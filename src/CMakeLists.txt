@@ -15,7 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 set(OPENSTA_DB_SOURCE
-  Main.cc
   OpenStaDB.cc
   OpenStaDB_wrap.cc
   OpenStaDBTclInitVar.cc
@@ -29,7 +28,13 @@ set(OPENSTA_DB_HEADERS
 
 set(STA_INCLUDE_DIRS
   ${OPENSTA_HOME}/util
+  ${OPENSTA_HOME}/liberty
   ${OPENSTA_HOME}/network
+  ${OPENSTA_HOME}/graph
+  ${OPENSTA_HOME}/sdc
+  ${OPENSTA_HOME}/parasitics
+  ${OPENSTA_HOME}/dcalc
+  ${OPENSTA_HOME}/sdf
   ${OPENSTA_HOME}/search
   )
 
@@ -79,8 +84,25 @@ add_custom_command(OUTPUT ${OPENSTA_DB_HOME}/src/OpenStaDB_wrap.cc
 
 ################################################################
 
-add_executable(opensta_db
+add_library(OpenStaDB
   ${OPENSTA_DB_SOURCE}
+  )
+
+target_include_directories(OpenStaDB
+  PUBLIC ${OPENSTA_DB_HOME}/include
+  PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
+  )
+
+target_compile_features(OpenStaDB
+  PUBLIC cxx_auto_type
+  )
+
+target_compile_options(OpenStaDB PUBLIC ${STA_COMPILE_OPTIONS})
+
+################################################################
+
+add_executable(opensta_db
+  Main.cc
   )
 
 target_include_directories(opensta_db
@@ -101,6 +123,7 @@ target_link_libraries(opensta_db
   lefout
   zutil
   OpenSTA
+  OpenStaDB
   ${TCL_LIB}
   )
 

@@ -21,9 +21,7 @@
 #include "Liberty.hh"
 #include "OpenDBNetwork.hh"
 
-#include "ads.h"
-#include "db.h"
-#include "logger.h"
+#include "opendb/db.h"
 
 namespace sta {
 
