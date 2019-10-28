@@ -129,7 +129,7 @@ public:
   Cell *dbToSta(dbMaster *master) const;
   Port *dbToSta(dbMTerm *mterm) const;
   PortDirection *dbToSta(dbSigType sig_type,
-			 dbIoType io_type);
+			 dbIoType io_type) const;
 
   using Network::netIterator;
   using Network::findPin;

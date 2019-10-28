@@ -584,8 +584,19 @@ OpenDBNetwork::port(const Pin *pin) const
 PortDirection *
 OpenDBNetwork::direction(const Pin *pin) const
 {
-  Port *port = this->port(pin);
-  return this->direction(port);
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm) {
+    PortDirection *dir = dbToSta(iterm->getSigType(), iterm->getIoType());
+    return dir;
+  }
+  else if (bterm) {
+    PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+    return dir;
+  }
+  else
+    return nullptr;
 }
 
 VertexIndex
@@ -796,7 +807,7 @@ OpenDBNetwork::makeTopCell()
 
 PortDirection *
 OpenDBNetwork::dbToSta(dbSigType sig_type,
-		       dbIoType io_type)
+		       dbIoType io_type) const
 {
   if (sig_type == dbSigType::POWER)
     return PortDirection::power();
@@ -834,7 +845,7 @@ OpenDBNetwork::staToDb(const Pin *pin,
 		       dbITerm *&iterm,
 		       dbBTerm *&bterm) const
 {
-  dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
+ dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
   dbObjectType type = obj->getType();
   if (type == dbITermObj) {
     iterm = static_cast<dbITerm*>(obj);
