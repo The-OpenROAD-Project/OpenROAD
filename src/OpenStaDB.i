@@ -26,7 +26,7 @@
 #include "Machine.hh"
 #include "Report.hh"
 #include "Network.hh"
-#include "OpenStaDB.hh"
+#include "OpenStaDB/OpenStaDB.hh"
 
 namespace sta {
 

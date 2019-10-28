@@ -16,7 +16,7 @@
 
 #include "Machine.hh"
 #include "OpenDBNetwork.hh"
-#include "OpenStaDB.hh"
+#include "OpenStaDB/OpenStaDB.hh"
 #include "opendb/db.h"
 
 namespace sta {

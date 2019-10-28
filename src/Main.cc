@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include "Machine.hh"
 #include "StringUtil.hh"
-#include "OpenStaDB.hh"
 #include "StaMain.hh"
+#include "OpenStaDB/OpenStaDB.hh"
 #include "OpenStaDB/Version.hh"
 
 using sta::stringEq;
