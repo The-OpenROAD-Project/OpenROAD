@@ -17,6 +17,6 @@ Makefile
 /build
 /test/results
 
-Verilog2dbTclInitVar.cc
-src/Verilog2db_wrap.cc
+OpenStaDBTclInitVar.cc
+src/OpenStaDB_wrap.cc
 Version.hh
