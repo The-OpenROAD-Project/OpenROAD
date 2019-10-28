@@ -20,6 +20,7 @@
 #include "StaMain.hh"
 #include "OpenStaDB/OpenStaDB.hh"
 #include "OpenStaDB/Version.hh"
+#include "OpenStaDB/OpenRoad.hh"
 
 using sta::stringEq;
 using sta::OpenStaDB;
@@ -48,7 +49,8 @@ main(int argc,
     return 0;
   }
   else {
-    OpenStaDB *sta = new OpenStaDB;
+    ord::OpenRoad *ord = ord::OpenRoad::openRoad();
+    OpenStaDB *sta = ord->getSta();
     staMain(sta, argc, argv, Opensta_db_Init, sta::opensta_db_tcl_inits);
     return 0;
   }

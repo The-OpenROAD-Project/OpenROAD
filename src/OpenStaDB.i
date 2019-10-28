@@ -22,13 +22,12 @@
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
-#include "OpenStaDB/Version.hh"
 #include "Machine.hh"
 #include "Report.hh"
 #include "Network.hh"
+#include "OpenStaDB/Version.hh"
 #include "OpenStaDB/OpenStaDB.hh"
-
-namespace sta {
+#include "OpenStaDB/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
 //
@@ -37,31 +36,20 @@ namespace sta {
 //
 ////////////////////////////////////////////////////////////////
 
-odb::dbDatabase *db_ = nullptr;
+using ord::OpenRoad;
+using sta::OpenStaDB;
 
-odb::dbDatabase *
-getDb()
+OpenRoad *
+getOpenRoad()
 {
-  return db_;
-}
-
-odb::dbDatabase *
-ensureDb()
-{
-  if (db_ == nullptr)
-    db_ = odb::dbDatabase::create();
-  return db_;
+  return OpenRoad::openRoad();
 }
 
 OpenStaDB *
-openStaDB()
+getSta()
 {
-  return dynamic_cast<OpenStaDB *>(Sta::sta());
+  return getOpenRoad()->getSta();
 }
-
-} // namespace
-
-using namespace sta;
 
 %}
 
@@ -91,37 +79,13 @@ opensta_db_git_sha1()
   return OPENSTA_DB_GIT_SHA1;
 }
 
-bool
-have_db()
-{  
-  odb::dbDatabase *db = getDb();
-  if (db) {
-    odb::dbChip *chip = db->getChip();
-    if (chip) {
-      odb::dbBlock *block = chip->getBlock();
-      if (block)
-	return true;
-    }
-  }
-  return false;
-}
-
-bool
-have_db_tech()
-{  
-  odb::dbDatabase *db = getDb();
-  if (db)
-    return db->getTech() != nullptr;
-  else
-    return false;
-}
-
 void
 init_sta_db()
 {
-  odb::dbDatabase *db = getDb();
-  if (db)
-    openStaDB()->init(db);
+  OpenRoad *ord = getOpenRoad();
+  OpenStaDB *sta = ord->getSta();
+  odb::dbDatabase *db = ord->getDb();
+  sta->init(db);
 }
 
 void
@@ -130,67 +94,41 @@ read_lef_cmd(const char *filename,
 	     bool make_tech,
 	     bool make_library)
 {
-  odb::dbDatabase *db = ensureDb();
-  odb::lefin lef_reader(db, false);
-  if (make_tech && make_library)
-    lef_reader.createTechAndLib(lib_name, filename);
-  else if (make_tech)
-    lef_reader.createTech(filename);
-  else if (make_library)
-    lef_reader.createLib(lib_name, filename);
+  OpenRoad *ord = getOpenRoad();
+  ord->readLef(filename, lib_name, make_tech, make_library);
 }
 
 void
 read_def_cmd(const char *filename)
 {
-  odb::dbDatabase *db = getDb();
-  if (db) {
-    odb::defin def_reader(db);
-    std::vector<odb::dbLib *> search_libs;
-    for (odb::dbLib *lib : db->getLibs())
-      search_libs.push_back(lib);
-    def_reader.createChip(search_libs, filename);
-  }
+  OpenRoad *ord = getOpenRoad();
+  ord->readDef(filename);
 }
 
 void
 write_def_cmd(const char *filename)
 {
-  odb::dbDatabase *db = getDb();
-  if (db) {
-    odb::dbChip *chip = db->getChip();
-    if (chip) {
-      odb::dbBlock *block = chip->getBlock();
-      if (block) {
-	odb::defout def_writer;
-	def_writer.writeBlock(block, filename);
-      }
-    }
-  }
+  OpenRoad *ord = getOpenRoad();
+  ord->writeDef(filename);
 }
 
 void
 read_db_cmd(const char *filename)
 {
-  odb::dbDatabase *db = ensureDb();
-  FILE *stream = fopen(filename, "r");
-  db->read(stream);
-  fclose(stream);
+  OpenRoad *ord = getOpenRoad();
+  ord->readDb(filename);
 }
 
 void
 write_db_cmd(const char *filename)
 {
-  odb::dbDatabase *db = getDb();
-  if (db) {
-    FILE *stream = fopen(filename, "w");
-    db->write(stream);
-    fclose(stream);
-  }
+  OpenRoad *ord = getOpenRoad();
+  ord->writeDb(filename);
 }
 
 %} // inline
 
+// OpenSTA swig files
 %include "StaException.i"
 %include "StaTcl.i"
 %include "NetworkEdit.i"

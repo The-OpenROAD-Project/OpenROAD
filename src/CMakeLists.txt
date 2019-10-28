@@ -103,6 +103,7 @@ target_compile_options(OpenStaDB PUBLIC ${STA_COMPILE_OPTIONS})
 
 add_executable(opensta_db
   Main.cc
+  OpenRoad.cc
   )
 
 target_include_directories(opensta_db
