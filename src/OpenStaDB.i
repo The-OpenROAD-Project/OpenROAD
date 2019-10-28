@@ -24,6 +24,7 @@
 #include "opendb/defout.h"
 #include "OpenStaDB/Version.hh"
 #include "Machine.hh"
+#include "Report.hh"
 #include "Network.hh"
 #include "OpenStaDB.hh"
 
@@ -35,6 +36,22 @@ namespace sta {
 // These are not visible in the TCL API.
 //
 ////////////////////////////////////////////////////////////////
+
+odb::dbDatabase *db_ = nullptr;
+
+odb::dbDatabase *
+getDb()
+{
+  return db_;
+}
+
+odb::dbDatabase *
+ensureDb()
+{
+  if (db_ == nullptr)
+    db_ = odb::dbDatabase::create();
+  return db_;
+}
 
 OpenStaDB *
 openStaDB()
@@ -62,8 +79,6 @@ using namespace sta;
 
 %inline %{
 
-odb::dbDatabase *db = nullptr;
-
 const char *
 opensta_db_version()
 {
@@ -76,10 +91,37 @@ opensta_db_git_sha1()
   return OPENSTA_DB_GIT_SHA1;
 }
 
+bool
+have_db()
+{  
+  odb::dbDatabase *db = getDb();
+  if (db) {
+    odb::dbChip *chip = db->getChip();
+    if (chip) {
+      odb::dbBlock *block = chip->getBlock();
+      if (block)
+	return true;
+    }
+  }
+  return false;
+}
+
+bool
+have_db_tech()
+{  
+  odb::dbDatabase *db = getDb();
+  if (db)
+    return db->getTech() != nullptr;
+  else
+    return false;
+}
+
 void
 init_sta_db()
 {
-  openStaDB()->init(db);
+  odb::dbDatabase *db = getDb();
+  if (db)
+    openStaDB()->init(db);
 }
 
 void
@@ -88,8 +130,7 @@ read_lef_cmd(const char *filename,
 	     bool make_tech,
 	     bool make_library)
 {
-  if (db == nullptr)
-    db = odb::dbDatabase::create();
+  odb::dbDatabase *db = ensureDb();
   odb::lefin lef_reader(db, false);
   if (make_tech && make_library)
     lef_reader.createTechAndLib(lib_name, filename);
@@ -102,6 +143,7 @@ read_lef_cmd(const char *filename,
 void
 read_def_cmd(const char *filename)
 {
+  odb::dbDatabase *db = getDb();
   if (db) {
     odb::defin def_reader(db);
     std::vector<odb::dbLib *> search_libs;
@@ -114,6 +156,7 @@ read_def_cmd(const char *filename)
 void
 write_def_cmd(const char *filename)
 {
+  odb::dbDatabase *db = getDb();
   if (db) {
     odb::dbChip *chip = db->getChip();
     if (chip) {
@@ -129,8 +172,7 @@ write_def_cmd(const char *filename)
 void
 read_db_cmd(const char *filename)
 {
-  if (db == nullptr)
-    db = odb::dbDatabase::create();
+  odb::dbDatabase *db = ensureDb();
   FILE *stream = fopen(filename, "r");
   db->read(stream);
   fclose(stream);
@@ -139,6 +181,7 @@ read_db_cmd(const char *filename)
 void
 write_db_cmd(const char *filename)
 {
+  odb::dbDatabase *db = getDb();
   if (db) {
     FILE *stream = fopen(filename, "w");
     db->write(stream);
