@@ -756,6 +756,7 @@ OpenDBNetwork::init(dbDatabase *db)
 {
   db_ = db;
   block_ = db_->getChip()->getBlock();
+  // Make ConcreteLibrary/Cell/Port objects for the db library objects.
   for (dbLib *lib : db_->getLibs())
     makeLibrary(lib);
   makeTopCell();
@@ -846,7 +847,7 @@ OpenDBNetwork::staToDb(const Pin *pin,
 		       dbBTerm *&bterm) const
 {
  dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-  dbObjectType type = obj->getType();
+  dbObjectType type = obj->getObjectType();
   if (type == dbITermObj) {
     iterm = static_cast<dbITerm*>(obj);
     bterm = nullptr;
