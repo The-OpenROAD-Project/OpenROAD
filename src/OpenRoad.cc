@@ -31,8 +31,8 @@ OpenRoad::OpenRoad() :
 
 OpenRoad::~OpenRoad()
 {
-  delete db_;
   delete sta_;
+  odb::dbDatabase::destroy(db_);
 }
 
 void
