@@ -19,11 +19,13 @@ set(OPENSTA_DB_SOURCE
   OpenStaDB_wrap.cc
   OpenStaDBTclInitVar.cc
   OpenDBNetwork.cc
+  Verilog2db.cc
   )
 
 set(OPENSTA_DB_HEADERS
   OpenStaDB.hh
   OpenDBNetwork.hh
+  Verilog2db.hh
   )
 
 set(STA_INCLUDE_DIRS
@@ -36,6 +38,7 @@ set(STA_INCLUDE_DIRS
   ${OPENSTA_HOME}/dcalc
   ${OPENSTA_HOME}/sdf
   ${OPENSTA_HOME}/search
+  ${OPENSTA_HOME}/verilog
   )
 
 set(OPENSTA_DB_TCL_FILES
@@ -56,10 +59,12 @@ set(OPENSTA_DB_TCL_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.tcl
   ${OPENSTA_HOME}/sdf/Sdf.tcl
   OpenStaDB.tcl
+  Verilog2db.tcl
   )
 
 set(OPENSTA_DB_SWIG_FILES
   OpenStaDB.i
+  Verilog2db.i
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i

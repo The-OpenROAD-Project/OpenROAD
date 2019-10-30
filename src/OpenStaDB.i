@@ -38,11 +38,18 @@
 
 using ord::OpenRoad;
 using sta::OpenStaDB;
+using odb::dbDatabase;
 
 OpenRoad *
 getOpenRoad()
 {
   return OpenRoad::openRoad();
+}
+
+dbDatabase *
+getDb()
+{
+  return getOpenRoad()->getDb();
 }
 
 OpenStaDB *
@@ -135,3 +142,5 @@ write_db_cmd(const char *filename)
 %include "Sdf.i"
 %include "DelayCalc.i"
 %include "Parasitics.i"
+
+%include "Verilog2db.i"

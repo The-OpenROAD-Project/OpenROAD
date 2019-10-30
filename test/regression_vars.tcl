@@ -120,6 +120,8 @@ proc list_delete { list delete } {
 # Record tests in resizer/test
 record_tests {
   report_checks1
+  read_verilog1
+  read_verilog2
 }
 
 # Record tests in $STAX/designs
