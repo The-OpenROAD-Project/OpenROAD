@@ -26,6 +26,7 @@
 namespace sta {
 
 using odb::dbDatabase;
+using odb::dbString;
 using odb::dbObject;
 using odb::dbLib;
 using odb::dbMaster;
@@ -392,13 +393,13 @@ const char *
 OpenDBNetwork::name(const Instance *instance) const
 {
   if (instance == top_instance_) {
-    const char *name = block_->getName().c_str();
-    return tmpStringCopy(name);
+    dbString name = block_->getName();
+    return tmpStringCopy(name.c_str());
   }
   else {
     dbInst *dinst = staToDb(instance);
-    const char *name = dinst->getName().c_str();
-    return tmpStringCopy(name);
+    dbString name = dinst->getName();
+    return tmpStringCopy(name.c_str());
   }
 }
 
@@ -574,8 +575,8 @@ OpenDBNetwork::port(const Pin *pin) const
     return dbToSta(mterm);
   }
   else if (bterm) {
-    const char *port_name = bterm->getName().c_str();
-    return findPort(top_cell_, port_name);
+    dbString port_name = bterm->getName();
+    return findPort(top_cell_, port_name.c_str());
   }
   else
     return nullptr;
@@ -636,8 +637,8 @@ const char *
 OpenDBNetwork::name(const Net *net) const
 {
   dbNet *dnet = staToDb(net);
-  const char *name = dnet->getName().c_str();
-  return tmpStringCopy(name);
+  dbString name = dnet->getName();
+  return tmpStringCopy(name.c_str());
 }
 
 Instance *
@@ -765,7 +766,8 @@ OpenDBNetwork::init(dbDatabase *db)
 void
 OpenDBNetwork::makeLibrary(dbLib *lib)
 {
-  Library *library = makeLibrary(lib->getName().c_str(), nullptr);
+  dbString lib_name = lib->getName();
+  Library *library = makeLibrary(lib_name.c_str(), nullptr);
   for (dbMaster *master : lib->getMasters())
     makeCell(library, master);
 }
@@ -774,14 +776,14 @@ void
 OpenDBNetwork::makeCell(Library *library,
 			dbMaster *master)
 {
-  const char *cell_name = master->getName().c_str();
-  Cell *cell = makeCell(library, cell_name, true, nullptr);
+  dbString cell_name = master->getName();
+  Cell *cell = makeCell(library, cell_name.c_str(), true, nullptr);
   LibertyCell *lib_cell = findLibertyCell(cell_name);
   ConcreteCell *ccell = reinterpret_cast<ConcreteCell *>(cell);
   ccell->setLibertyCell(lib_cell);
   for (dbMTerm *mterm : master->getMTerms()) {
-    const char *port_name = mterm->getName().c_str();
-    Port *port = makePort(cell, port_name);
+    dbString port_name = mterm->getName();
+    Port *port = makePort(cell, port_name.c_str());
     PortDirection *dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
     if (lib_cell) {
@@ -795,12 +797,12 @@ OpenDBNetwork::makeCell(Library *library,
 void
 OpenDBNetwork::makeTopCell()
 {
-  const char *design_name = block_->getName().c_str();
-  Library *top_lib = makeLibrary(design_name, nullptr);
-  top_cell_ = makeCell(top_lib, design_name, false, nullptr);
+  dbString design_name = block_->getName();
+  Library *top_lib = makeLibrary(design_name.c_str(), nullptr);
+  top_cell_ = makeCell(top_lib, design_name.c_str(), false, nullptr);
   for (dbBTerm *bterm : block_->getBTerms()) {
-    const char *port_name = bterm->getName().c_str();
-    Port *port = makePort(top_cell_, port_name);
+    dbString port_name = bterm->getName();
+    Port *port = makePort(top_cell_, port_name.c_str());
     PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     setDirection(port, dir);
   }
@@ -901,8 +903,8 @@ OpenDBNetwork::dbToSta(dbMTerm *mterm) const
 {
   dbMaster *master = mterm->getMaster();
   Cell *cell = dbToSta(master);
-  const char *port_name = mterm->getName().c_str();
-  Port *port = findPort(cell, port_name);
+  dbString port_name = mterm->getName();
+  Port *port = findPort(cell, port_name.c_str());
   return port;
 }
 
@@ -910,10 +912,10 @@ Cell *
 OpenDBNetwork::dbToSta(dbMaster *master) const
 {
   dbLib *lib = master->getLib();
-  const char *lib_name = lib->getName().c_str();  
-  Library *library = const_cast<OpenDBNetwork*>(this)->findLibrary(lib_name);
-  const char *cell_name = master->getName().c_str();
-  return findCell(library, cell_name);
+  dbString lib_name = lib->getName();  
+  Library *library = const_cast<OpenDBNetwork*>(this)->findLibrary(lib_name.c_str());
+  dbString cell_name = master->getName();
+  return findCell(library, cell_name.c_str());
 }
 
 } // namespace
