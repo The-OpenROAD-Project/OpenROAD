@@ -112,6 +112,8 @@ target_include_directories(opensta_db
   )
 
 target_link_libraries(opensta_db
+  OpenStaDB
+  OpenSTA
   opendb 
   zutil 
   zlib 
@@ -123,8 +125,6 @@ target_link_libraries(opensta_db
   lefin
   lefout
   zutil
-  OpenSTA
-  OpenStaDB
   ${TCL_LIB}
   )
 
