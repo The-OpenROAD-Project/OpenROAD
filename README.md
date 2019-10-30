@@ -77,45 +77,52 @@ shown below.
 read_lef [-tech] [-library] filename
 read_def filename
 write_def filename
+read_verilog filename
+write_verilog filename
 read_db filename
 write_db filename
 init_sta_db
 ```
 
-Note that OpenStaDB does NOT include the `read_verilog` command.
+OpenStaDB can be used to make and OpenDB database from LEF/DEF, or
+Verilog (flat or hierarchical). Once the database is made it can be
+saved as a file with the `write_db` command. OpenStaDB can then read
+the database with the `read_db` command without reading LEF/DEF or
+Verilog.
 
-The `read_lef` and `read_def` commands can be used to build an OpenDB database
-as shown below.
+The `read_lef` and `read_def` commands can be used to build an OpenDB
+database as shown below. In this example the LEF contains both
+technology and MACRO definitions so the `-tech` and `-library` flags
+are used with the `read_lef` command.
 
 ```
 read_lef -tech -library liberty1.lef
 read_def reg1.def
-# Wrtie the db for future runs.
+# Write the db for future runs.
 write_db reg1.def
 ```
 
-After the database is built from LEF/DEF as shown above, or read using
-the `read_db` command, use the `read_liberty` command to read Liberty
-library files used by the design.
+The `read_verilog` command is used to build an OpenDB database as
+shown below. Multiple verilog files for a hierarchical design can be
+read.  The `link_design` command is used to flatten the design
+and make a database.
+
+```
+read_lef -tech -library liberty1.lef
+read_verilog reg1.v
+link_design top
+# Write the db for future runs.
+write_db reg1.db
+```
+
+After the database has been read from LEF/DEF, Verilog or an OpenDB
+database, use the `read_liberty` command to read Liberty library files
+used by the design.
 
 The `init_sta_db` command is used to initialize OpenSTA after the database
 is built and liberty files have been read.
 
-The example script analyzes a LEF/DEF design.
-
-```
-read_lef -tech -library liberty1.lef
-read_def reg1.def
-read_liberty liberty1.lib
-init_sta_db
-create_clock -name clk -period 10 {clk1 clk2 clk3}
-set_input_delay -clock clk 0 {in1 in2}
-set_output_delay -clock clk 0 out
-report_checks
-```
-
-The same design using a previously saved database is analyzed
-with the example script below.
+The example script below timing analyzes a database.
 
 ```
 read_db reg1.db
