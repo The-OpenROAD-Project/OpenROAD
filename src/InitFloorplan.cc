@@ -120,7 +120,7 @@ protected:
 		     double core_ly,
 		     double core_ux,
 		     double core_uy);
-  uint metersToDbu(double dist) const;
+  int metersToDbu(double dist) const;
   double dbuToMeters(uint dist) const;
 
   dbDatabase *db_;
@@ -258,6 +258,7 @@ InitFloorplan::makeTracks(const char *tracks_file,
 			  double die_ux,
 			  double die_uy)
 {
+  Report *report = network_->report();
   readTracks(tracks_file);
   dbTech *tech = db_->getTech();
   for (auto track : tracks_) {
@@ -266,23 +267,34 @@ InitFloorplan::makeTracks(const char *tracks_file,
     char dir = track.dir();
     const char *layer_name = track.layer().c_str();
     dbTechLayer *layer = tech->findLayer(layer_name);
-    dbTrackGrid *grid = dbTrackGrid::create(block_, layer);
-    uint width;
-    int track_count;
-    switch (dir) {
-    case 'X':
-      width = metersToDbu(die_ux - die_lx);
-      track_count = floor((width - offset) / pitch) + 1;
-      grid->addGridPatternX(offset, track_count, pitch);
-      break;
-    case 'Y':
-      width = metersToDbu(die_uy - die_ly);
-      track_count = floor((width - offset) / pitch) + 1;
-      grid->addGridPatternY(offset, track_count, pitch);
-      break;
-    default:
-      internalError("unknown track direction\n");
+    if (layer) {
+      dbTrackGrid *grid = block_->findTrackGrid(layer);
+      if (grid == nullptr)
+	grid = dbTrackGrid::create(block_, layer);
+      double width;
+      int width_dbu;
+      int track_count;
+      int pitch_dbu = metersToDbu(pitch);
+      int offset_dbu = metersToDbu(offset);
+      switch (dir) {
+      case 'X':
+	width = die_ux - die_lx;
+	track_count = floor((width - offset) / pitch) + 1;
+	width_dbu = metersToDbu(width);
+	grid->addGridPatternX(offset_dbu, track_count, pitch_dbu);
+	break;
+      case 'Y':
+	width = die_uy - die_ly;
+	track_count = floor((width - offset) / pitch) + 1;
+	width_dbu = metersToDbu(width);
+	grid->addGridPatternY(offset_dbu, track_count, pitch_dbu);
+	break;
+      default:
+	internalError("unknown track direction\n");
+      }
     }
+    else
+      report->fileWarn(tracks_file, 0, "layer %s not found.\n", layer_name);
   }
 }
 
@@ -422,7 +434,9 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
 
       dbBPin *bpin = dbBPin::create(bterm);
       bpin->setPlacementStatus(dbPlacementStatus::FIRM);
-      dbBox::create(bpin, pin_layer, x, y, x, y);
+      int x_dbu = metersToDbu(x);
+      int y_dbu = metersToDbu(y);
+      dbBox::create(bpin, pin_layer, x_dbu, y_dbu, x_dbu, y_dbu);
 
       location += pin_dist;
     }
@@ -430,7 +444,7 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
 }
 
 // DBUs are nanometers.
-uint
+int
 InitFloorplan::metersToDbu(double dist) const
 {
   dbTech *tech = db_->getTech();

@@ -123,6 +123,7 @@ record_tests {
   read_verilog1
   read_verilog2
   init_floorplan1
+  init_floorplan2
 }
 
 # Record tests in $STAX/designs
