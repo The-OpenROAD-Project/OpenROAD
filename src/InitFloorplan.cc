@@ -18,12 +18,11 @@
 #include <fstream>
 #include <cmath>
 #include "Machine.hh"
-#include "Debug.hh"
 #include "Error.hh"
 #include "Report.hh"
+#include "StringUtil.hh"
 #include "Vector.hh"
 #include "PortDirection.hh"
-#include "OpenDBNetwork.hh"
 #include "opendb/db.h"
 #include "opendb/dbTransform.h"
 #include "InitFloorplan.hh"
@@ -34,7 +33,6 @@ using std::string;
 
 using sta::Vector;
 using sta::Report;
-using sta::Debug;
 using sta::stringPrint;
 using sta::StringVector;
 using sta::stringEqual;
@@ -93,7 +91,7 @@ public:
 		     bool auto_place_pins,
 		     const char *pin_layer_name,
 		     dbDatabase *db,
-		     OpenDBNetwork *network);
+		     Report *report);
   void initFloorplan(double die_lx,
 		     double die_ly,
 		     double die_ux,
@@ -107,7 +105,7 @@ public:
 		     bool auto_place_pins,
 		     const char *pin_layer_name,
 		     dbDatabase *db,
-		     OpenDBNetwork *network);
+		     Report *report);
 
 protected:
   void initFloorplan(double die_lx,
@@ -149,7 +147,7 @@ protected:
   double dbu2ToMeters2(uint area) const;
 
   dbDatabase *db_;
-  OpenDBNetwork *network_;
+  Report *report_;
   dbBlock *block_;
   Vector<Track> tracks_;
 };
@@ -163,13 +161,13 @@ initFloorplan(double util,
 	      bool auto_place_pins,
 	      const char *pin_layer_name,
 	      dbDatabase *db,
-	      OpenDBNetwork *network)
+	      Report *report)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(util, aspect_ratio, core_space,
 			site_name, tracks_file,
 			auto_place_pins, pin_layer_name,
-			db, network);
+			db, report);
 }
 
 void
@@ -186,14 +184,14 @@ initFloorplan(double die_lx,
 	      bool auto_place_pins,
 	      const char *pin_layer_name,
 	      dbDatabase *db,
-	      OpenDBNetwork *network)
+	      Report *report)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
 			core_lx, core_ly, core_ux, core_uy,
 			site_name, tracks_file,
 			auto_place_pins, pin_layer_name,
-			db, network);
+			db, report);
 }
 
 void
@@ -205,9 +203,9 @@ InitFloorplan::initFloorplan(double util,
 			     bool auto_place_pins,
 			     const char *pin_layer_name,
 			     dbDatabase *db,
-			     OpenDBNetwork *network)
+			     Report *report)
 {
-  network_ = network;
+  report_ = report;
   db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
@@ -261,9 +259,9 @@ InitFloorplan::initFloorplan(double die_lx,
 			     bool auto_place_pins,
 			     const char *pin_layer_name,
 			     dbDatabase *db,
-			     OpenDBNetwork *network)
+			     Report *report)
 {
-  network_ = network;
+  report_ = report;
   db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
@@ -291,13 +289,12 @@ InitFloorplan::initFloorplan(double die_lx,
 			     bool auto_place_pins,
 			     const char *pin_layer_name)
 {
-  Report *report = network_->report();
   dbTechLayer *pin_layer = nullptr;
   if (auto_place_pins && pin_layer_name) {
     dbTech *tech = db_->getTech();
     pin_layer = tech->findLayer(pin_layer_name);
     if (pin_layer == nullptr)
-      report->warn("pin layer %s not found.\n", pin_layer_name);
+      report_->warn("pin layer %s not found.\n", pin_layer_name);
   }
 
   adsRect die_area(metersToDbu(die_lx),
@@ -321,7 +318,6 @@ InitFloorplan::makeRows(const char *site_name,
 			double core_ux,
 			double core_uy)
 {
-  Report *report = network_->report();
   if (site_name && site_name[0]
       &&  core_lx >= 0.0 && core_lx >= 0.0 && core_ux >= 0.0 && core_uy >= 0.0) {
     dbSite *site = findSite(site_name);
@@ -346,7 +342,7 @@ InitFloorplan::makeRows(const char *site_name,
       }
     }
     else
-      report->printWarn("Warning: SITE %s not found.\n", site_name);
+      report_->printWarn("Warning: SITE %s not found.\n", site_name);
   }
 }
 
@@ -370,7 +366,6 @@ InitFloorplan::makeTracks(const char *tracks_file,
 			  double die_ux,
 			  double die_uy)
 {
-  Report *report = network_->report();
   readTracks(tracks_file);
   dbTech *tech = db_->getTech();
   for (auto track : tracks_) {
@@ -405,43 +400,45 @@ InitFloorplan::makeTracks(const char *tracks_file,
 	internalError("unknown track direction\n");
       }
     }
-    else
-      report->fileWarn(tracks_file, 0, "layer %s not found.\n", layer_name);
   }
 }
 
 void
 InitFloorplan::readTracks(const char *tracks_file)
 {
-  Report *report = network_->report();
-  Debug *debug = network_->debug();
   std::ifstream tracks_stream(tracks_file);
   if (tracks_stream.is_open()) {
     int line_count = 1;
     string line;
+    dbTech *tech = db_->getTech();
     while (getline(tracks_stream, line)) {
       StringVector tokens;
       split(line, " \t", tokens);
       if (tokens.size() == 4) {
-	string layer = tokens[0];
-	string dir_str = tokens[1];
-	char dir = 'X';
-	if (stringEqual(dir_str.c_str(), "X"))
-	  dir = 'X';
-	else if (stringEqual(dir_str.c_str(), "Y"))
-	  dir = 'Y';
+	string layer_name = tokens[0];
+	dbTechLayer *layer = tech->findLayer(layer_name.c_str());
+	if (layer) {
+	  string dir_str = tokens[1];
+	  char dir = 'X';
+	  if (stringEqual(dir_str.c_str(), "X"))
+	    dir = 'X';
+	  else if (stringEqual(dir_str.c_str(), "Y"))
+	    dir = 'Y';
+	  else
+	    report_->warn("Warning: track file line %d direction must be X or Y'.\n",
+			  line_count);
+	  // microns -> meters
+	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
+	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
+	  tracks_.push_back(Track(layer_name, dir, offset, pitch));
+	}
 	else
-	  report->warn("Warning: track file line %d direction must be X or Y'.\n",
-		       line_count);
-	// microns -> meters
-	double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
-	double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
-	tracks_.push_back(Track(layer, dir, offset, pitch));
-	debugPrint4(debug, "track", 1, "%s %c %f %f\n", layer.c_str(), dir, offset, pitch);
+	  report_->fileWarn(tracks_file, line_count, "layer %s not found.\n",
+			    layer_name.c_str());
       }
       else
-	report->warn("Warning: track file line %d does not match 'layer X|Y offset pitch'.\n",
-				 line_count);
+	report_->warn("Warning: track file line %d does not match 'layer X|Y offset pitch'.\n",
+		      line_count);
       line_count++;
     }
     tracks_stream.close();

@@ -26,7 +26,7 @@
 #include "MakeConcreteNetwork.hh"
 #include "VerilogReader.hh"
 #include "VerilogWriter.hh"
-#include "Verilog2db.hh"
+#include "VerilogToDb.hh"
 
 using sta::NetworkReader;
 using sta::Debug;

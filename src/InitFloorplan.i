@@ -47,12 +47,13 @@ init_floorplan_core(double die_lx,
 		    const char *pin_layer_name)
 {
   odb::dbDatabase *db = getDb();
-  sta::OpenDBNetwork *network = getDbNetwork();
+  sta::StaDb *sta = getSta();
+  sta::Report *report = sta->report();
   ord::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
 		     site_name, tracks_file,
 		     auto_place_pins, pin_layer_name,
-		     db, network);
+		     db, report);
 }
 
 void
@@ -66,11 +67,12 @@ init_floorplan_util(double util,
 
 {
   odb::dbDatabase *db = getDb();
-  sta::OpenDBNetwork *network = getDbNetwork();
+  sta::StaDb *sta = getSta();
+  sta::Report *report = sta->report();
   ord::initFloorplan(util, aspect_ratio, core_space,
 		     site_name, tracks_file,
 		     auto_place_pins, pin_layer_name,
-		     db, network);
+		     db, report);
 }
 
 %} // inline

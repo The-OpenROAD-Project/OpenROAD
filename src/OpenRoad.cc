@@ -15,9 +15,9 @@
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
-#include "OpenStaDB/OpenRoad.hh"
 #include "Machine.hh"
-#include "OpenStaDB/OpenStaDB.hh"
+#include "sta_db/OpenRoad.hh"
+#include "sta_db/StaDb.hh"
 
 namespace ord {
 
@@ -25,7 +25,7 @@ OpenRoad OpenRoad::open_road_;
 
 OpenRoad::OpenRoad() :
   db_(odb::dbDatabase::create()),
-  sta_(new sta::OpenStaDB)
+  sta_(new sta::StaDb)
 {
 }
 
@@ -95,7 +95,7 @@ OpenRoad::writeDb(const char *filename)
 
 ////////////////////////////////////////////////////////////////
 
-sta::OpenDBNetwork *
+sta::DbNetwork *
 OpenRoad::getDbNetwork()
 {
   return sta_->dbNetwork();

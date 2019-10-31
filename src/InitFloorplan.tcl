@@ -107,12 +107,10 @@ proc initialize_floorplan { args } {
     } else {
       sta_error "no -core_area specified."
     }
-    
   } else {
     sta_error "no -utilization or -die_area specified."
   }
 }
-
 
 # sta namespace end
 }

@@ -25,9 +25,9 @@
 #include "Machine.hh"
 #include "Report.hh"
 #include "Network.hh"
-#include "OpenStaDB/Version.hh"
-#include "OpenStaDB/OpenStaDB.hh"
-#include "OpenStaDB/OpenRoad.hh"
+#include "sta_db/Version.hh"
+#include "sta_db/StaDb.hh"
+#include "sta_db/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
 //
@@ -37,8 +37,8 @@
 ////////////////////////////////////////////////////////////////
 
 using ord::OpenRoad;
-using sta::OpenStaDB;
-using sta::OpenDBNetwork;
+using sta::StaDb;
+using sta::DbNetwork;
 using odb::dbDatabase;
 
 OpenRoad *
@@ -53,13 +53,13 @@ getDb()
   return getOpenRoad()->getDb();
 }
 
-OpenStaDB *
+StaDb *
 getSta()
 {
   return getOpenRoad()->getSta();
 }
 
-OpenDBNetwork *
+DbNetwork *
 getDbNetwork()
 {
   return getOpenRoad()->getDbNetwork();
@@ -76,15 +76,15 @@ getDbNetwork()
 %inline %{
 
 const char *
-opensta_db_version()
+openroad_version()
 {
-  return OPENSTA_DB_VERSION;
+  return STA_DB_VERSION;
 }
 
 const char *
-opensta_db_git_sha1()
+openroad_git_sha1()
 {
-  return OPENSTA_DB_GIT_SHA1;
+  return STA_DB_GIT_SHA1;
 }
 
 void
@@ -92,7 +92,7 @@ init_sta_db()
 {
   OpenRoad *ord = getOpenRoad();
   odb::dbDatabase *db = ord->getDb();
-  OpenStaDB *sta = ord->getSta();
+  StaDb *sta = ord->getSta();
   sta->init(db);
 }
 
@@ -144,5 +144,5 @@ write_db_cmd(const char *filename)
 %include "DelayCalc.i"
 %include "Parasitics.i"
 
-%include "Verilog2db.i"
+%include "VerilogToDb.i"
 %include "InitFloorplan.i"

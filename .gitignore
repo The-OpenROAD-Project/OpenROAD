@@ -17,6 +17,6 @@ Makefile
 /build
 /test/results
 
-OpenStaDBTclInitVar.cc
-src/OpenStaDB_wrap.cc
+OpenRoadTclInitVar.cc
+src/OpenRoad_wrap.cc
 Version.hh

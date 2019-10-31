@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENSTA_DB_NETWORK_H
-#define OPENSTA_DB_NETWORK_H
+#ifndef STA_DB_NETWORK_H
+#define STA_DB_NETWORK_H
 
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
@@ -38,11 +38,11 @@ using odb::dbSet;
 
 // This adapter implements the network api for OpenDB.
 // ConcreteNetwork is used for library/cell/port functions only.
-class OpenDBNetwork : public ConcreteNetwork
+class DbNetwork : public ConcreteNetwork
 {
 public:
-  OpenDBNetwork();
-  virtual ~OpenDBNetwork();
+  DbNetwork();
+  virtual ~DbNetwork();
   void init(dbDatabase *db);
   virtual void clear();
 

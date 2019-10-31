@@ -18,12 +18,12 @@
 #include "Machine.hh"
 #include "StringUtil.hh"
 #include "StaMain.hh"
-#include "OpenStaDB/OpenStaDB.hh"
-#include "OpenStaDB/Version.hh"
-#include "OpenStaDB/OpenRoad.hh"
+#include "sta_db/StaDb.hh"
+#include "sta_db/Version.hh"
+#include "sta_db/OpenRoad.hh"
 
 using sta::stringEq;
-using sta::OpenStaDB;
+using sta::StaDb;
 using sta::staMain;
 using sta::showUsage;
 
@@ -33,7 +33,7 @@ extern int Opensta_db_Init(Tcl_Interp *interp);
 }
 
 namespace sta {
-extern const char *opensta_db_tcl_inits[];
+extern const char *openroad_tcl_inits[];
 }
 
 int
@@ -50,8 +50,8 @@ main(int argc,
   }
   else {
     ord::OpenRoad *ord = ord::OpenRoad::openRoad();
-    OpenStaDB *sta = ord->getSta();
-    staMain(sta, argc, argv, Opensta_db_Init, sta::opensta_db_tcl_inits);
+    StaDb *sta = ord->getSta();
+    staMain(sta, argc, argv, Opensta_db_Init, sta::openroad_tcl_inits);
     return 0;
   }
 }

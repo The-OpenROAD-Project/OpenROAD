@@ -1,4 +1,4 @@
-# OpenStaDB, OpenSTA on OpenDB
+# StaDb, OpenSTA on OpenDB
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(OPENSTA_DB_SOURCE
-  OpenStaDB.cc
-  OpenStaDB_wrap.cc
-  OpenStaDBTclInitVar.cc
-  OpenDBNetwork.cc
-  Verilog2db.cc
+set(STA_DB_SOURCE
+  StaDb.cc
+  DbNetwork.cc
+  VerilogToDb.cc
   InitFloorplan.cc
+  OpenRoad_wrap.cc
+  OpenRoadTclInitVar.cc
   )
 
-set(OPENSTA_DB_HEADERS
-  OpenStaDB.hh
-  OpenDBNetwork.hh
-  Verilog2db.hh
+set(STA_DB_HEADERS
+  StaDb.hh
+  DbNetwork.hh
+  VerilogToDb.hh
   InitFloorplan.hh
   )
 
@@ -43,7 +43,7 @@ set(STA_INCLUDE_DIRS
   ${OPENSTA_HOME}/verilog
   )
 
-set(OPENSTA_DB_TCL_FILES
+set(STA_DB_TCL_FILES
   ${OPENSTA_HOME}/tcl/Util.tcl
   ${OPENSTA_HOME}/tcl/Graph.tcl
   ${OPENSTA_HOME}/tcl/Liberty.tcl
@@ -60,15 +60,15 @@ set(OPENSTA_DB_TCL_FILES
   ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
   ${OPENSTA_HOME}/parasitics/Parasitics.tcl
   ${OPENSTA_HOME}/sdf/Sdf.tcl
-  OpenStaDB.tcl
-  Verilog2db.tcl
+  StaDb.tcl
+  VerilogToDb.tcl
   InitFloorplan.tcl
   )
 
 # Only used for depends.
-set(OPENSTA_DB_SWIG_FILES
-  OpenStaDB.i
-  Verilog2db.i
+set(STA_DB_SWIG_FILES
+  OpenRoad.i
+  VerilogToDb.i
   InitFloorplan.i
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
@@ -78,36 +78,36 @@ set(OPENSTA_DB_SWIG_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.i
   )
 
-add_custom_command(OUTPUT ${OPENSTA_DB_HOME}/src/OpenStaDBTclInitVar.cc
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenStaDBTclInitVar.cc opensta_db_tcl_inits ${OPENSTA_DB_TCL_FILES}
-  WORKING_DIRECTORY ${OPENSTA_DB_HOME}/src
-  DEPENDS ${OPENSTA_DB_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
+add_custom_command(OUTPUT ${STA_DB_HOME}/src/OpenRoadTclInitVar.cc
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenRoadTclInitVar.cc openroad_tcl_inits ${STA_DB_TCL_FILES}
+  WORKING_DIRECTORY ${STA_DB_HOME}/src
+  DEPENDS ${STA_DB_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
   )
 
 include(FindSWIG)
-add_custom_command(OUTPUT ${OPENSTA_DB_HOME}/src/OpenStaDB_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o OpenStaDB_wrap.cc OpenStaDB.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenStaDB_wrap.cc
-  WORKING_DIRECTORY ${OPENSTA_DB_HOME}/src
-  DEPENDS ${OPENSTA_DB_SWIG_FILES}
+add_custom_command(OUTPUT ${STA_DB_HOME}/src/OpenRoad_wrap.cc
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o OpenRoad_wrap.cc OpenRoad.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
+  WORKING_DIRECTORY ${STA_DB_HOME}/src
+  DEPENDS ${STA_DB_SWIG_FILES}
   )
 
 ################################################################
 
-add_library(OpenStaDB
-  ${OPENSTA_DB_SOURCE}
+add_library(StaDb
+  ${STA_DB_SOURCE}
   )
 
-target_include_directories(OpenStaDB
-  PUBLIC ${OPENSTA_DB_HOME}/include
+target_include_directories(StaDb
+  PUBLIC ${STA_DB_HOME}/include
   PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   )
 
-target_compile_features(OpenStaDB
+target_compile_features(StaDb
   PUBLIC cxx_auto_type
   )
 
-target_compile_options(OpenStaDB PUBLIC ${STA_COMPILE_OPTIONS})
+target_compile_options(StaDb PUBLIC ${STA_COMPILE_OPTIONS})
 
 ################################################################
 
@@ -117,12 +117,12 @@ add_executable(opensta_db
   )
 
 target_include_directories(opensta_db
-  PUBLIC ${OPENSTA_DB_HOME}/include
+  PUBLIC ${STA_DB_HOME}/include
   PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   )
 
 target_link_libraries(opensta_db
-  OpenStaDB
+  StaDb
   OpenSTA
   opendb 
   zutil 
@@ -153,7 +153,7 @@ install(TARGETS opensta_db DESTINATION bin)
 
 ################################################################
 
-add_custom_target(opensta_db_tags etags -o TAGS ${OPENSTA_DB_SOURCE} ${OPENSTA_DB_HEADERS} ${OPENSTA_DB_TCL_FILES}
-  WORKING_DIRECTORY ${OPENSTA_DB_HOME}
-  DEPENDS ${OPENSTA_DB_SOURCE} ${OPENSTA_DB_HEADERS} ${OPENSTA_DB_TCL_FILES}
+add_custom_target(sta_db_tags etags -o TAGS ${STA_DB_SOURCE} ${STA_DB_HEADERS} ${STA_DB_TCL_FILES}
+  WORKING_DIRECTORY ${STA_DB_HOME}/src
+  DEPENDS ${STA_DB_SOURCE} ${STA_DB_HEADERS} ${STA_DB_TCL_FILES}
   )

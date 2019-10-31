@@ -19,8 +19,8 @@ class dbDatabase;
 }
 
 namespace sta {
-class OpenStaDB;
-class OpenDBNetwork;
+class StaDb;
+class DbNetwork;
 }
 
 namespace ord {
@@ -35,8 +35,8 @@ public:
   // Singleton accessor used by tcl command interpreter.
   static OpenRoad *openRoad() { return &open_road_; }
   odb::dbDatabase *getDb() { return db_; }
-  sta::OpenStaDB *getSta() { return sta_; }
-  sta::OpenDBNetwork *getDbNetwork();
+  sta::StaDb *getSta() { return sta_; }
+  sta::DbNetwork *getDbNetwork();
   void readLef(const char *filename,
 	       const char *lib_name,
 	       bool make_tech,
@@ -48,7 +48,7 @@ public:
 
 private:
   odb::dbDatabase *db_;
-  sta::OpenStaDB *sta_;
+  sta::StaDb *sta_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad open_road_;

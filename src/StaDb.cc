@@ -14,30 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENSTA_DB_OPENSTADB_H
-#define OPENSTA_DB_OPENSTADB_H
-
+#include "Machine.hh"
+#include "DbNetwork.hh"
+#include "sta_db/StaDb.hh"
 #include "opendb/db.h"
-#include "Sta.hh"
 
 namespace sta {
 
-class OpenDBNetwork;
-
-using odb::dbDatabase;
-
-class OpenStaDB : public Sta
+StaDb::StaDb() :
+  Sta()
 {
-public:
-  OpenStaDB();
-  void init(dbDatabase *db);
-  OpenDBNetwork *dbNetwork();
+}
 
-protected:
-  virtual void makeNetwork();
+void
+StaDb::init(dbDatabase *db)
+{
+  db_ = db;
+  dbNetwork()->init(db);
+}
 
-  dbDatabase *db_;
-};
+DbNetwork *
+StaDb::dbNetwork()
+{
+  return dynamic_cast<DbNetwork *>(network_);
+}
 
-} // namespace
-#endif
+void
+StaDb::makeNetwork()
+{
+  network_ = new DbNetwork();
+}
+
+}

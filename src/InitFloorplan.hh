@@ -28,7 +28,7 @@ class OpenDbNetwork;
 namespace ord {
 
 using odb::dbDatabase;
-using sta::OpenDBNetwork;
+using sta::Report;
 
 void
 initFloorplan(double util,
@@ -39,7 +39,7 @@ initFloorplan(double util,
 	      bool auto_place_pins,
 	      const char *pin_layer_name,
 	      dbDatabase *db,
-	      OpenDBNetwork *network);
+	      Report *report);
 void
 initFloorplan(double die_lx,
 	      double die_ly,
@@ -54,7 +54,7 @@ initFloorplan(double die_lx,
 	      bool auto_place_pins,
 	      const char *pin_layer_name,
 	      dbDatabase *db,
-	      OpenDBNetwork *network);
+	      Report *report);
 
 } // namespace
 #endif

@@ -19,7 +19,7 @@
 #include "PatternMatch.hh"
 #include "PortDirection.hh"
 #include "Liberty.hh"
-#include "OpenDBNetwork.hh"
+#include "DbNetwork.hh"
 
 #include "opendb/db.h"
 
@@ -53,11 +53,11 @@ tmpStringCopy(const char *str)
   return tmp;
 }
 
-class OpenDBLibraryIterator1 : public Iterator<Library*>
+class DbLibraryIterator1 : public Iterator<Library*>
 {
 public:
-  OpenDBLibraryIterator1(ConcreteLibraryIterator *iter);
-  ~OpenDBLibraryIterator1();
+  DbLibraryIterator1(ConcreteLibraryIterator *iter);
+  ~DbLibraryIterator1();
   virtual bool hasNext();
   virtual Library *next();
 
@@ -65,47 +65,47 @@ private:
   ConcreteLibraryIterator *iter_;
 };
 
-OpenDBLibraryIterator1::OpenDBLibraryIterator1(ConcreteLibraryIterator * iter) :
+DbLibraryIterator1::DbLibraryIterator1(ConcreteLibraryIterator * iter) :
   iter_(iter)
 {
 }
 
-OpenDBLibraryIterator1::~OpenDBLibraryIterator1()
+DbLibraryIterator1::~DbLibraryIterator1()
 {
   delete iter_;
 }
 
 bool
-OpenDBLibraryIterator1::hasNext()
+DbLibraryIterator1::hasNext()
 {
   return iter_->hasNext();
 }
 
 Library *
-OpenDBLibraryIterator1::next()
+DbLibraryIterator1::next()
 {
   return reinterpret_cast<Library*>(iter_->next());
 }
 
 ////////////////////////////////////////////////////////////////
 
-class OpenDBInstanceChildIterator : public InstanceChildIterator
+class DbInstanceChildIterator : public InstanceChildIterator
 {
 public:
-  OpenDBInstanceChildIterator(const Instance *instance,
-			      const OpenDBNetwork *network);
+  DbInstanceChildIterator(const Instance *instance,
+			      const DbNetwork *network);
   bool hasNext();
   Instance *next();
   
 private:
-  const OpenDBNetwork *network_;
+  const DbNetwork *network_;
   bool top_;
   dbSet<dbInst>::iterator iter_;
   dbSet<dbInst>::iterator end_;
 };
 
-OpenDBInstanceChildIterator::OpenDBInstanceChildIterator(const Instance *instance,
-							 const OpenDBNetwork *network) :
+DbInstanceChildIterator::DbInstanceChildIterator(const Instance *instance,
+							 const DbNetwork *network) :
   network_(network)
 {
   if (instance == network->topInstance()) {
@@ -119,13 +119,13 @@ OpenDBInstanceChildIterator::OpenDBInstanceChildIterator(const Instance *instanc
 }
 
 bool
-OpenDBInstanceChildIterator::hasNext()
+DbInstanceChildIterator::hasNext()
 {
   return top_ && iter_ != end_;
 }
 
 Instance *
-OpenDBInstanceChildIterator::next()
+DbInstanceChildIterator::next()
 {
   dbInst *child = *iter_;
   iter_++;
@@ -133,23 +133,23 @@ OpenDBInstanceChildIterator::next()
 }
 
 
-class OpenDBInstanceNetIterator : public InstanceNetIterator
+class DbInstanceNetIterator : public InstanceNetIterator
 {
 public:
-  OpenDBInstanceNetIterator(const Instance *instance,
-			    const OpenDBNetwork *network);
+  DbInstanceNetIterator(const Instance *instance,
+			    const DbNetwork *network);
   bool hasNext();
   Net *next();
 
 private:
-  const OpenDBNetwork *network_;
+  const DbNetwork *network_;
   bool top_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
 };
 
-OpenDBInstanceNetIterator::OpenDBInstanceNetIterator(const Instance *instance,
-						     const OpenDBNetwork *network) :
+DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
+						     const DbNetwork *network) :
   network_(network)
 {
   if (instance == network->topInstance()) {
@@ -163,13 +163,13 @@ OpenDBInstanceNetIterator::OpenDBInstanceNetIterator(const Instance *instance,
 }
 
 bool
-OpenDBInstanceNetIterator::hasNext()
+DbInstanceNetIterator::hasNext()
 {
   return top_ && iter_ != end_;
 }
 
 Net *
-OpenDBInstanceNetIterator::next()
+DbInstanceNetIterator::next()
 {
   dbNet *net = *iter_;
   iter_++;
@@ -178,16 +178,16 @@ OpenDBInstanceNetIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
-class OpenDBInstancePinIterator : public InstancePinIterator
+class DbInstancePinIterator : public InstancePinIterator
 {
 public:
-  OpenDBInstancePinIterator(const Instance *inst,
-			    const OpenDBNetwork *network);
+  DbInstancePinIterator(const Instance *inst,
+			    const DbNetwork *network);
   bool hasNext();
   Pin *next();
 
 private:
-  const OpenDBNetwork *network_;
+  const DbNetwork *network_;
   bool top_;
   dbSet<dbITerm>::iterator iitr_;
   dbSet<dbITerm>::iterator iitr_end_;
@@ -196,8 +196,8 @@ private:
   Pin *pin_;
 };
 
-OpenDBInstancePinIterator::OpenDBInstancePinIterator(const Instance *inst,
-						     const OpenDBNetwork *network) :
+DbInstancePinIterator::DbInstancePinIterator(const Instance *inst,
+						     const DbNetwork *network) :
   network_(network)
 {
   top_ = (inst == network->topInstance());
@@ -214,7 +214,7 @@ OpenDBInstancePinIterator::OpenDBInstancePinIterator(const Instance *inst,
 }
 
 bool 
-OpenDBInstancePinIterator::hasNext()
+DbInstancePinIterator::hasNext()
 {
   if (top_) {
     if (bitr_ == bitr_end_)
@@ -248,23 +248,23 @@ OpenDBInstancePinIterator::hasNext()
 }
 
 Pin *
-OpenDBInstancePinIterator::next()
+DbInstancePinIterator::next()
 {
   return pin_;
 }
 
 ////////////////////////////////////////////////////////////////
 
-class OpenDBNetPinIterator : public NetPinIterator
+class DbNetPinIterator : public NetPinIterator
 {
 public:
-  OpenDBNetPinIterator(const Net *net,
-		       const OpenDBNetwork *network);
+  DbNetPinIterator(const Net *net,
+		       const DbNetwork *network);
   bool hasNext();
   Pin *next();
 
 private:
-  const OpenDBNetwork *network_;
+  const DbNetwork *network_;
   dbSet<dbITerm>::iterator _iitr;
   dbSet<dbITerm>::iterator _iitr_end;
   dbSet<dbBTerm>::iterator _bitr;
@@ -272,8 +272,8 @@ private:
   void *_term;
 };
 
-OpenDBNetPinIterator::OpenDBNetPinIterator(const Net *net,
-					   const OpenDBNetwork *network) :
+DbNetPinIterator::DbNetPinIterator(const Net *net,
+					   const DbNetwork *network) :
   network_(network)
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
@@ -285,7 +285,7 @@ OpenDBNetPinIterator::OpenDBNetPinIterator(const Net *net,
 }
 
 bool 
-OpenDBNetPinIterator::hasNext()
+DbNetPinIterator::hasNext()
 {
   if (_iitr != _iitr_end) {
     dbITerm *iterm = *_iitr;
@@ -311,29 +311,29 @@ OpenDBNetPinIterator::hasNext()
 }
 
 Pin *
-OpenDBNetPinIterator::next()
+DbNetPinIterator::next()
 {
   return (Pin*)_term;
 }
 
 ////////////////////////////////////////////////////////////////
 
-class OpenDBNetTermIterator : public NetTermIterator
+class DbNetTermIterator : public NetTermIterator
 {
 public:
-  OpenDBNetTermIterator(const Net *net,
-			const OpenDBNetwork *network);
+  DbNetTermIterator(const Net *net,
+			const DbNetwork *network);
   bool hasNext();
   Term *next();
 
 private:
-  const OpenDBNetwork *network_;
+  const DbNetwork *network_;
   dbSet<dbBTerm>::iterator iter_;
   dbSet<dbBTerm>::iterator end_;
 };
 
-OpenDBNetTermIterator::OpenDBNetTermIterator(const Net *net,
-					     const OpenDBNetwork *network) :
+DbNetTermIterator::DbNetTermIterator(const Net *net,
+					     const DbNetwork *network) :
   network_(network)
 {
   dbNet *dnet = network_->staToDb(net);
@@ -343,13 +343,13 @@ OpenDBNetTermIterator::OpenDBNetTermIterator(const Net *net,
 }
 
 bool 
-OpenDBNetTermIterator::hasNext()
+DbNetTermIterator::hasNext()
 {
   return iter_ != end_;
 }
 
 Term *
-OpenDBNetTermIterator::next()
+DbNetTermIterator::next()
 {
   dbBTerm *bterm = *iter_;
   iter_++;
@@ -359,30 +359,30 @@ OpenDBNetTermIterator::next()
 ////////////////////////////////////////////////////////////////
 
 Network *
-makeOpenDBNetwork()
+makeDbNetwork()
 {
-  return new OpenDBNetwork;
+  return new DbNetwork;
 }
 
-OpenDBNetwork::OpenDBNetwork() :
+DbNetwork::DbNetwork() :
   db_(nullptr),
   top_instance_(reinterpret_cast<Instance*>(1)),
   top_cell_(nullptr)
 {
 }
 
-OpenDBNetwork::~OpenDBNetwork()
+DbNetwork::~DbNetwork()
 {
 }
 
 void
-OpenDBNetwork::clear()
+DbNetwork::clear()
 {
   db_ = nullptr;
 }
 
 Instance *
-OpenDBNetwork::topInstance() const
+DbNetwork::topInstance() const
 {
   return top_instance_;
 }
@@ -390,7 +390,7 @@ OpenDBNetwork::topInstance() const
 ////////////////////////////////////////////////////////////////
 
 const char *
-OpenDBNetwork::name(const Instance *instance) const
+DbNetwork::name(const Instance *instance) const
 {
   if (instance == top_instance_) {
     dbString name = block_->getName();
@@ -404,7 +404,7 @@ OpenDBNetwork::name(const Instance *instance) const
 }
 
 Cell *
-OpenDBNetwork::cell(const Instance *instance) const
+DbNetwork::cell(const Instance *instance) const
 {
   if (instance == top_instance_)
     return reinterpret_cast<Cell*>(top_cell_);
@@ -416,7 +416,7 @@ OpenDBNetwork::cell(const Instance *instance) const
 }
 
 Instance *
-OpenDBNetwork::parent(const Instance *instance) const
+DbNetwork::parent(const Instance *instance) const
 {
   if (instance == top_instance_)
     return nullptr;
@@ -424,7 +424,7 @@ OpenDBNetwork::parent(const Instance *instance) const
 }
 
 bool
-OpenDBNetwork::isLeaf(const Instance *instance) const
+DbNetwork::isLeaf(const Instance *instance) const
 {
   if (instance == top_instance_)
     return false;
@@ -432,7 +432,7 @@ OpenDBNetwork::isLeaf(const Instance *instance) const
 }
 
 Instance *
-OpenDBNetwork::findChild(const Instance *parent,
+DbNetwork::findChild(const Instance *parent,
 			 const char *name) const
 {
   if (parent == top_instance_) {
@@ -444,7 +444,7 @@ OpenDBNetwork::findChild(const Instance *parent,
 }
 
 Pin *
-OpenDBNetwork::findPin(const Instance *instance, 
+DbNetwork::findPin(const Instance *instance, 
 		       const char *port_name) const
 {
   if (instance == top_instance_) {
@@ -459,7 +459,7 @@ OpenDBNetwork::findPin(const Instance *instance,
 }
 
 Pin *
-OpenDBNetwork::findPin(const Instance *instance,
+DbNetwork::findPin(const Instance *instance,
 		       const Port *port) const
 {
   const char *port_name = this->name(port);
@@ -467,7 +467,7 @@ OpenDBNetwork::findPin(const Instance *instance,
 }
 
 Net *
-OpenDBNetwork::findNet(const Instance *instance, 
+DbNetwork::findNet(const Instance *instance, 
 		       const char *net_name) const
 {
   if (instance == top_instance_) {
@@ -479,7 +479,7 @@ OpenDBNetwork::findNet(const Instance *instance,
 }
 
 void
-OpenDBNetwork::findInstNetsMatching(const Instance *instance,
+DbNetwork::findInstNetsMatching(const Instance *instance,
 				    const PatternMatch *pattern,
 				    // Return value.
 				    NetSeq *nets) const
@@ -501,27 +501,27 @@ OpenDBNetwork::findInstNetsMatching(const Instance *instance,
 }
 
 InstanceChildIterator *
-OpenDBNetwork::childIterator(const Instance *instance) const
+DbNetwork::childIterator(const Instance *instance) const
 {
-  return new OpenDBInstanceChildIterator(instance, this);
+  return new DbInstanceChildIterator(instance, this);
 }
 
 InstancePinIterator *
-OpenDBNetwork::pinIterator(const Instance *instance) const
+DbNetwork::pinIterator(const Instance *instance) const
 {
-  return new OpenDBInstancePinIterator(instance, this);
+  return new DbInstancePinIterator(instance, this);
 }
 
 InstanceNetIterator *
-OpenDBNetwork::netIterator(const Instance *instance) const
+DbNetwork::netIterator(const Instance *instance) const
 {
-  return new OpenDBInstanceNetIterator(instance, this);
+  return new DbInstanceNetIterator(instance, this);
 }
 
 ////////////////////////////////////////////////////////////////
 
 Instance *
-OpenDBNetwork::instance(const Pin *pin) const
+DbNetwork::instance(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -537,7 +537,7 @@ OpenDBNetwork::instance(const Pin *pin) const
 }
 
 Net *
-OpenDBNetwork::net(const Pin *pin) const
+DbNetwork::net(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -551,7 +551,7 @@ OpenDBNetwork::net(const Pin *pin) const
 }
 
 Term *
-OpenDBNetwork::term(const Pin *pin) const
+DbNetwork::term(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -565,7 +565,7 @@ OpenDBNetwork::term(const Pin *pin) const
 }
 
 Port *
-OpenDBNetwork::port(const Pin *pin) const
+DbNetwork::port(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -583,7 +583,7 @@ OpenDBNetwork::port(const Pin *pin) const
 }
 
 PortDirection *
-OpenDBNetwork::direction(const Pin *pin) const
+DbNetwork::direction(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -601,7 +601,7 @@ OpenDBNetwork::direction(const Pin *pin) const
 }
 
 VertexIndex
-OpenDBNetwork::vertexIndex(const Pin *pin) const
+DbNetwork::vertexIndex(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -619,7 +619,7 @@ OpenDBNetwork::vertexIndex(const Pin *pin) const
 }
 
 void
-OpenDBNetwork::setVertexIndex(Pin *pin,
+DbNetwork::setVertexIndex(Pin *pin,
 			      VertexIndex index)
 {
   dbITerm *iterm;
@@ -634,7 +634,7 @@ OpenDBNetwork::setVertexIndex(Pin *pin,
 ////////////////////////////////////////////////////////////////
 
 const char *
-OpenDBNetwork::name(const Net *net) const
+DbNetwork::name(const Net *net) const
 {
   dbNet *dnet = staToDb(net);
   dbString name = dnet->getName();
@@ -642,40 +642,40 @@ OpenDBNetwork::name(const Net *net) const
 }
 
 Instance *
-OpenDBNetwork::instance(const Net *) const
+DbNetwork::instance(const Net *) const
 {
   return top_instance_;
 }
 
 bool
-OpenDBNetwork::isPower(const Net *net) const
+DbNetwork::isPower(const Net *net) const
 {
   dbNet *dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::POWER);
 }
 
 bool
-OpenDBNetwork::isGround(const Net *net) const
+DbNetwork::isGround(const Net *net) const
 {
   dbNet *dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::GROUND);
 }
 
 NetPinIterator *
-OpenDBNetwork::pinIterator(const Net *net) const
+DbNetwork::pinIterator(const Net *net) const
 {
-  return new OpenDBNetPinIterator(net, this);
+  return new DbNetPinIterator(net, this);
 }
 
 NetTermIterator *
-OpenDBNetwork::termIterator(const Net *net) const
+DbNetwork::termIterator(const Net *net) const
 {
-  return new OpenDBNetTermIterator(net, this);
+  return new DbNetTermIterator(net, this);
 }
 
 // override ConcreteNetwork::visitConnectedPins
 void
-OpenDBNetwork::visitConnectedPins(const Net *net,
+DbNetwork::visitConnectedPins(const Net *net,
 				    PinVisitor &visitor,
 				    ConstNetSet &visited_nets) const
 {
@@ -685,14 +685,14 @@ OpenDBNetwork::visitConnectedPins(const Net *net,
 ////////////////////////////////////////////////////////////////
 
 Pin *
-OpenDBNetwork::pin(const Term *) const
+DbNetwork::pin(const Term *) const
 {
   // No pin at the next level of hierarchy.
   return nullptr;
 }
 
 Net *
-OpenDBNetwork::net(const Term *term) const
+DbNetwork::net(const Term *term) const
 {
   dbBTerm *bterm = staToDb(term);
   dbNet *dnet = bterm->getNet();
@@ -701,50 +701,50 @@ OpenDBNetwork::net(const Term *term) const
 
 ////////////////////////////////////////////////////////////////
 
-class OpenDBConstantPinIterator : public ConstantPinIterator
+class DbConstantPinIterator : public ConstantPinIterator
 {
 public:
-  OpenDBConstantPinIterator(const Network *network);
+  DbConstantPinIterator(const Network *network);
   bool hasNext();
   void next(Pin *&pin, LogicValue &value);
   
 private:
 };
 
-OpenDBConstantPinIterator::
-OpenDBConstantPinIterator(const Network *)
+DbConstantPinIterator::
+DbConstantPinIterator(const Network *)
 {
 }
 
 bool
-OpenDBConstantPinIterator::hasNext()
+DbConstantPinIterator::hasNext()
 {
   return false;
 }
 
 void
-OpenDBConstantPinIterator::next(Pin *&pin, LogicValue &value)
+DbConstantPinIterator::next(Pin *&pin, LogicValue &value)
 {
   value = LogicValue::zero;
   pin = nullptr;
 }
 
 ConstantPinIterator *
-OpenDBNetwork::constantPinIterator()
+DbNetwork::constantPinIterator()
 {
-  return new OpenDBConstantPinIterator(this);
+  return new DbConstantPinIterator(this);
 }
 
 ////////////////////////////////////////////////////////////////
 
 bool
-OpenDBNetwork::isLinked() const
+DbNetwork::isLinked() const
 {
   return true;
 }
 
 bool
-OpenDBNetwork::linkNetwork(const char *,
+DbNetwork::linkNetwork(const char *,
 			   bool ,
 			   Report *)
 {
@@ -753,7 +753,7 @@ OpenDBNetwork::linkNetwork(const char *,
 }
 
 void
-OpenDBNetwork::init(dbDatabase *db)
+DbNetwork::init(dbDatabase *db)
 {
   db_ = db;
   block_ = db_->getChip()->getBlock();
@@ -764,7 +764,7 @@ OpenDBNetwork::init(dbDatabase *db)
 }
 
 void
-OpenDBNetwork::makeLibrary(dbLib *lib)
+DbNetwork::makeLibrary(dbLib *lib)
 {
   dbString lib_name = lib->getName();
   Library *library = makeLibrary(lib_name.c_str(), nullptr);
@@ -773,7 +773,7 @@ OpenDBNetwork::makeLibrary(dbLib *lib)
 }
 
 void
-OpenDBNetwork::makeCell(Library *library,
+DbNetwork::makeCell(Library *library,
 			dbMaster *master)
 {
   dbString cell_name = master->getName();
@@ -795,7 +795,7 @@ OpenDBNetwork::makeCell(Library *library,
 }
 
 void
-OpenDBNetwork::makeTopCell()
+DbNetwork::makeTopCell()
 {
   dbString design_name = block_->getName();
   Library *top_lib = makeLibrary(design_name.c_str(), nullptr);
@@ -809,7 +809,7 @@ OpenDBNetwork::makeTopCell()
 }
 
 PortDirection *
-OpenDBNetwork::dbToSta(dbSigType sig_type,
+DbNetwork::dbToSta(dbSigType sig_type,
 		       dbIoType io_type) const
 {
   if (sig_type == dbSigType::POWER)
@@ -831,19 +831,19 @@ OpenDBNetwork::dbToSta(dbSigType sig_type,
 }
 
 dbInst *
-OpenDBNetwork::staToDb(const Instance *instance) const
+DbNetwork::staToDb(const Instance *instance) const
 {
   return reinterpret_cast<dbInst*>(const_cast<Instance*>(instance));
 }
 
 dbNet *
-OpenDBNetwork::staToDb(const Net *net) const
+DbNetwork::staToDb(const Net *net) const
 {
   return reinterpret_cast<dbNet*>(const_cast<Net*>(net));
 }
 
 void
-OpenDBNetwork::staToDb(const Pin *pin,
+DbNetwork::staToDb(const Pin *pin,
 		       // Return values.
 		       dbITerm *&iterm,
 		       dbBTerm *&bterm) const
@@ -863,43 +863,43 @@ OpenDBNetwork::staToDb(const Pin *pin,
 }
 
 dbBTerm *
-OpenDBNetwork::staToDb(const Term *term) const
+DbNetwork::staToDb(const Term *term) const
 {
   return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
 }
 
 Instance *
-OpenDBNetwork::dbToSta(dbInst *inst) const
+DbNetwork::dbToSta(dbInst *inst) const
 {
   return reinterpret_cast<Instance*>(inst);
 }
 
 Net *
-OpenDBNetwork::dbToSta(dbNet *net) const
+DbNetwork::dbToSta(dbNet *net) const
 {
   return reinterpret_cast<Net*>(net);
 }
 
 Pin *
-OpenDBNetwork::dbToSta(dbBTerm *bterm) const
+DbNetwork::dbToSta(dbBTerm *bterm) const
 {
   return reinterpret_cast<Pin*>(bterm);
 }
 
 Pin *
-OpenDBNetwork::dbToSta(dbITerm *iterm) const
+DbNetwork::dbToSta(dbITerm *iterm) const
 {
   return reinterpret_cast<Pin*>(iterm);
 }
 
 Term *
-OpenDBNetwork::dbToStaTerm(dbBTerm *bterm) const
+DbNetwork::dbToStaTerm(dbBTerm *bterm) const
 {
   return reinterpret_cast<Term*>(bterm);
 }
 
 Port *
-OpenDBNetwork::dbToSta(dbMTerm *mterm) const
+DbNetwork::dbToSta(dbMTerm *mterm) const
 {
   dbMaster *master = mterm->getMaster();
   Cell *cell = dbToSta(master);
@@ -909,11 +909,11 @@ OpenDBNetwork::dbToSta(dbMTerm *mterm) const
 }
 
 Cell *
-OpenDBNetwork::dbToSta(dbMaster *master) const
+DbNetwork::dbToSta(dbMaster *master) const
 {
   dbLib *lib = master->getLib();
   dbString lib_name = lib->getName();  
-  Library *library = const_cast<OpenDBNetwork*>(this)->findLibrary(lib_name.c_str());
+  Library *library = const_cast<DbNetwork*>(this)->findLibrary(lib_name.c_str());
   dbString cell_name = master->getName();
   return findCell(library, cell_name.c_str());
 }

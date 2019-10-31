@@ -1,0 +1,3 @@
+#define STA_DB_VERSION "${STA_DB_VERSION}"
+
+#define STA_DB_GIT_SHA1 "${STA_DB_GIT_SHA1}"
