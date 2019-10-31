@@ -38,6 +38,7 @@
 
 using ord::OpenRoad;
 using sta::OpenStaDB;
+using sta::OpenDBNetwork;
 using odb::dbDatabase;
 
 OpenRoad *
@@ -58,13 +59,13 @@ getSta()
   return getOpenRoad()->getSta();
 }
 
-%}
+OpenDBNetwork *
+getDbNetwork()
+{
+  return getOpenRoad()->getDbNetwork();
+}
 
-////////////////////////////////////////////////////////////////
-//
-// SWIG type definitions.
-//
-////////////////////////////////////////////////////////////////
+%}
 
 ////////////////////////////////////////////////////////////////
 //
@@ -90,8 +91,8 @@ void
 init_sta_db()
 {
   OpenRoad *ord = getOpenRoad();
-  OpenStaDB *sta = ord->getSta();
   odb::dbDatabase *db = ord->getDb();
+  OpenStaDB *sta = ord->getSta();
   sta->init(db);
 }
 
@@ -144,3 +145,4 @@ write_db_cmd(const char *filename)
 %include "Parasitics.i"
 
 %include "Verilog2db.i"
+%include "InitFloorplan.i"

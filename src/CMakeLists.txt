@@ -20,12 +20,14 @@ set(OPENSTA_DB_SOURCE
   OpenStaDBTclInitVar.cc
   OpenDBNetwork.cc
   Verilog2db.cc
+  InitFloorplan.cc
   )
 
 set(OPENSTA_DB_HEADERS
   OpenStaDB.hh
   OpenDBNetwork.hh
   Verilog2db.hh
+  InitFloorplan.hh
   )
 
 set(STA_INCLUDE_DIRS
@@ -60,11 +62,14 @@ set(OPENSTA_DB_TCL_FILES
   ${OPENSTA_HOME}/sdf/Sdf.tcl
   OpenStaDB.tcl
   Verilog2db.tcl
+  InitFloorplan.tcl
   )
 
+# Only used for depends.
 set(OPENSTA_DB_SWIG_FILES
   OpenStaDB.i
   Verilog2db.i
+  InitFloorplan.i
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i

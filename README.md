@@ -3,7 +3,7 @@
 OpenStaDB the OpenSTA static timing analyzer that uses an OpenDB
 database for netlist connectivity.
 
-#### Installation
+#### Build
 
 OpenStaDB depends on OpenSTA, and OpenDB. These source directories are
 git submodules and located in `/module`.
@@ -50,7 +50,7 @@ There are a set of regression tests in `/test`.
 test/regression fast
 ```
 
-#### Running OpenStaDB
+#### Run
 
 ```
 opensta_db
@@ -82,6 +82,7 @@ write_verilog filename
 read_db filename
 write_db filename
 init_sta_db
+initialize_floorplan 
 ```
 
 OpenStaDB can be used to make and OpenDB database from LEF/DEF, or
@@ -133,6 +134,31 @@ set_input_delay -clock clk 0 {in1 in2}
 set_output_delay -clock clk 0 out
 report_checks
 ```
+
+#### Initialize Floorplan
+
+initialize_floorplan
+  [-site site_name]          LEF site name for ROWS
+  [-tracks tracks_file]      routing track specification
+  [-auto_place_pins]         place pins around core area boundary
+  [-pin_layer pin_layer]
+  -die_area "lx ly ux uy"    die area in microns
+  [-core_area "lx ly ux uy"] core area in microns
+or
+  -utilization util          utilization (0-100 percent)
+  [-aspect_ratio ratio]      height / width, default 1.0
+  [-core_space space]        space around core, default 0.0 (microns)
+
+The die area and core size used to write ROWs can be specified
+explicitly with the -die_area and -core_area arguments. Alternatively,
+the die and core area can be computed from the design size and
+utilization as show below:
+
+ core_area = design_area / (utilization / 100)
+ core_width = sqrt(core_area / aspect_ratio)
+ core_height = core_width * aspect_ratio
+ core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
+ die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
 
 ## Authors
 

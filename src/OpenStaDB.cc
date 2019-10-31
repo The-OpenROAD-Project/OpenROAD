@@ -30,11 +30,11 @@ void
 OpenStaDB::init(dbDatabase *db)
 {
   db_ = db;
-  openDbNetwork()->init(db);
+  dbNetwork()->init(db);
 }
 
 OpenDBNetwork *
-OpenStaDB::openDbNetwork()
+OpenStaDB::dbNetwork()
 {
   return dynamic_cast<OpenDBNetwork *>(network_);
 }

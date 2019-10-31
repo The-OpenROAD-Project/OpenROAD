@@ -32,7 +32,8 @@ using sta::NetworkReader;
 using sta::Debug;
 using sta::Report;
 
-NetworkReader *verilog_network = nullptr;
+// Hierarchical network for read_verilog.
+static NetworkReader *verilog_network = nullptr;
 
 NetworkReader *
 getVerilogNetwork()
@@ -50,18 +51,6 @@ getVerilogNetwork()
 
 %}
 
-////////////////////////////////////////////////////////////////
-//
-// SWIG type definitions.
-//
-////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////
-//
-// C++ functions visible as TCL functions.
-//
-////////////////////////////////////////////////////////////////
-
 %inline %{
 
 bool
@@ -71,6 +60,7 @@ read_verilog(const char *filename)
   return sta::readVerilogFile(filename, verilog_network);
 }
 
+// Write a flat verilog netlist for the database.
 void
 write_verilog_cmd(const char *filename,
 		  bool sort)

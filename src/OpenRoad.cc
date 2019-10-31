@@ -93,4 +93,12 @@ OpenRoad::writeDb(const char *filename)
   }
 }
 
+////////////////////////////////////////////////////////////////
+
+sta::OpenDBNetwork *
+OpenRoad::getDbNetwork()
+{
+  return sta_->dbNetwork();
+}
+
 } // namespace

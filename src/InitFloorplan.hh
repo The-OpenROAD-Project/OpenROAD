@@ -1,4 +1,4 @@
-// OpenStaDB, OpenSTA on OpenDB
+// Resizer, LEF/DEF gate resizer
 // Copyright (c) 2019, Parallax Software, Inc.
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -14,30 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENSTA_DB_OPENSTADB_H
-#define OPENSTA_DB_OPENSTADB_H
+#ifndef INIT_FLOORPLAN_H
+#define INIT_FLOORPLAN_H
 
-#include "opendb/db.h"
-#include "Sta.hh"
+namespace odb {
+class dbDatabase;
+}
 
 namespace sta {
+class OpenDbNetwork;
+}
 
-class OpenDBNetwork;
+namespace ord {
 
 using odb::dbDatabase;
+using sta::OpenDBNetwork;
 
-class OpenStaDB : public Sta
-{
-public:
-  OpenStaDB();
-  void init(dbDatabase *db);
-  OpenDBNetwork *dbNetwork();
-
-protected:
-  virtual void makeNetwork();
-
-  dbDatabase *db_;
-};
+void
+initFloorplan(const char *site_name,
+	      const char *tracks_file,
+	      bool auto_place_pins,
+	      const char *pin_layer_name,
+	      // Die area.
+	      double die_lx,
+	      double die_ly,
+	      double die_ux,
+	      double die_uy,
+	      double core_lx,
+	      double core_ly,
+	      double core_ux,
+	      double core_uy,
+	      dbDatabase *db,
+	      OpenDBNetwork *network);
 
 } // namespace
 #endif

@@ -20,6 +20,7 @@ class dbDatabase;
 
 namespace sta {
 class OpenStaDB;
+class OpenDBNetwork;
 }
 
 namespace ord {
@@ -35,6 +36,7 @@ public:
   static OpenRoad *openRoad() { return &open_road_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::OpenStaDB *getSta() { return sta_; }
+  sta::OpenDBNetwork *getDbNetwork();
   void readLef(const char *filename,
 	       const char *lib_name,
 	       bool make_tech,
