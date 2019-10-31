@@ -21,18 +21,6 @@ No Logger: notice 0:     Created 10 nets and 14 connections.
 
 No Logger: notice 0: Finished DEF file: reg1.def
 
-Warning: init_floorplan2.tracks, line 0 layer M3 not found.
-Warning: init_floorplan2.tracks, line 0 layer M3 not found.
-Warning: init_floorplan2.tracks, line 0 layer M4 not found.
-Warning: init_floorplan2.tracks, line 0 layer M4 not found.
-Warning: init_floorplan2.tracks, line 0 layer M5 not found.
-Warning: init_floorplan2.tracks, line 0 layer M5 not found.
-Warning: init_floorplan2.tracks, line 0 layer M6 not found.
-Warning: init_floorplan2.tracks, line 0 layer M6 not found.
-Warning: init_floorplan2.tracks, line 0 layer M7 not found.
-Warning: init_floorplan2.tracks, line 0 layer M7 not found.
-Warning: init_floorplan2.tracks, line 0 layer M8 not found.
-Warning: init_floorplan2.tracks, line 0 layer M8 not found.
 VERSION 5.3 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;

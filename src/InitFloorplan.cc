@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cmath>
 #include "Machine.hh"
 #include "Debug.hh"
 #include "Error.hh"
@@ -43,6 +44,8 @@ using odb::dbDatabase;
 using odb::dbChip;
 using odb::dbBlock;
 using odb::dbLib;
+using odb::dbMaster;
+using odb::dbInst;
 using odb::dbTech;
 using odb::dbBTerm;
 using odb::dbBPin;
@@ -82,12 +85,16 @@ class InitFloorplan
 {
 public:
   InitFloorplan() {}
-  void initFloorplan(const char *site_name,
+  void initFloorplan(double util,
+		     double aspect_ratio,
+		     double core_space,
+		     const char *site_name,
 		     const char *tracks_file,
 		     bool auto_place_pins,
 		     const char *pin_layer_name,
-		     // Die area.
-		     double die_lx,
+		     dbDatabase *db,
+		     OpenDBNetwork *network);
+  void initFloorplan(double die_lx,
 		     double die_ly,
 		     double die_ux,
 		     double die_uy,
@@ -95,10 +102,27 @@ public:
 		     double core_ly,
 		     double core_ux,
 		     double core_uy,
+		     const char *site_name,
+		     const char *tracks_file,
+		     bool auto_place_pins,
+		     const char *pin_layer_name,
 		     dbDatabase *db,
 		     OpenDBNetwork *network);
 
 protected:
+  void initFloorplan(double die_lx,
+		     double die_ly,
+		     double die_ux,
+		     double die_uy,
+		     double core_lx,
+		     double core_ly,
+		     double core_ux,
+		     double core_uy,
+		     const char *site_name,
+		     const char *tracks_file,
+		     bool auto_place_pins,
+		     const char *pin_layer_name);
+  double designArea();
   void makeRows(const char *site_name,
 		double core_lx,
 		double core_ly,
@@ -122,6 +146,7 @@ protected:
 		     double core_uy);
   int metersToDbu(double dist) const;
   double dbuToMeters(uint dist) const;
+  double dbu2ToMeters2(uint area) const;
 
   dbDatabase *db_;
   OpenDBNetwork *network_;
@@ -130,12 +155,25 @@ protected:
 };
 
 void
-initFloorplan(const char *site_name,
+initFloorplan(double util,
+	      double aspect_ratio,
+	      double core_space,
+	      const char *site_name,
 	      const char *tracks_file,
 	      bool auto_place_pins,
 	      const char *pin_layer_name,
-	      // Die area.
-	      double die_lx,
+	      dbDatabase *db,
+	      OpenDBNetwork *network)
+{
+  InitFloorplan init_fp;
+  init_fp.initFloorplan(util, aspect_ratio, core_space,
+			site_name, tracks_file,
+			auto_place_pins, pin_layer_name,
+			db, network);
+}
+
+void
+initFloorplan(double die_lx,
 	      double die_ly,
 	      double die_ux,
 	      double die_uy,
@@ -143,25 +181,74 @@ initFloorplan(const char *site_name,
 	      double core_ly,
 	      double core_ux,
 	      double core_uy,
+	      const char *site_name,
+	      const char *tracks_file,
+	      bool auto_place_pins,
+	      const char *pin_layer_name,
 	      dbDatabase *db,
 	      OpenDBNetwork *network)
 {
   InitFloorplan init_fp;
-  init_fp.initFloorplan(site_name,
-			tracks_file,
-			auto_place_pins, pin_layer_name,
-			die_lx, die_ly, die_ux, die_uy,
+  init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
 			core_lx, core_ly, core_ux, core_uy,
+			site_name, tracks_file,
+			auto_place_pins, pin_layer_name,
 			db, network);
 }
 
 void
-InitFloorplan::initFloorplan(const char *site_name,
+InitFloorplan::initFloorplan(double util,
+			     double aspect_ratio,
+			     double core_space,
+			     const char *site_name,
 			     const char *tracks_file,
 			     bool auto_place_pins,
 			     const char *pin_layer_name,
-			     // Die area.
-			     double die_lx,
+			     dbDatabase *db,
+			     OpenDBNetwork *network)
+{
+  network_ = network;
+  db_ = db;
+  dbChip *chip = db_->getChip();
+  if (chip) {
+    block_ = chip->getBlock();
+    if (block_) {
+      // In microns.
+      double design_area = designArea();
+      double core_area = design_area / util;
+      double core_width = std::sqrt(core_area / aspect_ratio);
+      double core_height = core_width * aspect_ratio;
+
+      double core_lx = core_space;
+      double core_ly = core_space;
+      double core_ux = core_space + core_width;
+      double core_uy = core_space + core_height;
+      double die_lx = 0.0;
+      double die_ly = 0.0;
+      double die_ux = core_width + core_space * 2.0;
+      double die_uy = core_height + core_space * 2.0;
+      initFloorplan(die_lx, die_ly, die_ux, die_uy,
+		    core_lx, core_ly, core_ux, core_uy,
+		    site_name, tracks_file,
+		    auto_place_pins, pin_layer_name);
+    }
+  }
+}
+
+double
+InitFloorplan::designArea()
+{
+  double design_area = 0.0;
+  for (dbInst *inst : block_->getInsts()) {
+    dbMaster *master = inst->getMaster();
+    double area = dbuToMeters(master->getHeight()) * dbuToMeters(master->getWidth());
+    design_area += area;
+  }
+  return design_area;
+}
+
+void
+InitFloorplan::initFloorplan(double die_lx,
 			     double die_ly,
 			     double die_ux,
 			     double die_uy,
@@ -169,37 +256,62 @@ InitFloorplan::initFloorplan(const char *site_name,
 			     double core_ly,
 			     double core_ux,
 			     double core_uy,
+			     const char *site_name,
+			     const char *tracks_file,
+			     bool auto_place_pins,
+			     const char *pin_layer_name,
 			     dbDatabase *db,
 			     OpenDBNetwork *network)
 {
-  db_ = db;
   network_ = network;
-
-  Report *report = network_->report();
-  dbChip *chip = db->getChip();
+  db_ = db;
+  dbChip *chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();
-    dbTechLayer *pin_layer = nullptr;
-    if (auto_place_pins && pin_layer_name) {
-      dbTech *tech = db_->getTech();
-      pin_layer = tech->findLayer(pin_layer_name);
-      if (pin_layer == nullptr)
-	report->warn("pin layer %s not found.\n", pin_layer_name);
+    if (block_) {
+      initFloorplan(die_lx, die_ly, die_ux, die_uy,
+		    core_lx, core_ly, core_ux, core_uy,
+		    site_name, tracks_file,
+		    auto_place_pins, pin_layer_name);
     }
-
-    adsRect die_area(metersToDbu(die_lx),
-		     metersToDbu(die_ly),
-		     metersToDbu(die_ux),
-		     metersToDbu(die_uy));
-    block_->setDieArea(die_area);
-    makeRows(site_name, core_lx, core_ly, core_ux, core_uy);
-    if (tracks_file && tracks_file[0])
-      makeTracks(tracks_file, die_lx, die_ly, die_ux, die_uy);
-    else
-      makeTracks(die_lx, die_ly, die_ux, die_uy);
-    if (auto_place_pins && pin_layer)
-      autoPlacePins(pin_layer, core_lx, core_ly, core_ux, core_uy);
   }
+}
+
+void
+InitFloorplan::initFloorplan(double die_lx,
+			     double die_ly,
+			     double die_ux,
+			     double die_uy,
+			     double core_lx,
+			     double core_ly,
+			     double core_ux,
+			     double core_uy,
+			     const char *site_name,
+			     const char *tracks_file,
+			     bool auto_place_pins,
+			     const char *pin_layer_name)
+{
+  Report *report = network_->report();
+  dbTechLayer *pin_layer = nullptr;
+  if (auto_place_pins && pin_layer_name) {
+    dbTech *tech = db_->getTech();
+    pin_layer = tech->findLayer(pin_layer_name);
+    if (pin_layer == nullptr)
+      report->warn("pin layer %s not found.\n", pin_layer_name);
+  }
+
+  adsRect die_area(metersToDbu(die_lx),
+		   metersToDbu(die_ly),
+		   metersToDbu(die_ux),
+		   metersToDbu(die_uy));
+  block_->setDieArea(die_area);
+  makeRows(site_name, core_lx, core_ly, core_ux, core_uy);
+  if (tracks_file && tracks_file[0])
+    makeTracks(tracks_file, die_lx, die_ly, die_ux, die_uy);
+  else
+    makeTracks(die_lx, die_ly, die_ux, die_uy);
+  if (auto_place_pins && pin_layer)
+    autoPlacePins(pin_layer, core_lx, core_ly, core_ux, core_uy);
 }
 
 void
@@ -461,6 +573,13 @@ double
 InitFloorplan::dbuToMeters(uint dist) const
 {
   return dist * 1E-9;
+}
+
+// DBUs are nanometers.
+double
+InitFloorplan::dbu2ToMeters2(uint area) const
+{
+  return area * 1E-9 * 1E-9;
 }
 
 }

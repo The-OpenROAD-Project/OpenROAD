@@ -31,12 +31,17 @@ using odb::dbDatabase;
 using sta::OpenDBNetwork;
 
 void
-initFloorplan(const char *site_name,
+initFloorplan(double util,
+	      double aspect_ratio,
+	      double core_space,
+	      const char *site_name,
 	      const char *tracks_file,
 	      bool auto_place_pins,
 	      const char *pin_layer_name,
-	      // Die area.
-	      double die_lx,
+	      dbDatabase *db,
+	      OpenDBNetwork *network);
+void
+initFloorplan(double die_lx,
 	      double die_ly,
 	      double die_ux,
 	      double die_uy,
@@ -44,6 +49,10 @@ initFloorplan(const char *site_name,
 	      double core_ly,
 	      double core_ux,
 	      double core_uy,
+	      const char *site_name,
+	      const char *tracks_file,
+	      bool auto_place_pins,
+	      const char *pin_layer_name,
 	      dbDatabase *db,
 	      OpenDBNetwork *network);
 

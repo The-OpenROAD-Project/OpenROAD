@@ -77,12 +77,12 @@ COMPONENTS 5 ;
     - u2 snl_and02x1 ;
 END COMPONENTS
 PINS 6 ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 100000 100000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 633300 100000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 900000 366700 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 900000 900000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 366700 900000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 100000 633300 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
 END PINS
 SPECIALNETS 2 ;
     - VSS ( * VSS ) + USE GROUND ;

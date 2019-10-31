@@ -33,26 +33,43 @@ using namespace sta;
 %inline %{
 
 void
-init_floorplan_cmd(const char *site_name,
-		   const char *tracks_file,
-		   bool auto_place_pins,
-		   const char *pin_layer_name,
-		   double die_lx,
-		   double die_ly,
-		   double die_ux,
-		   double die_uy,
-		   double core_lx,
-		   double core_ly,
-		   double core_ux,
-		   double core_uy)
+init_floorplan_core(double die_lx,
+		    double die_ly,
+		    double die_ux,
+		    double die_uy,
+		    double core_lx,
+		    double core_ly,
+		    double core_ux,
+		    double core_uy,
+		    const char *site_name,
+		    const char *tracks_file,
+		    bool auto_place_pins,
+		    const char *pin_layer_name)
+{
+  odb::dbDatabase *db = getDb();
+  sta::OpenDBNetwork *network = getDbNetwork();
+  ord::initFloorplan(die_lx, die_ly, die_ux, die_uy,
+		     core_lx, core_ly, core_ux, core_uy,
+		     site_name, tracks_file,
+		     auto_place_pins, pin_layer_name,
+		     db, network);
+}
+
+void
+init_floorplan_util(double util,
+		    double aspect_ratio,
+		    double core_space,
+		    const char *site_name,
+		    const char *tracks_file,
+		    bool auto_place_pins,
+		    const char *pin_layer_name)
 
 {
   odb::dbDatabase *db = getDb();
   sta::OpenDBNetwork *network = getDbNetwork();
-  ord::initFloorplan(site_name, tracks_file,
+  ord::initFloorplan(util, aspect_ratio, core_space,
+		     site_name, tracks_file,
 		     auto_place_pins, pin_layer_name,
-		     die_lx, die_ly, die_ux, die_uy,
-		     core_lx, core_ly, core_ux, core_uy,
 		     db, network);
 }
 
