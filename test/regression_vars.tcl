@@ -127,6 +127,8 @@ record_tests {
   report_checks1
   write_verilog1
   write_verilog2
+  write_verilog3
+  write_verilog4
 }
 
 # Record tests in $STAX/designs

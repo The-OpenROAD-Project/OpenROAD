@@ -1,14 +1,39 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: Reading LEF file:  bus1.lef
+
+No Logger: notice 0:     Created 1 library cells
+
+No Logger: notice 0: Finished LEF file:  bus1.lef
+
+No Logger: notice 0: 
+Reading DEF file: bus1.def
+
+No Logger: notice 0: Design: top
+
+No Logger: notice 0:     Created 8 pins.
+
+No Logger: notice 0:     Created 1 components and 10 component-terminals.
+
+No Logger: notice 0:     Created 8 nets and 8 connections.
+
+No Logger: notice 0: Finished DEF file: bus1.def
+
 module top (in,
     out);
  input [3:0] in;
  output [3:0] out;
 
- bus4 bus1 (.in({in[3],
-    in[2],
+ bus4 bus1 (.in({in[0],
     in[1],
-    in[0]}),
-    .out({out[3],
-    out[2],
+    in[2],
+    in[3]}),
+    .out({out[0],
     out[1],
-    out[0]}));
+    out[2],
+    out[3]}));
 endmodule
