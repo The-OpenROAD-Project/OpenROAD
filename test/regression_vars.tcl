@@ -125,6 +125,7 @@ record_tests {
   init_floorplan1
   init_floorplan2
   init_floorplan3
+  write_verilog1
 }
 
 # Record tests in $STAX/designs

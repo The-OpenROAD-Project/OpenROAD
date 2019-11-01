@@ -77,8 +77,10 @@ link_design_db_cmd(const char *top_cell_name)
   bool success = verilog_network->linkNetwork(top_cell_name,
 					      link_make_black_boxes,
 					      sta->report());
-  if (success)
+  if (success) {
     verilog2db(verilog_network, getDb());
+    deleteVerilogReader();
+  }
 }
 
 %} // inline

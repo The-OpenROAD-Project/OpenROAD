@@ -89,6 +89,9 @@ Verilog2db::makeBlock()
   dbChip *chip = db_->getChip();
   if (chip == nullptr)
     chip = dbChip::create(db_);
+  dbBlock *block = chip->getBlock();
+  if (block)
+    dbBlock::destroy(block);
   const char *design = network_->name(network_->cell(network_->topInstance()));
   block_ = dbBlock::create(chip, design, network_->pathDivider());
   block_->setBusDelimeters('[', ']');

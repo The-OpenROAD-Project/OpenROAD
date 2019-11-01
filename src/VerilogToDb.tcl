@@ -35,5 +35,16 @@ proc link_design { {top_cell_name ""} } {
   link_design_db_cmd $top_cell_name
 }
 
+define_cmd_args "write_verilog" {[-sort] filename}
+
+proc write_verilog { args } {
+  parse_key_args "write_verilog" args keys {} flags {-sort}
+
+  set sort [info exists flags(-sort)]
+  check_argc_eq1 "write_verilog" $args
+  set filename $args
+  write_verilog_cmd $filename $sort
+}
+
 # sta namespace end
 }

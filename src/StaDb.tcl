@@ -101,7 +101,7 @@ proc source_ { filename echo verbose } {
 ################################################################
 
 proc show_splash {} {
-  puts "OpenStaDB [sta::opensta_db_version] [string range [sta::opensta_db_git_sha1] 0 9] Copyright (c) 2019, Parallax Software, Inc.
+  puts "OpenROAD [openroad_version] [string range [openroad_git_sha1] 0 9]
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
 This is free software, and you are free to change and redistribute it
