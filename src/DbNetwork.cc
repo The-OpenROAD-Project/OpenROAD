@@ -384,7 +384,10 @@ DbNetwork::clear()
 Instance *
 DbNetwork::topInstance() const
 {
-  return top_instance_;
+  if (top_cell_)
+    return top_instance_;
+  else
+    return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -740,7 +743,7 @@ DbNetwork::constantPinIterator()
 bool
 DbNetwork::isLinked() const
 {
-  return true;
+  return top_cell_ != nullptr;
 }
 
 bool

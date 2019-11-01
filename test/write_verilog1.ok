@@ -59,6 +59,3 @@ module top (in1,
     .VDD(VDD),
     .VSS(VSS));
 endmodule
-Warning: ./results/write_verilog1.v, line 14 module snl_ffqx1 not found.  Creating black box for r1.
-Warning: ./results/write_verilog1.v, line 29 module snl_bufx1 not found.  Creating black box for u1.
-Warning: ./results/write_verilog1.v, line 33 module snl_and02x1 not found.  Creating black box for u2.

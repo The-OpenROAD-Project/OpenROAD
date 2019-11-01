@@ -1,0 +1,14 @@
+module top (in,
+    out);
+ input [3:0] in;
+ output [3:0] out;
+
+ bus4 bus1 (.in({in[3],
+    in[2],
+    in[1],
+    in[0]}),
+    .out({out[3],
+    out[2],
+    out[1],
+    out[0]}));
+endmodule

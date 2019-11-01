@@ -52,7 +52,7 @@ public:
   void makeDbNetlist();
 
 protected:
-  void makeDbComponents();
+  void makeDbInsts();
   dbIoType staToDb(PortDirection *dir);
   void makeDbNets(const Instance *inst);
   bool hasTerminals(Net *net) const;
@@ -100,12 +100,12 @@ Verilog2db::makeBlock()
 void
 Verilog2db::makeDbNetlist()
 {
-  makeDbComponents();
+  makeDbInsts();
   makeDbNets(network_->topInstance());
 }
 
 void
-Verilog2db::makeDbComponents()
+Verilog2db::makeDbInsts()
 {
   LeafInstanceIterator *leaf_iter = network_->leafInstanceIterator();
   while (leaf_iter->hasNext()) {
