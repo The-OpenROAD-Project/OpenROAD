@@ -125,6 +125,7 @@ record_tests {
   read_verilog1
   read_verilog2
   report_checks1
+  sdc_names1
   write_verilog1
   write_verilog2
   write_verilog3

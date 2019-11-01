@@ -35,6 +35,7 @@ public:
 
 protected:
   virtual void makeNetwork();
+  virtual void makeCmdNetwork();
 
   dbDatabase *db_;
 };

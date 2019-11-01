@@ -16,6 +16,7 @@
 
 #include "Machine.hh"
 #include "DbNetwork.hh"
+#include "DbSdcNetwork.hh"
 #include "sta_db/StaDb.hh"
 #include "opendb/db.h"
 
@@ -43,6 +44,14 @@ void
 StaDb::makeNetwork()
 {
   network_ = new DbNetwork();
+}
+
+void
+StaDb::makeCmdNetwork()
+{
+  sdc_network_ = new DbSdcNetwork(network_);
+  cmd_network_ = sdc_network_;
+  cmd_namespace_ = CmdNamespace::sdc;
 }
 
 }

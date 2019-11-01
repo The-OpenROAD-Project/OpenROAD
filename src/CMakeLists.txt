@@ -17,6 +17,7 @@
 set(OPENROAD_SOURCE
   StaDb.cc
   DbNetwork.cc
+  DbSdcNetwork.cc
   VerilogToDb.cc
   InitFloorplan.cc
   OpenRoad_wrap.cc
@@ -26,6 +27,7 @@ set(OPENROAD_SOURCE
 set(OPENROAD_HEADERS
   StaDb.hh
   DbNetwork.hh
+  DbSdcNetwork.hh
   VerilogToDb.hh
   InitFloorplan.hh
   )
