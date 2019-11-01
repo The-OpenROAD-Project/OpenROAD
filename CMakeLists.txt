@@ -16,9 +16,9 @@
 
 cmake_minimum_required (VERSION 3.9)
 
-project(StaDb VERSION 1.0.0)
+project(OpenROAD VERSION 1.0.0)
 
-set(STA_DB_HOME ${PROJECT_SOURCE_DIR})
+set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/module/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/module/OpenDB)
 
@@ -28,14 +28,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(STA_DB_VERSION ${PROJECT_VERSION})
-message(STATUS "StaDb version: ${STA_DB_VERSION}")
+set(OPENROAD_VERSION ${PROJECT_VERSION})
+message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-#include(GetGitRevisionDescription)
-#get_git_head_revision(GIT_REFSPEC STA_DB_GIT_SHA1)
-set(STA_DB_GIT_SHA1 "unknown")
-message(STATUS "StaDb git sha: ${STA_DB_GIT_SHA1}")
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC OPENROAD_GIT_SHA1)
+message(STATUS "OpenROAD git sha: ${OPENROAD_GIT_SHA1}")
 
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
@@ -61,8 +60,8 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(
-  ${STA_DB_HOME}/include/sta_db/Version.hh.cmake
-  ${STA_DB_HOME}/include/sta_db/Version.hh
+  ${OPENROAD_HOME}/include/openroad/Version.hh.cmake
+  ${OPENROAD_HOME}/include/openroad/Version.hh
   )
 
 ################################################################

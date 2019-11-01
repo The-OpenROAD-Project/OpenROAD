@@ -16,7 +16,7 @@
 #include "opendb/defin.h"
 #include "opendb/defout.h"
 #include "Machine.hh"
-#include "sta_db/OpenRoad.hh"
+#include "openroad/OpenRoad.hh"
 #include "sta_db/StaDb.hh"
 
 namespace ord {

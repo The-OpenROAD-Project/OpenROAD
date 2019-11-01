@@ -19,8 +19,8 @@
 #include "StringUtil.hh"
 #include "StaMain.hh"
 #include "sta_db/StaDb.hh"
-#include "sta_db/Version.hh"
-#include "sta_db/OpenRoad.hh"
+#include "openroad/Version.hh"
+#include "openroad/OpenRoad.hh"
 
 using sta::stringEq;
 using sta::StaDb;
@@ -45,7 +45,7 @@ main(int argc,
     return 0;
   }
   else if (argc == 2 && stringEq(argv[1], "-version")) {
-    printf("%s\n", STA_VERSION);
+    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_SHA1);
     return 0;
   }
   else {

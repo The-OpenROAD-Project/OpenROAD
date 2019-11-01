@@ -25,9 +25,9 @@
 #include "Machine.hh"
 #include "Report.hh"
 #include "Network.hh"
-#include "sta_db/Version.hh"
 #include "sta_db/StaDb.hh"
-#include "sta_db/OpenRoad.hh"
+#include "openroad/Version.hh"
+#include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
 //
@@ -78,13 +78,13 @@ getDbNetwork()
 const char *
 openroad_version()
 {
-  return STA_DB_VERSION;
+  return OPENROAD_VERSION;
 }
 
 const char *
 openroad_git_sha1()
 {
-  return STA_DB_GIT_SHA1;
+  return OPENROAD_GIT_SHA1;
 }
 
 void

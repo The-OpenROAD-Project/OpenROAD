@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set(STA_DB_SOURCE
+set(OPENROAD_SOURCE
   StaDb.cc
   DbNetwork.cc
   VerilogToDb.cc
@@ -23,7 +23,7 @@ set(STA_DB_SOURCE
   OpenRoadTclInitVar.cc
   )
 
-set(STA_DB_HEADERS
+set(OPENROAD_HEADERS
   StaDb.hh
   DbNetwork.hh
   VerilogToDb.hh
@@ -43,7 +43,7 @@ set(STA_INCLUDE_DIRS
   ${OPENSTA_HOME}/verilog
   )
 
-set(STA_DB_TCL_FILES
+set(OPENROAD_TCL_FILES
   ${OPENSTA_HOME}/tcl/Util.tcl
   ${OPENSTA_HOME}/tcl/Graph.tcl
   ${OPENSTA_HOME}/tcl/Liberty.tcl
@@ -60,7 +60,7 @@ set(STA_DB_TCL_FILES
   ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
   ${OPENSTA_HOME}/parasitics/Parasitics.tcl
   ${OPENSTA_HOME}/sdf/Sdf.tcl
-  StaDb.tcl
+  OpenRoad.tcl
   VerilogToDb.tcl
   InitFloorplan.tcl
   )
@@ -78,28 +78,28 @@ set(STA_DB_SWIG_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.i
   )
 
-add_custom_command(OUTPUT ${STA_DB_HOME}/src/OpenRoadTclInitVar.cc
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenRoadTclInitVar.cc openroad_tcl_inits ${STA_DB_TCL_FILES}
-  WORKING_DIRECTORY ${STA_DB_HOME}/src
-  DEPENDS ${STA_DB_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenRoadTclInitVar.cc openroad_tcl_inits ${OPENROAD_TCL_FILES}
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src
+  DEPENDS ${OPENROAD_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
   )
 
 include(FindSWIG)
-add_custom_command(OUTPUT ${STA_DB_HOME}/src/OpenRoad_wrap.cc
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o OpenRoad_wrap.cc OpenRoad.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
-  WORKING_DIRECTORY ${STA_DB_HOME}/src
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${STA_DB_SWIG_FILES}
   )
 
 ################################################################
 
 add_library(StaDb
-  ${STA_DB_SOURCE}
+  ${OPENROAD_SOURCE}
   )
 
 target_include_directories(StaDb
-  PUBLIC ${STA_DB_HOME}/include
+  PUBLIC ${OPENROAD_HOME}/include
   PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   )
 
@@ -117,7 +117,7 @@ add_executable(opensta_db
   )
 
 target_include_directories(opensta_db
-  PUBLIC ${STA_DB_HOME}/include
+  PUBLIC ${OPENROAD_HOME}/include
   PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   )
 
@@ -153,7 +153,7 @@ install(TARGETS opensta_db DESTINATION bin)
 
 ################################################################
 
-add_custom_target(sta_db_tags etags -o TAGS ${STA_DB_SOURCE} ${STA_DB_HEADERS} ${STA_DB_TCL_FILES}
-  WORKING_DIRECTORY ${STA_DB_HOME}/src
-  DEPENDS ${STA_DB_SOURCE} ${STA_DB_HEADERS} ${STA_DB_TCL_FILES}
+add_custom_target(sta_db_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src
+  DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )
