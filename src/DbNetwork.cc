@@ -774,7 +774,7 @@ DbNetwork::makeLibrary(dbLib *lib)
 
 void
 DbNetwork::makeCell(Library *library,
-			dbMaster *master)
+		    dbMaster *master)
 {
   dbString cell_name = master->getName();
   Cell *cell = makeCell(library, cell_name.c_str(), true, nullptr);
@@ -792,6 +792,7 @@ DbNetwork::makeCell(Library *library,
       cport->setLibertyPort(lib_port);
     }
   }
+  groupBusPorts(cell);
 }
 
 void
@@ -806,6 +807,7 @@ DbNetwork::makeTopCell()
     PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     setDirection(port, dir);
   }
+  groupBusPorts(top_cell_);
 }
 
 PortDirection *

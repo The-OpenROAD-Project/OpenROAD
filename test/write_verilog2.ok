@@ -1,0 +1,58 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: 
+Reading DEF file: reg4.def
+
+No Logger: notice 0: Design: reg1
+
+No Logger: notice 0:     Created 6 pins.
+
+No Logger: notice 0:     Created 5 components and 24 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 10 connections.
+
+No Logger: notice 0:     Created 10 nets and 14 connections.
+
+No Logger: notice 0: Finished DEF file: reg4.def
+
+module reg1 (out,
+    clk,
+    in);
+ output out;
+ input [0:2] clk;
+ input [0:1] in;
+
+ snl_ffqx1 r1 (.Q(r1q),
+    .D(in[0]),
+    .CP(clk[0]),
+    .VDD(VDD),
+    .VSS(VSS));
+ snl_ffqx1 r2 (.Q(r2q),
+    .D(in[1]),
+    .CP(clk[1]),
+    .VDD(VDD),
+    .VSS(VSS));
+ snl_ffqx1 r3 (.Q(out),
+    .D(u2z),
+    .CP(clk[2]),
+    .VDD(VDD),
+    .VSS(VSS));
+ snl_bufx1 u1 (.Z(u1z),
+    .A(r2q),
+    .VDD(VDD),
+    .VSS(VSS));
+ snl_and02x1 u2 (.Z(u2z),
+    .A(r1q),
+    .B(u1z),
+    .VDD(VDD),
+    .VSS(VSS));
+endmodule
+Warning: ./results/write_verilog2.v, line 8 module snl_ffqx1 not found.  Creating black box for r1.
+Warning: ./results/write_verilog2.v, line 23 module snl_bufx1 not found.  Creating black box for u1.
+Warning: ./results/write_verilog2.v, line 27 module snl_and02x1 not found.  Creating black box for u2.
