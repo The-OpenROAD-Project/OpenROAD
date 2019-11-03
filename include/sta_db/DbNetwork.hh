@@ -120,6 +120,7 @@ public:
 	       dbITerm *&iterm,
 	       dbBTerm *&bterm) const;
   dbBTerm *staToDb(const Term *term) const;
+  dbMaster *staToDb(const Cell *cell) const;
 
   Pin *dbToSta(dbBTerm *bterm) const;
   Term *dbToStaTerm(dbBTerm *bterm) const;
@@ -143,6 +144,7 @@ public:
   using Network::libertyPort;
   using Network::direction;
   using Network::name;
+  using Network::cell;
   using NetworkReader::makeLibrary;
   using NetworkReader::makeCell;
 

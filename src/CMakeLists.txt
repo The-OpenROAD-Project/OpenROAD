@@ -16,9 +16,6 @@
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 
-add_subdirectory(${OPENDB_HOME})
-add_subdirectory(${OPENSTA_HOME})
-
 set(OPENROAD_SOURCE
   StaDb.cc
   DbNetwork.cc
@@ -98,6 +95,13 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${STA_DB_SWIG_FILES}
   )
+
+################################################################
+
+add_subdirectory(${OPENDB_HOME})
+add_subdirectory(${OPENSTA_HOME})
+add_subdirectory(flute3)
+add_subdirectory(resizer)
 
 ################################################################
 

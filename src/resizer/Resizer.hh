@@ -17,7 +17,7 @@
 #ifndef RESIZER_H
 #define RESIZER_H
 
-#include "Sta.hh"
+#include "sta_db/StaDb.hh"
 #include "SteinerTree.hh"
 
 namespace sta {
@@ -27,10 +27,10 @@ class RebufferOption;
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<RebufferOption*> RebufferOptionSeq;
 
-class Resizer
+class Resizer : public StaState
 {
 public:
-  Resizer();
+  Resizer(StaDb *sta);
   void initFlute(const char *resizer_path);
 
   // Set the resistance and capacitance used for parasitics.
@@ -163,8 +163,6 @@ protected:
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
   Required pinRequired(const Pin *pin);
-  Required vertexRequired(Vertex *vertex,
-			  const MinMax *min_max);
   float gateDelay(LibertyPort *out_port,
 		  float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
@@ -174,6 +172,13 @@ protected:
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
+  void setLocation(Instance *inst,
+		   adsPoint pt);
+  Pin *singleOutputPin(const Instance *inst);
+  double area(dbMaster *master);
+  double area(Cell *cell);
+  double dbuToMeters(uint dist) const;
+
 
   friend class RebufferOption;
 
@@ -184,6 +189,8 @@ protected:
   double max_area_;
 
   StaDb *sta_;
+  DbNetwork *db_network_;
+  dbDatabase *db_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;

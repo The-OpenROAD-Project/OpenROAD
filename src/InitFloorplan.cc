@@ -144,7 +144,6 @@ protected:
 		     double core_uy);
   int metersToDbu(double dist) const;
   double dbuToMeters(uint dist) const;
-  double dbu2ToMeters2(uint area) const;
 
   dbDatabase *db_;
   Report *report_;
@@ -570,13 +569,6 @@ double
 InitFloorplan::dbuToMeters(uint dist) const
 {
   return dist * 1E-9;
-}
-
-// DBUs are nanometers.
-double
-InitFloorplan::dbu2ToMeters2(uint area) const
-{
-  return area * 1E-9 * 1E-9;
 }
 
 }

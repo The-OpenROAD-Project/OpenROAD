@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Machine.hh"
-#include "DbNetwork.hh"
+#include "sta_db/DbNetwork.hh"
 #include "DbSdcNetwork.hh"
 #include "sta_db/StaDb.hh"
 #include "opendb/db.h"

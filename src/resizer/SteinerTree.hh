@@ -19,14 +19,17 @@
 
 #include <string>
 #include "Hash.hh"
+#include "UnorderedMap.hh"
+#include "opendb/geom.h"
+#include "sta_db/DbNetwork.hh"
 
-#define FLUTE_DTYPE sta::DefDbu
+#define FLUTE_DTYPE int
 #include "flute.h"
-typedef sta::DefDbu FluteDbu;
 
 namespace sta {
 
 using std::string;
+using odb::adsPoint;
 
 class SteinerTree;
 
@@ -39,12 +42,12 @@ readFluteInits(string dir);
 SteinerTree *
 makeSteinerTree(const Net *net,
 		bool find_left_rights,
-		LefDefNetwork *network);
+		DbNetwork *network);
 
-class DefPtHash
+class adsPointHash
 {
 public:
-  size_t operator()(const DefPt &pt) const
+  size_t operator()(const adsPoint &pt) const
   {
     size_t hash = hash_init_value;
     hashIncr(hash, pt.x());
@@ -53,11 +56,11 @@ public:
   }
 };
 
-class DefPtEqual
+class adsPointEqual
 {
 public:
-  bool operator()(const DefPt &pt1,
-		  const DefPt &pt2) const
+  bool operator()(const adsPoint &pt1,
+		  const adsPoint &pt2) const
   {
     return pt1.x() == pt2.x()
       && pt1.y() == pt2.y();
@@ -72,15 +75,15 @@ public:
   ~SteinerTree();
   PinSeq &pins() { return pins_; }
   void setTree(Flute::Tree tree,
-	       const LefDefNetwork *network);
+	       const DbNetwork *network);
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
   void branch(int index,
 	      // Return values.
-	      DefPt &pt1,
+	      adsPoint &pt1,
 	      Pin *&pin1,
 	      int &steiner_pt1,
-	      DefPt &pt2,
+	      adsPoint &pt2,
 	      Pin *&pin2,
 	      int &steiner_pt2,
 	      int &wire_length);
@@ -89,7 +92,7 @@ public:
   Pin *steinerPtAlias(SteinerPt pt);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt(const Network *network) const;
-  bool isPlaced(LefDefNetwork *network) const;
+  bool isPlaced(const DbNetwork *network) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
@@ -97,7 +100,7 @@ public:
   Pin *pin(SteinerPt pt) const;
   bool isLoad(SteinerPt pt,
 	      const Network *network);
-  DefPt location(SteinerPt pt) const;
+  adsPoint location(SteinerPt pt) const;
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
@@ -122,7 +125,7 @@ protected:
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;
   // location -> pin (any pin if there are multiple at the location).
-  UnorderedMap<DefPt, Pin*, DefPtHash, DefPtEqual> loc_pin_map_;
+  UnorderedMap<adsPoint, Pin*, adsPointHash, adsPointEqual> loc_pin_map_;
   SteinerPtSeq left_;
   SteinerPtSeq right_;
 };

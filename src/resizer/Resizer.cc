@@ -34,9 +34,7 @@
 #include "SearchPred.hh"
 #include "Bfs.hh"
 #include "Search.hh"
-#include "LefDefNetwork.hh"
-#include "LefDefSdcNetwork.hh"
-#include "DefReader.hh"
+#include "Network.hh"
 #include "SteinerTree.hh"
 #include "Resizer.hh"
 
@@ -57,16 +55,25 @@ using std::abs;
 using std::min;
 using std::string;
 
-static Pin *
-singleOutputPin(const Instance *inst,
-		Network *network);
+using odb::dbInst;
+using odb::dbPlacementStatus;
 
-Resizer::Resizer() :
-  Sta(),
+bool
+pinIsPlaced(Pin *pin,
+	    const DbNetwork *network);
+adsPoint
+pinLocation(Pin *pin,
+	    const DbNetwork *network);
+
+Resizer::Resizer(StaDb *sta) :
+  StaState(sta),
   wire_res_(0.0),
   wire_cap_(0.0),
   corner_(nullptr),
   max_area_(0.0),
+  sta_(sta),
+  db_network_(sta->dbNetwork()),
+  db_(sta->db()),
   clk_nets__valid_(false),
   level_drvr_verticies_valid_(false),
   unique_net_index_(1),
@@ -136,7 +143,7 @@ VertexLevelLess::operator()(const Vertex *vertex1,
 void
 Resizer::init()
 {
-  ensureLevelized();
+  sta_->ensureLevelized();
   ensureLevelDrvrVerticies();
   ensureClkNets();
   ensureCorner();
@@ -163,7 +170,7 @@ void
 Resizer::ensureCorner()
 {
   if (corner_ == nullptr)
-    initCorner(cmd_corner_);
+    initCorner(sta_->cmdCorner());
 }
 
 void
@@ -225,29 +232,37 @@ void
 Resizer::bufferInput(Pin *top_pin,
 		     LibertyCell *buffer_cell)
 {
-  LefDefNetwork *network = lefDefNetwork();
-  Term *term = network_->term(top_pin);
-  Net *input_net = network_->net(term);
+  Term *term = db_network_->term(top_pin);
+  Net *input_net = db_network_->net(term);
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   string buffer_out_net_name = makeUniqueNetName();
   string buffer_name = makeUniqueBufferName();
-  Instance *parent = network->topInstance();
-  Net *buffer_out = network->makeNet(buffer_out_net_name.c_str(), parent);
-  Instance *buffer = network->makeInstance(buffer_cell,
-					   buffer_name.c_str(),
-					   parent);
-  network->setLocation(buffer, network->location(top_pin));
+  Instance *parent = db_network_->topInstance();
+  Net *buffer_out = db_network_->makeNet(buffer_out_net_name.c_str(), parent);
+  Instance *buffer = db_network_->makeInstance(buffer_cell,
+					       buffer_name.c_str(),
+					       parent);
+  setLocation(buffer, pinLocation(top_pin, db_network_));
   inserted_buffer_count_++;
 
-  NetPinIterator *pin_iter(network->pinIterator(input_net));
+  NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
-    disconnectPin(pin);
-    connectPin(network->instance(pin), network->port(pin), buffer_out);
+    sta_->disconnectPin(pin);
+    sta_->connectPin(db_network_->instance(pin), db_network_->port(pin), buffer_out);
   }
-  connectPin(buffer, input, input_net);
-  connectPin(buffer, output, buffer_out);
+  sta_->connectPin(buffer, input, input_net);
+  sta_->connectPin(buffer, output, buffer_out);
+}
+
+void
+Resizer::setLocation(Instance *inst,
+		     adsPoint pt)
+{
+  dbInst *dinst = db_network_->staToDb(inst);
+  dinst->setPlacementStatus(dbPlacementStatus::PLACED);
+  dinst->setLocation(pt.getX(), pt.getY());
 }
 
 void
@@ -269,7 +284,7 @@ void
 Resizer::bufferOutput(Pin *top_pin,
 		     LibertyCell *buffer_cell)
 {
-  LefDefNetwork *network = lefDefNetwork();
+  NetworkEdit *network = networkEdit();
   Term *term = network_->term(top_pin);
   Net *output_net = network_->net(term);
   LibertyPort *input, *output;
@@ -281,17 +296,17 @@ Resizer::bufferOutput(Pin *top_pin,
   Instance *buffer = network->makeInstance(buffer_cell,
 					   buffer_name.c_str(),
 					   parent);
-  network->setLocation(buffer, network->location(top_pin));
+  setLocation(buffer, pinLocation(top_pin, db_network_));
   inserted_buffer_count_++;
 
   NetPinIterator *pin_iter(network->pinIterator(output_net));
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
-    disconnectPin(pin);
-    connectPin(network->instance(pin), network->port(pin), buffer_in);
+    sta_->disconnectPin(pin);
+    sta_->connectPin(network->instance(pin), network->port(pin), buffer_in);
   }
-  connectPin(buffer, input, buffer_in);
-  connectPin(buffer, output, output_net);
+  sta_->connectPin(buffer, input, buffer_in);
+  sta_->connectPin(buffer, output, output_net);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -325,16 +340,16 @@ Resizer::makeEquivCells(LibertyLibrarySeq *resize_libs)
     map_libs.push_back(lib);
   }
   delete lib_iter;
-  makeEquivCells(resize_libs, &map_libs);
+  sta_->makeEquivCells(resize_libs, &map_libs);
 }
 
 void
 Resizer::resizeToTargetSlew(Instance *inst)
 {
-  LefDefNetwork *network = lefDefNetwork();
+  NetworkEdit *network = networkEdit();
   LibertyCell *cell = network_->libertyCell(inst);
   if (cell) {
-    Pin *output = singleOutputPin(inst, network_);
+    Pin *output = singleOutputPin(inst);
     // Only resize single output gates for now.
     if (output) {
       Net *out_net = network->net(output);
@@ -344,7 +359,7 @@ Resizer::resizeToTargetSlew(Instance *inst)
 	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
 	LibertyCell *best_cell = nullptr;
 	float best_ratio = 0.0;
-	auto equiv_cells = equivCells(cell);
+	auto equiv_cells = sta_->equivCells(cell);
 	if (equiv_cells) {
 	  for (auto target_cell : *equiv_cells) {
 	    if (!dontUse(target_cell)) {
@@ -363,19 +378,17 @@ Resizer::resizeToTargetSlew(Instance *inst)
 			sdc_network_->pathName(inst),
 			cell->name(),
 			best_cell->name());
-	    if (network->isLefCell(network_->cell(inst))) {
-	      // Replace LEF with LEF so ports stay aligned in instance.
-	      Cell *best_lef = network->lefCell(best_cell);
-	      if (best_lef) {
-		design_area_ -= network->area(inst);
-		replaceCell(inst, best_lef);
-		resize_count_++;
-		design_area_ += network->area(inst);
-	      }
-	    }
-	    else {
-	      replaceCell(inst, best_cell);
+	    const char *best_cell_name = best_cell->name();
+	    dbMaster *best_master = db_->findMaster(best_cell_name);
+	    // Replace LEF with LEF so ports stay aligned in instance.
+	    if (best_master) {
+	      dbInst *dinst = db_network_->staToDb(inst);
+	      dbMaster *master = dinst->getMaster();
+	      design_area_ -= area(master);
+	      Cell *best_cell1 = db_network_->dbToSta(best_master);
+	      sta_->replaceCell(inst, best_cell1);
 	      resize_count_++;
+	      design_area_ += area(best_master);
 	    }
 	  }
 	}
@@ -384,15 +397,14 @@ Resizer::resizeToTargetSlew(Instance *inst)
   }
 }
 
-static Pin *
-singleOutputPin(const Instance *inst,
-		Network *network)
+Pin *
+Resizer::singleOutputPin(const Instance *inst)
 {
   Pin *output = nullptr;
-  InstancePinIterator *pin_iter = network->pinIterator(inst);
+  InstancePinIterator *pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
-    if (network->direction(pin)->isOutput()) {
+    if (network_->direction(pin)->isOutput()) {
       if (output) {
 	// Already found one.
 	delete pin_iter;
@@ -403,6 +415,25 @@ singleOutputPin(const Instance *inst,
   }
   delete pin_iter;
   return output;
+}
+
+double
+Resizer::area(Cell *cell)
+{
+  return area(db_network_->staToDb(cell));
+}
+
+double
+Resizer::area(dbMaster *master)
+{
+  return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+}
+
+// DBUs are nanometers.
+double
+Resizer::dbuToMeters(uint dist) const
+{
+  return dist * 1E-9;
 }
 
 void
@@ -699,16 +730,15 @@ Resizer::makeNetParasitics()
 void
 Resizer::makeNetParasitics(const Net *net)
 {
-  LefDefNetwork *network = lefDefNetwork();
-  SteinerTree *tree = makeSteinerTree(net, false, network);
-  if (tree && tree->isPlaced(network)) {
+  SteinerTree *tree = makeSteinerTree(net, false, db_network_);
+  if (tree && tree->isPlaced(db_network_)) {
     debugPrint1(debug_, "resizer_parasitics", 1, "net %s\n",
 		sdc_network_->pathName(net));
     Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
 							     parasitics_ap_);
     int branch_count = tree->branchCount();
     for (int i = 0; i < branch_count; i++) {
-      DefPt pt1, pt2;
+      adsPoint pt1, pt2;
       Pin *pin1, *pin2;
       int steiner_pt1, steiner_pt2;
       int wire_length_dbu;
@@ -723,7 +753,7 @@ Resizer::makeNetParasitics(const Net *net)
 	  // Use a small resistor to keep the connectivity intact.
 	  parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
 	else {
-	  float wire_length = network->dbuToMeters(wire_length_dbu);
+	  float wire_length = dbuToMeters(wire_length_dbu);
 	  float wire_cap = wire_length * wire_cap_;
 	  float wire_res = wire_length * wire_res_;
 	  // Make pi model for the wire.
@@ -784,7 +814,7 @@ public:
 		 float cap,
 		 Required required,
 		 Pin *load_pin,
-		 DefPt location,
+		 adsPoint location,
 		 RebufferOption *ref,
 		 RebufferOption *ref2);
   ~RebufferOption();
@@ -793,7 +823,7 @@ public:
   Required required() const { return required_; }
   Required bufferRequired(LibertyCell *buffer_cell,
 			  Resizer *resizer) const;
-  DefPt location() const { return location_; }
+  adsPoint location() const { return location_; }
   Pin *loadPin() const { return load_pin_; }
   RebufferOption *ref() const { return ref_; }
   RebufferOption *ref2() const { return ref2_; }
@@ -803,7 +833,7 @@ private:
   float cap_;
   Required required_;
   Pin *load_pin_;
-  DefPt location_;
+  adsPoint location_;
   RebufferOption *ref_;
   RebufferOption *ref2_;
 };
@@ -812,7 +842,7 @@ RebufferOption::RebufferOption(Type type,
 			       float cap,
 			       Required required,
 			       Pin *load_pin,
-			       DefPt location,
+			       adsPoint location,
 			       RebufferOption *ref,
 			       RebufferOption *ref2) :
   type_(type),
@@ -845,7 +875,7 @@ Resizer::rebuffer(bool repair_max_cap,
 {
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
-  findDelays();
+  sta_->findDelays();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
@@ -990,8 +1020,7 @@ Resizer::rebuffer(const Pin *drvr_pin,
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
-    LefDefNetwork *network = lefDefNetwork();
-    SteinerTree *tree = makeSteinerTree(net, true, network);
+    SteinerTree *tree = makeSteinerTree(net, true, db_network_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
       Required drvr_req = pinRequired(drvr_pin);
@@ -1156,15 +1185,14 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 			  int level,
 			  LibertyCell *buffer_cell)
 {
-  LefDefNetwork *network = lefDefNetwork();
   RebufferOptionSeq Z1;
   Required best = -INF;
   RebufferOption *best_ref = nullptr;
-  DefPt k_loc = tree->location(k);
-  DefPt prev_loc = tree->location(prev);
-  DefDbu wire_length_dbu = abs(k_loc.x() - prev_loc.x())
+  adsPoint k_loc = tree->location(k);
+  adsPoint prev_loc = tree->location(prev);
+  int wire_length_dbu = abs(k_loc.x() - prev_loc.x())
     + abs(k_loc.y() - prev_loc.y());
-  float wire_length = network->dbuToMeters(wire_length_dbu);
+  float wire_length = dbuToMeters(wire_length_dbu);
   float wire_cap = wire_length * wire_cap_;
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
@@ -1221,18 +1249,17 @@ Resizer::rebufferTopDown(RebufferOption *choice,
 			 int level,
 			 LibertyCell *buffer_cell)
 {
-  LefDefNetwork *network = lefDefNetwork();
   switch(choice->type()) {
   case RebufferOption::Type::buffer: {
-    Instance *parent = network->topInstance();
+    Instance *parent = db_network_->topInstance();
     string net2_name = makeUniqueNetName();
     string buffer_name = makeUniqueBufferName();
-    Net *net2 = network->makeNet(net2_name.c_str(), parent);
-    Instance *buffer = network->makeInstance(buffer_cell,
-					     buffer_name.c_str(),
-					     parent);
+    Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+    Instance *buffer = db_network_->makeInstance(buffer_cell,
+						 buffer_name.c_str(),
+						 parent);
     inserted_buffer_count_++;
-    design_area_ += network->area(buffer);
+    design_area_ += area(db_network_->cell(buffer_cell));
     level_drvr_verticies_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -1241,9 +1268,9 @@ Resizer::rebufferTopDown(RebufferOption *choice,
 		sdc_network_->pathName(net),
 		buffer_name.c_str(),
 		net2_name.c_str());
-    connectPin(buffer, input, net);
-    connectPin(buffer, output, net2);
-    network->setLocation(buffer, choice->location());
+    sta_->connectPin(buffer, input, net);
+    sta_->connectPin(buffer, output, net2);
+    setLocation(buffer, choice->location());
     rebufferTopDown(choice->ref(), net2, level + 1, buffer_cell);
     makeNetParasitics(net);
     makeNetParasitics(net2);
@@ -1263,14 +1290,14 @@ Resizer::rebufferTopDown(RebufferOption *choice,
     Pin *load_pin = choice->loadPin();
     Net *load_net = network_->net(load_pin);
     if (load_net != net) {
-      Instance *load_inst = network->instance(load_pin);
-      Port *load_port = network->port(load_pin);
+      Instance *load_inst = db_network_->instance(load_pin);
+      Port *load_port = db_network_->port(load_pin);
       debugPrint4(debug_, "rebuffer", 3, "%*sconnect load %s to %s\n",
 		  level, "",
 		  sdc_network_->pathName(load_pin),
 		  sdc_network_->pathName(net));
-      disconnectPin(load_pin);
-      connectPin(load_inst, load_port, net);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load_inst, load_port, net);
     }
     break;
   }
@@ -1328,26 +1355,7 @@ Required
 Resizer::pinRequired(const Pin *pin)
 {
   Vertex *vertex = graph_->pinLoadVertex(pin);
-  return vertexRequired(vertex, min_max_);
-}
-
-Required
-Resizer::vertexRequired(Vertex *vertex,
-			const MinMax *min_max)
-{
-  findRequired(vertex);
-  const MinMax *req_min_max = min_max->opposite();
-  Required required = req_min_max->initValue();
-  VertexPathIterator path_iter(vertex, this);
-  while (path_iter.hasNext()) {
-    const Path *path = path_iter.next();
-    if (path->minMax(this) == min_max) {
-      const Required path_required = path->required(this);
-      if (fuzzyGreater(path_required, required, req_min_max))
-	required = path_required;
-    }
-  }
-  return required;
+  return sta_->vertexRequired(vertex, min_max_);
 }
 
 float
@@ -1392,10 +1400,53 @@ double
 Resizer::designArea()
 {
   if (design_area_ == 0.0) {
-    LefDefNetwork *network = lefDefNetwork();
-    design_area_ = network->designArea();
+    for (dbInst *inst : db_->getChip()->getBlock()->getInsts()) {
+      dbMaster *master = inst->getMaster();
+      design_area_ += area(master);
+    }
   }
   return design_area_;
+}
+
+adsPoint
+pinLocation(Pin *pin,
+	    const DbNetwork *network)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  network->staToDb(pin, iterm, bterm);
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    int x, y;
+    inst->getOrigin(x, y);
+    return adsPoint(x, y);
+  }
+  if (bterm) {
+    int x, y;
+    if (bterm->getFirstPinLocation(x, y))
+      return adsPoint(x, y);
+  }
+  return adsPoint(0, 0);
+}  
+
+bool
+pinIsPlaced(Pin *pin,
+	    const DbNetwork *network)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  network->staToDb(pin, iterm, bterm);
+  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    status = inst->getPlacementStatus();
+  }
+  if (bterm)
+    status = bterm->getFirstPinPlacementStatus();
+  return status == dbPlacementStatus::PLACED
+    || status == dbPlacementStatus::LOCKED
+    || status == dbPlacementStatus::FIRM
+    || status == dbPlacementStatus::COVER;
 }
 
 }

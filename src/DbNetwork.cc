@@ -19,7 +19,7 @@
 #include "PatternMatch.hh"
 #include "PortDirection.hh"
 #include "Liberty.hh"
-#include "DbNetwork.hh"
+#include "sta_db/DbNetwork.hh"
 
 #include "opendb/db.h"
 
@@ -871,6 +871,16 @@ dbBTerm *
 DbNetwork::staToDb(const Term *term) const
 {
   return reinterpret_cast<dbBTerm*>(const_cast<Term*>(term));
+}
+
+dbMaster *
+DbNetwork::staToDb(const Cell *cell) const
+{
+  Library *lib = library(cell);
+  const char *lib_name = name(lib);
+  dbLib *dlib = db_->findLib(lib_name);
+  const char *cell_name = name(cell);
+  return dlib->findMaster(cell_name);
 }
 
 Instance *

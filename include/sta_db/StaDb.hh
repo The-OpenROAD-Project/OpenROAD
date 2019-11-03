@@ -31,6 +31,7 @@ class StaDb : public Sta
 public:
   StaDb();
   void init(dbDatabase *db);
+  dbDatabase *db() { return db_; }
   DbNetwork *dbNetwork();
 
 protected:
