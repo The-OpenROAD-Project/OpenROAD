@@ -1,9 +1,9 @@
 [submodule "module/OpenSTA"]
-	path = OpenSTA
+	path = src/OpenSTA
 	url = https://github.com/The-OpenROAD-Project/OpenSTA.git
 [submodule "module/OpenDB"]
-	path = OpenDB
+	path = src/OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
 [submodule "flute3"]
-	path = flute3
+	path = src/flute3
 	url = https://github.com/The-OpenROAD-Project/flute3

@@ -1,4 +1,3 @@
-# OpenStaDB, OpenSTA on OpenDB
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -19,8 +18,6 @@ cmake_minimum_required (VERSION 3.9)
 project(OpenROAD VERSION 1.0.0)
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
-set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/OpenSTA)
-set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/OpenDB)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 11)
@@ -144,6 +141,4 @@ include(FindSWIG)
 
 ################################################################
 
-add_subdirectory(${OPENDB_HOME})
-add_subdirectory(${OPENSTA_HOME})
 add_subdirectory(src)
