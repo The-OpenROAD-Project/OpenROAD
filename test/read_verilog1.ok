@@ -9,7 +9,7 @@ No Logger: notice 0: Finished LEF file:  liberty1.lef
 Warning: reg1.v, line 6 module snl_ffqx1 not found.  Creating black box for r1.
 Warning: reg1.v, line 8 module snl_bufx1 not found.  Creating black box for u1.
 Warning: reg1.v, line 9 module snl_and02x1 not found.  Creating black box for u2.
-VERSION 5.3 ;
+VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;

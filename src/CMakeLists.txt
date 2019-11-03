@@ -113,25 +113,23 @@ target_compile_options(StaDb PUBLIC ${STA_COMPILE_OPTIONS})
 
 ################################################################
 
-add_executable(opensta_db
+add_executable(openroad
   Main.cc
   OpenRoad.cc
   )
 
-target_include_directories(opensta_db
+target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
   PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   )
 
-target_link_libraries(opensta_db
+target_link_libraries(openroad
   StaDb
   OpenSTA
   opendb 
   zutil 
   zlib 
   tm
-  lef
-  lefrw
   defin
   defout
   lefin
@@ -141,21 +139,21 @@ target_link_libraries(opensta_db
   )
 
 if (ZLIB_FOUND)
-  target_link_libraries(opensta_db ${ZLIB_LIBRARIES})
+  target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
 
-target_compile_options(opensta_db PUBLIC ${COMPILE_OPTIONS})
+target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 ################################################################
 # Install
 # cmake .. -DCMAKE_INSTALL_PREFIX=<prefix_path>
 
 # executable
-install(TARGETS opensta_db DESTINATION bin)
+install(TARGETS openroad DESTINATION bin)
 
 ################################################################
 
-add_custom_target(sta_db_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
+add_custom_target(openroad_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )

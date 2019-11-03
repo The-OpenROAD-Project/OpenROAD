@@ -17,7 +17,7 @@
 # Regression variables.
 
 # Application program to run tests on.
-set app "opensta_db"
+set app "openroad"
 set app_dir [find_parent_dir $test_dir]
 set app_path [file join $app_dir "build" "src" $app]
 # Application options.

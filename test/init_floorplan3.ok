@@ -21,7 +21,7 @@ No Logger: notice 0:     Created 10 nets and 14 connections.
 
 No Logger: notice 0: Finished DEF file: reg1.def
 
-VERSION 5.3 ;
+VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;

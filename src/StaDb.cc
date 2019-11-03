@@ -47,11 +47,9 @@ StaDb::makeNetwork()
 }
 
 void
-StaDb::makeCmdNetwork()
+StaDb::makeSdcNetwork()
 {
   sdc_network_ = new DbSdcNetwork(network_);
-  cmd_network_ = sdc_network_;
-  cmd_namespace_ = CmdNamespace::sdc;
 }
 
 }
