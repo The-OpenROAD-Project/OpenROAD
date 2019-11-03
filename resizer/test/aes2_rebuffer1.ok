@@ -1,0 +1,12 @@
+tns -5418.30
+worst slack -24.72
+Inserted 260 input buffers.
+Inserted 130 output buffers.
+Resized 9340 instances.
+Inserted 68 buffers in 13 nets.
+tns -0.00
+worst slack 0.26
+Inserted 8 buffers.
+Inserted 9 buffers.
+tns -0.00
+worst slack 0.46

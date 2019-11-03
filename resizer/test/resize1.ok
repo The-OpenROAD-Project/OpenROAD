@@ -1,0 +1,8 @@
+Instance u1
+ Cell: snl_bufx12
+ Library: LEF
+ Path cells: snl_bufx12
+Instance r1
+ Cell: snl_ffqx4
+ Library: LEF
+ Path cells: snl_ffqx4

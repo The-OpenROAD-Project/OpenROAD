@@ -1,0 +1,112 @@
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CP (snl_ffqx1)
+   0.90    0.90 v r1/Q (snl_ffqx1)
+   0.29    1.20 v u2/Z (snl_and02x1)
+   0.00    1.20 v r3/D (snl_ffqx1)
+           1.20   data arrival time
+
+   1.00    1.00   clock clk (rise edge)
+   0.00    1.00   clock network delay (ideal)
+   0.00    1.00   clock reconvergence pessimism
+           1.00 ^ r3/CP (snl_ffqx1)
+  -0.12    0.88   library setup time
+           0.88   data required time
+---------------------------------------------------------
+           0.88   data required time
+          -1.20   data arrival time
+---------------------------------------------------------
+          -0.32   slack (VIOLATED)
+
+
+Resized 3 instances.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r1/CP (snl_ffqx2)
+   0.59    0.59 ^ r1/Q (snl_ffqx2)
+   0.24    0.83 ^ u2/Z (snl_and02x1)
+   0.00    0.83 ^ r3/D (snl_ffqx1)
+           0.83   data arrival time
+
+   1.00    1.00   clock clk (rise edge)
+   0.00    1.00   clock network delay (ideal)
+   0.00    1.00   clock reconvergence pessimism
+           1.00 ^ r3/CP (snl_ffqx1)
+  -0.11    0.89   library setup time
+           0.89   data required time
+---------------------------------------------------------
+           0.89   data required time
+          -0.83   data arrival time
+---------------------------------------------------------
+           0.06   slack (MET)
+
+
+###############################################################################
+# reg1.v
+###############################################################################
+
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN top ;
+TECHNOLOGY technology ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( -1000 -1000 ) ( 1000 1000 ) ;
+
+
+COMPONENTS 5 ;
+- r1 snl_ffqx2 ;
+- r2 snl_ffqx2 ;
+- r3 snl_ffqx1 ;
+- u1 snl_bufx12 ;
+- u2 snl_and02x1 ;
+END COMPONENTS
+
+PINS 6 ;
+- in1 + NET in1 + DIRECTION INPUT ;
+- in2 + NET in2 + DIRECTION INPUT ;
+- clk1 + NET clk1 + DIRECTION INPUT ;
+- clk2 + NET clk2 + DIRECTION INPUT ;
+- clk3 + NET clk3 + DIRECTION INPUT ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 10 ;
+- clk1 ( PIN clk1 ) ( r1 CP ) ;
+- clk2 ( PIN clk2 ) ( r2 CP ) ;
+- clk3 ( PIN clk3 ) ( r3 CP ) ;
+- in1 ( PIN in1 ) ( r1 D ) ;
+- in2 ( PIN in2 ) ( r2 D ) ;
+- out ( PIN out ) ( r3 Q ) ;
+- r1q ( r1 Q ) ( u2 A ) ;
+- r2q ( r2 Q ) ( u1 A ) ;
+- u1z ( u1 Z ) ( u2 B ) ;
+- u2z ( r3 D ) ( u2 Z ) ;
+END NETS
+
+END DESIGN

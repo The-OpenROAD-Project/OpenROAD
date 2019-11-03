@@ -1,0 +1,107 @@
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r5 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Cap   Delay    Time   Description
+----------------------------------------------------------------
+           0.00    0.00   clock clk (rise edge)
+           0.00    0.00   clock network delay (ideal)
+           0.00    0.00 ^ r1/CP (snl_ffqx1)
+   5.21   15.02   15.02 v r1/Q (snl_ffqx1)
+           0.18   15.19 v r5/D (snl_ffqx1)
+                  15.19   data arrival time
+
+           1.00    1.00   clock clk (rise edge)
+           0.00    1.00   clock network delay (ideal)
+           0.00    1.00   clock reconvergence pessimism
+                   1.00 ^ r5/CP (snl_ffqx1)
+          -6.03   -5.03   library setup time
+                  -5.03   data required time
+----------------------------------------------------------------
+                  -5.03   data required time
+                 -15.19   data arrival time
+----------------------------------------------------------------
+                 -20.22   slack (VIOLATED)
+
+
+Inserted 1 buffers.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r5 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Cap   Delay    Time   Description
+----------------------------------------------------------------
+           0.00    0.00   clock clk (rise edge)
+           0.00    0.00   clock network delay (ideal)
+           0.00    0.00 ^ r1/CP (snl_ffqx1)
+   0.00    0.12    0.12 ^ r1/Q (snl_ffqx1)
+           0.00    0.12 ^ buffer1/A (snl_bufx2)
+   5.21    6.12    6.24 ^ buffer1/Z (snl_bufx2)
+           0.18    6.42 ^ r5/D (snl_ffqx1)
+                   6.42   data arrival time
+
+           1.00    1.00   clock clk (rise edge)
+           0.00    1.00   clock network delay (ideal)
+           0.00    1.00   clock reconvergence pessimism
+                   1.00 ^ r5/CP (snl_ffqx1)
+          -0.39    0.61   library setup time
+                   0.61   data required time
+----------------------------------------------------------------
+                   0.61   data required time
+                  -6.42   data arrival time
+----------------------------------------------------------------
+                  -5.81   slack (VIOLATED)
+
+
+###############################################################################
+# r1 driving r2-r5 from end
+###############################################################################
+
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN reg1 ;
+TECHNOLOGY technology ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+
+COMPONENTS 6 ;
+- buffer1 snl_bufx2
++ PLACED ( 100000 100000 ) N ;
+- r1 snl_ffqx1
++ PLACED ( 100000 100000 ) N ;
+- r2 snl_ffqx1
++ PLACED ( 100000 200000 ) N ;
+- r3 snl_ffqx1
++ PLACED ( 100000 300000 ) N ;
+- r4 snl_ffqx1
++ PLACED ( 100000 400000 ) N ;
+- r5 snl_ffqx1
++ PLACED ( 100000 500000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 3 ;
+- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ( r4 CP ) ( r5 CP ) ;
+- net1 ( buffer1 Z ) ( r2 D ) ( r3 D ) ( r4 D ) ( r5 D ) ;
+- r1q ( buffer1 A ) ( r1 Q ) ;
+END NETS
+
+END DESIGN

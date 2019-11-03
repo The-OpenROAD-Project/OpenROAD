@@ -1,0 +1,51 @@
+###############################################################################
+# reg1 with clock pins tied together and placement
+###############################################################################
+
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN reg1 ;
+TECHNOLOGY technology ;
+
+UNITS DISTANCE MICRONS 100 ;
+
+DIEAREA ( 0 0 ) ( 10000 10000 ) ;
+
+
+COMPONENTS 5 ;
+- r1 snl_ffqx1 + PLACED   ( 10000 20000 ) N ;
+- r2 snl_ffqx1 + PLACED   ( 20000 10000 ) N ;
+- r3 snl_ffqx1 + PLACED   ( 30000 30000 ) N ;
+- u1 snl_bufx1 + PLACED   ( 40000 10000 ) N ;
+- u2 snl_and02x1 + PLACED ( 10000 40000 ) N ;
+END COMPONENTS
+
+PINS 6 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 200000 ) N ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 10 ;
+- in1 ( PIN in1 ) ( r1 D ) ( r2 D ) ;
+- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ;
+- r1q ( r1 Q ) ( u2 A ) ;
+- r2q ( r2 Q ) ( u1 A ) ;
+- u1z ( u2 B ) ( u1 Z ) ;
+- u2z ( u2 Z ) ( r3 D ) ;
+- out ( r3 Q ) ( PIN out ) ;
+END NETS
+
+END DESIGN

@@ -1,0 +1,60 @@
+Inserted 1 buffers.
+###############################################################################
+# reg1 with clock pins tied together and placement
+###############################################################################
+
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN reg1 ;
+TECHNOLOGY technology ;
+
+UNITS DISTANCE MICRONS 100 ;
+
+DIEAREA ( 0 0 ) ( 10000 10000 ) ;
+
+
+COMPONENTS 6 ;
+- buffer1 snl_bufx2
++ PLACED ( 40000 10000 ) N ;
+- r1 snl_ffqx1
++ PLACED ( 10000 20000 ) N ;
+- r2 snl_ffqx1
++ PLACED ( 20000 10000 ) N ;
+- r3 snl_ffqx1
++ PLACED ( 30000 30000 ) N ;
+- u1 snl_bufx1
++ PLACED ( 40000 10000 ) N ;
+- u2 snl_and02x1
++ PLACED ( 10000 40000 ) N ;
+END COMPONENTS
+
+PINS 6 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 200000 ) N ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 8 ;
+- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ;
+- in1 ( PIN in1 ) ( r1 D ) ( r2 D ) ;
+- net1 ( buffer1 Z ) ( u2 B ) ;
+- out ( PIN out ) ( r3 Q ) ;
+- r1q ( r1 Q ) ( u2 A ) ;
+- r2q ( r2 Q ) ( u1 A ) ;
+- u1z ( buffer1 A ) ( u1 Z ) ;
+- u2z ( r3 D ) ( u2 Z ) ;
+END NETS
+
+END DESIGN

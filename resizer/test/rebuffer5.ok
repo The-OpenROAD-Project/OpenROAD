@@ -1,0 +1,122 @@
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+in1                                     1.00   17.85  -16.85 (VIOLATED)
+r1/D                                    2.00   17.91  -15.91 (VIOLATED)
+r2/D                                    2.00   17.91  -15.91 (VIOLATED)
+out                                     1.00    5.16   -4.16 (VIOLATED)
+r3/Q                                    1.50    5.16   -3.66 (VIOLATED)
+u1/Z                                    1.50    3.85   -2.35 (VIOLATED)
+u2/B                                    2.00    3.85   -1.85 (VIOLATED)
+u2/Z                                    1.50    1.97   -0.47 (VIOLATED)
+r1/Q                                    1.50    1.77   -0.27 (VIOLATED)
+r2/Q                                    1.50    1.77   -0.27 (VIOLATED)
+
+Inserted 4 buffers in 4 nets.
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+in1                                     1.00   17.85  -16.85 (VIOLATED)
+r1/D                                    2.00   17.91  -15.91 (VIOLATED)
+r2/D                                    2.00   17.91  -15.91 (VIOLATED)
+out                                     1.00    5.16   -4.16 (VIOLATED)
+r3/Q                                    1.50    5.16   -3.66 (VIOLATED)
+buffer2/Z                               1.50    1.94   -0.44 (VIOLATED)
+
+Startpoint: in1 (input port clocked by clk)
+Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------
+           0.00    0.00    0.00   clock clk (rise edge)
+                   0.00    0.00   clock network delay (ideal)
+                   0.00    0.00 ^ input external delay
+   3.65   17.85    9.04    9.04 ^ in1 (in)
+          17.91    0.00    9.04 ^ r1/D (snl_ffqx1)
+                           9.04   data arrival time
+
+           0.00    1.00    1.00   clock clk (rise edge)
+                   0.00    1.00   clock network delay (ideal)
+                   0.00    1.00   clock reconvergence pessimism
+                           1.00 ^ r1/CP (snl_ffqx1)
+                  -0.47    0.53   library setup time
+                           0.53   data required time
+-----------------------------------------------------------------------
+                           0.53   data required time
+                          -9.04   data arrival time
+-----------------------------------------------------------------------
+                          -8.51   slack (VIOLATED)
+
+
+###############################################################################
+# reg1 with clock pins tied together and placement
+###############################################################################
+
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN reg1 ;
+TECHNOLOGY technology ;
+
+UNITS DISTANCE MICRONS 100 ;
+
+DIEAREA ( 0 0 ) ( 10000 10000 ) ;
+
+
+COMPONENTS 9 ;
+- buffer1 snl_bufx2
++ PLACED ( 10000 40000 ) N ;
+- buffer2 snl_bufx2
++ PLACED ( 40000 10000 ) N ;
+- buffer3 snl_bufx2
++ PLACED ( 20000 10000 ) N ;
+- buffer4 snl_bufx2
++ PLACED ( 10000 20000 ) N ;
+- r1 snl_ffqx1
++ PLACED ( 10000 20000 ) N ;
+- r2 snl_ffqx1
++ PLACED ( 20000 10000 ) N ;
+- r3 snl_ffqx1
++ PLACED ( 30000 30000 ) N ;
+- u1 snl_bufx1
++ PLACED ( 40000 10000 ) N ;
+- u2 snl_and02x1
++ PLACED ( 10000 40000 ) N ;
+END COMPONENTS
+
+PINS 6 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 200000 ) N ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 11 ;
+- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ;
+- in1 ( PIN in1 ) ( r1 D ) ( r2 D ) ;
+- net1 ( buffer1 Z ) ( r3 D ) ;
+- net2 ( buffer2 Z ) ( u2 B ) ;
+- net3 ( buffer3 Z ) ( u1 A ) ;
+- net4 ( buffer4 Z ) ( u2 A ) ;
+- out ( PIN out ) ( r3 Q ) ;
+- r1q ( buffer4 A ) ( r1 Q ) ;
+- r2q ( buffer3 A ) ( r2 Q ) ;
+- u1z ( buffer2 A ) ( u1 Z ) ;
+- u2z ( buffer1 A ) ( u2 Z ) ;
+END NETS
+
+END DESIGN

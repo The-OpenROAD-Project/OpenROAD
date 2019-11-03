@@ -1,0 +1,35 @@
+# lef/def reg1
+read_liberty liberty1.lib
+read_lef liberty1.lef
+read_def reg1.def
+create_clock -name clk -period 10 {clk1 clk2 clk3}
+set_input_delay -clock clk 0 {in1 in2}
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r2/CP (snl_ffqx1)
+   0.23    0.23 v r2/Q (snl_ffqx1)
+   0.14    0.37 v u1/Z (snl_bufx1)
+   0.13    0.50 v u2/Z (snl_and02x1)
+   0.00    0.50 v r3/D (snl_ffqx1)
+           0.50   data arrival time
+
+  10.00   10.00   clock clk (rise edge)
+   0.00   10.00   clock network delay (ideal)
+   0.00   10.00   clock reconvergence pessimism
+          10.00 ^ r3/CP (snl_ffqx1)
+  -0.10    9.90   library setup time
+           9.90   data required time
+---------------------------------------------------------
+           9.90   data required time
+          -0.50   data arrival time
+---------------------------------------------------------
+           9.40   slack (MET)
+
+
