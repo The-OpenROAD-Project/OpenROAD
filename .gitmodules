@@ -1,6 +1,6 @@
 [submodule "module/OpenSTA"]
-	path = module/OpenSTA
+	path = OpenSTA
 	url = https://github.com/The-OpenROAD-Project/OpenSTA.git
 [submodule "module/OpenDB"]
-	path = module/OpenDB
+	path = OpenDB
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
