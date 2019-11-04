@@ -68,6 +68,8 @@ public:
   pinIterator(const Instance *instance) const;
   virtual InstanceNetIterator *
   netIterator(const Instance *instance) const;
+  virtual void replaceCell(Instance *inst,
+			   Cell *cell);
 
   ////////////////////////////////////////////////////////////////
   // Pin functions

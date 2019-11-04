@@ -18,6 +18,7 @@
 #include "Machine.hh"
 #include "openroad/OpenRoad.hh"
 #include "sta_db/StaDb.hh"
+#include "resizer/Resizer.hh"
 
 namespace ord {
 
@@ -25,13 +26,15 @@ OpenRoad OpenRoad::open_road_;
 
 OpenRoad::OpenRoad() :
   db_(odb::dbDatabase::create()),
-  sta_(new sta::StaDb)
+  sta_(new sta::StaDb(db_)),
+  resizer_(new sta::Resizer(sta_))
 {
 }
 
 OpenRoad::~OpenRoad()
 {
   delete sta_;
+  delete resizer_;
   odb::dbDatabase::destroy(db_);
 }
 
@@ -99,6 +102,12 @@ sta::DbNetwork *
 OpenRoad::getDbNetwork()
 {
   return sta_->dbNetwork();
+}
+
+sta::Resizer *
+OpenRoad::getResizer()
+{
+  return resizer_;
 }
 
 } // namespace

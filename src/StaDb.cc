@@ -22,16 +22,17 @@
 
 namespace sta {
 
-StaDb::StaDb() :
-  Sta()
+StaDb::StaDb(dbDatabase *db) :
+  Sta(),
+  db_(db)
 {
 }
 
+
 void
-StaDb::init(dbDatabase *db)
+StaDb::initNetwork()
 {
-  db_ = db;
-  dbNetwork()->init(db);
+  dbNetwork()->init(db_);
 }
 
 DbNetwork *

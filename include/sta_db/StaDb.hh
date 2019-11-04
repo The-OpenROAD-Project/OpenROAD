@@ -29,8 +29,8 @@ using odb::dbDatabase;
 class StaDb : public Sta
 {
 public:
-  StaDb();
-  void init(dbDatabase *db);
+  StaDb(dbDatabase *db);
+  void initNetwork();
   dbDatabase *db() { return db_; }
   DbNetwork *dbNetwork();
 

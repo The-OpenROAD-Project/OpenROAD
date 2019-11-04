@@ -21,11 +21,11 @@ class dbDatabase;
 namespace sta {
 class StaDb;
 class DbNetwork;
+class Resizer;
 }
 
 namespace ord {
 
-// Lightweight version of OpenRoad app for stand-alone version.
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
@@ -37,6 +37,8 @@ public:
   odb::dbDatabase *getDb() { return db_; }
   sta::StaDb *getSta() { return sta_; }
   sta::DbNetwork *getDbNetwork();
+  sta::Resizer *getResizer();
+
   void readLef(const char *filename,
 	       const char *lib_name,
 	       bool make_tech,
@@ -49,6 +51,7 @@ public:
 private:
   odb::dbDatabase *db_;
   sta::StaDb *sta_;
+  sta::Resizer *resizer_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad open_road_;

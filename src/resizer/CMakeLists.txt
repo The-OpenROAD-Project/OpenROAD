@@ -22,7 +22,3 @@ target_include_directories(resizer
   PUBLIC ${OPENROAD_HOME}/include/resizer
   PRIVATE ${OPENROAD_HOME}/include ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include ${OPENROAD_HOME}/src/flute3
   )
-
-target_compile_features(resizer
-  PUBLIC cxx_auto_type
-  )

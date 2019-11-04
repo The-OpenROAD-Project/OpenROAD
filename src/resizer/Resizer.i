@@ -23,7 +23,7 @@
 #include "Machine.hh"
 #include "Error.hh"
 #include "Liberty.hh"
-#include "Resizer.hh"
+#include "resizer/Resizer.hh"
 
 namespace sta {
 
@@ -34,12 +34,6 @@ tclListSeqLibertyLibrary(Tcl_Obj *const source,
 LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
 		      Tcl_Interp *interp);
-
-Resizer *
-getResizer()
-{
-  return static_cast<Resizer*>(Sta::sta());
-}
 
 void
 networkLibertyLibraries(Network *network,

@@ -37,8 +37,11 @@
 ////////////////////////////////////////////////////////////////
 
 using ord::OpenRoad;
+
 using sta::StaDb;
 using sta::DbNetwork;
+using sta::Resizer;
+
 using odb::dbDatabase;
 
 OpenRoad *
@@ -63,6 +66,12 @@ DbNetwork *
 getDbNetwork()
 {
   return getOpenRoad()->getDbNetwork();
+}
+
+Resizer *
+getResizer()
+{
+  return getOpenRoad()->getResizer();
 }
 
 %}
@@ -90,10 +99,8 @@ openroad_git_sha1()
 void
 init_sta_db()
 {
-  OpenRoad *ord = getOpenRoad();
-  odb::dbDatabase *db = ord->getDb();
-  StaDb *sta = ord->getSta();
-  sta->init(db);
+  StaDb *sta = getSta();
+  sta->initNetwork();
 }
 
 void
@@ -146,3 +153,4 @@ write_db_cmd(const char *filename)
 
 %include "VerilogToDb.i"
 %include "InitFloorplan.i"
+%include "resizer/Resizer.i"

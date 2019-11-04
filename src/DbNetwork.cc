@@ -26,6 +26,7 @@
 namespace sta {
 
 using odb::dbDatabase;
+using odb::dbChip;
 using odb::dbString;
 using odb::dbObject;
 using odb::dbLib;
@@ -755,15 +756,18 @@ DbNetwork::linkNetwork(const char *,
   return true;
 }
 
+// Make ConcreteLibrary/Cell/Port objects for the db library/master/MTerm objects.
 void
 DbNetwork::init(dbDatabase *db)
 {
   db_ = db;
-  block_ = db_->getChip()->getBlock();
-  // Make ConcreteLibrary/Cell/Port objects for the db library objects.
-  for (dbLib *lib : db_->getLibs())
-    makeLibrary(lib);
-  makeTopCell();
+  dbChip *chip = db_->getChip();
+  if (chip) {
+    block_ = chip->getBlock();
+    for (dbLib *lib : db_->getLibs())
+      makeLibrary(lib);
+    makeTopCell();
+  }
 }
 
 void
@@ -813,27 +817,18 @@ DbNetwork::makeTopCell()
   groupBusPorts(top_cell_);
 }
 
-PortDirection *
-DbNetwork::dbToSta(dbSigType sig_type,
-		       dbIoType io_type) const
+////////////////////////////////////////////////////////////////
+
+void
+DbNetwork::replaceCell(Instance *inst,
+		       Cell *cell)
 {
-  if (sig_type == dbSigType::POWER)
-    return PortDirection::power();
-  else if (sig_type == dbSigType::GROUND)
-    return PortDirection::ground();
-  else if (io_type == dbIoType::INPUT)
-    return PortDirection::input();
-  else if (io_type == dbIoType::OUTPUT)
-    return PortDirection::output();
-  else if (io_type == dbIoType::INOUT)
-    return PortDirection::bidirect();
-  else if (io_type == dbIoType::FEEDTHRU)
-    return PortDirection::bidirect();
-  else {
-    internalError("unknown master term type");
-    return PortDirection::bidirect();
-  }
+  dbMaster *master = staToDb(cell);
+  dbInst *dinst = staToDb(inst);
+  dinst->swapMaster(master);
 }
+
+////////////////////////////////////////////////////////////////
 
 dbInst *
 DbNetwork::staToDb(const Instance *instance) const
@@ -883,6 +878,8 @@ DbNetwork::staToDb(const Cell *cell) const
   return dlib->findMaster(cell_name);
 }
 
+////////////////////////////////////////////////////////////////
+
 Instance *
 DbNetwork::dbToSta(dbInst *inst) const
 {
@@ -931,6 +928,28 @@ DbNetwork::dbToSta(dbMaster *master) const
   Library *library = const_cast<DbNetwork*>(this)->findLibrary(lib_name.c_str());
   dbString cell_name = master->getName();
   return findCell(library, cell_name.c_str());
+}
+
+PortDirection *
+DbNetwork::dbToSta(dbSigType sig_type,
+		       dbIoType io_type) const
+{
+  if (sig_type == dbSigType::POWER)
+    return PortDirection::power();
+  else if (sig_type == dbSigType::GROUND)
+    return PortDirection::ground();
+  else if (io_type == dbIoType::INPUT)
+    return PortDirection::input();
+  else if (io_type == dbIoType::OUTPUT)
+    return PortDirection::output();
+  else if (io_type == dbIoType::INOUT)
+    return PortDirection::bidirect();
+  else if (io_type == dbIoType::FEEDTHRU)
+    return PortDirection::bidirect();
+  else {
+    internalError("unknown master term type");
+    return PortDirection::bidirect();
+  }
 }
 
 } // namespace

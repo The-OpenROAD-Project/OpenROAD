@@ -144,6 +144,8 @@ void
 Resizer::init()
 {
   sta_->ensureLevelized();
+  copyState(sta_);
+  db_network_ = sta_->dbNetwork();
   ensureLevelDrvrVerticies();
   ensureClkNets();
   ensureCorner();

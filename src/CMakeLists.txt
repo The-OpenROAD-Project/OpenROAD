@@ -17,13 +17,15 @@ set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 
 set(OPENROAD_SOURCE
+  Main.cc
+  OpenRoad.cc
+  OpenRoad_wrap.cc
+  OpenRoadTclInitVar.cc
   StaDb.cc
   DbNetwork.cc
   DbSdcNetwork.cc
   VerilogToDb.cc
   InitFloorplan.cc
-  OpenRoad_wrap.cc
-  OpenRoadTclInitVar.cc
   )
 
 set(OPENROAD_HEADERS
@@ -67,13 +69,15 @@ set(OPENROAD_TCL_FILES
   OpenRoad.tcl
   VerilogToDb.tcl
   InitFloorplan.tcl
+  resizer/Resizer.tcl
   )
 
 # Only used for depends.
-set(STA_DB_SWIG_FILES
+set(OPENROAD_SWIG_FILES
   OpenRoad.i
   VerilogToDb.i
   InitFloorplan.i
+  resizer/Resizer.i
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i
@@ -93,49 +97,32 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o OpenRoad_wrap.cc OpenRoad.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS ${STA_DB_SWIG_FILES}
+  DEPENDS ${OPENROAD_SWIG_FILES}
   )
 
 ################################################################
 
-add_subdirectory(${OPENDB_HOME})
-add_subdirectory(${OPENSTA_HOME})
+add_subdirectory(OpenDB)
+add_subdirectory(OpenSTA)
 add_subdirectory(flute3)
 add_subdirectory(resizer)
 
 ################################################################
 
-add_library(StaDb
-  ${OPENROAD_SOURCE}
-  )
-
-target_include_directories(StaDb
-  PUBLIC ${OPENROAD_HOME}/include
-  PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
-  )
-
-target_compile_features(StaDb
-  PUBLIC cxx_auto_type
-  )
-
-target_compile_options(StaDb PUBLIC ${STA_COMPILE_OPTIONS})
-
-################################################################
-
 add_executable(openroad
-  Main.cc
-  OpenRoad.cc
+  ${OPENROAD_SOURCE}
   )
 
 target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
-  PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
+  PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include flute3
   )
 
 target_link_libraries(openroad
-  StaDb
+  resizer
+  flute
   OpenSTA
-  opendb 
+  opendb
   zutil 
   zlib 
   tm
