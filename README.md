@@ -1,19 +1,20 @@
-# OpenStaDB, OpenSTA on OpenDB
+# OpenROAD
 
-OpenStaDB the OpenSTA static timing analyzer that uses an OpenDB
-database for netlist connectivity.
+OpenROAD is a chip physical design tool. It uses the OpenDB database
+as a design database and representation. OpenSTA is used for static
+timing analysis.
 
 #### Build
 
-OpenStaDB depends on OpenSTA, and OpenDB. These source directories are
-git submodules and located in `/module`.
+OpenROAD depends on OpenSTA, and OpenDB, and flute3. These source
+directories are git submodules and located in `/src`.
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenStaDB.git
 cd OpenStaDB
 mkdir build
 cd build
-cmake .. -DBUILD_PYTHON=OFF -DBUILD_TCL=OFF
+cmake .. -DBUILD_TCL=OFF
 make
 ```
 
@@ -53,7 +54,7 @@ test/regression fast
 #### Run
 
 ```
-opensta_db
+openroad
   -help              show help and exit
   -version           show version and exit
   -no_init           do not read .sta init file
@@ -62,14 +63,14 @@ opensta_db
   cmd_file           source cmd_file
 ```
 
-opensta_db sources the TCL command file `~/.sta` unless the command
+OpenROAD sources the TCL command file `~/.sta` unless the command
 line option `-no_init` is specified.
 
-opensta_db then sources the command file cmd_file. Unless the `-exit`
+OpenROAD then sources the command file cmd_file. Unless the `-exit`
 command line flag is specified it enters and interactive TCL command
 interpreter.
 
-OpenStaDB is run using TCL scripts.  In addition to the OpenSTA
+OpenROAD is run using TCL scripts.  In addition to the OpenSTA
 commands documented in OpenSTA/doc/Sta.pdf, available commands are
 shown below.
 
@@ -81,13 +82,13 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
-init_sta_db
+init_sta_db (temporary command to initialize OpenSTA)
 initialize_floorplan 
 ```
 
-OpenStaDB can be used to make and OpenDB database from LEF/DEF, or
+OpenROAD can be used to make and OpenDB database from LEF/DEF, or
 Verilog (flat or hierarchical). Once the database is made it can be
-saved as a file with the `write_db` command. OpenStaDB can then read
+saved as a file with the `write_db` command. OpenROAD can then read
 the database with the `read_db` command without reading LEF/DEF or
 Verilog.
 
@@ -116,25 +117,6 @@ link_design top
 write_db reg1.db
 ```
 
-After the database has been read from LEF/DEF, Verilog or an OpenDB
-database, use the `read_liberty` command to read Liberty library files
-used by the design.
-
-The `init_sta_db` command is used to initialize OpenSTA after the database
-is built and liberty files have been read.
-
-The example script below timing analyzes a database.
-
-```
-read_db reg1.db
-read_liberty liberty1.lib
-init_sta_db
-create_clock -name clk -period 10 {clk1 clk2 clk3}
-set_input_delay -clock clk 0 {in1 in2}
-set_output_delay -clock clk 0 out
-report_checks
-```
-
 #### Initialize Floorplan
 
 initialize_floorplan
@@ -159,6 +141,107 @@ utilization as show below:
  core_height = core_width * aspect_ratio
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+
+#### Gate Resizer
+
+Gate resizer commands are shown below.
+
+```
+set_wire_rc [-resistance res ] [-capacitance cap] [-corner corner_name]
+resize [-buffer_inputs]
+       [-buffer_outputs]
+       [-resize]
+       [-resize_libraries resize_libraries]
+       [-repair_max_cap]
+       [-repair_max_slew]
+       [-buffer_cell buffer_cell]
+       [-dont_use cells]
+       [-max_utilization util]
+```
+
+The `set_wire_rc` command sets the resistance
+(resistance_unit/distance_unit) and capacitance
+(capacitance_unit/distance_unit) of routing wires. It adds RC
+parasitics based on placed component pin locations. If there are no
+component locations no parasitics are added. The resistance and
+capacitance are per distance unit of a routing wire. Use the
+`set_units` command to check units or `set_cmd_units` to change
+units. They should represent "average" routing layer resistance and
+capacitance. If the set_wire_rc command is not called before resizing,
+the default_wireload model specified in the first liberty file or with
+the SDC set_wire_load command is used to make parasitics.
+
+The `resize` command buffers inputs and outputs, resizes gates, and
+then uses buffer insertion to repair maximum capacitance and slew
+violations. Use the `-buffer_inputs`, `-buffer_outputs`, `-resize`,
+`-repair_max_cap` and `-repair_max_slew` options to invoke a single
+mode. With none of the options specified all are done. The
+`-buffer_cell` argument is required for buffer insertion
+(`-repair_max_cap` or `-repair_max_slew`). The `-resize_libraries`
+option specifies which libraries to use when
+resizing. `resize_libraries` defaults to all of the liberty libraries
+that have been read. Some designs have multiple libraries with
+different transistor thresholds (Vt) and are used to trade off power
+and speed. Chosing a low Vt library uses more power but results in a
+faster design after the resizing step. Use the `-dont_use` keyword to
+specify a list of patterns of cells to not use. For example, "*/DLY*"
+says do not use cells with names that begin with "DLY" in all
+libraries.
+
+The resizer stops when the design area is `-max_utilization util`
+percent of the core area. `util` is between 0 and 100.
+
+A typical resizer command file is shown below.
+
+```
+read_lef nlc18.lef
+read_def mea.def
+read_liberty nlc18.lib
+init_sta_db
+read_sdc mea.sdc
+set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
+set_design_size -die "0 0 1000 1000" -core "100 100 900 900"
+resize -buffer_cell [get_lib_cell nlc18_worst/snl_bufx4] -max_utilization 90
+write_def mea_resized.def
+```
+
+Note that OpenSTA commands can be used to report timing metrics before
+or after the resizing.
+
+```
+set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
+report_checks
+report_tns
+report_wns
+report_checks
+
+resize
+
+report_checks
+report_tns
+report_wns
+```
+
+#### Timing Analysis
+
+After the database has been read from LEF/DEF, Verilog or an OpenDB
+database, use the `read_liberty` command to read Liberty library files
+used by the design.
+
+The `init_sta_db` command is used to initialize OpenSTA after the database
+is built and liberty files have been read.
+
+The example script below timing analyzes a database.
+
+```
+read_db reg1.db
+read_liberty liberty1.lib
+init_sta_db
+create_clock -name clk -period 10 {clk1 clk2 clk3}
+set_input_delay -clock clk 0 {in1 in2}
+set_output_delay -clock clk 0 out
+report_checks
+```
 
 ## Authors
 
