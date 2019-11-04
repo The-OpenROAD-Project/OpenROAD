@@ -2,7 +2,6 @@
 # The next line is executed by /bin/sh, but not Tcl \
 exec tclsh $0 ${1+"$@"}
 
-# Resizer, LEF/DEF gate resizer
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -25,7 +24,10 @@ exec tclsh $0 ${1+"$@"}
 set test_dir [file dirname [file normalize [info script]]]
 source [file join $test_dir find_parent_dir.tcl]
 source [file join $test_dir regression_vars.tcl]
-source [file join $test_dir regression.tcl]
+set resizer_dir [find_parent_dir $test_dir]
+set openroad_src_dir [find_parent_dir $resizer_dir]
+set openroad_dir [find_parent_dir $openroad_src_dir]
+source [file join $openroad_dir "test" regression.tcl]
 
 regression_main
 

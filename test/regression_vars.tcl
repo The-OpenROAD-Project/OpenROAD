@@ -55,7 +55,7 @@ proc record_test { test cmd_dir } {
   return $test
 }
 
-# Record a test in the $RESIZER/test directory.
+# Record a test in the /test directory.
 proc record_tests { tests } {
   global test_dir
   foreach test $tests {
@@ -117,7 +117,7 @@ proc list_delete { list delete } {
 
 # Regression test lists.
 
-# Record tests in resizer/test
+# Record tests in /test
 record_tests {
   init_floorplan1
   init_floorplan2
@@ -130,6 +130,10 @@ record_tests {
   write_verilog2
   write_verilog3
   write_verilog4
+}
+
+record_resizer_tests {
+  resize1
 }
 
 # Record tests in $STAX/designs

@@ -17,6 +17,8 @@ Makefile
 /build
 /test/results
 
-OpenRoadTclInitVar.cc
+src/OpenRoadTclInitVar.cc
 src/OpenRoad_wrap.cc
-Version.hh
+include/openroad/Version.hh
+
+src/resizer/test/results

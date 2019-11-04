@@ -27,6 +27,7 @@
 #include "Network.hh"
 #include "sta_db/StaDb.hh"
 #include "openroad/Version.hh"
+#include "sta_db/DbNetwork.hh"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -56,22 +57,41 @@ getDb()
   return getOpenRoad()->getDb();
 }
 
+class CmdErrorNetworkNotLinked : public sta::StaException
+{
+public:
+  virtual const char *what() const throw()
+  { return "Error: no network has been linked."; }
+};
+
+void
+ensureLinked(OpenRoad *openroad)
+{
+  DbNetwork *network = openroad->getDbNetwork();
+  if (!network->isLinked())
+    throw CmdErrorNetworkNotLinked();
+}
+
+DbNetwork *
+getDbNetwork()
+{
+  OpenRoad *openroad = getOpenRoad();
+  ensureLinked(openroad);
+  return openroad->getDbNetwork();
+}
+
 StaDb *
 getSta()
 {
   return getOpenRoad()->getSta();
 }
 
-DbNetwork *
-getDbNetwork()
-{
-  return getOpenRoad()->getDbNetwork();
-}
-
 Resizer *
 getResizer()
 {
-  return getOpenRoad()->getResizer();
+  OpenRoad *openroad = getOpenRoad();
+  ensureLinked(openroad);
+  return openroad->getResizer();
 }
 
 %}
@@ -81,6 +101,8 @@ getResizer()
 // C++ functions visible as TCL functions.
 //
 ////////////////////////////////////////////////////////////////
+
+%include "StaException.i"
 
 %inline %{
 
@@ -99,7 +121,9 @@ openroad_git_sha1()
 void
 init_sta_db()
 {
-  StaDb *sta = getSta();
+  OpenRoad *openroad = getOpenRoad();
+  // getSta without link check.
+  StaDb *sta = openroad->getSta();
   sta->initNetwork();
 }
 
@@ -144,7 +168,6 @@ write_db_cmd(const char *filename)
 %} // inline
 
 // OpenSTA swig files
-%include "StaException.i"
 %include "StaTcl.i"
 %include "NetworkEdit.i"
 %include "Sdf.i"

@@ -106,12 +106,13 @@ private:
 };
 
 DbInstanceChildIterator::DbInstanceChildIterator(const Instance *instance,
-							 const DbNetwork *network) :
+						 const DbNetwork *network) :
   network_(network)
 {
-  if (instance == network->topInstance()) {
+  dbBlock *block = network->block();
+  if (instance == network->topInstance() && block) {
+    dbSet<dbInst> insts = block->getInsts();
     top_ = true;
-    dbSet<dbInst> insts = network->block()->getInsts();
     iter_ = insts.begin();
     end_ = insts.end();
   }

@@ -3,6 +3,7 @@ read_liberty nlc18.lib
 read_lef -tech -library nlc18.lef
 read_def reg1.def
 init_sta_db
+
 create_clock -name clk -period 10 {clk1 clk2 clk3}
 set_input_delay -clock clk 0 {in1 in2}
 
