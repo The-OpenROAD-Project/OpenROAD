@@ -121,10 +121,7 @@ proc list_delete { list delete } {
 
 # Record tests in resizer/test
 record_resizer_tests {
-  insert_buffer1
   make_parasitics1
-  read_def1
-  read_def2
   rebuffer1
   rebuffer2
   rebuffer4
@@ -140,20 +137,6 @@ record_resizer_tests {
   resize4
   resize5
   resize6
-  write_def1
-  write_def2
-  write_def3
-  write_def4
-  write_def5
-  write_def6
-  write_def7
-  verilog2def1
-  verilog2def2
-  verilog2def3
-  write_verilog1
-  write_verilog2
-  write_verilog3
-  write_verilog6
 }
 
 # Record tests in $STAX/designs

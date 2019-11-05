@@ -68,8 +68,6 @@ public:
   pinIterator(const Instance *instance) const;
   virtual InstanceNetIterator *
   netIterator(const Instance *instance) const;
-  virtual void replaceCell(Instance *inst,
-			   Cell *cell);
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -109,6 +107,32 @@ public:
   virtual ConstantPinIterator *constantPinIterator();
 
   ////////////////////////////////////////////////////////////////
+  // Edit functions
+  virtual Instance *makeInstance(LibertyCell *cell,
+				 const char *name,
+				 Instance *parent);
+  virtual void makePins(Instance *inst);
+  virtual void replaceCell(Instance *inst,
+			   Cell *cell);
+  // Deleting instance also deletes instance pins.
+  virtual void deleteInstance(Instance *inst);
+  // Connect the port on an instance to a net.
+  virtual Pin *connect(Instance *inst,
+		       Port *port,
+		       Net *net);
+  virtual Pin *connect(Instance *inst,
+		       LibertyPort *port,
+		       Net *net);
+  virtual void disconnectPin(Pin *pin);
+  virtual void deletePin(Pin *pin);
+  virtual Net *makeNet(const char *name,
+		       Instance *parent);
+  virtual void deleteNet(Net *net);
+  virtual void mergeInto(Net *net,
+			 Net *into_net);
+  virtual Net *mergedInto(Net *net);
+
+  ////////////////////////////////////////////////////////////////
   dbBlock *block() const { return block_; }
   void makeLibrary(dbLib *lib);
   void makeCell(Library *library,
@@ -123,6 +147,11 @@ public:
 	       dbBTerm *&bterm) const;
   dbBTerm *staToDb(const Term *term) const;
   dbMaster *staToDb(const Cell *cell) const;
+  dbMTerm *staToDb(const Port *port) const;
+  void staToDb(PortDirection *dir,
+	       // Return values.
+	       dbSigType &sig_type,
+	       dbIoType &io_type) const;
 
   Pin *dbToSta(dbBTerm *bterm) const;
   Term *dbToStaTerm(dbBTerm *bterm) const;

@@ -613,14 +613,15 @@ DbNetwork::vertexIndex(const Pin *pin) const
   staToDb(pin, iterm, bterm);
   if (iterm) {
     dbIntProperty *prop = dbIntProperty::find(iterm, "vertex_index");
-    return prop->getValue();
+    if (prop)
+      return prop->getValue();
   }
   else if (bterm) {
     dbIntProperty *prop = dbIntProperty::find(bterm, "vertex_index");
-    return prop->getValue();
+    if (prop)
+      return prop->getValue();
   }
-  else
-    return 0;
+  return 0;
 }
 
 void
@@ -820,6 +821,29 @@ DbNetwork::makeTopCell()
 
 ////////////////////////////////////////////////////////////////
 
+// Edit functions
+
+Instance *
+DbNetwork::makeInstance(LibertyCell *cell,
+			const char *name,
+			Instance *parent)
+{
+  if (parent == top_instance_) {
+    Cell *ccell = this->cell(cell);
+    dbMaster *master = staToDb(ccell);
+    dbInst *inst = dbInst::create(block_, master, name);
+    return dbToSta(inst);
+  }
+  else
+    return nullptr;
+}
+
+void
+DbNetwork::makePins(Instance *)
+{
+  // This space intentionally left blank.
+}
+
 void
 DbNetwork::replaceCell(Instance *inst,
 		       Cell *cell)
@@ -827,6 +851,119 @@ DbNetwork::replaceCell(Instance *inst,
   dbMaster *master = staToDb(cell);
   dbInst *dinst = staToDb(inst);
   dinst->swapMaster(master);
+}
+
+void
+DbNetwork::deleteInstance(Instance *inst)
+{
+  dbInst *dinst = staToDb(inst);
+  dbInst::destroy(dinst);
+}
+
+Pin *
+DbNetwork::connect(Instance *inst,
+		   Port *port,
+		   Net *net)
+{
+  dbNet *dnet = staToDb(net);
+  if (inst == top_instance_) {
+    const char *port_name = name(port);
+    dbBTerm *bterm = dbBTerm::create(dnet, port_name);
+    PortDirection *dir = direction(port);
+    dbSigType sig_type;
+    dbIoType io_type;
+    staToDb(dir, sig_type, io_type);
+    bterm->setSigType(sig_type);
+    bterm->setIoType(io_type);
+    return dbToSta(bterm);
+  }
+  else {
+    dbInst *dinst = staToDb(inst);
+    dbMTerm *dterm = staToDb(port);
+    dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
+    return dbToSta(iterm);
+  }
+}
+
+Pin *
+DbNetwork::connect(Instance *inst,
+		   LibertyPort *port,
+		   Net *net)
+{
+  dbNet *dnet = staToDb(net);
+  const char *port_name = port->name();
+  if (inst == top_instance_) {
+    dbBTerm *bterm = dbBTerm::create(dnet, port_name);
+    PortDirection *dir = port->direction();
+    dbSigType sig_type;
+    dbIoType io_type;
+    staToDb(dir, sig_type, io_type);
+    bterm->setSigType(sig_type);
+    bterm->setIoType(io_type);
+    return dbToSta(bterm);
+  }
+  else {
+    dbInst *dinst = staToDb(inst);
+    dbMaster *master = dinst->getMaster();
+    dbMTerm *dterm = master->findMTerm(port_name);
+    dbITerm *iterm = dbITerm::connect(dinst, dnet, dterm);
+    return dbToSta(iterm);
+  }
+}
+
+void
+DbNetwork::disconnectPin(Pin *pin)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm)
+    dbITerm::disconnect(iterm);
+  else if (bterm)
+    dbBTerm::destroy(bterm);
+}
+
+void
+DbNetwork::deletePin(Pin *pin)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm)
+    internalError("not implemented deletePin dbITerm");
+  else if (bterm)
+    dbBTerm::destroy(bterm);
+}
+
+Net *
+DbNetwork::makeNet(const char *name,
+		   Instance *parent)
+{
+  if (parent == top_instance_) {
+    dbNet *dnet = dbNet::create(block_, name, false);
+    return dbToSta(dnet);
+  }
+  return nullptr;
+}
+
+void
+DbNetwork::deleteNet(Net *net)
+{
+  dbNet *dnet = staToDb(net);
+  dbNet::destroy(dnet);
+}
+
+void
+DbNetwork::mergeInto(Net *,
+		     Net *)
+{
+  internalError("unimplemented network function mergeInto\n");
+}
+
+Net *
+DbNetwork::mergedInto(Net *)
+{
+  internalError("unimplemented network function mergeInto\n");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -849,7 +986,7 @@ DbNetwork::staToDb(const Pin *pin,
 		       dbITerm *&iterm,
 		       dbBTerm *&bterm) const
 {
- dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
+  dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
   dbObjectType type = obj->getObjectType();
   if (type == dbITermObj) {
     iterm = static_cast<dbITerm*>(obj);
@@ -877,6 +1014,45 @@ DbNetwork::staToDb(const Cell *cell) const
   dbLib *dlib = db_->findLib(lib_name);
   const char *cell_name = name(cell);
   return dlib->findMaster(cell_name);
+}
+
+dbMTerm *
+DbNetwork::staToDb(const Port *port) const
+{
+  Cell *cell = this->cell(port);
+  dbMaster *master = staToDb(cell);
+  const char *port_name = name(port);
+  return master->findMTerm(port_name);
+}
+
+void
+DbNetwork::staToDb(PortDirection *dir,
+		   // Return values.
+		   dbSigType &sig_type,
+		   dbIoType &io_type) const
+{
+  if (dir == PortDirection::input()) {
+    sig_type = dbSigType::SIGNAL;
+    io_type = dbIoType::INPUT;
+  }
+  else if (dir == PortDirection::output()) {
+    sig_type = dbSigType::SIGNAL;
+    io_type = dbIoType::OUTPUT;
+  }
+  else if (dir == PortDirection::bidirect()) {
+    sig_type = dbSigType::SIGNAL;
+    io_type = dbIoType::INOUT;
+  }
+  else if (dir == PortDirection::power()) {
+    sig_type = dbSigType::POWER;
+    io_type = dbIoType::INOUT;
+  }
+  else if (dir == PortDirection::ground()) {
+    sig_type = dbSigType::GROUND;
+    io_type = dbIoType::INOUT;
+  }
+  else
+    internalError("unhandled port direction");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -933,7 +1109,7 @@ DbNetwork::dbToSta(dbMaster *master) const
 
 PortDirection *
 DbNetwork::dbToSta(dbSigType sig_type,
-		       dbIoType io_type) const
+		   dbIoType io_type) const
 {
   if (sig_type == dbSigType::POWER)
     return PortDirection::power();

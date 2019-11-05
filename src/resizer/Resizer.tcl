@@ -16,15 +16,6 @@
 
 namespace eval sta {
 
-proc show_resizer_splash {} {
-  puts "Resizer [sta::resizer_version] [string range [sta::resizer_git_sha1] 0 9] Copyright (c) 2019, Parallax Software, Inc.
-License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
-
-This is free software, and you are free to change and redistribute it
-under certain conditions; type `show_copying' for details. 
-This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'."
-}
-
 # Defined by SWIG interface Resizer.i.
 define_cmd_args "set_dont_use" {cell dont_use}
 
