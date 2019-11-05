@@ -1,6 +1,6 @@
 # write_verilog reg1 with bus ports
 source "helpers.tcl"
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_def reg4.def
 init_sta_db
 

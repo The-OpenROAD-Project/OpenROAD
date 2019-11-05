@@ -132,10 +132,6 @@ record_tests {
   write_verilog4
 }
 
-record_resizer_tests {
-  resize1
-}
-
 # Record tests in $STAX/designs
 record_test_design {
   mea/mea_db_dcalc

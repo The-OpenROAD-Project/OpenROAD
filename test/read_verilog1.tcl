@@ -1,6 +1,6 @@
 # reg1
 source "helpers.tcl"
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_verilog reg1.v
 link_design top
 

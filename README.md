@@ -93,12 +93,14 @@ the database with the `read_db` command without reading LEF/DEF or
 Verilog.
 
 The `read_lef` and `read_def` commands can be used to build an OpenDB
-database as shown below. In this example the LEF contains both
-technology and MACRO definitions so the `-tech` and `-library` flags
-are used with the `read_lef` command.
+database as shown below. The `read_lef -tech` flag reads the
+technology portion of a LEF file.  The `read_lef -library` flag reads
+the MACROs in the LEF file.  If neither of the `-tech` and `-library`
+flags are specified they default to `-tech -library` if no technology
+has been read and `-library` otherwise.
 
 ```
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_def reg1.def
 # Write the db for future runs.
 write_db reg1.def
@@ -110,7 +112,7 @@ read.  The `link_design` command is used to flatten the design
 and make a database.
 
 ```
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_verilog reg1.v
 link_design top
 # Write the db for future runs.

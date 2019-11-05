@@ -1,7 +1,7 @@
 # resize -buffer_cell arg checks
 source "helpers.tcl"
 read_liberty liberty1.lib
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_def reg1.def
 init_sta_db
 

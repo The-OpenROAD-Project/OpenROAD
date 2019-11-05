@@ -1,5 +1,5 @@
 # lef/def reg1
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_def reg1.def
 read_liberty liberty1.lib
 init_sta_db

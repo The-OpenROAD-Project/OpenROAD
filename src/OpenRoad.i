@@ -26,8 +26,8 @@
 #include "Report.hh"
 #include "Network.hh"
 #include "sta_db/StaDb.hh"
-#include "openroad/Version.hh"
 #include "sta_db/DbNetwork.hh"
+#include "openroad/Version.hh"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -57,6 +57,7 @@ getDb()
   return getOpenRoad()->getDb();
 }
 
+// Copied from StaTcl.i because of ordering issues.
 class CmdErrorNetworkNotLinked : public sta::StaException
 {
 public:
@@ -116,6 +117,12 @@ const char *
 openroad_git_sha1()
 {
   return OPENROAD_GIT_SHA1;
+}
+
+bool
+db_has_tech()
+{
+  return getDb()->getTech() != nullptr;
 }
 
 void

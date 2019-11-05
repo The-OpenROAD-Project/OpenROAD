@@ -39,6 +39,7 @@ proc read_lef { args } {
   set make_lib [info exists flags(-library)]
   if { !$make_tech && !$make_lib} {
     set make_lib 1
+    set make_tech [expr ![sta::db_has_tech]]
   }
   set lib_name [file rootname [file tail $filename]]
   read_lef_cmd $filename $lib_name $make_tech $make_lib

@@ -1,6 +1,6 @@
 # write_verilog reg1
 source "helpers.tcl"
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_def reg1.def
 init_sta_db
 

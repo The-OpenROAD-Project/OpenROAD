@@ -1,6 +1,6 @@
 # init_floorplan -tracks
 source "helpers.tcl"
-read_lef -tech -library liberty1.lef
+read_lef liberty1.lef
 read_def reg1.def
 read_liberty liberty1.lib
 initialize_floorplan -die_area "0 0 1000 1000" \
