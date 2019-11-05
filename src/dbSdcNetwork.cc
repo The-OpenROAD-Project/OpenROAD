@@ -17,7 +17,7 @@
 #include "Machine.hh"
 #include "PatternMatch.hh"
 #include "ParseBus.hh"
-#include "DbSdcNetwork.hh"
+#include "dbSdcNetwork.hh"
 
 namespace sta {
 
@@ -25,14 +25,14 @@ static const char *
 escapeDividers(const char *token,
 	       const Network *network);
 
-DbSdcNetwork::DbSdcNetwork(Network *network) :
+dbSdcNetwork::dbSdcNetwork(Network *network) :
   SdcNetwork(network)
 {
 }
 
 // Override SdcNetwork to NetworkNameAdapter.
 Instance *
-DbSdcNetwork::findInstance(const char *path_name) const
+dbSdcNetwork::findInstance(const char *path_name) const
 {
   Instance *inst = network_->findInstance(path_name);
   if (inst == nullptr)
@@ -41,7 +41,7 @@ DbSdcNetwork::findInstance(const char *path_name) const
 }
 
 void
-DbSdcNetwork::findInstancesMatching(const Instance *,
+dbSdcNetwork::findInstancesMatching(const Instance *,
 				    const PatternMatch *pattern,
 				    InstanceSeq *insts) const
 {
@@ -65,7 +65,7 @@ DbSdcNetwork::findInstancesMatching(const Instance *,
 }
 
 void
-DbSdcNetwork::findInstancesMatching1(const PatternMatch *pattern,
+dbSdcNetwork::findInstancesMatching1(const PatternMatch *pattern,
 				     InstanceSeq *insts) const
 {
   InstanceChildIterator *child_iter = childIterator(topInstance());
@@ -78,7 +78,7 @@ DbSdcNetwork::findInstancesMatching1(const PatternMatch *pattern,
 }
 
 void
-DbSdcNetwork::findNetsMatching(const Instance *,
+dbSdcNetwork::findNetsMatching(const Instance *,
 			       const PatternMatch *pattern,
 			       NetSeq *nets) const
 {
@@ -102,7 +102,7 @@ DbSdcNetwork::findNetsMatching(const Instance *,
 }
 
 void
-DbSdcNetwork::findNetsMatching1(const PatternMatch *pattern,
+dbSdcNetwork::findNetsMatching1(const PatternMatch *pattern,
 				NetSeq *nets) const
 {
   NetIterator *net_iter = netIterator(topInstance());
@@ -115,7 +115,7 @@ DbSdcNetwork::findNetsMatching1(const PatternMatch *pattern,
 }
 
 void
-DbSdcNetwork::findPinsMatching(const Instance *instance,
+dbSdcNetwork::findPinsMatching(const Instance *instance,
 			       const PatternMatch *pattern,
 			       PinSeq *pins) const
 {
@@ -148,7 +148,7 @@ DbSdcNetwork::findPinsMatching(const Instance *instance,
 }
 
 void
-DbSdcNetwork::findMatchingPins(const Instance *instance,
+dbSdcNetwork::findMatchingPins(const Instance *instance,
 			       const PatternMatch *port_pattern,
 			       PinSeq *pins) const
 {
@@ -190,7 +190,7 @@ DbSdcNetwork::findMatchingPins(const Instance *instance,
 }
 
 Pin *
-DbSdcNetwork::findPin(const char *path_name) const
+dbSdcNetwork::findPin(const char *path_name) const
 {
   char *inst_path, *port_name;
   pathNameLast(path_name, inst_path, port_name);

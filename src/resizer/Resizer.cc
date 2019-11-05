@@ -60,12 +60,12 @@ using odb::dbPlacementStatus;
 
 bool
 pinIsPlaced(Pin *pin,
-	    const DbNetwork *network);
+	    const dbNetwork *network);
 adsPoint
 pinLocation(Pin *pin,
-	    const DbNetwork *network);
+	    const dbNetwork *network);
 
-Resizer::Resizer(StaDb *sta) :
+Resizer::Resizer(dbSta *sta) :
   StaState(sta),
   wire_res_(0.0),
   wire_cap_(0.0),
@@ -1412,7 +1412,7 @@ Resizer::designArea()
 
 adsPoint
 pinLocation(Pin *pin,
-	    const DbNetwork *network)
+	    const dbNetwork *network)
 {
   dbITerm *iterm;
   dbBTerm *bterm;
@@ -1433,7 +1433,7 @@ pinLocation(Pin *pin,
 
 bool
 pinIsPlaced(Pin *pin,
-	    const DbNetwork *network)
+	    const dbNetwork *network)
 {
   dbITerm *iterm;
   dbBTerm *bterm;

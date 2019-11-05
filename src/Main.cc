@@ -18,12 +18,12 @@
 #include "Machine.hh"
 #include "StringUtil.hh"
 #include "StaMain.hh"
-#include "sta_db/StaDb.hh"
+#include "db_sta/dbSta.hh"
 #include "openroad/Version.hh"
 #include "openroad/OpenRoad.hh"
 
 using sta::stringEq;
-using sta::StaDb;
+using sta::dbSta;
 using sta::staMain;
 using sta::showUsage;
 
@@ -50,7 +50,7 @@ main(int argc,
   }
   else {
     ord::OpenRoad *ord = ord::OpenRoad::openRoad();
-    StaDb *sta = ord->getSta();
+    dbSta *sta = ord->getSta();
     staMain(sta, argc, argv, Opensta_db_Init, sta::openroad_tcl_inits);
     return 0;
   }

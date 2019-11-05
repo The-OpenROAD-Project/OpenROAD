@@ -16,9 +16,9 @@
 #include "opendb/defin.h"
 #include "opendb/defout.h"
 #include "Machine.hh"
-#include "openroad/OpenRoad.hh"
-#include "sta_db/StaDb.hh"
+#include "db_sta/dbSta.hh"
 #include "resizer/Resizer.hh"
+#include "openroad/OpenRoad.hh"
 
 namespace ord {
 
@@ -26,7 +26,7 @@ OpenRoad OpenRoad::open_road_;
 
 OpenRoad::OpenRoad() :
   db_(odb::dbDatabase::create()),
-  sta_(new sta::StaDb(db_)),
+  sta_(new sta::dbSta(db_)),
   resizer_(new sta::Resizer(sta_))
 {
 }
@@ -98,7 +98,7 @@ OpenRoad::writeDb(const char *filename)
 
 ////////////////////////////////////////////////////////////////
 
-sta::DbNetwork *
+sta::dbNetwork *
 OpenRoad::getDbNetwork()
 {
   return sta_->dbNetwork();

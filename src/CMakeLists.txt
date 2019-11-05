@@ -21,18 +21,18 @@ set(OPENROAD_SOURCE
   OpenRoad.cc
   OpenRoad_wrap.cc
   OpenRoadTclInitVar.cc
-  StaDb.cc
-  DbNetwork.cc
-  DbSdcNetwork.cc
-  VerilogToDb.cc
+  dbSta.cc
+  dbNetwork.cc
+  dbSdcNetwork.cc
+  dbReadVerilog.cc
   InitFloorplan.cc
   )
 
 set(OPENROAD_HEADERS
-  StaDb.hh
-  DbNetwork.hh
-  DbSdcNetwork.hh
-  VerilogToDb.hh
+  dbSta.hh
+  dbNetwork.hh
+  dbSdcNetwork.hh
+  dbReadVerilog.hh
   InitFloorplan.hh
   )
 
@@ -67,7 +67,7 @@ set(OPENROAD_TCL_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.tcl
   ${OPENSTA_HOME}/sdf/Sdf.tcl
   OpenRoad.tcl
-  VerilogToDb.tcl
+  dbReadVerilog.tcl
   InitFloorplan.tcl
   resizer/Resizer.tcl
   )
@@ -75,7 +75,7 @@ set(OPENROAD_TCL_FILES
 # Only used for depends.
 set(OPENROAD_SWIG_FILES
   OpenRoad.i
-  VerilogToDb.i
+  dbReadVerilog.i
   InitFloorplan.i
   resizer/Resizer.i
   ${OPENSTA_HOME}/tcl/StaException.i
@@ -149,7 +149,7 @@ install(TARGETS openroad DESTINATION bin)
 
 ################################################################
 
-add_custom_target(openroad_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
+add_custom_target(openroad_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES} resizer/src/*.cc resizer/src/*.hh
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )

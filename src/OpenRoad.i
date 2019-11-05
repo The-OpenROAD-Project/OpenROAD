@@ -25,8 +25,8 @@
 #include "Machine.hh"
 #include "Report.hh"
 #include "Network.hh"
-#include "sta_db/StaDb.hh"
-#include "sta_db/DbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "db_sta/dbNetwork.hh"
 #include "openroad/Version.hh"
 #include "openroad/OpenRoad.hh"
 
@@ -39,8 +39,8 @@
 
 using ord::OpenRoad;
 
-using sta::StaDb;
-using sta::DbNetwork;
+using sta::dbSta;
+using sta::dbNetwork;
 using sta::Resizer;
 
 using odb::dbDatabase;
@@ -68,12 +68,12 @@ public:
 void
 ensureLinked(OpenRoad *openroad)
 {
-  DbNetwork *network = openroad->getDbNetwork();
+  dbNetwork *network = openroad->getDbNetwork();
   if (!network->isLinked())
     throw CmdErrorNetworkNotLinked();
 }
 
-DbNetwork *
+dbNetwork *
 getDbNetwork()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -81,7 +81,7 @@ getDbNetwork()
   return openroad->getDbNetwork();
 }
 
-StaDb *
+dbSta *
 getSta()
 {
   return getOpenRoad()->getSta();
@@ -130,7 +130,7 @@ init_sta_db()
 {
   OpenRoad *openroad = getOpenRoad();
   // getSta without link check.
-  StaDb *sta = openroad->getSta();
+  dbSta *sta = openroad->getSta();
   sta->initNetwork();
 }
 
@@ -181,6 +181,6 @@ write_db_cmd(const char *filename)
 %include "DelayCalc.i"
 %include "Parasitics.i"
 
-%include "VerilogToDb.i"
+%include "dbReadVerilog.i"
 %include "InitFloorplan.i"
 %include "resizer/Resizer.i"

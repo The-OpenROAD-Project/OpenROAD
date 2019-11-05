@@ -17,7 +17,7 @@
 #ifndef RESIZER_H
 #define RESIZER_H
 
-#include "sta_db/StaDb.hh"
+#include "db_sta/dbSta.hh"
 #include "SteinerTree.hh"
 
 namespace sta {
@@ -30,7 +30,7 @@ typedef Vector<RebufferOption*> RebufferOptionSeq;
 class Resizer : public StaState
 {
 public:
-  Resizer(StaDb *sta);
+  Resizer(dbSta *sta);
   void initFlute(const char *resizer_path);
 
   // Set the resistance and capacitance used for parasitics.
@@ -188,8 +188,8 @@ protected:
   LibertyCellSet dont_use_;
   double max_area_;
 
-  StaDb *sta_;
-  DbNetwork *db_network_;
+  dbSta *sta_;
+  dbNetwork *db_network_;
   dbDatabase *db_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;

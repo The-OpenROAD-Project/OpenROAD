@@ -21,7 +21,7 @@
 #include "Hash.hh"
 #include "UnorderedMap.hh"
 #include "opendb/geom.h"
-#include "sta_db/DbNetwork.hh"
+#include "db_sta/dbNetwork.hh"
 
 #define FLUTE_DTYPE int
 #include "flute.h"
@@ -42,7 +42,7 @@ readFluteInits(string dir);
 SteinerTree *
 makeSteinerTree(const Net *net,
 		bool find_left_rights,
-		DbNetwork *network);
+		dbNetwork *network);
 
 class adsPointHash
 {
@@ -75,7 +75,7 @@ public:
   ~SteinerTree();
   PinSeq &pins() { return pins_; }
   void setTree(Flute::Tree tree,
-	       const DbNetwork *network);
+	       const dbNetwork *network);
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
   void branch(int index,
@@ -92,7 +92,7 @@ public:
   Pin *steinerPtAlias(SteinerPt pt);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt(const Network *network) const;
-  bool isPlaced(const DbNetwork *network) const;
+  bool isPlaced(const dbNetwork *network) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,

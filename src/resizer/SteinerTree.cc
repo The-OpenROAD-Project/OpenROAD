@@ -41,10 +41,10 @@ connectedPins(const Net *net,
 	      PinSeq &pins);
 bool
 pinIsPlaced(Pin *pin,
-	    const DbNetwork *network);
+	    const dbNetwork *network);
 adsPoint
 pinLocation(Pin *pin,
-	    const DbNetwork *network);
+	    const dbNetwork *network);
 
 bool
 readFluteInits(string dir)
@@ -82,7 +82,7 @@ SteinerPt SteinerTree::null_pt = -1;
 SteinerTree *
 makeSteinerTree(const Net *net,
 		bool find_left_rights,
-		DbNetwork *network)
+		dbNetwork *network)
 {
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
@@ -147,7 +147,7 @@ connectedPins(const Net *net,
 
 void
 SteinerTree::setTree(Flute::Tree tree,
-		     const DbNetwork *network)
+		     const dbNetwork *network)
 {
   tree_ = tree;
   int pin_count = pins_.size();
@@ -178,7 +178,7 @@ SteinerTree::~SteinerTree()
 }
 
 bool
-SteinerTree::isPlaced(const DbNetwork *network) const
+SteinerTree::isPlaced(const dbNetwork *network) const
 {
   for (auto pin : pins_) {
     if (pinIsPlaced(pin, network))

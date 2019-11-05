@@ -38,11 +38,11 @@ using odb::dbSet;
 
 // This adapter implements the network api for OpenDB.
 // ConcreteNetwork is used for library/cell/port functions only.
-class DbNetwork : public ConcreteNetwork
+class dbNetwork : public ConcreteNetwork
 {
 public:
-  DbNetwork();
-  virtual ~DbNetwork();
+  dbNetwork();
+  virtual ~dbNetwork();
   void init(dbDatabase *db);
   virtual void clear();
 

@@ -21,10 +21,10 @@
 
 namespace sta {
 
-class DbSdcNetwork : public SdcNetwork
+class dbSdcNetwork : public SdcNetwork
 {
 public:
-  DbSdcNetwork(Network *network);
+  dbSdcNetwork(Network *network);
   virtual Instance *findInstance(const char *path_name) const;
   virtual void findInstancesMatching(const Instance *contex,
 				     const PatternMatch *pattern,
@@ -32,9 +32,9 @@ public:
   virtual void findNetsMatching(const Instance *,
 				const PatternMatch *pattern,
 				NetSeq *nets) const;
-virtual void findPinsMatching(const Instance *instance,
-			      const PatternMatch *pattern,
-			      PinSeq *pins) const;
+  virtual void findPinsMatching(const Instance *instance,
+				const PatternMatch *pattern,
+				PinSeq *pins) const;
 
 protected:
   void findInstancesMatching1(const PatternMatch *pattern,
