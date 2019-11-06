@@ -47,8 +47,16 @@ public:
 	       const char *lib_name,
 	       bool make_tech,
 	       bool make_library);
+
   void readDef(const char *filename);
   void writeDef(const char *filename);
+
+  void readVerilog(const char *filename);
+  // Write a flat verilog netlist for the database.
+  void writeVerilog(const char *filename,
+		    bool sort);
+  void linkDesign(const char *top_cell_name);
+
   void readDb(const char *filename);
   void writeDb(const char *filename);
 

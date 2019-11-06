@@ -23,10 +23,13 @@
 #include "Debug.hh"
 #include "Vector.hh"
 #include "PortDirection.hh"
-#include "Network.hh"
+#include "MakeConcreteNetwork.hh"
+#include "ConcreteNetwork.hh"
+#include "VerilogReader.hh"
+
 #include "opendb/db.h"
 
-namespace sta {
+namespace ord {
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -41,6 +44,41 @@ using odb::dbMTerm;
 using odb::dbITerm;
 using odb::dbSet;
 using odb::dbIoType;
+
+using sta::Network;
+using sta::NetworkReader;
+using sta::Report;
+using sta::Debug;
+using sta::PortDirection;
+using sta::Instance;
+using sta::Pin;
+using sta::Net;
+using sta::Cell;
+using sta::deleteVerilogReader;
+using sta::LeafInstanceIterator;
+using sta::NetIterator;
+using sta::NetTermIterator;
+using sta::ConnectedPinIterator;
+using sta::NetConnectedPinIterator;
+
+// Hierarchical network for read_verilog.
+// Cells and module networks are built here.
+static NetworkReader *verilog_network = nullptr;
+
+void
+dbReadVerilog(const char *filename,
+	      Report *report,
+	      Debug *debug)
+{
+  if (verilog_network == nullptr) {
+    verilog_network = sta::makeConcreteNetwork();
+    verilog_network->setReport(report);
+    verilog_network->setDebug(debug);
+  }
+  sta::readVerilogFile(filename, verilog_network);
+}
+
+////////////////////////////////////////////////////////////////
 
 class Verilog2db
 {
@@ -64,12 +102,21 @@ protected:
 };
 
 void
-verilog2db(Network *verilog_network,
-	   dbDatabase *db)
+dbLinkDesign(const char *top_cell_name,
+	     dbDatabase *db)
 {
-  Verilog2db v2db(verilog_network, db);
-  v2db.makeBlock();
-  v2db.makeDbNetlist();
+  if (verilog_network) {
+    bool link_make_black_boxes = true;
+    bool success = verilog_network->linkNetwork(top_cell_name,
+						link_make_black_boxes,
+						verilog_network->report());
+    if (success) {
+      Verilog2db v2db(verilog_network, db);
+      v2db.makeBlock();
+      v2db.makeDbNetlist();
+      deleteVerilogReader();
+    }
+  }
 }
 
 Verilog2db::Verilog2db(Network *network,

@@ -16,9 +16,12 @@
 #include "opendb/defin.h"
 #include "opendb/defout.h"
 #include "Machine.hh"
+#include "Report.hh"
+#include "VerilogWriter.hh"
 #include "db_sta/dbSta.hh"
 #include "resizer/Resizer.hh"
 #include "openroad/OpenRoad.hh"
+#include "dbReadVerilog.hh"
 
 namespace ord {
 
@@ -102,6 +105,31 @@ OpenRoad::writeDb(const char *filename)
     db_->write(stream);
     fclose(stream);
   }
+}
+
+void
+OpenRoad::readVerilog(const char *filename)
+{
+  ord::dbReadVerilog(filename,
+		     sta_->report(),
+		     sta_->debug());
+}
+
+void
+OpenRoad::linkDesign(const char *top_cell_name)
+
+{
+  if (db_->getTech() == nullptr)
+    sta_->report()->error("no technology has been read.\n");
+  dbLinkDesign(top_cell_name, db_);
+  sta_->readDbAfter();
+}
+
+void
+OpenRoad::writeVerilog(const char *filename,
+		       bool sort)
+{
+  sta::writeVerilog(filename, sort, sta_->network());
 }
 
 ////////////////////////////////////////////////////////////////

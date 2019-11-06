@@ -75,7 +75,6 @@ set(OPENROAD_TCL_FILES
 # Only used for depends.
 set(OPENROAD_SWIG_FILES
   OpenRoad.i
-  dbReadVerilog.i
   InitFloorplan.i
   resizer/Resizer.i
   ${OPENSTA_HOME}/tcl/StaException.i

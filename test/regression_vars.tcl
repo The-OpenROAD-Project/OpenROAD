@@ -124,7 +124,6 @@ record_tests {
   init_floorplan3
   read_verilog1
   read_verilog2
-  report_checks1
   sdc_names1
   sta1
   sta2

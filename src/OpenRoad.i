@@ -162,6 +162,28 @@ write_db_cmd(const char *filename)
   ord->writeDb(filename);
 }
 
+void
+read_verilog(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->readVerilog(filename);
+}
+
+void
+link_design_db_cmd(const char *top_cell_name)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->linkDesign(top_cell_name);
+}
+
+void
+write_verilog_cmd(const char *filename,
+		  bool sort)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeVerilog(filename, sort);
+}
+
 %} // inline
 
 // OpenSTA swig files
@@ -171,6 +193,5 @@ write_db_cmd(const char *filename)
 %include "DelayCalc.i"
 %include "Parasitics.i"
 
-%include "dbReadVerilog.i"
 %include "InitFloorplan.i"
 %include "resizer/Resizer.i"

@@ -18,19 +18,30 @@
 #define VERILOG2DB_H
 
 namespace odb {
-
 class dbDatabase;
-
 }
 
 namespace sta {
-
+class Debug;
+class Report;
 class Network;
+}
+
+namespace ord {
+
 using odb::dbDatabase;
+using sta::Debug;
+using sta::Report;
+using sta::Network;
 
 void
-verilog2db(Network *network,
-	   dbDatabase *db);
+dbReadVerilog(const char *filename,
+	      Report *report,
+	      Debug *debug);
+
+void
+dbLinkDesign(const char *top_cell_name,
+	     dbDatabase *db);
 
 } // namespace
 #endif
