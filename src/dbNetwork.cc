@@ -831,11 +831,12 @@ dbNetwork::makeInstance(LibertyCell *cell,
   if (parent == top_instance_) {
     Cell *ccell = this->cell(cell);
     dbMaster *master = staToDb(ccell);
-    dbInst *inst = dbInst::create(block_, master, name);
-    return dbToSta(inst);
+    if (master) {
+      dbInst *inst = dbInst::create(block_, master, name);
+      return dbToSta(inst);
+    }
   }
-  else
-    return nullptr;
+  return nullptr;
 }
 
 void
@@ -1012,8 +1013,12 @@ dbNetwork::staToDb(const Cell *cell) const
   Library *lib = library(cell);
   const char *lib_name = name(lib);
   dbLib *dlib = db_->findLib(lib_name);
-  const char *cell_name = name(cell);
-  return dlib->findMaster(cell_name);
+  if (dlib) {
+    const char *cell_name = name(cell);
+    return dlib->findMaster(cell_name);
+  }
+  else
+    return nullptr;
 }
 
 dbMTerm *

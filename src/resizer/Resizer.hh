@@ -39,31 +39,8 @@ public:
 		 float wire_cap, // farads/meter
 		 Corner *corner);
 
-  // Die area (meters).
-  double dieArea() const;
-  bool haveDieArea() const;
-  void dieSize(// Return values.
-	       double &die_lx,
-	       double &die_ly,
-	       double &die_ux,
-	       double &die_uy);
-  void setDieSize(double die_lx,
-		  double die_ly,
-		  double die_ux,
-		  double die_uy);
-
   // Core area (meters).
   double coreArea() const;
-  bool haveCoreArea() const;
-  void coreSize(// Return values.
-		double &core_lx,
-		double &core_ly,
-		double &core_ux,
-		double &core_uy);
-  void setCoreSize(double core_lx,
-		   double core_ly,
-		   double core_ux,
-		   double core_uy);
   // 0.0 - 1.0 (100%) of core size.
   double utilization();
 

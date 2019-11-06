@@ -19,13 +19,22 @@
 #include "StringUtil.hh"
 #include "StaMain.hh"
 #include "db_sta/dbSta.hh"
+#include "resizer/Resizer.hh"
 #include "openroad/Version.hh"
 #include "openroad/OpenRoad.hh"
 
+using ord::OpenRoad;
+
 using sta::stringEq;
+using sta::Sta;
 using sta::dbSta;
-using sta::staMain;
+using sta::initSta;
 using sta::showUsage;
+using sta::staSetupAppInit;
+using sta::staTclAppInit;
+using sta::parseThreadsArg;
+
+using sta::Resizer;
 
 // Swig uses C linkage for init functions.
 extern "C" {
@@ -49,9 +58,25 @@ main(int argc,
     return 0;
   }
   else {
-    ord::OpenRoad *ord = ord::OpenRoad::openRoad();
+    OpenRoad *ord = ord::OpenRoad::openRoad();
+
+    initSta();
     dbSta *sta = ord->getSta();
-    staMain(sta, argc, argv, Opensta_db_Init, sta::openroad_tcl_inits);
+    Sta::setSta(sta);
+    sta->makeComponents();
+
+    Resizer *resizer = ord->getResizer();
+    resizer->copyState(sta);
+    resizer->initFlute(argv[0]);
+
+    int thread_count = parseThreadsArg(argc, argv);
+    sta->setThreadCount(thread_count);
+
+    staSetupAppInit(argc, argv, ".openroad", Opensta_db_Init,
+		    sta::openroad_tcl_inits);
+    // Set argc to 1 so Tcl_Main doesn't source any files.
+    // Tcl_Main never returns.
+    Tcl_Main(1, argv, staTclAppInit);
     return 0;
   }
 }

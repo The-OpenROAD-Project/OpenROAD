@@ -57,6 +57,7 @@ using std::string;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
+using odb::adsRect;
 
 bool
 pinIsPlaced(Pin *pin,
@@ -78,7 +79,6 @@ Resizer::Resizer(dbSta *sta) :
   level_drvr_verticies_valid_(false),
   unique_net_index_(1),
   unique_buffer_index_(1),
-  core_area_(0.0),
   design_area_(0.0)
 {
 }
@@ -88,20 +88,17 @@ Resizer::Resizer(dbSta *sta) :
 double
 Resizer::coreArea() const
 {
-  return core_area_;
-}
-
-bool
-Resizer::haveCoreArea() const
-{
-  return core_area_ > 0.0;
+  adsRect rect;
+  db_->getChip()->getBlock()->getDieArea(rect);
+  return dbuToMeters(rect.dx()) * dbuToMeters(rect.dy());
 }
 
 double
 Resizer::utilization()
 {
-  if (haveCoreArea())
-    return designArea() / coreArea();
+  double core_area = coreArea();
+  if (core_area > 0.0)
+    return designArea() / core_area;
   else
     return 1.0;
 }
@@ -143,9 +140,10 @@ VertexLevelLess::operator()(const Vertex *vertex1,
 void
 Resizer::init()
 {
-  sta_->ensureLevelized();
-  copyState(sta_);
   db_network_ = sta_->dbNetwork();
+  sta_->ensureLevelized();
+  // In case graph was made by ensureLevelized.
+  graph_ = sta_->graph();
   ensureLevelDrvrVerticies();
   ensureClkNets();
   ensureCorner();
@@ -156,6 +154,10 @@ Resizer::setWireRC(float wire_res,
 		   float wire_cap,
 		   Corner *corner)
 {
+  // Abbreviated copyState
+  graph_delay_calc_ = sta_->graphDelayCalc();
+  search_ = sta_->search();
+
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
@@ -245,17 +247,19 @@ Resizer::bufferInput(Pin *top_pin,
   Instance *buffer = db_network_->makeInstance(buffer_cell,
 					       buffer_name.c_str(),
 					       parent);
-  setLocation(buffer, pinLocation(top_pin, db_network_));
-  inserted_buffer_count_++;
+  if (buffer) {
+    setLocation(buffer, pinLocation(top_pin, db_network_));
+    inserted_buffer_count_++;
 
-  NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    sta_->disconnectPin(pin);
-    sta_->connectPin(db_network_->instance(pin), db_network_->port(pin), buffer_out);
+    NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
+    while (pin_iter->hasNext()) {
+      Pin *pin = pin_iter->next();
+      sta_->disconnectPin(pin);
+      sta_->connectPin(db_network_->instance(pin), db_network_->port(pin), buffer_out);
+    }
+    sta_->connectPin(buffer, input, input_net);
+    sta_->connectPin(buffer, output, buffer_out);
   }
-  sta_->connectPin(buffer, input, input_net);
-  sta_->connectPin(buffer, output, buffer_out);
 }
 
 void
@@ -298,17 +302,19 @@ Resizer::bufferOutput(Pin *top_pin,
   Instance *buffer = network->makeInstance(buffer_cell,
 					   buffer_name.c_str(),
 					   parent);
-  setLocation(buffer, pinLocation(top_pin, db_network_));
-  inserted_buffer_count_++;
+  if (buffer) {
+    setLocation(buffer, pinLocation(top_pin, db_network_));
+    inserted_buffer_count_++;
 
-  NetPinIterator *pin_iter(network->pinIterator(output_net));
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    sta_->disconnectPin(pin);
-    sta_->connectPin(network->instance(pin), network->port(pin), buffer_in);
+    NetPinIterator *pin_iter(network->pinIterator(output_net));
+    while (pin_iter->hasNext()) {
+      Pin *pin = pin_iter->next();
+      sta_->disconnectPin(pin);
+      sta_->connectPin(network->instance(pin), network->port(pin), buffer_in);
+    }
+    sta_->connectPin(buffer, input, buffer_in);
+    sta_->connectPin(buffer, output, output_net);
   }
-  sta_->connectPin(buffer, input, buffer_in);
-  sta_->connectPin(buffer, output, output_net);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -441,7 +447,7 @@ Resizer::dbuToMeters(uint dist) const
 void
 Resizer::setMaxUtilization(double max_utilization)
 {
-  max_area_ = core_area_ * max_utilization;
+  max_area_ = coreArea() * max_utilization;
 }
 
 bool
@@ -647,27 +653,36 @@ void
 Resizer::initFlute(const char *resizer_path)
 {
   string resizer_dir = resizer_path;
-  // One directory level up from /bin or /build to find /etc.
+  // Look up one directory level from /build/src.
   auto last_slash = resizer_dir.find_last_of("/");
   if (last_slash != string::npos) {
     resizer_dir.erase(last_slash);
     last_slash = resizer_dir.find_last_of("/");
     if (last_slash != string::npos) {
       resizer_dir.erase(last_slash);
-      if (readFluteInits(resizer_dir))
-	return;
-    }
-    else {
-      // try ./etc2
-      resizer_dir = ".";
-      if (readFluteInits(resizer_dir))
-	return;
+      last_slash = resizer_dir.find_last_of("/");
+      if (last_slash != string::npos) {
+	resizer_dir.erase(last_slash);
+	if (readFluteInits(resizer_dir))
+	  return;
+      }
     }
   }
+  // try ./etc
+  resizer_dir = ".";
+  if (readFluteInits(resizer_dir))
+    return;
+
   // try ../etc
   resizer_dir = "..";
   if (readFluteInits(resizer_dir))
     return;
+
+  // try ../../etc
+  resizer_dir = "../..";
+  if (readFluteInits(resizer_dir))
+    return;
+
   printf("Error: could not find FluteLUT files POWV9.dat and POST9.dat.\n");
   exit(EXIT_FAILURE);
 }

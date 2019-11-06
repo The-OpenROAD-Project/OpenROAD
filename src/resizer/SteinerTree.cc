@@ -49,6 +49,7 @@ pinLocation(Pin *pin,
 bool
 readFluteInits(string dir)
 {
+  //  printf("flute try %s\n", dir.c_str());
   string etc;
   stringPrint(etc, "%s/etc", dir.c_str());
   string flute_path1;
