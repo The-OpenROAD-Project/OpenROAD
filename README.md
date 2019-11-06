@@ -57,13 +57,13 @@ test/regression fast
 openroad
   -help              show help and exit
   -version           show version and exit
-  -no_init           do not read .sta init file
+  -no_init           do not read .openroad init file
   -no_splash         do not show the license splash at startup
   -exit              exit after reading cmd_file
   cmd_file           source cmd_file
 ```
 
-OpenROAD sources the TCL command file `~/.sta` unless the command
+OpenROAD sources the TCL command file `~/.openroad` unless the command
 line option `-no_init` is specified.
 
 OpenROAD then sources the command file cmd_file. Unless the `-exit`
