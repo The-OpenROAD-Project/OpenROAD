@@ -378,6 +378,12 @@ dbNetwork::~dbNetwork()
 }
 
 void
+dbNetwork::setDb(dbDatabase *db)
+{
+  db_ = db;
+}
+
+void
 dbNetwork::clear()
 {
   db_ = nullptr;
@@ -760,9 +766,8 @@ dbNetwork::linkNetwork(const char *,
 
 // Make ConcreteLibrary/Cell/Port objects for the db library/master/MTerm objects.
 void
-dbNetwork::init(dbDatabase *db)
+dbNetwork::readDbAfter()
 {
-  db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();

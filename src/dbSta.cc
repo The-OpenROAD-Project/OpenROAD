@@ -28,17 +28,18 @@ dbSta::dbSta(dbDatabase *db) :
 {
 }
 
-
-void
-dbSta::initNetwork()
-{
-  dbNetwork()->init(db_);
-}
-
 dbNetwork *
 dbSta::dbNetwork()
 {
   return dynamic_cast<class dbNetwork *>(network_);
+}
+
+// Wrapper to init network db.
+void
+dbSta::makeComponents()
+{
+  Sta::makeComponents();
+  dbNetwork()->setDb(db_);
 }
 
 void
@@ -51,6 +52,12 @@ void
 dbSta::makeSdcNetwork()
 {
   sdc_network_ = new dbSdcNetwork(network_);
+}
+
+void
+dbSta::readDbAfter()
+{
+  dbNetwork()->readDbAfter();
 }
 
 }

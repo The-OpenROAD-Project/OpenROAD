@@ -43,8 +43,10 @@ class dbNetwork : public ConcreteNetwork
 public:
   dbNetwork();
   virtual ~dbNetwork();
-  void init(dbDatabase *db);
+  void setDb(dbDatabase *db);
   virtual void clear();
+
+  void readDbAfter();
 
   virtual bool linkNetwork(const char *top_cell_name,
 			   bool make_black_boxes,

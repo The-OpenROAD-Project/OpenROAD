@@ -3,7 +3,6 @@ source "helpers.tcl"
 read_lef liberty1.lef
 read_lef liberty1.lef
 read_def write_verilog4.def
-init_sta_db
 
 set verilog_file [make_result_file write_verilog4.v]
 write_verilog  $verilog_file

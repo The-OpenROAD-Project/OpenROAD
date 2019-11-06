@@ -76,7 +76,6 @@ Path Type: max
            0.06   slack (MET)
 
 
-Error: resize4.tcl, 19 write_def requires one positional argument.
 VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
@@ -85,10 +84,10 @@ DESIGN top ;
 UNITS DISTANCE MICRONS 1000 ;
 DIEAREA ( -1000 -1000 ) ( 1000 1000 ) ;
 COMPONENTS 5 ;
-    - r1 snl_ffqx4 ;
+    - r1 snl_ffqx2 ;
     - r2 snl_ffqx2 ;
     - r3 snl_ffqx1 ;
-    - u1 snl_bufx8 ;
+    - u1 snl_bufx12 ;
     - u2 snl_and02x1 ;
 END COMPONENTS
 PINS 6 ;

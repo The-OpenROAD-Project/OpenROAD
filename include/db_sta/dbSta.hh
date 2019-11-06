@@ -30,9 +30,10 @@ class dbSta : public Sta
 {
 public:
   dbSta(dbDatabase *db);
-  void initNetwork();
   dbDatabase *db() { return db_; }
+  virtual void makeComponents();
   dbNetwork *dbNetwork();
+  void readDbAfter();
 
 protected:
   virtual void makeNetwork();

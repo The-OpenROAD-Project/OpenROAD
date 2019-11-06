@@ -82,7 +82,6 @@ read_lef liberty1.lef
 set def_file [make_result_file rebuffer3.def]
 write_reg_fanout_def 60 $def_file
 read_def $def_file
-init_sta_db
 create_clock clk -period 1
 
 # kohm/micron, pf/micron

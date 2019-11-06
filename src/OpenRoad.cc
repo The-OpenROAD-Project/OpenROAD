@@ -22,10 +22,10 @@
 
 namespace ord {
 
-OpenRoad OpenRoad::open_road_;
+OpenRoad *OpenRoad::openroad_ = nullptr;
 
-OpenRoad::OpenRoad() :
-  db_(odb::dbDatabase::create()),
+OpenRoad::OpenRoad(dbDatabase *db) :
+  db_(db),
   sta_(new sta::dbSta(db_)),
   resizer_(new sta::Resizer(sta_))
 {
@@ -36,6 +36,12 @@ OpenRoad::~OpenRoad()
   delete sta_;
   delete resizer_;
   odb::dbDatabase::destroy(db_);
+}
+
+void
+OpenRoad::setOpenRoad(OpenRoad *openroad)
+{
+  openroad_ = openroad;
 }
 
 void
@@ -61,6 +67,7 @@ OpenRoad::readDef(const char *filename)
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
   def_reader.createChip(search_libs, filename);
+  sta_->readDbAfter();
 }
 
 void
@@ -82,6 +89,7 @@ OpenRoad::readDb(const char *filename)
   FILE *stream = fopen(filename, "r");
   if (stream) {
     db_->read(stream);
+    sta_->readDbAfter();
     fclose(stream);
   }
 }

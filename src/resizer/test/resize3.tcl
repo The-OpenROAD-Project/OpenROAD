@@ -3,7 +3,6 @@ source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def reg1.def
-init_sta_db
 
 resize -buffer_cell xxx/yyy
 resize -buffer_cell liberty1/yyy

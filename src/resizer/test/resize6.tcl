@@ -4,8 +4,6 @@ read_liberty nlc18.lib
 read_lef -tech liberty1.lef
 read_lef nlc18.lef
 read_def rebuffer2.def
-init_sta_db
-
 create_clock clk -period 1
 
 set buffer_cell [get_lib_cell nlc18/snl_bufx2]

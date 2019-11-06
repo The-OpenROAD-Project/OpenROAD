@@ -26,14 +26,18 @@ class Resizer;
 
 namespace ord {
 
+using odb::dbDatabase;
+
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
 public:
-  OpenRoad();
+  OpenRoad(dbDatabase *db);
   ~OpenRoad();
   // Singleton accessor used by tcl command interpreter.
-  static OpenRoad *openRoad() { return &open_road_; }
+  static OpenRoad *openRoad() { return openroad_; }
+  static void setOpenRoad(OpenRoad *openroad);
+
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -54,7 +58,7 @@ private:
   sta::Resizer *resizer_;
 
   // Singleton used by tcl command interpreter.
-  static OpenRoad open_road_;
+  static OpenRoad *openroad_;
 };
 
 } // namespace

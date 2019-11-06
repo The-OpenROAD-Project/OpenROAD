@@ -3,7 +3,6 @@ source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def reg3.def
-init_sta_db
 create_clock clk -period 1
 
 set buffer_cell [get_lib_cell liberty1/snl_bufx2]

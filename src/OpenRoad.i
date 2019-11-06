@@ -126,15 +126,6 @@ db_has_tech()
 }
 
 void
-init_sta_db()
-{
-  OpenRoad *openroad = getOpenRoad();
-  // getSta without link check.
-  dbSta *sta = openroad->getSta();
-  sta->initNetwork();
-}
-
-void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
 	     bool make_tech,

@@ -25,6 +25,8 @@
 
 using ord::OpenRoad;
 
+using odb::dbDatabase;
+
 using sta::stringEq;
 using sta::Sta;
 using sta::dbSta;
@@ -58,14 +60,16 @@ main(int argc,
     return 0;
   }
   else {
-    OpenRoad *ord = ord::OpenRoad::openRoad();
+    dbDatabase *db = dbDatabase::create();
+    OpenRoad *openroad = new OpenRoad(db);
+    OpenRoad::setOpenRoad(openroad);
 
     initSta();
-    dbSta *sta = ord->getSta();
+    dbSta *sta = openroad->getSta();
     Sta::setSta(sta);
     sta->makeComponents();
 
-    Resizer *resizer = ord->getResizer();
+    Resizer *resizer = openroad->getResizer();
     resizer->copyState(sta);
     resizer->initFlute(argv[0]);
 

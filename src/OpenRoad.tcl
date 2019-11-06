@@ -1,4 +1,3 @@
-# Verilog2db, Verilog to OpenDB
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -24,9 +23,6 @@ This is free software, and you are free to change and redistribute it
 under certain conditions; type `show_copying' for details. 
 This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'."
 }
-
-# Defined by swig.
-define_cmd_args "init_sta_db" {}
 
 # -library is the default
 define_cmd_args "read_lef" {[-tech] [-library] filename}
