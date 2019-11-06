@@ -68,9 +68,6 @@ define_cmd_args "write_def" {filename}
 proc write_def { args } {
   check_argc_eq1 "write_def" $args
   set filename $args
-  if { ![file writeable $filename] } {
-    sta_error "$filename is not writeable."
-  }
   write_def_cmd $filename
 }
 
@@ -93,9 +90,6 @@ define_cmd_args "write_db" {filename}
 proc write_db { args } {
   check_argc_eq1 "write_db" $args
   set filename $args
-  if { ![file writeable $filename] } {
-    sta_error "$filename is not writeable."
-  }
   write_db_cmd $filename
 }
 
