@@ -82,7 +82,6 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
-init_sta_db (temporary command to initialize OpenSTA)
 initialize_floorplan 
 ```
 
@@ -197,9 +196,8 @@ A typical resizer command file is shown below.
 
 ```
 read_lef nlc18.lef
-read_def mea.def
 read_liberty nlc18.lib
-init_sta_db
+read_def mea.def
 read_sdc mea.sdc
 set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
 set_design_size -die "0 0 1000 1000" -core "100 100 900 900"
@@ -230,15 +228,11 @@ After the database has been read from LEF/DEF, Verilog or an OpenDB
 database, use the `read_liberty` command to read Liberty library files
 used by the design.
 
-The `init_sta_db` command is used to initialize OpenSTA after the database
-is built and liberty files have been read.
-
 The example script below timing analyzes a database.
 
 ```
-read_db reg1.db
 read_liberty liberty1.lib
-init_sta_db
+read_db reg1.db
 create_clock -name clk -period 10 {clk1 clk2 clk3}
 set_input_delay -clock clk 0 {in1 in2}
 set_output_delay -clock clk 0 out

@@ -30,7 +30,15 @@ define_cmd_args "read_lef" {[-tech] [-library] filename}
 proc read_lef { args } {
   parse_key_args "read_lef" args keys {} flags {-tech -library}
   check_argc_eq1 "read_lef" $args
+
   set filename $args
+  if { ![file exists $filename] } {
+    sta_error "$filename does not exist."
+  }
+  if { ![file readable $filename] } {
+    sta_error "$filename is not readable."
+  }
+
   set make_tech [info exists flags(-tech)]
   set make_lib [info exists flags(-library)]
   if { !$make_tech && !$make_lib} {
@@ -46,6 +54,12 @@ define_cmd_args "read_def" {filename}
 proc read_def { args } {
   check_argc_eq1 "read_def" $args
   set filename $args
+  if { ![file exists $filename] } {
+    sta_error "$filename does not exist."
+  }
+  if { ![file readable $filename] } {
+    sta_error "$filename is not readable."
+  }
   read_def_cmd $filename
 }
 
@@ -54,6 +68,9 @@ define_cmd_args "write_def" {filename}
 proc write_def { args } {
   check_argc_eq1 "write_def" $args
   set filename $args
+  if { ![file writeable $filename] } {
+    sta_error "$filename is not writeable."
+  }
   write_def_cmd $filename
 }
 
@@ -62,6 +79,12 @@ define_cmd_args "read_db" {filename}
 proc read_db { args } {
   check_argc_eq1 "read_db" $args
   set filename $args
+  if { ![file exists $filename] } {
+    sta_error "$filename does not exist."
+  }
+  if { ![file readable $filename] } {
+    sta_error "$filename is not readable."
+  }
   read_db_cmd $filename
 }
 
@@ -70,6 +93,9 @@ define_cmd_args "write_db" {filename}
 proc write_db { args } {
   check_argc_eq1 "write_db" $args
   set filename $args
+  if { ![file writeable $filename] } {
+    sta_error "$filename is not writeable."
+  }
   write_db_cmd $filename
 }
 

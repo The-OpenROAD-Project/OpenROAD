@@ -60,4 +60,18 @@ dbSta::readDbAfter()
   dbNetwork()->readDbAfter();
 }
 
+// Wrapper to sync db/liberty libraries.
+LibertyLibrary *
+dbSta::readLiberty(const char *filename,
+		   Corner *corner,
+		   const MinMaxAll *min_max,
+		   bool infer_latches)
+
+{
+  LibertyLibrary *lib = Sta::readLiberty(filename, corner, min_max,
+					 infer_latches);
+  dbNetwork()->readLibertyAfter(lib);
+  return lib;
+}
+
 }

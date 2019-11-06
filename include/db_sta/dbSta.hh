@@ -34,6 +34,10 @@ public:
   virtual void makeComponents();
   dbNetwork *dbNetwork();
   void readDbAfter();
+  virtual LibertyLibrary *readLiberty(const char *filename,
+				      Corner *corner,
+				      const MinMaxAll *min_max,
+				      bool infer_latches);
 
 protected:
   virtual void makeNetwork();

@@ -47,6 +47,7 @@ public:
   virtual void clear();
 
   void readDbAfter();
+  void readLibertyAfter(LibertyLibrary *lib);
 
   virtual bool linkNetwork(const char *top_cell_name,
 			   bool make_black_boxes,
