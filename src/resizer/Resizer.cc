@@ -453,7 +453,8 @@ Resizer::setMaxUtilization(double max_utilization)
 bool
 Resizer::overMaxArea()
 {
-  return max_area_ && design_area_ > max_area_;
+  return max_area_
+    && fuzzyGreaterEqual(design_area_, max_area_);
 }
 
 void
