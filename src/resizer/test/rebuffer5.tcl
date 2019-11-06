@@ -3,6 +3,7 @@ source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def reg3.def
+init_sta_db
 create_clock clk -period 1
 set_input_delay -clock clk 0 in1
 # driving cell so input net has non-zero slew
@@ -23,5 +24,5 @@ report_check_types -max_transition -all_violators
 report_checks -fields {input_pin transition_time capacitance}
 
 set def_file [make_result_file rebuffer5.def]
-write_def -sort $def_file
+write_def $def_file
 report_file $def_file

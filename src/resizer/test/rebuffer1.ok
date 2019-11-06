@@ -1,3 +1,26 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: 
+Reading DEF file: rebuffer1.def
+
+No Logger: notice 0: Design: reg1
+
+No Logger: notice 0:     Created 1 pins.
+
+No Logger: notice 0:     Created 5 components and 25 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 10 connections.
+
+No Logger: notice 0:     Created 2 nets and 10 connections.
+
+No Logger: notice 0: Finished DEF file: rebuffer1.def
+
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r5 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -55,53 +78,31 @@ Path Type: max
                   -5.81   slack (VIOLATED)
 
 
-###############################################################################
-# r1 driving r2-r5 from end
-###############################################################################
-
-VERSION 5.5 ; 
+VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-
 DESIGN reg1 ;
-TECHNOLOGY technology ;
-
 UNITS DISTANCE MICRONS 1000 ;
-
 DIEAREA ( 0 0 ) ( 1000 1000 ) ;
-
 COMPONENTS 6 ;
-- buffer1 snl_bufx2
-+ PLACED ( 100000 100000 ) N ;
-- r1 snl_ffqx1
-+ PLACED ( 100000 100000 ) N ;
-- r2 snl_ffqx1
-+ PLACED ( 100000 200000 ) N ;
-- r3 snl_ffqx1
-+ PLACED ( 100000 300000 ) N ;
-- r4 snl_ffqx1
-+ PLACED ( 100000 400000 ) N ;
-- r5 snl_ffqx1
-+ PLACED ( 100000 500000 ) N ;
+    - r1 snl_ffqx1 + PLACED ( 100000 100000 ) N ;
+    - r2 snl_ffqx1 + PLACED ( 100000 200000 ) N ;
+    - r3 snl_ffqx1 + PLACED ( 100000 300000 ) N ;
+    - r4 snl_ffqx1 + PLACED ( 100000 400000 ) N ;
+    - r5 snl_ffqx1 + PLACED ( 100000 500000 ) N ;
+    - buffer1 snl_bufx2 + PLACED ( 100000 100000 ) N ;
 END COMPONENTS
-
 PINS 1 ;
-- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 100000 100520 ) N + LAYER M1 ( -100 -520 ) ( 100 520 ) ;
 END PINS
-
 SPECIALNETS 2 ;
-- VSS  ( * VSS )
-  + USE GROUND ;
-- VDD  ( * VDD )
-  + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( * VDD ) + USE POWER ;
 END SPECIALNETS
-
 NETS 3 ;
-- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ( r4 CP ) ( r5 CP ) ;
-- net1 ( buffer1 Z ) ( r2 D ) ( r3 D ) ( r4 D ) ( r5 D ) ;
-- r1q ( buffer1 A ) ( r1 Q ) ;
+    - clk ( r1 CP ) ( r2 CP ) ( r3 CP ) ( r4 CP ) ( r5 CP ) + USE SIGNAL ;
+    - r1q ( buffer1 A ) ( r1 Q ) + USE SIGNAL ;
+    - net1 ( r5 D ) ( r4 D ) ( r3 D ) ( r2 D ) ( buffer1 Z ) + USE SIGNAL ;
 END NETS
-
 END DESIGN

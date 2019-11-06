@@ -1,10 +1,33 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: 
+Reading DEF file: reg3.def
+
+No Logger: notice 0: Design: reg1
+
+No Logger: notice 0:     Created 3 pins.
+
+No Logger: notice 0:     Created 5 components and 24 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 10 connections.
+
+No Logger: notice 0:     Created 7 nets and 14 connections.
+
+No Logger: notice 0: Finished DEF file: reg3.def
+
 max_transition
 
 Pin                                    Limit   Trans   Slack
 ------------------------------------------------------------
-in1                                     1.00   17.85  -16.85 (VIOLATED)
-r1/D                                    2.00   17.91  -15.91 (VIOLATED)
-r2/D                                    2.00   17.91  -15.91 (VIOLATED)
+in1                                     1.00   17.88  -16.88 (VIOLATED)
+r1/D                                    2.00   17.95  -15.95 (VIOLATED)
+r2/D                                    2.00   17.95  -15.95 (VIOLATED)
 out                                     1.00    5.16   -4.16 (VIOLATED)
 r3/Q                                    1.50    5.16   -3.66 (VIOLATED)
 u1/Z                                    1.50    3.85   -2.35 (VIOLATED)
@@ -18,9 +41,9 @@ max_transition
 
 Pin                                    Limit   Trans   Slack
 ------------------------------------------------------------
-in1                                     1.00   17.85  -16.85 (VIOLATED)
-r1/D                                    2.00   17.91  -15.91 (VIOLATED)
-r2/D                                    2.00   17.91  -15.91 (VIOLATED)
+in1                                     1.00   17.88  -16.88 (VIOLATED)
+r1/D                                    2.00   17.95  -15.95 (VIOLATED)
+r2/D                                    2.00   17.95  -15.95 (VIOLATED)
 out                                     1.00    5.16   -4.16 (VIOLATED)
 r3/Q                                    1.50    5.16   -3.66 (VIOLATED)
 buffer2/Z                               1.50    1.94   -0.44 (VIOLATED)
@@ -35,9 +58,9 @@ Path Type: max
            0.00    0.00    0.00   clock clk (rise edge)
                    0.00    0.00   clock network delay (ideal)
                    0.00    0.00 ^ input external delay
-   3.65   17.85    9.04    9.04 ^ in1 (in)
-          17.91    0.00    9.04 ^ r1/D (snl_ffqx1)
-                           9.04   data arrival time
+   3.65   17.88    9.06    9.06 ^ in1 (in)
+          17.95    0.00    9.06 ^ r1/D (snl_ffqx1)
+                           9.06   data arrival time
 
            0.00    1.00    1.00   clock clk (rise edge)
                    0.00    1.00   clock network delay (ideal)
@@ -47,76 +70,49 @@ Path Type: max
                            0.53   data required time
 -----------------------------------------------------------------------
                            0.53   data required time
-                          -9.04   data arrival time
+                          -9.06   data arrival time
 -----------------------------------------------------------------------
-                          -8.51   slack (VIOLATED)
+                          -8.53   slack (VIOLATED)
 
 
-###############################################################################
-# reg1 with clock pins tied together and placement
-###############################################################################
-
-VERSION 5.5 ; 
+VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-
 DESIGN reg1 ;
-TECHNOLOGY technology ;
-
 UNITS DISTANCE MICRONS 100 ;
-
 DIEAREA ( 0 0 ) ( 10000 10000 ) ;
-
-
 COMPONENTS 9 ;
-- buffer1 snl_bufx2
-+ PLACED ( 10000 40000 ) N ;
-- buffer2 snl_bufx2
-+ PLACED ( 40000 10000 ) N ;
-- buffer3 snl_bufx2
-+ PLACED ( 20000 10000 ) N ;
-- buffer4 snl_bufx2
-+ PLACED ( 10000 20000 ) N ;
-- r1 snl_ffqx1
-+ PLACED ( 10000 20000 ) N ;
-- r2 snl_ffqx1
-+ PLACED ( 20000 10000 ) N ;
-- r3 snl_ffqx1
-+ PLACED ( 30000 30000 ) N ;
-- u1 snl_bufx1
-+ PLACED ( 40000 10000 ) N ;
-- u2 snl_and02x1
-+ PLACED ( 10000 40000 ) N ;
+    - r1 snl_ffqx1 + PLACED ( 10000 20000 ) N ;
+    - r2 snl_ffqx1 + PLACED ( 20000 10000 ) N ;
+    - r3 snl_ffqx1 + PLACED ( 30000 30000 ) N ;
+    - u1 snl_bufx1 + PLACED ( 40000 10000 ) N ;
+    - u2 snl_and02x1 + PLACED ( 10000 40000 ) N ;
+    - buffer1 snl_bufx2 + PLACED ( 10000 40000 ) N ;
+    - buffer2 snl_bufx2 + PLACED ( 40000 10000 ) N ;
+    - buffer3 snl_bufx2 + PLACED ( 20000 10000 ) N ;
+    - buffer4 snl_bufx2 + PLACED ( 10000 20000 ) N ;
 END COMPONENTS
-
-PINS 6 ;
-- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 200000 ) N ;
-- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
-- out + NET out + DIRECTION OUTPUT ;
+PINS 3 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 100000 200520 ) N + LAYER M1 ( -100 -520 ) ( 100 520 ) ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 100000 100520 ) N + LAYER M1 ( -100 -520 ) ( 100 520 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-
 SPECIALNETS 2 ;
-- VSS  ( * VSS )
-  + USE GROUND ;
-- VDD  ( * VDD )
-  + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( * VDD ) + USE POWER ;
 END SPECIALNETS
-
 NETS 11 ;
-- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ;
-- in1 ( PIN in1 ) ( r1 D ) ( r2 D ) ;
-- net1 ( buffer1 Z ) ( r3 D ) ;
-- net2 ( buffer2 Z ) ( u2 B ) ;
-- net3 ( buffer3 Z ) ( u1 A ) ;
-- net4 ( buffer4 Z ) ( u2 A ) ;
-- out ( PIN out ) ( r3 Q ) ;
-- r1q ( buffer4 A ) ( r1 Q ) ;
-- r2q ( buffer3 A ) ( r2 Q ) ;
-- u1z ( buffer2 A ) ( u1 Z ) ;
-- u2z ( buffer1 A ) ( u2 Z ) ;
+    - in1 ( r1 D ) ( r2 D ) + USE SIGNAL ;
+    - clk ( r1 CP ) ( r2 CP ) ( r3 CP ) + USE SIGNAL ;
+    - out ( r3 Q ) + USE SIGNAL ;
+    - r1q ( buffer4 A ) ( r1 Q ) + USE SIGNAL ;
+    - r2q ( buffer3 A ) ( r2 Q ) + USE SIGNAL ;
+    - u1z ( buffer2 A ) ( u1 Z ) + USE SIGNAL ;
+    - u2z ( buffer1 A ) ( u2 Z ) + USE SIGNAL ;
+    - net1 ( r3 D ) ( buffer1 Z ) + USE SIGNAL ;
+    - net2 ( u2 B ) ( buffer2 Z ) + USE SIGNAL ;
+    - net3 ( u1 A ) ( buffer3 Z ) + USE SIGNAL ;
+    - net4 ( u2 A ) ( buffer4 Z ) + USE SIGNAL ;
 END NETS
-
 END DESIGN

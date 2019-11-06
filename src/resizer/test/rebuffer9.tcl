@@ -2,6 +2,7 @@
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def reg3.def
+init_sta_db
 create_clock clk -period 1
 set_input_delay -clock clk 0 in1
 # driving cell so input net has non-zero slew
@@ -16,7 +17,6 @@ set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-3
 
 report_design_area
 
-set_design_size -core "0 0 100 100"
 resize -repair_max_slew -buffer_cell $buffer_cell -max_utilization 70
 
 report_design_area

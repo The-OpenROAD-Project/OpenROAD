@@ -1,1 +1,24 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: 
+Reading DEF file: rebuffer7.def
+
+No Logger: notice 0: Design: reg1
+
+No Logger: notice 0:     Created 2 pins.
+
+No Logger: notice 0:     Created 2 components and 10 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 4 connections.
+
+No Logger: notice 0:     Created 2 nets and 4 connections.
+
+No Logger: notice 0: Finished DEF file: rebuffer7.def
+
 Inserted 0 buffers.

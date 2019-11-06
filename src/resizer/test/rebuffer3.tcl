@@ -16,7 +16,7 @@ DIEAREA ( -1000 -1000 ) ( 1000 1000 ) ;
 set middle {
 PINS 1 ;
 - clk + NET clk + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M4 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+  + LAYER M1 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -82,7 +82,7 @@ read_lef liberty1.lef
 set def_file [make_result_file rebuffer3.def]
 write_reg_fanout_def 60 $def_file
 read_def $def_file
-
+init_sta_db
 create_clock clk -period 1
 
 # kohm/micron, pf/micron

@@ -1,0 +1,26 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: 
+Reading DEF file: ./results/rebuffer3.def
+
+No Logger: notice 0: Design: reg1
+
+No Logger: notice 0:     Created 1 pins.
+
+No Logger: notice 0:     Created 61 components and 305 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 122 connections.
+
+No Logger: notice 0:     Created 2 nets and 122 connections.
+
+No Logger: notice 0: Finished DEF file: ./results/rebuffer3.def
+
+worst slack -15.73
+Inserted 22 buffers in 1 nets.
+worst slack -1.67

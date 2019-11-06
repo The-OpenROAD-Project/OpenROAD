@@ -3,6 +3,7 @@ source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def rebuffer2.def
+init_sta_db
 create_clock clk -period 1
 
 set buffer_cell [get_lib_cell liberty1/snl_bufx2]
@@ -19,5 +20,5 @@ sta::rebuffer_net [get_pin_net r1/Q] $buffer_cell
 report_checks -fields {input_pin capacitance}
 
 set def_file [make_result_file rebuffer2.def]
-write_def -sort $def_file
+write_def $def_file
 report_file $def_file

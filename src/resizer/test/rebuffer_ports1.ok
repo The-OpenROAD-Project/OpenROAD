@@ -1,66 +1,70 @@
+No Logger: notice 0: Reading LEF file:  liberty1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  liberty1.lef
+
+No Logger: notice 0: 
+Reading DEF file: reg1.def
+
+No Logger: notice 0: Design: top
+
+No Logger: notice 0:     Created 6 pins.
+
+No Logger: notice 0:     Created 5 components and 24 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 10 connections.
+
+No Logger: notice 0:     Created 10 nets and 14 connections.
+
+No Logger: notice 0: Finished DEF file: reg1.def
+
 Inserted 2 input buffers.
 Inserted 1 output buffers.
-###############################################################################
-# reg1.v
-###############################################################################
-
-VERSION 5.5 ; 
+VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-
 DESIGN top ;
-TECHNOLOGY technology ;
-
 UNITS DISTANCE MICRONS 1000 ;
-
 DIEAREA ( -1000 -1000 ) ( 1000 1000 ) ;
-
-
 COMPONENTS 8 ;
-- buffer1 snl_bufx2
-+ PLACED ( 0 0 ) N ;
-- buffer2 snl_bufx2
-+ PLACED ( 0 0 ) N ;
-- buffer3 snl_bufx2
-+ PLACED ( 0 0 ) N ;
-- r1 snl_ffqx1 ;
-- r2 snl_ffqx1 ;
-- r3 snl_ffqx1 ;
-- u1 snl_bufx1 ;
-- u2 snl_and02x1 ;
+    - r1 snl_ffqx1 ;
+    - r2 snl_ffqx1 ;
+    - r3 snl_ffqx1 ;
+    - u1 snl_bufx1 ;
+    - u2 snl_and02x1 ;
+    - buffer1 snl_bufx2 + PLACED ( 0 0 ) N ;
+    - buffer2 snl_bufx2 + PLACED ( 0 0 ) N ;
+    - buffer3 snl_bufx2 + PLACED ( 0 0 ) N ;
 END COMPONENTS
-
 PINS 6 ;
-- in1 + NET in1 + DIRECTION INPUT ;
-- in2 + NET in2 + DIRECTION INPUT ;
-- clk1 + NET clk1 + DIRECTION INPUT ;
-- clk2 + NET clk2 + DIRECTION INPUT ;
-- clk3 + NET clk3 + DIRECTION INPUT ;
-- out + NET out + DIRECTION OUTPUT ;
+    - in1 + NET net1 + DIRECTION INPUT + USE SIGNAL ;
+    - in2 + NET net2 + DIRECTION INPUT + USE SIGNAL ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
+    - out + NET net3 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-
 SPECIALNETS 2 ;
-- VSS  ( * VSS )
-  + USE GROUND ;
-- VDD  ( * VDD )
-  + USE POWER ;
+    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( * VDD ) + USE POWER ;
 END SPECIALNETS
-
 NETS 13 ;
-- clk1 ( PIN clk1 ) ( r1 CP ) ;
-- clk2 ( PIN clk2 ) ( r2 CP ) ;
-- clk3 ( PIN clk3 ) ( r3 CP ) ;
-- in1 ( PIN in1 ) ( buffer1 A ) ;
-- in2 ( PIN in2 ) ( buffer2 A ) ;
-- net1 ( buffer1 Z ) ( r1 D ) ;
-- net2 ( buffer2 Z ) ( r2 D ) ;
-- net3 ( buffer3 A ) ( r3 Q ) ;
-- out ( PIN out ) ( buffer3 Z ) ;
-- r1q ( r1 Q ) ( u2 A ) ;
-- r2q ( r2 Q ) ( u1 A ) ;
-- u1z ( u1 Z ) ( u2 B ) ;
-- u2z ( r3 D ) ( u2 Z ) ;
+    - in1 ( buffer1 A ) + USE SIGNAL ;
+    - in2 ( buffer2 A ) + USE SIGNAL ;
+    - clk1 ( r1 CP ) + USE SIGNAL ;
+    - clk2 ( r2 CP ) + USE SIGNAL ;
+    - clk3 ( r3 CP ) + USE SIGNAL ;
+    - out ( buffer3 Z ) + USE SIGNAL ;
+    - r1q ( r1 Q ) ( u2 A ) + USE SIGNAL ;
+    - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
+    - u1z ( u1 Z ) ( u2 B ) + USE SIGNAL ;
+    - u2z ( u2 Z ) ( r3 D ) + USE SIGNAL ;
+    - net1 ( buffer1 Z ) ( r1 D ) + USE SIGNAL ;
+    - net2 ( buffer2 Z ) ( r2 D ) + USE SIGNAL ;
+    - net3 ( buffer3 A ) ( r3 Q ) + USE SIGNAL ;
 END NETS
-
 END DESIGN

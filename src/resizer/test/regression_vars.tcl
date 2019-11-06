@@ -120,28 +120,17 @@ proc list_delete { list delete } {
 # Regression test lists.
 
 # Record tests in resizer/test
-if {0} {
 record_resizer_tests {
   make_parasitics1
   rebuffer1
   rebuffer2
+  rebuffer3
   rebuffer4
   rebuffer5
-  
   rebuffer7
   rebuffer8
   rebuffer9
   rebuffer_ports1
-  resize1
-  resize2
-  resize3
-  resize4
-  resize5
-  resize6
-}
-}
-
-record_resizer_tests {
   resize1
   resize2
   resize3
