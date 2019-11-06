@@ -35,8 +35,12 @@ using sta::Report;
 // Hierarchical network for read_verilog.
 static NetworkReader *verilog_network = nullptr;
 
-NetworkReader *
-getVerilogNetwork()
+%}
+
+%inline %{
+
+bool
+read_verilog(const char *filename)
 {
   if (verilog_network == nullptr) {
     verilog_network = sta::makeConcreteNetwork();
@@ -46,17 +50,6 @@ getVerilogNetwork()
     Debug *debug = sta->debug();
     verilog_network->setDebug(debug);
   }
-  return verilog_network;
-}
-
-%}
-
-%inline %{
-
-bool
-read_verilog(const char *filename)
-{
-  NetworkReader *verilog_network = getVerilogNetwork();
   return sta::readVerilogFile(filename, verilog_network);
 }
 
@@ -71,15 +64,20 @@ write_verilog_cmd(const char *filename,
 void
 link_design_db_cmd(const char *top_cell_name)
 {
-  bool link_make_black_boxes = true;
-  sta::Sta *sta = getSta();
-  NetworkReader *verilog_network = getVerilogNetwork();
-  bool success = verilog_network->linkNetwork(top_cell_name,
-					      link_make_black_boxes,
-					      sta->report());
-  if (success) {
-    verilog2db(verilog_network, getDb());
-    deleteVerilogReader();
+  dbDatabase *db = getDb();
+  sta::dbSta *db_sta = getSta();
+  if (db->getTech() == nullptr)
+    db_sta->report()->error("no technology has been read.\n");
+  if (verilog_network) {
+    bool link_make_black_boxes = true;
+    bool success = verilog_network->linkNetwork(top_cell_name,
+						link_make_black_boxes,
+						db_sta->report());
+    if (success) {
+      verilog2db(verilog_network, db);
+      db_sta->readDbAfter();
+      deleteVerilogReader();
+    }
   }
 }
 

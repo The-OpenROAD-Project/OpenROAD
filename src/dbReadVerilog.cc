@@ -1,4 +1,3 @@
-// Resizer, LEF/DEF gate resizer
 // Copyright (c) 2019, Parallax Software, Inc.
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -46,7 +45,7 @@ using odb::dbIoType;
 class Verilog2db
 {
 public:
-  Verilog2db(Network *network,
+  Verilog2db(Network *verilog_network,
 	     dbDatabase *db);
   void makeBlock();
   void makeDbNetlist();
@@ -56,8 +55,6 @@ protected:
   dbIoType staToDb(PortDirection *dir);
   void makeDbNets(const Instance *inst);
   bool hasTerminals(Net *net) const;
-  uint metersToDbu(double dist) const;
-  double dbuToMeters(uint dist) const;
   dbMaster *getMaster(Cell *cell);
 
   Network *network_;
@@ -67,10 +64,10 @@ protected:
 };
 
 void
-verilog2db(Network *network,
+verilog2db(Network *verilog_network,
 	   dbDatabase *db)
 {
-  Verilog2db v2db(network, db);
+  Verilog2db v2db(verilog_network, db);
   v2db.makeBlock();
   v2db.makeDbNetlist();
 }
@@ -113,7 +110,8 @@ Verilog2db::makeDbInsts()
     const char *inst_name = network_->pathName(inst);
     Cell *cell = network_->cell(inst);
     dbMaster *master = getMaster(cell);
-    dbInst::create(block_, master, inst_name);
+    if (master)
+      dbInst::create(block_, master, inst_name);
   }
   delete leaf_iter;
 }
@@ -162,10 +160,12 @@ Verilog2db::makeDbNets(const Instance *inst)
 	  Instance *inst = network_->instance(pin);
 	  const char *inst_name = network_->pathName(inst);
 	  dbInst *db_inst = block_->findInst(inst_name);
-	  dbMaster *master = db_inst->getMaster();
-	  dbMTerm *mterm = master->findMTerm(block_, port_name);
-	  if (mterm)
-	    dbITerm::connect(db_inst, db_net, mterm);
+	  if (db_inst) {
+	    dbMaster *master = db_inst->getMaster();
+	    dbMTerm *mterm = master->findMTerm(block_, port_name);
+	    if (mterm)
+	      dbITerm::connect(db_inst, db_net, mterm);
+	  }
 	}
       }
       delete pin_iter;
@@ -201,26 +201,6 @@ Verilog2db::getMaster(Cell *cell)
     master_map_[cell] = nullptr;
     return nullptr;
   }
-}
-
-// DBUs are nanometers.
-uint
-Verilog2db::metersToDbu(double dist) const
-{
-  dbTech *tech = db_->getTech();
-  if (tech->hasManufacturingGrid()) {
-    int grid = tech->getManufacturingGrid();
-    return round(round(dist * 1e9 / grid) * grid);
-  }
-  else
-    return round(dist * 1e9);
-}
-
-// DBUs are nanometers.
-double
-Verilog2db::dbuToMeters(uint dist) const
-{
-  return dist * 1E-9;
 }
 
 }

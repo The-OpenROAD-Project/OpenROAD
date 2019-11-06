@@ -77,7 +77,6 @@ dbNetwork *
 getDbNetwork()
 {
   OpenRoad *openroad = getOpenRoad();
-  ensureLinked(openroad);
   return openroad->getDbNetwork();
 }
 
