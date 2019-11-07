@@ -1,0 +1,52 @@
+No Logger: notice 0: Reading LEF file:  example1.lef
+
+No Logger: notice 0:     Created 2 technology layers
+
+No Logger: notice 0:     Created 6 library cells
+
+No Logger: notice 0: Finished LEF file:  example1.lef
+
+No Logger: notice 0: 
+Reading DEF file: example1.def
+
+No Logger: notice 0: Design: top
+
+No Logger: notice 0:     Created 6 pins.
+
+No Logger: notice 0:     Created 5 components and 24 component-terminals.
+
+No Logger: notice 0:     Created 2 special nets and 10 connections.
+
+No Logger: notice 0:     Created 10 nets and 14 connections.
+
+No Logger: notice 0: Finished DEF file: example1.def
+
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r2/CK (DFF_X1)
+   2.58    2.58 ^ r2/Q (DFF_X1)
+   2.59    5.17 ^ u1/Z (BUF_X1)
+   2.77    7.95 ^ u2/ZN (AND2_X1)
+   0.00    7.95 ^ r3/D (DFF_X1)
+           7.95   data arrival time
+
+  10.00   10.00   clock clk (rise edge)
+   0.00   10.00   clock network delay (ideal)
+   0.00   10.00   clock reconvergence pessimism
+          10.00 ^ r3/CK (DFF_X1)
+  -0.61    9.39   library setup time
+           9.39   data required time
+---------------------------------------------------------
+           9.39   data required time
+          -7.95   data arrival time
+---------------------------------------------------------
+           1.45   slack (MET)
+
+

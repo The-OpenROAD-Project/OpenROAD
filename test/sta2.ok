@@ -1,14 +1,14 @@
-No Logger: notice 0: Reading LEF file:  liberty1.lef
+No Logger: notice 0: Reading LEF file:  example1.lef
 
 No Logger: notice 0:     Created 2 technology layers
 
 No Logger: notice 0:     Created 6 library cells
 
-No Logger: notice 0: Finished LEF file:  liberty1.lef
+No Logger: notice 0: Finished LEF file:  example1.lef
 
-Warning: reg1.v, line 6 module snl_ffqx1 not found.  Creating black box for r1.
-Warning: reg1.v, line 8 module snl_bufx1 not found.  Creating black box for u1.
-Warning: reg1.v, line 9 module snl_and02x1 not found.  Creating black box for u2.
+Warning: example1.v, line 6 module DFF_X1 not found.  Creating black box for r1.
+Warning: example1.v, line 8 module BUF_X1 not found.  Creating black box for u1.
+Warning: example1.v, line 9 module AND2_X1 not found.  Creating black box for u2.
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -18,17 +18,17 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ r2/CP (snl_ffqx1)
-   1.10    1.10 v r2/Q (snl_ffqx1)
-   1.10    2.20 v u1/Z (snl_bufx1)
-   1.10    3.30 v u2/Z (snl_and02x1)
-   0.00    3.30 v r3/D (snl_ffqx1)
+   0.00    0.00 ^ r2/CK (DFF_X1)
+   1.10    1.10 v r2/Q (DFF_X1)
+   1.10    2.20 v u1/Z (BUF_X1)
+   1.10    3.30 v u2/ZN (AND2_X1)
+   0.00    3.30 v r3/D (DFF_X1)
            3.30   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
    0.00   10.00   clock reconvergence pessimism
-          10.00 ^ r3/CP (snl_ffqx1)
+          10.00 ^ r3/CK (DFF_X1)
   -0.50    9.50   library setup time
            9.50   data required time
 ---------------------------------------------------------

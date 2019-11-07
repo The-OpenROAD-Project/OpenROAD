@@ -127,6 +127,9 @@ record_tests {
   sdc_names1
   sta1
   sta2
+  sta3
+  sta4
+  sta5
   write_verilog1
   write_verilog2
   write_verilog3
