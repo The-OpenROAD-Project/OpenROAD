@@ -30,6 +30,7 @@
 namespace ord {
 
 using std::string;
+using std::abs;
 
 using sta::Vector;
 using sta::Report;
