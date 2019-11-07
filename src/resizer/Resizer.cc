@@ -254,8 +254,9 @@ Resizer::bufferInput(Pin *top_pin,
     NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
     while (pin_iter->hasNext()) {
       Pin *pin = pin_iter->next();
+      Port *pin_port = db_network_->port(pin);
       sta_->disconnectPin(pin);
-      sta_->connectPin(db_network_->instance(pin), db_network_->port(pin), buffer_out);
+      sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
     }
     sta_->connectPin(buffer, input, input_net);
     sta_->connectPin(buffer, output, buffer_out);
@@ -309,8 +310,9 @@ Resizer::bufferOutput(Pin *top_pin,
     NetPinIterator *pin_iter(network->pinIterator(output_net));
     while (pin_iter->hasNext()) {
       Pin *pin = pin_iter->next();
+      Port *pin_port = network->port(pin);
       sta_->disconnectPin(pin);
-      sta_->connectPin(network->instance(pin), network->port(pin), buffer_in);
+      sta_->connectPin(network->instance(pin), pin_port, buffer_in);
     }
     sta_->connectPin(buffer, input, buffer_in);
     sta_->connectPin(buffer, output, output_net);
