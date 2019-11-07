@@ -29,7 +29,7 @@ dbSta::dbSta(dbDatabase *db) :
 }
 
 dbNetwork *
-dbSta::dbNetwork()
+dbSta::getDbNetwork()
 {
   return dynamic_cast<class dbNetwork *>(network_);
 }
@@ -39,7 +39,7 @@ void
 dbSta::makeComponents()
 {
   Sta::makeComponents();
-  dbNetwork()->setDb(db_);
+  getDbNetwork()->setDb(db_);
 }
 
 void
@@ -57,7 +57,7 @@ dbSta::makeSdcNetwork()
 void
 dbSta::readDbAfter()
 {
-  dbNetwork()->readDbAfter();
+  getDbNetwork()->readDbAfter();
 }
 
 // Wrapper to sync db/liberty libraries.
@@ -70,7 +70,7 @@ dbSta::readLiberty(const char *filename,
 {
   LibertyLibrary *lib = Sta::readLiberty(filename, corner, min_max,
 					 infer_latches);
-  dbNetwork()->readLibertyAfter(lib);
+  getDbNetwork()->readLibertyAfter(lib);
   return lib;
 }
 

@@ -32,7 +32,7 @@ public:
   dbSta(dbDatabase *db);
   dbDatabase *db() { return db_; }
   virtual void makeComponents();
-  dbNetwork *dbNetwork();
+  dbNetwork *getDbNetwork();
   void readDbAfter();
   virtual LibertyLibrary *readLiberty(const char *filename,
 				      Corner *corner,

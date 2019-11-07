@@ -143,7 +143,7 @@ OpenRoad::writeVerilog(const char *filename,
 sta::dbNetwork *
 OpenRoad::getDbNetwork()
 {
-  return sta_->dbNetwork();
+  return sta_->getDbNetwork();
 }
 
 sta::Resizer *

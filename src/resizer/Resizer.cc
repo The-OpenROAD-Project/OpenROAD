@@ -73,7 +73,7 @@ Resizer::Resizer(dbSta *sta) :
   corner_(nullptr),
   max_area_(0.0),
   sta_(sta),
-  db_network_(sta->dbNetwork()),
+  db_network_(sta->getDbNetwork()),
   db_(sta->db()),
   clk_nets__valid_(false),
   level_drvr_verticies_valid_(false),
@@ -140,7 +140,7 @@ VertexLevelLess::operator()(const Vertex *vertex1,
 void
 Resizer::init()
 {
-  db_network_ = sta_->dbNetwork();
+  db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
   // In case graph was made by ensureLevelized.
   graph_ = sta_->graph();
