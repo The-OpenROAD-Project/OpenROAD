@@ -186,8 +186,7 @@ write_verilog_cmd(const char *filename,
 
 %} // inline
 
-// too noisy
-//%include "opendbtcl.i"
+%include "opendbtcl.i"
 
 // OpenSTA swig files
 %include "StaTcl.i"
