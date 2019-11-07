@@ -186,6 +186,9 @@ write_verilog_cmd(const char *filename,
 
 %} // inline
 
+// too noisy
+//%include "opendbtcl.i"
+
 // OpenSTA swig files
 %include "StaTcl.i"
 %include "NetworkEdit.i"
@@ -193,5 +196,6 @@ write_verilog_cmd(const char *filename,
 %include "DelayCalc.i"
 %include "Parasitics.i"
 
+// OpenROAD swig files
 %include "InitFloorplan.i"
 %include "resizer/Resizer.i"

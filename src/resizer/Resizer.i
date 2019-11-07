@@ -27,14 +27,6 @@
 
 namespace sta {
 
-// Defined in StaTcl.i
-LibertyLibrarySeq *
-tclListSeqLibertyLibrary(Tcl_Obj *const source,
-			 Tcl_Interp *interp);
-LibertyCellSeq *
-tclListSeqLibertyCell(Tcl_Obj *const source,
-		      Tcl_Interp *interp);
-
 void
 networkLibertyLibraries(Network *network,
 			// Return value.
