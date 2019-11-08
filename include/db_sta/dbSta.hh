@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef STA_DB_OPENSTADB_H
-#define STA_DB_OPENSTADB_H
+#ifndef DB_STA_H
+#define DB_STA_H
 
 #include "opendb/db.h"
 #include "Sta.hh"
