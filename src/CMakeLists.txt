@@ -19,7 +19,8 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(OPENROAD_SOURCE
   Main.cc
   OpenRoad.cc
-  OpenRoad_wrap.cc
+  OpenSTA_wrap.cc
+  OpenDB_wrap.cc
   OpenRoadTclInitVar.cc
   dbSta.cc
   dbNetwork.cc
@@ -83,7 +84,6 @@ set(OPENROAD_SWIG_FILES
   ${OPENSTA_HOME}/sdf/Sdf.i
   ${OPENSTA_HOME}/dcalc/DelayCalc.i
   ${OPENSTA_HOME}/parasitics/Parasitics.i
-  ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   )
 
 add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
@@ -93,11 +93,18 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
   )
 
 include(FindSWIG)
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf  -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o OpenRoad_wrap.cc OpenRoad.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenSTA_wrap.cc
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o OpenSTA_wrap.cc OpenRoad.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenSTA_wrap.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SWIG_FILES}
+  )
+
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenDB_wrap.cc
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o OpenDB_wrap.cc ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenDB_wrap.cc
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src
+  DEPENDS ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   )
 
 ################################################################

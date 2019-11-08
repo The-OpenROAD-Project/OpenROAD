@@ -1,4 +1,4 @@
-%module opensta_db
+%module openroad
 
 // OpenStaDB, OpenSTA on OpenDB
 // Copyright (c) 2019, Parallax Software, Inc.
@@ -185,8 +185,6 @@ write_verilog_cmd(const char *filename,
 }
 
 %} // inline
-
-%include "opendbtcl.i"
 
 // OpenSTA swig files
 %include "StaTcl.i"

@@ -40,11 +40,19 @@ using sta::Resizer;
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Opensta_db_Init(Tcl_Interp *interp);
+extern int Openroad_Init(Tcl_Interp *interp);
+extern int Opendbtcl_Init(Tcl_Interp *interp);
 }
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
+}
+
+static int
+swigInit(Tcl_Interp *interp)
+{
+  Openroad_Init(interp);
+  Opendbtcl_Init(interp);
 }
 
 int
@@ -76,7 +84,7 @@ main(int argc,
     int thread_count = parseThreadsArg(argc, argv);
     sta->setThreadCount(thread_count);
 
-    staSetupAppInit(argc, argv, ".openroad", Opensta_db_Init,
+    staSetupAppInit(argc, argv, ".openroad", swigInit,
 		    sta::openroad_tcl_inits);
     // Set argc to 1 so Tcl_Main doesn't source any files.
     // Tcl_Main never returns.
