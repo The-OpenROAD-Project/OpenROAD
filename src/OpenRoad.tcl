@@ -60,6 +60,9 @@ proc read_def { args } {
   if { ![file readable $filename] } {
     sta_error "$filename is not readable."
   }
+  if { ![db_has_tech] } {
+    sta_error "no technology has been read."
+  }
   read_def_cmd $filename
 }
 

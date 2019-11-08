@@ -65,16 +65,12 @@ OpenRoad::readLef(const char *filename,
 void
 OpenRoad::readDef(const char *filename)
 {
-  if (db_->getTech() == nullptr)
-    sta_->report()->error("no technology has been read.\n");
-  else {
-    odb::defin def_reader(db_);
-    std::vector<odb::dbLib *> search_libs;
-    for (odb::dbLib *lib : db_->getLibs())
-      search_libs.push_back(lib);
-    def_reader.createChip(search_libs, filename);
-    sta_->readDbAfter();
-  }
+  odb::defin def_reader(db_);
+  std::vector<odb::dbLib *> search_libs;
+  for (odb::dbLib *lib : db_->getLibs())
+    search_libs.push_back(lib);
+  def_reader.createChip(search_libs, filename);
+  sta_->readDbAfter();
 }
 
 void
@@ -123,12 +119,8 @@ void
 OpenRoad::linkDesign(const char *top_cell_name)
 
 {
-  if (db_->getTech() == nullptr)
-    sta_->report()->error("no technology has been read.\n");
-  else {
-    dbLinkDesign(top_cell_name, db_);
-    sta_->readDbAfter();
-  }
+  dbLinkDesign(top_cell_name, db_);
+  sta_->readDbAfter();
 }
 
 void

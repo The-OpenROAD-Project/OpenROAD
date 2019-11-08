@@ -32,6 +32,9 @@ proc link_design { {top_cell_name ""} } {
       set top_cell_name $current_design_name
     }
   }
+  if { ![db_has_tech] } {
+    sta_error "no technology has been read."
+  }
   link_design_db_cmd $top_cell_name
 }
 
