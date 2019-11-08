@@ -1,4 +1,4 @@
-mkdir -p /resizer/build
-cd /resizer/build
-cmake -DCUDD=/usr/local ..
+mkdir -p /OpenStaDB/build
+cd /OpenStaDB/build
+cmake ..
 make

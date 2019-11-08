@@ -1,1 +1,1 @@
-docker run -v $(pwd):/verilog2db verilog2db bash -c "cd /verilog2db/build && ../test/regression fast"
+docker run -v $(pwd):/OpenStaDB openroad bash -c "OpenStaDB/test/regression fast && OpenStaDB/src/resizer/test/regression fast"

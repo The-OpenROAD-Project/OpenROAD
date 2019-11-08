@@ -17,25 +17,16 @@ RUN wget https://cmake.org/files/v3.9/cmake-3.9.0-Linux-x86_64.sh && \
     chmod +x cmake-3.9.0-Linux-x86_64.sh  && \
     ./cmake-3.9.0-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-# download CUDD
-RUN wget https://www.davidkebo.com/source/cudd_versions/cudd-3.0.0.tar.gz && \
-    tar -xvf cudd-3.0.0.tar.gz && \
-    cd cudd-3.0.0 && \
-    ./configure && \
-    make && \
-    make install
-
-COPY . /Resizer
-RUN mkdir /Resizer/build
-WORKDIR /Resizer/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/build -DCUDD=/usr/local ..
+COPY . /OpenStaDb
+RUN mkdir /OpenStaDb/build
+WORKDIR /OpenStaDb/build
+RUN cmake -DCMAKE_INSTALL_PREFIX=/build ..
 RUN make
 
 # Run enviornment
 FROM centos:centos6 AS runner
 RUN yum update -y && yum install -y tcl-devel
-COPY --from=builder /Resizer/build/resizer /build/resizer
-COPY --from=builder /Resizer/build/verilog2def /build/verilog2def
+COPY --from=builder /OpenStaDb/build/src /build/openroad
 RUN useradd -ms /bin/bash openroad
 USER openroad
 WORKDIR /home/openroad
