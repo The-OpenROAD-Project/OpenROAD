@@ -1,6 +1,5 @@
 %module openroad
 
-// OpenStaDB, OpenSTA on OpenDB
 // Copyright (c) 2019, Parallax Software, Inc.
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -44,6 +43,16 @@ using sta::dbNetwork;
 using sta::Resizer;
 
 using odb::dbDatabase;
+
+namespace sta {
+// Defined in StaTcl.i
+LibertyLibrarySeq *
+tclListSeqLibertyLibrary(Tcl_Obj *const source,
+			 Tcl_Interp *interp);
+LibertyCellSeq *
+tclListSeqLibertyCell(Tcl_Obj *const source,
+		      Tcl_Interp *interp);
+}
 
 OpenRoad *
 getOpenRoad()
@@ -102,7 +111,7 @@ getResizer()
 //
 ////////////////////////////////////////////////////////////////
 
-%include "StaException.i"
+%include "OpenSTA/tcl/StaException.i"
 
 %inline %{
 
@@ -185,13 +194,6 @@ write_verilog_cmd(const char *filename,
 }
 
 %} // inline
-
-// OpenSTA swig files
-%include "StaTcl.i"
-%include "NetworkEdit.i"
-%include "Sdf.i"
-%include "DelayCalc.i"
-%include "Parasitics.i"
 
 // OpenROAD swig files
 %include "InitFloorplan.i"

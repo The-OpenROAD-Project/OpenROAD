@@ -18,21 +18,26 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 
 set(OPENROAD_SOURCE
   Main.cc
-  OpenRoad.cc
-  OpenSTA_wrap.cc
-  OpenDB_wrap.cc
-  OpenRoadTclInitVar.cc
+
   dbSta.cc
   dbNetwork.cc
   dbSdcNetwork.cc
+  dbSta_wrap.cc
+
   dbReadVerilog.cc
   InitFloorplan.cc
+
+  OpenRoad.cc
+  OpenRoad_wrap.cc
+  OpenDB_wrap.cc
+  OpenRoadTclInitVar.cc
   )
 
 set(OPENROAD_HEADERS
   dbSta.hh
   dbNetwork.hh
   dbSdcNetwork.hh
+
   dbReadVerilog.hh
   InitFloorplan.hh
   )
@@ -73,11 +78,18 @@ set(OPENROAD_TCL_FILES
   resizer/Resizer.tcl
   )
 
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenRoadTclInitVar.cc openroad_tcl_inits ${OPENROAD_TCL_FILES}
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src
+  DEPENDS ${OPENROAD_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
+  )
+
+################################################################
+
+include(FindSWIG)
+
 # Only used for depends.
-set(OPENROAD_SWIG_FILES
-  OpenRoad.i
-  InitFloorplan.i
-  resizer/Resizer.i
+set(DBSTA_SWIG_FILES
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i
@@ -86,18 +98,11 @@ set(OPENROAD_SWIG_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.i
   )
 
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenRoadTclInitVar.cc openroad_tcl_inits ${OPENROAD_TCL_FILES}
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/dbSta_wrap.cc
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o dbSta_wrap.cc dbSta.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl dbSta_wrap.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS ${OPENROAD_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
-
-include(FindSWIG)
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenSTA_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o OpenSTA_wrap.cc OpenRoad.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenSTA_wrap.cc
-  WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS ${OPENROAD_SWIG_FILES}
+  DEPENDS ${DBSTA_SWIG_FILES}
   )
 
 add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenDB_wrap.cc
@@ -105,6 +110,13 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenDB_wrap.cc
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenDB_wrap.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  )
+
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -o OpenRoad_wrap.cc OpenRoad.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src
+  DEPENDS OpenRoad.i InitFloorplan.i resizer/Resizer.i
   )
 
 ################################################################

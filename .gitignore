@@ -20,7 +20,7 @@ Makefile
 src/OpenRoadTclInitVar.cc
 src/OpenRoad_wrap.cc
 src/OpenDB_wrap.cc
-src/OpenSTA_wrap.cc
+src/dbSta_wrap.cc
 include/openroad/Version.hh
 
 src/resizer/test/results
