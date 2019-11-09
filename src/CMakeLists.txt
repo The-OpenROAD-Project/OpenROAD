@@ -19,11 +19,6 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(OPENROAD_SOURCE
   Main.cc
 
-  dbSta.cc
-  dbNetwork.cc
-  dbSdcNetwork.cc
-  dbSta_wrap.cc
-
   dbReadVerilog.cc
   InitFloorplan.cc
 
@@ -31,15 +26,6 @@ set(OPENROAD_SOURCE
   OpenRoad_wrap.cc
   OpenDB_wrap.cc
   OpenRoadTclInitVar.cc
-  )
-
-set(OPENROAD_HEADERS
-  dbSta.hh
-  dbNetwork.hh
-  dbSdcNetwork.hh
-
-  dbReadVerilog.hh
-  InitFloorplan.hh
   )
 
 set(STA_INCLUDE_DIRS
@@ -88,23 +74,6 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
 
 include(FindSWIG)
 
-# Only used for depends.
-set(DBSTA_SWIG_FILES
-  ${OPENSTA_HOME}/tcl/StaException.i
-  ${OPENSTA_HOME}/tcl/StaTcl.i
-  ${OPENSTA_HOME}/tcl/NetworkEdit.i
-  ${OPENSTA_HOME}/sdf/Sdf.i
-  ${OPENSTA_HOME}/dcalc/DelayCalc.i
-  ${OPENSTA_HOME}/parasitics/Parasitics.i
-  )
-
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/dbSta_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o dbSta_wrap.cc dbSta.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl dbSta_wrap.cc
-  WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS ${DBSTA_SWIG_FILES}
-  )
-
 add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenDB_wrap.cc
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o OpenDB_wrap.cc ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenDB_wrap.cc
@@ -124,6 +93,7 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(flute3)
+add_subdirectory(dbSta)
 add_subdirectory(resizer)
 
 ################################################################
@@ -134,12 +104,13 @@ add_executable(openroad
 
 target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
-  PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include flute3
+  PRIVATE ${OPENDB_HOME}/include flute3
   )
 
 target_link_libraries(openroad
   resizer
   flute
+  dbSta
   OpenSTA
   opendb
   zutil 
@@ -168,7 +139,7 @@ install(TARGETS openroad DESTINATION bin)
 
 ################################################################
 
-add_custom_target(openroad_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES} resizer/src/*.cc resizer/src/*.hh
+add_custom_target(openroad_tags etags -o TAGS ${OPENROAD_SOURCE} ${OPENROAD_HOME}/include/*.hh resizer/src/*.cc resizer/src/*.hh
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )
