@@ -53,6 +53,7 @@ namespace sta {
 
 using std::abs;
 using std::min;
+using std::max;
 using std::string;
 
 using odb::dbInst;

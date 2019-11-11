@@ -83,9 +83,9 @@ public:
   virtual Net *net(const Pin *pin) const;
   virtual Term *term(const Pin *pin) const;
   virtual PortDirection *direction(const Pin *pin) const;
-  virtual VertexIndex vertexIndex(const Pin *pin) const;
-  virtual void setVertexIndex(Pin *pin,
-			      VertexIndex index);
+  virtual VertexId vertexId(const Pin *pin) const;
+  virtual void setVertexId(Pin *pin,
+			   VertexId id);
 
   ////////////////////////////////////////////////////////////////
   // Terminal functions

@@ -611,19 +611,19 @@ dbNetwork::direction(const Pin *pin) const
     return nullptr;
 }
 
-VertexIndex
-dbNetwork::vertexIndex(const Pin *pin) const
+VertexId
+dbNetwork::vertexId(const Pin *pin) const
 {
   dbITerm *iterm;
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
   if (iterm) {
-    dbIntProperty *prop = dbIntProperty::find(iterm, "vertex_index");
+    dbIntProperty *prop = dbIntProperty::find(iterm, "vertex_id");
     if (prop)
       return prop->getValue();
   }
   else if (bterm) {
-    dbIntProperty *prop = dbIntProperty::find(bterm, "vertex_index");
+    dbIntProperty *prop = dbIntProperty::find(bterm, "vertex_id");
     if (prop)
       return prop->getValue();
   }
@@ -631,16 +631,16 @@ dbNetwork::vertexIndex(const Pin *pin) const
 }
 
 void
-dbNetwork::setVertexIndex(Pin *pin,
-			      VertexIndex index)
+dbNetwork::setVertexId(Pin *pin,
+		       VertexId id)
 {
   dbITerm *iterm;
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
   if (iterm)
-    dbIntProperty::create(iterm, "vertex_index", index);
+    dbIntProperty::create(iterm, "vertex_id", id);
   else if (bterm)
-    dbIntProperty::create(bterm, "vertex_index", index);
+    dbIntProperty::create(bterm, "vertex_id", id);
 }
 
 ////////////////////////////////////////////////////////////////
