@@ -18,10 +18,6 @@ Makefile
 /test/results
 
 src/OpenRoadTclInitVar.cc
-src/OpenRoad_wrap.cc
-src/OpenDB_wrap.cc
-src/dbSta/dbSta_wrap.cc
-src/resizer/Resizer_wrap.cc
 include/openroad/Version.hh
 
 src/resizer/test/results

@@ -24,9 +24,11 @@ set(DBSTA_SWIG_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.i
   )
 
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/dbSta/dbSta_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o dbSta_wrap.cc dbSta.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_HOME}/src/dbSta/dbSta_wrap.cc
+set(DBSTA_WRAP ${CMAKE_CURRENT_BINARY_DIR}/dbSta_wrap.cc)
+
+add_custom_command(OUTPUT ${DBSTA_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o ${DBSTA_WRAP} dbSta.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${DBSTA_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src/dbSta
   DEPENDS ${DBSTA_SWIG_FILES}
   )
@@ -35,7 +37,7 @@ add_library(dbSta
   dbSta.cc
   dbNetwork.cc
   dbSdcNetwork.cc
-  dbSta_wrap.cc
+  ${DBSTA_WRAP}
   )
 
 target_include_directories(dbSta

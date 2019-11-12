@@ -16,6 +16,9 @@
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 
+set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
+set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
+
 set(OPENROAD_SOURCE
   Main.cc
 
@@ -23,8 +26,8 @@ set(OPENROAD_SOURCE
   InitFloorplan.cc
 
   OpenRoad.cc
-  OpenRoad_wrap.cc
-  OpenDB_wrap.cc
+  ${OPENROAD_WRAP}
+  ${OPENDB_WRAP}
   OpenRoadTclInitVar.cc
   )
 
@@ -74,16 +77,16 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
 
 include(FindSWIG)
 
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenDB_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o OpenDB_wrap.cc ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenDB_wrap.cc
+add_custom_command(OUTPUT ${OPENDB_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENDB_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   )
 
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -o OpenRoad_wrap.cc OpenRoad.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
+add_custom_command(OUTPUT ${OPENROAD_WRAP}
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS OpenRoad.i InitFloorplan.i
   )
@@ -104,7 +107,7 @@ add_executable(openroad
 
 target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
-  PRIVATE ${OPENDB_HOME}/include flute3
+  PRIVATE ${OPENROAD_HOME}/src ${OPENDB_HOME}/include flute3
   )
 
 target_link_libraries(openroad
