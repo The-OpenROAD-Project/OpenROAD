@@ -10,8 +10,8 @@ OpenROAD depends on OpenSTA, and OpenDB, and flute3. These source
 directories are git submodules and located in `/src`.
 
 ```
-git clone --recursive https://github.com/The-OpenROAD-Project/OpenStaDB.git
-cd OpenStaDB
+git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
+cd OpenROAD
 mkdir build
 cd build
 cmake .. -DBUILD_TCL=OFF
