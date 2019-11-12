@@ -866,8 +866,8 @@ dbNetwork::makeInstance(LibertyCell *cell,
 			Instance *parent)
 {
   if (parent == top_instance_) {
-    Cell *ccell = this->cell(cell);
-    dbMaster *master = staToDb(ccell);
+    const char *cell_name = cell->name();
+    dbMaster *master = db_->findMaster(cell_name);
     if (master) {
       dbInst *inst = dbInst::create(block_, master, name);
       return dbToSta(inst);
