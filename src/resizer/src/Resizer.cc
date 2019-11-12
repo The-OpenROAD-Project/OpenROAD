@@ -527,11 +527,11 @@ Resizer::findTargetLoad(LibertyCell *cell,
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
 	TimingArc *arc = arc_iter.next();
-	TransRiseFall *in_tr = arc->fromTrans()->asRiseFall();
-	TransRiseFall *out_tr = arc->toTrans()->asRiseFall();
+	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+	RiseFall *out_rf = arc->toTrans()->asRiseFall();
 	float arc_target_load = findTargetLoad(cell, arc,
-					       slews[in_tr->index()],
-					       slews[out_tr->index()]);
+					       slews[in_rf->index()],
+					       slews[out_rf->index()]);
 	target_load_sum += arc_target_load;
 	arc_count++;
       }
@@ -577,41 +577,41 @@ Resizer::findTargetLoad(LibertyCell *cell,
 ////////////////////////////////////////////////////////////////
 
 Slew
-Resizer::targetSlew(const TransRiseFall *tr)
+Resizer::targetSlew(const RiseFall *rf)
 {
-  return tgt_slews_[tr->index()];
+  return tgt_slews_[rf->index()];
 }
 
 // Find target slew across all buffers in the libraries.
 void
 Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
 {
-  tgt_slews_[TransRiseFall::riseIndex()] = 0.0;
-  tgt_slews_[TransRiseFall::fallIndex()] = 0.0;
-  int tgt_counts[TransRiseFall::index_count]{0};
+  tgt_slews_[RiseFall::riseIndex()] = 0.0;
+  tgt_slews_[RiseFall::fallIndex()] = 0.0;
+  int tgt_counts[RiseFall::index_count]{0};
   
   for (auto lib : *resize_libs) {
-    Slew slews[TransRiseFall::index_count]{0.0};
-    int counts[TransRiseFall::index_count]{0};
+    Slew slews[RiseFall::index_count]{0.0};
+    int counts[RiseFall::index_count]{0};
     
     findBufferTargetSlews(lib, slews, counts);
-    for (auto tr : TransRiseFall::rangeIndex()) {
-      tgt_slews_[tr] += slews[tr];
-      tgt_counts[tr] += counts[tr];
-      slews[tr] /= counts[tr];
+    for (auto rf : RiseFall::rangeIndex()) {
+      tgt_slews_[rf] += slews[rf];
+      tgt_counts[rf] += counts[rf];
+      slews[rf] /= counts[rf];
     }
     debugPrint3(debug_, "resizer", 2, "target_slews %s = %.2e/%.2e\n",
 		lib->name(),
-		slews[TransRiseFall::riseIndex()],
-		slews[TransRiseFall::fallIndex()]);
+		slews[RiseFall::riseIndex()],
+		slews[RiseFall::fallIndex()]);
   }
 
-  for (auto tr : TransRiseFall::rangeIndex())
-    tgt_slews_[tr] /= tgt_counts[tr];
+  for (auto rf : RiseFall::rangeIndex())
+    tgt_slews_[rf] /= tgt_counts[rf];
 
   debugPrint2(debug_, "resizer", 1, "target_slews = %.2e/%.2e\n",
-	      tgt_slews_[TransRiseFall::riseIndex()],
-	      tgt_slews_[TransRiseFall::fallIndex()]);
+	      tgt_slews_[RiseFall::riseIndex()],
+	      tgt_slews_[RiseFall::fallIndex()]);
 }
 
 void
@@ -631,9 +631,9 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
 	  while (arc_iter.hasNext()) {
 	    TimingArc *arc = arc_iter.next();
 	    GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-	    TransRiseFall *in_tr = arc->fromTrans()->asRiseFall();
-	    TransRiseFall *out_tr = arc->toTrans()->asRiseFall();
-	    float in_cap = input->capacitance(in_tr, min_max_);
+	    RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+	    RiseFall *out_rf = arc->toTrans()->asRiseFall();
+	    float in_cap = input->capacitance(in_rf, min_max_);
 	    float load_cap = in_cap * 10.0; // "factor debatable"
 	    ArcDelay arc_delay;
 	    Slew arc_slew;
@@ -641,8 +641,8 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
 			     arc_delay, arc_slew);
 	    model->gateDelay(buffer, pvt_, arc_slew, load_cap, 0.0, false,
 			     arc_delay, arc_slew);
-	    slews[out_tr->index()] += arc_slew;
-	    counts[out_tr->index()]++;
+	    slews[out_rf->index()] += arc_slew;
+	    counts[out_rf->index()]++;
 	  }
 	}
       }
@@ -938,8 +938,8 @@ Resizer::hasMaxSlewViolation(const Pin *drvr_pin)
   float limit;
   bool exists;
   slewLimit(drvr_pin, MinMax::max(), limit, exists);
-  for (auto tr : TransRiseFall::range()) {
-    Slew slew = graph_->slew(vertex, tr, dcalc_ap_->index());
+  for (auto rf : RiseFall::range()) {
+    Slew slew = graph_->slew(vertex, rf, dcalc_ap_->index());
     if (slew > limit)
       return true;
   }
@@ -1367,8 +1367,8 @@ Resizer::pinCapacitance(const Pin *pin)
 float
 Resizer::portCapacitance(const LibertyPort *port)
 {
-  float cap1 = port->capacitance(TransRiseFall::rise(), min_max_);
-  float cap2 = port->capacitance(TransRiseFall::fall(), min_max_);
+  float cap1 = port->capacitance(RiseFall::rise(), min_max_);
+  float cap2 = port->capacitance(RiseFall::fall(), min_max_);
   return max(cap1, cap2);
 }
 
@@ -1402,8 +1402,8 @@ Resizer::gateDelay(LibertyPort *out_port,
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
 	TimingArc *arc = arc_iter.next();
-	TransRiseFall *in_tr = arc->fromTrans()->asRiseFall();
-	float in_slew = tgt_slews_[in_tr->index()];
+	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+	float in_slew = tgt_slews_[in_rf->index()];
 	ArcDelay gate_delay;
 	Slew drvr_slew;
 	arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,

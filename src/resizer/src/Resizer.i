@@ -63,7 +63,7 @@ using sta::LibertyLibrarySeq;
 using sta::LibertyCell;
 using sta::Instance;
 using sta::Net;
-using sta::TransRiseFall;
+using sta::RiseFall;
 using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
 
@@ -76,10 +76,10 @@ using sta::tclListSeqLibertyCell;
 //
 ////////////////////////////////////////////////////////////////
 
-%typemap(in) TransRiseFall* {
+%typemap(in) RiseFall* {
   int length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
-  TransRiseFall *tr = TransRiseFall::find(arg);
+  RiseFall *tr = RiseFall::find(arg);
   if (tr == nullptr) {
     Tcl_SetResult(interp,const_cast<char*>("Error: unknown transition name."),
 		  TCL_STATIC);
@@ -187,10 +187,10 @@ rebuffer_net(Net *net,
 }
 
 double
-resize_target_slew(const TransRiseFall *tr)
+resize_target_slew(const RiseFall *rf)
 {
   Resizer *resizer = getResizer();
-  return resizer->targetSlew(tr);
+  return resizer->targetSlew(rf);
 }
 
 double

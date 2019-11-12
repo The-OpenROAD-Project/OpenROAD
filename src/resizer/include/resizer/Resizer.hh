@@ -67,7 +67,7 @@ public:
   // resizerPreamble() required.
   void rebuffer(Net *net,
 		LibertyCell *buffer_cell);
-  Slew targetSlew(const TransRiseFall *tr);
+  Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
   // Area of the design in meter^2.
   double designArea();
@@ -177,7 +177,7 @@ protected:
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
-  Slew tgt_slews_[TransRiseFall::index_count];
+  Slew tgt_slews_[RiseFall::index_count];
   int unique_net_index_;
   int unique_buffer_index_;
   int resize_count_;
