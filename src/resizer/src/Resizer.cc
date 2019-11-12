@@ -141,6 +141,8 @@ VertexLevelLess::operator()(const Vertex *vertex1,
 void
 Resizer::init()
 {
+  // Init design_area_.
+  designArea();
   db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
   // In case graph was made by ensureLevelized.
