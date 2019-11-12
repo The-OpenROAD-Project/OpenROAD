@@ -290,6 +290,8 @@ InitFloorplan::initFloorplan(double die_lx,
 			     const char *pin_layer_name)
 {
   dbTechLayer *pin_layer = nullptr;
+  if (pin_layer_name[0] == '\0')
+    pin_layer_name = nullptr;
   if (auto_place_pins && pin_layer_name) {
     dbTech *tech = db_->getTech();
     pin_layer = tech->findLayer(pin_layer_name);
