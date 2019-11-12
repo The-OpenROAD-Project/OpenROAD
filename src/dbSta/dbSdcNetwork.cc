@@ -59,6 +59,7 @@ dbSdcNetwork::findInstancesMatching(const Instance *,
       if (inst)
 	insts->push_back(inst);
       else
+	// Malo
 	findInstancesMatching1(pattern, insts);
     }
   }

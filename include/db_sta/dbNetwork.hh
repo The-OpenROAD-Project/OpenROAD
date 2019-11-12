@@ -63,6 +63,7 @@ public:
   virtual Cell *cell(const Instance *instance) const;
   virtual Instance *parent(const Instance *instance) const;
   virtual bool isLeaf(const Instance *instance) const;
+  virtual Instance *findInstance(const char *path_name) const;
   virtual Instance *findChild(const Instance *parent,
 			      const char *name) const;
   virtual InstanceChildIterator *

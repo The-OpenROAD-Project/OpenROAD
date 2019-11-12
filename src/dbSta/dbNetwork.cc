@@ -443,8 +443,15 @@ dbNetwork::isLeaf(const Instance *instance) const
 }
 
 Instance *
+dbNetwork::findInstance(const char *path_name) const
+{
+  dbInst *inst = block_->findInst(path_name);
+  return dbToSta(inst);
+}
+
+Instance *
 dbNetwork::findChild(const Instance *parent,
-			 const char *name) const
+		     const char *name) const
 {
   if (parent == top_instance_) {
     dbInst *inst = block_->findInst(name);
