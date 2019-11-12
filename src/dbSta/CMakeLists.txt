@@ -15,6 +15,7 @@
 
 # Only used for depends.
 set(DBSTA_SWIG_FILES
+  dbSta.i
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i
@@ -23,10 +24,10 @@ set(DBSTA_SWIG_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.i
   )
 
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/dbSta_wrap.cc
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/dbSta/dbSta_wrap.cc
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o dbSta_wrap.cc dbSta.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl dbSta_wrap.cc
-  WORKING_DIRECTORY ${OPENROAD_HOME}/src
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_HOME}/src/dbSta/dbSta_wrap.cc
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src/dbSta
   DEPENDS ${DBSTA_SWIG_FILES}
   )
 
