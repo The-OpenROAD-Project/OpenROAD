@@ -56,6 +56,7 @@ using sta::Net;
 using sta::Cell;
 using sta::deleteVerilogReader;
 using sta::LeafInstanceIterator;
+using sta::InstanceChildIterator;
 using sta::NetIterator;
 using sta::NetTermIterator;
 using sta::ConnectedPinIterator;
@@ -185,10 +186,10 @@ Verilog2db::makeDbNets(const Instance *inst)
   NetIterator *net_iter = network_->netIterator(inst);
   while (net_iter->hasNext()) {
     Net *net = net_iter->next();
+    const char *net_name = network_->pathName(net);
     if ((is_top || !hasTerminals(net))
 	&& !network_->isGround(net)
 	&& !network_->isPower(net)) {
-      const char *net_name = network_->pathName(net);
       dbNet *db_net = dbNet::create(block_, net_name);
       
       NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
@@ -219,6 +220,13 @@ Verilog2db::makeDbNets(const Instance *inst)
     }
   }
   delete net_iter;
+
+  InstanceChildIterator *child_iter = network_->childIterator(inst);
+  while (child_iter->hasNext()) {
+    const Instance *child = child_iter->next();
+    makeDbNets(child);
+  }
+  delete child_iter;
 }
 
 bool

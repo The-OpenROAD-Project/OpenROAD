@@ -14,6 +14,10 @@ Instance b1/r1
  Cell: snl_ffqx1
  Library: liberty1
  Path cells: snl_ffqx1
+Net b1out
+Net b1/u1out
+Net b1/r1q
+Net b2/r1q
 VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
@@ -34,11 +38,15 @@ PINS 4 ;
     - in + NET in + DIRECTION INPUT + USE SIGNAL ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-NETS 5 ;
+NETS 9 ;
     - b1out ( b2/u1 A ) ( b1/u2 Z ) + USE SIGNAL ;
     - clk1 ( b1/r1 CP ) + USE SIGNAL ;
     - clk2 ( b2/r1 CP ) + USE SIGNAL ;
     - in ( b1/u1 A ) + USE SIGNAL ;
     - out ( b2/u2 Z ) + USE SIGNAL ;
+    - b1/r1q ( b1/u2 A ) ( b1/r1 Q ) + USE SIGNAL ;
+    - b1/u1out ( b1/r1 D ) ( b1/u1 Z ) + USE SIGNAL ;
+    - b2/r1q ( b2/u2 A ) ( b2/r1 Q ) + USE SIGNAL ;
+    - b2/u1out ( b2/r1 D ) ( b2/u1 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN
