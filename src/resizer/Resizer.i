@@ -21,9 +21,23 @@
 #include "Machine.hh"
 #include "Error.hh"
 #include "Liberty.hh"
-#include "resizer/Resizer.hh"
+#include "Resizer.hh"
+
+namespace ord {
+// Defined in OpenRoad.i
+sta::Resizer *
+getResizer();
+}
 
 namespace sta {
+
+// Defined in StaTcl.i
+LibertyLibrarySeq *
+tclListSeqLibertyLibrary(Tcl_Obj *const source,
+			 Tcl_Interp *interp);
+LibertyCellSeq *
+tclListSeqLibertyCell(Tcl_Obj *const source,
+		      Tcl_Interp *interp);
 
 void
 networkLibertyLibraries(Network *network,
@@ -41,7 +55,17 @@ networkLibertyLibraries(Network *network,
 
 } // namespace
 
-using namespace sta;
+using ord::getResizer;
+using sta::Resizer;
+using sta::Corner;
+using sta::LibertyCellSeq;
+using sta::LibertyLibrarySeq;
+using sta::LibertyCell;
+using sta::Instance;
+using sta::Net;
+using sta::TransRiseFall;
+using sta::tclListSeqLibertyLibrary;
+using sta::tclListSeqLibertyCell;
 
 %}
 

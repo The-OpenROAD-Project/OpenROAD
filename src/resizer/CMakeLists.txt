@@ -13,8 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+add_custom_command(OUTPUT ${OPENROAD_HOME}/src/resizer/Resizer_wrap.cc
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENROAD_HOME}/include -o Resizer_wrap.cc Resizer.i
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl Resizer_wrap.cc
+  WORKING_DIRECTORY ${OPENROAD_HOME}/src/resizer
+  DEPENDS Resizer.i
+  )
+
 add_library(resizer
   Resizer.cc
+  Resizer_wrap.cc
   SteinerTree.cc
   )
 

@@ -85,7 +85,7 @@ add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoad_wrap.cc
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -o OpenRoad_wrap.cc OpenRoad.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl OpenRoad_wrap.cc
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS OpenRoad.i InitFloorplan.i resizer/Resizer.i
+  DEPENDS OpenRoad.i InitFloorplan.i
   )
 
 ################################################################

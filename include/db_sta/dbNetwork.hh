@@ -20,7 +20,7 @@
 #include "ConcreteNetwork.hh"
 #include "opendb/db.h"
 
-namespace  sta {
+namespace sta {
 
 using odb::dbDatabase;
 using odb::dbObject;

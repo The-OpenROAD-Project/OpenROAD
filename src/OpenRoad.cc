@@ -116,10 +116,10 @@ OpenRoad::readVerilog(const char *filename)
 }
 
 void
-OpenRoad::linkDesign(const char *top_cell_name)
+OpenRoad::linkDesign(const char *design_name)
 
 {
-  dbLinkDesign(top_cell_name, db_);
+  dbLinkDesign(design_name, db_);
   sta_->readDbAfter();
 }
 

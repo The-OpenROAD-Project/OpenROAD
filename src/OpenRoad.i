@@ -36,23 +36,13 @@
 //
 ////////////////////////////////////////////////////////////////
 
-using ord::OpenRoad;
+namespace ord {
 
 using sta::dbSta;
 using sta::dbNetwork;
 using sta::Resizer;
 
 using odb::dbDatabase;
-
-namespace sta {
-// Defined in StaTcl.i
-LibertyLibrarySeq *
-tclListSeqLibertyLibrary(Tcl_Obj *const source,
-			 Tcl_Interp *interp);
-LibertyCellSeq *
-tclListSeqLibertyCell(Tcl_Obj *const source,
-		      Tcl_Interp *interp);
-}
 
 OpenRoad *
 getOpenRoad()
@@ -102,6 +92,16 @@ getResizer()
   ensureLinked(openroad);
   return openroad->getResizer();
 }
+
+} // namespace
+
+using ord::OpenRoad;
+using ord::getOpenRoad;
+using ord::getDb;
+using ord::ensureLinked;
+using ord::getDbNetwork;
+using ord::getSta;
+using ord::getResizer;
 
 %}
 
@@ -179,10 +179,10 @@ read_verilog(const char *filename)
 }
 
 void
-link_design_db_cmd(const char *top_cell_name)
+link_design_db_cmd(const char *design_name)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->linkDesign(top_cell_name);
+  ord->linkDesign(design_name);
 }
 
 void
@@ -197,4 +197,4 @@ write_verilog_cmd(const char *filename,
 
 // OpenROAD swig files
 %include "InitFloorplan.i"
-%include "resizer/Resizer.i"
+
