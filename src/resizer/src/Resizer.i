@@ -21,7 +21,7 @@
 #include "Machine.hh"
 #include "Error.hh"
 #include "Liberty.hh"
-#include "Resizer.hh"
+#include "resizer/Resizer.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

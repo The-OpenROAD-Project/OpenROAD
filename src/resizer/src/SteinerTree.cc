@@ -22,7 +22,7 @@
 #include "Error.hh"
 #include "Debug.hh"
 #include "NetworkCmp.hh"
-#include "SteinerTree.hh"
+#include "resizer/SteinerTree.hh"
 
 #include "opendb/dbShape.h"
 

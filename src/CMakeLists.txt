@@ -61,7 +61,7 @@ set(OPENROAD_TCL_FILES
   OpenRoad.tcl
   dbReadVerilog.tcl
   InitFloorplan.tcl
-  resizer/Resizer.tcl
+  resizer/src/Resizer.tcl
   )
 
 add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc

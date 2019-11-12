@@ -35,8 +35,8 @@
 #include "Bfs.hh"
 #include "Search.hh"
 #include "Network.hh"
-#include "SteinerTree.hh"
-#include "Resizer.hh"
+#include "resizer/SteinerTree.hh"
+#include "resizer/Resizer.hh"
 
 // Outstanding issues
 //  Instance levelization and resizing to target slew only support single output gates
