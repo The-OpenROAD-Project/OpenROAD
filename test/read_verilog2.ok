@@ -14,10 +14,71 @@ Instance b1/r1
  Cell: snl_ffqx1
  Library: liberty1
  Path cells: snl_ffqx1
+ Input pins:
+  D input b1/u1out
+  CP input clk1
+ Output pins:
+  Q output b1/r1q
 Net b1out
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b1/u2/Z output (snl_bufx1)
+
+Load pins
+ b2/u1/A input (snl_bufx1)
+
+Hierarchical pins
 Net b1/u1out
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b1/u1/Z output (snl_bufx1)
+
+Load pins
+ b1/r1/D input (snl_ffqx1)
+
+Hierarchical pins
 Net b1/r1q
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b1/r1/Q output (snl_ffqx1)
+
+Load pins
+ b1/u2/A input (snl_bufx1)
+
+Hierarchical pins
 Net b2/r1q
+ Pin capacitance: 0.00
+ Wire capacitance: 0.00
+ Total capacitance: 0.00
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ b2/r1/Q output (snl_ffqx1)
+
+Load pins
+ b2/u2/A input (snl_bufx1)
+
+Hierarchical pins
 VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
