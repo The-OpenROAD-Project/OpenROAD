@@ -71,7 +71,7 @@ command line flag is specified it enters and interactive TCL command
 interpreter.
 
 OpenROAD is run using TCL scripts.  In addition to the OpenSTA
-commands documented in OpenSTA/doc/Sta.pdf, available commands are
+commands documented in OpenSTA/doc/OpenSTA.pdf, available commands are
 shown below.
 
 ```
@@ -96,7 +96,7 @@ database as shown below. The `read_lef -tech` flag reads the
 technology portion of a LEF file.  The `read_lef -library` flag reads
 the MACROs in the LEF file.  If neither of the `-tech` and `-library`
 flags are specified they default to `-tech -library` if no technology
-has been read and `-library` otherwise.
+has been read and `-library` if a technogy exists in the database.
 
 ```
 read_lef liberty1.lef
@@ -158,6 +158,7 @@ resize [-buffer_inputs]
        [-buffer_cell buffer_cell]
        [-dont_use cells]
        [-max_utilization util]
+report_design_area
 ```
 
 The `set_wire_rc` command sets the resistance
@@ -202,11 +203,10 @@ read_sdc mea.sdc
 set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
 set_design_size -die "0 0 1000 1000" -core "100 100 900 900"
 resize -buffer_cell [get_lib_cell nlc18_worst/snl_bufx4] -max_utilization 90
-write_def mea_resized.def
 ```
 
 Note that OpenSTA commands can be used to report timing metrics before
-or after the resizing.
+or after resizing the design.
 
 ```
 set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
@@ -221,6 +221,9 @@ report_checks
 report_tns
 report_wns
 ```
+
+The report_design_area command reports the area of the design's
+components and the utilization.
 
 #### Timing Analysis
 
@@ -241,4 +244,6 @@ report_checks
 
 ## Authors
 
-* James Cherry
+* James Cherry (OpenSTA, Resizer, OpenROAD)
+* Lukas van Ginneken (Resizer algorithm)
+* Chris Chu (Flute steiner tree package)
