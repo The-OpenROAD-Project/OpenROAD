@@ -139,7 +139,7 @@ class DbInstanceNetIterator : public InstanceNetIterator
 {
 public:
   DbInstanceNetIterator(const Instance *instance,
-			    const dbNetwork *network);
+			const dbNetwork *network);
   bool hasNext();
   Net *next();
 
@@ -151,7 +151,7 @@ private:
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance *instance,
-						     const dbNetwork *network) :
+					     const dbNetwork *network) :
   network_(network)
 {
   if (instance == network->topInstance()) {
@@ -387,6 +387,8 @@ void
 dbNetwork::clear()
 {
   db_ = nullptr;
+  master_cell_map_.clear();
+  mterm_port_map_.clear();
 }
 
 Instance *
@@ -768,7 +770,8 @@ dbNetwork::linkNetwork(const char *,
   return true;
 }
 
-// Make ConcreteLibrary/Cell/Port objects for the db library/master/MTerm objects.
+// Make ConcreteLibrary/Cell/Port objects for the
+// db library/master/MTerm objects.
 void
 dbNetwork::readDbAfter()
 {
@@ -796,18 +799,33 @@ dbNetwork::makeCell(Library *library,
 {
   const char *cell_name = master->getConstName();
   Cell *cell = makeCell(library, cell_name, true, nullptr);
-  LibertyCell *lib_cell = findLibertyCell(cell_name);
   ConcreteCell *ccell = reinterpret_cast<ConcreteCell *>(cell);
-  ccell->setLibertyCell(lib_cell);
+  master_cell_map_[master] = cell;
+  ccell->setExtCell(reinterpret_cast<void*>(master));
+
+  LibertyCell *lib_cell = findLibertyCell(cell_name);
+  if (lib_cell) {
+    ccell->setLibertyCell(lib_cell);
+    lib_cell->setExtCell(reinterpret_cast<void*>(master));
+  }
+
   for (dbMTerm *mterm : master->getMTerms()) {
     const char *port_name = mterm->getConstName();
     Port *port = makePort(cell, port_name);
     PortDirection *dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
+    mterm_port_map_[mterm] = port;
+    ConcretePort *cport = reinterpret_cast<ConcretePort *>(port);
+    cport->setExtPort(reinterpret_cast<void*>(mterm));
+
     if (lib_cell) {
       LibertyPort *lib_port = lib_cell->findLibertyPort(port_name);
-      ConcretePort *cport = reinterpret_cast<ConcretePort *>(port);
-      cport->setLibertyPort(lib_port);
+      if (lib_port)
+	cport->setLibertyPort(lib_port);
+      else if (!dir->isPowerGround())
+	report_->warn("LEF macro %s pin %s missing from liberty cell\n",
+		      cell_name,
+		      port_name);
     }
   }
   groupBusPorts(cell);
@@ -824,6 +842,7 @@ dbNetwork::makeTopCell()
     Port *port = makePort(top_cell_, port_name);
     PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     setDirection(port, dir);
+    
   }
   groupBusPorts(top_cell_);
 }
@@ -1044,24 +1063,15 @@ dbNetwork::staToDb(const Term *term) const
 dbMaster *
 dbNetwork::staToDb(const Cell *cell) const
 {
-  Library *lib = library(cell);
-  const char *lib_name = name(lib);
-  dbLib *dlib = db_->findLib(lib_name);
-  if (dlib) {
-    const char *cell_name = name(cell);
-    return dlib->findMaster(cell_name);
-  }
-  else
-    return nullptr;
+  const ConcreteCell *ccell = reinterpret_cast<const ConcreteCell *>(cell);
+  return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
 dbMTerm *
 dbNetwork::staToDb(const Port *port) const
 {
-  Cell *cell = this->cell(port);
-  dbMaster *master = staToDb(cell);
-  const char *port_name = name(port);
-  return master->findMTerm(port_name);
+  const ConcretePort *cport = reinterpret_cast<const ConcretePort *>(port);
+  return reinterpret_cast<dbMTerm*>(cport->extPort());
 }
 
 void
@@ -1129,21 +1139,13 @@ dbNetwork::dbToStaTerm(dbBTerm *bterm) const
 Port *
 dbNetwork::dbToSta(dbMTerm *mterm) const
 {
-  dbMaster *master = mterm->getMaster();
-  Cell *cell = dbToSta(master);
-  const char *port_name = mterm->getConstName();
-  Port *port = findPort(cell, port_name);
-  return port;
+  return mterm_port_map_.findKey(mterm);
 }
 
 Cell *
 dbNetwork::dbToSta(dbMaster *master) const
 {
-  dbLib *lib = master->getLib();
-  const char *lib_name = lib->getConstName();  
-  Library *library = const_cast<dbNetwork*>(this)->findLibrary(lib_name);
-  const char *cell_name = master->getConstName();
-  return findCell(library, cell_name);
+  return master_cell_map_.findKey(master);
 }
 
 PortDirection *
