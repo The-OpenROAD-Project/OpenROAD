@@ -403,14 +403,11 @@ dbNetwork::topInstance() const
 const char *
 dbNetwork::name(const Instance *instance) const
 {
-  if (instance == top_instance_) {
-    dbString name = block_->getName();
-    return tmpStringCopy(name.c_str());
-  }
+  if (instance == top_instance_)
+    return tmpStringCopy(block_->getConstName());
   else {
     dbInst *dinst = staToDb(instance);
-    dbString name = dinst->getName();
-    return tmpStringCopy(name.c_str());
+    return tmpStringCopy(dinst->getConstName());
   }
 }
 
@@ -505,7 +502,7 @@ dbNetwork::findInstNetsMatching(const Instance *instance,
   if (instance == top_instance_) {
     if (pattern->hasWildcards()) {
       for (dbNet *dnet : block_->getNets()) {
-	const char *net_name = dnet->getName();
+	const char *net_name = dnet->getConstName();
 	if (pattern->match(net_name))
 	  nets->push_back(dbToSta(dnet));
       }
@@ -593,8 +590,8 @@ dbNetwork::port(const Pin *pin) const
     return dbToSta(mterm);
   }
   else if (bterm) {
-    dbString port_name = bterm->getName();
-    return findPort(top_cell_, port_name.c_str());
+    const char *port_name = bterm->getConstName();
+    return findPort(top_cell_, port_name);
   }
   else
     return nullptr;
@@ -656,8 +653,8 @@ const char *
 dbNetwork::name(const Net *net) const
 {
   dbNet *dnet = staToDb(net);
-  dbString name = dnet->getName();
-  return tmpStringCopy(name.c_str());
+  const char *name = dnet->getConstName();
+  return tmpStringCopy(name);
 }
 
 Instance *
@@ -787,8 +784,8 @@ dbNetwork::readDbAfter()
 void
 dbNetwork::makeLibrary(dbLib *lib)
 {
-  dbString lib_name = lib->getName();
-  Library *library = makeLibrary(lib_name.c_str(), nullptr);
+  const char *lib_name = lib->getConstName();
+  Library *library = makeLibrary(lib_name, nullptr);
   for (dbMaster *master : lib->getMasters())
     makeCell(library, master);
 }
@@ -797,14 +794,14 @@ void
 dbNetwork::makeCell(Library *library,
 		    dbMaster *master)
 {
-  dbString cell_name = master->getName();
-  Cell *cell = makeCell(library, cell_name.c_str(), true, nullptr);
+  const char *cell_name = master->getConstName();
+  Cell *cell = makeCell(library, cell_name, true, nullptr);
   LibertyCell *lib_cell = findLibertyCell(cell_name);
   ConcreteCell *ccell = reinterpret_cast<ConcreteCell *>(cell);
   ccell->setLibertyCell(lib_cell);
   for (dbMTerm *mterm : master->getMTerms()) {
-    dbString port_name = mterm->getName();
-    Port *port = makePort(cell, port_name.c_str());
+    const char *port_name = mterm->getConstName();
+    Port *port = makePort(cell, port_name);
     PortDirection *dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
     if (lib_cell) {
@@ -819,12 +816,12 @@ dbNetwork::makeCell(Library *library,
 void
 dbNetwork::makeTopCell()
 {
-  dbString design_name = block_->getName();
-  Library *top_lib = makeLibrary(design_name.c_str(), nullptr);
-  top_cell_ = makeCell(top_lib, design_name.c_str(), false, nullptr);
+  const char *design_name = block_->getConstName();
+  Library *top_lib = makeLibrary(design_name, nullptr);
+  top_cell_ = makeCell(top_lib, design_name, false, nullptr);
   for (dbBTerm *bterm : block_->getBTerms()) {
-    dbString port_name = bterm->getName();
-    Port *port = makePort(top_cell_, port_name.c_str());
+    const char *port_name = bterm->getConstName();
+    Port *port = makePort(top_cell_, port_name);
     PortDirection *dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     setDirection(port, dir);
   }
@@ -1134,8 +1131,8 @@ dbNetwork::dbToSta(dbMTerm *mterm) const
 {
   dbMaster *master = mterm->getMaster();
   Cell *cell = dbToSta(master);
-  dbString port_name = mterm->getName();
-  Port *port = findPort(cell, port_name.c_str());
+  const char *port_name = mterm->getConstName();
+  Port *port = findPort(cell, port_name);
   return port;
 }
 
@@ -1143,10 +1140,10 @@ Cell *
 dbNetwork::dbToSta(dbMaster *master) const
 {
   dbLib *lib = master->getLib();
-  dbString lib_name = lib->getName();  
-  Library *library = const_cast<dbNetwork*>(this)->findLibrary(lib_name.c_str());
-  dbString cell_name = master->getName();
-  return findCell(library, cell_name.c_str());
+  const char *lib_name = lib->getConstName();  
+  Library *library = const_cast<dbNetwork*>(this)->findLibrary(lib_name);
+  const char *cell_name = master->getConstName();
+  return findCell(library, cell_name);
 }
 
 PortDirection *
