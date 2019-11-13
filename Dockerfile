@@ -17,16 +17,16 @@ RUN wget https://cmake.org/files/v3.9/cmake-3.9.0-Linux-x86_64.sh && \
     chmod +x cmake-3.9.0-Linux-x86_64.sh  && \
     ./cmake-3.9.0-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-COPY . /OpenStaDb
-RUN mkdir /OpenStaDb/build
-WORKDIR /OpenStaDb/build
+COPY . /OpenRoad
+RUN mkdir /OpenRoad/build
+WORKDIR /OpenRoad/build
 RUN cmake -DCMAKE_INSTALL_PREFIX=/build ..
 RUN make
 
 # Run enviornment
 FROM centos:centos6 AS runner
 RUN yum update -y && yum install -y tcl-devel
-COPY --from=builder /OpenStaDb/build/src /build/openroad
+COPY --from=builder /OpenRoad/build/src /build/openroad
 RUN useradd -ms /bin/bash openroad
 USER openroad
 WORKDIR /home/openroad
