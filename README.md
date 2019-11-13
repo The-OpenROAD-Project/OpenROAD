@@ -14,7 +14,7 @@ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
 mkdir build
 cd build
-cmake .. -DBUILD_TCL=OFF
+cmake ..
 make
 ```
 
