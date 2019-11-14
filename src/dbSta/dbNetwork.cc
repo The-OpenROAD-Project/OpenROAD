@@ -864,17 +864,20 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
       ConcreteLibraryCellIterator *cell_iter = clib->cellIterator();
       while (cell_iter->hasNext()) {
 	ConcreteCell *ccell = cell_iter->next();
-	LibertyCell *lcell = lib->findLibertyCell(ccell->name());
-	if (lcell) {
-	  ccell->setLibertyCell(lcell);
-	  ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
-	  while (port_iter->hasNext()) {
-	    ConcretePort *cport = port_iter->next();
-	    LibertyPort *lport = lcell->findLibertyPort(cport->name());
-	    if (lport)
-	      cport->setLibertyPort(lport);
+	// Don't clobber an existing liberty cell so link points to the first.
+	if (ccell->libertyCell() == nullptr) {
+	  LibertyCell *lcell = lib->findLibertyCell(ccell->name());
+	  if (lcell) {
+	    ccell->setLibertyCell(lcell);
+	    ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
+	    while (port_iter->hasNext()) {
+	      ConcretePort *cport = port_iter->next();
+	      LibertyPort *lport = lcell->findLibertyPort(cport->name());
+	      if (lport)
+		cport->setLibertyPort(lport);
+	    }
+	    delete port_iter;
 	  }
-	  delete port_iter;
 	}
       }
       delete cell_iter;
