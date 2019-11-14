@@ -1,11 +1,7 @@
-No Logger: notice 0: Reading LEF file:  example1.lef
-
-No Logger: notice 0:     Created 2 technology layers
-
-No Logger: notice 0:     Created 6 library cells
-
-No Logger: notice 0: Finished LEF file:  example1.lef
-
+Notice 0: Reading LEF file:  example1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  example1.lef
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

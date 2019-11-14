@@ -1,11 +1,7 @@
-No Logger: notice 0: Reading LEF file:  liberty1.lef
-
-No Logger: notice 0:     Created 2 technology layers
-
-No Logger: notice 0:     Created 6 library cells
-
-No Logger: notice 0: Finished LEF file:  liberty1.lef
-
+Notice 0: Reading LEF file:  liberty1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  liberty1.lef
 b1/r1
 b1out
 Instance b1/r1
