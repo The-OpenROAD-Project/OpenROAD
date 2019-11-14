@@ -1,7 +1,7 @@
 # min/max delay calc
 read_lef example1.lef
-read_liberty -max example1_slow.lib
 read_liberty -min example1_fast.lib
+read_liberty -max example1_slow.lib
 read_def example1.def
 
 create_clock -name clk -period 10 {clk1 clk2 clk3}

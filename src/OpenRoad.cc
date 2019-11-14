@@ -25,6 +25,8 @@
 
 namespace ord {
 
+using odb::dbLib;
+
 OpenRoad *OpenRoad::openroad_ = nullptr;
 
 OpenRoad::OpenRoad(dbDatabase *db) :
@@ -54,12 +56,18 @@ OpenRoad::readLef(const char *filename,
 		  bool make_library)
 {
   odb::lefin lef_reader(db_, false);
-  if (make_tech && make_library)
-    lef_reader.createTechAndLib(lib_name, filename);
+  if (make_tech && make_library) {
+    dbLib *lib = lef_reader.createTechAndLib(lib_name, filename);
+    if (lib)
+      sta_->readLefAfter(lib);
+  }
   else if (make_tech)
     lef_reader.createTech(filename);
-  else if (make_library)
-    lef_reader.createLib(lib_name, filename);
+  else if (make_library) {
+    dbLib *lib = lef_reader.createLib(lib_name, filename);
+    if (lib)
+      sta_->readLefAfter(lib);
+  }
 }
 
 void
@@ -70,7 +78,7 @@ OpenRoad::readDef(const char *filename)
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
   def_reader.createChip(search_libs, filename);
-  sta_->readDbAfter();
+  sta_->readDefAfter();
 }
 
 void
@@ -110,9 +118,7 @@ OpenRoad::writeDb(const char *filename)
 void
 OpenRoad::readVerilog(const char *filename)
 {
-  ord::dbReadVerilog(filename,
-		     sta_->report(),
-		     sta_->debug());
+  ord::dbReadVerilog(filename, sta_->networkReader());
 }
 
 void

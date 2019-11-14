@@ -55,6 +55,18 @@ dbSta::makeSdcNetwork()
 }
 
 void
+dbSta::readLefAfter(dbLib *lib)
+{
+  getDbNetwork()->readLefAfter(lib);
+}
+
+void
+dbSta::readDefAfter()
+{
+  getDbNetwork()->readDefAfter();
+}
+
+void
 dbSta::readDbAfter()
 {
   getDbNetwork()->readDbAfter();

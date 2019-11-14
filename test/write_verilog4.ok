@@ -6,8 +6,6 @@ No Logger: notice 0:     Created 6 library cells
 
 No Logger: notice 0: Finished LEF file:  liberty1.lef
 
-No Logger: notice 0: Error: library (liberty1) already exists
-
 No Logger: notice 0: 
 Reading DEF file: write_verilog4.def
 
