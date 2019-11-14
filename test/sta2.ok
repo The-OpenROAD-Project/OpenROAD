@@ -6,9 +6,6 @@ No Logger: notice 0:     Created 6 library cells
 
 No Logger: notice 0: Finished LEF file:  example1.lef
 
-Warning: example1.v, line 6 module DFF_X1 not found.  Creating black box for r1.
-Warning: example1.v, line 8 module BUF_X1 not found.  Creating black box for u1.
-Warning: example1.v, line 9 module AND2_X1 not found.  Creating black box for u2.
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

@@ -770,6 +770,22 @@ dbNetwork::linkNetwork(const char *,
   return true;
 }
 
+void
+dbNetwork::readLefAfter(dbLib *lib)
+{
+  makeLibrary(lib);
+}
+
+void
+dbNetwork::readDefAfter()
+{
+  dbChip *chip = db_->getChip();
+  if (chip) {
+    block_ = chip->getBlock();
+    makeTopCell();
+  }
+}
+
 // Make ConcreteLibrary/Cell/Port objects for the
 // db library/master/MTerm objects.
 void
@@ -852,23 +868,25 @@ void
 dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 {
   for (ConcreteLibrary *clib : library_seq_) {
-    ConcreteLibraryCellIterator *cell_iter = clib->cellIterator();
-    while (cell_iter->hasNext()) {
-      ConcreteCell *ccell = cell_iter->next();
-      LibertyCell *lcell = lib->findLibertyCell(ccell->name());
-      if (lcell) {
-	ccell->setLibertyCell(lcell);
-	ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
-	while (port_iter->hasNext()) {
-	  ConcretePort *cport = port_iter->next();
-	  LibertyPort *lport = lcell->findLibertyPort(cport->name());
-	  if (lport)
-	    cport->setLibertyPort(lport);
+    if (!clib->isLiberty()) {
+      ConcreteLibraryCellIterator *cell_iter = clib->cellIterator();
+      while (cell_iter->hasNext()) {
+	ConcreteCell *ccell = cell_iter->next();
+	LibertyCell *lcell = lib->findLibertyCell(ccell->name());
+	if (lcell) {
+	  ccell->setLibertyCell(lcell);
+	  ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
+	  while (port_iter->hasNext()) {
+	    ConcretePort *cport = port_iter->next();
+	    LibertyPort *lport = lcell->findLibertyPort(cport->name());
+	    if (lport)
+	      cport->setLibertyPort(lport);
+	  }
+	  delete port_iter;
 	}
-	delete port_iter;
       }
+      delete cell_iter;
     }
-    delete cell_iter;
   }
 }
 

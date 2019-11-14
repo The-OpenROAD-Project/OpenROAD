@@ -23,7 +23,6 @@
 #include "Debug.hh"
 #include "Vector.hh"
 #include "PortDirection.hh"
-#include "MakeConcreteNetwork.hh"
 #include "ConcreteNetwork.hh"
 #include "VerilogReader.hh"
 
@@ -45,11 +44,13 @@ using odb::dbITerm;
 using odb::dbSet;
 using odb::dbIoType;
 
+using sta::ConcreteNetwork;
 using sta::Network;
 using sta::NetworkReader;
 using sta::Report;
 using sta::Debug;
 using sta::PortDirection;
+using sta::Library;
 using sta::Instance;
 using sta::Pin;
 using sta::Net;
@@ -62,20 +63,44 @@ using sta::NetTermIterator;
 using sta::ConnectedPinIterator;
 using sta::NetConnectedPinIterator;
 
+class dbVerilogNetwork : public  ConcreteNetwork
+{
+public:
+  dbVerilogNetwork(NetworkReader *db_network);
+  virtual Cell *findAnyCell(const char *name);
+
+private:
+  NetworkReader *db_network_;
+};
+
+dbVerilogNetwork::dbVerilogNetwork(NetworkReader *db_network) :
+  ConcreteNetwork(),
+  db_network_(db_network)
+{
+  report_ = db_network_->report();
+  debug_ = db_network_->debug();
+}
+
+Cell *
+dbVerilogNetwork::findAnyCell(const char *name)
+{
+  Cell *cell = ConcreteNetwork::findAnyCell(name);
+  if (cell == nullptr)
+    cell = db_network_->findAnyCell(name);
+  return cell;
+}
+
 // Hierarchical network for read_verilog.
-// Cells and module networks are built here.
+// Verilog cells and module networks are built here.
+// It is NOT part of an Sta.
 static NetworkReader *verilog_network = nullptr;
 
 void
 dbReadVerilog(const char *filename,
-	      Report *report,
-	      Debug *debug)
+	      NetworkReader *db_network)
 {
-  if (verilog_network == nullptr) {
-    verilog_network = sta::makeConcreteNetwork();
-    verilog_network->setReport(report);
-    verilog_network->setDebug(debug);
-  }
+  if (verilog_network == nullptr)
+    verilog_network = new dbVerilogNetwork(db_network);
   sta::readVerilogFile(filename, verilog_network);
 }
 
@@ -116,6 +141,8 @@ dbLinkDesign(const char *top_cell_name,
       v2db.makeBlock();
       v2db.makeDbNetlist();
       deleteVerilogReader();
+      delete verilog_network;
+      verilog_network = nullptr;
     }
   }
 }

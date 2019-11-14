@@ -49,6 +49,8 @@ public:
   void setDb(dbDatabase *db);
   virtual void clear();
 
+  void readLefAfter(dbLib *lib);
+  void readDefAfter();
   void readDbAfter();
   void readLibertyAfter(LibertyLibrary *lib);
 

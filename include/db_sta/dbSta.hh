@@ -25,6 +25,7 @@ namespace sta {
 class dbNetwork;
 
 using odb::dbDatabase;
+using odb::dbLib;
 
 class dbSta : public Sta
 {
@@ -33,6 +34,8 @@ public:
   dbDatabase *db() { return db_; }
   virtual void makeComponents();
   dbNetwork *getDbNetwork();
+  void readLefAfter(dbLib *lib);
+  void readDefAfter();
   void readDbAfter();
   virtual LibertyLibrary *readLiberty(const char *filename,
 				      Corner *corner,

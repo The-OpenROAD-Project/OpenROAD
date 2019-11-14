@@ -30,14 +30,11 @@ class Network;
 namespace ord {
 
 using odb::dbDatabase;
-using sta::Debug;
-using sta::Report;
-using sta::Network;
+using sta::NetworkReader;
 
 void
 dbReadVerilog(const char *filename,
-	      Report *report,
-	      Debug *debug);
+	      NetworkReader *db_network);
 
 void
 dbLinkDesign(const char *top_cell_name,
