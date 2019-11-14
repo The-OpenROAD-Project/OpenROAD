@@ -36,9 +36,6 @@ using odb::dbSigType;
 using odb::dbIoType;
 using odb::dbSet;
 
-typedef Map<dbMaster*, Cell*> MasterCellMap;
-typedef Map<dbMTerm*, Port*> MTermPortMap;
-
 // This adapter implements the network api for OpenDB.
 // ConcreteNetwork is used for library/cell/port functions only.
 class dbNetwork : public ConcreteNetwork
@@ -193,8 +190,6 @@ protected:
 
   dbDatabase *db_;
   dbBlock *block_;
-  MasterCellMap master_cell_map_;
-  MTermPortMap mterm_port_map_;
   Instance *top_instance_;
   Cell *top_cell_;
   const char *zero_net_name_;

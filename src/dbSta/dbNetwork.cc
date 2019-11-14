@@ -387,8 +387,6 @@ void
 dbNetwork::clear()
 {
   db_ = nullptr;
-  master_cell_map_.clear();
-  mterm_port_map_.clear();
 }
 
 Instance *
@@ -623,17 +621,11 @@ dbNetwork::vertexId(const Pin *pin) const
   dbITerm *iterm;
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
-  if (iterm) {
-    dbIntProperty *prop = dbIntProperty::find(iterm, "vertex_id");
-    if (prop)
-      return prop->getValue();
-  }
-  else if (bterm) {
-    dbIntProperty *prop = dbIntProperty::find(bterm, "vertex_id");
-    if (prop)
-      return prop->getValue();
-  }
-  return 0;
+  if (iterm)
+    return iterm->staVertexId();
+  else if (bterm)
+    return bterm->staVertexId();
+  return object_id_null;
 }
 
 void
@@ -644,9 +636,9 @@ dbNetwork::setVertexId(Pin *pin,
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
   if (iterm)
-    dbIntProperty::create(iterm, "vertex_id", id);
+    return iterm->staSetVertexId(id);
   else if (bterm)
-    dbIntProperty::create(bterm, "vertex_id", id);
+    return bterm->staSetVertexId(id);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -799,8 +791,8 @@ dbNetwork::makeCell(Library *library,
 {
   const char *cell_name = master->getConstName();
   Cell *cell = makeCell(library, cell_name, true, nullptr);
+  master->staSetCell(reinterpret_cast<void*>(cell));
   ConcreteCell *ccell = reinterpret_cast<ConcreteCell *>(cell);
-  master_cell_map_[master] = cell;
   ccell->setExtCell(reinterpret_cast<void*>(master));
 
   LibertyCell *lib_cell = findLibertyCell(cell_name);
@@ -814,7 +806,7 @@ dbNetwork::makeCell(Library *library,
     Port *port = makePort(cell, port_name);
     PortDirection *dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
-    mterm_port_map_[mterm] = port;
+    mterm->staSetPort(reinterpret_cast<void*>(port));
     ConcretePort *cport = reinterpret_cast<ConcretePort *>(port);
     cport->setExtPort(reinterpret_cast<void*>(mterm));
 
@@ -1139,13 +1131,13 @@ dbNetwork::dbToStaTerm(dbBTerm *bterm) const
 Port *
 dbNetwork::dbToSta(dbMTerm *mterm) const
 {
-  return mterm_port_map_.findKey(mterm);
+  return reinterpret_cast<Port*>(mterm->staPort());
 }
 
 Cell *
 dbNetwork::dbToSta(dbMaster *master) const
 {
-  return master_cell_map_.findKey(master);
+  return reinterpret_cast<Cell*>(master->staCell());
 }
 
 PortDirection *
