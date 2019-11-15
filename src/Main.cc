@@ -43,6 +43,7 @@ extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 extern int Dbsta_Init(Tcl_Interp *interp);
 extern int Resizer_Init(Tcl_Interp *interp);
+extern int Replace_Init(Tcl_Interp *interp);
 }
 
 namespace sta {
@@ -56,6 +57,7 @@ swigInit(Tcl_Interp *interp)
   Opendbtcl_Init(interp);
   Dbsta_Init(interp);
   Resizer_Init(interp);
+  Replace_Init(interp);
   return 1;
 }
 
