@@ -26,6 +26,7 @@ class dbNetwork;
 
 using odb::dbDatabase;
 using odb::dbLib;
+using odb::dbNet;
 
 class dbSta : public Sta
 {
@@ -33,7 +34,7 @@ public:
   dbSta(dbDatabase *db);
   dbDatabase *db() { return db_; }
   virtual void makeComponents();
-  dbNetwork *getDbNetwork();
+  dbNetwork *getDbNetwork() { return db_network_; }
   void readLefAfter(dbLib *lib);
   void readDefAfter();
   void readDbAfter();
@@ -42,11 +43,16 @@ public:
 				      const MinMaxAll *min_max,
 				      bool infer_latches);
 
+  Slack netSlack(const dbNet *net,
+		 const MinMax *min_max);
+  using Sta::netSlack;
+
 protected:
   virtual void makeNetwork();
   virtual void makeSdcNetwork();
 
   dbDatabase *db_;
+  dbNetwork *db_network_;
 };
 
 } // namespace

@@ -164,6 +164,7 @@ public:
   Pin *dbToSta(dbITerm *iterm) const;
   Instance *dbToSta(dbInst *inst) const;
   Net *dbToSta(dbNet *net) const;
+  const Net *dbToSta(const dbNet *net) const;
   Cell *dbToSta(dbMaster *master) const;
   Port *dbToSta(dbMTerm *mterm) const;
   PortDirection *dbToSta(dbSigType sig_type,

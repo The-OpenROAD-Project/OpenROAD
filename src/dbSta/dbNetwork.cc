@@ -1131,6 +1131,12 @@ dbNetwork::dbToSta(dbNet *net) const
   return reinterpret_cast<Net*>(net);
 }
 
+const Net *
+dbNetwork::dbToSta(const dbNet *net) const
+{
+  return reinterpret_cast<const Net*>(net);
+}
+
 Pin *
 dbNetwork::dbToSta(dbBTerm *bterm) const
 {

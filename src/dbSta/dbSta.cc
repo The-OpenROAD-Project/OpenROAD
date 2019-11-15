@@ -28,24 +28,19 @@ dbSta::dbSta(dbDatabase *db) :
 {
 }
 
-dbNetwork *
-dbSta::getDbNetwork()
-{
-  return dynamic_cast<class dbNetwork *>(network_);
-}
-
 // Wrapper to init network db.
 void
 dbSta::makeComponents()
 {
   Sta::makeComponents();
-  getDbNetwork()->setDb(db_);
+  db_network_->setDb(db_);
 }
 
 void
 dbSta::makeNetwork()
 {
-  network_ = new class dbNetwork();
+  db_network_ = new class dbNetwork();
+  network_ = db_network_;
 }
 
 void
@@ -57,19 +52,19 @@ dbSta::makeSdcNetwork()
 void
 dbSta::readLefAfter(dbLib *lib)
 {
-  getDbNetwork()->readLefAfter(lib);
+  db_network_->readLefAfter(lib);
 }
 
 void
 dbSta::readDefAfter()
 {
-  getDbNetwork()->readDefAfter();
+  db_network_->readDefAfter();
 }
 
 void
 dbSta::readDbAfter()
 {
-  getDbNetwork()->readDbAfter();
+  db_network_->readDbAfter();
 }
 
 // Wrapper to sync db/liberty libraries.
@@ -82,8 +77,16 @@ dbSta::readLiberty(const char *filename,
 {
   LibertyLibrary *lib = Sta::readLiberty(filename, corner, min_max,
 					 infer_latches);
-  getDbNetwork()->readLibertyAfter(lib);
+  db_network_->readLibertyAfter(lib);
   return lib;
+}
+
+Slack
+dbSta::netSlack(const dbNet *db_net,
+		const MinMax *min_max)
+{
+  const Net *net = db_network_->dbToSta(db_net);
+  return netSlack(net, min_max);
 }
 
 }
