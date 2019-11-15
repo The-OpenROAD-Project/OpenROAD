@@ -18,6 +18,7 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
+set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   Main.cc
@@ -28,7 +29,7 @@ set(OPENROAD_SOURCE
   OpenRoad.cc
   ${OPENROAD_WRAP}
   ${OPENDB_WRAP}
-  OpenRoadTclInitVar.cc
+  ${OPENROAD_TCL_INIT}
   )
 
 set(STA_INCLUDE_DIRS
@@ -67,8 +68,8 @@ set(OPENROAD_TCL_FILES
   resizer/src/Resizer.tcl
   )
 
-add_custom_command(OUTPUT ${OPENROAD_HOME}/src/OpenRoadTclInitVar.cc
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl OpenRoadTclInitVar.cc openroad_tcl_inits ${OPENROAD_TCL_FILES}
+add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENROAD_TCL_INIT} openroad_tcl_inits ${OPENROAD_TCL_FILES}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
   )

@@ -17,7 +17,6 @@ Makefile
 /build
 /test/results
 
-src/OpenRoadTclInitVar.cc
 include/openroad/Version.hh
 
 src/resizer/test/results
