@@ -16,7 +16,6 @@
 
 #include <fstream>
 #include <string>
-#include <unistd.h>
 #include "Machine.hh"
 #include "Report.hh"
 #include "Error.hh"
@@ -32,8 +31,6 @@ using std::string;
 using odb::dbShape;
 using odb::dbPlacementStatus;
 
-static bool
-fileExists(const string &filename);
 static void
 connectedPins(const Net *net,
 	      Network *network,
@@ -45,36 +42,6 @@ pinIsPlaced(Pin *pin,
 adsPoint
 pinLocation(Pin *pin,
 	    const dbNetwork *network);
-
-bool
-readFluteInits(string dir)
-{
-  //  printf("flute try %s\n", dir.c_str());
-  string etc;
-  stringPrint(etc, "%s/etc", dir.c_str());
-  string flute_path1;
-  string flute_path2;
-  stringPrint(flute_path1, "%s/%s", etc.c_str(), FLUTE_POWVFILE);
-  stringPrint(flute_path2, "%s/%s", etc.c_str(), FLUTE_POSTFILE);
-  if (fileExists(flute_path1) && fileExists(flute_path2)) {
-    char *cwd = getcwd(NULL, 0);
-    chdir(etc.c_str());
-    Flute::readLUT();
-    chdir(cwd);
-    free(cwd);
-    return true;
-  }
-  else
-    return false;
-}
-
-// c++17 std::filesystem::exists
-static bool
-fileExists(const string &filename)
-{
-  std::ifstream stream(filename.c_str());
-  return stream.good();
-}
 
 ////////////////////////////////////////////////////////////////
 

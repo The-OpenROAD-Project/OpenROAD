@@ -17,7 +17,6 @@
 #ifndef STEINER_TREE_H
 #define STEINER_TREE_H
 
-#include <string>
 #include "Hash.hh"
 #include "UnorderedMap.hh"
 #include "opendb/geom.h"
@@ -28,7 +27,6 @@
 
 namespace sta {
 
-using std::string;
 using odb::adsPoint;
 
 class SteinerTree;
@@ -36,8 +34,6 @@ class SteinerTree;
 typedef int SteinerPt;
 typedef Vector<SteinerPt> SteinerPtSeq;
 
-bool
-readFluteInits(string dir);
 // Returns nullptr if net has less than 2 pins.
 SteinerTree *
 makeSteinerTree(const Net *net,

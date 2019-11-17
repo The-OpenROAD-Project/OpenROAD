@@ -41,7 +41,6 @@
 
 // Outstanding issues
 //  Instance levelization and resizing to target slew only support single output gates
-//  skinflute wants to read files which prevents having a stand-alone executable
 //  multi-corner support?
 //  tcl cmds to set liberty pin cap and limit for testing
 //  check one def
@@ -103,7 +102,6 @@ Resizer::Resizer() :
 
 void
 Resizer::init(Tcl_Interp *interp,
-	      const char *prog_arg,
 	      dbDatabase *db,
 	      dbSta *sta)
 {
@@ -111,7 +109,6 @@ Resizer::init(Tcl_Interp *interp,
   sta_ = sta;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
-  initFlute(prog_arg);
   // Define swig TCL commands.
   Resizer_Init(interp);
   // Eval encoded sta TCL sources.
@@ -687,47 +684,6 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
       }
     }
   }
-}
-
-////////////////////////////////////////////////////////////////
-
-// Flute reads look up tables from local files. gag me.
-void
-Resizer::initFlute(const char *resizer_path)
-{
-  string resizer_dir = resizer_path;
-  // Look up one directory level from /build/src.
-  auto last_slash = resizer_dir.find_last_of("/");
-  if (last_slash != string::npos) {
-    resizer_dir.erase(last_slash);
-    last_slash = resizer_dir.find_last_of("/");
-    if (last_slash != string::npos) {
-      resizer_dir.erase(last_slash);
-      last_slash = resizer_dir.find_last_of("/");
-      if (last_slash != string::npos) {
-	resizer_dir.erase(last_slash);
-	if (readFluteInits(resizer_dir))
-	  return;
-      }
-    }
-  }
-  // try ./etc
-  resizer_dir = ".";
-  if (readFluteInits(resizer_dir))
-    return;
-
-  // try ../etc
-  resizer_dir = "..";
-  if (readFluteInits(resizer_dir))
-    return;
-
-  // try ../../etc
-  resizer_dir = "../..";
-  if (readFluteInits(resizer_dir))
-    return;
-
-  printf("Error: could not find FluteLUT files POWV9.dat and POST9.dat.\n");
-  exit(EXIT_FAILURE);
 }
 
 ////////////////////////////////////////////////////////////////

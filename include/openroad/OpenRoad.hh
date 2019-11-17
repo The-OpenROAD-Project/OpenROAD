@@ -44,7 +44,6 @@ public:
 	    const char *prog_arg);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  const char *progArg() { return prog_arg_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -70,7 +69,6 @@ public:
 
 private:
   Tcl_Interp *tcl_interp_;
-  const char *prog_arg_;
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;

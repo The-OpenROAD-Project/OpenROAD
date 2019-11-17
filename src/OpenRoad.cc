@@ -25,6 +25,13 @@
 
 #include "resizer/MakeResizer.hh"
 
+// All this to find flute init files.
+#include "flute.h"
+#include <fstream>
+#include <string>
+#include <unistd.h> // getcwd
+#include "StringUtil.hh"
+
 #include "dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
@@ -42,11 +49,20 @@ extern int Replace_Init(Tcl_Interp *interp);
 
 namespace ord {
 
+using std::string;
+
 using sta::Resizer;
 using odb::dbLib;
 using sta::dbSta;
 using odb::dbDatabase;
 using sta::evalTclInit;
+
+static void
+initFlute(const char *prog_path);
+static bool
+readFluteInits(string dir);
+static bool
+fileExists(const string &filename);
 
 OpenRoad *OpenRoad::openroad_ = nullptr;
 
@@ -84,7 +100,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
 	       const char *prog_arg)
 {
   tcl_interp_ = tcl_interp;
-  prog_arg_ = prog_arg;
 
   // Make components.
   db_ = dbDatabase::create();
@@ -101,8 +116,80 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);
+  initFlute(prog_arg);
 
   Replace_Init(tcl_interp);
+}
+
+////////////////////////////////////////////////////////////////
+
+// Flute reads look up tables from local files. gag me.
+static void
+initFlute(const char *prog_path)
+{
+  string prog_dir = prog_path;
+  // Look up one directory level from /build/src.
+  auto last_slash = prog_dir.find_last_of("/");
+  if (last_slash != string::npos) {
+    prog_dir.erase(last_slash);
+    last_slash = prog_dir.find_last_of("/");
+    if (last_slash != string::npos) {
+      prog_dir.erase(last_slash);
+      last_slash = prog_dir.find_last_of("/");
+      if (last_slash != string::npos) {
+	prog_dir.erase(last_slash);
+	if (readFluteInits(prog_dir))
+	  return;
+      }
+    }
+  }
+  // try ./etc
+  prog_dir = ".";
+  if (readFluteInits(prog_dir))
+    return;
+
+  // try ../etc
+  prog_dir = "..";
+  if (readFluteInits(prog_dir))
+    return;
+
+  // try ../../etc
+  prog_dir = "../..";
+  if (readFluteInits(prog_dir))
+    return;
+
+  printf("Error: could not find FluteLUT files POWV9.dat and POST9.dat.\n");
+  exit(EXIT_FAILURE);
+}
+
+static bool
+readFluteInits(string dir)
+{
+  //  printf("flute try %s\n", dir.c_str());
+  string etc;
+  sta::stringPrint(etc, "%s/etc", dir.c_str());
+  string flute_path1;
+  string flute_path2;
+  sta::stringPrint(flute_path1, "%s/%s", etc.c_str(), FLUTE_POWVFILE);
+  sta::stringPrint(flute_path2, "%s/%s", etc.c_str(), FLUTE_POSTFILE);
+  if (fileExists(flute_path1) && fileExists(flute_path2)) {
+    char *cwd = getcwd(NULL, 0);
+    chdir(etc.c_str());
+    Flute::readLUT();
+    chdir(cwd);
+    free(cwd);
+    return true;
+  }
+  else
+    return false;
+}
+
+// c++17 std::filesystem::exists
+static bool
+fileExists(const string &filename)
+{
+  std::ifstream stream(filename.c_str());
+  return stream.good();
 }
 
 ////////////////////////////////////////////////////////////////

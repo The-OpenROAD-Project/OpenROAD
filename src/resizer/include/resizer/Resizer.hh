@@ -32,10 +32,8 @@ class Resizer : public StaState
 public:
   Resizer();
   void init(Tcl_Interp *interp,
-	    const char *prog_arg,
 	    dbDatabase *db,
 	    dbSta *sta);
-  void initFlute(const char *resizer_path);
 
   // Set the resistance and capacitance used for parasitics.
   // Make net wire parasitics based on DEF locations.
