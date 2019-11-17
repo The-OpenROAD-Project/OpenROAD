@@ -22,6 +22,30 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "opendb/db.h"
+#include "openroad/OpenRoad.hh"
+
+namespace ord {
+
+sta::dbSta *
+makeDbSta()
+{
+  return new sta::dbSta;
+}
+
+void
+initDbSta(OpenRoad *openroad)
+{
+  openroad->getSta()->init(openroad->tclInterp(),
+			   openroad->getDb());
+}
+
+void
+deleteDbSta(sta::dbSta *sta)
+{
+  delete sta;
+}
+
+}
 
 namespace sta {
 
@@ -31,29 +55,28 @@ extern int Dbsta_Init(Tcl_Interp *interp);
 
 extern const char *dbsta_tcl_inits[];
 
-dbSta *
-makeDbSta(dbDatabase *db,
-	  Tcl_Interp *interp)
+dbSta::dbSta() :
+  Sta(),
+  db_(nullptr)
 {
-  initSta();
-  dbSta *sta = new sta::dbSta(db);
-  Sta::setSta(sta);
-  sta->makeComponents();
-  sta->setTclInterp(interp);
-  // Define swig TCL commands.
-  Dbsta_Init(interp);
-  // Eval encoded sta TCL sources.
-  evalTclInit(interp, dbsta_tcl_inits);
-  // Import exported commands from sta namespace to global namespace.
-  Tcl_Eval(interp, "sta::define_sta_cmds");
-  Tcl_Eval(interp, "namespace import sta::*");
-  return sta;
 }
 
-dbSta::dbSta(dbDatabase *db) :
-  Sta(),
-  db_(db)
+void
+dbSta::init(Tcl_Interp *tcl_interp,
+	    dbDatabase *db)
 {
+  initSta();
+  Sta::setSta(this);
+  db_ = db;
+  makeComponents();
+  setTclInterp(tcl_interp);
+  // Define swig TCL commands.
+  Dbsta_Init(tcl_interp);
+  // Eval encoded sta TCL sources.
+  evalTclInit(tcl_interp, dbsta_tcl_inits);
+  // Import exported commands from sta namespace to global namespace.
+  Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
+  Tcl_Eval(tcl_interp, "namespace import sta::*");
 }
 
 // Wrapper to init network db.

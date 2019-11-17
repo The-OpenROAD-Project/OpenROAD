@@ -23,7 +23,10 @@
 #include "ConcreteNetwork.hh"
 #include "VerilogReader.hh"
 
+#include "db_sta/dbNetwork.hh"
 #include "opendb/db.h"
+
+#include "openroad/OpenRoad.hh"
 
 namespace ord {
 
@@ -41,6 +44,7 @@ using odb::dbITerm;
 using odb::dbSet;
 using odb::dbIoType;
 
+using sta::dbNetwork;
 using sta::ConcreteNetwork;
 using sta::Network;
 using sta::NetworkReader;
@@ -66,25 +70,46 @@ using sta::NetConnectedPinIterator;
 class dbVerilogNetwork : public  ConcreteNetwork
 {
 public:
-  dbVerilogNetwork(NetworkReader *db_network);
+  dbVerilogNetwork();
   virtual Cell *findAnyCell(const char *name);
+  void init(dbNetwork *db_network);
 
 private:
   NetworkReader *db_network_;
 };
 
-dbVerilogNetwork::dbVerilogNetwork(NetworkReader *db_network) :
+dbVerilogNetwork::dbVerilogNetwork() :
   ConcreteNetwork(),
-  db_network_(db_network)
+  db_network_(nullptr)
 {
+  report_ = nullptr;
+  debug_ = nullptr;
+}
+
+void
+dbVerilogNetwork::init(dbNetwork *db_network)
+{
+  db_network_ = db_network;
   report_ = db_network_->report();
   debug_ = db_network_->debug();
 }
 
 dbVerilogNetwork *
-makeDbVerilogNetwork(NetworkReader *db_network)
+makeDbVerilogNetwork()
 {
-  return new dbVerilogNetwork(db_network);
+  return new dbVerilogNetwork;
+}
+
+void
+initDbVerilogNetwork(ord::OpenRoad *openroad)
+{
+  openroad->getVerilogNetwork()->init(openroad->getDbNetwork());
+}
+
+void
+deleteDbVerilogNetwork(dbVerilogNetwork *verilog_network)
+{
+  delete verilog_network;
 }
 
 // Facade that looks in the db network for a liberty cell if

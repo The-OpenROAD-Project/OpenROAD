@@ -14,6 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 set(RESIZER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/Resizer_wrap.cc)
+set(RESIZER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/ResizerTclInitVar.cc)
 
 set(OPENSTA_INCLUDE_DIRS
   ${OPENSTA_HOME}/util
@@ -34,10 +35,18 @@ add_custom_command(OUTPUT ${RESIZER_WRAP}
   DEPENDS ${RESIZER_HOME}/src/Resizer.i
   )
 
+add_custom_command(OUTPUT ${RESIZER_TCL_INIT}
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${RESIZER_TCL_INIT} resizer_tcl_inits Resizer.tcl
+  WORKING_DIRECTORY ${RESIZER_HOME}/src
+  DEPENDS Resizer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+  )
+
 add_library(resizer
+  MakeResizer.cc
   Resizer.cc
   SteinerTree.cc
   ${RESIZER_WRAP}
+  ${RESIZER_TCL_INIT}
   )
 
 target_include_directories(resizer

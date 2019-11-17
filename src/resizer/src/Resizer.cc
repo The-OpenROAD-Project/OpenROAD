@@ -35,6 +35,7 @@
 #include "Bfs.hh"
 #include "Search.hh"
 #include "Network.hh"
+#include "StaMain.hh"
 #include "resizer/SteinerTree.hh"
 #include "resizer/Resizer.hh"
 
@@ -64,6 +65,8 @@ extern "C" {
 extern int Resizer_Init(Tcl_Interp *interp);
 }
 
+extern const char *resizer_tcl_inits[];
+
 bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
@@ -71,27 +74,17 @@ adsPoint
 pinLocation(Pin *pin,
 	    const dbNetwork *network);
 
-Resizer *
-makeResizer(dbSta *sta,
-	    Tcl_Interp *interp,
-	    const char *prog_arg)
-{
-  Resizer *resizer = new sta::Resizer(sta);
-  resizer->copyState(sta);
-  resizer->initFlute(prog_arg);
-  Resizer_Init(interp);
-  return resizer;
-}
+////////////////////////////////////////////////////////////////
 
-Resizer::Resizer(dbSta *sta) :
-  StaState(sta),
+Resizer::Resizer() :
+  StaState(),
   wire_res_(0.0),
   wire_cap_(0.0),
   corner_(nullptr),
   max_area_(0.0),
-  sta_(sta),
-  db_network_(sta->getDbNetwork()),
-  db_(sta->db()),
+  sta_(nullptr),
+  db_network_(nullptr),
+  db_(nullptr),
   min_max_(nullptr),
   dcalc_ap_(nullptr),
   pvt_(nullptr),
@@ -106,6 +99,26 @@ Resizer::Resizer(dbSta *sta) :
   core_area_(0.0),
   design_area_(0.0)
 {
+}
+
+void
+Resizer::init(Tcl_Interp *interp,
+	      const char *prog_arg,
+	      dbDatabase *db,
+	      dbSta *sta)
+{
+  db_ = db;
+  sta_ = sta;
+  db_network_ = sta->getDbNetwork();
+  copyState(sta);
+  initFlute(prog_arg);
+  // Define swig TCL commands.
+  Resizer_Init(interp);
+  // Eval encoded sta TCL sources.
+  evalTclInit(interp, resizer_tcl_inits);
+  // Import exported commands from sta namespace to global namespace.
+  Tcl_Eval(interp, "sta::define_sta_cmds");
+  Tcl_Eval(interp, "namespace import sta::*");
 }
 
 ////////////////////////////////////////////////////////////////

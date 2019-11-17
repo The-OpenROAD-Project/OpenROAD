@@ -30,7 +30,11 @@ typedef Vector<RebufferOption*> RebufferOptionSeq;
 class Resizer : public StaState
 {
 public:
-  Resizer(dbSta *sta);
+  Resizer();
+  void init(Tcl_Interp *interp,
+	    const char *prog_arg,
+	    dbDatabase *db,
+	    dbSta *sta);
   void initFlute(const char *resizer_path);
 
   // Set the resistance and capacitance used for parasitics.

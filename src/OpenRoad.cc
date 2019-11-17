@@ -23,7 +23,6 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
-#include "resizer/Resizer.hh"
 #include "resizer/MakeResizer.hh"
 
 #include "dbReadVerilog.hh"
@@ -58,8 +57,9 @@ OpenRoad::OpenRoad()
 
 OpenRoad::~OpenRoad()
 {
-  delete sta_;
-  delete resizer_;
+  deleteDbVerilogNetwork(verilog_network_);
+  deleteDbSta(sta_);
+  deleteResizer(resizer_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -80,23 +80,29 @@ initOpenRoad(Tcl_Interp *interp,
 }
 
 void
-OpenRoad::init(Tcl_Interp *interp,
+OpenRoad::init(Tcl_Interp *tcl_interp,
 	       const char *prog_arg)
 {
-  Openroad_Init(interp);
-  // Import TCL scripts.
-  evalTclInit(interp, sta::openroad_tcl_inits);
+  tcl_interp_ = tcl_interp;
+  prog_arg_ = prog_arg;
 
+  // Make components.
   db_ = dbDatabase::create();
-  Opendbtcl_Init(interp);
+  sta_ = makeDbSta();
+  verilog_network_ = makeDbVerilogNetwork();
+  resizer_ = ord::makeResizer();
 
-  sta_ = sta::makeDbSta(db_, interp);
+  // Init components.
+  Openroad_Init(tcl_interp);
+  // Import TCL scripts.
+  evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
-  verilog_network_ = makeDbVerilogNetwork(sta_->getDbNetwork());
+  Opendbtcl_Init(tcl_interp);
+  initDbSta(this);
+  initResizer(this);
+  initDbVerilogNetwork(this);
 
-  resizer_ = sta::makeResizer(sta_, interp, prog_arg);
-
-  Replace_Init(interp);
+  Replace_Init(tcl_interp);
 }
 
 ////////////////////////////////////////////////////////////////

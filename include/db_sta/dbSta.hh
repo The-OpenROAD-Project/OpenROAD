@@ -31,7 +31,10 @@ using odb::dbNet;
 class dbSta : public Sta
 {
 public:
-  dbSta(dbDatabase *db);
+  dbSta();
+  void init(Tcl_Interp *tcl_interp,
+	    dbDatabase *db);
+
   dbDatabase *db() { return db_; }
   virtual void makeComponents();
   dbNetwork *getDbNetwork() { return db_network_; }

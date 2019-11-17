@@ -15,14 +15,22 @@
 #define MAKE_RESIZER_H
 
 namespace sta {
-
 class dbSta;
 class Resizer;
+}
 
-Resizer *
-makeResizer(dbSta *sta,
-	    Tcl_Interp *interp,
-	    const char *prog_arg);
+namespace ord {
+
+class OpenRoad;
+
+sta::Resizer *
+makeResizer();
+
+void
+deleteResizer(sta::Resizer *resizer);
+
+void
+initResizer(OpenRoad *openroad);
 
 } // namespace
 #endif

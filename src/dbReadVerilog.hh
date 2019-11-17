@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef VERILOG2DB_H
-#define VERILOG2DB_H
+#ifndef DB_READ_VERILOG_H
+#define DB_READ_VERILOG_H
 
 namespace odb {
 class dbDatabase;
@@ -33,7 +33,13 @@ using odb::dbDatabase;
 using sta::NetworkReader;
 
 dbVerilogNetwork *
-makeDbVerilogNetwork(NetworkReader *db_network);
+makeDbVerilogNetwork();
+
+void
+initDbVerilogNetwork(OpenRoad *openroad);
+
+void
+deleteDbVerilogNetwork(dbVerilogNetwork *verilog_network);
 
 // Read a hierarchical Verilog netlist into a OpenSTA concrete network
 // objects. The hierarchical network is elaborated/flattened by the 
