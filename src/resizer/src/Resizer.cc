@@ -60,12 +60,28 @@ using odb::dbInst;
 using odb::dbPlacementStatus;
 using odb::adsRect;
 
+extern "C" {
+extern int Resizer_Init(Tcl_Interp *interp);
+}
+
 bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
 adsPoint
 pinLocation(Pin *pin,
 	    const dbNetwork *network);
+
+Resizer *
+makeResizer(dbSta *sta,
+	    Tcl_Interp *interp,
+	    const char *prog_arg)
+{
+  Resizer *resizer = new sta::Resizer(sta);
+  resizer->copyState(sta);
+  resizer->initFlute(prog_arg);
+  Resizer_Init(interp);
+  return resizer;
+}
 
 Resizer::Resizer(dbSta *sta) :
   StaState(sta),
@@ -76,10 +92,18 @@ Resizer::Resizer(dbSta *sta) :
   sta_(sta),
   db_network_(sta->getDbNetwork()),
   db_(sta->db()),
+  min_max_(nullptr),
+  dcalc_ap_(nullptr),
+  pvt_(nullptr),
+  parasitics_ap_(nullptr),
   clk_nets__valid_(false),
+  target_load_map_(nullptr),
   level_drvr_verticies_valid_(false),
+  tgt_slews_{0.0, 0.0},
   unique_net_index_(1),
   unique_buffer_index_(1),
+  resize_count_(0),
+  core_area_(0.0),
   design_area_(0.0)
 {
 }

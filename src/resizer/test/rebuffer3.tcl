@@ -80,7 +80,7 @@ source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
 set def_file [make_result_file rebuffer3.def]
-write_reg_fanout_def 60 $def_file
+write_reg_fanout_def 40 $def_file
 read_def $def_file
 create_clock clk -period 1
 

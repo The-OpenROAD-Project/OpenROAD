@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+set(DBSTA_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/dbStaTclInitVar.cc)
+set(DBSTA_WRAP ${CMAKE_CURRENT_BINARY_DIR}/dbSta_wrap.cc)
+
 # Only used for depends.
 set(DBSTA_SWIG_FILES
   dbSta.i
@@ -24,7 +27,40 @@ set(DBSTA_SWIG_FILES
   ${OPENSTA_HOME}/parasitics/Parasitics.i
   )
 
-set(DBSTA_WRAP ${CMAKE_CURRENT_BINARY_DIR}/dbSta_wrap.cc)
+set(DBSTA_TCL_FILES
+  ${OPENSTA_HOME}/tcl/Graph.tcl
+  ${OPENSTA_HOME}/tcl/Liberty.tcl
+  ${OPENSTA_HOME}/tcl/Network.tcl
+  ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
+  ${OPENSTA_HOME}/tcl/Sdc.tcl
+  ${OPENSTA_HOME}/tcl/Search.tcl
+  ${OPENSTA_HOME}/tcl/Cmds.tcl
+  ${OPENSTA_HOME}/tcl/Variables.tcl
+  ${OPENSTA_HOME}/tcl/Sta.tcl
+  ${OPENSTA_HOME}/tcl/Power.tcl
+  ${OPENSTA_HOME}/tcl/Splash.tcl
+  ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
+  ${OPENSTA_HOME}/parasitics/Parasitics.tcl
+  ${OPENSTA_HOME}/sdf/Sdf.tcl
+  )
+
+set(OPENSTA_INCLUDE_DIRS
+  ${OPENSTA_HOME}/util
+  ${OPENSTA_HOME}/liberty
+  ${OPENSTA_HOME}/network
+  ${OPENSTA_HOME}/graph
+  ${OPENSTA_HOME}/sdc
+  ${OPENSTA_HOME}/parasitics
+  ${OPENSTA_HOME}/dcalc
+  ${OPENSTA_HOME}/sdf
+  ${OPENSTA_HOME}/search
+  ${OPENSTA_HOME}/app
+  )
+
+add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${DBSTA_TCL_INIT} dbsta_tcl_inits ${DBSTA_TCL_FILES}
+  DEPENDS ${DBSTA_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
+  )
 
 add_custom_command(OUTPUT ${DBSTA_WRAP}
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o ${DBSTA_WRAP} dbSta.i
@@ -37,10 +73,11 @@ add_library(dbSta
   dbSta.cc
   dbNetwork.cc
   dbSdcNetwork.cc
+  ${DBSTA_TCL_INIT}
   ${DBSTA_WRAP}
   )
 
 target_include_directories(dbSta
   PUBLIC ${OPENROAD_HOME}/include
-  PRIVATE ${STA_INCLUDE_DIRS} ${OPENDB_HOME}/include
+  PRIVATE ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   )

@@ -32,36 +32,8 @@ set(OPENROAD_SOURCE
   ${OPENROAD_TCL_INIT}
   )
 
-set(STA_INCLUDE_DIRS
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/sdf
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/verilog
-  )
-
 set(OPENROAD_TCL_FILES
   ${OPENSTA_HOME}/tcl/Util.tcl
-  ${OPENSTA_HOME}/tcl/Graph.tcl
-  ${OPENSTA_HOME}/tcl/Liberty.tcl
-  ${OPENSTA_HOME}/tcl/Link.tcl
-  ${OPENSTA_HOME}/tcl/Network.tcl
-  ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
-  ${OPENSTA_HOME}/tcl/Sdc.tcl
-  ${OPENSTA_HOME}/tcl/Search.tcl
-  ${OPENSTA_HOME}/tcl/Cmds.tcl
-  ${OPENSTA_HOME}/tcl/Variables.tcl
-  ${OPENSTA_HOME}/tcl/Sta.tcl
-  ${OPENSTA_HOME}/tcl/Power.tcl
-  ${OPENSTA_HOME}/tcl/Splash.tcl
-  ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
-  ${OPENSTA_HOME}/parasitics/Parasitics.tcl
-  ${OPENSTA_HOME}/sdf/Sdf.tcl
   OpenRoad.tcl
   dbReadVerilog.tcl
   InitFloorplan.tcl

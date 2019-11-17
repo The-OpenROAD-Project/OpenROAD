@@ -22,18 +22,38 @@
 #include "resizer/Resizer.hh"
 #include "openroad/OpenRoad.hh"
 #include "dbReadVerilog.hh"
+#include "db_sta/dbSta.hh"
+#include "StaMain.hh"
+#include "openroad/InitOpenRoad.hh"
+#include "db_sta/MakeDbSta.hh"
+#include "resizer/MakeResizer.hh"
+
+namespace sta {
+extern const char *openroad_tcl_inits[];
+}
+
+// Swig uses C linkage for init functions.
+extern "C" {
+extern int Openroad_Init(Tcl_Interp *interp);
+extern int Opendbtcl_Init(Tcl_Interp *interp);
+extern int Replace_Init(Tcl_Interp *interp);
+}
 
 namespace ord {
 
+using sta::Resizer;
 using odb::dbLib;
+using sta::Sta;
+using sta::dbSta;
+using sta::initSta;
+using odb::dbDatabase;
+using sta::evalTclInit;
 
 OpenRoad *OpenRoad::openroad_ = nullptr;
 
-OpenRoad::OpenRoad(dbDatabase *db) :
-  db_(db),
-  sta_(new sta::dbSta(db_)),
-  resizer_(new sta::Resizer(sta_))
+OpenRoad::OpenRoad()
 {
+  openroad_ = this;
 }
 
 OpenRoad::~OpenRoad()
@@ -43,11 +63,41 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
 }
 
-void
-OpenRoad::setOpenRoad(OpenRoad *openroad)
+sta::dbNetwork *
+OpenRoad::getDbNetwork()
 {
-  openroad_ = openroad;
+  return sta_->getDbNetwork();
 }
+
+////////////////////////////////////////////////////////////////
+
+void
+initOpenRoad(Tcl_Interp *interp,
+	     const char *prog_arg)
+{
+  OpenRoad *openroad = new OpenRoad;
+  openroad->init(interp, prog_arg);
+}
+
+void
+OpenRoad::init(Tcl_Interp *interp,
+	       const char *prog_arg)
+{
+  Openroad_Init(interp);
+  // Import TCL scripts.
+  evalTclInit(interp, sta::openroad_tcl_inits);
+
+  db_ = dbDatabase::create();
+  Opendbtcl_Init(interp);
+
+  sta_ = sta::makeDbSta(db_, interp);
+
+  resizer_ = sta::makeResizer(sta_, interp, prog_arg);
+
+  Replace_Init(interp);
+}
+
+////////////////////////////////////////////////////////////////
 
 void
 OpenRoad::readLef(const char *filename,
@@ -134,20 +184,6 @@ OpenRoad::writeVerilog(const char *filename,
 		       bool sort)
 {
   sta::writeVerilog(filename, sort, sta_->network());
-}
-
-////////////////////////////////////////////////////////////////
-
-sta::dbNetwork *
-OpenRoad::getDbNetwork()
-{
-  return sta_->getDbNetwork();
-}
-
-sta::Resizer *
-OpenRoad::getResizer()
-{
-  return resizer_;
 }
 
 } // namespace

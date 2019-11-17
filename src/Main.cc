@@ -14,59 +14,39 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdio.h>
+#include <tcl.h>
 #include "Machine.hh"
 #include "StringUtil.hh"
 #include "StaMain.hh"
-#include "db_sta/dbSta.hh"
-#include "resizer/Resizer.hh"
 #include "openroad/Version.hh"
-#include "openroad/OpenRoad.hh"
-
-using ord::OpenRoad;
-
-using odb::dbDatabase;
+#include "openroad/InitOpenRoad.hh"
 
 using sta::stringEq;
-using sta::Sta;
-using sta::dbSta;
-using sta::initSta;
-using sta::showUsage;
-using sta::staSetupAppInit;
-using sta::staTclAppInit;
-using sta::parseThreadsArg;
+using sta::findCmdLineFlag;
+using sta::stringPrintTmp;
+using sta::sourceTclFile;
 
-using sta::Resizer;
-
-// Swig uses C linkage for init functions.
-extern "C" {
-extern int Openroad_Init(Tcl_Interp *interp);
-extern int Opendbtcl_Init(Tcl_Interp *interp);
-extern int Dbsta_Init(Tcl_Interp *interp);
-extern int Resizer_Init(Tcl_Interp *interp);
-extern int Replace_Init(Tcl_Interp *interp);
-}
-
-namespace sta {
-extern const char *openroad_tcl_inits[];
-}
+static int cmd_argc;
+static char **cmd_argv;
+static const char *init_filename = ".openroad";
 
 static int
-swigInit(Tcl_Interp *interp)
-{
-  Openroad_Init(interp);
-  Opendbtcl_Init(interp);
-  Dbsta_Init(interp);
-  Resizer_Init(interp);
-  Replace_Init(interp);
-  return 1;
-}
+tclAppInit(Tcl_Interp *interp);
+static int
+tclAppInit(int argc,
+	   char *argv[],
+	   const char *init_filename,
+	   Tcl_Interp *interp);
+static void
+showUsage(const char *prog,
+	  const char *init_filename);
 
 int
 main(int argc,
      char *argv[])
 {
   if (argc == 2 && stringEq(argv[1], "-help")) {
-    showUsage(argv[0]);
+    showUsage(argv[0], init_filename);
     return 0;
   }
   else if (argc == 2 && stringEq(argv[1], "-version")) {
@@ -74,27 +54,69 @@ main(int argc,
     return 0;
   }
   else {
-    dbDatabase *db = dbDatabase::create();
-    OpenRoad *openroad = new OpenRoad(db);
-    OpenRoad::setOpenRoad(openroad);
-
-    initSta();
-    dbSta *sta = openroad->getSta();
-    Sta::setSta(sta);
-    sta->makeComponents();
-
-    Resizer *resizer = openroad->getResizer();
-    resizer->copyState(sta);
-    resizer->initFlute(argv[0]);
-
-    int thread_count = parseThreadsArg(argc, argv);
-    sta->setThreadCount(thread_count);
-
-    staSetupAppInit(argc, argv, ".openroad", swigInit,
-		    sta::openroad_tcl_inits);
+    cmd_argc = argc;
+    cmd_argv = argv;
     // Set argc to 1 so Tcl_Main doesn't source any files.
     // Tcl_Main never returns.
-    Tcl_Main(1, argv, staTclAppInit);
+    Tcl_Main(1, argv, tclAppInit);
     return 0;
   }
 }
+
+static int
+tclAppInit(Tcl_Interp *interp)
+{
+  return tclAppInit(cmd_argc, cmd_argv, init_filename, interp);
+}
+
+// Tcl init executed inside Tcl_Main.
+static int
+tclAppInit(int argc,
+	   char *argv[],
+	   const char *init_filename,
+	   Tcl_Interp *interp)
+{
+  // source init.tcl
+  Tcl_Init(interp);
+  ord::initOpenRoad(interp, argv[0]);
+
+  if (!findCmdLineFlag(argc, argv, "-no_splash"))
+    Tcl_Eval(interp, "sta::show_splash");
+
+  if (!findCmdLineFlag(argc, argv, "-no_init")) {
+    char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename);
+    sourceTclFile(init_path, true, true, interp);
+  }
+
+  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
+
+  if (argc > 2 ||
+      (argc > 1 && argv[1][0] == '-'))
+    showUsage(argv[0], init_filename);
+  else {
+    if (argc == 2) {
+      char *cmd_file = argv[1];
+      if (cmd_file) {
+	sourceTclFile(cmd_file, false, false, interp);
+	if (exit_after_cmd_file)
+	  exit(EXIT_SUCCESS);
+      }
+    }
+  }
+  return TCL_OK;
+}
+
+static void
+showUsage(const char *prog,
+	  const char *init_filename)
+{
+  printf("Usage: %s [-help] [-version] [-no_init] [-exit] cmd_file\n", prog);
+  printf("  -help              show help and exit\n");
+  printf("  -version           show version and exit\n");
+  printf("  -no_init           do not read %s init file\n", init_filename);
+  printf("  -threads count|max use count threads\n");
+  printf("  -no_splash         do not show the license splash at startup\n");
+  printf("  -exit              exit after reading cmd_file\n");
+  printf("  cmd_file           source cmd_file\n");
+}
+

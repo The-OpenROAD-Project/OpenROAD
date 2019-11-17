@@ -14,13 +14,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <tcl.h>
 #include "Machine.hh"
+#include "StaMain.hh"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "db_sta/MakeDbSta.hh"
 #include "opendb/db.h"
 
 namespace sta {
+
+extern "C" {
+extern int Dbsta_Init(Tcl_Interp *interp);
+}
+
+extern const char *dbsta_tcl_inits[];
+
+dbSta *
+makeDbSta(dbDatabase *db,
+	  Tcl_Interp *interp)
+{
+  initSta();
+  dbSta *sta = new sta::dbSta(db);
+  Sta::setSta(sta);
+  sta->makeComponents();
+  sta->setTclInterp(interp);
+  // Define swig TCL commands.
+  Dbsta_Init(interp);
+  // Eval encoded sta TCL sources.
+  evalTclInit(interp, dbsta_tcl_inits);
+  // Import exported commands from sta namespace to global namespace.
+  Tcl_Eval(interp, "sta::define_sta_cmds");
+  Tcl_Eval(interp, "namespace import sta::*");
+  return sta;
+}
 
 dbSta::dbSta(dbDatabase *db) :
   Sta(),
