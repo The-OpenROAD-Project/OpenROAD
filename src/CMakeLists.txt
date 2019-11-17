@@ -31,6 +31,7 @@ set(OPENROAD_SOURCE
 
   dbReadVerilog.cc
   InitFloorplan.cc
+  InitFlute.cc
 
   ${OPENDB_WRAP}
   )

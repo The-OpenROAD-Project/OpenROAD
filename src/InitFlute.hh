@@ -11,15 +11,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef INIT_OPENROAD_H
-#define INIT_OPENROAD_H
-
 namespace ord {
 
-// Call this inside of Tcl_Main.
 void
-initOpenRoad(Tcl_Interp *interp,
-	     const char *prog_arg);
+initFlute(const char *prog_path);
 
-} // namespace
-#endif
+}
