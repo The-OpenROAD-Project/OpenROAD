@@ -26,6 +26,8 @@ class Resizer;
 
 namespace ord {
 
+class dbVerilogNetwork;
+
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
@@ -61,6 +63,7 @@ public:
 
 private:
   odb::dbDatabase *db_;
+  ord::dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
 

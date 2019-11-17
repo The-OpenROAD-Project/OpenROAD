@@ -15,18 +15,20 @@
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
+
 #include "Machine.hh"
-#include "Report.hh"
 #include "VerilogWriter.hh"
-#include "db_sta/dbSta.hh"
-#include "resizer/Resizer.hh"
-#include "openroad/OpenRoad.hh"
-#include "dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
 #include "StaMain.hh"
-#include "openroad/InitOpenRoad.hh"
+
+#include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
+
+#include "resizer/Resizer.hh"
 #include "resizer/MakeResizer.hh"
+
+#include "dbReadVerilog.hh"
+#include "openroad/OpenRoad.hh"
+#include "openroad/InitOpenRoad.hh"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -43,9 +45,7 @@ namespace ord {
 
 using sta::Resizer;
 using odb::dbLib;
-using sta::Sta;
 using sta::dbSta;
-using sta::initSta;
 using odb::dbDatabase;
 using sta::evalTclInit;
 
@@ -91,6 +91,8 @@ OpenRoad::init(Tcl_Interp *interp,
   Opendbtcl_Init(interp);
 
   sta_ = sta::makeDbSta(db_, interp);
+
+  verilog_network_ = makeDbVerilogNetwork(sta_->getDbNetwork());
 
   resizer_ = sta::makeResizer(sta_, interp, prog_arg);
 
@@ -168,14 +170,14 @@ OpenRoad::writeDb(const char *filename)
 void
 OpenRoad::readVerilog(const char *filename)
 {
-  ord::dbReadVerilog(filename, sta_->networkReader());
+  dbReadVerilog(filename, verilog_network_);
 }
 
 void
 OpenRoad::linkDesign(const char *design_name)
 
 {
-  dbLinkDesign(design_name, db_);
+  dbLinkDesign(design_name, verilog_network_, db_);
   sta_->readDbAfter();
 }
 

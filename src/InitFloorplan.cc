@@ -381,7 +381,6 @@ InitFloorplan::makeTracks(const char *tracks_file,
       if (grid == nullptr)
 	grid = dbTrackGrid::create(block_, layer);
       double width;
-      int width_dbu;
       int track_count;
       int pitch_dbu = metersToDbu(pitch);
       int offset_dbu = metersToDbu(offset);
@@ -389,13 +388,11 @@ InitFloorplan::makeTracks(const char *tracks_file,
       case 'X':
 	width = die_ux - die_lx;
 	track_count = floor((width - offset) / pitch) + 1;
-	width_dbu = metersToDbu(width);
 	grid->addGridPatternX(offset_dbu, track_count, pitch_dbu);
 	break;
       case 'Y':
 	width = die_uy - die_ly;
 	track_count = floor((width - offset) / pitch) + 1;
-	width_dbu = metersToDbu(width);
 	grid->addGridPatternY(offset_dbu, track_count, pitch_dbu);
 	break;
       default:
