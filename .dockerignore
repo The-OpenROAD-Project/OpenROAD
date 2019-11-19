@@ -1,0 +1,63 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# build
+build
+.DS_Store
+.vscode
+
+**/rpm/RPM-GPG-KEY-nefelus
+autom4te.cache
+.deps
+*.o
+*.so
+*.a
+pkgIndex.tcl
+tclIndex
+Makefile.defs
+*~
+core
+*.core
+*.dSYM
+*.rej
+TAGS
+
+zrouter/bin
+zrouter/src/ade.log
+zrouter/src/ldir
+zrouter/src/logs
+zrouter/src/main/cvs_version.h
+zrouter/src/ModuleTemplate/TMP_tcl/TMP_Tcl.cpp
+zrouter/src/ModuleTemplate/TMP_tcl/TMP_Tcl.h
+zrouter/src/SHAPES/PDN_tcl/PDN_Tcl.cpp
+zrouter/src/SHAPES/PDN_tcl/PDN_Tcl.h

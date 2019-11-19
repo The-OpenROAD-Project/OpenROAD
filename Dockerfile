@@ -1,32 +1,32 @@
-FROM centos:centos6 AS builder
+FROM centos:centos7 AS base-dependencies
+LABEL maintainer "Abdelrahman Hosny <abdelrahman_hosny@brown.edu>"
 
-# install gcc 6
+# Install Development Environment
+RUN yum group install -y "Development Tools"
+RUN yum install -y wget git
 RUN yum -y install centos-release-scl && \
-    yum -y install devtoolset-6 devtoolset-6-libatomic-devel
-ENV CC=/opt/rh/devtoolset-6/root/usr/bin/gcc \
-    CPP=/opt/rh/devtoolset-6/root/usr/bin/cpp \
-    CXX=/opt/rh/devtoolset-6/root/usr/bin/g++ \
-    PATH=/opt/rh/devtoolset-6/root/usr/bin:$PATH \
-    LD_LIBRARY_PATH=/opt/rh/devtoolset-6/root/usr/lib64:/opt/rh/devtoolset-6/root/usr/lib:/opt/rh/devtoolset-6/root/usr/lib64/dyninst:/opt/rh/devtoolset-6/root/usr/lib/dyninst:/opt/rh/devtoolset-6/root/usr/lib64:/opt/rh/devtoolset-6/root/usr/lib:$LD_LIBRARY_PATH
+    yum -y install devtoolset-8 devtoolset-8-libatomic-devel
+RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
+    chmod +x cmake-3.14.0-Linux-x86_64.sh  && \
+    ./cmake-3.14.0-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-# install dependencies
-RUN yum install -y wget git zlib-devel tcl-devel swig bison flex
+# Install epel repo
+RUN wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+RUN yum install -y epel-release-latest-7.noarch.rpm
 
-# Installing cmake for build dependency
-RUN wget https://cmake.org/files/v3.9/cmake-3.9.0-Linux-x86_64.sh && \
-    chmod +x cmake-3.9.0-Linux-x86_64.sh  && \
-    ./cmake-3.9.0-Linux-x86_64.sh --skip-license --prefix=/usr/local
+# Install dev and runtime dependencies
+RUN yum install -y tcl-devel tcl tk libstdc++ tk-devel boost-devel
 
-COPY . /OpenRoad
-RUN mkdir /OpenRoad/build
-WORKDIR /OpenRoad/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/build ..
-RUN make
+# Install python dev
+RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm && \
+    yum update -y && \
+    yum install -y python36u python36u-libs python36u-devel python36u-pip
 
-# Run enviornment
-FROM centos:centos6 AS runner
-RUN yum update -y && yum install -y tcl-devel
-COPY --from=builder /OpenRoad/build/src /build/openroad
-RUN useradd -ms /bin/bash openroad
-USER openroad
-WORKDIR /home/openroad
+FROM base-dependencies AS builder
+
+COPY . /OpenROAD
+WORKDIR /OpenROAD
+
+# Build
+RUN mkdir build
+RUN cd build && cmake .. && make -j 4

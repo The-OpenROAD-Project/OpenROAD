@@ -1,2 +1,2 @@
-docker build -f jenkins/Dockerfile.dev -t OpenStaDB .
-docker run -v $(pwd):/OpenStaDB openroad bash -c "./OpenStaDB/jenkins/install.sh"
+docker build -t openroad/openroad --target base-dependencies .
+docker run -v $(pwd):/OpenROAD openroad/openroad bash -c "./OpenROAD/jenkins/install.sh"
