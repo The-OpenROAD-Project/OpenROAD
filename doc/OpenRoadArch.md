@@ -163,6 +163,34 @@ OpenROAD sources. As the sources in the develop/master branch change
 the tool branch is rebased to follow them, keeping only the edits
 necessary to remove other tools.
 
+### Example of Adding a Tool  to OpenRoad
+
+The branch "add_tool" illustrates how to add a tool to OpenRoad.  Use
+`git checkout add_tool` to checkout the branch. To see the changes
+between OpenRoad with and without Tool use `git diff master`.
+
+This adds a directory OpenRoad/src/tool that illustrates a tool named "Tool"
+that uses the file structure described and defines a command to run the tool
+with keyword and flag arguments as illustrated below:
+
+```
+% run_tool foo
+Helping 23/6
+Gotta pos_arg1 foo
+Gotta param1 0.000000
+Gotta flag1 false
+
+% run_tool -flag1 -key1 2.0 bar
+Helping 23/6
+Gotta pos_arg1 bar
+Gotta param1 2.000000
+Gotta flag1 true
+
+% help run_tool
+run_tool [-key1 key1] [-flag1] pos_arg1
+
+```
+
 ### Tool Flow
 
 Verilog to DB (OpenDB, dbSTA/OpenSTA)
