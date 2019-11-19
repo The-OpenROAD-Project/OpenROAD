@@ -30,6 +30,8 @@
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
 
+#include "tool/MakeTool.hh"
+
 namespace sta {
 extern const char *openroad_tcl_inits[];
 }
@@ -90,7 +92,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   db_ = dbDatabase::create();
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
-  resizer_ = ord::makeResizer();
+  resizer_ = makeResizer();
+  tool_ = makeTool();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -103,10 +106,11 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initDbVerilogNetwork(this);
   initFlute(prog_arg);
   Replace_Init(tcl_interp);
+  initTool(this);
 
-  // Import exported commands to global namespace.
-  Tcl_Eval(interp, "sta::define_sta_cmds");
-  Tcl_Eval(interp, "namespace import sta::*");
+  // Import exported commands from sta namespace to global namespace.
+  Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
+  Tcl_Eval(tcl_interp, "namespace import sta::*");
 }
 
 ////////////////////////////////////////////////////////////////

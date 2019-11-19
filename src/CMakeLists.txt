@@ -20,6 +20,8 @@ set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 
+set(TOOL_HOME ${OPENROAD_HOME}/src/tool)
+
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -69,6 +71,7 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
 
 ################################################################
 
+add_subdirectory(tool)
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(dbSta)
@@ -166,9 +169,11 @@ target_include_directories(openroad
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
   flute3
+  ${TOOL_HOME}/include
   )
 
 target_link_libraries(openroad
+  tool
   replace
   resizer
   flute

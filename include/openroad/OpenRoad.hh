@@ -28,6 +28,10 @@ class dbNetwork;
 class Resizer;
 }
 
+namespace tool {
+class Tool;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -44,6 +48,7 @@ public:
 	    const char *prog_arg);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
+  tool::Tool *getTool(){ return tool_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -73,6 +78,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
+  tool::Tool *tool_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
