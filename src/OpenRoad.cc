@@ -105,8 +105,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   Replace_Init(tcl_interp);
 
   // Import exported commands to global namespace.
-  Tcl_Eval(interp, "sta::define_sta_cmds");
-  Tcl_Eval(interp, "namespace import sta::*");
+  Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
+  Tcl_Eval(tcl_interp, "namespace import sta::*");
 }
 
 ////////////////////////////////////////////////////////////////
