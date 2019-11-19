@@ -113,9 +113,6 @@ Resizer::init(Tcl_Interp *interp,
   Resizer_Init(interp);
   // Eval encoded sta TCL sources.
   evalTclInit(interp, resizer_tcl_inits);
-  // Import exported commands from sta namespace to global namespace.
-  Tcl_Eval(interp, "sta::define_sta_cmds");
-  Tcl_Eval(interp, "namespace import sta::*");
 }
 
 ////////////////////////////////////////////////////////////////

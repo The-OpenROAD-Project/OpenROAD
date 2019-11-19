@@ -74,9 +74,6 @@ dbSta::init(Tcl_Interp *tcl_interp,
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   evalTclInit(tcl_interp, dbsta_tcl_inits);
-  // Import exported commands from sta namespace to global namespace.
-  Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
-  Tcl_Eval(tcl_interp, "namespace import sta::*");
 }
 
 // Wrapper to init network db.
