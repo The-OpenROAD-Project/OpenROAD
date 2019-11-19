@@ -163,7 +163,7 @@ OpenROAD sources. As the sources in the develop/master branch change
 the tool branch is rebased to follow them, keeping only the edits
 necessary to remove other tools.
 
-### Example of Adding a Tool  to OpenRoad
+### Example of Adding a Tool to OpenRoad
 
 The branch "add_tool" illustrates how to add a tool to OpenRoad.  Use
 `git checkout add_tool` to checkout the branch. To see the changes
