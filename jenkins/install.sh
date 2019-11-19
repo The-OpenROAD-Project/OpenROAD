@@ -1,4 +1,4 @@
-mkdir -p /OpenStaDB/build
-cd /OpenStaDB/build
+mkdir -p /OpenROAD/build
+cd /OpenROAD/build
 cmake ..
-make
+make -j 4
