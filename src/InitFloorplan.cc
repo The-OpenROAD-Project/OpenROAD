@@ -1,4 +1,3 @@
-// Resizer, LEF/DEF gate resizer
 // Copyright (c) 2019, Parallax Software, Inc.
 // 
 // This program is free software: you can redistribute it and/or modify
