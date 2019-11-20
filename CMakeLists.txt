@@ -64,4 +64,3 @@ configure_file(
 ################################################################
 
 add_subdirectory(src)
-INSTALL( DIRECTORY etc DESTINATION .)
