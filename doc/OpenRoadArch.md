@@ -159,9 +159,17 @@ It can be used to run unit tests that reside inside the tool
 directory.
 
 Currently this is supported by editing Resizer related calls in the
-OpenROAD sources. As the sources in the develop/master branch change
-the tool branch is rebased to follow them, keeping only the edits
-necessary to remove other tools.
+OpenROAD sources. Changes to the develop branch are merged into the
+tool only branch to follow them, keeping only the edits necessary to
+remove other tools.
+
+Note that removing submodules from the repo is less than obvious.
+Here are the steps:
+
+git submodule deinit <path_to_submodule>
+git rm <path_to_submodule>
+git commit-m "Removed submodule "
+rm -rf .git/modules/<path_to_submodule>
 
 ### Tool Flow
 
