@@ -28,6 +28,10 @@ class dbNetwork;
 class Resizer;
 }
 
+namespace opendp {
+class opendp_external;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -49,6 +53,7 @@ public:
   sta::dbNetwork *getDbNetwork();
   sta::Resizer *getResizer() { return resizer_; }
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
+  opendp::opendp_external *getOpendp() { return opendp_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
@@ -73,6 +78,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
+  opendp::opendp_external *opendp_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

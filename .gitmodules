@@ -11,3 +11,7 @@
 	path = src/replace
 	url = https://github.com/The-OpenROAD-Project/RePlAce.git
 	branch = openroad
+[submodule "src/opendp"]
+	path = src/opendp
+	url = https://github.com/The-OpenROAD-Project/OpenDP.git
+	branch = openroad

@@ -19,6 +19,7 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
+set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -75,6 +76,7 @@ add_subdirectory(dbSta)
 add_subdirectory(resizer)
 add_subdirectory(flute3)
 add_subdirectory(replace)
+add_subdirectory(opendp)
 
 ################################################################
 
@@ -165,11 +167,13 @@ target_include_directories(openroad
   PRIVATE
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
+  ${OPENDP_HOME}/include
   flute3
   )
 
 target_link_libraries(openroad
   replace
+  opendp
   resizer
   flute
   dbSta
