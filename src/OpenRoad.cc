@@ -23,13 +23,14 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
-#include "resizer/MakeResizer.hh"
-#include "opendp/MakeOpendp.h"
-
 #include "dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
+
+#include "resizer/MakeResizer.hh"
+#include "opendp/MakeOpendp.h"
+#include "replace/src/MakeReplace.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -105,7 +106,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initResizer(this);
   initDbVerilogNetwork(this);
   initFlute(prog_arg);
-  Replace_Init(tcl_interp);
+  initReplace(this);
   initOpendp(this);
 
   // Import exported commands to global namespace.

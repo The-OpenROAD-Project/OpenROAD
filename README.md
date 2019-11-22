@@ -242,6 +242,31 @@ set_output_delay -clock clk 0 out
 report_checks
 ```
 
+#### Global Placement
+
+RePlAce global placement.
+
+```
+global_placement
+    [-timing_driven]
+    [-wire_res res]
+    [-wire_cap cap]
+    [-bin_grid_count grid_count]
+```
+
+-timing_driven Enable timing-driven mode
+res ohms per micron (for wire RC estimation)
+cap farads per micron (for wire RC estimation)
+grid_count [64,128,256,512,..., int]. Default: Defined by internal algorithm.
+
+#### Detailed Placement
+
+Legalize a design that has been globally placed.
+
+```
+legalize_placement [-constraints constraints_file]
+```
+
 ## Authors
 
 * James Cherry (OpenSTA, Resizer, OpenROAD)
