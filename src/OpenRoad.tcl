@@ -15,7 +15,7 @@
 
 namespace eval sta {
 
-proc show_splash {} {
+proc show_openroad_splash {} {
   puts "OpenROAD [openroad_version] [string range [openroad_git_sha1] 0 9]
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
