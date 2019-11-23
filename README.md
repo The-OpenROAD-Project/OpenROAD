@@ -161,9 +161,9 @@ resize [-buffer_inputs]
 report_design_area
 ```
 
-The `set_wire_rc` command sets the resistance
-(resistance_unit/distance_unit) and capacitance
-(capacitance_unit/distance_unit) of routing wires. It adds RC
+The `set_wire_rc` command sets the resistance (liberty
+resistance_unit/distance_unit) and capacitance (liberty
+capacitance_unit/distance_unit) of routing wires. It adds RC
 parasitics based on placed component pin locations. If there are no
 component locations no parasitics are added. The resistance and
 capacitance are per distance unit of a routing wire. Use the
