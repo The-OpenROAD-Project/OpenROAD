@@ -341,6 +341,7 @@ InitFloorplan::makeRows(const char *site_name,
 		      dbRowDir::HORIZONTAL, rows_x, site_dx);
 	y += site_dy;
       }
+      report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
     }
     else
       report_->printWarn("Warning: SITE %s not found.\n", site_name);

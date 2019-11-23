@@ -35,6 +35,8 @@ proc initialize_floorplan { args } {
   set site_name ""
   if [info exists keys(-site)] {
     set site_name $keys(-site)
+  } else {
+    puts "Warning: use -site to add placement rows."
   }
 
   set tracks_file ""
