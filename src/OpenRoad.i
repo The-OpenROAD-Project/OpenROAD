@@ -197,7 +197,7 @@ write_verilog_cmd(const char *filename,
 bool
 db_has_rows()
 {
-  dbDatabase *db = ord::OpenRoad::openRoad()->getDb();
+  odb::dbDatabase *db = ord::OpenRoad::openRoad()->getDb();
   return db->getChip()
     && db->getChip()->getBlock()
     && db->getChip()->getBlock()->getRows().size() > 0;
