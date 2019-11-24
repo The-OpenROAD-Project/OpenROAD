@@ -193,8 +193,17 @@ write_verilog_cmd(const char *filename,
   ord->writeVerilog(filename, sort);
 }
 
+// Common check for placement tools.
+bool
+db_has_rows()
+{
+  dbDatabase *db = ord::OpenRoad::openRoad()->getDb();
+  return db->getChip()
+    && db->getChip()->getBlock()
+    && db->getChip()->getBlock()->getRows().size() > 0;
+}
+
 %} // inline
 
 // OpenROAD swig files
 %include "InitFloorplan.i"
-
