@@ -123,8 +123,6 @@ write_db reg1.db
 initialize_floorplan
   [-site site_name]          LEF site name for ROWS
   [-tracks tracks_file]      routing track specification
-  [-auto_place_pins]         place pins around core area boundary
-  [-pin_layer pin_layer]
   -die_area "lx ly ux uy"    die area in microns
   [-core_area "lx ly ux uy"] core area in microns
 or
@@ -142,6 +140,10 @@ utilization as show below:
  core_height = core_width * aspect_ratio
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+
+Place pins around core boundary.
+
+  auto_place_pins pin_layer
 
 #### Gate Resizer
 

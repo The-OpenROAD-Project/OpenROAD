@@ -36,8 +36,6 @@ initFloorplan(double util,
 	      double core_space,
 	      const char *site_name,
 	      const char *tracks_file,
-	      bool auto_place_pins,
-	      const char *pin_layer_name,
 	      dbDatabase *db,
 	      Report *report);
 void
@@ -51,8 +49,11 @@ initFloorplan(double die_lx,
 	      double core_uy,
 	      const char *site_name,
 	      const char *tracks_file,
-	      bool auto_place_pins,
-	      const char *pin_layer_name,
+	      dbDatabase *db,
+	      Report *report);
+
+void
+autoPlacePins(const char *pin_layer_name,
 	      dbDatabase *db,
 	      Report *report);
 

@@ -22,15 +22,13 @@ define_cmd_args "initialize_floorplan" {
     [-die_area {lx ly ux uy}]\
     [-core_area {lx ly ux uy}]\
     [-site site_name]\
-    [-tracks tracks_file]\
-    [-auto_place_pins]}
+    [-tracks tracks_file]}
 
 proc initialize_floorplan { args } {
   parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site -tracks \
-	    -pin_layer pin_layer} \
-    flags {-auto_place_pins}
+	    -die_area -core_area -site -tracks} \
+    flags {}
 
   set site_name ""
   if [info exists keys(-site)] {
@@ -42,14 +40,6 @@ proc initialize_floorplan { args } {
   set tracks_file ""
   if { [info exists keys(-tracks)] } {
     set tracks_file $keys(-tracks)
-  }
-
-  set auto_place_pins [info exists flags(-auto_place_pins)]
-  set pin_layer ""
-  if { $auto_place_pins } {
-    if { [info exists keys(-pin_layer)] } {
-      set pin_layer $keys(-pin_layer)
-    }
   }
 
   if [info exists keys(-utilization)] {
@@ -75,8 +65,7 @@ proc initialize_floorplan { args } {
       set aspect_ratio 1.0
     }
     init_floorplan_util $util $aspect_ratio [distance_ui_sta $core_sp] \
-      $site_name $tracks_file \
-      $auto_place_pins $pin_layer
+      $site_name $tracks_file
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
@@ -104,14 +93,19 @@ proc initialize_floorplan { args } {
 	[distance_ui_sta $die_ux] [distance_ui_sta $die_uy] \
 	[distance_ui_sta $core_lx] [distance_ui_sta $core_ly] \
 	[distance_ui_sta $core_ux] [distance_ui_sta $core_uy] \
-	$site_name $tracks_file \
-	$auto_place_pins $pin_layer
+	$site_name $tracks_file
     } else {
       sta_error "no -core_area specified."
     }
   } else {
     sta_error "no -utilization or -die_area specified."
   }
+}
+
+define_cmd_args "auto_place_pins" {pin_layer}
+
+proc auto_place_pins { pin_layer } {
+  auto_place_pins_cmd $pin_layer
 }
 
 # sta namespace end
