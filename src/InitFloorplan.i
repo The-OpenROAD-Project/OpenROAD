@@ -20,8 +20,6 @@
 #include "Machine.hh"
 #include "InitFloorplan.hh"
 
-using namespace sta;
-
 %}
 
 ////////////////////////////////////////////////////////////////

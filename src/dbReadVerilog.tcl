@@ -14,40 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace eval sta {
+sta::define_cmd_args "read_verilog" {filename}
 
-# Defined by swig.
-define_cmd_args "read_verilog" {filename}
+proc read_verilog { filename } {
+  ord::read_verilog_cmd $filename
+}
 
-define_cmd_args "link_design" {[top_cell_name]}
+sta::define_cmd_args "link_design" {[top_cell_name]}
 
 proc link_design { {top_cell_name ""} } {
   variable current_design_name
 
   if { $top_cell_name == "" } {
     if { $current_design_name == "" } {
-      sta_error "missing top_cell_name argument and no current_design."
+      sta::sta_error "missing top_cell_name argument and no current_design."
       return 0
     } else {
       set top_cell_name $current_design_name
     }
   }
-  if { ![db_has_tech] } {
-    sta_error "no technology has been read."
+  if { ![ord::db_has_tech] } {
+    sta::sta_error "no technology has been read."
   }
-  link_design_db_cmd $top_cell_name
+  ord::link_design_db_cmd $top_cell_name
 }
 
-define_cmd_args "write_verilog" {[-sort] filename}
+sta::define_cmd_args "write_verilog" {[-sort] filename}
 
 proc write_verilog { args } {
-  parse_key_args "write_verilog" args keys {} flags {-sort}
+  sta::parse_key_args "write_verilog" args keys {} flags {-sort}
 
   set sort [info exists flags(-sort)]
-  check_argc_eq1 "write_verilog" $args
+  sta::check_argc_eq1 "write_verilog" $args
   set filename $args
-  write_verilog_cmd $filename $sort
-}
-
-# sta namespace end
+  ord::write_verilog_cmd $filename $sort
 }

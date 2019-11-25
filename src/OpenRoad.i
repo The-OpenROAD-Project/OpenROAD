@@ -172,7 +172,7 @@ write_db_cmd(const char *filename)
 }
 
 void
-read_verilog(const char *filename)
+read_verilog_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
   ord->readVerilog(filename);
