@@ -75,6 +75,7 @@ add_subdirectory(dbSta)
 add_subdirectory(resizer)
 add_subdirectory(flute3)
 add_subdirectory(replace)
+add_subdirectory(ioPlacer)
 
 ################################################################
 
@@ -171,6 +172,7 @@ target_include_directories(openroad
 target_link_libraries(openroad
   replace
   resizer
+  ioPlacer
   flute
   dbSta
   OpenSTA

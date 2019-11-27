@@ -11,3 +11,6 @@
 	path = src/replace
 	url = https://github.com/The-OpenROAD-Project/RePlAce.git
 	branch = openroad
+[submodule "src/ioPlacer"]
+	path = src/ioPlacer
+	url = https://github.com/The-OpenROAD-Project/ioPlacer.git

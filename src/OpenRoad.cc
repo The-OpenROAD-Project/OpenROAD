@@ -39,6 +39,7 @@ extern "C" {
 extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 extern int Replace_Init(Tcl_Interp *interp);
+extern int Ioplacer_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -88,6 +89,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
 
   // Make components.
   db_ = dbDatabase::create();
+  printf("DB id: %u\n", db_->getId());
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   resizer_ = ord::makeResizer();
@@ -103,6 +105,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initDbVerilogNetwork(this);
   initFlute(prog_arg);
   Replace_Init(tcl_interp);
+  Ioplacer_Init(tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
