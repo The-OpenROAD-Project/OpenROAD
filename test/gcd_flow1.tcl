@@ -21,7 +21,7 @@ set wire_cap_f_per_micron [expr $wire_cap_ff_per_micron * 1e-15]
 set wire_res_ohm_per_micron [expr $wire_res_kohm_per_micron * 1e+3]
 
 initialize_floorplan -site FreePDK45_38x28_10R_NP_162NW_34O \
-  -utilization 40 -tracks tracks.info
+  -utilization 40 -tracks nangate45.tracks
 auto_place_pin metal1
 
 # Pre-sizing wireload timing
