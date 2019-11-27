@@ -96,8 +96,6 @@ Path Type: max
 
 
 [INFO] TargetDensity = 1.000000
-[INFO] ExperimentIndex = 7
-[INFO] DirectoryPath = ./output/etc//experiment007
 [PROC] Begin Filling Replace Structure ...
 [INFO] DEF DBU = 2000
 [INFO] RowHeight = 2800.000000
