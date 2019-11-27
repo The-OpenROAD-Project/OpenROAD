@@ -491,12 +491,17 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
       dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
       if (pin_layer) {
 	adsRect core;
-	core.mergeInit();
-	for (auto row : block_->getRows()) {
-	  adsRect row_bbox;
-	  row->getBBox(row_bbox);
-	  core.merge(row_bbox);
+	auto rows = block_->getRows();
+	if (rows.size() > 0) {
+	  core.mergeInit();
+	  for (auto row : rows) {
+	    adsRect row_bbox;
+	    row->getBBox(row_bbox);
+	    core.merge(row_bbox);
+	  }
 	}
+	else
+	  block_->getDieArea(core);
 	autoPlacePins(pin_layer, core.xMin(), core.yMin(), core.xMax(), core.yMax());
       }
       else
@@ -549,6 +554,11 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
 	y = core_uy - (location - (dx * 2 + dy));
 	orient = dbOrientType::R90; // W
       }
+
+      // Delete existing BPins.
+      dbSet<dbBPin> bpins = bterm->getBPins();
+      for (auto bpin_itr = bpins.begin(); bpin_itr != bpins.end(); )
+	bpin_itr = dbBPin::destroy(bpin_itr);
 
       dbBPin *bpin = dbBPin::create(bterm);
       bpin->setPlacementStatus(dbPlacementStatus::FIRM);
