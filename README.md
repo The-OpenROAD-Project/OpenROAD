@@ -251,15 +251,14 @@ RePlAce global placement.
 ```
 global_placement
     [-timing_driven]
-    [-wire_res res]
-    [-wire_cap cap]
     [-bin_grid_count grid_count]
 ```
 
 -timing_driven Enable timing-driven mode
-res ohms per micron (for wire RC estimation)
-cap farads per micron (for wire RC estimation)
 grid_count [64,128,256,512,..., int]. Default: Defined by internal algorithm.
+
+Use the `set_wire_rc` command to set resistance and capacitance of
+estimated wires used for timing.
 
 #### Detailed Placement
 

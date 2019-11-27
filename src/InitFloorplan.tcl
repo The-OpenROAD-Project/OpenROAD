@@ -104,6 +104,9 @@ proc initialize_floorplan { args } {
 sta::define_cmd_args "auto_place_pins" {pin_layer}
 
 proc auto_place_pins { pin_layer } {
-  ord::auto_place_pins_cmd $pin_layer
+  if { [[ord::get_db_tech] findLayer $pin_layer] != "NULL" } {
+    ord::auto_place_pins_cmd $pin_layer
+  } else {
+    sta::sta_error "layer $pin_layer not found."
+  }
 }
-

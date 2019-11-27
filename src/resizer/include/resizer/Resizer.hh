@@ -40,6 +40,10 @@ public:
   void setWireRC(float wire_res, // ohms/meter
 		 float wire_cap, // farads/meter
 		 Corner *corner);
+  // ohms/meter
+  float wireResistance() { return wire_res_; }
+  // farads/meter
+  float wireCapacitance() { return wire_cap_; }
 
   // Core area (meters).
   double coreArea() const;
