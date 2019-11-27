@@ -134,8 +134,8 @@ record_tests {
   write_verilog2
   write_verilog3
   write_verilog4
-  gcd_flow1
 }
+#  gcd_flow1
 
 # Record tests in $STAX/designs
 record_test_design {

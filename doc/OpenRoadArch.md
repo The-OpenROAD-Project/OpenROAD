@@ -163,8 +163,8 @@ OpenROAD sources. Changes to the develop branch are merged into the
 tool only branch to follow them, keeping only the edits necessary to
 remove other tools.
 
-Note that removing submodules from the repo is less than obvious.
-Here are the steps:
+Note that removing submodules from a repo when moving it into OpenROAD
+is less than obvious.  Here are the steps:
 
 git submodule deinit <path_to_submodule>
 git rm <path_to_submodule>
