@@ -150,7 +150,7 @@ Place pins around core boundary.
 Gate resizer commands are shown below.
 
 ```
-set_wire_rc [-resistance res ] [-capacitance cap] [-corner corner_name]
+set_wire_rc [-layer layer_name] [-resistance res ] [-capacitance cap] [-corner corner_name]
 resize [-buffer_inputs]
        [-buffer_outputs]
        [-resize]
@@ -163,17 +163,21 @@ resize [-buffer_inputs]
 report_design_area
 ```
 
-The `set_wire_rc` command sets the resistance (liberty
-resistance_unit/distance_unit) and capacitance (liberty
-capacitance_unit/distance_unit) of routing wires. It adds RC
-parasitics based on placed component pin locations. If there are no
-component locations no parasitics are added. The resistance and
-capacitance are per distance unit of a routing wire. Use the
-`set_units` command to check units or `set_cmd_units` to change
-units. They should represent "average" routing layer resistance and
-capacitance. If the set_wire_rc command is not called before resizing,
-the default_wireload model specified in the first liberty file or with
-the SDC set_wire_load command is used to make parasitics.
+The `set_wire_rc` command sets the resistance and capacitance used to
+estimate delay of routing wires.  Use `-layer` or `-resistance` and
+`-capacitance`.  If `-layer` is used, the LEF technology resistance
+and area/edge capacitance values for the layer are used.  The units
+for `-resistance` and `-capacitance` are from the first liberty file
+read, resistance_unit/distance_unit and liberty
+capacitance_unit/distance_unit. RC parasitics are added based on
+placed component pin locations. If there are no component locations no
+parasitics are added. The resistance and capacitance are per distance
+unit of a routing wire. Use the `set_units` command to check units or
+`set_cmd_units` to change units. They should represent "average"
+routing layer resistance and capacitance. If the set_wire_rc command
+is not called before resizing, the default_wireload model specified in
+the first liberty file or with the SDC set_wire_load command is used
+to make parasitics.
 
 The `resize` command buffers inputs and outputs, resizes gates, and
 then uses buffer insertion to repair maximum capacitance and slew
