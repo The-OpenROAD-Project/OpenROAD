@@ -123,8 +123,6 @@ write_db reg1.db
 initialize_floorplan
   [-site site_name]          LEF site name for ROWS
   [-tracks tracks_file]      routing track specification
-  [-auto_place_pins]         place pins around core area boundary
-  [-pin_layer pin_layer]
   -die_area "lx ly ux uy"    die area in microns
   [-core_area "lx ly ux uy"] core area in microns
 or
@@ -142,6 +140,10 @@ utilization as show below:
  core_height = core_width * aspect_ratio
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+
+Place pins around core boundary.
+
+  auto_place_pins pin_layer
 
 #### Gate Resizer
 
@@ -161,9 +163,9 @@ resize [-buffer_inputs]
 report_design_area
 ```
 
-The `set_wire_rc` command sets the resistance
-(resistance_unit/distance_unit) and capacitance
-(capacitance_unit/distance_unit) of routing wires. It adds RC
+The `set_wire_rc` command sets the resistance (liberty
+resistance_unit/distance_unit) and capacitance (liberty
+capacitance_unit/distance_unit) of routing wires. It adds RC
 parasitics based on placed component pin locations. If there are no
 component locations no parasitics are added. The resistance and
 capacitance are per distance unit of a routing wire. Use the
@@ -240,6 +242,30 @@ create_clock -name clk -period 10 {clk1 clk2 clk3}
 set_input_delay -clock clk 0 {in1 in2}
 set_output_delay -clock clk 0 out
 report_checks
+```
+
+#### Global Placement
+
+RePlAce global placement.
+
+```
+global_placement
+    [-timing_driven]
+    [-bin_grid_count grid_count]
+```
+
+-timing_driven Enable timing-driven mode
+grid_count [64,128,256,512,..., int]. Default: Defined by internal algorithm.
+
+Use the `set_wire_rc` command to set resistance and capacitance of
+estimated wires used for timing.
+
+#### Detailed Placement
+
+Legalize a design that has been globally placed.
+
+```
+legalize_placement [-constraints constraints_file]
 ```
 
 ## Authors

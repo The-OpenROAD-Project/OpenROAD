@@ -19,6 +19,7 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
+set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(TOOL_HOME ${OPENROAD_HOME}/src/tool)
 
@@ -63,7 +64,7 @@ add_custom_command(OUTPUT ${OPENDB_WRAP}
   )
 
 add_custom_command(OUTPUT ${OPENROAD_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ord -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS OpenRoad.i InitFloorplan.i
@@ -78,6 +79,7 @@ add_subdirectory(dbSta)
 add_subdirectory(resizer)
 add_subdirectory(flute3)
 add_subdirectory(replace)
+add_subdirectory(opendp)
 
 ################################################################
 
@@ -168,6 +170,7 @@ target_include_directories(openroad
   PRIVATE
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
+  ${OPENDP_HOME}/include
   flute3
   ${TOOL_HOME}/include
   )
@@ -175,6 +178,7 @@ target_include_directories(openroad
 target_link_libraries(openroad
   tool
   replace
+  opendp
   resizer
   flute
   dbSta
@@ -203,6 +207,9 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 # executable
 install(TARGETS openroad DESTINATION bin)
+# etc magic flute files
+INSTALL( FILES ../etc/POST9.dat DESTINATION etc)
+INSTALL( FILES ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 

@@ -159,9 +159,60 @@ It can be used to run unit tests that reside inside the tool
 directory.
 
 Currently this is supported by editing Resizer related calls in the
-OpenROAD sources. As the sources in the develop/master branch change
-the tool branch is rebased to follow them, keeping only the edits
-necessary to remove other tools.
+OpenROAD sources. Changes to the develop branch are merged into the
+tool only branch to follow them, keeping only the edits necessary to
+remove other tools.
+
+Note that removing submodules from a repo when moving it into OpenROAD
+is less than obvious.  Here are the steps:
+
+git submodule deinit <path_to_submodule>
+git rm <path_to_submodule>
+git commit-m "Removed submodule "
+rm -rf .git/modules/<path_to_submodule>
+
+### Tool Work Flow
+
+To work on one of the tools inside OpenROAD when it is a submodule
+requires updating the OpenROAD repo to integrate your changes.
+Submodules point to a specific version (hash) of the submodule repo
+and do not automatically track changes to the submodule repo.
+
+Work on OpenROAD should be done in the `develop` branch.
+
+To make changes to a submodule, first check out a branch of the submodule
+(git clone --recursive does not check out a branch, just a specific hash).
+
+```
+cd src/<tool>
+git checkout <branch>
+```
+
+`<branch>` is the branch used for development of the tool when it is inside
+OpenROAD. Eventually this branch will be `develop` or `master`, but right
+now it may be a branch used just for integrating with OpenROAD, like `openroad`.
+
+After making changes inside the tool source tree, stage and commit
+them to the tool repo and push them to the remote repo.
+
+```
+git add ...
+git commit -m "massive improvement"
+git push
+```
+
+If instead you have done development in a different branch or source tree,
+merge those changes into the branch used for OpenROAD.
+
+Once the changes are in the OpenROAD submodule source tree it will show
+them as a diff in the hash for the directory.
+
+```
+cd openroad
+git stage <tool_submodule_dir>
+git commit -m "merge tool massive improvement"
+git push
+```
 
 ### Example of Adding a Tool to OpenRoad
 

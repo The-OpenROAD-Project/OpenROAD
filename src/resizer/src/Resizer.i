@@ -120,6 +120,22 @@ set_wire_rc_cmd(float res,
   resizer->setWireRC(res, cap, corner);
 }
 
+// ohms/meter
+double
+wire_resistance()
+{
+  Resizer *resizer = getResizer();
+  return resizer->wireResistance();
+}
+
+// farads/meter
+double
+wire_capacitance()
+{
+  Resizer *resizer = getResizer();
+  return resizer->wireCapacitance();
+}
+
 void
 set_max_utilization(double max_utilization)
 {

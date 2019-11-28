@@ -20,8 +20,6 @@
 #include "Machine.hh"
 #include "InitFloorplan.hh"
 
-using namespace sta;
-
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -42,9 +40,7 @@ init_floorplan_core(double die_lx,
 		    double core_ux,
 		    double core_uy,
 		    const char *site_name,
-		    const char *tracks_file,
-		    bool auto_place_pins,
-		    const char *pin_layer_name)
+		    const char *tracks_file)
 {
   odb::dbDatabase *db = getDb();
   sta::dbSta *sta = getSta();
@@ -52,7 +48,6 @@ init_floorplan_core(double die_lx,
   ord::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
 		     site_name, tracks_file,
-		     auto_place_pins, pin_layer_name,
 		     db, report);
 }
 
@@ -61,9 +56,7 @@ init_floorplan_util(double util,
 		    double aspect_ratio,
 		    double core_space,
 		    const char *site_name,
-		    const char *tracks_file,
-		    bool auto_place_pins,
-		    const char *pin_layer_name)
+		    const char *tracks_file)
 
 {
   odb::dbDatabase *db = getDb();
@@ -71,8 +64,16 @@ init_floorplan_util(double util,
   sta::Report *report = sta->report();
   ord::initFloorplan(util, aspect_ratio, core_space,
 		     site_name, tracks_file,
-		     auto_place_pins, pin_layer_name,
 		     db, report);
+}
+
+void
+auto_place_pins_cmd(const char *pin_layer)
+{
+  odb::dbDatabase *db = getDb();
+  sta::dbSta *sta = getSta();
+  sta::Report *report = sta->report();
+  ord::autoPlacePins(pin_layer, db, report);
 }
 
 %} // inline

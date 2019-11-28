@@ -987,6 +987,8 @@ dbNetwork::disconnectPin(Pin *pin)
   if (iterm)
     dbITerm::disconnect(iterm);
   else if (bterm)
+    // dbNet::disconnect(bterm) does not exist.
+    // It should. -cherry
     dbBTerm::destroy(bterm);
 }
 

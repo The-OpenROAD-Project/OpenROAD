@@ -2,7 +2,7 @@
 source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
-read_def reg1.def
+read_def rebuffer_ports1.def
 create_clock -period 1 {clk1 clk2 clk3}
 
 set buffer_cell [get_lib_cell liberty1/snl_bufx2]

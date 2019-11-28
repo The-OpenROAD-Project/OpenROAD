@@ -23,13 +23,14 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
-#include "resizer/MakeResizer.hh"
-
 #include "dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
 
+#include "resizer/MakeResizer.hh"
+#include "opendp/MakeOpendp.h"
+#include "replace/src/MakeReplace.h"
 #include "tool/MakeTool.hh"
 
 namespace sta {
@@ -63,6 +64,7 @@ OpenRoad::~OpenRoad()
   deleteDbVerilogNetwork(verilog_network_);
   deleteDbSta(sta_);
   deleteResizer(resizer_);
+  deleteOpendp(opendp_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -93,6 +95,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   resizer_ = makeResizer();
+  opendp_ = makeOpendp();
   tool_ = makeTool();
 
   // Init components.
@@ -105,7 +108,9 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initResizer(this);
   initDbVerilogNetwork(this);
   initFlute(prog_arg);
-  Replace_Init(tcl_interp);
+
+  initReplace(this);
+  initOpendp(this);
   initTool(this);
 
   // Import exported commands to global namespace.

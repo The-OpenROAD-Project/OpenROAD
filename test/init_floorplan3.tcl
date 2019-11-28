@@ -7,9 +7,8 @@ initialize_floorplan -utilization 30 \
   -aspect_ratio 0.5 \
   -core_space 2 \
   -tracks init_floorplan2.tracks \
-  -site site1 \
-  -auto_place_pins \
-  -pin_layer M1
+  -site site1
+auto_place_pins M1
 
 set def_file [make_result_file init_floorplan3.def]
 write_def $def_file
