@@ -28,6 +28,8 @@ class dbNetwork;
 class Resizer;
 }
 
+class IOPlacementKernel;
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -73,6 +75,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
+  IOPlacementKernel *ioPlacer_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

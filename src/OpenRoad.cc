@@ -30,6 +30,8 @@
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
 
+#include "ioPlacer/src/MakeIoplacer.h"
+
 namespace sta {
 extern const char *openroad_tcl_inits[];
 }
@@ -89,10 +91,10 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
 
   // Make components.
   db_ = dbDatabase::create();
-  printf("DB id: %u\n", db_->getId());
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   resizer_ = ord::makeResizer();
+  ioPlacer_ = (IOPlacementKernel*) makeIoplacer();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -103,6 +105,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);
+  initIoplacer(this);
   initFlute(prog_arg);
   Replace_Init(tcl_interp);
   Ioplacer_Init(tcl_interp);
