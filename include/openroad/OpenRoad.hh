@@ -28,6 +28,10 @@ class dbNetwork;
 class Resizer;
 }
 
+namespace FastRoute {
+class FastRouteKernel;
+}
+
 namespace opendp {
 class opendp_external;
 }
@@ -79,6 +83,7 @@ private:
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
   opendp::opendp_external *opendp_;
+  FastRoute::FastRouteKernel *fastRoute_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
