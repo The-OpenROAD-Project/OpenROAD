@@ -49,6 +49,8 @@ There are a set of regression tests in `/test`.
 
 ```
 test/regression fast
+src/resizer/test/regression fast
+
 ```
 
 #### Run
