@@ -28,10 +28,13 @@ class dbNetwork;
 class Resizer;
 }
 
+namespace ioPlacer {
 class IOPlacementKernel;
+}
 
 namespace opendp {
 class opendp_external;
+}
 
 namespace ord {
 
@@ -79,7 +82,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
-  IOPlacementKernel *ioPlacer_;
+  ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
 
   // Singleton used by tcl command interpreter.

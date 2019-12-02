@@ -97,7 +97,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   db_ = dbDatabase::create();
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
-  ioPlacer_ = (IOPlacementKernel*) makeIoplacer();
+  ioPlacer_ = (ioPlacer::IOPlacementKernel*) makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
 

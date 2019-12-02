@@ -161,6 +161,7 @@ add_subdirectory(resizer)
 add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
+add_subdirectory(ioPlacer)
 
 ################################################################
 
