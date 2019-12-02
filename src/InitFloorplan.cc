@@ -88,8 +88,6 @@ public:
 		     double core_space,
 		     const char *site_name,
 		     const char *tracks_file,
-		     bool auto_place_pins,
-		     const char *pin_layer_name,
 		     dbDatabase *db,
 		     Report *report);
   void initFloorplan(double die_lx,
@@ -102,8 +100,9 @@ public:
 		     double core_uy,
 		     const char *site_name,
 		     const char *tracks_file,
-		     bool auto_place_pins,
-		     const char *pin_layer_name,
+		     dbDatabase *db,
+		     Report *report);
+  void autoPlacePins(const char *pin_layer_name,
 		     dbDatabase *db,
 		     Report *report);
 
@@ -117,9 +116,7 @@ protected:
 		     double core_ux,
 		     double core_uy,
 		     const char *site_name,
-		     const char *tracks_file,
-		     bool auto_place_pins,
-		     const char *pin_layer_name);
+		     const char *tracks_file);
   double designArea();
   void makeRows(const char *site_name,
 		double core_lx,
@@ -138,10 +135,10 @@ protected:
 		  double die_uy);
   void readTracks(const char *tracks_file);
   void autoPlacePins(dbTechLayer *pin_layer,
-		     double core_lx,
-		     double core_ly,
-		     double core_ux,
-		     double core_uy);
+		     int core_lx,
+		     int core_ly,
+		     int core_ux,
+		     int core_uy);
   int metersToDbu(double dist) const;
   double dbuToMeters(uint dist) const;
 
@@ -157,15 +154,12 @@ initFloorplan(double util,
 	      double core_space,
 	      const char *site_name,
 	      const char *tracks_file,
-	      bool auto_place_pins,
-	      const char *pin_layer_name,
 	      dbDatabase *db,
 	      Report *report)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(util, aspect_ratio, core_space,
 			site_name, tracks_file,
-			auto_place_pins, pin_layer_name,
 			db, report);
 }
 
@@ -180,8 +174,6 @@ initFloorplan(double die_lx,
 	      double core_uy,
 	      const char *site_name,
 	      const char *tracks_file,
-	      bool auto_place_pins,
-	      const char *pin_layer_name,
 	      dbDatabase *db,
 	      Report *report)
 {
@@ -189,7 +181,6 @@ initFloorplan(double die_lx,
   init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
 			core_lx, core_ly, core_ux, core_uy,
 			site_name, tracks_file,
-			auto_place_pins, pin_layer_name,
 			db, report);
 }
 
@@ -199,8 +190,6 @@ InitFloorplan::initFloorplan(double util,
 			     double core_space,
 			     const char *site_name,
 			     const char *tracks_file,
-			     bool auto_place_pins,
-			     const char *pin_layer_name,
 			     dbDatabase *db,
 			     Report *report)
 {
@@ -226,8 +215,7 @@ InitFloorplan::initFloorplan(double util,
       double die_uy = core_height + core_space * 2.0;
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
-		    site_name, tracks_file,
-		    auto_place_pins, pin_layer_name);
+		    site_name, tracks_file);
     }
   }
 }
@@ -255,8 +243,6 @@ InitFloorplan::initFloorplan(double die_lx,
 			     double core_uy,
 			     const char *site_name,
 			     const char *tracks_file,
-			     bool auto_place_pins,
-			     const char *pin_layer_name,
 			     dbDatabase *db,
 			     Report *report)
 {
@@ -268,8 +254,8 @@ InitFloorplan::initFloorplan(double die_lx,
     if (block_) {
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
-		    site_name, tracks_file,
-		    auto_place_pins, pin_layer_name);
+		    site_name, tracks_file);
+
     }
   }
 }
@@ -284,20 +270,8 @@ InitFloorplan::initFloorplan(double die_lx,
 			     double core_ux,
 			     double core_uy,
 			     const char *site_name,
-			     const char *tracks_file,
-			     bool auto_place_pins,
-			     const char *pin_layer_name)
+			     const char *tracks_file)
 {
-  dbTechLayer *pin_layer = nullptr;
-  if (pin_layer_name[0] == '\0')
-    pin_layer_name = nullptr;
-  if (auto_place_pins && pin_layer_name) {
-    dbTech *tech = db_->getTech();
-    pin_layer = tech->findLayer(pin_layer_name);
-    if (pin_layer == nullptr)
-      report_->warn("pin layer %s not found.\n", pin_layer_name);
-  }
-
   adsRect die_area(metersToDbu(die_lx),
 		   metersToDbu(die_ly),
 		   metersToDbu(die_ux),
@@ -308,8 +282,6 @@ InitFloorplan::initFloorplan(double die_lx,
     makeTracks(tracks_file, die_lx, die_ly, die_ux, die_uy);
   else
     makeTracks(die_lx, die_ly, die_ux, die_uy);
-  if (auto_place_pins && pin_layer)
-    autoPlacePins(pin_layer, core_lx, core_ly, core_ux, core_uy);
 }
 
 void
@@ -341,6 +313,7 @@ InitFloorplan::makeRows(const char *site_name,
 		      dbRowDir::HORIZONTAL, rows_x, site_dx);
 	y += site_dy;
       }
+      report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
     }
     else
       report_->printWarn("Warning: SITE %s not found.\n", site_name);
@@ -495,24 +468,67 @@ InitFloorplan::makeTracks(double die_lx,
 ////////////////////////////////////////////////////////////////
 
 void
+autoPlacePins(const char *pin_layer_name,
+	      dbDatabase *db,
+	      Report *report)
+{
+  InitFloorplan init_fp;
+  init_fp.autoPlacePins(pin_layer_name, db, report);
+}
+
+void
+InitFloorplan::autoPlacePins(const char *pin_layer_name,
+			     dbDatabase *db,
+			     Report *report)
+{
+  report_ = report;
+  db_ = db;
+  dbChip *chip = db_->getChip();
+  if (chip) {
+    block_ = chip->getBlock();
+    if (block_) {
+      dbTech *tech = db_->getTech();
+      dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
+      if (pin_layer) {
+	adsRect core;
+	auto rows = block_->getRows();
+	if (rows.size() > 0) {
+	  core.mergeInit();
+	  for (auto row : rows) {
+	    adsRect row_bbox;
+	    row->getBBox(row_bbox);
+	    core.merge(row_bbox);
+	  }
+	}
+	else
+	  block_->getDieArea(core);
+	autoPlacePins(pin_layer, core.xMin(), core.yMin(), core.xMax(), core.yMax());
+      }
+      else
+	report_->warn("pin layer %s not found.\n", pin_layer_name);
+    }
+  }
+}
+
+void
 InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
-			     double core_lx,
-			     double core_ly,
-			     double core_ux,
-			     double core_uy)
+			     int core_lx,
+			     int core_ly,
+			     int core_ux,
+			     int core_uy)
 {
   dbSet<dbBTerm> bterms = block_->getBTerms();
   int pin_count = bterms.size();
 
   if (pin_count > 0) {
-    double dx = abs(core_ux - core_lx);
-    double dy = abs(core_uy - core_ly);
-    double perimeter = dx * 2 + dy * 2;
+    int dx = abs(core_ux - core_lx);
+    int dy = abs(core_uy - core_ly);
+    int perimeter = dx * 2 + dy * 2;
     double location = 0.0;
-    double pin_dist = perimeter / pin_count;
+    int pin_dist = perimeter / pin_count;
 
     for (dbBTerm *bterm : bterms) {
-      double x, y;
+      int x, y;
       dbOrientType orient;
       if (location < dx) {
 	// bottom
@@ -539,11 +555,14 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
 	orient = dbOrientType::R90; // W
       }
 
+      // Delete existing BPins.
+      dbSet<dbBPin> bpins = bterm->getBPins();
+      for (auto bpin_itr = bpins.begin(); bpin_itr != bpins.end(); )
+	bpin_itr = dbBPin::destroy(bpin_itr);
+
       dbBPin *bpin = dbBPin::create(bterm);
       bpin->setPlacementStatus(dbPlacementStatus::FIRM);
-      int x_dbu = metersToDbu(x);
-      int y_dbu = metersToDbu(y);
-      dbBox::create(bpin, pin_layer, x_dbu, y_dbu, x_dbu, y_dbu);
+      dbBox::create(bpin, pin_layer, x, y, x, y);
 
       location += pin_dist;
     }

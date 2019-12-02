@@ -122,6 +122,7 @@ proc list_delete { list delete } {
 # Record tests in resizer/test
 record_resizer_tests {
   make_parasitics1
+  make_parasitics2
   rebuffer1
   rebuffer2
   rebuffer3

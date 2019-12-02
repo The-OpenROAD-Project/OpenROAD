@@ -19,6 +19,7 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
+set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
@@ -63,23 +64,12 @@ add_custom_command(OUTPUT ${OPENDB_WRAP}
   )
 
 add_custom_command(OUTPUT ${OPENROAD_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ord -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS OpenRoad.i InitFloorplan.i
   )
 
-################################################################
-
-add_subdirectory(OpenDB)
-add_subdirectory(OpenSTA)
-add_subdirectory(dbSta)
-add_subdirectory(resizer)
-add_subdirectory(flute3)
-add_subdirectory(replace)
-add_subdirectory(ioPlacer)
-
-################################################################
 
 ################################################################
 #
@@ -156,6 +146,21 @@ if (NOT TCL_HEADER)
 endif()
 message(STATUS "TCL header: ${TCL_HEADER}")
 get_filename_component(TCL_HEADER_DIR "${TCL_HEADER}" PATH)
+include_directories(SYSTEM ${TCL_HEADER_DIR})
+
+################################################################
+
+# Disable OpenDB stand-alone executable builds.
+# Simplistic findTCL fails on OSX.
+set(BUILD_PYTHON false)
+set(BUILD_TCL false)
+add_subdirectory(OpenDB)
+add_subdirectory(OpenSTA)
+add_subdirectory(dbSta)
+add_subdirectory(resizer)
+add_subdirectory(flute3)
+add_subdirectory(replace)
+add_subdirectory(opendp)
 
 ################################################################
 
@@ -168,11 +173,13 @@ target_include_directories(openroad
   PRIVATE
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
+  ${OPENDP_HOME}/include
   flute3
   )
 
 target_link_libraries(openroad
   replace
+  opendp
   resizer
   ioPlacer
   flute
@@ -194,6 +201,10 @@ if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_link_libraries(openroad -pthread)
+endif()
+
 target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 ################################################################
@@ -202,6 +213,8 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 # executable
 install(TARGETS openroad DESTINATION bin)
+# etc magic flute files
+install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 
@@ -216,3 +229,4 @@ add_custom_target(openroad_tags etags -o TAGS
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )
+

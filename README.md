@@ -49,6 +49,8 @@ There are a set of regression tests in `/test`.
 
 ```
 test/regression fast
+src/resizer/test/regression fast
+
 ```
 
 #### Run
@@ -123,8 +125,6 @@ write_db reg1.db
 initialize_floorplan
   [-site site_name]          LEF site name for ROWS
   [-tracks tracks_file]      routing track specification
-  [-auto_place_pins]         place pins around core area boundary
-  [-pin_layer pin_layer]
   -die_area "lx ly ux uy"    die area in microns
   [-core_area "lx ly ux uy"] core area in microns
 or
@@ -143,12 +143,16 @@ utilization as show below:
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
 
+Place pins around core boundary.
+
+  auto_place_pins pin_layer
+
 #### Gate Resizer
 
 Gate resizer commands are shown below.
 
 ```
-set_wire_rc [-resistance res ] [-capacitance cap] [-corner corner_name]
+set_wire_rc [-layer layer_name] [-resistance res ] [-capacitance cap] [-corner corner_name]
 resize [-buffer_inputs]
        [-buffer_outputs]
        [-resize]
@@ -161,17 +165,21 @@ resize [-buffer_inputs]
 report_design_area
 ```
 
-The `set_wire_rc` command sets the resistance
-(resistance_unit/distance_unit) and capacitance
-(capacitance_unit/distance_unit) of routing wires. It adds RC
-parasitics based on placed component pin locations. If there are no
-component locations no parasitics are added. The resistance and
-capacitance are per distance unit of a routing wire. Use the
-`set_units` command to check units or `set_cmd_units` to change
-units. They should represent "average" routing layer resistance and
-capacitance. If the set_wire_rc command is not called before resizing,
-the default_wireload model specified in the first liberty file or with
-the SDC set_wire_load command is used to make parasitics.
+The `set_wire_rc` command sets the resistance and capacitance used to
+estimate delay of routing wires.  Use `-layer` or `-resistance` and
+`-capacitance`.  If `-layer` is used, the LEF technology resistance
+and area/edge capacitance values for the layer are used.  The units
+for `-resistance` and `-capacitance` are from the first liberty file
+read, resistance_unit/distance_unit and liberty
+capacitance_unit/distance_unit. RC parasitics are added based on
+placed component pin locations. If there are no component locations no
+parasitics are added. The resistance and capacitance are per distance
+unit of a routing wire. Use the `set_units` command to check units or
+`set_cmd_units` to change units. They should represent "average"
+routing layer resistance and capacitance. If the set_wire_rc command
+is not called before resizing, the default_wireload model specified in
+the first liberty file or with the SDC set_wire_load command is used
+to make parasitics.
 
 The `resize` command buffers inputs and outputs, resizes gates, and
 then uses buffer insertion to repair maximum capacitance and slew
@@ -240,6 +248,30 @@ create_clock -name clk -period 10 {clk1 clk2 clk3}
 set_input_delay -clock clk 0 {in1 in2}
 set_output_delay -clock clk 0 out
 report_checks
+```
+
+#### Global Placement
+
+RePlAce global placement.
+
+```
+global_placement
+    [-timing_driven]
+    [-bin_grid_count grid_count]
+```
+
+-timing_driven Enable timing-driven mode
+grid_count [64,128,256,512,..., int]. Default: Defined by internal algorithm.
+
+Use the `set_wire_rc` command to set resistance and capacitance of
+estimated wires used for timing.
+
+#### Detailed Placement
+
+Legalize a design that has been globally placed.
+
+```
+legalize_placement [-constraints constraints_file]
 ```
 
 ## Authors

@@ -14,3 +14,7 @@
 [submodule "src/ioPlacer"]
 	path = src/ioPlacer
 	url = https://github.com/The-OpenROAD-Project/ioPlacer.git
+[submodule "src/opendp"]
+	path = src/opendp
+	url = https://github.com/The-OpenROAD-Project/OpenDP.git
+	branch = openroad

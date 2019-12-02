@@ -127,12 +127,6 @@ openroad_git_sha1()
   return OPENROAD_GIT_SHA1;
 }
 
-bool
-db_has_tech()
-{
-  return getDb()->getTech() != nullptr;
-}
-
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
@@ -172,7 +166,7 @@ write_db_cmd(const char *filename)
 }
 
 void
-read_verilog(const char *filename)
+read_verilog_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
   ord->readVerilog(filename);
@@ -193,8 +187,43 @@ write_verilog_cmd(const char *filename,
   ord->writeVerilog(filename, sort);
 }
 
+////////////////////////////////////////////////////////////////
+
+odb::dbDatabase *
+get_db()
+{
+  return getDb();
+}
+
+odb::dbTech *
+get_db_tech()
+{
+  return getDb()->getTech();
+}
+
+bool
+db_has_tech()
+{
+  return getDb()->getTech() != nullptr;
+}
+
+double
+dbu_to_microns(int dbu)
+{
+  return static_cast<double>(dbu) / getDb()->getTech()->getLefUnits();
+}
+
+// Common check for placement tools.
+bool
+db_has_rows()
+{
+  odb::dbDatabase *db = ord::OpenRoad::openRoad()->getDb();
+  return db->getChip()
+    && db->getChip()->getBlock()
+    && db->getChip()->getBlock()->getRows().size() > 0;
+}
+
 %} // inline
 
 // OpenROAD swig files
 %include "InitFloorplan.i"
-

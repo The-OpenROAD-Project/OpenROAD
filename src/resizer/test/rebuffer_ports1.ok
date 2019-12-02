@@ -3,13 +3,13 @@ Notice 0:     Created 2 technology layers
 Notice 0:     Created 6 library cells
 Notice 0: Finished LEF file:  liberty1.lef
 Notice 0: 
-Reading DEF file: reg1.def
+Reading DEF file: rebuffer_ports1.def
 Notice 0: Design: top
 Notice 0:     Created 6 pins.
 Notice 0:     Created 5 components and 24 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 10 nets and 14 connections.
-Notice 0: Finished DEF file: reg1.def
+Notice 0: Finished DEF file: rebuffer_ports1.def
 Inserted 2 input buffers.
 Inserted 1 output buffers.
 VERSION 5.5 ;
@@ -25,17 +25,17 @@ COMPONENTS 8 ;
     - r3 snl_ffqx1 ;
     - u1 snl_bufx1 ;
     - u2 snl_and02x1 ;
-    - buffer1 snl_bufx2 + PLACED ( 0 0 ) N ;
-    - buffer2 snl_bufx2 + PLACED ( 0 0 ) N ;
-    - buffer3 snl_bufx2 + PLACED ( 0 0 ) N ;
+    - buffer1 snl_bufx2 + PLACED ( -1000 -1000 ) N ;
+    - buffer2 snl_bufx2 + PLACED ( 333 -1000 ) N ;
+    - buffer3 snl_bufx2 + PLACED ( -1000 335 ) N ;
 END COMPONENTS
 PINS 6 ;
-    - in1 + NET net1 + DIRECTION INPUT + USE SIGNAL ;
-    - in2 + NET net2 + DIRECTION INPUT + USE SIGNAL ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
-    - out + NET net3 + DIRECTION OUTPUT + USE SIGNAL ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( -1000 -1000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 333 -1000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 -334 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 999 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( -332 1000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( -1000 335 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
 END PINS
 SPECIALNETS 2 ;
     - VSS ( * VSS ) + USE GROUND ;

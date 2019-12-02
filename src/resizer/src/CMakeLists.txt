@@ -51,5 +51,9 @@ add_library(resizer
 
 target_include_directories(resizer
   PUBLIC ${RESIZER_HOME}/include
-  PRIVATE ${OPENROAD_HOME}/include ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include ${OPENROAD_HOME}/src/flute3
+  PRIVATE
+  ${OPENROAD_HOME}/include
+  ${OPENSTA_INCLUDE_DIRS}
+  ${OPENDB_HOME}/include
+  ${OPENROAD_HOME}/src/flute3
   )

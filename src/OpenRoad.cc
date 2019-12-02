@@ -23,14 +23,17 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
-#include "resizer/MakeResizer.hh"
-
 #include "dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
 
+
 #include "ioPlacer/src/MakeIoplacer.h"
+
+#include "resizer/MakeResizer.hh"
+#include "opendp/MakeOpendp.h"
+#include "replace/src/MakeReplace.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -64,6 +67,7 @@ OpenRoad::~OpenRoad()
   deleteDbVerilogNetwork(verilog_network_);
   deleteDbSta(sta_);
   deleteResizer(resizer_);
+  deleteOpendp(opendp_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -93,8 +97,9 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   db_ = dbDatabase::create();
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
-  resizer_ = ord::makeResizer();
   ioPlacer_ = (IOPlacementKernel*) makeIoplacer();
+  resizer_ = makeResizer();
+  opendp_ = makeOpendp();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -107,8 +112,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initDbVerilogNetwork(this);
   initIoplacer(this);
   initFlute(prog_arg);
-  Replace_Init(tcl_interp);
-  Ioplacer_Init(tcl_interp);
+  initReplace(this);
+  initOpendp(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

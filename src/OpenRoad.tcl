@@ -13,9 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace eval sta {
-
-proc show_splash {} {
+proc show_openroad_splash {} {
   puts "OpenROAD [openroad_version] [string range [openroad_git_sha1] 0 9]
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
@@ -25,76 +23,73 @@ This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'
 }
 
 # -library is the default
-define_cmd_args "read_lef" {[-tech] [-library] filename}
+sta::define_cmd_args "read_lef" {[-tech] [-library] filename}
 
 proc read_lef { args } {
-  parse_key_args "read_lef" args keys {} flags {-tech -library}
-  check_argc_eq1 "read_lef" $args
+  sta::parse_key_args "read_lef" args keys {} flags {-tech -library}
+  sta::check_argc_eq1 "read_lef" $args
 
   set filename $args
   if { ![file exists $filename] } {
-    sta_error "$filename does not exist."
+    sta::sta_error "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    sta_error "$filename is not readable."
+    sta::sta_error "$filename is not readable."
   }
 
   set make_tech [info exists flags(-tech)]
   set make_lib [info exists flags(-library)]
   if { !$make_tech && !$make_lib} {
     set make_lib 1
-    set make_tech [expr ![sta::db_has_tech]]
+    set make_tech [expr ![ord::db_has_tech]]
   }
   set lib_name [file rootname [file tail $filename]]
-  read_lef_cmd $filename $lib_name $make_tech $make_lib
+  ord::read_lef_cmd $filename $lib_name $make_tech $make_lib
 }
 
-define_cmd_args "read_def" {filename}
+sta::define_cmd_args "read_def" {filename}
 
 proc read_def { args } {
-  check_argc_eq1 "read_def" $args
+  sta::check_argc_eq1 "read_def" $args
   set filename $args
   if { ![file exists $filename] } {
-    sta_error "$filename does not exist."
+    sta::sta_error "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    sta_error "$filename is not readable."
+    sta::sta_error "$filename is not readable."
   }
-  if { ![db_has_tech] } {
-    sta_error "no technology has been read."
+  if { ![ord::db_has_tech] } {
+    sta::sta_error "no technology has been read."
   }
-  read_def_cmd $filename
+  ord::read_def_cmd $filename
 }
 
-define_cmd_args "write_def" {filename}
+sta::define_cmd_args "write_def" {filename}
 
 proc write_def { args } {
-  check_argc_eq1 "write_def" $args
+  sta::check_argc_eq1 "write_def" $args
   set filename $args
-  write_def_cmd $filename
+  ord::write_def_cmd $filename
 }
 
-define_cmd_args "read_db" {filename}
+sta::define_cmd_args "read_db" {filename}
 
 proc read_db { args } {
-  check_argc_eq1 "read_db" $args
+  sta::check_argc_eq1 "read_db" $args
   set filename $args
   if { ![file exists $filename] } {
-    sta_error "$filename does not exist."
+    sta::sta_error "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    sta_error "$filename is not readable."
+    sta::sta_error "$filename is not readable."
   }
-  read_db_cmd $filename
+  ord::read_db_cmd $filename
 }
 
-define_cmd_args "write_db" {filename}
+sta::define_cmd_args "write_db" {filename}
 
 proc write_db { args } {
-  check_argc_eq1 "write_db" $args
+  sta::check_argc_eq1 "write_db" $args
   set filename $args
-  write_db_cmd $filename
-}
-
-# sta namespace end
+  ord::write_db_cmd $filename
 }

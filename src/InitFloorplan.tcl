@@ -13,28 +13,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-namespace eval sta {
-
-define_cmd_args "initialize_floorplan" {
+sta::define_cmd_args "initialize_floorplan" {
   [-utilization util]\
     [-aspect_ratio ratio]\
     [-core_space space]\
     [-die_area {lx ly ux uy}]\
     [-core_area {lx ly ux uy}]\
     [-site site_name]\
-    [-tracks tracks_file]\
-    [-auto_place_pins]}
+    [-tracks tracks_file]}
 
 proc initialize_floorplan { args } {
-  parse_key_args "initialize_floorplan" args \
+  sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site -tracks \
-	    -pin_layer pin_layer} \
-    flags {-auto_place_pins}
+	    -die_area -core_area -site -tracks} \
+    flags {}
 
   set site_name ""
   if [info exists keys(-site)] {
     set site_name $keys(-site)
+  } else {
+    puts "Warning: use -site to add placement rows."
   }
 
   set tracks_file ""
@@ -42,49 +40,40 @@ proc initialize_floorplan { args } {
     set tracks_file $keys(-tracks)
   }
 
-  set auto_place_pins [info exists flags(-auto_place_pins)]
-  set pin_layer ""
-  if { $auto_place_pins } {
-    if { [info exists keys(-pin_layer)] } {
-      set pin_layer $keys(-pin_layer)
-    }
-  }
-
   if [info exists keys(-utilization)] {
     set util $keys(-utilization)
-    check_positive_float "-utilization" $util
+    sta::check_positive_float "-utilization" $util
     if { $util > 100 } {
-      sta_error "-utilization must be from 0% to 100%"
+      sta::sta_error "-utilization must be from 0% to 100%"
     }
     set util [expr $util / 100.0]
     if [info exists keys(-core_space)] {
       set core_sp $keys(-core_space)
-      check_positive_float "-core_space" $core_sp
+      sta::check_positive_float "-core_space" $core_sp
     } else {
       set core_sp 0.0
     }
     if [info exists keys(-aspect_ratio)] {
       set aspect_ratio $keys(-aspect_ratio)
-      check_positive_float "-aspect_ratio" $aspect_ratio
+      sta::check_positive_float "-aspect_ratio" $aspect_ratio
       if { $aspect_ratio > 1.0 } {
-	sta_error "-aspect_ratio must be from 0.0 to 1.0"
+	sta::sta_error "-aspect_ratio must be from 0.0 to 1.0"
       }
     } else {
       set aspect_ratio 1.0
     }
-    init_floorplan_util $util $aspect_ratio [distance_ui_sta $core_sp] \
-      $site_name $tracks_file \
-      $auto_place_pins $pin_layer
+    ord::init_floorplan_util $util $aspect_ratio [sta::distance_ui_sta $core_sp] \
+      $site_name $tracks_file
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
-      sta_error "-die_area is a list of 4 coordinates."
+      sta::sta_error "-die_area is a list of 4 coordinates."
     }
     lassign $die_area die_lx die_ly die_ux die_uy
-    check_positive_float "-die_area" $die_lx
-    check_positive_float "-die_area" $die_ly
-    check_positive_float "-die_area" $die_ux
-    check_positive_float "-die_area" $die_uy
+    sta::check_positive_float "-die_area" $die_lx
+    sta::check_positive_float "-die_area" $die_ly
+    sta::check_positive_float "-die_area" $die_ux
+    sta::check_positive_float "-die_area" $die_uy
 
     if [info exists keys(-core_area)] {
       set core_area $keys(-core_area)
@@ -92,25 +81,32 @@ proc initialize_floorplan { args } {
 	sta_error "-core_area is a list of 4 coordinates."
       }
       lassign $core_area core_lx core_ly core_ux core_uy
-      check_positive_float "-core_area" $core_lx
-      check_positive_float "-core_area" $core_ly
-      check_positive_float "-core_area" $core_ux
-      check_positive_float "-core_area" $core_uy
+      sta::check_positive_float "-core_area" $core_lx
+      sta::check_positive_float "-core_area" $core_ly
+      sta::check_positive_float "-core_area" $core_ux
+      sta::check_positive_float "-core_area" $core_uy
 
       # convert die/core coordinates to meters.
-      init_floorplan_core [distance_ui_sta $die_lx] [distance_ui_sta $die_ly] \
-	[distance_ui_sta $die_ux] [distance_ui_sta $die_uy] \
-	[distance_ui_sta $core_lx] [distance_ui_sta $core_ly] \
-	[distance_ui_sta $core_ux] [distance_ui_sta $core_uy] \
-	$site_name $tracks_file \
-	$auto_place_pins $pin_layer
+      ord::init_floorplan_core \
+	[sta::distance_ui_sta $die_lx] [sta::distance_ui_sta $die_ly] \
+	[sta::distance_ui_sta $die_ux] [sta::distance_ui_sta $die_uy] \
+	[sta::distance_ui_sta $core_lx] [sta::distance_ui_sta $core_ly] \
+	[sta::distance_ui_sta $core_ux] [sta::distance_ui_sta $core_uy] \
+	$site_name $tracks_file
     } else {
-      sta_error "no -core_area specified."
+      sta::sta_error "no -core_area specified."
     }
   } else {
-    sta_error "no -utilization or -die_area specified."
+    sta::sta_error "no -utilization or -die_area specified."
   }
 }
 
-# sta namespace end
+sta::define_cmd_args "auto_place_pins" {pin_layer}
+
+proc auto_place_pins { pin_layer } {
+  if { [[ord::get_db_tech] findLayer $pin_layer] != "NULL" } {
+    ord::auto_place_pins_cmd $pin_layer
+  } else {
+    sta::sta_error "layer $pin_layer not found."
+  }
 }

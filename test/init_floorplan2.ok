@@ -10,6 +10,7 @@ Notice 0:     Created 5 components and 24 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 10 nets and 14 connections.
 Notice 0: Finished DEF file: reg1.def
+Info: Added 39 rows of 15 sites.
 VERSION 5.5 ;
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
@@ -69,11 +70,11 @@ COMPONENTS 5 ;
 END COMPONENTS
 PINS 6 ;
     - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 100000 100000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 633300 100000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 900000 366700 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 900000 900000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 366700 900000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 100000 633300 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 610000 100000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 850000 370000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 850000 880000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 340000 880000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 100000 610000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
 END PINS
 SPECIALNETS 2 ;
     - VSS ( * VSS ) + USE GROUND ;

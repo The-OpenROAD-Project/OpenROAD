@@ -19,28 +19,55 @@ namespace eval sta {
 # Defined by SWIG interface Resizer.i.
 define_cmd_args "set_dont_use" {cell dont_use}
 
-define_cmd_args "set_wire_rc" {[-resistance res ][-capacitance cap]\
+define_cmd_args "set_wire_rc" {[-layer layer_name]\
+				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
 
 proc set_wire_rc { args } {
    parse_key_args "set_wire_rc" args \
-    keys {-resistance -capacitance -corner} flags {}
+    keys {-layer -resistance -capacitance -corner} flags {}
 
   set wire_res 0.0
-  if [info exists keys(-resistance)] {
-    set res $keys(-resistance)
-    check_positive_float "-resistance" $res
-  }
   set wire_cap 0.0
-  if [info exists keys(-capacitance)] {
-    set cap $keys(-capacitance)
-    check_positive_float "-capacitance" $cap
+
+  if { [info exists keys(-layer)] } {
+    if { [info exists keys(-resistance)] \
+	   || [info exists keys(-capacitance)] } {
+      sta_error "Use -layer or -resistance/-capacitance but not both."
+    }
+    set layer_name $keys(-layer)
+    set layer [[[ord::get_db] getTech] findLayer $layer_name]
+    if { $layer == "NULL" } {
+      sta_error "layer $layer_name not found."
+    }
+    set layer_width [ord::dbu_to_microns [$layer getWidth]]
+    set res_ohm_per_micron [expr [$layer getResistance] / $layer_width]
+    set cap_pf_per_micron [expr [ord::dbu_to_microns 1] * $layer_width \
+			     * [$layer getCapacitance] \
+			     + [$layer getEdgeCapacitance] * 2]
+    # ohms/sq
+    set wire_res [expr $res_ohm_per_micron * 1e+6]
+    # F/m^2
+    set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
+    puts "$wire_res $wire_cap"
+  } else {
+    if { [info exists keys(-resistance)] } {
+      set res $keys(-resistance)
+      check_positive_float "-resistance" $res
+      set wire_res [expr [resistance_ui_sta $res] / [distance_ui_sta 1.0]]
+    }
+
+    if { [info exists keys(-capacitance)] } {
+      set cap $keys(-capacitance)
+      check_positive_float "-capacitance" $cap
+      set wire_cap [expr [capacitance_ui_sta $cap] / [distance_ui_sta 1.0]]
+    }
   }
+
   set corner [parse_corner keys]
   check_argc_eq0 "set_wire_rc" $args
-  set r [expr [resistance_ui_sta $res] / [distance_ui_sta 1.0]]
-  set c [expr [capacitance_ui_sta $cap] / [distance_ui_sta 1.0]]
-  set_wire_rc_cmd $r $c $corner
+
+  set_wire_rc_cmd $wire_res $wire_cap $corner
 }
 
 define_cmd_args "resize" {[-buffer_inputs]\
