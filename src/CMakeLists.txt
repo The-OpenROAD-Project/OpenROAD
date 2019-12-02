@@ -210,8 +210,7 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 # executable
 install(TARGETS openroad DESTINATION bin)
 # etc magic flute files
-INSTALL( FILES ../etc/POST9.dat DESTINATION etc)
-INSTALL( FILES ../etc/POWV9.dat DESTINATION etc)
+install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 
