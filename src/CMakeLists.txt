@@ -21,6 +21,8 @@ set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
+set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
+
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute4-lefdef)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
@@ -69,6 +71,7 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS OpenRoad.i InitFloorplan.i
   )
+
 
 ################################################################
 #
@@ -160,6 +163,7 @@ add_subdirectory(resizer)
 add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
+add_subdirectory(ioPlacer)
 add_subdirectory(FastRoute4-lefdef)
 
 ################################################################
@@ -182,6 +186,7 @@ target_link_libraries(openroad
   replace
   opendp
   resizer
+  ioPlacer
   flute
   dbSta
   OpenSTA

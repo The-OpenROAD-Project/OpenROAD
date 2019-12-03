@@ -28,6 +28,10 @@ class dbNetwork;
 class Resizer;
 }
 
+namespace ioPlacer {
+class IOPlacementKernel;
+}
+
 namespace FastRoute {
 class FastRouteKernel;
 }
@@ -82,6 +86,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
+  ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
   FastRoute::FastRouteKernel *fastRoute_;
 
