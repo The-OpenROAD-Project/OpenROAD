@@ -32,6 +32,8 @@
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
 
+#include "FastRoute4-lefdef/src/MakeFastRoute.h"
+
 namespace sta {
 extern const char *openroad_tcl_inits[];
 }
@@ -41,6 +43,7 @@ extern "C" {
 extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 extern int Replace_Init(Tcl_Interp *interp);
+extern int Fastroute_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -95,6 +98,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   verilog_network_ = makeDbVerilogNetwork();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
+  fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -108,7 +112,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initFlute(prog_arg);
   initReplace(this);
   initOpendp(this);
-
+  initFastRoute(this);
+  
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");

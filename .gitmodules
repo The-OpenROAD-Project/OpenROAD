@@ -15,3 +15,6 @@
 	path = src/opendp
 	url = https://github.com/The-OpenROAD-Project/OpenDP.git
 	branch = openroad
+[submodule "src/FastRoute4-lefdef"]
+	path = src/FastRoute4-lefdef
+	url = https://github.com/The-OpenROAD-Project/FastRoute4-lefdef.git
