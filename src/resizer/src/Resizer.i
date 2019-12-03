@@ -130,7 +130,7 @@ wire_resistance()
 
 // farads/meter
 double
-wire_capacitance()
+wire_capacitanceb()
 {
   Resizer *resizer = getResizer();
   return resizer->wireCapacitance();
