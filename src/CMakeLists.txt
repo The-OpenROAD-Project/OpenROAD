@@ -23,6 +23,8 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
+set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute4-lefdef)
+
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -162,6 +164,7 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
+add_subdirectory(FastRoute4-lefdef)
 
 ################################################################
 
@@ -175,6 +178,7 @@ target_include_directories(openroad
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
+  ${FASTROUTE_HOME}/include
   flute3
   )
 
@@ -187,6 +191,7 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
+  FR4lefdef
   zutil 
   zlib 
   tm
