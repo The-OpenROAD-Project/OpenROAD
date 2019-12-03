@@ -71,19 +71,6 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
   )
 
 ################################################################
-
-add_subdirectory(OpenDB)
-add_subdirectory(OpenSTA)
-add_subdirectory(dbSta)
-add_subdirectory(resizer)
-add_subdirectory(flute3)
-add_subdirectory(replace)
-add_subdirectory(opendp)
-add_subdirectory(FastRoute4-lefdef)
-
-################################################################
-
-################################################################
 #
 # Library dependencies
 #
@@ -158,6 +145,22 @@ if (NOT TCL_HEADER)
 endif()
 message(STATUS "TCL header: ${TCL_HEADER}")
 get_filename_component(TCL_HEADER_DIR "${TCL_HEADER}" PATH)
+include_directories(SYSTEM ${TCL_HEADER_DIR})
+
+################################################################
+
+# Disable OpenDB stand-alone executable builds.
+# Simplistic findTCL fails on OSX.
+set(BUILD_PYTHON false)
+set(BUILD_TCL false)
+add_subdirectory(OpenDB)
+add_subdirectory(OpenSTA)
+add_subdirectory(dbSta)
+add_subdirectory(resizer)
+add_subdirectory(flute3)
+add_subdirectory(replace)
+add_subdirectory(opendp)
+add_subdirectory(FastRoute4-lefdef)
 
 ################################################################
 
@@ -199,6 +202,10 @@ if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_link_libraries(openroad -pthread)
+endif()
+
 target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 ################################################################
@@ -208,8 +215,7 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 # executable
 install(TARGETS openroad DESTINATION bin)
 # etc magic flute files
-INSTALL( FILES ../etc/POST9.dat DESTINATION etc)
-INSTALL( FILES ../etc/POWV9.dat DESTINATION etc)
+install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 
@@ -224,3 +230,4 @@ add_custom_target(openroad_tags etags -o TAGS
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )
+
