@@ -120,6 +120,7 @@ write_db reg1.db
 
 #### Initialize Floorplan
 
+```
 initialize_floorplan
   [-site site_name]          LEF site name for ROWS
   [-tracks tracks_file]      routing track specification
@@ -129,21 +130,26 @@ or
   -utilization util          utilization (0-100 percent)
   [-aspect_ratio ratio]      height / width, default 1.0
   [-core_space space]        space around core, default 0.0 (microns)
+```
 
 The die area and core size used to write ROWs can be specified
 explicitly with the -die_area and -core_area arguments. Alternatively,
 the die and core area can be computed from the design size and
 utilization as show below:
 
+```
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)
  core_height = core_width * aspect_ratio
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+```
 
 Place pins around core boundary.
 
-  auto_place_pins pin_layer
+```
+auto_place_pins pin_layer
+```
 
 #### Gate Resizer
 
