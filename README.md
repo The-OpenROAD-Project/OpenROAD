@@ -72,9 +72,8 @@ OpenROAD then sources the command file cmd_file. Unless the `-exit`
 command line flag is specified it enters and interactive TCL command
 interpreter.
 
-OpenROAD is run using TCL scripts.  In addition to the OpenSTA
-commands documented in OpenSTA/doc/OpenSTA.pdf, available commands are
-shown below.
+OpenROAD is run using TCL scripts. The following commands are used to read
+and write design data.
 
 ```
 read_lef [-tech] [-library] filename
@@ -84,7 +83,6 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
-initialize_floorplan 
 ```
 
 OpenROAD can be used to make and OpenDB database from LEF/DEF, or
@@ -235,6 +233,8 @@ components and the utilization.
 
 #### Timing Analysis
 
+Timing analysis commands are documented in OpenSTA/doc/OpenSTA.pdf.
+
 After the database has been read from LEF/DEF, Verilog or an OpenDB
 database, use the `read_liberty` command to read Liberty library files
 used by the design.
@@ -273,9 +273,3 @@ Legalize a design that has been globally placed.
 ```
 legalize_placement [-constraints constraints_file]
 ```
-
-## Authors
-
-* James Cherry (OpenSTA, Resizer, OpenROAD)
-* Lukas van Ginneken (Resizer algorithm)
-* Chris Chu (Flute steiner tree package)
