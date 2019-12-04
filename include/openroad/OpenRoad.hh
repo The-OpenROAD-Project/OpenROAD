@@ -40,6 +40,10 @@ namespace opendp {
 class opendp_external;
 }
 
+namespace psn {
+class Psn;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -89,6 +93,8 @@ private:
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
   FastRoute::FastRouteKernel *fastRoute_;
+  psn::Psn *psn_;
+
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

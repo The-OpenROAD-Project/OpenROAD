@@ -59,7 +59,7 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
 include(FindSWIG)
 
 add_custom_command(OUTPUT ${OPENDB_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  COMMAND ${SWIG_EXECUTABLE} -DSWIG_DIRECTOR_STATIC -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENDB_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
@@ -156,15 +156,22 @@ include_directories(SYSTEM ${TCL_HEADER_DIR})
 # Simplistic findTCL fails on OSX.
 set(BUILD_PYTHON false)
 set(BUILD_TCL false)
+set(OPENROAD_BUILD ON)
+add_definitions(-DOPENROAD_BUILD)
+
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(dbSta)
 add_subdirectory(resizer)
 add_subdirectory(flute3)
+# Temp. fix..
+set_property(TARGET flute PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(FastRoute4-lefdef)
+add_subdirectory(OpenPhySyn)
+
 
 ################################################################
 
@@ -191,6 +198,7 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
+  OpenPhySyn
   FR4lefdef
   zutil 
   zlib 

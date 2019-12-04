@@ -36,6 +36,8 @@
 #include "replace/src/MakeReplace.h"
 
 #include "FastRoute4-lefdef/src/MakeFastRoute.h"
+#include "OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp"
+
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -71,6 +73,7 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deletePsn(psn_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -104,6 +107,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
+  psn_ = makePsn();
+
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -119,6 +124,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initReplace(this);
   initOpendp(this);
   initFastRoute(this);
+  initPsn(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
