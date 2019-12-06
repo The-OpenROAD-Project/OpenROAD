@@ -72,9 +72,8 @@ OpenROAD then sources the command file cmd_file. Unless the `-exit`
 command line flag is specified it enters and interactive TCL command
 interpreter.
 
-OpenROAD is run using TCL scripts.  In addition to the OpenSTA
-commands documented in OpenSTA/doc/OpenSTA.pdf, available commands are
-shown below.
+OpenROAD is run using TCL scripts. The following commands are used to read
+and write design data.
 
 ```
 read_lef [-tech] [-library] filename
@@ -84,7 +83,6 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
-initialize_floorplan 
 ```
 
 OpenROAD can be used to make and OpenDB database from LEF/DEF, or
@@ -122,6 +120,7 @@ write_db reg1.db
 
 #### Initialize Floorplan
 
+```
 initialize_floorplan
   [-site site_name]          LEF site name for ROWS
   [-tracks tracks_file]      routing track specification
@@ -131,21 +130,26 @@ or
   -utilization util          utilization (0-100 percent)
   [-aspect_ratio ratio]      height / width, default 1.0
   [-core_space space]        space around core, default 0.0 (microns)
+```
 
 The die area and core size used to write ROWs can be specified
 explicitly with the -die_area and -core_area arguments. Alternatively,
 the die and core area can be computed from the design size and
 utilization as show below:
 
+```
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)
  core_height = core_width * aspect_ratio
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+```
 
 Place pins around core boundary.
 
-  auto_place_pins pin_layer
+```
+auto_place_pins pin_layer
+```
 
 #### Gate Resizer
 
@@ -235,6 +239,8 @@ components and the utilization.
 
 #### Timing Analysis
 
+Timing analysis commands are documented in OpenSTA/doc/OpenSTA.pdf.
+
 After the database has been read from LEF/DEF, Verilog or an OpenDB
 database, use the `read_liberty` command to read Liberty library files
 used by the design.
@@ -273,9 +279,3 @@ Legalize a design that has been globally placed.
 ```
 legalize_placement [-constraints constraints_file]
 ```
-
-## Authors
-
-* James Cherry (OpenSTA, Resizer, OpenROAD)
-* Lukas van Ginneken (Resizer algorithm)
-* Chris Chu (Flute steiner tree package)
