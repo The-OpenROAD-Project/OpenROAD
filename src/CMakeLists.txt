@@ -191,7 +191,7 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
-  FR4lefdef
+  FastRoute
   zutil 
   zlib 
   tm
