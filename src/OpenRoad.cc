@@ -35,7 +35,7 @@
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
 
-#include "FastRoute4-lefdef/src/MakeFastRoute.h"
+#include "FastRoute/src/MakeFastRoute.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
