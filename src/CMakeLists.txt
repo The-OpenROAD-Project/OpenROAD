@@ -156,21 +156,26 @@ include_directories(SYSTEM ${TCL_HEADER_DIR})
 # Simplistic findTCL fails on OSX.
 set(BUILD_PYTHON false)
 set(BUILD_TCL false)
+
+# Make the tools aware that they are being built as part of the top-level app.
+# This allows the tool to have any custom CMake/C++ configuration for the top-level built
 set(OPENROAD_BUILD ON)
 add_definitions(-DOPENROAD_BUILD)
 
+# Build flow tools
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(dbSta)
 add_subdirectory(resizer)
 add_subdirectory(flute3)
-# Temp. fix..
-set_property(TARGET flute PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(FastRoute4-lefdef)
 add_subdirectory(OpenPhySyn)
+
+# Temporary fix, set -fPIC flag for flute
+set_property(TARGET flute PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
 ################################################################
