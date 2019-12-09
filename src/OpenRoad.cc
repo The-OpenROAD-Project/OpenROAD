@@ -35,7 +35,6 @@
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
 
-#include "FastRoute4-lefdef/src/MakeFastRoute.h"
 #include "OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp"
 
 

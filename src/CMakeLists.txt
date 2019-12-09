@@ -171,7 +171,6 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
-add_subdirectory(FastRoute4-lefdef)
 add_subdirectory(OpenPhySyn)
 
 # Temporary fix, set -fPIC flag for flute
