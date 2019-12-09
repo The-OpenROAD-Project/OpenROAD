@@ -23,4 +23,4 @@
 	url = https://github.com/The-OpenROAD-Project/FastRoute4-lefdef.git
 [submodule "src/OpenPhySyn"]
 	path = src/OpenPhySyn
-	url = https://github.com/The-OpenROAD-Project/OpenPhySyn.git
+	url = https://github.com/The-OpenROAD-Project/OpenPhySyn
