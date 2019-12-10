@@ -19,8 +19,8 @@ sta::define_cmd_args "run_pdngen" {[-key1 key1] [-flag1] pos_arg1}
 # too users in the global namespace.
 namespace eval pdngen {
 
-    proc pdngen_helper { } {
-	puts "Helping 23/6"
+    proc pdngen_helper { config_file verbose} {
+	puts "Helping $config_file $verbose"
     }
 
     variable logical_viarules {}
@@ -704,11 +704,6 @@ namespace eval pdngen {
     }
 
     namespace export write_def write_vias
-
-
-    proc pdngen_helper { } {
-	puts "Helping 23/6"
-    }
 
     variable macros {}
     variable instances {}
@@ -1651,17 +1646,12 @@ namespace eval pdngen {
 
 proc run_pdngen { args } {
   sta::parse_key_args "run_pdngen" args \
-    keys {-key1} flags {-flag1}
+    keys {} flags {-verbose}
 
-  if { [info exists keys(-key1)] } {
-    set param1 $keys(-key1)
-    sta::check_positive_float "-key1" $param1
-    pdngen::pdngen_set_param1 $param1
-  }
-
-  pdngen::pdngen_set_flag1 [info exists flags(-flag1)]
+  set verbose [info exists flags(-verbose)]
 
   sta::check_argc_eq1 "run_pdngen" $args
-  pdngen::pdngen_helper
+  pdngen::pdngen_helper $args $verbose
+  # the following routine does not do anything but is left in place for the future use of c++ code in pdngen.
   pdngen::pdngen_run [lindex $args 0]
 }
