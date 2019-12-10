@@ -25,6 +25,8 @@ set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
+set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
+
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -191,6 +193,7 @@ target_include_directories(openroad
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
   ${FASTROUTE_HOME}/include
+  ${OPENPHYSYN_HOME}/include
   flute3
   )
 
