@@ -72,4 +72,4 @@ WORKDIR /OpenROAD
 
 # Build
 RUN mkdir build
-RUN cd build && cmake .. && make -j 4
+RUN cd build && cmake .. && make clean && make -j 4
