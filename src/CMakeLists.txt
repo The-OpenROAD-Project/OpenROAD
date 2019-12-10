@@ -176,9 +176,6 @@ add_subdirectory(ioPlacer)
 add_subdirectory(FastRoute)
 add_subdirectory(OpenPhySyn)
 
-# Temporary fix, set -fPIC flag for flute
-set_property(TARGET flute PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 
 ################################################################
 
