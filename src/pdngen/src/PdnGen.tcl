@@ -32,6 +32,16 @@ namespace eval pdngen {
     
     #This file contains procedures that are used for PDN generation
 
+    proc lmap {args} {
+        set result {}
+        set var [lindex $args 0]
+        foreach item [lindex $args 1] {
+            uplevel 1 "set $var $item"
+            lappend result [uplevel 1 [lindex $args end]]
+        }
+        return $result
+    }
+
     proc get_dir {layer_name} {
         variable metal_layers 
         variable metal_layers_dir 
@@ -838,7 +848,7 @@ namespace eval pdngen {
         variable tech
 
         dict for {name rule} $physical_viarules {
-            set via [dbVia_create $block $name]
+            set via [odb::dbVia_create $block $name]
             $via setViaGenerateRule [$tech findViaGenerateRule [dict get $rule rule]]
             set params [$via getViaParams]
             $params setBottomLayer [$tech findLayer [lindex [dict get $rule layers] 0]]
@@ -870,7 +880,7 @@ namespace eval pdngen {
         
         set net [$block findNet $net_name]
         if {$net == "NULL"} {
-            set net [dbNet_create $block $net_name]
+            set net [odb::dbNet_create $block $net_name]
         }
         $net setSpecial
         $net setSigType $signal_type
@@ -882,7 +892,7 @@ namespace eval pdngen {
                     foreach pattern [dict get $global_connections $net_name] {
                         if {[regexp [dict get $pattern inst_name] [$inst getName]] &&
                             [regexp [dict get $pattern pin_name] [$mterm getName]]} {
-                            dbITerm_connect $inst $net $mterm
+                            odb::dbITerm_connect $inst $net $mterm
                         }
                     }
                 }
@@ -894,7 +904,7 @@ namespace eval pdngen {
             }
         }
         $net setWildConnected
-        set swire [dbSWire_create $net "ROUTED"]
+        set swire [odb::dbSWire_create $net "ROUTED"]
 
         foreach lay $metal_layers {
             set layer [$tech findLayer $lay]
@@ -907,9 +917,9 @@ namespace eval pdngen {
                     set l3 [lindex $l_str 2]
                     if {$l1 == $l3} {continue}
                     if {$lay == [get_rails_layer]} {
-                        dbSBox_create $swire $layer [expr round($l1)] [expr round($l2 - ($widths($lay)/2))] [expr round($l3)] [expr round($l2 + ($widths($lay)/2))] "FOLLOWPIN"
+                        odb::dbSBox_create $swire $layer [expr round($l1)] [expr round($l2 - ($widths($lay)/2))] [expr round($l3)] [expr round($l2 + ($widths($lay)/2))] "FOLLOWPIN"
                     } else {
-                        dbSBox_create $swire $layer [expr round($l1)] [expr round($l2 - ($widths($lay)/2))] [expr round($l3)] [expr round($l2 + ($widths($lay)/2))] "STRIPE"
+                        odb::dbSBox_create $swire $layer [expr round($l1)] [expr round($l2 - ($widths($lay)/2))] [expr round($l3)] [expr round($l2 + ($widths($lay)/2))] "STRIPE"
                     }
 
                 }
@@ -920,9 +930,9 @@ namespace eval pdngen {
                     set l3 [lindex $l_str 2]
                     if {$l2 == $l3} {continue}
                     if {$lay == [get_rails_layer]} {
-                        dbSBox_create $swire $layer [expr round($l1 - ($widths($lay)/2))] [expr round($l2)] [expr round($l1 + ($widths($lay)/2))] [expr round($l3)] "FOLLOWPIN"
+                        odb::dbSBox_create $swire $layer [expr round($l1 - ($widths($lay)/2))] [expr round($l2)] [expr round($l1 + ($widths($lay)/2))] [expr round($l3)] "FOLLOWPIN"
                     } else {
-                        dbSBox_create $swire $layer [expr round($l1 - ($widths($lay)/2))] [expr round($l2)] [expr round($l1 + ($widths($lay)/2))] [expr round($l3)] "STRIPE"
+                        odb::dbSBox_create $swire $layer [expr round($l1 - ($widths($lay)/2))] [expr round($l2)] [expr round($l1 + ($widths($lay)/2))] [expr round($l3)] "STRIPE"
                     }
                 }               
             }
@@ -939,7 +949,7 @@ namespace eval pdngen {
                     set lay      [dict get $via_inst lower_layer]
                     regexp {(.*)_PIN} $lay - lay
                     set layer [$tech findLayer $lay]
-                    dbSBox_create $swire [$block findVia $via_name] $x $y "STRIPE"
+                    odb::dbSBox_create $swire [$block findVia $via_name] $x $y "STRIPE"
 	        }
             }
         }
@@ -1005,7 +1015,7 @@ namespace eval pdngen {
 
 	set num  [expr {($end - $x)/$site_width}]
         
-        dbRow_create $block ROW_$row_index $site $x $height [orientation $height] "HORIZONTAL" $num $site_width
+        odb::dbRow_create $block ROW_$row_index $site $x $height [orientation $height] "HORIZONTAL" $num $site_width
         incr row_index
     }
 
@@ -1390,9 +1400,9 @@ namespace eval pdngen {
         ########################################
         # Creating blockages based on macro locations
         #######################################
-        pdn read_macro_boundaries
+        read_macro_boundaries
 
-        pdn get_memory_instance_pg_pins
+        get_memory_instance_pg_pins
 
         if {$default_grid_data == {}} {
             set default_grid_data [lindex [dict get $design_data grid stdcell] 0]
@@ -1611,13 +1621,13 @@ namespace eval pdngen {
             if {![dict exists $specification area]} {
                 dict set specification area [dict get $design_data config core_area]
             }
-            pdn add_grid $specification
+            add_grid $specification
         }
         
         if {[llength [dict keys $instances]] > 0} {
             puts "Inserting macro grid for [llength [dict keys $instances]] macros"
             foreach instance [dict keys $instances] {
-                pdn add_grid [get_instance_specification $instance]
+                add_grid [get_instance_specification $instance]
             }
         }
     }
@@ -1629,16 +1639,25 @@ namespace eval pdngen {
         write_opendb_rows
     }
     
-    proc apply {block config} {
+    proc apply_pdn {config verbose} {
+	if {$verbose} {
+	    puts "##Power Delivery Network Generator: $config $verbose"
+	}
+	set db [::ord::get_db]
+	set block [[$db getChip] getBlock]
         init $block $config
 
-        puts "##Power Delivery Network Generator: Generating PDN DEF"
-	#         set ::start_time [clock clicks -milliseconds]
+        set ::start_time [clock clicks -milliseconds]
+	if {$verbose} {
+	    puts "##Power Delivery Network Generator: Generating PDN DEF"
+	}
 
         plan_grid
         opendb_update_grid
 
-	#        puts "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+	if {$verbose} {
+	    puts "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+	}
     }
 
 
@@ -1652,6 +1671,7 @@ proc run_pdngen { args } {
 
   sta::check_argc_eq1 "run_pdngen" $args
   pdngen::pdngen_helper $args $verbose
+  pdngen::apply_pdn $args $verbose
   # the following routine does not do anything but is left in place for the future use of c++ code in pdngen.
   pdngen::pdngen_run [lindex $args 0]
 }
