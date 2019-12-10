@@ -125,14 +125,8 @@ protected:
 		int core_uy);
   dbSite *findSite(const char *site_name);
   void makeTracks(const char *tracks_file,
-		  double die_lx,
-		  double die_ly,
-		  double die_ux,
-		  double die_uy);
-  void makeTracks(double die_lx,
-		  double die_ly,
-		  double die_ux,
-		  double die_uy);
+		  adsRect &die_area);
+  void makeTracks(adsRect &die_area);
   void readTracks(const char *tracks_file);
   void autoPlacePins(dbTechLayer *pin_layer,
 		     adsRect &core);
@@ -289,9 +283,9 @@ InitFloorplan::initFloorplan(double die_lx,
       makeRows(site, clx, cly, cux, cuy);
 
       if (tracks_file && tracks_file[0])
-	makeTracks(tracks_file, die_lx, die_ly, die_ux, die_uy);
+	makeTracks(tracks_file, die_area);
       else
-	makeTracks(die_lx, die_ly, die_ux, die_uy);
+	makeTracks(die_area);
     }
     else
       report_->printWarn("Warning: SITE %s not found.\n", site_name);
@@ -341,16 +335,13 @@ InitFloorplan::findSite(const char *site_name)
 
 void
 InitFloorplan::makeTracks(const char *tracks_file,
-			  double die_lx,
-			  double die_ly,
-			  double die_ux,
-			  double die_uy)
+			  adsRect &die_area)
 {
   readTracks(tracks_file);
   dbTech *tech = db_->getTech();
   for (auto track : tracks_) {
-    double offset = track.offset();
-    double pitch = track.pitch();
+    int pitch = metersToMfgGrid(track.pitch());
+    int offset = metersToMfgGrid(track.offset());
     char dir = track.dir();
     const char *layer_name = track.layer().c_str();
     dbTechLayer *layer = tech->findLayer(layer_name);
@@ -358,20 +349,18 @@ InitFloorplan::makeTracks(const char *tracks_file,
       dbTrackGrid *grid = block_->findTrackGrid(layer);
       if (grid == nullptr)
 	grid = dbTrackGrid::create(block_, layer);
-      double width;
+      int width;
       int track_count;
-      int pitch_dbu = metersToMfgGrid(pitch);
-      int offset_dbu = metersToMfgGrid(offset);
       switch (dir) {
       case 'X':
-	width = die_ux - die_lx;
-	track_count = floor((width - offset) / pitch) + 1;
-	grid->addGridPatternX(offset_dbu, track_count, pitch_dbu);
+	width = die_area.dx();
+	track_count = (width - offset) / pitch;
+	grid->addGridPatternX(offset, track_count, pitch);
 	break;
       case 'Y':
-	width = die_uy - die_ly;
-	track_count = floor((width - offset) / pitch) + 1;
-	grid->addGridPatternY(offset_dbu, track_count, pitch_dbu);
+	width = die_area.dy();
+	track_count = (width - offset) / pitch;
+	grid->addGridPatternY(offset, track_count, pitch);
 	break;
       default:
 	internalError("unknown track direction\n");
@@ -436,10 +425,7 @@ Track::Track(string layer,
 }
 
 void
-InitFloorplan::makeTracks(double die_lx,
-			  double die_ly,
-			  double die_ux,
-			  double die_uy)
+InitFloorplan::makeTracks(adsRect &die_area)
 {
   dbTech *tech = db_->getTech();
   dbSet<dbTechLayer> layers = tech->getLayers();
@@ -455,13 +441,13 @@ InitFloorplan::makeTracks(double die_lx,
     switch (layer_dir) {
     case dbTechLayerDir::HORIZONTAL:
       grid = dbTrackGrid::create(block_, layer);
-      width = metersToMfgGrid(die_ux - die_lx);
+      width = die_area.dx();
       track_count = floor((width - offset) / pitch) + 1;
       grid->addGridPatternX(offset, track_count, pitch);
       break;
     case dbTechLayerDir::VERTICAL:
       grid = dbTrackGrid::create(block_, layer);
-      width = metersToMfgGrid(die_uy - die_ly);
+      width = die_area.dy();
       track_count = floor((width - offset) / pitch) + 1;
       grid->addGridPatternY(offset, track_count, pitch);
       break;
