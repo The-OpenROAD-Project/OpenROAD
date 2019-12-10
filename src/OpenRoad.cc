@@ -46,8 +46,6 @@ extern "C" {
 extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 extern int Replace_Init(Tcl_Interp *interp);
-extern int Ioplacer_Init(Tcl_Interp *interp);
-extern int Fastroute_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
