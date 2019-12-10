@@ -195,30 +195,26 @@ target_include_directories(openroad
   )
 
 target_link_libraries(openroad
-  replace
-  opendp
-  resizer
-  ioPlacer
-  flute
-  dbSta
-  OpenSTA
-  opendb
-<<<<<<< HEAD
-  OpenPhySyn
-  FR4lefdef
-=======
-  FastRoute
->>>>>>> origin/develop
-  zutil 
-  zlib 
-  tm
-  defin
-  defout
-  lefin
-  lefout
-  zutil
-  ${TCL_LIB}
-  )
+replace
+opendp
+resizer
+ioPlacer
+flute
+dbSta
+OpenSTA
+opendb
+OpenPhySyn
+FastRoute
+zutil 
+zlib 
+tm
+defin
+defout
+lefin
+lefout
+zutil
+${TCL_LIB}
+)
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
