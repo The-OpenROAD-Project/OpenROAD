@@ -19,7 +19,7 @@ module top (clk1,
  input clk2;
  input clk3;
  output out;
- input [0:1] \in[0] ;
+ input [1:0] \in[0] ;
 
  snl_ffqx1 r1 (.Q(r1q),
     .D(\in[0] [0]),
