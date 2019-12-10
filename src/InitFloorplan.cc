@@ -118,11 +118,11 @@ protected:
 		     const char *site_name,
 		     const char *tracks_file);
   double designArea();
-  void makeRows(const char *site_name,
-		double core_lx,
-		double core_ly,
-		double core_ux,
-		double core_uy);
+  void makeRows(dbSite *site,
+		int core_lx,
+		int core_ly,
+		int core_ux,
+		int core_uy);
   dbSite *findSite(const char *site_name);
   void makeTracks(const char *tracks_file,
 		  double die_lx,
@@ -135,11 +135,8 @@ protected:
 		  double die_uy);
   void readTracks(const char *tracks_file);
   void autoPlacePins(dbTechLayer *pin_layer,
-		     int core_lx,
-		     int core_ly,
-		     int core_ux,
-		     int core_uy);
-  int metersToDbu(double dist) const;
+		     adsRect &core);
+  int metersToMfgGrid(double dist) const;
   double dbuToMeters(uint dist) const;
 
   dbDatabase *db_;
@@ -207,8 +204,8 @@ InitFloorplan::initFloorplan(double util,
 
       double core_lx = core_space;
       double core_ly = core_space;
-      double core_ux = core_space + core_width;
-      double core_uy = core_space + core_height;
+      double core_ux = core_lx + core_width;
+      double core_uy = core_ly + core_height;
       double die_lx = 0.0;
       double die_ly = 0.0;
       double die_ux = core_width + core_space * 2.0;
@@ -272,52 +269,61 @@ InitFloorplan::initFloorplan(double die_lx,
 			     const char *site_name,
 			     const char *tracks_file)
 {
-  adsRect die_area(metersToDbu(die_lx),
-		   metersToDbu(die_ly),
-		   metersToDbu(die_ux),
-		   metersToDbu(die_uy));
+  adsRect die_area(metersToMfgGrid(die_lx),
+		   metersToMfgGrid(die_ly),
+		   metersToMfgGrid(die_ux),
+		   metersToMfgGrid(die_uy));
   block_->setDieArea(die_area);
-  makeRows(site_name, core_lx, core_ly, core_ux, core_uy);
-  if (tracks_file && tracks_file[0])
-    makeTracks(tracks_file, die_lx, die_ly, die_ux, die_uy);
-  else
-    makeTracks(die_lx, die_ly, die_ux, die_uy);
-}
 
-void
-InitFloorplan::makeRows(const char *site_name,
-			double core_lx,
-			double core_ly,
-			double core_ux,
-			double core_uy)
-{
   if (site_name && site_name[0]
       &&  core_lx >= 0.0 && core_lx >= 0.0 && core_ux >= 0.0 && core_uy >= 0.0) {
     dbSite *site = findSite(site_name);
     if (site) {
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
-      double core_dx = abs(core_ux - core_lx);
-      double core_dy = abs(core_uy - core_ly);
-      int rows_x = floor(core_dx / dbuToMeters(site_dx));
-      int rows_y = floor(core_dy / dbuToMeters(site_dy));
+      // floor core lower left corner to multiple of site dx/dy.
+      int clx = (metersToMfgGrid(core_lx) / site_dx) * site_dx;
+      int cly = (metersToMfgGrid(core_ly) / site_dy) * site_dy;
+      int cux = metersToMfgGrid(core_ux);
+      int cuy = metersToMfgGrid(core_uy);
+      makeRows(site, clx, cly, cux, cuy);
 
-      uint core_lx_dbu = metersToDbu(core_lx);
-      uint y = metersToDbu(core_ly);;
-      for (int row = 0; row < rows_y; row++) {
-	dbOrientType orient = (row % 2 == 0)
-	  ? dbOrientType::MX  // FS
-	  : dbOrientType::R0; // N
-	const char *row_name = stringPrint("ROW_%d", row);
-	dbRow::create(block_, row_name, site, core_lx_dbu, y, orient,
-		      dbRowDir::HORIZONTAL, rows_x, site_dx);
-	y += site_dy;
-      }
-      report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
+      if (tracks_file && tracks_file[0])
+	makeTracks(tracks_file, die_lx, die_ly, die_ux, die_uy);
+      else
+	makeTracks(die_lx, die_ly, die_ux, die_uy);
     }
     else
       report_->printWarn("Warning: SITE %s not found.\n", site_name);
+
   }
+}
+
+void
+InitFloorplan::makeRows(dbSite *site,
+			int core_lx,
+			int core_ly,
+			int core_ux,
+			int core_uy)
+{
+  int core_dx = abs(core_ux - core_lx);
+  int core_dy = abs(core_uy - core_ly);
+  uint site_dx = site->getWidth();
+  uint site_dy = site->getHeight();
+  int rows_x = core_dx / site_dx;
+  int rows_y = core_dy / site_dy;
+
+  int y = core_ly;
+  for (int row = 0; row < rows_y; row++) {
+    dbOrientType orient = (row % 2 == 0)
+      ? dbOrientType::MX  // FS
+      : dbOrientType::R0; // N
+    const char *row_name = stringPrint("ROW_%d", row);
+    dbRow::create(block_, row_name, site, core_lx, y, orient,
+		  dbRowDir::HORIZONTAL, rows_x, site_dx);
+    y += site_dy;
+  }
+  report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
 }
 
 dbSite *
@@ -354,8 +360,8 @@ InitFloorplan::makeTracks(const char *tracks_file,
 	grid = dbTrackGrid::create(block_, layer);
       double width;
       int track_count;
-      int pitch_dbu = metersToDbu(pitch);
-      int offset_dbu = metersToDbu(offset);
+      int pitch_dbu = metersToMfgGrid(pitch);
+      int offset_dbu = metersToMfgGrid(offset);
       switch (dir) {
       case 'X':
 	width = die_ux - die_lx;
@@ -449,13 +455,13 @@ InitFloorplan::makeTracks(double die_lx,
     switch (layer_dir) {
     case dbTechLayerDir::HORIZONTAL:
       grid = dbTrackGrid::create(block_, layer);
-      width = metersToDbu(die_ux - die_lx);
+      width = metersToMfgGrid(die_ux - die_lx);
       track_count = floor((width - offset) / pitch) + 1;
       grid->addGridPatternX(offset, track_count, pitch);
       break;
     case dbTechLayerDir::VERTICAL:
       grid = dbTrackGrid::create(block_, layer);
-      width = metersToDbu(die_uy - die_ly);
+      width = metersToMfgGrid(die_uy - die_ly);
       track_count = floor((width - offset) / pitch) + 1;
       grid->addGridPatternY(offset, track_count, pitch);
       break;
@@ -502,7 +508,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
 	}
 	else
 	  block_->getDieArea(core);
-	autoPlacePins(pin_layer, core.xMin(), core.yMin(), core.xMax(), core.yMax());
+	autoPlacePins(pin_layer, core);
       }
       else
 	report_->warn("pin layer %s not found.\n", pin_layer_name);
@@ -512,17 +518,14 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
 
 void
 InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
-			     int core_lx,
-			     int core_ly,
-			     int core_ux,
-			     int core_uy)
+			     adsRect &core)
 {
   dbSet<dbBTerm> bterms = block_->getBTerms();
   int pin_count = bterms.size();
 
   if (pin_count > 0) {
-    int dx = abs(core_ux - core_lx);
-    int dy = abs(core_uy - core_ly);
+    int dx = core.dx();
+    int dy = core.dy();
     int perimeter = dx * 2 + dy * 2;
     double location = 0.0;
     int pin_dist = perimeter / pin_count;
@@ -532,26 +535,26 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
       dbOrientType orient;
       if (location < dx) {
 	// bottom
-	x = core_lx + location;
-	y = core_ly;
+	x = core.xMin() + location;
+	y = core.yMin();
 	orient = dbOrientType::R180; // S
       }
       else if (location < (dx + dy)) {
 	// right
-	x = core_ux;
-	y = core_ly + (location - dx);
+	x = core.xMax();
+	y = core.yMin() + (location - dx);
 	orient = dbOrientType::R270; // E
       }
       else if (location < (dx * 2 + dy)) {
 	// top
-	x = core_ux - (location - (dx + dy));
-	y = core_uy;
+	x = core.xMax() - (location - (dx + dy));
+	y = core.yMax();
 	orient = dbOrientType::R0; // N
       }
       else {
 	// left
-	x = core_lx;
-	y = core_uy - (location - (dx * 2 + dy));
+	x = core.xMin();
+	y = core.yMax() - (location - (dx * 2 + dy));
 	orient = dbOrientType::R90; // W
       }
 
@@ -569,24 +572,25 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
   }
 }
 
-// DBUs are nanometers.
 int
-InitFloorplan::metersToDbu(double dist) const
+InitFloorplan::metersToMfgGrid(double dist) const
 {
   dbTech *tech = db_->getTech();
+  int dbu = tech->getDbUnitsPerMicron();
   if (tech->hasManufacturingGrid()) {
     int grid = tech->getManufacturingGrid();
-    return round(round(dist * 1e9 / grid) * grid);
+    return round(round(dist * dbu * 1e+6 / grid) * grid);
   }
   else
-    return round(dist * 1e9);
+    return round(dist * 1e+9);
 }
 
-// DBUs are nanometers.
 double
 InitFloorplan::dbuToMeters(uint dist) const
 {
-  return dist * 1E-9;
+  dbTech *tech = db_->getTech();
+  int dbu = tech->getDbUnitsPerMicron();
+  return dist / (dbu * 1e+6);
 }
 
 }

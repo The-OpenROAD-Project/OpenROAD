@@ -122,6 +122,7 @@ record_tests {
   init_floorplan1
   init_floorplan2
   init_floorplan3
+  init_floorplan4
   read_verilog1
   read_verilog2
   sdc_names1
