@@ -21,3 +21,6 @@
 [submodule "src/OpenPhySyn"]
 	path = src/OpenPhySyn
 	url = https://github.com/The-OpenROAD-Project/OpenPhySyn
+[submodule "src/FastRoute"]
+	path = src/FastRoute
+	url = https://github.com/The-OpenROAD-Project/FastRoute.git

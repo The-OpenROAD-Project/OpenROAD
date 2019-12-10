@@ -30,11 +30,10 @@
 
 
 #include "ioPlacer/src/MakeIoplacer.h"
-
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
-
+#include "FastRoute/src/MakeFastRoute.h"
 #include "OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp"
 
 

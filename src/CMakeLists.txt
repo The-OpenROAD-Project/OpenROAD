@@ -23,7 +23,7 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
-set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute4-lefdef)
+set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -171,6 +171,7 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
+add_subdirectory(FastRoute)
 add_subdirectory(OpenPhySyn)
 
 # Temporary fix, set -fPIC flag for flute
@@ -202,8 +203,12 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
+<<<<<<< HEAD
   OpenPhySyn
   FR4lefdef
+=======
+  FastRoute
+>>>>>>> origin/develop
   zutil 
   zlib 
   tm
