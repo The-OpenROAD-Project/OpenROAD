@@ -1,3 +1,5 @@
+// Copyright (c) 2019, Parallax Software, Inc.
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -11,25 +13,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef MAKE_TOOL_H
-#define MAKE_TOOL_H
+%module pdngen
 
-namespace tool {
-class Tool;
+%{
+
+#include "pdngen/PdnGen.hh"
+#include "openroad/OpenRoad.hh"
+
+pdngen::PdnGen *
+getPdnGen()
+{
+  return ord::OpenRoad::openRoad()->getPdnGen();
 }
 
-namespace ord {
+%}
 
-class OpenRoad;
-
-tool::Tool *
-makeTool();
+%inline %{
 
 void
-deleteTool(tool::Tool *tool);
+pdngen_set_param1(double param1)
+{
+  getPdnGen()->setParam1(param1);
+}
 
 void
-initTool(OpenRoad *openroad);
+pdngen_set_flag1(bool flag1)
+{
+  getPdnGen()->setFlag1(flag1);
+}
 
-} // namespace
-#endif
+void
+pdngen_run(const char *pos_arg1)
+{
+  getPdnGen()->run(pos_arg1);
+}
+
+%} // inline

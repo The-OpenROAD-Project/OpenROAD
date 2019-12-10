@@ -31,7 +31,7 @@
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
-#include "tool/MakeTool.hh"
+#include "pdngen/MakePdnGen.hh"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -96,7 +96,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   verilog_network_ = makeDbVerilogNetwork();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
-  tool_ = makeTool();
+  pdngen_ = makePdnGen();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -111,7 +111,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
 
   initReplace(this);
   initOpendp(this);
-  initTool(this);
+  initPdnGen(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

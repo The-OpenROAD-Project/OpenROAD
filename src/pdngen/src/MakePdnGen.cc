@@ -13,39 +13,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-%module tool
-
-%{
-
-#include "tool/Tool.hh"
 #include "openroad/OpenRoad.hh"
+#include "pdngen/PdnGen.hh"
+#include "pdngen/MakePdnGen.hh"
 
-tool::Tool *
-getTool()
+namespace ord {
+
+pdngen::PdnGen *
+makePdnGen()
 {
-  return ord::OpenRoad::openRoad()->getTool();
-}
-
-%}
-
-%inline %{
-
-void
-tool_set_param1(double param1)
-{
-  getTool()->setParam1(param1);
+  return new pdngen::PdnGen;
 }
 
 void
-tool_set_flag1(bool flag1)
+deletePdnGen(pdngen::PdnGen *PdnGen)
 {
-  getTool()->setFlag1(flag1);
+  delete PdnGen;
 }
 
 void
-tool_run(const char *pos_arg1)
+initPdnGen(OpenRoad *openroad)
 {
-  getTool()->run(pos_arg1);
+  openroad->getPdnGen()->init(openroad->tclInterp(),
+			    openroad->getDb());
 }
 
-%} // inline
+}

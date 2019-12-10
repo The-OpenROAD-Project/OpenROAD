@@ -13,29 +13,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "openroad/OpenRoad.hh"
-#include "tool/Tool.hh"
-#include "tool/MakeTool.hh"
+#include <tcl.h>
+#include "opendb/db.h"
 
-namespace ord {
+namespace pdngen {
 
-tool::Tool *
-makeTool()
+class PdnGen
 {
-  return new tool::Tool;
-}
+public:
+  PdnGen();
+  ~PdnGen();
+  void init(Tcl_Interp *tcl_interp,
+	    odb::dbDatabase *db);
+  void run(const char *pos_arg1);
+  void setParam1(double param1);
+  void setFlag1(bool flag1);
 
-void
-deleteTool(tool::Tool *tool)
-{
-  delete tool;
-}
-
-void
-initTool(OpenRoad *openroad)
-{
-  openroad->getTool()->init(openroad->tclInterp(),
-			    openroad->getDb());
-}
+private:
+  odb::dbDatabase *db_;
+  double param1_;
+  bool flag1_;
+};
 
 }

@@ -13,35 +13,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-sta::define_cmd_args "run_tool" {[-key1 key1] [-flag1] pos_arg1}
+sta::define_cmd_args "run_pdngen" {[-key1 key1] [-flag1] pos_arg1}
 
 # Put helper functions in a separate namespace so they are not visible
 # too users in the global namespace.
-namespace eval tool {
+namespace eval pdngen {
 
-proc tool_helper { } {
+proc pdngen_helper { } {
   puts "Helping 23/6"
 }
 
 }
 
 # Example usage:
-#  run_tool foo
-#  run_tool -flag1 -key1 2.0 bar
-#  help run_tool
-proc run_tool { args } {
-  sta::parse_key_args "run_tool" args \
+#  run_pdngen foo
+#  run_pdngen -flag1 -key1 2.0 bar
+#  help run_pdngen
+proc run_pdngen { args } {
+  sta::parse_key_args "run_pdngen" args \
     keys {-key1} flags {-flag1}
 
   if { [info exists keys(-key1)] } {
     set param1 $keys(-key1)
     sta::check_positive_float "-key1" $param1
-    tool::tool_set_param1 $param1
+    pdngen::pdngen_set_param1 $param1
   }
 
-  tool::tool_set_flag1 [info exists flags(-flag1)]
+  pdngen::pdngen_set_flag1 [info exists flags(-flag1)]
 
-  sta::check_argc_eq1 "run_tool" $args
-  tool::tool_helper
-  tool::tool_run [lindex $args 0]
+  sta::check_argc_eq1 "run_pdngen" $args
+  pdngen::pdngen_helper
+  pdngen::pdngen_run [lindex $args 0]
 }

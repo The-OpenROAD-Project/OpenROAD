@@ -13,44 +13,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "tool/Tool.hh"
+#include "pdngen/PdnGen.hh"
 #include "StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *tool_tcl_inits[];
+extern const char *pdngen_tcl_inits[];
 }
 
-namespace tool {
+namespace pdngen {
 
 extern "C" {
-extern int Tool_Init(Tcl_Interp *interp);
+extern int Pdngen_Init(Tcl_Interp *interp);
 }
 
-Tool::Tool() :
+PdnGen::PdnGen() :
   param1_(0.0),
   flag1_(false)
 {
 }
 
-Tool::~Tool()
+PdnGen::~PdnGen()
 {
 }
 
 void
-Tool::init(Tcl_Interp *tcl_interp,
+PdnGen::init(Tcl_Interp *tcl_interp,
 	   odb::dbDatabase *db)
 {
   db_ = db;
 
   // Define swig TCL commands.
-  Tool_Init(tcl_interp);
+  Pdngen_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::tool_tcl_inits);
+  sta::evalTclInit(tcl_interp, sta::pdngen_tcl_inits);
 }
 
 void
-Tool::run(const char *pos_arg1)
+PdnGen::run(const char *pos_arg1)
 {
   printf("Gotta pos_arg1 %s\n", pos_arg1);
   printf("Gotta param1 %f\n", param1_);
@@ -58,13 +58,13 @@ Tool::run(const char *pos_arg1)
 }
 
 void
-Tool::setParam1(double param1)
+PdnGen::setParam1(double param1)
 {
   param1_ = param1;
 }
 
 void
-Tool::setFlag1(bool flag1)
+PdnGen::setFlag1(bool flag1)
 {
   flag1_ = flag1;
 }

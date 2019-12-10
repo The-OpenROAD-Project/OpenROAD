@@ -28,8 +28,8 @@ class dbNetwork;
 class Resizer;
 }
 
-namespace tool {
-class Tool;
+namespace pdngen {
+class PdnGen;
 }
 
 namespace opendp {
@@ -52,7 +52,7 @@ public:
 	    const char *prog_arg);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  tool::Tool *getTool(){ return tool_; }
+  pdngen::PdnGen *getPdnGen(){ return pdngen_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -84,7 +84,7 @@ private:
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
   opendp::opendp_external *opendp_;
-  tool::Tool *tool_;
+  pdngen::PdnGen *pdngen_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

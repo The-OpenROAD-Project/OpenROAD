@@ -21,7 +21,7 @@ set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
-set(TOOL_HOME ${OPENROAD_HOME}/src/tool)
+set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -72,7 +72,7 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
 
 ################################################################
 
-add_subdirectory(tool)
+add_subdirectory(pdngen)
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(dbSta)
@@ -172,11 +172,11 @@ target_include_directories(openroad
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
   flute3
-  ${TOOL_HOME}/include
+  ${PDNGEN_HOME}/include
   )
 
 target_link_libraries(openroad
-  tool
+  pdngen
   replace
   opendp
   resizer
