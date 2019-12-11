@@ -28,24 +28,3 @@ getPdnGen()
 
 %}
 
-%inline %{
-
-void
-pdngen_set_param1(double param1)
-{
-  getPdnGen()->setParam1(param1);
-}
-
-void
-pdngen_set_flag1(bool flag1)
-{
-  getPdnGen()->setFlag1(flag1);
-}
-
-void
-pdngen_run(const char *pos_arg1)
-{
-  getPdnGen()->run(pos_arg1);
-}
-
-%} // inline

@@ -1413,6 +1413,3 @@ NETS 385 ;
     - dpath.a_lt_b$in1[9] ( _305_ A3 ) ( _363_ B ) ( _379_ A2 ) ( _488_ A2 ) ( _563_ A ) ( _604_ Q ) + USE SIGNAL ;
 END NETS
 END DESIGN
-Gotta pos_arg1 ./gcd/PDN.cfg
-Gotta param1 0.000000
-Gotta flag1 false
