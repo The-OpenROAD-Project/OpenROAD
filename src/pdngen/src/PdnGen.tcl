@@ -1379,7 +1379,7 @@ namespace eval pdngen {
         # Remove existing rows
         #######################################
         foreach row [$block getRows] {
-            dbRow_destroy $row
+            odb::dbRow_destroy $row
         }
 
         ########################################
@@ -1388,7 +1388,7 @@ namespace eval pdngen {
         foreach pg_net [concat [dict get $design_data power_nets] [dict get $design_data ground_nets]] {
             set net [$block findNet $pg_net]
             if {$net != "NULL"} {
-                dbNet_destroy $net
+                odb::dbNet_destroy $net
             }
         }
 
