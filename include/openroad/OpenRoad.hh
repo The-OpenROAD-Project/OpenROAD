@@ -30,6 +30,13 @@ class Resizer;
 
 namespace pdngen {
 class PdnGen;
+
+namespace ioPlacer {
+class IOPlacementKernel;
+}
+
+namespace FastRoute {
+class FastRouteKernel;
 }
 
 namespace opendp {
@@ -83,8 +90,10 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
+  ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
   pdngen::PdnGen *pdngen_;
+  FastRoute::FastRouteKernel *fastRoute_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

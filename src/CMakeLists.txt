@@ -23,6 +23,9 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
+set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
+set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute4-lefdef)
+
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -82,6 +85,7 @@ add_subdirectory(replace)
 add_subdirectory(opendp)
 
 ################################################################
+
 
 ################################################################
 #
@@ -158,6 +162,23 @@ if (NOT TCL_HEADER)
 endif()
 message(STATUS "TCL header: ${TCL_HEADER}")
 get_filename_component(TCL_HEADER_DIR "${TCL_HEADER}" PATH)
+include_directories(SYSTEM ${TCL_HEADER_DIR})
+
+################################################################
+
+# Disable OpenDB stand-alone executable builds.
+# Simplistic findTCL fails on OSX.
+set(BUILD_PYTHON false)
+set(BUILD_TCL false)
+add_subdirectory(OpenDB)
+add_subdirectory(OpenSTA)
+add_subdirectory(dbSta)
+add_subdirectory(resizer)
+add_subdirectory(flute3)
+add_subdirectory(replace)
+add_subdirectory(opendp)
+add_subdirectory(ioPlacer)
+add_subdirectory(FastRoute4-lefdef)
 
 ################################################################
 
@@ -171,6 +192,7 @@ target_include_directories(openroad
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
+  ${FASTROUTE_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
   )
@@ -180,10 +202,12 @@ target_link_libraries(openroad
   replace
   opendp
   resizer
+  ioPlacer
   flute
   dbSta
   OpenSTA
   opendb
+  FR4lefdef
   zutil 
   zlib 
   tm
@@ -199,6 +223,10 @@ if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_link_libraries(openroad -pthread)
+endif()
+
 target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 ################################################################
@@ -208,8 +236,7 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 # executable
 install(TARGETS openroad DESTINATION bin)
 # etc magic flute files
-INSTALL( FILES ../etc/POST9.dat DESTINATION etc)
-INSTALL( FILES ../etc/POWV9.dat DESTINATION etc)
+install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 
@@ -224,3 +251,4 @@ add_custom_target(openroad_tags etags -o TAGS
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )
+

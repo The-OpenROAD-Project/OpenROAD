@@ -49,6 +49,8 @@ There are a set of regression tests in `/test`.
 
 ```
 test/regression fast
+src/resizer/test/regression fast
+
 ```
 
 #### Run
@@ -70,9 +72,8 @@ OpenROAD then sources the command file cmd_file. Unless the `-exit`
 command line flag is specified it enters and interactive TCL command
 interpreter.
 
-OpenROAD is run using TCL scripts.  In addition to the OpenSTA
-commands documented in OpenSTA/doc/OpenSTA.pdf, available commands are
-shown below.
+OpenROAD is run using TCL scripts. The following commands are used to read
+and write design data.
 
 ```
 read_lef [-tech] [-library] filename
@@ -82,7 +83,6 @@ read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
-initialize_floorplan 
 ```
 
 OpenROAD can be used to make and OpenDB database from LEF/DEF, or
@@ -120,6 +120,7 @@ write_db reg1.db
 
 #### Initialize Floorplan
 
+```
 initialize_floorplan
   [-site site_name]          LEF site name for ROWS
   [-tracks tracks_file]      routing track specification
@@ -129,28 +130,33 @@ or
   -utilization util          utilization (0-100 percent)
   [-aspect_ratio ratio]      height / width, default 1.0
   [-core_space space]        space around core, default 0.0 (microns)
+```
 
 The die area and core size used to write ROWs can be specified
 explicitly with the -die_area and -core_area arguments. Alternatively,
 the die and core area can be computed from the design size and
 utilization as show below:
 
+```
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)
  core_height = core_width * aspect_ratio
  core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
  die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+```
 
 Place pins around core boundary.
 
-  auto_place_pins pin_layer
+```
+auto_place_pins pin_layer
+```
 
 #### Gate Resizer
 
 Gate resizer commands are shown below.
 
 ```
-set_wire_rc [-resistance res ] [-capacitance cap] [-corner corner_name]
+set_wire_rc [-layer layer_name] [-resistance res ] [-capacitance cap] [-corner corner_name]
 resize [-buffer_inputs]
        [-buffer_outputs]
        [-resize]
@@ -163,17 +169,21 @@ resize [-buffer_inputs]
 report_design_area
 ```
 
-The `set_wire_rc` command sets the resistance (liberty
-resistance_unit/distance_unit) and capacitance (liberty
-capacitance_unit/distance_unit) of routing wires. It adds RC
-parasitics based on placed component pin locations. If there are no
-component locations no parasitics are added. The resistance and
-capacitance are per distance unit of a routing wire. Use the
-`set_units` command to check units or `set_cmd_units` to change
-units. They should represent "average" routing layer resistance and
-capacitance. If the set_wire_rc command is not called before resizing,
-the default_wireload model specified in the first liberty file or with
-the SDC set_wire_load command is used to make parasitics.
+The `set_wire_rc` command sets the resistance and capacitance used to
+estimate delay of routing wires.  Use `-layer` or `-resistance` and
+`-capacitance`.  If `-layer` is used, the LEF technology resistance
+and area/edge capacitance values for the layer are used.  The units
+for `-resistance` and `-capacitance` are from the first liberty file
+read, resistance_unit/distance_unit and liberty
+capacitance_unit/distance_unit. RC parasitics are added based on
+placed component pin locations. If there are no component locations no
+parasitics are added. The resistance and capacitance are per distance
+unit of a routing wire. Use the `set_units` command to check units or
+`set_cmd_units` to change units. They should represent "average"
+routing layer resistance and capacitance. If the set_wire_rc command
+is not called before resizing, the default_wireload model specified in
+the first liberty file or with the SDC set_wire_load command is used
+to make parasitics.
 
 The `resize` command buffers inputs and outputs, resizes gates, and
 then uses buffer insertion to repair maximum capacitance and slew
@@ -229,6 +239,8 @@ components and the utilization.
 
 #### Timing Analysis
 
+Timing analysis commands are documented in OpenSTA/doc/OpenSTA.pdf.
+
 After the database has been read from LEF/DEF, Verilog or an OpenDB
 database, use the `read_liberty` command to read Liberty library files
 used by the design.
@@ -267,9 +279,3 @@ Legalize a design that has been globally placed.
 ```
 legalize_placement [-constraints constraints_file]
 ```
-
-## Authors
-
-* James Cherry (OpenSTA, Resizer, OpenROAD)
-* Lukas van Ginneken (Resizer algorithm)
-* Chris Chu (Flute steiner tree package)
