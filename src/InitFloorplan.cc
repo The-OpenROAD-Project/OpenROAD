@@ -430,10 +430,10 @@ InitFloorplan::makeTracks(adsRect &die_area)
   dbTech *tech = db_->getTech();
   dbSet<dbTechLayer> layers = tech->getLayers();
   for (auto layer : layers) {
-    double pitch = layer->getPitch();
+    int pitch = layer->getPitch();
     // FIXME is offset a lef 5.7 construct?
-    //double offset = layer->hasOffset() ? layer.hasOffset() * 1e-6 : pitch;
-    double offset = pitch;
+    //int offset = layer->hasOffset() ? layer.offset() : pitch;
+    int offset = pitch;
     dbTechLayerDir layer_dir = layer->getDirection();
     dbTrackGrid *grid;
     uint width;
