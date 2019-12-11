@@ -279,3 +279,13 @@ Legalize a design that has been globally placed.
 ```
 legalize_placement [-constraints constraints_file]
 ```
+
+#### Physical Synthesis Optimization
+
+You can optionally run OpenPhySyn timing optimization commands (currently only supports load driven gate-cloning).
+
+```
+psn::set_wire_rc 0.0020 0.00020
+optimize_design [-clone_max_cap_factor factor] [-clone_non_largest_cells]
+optimize_fanout -buffer_cell buffer_cell_name -max_fanout max_fanout # Adds buffer cells based on sink pin count
+```
