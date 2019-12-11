@@ -36,6 +36,7 @@
 #include "replace/src/MakeReplace.h"
 
 #include "FastRoute/src/MakeFastRoute.h"
+#include "TritonCTS/src/MakeTritoncts.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -48,6 +49,7 @@ extern int Opendbtcl_Init(Tcl_Interp *interp);
 extern int Replace_Init(Tcl_Interp *interp);
 extern int Ioplacer_Init(Tcl_Interp *interp);
 extern int Fastroute_Init(Tcl_Interp *interp);
+extern int Tritoncts_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -104,6 +106,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
+  tritonCts_ = makeTritonCts();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -119,6 +122,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initReplace(this);
   initOpendp(this);
   initFastRoute(this);
+  initTritonCts(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

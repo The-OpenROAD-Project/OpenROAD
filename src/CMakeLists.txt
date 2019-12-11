@@ -23,6 +23,8 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
+set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
+
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
@@ -164,6 +166,7 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
+add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 
 ################################################################
@@ -191,6 +194,7 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
+  TritonCTS
   FastRoute
   zutil 
   zlib 
