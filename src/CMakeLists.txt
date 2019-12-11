@@ -75,17 +75,6 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
 
 ################################################################
 
-add_subdirectory(pdngen)
-add_subdirectory(OpenDB)
-add_subdirectory(OpenSTA)
-add_subdirectory(dbSta)
-add_subdirectory(resizer)
-add_subdirectory(flute3)
-add_subdirectory(replace)
-add_subdirectory(opendp)
-
-################################################################
-
 
 ################################################################
 #
@@ -179,6 +168,7 @@ add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(FastRoute4-lefdef)
+add_subdirectory(pdngen)
 
 ################################################################
 

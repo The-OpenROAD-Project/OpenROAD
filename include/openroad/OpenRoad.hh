@@ -30,7 +30,7 @@ class Resizer;
 
 namespace pdngen {
 class PdnGen;
-
+}
 namespace ioPlacer {
 class IOPlacementKernel;
 }

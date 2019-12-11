@@ -18,11 +18,6 @@ sta::define_cmd_args "run_pdngen" {[-key1 key1] [-flag1] pos_arg1}
 # Put helper functions in a separate namespace so they are not visible
 # too users in the global namespace.
 namespace eval pdngen {
-
-    proc pdngen_helper { config_file verbose} {
-	puts "Helping $config_file $verbose"
-    }
-
     variable logical_viarules {}
     variable physical_viarules {}
     variable vias {}
@@ -1670,7 +1665,6 @@ proc run_pdngen { args } {
   set verbose [info exists flags(-verbose)]
 
   sta::check_argc_eq1 "run_pdngen" $args
-  pdngen::pdngen_helper $args $verbose
   pdngen::apply_pdn $args $verbose
   # the following routine does not do anything but is left in place for the future use of c++ code in pdngen.
   pdngen::pdngen_run [lindex $args 0]
