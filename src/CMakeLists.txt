@@ -21,8 +21,9 @@ set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
-set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
+set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
+set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
@@ -73,6 +74,8 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS OpenRoad.i InitFloorplan.i
   )
+
+################################################################
 
 
 ################################################################
@@ -173,6 +176,7 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
+add_subdirectory(pdngen)
 add_subdirectory(FastRoute)
 add_subdirectory(OpenPhySyn)
 
@@ -192,29 +196,31 @@ target_include_directories(openroad
   ${FASTROUTE_HOME}/include
   ${OPENPHYSYN_HOME}/include
   flute3
+  ${PDNGEN_HOME}/include
   )
 
 target_link_libraries(openroad
-replace
-opendp
-resizer
-ioPlacer
-flute
-dbSta
-OpenSTA
-opendb
-OpenPhySyn
-FastRoute
-zutil 
-zlib 
-tm
-defin
-defout
-lefin
-lefout
-zutil
-${TCL_LIB}
-)
+  pdngen
+  replace
+  opendp
+  resizer
+  ioPlacer
+  flute
+  dbSta
+  OpenSTA
+  opendb
+  OpenPhySyn
+  FastRoute
+  zutil 
+  zlib 
+  tm
+  defin
+  defout
+  lefin
+  lefout
+  zutil
+  ${TCL_LIB}
+  )
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})

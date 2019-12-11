@@ -28,6 +28,9 @@ class dbNetwork;
 class Resizer;
 }
 
+namespace pdngen {
+class PdnGen;
+}
 namespace ioPlacer {
 class IOPlacementKernel;
 }
@@ -60,6 +63,7 @@ public:
 	    const char *prog_arg);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
+  pdngen::PdnGen *getPdnGen(){ return pdngen_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -92,6 +96,7 @@ private:
   sta::Resizer *resizer_;
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
+  pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
   psn::Psn *psn_;
 

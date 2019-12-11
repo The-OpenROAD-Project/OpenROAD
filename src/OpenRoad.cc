@@ -33,6 +33,8 @@
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
+#include "pdngen/MakePdnGen.hh"
+
 #include "FastRoute/src/MakeFastRoute.h"
 #include "OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp"
 
@@ -46,8 +48,6 @@ extern "C" {
 extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 extern int Replace_Init(Tcl_Interp *interp);
-extern int Ioplacer_Init(Tcl_Interp *interp);
-extern int Fastroute_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -104,6 +104,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   ioPlacer_ = (ioPlacer::IOPlacementKernel*) makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
+  pdngen_ = makePdnGen();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
   psn_ = makePsn();
 
@@ -121,6 +122,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initFlute(prog_arg);
   initReplace(this);
   initOpendp(this);
+  initPdnGen(this);
   initFastRoute(this);
   initPsn(this);
   
