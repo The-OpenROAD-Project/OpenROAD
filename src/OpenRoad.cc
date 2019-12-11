@@ -34,6 +34,7 @@
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "replace/src/MakeReplace.h"
+#include "pdngen/MakePdnGen.hh"
 
 #include "FastRoute/src/MakeFastRoute.h"
 
@@ -101,6 +102,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   ioPlacer_ = (ioPlacer::IOPlacementKernel*) makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
+  pdngen_ = makePdnGen();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
 
   // Init components.
@@ -116,6 +118,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initFlute(prog_arg);
   initReplace(this);
   initOpendp(this);
+  initPdnGen(this);
   initFastRoute(this);
   
   // Import exported commands to global namespace.
