@@ -27,9 +27,7 @@ extern "C" {
 extern int Pdngen_Init(Tcl_Interp *interp);
 }
 
-PdnGen::PdnGen() :
-  param1_(0.0),
-  flag1_(false)
+PdnGen::PdnGen()
 {
 }
 
@@ -49,24 +47,5 @@ PdnGen::init(Tcl_Interp *tcl_interp,
   sta::evalTclInit(tcl_interp, sta::pdngen_tcl_inits);
 }
 
-void
-PdnGen::run(const char *pos_arg1)
-{
-  printf("Gotta pos_arg1 %s\n", pos_arg1);
-  printf("Gotta param1 %f\n", param1_);
-  printf("Gotta flag1 %s\n", flag1_ ? "true" : "false");
-}
-
-void
-PdnGen::setParam1(double param1)
-{
-  param1_ = param1;
-}
-
-void
-PdnGen::setFlag1(bool flag1)
-{
-  flag1_ = flag1;
-}
 
 }

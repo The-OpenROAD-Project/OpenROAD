@@ -26,13 +26,9 @@ public:
   void init(Tcl_Interp *tcl_interp,
 	    odb::dbDatabase *db);
   void run(const char *pos_arg1);
-  void setParam1(double param1);
-  void setFlag1(bool flag1);
 
 private:
   odb::dbDatabase *db_;
-  double param1_;
-  bool flag1_;
 };
 
 }

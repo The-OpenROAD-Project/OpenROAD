@@ -1666,6 +1666,4 @@ proc run_pdngen { args } {
 
   sta::check_argc_eq1 "run_pdngen" $args
   pdngen::apply_pdn $args $verbose
-  # the following routine does not do anything but is left in place for the future use of c++ code in pdngen.
-  pdngen::pdngen_run [lindex $args 0]
 }
