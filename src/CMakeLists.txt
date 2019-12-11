@@ -24,7 +24,6 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
-set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute4-lefdef)
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
@@ -168,7 +167,6 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
-add_subdirectory(FastRoute4-lefdef)
 add_subdirectory(pdngen)
 add_subdirectory(FastRoute)
 
