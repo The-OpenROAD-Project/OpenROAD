@@ -25,6 +25,7 @@ set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute4-lefdef)
+set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -169,6 +170,7 @@ add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(FastRoute4-lefdef)
 add_subdirectory(pdngen)
+add_subdirectory(FastRoute)
 
 ################################################################
 
@@ -197,7 +199,7 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
-  FR4lefdef
+  FastRoute
   zutil 
   zlib 
   tm

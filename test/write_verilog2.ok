@@ -14,8 +14,8 @@ module reg1 (out,
     clk,
     in);
  output out;
- input [0:2] clk;
- input [0:1] in;
+ input [2:0] clk;
+ input [1:0] in;
 
  snl_ffqx1 r1 (.Q(r1q),
     .D(in[0]),
