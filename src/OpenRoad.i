@@ -65,8 +65,9 @@ public:
 };
 
 void
-ensureLinked(OpenRoad *openroad)
+ensureLinked()
 {
+  OpenRoad *openroad = getOpenRoad();
   dbNetwork *network = openroad->getDbNetwork();
   if (!network->isLinked())
     throw CmdErrorNetworkNotLinked();
@@ -89,7 +90,6 @@ Resizer *
 getResizer()
 {
   OpenRoad *openroad = getOpenRoad();
-  ensureLinked(openroad);
   return openroad->getResizer();
 }
 
@@ -177,6 +177,12 @@ link_design_db_cmd(const char *design_name)
 {
   OpenRoad *ord = getOpenRoad();
   ord->linkDesign(design_name);
+}
+
+void
+ensure_linked()
+{
+  return ensureLinked();
 }
 
 void

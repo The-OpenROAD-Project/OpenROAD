@@ -1,7 +1,7 @@
-Notice 0: Reading LEF file:  liberty1.lef
+Notice 0: Reading LEF file:  init_floorplan5.lef
 Notice 0:     Created 2 technology layers
 Notice 0:     Created 6 library cells
-Notice 0: Finished LEF file:  liberty1.lef
+Notice 0: Finished LEF file:  init_floorplan5.lef
 Notice 0: 
 Reading DEF file: reg1.def
 Notice 0: Design: top

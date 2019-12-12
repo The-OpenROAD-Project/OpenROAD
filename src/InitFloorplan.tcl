@@ -75,6 +75,7 @@ proc initialize_floorplan { args } {
     sta::check_positive_float "-die_area" $die_ux
     sta::check_positive_float "-die_area" $die_uy
 
+    ord::ensure_linked
     if [info exists keys(-core_area)] {
       set core_area $keys(-core_area)
       if { [llength $core_area] != 4 } {
