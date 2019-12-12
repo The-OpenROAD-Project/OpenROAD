@@ -21,8 +21,9 @@ set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
-set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
+set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
+set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
@@ -71,6 +72,8 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS OpenRoad.i InitFloorplan.i
   )
+
+################################################################
 
 
 ################################################################
@@ -164,6 +167,7 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
+add_subdirectory(pdngen)
 add_subdirectory(FastRoute)
 
 ################################################################
@@ -180,9 +184,11 @@ target_include_directories(openroad
   ${OPENDP_HOME}/include
   ${FASTROUTE_HOME}/include
   flute3
+  ${PDNGEN_HOME}/include
   )
 
 target_link_libraries(openroad
+  pdngen
   replace
   opendp
   resizer
