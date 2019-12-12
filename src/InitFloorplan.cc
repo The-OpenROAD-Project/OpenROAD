@@ -59,6 +59,7 @@ using odb::dbTrackGrid;
 using odb::dbPlacementStatus;
 using odb::dbTransform;
 using odb::dbBox;
+using odb::dbTechLayerType;
 
 class Track
 {
@@ -430,34 +431,36 @@ InitFloorplan::makeTracks(adsRect &die_area)
   dbTech *tech = db_->getTech();
   dbSet<dbTechLayer> layers = tech->getLayers();
   for (auto layer : layers) {
-    int pitch = layer->getPitch();
-    if (pitch) {
-      // FIXME is offset a lef 5.7 construct?
-      //int offset = layer->hasOffset() ? layer.offset() : pitch;
-      int offset = pitch;
-      dbTechLayerDir layer_dir = layer->getDirection();
-      dbTrackGrid *grid;
-      uint width;
-      int track_count;
-      switch (layer_dir) {
-      case dbTechLayerDir::HORIZONTAL:
-	grid = dbTrackGrid::create(block_, layer);
-	width = die_area.dx();
-	track_count = floor((width - offset) / pitch) + 1;
-	grid->addGridPatternX(offset, track_count, pitch);
-	break;
-      case dbTechLayerDir::VERTICAL:
-	grid = dbTrackGrid::create(block_, layer);
-	width = die_area.dy();
-	track_count = floor((width - offset) / pitch) + 1;
-	grid->addGridPatternY(offset, track_count, pitch);
-	break;
-      case dbTechLayerDir::NONE:
-	break;
+    if (layer->getType() == dbTechLayerType::ROUTING) {
+      int pitch = layer->getPitch();
+      if (pitch) {
+	// FIXME is offset a lef 5.7 construct?
+	//int offset = layer->hasOffset() ? layer.offset() : pitch;
+	int offset = pitch;
+	dbTechLayerDir layer_dir = layer->getDirection();
+	dbTrackGrid *grid;
+	uint width;
+	int track_count;
+	switch (layer_dir) {
+	case dbTechLayerDir::HORIZONTAL:
+	  grid = dbTrackGrid::create(block_, layer);
+	  width = die_area.dx();
+	  track_count = floor((width - offset) / pitch) + 1;
+	  grid->addGridPatternX(offset, track_count, pitch);
+	  break;
+	case dbTechLayerDir::VERTICAL:
+	  grid = dbTrackGrid::create(block_, layer);
+	  width = die_area.dy();
+	  track_count = floor((width - offset) / pitch) + 1;
+	  grid->addGridPatternY(offset, track_count, pitch);
+	  break;
+	case dbTechLayerDir::NONE:
+	  break;
+	}
       }
+      else
+	printf("Error: layer %s has zero pitch.\n", layer->getConstName());
     }
-    else
-      printf("Error: layer %s has zero pitch.\n", layer->getConstName());
   }
 }
 
