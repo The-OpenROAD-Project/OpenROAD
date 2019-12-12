@@ -1,0 +1,203 @@
+################################################################################
+## Authors: Eder Matheus Monteiro (UFRGS) and Minsoo Kim (UCSD)
+##
+## BSD 3-Clause License
+##
+## Copyright (c) 2019, Federal University of Rio Grande do Sul (UFRGS)
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and#or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+################################################################################
+
+sta::define_cmd_args "run_tapcell" {[-output_file out_file] \
+                                    [-tech tech] \
+                                    [-tabcell_master tabcell_master] \
+                                    [-endcap_master endcap_master] \
+                                    [-endcap_cpp endcap_cpp] \
+#when you set 25 (um), each row has 50um with checker-board pattern
+                                    [-distance dist] \
+                                    [-halo_macro halo_macro] \
+}
+
+#Pre-step: assumed that placement blockages inserted around macros
+#You might or might not need this step
+#createPlaceBlockage -allMacro -outerRingBySide {$halo_macro $halo_macro $halo_macro $halo_macro}
+
+namespace eval tapcell {
+    #proc to detect even/odd
+    proc even {row} {
+        set db [::ord::get_db]
+        set block [[$db getChip] getBlock]
+
+        set site_y [dbGet head.sites.size_y] #TODO: change to OpenDB cmd
+
+        set lly [[$row getBBox] yMin]
+        set core_box_lly [[$block getBBox] yMin]
+        set lly_idx [expr ($lly-$core_box_lly)/$site_y]
+        set lly_idx_int [expr int($lly_idx)]
+
+        if {[expr $lly_idx_int % 2]==0} {
+            return 1
+        } else {
+            return 0
+        }
+    }
+
+    #proc to detect top/bottom row
+    proc top_or_bottom {row} {
+        set db [::ord::get_db]
+        set block [[$db getChip] getBlock]
+
+        set lly [[$row getBBox] yMin]
+        set ury [[$row getBBox] yMax]
+        set core_box_lly [[$block getBBox] yMin]
+        set core_box_ury [[$block getBBox] yMax]
+
+        if {$lly == $core_box_lly} {
+            return 1
+        } elseif {$ury == $core_box_ury} {
+            return 1
+        } else {
+            return 0
+        }
+    }
+}
+
+# Main function. It will run tapcell given the correct parameters
+proc run_tapcell { args } {
+    sta::parse_key_args "run_tapcell" args \
+        keys {-output_file -tech -endcap_master -encap_cpp -distance -halo_macro} flags {}
+
+    if { [info exists keys(-output_file)] } {
+        set out_file $keys(-output_file)
+        puts $out_file
+    } else {
+        puts "WARNING: Default output guide name: out.guide"
+    }
+
+    if { [info exists keys(-tech)] } {
+        set tech $keys(-tech)
+    } else {
+        puts "ERROR: Please, set the technology with '-tech' flag"
+        puts "\t--Current options: Nangate45, gf14"
+    }
+
+    if { [info exists keys(-endcap_master)] } {
+        set endcap_master $keys(-endcap_master)
+    }
+
+    if { [info exists keys(-endcap_cpp)] } {
+        set endcap_cpp $keys(-endcap_cpp)
+    }
+
+    if { [info exists keys(-distance)] } {
+        set dist $keys(-distance)
+    }
+
+    if { [info exists keys(-halo_macro)] } {
+        set halo_macro $keys(-halo_macro)
+    }
+
+    if { [string match $tech "Nangate45"] } {
+        puts "Processing Nangate45"
+        
+        set db [::ord::get_db]
+        set block [[$db getChip] getBlock]
+
+        #Step 1: cut placement rows if there are overlaps between rows and placement blockages
+        # Assume the only macro cells are fixed
+        set macro_boxes [dbGet [dbGet -p1 top.insts.pStatus fixed].box] # TODO: change to OpenDB cmd
+        
+        foreach macro_box $macro_boxes {
+            set llx [expr [$macro_box xMin] - $halo_macro]
+            set lly [expr [$macro_box yMin] - $halo_macro]
+            set urx [expr [$macro_box xMax] + $halo_macro]
+            set ury [expr [$macro_box yMax] + $halo_macro]
+            set box "$llx $lly $urx $ury"
+            cutRow -area $box
+        }
+
+        #Step 2: Insert Endcap at the left and right end of each row
+        set rows [$block getRows]
+        set site_x [dbGet head.sites.size_x] # TODO: change to OpenDB cmd
+        set site_y [dbGet head.sites.size_y] # TODO: change to OpenDB cmd
+
+        set cnt 0
+        foreach row $rows {
+            set llx [[$row getBBox] xMin]
+            set lly [[$row getBBox] yMin]
+            set urx [[$row getBBox] xMax]
+            set ury [[$row getBBox] yMax]
+            set loc_2_x [expr $urx - $site_x]
+            set loc_2_y [expr $ury - $site_y]
+
+            set loc_1 "$llx $lly"
+            set loc_2 "$loc_2_x $loc_2_y"
+
+            set ori [$row getOrient]
+
+            addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_1 -ori $ori # TODO: change to OpenDB cmd
+            incr cnt
+            addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_2 -ori $ori # TODO: change to OpenDB cmd
+            incr cnt
+        }
+
+        #Step 3: Insert tab
+        set core_box_lly [[$block getBBox] yMin]
+
+        foreach row $rows {
+            set llx [[$row getBBox] xMin]
+            set lly [[$row getBBox] yMin]
+            set urx [[$row getBBox] xMax]
+            set ury [[$row getBBox] yMax]
+
+            set ori [$row getOrient]
+
+            if {[tapcell::even $row]} {
+                set offset $dist
+            } else {
+                set offset [expr $dist*2]
+            }
+
+            if {[tapcell::top_or_bottom $row]} {
+                set pitch $dist
+            } else {
+                set pitch [expr $dist*2]
+            }
+
+            for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
+                set loc "$x $lly"
+                addInst -cell $tabcell_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori # TODO: change to OpenDB cmd
+                incr cnt
+            }
+        }
+    } elseif { [string match $tech "gf14"] } {
+        puts "WARNING: Currently, tapcell does not support gf14"
+    } else {
+        puts "ERROR: informed tech is not valid"
+    }   
+}

@@ -25,6 +25,7 @@ set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
+set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -169,6 +170,7 @@ add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(pdngen)
 add_subdirectory(FastRoute)
+add_subdirectory(tapcell)
 
 ################################################################
 
@@ -185,6 +187,7 @@ target_include_directories(openroad
   ${FASTROUTE_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  ${TAPCELL_HOME}/include
   )
 
 target_link_libraries(openroad
@@ -198,6 +201,7 @@ target_link_libraries(openroad
   OpenSTA
   opendb
   FastRoute
+  tapcell
   zutil 
   zlib 
   tm
