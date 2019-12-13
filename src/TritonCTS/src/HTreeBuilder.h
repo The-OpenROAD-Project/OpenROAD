@@ -185,6 +185,7 @@ private:
                                         unsigned &outputSlew,
                                         unsigned &outputCap) const;
         void createClockSubNets();
+        void createSingleBufferClockNet();
         void initTopLevelSinks(std::vector<std::pair<float,float>>& sinkLocations);
         void computeBranchSinks(LevelTopology& topology, unsigned branchIdx,
                                 std::vector<std::pair<float,float>>& sinkLocations) const;

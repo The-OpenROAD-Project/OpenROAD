@@ -104,6 +104,11 @@ void HTreeBuilder::run() {
                 }
         }
 
+        if (_topologyForEachLevel.size() < 1) {
+                createSingleBufferClockNet();
+                return;
+        }
+        
         plotSolution();
         createClockSubNets();
 
@@ -453,6 +458,21 @@ void HTreeBuilder::createClockSubNets() {
         });
 
         std::cout << " Number of sinks covered: " << numSinks << "\n";
+}
+
+void HTreeBuilder::createSingleBufferClockNet() {
+        std::cout << " Building single-buffer clock net...\n";
+       
+        DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
+        DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
+        ClockInstance& rootBuffer = _clockNet.addClockBuffer("clkbuf_0", _parms->getRootBuffer(), 
+                                                             centerX, centerY); 
+        ClockNet::SubNet& clockSubNet = _clockNet.addSubNet("clknet_0");
+        clockSubNet.addInstance(rootBuffer);
+
+        _clockNet.forEachSink( [&] (ClockInstance& inst) {
+                clockSubNet.addInstance(inst);                                               
+        });
 }
 
 void HTreeBuilder::plotSolution() {

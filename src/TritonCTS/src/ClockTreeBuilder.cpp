@@ -88,7 +88,7 @@ Box<DBU> ClockNet::computeSinkRegion() {
         DBU xMin = allPositionsX[numOutliers];
         DBU xMax = allPositionsX[numSinks - numOutliers - 1]; 
         DBU yMin = allPositionsY[numOutliers];
-        DBU yMax = allPositionsY[numSinks - numOutliers]; 
+        DBU yMax = allPositionsY[numSinks - numOutliers - 1]; 
         
         return Box<DBU>(xMin, yMin, xMax, yMax);
 }
