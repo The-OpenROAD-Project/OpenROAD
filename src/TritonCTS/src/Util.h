@@ -62,7 +62,6 @@ public:
                 T dy = (getY() > other.getY()) ? (getY() - other.getY()) : (other.getY() - getY());
                 
                 return dx + dy; 
-                return std::abs(getX() - other.getX()) + std::abs(getY() - other.getY()); 
         }
        
         bool operator < (const Point<T>& other) const {
