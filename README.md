@@ -280,9 +280,9 @@ Legalize a design that has been globally placed.
 legalize_placement [-constraints constraints_file]
 ```
 
-#### Physical Synthesis Optimization
+#### Physical Synthesis Optimization [optional]
 
-You can optionally run OpenPhySyn timing optimization commands (currently only supports load driven gate-cloning).
+You can optionally run OpenPhySyn timing optimization commands (currently only performs load driven gate-cloning).
 
 ```
 psn::set_wire_rc 0.0020 0.00020
