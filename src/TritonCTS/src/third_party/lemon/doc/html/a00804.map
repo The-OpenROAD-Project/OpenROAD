@@ -1,0 +1,8 @@
+<map id="Exception" name="Exception">
+<area shape="rect" id="node3" href="$a00040.html" title="Exception used by ArgParser. " alt="" coords="144,5,280,32"/>
+<area shape="rect" id="node5" href="$a00238.html" title="This exception is thrown when the license check is not sufficient. " alt="" coords="165,56,259,83"/>
+<area shape="rect" id="node7" href="$a00173.html" title="Format error. " alt="" coords="167,107,257,133"/>
+<area shape="rect" id="node9" href="$a00221.html" title="Input&#45;Output error. " alt="" coords="183,157,241,184"/>
+<area shape="rect" id="node11" href="$a00435.html" title="Unsupported file format exception. " alt="" coords="131,208,293,235"/>
+<area shape="rect" id="node13" href="$a00313.html" title="Exception thrown by RadixHeap. " alt="" coords="139,259,285,285"/>
+</map>
