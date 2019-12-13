@@ -37,6 +37,7 @@
 #include "pdngen/MakePdnGen.hh"
 
 #include "FastRoute/src/MakeFastRoute.h"
+#include "TritonCTS/src/MakeTritoncts.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -104,6 +105,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   opendp_ = makeOpendp();
   pdngen_ = makePdnGen();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
+  tritonCts_ = makeTritonCts();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -120,6 +122,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initOpendp(this);
   initPdnGen(this);
   initFastRoute(this);
+  initTritonCts(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

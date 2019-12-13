@@ -93,6 +93,13 @@ getResizer()
   return openroad->getResizer();
 }
 
+TritonCTS::TritonCTSKernel *
+getTritonCts()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTritonCts();
+}
+
 } // namespace
 
 using ord::OpenRoad;
@@ -102,7 +109,7 @@ using ord::ensureLinked;
 using ord::getDbNetwork;
 using ord::getSta;
 using ord::getResizer;
-
+using ord::getTritonCts;
 %}
 
 ////////////////////////////////////////////////////////////////
