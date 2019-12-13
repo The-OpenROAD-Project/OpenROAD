@@ -56,24 +56,28 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-lut_file)] } {
         set lut $keys(-lut_file)
   } else {
+        puts "Missing argument -lut_file"
         exit
   }
  
   if { [info exists keys(-sol_list)] } {
         set sol_list $keys(-sol_list)
   } else {
+        puts "Missing argument -sol_list"
         exit
   }
 
   if { [info exists keys(-root_buf)] } {
         set root_buf $keys(-root_buf)
   } else {
+        puts "Missing argument -root_buf"
         exit
   }
 
   if { [info exists keys(-wire_unit)] } {
         set wire_unit $keys(-wire_unit)
   } else {
+        puts "Missing argument -wire_unit"
         exit
   }
 
