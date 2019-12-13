@@ -123,11 +123,6 @@ test_gcd
 }
 #  gcd_flow1
 
-# Record tests in $STAX/designs
-record_test_design {
-  mea/mea_db_dcalc
-}
-
 ################################################################
 
 # Regression test groups
@@ -135,7 +130,6 @@ record_test_design {
 # Medium speed tests.
 # run time <15s with optimized compile
 define_test_group med {
-  mea_db_dcalc
 }
 
 define_test_group slow {
