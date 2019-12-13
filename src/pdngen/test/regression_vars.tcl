@@ -18,8 +18,7 @@
 
 # Application program to run tests on.
 set app "openroad"
-set app_dir [find_parent_dir [find_parent_dir [find_parent_dir $test_dir]]]
-set app_path [file join $app_dir "build" "src" $app]
+set app_path [file join $openroad_dir "build" "src" $app]
 # Application options.
 set app_options "-no_init -no_splash -exit"
 # Log files for each test are placed in result_dir.
