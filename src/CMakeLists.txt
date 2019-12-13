@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
@@ -197,6 +198,8 @@ target_include_directories(openroad
   ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  SYSTEM
+  ${TCL_HEADER_DIR}
   )
 
 target_link_libraries(openroad
@@ -220,7 +223,7 @@ target_link_libraries(openroad
   lefout
   zutil
   ${TCL_LIB}
-  )
+)
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
