@@ -58,6 +58,10 @@ public:
         T getY() const { return _y; }
 
         T computeDist(const Point<T>& other) const {
+                T dx = (getX() > other.getX()) ? (getX() - other.getX()) : (other.getX() - getX());
+                T dy = (getY() > other.getY()) ? (getY() - other.getY()) : (other.getY() - getY());
+                
+                return dx + dy; 
                 return std::abs(getX() - other.getX()) + std::abs(getY() - other.getY()); 
         }
        
