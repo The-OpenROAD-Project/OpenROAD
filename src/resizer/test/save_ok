@@ -17,14 +17,14 @@ exec tclsh $0 ${1+"$@"}
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# Usage: save_ok | test1 [test2...] | failures
+
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
-source [file join $test_dir find_parent_dir.tcl]
-source [file join $test_dir regression_vars.tcl]
-set resizer_dir [find_parent_dir $test_dir]
-set openroad_src_dir [find_parent_dir $resizer_dir]
-set openroad_dir [find_parent_dir $openroad_src_dir]
-source [file join $openroad_dir "test" regression.tcl]
+set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
+
+source [file join $test_dir "regression_vars.tcl"]
+source [file join $openroad_dir "test" "regression.tcl"]
 
 save_ok_main
 

@@ -20,3 +20,4 @@ Makefile
 include/openroad/Version.hh
 
 src/resizer/test/results
+src/pdngen/test/results
