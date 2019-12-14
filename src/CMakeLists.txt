@@ -154,8 +154,8 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
-  OpenPhySyn
   FastRoute
+  OpenPhySyn
   zutil 
   zlib 
   tm
