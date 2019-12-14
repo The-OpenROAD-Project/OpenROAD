@@ -9,7 +9,7 @@ Starting tomorrow at 5pm Pacific Time on Friday 12/13
 
 
 *   For the submodules, the developers of each repo should make a branch named “alpha2” and populate it from their openroad branch. The openroad app will also create this branch. The “alpha2” branch should not to be confused with alpha1 last July.
-*   Do not to merge or push to the alpha2 branch without permission but keep your active code in other branches.
+*   Do not merge or push to the alpha2 branch without permission but keep your active code in other branches.
 *   Permission to modify the alpha2 branches can be given by Cherry, Tom or Austin with Tom or Cherry needed to approval the actual pull request diffs.
 *   For continuing work not for alpha2, each repo internal to OpenROAD should have a branch named "openroad" which the git submodules will get their git hashes from. At the moment the branch naming for the submodule repos is random. We need to unify this.
 *   For developers not working on January critical issues, they should not slow down but rather continuing working in branches as usual until we are ready for their changes.
