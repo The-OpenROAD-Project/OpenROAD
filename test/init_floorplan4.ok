@@ -11,12 +11,4 @@ Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 10 nets and 14 connections.
 Notice 0: Finished DEF file: reg1.def
 Info: Added 40 rows of 16 sites.
-Notice 0: 
-Reading DEF file: init_floorplan4.defok
-Notice 0: Design: top
-Notice 0:     Created 6 pins.
-Notice 0:     Created 5 components and 24 component-terminals.
-Notice 0:     Created 2 special nets and 10 connections.
-Notice 0:     Created 10 nets and 14 connections.
-Notice 0: Finished DEF file: init_floorplan4.defok
 No differences found.

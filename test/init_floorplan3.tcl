@@ -12,4 +12,4 @@ auto_place_pins M1
 
 set def_file [make_result_file init_floorplan3.def]
 write_def $def_file
-def_diff init_floorplan3.defok
+diff_files $def_file init_floorplan3.defok

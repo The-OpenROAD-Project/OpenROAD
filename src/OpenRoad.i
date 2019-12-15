@@ -245,5 +245,10 @@ def_diff(const char *def_filename)
 // OpenROAD swig files
 %include "InitFloorplan.i"
 
+// Diff the current database with def_filename.
+// Returns true if differences were found.
+// Unfortunately, this current does not work very well.
+// write_def/read_def produce different database layouts if
+// the database has been edited before writing.
 bool
 def_diff(const char *def_filename);
