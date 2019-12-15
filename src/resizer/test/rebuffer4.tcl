@@ -13,4 +13,4 @@ sta::rebuffer_net [get_pin_net u1/Z] $buffer_cell
 
 set def_file [make_result_file rebuffer4.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file rebuffer4.defok

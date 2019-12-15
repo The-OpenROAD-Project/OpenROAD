@@ -93,3 +93,8 @@ proc write_db { args } {
   set filename $args
   ord::write_db_cmd $filename
 }
+
+# Defined by OpenRoad.i
+sta::define_cmd_args "def_diff" {def_filename}
+namespace eval ord { namespace export def_diff }
+namespace import ord::def_diff

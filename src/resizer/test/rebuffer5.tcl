@@ -24,4 +24,4 @@ report_checks -fields {input_pin transition_time capacitance}
 
 set def_file [make_result_file rebuffer5.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file rebuffer5.defok
