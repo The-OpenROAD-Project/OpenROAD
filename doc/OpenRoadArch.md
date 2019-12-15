@@ -1,3 +1,16 @@
+### Tool Philosophy
+
+OpenROAD is a tool to build a chip from a synthesized netlist to a
+physical design for manufacturing.
+
+The unifying principle behind the design of OpenROAD is for all of the
+tools to reside in one tool, with one process, and one database.  All
+tools in the flow should use Tcl commands exclusively to control them
+instead of external "configuration files".  File based communication
+between tools and forking processes is strongly discouraged. This
+architecture streamlines the construction of a flexible tool flow and
+minimizes the overhead of invoking each tool in the flow.
+
 ### Tool File Organization
 
 Every tool follows the following file structure.
@@ -13,7 +26,7 @@ CMakelists.txt - add_subdirectory's src/CMakelists.txt
 /jenkins/
 ```
 
-OpenROAD repo
+OpenROAD repository
 
 ```
 src/Main.cc
@@ -140,6 +153,9 @@ OpenRoad tools and their submodules.
   cmake ..
   make
   
+All tools build using cmake and must have a CMakeLists.txt file in their
+directory.
+
 This builds the 'openroad' executable.
 
 A stand-alone executable for one tool can be built by making a branch
@@ -225,20 +241,20 @@ that uses the file structure described and defines a command to run the tool
 with keyword and flag arguments as illustrated below:
 
 ```
-% run_tool foo
+% toolize foo
 Helping 23/6
 Gotta pos_arg1 foo
 Gotta param1 0.000000
 Gotta flag1 false
 
-% run_tool -flag1 -key1 2.0 bar
+% toolize -flag1 -key1 2.0 bar
 Helping 23/6
 Gotta pos_arg1 bar
 Gotta param1 2.000000
 Gotta flag1 true
 
-% help run_tool
-run_tool [-key1 key1] [-flag1] pos_arg1
+% help toolize
+toolize [-key1 key1] [-flag1] pos_arg1
 
 ```
 
@@ -257,3 +273,5 @@ TritonCTS (OpenDB)
 FRlefdef (OpenDB)
 TritonRoute (OpenDB)
 Final report (OpenDB, dbSTA/OpenSTA)
+
+James Cherry, Dec 2019
