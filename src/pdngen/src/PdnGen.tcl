@@ -1172,8 +1172,8 @@ variable metal_layers {}
 variable metal_layers_dir {}
 
 ## procedure for file existence check, returns 0 if file does not exist or file exists, but empty
-proc -s {filename} {
-  return [expr {([file exists $filename]) && ([file size $filename] > 0)}]
+proc file_exists_non_empty {filename} {
+  return [expr [file exists $filename] && [file size $filename] > 0]
 }
 
 proc get {args} {
@@ -1304,7 +1304,7 @@ proc init {opendb_block {PDN_cfg "PDN.cfg"}} {
   variable rails_start_with
   
   #        set ::start_time [clock clicks -milliseconds]
-  if {![file readable $PDN_cfg]} {
+  if {![file_exists_non_empty $PDN_cfg]} {
     error "File $PDN_cfg does not exist, or exists but empty"
   }
 
