@@ -91,7 +91,7 @@ SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER ;
 END SPECIALNETS
 NETS 4 ;
-    - clk ( r1 CP ) ( r2 CP ) ( r3 CP ) ( r4 CP ) ( r5 CP ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ( r4 CP ) ( r5 CP ) + USE SIGNAL ;
     - r1q ( buffer2 A ) ( buffer1 A ) ( r1 Q ) + USE SIGNAL ;
     - net1 ( r2 D ) ( r3 D ) ( buffer1 Z ) + USE SIGNAL ;
     - net2 ( r5 D ) ( r4 D ) ( buffer2 Z ) + USE SIGNAL ;

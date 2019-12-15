@@ -36,9 +36,9 @@ SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER ;
 END SPECIALNETS
 NETS 8 ;
-    - in1 ( r1 D ) ( r2 D ) + USE SIGNAL ;
-    - clk ( r1 CP ) ( r2 CP ) ( r3 CP ) + USE SIGNAL ;
-    - out ( r3 Q ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( r1 D ) ( r2 D ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) + USE SIGNAL ;
+    - out ( PIN out ) ( r3 Q ) + USE SIGNAL ;
     - r1q ( r1 Q ) ( u2 A ) + USE SIGNAL ;
     - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
     - u1z ( buffer1 A ) ( u1 Z ) + USE SIGNAL ;
