@@ -475,6 +475,37 @@ autoPlacePins(const char *pin_layer_name,
   init_fp.autoPlacePins(pin_layer_name, db, report);
 }
 
+adsRect
+getCoreArea(dbBlock *block)
+{
+  adsRect core;
+  auto rows = block->getRows();
+  if (rows.size() > 0) {
+    core.mergeInit();
+    adsRect row_bbox;
+    dbRow *row;
+    uint seq = rows.sequential();
+    if (seq) {
+      row = *rows.begin();
+      row->getBBox(row_bbox);
+      core.merge(row_bbox);
+
+      row = dbRow::getRow(block, seq);
+      row->getBBox(row_bbox);
+      core.merge(row_bbox);
+    }
+    else {
+      for (dbRow *row : rows) {
+	row->getBBox(row_bbox);
+	core.merge(row_bbox);
+      }
+    }
+  }
+  else
+    block->getDieArea(core);
+  return core;
+}
+
 void
 InitFloorplan::autoPlacePins(const char *pin_layer_name,
 			     dbDatabase *db,
@@ -489,18 +520,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
       dbTech *tech = db_->getTech();
       dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
       if (pin_layer) {
-	adsRect core;
-	auto rows = block_->getRows();
-	if (rows.size() > 0) {
-	  core.mergeInit();
-	  for (auto row : rows) {
-	    adsRect row_bbox;
-	    row->getBBox(row_bbox);
-	    core.merge(row_bbox);
-	  }
-	}
-	else
-	  block_->getDieArea(core);
+	adsRect core = getCoreArea(block_);
 	autoPlacePins(pin_layer, core);
       }
       else

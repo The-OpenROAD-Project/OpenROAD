@@ -8,6 +8,6 @@ initialize_floorplan -die_area "0 0 1000 1000" \
   -site site1
 auto_place_pins M1
 
-set def_file [make_result_file init_floorplan1.def]
+set def_file [make_result_file init_floorplan4.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file init_floorplan4.defok

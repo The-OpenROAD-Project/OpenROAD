@@ -29,7 +29,6 @@ set diff_file [file join $result_dir "diffs"]
 # File containing list of failed tests.
 set failure_file [file join $result_dir "failures"]
 # Use the DIFF_OPTIONS envar to change the diff options
-# (Solaris diff doesn't support this envar)
 set diff_options "-c"
 if [info exists env(DIFF_OPTIONS)] {
   set diff_options $env(DIFF_OPTIONS)
@@ -128,6 +127,7 @@ record_tests {
   read_verilog1
   read_verilog2
   sdc_names1
+  sdc_get1
   sta1
   sta2
   sta3

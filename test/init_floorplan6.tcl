@@ -11,4 +11,4 @@ auto_place_pins M1
 
 set def_file [make_result_file init_floorplan6.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file init_floorplan6.defok

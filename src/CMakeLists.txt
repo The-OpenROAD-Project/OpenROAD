@@ -25,6 +25,9 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
+
+set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
+
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
@@ -62,11 +65,18 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
 
 include(FindSWIG)
 
+# OpenDB's swig wrapper is not in the library (and mistakenly exports
+# to the global namespace) so make our own.
 add_custom_command(OUTPUT ${OPENDB_WRAP}
   COMMAND ${SWIG_EXECUTABLE} -DSWIG_DIRECTOR_STATIC -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENDB_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  DEPENDS
+  ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  ${OPENDB_HOME}/src/swig/tcl/dbenums.i
+  ${OPENDB_HOME}/src/swig/tcl/parserenums.i
+  ${OPENDB_HOME}/src/swig/tcl/dbhelpers.i
+  ${OPENDB_HOME}/src/swig/tcl/dbdiff.i
   )
 
 add_custom_command(OUTPUT ${OPENROAD_WRAP}
@@ -101,7 +111,6 @@ endif()
 ################################################################
 
 # Disable OpenDB stand-alone executable builds.
-# Simplistic findTCL fails on OSX.
 set(BUILD_PYTHON false)
 set(BUILD_TCL false)
 
@@ -120,6 +129,7 @@ add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(pdngen)
+add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(OpenPhySyn)
 
@@ -154,6 +164,7 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
+  TritonCTS
   FastRoute
   OpenPhySyn
   zutil 

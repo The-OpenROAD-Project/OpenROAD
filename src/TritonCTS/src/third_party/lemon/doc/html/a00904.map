@@ -1,0 +1,5 @@
+<map id="SkeletonSolverBase" name="SkeletonSolverBase">
+<area shape="rect" id="node5" href="$a00248.html" title="Skeleton class for an LP solver interface. " alt="" coords="5,155,91,181"/>
+<area shape="rect" id="node7" href="$a00268.html" title="Skeleton class for a MIP solver interface. " alt="" coords="116,155,209,181"/>
+<area shape="rect" id="node2" href="$a00247.html" title="Common base class for LP and MIP solvers. " alt="" coords="72,5,139,32"/>
+</map>

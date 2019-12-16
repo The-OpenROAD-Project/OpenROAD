@@ -11,3 +11,5 @@ Notice 0:     Created 2 special nets and 4 connections.
 Notice 0:     Created 2 nets and 4 connections.
 Notice 0: Finished DEF file: rebuffer7.def
 Inserted 0 buffers.
+Error: rebuffer7.tcl, 15 write_def requires one positional argument.
+Error: rebuffer7.tcl, 16 couldn't open "./results/rebuffer7.def": no such file or directory

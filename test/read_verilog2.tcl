@@ -14,4 +14,4 @@ report_net -hier_pins -connections -verbose b2/r1q
 
 set def_file [make_result_file read_verilog2.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file read_verilog2.defok

@@ -16,4 +16,4 @@ report_checks
 
 set def_file [make_result_file resize4.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file resize4.defok

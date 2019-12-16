@@ -13,9 +13,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This is a generic test script used by the "regression" and "save_ok" scripts.
-# You should NOT need to modify it.
-# Customization is done by modifying "regression_vars.tcl".
+# This is a generic regression test script used to compare application 
+# output to a known good "ok" file.
+# 
+# Use the "regression" command to run the regressions.
+#
+#  regression help | test1 [test2...]
+#
+# where test is "all" or the name of a test group defined in regression_vars.tcl
+# This runs the regressions and reports pass or fail.
+# The results of each test are in the file test/results/<test>.log
+# The diffs for all tests are in the file test/results/diffs
+# To save a log file as the correct output use the save_ok command.
+#
+#  save_ok failures | test1 [test2...]
+#
+# This copies test/results/test.log to test/test.ok
+#
+# You should NOT need to modify this script.
+# To setup the regression script customize the scripts "regresssion" and "save_ok"
+# to source "regression_vars.tcl" and "regression.tcl" as in this example.
+# Customize "regression_vars.tcl" to locate the directory and name of the
+# application to run.
 
 proc regression_main {} {
   setup

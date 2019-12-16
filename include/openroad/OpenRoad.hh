@@ -35,6 +35,10 @@ namespace ioPlacer {
 class IOPlacementKernel;
 }
 
+namespace TritonCTS {
+class TritonCTSKernel;
+}
+
 namespace FastRoute {
 class FastRouteKernel;
 }
@@ -68,6 +72,7 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   sta::Resizer *getResizer() { return resizer_; }
+  TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::opendp_external *getOpendp() { return opendp_; }
 
@@ -99,7 +104,7 @@ private:
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
   psn::Psn *psn_;
-
+  TritonCTS::TritonCTSKernel *tritonCts_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

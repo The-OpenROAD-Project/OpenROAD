@@ -695,10 +695,10 @@ dbNetwork::visitConnectedPins(const Net *net,
 ////////////////////////////////////////////////////////////////
 
 Pin *
-dbNetwork::pin(const Term *) const
+dbNetwork::pin(const Term *term) const
 {
-  // No pin at the next level of hierarchy.
-  return nullptr;
+  // Only terms are for top level instance pins, which are also BTerms.
+  return reinterpret_cast<Pin*>(const_cast<Term*>(term));
 }
 
 Net *
@@ -1051,9 +1051,9 @@ dbNetwork::staToDb(const Net *net) const
 
 void
 dbNetwork::staToDb(const Pin *pin,
-		       // Return values.
-		       dbITerm *&iterm,
-		       dbBTerm *&bterm) const
+		   // Return values.
+		   dbITerm *&iterm,
+		   dbBTerm *&bterm) const
 {
   dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
   dbObjectType type = obj->getObjectType();
