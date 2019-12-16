@@ -1,0 +1,7 @@
+<map id="MapBase&lt; K, V &gt;" name="MapBase&lt; K, V &gt;">
+<area shape="rect" id="node3" href="$a00103.html" title="Constant map. " alt="" coords="192,5,320,32"/>
+<area shape="rect" id="node5" href="$a00104.html" title="Constant map with inlined constant value. " alt="" coords="185,57,327,98"/>
+<area shape="rect" id="node7" href="$a00178.html" title="Converts an STL style (unary) functor to a map. " alt="" coords="179,123,333,149"/>
+<area shape="rect" id="node9" href="$a00292.html" title="Null map. (a.k.a. DoNothingMap) " alt="" coords="197,173,315,200"/>
+<area shape="rect" id="node11" href="$a00413.html" title="Map type based on std::map. " alt="" coords="188,224,324,251"/>
+</map>
