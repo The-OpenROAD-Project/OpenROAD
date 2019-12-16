@@ -532,24 +532,24 @@ void clustering::plotClusters(const vector<vector<flop*>>& clusters, const vecto
     //fout << "fig, ax = plt.subplots()" << endl;
     fout << "patches = []" << endl;
 
-	std::array<char, 6> colors = {'b', 'r', 'g', 'm', 'c', 'y'};
-	for (size_t i = 0; i < clusters.size(); i++) {
-		//std::cout << "clusters " << i << "\n";
-		for (size_t j = 0; j < clusters[i].size(); j++) {
-			fout << "plt.scatter(" << clusters[i][j]->x << ", " 
-				<< clusters[i][j]->y << ", color=\'" << colors[i % colors.size()] << "\')\n";
-			
-			if (clusters[i][j]->x < means[i].first) {
-				fout << "plt.plot([" << clusters[i][j]->x << ", "  << means[i].first << 
-					"], [" << clusters[i][j]->y << ", " << means[i].second << 
-					"], color = '" << colors[i % colors.size()] << "')\n";
-			} else {
-				fout << "plt.plot([" << means[i].first << ", "  << clusters[i][j]->x  << 
-					"], [" << means[i].second << ", " <<  clusters[i][j]->y<< 
-					"], color = '" << colors[i % colors.size()] << "')\n";
-			}
-		}
-	}
+	//std::array<char, 6> colors = {'b', 'r', 'g', 'm', 'c', 'y'};
+	//for (size_t i = 0; i < clusters.size(); i++) {
+	//	//std::cout << "clusters " << i << "\n";
+	//	for (size_t j = 0; j < clusters[i].size(); j++) {
+	//		fout << "plt.scatter(" << clusters[i][j]->x << ", " 
+	//			<< clusters[i][j]->y << ", color=\'" << colors[i % colors.size()] << "\')\n";
+	//		
+	//		if (clusters[i][j]->x < means[i].first) {
+	//			fout << "plt.plot([" << clusters[i][j]->x << ", "  << means[i].first << 
+	//				"], [" << clusters[i][j]->y << ", " << means[i].second << 
+	//				"], color = '" << colors[i % colors.size()] << "')\n";
+	//		} else {
+	//			fout << "plt.plot([" << means[i].first << ", "  << clusters[i][j]->x  << 
+	//				"], [" << means[i].second << ", " <<  clusters[i][j]->y<< 
+	//				"], color = '" << colors[i % colors.size()] << "')\n";
+	//		}
+	//	}
+	//}
 
 	for (size_t i = 0; i < means.size(); i++) {
 		fout << "plt.scatter(" << means[i].first << ", " 
