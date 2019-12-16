@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-// MF @ 191215: set CMP0048 to new and included version in project statement
+# MF @ 191215: set CMP0048 to new and included version in project statement
 CMAKE_POLICY(SET CMP0048 NEW)
 
 SET(PROJECT_NAME "LEMON")
