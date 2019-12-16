@@ -260,18 +260,18 @@ toolize [-key1 key1] [-flag1] pos_arg1
 
 ### Tool Flow
 
-Verilog to DB (OpenDB, dbSTA/OpenSTA)
-Init Floorplan (OpenDB)
-ioPlacer (OpenDB)
-PDN generation (OpenDB)
-tapcell (OpenDB)
-ioPlacer (OpenDB)
-RePlAce (OpenDB, dbSTA/OpenSTA, flute3)
-Resizer (OpenDB, dbSTA/OpenSTA, flute3)
-OpenDP (OpenDB,  dbSTA/OpenSTA, flute3)
-TritonCTS (OpenDB)
-FRlefdef (OpenDB)
-TritonRoute (OpenDB)
-Final report (OpenDB, dbSTA/OpenSTA)
+1. Verilog to DB (OpenDB, dbSTA/OpenSTA)
+2. Init Floorplan (OpenDB)
+3. ioPlacer (OpenDB)
+4. PDN generation (OpenDB)
+5. tapcell (OpenDB)
+6. ioPlacer (OpenDB)
+7. RePlAce (OpenDB, dbSTA/OpenSTA, flute3)
+8. Resizer (OpenDB, dbSTA/OpenSTA, flute3)
+9. OpenDP (OpenDB,  dbSTA/OpenSTA, flute3)
+10. TritonCTS (OpenDB)
+11. FRlefdef (OpenDB)
+12. TritonRoute (OpenDB)
+13. Final report (OpenDB, dbSTA/OpenSTA)
 
 James Cherry, Dec 2019
