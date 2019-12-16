@@ -27,6 +27,8 @@ namespace ord {
 // Defined in OpenRoad.i
 sta::Resizer *
 getResizer();
+void
+ensureLinked();
 }
 
 namespace sta {
@@ -56,6 +58,8 @@ networkLibertyLibraries(Network *network,
 } // namespace
 
 using ord::getResizer;
+using ord::ensureLinked;
+
 using sta::Resizer;
 using sta::Corner;
 using sta::LibertyCellSeq;
@@ -107,6 +111,7 @@ using sta::tclListSeqLibertyCell;
 double
 utilization()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->utilization();
 }
@@ -116,6 +121,7 @@ set_wire_rc_cmd(float res,
 		float cap,
 		Corner *corner)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setWireRC(res, cap, corner);
 }
@@ -124,6 +130,7 @@ set_wire_rc_cmd(float res,
 double
 wire_resistance()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->wireResistance();
 }
@@ -132,6 +139,7 @@ wire_resistance()
 double
 wire_capacitanceb()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->wireCapacitance();
 }
@@ -139,6 +147,7 @@ wire_capacitanceb()
 void
 set_max_utilization(double max_utilization)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setMaxUtilization(max_utilization);
 }
@@ -146,6 +155,7 @@ set_max_utilization(double max_utilization)
 void
 set_dont_use(LibertyCellSeq *dont_use)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(dont_use);
 }
@@ -153,6 +163,7 @@ set_dont_use(LibertyCellSeq *dont_use)
 void
 resizer_preamble(LibertyLibrarySeq *resize_libs)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizePreamble(resize_libs);
 }
@@ -160,6 +171,7 @@ resizer_preamble(LibertyLibrarySeq *resize_libs)
 void
 buffer_inputs(LibertyCell *buffer_cell)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->bufferInputs(buffer_cell);
 }
@@ -174,6 +186,7 @@ buffer_outputs(LibertyCell *buffer_cell)
 void
 resize_to_target_slew()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizeToTargetSlew();
 }
@@ -183,6 +196,7 @@ rebuffer_nets(bool repair_max_cap,
 	      bool repair_max_slew,
 	      LibertyCell *buffer_cell)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->rebufferNets(repair_max_cap, repair_max_slew, buffer_cell);
 }
@@ -190,6 +204,7 @@ rebuffer_nets(bool repair_max_cap,
 void
 resize_instance_to_target_slew(Instance *inst)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizeToTargetSlew(inst);
 }
@@ -198,6 +213,7 @@ void
 rebuffer_net(Net *net,
 	     LibertyCell *buffer_cell)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->rebuffer(net, buffer_cell);
 }
@@ -205,6 +221,7 @@ rebuffer_net(Net *net,
 double
 resize_target_slew(const RiseFall *rf)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->targetSlew(rf);
 }
@@ -212,6 +229,7 @@ resize_target_slew(const RiseFall *rf)
 double
 resize_target_load_cap(LibertyCell *cell)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->targetLoadCap(cell);
 }
@@ -219,6 +237,7 @@ resize_target_load_cap(LibertyCell *cell)
 float
 design_area()
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->designArea();
 }

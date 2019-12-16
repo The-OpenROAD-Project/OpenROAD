@@ -1,4 +1,3 @@
-# Resizer, LEF/DEF gate resizer
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -13,6 +12,10 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# This is a generic test script used by the "regression" and "save_ok" scripts.
+# You should NOT need to modify it.
+# Customization is done by modifying "regression_vars.tcl".
 
 proc regression_main {} {
   setup

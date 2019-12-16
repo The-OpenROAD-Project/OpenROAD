@@ -1,8 +1,7 @@
-#! /bin/sh
+#!/bin/sh
 # The next line is executed by /bin/sh, but not Tcl \
 exec tclsh $0 ${1+"$@"}
 
-# Resizer, LEF/DEF gate resizer
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -18,17 +17,17 @@ exec tclsh $0 ${1+"$@"}
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-proc find_parent_dir { dir } {
-  if { $dir == "." } {
-    return ".."
-  } else {
-    set path [file split $dir]
-    set path_len [llength $path]
-    if { $path_len == 1 } {
-      return "."
-    } else {
-      set path_len2 [expr $path_len - 2]
-      return [eval file join [lrange $path 0 $path_len2]]
-    }
-  }
-}
+# Usage: save_ok | test1 [test2...] | failures
+
+# Directory containing tests.
+set test_dir [file dirname [file normalize [info script]]]
+set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
+
+source [file join $test_dir "regression_vars.tcl"]
+source [file join $openroad_dir "test" "regression.tcl"]
+
+save_ok_main
+
+# Local Variables:
+# mode:tcl
+# End:

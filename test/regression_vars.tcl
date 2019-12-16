@@ -18,7 +18,7 @@
 
 # Application program to run tests on.
 set app "openroad"
-set app_dir [find_parent_dir $test_dir]
+set app_dir [file dirname $test_dir]
 set app_path [file join $app_dir "build" "src" $app]
 # Application options.
 set app_options "-no_init -no_splash -exit"
@@ -122,9 +122,13 @@ record_tests {
   init_floorplan1
   init_floorplan2
   init_floorplan3
+  init_floorplan4
+  init_floorplan5
+  init_floorplan6
   read_verilog1
   read_verilog2
   sdc_names1
+  sdc_get1
   sta1
   sta2
   sta3

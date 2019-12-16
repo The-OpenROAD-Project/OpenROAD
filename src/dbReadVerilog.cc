@@ -189,6 +189,8 @@ Verilog2db::makeBlock()
     dbBlock::destroy(block);
   const char *design = network_->name(network_->cell(network_->topInstance()));
   block_ = dbBlock::create(chip, design, network_->pathDivider());
+  dbTech *tech = db_->getTech();
+  block_->setDefUnits(tech->getLefUnits());
   block_->setBusDelimeters('[', ']');
 }
 
