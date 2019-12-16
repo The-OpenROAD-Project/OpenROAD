@@ -432,34 +432,42 @@ InitFloorplan::makeTracks(adsRect &die_area)
   dbSet<dbTechLayer> layers = tech->getLayers();
   for (auto layer : layers) {
     if (layer->getType() == dbTechLayerType::ROUTING) {
-      int pitch = layer->getPitch();
-      if (pitch) {
-	// FIXME is offset a lef 5.7 construct?
-	//int offset = layer->hasOffset() ? layer.offset() : pitch;
-	int offset = pitch;
-	dbTechLayerDir layer_dir = layer->getDirection();
-	dbTrackGrid *grid;
-	uint width;
-	int track_count;
-	switch (layer_dir) {
-	case dbTechLayerDir::HORIZONTAL:
-	  grid = dbTrackGrid::create(block_, layer);
-	  width = die_area.dx();
+      dbTechLayerDir layer_dir = layer->getDirection();
+      dbTrackGrid *grid;
+      uint width;
+      int offset, pitch, track_count;
+      switch (layer_dir) {
+      case dbTechLayerDir::HORIZONTAL:
+	grid = dbTrackGrid::create(block_, layer);
+	width = die_area.dx();
+	pitch = layer->getPitchX();
+	if (pitch) {
+	  offset = layer->getOffsetX();
+	  if (offset == 0)
+	    offset = pitch;
 	  track_count = floor((width - offset) / pitch) + 1;
 	  grid->addGridPatternX(offset, track_count, pitch);
-	  break;
-	case dbTechLayerDir::VERTICAL:
-	  grid = dbTrackGrid::create(block_, layer);
-	  width = die_area.dy();
+	}
+	else
+	  printf("Error: layer %s has zero pitch.\n", layer->getConstName());
+	break;
+      case dbTechLayerDir::VERTICAL:
+	grid = dbTrackGrid::create(block_, layer);
+	width = die_area.dy();
+	pitch = layer->getPitchY();
+	if (pitch) {
+	  offset = layer->getOffsetY();
+	  if (offset == 0)
+	    offset = pitch;
 	  track_count = floor((width - offset) / pitch) + 1;
 	  grid->addGridPatternY(offset, track_count, pitch);
-	  break;
-	case dbTechLayerDir::NONE:
-	  break;
 	}
+	else
+	  printf("Error: layer %s has zero pitch.\n", layer->getConstName());
+	break;
+      case dbTechLayerDir::NONE:
+	break;
       }
-      else
-	printf("Error: layer %s has zero pitch.\n", layer->getConstName());
     }
   }
 }
