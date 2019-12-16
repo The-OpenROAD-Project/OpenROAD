@@ -128,6 +128,7 @@ record_tests {
   read_verilog1
   read_verilog2
   sdc_names1
+  sdc_get1
   sta1
   sta2
   sta3
