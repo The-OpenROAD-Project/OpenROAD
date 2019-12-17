@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "*.jsx": "javascriptreact",
-        "*.tcl": "cpp"
-    }
-}
