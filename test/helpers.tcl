@@ -28,6 +28,8 @@ proc diff_files { file1 file2 } {
   while { ![eof $stream1] && ![eof $stream2] } {
     if { $line1 != $line2 } {
       puts "Differences found at line $line."
+      puts "$line1"
+      puts "$line2"
       return 1
     }
     gets $stream1 line1

@@ -46,7 +46,7 @@
 #include <ostream>
 #include <iomanip>
 #include <sstream>
-#include <regex>
+#include <algorithm>
 
 namespace TritonCTS {
 
@@ -72,6 +72,16 @@ void Characterization::parseLut(const std::string& file) {
         std::cout << std::setw(12) << _minSegmentLength << std::setw(12) << _maxSegmentLength 
                   << std::setw(12) << _minCapacitance  << std::setw(12) << _maxCapacitance
                   << std::setw(12) << _minSlew << std::setw(12) << _maxSlew << "\n";
+
+        if (_minSegmentLength > MAX_NORMALIZED_VAL || _maxSegmentLength > MAX_NORMALIZED_VAL ||
+            _minCapacitance > MAX_NORMALIZED_VAL || _maxCapacitance > MAX_NORMALIZED_VAL ||
+            _minSlew > MAX_NORMALIZED_VAL || _maxSlew > MAX_NORMALIZED_VAL) {
+               std::cout << "    [ERROR] Normalized values in the LUT should be in the range ";
+               std::cout << "[1, " << MAX_NORMALIZED_VAL << "]\n";
+               std::cout << "    Check the table above to see the normalization ranges and check ";
+               std::cout << "your characterization configuration.\n";
+               std::exit(1);
+        } 
                 
         std::string line;
         std::getline(lutFile, line); // Ignore first line
@@ -125,14 +135,14 @@ void Characterization::parseSolList(const std::string& file) {
 
         unsigned solIdx = 0;
         std::string line;
+        
         while (getline(solFile, line)) {
                 std::stringstream ss(line);
                 std::string token;
                 unsigned numBuffers = 0;
                 while (getline(ss, token, ',')) {
-                        if (!std::regex_match(token, std::regex("^[0-9]*$")) && 
-                            !std::regex_match(token, std::regex("[0-9]*\\s[0-9]*"))) {
-                                _wireSegments[solIdx].addBufferCell(token);
+                        if (std::any_of(std::begin(token), std::end(token), ::isalpha)) {
+				_wireSegments[solIdx].addBufferCell(token);
                                 ++numBuffers;
                         }
                 }

@@ -1,4 +1,4 @@
-# init_floorplan -tracks lef5.7
+# init_floorplan layer xy pitch, offset
 source "helpers.tcl"
 read_lef init_floorplan5.lef
 read_def reg1.def

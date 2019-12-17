@@ -278,14 +278,37 @@ Legalize a design that has been globally placed.
 
 ```
 legalize_placement [-constraints constraints_file]
+
 ```
+#### Global Routing
+
+FastRoute global route.
+Generate routing guides given a placed design.
+
+```
+fastroute -output_file out_file
+          -capacity_adjustment cap_adjust
+          -min_routing_layer min_layer
+          -max_routing_layer max_layer
+          -unidirectional_route unidir_route
+```
+
+Options description:
+- **capacity_adjustment**: Global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
+- **min_routing_layer**: Minimum routing layer (e.g.: -min_routing_layer *2*)
+- **max_routing_layer** Maximum routing layer (e.g.: max_routing_layer *9*)
+- **-unidirectional_route** Unidirectional route (e.g.: -unidirectional_route *true*)
+
+###### NOTE 1: if you set unidirectionalRoute as "true", the minimum routing layer will be assigned as "2" automatically
+###### NOTE 2: the first routing layer of the design have index equal to 1
 
 #### Physical Synthesis Optimization [optional]
 
-You can optionally run OpenPhySyn timing optimization commands (currently only performs load driven gate-cloning).
+You can optionally run OpenPhySyn timing optimization commands (currently only performs load driven gate-cloning and pin-swapping).
 
 ```
 psn::set_wire_rc 0.0020 0.00020
-optimize_design [-clone_max_cap_factor factor] [-clone_non_largest_cells]
+optimize_design [-no_gate_clone] [-no_pin_swap] [-clone_max_cap_factor factor] [-clone_non_largest_cells]
 optimize_fanout -buffer_cell buffer_cell_name -max_fanout max_fanout # Adds buffer cells based on sink pin count
 ```
+
