@@ -115,7 +115,7 @@ tool interfaces are not user friendly. Define Tcl procedures that take
 keyword arguments that reference the OpenRoad object to get tool
 state.  OpenSTA has Tcl utilities to parse keyword arguements
 (sta::parse_keyword_args). See OpenSTA/tcl/*.tcl for examples.
-Use swig to define internal functions to C++ functionality.
+Use swig to define internal functions to C++ functionality.p
 
 Tcl files can be included by encoding them in cmake into a string
 that is evaluated at run time (See Resizer::init()).
@@ -125,6 +125,10 @@ that is evaluated at run time (See Resizer::init()).
 Each "tool" has a /test directory containing a script to run "unit" tests.
 
 No databases should be in tests. Read lef/def/verilog to make a database.
+
+The regression script should not depend on the current working directory.
+It should be able to be run from any directory. Use filenames relative
+to the script name rather the the current working directory.
 
 ### Issues
 
@@ -260,18 +264,18 @@ toolize [-key1 key1] [-flag1] pos_arg1
 
 ### Tool Flow
 
-1. Verilog to DB (OpenDB, dbSTA/OpenSTA)
-2. Init Floorplan (OpenDB)
-3. ioPlacer (OpenDB)
-4. PDN generation (OpenDB)
-5. tapcell (OpenDB)
-6. ioPlacer (OpenDB)
-7. RePlAce (OpenDB, dbSTA/OpenSTA, flute3)
-8. Resizer (OpenDB, dbSTA/OpenSTA, flute3)
-9. OpenDP (OpenDB,  dbSTA/OpenSTA, flute3)
-10. TritonCTS (OpenDB)
-11. FRlefdef (OpenDB)
-12. TritonRoute (OpenDB)
-13. Final report (OpenDB, dbSTA/OpenSTA)
+Verilog to DB (dbSTA)
+Init Floorplan (OpenROAD)
+I/O placement (ioPlacer)
+PDN generation (pdngen
+Tapcell and Welltie insertion (tapcell with LEF/DEF)
+I/O placement (ioPlacer)
+Global placement (RePlAce)
+Gate Resizing and buffering (Resizer)
+Detailed placement (OpenDP)
+Clock Tree Synthesis (TritonCTS)
+Global route (FastRoute)
+Detailed route (TritonRoute)n
+Final timing/power report (OpenSTA)
 
 James Cherry, Dec 2019

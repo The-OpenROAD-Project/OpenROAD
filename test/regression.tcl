@@ -21,20 +21,32 @@
 #  regression help | test1 [test2...]
 #
 # where test is "all" or the name of a test group defined in regression_vars.tcl
-# This runs the regressions and reports pass or fail.
+# Wildcards can be used in test names if the name is enclosed in ""s to suppress
+# shell globbing. For example,
+#
+#  regression "init_floorplan*"
+# 
+# will run all tests with names that begin with "init_floorplan".
+# Each test name is printed before it runs. Once it finishes pass,
+# fail, *NO OK FILE* or *SEG FAULT* is printed after the test name.
+#
 # The results of each test are in the file test/results/<test>.log
-# The diffs for all tests are in the file test/results/diffs
+# The diffs for all tests are in test/results/diffs.
+# A list of failed tests is in test/results/failures.
 # To save a log file as the correct output use the save_ok command.
 #
 #  save_ok failures | test1 [test2...]
 #
 # This copies test/results/test.log to test/test.ok
+# Using the test name 'failures' copies the ok files for all failed tests.
+# This is a quick way to update the failing test ok files after examining
+# the differences.
 #
 # You should NOT need to modify this script.
 # To setup the regression script customize the scripts "regresssion" and "save_ok"
 # to source "regression_vars.tcl" and "regression.tcl" as in this example.
 # Customize "regression_vars.tcl" to locate the directory and name of the
-# application to run.
+# application to run as well as the test names. Each test is a tcl command file.
 
 proc regression_main {} {
   setup
