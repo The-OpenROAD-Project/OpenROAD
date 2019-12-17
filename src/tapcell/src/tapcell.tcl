@@ -53,7 +53,7 @@ namespace eval tapcell {
         set db [::ord::get_db]
         set block [[$db getChip] getBlock]
 
-        set site_y [dbGet head.sites.size_y] #TODO: change to OpenDB cmd
+        set site_y [[$row getSite] getHeight]
 
         set lly [[$row getBBox] yMin]
         set core_box_lly [[$block getBBox] yMin]
@@ -129,22 +129,21 @@ proc run_tapcell { args } {
         set block [[$db getChip] getBlock]
 
         #Step 1: cut placement rows if there are overlaps between rows and placement blockages
-        # Assume the only macro cells are fixed
-        set macro_boxes [dbGet [dbGet -p1 top.insts.pStatus fixed].box] # TODO: change to OpenDB cmd
-        
-        foreach macro_box $macro_boxes {
-            set llx [expr [$macro_box xMin] - $halo_macro]
-            set lly [expr [$macro_box yMin] - $halo_macro]
-            set urx [expr [$macro_box xMax] + $halo_macro]
-            set ury [expr [$macro_box yMax] + $halo_macro]
+
+        foreach blockage_box [[$block getBlockages] getBBox] {
+            set llx [$blockage_box xMin]
+            set lly [$blockage_box yMin]
+            set urx [$blockage_box xMax]
+            set ury [$blockage_box yMax]
+
             set box "$llx $lly $urx $ury"
-            cutRow -area $box
+            # cutRow -area $box # TODO: implement cutRow inside script
         }
 
         #Step 2: Insert Endcap at the left and right end of each row
         set rows [$block getRows]
-        set site_x [dbGet head.sites.size_x] # TODO: change to OpenDB cmd
-        set site_y [dbGet head.sites.size_y] # TODO: change to OpenDB cmd
+        set site_x [[$row getSite] getWidth]
+        set site_y [[$row getSite] getHeight]
 
         set cnt 0
         foreach row $rows {
@@ -165,7 +164,7 @@ proc run_tapcell { args } {
             addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_2 -ori $ori # TODO: change to OpenDB cmd
             incr cnt
         }
-
+        
         #Step 3: Insert tab
         set core_box_lly [[$block getBBox] yMin]
 
@@ -191,10 +190,10 @@ proc run_tapcell { args } {
 
             for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                 set loc "$x $lly"
-                addInst -cell $tabcell_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori # TODO: change to OpenDB cmd
+                #addInst -cell $tabcell_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori # TODO: change to OpenDB cmd
                 incr cnt
             }
-        }
+        }            
     } elseif { [string match $tech "gf14"] } {
         puts "WARNING: Currently, tapcell does not support gf14"
     } else {
