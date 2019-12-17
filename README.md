@@ -279,3 +279,25 @@ Legalize a design that has been globally placed.
 ```
 legalize_placement [-constraints constraints_file]
 ```
+
+#### Global Routing
+
+FastRoute global route.
+Generate routing guides given a placed design.
+
+```
+fastroute -output_file out_file
+          -capacity_adjustment cap_adjust
+          -min_routing_layer min_layer
+          -max_routing_layer max_layer
+          -unidirectional_route unidir_route
+```
+
+Options description:
+- **capacity_adjustment**: Global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
+- **min_routing_layer**: Minimum routing layer (e.g.: -min_routing_layer *2*)
+- **max_routing_layer** Maximum routing layer (e.g.: max_routing_layer *9*)
+- **-unidirectional_route** Unidirectional route (e.g.: -unidirectional_route *true*)
+
+###### NOTE 1: if you set unidirectionalRoute as "true", the minimum routing layer will be assigned as "2" automatically
+###### NOTE 2: the first routing layer of the design have index equal to 1
