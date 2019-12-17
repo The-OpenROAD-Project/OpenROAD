@@ -415,6 +415,8 @@ proc generate_via_stacks {l1 l2 tag grid_data} {
       foreach l1_str $orig_stripe_locs($l1,$tag) {
 	set a1  [expr {[lindex $l1_str 1]}]
 
+        if {[array names orig_stripe_locs "$l2,$tag"] == ""} {continue}
+
 	foreach l2_str $orig_stripe_locs($l2,$tag) {
 	  set flag 1
 	  set a2	[expr {[lindex $l2_str 0]}]
@@ -473,6 +475,8 @@ proc generate_via_stacks {l1 l2 tag grid_data} {
       ## puts "     and [llength $blockage] blockages"
       foreach l1_str $orig_stripe_locs($l1,$tag) {
 	set n1  [expr {[lindex $l1_str 0]}]
+
+        if {[array names orig_stripe_locs "$l2,$tag"] == ""} {continue}
 
 	foreach l2_str $orig_stripe_locs($l2,$tag) {
 	  set flag 1
