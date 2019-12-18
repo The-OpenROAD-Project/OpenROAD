@@ -33,7 +33,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-sta::define_cmd_args "tapcell" {[-tabcell_master tabcell_master] \
+sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master] \
                                     [-endcap_master endcap_master] \
                                     [-endcap_cpp endcap_cpp] \
 #when you set 25 (um), each row has 50um with checker-board pattern
@@ -102,21 +102,19 @@ namespace eval tapcell {
         set dx [expr $max_x - $min_x]
         set dy [expr $max_y - $min_y]
 
-        if {($dx < 0) && ($dy < 0)} {
-            return 1
-        } else {
-            return 0
-        }
+        set overlap [expr ($dx < 0) && ($dy < 0)]
+
+        return $overlap
     }
 }
 
 # Main function. It will run tapcell given the correct parameters
 proc tapcell { args } {
     sta::parse_key_args "tapcell" args \
-        keys {-tabcell_master -endcap_master -endcap_cpp -distance} flags {}
+        keys {-tapcell_master -endcap_master -endcap_cpp -distance} flags {}
 
-    if { [info exists keys(-tabcell_master)] } {
-        set tabcell_master $keys(-tabcell_master)
+    if { [info exists keys(-tapcell_master)] } {
+        set tapcell_master $keys(-tapcell_master)
     }
 
     if { [info exists keys(-endcap_master)] } {
@@ -189,34 +187,33 @@ proc tapcell { args } {
 
     set cnt 0
     foreach row $rows {
-        set site_x [[$row getSite] getWidth]
-        set site_y [[$row getSite] getHeight]
-        set llx [[$row getBBox] xMin]
-        set lly [[$row getBBox] yMin]
-        set urx [[$row getBBox] xMax]
-        set ury [[$row getBBox] yMax]
-        set loc_2_x [expr $urx - $site_x]
-        set loc_2_y [expr $ury - $site_y]
-
-        set loc_1 "$llx $lly"
-        set loc_2 "$loc_2_x $loc_2_y"
-
-        set ori [$row getOrient]
-
         set master [$db findMaster $endcap_master]
         if { [string match [$master getConstName] $endcap_master] } {
+            set master_x [$master getWidth]
+            set master_y [$master getHeight]
+            
+            set llx [[$row getBBox] xMin]
+            set lly [[$row getBBox] yMin]
+            set urx [[$row getBBox] xMax]
+            set ury [[$row getBBox] yMax]
+
+            set loc_2_x [expr $urx - $master_x]
+            set loc_2_y [expr $ury - $master_y]
+
+            set ori [$row getOrient]
+
             set inst1_name "PHY_${cnt}"
             set inst1 [odb::dbInst_create $block $master $inst1_name]
-            $inst1 setLocation $llx $lly
             $inst1 setOrient $ori
+            $inst1 setLocation $llx $lly
             $inst1 setPlacementStatus LOCKED
 
             incr cnt
 
             set inst2_name "PHY_${cnt}"
             set inst2 [odb::dbInst_create $block $master $inst2_name]
-            $inst2 setLocation $loc_2_x $loc_2_y
             $inst2 setOrient $ori
+            $inst2 setLocation $loc_2_x $loc_2_y
             $inst2 setPlacementStatus LOCKED
 
             incr cnt
@@ -226,7 +223,7 @@ proc tapcell { args } {
         }
     }
 
-    #Step 3: Insert tab
+    #Step 3: Insert tap
 
     foreach row $rows {
         set site_x [[$row getSite] getWidth]
@@ -269,5 +266,5 @@ proc tapcell { args } {
                 exit 1
             }
         }
-    }  
+    }
 }
