@@ -24,3 +24,6 @@
 [submodule "src/eigen"]
 	path = src/eigen
 	url = https://gitlab.com/libeigen/eigen
+[submodule "src/TritonMacroPlace"]
+	path = src/TritonMacroPlace
+	url = https://github.com/The-OpenROAD-Project/TritonMacroPlace
