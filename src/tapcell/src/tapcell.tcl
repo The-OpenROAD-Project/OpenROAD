@@ -251,10 +251,10 @@ proc tapcell { args } {
         }
 
         for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
-            set master [$db findMaster $tabcell_master]
+            set master [$db findMaster $tapcell_master]
             set inst_name "PHY_${cnt}"
 
-            if { [string match [$master getConstName] $tabcell_master] } {
+            if { [string match [$master getConstName] $tapcell_master] } {
                 set inst [odb::dbInst_create $block $master $inst_name]
                 $inst setOrient $ori
                 $inst setLocation $x $lly
@@ -262,7 +262,7 @@ proc tapcell { args } {
 
                 incr cnt
             } else {
-                puts "ERROR Master $tabcell_master not found"
+                puts "ERROR Master $tapcell_master not found"
                 exit 1
             }
         }
