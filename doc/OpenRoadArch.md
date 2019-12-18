@@ -1,3 +1,16 @@
+### Tool Philosophy
+
+OpenROAD is a tool to build a chip from a synthesized netlist to a
+physical design for manufacturing.
+
+The unifying principle behind the design of OpenROAD is for all of the
+tools to reside in one tool, with one process, and one database.  All
+tools in the flow should use Tcl commands exclusively to control them
+instead of external "configuration files".  File based communication
+between tools and forking processes is strongly discouraged. This
+architecture streamlines the construction of a flexible tool flow and
+minimizes the overhead of invoking each tool in the flow.
+
 ### Tool File Organization
 
 Every tool follows the following file structure.
@@ -13,7 +26,7 @@ CMakelists.txt - add_subdirectory's src/CMakelists.txt
 /jenkins/
 ```
 
-OpenROAD repo
+OpenROAD repository
 
 ```
 src/Main.cc
@@ -102,7 +115,7 @@ tool interfaces are not user friendly. Define Tcl procedures that take
 keyword arguments that reference the OpenRoad object to get tool
 state.  OpenSTA has Tcl utilities to parse keyword arguements
 (sta::parse_keyword_args). See OpenSTA/tcl/*.tcl for examples.
-Use swig to define internal functions to C++ functionality.
+Use swig to define internal functions to C++ functionality.p
 
 Tcl files can be included by encoding them in cmake into a string
 that is evaluated at run time (See Resizer::init()).
@@ -112,6 +125,10 @@ that is evaluated at run time (See Resizer::init()).
 Each "tool" has a /test directory containing a script to run "unit" tests.
 
 No databases should be in tests. Read lef/def/verilog to make a database.
+
+The regression script should not depend on the current working directory.
+It should be able to be run from any directory. Use filenames relative
+to the script name rather the the current working directory.
 
 ### Issues
 
@@ -140,6 +157,9 @@ OpenRoad tools and their submodules.
   cmake ..
   make
   
+All tools build using cmake and must have a CMakeLists.txt file in their
+directory.
+
 This builds the 'openroad' executable.
 
 A stand-alone executable for one tool can be built by making a branch
@@ -225,35 +245,37 @@ that uses the file structure described and defines a command to run the tool
 with keyword and flag arguments as illustrated below:
 
 ```
-% run_tool foo
+% toolize foo
 Helping 23/6
 Gotta pos_arg1 foo
 Gotta param1 0.000000
 Gotta flag1 false
 
-% run_tool -flag1 -key1 2.0 bar
+% toolize -flag1 -key1 2.0 bar
 Helping 23/6
 Gotta pos_arg1 bar
 Gotta param1 2.000000
 Gotta flag1 true
 
-% help run_tool
-run_tool [-key1 key1] [-flag1] pos_arg1
+% help toolize
+toolize [-key1 key1] [-flag1] pos_arg1
 
 ```
 
 ### Tool Flow
 
-Verilog to DB (OpenDB, dbSTA/OpenSTA)
-Init Floorplan (OpenDB)
-ioPlacer (OpenDB)
-PDN generation (OpenDB)
-tapcell (OpenDB)
-ioPlacer (OpenDB)
-RePlAce (OpenDB, dbSTA/OpenSTA, flute3)
-Resizer (OpenDB, dbSTA/OpenSTA, flute3)
-OpenDP (OpenDB,  dbSTA/OpenSTA, flute3)
-TritonCTS (OpenDB)
-FRlefdef (OpenDB)
-TritonRoute (OpenDB)
-Final report (OpenDB, dbSTA/OpenSTA)
+Verilog to DB (dbSTA)
+Init Floorplan (OpenROAD)
+I/O placement (ioPlacer)
+PDN generation (pdngen
+Tapcell and Welltie insertion (tapcell with LEF/DEF)
+I/O placement (ioPlacer)
+Global placement (RePlAce)
+Gate Resizing and buffering (Resizer)
+Detailed placement (OpenDP)
+Clock Tree Synthesis (TritonCTS)
+Global route (FastRoute)
+Detailed route (TritonRoute)n
+Final timing/power report (OpenSTA)
+
+James Cherry, Dec 2019

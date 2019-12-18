@@ -261,7 +261,7 @@ class DbNetPinIterator : public NetPinIterator
 {
 public:
   DbNetPinIterator(const Net *net,
-		       const dbNetwork *network);
+		   const dbNetwork *network);
   bool hasNext();
   Pin *next();
 
@@ -269,20 +269,16 @@ private:
   const dbNetwork *network_;
   dbSet<dbITerm>::iterator _iitr;
   dbSet<dbITerm>::iterator _iitr_end;
-  dbSet<dbBTerm>::iterator _bitr;
-  dbSet<dbBTerm>::iterator _bitr_end;
   void *_term;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net *net,
-					   const dbNetwork *network) :
+				   const dbNetwork *network) :
   network_(network)
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
   _iitr = dnet->getITerms().begin();
   _iitr_end = dnet->getITerms().end();
-  _bitr = dnet->getBTerms().begin();
-  _bitr_end = dnet->getBTerms().end();
   _term = NULL;
 }
 
@@ -303,13 +299,8 @@ DbNetPinIterator::hasNext()
     ++_iitr;
     return true;
   }
-  if (_bitr != _bitr_end) {
-    dbBTerm *bterm = *_bitr;
-    ++_bitr;
-    _term = network_->dbToSta(bterm);
-    return true;
-  }
-  return false;
+  else
+    return false;
 }
 
 Pin *
@@ -695,10 +686,10 @@ dbNetwork::visitConnectedPins(const Net *net,
 ////////////////////////////////////////////////////////////////
 
 Pin *
-dbNetwork::pin(const Term *) const
+dbNetwork::pin(const Term *term) const
 {
-  // No pin at the next level of hierarchy.
-  return nullptr;
+  // Only terms are for top level instance pins, which are also BTerms.
+  return reinterpret_cast<Pin*>(const_cast<Term*>(term));
 }
 
 Net *
@@ -1051,9 +1042,9 @@ dbNetwork::staToDb(const Net *net) const
 
 void
 dbNetwork::staToDb(const Pin *pin,
-		       // Return values.
-		       dbITerm *&iterm,
-		       dbBTerm *&bterm) const
+		   // Return values.
+		   dbITerm *&iterm,
+		   dbBTerm *&bterm) const
 {
   dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
   dbObjectType type = obj->getObjectType();

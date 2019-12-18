@@ -37,6 +37,7 @@
 #include "pdngen/MakePdnGen.hh"
 
 #include "FastRoute/src/MakeFastRoute.h"
+#include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 
 namespace sta {
@@ -105,6 +106,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   opendp_ = makeOpendp();
   pdngen_ = makePdnGen();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
+  tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
 
   // Init components.
@@ -122,6 +124,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initOpendp(this);
   initPdnGen(this);
   initFastRoute(this);
+  initTritonCts(this);
   initTapcell(this);
   
   // Import exported commands to global namespace.

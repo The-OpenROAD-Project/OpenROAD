@@ -11,4 +11,4 @@ resize -buffer_outputs -buffer_cell $buffer_cell
 
 set def_file [make_result_file rebuffer_ports1.def]
 write_def $def_file
-report_file $def_file
+diff_files $def_file rebuffer_ports1.defok

@@ -1,0 +1,14 @@
+Notice 0: Reading LEF file:  example1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  example1.lef
+Notice 0: 
+Reading DEF file: example1.def
+Notice 0: Design: top
+Notice 0:     Created 6 pins.
+Notice 0:     Created 5 components and 24 component-terminals.
+Notice 0:     Created 2 special nets and 10 connections.
+Notice 0:     Created 10 nets and 14 connections.
+Notice 0: Finished DEF file: example1.def
+clk1
+r1/CK

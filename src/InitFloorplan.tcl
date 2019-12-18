@@ -75,10 +75,11 @@ proc initialize_floorplan { args } {
     sta::check_positive_float "-die_area" $die_ux
     sta::check_positive_float "-die_area" $die_uy
 
+    ord::ensure_linked
     if [info exists keys(-core_area)] {
       set core_area $keys(-core_area)
       if { [llength $core_area] != 4 } {
-	sta_error "-core_area is a list of 4 coordinates."
+	sta::sta_error "-core_area is a list of 4 coordinates."
       }
       lassign $core_area core_lx core_ly core_ux core_uy
       sta::check_positive_float "-core_area" $core_lx
