@@ -85,12 +85,39 @@ namespace eval tapcell {
             return 0
         }
     }
+
+    #proc to detect if blockage overlaps with row
+    proc overlaps {blockage, row} {
+        set blockage_llx [[$blockage getBBox] xMin]
+        set blockage_lly [[$blockage getBBox] yMin]
+        set blockage_urx [[$blockage getBBox] xMax]
+        set blockage_ury [[$blockage getBBox] yMax]
+
+        set row_llx [[$row getBBox] xMin]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [[$row getBBox] xMax]
+        set row_ury [[$row getBBox] yMax]
+
+        set min_x [expr min($blockage_llx, $row_llx)]
+        set max_x [expr max($blockage_urx, $row_urx)]
+        set min_y [expr min($blockage_lly, $row_lly)]
+        set max_y [expr max($blockage_ury, $row_ury)]
+
+        set dx [expr $max_x - $min_x]
+        set dy [expr $max_y - $min_y]
+
+        if {{$dx < 0} && {$dy < 0}} {
+            return 1
+        } else {
+            return 0
+        }
+    }
 }
 
 # Main function. It will run tapcell given the correct parameters
 proc run_tapcell { args } {
     sta::parse_key_args "run_tapcell" args \
-        keys {-output_file -tech -endcap_master -encap_cpp -distance -halo_macro} flags {}
+        keys {-output_file -tech -endcap_master -endcap_cpp -distance -halo_macro} flags {}
 
     if { [info exists keys(-output_file)] } {
         set out_file $keys(-output_file)
@@ -127,26 +154,52 @@ proc run_tapcell { args } {
         
         set db [::ord::get_db]
         set block [[$db getChip] getBlock]
+        set rows [$block getRows]
 
         #Step 1: cut placement rows if there are overlaps between rows and placement blockages
 
-        foreach blockage_box [[$block getBlockages] getBBox] {
-            set llx [$blockage_box xMin]
-            set lly [$blockage_box yMin]
-            set urx [$blockage_box xMax]
-            set ury [$blockage_box yMax]
+        foreach blockage [$block getBlockages] {
+            foreach row $rows {
+                if {[tapcell::overlaps $blockage $rows]} {
+                    # Create two new rows, avoiding overlap with blockage
+                    set row_site [$row getSite]
+                    set orient [$row getOrient]
+                    set direction [$row getDirection]
 
-            set box "$llx $lly $urx $ury"
-            # cutRow -area $box # TODO: implement cutRow inside script
+                    set site_width [$row_site getWidth]
+
+                    ## First new row: from left of previous row to the left boundary of blockage
+                    set first_origin_x [[$row getBBox] xMin]
+                    set first_origin_y [[$row getBBox] yMin]
+                    set first_end_x [[$blockage getBBox] xMin]
+                    set first_num_sites [expr {($first_end_x - $first_origin_x)/$site_width}]
+                    
+                    if {first_num_sites > 0} {
+                        odb::dbRow_create $block $row_name $row_site $first_origin_x $first_origin_y $orient $direction $first_num_sites $site_width
+                    }
+
+                    ## Second new row: from right of previous row to the right boundary of blockage
+                    set second_origin_x [[$blockage getBBox] xMax]
+                    set second_origin_y [[$row getBBox] yMin]
+                    set second_end_x [[$row getBBox] xMax]
+                    set second_num_sites [expr {($second_end_x - $second_origin_x)/$site_width}]
+                    
+                    if {second_num_sites > 0} {
+                        odb::dbRow_create $block $row_name $row_site $second_origin_x $second_origin_y $orient $direction $second_num_sites $site_width
+                    }
+
+                    # Remove current row
+                    odb::dbRow_destroy $row
+                }
+            }
         }
 
         #Step 2: Insert Endcap at the left and right end of each row
-        set rows [$block getRows]
-        set site_x [[$row getSite] getWidth]
-        set site_y [[$row getSite] getHeight]
 
         set cnt 0
         foreach row $rows {
+            set site_x [[$row getSite] getWidth]
+            set site_y [[$row getSite] getHeight]
             set llx [[$row getBBox] xMin]
             set lly [[$row getBBox] yMin]
             set urx [[$row getBBox] xMax]
@@ -159,9 +212,9 @@ proc run_tapcell { args } {
 
             set ori [$row getOrient]
 
-            addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_1 -ori $ori # TODO: change to OpenDB cmd
+            #addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_1 -ori $ori # TODO: change to OpenDB cmd
             incr cnt
-            addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_2 -ori $ori # TODO: change to OpenDB cmd
+            #addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_2 -ori $ori # TODO: change to OpenDB cmd
             incr cnt
         }
         
@@ -193,7 +246,7 @@ proc run_tapcell { args } {
                 #addInst -cell $tabcell_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori # TODO: change to OpenDB cmd
                 incr cnt
             }
-        }            
+        }
     } elseif { [string match $tech "gf14"] } {
         puts "WARNING: Currently, tapcell does not support gf14"
     } else {
