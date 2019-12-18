@@ -28,6 +28,7 @@ set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
 
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
+set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -121,6 +122,7 @@ add_subdirectory(ioPlacer)
 add_subdirectory(pdngen)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
+add_subdirectory(tapcell)
 
 ################################################################
 
@@ -137,6 +139,7 @@ target_include_directories(openroad
   ${FASTROUTE_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  ${TAPCELL_HOME}/include
   SYSTEM
   ${TCL_HEADER_DIR}
   )
@@ -153,6 +156,7 @@ target_link_libraries(openroad
   opendb
   TritonCTS
   FastRoute
+  tapcell
   zutil 
   zlib 
   tm

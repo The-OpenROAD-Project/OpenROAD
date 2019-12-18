@@ -43,6 +43,10 @@ namespace FastRoute {
 class FastRouteKernel;
 }
 
+namespace tapcell {
+    class Tapcell;
+}
+
 namespace opendp {
 class opendp_external;
 }
@@ -71,6 +75,7 @@ public:
   TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::opendp_external *getOpendp() { return opendp_; }
+  tapcell::Tapcell *getTapcell() { return tapcell_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
@@ -100,6 +105,7 @@ private:
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
+  tapcell::Tapcell *tapcell_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
