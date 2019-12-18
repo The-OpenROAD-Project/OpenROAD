@@ -256,8 +256,8 @@ proc tapcell { args } {
 
             if { [string match [$master getConstName] $tabcell_master] } {
                 set inst [odb::dbInst_create $block $master $inst_name]
-                $inst setLocation $x $lly
                 $inst setOrient $ori
+                $inst setLocation $x $lly
                 $inst setPlacementStatus LOCKED
 
                 incr cnt
