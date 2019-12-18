@@ -168,24 +168,26 @@ proc run_tapcell { args } {
 
                     set site_width [$row_site getWidth]
 
-                    ## First new row: from left of previous row to the left boundary of blockage
-                    set first_origin_x [[$row getBBox] xMin]
-                    set first_origin_y [[$row getBBox] yMin]
-                    set first_end_x [[$blockage getBBox] xMin]
-                    set first_num_sites [expr {($first_end_x - $first_origin_x)/$site_width}]
+                    ## First new row: from left of original row to the left boundary of blockage
+                    set row1_origin_x [[$row getBBox] xMin]
+                    set row1_origin_y [[$row getBBox] yMin]
+                    set row1_end_x [[$blockage getBBox] xMin]
+                    set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
                     
-                    if {first_num_sites > 0} {
-                        odb::dbRow_create $block $row_name $row_site $first_origin_x $first_origin_y $orient $direction $first_num_sites $site_width
+                    if {$row1_num_sites > 0} {
+                        odb::dbRow_create $block $row_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
                     }
 
-                    ## Second new row: from right of previous row to the right boundary of blockage
-                    set second_origin_x [[$blockage getBBox] xMax]
-                    set second_origin_y [[$row getBBox] yMin]
-                    set second_end_x [[$row getBBox] xMax]
-                    set second_num_sites [expr {($second_end_x - $second_origin_x)/$site_width}]
+                    ## Second new row: from right of original  row to the right boundary of blockage
+                    set blockage_x_max [[$blockage getBBox] xMax]
                     
-                    if {second_num_sites > 0} {
-                        odb::dbRow_create $block $row_name $row_site $second_origin_x $second_origin_y $orient $direction $second_num_sites $site_width
+                    set row2_origin_x [expr {ceil (expr {blockage_x_max / $site_width})*$site_width}]
+                    set row2_origin_y [[$row getBBox] yMin]
+                    set row2_end_x [[$row getBBox] xMax]
+                    set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
+                    
+                    if {$row2_num_sites > 0} {
+                        odb::dbRow_create $block $row_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
                     }
 
                     # Remove current row
