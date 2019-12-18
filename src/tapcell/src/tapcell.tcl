@@ -40,12 +40,10 @@ sta::define_cmd_args "tapcell" {[-output_file out_file] \
                                     [-endcap_cpp endcap_cpp] \
 #when you set 25 (um), each row has 50um with checker-board pattern
                                     [-distance dist] \
-                                    [-halo_macro halo_macro] \
 }
 
 #Pre-step: assumed that placement blockages inserted around macros
 #You might or might not need this step
-#createPlaceBlockage -allMacro -outerRingBySide {$halo_macro $halo_macro $halo_macro $halo_macro}
 
 namespace eval tapcell {
     #proc to detect even/odd
@@ -117,7 +115,7 @@ namespace eval tapcell {
 # Main function. It will run tapcell given the correct parameters
 proc tapcell { args } {
     sta::parse_key_args "tapcell" args \
-        keys {-output_file -tech -tabcell_master -endcap_master -endcap_cpp -distance -halo_macro} flags {}
+        keys {-output_file -tech -tabcell_master -endcap_master -endcap_cpp -distance} flags {}
 
     if { [info exists keys(-output_file)] } {
         set out_file $keys(-output_file)
@@ -147,10 +145,6 @@ proc tapcell { args } {
 
     if { [info exists keys(-distance)] } {
         set dist $keys(-distance)
-    }
-
-    if { [info exists keys(-halo_macro)] } {
-        set halo_macro $keys(-halo_macro)
     }
 
     if { [string match $tech "Nangate45"] } {
@@ -246,6 +240,7 @@ proc tapcell { args } {
         #Step 3: Insert tab
 
         foreach row $rows {
+            set site_x [[$row getSite] getWidth]
             set llx [[$row getBBox] xMin]
             set lly [[$row getBBox] yMin]
             set urx [[$row getBBox] xMax]
