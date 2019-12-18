@@ -221,7 +221,7 @@ proc tapcell { args } {
 
             incr cnt
         } else {
-            puts "ERROR Master $tabcell_master not found"
+            puts "ERROR Master $endcap_master not found"
             exit 1
         }
     }
@@ -257,7 +257,7 @@ proc tapcell { args } {
             set master [$db findMaster $tabcell_master]
             set inst_name "PHY_${cnt}"
 
-            if { [string match [$master getConstName] $endcap_master] } {
+            if { [string match [$master getConstName] $tabcell_master] } {
                 set inst [odb::dbInst_create $block $master $inst_name]
                 $inst setLocation $x $lly
                 $inst setOrient $ori
