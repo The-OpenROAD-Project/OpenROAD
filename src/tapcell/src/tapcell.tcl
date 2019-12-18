@@ -138,14 +138,11 @@ proc tapcell { args } {
 
     #Step 1: cut placement rows if there are overlaps between rows and placement blockages
 
-    set rowCutCnt 0
     foreach blockage [$block getInsts] {
         set inst_master [$blockage getMaster]
         if { [string match [$inst_master getType] "BLOCK"] } {
             foreach row $rows {
                 if {[tapcell::overlaps $blockage $row]} {
-                    incr rowCutCnt
-                    puts "Cutting row $rowCutCnt..."
                     # Create two new rows, avoiding overlap with blockage
                     set row_site [$row getSite]
                     set orient [$row getOrient]
