@@ -152,6 +152,7 @@ proc tapcell { args } {
         
         set db [::ord::get_db]
         set block [[$db getChip] getBlock]
+        set libs [$db getLibs]
         set rows [$block getRows]
 
         #Step 1: cut placement rows if there are overlaps between rows and placement blockages
@@ -248,18 +249,22 @@ proc tapcell { args } {
 
             set ori [$row getOrient]
 
+            foreach lib $libs {
+                set lef_units [$lib getLefUnits]
+            }
+
             if {[tapcell::even $row]} {
-                set offset $dist
+                set offset [expr $dist*$lef_units]
             } else {
-                set offset [expr $dist*2]
+                set offset [expr $dist*2*$lef_units]
             }
 
             if {[tapcell::top_or_bottom $row]} {
-                set pitch $dist
+                set pitch [expr $dist*$lef_units]
             } else {
-                set pitch [expr $dist*2]
+                set pitch [expr $dist*2*$lef_units]
             }
-
+            puts "offset: $offset"
             for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                 set master [$db findMaster $tabcell_master]
                 set inst_name "PHY_${cnt}"
