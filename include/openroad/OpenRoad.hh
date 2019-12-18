@@ -48,7 +48,7 @@ class opendp_external;
 }
 
 namespace MacroPlace {
-class tritonmp_external;
+class TritonMacroPlace;
 }
 
 namespace ord {
@@ -75,7 +75,7 @@ public:
   TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::opendp_external *getOpendp() { return opendp_; }
-  MacroPlace::tritonmp_external *getTritonMp() { return tritonMp_; }
+  MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
@@ -102,7 +102,7 @@ private:
   sta::Resizer *resizer_;
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
-  MacroPlace::tritonmp_external *tritonMp_;
+  MacroPlace::TritonMacroPlace *tritonMp_;
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
