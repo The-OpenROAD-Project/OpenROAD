@@ -33,9 +33,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-sta::define_cmd_args "tapcell" {[-output_file out_file] \
-                                    [-tech tech] \
-                                    [-tabcell_master tabcell_master] \
+sta::define_cmd_args "tapcell" {[-tabcell_master tabcell_master] \
                                     [-endcap_master endcap_master] \
                                     [-endcap_cpp endcap_cpp] \
 #when you set 25 (um), each row has 50um with checker-board pattern
@@ -85,7 +83,7 @@ namespace eval tapcell {
     }
 
     #proc to detect if blockage overlaps with row
-    proc overlaps {blockage, row} {
+    proc overlaps {blockage row} {
         set blockage_llx [[$blockage getBBox] xMin]
         set blockage_lly [[$blockage getBBox] yMin]
         set blockage_urx [[$blockage getBBox] xMax]
@@ -104,7 +102,7 @@ namespace eval tapcell {
         set dx [expr $max_x - $min_x]
         set dy [expr $max_y - $min_y]
 
-        if {{$dx < 0} && {$dy < 0}} {
+        if {($dx < 0) && ($dy < 0)} {
             return 1
         } else {
             return 0
@@ -115,21 +113,7 @@ namespace eval tapcell {
 # Main function. It will run tapcell given the correct parameters
 proc tapcell { args } {
     sta::parse_key_args "tapcell" args \
-        keys {-output_file -tech -tabcell_master -endcap_master -endcap_cpp -distance} flags {}
-
-    if { [info exists keys(-output_file)] } {
-        set out_file $keys(-output_file)
-        puts $out_file
-    } else {
-        puts "WARNING: Default output guide name: out.guide"
-    }
-
-    if { [info exists keys(-tech)] } {
-        set tech $keys(-tech)
-    } else {
-        puts "ERROR: Please, set the technology with '-tech' flag"
-        puts "\t--Current options: Nangate45, gf14"
-    }
+        keys {-tabcell_master -endcap_master -endcap_cpp -distance} flags {}
 
     if { [info exists keys(-tabcell_master)] } {
         set tabcell_master $keys(-tabcell_master)
@@ -146,20 +130,22 @@ proc tapcell { args } {
     if { [info exists keys(-distance)] } {
         set dist $keys(-distance)
     }
-
-    if { [string match $tech "Nangate45"] } {
-        puts "Processing Nangate45"
         
-        set db [::ord::get_db]
-        set block [[$db getChip] getBlock]
-        set libs [$db getLibs]
-        set rows [$block getRows]
+    set db [::ord::get_db]
+    set block [[$db getChip] getBlock]
+    set libs [$db getLibs]
+    set rows [$block getRows]
 
-        #Step 1: cut placement rows if there are overlaps between rows and placement blockages
+    #Step 1: cut placement rows if there are overlaps between rows and placement blockages
 
-        foreach blockage [$block getBlockages] {
+    set rowCutCnt 0
+    foreach blockage [$block getInsts] {
+        set inst_master [$blockage getMaster]
+        if { [string match [$inst_master getType] "BLOCK"] } {
             foreach row $rows {
-                if {[tapcell::overlaps $blockage $rows]} {
+                if {[tapcell::overlaps $blockage $row]} {
+                    incr rowCutCnt
+                    puts "Cutting row $rowCutCnt..."
                     # Create two new rows, avoiding overlap with blockage
                     set row_site [$row getSite]
                     set orient [$row getOrient]
@@ -178,19 +164,19 @@ proc tapcell { args } {
                     set row1_origin_y [[$row getBBox] yMin]
                     set row1_end_x [[$blockage getBBox] xMin]
                     set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
-                    
+
                     if {$row1_num_sites > 0} {
                         odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
                     }
 
                     ## Second new row: from right of original  row to the right boundary of blockage
                     set blockage_x_max [[$blockage getBBox] xMax]
-                    
+
                     set row2_origin_x [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
                     set row2_origin_y [[$row getBBox] yMin]
                     set row2_end_x [[$row getBBox] xMax]
                     set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
-                    
+
                     if {$row2_num_sites > 0} {
                         odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
                     }
@@ -200,89 +186,91 @@ proc tapcell { args } {
                 }
             }
         }
+    }
 
-        #Step 2: Insert Endcap at the left and right end of each row
+    #Step 2: Insert Endcap at the left and right end of each row
 
-        set cnt 0
-        foreach row $rows {
-            set site_x [[$row getSite] getWidth]
-            set site_y [[$row getSite] getHeight]
-            set llx [[$row getBBox] xMin]
-            set lly [[$row getBBox] yMin]
-            set urx [[$row getBBox] xMax]
-            set ury [[$row getBBox] yMax]
-            set loc_2_x [expr $urx - $site_x]
-            set loc_2_y [expr $ury - $site_y]
+    set cnt 0
+    foreach row $rows {
+        set site_x [[$row getSite] getWidth]
+        set site_y [[$row getSite] getHeight]
+        set llx [[$row getBBox] xMin]
+        set lly [[$row getBBox] yMin]
+        set urx [[$row getBBox] xMax]
+        set ury [[$row getBBox] yMax]
+        set loc_2_x [expr $urx - $site_x]
+        set loc_2_y [expr $ury - $site_y]
 
-            set loc_1 "$llx $lly"
-            set loc_2 "$loc_2_x $loc_2_y"
+        set loc_1 "$llx $lly"
+        set loc_2 "$loc_2_x $loc_2_y"
 
-            set ori [$row getOrient]
+        set ori [$row getOrient]
 
-            set master [$db findMaster $endcap_master]
+        set master [$db findMaster $endcap_master]
+        if { [string match [$master getConstName] $endcap_master] } {
+            set inst1_name "PHY_${cnt}"
+            set inst1 [odb::dbInst_create $block $master $inst1_name]
+            $inst1 setLocation $llx $lly
+            $inst1 setOrient $ori
+            $inst1 setPlacementStatus LOCKED
+
+            incr cnt
+
+            set inst2_name "PHY_${cnt}"
+            set inst2 [odb::dbInst_create $block $master $inst2_name]
+            $inst2 setLocation $loc_2_x $loc_2_y
+            $inst2 setOrient $ori
+            $inst2 setPlacementStatus LOCKED
+
+            incr cnt
+        } else {
+            puts "ERROR Master $tabcell_master not found"
+            exit 1
+        }
+    }
+
+    #Step 3: Insert tab
+
+    foreach row $rows {
+        set site_x [[$row getSite] getWidth]
+        set llx [[$row getBBox] xMin]
+        set lly [[$row getBBox] yMin]
+        set urx [[$row getBBox] xMax]
+        set ury [[$row getBBox] yMax]
+
+        set ori [$row getOrient]
+
+        foreach lib $libs {
+            set lef_units [$lib getLefUnits]
+        }
+
+        if {[tapcell::even $row]} {
+            set offset [expr $dist*$lef_units]
+        } else {
+            set offset [expr $dist*2*$lef_units]
+        }
+
+        if {[tapcell::top_or_bottom $row]} {
+            set pitch [expr $dist*$lef_units]
+        } else {
+            set pitch [expr $dist*2*$lef_units]
+        }
+
+        for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
+            set master [$db findMaster $tabcell_master]
+            set inst_name "PHY_${cnt}"
+
             if { [string match [$master getConstName] $endcap_master] } {
-                set inst1_name "PHY_${cnt}"
-                set inst1 [odb::dbInst_create $block $master $inst1_name]
-                $inst1 setLocation $llx $lly
-                $inst1 setOrient $ori
-                incr cnt
+                set inst [odb::dbInst_create $block $master $inst_name]
+                $inst setLocation $x $lly
+                $inst setOrient $ori
+                $inst setPlacementStatus LOCKED
 
-                set inst2_name "PHY_${cnt}"
-                set inst2 [odb::dbInst_create $block $master $inst2_name]
-                $inst2 setLocation $loc_2_x $loc_2_y
-                $inst2 setOrient $ori
                 incr cnt
             } else {
                 puts "ERROR Master $tabcell_master not found"
                 exit 1
             }
         }
-        
-        #Step 3: Insert tab
-
-        foreach row $rows {
-            set site_x [[$row getSite] getWidth]
-            set llx [[$row getBBox] xMin]
-            set lly [[$row getBBox] yMin]
-            set urx [[$row getBBox] xMax]
-            set ury [[$row getBBox] yMax]
-
-            set ori [$row getOrient]
-
-            foreach lib $libs {
-                set lef_units [$lib getLefUnits]
-            }
-
-            if {[tapcell::even $row]} {
-                set offset [expr $dist*$lef_units]
-            } else {
-                set offset [expr $dist*2*$lef_units]
-            }
-
-            if {[tapcell::top_or_bottom $row]} {
-                set pitch [expr $dist*$lef_units]
-            } else {
-                set pitch [expr $dist*2*$lef_units]
-            }
-            puts "offset: $offset"
-            for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
-                set master [$db findMaster $tabcell_master]
-                set inst_name "PHY_${cnt}"
-
-                if { [string match [$master getConstName] $endcap_master] } {
-                    set inst [odb::dbInst_create $block $master $inst_name]
-                    $inst setLocation $x $lly
-                    $inst setOrient $ori
-                    incr cnt
-                } else {
-                    puts "ERROR Master $tabcell_master not found"
-                    exit 1
-                }
-            }
-        }
-    } elseif { [string match $tech "gf14"] } {
-        puts "WARNING: Currently, tapcell does not support gf14"
-    } else {
-        puts "ERROR: informed tech is not valid"
-    }   
+    }  
 }
