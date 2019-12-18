@@ -33,7 +33,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-sta::define_cmd_args "run_tapcell" {[-output_file out_file] \
+sta::define_cmd_args "tapcell" {[-output_file out_file] \
                                     [-tech tech] \
                                     [-tabcell_master tabcell_master] \
                                     [-endcap_master endcap_master] \
@@ -115,9 +115,9 @@ namespace eval tapcell {
 }
 
 # Main function. It will run tapcell given the correct parameters
-proc run_tapcell { args } {
-    sta::parse_key_args "run_tapcell" args \
-        keys {-output_file -tech -endcap_master -endcap_cpp -distance -halo_macro} flags {}
+proc tapcell { args } {
+    sta::parse_key_args "tapcell" args \
+        keys {-output_file -tech -tabcell_master -endcap_master -endcap_cpp -distance -halo_macro} flags {}
 
     if { [info exists keys(-output_file)] } {
         set out_file $keys(-output_file)
@@ -131,6 +131,10 @@ proc run_tapcell { args } {
     } else {
         puts "ERROR: Please, set the technology with '-tech' flag"
         puts "\t--Current options: Nangate45, gf14"
+    }
+
+    if { [info exists keys(-tabcell_master)] } {
+        set tabcell_master $keys(-tabcell_master)
     }
 
     if { [info exists keys(-endcap_master)] } {
@@ -172,7 +176,7 @@ proc run_tapcell { args } {
                     append row1_name "_1"
 
                     set row2_name [$row getName]
-                    append row1_name "_2"
+                    append row2_name "_2"
 
                     ## First new row: from left of original row to the left boundary of blockage
                     set row1_origin_x [[$row getBBox] xMin]
@@ -220,14 +224,26 @@ proc run_tapcell { args } {
 
             set ori [$row getOrient]
 
-            #addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_1 -ori $ori # TODO: change to OpenDB cmd
-            incr cnt
-            #addInst -cell $endcap_master -inst "PHY_${cnt}" -physical -loc $loc_2 -ori $ori # TODO: change to OpenDB cmd
-            incr cnt
+            set master [$db findMaster $endcap_master]
+            if { [string match [$master getConstName] $endcap_master] } {
+                set inst1_name "PHY_${cnt}"
+                set inst1 [odb::dbInst_create $block $master $inst1_name]
+                $inst1 setLocation $llx $lly
+                $inst1 setOrient $ori
+                incr cnt
+
+                set inst2_name "PHY_${cnt}"
+                set inst2 [odb::dbInst_create $block $master $inst2_name]
+                $inst2 setLocation $loc_2_x $loc_2_y
+                $inst2 setOrient $ori
+                incr cnt
+            } else {
+                puts "ERROR Master $tabcell_master not found"
+                exit 1
+            }
         }
         
         #Step 3: Insert tab
-        set core_box_lly [[$block getBBox] yMin]
 
         foreach row $rows {
             set llx [[$row getBBox] xMin]
@@ -250,9 +266,18 @@ proc run_tapcell { args } {
             }
 
             for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
-                set loc "$x $lly"
-                #addInst -cell $tabcell_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori # TODO: change to OpenDB cmd
-                incr cnt
+                set master [$db findMaster $tabcell_master]
+                set inst_name "PHY_${cnt}"
+
+                if { [string match [$master getConstName] $endcap_master] } {
+                    set inst [odb::dbInst_create $block $master $inst_name]
+                    $inst setLocation $x $lly
+                    $inst setOrient $ori
+                    incr cnt
+                } else {
+                    puts "ERROR Master $tabcell_master not found"
+                    exit 1
+                }
             }
         }
     } elseif { [string match $tech "gf14"] } {
