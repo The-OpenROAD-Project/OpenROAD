@@ -168,6 +168,12 @@ proc run_tapcell { args } {
 
                     set site_width [$row_site getWidth]
 
+                    set row1_name [$row getName]
+                    append row1_name "_1"
+
+                    set row2_name [$row getName]
+                    append row1_name "_2"
+
                     ## First new row: from left of original row to the left boundary of blockage
                     set row1_origin_x [[$row getBBox] xMin]
                     set row1_origin_y [[$row getBBox] yMin]
@@ -175,19 +181,19 @@ proc run_tapcell { args } {
                     set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
                     
                     if {$row1_num_sites > 0} {
-                        odb::dbRow_create $block $row_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
+                        odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
                     }
 
                     ## Second new row: from right of original  row to the right boundary of blockage
                     set blockage_x_max [[$blockage getBBox] xMax]
                     
-                    set row2_origin_x [expr {ceil (expr {blockage_x_max / $site_width})*$site_width}]
+                    set row2_origin_x [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
                     set row2_origin_y [[$row getBBox] yMin]
                     set row2_end_x [[$row getBBox] xMax]
                     set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
                     
                     if {$row2_num_sites > 0} {
-                        odb::dbRow_create $block $row_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
+                        odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
                     }
 
                     # Remove current row
