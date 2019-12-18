@@ -1312,6 +1312,7 @@ proc init {opendb_block {PDN_cfg "PDN.cfg"}} {
     error "File $PDN_cfg does not exist, or exists but empty"
   }
 
+  set design_data {}
   source $PDN_cfg
 
   set block $opendb_block
