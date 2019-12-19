@@ -2,12 +2,12 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -26,7 +26,7 @@ namespace sta {
 class dbSta;
 class dbNetwork;
 class Resizer;
-}
+} // namespace sta
 
 namespace pdngen {
 class PdnGen;
@@ -43,12 +43,19 @@ namespace FastRoute {
 class FastRouteKernel;
 }
 
+namespace tapcell {
+class Tapcell;
+}
+
 namespace opendp {
 class opendp_external;
 }
 
 namespace psn {
 class Psn;
+
+namespace MacroPlace {
+class TritonMacroPlace;
 }
 
 namespace ord {
@@ -56,38 +63,35 @@ namespace ord {
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
-class OpenRoad
-{
+class OpenRoad {
 public:
   OpenRoad();
   ~OpenRoad();
   // Singleton accessor used by tcl command interpreter.
   static OpenRoad *openRoad() { return openroad_; }
-  void init(Tcl_Interp *tcl_interp,
-	    const char *prog_arg);
+  void init(Tcl_Interp *tcl_interp, const char *prog_arg);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  pdngen::PdnGen *getPdnGen(){ return pdngen_; }
+  pdngen::PdnGen *getPdnGen() { return pdngen_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   sta::Resizer *getResizer() { return resizer_; }
-  TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
+  TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; }
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::opendp_external *getOpendp() { return opendp_; }
+  tapcell::Tapcell *getTapcell() { return tapcell_; }
+  MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
 
-  void readLef(const char *filename,
-	       const char *lib_name,
-	       bool make_tech,
-	       bool make_library);
+  void readLef(const char *filename, const char *lib_name, bool make_tech,
+               bool make_library);
 
   void readDef(const char *filename);
   void writeDef(const char *filename);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
-  void writeVerilog(const char *filename,
-		    bool sort);
+  void writeVerilog(const char *filename, bool sort);
   void linkDesign(const char *top_cell_name);
 
   void readDb(const char *filename);
@@ -101,15 +105,17 @@ private:
   sta::Resizer *resizer_;
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
+  MacroPlace::TritonMacroPlace *tritonMp_;
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
   psn::Psn *psn_;
   TritonCTS::TritonCTSKernel *tritonCts_;
+  tapcell::Tapcell *tapcell_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
 };
 
-} // namespace
+} // namespace ord
 
 #endif

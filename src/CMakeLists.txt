@@ -29,6 +29,9 @@ set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
 
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
+set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
+
+set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 
@@ -132,7 +135,8 @@ add_subdirectory(pdngen)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(OpenPhySyn)
-
+add_subdirectory(tapcell)
+add_subdirectory(TritonMacroPlace)
 
 ################################################################
 
@@ -146,10 +150,12 @@ target_include_directories(openroad
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
+  ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
   ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  ${TAPCELL_HOME}/include
   SYSTEM
   ${TCL_HEADER_DIR}
   )
@@ -167,6 +173,7 @@ target_link_libraries(openroad
   TritonCTS
   FastRoute
   OpenPhySyn
+  tapcell
   zutil 
   zlib 
   tm
@@ -175,6 +182,9 @@ target_link_libraries(openroad
   lefin
   lefout
   zutil
+  TritonMacroPlace 
+  ParquetFP
+  ABKCommon 
   ${TCL_LIB}
 )
 
