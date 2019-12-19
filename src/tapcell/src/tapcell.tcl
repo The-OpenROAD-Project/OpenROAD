@@ -63,8 +63,36 @@ namespace eval tapcell {
         }
     }
 
+    proc get_min_rows_y {rows} {
+        set min_y -1
+        foreach row $rows {
+            set row_y [[$row getBBox] yMin]
+            if {$min_y == -1} {
+                set min_y $row_y
+            }
+
+            if {$row_y < $min_y} {
+                set min_y $row_y
+            }
+        }
+
+        return $min_y
+    }
+
+    proc get_max_rows_y {rows} {
+        set max_y -1
+        foreach row $rows {
+            set row_y [[$row getBBox] yMax]
+            if {$row_y > $max_y} {
+                set max_y $row_y
+            }
+        }
+
+        return $max_y
+    }
+
     #proc to detect top/bottom row
-    proc top_or_bottom {row} {
+    proc top_or_bottom {row min_y max_y} {
         set db [::ord::get_db]
         set block [[$db getChip] getBlock]
 
@@ -72,10 +100,12 @@ namespace eval tapcell {
         set ury [[$row getBBox] yMax]
         set core_box_lly [[$block getBBox] yMin]
         set core_box_ury [[$block getBBox] yMax]
-
-        if {$lly == $core_box_lly} {
+        
+        if {$lly == $min_y} {
+            puts "bottom"
             return 1
-        } elseif {$ury == $core_box_ury} {
+        } elseif {$ury == $max_y} {
+            puts "top"
             return 1
         } else {
             return 0
@@ -225,6 +255,9 @@ proc tapcell { args } {
 
     #Step 3: Insert tap
 
+    set min_y [tapcell::get_min_rows_y $rows]
+    set max_y [tapcell::get_max_rows_y $rows]
+
     foreach row $rows {
         set site_x [[$row getSite] getWidth]
         set llx [[$row getBBox] xMin]
@@ -244,7 +277,7 @@ proc tapcell { args } {
             set offset [expr $dist*2*$lef_units]
         }
 
-        if {[tapcell::top_or_bottom $row]} {
+        if {[tapcell::top_or_bottom $row $min_y $max_y]} {
             set pitch [expr $dist*$lef_units]
         } else {
             set pitch [expr $dist*2*$lef_units]
