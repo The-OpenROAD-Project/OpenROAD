@@ -102,10 +102,8 @@ namespace eval tapcell {
         set core_box_ury [[$block getBBox] yMax]
         
         if {$lly == $min_y} {
-            puts "bottom"
             return 1
         } elseif {$ury == $max_y} {
-            puts "top"
             return 1
         } else {
             return 0
@@ -124,13 +122,13 @@ namespace eval tapcell {
         set row_urx [[$row getBBox] xMax]
         set row_ury [[$row getBBox] yMax]
 
-        set min_x [expr min($blockage_llx, $row_llx)]
-        set max_x [expr max($blockage_urx, $row_urx)]
-        set min_y [expr min($blockage_lly, $row_lly)]
-        set max_y [expr max($blockage_ury, $row_ury)]
+        set min_x [expr max($blockage_llx, $row_llx)]
+        set max_x [expr min($blockage_urx, $row_urx)]
+        set min_y [expr max($blockage_lly, $row_lly)]
+        set max_y [expr min($blockage_ury, $row_ury)]
 
-        set dx [expr $max_x - $min_x]
-        set dy [expr $max_y - $min_y]
+        set dx [expr $min_x - $max_x]
+        set dy [expr $min_y - $max_y]
 
         set overlap [expr ($dx < 0) && ($dy < 0)]
 
@@ -162,11 +160,11 @@ proc tapcell { args } {
     set db [::ord::get_db]
     set block [[$db getChip] getBlock]
     set libs [$db getLibs]
-    set rows [$block getRows]
 
     #Step 1: cut placement rows if there are overlaps between rows and placement blockages
 
     foreach blockage [$block getInsts] {
+        set rows [$block getRows]
         set inst_master [$blockage getMaster]
         if { [string match [$inst_master getType] "BLOCK"] } {
             foreach row $rows {
@@ -197,7 +195,8 @@ proc tapcell { args } {
                     ## Second new row: from right of original  row to the right boundary of blockage
                     set blockage_x_max [[$blockage getBBox] xMax]
 
-                    set row2_origin_x [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
+                    set row2_origin_x_tmp [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
+                    set row2_origin_x [expr { int($row2_origin_x_tmp) }]
                     set row2_origin_y [[$row getBBox] yMin]
                     set row2_end_x [[$row getBBox] xMax]
                     set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
@@ -214,7 +213,7 @@ proc tapcell { args } {
     }
 
     #Step 2: Insert Endcap at the left and right end of each row
-
+    set rows [$block getRows]
     set cnt 0
     foreach row $rows {
         set master [$db findMaster $endcap_master]
