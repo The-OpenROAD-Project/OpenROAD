@@ -51,6 +51,10 @@ namespace opendp {
 class opendp_external;
 }
 
+namespace MacroPlace {
+class TritonMacroPlace;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -76,6 +80,7 @@ public:
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::opendp_external *getOpendp() { return opendp_; }
   tapcell::Tapcell *getTapcell() { return tapcell_; }
+  MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
@@ -102,6 +107,7 @@ private:
   sta::Resizer *resizer_;
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::opendp_external *opendp_;
+  MacroPlace::TritonMacroPlace *tritonMp_;
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;

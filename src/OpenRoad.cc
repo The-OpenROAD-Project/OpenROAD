@@ -33,6 +33,7 @@
 
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
+#include "tritonmp/MakeTritonMp.h"
 #include "replace/src/MakeReplace.h"
 #include "pdngen/MakePdnGen.hh"
 
@@ -108,6 +109,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
+  tritonMp_ = makeTritonMp();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -126,6 +128,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initFastRoute(this);
   initTritonCts(this);
   initTapcell(this);
+  initTritonMp(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
