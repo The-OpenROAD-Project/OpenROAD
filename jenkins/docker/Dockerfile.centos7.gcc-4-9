@@ -63,7 +63,6 @@ RUN yum install -y boost-devel && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
-
 FROM base-dependencies AS builder
 
 COPY . /OpenROAD

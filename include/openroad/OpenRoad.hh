@@ -51,6 +51,10 @@ namespace opendp {
 class opendp_external;
 }
 
+namespace psn {
+class Psn;
+}
+
 namespace MacroPlace {
 class TritonMacroPlace;
 }
@@ -110,6 +114,7 @@ private:
   MacroPlace::TritonMacroPlace *tritonMp_;
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
+  psn::Psn *psn_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
 
