@@ -11,15 +11,15 @@ RUN yum group install -y "Development Tools" \
     rm -rf /var/lib/apt/lists/*
 
 
-# Install gcc 7.3
-RUN curl -O https://ftp.gnu.org/gnu/gcc/gcc-7.3.0/gcc-7.3.0.tar.gz \
-    && tar xzf gcc-7.3.0.tar.gz                      \
-    && cd gcc-7.3.0                                  \
+# Install gcc 4.9
+RUN curl -O https://ftp.gnu.org/gnu/gcc/gcc-4.9.2/gcc-4.9.2.tar.gz \
+    && tar xzf gcc-4.9.2.tar.gz                      \
+    && cd gcc-4.9.2                                  \
     && ./contrib/download_prerequisites              \
     && cd ..                                         \
     && mkdir gcc-build                               \
     && cd gcc-build                                  \
-    && ../gcc-7.3.0/configure                        \
+    && ../gcc-4.9.2/configure                        \
     --prefix=/usr                                    \
     --enable-shared                                  \
     --enable-threads=posix                           \
@@ -30,8 +30,8 @@ RUN curl -O https://ftp.gnu.org/gnu/gcc/gcc-7.3.0/gcc-7.3.0.tar.gz \
     && make -j$(nproc)                               \
     && make install                                  \
     && cd ..                                         \
-    && rm -rf gcc-7.3.0                              \
-    && rm -rf gcc-7.3.0.tar.gz                       \
+    && rm -rf gcc-4.9.2                              \
+    && rm -rf gcc-4.9.2.tar.gz                       \
     && rm -rf gcc-build
 
 
@@ -58,6 +58,10 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
+# Temporarily add boost till all dependent tools are updated..
+RUN yum install -y boost-devel && \
+    yum clean -y all && \
+    rm -rf /var/lib/apt/lists/*
 
 FROM base-dependencies AS builder
 

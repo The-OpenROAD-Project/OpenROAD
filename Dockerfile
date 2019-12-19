@@ -58,6 +58,7 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
+# Temporarily add boost till all dependent tools are updated..
 RUN yum install -y boost-devel && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
