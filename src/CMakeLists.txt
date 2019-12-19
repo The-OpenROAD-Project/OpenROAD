@@ -172,8 +172,11 @@ target_link_libraries(openroad
   opendb
   TritonCTS
   FastRoute
-  OpenPhySyn
   tapcell
+  TritonMacroPlace 
+  ParquetFP
+  ABKCommon 
+  OpenPhySyn
   zutil 
   zlib 
   tm
@@ -182,9 +185,6 @@ target_link_libraries(openroad
   lefin
   lefout
   zutil
-  TritonMacroPlace 
-  ParquetFP
-  ABKCommon 
   ${TCL_LIB}
 )
 

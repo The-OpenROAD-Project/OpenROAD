@@ -53,6 +53,7 @@ class opendp_external;
 
 namespace psn {
 class Psn;
+}
 
 namespace MacroPlace {
 class TritonMacroPlace;

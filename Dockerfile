@@ -58,6 +58,10 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
+RUN yum install -y boost-devel && \
+    yum clean -y all && \
+    rm -rf /var/lib/apt/lists/*
+
 
 FROM base-dependencies AS builder
 
