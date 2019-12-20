@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
@@ -28,6 +29,11 @@ set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
 
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
+set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
+
+set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
+
+set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -65,7 +71,7 @@ include(FindSWIG)
 # OpenDB's swig wrapper is not in the library (and mistakenly exports
 # to the global namespace) so make our own.
 add_custom_command(OUTPUT ${OPENDB_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  COMMAND ${SWIG_EXECUTABLE} -DSWIG_DIRECTOR_STATIC -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENDB_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS
@@ -108,6 +114,13 @@ endif()
 # Disable OpenDB stand-alone executable builds.
 set(BUILD_PYTHON false)
 set(BUILD_TCL false)
+
+# Make the tools aware that they are being built as part of the top-level app.
+# This allows the tool to have any custom CMake/C++ configuration for the top-level built
+set(OPENROAD_BUILD ON)
+add_definitions(-DOPENROAD_BUILD)
+
+# Build flow tools
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(dbSta)
@@ -119,6 +132,9 @@ add_subdirectory(ioPlacer)
 add_subdirectory(pdngen)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
+add_subdirectory(OpenPhySyn)
+add_subdirectory(tapcell)
+add_subdirectory(TritonMacroPlace)
 
 ################################################################
 
@@ -132,9 +148,12 @@ target_include_directories(openroad
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
+  ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
+  ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  ${TAPCELL_HOME}/include
   SYSTEM
   ${TCL_HEADER_DIR}
   )
@@ -151,6 +170,11 @@ target_link_libraries(openroad
   opendb
   TritonCTS
   FastRoute
+  tapcell
+  TritonMacroPlace 
+  ParquetFP
+  ABKCommon 
+  OpenPhySyn
   zutil 
   zlib 
   tm
@@ -160,7 +184,7 @@ target_link_libraries(openroad
   lefout
   zutil
   ${TCL_LIB}
-  )
+)
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
