@@ -92,9 +92,7 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
 #
 ################################################################
 
-find_package(TCL)
-message(STATUS "TCL lib: ${TCL_LIB}")
-message(STATUS "TCL header: ${TCL_HEADER}")
+include(FindTcl)
 
 # Zlib
 include(FindZLIB)
