@@ -170,6 +170,16 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(openroad -pthread)
 endif()
 
+# Ancient versions of glibc found on CentOS required librt.
+# OSX has an empty version of librt that causes a link error,
+# so this is protected from linking there.
+find_library(LIBRT rt)
+if (LIBRT
+    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+    AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(openroad ${LIBRT})
+endif()
+
 target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 ################################################################
@@ -194,4 +204,3 @@ add_custom_target(openroad_tags etags -o TAGS
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS ${OPENROAD_SOURCE} ${OPENROAD_HEADERS} ${OPENROAD_TCL_FILES}
   )
-
