@@ -280,6 +280,22 @@ Legalize a design that has been globally placed.
 legalize_placement [-constraints constraints_file]
 
 ```
+
+#### Clock Tree Synthesis
+
+Create clock tree subnets.
+
+```
+clock_tree_synthesis -lut_file <lut_file> \
+                     -sol_list <sol_list_file> \
+                     -wire_unit <wire_unit> \
+                     -root_buf <root_buf> \
+                     [-clk_nets <list_of_clk_nets>]
+```
+- ```lut_file```, ```sol_list``` and ```wire_unit``` are parameters related to the technology characterization described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md).
+- ``root_buffer`` is the master cell of the buffer that serves as root for the clock tree.
+- ``clk_nets`` is a string containing the names of the clock roots. If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
+
 #### Global Routing
 
 FastRoute global route.
