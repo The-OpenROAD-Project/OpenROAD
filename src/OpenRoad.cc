@@ -28,18 +28,13 @@
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
 
-
 #include "ioPlacer/src/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/src/MakeReplace.h"
 #include "pdngen/MakePdnGen.hh"
-
 #include "FastRoute/src/MakeFastRoute.h"
-
-#include "OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp"
-
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 
@@ -75,7 +70,6 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deletePsn(psn_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -110,7 +104,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   opendp_ = makeOpendp();
   pdngen_ = makePdnGen();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
-  psn_ = makePsn();
 
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
@@ -131,7 +124,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initOpendp(this);
   initPdnGen(this);
   initFastRoute(this);
-  initPsn(this);
   initTritonCts(this);
   initTapcell(this);
   initTritonMp(this);
