@@ -15,7 +15,7 @@
 
 cmake_minimum_required (VERSION 3.9)
 
-project(OpenROAD VERSION 1.0.0)
+project(OpenROAD VERSION 1.0.1)
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 
