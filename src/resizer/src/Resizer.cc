@@ -1036,6 +1036,7 @@ Resizer::rebuffer(const Pin *drvr_pin,
     drvr_port = network_->libertyPort(drvr_pin);
   }
   if (drvr_port
+      && net
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       && !hasTopLevelOutputPort(net)) {
