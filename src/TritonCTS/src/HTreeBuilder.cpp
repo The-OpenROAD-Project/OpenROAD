@@ -242,17 +242,28 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSle
                 }
         }
 
-        if (inputSlew >= slewThreshold && minBufKey < std::numeric_limits<unsigned>::max()) {
-                const WireSegment& bestBufSegment = _techChar->getWireSegment(minBufKey);
-                outputSlew = bestBufSegment.getOutputSlew();
-                outputCap  = bestBufSegment.getLoad();      
-                return minBufKey;                
+        const unsigned MAX_TOLERANCE = 10;
+        if (inputSlew >= slewThreshold) {
+                if (minBufKey < std::numeric_limits<unsigned>::max()) {
+                        const WireSegment& bestBufSegment = _techChar->getWireSegment(minBufKey);
+                        outputSlew = bestBufSegment.getOutputSlew();
+                        outputCap  = bestBufSegment.getLoad();      
+                        return minBufKey;
+                } else if (tolerance < MAX_TOLERANCE) {
+                        std::cout << "    Could not find a buffered segment for [" << length << ", " 
+                                  << inputSlew << ", " << inputCap << "]... ";
+                        std::cout << "Increasing tolerance\n";
+                        return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, 
+                                                      tolerance + 1, outputSlew, outputCap );
+                }
         }
 
         if (minKey == std::numeric_limits<unsigned>::max()) {
-                std::cout << "    Could not find segment for [" << length << ", " << inputSlew << ", " << inputCap << "]... ";
+                std::cout << "    Could not find segment for [" << length << ", " 
+                          << inputSlew << ", " << inputCap << "]... ";
                 std::cout << "Increasing tolerance\n";
-                return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, tolerance + 1, outputSlew, outputCap );
+                return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, 
+                                              tolerance + 1, outputSlew, outputCap );
         }
 
         const WireSegment& bestSegment = _techChar->getWireSegment(minKey);
