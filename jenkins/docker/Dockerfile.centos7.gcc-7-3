@@ -10,6 +10,31 @@ RUN yum group install -y "Development Tools" \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
+
+# Install gcc 7.3
+RUN curl -O https://ftp.gnu.org/gnu/gcc/gcc-7.3.0/gcc-7.3.0.tar.gz \
+    && tar xzf gcc-7.3.0.tar.gz                      \
+    && cd gcc-7.3.0                                  \
+    && ./contrib/download_prerequisites              \
+    && cd ..                                         \
+    && mkdir gcc-build                               \
+    && cd gcc-build                                  \
+    && ../gcc-7.3.0/configure                        \
+    --prefix=/usr                                    \
+    --enable-shared                                  \
+    --enable-threads=posix                           \
+    --enable-__cxa_atexit                            \
+    --enable-clocale=gnu                             \
+    --disable-multilib                               \
+    --enable-languages=all                           \
+    && make -j$(nproc)                               \
+    && make install                                  \
+    && cd ..                                         \
+    && rm -rf gcc-7.3.0                              \
+    && rm -rf gcc-7.3.0.tar.gz                       \
+    && rm -rf gcc-build
+
+
 # Install CMake
 RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
     chmod +x cmake-3.14.0-Linux-x86_64.sh  && \
@@ -37,7 +62,6 @@ RUN yum remove -y swig \
 RUN yum install -y boost-devel && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
-
 
 FROM base-dependencies AS builder
 
