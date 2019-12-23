@@ -275,9 +275,8 @@ proc tapcell { args } {
                 ## Second new row: from right of original  row to the right boundary of blockage
                 set blockage_x_max [[$blockage getBBox] xMax]
 
-                set row2_origin_x_tmp [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
+                set row2_origin_x_tmp [expr {ceil (1.0*($blockage_x_max + $halo_x)/$site_width)*$site_width}]
                 set row2_origin_x [expr { int($row2_origin_x_tmp) }]
-                set row2_origin_x [expr $row2_origin_x + $halo_x]
                 set row2_origin_y [[$row getBBox] yMin]
                 set row2_end_x [[$row getBBox] xMax]
                 set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
