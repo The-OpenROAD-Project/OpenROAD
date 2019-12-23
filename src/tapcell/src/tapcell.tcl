@@ -112,6 +112,48 @@ namespace eval tapcell {
         }
     }
 
+    #proc to detect if row is right below/above macro block
+    proc right_above_below_macros {blockages row halo_x halo_y} {
+        set row_llx [[$row getBBox] xMin]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [[$row getBBox] xMax]
+        set row_ury [[$row getBBox] yMax]
+        
+        set row_height [expr $row_ury - $row_lly]
+
+        set row_below_ury [expr $row_ury + $row_height]
+        set row_above_lly [expr $row_lly - $row_height]
+
+        foreach blockage $blockages {
+            set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
+            set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
+            set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
+            set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
+
+            set min_x [expr max($blockage_llx, $row_llx)]
+            set max_x [expr min($blockage_urx, $row_urx)]
+
+            set min_above_y [expr max($blockage_lly, $row_above_lly)]
+            set max_below_y [expr max($blockage_ury, $row_below_ury)]
+            
+            set min_y [expr max($blockage_lly, $row_lly)]
+            set max_y [expr min($blockage_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            
+            set dy_above [expr $min_above_y - $max_y]
+            set dy_below [expr $min_y - $max_below_y]
+
+            set overlap_above [expr ($dx < 0) && ($dy_above < 0)]
+            set overlap_below [expr ($dx < 0) && ($dy_below < 0)]
+
+            if {$overlap_above || $overlap_below} {
+                return 1
+            }
+        }
+        return 0
+    }
+
     #proc to detect if blockage overlaps with row
     proc overlaps {blockage row halo_x halo_y} {
         set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
@@ -191,54 +233,60 @@ proc tapcell { args } {
     set block_count 0
     set cut_rows_count 0
 
+    set blockages {}
+
     foreach blockage [$block getInsts] {
-        set rows [$block getRows]
         set inst_master [$blockage getMaster]
         if { [string match [$inst_master getType] "BLOCK"] } {
-            incr block_count
-            foreach row $rows {
-                if {[tapcell::overlaps $blockage $row $halo_x $halo_y]} {
-                    incr cut_rows_count
-                    # Create two new rows, avoiding overlap with blockage
-                    set row_site [$row getSite]
-                    set orient [$row getOrient]
-                    set direction [$row getDirection]
+            lappend blockages $blockage
+        }
+    }
 
-                    set site_width [$row_site getWidth]
+    foreach blockage $blockages {
+        set rows [$block getRows]
+        incr block_count
+        foreach row $rows {
+            if {[tapcell::overlaps $blockage $row $halo_x $halo_y]} {
+                incr cut_rows_count
+                # Create two new rows, avoiding overlap with blockage
+                set row_site [$row getSite]
+                set orient [$row getOrient]
+                set direction [$row getDirection]
 
-                    set row1_name [$row getName]
-                    append row1_name "_1"
+                set site_width [$row_site getWidth]
 
-                    set row2_name [$row getName]
-                    append row2_name "_2"
+                set row1_name [$row getName]
+                append row1_name "_1"
 
-                    ## First new row: from left of original row to the left boundary of blockage
-                    set row1_origin_x [[$row getBBox] xMin]
-                    set row1_origin_y [[$row getBBox] yMin]
-                    set row1_end_x [expr [[$blockage getBBox] xMin] - $halo_x]
-                    set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
+                set row2_name [$row getName]
+                append row2_name "_2"
 
-                    if {$row1_num_sites > 0} {
-                        odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
-                    }
+                ## First new row: from left of original row to the left boundary of blockage
+                set row1_origin_x [[$row getBBox] xMin]
+                set row1_origin_y [[$row getBBox] yMin]
+                set row1_end_x [expr [[$blockage getBBox] xMin] - $halo_x]
+                set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
 
-                    ## Second new row: from right of original  row to the right boundary of blockage
-                    set blockage_x_max [[$blockage getBBox] xMax]
-
-                    set row2_origin_x_tmp [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
-                    set row2_origin_x [expr { int($row2_origin_x_tmp) }]
-                    set row2_origin_x [expr $row2_origin_x + $halo_x]
-                    set row2_origin_y [[$row getBBox] yMin]
-                    set row2_end_x [[$row getBBox] xMax]
-                    set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
-
-                    if {$row2_num_sites > 0} {
-                        odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
-                    }
-
-                    # Remove current row
-                    odb::dbRow_destroy $row
+                if {$row1_num_sites > 0} {
+                    odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
                 }
+
+                ## Second new row: from right of original  row to the right boundary of blockage
+                set blockage_x_max [[$blockage getBBox] xMax]
+
+                set row2_origin_x_tmp [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
+                set row2_origin_x [expr { int($row2_origin_x_tmp) }]
+                set row2_origin_x [expr $row2_origin_x + $halo_x]
+                set row2_origin_y [[$row getBBox] yMin]
+                set row2_end_x [[$row getBBox] xMax]
+                set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
+
+                if {$row2_num_sites > 0} {
+                    odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
+                }
+
+                # Remove current row
+                odb::dbRow_destroy $row
             }
         }
     }
@@ -312,7 +360,8 @@ proc tapcell { args } {
             set offset [expr $dist*2*$lef_units]
         }
 
-        if {[tapcell::top_or_bottom $row $min_y $max_y]} {
+        if {[tapcell::top_or_bottom $row $min_y $max_y] || \
+            [tapcell::right_above_below_macros $blockages $row $halo_x $halo_y]} {
             set pitch [expr $dist*$lef_units]
         } else {
             set pitch [expr $dist*2*$lef_units]
