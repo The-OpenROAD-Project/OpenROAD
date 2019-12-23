@@ -58,7 +58,7 @@ void TritonCTSKernel::set_clock_nets(const char* names) {
         _parms.setClockNets(names);
 }
 
-void TritonCTSKernel::set_wire_segment_unit(unsigned unit) {
+void TritonCTSKernel::set_wire_segment_distance_unit(unsigned unit) {
         _parms.setWireSegmentUnit(unit);
 }
 
