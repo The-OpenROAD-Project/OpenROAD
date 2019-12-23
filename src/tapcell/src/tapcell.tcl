@@ -38,6 +38,8 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master] \
                                     [-endcap_cpp endcap_cpp] \
 #when you set 25 (um), each row has 50um with checker-board pattern
                                     [-distance dist] \
+                                    [-halo_width_x halo_x] \
+                                    [-halo_width_y halo_y] \
 }
 
 #Pre-step: assumed that placement blockages inserted around macros
@@ -111,11 +113,11 @@ namespace eval tapcell {
     }
 
     #proc to detect if blockage overlaps with row
-    proc overlaps {blockage row} {
-        set blockage_llx [[$blockage getBBox] xMin]
-        set blockage_lly [[$blockage getBBox] yMin]
-        set blockage_urx [[$blockage getBBox] xMax]
-        set blockage_ury [[$blockage getBBox] yMax]
+    proc overlaps {blockage row halo_x halo_y} {
+        set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
+        set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
+        set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
+        set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
 
         set row_llx [[$row getBBox] xMin]
         set row_lly [[$row getBBox] yMin]
@@ -155,20 +157,48 @@ proc tapcell { args } {
 
     if { [info exists keys(-distance)] } {
         set dist $keys(-distance)
+    } else {
+        set dist 2
     }
+
+    if { [info exists keys(-halo_width_v)] } {
+        set halo_y $keys(-halo_width_v)
+    } else {
+        set halo_y 2
+    }
+
+    if { [info exists keys(-halo_width_x)] } {
+        set halo_x $keys(-halo_width_x)
+    } else {
+        set halo_x 2
+    }
+
+    puts "Running tapcell..."
         
     set db [::ord::get_db]
     set block [[$db getChip] getBlock]
     set libs [$db getLibs]
 
+    foreach lib $libs {
+        set lef_units [$lib getLefUnits]
+    }
+
+    set halo_y [expr $halo_y * $lef_units]
+    set halo_x [expr $halo_x * $lef_units]
+
     #Step 1: cut placement rows if there are overlaps between rows and placement blockages
+
+    set block_count 0
+    set cut_rows_count 0
 
     foreach blockage [$block getInsts] {
         set rows [$block getRows]
         set inst_master [$blockage getMaster]
         if { [string match [$inst_master getType] "BLOCK"] } {
+            incr block_count
             foreach row $rows {
-                if {[tapcell::overlaps $blockage $row]} {
+                if {[tapcell::overlaps $blockage $row $halo_x $halo_y]} {
+                    incr cut_rows_count
                     # Create two new rows, avoiding overlap with blockage
                     set row_site [$row getSite]
                     set orient [$row getOrient]
@@ -185,7 +215,7 @@ proc tapcell { args } {
                     ## First new row: from left of original row to the left boundary of blockage
                     set row1_origin_x [[$row getBBox] xMin]
                     set row1_origin_y [[$row getBBox] yMin]
-                    set row1_end_x [[$blockage getBBox] xMin]
+                    set row1_end_x [expr [[$blockage getBBox] xMin] - $halo_x]
                     set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
 
                     if {$row1_num_sites > 0} {
@@ -197,6 +227,7 @@ proc tapcell { args } {
 
                     set row2_origin_x_tmp [expr {ceil (1.0*$blockage_x_max/$site_width)*$site_width}]
                     set row2_origin_x [expr { int($row2_origin_x_tmp) }]
+                    set row2_origin_x [expr $row2_origin_x + $halo_x]
                     set row2_origin_y [[$row getBBox] yMin]
                     set row2_end_x [[$row getBBox] xMax]
                     set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
@@ -212,9 +243,13 @@ proc tapcell { args } {
         }
     }
 
+    puts "---- Macro blocks found: $block_count"
+    puts "---- #Cut rows: $cut_rows_count"
+
     #Step 2: Insert Endcap at the left and right end of each row
     set rows [$block getRows]
     set cnt 0
+    set endcap_count 0
     foreach row $rows {
         set master [$db findMaster $endcap_master]
         if { [string match [$master getConstName] $endcap_master] } {
@@ -238,6 +273,7 @@ proc tapcell { args } {
             $inst1 setPlacementStatus LOCKED
 
             incr cnt
+            incr endcap_count
 
             set inst2_name "PHY_${cnt}"
             set inst2 [odb::dbInst_create $block $master $inst2_name]
@@ -246,17 +282,21 @@ proc tapcell { args } {
             $inst2 setPlacementStatus LOCKED
 
             incr cnt
+            incr endcap_count
         } else {
             puts "ERROR Master $endcap_master not found"
             exit 1
         }
     }
 
+    puts "---- #Endcaps inserted: $endcap_count"
+
     #Step 3: Insert tap
 
     set min_y [tapcell::get_min_rows_y $rows]
     set max_y [tapcell::get_max_rows_y $rows]
-
+    
+    set tapcell_count 0
     foreach row $rows {
         set site_x [[$row getSite] getWidth]
         set llx [[$row getBBox] xMin]
@@ -265,10 +305,6 @@ proc tapcell { args } {
         set ury [[$row getBBox] yMax]
 
         set ori [$row getOrient]
-
-        foreach lib $libs {
-            set lef_units [$lib getLefUnits]
-        }
 
         if {[tapcell::even $row]} {
             set offset [expr $dist*$lef_units]
@@ -293,10 +329,14 @@ proc tapcell { args } {
                 $inst setPlacementStatus LOCKED
 
                 incr cnt
+                incr tapcell_count
             } else {
                 puts "ERROR Master $tapcell_master not found"
                 exit 1
             }
         }
     }
+
+    puts "---- #Tapcells inserted: $tapcell_count"
+    puts "Running tapcell... Done!"
 }
