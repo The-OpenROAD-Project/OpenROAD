@@ -134,7 +134,7 @@ namespace eval tapcell {
             set max_x [expr min($blockage_urx, $row_urx)]
 
             set min_above_y [expr max($blockage_lly, $row_above_lly)]
-            set max_below_y [expr max($blockage_ury, $row_below_ury)]
+            set max_below_y [expr min($blockage_ury, $row_below_ury)]
             
             set min_y [expr max($blockage_lly, $row_lly)]
             set max_y [expr min($blockage_ury, $row_ury)]
@@ -144,10 +144,11 @@ namespace eval tapcell {
             set dy_above [expr $min_above_y - $max_y]
             set dy_below [expr $min_y - $max_below_y]
 
-            set overlap_above [expr ($dx < 0) && ($dy_above < 0)]
-            set overlap_below [expr ($dx < 0) && ($dy_below < 0)]
+            if {[expr ($dx < 0) && ($dy_above < 0)]} {
+                return 1
+            }
 
-            if {$overlap_above || $overlap_below} {
+            if {[expr ($dx < 0) && ($dy_below < 0)]} {
                 return 1
             }
         }
@@ -360,8 +361,9 @@ proc tapcell { args } {
             set offset [expr $dist*2*$lef_units]
         }
 
-        if {[tapcell::top_or_bottom $row $min_y $max_y] || \
-            [tapcell::right_above_below_macros $blockages $row $halo_x $halo_y]} {
+        if {[tapcell::top_or_bottom $row $min_y $max_y]} {
+            set pitch [expr $dist*$lef_units]
+        } elseif {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y]} {
             set pitch [expr $dist*$lef_units]
         } else {
             set pitch [expr $dist*2*$lef_units]
