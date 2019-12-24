@@ -271,6 +271,11 @@ proc tapcell { args } {
         }
     }
 
+    set rows_count 0
+    foreach row [$block getRows] {
+        incr rows_count
+    }
+
     foreach blockage $blockages {
         set rows [$block getRows]
         incr block_count
@@ -320,6 +325,7 @@ proc tapcell { args } {
     }
 
     puts "---- Macro blocks found: $block_count"
+    puts "---- #Original rows: $rows_count"
     puts "---- #Cut rows: $cut_rows_count"
 
     #Step 2: Insert Endcap at the left and right end of each row
