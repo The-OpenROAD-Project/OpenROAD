@@ -6,7 +6,7 @@
 	url = https://github.com/The-OpenROAD-Project/OpenDB.git
 [submodule "flute3"]
 	path = src/flute3
-	url = https://github.com/The-OpenROAD-Project/flute3
+	url = https://github.com/The-OpenROAD-Project/flute3.git
 [submodule "src/replace"]
 	path = src/replace
 	url = https://github.com/The-OpenROAD-Project/RePlAce.git
