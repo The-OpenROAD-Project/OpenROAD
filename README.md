@@ -278,7 +278,23 @@ Legalize a design that has been globally placed.
 
 ```
 legalize_placement [-constraints constraints_file]
+
 ```
+
+#### Clock Tree Synthesis
+
+Create clock tree subnets.
+
+```
+clock_tree_synthesis -lut_file <lut_file> \
+                     -sol_list <sol_list_file> \
+                     -wire_unit <wire_unit> \
+                     -root_buf <root_buf> \
+                     [-clk_nets <list_of_clk_nets>]
+```
+- ```lut_file```, ```sol_list``` and ```wire_unit``` are parameters related to the technology characterization described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md).
+- ``root_buffer`` is the master cell of the buffer that serves as root for the clock tree.
+- ``clk_nets`` is a string containing the names of the clock roots. If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
 
 #### Global Routing
 
@@ -301,3 +317,13 @@ Options description:
 
 ###### NOTE 1: if you set unidirectionalRoute as "true", the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
+
+#### Physical Synthesis Optimization [optional]
+
+You can optionally run OpenPhySyn timing optimization commands (currently only performs load driven gate-cloning and pin-swapping).
+
+```
+psn::set_wire_rc 0.0020 0.00020
+optimize_design [-no_gate_clone] [-no_pin_swap] [-clone_max_cap_factor factor] [-clone_non_largest_cells]
+optimize_fanout -buffer_cell buffer_cell_name -max_fanout max_fanout # Adds buffer cells based on sink pin count
+```

@@ -100,6 +100,13 @@ getTritonCts()
   return openroad->getTritonCts();
 }
 
+MacroPlace::TritonMacroPlace *
+getTritonMp()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTritonMp();
+}
+
 } // namespace
 
 using ord::OpenRoad;
