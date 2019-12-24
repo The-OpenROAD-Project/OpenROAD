@@ -250,18 +250,18 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSle
                         outputCap  = bestBufSegment.getLoad();      
                         return minBufKey;
                 } else if (tolerance < MAX_TOLERANCE) {
-                        std::cout << "    Could not find a buffered segment for [" << length << ", " 
-                                  << inputSlew << ", " << inputCap << "]... ";
-                        std::cout << "Increasing tolerance\n";
+                        //std::cout << "    Could not find a buffered segment for [" << length << ", " 
+                        //          << inputSlew << ", " << inputCap << "]... ";
+                        //std::cout << "Increasing tolerance\n";
                         return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, 
                                                       tolerance + 1, outputSlew, outputCap );
                 }
         }
 
         if (minKey == std::numeric_limits<unsigned>::max()) {
-                std::cout << "    Could not find segment for [" << length << ", " 
-                          << inputSlew << ", " << inputCap << "]... ";
-                std::cout << "Increasing tolerance\n";
+                //std::cout << "    Could not find segment for [" << length << ", " 
+                //          << inputSlew << ", " << inputCap << "]... ";
+                //std::cout << "Increasing tolerance\n";
                 return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, 
                                               tolerance + 1, outputSlew, outputCap );
         }
