@@ -93,6 +93,34 @@ namespace eval tapcell {
         return $max_y
     }
 
+    proc get_min_rows_x {rows} {
+        set min_x -1
+        foreach row $rows {
+            set row_x [[$row getBBox] xMin]
+            if {$min_x == -1} {
+                set min_x $row_x
+            }
+
+            if {$row_x < $min_x} {
+                set min_x $row_x
+            }
+        }
+
+        return $min_x
+    }
+
+    proc get_max_rows_x {rows} {
+        set max_x -1
+        foreach row $rows {
+            set row_x [[$row getBBox] xMax]
+            if {$row_x > $max_x} {
+                set max_x $row_x
+            }
+        }
+
+        return $max_x
+    }
+
     #proc to detect top/bottom row
     proc top_or_bottom {row min_y max_y} {
         set db [::ord::get_db]
@@ -332,7 +360,7 @@ proc tapcell { args } {
             incr cnt
             incr endcap_count
         } else {
-            puts "ERROR Master $endcap_master not found"
+            puts "ERROR: Master $endcap_master not found"
             exit 1
         }
     }
@@ -340,6 +368,9 @@ proc tapcell { args } {
     puts "---- #Endcaps inserted: $endcap_count"
 
     #Step 3: Insert tap
+
+    set min_x [tapcell::get_min_rows_x $rows]
+    set max_x [tapcell::get_max_rows_x $rows]
 
     set min_y [tapcell::get_min_rows_y $rows]
     set max_y [tapcell::get_max_rows_y $rows]
@@ -373,15 +404,22 @@ proc tapcell { args } {
             set inst_name "PHY_${cnt}"
 
             if { [string match [$master getConstName] $tapcell_master] } {
-                set inst [odb::dbInst_create $block $master $inst_name]
-                $inst setOrient $ori
-                $inst setLocation $x $lly
-                $inst setPlacementStatus LOCKED
+                set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
+                set x [expr { int($x_tmp) }]
+                set x_end [expr $x + $site_x]
 
-                incr cnt
-                incr tapcell_count
+                if {($x != $min_x) && ($x_end != $max_x)} {
+                    set inst [odb::dbInst_create $block $master $inst_name]
+                    $inst setOrient $ori
+
+                    $inst setLocation $x $lly
+                    $inst setPlacementStatus LOCKED
+
+                    incr cnt
+                    incr tapcell_count
+                }
             } else {
-                puts "ERROR Master $tapcell_master not found"
+                puts "ERROR: Master $tapcell_master not found"
                 exit 1
             }
         }
