@@ -21,3 +21,4 @@ include/openroad/Version.hh
 
 src/resizer/test/results
 src/pdngen/test/results
+src/FastRoute/tests/src/
