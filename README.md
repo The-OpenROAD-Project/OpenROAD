@@ -265,9 +265,8 @@ global_placement
     [-timing_driven]
     [-bin_grid_count grid_count]
 ```
-
--timing_driven Enable timing-driven mode
-grid_count [64,128,256,512,..., int]. Default: Defined by internal algorithm.
+- **timing_driven**: Enable timing-driven mode
+- **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
 
 Use the `set_wire_rc` command to set resistance and capacitance of
 estimated wires used for timing.
