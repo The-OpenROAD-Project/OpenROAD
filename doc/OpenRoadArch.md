@@ -54,7 +54,7 @@ src/replace
 src/flute3
 ```
 
-None of the tool repos have submodules. All submodules are owned by OpenROAD
+Submodules that are shared by multiple tools are owned by OpenROAD
 so that there are not redundant source trees and compiles.
 
 Each tool submodule cmake file builds a library that is linked by the
@@ -78,11 +78,11 @@ namespace should be used for any Tcl commands.  Internal Tcl commands
 stay inside the namespace, user visible Tcl commands will be exported
 to the global namespace. User commands should be simple Tcl commands
 such as 'global_place_design' that do not create tool instances that
-must be based to the commands. Definiting Tcl commands for a tool
-class is fine for internals, but not for user visible
-commands. Commands have an implicit argument of the current OpenROAD
-class object. Functions to get individual tools from the OpenROAD
-object can be defined.
+must be based to the commands. Defining Tcl commands for a tool class
+is fine for internals, but not for user visible commands. Commands
+have an implicit argument of the current OpenROAD class
+object. Functions to get individual tools from the OpenROAD object can
+be defined.
 
 ### Initialization
 
@@ -122,13 +122,18 @@ that is evaluated at run time (See Resizer::init()).
 
 ### Test
 
-Each "tool" has a /test directory containing a script to run "unit" tests.
+Each "tool" has a /test directory containing a script nameed
+"regression" to run "unit" tests. With no arguments it should
+run default unit tests.
 
 No databases should be in tests. Read lef/def/verilog to make a database.
 
 The regression script should not depend on the current working directory.
 It should be able to be run from any directory. Use filenames relative
 to the script name rather the the current working directory.
+
+Regression scripts should print a consise summary of test failures.
+They should **not** print thousands of lines of internal tool info.
 
 ### Issues
 
@@ -261,6 +266,11 @@ Gotta flag1 true
 toolize [-key1 key1] [-flag1] pos_arg1
 
 ```
+
+### Documentation
+
+Tool commands should be documented in the top level OpenROAD README.md file.
+Detailed documentation should be the tool/README.md file.
 
 ### Tool Flow
 
