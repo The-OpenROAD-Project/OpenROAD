@@ -90,7 +90,7 @@ proc clock_tree_synthesis { args } {
 
   $cts import_characterization $lut 
   $cts import_sol_list $sol_list
-  $cts set_wire_segment_unit $wire_unit
+  $cts set_wire_segment_distance_unit $wire_unit
   $cts set_root_buffer $root_buf
   $cts run_triton_cts
 }

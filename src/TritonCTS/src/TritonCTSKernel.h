@@ -79,7 +79,7 @@ public:
         void export_characterization(const char* file);
         void set_root_buffer(const char* buffer);
         void set_clock_nets(const char* names);
-        void set_wire_segment_unit(unsigned unit);
+        void set_wire_segment_distance_unit(unsigned unit);
         void run_triton_cts();
         void report_characterization();
         void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 
