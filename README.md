@@ -316,13 +316,3 @@ Options description:
 
 ###### NOTE 1: if you set unidirectionalRoute as "true", the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
-
-#### Physical Synthesis Optimization [optional]
-
-You can optionally run OpenPhySyn timing optimization commands (currently only performs load driven gate-cloning and pin-swapping).
-
-```
-psn::set_wire_rc 0.0020 0.00020
-optimize_design [-no_gate_clone] [-no_pin_swap] [-clone_max_cap_factor factor] [-clone_non_largest_cells]
-optimize_fanout -buffer_cell buffer_cell_name -max_fanout max_fanout # Adds buffer cells based on sink pin count
-```
