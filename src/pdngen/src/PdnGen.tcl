@@ -110,7 +110,7 @@ proc init_via_tech {} {
   }
 }
 
-proc select_viainfo {lower} {
+proc select_via_info {lower} {
   variable def_via_tech
 
   set layer_name $lower
@@ -285,7 +285,7 @@ proc get_via_option {lower_dir rule_name via_info x y width height} {
 }
 
 proc get_viarule_name {lower x y width height} {
-  set rules [select_viainfo $lower]
+  set rules [select_via_info $lower]
   set first_key [lindex [dict keys $rules] 0]
   set cut_layer [dict get $rules $first_key cut layer]
 
@@ -313,7 +313,7 @@ proc get_via {lower x y width height} {
   if {![dict exists $physical_viarules $rule_name]} {
     set selected_rule {}
 
-    dict for {name rule} [select_viainfo $lower] {
+    dict for {name rule} [select_via_info $lower] {
       set result [get_via_option [get_dir $lower] $name $rule $x $y $width $height]
       if {$selected_rule == {}} {
 	set selected_rule $result
@@ -415,6 +415,8 @@ proc generate_via_stacks {l1 l2 tag grid_data} {
       foreach l1_str $orig_stripe_locs($l1,$tag) {
 	set a1  [expr {[lindex $l1_str 1]}]
 
+        if {[array names orig_stripe_locs "$l2,$tag"] == ""} {continue}
+
 	foreach l2_str $orig_stripe_locs($l2,$tag) {
 	  set flag 1
 	  set a2	[expr {[lindex $l2_str 0]}]
@@ -473,6 +475,8 @@ proc generate_via_stacks {l1 l2 tag grid_data} {
       ## puts "     and [llength $blockage] blockages"
       foreach l1_str $orig_stripe_locs($l1,$tag) {
 	set n1  [expr {[lindex $l1_str 0]}]
+
+        if {[array names orig_stripe_locs "$l2,$tag"] == ""} {continue}
 
 	foreach l2_str $orig_stripe_locs($l2,$tag) {
 	  set flag 1
@@ -763,7 +767,7 @@ proc get_macro_halo_boundaries {} {
   return $boundaries
 }
 
-proc read_macro_boundaries {} {
+proc import_macro_boundaries {} {
   variable libs
   variable macros
   variable instances
@@ -793,7 +797,7 @@ proc read_macro_boundaries {} {
     }
   }
 
-  set instances [read_def_components [dict keys $macros]]
+  set instances [import_def_components [dict keys $macros]]
 
   foreach instance [dict keys $instances] {
     set macro_name [dict get $instances $instance macro]
@@ -815,7 +819,7 @@ proc read_macro_boundaries {} {
   }
 }
 
-proc read_def_components {macros} {
+proc import_def_components {macros} {
   variable design_data
   variable block
   set instances {}
@@ -865,7 +869,7 @@ variable global_connections {
   }
 }
 
-proc write_opendb_vias {} {
+proc export_opendb_vias {} {
   variable physical_viarules
   variable block
   variable tech
@@ -892,7 +896,7 @@ proc write_opendb_vias {} {
   }
 }
 
-proc write_opendb_specialnet {net_name signal_type} {
+proc export_opendb_specialnet {net_name signal_type} {
   variable block
   variable instances
   variable metal_layers
@@ -978,16 +982,16 @@ proc write_opendb_specialnet {net_name signal_type} {
   }
 }
 
-proc write_opendb_specialnets {} {
+proc export_opendb_specialnets {} {
   variable block
   variable design_data
   
   foreach net_name [dict get $design_data power_nets] {
-    write_opendb_specialnet "VDD" "POWER"
+    export_opendb_specialnet "VDD" "POWER"
   }
 
   foreach net_name [dict get $design_data ground_nets] {
-    write_opendb_specialnet "VSS" "GROUND"
+    export_opendb_specialnet "VSS" "GROUND"
   }
   
 }
@@ -1042,7 +1046,7 @@ proc write_opendb_row {height start end} {
   incr row_index
 }
 
-proc write_opendb_rows {} {
+proc export_opendb_rows {} {
   variable stripe_locs
   variable row_height
   variable row_index
@@ -1422,7 +1426,7 @@ proc init {opendb_block {PDN_cfg "PDN.cfg"}} {
   ########################################
   # Creating blockages based on macro locations
   #######################################
-  read_macro_boundaries
+  import_macro_boundaries
 
   get_memory_instance_pg_pins
 
@@ -1656,9 +1660,9 @@ proc plan_grid {} {
 
 proc opendb_update_grid {} {
   puts "Writing to database"
-  write_opendb_vias
-  write_opendb_specialnets
-  write_opendb_rows
+  export_opendb_vias
+  export_opendb_specialnets
+  export_opendb_rows
 }
 
 proc apply_pdn {config verbose} {
