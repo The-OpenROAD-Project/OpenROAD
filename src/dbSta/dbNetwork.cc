@@ -926,7 +926,11 @@ dbNetwork::connect(Instance *inst,
   dbNet *dnet = staToDb(net);
   if (inst == top_instance_) {
     const char *port_name = name(port);
-    dbBTerm *bterm = dbBTerm::create(dnet, port_name);
+    dbBTerm *bterm = block_->findBTerm(port_name);
+    if (bterm)
+      bterm->connect(dnet);
+    else
+      bterm = dbBTerm::create(dnet, port_name);
     PortDirection *dir = direction(port);
     dbSigType sig_type;
     dbIoType io_type;
@@ -951,7 +955,11 @@ dbNetwork::connect(Instance *inst,
   dbNet *dnet = staToDb(net);
   const char *port_name = port->name();
   if (inst == top_instance_) {
-    dbBTerm *bterm = dbBTerm::create(dnet, port_name);
+    dbBTerm *bterm = block_->findBTerm(port_name);
+    if (bterm)
+      bterm->connect(dnet);
+    else
+      bterm = dbBTerm::create(dnet, port_name);
     PortDirection *dir = port->direction();
     dbSigType sig_type;
     dbIoType io_type;
@@ -978,9 +986,7 @@ dbNetwork::disconnectPin(Pin *pin)
   if (iterm)
     dbITerm::disconnect(iterm);
   else if (bterm)
-    // dbNet::disconnect(bterm) does not exist.
-    // It should. -cherry
-    dbBTerm::destroy(bterm);
+    bterm->disconnect();
 }
 
 void
