@@ -274,18 +274,18 @@ Detailed documentation should be the tool/README.md file.
 
 ### Tool Flow
 
-Verilog to DB (dbSTA)
-Init Floorplan (OpenROAD)
-I/O placement (ioPlacer)
-PDN generation (pdngen
-Tapcell and Welltie insertion (tapcell with LEF/DEF)
-I/O placement (ioPlacer)
-Global placement (RePlAce)
-Gate Resizing and buffering (Resizer)
-Detailed placement (OpenDP)
-Clock Tree Synthesis (TritonCTS)
-Global route (FastRoute)
-Detailed route (TritonRoute)n
-Final timing/power report (OpenSTA)
+1. Verilog to DB (dbSTA)
+2. Init Floorplan (OpenROAD)
+3. I/O placement (ioPlacer)
+4. PDN generation (pdngen
+5. Tapcell and Welltie insertion (tapcell with LEF/DEF)
+6. I/O placement (ioPlacer)
+7. Global placement (RePlAce)
+8. Gate Resizing and buffering (Resizer)
+9. Detailed placement (OpenDP)
+10. Clock Tree Synthesis (TritonCTS)
+11. Global route (FastRoute)
+12. Detailed route (TritonRoute)n
+13. Final timing/power report (OpenSTA)
 
 James Cherry, Dec 2019
