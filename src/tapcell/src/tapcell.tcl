@@ -361,11 +361,38 @@ proc tapcell { args } {
     puts "---- #Cut rows: $cut_rows_count"
 
     #Step 2: Insert Endcap at the left and right end of each row
+
+    set min_y [tapcell::get_min_rows_y $rows]
+    set max_y [tapcell::get_max_rows_y $rows]
+
     set rows [$block getRows]
     set cnt 0
     set endcap_count 0
     foreach row $rows {
         set master [$db findMaster $endcap_master]
+
+        set ori [$row getOrient]
+
+        set top_bottom [tapcell::top_or_bottom $row $min_y $max_y]
+
+        if {$no_cell_at_top_bottom == true} {
+            if {$top_bottom == 1} {
+                if {[string match "MX" $ori]} {
+                    set master [$db findMaster $cnrcap_nwin_master]
+                } else {
+                    set master [$db findMaster $cnrcap_nwout_master]
+                }
+            } elseif {$top_bottom == -1} {
+                if {[string match "R0" $ori]} {
+                    set master [$db findMaster $cnrcap_nwin_master]
+                } else {
+                    set master [$db findMaster $cnrcap_nwout_master]
+                }
+            } else {
+                set master [$db findMaster $endcap_master]
+            }
+        }
+
         if { [string match [$master getConstName] $endcap_master] } {
             set master_x [$master getWidth]
             set master_y [$master getHeight]
@@ -377,8 +404,6 @@ proc tapcell { args } {
 
             set loc_2_x [expr $urx - $master_x]
             set loc_2_y [expr $ury - $master_y]
-
-            set ori [$row getOrient]
 
             set inst1_name "PHY_${cnt}"
             set inst1 [odb::dbInst_create $block $master $inst1_name]
@@ -431,7 +456,6 @@ proc tapcell { args } {
 
         if {[tapcell::top_or_bottom $row $min_y $max_y]} {
             if {$no_cell_at_top_bottom == true} {
-                puts "Skipping top/bottom"
                 continue
             }
             set pitch [expr $dist*$lef_units]
