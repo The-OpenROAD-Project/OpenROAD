@@ -40,6 +40,21 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master] \
                                     [-distance dist] \
                                     [-halo_width_x halo_x] \
                                     [-halo_width_y halo_y] \
+#the next parameters are for 14nm tech
+                                    [-tap_nwin2_master tap_nwin2_master] \
+                                    [-tap_nwin3_master tap_nwin3_master] \
+                                    [-tap_nwout2_master tap_nwout2_master] \
+                                    [-tap_nwout3_master tap_nwout3_master] \
+                                    [-tap_nwintie_master tap_nwintie_master] \
+                                    [-tap_nwouttie_master tap_nwouttie_master] \
+                                    [-cnrcap_nwin_master cnrcap_nwin_master] \
+                                    [-cnrcap_nwout_master cnrcap_nwout_master] \
+                                    [-incnrcap_nwin_master incnrcap_nwin_master] \
+                                    [-incnrcap_nwout_master incnrcap_nwout_master] \
+                                    [-tbtie_cpp tbtie_cpp] \
+#the next flags enables gf14 flow
+                                    [-no_cell_at_top_bottom] \
+                                    [-add_boundary_cell] \
 }
 
 #Pre-step: assumed that placement blockages inserted around macros
@@ -132,7 +147,7 @@ namespace eval tapcell {
         set core_box_ury [[$block getBBox] yMax]
         
         if {$lly == $min_y} {
-            return 1
+            return -1
         } elseif {$ury == $max_y} {
             return 1
         } else {
@@ -212,7 +227,12 @@ namespace eval tapcell {
 # Main function. It will run tapcell given the correct parameters
 proc tapcell { args } {
     sta::parse_key_args "tapcell" args \
-        keys {-tapcell_master -endcap_master -endcap_cpp -distance} flags {}
+        keys {-tapcell_master -endcap_master -endcap_cpp -distance -halo_width_x \
+              -halo_width_y -tap_nwin2_master -tap_nwin3_master -tap_nwout2_master \
+              -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
+              -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
+              -incnrcap_nwout_master -tbtie_cpp} \
+              flags {-no_cell_at_top_bottom -add_boundary_cell}
 
     if { [info exists keys(-tapcell_master)] } {
         set tapcell_master $keys(-tapcell_master)
@@ -232,8 +252,8 @@ proc tapcell { args } {
         set dist 2
     }
 
-    if { [info exists keys(-halo_width_v)] } {
-        set halo_y $keys(-halo_width_v)
+    if { [info exists keys(-halo_width_y)] } {
+        set halo_y $keys(-halo_width_y)
     } else {
         set halo_y 2
     }
@@ -242,6 +262,18 @@ proc tapcell { args } {
         set halo_x $keys(-halo_width_x)
     } else {
         set halo_x 2
+    }
+
+    if { [info exists flags(-add_boundary_cell)] } {
+        set add_boundary_cell true
+    } else {
+        set add_boundary_cell false
+    }
+
+    if { [info exists flags(-no_cell_at_top_bottom)] } {
+        set no_cell_at_top_bottom true
+    } else {
+        set no_cell_at_top_bottom false
     }
 
     puts "Running tapcell..."
@@ -398,6 +430,10 @@ proc tapcell { args } {
         }
 
         if {[tapcell::top_or_bottom $row $min_y $max_y]} {
+            if {$no_cell_at_top_bottom == true} {
+                puts "Skipping top/bottom"
+                continue
+            }
             set pitch [expr $dist*$lef_units]
         } elseif {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y]} {
             set pitch [expr $dist*$lef_units]
