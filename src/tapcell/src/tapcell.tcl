@@ -578,5 +578,87 @@ proc tapcell { args } {
     }
 
     puts "---- #Tapcells inserted: $tapcell_count"
+
+    if {$add_boundary_cell == true} {
+        #Step 4: Insert top/bottom
+        #Step 4-1: insert top/bottom between cnr cell
+
+        foreach row $rows {
+            set site_x [[$row getSite] getWidth]
+
+            set llx [[$row getBBox] xMin]
+            set lly [[$row getBBox] yMin]
+            set urx [[$row getBBox] xMax]
+            set ury [[$row getBBox] yMax]
+
+            set ori [$row getOrient]
+
+            set tbtiewidth [expr $tbtie_cpp*$site_x]
+            set endcapwidth [expr $endcap_cpp*$site_x]
+
+            set topbottom_chk [[tapcell::top_or_bottom $row $min_y $max_y]]
+            if {$topbottom_chk==1} {
+                if {[string match "MX" $ori]} {
+                    set master [$db findMaster $tap_nwintie_master]
+                    set tb2_master [$db findMaster $tap_nwin2_master]
+                    set tb3_master [$db findMaster $tap_nwin3_master]
+                } else {
+                    set master [$db findMaster $tap_nwouttie_master]
+                    set tb2_master [$db findMaster $tap_nwout2_master]
+                    set tb3_master [$db findMaster $tap_nwout3_master]
+                }
+            } elseif {$topbottom_chk==-1} {
+                if {[string match "R0" $ori]} {
+                    set master [$db findMaster $tap_nwintie_master]
+                    set tb2_master [$db findMaster $tap_nwin2_master]
+                    set tb3_master [$db findMaster $tap_nwin3_master]
+                } else {
+                    set master [$db findMaster $tap_nwouttie_master]
+                    set tb2_master [$db findMaster $tap_nwout2_master]
+                    set tb3_master [$db findMaster $tap_nwout3_master]
+                }
+            }
+
+            #insert tb tie
+            if {$topbottom_chk!=0} {
+                set x_start [expr $llx+$endcapwidth]
+                set x_end [expr $urx-$endcapwidth]
+
+                for {set x $x_start} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
+                    set inst_name "PHY_${cnt}"
+                    set new_inst [odb::dbInst_create $block $master $inst_name]
+                    $new_inst setOrient $ori
+                    $new_inst setLocation $x $lly
+                    $new_inst setPlacementStatus LOCKED
+
+                    incr cnt
+                }
+
+                set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
+
+                if {[expr $numcpp % 2] == 1} {
+                    set inst_name "PHY_${cnt}"
+                    set x_tb3 [expr $x_end-(3*$site_x)]
+                    set new_inst [odb::dbInst_create $block $tb3_master $inst_name]
+                    $new_inst setOrient $ori
+                    $new_inst setLocation $x_tb3 $lly
+                    $new_inst setPlacementStatus LOCKED
+
+                    incr cnt
+                    set x_end $x_tb3
+                }
+
+                for {} {$x < $x_end} {set x [expr $x+(2*$site_x)]} {
+                    set inst_name "PHY_${cnt}"
+                    set new_inst [odb::dbInst_create $block $tb2_master $inst_name]
+                    $new_inst setOrient $ori
+                    $new_inst setLocation $x $lly
+                    $new_inst setPlacementStatus LOCKED
+
+                    incr cnt
+                }
+            }
+        }
+    }
+
     puts "Running tapcell... Done!"
-}
