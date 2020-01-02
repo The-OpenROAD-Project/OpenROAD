@@ -222,6 +222,90 @@ namespace eval tapcell {
 
         return $overlap
     }
+
+    proc get_insts_in_area {area block} {
+        set ll_x [lindex $area 0]
+        set ll_y [lindex $area 1]
+        set ur_x [lindex $area 2]
+        set ur_y [lindex $area 3]
+
+        puts "test area: ($ll_x, $ll_y); ($ur_x, $ur_y)"
+
+        set insts_in_area ""
+
+        foreach inst [$block getInsts] {
+            set inst_llx [[$inst getBBox] xMin]
+            set inst_lly [[$inst getBBox] yMin]
+            set inst_urx [[$inst getBBox] xMax]
+            set inst_ury [[$inst getBBox] yMax]
+
+            if {($inst_llx >= $ll_x) && ($inst_lly >= $ll_y) && \
+                ($inst_urx <= $ur_x) && ($inst_ury <= $ur_y)} {
+                lappend insts_in_area $inst
+            }
+        }
+
+        return $insts_in_area
+    }
+
+    proc find_endcaps {y lib block} {
+        set sites [$lib getSites]
+        set site_y [[lindex $sites 0] getHeight]
+        
+        set rows [$block getRows]
+
+        set min_x [tapcell::get_min_rows_x $rows]
+        set max_x [tapcell::get_max_rows_x $rows]
+
+        set llx [expr $min_x + 0.001]
+        set lly [expr $y + 0.001]
+        set urx [expr $max_x - 0.001]
+        set ury [expr $y + $site_y - 0.001]
+        set area "$llx $lly $urx $ury"
+
+        set insts [get_insts_in_area $area $block]
+
+        set endcaps ""
+        foreach inst $insts {
+            set cell_name [[$inst getMaster] getName]
+            if {[string match "ENDCAPTIE*" $cell_name]} {
+                lappend endcaps $inst
+            }
+        }
+
+        return $endcaps
+    }
+
+    proc find_endcaps_above {y lib block} {
+        set sites [$lib getSites]
+        set site_y [[lindex $sites 0] getHeight]
+
+        set rows [$block getRows]
+
+        set llx [tapcell::get_min_rows_x $rows]
+        set urx [tapcell::get_max_rows_x $rows]
+        set ury [expr $y + $site_y]
+
+        #search above the row
+        set up_llx [expr $llx + 0.001]
+        set up_lly [expr $y + $site_y + 0.001]
+        set up_urx [expr $urx - 0.001]
+        set up_ury [expr $ury + $site_y - 0.001]
+        set up_area "$up_llx $up_lly $up_urx $up_ury"
+
+        set insts [get_insts_in_area $up_area $block]
+
+        set endcaps ""
+
+        foreach inst $insts {
+            set cell_name [[$inst getMaster] getName]
+            if {[string match "ENDCAPTIE*" $cell_name]} {
+                lappend endcaps $inst
+            }
+        }
+
+        return $endcaps
+    }
 }
 
 # Main function. It will run tapcell given the correct parameters
@@ -285,6 +369,8 @@ proc tapcell { args } {
     foreach lib $libs {
         set lef_units [$lib getLefUnits]
     }
+
+    set lib [lindex $libs 0]
 
     set halo_y [expr $halo_y * $lef_units]
     set halo_x [expr $halo_x * $lef_units]
