@@ -229,8 +229,6 @@ namespace eval tapcell {
         set ur_x [lindex $area 2]
         set ur_y [lindex $area 3]
 
-        puts "test area: ($ll_x, $ll_y); ($ur_x, $ur_y)"
-
         set insts_in_area ""
 
         foreach inst [$block getInsts] {
@@ -491,11 +489,12 @@ proc tapcell { args } {
     puts "---- #Cut rows: $cut_rows_count"
 
     #Step 2: Insert Endcap at the left and right end of each row
-
+    
+    set rows [$block getRows]
+    
     set min_y [tapcell::get_min_rows_y $rows]
     set max_y [tapcell::get_max_rows_y $rows]
 
-    set rows [$block getRows]
     set cnt 0
     set endcap_count 0
     foreach row $rows {
@@ -552,9 +551,6 @@ proc tapcell { args } {
 
             incr cnt
             incr endcap_count
-        } else {
-            puts "ERROR: Master $endcap_master not found"
-            exit 1
         }
     }
 
@@ -614,9 +610,6 @@ proc tapcell { args } {
                     incr cnt
                     incr tapcell_count
                 }
-            } else {
-                puts "ERROR: Master $tapcell_master not found"
-                exit 1
             }
         }
     }
@@ -640,8 +633,13 @@ proc tapcell { args } {
             set tbtiewidth [expr $tbtie_cpp*$site_x]
             set endcapwidth [expr $endcap_cpp*$site_x]
 
-            set topbottom_chk [[tapcell::top_or_bottom $row $min_y $max_y]]
-            if {$topbottom_chk==1} {
+            set topbottom_chk [tapcell::top_or_bottom $row $min_y $max_y]
+            
+            set master NULL
+            set tb2_master NULL
+            set tb3_master NULL
+
+            if {$topbottom_chk == 1} {
                 if {[string match "MX" $ori]} {
                     set master [$db findMaster $tap_nwintie_master]
                     set tb2_master [$db findMaster $tap_nwin2_master]
@@ -651,7 +649,7 @@ proc tapcell { args } {
                     set tb2_master [$db findMaster $tap_nwout2_master]
                     set tb3_master [$db findMaster $tap_nwout3_master]
                 }
-            } elseif {$topbottom_chk==-1} {
+            } elseif {$topbottom_chk == -1} {
                 if {[string match "R0" $ori]} {
                     set master [$db findMaster $tap_nwintie_master]
                     set tb2_master [$db findMaster $tap_nwin2_master]
@@ -664,10 +662,9 @@ proc tapcell { args } {
             }
 
             #insert tb tie
-            if {$topbottom_chk!=0} {
+            if {$topbottom_chk != 0} {
                 set x_start [expr $llx+$endcapwidth]
                 set x_end [expr $urx-$endcapwidth]
-
                 for {set x $x_start} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
                     set inst_name "PHY_${cnt}"
                     set new_inst [odb::dbInst_create $block $master $inst_name]
@@ -710,11 +707,15 @@ proc tapcell { args } {
 
         set corebox_lly [tapcell::get_min_rows_y $rows]
         set corebox_ury [tapcell::get_max_rows_y $rows]
+
+        set sites [$lib getSites]
+        set site_x [[lindex $sites 0] getWidth]
+        set site_y [[lindex $sites 0] getHeight]
         
         for {set y [expr $corebox_lly+$site_y]} {$y < [expr $corebox_ury-$site_y]} {set y [expr $y + $site_y]} {
             foreach temp_row $rows {
                 set temp_row_lly [[$temp_row getBBox] yMin]
-                if {(temp_row_lly == $y)} {
+                if {($temp_row_lly == $y)} {
                     set row $temp_row
                     break
                 }
@@ -722,8 +723,8 @@ proc tapcell { args } {
 
             set ori [$row getOrient]
 
-            set endcaps [find_endcaps $y]
-            set endcaps_above [find_endcaps_above $y]
+            set endcaps [tapcell::find_endcaps $y $lib $block]
+            set endcaps_above [tapcell::find_endcaps_above $y $lib $block]
 
             set endcap_xs ""
             set endcap_above_xs ""
@@ -764,7 +765,7 @@ proc tapcell { args } {
                         }
                     }
 
-                    puts $res
+                    #puts $res
 
                     for {set i 0} {$i < [llength $res]} {set i [expr $i+2]} {
                         set x_start [lindex $res $i]
@@ -849,7 +850,7 @@ proc tapcell { args } {
                         }
                     }
 
-                    puts $res
+                    #puts $res
                     for {set i 0} {$i < [llength $res]} {set i [expr $i+2]} {
                         set x_start [lindex $res $i]
                         set x_end [lindex $res $i+1]
