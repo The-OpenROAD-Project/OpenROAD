@@ -176,12 +176,14 @@ void DBWrapper::writeClockNetsToDb(const ClockNet& clockNet) {
         odb::dbInst* topClockInst = _block->findInst("clkbuf_0");
         odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst); 
         odb::dbITerm::connect(topClockInstInputPin, topClockNet); 
+        topClockNet->setSigType(odb::dbSigType::CLOCK);
 
         // create subNets 
         clockNet.forEachSubNet( [&] (const ClockNet::SubNet& subNet) {
                         //std::cout << "    SubNet: " << subNet.getName() << "\n";
                         odb::dbNet* clkSubNet = odb::dbNet::create(_block, subNet.getName().c_str());
-
+                        clkSubNet->setSigType(odb::dbSigType::CLOCK);
+                        
                         //std::cout << "      Driver: " << subNet.getDriver()->getName() << "\n";
                        
                         odb::dbInst* driver = _block->findInst(subNet.getDriver()->getName().c_str());
