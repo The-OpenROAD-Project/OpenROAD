@@ -316,6 +316,7 @@ InitFloorplan::makeRows(dbSite *site,
     const char *row_name = stringPrint("ROW_%d", row);
     dbRow::create(block_, row_name, site, core_lx, y, orient,
 		  dbRowDir::HORIZONTAL, rows_x, site_dx);
+    stringDelete(row_name);
     y += site_dy;
   }
   report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
