@@ -33,7 +33,7 @@ using std::abs;
 
 using sta::Vector;
 using sta::Report;
-using sta::stringPrint;
+using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
 using sta::FileNotReadable;
@@ -313,10 +313,9 @@ InitFloorplan::makeRows(dbSite *site,
     dbOrientType orient = (row % 2 == 0)
       ? dbOrientType::MX  // FS
       : dbOrientType::R0; // N
-    const char *row_name = stringPrint("ROW_%d", row);
-    dbRow::create(block_, row_name, site, core_lx, y, orient,
+    string row_name = stdstrPrint("ROW_%d", row);
+    dbRow::create(block_, row_name.c_str(), site, core_lx, y, orient,
 		  dbRowDir::HORIZONTAL, rows_x, site_dx);
-    stringDelete(row_name);
     y += site_dy;
   }
   report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
