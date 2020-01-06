@@ -58,12 +58,18 @@ public:
         TritonCTSKernel() : _dbWrapper(_parms, *this),
                             _staEngine(_parms) {}
 
-        void addBuilder(ClockTreeBuilder* builder) { _builders.push_back(builder); }
-        void buildClockTrees();
-        void forEachBuilder(const std::function<void(const ClockTreeBuilder*)> func) const;
+        void runTritonCts();
         ParametersForCTS& getParms() { return _parms; }
+        void addBuilder(ClockTreeBuilder* builder) { _builders.push_back(builder); }
+        void forEachBuilder(const std::function<void(const ClockTreeBuilder*)> func) const;
 
 private:
+        void importCharacterization();
+        void checkCharacterization();
+        void findClockRoots();
+        void populateTritonCts();
+        void buildClockTrees();
+        
         ParametersForCTS _parms;
         DBWrapper        _dbWrapper;
         Characterization _characterization;
@@ -74,8 +80,8 @@ private:
 
 // TCL commands
 public:
-        void import_characterization(const char* file);
-        void import_sol_list(const char* file);
+        void set_lut_file(const char* file);
+        void set_sol_list_file(const char* file);
         void export_characterization(const char* file);
         void set_root_buffer(const char* buffer);
         void set_clock_nets(const char* names);
@@ -83,11 +89,6 @@ public:
         void run_triton_cts();
         void report_characterization();
         void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 
-
-        void set_sta_verilog_file(const char* file);
-        void set_sta_sdc_file(const char* file);
-        void set_sta_liberty_files(const char* file);
-        void init_sta_engine();
 };
 
 }

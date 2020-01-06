@@ -60,10 +60,6 @@ TritonCTSKernel* get_triton_cts() {
         return getTritonCts();
 }
 
-TritonCTSKernel* run_triton_cts() {
-        TritonCTSKernel* tritonCts = getTritonCts();
-        tritonCts->run_triton_cts();
-}
 %} //inline
 
 %include "TritonCTSKernel.h"
