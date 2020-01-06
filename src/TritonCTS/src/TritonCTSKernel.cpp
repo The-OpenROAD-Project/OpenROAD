@@ -44,10 +44,47 @@
 
 namespace TritonCTS {
 
+void TritonCTSKernel::runTritonCts() {
+        importCharacterization();
+        findClockRoots();
+        populateTritonCts();
+        buildClockTrees();
+}
+
+void TritonCTSKernel::importCharacterization() {
+        std::cout << " *****************************\n";
+        std::cout << " *  Import characterization  *\n";
+        std::cout << " *****************************\n";
+        
+        _characterization.parseLut(_parms.getLutFile());
+        _characterization.parseSolList(_parms.getSolListFile());
+}
+
+void TritonCTSKernel::findClockRoots() {
+        std::cout << " **********************\n";
+        std::cout << " *  Find clock roots  *\n";
+        std::cout << " **********************\n";
+        
+        if(_parms.getClockNets() != "") {
+                std::cout << " Running TritonCTS with user-specified clock roots: ";
+                std::cout << _parms.getClockNets() << "\n";
+                return;
+        }
+
+        std::cout << " User did not specify clock roots.\n";
+        std::cout << " Using OpenSTA to find clock roots.\n";
+        _staEngine.init();
+        _staEngine.findClockRoots();
+}
+
+void TritonCTSKernel::populateTritonCts() {
+        _dbWrapper.populateTritonCTS();
+}
+
 void TritonCTSKernel::buildClockTrees() {
-        std::cout << " ***************************\n";
-        std::cout << " *  Building clock trees   *\n";
-        std::cout << " ***************************\n";
+        std::cout << " ***********************\n";
+        std::cout << " *  Build clock trees  *\n";
+        std::cout << " ***********************\n";
 
         for (ClockTreeBuilder* builder: _builders) {
                 builder->setCharacterization(_characterization);

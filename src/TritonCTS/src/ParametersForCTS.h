@@ -54,10 +54,8 @@ public:
         ParametersForCTS() {
                 _blockName       = "";
                 _lutFile         = "";
+                _solListFile     = "";
                 _clockNets       = "";
-                _libertyFile     = "";
-                _verilogFile     = "";
-                _sdcFile         = "";
                 _rootBuffer      = "";
                 _numSinkRegions  = -1;
                 _dbUnits         = -1;
@@ -69,14 +67,10 @@ public:
         std::string getBlockName() const { return _blockName; } 
         void setLutFile(const std::string& lutFile) { _lutFile = lutFile; }
         std::string getLutFile() const { return _lutFile; } 
+        void setSolListFile(const std::string& solListFile) { _solListFile = solListFile; }
+        std::string getSolListFile() const { return _solListFile; } 
         void setClockNets(const std::string& clockNets) { _clockNets = clockNets; }
         std::string getClockNets() const { return _clockNets; }
-        void setLibertyFiles(const std::string& libertyFile) { _libertyFile = libertyFile; }
-        std::string getLibertyFiles() const { return _libertyFile; }
-        void setVerilogFile(const std::string& verilogFile) { _verilogFile = verilogFile; }
-        std::string getVerilogFile() const { return _verilogFile; }
-        void setSdcFile(const std::string& sdcFile) { _sdcFile = sdcFile; }
-        std::string getSdcFile() const { return _sdcFile; }
         void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
         std::string getRootBuffer() const { return  _rootBuffer; }
         void setNumSinkRegions(unsigned numSinkRegions) { _numSinkRegions = numSinkRegions; }
@@ -91,10 +85,8 @@ public:
 private:
         std::string _blockName;
         std::string _lutFile;
+        std::string _solListFile;
         std::string _clockNets;
-        std::string _libertyFile;
-        std::string _verilogFile;
-        std::string _sdcFile;
         std::string _rootBuffer;
         unsigned    _numSinkRegions;
         DBU         _dbUnits;

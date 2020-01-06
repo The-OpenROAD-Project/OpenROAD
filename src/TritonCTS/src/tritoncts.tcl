@@ -84,12 +84,10 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-clk_nets)] } {
         set clk_nets $keys(-clk_nets)
         $cts set_clock_nets $clk_nets
-  } else {
-        $cts init_sta_engine
   }
 
-  $cts import_characterization $lut 
-  $cts import_sol_list $sol_list
+  $cts set_lut_file $lut 
+  $cts set_sol_list_file $sol_list
   $cts set_wire_segment_distance_unit $wire_unit
   $cts set_root_buffer $root_buf
   $cts run_triton_cts

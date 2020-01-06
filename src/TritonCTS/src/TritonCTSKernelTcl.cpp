@@ -46,12 +46,12 @@
 
 namespace TritonCTS {
 
-void TritonCTSKernel::import_characterization(const char* file) {
-        _characterization.parseLut(file);
+void TritonCTSKernel::set_lut_file(const char* file) {
+        _parms.setLutFile(file);
 }
 
-void TritonCTSKernel::import_sol_list(const char* file) {
-        _characterization.parseSolList(file);
+void TritonCTSKernel::set_sol_list_file(const char* file) {
+        _parms.setSolListFile(file);
 }
 
 void TritonCTSKernel::set_clock_nets(const char* names) {
@@ -63,8 +63,7 @@ void TritonCTSKernel::set_wire_segment_distance_unit(unsigned unit) {
 }
 
 void TritonCTSKernel::run_triton_cts() {
-        _dbWrapper.populateTritonCTS();
-        buildClockTrees();
+        runTritonCts();
 }
 
 void TritonCTSKernel::report_characterization() {
@@ -77,22 +76,6 @@ void TritonCTSKernel::report_wire_segments(unsigned length, unsigned load, unsig
 
 void TritonCTSKernel::export_characterization(const char* file) {
         _characterization.write(file);
-}
-
-void TritonCTSKernel::set_sta_verilog_file(const char* file) {
-        _parms.setVerilogFile(file);
-}
-
-void TritonCTSKernel::set_sta_liberty_files(const char* files) { 
-        _parms.setLibertyFiles(files);
-}
-
-void TritonCTSKernel::set_sta_sdc_file(const char* files) { 
-        _parms.setSdcFile(files);
-}
-
-void TritonCTSKernel::init_sta_engine() {
-        _staEngine.init();
 }
 
 void TritonCTSKernel::set_root_buffer(const char* buffer) {

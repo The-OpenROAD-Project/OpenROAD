@@ -51,18 +51,18 @@
 namespace TritonCTS {
 
 void Characterization::parseLut(const std::string& file) {
-        std::cout << " > Reading LUT file \"" << file << "\"\n";
+        std::cout << " Reading LUT file \"" << file << "\"\n";
         std::ifstream lutFile(file.c_str());
         
         if (!lutFile.is_open()) {
-                std::cout << "[ERROR] Could not find LUT file. Exiting...\n";
+                std::cout << "    [ERROR] Could not find LUT file. Exiting...\n";
                 std::exit(1);
         }
 
         // First line of the LUT is a header with normalization values
         if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance 
                       >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-                std::cout << "[ERROR] Problem reading the LUT file\n";                 
+                std::cout << "    [ERROR] Problem reading the LUT file\n";                 
         }
 
         std::cout << std::setw(12) << "Min. len" << std::setw(12) << "Max. len" 
@@ -130,7 +130,7 @@ void Characterization::parseLut(const std::string& file) {
 }
 
 void Characterization::parseSolList(const std::string& file) {
-        std::cout << " > Reading solution list file \"" << file << "\"\n";
+        std::cout << " Reading solution list file \"" << file << "\"\n";
         std::ifstream solFile(file.c_str());
 
         unsigned solIdx = 0;
@@ -149,7 +149,7 @@ void Characterization::parseSolList(const std::string& file) {
                 
                 // Sanity check
                 if (_wireSegments[solIdx].getNumBuffers() != numBuffers) {
-                        std::cout << " [ERROR] Number of buffers does not match on solution " 
+                        std::cout << "    [ERROR] Number of buffers does not match on solution " 
                                   << solIdx << "\n";
                         std::cout << numBuffers << "\n";
                         std::exit(1);
