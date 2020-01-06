@@ -65,13 +65,6 @@ public:
         void findClockRoots();
 
 private:
-        void initTclShell();
-        void initOpenSTA();
-        void readLiberty();
-        void readVerilog();
-        void linkDesign();
-        void readSdcFile();
-        
         sta::dbSta*         _openSta = nullptr;
         sta::NetworkReader* _network = nullptr;
         sta::Graph*         _graph   = nullptr;

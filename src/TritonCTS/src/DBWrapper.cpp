@@ -217,17 +217,12 @@ void DBWrapper::disconnectAllSinksFromNet(std::string netName) {
 void DBWrapper::createClockBuffers(const ClockNet& clockNet) {
         unsigned numBuffers = 0;
         clockNet.forEachClockBuffer([&] (const ClockInstance& inst) {
-                //std::cout << inst.getName() << " (" << inst.getMaster() 
-                //          << ")\n";
                 odb::dbMaster* master = _db->findMaster(inst.getMaster().c_str());
                 odb::dbInst* newInst = odb::dbInst::create(_block, master, inst.getName().c_str());
                 newInst->setLocation(inst.getX(), inst.getY());        
                 newInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
                 ++numBuffers;
         });
-
-        //std::cout << "    " << numBuffers << " clock buffers created in to DB\n";
-
 }
 
 odb::dbITerm* DBWrapper::getFirstInput(odb::dbInst* inst) const {
@@ -243,5 +238,9 @@ odb::dbITerm* DBWrapper::getFirstInput(odb::dbInst* inst) const {
         
         return nullptr;
 }
+
+bool DBWrapper::masterExists(const std::string& master) const {
+        return _db->findMaster(master.c_str()); 
+};
 
 }

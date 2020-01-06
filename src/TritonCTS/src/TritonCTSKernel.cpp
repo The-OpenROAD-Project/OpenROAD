@@ -42,12 +42,15 @@
 
 #include "TritonCTSKernel.h"
 
+#include <unordered_set>
+
 namespace TritonCTS {
 
 void TritonCTSKernel::runTritonCts() {
         importCharacterization();
         findClockRoots();
         populateTritonCts();
+        checkCharacterization();
         buildClockTrees();
 }
 
@@ -58,6 +61,33 @@ void TritonCTSKernel::importCharacterization() {
         
         _characterization.parseLut(_parms.getLutFile());
         _characterization.parseSolList(_parms.getSolListFile());
+}
+
+void TritonCTSKernel::checkCharacterization() {
+        std::cout << " ****************************\n";
+        std::cout << " *  Check characterization  *\n";
+        std::cout << " ****************************\n";
+
+        std::unordered_set<std::string> visitedMasters;
+        _characterization.forEachWireSegment( [&] (unsigned idx, const WireSegment& wireSeg) {
+                for (unsigned buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
+                        std::string master = wireSeg.getBufferMaster(buf);
+                        if (visitedMasters.count(master) != 0) {
+                                continue;
+                        }
+                        
+                        if (_dbWrapper.masterExists(master)) {
+                                visitedMasters.insert(master);
+                        } else {
+                                std::cout << "    [ERROR] Buffer " << master 
+                                          << " is not in the loaded DB.\n";
+                                std::error(1);
+                        }           
+                }
+        });
+
+        std::cout << "    The chacterization used " << visitedMasters.size() << " buffer(s) types."
+                  << " All of them are in the loaded DB.\n";
 }
 
 void TritonCTSKernel::findClockRoots() {
@@ -78,6 +108,10 @@ void TritonCTSKernel::findClockRoots() {
 }
 
 void TritonCTSKernel::populateTritonCts() {
+        std::cout << " ************************\n";
+        std::cout << " *  Populate TritonCTS  *\n";
+        std::cout << " ************************\n";
+        
         _dbWrapper.populateTritonCTS();
 }
 

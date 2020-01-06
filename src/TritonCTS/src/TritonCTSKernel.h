@@ -65,6 +65,7 @@ public:
 
 private:
         void importCharacterization();
+        void checkCharacterization();
         void findClockRoots();
         void populateTritonCts();
         void buildClockTrees();
