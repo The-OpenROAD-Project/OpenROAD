@@ -81,7 +81,7 @@ void TritonCTSKernel::checkCharacterization() {
                         } else {
                                 std::cout << "    [ERROR] Buffer " << master 
                                           << " is not in the loaded DB.\n";
-                                std::error(1);
+                                std::exit(1);
                         }           
                 }
         });
