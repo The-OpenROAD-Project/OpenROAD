@@ -21,3 +21,8 @@ include/openroad/Version.hh
 
 src/resizer/test/results
 src/pdngen/test/results
+
+# Exclude the projects which are cloned manually rather than using git
+# submodules.
+src/TritonRoute/
+src/yosys/
