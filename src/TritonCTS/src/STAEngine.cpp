@@ -43,11 +43,7 @@
 #include "STAEngine.h"
 
 #include "Machine.hh"
-#include "Sta.hh"
-//#include "StaMain.hh"
-#include "VerilogReader.hh"
 #include "Network.hh"
-#include "Graph.hh"
 #include "Sdc.hh"
 #include "openroad/OpenRoad.hh"
 #include "db_sta/dbSta.hh"
@@ -57,43 +53,24 @@
 #include <sstream>
 #include <cassert>
 
-extern "C" {
-        extern int Sta_Init(Tcl_Interp *interp);
-}
-
-namespace sta { 
-        extern const char *tcl_inits[];
-}
-
 namespace TritonCTS {
 
 void STAEngine::init() {
         ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
         _openSta = openRoad->getSta();
-        _graph = _openSta->graph();
+        _sdc = _openSta->sdc();
+        _network = _openSta->network();
 }
 
 void STAEngine::findClockRoots() {
         std::cout << " Looking for clock sources...\n";
 
-        unsigned numEdges = _graph->edgeCount();
-        unsigned numVertices = _graph->vertexCount();
-        std::cout << "    # edges: " << numEdges << "\n";        
-        std::cout << "    # vertices: " << numVertices << "\n";
-
         std::string clockNames = "";
-        for (unsigned vertexIdx = 1; vertexIdx <= numVertices; ++vertexIdx) {
-                sta::Vertex* vertex = _openSta->graph()->vertex(vertexIdx);
-                sta::Pin* pin = vertex->pin();
-                
-                if( !_openSta->network()->isTopLevelPort(pin) ||
-                    !(_openSta->network()->isCheckClk(pin) ||  _openSta->sdc()->isClock(pin)) ) {
-                        continue;
+        for (sta::Clock *clk : _sdc->clks()) {
+                for (sta::Pin *pin : clk->leafPins()) {
+                        clockNames += std::string(_network->name(pin)) + " ";
                 }
-
-                clockNames += std::string(_openSta->network()->name(pin)) + " ";
-
-        }
+        }         
 
         std::cout << "    Clock names: " << clockNames << "\n";
         _parms->setClockNets(clockNames);
