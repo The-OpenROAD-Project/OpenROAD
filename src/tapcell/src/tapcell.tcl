@@ -585,8 +585,10 @@ proc tapcell { args } {
                 continue
             }
             set pitch [expr $dist*$lef_units]
+            set offset [expr $dist*$lef_units]
         } elseif {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y]} {
             set pitch [expr $dist*$lef_units]
+            set offset [expr $dist*$lef_units]
         } else {
             set pitch [expr $dist*2*$lef_units]
         }
