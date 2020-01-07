@@ -50,8 +50,8 @@ struct Tcl_Interp;
 
 namespace sta {
 class Sta;
-class NetworkReader;
-class Graph;
+class Sdc;
+class Network;
 }
 
 namespace TritonCTS {
@@ -61,23 +61,12 @@ public:
         STAEngine(ParametersForCTS& parms) : _parms(&parms) {};
         
         void init();
-        void updateTiming();
-
-private:
-        void initTclShell();
-        void initOpenSTA();
-        void readLiberty();
-        void readVerilog();
-        void linkDesign();
-        void readSdcFile();
         void findClockRoots();
-        
+private:
         sta::dbSta*         _openSta = nullptr;
-        sta::NetworkReader* _network = nullptr;
-        sta::Graph*         _graph   = nullptr;
-        Tcl_Interp*         _interp  = nullptr;
+        sta::Sdc*           _sdc     = nullptr;
+        sta::Network*       _network = nullptr;    
         ParametersForCTS*   _parms   = nullptr;
-        bool                _isInitialized = false;
 };
 
 }

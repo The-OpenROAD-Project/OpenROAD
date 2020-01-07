@@ -67,6 +67,8 @@ public:
         DBWrapper(ParametersForCTS& parms,
                   TritonCTSKernel& kernel);
 
+        bool masterExists(const std::string& master) const;
+
         void populateTritonCTS();
         void writeClockNetsToDb(const ClockNet& clockNet);
 
