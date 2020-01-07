@@ -113,6 +113,11 @@ void TritonCTSKernel::populateTritonCts() {
         std::cout << " ************************\n";
         
         _dbWrapper.populateTritonCTS();
+
+        if (_builders.size() < 1) {
+                std::cout << "    [ERROR] No valid clock nets in the design. Exiting...\n";
+                std::exit(0);
+        }
 }
 
 void TritonCTSKernel::buildClockTrees() {

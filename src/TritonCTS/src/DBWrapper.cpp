@@ -112,7 +112,13 @@ void DBWrapper::initClockNet(odb::dbNet* net) {
                 DBU x, y;
                 computeSinkPosition(iterm, x, y);
                 clockNet.addSink(name, x, y);
-                //std::cout << name << " " << x << " " << y << "\n";
+        }
+
+        if (clockNet.getNumSinks() < 1) {
+                std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""  
+                          << " has no sinks. Skipping...\n";
+                return;
+        
         }
 
         _kernel->addBuilder(new HTreeBuilder(*_parms, clockNet));
@@ -137,9 +143,7 @@ void DBWrapper::parseClockNetNames(std::vector<std::string>& clockNetNames) cons
                 std::cout << " )\n";
         } else {
                 std::cout << "\n";
-                std::cout << " [ERROR] User did not specify clock nets.\n";
-                std::cout << "         Try add set_clock_nets <names> to your script.\n";
-                std::cout << "         TritonCTS is exiting...\n";
+                std::cout << " [ERROR] No clock nets have been found.\n";
                 std::exit(1);
 
         } 
@@ -169,8 +173,8 @@ void DBWrapper::computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
 void DBWrapper::writeClockNetsToDb(const ClockNet& clockNet) {
         disconnectAllSinksFromNet(clockNet.getName());
         
-        createClockBuffers(clockNet);      
-       
+        createClockBuffers(clockNet);   
+        
         // connect top buffer on the clock pin
         odb::dbNet* topClockNet = _block->findNet(clockNet.getName().c_str());
         odb::dbInst* topClockInst = _block->findInst("clkbuf_0");
