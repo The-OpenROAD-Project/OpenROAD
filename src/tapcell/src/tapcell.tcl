@@ -418,6 +418,7 @@ proc tapcell { args } {
     set halo_x [expr $halo_x * $lef_units]
 
     #Step 1: cut placement rows if there are overlaps between rows and placement blockages
+    puts "Step1: Cut rows..."
 
     set block_count 0
     set cut_rows_count 0
@@ -489,6 +490,7 @@ proc tapcell { args } {
     puts "---- #Cut rows: $cut_rows_count"
 
     #Step 2: Insert Endcap at the left and right end of each row
+    puts "Step2: Insert endcaps..."
     
     set rows [$block getRows]
     
@@ -500,6 +502,10 @@ proc tapcell { args } {
     foreach row $rows {
         set master [$db findMaster $endcap_master]
 
+        if { ![string match [$master getConstName] $endcap_master] } {
+            puts "ERROR: Master $endcap_master not found"
+        }
+
         set ori [$row getOrient]
 
         set top_bottom [tapcell::top_or_bottom $row $min_y $max_y]
@@ -508,55 +514,74 @@ proc tapcell { args } {
             if {$top_bottom == 1} {
                 if {[string match "MX" $ori]} {
                     set master [$db findMaster $cnrcap_nwin_master]
+
+                    if { ![string match [$master getConstName] $cnrcap_nwin_master] } {
+                        puts "ERROR: Master $cnrcap_nwin_master not found"
+                        exit 1
+                    }
                 } else {
                     set master [$db findMaster $cnrcap_nwout_master]
+                    
+                    if { ![string match [$master getConstName] $cnrcap_nwout_master] } {
+                        puts "ERROR: Master $cnrcap_nwout_master not found"
+                        exit 1
+                    }
                 }
             } elseif {$top_bottom == -1} {
                 if {[string match "R0" $ori]} {
                     set master [$db findMaster $cnrcap_nwin_master]
+
+                    if { ![string match [$master getConstName] $cnrcap_nwin_master] } {
+                        puts "ERROR: Master $cnrcap_nwin_master not found"
+                        exit 1
+                    }
                 } else {
                     set master [$db findMaster $cnrcap_nwout_master]
+
+                    if { ![string match [$master getConstName] $cnrcap_nwout_master] } {
+                        puts "ERROR: Master $cnrcap_nwout_master not found"
+                        exit 1
+                    }
                 }
             } else {
                 set master [$db findMaster $endcap_master]
             }
         }
 
-        if { [string match [$master getConstName] $endcap_master] } {
-            set master_x [$master getWidth]
-            set master_y [$master getHeight]
-            
-            set llx [[$row getBBox] xMin]
-            set lly [[$row getBBox] yMin]
-            set urx [[$row getBBox] xMax]
-            set ury [[$row getBBox] yMax]
+        set master_x [$master getWidth]
+        set master_y [$master getHeight]
 
-            set loc_2_x [expr $urx - $master_x]
-            set loc_2_y [expr $ury - $master_y]
+        set llx [[$row getBBox] xMin]
+        set lly [[$row getBBox] yMin]
+        set urx [[$row getBBox] xMax]
+        set ury [[$row getBBox] yMax]
 
-            set inst1_name "PHY_${cnt}"
-            set inst1 [odb::dbInst_create $block $master $inst1_name]
-            $inst1 setOrient $ori
-            $inst1 setLocation $llx $lly
-            $inst1 setPlacementStatus LOCKED
+        set loc_2_x [expr $urx - $master_x]
+        set loc_2_y [expr $ury - $master_y]
 
-            incr cnt
-            incr endcap_count
+        set inst1_name "PHY_${cnt}"
+        set inst1 [odb::dbInst_create $block $master $inst1_name]
+        $inst1 setOrient $ori
+        $inst1 setLocation $llx $lly
+        $inst1 setPlacementStatus LOCKED
 
-            set inst2_name "PHY_${cnt}"
-            set inst2 [odb::dbInst_create $block $master $inst2_name]
-            $inst2 setOrient $ori
-            $inst2 setLocation $loc_2_x $loc_2_y
-            $inst2 setPlacementStatus LOCKED
+        incr cnt
+        incr endcap_count
 
-            incr cnt
-            incr endcap_count
-        }
+        set inst2_name "PHY_${cnt}"
+        set inst2 [odb::dbInst_create $block $master $inst2_name]
+        $inst2 setOrient $ori
+        $inst2 setLocation $loc_2_x $loc_2_y
+        $inst2 setPlacementStatus LOCKED
+
+        incr cnt
+        incr endcap_count
     }
 
     puts "---- #Endcaps inserted: $endcap_count"
 
     #Step 3: Insert tap
+    puts "Step3: Insert tapcells..."
 
     set min_x [tapcell::get_min_rows_x $rows]
     set max_x [tapcell::get_max_rows_x $rows]
@@ -621,6 +646,9 @@ proc tapcell { args } {
     if {$add_boundary_cell == true} {
         #Step 4: Insert top/bottom
         #Step 4-1: insert top/bottom between cnr cell
+        puts "Step4.1: Insert tapcells at top/bottom between cnr cell..."
+
+        set topbottom_cnt 0
 
         foreach row $rows {
             set site_x [[$row getSite] getWidth]
@@ -675,6 +703,7 @@ proc tapcell { args } {
                     $new_inst setPlacementStatus LOCKED
 
                     incr cnt
+                    incr topbottom_cnt
                 }
 
                 set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
@@ -688,6 +717,7 @@ proc tapcell { args } {
                     $new_inst setPlacementStatus LOCKED
 
                     incr cnt
+                    incr topbottom_cnt
                     set x_end $x_tb3
                 }
 
@@ -699,11 +729,18 @@ proc tapcell { args } {
                     $new_inst setPlacementStatus LOCKED
 
                     incr cnt
+                    incr topbottom_cnt
                 }
             }
         }
 
+        puts "Top/bottom cells inserted: $topbottom_cnt"
+
         #Step 4-2: insert incnr/topbottom for blkgs
+        
+        set blkgs_cnt 0
+        
+        puts "Step4.2: Insert tapcells incnr/top/bottom for blkgs..."
         set corebox_llx [tapcell::get_min_rows_x $rows]
         set corebox_urx [tapcell::get_max_rows_x $rows]
 
@@ -781,6 +818,7 @@ proc tapcell { args } {
                         $inst1 setPlacementStatus LOCKED
 
                         incr cnt
+                        incr blkgs_cnt
 
                         set inst2_name "PHY_${cnt}"
                         set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
@@ -789,6 +827,7 @@ proc tapcell { args } {
                         $inst2 setPlacementStatus LOCKED
 
                         incr cnt
+                        incr blkgs_cnt
 
                         for {set x [expr $x_start+$endcapwidth]} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
                             set inst3_name "PHY_${cnt}"
@@ -798,6 +837,7 @@ proc tapcell { args } {
                             $inst3 setPlacementStatus LOCKED
 
                             incr cnt
+                            incr blkgs_cnt
                         }
 
                         set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
@@ -811,6 +851,7 @@ proc tapcell { args } {
                             $inst4 setPlacementStatus LOCKED
 
                             incr cnt
+                            incr blkgs_cnt
                             set x_end $x_tb3
                         }
 
@@ -823,6 +864,7 @@ proc tapcell { args } {
 
                             addInst -cell $tb2_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori
                             incr cnt
+                            incr blkgs_cnt
                         }
                     }
                 } else {
@@ -868,6 +910,7 @@ proc tapcell { args } {
                         $inst1 setPlacementStatus LOCKED
 
                         incr cnt
+                        incr blkgs_cnt
 
                         set inst2_name "PHY_${cnt}"
                         set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
@@ -876,6 +919,7 @@ proc tapcell { args } {
                         $inst2 setPlacementStatus LOCKED
 
                         incr cnt
+                        incr blkgs_cnt
 
                         for {set x [expr $x_start+$endcapwidth]} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
                             set inst3_name "PHY_${cnt}"
@@ -885,6 +929,7 @@ proc tapcell { args } {
                             $inst3 setPlacementStatus LOCKED
 
                             incr cnt
+                            incr blkgs_cnt
                         }
 
                         set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
@@ -898,6 +943,7 @@ proc tapcell { args } {
                             $inst4 setPlacementStatus LOCKED
 
                             incr cnt
+                            incr blkgs_cnt
                             set x_end $x_tb3
                         }
 
@@ -908,11 +954,13 @@ proc tapcell { args } {
                             $inst5 setLocation $x $lly
 
                             incr cnt
+                            incr blkgs_cnt
                         }
                     }
                 }
             }
         }
+        puts "Cells inserted near blkgs: $blkgs_cnt"
     }
 
     puts "Running tapcell... Done!"
