@@ -109,7 +109,10 @@ void HTreeBuilder::run() {
                 return;
         }
         
-        plotSolution();
+        if (_parms->getPlotSolution()) {
+                plotSolution();
+        }
+        
         createClockSubNets();
 
         std::cout << " Clock topology of net \"" << _clockNet.getName() << "\" done.\n";

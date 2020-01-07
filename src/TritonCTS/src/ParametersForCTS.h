@@ -61,6 +61,7 @@ public:
                 _dbUnits         = -1;
                 _wireSegmentUnit = 0;
                 _dbId            = 0;
+                _plotSolution    = false;
         }
 
         void setBlockName(const std::string& blockName) { _blockName = blockName; }
@@ -78,9 +79,11 @@ public:
         void setDbUnits(DBU units) { _dbUnits = units; }
         DBU getDbUnits() const { return _dbUnits; }
         void setWireSegmentUnit(unsigned wireSegmentUnit) { _wireSegmentUnit = wireSegmentUnit; }
-        unsigned getWireSegmentUnit() { return _wireSegmentUnit; }
+        unsigned getWireSegmentUnit() const { return _wireSegmentUnit; }
         void setDbId(unsigned id) { _dbId = id; }
-        unsigned getDbId() { return _dbId; }
+        unsigned getDbId() const { return _dbId; }
+        void setPlotSolution(bool plot) { _plotSolution = plot; } 
+        bool getPlotSolution() const { return _plotSolution; }
 
 private:
         std::string _blockName;
@@ -92,6 +95,7 @@ private:
         DBU         _dbUnits;
         unsigned    _wireSegmentUnit;
         unsigned    _dbId;
+        bool        _plotSolution;
 };
 
 }
