@@ -137,9 +137,7 @@ void DBWrapper::parseClockNetNames(std::vector<std::string>& clockNetNames) cons
                 std::cout << " )\n";
         } else {
                 std::cout << "\n";
-                std::cout << " [ERROR] User did not specify clock nets.\n";
-                std::cout << "         Try add set_clock_nets <names> to your script.\n";
-                std::cout << "         TritonCTS is exiting...\n";
+                std::cout << " [ERROR] No clock nets have been found.\n";
                 std::exit(1);
 
         } 
