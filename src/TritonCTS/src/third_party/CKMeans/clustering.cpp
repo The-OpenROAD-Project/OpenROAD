@@ -122,7 +122,7 @@ void clustering::iterKmeans(unsigned ITER, unsigned N, unsigned CAP, unsigned ID
     // print clustering solution
     if (TEST_LAYOUT == 1) {
         ofstream outFile;
-        outFile.open("cluster.sol");
+        //outFile.open("cluster.sol");
         for (unsigned i = 0; i < _means.size(); ++i) {
             outFile << "TRAY " << i << " " << _means[i].first << " " << _means[i].second << endl;
         }
