@@ -156,7 +156,7 @@ target_include_directories(openroad
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
   SYSTEM
-  ${TCL_HEADER_DIR}
+  ${TCL_INCLUDE_PATH}
   )
 
 target_link_libraries(openroad
