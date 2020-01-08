@@ -13,7 +13,9 @@ set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TritonCTSKernelTclWrap.cpp)
 add_custom_command(OUTPUT ${TRITONCTS_WRAP}
         COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -o ${TRITONCTS_WRAP} ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernelTcl.i   
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Generating swig wrapper"
+        DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernelTcl.i
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernel.h
 )
 
 set(TRITONCTS_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonCtsTclInitVar.cc)

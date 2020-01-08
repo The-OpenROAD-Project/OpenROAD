@@ -34,7 +34,7 @@ add_custom_command(OUTPUT ${RESIZER_WRAP}
   WORKING_DIRECTORY ${RESIZER_HOME}/src
   DEPENDS
   ${RESIZER_HOME}/src/Resizer.i
-  ${RESIZER_HOME}/include/resizer/Resizer.h
+  ${RESIZER_HOME}/include/resizer/Resizer.hh
   )
 
 add_custom_command(OUTPUT ${RESIZER_TCL_INIT}
