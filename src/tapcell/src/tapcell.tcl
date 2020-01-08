@@ -223,11 +223,11 @@ namespace eval tapcell {
         return $overlap
     }
 
-    proc get_insts_in_area {area block} {
-        set ll_x [lindex $area 0]
-        set ll_y [lindex $area 1]
-        set ur_x [lindex $area 2]
-        set ur_y [lindex $area 3]
+    proc get_insts_in_area {ll_x ll_y ur_x ur_y block} {
+        set ll_x [expr { int($ll_x) }]
+        set ll_y [expr { int($ll_y) }]
+        set ur_x [expr { int($ur_x) }]
+        set ur_y [expr { int($ur_y) }]
 
         set insts_in_area ""
 
@@ -247,6 +247,8 @@ namespace eval tapcell {
     }
 
     proc find_endcaps {y lib block} {
+        set lef_units [$lib getLefUnits]
+        
         set sites [$lib getSites]
         set site_y [[lindex $sites 0] getHeight]
         
@@ -255,13 +257,12 @@ namespace eval tapcell {
         set min_x [tapcell::get_min_rows_x $rows]
         set max_x [tapcell::get_max_rows_x $rows]
 
-        set llx [expr $min_x + 0.001]
-        set lly [expr $y + 0.001]
-        set urx [expr $max_x - 0.001]
-        set ury [expr $y + $site_y - 0.001]
-        set area "$llx $lly $urx $ury"
+        set llx [expr $min_x + [expr 0.001 * $lef_units]]
+        set lly [expr $y + [expr 0.001 * $lef_units]]
+        set urx [expr $max_x - [expr 0.001 * $lef_units]]
+        set ury [expr $y + $site_y - [expr 0.001 * $lef_units]]
 
-        set insts [get_insts_in_area $area $block]
+        set insts [get_insts_in_area $llx $lly $urx $ury $block]
 
         set endcaps ""
         foreach inst $insts {
@@ -275,6 +276,8 @@ namespace eval tapcell {
     }
 
     proc find_endcaps_above {y lib block} {
+        set lef_units [$lib getLefUnits]
+
         set sites [$lib getSites]
         set site_y [[lindex $sites 0] getHeight]
 
@@ -285,13 +288,12 @@ namespace eval tapcell {
         set ury [expr $y + $site_y]
 
         #search above the row
-        set up_llx [expr $llx + 0.001]
-        set up_lly [expr $y + $site_y + 0.001]
-        set up_urx [expr $urx - 0.001]
-        set up_ury [expr $ury + $site_y - 0.001]
-        set up_area "$up_llx $up_lly $up_urx $up_ury"
+        set up_llx [expr $llx + [expr 0.001 * $lef_units]]
+        set up_lly [expr $y + $site_y + [expr 0.001 * $lef_units]]
+        set up_urx [expr $urx - [expr 0.001 * $lef_units]]
+        set up_ury [expr $ury + $site_y - [expr 0.001 * $lef_units]]
 
-        set insts [get_insts_in_area $up_area $block]
+        set insts [get_insts_in_area $up_llx $up_lly $up_urx $up_ury $block]
 
         set endcaps ""
 
@@ -303,6 +305,49 @@ namespace eval tapcell {
         }
 
         return $endcaps
+    }
+
+    proc get_rows_top_bottom_macro {macro rows halo_x halo_y} {
+        set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
+        set macro_lly [expr [[$macro getBBox] yMin] - $halo_y]
+        set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
+        set macro_ury [expr [[$macro getBBox] yMax] + $halo_y]
+
+        set top_bottom_rows ""
+
+        foreach row $rows {
+            set row_llx [[$row getBBox] xMin]
+            set row_lly [[$row getBBox] yMin]
+            set row_urx [[$row getBBox] xMax]
+            set row_ury [[$row getBBox] yMax]
+
+            set row_height [expr $row_ury - $row_lly]
+
+            set row_below_ury [expr $row_ury + $row_height]
+            set row_above_lly [expr $row_lly - $row_height]
+
+            set min_x [expr max($macro_llx, $row_llx)]
+            set max_x [expr min($macro_urx, $row_urx)]
+
+            set min_above_y [expr max($macro_lly, $row_above_lly)]
+            set max_below_y [expr min($macro_ury, $row_below_ury)]
+            
+            set min_y [expr max($macro_lly, $row_lly)]
+            set max_y [expr min($macro_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            
+            set dy_above [expr $min_above_y - $max_y]
+            set dy_below [expr $min_y - $max_below_y]
+
+            if {[expr ($dx < 0) && ($dy_above < 0)]} {
+                lappend top_bottom_rows $row
+            } elseif {[expr ($dx < 0) && ($dy_below < 0)]} {
+                lappend top_bottom_rows $row
+            }
+        }
+
+        return $top_bottom_rows
     }
 }
 
@@ -418,7 +463,7 @@ proc tapcell { args } {
     set halo_x [expr $halo_x * $lef_units]
 
     #Step 1: cut placement rows if there are overlaps between rows and placement blockages
-    puts "Step1: Cut rows..."
+    puts "Step 1: Cut rows..."
 
     set block_count 0
     set cut_rows_count 0
@@ -490,7 +535,7 @@ proc tapcell { args } {
     puts "---- #Cut rows: $cut_rows_count"
 
     #Step 2: Insert Endcap at the left and right end of each row
-    puts "Step2: Insert endcaps..."
+    puts "Step 2: Insert endcaps..."
     
     set rows [$block getRows]
     
@@ -581,7 +626,7 @@ proc tapcell { args } {
     puts "---- #Endcaps inserted: $endcap_count"
 
     #Step 3: Insert tap
-    puts "Step3: Insert tapcells..."
+    puts "Step 3: Insert tapcells..."
 
     set min_x [tapcell::get_min_rows_x $rows]
     set max_x [tapcell::get_max_rows_x $rows]
@@ -737,230 +782,15 @@ proc tapcell { args } {
         puts "Top/bottom cells inserted: $topbottom_cnt"
 
         #Step 4-2: insert incnr/topbottom for blkgs
+        puts "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
         
         set blkgs_cnt 0
         
-        puts "Step4.2: Insert tapcells incnr/top/bottom for blkgs..."
-        set corebox_llx [tapcell::get_min_rows_x $rows]
-        set corebox_urx [tapcell::get_max_rows_x $rows]
-
-        set corebox_lly [tapcell::get_min_rows_y $rows]
-        set corebox_ury [tapcell::get_max_rows_y $rows]
-
-        set sites [$lib getSites]
-        set site_x [[lindex $sites 0] getWidth]
-        set site_y [[lindex $sites 0] getHeight]
-        
-        for {set y [expr $corebox_lly+$site_y]} {$y < [expr $corebox_ury-$site_y]} {set y [expr $y + $site_y]} {
-            foreach temp_row $rows {
-                set temp_row_lly [[$temp_row getBBox] yMin]
-                if {($temp_row_lly == $y)} {
-                    set row $temp_row
-                    break
-                }
-            }
-
-            set ori [$row getOrient]
-
-            set endcaps [tapcell::find_endcaps $y $lib $block]
-            set endcaps_above [tapcell::find_endcaps_above $y $lib $block]
-
-            set endcap_xs ""
-            set endcap_above_xs ""
-
-            foreach endcap $endcaps {
-                lappend endcap_xs [[$endcap getBBox] xMin]
-            }
-
-            foreach endcap $endcaps_above {
-                lappend endcap_above_xs [[$endcap getBBox] xMin]
-            }
-
-            set endcap_xs [lsort -increasing $endcap_xs]
-            set endcap_above_xs [lsort -increasing $endcap_above_xs]
-
-            if {$endcap_xs != $endcap_above_xs} {
-                set endcapnum [llength $endcap_xs]
-                set endcapnum_above [llength $endcap_above_xs]
-
-                #top
-                if {$endcapnum < $endcapnum_above} {
-                    if {[string match "MX" $ori]} {
-                        set incnr_master [$db findMaster $incnrcap_nwin_master]
-                        set tb2_master [$db findMaster $tap_nwin2_master]
-                        set tb3_master [$db findMaster $tap_nwin3_master]
-                        set tbtie_master [$db findMaster $tap_nwintie_master]
-                    } else {
-                        set incnr_master [$db findMaster $incnrcap_nwout_master]
-                        set tb2_master [$db findMaster $tap_nwout2_master]
-                        set tb3_master [$db findMaster $tap_nwout3_master]
-                        set tbtie_master [$db findMaster $tap_nwouttie_master]
-                    }
-
-                    set res {}
-                    foreach item $endcap_above_xs {
-                        if {$item ni $endcap_xs} {
-                            lappend res $item
-                        }
-                    }
-
-                    #puts $res
-
-                    for {set i 0} {$i < [llength $res]} {set i [expr $i+2]} {
-                        set x_start [lindex $res $i]
-                        set x_end [lindex $res $i+1]
-
-                        #insert incnr
-                        set inst1_name "PHY_${cnt}"
-                        set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
-                        $inst1 setOrient $ori
-                        $inst1 setLocation $x_start $y
-                        $inst1 setPlacementStatus LOCKED
-
-                        incr cnt
-                        incr blkgs_cnt
-
-                        set inst2_name "PHY_${cnt}"
-                        set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
-                        $inst2 setOrient $ori
-                        $inst2 setLocation $x_end $y
-                        $inst2 setPlacementStatus LOCKED
-
-                        incr cnt
-                        incr blkgs_cnt
-
-                        for {set x [expr $x_start+$endcapwidth]} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
-                            set inst3_name "PHY_${cnt}"
-                            set inst3 [odb::dbInst_create $block $tbtie_master $inst3_name]
-                            $inst3 setOrient $ori
-                            $inst3 setLocation $x $y
-                            $inst3 setPlacementStatus LOCKED
-
-                            incr cnt
-                            incr blkgs_cnt
-                        }
-
-                        set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
-
-                        if {[expr $numcpp % 2] == 1} {
-                            set x_tb3 [expr $x_end-(3*$site_x)]
-                            set inst4_name "PHY_${cnt}"
-                            set inst4 [odb::dbInst_create $block $tb3_master $inst4_name]
-                            $inst4 setOrient $ori
-                            $inst4 setLocation $x_tb3 $y
-                            $inst4 setPlacementStatus LOCKED
-
-                            incr cnt
-                            incr blkgs_cnt
-                            set x_end $x_tb3
-                        }
-
-                        for {} {$x < $x_end} {set x [expr $x+(2*$site_x)]} {
-                            set inst5_name "PHY_${cnt}"
-                            set inst5 [odb::dbInst_create $block $tb2_master $inst5_name]
-                            $inst5 setOrient $ori
-                            $inst5 setLocation $x $y
-                            $inst5 setPlacementStatus LOCKED
-
-                            addInst -cell $tb2_master -inst "PHY_${cnt}" -physical -loc $loc -ori $ori
-                            incr cnt
-                            incr blkgs_cnt
-                        }
-                    }
-                } else {
-                    #targeting upper row
-                    if {[string match "R0" $ori]} {
-                        set ori "MX"
-                    } else {
-                        set ori "R0"
-                    }
-
-                    if {[string match "R0" $ori]} {
-                        set incnr_master [$db findMaster $incnrcap_nwin_master]
-                        set tb2_master [$db findMaster $tap_nwin2_master]
-                        set tb3_master [$db findMaster $tap_nwin3_master]
-                        set tbtie_master [$db findMaster $tap_nwintie_master]
-                    } else {
-                        set incnr_master [$db findMaster $incnrcap_nwout_master]
-                        set tb2_master [$db findMaster $tap_nwout2_master]
-                        set tb3_master [$db findMaster $tap_nwout3_master]
-                        set tbtie_master [$db findMaster $tap_nwouttie_master]
-                    }
-
-                    set res {}
-                    foreach item $endcap_xs {
-                        if {$item ni $endcap_above_xs} {
-                            lappend res $item
-                        }
-                    }
-
-                    #puts $res
-                    for {set i 0} {$i < [llength $res]} {set i [expr $i+2]} {
-                        set x_start [lindex $res $i]
-                        set x_end [lindex $res $i+1]
-
-                        #insert above row
-                        set lly [expr $y + $site_y]
-
-                        #insert incnr
-                        set inst1_name "PHY_${cnt}"
-                        set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
-                        $inst1 setOrient $ori
-                        $inst1 setLocation $x_start $lly
-                        $inst1 setPlacementStatus LOCKED
-
-                        incr cnt
-                        incr blkgs_cnt
-
-                        set inst2_name "PHY_${cnt}"
-                        set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
-                        $inst2 setOrient $ori
-                        $inst2 setLocation $x_end $lly
-                        $inst2 setPlacementStatus LOCKED
-
-                        incr cnt
-                        incr blkgs_cnt
-
-                        for {set x [expr $x_start+$endcapwidth]} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
-                            set inst3_name "PHY_${cnt}"
-                            set inst3 [odb::dbInst_create $block $tbtie_master $inst3_name]
-                            $inst3 setOrient $ori
-                            $inst3 setLocation $x $lly
-                            $inst3 setPlacementStatus LOCKED
-
-                            incr cnt
-                            incr blkgs_cnt
-                        }
-
-                        set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
-
-                        if {[expr $numcpp % 2] == 1} {
-                            set x_tb3 [expr $x_end-(3*$site_x)]
-                            set inst4_name "PHY_${cnt}"
-                            set inst4 [odb::dbInst_create $block $tb3_master $inst4_name]
-                            $inst4 setOrient $ori
-                            $inst4 setLocation $x_tb3 $lly
-                            $inst4 setPlacementStatus LOCKED
-
-                            incr cnt
-                            incr blkgs_cnt
-                            set x_end $x_tb3
-                        }
-
-                        for {} {$x < $x_end} {set x [expr $x+(2*$site_x)]} {
-                            set inst5_name "PHY_${cnt}"
-                            set inst5 [odb::dbInst_create $block $tb2_master $inst5_name]
-                            $inst5 setOrient $ori
-                            $inst5 setLocation $x $lly
-
-                            incr cnt
-                            incr blkgs_cnt
-                        }
-                    }
-                }
-            }
+        set rows [$block getRows]
+        foreach blockage $blockages {
+            set rows_top_bottom [tapcell::get_rows_top_bottom_macro $blockage $rows $halo_x $halo_y]
+            
         }
-        puts "Cells inserted near blkgs: $blkgs_cnt"
     }
 
     puts "Running tapcell... Done!"
