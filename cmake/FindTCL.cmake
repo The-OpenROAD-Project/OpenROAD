@@ -43,24 +43,24 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(TCL_NO_DEFAULT_PATH FALSE)
 endif()
 
-if (NOT TCL_LIB)
+if (NOT TCL_LIBRARY)
   # bagbiter cmake doesn't have a way to pass NO_DEFAULT_PATH as a parameter.
   if (TCL_NO_DEFAULT_PATH)
-    find_library(TCL_LIB
+    find_library(TCL_LIBRARY
       NAMES tcl ${TCL_POSSIBLE_NAMES}
       PATHS ${TCL_LIB_PATHS}
       NO_DEFAULT_PATH
       )
   else()
-    find_library(TCL_LIB
+    find_library(TCL_LIBRARY
       NAMES tcl ${TCL_POSSIBLE_NAMES}
       PATHS ${TCL_LIB_PATHS}
       )
   endif()
 endif()
-message(STATUS "TCL lib: ${TCL_LIB}")
+message(STATUS "TCL library: ${TCL_LIBRARY}")
 
-get_filename_component(TCL_LIB_DIR "${TCL_LIB}" PATH)
+get_filename_component(TCL_LIB_DIR "${TCL_LIBRARY}" PATH)
 get_filename_component(TCL_LIB_PARENT1 "${TCL_LIB_DIR}" PATH)
 get_filename_component(TCL_LIB_PARENT2 "${TCL_LIB_PARENT1}" PATH)
 
