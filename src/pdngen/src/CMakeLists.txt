@@ -57,4 +57,6 @@ target_include_directories(pdngen
   ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENSTA_HOME}/app
+  SYSTEM
+  ${TCL_INCLUDE_PATH}
   )

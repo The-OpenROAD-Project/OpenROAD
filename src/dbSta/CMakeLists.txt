@@ -80,4 +80,5 @@ add_library(dbSta
 target_include_directories(dbSta
   PUBLIC ${OPENROAD_HOME}/include
   PRIVATE ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include
+  SYSTEM ${TCL_INCLUDE_PATH}
   )
