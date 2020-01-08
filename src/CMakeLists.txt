@@ -64,7 +64,8 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
 
 ################################################################
 
-include(FindSWIG)
+set(SWIG_REQUIRED_VERSION "3.0")
+find_package(SWIG REQUIRED)
 
 # OpenDB's swig wrapper is not in the library (and mistakenly exports
 # to the global namespace) so make our own.
@@ -88,15 +89,19 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
   )
 
 ################################################################
-
-
-################################################################
 #
 # Library dependencies
 #
 ################################################################
 
-include(FindTcl)
+# OSX tcl is deprecated and prints a warning, so look for a user installed
+# version before using the system version.
+# I tried to override the library search order instead but failed.
+# CMAKE_FIND_FRAMEWORK LAST bypasses the version in the framework directory
+# but not the one in /usr/lib.
+# This calls cmake/FindTCL.cmake
+# Do not use REQUIRED because it also requires TK.
+find_package(TCL)
 
 # Zlib
 include(FindZLIB)
@@ -151,7 +156,7 @@ target_include_directories(openroad
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
   SYSTEM
-  ${TCL_HEADER_DIR}
+  ${TCL_INCLUDE_PATH}
   )
 
 target_link_libraries(openroad
@@ -177,7 +182,7 @@ target_link_libraries(openroad
   lefin
   lefout
   zutil
-  ${TCL_LIB}
+  ${TCL_LIBRARY}
 )
 
 if (ZLIB_FOUND)
