@@ -74,3 +74,7 @@ if (NOT TCL_HEADER)
 endif()
 message(STATUS "TCL header: ${TCL_HEADER}")
 get_filename_component(TCL_HEADER_DIR "${TCL_HEADER}" PATH)
+
+if (TCL_HEADER)
+  get_filename_component(TCL_INCLUDE_PATH "${TCL_HEADER}" PATH)
+endif()
