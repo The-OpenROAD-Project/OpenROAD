@@ -195,15 +195,19 @@ dbSdcNetwork::findPin(const char *path_name) const
 {
   char *inst_path, *port_name;
   pathNameLast(path_name, inst_path, port_name);
+  Pin *pin = nullptr;
   if (inst_path) {
     Instance *inst = findInstance(inst_path);
     if (inst)
-      return findPin(inst, port_name);
+      pin = findPin(inst, port_name);
     else
-      return nullptr;
+      pin = nullptr;
   }
   else
-    return findPin(topInstance(), path_name);
+    pin = findPin(topInstance(), path_name);
+  stringDelete(inst_path);
+  stringDelete(port_name);
+  return pin;
 }
 
 static const char *
