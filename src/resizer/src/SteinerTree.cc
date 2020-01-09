@@ -142,6 +142,11 @@ SteinerTree::setTree(Flute::Tree tree,
   }
 }
 
+SteinerTree::SteinerTree() :
+  tree_({0, 0, nullptr})
+{
+}
+
 SteinerTree::~SteinerTree()
 {
   Flute::free_tree(tree_);

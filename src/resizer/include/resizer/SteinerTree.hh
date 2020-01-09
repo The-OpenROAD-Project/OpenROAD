@@ -63,11 +63,11 @@ public:
   }
 };
 
-// Wrapper for Tree
+// Wrapper for Flute::Tree
 class SteinerTree
 {
 public:
-  SteinerTree() {}
+  SteinerTree();
   ~SteinerTree();
   PinSeq &pins() { return pins_; }
   void setTree(Flute::Tree tree,
