@@ -110,14 +110,16 @@ proc parse_args {} {
     } elseif { $arg == "-valgrind" } {
       set use_valgrind 1
       set argv [lrange $argv 1 end]
-    } elseif { [llength $argv] == 0 } {
-      # Default is to run dist tests.
-      set tests [group_tests dist]
     } else {
       break
     }
   }
-  set tests [expand_tests $argv]
+  if { $argv == {} } {
+    # Default is to run fast tests.
+    set tests [group_tests fast]
+  } else {
+    set tests [expand_tests $argv]
+  }
 }
 
 proc expand_tests { argv } {
