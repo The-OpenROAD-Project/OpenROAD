@@ -451,7 +451,7 @@ dbNetwork::findChild(const Instance *parent,
 
 Pin *
 dbNetwork::findPin(const Instance *instance, 
-		       const char *port_name) const
+		   const char *port_name) const
 {
   if (instance == top_instance_) {
     dbBTerm *bterm = block_->findBTerm(port_name);
@@ -466,7 +466,7 @@ dbNetwork::findPin(const Instance *instance,
 
 Pin *
 dbNetwork::findPin(const Instance *instance,
-		       const Port *port) const
+		   const Port *port) const
 {
   const char *port_name = this->name(port);
   return findPin(instance, port_name);
@@ -486,9 +486,9 @@ dbNetwork::findNet(const Instance *instance,
 
 void
 dbNetwork::findInstNetsMatching(const Instance *instance,
-				    const PatternMatch *pattern,
-				    // Return value.
-				    NetSeq *nets) const
+				const PatternMatch *pattern,
+				// Return value.
+				NetSeq *nets) const
 {
   if (instance == top_instance_) {
     if (pattern->hasWildcards()) {
