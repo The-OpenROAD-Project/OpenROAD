@@ -295,9 +295,9 @@ CMakeLists.txt does not use glob.
 
 No main.cpp or main procedure.
 
-No compiler warnings for gcc, clang with -O2 optimization
+No compiler warnings for gcc, clang with optimization enabled.
 
-Does not call flute::readLUT
+Does not call flute::readLUT (called once by OpenRoad).
 
 Tcl command(s) documented in top level README.md in flow order.
 
@@ -308,14 +308,14 @@ Conforms to Tcl command naming standards (no camel case).
 Does not read configuration files. 
 Use command arguments or support commands.
 
-.clang-format at tool root directory to aid foreign programmers
+.clang-format at tool root directory to aid foreign programmers.
 
-No jenkins/, Jenkinsfile, Dockerfile.
+No jenkins/, Jenkinsfile, Dockerfile in tool directory.
 
 regression script named "test/regression" with default argument that runs
 tests. Not tests/regression-tcl.sh, not test/run_tests.py etc.
 
-Regression runs independent of current directory
+Regression runs independent of current directory.
 
 Regression only prints test results or summary, does not belch 1000s
 of lines of output.
@@ -325,5 +325,7 @@ Test scripts use OpenROAD tcl commands (not itcl, not internal accessors).
 Regressions report no memory errors with valgrind.
 
 Regressions report no memory leaks with valgrind (difficult).
+
+###
 
 James Cherry, Dec 2019
