@@ -95,8 +95,10 @@ makeSteinerTree(const Net *net,
     delete [] y;
     return tree;
   }
-  else
+  else {
+    delete tree;
     return nullptr;
+  }
 }
 
 static void

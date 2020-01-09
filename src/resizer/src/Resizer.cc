@@ -789,8 +789,8 @@ Resizer::makeNetParasitics(const Net *net)
 	}
       }
     }
-    delete tree;
   }
+  delete tree;
 }
 
 ParasiticNode *
