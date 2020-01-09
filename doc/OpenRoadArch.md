@@ -17,18 +17,16 @@ Every tool follows the following file structure.
 
 ```
 CMakelists.txt - add_subdirectory's src/CMakelists.txt
-/src/ - sources and private headers
-/src/CMakelists.txt
-/include/<toolname>/ - exported headers
-/test/
-/Dockerfile
-/Jenkinsfile
-/jenkins/
+src/ - sources and private headers
+src/CMakelists.txt
+include/<toolname>/ - exported headers
+test/
 ```
 
 OpenROAD repository
 
 ```
+CMakeLists.txt - top level cmake file
 src/Main.cc
 src/OpenROAD.cc - OpenROAD class functions
 src/OpenROAD.i - top level swig, %includes tool swig files
@@ -41,8 +39,8 @@ or terribly useful without the rest of OpenROAD.
 ```
 src/dbReadVerilog.* - Verilog reader/flattener
 src/InitFloorplan.* - Initialize floorplan
-src/StaDB/ - OpenSTA on OpenDB.
-src/Resizer/ - gate resizer
+src/dbSta/ - OpenSTA on OpenDB.
+src/resizer/ - gate resizer
 ```
 
 Submodule repos (note these are NOT in src/module)
@@ -287,5 +285,45 @@ Detailed documentation should be the tool/README.md file.
 11. Global route (FastRoute)
 12. Detailed route (TritonRoute)n
 13. Final timing/power report (OpenSTA)
+
+### Tool Checklist
+
+OpenROAD submodules reference tool develop branch head
+No openroad, openroad_app, openroad_build branches
+
+CMakeLists.txt does not use glob.
+
+No main.cpp or main procedure.
+
+No compiler warnings for gcc, clang with -O2 optimization
+
+Does not call flute::readLUT
+
+Tcl command(s) documented in top level README.md in flow order.
+
+Command line tool documentation in tool README.
+
+Conforms to Tcl command naming standards (no camel case).
+
+Does not read configuration files. 
+Use command arguments or support commands.
+
+.clang-format at tool root directory to aid foreign programmers
+
+No jenkins/, Jenkinsfile, Dockerfile.
+
+regression script named "test/regression" with default argument that runs
+tests. Not tests/regression-tcl.sh, not test/run_tests.py etc.
+
+Regression runs independent of current directory
+
+Regression only prints test results or summary, does not belch 1000s
+of lines of output.
+
+Test scripts use OpenROAD tcl commands (not itcl, not internal accessors).
+
+Regressions report no memory errors with valgrind.
+
+Regressions report no memory leaks with valgrind (difficult).
 
 James Cherry, Dec 2019
