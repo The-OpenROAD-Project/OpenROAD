@@ -18,7 +18,7 @@
 # 
 # Use the "regression" command to run the regressions.
 #
-#  regression help | test1 [test2...]
+#  regression -help | [-valgrind] test1 [test2...]
 #
 # where test is "all" or the name of a test group defined in regression_vars.tcl
 # Wildcards can be used in test names if the name is enclosed in ""s to suppress
@@ -90,7 +90,7 @@ proc parse_args {} {
   while { $argv != {} } {
     set arg [lindex $argv 0]
     if { $arg == "help" || $arg == "-help" } {
-      puts {Usage: regression [-help] [-threads threads]  [-valgrind] tests...}
+      puts {Usage: regression [-help] [-threads threads] [-valgrind] tests...}
       puts "  -threads max|integer - number of threads to use"
       puts "  -valgrind - run valgrind (linux memory checker)"
       puts "  Wildcarding for test names is supported (enclose in \"'s)"
@@ -308,15 +308,14 @@ proc run_test_valgrind { test cmd_file log_file } {
 
   set cmd [concat exec valgrind $valgrind_options \
 	     $app_path $app_options $vg_cmd_file >& $log_file]
+  set error_msg ""
   if { [catch $cmd] } {
-    set error [lindex $errorCode 3]
-    cleanse_valgrind_logfile $test $log_file
-    cleanse_logfile $test $log_file
-    return "ERROR $error"
-  } else {
-    cleanse_logfile $test $log_file
-    return [cleanse_valgrind_logfile $test $log_file]
+    set error_msg "ERROR [lindex $errorCode 3]"
   }
+  file delete $vg_cmd_file
+  cleanse_logfile $test $log_file
+  lappend error_msg [cleanse_valgrind_logfile $test $log_file]
+  return $error_msg
 }
 
 # Error messages can be found in "valgrind/memcheck/mc_errcontext.c".
