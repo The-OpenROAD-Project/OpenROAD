@@ -1089,6 +1089,7 @@ Resizer::rebuffer(const Pin *drvr_pin,
 	deleteRebufferOptions();
       }
     }
+    delete tree;
   }
 }
 
