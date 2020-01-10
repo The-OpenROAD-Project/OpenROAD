@@ -172,10 +172,10 @@ target_link_libraries(openroad
   TritonCTS
   FastRoute
   tapcell
-  TritonMacroPlace 
+  TritonMacroPlace
   ParquetFP
-  ABKCommon 
-  zlib 
+  ABKCommon
+  zlib
   tm
   defin
   defout
@@ -196,10 +196,9 @@ endif()
 # Ancient versions of glibc found on CentOS required librt.
 # OSX has an empty version of librt that causes a link error,
 # so this is protected from linking there.
-find_library(LIBRT rt)
-if (LIBRT
-    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
     AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  find_library(LIBRT rt)
   target_link_libraries(openroad ${LIBRT})
 endif()
 
