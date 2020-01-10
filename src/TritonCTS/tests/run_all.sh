@@ -8,13 +8,8 @@ echo "* TritonCTS unit tests *"
 echo "************************"
 echo ""
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: ./run_all.sh <path_to_bin> <testdir>"
-	exit 1
-fi
-
-binary=$(readlink -f $1)
-testdir=$(readlink -f $2)
+testdir=$(cd "$(dirname "$0")" && pwd -P)
+binary=$testdir/../../../build/src/openroad
 failed=0
 
 echo " > TritonCTS binary: $binary"
