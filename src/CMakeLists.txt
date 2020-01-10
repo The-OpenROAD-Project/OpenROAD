@@ -185,6 +185,11 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
 )
 
+find_library(LIBRT rt)
+if(LIBRT)
+  target_link_libraries(openroad ${LIBRT})
+endif()
+
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
