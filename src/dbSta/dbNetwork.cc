@@ -27,7 +27,6 @@ namespace sta {
 
 using odb::dbDatabase;
 using odb::dbChip;
-using odb::dbString;
 using odb::dbObject;
 using odb::dbLib;
 using odb::dbMaster;
