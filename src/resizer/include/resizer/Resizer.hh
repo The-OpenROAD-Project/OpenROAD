@@ -26,6 +26,7 @@ class RebufferOption;
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<RebufferOption*> RebufferOptionSeq;
+enum class RebufferOptionType { sink, junction, wire, buffer };
 
 class Resizer : public StaState
 {
@@ -162,7 +163,15 @@ protected:
   double area(Cell *cell);
   double dbuToMeters(uint dist) const;
 
-
+  // RebufferOption factory.
+  RebufferOption *makeRebufferOption(RebufferOptionType type,
+				     float cap,
+				     Required required,
+				     Pin *load_pin,
+				     adsPoint location,
+				     RebufferOption *ref,
+				     RebufferOption *ref2);
+  void deleteRebufferOptions();
   friend class RebufferOption;
 
   float wire_res_;
@@ -191,6 +200,7 @@ protected:
   int rebuffer_net_count_;
   double core_area_;
   double design_area_;
+  RebufferOptionSeq rebuffer_options_;
 };
 
 } // namespace

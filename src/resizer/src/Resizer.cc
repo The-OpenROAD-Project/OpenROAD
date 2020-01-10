@@ -827,9 +827,7 @@ Resizer::rebufferNets(bool repair_max_cap,
 class RebufferOption
 {
 public:
-  enum Type { sink, junction, wire, buffer };
-
-  RebufferOption(Type type,
+  RebufferOption(RebufferOptionType type,
 		 float cap,
 		 Required required,
 		 Pin *load_pin,
@@ -837,7 +835,7 @@ public:
 		 RebufferOption *ref,
 		 RebufferOption *ref2);
   ~RebufferOption();
-  Type type() const { return type_; }
+  RebufferOptionType type() const { return type_; }
   float cap() const { return cap_; }
   Required required() const { return required_; }
   Required bufferRequired(LibertyCell *buffer_cell,
@@ -848,7 +846,7 @@ public:
   RebufferOption *ref2() const { return ref2_; }
 
 private:
-  Type type_;
+  RebufferOptionType type_;
   float cap_;
   Required required_;
   Pin *load_pin_;
@@ -857,7 +855,7 @@ private:
   RebufferOption *ref2_;
 };
 
-RebufferOption::RebufferOption(Type type,
+RebufferOption::RebufferOption(RebufferOptionType type,
 			       float cap,
 			       Required required,
 			       Pin *load_pin,
@@ -883,6 +881,28 @@ RebufferOption::bufferRequired(LibertyCell *buffer_cell,
 			       Resizer *resizer) const
 {
   return required_ - resizer->bufferDelay(buffer_cell, cap_);
+}
+
+RebufferOption *
+Resizer::makeRebufferOption(RebufferOptionType type,
+			    float cap,
+			    Required required,
+			    Pin *load_pin,
+			    adsPoint location,
+			    RebufferOption *ref,
+			    RebufferOption *ref2)
+{
+  RebufferOption *option = new RebufferOption(type, cap, required,
+					      load_pin, location, ref, ref2);
+
+  rebuffer_options_.push_back(option);
+  return option;
+}
+
+void
+Resizer::deleteRebufferOptions()
+{
+  rebuffer_options_.deleteContentsClear();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1066,6 +1086,7 @@ Resizer::rebuffer(const Pin *drvr_pin,
 	  if (inserted_buffer_count_ != before)
 	    rebuffer_net_count_++;
 	}
+	deleteRebufferOptions();
       }
     }
   }
@@ -1129,7 +1150,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
     Pin *pin = tree->pin(k);
     if (pin && network_->isLoad(pin)) {
       // Load capacitance and required time.
-      RebufferOption *z = new RebufferOption(RebufferOption::Type::sink,
+      RebufferOption *z = makeRebufferOption(RebufferOptionType::sink,
 					     pinCapacitance(pin),
 					     pinRequired(pin),
 					     pin,
@@ -1155,7 +1176,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
       // Combine the options from both branches.
       for (auto p : Zl) {
 	for (auto q : Zr) {
-	  RebufferOption *junc = new RebufferOption(RebufferOption::Type::junction,
+	  RebufferOption *junc = makeRebufferOption(RebufferOptionType::junction,
 						    p->cap() + q->cap(),
 						    min(p->required(),
 							q->required()),
@@ -1217,7 +1238,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
   for (auto p : Z) {
-    RebufferOption *z = new RebufferOption(RebufferOption::Type::wire,
+    RebufferOption *z = makeRebufferOption(RebufferOptionType::wire,
 					   // account for wire load
 					   p->cap() + wire_cap,
 					   // account for wire delay
@@ -1243,7 +1264,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
     }
   }
   if (best_ref) {
-    RebufferOption *z = new RebufferOption(RebufferOption::Type::buffer,
+    RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
 					   bufferInputCapacitance(buffer_cell),
 					   best,
 					   nullptr,
@@ -1270,7 +1291,7 @@ Resizer::rebufferTopDown(RebufferOption *choice,
 			 LibertyCell *buffer_cell)
 {
   switch(choice->type()) {
-  case RebufferOption::Type::buffer: {
+  case RebufferOptionType::buffer: {
     Instance *parent = db_network_->topInstance();
     string net2_name = makeUniqueNetName();
     string buffer_name = makeUniqueBufferName();
@@ -1296,17 +1317,17 @@ Resizer::rebufferTopDown(RebufferOption *choice,
     makeNetParasitics(net2);
     break;
   }
-  case RebufferOption::Type::wire:
+  case RebufferOptionType::wire:
     debugPrint2(debug_, "rebuffer", 3, "%*swire\n", level, "");
     rebufferTopDown(choice->ref(), net, level + 1, buffer_cell);
     break;
-  case RebufferOption::Type::junction: {
+  case RebufferOptionType::junction: {
     debugPrint2(debug_, "rebuffer", 3, "%*sjunction\n", level, "");
     rebufferTopDown(choice->ref(), net, level + 1, buffer_cell);
     rebufferTopDown(choice->ref2(), net, level + 1, buffer_cell);
     break;
   }
-  case RebufferOption::Type::sink: {
+  case RebufferOptionType::sink: {
     Pin *load_pin = choice->loadPin();
     Net *load_net = network_->net(load_pin);
     if (load_net != net) {
