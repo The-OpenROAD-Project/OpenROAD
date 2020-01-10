@@ -66,11 +66,12 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
 
 set(SWIG_REQUIRED_VERSION "3.0")
 find_package(SWIG REQUIRED)
+set(SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")
 
 # OpenDB's swig wrapper is not in the library (and mistakenly exports
 # to the global namespace) so make our own.
 add_custom_command(OUTPUT ${OPENDB_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -DSWIG_DIRECTOR_STATIC -tcl8 -c++ -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
+  COMMAND ${SWIG_EXECUTABLE} -DSWIG_DIRECTOR_STATIC -tcl8 -c++ ${SWIG_WARNINGS} -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENDB_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
   DEPENDS
@@ -184,11 +185,6 @@ target_link_libraries(openroad
   zutil
   ${TCL_LIBRARY}
 )
-
-find_library(LIBRT rt)
-if(LIBRT)
-  target_link_libraries(openroad ${LIBRT})
-endif()
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
