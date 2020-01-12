@@ -292,6 +292,7 @@ OpenROAD submodules reference tool develop branch head
 No openroad, openroad_app, openroad_build branches
 
 CMakeLists.txt does not use glob.
+https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1
 
 No main.cpp or main procedure.
 
