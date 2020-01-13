@@ -38,7 +38,7 @@ proc pdngen { args } {
 
   sta::check_argc_eq1 "pdngen" $args
   set config_file $args
-  ord::ensure_linked
+  #ord::ensure_linked
   if { [catch { pdngen::apply_pdn $config_file $verbose } error_msg] } {
     puts $error_msg
   }
@@ -76,6 +76,7 @@ variable metal_layers_dir {}
 variable blockages {} 
 variable instances {}
 variable default_template_name {}
+variable template {}
 
 #This file contains procedures that are used for PDN generation
 
@@ -1798,16 +1799,24 @@ proc core_area_boundary {} {
   set urx [lindex $core_area 2]
   set ury [lindex $core_area 3]
 
-  set width  [dict get $template width]
-  set height [dict get $template height]
+  if {[dict exists $template width]} {
+    set width [dict get $template width]
+  } else {
+    set width 2000
+  }
+  if {[dict exists $template height]} {
+    set height [dict get $template height]
+  } else {
+    set height 2000
+  }
   
   # Add blockages around the outside of the core area in order to trim back the templates.
   #
   set blockages {}
   set boundary [list \
     [list [expr $llx - $width] [expr $lly - $height] $llx [expr $ury + $height]] \
-    [list $llx [expr $lly - $height] $urx $lly] \
-    [list $llx $ury $urx [expr $ury + $height]] \
+    [list [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly] \
+    [list [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]] \
     [list $urx [expr $lly - $height] [expr $urx + $width] [expr $ury + $height]] \
   ]
   
@@ -1854,13 +1863,13 @@ proc define_template_grid {file_name} {
   set x_sections [expr round($core_width  / $template_width)]
   set y_sections [expr round($core_height / $template_height)]
   
-  dict set template offset x [expr ($core_width - $x_sections * $template_width) / 2]
-  dict set template offset y [expr ($core_height - $y_sections * $template_height) / 2]
+  dict set template offset x [expr [lindex $core_area 0] + ($core_width - $x_sections * $template_width) / 2]
+  dict set template offset y [expr [lindex $core_area 1] + ($core_height - $y_sections * $template_height) / 2]
   
   if {$default_template_name == {}} {
     set template_name [lindex [dict get $default_grid_data template names] 0]
   } else {
-    set template_namae $default_template_name
+    set template_name $default_template_name
   }
   
   for {set i -1} {$i <= $x_sections} {incr i} {
@@ -1895,7 +1904,8 @@ proc add_blockages {more_blockages} {
 
 proc add_macro_based_grids {} {
   variable instances
-  
+
+  set_blockages {}
   if {[llength [dict keys $instances]] > 0} {
     puts "Inserting macro grid for [llength [dict keys $instances]] macros"
     foreach instance [dict keys $instances] {
@@ -1955,7 +1965,6 @@ proc opendb_update_grid {} {
   puts "Writing to database"
   export_opendb_vias
   export_opendb_specialnets
-  #export_opendb_rows
 }
   
 proc apply_pdn {config is_verbose} {
@@ -1992,12 +2001,6 @@ proc apply {config} {
   if {$verbose} {
     puts "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
   }
-}
-
-proc apply_template {block config} {
-  pdn init $block $config
-  
-  opendb_update_grid
 }
 
 }
