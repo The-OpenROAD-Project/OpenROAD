@@ -1,7 +1,7 @@
-#!/usr/bin/env tclsh
+#!/usr/bin/env bash
 
 ################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
+## Authors: Mateus Fogaca, Eder Matheus Monteiro
 ##          (Advisor: Ricardo Reis)
 ##
 ## BSD 3-Clause License
@@ -36,43 +36,59 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-proc checkMacros {goldFile outFile} {
-        _puts "--Check number of macros..."
+test_script=./run.sh
 
-        set base_dir [pwd]
-        set grep_pattern "---- Macro blocks found:"
-        
-        set macros_report [catch {exec grep -i -e "${grep_pattern}" $outFile} result]
+echo ""
+echo "************************"
+echo "* Tapcell unit tests *"
+echo "************************"
+echo ""
 
-        set status [catch {exec grep -q -e $result $goldFile} rslt]
+testdir=$(cd "$(dirname "$0")" && pwd -P)
+binary=$testdir/../../../build/src/openroad
+failed=0
 
-        if {$status == 0} {
-                _puts "--Check number of macros... Success!"
-        } else {
-                _puts stderr "Nmber of macros is different"
-                _puts stderr "********************************************************************************"
-                _puts stderr $rslt
-                _puts stderr "********************************************************************************"
-                _err "Current tapcell insertion has different number of macros"
-        }
-}
+echo " > Tapcell binary: $binary"
+if [ ! -e $binary ] ; 
+then
+	echo "    - Binary not found. Exiting...\n" 
+	exit 1
+fi
 
-set test_name "input"
+for unit_test_path in ${testdir}/src/* ; 
+do
+	test_name=$(basename $unit_test_path)
+	echo " > Now running $test_name..."
 
-set base_dir [pwd]
-set tests_dir "${base_dir}/src/tapcell/test"
-set src_dir "${tests_dir}/src"
-set inputs_dir "${tests_dir}/input"
+	if [ ! -e $unit_test_path/$test_script ] ; 
+	then
+		echo "    - Script \"run.sh\" not found. Skipping..." 
+		continue
+	fi
+	
+	cd $unit_test_path 
+	$test_script $binary $testdir
+	test_return_code=$?
+	cd $test_root
 
-set curr_test "${src_dir}/check_macros"
+	if [ $test_return_code == 0 ];
+	then
+		echo "     - Test returned GREEN (passed)"
+	elif [ $test_return_code == 1 ];
+	then
+		echo "     - Test return YELLOW (passed)"
+	else
+		echo "     - Test returned RED (failed)"
+		failed=1
+	fi
+done
 
-set gold_rows "${curr_test}/golden.macros"
+echo ""
+echo "Tapcell tests finished!"
 
-set script_file "${curr_test}/insertTap.tcl"
-set output_file "${curr_test}/${test_name}.guide"
-set output_log "${curr_test}/${test_name}.log"
-set bin_file "$base_dir/build/src/openroad"
+sh $testdir/clean_all.sh $testdir
 
-runTapcell $test_name $curr_test $inputs_dir $bin_file $output_log
-
-checkMacros $gold_rows $output_log
+if [ $failed -gt 0 ]
+then
+	exit 1
+fi
