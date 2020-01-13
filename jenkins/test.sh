@@ -8,6 +8,6 @@ docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/ope
 docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "/OpenROAD/src/TritonMacroPlace/test/regression"
 docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "cd /OpenROAD/src/replace/test && python3 regression.py run openroad"
 docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "cd /OpenROAD && cp etc/PO* . && tclsh ./src/FastRoute/tests/run_all.tcl"
-docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "cd /OpenROAD && ./src/ioPlacer/tests/run_all.sh ./build/src/openroad ./src/ioPlacer/tests/"
-docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "cd /OpenROAD && ./src/TritonCTS/tests/run_all.sh ./build/src/openroad ./src/TritonCTS/tests/"
+docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "/OpenROAD/src/ioPlacer/tests/run_all.sh"
+docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "/OpenROAD/src/TritonCTS/tests/run_all.sh"
 docker run -v $(pwd):/OpenROAD openroad/openroad bash -c "cd /OpenROAD && tclsh ./src/tapcell/test/run_all.tcl"
