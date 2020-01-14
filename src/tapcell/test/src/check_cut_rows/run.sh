@@ -1,7 +1,7 @@
-#!/usr/bin/env tclsh
+#!/usr/bin/env bash
 
 ################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
+## Authors: Mateus Fogaca, Eder Matheus Monteiro
 ##          (Advisor: Ricardo Reis)
 ##
 ## BSD 3-Clause License
@@ -36,43 +36,30 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-proc checkMacros {goldFile outFile} {
-        _puts "--Check number of macros..."
+GREEN=0
+RED=2
 
-        set base_dir [pwd]
-        set grep_pattern "---- Macro blocks found:"
-        
-        set macros_report [catch {exec grep -i -e "${grep_pattern}" $outFile} result]
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
-        set status [catch {exec grep -q -e $result $goldFile} rslt]
+binary=$1
+testdir=$2
 
-        if {$status == 0} {
-                _puts "--Check number of macros... Success!"
-        } else {
-                _puts stderr "Nmber of macros is different"
-                _puts stderr "********************************************************************************"
-                _puts stderr $rslt
-                _puts stderr "********************************************************************************"
-                _err "Current tapcell insertion has different number of macros"
-        }
-}
+lefFile="$testdir/input/input.lef"
+defFile="$testdir/input/input.def"
 
-set test_name "input"
+cp $testdir/src/check_cut_rows/insertTap.tcl $testdir/src/check_cut_rows/run.tcl
+sed -i s#_LEF_#$lefFile#g $testdir/src/check_cut_rows/run.tcl
+sed -i s#_DEF_#$defFile#g $testdir/src/check_cut_rows/run.tcl
 
-set base_dir [pwd]
-set tests_dir "${base_dir}/src/tapcell/test"
-set src_dir "${tests_dir}/src"
-set inputs_dir "${tests_dir}/input"
+$binary < run.tcl > test.log 2>&1
 
-set curr_test "${src_dir}/check_macros"
+obs_report=$(grep -e '---- #Cut rows:' ./test.log)
 
-set gold_rows "${curr_test}/golden.macros"
-
-set script_file "${curr_test}/insertTap.tcl"
-set output_file "${curr_test}/${test_name}.guide"
-set output_log "${curr_test}/${test_name}.log"
-set bin_file "$base_dir/build/src/openroad"
-
-runTapcell $test_name $curr_test $inputs_dir $bin_file $output_log
-
-checkMacros $gold_rows $output_log
+if grep -q -e "$obs_report" golden.rows
+then
+	exit $GREEN
+else
+	exit $RED
+fi

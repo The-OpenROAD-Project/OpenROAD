@@ -1,7 +1,7 @@
-#!/usr/bin/env tclsh
+#!/usr/bin/env bash
 
 ################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
+## Authors: Mateus Fogaca, Eder Matheus Monteiro
 ##          (Advisor: Ricardo Reis)
 ##
 ## BSD 3-Clause License
@@ -36,47 +36,30 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-proc checkCellsInserted {goldFile outFile} {
-        _puts "--Check number of inserted cells..."
+GREEN=0
+RED=2
 
-        set base_dir [pwd]
-        set grep_pattern1 "---- #Endcaps inserted:"
-        set grep_pattern2 "---- #Tapcells inserted:"
-        
-        set endcap_report [catch {exec grep -i -e "${grep_pattern1}" $outFile} result1]
-        set tapcells_report [catch {exec grep -i -e "${grep_pattern2}" $outFile} result2]
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
-        set status1 [catch {exec grep -q -e $result1 $goldFile} rslt1]
-        set status2 [catch {exec grep -q -e $result2 $goldFile} rslt2]
+binary=$1
+testdir=$2
 
-        if {$status1 == 0 && $status2 == 0} {
-                _puts "--Check number of inserted cells... Success!"
-        } else {
-                _puts stderr "Inserted cells are different"
-                _puts stderr "********************************************************************************"
-                _puts stderr $rslt1
-                _puts stderr $rslt2
-                _puts stderr "********************************************************************************"
-                _err "Current tapcell insertion has different number of inserted cells"
-        }
-}
+lefFile="$testdir/input/input.lef"
+defFile="$testdir/input/input.def"
 
-set test_name "input"
+cp $testdir/src/check_macros/insertTap.tcl $testdir/src/check_macros/run.tcl
+sed -i s#_LEF_#$lefFile#g $testdir/src/check_macros/run.tcl
+sed -i s#_DEF_#$defFile#g $testdir/src/check_macros/run.tcl
 
-set base_dir [pwd]
-set tests_dir "${base_dir}/src/tapcell/test"
-set src_dir "${tests_dir}/src"
-set inputs_dir "${tests_dir}/input"
+$binary < run.tcl > test.log 2>&1
 
-set curr_test "${src_dir}/check_cells_inserted"
+obs_report=$(grep -e '---- Macro blocks found:' ./test.log)
 
-set gold_cells "${curr_test}/golden.cells"
-
-set script_file "${curr_test}/insertTap.tcl"
-set output_file "${curr_test}/${test_name}.guide"
-set output_log "${curr_test}/${test_name}.log"
-set bin_file "$base_dir/build/src/openroad"
-
-runTapcell $test_name $curr_test $inputs_dir $bin_file $output_log
-
-checkCellsInserted $gold_cells $output_log
+if grep -q -e "$obs_report" golden.macros
+then
+	exit $GREEN
+else
+	exit $RED
+fi

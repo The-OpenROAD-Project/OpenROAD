@@ -1,6 +1,7 @@
+#!/usr/bin/env bash
 
 ################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
+## Authors: Mateus Fogaca, Eder Matheus Monteiro
 ##          (Advisor: Ricardo Reis)
 ##
 ## BSD 3-Clause License
@@ -35,64 +36,59 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-rename puts _puts
+test_script=./run.sh
 
-proc _err {s {n 1}} {
-        _puts stderr "ERROR: $s"
-        exit $n
-}
+echo ""
+echo "************************"
+echo "* Tapcell unit tests *"
+echo "************************"
+echo ""
 
-proc _warn {s} {
-        _puts "WARNING: $s"
-}
+testdir=$(cd "$(dirname "$0")" && pwd -P)
+binary=$testdir/../../../build/src/openroad
+failed=0
 
-proc _debug {s {n 1}} {
-        global debugLevel
-        if {$n <= $debugLevel} {
-                _puts "DEBUG: $s"
-        }
-}
+echo " > Tapcell binary: $binary"
+if [ ! -e $binary ] ; 
+then
+	echo "    - Binary not found. Exiting...\n" 
+	exit 1
+fi
 
-proc _info {s {n 0}} {
-        global infoLevel
-        if {$n <= $infoLevel} {
-                _puts "INFO: $s"
-        }
-}
+for unit_test_path in ${testdir}/src/* ; 
+do
+	test_name=$(basename $unit_test_path)
+	echo " > Now running $test_name..."
 
-proc _infoN {s} {
-        _puts -nonewline "INFO: $s"
-}
+	if [ ! -e $unit_test_path/$test_script ] ; 
+	then
+		echo "    - Script \"run.sh\" not found. Skipping..." 
+		continue
+	fi
+	
+	cd $unit_test_path 
+	$test_script $binary $testdir
+	test_return_code=$?
+	cd $test_root
 
-proc runTapcell {testName testDir inputDir binFile outLog} {
-        set lefFile "${inputDir}/${testName}.lef"
-        set defFile "${inputDir}/${testName}.def"
+	if [ $test_return_code == 0 ];
+	then
+		echo "     - Test returned GREEN (passed)"
+	elif [ $test_return_code == 1 ];
+	then
+		echo "     - Test return YELLOW (passed)"
+	else
+		echo "     - Test returned RED (failed)"
+		failed=1
+	fi
+done
 
-        exec cp $testDir/insertTap.tcl $testDir/$testName.tcl
-        exec sed -i s#_LEF_#$lefFile#g $testDir/$testName.tcl
-        exec sed -i s#_DEF_#$defFile#g $testDir/$testName.tcl
-        exec sed -i s#_GUIDE_#$testDir/$testName.guide#g $testDir/$testName.tcl
-        catch {exec $binFile < $testDir/$testName.tcl > $outLog}
-}
+echo ""
+echo "Tapcell tests finished!"
 
-# proc Main {} {
+sh $testdir/clean_all.sh $testdir
 
-set base_dir [pwd]
-_puts $base_dir
-set tests_dir "${base_dir}/src/tapcell/test"
-set src_dir "${tests_dir}/src"
-set inputs_dir "${tests_dir}/input"
-
-_puts "Start unit tests..."
-
-proc unit_tests {{dir}} {
-        set subdirs [glob -dir $dir *]
-
-        foreach subdir [split $subdirs] {
-                source ${subdir}/run.tcl
-        }
-}
-
-unit_tests $src_dir
-
-# }
+if [ $failed -gt 0 ]
+then
+	exit 1
+fi

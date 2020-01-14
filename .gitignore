@@ -23,4 +23,5 @@ src/resizer/test/results
 src/pdngen/test/results
 src/FastRoute/tests/src/
 src/tapcell/test/src/
-src/TritonCTS/tests/src/
+src/TritonCTS/test/src
+src/ioPlacer/test/src

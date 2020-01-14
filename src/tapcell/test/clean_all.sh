@@ -1,5 +1,3 @@
-#!/usr/bin/env tclsh
-
 ################################################################################
 ## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
 ##          (Advisor: Ricardo Reis)
@@ -36,43 +34,11 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-proc checkCutRows {goldFile outFile} {
-        _puts "--Check number of cut rows..."
+testsdir=$1
+srcdir="$testsdir/src"
 
-        set base_dir [pwd]
-        set grep_pattern "---- #Cut rows:"
-        
-        set rows_report [catch {exec grep -i -e "${grep_pattern}" $outFile} result]
-
-        set status [catch {exec grep -q -e $result $goldFile} rslt]
-
-        if {$status == 0} {
-                _puts "--Check number of cut rows... Success!"
-        } else {
-                _puts stderr "Nmber of cut rows is different"
-                _puts stderr "********************************************************************************"
-                _puts stderr $rslt
-                _puts stderr "********************************************************************************"
-                _err "Current tapcell insertion has different number of cut rows"
-        }
-}
-
-set test_name "input"
-
-set base_dir [pwd]
-set tests_dir "${base_dir}/src/tapcell/test"
-set src_dir "${tests_dir}/src"
-set inputs_dir "${tests_dir}/input"
-
-set curr_test "${src_dir}/check_cut_rows"
-
-set gold_rows "${curr_test}/golden.rows"
-
-set script_file "${curr_test}/insertTap.tcl"
-set output_file "${curr_test}/${test_name}.guide"
-set output_log "${curr_test}/${test_name}.log"
-set bin_file "$base_dir/build/src/openroad"
-
-runTapcell $test_name $curr_test $inputs_dir $bin_file $output_log
-
-checkCutRows $gold_rows $output_log
+for subdir in $srcdir/*;
+do
+    rm -f ${subdir}/test.log
+    rm -f ${subdir}/run.tcl
+done

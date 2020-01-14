@@ -9,9 +9,9 @@ fi
 
 binary=$1
 
-$binary -c 1 < run.tcl > test.log 2>&1
+$binary -no_init < run.tcl > test.log 2>&1
 
-if grep -q "Clock topology of net \"clk\" done." test.log;
+if grep -q " Net \"clk\" has no sinks" test.log;
 then
 	exit $GREEN
 else

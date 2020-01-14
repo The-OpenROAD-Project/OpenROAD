@@ -48,7 +48,7 @@ namespace tapcell {
 }
 
 namespace opendp {
-class opendp_external;
+class Opendp;
 }
 
 namespace psn {
@@ -82,7 +82,7 @@ public:
   sta::Resizer *getResizer() { return resizer_; }
   TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
-  opendp::opendp_external *getOpendp() { return opendp_; }
+  opendp::Opendp *getOpendp() { return opendp_; }
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
 
@@ -110,7 +110,7 @@ private:
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
   ioPlacer::IOPlacementKernel *ioPlacer_;
-  opendp::opendp_external *opendp_;
+  opendp::Opendp *opendp_;
   MacroPlace::TritonMacroPlace *tritonMp_;
   pdngen::PdnGen *pdngen_;
   FastRoute::FastRouteKernel *fastRoute_;
