@@ -51,20 +51,8 @@ namespace TritonCTS {
 
 class ParametersForCTS {
 public:
-        ParametersForCTS() {
-                _blockName       = "";
-                _lutFile         = "";
-                _solListFile     = "";
-                _clockNets       = "";
-                _rootBuffer      = "";
-                _dbUnits         = -1;
-                _wireSegmentUnit = 0;
-                _dbId            = 0;
-                _plotSolution    = false;
-                _maxSlew         = 4;
-                _maxNumLeafSinks = 20;
-        }
-
+        ParametersForCTS() = default;
+       
         void setBlockName(const std::string& blockName) { _blockName = blockName; }
         std::string getBlockName() const { return _blockName; } 
         void setLutFile(const std::string& lutFile) { _lutFile = lutFile; }
@@ -83,24 +71,26 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
-        void setNumLeafSinks(unsigned numSinks) { _maxNumLeafSinks = numSinks; }
-        unsigned getNumLeafSinks() const { return _maxNumLeafSinks; }        
+        void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
+        unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
         unsigned getMaxSlew() const { return _maxSlew; }
+        void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
+        unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; } 
 
 private:
-        std::string _blockName;
-        std::string _lutFile;
-        std::string _solListFile;
-        std::string _clockNets;
-        std::string _rootBuffer;
-        unsigned    _numSinkRegions;
-        DBU         _dbUnits;
-        unsigned    _wireSegmentUnit;
-        unsigned    _dbId;
-        bool        _plotSolution;
-        unsigned    _maxNumLeafSinks;
-        unsigned    _maxSlew;
+        std::string _blockName         = "";
+        std::string _lutFile           = "";
+        std::string _solListFile       = "";
+        std::string _clockNets         = "";
+        std::string _rootBuffer        = "";
+        DBU         _dbUnits           = -1;
+        unsigned    _wireSegmentUnit   = 0;
+        unsigned    _dbId              = 0;
+        bool        _plotSolution      = false;
+        unsigned    _numMaxLeafSinks   = 20;
+        unsigned    _maxSlew           = 4;
+        unsigned    _clockTreeMaxDepth = 100;
 };
 
 }

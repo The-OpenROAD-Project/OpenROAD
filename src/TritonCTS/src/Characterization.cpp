@@ -59,11 +59,15 @@ void Characterization::parseLut(const std::string& file) {
                 std::exit(1);
         }
 
+        initLengthUnits();
+
         // First line of the LUT is a header with normalization values
         if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance 
                       >> _maxCapacitance >> _minSlew >> _maxSlew)) {
                 std::cout << "    [ERROR] Problem reading the LUT file\n";                 
         }
+        _minSegmentLength = toInternalLengthUnit(_minSegmentLength); 
+        _maxSegmentLength = toInternalLengthUnit(_maxSegmentLength); 
         
         reportCharacterizationBounds();
         checkCharacterizationBounds();
@@ -81,7 +85,9 @@ void Characterization::parseLut(const std::string& file) {
                 std::stringstream ss(line);
                 ss >> idx >> length >> load >> outputSlew >> power >> delay 
                    >> inputCap >> inputSlew >> isPureWire;
-               
+              
+                length = toInternalLengthUnit(length);
+
                 _actualMinInputCap = std::min(inputCap, _actualMinInputCap);                 
 
                 if (isPureWire && outputSlew <= inputSlew) {
@@ -102,7 +108,7 @@ void Characterization::parseLut(const std::string& file) {
                 }
         }
 
-        if (noSlewDegradationCount) {
+        if (noSlewDegradationCount > 0) {
                 std::cout << "    [WARNING] " << noSlewDegradationCount 
                           << " wires are pure wire and no slew degration.\n" 
                           << "    TritonCTS forced slew degradation on these wires.\n";
@@ -113,6 +119,17 @@ void Characterization::parseLut(const std::string& file) {
                   << _keyToWireSegments.size() << "\n";
 
         std::cout << "    Actual min input cap: " << _actualMinInputCap << "\n";
+}
+
+void Characterization::parse(const std::string& lutFile, const std::string solListFile) {
+        parseLut(lutFile);
+        parseSolList(solListFile);
+}
+
+void Characterization::initLengthUnits() {
+        _charLengthUnit = _parms->getWireSegmentUnit();
+        _lengthUnit = LENGTH_UNIT_MICRON;
+        _lengthUnitRatio = _charLengthUnit / _lengthUnit;
 }
 
 inline
@@ -171,7 +188,7 @@ void Characterization::parseSolList(const std::string& file) {
                 unsigned numBuffers = 0;
                 while (getline(ss, token, ',')) {
                         if (std::any_of(std::begin(token), std::end(token), ::isalpha)) {
-				_wireSegments[solIdx].addBufferCell(token);
+				_wireSegments[solIdx].addBufferMaster(token);
                                 ++numBuffers;
                         }
                 }

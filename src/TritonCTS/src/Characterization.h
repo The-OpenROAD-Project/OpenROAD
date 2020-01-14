@@ -80,7 +80,7 @@ public:
                _bufferLocations.push_back(location);
        }
        
-       void addBufferCell(std::string name) { 
+       void addBufferMaster(std::string name) { 
                _bufferCells.push_back(name);
        }
        
@@ -114,22 +114,12 @@ public:
         typedef uint32_t Key;
         static const unsigned NUM_BITS_PER_FIELD = 10;
         static const unsigned MAX_NORMALIZED_VAL = 1023;
-        static const unsigned LENGTH_UNIT_MICRON = 5;
+        static const unsigned LENGTH_UNIT_MICRON = 10;
 
 public:
-        Characterization(const ParametersForCTS& parms) {
-                initLengthUnits(parms.getWireSegmentUnit(),
-                                parms.getDbUnits());
-        }
+        Characterization(ParametersForCTS& parms) : _parms(&parms) {}
         
-        void initLengthUnits(unsigned charLengthUnitInMicron, unsigned dbUnit) {
-               _lengthUnit = LENGTH_UNIT_MICRON * dbUnit;
-               _lengthUnitRatio = _charLengthUnit / _lengthUnit; 
-        }
-
-public:
-        void parseLut(const std::string& file);
-        void parseSolList(const std::string& file);
+        void parse(const std::string& lutFile, const std::string solListFile);
         void write(const std::string& file) const;
         
         void report() const;
@@ -151,11 +141,14 @@ public:
                                        uint8_t inputSlew);
 
         const WireSegment& getWireSegment(unsigned idx) const { return _wireSegments[idx]; }
+        
+        unsigned getMinSegmentLength() const { return _minSegmentLength; }
         unsigned getMaxSegmentLength() const { return _maxSegmentLength; }
         unsigned getMaxCapacitance() const { return _maxCapacitance; }
         unsigned getMaxSlew() const { return _maxSlew; }
         void setActualMinInputCap(unsigned cap) { _actualMinInputCap = cap; }
         unsigned getActualMinInputCap() const { return _actualMinInputCap; }
+        unsigned getLengthUnit() const { return _lengthUnit; }
 
         unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const {
                 assert(length <= MAX_NORMALIZED_VAL && 
@@ -167,11 +160,14 @@ public:
         }
 
 protected:
+        void parseLut(const std::string& file);
+        void parseSolList(const std::string& file);
+        void initLengthUnits();
         void reportCharacterizationBounds() const;
         void checkCharacterizationBounds() const;
 
-        unsigned toInternalLengthUnit(unsigned length) {
-              return length * _lengthUnitRatio;  
+        unsigned toInternalLengthUnit(unsigned length) { 
+                return length * _lengthUnitRatio; 
         }
 
         unsigned _lengthUnit         = 0;
@@ -190,6 +186,8 @@ protected:
 
         std::vector<WireSegment> _wireSegments;
         std::unordered_map<Key, std::vector<unsigned>> _keyToWireSegments;
+
+        ParametersForCTS* _parms;
 };
 
 }

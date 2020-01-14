@@ -51,7 +51,7 @@
 namespace TritonCTS {
 
 void HTreeBuilder::initSinkRegion() {
-        unsigned wireSegmentUnitInMicron = _parms->getWireSegmentUnit(); 
+        unsigned wireSegmentUnitInMicron = _techChar->getLengthUnit(); 
         DBU dbUnits = _parms->getDbUnits();
         _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
@@ -71,11 +71,14 @@ void HTreeBuilder::run() {
         std::cout << " Generating H-Tree topology for net " << _clockNet.getName() << "...\n";
         std::cout << "    Tot. number of sinks: " << _clockNet.getNumSinks() << "\n";
        
+        _clockTreeMaxDepth = _parms->getClockTreeMaxDepth();
         _minInputCap = _techChar->getActualMinInputCap();
+        _numMaxLeafSinks = _parms->getNumMaxLeafSinks();
+        _minLengthSinkRegion = _techChar->getMinSegmentLength() * 2;
 
         initSinkRegion();
-
-        for (unsigned level = 1; level <= MAX_DEPTH; ++level) {
+        
+        for (unsigned level = 1; level <= _clockTreeMaxDepth; ++level) {
                 bool stopCriterionFound = false;
 
                 unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
@@ -90,8 +93,8 @@ void HTreeBuilder::run() {
 
                 stopCriterionFound = isSubRegionTooSmall(regionWidth, regionHeight);
                 if (stopCriterionFound) {
-                        std::cout << " Stop criterion found: MIN_SUB_REGION_SIZE (" 
-                                  << MIN_SUB_REGION_SIZE << ")\n";
+                        std::cout << " Stop criterion found. Min lenght of sink region is (" 
+                                  << _minLengthSinkRegion << ")\n";
                         break;
                 }       
         
@@ -99,7 +102,8 @@ void HTreeBuilder::run() {
                 
                 stopCriterionFound = isNumberOfSinksTooSmall(numSinksPerSubRegion);
                 if (stopCriterionFound) {
-                        std::cout << " Stop criterion found: MIN_NUM_SINKS (" << MIN_NUM_SINKS << ")\n";
+                        std::cout << " Stop criterion found. " 
+                                  << "Max number of sinks is (" << _numMaxLeafSinks << ")\n";
                         break;
                 }
         }
@@ -135,11 +139,11 @@ void HTreeBuilder::computeSubRegionSize(unsigned level, double& width, double& h
 }
 
 void HTreeBuilder::computeLevelTopology(unsigned level, double width, double height) {
-        assert(_techChar);
+        unsigned minLength = _techChar->getMinSegmentLength();
 
-        unsigned segmentLength = std::round(width/2.0);
+        unsigned segmentLength = std::round(width/(2.0*minLength))*minLength;
         if (isVertical(level)) {
-                segmentLength = std::round(height/2.0);
+                segmentLength = std::round(height/(2.0*minLength))*minLength;
         }
         
         LevelTopology topology(segmentLength);
@@ -212,7 +216,7 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSle
         unsigned minDelay    = std::numeric_limits<unsigned>::max();
         unsigned minBufKey   = std::numeric_limits<unsigned>::max();
         unsigned minBufDelay = std::numeric_limits<unsigned>::max();
-        
+      
         for (unsigned load = 1; load <= _techChar->getMaxCapacitance(); ++load) {
                 for (unsigned outSlew = 1; outSlew <= _techChar->getMaxSlew(); ++outSlew) {
                         _techChar->forEachWireSegment(length, load, outSlew,
