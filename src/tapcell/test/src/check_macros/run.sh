@@ -53,7 +53,7 @@ cp $testdir/src/check_macros/insertTap.tcl $testdir/src/check_macros/run.tcl
 sed -i s#_LEF_#$lefFile#g $testdir/src/check_macros/run.tcl
 sed -i s#_DEF_#$defFile#g $testdir/src/check_macros/run.tcl
 
-$binary < run.tcl > test.log 2>&1
+$binary -no-init < run.tcl > test.log 2>&1
 
 obs_report=$(grep -e '---- Macro blocks found:' ./test.log)
 
@@ -61,5 +61,6 @@ if grep -q -e "$obs_report" golden.macros
 then
 	exit $GREEN
 else
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_macros/test.log and Check $testdir/src/check_macros/golden.macros"
 	exit $RED
 fi

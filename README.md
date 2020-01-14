@@ -256,6 +256,33 @@ set_output_delay -clock clk 0 out
 report_checks
 ```
 
+#### Tapcell
+
+Tapcell and endcap insertion.
+
+```
+tapcell -tapcell_master <tapcell_master>
+        -endcap_master <endcap_master>
+        -endcap_cpp <endcap_cpp>
+        -distance <dist>
+        -halo_width_x <halo_x>
+        -halo_width_y <halo_y>
+        -tap_nwin2_master <tap_nwin2_master>
+        -tap_nwin3_master <tap_nwin3_master>
+        -tap_nwout2_master <tap_nwout2_master>
+        -tap_nwout3_master <tap_nwout3_master>
+        -tap_nwintie_master <tap_nwintie_master>
+        -tap_nwouttie_master <tap_nwouttie_master>
+        -cnrcap_nwin_master <cnrcap_nwin_master>
+        -cnrcap_nwout_master <cnrcap_nwout_master>
+        -incnrcap_nwin_master <incnrcap_nwin_master>
+        -incnrcap_nwout_master <incnrcap_nwout_master>
+        -tbtie_cpp <tbtie_cpp>
+        -no_cell_at_top_bottom
+        -add_boundary_cell
+```
+You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scripts```
+
 #### Global Placement
 
 RePlAce global placement.
@@ -302,17 +329,30 @@ Generate routing guides given a placed design.
 
 ```
 fastroute -output_file out_file
-          -capacity_adjustment cap_adjust
-          -min_routing_layer min_layer
-          -max_routing_layer max_layer
-          -unidirectional_route unidir_route
+          -capacity_adjustment <cap_adjust>
+          -min_routing_layer <min_layer>
+          -max_routing_layer <max_layer>
+          -pitches_in_tile <pitches>
+          -unidirectional_route
+          -clock_net_routing
 ```
 
 Options description:
-- **capacity_adjustment**: Global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
-- **min_routing_layer**: Minimum routing layer (e.g.: -min_routing_layer *2*)
-- **max_routing_layer** Maximum routing layer (e.g.: max_routing_layer *9*)
-- **-unidirectional_route** Unidirectional route (e.g.: -unidirectional_route *true*)
+- **capacity_adjustment**: Set global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
+- **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
+- **max_routing_layer**: Set maximum routing layer (e.g.: max_routing_layer *9*)
+- **pitches_in_tile**: Set the number of pitches inside a GCell
+- **unidirectional_route**: Activate unidirectional route *(flag)*
+- **clock_net_routing**: Activate clock net routing *(flag)*
 
-###### NOTE 1: if you set unidirectionalRoute as "true", the minimum routing layer will be assigned as "2" automatically
+Independent commands:
+```
+fr_add_layer_adjustment <layer> <reductionPercentage>
+fr_add_region_adjustment <minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>
+```
+- **fr_add_layer_adjustment**: Applies a percentage reduction over all edges of a specific layer
+- **fr_add_region_adjustment**: Applies a percentage reduction over all edges of a specific region
+
+###### NOTE 1: if you use the flag *unidirectionalRoute*, the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
+###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated

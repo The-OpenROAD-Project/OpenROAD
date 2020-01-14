@@ -53,7 +53,7 @@ cp $testdir/src/check_cut_rows/insertTap.tcl $testdir/src/check_cut_rows/run.tcl
 sed -i s#_LEF_#$lefFile#g $testdir/src/check_cut_rows/run.tcl
 sed -i s#_DEF_#$defFile#g $testdir/src/check_cut_rows/run.tcl
 
-$binary < run.tcl > test.log 2>&1
+$binary -no-init < run.tcl > test.log 2>&1
 
 obs_report=$(grep -e '---- #Cut rows:' ./test.log)
 
@@ -61,5 +61,6 @@ if grep -q -e "$obs_report" golden.rows
 then
 	exit $GREEN
 else
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_cut_rows/test.log and Check $testdir/src/check_cut_rows/golden.rows"
 	exit $RED
 fi
