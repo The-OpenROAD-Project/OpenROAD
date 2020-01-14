@@ -1,4 +1,3 @@
-
 ################################################################################
 ## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
 ##          (Advisor: Ricardo Reis)
@@ -35,64 +34,11 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-rename puts _puts
+testsdir=$1
+srcdir="$testsdir/src"
 
-proc _err {s {n 1}} {
-        _puts stderr "ERROR: $s"
-        exit $n
-}
-
-proc _warn {s} {
-        _puts "WARNING: $s"
-}
-
-proc _debug {s {n 1}} {
-        global debugLevel
-        if {$n <= $debugLevel} {
-                _puts "DEBUG: $s"
-        }
-}
-
-proc _info {s {n 0}} {
-        global infoLevel
-        if {$n <= $infoLevel} {
-                _puts "INFO: $s"
-        }
-}
-
-proc _infoN {s} {
-        _puts -nonewline "INFO: $s"
-}
-
-proc runTapcell {testName testDir inputDir binFile outLog} {
-        set lefFile "${inputDir}/${testName}.lef"
-        set defFile "${inputDir}/${testName}.def"
-
-        exec cp $testDir/insertTap.tcl $testDir/$testName.tcl
-        exec sed -i s#_LEF_#$lefFile#g $testDir/$testName.tcl
-        exec sed -i s#_DEF_#$defFile#g $testDir/$testName.tcl
-        exec sed -i s#_GUIDE_#$testDir/$testName.guide#g $testDir/$testName.tcl
-        catch {exec $binFile < $testDir/$testName.tcl > $outLog}
-}
-
-# proc Main {} {
-
-set base_dir [pwd]
-_puts $base_dir
-set tests_dir "${base_dir}/src/tapcell/test"
-set src_dir "${tests_dir}/src"
-set inputs_dir "${tests_dir}/input"
-
-_puts "Start unit tests..."
-
-proc unit_tests {{dir}} {
-        set subdirs [glob -dir $dir *]
-
-        foreach subdir [split $subdirs] {
-                source ${subdir}/run.tcl
-        }
-}
-
-unit_tests $src_dir
-
-# }
+for subdir in $srcdir/*;
+do
+    rm -f ${subdir}/test.log
+    rm -f ${subdir}/run.tcl
+done
