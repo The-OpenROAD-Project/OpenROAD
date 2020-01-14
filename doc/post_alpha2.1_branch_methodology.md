@@ -13,7 +13,7 @@ The top level openroad app and all submodules which it depends on will develop i
 Submodule's may use the master branch for repo specific externally facing releases not tied to the top level openroad app. This would also be a branch for any applications which are maintaining a standalone application or servicing other non-openroad needs. It is recommended that for code needed for papers that a branch is made for each paper so that there is flexibility to change the master branch as needed.
 
 **External Modules:**
-The "external" modules like magic, OpenSTA, eigen, flute3 point to master to the master branch of those repo's.
+The "external" modules like magic, OpenSTA, eigen, flute3 point to the master branch of those repo's.
 
 January 2020
 Tom Spyrou
