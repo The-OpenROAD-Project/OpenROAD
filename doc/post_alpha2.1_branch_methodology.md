@@ -1,6 +1,6 @@
 **<span style="text-decoration:underline;">Openroad project branching methodology post alpha2.1</span>**
 
-**Motivation : **
+**Motivation :**
 
 Alpha2.1 has completed and we are back into a normal development cycle. With the new openroad app, some of the procedures we had put in place were poorly specified and a bit cumbersome. The goal of this document is to specify clearly an efficient branching methodology for the top level openroad app and also the submodules that it depends on. This methodology is efficient for developers and still allows us to maintain a stable externally facing branch.
 
