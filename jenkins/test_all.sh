@@ -6,8 +6,9 @@ src/resizer/test/regression
 src/opendp/test/regression
 src/TritonMacroPlace/test/regression
 
-# fails every test
-#src/TritonCTS/tests/run_all.sh ./build/src/openroad ./src/TritonCTS/tests
+# these still use the wrong directory and script name
+src/TritonCTS/tests/run_all.sh
+src/ioPlacer/tests/run_all.sh
 
 # hangs indefinitely
 #pushd src/replace/test && python3 regression.py run openroad && popd
@@ -15,5 +16,4 @@ src/TritonMacroPlace/test/regression
 # errors: sed: 1: "/Users/cherry/sta/openr ...": command c expects \ followed by text
 #cp etc/PO* . && tclsh ./src/FastRoute/tests/run_all.tcl
 
-# errors; readlink: illegal option -- f
-#src/ioPlacer/tests/run_all.sh ./build/src/openroad ./src/ioPlacer/tests/
+
