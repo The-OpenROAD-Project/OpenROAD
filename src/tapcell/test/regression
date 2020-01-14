@@ -86,9 +86,9 @@ done
 echo ""
 echo "Tapcell tests finished!"
 
-sh $testdir/clean_all.sh $testdir
-
 if [ $failed -gt 0 ]
 then
 	exit 1
 fi
+
+sh $testdir/clean_all.sh $testdir

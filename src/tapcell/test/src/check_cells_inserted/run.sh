@@ -64,5 +64,6 @@ if grep -q -e "$obs_report0" golden.cells && grep -q -e "$obs_report1" golden.ce
 then
 	exit $GREEN
 else
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_cells_inserted/test.log and Check $testdir/src/check_cells_inserted/golden.cells"
 	exit $RED
 fi
