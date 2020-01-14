@@ -153,6 +153,8 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                 inputSlew = previousLevel.getOutputSlew();
         }
 
+        const unsigned SLEW_THRESHOLD = _parms->getMaxSlew();
+        const unsigned INIT_TOLERANCE = 1;
         unsigned currLength = 0;
         for (unsigned charSegLength = _techChar->getMaxSegmentLength(); charSegLength >= 1; --charSegLength) {
                 unsigned numWires = (segmentLength - currLength) / charSegLength;
@@ -162,10 +164,11 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                 }
 
                 currLength += numWires * charSegLength;
-
+                
                 for (unsigned wireCount = 0; wireCount < numWires; ++wireCount) {
                         unsigned outCap = 0, outSlew = 0;
-                        unsigned key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 4, 1, outSlew, outCap);
+                        unsigned key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                              SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap);
                         std::cout << "    Key: " << key << " outSlew: " << outSlew << " outCap: " << outCap 
                                   << " length: " << charSegLength << "\n";
                         inputCap = std::max(outCap, _minInputCap);

@@ -43,6 +43,8 @@
 #ifndef CHARACTERIZATION_H
 #define CHARACTERIZATION_H
 
+#include "ParametersForCTS.h"
+
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -112,7 +114,20 @@ public:
         typedef uint32_t Key;
         static const unsigned NUM_BITS_PER_FIELD = 10;
         static const unsigned MAX_NORMALIZED_VAL = 1023;
+        static const unsigned LENGTH_UNIT_MICRON = 5;
 
+public:
+        Characterization(const ParametersForCTS& parms) {
+                initLengthUnits(parms.getWireSegmentUnit(),
+                                parms.getDbUnits());
+        }
+        
+        void initLengthUnits(unsigned charLengthUnitInMicron, unsigned dbUnit) {
+               _lengthUnit = LENGTH_UNIT_MICRON * dbUnit;
+               _lengthUnitRatio = _charLengthUnit / _lengthUnit; 
+        }
+
+public:
         void parseLut(const std::string& file);
         void parseSolList(const std::string& file);
         void write(const std::string& file) const;
@@ -121,40 +136,24 @@ public:
         void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
         
         void forEachWireSegment(const std::function<void(unsigned, const WireSegment&)> func) const;
-        void forEachWireSegment(uint8_t length, uint8_t load, uint8_t outputSlew, 
+        
+        void forEachWireSegment(uint8_t length, 
+                                uint8_t load, 
+                                uint8_t outputSlew, 
                                 const std::function<void(unsigned, const WireSegment&)> func) const;
 
+        WireSegment& createWireSegment(uint8_t length, 
+                                       uint8_t load, 
+                                       uint8_t outputSlew,
+                                       double power, 
+                                       unsigned delay, 
+                                       uint8_t inputCap,
+                                       uint8_t inputSlew);
 
-        WireSegment& createWireSegment(uint8_t length, uint8_t load, 
-                                       uint8_t outputSlew, double power, 
-                                       unsigned delay, uint8_t inputCap,
-                                       uint8_t inputSlew) {
-                _wireSegments.emplace_back(length, load, outputSlew, power, 
-                                           delay, inputCap, inputSlew);
-                
-                unsigned segmentIdx = _wireSegments.size() - 1;
-                unsigned key = computeKey(length, load, outputSlew);
-
-                if (_keyToWireSegments.find(key) == _keyToWireSegments.end()) {
-                        _keyToWireSegments[key] = std::vector<unsigned>();        
-                }              
-                
-                
-                _keyToWireSegments[key].push_back(segmentIdx);
-                
-                return _wireSegments.back(); 
-        }
-
-        const WireSegment& getWireSegment(unsigned idx) const {
-                return _wireSegments[idx];
-        }
-
-        void setWireSegmentUnit(unsigned unit) { _wireSegmentUnit = unit; }
-        unsigned getWireSegmentUnit() const { return _wireSegmentUnit; }
+        const WireSegment& getWireSegment(unsigned idx) const { return _wireSegments[idx]; }
         unsigned getMaxSegmentLength() const { return _maxSegmentLength; }
         unsigned getMaxCapacitance() const { return _maxCapacitance; }
         unsigned getMaxSlew() const { return _maxSlew; }
-
         void setActualMinInputCap(unsigned cap) { _actualMinInputCap = cap; }
         unsigned getActualMinInputCap() const { return _actualMinInputCap; }
 
@@ -166,20 +165,31 @@ public:
                 return length | (load << NUM_BITS_PER_FIELD) | 
                        (outputSlew << 2 * NUM_BITS_PER_FIELD); 
         }
+
 protected:
-        
-        unsigned _wireSegmentUnit   = 0;              
-        unsigned _minSegmentLength  = 0;
-        unsigned _maxSegmentLength  = 0;
-        unsigned _minCapacitance    = 0;
-        unsigned _maxCapacitance    = 0;
-        unsigned _minSlew           = 0;
-        unsigned _maxSlew           = 0;
-        unsigned _actualMinInputCap = 0;
+        void reportCharacterizationBounds() const;
+        void checkCharacterizationBounds() const;
+
+        unsigned toInternalLengthUnit(unsigned length) {
+              return length * _lengthUnitRatio;  
+        }
+
+        unsigned _lengthUnit         = 0;
+        unsigned _charLengthUnit     = 0;
+        unsigned _lengthUnitRatio    = 0;
+
+        unsigned _minSegmentLength   = 0;
+        unsigned _maxSegmentLength   = 0;
+        unsigned _minCapacitance     = 0;
+        unsigned _maxCapacitance     = 0;
+        unsigned _minSlew            = 0;
+        unsigned _maxSlew            = 0;
+
+        unsigned _actualMinInputCap  = 0;
         unsigned _actualMinInputSlew = 0;
+
         std::vector<WireSegment> _wireSegments;
         std::unordered_map<Key, std::vector<unsigned>> _keyToWireSegments;
-
 };
 
 }

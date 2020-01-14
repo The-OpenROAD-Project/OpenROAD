@@ -57,11 +57,12 @@ public:
                 _solListFile     = "";
                 _clockNets       = "";
                 _rootBuffer      = "";
-                _numSinkRegions  = -1;
                 _dbUnits         = -1;
                 _wireSegmentUnit = 0;
                 _dbId            = 0;
                 _plotSolution    = false;
+                _maxSlew         = 4;
+                _maxNumLeafSinks = 20;
         }
 
         void setBlockName(const std::string& blockName) { _blockName = blockName; }
@@ -74,8 +75,6 @@ public:
         std::string getClockNets() const { return _clockNets; }
         void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
         std::string getRootBuffer() const { return  _rootBuffer; }
-        void setNumSinkRegions(unsigned numSinkRegions) { _numSinkRegions = numSinkRegions; }
-        unsigned getNumSinkRegions() const { return _numSinkRegions; }
         void setDbUnits(DBU units) { _dbUnits = units; }
         DBU getDbUnits() const { return _dbUnits; }
         void setWireSegmentUnit(unsigned wireSegmentUnit) { _wireSegmentUnit = wireSegmentUnit; }
@@ -84,6 +83,10 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
+        void setNumLeafSinks(unsigned numSinks) { _maxNumLeafSinks = numSinks; }
+        unsigned getNumLeafSinks() const { return _maxNumLeafSinks; }        
+        void setMaxSlew(unsigned slew) { _maxSlew = slew; }
+        unsigned getMaxSlew() const { return _maxSlew; }
 
 private:
         std::string _blockName;
@@ -96,6 +99,8 @@ private:
         unsigned    _wireSegmentUnit;
         unsigned    _dbId;
         bool        _plotSolution;
+        unsigned    _maxNumLeafSinks;
+        unsigned    _maxSlew;
 };
 
 }

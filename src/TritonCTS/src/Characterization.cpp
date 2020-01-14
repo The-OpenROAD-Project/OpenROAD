@@ -64,25 +64,10 @@ void Characterization::parseLut(const std::string& file) {
                       >> _maxCapacitance >> _minSlew >> _maxSlew)) {
                 std::cout << "    [ERROR] Problem reading the LUT file\n";                 
         }
-
-        std::cout << std::setw(12) << "Min. len" << std::setw(12) << "Max. len" 
-                  << std::setw(12) << "Min. cap"  << std::setw(12) << "Max. cap"
-                  << std::setw(12) << "Min. slew" << std::setw(12) << "Max. slew" << "\n"; 
         
-        std::cout << std::setw(12) << _minSegmentLength << std::setw(12) << _maxSegmentLength 
-                  << std::setw(12) << _minCapacitance  << std::setw(12) << _maxCapacitance
-                  << std::setw(12) << _minSlew << std::setw(12) << _maxSlew << "\n";
+        reportCharacterizationBounds();
+        checkCharacterizationBounds();
 
-        if (_minSegmentLength > MAX_NORMALIZED_VAL || _maxSegmentLength > MAX_NORMALIZED_VAL ||
-            _minCapacitance > MAX_NORMALIZED_VAL || _maxCapacitance > MAX_NORMALIZED_VAL ||
-            _minSlew > MAX_NORMALIZED_VAL || _maxSlew > MAX_NORMALIZED_VAL) {
-               std::cout << "    [ERROR] Normalized values in the LUT should be in the range ";
-               std::cout << "[1, " << MAX_NORMALIZED_VAL << "]\n";
-               std::cout << "    Check the table above to see the normalization ranges and check ";
-               std::cout << "your characterization configuration.\n";
-               std::exit(1);
-        } 
-                
         std::string line;
         std::getline(lutFile, line); // Ignore first line
         unsigned noSlewDegradationCount = 0;
@@ -118,8 +103,9 @@ void Characterization::parseLut(const std::string& file) {
         }
 
         if (noSlewDegradationCount) {
-                std::cout << "    [WARNING] " << noSlewDegradationCount << " wires are pure wire and no slew degration.\n" 
-                          << "              TritonCTS forced slew degradation on these wires.\n";
+                std::cout << "    [WARNING] " << noSlewDegradationCount 
+                          << " wires are pure wire and no slew degration.\n" 
+                          << "    TritonCTS forced slew degradation on these wires.\n";
         }
 
         std::cout << "    Num wire segments: " << _wireSegments.size() << "\n";
@@ -127,6 +113,49 @@ void Characterization::parseLut(const std::string& file) {
                   << _keyToWireSegments.size() << "\n";
 
         std::cout << "    Actual min input cap: " << _actualMinInputCap << "\n";
+}
+
+inline
+void Characterization::reportCharacterizationBounds() const {
+        std::cout << std::setw(12) << "Min. len" << std::setw(12) << "Max. len" 
+                  << std::setw(12) << "Min. cap"  << std::setw(12) << "Max. cap"
+                  << std::setw(12) << "Min. slew" << std::setw(12) << "Max. slew" << "\n"; 
+        
+        std::cout << std::setw(12) << _minSegmentLength << std::setw(12) << _maxSegmentLength 
+                  << std::setw(12) << _minCapacitance  << std::setw(12) << _maxCapacitance
+                  << std::setw(12) << _minSlew << std::setw(12) << _maxSlew << "\n";
+}
+
+inline
+void Characterization::checkCharacterizationBounds() const {
+        if (_minSegmentLength > MAX_NORMALIZED_VAL || _maxSegmentLength > MAX_NORMALIZED_VAL ||
+            _minCapacitance > MAX_NORMALIZED_VAL || _maxCapacitance > MAX_NORMALIZED_VAL ||
+            _minSlew > MAX_NORMALIZED_VAL || _maxSlew > MAX_NORMALIZED_VAL) {
+               std::cout << "    [ERROR] Normalized values in the LUT should be in the range ";
+               std::cout << "[1, " << MAX_NORMALIZED_VAL << "]\n";
+               std::cout << "    Check the table above to see the normalization ranges and check ";
+               std::cout << "your characterization configuration.\n";
+               std::exit(1);
+        } 
+}
+
+inline
+WireSegment& Characterization::createWireSegment(uint8_t length, uint8_t load, uint8_t outputSlew, 
+                                                 double power, unsigned delay, uint8_t inputCap, 
+                                                 uint8_t inputSlew) {
+        _wireSegments.emplace_back(length, load, outputSlew, power, 
+                                   delay, inputCap, inputSlew);
+                
+        unsigned segmentIdx = _wireSegments.size() - 1;
+        unsigned key = computeKey(length, load, outputSlew);
+
+        if (_keyToWireSegments.find(key) == _keyToWireSegments.end()) {
+            _keyToWireSegments[key] = std::vector<unsigned>();        
+        }              
+                
+        _keyToWireSegments[key].push_back(segmentIdx);
+                
+        return _wireSegments.back(); 
 }
 
 void Characterization::parseSolList(const std::string& file) {

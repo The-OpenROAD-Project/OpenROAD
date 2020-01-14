@@ -56,6 +56,7 @@ namespace TritonCTS {
 class TritonCTSKernel {
 public:
         TritonCTSKernel() : _dbWrapper(_parms, *this),
+                            _characterization(_parms),
                             _staEngine(_parms) {}
 
         void runTritonCts();
