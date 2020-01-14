@@ -53,7 +53,7 @@ cp $testdir/src/check_cells_inserted/insertTap.tcl $testdir/src/check_cells_inse
 sed -i s#_LEF_#$lefFile#g $testdir/src/check_cells_inserted/run.tcl
 sed -i s#_DEF_#$defFile#g $testdir/src/check_cells_inserted/run.tcl
 
-$binary < run.tcl > test.log 2>&1
+$binary -no-init < run.tcl > test.log 2>&1
 
 obs_report0=$(grep -e '---- #Endcaps inserted:' ./test.log)
 obs_report1=$(grep -e '---- #Endcaps inserted:' ./test.log)
