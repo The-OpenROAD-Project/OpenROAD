@@ -61,5 +61,6 @@ if grep -q -e "$obs_report" golden.macros
 then
 	exit $GREEN
 else
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_macros/test.log and Check $testdir/src/check_macros/golden.macros"
 	exit $RED
 fi

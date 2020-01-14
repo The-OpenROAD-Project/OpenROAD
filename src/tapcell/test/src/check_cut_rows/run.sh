@@ -61,5 +61,6 @@ if grep -q -e "$obs_report" golden.rows
 then
 	exit $GREEN
 else
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_cut_rows/test.log and Check $testdir/src/check_cut_rows/golden.rows"
 	exit $RED
 fi
