@@ -14,3 +14,6 @@ Submodule's may use the master branch for repo specific externally facing releas
 
 **External Modules:**
 The "external" modules like magic, OpenSTA, eigen, flute3 point to master to the master branch of those repo's.
+
+January 2020
+Tom Spyrou
