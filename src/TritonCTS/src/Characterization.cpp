@@ -127,7 +127,7 @@ void Characterization::parse(const std::string& lutFile, const std::string solLi
 }
 
 void Characterization::initLengthUnits() {
-        _charLengthUnit = _parms->getWireSegmentUnit();
+        _charLengthUnit = _options->getWireSegmentUnit();
         _lengthUnit = LENGTH_UNIT_MICRON;
         _lengthUnitRatio = _charLengthUnit / _lengthUnit;
 }

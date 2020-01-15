@@ -52,7 +52,7 @@ namespace TritonCTS {
 
 void HTreeBuilder::initSinkRegion() {
         unsigned wireSegmentUnitInMicron = _techChar->getLengthUnit(); 
-        DBU dbUnits = _parms->getDbUnits();
+        DBU dbUnits = _options->getDbUnits();
         _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
         std::cout << " Wire segment unit: " << _wireSegmentUnit << " dbu ("
@@ -71,9 +71,9 @@ void HTreeBuilder::run() {
         std::cout << " Generating H-Tree topology for net " << _clockNet.getName() << "...\n";
         std::cout << "    Tot. number of sinks: " << _clockNet.getNumSinks() << "\n";
        
-        _clockTreeMaxDepth = _parms->getClockTreeMaxDepth();
+        _clockTreeMaxDepth = _options->getClockTreeMaxDepth();
         _minInputCap = _techChar->getActualMinInputCap();
-        _numMaxLeafSinks = _parms->getNumMaxLeafSinks();
+        _numMaxLeafSinks = _options->getNumMaxLeafSinks();
         _minLengthSinkRegion = _techChar->getMinSegmentLength() * 2;
 
         initSinkRegion();
@@ -87,7 +87,7 @@ void HTreeBuilder::run() {
 
                 stopCriterionFound = isSubRegionTooSmall(regionWidth, regionHeight);
                 if (stopCriterionFound) {
-                        if (_parms->isFakeLutEntriesEnabled()) {
+                        if (_options->isFakeLutEntriesEnabled()) {
                                 unsigned minIndex = 1;
                                 _techChar->createFakeEntries(_minLengthSinkRegion, minIndex);
                                 _minLengthSinkRegion = 1;
@@ -115,7 +115,7 @@ void HTreeBuilder::run() {
                 return;
         }
         
-        if (_parms->getPlotSolution()) {
+        if (_options->getPlotSolution()) {
                 plotSolution();
         }
         
@@ -166,7 +166,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                 inputSlew = previousLevel.getOutputSlew();
         }
 
-        const unsigned SLEW_THRESHOLD = _parms->getMaxSlew();
+        const unsigned SLEW_THRESHOLD = _options->getMaxSlew();
         const unsigned INIT_TOLERANCE = 1;
         unsigned currLength = 0;
         for (unsigned charSegLength = _techChar->getMaxSegmentLength(); charSegLength >= 1; --charSegLength) {
@@ -414,7 +414,7 @@ void HTreeBuilder::createClockSubNets() {
        
         DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
         DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
-        ClockInstance& rootBuffer = _clockNet.addClockBuffer("clkbuf_0", _parms->getRootBuffer(), 
+        ClockInstance& rootBuffer = _clockNet.addClockBuffer("clkbuf_0", _options->getRootBuffer(), 
                                                              centerX, centerY); 
         ClockNet::SubNet& rootClockSubNet = _clockNet.addSubNet("clknet_0");
         rootClockSubNet.addInstance(rootBuffer);
@@ -433,7 +433,7 @@ void HTreeBuilder::createClockSubNets() {
                                        _wireSegmentUnit);
                 builder.build();
                 if (_topologyForEachLevel.size() == 1) {
-                        builder.forceBufferInSegment(_parms->getRootBuffer());
+                        builder.forceBufferInSegment(_options->getRootBuffer());
                         
                 }
                 topLevelTopology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());                
@@ -460,7 +460,7 @@ void HTreeBuilder::createClockSubNets() {
                                                _wireSegmentUnit);
                         builder.build();
                         if (levelIdx == _topologyForEachLevel.size() - 1) {
-                                builder.forceBufferInSegment(_parms->getRootBuffer());
+                                builder.forceBufferInSegment(_options->getRootBuffer());
                         }
                         topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());                     
                 });
@@ -502,7 +502,7 @@ void HTreeBuilder::createSingleBufferClockNet() {
        
         DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
         DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
-        ClockInstance& rootBuffer = _clockNet.addClockBuffer("clkbuf_0", _parms->getRootBuffer(), 
+        ClockInstance& rootBuffer = _clockNet.addClockBuffer("clkbuf_0", _options->getRootBuffer(), 
                                                              centerX, centerY); 
         ClockNet::SubNet& clockSubNet = _clockNet.addSubNet("clknet_0");
         clockSubNet.addInstance(rootBuffer);

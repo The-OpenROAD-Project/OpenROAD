@@ -59,7 +59,7 @@ void TritonCTSKernel::importCharacterization() {
         std::cout << " *  Import characterization  *\n";
         std::cout << " *****************************\n";
        
-        _characterization.parse(_parms.getLutFile(), _parms.getSolListFile()); 
+        _characterization.parse(_options.getLutFile(), _options.getSolListFile()); 
 }
 
 void TritonCTSKernel::checkCharacterization() {
@@ -94,9 +94,9 @@ void TritonCTSKernel::findClockRoots() {
         std::cout << " *  Find clock roots  *\n";
         std::cout << " **********************\n";
         
-        if(_parms.getClockNets() != "") {
+        if(_options.getClockNets() != "") {
                 std::cout << " Running TritonCTS with user-specified clock roots: ";
-                std::cout << _parms.getClockNets() << "\n";
+                std::cout << _options.getClockNets() << "\n";
                 return;
         }
 

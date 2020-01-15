@@ -50,7 +50,7 @@
 #include <deque>
 
 #include "Util.h"
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 #include "Characterization.h"
 
 namespace TritonCTS {
@@ -177,15 +177,15 @@ private:
 
 class ClockTreeBuilder {
 public:
-        ClockTreeBuilder(ParametersForCTS& parms, ClockNet& net) : 
-                         _parms(&parms), _clockNet(net) {};
+        ClockTreeBuilder(CtsOptions& options, ClockNet& net) : 
+                         _options(&options), _clockNet(net) {};
         
         virtual void run() = 0;
         void setCharacterization(Characterization& techChar) { _techChar = &techChar; }
         const ClockNet& getClockNet() const { return _clockNet; }        
 
 protected:
-        ParametersForCTS* _parms = nullptr;
+        CtsOptions*       _options = nullptr;
         ClockNet          _clockNet;
         Characterization* _techChar = nullptr;
 };
@@ -194,8 +194,8 @@ protected:
 
 class GHTreeBuilder : public ClockTreeBuilder {
 public:
-        GHTreeBuilder(ParametersForCTS& parms, ClockNet& net) : 
-                      ClockTreeBuilder(parms, net) {};
+        GHTreeBuilder(CtsOptions& options, ClockNet& net) : 
+                      ClockTreeBuilder(options, net) {};
         
         void run();
 private:

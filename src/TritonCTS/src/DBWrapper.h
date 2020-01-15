@@ -43,7 +43,7 @@
 #ifndef DBWRAPPER_H
 #define DBWRAPPER_H
 
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 #include "ClockTreeBuilder.h"
 
 #include <string>
@@ -64,7 +64,7 @@ class TritonCTSKernel;
 
 class DBWrapper {
 public:
-        DBWrapper(ParametersForCTS& parms,
+        DBWrapper(CtsOptions& options,
                   TritonCTSKernel& kernel);
 
         bool masterExists(const std::string& master) const;
@@ -76,7 +76,7 @@ private:
         odb::dbDatabase*  _db     = nullptr;
         odb::dbChip*      _chip   = nullptr;
         odb::dbBlock*     _block  = nullptr;
-        ParametersForCTS* _parms  = nullptr;
+        CtsOptions* _options  = nullptr;
         TritonCTSKernel*  _kernel = nullptr;         
 
         void parseClockNetNames(std::vector<std::string>& clockNetNames) const;

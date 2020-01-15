@@ -43,7 +43,7 @@
 #ifndef CHARACTERIZATION_H
 #define CHARACTERIZATION_H
 
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 
 #include <iostream>
 #include <vector>
@@ -119,7 +119,7 @@ public:
         static const unsigned LENGTH_UNIT_MICRON = 10;
 
 public:
-        Characterization(ParametersForCTS& parms) : _parms(&parms) {}
+        Characterization(CtsOptions& options) : _options(&options) {}
         
         void parse(const std::string& lutFile, const std::string solListFile);
         void write(const std::string& file) const;
@@ -192,7 +192,7 @@ protected:
         std::vector<WireSegment> _wireSegments;
         std::unordered_map<Key, std::vector<unsigned>> _keyToWireSegments;
 
-        ParametersForCTS* _parms;
+        CtsOptions* _options;
 };
 
 }

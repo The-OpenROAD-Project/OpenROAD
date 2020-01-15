@@ -44,7 +44,7 @@
 #define HTREEBUILDER_H
 
 #include "ClockTreeBuilder.h"
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 #include "Util.h"
 
 #include <cmath>
@@ -165,8 +165,8 @@ class HTreeBuilder : public ClockTreeBuilder {
         };
 
 public:
-        HTreeBuilder(ParametersForCTS& parms, ClockNet& net) : 
-                     ClockTreeBuilder(parms, net) {};
+        HTreeBuilder(CtsOptions& options, ClockNet& net) : 
+                     ClockTreeBuilder(options, net) {};
         
         void run();
 

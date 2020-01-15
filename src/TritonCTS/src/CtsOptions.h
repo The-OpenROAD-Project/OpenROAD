@@ -49,9 +49,9 @@
 
 namespace TritonCTS {
 
-class ParametersForCTS {
+class CtsOptions {
 public:
-        ParametersForCTS() = default;
+        CtsOptions() = default;
        
         void setBlockName(const std::string& blockName) { _blockName = blockName; }
         std::string getBlockName() const { return _blockName; } 
