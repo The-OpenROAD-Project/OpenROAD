@@ -206,6 +206,10 @@ void DBWrapper::writeClockNetsToDb(const ClockNet& clockNet) {
                                 odb::dbITerm::connect(inputPin, clkSubNet); 
                         });
                 });       
+        
+        if (_options->writeOnlyClockNets()) {
+                removeNonClockNets();
+        }
 }
 
 void DBWrapper::disconnectAllSinksFromNet(std::string netName) {
@@ -246,5 +250,13 @@ odb::dbITerm* DBWrapper::getFirstInput(odb::dbInst* inst) const {
 bool DBWrapper::masterExists(const std::string& master) const {
         return _db->findMaster(master.c_str()); 
 };
+
+void DBWrapper::removeNonClockNets() {
+        for (odb::dbNet* net : _block->getNets()) {
+                if (net->getSigType() != odb::dbSigType::CLOCK) {
+                        odb::dbNet::destroy(net);
+                } 
+        } 
+}
 
 }

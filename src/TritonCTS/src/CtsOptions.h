@@ -81,22 +81,25 @@ public:
         unsigned isFakeLutEntriesEnabled() const { return _enableFakeLutEntries; }
         void setForceBuffersOnLeafLevel(bool force) { _forceBuffersOnLeafLevel = force; }
         bool forceBuffersOnLeafLevel() const { return _forceBuffersOnLeafLevel; }
+        void setWriteOnlyClockNets(bool writeOnlyClk) { _writeOnlyClockNets = writeOnlyClk; }
+        bool writeOnlyClockNets() const { return _writeOnlyClockNets; }
                 
 private:
-        std::string _blockName         = "";
-        std::string _lutFile           = "";
-        std::string _solListFile       = "";
-        std::string _clockNets         = "";
-        std::string _rootBuffer        = "";
-        DBU         _dbUnits           = -1;
-        unsigned    _wireSegmentUnit   = 0;
-        unsigned    _dbId              = 0;
-        bool        _plotSolution      = false;
-        unsigned    _numMaxLeafSinks   = 15;
-        unsigned    _maxSlew           = 4;
-        unsigned    _clockTreeMaxDepth = 100;
-        bool        _enableFakeLutEntries = false;
+        std::string _blockName               = "";
+        std::string _lutFile                 = "";
+        std::string _solListFile             = "";
+        std::string _clockNets               = "";
+        std::string _rootBuffer              = "";
+        DBU         _dbUnits                 = -1;
+        unsigned    _wireSegmentUnit         = 0;
+        unsigned    _dbId                    = 0;
+        bool        _plotSolution            = false;
+        unsigned    _numMaxLeafSinks         = 15;
+        unsigned    _maxSlew                 = 4;
+        unsigned    _clockTreeMaxDepth       = 100;
+        bool        _enableFakeLutEntries    = false;
         bool        _forceBuffersOnLeafLevel = false;
+        bool        _writeOnlyClockNets      = false;
 };
 
 }
