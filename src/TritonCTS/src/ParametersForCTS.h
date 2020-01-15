@@ -79,6 +79,8 @@ public:
         unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
         void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
         unsigned isFakeLutEntriesEnabled() const { return _enableFakeLutEntries; }
+        void setForceBuffersOnLeafLevel(bool force) { _forceBuffersOnLeafLevel = force; }
+        bool forceBuffersOnLeafLevel() const { return _forceBuffersOnLeafLevel; }
                 
 private:
         std::string _blockName         = "";
@@ -94,6 +96,7 @@ private:
         unsigned    _maxSlew           = 4;
         unsigned    _clockTreeMaxDepth = 100;
         bool        _enableFakeLutEntries = false;
+        bool        _forceBuffersOnLeafLevel = false;
 };
 
 }

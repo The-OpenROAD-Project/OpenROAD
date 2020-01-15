@@ -147,11 +147,13 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                   << "\n";
         std::cout << "    # sinks per sub-region: " << numSinksPerSubRegion << "\n";        
         std::cout << "    Sub-region size: " << width << " X " << height << "\n";      
-        
-        unsigned segmentLength = std::round(width/(2.0*_minLengthSinkRegion))*_minLengthSinkRegion;
+       
+        unsigned minLength = _minLengthSinkRegion / 2;
+        unsigned segmentLength = std::round(width/(2.0*minLength))*minLength;
         if (isVertical(level)) {
-                segmentLength = std::round(height/(2.0*_minLengthSinkRegion))*_minLengthSinkRegion;
+                segmentLength = std::round(height/(2.0*minLength))*minLength; 
         }
+        segmentLength = std::max<unsigned>(segmentLength, 1);        
         
         LevelTopology topology(segmentLength);
         
@@ -430,6 +432,10 @@ void HTreeBuilder::createClockSubNets() {
                                        *_techChar,
                                        _wireSegmentUnit);
                 builder.build();
+                if (_topologyForEachLevel.size() == 1) {
+                        builder.forceBufferInSegment(_parms->getRootBuffer());
+                        
+                }
                 topLevelTopology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());                
         });
         
@@ -453,6 +459,9 @@ void HTreeBuilder::createClockSubNets() {
                                                *_techChar,
                                                _wireSegmentUnit);
                         builder.build();
+                        if (levelIdx == _topologyForEachLevel.size() - 1) {
+                                builder.forceBufferInSegment(_parms->getRootBuffer());
+                        }
                         topology.setBranchDrivingSubNet(idx, *builder.getDrivingSubNet());                     
                 });
         }
@@ -567,7 +576,6 @@ void HTreeBuilder::plotSolution() {
 }
 
 void SegmentBuilder::build() {
-        //std::cout << _root << " " << _target << "\n";
         if (_root.getX() == _target.getX()) {
                 buildVerticalConnection();
         } else if (_root.getY() == _target.getY()) { 
@@ -583,7 +591,6 @@ void SegmentBuilder::buildVerticalConnection() {
         
         double x = _root.getX();
         
-        unsigned numBuffers = 0;
         double currLength = 0;        
         for (unsigned wire = 0; wire < _techCharWires.size(); ++wire) {
                 unsigned techCharWireIdx = _techCharWires[wire];
@@ -596,11 +603,11 @@ void SegmentBuilder::buildVerticalConnection() {
                         //std::cout << "B " << Point<double>(x, y) << " " 
                         //          << wireSegment.getBufferMaster(buffer) << "\n";
                         
-                        _clockNet->addClockBuffer(_instPrefix + std::to_string(numBuffers),
+                        _clockNet->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
                                                   wireSegment.getBufferMaster(buffer),
                                                   x * _techCharDistUnit,
                                                   y * _techCharDistUnit);
-                        ++numBuffers;
+                        ++_numBuffers;
                 }
         }
         //std::cout << "currLength: " << currLength << " length: " << length << "\n";
@@ -612,7 +619,6 @@ void SegmentBuilder::buildHorizontalConnection() {
         
         double y = _root.getY();
         
-        unsigned numBuffers = 0;
         double currLength = 0;        
         for (unsigned wire = 0; wire < _techCharWires.size(); ++wire) {
                 unsigned techCharWireIdx = _techCharWires[wire];
@@ -625,11 +631,11 @@ void SegmentBuilder::buildHorizontalConnection() {
                         //std::cout << "B " << Point<double>(x, y) << " " 
                         //          << wireSegment.getBufferMaster(buffer) << "\n";
 
-                        _clockNet->addClockBuffer(_instPrefix + std::to_string(numBuffers),
+                        _clockNet->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
                                                   wireSegment.getBufferMaster(buffer),
                                                   x * _techCharDistUnit,
                                                   y * _techCharDistUnit);
-                        ++numBuffers;
+                        ++_numBuffers;
                 }
         }
         //std::cout << "currLength: " << currLength << " length: " << length << "\n";
@@ -644,7 +650,6 @@ void SegmentBuilder::buildLShapeConnection() {
         bool isLowToHiY = _root.getY() < _target.getY();
 
         //std::cout << "      Root: " << _root << " target: " << _target << "\n";
-        unsigned numBuffers = 0;
         double currLength = 0.0;
         for (unsigned wire = 0; wire < _techCharWires.size(); ++wire) {
                 unsigned techCharWireIdx = _techCharWires[wire];
@@ -667,18 +672,34 @@ void SegmentBuilder::buildLShapeConnection() {
                         }
 
                         ClockInstance& newBuffer = 
-                                _clockNet->addClockBuffer(_instPrefix + std::to_string(numBuffers),
+                                _clockNet->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
                                                           wireSegment.getBufferMaster(buffer),
                                                           x * _techCharDistUnit,
                                                           y * _techCharDistUnit);
                         _drivingSubNet->addInstance(newBuffer);
-                        _drivingSubNet = &_clockNet->addSubNet(_netPrefix + std::to_string(numBuffers));
+                        _drivingSubNet = &_clockNet->addSubNet(_netPrefix + std::to_string(_numBuffers));
                         _drivingSubNet->addInstance(newBuffer);
                         
                         //std::cout << "      x: " << x << " y: " << y << "\n";
-                        ++numBuffers;
+                        ++_numBuffers;
                 }
         }
+}
+
+void SegmentBuilder::forceBufferInSegment(std::string master) {
+        if (_numBuffers != 0) {
+                return;
+        }
+
+        unsigned x = _target.getX();
+        unsigned y = _target.getY();
+        ClockInstance& newBuffer = _clockNet->addClockBuffer(_instPrefix + "_f",
+                                                             master,
+                                                             x * _techCharDistUnit,
+                                                             y * _techCharDistUnit);
+        _drivingSubNet->addInstance(newBuffer);
+        _drivingSubNet = &_clockNet->addSubNet(_netPrefix + "_leaf");
+        _drivingSubNet->addInstance(newBuffer);
 }
 
 }

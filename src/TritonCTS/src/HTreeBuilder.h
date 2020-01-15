@@ -72,7 +72,9 @@ public:
                        _drivingSubNet(&drivingSubNet),
                        _techChar(&techChar),
                        _techCharDistUnit(techCharDistUnit) {}
+
         void build();
+        void forceBufferInSegment(std::string master);
         ClockNet::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
 protected:
@@ -85,6 +87,8 @@ protected:
         ClockNet::SubNet*     _drivingSubNet;
         Characterization*     _techChar;
         unsigned              _techCharDistUnit;
+        bool                  _forceBuffer;
+        unsigned              _numBuffers = 0;
 
         void buildVerticalConnection();
         void buildHorizontalConnection();
