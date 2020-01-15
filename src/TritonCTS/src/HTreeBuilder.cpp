@@ -85,19 +85,20 @@ void HTreeBuilder::run() {
                 double regionWidth = 0.0, regionHeight = 0.0;
                 computeSubRegionSize(level, regionWidth, regionHeight);
 
-                std::cout << " Level " << level << "\n";
-                std::cout << "    Direction: " << ((isVertical(level)) ? ("Vertical") : ("Horizontal")) 
-                          << "\n";
-                std::cout << "    # sinks per sub-region: " << numSinksPerSubRegion << "\n";        
-                std::cout << "    Sub-region size: " << regionWidth << " X " << regionHeight << "\n";      
-
                 stopCriterionFound = isSubRegionTooSmall(regionWidth, regionHeight);
                 if (stopCriterionFound) {
-                        std::cout << " Stop criterion found. Min lenght of sink region is (" 
-                                  << _minLengthSinkRegion << ")\n";
-                        break;
+                        if (_parms->isFakeLutEntriesEnabled()) {
+                                unsigned minIndex = 1;
+                                _techChar->createFakeEntries(_minLengthSinkRegion, minIndex);
+                                _minLengthSinkRegion = 1;
+                                stopCriterionFound = false;
+                        } else { 
+                                std::cout << " Stop criterion found. Min lenght of sink region is (" 
+                                          << _minLengthSinkRegion << ")\n";
+                                break;
+                        }
                 }       
-        
+                
                 computeLevelTopology(level, regionWidth, regionHeight);
                 
                 stopCriterionFound = isNumberOfSinksTooSmall(numSinksPerSubRegion);
@@ -106,6 +107,7 @@ void HTreeBuilder::run() {
                                   << "Max number of sinks is (" << _numMaxLeafSinks << ")\n";
                         break;
                 }
+                
         }
 
         if (_topologyForEachLevel.size() < 1) {
@@ -139,11 +141,16 @@ void HTreeBuilder::computeSubRegionSize(unsigned level, double& width, double& h
 }
 
 void HTreeBuilder::computeLevelTopology(unsigned level, double width, double height) {
-        unsigned minLength = _techChar->getMinSegmentLength();
-
-        unsigned segmentLength = std::round(width/(2.0*minLength))*minLength;
+        unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
+        std::cout << " Level " << level << "\n";
+        std::cout << "    Direction: " << ((isVertical(level)) ? ("Vertical") : ("Horizontal")) 
+                  << "\n";
+        std::cout << "    # sinks per sub-region: " << numSinksPerSubRegion << "\n";        
+        std::cout << "    Sub-region size: " << width << " X " << height << "\n";      
+        
+        unsigned segmentLength = std::round(width/(2.0*_minLengthSinkRegion))*_minLengthSinkRegion;
         if (isVertical(level)) {
-                segmentLength = std::round(height/(2.0*minLength))*minLength;
+                segmentLength = std::round(height/(2.0*_minLengthSinkRegion))*_minLengthSinkRegion;
         }
         
         LevelTopology topology(segmentLength);
@@ -168,7 +175,6 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                 }
 
                 currLength += numWires * charSegLength;
-                
                 for (unsigned wireCount = 0; wireCount < numWires; ++wireCount) {
                         unsigned outCap = 0, outSlew = 0;
                         unsigned key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 

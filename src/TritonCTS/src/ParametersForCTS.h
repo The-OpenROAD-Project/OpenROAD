@@ -76,8 +76,10 @@ public:
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
         unsigned getMaxSlew() const { return _maxSlew; }
         void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
-        unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; } 
-
+        unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
+        void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
+        unsigned isFakeLutEntriesEnabled() const { return _enableFakeLutEntries; }
+                
 private:
         std::string _blockName         = "";
         std::string _lutFile           = "";
@@ -88,9 +90,10 @@ private:
         unsigned    _wireSegmentUnit   = 0;
         unsigned    _dbId              = 0;
         bool        _plotSolution      = false;
-        unsigned    _numMaxLeafSinks   = 20;
+        unsigned    _numMaxLeafSinks   = 15;
         unsigned    _maxSlew           = 4;
         unsigned    _clockTreeMaxDepth = 100;
+        bool        _enableFakeLutEntries = false;
 };
 
 }

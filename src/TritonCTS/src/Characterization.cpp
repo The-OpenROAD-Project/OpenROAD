@@ -349,7 +349,7 @@ void Characterization::write(const std::string& filename) const {
 }
 
 void Characterization::createFakeEntries(unsigned length, unsigned fakeLength) {
-        std::cout << " Creating fake entries..\n";
+        std::cout << " [WARNING] Creating fake entries in the LUT.\n";
         for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
                 for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
                         forEachWireSegment(length, load, outSlew,
