@@ -173,8 +173,9 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                         unsigned outCap = 0, outSlew = 0;
                         unsigned key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
                                                               SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap);
-                        std::cout << "    Key: " << key << " outSlew: " << outSlew << " outCap: " << outCap 
-                                  << " length: " << charSegLength << "\n";
+                        
+                        _techChar->reportSegment(key);
+
                         inputCap = std::max(outCap, _minInputCap);
                         inputSlew = outSlew;
                         topology.addWireSegment(key); 

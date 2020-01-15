@@ -180,6 +180,7 @@ private:
                                         unsigned tolerance,
                                         unsigned &outputSlew,
                                         unsigned &outputCap) const;
+        void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();
         void initTopLevelSinks(std::vector<std::pair<float,float>>& sinkLocations);

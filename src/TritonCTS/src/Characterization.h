@@ -66,7 +66,7 @@ class WireSegment {
        uint8_t  _inputSlew;
        
        std::vector<double> _bufferLocations;
-       std::vector<std::string> _bufferCells;
+       std::vector<std::string> _bufferMasters;
        
 public: 
        WireSegment(uint8_t length, uint8_t load, uint8_t outputSlew,
@@ -81,7 +81,7 @@ public:
        }
        
        void addBufferMaster(std::string name) { 
-               _bufferCells.push_back(name);
+               _bufferMasters.push_back(name);
        }
        
        double   getPower() const { return _power; }
@@ -93,6 +93,8 @@ public:
        uint8_t  getOutputSlew() const { return _outputSlew; }
        bool     isBuffered() const { return _bufferLocations.size() > 0; }
        unsigned getNumBuffers() const { return _bufferLocations.size(); }
+       std::vector<double>& getBufferLocations() { return _bufferLocations; }
+       std::vector<std::string>& getBufferMasters() { return _bufferMasters; }
        
        double   getBufferLocation(unsigned idx) const {
                if (idx < 0 || idx >= _bufferLocations.size()) {
@@ -102,8 +104,8 @@ public:
        }
 
         std::string getBufferMaster(unsigned idx) const {
-               assert(idx >= 0 || idx < _bufferCells.size());
-               return _bufferCells[idx];
+               assert(idx >= 0 || idx < _bufferMasters.size());
+               return _bufferMasters[idx];
         }
 };
 
@@ -123,6 +125,7 @@ public:
         void write(const std::string& file) const;
         
         void report() const;
+        void reportSegment(unsigned key) const;
         void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
         
         void forEachWireSegment(const std::function<void(unsigned, const WireSegment&)> func) const;
@@ -149,6 +152,8 @@ public:
         void setActualMinInputCap(unsigned cap) { _actualMinInputCap = cap; }
         unsigned getActualMinInputCap() const { return _actualMinInputCap; }
         unsigned getLengthUnit() const { return _lengthUnit; }
+       
+        void createFakeEntries(unsigned length, unsigned fakeLength);
 
         unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const {
                 assert(length <= MAX_NORMALIZED_VAL && 

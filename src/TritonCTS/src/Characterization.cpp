@@ -348,4 +348,43 @@ void Characterization::write(const std::string& filename) const {
         file.close();
 }
 
+void Characterization::createFakeEntries(unsigned length, unsigned fakeLength) {
+        std::cout << " Creating fake entries..\n";
+        for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
+                for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
+                        forEachWireSegment(length, load, outSlew,
+                                [&] (unsigned key, const WireSegment& seg) {  
+                                        unsigned power = seg.getPower();
+                                        unsigned delay = seg.getDelay();
+                                        unsigned inputCap = seg.getInputCap();
+                                        unsigned inputSlew = seg.getInputSlew();
+
+                                        WireSegment& fakeSeg = createWireSegment(fakeLength,
+                                                                                 load, 
+                                                                                 outSlew,
+                                                                                 power,
+                                                                                 delay,
+                                                                                 inputCap,
+                                                                                 inputSlew
+                                                                                );
+
+                                        for (unsigned buf = 0; buf < seg.getNumBuffers(); ++buf) {
+                                                fakeSeg.addBuffer(seg.getBufferLocation(buf));
+                                                fakeSeg.addBufferMaster(seg.getBufferMaster(buf));
+                                        }                                   
+                                });
+                }
+        }
+}
+
+void Characterization::reportSegment(unsigned key) const {
+        const WireSegment& seg = getWireSegment(key);
+
+        std::cout << "    Key: "     << key 
+                  << " outSlew: "    << (unsigned) seg.getOutputSlew() 
+                  << " load: "       << (unsigned) seg.getLoad()
+                  << " length: "     << (unsigned) seg.getLength() 
+                  << " isBuffered: " << seg.isBuffered() << "\n";
+}
+
 }
