@@ -27,6 +27,43 @@ source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
 regression_main
+if {0} {
+puts "OpenROAD"
+puts "----------------------------------------------------------------"
+regression_main
+
+puts "ioPlacer"
+puts "----------------------------------------------------------------"
+puts [exec "src/ioPlacer/tests/run_all.sh"]
+
+puts "Resizer"
+puts "----------------------------------------------------------------"
+puts [exec "src/resizer/test/regression"]
+
+puts "pdngen"
+puts "----------------------------------------------------------------"
+puts [exec "src/pdngen/test/regression"]
+
+puts "Macro Place"
+puts "----------------------------------------------------------------"
+puts [exec "src/TritonMacroPlace/test/regression"]
+
+puts "OpenDP"
+puts "----------------------------------------------------------------"
+puts [exec "src/opendp/test/regression"]
+
+puts "TritonCTS"
+puts "----------------------------------------------------------------"
+puts [exec "src/TritonCTS/tests/run_all.sh"]
+
+if {0} {
+# hangs indefinitely
+#pushd src/replace/test && python3 regression.py run openroad && popd
+
+# errors: sed: 1: "/Users/cherry/sta/openr ...": command c expects \ followed by text
+#cp etc/PO* . && tclsh ./src/FastRoute/tests/run_all.tcl
+}
+}
 
 # Local Variables:
 # mode:tcl

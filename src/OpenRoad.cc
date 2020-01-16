@@ -28,6 +28,7 @@
 #include "openroad/InitOpenRoad.hh"
 #include "InitFlute.hh"
 
+#include "init_fp//MakeInitFloorplan.hh"
 #include "ioPlacer/src/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
@@ -115,6 +116,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
   Opendbtcl_Init(tcl_interp);
+  initInitFloorplan(this);
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);

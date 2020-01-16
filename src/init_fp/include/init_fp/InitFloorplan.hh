@@ -23,6 +23,7 @@ class dbDatabase;
 
 namespace sta {
 class OpenDbNetwork;
+class Report;
 }
 
 namespace ord {

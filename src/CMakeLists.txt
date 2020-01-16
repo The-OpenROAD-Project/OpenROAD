@@ -19,6 +19,7 @@ set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 
+set(INIT_FP_HOME ${PROJECT_SOURCE_DIR}/src/init_fp)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
@@ -43,7 +44,6 @@ set(OPENROAD_SOURCE
   Main.cc
 
   dbReadVerilog.cc
-  InitFloorplan.cc
   InitFlute.cc
 
   ${OPENDB_WRAP}
@@ -53,7 +53,6 @@ set(OPENROAD_TCL_FILES
   ${OPENSTA_HOME}/tcl/Util.tcl
   OpenRoad.tcl
   dbReadVerilog.tcl
-  InitFloorplan.tcl
   )
 
 add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
@@ -86,7 +85,7 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ord -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS OpenRoad.i InitFloorplan.i
+  DEPENDS OpenRoad.i
   )
 
 ################################################################
@@ -124,7 +123,20 @@ set(BUILD_TCL false)
 set(OPENROAD_BUILD ON)
 add_definitions(-DOPENROAD_BUILD)
 
+set(OPENSTA_INCLUDE_DIRS
+  ${OPENSTA_HOME}/util
+  ${OPENSTA_HOME}/liberty
+  ${OPENSTA_HOME}/network
+  ${OPENSTA_HOME}/graph
+  ${OPENSTA_HOME}/sdc
+  ${OPENSTA_HOME}/parasitics
+  ${OPENSTA_HOME}/dcalc
+  ${OPENSTA_HOME}/search
+  ${OPENSTA_HOME}/app
+  )
+
 # Build flow tools
+add_subdirectory(init_fp)
 add_subdirectory(OpenDB)
 add_subdirectory(OpenSTA)
 add_subdirectory(dbSta)
@@ -149,6 +161,7 @@ target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
   PRIVATE
   ${OPENROAD_HOME}/src
+  ${INIT_FP_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
@@ -161,6 +174,7 @@ target_include_directories(openroad
   )
 
 target_link_libraries(openroad
+  init_fp
   pdngen
   replace
   opendp

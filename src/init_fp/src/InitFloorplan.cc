@@ -24,7 +24,7 @@
 #include "PortDirection.hh"
 #include "opendb/db.h"
 #include "opendb/dbTransform.h"
-#include "InitFloorplan.hh"
+#include "init_fp/InitFloorplan.hh"
 
 namespace ord {
 
@@ -614,4 +614,4 @@ InitFloorplan::dbuToMeters(uint dist) const
   return dist / (dbu * 1e+6);
 }
 
-}
+} // namespace ord
