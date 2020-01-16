@@ -137,6 +137,8 @@ explicitly with the -die_area and -core_area arguments. Alternatively,
 the die and core area can be computed from the design size and
 utilization as show below:
 
+If no -tracks file is used the routing layers from the LEF are used.
+
 ```
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)

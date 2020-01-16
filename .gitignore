@@ -19,9 +19,10 @@ Makefile
 
 include/openroad/Version.hh
 
+src/init_fp/test/results
 src/resizer/test/results
 src/pdngen/test/results
-src/FastRoute/tests/src/
-src/tapcell/test/src/
+src/FastRoute/tests/src
+src/tapcell/test/src
 src/TritonCTS/test/src
 src/ioPlacer/test/src
