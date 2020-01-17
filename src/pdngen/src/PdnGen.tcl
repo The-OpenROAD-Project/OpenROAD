@@ -77,6 +77,7 @@ variable blockages {}
 variable instances {}
 variable default_template_name {}
 variable template {}
+variable default_cutclass {}
 
 #This file contains procedures that are used for PDN generation
 
@@ -138,6 +139,183 @@ proc init_via_tech {} {
   }
 }
 
+proc set_proptech_lines {obj prop_name} {
+  variable tech_line
+  if {[set prop [::odb::dbStringProperty_find $obj $prop_name]] != "NULL"} {
+    set tech_line [$prop getValue]
+  } else {
+    set tech_line {}
+  }
+}
+
+proc read_proptechline {} {
+  variable tech_line
+
+  set word [lindex $tech_line 0]
+  set tech_line [lrange $tech_line 1 end]
+
+  set line {}
+  while {[llength $tech_line] > 0 && $word != ";"} {
+    lappend line $word
+    set word [lindex $tech_line 0]
+    set tech_line [lrange $tech_line 1 end]
+  }
+  return $line
+}
+
+proc empty_techline {} {
+  variable tech_line
+  return [expr ![llength $tech_line]]
+}
+
+proc find_layer {layer_name} {
+  variable tech
+
+  if {[set layer [$tech findLayer $layer_name]] == "NULL"} {
+    error "Cannot find layer $layer_name in loaded technology"
+  }
+  return $layer
+}
+
+proc read_arrayspacing {layer_name} {
+  variable layers 
+  variable def_units
+
+  set layer [find_layer $layer_name]
+
+  set_proptech_lines $layer LEF58_ARRAYSPACING
+  set arrayspacing {}
+  
+  while {![empty_techline]} {
+    set line [read_proptechline]
+    if {[set idx [lsearch $line PARALLELOVERLAP]] > -1} {
+      dict set arrayspacing paralleloverlap 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch $line LONGARRAY]] > -1} {
+      dict set arrayspacing longarray 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch $line CUTSPACING]] > -1} {
+      dict set arrayspacing cutspacing [lindex $line [expr $idx + 1]]
+      set line [lreplace $line $idx [expr $idx + 1]]
+    }
+    while {[set idx [lsearch $line ARRAYCUTS]] > -1} {
+      dict set arrayspacing arraycuts [lindex $line [expr $idx + 1]] spacing [lindex $line [expr $idx + 3]]
+      set line [lreplace $line $idx [expr $idx + 3]]
+    }
+  }
+  dict set layers $layer_name arrayspacing $arrayspacing 
+}
+
+proc read_cutclass {layer_name} {
+  variable tech
+  variable layers 
+  variable def_units
+  variable default_cutclass
+
+  set layer [find_layer $layer_name]
+  set_proptech_lines $layer LEF58_CUTCLASS
+  dict set layers $layer_name cutclass {}
+  set min_area -1
+  
+  while {![empty_techline]} {
+    set line [read_proptechline]
+    if {![regexp {CUTCLASS\s+([^\s]+)\s+WIDTH\s+([^\s]+)\s+LENGTH\s+([^\s]+)} $line - cut_class width length]} {
+      error "Failed to read CUTCLASS property '$line'"
+    }
+    if {$min_area == -1 || [expr $width * $length] < $min_area} {
+      dict set default_cutclass $layer_name $cut_class
+      set min_area [expr $width * $length]
+    }
+    dict set layers $layer_name cutclass $cut_class [list width [expr round($width * $def_units)] length [expr round($length * $def_units)]]
+  }
+}
+
+proc read_enclosures {layer_name} {
+  variable tech
+  variable layers 
+  variable def_units
+  
+  set layer [find_layer $layer_name]
+  set_proptech_lines $layer LEF58_ENCLOSURE
+  set prev_cutclass ""
+
+  while {![empty_techline]} {
+    set line [read_proptechline]
+    set flags {}
+    if {[set idx [lsearch $line ABOVE]] > -1} {
+      dict set flags above 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch $line BELOW]] > -1} {
+      dict set flags below 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch $line END]] > -1} {
+      dict set flags end 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch $line SIDE]] > -1} {
+      dict set flags side 1
+      set line [lreplace $line $idx $idx]
+    }
+
+    set width 0
+    regexp {WIDTH\s+([^\s]+)} $line - width
+    set width [expr round($width * $def_units)]
+    
+    if {![regexp {ENCLOSURE CUTCLASS\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)} $line - cut_class overlap1 overlap2]} {
+      error "Failed to read ENCLOSURE property '$line'"
+    }
+    
+    if {$prev_cutclass != $cut_class} {
+      set enclosures {}
+      set prev_cutclass $cut_class
+    }
+    dict lappend enclosures $width [list [expr round($overlap1 * $def_units)] [expr round($overlap2 * $def_units)]]
+    dict set layers $layer_name cutclass $cut_class enclosures $enclosures 
+  }
+}
+
+proc get_via_enclosure {layer_name width} {
+  variable layers
+  variable default_cutclass
+    
+  if {![dict exists $layers $layer_name cutclass]} {
+    read_cutclass $layer_name
+    read_enclosures $layer_name
+  }
+
+  if {![dict exists $default_cutclass $layer_name]} {
+    return {0 0}
+  }
+  
+  set enclosures [dict get $layers $layer_name cutclass [dict get $default_cutclass $layer_name] enclosures]
+  foreach size [lreverse [dict keys $enclosures]] {
+    if {$width >= $size} {
+        break
+    }
+  }
+   
+  set enclosure [dict get $enclosures $size]
+  if {[llength $enclosure] > 1} {
+    set selected_enclosure [lindex $enclosure 0]
+    set selected_min [expr min([lindex $selected_enclosure 0], [lindex $selected_enclosure 1])]
+    foreach enc [lrange $enclosure 1 end] {
+      set cur_min [expr min([lindex $enc 0], [lindex $enc 1])]
+      if {$cur_min < $selected_min} {
+        set selected_min $cur_min
+        set selected_enclosure $enc
+      }
+    }
+  } else { 
+    set selected_enclosure [lindex $enclosure 0]
+  }
+
+  return $selected_enclosure
+}
+
 proc select_via_info {lower} {
   variable def_via_tech
 
@@ -159,24 +337,60 @@ proc get_layer_info {} {
   return $layers
 }
 
+proc read_widthtable {layer_name} {
+  variable tech
+  variable def_units
+  
+  set table {}
+  set layer [find_layer $layer_name]
+  set_proptech_lines $layer LEF58_WIDTHTABLE
+
+  while {![empty_techline]} {
+    set line [read_proptechline]
+    set flags {}
+    if {[set idx [lsearch $line ORTHOGONAL]] > -1} {
+      dict set flags orthogonal 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch $line WRONGDIRECTION]] > -1} {
+      dict set flags wrongdirection 1
+      set line [lreplace $line $idx $idx]
+    }
+
+    regexp {WIDTHTABLE\s+(.*)} $line - widthtable
+    set widthtable [lmap x $widthtable {expr round($x * $def_units)}]
+    
+    # Not interested in wrong direction routing
+    if {![dict exists $flags wrongdirection]} {
+      set table $widthtable
+    }
+  }
+  return $table
+}
+
+proc get_widthtable {layer_name} {
+  variable layers
+  
+  if {![dict exists $layers $layer_name widthtable]} {
+      dict set layers $layer_name widthtable [read_widthtable $layer_name]
+  }
+
+  return [dict get $layers $layer_name widthtable]
+}
+
 # Layers that have a widthtable will only support some width values, the widthtable defines the 
 # set of widths that are allowed, or any width greater than or equal to the last value in the
 # table
 proc get_adjusted_width {layer width} {
-  set layers [get_layer_info]
-  
-  if {[dict exists $layers $layer] && [dict exists $layers $layer widthtable]} {
-    set widthtable [dict get $layers $layer widthtable]
-    if {[lsearch $widthtable $width] > 0} {
-      return $width
-    } elseif {$width > [lindex $widthtable end]} {
-      return $width
-    } else {
-      foreach value $widthtable {
-        if {$value > $width} {
-          return $value
-        }
-      }
+  set widthtable [get_widthtable $layer]
+
+  if {[llength $widthtable] == 0} {return $width}
+  if {[lsearch $widthtable $width] > 0} {return $width}
+  if {$width > [lindex $widthtable end]} {return $width}
+
+  foreach value $widthtable {
+    if {$value > $width} {
+      return $value
     }
   }
   
@@ -184,7 +398,47 @@ proc get_adjusted_width {layer width} {
 }
 
 # Given the via rule expressed in via_info, what is the via with the largest cut area that we can make
-proc get_via_option {lower_dir rule_name via_info x y width height} {
+# Try using via arrays
+proc get_via_array_option {lower width height} {
+  set cut_width  [lindex [dict get $via_info cut size] 0]
+  set cut_height [lindex [dict get $via_info cut size] 1]
+
+  # Adjust the width and height values to the next largest allowed value if necessary
+  set lower_width  [get_adjusted_width [dict get $via_info lower layer] $width]
+  set lower_height [get_adjusted_width [dict get $via_info lower layer] $height]
+  set upper_width  [get_adjusted_width [dict get $via_info upper layer] $width]
+  set upper_height [get_adjusted_width [dict get $via_info upper layer] $height]
+
+  
+}
+
+proc get_arrayspacing_rule {layer_name} {
+  variable layers
+  
+  if {![dict exists $layers $layer_name arrayspacing]} {
+    read_arrayspacing $layer_name
+  }
+  
+  return [dict get $layers $layer_name arrayspacing]
+}
+
+proc use_arrayspacing {layer_name rows columns} {
+  set arrayspacing [get_arrayspacing_rule $layer_name]
+  
+  if {[llength $arrayspacing] == 0} {return 0}
+  if {![dict exists $arrayspacing [expr min($rows,$columns)]} {return 0}
+  if {[expr min($rows,$columns)] < [lindex [dict keys $arrayspacing] 0]} {return 0}
+  if {[expr min($rows,$columns)] > [lindex [dict keys $arrayspacing] end]} {return 1}
+  return 1
+}
+
+# Given the via rule expressed in via_info, what is the via with the largest cut area that we can make
+# Try using a via generate rule
+proc get_via_option {lower width height} {
+# puts "get_via_option {$lower $width $height}"
+  set via_info [lindex [select_via_info $lower] 1]
+  set lower_dir [get_dir $lower]
+
   set cut_width  [lindex [dict get $via_info cut size] 0]
   set cut_height [lindex [dict get $via_info cut size] 1]
 
@@ -194,21 +448,31 @@ proc get_via_option {lower_dir rule_name via_info x y width height} {
   set upper_width  [get_adjusted_width [dict get $via_info upper layer] $width]
   set upper_height [get_adjusted_width [dict get $via_info upper layer] $height]
   
-  set lower_enclosure [lindex [dict get $via_info lower enclosure] 0]
-  set max_lower_enclosure [lindex [dict get $via_info lower enclosure] 1]
+  set via_enclosure [get_via_enclosure [dict get $via_info cut layer] [expr min($lower_width,$lower_height,$upper_width,$upper_height)]]
+  set lower_enclosure [dict get $via_info lower enclosure]
+  if {[expr min([lindex $via_enclosure 0],[lindex $via_enclosure 1])] > [expr min([lindex $lower_enclosure 0],[lindex $lower_enclosure 1])]} {
+    set lower_enclosure $via_enclosure
+  }
+  set upper_enclosure [dict get $via_info upper enclosure]
+  if {[expr min([lindex $via_enclosure 0],[lindex $via_enclosure 1])] > [expr min([lindex $upper_enclosure 0],[lindex $upper_enclosure 1])]} {
+    set upper_enclosure $via_enclosure
+  }
   
-  if {$max_lower_enclosure < $lower_enclosure} {
-    set swap $lower_enclosure
-    set lower_enclosure $max_lower_enclosure
+  set min_lower_enclosure [lindex $lower_enclosure 0]
+  set max_lower_enclosure [lindex $lower_enclosure 1]
+  
+  if {$max_lower_enclosure < $min_lower_enclosure} {
+    set swap $min_lower_enclosure
+    set min_lower_enclosure $max_lower_enclosure
     set max_lower_enclosure $swap
   }
 
-  set upper_enclosure [lindex [dict get $via_info upper enclosure] 0]
-  set max_upper_enclosure [lindex [dict get $via_info upper enclosure] 1]
+  set min_upper_enclosure [lindex $upper_enclosure 0]
+  set max_upper_enclosure [lindex $upper_enclosure 1]
 
-  if {$max_upper_enclosure < $upper_enclosure} {
-    set swap $upper_enclosure
-    set upper_enclosure $max_upper_enclosure
+  if {$max_upper_enclosure < $min_upper_enclosure} {
+    set swap $min_upper_enclosure
+    set min_upper_enclosure $max_upper_enclosure
     set max_upper_enclosure $swap
   }
   
@@ -216,11 +480,12 @@ proc get_via_option {lower_dir rule_name via_info x y width height} {
   set i 0
   set via_width_lower 0
   set via_width_upper 0
+  set xcut_pitch [lindex [dict get $via_info cut spacing] 0]
   while {$via_width_lower < $lower_width && $via_width_upper < $upper_width} {
+    # puts "W: $via_width_lower < $lower_width && $via_width_upper < $upper_width"
     incr i
-    set xcut_pitch [lindex [dict get $via_info cut spacing] 0]
-    set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $lower_enclosure]
-    set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $upper_enclosure]
+    set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
+    set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
   }
   set xcut_spacing [expr $xcut_pitch - $cut_width]
   set columns [expr $i - 1]
@@ -228,91 +493,103 @@ proc get_via_option {lower_dir rule_name via_info x y width height} {
   set i 0
   set via_height_lower 0
   set via_height_upper 0
+  set ycut_pitch [lindex [dict get $via_info cut spacing] 1]
   while {$via_height_lower < $lower_height && $via_height_upper < $upper_height} {
+    # puts "H: $via_height_lower < $lower_height && $via_height_upper < $upper_height"
     incr i
-    set ycut_pitch [lindex [dict get $via_info cut spacing] 1]
-    set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $lower_enclosure]
-    set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $upper_enclosure]
+    set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
+    set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
   }
   set ycut_spacing [expr $ycut_pitch - $cut_height]
   set rows [expr $i - 1]
 
-  set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-  set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
-  set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-  set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+  if {![use_arrayspacing [dict get $via_info cut layer] $rows $columns]} {
+    set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+    set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+    set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+    set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
 
-  # Adjust calculated via width values to ensure that an allowed size is generated
-  set lower_size_max_enclosure [get_adjusted_width [dict get $via_info lower layer] [expr round(($cut_width   + $xcut_pitch * ($columns - 1) + $max_lower_enclosure * 2))]]
-  set upper_size_max_enclosure [get_adjusted_width [dict get $via_info upper layer] [expr round(($cut_width   + $xcut_pitch * ($columns - 1) + $max_upper_enclosure * 2))]]
-  
-  set max_lower_enclosure [expr round(($lower_size_max_enclosure  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-  set max_upper_enclosure [expr round(($upper_size_max_enclosure  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+    # Adjust calculated via width values to ensure that an allowed size is generated
+    set lower_size_max_enclosure [get_adjusted_width [dict get $via_info lower layer] [expr round(($cut_width   + $xcut_pitch * ($columns - 1) + $max_lower_enclosure * 2))]]
+    set upper_size_max_enclosure [get_adjusted_width [dict get $via_info upper layer] [expr round(($cut_width   + $xcut_pitch * ($columns - 1) + $max_upper_enclosure * 2))]]
 
-  # Use the largest value of enclosure in the direction of the layer
-  # Use the smallest value of enclosure perpendicular to direction of the layer
-  if {$lower_dir == "hor"} {
-    if {$lower_enc_height < $max_lower_enclosure} {
-      set xBotEnc $max_lower_enclosure
-      if {$lower_enc_width > $xBotEnc} {
+    set max_lower_enclosure [expr round(($lower_size_max_enclosure  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+    set max_upper_enclosure [expr round(($upper_size_max_enclosure  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+
+    # Use the largest value of enclosure in the direction of the layer
+    # Use the smallest value of enclosure perpendicular to direction of the layer
+    if {$lower_dir == "hor"} {
+      if {$lower_enc_height < $max_lower_enclosure} {
+        set xBotEnc $max_lower_enclosure
+        if {$lower_enc_width > $xBotEnc} {
+          set xBotEnc $lower_enc_width
+        }
+      } else {
         set xBotEnc $lower_enc_width
       }
+      set yBotEnc $lower_enc_height
     } else {
       set xBotEnc $lower_enc_width
-    }
-    set yBotEnc $lower_enc_height
-  } else {
-    set xBotEnc $lower_enc_width
-    if {$lower_enc_width < $max_lower_enclosure} {
-      set yBotEnc $max_lower_enclosure
-      if {$lower_enc_height > $yBotEnc} {
+      if {$lower_enc_width < $max_lower_enclosure} {
+        set yBotEnc $max_lower_enclosure
+        if {$lower_enc_height > $yBotEnc} {
+          set yBotEnc $lower_enc_height
+        }
+      } else {
         set yBotEnc $lower_enc_height
       }
-    } else {
-      set yBotEnc $lower_enc_height
     }
-  }
 
-  # Use the largest value of enclosure in the direction of the layer
-  # Use the smallest value of enclosure perpendicular to direction of the layer
-  if {[get_dir [dict get $via_info upper layer]] == "hor"} {
-    if {$upper_enc_height < $max_upper_enclosure} {
-      set xTopEnc $max_upper_enclosure
-      if {$upper_enc_width > $xTopEnc} {
+    # Use the largest value of enclosure in the direction of the layer
+    # Use the smallest value of enclosure perpendicular to direction of the layer
+    if {[get_dir [dict get $via_info upper layer]] == "hor"} {
+      if {$upper_enc_height < $max_upper_enclosure} {
+        set xTopEnc $max_upper_enclosure
+        if {$upper_enc_width > $xTopEnc} {
+          set xTopEnc $upper_enc_width
+        }
+      } else {
         set xTopEnc $upper_enc_width
       }
+      set yTopEnc $upper_enc_height
     } else {
       set xTopEnc $upper_enc_width
-    }
-    set yTopEnc $upper_enc_height
-  } else {
-    set xTopEnc $upper_enc_width
-    if {$upper_enc_width < $max_upper_enclosure} {
-      set yTopEnc $max_upper_enclosure
-      if {$upper_enc_height > $yTopEnc} {
+      if {$upper_enc_width < $max_upper_enclosure} {
+        set yTopEnc $max_upper_enclosure
+        if {$upper_enc_height > $yTopEnc} {
+          set yTopEnc $upper_enc_height
+        }
+      } else {
         set yTopEnc $upper_enc_height
       }
-    } else {
-      set yTopEnc $upper_enc_height
     }
+
+    set rule [list \
+      rule [lindex [select_via_info $lower] 0] \
+      cutsize [dict get $via_info cut size] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
+      cutspacing [list \
+        [expr [lindex [dict get $via_info cut spacing] 0] - [lindex [dict get $via_info cut size] 0]] \
+        [expr [lindex [dict get $via_info cut spacing] 1] - [lindex [dict get $via_info cut size] 1]] \
+      ] \
+      rowcol [list $rows $columns] \
+      enclosure [list $xBotEnc $yBotEnc $xTopEnc $yTopEnc] \
+      origin_x 0 origin_y 0]
+    set rule_list [list $rule]
+  } else {
+    # We need array vias -
+    # if the min(rows,columns) <= ARRAYCUTS
+    #   add a single via with min(rows,columns) cuts - hor/ver as required
+    # else
+    #   determine which direction gives best number of CUTs wide using min(ARRAYCUTS)
+    #   After adding ARRAYs, is there space for more vias
+    #   Add vias to the rule with appropriate origin setting
   }
   
-  set rule [list \
-    rule $rule_name \
-    cutsize [dict get $via_info cut size] \
-    layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
-    cutspacing [list \
-      [expr [lindex [dict get $via_info cut spacing] 0] - [lindex [dict get $via_info cut size] 0]] \
-      [expr [lindex [dict get $via_info cut spacing] 1] - [lindex [dict get $via_info cut size] 1]] \
-    ] \
-    rowcol [list $rows $columns] \
-    enclosure [list $xBotEnc $yBotEnc $xTopEnc $yTopEnc] \
-  ]
-  
-  return $rule
+  return $rule_list
 }
 
-proc get_viarule_name {lower x y width height} {
+proc get_viarule_name {lower width height} {
   set rules [select_via_info $lower]
   set first_key [lindex [dict keys $rules] 0]
   set cut_layer [dict get $rules $first_key cut layer]
@@ -321,7 +598,11 @@ proc get_viarule_name {lower x y width height} {
 }
 
 proc get_cut_area {rule} {
-  return [expr [lindex [dict get $rule rowcol] 0] * [lindex [dict get $rule rowcol] 0] * [lindex [dict get $rule cutsize] 0] * [lindex [dict get $rule cutsize] 1]]
+  set area 0
+  foreach via $rule {
+    set area [expr [lindex [dict get $via rowcol] 0] * [lindex [dict get $via rowcol] 0] * [lindex [dict get $via cutsize] 0] * [lindex [dict get $via cutsize] 1]]
+  }
+  return $area
 }
 
 proc select_rule {rule1 rule2} {
@@ -331,18 +612,18 @@ proc select_rule {rule1 rule2} {
   return $rule1
 }
 
-proc get_via {lower x y width height} {
+proc get_via {lower width height} {
   # First cur will assume that all crossing points (x y) are on grid for both lower and upper layers
   # TODO: Refine the algorithm to cope with offgrid intersection points
   variable physical_viarules
-  
-  set rule_name [get_viarule_name $lower $x $y $width $height]
 
+  set rule_name [get_viarule_name $lower $width $height]
+  
   if {![dict exists $physical_viarules $rule_name]} {
     set selected_rule {}
 
     dict for {name rule} [select_via_info $lower] {
-      set result [get_via_option [get_dir $lower] $name $rule $x $y $width $height]
+      set result [get_via_option $lower $width $height]
       if {$selected_rule == {}} {
         set selected_rule $result
       } else {
@@ -350,16 +631,28 @@ proc get_via {lower x y width height} {
         set selected_rule [select_rule $selected_rule $result]
       }
     }
-
     dict set physical_viarules $rule_name $selected_rule
-  }        
-  
+    #puts "Via [dict size $physical_viarules]: $rule_name"
+  }
+
   return $rule_name
+}
+
+proc instantiate_via {physical_via_name x y} {
+  variable physical_viarules
+  
+  set via_insts {}
+  foreach via [dict get $physical_viarules $physical_via_name] {
+    dict set via x [expr $x + [dict get $via origin_x]]
+    dict set via y [expr $y + [dict get $via origin_y]]
+    dict set via name $physical_via_name
+    lappend via_insts $via
+  }
+  return $via_insts
 }
 
 proc generate_vias {layer1 layer2 intersections} {
   variable logical_viarules
-  variable physical_viarules
   variable metal_layers
 
   set vias {}
@@ -369,10 +662,12 @@ proc generate_vias {layer1 layer2 intersections} {
   
   set i1 [lsearch $metal_layers $layer1_name]
   set i2 [lsearch $metal_layers $layer2_name]
-  if {$i1 == -1} {error "Layer1 [dict get $connect layer1], Layer2 $layer2"}
-  if {$i2 == -1} {error "Layer1 [dict get $connect layer1], Layer2 $layer2"}
+  if {$i1 == -1} {error "Cant find layer $layer1"}
+  if {$i2 == -1} {error "Cant find layer $layer2"}
 
   # For each layer between l1 and l2, add vias at the intersection
+  # puts "  # Intersections [llength $intersections]"
+  set count 0
   foreach intersection $intersections {
     if {![dict exists $logical_viarules [dict get $intersection rule]]} {
       error "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
@@ -385,11 +680,18 @@ proc generate_vias {layer1 layer2 intersections} {
     set height  [dict get $logical_rule height]
     
     set connection_layers [list $layer1 {*}[lrange $metal_layers [expr $i1 + 1] [expr $i2 - 1]]]
+    # puts "  # Connection layers: [llength $connection_layers]"
     foreach lay $connection_layers {
-      set via_name [get_via $lay $x $y $width $height]
-
-      lappend vias [list name $via_name lower_layer $lay x [expr round([dict get $intersection x])] y [expr round([dict get $intersection y])]]
+      set via_name [get_via $lay $width $height]
+      foreach via [instantiate_via $via_name $x $y] {
+        lappend vias $via
+      }
     }
+    
+    incr count
+    #if {$count % 1000 == 0} {
+    #  puts "  # $count / [llength $intersections]"
+    #}
   }
   
   return $vias
@@ -766,7 +1068,7 @@ proc generate_stripes_vias {tag net_name grid_data} {
     }
   }
   foreach lay [dict keys [dict get $grid_data straps]] {
-    #puts "    Layer $lay ..."
+    # puts "    Layer $lay ..."
 
     #Upper layer stripes
     if {[dict exists $grid_data straps $lay width]} {
@@ -796,15 +1098,16 @@ proc generate_stripes_vias {tag net_name grid_data} {
 
   #Via stacks
   if {[dict exists $grid_data connect]} {
-    ## puts "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
+    # puts "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
     foreach tuple [dict get $grid_data connect] {
         set l1 [lindex $tuple 0]
         set l2 [lindex $tuple 1]
-        ## puts "    $l1 to $l2"
+        # puts "    $l1 to $l2"
         set connections [generate_via_stacks $l1 $l2 $tag $grid_data]
         lappend vias [list net_name $net_name connections $connections]
     }
   }
+  # puts "End"
 }
 
 proc get_macro_boundaries {} {
@@ -834,6 +1137,7 @@ proc import_macro_boundaries {} {
   variable macros
   variable instances
 
+  set macros {}
   foreach lib $libs {
     foreach cell [$lib getMasters] {
       if {[$cell getType] == "CORE"} {continue}
@@ -934,29 +1238,30 @@ proc export_opendb_vias {} {
   variable physical_viarules
   variable block
   variable tech
+  dict for {name rules} $physical_viarules {
+    foreach rule $rules {
+      set via [$block findVia $name]
+      if {$via == "NULL"} {
+        set via [odb::dbVia_create $block $name]
 
-  dict for {name rule} $physical_viarules {
-    set via [$block findVia $name]
-    if {$via == "NULL"} {
-      set via [odb::dbVia_create $block $name]
-      
-      $via setViaGenerateRule [$tech findViaGenerateRule [dict get $rule rule]]
-      set params [$via getViaParams]
-      $params setBottomLayer [$tech findLayer [lindex [dict get $rule layers] 0]]
-      $params setCutLayer [$tech findLayer [lindex [dict get $rule layers] 2]]
-      $params setTopLayer [$tech findLayer [lindex [dict get $rule layers] 1]]
-      $params setXCutSize [lindex [dict get $rule cutsize] 0]
-      $params setYCutSize [lindex [dict get $rule cutsize] 1]
-      $params setXCutSpacing [lindex [dict get $rule cutspacing] 0]
-      $params setYCutSpacing [lindex [dict get $rule cutspacing] 1]
-      $params setXBottomEnclosure [lindex [dict get $rule enclosure] 0]
-      $params setYBottomEnclosure [lindex [dict get $rule enclosure] 1]
-      $params setXTopEnclosure [lindex [dict get $rule enclosure] 2]
-      $params setYTopEnclosure [lindex [dict get $rule enclosure] 3]
-      $params setNumCutRows [lindex [dict get $rule rowcol] 0]
-      $params setNumCutCols [lindex [dict get $rule rowcol] 1]
+        $via setViaGenerateRule [$tech findViaGenerateRule [dict get $rule rule]]
+        set params [$via getViaParams]
+        $params setBottomLayer [$tech findLayer [lindex [dict get $rule layers] 0]]
+        $params setCutLayer [$tech findLayer [lindex [dict get $rule layers] 2]]
+        $params setTopLayer [$tech findLayer [lindex [dict get $rule layers] 1]]
+        $params setXCutSize [lindex [dict get $rule cutsize] 0]
+        $params setYCutSize [lindex [dict get $rule cutsize] 1]
+        $params setXCutSpacing [lindex [dict get $rule cutspacing] 0]
+        $params setYCutSpacing [lindex [dict get $rule cutspacing] 1]
+        $params setXBottomEnclosure [lindex [dict get $rule enclosure] 0]
+        $params setYBottomEnclosure [lindex [dict get $rule enclosure] 1]
+        $params setXTopEnclosure [lindex [dict get $rule enclosure] 2]
+        $params setYTopEnclosure [lindex [dict get $rule enclosure] 3]
+        $params setNumCutRows [lindex [dict get $rule rowcol] 0]
+        $params setNumCutCols [lindex [dict get $rule rowcol] 1]
 
-      $via setViaParams $params
+        $via setViaParams $params
+      }
     }
   }
 }
@@ -1034,7 +1339,7 @@ proc export_opendb_specialnet {net_name signal_type} {
         set via_name [dict get $via_inst name]
         set x        [dict get $via_inst x]
         set y        [dict get $via_inst y]
-        set lay      [dict get $via_inst lower_layer]
+        set lay      [lindex [dict get $via_inst layers] 0]
         regexp {(.*)_PIN} $lay - lay
         set layer [$tech findLayer $lay]
         odb::dbSBox_create $swire [$block findVia $via_name] $x $y "STRIPE"
@@ -1314,7 +1619,7 @@ proc set_core_area {xmin ymin xmax ymax} {
   dict set design_data config core_area [list $xmin $ymin $xmax $ymax]
 }
 
-proc init {opendb_block {PDN_cfg "PDN.cfg"}} {
+proc init {{PDN_cfg "PDN.cfg"}} {
   variable db
   variable block
   variable tech
@@ -1338,10 +1643,13 @@ proc init {opendb_block {PDN_cfg "PDN.cfg"}} {
     error "File $PDN_cfg does not exist, or exists but empty"
   }
 
-  set def_units [$block getDefUnits]
-  set design_name [$block getName]
   set tech [$db getTech]
   set libs [$db getLibs]
+  set block [[$db getChip] getBlock]
+  set def_units [$block getDefUnits]
+  set design_name [$block getName]
+
+  set design_data {}
 
   source $PDN_cfg
 
@@ -1971,20 +2279,16 @@ proc apply_pdn {config is_verbose} {
   variable design_data
   variable instances
   variable db
-  variable block
   variable verbose
 
   set verbose $is_verbose
   
-  if {$verbose} {
-    puts "##Power Delivery Network Generator: $config $verbose"
-  }
   set db [::ord::get_db]
-  set block [[$db getChip] getBlock]
 
   set ::start_time [clock clicks -milliseconds]
   if {$verbose} {
-    puts "##Power Delivery Network Generator: Generating PDN DEF"
+    puts "##Power Delivery Network Generator: Generating PDN"
+    puts "##  config: $config"
   }
   
   apply $config
