@@ -97,8 +97,8 @@ private:
         unsigned    _numMaxLeafSinks         = 15;
         unsigned    _maxSlew                 = 4;
         unsigned    _clockTreeMaxDepth       = 100;
-        bool        _enableFakeLutEntries    = false;
-        bool        _forceBuffersOnLeafLevel = false;
+        bool        _enableFakeLutEntries    = true;
+        bool        _forceBuffersOnLeafLevel = true;
         bool        _writeOnlyClockNets      = false;
 };
 
