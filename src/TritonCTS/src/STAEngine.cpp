@@ -73,7 +73,7 @@ void STAEngine::findClockRoots() {
         }         
 
         std::cout << "    Clock names: " << clockNames << "\n";
-        _parms->setClockNets(clockNames);
+        _options->setClockNets(clockNames);
 }
 
 }

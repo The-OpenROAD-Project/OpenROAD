@@ -122,8 +122,8 @@ void GHTreeBuilder::run() {
 }
 
 void GHTreeBuilder::initSinkRegion() {
-        unsigned wireSegmentUnitInMicron = _parms->getWireSegmentUnit(); 
-        DBU dbUnits = _parms->getDbUnits();
+        unsigned wireSegmentUnitInMicron = _options->getWireSegmentUnit(); 
+        DBU dbUnits = _options->getDbUnits();
         _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
 
         std::cout << " Wire segment unit: " << _wireSegmentUnit << " dbu ("

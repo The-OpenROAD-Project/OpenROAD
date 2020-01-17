@@ -54,9 +54,9 @@
 
 namespace TritonCTS {
 
-DBWrapper::DBWrapper(ParametersForCTS& parms,
+DBWrapper::DBWrapper(CtsOptions& options,
                      TritonCTSKernel& kernel) {
-        _parms  = &parms;
+        _options  = &options;
         _kernel = &kernel;
 }
 
@@ -66,10 +66,10 @@ void DBWrapper::populateTritonCTS() {
 }
 
 void DBWrapper::initDB() {
-        _db    = odb::dbDatabase::getDatabase(_parms->getDbId());
+        _db    = odb::dbDatabase::getDatabase(_options->getDbId());
         _chip  = _db->getChip();
         _block = _chip->getBlock();
-        _parms->setDbUnits(_block->getDbUnitsPerMicron());
+        _options->setDbUnits(_block->getDbUnitsPerMicron());
 }
 
 void DBWrapper::initAllClockNets() {
@@ -121,11 +121,11 @@ void DBWrapper::initClockNet(odb::dbNet* net) {
         
         }
 
-        _kernel->addBuilder(new HTreeBuilder(*_parms, clockNet));
+        _kernel->addBuilder(new HTreeBuilder(*_options, clockNet));
 }
 
 void DBWrapper::parseClockNetNames(std::vector<std::string>& clockNetNames) const {
-        std::stringstream allNames(_parms->getClockNets());
+        std::stringstream allNames(_options->getClockNets());
 
         std::string tmpName = "";
         while (allNames >> tmpName) {
@@ -206,6 +206,10 @@ void DBWrapper::writeClockNetsToDb(const ClockNet& clockNet) {
                                 odb::dbITerm::connect(inputPin, clkSubNet); 
                         });
                 });       
+        
+        if (_options->writeOnlyClockNets()) {
+                removeNonClockNets();
+        }
 }
 
 void DBWrapper::disconnectAllSinksFromNet(std::string netName) {
@@ -246,5 +250,13 @@ odb::dbITerm* DBWrapper::getFirstInput(odb::dbInst* inst) const {
 bool DBWrapper::masterExists(const std::string& master) const {
         return _db->findMaster(master.c_str()); 
 };
+
+void DBWrapper::removeNonClockNets() {
+        for (odb::dbNet* net : _block->getNets()) {
+                if (net->getSigType() != odb::dbSigType::CLOCK) {
+                        odb::dbNet::destroy(net);
+                } 
+        } 
+}
 
 }

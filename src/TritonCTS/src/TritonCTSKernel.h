@@ -44,7 +44,7 @@
 #define TRITONCTSKERNEL_H
 
 #include "DBWrapper.h"
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 #include "Characterization.h"
 #include "ClockTreeBuilder.h"
 #include "STAEngine.h"
@@ -55,11 +55,12 @@ namespace TritonCTS {
 
 class TritonCTSKernel {
 public:
-        TritonCTSKernel() : _dbWrapper(_parms, *this),
-                            _staEngine(_parms) {}
+        TritonCTSKernel() : _dbWrapper(_options, *this),
+                            _characterization(_options),
+                            _staEngine(_options) {}
 
         void runTritonCts();
-        ParametersForCTS& getParms() { return _parms; }
+        CtsOptions& getParms() { return _options; }
         void addBuilder(ClockTreeBuilder* builder) { _builders.push_back(builder); }
         void forEachBuilder(const std::function<void(const ClockTreeBuilder*)> func) const;
 
@@ -70,7 +71,7 @@ private:
         void populateTritonCts();
         void buildClockTrees();
         
-        ParametersForCTS _parms;
+        CtsOptions _options;
         DBWrapper        _dbWrapper;
         Characterization _characterization;
         STAEngine        _staEngine;

@@ -47,19 +47,19 @@
 namespace TritonCTS {
 
 void TritonCTSKernel::set_lut_file(const char* file) {
-        _parms.setLutFile(file);
+        _options.setLutFile(file);
 }
 
 void TritonCTSKernel::set_sol_list_file(const char* file) {
-        _parms.setSolListFile(file);
+        _options.setSolListFile(file);
 }
 
 void TritonCTSKernel::set_clock_nets(const char* names) {
-        _parms.setClockNets(names);
+        _options.setClockNets(names);
 }
 
 void TritonCTSKernel::set_wire_segment_distance_unit(unsigned unit) {
-        _parms.setWireSegmentUnit(unit);
+        _options.setWireSegmentUnit(unit);
 }
 
 void TritonCTSKernel::run_triton_cts() {
@@ -79,7 +79,7 @@ void TritonCTSKernel::export_characterization(const char* file) {
 }
 
 void TritonCTSKernel::set_root_buffer(const char* buffer) {
-        _parms.setRootBuffer(buffer);
+        _options.setRootBuffer(buffer);
 }
 
 }

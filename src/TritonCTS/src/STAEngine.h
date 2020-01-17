@@ -43,7 +43,7 @@
 #ifndef STAENGINE_H
 #define STAENGINE_H
 
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 #include "openroad/OpenRoad.hh"
 
 struct Tcl_Interp;
@@ -58,15 +58,15 @@ namespace TritonCTS {
 
 class STAEngine {
 public:
-        STAEngine(ParametersForCTS& parms) : _parms(&parms) {};
+        STAEngine(CtsOptions& options) : _options(&options) {};
         
         void init();
         void findClockRoots();
 private:
-        sta::dbSta*         _openSta = nullptr;
-        sta::Sdc*           _sdc     = nullptr;
-        sta::Network*       _network = nullptr;    
-        ParametersForCTS*   _parms   = nullptr;
+        sta::dbSta*   _openSta   = nullptr;
+        sta::Sdc*     _sdc       = nullptr;
+        sta::Network* _network   = nullptr;    
+        CtsOptions*   _options   = nullptr;
 };
 
 }

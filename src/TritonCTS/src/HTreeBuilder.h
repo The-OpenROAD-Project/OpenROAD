@@ -44,7 +44,7 @@
 #define HTREEBUILDER_H
 
 #include "ClockTreeBuilder.h"
-#include "ParametersForCTS.h"
+#include "CtsOptions.h"
 #include "Util.h"
 
 #include <cmath>
@@ -72,7 +72,9 @@ public:
                        _drivingSubNet(&drivingSubNet),
                        _techChar(&techChar),
                        _techCharDistUnit(techCharDistUnit) {}
+
         void build();
+        void forceBufferInSegment(std::string master);
         ClockNet::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
 protected:
@@ -85,6 +87,8 @@ protected:
         ClockNet::SubNet*     _drivingSubNet;
         Characterization*     _techChar;
         unsigned              _techCharDistUnit;
+        bool                  _forceBuffer;
+        unsigned              _numBuffers = 0;
 
         void buildVerticalConnection();
         void buildHorizontalConnection();
@@ -161,12 +165,8 @@ class HTreeBuilder : public ClockTreeBuilder {
         };
 
 public:
-        static constexpr unsigned MAX_DEPTH = 100;
-        static constexpr unsigned MIN_NUM_SINKS = 20;
-        static constexpr double   MIN_SUB_REGION_SIZE = 2.0;
-
-        HTreeBuilder(ParametersForCTS& parms, ClockNet& net) : 
-                     ClockTreeBuilder(parms, net) {};
+        HTreeBuilder(CtsOptions& options, ClockNet& net) : 
+                     ClockTreeBuilder(options, net) {};
         
         void run();
 
@@ -184,6 +184,7 @@ private:
                                         unsigned tolerance,
                                         unsigned &outputSlew,
                                         unsigned &outputCap) const;
+        void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();
         void initTopLevelSinks(std::vector<std::pair<float,float>>& sinkLocations);
@@ -204,27 +205,29 @@ private:
                                                  const Point<double>& rootLocation,
                                                  const std::vector<std::pair<float, float>>& topLevelSinks );
         
-
-        //unsigned computeParentBranchPointIdx(unsigned level, double x, double y) const;
-
         bool isSubRegionTooSmall(double width, double height) const {
-                if (width < MIN_SUB_REGION_SIZE || height < MIN_SUB_REGION_SIZE) {
+                if (width < _minLengthSinkRegion || height < _minLengthSinkRegion ) {
                         return true;
                 }
                 return false;       
         }
 
         bool isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const {
-                if (numSinksPerSubRegion < MIN_NUM_SINKS) {
+                if (numSinksPerSubRegion < _numMaxLeafSinks) {
                         return true;
                 }
                 return false;
         }
 
-        Box<double> _sinkRegion;
+protected:
+        Box<double>                _sinkRegion;
         std::vector<LevelTopology> _topologyForEachLevel;
-        DBU _wireSegmentUnit = -1;
-        unsigned _minInputCap = 1;
+        
+        DBU      _wireSegmentUnit     = -1;
+        unsigned _minInputCap         =  1;
+        unsigned _numMaxLeafSinks     =  0;
+        unsigned _minLengthSinkRegion =  0;
+        unsigned _clockTreeMaxDepth   =  0;
 }; 
 
 }

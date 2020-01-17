@@ -58,9 +58,8 @@ void TritonCTSKernel::importCharacterization() {
         std::cout << " *****************************\n";
         std::cout << " *  Import characterization  *\n";
         std::cout << " *****************************\n";
-        
-        _characterization.parseLut(_parms.getLutFile());
-        _characterization.parseSolList(_parms.getSolListFile());
+       
+        _characterization.parse(_options.getLutFile(), _options.getSolListFile()); 
 }
 
 void TritonCTSKernel::checkCharacterization() {
@@ -95,9 +94,9 @@ void TritonCTSKernel::findClockRoots() {
         std::cout << " *  Find clock roots  *\n";
         std::cout << " **********************\n";
         
-        if(_parms.getClockNets() != "") {
+        if(_options.getClockNets() != "") {
                 std::cout << " Running TritonCTS with user-specified clock roots: ";
-                std::cout << _parms.getClockNets() << "\n";
+                std::cout << _options.getClockNets() << "\n";
                 return;
         }
 
@@ -124,7 +123,7 @@ void TritonCTSKernel::buildClockTrees() {
         std::cout << " ***********************\n";
         std::cout << " *  Build clock trees  *\n";
         std::cout << " ***********************\n";
-
+        
         for (ClockTreeBuilder* builder: _builders) {
                 builder->setCharacterization(_characterization);
                 builder->run();
@@ -137,6 +136,5 @@ void TritonCTSKernel::forEachBuilder(const std::function<void(const ClockTreeBui
                 func(builder);
         }
 }
-
 
 }

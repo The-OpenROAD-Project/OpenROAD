@@ -49,21 +49,10 @@
 
 namespace TritonCTS {
 
-class ParametersForCTS {
+class CtsOptions {
 public:
-        ParametersForCTS() {
-                _blockName       = "";
-                _lutFile         = "";
-                _solListFile     = "";
-                _clockNets       = "";
-                _rootBuffer      = "";
-                _numSinkRegions  = -1;
-                _dbUnits         = -1;
-                _wireSegmentUnit = 0;
-                _dbId            = 0;
-                _plotSolution    = false;
-        }
-
+        CtsOptions() = default;
+       
         void setBlockName(const std::string& blockName) { _blockName = blockName; }
         std::string getBlockName() const { return _blockName; } 
         void setLutFile(const std::string& lutFile) { _lutFile = lutFile; }
@@ -74,8 +63,6 @@ public:
         std::string getClockNets() const { return _clockNets; }
         void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
         std::string getRootBuffer() const { return  _rootBuffer; }
-        void setNumSinkRegions(unsigned numSinkRegions) { _numSinkRegions = numSinkRegions; }
-        unsigned getNumSinkRegions() const { return _numSinkRegions; }
         void setDbUnits(DBU units) { _dbUnits = units; }
         DBU getDbUnits() const { return _dbUnits; }
         void setWireSegmentUnit(unsigned wireSegmentUnit) { _wireSegmentUnit = wireSegmentUnit; }
@@ -84,18 +71,35 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
-
+        void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
+        unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
+        void setMaxSlew(unsigned slew) { _maxSlew = slew; }
+        unsigned getMaxSlew() const { return _maxSlew; }
+        void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
+        unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
+        void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
+        unsigned isFakeLutEntriesEnabled() const { return _enableFakeLutEntries; }
+        void setForceBuffersOnLeafLevel(bool force) { _forceBuffersOnLeafLevel = force; }
+        bool forceBuffersOnLeafLevel() const { return _forceBuffersOnLeafLevel; }
+        void setWriteOnlyClockNets(bool writeOnlyClk) { _writeOnlyClockNets = writeOnlyClk; }
+        bool writeOnlyClockNets() const { return _writeOnlyClockNets; }
+                
 private:
-        std::string _blockName;
-        std::string _lutFile;
-        std::string _solListFile;
-        std::string _clockNets;
-        std::string _rootBuffer;
-        unsigned    _numSinkRegions;
-        DBU         _dbUnits;
-        unsigned    _wireSegmentUnit;
-        unsigned    _dbId;
-        bool        _plotSolution;
+        std::string _blockName               = "";
+        std::string _lutFile                 = "";
+        std::string _solListFile             = "";
+        std::string _clockNets               = "";
+        std::string _rootBuffer              = "";
+        DBU         _dbUnits                 = -1;
+        unsigned    _wireSegmentUnit         = 0;
+        unsigned    _dbId                    = 0;
+        bool        _plotSolution            = false;
+        unsigned    _numMaxLeafSinks         = 15;
+        unsigned    _maxSlew                 = 4;
+        unsigned    _clockTreeMaxDepth       = 100;
+        bool        _enableFakeLutEntries    = true;
+        bool        _forceBuffersOnLeafLevel = true;
+        bool        _writeOnlyClockNets      = false;
 };
 
 }
