@@ -426,7 +426,7 @@ proc use_arrayspacing {layer_name rows columns} {
   set arrayspacing [get_arrayspacing_rule $layer_name]
   
   if {[llength $arrayspacing] == 0} {return 0}
-  if {![dict exists $arrayspacing [expr min($rows,$columns)]} {return 0}
+  if {![dict exists $arrayspacing [expr min($rows,$columns)]]} {return 0}
   if {[expr min($rows,$columns)] < [lindex [dict keys $arrayspacing] 0]} {return 0}
   if {[expr min($rows,$columns)] > [lindex [dict keys $arrayspacing] end]} {return 1}
   return 1
@@ -434,7 +434,7 @@ proc use_arrayspacing {layer_name rows columns} {
 
 # Given the via rule expressed in via_info, what is the via with the largest cut area that we can make
 # Try using a via generate rule
-proc get_via_option {lower width height} {
+proc get_via_option {lower width height constraints} {
 # puts "get_via_option {$lower $width $height}"
   set via_info [lindex [select_via_info $lower] 1]
   set lower_dir [get_dir $lower]
@@ -489,7 +489,15 @@ proc get_via_option {lower width height} {
   }
   set xcut_spacing [expr $xcut_pitch - $cut_width]
   set columns [expr $i - 1]
-
+  if {[dict exists $constraints max_columns]} {
+    if {$columns > [dict get $constraints max_columns]} {
+      set columns [dict get $constraints max_columns]
+      set lower_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $max_lower_enclosure]
+      set upper_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $max_upper_enclosure]
+      set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
+      set upper_width [get_adjusted_width [dict get $via_info lower layer] $upper_width]
+    }
+  }
   set i 0
   set via_height_lower 0
   set via_height_upper 0
@@ -502,6 +510,15 @@ proc get_via_option {lower width height} {
   }
   set ycut_spacing [expr $ycut_pitch - $cut_height]
   set rows [expr $i - 1]
+  if {[dict exists $constraints max_rows]} {
+    if {$columns > [dict get $constraints max_columns]} {
+      set columns [dict get $constraints max_columns]
+      set lower_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $max_lower_enclosure]
+      set upper_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $max_upper_enclosure]
+      set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
+      set upper_height [get_adjusted_width [dict get $via_info lower layer] $upper_height]
+    }                                                                              
+  }
 
   if {![use_arrayspacing [dict get $via_info cut layer] $rows $columns]} {
     set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
@@ -612,7 +629,7 @@ proc select_rule {rule1 rule2} {
   return $rule1
 }
 
-proc get_via {lower width height} {
+proc get_via {lower width height constraints} {
   # First cur will assume that all crossing points (x y) are on grid for both lower and upper layers
   # TODO: Refine the algorithm to cope with offgrid intersection points
   variable physical_viarules
@@ -623,7 +640,7 @@ proc get_via {lower width height} {
     set selected_rule {}
 
     dict for {name rule} [select_via_info $lower] {
-      set result [get_via_option $lower $width $height]
+      set result [get_via_option $lower $width $height $constraints]
       if {$selected_rule == {}} {
         set selected_rule $result
       } else {
@@ -651,7 +668,7 @@ proc instantiate_via {physical_via_name x y} {
   return $via_insts
 }
 
-proc generate_vias {layer1 layer2 intersections} {
+proc generate_vias {layer1 layer2 intersections constraints} {
   variable logical_viarules
   variable metal_layers
 
@@ -682,7 +699,7 @@ proc generate_vias {layer1 layer2 intersections} {
     set connection_layers [list $layer1 {*}[lrange $metal_layers [expr $i1 + 1] [expr $i2 - 1]]]
     # puts "  # Connection layers: [llength $connection_layers]"
     foreach lay $connection_layers {
-      set via_name [get_via $lay $width $height]
+      set via_name [get_via $lay $width $height $constraints]
       foreach via [instantiate_via $via_name $x $y] {
         lappend vias $via
       }
@@ -708,7 +725,7 @@ proc get_layers_from_to {from to} {
 }
 
 ## Proc to generate via locations, both for a normal via and stacked via
-proc generate_via_stacks {l1 l2 tag grid_data} {
+proc generate_via_stacks {l1 l2 tag grid_data constraints} {
   variable logical_viarules
   variable default_grid_data
   variable stripe_locs
@@ -857,7 +874,7 @@ proc generate_via_stacks {l1 l2 tag grid_data} {
     error "ERROR: Adding vias between same direction layers is not supported yet.\nLayer: $l1, Direction: $layer1_direction\nLayer: $l2, Direction: [get_dir $l2]"
   }
 
-  return [generate_vias $l1 $l2 $intersections]
+  return [generate_vias $l1 $l2 $intersections $constraints]
 }
 
 # proc to generate follow pin layers or standard cell rails
@@ -1099,11 +1116,16 @@ proc generate_stripes_vias {tag net_name grid_data} {
   #Via stacks
   if {[dict exists $grid_data connect]} {
     # puts "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
-    foreach tuple [dict get $grid_data connect] {
-        set l1 [lindex $tuple 0]
-        set l2 [lindex $tuple 1]
+    foreach connection [dict get $grid_data connect] {
+        set l1 [lindex $connection 0]
+        set l2 [lindex $connection 1]
         # puts "    $l1 to $l2"
-        set connections [generate_via_stacks $l1 $l2 $tag $grid_data]
+        set constraints {}
+        if {[dict exists $connection constraints]} {
+          set constraints [dict get $connection constraints]
+        }
+        # puts "    Constraints: $constraints"
+        set connections [generate_via_stacks $l1 $l2 $tag $grid_data $constraints]
         lappend vias [list net_name $net_name connections $connections]
     }
   }
