@@ -2303,7 +2303,7 @@ proc apply {config} {
   opendb_update_grid
 
   if {$verbose} {
-    puts "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+#    puts "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
   }
 }
 
