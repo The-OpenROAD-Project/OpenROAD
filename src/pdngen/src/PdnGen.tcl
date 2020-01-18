@@ -109,9 +109,11 @@ proc get_dir {layer_name} {
 proc get_rails_layers {} {
   variable design_data
   
-  dict for {name specification} [dict get $design_data specifications] {
-    if {[dict exists $specification rails]} {
-      return [dict keys [dict get $specification rails]]
+  foreach type [dict keys [dict get $design_data grid]] {
+    dict for {name specification} [dict get $design_data grid $type] {
+      if {[dict exists $specification rails]} {
+        return [dict keys [dict get $specification rails]]
+      }
     }
   }
   error "Cannot determine layer to use for stdcell rails"
@@ -139,33 +141,33 @@ proc init_via_tech {} {
   }
 }
 
-proc set_proptech_lines {obj prop_name} {
-  variable tech_line
+proc set_prop_lines {obj prop_name} {
+  variable prop_line
   if {[set prop [::odb::dbStringProperty_find $obj $prop_name]] != "NULL"} {
-    set tech_line [$prop getValue]
+    set prop_line [$prop getValue]
   } else {
-    set tech_line {}
+    set prop_line {}
   }
 }
 
-proc read_proptechline {} {
-  variable tech_line
+proc read_propline {} {
+  variable prop_line
 
-  set word [lindex $tech_line 0]
-  set tech_line [lrange $tech_line 1 end]
+  set word [lindex $prop_line 0]
+  set prop_line [lrange $prop_line 1 end]
 
   set line {}
-  while {[llength $tech_line] > 0 && $word != ";"} {
+  while {[llength $prop_line] > 0 && $word != ";"} {
     lappend line $word
-    set word [lindex $tech_line 0]
-    set tech_line [lrange $tech_line 1 end]
+    set word [lindex $prop_line 0]
+    set prop_line [lrange $prop_line 1 end]
   }
   return $line
 }
 
-proc empty_techline {} {
-  variable tech_line
-  return [expr ![llength $tech_line]]
+proc empty_propline {} {
+  variable prop_line
+  return [expr ![llength $prop_line]]
 }
 
 proc find_layer {layer_name} {
@@ -183,11 +185,11 @@ proc read_spacing {layer_name} {
 
   set layer [find_layer $layer_name]
 
-  set_proptech_lines $layer LEF58_SPACING
+  set_prop_lines $layer LEF58_SPACING
   set spacing {}
 
-  while {![empty_techline]} {
-    set line [read_proptechline]
+  while {![empty_propline]} {
+    set line [read_propline]
     if {[set idx [lsearch $line CUTCLASS]] > -1} {
       set cutclass [lindex $line [expr $idx + 1]]
       set line [lreplace $line $idx [expr $idx + 1]]
@@ -232,11 +234,11 @@ proc read_arrayspacing {layer_name} {
 
   set layer [find_layer $layer_name]
 
-  set_proptech_lines $layer LEF58_ARRAYSPACING
+  set_prop_lines $layer LEF58_ARRAYSPACING
   set arrayspacing {}
   
-  while {![empty_techline]} {
-    set line [read_proptechline]
+  while {![empty_propline]} {
+    set line [read_propline]
     if {[set idx [lsearch $line PARALLELOVERLAP]] > -1} {
       dict set arrayspacing paralleloverlap 1
       set line [lreplace $line $idx $idx]
@@ -264,12 +266,12 @@ proc read_cutclass {layer_name} {
   variable default_cutclass
 
   set layer [find_layer $layer_name]
-  set_proptech_lines $layer LEF58_CUTCLASS
+  set_prop_lines $layer LEF58_CUTCLASS
   dict set layers $layer_name cutclass {}
   set min_area -1
   
-  while {![empty_techline]} {
-    set line [read_proptechline]
+  while {![empty_propline]} {
+    set line [read_propline]
     if {![regexp {CUTCLASS\s+([^\s]+)\s+WIDTH\s+([^\s]+)\s+LENGTH\s+([^\s]+)} $line - cut_class width length]} {
       error "Failed to read CUTCLASS property '$line'"
     }
@@ -287,11 +289,11 @@ proc read_enclosures {layer_name} {
   variable def_units
   
   set layer [find_layer $layer_name]
-  set_proptech_lines $layer LEF58_ENCLOSURE
+  set_prop_lines $layer LEF58_ENCLOSURE
   set prev_cutclass ""
 
-  while {![empty_techline]} {
-    set line [read_proptechline]
+  while {![empty_propline]} {
+    set line [read_propline]
     set flags {}
     if {[set idx [lsearch $line ABOVE]] > -1} {
       dict set flags above 1
@@ -416,10 +418,10 @@ proc read_widthtable {layer_name} {
   
   set table {}
   set layer [find_layer $layer_name]
-  set_proptech_lines $layer LEF58_WIDTHTABLE
+  set_prop_lines $layer LEF58_WIDTHTABLE
 
-  while {![empty_techline]} {
-    set line [read_proptechline]
+  while {![empty_propline]} {
+    set line [read_propline]
     set flags {}
     if {[set idx [lsearch $line ORTHOGONAL]] > -1} {
       dict set flags orthogonal 1
@@ -878,7 +880,6 @@ proc get_layers_from_to {from to} {
 ## Proc to generate via locations, both for a normal via and stacked via
 proc generate_via_stacks {l1 l2 tag grid_data constraints} {
   variable logical_viarules
-  variable default_grid_data
   variable stripe_locs
   variable def_units
   variable metal_layers
@@ -1515,9 +1516,6 @@ proc export_opendb_specialnet {net_name signal_type} {
         set via_name [dict get $via_inst name]
         set x        [dict get $via_inst x]
         set y        [dict get $via_inst y]
-#        set lay      [lindex [dict get $via_inst layers] 0]
-#        regexp {(.*)_PIN} $lay - lay
-#        set layer [$tech findLayer $lay]
 #        puts "export_opendb_specialnet: $via_name $x $y [$block findVia $via_name]"
         odb::dbSBox_create $swire [$block findVia $via_name] $x $y "STRIPE"
 #        puts "export_opendb_specialnet: via created"
@@ -1797,6 +1795,12 @@ proc set_core_area {xmin ymin xmax ymax} {
   dict set design_data config core_area [list $xmin $ymin $xmax $ymax]
 }
 
+proc write_pdn_strategy {} {
+  variable design_data
+  
+  set_pdn_string_property_value "strategy" [dict get $design_data grid]
+}
+
 proc init {{PDN_cfg "PDN.cfg"}} {
   variable db
   variable block
@@ -1832,7 +1836,8 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   set physical_viarules {}
   
   source $PDN_cfg
-
+  write_pdn_strategy 
+  
   init_metal_layers
   init_via_tech
   
@@ -1941,7 +1946,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
   get_memory_instance_pg_pins
 
-  set default_grid_data [lindex [dict get $design_data grid stdcell] 0]
+  set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
 
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
@@ -1968,9 +1973,18 @@ proc convert_layer_spec_to_def_units {data} {
 
 proc specify_grid {type specification} {
   variable design_data
-  variable design_name 
   
   set spec $specification
+  if {![dict exists $spec name]} {
+    if {[dict exists $design_data grid $type]} {
+      set index [expr [dict size [dict get $design_data grid $type]] + 1]
+    } else {
+      set index 1
+    }
+    dict set spec name "${type}_$index"
+  }
+  set spec_name [dict get $spec name]
+  
   if {[dict exists $specification rails]} {
     dict for {layer data} [dict get $specification rails] {
       dict set spec rails $layer [convert_layer_spec_to_def_units $data]
@@ -1993,22 +2007,11 @@ proc specify_grid {type specification} {
       }
     }
   }
-  if {[dict exists $specification template] && ![dict exists $specification template file_name]} {
+  if {[dict exists $specification template]} {
     set_template_size {*}[dict get $specification template size]
-    dict set spec template file_name ${design_name}.template.plan
   }
   
-  set specifications {}
-  if {[dict exists $design_data grid $type]} {
-    set specifications [dict get $design_data grid $type]
-  }
-  lappend specifications $spec
-  
-  if {[dict exists $spec name]} {
-    dict set design_data specifications [dict get $specification name] $spec
-  }
-  
-  dict set design_data grid $type $specifications
+  dict set design_data grid $type $spec_name $spec
 }
 
 proc add_grid {grid_data} {
@@ -2037,7 +2040,7 @@ proc select_instance_specification {instance} {
     set macro_specifications [dict get $design_data grid macro]
 
     # If there is a specifcation that matches this instance name, use that
-    foreach specification $macro_specifications {
+    dict for {name specification} $macro_specifications {
       if {![dict exists $specification instance]} {continue}
       if {[dict get $specification instance] == $instance} {
         return $specification
@@ -2048,7 +2051,7 @@ proc select_instance_specification {instance} {
       set instance_macro [dict get $instances $instance macro]
 
       # If there are orientation based specifcations for this macro, use the appropriate one if available
-      foreach spec $macro_specifications {
+      dict for {name spec} $macro_specifications {
         if {!([dict exists $spec macro] && [dict get $spec orient] && [dict get $spec macro] == $instance_macro)} {continue}
         if {[lsearch [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
           return $spec
@@ -2056,7 +2059,7 @@ proc select_instance_specification {instance} {
       }
 
       # There should only be one macro specific spec that doesnt have an orientation qualifier
-      foreach spec $macro_specifications {
+      dict for {name spec} $macro_specifications {
         if {!([dict exists $spec macro] && [dict get $spec macro] == $instance_macro)} {continue}
         if {[lsearch [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
           return $spec
@@ -2064,7 +2067,7 @@ proc select_instance_specification {instance} {
       }
 
       # If there are orientation based specifcations, use the appropriate one if available
-      foreach spec $macro_specifications {
+      dict for {name spec} $macro_specifications {
         if {!(![dict exists $spec macro] && ![dict exists $spec instance] && [dict exists $spec orient])} {continue}
         if {[lsearch [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
           return $spec
@@ -2073,7 +2076,7 @@ proc select_instance_specification {instance} {
     }
 
     # There should only be one macro specific spec that doesnt have an orientation qualifier
-    foreach spec $macro_specifications {
+    dict for {name spec} $macro_specifications {
       if {!(![dict exists $spec macro] && ![dict exists $spec instance])} {continue}
       return $spec
     }
@@ -2207,41 +2210,85 @@ proc print_strategy {type specification} {
   puts "    Connect: [dict get $specification connect]"
 }
 
-proc read_template_placement {file_name} {
+proc read_template_placement {} {
   variable plan_template
   variable def_units
-  
-  set ch [open $file_name]
-  
-  while {![eof $ch]} {
-    set line [gets $ch]
-    if {[llength $line] == 0} {continue}
-    set x [expr round([lindex $line 0] * $def_units)]
-    set y [expr round([lindex $line 1] * $def_units)]
-    set template [lindex $line end]
-    
-    dict set plan_template $x $y $template
+  variable prop_line
+
+  if {![is_defined_pdn_property "plan_template"]} {
+    define_template_grid
+  } else {
+    set plan_template {}
+    set prop_line [get_pdn_string_property_value "plan_template"]
+    while {![empty_propline]} {
+      set line [read_propline]
+      if {[llength $line] == 0} {continue}
+      set x  [expr round([lindex $line 0] * $def_units)]
+      set y  [expr round([lindex $line 1] * $def_units)]
+      set x1 [expr round([lindex $line 2] * $def_units)]
+      set y1 [expr round([lindex $line 3] * $def_units)]
+      set template [lindex $line end]
+
+      dict set plan_template $x $y $template
+    }
   }
 }
 
-proc write_template_placement {file_name} {
+proc is_defined_pdn_property {name} {
+  variable block
+
+  if {[set pdn_props [::odb::dbBoolProperty_find $block PDN]] == "NULL"} {
+    return 0
+  }
+  
+  if {[::odb::dbStringProperty_find $pdn_props $name] == "NULL"} {
+    return 0
+  }
+  return 1
+}
+
+proc get_pdn_string_property {name} {
+  variable block
+
+  if {[set pdn_props [::odb::dbBoolProperty_find $block PDN]] == "NULL"} {
+    set pdn_props [::odb::dbBoolProperty_create $block PDN 1]
+  }
+  
+  if {[set prop [::odb::dbStringProperty_find $pdn_props $name]] == "NULL"} {
+    set prop [::odb::dbStringProperty_create $pdn_props $name ""]
+  }
+  
+  return $prop
+}
+
+proc set_pdn_string_property_value {name value} {
+  set prop [get_pdn_string_property $name]
+  $prop setValue $value
+}
+
+proc get_pdn_string_property_value {name} {
+  set prop [get_pdn_string_property $name]
+
+  return [$prop getValue]
+}
+
+proc write_template_placement {} {
   variable plan_template
   variable template
   variable def_units
   
-  set ch [open $file_name "w"]
-
+  set str ""
   foreach x [lsort -integer [dict keys $plan_template]] {
     foreach y [lsort -integer [dict keys [dict get $plan_template $x]]] {
-      puts $ch [format "%.3f %.3f %.3f %.3f %s" \
+      set str [format "${str}%.3f %.3f %.3f %.3f %s ;\n" \
         [expr 1.0 * $x / $def_units] [expr 1.0 * $y / $def_units] \
         [expr 1.0 * ($x + [dict get $template width]) / $def_units] [expr 1.0 * ($y + [dict get $template height]) / $def_units] \
         [dict get $plan_template $x $y]
       ]
     }
   }
-  
-  close $ch
+
+  set_pdn_string_property_value "plan_template" $str
 }
 
 proc set_default_template {name} {
@@ -2329,7 +2376,7 @@ proc get_instance_blockages {instances} {
   return $blockages
 }
 
-proc define_template_grid {file_name} {
+proc define_template_grid {} {
   variable design_data
   variable template
   variable plan_template
@@ -2368,8 +2415,7 @@ proc define_template_grid {file_name} {
       dict set plan_template $llx $lly $template_name
     }
   }
-  
-  write_template_placement $file_name
+  write_template_placement
 }
 
 proc set_blockages {these_blockages} {
@@ -2408,14 +2454,14 @@ proc plan_grid {} {
   variable default_grid_data
   variable def_units
   variable blockages 
-
+  
   ################################## Main Code #################################
 
   puts "****** INFO ******"
-  foreach specification [dict get $design_data grid stdcell] {
+  dict for {name specification} [dict get $design_data grid stdcell] {
     print_strategy stdcell $specification
   }
-  foreach specification [dict get $design_data grid macro] {
+  dict for {name specification} [dict get $design_data grid macro] {
     print_strategy macro $specification
   }
   puts "**** END INFO ****"
@@ -2436,12 +2482,7 @@ proc plan_grid {} {
   add_blockages [core_area_boundary]        
 
   if {[dict exists $specification template]} {
-    set template_pdn_file [dict get $specification template file_name]
-    if {[file exists $template_pdn_file]} {
-      read_template_placement $template_pdn_file
-    } else {
-      define_template_grid $template_pdn_file
-    }
+    read_template_placement
   }
   
   add_grid $specification

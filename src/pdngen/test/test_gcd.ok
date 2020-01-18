@@ -22,13 +22,13 @@ Type: stdcell, grid
       Layer: metal4 - Width: 0.480 Pitch: 56.000 Offset: 2.000
       Layer: metal7 - Width: 1.400 Pitch: 40.000 Offset: 2.000
     Connect: {metal1 metal4} {metal4 metal7}
-Type: macro
+Type: macro, macro_1
     Macro orientation: R0 R180 MX MY
     Straps
       Layer: metal5 - Width: 0.930 Pitch: 40.000 Offset: 2.000
       Layer: metal6 - Width: 0.930 Pitch: 40.000 Offset: 2.000
     Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
-Type: macro
+Type: macro, macro_2
     Macro orientation: R90 R270 MXR90 MYR90
     Straps
       Layer: metal6 - Width: 0.930 Pitch: 40.000 Offset: 2.000
