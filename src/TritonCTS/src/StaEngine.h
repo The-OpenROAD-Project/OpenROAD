@@ -40,40 +40,35 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include "STAEngine.h"
+#ifndef STAENGINE_H
+#define STAENGINE_H
 
-#include "Machine.hh"
-#include "Network.hh"
-#include "Sdc.hh"
+#include "CtsOptions.h"
 #include "openroad/OpenRoad.hh"
-#include "db_sta/dbSta.hh"
 
-#include <tcl.h>
-#include <iostream>
-#include <sstream>
-#include <cassert>
+struct Tcl_Interp;
+
+namespace sta {
+class Sta;
+class Sdc;
+class Network;
+}
 
 namespace TritonCTS {
 
-void STAEngine::init() {
-        ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
-        _openSta = openRoad->getSta();
-        _sdc = _openSta->sdc();
-        _network = _openSta->network();
-}
-
-void STAEngine::findClockRoots() {
-        std::cout << " Looking for clock sources...\n";
-
-        std::string clockNames = "";
-        for (sta::Clock *clk : _sdc->clks()) {
-                for (sta::Pin *pin : clk->leafPins()) {
-                        clockNames += std::string(_network->name(pin)) + " ";
-                }
-        }         
-
-        std::cout << "    Clock names: " << clockNames << "\n";
-        _options->setClockNets(clockNames);
-}
+class StaEngine {
+public:
+        StaEngine(CtsOptions& options) : _options(&options) {};
+        
+        void init();
+        void findClockRoots();
+private:
+        sta::dbSta*   _openSta   = nullptr;
+        sta::Sdc*     _sdc       = nullptr;
+        sta::Network* _network   = nullptr;    
+        CtsOptions*   _options   = nullptr;
+};
 
 }
+
+#endif

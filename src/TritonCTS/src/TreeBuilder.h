@@ -51,7 +51,7 @@
 
 #include "Util.h"
 #include "CtsOptions.h"
-#include "Characterization.h"
+#include "TechChar.h"
 
 namespace TritonCTS {
 
@@ -175,34 +175,19 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class ClockTreeBuilder {
+class TreeBuilder {
 public:
-        ClockTreeBuilder(CtsOptions& options, ClockNet& net) : 
+        TreeBuilder(CtsOptions& options, ClockNet& net) : 
                          _options(&options), _clockNet(net) {};
         
         virtual void run() = 0;
-        void setCharacterization(Characterization& techChar) { _techChar = &techChar; }
+        void setTechChar(TechChar& techChar) { _techChar = &techChar; }
         const ClockNet& getClockNet() const { return _clockNet; }        
 
 protected:
-        CtsOptions*       _options = nullptr;
-        ClockNet          _clockNet;
-        Characterization* _techChar = nullptr;
-};
-
-//-----------------------------------------------------------------------------
-
-class GHTreeBuilder : public ClockTreeBuilder {
-public:
-        GHTreeBuilder(CtsOptions& options, ClockNet& net) : 
-                      ClockTreeBuilder(options, net) {};
-        
-        void run();
-private:
-        void initSinkRegion();
-
-        Box<double> _sinkRegion;
-        DBU _wireSegmentUnit = -1;
+        CtsOptions* _options = nullptr;
+        ClockNet    _clockNet;
+        TechChar*   _techChar = nullptr;
 };
 
 }

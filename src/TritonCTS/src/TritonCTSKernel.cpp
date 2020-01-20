@@ -59,7 +59,7 @@ void TritonCTSKernel::importCharacterization() {
         std::cout << " *  Import characterization  *\n";
         std::cout << " *****************************\n";
        
-        _characterization.parse(_options.getLutFile(), _options.getSolListFile()); 
+        _techChar.parse(_options.getLutFile(), _options.getSolListFile()); 
 }
 
 void TritonCTSKernel::checkCharacterization() {
@@ -68,7 +68,7 @@ void TritonCTSKernel::checkCharacterization() {
         std::cout << " ****************************\n";
 
         std::unordered_set<std::string> visitedMasters;
-        _characterization.forEachWireSegment( [&] (unsigned idx, const WireSegment& wireSeg) {
+        _techChar.forEachWireSegment( [&] (unsigned idx, const WireSegment& wireSeg) {
                 for (unsigned buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
                         std::string master = wireSeg.getBufferMaster(buf);
                         if (visitedMasters.count(master) != 0) {
@@ -124,15 +124,15 @@ void TritonCTSKernel::buildClockTrees() {
         std::cout << " *  Build clock trees  *\n";
         std::cout << " ***********************\n";
         
-        for (ClockTreeBuilder* builder: _builders) {
-                builder->setCharacterization(_characterization);
+        for (TreeBuilder* builder: _builders) {
+                builder->setTechChar(_techChar);
                 builder->run();
                 _dbWrapper.writeClockNetsToDb(builder->getClockNet());
         }
 }
 
-void TritonCTSKernel::forEachBuilder(const std::function<void(const ClockTreeBuilder*)> func) const {
-        for (const ClockTreeBuilder* builder: _builders) {
+void TritonCTSKernel::forEachBuilder(const std::function<void(const TreeBuilder*)> func) const {
+        for (const TreeBuilder* builder: _builders) {
                 func(builder);
         }
 }

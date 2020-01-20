@@ -111,7 +111,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class Characterization {
+class TechChar {
 public:
         typedef uint32_t Key;
         static const unsigned NUM_BITS_PER_FIELD = 10;
@@ -119,7 +119,7 @@ public:
         static const unsigned LENGTH_UNIT_MICRON = 10;
 
 public:
-        Characterization(CtsOptions& options) : _options(&options) {}
+        TechChar(CtsOptions& options) : _options(&options) {}
         
         void parse(const std::string& lutFile, const std::string solListFile);
         void write(const std::string& file) const;

@@ -43,12 +43,12 @@
 #ifndef HTREEBUILDER_H
 #define HTREEBUILDER_H
 
-#include "ClockTreeBuilder.h"
+#include "TreeBuilder.h"
 #include "CtsOptions.h"
 #include "Util.h"
 
-#include <cmath>
 #include <limits>
+#include <cmath>
 
 namespace TritonCTS {
 
@@ -61,7 +61,7 @@ public:
                        const std::vector<unsigned>& techCharWires,
                        ClockNet& clockNet,
                        ClockNet::SubNet& drivingSubNet,
-                       Characterization& techChar,
+                       TechChar& techChar,
                        unsigned techCharDistUnit) :
                        _instPrefix(instPrefix),
                        _netPrefix(netPrefix),                       
@@ -85,7 +85,7 @@ protected:
         std::vector<unsigned> _techCharWires;
         ClockNet*             _clockNet;
         ClockNet::SubNet*     _drivingSubNet;
-        Characterization*     _techChar;
+        TechChar*             _techChar;
         unsigned              _techCharDistUnit;
         bool                  _forceBuffer;
         unsigned              _numBuffers = 0;
@@ -97,7 +97,7 @@ protected:
 
 //-----------------------------------------------------------------------------
 
-class HTreeBuilder : public ClockTreeBuilder {
+class HTreeBuilder : public TreeBuilder {
         class LevelTopology {
         public:
                 static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
@@ -166,7 +166,7 @@ class HTreeBuilder : public ClockTreeBuilder {
 
 public:
         HTreeBuilder(CtsOptions& options, ClockNet& net) : 
-                     ClockTreeBuilder(options, net) {};
+                     TreeBuilder(options, net) {};
         
         void run();
 

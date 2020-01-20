@@ -40,41 +40,40 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <chrono>
-#include <ctime> 
+#include "StaEngine.h"
+
+#include "Machine.hh"
+#include "Network.hh"
+#include "Sdc.hh"
+#include "openroad/OpenRoad.hh"
+#include "db_sta/dbSta.hh"
+
 #include <tcl.h>
+#include <iostream>
+#include <sstream>
+#include <cassert>
 
-extern "C" {
-        extern int Tritoncts_Init(Tcl_Interp *interp);
+namespace TritonCTS {
+
+void StaEngine::init() {
+        ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
+        _openSta = openRoad->getSta();
+        _sdc = _openSta->sdc();
+        _network = _openSta->network();
 }
 
-int tclAppInit(Tcl_Interp *interp) {
-        Tcl_Init(interp);
-        Tritoncts_Init(interp);
+void StaEngine::findClockRoots() {
+        std::cout << " Looking for clock sources...\n";
 
-        return TCL_OK;
+        std::string clockNames = "";
+        for (sta::Clock *clk : _sdc->clks()) {
+                for (sta::Pin *pin : clk->leafPins()) {
+                        clockNames += std::string(_network->name(pin)) + " ";
+                }
+        }         
+
+        std::cout << "    Clock names: " << clockNames << "\n";
+        _options->setClockNets(clockNames);
 }
 
-int main(int argc, char** argv) {
-        std::cout << "\n";
-        std::cout << " ##########################################\n";
-        std::cout << " #              TritonCTS 2.0             #\n";
-        std::cout << " #                                        #\n";
-        std::cout << " # Authors: Mateus Fogaca (UFRGS)         #\n";
-        std::cout << " #          Jiajia Li (Qualcomm)          #\n";
-        std::cout << " # Faculty: Andrew Kahng (UCSD)           #\n";
-        std::cout << " #          Ricardo Reis (UFRGS)          #\n";
-        std::cout << " ##########################################\n\n";
-        
-        using std::chrono::time_point;
-        using std::chrono::system_clock; 
-        
-        time_point<system_clock> startPoint = system_clock::now();
-        std::time_t startTime = system_clock::to_time_t(startPoint);
-        std::cout << " > Current time: " << std::ctime(&startTime) << "\n";
-
-        Tcl_Main(argc, argv, tclAppInit);
-
-        return 0;
 }

@@ -40,34 +40,57 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STAENGINE_H
-#define STAENGINE_H
+#ifndef DBWRAPPER_H
+#define DBWRAPPER_H
 
 #include "CtsOptions.h"
-#include "openroad/OpenRoad.hh"
+#include "TreeBuilder.h"
 
-struct Tcl_Interp;
+#include <string>
+#include <vector>
 
-namespace sta {
-class Sta;
-class Sdc;
-class Network;
+namespace odb {
+class dbDatabase;
+class dbChip;
+class dbBlock;
+class dbInst;
+class dbNet;
+class dbITerm;
 }
 
 namespace TritonCTS {
 
-class STAEngine {
+class TritonCTSKernel;
+
+class DbWrapper {
 public:
-        STAEngine(CtsOptions& options) : _options(&options) {};
-        
-        void init();
-        void findClockRoots();
+        DbWrapper(CtsOptions& options,
+                  TritonCTSKernel& kernel);
+
+        bool masterExists(const std::string& master) const;
+
+        void populateTritonCTS();
+        void writeClockNetsToDb(const ClockNet& clockNet);
+
 private:
-        sta::dbSta*   _openSta   = nullptr;
-        sta::Sdc*     _sdc       = nullptr;
-        sta::Network* _network   = nullptr;    
-        CtsOptions*   _options   = nullptr;
-};
+        odb::dbDatabase*  _db     = nullptr;
+        odb::dbChip*      _chip   = nullptr;
+        odb::dbBlock*     _block  = nullptr;
+        CtsOptions* _options  = nullptr;
+        TritonCTSKernel*  _kernel = nullptr;         
+
+        void parseClockNetNames(std::vector<std::string>& clockNetNames) const;
+
+        void initDB();
+        void initAllClockNets();
+        void initClockNet(odb::dbNet* net);
+        
+        void disconnectAllSinksFromNet(std::string netName);
+        void createClockBuffers(const ClockNet& net);
+        void removeNonClockNets();
+        void computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const;
+        odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
+};  
 
 }
 

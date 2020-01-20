@@ -40,7 +40,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include "ClockTreeBuilder.h"
+#include "TreeBuilder.h"
 
 #include <iostream>
 #include <fstream>
@@ -114,28 +114,6 @@ void ClockNet::forEachClockBuffer(const std::function<void(const ClockInstance&)
         for (const ClockInstance& clockBuffer: _clockBuffers) {
                 func(clockBuffer);
         }
-}
-
-void GHTreeBuilder::run() {
-        std::cout << " Generating GH-Tree topology for net " << _clockNet.getName() << "...\n";
-        initSinkRegion();
-}
-
-void GHTreeBuilder::initSinkRegion() {
-        unsigned wireSegmentUnitInMicron = _options->getWireSegmentUnit(); 
-        DBU dbUnits = _options->getDbUnits();
-        _wireSegmentUnit = wireSegmentUnitInMicron * dbUnits;
-
-        std::cout << " Wire segment unit: " << _wireSegmentUnit << " dbu ("
-                  << wireSegmentUnitInMicron << " um)\n";
-
-        Box<DBU> sinkRegionDbu = _clockNet.computeSinkRegion();
-        std::cout << " Original sink region: " << sinkRegionDbu << "\n";
-        
-        _sinkRegion = sinkRegionDbu.normalize(1.0/_wireSegmentUnit);
-        std::cout << " Normalized sink region: " << _sinkRegion << "\n";
-        std::cout << "  Width:  " << _sinkRegion.getWidth() << "\n";
-        std::cout << "  Height: " << _sinkRegion.getHeight() << "\n";
 }
 
 }
