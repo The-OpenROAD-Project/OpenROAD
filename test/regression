@@ -18,7 +18,7 @@ exec tclsh $0 ${1+"$@"}
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Usage: regression help | test1 [test2...]
-# where test is all or the name of a tcl script in $STA/test
+# where test is all or the name of a tcl script in /test
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
