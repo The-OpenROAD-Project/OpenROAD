@@ -155,13 +155,6 @@ proc resize { args } {
   }
 }
 
-define_cmd_args "get_pin_net" {pin_name}
-
-proc get_pin_net { pin_name } {
-  set pin [get_pin_error "pin_name" $pin_name]
-  return [$pin net]
-}
-
 define_cmd_args "report_design_area" {}
 
 proc report_design_area {} {
