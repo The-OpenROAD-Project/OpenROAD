@@ -40,60 +40,37 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TRITONCTSKERNEL_H
-#define TRITONCTSKERNEL_H
+#ifndef POSTCTSOPT_H
+#define POSTCTSOPT_H
 
-#include "DbWrapper.h"
 #include "CtsOptions.h"
-#include "TechChar.h"
-#include "TreeBuilder.h"
-#include "StaEngine.h"
+#include "Clock.h"
 
-#include <functional>
+#include <unordered_map>
 
 namespace TritonCTS {
 
-class TritonCTSKernel {
+class PostCtsOpt {
 public:
-        TritonCTSKernel() : _dbWrapper(_options, *this),
-                            _techChar(_options),
-                            _staEngine(_options) {}
+        PostCtsOpt(Clock& clock, CtsOptions& options) : 
+                   _clock(&clock), _options(&options) {}      
 
-        void runTritonCts();
-        CtsOptions& getParms() { return _options; }
-        void addBuilder(TreeBuilder* builder) { _builders.push_back(builder); }
-        void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+        void run();
 
-private:
-        void printHeader() const;
-        void importCharacterization();
-        void checkCharacterization();
-        void findClockRoots();
-        void populateTritonCts();
-        void buildClockTrees();
-        void runPostCtsOpt();
-        void writeDataToDb();
-        void printFooter() const;
-        
-        CtsOptions _options;
-        DbWrapper  _dbWrapper;
-        TechChar   _techChar;
-        StaEngine  _staEngine;
-        std::vector<TreeBuilder*> _builders;
+protected:
+        void initSourceSinkDists();
+        void computeNetSourceSinkDists(const Clock::SubNet& subNet);
+        void fixSourceSinkDists();
+        void fixNetSourceSinkDists(Clock::SubNet& subNet);
+        void createSubClockNet(Clock::SubNet& net, ClockInst* driver, ClockInst* sink);
+        Point<DBU> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
 
-//-----------------------------------------------------------------------------
-
-// TCL commands
-public:
-        void set_lut_file(const char* file);
-        void set_sol_list_file(const char* file);
-        void export_characterization(const char* file);
-        void set_root_buffer(const char* buffer);
-        void set_clock_nets(const char* names);
-        void set_wire_segment_distance_unit(unsigned unit);
-        void run_triton_cts();
-        void report_characterization();
-        void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 
+        Clock*      _clock;
+        CtsOptions* _options;
+        unsigned _numViolatingSinks  = 0;
+        unsigned _numInsertedBuffers = 0;
+        double   _avgSourceSinkDist  = 0.0;
+        std::unordered_map<std::string, DBU> _sinkDistMap;
 };
 
 }

@@ -70,23 +70,23 @@ public:
         bool masterExists(const std::string& master) const;
 
         void populateTritonCTS();
-        void writeClockNetsToDb(const ClockNet& clockNet);
+        void writeClockNetsToDb(const Clock& clockNet);
 
 private:
-        odb::dbDatabase*  _db     = nullptr;
-        odb::dbChip*      _chip   = nullptr;
-        odb::dbBlock*     _block  = nullptr;
-        CtsOptions* _options  = nullptr;
-        TritonCTSKernel*  _kernel = nullptr;         
+        odb::dbDatabase*  _db      = nullptr;
+        odb::dbChip*      _chip    = nullptr;
+        odb::dbBlock*     _block   = nullptr;
+        CtsOptions*       _options = nullptr;
+        TritonCTSKernel*  _kernel  = nullptr;         
 
-        void parseClockNetNames(std::vector<std::string>& clockNetNames) const;
+        void parseClockNames(std::vector<std::string>& clockNetNames) const;
 
         void initDB();
-        void initAllClockNets();
-        void initClockNet(odb::dbNet* net);
+        void initAllClocks();
+        void initClock(odb::dbNet* net);
         
         void disconnectAllSinksFromNet(std::string netName);
-        void createClockBuffers(const ClockNet& net);
+        void createClockBuffers(const Clock& clk);
         void removeNonClockNets();
         void computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const;
         odb::dbITerm* getFirstInput(odb::dbInst* inst) const;

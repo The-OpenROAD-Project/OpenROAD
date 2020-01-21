@@ -41,17 +41,34 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include "TritonCTSKernel.h"
+#include "PostCtsOpt.h"
 
 #include <unordered_set>
+#include <chrono>
+#include <ctime>
 
 namespace TritonCTS {
 
 void TritonCTSKernel::runTritonCts() {
+        printHeader();
         importCharacterization();
         findClockRoots();
         populateTritonCts();
         checkCharacterization();
         buildClockTrees();
+        runPostCtsOpt();
+        writeDataToDb();
+        printFooter();
+}
+
+void TritonCTSKernel::printHeader() const {
+        std::cout << " *****************\n";
+        std::cout << " * TritonCTS 2.0 *\n";        
+        std::cout << " *****************\n";
+
+        auto start = std::chrono::system_clock::now();
+        std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+        std::cout << " Current time: " << std::ctime(&startTime);
 }
 
 void TritonCTSKernel::importCharacterization() {
@@ -127,14 +144,41 @@ void TritonCTSKernel::buildClockTrees() {
         for (TreeBuilder* builder: _builders) {
                 builder->setTechChar(_techChar);
                 builder->run();
-                _dbWrapper.writeClockNetsToDb(builder->getClockNet());
         }
 }
+
+void TritonCTSKernel::runPostCtsOpt() {
+        std::cout << " ****************\n";
+        std::cout << " * Post CTS opt *\n";
+        std::cout << " ****************\n";
+
+        for (TreeBuilder* builder: _builders) {
+                PostCtsOpt opt(builder->getClock(), _options);
+                opt.run();
+        }
+}
+
+void TritonCTSKernel::writeDataToDb() {
+        std::cout << " ********************\n";
+        std::cout << " * Write data to DB *\n";
+        std::cout << " ********************\n";
+        
+        for (TreeBuilder* builder: _builders) {
+                _dbWrapper.writeClockNetsToDb(builder->getClock());
+        }
+} 
 
 void TritonCTSKernel::forEachBuilder(const std::function<void(const TreeBuilder*)> func) const {
         for (const TreeBuilder* builder: _builders) {
                 func(builder);
         }
+}
+
+void TritonCTSKernel::printFooter() const {
+        auto end = std::chrono::system_clock::now();
+        std::time_t endTime = std::chrono::system_clock::to_time_t(end);
+        std::cout << "\n Current time: " << std::ctime(&endTime);
+        std::cout << " ... End of TritonCTS execution.\n";
 }
 
 }
