@@ -53,7 +53,9 @@ namespace TritonCTS {
 class PostCtsOpt {
 public:
         PostCtsOpt(Clock& clock, CtsOptions& options) : 
-                   _clock(&clock), _options(&options) {}      
+                   _clock(&clock), _options(&options) {
+                _bufDistRatio = _options->getBufDistRatio();           
+        }      
 
         void run();
 
@@ -70,6 +72,7 @@ protected:
         unsigned _numViolatingSinks  = 0;
         unsigned _numInsertedBuffers = 0;
         double   _avgSourceSinkDist  = 0.0;
+        double   _bufDistRatio       = 0.0;
         std::unordered_map<std::string, DBU> _sinkDistMap;
 };
 

@@ -83,6 +83,10 @@ public:
         bool forceBuffersOnLeafLevel() const { return _forceBuffersOnLeafLevel; }
         void setWriteOnlyClockNets(bool writeOnlyClk) { _writeOnlyClockNets = writeOnlyClk; }
         bool writeOnlyClockNets() const { return _writeOnlyClockNets; }
+        void setRunPostCtsOpt(bool run) { _runPostCtsOpt = run; }
+        bool runPostCtsOpt() { return _runPostCtsOpt; }
+        void setBufDistRatio(double ratio) { _bufDistRatio = ratio; }
+        double getBufDistRatio() { return _bufDistRatio; }
                 
 private:
         std::string _blockName               = "";
@@ -100,6 +104,8 @@ private:
         bool        _enableFakeLutEntries    = true;
         bool        _forceBuffersOnLeafLevel = true;
         bool        _writeOnlyClockNets      = false;
+        bool        _runPostCtsOpt           = true;
+        double      _bufDistRatio            = 0.1;
 };
 
 }

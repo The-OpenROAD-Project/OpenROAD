@@ -148,6 +148,10 @@ void TritonCTSKernel::buildClockTrees() {
 }
 
 void TritonCTSKernel::runPostCtsOpt() {
+        if (!_options.runPostCtsOpt()) {
+                return;
+        }
+
         std::cout << " ****************\n";
         std::cout << " * Post CTS opt *\n";
         std::cout << " ****************\n";

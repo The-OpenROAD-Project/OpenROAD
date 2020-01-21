@@ -125,14 +125,14 @@ Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver, ClockInst* sink)
         unsigned xDist = driverLoc.computeDistX(sinkLoc); 
         unsigned yDist = driverLoc.computeDistY(sinkLoc); 
         
-        double xBufDistRatio = 0.1;
+        double xBufDistRatio = _bufDistRatio;
         if (sinkLoc.getX() < driverLoc.getX()) {
-                xBufDistRatio = -0.1;
+                xBufDistRatio = - _bufDistRatio;
         }
         
-        double yBufDistRatio = 0.1;
+        double yBufDistRatio = _bufDistRatio;
         if (sinkLoc.getY() < driverLoc.getY()) {
-                yBufDistRatio = -0.1;
+                yBufDistRatio = - _bufDistRatio;
         }
         
         Point<DBU> bufLoc(driverLoc.getX() + xBufDistRatio * xDist, 
