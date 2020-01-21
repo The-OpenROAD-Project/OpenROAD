@@ -40,58 +40,37 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef DBWRAPPER_H
-#define DBWRAPPER_H
+#ifndef CLOCKTREEBUILDER_H
+#define CLOCKTREEBUILDER_H
 
-#include "CtsOptions.h"
-#include "ClockTreeBuilder.h"
-
-#include <string>
 #include <vector>
+#include <string>
+#include <unordered_map>
+#include <functional>
+#include <deque>
 
-namespace odb {
-class dbDatabase;
-class dbChip;
-class dbBlock;
-class dbInst;
-class dbNet;
-class dbITerm;
-}
+#include "Clock.h"
+#include "Util.h"
+#include "CtsOptions.h"
+#include "TechChar.h"
 
 namespace TritonCTS {
 
-class TritonCTSKernel;
-
-class DBWrapper {
+class TreeBuilder {
 public:
-        DBWrapper(CtsOptions& options,
-                  TritonCTSKernel& kernel);
-
-        bool masterExists(const std::string& master) const;
-
-        void populateTritonCTS();
-        void writeClockNetsToDb(const ClockNet& clockNet);
-
-private:
-        odb::dbDatabase*  _db     = nullptr;
-        odb::dbChip*      _chip   = nullptr;
-        odb::dbBlock*     _block  = nullptr;
-        CtsOptions* _options  = nullptr;
-        TritonCTSKernel*  _kernel = nullptr;         
-
-        void parseClockNetNames(std::vector<std::string>& clockNetNames) const;
-
-        void initDB();
-        void initAllClockNets();
-        void initClockNet(odb::dbNet* net);
+        TreeBuilder(CtsOptions& options, Clock& clk) : 
+                    _options(&options), _clock(clk) {};
         
-        void disconnectAllSinksFromNet(std::string netName);
-        void createClockBuffers(const ClockNet& net);
-        void removeNonClockNets();
-        void computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const;
-        odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
-};  
+        virtual void run() = 0;
+        void setTechChar(TechChar& techChar) { _techChar = &techChar; }
+        const Clock& getClock() const { return _clock; }        
+        Clock& getClock() { return _clock; }        
+
+protected:
+        CtsOptions* _options = nullptr;
+        Clock       _clock;
+        TechChar*   _techChar = nullptr;
+};
 
 }
-
 #endif

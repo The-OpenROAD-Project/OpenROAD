@@ -40,41 +40,42 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include <chrono>
-#include <ctime> 
-#include <tcl.h>
+#ifndef POSTCTSOPT_H
+#define POSTCTSOPT_H
 
-extern "C" {
-        extern int Tritoncts_Init(Tcl_Interp *interp);
+#include "CtsOptions.h"
+#include "Clock.h"
+
+#include <unordered_map>
+
+namespace TritonCTS {
+
+class PostCtsOpt {
+public:
+        PostCtsOpt(Clock& clock, CtsOptions& options) : 
+                   _clock(&clock), _options(&options) {
+                _bufDistRatio = _options->getBufDistRatio();           
+        }      
+
+        void run();
+
+protected:
+        void initSourceSinkDists();
+        void computeNetSourceSinkDists(const Clock::SubNet& subNet);
+        void fixSourceSinkDists();
+        void fixNetSourceSinkDists(Clock::SubNet& subNet);
+        void createSubClockNet(Clock::SubNet& net, ClockInst* driver, ClockInst* sink);
+        Point<DBU> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
+
+        Clock*      _clock;
+        CtsOptions* _options;
+        unsigned _numViolatingSinks  = 0;
+        unsigned _numInsertedBuffers = 0;
+        double   _avgSourceSinkDist  = 0.0;
+        double   _bufDistRatio       = 0.0;
+        std::unordered_map<std::string, DBU> _sinkDistMap;
+};
+
 }
 
-int tclAppInit(Tcl_Interp *interp) {
-        Tcl_Init(interp);
-        Tritoncts_Init(interp);
-
-        return TCL_OK;
-}
-
-int main(int argc, char** argv) {
-        std::cout << "\n";
-        std::cout << " ##########################################\n";
-        std::cout << " #              TritonCTS 2.0             #\n";
-        std::cout << " #                                        #\n";
-        std::cout << " # Authors: Mateus Fogaca (UFRGS)         #\n";
-        std::cout << " #          Jiajia Li (Qualcomm)          #\n";
-        std::cout << " # Faculty: Andrew Kahng (UCSD)           #\n";
-        std::cout << " #          Ricardo Reis (UFRGS)          #\n";
-        std::cout << " ##########################################\n\n";
-        
-        using std::chrono::time_point;
-        using std::chrono::system_clock; 
-        
-        time_point<system_clock> startPoint = system_clock::now();
-        std::time_t startTime = system_clock::to_time_t(startPoint);
-        std::cout << " > Current time: " << std::ctime(&startTime) << "\n";
-
-        Tcl_Main(argc, argv, tclAppInit);
-
-        return 0;
-}
+#endif

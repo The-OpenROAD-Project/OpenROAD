@@ -43,12 +43,12 @@
 #ifndef HTREEBUILDER_H
 #define HTREEBUILDER_H
 
-#include "ClockTreeBuilder.h"
+#include "TreeBuilder.h"
 #include "CtsOptions.h"
 #include "Util.h"
 
-#include <cmath>
 #include <limits>
+#include <cmath>
 
 namespace TritonCTS {
 
@@ -59,23 +59,23 @@ public:
                        Point<double> root, 
                        Point<double> target,
                        const std::vector<unsigned>& techCharWires,
-                       ClockNet& clockNet,
-                       ClockNet::SubNet& drivingSubNet,
-                       Characterization& techChar,
+                       Clock& clock,
+                       Clock::SubNet& drivingSubNet,
+                       TechChar& techChar,
                        unsigned techCharDistUnit) :
                        _instPrefix(instPrefix),
                        _netPrefix(netPrefix),                       
                        _root(root), 
                        _target(target), 
                        _techCharWires(techCharWires), 
-                       _clockNet(&clockNet),
+                       _clock(&clock),
                        _drivingSubNet(&drivingSubNet),
                        _techChar(&techChar),
                        _techCharDistUnit(techCharDistUnit) {}
 
         void build();
         void forceBufferInSegment(std::string master);
-        ClockNet::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
+        Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
 protected:
         const std::string     _instPrefix;       
@@ -83,9 +83,9 @@ protected:
         Point<double>         _root;
         Point<double>         _target;
         std::vector<unsigned> _techCharWires;
-        ClockNet*             _clockNet;
-        ClockNet::SubNet*     _drivingSubNet;
-        Characterization*     _techChar;
+        Clock*                _clock;
+        Clock::SubNet*        _drivingSubNet;
+        TechChar*             _techChar;
         unsigned              _techCharDistUnit;
         bool                  _forceBuffer;
         unsigned              _numBuffers = 0;
@@ -97,7 +97,7 @@ protected:
 
 //-----------------------------------------------------------------------------
 
-class HTreeBuilder : public ClockTreeBuilder {
+class HTreeBuilder : public TreeBuilder {
         class LevelTopology {
         public:
                 static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
@@ -134,11 +134,11 @@ class HTreeBuilder : public ClockTreeBuilder {
                         }
                 }
 
-                ClockNet::SubNet* getBranchDrivingSubNet(unsigned idx) const { 
+                Clock::SubNet* getBranchDrivingSubNet(unsigned idx) const { 
                         return _branchDrivingSubNet[idx]; 
                 }
 
-                void setBranchDrivingSubNet(unsigned idx, ClockNet::SubNet& subNet) {
+                void setBranchDrivingSubNet(unsigned idx, Clock::SubNet& subNet) {
                         _branchDrivingSubNet[idx] = &subNet;
                 }
 
@@ -160,13 +160,13 @@ class HTreeBuilder : public ClockTreeBuilder {
                 std::vector<unsigned>          _wireSegments;
                 std::vector<Point<double>>     _branchPointLoc;
                 std::vector<unsigned>          _parents;
-                std::vector<ClockNet::SubNet*> _branchDrivingSubNet;
+                std::vector<Clock::SubNet*>    _branchDrivingSubNet;
                 std::vector<std::vector<Point<double>>> _branchSinkLocs;
         };
 
 public:
-        HTreeBuilder(CtsOptions& options, ClockNet& net) : 
-                     ClockTreeBuilder(options, net) {};
+        HTreeBuilder(CtsOptions& options, Clock& net) : 
+                     TreeBuilder(options, net) {};
         
         void run();
 

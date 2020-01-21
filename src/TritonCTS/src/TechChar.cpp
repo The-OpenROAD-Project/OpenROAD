@@ -40,7 +40,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include "Characterization.h"
+#include "TechChar.h"
 
 #include <fstream>
 #include <ostream>
@@ -50,7 +50,7 @@
 
 namespace TritonCTS {
 
-void Characterization::parseLut(const std::string& file) {
+void TechChar::parseLut(const std::string& file) {
         std::cout << " Reading LUT file \"" << file << "\"\n";
         std::ifstream lutFile(file.c_str());
         
@@ -121,19 +121,19 @@ void Characterization::parseLut(const std::string& file) {
         std::cout << "    Actual min input cap: " << _actualMinInputCap << "\n";
 }
 
-void Characterization::parse(const std::string& lutFile, const std::string solListFile) {
+void TechChar::parse(const std::string& lutFile, const std::string solListFile) {
         parseLut(lutFile);
         parseSolList(solListFile);
 }
 
-void Characterization::initLengthUnits() {
+void TechChar::initLengthUnits() {
         _charLengthUnit = _options->getWireSegmentUnit();
         _lengthUnit = LENGTH_UNIT_MICRON;
         _lengthUnitRatio = _charLengthUnit / _lengthUnit;
 }
 
 inline
-void Characterization::reportCharacterizationBounds() const {
+void TechChar::reportCharacterizationBounds() const {
         std::cout << std::setw(12) << "Min. len" << std::setw(12) << "Max. len" 
                   << std::setw(12) << "Min. cap"  << std::setw(12) << "Max. cap"
                   << std::setw(12) << "Min. slew" << std::setw(12) << "Max. slew" << "\n"; 
@@ -144,7 +144,7 @@ void Characterization::reportCharacterizationBounds() const {
 }
 
 inline
-void Characterization::checkCharacterizationBounds() const {
+void TechChar::checkCharacterizationBounds() const {
         if (_minSegmentLength > MAX_NORMALIZED_VAL || _maxSegmentLength > MAX_NORMALIZED_VAL ||
             _minCapacitance > MAX_NORMALIZED_VAL || _maxCapacitance > MAX_NORMALIZED_VAL ||
             _minSlew > MAX_NORMALIZED_VAL || _maxSlew > MAX_NORMALIZED_VAL) {
@@ -157,7 +157,7 @@ void Characterization::checkCharacterizationBounds() const {
 }
 
 inline
-WireSegment& Characterization::createWireSegment(uint8_t length, uint8_t load, uint8_t outputSlew, 
+WireSegment& TechChar::createWireSegment(uint8_t length, uint8_t load, uint8_t outputSlew, 
                                                  double power, unsigned delay, uint8_t inputCap, 
                                                  uint8_t inputSlew) {
         _wireSegments.emplace_back(length, load, outputSlew, power, 
@@ -175,7 +175,7 @@ WireSegment& Characterization::createWireSegment(uint8_t length, uint8_t load, u
         return _wireSegments.back(); 
 }
 
-void Characterization::parseSolList(const std::string& file) {
+void TechChar::parseSolList(const std::string& file) {
         std::cout << " Reading solution list file \"" << file << "\"\n";
         std::ifstream solFile(file.c_str());
 
@@ -205,13 +205,13 @@ void Characterization::parseSolList(const std::string& file) {
 }
 
 
-void Characterization::forEachWireSegment(const std::function<void(unsigned, const WireSegment&)> func) const {
+void TechChar::forEachWireSegment(const std::function<void(unsigned, const WireSegment&)> func) const {
         for (unsigned idx = 0; idx < _wireSegments.size(); ++idx) {
                 func(idx, _wireSegments[idx]);
         }
 };
 
-void Characterization::forEachWireSegment(uint8_t length, uint8_t load, uint8_t outputSlew,
+void TechChar::forEachWireSegment(uint8_t length, uint8_t load, uint8_t outputSlew,
                                           const std::function<void(unsigned, const WireSegment&)> func) const {
         unsigned key = computeKey(length, load, outputSlew);
         
@@ -227,7 +227,7 @@ void Characterization::forEachWireSegment(uint8_t length, uint8_t load, uint8_t 
         }
 };
 
-void Characterization::report() const {
+void TechChar::report() const {
         std::cout << "\n";
         std::cout << "*********************************************************************\n";
         std::cout << "*                     Report Characterization                       *\n";
@@ -269,7 +269,7 @@ void Characterization::report() const {
         std::cout << "*************************************************************\n\n";
 }
 
-void Characterization::reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const {
+void TechChar::reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const {
         std::cout << "\n";
         std::cout << "*********************************************************************\n";
         std::cout << "*                     Report Characterization                       *\n";
@@ -314,7 +314,7 @@ void Characterization::reportSegments(uint8_t length, uint8_t load, uint8_t outp
                 });   
 }
 
-void Characterization::write(const std::string& filename) const {
+void TechChar::write(const std::string& filename) const {
         std::ofstream file(filename.c_str());
 
         if(!file.is_open()) {
@@ -348,7 +348,7 @@ void Characterization::write(const std::string& filename) const {
         file.close();
 }
 
-void Characterization::createFakeEntries(unsigned length, unsigned fakeLength) {
+void TechChar::createFakeEntries(unsigned length, unsigned fakeLength) {
         std::cout << " [WARNING] Creating fake entries in the LUT.\n";
         for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
                 for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
@@ -377,7 +377,7 @@ void Characterization::createFakeEntries(unsigned length, unsigned fakeLength) {
         }
 }
 
-void Characterization::reportSegment(unsigned key) const {
+void TechChar::reportSegment(unsigned key) const {
         const WireSegment& seg = getWireSegment(key);
 
         std::cout << "    Key: "     << key 

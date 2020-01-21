@@ -40,7 +40,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include "STAEngine.h"
+#include "StaEngine.h"
 
 #include "Machine.hh"
 #include "Network.hh"
@@ -55,14 +55,14 @@
 
 namespace TritonCTS {
 
-void STAEngine::init() {
+void StaEngine::init() {
         ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
         _openSta = openRoad->getSta();
         _sdc = _openSta->sdc();
         _network = _openSta->network();
 }
 
-void STAEngine::findClockRoots() {
+void StaEngine::findClockRoots() {
         std::cout << " Looking for clock sources...\n";
 
         std::string clockNames = "";

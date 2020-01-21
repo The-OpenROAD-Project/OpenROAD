@@ -64,6 +64,16 @@ public:
                 return dx + dy; 
         }
        
+        T computeDistX(const Point<T>& other) const {
+                T dx = (getX() > other.getX()) ? (getX() - other.getX()) : (other.getX() - getX());
+                return dx; 
+        }
+
+        T computeDistY(const Point<T>& other) const {
+                T dy = (getY() > other.getY()) ? (getY() - other.getY()) : (other.getY() - getY());
+                return dy;
+        }
+
         bool operator < (const Point<T>& other) const {
                 if (getX() != other.getX()) {
                         return getX() < other.getX();
