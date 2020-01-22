@@ -1491,4 +1491,67 @@ pinIsPlaced(Pin *pin,
     || status == dbPlacementStatus::COVER;
 }
 
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::repairHoldViolations(LibertyCell *buffer_cell)
+{
+  sta_->findRequireds();
+  VertexSet hold_failures;
+  // Find endpoints with hold violation.
+  for (Vertex *end : *sta_->search()->endpoints()) {
+    if (sta_->vertexSlack(end, MinMax::min()) < 0.0)
+      hold_failures.insert(end);
+  }
+  printf("Failing endpoints\n");
+  for (Vertex *failing_end : hold_failures)
+    printf(" %s\n", failing_end->name(sdc_network_));
+}
+
+void
+Resizer::repairHoldViolations(Pin *end_pin,
+			      LibertyCell *buffer_cell)
+{
+  Vertex *end = graph_->pinLoadVertex(end_pin);
+  VertexSet ends;
+  ends.insert(end);
+  VertexWeightMap weight_map;
+  findFaninWeights(ends, weight_map);
+}
+
+void
+Resizer::findFaninWeights(VertexSet &ends,
+			  // Return value.
+			  VertexWeightMap &weight_map)
+{
+  SearchPredNonReg2 pred(sta_);
+  BfsBkwdIterator iter(BfsIndex::other, &pred, this);
+  for (Vertex *vertex : ends)
+    iter.enqueue(vertex);
+
+  while (iter.hasNext()) {
+    Vertex *vertex = iter.next();
+    weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
+    iter.enqueueAdjacentVertices(vertex);
+  }
+
+  for(auto vertex_weight : weight_map) {
+    Vertex *vertex = vertex_weight.first;
+    float weight = vertex_weight.second;
+    printf(" %s %s\n", vertex->name(sdc_network_),
+	   sta::delayAsString(weight, this));
+  }
+}
+
+float
+Resizer::slackGap(Vertex *vertex)
+{
+  Slack slacks[RiseFall::index_count][MinMax::index_count];
+  sta_->vertexSlacks(vertex, slacks);
+  return min(slacks[RiseFall::riseIndex()][MinMax::maxIndex()]
+	     - slacks[RiseFall::riseIndex()][MinMax::minIndex()],
+	     slacks[RiseFall::fallIndex()][MinMax::maxIndex()]
+	     - slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
+}
+
 }

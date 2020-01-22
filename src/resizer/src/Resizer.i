@@ -67,6 +67,7 @@ using sta::LibertyLibrarySeq;
 using sta::LibertyCell;
 using sta::Instance;
 using sta::Net;
+using sta::Pin;
 using sta::RiseFall;
 using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
@@ -232,6 +233,23 @@ resize_target_load_cap(LibertyCell *cell)
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->targetLoadCap(cell);
+}
+
+void
+repair_pin_hold_violations(Pin *end_pin,
+			   LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHoldViolations(end_pin, buffer_cell);
+}
+
+void
+repair_hold_violations_cmd(LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHoldViolations(buffer_cell);
 }
 
 float
