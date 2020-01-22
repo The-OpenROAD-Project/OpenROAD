@@ -107,6 +107,13 @@ getTritonMp()
   return openroad->getTritonMp();
 }
 
+OpenRCX::Ext *
+getOpenRCX()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getOpenRCX();
+}
+
 } // namespace
 
 using ord::OpenRoad;
@@ -117,6 +124,7 @@ using ord::getDbNetwork;
 using ord::getSta;
 using ord::getResizer;
 using ord::getTritonCts;
+using ord::getOpenRCX;
 %}
 
 ////////////////////////////////////////////////////////////////
