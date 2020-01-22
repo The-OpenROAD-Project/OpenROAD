@@ -37,6 +37,7 @@
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
+#include "OpenRCX/MakeOpenRCX.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -108,6 +109,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
+  extractor_ = makeOpenRCX();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -127,6 +129,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initTritonCts(this);
   initTapcell(this);
   initTritonMp(this);
+  initOpenRCX(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
