@@ -12,6 +12,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "opendb/db.h"
+#include "opendb/wOrder.h"
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
@@ -37,6 +38,7 @@
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
+#include "OpenRCX/MakeOpenRCX.h"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -108,6 +110,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
+  extractor_ = makeOpenRCX();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -127,6 +130,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initTritonCts(this);
   initTapcell(this);
   initTritonMp(this);
+  initOpenRCX(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
@@ -157,13 +161,18 @@ OpenRoad::readLef(const char *filename,
 }
 
 void
-OpenRoad::readDef(const char *filename)
+OpenRoad::readDef(const char *filename, bool order_wires)
 {
   odb::defin def_reader(db_);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
   def_reader.createChip(search_libs, filename);
+  if (order_wires) {
+    odb::orderWires(db_->getChip()->getBlock(),
+                    nullptr /* net_name_or_id*/,
+                    false /* force */);
+  }
   sta_->readDefAfter();
 }
 

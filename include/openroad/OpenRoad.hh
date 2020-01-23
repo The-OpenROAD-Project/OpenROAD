@@ -59,6 +59,10 @@ namespace MacroPlace {
 class TritonMacroPlace;
 }
 
+namespace OpenRCX {
+class Ext;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -85,13 +89,15 @@ public:
   opendp::Opendp *getOpendp() { return opendp_; }
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
+  OpenRCX::Ext *getOpenRCX() { return extractor_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
 	       bool make_tech,
 	       bool make_library);
 
-  void readDef(const char *filename);
+  void readDef(const char *filename,
+               bool        order_wires);
   void writeDef(const char *filename);
 
   void readVerilog(const char *filename);
@@ -116,6 +122,7 @@ private:
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
+  OpenRCX::Ext *extractor_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
