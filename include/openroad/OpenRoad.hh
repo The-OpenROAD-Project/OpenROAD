@@ -96,7 +96,8 @@ public:
 	       bool make_tech,
 	       bool make_library);
 
-  void readDef(const char *filename);
+  void readDef(const char *filename,
+               bool        order_wires);
   void writeDef(const char *filename);
 
   void readVerilog(const char *filename);
