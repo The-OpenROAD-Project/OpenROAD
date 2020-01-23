@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 proc show_openroad_splash {} {
-  puts "OpenROAD [openroad_version] [string range [openroad_git_sha1] 0 9]
+  puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
 This is free software, and you are free to change and redistribute it
