@@ -107,6 +107,13 @@ getTritonMp()
   return openroad->getTritonMp();
 }
 
+OpenRCX::Ext *
+getOpenRCX()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getOpenRCX();
+}
+
 } // namespace
 
 using ord::OpenRoad;
@@ -117,6 +124,7 @@ using ord::getDbNetwork;
 using ord::getSta;
 using ord::getResizer;
 using ord::getTritonCts;
+using ord::getOpenRCX;
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -152,10 +160,10 @@ read_lef_cmd(const char *filename,
 }
 
 void
-read_def_cmd(const char *filename)
+read_def_cmd(const char *filename, bool order_wires)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDef(filename);
+  ord->readDef(filename, order_wires);
 }
 
 void

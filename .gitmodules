@@ -27,3 +27,6 @@
 [submodule "src/TritonMacroPlace"]
 	path = src/TritonMacroPlace
 	url = https://github.com/The-OpenROAD-Project/TritonMacroPlace.git
+[submodule "src/OpenRCX"]
+	path = src/OpenRCX
+	url = https://github.com/The-OpenROAD-Project/OpenRCX.git
