@@ -6,6 +6,7 @@ link_design top
 
 create_clock -period 2 clk
 set_input_delay -clock clk 0 {in1 in2}
+set_output_delay -clock clk -1.0 out
 set_propagated_clock clk
 
 set_wire_rc -layer metal1
