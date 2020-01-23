@@ -184,6 +184,8 @@ protected:
   float slackGap(Vertex *vertex);
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
+  void repairHoldPass(VertexSet &ends,
+		      LibertyCell *buffer_cell);
   void sortFaninsByWeight(VertexWeightMap &weight_map,
 			  // Return value.
 			  VertexSeq &fanins);

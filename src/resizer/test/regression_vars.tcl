@@ -135,6 +135,7 @@ record_resizer_tests {
   resize4
   resize5
   resize6
+  repair_hold1
 }
 
 # Record tests in $STAX/designs

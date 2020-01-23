@@ -11,13 +11,11 @@ set_propagated_clock clk
 set buffer_cell [get_lib_cell nlc18/snl_bufx2]
 set_wire_rc -layer metal1
 
-report_checks -path_delay min_max -to r3/D
-#repair_hold_violations -buffer_cell snl_bufx2
+report_checks -path_delay min -to r3/D
 sta::resizer_preamble [get_libs "nlc18"]
 sta::repair_pin_hold_violations [get_pins r3/D] [get_lib_cell nlc18/snl_bufx2]
+report_checks -path_delay min -to r3/D
 
-if {0} {
 set def_file [make_result_file repair_hold1.def]
 write_def $def_file
 diff_files $def_file repair_hold1.defok
-}
