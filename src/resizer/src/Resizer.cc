@@ -1505,6 +1505,7 @@ pinIsPlaced(Pin *pin,
 void
 Resizer::repairHoldViolations(LibertyCell *buffer_cell)
 {
+  init();
   sta_->findRequireds();
   VertexSet hold_failures;
   // Find endpoints with hold violation.
@@ -1527,6 +1528,8 @@ Resizer::repairHoldViolations(Pin *end_pin,
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
   ends.insert(end);
+
+  init();
   sta_->findRequireds();
   repairHoldViolations(ends, buffer_cell);
 }
@@ -1562,7 +1565,7 @@ Resizer::repairHoldPass(VertexSet &ends,
   sortFaninsByWeight(weight_map, fanins);
   
   int repair_count = 0;
-  for(int i = 0; i < fanins.size() && repair_count < 10; i++) {
+  for(int i = 0; i < fanins.size() && repair_count < 10 ; i++) {
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
@@ -1573,6 +1576,10 @@ Resizer::repairHoldPass(VertexSet &ends,
       Pin *drvr_pin = vertex->pin();
       repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
       repair_count++;
+      if (overMaxArea()) {
+	report_->warn("max utilization reached.\n");
+	break;
+      }
     }
   }
 }

@@ -76,7 +76,8 @@ define_cmd_args "resize" {[-buffer_inputs]\
 			    [-repair_max_slew]\
 			    [-resize_libraries resize_libs]\
 			    [-buffer_cell buffer_cell]\
-			    [-dont_use lib_cells]}
+			    [-dont_use lib_cells]\
+			    [-max_utilization util]}
 
 proc resize { args } {
   parse_key_args "resize" args \
@@ -153,12 +154,12 @@ proc resize { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {[-buffer_cell buffer_cell]\
-					    [-dont_use lib_cells]}
+define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
+					    [-max_utilization util]}
 
 proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
-    keys {-buffer_cell -resize_libraries -dont_use -max_utilization} \
+    keys {-buffer_cell -max_utilization} \
     flags {}
 
   set buffer_cell "NULL"
@@ -177,17 +178,6 @@ proc repair_hold_violations { args } {
     sta_error "-buffer_cell required."
   }
 
-  if { [info exists keys(-resize_libraries)] } {
-    set resize_libs [get_liberty_error "-resize_libraries" $keys(-resize_libraries)]
-  } else {
-    set resize_libs [get_libs *]
-  }
-
-  set dont_use {}
-  if { [info exists keys(-dont_use)] } {
-    set dont_use [get_lib_cells -quiet $keys(-dont_use)]
-  }
-
   set max_util 0.0
   if { [info exists keys(-max_utilization)] } {
     set max_util $keys(-max_utilization)
@@ -199,8 +189,6 @@ proc repair_hold_violations { args } {
 
   check_argc_eq0 "repair_hold_violations" $args
 
-  resizer_preamble $resize_libs
-  set_dont_use $dont_use
   set_max_utilization $max_util
   repair_hold_violations_cmd $buffer_cell
 }
