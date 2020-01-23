@@ -49,7 +49,6 @@ proc set_wire_rc { args } {
     set wire_res [expr $res_ohm_per_micron * 1e+6]
     # F/m^2
     set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
-    puts "$wire_res $wire_cap"
   } else {
     if { [info exists keys(-resistance)] } {
       set res $keys(-resistance)

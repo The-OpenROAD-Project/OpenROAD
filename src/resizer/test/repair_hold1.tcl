@@ -13,6 +13,7 @@ set_wire_rc -layer metal1
 
 report_checks -path_delay min_max -to r3/D
 #repair_hold_violations -buffer_cell snl_bufx2
+sta::resizer_preamble [get_libs "nlc18"]
 sta::repair_pin_hold_violations [get_pins r3/D] [get_lib_cell nlc18/snl_bufx2]
 
 if {0} {

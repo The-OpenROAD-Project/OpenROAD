@@ -181,6 +181,11 @@ protected:
 			// Return value.
 			VertexWeightMap &weight_map);
   float slackGap(Vertex *vertex);
+  void repairHoldViolations(VertexSet &ends,
+			    LibertyCell *buffer_cell);
+  void sortFaninsByWeight(VertexWeightMap &weight_map,
+			  // Return value.
+			  VertexSeq &fanins);
 
   float wire_res_;
   float wire_cap_;

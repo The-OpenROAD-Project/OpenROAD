@@ -1506,6 +1506,7 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
   printf("Failing endpoints\n");
   for (Vertex *failing_end : hold_failures)
     printf(" %s\n", failing_end->name(sdc_network_));
+  repairHoldViolations(hold_failures, buffer_cell);
 }
 
 void
@@ -1515,8 +1516,68 @@ Resizer::repairHoldViolations(Pin *end_pin,
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
   ends.insert(end);
+  repairHoldViolations(ends, buffer_cell);
+}
+
+float
+cellDriveResistance(const LibertyCell *cell);
+
+void
+Resizer::repairHoldViolations(VertexSet &ends,
+			      LibertyCell *buffer_cell)
+{
   VertexWeightMap weight_map;
   findFaninWeights(ends, weight_map);
+  VertexSeq fanins;
+  sortFaninsByWeight(weight_map, fanins);
+
+  for(Vertex *vertex : fanins) {
+    Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
+    if (hold_slack < 0) {
+      debugPrint3(debug_, "repair_hold", 2, " %s w=%s gap=%s\n",
+		  vertex->name(sdc_network_),
+		  delayAsString(weight_map[vertex], this),
+		  delayAsString(slackGap(vertex), this));
+      const Pin *drvr_pin = vertex->pin();
+      Instance *inst = network_->instance(drvr_pin);
+      LibertyCell *inst_cell = network_->libertyCell(inst);
+      LibertyCellSeq *equiv_cells = sta_->equivCells(inst_cell);
+
+      bool found_cell = false;
+      int i;
+      for (i = 0; i < equiv_cells->size(); i++) {
+	LibertyCell *equiv = (*equiv_cells)[i];
+	if (equiv == inst_cell) {
+	  found_cell = true;
+	  break;
+	}
+      }
+      // Equiv cells are sorted by drive strength.
+      // If inst_cell is the first equiv it is already the lowest drive option.
+      if (found_cell && i > 0) {
+	float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+	float drive_res = cellDriveResistance(inst_cell);
+	float rc_delay0 = drive_res * load_cap;
+	// Downsize until RC delay > hold violation.
+	for (int k = i - 1; k >= 0; k--) {
+	  LibertyCell *equiv = (*equiv_cells)[k];
+	  float drive_res = cellDriveResistance(equiv);
+	  float rc_delay = drive_res * load_cap;
+	  if (rc_delay - rc_delay0 > -hold_slack
+	      // Last chance baby.
+	      || k == 0) {
+	    printf("%s %s -> %s +%s\n",
+		   sdc_network_->pathName(inst),
+		   inst_cell->name(),
+		   equiv->name(),
+		   delayAsString(rc_delay - rc_delay0, this));
+	    sta_->replaceCell(inst, equiv);
+	    break;
+	  }
+	}
+      }
+    }
+  }
 }
 
 void
@@ -1524,6 +1585,7 @@ Resizer::findFaninWeights(VertexSet &ends,
 			  // Return value.
 			  VertexWeightMap &weight_map)
 {
+  Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
@@ -1531,18 +1593,41 @@ Resizer::findFaninWeights(VertexSet &ends,
 
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
-    weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
+    if (!search->isEndpoint(vertex)
+	&& vertex->isDriver(db_network_))
+      weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
     iter.enqueueAdjacentVertices(vertex);
-  }
-
-  for(auto vertex_weight : weight_map) {
-    Vertex *vertex = vertex_weight.first;
-    float weight = vertex_weight.second;
-    printf(" %s %s\n", vertex->name(sdc_network_),
-	   sta::delayAsString(weight, this));
   }
 }
 
+void
+Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
+			    // Return value.
+			    VertexSeq &fanins)
+{
+  for(auto vertex_weight : weight_map) {
+    Vertex *vertex = vertex_weight.first;
+    fanins.push_back(vertex);
+  }
+  sort(fanins, [&](Vertex *v1, Vertex *v2)
+	      { float w1 = weight_map[v1];
+		float w2 = weight_map[v2];
+		if (fuzzyEqual(w1, w2)) {
+		  float gap1 = slackGap(v1);
+		  float gap2 = slackGap(v2);
+		  // Break ties based on the hold/setup gap.
+		  if (fuzzyEqual(gap1, gap2))
+		    return v1->level() > v2->level();
+		  else
+		    return gap1 > gap2;
+		}
+		else
+		  return w1 < w2;});
+}
+
+// Gap between min setup and hold slacks.
+// This says how much head room there is for adding delay to fix a old violation
+// before violating a setup check.
 float
 Resizer::slackGap(Vertex *vertex)
 {
