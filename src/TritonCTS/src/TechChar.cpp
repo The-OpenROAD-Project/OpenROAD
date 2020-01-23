@@ -167,7 +167,7 @@ WireSegment& TechChar::createWireSegment(uint8_t length, uint8_t load, uint8_t o
         unsigned key = computeKey(length, load, outputSlew);
 
         if (_keyToWireSegments.find(key) == _keyToWireSegments.end()) {
-            _keyToWireSegments[key] = std::vector<unsigned>();        
+            _keyToWireSegments[key] = std::deque<unsigned>();        
         }              
                 
         _keyToWireSegments[key].push_back(segmentIdx);
@@ -221,7 +221,7 @@ void TechChar::forEachWireSegment(uint8_t length, uint8_t load, uint8_t outputSl
                return; 
         }
 
-        const std::vector<unsigned> &wireSegmentsIdx = _keyToWireSegments.at(key);
+        const std::deque<unsigned> &wireSegmentsIdx = _keyToWireSegments.at(key);
         for (unsigned idx : wireSegmentsIdx) {
                 func(idx, _wireSegments[idx]);
         }
@@ -353,7 +353,7 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength) {
         for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
                 for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
                         forEachWireSegment(length, load, outSlew,
-                                [&] (unsigned key, const WireSegment& seg) {  
+                                [&] (unsigned key, const WireSegment& seg) {
                                         unsigned power = seg.getPower();
                                         unsigned delay = seg.getDelay();
                                         unsigned inputCap = seg.getInputCap();

@@ -52,6 +52,7 @@
 #include <bitset>
 #include <cassert> 
 #include <string>
+#include <deque>
 
 namespace TritonCTS {
 
@@ -189,8 +190,8 @@ protected:
         unsigned _actualMinInputCap  = 0;
         unsigned _actualMinInputSlew = 0;
 
-        std::vector<WireSegment> _wireSegments;
-        std::unordered_map<Key, std::vector<unsigned>> _keyToWireSegments;
+        std::deque<WireSegment> _wireSegments;
+        std::unordered_map<Key, std::deque<unsigned>> _keyToWireSegments;
 
         CtsOptions* _options;
 };
