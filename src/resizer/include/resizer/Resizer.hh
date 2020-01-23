@@ -160,6 +160,7 @@ protected:
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
+  adsPoint location(Instance *inst);
   void setLocation(Instance *inst,
 		   adsPoint pt);
   Pin *singleOutputPin(const Instance *inst);
@@ -186,6 +187,11 @@ protected:
   void sortFaninsByWeight(VertexWeightMap &weight_map,
 			  // Return value.
 			  VertexSeq &fanins);
+  void repairHoldBuffer(Pin *drvr_pin,
+			Slack hold_slack,
+			LibertyCell *buffer_cell);
+  void repairHoldResize(Pin *drvr_pin,
+			Slack hold_slack);
 
   float wire_res_;
   float wire_cap_;

@@ -309,6 +309,15 @@ Resizer::setLocation(Instance *inst,
   dinst->setLocation(pt.getX(), pt.getY());
 }
 
+adsPoint
+Resizer::location(Instance *inst)
+{
+  dbInst *dinst = db_network_->staToDb(inst);
+  int x, y;
+  dinst->getOrigin(x, y);
+  return adsPoint(x, y);
+}
+
 void
 Resizer::bufferOutputs(LibertyCell *buffer_cell)
 {
@@ -1519,9 +1528,6 @@ Resizer::repairHoldViolations(Pin *end_pin,
   repairHoldViolations(ends, buffer_cell);
 }
 
-float
-cellDriveResistance(const LibertyCell *cell);
-
 void
 Resizer::repairHoldViolations(VertexSet &ends,
 			      LibertyCell *buffer_cell)
@@ -1531,6 +1537,7 @@ Resizer::repairHoldViolations(VertexSet &ends,
   VertexSeq fanins;
   sortFaninsByWeight(weight_map, fanins);
 
+  inserted_buffer_count_ = 0;
   for(Vertex *vertex : fanins) {
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
@@ -1538,43 +1545,91 @@ Resizer::repairHoldViolations(VertexSet &ends,
 		  vertex->name(sdc_network_),
 		  delayAsString(weight_map[vertex], this),
 		  delayAsString(slackGap(vertex), this));
-      const Pin *drvr_pin = vertex->pin();
-      Instance *inst = network_->instance(drvr_pin);
-      LibertyCell *inst_cell = network_->libertyCell(inst);
-      LibertyCellSeq *equiv_cells = sta_->equivCells(inst_cell);
+      Pin *drvr_pin = vertex->pin();
+      repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
+    }
+  }
+}
 
-      bool found_cell = false;
-      int i;
-      for (i = 0; i < equiv_cells->size(); i++) {
-	LibertyCell *equiv = (*equiv_cells)[i];
-	if (equiv == inst_cell) {
-	  found_cell = true;
-	  break;
-	}
-      }
-      // Equiv cells are sorted by drive strength.
-      // If inst_cell is the first equiv it is already the lowest drive option.
-      if (found_cell && i > 0) {
-	float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
-	float drive_res = cellDriveResistance(inst_cell);
-	float rc_delay0 = drive_res * load_cap;
-	// Downsize until RC delay > hold violation.
-	for (int k = i - 1; k >= 0; k--) {
-	  LibertyCell *equiv = (*equiv_cells)[k];
-	  float drive_res = cellDriveResistance(equiv);
-	  float rc_delay = drive_res * load_cap;
-	  if (rc_delay - rc_delay0 > -hold_slack
-	      // Last chance baby.
-	      || k == 0) {
-	    printf("%s %s -> %s +%s\n",
-		   sdc_network_->pathName(inst),
-		   inst_cell->name(),
-		   equiv->name(),
-		   delayAsString(rc_delay - rc_delay0, this));
-	    sta_->replaceCell(inst, equiv);
-	    break;
-	  }
-	}
+void
+Resizer::repairHoldBuffer(Pin *drvr_pin,
+			  Slack hold_slack,
+			  LibertyCell *buffer_cell)
+{
+  Net *net = db_network_->net(drvr_pin);
+  Instance *parent = db_network_->topInstance();
+  string net2_name = makeUniqueNetName();
+  string buffer_name = makeUniqueBufferName();
+  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+  Instance *buffer = db_network_->makeInstance(buffer_cell,
+					       buffer_name.c_str(),
+					       parent);
+  inserted_buffer_count_++;
+  design_area_ += area(db_network_->cell(buffer_cell));
+
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
+	      sdc_network_->pathName(drvr_pin),
+	      buffer_name.c_str(),
+	      net2_name.c_str())
+  Instance *drvr = db_network_->instance(drvr_pin);
+  sta_->disconnectPin(drvr_pin);
+  sta_->connectPin(drvr, db_network_->port(drvr_pin), net2);
+  sta_->connectPin(buffer, input, net2);
+  sta_->connectPin(buffer, output, net);
+  setLocation(buffer, location(drvr));
+}
+
+static float
+cellDriveResistance(const LibertyCell *cell)
+{
+  LibertyCellPortBitIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    auto port = port_iter.next();
+    if (port->direction()->isOutput())
+      return port->driveResistance();
+  }
+  return 0.0;
+}
+
+void
+Resizer::repairHoldResize(Pin *drvr_pin,
+			  Slack hold_slack)
+{
+  Instance *inst = network_->instance(drvr_pin);
+  LibertyCell *inst_cell = network_->libertyCell(inst);
+  LibertyCellSeq *equiv_cells = sta_->equivCells(inst_cell);
+  bool found_cell = false;
+  int i;
+  for (i = 0; i < equiv_cells->size(); i++) {
+    LibertyCell *equiv = (*equiv_cells)[i];
+    if (equiv == inst_cell) {
+      found_cell = true;
+      break;
+    }
+  }
+  // Equiv cells are sorted by drive strength.
+  // If inst_cell is the first equiv it is already the lowest drive option.
+  if (found_cell && i > 0) {
+    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+    float drive_res = cellDriveResistance(inst_cell);
+    float rc_delay0 = drive_res * load_cap;
+    // Downsize until RC delay > hold violation.
+    for (int k = i - 1; k >= 0; k--) {
+      LibertyCell *equiv = (*equiv_cells)[k];
+      float drive_res = cellDriveResistance(equiv);
+      float rc_delay = drive_res * load_cap;
+      if (rc_delay - rc_delay0 > -hold_slack
+	  // Last chance baby.
+	  || k == 0) {
+	printf("%s %s -> %s +%s\n",
+	       sdc_network_->pathName(inst),
+	       inst_cell->name(),
+	       equiv->name(),
+	       delayAsString(rc_delay - rc_delay0, this));
+	sta_->replaceCell(inst, equiv);
+	break;
       }
     }
   }
