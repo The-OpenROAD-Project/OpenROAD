@@ -81,7 +81,7 @@ tclAppInit(int argc,
   ord::initOpenRoad(interp, argv[0]);
 
   if (!findCmdLineFlag(argc, argv, "-no_splash"))
-    Tcl_Eval(interp, "sta::show_openroad_splash");
+    Tcl_Eval(interp, "show_openroad_splash");
 
   if (!findCmdLineFlag(argc, argv, "-no_init")) {
     char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename);

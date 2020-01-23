@@ -6,8 +6,16 @@ timing analysis.
 
 #### Build
 
-OpenROAD depends on OpenSTA, and OpenDB, and flute3. These source
-directories are git submodules and located in `/src`.
+The OpenROAD build requires the following packages:
+
+  * cmake 3.9
+  * gcc or clang
+  * bison
+  * flex
+  * swig 3.0
+  * boost
+  * tcl 8.5
+  * zlib
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
@@ -17,6 +25,8 @@ cd build
 cmake ..
 make
 ```
+
+OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
 
 The default build type is RELEASE to compile optimized code.
 The resulting executable is in `build/resizer`.
