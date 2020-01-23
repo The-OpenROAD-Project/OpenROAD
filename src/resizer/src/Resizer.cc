@@ -1512,9 +1512,11 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
     if (sta_->vertexSlack(end, MinMax::min()) < 0.0)
       hold_failures.insert(end);
   }
-  printf("Failing endpoints\n");
-  for (Vertex *failing_end : hold_failures)
-    printf(" %s\n", failing_end->name(sdc_network_));
+  if (debug_->check("repair_hold", 2)) {
+    printf("Failing endpoints %lu\n", hold_failures.size());
+    for (Vertex *failing_end : hold_failures)
+      printf(" %s\n", failing_end->name(sdc_network_));
+  }
   repairHoldViolations(hold_failures, buffer_cell);
 }
 
@@ -1580,7 +1582,6 @@ Resizer::repairHoldBuffer(Pin *drvr_pin,
 			  Slack hold_slack,
 			  LibertyCell *buffer_cell)
 {
-  Net *net = db_network_->net(drvr_pin);
   Instance *parent = db_network_->topInstance();
   string net2_name = makeUniqueNetName();
   string buffer_name = makeUniqueBufferName();
@@ -1598,11 +1599,15 @@ Resizer::repairHoldBuffer(Pin *drvr_pin,
 	      buffer_name.c_str(),
 	      net2_name.c_str())
   Instance *drvr = db_network_->instance(drvr_pin);
+  Port *drvr_port = db_network_->port(drvr_pin);
+  Net *net = network_->isTopLevelPort(drvr_pin)
+    ? db_network_->net(db_network_->term(drvr_pin))
+    : db_network_->net(drvr_pin);
   sta_->disconnectPin(drvr_pin);
-  sta_->connectPin(drvr, db_network_->port(drvr_pin), net2);
+  sta_->connectPin(drvr, drvr_port, net2);
   sta_->connectPin(buffer, input, net2);
   sta_->connectPin(buffer, output, net);
-  setLocation(buffer, location(drvr));
+  setLocation(buffer, pinLocation(drvr_pin, db_network_));
 }
 
 void
