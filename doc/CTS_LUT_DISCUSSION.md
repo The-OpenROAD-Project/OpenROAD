@@ -13,4 +13,12 @@ In order to demonstrate how fast OpenSTA can run, we can make a prototype in TCL
 
 I think we should question the use of registers in the patterns and instead of registers tie the buffer chain inputs to input ports and the buffer chain outputs to output ports. This will make the netlist simpler and avoid the transition setting on internal nodes issue we have seen in the past. All inputs and outputs can be constrained with a simple SDC which creates a virtual clock and sets all of the input arrival and output required times to 0. The input transition can be set via the SDC that creates the clock and arrival times. If it is necessary to sweep input transition times, they can be reset and timing re-updated or exact copies of the patterns can be made with different transition times set. 
 
+create_clock -period 10 -name virtual
+set_input_delay -clock virtual 0 [all_inputs]
+set_output_delay -clock virtual [all_outputs]
+set_input_transition 
+on each input as needed, vary, rerun report_timing
+output load by set_load
+
+
 We can create a new tcl command in openroad.i to create a second opensta instance, load it with the template netlist, run independent of opendb and openroad, and save the LUT in a member variable of CTS.
