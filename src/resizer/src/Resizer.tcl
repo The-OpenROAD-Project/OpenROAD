@@ -110,8 +110,10 @@ proc resize { args } {
 	}
       }
     }
-  } elseif { $buffer_inputs || $buffer_outputs \
-	       || $repair_max_cap || $repair_max_slew } {
+  }
+  if { $buffer_cell == "NULL"
+       && ($buffer_inputs || $buffer_outputs \
+	     || $repair_max_cap || $repair_max_slew) } {
     sta_error "-buffer_cell required for buffer insertion."
   }
 

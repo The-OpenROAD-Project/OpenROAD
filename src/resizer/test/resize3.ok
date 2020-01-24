@@ -13,8 +13,8 @@ Notice 0: Finished DEF file: reg1.def
 Error: resize3.tcl, 7 library 'xxx' not found.
 Error: resize3.tcl, 8 liberty cell 'liberty1/yyy' not found.
 Warning: resize3.tcl, 9 library 'xxx' not found.
-Error: resize3.tcl, 9 Error: resize -buffer_cell required for buffer insertion.
-Error: resize3.tcl, 10 Error: snl_nor02x1 is not a buffer.
+Error: resize3.tcl, 9 -buffer_cell required for buffer insertion.
+Error: resize3.tcl, 10 snl_nor02x1 is not a buffer.
 Inserted 5 input buffers.
 Inserted 1 output buffers.
 Resized 0 instances.

@@ -334,7 +334,7 @@ clock_tree_synthesis -lut_file <lut_file> \
 - ``root_buffer`` is the master cell of the buffer that serves as root for the clock tree.
 - ``clk_nets`` is a string containing the names of the clock roots. If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
 
-#### Hold Check Repair
+#### Repair Hold Violations
 
 The `repair_hold_violations` command inserts buffers to repair hold
 check violations. Use the `set_wire_rc` command for parasitic
