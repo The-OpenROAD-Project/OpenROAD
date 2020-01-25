@@ -64,7 +64,7 @@ find_package(SWIG REQUIRED 3.0)
 include(UseSWIG)
 set(OPENDB_SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")
 
-find_package(boost)
+find_package(Boost)
 
 # OpenDB's swig wrapper is not in the library (and mistakenly exports
 # to the global namespace) so make our own.
@@ -133,6 +133,8 @@ set_property(SOURCE ${OPENROAD_SWIG_FILE}
   ${OPENSTA_HOME}/search
 
   ${OPENDB_HOME}/include
+
+  ${TCL_INCLUDE_PATH}
 )
 
 swig_add_library(openroad_swig
