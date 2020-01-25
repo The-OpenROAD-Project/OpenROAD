@@ -73,16 +73,16 @@ set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
 set_property(SOURCE ${OPENDB_SWIG_FILE}
   PROPERTY CPLUSPLUS ON
 )
+# Ubuntu 18.04 cmake version 3.10.2 does not support the
+# COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
+# them into SWIG_FLAGS for the time being.
 set_property(SOURCE ${OPENDB_SWIG_FILE}
-  PROPERTY COMPILE_OPTIONS
+  PROPERTY SWIG_FLAGS
   -module opendbtcl
   -namespace -prefix odb
   ${OPENDB_SWIG_WARNINGS}
-)
-set_property(SOURCE ${OPENDB_SWIG_FILE}
-  PROPERTY INCLUDE_DIRECTORIES
-  ${OPENDB_HOME}/include/opendb
-  ${OPENDB_HOME}/src/swig/tcl
+  -I${OPENDB_HOME}/include/opendb
+  -I${OPENDB_HOME}/src/swig/tcl
 )
 
 swig_add_library(opendb_swig
@@ -109,15 +109,15 @@ set(OPENROAD_SWIG_FILE OpenRoad.i)
 set_property(SOURCE ${OPENROAD_SWIG_FILE}
   PROPERTY CPLUSPLUS ON
 )
+# Ubuntu 18.04 cmake version 3.10.2 does not support the
+# COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
+# them into SWIG_FLAGS for the time being.
 set_property(SOURCE ${OPENROAD_SWIG_FILE}
-  PROPERTY COMPILE_OPTIONS
+  PROPERTY SWIG_FLAGS
   -module openroad
   -namespace -prefix ord
-)
-set_property(SOURCE ${OPENROAD_SWIG_FILE}
-  PROPERTY INCLUDE_DIRECTORIES
-  ${OPENROAD_HOME}/src
-  ${OPENDB_HOME}/include
+  -I${OPENROAD_HOME}/src
+  -I${OPENDB_HOME}/include
 )
 set_property(SOURCE ${OPENROAD_SWIG_FILE}
   PROPERTY GENERATED_INCLUDE_DIRECTORIES
@@ -155,15 +155,6 @@ swig_link_libraries(openroad_swig
 # Library dependencies
 #
 ################################################################
-
-# OSX tcl is deprecated and prints a warning, so look for a user installed
-# version before using the system version.
-# I tried to override the library search order instead but failed.
-# CMAKE_FIND_FRAMEWORK LAST bypasses the version in the framework directory
-# but not the one in /usr/lib.
-# This calls cmake/FindTCL.cmake
-# Do not use REQUIRED because it also requires TK.
-find_package(TCL)
 
 # Zlib
 include(FindZLIB)
