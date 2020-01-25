@@ -94,6 +94,7 @@ swig_add_library(opendb_swig
 target_include_directories(opendb_swig
   PUBLIC
   ${Boost_INCLUDE_DIRS}
+  ${TCL_INCLUDE_PATH}
 )
 
 swig_link_libraries(opendb_swig
