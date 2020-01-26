@@ -72,6 +72,7 @@ using sta::RiseFall;
 using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
+using sta::LibertyPort;
 
 %}
 
@@ -113,6 +114,11 @@ using sta::NetSeq;
   }
   delete nets;
   Tcl_SetObjResult(interp, list);
+}
+
+%typemap(out) LibertyPort* {
+  Tcl_Obj *obj = SWIG_NewInstanceObj($1, $1_descriptor, false);
+  Tcl_SetObjResult(interp, obj);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -280,6 +286,16 @@ find_floating_nets()
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findFloatingNets();
+}
+
+void
+repair_tie_fanout_cmd(LibertyPort *tie_port,
+		      int max_fanout,
+		      bool verbose)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairTieFanout(tie_port, max_fanout, verbose);
 }
 
 %} // inline

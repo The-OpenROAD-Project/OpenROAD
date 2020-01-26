@@ -55,6 +55,7 @@ using std::abs;
 using std::min;
 using std::max;
 using std::string;
+using std::to_string;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
@@ -1755,6 +1756,95 @@ Resizer::findFloatingNets()
   }
   delete net_iter;
   return floating_nets;
+}
+
+////////////////////////////////////////////////////////////////
+
+// Repair tie hi/low net driver fanout by duplicating the
+// tie hi/low instances.
+void
+Resizer::repairTieFanout(LibertyPort *tie_port,
+			 int max_fanout,
+			 bool verbose)
+{
+  Instance *top_inst = network_->topInstance();
+  LibertyCell *tie_cell = tie_port->libertyCell();
+  InstanceSeq insts;
+  findCellInstances(tie_cell, insts);
+  int hi_fanout_count = 0;
+  for (Instance *inst : insts) {
+    Pin *tie_drvr = network_->findPin(inst, tie_port);
+    int fanout = this->fanout(tie_drvr);
+    if (fanout > max_fanout) {
+      const char *tie_inst_name0 = network_->name(inst);
+      Net *tie_net0 = network_->net(tie_drvr);
+      const char *tie_net_name0 = network_->name(tie_net0);
+      int tie_inst_index = 0;
+      Net *tie_net = nullptr;
+      int load_index = 0;
+      NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(tie_drvr);
+      while (pin_iter->hasNext()) {
+	Pin *pin = pin_iter->next();
+	if (pin != tie_drvr) {
+	  // Leave the connections to the original instance.
+	  if (load_index >= max_fanout) {
+	    if ((load_index % max_fanout) == 0) {
+	      string tie_inst_name = tie_inst_name0;
+	      tie_inst_name += "_";
+	      tie_inst_name += to_string(tie_inst_index);
+	      Instance *tie_inst = sta_->makeInstance(tie_inst_name.c_str(),
+						      tie_cell, top_inst);
+	      string tie_net_name = tie_net_name0;
+	      tie_net_name += "_";
+	      tie_net_name += to_string(tie_inst_index);
+	      tie_net = sta_->makeNet(tie_net_name.c_str(), top_inst);
+	      sta_->connectPin(tie_inst, tie_port, tie_net);
+	      tie_inst_index++;
+	    }
+	    Instance *load_inst = network_->instance(pin);
+	    LibertyPort *load_port = network_->libertyPort(pin);
+	    sta_->disconnectPin(pin);
+	    sta_->connectPin(load_inst, load_port, tie_net);
+	  }
+	  load_index++;
+	}
+      }
+      if (verbose)
+	report_->print("High fanout tie net %s inserted %d cells for %d loads.\n",
+		       network_->pathName(tie_net0),
+		       tie_inst_index + 1,
+		       load_index);
+      hi_fanout_count++;
+    }
+  }
+}
+
+void
+Resizer::findCellInstances(LibertyCell *cell,
+			   // Return value.
+			   InstanceSeq &insts)
+{
+  LeafInstanceIterator *inst_iter = network_->leafInstanceIterator();
+  while (inst_iter->hasNext()) {
+    Instance *inst = inst_iter->next();
+    if (network_->libertyCell(inst) == cell)
+      insts.push_back(inst);
+  }
+  delete inst_iter;
+}
+
+int
+Resizer::fanout(Pin *drvr_pin)
+{
+  int fanout = 0;
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (pin != drvr_pin)
+      fanout++;
+  }
+  delete pin_iter;
+  return fanout;
 }
 
 }

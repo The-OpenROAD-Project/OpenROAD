@@ -1,0 +1,16 @@
+Notice 0: Reading LEF file:  Nangate.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate.lef
+High fanout tie net n1 inserted 10 cells for 92 loads.
+t1 10
+t1_0 10
+t1_1 10
+t1_2 10
+t1_3 10
+t1_4 10
+t1_5 10
+t1_6 10
+t1_7 10
+t1_8 2

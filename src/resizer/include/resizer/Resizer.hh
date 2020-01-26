@@ -84,6 +84,9 @@ public:
   double designArea();
   // Caller owns return value.
   NetSeq *findFloatingNets();
+  void repairTieFanout(LibertyPort *tie_port,
+		       int max_fanout,
+		       bool verbose);
 
 protected:
   void ensureCorner();
@@ -196,6 +199,10 @@ protected:
 			LibertyCell *buffer_cell);
   void repairHoldResize(Pin *drvr_pin,
 			Slack hold_slack);
+  void findCellInstances(LibertyCell *cell,
+			 // Return value.
+			 InstanceSeq &insts);
+  int fanout(Pin *drvr_pin);
 
   float wire_res_;
   float wire_cap_;

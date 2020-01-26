@@ -180,6 +180,7 @@ resize [-buffer_inputs]
        [-max_utilization util]
 report_design_area
 report_floating_nets [-verbose]
+repair_tie_fanout lib_port [-max_fanout] [-verbose]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -252,6 +253,13 @@ components and the utilization.
 
 The `report_floating_nets` command reports nets with only one pin connection.
 Use the `-verbose` flag to see the net names.
+
+The `repair_tie_fanout` command duplicates tie hi/low instances with fanout
+greater than `max_fanout`.
+
+```
+repair_tie_fanout -max_fanout 10 -verbose Nangate_typ/LOGIC1_X1/Z
+```
 
 #### Timing Analysis
 
