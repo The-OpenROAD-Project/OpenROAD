@@ -255,7 +255,7 @@ Use the `-verbose` flag to see the net names.
 
 #### Timing Analysis
 
-Timing analysis commands are documented in OpenSTA/doc/OpenSTA.pdf.
+Timing analysis commands are documented in src/OpenSTA/doc/OpenSTA.pdf.
 
 After the database has been read from LEF/DEF, Verilog or an OpenDB
 database, use the `read_liberty` command to read Liberty library files
