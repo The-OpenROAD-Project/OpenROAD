@@ -203,5 +203,23 @@ proc report_design_area {} {
   puts "Design area ${area} u^2 ${util}% utilization."
 }
 
+define_cmd_args "report_floating_nets" {[-verbose]}
+
+proc report_floating_nets { args } {
+  parse_key_args "report_floating_nets" args keys {} flags {-verbose}
+
+  set verbose [info exists flags(-verbose)]
+  set floating_nets [find_floating_nets]
+  set floating_net_count [llength $floating_nets]
+  if { $floating_net_count > 0 } {
+    puts "Warning: found $floating_net_count floatiing nets."
+    if { $verbose } {
+      foreach net $floating_nets {
+	puts " [get_full_name $net]"
+      }
+    }
+  }
+}
+
 # sta namespace end
 }

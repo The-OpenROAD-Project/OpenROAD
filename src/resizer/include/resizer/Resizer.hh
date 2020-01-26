@@ -82,6 +82,8 @@ public:
 			    LibertyCell *buffer_cell);
   // Area of the design in meter^2.
   double designArea();
+  // Caller owns return value.
+  NetSeq *findFloatingNets();
 
 protected:
   void ensureCorner();

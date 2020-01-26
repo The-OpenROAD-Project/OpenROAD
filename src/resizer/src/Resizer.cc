@@ -1732,4 +1732,29 @@ Resizer::repairHoldResize(Pin *drvr_pin,
   }
 }
 
+////////////////////////////////////////////////////////////////
+
+NetSeq *
+Resizer::findFloatingNets()
+{
+  NetSeq *floating_nets = new NetSeq;
+  NetIterator *net_iter = network_->netIterator(network_->topInstance());
+  while (net_iter->hasNext()) {
+    Net *net = net_iter->next();
+    NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+    int pin_count = 0;
+    while (pin_iter->hasNext()) {
+      pin_iter->next();
+      pin_count++;
+      if (pin_count > 1)
+	break;
+    }
+    delete pin_iter;
+    if (pin_count == 1)
+      floating_nets->push_back(net);
+  }
+  delete net_iter;
+  return floating_nets;
+}
+
 }

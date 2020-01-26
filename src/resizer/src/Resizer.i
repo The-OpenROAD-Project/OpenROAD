@@ -71,6 +71,7 @@ using sta::Pin;
 using sta::RiseFall;
 using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
+using sta::NetSeq;
 
 %}
 
@@ -99,6 +100,19 @@ using sta::tclListSeqLibertyCell;
 
 %typemap(in) LibertyCellSeq* {
   $1 = tclListSeqLibertyCell($input, interp);
+}
+
+%typemap(out) NetSeq* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  NetSeq *nets = $1;
+  NetSeq::Iterator net_iter(nets);
+  while (net_iter.hasNext()) {
+    Net *net = net_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(net, SWIGTYPE_p_Net, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  delete nets;
+  Tcl_SetObjResult(interp, list);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -258,6 +272,14 @@ design_area()
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->designArea();
+}
+
+NetSeq *
+find_floating_nets()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findFloatingNets();
 }
 
 %} // inline

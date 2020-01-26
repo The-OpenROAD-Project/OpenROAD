@@ -58,8 +58,8 @@ make DESTDIR=<prefix_path> install
 There are a set of regression tests in `/test`.
 
 ```
-test/regression fast
-src/resizer/test/regression fast
+test/regression
+src/resizer/test/regression
 
 ```
 
@@ -179,6 +179,7 @@ resize [-buffer_inputs]
        [-dont_use cells]
        [-max_utilization util]
 report_design_area
+report_floating_nets [-verbose]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -246,8 +247,11 @@ report_tns
 report_wns
 ```
 
-The report_design_area command reports the area of the design's
+The `report_design_area` command reports the area of the design's
 components and the utilization.
+
+The `report_floating_nets` command reports nets with only one pin connection.
+Use the `-verbose` flag to see the net names.
 
 #### Timing Analysis
 
