@@ -157,10 +157,6 @@ public:
         void createFakeEntries(unsigned length, unsigned fakeLength);
 
         unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const {
-                assert(length <= MAX_NORMALIZED_VAL && 
-                       load <= MAX_NORMALIZED_VAL &&
-                       outputSlew <= MAX_NORMALIZED_VAL);
-                                
                 return length | (load << NUM_BITS_PER_FIELD) | 
                        (outputSlew << 2 * NUM_BITS_PER_FIELD); 
         }
