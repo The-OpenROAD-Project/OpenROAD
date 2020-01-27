@@ -137,8 +137,13 @@ public:
         }
         
         void forEachSubNet(const std::function<void(SubNet&)>& func) {
-                for (SubNet& subNet: _subNets) {
-                        func(subNet);
+		unsigned size = _subNets.size();
+		// We want to use ranged for loops in here beacause 
+		// the user may add new items to _subNets.
+		// C++11 "for each" loops will crash due to invalid
+		// iterators.
+		for (unsigned idx = 0; idx < size; ++idx) {                       
+			func(_subNets[idx]);
                 }
         }
 
