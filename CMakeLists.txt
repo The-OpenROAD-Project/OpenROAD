@@ -14,6 +14,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.9)
+# Use standard target names
+cmake_policy(SET CMP0078 NEW)
+# Allows SWIG_MODULE_NAME to be set
+cmake_policy(SET CMP0086 NEW)
 
 project(OpenROAD VERSION 1.1.0)
 
