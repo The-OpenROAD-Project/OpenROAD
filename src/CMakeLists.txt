@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
