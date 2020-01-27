@@ -137,9 +137,9 @@ record_resizer_tests {
   resize6
   repair_hold1
   repair_hold2
-  repair_tie_fanout1
   report_floating_nets1
 }
+#  repair_tie_fanout1
 
 # Record tests in $STAX/designs
 record_test_design {
