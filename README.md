@@ -368,7 +368,11 @@ fastroute -output_file out_file
           -min_routing_layer <min_layer>
           -max_routing_layer <max_layer>
           -pitches_in_tile <pitches>
-          -unidirectional_route
+          -layers_adjustments <list_of_layers_to_adjust>
+          -regions_adjustments <list_of_regions_to_adjust>
+          -nets_alphas_priorities <list_of_alphas_per_net>
+          -verbose <verbose>
+          -unidirectional_routing
           -clock_net_routing
 ```
 
@@ -377,17 +381,13 @@ Options description:
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
 - **max_routing_layer**: Set maximum routing layer (e.g.: max_routing_layer *9*)
 - **pitches_in_tile**: Set the number of pitches inside a GCell
-- **unidirectional_route**: Activate unidirectional route *(flag)*
+- **layers_adjustments**: Set capacity adjustment to specific layers (e.g.: -layers_adjustments {{<layer> <reductionPercentage>} ...})
+- **regions_adjustments**: Set capacity adjustment to specific regions (e.g.: -regions_adjustments {{<minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>} ...})
+- **nets_alphas_priorities**: Set alphas for specific nets when using clock net routing (e.g.: -nets_alphas_priorities {{<net_name> <alpha>} ...})
+- **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose 1)
+- **unidirectional_routing**: Activate unidirectional routing *(flag)*
 - **clock_net_routing**: Activate clock net routing *(flag)*
 
-Independent commands:
-```
-fr_add_layer_adjustment <layer> <reductionPercentage>
-fr_add_region_adjustment <minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>
-```
-- **fr_add_layer_adjustment**: Applies a percentage reduction over all edges of a specific layer
-- **fr_add_region_adjustment**: Applies a percentage reduction over all edges of a specific region
-
-###### NOTE 1: if you use the flag *unidirectionalRoute*, the minimum routing layer will be assigned as "2" automatically
+###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
