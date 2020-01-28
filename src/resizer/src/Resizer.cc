@@ -42,9 +42,6 @@
 // Outstanding issues
 //  Instance levelization and resizing to target slew only support single output gates
 //  multi-corner support?
-//  tcl cmds to set liberty pin cap and limit for testing
-//  check one def
-//  check lef/liberty library cell ports match
 //  option to place buffers between driver and load on long wires
 //   to fix max slew/cap violations
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
