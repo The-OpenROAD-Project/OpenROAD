@@ -1,6 +1,5 @@
 source helpers.tcl
 
-set fanout 1000
 set verilog_filename [file join $result_dir "repair_max_fanout1.v"]
 
 proc write_hi_fanout_netlist { filename fanout } {
@@ -17,7 +16,7 @@ proc write_hi_fanout_netlist { filename fanout } {
   close $stream
 }
 
-write_hi_fanout_netlist $verilog_filename $fanout
+write_hi_fanout_netlist $verilog_filename 100
 
 read_liberty liberty1.lib
 read_lef liberty1.lef

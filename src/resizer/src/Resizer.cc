@@ -382,7 +382,7 @@ Resizer::resizeToTargetSlew()
     Instance *inst = network_->instance(drvr_pin);
     resizeToTargetSlew(inst);
     if (overMaxArea()) {
-      report_->warn("max utilization reached.\n");
+      report_->warn("Max utilization reached.\n");
       break;
     }
   }
@@ -1867,15 +1867,16 @@ Resizer::repairFanoutViolations(int max_fanout,
 		       sdc_network_->pathName(drvr_pin), fanout);
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
-	  report_->warn("max utilization reached.\n");
+	  report_->warn("Max utilization reached.\n");
 	  break;
 	}
       }
     }
   }
-  report_->print("Max fanout inserted %d buffers in %d nets.\n",
-		 inserted_buffer_count_,
-		 rebuffer_net_count_);
+  if (inserted_buffer_count_ > 0)
+    report_->print("Max fanout inserted %d buffers in %d nets.\n",
+		   inserted_buffer_count_,
+		   rebuffer_net_count_);
 
 }
 
