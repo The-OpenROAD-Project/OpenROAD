@@ -87,6 +87,8 @@ public:
   void repairTieFanout(LibertyPort *tie_port,
 		       int max_fanout,
 		       bool verbose);
+  void repairFanoutViolations(int max_fanout,
+			      LibertyCell *buffer_cell);
 
 protected:
   void ensureCorner();

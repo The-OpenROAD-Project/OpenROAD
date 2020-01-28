@@ -1847,4 +1847,31 @@ Resizer::fanout(Pin *drvr_pin)
   return fanout;
 }
 
+void
+Resizer::repairFanoutViolations(int max_fanout,
+				LibertyCell *buffer_cell)
+{
+  inserted_buffer_count_ = 0;
+  rebuffer_net_count_ = 0;
+  sta_->findDelays();
+  ensureLevelDrvrVerticies();
+  // Rebuffer in reverse level order.
+  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
+    Vertex *vertex = level_drvr_verticies_[i];
+    // Hands off the clock tree.
+    if (!search_->isClock(vertex)) {
+      Pin *drvr_pin = vertex->pin();
+      int fanout = this->fanout(drvr_pin);
+      if (fanout > max_fanout) {
+	printf("repair fanout %s %d\n", sdc_network_->pathName(drvr_pin), fanout);
+	rebuffer(drvr_pin, buffer_cell);
+	if (overMaxArea()) {
+	  report_->warn("max utilization reached.\n");
+	  break;
+	}
+      }
+    }
+  }
+}
+
 }

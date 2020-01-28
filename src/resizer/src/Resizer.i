@@ -295,7 +295,16 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairTieFanout(tie_port, max_fanout, verbose);
+  resizer->repairTieFanout(tie_port, max_fanout, verbose);
+}
+
+void
+repair_fanout_violations(int max_fanout,
+			 LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairFanoutViolations(max_fanout, buffer_cell);
 }
 
 %} // inline
