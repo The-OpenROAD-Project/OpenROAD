@@ -176,14 +176,33 @@ OpenRoad::readDef(const char *filename, bool order_wires)
   sta_->readDefAfter();
 }
 
+static odb::defout::Version
+stringToDefVersion(string version)
+{
+  if (version == "5.8")
+    return odb::defout::Version::DEF_5_8;
+  else if (version == "5.6")
+    return odb::defout::Version::DEF_5_6;
+  else if (version == "5.5")
+    return odb::defout::Version::DEF_5_5;
+  else if (version == "5.4")
+    return odb::defout::Version::DEF_5_4;
+  else if (version == "5.3")
+    return odb::defout::Version::DEF_5_3;
+  else 
+    return odb::defout::Version::DEF_5_8;
+}
+
 void
-OpenRoad::writeDef(const char *filename)
+OpenRoad::writeDef(const char *filename,
+		   string version)
 {
   odb::dbChip *chip = db_->getChip();
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
       odb::defout def_writer;
+      def_writer.setVersion(stringToDefVersion(version));
       def_writer.writeBlock(block, filename);
     }
   }

@@ -66,12 +66,26 @@ proc read_def { args } {
   ord::read_def_cmd $filename $order_wires
 }
 
-sta::define_cmd_args "write_def" {filename}
+sta::define_cmd_args "write_def" {[-version version] filename}
 
 proc write_def { args } {
+  sta::parse_key_args "write_def" args keys {-version} flags {}
+
+  set version "5.8"
+  if { [info exists keys(-version)] } {
+    set version $keys(-version)
+    if { !($version == "5.8" \
+	     || $version == "5.6" \
+	     || $version == "5.5" \
+	     || $version == "5.4" \
+	     || $version == "5.3") } {
+      sta::sta_error "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
+    }
+  }
+
   sta::check_argc_eq1 "write_def" $args
   set filename $args
-  ord::write_def_cmd $filename
+  ord::write_def_cmd $filename $version
 }
 
 sta::define_cmd_args "read_db" {filename}
