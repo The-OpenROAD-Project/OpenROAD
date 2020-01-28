@@ -822,9 +822,9 @@ Resizer::findParasiticNode(SteinerTree *tree,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::rebufferNets(bool repair_max_cap,
-		      bool repair_max_slew,
-		      LibertyCell *buffer_cell)
+Resizer::repairMaxCapSlew(bool repair_max_cap,
+			  bool repair_max_slew,
+			  LibertyCell *buffer_cell)
 {
   if (repair_max_cap || repair_max_slew) {
     rebuffer(repair_max_cap, repair_max_slew, buffer_cell);
