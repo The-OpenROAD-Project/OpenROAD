@@ -822,9 +822,9 @@ Resizer::findParasiticNode(SteinerTree *tree,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::rebufferNets(bool repair_max_cap,
-		      bool repair_max_slew,
-		      LibertyCell *buffer_cell)
+Resizer::repairMaxCapSlew(bool repair_max_cap,
+			  bool repair_max_slew,
+			  LibertyCell *buffer_cell)
 {
   if (repair_max_cap || repair_max_slew) {
     rebuffer(repair_max_cap, repair_max_slew, buffer_cell);
@@ -1863,7 +1863,8 @@ Resizer::repairFanoutViolations(int max_fanout,
       Pin *drvr_pin = vertex->pin();
       int fanout = this->fanout(drvr_pin);
       if (fanout > max_fanout) {
-	printf("repair fanout %s %d\n", sdc_network_->pathName(drvr_pin), fanout);
+	report_->print("Max fanout violation on net %s fanout %d\n",
+		       sdc_network_->pathName(drvr_pin), fanout);
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  report_->warn("max utilization reached.\n");
@@ -1872,6 +1873,10 @@ Resizer::repairFanoutViolations(int max_fanout,
       }
     }
   }
+  report_->print("Max fanout inserted %d buffers in %d nets.\n",
+		 inserted_buffer_count_,
+		 rebuffer_net_count_);
+
 }
 
 }

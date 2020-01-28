@@ -157,7 +157,7 @@ proc resize { args } {
     resize_to_target_slew
   }
   if { $repair_max_cap || $repair_max_slew } {
-    rebuffer_nets $repair_max_cap $repair_max_slew $buffer_cell
+    repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
   }
 
   if { $repair_max_fanout } {

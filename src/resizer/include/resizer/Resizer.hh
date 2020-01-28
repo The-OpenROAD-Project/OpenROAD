@@ -67,9 +67,9 @@ public:
 
   // Insert buffers to fix max cap/slew violations.
   // resizerPreamble() required.
-  void rebufferNets(bool repair_max_cap,
-		    bool repair_max_slew,
-		    LibertyCell *buffer_cell);
+  void repairMaxCapSlew(bool repair_max_cap,
+			bool repair_max_slew,
+			LibertyCell *buffer_cell);
   // Rebuffer net (for testing).
   // Assumes buffer_cell->isBuffer() is true.
   // resizerPreamble() required.
