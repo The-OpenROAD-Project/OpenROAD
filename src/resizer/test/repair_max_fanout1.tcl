@@ -1,6 +1,6 @@
 source helpers.tcl
 
-set fanout 2
+set fanout 100
 set verilog_filename [file join $result_dir "repair_max_fanout1.v"]
 
 proc write_hi_fanout_netlist { filename fanout } {
@@ -11,7 +11,7 @@ proc write_hi_fanout_netlist { filename fanout } {
   for {set i 0} {$i < $fanout} {incr i} {
     set reg_name "r$i"
     # constant value for sim updates
-    puts $stream " snl_ff2x1 $reg_name (.CP(clk1), .D(u1z), .RN(1'b0));"
+    puts $stream " snl_ffqx1 $reg_name (.CP(clk1), .D(u1z));"
   }
   puts $stream "endmodule"
   close $stream
@@ -25,4 +25,5 @@ read_verilog $verilog_filename
 link_design top
 create_clock -period 10 clk1
 set_propagated_clock clk1
+set_input_delay -clock clk1 9 in1
 resize -repair_max_fanout -max_fanout 20 -buffer_cell liberty1/snl_bufx1
