@@ -254,10 +254,5 @@ proc repair_tie_fanout { args } {
   repair_tie_fanout_cmd $lib_port $max_fanout $verbose
 }
 
-define_cmd_args "repair_fanout_violations_cmd" {[-buffer_cell buffer_cell]\
-						  [-dont_use lib_cells]\
-						  [-max_utilization util]}
-
-
 # sta namespace end
 }
