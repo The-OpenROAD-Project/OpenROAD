@@ -82,5 +82,5 @@ target_include_directories(dbSta
   ${OPENROAD_HOME}/include
   PRIVATE
   ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include
-  {TCL_INCLUDE_PATH}
+  ${TCL_INCLUDE_PATH}
   )
