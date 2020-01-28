@@ -13,7 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-cmake_minimum_required (VERSION 3.9...3.16)
+cmake_minimum_required (VERSION 3.9)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16.2)
+# Use standard target names
+cmake_policy(SET CMP0078 NEW)
+# Allows SWIG_MODULE_NAME to be set
+cmake_policy(SET CMP0086 NEW)
+endif()
 
 project(OpenROAD VERSION 1.1.0)
 

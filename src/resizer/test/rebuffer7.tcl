@@ -12,5 +12,5 @@ set_wire_rc -resistance 1.7e+5 -capacitance 1.3e-8
 sta::rebuffer_net [get_net out] $buffer_cell
 
 set def_file [make_result_file rebuffer7.def]
-write_def -sort $def_file
+write_def $def_file
 diff_files $def_file rebuffer7.defok

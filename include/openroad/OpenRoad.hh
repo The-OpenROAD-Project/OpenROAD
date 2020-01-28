@@ -14,6 +14,8 @@
 #ifndef OPENROAD_H
 #define OPENROAD_H
 
+#include <string>
+
 extern "C" {
 struct Tcl_Interp;
 }
@@ -65,6 +67,8 @@ class Ext;
 
 namespace ord {
 
+using std::string;
+
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -97,8 +101,10 @@ public:
 	       bool make_library);
 
   void readDef(const char *filename,
-               bool        order_wires);
-  void writeDef(const char *filename);
+               bool order_wires);
+  void writeDef(const char *filename,
+		// major.minor (avoid including defout.h)
+		string version);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.

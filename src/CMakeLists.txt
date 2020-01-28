@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
@@ -59,6 +58,15 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
   )
 
 ################################################################
+
+# OSX tcl is deprecated and prints a warning, so look for a user installed
+# version before using the system version.
+# I tried to override the library search order instead but failed.
+# CMAKE_FIND_FRAMEWORK LAST bypasses the version in the framework directory
+# but not the one in /usr/lib.
+# This calls cmake/FindTCL.cmake
+# Do not use REQUIRED because it also requires TK.
+find_package(TCL)
 
 find_package(SWIG REQUIRED 3.0)
 include(UseSWIG)
@@ -119,23 +127,6 @@ set_property(SOURCE ${OPENROAD_SWIG_FILE}
   -I${OPENROAD_HOME}/src
   -I${OPENDB_HOME}/include
 )
-set_property(SOURCE ${OPENROAD_SWIG_FILE}
-  PROPERTY GENERATED_INCLUDE_DIRECTORIES
-  ${OPENROAD_HOME}/src
-  ${OPENROAD_HOME}/include
-
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/search
-
-  ${OPENDB_HOME}/include
-
-  ${TCL_INCLUDE_PATH}
-)
 
 swig_add_library(openroad_swig
   LANGUAGE tcl
@@ -148,6 +139,25 @@ swig_link_libraries(openroad_swig
   openroad
   # OpenDB public includes incorrectly point to include/opendb so this fails.
   #opendb
+)
+
+target_include_directories(openroad_swig
+  PUBLIC
+  ${OPENROAD_HOME}/include
+
+  PRIVATE
+  ${OPENROAD_HOME}/src
+  ${OPENSTA_HOME}/util
+  ${OPENSTA_HOME}/sdc
+  ${OPENSTA_HOME}/network
+  ${OPENSTA_HOME}/parasitics
+  ${OPENSTA_HOME}/liberty
+  ${OPENSTA_HOME}/graph
+  ${OPENSTA_HOME}/search
+
+  ${OPENDB_HOME}/include
+
+  ${TCL_INCLUDE_PATH}
 )
 
 ################################################################
@@ -217,7 +227,6 @@ target_include_directories(openroad
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
-  SYSTEM
   ${TCL_INCLUDE_PATH}
   )
 
