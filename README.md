@@ -180,7 +180,7 @@ resize [-buffer_inputs]
        [-max_utilization util]
 report_design_area
 report_floating_nets [-verbose]
-repair_tie_fanout lib_port [-max_fanout] [-verbose]
+repair_tie_fanout [-max_fanout] [-verbose] lib_port
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -199,11 +199,11 @@ is not called before resizing, the default_wireload model specified in
 the first liberty file or with the SDC set_wire_load command is used
 to make parasitics.
 
-The `resize` command buffers inputs and outputs, resizes gates, and
-then uses buffer insertion to repair maximum capacitance and slew
-violations. Use the `-buffer_inputs`, `-buffer_outputs`, `-resize`,
-`-repair_max_cap` and `-repair_max_slew` options to invoke a single
-mode. With none of the options specified all are done. The
+The `resize` command buffers top level input and output ports, resizes
+gates, and then uses buffer insertion to repair maximum capacitance
+and slew violations. Use the `-buffer_inputs`, `-buffer_outputs`,
+`-resize`, `-repair_max_cap` and `-repair_max_slew` options to invoke
+a single mode. With none of the options specified all are done. The
 `-buffer_cell` argument is required for buffer insertion
 (`-repair_max_cap` or `-repair_max_slew`). The `-resize_libraries`
 option specifies which libraries to use when
