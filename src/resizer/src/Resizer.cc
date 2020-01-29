@@ -1440,6 +1440,7 @@ Resizer::repairMaxFanout(int max_fanout,
   int max_fanout_violation_count = 0;
   inserted_buffer_count_ = 0;
 
+  init();
   sta_->findDelays();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {

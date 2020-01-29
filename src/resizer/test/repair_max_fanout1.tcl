@@ -23,7 +23,7 @@ read_lef liberty1.lef
 read_verilog $verilog_filename
 link_design top
 create_clock -period 10 clk1
-resize -repair_max_fanout -max_fanout 10 -buffer_cell liberty1/snl_bufx1
+repair_max_fanout -max_fanout 10 -buffer_cell liberty1/snl_bufx1
 report_object_names [get_pins -of [get_net u1z]]
 report_object_names [get_pins -of [get_net net1]]
 report_object_names [get_pins -of [get_net net2]]

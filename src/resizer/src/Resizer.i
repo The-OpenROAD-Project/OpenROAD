@@ -223,8 +223,8 @@ repair_max_slew_cap(bool repair_max_cap,
 }
 
 void
-repair_max_fanout(int max_fanout,
-		  LibertyCell *buffer_cell)
+repair_max_fanout_cmd(int max_fanout,
+		      LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();

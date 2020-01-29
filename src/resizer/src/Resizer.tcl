@@ -173,6 +173,53 @@ proc resize { args } {
   }
 }
 
+define_cmd_args "repair_max_fanout" {-max_fanout fanout\
+				       -buffer_cell buffer_cell\
+				       [-max_utilization util]}
+
+proc repair_max_fanout { args } {
+  parse_key_args "repair_max_fanout" args \
+    keys {-max_fanout -buffer_cell -max_utilization} \
+    flags {}
+
+  if { [info exists keys(-max_fanout)] } {
+    set max_fanout $keys(-max_fanout)
+    check_positive_integer "-max_fanout" $max_fanout
+  } else {
+    sta_error "no -max_fanout specified."
+  }
+
+  set buffer_cell "NULL"
+  if { [info exists keys(-buffer_cell)] } {
+    set buffer_cell_name $keys(-buffer_cell)
+    # check for -buffer_cell [get_lib_cell arg] return ""
+    if { $buffer_cell_name != "" } {
+      set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
+      if { $buffer_cell != "NULL" } {
+	if { ![get_property $buffer_cell is_buffer] } {
+	  sta_error "[get_name $buffer_cell] is not a buffer."
+	}
+      }
+    }
+  } else {
+    sta_error "-buffer_cell required."
+  }
+
+  set max_util 0.0
+  if { [info exists keys(-max_utilization)] } {
+    set max_util $keys(-max_utilization)
+    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
+      sta_error "-max_utilization must be between 0 and 100%."
+    }
+    set max_util [expr $max_util / 100.0]
+  }
+
+  check_argc_eq0 "repair_max_fanout" $args
+
+  set_max_utilization $max_util
+  repair_max_fanout_cmd $max_fanout $buffer_cell
+}
+
 define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
 					    [-max_utilization util]}
 

@@ -175,14 +175,17 @@ resize [-buffer_inputs]
        [-resize_libraries resize_libraries]
        [-repair_max_cap]
        [-repair_max_slew]
-       [-repair_max_fanout]
-       [-max_fanout fanout]
        [-buffer_cell buffer_cell]
        [-dont_use cells]
        [-max_utilization util]
+repair_max_fanout -max_fanout fanout
+       -buffer_cell buffer_cell
+       [-max_utilization util]
+repair_hold_violations -buffer_cell buffer_cell
+       [-max_utilization util]
+repair_tie_fanout [-max_fanout] [-verbose] lib_port
 report_design_area
 report_floating_nets [-verbose]
-repair_tie_fanout [-max_fanout] [-verbose] lib_port
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -262,6 +265,10 @@ greater than `max_fanout`.
 ```
 repair_tie_fanout -max_fanout 10 -verbose Nangate_typ/LOGIC1_X1/Z
 ```
+
+The `repair_hold_violations` command inserts buffers to repair hold
+check violations. Use the `set_wire_rc` command for parasitic
+estimation.
 
 #### Timing Analysis
 
@@ -347,17 +354,6 @@ clock_tree_synthesis -lut_file <lut_file> \
 - ```lut_file```, ```sol_list``` and ```wire_unit``` are parameters related to the technology characterization described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md).
 - ``root_buffer`` is the master cell of the buffer that serves as root for the clock tree.
 - ``clk_nets`` is a string containing the names of the clock roots. If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
-
-#### Repair Hold Violations
-
-The `repair_hold_violations` command inserts buffers to repair hold
-check violations. Use the `set_wire_rc` command for parasitic
-estimation.
-
-```
-repair_hold_violations -buffer_cell buffer_cell
-		       [-max_utilization util]
-```
 
 #### Global Routing
 
