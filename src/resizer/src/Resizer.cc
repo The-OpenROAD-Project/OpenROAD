@@ -1159,7 +1159,13 @@ Resizer::rebuffer(const Pin *drvr_pin,
 	RebufferOption *best_option = nullptr;
 	for (auto p : Z) {
 	  // Find required for drvr_pin into option.
-	  Required req = p->required() - gateDelay(drvr_port, p->cap());
+	  Delay gate_delay = gateDelay(drvr_port, p->cap());
+	  Required req = p->required() - gate_delay;
+	  debugPrint4(debug_, "rebuffer", 3, "option req %s - %s = %s cap %s\n",
+		      delayAsString(p->required(), this),
+		      delayAsString(gate_delay, this),
+		      delayAsString(req, this),
+		      units_->capacitanceUnit()->asString(p->cap()));
 	  if (fuzzyGreater(req, best_req)) {
 	    best_req = req;
 	    best_option = p;
