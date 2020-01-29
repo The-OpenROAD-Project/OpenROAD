@@ -31,7 +31,3 @@
 	path = src/OpenPhySyn	
 	url = https://github.com/The-OpenROAD-Project/OpenPhySyn
 	branch = openroad
-[submodule "src/OpenPhysyn"]
-	path = src/OpenPhysyn
-	url = https://github.com/The-OpenROAD-Project/OpenPhySyn
-	branch = openroad
