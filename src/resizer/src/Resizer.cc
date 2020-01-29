@@ -1316,7 +1316,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 					   prev_loc,
 					   p, nullptr);
     if (debug_->check("rebuffer", 3)) {
-      report_->print("%*s%s -> %s wl %d\n",
+      report_->print("%*swire %s -> %s wl %d\n",
 		     level, "",
 		     tree->name(prev, sdc_network_),
 		     tree->name(k, sdc_network_),
