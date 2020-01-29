@@ -166,7 +166,7 @@ proc resize { args } {
     }
   }
   if { $repair_max_cap || $repair_max_slew } {
-    repair_max_slew_cap_fanout $repair_max_cap $repair_max_slew $buffer_cell
+    repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
   }
   if { $repair_max_fanout } {
     repair_max_fanout $max_fanout $buffer_cell
