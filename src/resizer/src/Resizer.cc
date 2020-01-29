@@ -250,6 +250,7 @@ Resizer::resizePreamble(LibertyLibrarySeq *resize_libs)
 void
 Resizer::bufferInputs(LibertyCell *buffer_cell)
 {
+  init();
   inserted_buffer_count_ = 0;
   InstancePinIterator *port_iter(network_->pinIterator(network_->topInstance()));
   while (port_iter->hasNext()) {
@@ -319,6 +320,7 @@ Resizer::location(Instance *inst)
 void
 Resizer::bufferOutputs(LibertyCell *buffer_cell)
 {
+  init();
   inserted_buffer_count_ = 0;
   InstancePinIterator *port_iter(network_->pinIterator(network_->topInstance()));
   while (port_iter->hasNext()) {
