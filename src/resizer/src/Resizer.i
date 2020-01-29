@@ -299,11 +299,12 @@ find_floating_nets()
 
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
-		      int max_fanout)
+		      int max_fanout,
+		      bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTieFanout(tie_port, max_fanout);
+  resizer->repairTieFanout(tie_port, max_fanout, verbose);
 }
 
 %} // inline

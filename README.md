@@ -182,7 +182,7 @@ repair_max_fanout -max_fanout fanout
        [-max_utilization util]
 repair_hold_violations -buffer_cell buffer_cell
        [-max_utilization util]
-repair_tie_fanout [-max_fanout] lib_port
+repair_tie_fanout [-max_fanout] [-verbose] lib_port
 report_design_area
 report_floating_nets [-verbose]
 ```

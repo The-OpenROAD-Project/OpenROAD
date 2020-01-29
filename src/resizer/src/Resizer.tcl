@@ -291,12 +291,10 @@ proc report_floating_nets { args } {
   }
 }
 
-define_cmd_args "repair_tie_fanout" {lib_port [-max_fanout]}
+define_cmd_args "repair_tie_fanout" {lib_port [-max_fanout] [-verbose]}
 
 proc repair_tie_fanout { args } {
-  parse_key_args "repair_tie_fanout" args \
-    keys {-max_fanout} \
-    flags {}
+  parse_key_args "repair_tie_fanout" args keys {-max_fanout} flags {-verbose}
 
   if { [info exists keys(-max_fanout)] } {
     set max_fanout $keys(-max_fanout)
@@ -304,6 +302,7 @@ proc repair_tie_fanout { args } {
   } else {
     sta_error("-max_fanout requried.")
   }
+  set verbose [info exists flags(-verbose)]
   
   check_argc_eq1 "repair_tie_fanout" $args
   set lib_port [lindex $args 0]
@@ -311,7 +310,7 @@ proc repair_tie_fanout { args } {
     set lib_port [get_lib_pins [lindex $args 0]]
   }
   if { $lib_port != "NULL" } {
-    repair_tie_fanout_cmd $lib_port $max_fanout
+    repair_tie_fanout_cmd $lib_port $max_fanout $verbose
   }
 }
 
