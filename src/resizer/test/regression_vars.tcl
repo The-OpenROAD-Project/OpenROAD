@@ -135,6 +135,7 @@ record_resizer_tests {
   resize4
   resize5
   resize6
+  repair_max_fanout1
   repair_hold1
   repair_hold2
   report_floating_nets1

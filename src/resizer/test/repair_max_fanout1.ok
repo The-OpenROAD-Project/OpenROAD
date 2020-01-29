@@ -1,0 +1,50 @@
+Notice 0: Reading LEF file:  liberty1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  liberty1.lef
+Found 1 max fanout violations.
+Inserted 4 buffers.
+buffer1/A
+buffer2/A
+buffer3/A
+buffer4/A
+u1/Z
+buffer1/Z
+r25/D
+r26/D
+r27/D
+r28/D
+r29/D
+r30/D
+r31/D
+r32/D
+r33/D
+r34/D
+buffer2/Z
+r15/D
+r16/D
+r17/D
+r18/D
+r19/D
+r20/D
+r21/D
+r22/D
+r23/D
+r24/D
+buffer3/Z
+r10/D
+r11/D
+r12/D
+r13/D
+r14/D
+r5/D
+r6/D
+r7/D
+r8/D
+r9/D
+buffer4/Z
+r0/D
+r1/D
+r2/D
+r3/D
+r4/D

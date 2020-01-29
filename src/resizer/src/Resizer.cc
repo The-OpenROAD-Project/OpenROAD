@@ -972,17 +972,14 @@ Resizer::deleteRebufferOptions()
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairMaxCapSlewFanout(bool repair_max_cap,
-				bool repair_max_slew,
-				bool repair_max_fanout,
-				int max_fanout,
-				LibertyCell *buffer_cell)
+Resizer::repairMaxCapSlew(bool repair_max_cap,
+			  bool repair_max_slew,
+			  LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
   int max_cap_violation_count = 0;
   int max_slew_violation_count = 0;
-  int max_fanout_violation_count = 0;
 
   sta_->findDelays();
   // Rebuffer in reverse level order.
@@ -1002,11 +999,6 @@ Resizer::repairMaxCapSlewFanout(bool repair_max_cap,
 	max_slew_violation_count++;
 	violation = true;
       }
-      if (repair_max_fanout
-	  && fanout(drvr_pin) > max_fanout) {
-	max_fanout_violation_count++;
-	violation = true;
-      }
       if (violation) {
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
@@ -1021,8 +1013,6 @@ Resizer::repairMaxCapSlewFanout(bool repair_max_cap,
     report_->print("Found %d max capacitance violations.\n", max_cap_violation_count);
   if (max_slew_violation_count > 0)
     report_->print("Found %d max slew violations.\n", max_slew_violation_count);
-  if (max_fanout_violation_count > 0)
-    report_->print("Found %d max fanout violations.\n", max_fanout_violation_count);
   if (inserted_buffer_count_ > 0)
     report_->print("Inserted %d buffers in %d nets.\n",
 		   inserted_buffer_count_,
@@ -1440,6 +1430,95 @@ Resizer::rebufferTopDown(RebufferOption *choice,
   }
   }
 }
+
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::repairMaxFanout(int max_fanout,
+			 LibertyCell *buffer_cell)
+{
+  int max_fanout_violation_count = 0;
+  inserted_buffer_count_ = 0;
+
+  sta_->findDelays();
+  // Rebuffer in reverse level order.
+  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
+    Vertex *vertex = level_drvr_verticies_[i];
+    Pin *drvr_pin = vertex->pin();
+    // Hands off the clock tree.
+    if (!network_->isTopLevelPort(drvr_pin)
+	&& !search_->isClock(vertex)) {
+      int fanout = this->fanout(drvr_pin);
+      if (fanout > max_fanout) {
+	max_fanout_violation_count++;
+	int buffer_count = ceil(fanout / static_cast<double>(max_fanout));
+	bufferLoads(drvr_pin, buffer_count, max_fanout, buffer_cell);
+	if (overMaxArea()) {
+	  report_->warn("max utilization reached.\n");
+	  break;
+	}
+      }
+    }
+  }
+
+  if (max_fanout_violation_count > 0)
+    report_->print("Found %d max fanout violations.\n", max_fanout_violation_count);
+  if (inserted_buffer_count_ > 0)
+    report_->print("Inserted %d buffers.\n",
+		   inserted_buffer_count_);
+}
+
+void
+Resizer::bufferLoads(Pin *drvr_pin,
+		     int buffer_count,
+		     int max_fanout,
+		     LibertyCell *buffer_cell)
+{
+  PinSeq loads;
+  findLoads(drvr_pin, loads);
+  // group loads by location
+  PinSeq::Iterator load_iter(loads);
+  Vector<Instance*> buffers(buffer_count);
+  Net *net = network_->net(drvr_pin);
+  Instance *parent = db_network_->topInstance();
+  LibertyPort *buffer_in, *buffer_out;
+  buffer_cell->bufferPorts(buffer_in, buffer_out);
+  for (int i = 0; i < buffer_count; i++) {
+    string buffer_out_net_name = makeUniqueNetName();
+    Net *buffer_out_net = db_network_->makeNet(buffer_out_net_name.c_str(), parent);
+    string buffer_name = makeUniqueBufferName();
+    Instance *buffer = db_network_->makeInstance(buffer_cell,
+						 buffer_name.c_str(),
+						 parent);
+    inserted_buffer_count_++;
+    design_area_ += area(db_network_->cell(buffer_cell));
+
+    sta_->connectPin(buffer, buffer_in, net);
+    sta_->connectPin(buffer, buffer_out, buffer_out_net);
+    int l = 0;
+    while (load_iter.hasNext()
+	   && l < max_fanout) {
+      Pin *load = load_iter.next();
+      Instance *load_inst = network_->instance(load);
+      Port *load_port = network_->port(load);
+      sta_->disconnectPin(load);
+      sta_->connectPin(load_inst, load_port, buffer_out_net);
+      l++;
+    }
+  }
+}
+
+void
+Resizer::findLoads(Pin *drvr_pin,
+		   PinSeq &loads)
+{
+  PinSeq drvrs;
+  PinSet visited_drvrs;
+  FindNetDrvrLoads visitor(drvr_pin, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin, visitor);
+}
+
+////////////////////////////////////////////////////////////////
 
 string
 Resizer::makeUniqueNetName()

@@ -16,15 +16,16 @@ proc write_hi_fanout_netlist { filename fanout } {
   close $stream
 }
 
-write_hi_fanout_netlist $verilog_filename 20
+write_hi_fanout_netlist $verilog_filename 35
 
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_verilog $verilog_filename
 link_design top
 create_clock -period 10 clk1
-set_propagated_clock clk1
-set_input_delay -clock clk1 9 in1
-report_checks
-resize -repair_max_fanout -max_fanout 5 -buffer_cell liberty1/snl_bufx1
-#report_checks
+resize -repair_max_fanout -max_fanout 10 -buffer_cell liberty1/snl_bufx1
+report_object_names [get_pins -of [get_net u1z]]
+report_object_names [get_pins -of [get_net net1]]
+report_object_names [get_pins -of [get_net net2]]
+report_object_names [get_pins -of [get_net net3]]
+report_object_names [get_pins -of [get_net net4]]
