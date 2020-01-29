@@ -819,12 +819,15 @@ Resizer::findParasiticNode(SteinerTree *tree,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairMaxCapSlew(bool repair_max_cap,
-			  bool repair_max_slew,
-			  LibertyCell *buffer_cell)
+Resizer::repairMaxCapSlewFanout(bool repair_max_cap,
+				bool repair_max_slew,
+				bool repair_max_fanout,
+				int max_fanout,
+				LibertyCell *buffer_cell)
 {
-  if (repair_max_cap || repair_max_slew) {
-    rebuffer(repair_max_cap, repair_max_slew, buffer_cell);
+  if (repair_max_cap || repair_max_slew || repair_max_fanout) {
+    rebuffer(repair_max_cap, repair_max_slew, repair_max_fanout,
+	     max_fanout, buffer_cell);
     report_->print("Inserted %d buffers in %d nets.\n",
 		   inserted_buffer_count_,
 		   rebuffer_net_count_);
@@ -958,6 +961,8 @@ Resizer::deleteRebufferOptions()
 void
 Resizer::rebuffer(bool repair_max_cap,
 		  bool repair_max_slew,
+		  bool repair_max_fanout,
+		  int max_fanout,
 		  LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
@@ -972,7 +977,9 @@ Resizer::rebuffer(bool repair_max_cap,
       if ((repair_max_cap
 	   && hasMaxCapViolation(drvr_pin))
 	  || (repair_max_slew
-	      && hasMaxSlewViolation(drvr_pin))) {
+	      && hasMaxSlewViolation(drvr_pin))
+	  || (repair_max_fanout
+	      && fanout(drvr_pin) > max_fanout)) {
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  report_->warn("max utilization reached.\n");
@@ -1881,39 +1888,6 @@ Resizer::fanout(Pin *drvr_pin)
   }
   delete pin_iter;
   return fanout;
-}
-
-void
-Resizer::repairFanoutViolations(int max_fanout,
-				LibertyCell *buffer_cell)
-{
-  inserted_buffer_count_ = 0;
-  rebuffer_net_count_ = 0;
-  sta_->findDelays();
-  ensureLevelDrvrVerticies();
-  // Rebuffer in reverse level order.
-  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *vertex = level_drvr_verticies_[i];
-    // Hands off the clock tree.
-    if (!search_->isClock(vertex)) {
-      Pin *drvr_pin = vertex->pin();
-      int fanout = this->fanout(drvr_pin);
-      if (fanout > max_fanout) {
-	report_->print("Max fanout violation on net %s fanout %d\n",
-		       sdc_network_->pathName(drvr_pin), fanout);
-	rebuffer(drvr_pin, buffer_cell);
-	if (overMaxArea()) {
-	  report_->warn("Max utilization reached.\n");
-	  break;
-	}
-      }
-    }
-  }
-  if (inserted_buffer_count_ > 0)
-    report_->print("Max fanout inserted %d buffers in %d nets.\n",
-		   inserted_buffer_count_,
-		   rebuffer_net_count_);
-
 }
 
 }

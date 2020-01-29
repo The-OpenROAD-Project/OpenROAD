@@ -156,18 +156,18 @@ proc resize { args } {
   if { $resize } {
     resize_to_target_slew
   }
-  if { $repair_max_cap || $repair_max_slew } {
-    repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
-  }
-
-  if { $repair_max_fanout } {
-    if { [info exists keys(-max_fanout)] } {
-      set max_fanout $keys(-max_fanout)
-      check_positive_integer "-max_fanout" $max_fanout
-      repair_fanout_violations $max_fanout $buffer_cell
-    } else {
+  if { [info exists keys(-max_fanout)] } {
+    set max_fanout $keys(-max_fanout)
+    check_positive_integer "-max_fanout" $max_fanout
+  } else {
+    if { $repair_max_fanout } {
       sta_warn "no -max_fanout specified for -repair_max_fanout."
+      set repair_max_fanout 0
     }
+  }
+  if { $repair_max_cap || $repair_max_slew || $repair_max_fanout } {
+    repair_max_slew_cap_fanout $repair_max_cap $repair_max_slew \
+      $repair_max_fanout $max_fanout $buffer_cell
   }
 }
 

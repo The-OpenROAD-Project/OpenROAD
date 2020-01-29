@@ -67,9 +67,11 @@ public:
 
   // Insert buffers to fix max cap/slew violations.
   // resizerPreamble() required.
-  void repairMaxCapSlew(bool repair_max_cap,
-			bool repair_max_slew,
-			LibertyCell *buffer_cell);
+  void repairMaxCapSlewFanout(bool repair_max_cap,
+			      bool repair_max_slew,
+			      bool repair_max_fanout,
+			      int max_fanout,
+			      LibertyCell *buffer_cell);
   // Rebuffer net (for testing).
   // Assumes buffer_cell->isBuffer() is true.
   // resizerPreamble() required.
@@ -87,8 +89,6 @@ public:
   void repairTieFanout(LibertyPort *tie_port,
 		       int max_fanout,
 		       bool verbose);
-  void repairFanoutViolations(int max_fanout,
-			      LibertyCell *buffer_cell);
 
 protected:
   void ensureCorner();
@@ -127,6 +127,8 @@ protected:
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(bool repair_max_cap,
 		bool repair_max_slew,
+		bool repair_max_fanout,
+		int max_fanout,
 		LibertyCell *buffer_cell);
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);

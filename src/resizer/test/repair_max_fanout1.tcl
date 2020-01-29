@@ -16,7 +16,7 @@ proc write_hi_fanout_netlist { filename fanout } {
   close $stream
 }
 
-write_hi_fanout_netlist $verilog_filename 100
+write_hi_fanout_netlist $verilog_filename 20
 
 read_liberty liberty1.lib
 read_lef liberty1.lef
@@ -26,5 +26,5 @@ create_clock -period 10 clk1
 set_propagated_clock clk1
 set_input_delay -clock clk1 9 in1
 report_checks
-resize -repair_max_fanout -max_fanout 20 -buffer_cell liberty1/snl_bufx1
-report_checks
+resize -repair_max_fanout -max_fanout 5 -buffer_cell liberty1/snl_bufx1
+#report_checks
