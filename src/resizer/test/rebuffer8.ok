@@ -12,5 +12,6 @@ Notice 0:     Created 7 nets and 14 connections.
 Notice 0: Finished DEF file: reg3.def
 Design area 5000 u^2 50% utilization.
 Warning: max utilization reached.
+Found 2 max slew violations.
 Inserted 2 buffers in 2 nets.
 Design area 7000 u^2 70% utilization.

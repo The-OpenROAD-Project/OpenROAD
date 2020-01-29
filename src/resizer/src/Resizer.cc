@@ -818,19 +818,6 @@ Resizer::findParasiticNode(SteinerTree *tree,
 
 ////////////////////////////////////////////////////////////////
 
-void
-Resizer::repairMaxCapSlew(bool repair_max_cap,
-			  bool repair_max_slew,
-			  LibertyCell *buffer_cell)
-{
-  if (repair_max_cap || repair_max_slew) {
-    rebuffer(repair_max_cap, repair_max_slew, buffer_cell);
-    report_->print("Inserted %d buffers in %d nets.\n",
-		   inserted_buffer_count_,
-		   rebuffer_net_count_);
-  }
-}
-
 class RebufferOption
 {
 public:
@@ -985,12 +972,15 @@ Resizer::deleteRebufferOptions()
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::rebuffer(bool repair_max_cap,
-		  bool repair_max_slew,
-		  LibertyCell *buffer_cell)
+Resizer::repairMaxCapSlew(bool repair_max_cap,
+			  bool repair_max_slew,
+			  LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
+  int max_cap_violation_count = 0;
+  int max_slew_violation_count = 0;
+
   sta_->findDelays();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
@@ -998,10 +988,18 @@ Resizer::rebuffer(bool repair_max_cap,
     // Hands off the clock tree.
     if (!search_->isClock(vertex)) {
       Pin *drvr_pin = vertex->pin();
-      if ((repair_max_cap
-	   && hasMaxCapViolation(drvr_pin))
-	  || (repair_max_slew
-	      && hasMaxSlewViolation(drvr_pin))) {
+      bool violation = false;
+      if (repair_max_cap
+	  && hasMaxCapViolation(drvr_pin)) {
+	max_cap_violation_count++;
+	violation = true;
+      }
+      if (repair_max_slew
+	  && hasMaxSlewViolation(drvr_pin)) {
+	max_slew_violation_count++;
+	violation = true;
+      }
+      if (violation) {
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  report_->warn("max utilization reached.\n");
@@ -1010,6 +1008,15 @@ Resizer::rebuffer(bool repair_max_cap,
       }
     }
   }
+  
+  if (max_cap_violation_count > 0)
+    report_->print("Found %d max capacitance violations.\n", max_cap_violation_count);
+  if (max_slew_violation_count > 0)
+    report_->print("Found %d max slew violations.\n", max_slew_violation_count);
+  if (inserted_buffer_count_ > 0)
+    report_->print("Inserted %d buffers in %d nets.\n",
+		   inserted_buffer_count_,
+		   rebuffer_net_count_);
 }
 
 bool

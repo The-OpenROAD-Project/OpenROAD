@@ -123,9 +123,6 @@ protected:
 				   int steiner_pt);
 
   // Assumes buffer_cell->isBuffer() is true.
-  void rebuffer(bool repair_max_cap,
-		bool repair_max_slew,
-		LibertyCell *buffer_cell);
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
   bool hasMaxCapViolation(const Pin *drvr_pin);

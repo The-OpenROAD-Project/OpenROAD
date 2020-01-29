@@ -25,6 +25,7 @@ u2/Z                                    1.50    1.97   -0.47 (VIOLATED)
 r1/Q                                    1.50    1.77   -0.27 (VIOLATED)
 r2/Q                                    1.50    1.77   -0.27 (VIOLATED)
 
+Found 6 max slew violations.
 Inserted 4 buffers in 4 nets.
 max_transition
 
