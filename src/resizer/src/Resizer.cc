@@ -1155,18 +1155,19 @@ Resizer::rebuffer(const Pin *drvr_pin,
 	RebufferOptionSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
 					       drvr_pt,
 					       1, buffer_cell);
-	Required Tbest = -INF;
-	RebufferOption *best = nullptr;
+	Required best_req = -INF;
+	RebufferOption *best_option = nullptr;
 	for (auto p : Z) {
-	  Required Tb = p->required() - gateDelay(drvr_port, p->cap());
-	  if (fuzzyGreater(Tb, Tbest)) {
-	    Tbest = Tb;
-	    best = p;
+	  // Find required for drvr_pin into option.
+	  Required req = p->required() - gateDelay(drvr_port, p->cap());
+	  if (fuzzyGreater(req, best_req)) {
+	    best_req = req;
+	    best_option = p;
 	  }
 	}
-	if (best) {
+	if (best_option) {
 	  int before = inserted_buffer_count_;
-	  rebufferTopDown(best, net, 1, buffer_cell);
+	  rebufferTopDown(best_option, net, 1, buffer_cell);
 	  if (inserted_buffer_count_ != before)
 	    rebuffer_net_count_++;
 	}
@@ -1304,7 +1305,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 			  LibertyCell *buffer_cell)
 {
   RebufferOptionSeq Z1;
-  Required best = -INF;
+  Required best_req = -INF;
   RebufferOption *best_ref = nullptr;
   adsPoint k_loc = tree->location(k);
   adsPoint prev_loc = tree->location(prev);
@@ -1335,16 +1336,16 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
     // We could add options of different buffer drive strengths here
     // Which would have different delay Dbuf and input cap Lbuf
     // for simplicity we only consider one size of buffer.
-    Required rt = z->bufferRequired(buffer_cell, this);
-    if (fuzzyGreater(rt, best)) {
-      best = rt;
+    Required req = z->bufferRequired(buffer_cell, this);
+    if (fuzzyGreater(req, best_req)) {
+      best_req = req;
       best_ref = p;
     }
   }
   if (best_ref) {
     RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
 					   bufferInputCapacitance(buffer_cell),
-					   best,
+					   best_req,
 					   nullptr,
 					   // Locate buffer at opposite end of wire.
 					   prev_loc,
