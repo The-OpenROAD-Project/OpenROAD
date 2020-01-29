@@ -1931,8 +1931,7 @@ Resizer::findFloatingNets()
 // tie hi/low instances.
 void
 Resizer::repairTieFanout(LibertyPort *tie_port,
-			 int max_fanout,
-			 bool verbose)
+			 int max_fanout)
 {
   Instance *top_inst = network_->topInstance();
   LibertyCell *tie_cell = tie_port->libertyCell();
@@ -1976,11 +1975,10 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 	  load_index++;
 	}
       }
-      if (verbose)
-	report_->print("High fanout tie net %s inserted %d cells for %d loads.\n",
-		       network_->pathName(tie_net0),
-		       tie_inst_index + 1,
-		       load_index);
+      report_->print("High fanout tie net %s inserted %d cells for %d loads.\n",
+		     network_->pathName(tie_net0),
+		     tie_inst_index + 1,
+		     load_index);
       hi_fanout_count++;
     }
   }

@@ -87,8 +87,8 @@ create_clock clk -period 1
 # kohm/micron, pf/micron
 # use 100x wire cap to tickle buffer insertion
 set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-2
-set buffer_cell [get_lib_cell liberty1/snl_bufx2]
 report_worst_slack
 
-resize -repair_max_cap -repair_max_slew -buffer_cell $buffer_cell
+set buffer_cell [get_lib_cell liberty1/snl_bufx2]
+repair_max_cap -buffer_cell $buffer_cell
 report_worst_slack

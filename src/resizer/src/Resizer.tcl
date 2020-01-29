@@ -98,25 +98,8 @@ proc resize { args } {
     set repair_max_cap 1
     set repair_max_slew 1
   }
-  set buffer_cell "NULL"
-  if { [info exists keys(-buffer_cell)] } {
-    set buffer_cell_name $keys(-buffer_cell)
-    # check for -buffer_cell [get_lib_cell arg] return ""
-    if { $buffer_cell_name != "" } {
-      set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
-      if { $buffer_cell != "NULL" } {
-	if { ![get_property $buffer_cell is_buffer] } {
-	  sta_error "[get_name $buffer_cell] is not a buffer."
-	}
-      }
-    }
-  }
-  if { $buffer_cell == "NULL"
-       && ($buffer_inputs || $buffer_outputs \
-	     || $repair_max_cap || $repair_max_slew) } {
-    sta_error "-buffer_cell required for buffer insertion."
-  }
-
+  set buffer_cell [parse_buffer_cell keys [expr $buffer_inputs || $buffer_outputs \
+					     || $repair_max_cap || $repair_max_slew]]
   if { [info exists keys(-resize_libraries)] } {
     set resize_libs [get_liberty_error "-resize_libraries" $keys(-resize_libraries)]
   } else {
@@ -127,21 +110,13 @@ proc resize { args } {
   if { [info exists keys(-dont_use)] } {
     set dont_use [get_lib_cells -quiet $keys(-dont_use)]
   }
-
-  set max_util 0.0
-  if { [info exists keys(-max_utilization)] } {
-    set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      sta_error "-max_utilization must be between 0 and 100%."
-    }
-    set max_util [expr $max_util / 100.0]
-  }
+  set_dont_use $dont_use
+  set_max_utilization [parse_max_util keys]
 
   check_argc_eq0 "resize" $args
 
   resizer_preamble $resize_libs
-  set_dont_use $dont_use
-  set_max_utilization $max_util
+
   if { $buffer_inputs } {
     buffer_inputs $buffer_cell
   }
@@ -156,17 +131,21 @@ proc resize { args } {
   }
 }
 
-define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-				  -buffer_cell buffer_cell\
-				  [-max_utilization util]}
+proc parse_max_util { keys_var } {
+  upvar 1 $keys_var keys
+  set max_util 0.0
+  if { [info exists keys(-max_utilization)] } {
+    set max_util $keys(-max_utilization)
+    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
+      sta_error "-max_utilization must be between 0 and 100%."
+    }
+    set max_util [expr $max_util / 100.0]
+  }
+  return $max_util
+}
 
-proc buffer_ports { args } {
-  parse_key_args "buffer_ports" args \
-    keys {-buffer_cell -max_utilization} \
-    flags {-inputs -outputs}
-
-  set buffer_inputs [info exists flags(-inputs)]
-  set buffer_outputs [info exists flags(-outputs)]
+proc parse_buffer_cell { keys_var required } {
+  upvar 1 $keys_var keys
   set buffer_cell "NULL"
   if { [info exists keys(-buffer_cell)] } {
     set buffer_cell_name $keys(-buffer_cell)
@@ -179,28 +158,71 @@ proc buffer_ports { args } {
 	}
       }
     }
-  } else {
-    sta_error "-buffer_cell arg required."
+  } elseif { $required } {
+    sta_error "-buffer_cell required for buffer insertion."
   }
+  if { $buffer_cell == "NULL" && $required } {
+    sta_error "-buffer_cell required for buffer insertion."    
+  }
+  return $buffer_cell
+}
 
-  set max_util 0.0
-  if { [info exists keys(-max_utilization)] } {
-    set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      sta_error "-max_utilization must be between 0 and 100%."
-    }
-    set max_util [expr $max_util / 100.0]
+define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
+				  -buffer_cell buffer_cell\
+				  [-max_utilization util]}
+
+proc buffer_ports { args } {
+  parse_key_args "buffer_ports" args \
+    keys {-buffer_cell -max_utilization} \
+    flags {-inputs -outputs}
+
+  set buffer_inputs [info exists flags(-inputs)]
+  set buffer_outputs [info exists flags(-outputs)]
+  if { !$buffer_inputs && !$buffer_outputs } {
+    set buffer_inputs 1
+    set buffer_outputs 1
   }
+  set buffer_cell [parse_buffer_cell keys 1]
 
   check_argc_eq0 "buffer_ports" $args
 
-  set_max_utilization $max_util
+  set_max_utilization [parse_max_util keys]
   if { $buffer_inputs } {
     buffer_inputs $buffer_cell
   }
   if { $buffer_outputs } {
     buffer_outputs $buffer_cell
   }
+}
+
+define_cmd_args "repair_max_cap" {-buffer_cell buffer_cell\
+				    [-max_utilization util]}
+
+proc repair_max_cap { args } {
+  repair_max_cap_slew "repair_max_cap" $args 1 0
+}
+
+define_cmd_args "repair_max_slew" {-buffer_cell buffer_cell\
+				    [-max_utilization util]}
+
+proc repair_max_slew { args } {
+  repair_max_cap_slew "repair_max_slew" $args 0 1
+}
+
+
+proc repair_max_cap_slew { cmd cmd_args repair_max_cap repair_max_slew } {
+  parse_key_args "repair_max_slew" cmd_args \
+    keys {-buffer_cell -max_utilization} \
+    flags {}
+
+  set buffer_cell [parse_buffer_cell keys 1]
+  set_max_utilization [parse_max_util keys]
+
+  check_argc_eq0 $cmd $cmd_args
+
+  # init target slews
+  resizer_preamble [get_libs *]
+  repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
 }
 
 define_cmd_args "repair_max_fanout" {-max_fanout fanout\
@@ -219,34 +241,11 @@ proc repair_max_fanout { args } {
     sta_error "no -max_fanout specified."
   }
 
-  set buffer_cell "NULL"
-  if { [info exists keys(-buffer_cell)] } {
-    set buffer_cell_name $keys(-buffer_cell)
-    # check for -buffer_cell [get_lib_cell arg] return ""
-    if { $buffer_cell_name != "" } {
-      set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
-      if { $buffer_cell != "NULL" } {
-	if { ![get_property $buffer_cell is_buffer] } {
-	  sta_error "[get_name $buffer_cell] is not a buffer."
-	}
-      }
-    }
-  } else {
-    sta_error "-buffer_cell required."
-  }
-
-  set max_util 0.0
-  if { [info exists keys(-max_utilization)] } {
-    set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      sta_error "-max_utilization must be between 0 and 100%."
-    }
-    set max_util [expr $max_util / 100.0]
-  }
+  set buffer_cell [parse_buffer_cell keys 1]
+  set_max_utilization [parse_max_util keys]
 
   check_argc_eq0 "repair_max_fanout" $args
 
-  set_max_utilization $max_util
   repair_max_fanout_cmd $max_fanout $buffer_cell
 }
 
@@ -258,34 +257,11 @@ proc repair_hold_violations { args } {
     keys {-buffer_cell -max_utilization} \
     flags {}
 
-  set buffer_cell "NULL"
-  if { [info exists keys(-buffer_cell)] } {
-    set buffer_cell_name $keys(-buffer_cell)
-    # check for -buffer_cell [get_lib_cell arg] return ""
-    if { $buffer_cell_name != "" } {
-      set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
-      if { $buffer_cell != "NULL" } {
-	if { ![get_property $buffer_cell is_buffer] } {
-	  sta_error "[get_name $buffer_cell] is not a buffer."
-	}
-      }
-    }
-  } else {
-    sta_error "-buffer_cell required."
-  }
-
-  set max_util 0.0
-  if { [info exists keys(-max_utilization)] } {
-    set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      sta_error "-max_utilization must be between 0 and 100%."
-    }
-    set max_util [expr $max_util / 100.0]
-  }
+  set buffer_cell [parse_buffer_cell keys 1]
+  set_max_utilization [parse_max_util keys]
 
   check_argc_eq0 "repair_hold_violations" $args
 
-  set_max_utilization $max_util
   repair_hold_violations_cmd $buffer_cell
 }
 
@@ -315,10 +291,12 @@ proc report_floating_nets { args } {
   }
 }
 
-define_cmd_args "repair_tie_fanout" {lib_port [-max_fanout] [-verbose]}
+define_cmd_args "repair_tie_fanout" {lib_port [-max_fanout]}
 
 proc repair_tie_fanout { args } {
-  parse_key_args "repair_tie_fanout" args keys {-max_fanout} flags {-verbose}
+  parse_key_args "repair_tie_fanout" args \
+    keys {-max_fanout} \
+    flags {}
 
   if { [info exists keys(-max_fanout)] } {
     set max_fanout $keys(-max_fanout)
@@ -326,11 +304,15 @@ proc repair_tie_fanout { args } {
   } else {
     sta_error("-max_fanout requried.")
   }
-  set verbose [info exists flags(-verbose)]
   
   check_argc_eq1 "repair_tie_fanout" $args
-  set lib_port [get_lib_pins [lindex $args 0]]
-  repair_tie_fanout_cmd $lib_port $max_fanout $verbose
+  set lib_port [lindex $args 0]
+  if { ![is_object $lib_port] } {
+    set lib_port [get_lib_pins [lindex $args 0]]
+  }
+  if { $lib_port != "NULL" } {
+    repair_tie_fanout_cmd $lib_port $max_fanout
+  }
 }
 
 # sta namespace end

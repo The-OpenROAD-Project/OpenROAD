@@ -1,4 +1,4 @@
-# resize lef macro bus pins
+# buffer_ports lef macro bus pins
 source "helpers.tcl"
 read_liberty liberty1.lib
 read_liberty bus1.lib
@@ -10,5 +10,4 @@ create_clock -name clk -period 10
 set_input_delay -clock clk 0 [get_ports in[*]]
 set_output_delay -clock clk 0 [get_ports out[*]]
 
-set_wire_rc -layer M1
-resize -buffer_cell snl_bufx2
+buffer_ports -buffer_cell snl_bufx2

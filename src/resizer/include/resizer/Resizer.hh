@@ -87,8 +87,7 @@ public:
   // Caller owns return value.
   NetSeq *findFloatingNets();
   void repairTieFanout(LibertyPort *tie_port,
-		       int max_fanout,
-		       bool verbose);
+		       int max_fanout);
 
 protected:
   void ensureCorner();

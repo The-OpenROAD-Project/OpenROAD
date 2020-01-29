@@ -14,5 +14,3 @@ Notice 0:     Created 8 nets and 8 connections.
 Notice 0: Finished DEF file: bus1.def
 Inserted 4 input buffers.
 Inserted 4 output buffers.
-Resized 0 instances.
-Found 4 max slew violations.

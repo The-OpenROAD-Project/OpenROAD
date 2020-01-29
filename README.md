@@ -169,22 +169,20 @@ Gate resizer commands are shown below.
 
 ```
 set_wire_rc [-layer layer_name] [-resistance res ] [-capacitance cap] [-corner corner_name]
-resize [-buffer_inputs]
-       [-buffer_outputs]
-       [-resize]
-       [-resize_libraries resize_libraries]
-       [-repair_max_cap]
-       [-repair_max_slew]
-       [-buffer_cell buffer_cell]
+buffer_ports [-inputs] [-outputs] -buffer_cell buffer_cell
+resize [-libraries resize_libraries]
        [-dont_use cells]
        [-max_utilization util]
-buffer_ports [-inputs] [-outputs] -buffer_cell buffer_cell
+repair_max_cap -buffer_cell buffer_cell
+               [-max_utilization util]
+repair_max_slew -buffer_cell buffer_cell
+                [-max_utilization util]
 repair_max_fanout -max_fanout fanout
        -buffer_cell buffer_cell
        [-max_utilization util]
 repair_hold_violations -buffer_cell buffer_cell
        [-max_utilization util]
-repair_tie_fanout [-max_fanout] [-verbose] lib_port
+repair_tie_fanout [-max_fanout] lib_port
 report_design_area
 report_floating_nets [-verbose]
 ```
@@ -205,6 +203,9 @@ is not called before resizing, the default_wireload model specified in
 the first liberty file or with the SDC set_wire_load command is used
 to make parasitics.
 
+The `buffer_ports` command buffers top level input and output ports.
+The default behavior is `-inputs` and `-outputs` if neither is specified.
+
 The `resize` command resizes gates, and then uses buffer insertion to
 repair maximum capacitance and slew violations. Use the
 `-buffer_inputs`, `-buffer_outputs`, `-resize`, `-repair_max_cap` and
@@ -221,10 +222,8 @@ but results in a faster design after the resizing step. Use the
 use. For example, "*/DLY*" says do not use cells with names that begin
 with "DLY" in all libraries.
 
-The `buffer_ports` command buffers top level input and output ports.
-
-The resizer stops when the design area is `-max_utilization util`
-percent of the core area. `util` is between 0 and 100.
+The resizer commands stop when the design area is `-max_utilization
+util` percent of the core area. `util` is between 0 and 100.
 
 A typical resizer command file is shown below.
 
