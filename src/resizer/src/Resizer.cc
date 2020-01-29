@@ -844,6 +844,9 @@ public:
   ~RebufferOption();
   void print(int level,
 	     Resizer *resizer);
+  void printTree(Resizer *resizer);
+  void printTree(int level,
+		 Resizer *resizer);
   RebufferOptionType type() const { return type_; }
   float cap() const { return cap_; }
   Required required() const { return required_; }
@@ -886,6 +889,31 @@ RebufferOption::~RebufferOption()
 }
 
 void
+RebufferOption::printTree(Resizer *resizer)
+{
+  printTree(0, resizer);
+}
+
+void
+RebufferOption::printTree(int level,
+			  Resizer *resizer)
+{
+  print(level, resizer);
+  switch (type_) {
+  case RebufferOptionType::sink:
+    break;
+  case RebufferOptionType::buffer:
+  case RebufferOptionType::wire:
+    ref_->printTree(level + 1, resizer);
+    break;
+  case RebufferOptionType::junction:
+    ref_->printTree(level + 1, resizer);
+    ref2_->printTree(level + 1, resizer);
+    break;
+  }
+}
+
+void
 RebufferOption::print(int level,
 		      Resizer *resizer)
 {
@@ -915,7 +943,7 @@ RebufferOption::print(int level,
 
     break;
   case RebufferOptionType::junction:
-    report->print("%*sjunction %s cap %s req %s\n",
+    report->print("%*sjunction cap %s req %s\n",
 		  level, "",
 		  units->capacitanceUnit()->asString(cap_),
 		  delayAsString(required_, resizer));
