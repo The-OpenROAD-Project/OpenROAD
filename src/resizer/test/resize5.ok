@@ -15,4 +15,4 @@ Notice 0: Finished DEF file: bus1.def
 Inserted 4 input buffers.
 Inserted 4 output buffers.
 Resized 0 instances.
-Inserted 0 buffers in 0 nets.
+Found 4 max slew violations.
