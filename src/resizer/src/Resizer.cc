@@ -1265,25 +1265,21 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
       int si = 0;
       for (size_t pi = 0; pi < Z.size(); pi++) {
 	auto p = Z[pi];
-	if (p) {
-	  float Lp = p->cap();
-	  // Remove options by shifting down with index si.
-	  si = pi + 1;
-	  // Because the options are sorted we don't have to look
-	  // beyond the first option.
-	  for (size_t qi = pi + 1; qi < Z.size(); qi++) {
-	    auto q = Z[qi];
-	    if (q) {
-	      float Lq = q->cap();
-	      // We know Tq <= Tp from the sort so we don't need to check req.
-	      // If q is the same or worse than p, remove solution q.
-	      if (fuzzyLess(Lq, Lp))
-		// Copy survivor down.
-		Z[si++] = q;
-	    }
-	  }
-	  Z.resize(si);
+	float Lp = p->cap();
+	// Remove options by shifting down with index si.
+	si = pi + 1;
+	// Because the options are sorted we don't have to look
+	// beyond the first option.
+	for (size_t qi = pi + 1; qi < Z.size(); qi++) {
+	  auto q = Z[qi];
+	  float Lq = q->cap();
+	  // We know Tq <= Tp from the sort so we don't need to check req.
+	  // If q is the same or worse than p, remove solution q.
+	  if (fuzzyLess(Lq, Lp))
+	    // Copy survivor down.
+	    Z[si++] = q;
 	}
+	Z.resize(si);
       }
       return addWireAndBuffer(Z, tree, k, prev, level, buffer_cell);
     }
