@@ -952,6 +952,7 @@ RebufferOption::print(int level,
   }
 }
 
+// Required time at input of buffer_cell driving this option.
 Required
 RebufferOption::bufferRequired(LibertyCell *buffer_cell,
 			       Resizer *resizer) const
