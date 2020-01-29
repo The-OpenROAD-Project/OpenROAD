@@ -37,6 +37,7 @@
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
+#include "OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -70,6 +71,7 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deletePsn(psn_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -109,6 +111,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
 
+  psn_ = makePsn();
+
   // Init components.
   Openroad_Init(tcl_interp);
   // Import TCL scripts.
@@ -127,6 +131,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initTritonCts(this);
   initTapcell(this);
   initTritonMp(this);
+  initPsn(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

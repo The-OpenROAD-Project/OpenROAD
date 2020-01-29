@@ -116,6 +116,7 @@ private:
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
+  psn::Psn *psn_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

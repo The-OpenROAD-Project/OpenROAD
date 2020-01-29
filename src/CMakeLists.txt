@@ -33,6 +33,8 @@ set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 
+set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
+
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -138,6 +140,8 @@ add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
+add_subdirectory(OpenPhySyn)
+
 
 ################################################################
 
@@ -153,6 +157,7 @@ target_include_directories(openroad
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
+  ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
@@ -176,6 +181,7 @@ target_link_libraries(openroad
   TritonMacroPlace
   ParquetFP
   ABKCommon
+  OpenPhySyn
   zlib
   tm
   defin
