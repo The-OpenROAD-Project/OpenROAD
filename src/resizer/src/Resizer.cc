@@ -42,9 +42,6 @@
 // Outstanding issues
 //  Instance levelization and resizing to target slew only support single output gates
 //  multi-corner support?
-//  tcl cmds to set liberty pin cap and limit for testing
-//  check one def
-//  check lef/liberty library cell ports match
 //  option to place buffers between driver and load on long wires
 //   to fix max slew/cap violations
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
@@ -845,6 +842,8 @@ public:
 		 RebufferOption *ref,
 		 RebufferOption *ref2);
   ~RebufferOption();
+  void print(int level,
+	     Resizer *resizer);
   RebufferOptionType type() const { return type_; }
   float cap() const { return cap_; }
   Required required() const { return required_; }
@@ -884,6 +883,45 @@ RebufferOption::RebufferOption(RebufferOptionType type,
 
 RebufferOption::~RebufferOption()
 {
+}
+
+void
+RebufferOption::print(int level,
+		      Resizer *resizer)
+{
+  Report *report = resizer->report();
+  Network *sdc_network = resizer->sdcNetwork();
+  Units *units = resizer->units();
+  switch (type_) {
+  case RebufferOptionType::sink:
+    // %*s format indents level spaces.
+    report->print("%*sload %s cap %s req %s\n",
+		   level, "",
+		   sdc_network->pathName(load_pin_),
+		   units->capacitanceUnit()->asString(cap_),
+		   delayAsString(required_, resizer));
+    break;
+  case RebufferOptionType::wire:
+    report->print("%*swire cap %s req %s\n",
+		level, "",
+		units->capacitanceUnit()->asString(cap_),
+		delayAsString(required_, resizer));
+    break;
+  case RebufferOptionType::buffer:
+    report->print("%*sbuffer cap %s req %s\n",
+		  level, "",
+		  units->capacitanceUnit()->asString(cap_),
+		  delayAsString(required_, resizer));
+
+    break;
+  case RebufferOptionType::junction:
+    report->print("%*sjunction %s cap %s req %s\n",
+		  level, "",
+		  units->capacitanceUnit()->asString(cap_),
+		  delayAsString(required_, resizer));
+
+    break;
+  }
 }
 
 Required
@@ -1167,12 +1205,8 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
 					     pin,
 					     tree->location(k),
 					     nullptr, nullptr);
-      // %*s format indents level spaces.
-      debugPrint5(debug_, "rebuffer", 3, "%*sload %s cap %s req %s\n",
-		  level, "",
-		  sdc_network_->pathName(pin),
-		  units_->capacitanceUnit()->asString(z->cap()),
-		  delayAsString(z->required(), this));
+      if (debug_->check("rebuffer", 3))
+	z->print(level, this);
       RebufferOptionSeq Z;
       Z.push_back(z);
       return addWireAndBuffer(Z, tree, k, prev, level, buffer_cell);
@@ -1257,13 +1291,14 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 					   nullptr,
 					   prev_loc,
 					   p, nullptr);
-    debugPrint7(debug_, "rebuffer", 3, "%*swire %s -> %s wl %d cap %s req %s\n",
-		level, "",
-		tree->name(prev, sdc_network_),
-		tree->name(k, sdc_network_),
-		wire_length_dbu,
-		units_->capacitanceUnit()->asString(z->cap()),
-		delayAsString(z->required(), this));
+    if (debug_->check("rebuffer", 3)) {
+      report_->print("%*s%s -> %s wl %d\n",
+		     level, "",
+		     tree->name(prev, sdc_network_),
+		     tree->name(k, sdc_network_),
+		     wire_length_dbu);
+      z->print(level, this);
+    }
     Z1.push_back(z);
     // We could add options of different buffer drive strengths here
     // Which would have different delay Dbuf and input cap Lbuf
@@ -1282,13 +1317,14 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 					   // Locate buffer at opposite end of wire.
 					   prev_loc,
 					   best_ref, nullptr);
-    debugPrint7(debug_, "rebuffer", 3, "%*sbuffer %s cap %s req %s -> cap %s req %s\n",
-		level, "",
-		tree->name(prev, sdc_network_),
-		units_->capacitanceUnit()->asString(best_ref->cap()),
-		delayAsString(best_ref->required(), this),
-		units_->capacitanceUnit()->asString(z->cap()),
-		delayAsString(z->required(), this));
+    if (debug_->check("rebuffer", 3)) {
+      report_->print("%*sbuffer %s cap %s req %s ->\n",
+		     level, "",
+		     tree->name(prev, sdc_network_),
+		     units_->capacitanceUnit()->asString(best_ref->cap()),
+		     delayAsString(best_ref->required(), this));
+      z->print(level, this);
+    }
     Z1.push_back(z);
   }
   return Z1;
@@ -1721,11 +1757,11 @@ Resizer::repairHoldResize(Pin *drvr_pin,
       if (rc_delay - rc_delay0 > -hold_slack
 	  // Last chance baby.
 	  || k == 0) {
-	printf("%s %s -> %s +%s\n",
-	       sdc_network_->pathName(inst),
-	       inst_cell->name(),
-	       equiv->name(),
-	       delayAsString(rc_delay - rc_delay0, this));
+	debugPrint4(debug_, "resizer", 3, "%s %s -> %s +%s\n",
+		    sdc_network_->pathName(inst),
+		    inst_cell->name(),
+		    equiv->name(),
+		    delayAsString(rc_delay - rc_delay0, this));
 	sta_->replaceCell(inst, equiv);
 	break;
       }
