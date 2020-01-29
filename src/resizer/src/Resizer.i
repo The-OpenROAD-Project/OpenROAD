@@ -223,6 +223,15 @@ repair_max_slew_cap(bool repair_max_cap,
 }
 
 void
+repair_max_fanout(int max_fanout,
+		  LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairMaxFanout(max_fanout, buffer_cell);
+}
+
+void
 resize_instance_to_target_slew(Instance *inst)
 {
   ensureLinked();
@@ -295,7 +304,7 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairTieFanout(tie_port, max_fanout, verbose);
+  resizer->repairTieFanout(tie_port, max_fanout, verbose);
 }
 
 %} // inline

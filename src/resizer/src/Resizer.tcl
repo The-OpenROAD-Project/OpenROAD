@@ -74,6 +74,8 @@ define_cmd_args "resize" {[-buffer_inputs]\
 			    [-resize]\
 			    [-repair_max_cap]\
 			    [-repair_max_slew]\
+			    [-repair_max_fanout]\
+			    [-max_fanout fanout]\
 			    [-resize_libraries resize_libs]\
 			    [-buffer_cell buffer_cell]\
 			    [-dont_use lib_cells]\
@@ -81,22 +83,25 @@ define_cmd_args "resize" {[-buffer_inputs]\
 
 proc resize { args } {
   parse_key_args "resize" args \
-    keys {-buffer_cell -resize_libraries -dont_use -max_utilization} \
-    flags {-buffer_inputs -buffer_outputs -resize -repair_max_cap -repair_max_slew}
+    keys {-buffer_cell -resize_libraries -dont_use -max_utilization -max_fanout} \
+    flags {-buffer_inputs -buffer_outputs -resize -repair_max_cap -repair_max_slew \
+	   -repair_max_fanout}
 
   set buffer_inputs [info exists flags(-buffer_inputs)]
   set buffer_outputs [info exists flags(-buffer_outputs)]
   set resize [info exists flags(-resize)]
   set repair_max_cap [info exists flags(-repair_max_cap)]
   set repair_max_slew [info exists flags(-repair_max_slew)]
+  set repair_max_fanout [info exists flags(-repair_max_fanout)]
   # With no options you get the whole salmai.
   if { !($buffer_inputs || $buffer_outputs || $resize \
-	   || $repair_max_cap || $repair_max_slew) } {
+	   || $repair_max_cap || $repair_max_slew || $repair_max_fanout) } {
     set buffer_inputs 1
     set buffer_outputs 1
     set resize 1
     set repair_max_cap 1
     set repair_max_slew 1
+    set repair_max_fanout [info exists keys(-max_fanout)]
   }
   set buffer_cell "NULL"
   if { [info exists keys(-buffer_cell)] } {
@@ -113,7 +118,7 @@ proc resize { args } {
   }
   if { $buffer_cell == "NULL"
        && ($buffer_inputs || $buffer_outputs \
-	     || $repair_max_cap || $repair_max_slew) } {
+	     || $repair_max_cap || $repair_max_slew || $repair_max_fanout) } {
     sta_error "-buffer_cell required for buffer insertion."
   }
 
@@ -151,8 +156,20 @@ proc resize { args } {
   if { $resize } {
     resize_to_target_slew
   }
+  if { [info exists keys(-max_fanout)] } {
+    set max_fanout $keys(-max_fanout)
+    check_positive_integer "-max_fanout" $max_fanout
+  } else {
+    if { $repair_max_fanout } {
+      sta_warn "no -max_fanout specified for -repair_max_fanout."
+      set repair_max_fanout 0
+    }
+  }
   if { $repair_max_cap || $repair_max_slew } {
-    repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
+    repair_max_slew_cap_fanout $repair_max_cap $repair_max_slew $buffer_cell
+  }
+  if { $repair_max_fanout } {
+    repair_max_fanout $max_fanout $buffer_cell
   }
 }
 
