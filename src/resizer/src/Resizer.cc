@@ -1986,10 +1986,11 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
       inserted_buffer_count_ += tie_inst_index;
     }
   }
-  report_->print("Inserted %d tie %s instances for %d nets.\n",
-		 inserted_buffer_count_,
-		 tie_cell->name(),
-		 hi_fanout_count);
+  if (inserted_buffer_count_ > 0)
+    report_->print("Inserted %d tie %s instances for %d nets.\n",
+		   inserted_buffer_count_,
+		   tie_cell->name(),
+		   hi_fanout_count);
 }
 
 void
