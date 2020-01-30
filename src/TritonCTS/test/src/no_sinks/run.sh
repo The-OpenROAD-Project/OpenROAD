@@ -11,7 +11,7 @@ binary=$1
 
 $binary -no_init < run.tcl > test.log 2>&1
 
-if grep -q " Net \"clk\" has no sinks" test.log;
+if grep -q " Net \"clk\" has 0 sinks" test.log;
 then
 	exit $GREEN
 else

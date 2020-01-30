@@ -414,6 +414,7 @@ void HTreeBuilder::createClockSubNets() {
        
         DBU centerX = _sinkRegion.computeCenter().getX() * _wireSegmentUnit;
         DBU centerY = _sinkRegion.computeCenter().getY() * _wireSegmentUnit;
+	
         ClockInst& rootBuffer = _clock.addClockBuffer("clkbuf_0", _options->getRootBuffer(), 
                                                              centerX, centerY); 
         Clock::SubNet& rootClockSubNet = _clock.addSubNet("clknet_0");
