@@ -106,12 +106,12 @@ public:
         ClockInst& addClockBuffer(const std::string& name, 
                                   const std::string& master,
                                   DBU x, DBU y ) {
-                _clockBuffers.emplace_back(name, master, CLOCK_BUFFER, x, y);
+                _clockBuffers.emplace_back(name + "_" + getName(), master, CLOCK_BUFFER, x, y);
                 return _clockBuffers.back();
         }
 
         SubNet& addSubNet(const std::string& name) {
-                _subNets.emplace_back(name);
+                _subNets.emplace_back(name + "_" + getName());
                 return _subNets.back();
         }
 
