@@ -161,6 +161,7 @@ protected:
 		    float load_cap);
   string makeUniqueNetName();
   string makeUniqueBufferName();
+  string makeUniqueInstName(const char *base_name);
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
@@ -229,7 +230,7 @@ protected:
   bool level_drvr_verticies_valid_;
   Slew tgt_slews_[RiseFall::index_count];
   int unique_net_index_;
-  int unique_buffer_index_;
+  int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
   int rebuffer_net_count_;
