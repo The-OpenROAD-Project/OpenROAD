@@ -1511,163 +1511,6 @@ Resizer::bufferLoads(Pin *drvr_pin,
   }
 }
 
-void
-Resizer::findLoads(Pin *drvr_pin,
-		   PinSeq &loads)
-{
-  PinSeq drvrs;
-  PinSet visited_drvrs;
-  FindNetDrvrLoads visitor(drvr_pin, visited_drvrs, loads, drvrs, network_);
-  network_->visitConnectedPins(drvr_pin, visitor);
-}
-
-////////////////////////////////////////////////////////////////
-
-string
-Resizer::makeUniqueNetName()
-{
-  string node_name;
-  Instance *top_inst = network_->topInstance();
-  do 
-    stringPrint(node_name, "net%d", unique_net_index_++);
-  while (network_->findNet(top_inst, node_name.c_str()));
-  return node_name;
-}
-
-string
-Resizer::makeUniqueBufferName()
-{
-  string buffer_name;
-  do 
-    stringPrint(buffer_name, "buffer%d", unique_buffer_index_++);
-  while (network_->findInstance(buffer_name.c_str()));
-  return buffer_name;
-}
-
-float
-Resizer::bufferInputCapacitance(LibertyCell *buffer_cell)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  return portCapacitance(input);
-}
-
-float
-Resizer::pinCapacitance(const Pin *pin)
-{
-  LibertyPort *port = network_->libertyPort(pin);
-  if (port)
-    return portCapacitance(port);
-  else
-    return 0.0;
-}
-
-float
-Resizer::portCapacitance(const LibertyPort *port)
-{
-  float cap1 = port->capacitance(RiseFall::rise(), min_max_);
-  float cap2 = port->capacitance(RiseFall::fall(), min_max_);
-  return max(cap1, cap2);
-}
-
-Required
-Resizer::pinRequired(const Pin *pin)
-{
-  Vertex *vertex = graph_->pinLoadVertex(pin);
-  return sta_->vertexRequired(vertex, min_max_);
-}
-
-float
-Resizer::bufferDelay(LibertyCell *buffer_cell,
-		     float load_cap)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  return gateDelay(output, load_cap);
-}
-
-float
-Resizer::gateDelay(LibertyPort *out_port,
-		   float load_cap)
-{
-  LibertyCell *cell = out_port->libertyCell();
-  // Max rise/fall delays.
-  ArcDelay max_delay = -INF;
-  LibertyCellTimingArcSetIterator set_iter(cell);
-  while (set_iter.hasNext()) {
-    TimingArcSet *arc_set = set_iter.next();
-    if (arc_set->to() == out_port) {
-      TimingArcSetArcIterator arc_iter(arc_set);
-      while (arc_iter.hasNext()) {
-	TimingArc *arc = arc_iter.next();
-	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
-	float in_slew = tgt_slews_[in_rf->index()];
-	ArcDelay gate_delay;
-	Slew drvr_slew;
-	arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
-				   nullptr, 0.0, pvt_, dcalc_ap_,
-				   gate_delay,
-				   drvr_slew);
-	max_delay = max(max_delay, gate_delay);
-      }
-    }
-  }
-  return max_delay;
-}
-
-double
-Resizer::designArea()
-{
-  if (design_area_ == 0.0) {
-    for (dbInst *inst : db_->getChip()->getBlock()->getInsts()) {
-      dbMaster *master = inst->getMaster();
-      design_area_ += area(master);
-    }
-  }
-  return design_area_;
-}
-
-adsPoint
-pinLocation(Pin *pin,
-	    const dbNetwork *network)
-{
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  network->staToDb(pin, iterm, bterm);
-  if (iterm) {
-    dbInst *inst = iterm->getInst();
-    int x, y;
-    inst->getOrigin(x, y);
-    return adsPoint(x, y);
-  }
-  if (bterm) {
-    int x, y;
-    if (bterm->getFirstPinLocation(x, y))
-      return adsPoint(x, y);
-  }
-  return adsPoint(0, 0);
-}  
-
-bool
-pinIsPlaced(Pin *pin,
-	    const dbNetwork *network)
-{
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  network->staToDb(pin, iterm, bterm);
-  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
-  if (iterm) {
-    dbInst *inst = iterm->getInst();
-    status = inst->getPlacementStatus();
-  }
-  if (bterm)
-    status = bterm->getFirstPinPlacementStatus();
-  return status == dbPlacementStatus::PLACED
-    || status == dbPlacementStatus::LOCKED
-    || status == dbPlacementStatus::FIRM
-    || status == dbPlacementStatus::COVER;
-}
-
 ////////////////////////////////////////////////////////////////
 
 void
@@ -2007,6 +1850,153 @@ Resizer::findCellInstances(LibertyCell *cell,
   delete inst_iter;
 }
 
+////////////////////////////////////////////////////////////////
+
+string
+Resizer::makeUniqueNetName()
+{
+  string node_name;
+  Instance *top_inst = network_->topInstance();
+  do 
+    stringPrint(node_name, "net%d", unique_net_index_++);
+  while (network_->findNet(top_inst, node_name.c_str()));
+  return node_name;
+}
+
+string
+Resizer::makeUniqueBufferName()
+{
+  string buffer_name;
+  do 
+    stringPrint(buffer_name, "buffer%d", unique_buffer_index_++);
+  while (network_->findInstance(buffer_name.c_str()));
+  return buffer_name;
+}
+
+float
+Resizer::bufferInputCapacitance(LibertyCell *buffer_cell)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  return portCapacitance(input);
+}
+
+float
+Resizer::pinCapacitance(const Pin *pin)
+{
+  LibertyPort *port = network_->libertyPort(pin);
+  if (port)
+    return portCapacitance(port);
+  else
+    return 0.0;
+}
+
+float
+Resizer::portCapacitance(const LibertyPort *port)
+{
+  float cap1 = port->capacitance(RiseFall::rise(), min_max_);
+  float cap2 = port->capacitance(RiseFall::fall(), min_max_);
+  return max(cap1, cap2);
+}
+
+Required
+Resizer::pinRequired(const Pin *pin)
+{
+  Vertex *vertex = graph_->pinLoadVertex(pin);
+  return sta_->vertexRequired(vertex, min_max_);
+}
+
+float
+Resizer::bufferDelay(LibertyCell *buffer_cell,
+		     float load_cap)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  return gateDelay(output, load_cap);
+}
+
+float
+Resizer::gateDelay(LibertyPort *out_port,
+		   float load_cap)
+{
+  LibertyCell *cell = out_port->libertyCell();
+  // Max rise/fall delays.
+  ArcDelay max_delay = -INF;
+  LibertyCellTimingArcSetIterator set_iter(cell);
+  while (set_iter.hasNext()) {
+    TimingArcSet *arc_set = set_iter.next();
+    if (arc_set->to() == out_port) {
+      TimingArcSetArcIterator arc_iter(arc_set);
+      while (arc_iter.hasNext()) {
+	TimingArc *arc = arc_iter.next();
+	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+	float in_slew = tgt_slews_[in_rf->index()];
+	ArcDelay gate_delay;
+	Slew drvr_slew;
+	arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+				   nullptr, 0.0, pvt_, dcalc_ap_,
+				   gate_delay,
+				   drvr_slew);
+	max_delay = max(max_delay, gate_delay);
+      }
+    }
+  }
+  return max_delay;
+}
+
+double
+Resizer::designArea()
+{
+  if (design_area_ == 0.0) {
+    for (dbInst *inst : db_->getChip()->getBlock()->getInsts()) {
+      dbMaster *master = inst->getMaster();
+      design_area_ += area(master);
+    }
+  }
+  return design_area_;
+}
+
+adsPoint
+pinLocation(Pin *pin,
+	    const dbNetwork *network)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  network->staToDb(pin, iterm, bterm);
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    int x, y;
+    inst->getOrigin(x, y);
+    return adsPoint(x, y);
+  }
+  if (bterm) {
+    int x, y;
+    if (bterm->getFirstPinLocation(x, y))
+      return adsPoint(x, y);
+  }
+  return adsPoint(0, 0);
+}  
+
+bool
+pinIsPlaced(Pin *pin,
+	    const dbNetwork *network)
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  network->staToDb(pin, iterm, bterm);
+  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    status = inst->getPlacementStatus();
+  }
+  if (bterm)
+    status = bterm->getFirstPinPlacementStatus();
+  return status == dbPlacementStatus::PLACED
+    || status == dbPlacementStatus::LOCKED
+    || status == dbPlacementStatus::FIRM
+    || status == dbPlacementStatus::COVER;
+}
+
 int
 Resizer::fanout(Pin *drvr_pin)
 {
@@ -2019,6 +2009,16 @@ Resizer::fanout(Pin *drvr_pin)
   }
   delete pin_iter;
   return fanout;
+}
+
+void
+Resizer::findLoads(Pin *drvr_pin,
+		   PinSeq &loads)
+{
+  PinSeq drvrs;
+  PinSet visited_drvrs;
+  FindNetDrvrLoads visitor(drvr_pin, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin, visitor);
 }
 
 }
