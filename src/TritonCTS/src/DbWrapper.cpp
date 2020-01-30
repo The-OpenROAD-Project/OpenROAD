@@ -82,6 +82,10 @@ void DbWrapper::initAllClocks() {
         for (const std::string& name: clockNetNames) {
                 odb::dbNet* net = _block->findNet(name.c_str());
                 if (!net) {
+                        odb::dbITerm* iterm = _block->findITerm(name.c_str());
+                        net = iterm->getNet();
+                }
+                if (!net) {
                         std::cout << " [WARNING] Net \"" << name << "\" not in design. Skipping...\n";
                         continue;
                 } 
@@ -92,14 +96,29 @@ void DbWrapper::initAllClocks() {
 }       
 
 void DbWrapper::initClock(odb::dbNet* net) {
-        odb::dbBTerm* bterm = net->get1stBTerm(); // Clock pin
+        std::string driver = "";
+        odb::dbITerm* iterm = net->getFirstOutput();
         int xPin, yPin;
-        bterm->getFirstPinLocation(xPin, yPin);
+        if (!iterm) {
+                odb::dbBTerm* bterm = net->get1stBTerm(); // Clock pin
+                driver = bterm->getConstName();
+                bterm->getFirstPinLocation(xPin, yPin);
+         } else {
+                odb::dbInst* inst = iterm->getInst();
+                odb::dbMTerm* mterm = iterm->getMTerm();
+                std::string driver = std::string(inst->getConstName()) + "/" +  
+                                   std::string(mterm->getConstName());
+                DBU xTmp, yTmp;
+                computeITermPosition(iterm, xTmp, yTmp);
+                xPin = xTmp; yPin = yTmp;
+        }
 
         // Initialize clock net
+        std::cout << net->getConstName() << std::endl;
+        
         Clock clockNet(net->getConstName(), 
-                          bterm->getConstName(),
-                          xPin, yPin);
+                       driver,
+                       xPin, yPin);
         
         odb::dbSet<odb::dbITerm> iterms = net->getITerms(); 
         odb::dbSet<odb::dbITerm>::iterator itr;
@@ -110,13 +129,13 @@ void DbWrapper::initClock(odb::dbNet* net) {
                 std::string name = std::string(inst->getConstName()) + "/" +  
                                    std::string(mterm->getConstName());
                 DBU x, y;
-                computeSinkPosition(iterm, x, y);
+                computeITermPosition(iterm, x, y);
                 clockNet.addSink(name, x, y);
         }
-
-        if (clockNet.getNumSinks() < 1) {
+        
+        if (clockNet.getNumSinks() < 2) {
                 std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""  
-                          << " has no sinks. Skipping...\n";
+                          << " has " << clockNet.getNumSinks()  << " sinks. Skipping...\n";
                 return;
         
         }
@@ -149,7 +168,7 @@ void DbWrapper::parseClockNames(std::vector<std::string>& clockNetNames) const {
         } 
 }
 
-void DbWrapper::computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
+void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
         odb::dbITermShapeItr itr;
         
         odb::dbShape shape;
@@ -171,13 +190,16 @@ void DbWrapper::computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
 };  
 
 void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
+        std::cout << " Writing clock net \"" << clockNet.getName() << "\" to DB\n";
+                
         disconnectAllSinksFromNet(clockNet.getName());
         
         createClockBuffers(clockNet);   
         
         // connect top buffer on the clock pin
         odb::dbNet* topClockNet = _block->findNet(clockNet.getName().c_str());
-        odb::dbInst* topClockInst = _block->findInst("clkbuf_0");
+        std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
+        odb::dbInst* topClockInst = _block->findInst(topClockInstName.c_str());
         odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst); 
         odb::dbITerm::connect(topClockInstInputPin, topClockNet); 
         topClockNet->setSigType(odb::dbSigType::CLOCK);
@@ -213,7 +235,7 @@ void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
                 removeNonClockNets();
         }
 
-        std::cout << " Created " << numClkNets << " clock nets.\n";
+        std::cout << "    Created " << numClkNets << " clock nets.\n";
 }
 
 void DbWrapper::disconnectAllSinksFromNet(std::string netName) {
@@ -222,6 +244,9 @@ void DbWrapper::disconnectAllSinksFromNet(std::string netName) {
         odb::dbSet<odb::dbITerm>::iterator itr;
         for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
                 odb::dbITerm* iterm = *itr;
+                if (iterm->getIoType() != INPUT) {
+                        continue;
+                }
                 odb::dbITerm::disconnect(iterm);
         }
 }
@@ -235,7 +260,7 @@ void DbWrapper::createClockBuffers(const Clock& clockNet) {
                 newInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
                 ++numBuffers;
         });
-        std::cout << " Created " << numBuffers << " clock buffers.\n";
+        std::cout << "    Created " << numBuffers << " clock buffers.\n";
 }
 
 odb::dbITerm* DbWrapper::getFirstInput(odb::dbInst* inst) const {

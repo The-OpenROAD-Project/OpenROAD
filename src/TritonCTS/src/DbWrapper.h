@@ -88,7 +88,7 @@ private:
         void disconnectAllSinksFromNet(std::string netName);
         void createClockBuffers(const Clock& clk);
         void removeNonClockNets();
-        void computeSinkPosition(odb::dbITerm* term, DBU &x, DBU &y) const;
+        void computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const;
         odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 };  
 
