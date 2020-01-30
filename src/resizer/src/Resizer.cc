@@ -1970,7 +1970,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 	      tie_inst_index++;
 	    }
 	    Instance *load_inst = network_->instance(pin);
-	    LibertyPort *load_port = network_->libertyPort(pin);
+	    Port *load_port = network_->port(pin);
 	    sta_->disconnectPin(pin);
 	    sta_->connectPin(load_inst, load_port, tie_net);
 	  }

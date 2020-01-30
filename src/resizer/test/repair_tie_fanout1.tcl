@@ -28,6 +28,7 @@ write_tie_hi_fanout_netlist $verilog_filename \
 
 read_verilog $verilog_filename
 link_design top
+
 repair_tie_fanout -max_fanout 10 Nangate_typ/LOGIC1_X1/Z
 set tie_insts [get_cells -filter "ref_name == LOGIC1_X1"]
 foreach tie_inst $tie_insts {
