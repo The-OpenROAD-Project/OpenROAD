@@ -17,11 +17,11 @@ set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-3
 
 report_check_types -max_transition -all_violators
 
-resize -repair_max_slew -buffer_cell $buffer_cell
+repair_max_slew -buffer_cell $buffer_cell
 
 report_check_types -max_transition -all_violators
 report_checks -fields {input_pin transition_time capacitance}
 
-set def_file [make_result_file rebuffer5.def]
+set def_file [make_result_file repair_max_slew2.def]
 write_def $def_file
 diff_files $def_file rebuffer5.defok

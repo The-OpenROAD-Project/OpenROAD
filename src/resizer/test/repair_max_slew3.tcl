@@ -1,4 +1,4 @@
-# rebuffer reg3 -max_utilization (no core size)
+# rebuffer reg3 -max_utilization
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def reg3.def
@@ -13,7 +13,9 @@ set buffer_cell [get_lib_cell liberty1/snl_bufx2]
 # kohm/micron, pf/micron
 # use 10x wire cap to tickle buffer insertion
 set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-3
+
 report_design_area
 
-resize -repair_max_slew -buffer_cell $buffer_cell -max_utilization 70
+repair_max_slew -buffer_cell $buffer_cell -max_utilization 70
+
 report_design_area

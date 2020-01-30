@@ -123,10 +123,7 @@ record_resizer_tests {
   rebuffer1
   rebuffer2
   rebuffer4
-  rebuffer5
   rebuffer7
-  rebuffer8
-  rebuffer9
   buffer_ports1
   buffer_ports2
   buffer_ports3
@@ -136,6 +133,9 @@ record_resizer_tests {
   resize6
   repair_max_cap1
   repair_max_fanout1
+  repair_max_slew1
+  repair_max_slew2
+  repair_max_slew3
   repair_hold1
   repair_hold2
   report_floating_nets1

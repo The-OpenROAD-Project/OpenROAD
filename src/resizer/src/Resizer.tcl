@@ -85,10 +85,22 @@ proc resize { args } {
     flags {-buffer_inputs -buffer_outputs -resize -repair_max_cap -repair_max_slew}
 
   set buffer_inputs [info exists flags(-buffer_inputs)]
+  if { $buffer_inputs } {
+    sta_warn "resize -buffer_inputs is deprecated. Use the buffer_ports command."
+  }
   set buffer_outputs [info exists flags(-buffer_outputs)]
+  if { $buffer_outputs } {
+    sta_warn "resize -buffer_outputs is deprecated. Use the buffer_ports command."
+  }
   set resize [info exists flags(-resize)]
   set repair_max_cap [info exists flags(-repair_max_cap)]
+  if { $repair_max_cap } {
+    sta_warn "resize -repair_max_cap is deprecated. Use the repair_max_cap command."
+  }
   set repair_max_slew [info exists flags(-repair_max_slew)]
+  if { $repair_max_slew } {
+    sta_warn "resize -repair_max_slew is deprecated. Use the repair_max_slew command."
+  }
   # With no options you get the whole salmai.
   if { !($buffer_inputs || $buffer_outputs || $resize \
 	   || $repair_max_cap || $repair_max_slew) } {
@@ -291,7 +303,7 @@ proc report_floating_nets { args } {
   }
 }
 
-define_cmd_args "repair_tie_fanout" {lib_port [-max_fanout] [-verbose]}
+define_cmd_args "repair_tie_fanout" {lib_port [-max_fanout fanout] [-verbose]}
 
 proc repair_tie_fanout { args } {
   parse_key_args "repair_tie_fanout" args keys {-max_fanout} flags {-verbose}

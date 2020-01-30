@@ -165,28 +165,16 @@ auto_place_pins pin_layer
 
 #### Gate Resizer
 
-Gate resizer commands are shown below.
+Gate resizer commands are described below.
+The resizer commands stop when the design area is `-max_utilization
+util` percent of the core area. `util` is between 0 and 100.
 
 ```
-set_wire_rc [-layer layer_name] [-resistance res ] [-capacitance cap] [-corner corner_name]
-buffer_ports [-inputs] [-outputs] -buffer_cell buffer_cell
-resize [-libraries resize_libraries]
-       [-dont_use cells]
-       [-max_utilization util]
-repair_max_cap -buffer_cell buffer_cell
-               [-max_utilization util]
-repair_max_slew -buffer_cell buffer_cell
-                [-max_utilization util]
-repair_max_fanout -max_fanout fanout
-       -buffer_cell buffer_cell
-       [-max_utilization util]
-repair_hold_violations -buffer_cell buffer_cell
-       [-max_utilization util]
-repair_tie_fanout [-max_fanout] [-verbose] lib_port
-report_design_area
-report_floating_nets [-verbose]
+set_wire_rc [-layer layer_name]
+            [-resistance res ]
+	    [-capacitance cap]
+	    [-corner corner_name]
 ```
-
 The `set_wire_rc` command sets the resistance and capacitance used to
 estimate delay of routing wires.  Use `-layer` or `-resistance` and
 `-capacitance`.  If `-layer` is used, the LEF technology resistance
@@ -203,27 +191,79 @@ is not called before resizing, the default_wireload model specified in
 the first liberty file or with the SDC set_wire_load command is used
 to make parasitics.
 
-The `buffer_ports` command buffers top level input and output ports.
-The default behavior is `-inputs` and `-outputs` if neither is specified.
+```
+buffer_ports [-inputs]
+	     [-outputs]
+	     -buffer_cell buffer_cell
+```
+The `buffer_ports -inputs` command adds a buffer between the input and
+its loads.  The `buffer_ports -outputs` adds a buffer between the port
+driver and the output port. If  The default behavior is
+`-inputs` and `-outputs` if neither is specified.
 
-The `resize` command resizes gates, and then uses buffer insertion to
-repair maximum capacitance and slew violations. Use the
-`-buffer_inputs`, `-buffer_outputs`, `-resize`, `-repair_max_cap` and
-`-repair_max_slew` options to invoke a single mode. With none of the
-options specified all are done. The `-buffer_cell` argument is
-required for buffer insertion (`-repair_max_cap` or
-`-repair_max_slew`). The `-resize_libraries` option specifies which
-libraries to use when resizing. `resize_libraries` defaults to all of
-the liberty libraries that have been read. Some designs have multiple
-libraries with different transistor thresholds (Vt) and are used to
-trade off power and speed. Chosing a low Vt library uses more power
-but results in a faster design after the resizing step. Use the
-`-dont_use` keyword to specify a list of patterns of cells to not
-use. For example, "*/DLY*" says do not use cells with names that begin
-with "DLY" in all libraries.
+```
+resize [-libraries resize_libraries]
+       [-dont_use cells]
+       [-max_utilization util]
+```
+The `resize` command resizes gates to normalize slews.
 
-The resizer commands stop when the design area is `-max_utilization
-util` percent of the core area. `util` is between 0 and 100.
+The `-libraries` option specifies which libraries to use when
+resizing. `resize_libraries` defaults to all of the liberty libraries
+that have been read. Some designs have multiple libraries with
+different transistor thresholds (Vt) and are used to trade off power
+and speed. Chosing a low Vt library uses more power but results in a
+faster design after the resizing step. Use the `-dont_use` option to
+specify a list of patterns of cells to not use. For example, `*/DLY*`
+says do not use cells with names that begin with `DLY` in all
+libraries.
+
+```
+repair_max_cap -buffer_cell buffer_cell
+               [-max_utilization util]
+repair_max_slew -buffer_cell buffer_cell
+                [-max_utilization util]
+```
+The `repair_max_cap` and `repair_max_slew` commands repair nets with
+maximum capacitance or slew violations by inserting buffers in the
+net.
+
+```
+repair_max_fanout -max_fanout fanout
+                  -buffer_cell buffer_cell
+                  [-max_utilization util]
+```
+The `repair_max_fanout` command repairs nets with a fanout greater
+than `fanout` by inserting buffers between the driver and the loads.
+
+```
+repair_tie_fanout [-max_fanout fanout]
+                  [-verbose]
+                  lib_port
+```
+The `repair_tie_fanout` command repairs tie high/low nets with fanout
+greater than `fanout` by cloning the tie high/low driver.
+`lib_port` is the tie high/low port, which can be a library/cell/port
+name or object returned by `get_lib_pins`.
+
+```
+repair_hold_violations -buffer_cell buffer_cell
+                       [-max_utilization util]
+```
+The `repair_hold_violations` command inserts buffers to repair hold
+check violations.
+
+```
+report_design_area
+```
+The `report_design_area` command reports the area of the design's
+components and the utilization.
+
+```
+report_floating_nets [-verbose]
+```
+The `report_floating_nets` command reports nets with only one pin connection.
+Use the `-verbose` flag to see the net names.
 
 A typical resizer command file is shown below.
 
@@ -232,16 +272,23 @@ read_lef nlc18.lef
 read_liberty nlc18.lib
 read_def mea.def
 read_sdc mea.sdc
-set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
-set_design_size -die "0 0 1000 1000" -core "100 100 900 900"
-resize -buffer_cell [get_lib_cell nlc18_worst/snl_bufx4] -max_utilization 90
+set_wire_rc -layer metal2
+set buffer_cell [get_lib_cell nlc18_worst/snl_bufx4]
+set max_util 90
+buffer_ports -buffer_cell $buffer_cell
+resize -resize
+repair_max_cap -buffer_cell $buffer_cell -max_utilization $max_util
+repair_max_slew -buffer_cell $buffer_cell -max_utilization $max_util
+repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell -max_utilization $max_util
+repair_tie_fanout -max_fanout 100 Nangate/LOGIC1_X1/Z
+repair_hold_violations -buffer_cell $buffer_cell -max_utilization $max_util
 ```
 
 Note that OpenSTA commands can be used to report timing metrics before
 or after resizing the design.
 
 ```
-set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
+set_wire_rc -layer metal2
 report_checks
 report_tns
 report_wns
@@ -253,23 +300,6 @@ report_checks
 report_tns
 report_wns
 ```
-
-The `report_design_area` command reports the area of the design's
-components and the utilization.
-
-The `report_floating_nets` command reports nets with only one pin connection.
-Use the `-verbose` flag to see the net names.
-
-The `repair_tie_fanout` command duplicates tie hi/low instances with fanout
-greater than `max_fanout`.
-
-```
-repair_tie_fanout -max_fanout 10 -verbose Nangate_typ/LOGIC1_X1/Z
-```
-
-The `repair_hold_violations` command inserts buffers to repair hold
-check violations. Use the `set_wire_rc` command for parasitic
-estimation.
 
 #### Timing Analysis
 
@@ -322,9 +352,8 @@ You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scrip
 RePlAce global placement.
 
 ```
-global_placement
-    [-timing_driven]
-    [-bin_grid_count grid_count]
+global_placement [-timing_driven]
+                 [-bin_grid_count grid_count]
 ```
 - **timing_driven**: Enable timing-driven mode
 - **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
