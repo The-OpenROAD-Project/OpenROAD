@@ -279,8 +279,9 @@ buffer_ports -buffer_cell $buffer_cell
 resize -resize
 repair_max_cap -buffer_cell $buffer_cell -max_utilization $max_util
 repair_max_slew -buffer_cell $buffer_cell -max_utilization $max_util
-repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell -max_utilization $max_util
+# repair tie hi/low before max fanout so they don't get buffered
 repair_tie_fanout -max_fanout 100 Nangate/LOGIC1_X1/Z
+repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell -max_utilization $max_util
 repair_hold_violations -buffer_cell $buffer_cell -max_utilization $max_util
 ```
 
