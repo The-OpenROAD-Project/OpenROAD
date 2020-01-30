@@ -25,17 +25,26 @@ proc diff_files { file1 file2 } {
   gets $stream1 line1
   gets $stream2 line2
   set line 1
+  set diff_line 0;
   while { ![eof $stream1] && ![eof $stream2] } {
     if { $line1 != $line2 } {
-      puts "Differences found at line $line."
-      return 1
+      set diff_line $line
+      break
     }
     gets $stream1 line1
     gets $stream2 line2
     incr line
   }
+  if { !([eof $stream1] && [eof $stream2]) } {
+    set diff_line $line
+  }
   close $stream1
   close $stream2
-  puts "No differences found."
-  return 0
+  if { $diff_line } {
+    puts "Differences found at line $diff_line."
+    return 1
+  } else {
+    puts "No differences found."
+    return 0
+  }
 }
