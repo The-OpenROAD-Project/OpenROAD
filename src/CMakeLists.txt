@@ -41,7 +41,6 @@ set(OPENROAD_SOURCE
 
   dbReadVerilog.cc
   InitFloorplan.cc
-  InitFlute.cc
   )
 
 set(OPENROAD_TCL_FILES
@@ -284,8 +283,6 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 # executable
 install(TARGETS openroad DESTINATION bin)
-# etc magic flute files
-install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 
