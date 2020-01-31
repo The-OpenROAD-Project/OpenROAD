@@ -32,69 +32,7 @@ fileExists(const string &filename);
 void
 initFlute(const char *prog_path)
 {
-  string prog_dir = prog_path;
-  // Look up one directory level from /build/src.
-  auto last_slash = prog_dir.find_last_of("/");
-  if (last_slash != string::npos) {
-    prog_dir.erase(last_slash);
-    last_slash = prog_dir.find_last_of("/");
-    if (last_slash != string::npos) {
-      prog_dir.erase(last_slash);
-      last_slash = prog_dir.find_last_of("/");
-      if (last_slash != string::npos) {
-	prog_dir.erase(last_slash);
-	if (readFluteInits(prog_dir))
-	  return;
-      }
-    }
-  }
-  // try ./etc
-  prog_dir = ".";
-  if (readFluteInits(prog_dir))
-    return;
-
-  // try ../etc
-  prog_dir = "..";
-  if (readFluteInits(prog_dir))
-    return;
-
-  // try ../../etc
-  prog_dir = "../..";
-  if (readFluteInits(prog_dir))
-    return;
-
-  printf("Error: could not find FluteLUT files POWV9.dat and POST9.dat.\n");
-  exit(EXIT_FAILURE);
-}
-
-static bool
-readFluteInits(string dir)
-{
-  //  printf("flute try %s\n", dir.c_str());
-  string etc;
-  sta::stringPrint(etc, "%s/etc", dir.c_str());
-  string flute_path1;
-  string flute_path2;
-  sta::stringPrint(flute_path1, "%s/%s", etc.c_str(), FLUTE_POWVFILE);
-  sta::stringPrint(flute_path2, "%s/%s", etc.c_str(), FLUTE_POSTFILE);
-  if (fileExists(flute_path1) && fileExists(flute_path2)) {
-    char *cwd = getcwd(NULL, 0);
-    chdir(etc.c_str());
-    Flute::readLUT();
-    chdir(cwd);
-    free(cwd);
-    return true;
-  }
-  else
-    return false;
-}
-
-// c++17 std::filesystem::exists
-static bool
-fileExists(const string &filename)
-{
-  std::ifstream stream(filename.c_str());
-  return stream.good();
+  Flute::readLUT();
 }
 
 }
