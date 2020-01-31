@@ -95,7 +95,7 @@ read_db filename
 write_db filename
 ```
 
-OpenROAD can be used to make and OpenDB database from LEF/DEF, or
+OpenROAD can be used to make a OpenDB database from LEF/DEF, or
 Verilog (flat or hierarchical). Once the database is made it can be
 saved as a file with the `write_db` command. OpenROAD can then read
 the database with the `read_db` command without reading LEF/DEF or

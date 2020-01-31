@@ -1,0 +1,41 @@
+Notice 0: Reading LEF file:  bus16.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  bus16.lef
+Instance bus1
+ Cell: bus16
+ Library: bus16
+ Path cells: bus16
+ Input pins:
+  in[0] input in[0]
+  in[1] input in[1]
+  in[2] input in[2]
+  in[3] input in[3]
+  in[4] input in[4]
+  in[5] input in[5]
+  in[6] input in[6]
+  in[7] input in[7]
+  in[8] input in[8]
+  in[9] input in[9]
+  in[10] input in[10]
+  in[11] input in[11]
+  in[12] input in[12]
+  in[13] input in[13]
+  in[14] input in[14]
+  in[15] input in[15]
+ Output pins:
+  out[0] output out[0]
+  out[1] output out[1]
+  out[2] output out[2]
+  out[3] output out[3]
+  out[4] output out[4]
+  out[5] output out[5]
+  out[6] output out[6]
+  out[7] output out[7]
+  out[8] output out[8]
+  out[9] output out[9]
+  out[10] output out[10]
+  out[11] output out[11]
+  out[12] output out[12]
+  out[13] output out[13]
+  out[14] output out[14]
+  out[15] output out[15]
