@@ -123,7 +123,6 @@ record_tests {
   init_floorplan3
   init_floorplan4
   init_floorplan5
-  init_floorplan6
   network_edit1
   read_verilog1
   read_verilog2
@@ -140,6 +139,7 @@ record_tests {
   write_verilog3
   write_verilog4
 }
+#  init_floorplan6
 #  gcd_flow1
 
 # Record tests in $STAX/designs
