@@ -13,6 +13,7 @@ COMPONENTS 1 ;
 END COMPONENTS
 
 PINS 8 ;
+- clk + NET clk + DIRECTION OUTPUT ;
 - in[3] + NET in[3] + DIRECTION INPUT ;
 - in[2] + NET in[2] + DIRECTION INPUT ;
 - in[1] + NET in[1] + DIRECTION INPUT ;
@@ -24,6 +25,7 @@ PINS 8 ;
 END PINS
 
 NETS 8 ;
+- clk ( PIN clk ) ( bus1 clk ) ;
 - in[0] ( PIN in[0] ) ( bus1 in[0] ) ;
 - in[1] ( PIN in[1] ) ( bus1 in[1] ) ;
 - in[2] ( PIN in[2] ) ( bus1 in[2] ) ;

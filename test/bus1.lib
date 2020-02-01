@@ -46,6 +46,14 @@ library (buslib) {
     bit_to : 0;
   }
   cell (bus4) {
+    pin(clk) {
+      min_pulse_width_low : 0.600;
+      min_pulse_width_high : 0.600;
+      min_period  : 0.500 ;
+      direction : input;
+      clock : true ;
+      capacitance : 0.0103 ;
+    }
     bus (in) {
       bus_type : bus_3_0;
       direction : input ;
