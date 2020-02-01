@@ -27,7 +27,7 @@
 #include "dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
-#include "InitFlute.hh"
+#include "flute3/flute.h"
 
 #include "ioPlacer/src/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
@@ -118,11 +118,11 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
   Opendbtcl_Init(tcl_interp);
+  Flute::readLUT();
   initDbSta(this);
   initResizer(this);
   initDbVerilogNetwork(this);
   initIoplacer(this);
-  initFlute(prog_arg);
   initReplace(this);
   initOpendp(this);
   initPdnGen(this);
