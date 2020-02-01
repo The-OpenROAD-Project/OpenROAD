@@ -84,16 +84,14 @@ OpenRoad::getDbNetwork()
 ////////////////////////////////////////////////////////////////
 
 void
-initOpenRoad(Tcl_Interp *interp,
-	     const char *prog_arg)
+initOpenRoad(Tcl_Interp *interp)
 {
   OpenRoad *openroad = new OpenRoad;
-  openroad->init(interp, prog_arg);
+  openroad->init(interp);
 }
 
 void
-OpenRoad::init(Tcl_Interp *tcl_interp,
-	       const char *prog_arg)
+OpenRoad::init(Tcl_Interp *tcl_interp)
 {
   tcl_interp_ = tcl_interp;
 

@@ -79,8 +79,7 @@ public:
   ~OpenRoad();
   // Singleton accessor used by tcl command interpreter.
   static OpenRoad *openRoad() { return openroad_; }
-  void init(Tcl_Interp *tcl_interp,
-	    const char *prog_arg);
+  void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
   pdngen::PdnGen *getPdnGen(){ return pdngen_; }
