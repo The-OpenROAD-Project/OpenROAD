@@ -263,13 +263,6 @@ class Opendp {
   bool placed_check(bool verbose);
   bool overlap_check(bool verbose);
 
-  std::map< dbMaster*, Macro* > db_master_map_;
-  std::map< dbInst*, Cell* > db_inst_map_;
-  /* spacing between edges  1 to 1 , 1 to 2, 2 to 2 */
-  std::map< std::pair< int, int >, double > edge_spacing_;
-
-  int row_height_; // dbu
-  adsRect core_;
   int gridNearestX(int x);
   int gridNearestY(int y);
   int gridWidth();
@@ -287,23 +280,30 @@ class Opendp {
   int coreGridMaxX();
   int coreGridMaxY();
 
-  power initial_power_;
-  int diamond_search_height_;  // grid units
-  int max_displacement_constraint_; // from constraints file
-  int site_width_;
-  int max_cell_height_;
-
-  // 2D pixel grid
-  Pixel** grid_;
-  Cell dummy_cell_;
-  std::vector< sub_region > sub_regions_;
-
   dbDatabase* db_;
   dbBlock* block_;
   std::vector< Macro > macros_;
   std::vector< Cell > cells_;
   std::vector< Row > rows_;
   std::vector< Group > groups_;
+
+  std::map< dbMaster*, Macro* > db_master_map_;
+  std::map< dbInst*, Cell* > db_inst_map_;
+  /* spacing between edges  1 to 1 , 1 to 2, 2 to 2 */
+  std::map< std::pair< int, int >, double > edge_spacing_;
+
+  adsRect core_;
+  power initial_power_;
+  int row_height_; // dbu
+  int site_width_;
+  int max_cell_height_;
+  int diamond_search_height_;  // grid units
+  int max_displacement_constraint_; // from constraints file
+
+  // 2D pixel grid
+  Pixel** grid_;
+  Cell dummy_cell_;
+  std::vector< sub_region > sub_regions_;
 
   // Design stats.
   int fixed_inst_count_;
