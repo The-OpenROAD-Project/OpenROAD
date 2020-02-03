@@ -1,0 +1,947 @@
+VERSION 5.7 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO ms00f80
+   CLASS CORE ;
+   SIZE 1.6 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal2 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN ck
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 0.5 0.55 1.5 ;
+      END
+   END ck
+
+   PIN d
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 1.05 0.5 1.15 1.5 ;
+      END
+   END d
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.6 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.6 2.255 ;
+      END
+   END vdd
+
+END ms00f80
+
+MACRO in01f01
+   CLASS CORE ;
+   SIZE 0.4 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 0.4 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 0.4 2.255 ;
+      END
+   END vdd
+
+END in01f01
+
+MACRO na02f01
+   CLASS CORE ;
+   SIZE 0.8 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 0.5 0.55 1.5 ;
+      END
+   END b
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 0.8 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 0.8 2.255 ;
+      END
+   END vdd
+
+END na02f01
+
+MACRO no02f01
+   CLASS CORE ;
+   SIZE 0.8 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 0.5 0.55 1.5 ;
+      END
+   END b
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 0.8 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 0.8 2.255 ;
+      END
+   END vdd
+
+END no02f01
+
+MACRO oa12f01
+   CLASS CORE ;
+   SIZE 1.2 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+   END vdd
+
+END oa12f01
+
+MACRO na04m01
+   CLASS CORE ;
+   SIZE 1.6 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN d
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 1.25 0.5 1.35 1.5 ;
+      END
+   END d
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.6 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.6 2.255 ;
+      END
+   END vdd
+
+END na04m01
+
+MACRO ao12f01
+   CLASS CORE ;
+   SIZE 1.2 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+   END vdd
+
+END ao12f01
+
+MACRO na03f01
+   CLASS CORE ;
+   SIZE 1.2 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+   END vdd
+
+END na03f01
+
+MACRO ao22s01
+   CLASS CORE ;
+   SIZE 1.6 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN d
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 1.25 0.5 1.35 1.5 ;
+      END
+   END d
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.6 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.6 2.255 ;
+      END
+   END vdd
+
+END ao22s01
+
+MACRO oa22f01
+   CLASS CORE ;
+   SIZE 1.6 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal2 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN d
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 1.25 0.5 1.35 1.5 ;
+      END
+   END d
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.6 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.6 2.255 ;
+      END
+   END vdd
+
+END oa22f01
+
+MACRO no03m01
+   CLASS CORE ;
+   SIZE 1.2 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+   END vdd
+
+END no03m01
+
+MACRO no04s01
+   CLASS CORE ;
+   SIZE 1.6 BY 2 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.05 0.5 0.15 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END a
+
+   PIN b
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END b
+
+   PIN c
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 0.5 0.95 1.5 ;
+      END
+   END c
+
+   PIN d
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 1.25 0.5 1.35 1.5 ;
+      END
+   END d
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.6 0.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.6 2.255 ;
+      END
+   END vdd
+
+END no04s01
+
+MACRO in01f01X2HE
+   CLASS CORE ;
+   SIZE 1.2 BY 4 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 0.5 0.55 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END a
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      SHAPE ABUTMENT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 3.745 1.2 4.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+   END vdd
+
+END in01f01X2HE
+
+MACRO in01f01X2HO
+   CLASS CORE ;
+   SIZE 0.8 BY 4 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.25 0.5 0.35 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 0.5 0.55 1.5 ;
+      END
+   END a
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      SHAPE ABUTMENT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 0.8 0.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 3.745 0.8 4.255 ;
+      END
+   END vdd
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 0.8 2.255 ;
+      END
+   END vss
+
+END in01f01X2HO
+
+MACRO in01f01X3H
+   CLASS CORE ;
+   SIZE 1.2 BY 6 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 4.5 0.55 5.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END a
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 3.745 1.2 4.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 5.745 1.2 6.255 ;
+      END
+   END vdd
+
+END in01f01X3H
+
+MACRO in01f01X4HE
+   CLASS CORE ;
+   SIZE 1.2 BY 8 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.45 0.5 0.55 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 4.5 0.75 5.5 ;
+      END
+   END a
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      SHAPE ABUTMENT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.2 0.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 3.745 1.2 4.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 7.745 1.2 8.255 ;
+      END
+   END vss
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.2 2.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 5.745 1.2 6.255 ;
+      END
+   END vdd
+
+END in01f01X4HE
+
+MACRO in01f01X4HO
+   CLASS CORE ;
+   SIZE 1.6 BY 8 ;
+   ORIGIN 0 0 ;
+   SYMMETRY X Y R90 ;
+   SITE core ;
+   PIN o
+      DIRECTION OUTPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.65 0.5 0.75 1.5 ;
+      END
+   END o
+
+   PIN a
+      DIRECTION INPUT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0.85 4.5 0.95 5.5 ;
+      END
+   END a
+
+   PIN vdd
+      DIRECTION INOUT ;
+      USE POWER ;
+      SHAPE ABUTMENT ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 -0.255 1.6 0.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 3.745 1.6 4.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 7.745 1.6 8.255 ;
+      END
+   END vdd
+
+   PIN vss
+      DIRECTION INOUT ;
+      USE GROUND ;
+      PORT 
+         LAYER metal1 ;
+             RECT 0 1.745 1.6 2.255 ;
+      END
+      PORT 
+         LAYER metal1 ;
+             RECT 0 5.745 1.6 6.255 ;
+      END
+   END vss
+
+END in01f01X4HO
+
+END LIBRARY

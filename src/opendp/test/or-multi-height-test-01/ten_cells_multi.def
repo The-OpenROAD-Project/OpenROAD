@@ -1,0 +1,79 @@
+VERSION 5.6 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN ten_cells_multi ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 76000 64000 ) ;
+
+ROW ROW_0 core 28000 28000 FS DO 50 BY 1 STEP 400 0 ;
+ROW ROW_1 core 28000 32000 N DO 50 BY 1 STEP 400 0 ;
+
+COMPONENTS 10 ;
+- _285_ no02f01 + PLACED ( 31040 28000 ) FS
+ ;
+- _284_ no02f01 + PLACED ( 31040 28000 ) FN
+ ;
+- _283_ in01f01 + PLACED ( 31040 28000 ) FN
+ ;
+- _282_ no02f01 + PLACED ( 33320 28000 ) S
+ ;
+- _281_ in01f01X2HO + PLACED ( 35220 28000 ) N
+ ;
+- _280_ in01f01 + PLACED ( 38260 30800 ) N
+ ;
+- _279_ no02f01 + PLACED ( 35980 30800 ) N
+ ;
+- _278_ in01f01 + PLACED ( 37880 28000 ) S
+ ;
+- _277_ ms00f80 + PLACED ( 28000 28000 ) S
+ ;
+- _276_ no02f01 + PLACED ( 32940 30800 ) N
+ ;
+END COMPONENTS
+
+PINS 2 ;
+- input + NET input + DIRECTION INPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 0 0 ) S ;
+- out + NET out + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 0 200 ) S ;
+
+END PINS
+
+NETS 11 ;
+- input
+  ( PIN input ) ( _277_ o ) ;
+- net1  
+  ( _277_ d ) ( _284_ b ) ( _276_ o ) ;
+- net2
+  ( _276_ a ) ( _282_ b ) ( _278_ o ) ;
+- net3
+  ( _276_ b ) ( _283_ a ) ( _279_ o ) ;
+- net4
+  ( _278_ a ) ( _280_ o ) ;
+- net5
+  ( _279_ a ) ( _280_ a ) ( _281_ o ) ;
+- net6
+  ( _279_ b ) ( _281_ a ) ( _282_ o ) ;
+- net7
+  ( _284_ a ) ( _283_ o ) ;
+- net8
+  ( _285_ b ) ( _284_ o ) ;
+- net9
+  ( _282_ a ) ( _285_ o ) ;
+- out 
+  ( PIN out ) ( _285_ a ) ; 
+END NETS
+
+SPECIALNETS 2 ; 
+- vdd 
+  + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 28000 ) ( 48000 * )
+  + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 36000 ) ( 48000 * )
+  + USE POWER
+; 
+- vss
+  + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 32000 ) ( 48000 * )
+  + USE GROUND 
+;
+END SPECIALNETS
+
+END DESIGN

@@ -1,0 +1,19 @@
+BasedOnStyle: Google 
+IndentWidth: 2
+SpaceBeforeAssignmentOperators: true
+SpacesInAngles: true
+SpacesInParentheses: false 
+SpaceBeforeParens: Never
+BreakBeforeBraces: Custom
+SortIncludes: false 
+BraceWrapping: 
+    IndentBraces:          false 
+    AfterNamespace:        false 
+    AfterClass:            false 
+    AfterControlStatement: false 
+    AfterEnum:             false
+    AfterFunction:         false
+    AfterStruct:           false
+    AfterUnion:            false
+    BeforeCatch:           true 
+    BeforeElse:            true 
