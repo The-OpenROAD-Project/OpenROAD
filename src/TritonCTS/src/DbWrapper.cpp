@@ -244,7 +244,7 @@ void DbWrapper::disconnectAllSinksFromNet(std::string netName) {
         odb::dbSet<odb::dbITerm>::iterator itr;
         for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
                 odb::dbITerm* iterm = *itr;
-                if (iterm->getIoType() != INPUT) {
+                if (iterm->getIoType() != odb::dbIoType::INPUT) {
                         continue;
                 }
                 odb::dbITerm::disconnect(iterm);
