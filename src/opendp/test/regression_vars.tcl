@@ -117,22 +117,22 @@ proc list_delete { list delete } {
 
 # Record tests in resizer/test
 record_resizer_tests {
-  simple-test-01
-  simple-test-02
-  simple-test-03
-  simple-test-04
-  simple-test-05
-  simple-test-06
-  simple-test-07
+  simple01
+  simple02
+  simple03
+  simple04
+  simple05
+  simple06
+  simple07
   fence01
   fence02
   fence03
-  fragmented-row-test-01
-  fragmented-row-test-02
-  fragmented-row-test-03
-  low-util-test-01
-  low-util-test-02
-  low-util-test-03
+  fragmented_row01
+  fragmented_row02
+  fragmented_row03
+  low_util01
+  low_util02
+  low_util03
   multi_height01
   multi_height02
   multi_height03

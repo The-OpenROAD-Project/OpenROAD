@@ -4,12 +4,12 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
 Notice 0: 
-Reading DEF file: simple-test-03.def
+Reading DEF file: fragmented_row02.def
 Notice 0: Design: single_cell
 Notice 0:     Created 2 pins.
 Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 nets and 2 connections.
-Notice 0: Finished DEF file: simple-test-03.def
+Notice 0: Finished DEF file: fragmented_row02.def
 Error: could not find power special net VDD
 -------------------- Design Stats ------------------------------
 core area                  : (28000, 28000) (39780, 33600)
@@ -32,11 +32,11 @@ edge_check ==> PASS
 placed_check ==>> PASS 
 overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
-total displacement         : 55280
-average displacement       : 55280
-max displacement           : 55280
-original HPWL              : 125
-legalized HPWL             : 69.7
-delta HPWL                 : -44%
+total displacement         : 760
+average displacement       : 760
+max displacement           : 760
+original HPWL              : 63.5
+legalized HPWL             : 64.2
+delta HPWL                 : 1%
 ----------------------------------------------------------------
 No differences found.
