@@ -124,7 +124,12 @@ void DbWrapper::initClock(odb::dbNet* net) {
         odb::dbSet<odb::dbITerm>::iterator itr;
         for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
                 odb::dbITerm* iterm = *itr;
-                odb::dbInst* inst = iterm->getInst();
+                
+		if (iterm->getIoType() != odb::dbIoType::INPUT) {
+                        continue;
+                }
+                
+		odb::dbInst* inst = iterm->getInst();
                 odb::dbMTerm* mterm = iterm->getMTerm();
                 std::string name = std::string(inst->getConstName()) + "/" +  
                                    std::string(mterm->getConstName());

@@ -13,9 +13,9 @@ COMPONENTS 10 ;
     - _283_ in01f01 + PLACED ( 34400 28000 ) FS ;
     - _282_ no02f01 + PLACED ( 33200 32000 ) N ;
     - _281_ in01f01X2HO + PLACED ( 35200 28000 ) N ;
-    - _280_ in01f01 + PLACED ( 40800 28000 ) FS ;
-    - _279_ no02f01 + PLACED ( 40800 32000 ) N ;
-    - _278_ in01f01 + PLACED ( 41600 28000 ) FS ;
+    - _280_ in01f01 + PLACED ( 40800 32000 ) N ;
+    - _279_ no02f01 + PLACED ( 40800 28000 ) FS ;
+    - _278_ in01f01 + PLACED ( 42400 28000 ) FS ;
     - _277_ ms00f80 + PLACED ( 28000 28000 ) FS ;
     - _276_ no02f01 + PLACED ( 31600 32000 ) N ;
 END COMPONENTS

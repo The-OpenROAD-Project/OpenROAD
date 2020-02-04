@@ -265,6 +265,8 @@ class Opendp {
 
   int gridNearestX(int x);
   int gridNearestY(int y);
+  int gridX(int x);
+  int gridY(int y);
   int gridWidth();
   int gridHeight();
   int gridWidth(Cell* cell);
