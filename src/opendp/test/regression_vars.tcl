@@ -124,6 +124,7 @@ record_resizer_tests {
   simple05
   simple06
   simple07
+  simple08
   fence01
   fence02
   fence03
