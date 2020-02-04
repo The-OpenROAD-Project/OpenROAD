@@ -89,6 +89,9 @@ public:
   void repairTieFanout(LibertyPort *tie_port,
 		       int max_fanout,
 		       bool verbose);
+  void makeNetParasitics();
+  void makeNetParasitics(const Net *net);
+  void makeNetParasitics(const dbNet *net);
 
 protected:
   void ensureCorner();
@@ -116,8 +119,6 @@ protected:
 			     // Return values.
 			     Slew slews[],
 			     int counts[]);
-  void makeNetParasitics();
-  void makeNetParasitics(const Net *net);
   ParasiticNode *findParasiticNode(SteinerTree *tree,
 				   Parasitic *parasitic,
 				   const Net *net,

@@ -756,6 +756,12 @@ Resizer::makeNetParasitics()
 }
 
 void
+Resizer::makeNetParasitics(const dbNet *net)
+{
+  makeNetParasitics(db_network_->dbToSta(net));
+}
+ 
+void
 Resizer::makeNetParasitics(const Net *net)
 {
   SteinerTree *tree = makeSteinerTree(net, false, db_network_);
