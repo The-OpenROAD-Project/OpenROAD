@@ -32,11 +32,11 @@ edge_check ==> PASS
 placed_check ==>> PASS 
 overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
-total displacement         : 45146325
-average displacement       : 1320
-max displacement           : 8728
+total displacement         : 58303741
+average displacement       : 1705
+max displacement           : 8852
 original HPWL              : 6.38e+05
-legalized HPWL             : 6.52e+05
+legalized HPWL             : 6.53e+05
 delta HPWL                 : 2%
 ----------------------------------------------------------------
 No differences found.

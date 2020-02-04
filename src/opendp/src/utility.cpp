@@ -146,7 +146,7 @@ void Opendp::displacementStats(// Return values.
 }
 
 double Opendp::hpwl(bool initial) {
-  int hpwl = 0;
+  int64_t hpwl = 0;
   for(auto net : block_->getNets()) {
     adsRect box;
     box.mergeInit();
@@ -359,8 +359,8 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
   if(macro->edgetypeLeft == 1) edge_left = 2;
   if(macro->edgetypeRight == 1) edge_right = 2;
 
-  int x_step = divRound(cell->width, site_width_) + edge_left + edge_right;
-  int y_step = divRound(cell->height, row_height_);
+  int x_step = gridWidth(cell) + edge_left + edge_right;
+  int y_step = gridHeight(cell);
 
   // IF y is out of border
   if(y + y_step > (core_.yMax() / row_height_)) return make_pair(false, pos);
@@ -468,8 +468,8 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
                                             int y_coord) {
   Pixel* pixel = NULL;
   pair< bool, pair< int, int > > found;
-  int x_pos = gridNearestX(x_coord);
-  int y_pos = gridNearestY(y_coord);
+  int x_pos = gridX(x_coord);
+  int y_pos = gridY(y_coord);
 
   int x_start = 0;
   int x_end = 0;

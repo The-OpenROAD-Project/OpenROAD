@@ -426,6 +426,14 @@ int Opendp::gridNearestHeight(Cell *cell) {
   return divRound(cell->height, row_height_);
 }
 
+int Opendp::gridX(int x) {
+  return x / site_width_;
+}
+
+int Opendp::gridY(int y) {
+  return y / row_height_;
+}
+
 int Opendp::gridNearestX(int x) {
   return divRound(x, site_width_);
 }
