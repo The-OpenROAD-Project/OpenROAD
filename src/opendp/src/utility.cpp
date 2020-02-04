@@ -494,7 +494,7 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
                 gridWidth() - gridNearestWidth(cell));
     y_start = max(y_pos - diamond_search_height_, 0);
     y_end = min(y_pos + diamond_search_height_, 
-		(gridHeight() - gridNearestHeight(cell)));
+		gridHeight() - gridNearestHeight(cell));
   }
 #ifdef ODP_DEBUG
   cout << " == Start Diamond Search ==  " << endl;
