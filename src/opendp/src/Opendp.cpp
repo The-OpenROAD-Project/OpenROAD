@@ -149,16 +149,11 @@ Pixel::Pixel()
 Row::Row()
     : origX(0),
       origY(0),
-      stepX(0),
-      stepY(0),
-      site_count(0),
       orient(dbOrientType::R0) {}
 
 void Row::print() {
   cout << "|=== BEGIN ROW ===|" << endl;
   cout << "(origX,origY):     " << origX << ", " << origY << endl;
-  cout << "(stepX,stepY):     " << stepX << ", " << stepY << endl;
-  cout << "site_count:          " << site_count << endl;
   cout << "orientation:       " << orient << endl;
   cout << "|===  END  ROW ===|" << endl;
 }
@@ -282,7 +277,7 @@ void Opendp::findDesignStats() {
 
   design_area_ = 0;
   for(Row &row : rows_)
-    design_area_ += static_cast< int64_t >(row.stepX) * row.site_count * row_height_;
+    design_area_ += static_cast< int64_t >(site_width_) * row_site_count_ * row_height_;
 
   for(Cell &cell : cells_) {
     Macro *macro = cell.cell_macro;

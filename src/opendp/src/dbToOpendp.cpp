@@ -157,7 +157,7 @@ void Opendp::findCore() {
 
 // Generate new rows to fill core area.
 void Opendp::make_core_rows() {
-  int site_count = coreGridWidth();
+  row_site_count_ = coreGridWidth();
   int row_count = coreGridHeight();
 
   int bottom_row_y = numeric_limits<int>::max();
@@ -179,11 +179,6 @@ void Opendp::make_core_rows() {
       Row row;
       row.origX = core_.xMin();
       row.origY = core_.yMin() + i * row_height_;
-
-      row.stepX = site_width_;
-      row.stepY = 0;
-
-      row.site_count = site_count;
       row.orient = orient;
       rows_.push_back(row);
 

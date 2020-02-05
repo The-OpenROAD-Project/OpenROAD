@@ -118,9 +118,6 @@ struct Pixel {
 struct Row {
   int origX; // DBU
   int origY; // DBU
-  int stepX; // DBU
-  int stepY; // DBU
-  int site_count;
   dbOrientType orient;
   power top_power;
   std::vector< Cell* > cells;
@@ -291,6 +288,7 @@ class Opendp {
   power initial_power_;
   int row_height_; // dbu
   int site_width_;
+  int row_site_count_;
   int max_cell_height_;
   int diamond_search_height_;  // grid units
   int max_displacement_constraint_; // from constraints file

@@ -121,7 +121,7 @@ bool Opendp::edge_check(bool verbose) {
 
   for(int i = 0; i < rows_.size(); i++) {
     vector< Cell* > cells;
-    for(int j = 0; j < rows_[i].site_count; j++) {
+    for(int j = 0; j < row_site_count_; j++) {
       Cell* grid_cell = grid_[i][j].linked_cell;
       if(grid_[i][j].is_valid) {
 	if(grid_cell != NULL && grid_cell != &dummy_cell_) {
@@ -253,7 +253,7 @@ bool Opendp::placed_check(bool verbose) {
 bool Opendp::overlap_check(bool verbose) {
   bool valid = true;
   int row_count = rows_.size();
-  int col_count = rows_[0].site_count;
+  int col_count = row_site_count_;
   Pixel** grid2;
   grid2 = new Pixel*[row_count];
   for(int i = 0; i < row_count; i++) {

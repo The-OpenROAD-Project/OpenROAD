@@ -94,7 +94,7 @@ void Opendp::print_pixels() {
   cout << " print grid " << endl;
 
   for(int i = 0; i < rows_.size(); i++) {
-    for(int j = 0; j < rows_[i].site_count; j++) {
+    for(int j = 0; j < row_site_count_; j++) {
       // cout << grid[i][j].util << " ";
       if(grid_[i][j].util > 0.00001) {
         cout << grid_[i][j].util << " ";
@@ -116,7 +116,7 @@ void Opendp::group_cell_region_assign() {
   for(Group& group : groups_) {
     int64_t area = 0;
     for(int j = 0; j < rows_.size(); j++) {
-      for(int k = 0; k < rows_[j].site_count; k++) {
+      for(int k = 0; k < row_site_count_; k++) {
         if(grid_[j][k].pixel_group != nullptr) {
           if(grid_[j][k].is_valid) {
             if(grid_[j][k].pixel_group == &group)
@@ -226,7 +226,7 @@ void Opendp::non_group_cell_region_assign() {
 void Opendp::group_pixel_assign2() {
   for(int64_t i = 0; i < rows_.size(); i++) {
     Row* row = &rows_[i];
-    for(int64_t j = 0; j < row->site_count; j++) {
+    for(int64_t j = 0; j < row_site_count_; j++) {
       adsRect grid2;
       grid2.init(j * site_width_, i * row_height_,
 		(j + 1) * site_width_, (i + 1) * row_height_);
@@ -248,7 +248,7 @@ void Opendp::group_pixel_assign2() {
 void Opendp::group_pixel_assign() {
   for(int i = 0; i < rows_.size(); i++) {
     Row* row = &rows_[i];
-    for(int j = 0; j < row->site_count; j++) {
+    for(int j = 0; j < row_site_count_; j++) {
       grid_[i][j].util = 0.0;
     }
   }
@@ -260,19 +260,19 @@ void Opendp::group_pixel_assign() {
 
       for(int k = row_start; k < row_end; k++) {
 	Row* row = &rows_[k];
-        int col_start = divCeil(rect.xMin(), row->stepX);
-        int col_end = divFloor(rect.xMax(), row->stepX);
+        int col_start = divCeil(rect.xMin(), site_width_);
+        int col_end = divFloor(rect.xMax(), site_width_);
 
         for(int l = col_start; l < col_end; l++) {
           grid_[k][l].util += 1.0;
         }
-        if(static_cast<int>(rect.xMin()) % row->stepX != 0) {
+        if(static_cast<int>(rect.xMin()) % site_width_ != 0) {
           grid_[k][col_start].util -=
-	    (rect.xMin() % row->stepX) / (double)row->stepX;
+	    (rect.xMin() % site_width_) / (double)site_width_;
         }
-        if(static_cast<int>(rect.xMax()) % row->stepX != 0) {
+        if(static_cast<int>(rect.xMax()) % site_width_ != 0) {
           grid_[k][col_end - 1].util -=
-	    ((200 - rect.xMax()) % row->stepX) / (double)row->stepX;
+	    ((200 - rect.xMax()) % site_width_) / (double)site_width_;
         }
       }
     }
@@ -282,8 +282,8 @@ void Opendp::group_pixel_assign() {
 
       for(int k = row_start; k < row_end; k++) {
         Row* row = &rows_[k];
-        int col_start = divCeil(rect.xMin(), row->stepX);
-        int col_end = divFloor(rect.xMax(), row->stepX);
+        int col_start = divCeil(rect.xMin(), site_width_);
+        int col_end = divFloor(rect.xMax(), site_width_);
 
         // assign groupid to each pixel ( grid )
         for(int l = col_start; l < col_end; l++) {
