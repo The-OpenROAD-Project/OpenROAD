@@ -206,39 +206,32 @@ class Opendp {
 
   // utility.cpp
   void power_mapping();
-  void getPosition(Cell* cell, CoordType type,
-                   // Return values.
-                   int& x, int& y);
   void simplePlacement(bool verbose);
   void group_analyze();
   std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
-                                                       adsRect* rect,
-                                                       CoordType type);
-  int dist_for_rect(Cell* cell, adsRect* rect, CoordType type);
+                                                       adsRect* rect);
+  int dist_for_rect(Cell* cell, adsRect* rect);
   bool check_overlap(adsRect cell, adsRect box);
-  bool check_overlap(Cell* cell, adsRect* rect, CoordType type);
+  bool check_overlap(Cell* cell, adsRect* rect);
   bool check_inside(adsRect cell, adsRect box);
-  bool check_inside(Cell* cell, adsRect* rect, CoordType type);
+  bool check_inside(Cell* cell, adsRect* rect);
   std::pair< bool, std::pair< int, int > > bin_search(int x_pos, Cell* cell,
                                                       int x, int y);
   std::pair< bool, Pixel* > diamond_search(Cell* cell, int x, int y);
-  bool shift_move(Cell* cell, int x, int y);
-  bool shift_move(Cell* cell, CoordType type);
-  bool map_move(Cell* cell, CoordType type);
+  bool shift_move(Cell* cell);
+  bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
   std::vector< Cell* > overlap_cells(Cell* cell);
   std::vector< Cell* > get_cells_from_boundary(adsRect* rect);
   int dist_benefit(Cell* cell, int x_coord, int y_coord);
   bool swap_cell(Cell* cellA, Cell* cellB);
-  bool refine_move(Cell* cell, CoordType type);
-  bool refine_move(Cell* cell, int x_coord, int y_coord);
+  bool refine_move(Cell* cell);
   std::pair< bool, Cell* > nearest_cell(int x_coord, int y_coord);
 
   void non_group_cell_pre_placement();
   void group_cell_pre_placement();
-  void non_group_cell_placement(CoordType type);
-  void group_cell_placement(CoordType type);
-  void group_cell_placement(CoordType type, CoordType type2);
+  void non_group_cell_placement();
+  void group_cell_placement();
   void brick_placement_1(Group* group);
   void brick_placement_2(Group* group);
   int group_refine(Group* group);

@@ -381,25 +381,6 @@ bool Opendp::readConstraints(const string input) {
   return false;
 }
 
-void Opendp::getPosition(Cell *cell, CoordType type,
-                         // Return values.
-                         int &x, int &y) {
-  switch(type) {
-    case CoordType::init:
-      x = cell->init_x_coord;
-      y = cell->init_y_coord;
-      break;
-    case CoordType::coord:
-      x = cell->x_coord;
-      y = cell->y_coord;
-      break;
-    case CoordType::pos:
-      x = cell->x_pos * site_width_;
-      y = cell->y_pos * row_height_;
-      break;
-  }
-}
-
 int Opendp::gridWidth() {
   return core_.dx() / site_width_;
 }

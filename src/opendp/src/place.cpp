@@ -92,7 +92,7 @@ void Opendp::simplePlacement(bool verbose) {
 
   // naive method placement ( Multi -> single )
   if(groups_.size() > 0) {
-    group_cell_placement(CoordType::init);
+    group_cell_placement();
     cout << " group_cell_placement done .. " << endl;
     for(int i = 0; i < groups_.size(); i++) {
       Group* group = &groups_[i];
@@ -103,7 +103,7 @@ void Opendp::simplePlacement(bool verbose) {
       }
     }
   }
-  non_group_cell_placement(CoordType::init);
+  non_group_cell_placement();
   if (verbose)
     cout << "Notice: non group instance placement done. " << endl;
 }
@@ -117,7 +117,7 @@ void Opendp::non_group_cell_pre_placement() {
       for(int j = 0; j < groups_.size(); j++) {
 	Group* group = &groups_[j];
 	for(adsRect& rect : group->regions) {
-	  if(check_overlap(&cell, &rect, CoordType::init)) {
+	  if(check_overlap(&cell, &rect)) {
 	    inGroup = true;
 	    target = &rect;
 	  }
@@ -125,7 +125,7 @@ void Opendp::non_group_cell_pre_placement() {
       }
       if(inGroup) {
 	pair< int, int > coord =
-          nearest_coord_to_rect_boundary(&cell, target, CoordType::init);
+          nearest_coord_to_rect_boundary(&cell, target);
 	if(map_move(&cell, coord.first, coord.second))
 	  cell.hold = true;
       }
@@ -142,9 +142,9 @@ void Opendp::group_cell_pre_placement() {
 	bool in_group = false;
 	adsRect* target;
 	for(adsRect& rect : group->regions) {
-	  if(check_inside(cell, &rect, CoordType::init))
+	  if(check_inside(cell, &rect))
 	    in_group = true;
-	  int temp_dist = dist_for_rect(cell, &rect, CoordType::init);
+	  int temp_dist = dist_for_rect(cell, &rect);
 	  if(temp_dist < dist) {
 	    dist = temp_dist;
 	    target = &rect;
@@ -152,7 +152,7 @@ void Opendp::group_cell_pre_placement() {
 	}
 	if(!in_group) {
 	  pair< int, int > coord =
-            nearest_coord_to_rect_boundary(cell, target, CoordType::init);
+            nearest_coord_to_rect_boundary(cell, target);
 	  if(map_move(cell, coord.first, coord.second)) cell->hold = true;
 	}
       }
@@ -160,7 +160,7 @@ void Opendp::group_cell_pre_placement() {
   }
 }
 
-void Opendp::non_group_cell_placement(CoordType type) {
+void Opendp::non_group_cell_placement() {
   vector< Cell* > cell_list;
   cell_list.reserve(cells_.size());
 
@@ -170,23 +170,20 @@ void Opendp::non_group_cell_placement(CoordType type) {
   }
   sort(cell_list.begin(), cell_list.end(), SortUpOrder);
 
+
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
     if(macro->isMulti)
-      if(!map_move(cell, type)) shift_move(cell, type);
+      if(!map_move(cell)) shift_move(cell);
   }
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
     if(!macro->isMulti)
-      if(!map_move(cell, type)) shift_move(cell, type);
+      if(!map_move(cell)) shift_move(cell);
   }
 }
 
-void Opendp::group_cell_placement(CoordType type) {
-  group_cell_placement(type, CoordType::init);
-}
-
-void Opendp::group_cell_placement(CoordType type, CoordType type2) {
+void Opendp::group_cell_placement() {
   for(int i = 0; i < groups_.size(); i++) {
     bool single_pass = true;
     bool multi_pass = true;
@@ -208,7 +205,7 @@ void Opendp::group_cell_placement(CoordType type, CoordType type2) {
 	assert(cell->inGroup());
 	Macro* macro = cell->cell_macro;
 	if(macro->isMulti) {
-	  multi_pass = map_move(cell, type);
+	  multi_pass = map_move(cell);
 	  if(!multi_pass) {
 	    cout << "map_move fail" << endl;
 	    break;
@@ -227,7 +224,7 @@ void Opendp::group_cell_placement(CoordType type, CoordType type2) {
 	  assert(cell->inGroup());
 	  Macro* macro = cell->cell_macro;
 	  if(!macro->isMulti) {
-	    single_pass = map_move(cell, type);
+	    single_pass = map_move(cell);
 	    if(!single_pass) {
 	      cout << "map_move fail (single cell)" << endl;
 	      break;
@@ -384,7 +381,7 @@ int Opendp::group_refine(Group* group) {
   for(int i = 0; i < sort_by_disp.size() / 20; i++) {
     Cell* cell = sort_by_disp[i].second;
     if(!cell->hold) {
-      if(refine_move(cell, CoordType::init)) count++;
+      if(refine_move(cell)) count++;
     }
   }
   // cout << " Group refine : " << count << endl;
@@ -439,7 +436,7 @@ int Opendp::non_group_refine() {
   for(int i = 0; i < sort_by_disp.size() / 50; i++) {
     Cell* cell = sort_by_disp[i].second;
     if(!cell->hold) {
-      if(refine_move(cell, CoordType::init)) count++;
+      if(refine_move(cell)) count++;
     }
   }
   // cout << " nonGroup refine : " << count << endl;

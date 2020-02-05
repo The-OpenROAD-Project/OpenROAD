@@ -132,8 +132,8 @@ void Opendp::group_cell_region_assign() {
       int dist = INT_MAX;
       adsRect* region_backup = nullptr;
       for(adsRect &rect : group.regions) {
-        if(check_inside(cell, &rect, CoordType::init)) cell->region = &rect;
-        int temp_dist = dist_for_rect(cell, &rect, CoordType::init);
+        if(check_inside(cell, &rect)) cell->region = &rect;
+        int temp_dist = dist_for_rect(cell, &rect);
         if(temp_dist < dist) {
           dist = temp_dist;
           region_backup = &rect;
