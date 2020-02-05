@@ -19,6 +19,7 @@ set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
+set(REPLACE_HOME ${PROJECT_SOURCE_DIR}/src/replace)
 
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 
@@ -219,6 +220,7 @@ target_include_directories(openroad
   PRIVATE
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
+  ${REPLACE_HOME}/include
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include

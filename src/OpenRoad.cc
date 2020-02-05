@@ -33,7 +33,7 @@
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
-#include "replace/src/MakeReplace.h"
+#include "replace/MakeReplace.h"
 #include "pdngen/MakePdnGen.hh"
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
@@ -48,7 +48,6 @@ extern const char *openroad_tcl_inits[];
 extern "C" {
 extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
-extern int Replace_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
@@ -109,6 +108,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
+  replace_ = makeReplace();
 
   // Init components.
   Openroad_Init(tcl_interp);

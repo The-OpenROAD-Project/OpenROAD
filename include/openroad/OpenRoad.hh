@@ -61,6 +61,10 @@ namespace MacroPlace {
 class TritonMacroPlace;
 }
 
+namespace replace {
+class Replace;
+}
+
 namespace OpenRCX {
 class Ext;
 }
@@ -93,6 +97,7 @@ public:
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
+  replace::Replace* getReplace() { return replace_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
@@ -128,6 +133,7 @@ private:
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  replace::Replace *replace_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

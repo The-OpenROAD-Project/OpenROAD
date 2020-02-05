@@ -107,6 +107,13 @@ getTritonMp()
   return openroad->getTritonMp();
 }
 
+replace::Replace*
+getReplace()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getReplace();
+}
+
 OpenRCX::Ext *
 getOpenRCX()
 {
