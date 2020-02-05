@@ -235,6 +235,7 @@ repair_max_fanout -max_fanout fanout
 ```
 The `repair_max_fanout` command repairs nets with a fanout greater
 than `fanout` by inserting buffers between the driver and the loads.
+Buffers are located at the center of each group of loads.
 
 ```
 repair_tie_fanout [-max_fanout fanout]
@@ -244,7 +245,8 @@ repair_tie_fanout [-max_fanout fanout]
 The `repair_tie_fanout` command repairs tie high/low nets with fanout
 greater than `fanout` by cloning the tie high/low driver.
 `lib_port` is the tie high/low port, which can be a library/cell/port
-name or object returned by `get_lib_pins`.
+name or object returned by `get_lib_pins`. Clones are located at the
+center of each group of loads.
 
 ```
 repair_hold_violations -buffer_cell buffer_cell

@@ -4,7 +4,7 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate.lef
 Inserted 9 tie LOGIC1_X1 instances for 1 nets.
-t1 2
+t1 10
 t11 10
 t12 10
 t13 10
@@ -13,4 +13,5 @@ t15 10
 t16 10
 t17 10
 t18 10
-t19 10
+t19 2
+No differences found.

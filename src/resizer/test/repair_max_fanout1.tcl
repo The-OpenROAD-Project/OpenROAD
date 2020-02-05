@@ -23,8 +23,8 @@ DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN top ;
 UNITS DISTANCE MICRONS 1000 ;}
-  puts $stream "COMPONENTS $fanout ;
-    - u1 snl_bufx1 ;"
+  puts $stream "COMPONENTS [expr $fanout + 1] ;
+ - u1 snl_bufx1 ;"
   set rows [expr int(sqrt($fanout))]
   # 10micron x/y spacing
   set spacing 10000
@@ -76,6 +76,6 @@ report_object_names [get_pins -of [get_net net2]]
 report_object_names [get_pins -of [get_net net3]]
 report_object_names [get_pins -of [get_net net4]]
 
-set buffered_filename [file join $result_dir "repair_max_fanout1.def"]
-write_def $buffered_filename
-diff_file $buffered_filename repair_max_fanout1.defok
+set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
+write_def $repaired_filename
+diff_file $repaired_filename repair_max_fanout1.defok

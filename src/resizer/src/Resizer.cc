@@ -282,6 +282,7 @@ Resizer::bufferInput(Pin *top_pin,
 					       parent);
   if (buffer) {
     setLocation(buffer, pinLocation(top_pin, db_network_));
+    design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
     NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
@@ -351,6 +352,7 @@ Resizer::bufferOutput(Pin *top_pin,
 					   parent);
   if (buffer) {
     setLocation(buffer, pinLocation(top_pin, db_network_));
+    design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
     NetPinIterator *pin_iter(network->pinIterator(output_net));
@@ -1483,7 +1485,6 @@ Resizer::bufferLoads(Pin *drvr_pin,
 		     LibertyCell *buffer_cell)
 {
   GroupedPins grouped_loads;
-  //  groupLoadsCluster(drvr_pin, buffer_count, max_fanout, grouped_loads);
   groupLoadsSteiner(drvr_pin, buffer_count, max_fanout, grouped_loads);
   //reportGroupedLoads(grouped_loads);
   Vector<Instance*> buffers(buffer_count);
@@ -1492,20 +1493,22 @@ Resizer::bufferLoads(Pin *drvr_pin,
   LibertyPort *buffer_in, *buffer_out;
   buffer_cell->bufferPorts(buffer_in, buffer_out);
   for (int i = 0; i < buffer_count; i++) {
+    PinSeq &loads = grouped_loads[i];
+    adsPoint center = findCenter(loads);
+
     string load_net_name = makeUniqueNetName();
     Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
     string inst_name = makeUniqueBufferName();
     Instance *buffer = db_network_->makeInstance(buffer_cell,
 						 inst_name.c_str(),
 						 top_inst);
+    setLocation(buffer, center);
     inserted_buffer_count_++;
     design_area_ += area(db_network_->cell(buffer_cell));
 
     sta_->connectPin(buffer, buffer_in, net);
     sta_->connectPin(buffer, buffer_out, load_net);
-    PinSeq &loads = grouped_loads[i];
-    adsPoint center = findCenter(loads);
-    setLocation(buffer, center);
+
     for (Pin *load : loads) {
       Instance *load_inst = network_->instance(load);
       Port *load_port = network_->port(load);
@@ -1686,33 +1689,39 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
     Pin *drvr_pin = network_->findPin(inst, tie_port);
     int fanout = this->fanout(drvr_pin);
     if (fanout > max_fanout) {
-      PinSeq loads;
-      findLoads(drvr_pin, loads);
-      // group loads by location
-      PinSeq::Iterator load_iter(loads);
-      int clone_count = ceil(fanout / static_cast<double>(max_fanout)) - 1;
+      int drvr_count = ceil(fanout / static_cast<double>(max_fanout));
+      int clone_count = drvr_count - 1;
+      GroupedPins grouped_loads;
+      groupLoadsSteiner(drvr_pin, drvr_count, max_fanout, grouped_loads);
+
       const char *inst_name = network_->name(inst);
       Net *net = network_->net(drvr_pin);
 
+      // Place the original tie instance in the center of it's loads.
+      PinSeq &loads = grouped_loads[0];
+      adsPoint center = findCenter(loads);
+      setLocation(inst, center);
+
       for (int i = 0; i < clone_count; i++) {
+	PinSeq &loads = grouped_loads[i + 1];
+	adsPoint center = findCenter(loads);
+
 	string clone_name = makeUniqueInstName(inst_name);
 	Instance *clone = sta_->makeInstance(clone_name.c_str(),
 					     tie_cell, top_inst);
+	setLocation(clone, center);
+	design_area_ += area(db_network_->cell(tie_cell));
 	inserted_clone_count++;
 
 	string load_net_name = makeUniqueNetName();
 	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
 	sta_->connectPin(clone, tie_port, load_net);
 
-	int l = 0;
-	while (load_iter.hasNext()
-	       && l < max_fanout) {
-	  Pin *load = load_iter.next();
+	for (Pin *load : loads) {
 	  Instance *load_inst = network_->instance(load);
 	  Port *load_port = network_->port(load);
 	  sta_->disconnectPin(load);
 	  sta_->connectPin(load_inst, load_port, load_net);
-	  l++;
 	}
       }
       if (verbose)

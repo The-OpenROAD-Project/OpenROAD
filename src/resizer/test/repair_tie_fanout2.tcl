@@ -1,9 +1,15 @@
 # repair high fanout tie hi/low net
 source helpers.tcl
+source tie_fanout.tcl
+
 read_liberty Nangate_typ.lib
 read_lef Nangate.lef
-# def produced by writing results/repair_tie_fanout1.v
-read_def repair_tie_fanout2.def
+
+set def_filename [file join $result_dir "tie_hi2.def"]
+write_tie_hi_fanout_def $def_filename \
+  Nangate_typ/LOGIC1_X1/Z Nangate_typ/BUF_X1/A 92
+
+read_def $def_filename
 
 repair_tie_fanout -max_fanout 10 Nangate_typ/LOGIC1_X1/Z
 
@@ -14,3 +20,7 @@ foreach tie_inst $tie_insts {
   set fanout [llength [get_pins -of $net -filter "direction == input"]]
   puts "[get_full_name $tie_inst] $fanout"
 }
+
+set repaired_filename [file join $result_dir "repair_tie_fanout2.def"]
+write_def $repaired_filename
+diff_file $repaired_filename repair_tie_fanout2.defok
