@@ -1484,8 +1484,8 @@ Resizer::bufferLoads(Pin *drvr_pin,
 {
   PinSeq loads;
   findLoads(drvr_pin, loads);
-  // group loads by location
-  PinSeq::Iterator load_iter(loads);
+  GroupedPins grouped_loads;
+  groupLoadsByLocation(drvr_pin, buffer_count, max_fanout, grouped_loads);
   Vector<Instance*> buffers(buffer_count);
   Net *net = network_->net(drvr_pin);
   Instance *top_inst = db_network_->topInstance();
@@ -1503,16 +1503,54 @@ Resizer::bufferLoads(Pin *drvr_pin,
 
     sta_->connectPin(buffer, buffer_in, net);
     sta_->connectPin(buffer, buffer_out, load_net);
-    int l = 0;
-    while (load_iter.hasNext()
-	   && l < max_fanout) {
-      Pin *load = load_iter.next();
+    for (Pin *load : grouped_loads[i]) {
       Instance *load_inst = network_->instance(load);
       Port *load_port = network_->port(load);
       sta_->disconnectPin(load);
       sta_->connectPin(load_inst, load_port, load_net);
-      l++;
     }
+  }
+}
+
+void
+Resizer::groupLoadsByLocation(const Pin *drvr_pin,
+			      int group_count,
+			      int group_size,
+			      // Return value.
+			      GroupedPins &grouped_loads)
+{
+  SteinerTree *tree = makeSteinerTree(network_->net(drvr_pin),
+				      true, db_network_);
+  if (tree && tree->isPlaced(db_network_)) {
+    SteinerPt drvr_pt = tree->drvrPt(db_network_);
+    grouped_loads.resize(group_count);
+    int group_index = 0;
+    groupLoads(tree, drvr_pt, group_size, group_index, grouped_loads);
+  }
+}
+
+// DFS of steiner tree collecting leaf pins into groups.
+void
+Resizer::groupLoads(SteinerTree *tree,
+		    SteinerPt pt,
+		    int group_size,
+		    int &group_index,
+		    GroupedPins &grouped_loads)
+{
+  Pin *pin = tree->pin(pt);
+  if (pin && db_network_->isLoad(pin)) {
+    Vector<Pin*> &loads = grouped_loads[group_index];
+    loads.push_back(pin);
+    if (loads.size() == group_size)
+      group_index++;
+  }
+  else {
+    SteinerPt left = tree->left(pt);
+    if (left != SteinerTree::null_pt)
+      groupLoads(tree, left, group_size, group_index, grouped_loads);
+    SteinerPt right = tree->right(pt);
+    if (right != SteinerTree::null_pt)
+      groupLoads(tree, right, group_size, group_index, grouped_loads);
   }
 }
 

@@ -28,6 +28,7 @@ typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<RebufferOption*> RebufferOptionSeq;
 enum class RebufferOptionType { sink, junction, wire, buffer };
 typedef Map<Vertex*, float> VertexWeightMap;
+typedef Vector<Vector<Pin*>> GroupedPins;
 
 class Resizer : public StaState
 {
@@ -210,6 +211,16 @@ protected:
 		   LibertyCell *buffer_cell);
   void findLoads(Pin *drvr_pin,
 		 PinSeq &loads);
+  void groupLoadsByLocation(const Pin *drvr_pin,
+			    int group_count,
+			    int group_size,
+			    // Return value.
+			    GroupedPins &grouped_loads);
+  void groupLoads(SteinerTree *tree,
+		  SteinerPt pt,
+		  int group_size,
+		  int &group_index,
+		  GroupedPins &grouped_loads);
 
   float wire_res_;
   float wire_cap_;
