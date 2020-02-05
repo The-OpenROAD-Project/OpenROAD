@@ -1482,10 +1482,9 @@ Resizer::bufferLoads(Pin *drvr_pin,
 		     int max_fanout,
 		     LibertyCell *buffer_cell)
 {
-  PinSeq loads;
-  findLoads(drvr_pin, loads);
   GroupedPins grouped_loads;
   groupLoadsByLocation(drvr_pin, buffer_count, max_fanout, grouped_loads);
+  reportGroupRadii(grouped_loads);
   Vector<Instance*> buffers(buffer_count);
   Net *net = network_->net(drvr_pin);
   Instance *top_inst = db_network_->topInstance();
@@ -1513,7 +1512,7 @@ Resizer::bufferLoads(Pin *drvr_pin,
 }
 
 void
-Resizer::groupLoadsByLocation(const Pin *drvr_pin,
+Resizer::groupLoadsByLocation(Pin *drvr_pin,
 			      int group_count,
 			      int group_size,
 			      // Return value.
@@ -1521,12 +1520,44 @@ Resizer::groupLoadsByLocation(const Pin *drvr_pin,
 {
   SteinerTree *tree = makeSteinerTree(network_->net(drvr_pin),
 				      true, db_network_);
+  grouped_loads.resize(group_count);
   if (tree && tree->isPlaced(db_network_)) {
     SteinerPt drvr_pt = tree->drvrPt(db_network_);
-    grouped_loads.resize(group_count);
     int group_index = 0;
     groupLoads(tree, drvr_pt, group_size, group_index, grouped_loads);
   }
+  else {
+    PinSeq loads;
+    findLoads(drvr_pin, loads);
+    int group_index = 0;
+    for (Pin *load : loads) {
+      Vector<Pin*> &loads = grouped_loads[group_index];
+      loads.push_back(load);
+      if (loads.size() == group_size)
+	group_index++;
+    }
+  }
+}
+
+void
+Resizer::reportGroupRadii(GroupedPins &grouped_loads)
+{
+  int i = 0;
+  for (Vector<Pin*> &loads : grouped_loads) {
+    adsPoint sum(0, 0);
+    for (Pin *load : loads) {
+      adsPoint loc = pinLocation(load, db_network_);
+      sum.x() += loc.x();
+      sum.y() += loc.y();
+    }
+    adsPoint avg(sum.x() / loads.size(), sum.y() / loads.size());
+    uint64_t dist2 = 0;
+    for (Pin *load : loads)
+      dist2 += adsPoint::squaredDistance(pinLocation(load, db_network_), avg);
+    dist2 = std::sqrt(dist2);
+    printf("%d %.2e\n", i, dbuToMeters(dist2));
+  }
+  i++;
 }
 
 // DFS of steiner tree collecting leaf pins into groups.

@@ -211,7 +211,7 @@ protected:
 		   LibertyCell *buffer_cell);
   void findLoads(Pin *drvr_pin,
 		 PinSeq &loads);
-  void groupLoadsByLocation(const Pin *drvr_pin,
+  void groupLoadsByLocation(Pin *drvr_pin,
 			    int group_count,
 			    int group_size,
 			    // Return value.
@@ -221,6 +221,7 @@ protected:
 		  int group_size,
 		  int &group_index,
 		  GroupedPins &grouped_loads);
+  void reportGroupRadii(GroupedPins &grouped_loads);
 
   float wire_res_;
   float wire_cap_;
