@@ -1483,8 +1483,9 @@ Resizer::bufferLoads(Pin *drvr_pin,
 		     LibertyCell *buffer_cell)
 {
   GroupedPins grouped_loads;
-  groupLoadsByLocation(drvr_pin, buffer_count, max_fanout, grouped_loads);
-  reportGroupRadii(grouped_loads);
+  //  groupLoadsCluster(drvr_pin, buffer_count, max_fanout, grouped_loads);
+  groupLoadsSteiner(drvr_pin, buffer_count, max_fanout, grouped_loads);
+  //reportGroupedLoads(grouped_loads);
   Vector<Instance*> buffers(buffer_count);
   Net *net = network_->net(drvr_pin);
   Instance *top_inst = db_network_->topInstance();
@@ -1502,7 +1503,10 @@ Resizer::bufferLoads(Pin *drvr_pin,
 
     sta_->connectPin(buffer, buffer_in, net);
     sta_->connectPin(buffer, buffer_out, load_net);
-    for (Pin *load : grouped_loads[i]) {
+    PinSeq &loads = grouped_loads[i];
+    adsPoint center = findCenter(loads);
+    setLocation(buffer, center);
+    for (Pin *load : loads) {
       Instance *load_inst = network_->instance(load);
       Port *load_port = network_->port(load);
       sta_->disconnectPin(load);
@@ -1511,12 +1515,71 @@ Resizer::bufferLoads(Pin *drvr_pin,
   }
 }
 
+// K means clustering algorithm.
+// not used
 void
-Resizer::groupLoadsByLocation(Pin *drvr_pin,
-			      int group_count,
-			      int group_size,
-			      // Return value.
-			      GroupedPins &grouped_loads)
+Resizer::groupLoadsCluster(Pin *drvr_pin,
+			   int group_count,
+			   int group_size,
+			   // Return value.
+			   GroupedPins &grouped_loads)
+{
+  Vector<adsPoint> centers;
+  grouped_loads.resize(group_count);
+  centers.resize(group_count);
+
+  PinSeq loads;
+  findLoads(drvr_pin, loads);
+  // Find the bbox of the loads.
+  adsRect bbox;
+  bbox.mergeInit();
+  for (Pin *load : loads) {
+    adsPoint loc = pinLocation(load, db_network_);
+    adsRect r(loc.x(), loc.y(), loc.x(), loc.y());
+    bbox.merge(r);
+  }
+  // Choose initial centers on bbox diagonal.
+  for(int i = 0; i < group_count; i++) {
+    adsPoint center(bbox.xMin() + i * bbox.dx() / group_count,
+		    bbox.yMin() + i * bbox.dy() / group_count);
+    centers[i] = center;
+  }
+
+  for (int j = 0; j < 10; j++) {
+    for (int i = 0; i < group_count; i++)
+      grouped_loads[i].clear();
+
+    // Assign each load to the group with the nearest center.
+    for (Pin *load : loads) {
+      adsPoint loc = pinLocation(load, db_network_);
+      int64_t min_dist2 = std::numeric_limits<int64_t>::max();
+      int min_index = 0;
+      for(int i = 0; i < group_count; i++) {
+	adsPoint center = centers[i];
+	int64_t dist2 = adsPoint::squaredDistance(loc, center);
+	if (dist2 < min_dist2) {
+	  min_dist2 = dist2;
+	  min_index = i;
+	}
+      }
+      grouped_loads[min_index].push_back(load);
+    }
+
+    // Find the center of each group.
+    for (int i = 0; i < group_count; i++) {
+      Vector<Pin*> &loads = grouped_loads[i];
+      adsPoint center = findCenter(loads);
+      centers[i] = center;
+    }
+  }
+}
+
+void
+Resizer::groupLoadsSteiner(Pin *drvr_pin,
+			   int group_count,
+			   int group_size,
+			   // Return value.
+			   GroupedPins &grouped_loads)
 {
   SteinerTree *tree = makeSteinerTree(network_->net(drvr_pin),
 				      true, db_network_);
@@ -1524,7 +1587,7 @@ Resizer::groupLoadsByLocation(Pin *drvr_pin,
   if (tree && tree->isPlaced(db_network_)) {
     SteinerPt drvr_pt = tree->drvrPt(db_network_);
     int group_index = 0;
-    groupLoads(tree, drvr_pt, group_size, group_index, grouped_loads);
+    groupLoadsSteiner(tree, drvr_pt, group_size, group_index, grouped_loads);
   }
   else {
     PinSeq loads;
@@ -1539,34 +1602,13 @@ Resizer::groupLoadsByLocation(Pin *drvr_pin,
   }
 }
 
-void
-Resizer::reportGroupRadii(GroupedPins &grouped_loads)
-{
-  int i = 0;
-  for (Vector<Pin*> &loads : grouped_loads) {
-    adsPoint sum(0, 0);
-    for (Pin *load : loads) {
-      adsPoint loc = pinLocation(load, db_network_);
-      sum.x() += loc.x();
-      sum.y() += loc.y();
-    }
-    adsPoint avg(sum.x() / loads.size(), sum.y() / loads.size());
-    uint64_t dist2 = 0;
-    for (Pin *load : loads)
-      dist2 += adsPoint::squaredDistance(pinLocation(load, db_network_), avg);
-    dist2 = std::sqrt(dist2);
-    printf("%d %.2e\n", i, dbuToMeters(dist2));
-  }
-  i++;
-}
-
 // DFS of steiner tree collecting leaf pins into groups.
 void
-Resizer::groupLoads(SteinerTree *tree,
-		    SteinerPt pt,
-		    int group_size,
-		    int &group_index,
-		    GroupedPins &grouped_loads)
+Resizer::groupLoadsSteiner(SteinerTree *tree,
+			   SteinerPt pt,
+			   int group_size,
+			   int &group_index,
+			   GroupedPins &grouped_loads)
 {
   Pin *pin = tree->pin(pt);
   if (pin && db_network_->isLoad(pin)) {
@@ -1578,11 +1620,50 @@ Resizer::groupLoads(SteinerTree *tree,
   else {
     SteinerPt left = tree->left(pt);
     if (left != SteinerTree::null_pt)
-      groupLoads(tree, left, group_size, group_index, grouped_loads);
+      groupLoadsSteiner(tree, left, group_size, group_index, grouped_loads);
     SteinerPt right = tree->right(pt);
     if (right != SteinerTree::null_pt)
-      groupLoads(tree, right, group_size, group_index, grouped_loads);
+      groupLoadsSteiner(tree, right, group_size, group_index, grouped_loads);
   }
+}
+
+void
+Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
+{
+  int i = 0;
+  for (Vector<Pin*> &loads : grouped_loads) {
+    if (!loads.empty()) {
+      printf("Group %d %lu members\n", i, loads.size());
+      adsPoint center = findCenter(loads);
+      double max_dist = std::numeric_limits<double>::max();
+      double sum_dist = 0.0;
+      for (Pin *load : loads) {
+	uint64_t dist2 = adsPoint::squaredDistance(pinLocation(load, db_network_),
+						   center);
+	double dist = std::sqrt(dist2);
+	printf(" %.2e %s\n", dbuToMeters(dist), db_network_->pathName(load));
+	sum_dist += dist;
+	if (dist < max_dist)
+	  max_dist = dist;
+      }
+      double avg_dist = std::sqrt(sum_dist / loads.size());
+      printf(" avg dist %.2e\n", dbuToMeters(avg_dist));
+      printf(" max dist %.2e\n", dbuToMeters(max_dist));
+      i++;
+    }
+  }
+}
+
+adsPoint
+Resizer::findCenter(PinSeq &pins)
+{
+  adsPoint sum(0, 0);
+  for (Pin *pin : pins) {
+    adsPoint loc = pinLocation(pin, db_network_);
+    sum.x() += loc.x();
+    sum.y() += loc.y();
+  }
+  return adsPoint(sum.x() / pins.size(), sum.y() / pins.size());
 }
 
 ////////////////////////////////////////////////////////////////

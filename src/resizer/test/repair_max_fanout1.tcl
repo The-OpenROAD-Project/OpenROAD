@@ -15,8 +15,6 @@ proc write_hi_fanout_netlist { filename fanout } {
   close $stream
 }
 
-set def_filename [file join $result_dir "repair_max_fanout1.def"]
-
 proc write_hi_fanout_def { filename fanout } {
   set stream [open $filename "w"]
   puts $stream {VERSION 5.8 ;
@@ -31,8 +29,8 @@ UNITS DISTANCE MICRONS 1000 ;}
   # 10micron x/y spacing
   set spacing 10000
   for { set i 0 } { $i < $fanout } { incr i } {
-    set x [expr ($i % $fanout) * $spacing]
-    set y [expr int($i / $rows) * $spacing * 4]
+    set x [expr ($i % $rows) * $spacing * 4]
+    set y [expr int($i / $rows) * $spacing]
     puts $stream " - r$i snl_ffqx1 + PLACED ( $x $y ) N ;"
   }
   puts $stream "END COMPONENTS
@@ -63,6 +61,7 @@ END DESIGN"
   close $stream
 }
 
+set def_filename [file join $result_dir "hi_fanout.def"]
 write_hi_fanout_def $def_filename 35
 
 read_liberty liberty1.lib
@@ -77,3 +76,6 @@ report_object_names [get_pins -of [get_net net2]]
 report_object_names [get_pins -of [get_net net3]]
 report_object_names [get_pins -of [get_net net4]]
 
+set buffered_filename [file join $result_dir "repair_max_fanout1.def"]
+write_def $buffered_filename
+diff_file $buffered_filename repair_max_fanout1.defok

@@ -211,17 +211,23 @@ protected:
 		   LibertyCell *buffer_cell);
   void findLoads(Pin *drvr_pin,
 		 PinSeq &loads);
-  void groupLoadsByLocation(Pin *drvr_pin,
-			    int group_count,
-			    int group_size,
-			    // Return value.
-			    GroupedPins &grouped_loads);
-  void groupLoads(SteinerTree *tree,
-		  SteinerPt pt,
-		  int group_size,
-		  int &group_index,
-		  GroupedPins &grouped_loads);
-  void reportGroupRadii(GroupedPins &grouped_loads);
+  void groupLoadsCluster(Pin *drvr_pin,
+			 int group_count,
+			 int group_size,
+			 // Return value.
+			 GroupedPins &grouped_loads);
+  void groupLoadsSteiner(Pin *drvr_pin,
+			 int group_count,
+			 int group_size,
+			 // Return value.
+			 GroupedPins &grouped_loads);
+  void groupLoadsSteiner(SteinerTree *tree,
+			 SteinerPt pt,
+			 int group_size,
+			 int &group_index,
+			 GroupedPins &grouped_loads);
+  void reportGroupedLoads(GroupedPins &grouped_loads);
+  adsPoint findCenter(PinSeq &pins);
 
   float wire_res_;
   float wire_cap_;
