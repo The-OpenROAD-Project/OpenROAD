@@ -23,6 +23,7 @@ set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
+set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
@@ -103,6 +104,7 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
 # This calls cmake/FindTCL.cmake
 # Do not use REQUIRED because it also requires TK.
 find_package(TCL)
+find_package(Boost)
 
 # Zlib
 include(FindZLIB)
@@ -134,6 +136,7 @@ add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(pdngen)
+add_subdirectory(ICeWall)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
@@ -155,13 +158,16 @@ target_include_directories(openroad
   ${FASTROUTE_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  ${ICEWALL_HOME}/include
   ${TAPCELL_HOME}/include
   SYSTEM
   ${TCL_INCLUDE_PATH}
+  ${Boost_INCLUDE_DIRS}
   )
 
 target_link_libraries(openroad
   pdngen
+  ICeWall
   replace
   opendp
   resizer

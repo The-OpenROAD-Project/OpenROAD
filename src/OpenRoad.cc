@@ -34,6 +34,7 @@
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/src/MakeReplace.h"
 #include "pdngen/MakePdnGen.hh"
+#include "ICeWall/MakeICeWall.hh"
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
@@ -103,6 +104,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
   pdngen_ = makePdnGen();
+  ICeWall_ = makeICeWall();
   fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
 
   tritonCts_ = makeTritonCts();
@@ -123,6 +125,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp,
   initReplace(this);
   initOpendp(this);
   initPdnGen(this);
+  initICeWall(this);
   initFastRoute(this);
   initTritonCts(this);
   initTapcell(this);
