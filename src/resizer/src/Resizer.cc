@@ -1638,7 +1638,7 @@ Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
     if (!loads.empty()) {
       printf("Group %d %lu members\n", i, loads.size());
       adsPoint center = findCenter(loads);
-      double max_dist = std::numeric_limits<double>::max();
+      double max_dist = 0.0;
       double sum_dist = 0.0;
       for (Pin *load : loads) {
 	uint64_t dist2 = adsPoint::squaredDistance(pinLocation(load, db_network_),
@@ -1646,7 +1646,7 @@ Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
 	double dist = std::sqrt(dist2);
 	printf(" %.2e %s\n", dbuToMeters(dist), db_network_->pathName(load));
 	sum_dist += dist;
-	if (dist < max_dist)
+	if (dist > max_dist)
 	  max_dist = dist;
       }
       double avg_dist = std::sqrt(sum_dist / loads.size());
@@ -1669,23 +1669,23 @@ Resizer::findCenter(PinSeq &pins)
   return adsPoint(sum.x() / pins.size(), sum.y() / pins.size());
 }
 
-int64_t
+double
 Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
 {
   adsPoint drvr_loc = pinLocation(drvr_pin, db_network_);
   NetPinIterator *pin_iter = network_->pinIterator(network_->net(drvr_pin));
-  int64_t max_dist = std::numeric_limits<int64_t>::max();
+  int64_t max_dist = 0;
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     if (network_->isLoad(pin)) {
       adsPoint loc = pinLocation(pin, db_network_);
       int64_t dist = adsPoint::manhattanDistance(loc, drvr_loc);
-      if (dist < max_dist)
+      if (dist > max_dist)
 	max_dist = dist;
     }
   }
   delete pin_iter;
-  return max_dist;
+  return dbuToMeters(max_dist);
 }
 
 ////////////////////////////////////////////////////////////////

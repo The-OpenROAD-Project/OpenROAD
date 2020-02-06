@@ -308,8 +308,8 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
   resizer->repairTieFanout(tie_port, max_fanout, verbose);
 }
 
-// swig seems to be too stupid to deal with int64_t
-long long
+// In meters
+double
 max_load_manhatten_distance(Pin *drvr_pin)
 {
   ensureLinked();

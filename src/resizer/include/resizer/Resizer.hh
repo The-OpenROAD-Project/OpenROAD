@@ -93,7 +93,8 @@ public:
   void makeNetParasitics();
   void makeNetParasitics(const Net *net);
   void makeNetParasitics(const dbNet *net);
-  int64_t maxLoadManhattenDistance(Pin *drvr_pin);
+  // Max distance from driver pin to load in meters.
+  double maxLoadManhattenDistance(Pin *drvr_pin);
 
 protected:
   void ensureCorner();

@@ -70,12 +70,14 @@ read_def $def_filename
 create_clock -period 10 clk1
 
 repair_max_fanout -max_fanout 10 -buffer_cell liberty1/snl_bufx1
-report_object_names [get_pins -of [get_net u1z]]
-report_object_names [get_pins -of [get_net net1]]
-report_object_names [get_pins -of [get_net net2]]
-report_object_names [get_pins -of [get_net net3]]
-report_object_names [get_pins -of [get_net net4]]
 
-#set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
-#write_def $repaired_filename
-#diff_file $repaired_filename repair_max_fanout1.defok
+foreach drvr {u1/Z buffer1/Z buffer2/Z buffer3/Z buffer4/Z} {
+  set dist [sta::max_load_manhatten_distance [get_pin $drvr]]
+  set fanout [expr [llength [get_pins -of [get_net -of [get_pin $drvr]]]] - 1]
+  puts "$drvr fanout $fanout dist [format %.0f [expr $dist * 1e6]]"
+  #report_object_names [get_pins -of [get_net $ent]]
+}
+
+# set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
+# write_def $repaired_filename
+# diff_file $repaired_filename repair_max_fanout1.defok
