@@ -1669,6 +1669,25 @@ Resizer::findCenter(PinSeq &pins)
   return adsPoint(sum.x() / pins.size(), sum.y() / pins.size());
 }
 
+int64_t
+Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
+{
+  adsPoint drvr_loc = pinLocation(drvr_pin, db_network_);
+  NetPinIterator *pin_iter = network_->pinIterator(network_->net(drvr_pin));
+  int64_t max_dist = std::numeric_limits<int64_t>::max();
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (network_->isLoad(pin)) {
+      adsPoint loc = pinLocation(pin, db_network_);
+      int64_t dist = adsPoint::manhattanDistance(loc, drvr_loc);
+      if (dist < max_dist)
+	max_dist = dist;
+    }
+  }
+  delete pin_iter;
+  return max_dist;
+}
+
 ////////////////////////////////////////////////////////////////
 
 // Repair tie hi/low net driver fanout by duplicating the

@@ -93,6 +93,7 @@ public:
   void makeNetParasitics();
   void makeNetParasitics(const Net *net);
   void makeNetParasitics(const dbNet *net);
+  int64_t maxLoadManhattenDistance(Pin *drvr_pin);
 
 protected:
   void ensureCorner();

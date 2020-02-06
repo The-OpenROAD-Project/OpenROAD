@@ -18,6 +18,7 @@
 
 %{
 
+#include <cstdint>
 #include "Machine.hh"
 #include "Error.hh"
 #include "Liberty.hh"
@@ -305,6 +306,15 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairTieFanout(tie_port, max_fanout, verbose);
+}
+
+// swig seems to be too stupid to deal with int64_t
+long long
+max_load_manhatten_distance(Pin *drvr_pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->maxLoadManhattenDistance(drvr_pin);
 }
 
 %} // inline

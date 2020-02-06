@@ -1,7 +1,7 @@
 source helpers.tcl
 
 # not used
-proc write_hi_fanout_netlist { filename fanout } {
+proc write_hi_fanout_verilog { filename fanout } {
   set stream [open $filename "w"]
   puts $stream "module top (clk1, in1);"
   puts $stream " input clk1, in1;"
@@ -76,6 +76,6 @@ report_object_names [get_pins -of [get_net net2]]
 report_object_names [get_pins -of [get_net net3]]
 report_object_names [get_pins -of [get_net net4]]
 
-set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
-write_def $repaired_filename
-diff_file $repaired_filename repair_max_fanout1.defok
+#set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
+#write_def $repaired_filename
+#diff_file $repaired_filename repair_max_fanout1.defok
