@@ -22,6 +22,7 @@ set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 set(REPLACE_HOME ${PROJECT_SOURCE_DIR}/src/replace)
 
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
+set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
 
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
 
@@ -196,6 +197,7 @@ add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
 add_subdirectory(pdngen)
+add_subdirectory(ICeWall)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
@@ -226,14 +228,17 @@ target_include_directories(openroad
   ${FASTROUTE_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
+  ${ICEWALL_HOME}/include
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
   ${TCL_INCLUDE_PATH}
+  ${Boost_INCLUDE_DIRS}
   )
 
 target_link_libraries(openroad
   openroad_swig
   pdngen
+  ICeWall
   replace
   opendp
   resizer
