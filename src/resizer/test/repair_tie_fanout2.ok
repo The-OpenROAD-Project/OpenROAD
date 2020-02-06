@@ -10,7 +10,7 @@ Notice 0:     Created 36 components and 143 component-terminals.
 Notice 0:     Created 1 nets and 36 connections.
 Notice 0: Finished DEF file: ./results/tie_hi2.def
 Inserted 3 tie LOGIC1_X1 instances for 1 nets.
-t1 10 dist 154
-t11 10 dist 126
-t12 10 dist 182
-t13 5 dist 40
+t1 10
+t11 10
+t12 10
+t13 5

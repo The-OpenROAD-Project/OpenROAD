@@ -18,8 +18,9 @@ foreach tie_inst $tie_insts {
   set tie_pin [get_pins -of $tie_inst -filter "direction == output"]
   set net [get_nets -of $tie_inst]
   set fanout [llength [get_pins -of $net -filter "direction == input"]]
-  set dist [sta::max_load_manhatten_distance $tie_pin]
-  puts "[get_full_name $tie_inst] $fanout dist [format %.0f [expr $dist * 1e6]]"
+  puts "[get_full_name $tie_inst] $fanout"
+  #set dist [sta::max_load_manhatten_distance $tie_pin]
+  #puts "[get_full_name $tie_inst] $fanout dist [format %.0f [expr $dist * 1e6]]"
 }
 
 # set repaired_filename [file join $result_dir "repair_tie_fanout2.def"]

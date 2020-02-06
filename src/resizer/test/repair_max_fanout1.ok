@@ -11,8 +11,8 @@ Notice 0:     Created 3 nets and 72 connections.
 Notice 0: Finished DEF file: ./results/hi_fanout.def
 Found 1 max fanout violations.
 Inserted 4 buffers.
-u1/Z fanout 4 dist 180
-buffer1/Z fanout 10 dist 54
-buffer2/Z fanout 10 dist 63
-buffer3/Z fanout 10 dist 68
-buffer4/Z fanout 5 dist 32
+u1/Z fanout 4
+buffer1/Z fanout 10
+buffer2/Z fanout 10
+buffer3/Z fanout 10
+buffer4/Z fanout 5
