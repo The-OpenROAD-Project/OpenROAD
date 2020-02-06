@@ -122,19 +122,26 @@ record_resizer_tests {
   make_parasitics2
   rebuffer1
   rebuffer2
-  rebuffer3
   rebuffer4
-  rebuffer5
   rebuffer7
-  rebuffer8
-  rebuffer9
-  rebuffer_ports1
+  buffer_ports1
+  buffer_ports2
+  buffer_ports3
   resize1
   resize2
-  resize3
   resize4
-  resize5
   resize6
+  repair_max_cap1
+  repair_max_fanout1
+  repair_max_slew1
+  repair_max_slew2
+  repair_max_slew3
+  repair_hold1
+  repair_hold2
+  report_floating_nets1
+  repair_tie_fanout1
+  repair_tie_fanout2
+  repair_tie_fanout3
 }
 
 # Record tests in $STAX/designs

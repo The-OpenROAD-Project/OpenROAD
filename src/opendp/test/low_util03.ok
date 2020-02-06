@@ -1,0 +1,42 @@
+Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: 
+Reading DEF file: nangate45-bench/ibex_core/ibex_core_replace.def
+Notice 0: Design: ibex_core
+Notice 0:     Created 231 pins.
+Notice 0:     Created 34184 components and 173049 component-terminals.
+Notice 0:     Created 33171 nets and 104681 connections.
+Notice 0: Finished DEF file: nangate45-bench/ibex_core/ibex_core_replace.def
+Error: could not find power special net VDD
+-------------------- Design Stats ------------------------------
+core area                  : (28000, 28000) (1867960, 1467200)
+total cells                : 34184
+multi cells                : 0
+fixed cells                : 4883
+nets                       : 33171
+design area                : 2.65e+12
+total fixed area           : 5.2e+09
+total movable area         : 1.99e+11
+design utilization         : 7.53
+rows                       : 514
+row height                 : 2800
+----------------------------------------------------------------
+Check Legality
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==>> PASS 
+overlap_check ==> PASS 
+-------------------- Placement Analysis ------------------------
+total displacement         : 58303741
+average displacement       : 1705
+max displacement           : 8852
+original HPWL              : 6.38e+05
+legalized HPWL             : 6.53e+05
+delta HPWL                 : 2%
+----------------------------------------------------------------
+No differences found.

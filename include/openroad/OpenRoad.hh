@@ -14,6 +14,8 @@
 #ifndef OPENROAD_H
 #define OPENROAD_H
 
+#include <string>
+
 extern "C" {
 struct Tcl_Interp;
 }
@@ -62,7 +64,17 @@ namespace MacroPlace {
 class TritonMacroPlace;
 }
 
+namespace replace {
+class Replace;
+}
+
+namespace OpenRCX {
+class Ext;
+}
+
 namespace ord {
+
+using std::string;
 
 class dbVerilogNetwork;
 
@@ -74,8 +86,7 @@ public:
   ~OpenRoad();
   // Singleton accessor used by tcl command interpreter.
   static OpenRoad *openRoad() { return openroad_; }
-  void init(Tcl_Interp *tcl_interp,
-	    const char *prog_arg);
+  void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
   pdngen::PdnGen *getPdnGen(){ return pdngen_; }
@@ -89,14 +100,19 @@ public:
   opendp::Opendp *getOpendp() { return opendp_; }
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
+  OpenRCX::Ext *getOpenRCX() { return extractor_; }
+  replace::Replace* getReplace() { return replace_; }
 
   void readLef(const char *filename,
 	       const char *lib_name,
 	       bool make_tech,
 	       bool make_library);
 
-  void readDef(const char *filename);
-  void writeDef(const char *filename);
+  void readDef(const char *filename,
+               bool order_wires);
+  void writeDef(const char *filename,
+		// major.minor (avoid including defout.h)
+		string version);
 
   void readVerilog(const char *filename);
   // Write a flat verilog netlist for the database.
@@ -121,6 +137,8 @@ private:
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
+  OpenRCX::Ext *extractor_;
+  replace::Replace *replace_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

@@ -27,6 +27,7 @@ class RebufferOption;
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Vector<RebufferOption*> RebufferOptionSeq;
 enum class RebufferOptionType { sink, junction, wire, buffer };
+typedef Map<Vertex*, float> VertexWeightMap;
 
 class Resizer : public StaState
 {
@@ -66,9 +67,11 @@ public:
 
   // Insert buffers to fix max cap/slew violations.
   // resizerPreamble() required.
-  void rebufferNets(bool repair_max_cap,
-		    bool repair_max_slew,
-		    LibertyCell *buffer_cell);
+  void repairMaxCapSlew(bool repair_max_cap,
+			bool repair_max_slew,
+			LibertyCell *buffer_cell);
+  void repairMaxFanout(int max_fanout,
+		       LibertyCell *buffer_cell);
   // Rebuffer net (for testing).
   // Assumes buffer_cell->isBuffer() is true.
   // resizerPreamble() required.
@@ -76,8 +79,19 @@ public:
 		LibertyCell *buffer_cell);
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
+  void repairHoldViolations(LibertyCell *buffer_cell);
+  void repairHoldViolations(Pin *end_pin,
+			    LibertyCell *buffer_cell);
   // Area of the design in meter^2.
   double designArea();
+  // Caller owns return value.
+  NetSeq *findFloatingNets();
+  void repairTieFanout(LibertyPort *tie_port,
+		       int max_fanout,
+		       bool verbose);
+  void makeNetParasitics();
+  void makeNetParasitics(const Net *net);
+  void makeNetParasitics(const dbNet *net);
 
 protected:
   void ensureCorner();
@@ -105,8 +119,6 @@ protected:
 			     // Return values.
 			     Slew slews[],
 			     int counts[]);
-  void makeNetParasitics();
-  void makeNetParasitics(const Net *net);
   ParasiticNode *findParasiticNode(SteinerTree *tree,
 				   Parasitic *parasitic,
 				   const Net *net,
@@ -114,9 +126,6 @@ protected:
 				   int steiner_pt);
 
   // Assumes buffer_cell->isBuffer() is true.
-  void rebuffer(bool repair_max_cap,
-		bool repair_max_slew,
-		LibertyCell *buffer_cell);
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
   bool hasMaxCapViolation(const Pin *drvr_pin);
@@ -153,9 +162,11 @@ protected:
 		    float load_cap);
   string makeUniqueNetName();
   string makeUniqueBufferName();
+  string makeUniqueInstName(const char *base_name);
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
+  adsPoint location(Instance *inst);
   void setLocation(Instance *inst,
 		   adsPoint pt);
   Pin *singleOutputPin(const Instance *inst);
@@ -172,7 +183,33 @@ protected:
 				     RebufferOption *ref,
 				     RebufferOption *ref2);
   void deleteRebufferOptions();
-  friend class RebufferOption;
+
+  void findFaninWeights(VertexSet &ends,
+			// Return value.
+			VertexWeightMap &weight_map);
+  float slackGap(Vertex *vertex);
+  void repairHoldViolations(VertexSet &ends,
+			    LibertyCell *buffer_cell);
+  void repairHoldPass(VertexSet &ends,
+		      LibertyCell *buffer_cell);
+  void sortFaninsByWeight(VertexWeightMap &weight_map,
+			  // Return value.
+			  VertexSeq &fanins);
+  void repairHoldBuffer(Pin *drvr_pin,
+			Slack hold_slack,
+			LibertyCell *buffer_cell);
+  void repairHoldResize(Pin *drvr_pin,
+			Slack hold_slack);
+  void findCellInstances(LibertyCell *cell,
+			 // Return value.
+			 InstanceSeq &insts);
+  int fanout(Pin *drvr_pin);
+  void bufferLoads(Pin *drvr_pin,
+		   int buffer_count,
+		   int max_fanout,
+		   LibertyCell *buffer_cell);
+  void findLoads(Pin *drvr_pin,
+		 PinSeq &loads);
 
   float wire_res_;
   float wire_cap_;
@@ -194,13 +231,14 @@ protected:
   bool level_drvr_verticies_valid_;
   Slew tgt_slews_[RiseFall::index_count];
   int unique_net_index_;
-  int unique_buffer_index_;
+  int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
   int rebuffer_net_count_;
   double core_area_;
   double design_area_;
   RebufferOptionSeq rebuffer_options_;
+  friend class RebufferOption;
 };
 
 } // namespace

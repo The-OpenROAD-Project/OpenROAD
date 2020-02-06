@@ -6,8 +6,16 @@ timing analysis.
 
 #### Build
 
-OpenROAD depends on OpenSTA, and OpenDB, and flute3. These source
-directories are git submodules and located in `/src`.
+The OpenROAD build requires the following packages:
+
+  * cmake 3.9
+  * gcc or clang
+  * bison
+  * flex
+  * swig 3.0
+  * boost
+  * tcl 8.5
+  * zlib
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
@@ -17,6 +25,8 @@ cd build
 cmake ..
 make
 ```
+
+OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
 
 The default build type is RELEASE to compile optimized code.
 The resulting executable is in `build/resizer`.
@@ -48,8 +58,8 @@ make DESTDIR=<prefix_path> install
 There are a set of regression tests in `/test`.
 
 ```
-test/regression fast
-src/resizer/test/regression fast
+test/regression
+src/resizer/test/regression
 
 ```
 
@@ -78,14 +88,14 @@ and write design data.
 ```
 read_lef [-tech] [-library] filename
 read_def filename
-write_def filename
+write_def [-version 5.8|5.6|5.5|5.4|5.3] filename
 read_verilog filename
 write_verilog filename
 read_db filename
 write_db filename
 ```
 
-OpenROAD can be used to make and OpenDB database from LEF/DEF, or
+OpenROAD can be used to make a OpenDB database from LEF/DEF, or
 Verilog (flat or hierarchical). Once the database is made it can be
 saved as a file with the `write_db` command. OpenROAD can then read
 the database with the `read_db` command without reading LEF/DEF or
@@ -155,22 +165,16 @@ auto_place_pins pin_layer
 
 #### Gate Resizer
 
-Gate resizer commands are shown below.
+Gate resizer commands are described below.
+The resizer commands stop when the design area is `-max_utilization
+util` percent of the core area. `util` is between 0 and 100.
 
 ```
-set_wire_rc [-layer layer_name] [-resistance res ] [-capacitance cap] [-corner corner_name]
-resize [-buffer_inputs]
-       [-buffer_outputs]
-       [-resize]
-       [-resize_libraries resize_libraries]
-       [-repair_max_cap]
-       [-repair_max_slew]
-       [-buffer_cell buffer_cell]
-       [-dont_use cells]
-       [-max_utilization util]
-report_design_area
+set_wire_rc [-layer layer_name]
+            [-resistance res ]
+	    [-capacitance cap]
+	    [-corner corner_name]
 ```
-
 The `set_wire_rc` command sets the resistance and capacitance used to
 estimate delay of routing wires.  Use `-layer` or `-resistance` and
 `-capacitance`.  If `-layer` is used, the LEF technology resistance
@@ -187,25 +191,79 @@ is not called before resizing, the default_wireload model specified in
 the first liberty file or with the SDC set_wire_load command is used
 to make parasitics.
 
-The `resize` command buffers inputs and outputs, resizes gates, and
-then uses buffer insertion to repair maximum capacitance and slew
-violations. Use the `-buffer_inputs`, `-buffer_outputs`, `-resize`,
-`-repair_max_cap` and `-repair_max_slew` options to invoke a single
-mode. With none of the options specified all are done. The
-`-buffer_cell` argument is required for buffer insertion
-(`-repair_max_cap` or `-repair_max_slew`). The `-resize_libraries`
-option specifies which libraries to use when
+```
+buffer_ports [-inputs]
+	     [-outputs]
+	     -buffer_cell buffer_cell
+```
+The `buffer_ports -inputs` command adds a buffer between the input and
+its loads.  The `buffer_ports -outputs` adds a buffer between the port
+driver and the output port. If  The default behavior is
+`-inputs` and `-outputs` if neither is specified.
+
+```
+resize [-libraries resize_libraries]
+       [-dont_use cells]
+       [-max_utilization util]
+```
+The `resize` command resizes gates to normalize slews.
+
+The `-libraries` option specifies which libraries to use when
 resizing. `resize_libraries` defaults to all of the liberty libraries
 that have been read. Some designs have multiple libraries with
 different transistor thresholds (Vt) and are used to trade off power
 and speed. Chosing a low Vt library uses more power but results in a
-faster design after the resizing step. Use the `-dont_use` keyword to
-specify a list of patterns of cells to not use. For example, "*/DLY*"
-says do not use cells with names that begin with "DLY" in all
+faster design after the resizing step. Use the `-dont_use` option to
+specify a list of patterns of cells to not use. For example, `*/DLY*`
+says do not use cells with names that begin with `DLY` in all
 libraries.
 
-The resizer stops when the design area is `-max_utilization util`
-percent of the core area. `util` is between 0 and 100.
+```
+repair_max_cap -buffer_cell buffer_cell
+               [-max_utilization util]
+repair_max_slew -buffer_cell buffer_cell
+                [-max_utilization util]
+```
+The `repair_max_cap` and `repair_max_slew` commands repair nets with
+maximum capacitance or slew violations by inserting buffers in the
+net.
+
+```
+repair_max_fanout -max_fanout fanout
+                  -buffer_cell buffer_cell
+                  [-max_utilization util]
+```
+The `repair_max_fanout` command repairs nets with a fanout greater
+than `fanout` by inserting buffers between the driver and the loads.
+
+```
+repair_tie_fanout [-max_fanout fanout]
+                  [-verbose]
+                  lib_port
+```
+The `repair_tie_fanout` command repairs tie high/low nets with fanout
+greater than `fanout` by cloning the tie high/low driver.
+`lib_port` is the tie high/low port, which can be a library/cell/port
+name or object returned by `get_lib_pins`.
+
+```
+repair_hold_violations -buffer_cell buffer_cell
+                       [-max_utilization util]
+```
+The `repair_hold_violations` command inserts buffers to repair hold
+check violations.
+
+```
+report_design_area
+```
+The `report_design_area` command reports the area of the design's
+components and the utilization.
+
+```
+report_floating_nets [-verbose]
+```
+The `report_floating_nets` command reports nets with only one pin connection.
+Use the `-verbose` flag to see the net names.
 
 A typical resizer command file is shown below.
 
@@ -214,16 +272,24 @@ read_lef nlc18.lef
 read_liberty nlc18.lib
 read_def mea.def
 read_sdc mea.sdc
-set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
-set_design_size -die "0 0 1000 1000" -core "100 100 900 900"
-resize -buffer_cell [get_lib_cell nlc18_worst/snl_bufx4] -max_utilization 90
+set_wire_rc -layer metal2
+set buffer_cell [get_lib_cell nlc18_worst/snl_bufx4]
+set max_util 90
+buffer_ports -buffer_cell $buffer_cell
+resize -resize
+repair_max_cap -buffer_cell $buffer_cell -max_utilization $max_util
+repair_max_slew -buffer_cell $buffer_cell -max_utilization $max_util
+# repair tie hi/low before max fanout so they don't get buffered
+repair_tie_fanout -max_fanout 100 Nangate/LOGIC1_X1/Z
+repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell -max_utilization $max_util
+repair_hold_violations -buffer_cell $buffer_cell -max_utilization $max_util
 ```
 
 Note that OpenSTA commands can be used to report timing metrics before
 or after resizing the design.
 
 ```
-set_wire_rc -resistance 1.67e+05 -capacitance 1.33e-10
+set_wire_rc -layer metal2
 report_checks
 report_tns
 report_wns
@@ -236,12 +302,9 @@ report_tns
 report_wns
 ```
 
-The report_design_area command reports the area of the design's
-components and the utilization.
-
 #### Timing Analysis
 
-Timing analysis commands are documented in OpenSTA/doc/OpenSTA.pdf.
+Timing analysis commands are documented in src/OpenSTA/doc/OpenSTA.pdf.
 
 After the database has been read from LEF/DEF, Verilog or an OpenDB
 database, use the `read_liberty` command to read Liberty library files
@@ -290,9 +353,8 @@ You can find script examples for both 45nm/65nm and 14nm in ```tapcell/etc/scrip
 RePlAce global placement.
 
 ```
-global_placement
-    [-timing_driven]
-    [-bin_grid_count grid_count]
+global_placement [-timing_driven]
+                 [-bin_grid_count grid_count]
 ```
 - **timing_driven**: Enable timing-driven mode
 - **grid_count**: [64,128,256,512,..., int]. Default: Defined by internal algorithm.
@@ -335,7 +397,11 @@ fastroute -output_file out_file
           -min_routing_layer <min_layer>
           -max_routing_layer <max_layer>
           -pitches_in_tile <pitches>
-          -unidirectional_route
+          -layers_adjustments <list_of_layers_to_adjust>
+          -regions_adjustments <list_of_regions_to_adjust>
+          -nets_alphas_priorities <list_of_alphas_per_net>
+          -verbose <verbose>
+          -unidirectional_routing
           -clock_net_routing
 ```
 
@@ -344,17 +410,13 @@ Options description:
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
 - **max_routing_layer**: Set maximum routing layer (e.g.: max_routing_layer *9*)
 - **pitches_in_tile**: Set the number of pitches inside a GCell
-- **unidirectional_route**: Activate unidirectional route *(flag)*
+- **layers_adjustments**: Set capacity adjustment to specific layers (e.g.: -layers_adjustments {{<layer> <reductionPercentage>} ...})
+- **regions_adjustments**: Set capacity adjustment to specific regions (e.g.: -regions_adjustments {{<minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>} ...})
+- **nets_alphas_priorities**: Set alphas for specific nets when using clock net routing (e.g.: -nets_alphas_priorities {{<net_name> <alpha>} ...})
+- **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose 1)
+- **unidirectional_routing**: Activate unidirectional routing *(flag)*
 - **clock_net_routing**: Activate clock net routing *(flag)*
 
-Independent commands:
-```
-fr_add_layer_adjustment <layer> <reductionPercentage>
-fr_add_region_adjustment <minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>
-```
-- **fr_add_layer_adjustment**: Applies a percentage reduction over all edges of a specific layer
-- **fr_add_region_adjustment**: Applies a percentage reduction over all edges of a specific region
-
-###### NOTE 1: if you use the flag *unidirectionalRoute*, the minimum routing layer will be assigned as "2" automatically
+###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated

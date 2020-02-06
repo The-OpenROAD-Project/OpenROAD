@@ -13,14 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
-set(OPENDB_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenDB_wrap.cc)
 
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
+set(REPLACE_HOME ${PROJECT_SOURCE_DIR}/src/replace)
 
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
@@ -31,23 +30,19 @@ set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS)
 
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
+set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 
-set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
-  ${OPENROAD_WRAP}
   ${OPENROAD_TCL_INIT}
   Main.cc
 
   dbReadVerilog.cc
   InitFloorplan.cc
-  InitFlute.cc
-
-  ${OPENDB_WRAP}
   )
 
 set(OPENROAD_TCL_FILES
@@ -65,37 +60,6 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
 
 ################################################################
 
-set(SWIG_REQUIRED_VERSION "3.0")
-find_package(SWIG REQUIRED)
-set(SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")
-
-# OpenDB's swig wrapper is not in the library (and mistakenly exports
-# to the global namespace) so make our own.
-add_custom_command(OUTPUT ${OPENDB_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -DSWIG_DIRECTOR_STATIC -tcl8 -c++ ${SWIG_WARNINGS} -namespace -prefix odb -I${OPENDB_HOME}/include/opendb -I${OPENDB_HOME}/src/swig/tcl -o ${OPENDB_WRAP} ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENDB_WRAP}
-  WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS
-  ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i
-  ${OPENDB_HOME}/src/swig/tcl/dbenums.i
-  ${OPENDB_HOME}/src/swig/tcl/parserenums.i
-  ${OPENDB_HOME}/src/swig/tcl/dbhelpers.i
-  ${OPENDB_HOME}/src/swig/tcl/dbdiff.i
-  )
-
-add_custom_command(OUTPUT ${OPENROAD_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ord -I${OPENROAD}/src -o ${OPENROAD_WRAP} OpenRoad.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${OPENROAD_WRAP}
-  WORKING_DIRECTORY ${OPENROAD_HOME}/src
-  DEPENDS OpenRoad.i InitFloorplan.i
-  )
-
-################################################################
-#
-# Library dependencies
-#
-################################################################
-
 # OSX tcl is deprecated and prints a warning, so look for a user installed
 # version before using the system version.
 # I tried to override the library search order instead but failed.
@@ -104,7 +68,104 @@ add_custom_command(OUTPUT ${OPENROAD_WRAP}
 # This calls cmake/FindTCL.cmake
 # Do not use REQUIRED because it also requires TK.
 find_package(TCL)
+
+find_package(SWIG REQUIRED 3.0)
+include(UseSWIG)
+set(OPENDB_SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")
+
 find_package(Boost)
+
+# OpenDB's swig wrapper is not in the library (and mistakenly exports
+# to the global namespace) so make our own.
+set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
+
+set_property(SOURCE ${OPENDB_SWIG_FILE}
+  PROPERTY CPLUSPLUS ON
+)
+# Ubuntu 18.04 cmake version 3.10.2 does not support the
+# COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
+# them into SWIG_FLAGS for the time being.
+set_property(SOURCE ${OPENDB_SWIG_FILE}
+  PROPERTY SWIG_FLAGS
+  -module opendbtcl
+  -namespace -prefix odb
+  ${OPENDB_SWIG_WARNINGS}
+  -I${OPENDB_HOME}/include/opendb
+  -I${OPENDB_HOME}/src/swig/tcl
+)
+
+swig_add_library(opendb_swig
+  LANGUAGE tcl
+  TYPE STATIC
+  SOURCES ${OPENDB_SWIG_FILE}
+)
+
+target_include_directories(opendb_swig
+  PUBLIC
+  ${Boost_INCLUDE_DIRS}
+  ${TCL_INCLUDE_PATH}
+)
+
+swig_link_libraries(opendb_swig
+  PUBLIC
+  opendb
+)
+
+################################################################
+
+set(OPENROAD_SWIG_FILE OpenRoad.i)
+
+set_property(SOURCE ${OPENROAD_SWIG_FILE}
+  PROPERTY CPLUSPLUS ON
+)
+# Ubuntu 18.04 cmake version 3.10.2 does not support the
+# COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
+# them into SWIG_FLAGS for the time being.
+set_property(SOURCE ${OPENROAD_SWIG_FILE}
+  PROPERTY SWIG_FLAGS
+  -module openroad
+  -namespace -prefix ord
+  -I${OPENROAD_HOME}/src
+  -I${OPENDB_HOME}/include
+)
+
+swig_add_library(openroad_swig
+  LANGUAGE tcl
+  TYPE STATIC
+  SOURCES ${OPENROAD_SWIG_FILE}
+)
+
+swig_link_libraries(openroad_swig
+  PUBLIC
+  openroad
+  # OpenDB public includes incorrectly point to include/opendb so this fails.
+  #opendb
+)
+
+target_include_directories(openroad_swig
+  PUBLIC
+  ${OPENROAD_HOME}/include
+
+  PRIVATE
+  ${OPENROAD_HOME}/src
+  ${OPENSTA_HOME}/util
+  ${OPENSTA_HOME}/sdc
+  ${OPENSTA_HOME}/network
+  ${OPENSTA_HOME}/parasitics
+  ${OPENSTA_HOME}/liberty
+  ${OPENSTA_HOME}/graph
+  ${OPENSTA_HOME}/search
+
+  ${OPENDB_HOME}/include
+
+  ${TCL_INCLUDE_PATH}
+)
+
+################################################################
+#
+# Library dependencies
+#
+################################################################
 
 # Zlib
 include(FindZLIB)
@@ -141,6 +202,7 @@ add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
+add_subdirectory(OpenRCX)
 
 ################################################################
 
@@ -148,11 +210,19 @@ add_executable(openroad
   ${OPENROAD_SOURCE}
   )
 
+target_compile_options(openroad
+  PRIVATE
+  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+  $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
+  )
+
 target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
   PRIVATE
   ${OPENROAD_HOME}/src
   ${OPENDB_HOME}/include
+  ${REPLACE_HOME}/include
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
@@ -160,12 +230,13 @@ target_include_directories(openroad
   ${PDNGEN_HOME}/include
   ${ICEWALL_HOME}/include
   ${TAPCELL_HOME}/include
-  SYSTEM
+  ${OPENRCX_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
   )
 
 target_link_libraries(openroad
+  openroad_swig
   pdngen
   ICeWall
   replace
@@ -176,6 +247,8 @@ target_link_libraries(openroad
   dbSta
   OpenSTA
   opendb
+  opendb_swig
+  OpenRCX
   TritonCTS
   FastRoute
   tapcell
@@ -217,8 +290,6 @@ target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
 
 # executable
 install(TARGETS openroad DESTINATION bin)
-# etc magic flute files
-install(FILES ../etc/POST9.dat ../etc/POWV9.dat DESTINATION etc)
 
 ################################################################
 

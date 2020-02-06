@@ -11,6 +11,4 @@ Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 10 nets and 14 connections.
 Notice 0: Finished DEF file: reg1.def
 Info: Added 40 rows of 16 sites.
-Differences found at line 1.
-VERSION 5.8 ;
-VERSION 5.5 ;
+No differences found.

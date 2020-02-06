@@ -16,5 +16,6 @@ report_design_area
 resize -resize
 report_design_area
 
-resize -repair_max_cap -repair_max_slew -buffer_cell $buffer_cell
+repair_max_cap -buffer_cell $buffer_cell
+repair_max_slew -buffer_cell $buffer_cell
 report_design_area

@@ -10,7 +10,6 @@ Notice 0:     Created 5 components and 24 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 7 nets and 14 connections.
 Notice 0: Finished DEF file: reg3.def
-2500000.0 5.03180896e-11
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

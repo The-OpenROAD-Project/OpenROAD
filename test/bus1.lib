@@ -1,0 +1,85 @@
+library (buslib) {
+  comment                        : "";
+  delay_model                    : table_lookup;
+  simulation                     : false;
+  capacitive_load_unit (1,pf);
+  leakage_power_unit             : 1pW;
+  current_unit                   : "1A";
+  pulling_resistance_unit        : "1kohm";
+  time_unit                      : "1ns";
+  voltage_unit                   : "1V";
+  library_features(report_delay_calculation);
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_derate_from_library : 1.0;
+  slew_lower_threshold_pct_fall : 20;
+  slew_lower_threshold_pct_rise : 20;
+  slew_upper_threshold_pct_fall : 80;
+  slew_upper_threshold_pct_rise : 80;
+
+  default_fanout_load            : 1.0;
+  default_inout_pin_cap          : 0.0;
+  default_input_pin_cap          : 0.0;
+  default_output_pin_cap         : 0.0;
+
+  nom_process                    : 1.0;
+  nom_temperature                : 125.00;
+  nom_voltage                    : 1.62;
+
+  operating_conditions(worst_case_industrial) {
+    process  :  1.0;
+    temperature  :  125.00;
+    voltage  :  1.62;
+    tree_type  :  "worst_case_tree" ;
+  }
+  default_operating_conditions : worst_case_industrial ;
+  default_wire_load_mode : enclosed;
+
+  type (bus_3_0) {
+    base_type : array ;
+    data_type : bit ;
+    bit_width : 4;
+    bit_from : 3;
+    bit_to : 0;
+  }
+  cell (bus4) {
+    pin(clk) {
+      min_pulse_width_low : 0.600;
+      min_pulse_width_high : 0.600;
+      min_period  : 0.500 ;
+      direction : input;
+      clock : true ;
+      capacitance : 0.0103 ;
+    }
+    bus (in) {
+      bus_type : bus_3_0;
+      direction : input ;
+      capacitance : 0.007700 ;
+    } 
+    bus (out) {
+      bus_type : bus_3_0;
+      function : "in"
+      direction : output ;
+      timing () {
+	/* 1:1 timing arcs */
+	related_pin : "in" ;
+	timing_sense : "positive_unate" ;
+	cell_rise(scalar) {
+	  values("1");
+	} 
+	cell_fall(scalar) {
+	  values("2");
+	} 
+	rise_transition(scalar) {
+	  values("1");
+	} 
+	fall_transition(scalar) {
+	  values("2");
+	} 
+      } 
+    } 
+  }
+}
