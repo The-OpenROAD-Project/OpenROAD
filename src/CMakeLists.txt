@@ -14,24 +14,17 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
-
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
-
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
 set(REPLACE_HOME ${PROJECT_SOURCE_DIR}/src/replace)
-
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
-
 set(IOPLACER_HOME ${PROJECT_SOURCE_DIR}/src/ioPlacer)
-
 set(TRITONCTS_HOME ${PROJECT_SOURCE_DIR}/src/TritonCTS) 
-
 set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
-
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
@@ -50,6 +43,8 @@ set(OPENROAD_TCL_FILES
   OpenRoad.tcl
   dbReadVerilog.tcl
   InitFloorplan.tcl
+  ${ICEWALL_HOME}/src/ICeWall.tcl
+  ${PDNGEN_HOME}/src/PdnGen.tcl
   )
 
 add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
@@ -196,8 +191,6 @@ add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
 add_subdirectory(ioPlacer)
-add_subdirectory(pdngen)
-add_subdirectory(ICeWall)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
@@ -228,7 +221,6 @@ target_include_directories(openroad
   ${FASTROUTE_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
-  ${ICEWALL_HOME}/include
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
   ${TCL_INCLUDE_PATH}
@@ -237,8 +229,6 @@ target_include_directories(openroad
 
 target_link_libraries(openroad
   openroad_swig
-  pdngen
-  ICeWall
   replace
   opendp
   resizer
