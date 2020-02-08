@@ -1,4 +1,0 @@
-[submodule "external/StandardTransforms/HelloTransform"]
-	path = external/StandardTransforms/HelloTransform
-	url = https://github.com/The-OpenROAD-Project/OpenPhySynHelloTransform.git
-	branch = master
