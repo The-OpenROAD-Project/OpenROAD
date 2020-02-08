@@ -26,11 +26,14 @@ set test_dir [file dirname [file normalize [info script]]]
 source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
-puts "OpenROAD"
+if {1} {
+regression_main
+} else {
 puts "----------------------------------------------------------------"
+puts "OpenROAD"
 regression_main
 
-if {0} {
+set errors [regression_body]
 set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
 		    "I/O placer" "src/ioPlacer/test/regression" \
 		    "PDN gen" "src/pdngen/test/regression" \
@@ -43,10 +46,9 @@ set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
 		    "Tap cell" "src/tapcell/test/regression" \
 		  }
 
-set errors 0
 foreach {tool script} $tool_scripts {
-  puts $tool
   puts "----------------------------------------------------------------"
+  puts $tool
   if { [catch [concat exec $script] result] } {
     puts $result
     set errors 1
