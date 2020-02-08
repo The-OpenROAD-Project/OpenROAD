@@ -6,7 +6,9 @@ set(TEST_RUNNER_PARAMS "")  # Any arguemnts to feed the test runner (change as n
 set(PSN_TEST_WRAP ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap_test.cc)
 set_source_files_properties(${PSN_TEST_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
+# Generate TCL init file for test initialization.
 set(OPENPHYSYN_OPENROAD_TCL ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/OpenRoadTclInitVar.cc)
+
 add_custom_target(openroad_tcl
   COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${OPENPHYSYN_OPENROAD_TCL} openroad_tcl_inits ${OPENROAD_TCL_FILES}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src
@@ -15,8 +17,8 @@ add_custom_target(openroad_tcl
 
 add_executable(${TEST_MAIN} ${PSN_TESTFILES} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${OPENPHYSYN_OPENROAD_TCL} ${PSN_TEST_WRAP})
 
+set_source_files_properties(${OPENPHYSYN_OPENROAD_TCL} PROPERTIES GENERATED true)
 add_dependencies(${TEST_MAIN} openroad_tcl)
-
 
 add_custom_command(OUTPUT ${PSN_TEST_WRAP}
   COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} ${SWIG_PSN_LIB_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PSN_HOME}/src -o ${PSN_TEST_WRAP} ${PSN_SWIG_FILES}
