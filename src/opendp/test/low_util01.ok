@@ -1,0 +1,42 @@
+Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: 
+Reading DEF file: nangate45-bench/gcd/gcd_replace.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 549 components and 2166 component-terminals.
+Notice 0:     Created 364 nets and 1068 connections.
+Notice 0: Finished DEF file: nangate45-bench/gcd/gcd_replace.def
+Error: could not find power special net VDD
+-------------------- Design Stats ------------------------------
+core area                  : (28000, 28000) (267780, 266000)
+total cells                : 549
+multi cells                : 0
+fixed cells                : 255
+nets                       : 364
+design area                : 5.71e+10
+total fixed area           : 2.71e+08
+total movable area         : 2.28e+09
+design utilization         : 4.01
+rows                       : 85
+row height                 : 2800
+----------------------------------------------------------------
+Check Legality
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==>> PASS 
+overlap_check ==> PASS 
+-------------------- Placement Analysis ------------------------
+total displacement         : 1357615
+average displacement       : 2472
+max displacement           : 27829
+original HPWL              : 6.94e+03
+legalized HPWL             : 7.75e+03
+delta HPWL                 : 12%
+----------------------------------------------------------------
+No differences found.

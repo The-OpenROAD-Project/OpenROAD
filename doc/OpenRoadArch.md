@@ -282,9 +282,10 @@ Detailed documentation should be the tool/README.md file.
 8. Gate Resizing and buffering (Resizer)
 9. Detailed placement (OpenDP)
 10. Clock Tree Synthesis (TritonCTS)
-11. Global route (FastRoute)
-12. Detailed route (TritonRoute)n
-13. Final timing/power report (OpenSTA)
+11. Repair Hold Violations (Resizer)
+12. Global route (FastRoute)
+13. Detailed route (TritonRoute)n
+14. Final timing/power report (OpenSTA)
 
 ### Tool Checklist
 

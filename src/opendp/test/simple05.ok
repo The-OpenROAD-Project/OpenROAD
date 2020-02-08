@@ -1,0 +1,42 @@
+Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: 
+Reading DEF file: simple05.def
+Notice 0: Design: ten_cells
+Notice 0:     Created 2 pins.
+Notice 0:     Created 10 components and 45 component-terminals.
+Notice 0:     Created 11 nets and 25 connections.
+Notice 0: Finished DEF file: simple05.def
+Error: could not find power special net VDD
+-------------------- Design Stats ------------------------------
+core area                  : (28000, 28000) (39780, 33600)
+total cells                : 10
+multi cells                : 0
+fixed cells                : 1
+nets                       : 11
+design area                : 6.6e+07
+total fixed area           : 3.19e+06
+total movable area         : 3.09e+07
+design utilization         : 49.2
+rows                       : 2
+row height                 : 2800
+----------------------------------------------------------------
+Check Legality
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==>> PASS 
+overlap_check ==> PASS 
+-------------------- Placement Analysis ------------------------
+total displacement         : 4560
+average displacement       : 456
+max displacement           : 3420
+original HPWL              : 80.2
+legalized HPWL             : 80.5
+delta HPWL                 : 0%
+----------------------------------------------------------------
+No differences found.

@@ -121,6 +121,7 @@ record_tests {
   network_edit1
   read_verilog1
   read_verilog2
+  read_verilog3
   sdc_names1
   sdc_get1
   sta1

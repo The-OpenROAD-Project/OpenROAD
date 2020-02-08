@@ -46,7 +46,6 @@ include_directories(${TRITONCTS_HOME}/src
                     ${OPENSTA_HOME}/util
                     ${OPENSTA_HOME}/verilog
                     ${OPENSTA_HOME}/app
-		    SYSTEM
 		    ${TCL_INCLUDE_PATH}
                    ) 
 

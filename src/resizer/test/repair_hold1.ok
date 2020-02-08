@@ -1,0 +1,63 @@
+Notice 0: Reading LEF file:  nlc18.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 1008 library cells
+Notice 0: Finished LEF file:  nlc18.lef
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.13    0.13   clock network delay (propagated)
+   0.00    0.13 ^ r1/CP (snl_ffqx4)
+   0.26    0.39 v r1/Q (snl_ffqx4)
+   0.13    0.52 v u2/Z (snl_and02x1)
+   0.00    0.52 v r3/D (snl_ffqx4)
+           0.52   data arrival time
+
+   0.00    0.00   clock clk (rise edge)
+   0.66    0.66   clock network delay (propagated)
+   0.00    0.66   clock reconvergence pessimism
+           0.66 ^ r3/CP (snl_ffqx4)
+  -0.11    0.55   library hold time
+           0.55   data required time
+---------------------------------------------------------
+           0.55   data required time
+          -0.52   data arrival time
+---------------------------------------------------------
+          -0.03   slack (VIOLATED)
+
+
+Inserted 1 hold buffers.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.13    0.13   clock network delay (propagated)
+   0.00    0.13 ^ r1/CP (snl_ffqx4)
+   0.26    0.39 v r1/Q (snl_ffqx4)
+   0.16    0.56 v buffer1/Z (snl_bufx2)
+   0.12    0.68 v u2/Z (snl_and02x1)
+   0.00    0.68 v r3/D (snl_ffqx4)
+           0.68   data arrival time
+
+   0.00    0.00   clock clk (rise edge)
+   0.66    0.66   clock network delay (propagated)
+   0.00    0.66   clock reconvergence pessimism
+           0.66 ^ r3/CP (snl_ffqx4)
+  -0.11    0.55   library hold time
+           0.55   data required time
+---------------------------------------------------------
+           0.55   data required time
+          -0.68   data arrival time
+---------------------------------------------------------
+           0.12   slack (MET)
+
+
+No differences found.

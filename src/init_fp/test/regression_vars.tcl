@@ -101,8 +101,8 @@ record_tests {
   init_floorplan3
   init_floorplan4
   init_floorplan5
-  init_floorplan6
 }
+#  init_floorplan6
 
 set fast [group_tests all]
 define_test_group fast $fast
