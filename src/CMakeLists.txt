@@ -42,6 +42,8 @@ set(OPENROAD_TCL_FILES
   ${OPENSTA_HOME}/tcl/Util.tcl
   OpenRoad.tcl
   dbReadVerilog.tcl
+  ${ICEWALL_HOME}/src/ICeWall.tcl
+  ${PDNGEN_HOME}/src/PdnGen.tcl
   )
 
 add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}

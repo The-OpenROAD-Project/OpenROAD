@@ -26,43 +26,36 @@ set test_dir [file dirname [file normalize [info script]]]
 source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
-regression_main
-if {0} {
 puts "OpenROAD"
 puts "----------------------------------------------------------------"
 regression_main
 
-puts "ioPlacer"
-puts "----------------------------------------------------------------"
-puts [exec "src/ioPlacer/tests/run_all.sh"]
-
-puts "Resizer"
-puts "----------------------------------------------------------------"
-puts [exec "src/resizer/test/regression"]
-
-puts "pdngen"
-puts "----------------------------------------------------------------"
-puts [exec "src/pdngen/test/regression"]
-
-puts "Macro Place"
-puts "----------------------------------------------------------------"
-puts [exec "src/TritonMacroPlace/test/regression"]
-
-puts "OpenDP"
-puts "----------------------------------------------------------------"
-puts [exec "src/opendp/test/regression"]
-
-puts "TritonCTS"
-puts "----------------------------------------------------------------"
-puts [exec "src/TritonCTS/tests/run_all.sh"]
-
 if {0} {
-# hangs indefinitely
-#pushd src/replace/test && python3 regression.py run openroad && popd
+set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
+		    "I/O placer" "src/ioPlacer/test/regression" \
+		    "PDN gen" "src/pdngen/test/regression" \
+		    "Triton Macro Place" "src/TritonMacroPlace/test/regression" \
+		    "Replace" "src/replace/test/regression" \
+		    "Resizer" "src/resizer/test/regression" \
+		    "Triton CTS" "src/TritonCTS/test/regression" \
+		    "OpenDP" "src/opendp/test/regression" \
+		    "Fast Route" "src/FastRoute/test/regression" \
+		    "Tap cell" "src/tapcell/test/regression" \
+		  }
 
-# errors: sed: 1: "/Users/cherry/sta/openr ...": command c expects \ followed by text
-#cp etc/PO* . && tclsh ./src/FastRoute/tests/run_all.tcl
+set errors 0
+foreach {tool script} $tool_scripts {
+  puts $tool
+  puts "----------------------------------------------------------------"
+  if { [catch [concat exec $script] result] } {
+    puts $result
+    set errors 1
+  } else {
+    puts $result
+  }
 }
+
+exit $errors
 }
 
 # Local Variables:
