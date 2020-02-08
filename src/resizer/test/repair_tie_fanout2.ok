@@ -1,0 +1,16 @@
+Notice 0: Reading LEF file:  Nangate.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate.lef
+Notice 0: 
+Reading DEF file: ./results/tie_hi2.def
+Notice 0: Design: top
+Notice 0:     Created 36 components and 143 component-terminals.
+Notice 0:     Created 1 nets and 36 connections.
+Notice 0: Finished DEF file: ./results/tie_hi2.def
+Inserted 3 tie LOGIC1_X1 instances for 1 nets.
+t1 10
+t11 10
+t12 10
+t13 5

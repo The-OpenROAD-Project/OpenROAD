@@ -1,0 +1,944 @@
+VERSION			5.7 ;
+BUSBITCHARS		"[]" ;
+DIVIDERCHAR		"/" ;
+
+UNITS
+ 
+  DATABASE MICRONS	2000 ;
+END UNITS
+
+MANUFACTURINGGRID	0.005 ;
+
+PROPERTYDEFINITIONS 
+  LAYER LEF57_SPACING STRING ;
+  LAYER LEF57_MINSTEP STRING ;
+  MACRO LEF58_EDGETYPE STRING ;
+ 
+  LIBRARY LEF58_CELLEDGESPACINGTABLE STRING 
+"CELLEDGESPACINGTABLE
+    EDGETYPE 1 2 0.400
+    EDGETYPE 1 1 0.400
+    EDGETYPE 2 2 0.000 
+;" ;
+END PROPERTYDEFINITIONS 
+
+LAYER metal1
+  TYPE			ROUTING ;
+  DIRECTION		HORIZONTAL ;
+  PITCH			0.200 ;
+  OFFSET		0.000 ;
+  PROPERTY LEF57_MINSTEP "MINSTEP 0.100 MAXEDGES 1 ;" ;
+  WIDTH			0.100 ;
+  MAXWIDTH		10.0 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH     0.00    0.40    0.46    1.40    4.10
+  WIDTH    0.00         0.10    0.10    0.10    0.10    0.10
+  WIDTH    0.30         0.10    0.12    0.12    0.12    0.12
+  WIDTH    0.46         0.10    0.12    0.15    0.15    0.15
+  WIDTH    1.40         0.10    0.12    0.15    0.52    0.52
+  WIDTH    4.10         0.10    0.12    0.15    0.52    1.40 ;
+
+  PROPERTY LEF57_SPACING "SPACING 0.11 ENDOFLINE 0.12 WITHIN 0.045 PARALLELEDGE 0.11 WITHIN 0.11 ;" ;
+  AREA 			0.041 ;
+  MINENCLOSEDAREA	0.30 ;
+ 
+  MINIMUMCUT 2 WIDTH 0.400 ;
+  MINIMUMCUT 4 WIDTH 0.720 ;
+  MINIMUMCUT 2 WIDTH 0.400 LENGTH 0.400 WITHIN 0.820 ;
+  MINIMUMCUT 2 WIDTH 2.100 LENGTH 2.100 WITHIN 2.100 ;
+  MINIMUMCUT 2 WIDTH 3.200 LENGTH 8.000 WITHIN 5.200 ;
+
+END metal1
+
+LAYER via1
+  TYPE			CUT ;
+  SPACING		0.10 ;
+  SPACING		0.13 ADJACENTCUTS 3 WITHIN 0.15 ;
+  PROPERTY LEF57_SPACING "SPACING 0.13 PARALLELOVERLAP ;" ;
+END via1
+
+LAYER metal2
+  TYPE			ROUTING ;
+  DIRECTION		VERTICAL ;
+  PITCH			0.200 ;
+  OFFSET		0.100 ;
+  PROPERTY LEF57_MINSTEP "MINSTEP 0.1 MAXEDGES 1 ;" ;
+  WIDTH			0.1 ;
+  MAXWIDTH		10.0 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH     0.00    0.40    0.46    1.40    4.10
+  WIDTH    0.00         0.10    0.10    0.10    0.10    0.10
+  WIDTH    0.30         0.10    0.12    0.12    0.12    0.12
+  WIDTH    0.46         0.10    0.12    0.15    0.15    0.15
+  WIDTH    1.40         0.10    0.12    0.15    0.52    0.52
+  WIDTH    4.10         0.10    0.12    0.15    0.52    1.40 ;
+  PROPERTY LEF57_SPACING "SPACING 0.12 ENDOFLINE 0.14 WITHIN 0.045 PARALLELEDGE 0.12 WITHIN 0.12 ;" ;
+  AREA			0.051 ;
+  MINENCLOSEDAREA	0.30 ;   
+  MINIMUMCUT 2 WIDTH 0.400 ;
+  MINIMUMCUT 4 WIDTH 0.720 ;
+  MINIMUMCUT 2 WIDTH 0.400 LENGTH 0.400 WITHIN 0.820 ;
+  MINIMUMCUT 2 WIDTH 2.100 LENGTH 2.100 WITHIN 2.100 ;
+  MINIMUMCUT 2 WIDTH 3.200 LENGTH 8.000 WITHIN 5.200 ;
+ 
+END metal2
+
+LAYER via2
+  TYPE CUT ;
+  SPACING		0.10 ;
+  SPACING		0.13 ADJACENTCUTS 3 WITHIN 0.15 ;
+  PROPERTY LEF57_SPACING "SPACING 0.13 PARALLELOVERLAP ;" ;
+END via2
+
+LAYER metal3
+  TYPE			ROUTING ;
+  DIRECTION		HORIZONTAL ;
+  PITCH			0.200 ;
+  OFFSET		0.000 ;
+  PROPERTY LEF57_MINSTEP "MINSTEP 0.1 MAXEDGES 1 ;" ;
+  WIDTH			0.1 ;
+  MAXWIDTH		10.0 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH     0.00    0.40    0.46    1.40    4.10
+  WIDTH    0.00         0.10    0.10    0.10    0.10    0.10
+  WIDTH    0.30         0.10    0.12    0.12    0.12    0.12
+  WIDTH    0.46         0.10    0.12    0.15    0.15    0.15
+  WIDTH    1.40         0.10    0.12    0.15    0.52    0.52
+  WIDTH    4.10         0.10    0.12    0.15    0.52    1.40 ;
+  PROPERTY LEF57_SPACING "SPACING 0.12 ENDOFLINE 0.14 WITHIN 0.045 PARALLELEDGE 0.12 WITHIN 0.12 ;" ;
+  AREA			0.051 ;
+  MINENCLOSEDAREA	0.30 ;   
+  MINIMUMCUT 2 WIDTH 0.400 ;
+  MINIMUMCUT 4 WIDTH 0.720 ;
+  MINIMUMCUT 2 WIDTH 0.400 LENGTH 0.400 WITHIN 0.820 ;
+  MINIMUMCUT 2 WIDTH 2.100 LENGTH 2.100 WITHIN 2.100 ;
+  MINIMUMCUT 2 WIDTH 3.200 LENGTH 8.000 WITHIN 5.200 ;
+
+END metal3
+
+LAYER via3
+  TYPE			CUT ;
+  SPACING		0.10 ;
+  SPACING		0.13 ADJACENTCUTS 3 WITHIN 0.15 ;
+  PROPERTY LEF57_SPACING "SPACING 0.13 PARALLELOVERLAP ;" ; 
+END via3
+
+LAYER metal4
+  TYPE			ROUTING ;
+  DIRECTION		VERTICAL ;
+  PITCH			0.200 ;
+  OFFSET		0.100 ;
+  PROPERTY LEF57_MINSTEP "MINSTEP 0.1 MAXEDGES 1 ;" ;
+  WIDTH			0.1 ;
+  MAXWIDTH		10.0 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH     0.00    0.40    0.46    1.40    4.10
+  WIDTH    0.00         0.10    0.10    0.10    0.10    0.10
+  WIDTH    0.30         0.10    0.12    0.12    0.12    0.12
+  WIDTH    0.46         0.10    0.12    0.15    0.15    0.15
+  WIDTH    1.40         0.10    0.12    0.15    0.52    0.52
+  WIDTH    4.10         0.10    0.12    0.15    0.52    1.40 ;
+  PROPERTY LEF57_SPACING "SPACING 0.12 ENDOFLINE 0.14 WITHIN 0.045 PARALLELEDGE 0.12 WITHIN 0.12  ;" ;
+  AREA			0.051 ;
+  MINENCLOSEDAREA	0.30 ;    
+  MINIMUMCUT 2 WIDTH 0.400 ;
+  MINIMUMCUT 4 WIDTH 0.720 ;
+  MINIMUMCUT 2 WIDTH 0.400 LENGTH 0.400 WITHIN 0.820 ;
+  MINIMUMCUT 2 WIDTH 2.100 LENGTH 2.100 WITHIN 2.100 ;
+  MINIMUMCUT 2 WIDTH 3.200 LENGTH 8.000 WITHIN 5.200 ;
+
+END metal4
+
+LAYER via4
+  TYPE CUT ;
+  SPACING               0.10 ;
+  SPACING               0.13 ADJACENTCUTS 3 WITHIN 0.14 ;
+  PROPERTY LEF57_SPACING "SPACING 0.13 PARALLELOVERLAP ;" ;
+END via4
+
+LAYER metal5
+  TYPE			ROUTING ;
+  DIRECTION		HORIZONTAL ;
+  PITCH			0.200 ;
+  OFFSET		0.000 ;
+  PROPERTY LEF57_MINSTEP "MINSTEP 0.1 MAXEDGES 1 ;" ;
+  WIDTH			0.1 ;
+  MAXWIDTH		10.0 ;
+  SPACINGTABLE
+  PARALLELRUNLENGTH     0.00    0.40    0.46    1.40    4.10
+  WIDTH    0.00         0.10    0.10    0.10    0.10    0.10
+  WIDTH    0.30         0.10    0.12    0.12    0.12    0.12
+  WIDTH    0.46         0.10    0.12    0.15    0.15    0.15
+  WIDTH    1.40         0.10    0.12    0.15    0.52    0.52
+  WIDTH    4.10         0.10    0.12    0.15    0.52    1.40 ;
+
+  PROPERTY LEF57_SPACING "SPACING 0.12 ENDOFLINE 0.14 WITHIN 0.045 PARALLELEDGE 0.12 WITHIN 0.12  ;" ;
+  AREA			0.051 ;
+  MINENCLOSEDAREA	0.30 ;
+   
+  MINIMUMCUT 2 WIDTH 0.400 ;
+  MINIMUMCUT 4 WIDTH 0.720 ;
+  MINIMUMCUT 2 WIDTH 0.400 LENGTH 0.400 WITHIN 0.820 ;
+  MINIMUMCUT 2 WIDTH 2.100 LENGTH 2.100 WITHIN 2.100 ;
+  MINIMUMCUT 2 WIDTH 3.200 LENGTH 8.000 WITHIN 5.200 ; 
+
+END metal5
+
+VIA VIA12_HV DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA12_HV
+
+VIA VIA12_HH DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA12_HH
+                 
+VIA VIA12_VV DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA12_VV
+
+
+
+VIA VIA12_FAT_HV DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+END VIA12_FAT_HV
+             
+VIA VIA12_FAT_HH DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+END VIA12_FAT_HH
+
+VIA VIA12_FAT_VV DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+END VIA12_FAT_VV
+
+VIA VIA12_FAT DEFAULT
+
+  LAYER metal1 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal2 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+END VIA12_FAT
+                 
+
+VIA VIA12_2cut_E DEFAULT
+ 
+  LAYER metal1 ;
+    RECT -0.090 -0.050  0.290  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT  0.150 -0.050  0.250  0.050 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.250  0.090 ;
+END VIA12_2cut_E
+
+VIA VIA12_2cut_W DEFAULT
+  
+  LAYER metal1 ;
+    RECT -0.290 -0.050  0.090  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.250 -0.050 -0.150  0.050 ;
+  LAYER metal2 ;
+    RECT -0.250 -0.090  0.050  0.090 ;
+END VIA12_2cut_W
+
+VIA VIA12_2cut_N DEFAULT
+  
+  LAYER metal1 ;
+    RECT -0.090 -0.050  0.090  0.250 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050  0.150  0.050  0.250 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.290 ;
+END VIA12_2cut_N
+
+VIA VIA12_2cut_S DEFAULT
+  
+  LAYER metal1 ;
+    RECT -0.090 -0.250  0.090  0.050 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050 -0.250  0.050 -0.150 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.290  0.050  0.090 ;
+END VIA12_2cut_S
+
+VIA V12_2x1_HH_E DEFAULT
+  LAYER metal1 ;
+    RECT -0.09 -0.05 0.29 0.05 ;
+  LAYER via1 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+    RECT 0.15 -0.05 0.25 0.05 ;
+  LAYER metal2 ;
+    RECT -0.09 -0.05 0.29 0.05 ;
+ 
+END V12_2x1_HH_E
+
+VIA V12_2x1_HH_W DEFAULT
+  LAYER metal1 ;
+    RECT -0.29 -0.05 0.09 0.05 ;
+  LAYER via1 ;
+    RECT -0.25 -0.05 -0.15 0.05 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.29 -0.05 0.09 0.05 ;
+  
+END V12_2x1_HH_W
+
+VIA V12_1x2_VV_N DEFAULT
+  LAYER metal1 ;
+    RECT -0.05 -0.09 0.05 0.29 ;
+  LAYER via1 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+    RECT -0.05 0.15 0.05 0.25 ;
+  LAYER metal2 ;
+    RECT -0.05 -0.09 0.05 0.29 ;
+  
+END V12_1x2_VV_N
+
+VIA V12_1x2_VV_S DEFAULT
+  LAYER metal1 ;
+    RECT -0.05 -0.29 0.05 0.09 ;
+  LAYER via1 ;
+    RECT -0.05 -0.25 0.05 -0.15 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.05 -0.29 0.05 0.09 ;
+  
+END V12_1x2_VV_S
+
+VIA VIA12_2cut_HN 
+  
+  LAYER metal1 ;
+    RECT -0.050 -0.090  0.050  0.330 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050  0.190  0.050  0.290 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.330 ;
+END VIA12_2cut_HN
+
+VIA VIA12_2cut_HS 
+  
+  LAYER metal1 ;
+    RECT -0.050 -0.330  0.050  0.090 ;
+  LAYER via1 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050 -0.290  0.050 -0.190 ;
+  LAYER metal2 ;
+    RECT -0.050 -0.330  0.050  0.090 ;
+END VIA12_2cut_HS
+
+VIA V12_2x2_HV DEFAULT
+  LAYER metal1 ;
+    RECT -0.205 -0.165 0.205 0.165 ;
+  LAYER via1 ;
+    RECT -0.165 -0.165 -0.065 -0.065 ;
+    RECT 0.065 -0.165 0.165 -0.065 ;
+    RECT -0.165 0.065 -0.065 0.165 ;
+    RECT 0.065 0.065 0.165 0.165 ;
+  LAYER metal2 ;
+    RECT -0.165 -0.205 0.165 0.205 ;
+  
+END V12_2x2_HV
+
+VIA VIA12_4cut 
+ 
+  LAYER metal1 ;
+    RECT -0.190 -0.150  0.190  0.150 ;
+  LAYER via1 ;
+    RECT -0.150 -0.150 -0.050 -0.050 ;
+    RECT -0.150  0.050 -0.050  0.150 ;
+    RECT  0.050  0.050  0.150  0.150 ;
+    RECT  0.050 -0.150  0.150 -0.050 ;
+  LAYER metal2 ;
+    RECT -0.150 -0.190  0.150  0.190 ;
+END VIA12_4cut
+
+VIA VIA23_VH DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA23_VH
+
+VIA VIA23_VV DEFAULT
+ 
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA23_VV
+                 
+VIA VIA23_HH DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA23_HH
+
+
+
+VIA VIA23_FAT_VH DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+END VIA23_FAT_VH
+             
+VIA VIA23_FAT_VV DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+END VIA23_FAT_VV
+
+VIA VIA23_FAT_HH DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+END VIA23_FAT_HH
+
+VIA VIA23_FAT DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+END VIA23_FAT
+                 
+
+VIA VIA23_stack_N DEFAULT
+ 
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.430 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA23_stack_N
+
+VIA VIA23_stack_S DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.430  0.050  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA23_stack_S
+
+
+VIA VIA23_2cut_E DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.250  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT  0.150 -0.050  0.250  0.050 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.290  0.050 ;
+END VIA23_2cut_E
+
+VIA VIA23_2cut_W DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.250 -0.090  0.050  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.250 -0.050 -0.150  0.050 ;
+  LAYER metal3 ;
+    RECT -0.290 -0.050  0.090  0.050 ;
+END VIA23_2cut_W
+
+VIA VIA23_2cut_N DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.090  0.050  0.290 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050  0.150  0.050  0.250 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.250 ;
+END VIA23_2cut_N
+
+VIA VIA23_2cut_S DEFAULT
+  
+  LAYER metal2 ;
+    RECT -0.050 -0.290  0.050  0.090 ;
+  LAYER via2 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050 -0.250  0.050 -0.150 ;
+  LAYER metal3 ;
+    RECT -0.090 -0.250  0.090  0.050 ;
+END VIA23_2cut_S
+
+
+VIA V23_2x2_VH DEFAULT
+  LAYER metal2 ;
+    RECT -0.165 -0.205 0.165 0.205 ;
+  LAYER via2 ;
+    RECT -0.165 -0.165 -0.065 -0.065 ;
+    RECT 0.065 -0.165 0.165 -0.065 ;
+    RECT -0.165 0.065 -0.065 0.165 ;
+    RECT 0.065 0.065 0.165 0.165 ;
+  LAYER metal3 ;
+    RECT -0.205 -0.165 0.205 0.165 ;
+  
+END V23_2x2_VH
+
+VIA VIA23_4cut 
+  
+  LAYER metal2 ;
+    RECT -0.150 -0.190  0.150  0.190 ;
+  LAYER via2 ;
+    RECT -0.150 -0.150 -0.050 -0.050 ;
+    RECT -0.150  0.050 -0.050  0.150 ;
+    RECT  0.050  0.050  0.150  0.150 ;
+    RECT  0.050 -0.150  0.150 -0.050 ;
+  LAYER metal3 ;
+    RECT -0.190 -0.150  0.190  0.150 ;
+END VIA23_4cut
+
+
+VIA VIA34_HV DEFAULT
+  
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA34_HV
+
+VIA VIA34_HH DEFAULT
+  
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA34_HH
+                 
+VIA VIA34_VV DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA34_VV
+
+
+
+VIA VIA34_FAT_HV DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+END VIA34_FAT_HV
+             
+VIA VIA34_FAT_HH DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+END VIA34_FAT_HH
+
+VIA VIA34_FAT_VV DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+END VIA34_FAT_VV
+
+VIA VIA34_FAT DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+END VIA34_FAT
+                 
+                                        
+VIA VIA34_stack_E DEFAULT
+  
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.430  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA34_stack_E
+
+VIA VIA34_stack_W DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.430 -0.050  0.090  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA34_stack_W
+
+
+VIA VIA34_2cut_E DEFAULT
+  
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.290  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT  0.150 -0.050  0.250  0.050 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.250  0.090 ;
+END VIA34_2cut_E
+
+VIA VIA34_2cut_W DEFAULT
+  
+  LAYER metal3 ;
+    RECT -0.290 -0.050  0.090  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.250 -0.050 -0.150  0.050 ;
+  LAYER metal4 ;
+    RECT -0.250 -0.090  0.050  0.090 ;
+END VIA34_2cut_W
+
+VIA VIA34_2cut_N DEFAULT
+  
+  LAYER metal3 ;
+    RECT -0.090 -0.050  0.090  0.250 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050  0.150  0.050  0.250 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.290 ;
+END VIA34_2cut_N
+
+VIA VIA34_2cut_S DEFAULT
+ 
+  LAYER metal3 ;
+    RECT -0.090 -0.250  0.090  0.050 ;
+  LAYER via3 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050 -0.250  0.050 -0.150 ;
+  LAYER metal4 ;
+    RECT -0.050 -0.290  0.050  0.090 ;
+END VIA34_2cut_S
+
+
+VIA V34_2x2_HV DEFAULT
+  LAYER metal3 ;
+    RECT -0.205 -0.165 0.205 0.165 ;
+  LAYER via3 ;
+    RECT -0.165 -0.165 -0.065 -0.065 ;
+    RECT 0.065 -0.165 0.165 -0.065 ;
+    RECT -0.165 0.065 -0.065 0.165 ;
+    RECT 0.065 0.065 0.165 0.165 ;
+  LAYER metal4 ;
+    RECT -0.165 -0.205 0.165 0.205 ;
+ 
+END V34_2x2_HV
+
+VIA VIA34_4cut 
+
+  LAYER metal3 ;
+    RECT -0.190 -0.150  0.190  0.150 ;
+  LAYER via3 ;
+    RECT -0.150 -0.150 -0.050 -0.050 ;
+    RECT -0.150  0.050 -0.050  0.150 ;
+    RECT  0.050  0.050  0.150  0.150 ;
+    RECT  0.050 -0.150  0.150 -0.050 ;
+  LAYER metal4 ;
+    RECT -0.150 -0.190  0.150  0.190 ;
+END VIA34_4cut
+
+
+VIA VIA45_VH DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA45_VH
+
+VIA VIA45_VV DEFAULT
+  
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.050 -0.090  0.050  0.090 ;
+END VIA45_VV
+                 
+VIA VIA45_HH DEFAULT
+  
+  LAYER metal4 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA45_HH
+
+
+
+VIA VIA45_FAT_VH DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+END VIA45_FAT_VH
+             
+VIA VIA45_FAT_VV DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.050 -0.12  0.050  0.12 ;
+END VIA45_FAT_VV
+
+VIA VIA45_FAT_HH DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.12 -0.050  0.12  0.050 ;
+END VIA45_FAT_HH
+
+VIA VIA45_FAT DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.090  0.090  0.090 ;
+END VIA45_FAT
+                 
+
+VIA VIA45_1stack_N DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.430 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA45_1stack_N
+
+VIA VIA45_1stack_S DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.430  0.050  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.050  0.090  0.050 ;
+END VIA45_1stack_S
+
+
+VIA VIA45_2cut_E DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.250  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT  0.150 -0.050  0.250  0.050 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.050  0.290  0.050 ;
+END VIA45_2cut_E
+
+VIA VIA45_2cut_W DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.250 -0.090  0.050  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.250 -0.050 -0.150  0.050 ;
+  LAYER metal5 ;
+    RECT -0.290 -0.050  0.090  0.050 ;
+END VIA45_2cut_W
+
+VIA VIA45_2cut_N DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.090  0.050  0.290 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050  0.150  0.050  0.250 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.050  0.090  0.250 ;
+END VIA45_2cut_N
+
+VIA VIA45_2cut_S DEFAULT
+ 
+  LAYER metal4 ;
+    RECT -0.050 -0.290  0.050  0.090 ;
+  LAYER via4 ;
+    RECT -0.050 -0.050  0.050  0.050 ;
+    RECT -0.050 -0.250  0.050 -0.150 ;
+  LAYER metal5 ;
+    RECT -0.090 -0.250  0.090  0.050 ;
+END VIA45_2cut_S
+
+
+VIA V45_2x2_VH DEFAULT
+  LAYER metal4 ;
+    RECT -0.165 -0.205 0.165 0.205 ;
+  LAYER via4 ;
+    RECT -0.165 -0.165 -0.065 -0.065 ;
+    RECT 0.065 -0.165 0.165 -0.065 ;
+    RECT -0.165 0.065 -0.065 0.165 ;
+    RECT 0.065 0.065 0.165 0.165 ;
+  LAYER metal5 ;
+    RECT -0.205 -0.165 0.205 0.165 ;
+ 
+END V45_2x2_VH
+
+VIA VIA45_4cut 
+
+  LAYER metal4 ;
+    RECT -0.150 -0.190  0.150  0.190 ;
+  LAYER via4 ;
+    RECT -0.150 -0.150 -0.050 -0.050 ;
+    RECT -0.150  0.050 -0.050  0.150 ;
+    RECT  0.050  0.050  0.150  0.150 ;
+    RECT  0.050 -0.150  0.150 -0.050 ;
+  LAYER metal5 ;
+    RECT -0.190 -0.150  0.190  0.150 ;
+END VIA45_4cut
+
+
+VIARULE VIAGEN12 GENERATE
+   LAYER metal1 ;
+       ENCLOSURE 0.04 0 ; 
+       WIDTH 0.09 TO 12.00 ;
+   LAYER metal2 ;
+       ENCLOSURE 0.04 0 ;
+       WIDTH 0.10 TO 12.00 ;
+   LAYER via1 ;
+       RECT -0.05 -0.05 0.05 0.05 ;
+       SPACING 0.20 BY 0.20 ;    
+END VIAGEN12        
+
+VIARULE VIAGEN23 GENERATE
+   LAYER metal2 ;
+       ENCLOSURE 0.04 0 ;  
+       WIDTH 0.10 TO 12.00 ;
+   LAYER metal3 ;
+       ENCLOSURE 0.04 0 ; 
+       WIDTH 0.10 TO 12.00 ;
+   LAYER via2 ;
+       RECT -0.05 -0.05 0.05 0.05 ; 
+       SPACING 0.20 BY 0.20 ;    
+END VIAGEN23
+
+VIARULE VIAGEN34 GENERATE
+   LAYER metal3 ;
+       ENCLOSURE 0.04 0 ; 
+       WIDTH 0.10 TO 12.00 ;
+   LAYER metal4 ;
+       ENCLOSURE 0.04 0 ; 
+       WIDTH 0.10 TO 12.00 ;
+   LAYER via3 ;
+       RECT -0.05 -0.05 0.05 0.05 ; 
+       SPACING 0.20 BY 0.20 ;    
+END VIAGEN34
+
+VIARULE VIAGEN45 GENERATE
+   LAYER metal4 ;
+       ENCLOSURE 0.04 0 ; 
+       WIDTH 0.10 TO 12.00 ;
+   LAYER metal5 ;
+       ENCLOSURE 0.04 0 ; 
+       WIDTH 0.10 TO 12.00 ;
+   LAYER via4 ;
+       RECT -0.05 -0.05 0.05 0.05 ; 
+       SPACING 0.20 BY 0.20 ;    
+END VIAGEN45
+
+MAXVIASTACK 4 RANGE metal1 metal5 ;
+
+END LIBRARY

@@ -1,0 +1,45 @@
+VERSION 5.8 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+COMPONENTS 8 ;
+    - r1 snl_ffqx1 ;
+    - r2 snl_ffqx1 ;
+    - r3 snl_ffqx1 ;
+    - u1 snl_bufx1 ;
+    - u2 snl_and02x1 ;
+    - buffer1 snl_bufx2 + PLACED ( 0 0 ) N ;
+    - buffer2 snl_bufx2 + PLACED ( 333 1000 ) N ;
+    - buffer3 snl_bufx2 + PLACED ( 1000 335 ) N ;
+END COMPONENTS
+PINS 6 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 333 1000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 -334 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 999 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL + FIXED ( 332 1000 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 1000 335 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
+END PINS
+SPECIALNETS 2 ;
+    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( * VDD ) + USE POWER ;
+END SPECIALNETS
+NETS 13 ;
+    - in1 ( PIN in1 ) ( buffer1 A ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( buffer2 A ) + USE SIGNAL ;
+    - clk1 ( PIN clk1 ) ( r1 CP ) + USE SIGNAL ;
+    - clk2 ( PIN clk2 ) ( r2 CP ) + USE SIGNAL ;
+    - clk3 ( PIN clk3 ) ( r3 CP ) + USE SIGNAL ;
+    - out ( PIN out ) ( buffer3 Z ) + USE SIGNAL ;
+    - r1q ( r1 Q ) ( u2 A ) + USE SIGNAL ;
+    - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
+    - u1z ( u1 Z ) ( u2 B ) + USE SIGNAL ;
+    - u2z ( u2 Z ) ( r3 D ) + USE SIGNAL ;
+    - net1 ( buffer1 Z ) ( r1 D ) + USE SIGNAL ;
+    - net2 ( buffer2 Z ) ( r2 D ) + USE SIGNAL ;
+    - net3 ( buffer3 A ) ( r3 Q ) + USE SIGNAL ;
+END NETS
+END DESIGN

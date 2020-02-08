@@ -18,8 +18,6 @@ namespace ord {
 
 // Call this inside of Tcl_Main.
 void
-initOpenRoad(Tcl_Interp *interp,
-	     const char *prog_arg);
-
+initOpenRoad(Tcl_Interp *interp);
 } // namespace
 #endif

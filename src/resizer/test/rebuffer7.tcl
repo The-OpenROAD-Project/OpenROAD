@@ -9,8 +9,8 @@ set buffer_cell [get_lib_cell liberty1/snl_bufx2]
 # use 100x wire cap to tickle buffer insertion
 set_wire_rc -resistance 1.7e+5 -capacitance 1.3e-8
 
-sta::rebuffer_net [get_pin_net r1/Q] $buffer_cell
+sta::rebuffer_net [get_net out] $buffer_cell
 
 set def_file [make_result_file rebuffer7.def]
-write_def -sort $def_file
+write_def $def_file
 diff_files $def_file rebuffer7.defok

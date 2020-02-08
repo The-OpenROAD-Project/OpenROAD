@@ -98,7 +98,7 @@ proc get_dir {layer_name} {
     return $dir
   }
   
-  set idx [lsearch $metal_layers $layer_name]
+  set idx [lsearch -exact $metal_layers $layer_name]
   if {[lindex $metal_layers_dir $idx] == "HORIZONTAL"} {
     return "hor"
   } else {
@@ -120,7 +120,7 @@ proc get_rails_layers {} {
 }
 
 proc is_rails_layer {layer} {
-  return [expr {[lsearch [get_rails_layers] $layer] > -1}]
+  return [expr {[lsearch -exact [get_rails_layers] $layer] > -1}]
 }
 
 proc init_via_tech {} {
@@ -190,18 +190,18 @@ proc read_spacing {layer_name} {
 
   while {![empty_propline]} {
     set line [read_propline]
-    if {[set idx [lsearch $line CUTCLASS]] > -1} {
+    if {[set idx [lsearch -exact $line CUTCLASS]] > -1} {
       set cutclass [lindex $line [expr $idx + 1]]
       set line [lreplace $line $idx [expr $idx + 1]]
       
-      if {[set idx [lsearch $line LAYER]] > -1} {
+      if {[set idx [lsearch -exact $line LAYER]] > -1} {
         set other_layer [lindex $line [expr $idx + 1]]
         set line [lreplace $line $idx [expr $idx + 1]]
 
-        if {[set idx [lsearch $line CONCAVECORNER]] > -1} {
+        if {[set idx [lsearch -exact $line CONCAVECORNER]] > -1} {
           set line [lreplace $line $idx $idx]
           
-          if {[set idx [lsearch $line SPACING]] > -1} {
+          if {[set idx [lsearch -exact $line SPACING]] > -1} {
             dict set spacing $cutclass $other_layer concave [expr round([lindex $line [expr $idx + 1]] * $def_units)]
             # set line [lreplace $line $idx [expr $idx + 1]]
           }
@@ -239,19 +239,19 @@ proc read_arrayspacing {layer_name} {
   
   while {![empty_propline]} {
     set line [read_propline]
-    if {[set idx [lsearch $line PARALLELOVERLAP]] > -1} {
+    if {[set idx [lsearch -exact $line PARALLELOVERLAP]] > -1} {
       dict set arrayspacing paralleloverlap 1
       set line [lreplace $line $idx $idx]
     }
-    if {[set idx [lsearch $line LONGARRAY]] > -1} {
+    if {[set idx [lsearch -exact $line LONGARRAY]] > -1} {
       dict set arrayspacing longarray 1
       set line [lreplace $line $idx $idx]
     }
-    if {[set idx [lsearch $line CUTSPACING]] > -1} {
+    if {[set idx [lsearch -exact $line CUTSPACING]] > -1} {
       dict set arrayspacing cutspacing [expr round([lindex $line [expr $idx + 1]] * $def_units)]
       set line [lreplace $line $idx [expr $idx + 1]]
     }
-    while {[set idx [lsearch $line ARRAYCUTS]] > -1} {
+    while {[set idx [lsearch -exact $line ARRAYCUTS]] > -1} {
       dict set arrayspacing arraycuts [lindex $line [expr $idx + 1]] spacing [expr round([lindex $line [expr $idx + 3]] * $def_units)]
       set line [lreplace $line $idx [expr $idx + 3]]
     }
@@ -295,19 +295,23 @@ proc read_enclosures {layer_name} {
   while {![empty_propline]} {
     set line [read_propline]
     set flags {}
-    if {[set idx [lsearch $line ABOVE]] > -1} {
+    if {[set idx [lsearch -exact $line EOL]] > -1} {
+      # Don't need to handle this rule type
+      continue
+    }
+    if {[set idx [lsearch -exact $line ABOVE]] > -1} {
       dict set flags above 1
       set line [lreplace $line $idx $idx]
     }
-    if {[set idx [lsearch $line BELOW]] > -1} {
+    if {[set idx [lsearch -exact $line BELOW]] > -1} {
       dict set flags below 1
       set line [lreplace $line $idx $idx]
     }
-    if {[set idx [lsearch $line END]] > -1} {
+    if {[set idx [lsearch -exact $line END]] > -1} {
       dict set flags end 1
       set line [lreplace $line $idx $idx]
     }
-    if {[set idx [lsearch $line SIDE]] > -1} {
+    if {[set idx [lsearch -exact $line SIDE]] > -1} {
       dict set flags side 1
       set line [lreplace $line $idx $idx]
     }
@@ -372,8 +376,9 @@ proc get_via_enclosure {via_info width} {
     }
 
     set enclosure [dict get $enclosures $size]
+    # puts "get_via_enclosure: enclosure: $enclosure"
     if {[llength $enclosure] > 1} {
-      set selected_enclosure [lindex $enclosure 0]
+      set selected_enclosure [list {*}[lindex $enclosure 0] {*}[lindex $enclosure 0]]
       set selected_min [expr min([lindex $selected_enclosure 0], [lindex $selected_enclosure 1])]
       foreach enc [lrange $enclosure 1 end] {
         set cur_min [expr min([lindex $enc 0], [lindex $enc 1])]
@@ -386,7 +391,7 @@ proc get_via_enclosure {via_info width} {
       set selected_enclosure [list {*}[lindex $enclosure 0] {*}[lindex $enclosure 0]]
     }
   }
-  
+  # puts "get_via_enclosure: $selected_enclosure"
   return $selected_enclosure
 
 }
@@ -423,11 +428,11 @@ proc read_widthtable {layer_name} {
   while {![empty_propline]} {
     set line [read_propline]
     set flags {}
-    if {[set idx [lsearch $line ORTHOGONAL]] > -1} {
+    if {[set idx [lsearch -exact $line ORTHOGONAL]] > -1} {
       dict set flags orthogonal 1
       set line [lreplace $line $idx $idx]
     }
-    if {[set idx [lsearch $line WRONGDIRECTION]] > -1} {
+    if {[set idx [lsearch -exact $line WRONGDIRECTION]] > -1} {
       dict set flags wrongdirection 1
       set line [lreplace $line $idx $idx]
     }
@@ -460,7 +465,7 @@ proc get_adjusted_width {layer width} {
   set widthtable [get_widthtable $layer]
 
   if {[llength $widthtable] == 0} {return $width}
-  if {[lsearch $widthtable $width] > 0} {return $width}
+  if {[lsearch -exact $widthtable $width] > 0} {return $width}
   if {$width > [lindex $widthtable end]} {return $width}
 
   foreach value $widthtable {
@@ -763,6 +768,11 @@ proc get_via_option {lower width height constraints} {
 proc get_viarule_name {lower width height} {
   set rules [select_via_info $lower]
   set first_key [lindex [dict keys $rules] 0]
+  #if {![dict exists $rules $first_key cut layer]} {
+  #  puts "get_viarule_name: $lower $width $height"
+  #  puts "get_viarule_name: $rules"
+  #  puts "get_viarule_name: $first_key"
+  #}
   set cut_layer [dict get $rules $first_key cut layer]
 
   return ${cut_layer}_${width}x${height}
@@ -830,8 +840,8 @@ proc generate_vias {layer1 layer2 intersections constraints} {
   set layer2_name $layer2
   regexp {(.*)_PIN_(hor|ver)} $layer1 - layer1_name layer1_direction
   
-  set i1 [lsearch $metal_layers $layer1_name]
-  set i2 [lsearch $metal_layers $layer2_name]
+  set i1 [lsearch -exact $metal_layers $layer1_name]
+  set i2 [lsearch -exact $metal_layers $layer2_name]
   if {$i1 == -1} {error "Cant find layer $layer1"}
   if {$i2 == -1} {error "Cant find layer $layer2"}
 
@@ -851,6 +861,7 @@ proc generate_vias {layer1 layer2 intersections constraints} {
     
     set connection_layers [lrange $metal_layers $i1 [expr $i2 - 1]]
     # puts "  # Connection layers: [llength $connection_layers]"
+    # puts "  Connection layers: $connection_layers"
     foreach lay $connection_layers {
       set via_name [get_via $lay $width $height $constraints]
       foreach via [instantiate_via $via_name $x $y] {
@@ -871,7 +882,7 @@ proc get_layers_from_to {from to} {
   variable metal_layers
 
   set layers {}
-  for {set i [lsearch $metal_layers $from]} {$i <= [lsearch $metal_layers $to]} {incr i} {
+  for {set i [lsearch -exact $metal_layers $from]} {$i <= [lsearch -exact $metal_layers $to]} {incr i} {
     lappend layers [lindex $metal_layers $i]
   }
   return $layers
@@ -892,7 +903,7 @@ proc generate_via_stacks {l1 l2 tag grid_data constraints} {
   set intersections ""
   #check if layer pair is orthogonal, case 1
   set layer1 $l1
-  if {[lsearch $metal_layers $layer1] != -1} {
+  if {[lsearch -exact $metal_layers $layer1] != -1} {
     set layer1_direction [get_dir $layer1]
   } elseif {[regexp {(.*)_PIN_(hor|ver)} $l1 - layer1 layer1_direction]} {
     #
@@ -1366,7 +1377,7 @@ proc import_def_components {macros} {
 
   foreach inst [$block getInsts] {
     set macro_name [[$inst getMaster] getName]
-    if {[lsearch $macros $macro_name] != -1} {
+    if {[lsearch -exact $macros $macro_name] != -1} {
       set data {}
       dict set data name [$inst getName]
       dict set data macro $macro_name
@@ -1950,7 +1961,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
-    if {[lsearch $metal_layers $layer] < 0} {
+    if {[lsearch -exact $metal_layers $layer] < 0} {
       error "ERROR: Layer specified for std. cell rails '$layer' not in list of layers."
     }
   }
@@ -2053,7 +2064,7 @@ proc select_instance_specification {instance} {
       # If there are orientation based specifcations for this macro, use the appropriate one if available
       dict for {name spec} $macro_specifications {
         if {!([dict exists $spec macro] && [dict get $spec orient] && [dict get $spec macro] == $instance_macro)} {continue}
-        if {[lsearch [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
+        if {[lsearch -exact [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
           return $spec
         }
       }
@@ -2061,7 +2072,7 @@ proc select_instance_specification {instance} {
       # There should only be one macro specific spec that doesnt have an orientation qualifier
       dict for {name spec} $macro_specifications {
         if {!([dict exists $spec macro] && [dict get $spec macro] == $instance_macro)} {continue}
-        if {[lsearch [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
+        if {[lsearch -exact [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
           return $spec
         }
       }
@@ -2069,7 +2080,7 @@ proc select_instance_specification {instance} {
       # If there are orientation based specifcations, use the appropriate one if available
       dict for {name spec} $macro_specifications {
         if {!(![dict exists $spec macro] && ![dict exists $spec instance] && [dict exists $spec orient])} {continue}
-        if {[lsearch [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
+        if {[lsearch -exact [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
           return $spec
         }
       }
@@ -2109,6 +2120,9 @@ proc init_metal_layers {} {
   
   foreach layer [$tech getLayers] {
     if {[$layer getType] == "ROUTING"} {
+      set_prop_lines $layer LEF58_TYPE
+      # Layers that have LEF58_TYPE are not normal ROUTING layers, so should not be considered
+      if {![empty_propline]} {continue}
       lappend metal_layers [$layer getName]
       lappend metal_layers_dir [$layer getDirection]
     }

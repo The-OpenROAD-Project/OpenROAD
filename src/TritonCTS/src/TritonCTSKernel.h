@@ -43,11 +43,11 @@
 #ifndef TRITONCTSKERNEL_H
 #define TRITONCTSKERNEL_H
 
-#include "DBWrapper.h"
+#include "DbWrapper.h"
 #include "CtsOptions.h"
-#include "Characterization.h"
-#include "ClockTreeBuilder.h"
-#include "STAEngine.h"
+#include "TechChar.h"
+#include "TreeBuilder.h"
+#include "StaEngine.h"
 
 #include <functional>
 
@@ -56,26 +56,30 @@ namespace TritonCTS {
 class TritonCTSKernel {
 public:
         TritonCTSKernel() : _dbWrapper(_options, *this),
-                            _characterization(_options),
+                            _techChar(_options),
                             _staEngine(_options) {}
 
         void runTritonCts();
         CtsOptions& getParms() { return _options; }
-        void addBuilder(ClockTreeBuilder* builder) { _builders.push_back(builder); }
-        void forEachBuilder(const std::function<void(const ClockTreeBuilder*)> func) const;
+        void addBuilder(TreeBuilder* builder) { _builders.push_back(builder); }
+        void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
 
 private:
+        void printHeader() const;
         void importCharacterization();
         void checkCharacterization();
         void findClockRoots();
         void populateTritonCts();
         void buildClockTrees();
+        void runPostCtsOpt();
+        void writeDataToDb();
+        void printFooter() const;
         
         CtsOptions _options;
-        DBWrapper        _dbWrapper;
-        Characterization _characterization;
-        STAEngine        _staEngine;
-        std::vector<ClockTreeBuilder*> _builders;
+        DbWrapper  _dbWrapper;
+        TechChar   _techChar;
+        StaEngine  _staEngine;
+        std::vector<TreeBuilder*> _builders;
 
 //-----------------------------------------------------------------------------
 

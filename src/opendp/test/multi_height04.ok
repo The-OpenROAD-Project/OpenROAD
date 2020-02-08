@@ -1,0 +1,46 @@
+Notice 0: Reading LEF file:  iccad17-bench/des_perf_a_md1/tech.lef
+Notice 0:     Created 9 technology layers
+Notice 0:     Created 64 technology vias
+Notice 0: Finished LEF file:  iccad17-bench/des_perf_a_md1/tech.lef
+Notice 0: Reading LEF file:  iccad17-bench/des_perf_a_md1/cells_modified.lef
+Notice 0:     Created 21 library cells
+Notice 0: Finished LEF file:  iccad17-bench/des_perf_a_md1/cells_modified.lef
+Notice 0: 
+Reading DEF file: multi_height04.def
+Notice 0: Design: ten_cells_multi
+Notice 0:     Created 2 pins.
+Notice 0:     Created 10 components and 46 component-terminals.
+Notice 0:     Created 2 special nets and 0 connections.
+Notice 0:     Created 11 nets and 25 connections.
+Notice 0: Finished DEF file: multi_height04.def
+-------------------- Design Stats ------------------------------
+core area                  : (28000, 28000) (48000, 36000)
+total cells                : 10
+multi cells                : 1
+fixed cells                : 0
+nets                       : 13
+design area                : 1.6e+08
+total fixed area           : 0
+total movable area         : 9.92e+07
+design utilization         : 62
+rows                       : 2
+row height                 : 4000
+max multi_cell height      : 2
+----------------------------------------------------------------
+Error: cannot insert center cell_281_ target (7220 0)
+Check Legality
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==> FAIL (1)
+overlap_check ==> FAIL 
+-------------------- Placement Analysis ------------------------
+total displacement         : 22600
+average displacement       : 2260
+max displacement           : 7220
+original HPWL              : 79.8
+legalized HPWL             : 86
+delta HPWL                 : 8%
+----------------------------------------------------------------
+No differences found.

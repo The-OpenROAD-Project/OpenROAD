@@ -67,15 +67,15 @@ void TritonCTSKernel::run_triton_cts() {
 }
 
 void TritonCTSKernel::report_characterization() {
-        _characterization.report();
+        _techChar.report();
 }
 
 void TritonCTSKernel::report_wire_segments(unsigned length, unsigned load, unsigned outputSlew) {
-        _characterization.reportSegments(length, load, outputSlew);
+        _techChar.reportSegments(length, load, outputSlew);
 }
 
 void TritonCTSKernel::export_characterization(const char* file) {
-        _characterization.write(file);
+        _techChar.write(file);
 }
 
 void TritonCTSKernel::set_root_buffer(const char* buffer) {

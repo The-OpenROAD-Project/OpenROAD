@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 proc show_openroad_splash {} {
-  puts "OpenROAD [openroad_version] [string range [openroad_git_sha1] 0 9]
+  puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
 This is free software, and you are free to change and redistribute it
@@ -47,9 +47,10 @@ proc read_lef { args } {
   ord::read_lef_cmd $filename $lib_name $make_tech $make_lib
 }
 
-sta::define_cmd_args "read_def" {filename}
+sta::define_cmd_args "read_def" {[-order_wires] filename}
 
 proc read_def { args } {
+  sta::parse_key_args "read_def" args keys {} flags {-order_wires}
   sta::check_argc_eq1 "read_def" $args
   set filename $args
   if { ![file exists $filename] } {
@@ -61,15 +62,30 @@ proc read_def { args } {
   if { ![ord::db_has_tech] } {
     sta::sta_error "no technology has been read."
   }
-  ord::read_def_cmd $filename
+  set order_wires [info exists flags(-order_wires)]
+  ord::read_def_cmd $filename $order_wires
 }
 
-sta::define_cmd_args "write_def" {filename}
+sta::define_cmd_args "write_def" {[-version version] filename}
 
 proc write_def { args } {
+  sta::parse_key_args "write_def" args keys {-version} flags {}
+
+  set version "5.8"
+  if { [info exists keys(-version)] } {
+    set version $keys(-version)
+    if { !($version == "5.8" \
+	     || $version == "5.6" \
+	     || $version == "5.5" \
+	     || $version == "5.4" \
+	     || $version == "5.3") } {
+      sta::sta_error "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
+    }
+  }
+
   sta::check_argc_eq1 "write_def" $args
   set filename $args
-  ord::write_def_cmd $filename
+  ord::write_def_cmd $filename $version
 }
 
 sta::define_cmd_args "read_db" {filename}

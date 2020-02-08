@@ -32,7 +32,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT
 
 #include <tcl.h>
-#include "InitFlute.hh"
 #include "OpenSTA/app/StaMain.hh"
 #include "Psn/Psn.hpp"
 #include "Readers.hpp"
@@ -40,17 +39,15 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "doctest.h"
+#include "flute3/flute.h"
+
 
 namespace sta
 {
 extern const char* openroad_tcl_inits[];
 }
 using sta::evalTclInit;
-// Swig uses C linkage for init functions.
-// extern "C"
-// {
-// extern int Openroad_Init(Tcl_Interp* interp);
-// }
+
 
 int
 main(int argc, char** argv)
@@ -66,9 +63,7 @@ main(int argc, char** argv)
 
     sta_state->init(interp, db);
     psn::Psn::initialize(sta_state);
-
-    ord::initFlute("../../../../etc/"); // Will be removed eventually
-
+    Flute::readLUT();
     if (psn::Psn::instance().setupInterpreter(interp, true, true, true) !=
         TCL_OK)
     {

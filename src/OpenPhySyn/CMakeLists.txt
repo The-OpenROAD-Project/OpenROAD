@@ -180,8 +180,6 @@ set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/Sta.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
     ${PROJECT_SOURCE_DIR}/tests/Readers.cpp
-    ${OPENROAD_HOME}/src/InitFlute.cc
-    ${OPENROAD_TCL_INIT}
 )
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
 set(PSN_TESTFILES

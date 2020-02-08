@@ -15,7 +15,7 @@ report_checks -fields {input_pin capacitance}
 #      s5  s6  s7
 #  r1  r2  r3  r4  r5
 # 1,1 1,2 1,3 1,4 1,5
-sta::rebuffer_net [get_pin_net r1/Q] $buffer_cell
+sta::rebuffer_net [get_net r1q] $buffer_cell
 report_checks -fields {input_pin capacitance}
 
 set def_file [make_result_file rebuffer1.def]
