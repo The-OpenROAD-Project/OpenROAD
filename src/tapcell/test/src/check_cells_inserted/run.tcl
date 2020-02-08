@@ -1,4 +1,4 @@
- ################################################################################
+################################################################################
 ## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
 ##          (Advisor: Ricardo Reis)
 ##
@@ -34,8 +34,8 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-read_lef "_LEF_"
-read_def "_DEF_"
+read_lef "input.lef"
+read_def "input.def"
 
 tapcell -endcap_cpp "1" -distance "25" -tapcell_master "FILLCELL_X1" -endcap_master "FILLCELL_X1"
 
