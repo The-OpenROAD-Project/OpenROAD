@@ -152,7 +152,6 @@ target_include_directories(openroad_swig
 
   ${TCL_INCLUDE_PATH}
 )
->>>>>>> openroad
 
 ################################################################
 #
