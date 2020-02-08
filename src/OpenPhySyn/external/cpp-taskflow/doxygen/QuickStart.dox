@@ -1,0 +1,104 @@
+namespace tf {
+
+/** @mainpage Quick Start
+
+@section ModernCppParallelTaskProgrammingLibrary Modern C++ Parallel Task Programming Library
+
+Cpp-Taskflow is a fast C++ @em header-only library to help you quickly 
+write parallel programs with complex task dependencies.
+Cpp-Taskflow is by far faster, more expressive, fewer lines of code, and easier for drop-in integration
+than existing parallel task programming libraries such as <a href="http://www.nersc.gov/users/software/programming-models/openmp/openmp-tasking/">OpenMP Tasking</a> and Intel <a href="https://www.threadingbuildingblocks.org/tutorial-intel-tbb-flow-graph">Thread Building Block (TBB) FlowGraph</a>.
+
+@image html images/performance.jpg width=95%
+
+Cpp-Taskflow is committed to support both academic and industry research projects,
+making it reliable and cost-effective for long-term and large-scale developments.
+Our users say:
+
+@li \"<em>Cpp-Taskflow has the cleanest task API I've ever seen.</em>\" <a href="https://github.com/damienhocking">Damien Hocking</a>
+@li \"<em>Cpp-Taskflow has a very simple and elegant tasking interface. The performance also scales very well.</em>\" <a href="https://github.com/totalgee">Glen Fraser</a>
+@li \"<em>Cpp-Taskflow lets me handle parallel processing in a smart way.</em>\" <a href="https://cpp-learning.com/cpp-taskflow/">Hayabusa</a>
+@li \"<em>Best poster award for the open-source parallel programming library.</em>\" <a href="https://github.com/CppCon/CppCon2018">Cpp Conference 2018</a>
+
+See a quick <a href="https://cpp-taskflow.github.io/">presentation</a> and visit our <a href="https://github.com/cpp-taskflow/cpp-taskflow">GitHub</a> to learn more about Cpp-Taskflow.
+
+@section HowToInstallCppTaskflow How to Install Cpp-Taskflow?
+
+Cpp-Taskflow is *header-only* and there is no need for installation.
+Simply download the source and copy the headers under the @c taskflow subdirectory to your project.
+
+@code{.sh}
+~$ git clone https://github.com/cpp-taskflow/cpp-taskflow.git
+~$ cd cpp-taskflow/
+~$ cp -r taskflow myproject/include/
+@endcode
+
+@section ASimpleFirstProgram A Simple First Program
+
+Here is a rather simple program to get you started.
+
+@code{.cpp}
+#include <taskflow/taskflow.hpp>  // Cpp-Taskflow is header-only
+
+int main(){
+  
+  tf::Executor executor;
+  tf::Taskflow taskflow;
+
+  auto [A, B, C, D] = taskflow.emplace(
+    [] () { std::cout << "TaskA\n"; },               //  task dependency graph
+    [] () { std::cout << "TaskB\n"; },               // 
+    [] () { std::cout << "TaskC\n"; },               //          +---+          
+    [] () { std::cout << "TaskD\n"; }                //    +---->| B |-----+   
+  );                                                 //    |     +---+     |
+                                                     //  +---+           +-v-+ 
+  A.precede(B);  // A runs before B                  //  | A |           | D | 
+  A.precede(C);  // A runs before C                  //  +---+           +-^-+ 
+  B.precede(D);  // B runs before D                  //    |     +---+     |    
+  C.precede(D);  // C runs before D                  //    +---->| C |-----+    
+                                                     //          +---+          
+  executor.run(taskflow).wait();
+
+  return 0;
+}
+@endcode
+
+The program creates four tasks A, B, C, and D.
+The dependency constraints force A to run before B and C, and D to run after B and C.
+The maximum concurrency is this example is two, where B and C can run at the same time.
+
+@section CompileAndRunYourFirstProgram Compile and Run Your First Program
+
+Cpp-Taskflow is written in C++17 and is built on top of C++ standardized threading libraries.
+To compile the above program, you need to tell the compiler
+where to find the Cpp-Taskflow header files.
+For example, with gcc you need the `-I` option.
+
+@code{.sh}
+~$ g++ simple.cpp -I myproject/include/ -std=c++17 -O2 -pthread -o simple
+~$ ./simple
+TaskA
+TaskC 
+TaskB 
+TaskD
+@endcode
+
+The execution order of B and C might differ as they can run concurrently.
+
+@section SupportedCompilers Supported Compilers
+
+To use Cpp-Taskflow, you only need a compiler that supports C++17:
+
+@li GNU C++ Compiler v7.3 with -std=c++17
+@li Clang C++ Compiler v6.0 with -std=c++17
+@li Microsoft Visual Studio Version 15.7 (MSVC++ 19.14)
+
+Cpp-Taskflow works on Linux, Windows, and OSX.
+
+@section License License
+
+Cpp-Taskflow is open-source under permissive MIT license.
+
+*/
+
+}

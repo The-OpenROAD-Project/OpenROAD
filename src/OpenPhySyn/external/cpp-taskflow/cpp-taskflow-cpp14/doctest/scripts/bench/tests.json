@@ -1,0 +1,43 @@
+{
+    "compilers": {
+        "windows": [
+            " msvc  --debug",
+            " msvc",
+            " gcc   --debug",
+            " gcc"
+        ],
+        "linux": [
+            " gcc   --debug",
+            " gcc",
+            " clang --debug",
+            " clang"
+        ]
+    },
+    "header": [
+        " compile",
+        [
+            ["any",     " --files 200 --tests 0"],
+            ["any",     " --files 200 --tests 0 --implement"],
+            ["any",     " --files 200 --tests 0 --implement --header"],
+            ["any",     " --files 200 --tests 0 --implement --header --disabled"]
+        ]
+    ],
+    "asserts": [
+        " compile",
+        [
+            ["any",     " --header --files 10 --tests 0  --checks 0"],
+            ["any",     " --header --files 10 --tests 50 --checks 100 --asserts normal"],
+            ["any",     " --header --files 10 --tests 50 --checks 100 --asserts normal --fast"],
+            ["doctest", " --header --files 10 --tests 50 --checks 100 --asserts binary"],
+            ["doctest", " --header --files 10 --tests 50 --checks 100 --asserts binary --fast"],
+            ["any",     " --header --files 10 --tests 50 --checks 100 --asserts normal --disabled"]
+        ]
+    ],
+    "runtime": [
+        " runtime",
+        [
+            ["any",     " --files 1 --tests 1  --checks 1 --loop-iters 10000000"],
+            ["any",     " --files 1 --tests 1  --checks 1 --loop-iters 10000000 --info"]
+        ]
+    ]
+}

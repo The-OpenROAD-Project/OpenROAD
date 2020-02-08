@@ -27,7 +27,3 @@
 [submodule "src/TritonMacroPlace"]
 	path = src/TritonMacroPlace
 	url = https://github.com/The-OpenROAD-Project/TritonMacroPlace.git
-[submodule "src/OpenPhySyn"]	
-	path = src/OpenPhySyn	
-	url = https://github.com/The-OpenROAD-Project/OpenPhySyn
-	branch = openroad
