@@ -42,10 +42,6 @@
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
-#include "DefReader/DefReader.hpp"
-#include "DefWriter/DefWriter.hpp"
-#include "LefReader/LefReader.hpp"
-#include "LibertyReader/LibertyReader.hpp"
 #include "PsnException/FileException.hpp"
 #include "PsnException/FluteInitException.hpp"
 #include "PsnException/NoTechException.hpp"
@@ -74,39 +70,6 @@ using sta::tcl_inits;
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
-#ifndef OPENROAD_BUILD
-Psn::Psn(Database* db) : db_(db), interp_(nullptr)
-{
-    if (db_ == nullptr)
-    {
-        initializeDatabase();
-    }
-    exec_path_ = FileUtils::executablePath();
-    settings_  = new DesignSettings();
-    initializeSta();
-    db_handler_ = new DatabaseHandler(sta_);
-}
-void
-Psn::initialize(Database* db, bool load_transforms, Tcl_Interp* interp,
-                bool init_flute)
-{
-    psn_instance_ = new Psn(db);
-    if (load_transforms)
-    {
-        psn_instance_->loadTransforms();
-    }
-    if (interp != nullptr)
-    {
-        psn_instance_->setupInterpreter(interp);
-    }
-    if (init_flute)
-    {
-        psn_instance_->initializeFlute();
-    }
-    is_initialized_ = true;
-}
-#endif
-
 Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 {
     if (sta == nullptr)
@@ -122,8 +85,8 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 
 void
 Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
-                bool init_flute, bool import_psn_namespace,
-                bool print_psn_version, bool setup_sta_tcl)
+                bool import_psn_namespace, bool print_psn_version,
+                bool setup_sta_tcl)
 {
     psn_instance_ = new Psn(sta);
     if (load_transforms)
@@ -135,10 +98,7 @@ Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
         psn_instance_->setupInterpreter(interp, import_psn_namespace,
                                         print_psn_version, setup_sta_tcl);
     }
-    if (init_flute)
-    {
-        psn_instance_->initializeFlute();
-    }
+
     is_initialized_ = true;
 }
 
@@ -146,121 +106,6 @@ Psn::~Psn()
 {
     delete settings_;
     delete db_handler_;
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-    delete sta_;
-    if (db_ != nullptr)
-    {
-        Database::destroy(db_);
-    }
-#endif
-}
-
-int
-Psn::readDef(const char* path)
-{
-    DefReader reader(db_);
-    try
-    {
-        int rc = reader.read(path);
-        sta_->readDefAfter();
-        return rc;
-    }
-    catch (FileException& e)
-    {
-        PSN_LOG_ERROR(e.what());
-        return -1;
-    }
-    catch (NoTechException& e)
-    {
-        PSN_LOG_ERROR(e.what());
-        return -1;
-    }
-}
-
-int
-Psn::readLib(const char* path)
-{
-    LibertyReader reader(sta_);
-    try
-    {
-        liberty_ = reader.read(path);
-        sta_->getDbNetwork()->readLibertyAfter(liberty_);
-        if (liberty_)
-        {
-            return 1;
-        }
-        return -1;
-    }
-    catch (PsnException& e)
-    {
-        PSN_LOG_ERROR(e.what());
-        return -1;
-    }
-}
-
-int
-Psn::readLef(const char* path, bool import_library, bool import_tech)
-{
-    LefReader reader(db_);
-    try
-    {
-        Library*           library = nullptr;
-        LibraryTechnology* tech    = nullptr;
-        if (import_library && import_tech)
-        {
-            if (tech == nullptr)
-            {
-                library = reader.readLibAndTech(path);
-                tech    = library->getTech();
-            }
-            else
-            {
-                // Might consider adding a warning here
-                library = reader.readLib(path);
-            }
-            if (library)
-            {
-                sta_->readLefAfter(library);
-            }
-        }
-        else if (import_library)
-        {
-            library = reader.readLib(path);
-            if (library)
-            {
-                sta_->readLefAfter(library);
-            }
-        }
-        else if (import_tech)
-        {
-            tech = reader.readTech(path);
-        }
-        else
-        {
-            return 0;
-        }
-        return 1;
-    }
-    catch (PsnException& e)
-    {
-        PSN_LOG_ERROR(e.what());
-        return -1;
-    }
-}
-
-int
-Psn::writeDef(const char* path)
-{
-    DefWriter writer(db_);
-    try
-    {
-        return writer.write(path);
-    }
-    catch (PsnException& e)
-    {
-        PSN_LOG_ERROR(e.what());
-        return -1;
-    }
 }
 
 Database*
@@ -268,10 +113,10 @@ Psn::database() const
 {
     return db_;
 }
-Liberty*
-Psn::liberty() const
+sta::DatabaseSta*
+Psn::sta() const
 {
-    return liberty_;
+    return sta_;
 }
 
 LibraryTechnology*
@@ -378,9 +223,6 @@ Psn::loadTransforms()
                 tr_name);
         }
     }
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-    PSN_LOG_INFO("Loaded {} transforms.", load_count);
-#endif
     return load_count;
 }
 
@@ -452,14 +294,6 @@ Psn::setupInterpreter(Tcl_Interp* interp, bool import_psn_namespace,
     }
     if (setup_sta)
     {
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-        sta_->setTclInterp(interp_);
-        if (Sta_Init(interp) == TCL_ERROR)
-        {
-            return TCL_ERROR;
-        }
-        evalTclInit(interp, tcl_inits);
-#endif
         const char* tcl_psn_setup =
 #include "Tcl/SetupPsnSta.tcl"
             ;
@@ -819,13 +653,6 @@ Psn::setWireRC(float res_per_micon, float cap_per_micron)
         ->setResistancePerMicron(res_per_micon)
         ->setCapacitancePerMicron(cap_per_micron);
 }
-int
-Psn::linkDesign(const char* design_name)
-{
-    int rc = sta_->linkDesign(design_name);
-    sta_->readDbAfter();
-    return rc;
-}
 
 // Private methods:
 int
@@ -840,13 +667,6 @@ Psn::initializeDatabase()
 int
 Psn::initializeSta(Tcl_Interp* interp)
 {
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-    PSN_UNUSED(interp);
-    sta::initSta();
-    sta_ = new sta::DatabaseSta(db_);
-    sta::Sta::setSta(sta_);
-    sta_->makeComponents();
-#else
     if (interp == nullptr)
     {
         // This is a very bad solution! but temporarily until
@@ -856,7 +676,6 @@ Psn::initializeSta(Tcl_Interp* interp)
     }
     sta_ = new sta::DatabaseSta;
     sta_->init(interp, db_);
-#endif
     return 0;
 }
 
@@ -866,61 +685,4 @@ Psn::clearDatabase()
     handler()->clear();
 }
 
-int
-Psn::initializeFlute(const char* flue_init_dir)
-{
-    bool        lut_found = false;
-    std::string flute_dir, powv_file_path, post_file_path;
-    if (flue_init_dir)
-    {
-        flute_dir      = std::string(flute_dir);
-        powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
-        post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
-        if (FileUtils::isDirectory(flute_dir) &&
-            FileUtils::pathExists(powv_file_path) &&
-            FileUtils::pathExists(post_file_path))
-        {
-            lut_found = true;
-        }
-    }
-    else
-    {
-        for (auto& s : std::vector<std::string>({
-                 FileUtils::joinPath(exec_path_, "../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_, "../etc"),
-                 FileUtils::joinPath(exec_path_, "../../external/flute/etc"),
-                 FileUtils::joinPath(exec_path_, "../../etc"),
-                 FileUtils::joinPath(exec_path_, "../../../etc"),
-                 exec_path_,
-                 FileUtils::joinPath(exec_path_, ".."),
-                 FileUtils::joinPath(exec_path_, "../.."),
-                 FileUtils::joinPath(exec_path_, "../../.."),
-             }))
-        {
-
-            flute_dir      = s;
-            powv_file_path = FileUtils::joinPath(flute_dir, "POWV9.dat");
-            post_file_path = FileUtils::joinPath(flute_dir, "POST9.dat");
-            if (FileUtils::isDirectory(flute_dir) &&
-                FileUtils::pathExists(powv_file_path) &&
-                FileUtils::pathExists(post_file_path))
-            {
-                lut_found = true;
-                break;
-            }
-        }
-    }
-    if (!lut_found)
-    {
-        PSN_LOG_ERROR("Flute initialization failed");
-        throw FluteInitException();
-    }
-
-    char* cwd = getcwd(NULL, 0);
-    chdir(flute_dir.c_str());
-    Flute::readLUT();
-    chdir(cwd);
-    free(cwd);
-    return 1;
-}
 } // namespace psn

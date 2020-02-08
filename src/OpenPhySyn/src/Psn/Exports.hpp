@@ -44,42 +44,20 @@ void  print_usage();
 void  print_transforms();
 void  print_license();
 float design_area();
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-int import_def(const char* def_path);
-int import_lef(const char* lef_path, int ignore_routing_layers = true);
-int import_lib(const char* lib_path); // Alias for import_liberty
-int import_liberty(const char* lib_path);
-int export_def(const char* def_path);
-int print_liberty_cells();
-#endif
-bool has_transform(const char* transform_name);
-int  set_wire_rc(float res_per_micon, float cap_per_micron);
-int  set_max_area(float area);
-int  link(const char* top_module);
-int  link_design(const char* top_module);
-int  set_log(const char* level);
-int  set_log_level(const char* level);
-int  set_log_pattern(const char* pattern);
-int  transform_internal(std::string              transform_name,
-                        std::vector<std::string> args);
+bool  has_transform(const char* transform_name);
+int   set_wire_rc(float res_per_micon, float cap_per_micron);
+int   set_max_area(float area);
+int   set_log(const char* level);
+int   set_log_level(const char* level);
+int   set_log_pattern(const char* pattern);
+int   transform_internal(std::string              transform_name,
+                         std::vector<std::string> args);
 
 DatabaseHandler& get_handler();
 DatabaseHandler& get_database_handler();
 Database&        get_database();
-Liberty&         get_liberty();
 SteinerTree*     make_steiner_tree(const char* pin_name);
 SteinerTree*     make_steiner_tree(Net* net);
 } // namespace psn
 
-#endif
-#ifdef SWIGIMPORTED
-asdasda
-#ifdef OPENROAD_BUILD
-    % ignore import_def;
-% ignore     import_lef;
-% ignore     import_lib;
-% ignore     import_liberty;
-% ignore     export_def;
-% ignore     print_liberty_cells;
-#endif
 #endif

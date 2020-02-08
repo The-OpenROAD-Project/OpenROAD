@@ -57,13 +57,6 @@ public:
     int setLogPattern(const char* pattern);
     int setLogLevel(LogLevel level);
 
-    virtual int readDef(const char* path);
-    virtual int readLef(const char* path, bool import_library = true,
-                        bool import_tech = true);
-    virtual int readLib(const char* path);
-
-    virtual int writeDef(const char* path);
-
     int         loadTransforms();
     bool        hasTransform(std::string transform_name);
     virtual int runTransform(std::string              transform_name,
@@ -78,7 +71,6 @@ public:
     void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
     virtual void setWireRC(float res_per_micon, float cap_per_micron);
-    virtual int  linkDesign(const char* design_name);
 
     virtual DatabaseHandler* handler() const;
     virtual DesignSettings*  settings() const;
@@ -91,41 +83,20 @@ public:
     virtual void printCommands(bool raw_str = false);
 
     virtual Database*          database() const;
-    virtual Liberty*           liberty() const;
+    virtual sta::DatabaseSta*  sta() const;
     virtual LibraryTechnology* tech() const;
 
     virtual void clearDatabase();
 
-    virtual int initializeFlute(const char* flue_init_dir = nullptr);
-
-#ifndef OPENROAD_BUILD
-    static void initialize(Database* db = nullptr, bool load_transforms = true,
-                           Tcl_Interp* interp     = nullptr,
-                           bool        init_flute = true);
-    static void initialize(sta::DatabaseSta* sta, bool load_transforms = true,
-                           Tcl_Interp* interp = nullptr, bool init_flute = true,
-                           bool import_psn_namespace = true,
-                           bool print_psn_version    = true,
-                           bool setup_sta_tcl        = true);
-#else
-    static void initialize(sta::DatabaseSta* sta             = nullptr,
-                           bool              load_transforms = true,
-                           Tcl_Interp* interp = nullptr, bool init_flute = true,
-                           bool import_psn_namespace = false,
-                           bool print_psn_version    = false,
-                           bool setup_sta_tcl        = false);
-#endif
+    static void
+    initialize(sta::DatabaseSta* sta = nullptr, bool load_transforms = true,
+               Tcl_Interp* interp = nullptr, bool import_psn_namespace = false,
+               bool print_psn_version = false, bool setup_sta_tcl = false);
     virtual ~Psn();
 
 private:
-#ifndef OPENROAD_BUILD
-    Psn(Database* db = nullptr);
-    Psn(sta::DatabaseSta* sta);
-#else
     Psn(sta::DatabaseSta* sta = nullptr);
-#endif
     DesignSettings*   settings_;
-    Liberty*          liberty_;
     sta::DatabaseSta* sta_;
     Database*         db_;
     DatabaseHandler*  db_handler_;

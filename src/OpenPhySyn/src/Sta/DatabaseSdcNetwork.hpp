@@ -17,43 +17,6 @@
 #ifndef __PSN_DATABASE_SDC_NETWORK_H__
 #define __PSN_DATABASE_SDC_NETWORK_H__
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
-
-#include "SdcNetwork.hh"
-
-namespace sta
-{
-
-class DatabaseSdcNetwork : public SdcNetwork
-{
-public:
-    DatabaseSdcNetwork(Network* network);
-    virtual Instance* findInstance(const char* path_name) const;
-    virtual void      findInstancesMatching(const Instance*     contex,
-                                            const PatternMatch* pattern,
-                                            InstanceSeq*        insts) const;
-    virtual void findNetsMatching(const Instance*, const PatternMatch* pattern,
-                                  NetSeq* nets) const;
-    virtual void findPinsMatching(const Instance*     instance,
-                                  const PatternMatch* pattern,
-                                  PinSeq*             pins) const;
-
-protected:
-    void findInstancesMatching1(const PatternMatch* pattern,
-                                InstanceSeq*        insts) const;
-    void findNetsMatching1(const PatternMatch* pattern, NetSeq* nets) const;
-    void findMatchingPins(const Instance*     instance,
-                          const PatternMatch* port_pattern, PinSeq* pins) const;
-    Pin* findPin(const char* path_name) const;
-
-    using SdcNetwork::findPin;
-};
-
-} // namespace sta
-#else
 #include "dbSdcNetwork.hh"
 
 namespace sta
@@ -61,5 +24,4 @@ namespace sta
 class dbSdcNetwork;
 typedef dbSdcNetwork DatabaseSdcNetwork;
 } // namespace sta
-#endif
 #endif

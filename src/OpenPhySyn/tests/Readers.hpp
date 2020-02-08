@@ -29,24 +29,29 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_MAKE_OPEN_PHY_SYN__
-#define __PSN_MAKE_OPEN_PHY_SYN__
+// Reader utilities for unit tests
 
+#ifndef __PSN_TEST_READERS__
+#define __PSN_TEST_READERS__
+#define THROW_DCL throw()
+
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "opendb/db.h"
+#include "opendb/defin.h"
+#include "opendb/defout.h"
+#include "opendb/lefin.h"
 namespace psn
 {
-class Psn;
-}
 
-namespace ord
-{
+using odb::dbDatabase;
+using odb::dbLib;
+using sta::dbSta;
 
-class OpenRoad;
+void readLef(dbDatabase* db, dbSta* sta_state, const char* filename,
+             const char* lib_name, bool make_tech, bool make_library);
 
-psn::Psn* makePsn();
-
-void deletePsn(psn::Psn* psn);
-
-void initPsn(OpenRoad* openroad);
-
-} // namespace ord
+void readDef(dbDatabase* db, dbSta* sta_state, const char* filename);
+void readLiberty(dbSta* sta_state, const char* filename);
+} // namespace psn
 #endif

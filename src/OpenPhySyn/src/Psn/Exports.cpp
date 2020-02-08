@@ -37,51 +37,6 @@
 namespace psn
 {
 
-#ifndef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-int
-import_def(const char* def_path)
-{
-    return Psn::instance().readDef(def_path);
-}
-int
-import_lef(const char* lef_path, int ignore_routing_layers)
-{
-    return Psn::instance().readLef(lef_path, ignore_routing_layers);
-}
-int
-import_lib(const char* lib_path)
-{
-    return import_liberty(lib_path);
-}
-int
-import_liberty(const char* lib_path)
-{
-    return Psn::instance().readLib(lib_path);
-}
-int
-export_def(const char* lib_path)
-{
-    return Psn::instance().writeDef(lib_path);
-}
-int
-print_liberty_cells()
-{
-    Liberty* liberty = Psn::instance().liberty();
-    if (!liberty)
-    {
-        PSN_LOG_ERROR("Did not find any liberty files, use "
-                      "import_liberty <file name> first.");
-        return -1;
-    }
-    sta::LibertyCellIterator cell_iter(liberty);
-    while (cell_iter.hasNext())
-    {
-        sta::LibertyCell* cell = cell_iter.next();
-        PSN_LOG_INFO("Cell: {}", cell->name());
-    }
-    return 1;
-}
-#endif
 bool
 has_transform(const char* transform_name)
 {
@@ -105,16 +60,7 @@ set_max_area(float area)
     Psn::instance().settings()->setMaxArea(area);
     return 1;
 }
-int
-link(const char* top_module)
-{
-    return link_design(top_module);
-}
-int
-link_design(const char* top_module)
-{
-    return Psn::instance().linkDesign(top_module);
-}
+
 void
 version()
 {
@@ -158,11 +104,6 @@ Database&
 get_database()
 {
     return *(Psn::instance().database());
-}
-Liberty&
-get_liberty()
-{
-    return *(Psn::instance().liberty());
 }
 
 int

@@ -29,24 +29,53 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_MAKE_OPEN_PHY_SYN__
-#define __PSN_MAKE_OPEN_PHY_SYN__
+// Reader utilities for unit tests
+
+#include "Readers.hpp"
 
 namespace psn
 {
-class Psn;
+
+using odb::dbDatabase;
+using odb::dbLib;
+using sta::dbSta;
+
+void
+readLef(dbDatabase* db, dbSta* sta_state, const char* filename,
+        const char* lib_name, bool make_tech, bool make_library)
+{
+    odb::lefin lef_reader(db, false);
+    if (make_tech && make_library)
+    {
+        dbLib* lib = lef_reader.createTechAndLib(lib_name, filename);
+        if (lib)
+            sta_state->readLefAfter(lib);
+    }
+    else if (make_tech)
+        lef_reader.createTech(filename);
+    else if (make_library)
+    {
+        dbLib* lib = lef_reader.createLib(lib_name, filename);
+        if (lib)
+            sta_state->readLefAfter(lib);
+    }
 }
 
-namespace ord
+void
+readDef(dbDatabase* db, dbSta* sta_state, const char* filename)
 {
-
-class OpenRoad;
-
-psn::Psn* makePsn();
-
-void deletePsn(psn::Psn* psn);
-
-void initPsn(OpenRoad* openroad);
-
-} // namespace ord
-#endif
+    odb::defin               def_reader(db);
+    std::vector<odb::dbLib*> search_libs;
+    for (odb::dbLib* lib : db->getLibs())
+        search_libs.push_back(lib);
+    def_reader.createChip(search_libs, filename);
+    sta_state->readDefAfter();
+}
+void
+readLiberty(dbSta* sta_state, const char* filename)
+{
+    sta::LibertyLibrary* lib = sta_state->readLiberty(
+        filename, sta_state->cmdCorner(), sta::MinMaxAll::all(), false);
+    sta_state->network()->readLibertyAfter(lib);
+}
+} // namespace psn

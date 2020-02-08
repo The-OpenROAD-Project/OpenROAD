@@ -30,6 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
+
+#include "Readers.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
@@ -41,11 +43,14 @@ TEST_CASE("Should add fan-out buffers")
     try
     {
         psn_inst.clearDatabase();
-        psn_inst.readLib("../tests/data/libraries/Nangate45/"
-                         "NangateOpenCellLibrary_typical.lib");
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        psn::readLiberty(psn_inst.sta(), "../tests/data/libraries/Nangate45/"
+                                         "NangateOpenCellLibrary_typical.lib");
+        psn::readLef(psn_inst.database(), psn_inst.sta(),
+                     "../tests/data/libraries/Nangate45/"
+                     "NangateOpenCellLibrary.mod.lef",
+                     "nangate45", true, true);
+        psn::readDef(psn_inst.database(), psn_inst.sta(),
+                     "../tests/data/designs/fanout/fanout_nan.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         CHECK(psn_inst.hasTransform("buffer_fanout"));
         auto result = psn_inst.runTransform(

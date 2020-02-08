@@ -33,13 +33,6 @@
 #include "Psn/Exports.hpp"
 #include <OpenPhySyn/Psn/Psn.hpp>
 
-#ifndef OPENROAD_BUILD
-#include "db.h"
-#include "dbShape.h"
-#include "geom.h"
-using namespace odb;
-#endif
-
 #include <memory>
 #include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <OpenPhySyn/Database/DatabaseHandler.hpp>
@@ -58,13 +51,8 @@ DatabaseHandler *handler();
 %include <std_string.i>
 %include <std_pair.i>
 %include <std_except.i>
-#ifndef OPENROAD_BUILD
-%include <stl.i>
-//%include <src/Tcl/Swig/std_unique_ptr.i>
-%include <std_vector.i>
-#else
 %include <src/Tcl/Swig/std_vector.i>
-#endif
+
 %template(vector_str) std::vector<std::string>;
 %typemap(in) char ** {
      Tcl_Obj **listobjv;
@@ -106,17 +94,9 @@ DatabaseHandler *handler();
 %ignore psn::Psn::initialize;
 #endif
 
-#ifndef OPENROAD_BUILD
-%include "external/OpenDB/src/swig/tcl/dbtypes.i"
-%include "external/OpenDB/include/opendb/geom.h"
-%include "external/OpenDB/include/opendb/db.h"
-#endif
 %include "include/OpenPhySyn/Database/Types.hpp"
 %rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2);
 %rename(pt_hash) psn::PointHash::operator()(const Point& pt);
 %include "include/OpenPhySyn/Database/DatabaseHandler.hpp"
-#ifndef OPENROAD_BUILD //Temp. removed until SWIG is upgraded in the Dockerfile
-%include "include/OpenPhySyn/Psn/Psn.hpp"
-#endif
 
 %include "Psn/Exports.hpp"

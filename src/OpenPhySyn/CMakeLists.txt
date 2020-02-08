@@ -25,7 +25,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Tool build configuration
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
-option(OPENPHYSYN_TF_ENABLED "Build and use cpp-taskflow" OFF)
 set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
@@ -34,16 +33,12 @@ else()
 add_definitions(-DUSE_OPENSTA_DB_HANDLER)
 endif()
 
-if (${OPENROAD_BUILD})
 add_definitions(-DOPENROAD_BUILD)
-endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
 set(SWIG_PSN_LIB_FLAGS "")
-if (OPENROAD_BUILD)
 set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
 set(SWIG_PSN_LIB_FLAGS "-DOPENROAD_OPENPHYSYN_LIBRARY_BUILD")
-endif()
 
 
 set(PSN_HOME
@@ -87,29 +82,6 @@ find_package(ZLIB REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
 
-
-# Build OpenDB
-if(NOT DEFINED OPENDB_HOME)
-set(OPENDB_HOME
-${PROJECT_SOURCE_DIR}/external/OpenDB
-)
-set(BUILD_PYTHON OFF)
-endif()
-
-# Build OpenSTA
-if(NOT DEFINED OPENSTA_HOME)
-set(OPENSTA_HOME
-${PROJECT_SOURCE_DIR}/external/OpenSTA
-)
-endif()
-
-# Build Flute
-if(NOT DEFINED FLUTE_HOME)
-set(FLUTE_HOME
-${PROJECT_SOURCE_DIR}/external/flute
-)
-endif()
-
 # Build spdlok
 if(NOT DEFINED SPD_LOG_HOME)
 set(SPD_LOG_HOME
@@ -124,21 +96,6 @@ set(CXXOPTS_HOME
 )
 endif()
 
-# Add Flute
-if (NOT ${OPENROAD_BUILD})
-add_subdirectory(external/flute)
-endif()
-
-# Add OpenDB
-if (NOT ${OPENROAD_BUILD})
-add_subdirectory(external/OpenDB)
-endif()
-
-# Add OpenSTA
-if (NOT ${OPENROAD_BUILD})
-add_subdirectory(external/OpenSTA)
-endif()
-
 # Add spdlog
 add_subdirectory(external/spdlog)
 # Add cxxopts
@@ -149,27 +106,7 @@ if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.2)
 add_definitions(-DOPENPHYSYN_CXX_OPTS_DISABLED)
 endif()
 
-#Add cpp-taskflow
-if (${OPENPHYSYN_TF_ENABLED})
 
-add_definitions(-DTF_ENABLED)
-set(TF_BUILD_EXAMPLES OFF)
-set(TF_BUILD_TESTS OFF)
-set(TF_BUILD_BENCHMARKS OFF)
-
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
-set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow)
-add_subdirectory(external/cpp-taskflow)
-
-else()
-
-set(TF_HOME ${PROJECT_SOURCE_DIR}/external/cpp-taskflow/cpp-taskflow-cpp14)
-add_subdirectory(external/cpp-taskflow)
-set(OPENPHYSYN_TF_14 ON)
-
-endif()
-
-endif()
 
 
 message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
@@ -198,10 +135,6 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
     ${PSN_HOME}/src/Database/OpenDBHandler.cpp
     ${PSN_HOME}/src/Database/OpenStaHandler.cpp
-    ${PSN_HOME}/src/DefReader/DefReader.cpp
-    ${PSN_HOME}/src/DefWriter/DefWriter.cpp
-    ${PSN_HOME}/src/LefReader/LefReader.cpp
-    ${PSN_HOME}/src/LibertyReader/LibertyReader.cpp
     ${PSN_HOME}/src/Transform/PsnTransform.cpp
     ${PSN_HOME}/src/Transform/TransformHandler.cpp
     ${PSN_HOME}/src/Transform/TransformInfo.cpp
@@ -226,11 +159,9 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
 )
 
 set(PSN_OPENROAD_LIBRARY_FILE "")
-if (${OPENROAD_BUILD})
 set(PSN_OPENROAD_LIBRARY_FILE
   ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
 )
-endif()
 
 
 
@@ -246,11 +177,11 @@ set(PSN_SOURCES
 set(PSN_TESTFILES        # All .cpp files in tests/
     ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
     ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
-    ${PROJECT_SOURCE_DIR}/tests/ReadLefDef.cpp
-    ${PROJECT_SOURCE_DIR}/tests/WriteDef.cpp
-    ${PROJECT_SOURCE_DIR}/tests/ReadLiberty.cpp
     ${PROJECT_SOURCE_DIR}/tests/Sta.cpp
     ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
+    ${PROJECT_SOURCE_DIR}/tests/Readers.cpp
+    ${OPENROAD_HOME}/src/InitFlute.cc
+    ${OPENROAD_TCL_INIT}
 )
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
 set(PSN_TESTFILES
@@ -279,8 +210,6 @@ set(PSN_TESTFILES
 )
 endif()
 
-if (${OPENROAD_BUILD})
-
 set(PSN_SOURCES
     ${PSN_SOURCES}
     ${DBSTA_TCL_INIT}
@@ -294,7 +223,8 @@ add_custom_target(
   opensta-tcl-init
   DEPENDS ${DBSTA_TCL_INIT}
 )
-endif()
+
+
 
 
 set(PSN_SWIG_FILES
@@ -367,8 +297,6 @@ set(PUBLIC_LIBRARIES
 endif()
 
 
-if (${OPENROAD_BUILD})
-
 set(PRIVATE_INCLUDE_DIRS
   ${PRIVATE_INCLUDE_DIRS}
   ${OPENROAD_HOME}/include
@@ -398,32 +326,12 @@ OpenSTA
 flute
 )
 
-else()
 
-set(PRIVATE_INCLUDE_DIRS
-  ${PRIVATE_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/external
-)
-
-set(PUBLIC_LIBRARIES
-opendb
-OpenSTA
-# sta_swig
-flute
-${PUBLIC_LIBRARIES}
-)
-
-install(FILES ./external/flute/etc/POST9.dat ./external/flute/etc/POWV9.dat DESTINATION etc)
-
-endif()
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
-add_executable(Psn ${PSN_SOURCES})  # Name of exec. and location of file.
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
-target_include_directories(Psn PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(Psn PUBLIC ${PUBLIC_EXEC_LIBRARIES} ${PUBLIC_LIBRARIES})
 
 
 
@@ -434,20 +342,9 @@ include_directories (
   ${PRIVATE_INCLUDE_DIRS}
 )
 
-if (NOT ${OPENROAD_BUILD})
-set_target_properties(
-    ${LIBRARY_NAME} Psn
-      PROPERTIES 
-        CXX_STANDARD 14
-        CXX_STANDARD_REQUIRED YES 
-        CXX_EXTENSIONS NO
-)
-else()
 target_compile_definitions(${LIBRARY_NAME} PRIVATE -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
-endif()
 
 set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_property(TARGET Psn PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
 add_custom_command(OUTPUT ${PSN_WRAP}
@@ -460,8 +357,6 @@ add_custom_command(OUTPUT ${PSN_LIBRARY_WRAP}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
-
-install(TARGETS Psn DESTINATION bin)
 
 # Set up tests (see tests/CMakeLists.txt).
 if (${OPENPHYSYN_UNIT_TESTS_ENABLED})

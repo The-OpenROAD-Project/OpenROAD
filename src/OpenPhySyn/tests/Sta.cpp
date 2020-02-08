@@ -31,6 +31,8 @@
 #include <OpenPhySyn/Sta/PathPoint.hpp>
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
+
+#include "Readers.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
@@ -42,11 +44,14 @@ TEST_CASE("Should perform timing-driven pin swapping")
     try
     {
         psn_inst.clearDatabase();
-        psn_inst.readLib("../tests/data/libraries/Nangate45/"
-                         "NangateOpenCellLibrary_typical.lib");
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/gcd/gcd.def");
+        psn::readLiberty(psn_inst.sta(), "../tests/data/libraries/Nangate45/"
+                                         "NangateOpenCellLibrary_typical.lib");
+        psn::readLef(psn_inst.database(), psn_inst.sta(),
+                     "../tests/data/libraries/Nangate45/"
+                     "NangateOpenCellLibrary.mod.lef",
+                     "nangate45", true, true);
+        psn::readDef(psn_inst.database(), psn_inst.sta(),
+                     "../tests/data/designs/gcd/gcd.def");
         CHECK(psn_inst.database()->getChip() != nullptr);
         auto& handler = *(psn_inst.handler());
         handler.createClock("core_clock", {"clk"}, 10);

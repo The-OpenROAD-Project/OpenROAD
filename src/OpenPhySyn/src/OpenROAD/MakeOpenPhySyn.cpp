@@ -29,8 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifdef OPENROAD_BUILD
-
 #include <OpenPhySyn/OpenROAD/MakeOpenPhySyn.hpp>
 #include <OpenPhySyn/include/OpenPhySyn/Psn/Psn.hpp>
 #include "openroad/OpenRoad.hh"
@@ -61,8 +59,7 @@ void
 initPsn(OpenRoad* openroad)
 {
     psn::Psn::initialize(openroad->getSta(), true, openroad->tclInterp(), false,
-                         false, false, false);
+                         false, false);
 }
 
 } // namespace ord
-#endif

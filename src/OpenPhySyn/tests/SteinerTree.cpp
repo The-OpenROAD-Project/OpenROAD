@@ -31,6 +31,8 @@
 #include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include "Psn/Psn.hpp"
 #include "PsnException/PsnException.hpp"
+
+#include "Readers.hpp"
 #include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
@@ -42,9 +44,12 @@ TEST_CASE("Should construct a steiner tree correctly")
     try
     {
         psn_inst.clearDatabase();
-        psn_inst.readLef(
-            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef");
-        psn_inst.readDef("../tests/data/designs/fanout/fanout_nan.def");
+        psn::readLef(
+            psn_inst.database(), psn_inst.sta(),
+            "../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef",
+            "nangate45", true, true);
+        psn::readDef(psn_inst.database(), psn_inst.sta(),
+                     "../tests/data/designs/fanout/fanout_nan.def");
         auto& handler = *(psn_inst.handler());
         CHECK(psn_inst.database()->getChip() != nullptr);
         auto net = handler.net("clk");
