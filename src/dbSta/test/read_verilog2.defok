@@ -25,8 +25,8 @@ NETS 9 ;
     - in ( PIN in ) ( b1/u1 A ) + USE SIGNAL ;
     - out ( PIN out ) ( b2/u2 Z ) + USE SIGNAL ;
     - b1/r1q ( b1/u2 A ) ( b1/r1 Q ) + USE SIGNAL ;
-    - b1/u1out ( b1/r1 D ) ( b1/u1 Z ) + USE SIGNAL ;
+    - b1/u1out ( b1/u1 Z ) ( b1/r1 D ) + USE SIGNAL ;
     - b2/r1q ( b2/u2 A ) ( b2/r1 Q ) + USE SIGNAL ;
-    - b2/u1out ( b2/r1 D ) ( b2/u1 Z ) + USE SIGNAL ;
+    - b2/u1out ( b2/u1 Z ) ( b2/r1 D ) + USE SIGNAL ;
 END NETS
 END DESIGN

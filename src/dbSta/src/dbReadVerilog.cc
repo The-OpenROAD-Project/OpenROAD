@@ -21,6 +21,7 @@
 #include "Vector.hh"
 #include "PortDirection.hh"
 #include "ConcreteNetwork.hh"
+#include "NetworkCmp.hh"
 #include "VerilogReader.hh"
 
 #include "db_sta/dbNetwork.hh"
@@ -54,6 +55,7 @@ using sta::PortDirection;
 using sta::Library;
 using sta::Instance;
 using sta::Pin;
+using sta::PinSeq;
 using sta::Net;
 using sta::Cell;
 using sta::deleteVerilogReader;
@@ -63,6 +65,7 @@ using sta::NetIterator;
 using sta::NetTermIterator;
 using sta::ConnectedPinIterator;
 using sta::NetConnectedPinIterator;
+using sta::PinPathNameLess;
 
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
@@ -244,9 +247,17 @@ Verilog2db::makeDbNets(const Instance *inst)
 	&& !network_->isPower(net)) {
       dbNet *db_net = dbNet::create(block_, net_name);
       
+      // Sort connected pins for regression stability.
+      PinSeq net_pins;
       NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
       while (pin_iter->hasNext()) {
 	Pin *pin = pin_iter->next();
+	net_pins.push_back(pin);
+      }
+      delete pin_iter;
+      sort(net_pins, PinPathNameLess(network_));
+
+      for (Pin *pin : net_pins) {
 	if (network_->isTopLevelPort(pin)) {
 	  const char *port_name = network_->portName(pin);
 	  if (block_->findBTerm(port_name) == nullptr) {
@@ -268,7 +279,6 @@ Verilog2db::makeDbNets(const Instance *inst)
 	  }
 	}
       }
-      delete pin_iter;
     }
   }
   delete net_iter;
