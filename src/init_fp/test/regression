@@ -1,3 +1,7 @@
+#!/bin/sh
+# The next line is executed by /bin/sh, but not Tcl \
+exec tclsh $0 ${1+"$@"}
+
 # Copyright (c) 2019, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -13,4 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-add_subdirectory(src)
+# Usage: regression help | test1 [test2...]
+# where test is all or the name of a tcl script in $STA/test
+
+# Directory containing tests.
+set test_dir [file dirname [file normalize [info script]]]
+set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
+
+source [file join $test_dir "regression_vars.tcl"]
+source [file join $openroad_dir "test" "regression.tcl"]
+
+regression_main
+
+# Local Variables:
+# mode:tcl
+# End:

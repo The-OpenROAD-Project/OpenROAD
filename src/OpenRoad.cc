@@ -24,11 +24,12 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
-#include "dbReadVerilog.hh"
+#include "db_sta/dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
 
+#include "init_fp//MakeInitFloorplan.hh"
 #include "ioPlacer/src/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
@@ -114,6 +115,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
   Opendbtcl_Init(tcl_interp);
+  initInitFloorplan(this);
   Flute::readLUT();
   initDbSta(this);
   initResizer(this);

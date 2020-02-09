@@ -1,4 +1,4 @@
-%module InitFloorplan
+%module init_fp
 
 // Copyright (c) 2019, Parallax Software, Inc.
 // 
@@ -18,7 +18,18 @@
 %{
 
 #include "Machine.hh"
-#include "InitFloorplan.hh"
+#include "db_sta/dbSta.hh"
+#include "init_fp/InitFloorplan.hh"
+
+// Defined by OpenRoad.i
+namespace ord {
+
+odb::dbDatabase *
+getDb();
+
+sta::dbSta *
+getSta();
+}
 
 %}
 
@@ -42,8 +53,8 @@ init_floorplan_core(double die_lx,
 		    const char *site_name,
 		    const char *tracks_file)
 {
-  odb::dbDatabase *db = getDb();
-  sta::dbSta *sta = getSta();
+  odb::dbDatabase *db = ord::getDb();
+  sta::dbSta *sta = ord::getSta();
   sta::Report *report = sta->report();
   ord::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
@@ -59,8 +70,8 @@ init_floorplan_util(double util,
 		    const char *tracks_file)
 
 {
-  odb::dbDatabase *db = getDb();
-  sta::dbSta *sta = getSta();
+  odb::dbDatabase *db = ord::getDb();
+  sta::dbSta *sta = ord::getSta();
   sta::Report *report = sta->report();
   ord::initFloorplan(util, aspect_ratio, core_space,
 		     site_name, tracks_file,
@@ -70,8 +81,8 @@ init_floorplan_util(double util,
 void
 auto_place_pins_cmd(const char *pin_layer)
 {
-  odb::dbDatabase *db = getDb();
-  sta::dbSta *sta = getSta();
+  odb::dbDatabase *db = ord::getDb();
+  sta::dbSta *sta = ord::getSta();
   sta::Report *report = sta->report();
   ord::autoPlacePins(pin_layer, db, report);
 }

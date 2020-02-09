@@ -260,6 +260,3 @@ db_has_rows()
 }
 
 %} // inline
-
-// OpenROAD swig files
-%include "InitFloorplan.i"

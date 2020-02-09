@@ -49,11 +49,15 @@
 # application to run as well as the test names. Each test is a tcl command file.
 
 proc regression_main {} {
+  exit [regression_body]
+}
+
+proc regression_body {} {
   setup
   parse_args
   run_tests
   show_summary
-  exit [found_errors]
+  return [found_errors]
 }
 
 proc setup {} {
