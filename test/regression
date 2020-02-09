@@ -22,19 +22,19 @@ exec tclsh $0 ${1+"$@"}
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
+set ord_dir [file dirname $test_dir]
 
 source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
-if {1} {
-regression_main
-} else {
-puts "----------------------------------------------------------------"
-puts "OpenROAD"
-regression_main
+set found_errors 0
 
-set errors [regression_body]
+#puts "----------------------------------------------------------------"
+#puts "OpenROAD"
+#set found_errors [regression_body]
+
 set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
+		    "DB STA" "src/dbSta/test/regression" \
 		    "I/O placer" "src/ioPlacer/test/regression" \
 		    "PDN gen" "src/pdngen/test/regression" \
 		    "Triton Macro Place" "src/TritonMacroPlace/test/regression" \
@@ -46,19 +46,22 @@ set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
 		    "Tap cell" "src/tapcell/test/regression" \
 		  }
 
+set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
+		    "DB STA" "src/dbSta/test/regression" \
+		  }
+
 foreach {tool script} $tool_scripts {
   puts "----------------------------------------------------------------"
   puts $tool
-  if { [catch [concat exec $script] result] } {
+  if { [catch [concat exec [file join $ord_dir $script]] result] } {
     puts $result
-    set errors 1
+    set found_errors 1
   } else {
     puts $result
   }
 }
 
-exit $errors
-}
+exit $found_errors
 
 # Local Variables:
 # mode:tcl

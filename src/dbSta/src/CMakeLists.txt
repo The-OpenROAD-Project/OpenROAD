@@ -19,6 +19,7 @@ set(DBSTA_WRAP ${CMAKE_CURRENT_BINARY_DIR}/dbSta_wrap.cc)
 # Only used for depends.
 set(DBSTA_SWIG_FILES
   ${DBSTA_HOME}/src/dbSta.i
+
   ${OPENSTA_HOME}/tcl/StaException.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i
@@ -42,6 +43,8 @@ set(DBSTA_TCL_FILES
   ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
   ${OPENSTA_HOME}/parasitics/Parasitics.tcl
   ${OPENSTA_HOME}/sdf/Sdf.tcl
+
+  ${DBSTA_HOME}/src/dbReadVerilog.tcl
   )
 
 set(OPENSTA_INCLUDE_DIRS
@@ -54,6 +57,7 @@ set(OPENSTA_INCLUDE_DIRS
   ${OPENSTA_HOME}/dcalc
   ${OPENSTA_HOME}/sdf
   ${OPENSTA_HOME}/search
+  ${OPENSTA_HOME}/verilog
   ${OPENSTA_HOME}/app
   )
 
@@ -75,11 +79,13 @@ add_library(dbSta
   dbSdcNetwork.cc
   ${DBSTA_TCL_INIT}
   ${DBSTA_WRAP}
+  dbReadVerilog.cc
   )
 
 target_include_directories(dbSta
   PUBLIC
   ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
   PRIVATE
   ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include
   ${TCL_INCLUDE_PATH}

@@ -43,6 +43,7 @@ target_include_directories(resizer
   PUBLIC ${RESIZER_HOME}/include
   PRIVATE
   ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
   ${OPENSTA_INCLUDE_DIRS}
   ${OPENDB_HOME}/include
   ${OPENROAD_HOME}/src/flute3

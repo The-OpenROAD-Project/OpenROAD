@@ -104,6 +104,14 @@ record_tests {
   sta3
   sta4
   sta5
+
+  read_verilog1
+  read_verilog2
+  read_verilog3
+  write_verilog1
+  write_verilog2
+  write_verilog3
+  write_verilog4
 }
 
 

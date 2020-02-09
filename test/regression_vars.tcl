@@ -46,6 +46,8 @@ proc cleanse_logfile { test log_file } {
 
 ################################################################
 
+set test_groups(all) {}
+
 # Record a test in the regression suite.
 proc record_test { test cmd_dir } {
   global cmd_dirs test_groups
@@ -118,19 +120,11 @@ proc list_delete { list delete } {
 
 # Record tests in /test
 record_tests {
-  read_verilog1
-  read_verilog2
-  read_verilog3
-  write_verilog1
-  write_verilog2
-  write_verilog3
-  write_verilog4
 }
 #  gcd_flow1
 
 # Record tests in $STAX/designs
 record_test_design {
-  mea/mea_db_dcalc
 }
 
 ################################################################
@@ -140,7 +134,6 @@ record_test_design {
 # Medium speed tests.
 # run time <15s with optimized compile
 define_test_group med {
-  mea_db_dcalc
 }
 
 define_test_group slow {

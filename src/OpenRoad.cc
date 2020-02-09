@@ -24,7 +24,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
-#include "dbReadVerilog.hh"
+#include "db_sta/dbReadVerilog.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"

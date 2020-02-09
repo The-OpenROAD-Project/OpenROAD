@@ -35,14 +35,11 @@ set(OPENROAD_SOURCE
   OpenRoad.cc
   ${OPENROAD_TCL_INIT}
   Main.cc
-
-  dbReadVerilog.cc
   )
 
 set(OPENROAD_TCL_FILES
   ${OPENSTA_HOME}/tcl/Util.tcl
   OpenRoad.tcl
-  dbReadVerilog.tcl
   ${ICEWALL_HOME}/src/ICeWall.tcl
   ${PDNGEN_HOME}/src/PdnGen.tcl
   )
@@ -120,6 +117,7 @@ set_property(SOURCE ${OPENROAD_SWIG_FILE}
   PROPERTY SWIG_FLAGS
   -module openroad
   -namespace -prefix ord
+  -I${DBSTA_HOME}/include
   -I${OPENROAD_HOME}/src
   -I${OPENDB_HOME}/include
 )
@@ -151,6 +149,7 @@ target_include_directories(openroad_swig
   ${OPENSTA_HOME}/graph
   ${OPENSTA_HOME}/search
 
+  ${DBSTA_HOME}/include
   ${OPENDB_HOME}/include
 
   ${TCL_INCLUDE_PATH}
@@ -302,7 +301,7 @@ add_custom_target(openroad_tags etags -o TAGS
   ${OPENROAD_SOURCE}
   ${OPENROAD_HOME}/include/openroad/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.hh
-  ${OPENROAD_HOME}/include/db_sta/*.hh
+  ${DBSTA_HOME}/include/db_sta/*.hh
   ${OPENROAD_HOME}/src/dbSta/src/*.cc
   ${RESIZER_HOME}/src/*.hh
   ${RESIZER_HOME}/src/*.cc
