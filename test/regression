@@ -27,11 +27,12 @@ set ord_dir [file dirname $test_dir]
 source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
-set found_errors 0
+set tool_errors 0
 
-#puts "----------------------------------------------------------------"
+# Flow based tests (MIA)
+#puts "------------------------------------------------------"
 #puts "OpenROAD"
-#set found_errors [regression_body]
+incr tool_errors [regression_body]
 
 set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
 		    "DB STA" "src/dbSta/test/regression" \
@@ -46,22 +47,20 @@ set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
 		    "Tap cell" "src/tapcell/test/regression" \
 		  }
 
-set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
-		    "DB STA" "src/dbSta/test/regression" \
-		  }
-
 foreach {tool script} $tool_scripts {
-  puts "----------------------------------------------------------------"
+  puts "------------------------------------------------------"
   puts $tool
-  if { [catch [concat exec [file join $ord_dir $script]] result] } {
-    puts $result
-    set found_errors 1
-  } else {
-    puts $result
+  if { [catch "exec [file join $ord_dir $script] >@stdout"] } {
+    incr tool_errors
   }
 }
 
-exit $found_errors
+puts "------------------------------------------------------"
+if { $tool_errors } {
+  puts "Found $tool_errors tool regression failures."
+}
+
+exit $tool_errors
 
 # Local Variables:
 # mode:tcl
