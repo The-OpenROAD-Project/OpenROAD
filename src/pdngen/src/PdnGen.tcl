@@ -918,149 +918,176 @@ proc generate_via_stacks {l1 l2 tag grid_data constraints} {
   if {$layer1_direction == "hor" && [get_dir $l2] == "ver"} {
 
     if {[array names stripe_locs "$l1,$tag"] != ""} {
-      ## puts "Checking [llength $stripe_locs($l1,$tag)] horizontal stripes on $l1, $tag"
-      ## puts "  versus [llength $stripe_locs($l2,$tag)] vertical   stripes on $l2, $tag"
-      ## puts "     and [llength $blockage] blockages"
+      puts "Checking [llength $stripe_locs($l1,$tag)] horizontal stripes on $l1, $tag"
+      puts "  versus [llength $stripe_locs($l2,$tag)] vertical   stripes on $l2, $tag"
       #loop over each stripe of layer 1 and layer 2 
       foreach l1_str $stripe_locs($l1,$tag) {
-        set a1  [lindex $l1_str 1]
-        set layer1_width [lindex $l1_str 3]
-
-        foreach l2_str $stripe_locs($l2,$tag) {
-          set flag 1
-          set a2      [lindex $l2_str 0]
-          set layer2_width [lindex $l2_str 3]
-
-          # Ignore if outside the area
-          if {!($a2 >= [lindex $area 0] && $a2 <= [lindex $area 2] && $a1 >= [lindex $area 1] && $a1 <= [lindex $area 3])} {continue}
-          if {$a2 > [lindex $l1_str 2] || $a2 < [lindex $l1_str 0]} {continue}
-          if {$a1 > [lindex $l2_str 2] || $a1 < [lindex $l2_str 1]} {continue}
-
-          if {[lindex $l2_str 1] == [lindex $area 3]} {continue}
-          if {[lindex $l2_str 2] == [lindex $area 1]} {continue}
-
-          #loop over each blockage geometry (macros are blockages)
-          foreach layer [get_layers_from_to $layer1 $layer2] {
-            if {[dict exists $blockages $layer]} {
-              ## puts "     and [llength [dict get $blockages $layer]] blockages"
-              foreach blk [dict get $blockages $layer] {
-                set b1 [lindex $blk 0]
-                set b2 [lindex $blk 1]
-                set b3 [lindex $blk 2]
-                set b4 [lindex $blk 3]
-                ## Check if stripes are to be blocked on these blockages (blockages are specific to each layer). If yes, do not drop vias
-                if {($a2 > $b1 && $a2 < $b3 && $a1 > $b2 && $a1 < $b4 ) } {
-                  set flag 0
-                  break
-                } 
-                if {$a2 > $b1 && $a2 < $b3 && $a1 == $b2 && $a1 == [lindex $area 1]} {
-                  set flag 0
-                  break
-                } 
-                if {$a2 > $b1 && $a2 < $b3 && $a1 == $b4 && $a1 == [lindex $area 3]} {
-                  set flag 0
-                  break
-                }
-              }
-            }
-            if {$flag == 0} {break}
-          }
-
-          if {$flag == 1} {
-            ## if no blockage restriction, append intersecting points to this "intersections"
-            if {[regexp {.*_PIN_(hor|ver)} $l1 - dir]} {
-              set layer1_width [lindex $l1_str 3] ; # Already in def units
-            }
-            set rule_name ${l1}${layer2}_${layer2_width}x${layer1_width}
-            if {![dict exists $logical_viarules $rule_name]} {
-              dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width ${layer2_width} height ${layer1_width}]
-            }
-            lappend intersections "rule $rule_name x $a2 y $a1"
-          }
+        set box [::odb::odb_newSetFromRect [lindex $l1_str 0] [expr [lindex $l1_str 1] - [lindex $l1_str 3] / 2] [lindex $l1_str 2] [expr [lindex $l1_str 1] + [lindex $l1_str 3] / 2]]
+        if {[array names layer_set $l1] == ""} {
+          set layer_set($l1) $box
+        } else {
+          ::odb::odb_orSet $layer_set($l1) $box
         }
       }
-    }
+      foreach l2_str $stripe_locs($l2,$tag) {
+        set box [::odb::odb_newSetFromRect [expr [lindex $l2_str 0] - [lindex $l2_str 3] / 2] [lindex $l2_str 1] [expr [lindex $l2_str 0] + [lindex $l2_str 3] / 2] [lindex $l2_str 2]]
+
+        if {[array names layer_set $l2] == ""} {
+          set layer_set($l2) $box
+        } else {
+          ::odb::odb_orSet $layer_set($l2) $box
+        }
+      }
+      puts "Num shapes $l1: [llength [::odb::odb_getPolygons $layer_set($l1)]]"
+      puts "Num shapes $l2: [llength [::odb::odb_getPolygons $layer_set($l2)]] ([llength $stripe_locs($l2,$tag)])"
+      ::odb::odb_andSet $layer_set($l1) $layer_set($l2)
+      
+      set intersection $layer_set($l1)
+      
+      puts "Num shapes after and [llength [::odb::odb_getPolygons $intersection]]"
+      foreach shape [::odb::odb_getPolygons $intersection] {
+        set points [::odb::odb_getPoints $shape]
+        if {[llength $points] != 4} {
+          error "unexpected number of points in shape ([llength $points])"
+        }
+        set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+        set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+        set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+        set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+        
+        set width [expr $xMax - $xMin]
+        set height [expr $yMax - $yMin]
+        
+        set rule_name ${l1}${layer2}_${width}x${height}
+        if {![dict exists $logical_viarules $rule_name]} {
+          dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width $width height $height]
+        }
+        lappend intersections "rule $rule_name x [expr ($xMax + $xMin) / 2] y [expr ($yMax + $yMin) / 2]"
+      }
 
   } elseif {$layer1_direction == "ver" && [get_dir $l2] == "hor"} {
     ##Second case of orthogonal intersection, similar criteria as above, but just flip of coordinates to find intersections
     if {[array names stripe_locs "$l1,$tag"] != ""} {
-      ## puts "Checking [llength $stripe_locs($l1,$tag)] vertical   stripes on $l1, $tag"
-      ## puts "  versus [llength $stripe_locs($l2,$tag)] horizontal stripes on $l2, $tag"
+      # puts "Checking [llength $stripe_locs($l1,$tag)] vertical   stripes on $l1, $tag"
+      # puts "  versus [llength $stripe_locs($l2,$tag)] horizontal stripes on $l2, $tag"
+      array set layer_set {}
       foreach l1_str $stripe_locs($l1,$tag) {
-        set n1  [lindex $l1_str 0]
-        set layer1_width [lindex $l1_str 3]
-        foreach l2_str $stripe_locs($l2,$tag) {
-          set flag 1
-          set n2      [lindex $l2_str 1]
-          set layer2_width [lindex $l2_str 3]
-
-          # Ignore if outside the area
-          if {!($n1 >= [lindex $area 0] && $n1 <= [lindex $area 2] && $n2 >= [lindex $area 1] && $n2 <= [lindex $area 3])} {continue}
-          if {$n2 > [lindex $l1_str 2] || $n2 < [lindex $l1_str 1]} {continue}
-          if {$n1 > [lindex $l2_str 2] || $n1 < [lindex $l2_str 0]} {continue}
-
-          foreach layer [get_layers_from_to $layer1 $layer2] {
-            if {[dict exists $blockages $layer]} {
-              ## puts "     and [llength [dict get $blockages $layer]] blockages"
-              foreach blk [dict get $blockages $layer] {
-                set b1 [lindex $blk 0]
-                set b2 [lindex $blk 1]
-                set b3 [lindex $blk 2]
-                set b4 [lindex $blk 3]
-                if {($n1 >= $b1 && $n1 <= $b3 && $n2 >= $b2 && $n2 <= $b4)} {
-                    set flag 0
-                    break
-                }
-              }
-            }
-            if {$flag == 0} {break}
-          }
-
-          if {$flag == 1} {
-              ## if no blockage restriction, append intersecting points to this "intersections"
-              if {[regexp {.*_PIN_(hor|ver)} $l1 - dir]} {
-                set layer1_width [lindex $l1_str 3] ; # Already in def units
-              }
-              set rule_name ${l1}${layer2}_${layer1_width}x${layer2_width}
-              if {![dict exists $logical_viarules $rule_name]} {
-                dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width ${layer1_width} height ${layer2_width}]
-              }
-              lappend intersections "rule $rule_name x $n1 y $n2"
-          }
-
-
+        if {[is_rails_layer $l1]} {
+          set box [::odb::odb_newSetFromRect [lindex $l1_str 0] [expr [lindex $l1_str 1] - [lindex $l1_str 3] / 2] [lindex $l1_str 2] [expr [lindex $l1_str 1] + [lindex $l1_str 3] / 2]]
+        } else {
+          set box [::odb::odb_newSetFromRect [expr [lindex $l1_str 0] - [lindex $l1_str 3] / 2] [lindex $l1_str 1] [expr [lindex $l1_str 2] + [lindex $l1_str 3] / 2] [lindex $l1_str 1]]
+        }
+        if {[array names layer_set $l1] == ""} {
+          set layer_set($l1) $box
+        } else {
+          ::odb::odb_orSet $layer_set($l1) $box
         }
       }
+      foreach l2_str $stripe_locs($l2,$tag) {
+        set box [::odb::odb_newSetFromRect [lindex $l2_str 0] [expr [lindex $l2_str 1] - [lindex $l2_str 3] / 2] [lindex $l2_str 2] [expr [lindex $l2_str 1] + [lindex $l2_str 3] / 2]]
+
+        if {[array names layer_set $l2] == ""} {
+          set layer_set($l2) $box
+        } else {
+          ::odb::odb_orSet $layer_set($l2) $box
+        }
+      }
+      puts "Num shapes $l1,$tag: [llength [::odb::odb_getPolygons $layer_set($l1)]]"
+      puts "Num shapes $l2,$tag: [llength [::odb::odb_getPolygons $layer_set($l2)]] [llength $stripe_locs($l2,$tag)]"
+      ::odb::odb_andSet $layer_set($l1) $layer_set($l2)
+      
+      set intersection $layer_set($l1)
+      
+      puts "Num shapes after and [llength [::odb::odb_getPolygons $intersection]]"
+      foreach shape [::odb::odb_getPolygons $intersection] {
+        set points [::odb::odb_getPoints $shape]
+        if {[llength $points] != 4} {
+          error "unexpected number of points in shape ([llength $points])"
+        }
+        set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+        set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+        set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+        set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+        
+        set width [expr $xMax - $xMin]
+        set height [expr $yMax - $yMin]
+        
+        set rule_name ${l1}${layer2}_${width}x${height}
+        if {![dict exists $logical_viarules $rule_name]} {
+          dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width $width height $height]
+        }
+        lappend intersections "rule $rule_name x [expr ($xMax + $xMin) / 2] y [expr ($yMax + $yMin) / 2]"
+      }
+      
     }
   } else { 
     #Check if stripes have orthogonal intersections. If not, exit
     error "ERROR: Adding vias between same direction layers is not supported yet.\nLayer: $l1, Direction: $layer1_direction\nLayer: $l2, Direction: [get_dir $l2]"
   }
+  puts "Added [llength $intersections] intersections"
 
   return [generate_vias $l1 $l2 $intersections $constraints]
 }
 
 # proc to generate follow pin layers or standard cell rails
-proc generate_lower_metal_followpin_rails {tag grid_data} {
+proc generate_lower_metal_followpin_rails {grid_data} {
   variable stripe_locs
-  variable row_height
-  variable rails_start_with
-
-  set area [dict get $grid_data area]
-  #Assumes horizontal stripes
-  foreach lay [get_rails_layers] {
-
-    if {$tag == $rails_start_with} { ;#If starting from bottom with this net, 
-        set lly [lindex $area 1]
-    } else {
-        set lly [expr {[lindex $area 1] + $row_height}]
+  variable block
+  
+  foreach row [$block getRows] {
+    set orient [$row getOrient]
+    set box [$row getBBox]
+    switch -exact $orient {
+      R0 {
+        set vdd_y [$box yMax]
+        set vss_y [$box yMin]
+      }
+      MX {
+        set vdd_y [$box yMin]
+        set vss_y [$box yMax]
+      }
+      default {
+        error "unexpected row orientation $orient for row [$row getName]"
+      }
     }
-    lappend stripe_locs($lay,$tag) "[lindex $area 0] $lly [lindex $area 2] [dict get $grid_data rails $lay width]"
+    foreach lay [get_rails_layers] {
+      set width [dict get $grid_data rails $lay width]
+      set vdd_box [::odb::odb_newSetFromRect [$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]]
+      set vss_box [::odb::odb_newSetFromRect [$box xMin] [expr $vss_y - $width / 2] [$box xMax] [expr $vss_y + $width / 2]]
+      if {[array names vdd_set $lay] == ""} {
+        set vdd_set($lay) $vdd_box
+        set vss_set($lay) $vss_box
+      } else {
+        ::odb::odb_orSet $vdd_set($lay) $vdd_box
+        ::odb::odb_orSet $vss_set($lay) $vss_box
+      }
+    }
+  }
+  foreach lay [get_rails_layers] {
+    foreach shape [odb::odb_getPolygons $vdd_set($lay)] {
+      set points [odb::odb_getPoints $shape]
+      if {[llength $points] != 4} {
+        error "unexpected number of points in shape ([llength $points])"
+      }
+      set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+      set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+      set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+      set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
 
+      lappend stripe_locs($lay,POWER)  "$xMin [expr ($yMin + $yMax) / 2] $xMax [dict get $grid_data rails $lay width]"
+    }
 
-    #Rail every alternate rows - Assuming horizontal rows and full width rails
-    for {set y [expr {$lly + (2 * $row_height)}]} {$y <= [lindex $area 3]} {set y [expr {$y + (2 * $row_height)}]} {
-      lappend stripe_locs($lay,$tag) "[lindex $area 0] $y [lindex $area 2] [dict get $grid_data rails $lay width]"
+    foreach shape [::odb::odb_getPolygons $vss_set($lay)] {
+      set points [::odb::odb_getPoints $shape]
+      if {[llength $points] != 4} {
+        error "unexpected number of points in shape ([llength $points])"
+      }
+      set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+      set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+      set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+      set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+
+      lappend stripe_locs($lay,GROUND) "$xMin [expr ($yMin + $yMax) / 2] $xMax [dict get $grid_data rails $lay width]"
     }
   }
 }
@@ -1133,6 +1160,7 @@ proc generate_metal_with_blockage {area layer layer_width tag b1 b2 b3 b4} {
     }
         
     set stripe_locs($layer,$tag) [lsort -unique $stripe_locs($layer,$tag)]
+    puts "generate_metal_with_blockage: #straps added: layer $layer net $tag [llength $stripe_locs($layer,$tag)]"
 }
 
 # sub proc called from previous proc
@@ -1233,20 +1261,6 @@ proc generate_stripes_vias {tag net_name grid_data} {
   variable plan_template
   variable template
 
-  #puts "Adding stripes for $net_name ..."
-  if {[dict exists $grid_data rails]} {
-    set area [dict get $grid_data area]
-    foreach lay [dict keys [dict get $grid_data rails]] {
-        #Std. cell rails
-      #puts "    Layer $lay ..."
-      generate_lower_metal_followpin_rails $tag $grid_data
-      if {[dict exists $blockages $lay]} {
-        foreach blk [dict get $blockages $lay] {
-          generate_metal_with_blockage $area $lay [dict get $grid_data rails $lay width] $tag {*}$blk
-        }
-      }
-    }
-  }
   foreach lay [dict keys [dict get $grid_data straps]] {
     # puts "    Layer $lay ..."
 
@@ -1282,12 +1296,12 @@ proc generate_stripes_vias {tag net_name grid_data} {
     foreach connection [dict get $grid_data connect] {
         set l1 [lindex $connection 0]
         set l2 [lindex $connection 1]
-        # puts "    $l1 to $l2"
+        puts "    $l1 to $l2"
         set constraints {}
         if {[dict exists $connection constraints]} {
           set constraints [dict get $connection constraints]
         }
-        # puts "    Constraints: $constraints"
+        puts "    Constraints: $constraints"
         set connections [generate_via_stacks $l1 $l2 $tag $grid_data $constraints]
         lappend vias [list net_name $net_name connections $connections]
     }
@@ -1494,6 +1508,8 @@ proc export_opendb_specialnet {net_name signal_type} {
     set layer [$tech findLayer $lay]
 
     set dir [get_dir $lay]
+    if {[is_rails_layer $lay]} {set dir "hor"}
+    
     if {$dir == "hor"} {
       foreach l_str $stripe_locs($lay,$signal_type) {
         set l1 [lindex $l_str 0]
@@ -2028,6 +2044,12 @@ proc specify_grid {type specification} {
 proc add_grid {grid_data} {
   variable design_data
   
+  #puts "Adding stripes for $net_name ..."
+  if {[dict exists $grid_data rails]} {
+    set area [dict get $grid_data area]
+    generate_lower_metal_followpin_rails $grid_data
+  }
+
   ## Power nets
   ## puts "Power straps"
   foreach pwr_net [dict get $design_data power_nets] {
