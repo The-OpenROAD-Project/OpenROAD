@@ -108,6 +108,7 @@ record_tests {
   read_verilog1
   read_verilog2
   read_verilog3
+  read_verilog4
   write_verilog1
   write_verilog2
   write_verilog3
