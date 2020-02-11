@@ -43,6 +43,8 @@
 #include <opendb/lefin.h>
 #include <tuple>
 #include <unordered_map>
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 
 namespace psn
 {
@@ -104,6 +106,8 @@ typedef sta::PinSet         InstanceTermSet;
 typedef sta::PortDirection  PinDirection;
 typedef odb::adsPoint       Point;
 typedef OpenStaHandler      DatabaseHandler;
+typedef sta::dbSta          DatabaseSta;
+typedef sta::dbNetwork      DatabaseStaNetwork;
 
 #endif
 

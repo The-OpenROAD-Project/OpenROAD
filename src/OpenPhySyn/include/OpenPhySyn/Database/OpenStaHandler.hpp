@@ -33,8 +33,6 @@
 #define __PSN_OPEN_STA_HANDLER__
 
 #include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
 #include <unordered_map>
@@ -45,12 +43,12 @@ class PathPoint;
 class OpenStaHandler
 {
 public:
-    OpenStaHandler(sta::DatabaseSta* sta);
+    OpenStaHandler(DatabaseSta* sta);
 
 #include <OpenPhySyn/Database/DatabaseHandler.in>
 
-    sta::DatabaseStaNetwork* network() const;
-    sta::DatabaseSta*        sta() const;
+    DatabaseStaNetwork* network() const;
+    DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
     int evaluateFunctionExpression(
@@ -65,7 +63,7 @@ public:
 private:
     void                   makeEquivalentCells();
     sta::LibertyLibrarySeq allLibs() const;
-    sta::DatabaseSta*      sta_;
+    DatabaseSta*           sta_;
     Database*              db_;
 
     const sta::MinMax* min_max_;

@@ -34,7 +34,6 @@
 
 #include <Config.hpp>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/network/ConcreteNetwork.hh>
 #include <OpenSTA/search/Search.hh>
@@ -70,7 +69,7 @@ using sta::tcl_inits;
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
-Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
+Psn::Psn(DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 {
     if (sta == nullptr)
     {
@@ -84,7 +83,7 @@ Psn::Psn(sta::DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 }
 
 void
-Psn::initialize(sta::DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
+Psn::initialize(DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
                 bool import_psn_namespace, bool print_psn_version,
                 bool setup_sta_tcl)
 {
@@ -113,7 +112,7 @@ Psn::database() const
 {
     return db_;
 }
-sta::DatabaseSta*
+DatabaseSta*
 Psn::sta() const
 {
     return sta_;
@@ -123,12 +122,6 @@ LibraryTechnology*
 Psn::tech() const
 {
     return db_->getTech();
-}
-
-ProgramOptions&
-Psn::programOptions()
-{
-    return program_options_;
 }
 
 DatabaseHandler*
@@ -373,14 +366,6 @@ void
 Psn::printUsage(bool raw_str, bool print_transforms, bool print_commands)
 {
     PSN_LOG_RAW("");
-    if (raw_str)
-    {
-        PSN_LOG_RAW(programOptions().usage());
-    }
-    else
-    {
-        PSN_LOG_INFO(programOptions().usage());
-    }
     if (print_commands)
     {
         printCommands(true);
@@ -521,36 +506,6 @@ Psn::printTransforms(bool raw_str)
     }
 
 } // namespace psn
-void
-Psn::processStartupProgramOptions()
-{
-
-    if (programOptions().hasLogLevel())
-    {
-        setLogLevel(programOptions().logLevel().c_str());
-    }
-    if (programOptions().verbose())
-    {
-        setLogLevel(LogLevel::debug);
-    }
-    if (programOptions().quiet())
-    {
-        setLogLevel(LogLevel::off);
-    }
-    if (programOptions().hasLogFile())
-    {
-        PsnLogger::instance().setLogFile(programOptions().logFile());
-    }
-    if (programOptions().hasFile())
-    {
-        sourceTclScript(programOptions().file().c_str());
-    }
-}
-void
-Psn::setProgramOptions(int argc, char* argv[])
-{
-    program_options_ = ProgramOptions(argc, argv);
-}
 
 int
 Psn::setLogLevel(const char* level)
@@ -674,7 +629,7 @@ Psn::initializeSta(Tcl_Interp* interp)
         interp = Tcl_CreateInterp();
         Tcl_Init(interp);
     }
-    sta_ = new sta::DatabaseSta;
+    sta_ = new DatabaseSta;
     sta_->init(interp, db_);
     return 0;
 }

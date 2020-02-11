@@ -89,23 +89,9 @@ set(SPD_LOG_HOME
 )
 endif()
 
-# Build cxxopts
-if(NOT DEFINED CXXOPTS_HOME)
-set(CXXOPTS_HOME
-  ${PROJECT_SOURCE_DIR}/external/cxxopts
-)
-endif()
 
 # Add spdlog
 add_subdirectory(external/spdlog)
-# Add cxxopts
-add_subdirectory(external/cxxopts)
-
-#CXXOPTS regex causes issues on older compilers..
-if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.2)
-add_definitions(-DOPENPHYSYN_CXX_OPTS_DISABLED)
-endif()
-
 
 
 
@@ -129,7 +115,6 @@ set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Psn/Psn.cpp
     ${PSN_HOME}/src/Psn/Exports.cpp
-    ${PSN_HOME}/src/Psn/ProgramOptions.cpp
     ${PSN_HOME}/src/Psn/DesignSettings.cpp
     ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
@@ -152,10 +137,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
     ${PSN_HOME}/src/PsnException/LoadTransformException.cpp
     ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
-    ${PSN_HOME}/src/Sta/DatabaseSta.cpp
     ${PSN_HOME}/src/Sta/PathPoint.cpp
-    ${PSN_HOME}/src/Sta/DatabaseSdcNetwork.cpp
-    ${PSN_HOME}/src/Sta/DatabaseStaNetwork.cpp
 )
 
 set(PSN_OPENROAD_LIBRARY_FILE "")
@@ -226,7 +208,7 @@ add_custom_target(
 
 
 set(PSN_SWIG_FILES
-  ${PSN_HOME}/app/Psn.i
+  ${PSN_HOME}/src/Tcl/Psn.i
 )
 set(PSN_DEP_FILES
   ${PSN_SWIG_FILES}
@@ -253,19 +235,9 @@ set(PRIVATE_INCLUDE_DIRS
   ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
-  ${OPENDB_HOME}/src
-  ${OPENDB_HOME}/src/db
-  ${OPENDB_HOME}/src/lefin
-  ${OPENDB_HOME}/src/defin
-  ${OPENDB_HOME}/src/defout
 )
 
-if (${OPENPHYSYN_TF_ENABLED})
-set(PRIVATE_INCLUDE_DIRS
-  ${TF_HOME}
-  ${PRIVATE_INCLUDE_DIRS}
-)
-endif()
+
 
 set(PUBLIC_LIBRARIES
 ${ZLIB_LIBRARIES}

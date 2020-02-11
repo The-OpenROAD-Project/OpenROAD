@@ -33,7 +33,6 @@
 #define __PSN_OPEN_DB_HANDLER__
 
 #include <OpenPhySyn/Database/Types.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Utils/PsnGlobal.hpp>
 #include <PsnLogger/PsnLogger.hpp>
 
@@ -44,7 +43,7 @@ namespace psn
 class OpenDBHandler
 {
 public:
-    OpenDBHandler(sta::DatabaseSta* sta);
+    OpenDBHandler(DatabaseSta* sta);
 #include <OpenPhySyn/Database/DatabaseHandler.in>
     Point        OpenStaHandler::location(BlockTerm* term);
     bool         isPlaced(BlockTerm* term) const;
@@ -56,8 +55,8 @@ public:
     virtual bool isTriState(BlockTerm* term) const;
 
 private:
-    sta::DatabaseSta* sta_;
-    Database*         db_;
+    DatabaseSta* sta_;
+    Database*    db_;
 };
 
 } // namespace psn

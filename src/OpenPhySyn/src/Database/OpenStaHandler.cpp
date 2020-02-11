@@ -35,8 +35,6 @@
 
 #include <OpenPhySyn/Database/OpenStaHandler.hpp>
 #include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
-#include <OpenPhySyn/Sta/DatabaseStaNetwork.hpp>
 #include <OpenPhySyn/Sta/PathPoint.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
@@ -63,7 +61,7 @@
 
 namespace psn
 {
-OpenStaHandler::OpenStaHandler(sta::DatabaseSta* sta)
+OpenStaHandler::OpenStaHandler(DatabaseSta* sta)
     : sta_(sta),
       db_(sta->db()),
       has_equiv_cells_(false),
@@ -1071,12 +1069,12 @@ OpenStaHandler::clear()
     sta_->clear();
     db_->clear();
 }
-sta::DatabaseStaNetwork*
+DatabaseStaNetwork*
 OpenStaHandler::network() const
 {
     return sta_->getDbNetwork();
 }
-sta::DatabaseSta*
+DatabaseSta*
 OpenStaHandler::sta() const
 {
     return sta_;

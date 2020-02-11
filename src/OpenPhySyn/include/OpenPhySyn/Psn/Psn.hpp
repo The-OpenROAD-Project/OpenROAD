@@ -34,9 +34,7 @@
 #include <OpenPhySyn/Database/DatabaseHandler.hpp>
 #include <OpenPhySyn/Database/Types.hpp>
 #include <OpenPhySyn/Psn/DesignSettings.hpp>
-#include <OpenPhySyn/Psn/ProgramOptions.hpp>
 #include <OpenPhySyn/PsnLogger/LogLevel.hpp>
-#include <OpenPhySyn/Sta/DatabaseSta.hpp>
 #include <OpenPhySyn/Transform/PsnTransform.hpp>
 #include <OpenPhySyn/Transform/TransformInfo.hpp>
 #include <OpenSTA/network/ConcreteNetwork.hh>
@@ -50,8 +48,6 @@ class Psn
 public:
     static Psn& instance();
     static Psn* instancePtr();
-
-    virtual ProgramOptions& programOptions();
 
     int setLogLevel(const char* level);
     int setLogPattern(const char* pattern);
@@ -68,7 +64,6 @@ public:
     int  evaluateTclCommands(const char* commands) const;
     int  setupInterpreterReadline();
     void setProgramOptions(int argc, char* argv[]);
-    void processStartupProgramOptions();
     int  sourceTclScript(const char* script_path);
     virtual void setWireRC(float res_per_micon, float cap_per_micron);
 
@@ -83,24 +78,24 @@ public:
     virtual void printCommands(bool raw_str = false);
 
     virtual Database*          database() const;
-    virtual sta::DatabaseSta*  sta() const;
+    virtual DatabaseSta*       sta() const;
     virtual LibraryTechnology* tech() const;
 
     virtual void clearDatabase();
 
     static void
-    initialize(sta::DatabaseSta* sta = nullptr, bool load_transforms = true,
+    initialize(DatabaseSta* sta = nullptr, bool load_transforms = true,
                Tcl_Interp* interp = nullptr, bool import_psn_namespace = false,
                bool print_psn_version = false, bool setup_sta_tcl = false);
     virtual ~Psn();
 
 private:
-    Psn(sta::DatabaseSta* sta = nullptr);
-    DesignSettings*   settings_;
-    sta::DatabaseSta* sta_;
-    Database*         db_;
-    DatabaseHandler*  db_handler_;
-    std::string       exec_path_;
+    Psn(DatabaseSta* sta = nullptr);
+    DesignSettings*  settings_;
+    DatabaseSta*     sta_;
+    Database*        db_;
+    DatabaseHandler* db_handler_;
+    std::string      exec_path_;
 
     int initializeDatabase();
     int initializeSta(Tcl_Interp* interp = nullptr);
@@ -108,7 +103,6 @@ private:
     std::unordered_map<std::string, std::shared_ptr<PsnTransform>> transforms_;
     std::unordered_map<std::string, TransformInfo> transforms_info_;
     Tcl_Interp*                                    interp_;
-    ProgramOptions                                 program_options_;
     static Psn*                                    psn_instance_;
     static bool                                    is_initialized_;
 };
