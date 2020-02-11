@@ -34,7 +34,7 @@
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
-#include "replace/MakeReplace.h"
+#include "replace/src/MakeReplace.h"
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"

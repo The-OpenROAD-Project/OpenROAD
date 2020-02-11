@@ -39,13 +39,14 @@ set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
 		    "I/O placer" "src/ioPlacer/test/regression" \
 		    "PDN gen" "src/pdngen/test/regression" \
 		    "Triton Macro Place" "src/TritonMacroPlace/test/regression" \
-		    "Replace" "src/replace/test/regression" \
 		    "Resizer" "src/resizer/test/regression" \
 		    "Triton CTS" "src/TritonCTS/test/regression" \
 		    "OpenDP" "src/opendp/test/regression" \
 		    "Fast Route" "src/FastRoute/test/regression" \
 		    "Tap cell" "src/tapcell/test/regression" \
 		  }
+# side lined
+# "Replace" "src/replace/test/regression" \
 
 foreach {tool script} $tool_scripts {
   puts "------------------------------------------------------"
