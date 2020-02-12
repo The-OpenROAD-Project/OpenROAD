@@ -21,6 +21,7 @@ src/ - sources and private headers
 src/CMakelists.txt
 include/<toolname>/ - exported headers
 test/
+test/regression
 ```
 
 OpenROAD repository
@@ -34,22 +35,18 @@ src/OpenROAD.tcl - basic read/write lef/def/db commands
 src/OpenROAD.hh - OpenROAD top level class, has instances of tools
 ```
 
-Tools that are part of the OpenROAD repo because they are not a lot of code
-or terribly useful without the rest of OpenROAD.
-```
-src/dbReadVerilog.* - Verilog reader/flattener
-src/InitFloorplan.* - Initialize floorplan
-src/dbSta/ - OpenSTA on OpenDB.
-src/resizer/ - gate resizer
-```
-
-Submodule repos (note these are NOT in src/module)
+Submodule repos in /src (note these are NOT in src/module)
 
 ```
-src/OpenDB
-src/OpenSTA
-src/replace
-src/flute3
+OpenDB
+OpenSTA
+replace
+ioPlacer
+FastRoute
+TritonMacroPlace
+OpenRCX
+flute3
+eigen
 ```
 
 Submodules that are shared by multiple tools are owned by OpenROAD
@@ -57,6 +54,8 @@ so that there are not redundant source trees and compiles.
 
 Each tool submodule cmake file builds a library that is linked by the
 OpenROAD application. The tools should not define a `main()` function.
+If the tool is tcl only and has no c++ code it does not need to have
+a cmake file.
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files.  These functions are all provided by the OpenROAD
@@ -82,7 +81,7 @@ have an implicit argument of the current OpenROAD class
 object. Functions to get individual tools from the OpenROAD object can
 be defined.
 
-### Initialization
+### Initialization (c++ tools only)
 
 The OpenRoad class only has pointers to each tools with functions to
 get each tool.  Each tool has (at a minimum) a function to make an
@@ -121,49 +120,40 @@ that is evaluated at run time (See Resizer::init()).
 ### Test
 
 Each "tool" has a /test directory containing a script nameed
-"regression" to run "unit" tests. With no arguments it should
-run default unit tests.
+"regression" to run "unit" tests. With no arguments it should run
+default unit tests.
 
-No databases should be in tests. Read lef/def/verilog to make a database.
+No database files should be in tests. Read LEF/DEF/Verilog to make a
+database.
 
-The regression script should not depend on the current working directory.
-It should be able to be run from any directory. Use filenames relative
-to the script name rather the the current working directory.
+The regression script should not depend on the current working
+directory.  It should be able to be run from any directory. Use
+filenames relative to the script name rather the the current working
+directory.
 
 Regression scripts should print a consise summary of test failures.
-They should **not** print thousands of lines of internal tool info.
-
-### Issues
-
-Using Tcl wrappers for commands does not work in python without
-rewritting them.  The only way to make both work is to build command
-support (see OpenSTA/tcl/Util.tcl) in c++ and make exported swig
-commands use it. OpenSTA has quite a bit of Tcl that would have to be
-rewritten as c++. In the short term, the python version may be
-hobbled.
-
-Reporting (printing) standard. printf does not work in c++ code with
-Tcl because the buffers are not flushed and the output of one can be
-delayed. printf also does not support logging or redirection. OpenDB
-and OpenSTA have separate solutions to this issue. We have to pick
-a comment solution. I have not studied the OpenDB code.
+The regression script should return an exit code of zero if there are
+no errors and 1 if there are errors.  The script should **not** print
+thousands of lines of internal tool info.
 
 ### Builds
 
 Checking out the OpenROAD repo with --recursive installs all of the
 OpenRoad tools and their submodules.
 
-  git clone --recusive https://github.com/The-OpenROAD-Project/OpenROAD.git
-  cd OpenROAD
-  mkdir build
-  cd build
-  cmake ..
-  make
-  
-All tools build using cmake and must have a CMakeLists.txt file in their
-directory.
+```
+git clone --recusive https://github.com/The-OpenROAD-Project/OpenROAD.git
+cd OpenROAD
+mkdir build
+cd build
+cmake ..
+make
+```
 
-This builds the 'openroad' executable.
+All tools build using cmake and must have a CMakeLists.txt file in
+their tool directory.
+
+This builds the 'openroad' executable in /build.
 
 Note that removing submodules from a repo when moving it into OpenROAD
 is less than obvious.  Here are the steps:
