@@ -1043,18 +1043,25 @@ proc generate_stripes_vias {tag net_name grid_data} {
     if {[dict exists $grid_data straps $lay width]} {
       set area [dict get $grid_data area]
       generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
+      set width [dict get $grid_data straps $lay width]
     } else {
       foreach x [lsort -integer [dict keys $plan_template]] {
         foreach y [lsort -integer [dict keys [dict get $plan_template $x]]] {
           set template_name [dict get $plan_template $x $y]
           set layer_info [dict get $grid_data straps $lay $template_name]
           set area [list $x $y [expr $x + [dict get $template width]] [expr $y + [dict get $template height]]]
+          # puts "generate_stripes_vias: Adding straps for $area"
           generate_upper_metal_mesh_stripes $tag $lay $layer_info $area
         }
       }
+      set width [dict get $layer_info width]
     }
     if {[dict exists $blockages $lay]} {
       set stripe_locs($lay,$tag) [::odb::odb_subtractSet $stripe_locs($lay,$tag) [dict get $blockages $lay]]
+      # Trim any shapes that are less than the width of the wire
+      set size_by [expr $width / 2 - 1]
+      set trimmed_set [::odb::odb_shrinkSet $stripe_locs($lay,$tag) $size_by]
+      set stripe_locs($lay,$tag) [::odb::odb_bloatSet $trimmed_set $size_by]
     }
   }
 
@@ -1104,6 +1111,7 @@ proc import_macro_boundaries {} {
   variable macros
   variable instances
 
+  # puts "import_macro_boundaries: start"
   set macros {}
   foreach lib $libs {
     foreach cell [$lib getMasters] {
@@ -1150,6 +1158,9 @@ proc import_macro_boundaries {} {
 
     dict set instances $instance halo_boundary [list $llx $lly $urx $ury]
   }
+  
+  # puts "import_macro_boundaries: end"
+  
 }
 
 proc import_def_components {macros} {
@@ -1282,7 +1293,12 @@ proc export_opendb_specialnet {net_name signal_type} {
     foreach shape [::odb::odb_getPolygons $stripe_locs($lay,$signal_type)] {
       set points [::odb::odb_getPoints $shape]
       if {[llength $points] != 4} {
-        error "unexpected number of points in shape ([llength $points])"
+        variable def_units
+        puts "unexpected number of points in shape ($lay $signal_type [llength $points])"
+        puts -nonewline "    "
+        foreach point $points {puts -nonewline "([expr 1.0 * [$point getX] / $def_units ] [expr 1.0 * [$point getY] / $def_units]) "}
+        puts ""
+        continue
       }
       set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
       set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
@@ -1438,6 +1454,8 @@ proc get_memory_instance_pg_pins {} {
   variable block
   variable stripe_locs
 
+  # puts "get_memory_instance_pg_pins: start"
+
   foreach inst [$block getInsts] {
     set inst_name [$inst getName]
     set master [$inst getMaster]
@@ -1461,13 +1479,15 @@ proc get_memory_instance_pg_pins {} {
     if {[$master getType] == "CORE_TIEHIGH"} {continue}
     if {[$master getType] == "CORE_TIELOW"} {continue}
 
+    # puts "get_memory_instance_pg_pins: cell name - [$master getName]"
+
     foreach term_name [concat [get_macro_power_pins $inst_name] [get_macro_ground_pins $inst_name]] {
       set inst_term [$inst findITerm $term_name]
       if {$inst_term == "NULL"} {continue}
       
       set mterm [$inst_term getMTerm]
       set type [$mterm getSigType]
-
+      set pin_shapes ""
       foreach mPin [$mterm getMPins] {
         foreach geom [$mPin getGeometry] {
           set layer [[$geom getTechLayer] getName]
@@ -1482,16 +1502,23 @@ proc get_memory_instance_pg_pins {} {
             set layer_name ${layer}_PIN_ver
           }
           set pin_shape [odb::odb_newSetFromRect {*}$box]
-          if {[array names stripe_locs "$layer_name,$type"] == ""} {
-            set stripe_locs($layer_name,$type) $pin_shape
+
+          if {$pin_shapes == ""} {
+            set pin_shapes $pin_shape
           } else {
-            set stripe_locs($layer_name,$type) [odb::odb_orSet $stripe_locs($layer_name,$type) $pin_shape]
+            set pin_shapes [odb::odb_orSet $pin_shapes $pin_shape]
           }            
         }
+      }
+      if {[array names stripe_locs "$layer_name,$type"] == ""} {
+        set stripe_locs($layer_name,$type) $pin_shapes
+      } else {
+        set stripe_locs($layer_name,$type) [odb::odb_orSet $stripe_locs($layer_name,$type) $pin_shapes]
       }
     }    
   }
 #    puts "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+  # puts "get_memory_instance_pg_pins: end"
 }
 
 proc set_core_area {xmin ymin xmax ymax} {
@@ -1525,6 +1552,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   variable stripes_start_with
   variable rails_start_with
   variable physical_viarules
+  variable stdcell_area
   
 #    set ::start_time [clock clicks -milliseconds]
   if {![file_exists_non_empty $PDN_cfg]} {
@@ -1539,6 +1567,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
   set design_data {}
   set physical_viarules {}
+  set stdcell_area ""
   
   source $PDN_cfg
   write_pdn_strategy 
@@ -1619,16 +1648,6 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   dict set design_data config die_area     [list [$die_area xMin]  [$die_area yMin] [$die_area xMax] [$die_area yMax]]
   dict set design_data config default_halo [lmap x $default_halo {expr $x * $def_units}]
          
-  if {[info vars ::core_area_llx] != "" && [info vars ::core_area_lly] != "" && [info vars ::core_area_urx] != "" && [info vars ::core_area_ury] != ""} {
-     set_core_area \
-       [expr round($::core_area_llx * $def_units)] \
-       [expr round($::core_area_lly * $def_units)] \
-       [expr round($::core_area_urx * $def_units)] \
-       [expr round($::core_area_ury * $def_units)]
-  } else {
-    set_core_area {*}[find_core_area]
-  }
-  
   array unset stripe_locs
 
   ########################################
@@ -1650,6 +1669,19 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
   set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
 
+  # Set the core area
+  if {[info vars ::core_area_llx] != "" && [info vars ::core_area_lly] != "" && [info vars ::core_area_urx] != "" && [info vars ::core_area_ury] != ""} {
+     # The core area is larger than the stdcell area by half a rail, since the stdcell rails extend beyond the rails
+
+     set_core_area \
+       [expr round($::core_area_llx * $def_units)] \
+       [expr round($::core_area_lly * $def_units)] \
+       [expr round($::core_area_urx * $def_units)] \
+       [expr round($::core_area_ury * $def_units)]
+  } else {
+    set_core_area {*}[get_extent [get_stdcell_plus_area]]
+  }
+  
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
     if {[lsearch -exact $metal_layers $layer] < 0} {
@@ -2012,26 +2044,90 @@ proc get_specification_template {x y} {
   variable default_grid_data
 }
 
-proc find_core_area {} {
+proc get_extent {polygon_set} {
+  set first_point  [lindex [odb::odb_getPoints [lindex [odb::odb_getPolygons $polygon_set] 0]] 0]
+  set minX [set maxX [$first_point getX]]
+  set minY [set maxY [$first_point getY]]
+
+  foreach shape [odb::odb_getPolygons $polygon_set] {
+    foreach point [odb::odb_getPoints $shape] {
+      set x [$point getX]
+      set y [$point getY]
+      set minX [expr min($minX,$x)]
+      set maxX [expr max($maxX,$x)]
+      set minY [expr min($minY,$y)]
+      set maxY [expr max($maxY,$y)]
+    }
+  }
+
+  return [list $minX $minY $maxX $maxY]
+}
+
+proc get_stdcell_plus_area {} {
+  variable stdcell_area
+  variable stdcell_plus_area
+  
+  if {$stdcell_area == ""} {
+    get_stdcell_area
+  }
+  # puts "get_stdcell_plus_area: stdcell_area      [get_extent $stdcell_area]"
+  # puts "get_stdcell_plus_area: stdcell_plus_area [get_extent $stdcell_plus_area]"
+  return $stdcell_plus_area
+}
+
+proc get_stdcell_area {} {
   variable block
-    
+  variable stdcell_area
+  variable stdcell_plus_area
+  
+  if {$stdcell_area != ""} {return $stdcell_area}
+  set rails_width [get_rails_max_width]
+  
   set rows [$block getRows]
   set first_row [[lindex $rows 0] getBBox]
-    
+
   set minX [$first_row xMin]
   set maxX [$first_row xMax]
   set minY [$first_row yMin]
   set maxY [$first_row yMax]
+  set stdcell_area [odb::odb_newSetFromRect $minX $minY $maxX $maxY]
+  set stdcell_plus_area [odb::odb_newSetFromRect $minX [expr $minY - $rails_width / 2] $maxX [expr $maxY + $rails_width / 2]]
     
-  foreach row [lrange [$block getRows] 1 end] {
+  foreach row [lrange $rows 1 end] {
     set box [$row getBBox]
-    if {[set xMin [$box xMin]] < $minX} {set minX $xMin}
-    if {[set xMax [$box xMax]] > $maxX} {set maxX $xMax}
-    if {[set yMin [$box yMin]] < $minY} {set minY $yMin}
-    if {[set yMax [$box yMax]] > $maxY} {set maxY $yMax}
+    set minX [$box xMin]
+    set maxX [$box xMax]
+    set minY [$box yMin]
+    set maxY [$box yMax]
+    set stdcell_area [odb::odb_orSet $stdcell_area [odb::odb_newSetFromRect $minX $minY $maxX $maxY]]
+    set stdcell_plus_area [odb::odb_orSet $stdcell_plus_area [odb::odb_newSetFromRect $minX [expr $minY - $rails_width / 2] $maxX [expr $maxY + $rails_width / 2]]]
+  }
+
+  return $stdcell_area
+}
+
+proc find_core_area {} {
+  variable block
+  
+  set area [get_stdcell_area]
+
+  return [get_extent $area]
+}
+
+proc get_rails_max_width {} {
+  variable design_data
+  variable default_grid_data
+  
+  set max_width 0
+  foreach layer [get_rails_layers] {
+     if {[dict exists $default_grid_data rails $layer]} {
+       if {[set width [dict get $default_grid_data rails $layer width]] > $max_width} {
+         set max_width $width
+       }
+     }
   }
   
-  return [list $minX $minY $maxX $maxY]
+  return $max_width
 }
 
 proc core_area_boundary {} {
@@ -2039,8 +2135,10 @@ proc core_area_boundary {} {
   variable template
   variable metal_layers
 
-  set core_area [dict get $design_data config core_area]
-  set llx [lindex $core_area 0]
+  set core_area [find_core_area]
+  # We need to allow the rails to extend by half a rails width in the y direction, since the rails overlap the core_area
+  
+  set llx [lindex $core_area 0] 
   set lly [lindex $core_area 1]
   set urx [lindex $core_area 2]
   set ury [lindex $core_area 3]
@@ -2062,6 +2160,7 @@ proc core_area_boundary {} {
   set boundary [odb::odb_orSet $boundary [odb::odb_newSetFromRect [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly]]
   set boundary [odb::odb_orSet $boundary [odb::odb_newSetFromRect [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]]]
   set boundary [odb::odb_orSet $boundary [odb::odb_newSetFromRect $urx [expr $lly - $height] [expr $urx + $width] [expr $ury + $height]]]
+  set boundary [odb::odb_subtractSet $boundary [get_stdcell_plus_area]]
   
   foreach layer $metal_layers {
     dict set blockages $layer $boundary
@@ -2077,7 +2176,12 @@ proc get_instance_blockages {instances} {
   
   foreach inst $instances {
     foreach layer [get_macro_blockage_layers $inst] {
-      dict lappend blockages $layer [list [get_instance_llx $inst] [get_instance_lly $inst] [get_instance_urx $inst] [get_instance_ury $inst]]
+      set box [odb::odb_newSetFromRect [get_instance_llx $inst] [get_instance_lly $inst] [get_instance_urx $inst] [get_instance_ury $inst]]
+      if {[dict exists $blockages $layer]} {
+        dict set blockages $layer [odb::odb_orSet [dict get $blockages $layer] $box]
+      } else {
+        dict set blockages $layer $box
+      }
     }
   }
 
