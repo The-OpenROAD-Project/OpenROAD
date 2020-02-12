@@ -374,6 +374,14 @@ dbNetwork::setDb(dbDatabase *db)
 }
 
 void
+dbNetwork::setBlock(dbBlock *block)
+{
+  db_ = block->getDataBase();
+  block_ = block;
+  makeTopCell();
+}
+
+void
 dbNetwork::clear()
 {
   db_ = nullptr;

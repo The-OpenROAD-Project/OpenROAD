@@ -45,6 +45,7 @@ public:
   dbNetwork();
   virtual ~dbNetwork();
   void setDb(dbDatabase *db);
+  void setBlock(dbBlock *block);
   virtual void clear();
 
   void readLefAfter(dbLib *lib);

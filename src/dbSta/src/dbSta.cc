@@ -45,9 +45,23 @@ deleteDbSta(sta::dbSta *sta)
   delete sta;
 }
 
-}
+} // namespace ord
+
+////////////////////////////////////////////////////////////////
 
 namespace sta {
+
+dbSta *
+makeBlockSta(dbBlock *block)
+{
+  Sta *sta = Sta::sta();
+  dbSta *sta2 = new dbSta;
+  sta2->makeComponents();
+  sta2->getDbNetwork()->setBlock(block);
+  sta2->setTclInterp(sta->tclInterp());
+  sta2->copyUnits(sta->units());
+  return sta2;
+}
 
 extern "C" {
 extern int Dbsta_Init(Tcl_Interp *interp);

@@ -132,6 +132,7 @@ using ord::getSta;
 using ord::getResizer;
 using ord::getTritonCts;
 using ord::getOpenRCX;
+
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -257,6 +258,18 @@ db_has_rows()
   return db->getChip()
     && db->getChip()->getBlock()
     && db->getChip()->getBlock()->getRows().size() > 0;
+}
+
+sta::Sta *
+get_sta()
+{
+  return sta::Sta::sta();
+}
+
+void
+set_cmd_sta(sta::Sta *sta)
+{
+  sta::Sta::setSta(sta);
 }
 
 %} // inline

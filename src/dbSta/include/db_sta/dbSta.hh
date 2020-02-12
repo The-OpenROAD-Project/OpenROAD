@@ -27,6 +27,7 @@ class dbNetwork;
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbNet;
+using odb::dbBlock;
 
 class dbSta : public Sta
 {
@@ -57,6 +58,9 @@ protected:
   dbDatabase *db_;
   dbNetwork *db_network_;
 };
+
+dbSta *
+makeBlockSta(dbBlock *block);
 
 } // namespace
 #endif
