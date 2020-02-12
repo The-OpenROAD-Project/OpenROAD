@@ -197,8 +197,6 @@ protected:
   dbBlock *block_;
   Instance *top_instance_;
   Cell *top_cell_;
-  const char *zero_net_name_;
-  const char *one_net_name_;
 };
 
 } // namespace
