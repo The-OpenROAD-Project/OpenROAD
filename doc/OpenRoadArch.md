@@ -165,34 +165,15 @@ directory.
 
 This builds the 'openroad' executable.
 
-A stand-alone executable for one tool can be built by making a branch
-specific to that tool. For example, there is a branch named "sta_only"
-that builds the openroad executable that only includes OpenSTA running
-on OpenDB. The "sta_only" tool is checked out and built exactly as
-OpenRoad is built by specifying a branch during the git clone as show
-below.
-
-```
-git clone --recursive --branch sta_only https://github.com/The-OpenROAD-Project/OpenROAD.git
-```
-
-In this example, the Resizer and its dependent submodule flute3 are
-not installed in the source tree and are not compiled during builds.
-It can be used to run unit tests that reside inside the tool
-directory.
-
-Currently this is supported by editing Resizer related calls in the
-OpenROAD sources. Changes to the develop branch are merged into the
-tool only branch to follow them, keeping only the edits necessary to
-remove other tools.
-
 Note that removing submodules from a repo when moving it into OpenROAD
 is less than obvious.  Here are the steps:
 
+```
 git submodule deinit <path_to_submodule>
 git rm <path_to_submodule>
 git commit-m "Removed submodule "
 rm -rf .git/modules/<path_to_submodule>
+```
 
 ### Tool Work Flow
 
@@ -201,10 +182,10 @@ requires updating the OpenROAD repo to integrate your changes.
 Submodules point to a specific version (hash) of the submodule repo
 and do not automatically track changes to the submodule repo.
 
-Work on OpenROAD should be done in the `develop` branch.
+Work on OpenROAD should be done in the `openroad` branch.
 
 To make changes to a submodule, first check out a branch of the submodule
-(git clone --recursive does not check out a branch, just a specific hash).
+(git clone --recursive does not check out a branch, just a specific commit).
 
 ```
 cd src/<tool>
@@ -212,8 +193,7 @@ git checkout <branch>
 ```
 
 `<branch>` is the branch used for development of the tool when it is inside
-OpenROAD. Eventually this branch will be `develop` or `master`, but right
-now it may be a branch used just for integrating with OpenROAD, like `openroad`.
+OpenROAD. The convention is for <branch> to be named 'openroad'.
 
 After making changes inside the tool source tree, stage and commit
 them to the tool repo and push them to the remote repo.
@@ -289,8 +269,8 @@ Detailed documentation should be the tool/README.md file.
 
 ### Tool Checklist
 
-OpenROAD submodules reference tool develop branch head
-No openroad, openroad_app, openroad_build branches
+OpenROAD submodules reference tool `openroad` branch head
+No `develop`, `openroad_app`, `openroad_build` branches.
 
 CMakeLists.txt does not use glob.
 https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1
