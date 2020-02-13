@@ -1882,10 +1882,10 @@ proc get_macro_blockage_layers {instance} {
   variable metal_layers
   
   set specification [select_instance_specification $instance]
-  if {[dict exists $specification blockage]} {
-    return [dict get $specification blockage]
+  if {[dict exists $specification blockages]} {
+    return [dict get $specification blockages]
   }
-  return [lrange $metal_layers 0 3]
+  return $metal_layers
 }
 
 proc print_layer_details {layer_name layer indent} {
