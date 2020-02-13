@@ -151,4 +151,5 @@ dbSta::netSlack(const dbNet *db_net,
   return netSlack(net, min_max);
 }
 
-}
+} // namespace sta
+
