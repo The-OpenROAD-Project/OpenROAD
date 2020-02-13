@@ -27,6 +27,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "openroad/Version.hh"
+#include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -138,7 +139,7 @@ using odb::dbDatabase;
 //
 ////////////////////////////////////////////////////////////////
 
-%include "OpenSTA/tcl/StaException.i"
+%include "Error.i"
 
 %inline %{
 
@@ -268,6 +269,25 @@ void
 set_cmd_sta(sta::Sta *sta)
 {
   sta::Sta::setSta(sta);
+}
+
+bool
+get_exit_on_error()
+{
+  return ord::exit_on_error;
+}
+
+void
+set_exit_on_error(bool value)
+{
+  ord::exit_on_error = value;
+}
+
+// Used by error1.tcl test
+void
+test_error1()
+{
+  ord::error("this is only a test.");
 }
 
 %} // inline
