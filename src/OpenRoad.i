@@ -127,11 +127,8 @@ using ord::OpenRoad;
 using ord::getOpenRoad;
 using ord::getDb;
 using ord::ensureLinked;
-using ord::getDbNetwork;
-using ord::getSta;
-using ord::getResizer;
-using ord::getTritonCts;
-using ord::getOpenRCX;
+
+using odb::dbDatabase;
 
 %}
 
@@ -254,7 +251,7 @@ dbu_to_microns(int dbu)
 bool
 db_has_rows()
 {
-  odb::dbDatabase *db = ord::OpenRoad::openRoad()->getDb();
+  dbDatabase *db = OpenRoad::openRoad()->getDb();
   return db->getChip()
     && db->getChip()->getBlock()
     && db->getChip()->getBlock()->getRows().size() > 0;
@@ -266,6 +263,7 @@ get_sta()
   return sta::Sta::sta();
 }
 
+// For some bizzare reason this fails without the namespace qualifier for Sta.
 void
 set_cmd_sta(sta::Sta *sta)
 {
