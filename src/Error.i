@@ -15,12 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "openroad/Error.hh"
+
 %}
 
 %exception {
   try { $function }
-  // This catches ord::Error and std errors.
+  // This catches ord::Error, sta::StaException and std errors.
   catch (std::exception &excp) {
+    if (ord::exit_on_error) {
+      std::cerr << "Error: " << excp.what() << std::endl;
+      exit(1);
+    }
     Tcl_AppendResult(interp, "Error: ", const_cast<char*>(excp.what()), NULL);
     return TCL_ERROR;
   }

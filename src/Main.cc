@@ -19,6 +19,7 @@
 #include "StringUtil.hh"
 #include "StaMain.hh"
 #include "openroad/Version.hh"
+#include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 
 using sta::stringEq;
@@ -83,12 +84,13 @@ tclAppInit(int argc,
   if (!findCmdLineFlag(argc, argv, "-no_splash"))
     Tcl_Eval(interp, "show_openroad_splash");
 
+  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
+  ord::exit_on_error = findCmdLineFlag(argc, argv, "-exit_on_error");
+
   if (!findCmdLineFlag(argc, argv, "-no_init")) {
     char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename);
     sourceTclFile(init_path, true, true, interp);
   }
-
-  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
   if (argc > 2 ||
       (argc > 1 && argv[1][0] == '-'))
@@ -110,13 +112,14 @@ static void
 showUsage(const char *prog,
 	  const char *init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] cmd_file\n", prog);
+  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-exit_on_error] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
   printf("  -version           show version and exit\n");
   printf("  -no_init           do not read %s init file\n", init_filename);
   printf("  -threads count|max use count threads\n");
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
+  printf("  -exit_on_error     exit if an error is encountered\n");
   printf("  cmd_file           source cmd_file\n");
 }
 
