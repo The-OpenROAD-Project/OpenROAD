@@ -2,8 +2,6 @@
 # cannot really test exit_on_error 1 because that will bounce us
 set exit_on_error 0
 
-ord::error "lusing big"
-
 if { [catch { ord::error "catch a luser" } result] } {
   puts "caught '$result'"
 }
