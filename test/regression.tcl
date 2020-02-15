@@ -49,12 +49,13 @@
 # application to run as well as the test names. Each test is a tcl command file.
 
 proc regression_main {} {
-  exit [regression_body]
+  global argv
+  exit [regression_body $argv]
 }
 
-proc regression_body {} {
+proc regression_body { cmd_argv } {
   setup
-  parse_args
+  parse_args $cmd_argv
   run_tests
   show_summary
   return [found_errors]
@@ -86,13 +87,13 @@ proc setup {} {
   set valgrind_shared_lib_failure 0
 }
 
-proc parse_args {} {
-  global argv app_options tests test_groups cmd_paths
+proc parse_args { cmd_argv } {
+  global app_options tests test_groups cmd_paths
   global use_valgrind
   global result_dir tests
 
-  while { $argv != {} } {
-    set arg [lindex $argv 0]
+  while { $cmd_argv != {} } {
+    set arg [lindex $cmd_argv 0]
     if { $arg == "help" || $arg == "-help" } {
       puts {Usage: regression [-help] [-threads threads] [-valgrind] tests...}
       puts "  -threads max|integer - number of threads to use"
@@ -103,34 +104,34 @@ proc parse_args {} {
       puts "  If 'limit coredumpsize unlimited' corefiles are saved in $result_dir/test.core"
       exit
     } elseif { $arg == "-threads" } {
-      set threads [lindex $argv 1]
+      set threads [lindex $cmd_argv 1]
       if { !([string is integer $threads] || $threads == "max") } {
 	puts "Error: -threads arg $threads is not an integer or max."
 	exit 0
       }
       lappend app_options "-threads"
       lappend app_options $threads
-      set argv [lrange $argv 2 end]
+      set cmd_argv [lrange $cmd_argv 2 end]
     } elseif { $arg == "-valgrind" } {
       set use_valgrind 1
-      set argv [lrange $argv 1 end]
+      set cmd_argv [lrange $cmd_argv 1 end]
     } else {
       break
     }
   }
-  if { $argv == {} } {
+  if { $cmd_argv == {} } {
     # Default is to run fast tests.
     set tests [group_tests fast]
   } else {
-    set tests [expand_tests $argv]
+    set tests [expand_tests $cmd_argv]
   }
 }
 
-proc expand_tests { argv } {
+proc expand_tests { tests_arg } {
   global test_groups
 
   set tests {}
-  foreach arg $argv {
+  foreach arg $tests_arg {
     if { [info exists test_groups($arg)] } {
       set tests [concat $tests $test_groups($arg)]
     } elseif { [string first "*" $arg] != -1 \
