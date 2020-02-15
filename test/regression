@@ -17,8 +17,8 @@ exec tclsh $0 ${1+"$@"}
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Usage: regression help | test1 [test2...]
-# where test is all or the name of a tcl script in /test
+# Usage: regression tool [tool2...]
+# where tool is name of an openroad tool.
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
@@ -27,31 +27,49 @@ set ord_dir [file dirname $test_dir]
 source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
+set tool_scripts {"InitFloorplan" "src/init_fp/test/regression" \
+		    "dbSta" "src/dbSta/test/regression" \
+		    "IoPlacer" "src/ioPlacer/test/regression" \
+		    "PDNgen" "src/pdngen/test/regression" \
+		    "TritonMacroPlace" "src/TritonMacroPlace/test/regression" \
+		    "Resizer" "src/resizer/test/regression" \
+		    "TritonCTS" "src/TritonCTS/test/regression" \
+		    "OpenDP" "src/opendp/test/regression" \
+		    "FastRoute" "src/FastRoute/test/regression" \
+		    "TapCell" "src/tapcell/test/regression" \
+		  }
+
+foreach tool $argv {
+  if { !([string equal -nocase $tool "openroad"]
+	 || [lsearch -nocase $tool_scripts $tool] != -1) } {
+    puts "$tool is not an openroad tool name."
+  }
+}
+
+proc run_tool_tests { tool } {
+  global argv tool_scripts
+  return [expr { $argv == {} || [lsearch -nocase $argv $tool] != -1 }]
+}
+
 set tool_errors 0
 
-puts "------------------------------------------------------"
-puts "OpenROAD"
-incr tool_errors [regression_body]
+# Flow based tests (MIA)
+if { [run_tool_tests "openroad"] } {
+  puts "------------------------------------------------------"
+  puts "OpenROAD"
+  incr tool_errors [regression_body {}]
+}
 
-set tool_scripts {"Init floorplan" "src/init_fp/test/regression" \
-		    "DB STA" "src/dbSta/test/regression" \
-		    "I/O placer" "src/ioPlacer/test/regression" \
-		    "PDN gen" "src/pdngen/test/regression" \
-		    "Triton Macro Place" "src/TritonMacroPlace/test/regression" \
-		    "Resizer" "src/resizer/test/regression" \
-		    "Triton CTS" "src/TritonCTS/test/regression" \
-		    "OpenDP" "src/opendp/test/regression" \
-		    "Fast Route" "src/FastRoute/test/regression" \
-		    "Tap cell" "src/tapcell/test/regression" \
-		  }
 # side lined for bad behavior
 # "Replace" "src/replace/test/regression" \
 
 foreach {tool script} $tool_scripts {
-  puts "------------------------------------------------------"
-  puts $tool
-  if { [catch "exec [file join $ord_dir $script] >@stdout"] } {
-    incr tool_errors
+  if { [run_tool_tests $tool] } {
+    puts "------------------------------------------------------"
+    puts $tool
+    if { [catch "exec [file join $ord_dir $script] >@stdout"] } {
+      incr tool_errors
+    }
   }
 }
 
