@@ -19,21 +19,21 @@ namespace ord {
 
 bool exit_on_error = false;
 
-Error::Error(string what) :
+Exception::Exception(const char *what) :
   std::exception(),
   what_(what)
 {
 }
 
 void
-error(string what)
+error(const char *what)
 {
   if (exit_on_error) {
     std::cerr << "Error: " << what;
     exit(1);
   }
   else
-    throw Error(what);
+    throw Exception(what);
 }
 
 } // namespace

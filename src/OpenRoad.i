@@ -139,7 +139,7 @@ using odb::dbDatabase;
 //
 ////////////////////////////////////////////////////////////////
 
-%include "Error.i"
+%include "Exception.i"
 
 %inline %{
 

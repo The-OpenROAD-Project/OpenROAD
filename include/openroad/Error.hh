@@ -24,18 +24,18 @@ using std::string;
 
 extern bool exit_on_error;
 
-class Error : public std::exception
+class Exception : public std::exception
 {
 public:
-  Error(string what);
-  virtual ~Error() {}
-  virtual const char *what() const throw() { return what_.c_str(); }
+  Exception(const char *what);
+  virtual ~Exception() {}
+  virtual const char *what() const noexcept { return what_; }
 
 private:
-  string what_;
+  const char *what_;
 };
 
 void
-error(string what);
+error(const char *what);
 
 } // namespace
