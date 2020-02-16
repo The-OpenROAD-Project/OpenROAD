@@ -106,13 +106,13 @@ database as shown below. The `read_lef -tech` flag reads the
 technology portion of a LEF file.  The `read_lef -library` flag reads
 the MACROs in the LEF file.  If neither of the `-tech` and `-library`
 flags are specified they default to `-tech -library` if no technology
-has been read and `-library` if a technogy exists in the database.
+has been read and `-library` if a technology exists in the database.
 
 ```
 read_lef liberty1.lef
 read_def reg1.def
 # Write the db for future runs.
-write_db reg1.def
+write_db reg1.db
 ```
 
 The `read_verilog` command is used to build an OpenDB database as
