@@ -46,13 +46,6 @@ fi
 binary=$1
 testdir=$2
 
-lefFile="$testdir/input/input.lef"
-defFile="$testdir/input/input.def"
-
-cp $testdir/src/check_cells_inserted/insertTap.tcl $testdir/src/check_cells_inserted/run.tcl
-sed -i s#_LEF_#$lefFile#g $testdir/src/check_cells_inserted/run.tcl
-sed -i s#_DEF_#$defFile#g $testdir/src/check_cells_inserted/run.tcl
-
 $binary -no-init < run.tcl > test.log 2>&1
 
 obs_report0=$(grep -e '---- #Endcaps inserted:' ./test.log)
