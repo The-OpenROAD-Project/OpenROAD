@@ -172,8 +172,8 @@ read_def_cmd(const char *filename, bool order_wires)
 }
 
 void
-  write_def_cmd(const char *filename,
-		const char *version)
+write_def_cmd(const char *filename,
+	      const char *version)
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeDef(filename, version);
