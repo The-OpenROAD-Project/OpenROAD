@@ -28,7 +28,7 @@
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#sta::define_cmd_args "pdngen" {[-verbose] config_file}
+sta::define_cmd_args "pdngen" {[-verbose] config_file}
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
