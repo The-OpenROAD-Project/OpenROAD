@@ -38,16 +38,9 @@ proc pdngen { args } {
 
   sta::check_argc_eq1 "pdngen" $args
   set config_file $args
-  #ord::ensure_linked
   if { [catch { pdngen::apply_pdn $config_file $verbose } error_msg] } {
     puts $error_msg
   }
-}
-
-# temporary alias to old name
-proc run_pdngen { args } {
-  puts "Warning: run_pdngen is deprecated. Use pdngen."
-  pdngen $args
 }
 
 namespace eval pdngen {
