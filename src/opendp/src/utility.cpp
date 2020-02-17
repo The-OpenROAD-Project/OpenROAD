@@ -37,6 +37,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
+#include <limits>
 #include <set>
 #include "opendp/Opendp.h"
 
@@ -87,44 +88,15 @@ void Opendp::power_mapping() {
     exit(1);
   }
 
-  power opposite_power = undefined;
   if(macro_top_power == power::undefined) {
     cout << "ERROR: Cannot find cells that have VDD/VSS pins." << endl;
     exit(1);
   }
-  else if(macro_top_power == VDD) {
-    opposite_power = VSS;
-  }
-  else if(macro_top_power == VSS) {
-    opposite_power = VDD;
-  }
-  //  cout << "VDD " << VDD << " VSS " << VSS << endl;
-  //  cout << "initial_power: " << initial_power << endl;
-  //  cout << "Power " << macro_top_power << " " << opposite_power << endl;
 
-  for(int i = 0; i < rows_.size(); i++) {
-    Row* row = &rows_[i];
-    if(initial_power_ == undefined) {
-      if(i % 2 == 0) {
-        row->top_power = macro_top_power;
-      }
-      else {
-        row->top_power = opposite_power;
-      }
-    }
-    else if(initial_power_ == VDD) {
-      if(i % 2 == 0)
-        row->top_power = VDD;
-      else
-        row->top_power = VSS;
-    }
-    else if(initial_power_ == VSS) {
-      if(i % 2 == 0)
-        row->top_power = VSS;
-      else
-        row->top_power = VDD;
-    }
-    //    cout << "row" << i << " has top_power " << row->top_power << endl;
+  power row_power = (initial_power_ == undefined) ? macro_top_power : initial_power_;
+  for(Row& row : rows_) {
+    row.top_power = row_power;
+    row_power = (row_power == VSS) ? VDD : VSS;
   }
 }
 
@@ -594,8 +566,7 @@ bool Opendp::shift_move(Cell* cell) {
   vector< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
 
   // erase region cells
-  for(int i = 0; i < overlap_region_cells.size(); i++) {
-    Cell* around_cell = overlap_region_cells[i];
+  for(Cell* around_cell : overlap_region_cells) {
     if(cell->inGroup() == around_cell->inGroup()) {
       erase_pixel(around_cell);
     }
@@ -766,16 +737,15 @@ bool Opendp::refine_move(Cell* cell) {
 pair< bool, Cell* > Opendp::nearest_cell(int x_coord, int y_coord) {
   bool found = false;
   Cell* nearest_cell = NULL;
-  double nearest_dist = 99999999999;
-  for(int i = 0; i < cells_.size(); i++) {
-    Cell* cell = &cells_[i];
-    if(cell->is_placed) {
+  double nearest_dist = std::numeric_limits<double>::max();
+  for(Cell& cell : cells_) {
+    if(cell.is_placed) {
       double dist =
-        abs(cell->x_coord - x_coord) + abs(cell->y_coord - y_coord);
+        abs(cell.x_coord - x_coord) + abs(cell.y_coord - y_coord);
       if(dist < row_height_ * 2) {
 	if(nearest_dist > dist) {
 	  nearest_dist = dist;
-	  nearest_cell = cell;
+	  nearest_cell = &cell;
 	  found = true;
 	}
       }
