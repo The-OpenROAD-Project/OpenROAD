@@ -95,6 +95,20 @@ read_db filename
 write_db filename
 ```
 
+Use the Tcl `source` command to read commands from a file.
+
+```
+source [-echo] file
+```
+
+If an error is encountered in a command while reading the command file,
+the error is printed and no more commands are read from the file. If
+`file_continue_on_error` is `1` OpenROAD will continue reading commands
+after the error.
+
+If `exit_on_error` is `1` OpenROAD will exit when it encounters an
+error.
+
 OpenROAD can be used to make a OpenDB database from LEF/DEF, or
 Verilog (flat or hierarchical). Once the database is made it can be
 saved as a file with the `write_db` command. OpenROAD can then read

@@ -32,7 +32,9 @@ src/Main.cc
 src/OpenROAD.cc - OpenROAD class functions
 src/OpenROAD.i - top level swig, %includes tool swig files
 src/OpenROAD.tcl - basic read/write lef/def/db commands
-src/OpenROAD.hh - OpenROAD top level class, has instances of tools
+include/openroad/OpenRoad.hh - OpenROAD top level class, has instances of tools
+include/openroad/Error.hh - Error reporting API
+
 ```
 
 Submodule repos in /src (note these are NOT in src/module)
@@ -116,6 +118,18 @@ Use swig to define internal functions to C++ functionality.p
 
 Tcl files can be included by encoding them in cmake into a string
 that is evaluated at run time (See Resizer::init()).
+
+### Errors
+
+Tools should report errors to the user using the `ord::error` function
+defined in `include/openroad/Error.hh`. `ord::error` throws
+`ord::Exception`.  The variables `ord::exit_on_error` and
+`ord::file_continue_on_error` control how the error is handled.  If
+`ord::exit_on_error` is `true` OpenROAD reports the error and exits.
+If the error is encountered while reading a file with the `source` or
+`read_sdc` commands and `ord::file_continue_on_error` is `false` no
+other commands are read from the file. The default values of both
+variables is `false`.
 
 ### Test
 
