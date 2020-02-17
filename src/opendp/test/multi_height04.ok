@@ -27,7 +27,7 @@ rows                       : 2
 row height                 : 4000
 max multi_cell height      : 2
 ----------------------------------------------------------------
-Error: cannot insert center cell_281_ target (7220 0)
+Error: cannot insert center cell_281_
 Check Legality
 row check ==> PASS 
 site check ==> PASS 

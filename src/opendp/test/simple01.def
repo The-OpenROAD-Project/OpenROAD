@@ -41,6 +41,18 @@ PINS 2 ;
 
 END PINS
 
+SPECIALNETS 2 ; 
+- VDD 
+  + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 28000 ) ( 48000 * )
+  + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 36000 ) ( 48000 * )
+  + USE POWER
+; 
+- VSS
+  + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 32000 ) ( 48000 * )
+  + USE GROUND 
+;
+END SPECIALNETS
+
 NETS 2 ;
 - input
   ( PIN input ) ( _277_ Z ) ;

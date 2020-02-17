@@ -358,11 +358,7 @@ void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
   for(int i = y_pos; i < y_pos + y_step; i++) {
     for(int j = x_pos; j < x_pos + x_step; j++) {
       if(grid_[i][j].linked_cell != NULL) {
-        cerr << " Cannot paint grid [" << i << "][" << j << "]" << endl;
-        cerr << " cell name : "
-             << grid_[i][j].linked_cell->name()
-             << " already occupied grid" << endl;
-        exit(2);
+        error("Cannot paint grid because it is already occupied.");
       }
       else {
         grid_[i][j].linked_cell = cell;

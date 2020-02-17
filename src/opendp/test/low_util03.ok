@@ -10,7 +10,7 @@ Notice 0:     Created 231 pins.
 Notice 0:     Created 34184 components and 173049 component-terminals.
 Notice 0:     Created 33171 nets and 104681 connections.
 Notice 0: Finished DEF file: nangate45-bench/ibex_core/ibex_core_replace.def
-Error: could not find power special net VDD
+Error: could not find power special net
 -------------------- Design Stats ------------------------------
 core area                  : (28000, 28000) (1867960, 1467200)
 total cells                : 34184

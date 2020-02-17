@@ -187,7 +187,7 @@ void Opendp::make_core_rows() {
     }
   }
   else
-    cerr << "Error: no rows found.";
+    error("no rows found.");
 }
 
 void Opendp::make_cells() {
@@ -309,7 +309,8 @@ void Opendp::findInitialPower() {
   if (found_vdd)
     initial_power_ = divRound(min_vdd_y, row_height_) % 2 == 0 ? VDD : VSS;
   else
-    cerr << "Error: could not find power special net " << power_net_name << endl;
+    // error("could not find power special net");
+    cerr << "Error: could not find power special net" << endl;
 }
 
 }  // namespace opendp

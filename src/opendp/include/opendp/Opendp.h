@@ -271,6 +271,7 @@ class Opendp {
   int coreGridHeight();
   int coreGridMaxX();
   int coreGridMaxY();
+  void error(const char *what);
 
   dbDatabase* db_;
   dbBlock* block_;

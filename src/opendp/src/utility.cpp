@@ -82,15 +82,12 @@ void Opendp::power_mapping() {
   }
 
   if(found_multi && initial_power_ == undefined) {
-    cout << "ERROR: Cannot find VDD/VSS SPECIALNETS definition" << endl;
-    cout << "       Please remove multi-height cells or " << endl;
-    cout << "       define SPECIALNETS for VDD/VSS nets." << endl;
-    exit(1);
+    error("Cannot find VDD/VSS SPECIALNETS definition."
+	  "Please remove multi-height cells or define SPECIALNETS for VDD/VSS nets.");
   }
 
   if(macro_top_power == power::undefined) {
-    cout << "ERROR: Cannot find cells that have VDD/VSS pins." << endl;
-    exit(1);
+    error("Cannot find cells that have VDD/VSS pins.");
   }
 
   power row_power = (initial_power_ == undefined) ? macro_top_power : initial_power_;
@@ -574,8 +571,8 @@ bool Opendp::shift_move(Cell* cell) {
 
   // place target cell
   if(!map_move(cell, x, y)) {
-    cout << "Error: cannot insert center cell" << cell->name()
-	 << " target (" << x << " " << y << ")" << endl;
+    // error("cannot insert center cell");
+    cout << "Error: cannot insert center cell" << cell->name() << endl;
     return false;
   }
 
@@ -585,7 +582,7 @@ bool Opendp::shift_move(Cell* cell) {
       if(!map_move(around_cell, around_cell->init_x_coord,
                    around_cell->init_y_coord)) {
 #ifdef ODP_DEBUG
-        cout << "Error: shift move failure for cell "
+        cerr << "Error: shift move failure for cell "
 	     << around_cell->name() << "("
 	     << around_cell->init_x_coord << ", "
 	     << around_cell->init_y_coord << ")" << endl;
@@ -616,7 +613,7 @@ bool Opendp::map_move(Cell* cell, int x, int y) {
   }
   else {
 #ifdef ODP_DEBUG
-    cout << "Error: map move failure " << cell->name()
+    cerr << "Error: map move failure " << cell->name()
 	 << " (" << cell->init_x_coord << ", "
 	 << cell->init_y_coord << ")" << endl;
 #endif

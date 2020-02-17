@@ -34,6 +34,13 @@ PINS 2 ;
     - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
 END PINS
+SPECIALNETS 2 ;
+    - VDD + USE POWER
+      + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 28000 ) ( 48000 28000 )
+      + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 36000 ) ( 48000 36000 ) ;
+    - VSS + USE GROUND
+      + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 32000 ) ( 48000 32000 ) ;
+END SPECIALNETS
 NETS 2 ;
     - input ( PIN input ) ( _277_ Z ) + USE SIGNAL ;
     - out ( PIN out ) ( _277_ A ) + USE SIGNAL ;

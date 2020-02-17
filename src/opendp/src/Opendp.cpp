@@ -193,6 +193,44 @@ bool Opendp::legalizePlacement(bool verbose) {
   return legal;
 }
 
+void Opendp::error(const char *what) {
+  cerr << "Error: " << what << endl;
+  exit(1);
+}
+
+bool Opendp::readConstraints(const string input) {
+  //    cout << " .constraints file : " << input << endl;
+  ifstream dot_constraints(input.c_str());
+  if(!dot_constraints.good()) {
+    cerr << "readConstraints:: cannot open '" << input << "' for reading"
+         << endl;
+    return true;
+  }
+
+  string context;
+
+  while(!dot_constraints.eof()) {
+    dot_constraints >> context;
+    if(dot_constraints.eof()) break;
+    if(strncmp(context.c_str(), "maximum_movement", 16) == 0) {
+      string temp = context.substr(0, context.find_last_of("rows"));
+      string max_move = temp.substr(temp.find_last_of("=") + 1);
+      diamond_search_height_ = atoi(max_move.c_str()) * 20;
+      max_displacement_constraint_ = atoi(max_move.c_str());
+    }
+    else {
+      cerr << "readConstraints:: unsupported keyword " << endl;
+      return true;
+    }
+  }
+
+  if(max_displacement_constraint_ == 0)
+    max_displacement_constraint_ = rows_.size();
+
+  dot_constraints.close();
+  return false;
+}
+
 void Opendp::initAfterImport() {
   findDesignStats();
   power_mapping();
@@ -294,9 +332,7 @@ void Opendp::findDesignStats() {
 
   // design_utilization error handling.
   if(design_util_ >= 1.001) {
-    cout << "Error: utilization exceeds 100%. (" << fixed << setprecision(2)
-         << design_util_ * 100.00 << "%)" << endl;
-    exit(1);
+    error("utilization exceeds 100%.");
   }
 }
 
@@ -343,38 +379,7 @@ void Opendp::reportLegalizationStats() {
   cout << "----------------------------------------------------------------" << endl;
 }
 
-bool Opendp::readConstraints(const string input) {
-  //    cout << " .constraints file : " << input << endl;
-  ifstream dot_constraints(input.c_str());
-  if(!dot_constraints.good()) {
-    cerr << "readConstraints:: cannot open '" << input << "' for reading"
-         << endl;
-    return true;
-  }
-
-  string context;
-
-  while(!dot_constraints.eof()) {
-    dot_constraints >> context;
-    if(dot_constraints.eof()) break;
-    if(strncmp(context.c_str(), "maximum_movement", 16) == 0) {
-      string temp = context.substr(0, context.find_last_of("rows"));
-      string max_move = temp.substr(temp.find_last_of("=") + 1);
-      diamond_search_height_ = atoi(max_move.c_str()) * 20;
-      max_displacement_constraint_ = atoi(max_move.c_str());
-    }
-    else {
-      cerr << "readConstraints:: unsupported keyword " << endl;
-      return true;
-    }
-  }
-
-  if(max_displacement_constraint_ == 0)
-    max_displacement_constraint_ = rows_.size();
-
-  dot_constraints.close();
-  return false;
-}
+////////////////////////////////////////////////////////////////
 
 int Opendp::gridWidth() {
   return core_.dx() / site_width_;
