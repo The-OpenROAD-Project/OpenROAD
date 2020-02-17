@@ -119,9 +119,20 @@ set ::exit_on_error 0
 trace variable ::exit_on_error "rw" \
   ord::trace_exit_on_error
 
+# Sync with c++ variable.
 proc trace_exit_on_error { name1 name2 op } {
   sta::trace_boolean_var $op ::exit_on_error \
     ord::get_exit_on_error ord::set_exit_on_error
+}
+
+set ::file_continue_on_error 0
+
+trace variable ::file_continue_on_error "w" \
+  ord::trace_file_continue_on_error
+
+# Sync with sta::sta_continue_on_error used by 'source' proc defined by OpenSTA.
+proc trace_file_continue_on_error { name1 name2 op } {
+  set ::sta_continue_on_error $::file_continue_on_error
 }
 
 proc error { what } {

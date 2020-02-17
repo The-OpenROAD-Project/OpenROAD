@@ -8,7 +8,7 @@
 
 %}
 
-%include "../../src/Error.i"
+%include "../../src/Exception.i"
 // OpenSTA swig files
 %include "StaTcl.i"
 %include "NetworkEdit.i"
