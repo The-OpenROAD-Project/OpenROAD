@@ -249,8 +249,11 @@ namespace lemon {
 
         current = state + length;
 
-        register Word *curr = state + length - 1;
-        register long num;
+        // MF @ 2020/02/18:
+        // Remove "register" statement from the following two
+        // variables
+        Word *curr = state + length - 1;
+        long num;
 
         num = length - shift;
         while (num--) {
