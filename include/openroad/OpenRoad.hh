@@ -22,6 +22,7 @@ struct Tcl_Interp;
 
 namespace odb {
 class dbDatabase;
+class adsRect;
 }
 
 namespace sta {
@@ -102,6 +103,8 @@ public:
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
+  // Return the bounding box of the db rows.
+  odb::adsRect getCore();
 
   void readLef(const char *filename,
 	       const char *lib_name,

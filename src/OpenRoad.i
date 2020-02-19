@@ -241,6 +241,13 @@ db_has_tech()
   return getDb()->getTech() != nullptr;
 }
 
+odb::adsRect
+get_db_core()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getCore();
+}
+
 double
 dbu_to_microns(int dbu)
 {

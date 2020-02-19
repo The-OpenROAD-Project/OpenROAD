@@ -247,4 +247,20 @@ OpenRoad::writeVerilog(const char *filename,
   sta::writeVerilog(filename, sort, sta_->network());
 }
 
+odb::adsRect
+OpenRoad::getCore()
+{
+  odb::adsRect core;
+  core.mergeInit();
+  odb::dbBlock *block = db_->getChip()->getBlock();
+  for(auto db_row : block->getRows()) {
+    int orig_x, orig_y;
+    db_row->getOrigin(orig_x, orig_y);
+    odb::adsRect row_bbox;
+    db_row->getBBox(row_bbox);
+    core.merge(row_bbox);
+  }
+  return core;
+}
+
 } // namespace
