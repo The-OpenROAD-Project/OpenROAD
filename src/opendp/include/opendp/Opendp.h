@@ -120,7 +120,6 @@ struct Row {
   int origY; // DBU
   dbOrientType orient;
   power top_power;
-  std::vector< Cell* > cells;
 
   Row();
   void print();
