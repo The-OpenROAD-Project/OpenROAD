@@ -1,4 +1,4 @@
-# 10 inst placement legal
+# 10 inst placement legal (should not move anything)
 source helpers.tcl
 read_lef nangate45-bench/tech/NangateOpenCellLibrary.lef
 read_def simple04.def
