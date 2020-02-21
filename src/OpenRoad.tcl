@@ -109,3 +109,14 @@ proc write_db { args } {
   set filename $args
   ord::write_db_cmd $filename
 }
+
+namespace eval ord {
+
+proc ensure_units_initialized { } {
+  if { ![units_initialized] } {
+    sta::sta_error "Command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+  }
+}
+
+# namespace ord
+}

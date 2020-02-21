@@ -93,6 +93,8 @@ public:
   replace::Replace* getReplace() { return replace_; }
   // Return the bounding box of the db rows.
   odb::adsRect getCore();
+  // Return true if the command units have been initialized.
+  bool unitsInitialized();
 
   void readLef(const char *filename,
 	       const char *lib_name,

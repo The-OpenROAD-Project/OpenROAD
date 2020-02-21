@@ -25,6 +25,7 @@
 #include "db_sta/MakeDbSta.hh"
 
 #include "db_sta/dbReadVerilog.hh"
+#include "db_sta/dbNetwork.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
@@ -261,6 +262,13 @@ OpenRoad::getCore()
     core.merge(row_bbox);
   }
   return core;
+}
+
+bool
+OpenRoad::unitsInitialized()
+{
+  // Units are set by the first liberty library read.
+  return getDbNetwork()->defaultLibertyLibrary() != nullptr;
 }
 
 } // namespace

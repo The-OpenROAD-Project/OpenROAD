@@ -277,4 +277,11 @@ set_cmd_sta(sta::Sta *sta)
   sta::Sta::setSta(sta);
 }
 
+bool
+units_initialized()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->unitsInitialized();
+}
+
 %} // inline
