@@ -49,10 +49,12 @@ read_constraints(std::string constraint_file)
 }
 
 void
-legalize_placement(bool verbose)
+legalize_placement(int pad_left,
+		   int pad_right,
+		   bool verbose)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->legalizePlacement(verbose);
+  opendp->legalizePlacement(pad_left, pad_right, verbose);
 }
 
 %} // inline

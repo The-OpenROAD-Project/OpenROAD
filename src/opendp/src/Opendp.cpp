@@ -182,7 +182,12 @@ void Opendp::clear() {
   cells_.clear();
 }
 
-bool Opendp::legalizePlacement(bool verbose) {
+bool Opendp::legalizePlacement(int pad_left,
+			       int pad_right,
+			       bool verbose) {
+  pad_left_ = pad_left;
+  pad_right_ = pad_right;
+
   dbToOpendp();
   initAfterImport();
   reportDesignStats();
@@ -287,8 +292,8 @@ void Opendp::initAfterImport() {
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    int x = cell.x_coord + core_.xMin();
-    int y = cell.y_coord + core_.yMin();
+    int x = core_.xMin() + cell.x_coord + pad_left_ * site_width_;
+    int y = core_.yMin() + cell.y_coord;
     dbInst *db_inst = cell.db_inst;
     db_inst->setLocation(x, y);
     // Orientation is already set.
@@ -390,7 +395,8 @@ int Opendp::gridHeight() {
 }
 
 int Opendp::gridWidth(Cell *cell) {
-  return ceil(cell->width / static_cast<double>(site_width_));
+  return ceil((cell->width + site_width_ * (pad_left_ + pad_right_))
+	      / static_cast<double>(site_width_));
 }
 
 int Opendp::gridHeight(Cell *cell) {

@@ -169,7 +169,9 @@ class Opendp {
   void init(dbDatabase* db);
   bool readConstraints(string constraint_file);
   // legalize/check/report
-  bool legalizePlacement(bool verbose);
+  bool legalizePlacement(int pad_left,
+			 int pad_right,
+			 bool verbose);
 
   bool checkLegality(bool verbose);
 
@@ -275,6 +277,9 @@ class Opendp {
 
   dbDatabase* db_;
   dbBlock* block_;
+  int pad_left_;
+  int pad_right_;
+
   std::vector< Macro > macros_;
   std::vector< Cell > cells_;
   std::vector< Row > rows_;

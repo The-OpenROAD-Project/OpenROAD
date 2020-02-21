@@ -32,13 +32,27 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "legalize_placement" {[-constraints constraints_file]\
-					     [-verbose]}
+sta::define_cmd_args "legalize_placement" {[-pad_right site_count]\
+					     [-pad_left site_count] \
+					     [-verbose]\
+					     [-constraints constraints_file]\
+					   }
 
 proc legalize_placement { args } {
   sta::parse_key_args "legalize_placement" args \
-    keys {-constraints} flags {-verbose}
+    keys {-pad_right -pad_left -constraints} flags {-verbose}
 
+  set verbose [info exists flags(-verbose)]
+  set pad_left 0
+  if { [info exists keys(-pad_left)] } {
+    set pad_left $keys(-pad_left)
+    sta::check_positive_integer "-pad_left" $pad_left
+  }
+  set pad_right 0
+  if { [info exists keys(-pad_right)] } {
+    set pad_right $keys(-pad_right)
+    sta::check_positive_integer "-pad_right" $pad_right
+  }
   if { [info exists keys(-constraints)] } {
     set constraints_file $keys(-constraints)
     if { [file readable $constraints_file] } {
@@ -47,9 +61,9 @@ proc legalize_placement { args } {
       puts "Warning: cannot read $constraints_file"
     }
   }
-  set verbose [info exists flags(-verbose)]
+
   if { [ord::db_has_rows] } {
-    opendp::legalize_placement $verbose
+    opendp::legalize_placement $pad_left $pad_right $verbose
   } else {
     puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
   }
