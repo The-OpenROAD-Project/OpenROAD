@@ -31,12 +31,6 @@ class dbNetwork;
 class Resizer;
 }
 
-namespace pdngen {
-class PdnGen;
-}
-namespace ICeWall {
-class ICeWall;
-}
 namespace ioPlacer {
 class IOPlacementKernel;
 }
@@ -55,10 +49,6 @@ namespace tapcell {
 
 namespace opendp {
 class Opendp;
-}
-
-namespace psn {
-class Psn;
 }
 
 namespace MacroPlace {
@@ -90,8 +80,6 @@ public:
   void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  pdngen::PdnGen *getPdnGen(){ return pdngen_; }
-  ICeWall::ICeWall *getICeWall(){ return ICeWall_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -135,8 +123,6 @@ private:
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::Opendp *opendp_;
   MacroPlace::TritonMacroPlace *tritonMp_;
-  pdngen::PdnGen *pdngen_;
-  ICeWall::ICeWall *ICeWall_;
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
