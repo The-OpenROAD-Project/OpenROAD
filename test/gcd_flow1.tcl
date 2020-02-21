@@ -7,7 +7,7 @@ read_sdc gcd.sdc
 
 initialize_floorplan -site FreePDK45_38x28_10R_NP_162NW_34O \
   -utilization 40 -tracks nangate45.tracks
-auto_place_pin metal1
+auto_place_pins metal1
 
 pdngen -verbose gcd_pdn.cfg
 
