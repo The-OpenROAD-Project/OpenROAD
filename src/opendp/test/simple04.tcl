@@ -1,3 +1,4 @@
+# 10 inst placement legal
 source helpers.tcl
 read_lef nangate45-bench/tech/NangateOpenCellLibrary.lef
 read_def simple04.def

@@ -1,3 +1,4 @@
+# 1 inst in core off grid
 source helpers.tcl
 read_lef nangate45-bench/tech/NangateOpenCellLibrary.lef
 read_def simple02.def
