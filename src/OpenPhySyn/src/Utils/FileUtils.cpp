@@ -46,7 +46,7 @@ namespace fs = psn::filesystem;
 #include <libgen.h>
 #include <sys/stat.h>
 #include "FileUtils.hpp"
-#include "PsnException/FileException.hpp"
+#include "PsnException.hpp"
 
 #ifdef _WIN32
 #include <windows.h>

@@ -30,7 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include <OpenPhySyn/Sta/PathPoint.hpp>
 #include "Psn/Psn.hpp"
-#include "PsnException/PsnException.hpp"
+#include "PsnException.hpp"
 
 #include "Readers.hpp"
 #include "Utils/FileUtils.hpp"

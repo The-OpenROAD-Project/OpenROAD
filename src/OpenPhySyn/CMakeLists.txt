@@ -127,16 +127,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/Utils/FilesystemLegacyHelpers.cpp
     ${PSN_HOME}/src/Utils/StringUtils.cpp
     ${PSN_HOME}/src/Utils/PsnGlobal.cpp
-    ${PSN_HOME}/src/PsnException/Error.cpp
-    ${PSN_HOME}/src/PsnException/FileException.cpp
-    ${PSN_HOME}/src/PsnException/FluteInitException.cpp
-    ${PSN_HOME}/src/PsnException/NoTechException.cpp
-    ${PSN_HOME}/src/PsnException/SteinerException.cpp
-    ${PSN_HOME}/src/PsnException/ParseLibertyException.cpp
-    ${PSN_HOME}/src/PsnException/PsnException.cpp
-    ${PSN_HOME}/src/PsnException/ProgramOptionsException.cpp
-    ${PSN_HOME}/src/PsnException/LoadTransformException.cpp
-    ${PSN_HOME}/src/PsnException/TransformNotFoundException.cpp
+    ${PSN_HOME}/src/PsnException.cpp
     ${PSN_HOME}/src/Sta/PathPoint.cpp
 )
 

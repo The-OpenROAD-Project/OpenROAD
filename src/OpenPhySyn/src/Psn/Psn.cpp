@@ -41,11 +41,7 @@
 #include <Psn/Psn.hpp>
 #include <flute.h>
 #include <tcl.h>
-#include "PsnException/FileException.hpp"
-#include "PsnException/FluteInitException.hpp"
-#include "PsnException/NoTechException.hpp"
-#include "PsnException/ParseLibertyException.hpp"
-#include "PsnException/TransformNotFoundException.hpp"
+#include "PsnException.hpp"
 #include "Transform/TransformHandler.hpp"
 #include "Utils/FileUtils.hpp"
 #include "Utils/StringUtils.hpp"

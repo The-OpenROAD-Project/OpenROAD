@@ -33,10 +33,39 @@
 #define __PSN_PSN_EXCEPTION__
 #include <exception>
 #include <string>
-#include "Error.hpp"
 
 namespace psn
 {
+typedef long ErrorCode;
+
+namespace Error
+{
+
+enum File
+{
+    ERR_FILE_RW
+};
+
+enum Parse
+{
+    ERR_NO_TECH,
+    ERR_INVALID_LIBERTY
+};
+enum Transform
+{
+    ERR_NOT_FOUND,
+    ERR_LOAD
+};
+
+enum Common
+{
+    ERR_COMMON_UNRECOGNIZED,
+    ERR_PROGRAM_OPTIONS,
+    ERR_FLUTE_NO_LUT
+};
+
+} // namespace Error
+
 class PsnException : public std::exception
 {
 public:
@@ -66,5 +95,95 @@ protected:
     std::string fmt_msg_;
     ErrorCode   code_;
 };
+
+class FileException : public PsnException
+{
+public:
+    explicit FileException();
+    explicit FileException(const char* message)        = delete;
+    explicit FileException(const std::string& message) = delete;
+
+private:
+    int errno_;
+};
+
+class FluteInitException : public PsnException
+{
+public:
+    explicit FluteInitException();
+    explicit FluteInitException(const char* message)        = delete;
+    explicit FluteInitException(const std::string& message) = delete;
+
+private:
+};
+
+class LoadTransformException : public PsnException
+{
+public:
+    explicit LoadTransformException();
+    explicit LoadTransformException(const char* message)        = delete;
+    explicit LoadTransformException(const std::string& message) = delete;
+
+private:
+};
+
+class NoTechException : public PsnException
+{
+public:
+    explicit NoTechException();
+    explicit NoTechException(const char* message)        = delete;
+    explicit NoTechException(const std::string& message) = delete;
+
+private:
+};
+
+class ParseLibertyException : public PsnException
+{
+public:
+    explicit ParseLibertyException(const char* message);
+    explicit ParseLibertyException(const std::string& message);
+
+private:
+};
+
+class ProgramOptionsException : public PsnException
+{
+public:
+    explicit ProgramOptionsException(const char* message);
+    explicit ProgramOptionsException(const std::string& message);
+
+private:
+};
+
+class SteinerException : public PsnException
+{
+public:
+    explicit SteinerException();
+    explicit SteinerException(const char* message)        = delete;
+    explicit SteinerException(const std::string& message) = delete;
+
+private:
+};
+
+class TransformNotFoundException : public PsnException
+{
+public:
+    explicit TransformNotFoundException();
+    explicit TransformNotFoundException(const char* message)        = delete;
+    explicit TransformNotFoundException(const std::string& message) = delete;
+
+private:
+};
+
+class UnimplementedMethodException : public PsnException
+{
+public:
+    explicit UnimplementedMethodException();
+    explicit UnimplementedMethodException(const char* message)        = delete;
+    explicit UnimplementedMethodException(const std::string& message) = delete;
+
+private:
+};
+
 } // namespace psn
 #endif

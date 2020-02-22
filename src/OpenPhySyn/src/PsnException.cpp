@@ -30,6 +30,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "PsnException.hpp"
+#include <cstring>
+#include <dlfcn.h>
+#include <errno.h>
 
 namespace psn
 {
@@ -37,13 +40,6 @@ namespace psn
 PsnException::PsnException(const char* message, const char* name,
                            ErrorCode code)
     : msg_(message), name_(name), code_(code)
-{
-    setMessage(msg_);
-}
-
-PsnException::PsnException(const std::string& message, const char* name,
-                           ErrorCode code)
-    : PsnException(message.c_str(), name, code)
 {
     setMessage(msg_);
 }
@@ -59,9 +55,6 @@ PsnException::code() const
     return code_;
 }
 
-PsnException::~PsnException()
-{
-}
 void
 PsnException::setMessage(const char* message)
 {
@@ -76,6 +69,10 @@ PsnException::setMessage(std::string& message)
     fmt_msg_ = name_ + ": " + msg_;
 }
 
+PsnException::~PsnException()
+{
+}
+
 std::string
 PsnException::message() const
 {
@@ -86,6 +83,69 @@ const char*
 PsnException::what() const throw()
 {
     return fmt_msg_.c_str();
+}
+
+FileException::FileException()
+    : PsnException("", "FileException", Error::File::ERR_FILE_RW)
+{
+    std::string error_msg(std::string(strerror(errno)));
+    setMessage(error_msg);
+    errno_ = errno;
+}
+
+FluteInitException::FluteInitException()
+    : PsnException("Could not find Flute LUT files", "FluteInitException",
+                   Error::Common::ERR_FLUTE_NO_LUT)
+{
+}
+
+LoadTransformException::LoadTransformException()
+    : PsnException(dlerror(), "LoadTransformException",
+                   Error::Transform::ERR_LOAD)
+{
+}
+
+NoTechException::NoTechException()
+    : PsnException("Could not find any technology lef file", "NoTechException",
+                   Error::Parse::ERR_NO_TECH)
+{
+}
+
+ParseLibertyException::ParseLibertyException(const char* message)
+    : PsnException(message, "ParseLibertyException",
+                   Error::Parse::ERR_INVALID_LIBERTY)
+{
+}
+ParseLibertyException::ParseLibertyException(const std::string& message)
+    : ParseLibertyException(message.c_str())
+{
+}
+
+ProgramOptionsException::ProgramOptionsException(const char* message)
+    : PsnException(message, "ProgramOptionsException",
+                   Error::Common::ERR_PROGRAM_OPTIONS)
+{
+}
+ProgramOptionsException::ProgramOptionsException(const std::string& message)
+    : ProgramOptionsException(message.c_str())
+{
+}
+
+SteinerException::SteinerException()
+    : PsnException("Steiner point does not exist or out of bounds")
+{
+}
+
+TransformNotFoundException::TransformNotFoundException()
+    : PsnException("Could not find the specified transform.",
+                   "TransformNotFoundException",
+                   Error::Transform::ERR_NOT_FOUND)
+{
+}
+
+UnimplementedMethodException::UnimplementedMethodException()
+    : PsnException("Method is not supported")
+{
 }
 
 } // namespace psn

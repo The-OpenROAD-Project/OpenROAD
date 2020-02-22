@@ -32,7 +32,7 @@
 #include <OpenPhySyn/Psn/Psn.hpp>
 #include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
 #include <algorithm>
-#include "PsnException/SteinerException.hpp"
+#include "PsnException.hpp"
 namespace psn
 {
 std::unique_ptr<SteinerTree>

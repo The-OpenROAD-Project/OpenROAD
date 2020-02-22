@@ -29,7 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "TransformHandler.hpp"
-#include "PsnException/LoadTransformException.hpp"
+#include "PsnException.hpp"
 namespace psn
 {
 TransformHandler::TransformHandler(std::string name)
