@@ -143,36 +143,6 @@ bool Opendp::edge_check(bool verbose) {
     cout << " row search done " << endl;
     cout << " cell list size : " << cells.size() << endl;
 #endif
-    if(!cells.empty()) {
-
-      for(int k = 0; k < cells.size() - 1; k++) {
-#ifdef ODP_DEBUG
-	cout << " left cell : " << cells[k]->name() << endl;
-	cout << " Right cell : " << cells[k + 1]->name() << endl;
-#endif
-	if(cells.size() >= 2) {
-	  Macro* left_macro = cells[k]->cell_macro;
-	  Macro* right_macro = cells[k + 1]->cell_macro;
-	  if(left_macro->edgetypeRight != 0 && right_macro->edgetypeLeft != 0) {
-	    // The following statement cannot be executed anymore because the
-	    // edge_spacing map was hard coded in the obsolete LEF reader that
-	    // predated the Si2 LEF reader.
-	    int space = divRound(edge_spacing_[make_pair(left_macro->edgetypeRight,     
-							 right_macro->edgetypeLeft)],
-				 site_width_);
-	    int cell_dist = cells[k + 1]->x_coord - cells[k]->x_coord -
-	      cells[k]->width;
-	    if(cell_dist < space) {
-	      if (verbose)
-		cout << " edge_check fail ==> " << cells[k]->name()
-		     << " >> " << cell_dist << "(" << space << ") << "
-		     << cells[k + 1]->name() << endl;
-	      count++;
-	    }
-	  }
-	}
-      }
-    }
   }
 
   if(!valid)

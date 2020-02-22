@@ -71,8 +71,6 @@ enum power { undefined, VDD, VSS };
 struct Macro {
   dbMaster* db_master;
   bool isMulti;       /* single row = false , multi row = true */
-  int edgetypeLeft;   // 1 or 2
-  int edgetypeRight;  // 1 or 2
   power top_power;    // VDD = 0  VSS = 1 enum
 
   Macro();
@@ -120,7 +118,6 @@ struct Row {
   int origY; // DBU
   dbOrientType orient;
   power top_power;
-  std::vector< Cell* > cells;
 
   Row();
   void print();
