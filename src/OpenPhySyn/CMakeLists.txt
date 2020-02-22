@@ -198,7 +198,7 @@ add_custom_target(
 
 
 set(PSN_SWIG_FILES
-  ${PSN_HOME}/src/Tcl/Psn.i
+  ${PSN_HOME}/src/Tcl/Swig/Psn.i
 )
 set(PSN_DEP_FILES
   ${PSN_SWIG_FILES}
