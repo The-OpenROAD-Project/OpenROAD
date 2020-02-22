@@ -28,43 +28,49 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include <OpenPhySyn/PathPoint.hpp>
 
-#include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <algorithm>
-#include <cmath>
-
-using namespace psn;
-
-int
-HelloTransform::addWire(Psn* psn_inst, std::string name)
+namespace psn
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    Net*             n1      = handler.createNet(name.c_str());
-    return (n1 != nullptr);
+PathPoint::PathPoint(InstanceTerm* path_pin, bool is_rise, float path_arrival,
+                     float path_required, float path_slack, int ap_index)
+    : pin_(path_pin),
+      is_rise_(is_rise),
+      arrival_(path_arrival),
+      required_(path_required),
+      slack_(path_slack),
+      path_ap_index_(ap_index)
+{
+}
+InstanceTerm*
+PathPoint::pin() const
+{
+    return pin_;
+}
+bool
+PathPoint::isRise() const
+{
+    return is_rise_;
+}
+float
+PathPoint::arrival() const
+{
+    return arrival_;
+}
+float
+PathPoint::required() const
+{
+    return required_;
+}
+float
+PathPoint::slack() const
+{
+    return slack_;
+}
+int
+PathPoint::analysisPointIndex() const
+{
+    return path_ap_index_;
 }
 
-int
-HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
-{
-
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
-
-    if (args.size() == 1)
-    {
-        std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
-        return addWire(psn_inst, net_name);
-    }
-    else
-    {
-        PSN_LOG_ERROR("Usage:\n transform hello_transform "
-                      "<net_name>\n");
-    }
-
-    return -1;
-}
+} // namespace psn

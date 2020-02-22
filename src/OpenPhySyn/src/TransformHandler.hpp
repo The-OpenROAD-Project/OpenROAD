@@ -29,42 +29,38 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <algorithm>
-#include <cmath>
+#ifndef __PSN_TRANSFORM_HANDLER__
+#define __PSN_TRANSFORM_HANDLER__
 
-using namespace psn;
-
-int
-HelloTransform::addWire(Psn* psn_inst, std::string name)
+#include <PsnTransform.hpp>
+#include <dlfcn.h>
+#include <memory>
+namespace psn
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    Net*             n1      = handler.createNet(name.c_str());
-    return (n1 != nullptr);
-}
-
-int
-HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
+class TransformHandler
 {
+    std::shared_ptr<PsnTransform> (*load_)();
+    void* handle_;
+    char* (*get_name_)();
+    char* (*get_version_)();
+    char* (*get_help_)();
+    char* (*get_description_)();
 
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
+    std::shared_ptr<PsnTransform> instance;
 
-    if (args.size() == 1)
-    {
-        std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
-        return addWire(psn_inst, net_name);
-    }
-    else
-    {
-        PSN_LOG_ERROR("Usage:\n transform hello_transform "
-                      "<net_name>\n");
-    }
+public:
+    TransformHandler(std::string name);
 
-    return -1;
-}
+    std::string name();
+
+    std::string version();
+
+    std::string help();
+
+    std::string description();
+
+    std::shared_ptr<PsnTransform> load();
+};
+} // namespace psn
+
+#endif //__TRANSFORM_HANDLER__

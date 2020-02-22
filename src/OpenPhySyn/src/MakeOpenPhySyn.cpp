@@ -29,42 +29,37 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <algorithm>
-#include <cmath>
+#include <OpenPhySyn/MakeOpenPhySyn.hpp>
+#include <OpenPhySyn/include/OpenPhySyn/Psn.hpp>
+#include "openroad/OpenRoad.hh"
 
-using namespace psn;
-
-int
-HelloTransform::addWire(Psn* psn_inst, std::string name)
+namespace psn
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    Net*             n1      = handler.createNet(name.c_str());
-    return (n1 != nullptr);
+class Psn;
 }
 
-int
-HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
+namespace ord
 {
 
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
+class OpenRoad;
 
-    if (args.size() == 1)
-    {
-        std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
-        return addWire(psn_inst, net_name);
-    }
-    else
-    {
-        PSN_LOG_ERROR("Usage:\n transform hello_transform "
-                      "<net_name>\n");
-    }
-
-    return -1;
+psn::Psn*
+makePsn()
+{
+    return psn::Psn::instancePtr();
 }
+
+void
+deletePsn(psn::Psn* psn)
+{
+    delete psn;
+}
+
+void
+initPsn(OpenRoad* openroad)
+{
+    psn::Psn::initialize(openroad->getSta(), true, openroad->tclInterp(), false,
+                         false, false);
+}
+
+} // namespace ord

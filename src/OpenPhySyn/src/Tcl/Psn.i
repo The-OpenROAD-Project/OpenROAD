@@ -30,12 +30,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 %module psn
 %{
-#include "Psn/Exports.hpp"
-#include <OpenPhySyn/Psn/Psn.hpp>
+#include "Exports.hpp"
+#include <OpenPhySyn/Psn.hpp>
 
 #include <memory>
-#include <OpenPhySyn/SteinerTree/SteinerTree.hpp>
-#include <OpenPhySyn/Database/DatabaseHandler.hpp>
+#include <OpenPhySyn/SteinerTree.hpp>
+#include <OpenPhySyn/DatabaseHandler.hpp>
 using namespace psn;
 DatabaseHandler *handler() {
    return Psn::instance().handler();
@@ -80,9 +80,6 @@ DatabaseHandler *handler();
 %typemap(in) (unsigned long) = (int);
 %typemap(in) (ulong) = (int);
 
-// wrap_unique_ptr(SteinerTreePtr, SteinerTree);
-// wrap_unique_ptr(SteinerTreePtr, psn::SteinerTree);
-// %include "include/OpenPhySyn/SteinerTree/SteinerTree.hpp"
 
 #ifdef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
 %ignore     import_def;
@@ -94,9 +91,9 @@ DatabaseHandler *handler();
 %ignore psn::Psn::initialize;
 #endif
 
-%include "include/OpenPhySyn/Database/Types.hpp"
+%include "include/OpenPhySyn/Types.hpp"
 %rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2);
 %rename(pt_hash) psn::PointHash::operator()(const Point& pt);
-%include "include/OpenPhySyn/Database/DatabaseHandler.hpp"
+%include "include/OpenPhySyn/DatabaseHandler.hpp"
 
-%include "Psn/Exports.hpp"
+%include "Exports.hpp"

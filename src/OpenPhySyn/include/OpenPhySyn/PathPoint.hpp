@@ -29,42 +29,32 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <algorithm>
-#include <cmath>
+#ifndef __PSN_PATH_POINT__
+#define __PSN_PATH_POINT__
+#include <OpenPhySyn/Types.hpp>
 
-using namespace psn;
-
-int
-HelloTransform::addWire(Psn* psn_inst, std::string name)
+namespace psn
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    Net*             n1      = handler.createNet(name.c_str());
-    return (n1 != nullptr);
-}
-
-int
-HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
+class PathPoint
 {
+public:
+    PathPoint(InstanceTerm* path_pin = nullptr, bool is_rise = false,
+              float path_arrival = 0, float path_required = 0,
+              float path_slack = 0, int ap_index = -1);
+    InstanceTerm* pin() const;
+    bool          isRise() const;
+    float         arrival() const;
+    float         required() const;
+    float         slack() const;
+    int           analysisPointIndex() const;
 
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
-
-    if (args.size() == 1)
-    {
-        std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
-        return addWire(psn_inst, net_name);
-    }
-    else
-    {
-        PSN_LOG_ERROR("Usage:\n transform hello_transform "
-                      "<net_name>\n");
-    }
-
-    return -1;
-}
+private:
+    InstanceTerm* pin_;
+    bool          is_rise_;
+    float         arrival_;
+    float         required_;
+    float         slack_;
+    int           path_ap_index_;
+};
+} // namespace psn
+#endif

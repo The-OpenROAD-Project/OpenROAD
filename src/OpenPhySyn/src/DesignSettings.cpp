@@ -29,42 +29,66 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "HelloTransform.hpp"
+#include <OpenPhySyn/DesignSettings.hpp>
+#include <OpenPhySyn/PsnGlobal.hpp>
 #include <OpenPhySyn/PsnLogger.hpp>
-#include <algorithm>
-#include <cmath>
 
-using namespace psn;
-
-int
-HelloTransform::addWire(Psn* psn_inst, std::string name)
-{
-    DatabaseHandler& handler = *(psn_inst->handler());
-    Net*             n1      = handler.createNet(name.c_str());
-    return (n1 != nullptr);
-}
-
-int
-HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
+namespace psn
 {
 
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
-
-    if (args.size() == 1)
-    {
-        std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
-        return addWire(psn_inst, net_name);
-    }
-    else
-    {
-        PSN_LOG_ERROR("Usage:\n transform hello_transform "
-                      "<net_name>\n");
-    }
-
-    return -1;
+DesignSettings::DesignSettings(float max_area, float res_per_micron,
+                               float cap_per_micron)
+{
+    setMaxArea(max_area);
+    setResistancePerMicron(res_per_micron);
+    setCapacitancePerMicron(cap_per_micron);
 }
+
+float
+DesignSettings::maxArea() const
+{
+    if (max_area_ == 0)
+    {
+        PSN_LOG_WARN("Max area is 0 or not set.");
+    }
+    return max_area_;
+}
+float
+DesignSettings::resistancePerMicron() const
+{
+    if (res_per_micron_ == 0)
+    {
+        PSN_LOG_WARN("Resistance per micron is 0 or not set, use_set_wire_rc.");
+    }
+    return res_per_micron_;
+}
+float
+DesignSettings::capacitancePerMicron() const
+{
+    if (cap_per_micron_ == 0)
+    {
+        PSN_LOG_WARN(
+            "Capacitance per micron is 0 or not set, use set_wire_rc.");
+    }
+    return cap_per_micron_;
+}
+
+DesignSettings*
+DesignSettings::setMaxArea(float max_area)
+{
+    max_area_ = max_area;
+    return this;
+}
+DesignSettings*
+DesignSettings::setResistancePerMicron(float res_per_micron)
+{
+    res_per_micron_ = res_per_micron;
+    return this;
+}
+DesignSettings*
+DesignSettings::setCapacitancePerMicron(float cap_per_micron)
+{
+    cap_per_micron_ = cap_per_micron;
+    return this;
+}
+} // namespace psn

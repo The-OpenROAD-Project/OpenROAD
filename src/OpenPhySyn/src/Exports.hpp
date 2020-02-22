@@ -29,42 +29,35 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <algorithm>
-#include <cmath>
+#ifndef __PSN_EXPORTS__
+#define __PSN_EXPORTS__
+#include <OpenPhySyn/DatabaseHandler.hpp>
+#include <OpenPhySyn/SteinerTree.hpp>
+#include <OpenPhySyn/Types.hpp>
 
-using namespace psn;
-
-int
-HelloTransform::addWire(Psn* psn_inst, std::string name)
+namespace psn
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    Net*             n1      = handler.createNet(name.c_str());
-    return (n1 != nullptr);
-}
+void  version();
+void  print_version();
+void  help();
+void  print_usage();
+void  print_transforms();
+void  print_license();
+float design_area();
+bool  has_transform(const char* transform_name);
+int   set_wire_rc(float res_per_micon, float cap_per_micron);
+int   set_max_area(float area);
+int   set_log(const char* level);
+int   set_log_level(const char* level);
+int   set_log_pattern(const char* pattern);
+int   transform_internal(std::string              transform_name,
+                         std::vector<std::string> args);
 
-int
-HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
-{
+DatabaseHandler& get_handler();
+DatabaseHandler& get_database_handler();
+Database&        get_database();
+SteinerTree*     make_steiner_tree(const char* pin_name);
+SteinerTree*     make_steiner_tree(Net* net);
+} // namespace psn
 
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
-
-    if (args.size() == 1)
-    {
-        std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
-        return addWire(psn_inst, net_name);
-    }
-    else
-    {
-        PSN_LOG_ERROR("Usage:\n transform hello_transform "
-                      "<net_name>\n");
-    }
-
-    return -1;
-}
+#endif

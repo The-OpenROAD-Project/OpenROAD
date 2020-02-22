@@ -113,27 +113,26 @@ set_source_files_properties(${PSN_LIBRARY_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
-    ${PSN_HOME}/src/Psn/Psn.cpp
-    ${PSN_HOME}/src/Psn/Exports.cpp
-    ${PSN_HOME}/src/Psn/DesignSettings.cpp
-    ${PSN_HOME}/src/SteinerTree/SteinerTree.cpp
-    ${PSN_HOME}/src/PsnLogger/PsnLogger.cpp
-    ${PSN_HOME}/src/Database/OpenDBHandler.cpp
-    ${PSN_HOME}/src/Database/OpenStaHandler.cpp
-    ${PSN_HOME}/src/Transform/PsnTransform.cpp
-    ${PSN_HOME}/src/Transform/TransformHandler.cpp
-    ${PSN_HOME}/src/Transform/TransformInfo.cpp
-    ${PSN_HOME}/src/Utils/FileUtils.cpp
-    ${PSN_HOME}/src/Utils/FilesystemLegacyHelpers.cpp
-    ${PSN_HOME}/src/Utils/StringUtils.cpp
-    ${PSN_HOME}/src/Utils/PsnGlobal.cpp
+    ${PSN_HOME}/src/Psn.cpp
+    ${PSN_HOME}/src/Exports.cpp
+    ${PSN_HOME}/src/DesignSettings.cpp
+    ${PSN_HOME}/src/SteinerTree.cpp
+    ${PSN_HOME}/src/PsnLogger.cpp
+    ${PSN_HOME}/src/OpenDBHandler.cpp
+    ${PSN_HOME}/src/OpenStaHandler.cpp
+    ${PSN_HOME}/src/PsnTransform.cpp
+    ${PSN_HOME}/src/TransformHandler.cpp
+    ${PSN_HOME}/src/TransformInfo.cpp
+    ${PSN_HOME}/src/FileUtils.cpp
+    ${PSN_HOME}/src/FilesystemLegacyHelpers.cpp
+    ${PSN_HOME}/src/StringUtils.cpp
+    ${PSN_HOME}/src/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException.cpp
-    ${PSN_HOME}/src/Sta/PathPoint.cpp
+    ${PSN_HOME}/src/PathPoint.cpp
 )
 
-set(PSN_OPENROAD_LIBRARY_FILE "")
 set(PSN_OPENROAD_LIBRARY_FILE
-  ${PSN_HOME}/src/OpenROAD/MakeOpenPhySyn.cpp
+  ${PSN_HOME}/src/MakeOpenPhySyn.cpp
 )
 
 
@@ -205,8 +204,8 @@ set(PSN_DEP_FILES
   ${PSN_SWIG_FILES}
   ${PSN_HOME}/src/Psn/Exports.cpp
   ${PSN_HOME}/src/Psn/Psn.cpp
-  ${PSN_HOME}/src/Psn/Exports.hpp
-  ${PSN_HOME}/src/Psn/Psn.hpp
+  ${PSN_HOME}/src/Exports.hpp
+  ${PSN_HOME}/src/Psn.hpp
 )
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)

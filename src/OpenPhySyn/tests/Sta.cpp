@@ -28,12 +28,12 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <OpenPhySyn/Sta/PathPoint.hpp>
-#include "Psn/Psn.hpp"
+#include <OpenPhySyn/PathPoint.hpp>
+#include "Psn.hpp"
 #include "PsnException.hpp"
 
+#include "FileUtils.hpp"
 #include "Readers.hpp"
-#include "Utils/FileUtils.hpp"
 #include "doctest.h"
 
 using namespace psn;

@@ -30,9 +30,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "PinSwapTransform.hpp"
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Sta/PathPoint.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
+#include <OpenPhySyn/PathPoint.hpp>
+#include <OpenPhySyn/PsnGlobal.hpp>
+#include <OpenPhySyn/PsnLogger.hpp>
 #include <OpenSTA/dcalc/ArcDelayCalc.hh>
 #include <OpenSTA/dcalc/GraphDelayCalc.hh>
 #include <OpenSTA/liberty/TimingArc.hh>

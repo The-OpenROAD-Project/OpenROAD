@@ -33,7 +33,7 @@
 
 #include <tcl.h>
 #include "OpenSTA/app/StaMain.hh"
-#include "Psn/Psn.hpp"
+#include "Psn.hpp"
 #include "Readers.hpp"
 #include "db.h"
 #include "db_sta/dbNetwork.hh"
@@ -41,13 +41,11 @@
 #include "doctest.h"
 #include "flute3/flute.h"
 
-
 namespace sta
 {
 extern const char* openroad_tcl_inits[];
 }
 using sta::evalTclInit;
-
 
 int
 main(int argc, char** argv)

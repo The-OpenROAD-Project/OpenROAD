@@ -30,9 +30,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "BufferFanoutTransform.hpp"
-#include <OpenPhySyn/PsnLogger/PsnLogger.hpp>
-#include <OpenPhySyn/Utils/PsnGlobal.hpp>
-#include "Utils/StringUtils.hpp"
+#include <OpenPhySyn/PsnGlobal.hpp>
+#include <OpenPhySyn/PsnLogger.hpp>
+#include "StringUtils.hpp"
 
 #include <algorithm>
 #include <cmath>
