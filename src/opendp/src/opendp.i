@@ -49,12 +49,18 @@ read_constraints(std::string constraint_file)
 }
 
 void
-legalize_placement(int pad_left,
-		   int pad_right,
-		   bool verbose)
+legalize_placement(bool verbose)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->legalizePlacement(pad_left, pad_right, verbose);
+  opendp->legalizePlacement(verbose);
+}
+
+void
+set_padding_global(int left,
+		   int right)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPaddingGlobal(left, right);
 }
 
 %} // inline

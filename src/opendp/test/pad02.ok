@@ -11,32 +11,5 @@ Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: simple03.def
--------------------- Design Stats ------------------------------
-core area                  : (3800, 2800) (15960, 14000)
-total cells                : 1
-multi cells                : 0
-fixed cells                : 0
-nets                       : 4
-design area                : 1.36e+08
-total fixed area           : 0
-total movable area         : 7.45e+06
-design utilization         : 5.47
-rows                       : 4
-row height                 : 2800
-----------------------------------------------------------------
-Check Legality
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-edge_check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
--------------------- Placement Analysis ------------------------
-total displacement         : 100600
-average displacement       : 100600
-max displacement           : 100600
-original HPWL              : 125
-legalized HPWL             : 24.4
-delta HPWL                 : -80%
-----------------------------------------------------------------
+0 5
 No differences found.

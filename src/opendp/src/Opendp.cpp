@@ -165,11 +165,13 @@ Group::Group() : name(""), util(0.0){}
 sub_region::sub_region() : x_pos(0), y_pos(0), width(0), height(0) {}
 
 Opendp::Opendp()
-    : initial_power_(power::undefined),
-      diamond_search_height_(400),
-      max_displacement_constraint_(0),
-      site_width_(0),
-      max_cell_height_(1) {
+  : pad_right_(0),
+    pad_left_(0),
+    initial_power_(power::undefined),
+    diamond_search_height_(400),
+    max_displacement_constraint_(0),
+    site_width_(0),
+    max_cell_height_(1) {
 }
 
 Opendp::~Opendp() {}
@@ -182,12 +184,13 @@ void Opendp::clear() {
   cells_.clear();
 }
 
-bool Opendp::legalizePlacement(int pad_left,
-			       int pad_right,
-			       bool verbose) {
-  pad_left_ = pad_left;
-  pad_right_ = pad_right;
+void Opendp::setPaddingGlobal(int left,
+			      int right) {
+  pad_left_ = left;
+  pad_right_ = right;
+}
 
+bool Opendp::legalizePlacement(bool verbose) {
   dbToOpendp();
   initAfterImport();
   reportDesignStats();
