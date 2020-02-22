@@ -396,12 +396,11 @@ int Opendp::gridHeight() {
 }
 
 int Opendp::gridWidth(Cell *cell) {
-  return ceil((cell->width + site_width_ * (pad_left_ + pad_right_))
-	      / static_cast<double>(site_width_));
+  return divCeil(cell->width, site_width_) + pad_left_ + pad_right_;
 }
 
 int Opendp::gridHeight(Cell *cell) {
-  return ceil(cell->height / static_cast<double>(row_height_));
+  return divCeil(cell->height, row_height_);
 }
 
 // Callers should probably be using gridWidth.
