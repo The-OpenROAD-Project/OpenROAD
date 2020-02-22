@@ -321,13 +321,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
   pair< int, int > pos;
   Macro* macro = cell->cell_macro;
 
-  // EDGETYPE 1 - 1 : 400, 1 - 2 : 400, 2 - 2 : 0
-  int edge_left = 0;
-  int edge_right = 0;
-  if(macro->edgetypeLeft == 1) edge_left = 2;
-  if(macro->edgetypeRight == 1) edge_right = 2;
-
-  int x_step = gridWidth(cell) + edge_left + edge_right;
+  int x_step = gridWidth(cell);
   int y_step = gridHeight(cell);
 
   // IF y is out of border
@@ -377,13 +371,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
         }
       }
       if(available) {
-        if(edge_left == 0)
-          pos = make_pair(y, x + i);
-        else
-          pos = make_pair(y, x + i + edge_left);
-
-	// cout << "Bin Search Success: " << pos.first << " " << pos.second
-	//    << " edgeLeft: " << edge_left << endl;
+	pos = make_pair(y, x + i);
         return make_pair(available, pos);
       }
     }
@@ -420,11 +408,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
              << endl;
         cout << " - - - - - - - - - - - - - - - - - - - - - - - - " << endl;
 #endif
-        if(edge_left == 0)
-          pos = make_pair(y, x + i);
-        else
-          pos = make_pair(y, x + i + edge_left);
-
+	pos = make_pair(y, x + i);
         return make_pair(available, pos);
       }
     }

@@ -81,8 +81,6 @@ void density_bin::print() {
 
 Macro::Macro()
     : isMulti(false),
-      edgetypeLeft(0),
-      edgetypeRight(0),
       top_power(power::undefined) {}
 
 void Macro::print() {
