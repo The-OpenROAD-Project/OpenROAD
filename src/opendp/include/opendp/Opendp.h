@@ -83,7 +83,7 @@ struct Cell {
   dbInst* db_inst;
   Macro* cell_macro;
   int x_coord, y_coord;           // origin DBU
-  int init_x_coord, init_y_coord; // initial DBU
+  dbOrientType orient;
   int x_pos, y_pos;               // grid position
   int width, height;		  // DBU
   bool is_placed;
@@ -97,7 +97,7 @@ struct Cell {
   const char *name();
   void print();
   bool inGroup() { return cell_group != nullptr; }
-  int disp();
+  int64_t area();
 };
 
 struct Pixel {
@@ -250,6 +250,11 @@ class Opendp {
   bool placed_check(bool verbose);
   bool overlap_check(bool verbose);
 
+  // Cell initial location wrt core origin.
+  void initLocation(Cell *cell,
+		    int &x,
+		    int &y);
+  int disp(Cell *cell);
   int gridNearestX(int x);
   int gridNearestY(int y);
   int gridX(int x);

@@ -54,8 +54,8 @@ using std::string;
 using std::vector;
 
 static bool SortUpOrder(Cell* cell1, Cell* cell2) {
-  int area1 = cell1->width * cell1->height;
-  int area2 = cell2->width * cell2->height;
+  int area1 = cell1->area();
+  int area2 = cell2->area();
   if(area1 > area2)
     return true;
   else if(area1 < area2)
@@ -170,7 +170,6 @@ void Opendp::non_group_cell_placement() {
   }
   sort(cell_list.begin(), cell_list.end(), SortUpOrder);
 
-
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
     if(macro->isMulti)
@@ -178,8 +177,11 @@ void Opendp::non_group_cell_placement() {
   }
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
-    if(!macro->isMulti)
-      if(!map_move(cell)) shift_move(cell);
+    if(!macro->isMulti) {
+      if(!map_move(cell)) {
+	shift_move(cell);
+      }
+    }
   }
 }
 
@@ -268,18 +270,20 @@ void Opendp::brick_placement_1(Group* group) {
     int x_tar = 0;
     int y_tar = 0;
 
-    if(cell->init_x_coord > boundary_x_center)
+    int init_x, init_y;
+    initLocation(cell, init_x, init_y);
+    if(init_x > boundary_x_center)
       x_tar = boundary.xMax();
     else
       x_tar = boundary.xMin();
 
-    if(cell->init_y_coord > boundary_y_center)
+    if(init_y > boundary_y_center)
       y_tar = boundary.yMax();
     else
       y_tar = boundary.yMin();
 
     sort_by_dist.push_back(make_pair(
-        abs(cell->init_x_coord - x_tar) + abs(cell->init_y_coord - y_tar),
+        abs(init_x - x_tar) + abs(init_y - y_tar),
         cell));
   }
 
@@ -292,11 +296,13 @@ void Opendp::brick_placement_1(Group* group) {
     Cell* cell = sort_by_dist[i].second;
     int x_tar = 0;
     int y_tar = 0;
-    if(cell->init_x_coord > boundary_x_center)
+    int init_x, init_y;
+    initLocation(cell, init_x, init_y);
+    if(init_x > boundary_x_center)
       x_tar = boundary.xMax();
     else
       x_tar = boundary.xMin();
-    if(cell->init_y_coord > boundary_y_center)
+    if(init_y > boundary_y_center)
       y_tar = boundary.yMax();
     else
       y_tar = boundary.yMin();
@@ -319,18 +325,19 @@ void Opendp::brick_placement_2(Group* group) {
     adsRect* region = cell->region;
     int x_tar = 0;
     int y_tar = 0;
-    if(cell->init_x_coord > (region->xMin() + region->xMax()) / 2)
+    int init_x, init_y;
+    initLocation(cell, init_x, init_y);
+    if(init_x > (region->xMin() + region->xMax()) / 2)
       x_tar = region->xMax();
     else
       x_tar = region->xMin();
-    if(cell->init_y_coord > (region->yMin() + region->yMax()) / 2)
+    if(init_y > (region->yMin() + region->yMax()) / 2)
       y_tar = region->yMax();
     else
       y_tar = region->yMin();
 
-    sort_by_dist.push_back(make_pair(
-        abs(cell->init_x_coord - x_tar) + abs(cell->init_y_coord - y_tar),
-        cell));
+    // stupid stupid; no need for pairs -cherry
+    sort_by_dist.push_back(make_pair(abs(init_x - x_tar) + abs(init_y - y_tar), cell));
   }
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
@@ -344,11 +351,13 @@ void Opendp::brick_placement_2(Group* group) {
       adsRect *region = cell->region;
       int x_tar = 0;
       int y_tar = 0;
-      if(cell->init_x_coord > (region->xMin() + region->xMax()) / 2)
+      int init_x, init_y;
+      initLocation(cell, init_x, init_y);
+      if(init_x > (region->xMin() + region->xMax()) / 2)
 	x_tar = region->xMax();
       else
 	x_tar = region->xMin();
-      if(cell->init_y_coord > (region->yMin() + region->yMax()) / 2)
+      if(init_y > (region->yMin() + region->yMax()) / 2)
 	y_tar = region->yMax();
       else
 	y_tar = region->yMin();
@@ -367,9 +376,9 @@ int Opendp::group_refine(Group* group) {
 
   for(int i = 0; i < group->siblings.size(); i++) {
     Cell* cell = group->siblings[i];
-    double disp = abs(cell->init_x_coord - cell->x_coord) +
-                  abs(cell->init_y_coord - cell->y_coord);
-    sort_by_disp.push_back(make_pair(disp, cell));
+    double dsp = disp(cell);
+    // stupid stupid; no need for pairs -cherry
+    sort_by_disp.push_back(make_pair(dsp, cell));
   }
 
   sort(sort_by_disp.begin(), sort_by_disp.end(),
@@ -425,8 +434,9 @@ int Opendp::non_group_refine() {
 
   for(Cell &cell : cells_) {
     if(!(isFixed(&cell) || cell.hold || cell.inGroup()))
-      sort_by_disp.push_back(make_pair(cell.disp(), &cell));
+      sort_by_disp.push_back(make_pair(disp(&cell), &cell));
   }
+  // stupid stupid; no need for pairs -cherry
   sort(sort_by_disp.begin(), sort_by_disp.end(),
        [](const pair< double, Cell* >& lhs, const pair< double, Cell* >& rhs) {
          return (lhs.first > rhs.first);

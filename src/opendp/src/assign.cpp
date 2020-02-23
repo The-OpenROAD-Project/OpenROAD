@@ -128,7 +128,7 @@ void Opendp::group_cell_region_assign() {
 
     int64_t cell_area = 0;
     for(Cell* cell : group.siblings) {
-      cell_area += cell->width * cell->height;
+      cell_area += cell->area();
       int dist = INT_MAX;
       adsRect* region_backup = nullptr;
       for(adsRect &rect : group.regions) {
@@ -190,16 +190,18 @@ void Opendp::non_group_cell_region_assign() {
         cout << "Xmin: " << theSub.boundary.xMin() << endl;
         cout << " sibilings size : " << theSub.siblings.size() << endl;
 #endif
-	if(cell.init_x_coord >= j * x_step &&
-	   cell.init_x_coord < (j + 1) * x_step) {
+	int init_x, init_y;
+	initLocation(&cell, init_x, init_y);
+	if(init_x >= j * x_step &&
+	   init_x < (j + 1) * x_step) {
 	  theSub.siblings.push_back(&cell);
 	  cell_num_check++;
 	}
-	else if(j == 0 && cell.init_x_coord < 0.0) {
+	else if(j == 0 && init_x < 0.0) {
 	  theSub.siblings.push_back(&cell);
 	  cell_num_check++;
 	}
-	else if(j == group_num - 1 && cell.init_x_coord >= core_.dx()) {
+	else if(j == group_num - 1 && init_x >= core_.dx()) {
 #ifdef ODP_DEBUG
 	  cell.print();
 	  cout << "j: " << j << endl;
@@ -348,8 +350,6 @@ void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
   cell->is_placed = true;
 #ifdef ODP_DEBUG
   cout << "paint cell : " << cell->name() << endl;
-  cout << "init_x_coord - init_y_coord : " << cell->init_x_coord << " - "
-       << cell->init_y_coord << endl;
   cout << "x_coord - y_coord : " << cell->x_coord << " - "
        << cell->y_coord << endl;
   cout << "x_step - y_step : " << x_step << " - " << y_step << endl;
@@ -366,17 +366,16 @@ void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
       }
     }
   }
-
   if(max_cell_height_ > 1) {
     if(y_step % 2 == 1) {
       if(rows_[y_pos].top_power != macro->top_power)
-        cell->db_inst->setOrient(dbOrientType::MX);
+        cell->orient = dbOrientType::MX;
       else
-        cell->db_inst->setOrient(dbOrientType::R0);
+        cell->orient = dbOrientType::R0;
     }
   }
   else {
-    cell->db_inst->setOrient(rows_[y_pos].orient);
+    cell->orient = rows_[y_pos].orient;
   }
 }
 
