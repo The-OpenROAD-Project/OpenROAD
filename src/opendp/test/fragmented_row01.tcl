@@ -1,5 +1,5 @@
 source helpers.tcl
-read_lef nangate45-bench/tech/NangateOpenCellLibrary.lef
+read_lef NangateOpenCellLibrary.lef
 read_def fragmented_row01.def
 legalize_placement
 set def_file [make_result_file fragmented_row01.def]

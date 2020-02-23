@@ -1,6 +1,6 @@
 source helpers.tcl
-read_lef iccad17-bench/des_perf_a_md1/tech.lef
-read_lef iccad17-bench/des_perf_a_md1/cells_modified.lef
+read_lef multi_height_tech.lef
+read_lef multi_height_tech_cells.lef
 read_def multi_height03.def
 legalize_placement
 set def_file [make_result_file multi_height03.def]

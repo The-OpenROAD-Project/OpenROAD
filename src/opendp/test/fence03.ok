@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: Reading LEF file:  NangateOpenCellLibrary.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: Finished LEF file:  NangateOpenCellLibrary.lef
 Notice 0: 
 Reading DEF file: fence03.def
 Notice 0: Design: ten_cells
