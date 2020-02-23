@@ -1,6 +1,6 @@
 # 1 inst lower left of core
 source helpers.tcl
-read_lef nangate45-bench/tech/NangateOpenCellLibrary.lef
+read_lef NangateOpenCellLibrary.lef
 read_def simple01.def
 legalize_placement
 
