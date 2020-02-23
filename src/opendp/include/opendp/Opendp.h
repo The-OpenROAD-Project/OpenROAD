@@ -83,7 +83,7 @@ struct Cell {
   dbInst* db_inst;
   Macro* cell_macro;
   int x_coord, y_coord;           // origin DBU
-  int init_x_coord, init_y_coord; // initial DBU
+  dbOrientType orient;
   int x_pos, y_pos;               // grid position
   int width, height;		  // DBU
   bool is_placed;
@@ -97,7 +97,7 @@ struct Cell {
   const char *name();
   void print();
   bool inGroup() { return cell_group != nullptr; }
-  int disp();
+  int64_t area();
 };
 
 struct Pixel {
@@ -250,7 +250,19 @@ class Opendp {
   bool power_line_check(bool verbose);
   bool placed_check(bool verbose);
   bool overlap_check(bool verbose);
+  void rectDist(Cell *cell,
+		adsRect *rect,
+		// Return values.
+		int x_tar,
+		int y_tar);
+  int rectDist(Cell *cell,
+	       adsRect *rect);
 
+  // Cell initial location wrt core origin.
+  void initLocation(Cell *cell,
+		    int &x,
+		    int &y);
+  int disp(Cell *cell);
   int gridNearestX(int x);
   int gridNearestY(int y);
   int gridX(int x);
@@ -310,6 +322,10 @@ class Opendp {
   // total fixed cell area (excluding terminal NIs) dbu^2
   int64_t fixed_area_;
   double design_util_;
+
+  // Magic numbers
+  static constexpr double group_refine_percent_ = .05;
+  static constexpr double non_group_refine_percent_ = .02;
 };
 
 int divRound(int dividend, int divisor);

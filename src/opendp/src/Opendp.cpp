@@ -59,6 +59,7 @@ using std::string;
 using std::to_string;
 using std::vector;
 using std::round;
+using std::max;
 
 using odb::adsRect;
 using odb::dbBox;
@@ -93,8 +94,6 @@ Cell::Cell()
     : cell_macro(nullptr),
       x_coord(0),
       y_coord(0),
-      init_x_coord(0),
-      init_y_coord(0),
       x_pos(INT_MAX),
       y_pos(INT_MAX),
       width(0.0),
@@ -115,16 +114,15 @@ void Cell::print() {
   cout << "name:               " << db_inst->getConstName() << endl;
   cout << "type:               " << cell_macro->db_master->getConstName()
        << endl;
-  cout << "(init_x,  init_y):  " << init_x_coord << ", " << init_y_coord
-       << endl;
   cout << "(x_coord,y_coord):  " << x_coord << ", " << y_coord << endl;
-  cout << "[width,height]:      " << width << ", " << height << endl;
   cout << "|===  END  CELL ===|" << endl;
 }
 
-int Cell::disp() {
-  return abs(init_x_coord - x_coord) +
-         abs(init_y_coord - y_coord);
+int64_t
+Cell::area()
+{
+  dbMaster *master = db_inst->getMaster();
+  return master->getWidth() * master->getHeight();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -193,9 +191,9 @@ bool Opendp::legalizePlacement(bool verbose) {
   initAfterImport();
   reportDesignStats();
   simplePlacement(verbose);
-  updateDbInstLocations();
   bool legal = checkLegality(verbose);
   reportLegalizationStats();
+  updateDbInstLocations();
   return legal;
 }
 
@@ -296,8 +294,8 @@ void Opendp::updateDbInstLocations() {
     int x = core_.xMin() + cell.x_coord + pad_left_ * site_width_;
     int y = core_.yMin() + cell.y_coord;
     dbInst *db_inst = cell.db_inst;
+    db_inst->setOrient(cell.orient);
     db_inst->setLocation(x, y);
-    // Orientation is already set.
   }
 }
 
@@ -386,6 +384,24 @@ void Opendp::reportLegalizationStats() {
 }
 
 ////////////////////////////////////////////////////////////////
+
+void
+Opendp::initLocation(Cell *cell,
+		     int &x,
+		     int &y)
+{
+  int loc_x, loc_y;
+  cell->db_inst->getLocation(loc_x, loc_y);
+  x = max(0, loc_x - core_.xMin());
+  y = max(0, loc_y - core_.yMin());
+}
+
+int Opendp::disp(Cell *cell) {
+  int init_x, init_y;
+  initLocation(cell, init_x, init_y);
+  return abs(init_x - cell->x_coord) +
+         abs(init_y - cell->y_coord);
+}
 
 int Opendp::gridWidth() {
   return core_.dx() / site_width_;

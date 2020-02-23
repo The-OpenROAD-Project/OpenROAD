@@ -255,8 +255,8 @@ bool Opendp::overlap_check(bool verbose) {
       y_ur = min(y_ur, row_count);
     }
 
-    assert(x_pos > -1);
-    assert(y_pos > -1);
+    assert(x_pos >= 0);
+    assert(y_pos >= 0);
     assert(x_step > 0);
     assert(y_step > 0);
     assert(x_ur <= coreGridMaxX());

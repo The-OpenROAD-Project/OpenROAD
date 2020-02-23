@@ -53,9 +53,9 @@ using std::sort;
 using std::string;
 using std::vector;
 
-static bool SortUpOrder(Cell* cell1, Cell* cell2) {
-  int area1 = cell1->width * cell1->height;
-  int area2 = cell2->width * cell2->height;
+static bool sortUpOrder(Cell* cell1, Cell* cell2) {
+  int area1 = cell1->area();
+  int area2 = cell2->area();
   if(area1 > area2)
     return true;
   else if(area1 < area2)
@@ -94,11 +94,10 @@ void Opendp::simplePlacement(bool verbose) {
   if(groups_.size() > 0) {
     group_cell_placement();
     cout << " group_cell_placement done .. " << endl;
-    for(int i = 0; i < groups_.size(); i++) {
-      Group* group = &groups_[i];
+    for(Group &group : groups_) {
       for(int j = 0; j < 3; j++) {
-        int count_a = group_refine(group);
-        int count_b = group_annealing(group);
+        int count_a = group_refine(&group);
+        int count_b = group_annealing(&group);
         if(count_a < 10 || count_b < 100) break;
       }
     }
@@ -134,14 +133,13 @@ void Opendp::non_group_cell_pre_placement() {
 }
 
 void Opendp::group_cell_pre_placement() {
-  for(int i = 0; i < groups_.size(); i++) {
-    Group* group = &groups_[i];
-    for(Cell* cell : group->siblings) {
+  for(Group &group : groups_) {
+    for(Cell* cell : group.siblings) {
       if(!(isFixed(cell) || cell->is_placed)) {
 	int dist = INT_MAX;
 	bool in_group = false;
 	adsRect* target;
-	for(adsRect& rect : group->regions) {
+	for(adsRect& rect : group.regions) {
 	  if(check_inside(cell, &rect))
 	    in_group = true;
 	  int temp_dist = dist_for_rect(cell, &rect);
@@ -168,36 +166,37 @@ void Opendp::non_group_cell_placement() {
     if(!(isFixed(&cell) || cell.inGroup() || cell.is_placed))
       cell_list.push_back(&cell);
   }
-  sort(cell_list.begin(), cell_list.end(), SortUpOrder);
-
+  sort(cell_list.begin(), cell_list.end(), sortUpOrder);
 
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
-    if(macro->isMulti)
-      if(!map_move(cell)) shift_move(cell);
+    if(macro->isMulti) {
+      if(!map_move(cell))
+	shift_move(cell);
+    }
   }
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
-    if(!macro->isMulti)
-      if(!map_move(cell)) shift_move(cell);
+    if(!macro->isMulti) {
+      if(!map_move(cell)) {
+	shift_move(cell);
+      }
+    }
   }
 }
 
 void Opendp::group_cell_placement() {
-  for(int i = 0; i < groups_.size(); i++) {
+  for(Group &group : groups_) {
     bool single_pass = true;
     bool multi_pass = true;
-
-    Group* group = &groups_[i];
     vector< Cell* > cell_list;
     cell_list.reserve(cells_.size());
-    for(int j = 0; j < group->siblings.size(); j++) {
-      Cell* cell = group->siblings[j];
+    for(Cell* cell : group.siblings) {
       if(!isFixed(cell) && !cell->is_placed) {
 	cell_list.push_back(cell);
       }
     }
-    sort(cell_list.begin(), cell_list.end(), SortUpOrder);
+    sort(cell_list.begin(), cell_list.end(), sortUpOrder);
     // place multi-deck cells on each group region
     for(int j = 0; j < cell_list.size(); j++) {
       Cell* cell = cell_list[j];
@@ -233,73 +232,71 @@ void Opendp::group_cell_placement() {
 	}
       }
     }
-    //			if( single_pass )
-    //				cout << "single-deck placement done" << endl;
 
     if(!single_pass || !multi_pass) {
       // Erase group cells
-      for(int j = 0; j < group->siblings.size(); j++) {
-        Cell* cell = group->siblings[j];
+      for(int j = 0; j < group.siblings.size(); j++) {
+        Cell* cell = group.siblings[j];
         erase_pixel(cell);
       }
-      //				cout << "erase done" << endl;
 
       // determine brick placement by utilization
-      if(group->util > 0.95) {
-        brick_placement_1(group);
+      if(group.util > 0.95) {
+        brick_placement_1(&group);
       }
       else {
-        brick_placement_2(group);
+        brick_placement_2(&group);
       }
     }
   }
 }
 
+void
+Opendp::rectDist(Cell *cell,
+		 adsRect *rect,
+		 // Return values.
+		 int x_tar,
+		 int y_tar)
+{
+  x_tar = 0;
+  y_tar = 0;
+  int init_x, init_y;
+  initLocation(cell, init_x, init_y);
+  if(init_x > (rect->xMin() + rect->xMax()) / 2)
+    x_tar = rect->xMax();
+  else
+    x_tar = rect->xMin();
+  if(init_y > (rect->yMin() + rect->yMax()) / 2)
+    y_tar = rect->yMax();
+  else
+    y_tar = rect->yMin();
+}
+
+int
+Opendp::rectDist(Cell *cell,
+		 adsRect *rect)
+{
+  int x_tar, y_tar;
+  rectDist(cell, rect,
+	   x_tar, y_tar);
+  int init_x, init_y;
+  initLocation(cell, init_x, init_y);
+  return abs(init_x - x_tar) + abs(init_y - y_tar);
+}
+
 // place toward group edges
 void Opendp::brick_placement_1(Group* group) {
-  adsRect &boundary = group->boundary;
-  vector< pair< int, Cell* > > sort_by_dist;
-  sort_by_dist.reserve(group->siblings.size());
-
-  int boundary_x_center = (boundary.xMin() + boundary.xMax()) / 2;
-  int boundary_y_center = (boundary.yMin() + boundary.yMax()) / 2;
-  for(int i = 0; i < group->siblings.size(); i++) {
-    Cell* cell = group->siblings[i];
-    int x_tar = 0;
-    int y_tar = 0;
-
-    if(cell->init_x_coord > boundary_x_center)
-      x_tar = boundary.xMax();
-    else
-      x_tar = boundary.xMin();
-
-    if(cell->init_y_coord > boundary_y_center)
-      y_tar = boundary.yMax();
-    else
-      y_tar = boundary.yMin();
-
-    sort_by_dist.push_back(make_pair(
-        abs(cell->init_x_coord - x_tar) + abs(cell->init_y_coord - y_tar),
-        cell));
-  }
+  adsRect *boundary = &group->boundary;
+  vector< Cell* > sort_by_dist(group->siblings);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
-       [](const pair< int, Cell* >& lhs, const pair< int, Cell* >& rhs) {
-         return (lhs.first < rhs.first);
+       [&](Cell* cell1, Cell* cell2) {
+         return rectDist(cell1, boundary) < rectDist(cell2, boundary);
        });
-
-  for(int i = 0; i < sort_by_dist.size(); i++) {
-    Cell* cell = sort_by_dist[i].second;
-    int x_tar = 0;
-    int y_tar = 0;
-    if(cell->init_x_coord > boundary_x_center)
-      x_tar = boundary.xMax();
-    else
-      x_tar = boundary.xMin();
-    if(cell->init_y_coord > boundary_y_center)
-      y_tar = boundary.yMax();
-    else
-      y_tar = boundary.yMin();
+			       
+  for(Cell* cell : sort_by_dist) {
+    int x_tar, y_tar;
+    rectDist(cell, boundary);
 
     bool valid = map_move(cell, x_tar, y_tar);
     if(!valid) {
@@ -311,47 +308,19 @@ void Opendp::brick_placement_1(Group* group) {
 
 // place toward region edges
 void Opendp::brick_placement_2(Group* group) {
-  vector< pair< int, Cell* > > sort_by_dist;
-  sort_by_dist.reserve(group->siblings.size());
-
-  for(int i = 0; i < group->siblings.size(); i++) {
-    Cell* cell = group->siblings[i];
-    adsRect* region = cell->region;
-    int x_tar = 0;
-    int y_tar = 0;
-    if(cell->init_x_coord > (region->xMin() + region->xMax()) / 2)
-      x_tar = region->xMax();
-    else
-      x_tar = region->xMin();
-    if(cell->init_y_coord > (region->yMin() + region->yMax()) / 2)
-      y_tar = region->yMax();
-    else
-      y_tar = region->yMin();
-
-    sort_by_dist.push_back(make_pair(
-        abs(cell->init_x_coord - x_tar) + abs(cell->init_y_coord - y_tar),
-        cell));
-  }
+  vector< Cell* > sort_by_dist(group->siblings);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
-       [](const pair< int, Cell* >& lhs, const pair< int, Cell* >& rhs) {
-         return (lhs.first < rhs.first);
+       [&](Cell* cell1, Cell* cell2) {
+         return rectDist(cell1, cell1->region) < rectDist(cell2, cell2->region);
        });
 
-  for(int i = 0; i < sort_by_dist.size(); i++) {
-    Cell* cell = sort_by_dist[i].second;
+  for(Cell* cell : sort_by_dist) {
     if(!cell->hold) {
       adsRect *region = cell->region;
-      int x_tar = 0;
-      int y_tar = 0;
-      if(cell->init_x_coord > (region->xMin() + region->xMax()) / 2)
-	x_tar = region->xMax();
-      else
-	x_tar = region->xMin();
-      if(cell->init_y_coord > (region->yMin() + region->yMax()) / 2)
-	y_tar = region->yMax();
-      else
-	y_tar = region->yMin();
+      int x_tar, y_tar;
+      rectDist(cell, region,
+	       x_tar, y_tar);
       bool valid = map_move(cell, x_tar, y_tar);
       if(!valid) {
 	cout << "Warning: cannot place single ( brick place 2 ) "
@@ -362,24 +331,16 @@ void Opendp::brick_placement_2(Group* group) {
 }
 
 int Opendp::group_refine(Group* group) {
-  vector< pair< double, Cell* > > sort_by_disp;
-  sort_by_disp.reserve(group->siblings.size());
-
-  for(int i = 0; i < group->siblings.size(); i++) {
-    Cell* cell = group->siblings[i];
-    double disp = abs(cell->init_x_coord - cell->x_coord) +
-                  abs(cell->init_y_coord - cell->y_coord);
-    sort_by_disp.push_back(make_pair(disp, cell));
-  }
+  vector< Cell* > sort_by_disp(group->siblings);
 
   sort(sort_by_disp.begin(), sort_by_disp.end(),
-       [](const pair< double, Cell* >& lhs, const pair< double, Cell* >& rhs) {
-         return (lhs.first > rhs.first);
+       [&](Cell* cell1, Cell* cell2) {
+         return (disp(cell1) > disp(cell1));
        });
 
   int count = 0;
-  for(int i = 0; i < sort_by_disp.size() / 20; i++) {
-    Cell* cell = sort_by_disp[i].second;
+  for(int i = 0; i < sort_by_disp.size() * group_refine_percent_; i++) {
+    Cell* cell = sort_by_disp[i];
     if(!cell->hold) {
       if(refine_move(cell)) count++;
     }
@@ -420,21 +381,21 @@ int Opendp::non_group_annealing() {
 }
 
 int Opendp::non_group_refine() {
-  vector< pair< int, Cell* > > sort_by_disp;
+  vector< Cell* > sort_by_disp;
   sort_by_disp.reserve(cells_.size());
 
   for(Cell &cell : cells_) {
     if(!(isFixed(&cell) || cell.hold || cell.inGroup()))
-      sort_by_disp.push_back(make_pair(cell.disp(), &cell));
+      sort_by_disp.push_back(&cell);
   }
   sort(sort_by_disp.begin(), sort_by_disp.end(),
-       [](const pair< double, Cell* >& lhs, const pair< double, Cell* >& rhs) {
-         return (lhs.first > rhs.first);
+       [&](Cell* cell1, Cell* cell2) {
+         return disp(cell1) > disp(cell2);
        });
 
   int count = 0;
-  for(int i = 0; i < sort_by_disp.size() / 50; i++) {
-    Cell* cell = sort_by_disp[i].second;
+  for(int i = 0; i < sort_by_disp.size() * non_group_refine_percent_; i++) {
+    Cell* cell = sort_by_disp[i];
     if(!cell->hold) {
       if(refine_move(cell)) count++;
     }
