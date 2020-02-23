@@ -27,9 +27,9 @@ report_design_area
 # Pre-placement wireload timing
 report_checks
 
+set_padding -global -right 8
 global_placement -timing_driven
 
 legalize_placement
 
 report_checks
-

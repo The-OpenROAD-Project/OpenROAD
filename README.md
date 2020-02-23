@@ -369,9 +369,13 @@ estimated wires used for timing.
 Legalize a design that has been globally placed.
 
 ```
-legalize_placement [-constraints constraints_file]
+set_padding -global [-left pad_left] [-right pad_right]
+legalize_placement
 
 ```
+
+The `set_padding` command sets left and right padding in multiples of
+the row site width.
 
 #### Clock Tree Synthesis
 

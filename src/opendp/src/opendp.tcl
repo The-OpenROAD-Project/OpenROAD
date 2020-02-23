@@ -32,6 +32,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
+# -constraints is an undocumented option for worthless academic contests
 sta::define_cmd_args "legalize_placement" {[-verbose]\
 					     [-constraints constraints_file]\
 					   }
