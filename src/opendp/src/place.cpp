@@ -94,11 +94,10 @@ void Opendp::simplePlacement(bool verbose) {
   if(groups_.size() > 0) {
     group_cell_placement();
     cout << " group_cell_placement done .. " << endl;
-    for(int i = 0; i < groups_.size(); i++) {
-      Group* group = &groups_[i];
+    for(Group &group : groups_) {
       for(int j = 0; j < 3; j++) {
-        int count_a = group_refine(group);
-        int count_b = group_annealing(group);
+        int count_a = group_refine(&group);
+        int count_b = group_annealing(&group);
         if(count_a < 10 || count_b < 100) break;
       }
     }
@@ -134,14 +133,13 @@ void Opendp::non_group_cell_pre_placement() {
 }
 
 void Opendp::group_cell_pre_placement() {
-  for(int i = 0; i < groups_.size(); i++) {
-    Group* group = &groups_[i];
-    for(Cell* cell : group->siblings) {
+  for(Group &group : groups_) {
+    for(Cell* cell : group.siblings) {
       if(!(isFixed(cell) || cell->is_placed)) {
 	int dist = INT_MAX;
 	bool in_group = false;
 	adsRect* target;
-	for(adsRect& rect : group->regions) {
+	for(adsRect& rect : group.regions) {
 	  if(check_inside(cell, &rect))
 	    in_group = true;
 	  int temp_dist = dist_for_rect(cell, &rect);
@@ -172,8 +170,10 @@ void Opendp::non_group_cell_placement() {
 
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
-    if(macro->isMulti)
-      if(!map_move(cell)) shift_move(cell);
+    if(macro->isMulti) {
+      if(!map_move(cell))
+	shift_move(cell);
+    }
   }
   for(Cell* cell : cell_list) {
     Macro* macro = cell->cell_macro;
@@ -186,15 +186,13 @@ void Opendp::non_group_cell_placement() {
 }
 
 void Opendp::group_cell_placement() {
-  for(int i = 0; i < groups_.size(); i++) {
+  for(Group &group : groups_) {
     bool single_pass = true;
     bool multi_pass = true;
-
-    Group* group = &groups_[i];
     vector< Cell* > cell_list;
     cell_list.reserve(cells_.size());
-    for(int j = 0; j < group->siblings.size(); j++) {
-      Cell* cell = group->siblings[j];
+    for(int j = 0; j < group.siblings.size(); j++) {
+      Cell* cell = group.siblings[j];
       if(!isFixed(cell) && !cell->is_placed) {
 	cell_list.push_back(cell);
       }
@@ -240,18 +238,18 @@ void Opendp::group_cell_placement() {
 
     if(!single_pass || !multi_pass) {
       // Erase group cells
-      for(int j = 0; j < group->siblings.size(); j++) {
-        Cell* cell = group->siblings[j];
+      for(int j = 0; j < group.siblings.size(); j++) {
+        Cell* cell = group.siblings[j];
         erase_pixel(cell);
       }
       //				cout << "erase done" << endl;
 
       // determine brick placement by utilization
-      if(group->util > 0.95) {
-        brick_placement_1(group);
+      if(group.util > 0.95) {
+        brick_placement_1(&group);
       }
       else {
-        brick_placement_2(group);
+        brick_placement_2(&group);
       }
     }
   }
