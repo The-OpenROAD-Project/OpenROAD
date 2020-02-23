@@ -392,7 +392,7 @@ Opendp::initLocation(Cell *cell,
 {
   int loc_x, loc_y;
   cell->db_inst->getLocation(loc_x, loc_y);
-  x = max(0, loc_x - core_.xMin());
+  x = max(0, loc_x - core_.xMin() - pad_left_ * site_width_);
   y = max(0, loc_y - core_.yMin());
 }
 

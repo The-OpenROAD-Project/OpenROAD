@@ -82,10 +82,10 @@ struct Group;
 struct Cell {
   dbInst* db_inst;
   Macro* cell_macro;
-  int x_coord, y_coord;           // origin DBU
+  int x_coord, y_coord; // lower left with padding DBU
   dbOrientType orient;
-  int x_pos, y_pos;               // grid position
-  int width, height;		  // DBU
+  int x_pos, y_pos;     // grid position
+  int width, height;    // DBU
   bool is_placed;
   bool hold;
   adsRect *region;  // group rect

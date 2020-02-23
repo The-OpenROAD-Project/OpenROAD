@@ -1,0 +1,42 @@
+Notice 0: Reading LEF file:  NangateOpenCellLibrary.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  NangateOpenCellLibrary.lef
+Notice 0: 
+Reading DEF file: pad04.def
+Notice 0: Design: single_cell
+Notice 0:     Created 2 pins.
+Notice 0:     Created 10 components and 45 component-terminals.
+Notice 0:     Created 2 special nets and 20 connections.
+Notice 0:     Created 11 nets and 25 connections.
+Notice 0: Finished DEF file: pad04.def
+-------------------- Design Stats ------------------------------
+core area                  : (3800, 2800) (15960, 14000)
+total cells                : 10
+multi cells                : 0
+fixed cells                : 0
+nets                       : 13
+design area                : 1.36e+08
+total fixed area           : 0
+total movable area         : 3.4e+07
+design utilization         : 25
+rows                       : 4
+row height                 : 2800
+----------------------------------------------------------------
+Check Legality
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==>> PASS 
+overlap_check ==> PASS 
+-------------------- Placement Analysis ------------------------
+total displacement         : 0
+average displacement       : 0
+max displacement           : 0
+original HPWL              : 52.3
+legalized HPWL             : 52.3
+delta HPWL                 : 0%
+----------------------------------------------------------------
+No differences found.
