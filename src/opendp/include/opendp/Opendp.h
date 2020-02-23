@@ -249,6 +249,13 @@ class Opendp {
   bool power_line_check(bool verbose);
   bool placed_check(bool verbose);
   bool overlap_check(bool verbose);
+  void rectDist(Cell *cell,
+		adsRect *rect,
+		// Return values.
+		int x_tar,
+		int y_tar);
+  int rectDist(Cell *cell,
+	       adsRect *rect);
 
   // Cell initial location wrt core origin.
   void initLocation(Cell *cell,
