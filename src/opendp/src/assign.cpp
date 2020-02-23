@@ -81,7 +81,7 @@ void Opendp::fixed_cell_assign() {
 #endif
       for(int j = y_start; j < y_end; j++) {
         for(int k = x_start; k < x_end; k++) {
-          grid_[j][k].linked_cell = &cell;
+          grid_[j][k].cell = &cell;
           grid_[j][k].util = 1.0;
         }
       }
@@ -236,7 +236,7 @@ void Opendp::group_pixel_assign2() {
 	  if(!check_inside(grid2, rect) &&
              check_overlap(grid2, rect)) {
             grid_[i][j].util = 0.0;
-            grid_[i][j].linked_cell = &dummy_cell_;
+            grid_[i][j].cell = &dummy_cell_;
             grid_[i][j].is_valid = false;
             // cout << "invalid grid[" << i << "][" << j << "] marked" << endl;
           }
@@ -286,23 +286,20 @@ void Opendp::group_pixel_assign() {
         int col_start = divCeil(rect.xMin(), site_width_);
         int col_end = divFloor(rect.xMax(), site_width_);
 
-        // assign groupid to each pixel ( grid )
+        // assign group to each pixel ( grid )
         for(int l = col_start; l < col_end; l++) {
           if(abs(grid_[k][l].util - 1.0) < 1e-6) {
             grid_[k][l].pixel_group = &group;
 
-            // Can have FIXED cells, so no need to initialize as NULL
-            // grid[k][l].linked_cell = NULL;
             grid_[k][l].is_valid = true;
             grid_[k][l].util = 1.0;
-            // cout << "GroupPixelAssign: " << k << " " << l << " cleanned." << endl;
           }
           else if(grid_[k][l].util > 0 && grid_[k][l].util < 1) {
 #ifdef ODP_DEBUG
             cout << "grid[" << k << "][" << l << "]" << endl;
             cout << "util : " << grid_[k][l].util << endl;
 #endif
-            grid_[k][l].linked_cell = &dummy_cell_;
+            grid_[k][l].cell = &dummy_cell_;
             grid_[k][l].util = 0.0;
             grid_[k][l].is_valid = false;
           }
@@ -325,7 +322,7 @@ void Opendp::erase_pixel(Cell* cell) {
     assert(cell->y_pos == gridNearestY(cell));
     for(int i = cell->y_pos; i < cell->y_pos + y_step; i++) {
       for(int j = cell->x_pos; j < cell->x_pos + x_step; j++) {
-	grid_[i][j].linked_cell = NULL;
+	grid_[i][j].cell = nullptr;
 	grid_[i][j].util = 0;
       }
     }
@@ -356,11 +353,11 @@ void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
 #endif
   for(int i = y_pos; i < y_pos + y_step; i++) {
     for(int j = x_pos; j < x_pos + x_step; j++) {
-      if(grid_[i][j].linked_cell != NULL) {
+      if(grid_[i][j].cell != nullptr) {
         error("Cannot paint grid because it is already occupied.");
       }
       else {
-        grid_[i][j].linked_cell = cell;
+        grid_[i][j].cell = cell;
         grid_[i][j].util = 1.0;
       }
     }

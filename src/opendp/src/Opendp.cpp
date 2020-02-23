@@ -135,11 +135,11 @@ bool Opendp::isFixed(Cell *cell) {
 }
 
 Pixel::Pixel()
-    : util(0.0),
-      x_pos(0.0),
+    : x_pos(0.0),
       y_pos(0.0),
       pixel_group(nullptr),
-      linked_cell(NULL),
+      cell(nullptr),
+      util(0.0),
       is_valid(true) {}
 
 Row::Row()
@@ -250,7 +250,7 @@ void Opendp::initAfterImport() {
     for(int j = 0; j < col; j++) {
       grid_[i][j].y_pos = i;
       grid_[i][j].x_pos = j;
-      grid_[i][j].linked_cell = NULL;
+      grid_[i][j].cell = nullptr;
       grid_[i][j].is_valid = false;
     }
   }

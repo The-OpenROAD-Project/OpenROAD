@@ -101,11 +101,11 @@ struct Cell {
 };
 
 struct Pixel {
-  double util;
   int x_pos;
   int y_pos;
   Group* pixel_group;
-  Cell* linked_cell;
+  Cell* cell;
+  double util;
   bool is_valid;  // false for dummy place
 
   Pixel();

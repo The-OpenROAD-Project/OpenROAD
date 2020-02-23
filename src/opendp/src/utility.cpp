@@ -352,7 +352,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
 	    // cout << "BinSearch: chk " << k << " " << l << endl;
-	    if(grid_[k][l].linked_cell != NULL || !grid_[k][l].is_valid) {
+	    if(grid_[k][l].cell != nullptr || !grid_[k][l].is_valid) {
 	      // cout << "BinSearch: chk " << k << " " << l << " NonEmpty" << endl;
               available = false;
               break;
@@ -385,7 +385,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
       else {
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
-            if(grid_[k][l].linked_cell != NULL || !grid_[k][l].is_valid) {
+            if(grid_[k][l].cell != nullptr || !grid_[k][l].is_valid) {
               available = false;
               break;
             }
@@ -417,7 +417,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
 
 pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
                                             int y_coord) {
-  Pixel* pixel = NULL;
+  Pixel* pixel = nullptr;
   pair< bool, pair< int, int > > found;
   int x_pos = gridX(x_coord);
   int y_pos = gridY(y_coord);
@@ -478,7 +478,7 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
   for(int i = 1; i < diamond_search_height_ * 2 / div; i++) {
     vector< Pixel* > avail_list;
     avail_list.reserve(i * 4);
-    Pixel* pixel = NULL;
+    Pixel* pixel = nullptr;
 
     int x_offset = 0;
     int y_offset = 0;
@@ -612,7 +612,7 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
   set< Cell* > in_list;
   for(int i = cell->y_pos; i < cell->y_pos + step_y; i++) {
     for(int j = cell->x_pos; j < cell->y_pos + step_x; j++) {
-      Cell *pos_cell = grid_[i][j].linked_cell;
+      Cell *pos_cell = grid_[i][j].cell;
       if(pos_cell
 	 && in_list.find(pos_cell) != in_list.end()) {
 	   list.push_back(pos_cell);
@@ -640,7 +640,7 @@ vector< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
   set< Cell* > in_list;
   for(int i = y_start; i < y_end; i++) {
     for(int j = x_start; j < x_end; j++) {
-      Cell *pos_cell = grid_[i][j].linked_cell;
+      Cell *pos_cell = grid_[i][j].cell;
       if(pos_cell
 	 && !isFixed(pos_cell)
 	 && in_list.find(pos_cell) != in_list.end()) {
