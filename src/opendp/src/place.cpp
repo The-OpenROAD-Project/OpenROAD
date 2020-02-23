@@ -339,7 +339,7 @@ int Opendp::group_refine(Group* group) {
        });
 
   int count = 0;
-  for(int i = 0; i < sort_by_disp.size() / 20; i++) {
+  for(int i = 0; i < sort_by_disp.size() * group_refine_percent_; i++) {
     Cell* cell = sort_by_disp[i];
     if(!cell->hold) {
       if(refine_move(cell)) count++;
@@ -394,7 +394,7 @@ int Opendp::non_group_refine() {
        });
 
   int count = 0;
-  for(int i = 0; i < sort_by_disp.size() / 50; i++) {
+  for(int i = 0; i < sort_by_disp.size() * non_group_refine_percent_; i++) {
     Cell* cell = sort_by_disp[i];
     if(!cell->hold) {
       if(refine_move(cell)) count++;

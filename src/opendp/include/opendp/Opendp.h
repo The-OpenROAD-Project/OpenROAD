@@ -318,6 +318,10 @@ class Opendp {
   // total fixed cell area (excluding terminal NIs) dbu^2
   int64_t fixed_area_;
   double design_util_;
+
+  // Magic numbers
+  static constexpr double group_refine_percent_ = .05;
+  static constexpr double non_group_refine_percent_ = .02;
 };
 
 int divRound(int dividend, int divisor);
