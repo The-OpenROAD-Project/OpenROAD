@@ -277,8 +277,8 @@ int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {
   else if(y + cell->height > rect->yMax())
     temp_y = y + cell->height - rect->yMax();
 
-  assert(temp_y > -1);
-  assert(temp_x > -1);
+  assert(temp_y >= 0);
+  assert(temp_x >= 0);
 
   return temp_y + temp_x;
 }
@@ -713,26 +713,6 @@ bool Opendp::refine_move(Cell* cell) {
   }
   else
     return false;
-}
-
-pair< bool, Cell* > Opendp::nearest_cell(int x_coord, int y_coord) {
-  bool found = false;
-  Cell* nearest_cell = NULL;
-  double nearest_dist = std::numeric_limits<double>::max();
-  for(Cell& cell : cells_) {
-    if(cell.is_placed) {
-      double dist =
-        abs(cell.x_coord - x_coord) + abs(cell.y_coord - y_coord);
-      if(dist < row_height_ * 2) {
-	if(nearest_dist > dist) {
-	  nearest_dist = dist;
-	  nearest_cell = &cell;
-	  found = true;
-	}
-      }
-    }
-  }
-  return make_pair(found, nearest_cell);
 }
 
 }  // namespace opendp

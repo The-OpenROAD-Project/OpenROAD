@@ -220,7 +220,6 @@ class Opendp {
   int dist_benefit(Cell* cell, int x_coord, int y_coord);
   bool swap_cell(Cell* cellA, Cell* cellB);
   bool refine_move(Cell* cell);
-  std::pair< bool, Cell* > nearest_cell(int x_coord, int y_coord);
 
   void non_group_cell_pre_placement();
   void group_cell_pre_placement();

@@ -51,7 +51,6 @@ using std::pair;
 using std::round;
 
 // Fixed cell handle on parser ( no need to use this function during placement)
-// //
 void Opendp::fixed_cell_assign() {
   for(Cell &cell : cells_) {
     if(isFixed(&cell)) {
