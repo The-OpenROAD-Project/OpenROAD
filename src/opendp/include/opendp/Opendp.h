@@ -101,11 +101,11 @@ struct Cell {
 };
 
 struct Pixel {
-  double util;
   int x_pos;
   int y_pos;
   Group* pixel_group;
-  Cell* linked_cell;
+  Cell* cell;
+  double util;
   bool is_valid;  // false for dummy place
 
   Pixel();
@@ -221,7 +221,6 @@ class Opendp {
   int dist_benefit(Cell* cell, int x_coord, int y_coord);
   bool swap_cell(Cell* cellA, Cell* cellB);
   bool refine_move(Cell* cell);
-  std::pair< bool, Cell* > nearest_cell(int x_coord, int y_coord);
 
   void non_group_cell_pre_placement();
   void group_cell_pre_placement();

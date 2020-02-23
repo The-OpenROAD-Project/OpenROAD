@@ -351,7 +351,7 @@ int Opendp::group_refine(Group* group) {
 
 int Opendp::group_annealing(Group* group) {
   srand(777);
-  // srand(time(NULL));
+  // srand(time(nullptr));
   int count = 0;
 
   for(int i = 0; i < 1000 * group->siblings.size(); i++) {
