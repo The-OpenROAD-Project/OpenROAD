@@ -345,7 +345,7 @@ void Opendp::reportDesignStats() {
   cout << "design area                : " << static_cast< double >(design_area_) << endl;
   cout << "total fixed area           : " << static_cast< double >(fixed_area_) << endl;
   cout << "total movable area         : " << static_cast< double >(movable_area_) << endl;
-  cout << "design utilization         : " << design_util_ * 100.00 << endl;
+  cout << "design utilization         : " << design_util_ * 100.00 << "%" << endl;
   cout << "rows                       : " << rows_.size() << endl;
   cout << "row height                 : " << row_height_ << endl;
   if(max_cell_height_ > 1)

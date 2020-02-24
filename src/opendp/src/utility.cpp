@@ -342,7 +342,7 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
 #endif
   if(x_pos > x) {
     // magic number alert
-    for(int i = 9; i > -1; i--) {
+    for(int i = 9; i >= 0; i--) {
       // check all grids are empty
       bool available = true;
 

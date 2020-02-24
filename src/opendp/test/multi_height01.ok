@@ -22,7 +22,7 @@ nets                       : 13
 design area                : 1.6e+08
 total fixed area           : 0
 total movable area         : 9.92e+07
-design utilization         : 62
+design utilization         : 62%
 rows                       : 2
 row height                 : 4000
 max multi_cell height      : 2

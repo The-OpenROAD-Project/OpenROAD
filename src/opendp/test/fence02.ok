@@ -22,7 +22,7 @@ nets                       : 11
 design area                : 6.6e+07
 total fixed area           : 2.13e+06
 total movable area         : 3.19e+07
-design utilization         : 50
+design utilization         : 50%
 rows                       : 2
 row height                 : 2800
 group count                : 2

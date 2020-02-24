@@ -161,6 +161,7 @@ void Opendp::non_group_cell_region_assign() {
       non_group_cell_count++;
   }
 
+  // magic number alert
   int group_num = non_group_cell_count / 5000;
 
   if(group_num == 0) group_num = 1;
