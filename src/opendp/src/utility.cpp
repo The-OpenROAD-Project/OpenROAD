@@ -217,13 +217,13 @@ pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
   if(check_overlap(cell, rect)) {
     int dist_x = 0;
     int dist_y = 0;
-    if(abs(x - rect->xMin() + cell->width) > abs(rect->xMax() - x)) {
+    if(abs(x - rect->xMin() + paddedWidth(cell)) > abs(rect->xMax() - x)) {
       dist_x = abs(rect->xMax() - x);
       temp_x = rect->xMax();
     }
     else {
       dist_x = abs(x - rect->xMin());
-      temp_x = rect->xMin() - cell->width;
+      temp_x = rect->xMin() - paddedWidth(cell);
     }
     if(abs(y - rect->yMin() + cell->height) > abs(rect->yMax() - y)) {
       dist_y = abs(rect->yMax() - y);
@@ -243,8 +243,8 @@ pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
 
   if(x < rect->xMin())
     temp_x = rect->xMin();
-  else if(x + cell->width > rect->xMax())
-    temp_x = rect->xMax() - cell->width;
+  else if(x + paddedWidth(cell) > rect->xMax())
+    temp_x = rect->xMax() - paddedWidth(cell);
 
   if(y < rect->yMin())
     temp_y = rect->yMin();
@@ -270,8 +270,8 @@ int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {
 
   if(x < rect->xMin())
     temp_x = rect->xMin() - x;
-  else if(x + cell->width > rect->xMax())
-    temp_x = x + cell->width - rect->xMax();
+  else if(x + paddedWidth(cell) > rect->xMax())
+    temp_x = x + paddedWidth(cell) - rect->xMax();
 
   if(y < rect->yMin())
     temp_y = rect->yMin() - y;
@@ -294,7 +294,7 @@ bool Opendp::check_overlap(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
 
-  if(rect->xMax() <= x || rect->xMin() >= x + cell->width) return false;
+  if(rect->xMax() <= x || rect->xMin() >= x + paddedWidth(cell)) return false;
   if(rect->yMax() <= y || rect->yMin() >= y + cell->height) return false;
 
   return true;
@@ -310,7 +310,7 @@ bool Opendp::check_inside(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
 
-  if(rect->xMax() < x + cell->width || rect->xMin() > x) return false;
+  if(rect->xMax() < x + paddedWidth(cell) || rect->xMin() > x) return false;
   if(rect->yMax() < y + cell->height || rect->yMin() > y) return false;
 
   return true;
@@ -543,9 +543,9 @@ bool Opendp::shift_move(Cell* cell) {
   initLocation(cell, x, y);
   // set region boundary
   adsRect rect;
-  rect.reset(max(core_.xMin(), x - cell->width * 3),
+  rect.reset(max(core_.xMin(), x - paddedWidth(cell) * 3),
 	     max(core_.yMin(), y - cell->height * 3),
-	     min(core_.xMax(), x + cell->width * 3),
+	     min(core_.xMax(), x + paddedWidth(cell) * 3),
 	     min(core_.yMax(), y + cell->height * 3));
   vector< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
 

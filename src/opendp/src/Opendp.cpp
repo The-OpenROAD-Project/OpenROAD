@@ -403,8 +403,12 @@ int Opendp::gridHeight() {
   return core_.dy() / row_height_;
 }
 
+int Opendp::paddedWidth(Cell *cell) {
+  return cell->width + (pad_left_ + pad_right_) * site_width_;
+}
+
 int Opendp::gridWidth(Cell *cell) {
-  return divCeil(cell->width, site_width_) + pad_left_ + pad_right_;
+  return divCeil(paddedWidth(cell), site_width_);
 }
 
 int Opendp::gridHeight(Cell *cell) {
@@ -413,7 +417,7 @@ int Opendp::gridHeight(Cell *cell) {
 
 // Callers should probably be using gridWidth.
 int Opendp::gridNearestWidth(Cell *cell) {
-  return divRound(cell->width, site_width_);
+  return divRound(paddedWidth(cell), site_width_);
 }
 
 // Callers should probably be using gridHeight.

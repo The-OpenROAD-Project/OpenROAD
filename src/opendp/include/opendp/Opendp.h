@@ -266,6 +266,7 @@ class Opendp {
   void initLocation(Cell *cell,
 		    int &x,
 		    int &y);
+  int paddedWidth(Cell *cell);
   int disp(Cell *cell);
   int gridX(int x);
   int gridY(int y);
