@@ -40,5 +40,7 @@ Type: macro, macro_2
     Connect: {metal4_PIN_hor metal6} {metal6 metal7}
 **** END INFO ****
 Inserting stdcell grid - grid
-Writing to database
+ERROR: Adding vias between same direction layers is not supported yet.
+Layer: metal2, Direction: ver
+Layer: metal4, Direction: ver
 No differences found.
