@@ -43,4 +43,4 @@ Inserting stdcell grid - grid
 ERROR: Adding vias between same direction layers is not supported yet.
 Layer: metal2, Direction: ver
 Layer: metal4, Direction: ver
-Differences found at line 84.
+No differences found.
