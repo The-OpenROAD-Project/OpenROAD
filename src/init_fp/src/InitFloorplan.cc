@@ -38,6 +38,7 @@ using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
 using sta::FileNotReadable;
+using sta::stringPrint;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -357,12 +358,12 @@ InitFloorplan::makeTracks(const char *tracks_file,
       case 'X':
 	width = die_area.dx();
 	track_count = (width - offset) / pitch;
-	grid->addGridPatternX(offset, track_count, pitch);
+	grid->addGridPatternX(die_area.yMin() + offset, track_count, pitch);
 	break;
       case 'Y':
 	width = die_area.dy();
 	track_count = (width - offset) / pitch;
-	grid->addGridPatternY(offset, track_count, pitch);
+	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
 	break;
       default:
 	internalError("unknown track direction\n");
@@ -393,8 +394,8 @@ InitFloorplan::readTracks(const char *tracks_file)
 	  else if (stringEqual(dir_str.c_str(), "Y"))
 	    dir = 'Y';
 	  else
-	    report_->warn("Warning: track file line %d direction must be X or Y'.\n",
-			  line_count);
+	    report_->error("track file line %d direction must be X or Y'.\n",
+			   line_count);
 	  // microns -> meters
 	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
 	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
