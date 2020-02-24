@@ -437,30 +437,12 @@ int Opendp::gridY(int y) {
   return y / row_height_;
 }
 
-int Opendp::gridNearestX(int x) {
-  return divRound(x, site_width_);
-}
-
-int Opendp::gridNearestY(int y) {
-  return divRound(y, row_height_);
-}
-
 int Opendp::gridX(Cell *cell) {
   return cell->x_coord / site_width_;
 }
 
 int Opendp::gridY(Cell *cell) {
   return cell->y_coord / row_height_;
-}
-
-// Callers should probably be using gridX.
-int Opendp::gridNearestX(Cell *cell) {
-  return gridNearestX(cell->x_coord);
-}
-
-// Callers should probably be using gridY.
-int Opendp::gridNearestY(Cell *cell) {
-  return gridNearestY(cell->y_coord);
 }
 
 int Opendp::coreGridWidth() {

@@ -157,13 +157,14 @@ bool Opendp::power_line_check(bool verbose) {
   int count = 0;
   for(Cell& cell : cells_) {
     if(!isFixed(&cell)
+       // Magic number alert
+       // Shouldn't this be odd test instead of 1 or 3? -cherry
        && !(cell.height == row_height_ || cell.height == row_height_ * 3)
        // should removed later
        && cell.inGroup()) {
       Macro* macro = cell.cell_macro;
-      // This should probably be using gridHeight(cell).
-      int y_size = divRound(cell.height, row_height_);
-      int y_pos = gridNearestY(&cell);
+      int y_size = gridHeight(&cell);
+      int y_pos = gridY(&cell);
       if(y_size % 2 == 0) {
 	if(macro->top_power == rows_[y_pos].top_power) {
 	  cout << "power check fail ( even height ) ==> "
@@ -239,8 +240,8 @@ bool Opendp::overlap_check(bool verbose) {
   }
 
   for(Cell& cell : cells_) {
-    int x_pos = gridNearestX(&cell);
-    int y_pos = gridNearestY(&cell);
+    int x_pos = gridX(&cell);
+    int y_pos = gridY(&cell);
     int x_step = gridWidth(&cell);
     int y_step = gridHeight(&cell);
 

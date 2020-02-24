@@ -318,8 +318,8 @@ void Opendp::erase_pixel(Cell* cell) {
     cell->is_placed = false;
     cell->hold = false;
 
-    assert(cell->x_pos == gridNearestX(cell));
-    assert(cell->y_pos == gridNearestY(cell));
+    assert(cell->x_pos == gridX(cell));
+    assert(cell->y_pos == gridY(cell));
     for(int i = cell->y_pos; i < cell->y_pos + y_step; i++) {
       for(int j = cell->x_pos; j < cell->x_pos + x_step; j++) {
 	grid_[i][j].cell = nullptr;
