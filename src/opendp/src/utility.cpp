@@ -315,22 +315,21 @@ bool Opendp::check_inside(Cell* cell, adsRect* rect) {
   return true;
 }
 
-pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
-                                                  int x, int y) {
-  pair< int, int > pos;
+bool Opendp::bin_search(int x_pos, Cell* cell,
+			int x, int y,
+			// Return values
+			int &avail_x,
+			int &avail_y) {
   Macro* macro = cell->cell_macro;
-
   int x_step = gridWidth(cell);
   int y_step = gridHeight(cell);
 
   // IF y is out of border
-  if(y + y_step > (core_.yMax() / row_height_)) return make_pair(false, pos);
-
-  // If even number multi-deck cell -> check top power
-  if(y_step % 2 == 0) {
-    //    cout << cell->name << " power: " << rows[y].top_power << " " <<
-    //    macro->top_power << endl;
-    if(rows_[y].top_power == macro->top_power) return make_pair(false, pos);
+  if((y + y_step) > (core_.yMax() / row_height_)
+     // If even number multi-deck cell -> check top power
+     || (y_step % 2 == 0
+	 && rows_[y].top_power == macro->top_power)) {
+    return false;
   }
 
 #ifdef ODP_DEBUG
@@ -341,6 +340,7 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
   cout << " target y : " << y << endl;
 #endif
   if(x_pos > x) {
+    // magic number alert
     for(int i = 9; i > -1; i--) {
       // check all grids are empty
       bool available = true;
@@ -370,8 +370,9 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
         }
       }
       if(available) {
-	pos = make_pair(y, x + i);
-        return make_pair(available, pos);
+	avail_x = x + i;
+	avail_y = y;
+        return true;
       }
     }
   }
@@ -407,18 +408,18 @@ pair< bool, pair< int, int > > Opendp::bin_search(int x_pos, Cell* cell,
              << endl;
         cout << " - - - - - - - - - - - - - - - - - - - - - - - - " << endl;
 #endif
-	pos = make_pair(y, x + i);
-        return make_pair(available, pos);
+	avail_x = x + i;
+	avail_y = y;
+	return true;
       }
     }
   }
-  return make_pair(false, pos);
+  return false;
 }
 
 pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
                                             int y_coord) {
   Pixel* pixel = nullptr;
-  pair< bool, pair< int, int > > found;
   int x_pos = gridX(x_coord);
   int y_pos = gridY(y_coord);
 
@@ -463,16 +464,19 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
   cout << " x bound ( " << x_start << ") - (" << x_end << ")" << endl;
   cout << " y bound ( " << y_start << ") - (" << y_end << ")" << endl;
 #endif
-  found = bin_search(x_pos, cell, min(x_end, max(x_start, x_pos)),
-                     max(y_start, min(y_end, y_pos)));
-  if(found.first) {
-    //    cout << "DiamondSearch: found: " << found.second.first << " - " <<
-    //    found.second.second << endl;
-    pixel = &grid_[found.second.first][found.second.second];
-    return make_pair(found.first, pixel);
+  
+  int avail_x, avail_y;
+  bool found = bin_search(x_pos, cell, min(x_end, max(x_start, x_pos)),
+			  max(y_start, min(y_end, y_pos)),
+			  avail_x, avail_y);
+  if(found) {
+    pixel = &grid_[avail_y][avail_x];
+    return make_pair(true, pixel);
   }
 
+  // magic number alert
   int div = 4;
+  // magic number alert
   if(design_util_ > 0.6 || fixed_inst_count_ > 0) div = 1;
 
   for(int i = 1; i < diamond_search_height_ * 2 / div; i++) {
@@ -492,9 +496,10 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
         y_offset = -(i * 2 - j) / 2;
       found = bin_search(x_pos, cell,
                          min(x_end, max(x_start, (x_pos + x_offset * 10))),
-                         min(y_end, max(y_start, (y_pos + y_offset))));
-      if(found.first) {
-        pixel = &grid_[found.second.first][found.second.second];
+                         min(y_end, max(y_start, (y_pos + y_offset))),
+			 avail_x, avail_y);
+      if(found) {
+        pixel = &grid_[avail_y][avail_x];
         avail_list.push_back(pixel);
       }
     }
@@ -508,9 +513,10 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
         y_offset = -((i + 1) * 2 - j) / 2;
       found = bin_search(x_pos, cell,
                          min(x_end, max(x_start, (x_pos + x_offset * 10))),
-                         min(y_end, max(y_start, (y_pos + y_offset))));
-      if(found.first) {
-        pixel = &grid_[found.second.first][found.second.second];
+                         min(y_end, max(y_start, (y_pos + y_offset))),
+			 avail_x, avail_y);
+      if(found) {
+        pixel = &grid_[avail_y][avail_x];
         avail_list.push_back(pixel);
       }
     }
@@ -662,27 +668,27 @@ int Opendp::dist_benefit(Cell* cell, int x_coord, int y_coord) {
   return new_dist - curr_dist;
 }
 
-bool Opendp::swap_cell(Cell* cellA, Cell* cellB) {
-  if(cellA == cellB)
+bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
+  if(cell1 == cell2)
     return false;
-  else if(cellA->cell_macro != cellB->cell_macro)
+  else if(cell1->cell_macro != cell2->cell_macro)
     return false;
-  else if(isFixed(cellA) || isFixed(cellB))
+  else if(isFixed(cell1) || isFixed(cell2))
     return false;
 
-  int benefit = dist_benefit(cellA, cellB->x_coord, cellB->y_coord) +
-                dist_benefit(cellB, cellA->x_coord, cellA->y_coord);
+  int benefit = dist_benefit(cell1, cell2->x_coord, cell2->y_coord) +
+                dist_benefit(cell2, cell1->x_coord, cell1->y_coord);
 
   if(benefit < 0) {
-    int A_x_pos = cellB->x_pos;
-    int A_y_pos = cellB->y_pos;
-    int B_x_pos = cellA->x_pos;
-    int B_y_pos = cellA->y_pos;
+    int x_pos1 = cell2->x_pos;
+    int y_pos1 = cell2->y_pos;
+    int x_pos2 = cell1->x_pos;
+    int y_pos2 = cell1->y_pos;
 
-    erase_pixel(cellA);
-    erase_pixel(cellB);
-    paint_pixel(cellA, A_x_pos, A_y_pos);
-    paint_pixel(cellB, B_x_pos, B_y_pos);
+    erase_pixel(cell1);
+    erase_pixel(cell2);
+    paint_pixel(cell1, x_pos1, y_pos1);
+    paint_pixel(cell2, x_pos2, y_pos2);
     // cout << "swap benefit : " << benefit << endl;
     // save_score();
     return true;
