@@ -215,7 +215,9 @@ class Opendp {
 		  // Return values
 		  int &avail_x,
 		  int &avail_y);
-  std::pair< bool, Pixel* > diamond_search(Cell* cell, int x, int y);
+  bool diamondSearch(Cell* cell, int x_coord, int y_coord,
+		     // Return value
+		     Pixel *&pixel);
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);

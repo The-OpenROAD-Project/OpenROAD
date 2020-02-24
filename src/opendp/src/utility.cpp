@@ -417,9 +417,10 @@ bool Opendp::bin_search(int x_pos, Cell* cell,
   return false;
 }
 
-pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
-                                            int y_coord) {
-  Pixel* pixel = nullptr;
+bool Opendp::diamondSearch(Cell* cell, int x_coord, int y_coord,
+			   // Return value
+			   Pixel *&pixel) {
+  pixel = nullptr;
   int x_pos = gridX(x_coord);
   int y_pos = gridY(y_coord);
 
@@ -471,7 +472,7 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
 			  avail_x, avail_y);
   if(found) {
     pixel = &grid_[avail_y][avail_x];
-    return make_pair(true, pixel);
+    return true;
   }
 
   // magic number alert
@@ -482,7 +483,6 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
   for(int i = 1; i < diamond_search_height_ * 2 / div; i++) {
     vector< Pixel* > avail_list;
     avail_list.reserve(i * 4);
-    Pixel* pixel = nullptr;
 
     int x_offset = 0;
     int y_offset = 0;
@@ -533,10 +533,11 @@ pair< bool, Pixel* > Opendp::diamond_search(Cell* cell, int x_coord,
       }
     }
     if(best != INT_MAX) {
-      return make_pair(true, avail_list[best]);
+      pixel = avail_list[best];
+      return true;
     }
   }
-  return make_pair(false, pixel);
+  return false;
 }
 
 bool Opendp::shift_move(Cell* cell) {
@@ -588,16 +589,15 @@ bool Opendp::map_move(Cell* cell) {
 }
 
 bool Opendp::map_move(Cell* cell, int x, int y) {
-  pair< bool, Pixel* > pixel = diamond_search(cell, x, y);
-  if(pixel.first) {
-    pair< bool, Pixel* > nearPixel =
-        diamond_search(cell, pixel.second->x_pos * site_width_,
-                       pixel.second->y_pos * row_height_);
-    if(nearPixel.first) {
-      paint_pixel(cell, nearPixel.second->x_pos, nearPixel.second->y_pos);
+  Pixel* pixel;
+  if(diamondSearch(cell, x, y, pixel)) {
+    Pixel* near_pixel;
+    if(diamondSearch(cell, pixel->x_pos * site_width_, pixel->y_pos * row_height_,
+		     near_pixel)) {
+      paint_pixel(cell, near_pixel->x_pos, near_pixel->y_pos);
     }
     else {
-      paint_pixel(cell, pixel.second->x_pos, pixel.second->y_pos);
+      paint_pixel(cell, pixel->x_pos, pixel->y_pos);
     }
     return true;
   }
@@ -699,18 +699,18 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
 bool Opendp::refine_move(Cell* cell) {
   int init_x, init_y;
   initLocation(cell, init_x, init_y);
-  pair< bool, Pixel* > pixel = diamond_search(cell, init_x, init_y);
-  if(pixel.first) {
-    double new_dist = abs(init_x - pixel.second->x_pos * site_width_)
-      + abs(init_y - pixel.second->y_pos * row_height_);
+  Pixel* pixel;
+  if(diamondSearch(cell, init_x, init_y, pixel)) {
+    double new_dist = abs(init_x - pixel->x_pos * site_width_)
+      + abs(init_y - pixel->y_pos * row_height_);
     if(new_dist / row_height_ > max_displacement_constraint_) return false;
 
-    int benefit = dist_benefit(cell, pixel.second->x_pos * site_width_,
-                               pixel.second->y_pos * row_height_);
+    int benefit = dist_benefit(cell, pixel->x_pos * site_width_,
+                               pixel->y_pos * row_height_);
     if(benefit < 0) {
       // cout << " refine benefit : " << benefit << " : " << 2001 -
       erase_pixel(cell);
-      paint_pixel(cell, pixel.second->x_pos, pixel.second->y_pos);
+      paint_pixel(cell, pixel->x_pos, pixel->y_pos);
       // save_score();
       return true;
     }
