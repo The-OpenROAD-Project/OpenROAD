@@ -52,6 +52,7 @@ using std::pair;
 using std::sort;
 using std::string;
 using std::vector;
+using std::numeric_limits;
 
 static bool sortUpOrder(Cell* cell1, Cell* cell2) {
   int area1 = cell1->area();
@@ -136,7 +137,7 @@ void Opendp::group_cell_pre_placement() {
   for(Group &group : groups_) {
     for(Cell* cell : group.siblings) {
       if(!(isFixed(cell) || cell->is_placed)) {
-	int dist = INT_MAX;
+	int dist = numeric_limits<int>::max();
 	bool in_group = false;
 	adsRect* target;
 	for(adsRect& rect : group.regions) {
@@ -345,38 +346,37 @@ int Opendp::group_refine(Group* group) {
       if(refine_move(cell)) count++;
     }
   }
-  // cout << " Group refine : " << count << endl;
   return count;
 }
 
 int Opendp::group_annealing(Group* group) {
+  // magic number alert
   srand(777);
-  // srand(time(nullptr));
   int count = 0;
 
+  // magic number alert
   for(int i = 0; i < 1000 * group->siblings.size(); i++) {
-    Cell* cellA = group->siblings[rand() % group->siblings.size()];
-    Cell* cellB = group->siblings[rand() % group->siblings.size()];
+    Cell* cell1 = group->siblings[rand() % group->siblings.size()];
+    Cell* cell2 = group->siblings[rand() % group->siblings.size()];
 
-    if(!cellA->hold && !cellB->hold) {
-      if(swap_cell(cellA, cellB)) count++;
+    if(!cell1->hold && !cell2->hold) {
+      if(swap_cell(cell1, cell2)) count++;
     }
   }
-  // cout << " swap cell count : " << count << endl;
   return count;
 }
 
 int Opendp::non_group_annealing() {
+  // magic number alert
   srand(777);
   int count = 0;
   for(int i = 0; i < 100 * cells_.size(); i++) {
-    Cell* cellA = &cells_[rand() % cells_.size()];
-    Cell* cellB = &cells_[rand() % cells_.size()];
-    if(!cellA->hold && !cellB->hold) {
-      if(swap_cell(cellA, cellB)) count++;
+    Cell* cell1 = &cells_[rand() % cells_.size()];
+    Cell* cell2 = &cells_[rand() % cells_.size()];
+    if(!cell1->hold && !cell2->hold) {
+      if(swap_cell(cell1, cell2)) count++;
     }
   }
-  // cout << " swap cell count : " << count << endl;
   return count;
 }
 
@@ -400,7 +400,6 @@ int Opendp::non_group_refine() {
       if(refine_move(cell)) count++;
     }
   }
-  // cout << " nonGroup refine : " << count << endl;
   return count;
 }
 

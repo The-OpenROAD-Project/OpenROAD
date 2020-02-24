@@ -37,6 +37,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
+#include <limits>
 #include "opendp/Opendp.h"
 
 namespace opendp {
@@ -49,6 +50,7 @@ using std::min;
 using std::abs;
 using std::pair;
 using std::round;
+using std::numeric_limits;
 
 // Fixed cell handle on parser ( no need to use this function during placement)
 void Opendp::fixed_cell_assign() {
@@ -128,7 +130,7 @@ void Opendp::group_cell_region_assign() {
     int64_t cell_area = 0;
     for(Cell* cell : group.siblings) {
       cell_area += cell->area();
-      int dist = INT_MAX;
+      int dist = numeric_limits<int>::max();
       adsRect* region_backup = nullptr;
       for(adsRect &rect : group.regions) {
         if(check_inside(cell, &rect)) cell->region = &rect;

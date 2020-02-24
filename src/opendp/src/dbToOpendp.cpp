@@ -211,16 +211,13 @@ void Opendp::make_cells() {
       cell.width = width;
       cell.height = height;
 
+      int init_x, init_y;
+      initLocation(&cell, init_x, init_y);
+      // Shift by core lower left.
+      cell.x_coord = init_x;
+      cell.y_coord = init_y;
       cell.orient = db_inst->getOrient();
-      // fixed cells
-      if(isFixed(&cell)) {
-	int init_x, init_y;
-	initLocation(&cell, init_x, init_y);
-        // Shift by core lower left.
-	cell.x_coord = init_x;
-        cell.y_coord = init_y;
-        cell.is_placed = true;
-      }
+      cell.is_placed = isFixed(&cell);
     }
   }
 }

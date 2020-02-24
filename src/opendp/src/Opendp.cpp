@@ -91,19 +91,11 @@ void Macro::print() {
 }
 
 Cell::Cell()
-    : cell_macro(nullptr),
-      x_coord(0),
-      y_coord(0),
-      x_pos(INT_MAX),
-      y_pos(INT_MAX),
-      width(0.0),
-      height(0.0),
-      is_placed(false),
-      hold(false),
-      region(nullptr),
-      cell_group(nullptr),
-      dense_factor(0.0),
-      dense_factor_count(0) {}
+  : hold(false),
+    region(nullptr),
+    cell_group(nullptr),
+    dense_factor(0.0),
+    dense_factor_count(0) {}
 
 const char *Cell::name() {
   return db_inst->getConstName();

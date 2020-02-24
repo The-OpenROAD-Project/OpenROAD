@@ -210,11 +210,11 @@ class Opendp {
   bool check_overlap(Cell* cell, adsRect* rect);
   bool check_inside(adsRect cell, adsRect box);
   bool check_inside(Cell* cell, adsRect* rect);
-  bool bin_search(int x_pos, Cell* cell,
-		  int x, int y,
-		  // Return values
-		  int &avail_x,
-		  int &avail_y);
+  bool binSearch(int x_pos, Cell* cell,
+		 int x, int y,
+		 // Return values
+		 int &avail_x,
+		 int &avail_y);
   bool diamondSearch(Cell* cell, int x_coord, int y_coord,
 		     // Return value
 		     Pixel *&pixel);

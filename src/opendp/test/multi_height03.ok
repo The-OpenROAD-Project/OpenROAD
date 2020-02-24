@@ -27,20 +27,20 @@ rows                       : 2
 row height                 : 4000
 max multi_cell height      : 2
 ----------------------------------------------------------------
-Error: cannot insert center cell_281_
+Error: detailed placement failed on _281_
 Check Legality
 row check ==> PASS 
-site check ==> PASS 
+site check ==> FAIL (1)
 power check ==> PASS 
 edge_check ==> PASS 
 placed_check ==> FAIL (1)
 overlap_check ==> FAIL 
 -------------------- Placement Analysis ------------------------
-total displacement         : 22600
-average displacement       : 2260
-max displacement           : 7220
+total displacement         : 15380
+average displacement       : 1538
+max displacement           : 4240
 original HPWL              : 79.8
-legalized HPWL             : 86
-delta HPWL                 : 8%
+legalized HPWL             : 81.9
+delta HPWL                 : 3%
 ----------------------------------------------------------------
 No differences found.
