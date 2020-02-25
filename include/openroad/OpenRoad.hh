@@ -23,6 +23,7 @@ struct Tcl_Interp;
 namespace odb {
 class dbDatabase;
 class adsRect;
+class dbBlock;
 }
 
 namespace sta {
@@ -134,6 +135,10 @@ private:
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
 };
+
+// Return the bounding box of the db rows.
+odb::adsRect
+getCore(odb::dbBlock *block);
 
 } // namespace
 

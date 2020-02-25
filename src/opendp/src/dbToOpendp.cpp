@@ -36,6 +36,7 @@
 #include <cfloat>
 #include <algorithm>
 #include "opendp/Opendp.h"
+#include "openroad/OpenRoad.hh"
 
 namespace opendp {
 
@@ -76,12 +77,18 @@ void Opendp::dbToOpendp() {
   clear();
 
   // LEF
-  for(auto db_lib : db_->getLibs()) {
+  for(auto db_lib : db_->getLibs())
     make_macros(db_lib);
-  }
 
   block_ = db_->getChip()->getBlock();
-  findCore();
+  core_ = ord::getCore(block_);
+
+  auto db_rows = block_->getRows();
+  dbRow *db_row = *db_rows.begin();
+  dbSite *site = db_row->getSite();
+  row_height_ = site->getHeight();
+  site_width_ = site->getWidth();
+
   // make rows in CoreArea;
   make_core_rows();
   make_cells();
@@ -135,24 +142,6 @@ int Opendp::find_ymax(dbMTerm *mterm) {
     for(dbBox *box : mpin->getGeometry()) ymax = max(ymax, box->yMax());
   }
   return ymax;
-}
-
-void Opendp::findCore() {
-  core_.mergeInit();
-  auto db_rows = block_->getRows();
-  for(auto db_row : db_rows) {
-    int orig_x, orig_y;
-    db_row->getOrigin(orig_x, orig_y);
-    int site_count = db_row->getSiteCount();
-
-    dbSite *site = db_row->getSite();
-    row_height_ = site->getHeight();
-    site_width_ = site->getWidth();
-
-    adsRect row_bbox;
-    db_row->getBBox(row_bbox);
-    core_.merge(row_bbox);
-  }
 }
 
 // Generate new rows to fill core area.

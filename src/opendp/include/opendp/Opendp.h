@@ -182,7 +182,6 @@ class Opendp {
  private:
   void dbToOpendp();
   void make_macros(dbLib* db_lib);
-  void findCore();
   void make_core_rows();
   void make_cells();
   void makeGroups();
