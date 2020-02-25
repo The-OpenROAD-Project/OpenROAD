@@ -233,8 +233,8 @@ pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
       dist_y = abs(y - rect->yMin());
       temp_y = rect->yMin() - cell->height;
     }
-    assert(dist_x > -1);
-    assert(dist_y > -1);
+    assert(dist_x >= 0);
+    assert(dist_y >= 0);
     if(dist_x < dist_y)
       return make_pair(temp_x, y);
     else

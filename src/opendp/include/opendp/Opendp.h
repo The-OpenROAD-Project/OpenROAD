@@ -240,7 +240,6 @@ class Opendp {
 
   // assign.cpp
   void fixed_cell_assign();
-  void print_pixels();
   void group_cell_region_assign();
   void non_group_cell_region_assign();
   void group_pixel_assign();
@@ -269,9 +268,13 @@ class Opendp {
   int paddedWidth(Cell *cell);
   int disp(Cell *cell);
   int gridX(int x);
+  int gridEndX(Cell *cell);
   int gridY(int y);
+  int gridEndY(Cell *cell);
   int gridWidth();
   int gridHeight();
+  int gridEndX();
+  int gridEndY();
   int gridWidth(Cell* cell);
   int gridNearestHeight(Cell* cell);
   int gridNearestWidth(Cell* cell);

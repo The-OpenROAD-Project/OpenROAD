@@ -52,21 +52,18 @@ using std::pair;
 using std::round;
 using std::numeric_limits;
 
-// Fixed cell handle on parser ( no need to use this function during placement)
 void Opendp::fixed_cell_assign() {
   for(Cell &cell : cells_) {
     if(isFixed(&cell)) {
-      Macro* macro = cell.cell_macro;
-
       int y_start = gridY(&cell);
-      int y_end = y_start + gridHeight(&cell);
+      int y_end = gridEndY(&cell);
       int x_start = gridX(&cell);
-      int x_end = x_start + gridWidth(&cell);
+      int x_end = gridEndX(&cell);
 
       int y_start_rf = 0;
-      int y_end_rf = gridHeight();
+      int y_end_rf = gridEndY();
       int x_start_rf = 0;
-      int x_end_rf = gridWidth();
+      int x_end_rf = gridEndX();
 
       y_start = max(y_start, y_start_rf);
       y_end = min(y_end, y_end_rf);
@@ -89,28 +86,6 @@ void Opendp::fixed_cell_assign() {
       }
     }
   }
-}
-
-void Opendp::print_pixels() {
-  cout << " print grid " << endl;
-
-  for(int i = 0; i < rows_.size(); i++) {
-    for(int j = 0; j < row_site_count_; j++) {
-      // cout << grid[i][j].util << " ";
-      if(grid_[i][j].util > 0.00001) {
-        cout << grid_[i][j].util << " ";
-        if(grid_[i][j].pixel_group == nullptr) {
-          cout << " no_group ";
-        }
-        else {
-          cout << grid_[i][j].pixel_group->name << " ";
-        }
-      }
-    }
-    cout << endl;
-  }
-
-  cout << " end print grid" << endl;
 }
 
 void Opendp::group_cell_region_assign() {
@@ -241,7 +216,6 @@ void Opendp::group_pixel_assign2() {
             grid_[i][j].util = 0.0;
             grid_[i][j].cell = &dummy_cell_;
             grid_[i][j].is_valid = false;
-            // cout << "invalid grid[" << i << "][" << j << "] marked" << endl;
           }
         }
       }
@@ -270,13 +244,14 @@ void Opendp::group_pixel_assign() {
         for(int l = col_start; l < col_end; l++) {
           grid_[k][l].util += 1.0;
         }
-        if(static_cast<int>(rect.xMin()) % site_width_ != 0) {
+        if(rect.xMin() % site_width_ != 0) {
           grid_[k][col_start].util -=
-	    (rect.xMin() % site_width_) / (double)site_width_;
+	    (rect.xMin() % site_width_) / static_cast<double>(site_width_);
         }
         if(static_cast<int>(rect.xMax()) % site_width_ != 0) {
           grid_[k][col_end - 1].util -=
-	    ((200 - rect.xMax()) % site_width_) / (double)site_width_;
+	    // magic number alert
+	    ((200 - rect.xMax()) % site_width_) / static_cast<double>(site_width_);
         }
       }
     }

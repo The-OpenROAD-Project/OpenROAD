@@ -403,6 +403,14 @@ int Opendp::gridHeight() {
   return core_.dy() / row_height_;
 }
 
+int Opendp::gridEndX() {
+  return divCeil(core_.dx(), site_width_);
+}
+
+int Opendp::gridEndY() {
+  return divCeil(core_.dy(), row_height_);
+}
+
 int Opendp::paddedWidth(Cell *cell) {
   return cell->width + (pad_left_ + pad_right_) * site_width_;
 }
@@ -441,12 +449,20 @@ int Opendp::gridY(Cell *cell) {
   return cell->y_coord / row_height_;
 }
 
+int Opendp::gridEndX(Cell *cell) {
+  return divCeil(cell->x_coord + paddedWidth(cell), site_width_);
+}
+
+int Opendp::gridEndY(Cell *cell) {
+  return divCeil(cell->y_coord + row_height_, row_height_);
+}
+
 int Opendp::coreGridWidth() {
   return divRound(core_.dx(), site_width_);
 }
 
 int Opendp::coreGridHeight() {
-  return divRound(core_.dy(),row_height_);
+  return divRound(core_.dy(), row_height_);
 }
 
 int Opendp::coreGridMaxX() {
