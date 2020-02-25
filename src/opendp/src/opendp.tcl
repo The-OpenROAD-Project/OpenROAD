@@ -39,7 +39,7 @@ sta::define_cmd_args "legalize_placement" {[-verbose]\
 
 proc legalize_placement { args } {
   sta::parse_key_args "legalize_placement" args \
-    keys {-pad_right -pad_left -constraints} flags {-verbose}
+    keys {-constraints} flags {-verbose}
 
   set verbose [info exists flags(-verbose)]
   if { [info exists keys(-constraints)] } {
