@@ -84,10 +84,14 @@ void Opendp::dbToOpendp() {
   core_ = ord::getCore(block_);
 
   auto db_rows = block_->getRows();
-  dbRow *db_row = *db_rows.begin();
-  dbSite *site = db_row->getSite();
-  row_height_ = site->getHeight();
-  site_width_ = site->getWidth();
+  if (db_rows.size() > 0) {
+    dbRow *db_row = *db_rows.begin();
+    dbSite *site = db_row->getSite();
+    row_height_ = site->getHeight();
+    site_width_ = site->getWidth();
+  }
+  else
+    error("no ROWs found.\n");
 
   // make rows in CoreArea;
   make_core_rows();
