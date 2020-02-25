@@ -358,7 +358,7 @@ InitFloorplan::makeTracks(const char *tracks_file,
       case 'X':
 	width = die_area.dx();
 	track_count = (width - offset) / pitch;
-	grid->addGridPatternX(die_area.yMin() + offset, track_count, pitch);
+	grid->addGridPatternX(die_area.xMin() + offset, track_count, pitch);
 	break;
       case 'Y':
 	width = die_area.dy();
