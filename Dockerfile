@@ -36,8 +36,6 @@ RUN yum install -y boost-devel && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
-RUN useradd -ms /bin/bash openroad
-
 FROM base-dependencies AS builder
 
 COPY . /OpenROAD

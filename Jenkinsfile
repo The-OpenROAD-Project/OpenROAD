@@ -6,9 +6,14 @@ pipeline {
         sh './jenkins/build.sh'
       }
     }
-    stage('Test') {
+#    stage('Test') {
+#      steps {
+#        sh './jenkins/test.sh'
+#      }
+#    }
+    stage('Build-Flow') {
       steps {
-        sh './jenkins/test.sh'
+        sh label: 'Build', script: 'cd flow; ./build_openroad.sh'
       }
     }
     stage('Flow') {
