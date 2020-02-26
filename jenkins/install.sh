@@ -11,7 +11,7 @@ commit=`git rev-parse --verify HEAD`
 
 # Build a subdir 'flow' to run OpenROAD-flow tests in
 mkdir -p flow
-if [[ ! -d flow/OpenROAD-flow ]]; then
+if [[ ! -d flow ]]; then
     git clone -b openroad https://github.com/The-OpenROAD-Project/OpenROAD-flow.git flow
 fi
 
