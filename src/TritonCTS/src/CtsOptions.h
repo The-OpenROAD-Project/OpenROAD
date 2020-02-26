@@ -46,6 +46,9 @@
 #include "Util.h"
 
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 namespace TritonCTS {
 
@@ -63,6 +66,8 @@ public:
         std::string getClockNets() const { return _clockNets; }
         void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
         std::string getRootBuffer() const { return  _rootBuffer; }
+        void setBufferList(std::vector<std::string> buffers) { _bufferList = buffers; }
+        std::vector<std::string> getBufferList() const { return  _bufferList; }
         void setDbUnits(DBU units) { _dbUnits = units; }
         DBU getDbUnits() const { return _dbUnits; }
         void setWireSegmentUnit(unsigned wireSegmentUnit) { _wireSegmentUnit = wireSegmentUnit; }
@@ -75,6 +80,10 @@ public:
         unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
         unsigned getMaxSlew() const { return _maxSlew; }
+        void setMaxCharaSlew(double slew) { _maxCharaSlew = slew; }
+        double getMaxCharaSlew() const { return _maxCharaSlew; }
+        void setMaxCharaCap(double cap) { _maxCharaCap = cap; }
+        double getMaxCharaCap() const { return _maxCharaCap; }
         void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
         unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
         void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
@@ -100,12 +109,16 @@ private:
         bool        _plotSolution            = false;
         unsigned    _numMaxLeafSinks         = 15;
         unsigned    _maxSlew                 = 4;
+        double      _maxCharaSlew            = 0;
+        double      _maxCharaCap             = 0;
         unsigned    _clockTreeMaxDepth       = 100;
         bool        _enableFakeLutEntries    = true;
         bool        _forceBuffersOnLeafLevel = true;
         bool        _writeOnlyClockNets      = false;
         bool        _runPostCtsOpt           = true;
         double      _bufDistRatio            = 0.1;
+        
+        std::vector<std::string> _bufferList     ;
 };
 
 }

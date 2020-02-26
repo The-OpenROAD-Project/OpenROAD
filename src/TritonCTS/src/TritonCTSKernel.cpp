@@ -43,6 +43,7 @@
 #include "TritonCTSKernel.h"
 #include "PostCtsOpt.h"
 
+#include <fstream>
 #include <unordered_set>
 #include <chrono>
 #include <ctime>
@@ -51,7 +52,15 @@ namespace TritonCTS {
 
 void TritonCTSKernel::runTritonCts() {
         printHeader();
-        importCharacterization();
+        std::ifstream lutFile(_options.getLutFile().c_str());
+        std::ifstream solFile(_options.getSolListFile().c_str());
+        if (!lutFile.is_open() || !solFile.is_open()) {
+                //LUT files doesn't exist. So a new characteriztion is created.
+                createCharacterization();
+        } else {
+                //LUT files exists. Import the characterization results.
+                importCharacterization();
+        }
         findClockRoots();
         populateTritonCts();
         checkCharacterization();
@@ -75,8 +84,17 @@ void TritonCTSKernel::importCharacterization() {
         std::cout << " *****************************\n";
         std::cout << " *  Import characterization  *\n";
         std::cout << " *****************************\n";
-       
+        
         _techChar.parse(_options.getLutFile(), _options.getSolListFile()); 
+}
+
+void TritonCTSKernel::createCharacterization() {
+        std::cout << " *****************************\n";
+        std::cout << " *  Create characterization  *\n";
+        std::cout << " *****************************\n";
+
+        std::vector<TechChar::resultData> lutResults = _techChar.createCharacterization();
+        _techChar.compileLut(lutResults);
 }
 
 void TritonCTSKernel::checkCharacterization() {

@@ -44,6 +44,9 @@
 #define CHARACTERIZATION_H
 
 #include "CtsOptions.h"
+#include "openroad/OpenRoad.hh"
+#include "db_sta/dbNetwork.hh"
+#include "Corner.hh"
 
 #include <iostream>
 #include <vector>
@@ -53,6 +56,9 @@
 #include <cassert> 
 #include <string>
 #include <deque>
+#include <bitset>
+#include <algorithm>
+#include <chrono>
 
 namespace TritonCTS {
 
@@ -119,9 +125,35 @@ public:
         static const unsigned MAX_NORMALIZED_VAL = 1023;
         static const unsigned LENGTH_UNIT_MICRON = 10;
 
+        //solutionData represents the various different structures of the characterization segment. Ports, insts, nets...
+        struct solutionData {
+                std::vector<odb::dbNet*> netVector;
+                std::vector<unsigned int> nodesWithoutBufVector;
+                odb::dbBPin* inPort;
+                odb::dbBPin* outPort;
+                std::vector<odb::dbInst*> instVector;
+                std::vector<std::string> topologyDescriptor;
+                bool isPureWire = true;
+        } ;
+
+        //resultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        struct resultData {
+                float load;
+                float inSlew;
+                float wirelength;
+                float pinSlew;
+                float pinArrival;
+                float totalcap;
+                float totalPower;
+                bool isPureWire;
+                std::vector<std::string> topology;
+        } ;
+
 public:
         TechChar(CtsOptions& options) : _options(&options) {}
-        
+
+        std::vector<resultData> createCharacterization();
+        void compileLut(std::vector<resultData> lutSols);
         void parse(const std::string& lutFile, const std::string solListFile);
         void write(const std::string& file) const;
         
@@ -188,6 +220,47 @@ protected:
 
         std::deque<WireSegment> _wireSegments;
         std::unordered_map<Key, std::deque<unsigned>> _keyToWireSegments;
+
+        //Characterization attributes
+
+        void setupCharacterizationAttributes();
+        std::vector<solutionData> createCharacterizationTopologies(unsigned setupWirelength);
+        void setupNewStaInstance();
+        void setCharacterizationConstraints(std::vector<solutionData> topologiesVector, 
+                                            unsigned setupWirelength);
+        resultData computeTopologyResults(solutionData currentSolution, 
+                                          sta::Vertex* outPinVert, 
+                                          float currentLoad, 
+                                          unsigned setupWirelength);
+        void updateBufferTopologies(solutionData currentSolution);
+        std::vector<resultData> characterizationPostProcess();
+
+        sta::dbSta*                     _openSta                = nullptr;
+        odb::dbDatabase*                _db                     = nullptr;
+        sta::Sdc*                       _sdc                    = nullptr;
+        sta::Network*                   _network                = nullptr; 
+        sta::dbSta*                     _openSta2               = nullptr;
+        sta::Sdc*                       _sdc2                   = nullptr;
+        sta::Network*                   _network2               = nullptr; 
+        sta::dbNetwork*                 _dbnetwork              = nullptr;  
+        sta::PathAnalysisPt*            _charPathAnalysis       = nullptr;  
+        sta::Corner*                    _charCorner             = nullptr;  
+        odb::dbBlock*                   _charBlock              = nullptr;
+        odb::dbMaster*                  _charBuf                = nullptr;
+        std::string                     _charBufIn              = "";
+        std::string                     _charBufOut             = "";
+        float                           _resPerDBU              = 0.1; //Default values, not used
+        float                           _capPerDBU              = 5.0e-05; //Default values, not used
+        float*                          _charMaxSlew            = nullptr;
+        float*                          _charMaxCap             = nullptr;
+        float                           _charSlewInter          = 5.0e-12; //Hard-coded interval
+        float                           _charCapInter           = 5.0e-15;
+        std::vector<std::string>        _masterNames;
+        std::vector<float>              _wirelengthsToTest;
+        std::vector<float>              _loadsToTest;  
+        std::vector<float>              _slewsToTest;  
+
+        std::map<std::vector<float> , std::vector<resultData>> _solutionMap;
 
         CtsOptions* _options;
 };

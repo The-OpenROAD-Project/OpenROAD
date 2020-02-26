@@ -43,6 +43,9 @@
 #include "TritonCTSKernel.h"
 
 #include <iostream>
+#include <iterator>
+#include <sstream>
+#include <vector>
 
 namespace TritonCTS {
 
@@ -56,6 +59,14 @@ void TritonCTSKernel::set_sol_list_file(const char* file) {
 
 void TritonCTSKernel::set_clock_nets(const char* names) {
         _options.setClockNets(names);
+}
+
+void TritonCTSKernel::set_max_chara_cap(double cap) {
+        _options.setMaxCharaCap(cap);
+}
+
+void TritonCTSKernel::set_max_chara_slew(double slew) {
+        _options.setMaxCharaSlew(slew);
 }
 
 void TritonCTSKernel::set_wire_segment_distance_unit(unsigned unit) {
@@ -80,6 +91,14 @@ void TritonCTSKernel::export_characterization(const char* file) {
 
 void TritonCTSKernel::set_root_buffer(const char* buffer) {
         _options.setRootBuffer(buffer);
+}
+
+void TritonCTSKernel::set_buffer_list(const char* buffers) {
+        std::stringstream ss(buffers);
+        std::istream_iterator<std::string> begin(ss);
+        std::istream_iterator<std::string> end;
+        std::vector<std::string> bufferVector(begin, end);
+        _options.setBufferList(bufferVector);
 }
 
 }
