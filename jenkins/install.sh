@@ -14,7 +14,7 @@ commit=`git rev-parse --verify HEAD`
 # setup OpenROAD-flow
 cd /OpenROAD-flow
 if [[ ! -d .git ]]; then
-    git clone -b openroad https://github.com/The-OpenROAD-Project/OpenROAD-flow.git
+    git clone -b openroad https://github.com/The-OpenROAD-Project/OpenROAD-flow.git /
 else
     git fetch
 fi
