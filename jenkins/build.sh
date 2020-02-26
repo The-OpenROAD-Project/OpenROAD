@@ -2,4 +2,14 @@
 set -x
 set -e
 docker build -t openroad/openroad --target base-dependencies .
-docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "./OpenROAD/jenkins/install.sh"
+
+# Build a parallel area to the workspace for the flow test
+pwd=`pwd`
+dir=$(dirname "${pwd}")
+base=$(basename "${pwd}")
+flow=$dir/${base}__flow
+if [[ ! -d $flow ]]; then
+    mkdir $flow
+fi
+
+docker run -u $(id -u ${USER}):$(id -g ${USER}) -v ${pwd}:/OpenROAD -v ${flow}:/OpenROAD-flow openroad/openroad bash -c "./OpenROAD/jenkins/install.sh"
