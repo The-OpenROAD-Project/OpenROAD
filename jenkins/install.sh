@@ -10,7 +10,6 @@ cmake --build build -j 4
 commit=`git rev-parse --verify HEAD`
 
 # Build a subdir 'flow' to run OpenROAD-flow tests in
-mkdir -p flow
 if [[ ! -d flow ]]; then
     git clone -b openroad https://github.com/The-OpenROAD-Project/OpenROAD-flow.git flow
 fi
@@ -18,11 +17,11 @@ fi
 cd flow
 
 # Get the head of the openroad branch of OpenROAD-flow
-git fetch
-git checkout openroad
+git pull --ff-only openroad
 git submodule update --init --recursive
 
 # Swap to current commit of OpenROAD
 cd tools/OpenROAD
+git fetch
 git checkout ${commit}
 git submodule update --init --recursive
