@@ -40,6 +40,7 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
+#include "pdnsim/MakePDNSim.hh"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -109,6 +110,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
+  pdnsim_ = makePDNSim();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -129,6 +131,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
+  initPDNSim(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

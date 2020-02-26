@@ -26,3 +26,7 @@
 [submodule "src/OpenRCX"]
 	path = src/OpenRCX
 	url = https://github.com/The-OpenROAD-Project/OpenRCX.git
+[submodule "src/PDNSim"]
+	path = src/PDNSim
+	url = https://github.com/The-OpenROAD-Project/PDNSim.git
+	branch = openroad
