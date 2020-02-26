@@ -15,7 +15,7 @@ if [[ ! -d flow/OpenROAD-flow ]]; then
     git clone -b openroad https://github.com/The-OpenROAD-Project/OpenROAD-flow.git flow
 fi
 
-cd flow/OpenROAD-flow
+cd flow
 
 # Get the head of the openroad branch of OpenROAD-flow
 git fetch
