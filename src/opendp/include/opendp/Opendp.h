@@ -78,7 +78,6 @@ struct Group;
 struct Cell {
   Cell();
   const char *name();
-  void print();
   bool inGroup() { return group_ != nullptr; }
   int64_t area();
 
@@ -107,24 +106,23 @@ struct Pixel {
 // Rows covering core.
 // These do NOT correspond to database rows, which may be fragmented.
 struct Row {
+  Row();
+
   int origX; // DBU
   int origY; // DBU
   dbOrientType orient_;
   power top_power;
-
-  Row();
-  void print();
 };
 
 struct Group {
+  Group();
+
   std::string name;
   std::vector< adsRect > regions;
   std::vector< Cell* > siblings;
   std::vector< Pixel* > pixels;
   adsRect boundary;
   double util;
-
-  Group();
 };
 
 struct sub_region {

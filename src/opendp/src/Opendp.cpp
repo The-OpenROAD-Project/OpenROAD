@@ -78,15 +78,6 @@ const char *Cell::name() {
   return db_inst_->getConstName();
 }
 
-void Cell::print() {
-  cout << "|=== BEGIN CELL ===|" << endl;
-  cout << "name:               " << db_inst_->getConstName() << endl;
-  cout << "type:               " << db_inst_->getMaster()->getConstName()
-       << endl;
-  cout << "(x_,y_):  " << x_ << ", " << y_ << endl;
-  cout << "|===  END  CELL ===|" << endl;
-}
-
 int64_t
 Cell::area()
 {
@@ -129,13 +120,6 @@ Row::Row()
     : origX(0),
       origY(0),
       orient_(dbOrientType::R0) {}
-
-void Row::print() {
-  cout << "|=== BEGIN ROW ===|" << endl;
-  cout << "(origX,origY):     " << origX << ", " << origY << endl;
-  cout << "orientation:       " << orient_ << endl;
-  cout << "|===  END  ROW ===|" << endl;
-}
 
 ////////////////////////////////////////////////////////////////
 
