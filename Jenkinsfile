@@ -11,5 +11,10 @@ pipeline {
         sh './jenkins/test.sh'
       }
     }
+    stage('Flow') {
+      steps {
+        sh './jenkins/flow.sh'
+      }
+    }
   }
 }
