@@ -6,6 +6,8 @@ cd /OpenROAD/build
 cmake ..
 make -j 4
 
+echo `whoami`
+
 # Capture the commit we are testing for use in flow testing
 commit=`git rev-parse --verify HEAD`
 
