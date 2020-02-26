@@ -240,27 +240,27 @@ bool Opendp::overlap_check(bool verbose) {
   }
 
   for(Cell& cell : cells_) {
-    int grid_x_ = gridX(&cell);
-    int grid_y_ = gridY(&cell);
+    int grid_x = gridX(&cell);
+    int grid_y = gridY(&cell);
 
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
     // Fixed Cell can be out of Current DIEAREA settings.
     if(isFixed(&cell)) {
-      grid_x_ = max(0, grid_x_);
-      grid_y_ = max(0, grid_y_);
+      grid_x = max(0, grid_x);
+      grid_y = max(0, grid_y);
       x_ur = min(x_ur, col_count);
       y_ur = min(y_ur, row_count);
     }
 
-    assert(grid_x_ >= 0);
-    assert(grid_y_ >= 0);
+    assert(grid_x >= 0);
+    assert(grid_y >= 0);
     assert(x_ur <= coreGridMaxX());
     assert(y_ur <= coreGridMaxY());
 
-    for(int j = grid_y_; j < y_ur; j++) {
-      for(int k = grid_x_; k < x_ur; k++) {
+    for(int j = grid_y; j < y_ur; j++) {
+      for(int k = grid_x; k < x_ur; k++) {
         if(grid2[j][k].cell == nullptr) {
           grid2[j][k].cell = &cell;
           grid2[j][k].util = 1.0;

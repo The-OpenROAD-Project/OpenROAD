@@ -605,8 +605,8 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
 
   vector< Cell* > list;
   set< Cell* > in_list;
-  for(int i = cell->grid_y_; i < cell->grid_y_ + step_y; i++) {
-    for(int j = cell->grid_x_; j < cell->grid_y_ + step_x; j++) {
+  for(int i = gridY(cell); i < gridY(cell) + step_y; i++) {
+    for(int j = gridX(cell); j < gridX(cell) + step_x; j++) {
       Cell *pos_cell = grid_[i][j].cell;
       if(pos_cell
 	 && in_list.find(pos_cell) != in_list.end()) {
@@ -669,10 +669,10 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
                 dist_benefit(cell2, cell1->x_, cell1->y_);
 
   if(benefit < 0) {
-    int grid_x1 = cell2->grid_x_;
-    int grid_y1 = cell2->grid_y_;
-    int grid_x2 = cell1->grid_x_;
-    int grid_y2 = cell1->grid_y_;
+    int grid_x1 = gridX(cell2);
+    int grid_y1 = gridY(cell2);
+    int grid_x2 = gridX(cell1);
+    int grid_y2 = gridY(cell1);
 
     erase_pixel(cell1);
     erase_pixel(cell2);

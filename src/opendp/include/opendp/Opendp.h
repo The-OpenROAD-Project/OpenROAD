@@ -84,7 +84,6 @@ struct Cell {
   dbInst* db_inst_;
   int x_, y_;		       // lower left wrt core with padding DBU
   dbOrientType orient_;
-  int grid_x_, grid_y_;		// grid position
   int width_, height_;		// DBU
   bool is_placed_;
   bool hold_;
@@ -241,15 +240,8 @@ class Opendp {
 	       adsRect *rect);
 
   // Cell initial location wrt core origin.
-  void initLocation(Cell *cell,
-		    int &x,
-		    int &y);
-  int paddedWidth(Cell *cell);
-  int disp(Cell *cell);
   int gridX(int x);
-  int gridEndX(Cell *cell);
   int gridY(int y);
-  int gridEndY(Cell *cell);
   int gridWidth();
   int gridHeight();
   int gridEndX();
@@ -260,6 +252,13 @@ class Opendp {
   int gridHeight(Cell* cell);
   int gridX(Cell* cell);
   int gridY(Cell* cell);
+  int gridEndX(Cell *cell);
+  int gridEndY(Cell *cell);
+  void initLocation(Cell *cell,
+		    int &x,
+		    int &y);
+  int paddedWidth(Cell *cell);
+  int disp(Cell *cell);
   int coreGridWidth();
   int coreGridHeight();
   int coreGridMaxX();

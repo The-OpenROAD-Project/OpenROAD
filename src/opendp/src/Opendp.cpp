@@ -352,6 +352,7 @@ void Opendp::reportLegalizationStats() {
 
 void
 Opendp::initLocation(Cell *cell,
+		     // Return values.
 		     int &x,
 		     int &y)
 {
@@ -415,11 +416,11 @@ int Opendp::gridY(int y) {
 }
 
 int Opendp::gridX(Cell *cell) {
-  return cell->x_ / site_width_;
+  return gridX(cell->x_);
 }
 
 int Opendp::gridY(Cell *cell) {
-  return cell->y_ / row_height_;
+  return gridY(cell->y_);
 }
 
 int Opendp::gridEndX(Cell *cell) {

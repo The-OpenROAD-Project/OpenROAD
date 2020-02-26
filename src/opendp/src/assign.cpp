@@ -152,9 +152,9 @@ void Opendp::non_group_cell_region_assign() {
 #endif
 
   for(int j = 0; j < group_num; j++) {
-    sub_region theSub;
+    sub_region region;
 
-    theSub.boundary.init(j * x_step,
+    region.boundary.init(j * x_step,
 			 0,
 			 min((j + 1) * x_step, static_cast<int>(core_.dx())),
 			 core_.dy());
@@ -164,33 +164,33 @@ void Opendp::non_group_cell_region_assign() {
 #ifdef ODP_DEBUG
         cell.print();
         cout << "j: " << j << endl;
-        cout << "Xmin: " << theSub.boundary.xMin() << endl;
-        cout << " sibilings size : " << theSub.siblings.size() << endl;
+        cout << "Xmin: " << region.boundary.xMin() << endl;
+        cout << " sibilings size : " << region.siblings.size() << endl;
 #endif
 	int init_x, init_y;
 	initLocation(&cell, init_x, init_y);
 	if(init_x >= j * x_step &&
 	   init_x < (j + 1) * x_step) {
-	  theSub.siblings.push_back(&cell);
+	  region.siblings.push_back(&cell);
 	  cell_num_check++;
 	}
 	else if(j == 0 && init_x < 0.0) {
-	  theSub.siblings.push_back(&cell);
+	  region.siblings.push_back(&cell);
 	  cell_num_check++;
 	}
 	else if(j == group_num - 1 && init_x >= core_.dx()) {
 #ifdef ODP_DEBUG
 	  cell.print();
 	  cout << "j: " << j << endl;
-	  cout << "xMin: " << theSub.boundary.xMin() << endl;
-	  cout << " sibilings size : " << theSub.siblings.size() << endl;
+	  cout << "xMin: " << region.boundary.xMin() << endl;
+	  cout << " sibilings size : " << region.siblings.size() << endl;
 #endif
-	  theSub.siblings.push_back(&cell);
+	  region.siblings.push_back(&cell);
 	  cell_num_check++;
 	}
       }
     }
-    sub_regions_.push_back(theSub);
+    sub_regions_.push_back(region);
   }
 #ifdef ODP_DEBUG
   cout << "non_group_cell_count : " << non_group_cell_count << endl;
@@ -295,40 +295,34 @@ void Opendp::erase_pixel(Cell* cell) {
     cell->is_placed_ = false;
     cell->hold_ = false;
 
-    assert(cell->grid_x_ == gridX(cell));
-    assert(cell->grid_y_ == gridY(cell));
-    for(int i = cell->grid_y_; i < cell->grid_y_ + y_step; i++) {
-      for(int j = cell->grid_x_; j < cell->grid_x_ + x_step; j++) {
+    for(int i = gridY(cell); i < gridY(cell) + y_step; i++) {
+      for(int j = gridX(cell); j < gridX(cell) + x_step; j++) {
 	grid_[i][j].cell = nullptr;
 	grid_[i][j].util = 0;
       }
     }
     cell->x_ = 0;
     cell->y_ = 0;
-    cell->grid_x_ = 0;
-    cell->grid_y_ = 0;
   }
 }
 
-void Opendp::paint_pixel(Cell* cell, int grid_x_, int grid_y_) {
+void Opendp::paint_pixel(Cell* cell, int grid_x, int grid_y) {
   assert(!cell->is_placed_);
   int x_step = gridWidth(cell);
   int y_step = gridHeight(cell);
 
-  cell->grid_x_ = grid_x_;
-  cell->grid_y_ = grid_y_;
-  cell->x_ = grid_x_ * site_width_;
-  cell->y_ = grid_y_ * row_height_;
+  cell->x_ = grid_x * site_width_;
+  cell->y_ = grid_y * row_height_;
   cell->is_placed_ = true;
 #ifdef ODP_DEBUG
   cout << "paint cell : " << cell->name() << endl;
   cout << "x_ - y_ : " << cell->x_ << " - "
        << cell->y_ << endl;
   cout << "x_step - y_step : " << x_step << " - " << y_step << endl;
-  cout << "grid_x_ - grid_y_ : " << grid_x_ << " - " << grid_y_ << endl;
+  cout << "grid_x - grid_y : " << grid_x << " - " << grid_y << endl;
 #endif
-  for(int i = grid_y_; i < grid_y_ + y_step; i++) {
-    for(int j = grid_x_; j < grid_x_ + x_step; j++) {
+  for(int i = grid_y; i < grid_y + y_step; i++) {
+    for(int j = grid_x; j < grid_x + x_step; j++) {
       if(grid_[i][j].cell != nullptr) {
         error("Cannot paint grid because it is already occupied.");
       }
@@ -340,14 +334,14 @@ void Opendp::paint_pixel(Cell* cell, int grid_x_, int grid_y_) {
   }
   if(max_cell_height_ > 1) {
     if(y_step % 2 == 1) {
-      if(rows_[grid_y_].top_power != topPower(cell))
+      if(rows_[grid_y].top_power != topPower(cell))
         cell->orient_ = dbOrientType::MX;
       else
         cell->orient_ = dbOrientType::R0;
     }
   }
   else {
-    cell->orient_ = rows_[grid_y_].orient_;
+    cell->orient_ = rows_[grid_y].orient_;
   }
 }
 
