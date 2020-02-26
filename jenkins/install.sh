@@ -23,6 +23,6 @@ git checkout openroad
 git submodule update --init --recursive
 
 # Swap to current commit of OpenROAD
-(cd tools/OpenROAD;
- git checkout ${commit};
- git submodule update --init --recursive)
+cd tools/OpenROAD
+git checkout ${commit}
+git submodule update --init --recursive
