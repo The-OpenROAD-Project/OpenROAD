@@ -17,7 +17,7 @@ fi
 cd flow
 
 # Get the head of the openroad branch of OpenROAD-flow
-git pull --ff-only openroad
+git pull --ff-only
 git submodule update --init --recursive
 
 # Swap to current commit of OpenROAD
