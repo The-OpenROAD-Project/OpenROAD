@@ -17,6 +17,8 @@ Makefile
 /build
 /test/results
 
+/flow
+
 include/openroad/Version.hh
 
 src/init_fp/test/results
