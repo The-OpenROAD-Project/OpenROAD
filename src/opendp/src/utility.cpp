@@ -130,8 +130,8 @@ double Opendp::hpwl(bool initial) {
 	initLocation(cell, x, y);
       }
       else {
-        x = cell->x_coord;
-        y = cell->y_coord;
+        x = cell->x_;
+        y = cell->y_;
       }
       // Use inst center if no mpins.
       adsRect iterm_rect(x, y, x, y);
@@ -226,13 +226,13 @@ pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
       dist_x = abs(x - rect->xMin());
       temp_x = rect->xMin() - paddedWidth(cell);
     }
-    if(abs(y - rect->yMin() + cell->height) > abs(rect->yMax() - y)) {
+    if(abs(y - rect->yMin() + cell->height_) > abs(rect->yMax() - y)) {
       dist_y = abs(rect->yMax() - y);
       temp_y = rect->yMax();
     }
     else {
       dist_y = abs(y - rect->yMin());
-      temp_y = rect->yMin() - cell->height;
+      temp_y = rect->yMin() - cell->height_;
     }
     assert(dist_x >= 0);
     assert(dist_y >= 0);
@@ -249,15 +249,15 @@ pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
 
   if(y < rect->yMin())
     temp_y = rect->yMin();
-  else if(y + cell->height > rect->yMax())
-    temp_y = rect->yMax() - cell->height;
+  else if(y + cell->height_ > rect->yMax())
+    temp_y = rect->yMax() - cell->height_;
 
 #ifdef ODP_DEBUG
   cout << " - - - - - - - - - - - - - - - " << endl;
-  cout << " input x_coord : " << x << endl;
-  cout << " input y_coord : " << y << endl;
-  cout << " found x_coord : " << temp_x << endl;
-  cout << " found y_coord : " << temp_y << endl;
+  cout << " input x_ : " << x << endl;
+  cout << " input y_ : " << y << endl;
+  cout << " found x_ : " << temp_x << endl;
+  cout << " found y_ : " << temp_y << endl;
 #endif
 
   return make_pair(temp_x, temp_y);
@@ -276,8 +276,8 @@ int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {
 
   if(y < rect->yMin())
     temp_y = rect->yMin() - y;
-  else if(y + cell->height > rect->yMax())
-    temp_y = y + cell->height - rect->yMax();
+  else if(y + cell->height_ > rect->yMax())
+    temp_y = y + cell->height_ - rect->yMax();
 
   assert(temp_y >= 0);
   assert(temp_x >= 0);
@@ -296,7 +296,7 @@ bool Opendp::check_overlap(Cell* cell, adsRect* rect) {
   initLocation(cell, x, y);
 
   if(rect->xMax() <= x || rect->xMin() >= x + paddedWidth(cell)) return false;
-  if(rect->yMax() <= y || rect->yMin() >= y + cell->height) return false;
+  if(rect->yMax() <= y || rect->yMin() >= y + cell->height_) return false;
 
   return true;
 }
@@ -312,12 +312,12 @@ bool Opendp::check_inside(Cell* cell, adsRect* rect) {
   initLocation(cell, x, y);
 
   if(rect->xMax() < x + paddedWidth(cell) || rect->xMin() > x) return false;
-  if(rect->yMax() < y + cell->height || rect->yMin() > y) return false;
+  if(rect->yMax() < y + cell->height_ || rect->yMin() > y) return false;
 
   return true;
 }
 
-bool Opendp::binSearch(int x_pos, Cell* cell,
+bool Opendp::binSearch(int grid_x, Cell* cell,
 		       int x, int y,
 		       // Return values
 		       int &avail_x,
@@ -340,7 +340,7 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
   cout << " target x : " << x << endl;
   cout << " target y : " << y << endl;
 #endif
-  if(x_pos > x) {
+  if(grid_x > x) {
     // magic number alert
     for(int i = 9; i >= 0; i--) {
       // check all grids are empty
@@ -360,11 +360,11 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
             }
             // check group regions
             if(cell->inGroup()) {
-              if(grid_[k][l].pixel_group != cell->cell_group)
+              if(grid_[k][l].group_ != cell->group_)
                 available = false;
             }
             else {
-              if(grid_[k][l].pixel_group != nullptr) available = false;
+              if(grid_[k][l].group_ != nullptr) available = false;
             }
           }
           if(!available) break;
@@ -393,11 +393,11 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
             }
             // check group regions
             if(cell->inGroup()) {
-              if(grid_[k][l].pixel_group != cell->cell_group)
+              if(grid_[k][l].group_ != cell->group_)
                 available = false;
             }
             else {
-              if(grid_[k][l].pixel_group != nullptr) available = false;
+              if(grid_[k][l].group_ != nullptr) available = false;
             }
           }
           if(!available) break;
@@ -418,12 +418,12 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
   return false;
 }
 
-bool Opendp::diamondSearch(Cell* cell, int x_coord, int y_coord,
+bool Opendp::diamondSearch(Cell* cell, int x, int y,
 			   // Return value
 			   Pixel *&pixel) {
   pixel = nullptr;
-  int x_pos = gridX(x_coord);
-  int y_pos = gridY(y_coord);
+  int grid_x = gridX(x);
+  int grid_y = gridY(y);
 
   int x_start = 0;
   int x_end = 0;
@@ -432,44 +432,40 @@ bool Opendp::diamondSearch(Cell* cell, int x_coord, int y_coord,
 
   // Set search boundary max / min
   if(cell->inGroup()) {
-    Group* group = cell->cell_group;
-    x_start = max(x_pos - diamond_search_height_ * 5,
+    Group* group = cell->group_;
+    x_start = max(grid_x - diamond_search_height_ * 5,
                   group->boundary.xMin() / site_width_);
-    x_end = min(x_pos + diamond_search_height_ * 5,
+    x_end = min(grid_x + diamond_search_height_ * 5,
 		group->boundary.xMax() / site_width_ - gridNearestWidth(cell));
-    y_start = max(y_pos - diamond_search_height_,
+    y_start = max(grid_y - diamond_search_height_,
                   divCeil(group->boundary.yMin(), row_height_));
-    y_end = min(y_pos + diamond_search_height_,
+    y_end = min(grid_y + diamond_search_height_,
                 divCeil(group->boundary.yMax(), row_height_) - gridNearestHeight(cell));
   }
   else {
-    x_start = max(x_pos - diamond_search_height_ * 5, 0);
-    x_end = min(x_pos + diamond_search_height_ * 5,
+    x_start = max(grid_x - diamond_search_height_ * 5, 0);
+    x_end = min(grid_x + diamond_search_height_ * 5,
                 gridWidth() - gridNearestWidth(cell));
-    y_start = max(y_pos - diamond_search_height_, 0);
-    y_end = min(y_pos + diamond_search_height_, 
+    y_start = max(grid_y - diamond_search_height_, 0);
+    y_end = min(grid_y + diamond_search_height_, 
 		gridHeight() - gridNearestHeight(cell));
   }
 #ifdef ODP_DEBUG
   cout << " == Start Diamond Search ==  " << endl;
   cout << " cell_name : " << cell->name() << endl;
-  cout << " cell width : " << cell->width << endl;
-  cout << " cell height : " << cell->height << endl;
-  cout << " cell x step : " << gridNearestWidth(cell)
-       << endl;
-  cout << " cell y step : " << gridNearestHeight(cell)
-       << endl;
-  cout << " input x : " << x_coord << endl;
-  cout << " inpuy y : " << y_coord << endl;
-  cout << " x_pos : " << x_pos << endl;
-  cout << " y_pos : " << y_pos << endl;
+  cout << " cell x step : " << gridNearestWidth(cell) << endl;
+  cout << " cell y step : " << gridNearestHeight(cell) << endl;
+  cout << " input x : " << x << endl;
+  cout << " inpuy y : " << y << endl;
+  cout << " grid_x : " << grid_x << endl;
+  cout << " grid_y : " << grid_y << endl;
   cout << " x bound ( " << x_start << ") - (" << x_end << ")" << endl;
   cout << " y bound ( " << y_start << ") - (" << y_end << ")" << endl;
 #endif
   
   int avail_x, avail_y;
-  if(binSearch(x_pos, cell, min(x_end, max(x_start, x_pos)),
-	       max(y_start, min(y_end, y_pos)),
+  if(binSearch(grid_x, cell, min(x_end, max(x_start, grid_x)),
+	       max(y_start, min(y_end, grid_y)),
 	       avail_x, avail_y)) {
     pixel = &grid_[avail_y][avail_x];
     return true;
@@ -494,9 +490,9 @@ bool Opendp::diamondSearch(Cell* cell, int x_coord, int y_coord,
         y_offset = (i * 2 - j) / 2;
       else
         y_offset = -(i * 2 - j) / 2;
-      if(binSearch(x_pos, cell,
-		   min(x_end, max(x_start, (x_pos + x_offset * 10))),
-		   min(y_end, max(y_start, (y_pos + y_offset))),
+      if(binSearch(grid_x, cell,
+		   min(x_end, max(x_start, (grid_x + x_offset * 10))),
+		   min(y_end, max(y_start, (grid_y + y_offset))),
 		   avail_x, avail_y)) {
         pixel = &grid_[avail_y][avail_x];
         avail_list.push_back(pixel);
@@ -510,9 +506,9 @@ bool Opendp::diamondSearch(Cell* cell, int x_coord, int y_coord,
         y_offset = ((i + 1) * 2 - j) / 2;
       else
         y_offset = -((i + 1) * 2 - j) / 2;
-      if(binSearch(x_pos, cell,
-		   min(x_end, max(x_start, (x_pos + x_offset * 10))),
-		   min(y_end, max(y_start, (y_pos + y_offset))),
+      if(binSearch(grid_x, cell,
+		   min(x_end, max(x_start, (grid_x + x_offset * 10))),
+		   min(y_end, max(y_start, (grid_y + y_offset))),
 		   avail_x, avail_y)) {
         pixel = &grid_[avail_y][avail_x];
         avail_list.push_back(pixel);
@@ -523,8 +519,8 @@ bool Opendp::diamondSearch(Cell* cell, int x_coord, int y_coord,
     int dist = numeric_limits<int>::max();
     int best = -1;
     for(int j = 0; j < avail_list.size(); j++) {
-      int temp_dist = abs(x_coord - avail_list[j]->x_pos * site_width_) +
-                      abs(y_coord - avail_list[j]->y_pos * row_height_);
+      int temp_dist = abs(x - avail_list[j]->grid_x_ * site_width_) +
+                      abs(y - avail_list[j]->grid_y_ * row_height_);
       if(temp_dist < dist) {
         dist = temp_dist;
         best = j;
@@ -544,9 +540,9 @@ bool Opendp::shift_move(Cell* cell) {
   // set region boundary
   adsRect rect;
   rect.reset(max(core_.xMin(), x - paddedWidth(cell) * 3),
-	     max(core_.yMin(), y - cell->height * 3),
+	     max(core_.yMin(), y - cell->height_ * 3),
 	     min(core_.xMax(), x + paddedWidth(cell) * 3),
-	     min(core_.yMax(), y + cell->height * 3));
+	     min(core_.yMax(), y + cell->height_ * 3));
   vector< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
 
   // erase region cells
@@ -590,12 +586,12 @@ bool Opendp::map_move(Cell* cell, int x, int y) {
   Pixel* pixel;
   if(diamondSearch(cell, x, y, pixel)) {
     Pixel* near_pixel;
-    if(diamondSearch(cell, pixel->x_pos * site_width_, pixel->y_pos * row_height_,
+    if(diamondSearch(cell, pixel->grid_x_ * site_width_, pixel->grid_y_ * row_height_,
 		     near_pixel)) {
-      paint_pixel(cell, near_pixel->x_pos, near_pixel->y_pos);
+      paint_pixel(cell, near_pixel->grid_x_, near_pixel->grid_y_);
     }
     else {
-      paint_pixel(cell, pixel->x_pos, pixel->y_pos);
+      paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
     }
     return true;
   }
@@ -609,8 +605,8 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
 
   vector< Cell* > list;
   set< Cell* > in_list;
-  for(int i = cell->y_pos; i < cell->y_pos + step_y; i++) {
-    for(int j = cell->x_pos; j < cell->y_pos + step_x; j++) {
+  for(int i = cell->grid_y_; i < cell->grid_y_ + step_y; i++) {
+    for(int j = cell->grid_x_; j < cell->grid_y_ + step_x; j++) {
       Cell *pos_cell = grid_[i][j].cell;
       if(pos_cell
 	 && in_list.find(pos_cell) != in_list.end()) {
@@ -651,37 +647,37 @@ vector< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
   return list;
 }
 
-int Opendp::dist_benefit(Cell* cell, int x_coord, int y_coord) {
+int Opendp::dist_benefit(Cell* cell, int x, int y) {
   int init_x, init_y;
   initLocation(cell, init_x, init_y);
-  int curr_dist = abs(cell->x_coord - init_x) +
-                  abs(cell->y_coord - init_y);
-  int new_dist = abs(init_x - x_coord) +
-                 abs(init_y - y_coord);
+  int curr_dist = abs(cell->x_ - init_x) +
+                  abs(cell->y_ - init_y);
+  int new_dist = abs(init_x - x) +
+                 abs(init_y - y);
   return new_dist - curr_dist;
 }
 
 bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
   if(cell1 == cell2)
     return false;
-  else if(cell1->db_inst->getMaster() != cell2->db_inst->getMaster())
+  else if(cell1->db_inst_->getMaster() != cell2->db_inst_->getMaster())
     return false;
   else if(isFixed(cell1) || isFixed(cell2))
     return false;
 
-  int benefit = dist_benefit(cell1, cell2->x_coord, cell2->y_coord) +
-                dist_benefit(cell2, cell1->x_coord, cell1->y_coord);
+  int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +
+                dist_benefit(cell2, cell1->x_, cell1->y_);
 
   if(benefit < 0) {
-    int x_pos1 = cell2->x_pos;
-    int y_pos1 = cell2->y_pos;
-    int x_pos2 = cell1->x_pos;
-    int y_pos2 = cell1->y_pos;
+    int grid_x1 = cell2->grid_x_;
+    int grid_y1 = cell2->grid_y_;
+    int grid_x2 = cell1->grid_x_;
+    int grid_y2 = cell1->grid_y_;
 
     erase_pixel(cell1);
     erase_pixel(cell2);
-    paint_pixel(cell1, x_pos1, y_pos1);
-    paint_pixel(cell2, x_pos2, y_pos2);
+    paint_pixel(cell1, grid_x1, grid_y1);
+    paint_pixel(cell2, grid_x2, grid_y2);
     return true;
   }
   return false;
@@ -692,15 +688,15 @@ bool Opendp::refine_move(Cell* cell) {
   initLocation(cell, init_x, init_y);
   Pixel* pixel;
   if(diamondSearch(cell, init_x, init_y, pixel)) {
-    double new_dist = abs(init_x - pixel->x_pos * site_width_)
-      + abs(init_y - pixel->y_pos * row_height_);
+    double new_dist = abs(init_x - pixel->grid_x_ * site_width_)
+      + abs(init_y - pixel->grid_y_ * row_height_);
     if(new_dist / row_height_ > max_displacement_constraint_) return false;
 
-    int benefit = dist_benefit(cell, pixel->x_pos * site_width_,
-                               pixel->y_pos * row_height_);
+    int benefit = dist_benefit(cell, pixel->grid_x_ * site_width_,
+                               pixel->grid_y_ * row_height_);
     if(benefit < 0) {
       erase_pixel(cell);
-      paint_pixel(cell, pixel->x_pos, pixel->y_pos);
+      paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
       return true;
     }
     else

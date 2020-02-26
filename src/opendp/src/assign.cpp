@@ -93,9 +93,9 @@ void Opendp::group_cell_region_assign() {
     int64_t area = 0;
     for(int j = 0; j < rows_.size(); j++) {
       for(int k = 0; k < row_site_count_; k++) {
-        if(grid_[j][k].pixel_group != nullptr) {
+        if(grid_[j][k].group_ != nullptr) {
           if(grid_[j][k].is_valid) {
-            if(grid_[j][k].pixel_group == &group)
+            if(grid_[j][k].group_ == &group)
               area += site_width_ * row_height_;
           }
         }
@@ -108,15 +108,15 @@ void Opendp::group_cell_region_assign() {
       int dist = numeric_limits<int>::max();
       adsRect* region_backup = nullptr;
       for(adsRect &rect : group.regions) {
-        if(check_inside(cell, &rect)) cell->region = &rect;
+        if(check_inside(cell, &rect)) cell->region_ = &rect;
         int temp_dist = dist_for_rect(cell, &rect);
         if(temp_dist < dist) {
           dist = temp_dist;
           region_backup = &rect;
         }
       }
-      if(cell->region == nullptr) {
-        cell->region = region_backup;
+      if(cell->region_ == nullptr) {
+        cell->region_ = region_backup;
       }
     }
     group.util = static_cast<double>(cell_area) / area;
@@ -267,7 +267,7 @@ void Opendp::group_pixel_assign() {
         // assign group to each pixel ( grid )
         for(int l = col_start; l < col_end; l++) {
           if(abs(grid_[k][l].util - 1.0) < 1e-6) {
-            grid_[k][l].pixel_group = &group;
+            grid_[k][l].group_ = &group;
 
             grid_[k][l].is_valid = true;
             grid_[k][l].util = 1.0;
@@ -288,47 +288,47 @@ void Opendp::group_pixel_assign() {
 }
 
 void Opendp::erase_pixel(Cell* cell) {
-  if(!(isFixed(cell) || !cell->is_placed)) {
+  if(!(isFixed(cell) || !cell->is_placed_)) {
     int x_step = gridWidth(cell);
     int y_step = gridHeight(cell);
 
-    cell->is_placed = false;
-    cell->hold = false;
+    cell->is_placed_ = false;
+    cell->hold_ = false;
 
-    assert(cell->x_pos == gridX(cell));
-    assert(cell->y_pos == gridY(cell));
-    for(int i = cell->y_pos; i < cell->y_pos + y_step; i++) {
-      for(int j = cell->x_pos; j < cell->x_pos + x_step; j++) {
+    assert(cell->grid_x_ == gridX(cell));
+    assert(cell->grid_y_ == gridY(cell));
+    for(int i = cell->grid_y_; i < cell->grid_y_ + y_step; i++) {
+      for(int j = cell->grid_x_; j < cell->grid_x_ + x_step; j++) {
 	grid_[i][j].cell = nullptr;
 	grid_[i][j].util = 0;
       }
     }
-    cell->x_coord = 0;
-    cell->y_coord = 0;
-    cell->x_pos = 0;
-    cell->y_pos = 0;
+    cell->x_ = 0;
+    cell->y_ = 0;
+    cell->grid_x_ = 0;
+    cell->grid_y_ = 0;
   }
 }
 
-void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
-  assert(!cell->is_placed);
+void Opendp::paint_pixel(Cell* cell, int grid_x_, int grid_y_) {
+  assert(!cell->is_placed_);
   int x_step = gridWidth(cell);
   int y_step = gridHeight(cell);
 
-  cell->x_pos = x_pos;
-  cell->y_pos = y_pos;
-  cell->x_coord = x_pos * site_width_;
-  cell->y_coord = y_pos * row_height_;
-  cell->is_placed = true;
+  cell->grid_x_ = grid_x_;
+  cell->grid_y_ = grid_y_;
+  cell->x_ = grid_x_ * site_width_;
+  cell->y_ = grid_y_ * row_height_;
+  cell->is_placed_ = true;
 #ifdef ODP_DEBUG
   cout << "paint cell : " << cell->name() << endl;
-  cout << "x_coord - y_coord : " << cell->x_coord << " - "
-       << cell->y_coord << endl;
+  cout << "x_ - y_ : " << cell->x_ << " - "
+       << cell->y_ << endl;
   cout << "x_step - y_step : " << x_step << " - " << y_step << endl;
-  cout << "x_pos - y_pos : " << x_pos << " - " << y_pos << endl;
+  cout << "grid_x_ - grid_y_ : " << grid_x_ << " - " << grid_y_ << endl;
 #endif
-  for(int i = y_pos; i < y_pos + y_step; i++) {
-    for(int j = x_pos; j < x_pos + x_step; j++) {
+  for(int i = grid_y_; i < grid_y_ + y_step; i++) {
+    for(int j = grid_x_; j < grid_x_ + x_step; j++) {
       if(grid_[i][j].cell != nullptr) {
         error("Cannot paint grid because it is already occupied.");
       }
@@ -340,14 +340,14 @@ void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
   }
   if(max_cell_height_ > 1) {
     if(y_step % 2 == 1) {
-      if(rows_[y_pos].top_power != topPower(cell))
-        cell->orient = dbOrientType::MX;
+      if(rows_[grid_y_].top_power != topPower(cell))
+        cell->orient_ = dbOrientType::MX;
       else
-        cell->orient = dbOrientType::R0;
+        cell->orient_ = dbOrientType::R0;
     }
   }
   else {
-    cell->orient = rows_[y_pos].orient;
+    cell->orient_ = rows_[grid_y_].orient_;
   }
 }
 

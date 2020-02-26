@@ -75,10 +75,10 @@ bool Opendp::row_check(bool verbose) {
   for(int i = 0; i < cells_.size(); i++) {
     Cell* cell = &cells_[i];
     if(!isFixed(cell)) {
-      if(cell->y_coord % row_height_ != 0) {
+      if(cell->y_ % row_height_ != 0) {
 	if (verbose)
 	  cout << "row_check fail => " << cell->name()
-	       << " y_coord : " << cell->y_coord << endl;
+	       << " y_ : " << cell->y_ << endl;
 	valid = false;
 	count++;
       }
@@ -99,10 +99,10 @@ bool Opendp::site_check(bool verbose) {
   for(int i = 0; i < cells_.size(); i++) {
     Cell* cell = &cells_[i];
     if(!isFixed(cell)) {
-      if(cell->x_coord % site_width_ != 0) {
+      if(cell->x_ % site_width_ != 0) {
 	if (verbose)
 	  cout << "site check fail ==> " << cell->name()
-	       << " x_coord : " << cell->x_coord << endl;
+	       << " x_ : " << cell->x_ << endl;
 	valid = false;
 	count++;
       }
@@ -159,14 +159,14 @@ bool Opendp::power_line_check(bool verbose) {
     if(!isFixed(&cell)
        // Magic number alert
        // Shouldn't this be odd test instead of 1 or 3? -cherry
-       && !(cell.height == row_height_ || cell.height == row_height_ * 3)
+       && !(cell.height_ == row_height_ || cell.height_ == row_height_ * 3)
        // should removed later
        && cell.inGroup()) {
       int y_size = gridHeight(&cell);
-      int y_pos = gridY(&cell);
+      int grid_y_ = gridY(&cell);
       power top_power = topPower(&cell);
       if(y_size % 2 == 0) {
-	if(top_power == rows_[y_pos].top_power) {
+	if(top_power == rows_[grid_y_].top_power) {
 	  cout << "power check fail ( even height ) ==> "
 	      << cell.name() << endl;
 	  valid = false;
@@ -174,8 +174,8 @@ bool Opendp::power_line_check(bool verbose) {
 	}
       }
       else {
-	if(top_power == rows_[y_pos].top_power) {
-	  if(cell.db_inst->getOrient() != dbOrientType::R0) {
+	if(top_power == rows_[grid_y_].top_power) {
+	  if(cell.db_inst_->getOrient() != dbOrientType::R0) {
 	    cout << "power check fail ( Should be N ) ==> "
 		<< cell.name() << endl;
 	    valid = false;
@@ -183,7 +183,7 @@ bool Opendp::power_line_check(bool verbose) {
 	  }
 	}
 	else {
-	  if(cell.db_inst->getOrient() != dbOrientType::MX) {
+	  if(cell.db_inst_->getOrient() != dbOrientType::MX) {
 	    cout << "power_check fail ( Should be FS ) ==> "
 		<< cell.name() << endl;
 	    valid = false;
@@ -205,7 +205,7 @@ bool Opendp::placed_check(bool verbose) {
   bool valid = true;
   int count = 0;
   for(Cell& cell : cells_) {
-    if(!cell.is_placed) {
+    if(!cell.is_placed_) {
       if (verbose)
 	cout << "placed check fail ==> " << cell.name() << endl;
       valid = false;
@@ -233,34 +233,34 @@ bool Opendp::overlap_check(bool verbose) {
 
   for(int i = 0; i < row_count; i++) {
     for(int j = 0; j < col_count; j++) {
-      grid2[i][j].y_pos = i;
-      grid2[i][j].x_pos = j;
+      grid2[i][j].grid_y_ = i;
+      grid2[i][j].grid_x_ = j;
       grid2[i][j].cell = nullptr;
     }
   }
 
   for(Cell& cell : cells_) {
-    int x_pos = gridX(&cell);
-    int y_pos = gridY(&cell);
+    int grid_x_ = gridX(&cell);
+    int grid_y_ = gridY(&cell);
 
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
     // Fixed Cell can be out of Current DIEAREA settings.
     if(isFixed(&cell)) {
-      x_pos = max(0, x_pos);
-      y_pos = max(0, y_pos);
+      grid_x_ = max(0, grid_x_);
+      grid_y_ = max(0, grid_y_);
       x_ur = min(x_ur, col_count);
       y_ur = min(y_ur, row_count);
     }
 
-    assert(x_pos >= 0);
-    assert(y_pos >= 0);
+    assert(grid_x_ >= 0);
+    assert(grid_y_ >= 0);
     assert(x_ur <= coreGridMaxX());
     assert(y_ur <= coreGridMaxY());
 
-    for(int j = y_pos; j < y_ur; j++) {
-      for(int k = x_pos; k < x_ur; k++) {
+    for(int j = grid_y_; j < y_ur; j++) {
+      for(int k = grid_x_; k < x_ur; k++) {
         if(grid2[j][k].cell == nullptr) {
           grid2[j][k].cell = &cell;
           grid2[j][k].util = 1.0;

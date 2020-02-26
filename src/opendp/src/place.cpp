@@ -54,19 +54,15 @@ using std::string;
 using std::vector;
 using std::numeric_limits;
 
-static bool sortUpOrder(Cell* cell1, Cell* cell2) {
+static bool cellAreaLess(Cell* cell1, Cell* cell2) {
   int area1 = cell1->area();
   int area2 = cell2->area();
   if(area1 > area2)
     return true;
   else if(area1 < area2)
     return false;
-  else if(cell1->dense_factor > cell2->dense_factor)
-    return true;
-  else if(cell1->dense_factor < cell2->dense_factor)
-    return false;
   else
-    return cell1->db_inst->getId() < cell2->db_inst->getId();
+    return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
 void Opendp::simplePlacement(bool verbose) {
@@ -113,7 +109,7 @@ void Opendp::non_group_cell_pre_placement() {
     bool inGroup = false;
     adsRect* target;
     pair< int, int > coord;
-    if(!cell.inGroup() && !cell.is_placed) {
+    if(!cell.inGroup() && !cell.is_placed_) {
       for(int j = 0; j < groups_.size(); j++) {
 	Group* group = &groups_[j];
 	for(adsRect& rect : group->regions) {
@@ -127,7 +123,7 @@ void Opendp::non_group_cell_pre_placement() {
 	pair< int, int > coord =
           nearest_coord_to_rect_boundary(&cell, target);
 	if(map_move(&cell, coord.first, coord.second))
-	  cell.hold = true;
+	  cell.hold_ = true;
       }
     }
   }
@@ -136,7 +132,7 @@ void Opendp::non_group_cell_pre_placement() {
 void Opendp::group_cell_pre_placement() {
   for(Group &group : groups_) {
     for(Cell* cell : group.siblings) {
-      if(!(isFixed(cell) || cell->is_placed)) {
+      if(!(isFixed(cell) || cell->is_placed_)) {
 	int dist = numeric_limits<int>::max();
 	bool in_group = false;
 	adsRect* target;
@@ -152,7 +148,7 @@ void Opendp::group_cell_pre_placement() {
 	if(!in_group) {
 	  pair< int, int > coord =
             nearest_coord_to_rect_boundary(cell, target);
-	  if(map_move(cell, coord.first, coord.second)) cell->hold = true;
+	  if(map_move(cell, coord.first, coord.second)) cell->hold_ = true;
 	}
       }
     }
@@ -164,10 +160,10 @@ void Opendp::non_group_cell_placement() {
   cell_list.reserve(cells_.size());
 
   for(Cell& cell : cells_) {
-    if(!(isFixed(&cell) || cell.inGroup() || cell.is_placed))
+    if(!(isFixed(&cell) || cell.inGroup() || cell.is_placed_))
       cell_list.push_back(&cell);
   }
-  sort(cell_list.begin(), cell_list.end(), sortUpOrder);
+  sort(cell_list.begin(), cell_list.end(), cellAreaLess);
 
   for(Cell* cell : cell_list) {
     if(isMultiRow(cell)) {
@@ -191,15 +187,15 @@ void Opendp::group_cell_placement() {
     vector< Cell* > cell_list;
     cell_list.reserve(cells_.size());
     for(Cell* cell : group.siblings) {
-      if(!isFixed(cell) && !cell->is_placed) {
+      if(!isFixed(cell) && !cell->is_placed_) {
 	cell_list.push_back(cell);
       }
     }
-    sort(cell_list.begin(), cell_list.end(), sortUpOrder);
+    sort(cell_list.begin(), cell_list.end(), cellAreaLess);
     // place multi-deck cells on each group region
     for(int j = 0; j < cell_list.size(); j++) {
       Cell* cell = cell_list[j];
-      if(!isFixed(cell) && !cell->is_placed) {
+      if(!isFixed(cell) && !cell->is_placed_) {
 	assert(cell->inGroup());
 	if(isMultiRow(cell)) {
 	  multi_pass = map_move(cell);
@@ -217,7 +213,7 @@ void Opendp::group_cell_placement() {
       // place single-deck cells on each group region
       for(int j = 0; j < cell_list.size(); j++) {
         Cell* cell = cell_list[j];
-        if(!isFixed(cell) && !cell->is_placed) {
+        if(!isFixed(cell) && !cell->is_placed_) {
 	  assert(cell->inGroup());
 	  if(!isMultiRow(cell)) {
 	    single_pass = map_move(cell);
@@ -239,10 +235,10 @@ void Opendp::group_cell_placement() {
 
       // determine brick placement by utilization
       if(group.util > 0.95) {
-        brick_placement_1(&group);
+        brick_placement1(&group);
       }
       else {
-        brick_placement_2(&group);
+        brick_placement2(&group);
       }
     }
   }
@@ -282,7 +278,7 @@ Opendp::rectDist(Cell *cell,
 }
 
 // place toward group edges
-void Opendp::brick_placement_1(Group* group) {
+void Opendp::brick_placement1(Group* group) {
   adsRect *boundary = &group->boundary;
   vector< Cell* > sort_by_dist(group->siblings);
 
@@ -304,17 +300,17 @@ void Opendp::brick_placement_1(Group* group) {
 }
 
 // place toward region edges
-void Opendp::brick_placement_2(Group* group) {
+void Opendp::brick_placement2(Group* group) {
   vector< Cell* > sort_by_dist(group->siblings);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
        [&](Cell* cell1, Cell* cell2) {
-         return rectDist(cell1, cell1->region) < rectDist(cell2, cell2->region);
+         return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
        });
 
   for(Cell* cell : sort_by_dist) {
-    if(!cell->hold) {
-      adsRect *region = cell->region;
+    if(!cell->hold_) {
+      adsRect *region = cell->region_;
       int x_tar, y_tar;
       rectDist(cell, region,
 	       x_tar, y_tar);
@@ -338,7 +334,7 @@ int Opendp::group_refine(Group* group) {
   int count = 0;
   for(int i = 0; i < sort_by_disp.size() * group_refine_percent_; i++) {
     Cell* cell = sort_by_disp[i];
-    if(!cell->hold) {
+    if(!cell->hold_) {
       if(refine_move(cell)) count++;
     }
   }
@@ -355,7 +351,7 @@ int Opendp::group_annealing(Group* group) {
     Cell* cell1 = group->siblings[rand() % group->siblings.size()];
     Cell* cell2 = group->siblings[rand() % group->siblings.size()];
 
-    if(!cell1->hold && !cell2->hold) {
+    if(!cell1->hold_ && !cell2->hold_) {
       if(swap_cell(cell1, cell2)) count++;
     }
   }
@@ -369,7 +365,7 @@ int Opendp::non_group_annealing() {
   for(int i = 0; i < 100 * cells_.size(); i++) {
     Cell* cell1 = &cells_[rand() % cells_.size()];
     Cell* cell2 = &cells_[rand() % cells_.size()];
-    if(!cell1->hold && !cell2->hold) {
+    if(!cell1->hold_ && !cell2->hold_) {
       if(swap_cell(cell1, cell2)) count++;
     }
   }
@@ -381,7 +377,7 @@ int Opendp::non_group_refine() {
   sort_by_disp.reserve(cells_.size());
 
   for(Cell &cell : cells_) {
-    if(!(isFixed(&cell) || cell.hold || cell.inGroup()))
+    if(!(isFixed(&cell) || cell.hold_ || cell.inGroup()))
       sort_by_disp.push_back(&cell);
   }
   sort(sort_by_disp.begin(), sort_by_disp.end(),
@@ -392,7 +388,7 @@ int Opendp::non_group_refine() {
   int count = 0;
   for(int i = 0; i < sort_by_disp.size() * non_group_refine_percent_; i++) {
     Cell* cell = sort_by_disp[i];
-    if(!cell->hold) {
+    if(!cell->hold_) {
       if(refine_move(cell)) count++;
     }
   }

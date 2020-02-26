@@ -81,29 +81,27 @@ void density_bin::print() {
 }
 
 Cell::Cell()
-  : hold(false),
-    region(nullptr),
-    cell_group(nullptr),
-    dense_factor(0.0),
-    dense_factor_count(0) {}
+  : hold_(false),
+    region_(nullptr),
+    group_(nullptr) {}
 
 const char *Cell::name() {
-  return db_inst->getConstName();
+  return db_inst_->getConstName();
 }
 
 void Cell::print() {
   cout << "|=== BEGIN CELL ===|" << endl;
-  cout << "name:               " << db_inst->getConstName() << endl;
-  cout << "type:               " << db_inst->getMaster()->getConstName()
+  cout << "name:               " << db_inst_->getConstName() << endl;
+  cout << "type:               " << db_inst_->getMaster()->getConstName()
        << endl;
-  cout << "(x_coord,y_coord):  " << x_coord << ", " << y_coord << endl;
+  cout << "(x_,y_):  " << x_ << ", " << y_ << endl;
   cout << "|===  END  CELL ===|" << endl;
 }
 
 int64_t
 Cell::area()
 {
-  dbMaster *master = db_inst->getMaster();
+  dbMaster *master = db_inst_->getMaster();
   return master->getWidth() * master->getHeight();
 }
 
@@ -111,29 +109,29 @@ Cell::area()
 
 bool Opendp::isFixed(Cell *cell) {
   return cell == &dummy_cell_ ||
-         cell->db_inst->getPlacementStatus() == dbPlacementStatus::FIRM ||
-         cell->db_inst->getPlacementStatus() == dbPlacementStatus::LOCKED ||
-         cell->db_inst->getPlacementStatus() == dbPlacementStatus::COVER;
+         cell->db_inst_->getPlacementStatus() == dbPlacementStatus::FIRM ||
+         cell->db_inst_->getPlacementStatus() == dbPlacementStatus::LOCKED ||
+         cell->db_inst_->getPlacementStatus() == dbPlacementStatus::COVER;
 }
 
 bool
 Opendp::isMultiRow(Cell *cell)
 {
-  return db_master_map_[cell->db_inst->getMaster()].is_multi_row_;
+  return db_master_map_[cell->db_inst_->getMaster()].is_multi_row_;
 }
 
 power
 Opendp::topPower(Cell *cell)
 {
-  return db_master_map_[cell->db_inst->getMaster()].top_power_;
+  return db_master_map_[cell->db_inst_->getMaster()].top_power_;
 }
 
 ////////////////////////////////////////////////////////////////
 
 Pixel::Pixel()
-    : x_pos(0.0),
-      y_pos(0.0),
-      pixel_group(nullptr),
+    : grid_x_(0.0),
+      grid_y_(0.0),
+      group_(nullptr),
       cell(nullptr),
       util(0.0),
       is_valid(true) {}
@@ -141,12 +139,12 @@ Pixel::Pixel()
 Row::Row()
     : origX(0),
       origY(0),
-      orient(dbOrientType::R0) {}
+      orient_(dbOrientType::R0) {}
 
 void Row::print() {
   cout << "|=== BEGIN ROW ===|" << endl;
   cout << "(origX,origY):     " << origX << ", " << origY << endl;
-  cout << "orientation:       " << orient << endl;
+  cout << "orientation:       " << orient_ << endl;
   cout << "|===  END  ROW ===|" << endl;
 }
 
@@ -154,7 +152,7 @@ void Row::print() {
 
 Group::Group() : name(""), util(0.0){}
 
-sub_region::sub_region() : x_pos(0), y_pos(0), width(0), height(0) {}
+sub_region::sub_region() : grid_x_(0), grid_y_(0), width_(0), height_(0) {}
 
 Opendp::Opendp()
   : pad_right_(0),
@@ -236,7 +234,7 @@ void Opendp::initAfterImport() {
   power_mapping();
 
   // dummy cell generation
-  dummy_cell_.is_placed = true;
+  dummy_cell_.is_placed_ = true;
 
   // calc row / site offset
   int row_offset = rows_[0].origY;
@@ -252,8 +250,8 @@ void Opendp::initAfterImport() {
 
   for(int i = 0; i < row_num; i++) {
     for(int j = 0; j < col; j++) {
-      grid_[i][j].y_pos = i;
-      grid_[i][j].x_pos = j;
+      grid_[i][j].grid_y_ = i;
+      grid_[i][j].grid_x_ = j;
       grid_[i][j].cell = nullptr;
       grid_[i][j].is_valid = false;
     }
@@ -287,11 +285,11 @@ void Opendp::initAfterImport() {
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    int x = core_.xMin() + cell.x_coord + pad_left_ * site_width_;
-    int y = core_.yMin() + cell.y_coord;
-    dbInst *db_inst = cell.db_inst;
-    db_inst->setOrient(cell.orient);
-    db_inst->setLocation(x, y);
+    int x = core_.xMin() + cell.x_ + pad_left_ * site_width_;
+    int y = core_.yMin() + cell.y_;
+    dbInst *db_inst_ = cell.db_inst_;
+    db_inst_->setOrient(cell.orient_);
+    db_inst_->setLocation(x, y);
   }
 }
 
@@ -301,7 +299,7 @@ void Opendp::findDesignStats() {
   movable_area_ = fixed_area_ = 0;
 
   for(Cell &cell : cells_) {
-    int cell_area = cell.width * cell.height;
+    int cell_area = cell.area();
     if(isFixed(&cell)) {
       fixed_area_ += cell_area;
       fixed_inst_count_++;
@@ -317,7 +315,7 @@ void Opendp::findDesignStats() {
     design_area_ += static_cast< int64_t >(site_width_) * row_site_count_ * row_height_;
 
   for(Cell &cell : cells_) {
-    dbMaster *master = cell.db_inst->getMaster();
+    dbMaster *master = cell.db_inst_->getMaster();
     if(!isFixed(&cell) && isMultiRow(&cell) &&
        master->getType() == dbMasterType::CORE) {
       int cell_height = gridNearestHeight(&cell);
@@ -385,7 +383,7 @@ Opendp::initLocation(Cell *cell,
 		     int &y)
 {
   int loc_x, loc_y;
-  cell->db_inst->getLocation(loc_x, loc_y);
+  cell->db_inst_->getLocation(loc_x, loc_y);
   x = max(0, loc_x - core_.xMin() - pad_left_ * site_width_);
   y = max(0, loc_y - core_.yMin());
 }
@@ -393,8 +391,8 @@ Opendp::initLocation(Cell *cell,
 int Opendp::disp(Cell *cell) {
   int init_x, init_y;
   initLocation(cell, init_x, init_y);
-  return abs(init_x - cell->x_coord) +
-         abs(init_y - cell->y_coord);
+  return abs(init_x - cell->x_) +
+         abs(init_y - cell->y_);
 }
 
 int Opendp::gridWidth() {
@@ -414,7 +412,7 @@ int Opendp::gridEndY() {
 }
 
 int Opendp::paddedWidth(Cell *cell) {
-  return cell->width + (pad_left_ + pad_right_) * site_width_;
+  return cell->width_ + (pad_left_ + pad_right_) * site_width_;
 }
 
 int Opendp::gridWidth(Cell *cell) {
@@ -422,7 +420,7 @@ int Opendp::gridWidth(Cell *cell) {
 }
 
 int Opendp::gridHeight(Cell *cell) {
-  return divCeil(cell->height, row_height_);
+  return divCeil(cell->height_, row_height_);
 }
 
 // Callers should probably be using gridWidth.
@@ -432,7 +430,7 @@ int Opendp::gridNearestWidth(Cell *cell) {
 
 // Callers should probably be using gridHeight.
 int Opendp::gridNearestHeight(Cell *cell) {
-  return divRound(cell->height, row_height_);
+  return divRound(cell->height_, row_height_);
 }
 
 int Opendp::gridX(int x) {
@@ -444,19 +442,19 @@ int Opendp::gridY(int y) {
 }
 
 int Opendp::gridX(Cell *cell) {
-  return cell->x_coord / site_width_;
+  return cell->x_ / site_width_;
 }
 
 int Opendp::gridY(Cell *cell) {
-  return cell->y_coord / row_height_;
+  return cell->y_ / row_height_;
 }
 
 int Opendp::gridEndX(Cell *cell) {
-  return divCeil(cell->x_coord + paddedWidth(cell), site_width_);
+  return divCeil(cell->x_ + paddedWidth(cell), site_width_);
 }
 
 int Opendp::gridEndY(Cell *cell) {
-  return divCeil(cell->y_coord + row_height_, row_height_);
+  return divCeil(cell->y_ + row_height_, row_height_);
 }
 
 int Opendp::coreGridWidth() {

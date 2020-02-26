@@ -163,7 +163,7 @@ void Opendp::make_core_rows() {
       Row row;
       row.origX = core_.xMin();
       row.origY = core_.yMin() + i * row_height_;
-      row.orient = orient;
+      row.orient_ = orient;
       rows_.push_back(row);
 
       // orient flips. e.g. R0 -> MX -> R0 -> MX -> ...
@@ -180,23 +180,23 @@ void Opendp::make_cells() {
   for(auto db_inst : db_insts) {
     cells_.push_back(Cell());
     Cell &cell = cells_.back();
-    cell.db_inst = db_inst;
+    cell.db_inst_ = db_inst;
     db_inst_map_[db_inst] = &cell;
 
     dbMaster *master = db_inst->getMaster();
     int width = master->getWidth();
     int height = master->getHeight();
     if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
-    cell.width = width;
-    cell.height = height;
+    cell.width_ = width;
+    cell.height_ = height;
 
     int init_x, init_y;
     initLocation(&cell, init_x, init_y);
     // Shift by core lower left.
-    cell.x_coord = init_x;
-    cell.y_coord = init_y;
-    cell.orient = db_inst->getOrient();
-    cell.is_placed = isFixed(&cell);
+    cell.x_ = init_x;
+    cell.y_ = init_y;
+    cell.orient_ = db_inst->getOrient();
+    cell.is_placed_ = isFixed(&cell);
   }
 }
 
@@ -247,7 +247,7 @@ void Opendp::makeGroups() {
       for (auto db_inst : db_region->getRegionInsts()) {
 	Cell *cell = db_inst_map_[db_inst];
 	group.siblings.push_back(cell);
-	cell->cell_group = &group;
+	cell->group_ = &group;
       }
       // Reverse instances for compatibility with standalone ordering.
       // reverse(group.siblings.begin(), group.siblings.end());

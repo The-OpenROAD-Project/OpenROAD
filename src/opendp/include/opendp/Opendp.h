@@ -75,31 +75,28 @@ struct Macro {
 
 struct Group;
 
-class Cell {
-public:
+struct Cell {
   Cell();
   const char *name();
   void print();
-  bool inGroup() { return cell_group != nullptr; }
+  bool inGroup() { return group_ != nullptr; }
   int64_t area();
 
-  dbInst* db_inst;
-  int x_coord, y_coord; // lower left with padding DBU
-  dbOrientType orient;
-  int x_pos, y_pos;     // grid position
-  int width, height;    // DBU
-  bool is_placed;
-  bool hold;
-  adsRect *region;  // group rect
-  Group* cell_group;
-  double dense_factor;
-  int dense_factor_count;
+  dbInst* db_inst_;
+  int x_, y_;		       // lower left wrt core with padding DBU
+  dbOrientType orient_;
+  int grid_x_, grid_y_;		// grid position
+  int width_, height_;		// DBU
+  bool is_placed_;
+  bool hold_;
+  adsRect *region_;  // group rect
+  Group* group_;
 };
 
 struct Pixel {
-  int x_pos;
-  int y_pos;
-  Group* pixel_group;
+  int grid_x_;
+  int grid_y_;
+  Group* group_;
   Cell* cell;
   double util;
   bool is_valid;  // false for dummy place
@@ -112,7 +109,7 @@ struct Pixel {
 struct Row {
   int origX; // DBU
   int origY; // DBU
-  dbOrientType orient;
+  dbOrientType orient_;
   power top_power;
 
   Row();
@@ -132,8 +129,8 @@ struct Group {
 
 struct sub_region {
   adsRect boundary;
-  int x_pos, y_pos;
-  int width, height;
+  int grid_x_, grid_y_;
+  int width_, height_;
   std::vector< Cell* > siblings;
   sub_region();
 };
@@ -208,12 +205,12 @@ class Opendp {
   bool check_overlap(Cell* cell, adsRect* rect);
   bool check_inside(adsRect cell, adsRect box);
   bool check_inside(Cell* cell, adsRect* rect);
-  bool binSearch(int x_pos, Cell* cell,
+  bool binSearch(int grid_x, Cell* cell,
 		 int x, int y,
 		 // Return values
 		 int &avail_x,
 		 int &avail_y);
-  bool diamondSearch(Cell* cell, int x_coord, int y_coord,
+  bool diamondSearch(Cell* cell, int x, int y,
 		     // Return value
 		     Pixel *&pixel);
   bool shift_move(Cell* cell);
@@ -221,16 +218,16 @@ class Opendp {
   bool map_move(Cell* cell, int x, int y);
   std::vector< Cell* > overlap_cells(Cell* cell);
   std::vector< Cell* > get_cells_from_boundary(adsRect* rect);
-  int dist_benefit(Cell* cell, int x_coord, int y_coord);
-  bool swap_cell(Cell* cellA, Cell* cellB);
+  int dist_benefit(Cell* cell, int x, int y);
+  bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
   void non_group_cell_pre_placement();
   void group_cell_pre_placement();
   void non_group_cell_placement();
   void group_cell_placement();
-  void brick_placement_1(Group* group);
-  void brick_placement_2(Group* group);
+  void brick_placement1(Group* group);
+  void brick_placement2(Group* group);
   int group_refine(Group* group);
   int group_annealing(Group* group);
   int non_group_annealing();
@@ -243,7 +240,7 @@ class Opendp {
   void group_pixel_assign();
   void group_pixel_assign2();
   void erase_pixel(Cell* cell);
-  void paint_pixel(Cell* cell, int x_pos, int y_pos);
+  void paint_pixel(Cell* cell, int grid_x, int grid_y);
 
   bool row_check(bool verbose);
   bool site_check(bool verbose);
