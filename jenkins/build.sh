@@ -12,4 +12,4 @@ if [[ ! -d $flow ]]; then
     mkdir $flow
 fi
 
-docker run -u $(id -u ${USER}):$(id -g ${USER}) -v ${pwd}:/OpenROAD -v ${flow}:/OpenROAD-flow openroad/openroad bash -c "./OpenROAD/jenkins/install.sh"
+docker run -v ${pwd}:/OpenROAD -v ${flow}:/OpenROAD-flow openroad/openroad bash -c "./OpenROAD/jenkins/install.sh"
