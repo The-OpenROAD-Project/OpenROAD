@@ -135,20 +135,6 @@ struct sub_region {
   sub_region();
 };
 
-struct density_bin {
-  double lx, hx;     /* low/high x coordinate */
-  double ly, hy;     /* low/high y coordinate */
-  double area;       /* bin area */
-  double m_util;     /* bin's movable cell area */
-  double f_util;     /* bin's fixed cell area */
-  double free_space; /* bin's freespace area */
-  double overflow;
-  double density_limit;
-  void print();
-};
-
-enum class CoordType { init, coord, pos };
-
 ////////////////////////////////////////////////////////////////
 
 class Opendp {

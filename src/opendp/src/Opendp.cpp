@@ -69,17 +69,6 @@ using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbPlacementStatus;
 
-void density_bin::print() {
-  cout << "|=== BEGIN DENSITY_BIN ===|" << endl;
-  cout << " area :        " << area << endl;
-  cout << " m_util :      " << m_util << endl;
-  cout << " f_util :      " << f_util << endl;
-  cout << " free_space :  " << free_space << endl;
-  cout << " overflow :    " << overflow << endl;
-  cout << " density limit:" << density_limit << endl;
-  cout << "|===  END  DENSITY_BIN ===|" << endl;
-}
-
 Cell::Cell()
   : hold_(false),
     region_(nullptr),
