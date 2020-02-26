@@ -125,8 +125,6 @@ Row::Row()
 
 Group::Group() : name(""), util(0.0){}
 
-sub_region::sub_region() : grid_x_(0), grid_y_(0), width_(0), height_(0) {}
-
 Opendp::Opendp()
   : pad_right_(0),
     pad_left_(0),

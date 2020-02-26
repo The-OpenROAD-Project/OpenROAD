@@ -72,10 +72,6 @@ void Opendp::simplePlacement(bool verbose) {
     if (verbose)
       cout << "Notice: group instance region assignment done." << endl;
   }
-  // non group cell -> sub region gen & assign
-  non_group_cell_region_assign();
-  if (verbose)
-      cout << "Notice: non group instance region assignment done." << endl;
 
   // pre placement out border ( Need region assign function previously )
   if(groups_.size() > 0) {

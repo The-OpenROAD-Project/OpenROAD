@@ -124,14 +124,6 @@ struct Group {
   double util;
 };
 
-struct sub_region {
-  adsRect boundary;
-  int grid_x_, grid_y_;
-  int width_, height_;
-  std::vector< Cell* > siblings;
-  sub_region();
-};
-
 ////////////////////////////////////////////////////////////////
 
 class Opendp {
@@ -219,7 +211,6 @@ class Opendp {
   // assign.cpp
   void fixed_cell_assign();
   void group_cell_region_assign();
-  void non_group_cell_region_assign();
   void group_pixel_assign();
   void group_pixel_assign2();
   void erase_pixel(Cell* cell);
@@ -291,7 +282,6 @@ class Opendp {
   // 2D pixel grid
   Pixel** grid_;
   Cell dummy_cell_;
-  std::vector< sub_region > sub_regions_;
 
   // Design stats.
   int fixed_inst_count_;
