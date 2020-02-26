@@ -69,19 +69,21 @@ using odb::dbSite;
 enum power { undefined, VDD, VSS };
 
 struct Macro {
-  dbMaster* db_master;
-  bool isMulti;       /* single row = false , multi row = true */
-  power top_power;    // VDD = 0  VSS = 1 enum
-
-  Macro();
-  void print();
+  bool is_multi_row_;
+  power top_power_;    // VDD/VSS
 };
 
 struct Group;
 
-struct Cell {
+class Cell {
+public:
+  Cell();
+  const char *name();
+  void print();
+  bool inGroup() { return cell_group != nullptr; }
+  int64_t area();
+
   dbInst* db_inst;
-  Macro* cell_macro;
   int x_coord, y_coord; // lower left with padding DBU
   dbOrientType orient;
   int x_pos, y_pos;     // grid position
@@ -92,12 +94,6 @@ struct Cell {
   Group* cell_group;
   double dense_factor;
   int dense_factor_count;
-
-  Cell();
-  const char *name();
-  void print();
-  bool inGroup() { return cell_group != nullptr; }
-  int64_t area();
 };
 
 struct Pixel {
@@ -188,9 +184,12 @@ class Opendp {
   void findInitialPower();
   double dbuToMicrons(int64_t dbu);
   bool isFixed(Cell* cell);  // fixed cell or not
+  bool isMultiRow(Cell* cell);
+  power topPower(Cell* cell);
   void updateDbInstLocations();
 
-  void macro_define_top_power(Macro* myMacro);
+  void defineTopPower(Macro &macro,
+		      dbMaster *master);
   int find_ymax(dbMTerm* term);
 
   // read files for legalizer - parser.cpp
@@ -291,12 +290,11 @@ class Opendp {
   int pad_left_;
   int pad_right_;
 
-  std::vector< Macro > macros_;
   std::vector< Cell > cells_;
   std::vector< Row > rows_;
   std::vector< Group > groups_;
 
-  std::map< dbMaster*, Macro* > db_master_map_;
+  std::map< dbMaster*, Macro > db_master_map_;
   std::map< dbInst*, Cell* > db_inst_map_;
   /* spacing between edges  1 to 1 , 1 to 2, 2 to 2 */
   std::map< std::pair< int, int >, double > edge_spacing_;

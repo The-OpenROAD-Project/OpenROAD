@@ -162,11 +162,11 @@ bool Opendp::power_line_check(bool verbose) {
        && !(cell.height == row_height_ || cell.height == row_height_ * 3)
        // should removed later
        && cell.inGroup()) {
-      Macro* macro = cell.cell_macro;
       int y_size = gridHeight(&cell);
       int y_pos = gridY(&cell);
+      power top_power = topPower(&cell);
       if(y_size % 2 == 0) {
-	if(macro->top_power == rows_[y_pos].top_power) {
+	if(top_power == rows_[y_pos].top_power) {
 	  cout << "power check fail ( even height ) ==> "
 	      << cell.name() << endl;
 	  valid = false;
@@ -174,7 +174,7 @@ bool Opendp::power_line_check(bool verbose) {
 	}
       }
       else {
-	if(macro->top_power == rows_[y_pos].top_power) {
+	if(top_power == rows_[y_pos].top_power) {
 	  if(cell.db_inst->getOrient() != dbOrientType::R0) {
 	    cout << "power check fail ( Should be N ) ==> "
 		<< cell.name() << endl;

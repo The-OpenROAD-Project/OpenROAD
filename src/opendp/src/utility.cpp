@@ -72,12 +72,13 @@ using std::numeric_limits;
 void Opendp::power_mapping() {
   power macro_top_power = undefined;
   bool found_multi = false;
-  for(Macro& macro : macros_) {
-    if(macro.isMulti) {
+  for(auto master_macro : db_master_map_) {
+    Macro &macro = master_macro.second;
+    if(macro.is_multi_row_) {
       found_multi = true;
     }
-    if(!macro.isMulti && macro.top_power != power::undefined) {
-      macro_top_power = macro.top_power;
+    if(!macro.is_multi_row_ && macro.top_power_ != power::undefined) {
+      macro_top_power = macro.top_power_;
       break;
     }
   }
@@ -321,7 +322,6 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
 		       // Return values
 		       int &avail_x,
 		       int &avail_y) {
-  Macro* macro = cell->cell_macro;
   int x_step = gridWidth(cell);
   int y_step = gridHeight(cell);
 
@@ -329,7 +329,7 @@ bool Opendp::binSearch(int x_pos, Cell* cell,
   if((y + y_step) > (core_.yMax() / row_height_)
      // Check top power for even row multi-deck cell.
      || (y_step % 2 == 0
-	 && rows_[y].top_power == macro->top_power)) {
+	 && rows_[y].top_power == topPower(cell))) {
     return false;
   }
 
@@ -664,7 +664,7 @@ int Opendp::dist_benefit(Cell* cell, int x_coord, int y_coord) {
 bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
   if(cell1 == cell2)
     return false;
-  else if(cell1->cell_macro != cell2->cell_macro)
+  else if(cell1->db_inst->getMaster() != cell2->db_inst->getMaster())
     return false;
   else if(isFixed(cell1) || isFixed(cell2))
     return false;

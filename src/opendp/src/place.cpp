@@ -170,15 +170,13 @@ void Opendp::non_group_cell_placement() {
   sort(cell_list.begin(), cell_list.end(), sortUpOrder);
 
   for(Cell* cell : cell_list) {
-    Macro* macro = cell->cell_macro;
-    if(macro->isMulti) {
+    if(isMultiRow(cell)) {
       if(!map_move(cell))
 	shift_move(cell);
     }
   }
   for(Cell* cell : cell_list) {
-    Macro* macro = cell->cell_macro;
-    if(!macro->isMulti) {
+    if(!isMultiRow(cell)) {
       if(!map_move(cell)) {
 	shift_move(cell);
       }
@@ -203,8 +201,7 @@ void Opendp::group_cell_placement() {
       Cell* cell = cell_list[j];
       if(!isFixed(cell) && !cell->is_placed) {
 	assert(cell->inGroup());
-	Macro* macro = cell->cell_macro;
-	if(macro->isMulti) {
+	if(isMultiRow(cell)) {
 	  multi_pass = map_move(cell);
 	  if(!multi_pass) {
 	    cout << "map_move fail" << endl;
@@ -222,8 +219,7 @@ void Opendp::group_cell_placement() {
         Cell* cell = cell_list[j];
         if(!isFixed(cell) && !cell->is_placed) {
 	  assert(cell->inGroup());
-	  Macro* macro = cell->cell_macro;
-	  if(!macro->isMulti) {
+	  if(!isMultiRow(cell)) {
 	    single_pass = map_move(cell);
 	    if(!single_pass) {
 	      cout << "map_move fail (single cell)" << endl;

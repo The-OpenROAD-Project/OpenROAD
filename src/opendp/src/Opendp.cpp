@@ -80,16 +80,6 @@ void density_bin::print() {
   cout << "|===  END  DENSITY_BIN ===|" << endl;
 }
 
-Macro::Macro()
-    : isMulti(false),
-      top_power(power::undefined) {}
-
-void Macro::print() {
-  cout << "|=== BEGIN MACRO ===|" << endl;
-  cout << "name:                " << db_master->getConstName() << endl;
-  cout << "|=== BEGIN MACRO ===|" << endl;
-}
-
 Cell::Cell()
   : hold(false),
     region(nullptr),
@@ -104,7 +94,7 @@ const char *Cell::name() {
 void Cell::print() {
   cout << "|=== BEGIN CELL ===|" << endl;
   cout << "name:               " << db_inst->getConstName() << endl;
-  cout << "type:               " << cell_macro->db_master->getConstName()
+  cout << "type:               " << db_inst->getMaster()->getConstName()
        << endl;
   cout << "(x_coord,y_coord):  " << x_coord << ", " << y_coord << endl;
   cout << "|===  END  CELL ===|" << endl;
@@ -125,6 +115,20 @@ bool Opendp::isFixed(Cell *cell) {
          cell->db_inst->getPlacementStatus() == dbPlacementStatus::LOCKED ||
          cell->db_inst->getPlacementStatus() == dbPlacementStatus::COVER;
 }
+
+bool
+Opendp::isMultiRow(Cell *cell)
+{
+  return db_master_map_[cell->db_inst->getMaster()].is_multi_row_;
+}
+
+power
+Opendp::topPower(Cell *cell)
+{
+  return db_master_map_[cell->db_inst->getMaster()].top_power_;
+}
+
+////////////////////////////////////////////////////////////////
 
 Pixel::Pixel()
     : x_pos(0.0),
@@ -167,7 +171,7 @@ Opendp::~Opendp() {}
 void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
-  macros_.clear();
+  db_master_map_.clear();
   rows_.clear();
   cells_.clear();
 }
@@ -304,8 +308,7 @@ void Opendp::findDesignStats() {
     }
     else
       movable_area_ += cell_area;
-    Macro *macro = cell.cell_macro;
-    if(macro->isMulti)
+    if(isMultiRow(&cell))
       multi_height_inst_count_++;
   }
 
@@ -314,9 +317,8 @@ void Opendp::findDesignStats() {
     design_area_ += static_cast< int64_t >(site_width_) * row_site_count_ * row_height_;
 
   for(Cell &cell : cells_) {
-    Macro *macro = cell.cell_macro;
-    dbMaster *master = macro->db_master;
-    if(!isFixed(&cell) && macro->isMulti &&
+    dbMaster *master = cell.db_inst->getMaster();
+    if(!isFixed(&cell) && isMultiRow(&cell) &&
        master->getType() == dbMasterType::CORE) {
       int cell_height = gridNearestHeight(&cell);
       if(max_cell_height_ < cell_height) max_cell_height_ = cell_height;

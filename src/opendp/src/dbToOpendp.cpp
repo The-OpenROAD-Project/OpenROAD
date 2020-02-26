@@ -93,7 +93,7 @@ void Opendp::dbToOpendp() {
   else
     error("no ROWs found.\n");
 
-  // make rows in CoreArea;
+  // make rows in core area.
   make_core_rows();
   make_cells();
   makeGroups();
@@ -102,21 +102,14 @@ void Opendp::dbToOpendp() {
 
 void Opendp::make_macros(dbLib *db_lib) {
   auto db_masters = db_lib->getMasters();
-  macros_.reserve(db_masters.size());
   for(auto db_master : db_masters) {
-    macros_.push_back(Macro());
-    struct Macro &macro = macros_.back();
-    db_master_map_[db_master] = &macro;
-
-    macro.db_master = db_master;
-    macro_define_top_power(&macro);
+    struct Macro &macro = db_master_map_[db_master];
+    defineTopPower(macro, db_master);
   }
 }
 
-// - - - - - - - define multi row cell & define top power - - - - - - - - //
-void Opendp::macro_define_top_power(Macro *myMacro) {
-  dbMaster *master = myMacro->db_master;
-
+void Opendp::defineTopPower(Macro &macro,
+			    dbMaster *master) {
   dbMTerm *power = nullptr;
   dbMTerm *gnd = nullptr;
   for(dbMTerm *mterm : master->getMTerms()) {
@@ -130,14 +123,12 @@ void Opendp::macro_define_top_power(Macro *myMacro) {
   int power_y_max = power ? find_ymax(power) : 0;
   int gnd_y_max = gnd ? find_ymax(gnd) : 0;
   if(power_y_max > gnd_y_max)
-    myMacro->top_power = VDD;
+    macro.top_power_ = VDD;
   else
-    myMacro->top_power = VSS;
+    macro.top_power_ = VSS;
 
-  if(power && gnd) {
-    if(power->getMPins().size() > 1 || gnd->getMPins().size() > 1)
-      myMacro->isMulti = true;
-  }
+  macro.is_multi_row_ = power && gnd
+    && (power->getMPins().size() > 1 || gnd->getMPins().size() > 1);
 }
 
 int Opendp::find_ymax(dbMTerm *mterm) {
@@ -193,25 +184,19 @@ void Opendp::make_cells() {
     db_inst_map_[db_inst] = &cell;
 
     dbMaster *master = db_inst->getMaster();
-    auto miter = db_master_map_.find(master);
-    if(miter != db_master_map_.end()) {
-      Macro *macro = miter->second;
-      cell.cell_macro = macro;
+    int width = master->getWidth();
+    int height = master->getHeight();
+    if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
+    cell.width = width;
+    cell.height = height;
 
-      int width = master->getWidth();
-      int height = master->getHeight();
-      if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
-      cell.width = width;
-      cell.height = height;
-
-      int init_x, init_y;
-      initLocation(&cell, init_x, init_y);
-      // Shift by core lower left.
-      cell.x_coord = init_x;
-      cell.y_coord = init_y;
-      cell.orient = db_inst->getOrient();
-      cell.is_placed = isFixed(&cell);
-    }
+    int init_x, init_y;
+    initLocation(&cell, init_x, init_y);
+    // Shift by core lower left.
+    cell.x_coord = init_x;
+    cell.y_coord = init_y;
+    cell.orient = db_inst->getOrient();
+    cell.is_placed = isFixed(&cell);
   }
 }
 

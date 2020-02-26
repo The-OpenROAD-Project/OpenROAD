@@ -289,7 +289,6 @@ void Opendp::group_pixel_assign() {
 
 void Opendp::erase_pixel(Cell* cell) {
   if(!(isFixed(cell) || !cell->is_placed)) {
-    Macro* macro = cell->cell_macro;
     int x_step = gridWidth(cell);
     int y_step = gridHeight(cell);
 
@@ -313,7 +312,6 @@ void Opendp::erase_pixel(Cell* cell) {
 
 void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
   assert(!cell->is_placed);
-  Macro* macro = cell->cell_macro;
   int x_step = gridWidth(cell);
   int y_step = gridHeight(cell);
 
@@ -342,7 +340,7 @@ void Opendp::paint_pixel(Cell* cell, int x_pos, int y_pos) {
   }
   if(max_cell_height_ > 1) {
     if(y_step % 2 == 1) {
-      if(rows_[y_pos].top_power != macro->top_power)
+      if(rows_[y_pos].top_power != topPower(cell))
         cell->orient = dbOrientType::MX;
       else
         cell->orient = dbOrientType::R0;
