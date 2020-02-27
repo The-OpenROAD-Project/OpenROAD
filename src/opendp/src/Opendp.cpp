@@ -281,9 +281,8 @@ void Opendp::findDesignStats() {
       multi_height_inst_count_++;
   }
 
-  design_area_ = 0;
-  for(Row &row : rows_)
-    design_area_ += static_cast< int64_t >(site_width_) * row_site_count_ * row_height_;
+  design_area_ = rows_.size() * static_cast< int64_t >(row_site_count_)
+    * site_width_ * row_height_;
 
   for(Cell &cell : cells_) {
     dbMaster *master = cell.db_inst_->getMaster();
@@ -297,7 +296,6 @@ void Opendp::findDesignStats() {
   design_util_ =
       static_cast< double >(movable_area_) / (design_area_ - fixed_area_);
 
-  // design_utilization error handling.
   if(design_util_ >= 1.001) {
     error("utilization exceeds 100%.");
   }

@@ -90,17 +90,15 @@ void Opendp::fixed_cell_assign() {
 
 void Opendp::group_cell_region_assign() {
   for(Group& group : groups_) {
-    int64_t area = 0;
+    int64_t site_count = 0;
     for(int j = 0; j < rows_.size(); j++) {
       for(int k = 0; k < row_site_count_; k++) {
-        if(grid_[j][k].group_ != nullptr) {
-          if(grid_[j][k].is_valid) {
-            if(grid_[j][k].group_ == &group)
-              area += site_width_ * row_height_;
-          }
-        }
+	if(grid_[j][k].is_valid
+	   && grid_[j][k].group_ == &group)
+	  site_count++;
       }
     }
+    int64_t area = site_count * site_width_ * row_height_;
 
     int64_t cell_area = 0;
     for(Cell* cell : group.siblings) {
@@ -146,7 +144,6 @@ void Opendp::group_pixel_assign2() {
 
 void Opendp::group_pixel_assign() {
   for(int i = 0; i < rows_.size(); i++) {
-    Row* row = &rows_[i];
     for(int j = 0; j < row_site_count_; j++) {
       grid_[i][j].util = 0.0;
     }
@@ -158,7 +155,6 @@ void Opendp::group_pixel_assign() {
       int row_end = divFloor(rect.yMax(), row_height_);
 
       for(int k = row_start; k < row_end; k++) {
-	Row* row = &rows_[k];
         int col_start = divCeil(rect.xMin(), site_width_);
         int col_end = divFloor(rect.xMax(), site_width_);
 
@@ -169,7 +165,7 @@ void Opendp::group_pixel_assign() {
           grid_[k][col_start].util -=
 	    (rect.xMin() % site_width_) / static_cast<double>(site_width_);
         }
-        if(static_cast<int>(rect.xMax()) % site_width_ != 0) {
+        if(rect.xMax() % site_width_ != 0) {
           grid_[k][col_end - 1].util -=
 	    // magic number alert
 	    ((200 - rect.xMax()) % site_width_) / static_cast<double>(site_width_);
