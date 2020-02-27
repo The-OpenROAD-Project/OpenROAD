@@ -24,6 +24,15 @@ pipeline {
     stage('Test-Flow') {
       failFast true
       parallel {
+        stage('matt_test') {
+          steps {
+            catchError {
+              sh label: 'matt_test', script: '''
+              ls /usr && ls /usr/bin'''
+            }
+            echo currentBuild.result
+          }
+        }
         stage('nangate45_gcd') {
           steps {
             catchError {
