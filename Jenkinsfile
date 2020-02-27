@@ -6,13 +6,11 @@ pipeline {
         sh './jenkins/build.sh'
       }
     }
-/*
     stage('Test') {
       steps {
         sh './jenkins/test.sh'
       }
     }
-*/
     stage('Build-Flow') {
       environment {
         OPENROAD_FLOW_NO_GIT_INIT = 1
@@ -24,15 +22,6 @@ pipeline {
     stage('Test-Flow') {
       failFast true
       parallel {
-        stage('matt_test') {
-          steps {
-            catchError {
-              sh label: 'matt_test', script: '''
-              ls /usr && ls /usr/bin'''
-            }
-            echo currentBuild.result
-          }
-        }
         stage('nangate45_gcd') {
           steps {
             catchError {
@@ -42,7 +31,6 @@ pipeline {
             echo currentBuild.result
           }
         }
-/*
         stage('nangate45_aes') {
           steps {
             catchError {
@@ -70,7 +58,6 @@ pipeline {
             echo currentBuild.result
           }
         }
-*/
       }
     }
   }
