@@ -1,6 +1,6 @@
 # 1 inst in core off grid
 source helpers.tcl
-read_lef NangateOpenCellLibrary.lef
+read_lef Nangate45.lef
 read_def simple02.def
 legalize_placement
 set def_file [make_result_file simple02.def]

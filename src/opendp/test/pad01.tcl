@@ -1,6 +1,6 @@
 # set_padding -global -left
 source helpers.tcl
-read_lef NangateOpenCellLibrary.lef
+read_lef Nangate45.lef
 read_def simple01.def
 set_padding -global -left 5
 legalize_placement

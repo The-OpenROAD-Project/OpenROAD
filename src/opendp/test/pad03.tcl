@@ -1,6 +1,6 @@
 # set_padding -global -right
 source helpers.tcl
-read_lef NangateOpenCellLibrary.lef
+read_lef Nangate45.lef
 read_def simple03.def
 set_padding -global -right 5
 

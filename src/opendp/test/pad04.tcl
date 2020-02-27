@@ -1,6 +1,6 @@
 # 10 inst placement legal (should not move anything)
 source helpers.tcl
-read_lef NangateOpenCellLibrary.lef
+read_lef Nangate45.lef
 read_def pad04.def
 set_padding -global -left 2 -right 2
 legalize_placement
