@@ -91,7 +91,7 @@ void Opendp::fixed_cell_assign() {
 void Opendp::group_cell_region_assign() {
   for(Group& group : groups_) {
     int64_t site_count = 0;
-    for(int j = 0; j < rows_.size(); j++) {
+    for(int j = 0; j < row_count_; j++) {
       for(int k = 0; k < row_site_count_; k++) {
 	if(grid_[j][k].is_valid
 	   && grid_[j][k].group_ == &group)
@@ -109,8 +109,7 @@ void Opendp::group_cell_region_assign() {
 }
 
 void Opendp::group_pixel_assign2() {
-  for(int i = 0; i < rows_.size(); i++) {
-    Row* row = &rows_[i];
+  for(int i = 0; i < row_count_; i++) {
     for(int j = 0; j < row_site_count_; j++) {
       adsRect grid2;
       grid2.init(j * site_width_, i * row_height_,
@@ -130,7 +129,7 @@ void Opendp::group_pixel_assign2() {
 }
 
 void Opendp::group_pixel_assign() {
-  for(int i = 0; i < rows_.size(); i++) {
+  for(int i = 0; i < row_count_; i++) {
     for(int j = 0; j < row_site_count_; j++) {
       grid_[i][j].util = 0.0;
     }
@@ -164,7 +163,6 @@ void Opendp::group_pixel_assign() {
       int row_end = divFloor(rect.yMax(), row_height_);
 
       for(int k = row_start; k < row_end; k++) {
-        Row* row = &rows_[k];
         int col_start = divCeil(rect.xMin(), site_width_);
         int col_end = divFloor(rect.xMax(), site_width_);
 
@@ -237,14 +235,14 @@ void Opendp::paint_pixel(Cell* cell, int grid_x, int grid_y) {
   }
   if(max_cell_height_ > 1) {
     if(y_step % 2 == 1) {
-      if(rows_[grid_y].top_power != topPower(cell))
+      if(rowTopPower(grid_y) != topPower(cell))
         cell->orient_ = dbOrientType::MX;
       else
         cell->orient_ = dbOrientType::R0;
     }
   }
   else {
-    cell->orient_ = rows_[grid_y].orient_;
+    cell->orient_ = rowOrient(grid_y);
   }
 }
 

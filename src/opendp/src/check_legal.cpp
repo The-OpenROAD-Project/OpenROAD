@@ -119,7 +119,7 @@ bool Opendp::edge_check(bool verbose) {
   bool valid = true;
   int count = 0;
 
-  for(int i = 0; i < rows_.size(); i++) {
+  for(int i = 0; i < row_count_; i++) {
     vector< Cell* > cells;
     for(int j = 0; j < row_site_count_; j++) {
       Cell* grid_cell = grid_[i][j].cell;
@@ -163,10 +163,10 @@ bool Opendp::power_line_check(bool verbose) {
        // should removed later
        && cell.inGroup()) {
       int y_size = gridHeight(&cell);
-      int grid_y_ = gridY(&cell);
+      int grid_y = gridY(&cell);
       power top_power = topPower(&cell);
       if(y_size % 2 == 0) {
-	if(top_power == rows_[grid_y_].top_power) {
+	if(top_power == rowTopPower(grid_y)) {
 	  cout << "power check fail ( even height ) ==> "
 	      << cell.name() << endl;
 	  valid = false;
@@ -174,7 +174,7 @@ bool Opendp::power_line_check(bool verbose) {
 	}
       }
       else {
-	if(top_power == rows_[grid_y_].top_power) {
+	if(top_power == rowTopPower(grid_y)) {
 	  if(cell.db_inst_->getOrient() != dbOrientType::R0) {
 	    cout << "power check fail ( Should be N ) ==> "
 		<< cell.name() << endl;
@@ -223,7 +223,7 @@ bool Opendp::placed_check(bool verbose) {
 
 bool Opendp::overlap_check(bool verbose) {
   bool valid = true;
-  int row_count = rows_.size();
+  int row_count = row_count_;
   int col_count = row_site_count_;
   Pixel** grid2;
   grid2 = new Pixel*[row_count];

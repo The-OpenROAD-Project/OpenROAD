@@ -45,7 +45,6 @@ using std::cout;
 using std::endl;
 using std::fixed;
 using std::ifstream;
-using std::make_pair;
 using std::max;
 using std::min;
 using std::numeric_limits;
@@ -122,10 +121,7 @@ void Opendp::defineTopPower(Macro &macro,
 
   int power_y_max = power ? find_ymax(power) : 0;
   int gnd_y_max = gnd ? find_ymax(gnd) : 0;
-  if(power_y_max > gnd_y_max)
-    macro.top_power_ = VDD;
-  else
-    macro.top_power_ = VSS;
+  macro.top_power_ = (power_y_max > gnd_y_max) ? VDD : VSS;
 
   macro.is_multi_row_ = power && gnd
     && (power->getMPins().size() > 1 || gnd->getMPins().size() > 1);
@@ -142,7 +138,7 @@ int Opendp::find_ymax(dbMTerm *mterm) {
 // Generate new rows to fill core area.
 void Opendp::make_core_rows() {
   row_site_count_ = coreGridWidth();
-  int row_count = coreGridHeight();
+  row_count_ = coreGridHeight();
 
   int bottom_row_y = numeric_limits<int>::max();
   dbRow *bottom_row = nullptr;
@@ -156,19 +152,7 @@ void Opendp::make_core_rows() {
   }
   if (bottom_row) {
     dbOrientType orient = bottom_row->getOrient();
-
-    rows_.reserve(row_count);
-    rows_.clear();
-    for(int i = 0; i < row_count; i++) {
-      Row row;
-      row.origX = core_.xMin();
-      row.origY = core_.yMin() + i * row_height_;
-      row.orient_ = orient;
-      rows_.push_back(row);
-
-      // orient flips. e.g. R0 -> MX -> R0 -> MX -> ...
-      orient = (orient == dbOrientType::R0) ? dbOrientType::MX : dbOrientType::R0;
-    }
+    row0_orient_is_r0_ = (bottom_row->getOrient() == dbOrientType::R0);
   }
   else
     error("no rows found.");

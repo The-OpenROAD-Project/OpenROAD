@@ -89,14 +89,11 @@ void Opendp::power_mapping() {
   }
 
   if(macro_top_power == power::undefined) {
-    error("Cannot find cells that have VDD/VSS pins.");
+    error("Cannot find MACRO with VDD/VSS pins.");
   }
 
   power row_power = (initial_power_ == undefined) ? macro_top_power : initial_power_;
-  for(Row& row : rows_) {
-    row.top_power = row_power;
-    row_power = (row_power == VSS) ? VDD : VSS;
-  }
+  row0_top_power_is_vdd_ = (row_power == VDD);
 }
 
 void Opendp::displacementStats(// Return values.
@@ -300,7 +297,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
   if((y + y_step) > (core_.yMax() / row_height_)
      // Check top power for even row multi-deck cell.
      || (y_step % 2 == 0
-	 && rows_[y].top_power == topPower(cell))) {
+	 && rowTopPower(y) == topPower(cell))) {
     return false;
   }
 
