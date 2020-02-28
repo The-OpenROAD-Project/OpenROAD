@@ -88,6 +88,26 @@ void Opendp::fixed_cell_assign() {
   }
 }
 
+void Opendp::group_cell_region_assign() {
+  for(Group& group : groups_) {
+    int64_t site_count = 0;
+    for(int j = 0; j < rows_.size(); j++) {
+      for(int k = 0; k < row_site_count_; k++) {
+	if(grid_[j][k].is_valid
+	   && grid_[j][k].group_ == &group)
+	  site_count++;
+      }
+    }
+    int64_t area = site_count * site_width_ * row_height_;
+
+    int64_t cell_area = 0;
+    for(Cell* cell : group.siblings) {
+      cell_area += cell->area();
+    }
+    group.util = static_cast<double>(cell_area) / area;
+  }
+}
+
 void Opendp::group_pixel_assign2() {
   for(int i = 0; i < rows_.size(); i++) {
     Row* row = &rows_[i];
@@ -139,7 +159,6 @@ void Opendp::group_pixel_assign() {
         }
       }
     }
-    int64_t site_count = 0;
     for(adsRect& rect : group.regions) {
       int row_start = divCeil(rect.yMin(), row_height_);
       int row_end = divFloor(rect.yMax(), row_height_);
@@ -155,7 +174,6 @@ void Opendp::group_pixel_assign() {
             grid_[k][l].group_ = &group;
 	    grid_[k][l].is_valid = true;
             grid_[k][l].util = 1.0;
- 	    site_count++;
 	  }
           else if(grid_[k][l].util > 0 && grid_[k][l].util < 1) {
 #ifdef ODP_DEBUG
@@ -169,14 +187,6 @@ void Opendp::group_pixel_assign() {
         }
       }
     }
-    
-    // Set group utilization
-    int64_t area = site_count * site_width_ * row_height_;
-    int64_t cell_area = 0;
-    for(Cell* cell : group.siblings) {
-      cell_area += cell->area();
-    }
-    group.util = static_cast<double>(cell_area) / area;
   }
 }
 

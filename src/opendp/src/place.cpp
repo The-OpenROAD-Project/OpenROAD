@@ -236,33 +236,33 @@ void
 Opendp::rectDist(Cell *cell,
 		 adsRect *rect,
 		 // Return values.
-		 int x_tar,
-		 int y_tar)
+		 int x,
+		 int y)
 {
-  x_tar = 0;
-  y_tar = 0;
+  x = 0;
+  y = 0;
   int init_x, init_y;
   initLocation(cell, init_x, init_y);
   if(init_x > (rect->xMin() + rect->xMax()) / 2)
-    x_tar = rect->xMax();
+    x = rect->xMax();
   else
-    x_tar = rect->xMin();
+    x = rect->xMin();
   if(init_y > (rect->yMin() + rect->yMax()) / 2)
-    y_tar = rect->yMax();
+    y = rect->yMax();
   else
-    y_tar = rect->yMin();
+    y = rect->yMin();
 }
 
 int
 Opendp::rectDist(Cell *cell,
 		 adsRect *rect)
 {
-  int x_tar, y_tar;
+  int x, y;
   rectDist(cell, rect,
-	   x_tar, y_tar);
+	   x, y);
   int init_x, init_y;
   initLocation(cell, init_x, init_y);
-  return abs(init_x - x_tar) + abs(init_y - y_tar);
+  return abs(init_x - x) + abs(init_y - y);
 }
 
 // place toward group edges
@@ -276,10 +276,10 @@ void Opendp::brick_placement1(Group* group) {
        });
 			       
   for(Cell* cell : sort_by_dist) {
-    int x_tar, y_tar;
+    int x, y;
     rectDist(cell, boundary);
 
-    bool valid = map_move(cell, x_tar, y_tar);
+    bool valid = map_move(cell, x, y);
     if(!valid) {
       cout << "Warning: cannot place single ( brick place 1 ) "
            << cell->name() << endl;
@@ -291,19 +291,17 @@ void Opendp::brick_placement1(Group* group) {
 void Opendp::brick_placement2(Group* group) {
   vector< Cell* > sort_by_dist(group->siblings);
 
-  // use group region
-  adsRect region = this->region(group->siblings[0]);
   sort(sort_by_dist.begin(), sort_by_dist.end(),
        [&](Cell* cell1, Cell* cell2) {
-         return rectDist(cell1, &region) < rectDist(cell2, &region);
+         return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
        });
 
   for(Cell* cell : sort_by_dist) {
     if(!cell->hold_) {
-      int x_tar, y_tar;
-      rectDist(cell, &region,
-	       x_tar, y_tar);
-      bool valid = map_move(cell, x_tar, y_tar);
+      int x, y;
+      rectDist(cell, cell->region_,
+	       x, y);
+      bool valid = map_move(cell, x, y);
       if(!valid) {
 	cout << "Warning: cannot place single ( brick place 2 ) "
 	     << cell->name() << endl;

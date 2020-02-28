@@ -88,6 +88,7 @@ struct Cell {
   bool is_placed_;
   bool hold_;
   Group* group_;
+  adsRect *region_;  // group rect
 };
 
 // Rows covering core.
@@ -207,6 +208,7 @@ class Opendp {
 
   // assign.cpp
   void fixed_cell_assign();
+  void group_cell_region_assign();
   void group_pixel_assign();
   void group_pixel_assign2();
   void erase_pixel(Cell* cell);
@@ -245,7 +247,6 @@ class Opendp {
 		    int &x,
 		    int &y);
   int paddedWidth(Cell *cell);
-  adsRect region(Cell *cell);
   int disp(Cell *cell);
   int coreGridWidth();
   int coreGridHeight();
