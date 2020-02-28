@@ -177,35 +177,6 @@ double Opendp::hpwl(bool initial) {
   return dbuToMicrons(hpwl);
 }
 
-void Opendp::group_analyze() {
-  for(Group& group : groups_) {
-    double region_area = 0;
-    double avail_region_area = 0;
-
-    for(adsRect& rect : group.regions) {
-      region_area += (rect.xMax() - rect.xMin()) * (rect.yMax() - rect.yMin());
-      avail_region_area += (rect.xMax() - rect.xMin() - rect.xMax() % 200 +
-			    rect.xMin() % 200 - 200) *
-	(rect.yMax() - rect.yMin() - rect.yMax() % 2000 +
-	 rect.yMin() % 2000 - 2000);
-    }
-
-    double cell_area = 0;
-    for(Cell* cell : group.siblings)
-      cell_area += cell->area();
-
-    cout << " GROUP : " << group.name << endl;
-    cout << " region count : " << group.regions.size() << endl;
-    cout << " cell count : " << group.siblings.size() << endl;
-    cout << " region area : " << region_area << endl;
-    cout << " avail region area : " << avail_region_area << endl;
-    cout << " cell area : " << cell_area << endl;
-    cout << " utilization : " << cell_area / region_area << endl;
-    cout << " avail util : " << cell_area / avail_region_area << endl;
-    cout << " - - - - - - - - - - - - - - - - - - - - " << endl;
-  }
-}
-
 pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
                                                         adsRect* rect) {
   int x, y;

@@ -172,7 +172,6 @@ class Opendp {
   // utility.cpp
   void power_mapping();
   void simplePlacement(bool verbose);
-  void group_analyze();
   std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
                                                        adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
