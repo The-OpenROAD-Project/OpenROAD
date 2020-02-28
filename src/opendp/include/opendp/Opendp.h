@@ -207,7 +207,6 @@ class Opendp {
 
   // assign.cpp
   void fixed_cell_assign();
-  void group_cell_region_assign();
   void group_pixel_assign();
   void group_pixel_assign2();
   void erase_pixel(Cell* cell);

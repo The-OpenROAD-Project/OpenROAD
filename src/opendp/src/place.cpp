@@ -67,13 +67,8 @@ static bool cellAreaLess(Cell* cell1, Cell* cell2) {
 
 void Opendp::simplePlacement(bool verbose) {
   if(!groups_.empty()) {
-    // group_cell -> region assign
-    group_cell_region_assign();
-    if (verbose)
-      cout << "Notice: group instance region assignment done." << endl;
-
-  // pre placement out border ( Need region assign function previously )
-
+    // nonsense comment alert
+    // pre placement out border ( Need region assign function previously )
     group_cell_pre_placement();
     if (verbose)
       cout << "Notice: group instance pre-placement done." << endl;
