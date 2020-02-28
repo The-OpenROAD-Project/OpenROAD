@@ -190,7 +190,7 @@ class Opendp {
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
   std::vector< Cell* > overlap_cells(Cell* cell);
-  std::vector< Cell* > get_cells_from_boundary(adsRect* rect);
+  std::set< Cell* > get_cells_from_boundary(adsRect* rect);
   int dist_benefit(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
@@ -272,7 +272,6 @@ class Opendp {
   int site_width_;
   int row_site_count_;
   int max_cell_height_;
-  int diamond_search_height_;  // grid units
   int max_displacement_constraint_; // from constraints file
 
   // 2D pixel grid
@@ -291,8 +290,10 @@ class Opendp {
   double design_util_;
 
   // Magic numbers
+  int diamond_search_height_;  // grid units
   static constexpr double group_refine_percent_ = .05;
   static constexpr double non_group_refine_percent_ = .02;
+  static constexpr int rand_seed_ = 777;
 };
 
 int divRound(int dividend, int divisor);

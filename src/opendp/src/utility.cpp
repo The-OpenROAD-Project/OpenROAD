@@ -396,11 +396,7 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
   int grid_x = gridX(x);
   int grid_y = gridY(y);
 
-  int x_start = 0;
-  int x_end = 0;
-  int y_start = 0;
-  int y_end = 0;
-
+  int x_start, x_end, y_start, y_end;
   // Set search boundary max / min
   Group* group = cell->group_;
   if(group) {
@@ -507,11 +503,13 @@ bool Opendp::shift_move(Cell* cell) {
   initLocation(cell, x, y);
   // set region boundary
   adsRect rect;
-  rect.reset(max(core_.xMin(), x - paddedWidth(cell) * 3),
-	     max(core_.yMin(), y - cell->height_ * 3),
-	     min(core_.xMax(), x + paddedWidth(cell) * 3),
-	     min(core_.yMax(), y + cell->height_ * 3));
-  vector< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
+  // magic number alert
+  int boundary_margin = 3;
+  rect.reset(max(core_.xMin(), x - paddedWidth(cell) * boundary_margin),
+	     max(core_.yMin(), y - cell->height_ * boundary_margin),
+	     min(core_.xMax(), x + paddedWidth(cell) * boundary_margin),
+	     min(core_.yMax(), y + cell->height_ * boundary_margin));
+  set< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
 
   // erase region cells
   for(Cell* around_cell : overlap_region_cells) {
@@ -533,10 +531,6 @@ bool Opendp::shift_move(Cell* cell) {
       int x, y;
       initLocation(around_cell, x, y);
       if(!map_move(around_cell, x, y)) {
-#ifdef ODP_DEBUG
-        cout << "shift move failure for cell "
-	     << around_cell->name() << "(" << x << ", " << y << ")" << endl;
-#endif
         return false;
       }
     }
@@ -587,8 +581,8 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
 }
 
 // rect should be position
-vector< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
-  // inside
+set< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
+  // rect inside core
   assert(rect->xMin() >= core_.xMin());
   assert(rect->yMin() >= core_.yMin());
   assert(rect->xMax() <= core_.xMax());
@@ -599,20 +593,16 @@ vector< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
   int x_end = divRound(rect->xMax(), site_width_);
   int y_end = divRound(rect->yMax(), row_height_);
 
-  vector< Cell* > list;
-  set< Cell* > in_list;
+  set< Cell* > cells;
   for(int i = y_start; i < y_end; i++) {
     for(int j = x_start; j < x_end; j++) {
-      Cell *pos_cell = grid_[i][j].cell;
-      if(pos_cell
-	 && !isFixed(pos_cell)
-	 && in_list.find(pos_cell) != in_list.end()) {
-	list.push_back(pos_cell);
-	in_list.insert(pos_cell);
+      Cell *cell = grid_[i][j].cell;
+      if(cell && !isFixed(cell)) {
+	cells.insert(cell);
       }
     }
   }
-  return list;
+  return cells;
 }
 
 int Opendp::dist_benefit(Cell* cell, int x, int y) {

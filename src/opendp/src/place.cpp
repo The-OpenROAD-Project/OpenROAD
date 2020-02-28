@@ -329,8 +329,7 @@ int Opendp::group_refine(Group* group) {
 }
 
 int Opendp::group_annealing(Group* group) {
-  // magic number alert
-  srand(777);
+  srand(rand_seed_);
   int count = 0;
 
   // magic number alert
@@ -346,8 +345,7 @@ int Opendp::group_annealing(Group* group) {
 }
 
 int Opendp::non_group_annealing() {
-  // magic number alert
-  srand(777);
+  srand(rand_seed_);
   int count = 0;
   // magic number alert
   for(int i = 0; i < 100 * cells_.size(); i++) {
