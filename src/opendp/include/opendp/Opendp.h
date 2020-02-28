@@ -119,7 +119,6 @@ struct Group {
   std::string name;
   std::vector< adsRect > regions;
   std::vector< Cell* > siblings;
-  std::vector< Pixel* > pixels;
   adsRect boundary;
   double util;
 };
