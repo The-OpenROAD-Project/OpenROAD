@@ -266,8 +266,6 @@ class Opendp {
 
   std::map< dbMaster*, Macro > db_master_map_;
   std::map< dbInst*, Cell* > db_inst_map_;
-  /* spacing between edges  1 to 1 , 1 to 2, 2 to 2 */
-  std::map< std::pair< int, int >, double > edge_spacing_;
 
   adsRect core_;
   power initial_power_;
