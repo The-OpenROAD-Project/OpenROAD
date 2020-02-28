@@ -87,19 +87,7 @@ struct Cell {
   int width_, height_;		// DBU
   bool is_placed_;
   bool hold_;
-  adsRect *region_;  // group rect
   Group* group_;
-};
-
-struct Pixel {
-  int grid_x_;
-  int grid_y_;
-  Group* group_;
-  Cell* cell;
-  double util;
-  bool is_valid;  // false for dummy place
-
-  Pixel();
 };
 
 // Rows covering core.
@@ -121,6 +109,17 @@ struct Group {
   std::vector< Cell* > siblings;
   adsRect boundary;
   double util;
+};
+
+struct Pixel {
+  int grid_x_;
+  int grid_y_;
+  Group* group_;
+  Cell* cell;
+  double util;
+  bool is_valid;  // false for dummy cells
+
+  Pixel();
 };
 
 ////////////////////////////////////////////////////////////////
@@ -247,6 +246,7 @@ class Opendp {
 		    int &x,
 		    int &y);
   int paddedWidth(Cell *cell);
+  adsRect region(Cell *cell);
   int disp(Cell *cell);
   int coreGridWidth();
   int coreGridHeight();

@@ -402,8 +402,8 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
   int y_end = 0;
 
   // Set search boundary max / min
-  if(cell->inGroup()) {
-    Group* group = cell->group_;
+  Group* group = cell->group_;
+  if(group) {
     x_start = max(grid_x - diamond_search_height_ * 5,
                   group->boundary.xMin() / site_width_);
     x_end = min(grid_x + diamond_search_height_ * 5,

@@ -103,19 +103,6 @@ void Opendp::group_cell_region_assign() {
     int64_t cell_area = 0;
     for(Cell* cell : group.siblings) {
       cell_area += cell->area();
-      int dist = numeric_limits<int>::max();
-      adsRect* region_backup = nullptr;
-      for(adsRect &rect : group.regions) {
-        if(check_inside(cell, &rect)) cell->region_ = &rect;
-        int temp_dist = dist_for_rect(cell, &rect);
-        if(temp_dist < dist) {
-          dist = temp_dist;
-          region_backup = &rect;
-        }
-      }
-      if(cell->region_ == nullptr) {
-        cell->region_ = region_backup;
-      }
     }
     group.util = static_cast<double>(cell_area) / area;
   }

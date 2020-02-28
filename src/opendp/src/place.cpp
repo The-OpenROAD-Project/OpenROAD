@@ -222,8 +222,7 @@ void Opendp::group_cell_placement() {
 
     if(!single_pass || !multi_pass) {
       // Erase group cells
-      for(int j = 0; j < group.siblings.size(); j++) {
-        Cell* cell = group.siblings[j];
+      for(Cell* cell : group.siblings) {
         erase_pixel(cell);
       }
 
@@ -297,16 +296,17 @@ void Opendp::brick_placement1(Group* group) {
 void Opendp::brick_placement2(Group* group) {
   vector< Cell* > sort_by_dist(group->siblings);
 
+  // use group region
+  adsRect region = this->region(group->siblings[0]);
   sort(sort_by_dist.begin(), sort_by_dist.end(),
        [&](Cell* cell1, Cell* cell2) {
-         return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
+         return rectDist(cell1, &region) < rectDist(cell2, &region);
        });
 
   for(Cell* cell : sort_by_dist) {
     if(!cell->hold_) {
-      adsRect *region = cell->region_;
       int x_tar, y_tar;
-      rectDist(cell, region,
+      rectDist(cell, &region,
 	       x_tar, y_tar);
       bool valid = map_move(cell, x_tar, y_tar);
       if(!valid) {
@@ -356,6 +356,7 @@ int Opendp::non_group_annealing() {
   // magic number alert
   srand(777);
   int count = 0;
+  // magic number alert
   for(int i = 0; i < 100 * cells_.size(); i++) {
     Cell* cell1 = &cells_[rand() % cells_.size()];
     Cell* cell2 = &cells_[rand() % cells_.size()];

@@ -71,7 +71,6 @@ using odb::dbPlacementStatus;
 
 Cell::Cell()
   : hold_(false),
-    region_(nullptr),
     group_(nullptr) {}
 
 const char *Cell::name() {
@@ -363,6 +362,20 @@ int Opendp::disp(Cell *cell) {
   initLocation(cell, init_x, init_y);
   return abs(init_x - cell->x_) +
          abs(init_y - cell->y_);
+}
+
+adsRect
+Opendp::region(Cell *cell) {
+  odb::dbRegion* db_region = cell->db_inst_->getRegion();
+  odb::dbRegion* parent = db_region->getParent();
+  auto boundaries = parent->getBoundaries();
+  odb::dbBox *boundary = *boundaries.begin();
+  adsRect box;
+  boundary->getBox(box);
+  box = box.intersect(core_);
+  // offset region to core origin
+  box.moveDelta(-core_.xMin(), -core_.yMin());
+  return box;
 }
 
 int Opendp::gridWidth() {
