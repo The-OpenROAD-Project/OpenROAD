@@ -28,6 +28,7 @@ set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
+set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -210,6 +211,7 @@ add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
+add_subdirectory(PDNSim)
 
 ################################################################
 
@@ -238,6 +240,7 @@ target_include_directories(openroad
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
+  ${PDNSIM_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
   )
@@ -261,6 +264,7 @@ target_link_libraries(openroad
   TritonMacroPlace
   ParquetFP
   ABKCommon
+  pdnsim
   zlib
   tm
   defin
