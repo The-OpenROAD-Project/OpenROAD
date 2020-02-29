@@ -36,8 +36,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef OPENDP_H
-#define OPENDP_H
+#pragma once
 
 #include <cstdlib>
 #include <cstring>
@@ -292,5 +291,3 @@ int divCeil(int dividend, int divisor);
 int divFloor(int dividend, int divisor);
 
 }  // namespace opendp
-
-#endif
