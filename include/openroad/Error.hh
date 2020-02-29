@@ -22,20 +22,18 @@ namespace ord {
 
 using std::string;
 
-extern bool exit_on_error;
-
 class Exception : public std::exception
 {
 public:
-  Exception(const char *what);
+  Exception(string what);
   virtual ~Exception() {}
-  virtual const char *what() const noexcept { return what_; }
+  virtual const char *what() const noexcept { return what_.c_str(); }
 
 private:
-  const char *what_;
+  string what_;
 };
 
 void
-error(const char *what);
+error(string what);
 
 } // namespace

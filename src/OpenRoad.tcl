@@ -114,19 +114,6 @@ proc write_db { args } {
 
 namespace eval ord {
 
-set ::exit_on_error 0
-
-trace variable ::exit_on_error "rw" \
-  ord::trace_exit_on_error
-
-# Sync with c++ variable.
-proc trace_exit_on_error { name1 name2 op } {
-  sta::trace_boolean_var $op ::exit_on_error \
-    ord::get_exit_on_error ord::set_exit_on_error
-}
-
-set ::file_continue_on_error 0
-
 trace variable ::file_continue_on_error "w" \
   ord::trace_file_continue_on_error
 
@@ -136,14 +123,7 @@ proc trace_file_continue_on_error { name1 name2 op } {
 }
 
 proc error { what } {
-  global exit_on_error
-
-  if { $exit_on_error } {
-    puts stderr "Error: $what"
-    exit 1
-  } else {
-    ::error "Error: $what"
-  }
+  ::error "Error: $what"
 }
 
 proc ensure_units_initialized { } {

@@ -278,26 +278,14 @@ set_cmd_sta(sta::Sta *sta)
   sta::Sta::setSta(sta);
 }
 
-bool
-get_exit_on_error()
-{
-  return ord::exit_on_error;
-}
-
-void
-set_exit_on_error(bool value)
-{
-  ord::exit_on_error = value;
-}
-
-// Used by error1.tcl test
+// Used by test/error1.tcl
 void
 test_error1()
 {
   ord::error("this is only a test.");
 }
 
-void
+bool
 units_initialized()
 {
   OpenRoad *openroad = getOpenRoad();

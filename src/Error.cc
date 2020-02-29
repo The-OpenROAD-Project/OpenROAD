@@ -17,23 +17,17 @@
 
 namespace ord {
 
-bool exit_on_error = false;
-
-Exception::Exception(const char *what) :
+Exception::Exception(string what) :
   std::exception(),
   what_(what)
 {
 }
 
 void
-error(const char *what)
+error(string what)
 {
-  if (exit_on_error) {
-    std::cerr << "Error: " << what;
-    exit(1);
-  }
-  else
-    throw Exception(what);
+  // Exception should be caught by swig error handler.
+  throw Exception(what);
 }
 
 } // namespace

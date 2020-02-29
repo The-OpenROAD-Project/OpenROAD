@@ -23,10 +23,6 @@
   try { $function }
   // This catches ord::Error, sta::StaException and std errors.
   catch (std::exception &excp) {
-    if (ord::exit_on_error) {
-      std::cerr << "Error: " << excp.what() << std::endl;
-      exit(1);
-    }
     Tcl_AppendResult(interp, "Error: ", const_cast<char*>(excp.what()), NULL);
     return TCL_ERROR;
   }
