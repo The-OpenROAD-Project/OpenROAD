@@ -29,7 +29,7 @@ make
 OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
 
 The default build type is RELEASE to compile optimized code.
-The resulting executable is in `build/resizer`.
+The resulting executable is in `build/src/openroad`.
 
 Optional CMake variables passed as -D<var>=<value> arguments to CMake are show below.
 
