@@ -24,12 +24,14 @@
 #include "PortDirection.hh"
 #include "opendb/db.h"
 #include "opendb/dbTransform.h"
+#include "openroad/OpenRoad.hh"
 #include "init_fp/InitFloorplan.hh"
 
 namespace ord {
 
 using std::string;
 using std::abs;
+using std::round;
 
 using sta::Vector;
 using sta::Report;
@@ -37,6 +39,7 @@ using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
 using sta::FileNotReadable;
+using sta::stringPrint;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -356,12 +359,12 @@ InitFloorplan::makeTracks(const char *tracks_file,
       case 'X':
 	width = die_area.dx();
 	track_count = (width - offset) / pitch;
-	grid->addGridPatternX(offset, track_count, pitch);
+	grid->addGridPatternX(die_area.xMin() + offset, track_count, pitch);
 	break;
       case 'Y':
 	width = die_area.dy();
 	track_count = (width - offset) / pitch;
-	grid->addGridPatternY(offset, track_count, pitch);
+	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
 	break;
       default:
 	internalError("unknown track direction\n");
@@ -392,8 +395,8 @@ InitFloorplan::readTracks(const char *tracks_file)
 	  else if (stringEqual(dir_str.c_str(), "Y"))
 	    dir = 'Y';
 	  else
-	    report_->warn("Warning: track file line %d direction must be X or Y'.\n",
-			  line_count);
+	    report_->error("track file line %d direction must be X or Y'.\n",
+			   line_count);
 	  // microns -> meters
 	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
 	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
@@ -483,37 +486,6 @@ autoPlacePins(const char *pin_layer_name,
   init_fp.autoPlacePins(pin_layer_name, db, report);
 }
 
-adsRect
-getCoreArea(dbBlock *block)
-{
-  adsRect core;
-  auto rows = block->getRows();
-  if (rows.size() > 0) {
-    core.mergeInit();
-    adsRect row_bbox;
-    dbRow *row;
-    uint seq = rows.sequential();
-    if (seq) {
-      row = *rows.begin();
-      row->getBBox(row_bbox);
-      core.merge(row_bbox);
-
-      row = dbRow::getRow(block, seq);
-      row->getBBox(row_bbox);
-      core.merge(row_bbox);
-    }
-    else {
-      for (dbRow *row : rows) {
-	row->getBBox(row_bbox);
-	core.merge(row_bbox);
-      }
-    }
-  }
-  else
-    block->getDieArea(core);
-  return core;
-}
-
 void
 InitFloorplan::autoPlacePins(const char *pin_layer_name,
 			     dbDatabase *db,
@@ -528,7 +500,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
       dbTech *tech = db_->getTech();
       dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
       if (pin_layer) {
-	adsRect core = getCoreArea(block_);
+	adsRect core = ord::getCore(block_);
 	autoPlacePins(pin_layer, core);
       }
       else

@@ -55,4 +55,12 @@ legalize_placement(bool verbose)
   opendp->legalizePlacement(verbose);
 }
 
+void
+set_padding_global(int left,
+		   int right)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPaddingGlobal(left, right);
+}
+
 %} // inline

@@ -487,6 +487,45 @@ proc save_ok { test } {
 
 ################################################################
 
+proc save_defok_main {} {
+  global argv
+  if { $argv == "help" || $argv == "-help" } {
+    puts {Usage: save_defok [failures] test1 [test2]...}
+  } elseif { $argv == "failures" } {
+    global failure_file
+    if [file exists $failure_file] {
+      set fail_ch [open $failure_file "r"]
+      while { ! [eof $fail_ch] } {
+	set test [gets $fail_ch]
+	if { $test != "" } {
+	  save_defok $test
+	}
+      }
+      close $fail_ch
+    }
+  } else {
+    foreach test $argv {
+      save_defok $test
+    }
+  }
+}
+
+proc save_defok { test } {
+  if { [lsearch [group_tests "all"] $test] == -1 } {
+    puts "Error: test $test not found."
+  } else {
+    set defok_file [test_defok_file $test]
+    set def_file [test_def_result_file $test]
+    if { ! [file exists $def_file] } {
+      puts "Error: def file $def_file not found."
+    } else {
+      file copy -force $def_file $defok_file
+    }
+  }
+}
+
+################################################################
+
 proc test_cmd_dir { test } {
   global cmd_dirs
   
@@ -506,9 +545,19 @@ proc test_ok_file { test } {
   return [file join $test_dir "$test.ok"]
 }
 
+proc test_defok_file { test } {
+  global test_dir
+  return [file join $test_dir "$test.defok"]
+}
+
 proc test_log_file { test } {
   global result_dir
   return [file join $result_dir "$test.log"]
+}
+
+proc test_def_result_file { test } {
+  global result_dir
+  return [file join $result_dir "$test.def"]
 }
 
 proc test_tmp_file { test } {

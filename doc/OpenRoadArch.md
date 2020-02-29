@@ -150,6 +150,9 @@ The regression script should return an exit code of zero if there are
 no errors and 1 if there are errors.  The script should **not** print
 thousands of lines of internal tool info.
 
+Regression scripts should pass the `no_init` option to openroad so that a
+user's init file is not sourced before the tests runs.
+
 ### Builds
 
 Checking out the OpenROAD repo with --recursive installs all of the
@@ -167,7 +170,7 @@ make
 All tools build using cmake and must have a CMakeLists.txt file in
 their tool directory.
 
-This builds the 'openroad' executable in /build.
+This builds the `openroad` executable in `/build`.
 
 Note that removing submodules from a repo when moving it into OpenROAD
 is less than obvious.  Here are the steps:
@@ -179,6 +182,8 @@ git commit-m "Removed submodule "
 rm -rf .git/modules/<path_to_submodule>
 ```
 
+Tools should compile with no compile warnings in gcc or clang with -Wall.
+
 ### Tool Work Flow
 
 To work on one of the tools inside OpenROAD when it is a submodule
@@ -186,7 +191,9 @@ requires updating the OpenROAD repo to integrate your changes.
 Submodules point to a specific version (hash) of the submodule repo
 and do not automatically track changes to the submodule repo.
 
-Work on OpenROAD should be done in the `openroad` branch.
+Work on OpenROAD should be done in the `openroad` branch.  Stable
+commits on the `openroad` branch are periodically pushed to the
+`master` branch for public consumption.
 
 To make changes to a submodule, first check out a branch of the submodule
 (git clone --recursive does not check out a branch, just a specific commit).

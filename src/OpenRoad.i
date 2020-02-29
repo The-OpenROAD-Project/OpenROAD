@@ -173,8 +173,8 @@ read_def_cmd(const char *filename, bool order_wires)
 }
 
 void
-  write_def_cmd(const char *filename,
-		const char *version)
+write_def_cmd(const char *filename,
+	      const char *version)
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeDef(filename, version);
@@ -242,6 +242,13 @@ db_has_tech()
   return getDb()->getTech() != nullptr;
 }
 
+odb::adsRect
+get_db_core()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getCore();
+}
+
 double
 dbu_to_microns(int dbu)
 {
@@ -288,6 +295,13 @@ void
 test_error1()
 {
   ord::error("this is only a test.");
+}
+
+void
+units_initialized()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->unitsInitialized();
 }
 
 %} // inline

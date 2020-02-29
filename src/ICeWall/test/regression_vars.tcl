@@ -118,6 +118,7 @@ proc list_delete { list delete } {
 
 # Record tests in /test
 record_tests {
+soc_bsg_black_parrot_nangate45
 }
 #  gcd_flow1
 

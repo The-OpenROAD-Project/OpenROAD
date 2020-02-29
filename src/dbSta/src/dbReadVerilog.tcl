@@ -17,7 +17,7 @@
 sta::define_cmd_args "read_verilog" {filename}
 
 proc read_verilog { filename } {
-  ord::read_verilog_cmd $filename
+  ord::read_verilog_cmd [file nativename $filename]
 }
 
 sta::define_cmd_args "link_design" {[top_cell_name]}
@@ -46,6 +46,6 @@ proc write_verilog { args } {
 
   set sort [info exists flags(-sort)]
   sta::check_argc_eq1 "write_verilog" $args
-  set filename $args
+  set filename [file nativename $args]
   ord::write_verilog_cmd $filename $sort
 }

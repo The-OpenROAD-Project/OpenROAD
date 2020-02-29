@@ -28,6 +28,8 @@ proc initialize_floorplan { args } {
 	    -die_area -core_area -site -tracks} \
     flags {}
 
+  ord::ensure_units_initialized
+
   set site_name ""
   if [info exists keys(-site)] {
     set site_name $keys(-site)

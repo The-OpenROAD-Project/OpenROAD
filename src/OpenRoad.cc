@@ -25,6 +25,7 @@
 #include "db_sta/MakeDbSta.hh"
 
 #include "db_sta/dbReadVerilog.hh"
+#include "db_sta/dbNetwork.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
@@ -54,6 +55,9 @@ namespace ord {
 
 using odb::dbLib;
 using odb::dbDatabase;
+using odb::dbBlock;
+using odb::adsRect;
+
 using sta::evalTclInit;
 using sta::dbSta;
 using sta::Resizer;
@@ -245,6 +249,40 @@ OpenRoad::writeVerilog(const char *filename,
 		       bool sort)
 {
   sta::writeVerilog(filename, sort, sta_->network());
+}
+
+bool
+OpenRoad::unitsInitialized()
+{
+  // Units are set by the first liberty library read.
+  return getDbNetwork()->defaultLibertyLibrary() != nullptr;
+}
+
+odb::adsRect
+OpenRoad::getCore()
+{
+  return ord::getCore(db_->getChip()->getBlock());
+}
+
+adsRect
+getCore(dbBlock *block)
+{
+  odb::adsRect core;
+  auto rows = block->getRows();
+  if (rows.size() > 0) {
+    core.mergeInit();
+    for(auto db_row : block->getRows()) {
+      int orig_x, orig_y;
+      db_row->getOrigin(orig_x, orig_y);
+      odb::adsRect row_bbox;
+      db_row->getBBox(row_bbox);
+      core.merge(row_bbox);
+    }
+  }
+  else
+    // Default to die area if there aren't any rows.
+    block->getDieArea(core);
+  return core;
 }
 
 } // namespace
