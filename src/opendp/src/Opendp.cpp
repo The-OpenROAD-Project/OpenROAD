@@ -436,14 +436,6 @@ int Opendp::gridEndY(Cell *cell) {
   return divCeil(cell->y_ + row_height_, row_height_);
 }
 
-int Opendp::coreGridWidth() {
-  return divRound(core_.dx(), site_width_);
-}
-
-int Opendp::coreGridHeight() {
-  return divRound(core_.dy(), row_height_);
-}
-
 int Opendp::coreGridMaxX() {
   return divRound(core_.xMax(), site_width_);
 }

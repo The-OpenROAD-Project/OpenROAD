@@ -77,29 +77,18 @@ void Opendp::dbToOpendp() {
 
   // LEF
   for(auto db_lib : db_->getLibs())
-    make_macros(db_lib);
+    makeMacros(db_lib);
 
   block_ = db_->getChip()->getBlock();
   core_ = ord::getCore(block_);
 
-  auto db_rows = block_->getRows();
-  if (db_rows.size() > 0) {
-    dbRow *db_row = *db_rows.begin();
-    dbSite *site = db_row->getSite();
-    row_height_ = site->getHeight();
-    site_width_ = site->getWidth();
-  }
-  else
-    error("no ROWs found.\n");
-
-  // make rows in core area.
-  make_core_rows();
-  make_cells();
+  examineRows();
+  makeCells();
   makeGroups();
-  findInitialPower();
+  findRowPower();
 }
 
-void Opendp::make_macros(dbLib *db_lib) {
+void Opendp::makeMacros(dbLib *db_lib) {
   auto db_masters = db_lib->getMasters();
   for(auto db_master : db_masters) {
     struct Macro &macro = db_master_map_[db_master];
@@ -135,22 +124,27 @@ int Opendp::find_ymax(dbMTerm *mterm) {
   return ymax;
 }
 
-// Generate new rows to fill core area.
-void Opendp::make_core_rows() {
-  row_site_count_ = coreGridWidth();
-  row_count_ = coreGridHeight();
+void Opendp::examineRows() {
 
-  int bottom_row_y = numeric_limits<int>::max();
-  dbRow *bottom_row = nullptr;
-  for (dbRow *db_row : block_->getRows()) {
-    int row_x, row_y;
-    db_row->getOrigin(row_x, row_y);
-    if (row_y < bottom_row_y) {
-      bottom_row_y = row_y;
-      bottom_row = db_row;
+  auto rows = block_->getRows();
+  if (!rows.empty()) {
+    int bottom_row_y = numeric_limits<int>::max();
+    dbRow *bottom_row = nullptr;
+    for (dbRow *db_row : rows) {
+      dbSite *site = db_row->getSite();
+      row_height_ = site->getHeight();
+      site_width_ = site->getWidth();
+
+      int row_x, row_y;
+      db_row->getOrigin(row_x, row_y);
+      if (row_y < bottom_row_y) {
+	bottom_row_y = row_y;
+	bottom_row = db_row;
+      }
     }
-  }
-  if (bottom_row) {
+    row_site_count_ = divFloor(core_.dx(), site_width_);
+    row_count_ = divFloor(core_.dy(), row_height_);
+
     dbOrientType orient = bottom_row->getOrient();
     row0_orient_is_r0_ = (bottom_row->getOrient() == dbOrientType::R0);
   }
@@ -158,7 +152,7 @@ void Opendp::make_core_rows() {
     error("no rows found.");
 }
 
-void Opendp::make_cells() {
+void Opendp::makeCells() {
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
@@ -239,7 +233,7 @@ void Opendp::makeGroups() {
   }
 }
 
-void Opendp::findInitialPower() {
+void Opendp::findRowPower() {
   const char *power_net_name = "VDD";
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;

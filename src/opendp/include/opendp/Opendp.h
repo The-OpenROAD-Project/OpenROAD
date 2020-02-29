@@ -137,11 +137,11 @@ class Opendp {
 
  private:
   void dbToOpendp();
-  void make_macros(dbLib* db_lib);
-  void make_core_rows();
-  void make_cells();
+  void makeMacros(dbLib* db_lib);
+  void examineRows();
+  void makeCells();
   void makeGroups();
-  void findInitialPower();
+  void findRowPower();
   double dbuToMicrons(int64_t dbu);
   bool isFixed(Cell* cell);  // fixed cell or not
   bool isMultiRow(Cell* cell);
@@ -239,8 +239,6 @@ class Opendp {
 		    int &y);
   int paddedWidth(Cell *cell);
   int disp(Cell *cell);
-  int coreGridWidth();
-  int coreGridHeight();
   int coreGridMaxX();
   int coreGridMaxY();
   void error(const char *what);
