@@ -21,6 +21,7 @@ src/ - sources and private headers
 src/CMakelists.txt
 include/<toolname>/ - exported headers
 test/
+test/regression
 ```
 
 OpenROAD repository
@@ -34,22 +35,18 @@ src/OpenROAD.tcl - basic read/write lef/def/db commands
 src/OpenROAD.hh - OpenROAD top level class, has instances of tools
 ```
 
-Tools that are part of the OpenROAD repo because they are not a lot of code
-or terribly useful without the rest of OpenROAD.
-```
-src/dbReadVerilog.* - Verilog reader/flattener
-src/InitFloorplan.* - Initialize floorplan
-src/dbSta/ - OpenSTA on OpenDB.
-src/resizer/ - gate resizer
-```
-
-Submodule repos (note these are NOT in src/module)
+Submodule repos in /src (note these are NOT in src/module)
 
 ```
-src/OpenDB
-src/OpenSTA
-src/replace
-src/flute3
+OpenDB
+OpenSTA
+replace
+ioPlacer
+FastRoute
+TritonMacroPlace
+OpenRCX
+flute3
+eigen
 ```
 
 Submodules that are shared by multiple tools are owned by OpenROAD
@@ -57,6 +54,8 @@ so that there are not redundant source trees and compiles.
 
 Each tool submodule cmake file builds a library that is linked by the
 OpenROAD application. The tools should not define a `main()` function.
+If the tool is tcl only and has no c++ code it does not need to have
+a cmake file.
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files.  These functions are all provided by the OpenROAD
@@ -82,7 +81,7 @@ have an implicit argument of the current OpenROAD class
 object. Functions to get individual tools from the OpenROAD object can
 be defined.
 
-### Initialization
+### Initialization (c++ tools only)
 
 The OpenRoad class only has pointers to each tools with functions to
 get each tool.  Each tool has (at a minimum) a function to make an
@@ -121,78 +120,55 @@ that is evaluated at run time (See Resizer::init()).
 ### Test
 
 Each "tool" has a /test directory containing a script nameed
-"regression" to run "unit" tests. With no arguments it should
-run default unit tests.
+"regression" to run "unit" tests. With no arguments it should run
+default unit tests.
 
-No databases should be in tests. Read lef/def/verilog to make a database.
+No database files should be in tests. Read LEF/DEF/Verilog to make a
+database.
 
-The regression script should not depend on the current working directory.
-It should be able to be run from any directory. Use filenames relative
-to the script name rather the the current working directory.
+The regression script should not depend on the current working
+directory.  It should be able to be run from any directory. Use
+filenames relative to the script name rather the the current working
+directory.
 
 Regression scripts should print a consise summary of test failures.
-They should **not** print thousands of lines of internal tool info.
+The regression script should return an exit code of zero if there are
+no errors and 1 if there are errors.  The script should **not** print
+thousands of lines of internal tool info.
 
-### Issues
-
-Using Tcl wrappers for commands does not work in python without
-rewritting them.  The only way to make both work is to build command
-support (see OpenSTA/tcl/Util.tcl) in c++ and make exported swig
-commands use it. OpenSTA has quite a bit of Tcl that would have to be
-rewritten as c++. In the short term, the python version may be
-hobbled.
-
-Reporting (printing) standard. printf does not work in c++ code with
-Tcl because the buffers are not flushed and the output of one can be
-delayed. printf also does not support logging or redirection. OpenDB
-and OpenSTA have separate solutions to this issue. We have to pick
-a comment solution. I have not studied the OpenDB code.
+Regression scripts should pass the `no_init` option to openroad so that a
+user's init file is not sourced before the tests runs.
 
 ### Builds
 
 Checking out the OpenROAD repo with --recursive installs all of the
 OpenRoad tools and their submodules.
 
-  git clone --recusive https://github.com/The-OpenROAD-Project/OpenROAD.git
-  cd OpenROAD
-  mkdir build
-  cd build
-  cmake ..
-  make
-  
-All tools build using cmake and must have a CMakeLists.txt file in their
-directory.
-
-This builds the 'openroad' executable.
-
-A stand-alone executable for one tool can be built by making a branch
-specific to that tool. For example, there is a branch named "sta_only"
-that builds the openroad executable that only includes OpenSTA running
-on OpenDB. The "sta_only" tool is checked out and built exactly as
-OpenRoad is built by specifying a branch during the git clone as show
-below.
-
 ```
-git clone --recursive --branch sta_only https://github.com/The-OpenROAD-Project/OpenROAD.git
+git clone --recusive https://github.com/The-OpenROAD-Project/OpenROAD.git
+cd OpenROAD
+mkdir build
+cd build
+cmake ..
+make
 ```
 
-In this example, the Resizer and its dependent submodule flute3 are
-not installed in the source tree and are not compiled during builds.
-It can be used to run unit tests that reside inside the tool
-directory.
+All tools build using cmake and must have a CMakeLists.txt file in
+their tool directory.
 
-Currently this is supported by editing Resizer related calls in the
-OpenROAD sources. Changes to the develop branch are merged into the
-tool only branch to follow them, keeping only the edits necessary to
-remove other tools.
+This builds the `openroad` executable in `/build`.
 
 Note that removing submodules from a repo when moving it into OpenROAD
 is less than obvious.  Here are the steps:
 
+```
 git submodule deinit <path_to_submodule>
 git rm <path_to_submodule>
 git commit-m "Removed submodule "
 rm -rf .git/modules/<path_to_submodule>
+```
+
+Tools should compile with no compile warnings in gcc or clang with -Wall.
 
 ### Tool Work Flow
 
@@ -201,10 +177,12 @@ requires updating the OpenROAD repo to integrate your changes.
 Submodules point to a specific version (hash) of the submodule repo
 and do not automatically track changes to the submodule repo.
 
-Work on OpenROAD should be done in the `develop` branch.
+Work on OpenROAD should be done in the `openroad` branch.  Stable
+commits on the `openroad` branch are periodically pushed to the
+`master` branch for public consumption.
 
 To make changes to a submodule, first check out a branch of the submodule
-(git clone --recursive does not check out a branch, just a specific hash).
+(git clone --recursive does not check out a branch, just a specific commit).
 
 ```
 cd src/<tool>
@@ -212,8 +190,7 @@ git checkout <branch>
 ```
 
 `<branch>` is the branch used for development of the tool when it is inside
-OpenROAD. Eventually this branch will be `develop` or `master`, but right
-now it may be a branch used just for integrating with OpenROAD, like `openroad`.
+OpenROAD. The convention is for <branch> to be named 'openroad'.
 
 After making changes inside the tool source tree, stage and commit
 them to the tool repo and push them to the remote repo.
@@ -289,8 +266,8 @@ Detailed documentation should be the tool/README.md file.
 
 ### Tool Checklist
 
-OpenROAD submodules reference tool develop branch head
-No openroad, openroad_app, openroad_build branches
+OpenROAD submodules reference tool `openroad` branch head
+No `develop`, `openroad_app`, `openroad_build` branches.
 
 CMakeLists.txt does not use glob.
 https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1

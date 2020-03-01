@@ -92,3 +92,5 @@ then
 fi
 
 sh $testdir/clean_all.sh $testdir
+
+exit 0

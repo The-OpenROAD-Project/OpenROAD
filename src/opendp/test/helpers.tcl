@@ -42,6 +42,8 @@ proc diff_files { file1 file2 } {
   close $stream2
   if { $diff_line } {
     puts "Differences found at line $diff_line."
+    puts "$line1"
+    puts "$line2"
     return 1
   } else {
     puts "No differences found."

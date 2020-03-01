@@ -21,8 +21,6 @@ RUN wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
     yum install -y epel-release-latest-7.noarch.rpm && rm -rf epel-release-latest-7.noarch.rpm  \
     && yum clean -y all
 
-
-
 # Install SWIG
 RUN yum remove -y swig \
     && wget https://github.com/swig/swig/archive/rel-4.0.1.tar.gz \
@@ -33,11 +31,12 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
-# Temporarily add boost till all dependent tools are updated..
+# Install boost
 RUN yum install -y boost-devel && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
+RUN useradd -ms /bin/bash openroad
 
 FROM base-dependencies AS builder
 

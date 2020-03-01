@@ -1,0 +1,50 @@
+VERSION 5.5 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN top ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+
+
+COMPONENTS 5 ;
+- r1 DFF_X1 ;
+- r2 DFF_X1 ;
+- r3 DFF_X1 ;
+- u1 BUF_X1 ;
+- u2 AND2_X1 ;
+END COMPONENTS
+
+PINS 6 ;
+- in1 + NET in1 + DIRECTION INPUT ;
+- in2 + NET in2 + DIRECTION INPUT ;
+- clk1 + NET clk1 + DIRECTION INPUT ;
+- clk2 + NET clk2 + DIRECTION INPUT ;
+- clk3 + NET clk3 + DIRECTION INPUT ;
+- out + NET out + DIRECTION OUTPUT ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 10 ;
+- in1 ( PIN in1 ) ( r1 D ) ;
+- in2 ( PIN in2 ) ( r2 D ) ;
+- clk1 ( PIN clk1 ) ( r1 CK ) ;
+- clk2 ( PIN clk2 ) ( r2 CK ) ;
+- clk3 ( PIN clk3 ) ( r3 CK ) ;
+- r1q ( r1 Q ) ( u2 A1 ) ;
+- r2q ( r2 Q ) ( u1 A ) ;
+- u1z ( u1 Z ) ( u2 A2 ) ;
+- u2z ( u2 ZN ) ( r3 D ) ;
+- out ( r3 Q ) ( PIN out ) ;
+END NETS
+
+END DESIGN

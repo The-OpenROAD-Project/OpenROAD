@@ -32,13 +32,16 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "legalize_placement" {[-constraints constraints_file]\
-					     [-verbose]}
+# -constraints is an undocumented option for worthless academic contests
+sta::define_cmd_args "legalize_placement" {[-verbose]\
+					     [-constraints constraints_file]\
+					   }
 
 proc legalize_placement { args } {
   sta::parse_key_args "legalize_placement" args \
     keys {-constraints} flags {-verbose}
 
+  set verbose [info exists flags(-verbose)]
   if { [info exists keys(-constraints)] } {
     set constraints_file $keys(-constraints)
     if { [file readable $constraints_file] } {
@@ -47,10 +50,37 @@ proc legalize_placement { args } {
       puts "Warning: cannot read $constraints_file"
     }
   }
-  set verbose [info exists flags(-verbose)]
+
   if { [ord::db_has_rows] } {
     opendp::legalize_placement $verbose
   } else {
     puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+  }
+}
+
+sta::define_cmd_args "set_padding" { [-global]\
+				       [-right site_count]\
+				       [-left site_count] \
+				     }
+
+proc set_padding { args } {
+  sta::parse_key_args "set_padding" args \
+    keys {-right -left} flags {-global}
+
+  set left 0
+  if { [info exists keys(-left)] } {
+    set left $keys(-left)
+    sta::check_positive_integer "-left" $left
+  }
+  set right 0
+  if { [info exists keys(-right)] } {
+    set right $keys(-right)
+    sta::check_positive_integer "-right" $right
+  }
+  set global [info exists flags(-global)]
+  if { $global } {
+    opendp::set_padding_global $left $right
+  } else {
+    sta::sta_error "Only set_padding -global supported."
   }
 }

@@ -40,5 +40,4 @@ srcdir="$testsdir/src"
 for subdir in $srcdir/*;
 do
     rm -f ${subdir}/test.log
-    rm -f ${subdir}/run.tcl
 done

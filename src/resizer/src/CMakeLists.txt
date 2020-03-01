@@ -16,21 +16,9 @@
 set(RESIZER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/Resizer_wrap.cc)
 set(RESIZER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/ResizerTclInitVar.cc)
 
-set(OPENSTA_INCLUDE_DIRS
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/app
-  )
-
 add_custom_command(OUTPUT ${RESIZER_WRAP}
   COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENROAD_HOME}/include -o ${RESIZER_WRAP} ${RESIZER_HOME}/src/Resizer.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${CMAKE_CURRENT_BINARY_DIR}/Resizer_wrap.cc
+  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${RESIZER_WRAP}
   WORKING_DIRECTORY ${RESIZER_HOME}/src
   DEPENDS
   ${RESIZER_HOME}/src/Resizer.i
@@ -55,6 +43,7 @@ target_include_directories(resizer
   PUBLIC ${RESIZER_HOME}/include
   PRIVATE
   ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
   ${OPENSTA_INCLUDE_DIRS}
   ${OPENDB_HOME}/include
   ${OPENROAD_HOME}/src/flute3

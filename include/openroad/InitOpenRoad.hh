@@ -11,8 +11,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef INIT_OPENROAD_H
-#define INIT_OPENROAD_H
+#pragma once
 
 namespace ord {
 
@@ -20,4 +19,4 @@ namespace ord {
 void
 initOpenRoad(Tcl_Interp *interp);
 } // namespace
-#endif
+

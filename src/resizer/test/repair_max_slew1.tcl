@@ -1,4 +1,5 @@
-# rebuffer reg3 -max_utilization (no core size)
+# repair_max_slew reg3
+source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef
 read_def reg3.def
@@ -13,7 +14,14 @@ set buffer_cell [get_lib_cell liberty1/snl_bufx2]
 # kohm/micron, pf/micron
 # use 10x wire cap to tickle buffer insertion
 set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-3
-report_design_area
 
-repair_max_slew -buffer_cell $buffer_cell -max_utilization 70
-report_design_area
+report_check_types -max_transition -all_violators
+
+repair_max_slew -buffer_cell $buffer_cell
+
+report_check_types -max_transition -all_violators
+report_checks -fields {input_pin transition_time capacitance}
+
+set def_file [make_result_file repair_max_slew1.def]
+write_def $def_file
+diff_files $def_file repair_max_slew1.defok

@@ -1,0 +1,32 @@
+VERSION 5.8 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+COMPONENTS 6 ;
+    - b1/r1 snl_ffqx1 ;
+    - b1/u1 snl_bufx1 ;
+    - b1/u2 snl_bufx1 ;
+    - b2/r1 snl_ffqx1 ;
+    - b2/u1 snl_bufx1 ;
+    - b2/u2 snl_bufx1 ;
+END COMPONENTS
+PINS 4 ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
+    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
+    - in + NET in + DIRECTION INPUT + USE SIGNAL ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+NETS 9 ;
+    - b1out ( b2/u1 A ) ( b1/u2 Z ) + USE SIGNAL ;
+    - clk1 ( PIN clk1 ) ( b1/r1 CP ) + USE SIGNAL ;
+    - clk2 ( PIN clk2 ) ( b2/r1 CP ) + USE SIGNAL ;
+    - in ( PIN in ) ( b1/u1 A ) + USE SIGNAL ;
+    - out ( PIN out ) ( b2/u2 Z ) + USE SIGNAL ;
+    - b1/r1q ( b1/u2 A ) ( b1/r1 Q ) + USE SIGNAL ;
+    - b1/u1out ( b1/u1 Z ) ( b1/r1 D ) + USE SIGNAL ;
+    - b2/r1q ( b2/u2 A ) ( b2/r1 Q ) + USE SIGNAL ;
+    - b2/u1out ( b2/u1 Z ) ( b2/r1 D ) + USE SIGNAL ;
+END NETS
+END DESIGN

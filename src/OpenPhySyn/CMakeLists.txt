@@ -9,7 +9,7 @@ option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
 option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." ON)
 option(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED "Build OpenPhySyn Standard Transforms" ON)
-option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" ON)
+option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" OFF)
 option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transform" ON)
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
@@ -219,6 +219,7 @@ set(PRIVATE_INCLUDE_DIRS
   ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
+  ${DBSTA_HOME}/include
 )
 
 

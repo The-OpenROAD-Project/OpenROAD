@@ -37,6 +37,7 @@ include_directories(${TRITONCTS_HOME}/src
                     ${OPENDB_HOME}/include
                     ${OPENDB_HOME}/include/opendb
                     ${OPENROAD_HOME}/include
+                    ${DBSTA_HOME}/include
                     ${OPENSTA_HOME}/graph
                     ${OPENSTA_HOME}/liberty
                     ${OPENSTA_HOME}/network

@@ -46,13 +46,6 @@ fi
 binary=$1
 testdir=$2
 
-lefFile="$testdir/input/input.lef"
-defFile="$testdir/input/input.def"
-
-cp $testdir/src/check_cut_rows/insertTap.tcl $testdir/src/check_cut_rows/run.tcl
-sed -i s#_LEF_#$lefFile#g $testdir/src/check_cut_rows/run.tcl
-sed -i s#_DEF_#$defFile#g $testdir/src/check_cut_rows/run.tcl
-
 $binary -no-init < run.tcl > test.log 2>&1
 
 obs_report=$(grep -e '---- #Cut rows:' ./test.log)

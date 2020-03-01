@@ -49,11 +49,16 @@
 # application to run as well as the test names. Each test is a tcl command file.
 
 proc regression_main {} {
+  global argv
+  exit [regression_body $argv]
+}
+
+proc regression_body { cmd_argv } {
   setup
-  parse_args
+  parse_args $cmd_argv
   run_tests
   show_summary
-  exit [found_errors]
+  return [found_errors]
 }
 
 proc setup {} {
@@ -82,13 +87,13 @@ proc setup {} {
   set valgrind_shared_lib_failure 0
 }
 
-proc parse_args {} {
-  global argv app_options tests test_groups cmd_paths
+proc parse_args { cmd_argv } {
+  global app_options tests test_groups cmd_paths
   global use_valgrind
   global result_dir tests
 
-  while { $argv != {} } {
-    set arg [lindex $argv 0]
+  while { $cmd_argv != {} } {
+    set arg [lindex $cmd_argv 0]
     if { $arg == "help" || $arg == "-help" } {
       puts {Usage: regression [-help] [-threads threads] [-valgrind] tests...}
       puts "  -threads max|integer - number of threads to use"
@@ -99,34 +104,34 @@ proc parse_args {} {
       puts "  If 'limit coredumpsize unlimited' corefiles are saved in $result_dir/test.core"
       exit
     } elseif { $arg == "-threads" } {
-      set threads [lindex $argv 1]
+      set threads [lindex $cmd_argv 1]
       if { !([string is integer $threads] || $threads == "max") } {
 	puts "Error: -threads arg $threads is not an integer or max."
 	exit 0
       }
       lappend app_options "-threads"
       lappend app_options $threads
-      set argv [lrange $argv 2 end]
+      set cmd_argv [lrange $cmd_argv 2 end]
     } elseif { $arg == "-valgrind" } {
       set use_valgrind 1
-      set argv [lrange $argv 1 end]
+      set cmd_argv [lrange $cmd_argv 1 end]
     } else {
       break
     }
   }
-  if { $argv == {} } {
+  if { $cmd_argv == {} } {
     # Default is to run fast tests.
     set tests [group_tests fast]
   } else {
-    set tests [expand_tests $argv]
+    set tests [expand_tests $cmd_argv]
   }
 }
 
-proc expand_tests { argv } {
+proc expand_tests { tests_arg } {
   global test_groups
 
   set tests {}
-  foreach arg $argv {
+  foreach arg $tests_arg {
     if { [info exists test_groups($arg)] } {
       set tests [concat $tests $test_groups($arg)]
     } elseif { [string first "*" $arg] != -1 \
@@ -482,6 +487,45 @@ proc save_ok { test } {
 
 ################################################################
 
+proc save_defok_main {} {
+  global argv
+  if { $argv == "help" || $argv == "-help" } {
+    puts {Usage: save_defok [failures] test1 [test2]...}
+  } elseif { $argv == "failures" } {
+    global failure_file
+    if [file exists $failure_file] {
+      set fail_ch [open $failure_file "r"]
+      while { ! [eof $fail_ch] } {
+	set test [gets $fail_ch]
+	if { $test != "" } {
+	  save_defok $test
+	}
+      }
+      close $fail_ch
+    }
+  } else {
+    foreach test $argv {
+      save_defok $test
+    }
+  }
+}
+
+proc save_defok { test } {
+  if { [lsearch [group_tests "all"] $test] == -1 } {
+    puts "Error: test $test not found."
+  } else {
+    set defok_file [test_defok_file $test]
+    set def_file [test_def_result_file $test]
+    if { ! [file exists $def_file] } {
+      puts "Error: def file $def_file not found."
+    } else {
+      file copy -force $def_file $defok_file
+    }
+  }
+}
+
+################################################################
+
 proc test_cmd_dir { test } {
   global cmd_dirs
   
@@ -501,9 +545,19 @@ proc test_ok_file { test } {
   return [file join $test_dir "$test.ok"]
 }
 
+proc test_defok_file { test } {
+  global test_dir
+  return [file join $test_dir "$test.defok"]
+}
+
 proc test_log_file { test } {
   global result_dir
   return [file join $result_dir "$test.log"]
+}
+
+proc test_def_result_file { test } {
+  global result_dir
+  return [file join $result_dir "$test.def"]
 }
 
 proc test_tmp_file { test } {

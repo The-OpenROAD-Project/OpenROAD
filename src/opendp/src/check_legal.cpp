@@ -75,10 +75,10 @@ bool Opendp::row_check(bool verbose) {
   for(int i = 0; i < cells_.size(); i++) {
     Cell* cell = &cells_[i];
     if(!isFixed(cell)) {
-      if(cell->y_coord % row_height_ != 0) {
+      if(cell->y_ % row_height_ != 0) {
 	if (verbose)
 	  cout << "row_check fail => " << cell->name()
-	       << " y_coord : " << cell->y_coord << endl;
+	       << " y_ : " << cell->y_ << endl;
 	valid = false;
 	count++;
       }
@@ -99,10 +99,10 @@ bool Opendp::site_check(bool verbose) {
   for(int i = 0; i < cells_.size(); i++) {
     Cell* cell = &cells_[i];
     if(!isFixed(cell)) {
-      if(cell->x_coord % site_width_ != 0) {
+      if(cell->x_ % site_width_ != 0) {
 	if (verbose)
 	  cout << "site check fail ==> " << cell->name()
-	       << " x_coord : " << cell->x_coord << endl;
+	       << " x_ : " << cell->x_ << endl;
 	valid = false;
 	count++;
       }
@@ -119,22 +119,22 @@ bool Opendp::edge_check(bool verbose) {
   bool valid = true;
   int count = 0;
 
-  for(int i = 0; i < rows_.size(); i++) {
+  for(int i = 0; i < row_count_; i++) {
     vector< Cell* > cells;
     for(int j = 0; j < row_site_count_; j++) {
-      Cell* grid_cell = grid_[i][j].linked_cell;
+      Cell* grid_cell = grid_[i][j].cell;
       if(grid_[i][j].is_valid) {
-	if(grid_cell != NULL && grid_cell != &dummy_cell_) {
+	if(grid_cell != nullptr && grid_cell != &dummy_cell_) {
 #ifdef ODP_DEBUG
 	  cout << "grid util : " << grid[i][j].util << endl;
 	  cout << "cell name : "
-	       << grid[i][j].linked_cell->name() << endl;
+	       << grid[i][j].cell->name() << endl;
 #endif
 	  if(cells.empty()) {
-	    cells.push_back(grid_[i][j].linked_cell);
+	    cells.push_back(grid_[i][j].cell);
 	  }
-	  else if(cells[cells.size() - 1] != grid_[i][j].linked_cell) {
-	    cells.push_back(grid_[i][j].linked_cell);
+	  else if(cells[cells.size() - 1] != grid_[i][j].cell) {
+	    cells.push_back(grid_[i][j].cell);
 	  }
 	}
       }
@@ -143,36 +143,6 @@ bool Opendp::edge_check(bool verbose) {
     cout << " row search done " << endl;
     cout << " cell list size : " << cells.size() << endl;
 #endif
-    if(!cells.empty()) {
-
-      for(int k = 0; k < cells.size() - 1; k++) {
-#ifdef ODP_DEBUG
-	cout << " left cell : " << cells[k]->name() << endl;
-	cout << " Right cell : " << cells[k + 1]->name() << endl;
-#endif
-	if(cells.size() >= 2) {
-	  Macro* left_macro = cells[k]->cell_macro;
-	  Macro* right_macro = cells[k + 1]->cell_macro;
-	  if(left_macro->edgetypeRight != 0 && right_macro->edgetypeLeft != 0) {
-	    // The following statement cannot be executed anymore because the
-	    // edge_spacing map was hard coded in the obsolete LEF reader that
-	    // predated the Si2 LEF reader.
-	    int space = divRound(edge_spacing_[make_pair(left_macro->edgetypeRight,     
-							 right_macro->edgetypeLeft)],
-				 site_width_);
-	    int cell_dist = cells[k + 1]->x_coord - cells[k]->x_coord -
-	      cells[k]->width;
-	    if(cell_dist < space) {
-	      if (verbose)
-		cout << " edge_check fail ==> " << cells[k]->name()
-		     << " >> " << cell_dist << "(" << space << ") << "
-		     << cells[k + 1]->name() << endl;
-	      count++;
-	    }
-	  }
-	}
-      }
-    }
   }
 
   if(!valid)
@@ -187,15 +157,16 @@ bool Opendp::power_line_check(bool verbose) {
   int count = 0;
   for(Cell& cell : cells_) {
     if(!isFixed(&cell)
-       && !(cell.height == row_height_ || cell.height == row_height_ * 3)
+       // Magic number alert
+       // Shouldn't this be odd test instead of 1 or 3? -cherry
+       && !(cell.height_ == row_height_ || cell.height_ == row_height_ * 3)
        // should removed later
        && cell.inGroup()) {
-      Macro* macro = cell.cell_macro;
-      // This should probably be using gridHeight(cell).
-      int y_size = divRound(cell.height, row_height_);
-      int y_pos = gridNearestY(&cell);
+      int y_size = gridHeight(&cell);
+      int grid_y = gridY(&cell);
+      power top_power = topPower(&cell);
       if(y_size % 2 == 0) {
-	if(macro->top_power == rows_[y_pos].top_power) {
+	if(top_power == rowTopPower(grid_y)) {
 	  cout << "power check fail ( even height ) ==> "
 	      << cell.name() << endl;
 	  valid = false;
@@ -203,8 +174,8 @@ bool Opendp::power_line_check(bool verbose) {
 	}
       }
       else {
-	if(macro->top_power == rows_[y_pos].top_power) {
-	  if(cell.db_inst->getOrient() != dbOrientType::R0) {
+	if(top_power == rowTopPower(grid_y)) {
+	  if(cell.db_inst_->getOrient() != dbOrientType::R0) {
 	    cout << "power check fail ( Should be N ) ==> "
 		<< cell.name() << endl;
 	    valid = false;
@@ -212,7 +183,7 @@ bool Opendp::power_line_check(bool verbose) {
 	  }
 	}
 	else {
-	  if(cell.db_inst->getOrient() != dbOrientType::MX) {
+	  if(cell.db_inst_->getOrient() != dbOrientType::MX) {
 	    cout << "power_check fail ( Should be FS ) ==> "
 		<< cell.name() << endl;
 	    valid = false;
@@ -234,7 +205,7 @@ bool Opendp::placed_check(bool verbose) {
   bool valid = true;
   int count = 0;
   for(Cell& cell : cells_) {
-    if(!cell.is_placed) {
+    if(!cell.is_placed_) {
       if (verbose)
 	cout << "placed check fail ==> " << cell.name() << endl;
       valid = false;
@@ -252,7 +223,7 @@ bool Opendp::placed_check(bool verbose) {
 
 bool Opendp::overlap_check(bool verbose) {
   bool valid = true;
-  int row_count = rows_.size();
+  int row_count = row_count_;
   int col_count = row_site_count_;
   Pixel** grid2;
   grid2 = new Pixel*[row_count];
@@ -262,46 +233,42 @@ bool Opendp::overlap_check(bool verbose) {
 
   for(int i = 0; i < row_count; i++) {
     for(int j = 0; j < col_count; j++) {
-      grid2[i][j].y_pos = i;
-      grid2[i][j].x_pos = j;
-      grid2[i][j].linked_cell = NULL;
+      grid2[i][j].grid_y_ = i;
+      grid2[i][j].grid_x_ = j;
+      grid2[i][j].cell = nullptr;
     }
   }
 
   for(Cell& cell : cells_) {
-    int x_pos = gridNearestX(&cell);
-    int y_pos = gridNearestY(&cell);
-    int x_step = gridWidth(&cell);
-    int y_step = gridHeight(&cell);
+    int grid_x = gridX(&cell);
+    int grid_y = gridY(&cell);
 
-    int x_ur = x_pos + x_step;
-    int y_ur = y_pos + y_step;
+    int x_ur = gridEndX(&cell);
+    int y_ur = gridEndY(&cell);
 
     // Fixed Cell can be out of Current DIEAREA settings.
     if(isFixed(&cell)) {
-      x_pos = max(0, x_pos);
-      y_pos = max(0, y_pos);
+      grid_x = max(0, grid_x);
+      grid_y = max(0, grid_y);
       x_ur = min(x_ur, col_count);
       y_ur = min(y_ur, row_count);
     }
 
-    assert(x_pos > -1);
-    assert(y_pos > -1);
-    assert(x_step > 0);
-    assert(y_step > 0);
+    assert(grid_x >= 0);
+    assert(grid_y >= 0);
     assert(x_ur <= coreGridMaxX());
     assert(y_ur <= coreGridMaxY());
 
-    for(int j = y_pos; j < y_ur; j++) {
-      for(int k = x_pos; k < x_ur; k++) {
-        if(grid2[j][k].linked_cell == NULL) {
-          grid2[j][k].linked_cell = &cell;
+    for(int j = grid_y; j < y_ur; j++) {
+      for(int k = grid_x; k < x_ur; k++) {
+        if(grid2[j][k].cell == nullptr) {
+          grid2[j][k].cell = &cell;
           grid2[j][k].util = 1.0;
         }
         else {
 	  if (verbose)
 	    cout << "overlap_check ==> FAIL ( cell " << cell.name()
-		 << " overlaps " << grid2[j][k].linked_cell->name() << " ) "
+		 << " overlaps " << grid2[j][k].cell->name() << " ) "
 		 << " ( " << (k * site_width_ + core_.xMin()) << ", "
 		 << (j * row_height_ + core_.yMin()) << " )" << endl;
           valid = false;

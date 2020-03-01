@@ -127,11 +127,9 @@ using ord::OpenRoad;
 using ord::getOpenRoad;
 using ord::getDb;
 using ord::ensureLinked;
-using ord::getDbNetwork;
-using ord::getSta;
-using ord::getResizer;
-using ord::getTritonCts;
-using ord::getOpenRCX;
+
+using odb::dbDatabase;
+
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -174,8 +172,8 @@ read_def_cmd(const char *filename, bool order_wires)
 }
 
 void
-  write_def_cmd(const char *filename,
-		const char *version)
+write_def_cmd(const char *filename,
+	      const char *version)
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeDef(filename, version);
@@ -243,6 +241,13 @@ db_has_tech()
   return getDb()->getTech() != nullptr;
 }
 
+odb::adsRect
+get_db_core()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getCore();
+}
+
 double
 dbu_to_microns(int dbu)
 {
@@ -253,13 +258,30 @@ dbu_to_microns(int dbu)
 bool
 db_has_rows()
 {
-  odb::dbDatabase *db = ord::OpenRoad::openRoad()->getDb();
+  dbDatabase *db = OpenRoad::openRoad()->getDb();
   return db->getChip()
     && db->getChip()->getBlock()
     && db->getChip()->getBlock()->getRows().size() > 0;
 }
 
-%} // inline
+sta::Sta *
+get_sta()
+{
+  return sta::Sta::sta();
+}
 
-// OpenROAD swig files
-%include "InitFloorplan.i"
+// For some bizzare reason this fails without the namespace qualifier for Sta.
+void
+set_cmd_sta(sta::Sta *sta)
+{
+  sta::Sta::setSta(sta);
+}
+
+bool
+units_initialized()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->unitsInitialized();
+}
+
+%} // inline

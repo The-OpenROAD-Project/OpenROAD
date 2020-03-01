@@ -1,6 +1,6 @@
 # bottom row last
 source helpers.tcl
-read_lef nangate45-bench/tech/NangateOpenCellLibrary.lef
+read_lef Nangate45.lef
 read_def simple08.def
 legalize_placement
 set def_file [make_result_file simple08.def]

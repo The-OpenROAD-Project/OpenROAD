@@ -36,6 +36,7 @@
 #include "Search.hh"
 #include "Network.hh"
 #include "StaMain.hh"
+#include "openroad/OpenRoad.hh"
 #include "resizer/SteinerTree.hh"
 #include "resizer/Resizer.hh"
 
@@ -118,8 +119,8 @@ Resizer::init(Tcl_Interp *interp,
 double
 Resizer::coreArea() const
 {
-  adsRect rect;
-  db_->getChip()->getBlock()->getDieArea(rect);
+  dbBlock *block = db_->getChip()->getBlock();
+  adsRect rect = ord::getCore(block);
   return dbuToMeters(rect.dx()) * dbuToMeters(rect.dy());
 }
 
@@ -2133,7 +2134,8 @@ double
 Resizer::designArea()
 {
   if (design_area_ == 0.0) {
-    for (dbInst *inst : db_->getChip()->getBlock()->getInsts()) {
+    dbBlock *block = db_->getChip()->getBlock();
+    for (dbInst *inst : block->getInsts()) {
       dbMaster *master = inst->getMaster();
       design_area_ += area(master);
     }

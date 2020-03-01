@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef RESIZER_H
-#define RESIZER_H
+#pragma once
 
 #include "db_sta/dbSta.hh"
 #include "SteinerTree.hh"
@@ -262,4 +261,3 @@ protected:
 };
 
 } // namespace
-#endif
