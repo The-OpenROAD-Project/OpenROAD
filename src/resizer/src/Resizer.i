@@ -128,6 +128,8 @@ using sta::LibertyPort;
 //
 ////////////////////////////////////////////////////////////////
 
+%include "../../Exception.i"
+
 %inline %{
 
 double
