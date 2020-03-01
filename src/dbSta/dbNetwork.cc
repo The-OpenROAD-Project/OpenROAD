@@ -550,6 +550,8 @@ dbNetwork::net(const Pin *pin) const
   if (iterm) {
     dbNet *dnet = iterm->getNet();
     return dbToSta(dnet);
+  } else if (bterm) {
+    return net(network_->term(pin));
   }
   else
     return nullptr;

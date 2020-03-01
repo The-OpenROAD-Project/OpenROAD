@@ -46,6 +46,7 @@ void  print_license();
 float design_area();
 bool  has_transform(const char* transform_name);
 int   set_wire_rc(float res_per_micon, float cap_per_micron);
+int   set_wire_rc(const char* layer_name);
 int   set_max_area(float area);
 int   set_log(const char* level);
 int   set_log_level(const char* level);

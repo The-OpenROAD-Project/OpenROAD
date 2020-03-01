@@ -45,7 +45,6 @@
 #include <unordered_map>
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-
 namespace psn
 {
 class OpenDBHandler;
@@ -55,34 +54,7 @@ enum HandlerType
     OPENSTA,
     OPENDB
 };
-typedef int DefDbu;
-#ifdef USE_OPENDB_DB_HANDLER
-typedef odb::dbDatabase     Database;
-typedef odb::dbChip         Chip;
-typedef odb::dbBlock        Block;
-typedef odb::dbInst         Instance;
-typedef odb::dbITerm        InstanceTerm; // Instance pin
-typedef odb::dbMTerm        LibraryTerm;  // Library pin
-typedef odb::dbBTerm        BlockTerm;
-typedef odb::dbMaster       LibraryCell;
-typedef odb::dbLib          Library;
-typedef odb::dbTech         LibraryTechnology;
-typedef odb::dbNet          Net;
-typedef odb::defin          DefParser;
-typedef odb::defout         DefOut;
-typedef odb::lefin          LefParser;
-typedef sta::LibertyLibrary Liberty;
-
-typedef odb::dbSet<Library>                           LibrarySet;
-typedef odb::dbSet<Net>                               NetSet;
-typedef odb::dbSet<BlockTerm>                         BlockTermSet;
-typedef odb::dbSet<InstanceTerm>                      InstanceTermSet;
-typedef odb::dbIoType::Value                          PinDirection;
-typedef odb::adsPoint                                 Point;
-typedef OpenDBHandler                                 DatabaseHandler;
-typedef std::tuple<InstanceTerm*, bool, float, float> PathPoint;
-#else
-// Default is OpenSTA handler
+typedef int                 DefDbu;
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
 typedef odb::dbBlock        Block;
@@ -104,12 +76,11 @@ typedef sta::NetSet         NetSet;
 typedef sta::PinSet         BlockTermSet;
 typedef sta::PinSet         InstanceTermSet;
 typedef sta::PortDirection  PinDirection;
+typedef sta::Term           Term;
 typedef odb::adsPoint       Point;
 typedef OpenStaHandler      DatabaseHandler;
 typedef sta::dbSta          DatabaseSta;
 typedef sta::dbNetwork      DatabaseStaNetwork;
-
-#endif
 
 class PointHash
 {

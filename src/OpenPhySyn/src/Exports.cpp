@@ -55,6 +55,11 @@ set_wire_rc(float res_per_micon, float cap_per_micron)
     return 1;
 }
 int
+set_wire_rc(const char* layer_name)
+{
+    return Psn::instance().setWireRC(layer_name);
+}
+int
 set_max_area(float area)
 {
     Psn::instance().settings()->setMaxArea(area);

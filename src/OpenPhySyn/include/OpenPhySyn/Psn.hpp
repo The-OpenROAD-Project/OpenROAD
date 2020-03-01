@@ -66,6 +66,7 @@ public:
     void setProgramOptions(int argc, char* argv[]);
     int  sourceTclScript(const char* script_path);
     virtual void setWireRC(float res_per_micon, float cap_per_micron);
+    virtual int  setWireRC(const char* layer_name);
 
     virtual DatabaseHandler* handler() const;
     virtual DesignSettings*  settings() const;

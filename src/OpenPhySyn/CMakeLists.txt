@@ -27,11 +27,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
 set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
-if (${OPENPHYSYN_DATABASE_HANDLER} STREQUAL "OpenDB")
-add_definitions(-DUSE_OPENDB_DB_HANDLER)
-else()
-add_definitions(-DUSE_OPENSTA_DB_HANDLER)
-endif()
 
 add_definitions(-DOPENROAD_BUILD)
 
@@ -118,8 +113,7 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/DesignSettings.cpp
     ${PSN_HOME}/src/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger.cpp
-    ${PSN_HOME}/src/OpenDBHandler.cpp
-    ${PSN_HOME}/src/OpenStaHandler.cpp
+    ${PSN_HOME}/src/DatabaseHandler.cpp
     ${PSN_HOME}/src/PsnTransform.cpp
     ${PSN_HOME}/src/TransformHandler.cpp
     ${PSN_HOME}/src/TransformInfo.cpp
