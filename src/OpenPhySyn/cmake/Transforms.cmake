@@ -68,3 +68,11 @@ install(
   DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
 )
 endif()
+
+if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
+add_subdirectory(src/StandardTransforms/ConstantPropagationTransform)
+install(
+  TARGETS constant_propagation
+  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
+)
+endif()
