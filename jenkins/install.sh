@@ -22,6 +22,10 @@ git submodule update --init --recursive
 
 # Swap to current commit of OpenROAD
 cd tools/OpenROAD
+if ! git ls-remote local > /dev/null;
+    git remote add local ../../..
+fi
 git fetch
+git fetch local
 git checkout ${commit}
 git submodule update --init --recursive
