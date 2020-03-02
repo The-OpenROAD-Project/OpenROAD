@@ -130,8 +130,8 @@ protected:
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
-  bool hasMaxCapViolation(const Pin *drvr_pin);
-  bool hasMaxSlewViolation(const Pin *drvr_pin);
+  bool hasMaxCapViolation(const Pin *pin);
+  bool hasMaxSlewViolation(const Pin *pin);
   void slewLimit(const Pin *pin,
 		 const MinMax *min_max,
 		 // Return values.

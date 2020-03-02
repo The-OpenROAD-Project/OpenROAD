@@ -987,6 +987,7 @@ Resizer::deleteRebufferOptions()
 
 ////////////////////////////////////////////////////////////////
 
+// Assumes resizerPreambnle has been called.
 void
 Resizer::repairMaxCapSlew(bool repair_max_cap,
 			  bool repair_max_slew,
@@ -1004,19 +1005,26 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
     // Hands off the clock tree.
     Net *net = network_->net(vertex->pin());
     if (!isClock(net)) {
-      Pin *drvr_pin = vertex->pin();
       bool violation = false;
-      if (repair_max_cap
-	  && hasMaxCapViolation(drvr_pin)) {
-	max_cap_violation_count++;
-	violation = true;
+      NetPinIterator *pin_iter = network_->pinIterator(net);
+      while (pin_iter->hasNext()) {
+	Pin *pin = pin_iter->next();
+	if (repair_max_cap
+	    && hasMaxCapViolation(pin)) {
+	  violation = true;
+	  max_cap_violation_count++;
+	  break;
+	}
+	if (repair_max_slew
+	    && hasMaxSlewViolation(pin)) {
+	  max_slew_violation_count++;
+	  violation = true;
+	  break;
+	}
       }
-      if (repair_max_slew
-	  && hasMaxSlewViolation(drvr_pin)) {
-	max_slew_violation_count++;
-	violation = true;
-      }
+      delete pin_iter;
       if (violation) {
+	Pin *drvr_pin = vertex->pin();
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  report_->warn("max utilization reached.\n");
@@ -1037,11 +1045,11 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
 }
 
 bool
-Resizer::hasMaxCapViolation(const Pin *drvr_pin)
+Resizer::hasMaxCapViolation(const Pin *pin)
 {
-  LibertyPort *port = network_->libertyPort(drvr_pin);
+  LibertyPort *port = network_->libertyPort(pin);
   if (port) {
-    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+    float load_cap = graph_delay_calc_->loadCap(pin, dcalc_ap_);
     float cap_limit;
     bool exists;
     port->capacitanceLimit(MinMax::max(), cap_limit, exists);
@@ -1051,16 +1059,23 @@ Resizer::hasMaxCapViolation(const Pin *drvr_pin)
 }
 
 bool
-Resizer::hasMaxSlewViolation(const Pin *drvr_pin)
+Resizer::hasMaxSlewViolation(const Pin *pin)
 {
-  Vertex *vertex = graph_->pinDrvrVertex(drvr_pin);
+  Vertex *vertex, *bidirect_drvr_vertex;
+  graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
   float limit;
   bool exists;
-  slewLimit(drvr_pin, MinMax::max(), limit, exists);
+  slewLimit(pin, MinMax::max(), limit, exists);
   for (auto rf : RiseFall::range()) {
-    Slew slew = graph_->slew(vertex, rf, dcalc_ap_->index());
+    Slew slew;
+    slew  = graph_->slew(vertex, rf, dcalc_ap_->index());
     if (slew > limit)
       return true;
+    if (bidirect_drvr_vertex) {
+      slew  = graph_->slew(bidirect_drvr_vertex, rf, dcalc_ap_->index());
+      if (slew > limit)
+	return true;
+    }
   }
   return false;
 }
