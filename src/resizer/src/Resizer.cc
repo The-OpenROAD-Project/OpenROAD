@@ -175,7 +175,6 @@ Resizer::init()
   designArea();
   db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
-  // In case graph was made by ensureLevelized.
   graph_ = sta_->graph();
   ensureLevelDrvrVerticies();
   ensureClkNets();
@@ -190,7 +189,9 @@ Resizer::setWireRC(float wire_res,
   // Abbreviated copyState
   graph_delay_calc_ = sta_->graphDelayCalc();
   search_ = sta_->search();
+  graph_ = sta_->ensureGraph();
 
+  sta_->ensureLevelized();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
@@ -199,7 +200,7 @@ Resizer::setWireRC(float wire_res,
   wire_cap_ = wire_cap;
 
   initCorner(corner);
-  init();
+  ensureClkNets();
   makeNetParasitics();
 }
 
@@ -262,6 +263,8 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
       bufferInput(pin, buffer_cell);
   }
   delete port_iter;
+  if (inserted_buffer_count_ > 0)
+    level_drvr_verticies_valid_ = false;
   report_->print("Inserted %d input buffers.\n",
 		 inserted_buffer_count_);
 }
@@ -331,6 +334,8 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
       bufferOutput(pin, buffer_cell);
   }
   delete port_iter;
+  if (inserted_buffer_count_ > 0)
+    level_drvr_verticies_valid_ = false;
   report_->print("Inserted %d output buffers.\n",
 		 inserted_buffer_count_);
 }
@@ -997,7 +1002,8 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
     // Hands off the clock tree.
-    if (!search_->isClock(vertex)) {
+    Net *net = network_->net(vertex->pin());
+    if (!isClock(net)) {
       Pin *drvr_pin = vertex->pin();
       bool violation = false;
       if (repair_max_cap
@@ -2089,7 +2095,8 @@ Required
 Resizer::pinRequired(const Pin *pin)
 {
   Vertex *vertex = graph_->pinLoadVertex(pin);
-  return sta_->vertexRequired(vertex, min_max_);
+  Required required = sta_->vertexRequired(vertex, min_max_);
+  return required;
 }
 
 float
