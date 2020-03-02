@@ -9,7 +9,7 @@
 %}
 
 // OpenSTA swig files
-%include "StaException.i"
+%include "Exception.i"
 %include "StaTcl.i"
 %include "NetworkEdit.i"
 %include "Sdf.i"
