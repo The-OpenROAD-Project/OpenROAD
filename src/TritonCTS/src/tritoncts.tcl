@@ -48,20 +48,23 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-max_cap cap] \
                                              [-max_slew slew] \
                                              [-clk_nets nets] \ 
+                                             [-out_path path] \
+                                             [-sqr_cap capvalue] \
+                                             [-sqr_res resvalue] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets} flags {}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res} flags {}
 
   set cts [get_triton_cts]
 
   #Clock Tree Synthesis TCL -> Required commands:
   #                               -lut_file , -sol_list , -root-buf, -wire_unit
   #                                               or
-  #                               -buf_list
+  #                               -buf_list , -sqr_cap , -sqr_res
   #                         -> Other commands can be used as extra parameters or in conjunction with each other:
-  #                               ex: clock_tree_synthesis -buf_list ""BUFX1 BUFX2" -wire_unit 20 -clk_nets clk1
+  #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
 
 
   if { [info exists keys(-lut_file)] } {
@@ -98,12 +101,12 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-max_cap)] } {
     set max_cap_value $keys(-max_cap)
-    $cts set_max_chara_cap $max_cap_value
+    $cts set_max_char_cap $max_cap_value
   } 
 
   if { [info exists keys(-max_slew)] } {
     set max_slew_value $keys(-max_slew)
-    $cts set_max_chara_slew $max_slew_value
+    $cts set_max_char_slew $max_slew_value
   } 
 
   if { [info exists keys(-clk_nets)] } {
@@ -123,6 +126,22 @@ proc clock_tree_synthesis { args } {
       puts "Missing argument -root_buf"
       exit
     }
+  }
+
+  if { [info exists keys(-out_path)] && [info exists keys(-buf_list)] } {
+    set out_path $keys(-out_path)
+    $cts set_out_path $out_path
+  }
+
+  if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] && [info exists keys(-buf_list)] } {
+    set sqr_cap $keys(-sqr_cap)
+    $cts set_cap_per_sqr $sqr_cap
+    set sqr_res $keys(-sqr_res)
+    $cts set_res_per_sqr $sqr_res
+  } else {
+    #User must enter capacitance and resistance per square (um²) when creating a new characterization.
+    puts "Missing argument -sqr_cap and/or -sqr_res"
+    exit
   }
 
   $cts run_triton_cts

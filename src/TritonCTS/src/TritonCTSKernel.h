@@ -66,6 +66,7 @@ public:
 
 private:
         void printHeader() const;
+        void setupCharacterization();
         void createCharacterization();
         void importCharacterization();
         void checkCharacterization();
@@ -93,8 +94,11 @@ public:
         void set_buffer_list(const char* buffers);
         void set_clock_nets(const char* names);
         void set_wire_segment_distance_unit(unsigned unit);
-        void set_max_chara_slew(double slew);
-        void set_max_chara_cap(double cap);
+        void set_max_char_slew(double slew);
+        void set_max_char_cap(double cap);
+        void set_out_path(const char* path);
+        void set_cap_per_sqr(double cap);
+        void set_res_per_sqr(double res);
         void run_triton_cts();
         void report_characterization();
         void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 

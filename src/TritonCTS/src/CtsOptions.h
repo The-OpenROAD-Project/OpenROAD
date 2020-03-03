@@ -80,10 +80,22 @@ public:
         unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
         unsigned getMaxSlew() const { return _maxSlew; }
-        void setMaxCharaSlew(double slew) { _maxCharaSlew = slew; }
-        double getMaxCharaSlew() const { return _maxCharaSlew; }
-        void setMaxCharaCap(double cap) { _maxCharaCap = cap; }
-        double getMaxCharaCap() const { return _maxCharaCap; }
+        void setMaxCharSlew(double slew) { _maxCharSlew = slew; }
+        double getMaxCharSlew() const { return _maxCharSlew; }
+        void setMaxCharCap(double cap) { _maxCharCap = cap; }
+        double getMaxCharCap() const { return _maxCharCap; }
+        void setCharLoadIterations(unsigned loadIterations) { _charLoadIterations = loadIterations; }
+        unsigned getCharLoadIterations() const { return _charLoadIterations; }
+        void setCharSlewIterations(unsigned slewIterations) { _charSlewIterations = slewIterations; }
+        unsigned getCharSlewIterations() const { return _charSlewIterations; }
+        void setCharWirelengthIterations(unsigned wirelengthIterations) { _charWirelengthIterations = wirelengthIterations; }
+        unsigned getCharWirelengthIterations() const { return _charWirelengthIterations; }
+        void setOutputPath(const std::string& path) { _outputPath = path; }
+        std::string getOutputPath() const { return _outputPath; } 
+        void setCapPerSqr(double cap) { _capPerSqr = cap; }
+        double getCapPerSqr() const { return _capPerSqr; }
+        void setResPerSqr(double res) { _resPerSqr = res; }
+        double getResPerSqr() const { return _resPerSqr; }
         void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
         unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
         void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
@@ -98,27 +110,33 @@ public:
         double getBufDistRatio() { return _bufDistRatio; }
                 
 private:
-        std::string _blockName               = "";
-        std::string _lutFile                 = "";
-        std::string _solListFile             = "";
-        std::string _clockNets               = "";
-        std::string _rootBuffer              = "";
-        DBU         _dbUnits                 = -1;
-        unsigned    _wireSegmentUnit         = 0;
-        unsigned    _dbId                    = 0;
-        bool        _plotSolution            = false;
-        unsigned    _numMaxLeafSinks         = 15;
-        unsigned    _maxSlew                 = 4;
-        double      _maxCharaSlew            = 0;
-        double      _maxCharaCap             = 0;
-        unsigned    _clockTreeMaxDepth       = 100;
-        bool        _enableFakeLutEntries    = true;
-        bool        _forceBuffersOnLeafLevel = true;
-        bool        _writeOnlyClockNets      = false;
-        bool        _runPostCtsOpt           = true;
-        double      _bufDistRatio            = 0.1;
+        std::string _blockName                  = "";
+        std::string _lutFile                    = "";
+        std::string _solListFile                = "";
+        std::string _outputPath                 = "";
+        std::string _clockNets                  = "";
+        std::string _rootBuffer                 = "";
+        DBU         _dbUnits                    = -1;
+        unsigned    _wireSegmentUnit            = 0;
+        unsigned    _dbId                       = 0;
+        bool        _plotSolution               = false;
+        unsigned    _numMaxLeafSinks            = 15;
+        unsigned    _maxSlew                    = 4;
+        double      _maxCharSlew                = 0;
+        double      _maxCharCap                 = 0;
+        double      _capPerSqr                  = 0;
+        double      _resPerSqr                  = 0;
+        unsigned    _charWirelengthIterations   = 3;
+        unsigned    _charLoadIterations         = 30;
+        unsigned    _charSlewIterations         = 10;
+        unsigned    _clockTreeMaxDepth          = 100;
+        bool        _enableFakeLutEntries       = true;
+        bool        _forceBuffersOnLeafLevel    = true;
+        bool        _writeOnlyClockNets         = false;
+        bool        _runPostCtsOpt              = true;
+        double      _bufDistRatio               = 0.1;
         
-        std::vector<std::string> _bufferList     ;
+        std::vector<std::string> _bufferList;
 };
 
 }

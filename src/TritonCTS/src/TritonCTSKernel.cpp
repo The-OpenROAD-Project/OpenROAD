@@ -52,15 +52,7 @@ namespace TritonCTS {
 
 void TritonCTSKernel::runTritonCts() {
         printHeader();
-        std::ifstream lutFile(_options.getLutFile().c_str());
-        std::ifstream solFile(_options.getSolListFile().c_str());
-        if (!lutFile.is_open() || !solFile.is_open()) {
-                //LUT files doesn't exist. So a new characteriztion is created.
-                createCharacterization();
-        } else {
-                //LUT files exists. Import the characterization results.
-                importCharacterization();
-        }
+        setupCharacterization();
         findClockRoots();
         populateTritonCts();
         checkCharacterization();
@@ -80,6 +72,18 @@ void TritonCTSKernel::printHeader() const {
         std::cout << " Current time: " << std::ctime(&startTime);
 }
 
+void TritonCTSKernel::setupCharacterization() {
+        std::ifstream lutFile(_options.getLutFile().c_str());
+        std::ifstream solFile(_options.getSolListFile().c_str());
+        if (!lutFile.is_open() || !solFile.is_open()) {
+                //LUT files doesn't exist. So a new characteriztion is created.
+                createCharacterization();
+        } else {
+                //LUT files exists. Import the characterization results.
+                importCharacterization();
+        }
+}
+
 void TritonCTSKernel::importCharacterization() {
         std::cout << " *****************************\n";
         std::cout << " *  Import characterization  *\n";
@@ -93,8 +97,7 @@ void TritonCTSKernel::createCharacterization() {
         std::cout << " *  Create characterization  *\n";
         std::cout << " *****************************\n";
 
-        std::vector<TechChar::resultData> lutResults = _techChar.createCharacterization();
-        _techChar.compileLut(lutResults);
+        _techChar.create();
 }
 
 void TritonCTSKernel::checkCharacterization() {

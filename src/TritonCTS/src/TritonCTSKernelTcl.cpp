@@ -61,12 +61,12 @@ void TritonCTSKernel::set_clock_nets(const char* names) {
         _options.setClockNets(names);
 }
 
-void TritonCTSKernel::set_max_chara_cap(double cap) {
-        _options.setMaxCharaCap(cap);
+void TritonCTSKernel::set_max_char_cap(double cap) {
+        _options.setMaxCharCap(cap);
 }
 
-void TritonCTSKernel::set_max_chara_slew(double slew) {
-        _options.setMaxCharaSlew(slew);
+void TritonCTSKernel::set_max_char_slew(double slew) {
+        _options.setMaxCharSlew(slew);
 }
 
 void TritonCTSKernel::set_wire_segment_distance_unit(unsigned unit) {
@@ -99,6 +99,18 @@ void TritonCTSKernel::set_buffer_list(const char* buffers) {
         std::istream_iterator<std::string> end;
         std::vector<std::string> bufferVector(begin, end);
         _options.setBufferList(bufferVector);
+}
+
+void TritonCTSKernel::set_out_path(const char* path) {
+        _options.setOutputPath(path);
+}
+
+void TritonCTSKernel::set_cap_per_sqr(double cap) {
+        _options.setCapPerSqr(cap);
+}
+
+void TritonCTSKernel::set_res_per_sqr(double res) {
+        _options.setResPerSqr(res);
 }
 
 }

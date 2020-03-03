@@ -125,8 +125,8 @@ public:
         static const unsigned MAX_NORMALIZED_VAL = 1023;
         static const unsigned LENGTH_UNIT_MICRON = 10;
 
-        //solutionData represents the various different structures of the characterization segment. Ports, insts, nets...
-        struct solutionData {
+        //SolutionData represents the various different structures of the characterization segment. Ports, insts, nets...
+        struct SolutionData {
                 std::vector<odb::dbNet*> netVector;
                 std::vector<unsigned int> nodesWithoutBufVector;
                 odb::dbBPin* inPort;
@@ -136,8 +136,8 @@ public:
                 bool isPureWire = true;
         } ;
 
-        //resultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
-        struct resultData {
+        //ResultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        struct ResultData {
                 float load;
                 float inSlew;
                 float wirelength;
@@ -149,13 +149,29 @@ public:
                 std::vector<std::string> topology;
         } ;
 
+        //ResultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        struct CharKey {
+                float load;
+                float wirelength;
+                float pinSlew;
+                float totalcap;
+
+                bool operator<(const CharKey &o)  const {
+                        return load < o.load || 
+                               (load == o.load && wirelength < o.wirelength) ||
+                               (load == o.load && wirelength == o.wirelength && pinSlew < o.pinSlew) ||
+                               (load == o.load && wirelength == o.wirelength && pinSlew == o.pinSlew && totalcap < o.totalcap);
+                }
+        } ;
+
 public:
         TechChar(CtsOptions& options) : _options(&options) {}
 
-        std::vector<resultData> createCharacterization();
-        void compileLut(std::vector<resultData> lutSols);
+        void create();
+        void compileLut(std::vector<ResultData> lutSols);
         void parse(const std::string& lutFile, const std::string solListFile);
         void write(const std::string& file) const;
+        void writeSol(const std::string& file) const;
         
         void report() const;
         void reportSegment(unsigned key) const;
@@ -223,36 +239,36 @@ protected:
 
         //Characterization attributes
 
-        void setupCharacterizationAttributes();
-        std::vector<solutionData> createCharacterizationTopologies(unsigned setupWirelength);
-        void setupNewStaInstance();
-        void setCharacterizationConstraints(std::vector<solutionData> topologiesVector, 
+        void initCharacterization();
+        std::vector<SolutionData> createPatterns(unsigned setupWirelength);
+        void createStaInstance();
+        void setParasitics(std::vector<SolutionData> topologiesVector, 
                                             unsigned setupWirelength);
-        resultData computeTopologyResults(solutionData currentSolution, 
+        void setSdc(std::vector<SolutionData> topologiesVector, 
+                    unsigned setupWirelength);
+        ResultData computeTopologyResults(SolutionData currentSolution, 
                                           sta::Vertex* outPinVert, 
                                           float currentLoad, 
                                           unsigned setupWirelength);
-        void updateBufferTopologies(solutionData currentSolution);
-        std::vector<resultData> characterizationPostProcess();
+        void updateBufferTopologies(SolutionData currentSolution);
+        std::vector<ResultData> characterizationPostProcess();
+        unsigned normalizeCharResults(float value, float iter, 
+                                      unsigned* min, unsigned* max);
 
         sta::dbSta*                     _openSta                = nullptr;
         odb::dbDatabase*                _db                     = nullptr;
-        sta::Sdc*                       _sdc                    = nullptr;
-        sta::Network*                   _network                = nullptr; 
-        sta::dbSta*                     _openSta2               = nullptr;
-        sta::Sdc*                       _sdc2                   = nullptr;
-        sta::Network*                   _network2               = nullptr; 
-        sta::dbNetwork*                 _dbnetwork              = nullptr;  
+        sta::dbSta*                     _openStaChar            = nullptr; 
+        sta::dbNetwork*                 _dbNetworkChar          = nullptr;  
         sta::PathAnalysisPt*            _charPathAnalysis       = nullptr;  
         sta::Corner*                    _charCorner             = nullptr;  
         odb::dbBlock*                   _charBlock              = nullptr;
         odb::dbMaster*                  _charBuf                = nullptr;
         std::string                     _charBufIn              = "";
         std::string                     _charBufOut             = "";
-        float                           _resPerDBU              = 0.1; //Default values, not used
-        float                           _capPerDBU              = 5.0e-05; //Default values, not used
-        float*                          _charMaxSlew            = nullptr;
-        float*                          _charMaxCap             = nullptr;
+        double                          _resPerDBU              = 0.0001; //Default values, not used
+        double                          _capPerDBU              = 5.0e-20; //Default values, not used
+        float                           _charMaxSlew            = 0.0;
+        float                           _charMaxCap             = 0.0;
         float                           _charSlewInter          = 5.0e-12; //Hard-coded interval
         float                           _charCapInter           = 5.0e-15;
         std::vector<std::string>        _masterNames;
@@ -260,7 +276,7 @@ protected:
         std::vector<float>              _loadsToTest;  
         std::vector<float>              _slewsToTest;  
 
-        std::map<std::vector<float> , std::vector<resultData>> _solutionMap;
+        std::map<CharKey, std::vector<ResultData>> _solutionMap;
 
         CtsOptions* _options;
 };
