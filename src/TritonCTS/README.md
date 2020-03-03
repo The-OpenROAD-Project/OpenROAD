@@ -43,7 +43,7 @@ If this parameter is ommitted, the code gets the value from ten times the height
 If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
 - ``out_path`` (optional) is the output path (full) that the lut.txt and sol_list.txt files will be saved. This are used to load an existing characterization, whithout creating one from scrath.
 
-If, instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
+Instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
 
 ```
 read_lef "mylef.lef"
