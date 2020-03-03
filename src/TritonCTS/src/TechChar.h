@@ -50,6 +50,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 #include <unordered_map>
 #include <functional>
 #include <bitset>
@@ -250,7 +251,7 @@ protected:
                                           sta::Vertex* outPinVert, 
                                           float currentLoad, 
                                           unsigned setupWirelength);
-        void updateBufferTopologies(SolutionData currentSolution);
+        SolutionData updateBufferTopologies(SolutionData currentSolution);
         std::vector<ResultData> characterizationPostProcess();
         unsigned normalizeCharResults(float value, float iter, 
                                       unsigned* min, unsigned* max);
@@ -271,7 +272,7 @@ protected:
         float                           _charMaxCap             = 0.0;
         float                           _charSlewInter          = 5.0e-12; //Hard-coded interval
         float                           _charCapInter           = 5.0e-15;
-        std::vector<std::string>        _masterNames;
+        std::set<std::string>           _masterNames;
         std::vector<float>              _wirelengthsToTest;
         std::vector<float>              _loadsToTest;  
         std::vector<float>              _slewsToTest;  

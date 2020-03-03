@@ -95,7 +95,7 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols) {
                 for (int topologyIndex = 0 ; topologyIndex < maxIndex ; topologyIndex++) {
                         std::string topologyS = lutLine.topology[topologyIndex];
                         //Each buffered topology always has a wire segment followed by a buffer.
-                        if (std::find(_masterNames.begin(), _masterNames.end(), topologyS) == _masterNames.end()){
+                        if (_masterNames.find(topologyS) == _masterNames.end()){
                                 //Is a number (i.e. a wire segment).
                                 segment.addBuffer(std::stod(topologyS)); 
                         } else {
@@ -496,8 +496,12 @@ void TechChar::initCharacterization() {
         sta::Network* networkChar = _openSta->network();
 
         //Gets the buffer masters and its in/out pins.
-        _masterNames = _options->getBufferList();
-        std::string bufMasterName =  _masterNames[0];
+        std::vector<std::string> masterVector = _options->getBufferList();
+        for (std::string masterString : masterVector) {
+                _masterNames.insert(masterString);
+        }
+        
+        std::string bufMasterName =  masterVector[0];
         _charBuf = _db->findMaster(bufMasterName.c_str());
 
         for (odb::dbMTerm* masterTerminal : _charBuf->getMTerms()){
@@ -851,21 +855,20 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData cur
         return currentResults;
 }
 
-void TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
+TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
         unsigned currentindex = 0;
         //Change the buffer topology by increasing the size of the buffers.
         //After testing all the sizes for the current buffer, increment the size of the next one (works like a carry mechanism).
         //Ex for 4 different buffers: 103-> 110 -> 111 -> 112 -> 113 -> 120 ... 
         bool done = false;
         while (!done) {
-                //Gets the size of the current buffer.
-                std::vector<std::string>::iterator masterItr = std::find(_masterNames.begin(), _masterNames.end(), 
-                                                                         currentSolution.instVector[currentindex]->getMaster()->getName());
-                unsigned masterIndex = std::distance(_masterNames.begin(), masterItr);
-                //Tries to change the size of the current buffer.
-                masterIndex++;
-                if (masterIndex >= _masterNames.size()) {
-                        //If the size is higher than the number of possible buffers, change the current buf master to the _charBuf (0) and try to go to next instance. 
+                //Gets the iterator to the beggining of the _masterNames set.
+                std::set<std::string>::iterator masterItr = _masterNames.find(currentSolution.instVector[currentindex]->getMaster()->getName());
+                //Gets the iterator to the end of the _masterNames set.
+                std::set<std::string>::iterator masterFinalItr = _masterNames.rbegin().base();
+                masterFinalItr--;
+                if (masterItr == masterFinalItr) {
+                        //If the iterator cant increment past the final iterator, change the current buf master to the _charBuf and try to go to next instance. 
                         odb::dbInst* currentInst = currentSolution.instVector[currentindex];
                         //Using swap master means we don't have to update the SolutionData.
                         currentInst->swapMaster(_charBuf);
@@ -875,11 +878,12 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
                                 topologyIndex++){
                                 //Iterates through the topologyDescriptor to set the new information(string representing the current buffer).
                                 std::string topologyS = currentSolution.topologyDescriptor[topologyIndex];
-                                if (std::find(_masterNames.begin(), _masterNames.end(), topologyS) == _masterNames.end()){
+                                if (_masterNames.find(topologyS) == _masterNames.end()){
                                         continue; //Is a number (i.e. a wire segment). Ignore and go to the next one.
                                 } else {
                                         if (topologyCounter == currentindex){
-                                                currentSolution.topologyDescriptor[topologyIndex] = _masterNames[0];
+                                                std::set<std::string>::iterator firstMaster = _masterNames.begin();
+                                                currentSolution.topologyDescriptor[topologyIndex] = *firstMaster;
                                                 break;         
                                         }
                                         topologyCounter++;
@@ -887,8 +891,10 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
                         }
                         currentindex++;
                 } else {
-                        //If the size is lower, change the current buffer to the new size and exit the function.
-                        odb::dbMaster* newBufMaster = _db->findMaster(_masterNames[masterIndex].c_str());
+                        //If the size is lower, change the current buffer to the new size (increment the iterator) and exit the function.
+                        masterItr++;
+                        std::string masterString = *masterItr;
+                        odb::dbMaster* newBufMaster = _db->findMaster(masterString.c_str());
                         odb::dbInst* currentInst = currentSolution.instVector[currentindex];
                         currentInst->swapMaster(newBufMaster);
                         unsigned topologyCounter = 0;
@@ -896,11 +902,11 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
                                 topologyIndex < currentSolution.topologyDescriptor.size(); 
                                 topologyIndex++){
                                 std::string topologyS = currentSolution.topologyDescriptor[topologyIndex];
-                                if (std::find(_masterNames.begin(), _masterNames.end(), topologyS) == _masterNames.end()){
+                                if (_masterNames.find(topologyS) == _masterNames.end()){
                                         continue; //Is a number (i.e. a wire segment). Ignore and go to the next one.
                                 } else {
                                         if (topologyCounter == currentindex){
-                                                currentSolution.topologyDescriptor[topologyIndex] = _masterNames[masterIndex];
+                                                currentSolution.topologyDescriptor[topologyIndex] = masterString;
                                                 break;         
                                         }
                                         topologyCounter++;
@@ -913,6 +919,7 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
                         done = true;
                 }
         }
+        return currentSolution;
 }
 
 std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
@@ -968,7 +975,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
                 for (int topologyIndex = 0 ; topologyIndex < currentSolution.topology.size() ; topologyIndex ++) {
                         std::string topologyS = currentSolution.topology[topologyIndex];
                         //Normalizes the strings that represents the topology too.
-                        if (std::find(_masterNames.begin(), _masterNames.end(), topologyS) == _masterNames.end()){
+                        if (_masterNames.find(topologyS) == _masterNames.end()){
                                 //Is a number (i.e. a wire segment).
                                 topologyResult.push_back(std::to_string(std::stod(topologyS) / static_cast<float> (currentSolution.wirelength) ));
                         } else {
@@ -1082,13 +1089,12 @@ void TechChar::create() {
                                                         std::vector<ResultData> resultGroup;
                                                         resultGroup.push_back(currentResults);
                                                         _solutionMap[solutionKey] = resultGroup;
-                                                }                                  
+                                                }
                                         }
                                 }
                                 //If the currentSolution is not a pure-wire, update the buffer topologies.
                                 if (currentSolution.isPureWire == false) {
-
-                                        updateBufferTopologies(currentSolution);
+                                        currentSolution = updateBufferTopologies(currentSolution);
                                 }                        
                                 //For pure-wire solution buffersUpdate == 1, so it only runs once.
                                 buffersUpdate--;

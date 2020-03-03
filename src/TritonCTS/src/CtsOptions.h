@@ -126,7 +126,7 @@ private:
         double      _maxCharCap                 = 0;
         double      _capPerSqr                  = 0;
         double      _resPerSqr                  = 0;
-        unsigned    _charWirelengthIterations   = 3;
+        unsigned    _charWirelengthIterations   = 4;
         unsigned    _charLoadIterations         = 30;
         unsigned    _charSlewIterations         = 10;
         unsigned    _clockTreeMaxDepth          = 100;
