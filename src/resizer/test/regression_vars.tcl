@@ -127,6 +127,7 @@ record_resizer_tests {
   buffer_ports1
   buffer_ports2
   buffer_ports3
+  buffer_ports5
   resize1
   resize2
   resize4
