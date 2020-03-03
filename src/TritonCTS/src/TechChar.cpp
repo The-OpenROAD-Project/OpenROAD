@@ -865,12 +865,11 @@ TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData c
                 //Gets the iterator to the beggining of the _masterNames set.
                 std::set<std::string>::iterator masterItr = _masterNames.find(currentSolution.instVector[currentindex]->getMaster()->getName());
                 //Gets the iterator to the end of the _masterNames set.
-                std::set<std::string>::iterator masterFinalItr = _masterNames.rbegin().base();
+                std::set<std::string>::iterator masterFinalItr = _masterNames.end();
                 masterFinalItr--;
                 if (masterItr == masterFinalItr) {
-                        //If the iterator cant increment past the final iterator, change the current buf master to the _charBuf and try to go to next instance. 
+                        //If the iterator can't increment past the final iterator, change the current buf master to the _charBuf and try to go to next instance. 
                         odb::dbInst* currentInst = currentSolution.instVector[currentindex];
-                        //Using swap master means we don't have to update the SolutionData.
                         currentInst->swapMaster(_charBuf);
                         unsigned topologyCounter = 0;
                         for (unsigned topologyIndex = 0; 
@@ -891,7 +890,7 @@ TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData c
                         }
                         currentindex++;
                 } else {
-                        //If the size is lower, change the current buffer to the new size (increment the iterator) and exit the function.
+                        //Increment the iterator and change the current buffer to the new size.
                         masterItr++;
                         std::string masterString = *masterItr;
                         odb::dbMaster* newBufMaster = _db->findMaster(masterString.c_str());
