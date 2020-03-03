@@ -91,13 +91,7 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-wire_unit)] } {
     set wire_unit $keys(-wire_unit)
     $cts set_wire_segment_distance_unit $wire_unit
-  } else {
-    if {[info exists keys(-lut_file)] && [info exists keys(-sol_list)]} {
-      #User must enter a distance unit if using a lut file.
-      puts "Missing argument -wire_unit"
-      exit
-    }
-  }
+  } 
 
   if { [info exists keys(-max_cap)] } {
     set max_cap_value $keys(-max_cap)
@@ -128,20 +122,22 @@ proc clock_tree_synthesis { args } {
     }
   }
 
-  if { [info exists keys(-out_path)] && [info exists keys(-buf_list)] } {
+  if { [info exists keys(-out_path)] && (![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]) } {
     set out_path $keys(-out_path)
     $cts set_out_path $out_path
   }
 
-  if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] && [info exists keys(-buf_list)] } {
-    set sqr_cap $keys(-sqr_cap)
-    $cts set_cap_per_sqr $sqr_cap
-    set sqr_res $keys(-sqr_res)
-    $cts set_res_per_sqr $sqr_res
-  } else {
-    #User must enter capacitance and resistance per square (um²) when creating a new characterization.
-    puts "Missing argument -sqr_cap and/or -sqr_res"
-    exit
+  if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
+    if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] } {
+      set sqr_cap $keys(-sqr_cap)
+      $cts set_cap_per_sqr $sqr_cap
+      set sqr_res $keys(-sqr_res)
+      $cts set_res_per_sqr $sqr_res
+    } else {
+      #User must enter capacitance and resistance per square (um²) when creating a new characterization.
+      puts "Missing argument -sqr_cap and/or -sqr_res"
+      exit
+    }
   }
 
   $cts run_triton_cts

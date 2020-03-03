@@ -127,8 +127,8 @@ private:
         double      _capPerSqr                  = 0;
         double      _resPerSqr                  = 0;
         unsigned    _charWirelengthIterations   = 4;
-        unsigned    _charLoadIterations         = 30;
-        unsigned    _charSlewIterations         = 10;
+        unsigned    _charLoadIterations         = 34;
+        unsigned    _charSlewIterations         = 12;
         unsigned    _clockTreeMaxDepth          = 100;
         bool        _enableFakeLutEntries       = true;
         bool        _forceBuffersOnLeafLevel    = true;

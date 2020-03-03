@@ -63,6 +63,10 @@ namespace TritonCTS {
 void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols) {
         std::cout << " Compiling LUT\n";
         initLengthUnits();
+        
+        _minSegmentLength = toInternalLengthUnit(_minSegmentLength); 
+        _maxSegmentLength = toInternalLengthUnit(_maxSegmentLength); 
+        
         reportCharacterizationBounds(); //min and max values already set
         checkCharacterizationBounds();
 
@@ -127,16 +131,31 @@ void TechChar::parseLut(const std::string& file) {
                 std::exit(1);
         }
 
-        initLengthUnits();
-
         // First line of the LUT is a header with normalization values
         if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance 
                       >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-                std::cout << "    [ERROR] Problem reading the LUT file\n";                 
+                std::cout << "    [ERROR] Problem reading the LUT file\n";     
+                std::exit(1);            
         }
+        
+        if (_options->getWireSegmentUnit() == 0){
+                unsigned presetWireUnit = 0;
+                if (!(lutFile >> presetWireUnit)) {
+                        std::cout << "    [ERROR] Problem reading the LUT file\n"; 
+                        std::exit(1);            
+                }
+                if (presetWireUnit == 0) {
+                        std::cout << "    [ERROR] Problem reading the LUT file\n";
+                        std::exit(1);   
+                }
+                _options->setWireSegmentUnit(presetWireUnit);
+        }
+        
+        initLengthUnits();
+        
         _minSegmentLength = toInternalLengthUnit(_minSegmentLength); 
         _maxSegmentLength = toInternalLengthUnit(_maxSegmentLength); 
-        
+
         reportCharacterizationBounds();
         checkCharacterizationBounds();
 
@@ -391,7 +410,7 @@ void TechChar::write(const std::string& filename) const {
 
         file << _minSegmentLength << " " << _maxSegmentLength << " " 
              << _minCapacitance << " " << _maxCapacitance << " "
-             << _minSlew << " " << _maxSlew << "\n";
+             << _minSlew << " " << _maxSlew << " " << _options->getWireSegmentUnit() << "\n";
 
         file.precision(15);
         forEachWireSegment( [&] (unsigned idx, const WireSegment& segment) {
@@ -428,7 +447,7 @@ void TechChar::writeSol(const std::string& filename) const {
                         file << idx << " ";
                         for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
                                 float wirelengthValue = segment.getBufferLocation(idx) * ((float) (segment.getLength()) * (float) (_options->getWireSegmentUnit()));
-                                file << (unsigned long) (std::ceil(wirelengthValue));
+                                file << (unsigned long) (wirelengthValue);
                                 if (segment.isBuffered()){
                                         file << "," << segment.getBufferMaster(idx);
                                 }      
@@ -527,6 +546,11 @@ void TechChar::initCharacterization() {
         if (_options->getWireSegmentUnit() == 0){
                 unsigned charaunit = _charBuf->getHeight() * 10;
                 _options->setWireSegmentUnit(static_cast<unsigned> (charaunit));
+        } else {
+                //Updates the units to DBU.
+                int dbUnitsPerMicron = block->getDbUnitsPerMicron();
+                unsigned currentSegmentDistance = _options->getWireSegmentUnit();
+                _options->setWireSegmentUnit(currentSegmentDistance * dbUnitsPerMicron);
         }
         
         for (unsigned wirelengthInter = _options->getWireSegmentUnit(); 
@@ -1104,7 +1128,10 @@ void TechChar::create() {
         sta::Sta::setSta(_openSta);
         //Post-processing of the results.
         std::vector<ResultData> convertedSolutions = characterizationPostProcess();
-        //Creates the wire segments.
+        //Changes the segment units back to micron and creates the wire segments.
+        float dbUnitsPerMicron = static_cast<float> (_charBlock->getDbUnitsPerMicron());
+        float currentSegmentDistance = static_cast<float> (_options->getWireSegmentUnit());
+        _options->setWireSegmentUnit(static_cast<unsigned> (currentSegmentDistance / dbUnitsPerMicron));
         compileLut(convertedSolutions);
         //Saves the characterization file if needed.
         if (_options->getOutputPath().length() > 0) {
