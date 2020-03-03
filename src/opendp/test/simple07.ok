@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: Reading LEF file:  Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: Finished LEF file:  Nangate45.lef
 Notice 0: 
 Reading DEF file: simple07.def
 Notice 0: Design: ten_cells
@@ -20,7 +20,7 @@ nets                       : 11
 design area                : 6.6e+07
 total fixed area           : 3.19e+06
 total movable area         : 3.09e+07
-design utilization         : 49.2
+design utilization         : 49.2%
 rows                       : 2
 row height                 : 2800
 ----------------------------------------------------------------

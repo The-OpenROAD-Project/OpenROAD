@@ -69,6 +69,7 @@ find_package(Boost)
 
 # OpenDB's swig wrapper is not in the library (and mistakenly exports
 # to the global namespace) so make our own.
+# build/src/CMakeFiles/opendb_swig.dir/opendbtclTCL_wrap.cxx
 set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
 
 set_property(SOURCE ${OPENDB_SWIG_FILE}
@@ -128,6 +129,7 @@ swig_add_library(openroad_swig
   SOURCES ${OPENROAD_SWIG_FILE}
 )
 
+# build/src/CMakeFiles/openroad_swig.dir/OpenRoadTCL_wrap.cxx
 swig_link_libraries(openroad_swig
   PUBLIC
   openroad

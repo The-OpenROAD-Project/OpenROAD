@@ -29,7 +29,7 @@ make
 OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
 
 The default build type is RELEASE to compile optimized code.
-The resulting executable is in `build/resizer`.
+The resulting executable is in `build/src/openroad`.
 
 Optional CMake variables passed as -D<var>=<value> arguments to CMake are show below.
 
@@ -369,9 +369,13 @@ estimated wires used for timing.
 Legalize a design that has been globally placed.
 
 ```
-legalize_placement [-constraints constraints_file]
+set_padding -global [-left pad_left] [-right pad_right]
+legalize_placement
 
 ```
+
+The `set_padding` command sets left and right padding in multiples of
+the row site width.
 
 #### Clock Tree Synthesis
 

@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef INIT_FLOORPLAN_H
-#define INIT_FLOORPLAN_H
+#pragma once
 
 namespace odb {
 class dbDatabase;
@@ -59,4 +58,4 @@ autoPlacePins(const char *pin_layer_name,
 	      Report *report);
 
 } // namespace
-#endif
+

@@ -57,7 +57,7 @@ getDb()
 }
 
 // Copied from StaTcl.i because of ordering issues.
-class CmdErrorNetworkNotLinked : public sta::StaException
+class CmdErrorNetworkNotLinked : public sta::Exception
 {
 public:
   virtual const char *what() const throw()
@@ -138,7 +138,7 @@ using odb::dbDatabase;
 //
 ////////////////////////////////////////////////////////////////
 
-%include "OpenSTA/tcl/StaException.i"
+%include "OpenSTA/tcl/Exception.i"
 
 %inline %{
 
@@ -241,6 +241,13 @@ db_has_tech()
   return getDb()->getTech() != nullptr;
 }
 
+odb::adsRect
+get_db_core()
+{
+  OpenRoad *ord = getOpenRoad();
+  return ord->getCore();
+}
+
 double
 dbu_to_microns(int dbu)
 {
@@ -268,6 +275,13 @@ void
 set_cmd_sta(sta::Sta *sta)
 {
   sta::Sta::setSta(sta);
+}
+
+bool
+units_initialized()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->unitsInitialized();
 }
 
 %} // inline

@@ -1,7 +1,7 @@
 # OpenDP
 *OpenDP: Open Source Detailed Placement Engine*
 
-| <img src="/doc/image/OpenDP_sample.jpg" width=900px> | 
+| <img src="OpenDP.jpg" width=900px> | 
 |:--:| 
 | *Visualized detailed placement result using aes_cipher_top design with innovus initial placement; OpenDP_sample.jpg* |
 

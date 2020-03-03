@@ -36,6 +36,7 @@
 #include "Search.hh"
 #include "Network.hh"
 #include "StaMain.hh"
+#include "openroad/OpenRoad.hh"
 #include "resizer/SteinerTree.hh"
 #include "resizer/Resizer.hh"
 
@@ -118,8 +119,8 @@ Resizer::init(Tcl_Interp *interp,
 double
 Resizer::coreArea() const
 {
-  adsRect rect;
-  db_->getChip()->getBlock()->getDieArea(rect);
+  dbBlock *block = db_->getChip()->getBlock();
+  adsRect rect = ord::getCore(block);
   return dbuToMeters(rect.dx()) * dbuToMeters(rect.dy());
 }
 
@@ -174,7 +175,6 @@ Resizer::init()
   designArea();
   db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
-  // In case graph was made by ensureLevelized.
   graph_ = sta_->graph();
   ensureLevelDrvrVerticies();
   ensureClkNets();
@@ -189,7 +189,9 @@ Resizer::setWireRC(float wire_res,
   // Abbreviated copyState
   graph_delay_calc_ = sta_->graphDelayCalc();
   search_ = sta_->search();
+  graph_ = sta_->ensureGraph();
 
+  sta_->ensureLevelized();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
@@ -198,7 +200,7 @@ Resizer::setWireRC(float wire_res,
   wire_cap_ = wire_cap;
 
   initCorner(corner);
-  init();
+  ensureClkNets();
   makeNetParasitics();
 }
 
@@ -261,6 +263,8 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
       bufferInput(pin, buffer_cell);
   }
   delete port_iter;
+  if (inserted_buffer_count_ > 0)
+    level_drvr_verticies_valid_ = false;
   report_->print("Inserted %d input buffers.\n",
 		 inserted_buffer_count_);
 }
@@ -330,6 +334,8 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
       bufferOutput(pin, buffer_cell);
   }
   delete port_iter;
+  if (inserted_buffer_count_ > 0)
+    level_drvr_verticies_valid_ = false;
   report_->print("Inserted %d output buffers.\n",
 		 inserted_buffer_count_);
 }
@@ -981,6 +987,7 @@ Resizer::deleteRebufferOptions()
 
 ////////////////////////////////////////////////////////////////
 
+// Assumes resizerPreambnle has been called.
 void
 Resizer::repairMaxCapSlew(bool repair_max_cap,
 			  bool repair_max_slew,
@@ -996,20 +1003,28 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
     // Hands off the clock tree.
-    if (!search_->isClock(vertex)) {
-      Pin *drvr_pin = vertex->pin();
+    Net *net = network_->net(vertex->pin());
+    if (!isClock(net)) {
       bool violation = false;
-      if (repair_max_cap
-	  && hasMaxCapViolation(drvr_pin)) {
-	max_cap_violation_count++;
-	violation = true;
+      NetPinIterator *pin_iter = network_->pinIterator(net);
+      while (pin_iter->hasNext()) {
+	Pin *pin = pin_iter->next();
+	if (repair_max_cap
+	    && hasMaxCapViolation(pin)) {
+	  violation = true;
+	  max_cap_violation_count++;
+	  break;
+	}
+	if (repair_max_slew
+	    && hasMaxSlewViolation(pin)) {
+	  max_slew_violation_count++;
+	  violation = true;
+	  break;
+	}
       }
-      if (repair_max_slew
-	  && hasMaxSlewViolation(drvr_pin)) {
-	max_slew_violation_count++;
-	violation = true;
-      }
+      delete pin_iter;
       if (violation) {
+	Pin *drvr_pin = vertex->pin();
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  report_->warn("max utilization reached.\n");
@@ -1030,11 +1045,11 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
 }
 
 bool
-Resizer::hasMaxCapViolation(const Pin *drvr_pin)
+Resizer::hasMaxCapViolation(const Pin *pin)
 {
-  LibertyPort *port = network_->libertyPort(drvr_pin);
+  LibertyPort *port = network_->libertyPort(pin);
   if (port) {
-    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+    float load_cap = graph_delay_calc_->loadCap(pin, dcalc_ap_);
     float cap_limit;
     bool exists;
     port->capacitanceLimit(MinMax::max(), cap_limit, exists);
@@ -1044,16 +1059,23 @@ Resizer::hasMaxCapViolation(const Pin *drvr_pin)
 }
 
 bool
-Resizer::hasMaxSlewViolation(const Pin *drvr_pin)
+Resizer::hasMaxSlewViolation(const Pin *pin)
 {
-  Vertex *vertex = graph_->pinDrvrVertex(drvr_pin);
+  Vertex *vertex, *bidirect_drvr_vertex;
+  graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
   float limit;
   bool exists;
-  slewLimit(drvr_pin, MinMax::max(), limit, exists);
+  slewLimit(pin, MinMax::max(), limit, exists);
   for (auto rf : RiseFall::range()) {
-    Slew slew = graph_->slew(vertex, rf, dcalc_ap_->index());
+    Slew slew;
+    slew  = graph_->slew(vertex, rf, dcalc_ap_->index());
     if (slew > limit)
       return true;
+    if (bidirect_drvr_vertex) {
+      slew  = graph_->slew(bidirect_drvr_vertex, rf, dcalc_ap_->index());
+      if (slew > limit)
+	return true;
+    }
   }
   return false;
 }
@@ -2088,7 +2110,8 @@ Required
 Resizer::pinRequired(const Pin *pin)
 {
   Vertex *vertex = graph_->pinLoadVertex(pin);
-  return sta_->vertexRequired(vertex, min_max_);
+  Required required = sta_->vertexRequired(vertex, min_max_);
+  return required;
 }
 
 float
@@ -2133,7 +2156,8 @@ double
 Resizer::designArea()
 {
   if (design_area_ == 0.0) {
-    for (dbInst *inst : db_->getChip()->getBlock()->getInsts()) {
+    dbBlock *block = db_->getChip()->getBlock();
+    for (dbInst *inst : block->getInsts()) {
       dbMaster *master = inst->getMaster();
       design_area_ += area(master);
     }

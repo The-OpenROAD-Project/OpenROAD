@@ -50,6 +50,7 @@ proc set_wire_rc { args } {
     # F/m^2
     set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
   } else {
+    ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
       set res $keys(-resistance)
       check_positive_float "-resistance" $res

@@ -36,6 +36,7 @@
 #include <cfloat>
 #include <algorithm>
 #include "opendp/Opendp.h"
+#include "openroad/OpenRoad.hh"
 
 namespace opendp {
 
@@ -44,7 +45,6 @@ using std::cout;
 using std::endl;
 using std::fixed;
 using std::ifstream;
-using std::make_pair;
 using std::max;
 using std::min;
 using std::numeric_limits;
@@ -76,36 +76,28 @@ void Opendp::dbToOpendp() {
   clear();
 
   // LEF
-  for(auto db_lib : db_->getLibs()) {
-    make_macros(db_lib);
-  }
+  for(auto db_lib : db_->getLibs())
+    makeMacros(db_lib);
 
   block_ = db_->getChip()->getBlock();
-  findCore();
-  // make rows in CoreArea;
-  make_core_rows();
-  make_cells();
+  core_ = ord::getCore(block_);
+
+  examineRows();
+  makeCells();
   makeGroups();
-  findInitialPower();
+  findRowPower();
 }
 
-void Opendp::make_macros(dbLib *db_lib) {
+void Opendp::makeMacros(dbLib *db_lib) {
   auto db_masters = db_lib->getMasters();
-  macros_.reserve(db_masters.size());
   for(auto db_master : db_masters) {
-    macros_.push_back(Macro());
-    struct Macro &macro = macros_.back();
-    db_master_map_[db_master] = &macro;
-
-    macro.db_master = db_master;
-    macro_define_top_power(&macro);
+    struct Macro &macro = db_master_map_[db_master];
+    defineTopPower(macro, db_master);
   }
 }
 
-// - - - - - - - define multi row cell & define top power - - - - - - - - //
-void Opendp::macro_define_top_power(Macro *myMacro) {
-  dbMaster *master = myMacro->db_master;
-
+void Opendp::defineTopPower(Macro &macro,
+			    dbMaster *master) {
   dbMTerm *power = nullptr;
   dbMTerm *gnd = nullptr;
   for(dbMTerm *mterm : master->getMTerms()) {
@@ -118,15 +110,10 @@ void Opendp::macro_define_top_power(Macro *myMacro) {
 
   int power_y_max = power ? find_ymax(power) : 0;
   int gnd_y_max = gnd ? find_ymax(gnd) : 0;
-  if(power_y_max > gnd_y_max)
-    myMacro->top_power = VDD;
-  else
-    myMacro->top_power = VSS;
+  macro.top_power_ = (power_y_max > gnd_y_max) ? VDD : VSS;
 
-  if(power && gnd) {
-    if(power->getMPins().size() > 1 || gnd->getMPins().size() > 1)
-      myMacro->isMulti = true;
-  }
+  macro.is_multi_row_ = power && gnd
+    && (power->getMPins().size() > 1 || gnd->getMPins().size() > 1);
 }
 
 int Opendp::find_ymax(dbMTerm *mterm) {
@@ -137,94 +124,57 @@ int Opendp::find_ymax(dbMTerm *mterm) {
   return ymax;
 }
 
-void Opendp::findCore() {
-  core_.mergeInit();
-  auto db_rows = block_->getRows();
-  for(auto db_row : db_rows) {
-    int orig_x, orig_y;
-    db_row->getOrigin(orig_x, orig_y);
-    int site_count = db_row->getSiteCount();
+void Opendp::examineRows() {
 
-    dbSite *site = db_row->getSite();
-    row_height_ = site->getHeight();
-    site_width_ = site->getWidth();
+  auto rows = block_->getRows();
+  if (!rows.empty()) {
+    int bottom_row_y = numeric_limits<int>::max();
+    dbRow *bottom_row = nullptr;
+    for (dbRow *db_row : rows) {
+      dbSite *site = db_row->getSite();
+      row_height_ = site->getHeight();
+      site_width_ = site->getWidth();
 
-    adsRect row_bbox;
-    db_row->getBBox(row_bbox);
-    core_.merge(row_bbox);
-  }
-}
-
-// Generate new rows to fill core area.
-void Opendp::make_core_rows() {
-  row_site_count_ = coreGridWidth();
-  int row_count = coreGridHeight();
-
-  int bottom_row_y = numeric_limits<int>::max();
-  dbRow *bottom_row = nullptr;
-  for (dbRow *db_row : block_->getRows()) {
-    int row_x, row_y;
-    db_row->getOrigin(row_x, row_y);
-    if (row_y < bottom_row_y) {
-      bottom_row_y = row_y;
-      bottom_row = db_row;
+      int row_x, row_y;
+      db_row->getOrigin(row_x, row_y);
+      if (row_y < bottom_row_y) {
+	bottom_row_y = row_y;
+	bottom_row = db_row;
+      }
     }
-  }
-  if (bottom_row) {
+    row_site_count_ = divFloor(core_.dx(), site_width_);
+    row_count_ = divFloor(core_.dy(), row_height_);
+
     dbOrientType orient = bottom_row->getOrient();
-
-    rows_.reserve(row_count);
-    rows_.clear();
-    for(int i = 0; i < row_count; i++) {
-      Row row;
-      row.origX = core_.xMin();
-      row.origY = core_.yMin() + i * row_height_;
-      row.orient = orient;
-      rows_.push_back(row);
-
-      // orient flips. e.g. R0 -> MX -> R0 -> MX -> ...
-      orient = (orient == dbOrientType::R0) ? dbOrientType::MX : dbOrientType::R0;
-    }
+    row0_orient_is_r0_ = (bottom_row->getOrient() == dbOrientType::R0);
   }
   else
     error("no rows found.");
 }
 
-void Opendp::make_cells() {
+void Opendp::makeCells() {
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
     cells_.push_back(Cell());
     Cell &cell = cells_.back();
-    cell.db_inst = db_inst;
+    cell.db_inst_ = db_inst;
     db_inst_map_[db_inst] = &cell;
 
     dbMaster *master = db_inst->getMaster();
-    auto miter = db_master_map_.find(master);
-    if(miter != db_master_map_.end()) {
-      Macro *macro = miter->second;
-      cell.cell_macro = macro;
+    int width = master->getWidth();
+    int height = master->getHeight();
+    if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
+    cell.width_ = width;
+    cell.height_ = height;
 
-      int width = master->getWidth();
-      int height = master->getHeight();
-      if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
-      cell.width = width;
-      cell.height = height;
-
-      // Shift by core lower left.
-      int x, y;
-      db_inst->getLocation(x, y);
-      cell.init_x_coord = std::max(0, x - core_.xMin());
-      cell.init_y_coord = std::max(0, y - core_.yMin());
-
-      // fixed cells
-      if(isFixed(&cell)) {
-        // Shift by core lower left.
-        cell.x_coord = x - core_.xMin();
-        cell.y_coord = y - core_.yMin();
-        cell.is_placed = true;
-      }
-    }
+    int init_x, init_y;
+    initLocation(&cell, init_x, init_y);
+    // Shift by core lower left.
+    cell.x_ = init_x;
+    cell.y_ = init_y;
+    cell.orient_ = db_inst->getOrient();
+    cell.is_placed_ = isFixed(&cell);
   }
 }
 
@@ -275,7 +225,7 @@ void Opendp::makeGroups() {
       for (auto db_inst : db_region->getRegionInsts()) {
 	Cell *cell = db_inst_map_[db_inst];
 	group.siblings.push_back(cell);
-	cell->cell_group = &group;
+	cell->group_ = &group;
       }
       // Reverse instances for compatibility with standalone ordering.
       // reverse(group.siblings.begin(), group.siblings.end());
@@ -283,7 +233,7 @@ void Opendp::makeGroups() {
   }
 }
 
-void Opendp::findInitialPower() {
+void Opendp::findRowPower() {
   const char *power_net_name = "VDD";
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
