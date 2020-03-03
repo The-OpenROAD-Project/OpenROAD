@@ -36,8 +36,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef OPENDP_H
-#define OPENDP_H
+#pragma once
 
 #include <cstdlib>
 #include <cstring>
@@ -91,17 +90,6 @@ struct Cell {
   adsRect *region_;  // group rect
 };
 
-// Rows covering core.
-// These do NOT correspond to database rows, which may be fragmented.
-struct Row {
-  Row();
-
-  int origX; // DBU
-  int origY; // DBU
-  dbOrientType orient_;
-  power top_power;
-};
-
 struct Group {
   Group();
 
@@ -148,11 +136,11 @@ class Opendp {
 
  private:
   void dbToOpendp();
-  void make_macros(dbLib* db_lib);
-  void make_core_rows();
-  void make_cells();
+  void makeMacros(dbLib* db_lib);
+  void examineRows();
+  void makeCells();
   void makeGroups();
-  void findInitialPower();
+  void findRowPower();
   double dbuToMicrons(int64_t dbu);
   bool isFixed(Cell* cell);  // fixed cell or not
   bool isMultiRow(Cell* cell);
@@ -227,6 +215,8 @@ class Opendp {
 		int y_tar);
   int rectDist(Cell *cell,
 	       adsRect *rect);
+  power rowTopPower(int row);
+  dbOrientType rowOrient(int row);
 
   // Cell initial location wrt core origin.
   int gridX(int x);
@@ -248,8 +238,6 @@ class Opendp {
 		    int &y);
   int paddedWidth(Cell *cell);
   int disp(Cell *cell);
-  int coreGridWidth();
-  int coreGridHeight();
   int coreGridMaxX();
   int coreGridMaxY();
   void error(const char *what);
@@ -260,7 +248,6 @@ class Opendp {
   int pad_right_;
 
   std::vector< Cell > cells_;
-  std::vector< Row > rows_;
   std::vector< Group > groups_;
 
   std::map< dbMaster*, Macro > db_master_map_;
@@ -268,8 +255,11 @@ class Opendp {
 
   adsRect core_;
   power initial_power_;
+  bool row0_orient_is_r0_;
+  bool row0_top_power_is_vdd_;
   int row_height_; // dbu
   int site_width_;
+  int row_count_;
   int row_site_count_;
   int max_cell_height_;
   int max_displacement_constraint_; // from constraints file
@@ -301,5 +291,3 @@ int divCeil(int dividend, int divisor);
 int divFloor(int dividend, int divisor);
 
 }  // namespace opendp
-
-#endif

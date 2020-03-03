@@ -57,7 +57,7 @@ getDb()
 }
 
 // Copied from StaTcl.i because of ordering issues.
-class CmdErrorNetworkNotLinked : public sta::StaException
+class CmdErrorNetworkNotLinked : public sta::Exception
 {
 public:
   virtual const char *what() const throw()
@@ -145,7 +145,7 @@ using odb::dbDatabase;
 //
 ////////////////////////////////////////////////////////////////
 
-%include "OpenSTA/tcl/StaException.i"
+%include "OpenSTA/tcl/Exception.i"
 
 %inline %{
 

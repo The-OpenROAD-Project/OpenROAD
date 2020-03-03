@@ -46,12 +46,6 @@ proc pdngen { args } {
   }
 }
 
-# temporary alias to old name
-proc run_pdngen { args } {
-  pdngen::warning 1 "run_pdngen is deprecated. Use pdngen."
-  pdngen $args
-}
-
 namespace eval pdngen {
 
 variable logical_viarules {}

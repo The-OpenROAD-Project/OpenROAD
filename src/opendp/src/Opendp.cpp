@@ -116,11 +116,6 @@ Pixel::Pixel()
       util(0.0),
       is_valid(true) {}
 
-Row::Row()
-    : origX(0),
-      origY(0),
-      orient_(dbOrientType::R0) {}
-
 ////////////////////////////////////////////////////////////////
 
 Group::Group() : name(""), util(0.0){}
@@ -129,6 +124,8 @@ Opendp::Opendp()
   : pad_right_(0),
     pad_left_(0),
     initial_power_(power::undefined),
+    row0_orient_is_r0_(true),
+    row0_top_power_is_vdd_(true),
     diamond_search_height_(400),
     max_displacement_constraint_(0),
     site_width_(0),
@@ -141,7 +138,6 @@ void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
   db_master_map_.clear();
-  rows_.clear();
   cells_.clear();
 }
 
@@ -194,7 +190,7 @@ bool Opendp::readConstraints(const string input) {
   }
 
   if(max_displacement_constraint_ == 0)
-    max_displacement_constraint_ = rows_.size();
+    max_displacement_constraint_ = row_count_;
 
   dot_constraints.close();
   return false;
@@ -206,10 +202,6 @@ void Opendp::initAfterImport() {
 
   // dummy cell generation
   dummy_cell_.is_placed_ = true;
-
-  // calc row / site offset
-  int row_offset = rows_[0].origY;
-  int site_offset = rows_[0].origX;
 
   // construct pixel grid
   int row_num = gridHeight();
@@ -281,7 +273,7 @@ void Opendp::findDesignStats() {
       multi_height_inst_count_++;
   }
 
-  design_area_ = rows_.size() * static_cast< int64_t >(row_site_count_)
+  design_area_ = row_count_ * static_cast< int64_t >(row_site_count_)
     * site_width_ * row_height_;
 
   for(Cell &cell : cells_) {
@@ -315,7 +307,7 @@ void Opendp::reportDesignStats() {
   cout << "total fixed area           : " << static_cast< double >(fixed_area_) << endl;
   cout << "total movable area         : " << static_cast< double >(movable_area_) << endl;
   cout << "design utilization         : " << design_util_ * 100.00 << "%" << endl;
-  cout << "rows                       : " << rows_.size() << endl;
+  cout << "rows                       : " << row_count_ << endl;
   cout << "row height                 : " << row_height_ << endl;
   if(max_cell_height_ > 1)
     cout << "max multi_cell height      : " << max_cell_height_ << endl;
@@ -342,6 +334,23 @@ void Opendp::reportLegalizationStats() {
   cout << std::fixed;
   cout << "delta HPWL                 : " << hpwl_delta << "%" << endl;
   cout << "----------------------------------------------------------------" << endl;
+}
+
+////////////////////////////////////////////////////////////////
+
+power
+Opendp::rowTopPower(int row)
+{
+  return ((row0_top_power_is_vdd_ ? row : row+1) % 2 == 0) ? VDD : VSS;
+}
+
+dbOrientType
+Opendp::rowOrient(int row)
+{
+  // orient flips. e.g. R0 -> MX -> R0 -> MX -> ...
+  return ((row0_orient_is_r0_ ? row : row + 1) % 2 == 0)
+    ? dbOrientType::R0
+    : dbOrientType::MX;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -425,14 +434,6 @@ int Opendp::gridEndX(Cell *cell) {
 
 int Opendp::gridEndY(Cell *cell) {
   return divCeil(cell->y_ + row_height_, row_height_);
-}
-
-int Opendp::coreGridWidth() {
-  return divRound(core_.dx(), site_width_);
-}
-
-int Opendp::coreGridHeight() {
-  return divRound(core_.dy(), row_height_);
 }
 
 int Opendp::coreGridMaxX() {

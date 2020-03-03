@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef RESIZER_H
-#define RESIZER_H
+#pragma once
 
 #include "db_sta/dbSta.hh"
 #include "SteinerTree.hh"
@@ -131,8 +130,8 @@ protected:
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
-  bool hasMaxCapViolation(const Pin *drvr_pin);
-  bool hasMaxSlewViolation(const Pin *drvr_pin);
+  bool hasMaxCapViolation(const Pin *pin);
+  bool hasMaxSlewViolation(const Pin *pin);
   void slewLimit(const Pin *pin,
 		 const MinMax *min_max,
 		 // Return values.
@@ -262,4 +261,3 @@ protected:
 };
 
 } // namespace
-#endif

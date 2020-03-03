@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef STEINER_TREE_H
-#define STEINER_TREE_H
+#pragma once
 
 #include "Hash.hh"
 #include "UnorderedMap.hh"
@@ -127,4 +126,3 @@ protected:
 };
 
 } // namespace
-#endif

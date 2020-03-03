@@ -11,8 +11,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef MAKE_INIT_FP_H
-#define MAKE_INIT_FP_H
+#pragma once
 
 namespace ord {
 
@@ -23,4 +22,3 @@ void
 initInitFloorplan(OpenRoad *openroad);
 
 } // namespace
-#endif
