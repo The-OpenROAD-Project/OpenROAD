@@ -42,6 +42,7 @@ proc initialize_floorplan { args } {
     set tracks_file $keys(-tracks)
   }
 
+  sta::check_argc_eq0 "initialize_floorplan" $args
   if [info exists keys(-utilization)] {
     set util $keys(-utilization)
     sta::check_positive_float "-utilization" $util

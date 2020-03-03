@@ -51,10 +51,11 @@ proc legalize_placement { args } {
     }
   }
 
+  sta::check_argc_eq0 "legalize_placement" $args
   if { [ord::db_has_rows] } {
     opendp::legalize_placement $verbose
   } else {
-    puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+    sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
@@ -78,9 +79,39 @@ proc set_padding { args } {
     sta::check_positive_integer "-right" $right
   }
   set global [info exists flags(-global)]
+  sta::check_argc_eq0 "set_padding" $args
   if { $global } {
     opendp::set_padding_global $left $right
   } else {
     sta::sta_error "Only set_padding -global supported."
   }
+}
+
+sta::define_cmd_args "place_fillers" { filler_masters }
+
+proc place_fillers { args } {
+  sta::check_argc_eq1 "place_fillers" $args
+  set fillers [opendp::get_masters_arg $args]
+  opendp::place_fillers_cmd $fillers
+}
+
+namespace eval opendp {
+
+# expand master name regexps
+proc get_masters_arg { master_names } {
+  set db [ord::get_db]
+  set names {}
+  foreach name $master_names {
+    foreach lib [$db getLibs] {
+      foreach master [$lib getMasters] {
+	set master_name [$master getConstName]
+	if { [regexp $name $master_name] } {
+	  lappend names $master_name
+	}
+      }
+    }
+  }
+  return $names;
+}
+
 }
