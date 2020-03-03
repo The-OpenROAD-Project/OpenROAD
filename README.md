@@ -428,7 +428,7 @@ Options description:
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
 
 
-#### IR analysis
+#### PDN analysis
 
 PDNSim global route.
 Report IR drop given a placed and PDN synthesized design
