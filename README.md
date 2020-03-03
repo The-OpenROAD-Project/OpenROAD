@@ -426,3 +426,18 @@ Options description:
 ###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
+
+
+#### IR analysis
+
+PDNSim global route.
+Report IR drop given a placed and PDN synthesized design
+
+```
+analyze_power_grid -vsrc <voltage_source_location_file>
+```
+
+Options description:
+- **vsrc**: Set the location of the power C4 bumps/IO pins
+
+##### Note: See the file Vsrc_aes.loc in PDNSim/test repository file for an example
