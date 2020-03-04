@@ -24,13 +24,6 @@ design utilization         : 4.01%
 rows                       : 85
 row height                 : 2800
 ----------------------------------------------------------------
-Check Legality
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-edge_check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
 total displacement         : 1357615
 average displacement       : 2472
@@ -39,4 +32,11 @@ original HPWL              : 6.94e+03
 legalized HPWL             : 7.75e+03
 delta HPWL                 : 12%
 ----------------------------------------------------------------
+Check placement
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==>> PASS 
+overlap_check ==> PASS 
 No differences found.

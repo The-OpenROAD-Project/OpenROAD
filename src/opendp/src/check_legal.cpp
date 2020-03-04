@@ -56,8 +56,8 @@ using std::vector;
 
 using odb::adsRect;
 
-bool Opendp::checkLegality(bool verbose) {
-  cout << "Check Legality" << endl;
+bool Opendp::checkPlacement(bool verbose) {
+  cout << "Check placement" << endl;
 
   bool legal = true;
   legal &= row_check(verbose);

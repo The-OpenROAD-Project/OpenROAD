@@ -28,13 +28,6 @@ row height                 : 2800
 group count                : 2
 ----------------------------------------------------------------
  group_cell_placement done .. 
-Check Legality
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-edge_check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
 total displacement         : 10540
 average displacement       : 1054

@@ -25,13 +25,6 @@ rows                       : 1
 row height                 : 2800
 ----------------------------------------------------------------
 Error: detailed placement failed on _277_
-Check Legality
-row check ==> PASS 
-site check ==> FAIL (1)
-power check ==> PASS 
-edge_check ==> PASS 
-placed_check ==> FAIL (1)
-overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
 total displacement         : 0
 average displacement       : 0
@@ -40,4 +33,11 @@ original HPWL              : 61
 legalized HPWL             : 61
 delta HPWL                 : 0%
 ----------------------------------------------------------------
+Check placement
+row check ==> PASS 
+site check ==> FAIL (1)
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==> FAIL (1)
+overlap_check ==> PASS 
 No differences found.

@@ -139,15 +139,13 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-bool Opendp::detailedPlacement(bool verbose) {
+void Opendp::detailedPlacement() {
   dbToOpendp();
   initAfterImport();
   reportDesignStats();
-  simplePlacement(verbose);
-  bool legal = checkLegality(verbose);
+  simplePlacement();
   reportLegalizationStats();
   updateDbInstLocations();
-  return legal;
 }
 
 void Opendp::error(const char *what) {

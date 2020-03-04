@@ -115,11 +115,19 @@ read_constraints(std::string constraint_file)
 }
 
 void
-detailedPlacement(bool verbose)
+detailed_placement_cmd()
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(verbose);
+  opendp->detailedPlacement();
 }
+
+bool
+check_placement_cmd(bool verbose)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->checkPlacement(verbose);
+}
+
 
 void
 set_padding_global(int left,

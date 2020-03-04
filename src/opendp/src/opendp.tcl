@@ -33,20 +33,27 @@
 #############################################################################
 
 # -constraints is an undocumented option for worthless academic contests
-sta::define_cmd_args "detailed_placement" {[-verbose]\
-					     [-constraints constraints_file]\
-					   }
+sta::define_cmd_args "detailed_placement" {[-constraints constraints_file]}
 
 proc legalize_placement { args } {
+  sta::parse_key_args "legalize_placement" args \
+    keys {} flags {-verbose}
+
   puts "Warning: the legalize_placement command has been renamed to 'detailed_placement'."
-  eval [concat detailed_placement $args]
+  set verbose [info exists flags(-verbose)]
+  sta::check_argc_eq0 "legalize_placement" $args
+  if { [ord::db_has_rows] } {
+    opendp::detailedPlacement
+  } else {
+    sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
+  }
+  opendp::check_placement_cmd $verbose
 }
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-constraints} flags {-verbose}
+    keys {-constraints} flags {}
 
-  set verbose [info exists flags(-verbose)]
   if { [info exists keys(-constraints)] } {
     set constraints_file $keys(-constraints)
     if { [file readable $constraints_file] } {
@@ -58,7 +65,7 @@ proc detailed_placement { args } {
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::detailedPlacement $verbose
+    opendp::detailed_placement_cmd
   } else {
     sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
   }
@@ -104,6 +111,17 @@ proc filler_placement { args } {
   sta::check_argc_eq1 "filler_placement" $args
   set fillers [opendp::get_masters_arg $args]
   opendp::filler_placement_cmd $fillers
+}
+
+sta::define_cmd_args "check_placement" {[-verbose]}
+
+proc check_placement { args } {
+  sta::parse_key_args "check_placement" args \
+    keys {} flags {-verbose}
+
+  set verbose [info exists flags(-verbose)]
+  sta::check_argc_eq0 "check_placement" $args
+  opendp::check_placement_cmd $verbose
 }
 
 namespace eval opendp {

@@ -130,10 +130,10 @@ class Opendp {
   void init(dbDatabase* db);
   bool readConstraints(string constraint_file);
   // legalize/check/report
-  bool detailedPlacement(bool verbose);
+  void detailedPlacement();
   void setPaddingGlobal(int left,
 			int right);
-  bool checkLegality(bool verbose);
+  bool checkPlacement(bool verbose);
   void fillerPlacement(StringSeq *filler_master_names);
   void reportLegalizationStats();
   void reportDesignStats();
@@ -166,7 +166,7 @@ class Opendp {
 
   // utility.cpp
   void power_mapping();
-  void simplePlacement(bool verbose);
+  void simplePlacement();
   std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
                                                        adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);

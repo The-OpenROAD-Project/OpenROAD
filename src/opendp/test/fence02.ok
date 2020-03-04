@@ -28,13 +28,6 @@ row height                 : 2800
 group count                : 2
 ----------------------------------------------------------------
  group_cell_placement done .. 
-Check Legality
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-edge_check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
 total displacement         : 19280
 average displacement       : 1928
@@ -43,4 +36,11 @@ original HPWL              : 99.3
 legalized HPWL             : 91.4
 delta HPWL                 : -8%
 ----------------------------------------------------------------
+Check placement
+row check ==> PASS 
+site check ==> PASS 
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==>> PASS 
+overlap_check ==> PASS 
 No differences found.
