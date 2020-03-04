@@ -99,7 +99,8 @@ Opendp::gapFillers(int gap)
       }
     }
   }
-  error("could not fill gap");
+  string msg = "could not fill gap " + std::to_string(gap);
+  error(msg.c_str());
   return fillers;
 }
 
