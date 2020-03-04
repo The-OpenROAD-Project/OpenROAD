@@ -13,7 +13,7 @@ By default, the following transforms are built with OpenPhySyn:
 
 ## Optimization Commands
 
-The main provided command for optimization are `optimize_design` for physical design optimization and `optimize_logic`.
+The main provided commands for optimization are `optimize_design` for physical design optimization and `optimize_logic`.
 
 Currently, `optimize_design` performs pin swapping and load-driven gate-cloning to enhance the design timing. `optimize_logic` performs constant propagation optimization across the design hierarchy.
 

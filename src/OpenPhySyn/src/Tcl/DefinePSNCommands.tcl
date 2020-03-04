@@ -13,6 +13,41 @@ namespace eval psn {
         psn::transform_internal $transform_name $args
     }
 
+    define_cmd_args "optimize_logic" {\
+        [-no_constant_propagation] \
+        [-tiehi tiehi_cell_name] \
+        [-tielo tielo_cell_name] \
+    }
+
+    proc optimize_logic { args } {
+        sta::parse_key_args "optimize_power" args \
+            keys {-tiehi tielo} \
+            flags {-no_constant_propagation}
+        set do_constant_propagation true
+        set tiehi_cell_name ""
+        set tielo_cell_name ""
+        set max_prop_depth -1
+        if {[info exists flags(-no_constant_propagation)]} {
+            set no_constant_propagation false
+        }
+        if {![has_transform constant_propagation]} {
+            set do_constant_propagation false
+        }
+        if {$do_constant_propagation} {
+            if {[info exists keys(-tiehi)]} {
+                set tiehi_cell_name $keys(-tiehi)
+            }
+            if {[info exists keys(-tielo)]} {
+                set tielo_cell_name $keys(-tielo)
+            }
+            set propg [transform constant_propagation true $max_prop_depth $tiehi_cell_name $tielo_cell_name]
+            if {$propg < 0} {
+                return $propg
+            }
+        }
+        return 0
+    }
+
     define_cmd_args "optimize_design" {\
         [-no_gate_clone] \
         [-no_pin_swap] \
@@ -118,6 +153,21 @@ namespace eval psn {
         set cell $keys(-buffer_cell)
         set max_fanout $keys(-max_fanout)
         transform buffer_fanout $max_fanout $cell
+    }
+
+    define_cmd_args "set_psn_wire_rc" {[-layer layer_name]\
+				 [-resistance res_per_micron ][-capacitance cap_per_micron]
+
+    proc set_psn_wire_rc { args } {
+        parse_key_args "set_psn_wire_rc" args \
+        keys {-layer -resistance -capacitance} flags {}
+        if {[info exists keys(-layer)]} {
+            set_wire_res_cap $keys(-layer)
+        } else if {![info exists keys(-resistance)] || ![info exists keys(-capacitance)]} {
+            sta::cmd_usage_error "set_psn_wire_rc"
+        } else {
+            set_wire_res_cap $keys(-resistance) $keys(-capacitance)
+        }
     }
 }
 namespace import psn::*

@@ -48,14 +48,14 @@ design_area()
     return Psn::instance().handler()->area();
 }
 int
-set_wire_rc(float res_per_micon, float cap_per_micron)
+set_wire_res_cap(float res_per_micon, float cap_per_micron)
 {
     Psn::instance().setWireRC(res_per_micon, cap_per_micron);
 
     return 1;
 }
 int
-set_wire_rc(const char* layer_name)
+set_wire_res_cap(const char* layer_name)
 {
     return Psn::instance().setWireRC(layer_name);
 }
