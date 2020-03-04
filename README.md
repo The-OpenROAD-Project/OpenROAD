@@ -366,7 +366,8 @@ estimated wires used for timing.
 
 #### Detailed Placement
 
-Legalize a design that has been globally placed.
+The `legalize_placement` command does detailed placement of instances
+to legal locations after global placement.
 
 ```
 set_padding -global [-left pad_left] [-right pad_right]
@@ -375,7 +376,17 @@ legalize_placement
 ```
 
 The `set_padding` command sets left and right padding in multiples of
-the row site width.
+the row site width. Use the `set_padding` command before legalizing
+placement to leave room for routing.
+
+```
+place_fillers filler_masters
+```
+
+THe `place_fillers` command fills gaps between detail placed instances
+to connect the power and ground rails in the rows. `filler_masters` is
+a list of master/macro names to use for filling the gaps. Wildcard matching
+is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
 
 #### Clock Tree Synthesis
 
