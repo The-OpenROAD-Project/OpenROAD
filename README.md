@@ -372,18 +372,18 @@ to legal locations after global placement.
 ```
 set_placement_padding -global [-left pad_left] [-right pad_right]
 detailed_placement
-
+check_placement [-verbose]
+filler_placement filler_masters
 ```
 
 The `set_placement_padding` command sets left and right padding in multiples of
 the row site width. Use the `set_padding` command before legalizing
 placement to leave room for routing.
 
-```
-filler_placement filler_masters
-```
+The `check_placement` command checks the placement legality. It returns `1` if the
+placement is legal.
 
-THe `filler_placement` command fills gaps between detail placed instances
+The `filler_placement` command fills gaps between detail placed instances
 to connect the power and ground rails in the rows. `filler_masters` is
 a list of master/macro names to use for filling the gaps. Wildcard matching
 is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
