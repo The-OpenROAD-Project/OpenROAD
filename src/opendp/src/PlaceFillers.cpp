@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "opendp/Opendp.h"
+#include <algorithm>
 
 namespace opendp {
 
@@ -73,7 +74,7 @@ Opendp::findFillerMasters(StringSeq *filler_master_names)
       }
     }
   }
-  sort(filler_masters_.begin(), filler_masters_.end(),
+  std::sort(filler_masters_.begin(), filler_masters_.end(),
        [](dbMaster *master1,
 	  dbMaster *master2) {
 	 return master1->getWidth() > master2->getWidth();
