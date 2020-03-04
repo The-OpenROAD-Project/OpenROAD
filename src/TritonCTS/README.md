@@ -32,16 +32,16 @@ Argument description:
 - ``sqr_cap`` (mandatory) is the capacitance (in farad) per database units to be used in the wire segments. 
 - ``sqr_res`` (mandatory) is the resistance (in ohm) per database units to be used in the wire segments. 
 - ``root_buffer`` (optional) is the master cell of the buffer that serves as root for the clock tree. 
-If this parameter is ommitted, the first master cell from ```buf_list``` is taken.
+If this parameter is omitted, the first master cell from ```buf_list``` is taken.
 - ``max_slew`` (optional) is the max slew value (in seconds) that the characterization will test. 
-If this parameter is ommitted, the code tries to obtain the value from the liberty file.
+If this parameter is omitted, the code tries to obtain the value from the liberty file.
 - ``max_cap`` (optional) is the max capacitance value (in farad) that the characterization will test. 
-If this parameter is ommitted, the code tries to obtain the value from the liberty file.
+If this parameter is omitted, the code tries to obtain the value from the liberty file.
 - ``wire_unit`` (optional) is the minimum unit distance between buffers for a specific wire. 
-If this parameter is ommitted, the code gets the value from ten times the height of ``root_buffer``.
+If this parameter is omitted, the code gets the value from ten times the height of ``root_buffer``.
 - ``clk_nets`` (optional) is a string containing the names of the clock roots. 
-If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
-- ``out_path`` (optional) is the output path (full) that the lut.txt and sol_list.txt files will be saved. This are used to load an existing characterization, whithout creating one from scrath.
+If this parameter is omitted, TritonCTS looks for the clock roots automatically.
+- ``out_path`` (optional) is the output path (full) that the lut.txt and sol_list.txt files will be saved. This is used to load an existing characterization, without creating one from scratch.
 
 Instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
 
@@ -67,11 +67,11 @@ Argument description:
 - ``sol_list`` (mandatory) is the file containing the information on the topology of each segment (wirelengths and buffer masters).
 - ``sqr_res`` (mandatory) is the resistance (in ohm) per database units to be used in the wire segments. 
 - ``root_buffer`` (mandatory) is the master cell of the buffer that serves as root for the clock tree. 
-If this parameter is ommitted, you can use the ```buf_list``` argument, using the first master cell. If both arguments are ommitted, an error is raised.
+If this parameter is omitted, you can use the ```buf_list``` argument, using the first master cell. If both arguments are omitted, an error is raised.
 - ``wire_unit`` (optional) is the minimum unit distance between buffers for a specific wire, based on your ```lut_file```. 
-If this parameter is ommitted, the code gets the value from the header of the ```lut_file```. For the old technology characterization, described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md), this argument is mandatory, and ommitting it raises an error.
+If this parameter is omitted, the code gets the value from the header of the ```lut_file```. For the old technology characterization, described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md), this argument is mandatory, and omitting it raises an error.
 - ``clk_nets`` (optional) is a string containing the names of the clock roots. 
-If this parameter is ommitted, TritonCTS looks for the clock roots automatically.
+If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 
 ### Third party packages
 [LEMON](https://lemon.cs.elte.hu/trac/lemon) - **L**ibrary for **E**fficient **M**odeling and **O**ptimization in **N**etworks
