@@ -72,13 +72,12 @@ bool Opendp::checkLegality(bool verbose) {
 bool Opendp::row_check(bool verbose) {
   bool valid = true;
   int count = 0;
-  for(int i = 0; i < cells_.size(); i++) {
-    Cell* cell = &cells_[i];
-    if(!isFixed(cell)) {
-      if(cell->y_ % row_height_ != 0) {
+  for(Cell& cell : cells_) {
+    if(!isFixed(&cell)) {
+      if(cell.y_ % row_height_ != 0) {
 	if (verbose)
-	  cout << "row_check fail => " << cell->name()
-	       << " y_ : " << cell->y_ << endl;
+	  cout << "row_check fail => " << cell.name()
+	       << " y_ : " << cell.y_ << endl;
 	valid = false;
 	count++;
       }
@@ -96,13 +95,12 @@ bool Opendp::row_check(bool verbose) {
 bool Opendp::site_check(bool verbose) {
   bool valid = true;
   int count = 0;
-  for(int i = 0; i < cells_.size(); i++) {
-    Cell* cell = &cells_[i];
-    if(!isFixed(cell)) {
-      if(cell->x_ % site_width_ != 0) {
+  for(Cell& cell : cells_) {
+    if(!isFixed(&cell)) {
+      if(cell.x_ % site_width_ != 0) {
 	if (verbose)
-	  cout << "site check fail ==> " << cell->name()
-	       << " x_ : " << cell->x_ << endl;
+	  cout << "site check fail ==> " << cell.name()
+	       << " x_ : " << cell.x_ << endl;
 	valid = false;
 	count++;
       }
