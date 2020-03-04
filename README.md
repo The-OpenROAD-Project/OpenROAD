@@ -430,8 +430,8 @@ Options description:
 
 #### PDN analysis
 
-PDNSim global route.
-Report IR drop given a placed and PDN synthesized design
+PDNSim IR analysis.
+Report worst IR drop given a placed and PDN synthesized design
 
 ```
 analyze_power_grid -vsrc <voltage_source_location_file>
