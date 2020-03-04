@@ -43,6 +43,7 @@
 #include <iostream>
 #include <map>
 #include <unordered_map>
+#include <set>
 #include <vector>
 
 #include "opendb/db.h"
@@ -52,6 +53,7 @@
 namespace opendp {
 
 using std::string;
+using std::vector;
 
 using odb::adsRect;
 using odb::dbBlock;
@@ -66,16 +68,20 @@ using odb::dbRow;
 using odb::dbSite;
 
 class Pixel;
+struct Group;
 
 typedef Pixel* Grid;
+typedef std::vector<std::string> StringSeq;
+typedef vector<dbMaster*> dbMasterSeq;
+// gap -> sequence of masters to fill the gap
+typedef vector<dbMasterSeq> GapFillers;
+
 enum power { undefined, VDD, VSS };
 
 struct Macro {
   bool is_multi_row_;
   power top_power_;    // VDD/VSS
 };
-
-struct Group;
 
 struct Cell {
   Cell();
@@ -114,6 +120,8 @@ struct Pixel {
 
 ////////////////////////////////////////////////////////////////
 
+typedef std::set<dbMaster*> dbMasterSet;
+
 class Opendp {
  public:
   Opendp();
@@ -126,7 +134,7 @@ class Opendp {
   void setPaddingGlobal(int left,
 			int right);
   bool checkLegality(bool verbose);
-
+  void placeFillers(StringSeq *filler_master_names);
   void reportLegalizationStats();
   void reportDesignStats();
   double hpwl(bool initial);
@@ -134,7 +142,6 @@ class Opendp {
 			 int &avg_displacement,
 			 int &sum_displacement,
 			 int &max_displacement);
-
  private:
   void dbToOpendp();
   void makeMacros(dbLib* db_lib);
@@ -242,6 +249,12 @@ class Opendp {
   int coreGridMaxX();
   int coreGridMaxY();
   void error(const char *what);
+  // Place fillers
+  void findFillerMasters(StringSeq *filler_master_names);
+  dbMasterSeq &gapFillers(int gap);
+  Grid *makeCellGrid();  
+  void placeRowFillers(Grid *grid,
+		       int row);
 
   dbDatabase* db_;
   dbBlock* block_;
@@ -279,6 +292,11 @@ class Opendp {
   // total fixed cell area (excluding terminal NIs) dbu^2
   int64_t fixed_area_;
   double design_util_;
+
+  dbMasterSeq filler_masters_;
+  // gap (in sites) -> seq of masters
+  GapFillers gap_fillers_;
+  int filler_count_;
 
   // Magic numbers
   int diamond_search_height_;  // grid units
