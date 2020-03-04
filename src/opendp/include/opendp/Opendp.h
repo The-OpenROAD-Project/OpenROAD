@@ -65,6 +65,9 @@ using odb::dbOrientType;
 using odb::dbRow;
 using odb::dbSite;
 
+class Pixel;
+
+typedef Pixel* Grid;
 enum power { undefined, VDD, VSS };
 
 struct Macro {
@@ -107,8 +110,6 @@ struct Pixel {
   Cell* cell;
   double util;
   bool is_valid;  // false for dummy cells
-
-  Pixel();
 };
 
 ////////////////////////////////////////////////////////////////
@@ -218,11 +219,11 @@ class Opendp {
   power rowTopPower(int row);
   dbOrientType rowOrient(int row);
 
+  Grid *makeGrid();
+  void deleteGrid(Grid *grid);
   // Cell initial location wrt core origin.
   int gridX(int x);
   int gridY(int y);
-  int gridWidth();
-  int gridHeight();
   int gridEndX();
   int gridEndY();
   int gridWidth(Cell* cell);
@@ -265,7 +266,7 @@ class Opendp {
   int max_displacement_constraint_; // from constraints file
 
   // 2D pixel grid
-  Pixel** grid_;
+  Grid *grid_;
   Cell dummy_cell_;
 
   // Design stats.
