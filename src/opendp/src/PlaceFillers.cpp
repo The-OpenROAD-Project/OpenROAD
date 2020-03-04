@@ -38,26 +38,26 @@
 namespace opendp {
 
 using std::vector;
+using std::to_string;
+using std::max;
+using std::min;
+using std::cout;
+using std::endl;
 
 using odb::dbMaster;
 using odb::dbLib;
+using odb::dbPlacementStatus;
 
 void
 Opendp::placeFillers(StringSeq *filler_master_names)
 {
   findFillerMasters(filler_master_names);
-  for (dbMaster *filler_master : filler_masters_) {
-    printf("%s\n", filler_master->getConstName());
-  }
   gap_fillers_.clear();
-  dbMasterSeq &fillers = gapFillers(5);
-  for (dbMaster *master : fillers) {
-    printf("+ %s\n", master->getConstName());
-  }
-  fillers = gapFillers(66);
-  for (dbMaster *master : fillers) {
-    printf("+ %s\n", master->getConstName());
-  }
+  filler_count_ = 0;
+  Grid *grid = makeCellGrid();
+  for(int row = 0; row < row_count_; row++)
+    placeRowFillers(grid, row);
+  cout << "Placed " << to_string(filler_count_) << " filler instances." << endl;
 }
 
 void
@@ -80,6 +80,74 @@ Opendp::findFillerMasters(StringSeq *filler_master_names)
        });
 }
 
+Grid *
+Opendp::makeCellGrid()
+{
+  Grid *grid = makeGrid();
+
+  for(Cell& cell : cells_) {
+    int grid_x = gridX(&cell);
+    int grid_y = gridY(&cell);
+
+    int x_ur = gridEndX(&cell);
+    int y_ur = gridEndY(&cell);
+
+    // Fixed cells can be outside DIEAREA.
+    if(isFixed(&cell)) {
+      grid_x = max(0, grid_x);
+      grid_y = max(0, grid_y);
+      x_ur = min(x_ur, row_site_count_);
+      y_ur = min(y_ur, row_count_);
+    }
+
+    assert(grid_x >= 0);
+    assert(grid_y >= 0);
+    assert(x_ur <= row_site_count_);
+    assert(y_ur <= row_count_);
+
+    for(int j = grid_y; j < y_ur; j++) {
+      for(int k = grid_x; k < x_ur; k++) {
+	grid[j][k].cell = &cell;
+      }
+    }
+  }
+  return grid;
+}
+
+void
+Opendp::placeRowFillers(Grid *grid,
+			int row)
+{
+  dbOrientType orient = rowOrient(row);
+  int j = 0;
+  while (j < row_site_count_) {
+    if (grid[row][j].cell == nullptr) {
+      int k = j;
+      while (grid[row][k].cell == nullptr && k < row_site_count_)
+	k++;
+      int gap = k - j;
+      //printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
+      dbMasterSeq &fillers = gapFillers(gap);
+      k = j;
+      for (dbMaster *master : fillers) {
+	string inst_name = "FILLER_" + to_string(row) + "_" + to_string(k);
+	//printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() / site_width_);
+	dbInst *inst = dbInst::create(block_, master, inst_name.c_str());
+	int x = core_.xMin() + k * site_width_;
+	int y = core_.yMin() + row * row_height_;
+	inst->setOrient(orient);
+	inst->setLocation(x, y);
+	inst->setPlacementStatus(dbPlacementStatus::PLACED);
+	filler_count_++;
+	k += master->getWidth() / site_width_;
+      }
+      j += gap;
+    }
+    else
+      j++;
+  }
+}
+
 // return list of masters to fill gap (in site width units)
 dbMasterSeq &
 Opendp::gapFillers(int gap)
@@ -98,10 +166,12 @@ Opendp::gapFillers(int gap)
 	  return fillers;
       }
     }
+    string msg = "could not fill gap " + std::to_string(gap);
+    error(msg.c_str());
+    return fillers;
   }
-  string msg = "could not fill gap " + std::to_string(gap);
-  error(msg.c_str());
-  return fillers;
+  else
+    return fillers;
 }
 
 }  // namespace opendp

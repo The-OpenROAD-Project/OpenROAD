@@ -124,7 +124,7 @@ bool Opendp::edge_check(bool verbose) {
     for(int j = 0; j < row_site_count_; j++) {
       Cell* grid_cell = grid_[i][j].cell;
       if(grid_[i][j].is_valid) {
-	if(grid_cell != nullptr && grid_cell != &dummy_cell_) {
+	if(grid_cell && grid_cell != &dummy_cell_) {
 #ifdef ODP_DEBUG
 	  cout << "grid util : " << grid[i][j].util << endl;
 	  cout << "cell name : "
@@ -139,10 +139,6 @@ bool Opendp::edge_check(bool verbose) {
 	}
       }
     }
-#ifdef ODP_DEBUG
-    cout << " row search done " << endl;
-    cout << " cell list size : " << cells.size() << endl;
-#endif
   }
 
   if(!valid)
@@ -223,21 +219,7 @@ bool Opendp::placed_check(bool verbose) {
 
 bool Opendp::overlap_check(bool verbose) {
   bool valid = true;
-  int row_count = row_count_;
-  int col_count = row_site_count_;
-  Pixel** grid2;
-  grid2 = new Pixel*[row_count];
-  for(int i = 0; i < row_count; i++) {
-    grid2[i] = new Pixel[col_count];
-  }
-
-  for(int i = 0; i < row_count; i++) {
-    for(int j = 0; j < col_count; j++) {
-      grid2[i][j].grid_y_ = i;
-      grid2[i][j].grid_x_ = j;
-      grid2[i][j].cell = nullptr;
-    }
-  }
+  Grid *grid = makeGrid();
 
   for(Cell& cell : cells_) {
     int grid_x = gridX(&cell);
@@ -246,29 +228,29 @@ bool Opendp::overlap_check(bool verbose) {
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
-    // Fixed Cell can be out of Current DIEAREA settings.
+    // Fixed cells can be outside DIEAREA.
     if(isFixed(&cell)) {
       grid_x = max(0, grid_x);
       grid_y = max(0, grid_y);
-      x_ur = min(x_ur, col_count);
-      y_ur = min(y_ur, row_count);
+      x_ur = min(x_ur, row_site_count_);
+      y_ur = min(y_ur, row_count_);
     }
 
     assert(grid_x >= 0);
     assert(grid_y >= 0);
-    assert(x_ur <= coreGridMaxX());
-    assert(y_ur <= coreGridMaxY());
+    assert(x_ur <= row_site_count_);
+    assert(y_ur <= row_count_);
 
     for(int j = grid_y; j < y_ur; j++) {
       for(int k = grid_x; k < x_ur; k++) {
-        if(grid2[j][k].cell == nullptr) {
-          grid2[j][k].cell = &cell;
-          grid2[j][k].util = 1.0;
+        if(grid[j][k].cell == nullptr) {
+          grid[j][k].cell = &cell;
+          grid[j][k].util = 1.0;
         }
         else {
 	  if (verbose)
 	    cout << "overlap_check ==> FAIL ( cell " << cell.name()
-		 << " overlaps " << grid2[j][k].cell->name() << " ) "
+		 << " overlaps " << grid[j][k].cell->name() << " ) "
 		 << " ( " << (k * site_width_ + core_.xMin()) << ", "
 		 << (j * row_height_ + core_.yMin()) << " )" << endl;
           valid = false;
@@ -276,6 +258,8 @@ bool Opendp::overlap_check(bool verbose) {
       }
     }
   }
+  deleteGrid(grid);
+
   if(valid)
     cout << "overlap_check ==> PASS " << endl;
   else

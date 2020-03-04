@@ -67,6 +67,10 @@ using odb::dbOrientType;
 using odb::dbRow;
 using odb::dbSite;
 
+class Pixel;
+struct Group;
+
+typedef Pixel* Grid;
 typedef std::vector<std::string> StringSeq;
 typedef vector<dbMaster*> dbMasterSeq;
 // gap -> sequence of masters to fill the gap
@@ -78,8 +82,6 @@ struct Macro {
   bool is_multi_row_;
   power top_power_;    // VDD/VSS
 };
-
-struct Group;
 
 struct Cell {
   Cell();
@@ -114,8 +116,6 @@ struct Pixel {
   Cell* cell;
   double util;
   bool is_valid;  // false for dummy cells
-
-  Pixel();
 };
 
 ////////////////////////////////////////////////////////////////
@@ -142,7 +142,6 @@ class Opendp {
 			 int &avg_displacement,
 			 int &sum_displacement,
 			 int &max_displacement);
-  
  private:
   void dbToOpendp();
   void makeMacros(dbLib* db_lib);
@@ -227,11 +226,11 @@ class Opendp {
   power rowTopPower(int row);
   dbOrientType rowOrient(int row);
 
+  Grid *makeGrid();
+  void deleteGrid(Grid *grid);
   // Cell initial location wrt core origin.
   int gridX(int x);
   int gridY(int y);
-  int gridWidth();
-  int gridHeight();
   int gridEndX();
   int gridEndY();
   int gridWidth(Cell* cell);
@@ -253,6 +252,9 @@ class Opendp {
   // Place fillers
   void findFillerMasters(StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);
+  Grid *makeCellGrid();  
+  void placeRowFillers(Grid *grid,
+		       int row);
 
   dbDatabase* db_;
   dbBlock* block_;
@@ -277,7 +279,7 @@ class Opendp {
   int max_displacement_constraint_; // from constraints file
 
   // 2D pixel grid
-  Pixel** grid_;
+  Grid *grid_;
   Cell dummy_cell_;
 
   // Design stats.
@@ -294,6 +296,7 @@ class Opendp {
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters
   GapFillers gap_fillers_;
+  int filler_count_;
 
   // Magic numbers
   int diamond_search_height_;  // grid units
