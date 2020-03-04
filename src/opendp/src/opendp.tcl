@@ -98,12 +98,12 @@ proc set_placement_padding { args } {
   }
 }
 
-sta::define_cmd_args "place_fillers" { filler_masters }
+sta::define_cmd_args "filler_placement" { filler_masters }
 
-proc place_fillers { args } {
-  sta::check_argc_eq1 "place_fillers" $args
+proc filler_placement { args } {
+  sta::check_argc_eq1 "filler_placement" $args
   set fillers [opendp::get_masters_arg $args]
-  opendp::place_fillers_cmd $fillers
+  opendp::filler_placement_cmd $fillers
 }
 
 namespace eval opendp {

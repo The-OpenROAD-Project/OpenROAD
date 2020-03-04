@@ -35,7 +35,7 @@ add_library(opendp
   src/check_legal.cpp
   src/place.cpp
   src/utility.cpp
-  src/PlaceFillers.cpp
+  src/FillerPlacement.cpp
 
   ${OPENDP_WRAP}
   ${OPENDP_TCL_INIT}

@@ -134,7 +134,7 @@ class Opendp {
   void setPaddingGlobal(int left,
 			int right);
   bool checkLegality(bool verbose);
-  void placeFillers(StringSeq *filler_master_names);
+  void fillerPlacement(StringSeq *filler_master_names);
   void reportLegalizationStats();
   void reportDesignStats();
   double hpwl(bool initial);

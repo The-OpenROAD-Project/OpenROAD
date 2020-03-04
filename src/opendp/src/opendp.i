@@ -130,10 +130,10 @@ set_padding_global(int left,
 }
 
 void
-place_fillers_cmd(StringSeq *fillers)
+filler_placement_cmd(StringSeq *fillers)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->placeFillers(fillers);
+  opendp->fillerPlacement(fillers);
 }
 
 %} // inline

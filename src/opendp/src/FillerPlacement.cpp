@@ -49,7 +49,7 @@ using odb::dbLib;
 using odb::dbPlacementStatus;
 
 void
-Opendp::placeFillers(StringSeq *filler_master_names)
+Opendp::fillerPlacement(StringSeq *filler_master_names)
 {
   findFillerMasters(filler_master_names);
   gap_fillers_.clear();
