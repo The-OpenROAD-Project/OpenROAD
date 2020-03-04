@@ -64,13 +64,19 @@ proc detailed_placement { args } {
   }
 }
 
-sta::define_cmd_args "set_padding" { [-global]\
-				       [-right site_count]\
-				       [-left site_count] \
-				     }
+sta::define_cmd_args "set_placement_padding" { [-global]\
+						 [-right site_count]\
+						 [-left site_count] \
+					       }
 
 proc set_padding { args } {
-  sta::parse_key_args "set_padding" args \
+  puts "Warning: the set_padding command has been renamed to 'set_placement_padding'."
+  eval [concat set_placement_padding $args]
+
+}
+
+proc set_placement_padding { args } {
+  sta::parse_key_args "set_placement_padding" args \
     keys {-right -left} flags {-global}
 
   set left 0
@@ -84,11 +90,11 @@ proc set_padding { args } {
     sta::check_positive_integer "-right" $right
   }
   set global [info exists flags(-global)]
-  sta::check_argc_eq0 "set_padding" $args
+  sta::check_argc_eq0 "set_placement_padding" $args
   if { $global } {
     opendp::set_padding_global $left $right
   } else {
-    sta::sta_error "Only set_padding -global supported."
+    sta::sta_error "Only set_placement_padding -global supported."
   }
 }
 

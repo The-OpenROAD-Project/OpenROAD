@@ -370,12 +370,12 @@ The `detailed_placement` command does detailed placement of instances
 to legal locations after global placement.
 
 ```
-set_padding -global [-left pad_left] [-right pad_right]
-legalize_placement
+set_placement_padding -global [-left pad_left] [-right pad_right]
+detailed_placement
 
 ```
 
-The `set_padding` command sets left and right padding in multiples of
+The `set_placement_padding` command sets left and right padding in multiples of
 the row site width. Use the `set_padding` command before legalizing
 placement to leave room for routing.
 
