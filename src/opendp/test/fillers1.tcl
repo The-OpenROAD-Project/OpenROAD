@@ -2,7 +2,7 @@
 source helpers.tcl
 read_lef Nangate45.lef
 read_def simple01.def
-legalize_placement
+detailed_placement
 place_fillers FILL*
 
 set def_file [make_result_file fillers1.def]

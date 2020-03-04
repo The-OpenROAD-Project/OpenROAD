@@ -33,12 +33,17 @@
 #############################################################################
 
 # -constraints is an undocumented option for worthless academic contests
-sta::define_cmd_args "legalize_placement" {[-verbose]\
+sta::define_cmd_args "detailed_placement" {[-verbose]\
 					     [-constraints constraints_file]\
 					   }
 
 proc legalize_placement { args } {
-  sta::parse_key_args "legalize_placement" args \
+  puts "Warning: the legalize_placement command has been renamed to 'detailed_placement'."
+  eval [concat detailed_placement $args]
+}
+
+proc detailed_placement { args } {
+  sta::parse_key_args "detailed_placement" args \
     keys {-constraints} flags {-verbose}
 
   set verbose [info exists flags(-verbose)]
@@ -51,9 +56,9 @@ proc legalize_placement { args } {
     }
   }
 
-  sta::check_argc_eq0 "legalize_placement" $args
+  sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::legalize_placement $verbose
+    opendp::detailedPlacement $verbose
   } else {
     sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
   }

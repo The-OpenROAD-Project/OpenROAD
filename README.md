@@ -366,7 +366,7 @@ estimated wires used for timing.
 
 #### Detailed Placement
 
-The `legalize_placement` command does detailed placement of instances
+The `detailed_placement` command does detailed placement of instances
 to legal locations after global placement.
 
 ```

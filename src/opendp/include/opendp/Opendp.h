@@ -130,7 +130,7 @@ class Opendp {
   void init(dbDatabase* db);
   bool readConstraints(string constraint_file);
   // legalize/check/report
-  bool legalizePlacement(bool verbose);
+  bool detailedPlacement(bool verbose);
   void setPaddingGlobal(int left,
 			int right);
   bool checkLegality(bool verbose);

@@ -115,10 +115,10 @@ read_constraints(std::string constraint_file)
 }
 
 void
-legalize_placement(bool verbose)
+detailedPlacement(bool verbose)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->legalizePlacement(verbose);
+  opendp->detailedPlacement(verbose);
 }
 
 void
