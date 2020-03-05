@@ -1,0 +1,19 @@
+Include the post-processing options in the "partitioning time".
+
+Add Erik's matching trick to the different matching options.
+
+Add a geometric matching that breaks ties based upon geometric
+locality?
+
+Add option for heterogeneous network.
+  1. Add option to input graph.
+     A. Menu option (architecture value of -1)
+     B. Read it in fortran style and pass to interface
+     C. Reformat it to our data structure
+
+  2. When dividing, first divide processor graph
+     A. Use multilevel method, with wide variation in balance
+
+  3. Divide problem graph into appropriate sized pieces.
+     A. Can I use terminal propagation?  I don't know how
+	to measure architectural distance.

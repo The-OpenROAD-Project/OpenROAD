@@ -1,0 +1,40 @@
+This directory contains postscript files that should help you
+understand and make effective use of Chaco.  The most important
+document is the user's guide, "Users_Guide.ps".  This gives 
+directions for installing and using the code, describes the user
+interface and gives a brief overview of the algorithms used.
+The correct reference for the user's guide is
+  "The Chaco user's guide: Version 2.0", Tech. Rep. SAND94-2692,
+  Sandia National Laboratories, Albuquerque, NM, July 1995.
+
+Other files in this directory give detailed explanations of 
+several of the new partitioning algorithms implemented in Chaco.
+"Spectral_Theory.ps" gives a formal mathematical derivation of the
+multidimensional spectral methods.  This is also the appropriate place
+to learn about how spectral methods use edge and vertex weights.
+This paper has been published as
+  "An improved spectral graph partitioning algorithm for mapping parallel
+  computations", SIAM J. Sci. Comput., 16(2):452-469, 1995. To appear.
+
+A less formal discussion of the spectral material (without weights) is
+given in "Spectral_Overview.ps", which appeared as
+  "An improved spectral load balancing method", in Proc. 6th SIAM Conf.
+  Parallel Processing for Scientific Computing, SIAM, March 1993, pp. 953-961.
+
+The multilevel partitioner is described in "Multilevel.ps", along with a
+detailed description of the variant of the Kernighan-Lin/Fiduccia-Mattheyses
+refinement scheme used in Chaco.  This paper will appear as
+  "A multilevel algorithm for partitioning graphs", Proc. Supercomputing '95,
+  ACM, December 1995.
+
+Some of our empirical experience with the algorithms used in Chaco is
+described in "Empirical.ps", which was published as
+  "An empirical study of static load balancing algorithms", in Proc.
+  Scalable High Perf. Comput. Conf., IEEE, May 1994, pp. 682-685.
+
+A detailed discussion of terminal propagation and its ability to improve
+locality in partitions can be found in "Term_Prop.ps", which will be
+published as
+  "Enhancing data locality by using terminal propagation", Proc. 29th
+  Hawaii Conf. System Sciences, IEEE, January 1996.
+

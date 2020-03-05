@@ -1,0 +1,15 @@
+This is the directory in which the executable image (called "chaco")
+is placed by the makefile.  You will also notice some sample input 
+files. The "*.graph" files are graph input files, and the "*.coords" 
+files have coordinate inputs for geometric partitioning methods. The
+correct format for these files is described in detail in the user's
+guide, "doc/User_Guide.ps".
+
+The "grid20x20.*" files describe a simple square grid with 400 vertices.
+The "film.*" files correspond to a small, two dimensional unstructured
+mesh with tetrahedral elements.  A somewhat larger graph is described
+by the "hammond.*" files.  It is a 2D finite element grid of a complex
+airfoil with triangular elements.
+
+Larger graphs in a chaco input format can be obtained via anonymous ftp
+to www.cs.sandia.gov in the directory pub/graphs.
