@@ -514,9 +514,21 @@ void TechChar::initCharacterization() {
         _openSta = openRoad->getSta();
         sta::Network* networkChar = _openSta->network();
 
+        //Change resPerSqr and capPerSqr to DBU units.
+        double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0,-12))/2000;
+        double newResPerSqr = (_options->getResPerSqr())/2000;
+        _options->setCapPerSqr(newCapPerSqr); // picofarad/micron to farad/DBU
+        _options->setResPerSqr(newResPerSqr); // ohm/micron to ohm/DBU
+
         //Gets the buffer masters and its in/out pins.
         std::vector<std::string> masterVector = _options->getBufferList();
+        odb::dbMaster* testBuf = nullptr;
         for (std::string masterString : masterVector) {
+                testBuf = _db->findMaster(masterString.c_str());
+                if (testBuf == NULL){
+                        std::cout << "Buffer not found! Check your -buf_list input.\n";
+                        std::exit(1);
+                }
                 _masterNames.insert(masterString);
         }
         
@@ -537,8 +549,8 @@ void TechChar::initCharacterization() {
         _charBlock = odb::dbBlock::create(block, characterizationBlockName.c_str());
 
         //Gets the capacitance and resistance per DBU. User input.
-        _resPerDBU = _options->getResPerSqr(); //* block->getDbUnitsPerMicron();
-        _capPerDBU = _options->getCapPerSqr(); //* block->getDbUnitsPerMicron();
+        _resPerDBU = _options->getResPerSqr(); 
+        _capPerDBU = _options->getCapPerSqr(); 
 
         //Defines the different wirelengths to test and the characterization unit.
         unsigned wirelengthIterations = _options->getCharWirelengthIterations();
@@ -952,7 +964,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
         for (auto& keyResults : _solutionMap) {
                 CharKey currentKey = keyResults.first;
                 std::vector<ResultData> resultVector = keyResults.second;
-                if (resultVector.size() <= 3){
+                /*if (resultVector.size() <= 3){
                         for (ResultData selectedResults : resultVector){
                                 selectedSolutions.push_back(selectedResults);
                         }
@@ -964,8 +976,12 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
                                         resultVector[ static_cast<unsigned> (std::floor(0.5 * static_cast<float> (indexLimit))) ]);
                         selectedSolutions.push_back(
                                         resultVector[ static_cast<unsigned> (std::floor(0.9 * static_cast<float> (indexLimit))) ]);
+                }*/
+                for (ResultData selectedResults : resultVector){
+                        selectedSolutions.push_back(selectedResults);
                 }
         }
+
         //Creates variables to set the max and min values. These are normalized.
         unsigned minResultWirelength = std::numeric_limits<unsigned>::max();
         unsigned maxResultWirelength = 0;
@@ -1021,6 +1037,9 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
 
 unsigned TechChar::normalizeCharResults(float value, float iter, unsigned* min, unsigned* max) {
 	unsigned normVal = static_cast<unsigned>(std::ceil(value / iter));
+        if (normVal == 0 ){
+                normVal = 1;
+        }
 	*min = std::min(*min, normVal);
 	*max = std::max(*max, normVal);
 	return normVal;
@@ -1029,6 +1048,7 @@ unsigned TechChar::normalizeCharResults(float value, float iter, unsigned* min, 
 void TechChar::create() {
         //Setup of the attributes required to run the characterization.
         initCharacterization();
+        long unsigned int topologiesCreated = 0;
         for (unsigned setupWirelength : _wirelengthsToTest){
                 //Creates the topologies for the current wirelength.
                 std::vector<SolutionData> topologiesVector = createPatterns(setupWirelength);
@@ -1113,6 +1133,10 @@ void TechChar::create() {
                                                         resultGroup.push_back(currentResults);
                                                         _solutionMap[solutionKey] = resultGroup;
                                                 }
+                                                topologiesCreated++;
+                                                if (topologiesCreated % 50000 == 0){
+                                                        std::cout << "Number of created patterns = " << topologiesCreated << ".\n";
+                                                }
                                         }
                                 }
                                 //If the currentSolution is not a pure-wire, update the buffer topologies.
@@ -1124,6 +1148,7 @@ void TechChar::create() {
                         } while (buffersUpdate != 0);
                 }
         }
+        std::cout << "Number of created patterns = " << topologiesCreated << ".\n";
         //Returns the OpenSTA instance to the old one.
         sta::Sta::setSta(_openSta);
         //Post-processing of the results.

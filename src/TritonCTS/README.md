@@ -29,8 +29,8 @@ write_def "final.def"
 ```
 Argument description:
 - ```buf_list``` (mandatory) are the master cells (buffers) that will be considered when making the wire segments.
-- ``sqr_cap`` (mandatory) is the capacitance (in farad) per database units to be used in the wire segments. 
-- ``sqr_res`` (mandatory) is the resistance (in ohm) per database units to be used in the wire segments. 
+- ``sqr_cap`` (mandatory) is the capacitance (in picofarad) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
+- ``sqr_res`` (mandatory) is the resistance (in ohm) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
 - ``root_buffer`` (optional) is the master cell of the buffer that serves as root for the clock tree. 
 If this parameter is omitted, the first master cell from ```buf_list``` is taken.
 - ``max_slew`` (optional) is the max slew value (in seconds) that the characterization will test. 
