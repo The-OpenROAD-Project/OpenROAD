@@ -121,6 +121,13 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
+pdnsim::PDNSim*
+getPDNSim()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPDNSim();
+}
+
 } // namespace
 
 using ord::OpenRoad;
