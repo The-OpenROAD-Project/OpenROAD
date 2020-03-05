@@ -36,11 +36,11 @@ original HPWL              : 79.8
 legalized HPWL             : 81.9
 delta HPWL                 : 3%
 ----------------------------------------------------------------
-Check placement
 row check ==> PASS 
 site check ==> FAIL (1)
 power check ==> PASS 
 edge_check ==> PASS 
 placed_check ==> FAIL (1)
 overlap_check ==> FAIL 
+Error: placement check failed.
 No differences found.

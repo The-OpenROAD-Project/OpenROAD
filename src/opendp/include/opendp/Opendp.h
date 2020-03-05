@@ -133,6 +133,7 @@ class Opendp {
   void detailedPlacement();
   void setPaddingGlobal(int left,
 			int right);
+  // Return true if illegal.
   bool checkPlacement(bool verbose);
   void fillerPlacement(StringSeq *filler_master_names);
   void reportLegalizationStats();

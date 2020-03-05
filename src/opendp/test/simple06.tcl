@@ -3,7 +3,8 @@ source helpers.tcl
 read_lef Nangate45.lef
 read_def simple06.def
 detailed_placement
-check_placement
+catch {check_placement} error
+puts $error
 
 set def_file [make_result_file simple06.def]
 write_def $def_file

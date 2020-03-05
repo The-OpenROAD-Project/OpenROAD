@@ -3,7 +3,8 @@ read_lef multi_height_tech.lef
 read_lef multi_height_tech_cells.lef
 read_def multi_height04.def
 detailed_placement
-check_placement
+catch {check_placement} error
+puts $error
 
 set def_file [make_result_file multi_height04.def]
 write_def $def_file

@@ -33,7 +33,6 @@ legalized HPWL             : 8.37
 delta HPWL                 : 0%
 ----------------------------------------------------------------
 Placed 6 filler instances.
-Check placement
 row check ==> PASS 
 site check ==> PASS 
 power check ==> PASS 

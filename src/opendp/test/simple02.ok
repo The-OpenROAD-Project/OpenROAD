@@ -32,7 +32,6 @@ original HPWL              : 8.39
 legalized HPWL             : 8.37
 delta HPWL                 : -0%
 ----------------------------------------------------------------
-Check placement
 row check ==> PASS 
 site check ==> PASS 
 power check ==> PASS 

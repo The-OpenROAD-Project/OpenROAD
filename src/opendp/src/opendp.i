@@ -125,7 +125,7 @@ bool
 check_placement_cmd(bool verbose)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose);
+  return opendp->checkPlacement(verbose);
 }
 
 
