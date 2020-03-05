@@ -35,18 +35,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "PartClusManagerKernel.h"
 
 namespace PartClusManager {
+class PartClusManagerKernel;
+}
 
-        void PartClusManagerKernel::runChaco(Graph graph, const ChacoOptions options) {
+namespace ord {
 
-        }
-        void PartClusManagerKernel::runGPMetis(Graph graph, const GPMetisOptions options) {
+class OpenRoad;
 
-        }
-        void PartClusManagerKernel::runMLPart(Graph graph, const MLPartOptions options) {
-                
-        }
+PartClusManager::PartClusManagerKernel *makePartClusManager();
+
+void initPartClusManager(OpenRoad * openroad);
+
+void deletePartClusManager(PartClusManager::PartClusManagerKernel *partclusmanager);
 
 }
+

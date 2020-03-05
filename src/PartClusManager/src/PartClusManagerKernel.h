@@ -37,6 +37,7 @@
 
 
 #include "DBWrapper.h"
+#include "Graph.h"
 #include <iostream>
 
 namespace PartClusManager {
@@ -73,7 +74,7 @@ private:
         bool            _termProp               = true;
         double          _cutHopRatio            = 1.0;
         bool            _architecture           = false;
-        std::string     _archTopology           = ""
+        std::string     _archTopology           = "";
 };
 
 class GPMetisOptions {
@@ -115,9 +116,9 @@ class PartClusManagerKernel {
 
        public:
         PartClusManagerKernel() = default;
-        void runChaco(const ChacoOptions options);
-        void runGPMetis(const GPMetisOptions options);
-        void runMLPart(const MLPartOptions options);
+        void runChaco(Graph graph, const ChacoOptions options);
+        void runGPMetis(Graph graph, const GPMetisOptions options);
+        void runMLPart(Graph graph, const MLPartOptions options);
 };
 
 }

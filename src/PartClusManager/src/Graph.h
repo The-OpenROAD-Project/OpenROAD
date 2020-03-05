@@ -35,18 +35,21 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "PartClusManagerKernel.h"
-
 namespace PartClusManager {
 
-        void PartClusManagerKernel::runChaco(Graph graph, const ChacoOptions options) {
+enum GraphType : uint8_t {
+        CLIQUE,
+        HYBRID,
+        HYBRID_OLD,
+        STAR,
+        STAR_OLD
+};
 
-        }
-        void PartClusManagerKernel::runGPMetis(Graph graph, const GPMetisOptions options) {
+class Graph {
+public:
+        Graph() {}
+protected:
 
-        }
-        void PartClusManagerKernel::runMLPart(Graph graph, const MLPartOptions options) {
-                
-        }
+};
 
 }
