@@ -460,13 +460,8 @@ proc tapcell { args } {
         
     set db [::ord::get_db]
     set block [[$db getChip] getBlock]
-    set libs [$db getLibs]
-
-    foreach lib $libs {
-        set lef_units [$lib getLefUnits]
-    }
-
-    set lib [lindex $libs 0]
+    set tech [$db getTech]
+    set lef_units [$tech getLefUnits]
 
     set halo_y [expr $halo_y * $lef_units]
     set halo_x [expr $halo_x * $lef_units]
