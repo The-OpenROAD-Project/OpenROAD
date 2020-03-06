@@ -227,8 +227,6 @@ void Opendp::makeGroups() {
 	group.siblings.push_back(cell);
 	cell->group_ = &group;
       }
-      // Reverse instances for compatibility with standalone ordering.
-      // reverse(group.siblings.begin(), group.siblings.end());
     }
   }
 }
@@ -243,12 +241,6 @@ void Opendp::findRowPower() {
       if (strcasecmp(net_name, power_net_name) == 0) {
 	for (dbSWire *swire : net->getSWires()) {
 	  for (dbSBox *sbox : swire->getWires()) {
-#ifdef ODP_DEBUG
-	    adsRect box;
-	    printf("wire box %d %d %d %d\n",
-		   sbox->yMin(), sbox->xMin(),
-		   sbox->xMax(), sbox->yMax());
-#endif
 	    min_vdd_y = min(min_vdd_y, sbox->yMin());
 	    found_vdd = true;
 	  }
@@ -260,7 +252,7 @@ void Opendp::findRowPower() {
     initial_power_ = divRound(min_vdd_y, row_height_) % 2 == 0 ? VDD : VSS;
   else
     // error("could not find power special net");
-    cerr << "Error: could not find power special net" << endl;
+    cout << "Warning: could not find power special net" << endl;
 }
 
 }  // namespace opendp

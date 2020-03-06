@@ -10,7 +10,7 @@ Notice 0:     Created 391 pins.
 Notice 0:     Created 21340 components and 108388 component-terminals.
 Notice 0:     Created 19675 nets and 65708 connections.
 Notice 0: Finished DEF file: nangate45-bench/aes_cipher_top/aes_cipher_top_replace.def
-Error: could not find power special net
+Warning: could not find power special net
 -------------------- Design Stats ------------------------------
 core area                  : (28000, 28000) (1205240, 1010800)
 total cells                : 21340

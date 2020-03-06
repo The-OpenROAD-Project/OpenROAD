@@ -10,7 +10,7 @@ Notice 0:     Created 2 pins.
 Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: fragmented_row03.def
-Error: could not find power special net
+Warning: could not find power special net
 -------------------- Design Stats ------------------------------
 core area                  : (28000, 28000) (34840, 30800)
 total cells                : 1
