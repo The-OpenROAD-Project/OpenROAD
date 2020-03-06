@@ -44,9 +44,9 @@ END PINS
 
 NETS 2 ;
 - input
-  ( PIN input ) ( _277_ Z ) ;
+  ( PIN input ) ( _277_ A ) ;
 - out 
-  ( PIN out ) ( _277_ A ) ; 
+  ( PIN out ) ( _277_ Z ) ; 
 END NETS
 
 END DESIGN

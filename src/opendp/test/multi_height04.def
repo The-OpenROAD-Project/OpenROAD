@@ -40,8 +40,8 @@ PINS 2 ;
 END PINS
 
 NETS 11 ;
-- input
-  ( PIN input ) ( _277_ o ) ;
+- out
+  ( PIN out ) ( _277_ o ) ;
 - net1  
   ( _277_ d ) ( _284_ b ) ( _276_ o ) ;
 - net2
@@ -60,8 +60,8 @@ NETS 11 ;
   ( _285_ b ) ( _284_ o ) ;
 - net9
   ( _282_ a ) ( _285_ o ) ;
-- out 
-  ( PIN out ) ( _285_ a ) ; 
+- input
+  ( PIN input ) ( _285_ a ) ; 
 END NETS
 
 SPECIALNETS 2 ; 

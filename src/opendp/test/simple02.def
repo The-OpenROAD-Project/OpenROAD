@@ -76,7 +76,7 @@ SPECIALNETS 2 ;
       NEW metal1 340 + SHAPE FOLLOWPIN ( 3800 5600 ) ( 15960 5600 ) ;
 END SPECIALNETS
 NETS 2 ;
-    - input ( PIN input ) ( _277_ Z ) + USE SIGNAL ;
-    - out ( PIN out ) ( _277_ A ) + USE SIGNAL ;
+    - input ( PIN input ) ( _277_ A ) + USE SIGNAL ;
+    - out ( PIN out ) ( _277_ Z ) + USE SIGNAL ;
 END NETS
 END DESIGN
