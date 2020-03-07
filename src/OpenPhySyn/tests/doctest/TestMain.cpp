@@ -87,5 +87,3 @@ main(int argc, char** argv)
     return res + client_stuff_return_code; // the result from doctest is
                                            // propagated here as well
 }
-// This is all that is needed to compile a test-runner executable.
-// More tests can be added here, or in a new tests/*.cpp file.

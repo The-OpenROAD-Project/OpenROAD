@@ -16,7 +16,7 @@ option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy  ")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -143,44 +143,44 @@ set(PSN_SOURCES
 )
 
 set(PSN_TESTFILES        # All .cpp files in tests/
-    ${PROJECT_SOURCE_DIR}/tests/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
-    ${PROJECT_SOURCE_DIR}/tests/Sta.cpp
-    ${PROJECT_SOURCE_DIR}/tests/TestMain.cpp
-    ${PROJECT_SOURCE_DIR}/tests/Readers.cpp
+    ${PROJECT_SOURCE_DIR}/tests/doctest/SteinerTree.cpp
+    ${PROJECT_SOURCE_DIR}/tests/doctest/HelloTransform.cpp
+    ${PROJECT_SOURCE_DIR}/tests/doctest/Sta.cpp
+    ${PROJECT_SOURCE_DIR}/tests/doctest/TestMain.cpp
+    ${PROJECT_SOURCE_DIR}/tests/doctest/Readers.cpp
 )
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/HelloTransform.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/HelloTransform.cpp
 )
 endif()
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/BufferFanout.cpp
-  ${PROJECT_SOURCE_DIR}/tests/BufferTopPort.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/BufferFanout.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/BufferTopPort.cpp
 )
 endif()
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/GateClone.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/GateClone.cpp
 )
 endif()
 if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/PinSwap.cpp
-  ${PROJECT_SOURCE_DIR}/tests/PinSwapPower.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/PinSwap.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/PinSwapPower.cpp
 )
 endif()
 if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagation.cpp
-  ${PROJECT_SOURCE_DIR}/tests/SimpleConstantPropagationInversion.cpp
-  ${PROJECT_SOURCE_DIR}/tests/ComplexConstantPropagation.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/SimpleConstantPropagation.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/SimpleConstantPropagationInversion.cpp
+  ${PROJECT_SOURCE_DIR}/tests/doctest/ComplexConstantPropagation.cpp
 )
 endif()
 
