@@ -58,7 +58,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -only_characterization} flags {}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -only_characterization -slew_inter -cap_inter} flags {}
 
   set cts [get_triton_cts]
 
