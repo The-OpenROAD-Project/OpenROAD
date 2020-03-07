@@ -22,6 +22,7 @@ add_library(${BIN_NAME} ${SRC_FILES} ${PARTCLUSMANAGER_TCL_INIT})
 include_directories(${PARTCLUSMANAGER_HOME}/src
                     PRIVATE
                     ${OPENROAD_HOME}/include
+                    ${OPENSTA_HOME}/app
 		    ${TCL_INCLUDE_PATH}
                    ) 
 

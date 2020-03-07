@@ -67,6 +67,10 @@ namespace pdnsim {
 class PDNSim;
 }
 
+namespace PartClusManager {
+class PartClusManagerKernel;
+}
+
 namespace ord {
 
 using std::string;
@@ -96,11 +100,12 @@ public:
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
+  PartClusManager::PartClusManagerKernel *getPartClusManager() { return partClusManager_; }
   // Return the bounding box of the db rows.
   odb::adsRect getCore();
   // Return true if the command units have been initialized.
   bool unitsInitialized();
-
+      
   void readLef(const char *filename,
 	       const char *lib_name,
 	       bool make_tech,
@@ -136,6 +141,7 @@ private:
   OpenRCX::Ext *extractor_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
+  PartClusManager::PartClusManagerKernel *partClusManager_;      
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;

@@ -129,6 +129,13 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
+PartClusManager::PartClusManagerKernel *
+getPartClusManager()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPartClusManager();
+}
+
 } // namespace
 
 using ord::OpenRoad;

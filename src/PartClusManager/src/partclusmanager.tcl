@@ -35,4 +35,9 @@
 # // POSSIBILITY OF SUCH DAMAGE.
 # ////////////////////////////////////////////////////////////////////////////////
 
+sta::define_cmd_args "partition_netlist" { \
+                                         }
 
+proc partition_netlist { args } {
+  puts "Hello world!"
+}

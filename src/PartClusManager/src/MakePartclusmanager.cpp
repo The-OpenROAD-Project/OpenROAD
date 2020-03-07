@@ -36,4 +36,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "MakePartclusmanager.h"
+#include "PartClusManagerKernel.h"
+#include "openroad/OpenRoad.hh"
+#include "StaMain.hh"
 
+namespace sta {
+        //Tcl files encoded into strings.
+        extern const char *partclusmanager_tcl_inits[];
+}
+
+namespace ord {
+
+PartClusManager::PartClusManagerKernel *makePartClusManager() {
+        return new PartClusManager::PartClusManagerKernel();
+}
+
+void initPartClusManager(OpenRoad * openroad) {
+        Tcl_Interp *tcl_interp = openroad->tclInterp();
+        sta::evalTclInit(tcl_interp, sta::partclusmanager_tcl_inits);
+};
+
+void deletePartClusManager(PartClusManager::PartClusManagerKernel *partclusmanager);
+}
