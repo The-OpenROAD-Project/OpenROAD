@@ -42,6 +42,7 @@
 #include <iomanip>
 #include <limits>
 #include <cmath>
+#include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
 namespace opendp {
@@ -60,6 +61,8 @@ using std::to_string;
 using std::vector;
 using std::round;
 using std::max;
+
+using ord::error;
 
 using odb::adsRect;
 using odb::dbBox;
@@ -146,11 +149,6 @@ void Opendp::detailedPlacement() {
   simplePlacement();
   reportLegalizationStats();
   updateDbInstLocations();
-}
-
-void Opendp::error(const char *what) {
-  cerr << "Error: " << what << endl;
-  exit(1);
 }
 
 bool Opendp::readConstraints(const string input) {
@@ -293,7 +291,7 @@ void Opendp::findDesignStats() {
   design_util_ =
       static_cast< double >(movable_area_) / (design_area_ - fixed_area_);
 
-  if(design_util_ >= 1.001) {
+  if(design_util_ > 1.0) {
     error("utilization exceeds 100%.");
   }
 }

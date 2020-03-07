@@ -39,19 +39,10 @@
 #include <cmath>
 #include <limits>
 #include <set>
+#include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
 namespace opendp {
-
-using odb::adsRect;
-using odb::dbBox;
-using odb::dbITerm;
-using odb::dbMTerm;
-using odb::dbBTerm;
-using odb::dbMPin;
-using odb::dbBPin;
-using odb::dbNet;
-using odb::dbPlacementStatus;
 
 using std::abs;
 using std::ceil;
@@ -71,6 +62,18 @@ using std::to_string;
 using std::vector;
 using std::set;
 using std::numeric_limits;
+
+using ord::error;
+
+using odb::adsRect;
+using odb::dbBox;
+using odb::dbITerm;
+using odb::dbMTerm;
+using odb::dbBTerm;
+using odb::dbMPin;
+using odb::dbBPin;
+using odb::dbNet;
+using odb::dbPlacementStatus;
 
 void Opendp::power_mapping() {
   power macro_top_power = undefined;
@@ -520,8 +523,7 @@ bool Opendp::shift_move(Cell* cell) {
 
   // place target cell
   if(!map_move(cell, x, y)) {
-    // error("detailed placement failed");
-    cout << "Error: detailed placement failed on " << cell->name() << endl;
+    error("detailed placement failed");
     return false;
   }
 

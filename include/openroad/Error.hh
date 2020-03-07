@@ -25,15 +25,15 @@ using std::string;
 class Exception : public std::exception
 {
 public:
-  Exception(string what);
-  virtual ~Exception() {}
-  virtual const char *what() const noexcept { return what_.c_str(); }
+  Exception(const char *fmt, ...);
+  virtual ~Exception();
+  virtual const char *what() const noexcept { return what_; }
 
 private:
-  string what_;
+  char *what_;
 };
 
 void
-error(string what);
+error(const char *fmt, ...);
 
 } // namespace

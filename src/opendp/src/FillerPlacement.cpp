@@ -33,8 +33,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/Opendp.h"
 #include <algorithm>
+#include "openroad/Error.hh"
+#include "opendp/Opendp.h"
 
 namespace opendp {
 
@@ -44,6 +45,8 @@ using std::max;
 using std::min;
 using std::cout;
 using std::endl;
+
+using ord::error;
 
 using odb::dbMaster;
 using odb::dbLib;

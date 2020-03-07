@@ -38,6 +38,7 @@
 
 #include <cmath>
 #include <limits>
+#include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
 namespace opendp {
@@ -51,6 +52,8 @@ using std::abs;
 using std::pair;
 using std::round;
 using std::numeric_limits;
+
+using ord::error;
 
 void Opendp::fixed_cell_assign() {
   for(Cell &cell : cells_) {

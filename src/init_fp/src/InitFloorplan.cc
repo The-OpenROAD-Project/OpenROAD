@@ -25,6 +25,7 @@
 #include "opendb/db.h"
 #include "opendb/dbTransform.h"
 #include "openroad/OpenRoad.hh"
+#include "openroad/Error.hh"
 #include "init_fp/InitFloorplan.hh"
 
 namespace ord {
@@ -39,7 +40,8 @@ using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
 using sta::FileNotReadable;
-using sta::stringPrint;
+
+using ord::error;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -395,20 +397,17 @@ InitFloorplan::readTracks(const char *tracks_file)
 	  else if (stringEqual(dir_str.c_str(), "Y"))
 	    dir = 'Y';
 	  else
-	    report_->error("track file line %d direction must be X or Y'.\n",
-			   line_count);
+	    error("track file line %d direction must be X or Y'.", line_count);
 	  // microns -> meters
 	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
 	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
 	  tracks_.push_back(Track(layer_name, dir, offset, pitch));
 	}
 	else
-	  report_->fileWarn(tracks_file, line_count, "layer %s not found.\n",
-			    layer_name.c_str());
+	  error("layer %s not found.", layer_name.c_str());
       }
       else
-	report_->warn("Warning: track file line %d does not match 'layer X|Y offset pitch'.\n",
-		      line_count);
+	error("track file line %d does not match 'layer X|Y offset pitch'.", line_count);
       line_count++;
     }
     tracks_stream.close();

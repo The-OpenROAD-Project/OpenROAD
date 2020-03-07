@@ -249,7 +249,6 @@ class Opendp {
   int disp(Cell *cell);
   int coreGridMaxX();
   int coreGridMaxY();
-  void error(const char *what);
   // Place fillers
   void findFillerMasters(StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);

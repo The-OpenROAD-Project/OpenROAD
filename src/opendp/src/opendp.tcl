@@ -45,7 +45,7 @@ proc legalize_placement { args } {
   if { [ord::db_has_rows] } {
     opendp::detailed_placement
   } else {
-    sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
+    ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
   opendp::check_placement_cmd $verbose
 }
@@ -67,7 +67,7 @@ proc detailed_placement { args } {
   if { [ord::db_has_rows] } {
     opendp::detailed_placement_cmd
   } else {
-    sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
+    ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
@@ -101,7 +101,7 @@ proc set_placement_padding { args } {
   if { $global } {
     opendp::set_padding_global $left $right
   } else {
-    sta::sta_error "Only set_placement_padding -global supported."
+    ord::error "only set_placement_padding -global supported."
   }
 }
 
@@ -122,7 +122,7 @@ proc check_placement { args } {
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
   if { [opendp::check_placement_cmd $verbose] } {
-    error "Error: placement check failed."
+    ord::error "placement check failed."
   }
 }
 

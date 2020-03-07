@@ -35,8 +35,9 @@
 #include <limits>
 #include <cfloat>
 #include <algorithm>
-#include "opendp/Opendp.h"
+#include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
+#include "opendp/Opendp.h"
 
 namespace opendp {
 
@@ -53,6 +54,8 @@ using std::pair;
 using std::string;
 using std::to_string;
 using std::vector;
+
+using ord::error;
 
 using odb::adsRect;
 using odb::dbBox;
@@ -251,7 +254,6 @@ void Opendp::findRowPower() {
   if (found_vdd)
     initial_power_ = divRound(min_vdd_y, row_height_) % 2 == 0 ? VDD : VSS;
   else
-    // error("could not find power special net");
     cout << "Warning: could not find power special net" << endl;
 }
 

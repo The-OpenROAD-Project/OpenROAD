@@ -17,15 +17,27 @@
 
 namespace ord {
 
-Exception::Exception(string what) :
-  std::exception(),
-  what_(what)
+Exception::Exception(const char *fmt, ...) :
+  std::exception()
 {
+  va_list args;
+  va_start(args, fmt);
+  vasprintf(&what_, fmt, args);
+}
+
+Exception::~Exception()
+{
+  delete [] what_;
 }
 
 void
-error(string what)
+error(const char *fmt, ...)
 {
+  va_list args;
+  va_start(args, fmt);
+  char *what;
+  vasprintf(&what, fmt, args);
+
   // Exception should be caught by swig error handler.
   throw Exception(what);
 }
