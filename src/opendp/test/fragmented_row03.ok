@@ -10,7 +10,7 @@ Notice 0:     Created 2 pins.
 Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: fragmented_row03.def
-Error: could not find power special net
+Warning: could not find power special net
 -------------------- Design Stats ------------------------------
 core area                  : (28000, 28000) (34840, 30800)
 total cells                : 1
@@ -25,13 +25,6 @@ rows                       : 1
 row height                 : 2800
 ----------------------------------------------------------------
 Error: detailed placement failed on _277_
-Check Legality
-row check ==> PASS 
-site check ==> FAIL (1)
-power check ==> PASS 
-edge_check ==> PASS 
-placed_check ==> FAIL (1)
-overlap_check ==> PASS 
 -------------------- Placement Analysis ------------------------
 total displacement         : 0
 average displacement       : 0
@@ -40,4 +33,11 @@ original HPWL              : 61
 legalized HPWL             : 61
 delta HPWL                 : 0%
 ----------------------------------------------------------------
+row check ==> PASS 
+site check ==> FAIL (1)
+power check ==> PASS 
+edge_check ==> PASS 
+placed_check ==> FAIL (1)
+overlap_check ==> PASS 
+Error: placement check failed.
 No differences found.

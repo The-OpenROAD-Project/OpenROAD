@@ -36,7 +36,7 @@ PINS 2 ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 NETS 2 ;
-    - input ( PIN input ) ( _277_ Z ) + USE SIGNAL ;
-    - out ( PIN out ) ( _277_ A ) + USE SIGNAL ;
+    - input ( PIN input ) ( _277_ A ) + USE SIGNAL ;
+    - out ( PIN out ) ( _277_ Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

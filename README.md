@@ -380,16 +380,27 @@ estimated wires used for timing.
 
 #### Detailed Placement
 
-Legalize a design that has been globally placed.
+The `detailed_placement` command does detailed placement of instances
+to legal locations after global placement.
 
 ```
-set_padding -global [-left pad_left] [-right pad_right]
-legalize_placement
-
+set_placement_padding -global [-left pad_left] [-right pad_right]
+detailed_placement
+check_placement [-verbose]
+filler_placement filler_masters
 ```
 
-The `set_padding` command sets left and right padding in multiples of
-the row site width.
+The `set_placement_padding` command sets left and right padding in multiples of
+the row site width. Use the `set_padding` command before legalizing
+placement to leave room for routing.
+
+The `check_placement` command checks the placement legality. It returns `1` if the
+placement is legal.
+
+The `filler_placement` command fills gaps between detail placed instances
+to connect the power and ground rails in the rows. `filler_masters` is
+a list of master/macro names to use for filling the gaps. Wildcard matching
+is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
 
 #### Clock Tree Synthesis
 
@@ -440,3 +451,18 @@ Options description:
 ###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
+
+
+#### PDN analysis
+
+PDNSim IR analysis.
+Report worst IR drop given a placed and PDN synthesized design
+
+```
+analyze_power_grid -vsrc <voltage_source_location_file>
+```
+
+Options description:
+- **vsrc**: Set the location of the power C4 bumps/IO pins
+
+###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).

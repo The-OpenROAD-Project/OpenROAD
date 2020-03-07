@@ -58,7 +58,7 @@ getDb()
 }
 
 // Copied from StaTcl.i because of ordering issues.
-class CmdErrorNetworkNotLinked : public sta::StaException
+class CmdErrorNetworkNotLinked : public sta::Exception
 {
 public:
   virtual const char *what() const throw()
@@ -120,6 +120,13 @@ getOpenRCX()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getOpenRCX();
+}
+
+pdnsim::PDNSim*
+getPDNSim()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPDNSim();
 }
 
 } // namespace

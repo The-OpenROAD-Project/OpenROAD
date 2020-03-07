@@ -33,10 +33,12 @@ set tool_scripts {"InitFloorplan" "src/init_fp/test/regression" \
 		    "PDNgen" "src/pdngen/test/regression" \
 		    "TritonMacroPlace" "src/TritonMacroPlace/test/regression" \
 		    "Resizer" "src/resizer/test/regression" \
+		    "Replace" "src/replace/test/regression" \
 		    "TritonCTS" "src/TritonCTS/test/regression" \
 		    "OpenDP" "src/opendp/test/regression" \
 		    "FastRoute" "src/FastRoute/test/regression" \
 		    "TapCell" "src/tapcell/test/regression" \
+		    "PDNSim" "src/PDNSim/test/regression" \
 		  }
 
 foreach tool $argv {

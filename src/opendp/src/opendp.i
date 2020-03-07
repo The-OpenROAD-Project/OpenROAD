@@ -37,7 +37,73 @@
 %{
 #include "openroad/OpenRoad.hh"
 #include "opendp/Opendp.h"
+
+using opendp::StringSeq;
+
+StringSeq *
+tclListSeqString(Tcl_Obj *const source,
+		 Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK) {
+    StringSeq *seq = new StringSeq;
+    for (int i = 0; i < argc; i++) {
+      int length;
+      const char *str = Tcl_GetStringFromObj(argv[i], &length);
+      seq->push_back(str);
+    }
+    return seq;
+  }
+  else
+    return nullptr;
+}
+
+// Failed attempt to pass in dbMaster set.
+#if 0
+// copied from opensta/tcl/StaTcl.i
+template <class TYPE>
+std::set<TYPE> *
+tclListSet(Tcl_Obj *const source,
+	   swig_type_info *swig_type,
+	   Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    std::set<TYPE> *set = new std::set<TYPE>;
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      set->insert(reinterpret_cast<TYPE>(obj));
+    }
+    return set;
+  }
+  else
+    return nullptr;
+}
+  
+opendp::dbMasterSet *
+tclListSetdbMaster(Tcl_Obj *const source,
+		   Tcl_Interp *interp)
+{
+  return tclListSet<odb::dbMaster*>(source, SWIGTYPE_p_dbMaster, interp);
+}
+
+%typemap(in) dbMasterSet * {
+  $1 = tclListSeqLibertyLibrary($input, interp);
+}
+#endif
+
 %}
+
+%typemap(in) StringSeq* {
+  $1 = tclListSeqString($input, interp);
+}
 
 %inline %{
 
@@ -49,11 +115,19 @@ read_constraints(std::string constraint_file)
 }
 
 void
-legalize_placement(bool verbose)
+detailed_placement_cmd()
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->legalizePlacement(verbose);
+  opendp->detailedPlacement();
 }
+
+bool
+check_placement_cmd(bool verbose)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  return opendp->checkPlacement(verbose);
+}
+
 
 void
 set_padding_global(int left,
@@ -61,6 +135,13 @@ set_padding_global(int left,
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPaddingGlobal(left, right);
+}
+
+void
+filler_placement_cmd(StringSeq *fillers)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->fillerPlacement(fillers);
 }
 
 %} // inline

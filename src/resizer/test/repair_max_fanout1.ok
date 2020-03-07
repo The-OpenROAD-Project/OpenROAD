@@ -1,17 +1,18 @@
 Notice 0: Reading LEF file:  liberty1.lef
 Notice 0:     Created 2 technology layers
-Notice 0:     Created 6 library cells
+Notice 0:     Created 7 library cells
 Notice 0: Finished LEF file:  liberty1.lef
 Notice 0: 
 Reading DEF file: ./results/hi_fanout.def
-Notice 0: Design: top
-Notice 0:     Created 2 pins.
-Notice 0:     Created 36 components and 179 component-terminals.
-Notice 0:     Created 3 nets and 72 connections.
+Notice 0: Design: hi_fanout
+Notice 0:     Created 1 pins.
+Notice 0:     Created 36 components and 180 component-terminals.
+Notice 0:     Created 2 special nets and 72 connections.
+Notice 0:     Created 2 nets and 72 connections.
 Notice 0: Finished DEF file: ./results/hi_fanout.def
 Found 1 max fanout violations.
 Inserted 4 buffers.
-u1/Z fanout 4
+r1/Q fanout 4
 buffer1/Z fanout 10
 buffer2/Z fanout 10
 buffer3/Z fanout 10

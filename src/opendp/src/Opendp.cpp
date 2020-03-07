@@ -108,16 +108,6 @@ Opendp::topPower(Cell *cell)
 
 ////////////////////////////////////////////////////////////////
 
-Pixel::Pixel()
-    : grid_x_(0.0),
-      grid_y_(0.0),
-      group_(nullptr),
-      cell(nullptr),
-      util(0.0),
-      is_valid(true) {}
-
-////////////////////////////////////////////////////////////////
-
 Group::Group() : name(""), util(0.0){}
 
 Opendp::Opendp()
@@ -132,7 +122,9 @@ Opendp::Opendp()
     max_cell_height_(1) {
 }
 
-Opendp::~Opendp() {}
+Opendp::~Opendp() {
+  deleteGrid(grid_);
+}
 
 void Opendp::init(dbDatabase *db) { db_ = db; }
 
@@ -147,15 +139,13 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-bool Opendp::legalizePlacement(bool verbose) {
+void Opendp::detailedPlacement() {
   dbToOpendp();
   initAfterImport();
   reportDesignStats();
-  simplePlacement(verbose);
-  bool legal = checkLegality(verbose);
+  simplePlacement();
   reportLegalizationStats();
   updateDbInstLocations();
-  return legal;
 }
 
 void Opendp::error(const char *what) {
@@ -203,22 +193,8 @@ void Opendp::initAfterImport() {
   // dummy cell generation
   dummy_cell_.is_placed_ = true;
 
-  // construct pixel grid
-  int row_num = gridHeight();
-  int col = gridWidth();
-  grid_ = new Pixel *[row_num];
-  for(int i = 0; i < row_num; i++) {
-    grid_[i] = new Pixel[col];
-  }
-
-  for(int i = 0; i < row_num; i++) {
-    for(int j = 0; j < col; j++) {
-      grid_[i][j].grid_y_ = i;
-      grid_[i][j].grid_x_ = j;
-      grid_[i][j].cell = nullptr;
-      grid_[i][j].is_valid = false;
-    }
-  }
+  // Make pixel grid
+  grid_ = makeGrid();
 
   // Fragmented Row Handling
   for(auto db_row : block_->getRows()) {
@@ -244,6 +220,35 @@ void Opendp::initAfterImport() {
   group_pixel_assign2();
   // y axis dummycell insertion
   group_pixel_assign();
+}
+
+Grid *
+Opendp::makeGrid()
+{
+  Grid *grid = new Pixel*[row_count_];
+  for(int i = 0; i < row_count_; i++) {
+    grid[i] = new Pixel[row_site_count_];
+
+    for(int j = 0; j < row_site_count_; j++) {
+      Pixel &pixel = grid[i][j];
+      pixel.grid_y_ = i;
+      pixel.grid_x_ = j;
+      pixel.cell = nullptr;
+      pixel.group_ = nullptr;
+      pixel.util = 0.0;
+      pixel.is_valid = false;
+    }
+  }
+  return grid;
+}
+
+void
+Opendp::deleteGrid(Grid *grid)
+{
+  for(int i = 0; i < row_count_; i++) {
+    delete [] grid[i];
+  }
+  delete grid;
 }
 
 void Opendp::updateDbInstLocations() {
@@ -372,14 +377,6 @@ int Opendp::disp(Cell *cell) {
   initLocation(cell, init_x, init_y);
   return abs(init_x - cell->x_) +
          abs(init_y - cell->y_);
-}
-
-int Opendp::gridWidth() {
-  return core_.dx() / site_width_;
-}
-
-int Opendp::gridHeight() {
-  return core_.dy() / row_height_;
 }
 
 int Opendp::gridEndX() {

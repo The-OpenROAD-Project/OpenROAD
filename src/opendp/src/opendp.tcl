@@ -33,15 +33,27 @@
 #############################################################################
 
 # -constraints is an undocumented option for worthless academic contests
-sta::define_cmd_args "legalize_placement" {[-verbose]\
-					     [-constraints constraints_file]\
-					   }
+sta::define_cmd_args "detailed_placement" {[-constraints constraints_file]}
 
 proc legalize_placement { args } {
   sta::parse_key_args "legalize_placement" args \
-    keys {-constraints} flags {-verbose}
+    keys {} flags {-verbose}
 
+  puts "Warning: the legalize_placement command has been renamed to 'detailed_placement'."
   set verbose [info exists flags(-verbose)]
+  sta::check_argc_eq0 "legalize_placement" $args
+  if { [ord::db_has_rows] } {
+    opendp::detailed_placement
+  } else {
+    sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
+  }
+  opendp::check_placement_cmd $verbose
+}
+
+proc detailed_placement { args } {
+  sta::parse_key_args "detailed_placement" args \
+    keys {-constraints} flags {}
+
   if { [info exists keys(-constraints)] } {
     set constraints_file $keys(-constraints)
     if { [file readable $constraints_file] } {
@@ -51,20 +63,27 @@ proc legalize_placement { args } {
     }
   }
 
+  sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::legalize_placement $verbose
+    opendp::detailed_placement_cmd
   } else {
-    puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
+    sta::sta_error "no rows defined in design. Use initialize_floorplan to add rows."
   }
 }
 
-sta::define_cmd_args "set_padding" { [-global]\
-				       [-right site_count]\
-				       [-left site_count] \
-				     }
+sta::define_cmd_args "set_placement_padding" { [-global]\
+						 [-right site_count]\
+						 [-left site_count] \
+					       }
 
 proc set_padding { args } {
-  sta::parse_key_args "set_padding" args \
+  puts "Warning: the set_padding command has been renamed to 'set_placement_padding'."
+  eval [concat set_placement_padding $args]
+
+}
+
+proc set_placement_padding { args } {
+  sta::parse_key_args "set_placement_padding" args \
     keys {-right -left} flags {-global}
 
   set left 0
@@ -78,9 +97,52 @@ proc set_padding { args } {
     sta::check_positive_integer "-right" $right
   }
   set global [info exists flags(-global)]
+  sta::check_argc_eq0 "set_placement_padding" $args
   if { $global } {
     opendp::set_padding_global $left $right
   } else {
-    sta::sta_error "Only set_padding -global supported."
+    sta::sta_error "Only set_placement_padding -global supported."
   }
+}
+
+sta::define_cmd_args "filler_placement" { filler_masters }
+
+proc filler_placement { args } {
+  sta::check_argc_eq1 "filler_placement" $args
+  set fillers [opendp::get_masters_arg $args]
+  opendp::filler_placement_cmd $fillers
+}
+
+sta::define_cmd_args "check_placement" {[-verbose]}
+
+proc check_placement { args } {
+  sta::parse_key_args "check_placement" args \
+    keys {} flags {-verbose}
+
+  set verbose [info exists flags(-verbose)]
+  sta::check_argc_eq0 "check_placement" $args
+  if { [opendp::check_placement_cmd $verbose] } {
+    error "Error: placement check failed."
+  }
+}
+
+namespace eval opendp {
+
+# expand master name regexps
+proc get_masters_arg { master_names } {
+  set db [ord::get_db]
+  set names {}
+  foreach name $master_names {
+    foreach lib [$db getLibs] {
+      foreach master [$lib getMasters] {
+	set master_name [$master getConstName]
+	if { [regexp $name $master_name] } {
+	  lappend names $master_name
+	}
+      }
+    }
+  }
+  return $names;
+}
+
 }

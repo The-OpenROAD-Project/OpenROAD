@@ -203,6 +203,7 @@ buffer_inputs(LibertyCell *buffer_cell)
 void
 buffer_outputs(LibertyCell *buffer_cell)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->bufferOutputs(buffer_cell);
 }

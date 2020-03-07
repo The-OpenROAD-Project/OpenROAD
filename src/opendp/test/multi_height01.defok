@@ -31,8 +31,8 @@ SPECIALNETS 2 ;
       + ROUTED metal1 1020 + SHAPE STRIPE ( 28000 32000 ) ( 48000 32000 ) ;
 END SPECIALNETS
 NETS 11 ;
-    - input ( PIN input ) ( _277_ o ) + USE SIGNAL ;
-    - out ( PIN out ) ( _285_ a ) + USE SIGNAL ;
+    - input ( PIN input ) ( _285_ a ) + USE SIGNAL ;
+    - out ( PIN out ) ( _277_ o ) + USE SIGNAL ;
     - net1 ( _277_ d ) ( _284_ b ) ( _276_ o ) + USE SIGNAL ;
     - net2 ( _276_ a ) ( _282_ b ) ( _278_ o ) + USE SIGNAL ;
     - net3 ( _276_ b ) ( _283_ a ) ( _279_ o ) + USE SIGNAL ;
