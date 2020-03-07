@@ -21,9 +21,12 @@ clock_tree_synthesis -buf_list "BUF_X1 BUF_X2" \
                      -root_buf "BUF_X4" \
                      -max_slew 50.0e-12 \
                      -max_cap 150.0e-15 \
+                     -slew_inter 1.0e-12 \
+                     -cap_inter 1.0e-15 \
                      -wire_unit 20 \
                      -clk_nets "clk" \
-                     -out_path "/home/myfolder/"
+                     -out_path "/home/myfolder/" \
+                     -only_characterization 0
 
 write_def "final.def"
 ```
@@ -37,11 +40,16 @@ If this parameter is omitted, the first master cell from ```buf_list``` is taken
 If this parameter is omitted, the code tries to obtain the value from the liberty file.
 - ``max_cap`` (optional) is the max capacitance value (in farad) that the characterization will test. 
 If this parameter is omitted, the code tries to obtain the value from the liberty file.
+- ``slew_inter`` (optional) is the time value (in seconds) that the characterization will consider for results. 
+If this parameter is omitted, the code gets the default value (5.0e-12). Be careful that this value can be quite low for bigger technologies (>65nm).
+- ``cap_inter`` (optional) is the capacitance value (in farad) that the characterization will consider for results. 
+If this parameter is omitted, the code gets the default value (5.0e-15). Be careful that this value can be quite low for bigger technologies (>65nm).
 - ``wire_unit`` (optional) is the minimum unit distance between buffers for a specific wire. 
 If this parameter is omitted, the code gets the value from ten times the height of ``root_buffer``.
 - ``clk_nets`` (optional) is a string containing the names of the clock roots. 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``out_path`` (optional) is the output path (full) that the lut.txt and sol_list.txt files will be saved. This is used to load an existing characterization, without creating one from scratch.
+- ``only_characterization`` (optional), if true, makes so that the code exits after running the characterization.
 
 Instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
 

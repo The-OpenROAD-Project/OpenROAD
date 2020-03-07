@@ -520,6 +520,14 @@ void TechChar::initCharacterization() {
         _options->setCapPerSqr(newCapPerSqr); // picofarad/micron to farad/DBU
         _options->setResPerSqr(newResPerSqr); // ohm/micron to ohm/DBU
 
+        //Change intervals if needed
+        if (_options->getSlewInter() != 0) {
+                _charSlewInter = _options->getSlewInter();
+        }
+        if (_options->getCapInter() != 0) {
+                _charCapInter = _options->getCapInter();
+        }
+        
         //Gets the buffer masters and its in/out pins.
         std::vector<std::string> masterVector = _options->getBufferList();
         odb::dbMaster* testBuf = nullptr;

@@ -82,6 +82,9 @@ void TritonCTSKernel::setupCharacterization() {
                 //LUT files exists. Import the characterization results.
                 importCharacterization();
         }
+        if (_options.getOnlyCharacterization() == true){
+                std::exit(1);
+        }
 }
 
 void TritonCTSKernel::importCharacterization() {

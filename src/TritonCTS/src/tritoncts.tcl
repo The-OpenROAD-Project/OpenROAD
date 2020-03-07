@@ -51,11 +51,14 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-out_path path] \
                                              [-sqr_cap capvalue] \
                                              [-sqr_res resvalue] \
+                                             [-only_characterization enable] \
+                                             [-slew_inter slewvalue] \
+                                             [-cap_inter capvalue] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res} flags {}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -only_characterization} flags {}
 
   set cts [get_triton_cts]
 
@@ -66,6 +69,11 @@ proc clock_tree_synthesis { args } {
   #                         -> Other commands can be used as extra parameters or in conjunction with each other:
   #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
 
+
+  if { [info exists keys(-only_characterization)] } {
+	  set enable $keys(-only_characterization)
+    $cts set_only_characterization $enable 
+  } 
 
   if { [info exists keys(-lut_file)] } {
 	  set lut $keys(-lut_file)
@@ -107,6 +115,16 @@ proc clock_tree_synthesis { args } {
     set clk_nets $keys(-clk_nets)
     $cts set_clock_nets $clk_nets
   }
+
+  if { [info exists keys(-slew_inter)] } {
+	  set slew $keys(-slew_inter)
+    $cts set_slew_inter $slew 
+  } 
+
+  if { [info exists keys(-cap_inter)] } {
+	  set cap $keys(-cap_inter)
+    $cts set_cap_inter $cap 
+  } 
 
   if { [info exists keys(-root_buf)] } {
     set root_buf $keys(-root_buf)

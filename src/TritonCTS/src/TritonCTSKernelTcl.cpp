@@ -49,6 +49,10 @@
 
 namespace TritonCTS {
 
+void TritonCTSKernel::set_only_characterization(bool enable) {
+        _options.setOnlyCharacterization(enable);
+}
+
 void TritonCTSKernel::set_lut_file(const char* file) {
         _options.setLutFile(file);
 }
@@ -111,6 +115,14 @@ void TritonCTSKernel::set_cap_per_sqr(double cap) {
 
 void TritonCTSKernel::set_res_per_sqr(double res) {
         _options.setResPerSqr(res);
+}
+
+void TritonCTSKernel::set_slew_inter(double slew){
+         _options.setSlewInter(slew);
+}
+
+void TritonCTSKernel::set_cap_inter(double cap){
+        _options.setCapInter(cap);
 }
 
 }

@@ -76,6 +76,8 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
+        void setOnlyCharacterization(bool enable) { _onlyCharacterization = enable; } 
+        bool getOnlyCharacterization() const { return _onlyCharacterization; }
         void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
         unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
@@ -96,6 +98,10 @@ public:
         double getCapPerSqr() const { return _capPerSqr; }
         void setResPerSqr(double res) { _resPerSqr = res; }
         double getResPerSqr() const { return _resPerSqr; }
+        void setCapInter(double cap) { _capInter = cap; }
+        double getCapInter() const { return _capInter; }
+        void setSlewInter(double slew) { _slewInter = slew; }
+        double getSlewInter() const { return _slewInter; }
         void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
         unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
         void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
@@ -120,12 +126,15 @@ private:
         unsigned    _wireSegmentUnit            = 0;
         unsigned    _dbId                       = 0;
         bool        _plotSolution               = false;
+        bool        _onlyCharacterization       = false;
         unsigned    _numMaxLeafSinks            = 15;
         unsigned    _maxSlew                    = 4;
         double      _maxCharSlew                = 0;
         double      _maxCharCap                 = 0;
         double      _capPerSqr                  = 0;
         double      _resPerSqr                  = 0;
+        double      _capInter                   = 0;
+        double      _slewInter                  = 0;
         unsigned    _charWirelengthIterations   = 4;
         unsigned    _charLoadIterations         = 34;
         unsigned    _charSlewIterations         = 12;

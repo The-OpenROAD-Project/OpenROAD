@@ -87,6 +87,7 @@ private:
 
 // TCL commands
 public:
+        void set_only_characterization(bool enable);
         void set_lut_file(const char* file);
         void set_sol_list_file(const char* file);
         void export_characterization(const char* file);
@@ -99,6 +100,8 @@ public:
         void set_out_path(const char* path);
         void set_cap_per_sqr(double cap);
         void set_res_per_sqr(double res);
+        void set_slew_inter(double cap);
+        void set_cap_inter(double cap);
         void run_triton_cts();
         void report_characterization();
         void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 
