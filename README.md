@@ -480,6 +480,7 @@ optimize_design
 ```
 The `optimize_design` command can be used for additional timing optimization, it should be run after the global placmenet. Currently it peforms gate cloning and comuttaitve pin swapping to enhance the timing.
 
+```
 optimize_fanout
         -buffer_cell buffer_cell_name
         -max_fanout max_fanout
