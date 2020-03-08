@@ -36,7 +36,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace PartClusManager {
-
-
+void run_chaco();
+void run_gpmetis();
+void run_mlpart();
 }
 

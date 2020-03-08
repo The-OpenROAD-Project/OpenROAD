@@ -109,16 +109,19 @@ private:
 };
 
 class PartClusManagerKernel {
-       protected:
+protected:
 
-       private:
+private:
         DBWrapper _dbWrapper;
 
-       public:
+public:
         PartClusManagerKernel() = default;
-        void runChaco(Graph graph, const ChacoOptions options);
-        void runGPMetis(Graph graph, const GPMetisOptions options);
-        void runMLPart(Graph graph, const MLPartOptions options);
+        void runChaco();
+        void runChaco(const Graph& graph, const ChacoOptions& options);
+        void runGpMetis();
+        void runGpMetis(const Graph& graph, const GPMetisOptions& options);
+        void runMlPart();
+        void runMlPart(const Graph& graph, const MLPartOptions& options);
 };
 
 }

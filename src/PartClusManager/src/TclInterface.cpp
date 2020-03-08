@@ -37,8 +37,27 @@
 
 #include "TclInterface.h"
 #include "PartClusManagerKernel.h"
+#include "openroad/OpenRoad.hh"
+
 
 namespace PartClusManager {
 
+void run_chaco() {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->runChaco();        
+}
+
+void run_gpmetis() {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->runGpMetis();        
+}
+
+void run_mlpart() {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->runMlPart();        
+}
 
 }

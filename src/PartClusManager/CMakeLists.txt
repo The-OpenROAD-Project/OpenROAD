@@ -9,6 +9,15 @@ set(CMAKE_CXX_STANDARD 11)
 #include(${PROJECT_SOURCE_DIR}/cmake/FindTCL.cmake)
 find_package(SWIG REQUIRED)
 
+set(PARTCLUSMANAGER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
+add_custom_command(OUTPUT ${PARTCLUSMANAGER_WRAP}
+        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -o ${PARTCLUSMANAGER_WRAP} ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.i   
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.i
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.h
+)
+
 set(PARTCLUSMANAGER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/PartClusManagerTclInitVar.cc)
 add_custom_command(OUTPUT ${PARTCLUSMANAGER_TCL_INIT}
         COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${PARTCLUSMANAGER_TCL_INIT} partclusmanager_tcl_inits ${PARTCLUSMANAGER_HOME}/src/partclusmanager.tcl
@@ -17,7 +26,7 @@ add_custom_command(OUTPUT ${PARTCLUSMANAGER_TCL_INIT}
 )
 
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-add_library(${BIN_NAME} ${SRC_FILES} ${PARTCLUSMANAGER_TCL_INIT})
+add_library(${BIN_NAME} ${SRC_FILES} ${PARTCLUSMANAGER_WRAP} ${PARTCLUSMANAGER_TCL_INIT})
 
 include_directories(${PARTCLUSMANAGER_HOME}/src
                     PRIVATE

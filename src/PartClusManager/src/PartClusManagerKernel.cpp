@@ -39,14 +39,25 @@
 
 namespace PartClusManager {
 
-        void PartClusManagerKernel::runChaco(Graph graph, const ChacoOptions options) {
+void PartClusManagerKernel::runChaco() {
+        std::cout << "Running chaco...\n";
+}
 
-        }
-        void PartClusManagerKernel::runGPMetis(Graph graph, const GPMetisOptions options) {
+void PartClusManagerKernel::runChaco(const Graph& graph, const ChacoOptions& options) {
+}
 
-        }
-        void PartClusManagerKernel::runMLPart(Graph graph, const MLPartOptions options) {
-                
-        }
+void PartClusManagerKernel::runGpMetis() {
+        std::cout << "Running GPMetis...\n";
+}
+
+void PartClusManagerKernel::runGpMetis(const Graph& graph, const GPMetisOptions& options) {
+}
+
+void PartClusManagerKernel::runMlPart() {        
+        std::cout << "Running MLPart...\n";
+}
+
+void PartClusManagerKernel::runMlPart(const Graph& graph, const MLPartOptions& options) {        
+}
 
 }

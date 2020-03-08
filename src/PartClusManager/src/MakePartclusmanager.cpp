@@ -45,6 +45,10 @@ namespace sta {
         extern const char *partclusmanager_tcl_inits[];
 }
 
+extern "C" {
+        extern int Partclusmanager_Init(Tcl_Interp *interp);
+}
+
 namespace ord {
 
 PartClusManager::PartClusManagerKernel *makePartClusManager() {
@@ -53,6 +57,7 @@ PartClusManager::PartClusManagerKernel *makePartClusManager() {
 
 void initPartClusManager(OpenRoad * openroad) {
         Tcl_Interp *tcl_interp = openroad->tclInterp();
+        Partclusmanager_Init(tcl_interp);
         sta::evalTclInit(tcl_interp, sta::partclusmanager_tcl_inits);
 };
 

@@ -35,9 +35,22 @@
 # // POSSIBILITY OF SUCH DAMAGE.
 # ////////////////////////////////////////////////////////////////////////////////
 
-sta::define_cmd_args "partition_netlist" { \
+sta::define_cmd_args "partition_netlist" {[-tool tool] \
                                          }
 
 proc partition_netlist { args } {
-  puts "Hello world!"
+  sta::parse_key_args "partition_netlist" args \
+    keys {-tool} flags {}
+
+  if { ![info exists keys(-tool)] } {
+    puts "Missing argument -tool"
+  } elseif { $keys(-tool) == "chaco" } {
+    run_chaco
+  } elseif { $keys(-tool) == "mlpart" } {
+    run_mlpart
+  } elseif { $keys(-tool) == "gpmetis" } {
+    run_gpmetis
+  } else {
+    puts "Invalid tool. Use chaco, mlpart or gpmetis."
+  }
 }

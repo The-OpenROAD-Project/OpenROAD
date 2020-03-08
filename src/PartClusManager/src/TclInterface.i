@@ -42,4 +42,8 @@
 
 namespace PartClusManager {
 
+extern void run_chaco();
+extern void run_gpmetis();
+extern void run_mlpart();
+
 }
