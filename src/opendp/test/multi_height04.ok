@@ -27,7 +27,7 @@ rows                       : 2
 row height                 : 4000
 max multi_cell height      : 2
 ----------------------------------------------------------------
-Error: detailed placement failed on _281_
+Warning: detailed placement failed on _281_
 -------------------- Placement Analysis ------------------------
 total displacement         : 15380
 average displacement       : 1538

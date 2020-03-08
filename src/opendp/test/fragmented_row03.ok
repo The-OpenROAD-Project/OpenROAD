@@ -24,7 +24,7 @@ design utilization         : 38.9%
 rows                       : 1
 row height                 : 2800
 ----------------------------------------------------------------
-Error: detailed placement failed on _277_
+Warning: detailed placement failed on _277_
 -------------------- Placement Analysis ------------------------
 total displacement         : 0
 average displacement       : 0
