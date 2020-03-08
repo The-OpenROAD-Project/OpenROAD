@@ -1,3 +1,4 @@
+# left/right rows too far away from instance -> fails
 source helpers.tcl
 read_lef Nangate45.lef
 read_def fragmented_row03.def

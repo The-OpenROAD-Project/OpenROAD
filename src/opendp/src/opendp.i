@@ -105,6 +105,8 @@ tclListSetdbMaster(Tcl_Obj *const source,
   $1 = tclListSeqString($input, interp);
 }
 
+%include "../../Exception.i"
+
 %inline %{
 
 bool

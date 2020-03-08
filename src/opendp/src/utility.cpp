@@ -523,7 +523,8 @@ bool Opendp::shift_move(Cell* cell) {
 
   // place target cell
   if(!map_move(cell, x, y)) {
-    error("detailed placement failed");
+    printf("Warning: detailed placement failed on %s\n",
+	   cell->db_inst_->getConstName());
     return false;
   }
 
