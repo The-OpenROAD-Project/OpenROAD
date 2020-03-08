@@ -39,16 +39,10 @@
 #include <cmath>
 #include <limits>
 #include <set>
+#include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
 namespace opendp {
-
-using odb::adsRect;
-using odb::dbBox;
-using odb::dbITerm;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbPlacementStatus;
 
 using std::abs;
 using std::ceil;
@@ -68,6 +62,18 @@ using std::to_string;
 using std::vector;
 using std::set;
 using std::numeric_limits;
+
+using ord::error;
+
+using odb::adsRect;
+using odb::dbBox;
+using odb::dbITerm;
+using odb::dbMTerm;
+using odb::dbBTerm;
+using odb::dbMPin;
+using odb::dbBPin;
+using odb::dbNet;
+using odb::dbPlacementStatus;
 
 void Opendp::power_mapping() {
   power macro_top_power = undefined;
@@ -115,11 +121,11 @@ void Opendp::displacementStats(// Return values.
 
 double Opendp::hpwl(bool initial) {
   int64_t hpwl = 0;
-  for(auto net : block_->getNets()) {
+  for(dbNet *net : block_->getNets()) {
     adsRect box;
     box.mergeInit();
 
-    for(auto iterm : net->getITerms()) {
+    for(dbITerm *iterm : net->getITerms()) {
       dbInst* inst = iterm->getInst();
       Cell* cell = db_inst_map_[inst];
       int x, y;
@@ -144,15 +150,15 @@ double Opendp::hpwl(bool initial) {
           pin_box->getBox(pin_rect);
           int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
           int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
-          iterm_rect =
-              adsRect(x + center_x, y + center_y, x + center_x, y + center_y);
+          iterm_rect = adsRect(x + center_x, y + center_y,
+			       x + center_x, y + center_y);
         }
       }
       box.merge(iterm_rect);
     }
 
-    for(auto bterm : net->getBTerms()) {
-      for(auto bpin : bterm->getBPins()) {
+    for(dbBTerm *bterm : net->getBTerms()) {
+      for(dbBPin *bpin : bterm->getBPins()) {
         dbPlacementStatus status = bpin->getPlacementStatus();
         if(status.isPlaced()) {
           dbBox* pin_box = bpin->getBox();
@@ -409,10 +415,10 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
   else {
     x_start = max(grid_x - diamond_search_height_ * 5, 0);
     x_end = min(grid_x + diamond_search_height_ * 5,
-                gridWidth() - gridNearestWidth(cell));
+                row_site_count_ - gridNearestWidth(cell));
     y_start = max(grid_y - diamond_search_height_, 0);
     y_end = min(grid_y + diamond_search_height_, 
-		gridHeight() - gridNearestHeight(cell));
+		row_count_ - gridNearestHeight(cell));
   }
 #ifdef ODP_DEBUG
   cout << " == Start Diamond Search ==  " << endl;
@@ -517,8 +523,8 @@ bool Opendp::shift_move(Cell* cell) {
 
   // place target cell
   if(!map_move(cell, x, y)) {
-    // error("detailed placement failed");
-    cout << "Error: detailed placement failed on " << cell->name() << endl;
+    printf("Warning: detailed placement failed on %s\n",
+	   cell->db_inst_->getConstName());
     return false;
   }
 

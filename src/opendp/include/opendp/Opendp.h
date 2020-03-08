@@ -43,6 +43,7 @@
 #include <iostream>
 #include <map>
 #include <unordered_map>
+#include <set>
 #include <vector>
 
 #include "opendb/db.h"
@@ -52,6 +53,7 @@
 namespace opendp {
 
 using std::string;
+using std::vector;
 
 using odb::adsRect;
 using odb::dbBlock;
@@ -65,14 +67,21 @@ using odb::dbOrientType;
 using odb::dbRow;
 using odb::dbSite;
 
+class Pixel;
+struct Group;
+
+typedef Pixel* Grid;
+typedef std::vector<std::string> StringSeq;
+typedef vector<dbMaster*> dbMasterSeq;
+// gap -> sequence of masters to fill the gap
+typedef vector<dbMasterSeq> GapFillers;
+
 enum power { undefined, VDD, VSS };
 
 struct Macro {
   bool is_multi_row_;
   power top_power_;    // VDD/VSS
 };
-
-struct Group;
 
 struct Cell {
   Cell();
@@ -107,11 +116,11 @@ struct Pixel {
   Cell* cell;
   double util;
   bool is_valid;  // false for dummy cells
-
-  Pixel();
 };
 
 ////////////////////////////////////////////////////////////////
+
+typedef std::set<dbMaster*> dbMasterSet;
 
 class Opendp {
  public:
@@ -121,11 +130,12 @@ class Opendp {
   void init(dbDatabase* db);
   bool readConstraints(string constraint_file);
   // legalize/check/report
-  bool legalizePlacement(bool verbose);
+  void detailedPlacement();
   void setPaddingGlobal(int left,
 			int right);
-  bool checkLegality(bool verbose);
-
+  // Return true if illegal.
+  bool checkPlacement(bool verbose);
+  void fillerPlacement(StringSeq *filler_master_names);
   void reportLegalizationStats();
   void reportDesignStats();
   double hpwl(bool initial);
@@ -133,7 +143,6 @@ class Opendp {
 			 int &avg_displacement,
 			 int &sum_displacement,
 			 int &max_displacement);
-
  private:
   void dbToOpendp();
   void makeMacros(dbLib* db_lib);
@@ -158,7 +167,7 @@ class Opendp {
 
   // utility.cpp
   void power_mapping();
-  void simplePlacement(bool verbose);
+  void simplePlacement();
   std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
                                                        adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
@@ -218,11 +227,11 @@ class Opendp {
   power rowTopPower(int row);
   dbOrientType rowOrient(int row);
 
+  Grid *makeGrid();
+  void deleteGrid(Grid *grid);
   // Cell initial location wrt core origin.
   int gridX(int x);
   int gridY(int y);
-  int gridWidth();
-  int gridHeight();
   int gridEndX();
   int gridEndY();
   int gridWidth(Cell* cell);
@@ -240,7 +249,12 @@ class Opendp {
   int disp(Cell *cell);
   int coreGridMaxX();
   int coreGridMaxY();
-  void error(const char *what);
+  // Place fillers
+  void findFillerMasters(StringSeq *filler_master_names);
+  dbMasterSeq &gapFillers(int gap);
+  Grid *makeCellGrid();  
+  void placeRowFillers(Grid *grid,
+		       int row);
 
   dbDatabase* db_;
   dbBlock* block_;
@@ -265,7 +279,7 @@ class Opendp {
   int max_displacement_constraint_; // from constraints file
 
   // 2D pixel grid
-  Pixel** grid_;
+  Grid *grid_;
   Cell dummy_cell_;
 
   // Design stats.
@@ -278,6 +292,11 @@ class Opendp {
   // total fixed cell area (excluding terminal NIs) dbu^2
   int64_t fixed_area_;
   double design_util_;
+
+  dbMasterSeq filler_masters_;
+  // gap (in sites) -> seq of masters
+  GapFillers gap_fillers_;
+  int filler_count_;
 
   // Magic numbers
   int diamond_search_height_;  // grid units

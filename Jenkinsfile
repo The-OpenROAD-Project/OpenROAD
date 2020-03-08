@@ -49,15 +49,6 @@ pipeline {
             echo currentBuild.result
           }
         }
-        stage('nangate45_bp_fe_top') {
-          steps {
-            catchError {
-              sh label: 'nangate45_bp_fe_top', script: '''
-              cd flow && docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow bash -c "source setup_env.sh && cd flow && test/test_helper.sh bp_fe_top nangate45"'''
-            }
-            echo currentBuild.result
-          }
-        }
       }
     }
   }

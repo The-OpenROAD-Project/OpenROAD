@@ -868,6 +868,7 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 	if (ccell->libertyCell() == nullptr) {
 	  LibertyCell *lcell = lib->findLibertyCell(ccell->name());
 	  if (lcell) {
+	    lcell->setExtCell(ccell->extCell());
 	    ccell->setLibertyCell(lcell);
 	    ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
 	    while (port_iter->hasNext()) {

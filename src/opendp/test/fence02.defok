@@ -48,8 +48,8 @@ PINS 2 ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 NETS 11 ;
-    - input ( PIN input ) ( f1/_277_ Z ) + USE SIGNAL ;
-    - out ( PIN out ) ( f0/_285_ A1 ) + USE SIGNAL ;
+    - input ( PIN input ) ( f0/_285_ A1 ) + USE SIGNAL ;
+    - out ( PIN out ) ( f1/_277_ Z ) + USE SIGNAL ;
     - net1 ( f1/_277_ A ) ( f0/_284_ A2 ) ( f1/_276_ ZN ) + USE SIGNAL ;
     - net2 ( f1/_276_ A1 ) ( f0/_282_ A2 ) ( f1/_278_ ZN ) + USE SIGNAL ;
     - net3 ( f1/_276_ A2 ) ( f0/_283_ A ) ( f1/_279_ ZN ) + USE SIGNAL ;

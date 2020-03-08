@@ -120,6 +120,7 @@ proc list_delete { list delete } {
 
 # Record tests in /test
 record_tests {
+  error1
 }
 #  gcd_flow1
 

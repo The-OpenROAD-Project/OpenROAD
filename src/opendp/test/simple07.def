@@ -61,8 +61,8 @@ PINS 2 ;
 END PINS
 
 NETS 11 ;
-- input
-  ( PIN input ) ( _277_ Z ) ;
+- out
+  ( PIN out ) ( _277_ Z ) ;
 - net1  
   ( _277_ A ) ( _284_ A2 ) ( _276_ ZN ) ;
 - net2
@@ -81,8 +81,8 @@ NETS 11 ;
   ( _285_ A2 ) ( _284_ ZN ) ;
 - net9
   ( _282_ A1 ) ( _285_ ZN ) ;
-- out 
-  ( PIN out ) ( _285_ A1 ) ; 
+- input
+  ( PIN input ) ( _285_ A1 ) ; 
 END NETS
 
 END DESIGN

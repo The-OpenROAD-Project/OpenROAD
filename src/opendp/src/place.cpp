@@ -65,16 +65,12 @@ static bool cellAreaLess(Cell* cell1, Cell* cell2) {
     return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
-void Opendp::simplePlacement(bool verbose) {
+void Opendp::simplePlacement() {
   if(!groups_.empty()) {
     // nonsense comment alert
     // pre placement out border ( Need region assign function previously )
     group_cell_pre_placement();
-    if (verbose)
-      cout << "Notice: group instance pre-placement done." << endl;
     non_group_cell_pre_placement();
-    if (verbose)
-      cout << "Notice: Non group instance pre-placement done." << endl;
 
     // naive method placement ( Multi -> single )
     group_cell_placement();
@@ -87,10 +83,7 @@ void Opendp::simplePlacement(bool verbose) {
       }
     }
   }
-
   non_group_cell_placement();
-  if (verbose)
-    cout << "Notice: non group instance placement done. " << endl;
 }
 
 void Opendp::non_group_cell_pre_placement() {

@@ -19,6 +19,7 @@
 #include "StringUtil.hh"
 #include "StaMain.hh"
 #include "openroad/Version.hh"
+#include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 
 using sta::stringEq;
@@ -83,12 +84,12 @@ tclAppInit(int argc,
   if (!findCmdLineFlag(argc, argv, "-no_splash"))
     Tcl_Eval(interp, "show_openroad_splash");
 
+  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
+
   if (!findCmdLineFlag(argc, argv, "-no_init")) {
     char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename);
     sourceTclFile(init_path, true, true, interp);
   }
-
-  bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
   if (argc > 2 ||
       (argc > 1 && argv[1][0] == '-'))

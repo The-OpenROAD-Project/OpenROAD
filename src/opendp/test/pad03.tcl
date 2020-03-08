@@ -2,7 +2,7 @@
 source helpers.tcl
 read_lef Nangate45.lef
 read_def simple03.def
-set_padding -global -right 5
+set_placement_padding -global -right 5
 
 set def_file [make_result_file pad03.def]
 write_def $def_file

@@ -56,104 +56,90 @@ using std::vector;
 
 using odb::adsRect;
 
-bool Opendp::checkLegality(bool verbose) {
-  cout << "Check Legality" << endl;
-
-  bool legal = true;
-  legal &= row_check(verbose);
-  legal &= site_check(verbose);
-  legal &= power_line_check(verbose);
-  legal &= edge_check(verbose);
-  legal &= placed_check(verbose);
-  legal &= overlap_check(verbose);
-  return legal;
+bool Opendp::checkPlacement(bool verbose) {
+  bool fail = false;
+  fail |= row_check(verbose);
+  fail |= site_check(verbose);
+  fail |= power_line_check(verbose);
+  fail |= edge_check(verbose);
+  fail |= placed_check(verbose);
+  fail |= overlap_check(verbose);
+  return fail;
 }
 
 bool Opendp::row_check(bool verbose) {
-  bool valid = true;
+  bool fail = false;
   int count = 0;
-  for(int i = 0; i < cells_.size(); i++) {
-    Cell* cell = &cells_[i];
-    if(!isFixed(cell)) {
-      if(cell->y_ % row_height_ != 0) {
+  for(Cell& cell : cells_) {
+    if(!isFixed(&cell)) {
+      if(cell.y_ % row_height_ != 0) {
 	if (verbose)
-	  cout << "row_check fail => " << cell->name()
-	       << " y_ : " << cell->y_ << endl;
-	valid = false;
+	  cout << "row_check fail => " << cell.name()
+	       << " y_ : " << cell.y_ << endl;
+	fail = true;
 	count++;
       }
     }
   }
 
-  if(!valid)
+  if(fail)
     cout << "row check ==> FAIL (" << count << ")" << endl;
   else
     cout << "row check ==> PASS " << endl;
 
-  return valid;
+  return fail;
 }
 
 bool Opendp::site_check(bool verbose) {
-  bool valid = true;
+  bool fail = false;
   int count = 0;
-  for(int i = 0; i < cells_.size(); i++) {
-    Cell* cell = &cells_[i];
-    if(!isFixed(cell)) {
-      if(cell->x_ % site_width_ != 0) {
+  for(Cell& cell : cells_) {
+    if(!isFixed(&cell)) {
+      if(cell.x_ % site_width_ != 0) {
 	if (verbose)
-	  cout << "site check fail ==> " << cell->name()
-	       << " x_ : " << cell->x_ << endl;
-	valid = false;
+	  cout << "site check fail ==> " << cell.name()
+	       << " x_ : " << cell.x_ << endl;
+	fail = true;
 	count++;
       }
     }
   }
-  if(!valid)
+  if(fail)
     cout << "site check ==> FAIL (" << count << ")" << endl;
   else
     cout << "site check ==> PASS " << endl;
-  return valid;
+  return fail;
 }
 
 bool Opendp::edge_check(bool verbose) {
-  bool valid = true;
+  bool fail = false;
   int count = 0;
-
   for(int i = 0; i < row_count_; i++) {
     vector< Cell* > cells;
     for(int j = 0; j < row_site_count_; j++) {
       Cell* grid_cell = grid_[i][j].cell;
-      if(grid_[i][j].is_valid) {
-	if(grid_cell != nullptr && grid_cell != &dummy_cell_) {
-#ifdef ODP_DEBUG
-	  cout << "grid util : " << grid[i][j].util << endl;
-	  cout << "cell name : "
-	       << grid[i][j].cell->name() << endl;
-#endif
-	  if(cells.empty()) {
-	    cells.push_back(grid_[i][j].cell);
-	  }
-	  else if(cells[cells.size() - 1] != grid_[i][j].cell) {
-	    cells.push_back(grid_[i][j].cell);
-	  }
+      if(grid_[i][j].is_valid
+	 && grid_cell
+	 && grid_cell != &dummy_cell_) {
+	if(cells.empty()) {
+	  cells.push_back(grid_[i][j].cell);
+	}
+	else if(cells[cells.size() - 1] != grid_[i][j].cell) {
+	  cells.push_back(grid_[i][j].cell);
 	}
       }
     }
-#ifdef ODP_DEBUG
-    cout << " row search done " << endl;
-    cout << " cell list size : " << cells.size() << endl;
-#endif
   }
 
-  if(!valid)
+  if(fail)
     cout << "edge check ==> FAIL (" << count << ")" << endl;
   else
     cout << "edge_check ==> PASS " << endl;
-  return valid;
+  return fail;
 }
 
 bool Opendp::power_line_check(bool verbose) {
-  bool valid = true;
+  bool fail = false;
   int count = 0;
   for(Cell& cell : cells_) {
     if(!isFixed(&cell)
@@ -169,7 +155,7 @@ bool Opendp::power_line_check(bool verbose) {
 	if(top_power == rowTopPower(grid_y)) {
 	  cout << "power check fail ( even height ) ==> "
 	      << cell.name() << endl;
-	  valid = false;
+	  fail = true;
 	  count++;
 	}
       }
@@ -178,7 +164,7 @@ bool Opendp::power_line_check(bool verbose) {
 	  if(cell.db_inst_->getOrient() != dbOrientType::R0) {
 	    cout << "power check fail ( Should be N ) ==> "
 		<< cell.name() << endl;
-	    valid = false;
+	    fail = true;
 	    count++;
 	  }
 	}
@@ -186,7 +172,7 @@ bool Opendp::power_line_check(bool verbose) {
 	  if(cell.db_inst_->getOrient() != dbOrientType::MX) {
 	    cout << "power_check fail ( Should be FS ) ==> "
 		<< cell.name() << endl;
-	    valid = false;
+	    fail = true;
 	    count++;
 	  }
 	}
@@ -194,50 +180,36 @@ bool Opendp::power_line_check(bool verbose) {
     }
   }
 
-  if(!valid)
+  if(fail)
     cout << "power check ==> FAIL (" << count << ")" << endl;
   else
     cout << "power check ==> PASS " << endl;
-  return valid;
+  return fail;
 }
 
 bool Opendp::placed_check(bool verbose) {
-  bool valid = true;
+  bool fail = false;
   int count = 0;
   for(Cell& cell : cells_) {
     if(!cell.is_placed_) {
       if (verbose)
 	cout << "placed check fail ==> " << cell.name() << endl;
-      valid = false;
+      fail = true;
       count++;
     }
   }
 
-  if(!valid)
+  if(fail)
     cout << "placed_check ==> FAIL (" << count << ")" << endl;
   else
     cout << "placed_check ==>> PASS " << endl;
 
-  return valid;
+  return fail;
 }
 
 bool Opendp::overlap_check(bool verbose) {
-  bool valid = true;
-  int row_count = row_count_;
-  int col_count = row_site_count_;
-  Pixel** grid2;
-  grid2 = new Pixel*[row_count];
-  for(int i = 0; i < row_count; i++) {
-    grid2[i] = new Pixel[col_count];
-  }
-
-  for(int i = 0; i < row_count; i++) {
-    for(int j = 0; j < col_count; j++) {
-      grid2[i][j].grid_y_ = i;
-      grid2[i][j].grid_x_ = j;
-      grid2[i][j].cell = nullptr;
-    }
-  }
+  bool fail = false;
+  Grid *grid = makeGrid();
 
   for(Cell& cell : cells_) {
     int grid_x = gridX(&cell);
@@ -246,41 +218,43 @@ bool Opendp::overlap_check(bool verbose) {
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
-    // Fixed Cell can be out of Current DIEAREA settings.
+    // Fixed cells can be outside DIEAREA.
     if(isFixed(&cell)) {
       grid_x = max(0, grid_x);
       grid_y = max(0, grid_y);
-      x_ur = min(x_ur, col_count);
-      y_ur = min(y_ur, row_count);
+      x_ur = min(x_ur, row_site_count_);
+      y_ur = min(y_ur, row_count_);
     }
 
     assert(grid_x >= 0);
     assert(grid_y >= 0);
-    assert(x_ur <= coreGridMaxX());
-    assert(y_ur <= coreGridMaxY());
+    assert(x_ur <= row_site_count_);
+    assert(y_ur <= row_count_);
 
     for(int j = grid_y; j < y_ur; j++) {
       for(int k = grid_x; k < x_ur; k++) {
-        if(grid2[j][k].cell == nullptr) {
-          grid2[j][k].cell = &cell;
-          grid2[j][k].util = 1.0;
+        if(grid[j][k].cell == nullptr) {
+          grid[j][k].cell = &cell;
+          grid[j][k].util = 1.0;
         }
         else {
 	  if (verbose)
 	    cout << "overlap_check ==> FAIL ( cell " << cell.name()
-		 << " overlaps " << grid2[j][k].cell->name() << " ) "
+		 << " overlaps " << grid[j][k].cell->name() << " ) "
 		 << " ( " << (k * site_width_ + core_.xMin()) << ", "
 		 << (j * row_height_ + core_.yMin()) << " )" << endl;
-          valid = false;
+	  fail = true;
         }
       }
     }
   }
-  if(valid)
-    cout << "overlap_check ==> PASS " << endl;
-  else
+  deleteGrid(grid);
+
+  if(fail)
     cout << "overlap_check ==> FAIL " << endl;
-  return valid;
+  else
+    cout << "overlap_check ==> PASS " << endl;
+  return fail;
 }
 
 }  // namespace opendp

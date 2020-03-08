@@ -36,12 +36,13 @@
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
-#include "replace/src/MakeReplace.h"
+#include "replace/MakeReplace.h"
 #include "FastRoute/src/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "OpenPhySyn/MakeOpenPhySyn.hpp"
+#include "pdnsim/MakePDNSim.hh"
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -118,6 +119,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
   psn_ = makePsn();
+  pdnsim_ = makePDNSim();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -139,6 +141,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTritonMp(this);
   initOpenRCX(this);
   initPsn(this);
+  initPDNSim(this);
   
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

@@ -27,6 +27,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "openroad/Version.hh"
+#include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -57,7 +58,7 @@ getDb()
 }
 
 // Copied from StaTcl.i because of ordering issues.
-class CmdErrorNetworkNotLinked : public sta::StaException
+class CmdErrorNetworkNotLinked : public sta::Exception
 {
 public:
   virtual const char *what() const throw()
@@ -121,6 +122,13 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
+pdnsim::PDNSim*
+getPDNSim()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPDNSim();
+}
+
 } // namespace
 
 using ord::OpenRoad;
@@ -138,7 +146,7 @@ using odb::dbDatabase;
 //
 ////////////////////////////////////////////////////////////////
 
-%include "OpenSTA/tcl/StaException.i"
+%include "Exception.i"
 
 %inline %{
 
@@ -275,6 +283,13 @@ void
 set_cmd_sta(sta::Sta *sta)
 {
   sta::Sta::setSta(sta);
+}
+
+// Used by test/error1.tcl
+void
+test_error1()
+{
+  ord::error("this is only a test.");
 }
 
 bool

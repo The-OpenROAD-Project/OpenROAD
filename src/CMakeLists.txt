@@ -29,12 +29,14 @@ set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
+set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
 
 set(OPENROAD_WRAP ${CMAKE_CURRENT_BINARY_DIR}/OpenRoad_wrap.cc)
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
+  Error.cc
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -213,7 +215,7 @@ add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
 add_subdirectory(OpenPhySyn)
-
+add_subdirectory(PDNSim)
 
 ################################################################
 
@@ -243,6 +245,7 @@ target_include_directories(openroad
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
+  ${PDNSIM_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
   )
@@ -267,6 +270,7 @@ target_link_libraries(openroad
   ParquetFP
   ABKCommon
   OpenPhySyn
+  pdnsim
   zlib
   tm
   defin

@@ -67,6 +67,10 @@ namespace psn {
 class Psn;
 }
 
+namespace pdnsim {
+class PDNSim;
+}
+
 namespace ord {
 
 using std::string;
@@ -95,6 +99,7 @@ public:
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
+  pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   // Return the bounding box of the db rows.
   odb::adsRect getCore();
   // Return true if the command units have been initialized.
@@ -135,6 +140,7 @@ private:
   OpenRCX::Ext *extractor_;
   psn::Psn *psn_;
   replace::Replace *replace_;
+  pdnsim::PDNSim *pdnsim_; 
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
