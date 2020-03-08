@@ -37,6 +37,7 @@ set tool_scripts {"InitFloorplan" "src/init_fp/test/regression" \
 		    "OpenDP" "src/opendp/test/regression" \
 		    "FastRoute" "src/FastRoute/test/regression" \
 		    "TapCell" "src/tapcell/test/regression" \
+		    "OpenPhySyn" "src/OpenPhySyn/test/regression" \
 		  }
 
 foreach tool $argv {

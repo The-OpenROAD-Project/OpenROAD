@@ -5,12 +5,12 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  ../tests/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
 Notice 0: 
-Reading DEF file: clone1.def
-Notice 0: Design: aes_cipher_top
-Notice 0:     Created 388 pins.
-Notice 0:     Created 18916 components and 99688 component-terminals.
-Notice 0:     Created 18742 nets and 61856 connections.
-Notice 0: Finished DEF file: clone1.def
-[info] Invoking gate_clone transform
-[info] Finished gate_clone transform (8)
+Reading DEF file: pinswap1.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 676 components and 2850 component-terminals.
+Notice 0:     Created 579 nets and 1498 connections.
+Notice 0: Finished DEF file: pinswap1.def
+[info] Invoking pin_swap transform
+[info] Finished pin_swap transform (3)
 No differences found.

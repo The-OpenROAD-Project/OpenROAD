@@ -69,4 +69,9 @@ HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
+DEFINE_TRANSFORM_VIRTUALS(
+    HelloTransform, "hello_transform", "1.0.0",
+    "Hello transform, a toy transform that adds an unconnected net",
+    "Usage:\n transform hello_transform "
+    "<net_name>\n")
 #endif

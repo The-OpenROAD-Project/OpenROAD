@@ -32,7 +32,12 @@ if(NOT PSN_LIB_PATH STREQUAL 0)
 link_directories(${PSN_LIB_PATH})
 endif()
 
+if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
+add_library(${TRANSFORM_NAME}  src/BufferFanoutTransform.cpp)
+target_compile_definitions(${TRANSFORM_NAME} INTERFACE OPENPHYSYN_TRANSFORM_BUILD)
+else()
 add_library(${TRANSFORM_NAME} SHARED src/BufferFanoutTransform.cpp)
+endif()
 
 target_include_directories(${TRANSFORM_NAME} PUBLIC
   src/

@@ -42,11 +42,11 @@ class PsnTransform
 {
 public:
 #ifdef OPENPHYSYN_AUTO_LINK
-    virtual std::shared_ptr<psn::PsnTransform> load() = 0;
-    virtual const char* name() = 0;
-    virtual const char* version() = 0;
-    virtual const char* help() = 0;
-    virtual const char* description() = 0;
+    virtual std::shared_ptr<psn::PsnTransform> load()        = 0;
+    virtual const char*                        name()        = 0;
+    virtual const char*                        version()     = 0;
+    virtual const char*                        help()        = 0;
+    virtual const char*                        description() = 0;
 #endif
     PsnTransform();
     virtual ~PsnTransform();
@@ -54,31 +54,35 @@ public:
 };
 
 #ifdef OPENPHYSYN_AUTO_LINK
-#define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
-                         transformDescription, transformHelp)                  \
+#define DEFINE_TRANSFORM_VIRTUALS(classType, transformName, transformVersion,  \
+                                  transformDescription, transformHelp)         \
     std::shared_ptr<psn::PsnTransform> classType::load()                       \
     {                                                                          \
-        return std::shared_ptr<classType>(this);                                  \
-    };                                                                          \
+        return std::shared_ptr<classType>(this);                               \
+    };                                                                         \
                                                                                \
     const char* classType::name()                                              \
     {                                                                          \
         return transformName;                                                  \
-    };                                                                          \
+    };                                                                         \
                                                                                \
     const char* classType::version()                                           \
     {                                                                          \
         return transformVersion;                                               \
-    };                                                                          \
+    };                                                                         \
     const char* classType::help()                                              \
     {                                                                          \
         return transformHelp;                                                  \
-    };                                                                          \
+    };                                                                         \
     const char* classType::description()                                       \
     {                                                                          \
         return transformDescription;                                           \
     };
+#define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
+                         transformDescription, transformHelp)
 #else
+#define DEFINE_TRANSFORM_VIRTUALS(classType, transformName, transformVersion,  \
+                                  transformDescription, transformHelp)
 #define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
                          transformDescription, transformHelp)                  \
     extern "C"                                                                 \

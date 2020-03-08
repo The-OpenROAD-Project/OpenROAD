@@ -132,7 +132,15 @@ proc list_delete { list delete } {
 
 # Record tests in psn/test
 record_psn_tests {
+    # pinswap1
+    # pinswap2
+    # constprop1
+    # constprop2
+    # constprop3
     clone1
+    clone2
+    fanout1
+    fanout2
 }
 
 # Record tests in $STAX/designs

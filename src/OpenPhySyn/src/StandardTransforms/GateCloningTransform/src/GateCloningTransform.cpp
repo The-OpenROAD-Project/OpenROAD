@@ -298,4 +298,9 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     return gateClone(psn_inst, cap_factor, clone_largest_only);
 }
+
+DEFINE_TRANSFORM_VIRTUALS(GateCloningTransform, "gate_clone", "1.0.0",
+                 "Performs load-driven gate cloning",
+                 "Usage: transform gate_clone "
+                 "<float: max-cap-factor> <boolean: clone-gates-only>")
 #endif

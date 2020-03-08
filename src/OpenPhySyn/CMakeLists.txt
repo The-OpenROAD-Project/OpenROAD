@@ -7,7 +7,7 @@ option(OPENPHYSYN_WARNINGS_SETTINGS_ENABLED "Allow target_set_warnings to add fl
                                  Set this to OFF if you want to provide your own warning parameters." ON)
 option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
 option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
-                        Tests in tests/*.cpp will still be enabled." ON)
+                        Tests in tests/*.cpp will still be enabled." OFF)
 option(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED "Build OpenPhySyn Standard Transforms" ON)
 option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" OFF)
 option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transform" ON)
@@ -64,26 +64,23 @@ endif()
 if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
   if(${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
     set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} hello_transform")
-    add_definitions(-DOPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED)
   endif()
   if(${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
     set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} buffer_fanout")
-    add_definitions(-DOPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED)
   endif()
   if(${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
     set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} gate_clone")
-    add_definitions(-DOPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED)
   endif()
   if(${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
     set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} pin_swap")
-    add_definitions(-DOPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED)
   endif()
   if(${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
     set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} constant_propagation")
-    add_definitions(-DOPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED)
   endif()
   string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
 endif()
+
+string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include(CheckSymbolExists)
@@ -190,6 +187,7 @@ set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/doctest/HelloTransform.cpp
 )
+add_definitions(-DOPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED)
 endif()
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 set(PSN_TESTFILES
@@ -197,12 +195,14 @@ set(PSN_TESTFILES
   ${PROJECT_SOURCE_DIR}/tests/doctest/BufferFanout.cpp
   ${PROJECT_SOURCE_DIR}/tests/doctest/BufferTopPort.cpp
 )
+add_definitions(-DOPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED)
 endif()
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
 set(PSN_TESTFILES
   ${PSN_TESTFILES}
   ${PROJECT_SOURCE_DIR}/tests/doctest/GateClone.cpp
 )
+add_definitions(-DOPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED)
 endif()
 if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
 set(PSN_TESTFILES
@@ -210,6 +210,7 @@ set(PSN_TESTFILES
   ${PROJECT_SOURCE_DIR}/tests/doctest/PinSwap.cpp
   ${PROJECT_SOURCE_DIR}/tests/doctest/PinSwapPower.cpp
 )
+add_definitions(-DOPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED)
 endif()
 if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
 set(PSN_TESTFILES
@@ -218,7 +219,9 @@ set(PSN_TESTFILES
   ${PROJECT_SOURCE_DIR}/tests/doctest/SimpleConstantPropagationInversion.cpp
   ${PROJECT_SOURCE_DIR}/tests/doctest/ComplexConstantPropagation.cpp
 )
+add_definitions(-DOPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED)
 endif()
+
 
 set(PSN_SOURCES
     ${PSN_SOURCES}
