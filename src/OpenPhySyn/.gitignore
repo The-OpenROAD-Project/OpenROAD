@@ -28,6 +28,9 @@
 !tests/data/*.lib
 !tests/data/**/Nangate45/*.lib
 !tests/data/**/gscl45nm/*.lib
+!test/data/*.lib
+!test/data/**/Nangate45/*.lib
+!test/data/**/gscl45nm/*.lib
 
 # Executables
 *.exe
