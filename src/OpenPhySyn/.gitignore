@@ -38,3 +38,4 @@
 # Build directory
 build/
 tests/results
+test/results

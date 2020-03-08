@@ -1,0 +1,18 @@
+1
+Notice 0: Reading LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: fanout1.def
+Notice 0: Design: counter
+Notice 0:     Created 12 pins.
+Notice 0:     Created 12 components and 69 component-terminals.
+Notice 0:     Created 24 nets and 45 connections.
+Notice 0: Finished DEF file: fanout1.def
+[info] Invoking buffer_fanout transform
+[info] High fanout nets [6]: 
+[info] Added 6 buffers
+[info] Finished buffer_fanout transform (6)
+No differences found.

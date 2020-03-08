@@ -393,7 +393,7 @@ add_custom_command(OUTPUT ${PSN_LIBRARY_WRAP}
 
 # Set up tests (see tests/CMakeLists.txt).
 if (${OPENPHYSYN_UNIT_TESTS_ENABLED})
-add_subdirectory(tests)
+add_subdirectory(test)
 endif()
 
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
