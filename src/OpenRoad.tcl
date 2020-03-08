@@ -126,6 +126,10 @@ proc error { what } {
   ::error "Error: $what"
 }
 
+proc warn { what } {
+  puts "Warning: $what"
+}
+
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
     sta::sta_error "Command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
