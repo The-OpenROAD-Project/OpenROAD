@@ -35,22 +35,26 @@
 #include <PsnTransform.hpp>
 #include <dlfcn.h>
 #include <memory>
+#include <functional>
+
 namespace psn
 {
 class TransformHandler
 {
-    std::shared_ptr<PsnTransform> (*load_)();
+    std::function<std::shared_ptr<PsnTransform> ()> load_;
     void* handle_;
-    char* (*get_name_)();
-    char* (*get_version_)();
-    char* (*get_help_)();
-    char* (*get_description_)();
+    std::function<const char* ()> get_name_;
+    std::function<const char* ()> get_version_;
+    std::function<const char* ()> get_help_;
+    std::function<const char* ()> get_description_;
 
     std::shared_ptr<PsnTransform> instance;
 
 public:
     TransformHandler(std::string name);
-
+#ifdef OPENPHYSYN_AUTO_LINK
+    TransformHandler(std::string name, std::shared_ptr<PsnTransform> transform);
+#endif
     std::string name();
 
     std::string version();

@@ -45,7 +45,7 @@ target_include_directories(${TRANSFORM_NAME} PUBLIC
 
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
-OpenPhySyn
+${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
 )
 
 if (DEFINED "TRANSFORMS_BUILD_DIR")

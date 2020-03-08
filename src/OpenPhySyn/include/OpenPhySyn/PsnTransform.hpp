@@ -41,12 +41,44 @@ class Psn;
 class PsnTransform
 {
 public:
+#ifdef OPENPHYSYN_AUTO_LINK
+    virtual std::shared_ptr<psn::PsnTransform> load() = 0;
+    virtual const char* name() = 0;
+    virtual const char* version() = 0;
+    virtual const char* help() = 0;
+    virtual const char* description() = 0;
+#endif
     PsnTransform();
     virtual ~PsnTransform();
     virtual int run(Psn* psn_, std::vector<std::string> args) = 0;
 };
-} // namespace psn
 
+#ifdef OPENPHYSYN_AUTO_LINK
+#define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
+                         transformDescription, transformHelp)                  \
+    std::shared_ptr<psn::PsnTransform> classType::load()                       \
+    {                                                                          \
+        return std::shared_ptr<classType>(this);                                  \
+    };                                                                          \
+                                                                               \
+    const char* classType::name()                                              \
+    {                                                                          \
+        return transformName;                                                  \
+    };                                                                          \
+                                                                               \
+    const char* classType::version()                                           \
+    {                                                                          \
+        return transformVersion;                                               \
+    };                                                                          \
+    const char* classType::help()                                              \
+    {                                                                          \
+        return transformHelp;                                                  \
+    };                                                                          \
+    const char* classType::description()                                       \
+    {                                                                          \
+        return transformDescription;                                           \
+    };
+#else
 #define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
                          transformDescription, transformHelp)                  \
     extern "C"                                                                 \
@@ -79,5 +111,6 @@ public:
             return transformDescription;                                       \
         }                                                                      \
     }
-
+#endif
+} // namespace psn
 #endif /* ifndef __TRANSFORM__ */

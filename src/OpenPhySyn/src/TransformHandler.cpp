@@ -51,6 +51,16 @@ TransformHandler::TransformHandler(std::string name)
         throw LoadTransformException();
     }
 }
+#ifdef OPENPHYSYN_AUTO_LINK
+TransformHandler::TransformHandler(std::string name, std::shared_ptr<PsnTransform> transform)
+{
+    instance = transform;
+    get_name_        = [&]()->const char*{return transform.get()->name();};
+    get_version_        = [&]()->const char*{return transform.get()->version();};
+    get_help_        = [&]()->const char*{return transform.get()->help();};
+    get_description_        = [&]()->const char*{return transform.get()->description();};
+}
+#endif
 
 std::string
 TransformHandler::name()

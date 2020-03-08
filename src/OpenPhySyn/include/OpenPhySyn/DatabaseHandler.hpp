@@ -33,6 +33,7 @@
 #include <OpenPhySyn/PathPoint.hpp>
 #include <OpenPhySyn/PsnGlobal.hpp>
 #include <OpenPhySyn/Types.hpp>
+
 #include <PsnLogger.hpp>
 #include <unordered_map>
 #include <vector>
@@ -200,12 +201,12 @@ public:
     DatabaseSta*        sta() const;
     virtual ~OpenStaHandler();
 
-    int evaluateFunctionExpression(
+    virtual int evaluateFunctionExpression(
         InstanceTerm*                          term,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
-    int evaluateFunctionExpression(
+    virtual int evaluateFunctionExpression(
         LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
-    int evaluateFunctionExpression(
+    virtual int evaluateFunctionExpression(
         sta::FuncExpr*                         func,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
     void resetCache(); // Reset equivalent cells and target loads

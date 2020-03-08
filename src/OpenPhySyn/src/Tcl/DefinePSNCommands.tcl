@@ -156,14 +156,15 @@ namespace eval psn {
     }
 
     define_cmd_args "set_psn_wire_rc" {[-layer layer_name]\
-				 [-resistance res_per_micron ][-capacitance cap_per_micron]
+				 [-resistance res_per_micron ][-capacitance cap_per_micron]\
+    }
 
     proc set_psn_wire_rc { args } {
-        parse_key_args "set_psn_wire_rc" args \
+        sta::parse_key_args "set_psn_wire_rc" args \
         keys {-layer -resistance -capacitance} flags {}
         if {[info exists keys(-layer)]} {
             set_wire_res_cap $keys(-layer)
-        } else if {![info exists keys(-resistance)] || ![info exists keys(-capacitance)]} {
+        } elseif {![info exists keys(-resistance)] || ![info exists keys(-capacitance)]} {
             sta::cmd_usage_error "set_psn_wire_rc"
         } else {
             set_wire_res_cap $keys(-resistance) $keys(-capacitance)

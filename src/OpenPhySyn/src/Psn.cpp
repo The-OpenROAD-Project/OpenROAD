@@ -46,6 +46,14 @@
 #include "StringUtils.hpp"
 #include "TransformHandler.hpp"
 
+#ifdef OPENPHYSYN_AUTO_LINK
+#include "StandardTransforms/BufferFanoutTransform/src/BufferFanoutTransform.hpp"
+#include "StandardTransforms/ConstantPropagationTransform/src/ConstantPropagationTransform.hpp"
+#include "StandardTransforms/GateCloningTransform/src/GateCloningTransform.hpp"
+#include "StandardTransforms/HelloTransform/src/HelloTransform.hpp"
+#include "StandardTransforms/PinSwapTransform/src/PinSwapTransform.hpp"
+#endif
+
 extern "C"
 {
     extern int Psn_Init(Tcl_Interp* interp);
@@ -156,13 +164,32 @@ Psn::instancePtr()
 int
 Psn::loadTransforms()
 {
-
     std::vector<psn::TransformHandler> handlers;
+    int         load_count = 0;
+
+#ifdef OPENPHYSYN_AUTO_LINK
+#ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
+    handlers.push_back(TransformHandler("hello_transform", std::make_shared<HelloTransform>()));
+#endif
+#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
+    handlers.push_back(TransformHandler("buffer_fanout", std::make_shared<BufferFanoutTransform>()));
+#endif
+#ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
+    handlers.push_back(TransformHandler("gate_clone", std::make_shared<GateCloningTransform>()));
+#endif
+#ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
+    handlers.push_back(TransformHandler("pin_swap", std::make_shared<PinSwapTransform>()));
+#endif
+#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
+    handlers.push_back(TransformHandler("constant_propagation", std::make_shared<ConstantPropagationTransform>()));
+#endif
+
+#else
     std::string                        transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
-        ":" + FileUtils::joinPath(exec_path_, "./transforms"));
+        ":" + FileUtils::joinPath(exec_path_, "./transforms") +
+        ":" + FileUtils::joinPath(exec_path_, "../transforms"));
     const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
-    int         load_count = 0;
 
     if (env_path)
     {
@@ -187,13 +214,13 @@ Psn::loadTransforms()
         for (auto& path : transforms_paths)
         {
             PSN_LOG_DEBUG("Loading transform {}", path);
-            handlers.push_back(psn::TransformHandler(path));
+            handlers.push_back(TransformHandler(path));
         }
 
         PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
                       transform_parent_path);
     }
-
+#endif
     for (auto tr : handlers)
     {
         std::string tr_name(tr.name());

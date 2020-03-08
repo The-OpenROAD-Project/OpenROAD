@@ -29,18 +29,31 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
+#ifndef __PSN_HELLO_TRANSFORM__
+#define __PSN_HELLO_TRANSFORM__
+
 #include <OpenPhySyn/DatabaseHandler.hpp>
 #include <OpenPhySyn/Psn.hpp>
 #include <OpenPhySyn/PsnTransform.hpp>
 #include <OpenPhySyn/Types.hpp>
 #include <cstring>
 
-class HelloTransform : public psn::PsnTransform
+
+namespace psn {
+class HelloTransform : public PsnTransform
 {
 private:
 public:
-    int addWire(psn::Psn* psn_inst, std::string name);
-    int run(psn::Psn* psn_inst, std::vector<std::string> args) override;
+    int addWire(Psn* psn_inst, std::string name);
+    int run(Psn* psn_inst, std::vector<std::string> args) override;
+#ifdef OPENPHYSYN_AUTO_LINK
+    const char* help() override;
+    const char* version() override;
+    const char* name() override;
+    const char* description() override;
+    std::shared_ptr<psn::PsnTransform> load() override;
+#endif
 };
 
 DEFINE_TRANSFORM(
@@ -48,3 +61,7 @@ DEFINE_TRANSFORM(
     "Hello transform, a toy transform that adds an unconnected net",
     "Usage:\n transform hello_transform "
     "<net_name>\n")
+
+}
+#endif
+#endif

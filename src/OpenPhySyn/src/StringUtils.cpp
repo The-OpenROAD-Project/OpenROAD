@@ -30,46 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "StringUtils.hpp"
-#include <algorithm>
-#include <fstream>
-#include <libgen.h>
-#include <sstream>
-#include <sys/stat.h>
+
 namespace psn
 {
-std::vector<std::string>
-StringUtils::split(std::string str, const std::string& delimiter)
-{
-    std::vector<std::string> tokens;
-    size_t                   pos = 0;
-    std::string              token;
-    while ((pos = str.find(delimiter)) != std::string::npos)
-    {
-        token = str.substr(0, pos);
-        tokens.push_back(token);
-        str.erase(0, pos + delimiter.length());
-    }
-    tokens.push_back(str);
-    return tokens;
-}
-bool
-StringUtils::isNumber(const std::string& s)
-{
-    std::istringstream iss(s);
-    float              f;
-    iss >> std::noskipws >> f;
-    return iss.eof() && !iss.fail();
-}
-bool
-StringUtils::isTruthy(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-    return (s == "true" || s == "1" || s == "yes" || s == "y");
-}
-bool
-StringUtils::isFalsy(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-    return (s == "false" || s == "0" || s == "no" || s == "n");
-}
 } // namespace psn

@@ -28,6 +28,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
 
 #include "ConstantPropagationTransform.hpp"
 #include <OpenPhySyn/PsnLogger.hpp>
@@ -631,7 +632,7 @@ ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
         PSN_LOG_ERROR(help());
         return -1;
     }
-    if (args.size() >= 1 && StringUtils::isFalsy(args[0]))
+    if (args.size() >= 1 && StringUtils::isFalsy(args[0].c_str()))
     {
         invereter_replace = false;
     }
@@ -666,3 +667,5 @@ ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return propagateConstants(psn_inst, tiehi_cell_name, tielo_cell_name,
                               inverter_cell_name, max_depth, invereter_replace);
 }
+
+#endif

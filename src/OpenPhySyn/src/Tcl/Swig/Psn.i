@@ -52,7 +52,7 @@ DatabaseHandler *handler();
 %include <std_pair.i>
 %include <std_except.i>
 %include <src/Tcl/Swig/std_vector.i>
-
+%template(vector_psn_str) std::vector<std::string>;
 %typemap(in) char ** {
      Tcl_Obj **listobjv;
      int       nitems;

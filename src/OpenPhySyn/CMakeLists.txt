@@ -14,6 +14,14 @@ option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transfor
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
+option(OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS "Automatically link built transforms" ON)
+
+set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
+# string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
+
+
+set(OPENPHYSYN_LINKED_TRANSFORMS "")
+set(OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY ${LIBRARY_NAME})
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy  ")
@@ -31,6 +39,10 @@ set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database han
 
 
 add_definitions(-DOPENROAD_BUILD)
+if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
+add_definitions(-DOPENPHYSYN_AUTO_LINK)
+set(OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY "")
+endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
 set(SWIG_PSN_LIB_FLAGS "")
@@ -47,6 +59,30 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
+if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
+  if(${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
+    set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} hello_transform")
+    add_definitions(-DOPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED)
+  endif()
+  if(${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
+    set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} buffer_fanout")
+    add_definitions(-DOPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED)
+  endif()
+  if(${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
+    set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} gate_clone")
+    add_definitions(-DOPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED)
+  endif()
+  if(${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
+    set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} pin_swap")
+    add_definitions(-DOPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED)
+  endif()
+  if(${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
+    set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} constant_propagation")
+    add_definitions(-DOPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED)
+  endif()
+  string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -211,8 +247,6 @@ set(PSN_DEP_FILES
   ${PSN_HOME}/src/Exports.hpp
   ${PSN_HOME}/src/Psn.hpp
 )
-set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
-# string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
 
 set(PUBLIC_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/include
@@ -239,6 +273,38 @@ ${ZLIB_LIBRARIES}
 ${TCL_LIBRARY}
 dl
 )
+if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
+  if(${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
+    set(PUBLIC_LIBRARIES
+      ${PUBLIC_LIBRARIES}
+      hello_transform
+    )
+    endif()
+    if(${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
+    set(PUBLIC_LIBRARIES
+      ${PUBLIC_LIBRARIES}
+      buffer_fanout
+    )
+  endif()
+  if(${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
+    set(PUBLIC_LIBRARIES
+      ${PUBLIC_LIBRARIES}
+      gate_clone
+    )
+    endif()
+  if(${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
+    set(PUBLIC_LIBRARIES
+      ${PUBLIC_LIBRARIES}
+      pin_swap
+    )
+    endif()
+  if(${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
+    set(PUBLIC_LIBRARIES
+      ${PUBLIC_LIBRARIES}
+      constant_propagation
+    )
+  endif()
+endif()
 
 
 CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
@@ -287,7 +353,6 @@ set(PUBLIC_EXEC_LIBRARIES
 opendb
 dbSta
 OpenSTA
-# sta_swig
 flute
 )
 

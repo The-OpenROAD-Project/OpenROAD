@@ -29,6 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
+
 #include "BufferFanoutTransform.hpp"
 #include <OpenPhySyn/PsnGlobal.hpp>
 #include <OpenPhySyn/PsnLogger.hpp>
@@ -332,7 +334,7 @@ int
 BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
 
-    if (args.size() == 2 && StringUtils::isNumber(args[0]))
+    if (args.size() == 2 && StringUtils::isNumber(args[0].c_str()))
     {
         return buffer(psn_inst, stoi(args[0]), args[1]);
     }
@@ -343,3 +345,4 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
+#endif

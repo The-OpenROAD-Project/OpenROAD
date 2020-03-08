@@ -28,6 +28,9 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
+#ifndef __PSN_CONSTANT_PROPAGATION_TRANSFORM__
+#define __PSN_CONSTANT_PROPAGATION_TRANSFORM__
 
 #include <OpenPhySyn/DatabaseHandler.hpp>
 #include <OpenPhySyn/Types.hpp>
@@ -67,6 +70,13 @@ public:
     ConstantPropagationTransform();
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
+#ifdef OPENPHYSYN_AUTO_LINK
+    const char* help() override;
+    const char* version() override;
+    const char* name() override;
+    const char* description() override;
+    std::shared_ptr<psn::PsnTransform> load() override;
+#endif
 };
 
 DEFINE_TRANSFORM(
@@ -76,3 +86,6 @@ DEFINE_TRANSFORM(
     "[max-depth] [tie-hi cell] [tie-lo]"
     "cell] [inverter_cell]")
 } // namespace psn
+
+#endif
+#endif

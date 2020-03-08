@@ -31,7 +31,12 @@
 
 #ifndef __PSN_STRING_UTILS__
 #define __PSN_STRING_UTILS__
+#include <algorithm>
+#include <fstream>
+#include <libgen.h>
+#include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
 namespace psn
@@ -39,11 +44,44 @@ namespace psn
 class StringUtils
 {
 public:
-    static std::vector<std::string> split(std::string        str,
-                                          const std::string& delimiter);
-    static bool                     isNumber(const std::string& s);
-    static bool                     isTruthy(std::string s);
-    static bool                     isFalsy(std::string s);
+    static std::vector<std::string>
+    split(std::string str, const std::string& delimiter)
+    {
+        std::vector<std::string> tokens;
+        size_t                   pos = 0;
+        std::string              token;
+        while ((pos = str.find(delimiter)) != std::string::npos)
+        {
+            token = str.substr(0, pos);
+            tokens.push_back(token);
+            str.erase(0, pos + delimiter.length());
+        }
+        tokens.push_back(str);
+        return tokens;
+    }
+    static bool
+    isNumber(const char* s)
+    {
+        std::string        str(s);
+        std::istringstream iss(str);
+        float              f;
+        iss >> std::noskipws >> f;
+        return iss.eof() && !iss.fail();
+    }
+    static bool
+    isTruthy(const char* s)
+    {
+        std::string str(s);
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return (str == "true" || str == "1" || str == "yes" || str == "y");
+    }
+    static bool
+    isFalsy(const char* s)
+    {
+        std::string str(s);
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return (str == "false" || str == "0" || str == "no" || str == "n");
+    }
 };
 } // namespace psn
 #endif

@@ -29,10 +29,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
+
 #include "GateCloningTransform.hpp"
 #include <OpenPhySyn/PsnGlobal.hpp>
 #include <OpenPhySyn/PsnLogger.hpp>
-#include "StringUtils.hpp"
+#include <OpenPhySyn/StringUtils.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -65,7 +67,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
-
+    
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
     {
@@ -219,7 +221,6 @@ GateCloningTransform::cloneInstance(psn::Psn*                          psn_inst,
     {
         std::string instance_name = makeUniqueCloneName(psn_inst);
         auto        cell          = handler.libraryCell(inst);
-
         Instance* cloned_inst =
             handler.createInstance(instance_name.c_str(), cell);
         handler.setLocation(cloned_inst, handler.location(output_pin));
@@ -272,7 +273,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     bool  clone_largest_only = false;
     if (args.size() >= 1)
     {
-        if (!StringUtils::isNumber(args[0]))
+        if (!StringUtils::isNumber(args[0].c_str()))
         {
             PSN_LOG_ERROR(help());
             return -1;
@@ -280,11 +281,11 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
         cap_factor = std::stof(args[0].c_str());
         if (args.size() >= 2)
         {
-            if (StringUtils::isTruthy(args[1]))
+            if (StringUtils::isTruthy(args[1].c_str()))
             {
                 clone_largest_only = true;
             }
-            else if (StringUtils::isFalsy(args[1]))
+            else if (StringUtils::isFalsy(args[1].c_str()))
             {
                 clone_largest_only = false;
             }
@@ -297,3 +298,4 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     }
     return gateClone(psn_inst, cap_factor, clone_largest_only);
 }
+#endif

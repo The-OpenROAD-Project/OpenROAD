@@ -28,6 +28,9 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
+#ifndef __PSN_BUFFER_FANOUT_TRANSFORM__
+#define __PSN_BUFFER_FANOUT_TRANSFORM__
 
 #include <OpenPhySyn/DatabaseHandler.hpp>
 #include <OpenPhySyn/Psn.hpp>
@@ -35,7 +38,8 @@
 #include <OpenPhySyn/Types.hpp>
 #include <cstring>
 
-class BufferFanoutTransform : public psn::PsnTransform
+namespace psn {
+class BufferFanoutTransform : public PsnTransform
 {
 public:
     int buffer(psn::Psn* psn_inst, int max_fanout, std::string buffer_cell);
@@ -47,9 +51,19 @@ public:
     std::string bufferNetName(std::vector<int> indices);
     std::vector<int> nextBuffer(std::vector<int> current_buffer,
                                 int              max_fanout);
+#ifdef OPENPHYSYN_AUTO_LINK
+    const char* help() override;
+    const char* version() override;
+    const char* name() override;
+    const char* description() override;
+    std::shared_ptr<psn::PsnTransform> load() override;
+#endif
 };
 
 DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
                  "Inserts buffers based on max fan-out",
                  "Usage: transform buffer_fanout "
                  "<max_fanout> <buffer_cell>")
+}
+#endif
+#endif

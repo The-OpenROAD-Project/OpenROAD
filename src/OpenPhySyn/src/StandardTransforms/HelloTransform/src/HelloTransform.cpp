@@ -28,6 +28,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
 
 #include "HelloTransform.hpp"
 #include <OpenPhySyn/PsnLogger.hpp>
@@ -68,3 +69,4 @@ HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
+#endif
