@@ -452,7 +452,7 @@ Options description:
 ###### NOTE 2: the first routing layer of the design have index equal to 1
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
 
-<<<<<<< HEAD
+
 #### Logical and Physical Optimizations
 
 OpenPhySyn Perform additional timing and area optimization.
@@ -480,19 +480,12 @@ optimize_design
 ```
 The `optimize_design` command can be used for additional timing optimization, it should be run after the global placmenet. Currently it peforms gate cloning and comuttaitve pin swapping to enhance the timing.
 
-"optimize_fanout"
+optimize_fanout
         -buffer_cell buffer_cell_name
         -max_fanout max_fanout
 ```
 The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
 
-```
-optimize_power
-        [-no_pin_swap]
-        [-pin_swap_paths path_count]
-```
-The `optimize_power` command can be run after global placement for minor power enhancements through commutative pin-swapping. 
-=======
 
 #### PDN analysis
 
@@ -507,4 +500,3 @@ Options description:
 - **vsrc**: Set the location of the power C4 bumps/IO pins
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
->>>>>>> openroad
