@@ -43,4 +43,14 @@ error(const char *fmt, ...)
   throw Exception(what);
 }
 
+void
+warn(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  printf("Warning: ");
+  vprintf(fmt, args);
+  printf("\n");
+}
+
 } // namespace

@@ -56,6 +56,7 @@ using std::to_string;
 using std::vector;
 
 using ord::error;
+using ord::warn;
 
 using odb::adsRect;
 using odb::dbBox;
@@ -254,7 +255,7 @@ void Opendp::findRowPower() {
   if (found_vdd)
     initial_power_ = divRound(min_vdd_y, row_height_) % 2 == 0 ? VDD : VSS;
   else
-    cout << "Warning: could not find power special net" << endl;
+    warn("could not find power special net");
 }
 
 }  // namespace opendp

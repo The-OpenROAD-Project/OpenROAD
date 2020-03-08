@@ -34,7 +34,7 @@ proc initialize_floorplan { args } {
   if [info exists keys(-site)] {
     set site_name $keys(-site)
   } else {
-    puts "Warning: use -site to add placement rows."
+    ord::warn "use -site to add placement rows."
   }
 
   set tracks_file ""

@@ -39,7 +39,7 @@ proc legalize_placement { args } {
   sta::parse_key_args "legalize_placement" args \
     keys {} flags {-verbose}
 
-  puts "Warning: the legalize_placement command has been renamed to 'detailed_placement'."
+  ord::warn "the legalize_placement command has been renamed to 'detailed_placement'."
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "legalize_placement" $args
   if { [ord::db_has_rows] } {
@@ -59,7 +59,7 @@ proc detailed_placement { args } {
     if { [file readable $constraints_file] } {
       opendp::read_constraints $constraint_file
     } else {
-      puts "Warning: cannot read $constraints_file"
+      ord::warn "cannot read $constraints_file"
     }
   }
 
@@ -77,7 +77,7 @@ sta::define_cmd_args "set_placement_padding" { [-global]\
 					       }
 
 proc set_padding { args } {
-  puts "Warning: the set_padding command has been renamed to 'set_placement_padding'."
+  ord::warn "the set_padding command has been renamed to 'set_placement_padding'."
   eval [concat set_placement_padding $args]
 
 }

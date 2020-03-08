@@ -15,7 +15,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Machine.hh"
-#include "Report.hh"
 #include "Debug.hh"
 #include "PortDirection.hh"
 #include "TimingRole.hh"
@@ -37,6 +36,7 @@
 #include "Network.hh"
 #include "StaMain.hh"
 #include "openroad/OpenRoad.hh"
+#include "openroad/Error.hh"
 #include "resizer/SteinerTree.hh"
 #include "resizer/Resizer.hh"
 
@@ -54,6 +54,8 @@ using std::min;
 using std::max;
 using std::string;
 using std::to_string;
+
+using ord::warn;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
@@ -265,8 +267,7 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
   delete port_iter;
   if (inserted_buffer_count_ > 0)
     level_drvr_verticies_valid_ = false;
-  report_->print("Inserted %d input buffers.\n",
-		 inserted_buffer_count_);
+  printf("Inserted %d input buffers.\n", inserted_buffer_count_);
 }
    
 void
@@ -336,8 +337,7 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
   delete port_iter;
   if (inserted_buffer_count_ > 0)
     level_drvr_verticies_valid_ = false;
-  report_->print("Inserted %d output buffers.\n",
-		 inserted_buffer_count_);
+  printf("Inserted %d output buffers.\n", inserted_buffer_count_);
 }
 
 void
@@ -389,11 +389,11 @@ Resizer::resizeToTargetSlew()
     Instance *inst = network_->instance(drvr_pin);
     resizeToTargetSlew(inst);
     if (overMaxArea()) {
-      report_->warn("Max utilization reached.\n");
+      warn("Max utilization reached.");
       break;
     }
   }
-  report_->print("Resized %d instances.\n", resize_count_);
+  printf("Resized %d instances.\n", resize_count_);
 }
 
 void
@@ -920,36 +920,35 @@ void
 RebufferOption::print(int level,
 		      Resizer *resizer)
 {
-  Report *report = resizer->report();
   Network *sdc_network = resizer->sdcNetwork();
   Units *units = resizer->units();
   switch (type_) {
   case RebufferOptionType::sink:
     // %*s format indents level spaces.
-    report->print("%*sload %s cap %s req %s\n",
-		   level, "",
-		   sdc_network->pathName(load_pin_),
-		   units->capacitanceUnit()->asString(cap_),
-		   delayAsString(required_, resizer));
+    printf("%*sload %s cap %s req %s\n",
+	   level, "",
+	   sdc_network->pathName(load_pin_),
+	   units->capacitanceUnit()->asString(cap_),
+	   delayAsString(required_, resizer));
     break;
   case RebufferOptionType::wire:
-    report->print("%*swire cap %s req %s\n",
-		level, "",
-		units->capacitanceUnit()->asString(cap_),
-		delayAsString(required_, resizer));
+    printf("%*swire cap %s req %s\n",
+	   level, "",
+	   units->capacitanceUnit()->asString(cap_),
+	   delayAsString(required_, resizer));
     break;
   case RebufferOptionType::buffer:
-    report->print("%*sbuffer cap %s req %s\n",
-		  level, "",
-		  units->capacitanceUnit()->asString(cap_),
-		  delayAsString(required_, resizer));
+    printf("%*sbuffer cap %s req %s\n",
+	   level, "",
+	   units->capacitanceUnit()->asString(cap_),
+	   delayAsString(required_, resizer));
 
     break;
   case RebufferOptionType::junction:
-    report->print("%*sjunction cap %s req %s\n",
-		  level, "",
-		  units->capacitanceUnit()->asString(cap_),
-		  delayAsString(required_, resizer));
+    printf("%*sjunction cap %s req %s\n",
+	   level, "",
+	   units->capacitanceUnit()->asString(cap_),
+	   delayAsString(required_, resizer));
 
     break;
   }
@@ -1027,7 +1026,7 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
 	Pin *drvr_pin = vertex->pin();
 	rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
-	  report_->warn("max utilization reached.\n");
+	  warn("max utilization reached.");
 	  break;
 	}
       }
@@ -1035,13 +1034,13 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
   }
   
   if (max_cap_violation_count > 0)
-    report_->print("Found %d max capacitance violations.\n", max_cap_violation_count);
+    printf("Found %d max capacitance violations.\n", max_cap_violation_count);
   if (max_slew_violation_count > 0)
-    report_->print("Found %d max slew violations.\n", max_slew_violation_count);
+    printf("Found %d max slew violations.\n", max_slew_violation_count);
   if (inserted_buffer_count_ > 0)
-    report_->print("Inserted %d buffers in %d nets.\n",
-		   inserted_buffer_count_,
-		   rebuffer_net_count_);
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   rebuffer_net_count_);
 }
 
 bool
@@ -1152,7 +1151,7 @@ Resizer::rebuffer(Net *net,
     Pin *drvr = drvr_iter.next();
     rebuffer(drvr, buffer_cell);
   }
-  report_->print("Inserted %d buffers.\n", inserted_buffer_count_);
+  printf("Inserted %d buffers.\n", inserted_buffer_count_);
 }
 
 void
@@ -1363,11 +1362,11 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 					   prev_loc,
 					   p, nullptr);
     if (debug_->check("rebuffer", 3)) {
-      report_->print("%*swire %s -> %s wl %d\n",
-		     level, "",
-		     tree->name(prev, sdc_network_),
-		     tree->name(k, sdc_network_),
-		     wire_length_dbu);
+      printf("%*swire %s -> %s wl %d\n",
+	     level, "",
+	     tree->name(prev, sdc_network_),
+	     tree->name(k, sdc_network_),
+	     wire_length_dbu);
       z->print(level, this);
     }
     Z1.push_back(z);
@@ -1389,11 +1388,11 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 					   prev_loc,
 					   best_ref, nullptr);
     if (debug_->check("rebuffer", 3)) {
-      report_->print("%*sbuffer %s cap %s req %s ->\n",
-		     level, "",
-		     tree->name(prev, sdc_network_),
-		     units_->capacitanceUnit()->asString(best_ref->cap()),
-		     delayAsString(best_ref->required(), this));
+      printf("%*sbuffer %s cap %s req %s ->\n",
+	     level, "",
+	     tree->name(prev, sdc_network_),
+	     units_->capacitanceUnit()->asString(best_ref->cap()),
+	     delayAsString(best_ref->required(), this));
       z->print(level, this);
     }
     Z1.push_back(z);
@@ -1486,7 +1485,7 @@ Resizer::repairMaxFanout(int max_fanout,
 	int buffer_count = ceil(fanout / static_cast<double>(max_fanout));
 	bufferLoads(drvr_pin, buffer_count, max_fanout, buffer_cell);
 	if (overMaxArea()) {
-	  report_->warn("max utilization reached.\n");
+	  warn("max utilization reached.");
 	  break;
 	}
       }
@@ -1494,10 +1493,9 @@ Resizer::repairMaxFanout(int max_fanout,
   }
 
   if (max_fanout_violation_count > 0)
-    report_->print("Found %d max fanout violations.\n", max_fanout_violation_count);
+    printf("Found %d max fanout violations.\n", max_fanout_violation_count);
   if (inserted_buffer_count_ > 0)
-    report_->print("Inserted %d buffers.\n",
-		   inserted_buffer_count_);
+    printf("Inserted %d buffers.\n", inserted_buffer_count_);
 }
 
 void
@@ -1766,18 +1764,18 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 	}
       }
       if (verbose)
-	report_->print("High fanout tie net %s inserted %d cells for %d loads.\n",
-		       network_->pathName(net),
-		       clone_count,
-		       fanout);
+	printf("High fanout tie net %s inserted %d cells for %d loads.\n",
+	       network_->pathName(net),
+	       clone_count,
+	       fanout);
       hi_fanout_count++;
     }
   }
   if (inserted_clone_count > 0)
-    report_->print("Inserted %d tie %s instances for %d nets.\n",
-		   inserted_clone_count,
-		   tie_cell->name(),
-		   hi_fanout_count);
+    printf("Inserted %d tie %s instances for %d nets.\n",
+	  inserted_clone_count,
+	  tie_cell->name(),
+	  hi_fanout_count);
 }
 
 void
@@ -1845,8 +1843,7 @@ Resizer::repairHoldViolations(VertexSet &ends,
     sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
     pass++;
   }
-  report_->print("Inserted %d hold buffers.\n",
-		 inserted_buffer_count_);
+  printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
 }
 
 void
@@ -1871,7 +1868,7 @@ Resizer::repairHoldPass(VertexSet &ends,
       repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
       repair_count++;
       if (overMaxArea()) {
-	report_->warn("max utilization reached.\n");
+	warn("max utilization reached.");
 	break;
       }
     }

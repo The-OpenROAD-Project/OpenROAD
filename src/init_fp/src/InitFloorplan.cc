@@ -42,6 +42,7 @@ using sta::stringEqual;
 using sta::FileNotReadable;
 
 using ord::error;
+using ord::warn;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -294,7 +295,7 @@ InitFloorplan::initFloorplan(double die_lx,
 	makeTracks(die_area);
     }
     else
-      report_->printWarn("Warning: SITE %s not found.\n", site_name);
+      warn("SITE %s not found.", site_name);
 
   }
 }
@@ -503,7 +504,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
 	autoPlacePins(pin_layer, core);
       }
       else
-	report_->warn("pin layer %s not found.\n", pin_layer_name);
+	warn("pin layer %s not found.", pin_layer_name);
     }
   }
 }

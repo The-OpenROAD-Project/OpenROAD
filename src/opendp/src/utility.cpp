@@ -64,6 +64,7 @@ using std::set;
 using std::numeric_limits;
 
 using ord::error;
+using ord::warn;
 
 using odb::adsRect;
 using odb::dbBox;
@@ -523,8 +524,7 @@ bool Opendp::shift_move(Cell* cell) {
 
   // place target cell
   if(!map_move(cell, x, y)) {
-    printf("Warning: detailed placement failed on %s\n",
-	   cell->db_inst_->getConstName());
+    warn("detailed placement failed on %s", cell->name());
     return false;
   }
 
