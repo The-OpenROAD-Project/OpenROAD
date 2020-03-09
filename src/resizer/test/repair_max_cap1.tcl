@@ -17,5 +17,4 @@ report_max_cap 5
 
 set buffer_cell [get_lib_cell liberty1/snl_bufx2]
 repair_max_cap -buffer_cell $buffer_cell
-report_max_cap 5
-
+#report_max_cap 5
