@@ -27,7 +27,7 @@ set ord_dir [file dirname $test_dir]
 source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
-set tool_scripts {"InitFloorplan" "src/init_fp/test/regression" \
+set tool_scripts {"init_fp" "src/init_fp/test/regression" \
 		    "dbSta" "src/dbSta/test/regression" \
 		    "IoPlacer" "src/ioPlacer/test/regression" \
 		    "PDNgen" "src/pdngen/test/regression" \
