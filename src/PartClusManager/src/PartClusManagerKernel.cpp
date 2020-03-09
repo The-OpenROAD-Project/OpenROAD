@@ -43,21 +43,21 @@ void PartClusManagerKernel::runChaco() {
         std::cout << "Running chaco...\n";
 }
 
-void PartClusManagerKernel::runChaco(const Graph& graph, const ChacoOptions& options) {
+void PartClusManagerKernel::runChaco(const Graph& graph, const PartOptions& options) {
 }
 
 void PartClusManagerKernel::runGpMetis() {
         std::cout << "Running GPMetis...\n";
 }
 
-void PartClusManagerKernel::runGpMetis(const Graph& graph, const GPMetisOptions& options) {
+void PartClusManagerKernel::runGpMetis(const Graph& graph, const PartOptions& options) {
 }
 
 void PartClusManagerKernel::runMlPart() {        
         std::cout << "Running MLPart...\n";
 }
 
-void PartClusManagerKernel::runMlPart(const Graph& graph, const MLPartOptions& options) {        
+void PartClusManagerKernel::runMlPart(const Graph& graph, const PartOptions& options) {        
 }
 
 }

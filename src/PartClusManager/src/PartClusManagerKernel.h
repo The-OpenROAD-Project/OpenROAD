@@ -42,9 +42,9 @@
 
 namespace PartClusManager {
 
-class ChacoOptions {
+class PartOptions {
 public:
-        ChacoOptions() = default;
+        PartOptions() = default;
        
         void setNumberStarts(unsigned numStarts) { _numStarts = numStarts; }
         unsigned getNumberStarts() const { return _numStarts; } 
@@ -77,37 +77,6 @@ private:
         std::string     _archTopology           = "";
 };
 
-class GPMetisOptions {
-public:
-        GPMetisOptions() = default;
-       
-        void setNumberStarts(unsigned numStarts) { _numStarts = numStarts; }
-        unsigned getNumberStarts() const { return _numStarts; } 
-        void setNumberPartitions(unsigned numParts) { _numPartitions = numParts; }
-        unsigned getNumberPartitions() const { return _numPartitions; } 
-        void setWeightedVertices(bool enable) { _weightedVertices = enable; } 
-        bool getWeightedVertices() const { return _weightedVertices; }
-                
-private:
-        unsigned        _numStarts              = 0;
-        unsigned        _numPartitions          = 0;
-        bool            _weightedVertices       = false;
-};
-
-class MLPartOptions {
-public:
-        MLPartOptions() = default;
-       
-        void setNumberStarts(unsigned numStarts) { _numStarts = numStarts; }
-        unsigned getNumberStarts() const { return _numStarts; } 
-        void setNumberPartitions(unsigned numParts) { _numPartitions = numParts; }
-        unsigned getNumberPartitions() const { return _numPartitions; } 
-                
-private:
-        unsigned        _numStarts              = 0;
-        unsigned        _numPartitions          = 0;
-};
-
 class PartClusManagerKernel {
 protected:
 
@@ -117,11 +86,11 @@ private:
 public:
         PartClusManagerKernel() = default;
         void runChaco();
-        void runChaco(const Graph& graph, const ChacoOptions& options);
+        void runChaco(const Graph& graph, const PartOptions& options);
         void runGpMetis();
-        void runGpMetis(const Graph& graph, const GPMetisOptions& options);
+        void runGpMetis(const Graph& graph, const PartOptions& options);
         void runMlPart();
-        void runMlPart(const Graph& graph, const MLPartOptions& options);
+        void runMlPart(const Graph& graph, const PartOptions& options);
 };
 
 }
