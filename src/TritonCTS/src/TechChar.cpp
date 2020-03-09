@@ -579,6 +579,11 @@ void TechChar::initCharacterization() {
                 _wirelengthsToTest.push_back(wirelengthInter);
         }
 
+        if (_wirelengthsToTest.size() < 1) {
+                std::cout << "Error generating the wirelenghts to test. Check your -wire_unit parameter or technology files.\n";
+                std::exit(1);
+        }
+
         //Gets the max slew and max cap if they weren't added as parameters.
         float maxSlew = 0.0;
         float maxCap = 0.0;
@@ -613,6 +618,11 @@ void TechChar::initCharacterization() {
              ( (currentCapInter <= _charMaxCap) && (currentCapInter <= loadIterations * _charCapInter) ); 
              currentCapInter += _charCapInter){
                 _loadsToTest.push_back(currentCapInter); 
+        }
+
+        if ((_loadsToTest.size() < 1) || (_slewsToTest.size() < 1)) {
+                std::cout << "Error generating the wirelenghts to test. Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter or technology files.\n";
+                std::exit(1);
         }
 }
 
