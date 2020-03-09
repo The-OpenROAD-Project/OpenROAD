@@ -859,6 +859,7 @@ public:
   Pin *loadPin() const { return load_pin_; }
   RebufferOption *ref() const { return ref_; }
   RebufferOption *ref2() const { return ref2_; }
+  int bufferCount() const;
 
 private:
   RebufferOptionType type_;
@@ -962,6 +963,21 @@ RebufferOption::bufferRequired(LibertyCell *buffer_cell,
   return required_ - resizer->bufferDelay(buffer_cell, cap_);
 }
 
+int
+RebufferOption::bufferCount() const
+{
+  switch (type_) {
+  case RebufferOptionType::buffer:
+    return ref_->bufferCount() + 1;
+  case RebufferOptionType::wire:
+    return ref_->bufferCount();
+  case RebufferOptionType::junction:
+    return ref_->bufferCount() + ref2_->bufferCount();
+  case RebufferOptionType::sink:
+    return 0;
+  }
+}
+
 RebufferOption *
 Resizer::makeRebufferOption(RebufferOptionType type,
 			    float cap,
@@ -1003,7 +1019,7 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
     Vertex *vertex = level_drvr_verticies_[i];
     // Hands off the clock tree.
     Net *net = network_->net(vertex->pin());
-    if (!isClock(net)) {
+    if (net && !isClock(net)) {
       bool violation = false;
       NetPinIterator *pin_iter = network_->pinIterator(net);
       while (pin_iter->hasNext()) {
@@ -1178,38 +1194,42 @@ Resizer::rebuffer(const Pin *drvr_pin,
     SteinerTree *tree = makeSteinerTree(net, true, db_network_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
-      Required drvr_req = pinRequired(drvr_pin);
-      // Make sure the driver is constrained.
-      if (!fuzzyInf(drvr_req)) {
-	debugPrint1(debug_, "rebuffer", 2, "driver %s\n",
-		    sdc_network_->pathName(drvr_pin));
-	RebufferOptionSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
-					       drvr_pt,
-					       1, buffer_cell);
-	Required best_req = -INF;
-	RebufferOption *best_option = nullptr;
-	for (auto p : Z) {
-	  // Find required for drvr_pin into option.
-	  Delay gate_delay = gateDelay(drvr_port, p->cap());
-	  Required req = p->required() - gate_delay;
-	  debugPrint4(debug_, "rebuffer", 3, "option req %s - %s = %s cap %s\n",
-		      delayAsString(p->required(), this),
-		      delayAsString(gate_delay, this),
-		      delayAsString(req, this),
-		      units_->capacitanceUnit()->asString(p->cap()));
-	  if (fuzzyGreater(req, best_req)) {
-	    best_req = req;
-	    best_option = p;
-	  }
+      debugPrint1(debug_, "rebuffer", 2, "driver %s\n",
+		  sdc_network_->pathName(drvr_pin));
+      RebufferOptionSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
+					     drvr_pt,
+					     1, buffer_cell);
+      Required best_slack = -INF;
+      RebufferOption *best_option = nullptr;
+      for (auto p : Z) {
+	// Find required for drvr_pin into option.
+	Delay gate_delay = gateDelay(drvr_port, p->cap());
+	Slack slack = p->required() - gate_delay;
+	debugPrint5(debug_, "rebuffer", 3, "option %d buffers req %s - %s = %s cap %s\n",
+		    p->bufferCount(),
+		    delayAsString(p->required(), this),
+		    delayAsString(gate_delay, this),
+		    delayAsString(slack, this),
+		    units_->capacitanceUnit()->asString(p->cap()));
+	if (fuzzyGreater(slack, best_slack)) {
+	  best_slack = slack;
+	  best_option = p;
 	}
-	if (best_option) {
-	  int before = inserted_buffer_count_;
-	  rebufferTopDown(best_option, net, 1, buffer_cell);
-	  if (inserted_buffer_count_ != before)
-	    rebuffer_net_count_++;
-	}
-	deleteRebufferOptions();
       }
+      if (best_option) {
+	Delay gate_delay = gateDelay(drvr_port, best_option->cap());
+	Slack slack = best_option->required() - gate_delay;
+	debugPrint4(debug_, "rebuffer", 3, "best req %s - %s = %s cap %s\n",
+		    delayAsString(best_option->required(), this),
+		    delayAsString(gate_delay, this),
+		    delayAsString(slack, this),
+		    units_->capacitanceUnit()->asString(best_option->cap()));
+	int before = inserted_buffer_count_;
+	rebufferTopDown(best_option, net, 1, buffer_cell);
+	if (inserted_buffer_count_ != before)
+	  rebuffer_net_count_++;
+      }
+      deleteRebufferOptions();
     }
     delete tree;
   }
@@ -2108,6 +2128,9 @@ Resizer::pinRequired(const Pin *pin)
 {
   Vertex *vertex = graph_->pinLoadVertex(pin);
   Required required = sta_->vertexRequired(vertex, min_max_);
+  if (fuzzyInf(required))
+    // Unconstrained pin.
+    required = 0.0;
   return required;
 }
 
