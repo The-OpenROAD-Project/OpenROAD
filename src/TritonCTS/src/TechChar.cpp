@@ -527,7 +527,7 @@ void TechChar::initCharacterization() {
         if (_options->getCapInter() != 0) {
                 _charCapInter = _options->getCapInter();
         }
-        
+
         //Gets the buffer masters and its in/out pins.
         std::vector<std::string> masterVector = _options->getBufferList();
         odb::dbMaster* testBuf = nullptr;
@@ -574,7 +574,7 @@ void TechChar::initCharacterization() {
         }
         
         for (unsigned wirelengthInter = _options->getWireSegmentUnit(); 
-             (wirelengthInter <= maxWirelength) || (wirelengthInter < wirelengthIterations * _options->getWireSegmentUnit()); 
+             (wirelengthInter <= maxWirelength) && (wirelengthInter < wirelengthIterations * _options->getWireSegmentUnit()); 
              wirelengthInter += _options->getWireSegmentUnit()){
                 _wirelengthsToTest.push_back(wirelengthInter);
         }
@@ -605,14 +605,14 @@ void TechChar::initCharacterization() {
         unsigned slewIterations = _options->getCharSlewIterations();
         unsigned loadIterations = _options->getCharLoadIterations();
         for (float currentSlewInter = _charSlewInter; 
-             (currentSlewInter <= _charMaxSlew) || (currentSlewInter < slewIterations * _charSlewInter); 
+             (currentSlewInter <= _charMaxSlew) && (currentSlewInter < slewIterations * _charSlewInter); 
              currentSlewInter += _charSlewInter){
-                _slewsToTest.push_back(currentSlewInter); //Hard-coded limit
+                _slewsToTest.push_back(currentSlewInter);
         }
         for (float currentCapInter = _charCapInter; 
-             ( (currentCapInter <= _charMaxCap) || (currentCapInter < loadIterations * _charCapInter) ); 
+             ( (currentCapInter <= _charMaxCap) && (currentCapInter < loadIterations * _charCapInter) ); 
              currentCapInter += _charCapInter){
-                _loadsToTest.push_back(currentCapInter); //Hard-coded limit
+                _loadsToTest.push_back(currentCapInter); 
         }
 }
 
