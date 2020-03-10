@@ -23,7 +23,6 @@ total movable area         : 2.28e+09
 design utilization         : 4.01%
 rows                       : 85
 row height                 : 2800
-max multi_cell height      : 1917863491
 ----------------------------------------------------------------
 -------------------- Placement Analysis ------------------------
 total displacement         : 1357615
@@ -38,3 +37,4 @@ site check ==> PASS
 power check ==> PASS 
 placed_check ==>> PASS 
 overlap_check ==> PASS 
+No differences found.

@@ -255,12 +255,13 @@ void Opendp::findDesignStats() {
   design_area_ = row_count_ * static_cast< int64_t >(row_site_count_)
     * site_width_ * row_height_;
 
+  max_cell_height_ = 0;
   for(Cell &cell : cells_) {
     dbMaster *master = cell.db_inst_->getMaster();
     if(!isFixed(&cell) && isMultiRow(&cell) &&
        master->getType() == dbMasterType::CORE) {
       int cell_height = gridNearestHeight(&cell);
-      if(max_cell_height_ < cell_height) max_cell_height_ = cell_height;
+      if(cell_height > max_cell_height_) max_cell_height_ = cell_height;
     }
   }
 

@@ -1,6 +1,6 @@
 source helpers.tcl
 read_lef Nangate45.lef
-read_def nangate45-bench/aes_cipher_top/aes_cipher_top_replace.def
+read_def aes_cipher_top_replace.def
 detailed_placement
 check_placement
 
