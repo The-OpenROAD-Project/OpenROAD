@@ -61,3 +61,7 @@ zrouter/src/ModuleTemplate/TMP_tcl/TMP_Tcl.cpp
 zrouter/src/ModuleTemplate/TMP_tcl/TMP_Tcl.h
 zrouter/src/SHAPES/PDN_tcl/PDN_Tcl.cpp
 zrouter/src/SHAPES/PDN_tcl/PDN_Tcl.h
+
+# git
+**/.git
+**/.gitignore
