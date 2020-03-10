@@ -128,9 +128,9 @@ class Opendp {
   ~Opendp();
   void clear();
   void init(dbDatabase* db);
-  bool readConstraints(string constraint_file);
-  // legalize/check/report
-  void detailedPlacement();
+  // legalize/report
+  // max_displacment is in rows, 0 for unconstrained
+  void detailedPlacement(int max_displacment);
   void setPaddingGlobal(int left,
 			int right);
   // Return true if illegal.
@@ -167,9 +167,8 @@ class Opendp {
   void findDesignStats();
   void copy_init_to_final();
 
-  // utility.cpp
   void power_mapping();
-  void simplePlacement();
+  void detailedPlacement();
   std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
                                                        adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
@@ -288,7 +287,7 @@ class Opendp {
   int row_count_;
   int row_site_count_;
   int max_cell_height_;
-  int max_displacement_constraint_; // from constraints file
+  int max_displacement_constraint_;  // rows
 
   // 2D pixel grid
   Grid *grid_;

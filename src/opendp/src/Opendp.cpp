@@ -143,46 +143,14 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-void Opendp::detailedPlacement() {
+void Opendp::detailedPlacement(int max_displacment) {
+  max_displacement_constraint_ = max_displacment;
   dbToOpendp();
   initAfterImport();
   reportDesignStats();
-  simplePlacement();
+  detailedPlacement();
   reportLegalizationStats();
   updateDbInstLocations();
-}
-
-bool Opendp::readConstraints(const string input) {
-  //    cout << " .constraints file : " << input << endl;
-  ifstream dot_constraints(input.c_str());
-  if(!dot_constraints.good()) {
-    cerr << "readConstraints:: cannot open '" << input << "' for reading"
-         << endl;
-    return true;
-  }
-
-  string context;
-
-  while(!dot_constraints.eof()) {
-    dot_constraints >> context;
-    if(dot_constraints.eof()) break;
-    if(strncmp(context.c_str(), "maximum_movement", 16) == 0) {
-      string temp = context.substr(0, context.find_last_of("rows"));
-      string max_move = temp.substr(temp.find_last_of("=") + 1);
-      diamond_search_height_ = atoi(max_move.c_str()) * 20;
-      max_displacement_constraint_ = atoi(max_move.c_str());
-    }
-    else {
-      cerr << "readConstraints:: unsupported keyword " << endl;
-      return true;
-    }
-  }
-
-  if(max_displacement_constraint_ == 0)
-    max_displacement_constraint_ = row_count_;
-
-  dot_constraints.close();
-  return false;
 }
 
 void Opendp::initAfterImport() {

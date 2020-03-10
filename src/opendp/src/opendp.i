@@ -109,18 +109,11 @@ tclListSetdbMaster(Tcl_Obj *const source,
 
 %inline %{
 
-bool
-read_constraints(std::string constraint_file)
-{
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  return opendp->readConstraints(constraint_file);
-}
-
 void
-detailed_placement_cmd()
+detailed_placement_cmd(int max_displacment)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement();
+  opendp->detailedPlacement(max_displacment);
 }
 
 bool

@@ -645,7 +645,9 @@ bool Opendp::refine_move(Cell* cell) {
   if(diamondSearch(cell, init_x, init_y, pixel)) {
     double new_dist = abs(init_x - pixel->grid_x_ * site_width_)
       + abs(init_y - pixel->grid_y_ * row_height_);
-    if(new_dist / row_height_ > max_displacement_constraint_) return false;
+    if(max_displacement_constraint_
+       && (new_dist / row_height_ > max_displacement_constraint_))
+      return false;
 
     int benefit = dist_benefit(cell, pixel->grid_x_ * site_width_,
                                pixel->grid_y_ * row_height_);
