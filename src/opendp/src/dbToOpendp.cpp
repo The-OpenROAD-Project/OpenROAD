@@ -75,10 +75,6 @@ using odb::dbSBox;
 static bool swapWidthHeight(dbOrientType orient);
 
 void Opendp::dbToOpendp() {
-  // Clearing pre-built structure will enable
-  // multiple execution of the legalize_placement command.
-  clear();
-
   // LEF
   for(auto db_lib : db_->getLibs())
     makeMacros(db_lib);
@@ -236,6 +232,7 @@ void Opendp::makeGroups() {
 }
 
 void Opendp::findRowPower() {
+  initial_power_ = power::undefined;
   const char *power_net_name = "VDD";
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;

@@ -117,13 +117,8 @@ Group::Group() : name(""), util(0.0){}
 Opendp::Opendp()
   : pad_right_(0),
     pad_left_(0),
-    initial_power_(power::undefined),
-    row0_orient_is_r0_(true),
-    row0_top_power_is_vdd_(true),
-    diamond_search_height_(400),
-    max_displacement_constraint_(0),
-    site_width_(0),
-    max_cell_height_(1) {
+    grid_(nullptr)
+{
 }
 
 Opendp::~Opendp() {
@@ -133,8 +128,17 @@ Opendp::~Opendp() {
 void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
+  // magic number alert
+  diamond_search_height_ = 400;
+  max_displacement_constraint_ = 0;
+
   db_master_map_.clear();
   cells_.clear();
+  groups_.clear();
+  db_master_map_.clear();
+  db_inst_map_.clear();
+  deleteGrid(grid_);
+  grid_ = nullptr;
 }
 
 void Opendp::setPaddingGlobal(int left,
@@ -144,6 +148,7 @@ void Opendp::setPaddingGlobal(int left,
 }
 
 void Opendp::detailedPlacement(int max_displacment) {
+  clear();
   max_displacement_constraint_ = max_displacment;
   dbToOpendp();
   initAfterImport();
@@ -212,10 +217,12 @@ Opendp::makeGrid()
 void
 Opendp::deleteGrid(Grid *grid)
 {
-  for(int i = 0; i < row_count_; i++) {
-    delete [] grid[i];
+  if (grid) {
+    for(int i = 0; i < row_count_; i++) {
+      delete [] grid[i];
+    }
+    delete grid;
   }
-  delete grid;
 }
 
 void Opendp::updateDbInstLocations() {
