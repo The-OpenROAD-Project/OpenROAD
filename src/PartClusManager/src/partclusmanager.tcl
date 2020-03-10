@@ -35,22 +35,138 @@
 # // POSSIBILITY OF SUCH DAMAGE.
 # ////////////////////////////////////////////////////////////////////////////////
 
-sta::define_cmd_args "partition_netlist" {[-tool tool] \
+sta::define_cmd_args "partition_netlist" { [-tool name] \
+                                          [-target_partitions value] \
+                                          [-graph_model name] \
+                                          [-clique_threshold value] \
+                                          [-weight_model name] \
+                                          [-max_edge_weight value] \
+                                          [-num_starts value] \
+                                          [-balance_constraint value] \
+                                          [-coarsening_ratio value] \
+                                          [-coarsening_vertices value] \
+                                          [-enable_term_prop value] \
+                                          [-cut_hop_ratio value] \
                                          }
-
 proc partition_netlist { args } {
   sta::parse_key_args "partition_netlist" args \
-    keys {-tool} flags {}
+    keys {-tool \
+          -target_partitions \
+          -graph_model \
+          -clique_threshold \
+          -weight_model \
+          -max_edge_weight \
+          -num_starts \
+          -balance_constraint \
+          -coarsening_ratio \
+          -cut_hop_ratio \ 
+         } flags { -enable_perm_prop \ 
+         }
 
+  # Tool
+  set tools "chaco gpmetis mlpart"
   if { ![info exists keys(-tool)] } {
-    puts "Missing argument -tool"
-  } elseif { $keys(-tool) == "chaco" } {
-    run_chaco
-  } elseif { $keys(-tool) == "mlpart" } {
-    run_mlpart
-  } elseif { $keys(-tool) == "gpmetis" } {
-    run_gpmetis
+    puts "\[ERROR\] Missing mandatory argument -tool"
+    return
+  } elseif { !($keys(-tool) in $tools) } {
+    puts "\[ERROR\] Invalid tool. Use one of the following: $tools"
+    return
   } else {
-    puts "Invalid tool. Use chaco, mlpart or gpmetis."
+  }
+       
+  # Target partitions
+  if { ![info exists keys(-target_partitions)] } {
+    puts "\[ERROR\] Missing mandatory argument \"-target_partitions \[2, 32768\]\""
+    return
+  } elseif { !([string is integer $keys(-target_partitions)] && \
+              $keys(-target_partitions) >= 2 && $keys(-target_partitions) <= 32768)} {
+    puts "\[ERROR\] Argument -target_partitions should be an integer in the range \[2, 32768\]"
+    return
+  } else {
+          
+  }
+
+  # Clique threshold
+  if { [info exists keys(-clique_threshold)] && \
+       !([string is integer $keys(-clique_threshold)] && \
+         $keys(-clique_threshold) >= 3 && $keys(-clique_threshold) <= 32768) } {
+    puts "\[ERROR\] Argument -clique_threshold should be an integer in the range \[3, 32768\]"
+    return
+  } else {
+          
+  }
+
+  # Graph model
+  set graph_models "clique start hybrid"
+  if { [info exists keys(-graph_model)] } {
+    if { $keys(-graph_model) in $graph_models } {
+    } else {
+      puts "\[ERROR\] Invalid graph model. Use one of the following: $graph_models"
+      return
+    }
+  }
+
+  # Weight model
+  if { [info exists keys(-weight_model)] } {
+     if { !([string is integer $keys(-weight_model)] && \
+             $keys(-weight_model) >= 1 && $keys(-weight_model) <= 7) } {
+       puts "\[ERROR\] Argument -weight_model should be an integer in the range \[1, 7\]"
+       return
+     } else {
+     }     
+  }
+
+  # Max edge weight
+  if { [info exists keys(-max_edge_weight)] } {
+       if { !([string is integer $keys(-max_edge_weight)] && \
+              $keys(-max_edge_weight) >= 1 && $keys(-max_edge_weight) <= 32768) } {
+      puts "\[ERROR\] Argument -max_edge_weight should be an integer in the range \[1, 32768\]"
+      return
+    } else {
+    }       
+  }
+
+  # Num starts
+  if { [info exists keys(-num_starts)] } {
+       if { !([string is integer $keys(-num_starts)] && \
+              $keys(-num_starts) >= 1 && $keys(-num_starts) <= 32768) } {
+      puts "\[ERROR\] Argument -num_starts should be an integer in the range \[1, 32768\]"
+      return
+    } else {
+    }       
+  }
+  
+  # Balance constraint
+  if { [info exists keys(-balance_constraint)] } {
+       if { !([string is integer $keys(-balance_constraint)] && \
+              $keys(-balance_constraint) >= 0 && $keys(-balance_constraint) <= 50) } {
+      puts "\[ERROR\] Argument -balance_constraint should be an integer in the range \[0, 50\]"
+      return
+    } else {
+    }       
+  }
+
+  # Coarsening ratio 
+  if { [info exists keys(-coarsening_ratio)] } {
+       if { !([string is double $keys(-coarsening_ratio)] && \
+              $keys(-coarsening_ratio) >= 0.5 && $keys(-coarsening_ratio) <= 1.0) } {
+      puts "\[ERROR\] Argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
+      return
+    } else {
+    }       
+  }
+
+  # Terminal propagation 
+  if { [info exists flags(-enable_term_prop)] } {
+  }
+
+  # Cut hop ratio 
+  if { [info exists keys(-cut_hop_ratio)] } {
+       if { !([string is double $keys(-cut_hop_ratio)] && \
+              $keys(-cut_hop_ratio) >= 0.5 && $keys(-cut_hop_ratio) <= 1.0) } {
+      puts "\[ERROR\] Argument -cut_hop_ratio should be a floating number in the range \[0.5, 1.0\]"
+      return
+    } else {
+    }       
   }
 }
