@@ -43,7 +43,7 @@ proc legalize_placement { args } {
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "legalize_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::detailed_placement
+    opendp::detailed_placement 0
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
