@@ -46,7 +46,7 @@ fi
 binary=$1
 testdir=$2
 
-$binary -no-init < run.tcl > test.log 2>&1
+$binary -no_init < run.tcl > test.log 2>&1
 
 obs_report=$(grep -e '---- Macro blocks found:' ./test.log)
 
