@@ -126,6 +126,9 @@ record_tests {
   overlap1
   fillers1
   fillers2
+  aes
+  gcd
+  ibex
 }
 
 ################################################################
