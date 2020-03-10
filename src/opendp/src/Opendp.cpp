@@ -389,6 +389,10 @@ int Opendp::paddedWidth(Cell *cell) {
   return cell->width_ + (pad_left_ + pad_right_) * site_width_;
 }
 
+bool Opendp::isPadded(Cell *cell) {
+  return pad_left_  > 0 || pad_right_ > 0;
+}
+
 int Opendp::gridWidth(Cell *cell) {
   return divCeil(paddedWidth(cell), site_width_);
 }

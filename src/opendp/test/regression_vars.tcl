@@ -120,6 +120,7 @@ record_tests {
   multi_height03
   multi_height04
   pad01
+  pad02
   pad03
   pad04
   overlap1

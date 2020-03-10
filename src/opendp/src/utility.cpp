@@ -509,10 +509,10 @@ bool Opendp::shift_move(Cell* cell) {
   adsRect rect;
   // magic number alert
   int boundary_margin = 3;
-  rect.reset(max(core_.xMin(), x - paddedWidth(cell) * boundary_margin),
-	     max(core_.yMin(), y - cell->height_ * boundary_margin),
-	     min(core_.xMax(), x + paddedWidth(cell) * boundary_margin),
-	     min(core_.yMax(), y + cell->height_ * boundary_margin));
+  rect.reset(max(0, x - paddedWidth(cell) * boundary_margin),
+	     max(0, y - cell->height_ * boundary_margin),
+	     min(static_cast<int>(core_.dx()), x + paddedWidth(cell) * boundary_margin),
+	     min(static_cast<int>(core_.dy()), y + cell->height_ * boundary_margin));
   set< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
 
   // erase region cells
@@ -585,16 +585,10 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
 
 // rect should be position
 set< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
-  // rect inside core
-  assert(rect->xMin() >= core_.xMin());
-  assert(rect->yMin() >= core_.yMin());
-  assert(rect->xMax() <= core_.xMax());
-  assert(rect->yMax() <= core_.yMax());
-
-  int x_start = divRound(rect->xMin(), site_width_);
-  int y_start = divRound(rect->yMin(), row_height_);
-  int x_end = divRound(rect->xMax(), site_width_);
-  int y_end = divRound(rect->yMax(), row_height_);
+  int x_start = divFloor(rect->xMin(), site_width_);
+  int y_start = divFloor(rect->yMin(), row_height_);
+  int x_end = divFloor(rect->xMax(), site_width_);
+  int y_end = divFloor(rect->yMax(), row_height_);
 
   set< Cell* > cells;
   for(int i = y_start; i < y_end; i++) {
