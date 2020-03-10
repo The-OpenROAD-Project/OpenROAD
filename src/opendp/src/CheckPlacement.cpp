@@ -61,7 +61,6 @@ bool Opendp::checkPlacement(bool verbose) {
   fail |= row_check(verbose);
   fail |= site_check(verbose);
   fail |= power_line_check(verbose);
-  fail |= edge_check(verbose);
   fail |= placed_check(verbose);
   fail |= overlap_check(verbose);
   return fail;
@@ -108,33 +107,6 @@ bool Opendp::site_check(bool verbose) {
     cout << "site check ==> FAIL (" << count << ")" << endl;
   else
     cout << "site check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::edge_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(int i = 0; i < row_count_; i++) {
-    vector< Cell* > cells;
-    for(int j = 0; j < row_site_count_; j++) {
-      Cell* grid_cell = grid_[i][j].cell;
-      if(grid_[i][j].is_valid
-	 && grid_cell
-	 && grid_cell != &dummy_cell_) {
-	if(cells.empty()) {
-	  cells.push_back(grid_[i][j].cell);
-	}
-	else if(cells[cells.size() - 1] != grid_[i][j].cell) {
-	  cells.push_back(grid_[i][j].cell);
-	}
-      }
-    }
-  }
-
-  if(fail)
-    cout << "edge check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "edge_check ==> PASS " << endl;
   return fail;
 }
 

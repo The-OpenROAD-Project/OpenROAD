@@ -214,7 +214,6 @@ class Opendp {
 
   bool row_check(bool verbose);
   bool site_check(bool verbose);
-  bool edge_check(bool verbose);
   bool power_line_check(bool verbose);
   bool placed_check(bool verbose);
   bool overlap_check(bool verbose);

@@ -39,7 +39,6 @@ delta HPWL                 : 3%
 row check ==> PASS 
 site check ==> FAIL (1)
 power check ==> PASS 
-edge_check ==> PASS 
 placed_check ==> FAIL (1)
 overlap_check ==> FAIL 
 Error: placement check failed.

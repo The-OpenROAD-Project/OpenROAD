@@ -39,7 +39,6 @@ delta HPWL                 : 10%
 row check ==> PASS 
 site check ==> PASS 
 power check ==> PASS 
-edge_check ==> PASS 
 placed_check ==>> PASS 
 overlap_check ==> PASS 
 No differences found.
