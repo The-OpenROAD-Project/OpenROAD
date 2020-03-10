@@ -297,7 +297,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
 		       // Return values
 		       int &avail_x,
 		       int &avail_y) {
-  int x_step = gridWidth(cell);
+  int x_step = gridPaddedWidth(cell);
   int y_step = gridHeight(cell);
 
   // Check y is beyond the border.
@@ -543,7 +543,7 @@ bool Opendp::shift_move(Cell* cell) {
 
 bool Opendp::map_move(Cell* cell) {
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initPaddedLoc(cell, init_x, init_y);
   return map_move(cell, init_x, init_y);
 }
 
@@ -565,13 +565,13 @@ bool Opendp::map_move(Cell* cell, int x, int y) {
 }
 
 vector< Cell* > Opendp::overlap_cells(Cell* cell) {
-  int step_x = gridWidth(cell);
+  int step_x = gridPaddedWidth(cell);
   int step_y = gridHeight(cell);
 
   vector< Cell* > list;
   set< Cell* > in_list;
   for(int i = gridY(cell); i < gridY(cell) + step_y; i++) {
-    for(int j = gridX(cell); j < gridX(cell) + step_x; j++) {
+    for(int j = gridPaddedX(cell); j < gridPaddedX(cell) + step_x; j++) {
       Cell *pos_cell = grid_[i][j].cell;
       if(pos_cell
 	 && in_list.find(pos_cell) != in_list.end()) {
@@ -624,9 +624,9 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
                 dist_benefit(cell2, cell1->x_, cell1->y_);
 
   if(benefit < 0) {
-    int grid_x1 = gridX(cell2);
+    int grid_x1 = gridPaddedX(cell2);
     int grid_y1 = gridY(cell2);
-    int grid_x2 = gridX(cell1);
+    int grid_x2 = gridPaddedX(cell1);
     int grid_y2 = gridY(cell1);
 
     erase_pixel(cell1);

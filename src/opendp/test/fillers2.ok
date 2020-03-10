@@ -24,20 +24,19 @@ design utilization         : 5.47%
 rows                       : 4
 row height                 : 2800
 ----------------------------------------------------------------
-Warning: detailed placement failed on _277_
 -------------------- Placement Analysis ------------------------
-total displacement         : 0
-average displacement       : 0
-max displacement           : 0
+total displacement         : 7360
+average displacement       : 7360
+max displacement           : 7360
 original HPWL              : 1.77
-legalized HPWL             : 1.77
-delta HPWL                 : 0%
+legalized HPWL             : 9.13
+delta HPWL                 : 415%
 ----------------------------------------------------------------
+Placed 8 filler instances.
 row check ==> PASS 
 site check ==> PASS 
 power check ==> PASS 
 edge_check ==> PASS 
-placed_check ==> FAIL (1)
-Cell _277_ with padding is outside the core boundary.
-overlap_check ==> FAIL 
-Error: placement check failed.
+placed_check ==>> PASS 
+overlap_check ==> PASS 
+No differences found.

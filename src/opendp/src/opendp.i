@@ -146,4 +146,11 @@ filler_placement_cmd(StringSeq *fillers)
   opendp->fillerPlacement(fillers);
 }
 
+void
+report_placement_grid()
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->reportGrid();
+}
+
 %} // inline

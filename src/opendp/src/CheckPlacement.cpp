@@ -75,7 +75,7 @@ bool Opendp::row_check(bool verbose) {
       if(cell.y_ % row_height_ != 0) {
 	if (verbose)
 	  cout << "row_check fail => " << cell.name()
-	       << " y_ : " << cell.y_ << endl;
+	       << " y : " << cell.y_ << endl;
 	fail = true;
 	count++;
       }
@@ -212,10 +212,10 @@ bool Opendp::overlap_check(bool verbose) {
   Grid *grid = makeGrid();
 
   for(Cell& cell : cells_) {
-    int grid_x = gridX(&cell);
+    int grid_x = gridPaddedX(&cell);
     int grid_y = gridY(&cell);
 
-    int x_ur = gridEndX(&cell);
+    int x_ur = gridPaddedEndX(&cell);
     int y_ur = gridEndY(&cell);
 
     // Fixed cells can be outside DIEAREA.

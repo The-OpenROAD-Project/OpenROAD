@@ -90,7 +90,7 @@ struct Cell {
   int64_t area();
 
   dbInst* db_inst_;
-  int x_, y_;		       // lower left wrt core with padding DBU
+  int x_, y_;		       // lower left wrt core DBU
   dbOrientType orient_;
   int width_, height_;		// DBU
   bool is_placed_;
@@ -143,6 +143,8 @@ class Opendp {
 			 int &avg_displacement,
 			 int &sum_displacement,
 			 int &max_displacement);
+  void reportGrid();
+
  private:
   void dbToOpendp();
   void makeMacros(dbLib* db_lib);
@@ -234,17 +236,25 @@ class Opendp {
   int gridY(int y);
   int gridEndX();
   int gridEndY();
-  int gridWidth(Cell* cell);
+  int gridPaddedWidth(Cell* cell);
   int gridNearestHeight(Cell* cell);
   int gridNearestWidth(Cell* cell);
   int gridHeight(Cell* cell);
   int gridX(Cell* cell);
+  int gridPaddedX(Cell* cell);
   int gridY(Cell* cell);
+  int gridPaddedEndX(Cell *cell);
   int gridEndX(Cell *cell);
   int gridEndY(Cell *cell);
+  void setGridPaddedLoc(Cell *cell,
+			int x,
+			int y);
   void initLocation(Cell *cell,
 		    int &x,
 		    int &y);
+  void initPaddedLoc(Cell *cell,
+		     int &x,
+		     int &y);
   int paddedWidth(Cell *cell);
   bool isPadded(Cell *cell);
   int disp(Cell *cell);
@@ -256,6 +266,7 @@ class Opendp {
   Grid *makeCellGrid();  
   void placeRowFillers(Grid *grid,
 		       int row);
+  void reportGrid(Grid *grid);
 
   dbDatabase* db_;
   dbBlock* block_;
