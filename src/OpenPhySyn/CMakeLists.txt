@@ -104,10 +104,7 @@ set(TCL_LIB ${TCL_LIBRARY})
 endif()
 
 #Add SWIG Package
-cmake_policy(SET CMP0078 NEW)
-find_package(SWIG REQUIRED)
 find_package(ZLIB REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
 
 
 # Build spdlok
