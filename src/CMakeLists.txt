@@ -29,6 +29,7 @@ set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
+set(PARTCLUSMANAGER_HOME ${PROJECT_SOURCE_DIR}/src/PartClusManager)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -213,6 +214,7 @@ add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
+add_subdirectory(PartClusManager)
 
 ################################################################
 
@@ -264,6 +266,7 @@ target_link_libraries(openroad
   tapcell
   TritonMacroPlace
   ParquetFP
+  PartClusManager
   ABKCommon
   pdnsim
   zlib
