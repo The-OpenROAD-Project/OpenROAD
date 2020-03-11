@@ -41,9 +41,16 @@
 %}
 
 namespace PartClusManager {
-
-extern void run_chaco();
-extern void run_gpmetis();
-extern void run_mlpart();
-
+extern void set_tool(const char* name);
+extern void set_target_partitions(unsigned value);
+extern void set_graph_model(const char* name);
+extern void set_clique_threshold(unsigned value);
+extern void set_weight_model(unsigned value);
+extern void set_max_edge_weight(unsigned value);
+extern void set_num_starts(unsigned value);
+extern void set_balance_constraints(unsigned value);
+extern void set_coarsening_ratio(float value);
+extern void set_enable_term_prop(bool value);
+extern void set_cut_hop_ratio(float value);
+extern void run_partitioning();
 }

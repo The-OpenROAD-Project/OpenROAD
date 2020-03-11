@@ -42,22 +42,76 @@
 
 namespace PartClusManager {
 
-void run_chaco() {
+void set_tool(const char* name) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
-        kernel->runChaco();        
+        kernel->getOptions().setTool(name);
 }
 
-void run_gpmetis() {
+void set_target_partitions(unsigned value) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
-        kernel->runGpMetis();        
+        kernel->getOptions().setTargetPartitions(value);
 }
 
-void run_mlpart() {
+void set_graph_model(const char* name) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
-        kernel->runMlPart();        
+        kernel->getOptions().setGraphModel(name);
+}
+
+void set_clique_threshold(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setCliqueThreshold(value);
+}
+
+void set_weight_model(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setWeightModel(value);
+}
+
+void set_max_edge_weight(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setMaxEdgeWeight(value);
+}
+
+void set_num_starts(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setNumStarts(value);
+}
+
+void set_balance_constraints(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setBalanceConstraint(value);
+}
+
+void set_coarsening_ratio(float value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setCoarRatio(value);
+}
+
+void set_enable_term_prop(bool value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setTermProp(value);
+}
+
+void set_cut_hop_ratio(float value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setCutHopRatio(value);
+}
+
+void run_partitioning() {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->runPartitioning();
 }
 
 }

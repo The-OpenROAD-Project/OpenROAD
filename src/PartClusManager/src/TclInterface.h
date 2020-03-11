@@ -36,8 +36,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace PartClusManager {
-void run_chaco();
-void run_gpmetis();
-void run_mlpart();
+void set_tool(const char* name);
+void set_target_partitions(unsigned value);
+void set_graph_model(const char* name);
+void set_clique_threshold(unsigned value);
+void set_weight_model(unsigned value);
+void set_max_edge_weight(unsigned value);
+void set_num_starts(unsigned value);
+void set_balance_constraints(unsigned value);
+void set_coarsening_ratio(float value);
+void set_enable_term_prop(bool value);
+void set_cut_hop_ratio(float value);
+void run_partitioning();
 }
 

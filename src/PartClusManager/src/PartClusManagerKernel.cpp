@@ -39,6 +39,16 @@
 
 namespace PartClusManager {
 
+void PartClusManagerKernel::runPartitioning() {
+        if (_options.getTool() == "mlpart") {
+                runMlPart();
+        } else if (_options.getTool() == "gpmetis") {
+                runGpMetis();
+        } else {
+                runChaco();
+        }
+}
+
 void PartClusManagerKernel::runChaco() {
         std::cout << "Running chaco...\n";
 }

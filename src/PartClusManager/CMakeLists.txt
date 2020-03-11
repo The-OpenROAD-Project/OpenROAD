@@ -11,7 +11,7 @@ find_package(SWIG REQUIRED)
 
 set(PARTCLUSMANAGER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
 add_custom_command(OUTPUT ${PARTCLUSMANAGER_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -o ${PARTCLUSMANAGER_WRAP} ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.i   
+        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix PartClusManager -tcl8 -c++ -o ${PARTCLUSMANAGER_WRAP} ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.i   
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.i

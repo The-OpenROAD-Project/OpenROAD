@@ -72,6 +72,7 @@ proc partition_netlist { args } {
     puts "\[ERROR\] Invalid tool. Use one of the following: $tools"
     return
   } else {
+     PartClusManager::set_tool $keys(-tool)
   }
        
   # Target partitions
@@ -83,17 +84,18 @@ proc partition_netlist { args } {
     puts "\[ERROR\] Argument -target_partitions should be an integer in the range \[2, 32768\]"
     return
   } else {
-          
+    PartClusManager::set_target_partitions $keys(-target_partitions)     
   }
 
   # Clique threshold
-  if { [info exists keys(-clique_threshold)] && \
-       !([string is integer $keys(-clique_threshold)] && \
-         $keys(-clique_threshold) >= 3 && $keys(-clique_threshold) <= 32768) } {
-    puts "\[ERROR\] Argument -clique_threshold should be an integer in the range \[3, 32768\]"
-    return
-  } else {
-          
+  if { [info exists keys(-clique_threshold)] } {
+    if { !([string is integer $keys(-clique_threshold)] && \
+           $keys(-clique_threshold) >= 3 && $keys(-clique_threshold) <= 32768) } {
+      puts "\[ERROR\] Argument -clique_threshold should be an integer in the range \[3, 32768\]"
+      return
+    } else {
+      PartClusManager::set_clique_threshold $keys(-clique_threshold)
+    }
   }
 
   # Graph model
@@ -104,6 +106,7 @@ proc partition_netlist { args } {
       puts "\[ERROR\] Invalid graph model. Use one of the following: $graph_models"
       return
     }
+    PartClusManager::set_graph_model $keys(-graph_model)
   }
 
   # Weight model
@@ -113,6 +116,7 @@ proc partition_netlist { args } {
        puts "\[ERROR\] Argument -weight_model should be an integer in the range \[1, 7\]"
        return
      } else {
+       PartClusManager::set_weight_model $keys(-weight_model)
      }     
   }
 
@@ -123,6 +127,7 @@ proc partition_netlist { args } {
       puts "\[ERROR\] Argument -max_edge_weight should be an integer in the range \[1, 32768\]"
       return
     } else {
+       PartClusManager::set_max_edge_weight $keys(-max_edge_weight)
     }       
   }
 
@@ -133,6 +138,7 @@ proc partition_netlist { args } {
       puts "\[ERROR\] Argument -num_starts should be an integer in the range \[1, 32768\]"
       return
     } else {
+       PartClusManager::set_num_starts $keys(-num_starts)
     }       
   }
   
@@ -143,6 +149,7 @@ proc partition_netlist { args } {
       puts "\[ERROR\] Argument -balance_constraint should be an integer in the range \[0, 50\]"
       return
     } else {
+       PartClusManager::set_balance_constraint $keys(-balance_constraint)
     }       
   }
 
@@ -153,11 +160,13 @@ proc partition_netlist { args } {
       puts "\[ERROR\] Argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
       return
     } else {
+       PartClusManager::set_coarsening_ratio $keys(-coarsening_ratio)
     }       
   }
 
   # Terminal propagation 
   if { [info exists flags(-enable_term_prop)] } {
+       PartClusManager::set_enable_term_prop $keys(-enable_term_prop)
   }
 
   # Cut hop ratio 
@@ -167,6 +176,9 @@ proc partition_netlist { args } {
       puts "\[ERROR\] Argument -cut_hop_ratio should be a floating number in the range \[0.5, 1.0\]"
       return
     } else {
+       PartClusManager::set_cut_hop_ratio $keys(-cut_hop_ratio)
     }       
   }
+
+  PartClusManager::run_partitioning
 }

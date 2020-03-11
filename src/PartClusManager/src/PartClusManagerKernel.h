@@ -46,10 +46,10 @@ class PartOptions {
 public:
         PartOptions() = default;
        
-        void setNumberStarts(unsigned numStarts) { _numStarts = numStarts; }
-        unsigned getNumberStarts() const { return _numStarts; } 
-        void setNumberPartitions(unsigned numParts) { _numPartitions = numParts; }
-        unsigned getNumberPartitions() const { return _numPartitions; } 
+        void setNumStarts(unsigned numStarts) { _numStarts = numStarts; }
+        unsigned getNumStarts() const { return _numStarts; } 
+        void setTargetPartitions(unsigned target) { _targetPartitions = target; }
+        unsigned getTargetPartitions() const { return _targetPartitions; } 
         void setWeightedVertices(bool enable) { _weightedVertices = enable; } 
         bool getWeightedVertices() const { return _weightedVertices; }
         void setCoarRatio(double cratio) { _coarRatio = cratio; }
@@ -64,10 +64,22 @@ public:
         bool getArchitecture() const { return _architecture; }
         void setArchTopology(const std::string& archString) { _archTopology = archString; }
         std::string getArchTopology() const { return _archTopology; } 
-                
+        void setTool(const std::string& tool) { _tool = tool; }
+        std::string getTool() const { return _tool; } 
+        void setGraphModel(const std::string& graphModel) { _graphModel = graphModel; }
+        std::string getGraphModel() const { return _tool; } 
+        void setCliqueThreshold(unsigned threshold) { _cliqueThreshold = threshold; }
+        unsigned getCliqueThreshold() const { return _cliqueThreshold; } 
+        void setWeightModel(unsigned model) { _weightModel = model; }
+        unsigned getWeightModel() const { return _weightModel; } 
+        void setMaxEdgeWeight(unsigned weight) { _maxEdgeWeight = weight; }
+        unsigned getMaxEdgeWeight() const { return _maxEdgeWeight; }
+        void setBalanceConstraint(unsigned constraint) { _balanceConstraint = constraint; }
+        unsigned getBalanceConstraint() const { return _balanceConstraint; }
+
 private:
         unsigned        _numStarts              = 0;
-        unsigned        _numPartitions          = 0;
+        unsigned        _targetPartitions       = 0;
         bool            _weightedVertices       = false;
         double          _coarRatio              = 0.8;
         unsigned        _coarVertices           = 2500;
@@ -75,22 +87,31 @@ private:
         double          _cutHopRatio            = 1.0;
         bool            _architecture           = false;
         std::string     _archTopology           = "";
-};
+        std::string     _tool                   = "chaco";
+        std::string     _graphModel             = "clique";
+        unsigned        _cliqueThreshold        = 50;
+        unsigned        _weightModel            = 7;
+        unsigned        _maxEdgeWeight          = 100; 
+        unsigned        _balanceConstraint      = 5; 
+}; 
 
 class PartClusManagerKernel {
 protected:
 
 private:
-        DBWrapper _dbWrapper;
+        DBWrapper   _dbWrapper;
+        PartOptions _options;
 
 public:
         PartClusManagerKernel() = default;
+        void runPartitioning();
         void runChaco();
         void runChaco(const Graph& graph, const PartOptions& options);
         void runGpMetis();
         void runGpMetis(const Graph& graph, const PartOptions& options);
         void runMlPart();
         void runMlPart(const Graph& graph, const PartOptions& options);
+        PartOptions& getOptions() { return _options; }
 };
 
 }
