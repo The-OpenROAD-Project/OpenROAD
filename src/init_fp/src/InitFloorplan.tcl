@@ -13,14 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-sta::define_cmd_args "initialize_floorplan" {
-  [-utilization util]\
-    [-aspect_ratio ratio]\
-    [-core_space space]\
-    [-die_area {lx ly ux uy}]\
-    [-core_area {lx ly ux uy}]\
-    [-site site_name]\
-    [-tracks tracks_file]}
+sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
+					       [-aspect_ratio ratio]\
+					       [-core_space space]\
+					       [-die_area {lx ly ux uy}]\
+					       [-core_area {lx ly ux uy}]\
+					       [-site site_name]\
+					       [-tracks tracks_file]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
