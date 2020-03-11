@@ -1,0 +1,44 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+!tests/data/*.lib
+!tests/data/**/Nangate45/*.lib
+!tests/data/**/gscl45nm/*.lib
+!test/data/*.lib
+!test/data/**/Nangate45/*.lib
+!test/data/**/gscl45nm/*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.x
+
+# Build directory
+build/
+tests/results
+test/results
