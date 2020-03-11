@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.13.4)
-
 project(OpenPhySyn VERSION 1.2.4 LANGUAGES CXX)
 
 
