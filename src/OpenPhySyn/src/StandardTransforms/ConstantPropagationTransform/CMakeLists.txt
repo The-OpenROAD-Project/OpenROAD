@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.13.4)
-
 project(ConstantPropagation VERSION 1.0.0 LANGUAGES CXX)
 
 set(TRANSFORM_NAME constant_propagation)
