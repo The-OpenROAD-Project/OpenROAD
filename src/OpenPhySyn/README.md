@@ -24,6 +24,7 @@ Currently, `optimize_design` performs pin swapping and load-driven gate-cloning 
 -   `[-clone_max_cap_factor <factor>]`: Set gate-cloning capacitance load ratio, defaults to _1.5_.
 -   `[-clone_non_largest_cells]`: Allow cloning of cells that are not the largest of their cell-footprint, not recommended.
 
+
 `optimize_logic` options:
 
 -   `[-no_constant_propagation]`: Disable constant propagation.
