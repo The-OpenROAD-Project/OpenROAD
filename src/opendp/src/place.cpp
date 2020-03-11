@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
 namespace opendp {
@@ -54,6 +55,8 @@ using std::string;
 using std::vector;
 using std::numeric_limits;
 
+using ord::warn;
+
 static bool cellAreaLess(Cell* cell1, Cell* cell2) {
   int area1 = cell1->area();
   int area2 = cell2->area();
@@ -65,7 +68,7 @@ static bool cellAreaLess(Cell* cell1, Cell* cell2) {
     return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
-void Opendp::simplePlacement() {
+void Opendp::detailedPlacement() {
   if(!groups_.empty()) {
     // nonsense comment alert
     // pre placement out border ( Need region assign function previously )
@@ -274,8 +277,7 @@ void Opendp::brick_placement1(Group* group) {
 
     bool valid = map_move(cell, x, y);
     if(!valid) {
-      cout << "Warning: cannot place single ( brick place 1 ) "
-           << cell->name() << endl;
+      warn("cannot place single cell (brick place 1) %s", cell->name());
     }
   }
 }
@@ -296,8 +298,7 @@ void Opendp::brick_placement2(Group* group) {
 	       x, y);
       bool valid = map_move(cell, x, y);
       if(!valid) {
-	cout << "Warning: cannot place single ( brick place 2 ) "
-	     << cell->name() << endl;
+	warn("cannot place instance (brick place 2) %s" , cell->name());
       }
     }
   }

@@ -60,8 +60,8 @@ void Opendp::fixed_cell_assign() {
     if(isFixed(&cell)) {
       int y_start = gridY(&cell);
       int y_end = gridEndY(&cell);
-      int x_start = gridX(&cell);
-      int x_end = gridEndX(&cell);
+      int x_start = gridPaddedX(&cell);
+      int x_end = gridPaddedEndX(&cell);
 
       int y_start_rf = 0;
       int y_end_rf = gridEndY();
@@ -193,31 +193,29 @@ void Opendp::group_pixel_assign() {
 
 void Opendp::erase_pixel(Cell* cell) {
   if(!(isFixed(cell) || !cell->is_placed_)) {
-    int x_step = gridWidth(cell);
+    int x_step = gridPaddedWidth(cell);
     int y_step = gridHeight(cell);
-
-    cell->is_placed_ = false;
-    cell->hold_ = false;
-
     for(int i = gridY(cell); i < gridY(cell) + y_step; i++) {
-      for(int j = gridX(cell); j < gridX(cell) + x_step; j++) {
+      for(int j = gridPaddedX(cell); j < gridPaddedX(cell) + x_step; j++) {
 	grid_[i][j].cell = nullptr;
 	grid_[i][j].util = 0;
       }
     }
     cell->x_ = 0;
     cell->y_ = 0;
+    cell->is_placed_ = false;
+    cell->hold_ = false;
   }
 }
 
 void Opendp::paint_pixel(Cell* cell, int grid_x, int grid_y) {
   assert(!cell->is_placed_);
-  int x_step = gridWidth(cell);
+  int x_step = gridPaddedWidth(cell);
   int y_step = gridHeight(cell);
 
-  cell->x_ = grid_x * site_width_;
-  cell->y_ = grid_y * row_height_;
+  setGridPaddedLoc(cell, grid_x, grid_y);
   cell->is_placed_ = true;
+
 #ifdef ODP_DEBUG
   cout << "paint cell : " << cell->name() << endl;
   cout << "x_ - y_ : " << cell->x_ << " - "
@@ -225,6 +223,7 @@ void Opendp::paint_pixel(Cell* cell, int grid_x, int grid_y) {
   cout << "x_step - y_step : " << x_step << " - " << y_step << endl;
   cout << "grid_x - grid_y : " << grid_x << " - " << grid_y << endl;
 #endif
+
   for(int i = grid_y; i < grid_y + y_step; i++) {
     for(int j = grid_x; j < grid_x + x_step; j++) {
       if(grid_[i][j].cell != nullptr) {

@@ -26,6 +26,7 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 }
 
+# r1/Q -> r2/D r3/D .... r<fanout+2>/D
 proc write_hi_fanout_def { filename fanout } {
   global header middle
 

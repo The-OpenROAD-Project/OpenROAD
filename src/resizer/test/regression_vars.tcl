@@ -133,6 +133,7 @@ record_resizer_tests {
   resize4
   resize6
   repair_max_cap1
+  repair_max_cap2
   repair_max_fanout1
   repair_max_slew1
   repair_max_slew2

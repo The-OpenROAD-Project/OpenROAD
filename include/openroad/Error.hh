@@ -35,5 +35,7 @@ private:
 
 void
 error(const char *fmt, ...);
+void
+warn(const char *fmt, ...);
 
 } // namespace

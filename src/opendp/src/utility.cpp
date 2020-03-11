@@ -64,6 +64,7 @@ using std::set;
 using std::numeric_limits;
 
 using ord::error;
+using ord::warn;
 
 using odb::adsRect;
 using odb::dbBox;
@@ -296,7 +297,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
 		       // Return values
 		       int &avail_x,
 		       int &avail_y) {
-  int x_step = gridWidth(cell);
+  int x_step = gridPaddedWidth(cell);
   int y_step = gridHeight(cell);
 
   // Check y is beyond the border.
@@ -508,10 +509,10 @@ bool Opendp::shift_move(Cell* cell) {
   adsRect rect;
   // magic number alert
   int boundary_margin = 3;
-  rect.reset(max(core_.xMin(), x - paddedWidth(cell) * boundary_margin),
-	     max(core_.yMin(), y - cell->height_ * boundary_margin),
-	     min(core_.xMax(), x + paddedWidth(cell) * boundary_margin),
-	     min(core_.yMax(), y + cell->height_ * boundary_margin));
+  rect.reset(max(0, x - paddedWidth(cell) * boundary_margin),
+	     max(0, y - cell->height_ * boundary_margin),
+	     min(static_cast<int>(core_.dx()), x + paddedWidth(cell) * boundary_margin),
+	     min(static_cast<int>(core_.dy()), y + cell->height_ * boundary_margin));
   set< Cell* > overlap_region_cells = get_cells_from_boundary(&rect);
 
   // erase region cells
@@ -523,8 +524,7 @@ bool Opendp::shift_move(Cell* cell) {
 
   // place target cell
   if(!map_move(cell, x, y)) {
-    printf("Warning: detailed placement failed on %s\n",
-	   cell->db_inst_->getConstName());
+    warn("detailed placement failed on %s", cell->name());
     return false;
   }
 
@@ -543,7 +543,7 @@ bool Opendp::shift_move(Cell* cell) {
 
 bool Opendp::map_move(Cell* cell) {
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initPaddedLoc(cell, init_x, init_y);
   return map_move(cell, init_x, init_y);
 }
 
@@ -565,13 +565,13 @@ bool Opendp::map_move(Cell* cell, int x, int y) {
 }
 
 vector< Cell* > Opendp::overlap_cells(Cell* cell) {
-  int step_x = gridWidth(cell);
+  int step_x = gridPaddedWidth(cell);
   int step_y = gridHeight(cell);
 
   vector< Cell* > list;
   set< Cell* > in_list;
   for(int i = gridY(cell); i < gridY(cell) + step_y; i++) {
-    for(int j = gridX(cell); j < gridX(cell) + step_x; j++) {
+    for(int j = gridPaddedX(cell); j < gridPaddedX(cell) + step_x; j++) {
       Cell *pos_cell = grid_[i][j].cell;
       if(pos_cell
 	 && in_list.find(pos_cell) != in_list.end()) {
@@ -585,16 +585,10 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
 
 // rect should be position
 set< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
-  // rect inside core
-  assert(rect->xMin() >= core_.xMin());
-  assert(rect->yMin() >= core_.yMin());
-  assert(rect->xMax() <= core_.xMax());
-  assert(rect->yMax() <= core_.yMax());
-
-  int x_start = divRound(rect->xMin(), site_width_);
-  int y_start = divRound(rect->yMin(), row_height_);
-  int x_end = divRound(rect->xMax(), site_width_);
-  int y_end = divRound(rect->yMax(), row_height_);
+  int x_start = divFloor(rect->xMin(), site_width_);
+  int y_start = divFloor(rect->yMin(), row_height_);
+  int x_end = divFloor(rect->xMax(), site_width_);
+  int y_end = divFloor(rect->yMax(), row_height_);
 
   set< Cell* > cells;
   for(int i = y_start; i < y_end; i++) {
@@ -630,9 +624,9 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
                 dist_benefit(cell2, cell1->x_, cell1->y_);
 
   if(benefit < 0) {
-    int grid_x1 = gridX(cell2);
+    int grid_x1 = gridPaddedX(cell2);
     int grid_y1 = gridY(cell2);
-    int grid_x2 = gridX(cell1);
+    int grid_x2 = gridPaddedX(cell1);
     int grid_y2 = gridY(cell1);
 
     erase_pixel(cell1);
@@ -651,7 +645,9 @@ bool Opendp::refine_move(Cell* cell) {
   if(diamondSearch(cell, init_x, init_y, pixel)) {
     double new_dist = abs(init_x - pixel->grid_x_ * site_width_)
       + abs(init_y - pixel->grid_y_ * row_height_);
-    if(new_dist / row_height_ > max_displacement_constraint_) return false;
+    if(max_displacement_constraint_
+       && (new_dist / row_height_ > max_displacement_constraint_))
+      return false;
 
     int benefit = dist_benefit(cell, pixel->grid_x_ * site_width_,
                                pixel->grid_y_ * row_height_);

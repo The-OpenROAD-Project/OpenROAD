@@ -112,18 +112,20 @@ record_tests {
   fragmented_row01
   fragmented_row02
   fragmented_row03
-  low_util01
-  low_util02
-  low_util03
   multi_height01
   multi_height02
   multi_height03
   multi_height04
   pad01
+  pad02
   pad03
   pad04
   overlap1
   fillers1
+  fillers2
+  aes
+  gcd
+  ibex
 }
 
 ################################################################

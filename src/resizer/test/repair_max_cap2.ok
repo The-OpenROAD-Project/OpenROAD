@@ -10,8 +10,8 @@ Notice 0:     Created 41 components and 205 component-terminals.
 Notice 0:     Created 2 special nets and 82 connections.
 Notice 0:     Created 2 nets and 82 connections.
 Notice 0: Finished DEF file: ./results/hi_fanout.def
+ clk1 3.01
  r1q 2.73
- clk1 0.42
  VSS 0.00
  VDD 0.00
 Found 1 max capacitance violations.

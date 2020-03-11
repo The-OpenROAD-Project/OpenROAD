@@ -90,7 +90,7 @@ struct Cell {
   int64_t area();
 
   dbInst* db_inst_;
-  int x_, y_;		       // lower left wrt core with padding DBU
+  int x_, y_;		       // lower left wrt core DBU
   dbOrientType orient_;
   int width_, height_;		// DBU
   bool is_placed_;
@@ -128,9 +128,9 @@ class Opendp {
   ~Opendp();
   void clear();
   void init(dbDatabase* db);
-  bool readConstraints(string constraint_file);
-  // legalize/check/report
-  void detailedPlacement();
+  // legalize/report
+  // max_displacment is in rows, 0 for unconstrained
+  void detailedPlacement(int max_displacment);
   void setPaddingGlobal(int left,
 			int right);
   // Return true if illegal.
@@ -143,6 +143,8 @@ class Opendp {
 			 int &avg_displacement,
 			 int &sum_displacement,
 			 int &max_displacement);
+  void reportGrid();
+
  private:
   void dbToOpendp();
   void makeMacros(dbLib* db_lib);
@@ -165,9 +167,8 @@ class Opendp {
   void findDesignStats();
   void copy_init_to_final();
 
-  // utility.cpp
   void power_mapping();
-  void simplePlacement();
+  void detailedPlacement();
   std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
                                                        adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
@@ -213,7 +214,6 @@ class Opendp {
 
   bool row_check(bool verbose);
   bool site_check(bool verbose);
-  bool edge_check(bool verbose);
   bool power_line_check(bool verbose);
   bool placed_check(bool verbose);
   bool overlap_check(bool verbose);
@@ -234,18 +234,27 @@ class Opendp {
   int gridY(int y);
   int gridEndX();
   int gridEndY();
-  int gridWidth(Cell* cell);
+  int gridPaddedWidth(Cell* cell);
   int gridNearestHeight(Cell* cell);
   int gridNearestWidth(Cell* cell);
   int gridHeight(Cell* cell);
   int gridX(Cell* cell);
+  int gridPaddedX(Cell* cell);
   int gridY(Cell* cell);
+  int gridPaddedEndX(Cell *cell);
   int gridEndX(Cell *cell);
   int gridEndY(Cell *cell);
+  void setGridPaddedLoc(Cell *cell,
+			int x,
+			int y);
   void initLocation(Cell *cell,
 		    int &x,
 		    int &y);
+  void initPaddedLoc(Cell *cell,
+		     int &x,
+		     int &y);
   int paddedWidth(Cell *cell);
+  bool isPadded(Cell *cell);
   int disp(Cell *cell);
   int coreGridMaxX();
   int coreGridMaxY();
@@ -255,6 +264,7 @@ class Opendp {
   Grid *makeCellGrid();  
   void placeRowFillers(Grid *grid,
 		       int row);
+  void reportGrid(Grid *grid);
 
   dbDatabase* db_;
   dbBlock* block_;
@@ -276,7 +286,7 @@ class Opendp {
   int row_count_;
   int row_site_count_;
   int max_cell_height_;
-  int max_displacement_constraint_; // from constraints file
+  int max_displacement_constraint_;  // rows
 
   // 2D pixel grid
   Grid *grid_;

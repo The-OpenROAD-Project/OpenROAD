@@ -61,7 +61,6 @@ bool Opendp::checkPlacement(bool verbose) {
   fail |= row_check(verbose);
   fail |= site_check(verbose);
   fail |= power_line_check(verbose);
-  fail |= edge_check(verbose);
   fail |= placed_check(verbose);
   fail |= overlap_check(verbose);
   return fail;
@@ -75,7 +74,7 @@ bool Opendp::row_check(bool verbose) {
       if(cell.y_ % row_height_ != 0) {
 	if (verbose)
 	  cout << "row_check fail => " << cell.name()
-	       << " y_ : " << cell.y_ << endl;
+	       << " y : " << cell.y_ << endl;
 	fail = true;
 	count++;
       }
@@ -108,33 +107,6 @@ bool Opendp::site_check(bool verbose) {
     cout << "site check ==> FAIL (" << count << ")" << endl;
   else
     cout << "site check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::edge_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(int i = 0; i < row_count_; i++) {
-    vector< Cell* > cells;
-    for(int j = 0; j < row_site_count_; j++) {
-      Cell* grid_cell = grid_[i][j].cell;
-      if(grid_[i][j].is_valid
-	 && grid_cell
-	 && grid_cell != &dummy_cell_) {
-	if(cells.empty()) {
-	  cells.push_back(grid_[i][j].cell);
-	}
-	else if(cells[cells.size() - 1] != grid_[i][j].cell) {
-	  cells.push_back(grid_[i][j].cell);
-	}
-      }
-    }
-  }
-
-  if(fail)
-    cout << "edge check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "edge_check ==> PASS " << endl;
   return fail;
 }
 
@@ -212,24 +184,28 @@ bool Opendp::overlap_check(bool verbose) {
   Grid *grid = makeGrid();
 
   for(Cell& cell : cells_) {
-    int grid_x = gridX(&cell);
+    int grid_x = gridPaddedX(&cell);
     int grid_y = gridY(&cell);
 
-    int x_ur = gridEndX(&cell);
+    int x_ur = gridPaddedEndX(&cell);
     int y_ur = gridEndY(&cell);
 
     // Fixed cells can be outside DIEAREA.
-    if(isFixed(&cell)) {
-      grid_x = max(0, grid_x);
-      grid_y = max(0, grid_y);
-      x_ur = min(x_ur, row_site_count_);
-      y_ur = min(y_ur, row_count_);
+    if (!isFixed(&cell)
+	&& (grid_x < 0
+	    || grid_y < 0
+	    || x_ur > row_site_count_
+	    || y_ur > row_count_)) {
+      printf("Cell %s %sis outside the core boundary.\n",
+	     cell.name(),
+	     isPadded(&cell) ? "with padding " : "");
+      fail = true;
     }
 
-    assert(grid_x >= 0);
-    assert(grid_y >= 0);
-    assert(x_ur <= row_site_count_);
-    assert(y_ur <= row_count_);
+    grid_x = max(0, grid_x);
+    grid_y = max(0, grid_y);
+    x_ur = min(x_ur, row_site_count_);
+    y_ur = min(y_ur, row_count_);
 
     for(int j = grid_y; j < y_ur; j++) {
       for(int k = grid_x; k < x_ur; k++) {
