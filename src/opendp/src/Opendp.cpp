@@ -462,6 +462,8 @@ int divFloor(int dividend, int divisor) {
 }
 
 void Opendp::reportGrid() {
+  clear();
+  dbToOpendp();
   Grid *grid = makeCellGrid();
   reportGrid(grid);
 }
@@ -476,25 +478,25 @@ void Opendp::reportGrid(Grid *grid)
   }
 
   // column header
-  printf("  ");
+  printf("   ");
   for(int j = 0; j < row_site_count_; j++) {
-    printf("|%2d", j);
+    printf("|%3d", j);
   }
   printf("|\n");
-  printf("  ");
+  printf("   ");
   for(int j = 0; j < row_site_count_; j++) {
-    printf("|--");
+    printf("|---");
   }
   printf("|\n");
 
-  for(int i = 0; i < row_count_; i++) {
-    printf("%2d", i);
+  for(int i = row_count_ - 1; i >= 0; i--) {
+    printf("%3d", i);
     for(int j = 0; j < row_site_count_; j++) {
-      Cell* cell = grid_[i][j].cell;
+      Cell* cell = grid[i][j].cell;
       if (cell)
-	printf("|%2d", cell_index[cell]);
+	printf("|%3d", cell_index[cell]);
       else
-	printf("|  ");
+	printf("|   ");
     }
     printf("|\n");
   }
@@ -502,7 +504,7 @@ void Opendp::reportGrid(Grid *grid)
 
   i = 0;
   for(Cell& cell : cells_) {
-    printf("%2d %s\n", i, cell.name());
+    printf("%3d %s\n", i, cell.name());
     i++;
   }
 }
