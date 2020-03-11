@@ -385,7 +385,7 @@ to legal locations after global placement.
 
 ```
 set_placement_padding -global [-left pad_left] [-right pad_right]
-detailed_placement
+detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters
 ```

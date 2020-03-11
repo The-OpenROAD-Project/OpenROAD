@@ -43,7 +43,7 @@ proc legalize_placement { args } {
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "legalize_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::detailed_placement
+    opendp::detailed_placement 0
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
@@ -54,18 +54,16 @@ proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-constraints} flags {}
 
-  if { [info exists keys(-constraints)] } {
-    set constraints_file $keys(-constraints)
-    if { [file readable $constraints_file] } {
-      opendp::read_constraints $constraint_file
-    } else {
-      ord::warn "cannot read $constraints_file"
-    }
+  if { [info exists keys(-max_displacment)] } {
+    set max_displacment $keys(-max_displacment)
+    sta::check_positive_integer "-max_displacment" $max_displacment
+  } else {
+    set max_displacment 0
   }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::detailed_placement_cmd
+    opendp::detailed_placement_cmd $max_displacment
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }

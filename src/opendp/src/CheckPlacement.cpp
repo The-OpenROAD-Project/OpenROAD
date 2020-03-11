@@ -61,7 +61,6 @@ bool Opendp::checkPlacement(bool verbose) {
   fail |= row_check(verbose);
   fail |= site_check(verbose);
   fail |= power_line_check(verbose);
-  fail |= edge_check(verbose);
   fail |= placed_check(verbose);
   fail |= overlap_check(verbose);
   return fail;
@@ -75,7 +74,7 @@ bool Opendp::row_check(bool verbose) {
       if(cell.y_ % row_height_ != 0) {
 	if (verbose)
 	  cout << "row_check fail => " << cell.name()
-	       << " y_ : " << cell.y_ << endl;
+	       << " y : " << cell.y_ << endl;
 	fail = true;
 	count++;
       }
@@ -108,33 +107,6 @@ bool Opendp::site_check(bool verbose) {
     cout << "site check ==> FAIL (" << count << ")" << endl;
   else
     cout << "site check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::edge_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(int i = 0; i < row_count_; i++) {
-    vector< Cell* > cells;
-    for(int j = 0; j < row_site_count_; j++) {
-      Cell* grid_cell = grid_[i][j].cell;
-      if(grid_[i][j].is_valid
-	 && grid_cell
-	 && grid_cell != &dummy_cell_) {
-	if(cells.empty()) {
-	  cells.push_back(grid_[i][j].cell);
-	}
-	else if(cells[cells.size() - 1] != grid_[i][j].cell) {
-	  cells.push_back(grid_[i][j].cell);
-	}
-      }
-    }
-  }
-
-  if(fail)
-    cout << "edge check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "edge_check ==> PASS " << endl;
   return fail;
 }
 
@@ -212,10 +184,10 @@ bool Opendp::overlap_check(bool verbose) {
   Grid *grid = makeGrid();
 
   for(Cell& cell : cells_) {
-    int grid_x = gridX(&cell);
+    int grid_x = gridPaddedX(&cell);
     int grid_y = gridY(&cell);
 
-    int x_ur = gridEndX(&cell);
+    int x_ur = gridPaddedEndX(&cell);
     int y_ur = gridEndY(&cell);
 
     // Fixed cells can be outside DIEAREA.

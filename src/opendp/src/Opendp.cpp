@@ -42,6 +42,7 @@
 #include <iomanip>
 #include <limits>
 #include <cmath>
+#include <map>
 #include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
@@ -116,13 +117,8 @@ Group::Group() : name(""), util(0.0){}
 Opendp::Opendp()
   : pad_right_(0),
     pad_left_(0),
-    initial_power_(power::undefined),
-    row0_orient_is_r0_(true),
-    row0_top_power_is_vdd_(true),
-    diamond_search_height_(400),
-    max_displacement_constraint_(0),
-    site_width_(0),
-    max_cell_height_(1) {
+    grid_(nullptr)
+{
 }
 
 Opendp::~Opendp() {
@@ -132,8 +128,17 @@ Opendp::~Opendp() {
 void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
+  // magic number alert
+  diamond_search_height_ = 400;
+  max_displacement_constraint_ = 0;
+
   db_master_map_.clear();
   cells_.clear();
+  groups_.clear();
+  db_master_map_.clear();
+  db_inst_map_.clear();
+  deleteGrid(grid_);
+  grid_ = nullptr;
 }
 
 void Opendp::setPaddingGlobal(int left,
@@ -142,46 +147,15 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-void Opendp::detailedPlacement() {
+void Opendp::detailedPlacement(int max_displacment) {
+  clear();
+  max_displacement_constraint_ = max_displacment;
   dbToOpendp();
   initAfterImport();
   reportDesignStats();
-  simplePlacement();
+  detailedPlacement();
   reportLegalizationStats();
   updateDbInstLocations();
-}
-
-bool Opendp::readConstraints(const string input) {
-  //    cout << " .constraints file : " << input << endl;
-  ifstream dot_constraints(input.c_str());
-  if(!dot_constraints.good()) {
-    cerr << "readConstraints:: cannot open '" << input << "' for reading"
-         << endl;
-    return true;
-  }
-
-  string context;
-
-  while(!dot_constraints.eof()) {
-    dot_constraints >> context;
-    if(dot_constraints.eof()) break;
-    if(strncmp(context.c_str(), "maximum_movement", 16) == 0) {
-      string temp = context.substr(0, context.find_last_of("rows"));
-      string max_move = temp.substr(temp.find_last_of("=") + 1);
-      diamond_search_height_ = atoi(max_move.c_str()) * 20;
-      max_displacement_constraint_ = atoi(max_move.c_str());
-    }
-    else {
-      cerr << "readConstraints:: unsupported keyword " << endl;
-      return true;
-    }
-  }
-
-  if(max_displacement_constraint_ == 0)
-    max_displacement_constraint_ = row_count_;
-
-  dot_constraints.close();
-  return false;
 }
 
 void Opendp::initAfterImport() {
@@ -243,15 +217,17 @@ Opendp::makeGrid()
 void
 Opendp::deleteGrid(Grid *grid)
 {
-  for(int i = 0; i < row_count_; i++) {
-    delete [] grid[i];
+  if (grid) {
+    for(int i = 0; i < row_count_; i++) {
+      delete [] grid[i];
+    }
+    delete grid;
   }
-  delete grid;
 }
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    int x = core_.xMin() + cell.x_ + pad_left_ * site_width_;
+    int x = core_.xMin() + cell.x_;
     int y = core_.yMin() + cell.y_;
     dbInst *db_inst_ = cell.db_inst_;
     db_inst_->setOrient(cell.orient_);
@@ -279,12 +255,13 @@ void Opendp::findDesignStats() {
   design_area_ = row_count_ * static_cast< int64_t >(row_site_count_)
     * site_width_ * row_height_;
 
+  max_cell_height_ = 0;
   for(Cell &cell : cells_) {
     dbMaster *master = cell.db_inst_->getMaster();
     if(!isFixed(&cell) && isMultiRow(&cell) &&
        master->getType() == dbMasterType::CORE) {
       int cell_height = gridNearestHeight(&cell);
-      if(max_cell_height_ < cell_height) max_cell_height_ = cell_height;
+      if(cell_height > max_cell_height_) max_cell_height_ = cell_height;
     }
   }
 
@@ -366,8 +343,18 @@ Opendp::initLocation(Cell *cell,
 {
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
-  x = max(0, loc_x - core_.xMin() - pad_left_ * site_width_);
-  y = max(0, loc_y - core_.yMin());
+  x = loc_x - core_.xMin();
+  y = loc_y - core_.yMin();
+}
+
+void
+Opendp::initPaddedLoc(Cell *cell,
+		      // Return values.
+		      int &x,
+		      int &y)
+{
+  initLocation(cell, x, y);
+  x -= pad_left_ * site_width_;
 }
 
 int Opendp::disp(Cell *cell) {
@@ -393,7 +380,7 @@ bool Opendp::isPadded(Cell *cell) {
   return pad_left_  > 0 || pad_right_ > 0;
 }
 
-int Opendp::gridWidth(Cell *cell) {
+int Opendp::gridPaddedWidth(Cell *cell) {
   return divCeil(paddedWidth(cell), site_width_);
 }
 
@@ -401,7 +388,7 @@ int Opendp::gridHeight(Cell *cell) {
   return divCeil(cell->height_, row_height_);
 }
 
-// Callers should probably be using gridWidth.
+// Callers should probably be using gridPaddedWidth.
 int Opendp::gridNearestWidth(Cell *cell) {
   return divRound(paddedWidth(cell), site_width_);
 }
@@ -423,12 +410,27 @@ int Opendp::gridX(Cell *cell) {
   return gridX(cell->x_);
 }
 
+int Opendp::gridPaddedX(Cell *cell) {
+  return gridX(cell->x_ - pad_left_);
+}
+
 int Opendp::gridY(Cell *cell) {
   return gridY(cell->y_);
 }
 
+void Opendp::setGridPaddedLoc(Cell *cell,
+			      int x,
+			      int y) {
+  cell->x_ = (x + pad_left_) * site_width_;
+  cell->y_ = y * row_height_;
+}
+
+int Opendp::gridPaddedEndX(Cell *cell) {
+  return divCeil(cell->x_ + cell->width_ + pad_right_ * site_width_, site_width_);
+}
+
 int Opendp::gridEndX(Cell *cell) {
-  return divCeil(cell->x_ + paddedWidth(cell), site_width_);
+  return divCeil(cell->x_ + cell->width_, site_width_);
 }
 
 int Opendp::gridEndY(Cell *cell) {
@@ -457,6 +459,54 @@ int divCeil(int dividend, int divisor) {
 
 int divFloor(int dividend, int divisor) {
   return dividend / divisor;
+}
+
+void Opendp::reportGrid() {
+  clear();
+  dbToOpendp();
+  Grid *grid = makeCellGrid();
+  reportGrid(grid);
+}
+
+void Opendp::reportGrid(Grid *grid)
+{
+  std::map<Cell*, int> cell_index;
+  int i = 0;
+  for(Cell& cell : cells_) {
+    cell_index[&cell] = i;
+    i++;
+  }
+
+  // column header
+  printf("   ");
+  for(int j = 0; j < row_site_count_; j++) {
+    printf("|%3d", j);
+  }
+  printf("|\n");
+  printf("   ");
+  for(int j = 0; j < row_site_count_; j++) {
+    printf("|---");
+  }
+  printf("|\n");
+
+  for(int i = row_count_ - 1; i >= 0; i--) {
+    printf("%3d", i);
+    for(int j = 0; j < row_site_count_; j++) {
+      Cell* cell = grid[i][j].cell;
+      if (cell)
+	printf("|%3d", cell_index[cell]);
+      else
+	printf("|   ");
+    }
+    printf("|\n");
+  }
+  printf("\n");
+
+  i = 0;
+  for(Cell& cell : cells_) {
+    printf("%3d %s\n", i, cell.name());
+    i++;
+  }
 }
 
 }  // namespace opendp

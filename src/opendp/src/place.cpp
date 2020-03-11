@@ -68,7 +68,7 @@ static bool cellAreaLess(Cell* cell1, Cell* cell2) {
     return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
-void Opendp::simplePlacement() {
+void Opendp::detailedPlacement() {
   if(!groups_.empty()) {
     // nonsense comment alert
     // pre placement out border ( Need region assign function previously )

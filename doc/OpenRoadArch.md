@@ -150,8 +150,11 @@ The regression script should return an exit code of zero if there are
 no errors and 1 if there are errors.  The script should **not** print
 thousands of lines of internal tool info.
 
-Regression scripts should pass the `no_init` option to openroad so that a
+Regression scripts should pass the `-no_init` option to openroad so that a
 user's init file is not sourced before the tests runs.
+
+Regression scripts should add output files or directories to `.gitignore` so that running
+does note leave the source repository "dirty".
 
 ### Builds
 

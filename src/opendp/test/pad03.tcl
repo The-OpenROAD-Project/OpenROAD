@@ -6,4 +6,4 @@ set_placement_padding -global -right 5
 
 set def_file [make_result_file pad03.def]
 write_def $def_file
-diff_file $def_file pad03.defok
+diff_file pad03.defok $def_file

@@ -29,14 +29,13 @@ Warning: detailed placement failed on _277_
 total displacement         : 0
 average displacement       : 0
 max displacement           : 0
-original HPWL              : 8.37
-legalized HPWL             : 8.37
+original HPWL              : 1.77
+legalized HPWL             : 1.77
 delta HPWL                 : 0%
 ----------------------------------------------------------------
 row check ==> PASS 
 site check ==> PASS 
 power check ==> PASS 
-edge_check ==> PASS 
 placed_check ==> FAIL (1)
 Cell _277_ with padding is outside the core boundary.
 overlap_check ==> FAIL 

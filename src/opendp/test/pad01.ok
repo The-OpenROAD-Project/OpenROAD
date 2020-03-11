@@ -25,17 +25,16 @@ rows                       : 4
 row height                 : 2800
 ----------------------------------------------------------------
 -------------------- Placement Analysis ------------------------
-total displacement         : 0
-average displacement       : 0
-max displacement           : 0
-original HPWL              : 8.37
-legalized HPWL             : 8.37
-delta HPWL                 : 0%
+total displacement         : 8500
+average displacement       : 8500
+max displacement           : 8500
+original HPWL              : 1.77
+legalized HPWL             : 10.3
+delta HPWL                 : 480%
 ----------------------------------------------------------------
 row check ==> PASS 
 site check ==> PASS 
 power check ==> PASS 
-edge_check ==> PASS 
 placed_check ==>> PASS 
 overlap_check ==> PASS 
 No differences found.
