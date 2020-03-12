@@ -38,6 +38,7 @@
 #include "MakePartclusmanager.h"
 #include "PartClusManagerKernel.h"
 #include "openroad/OpenRoad.hh"
+#include "opendb/db.h"
 #include "StaMain.hh"
 
 namespace sta {
@@ -59,6 +60,10 @@ void initPartClusManager(OpenRoad * openroad) {
         Tcl_Interp *tcl_interp = openroad->tclInterp();
         Partclusmanager_Init(tcl_interp);
         sta::evalTclInit(tcl_interp, sta::partclusmanager_tcl_inits);
+	
+	unsigned dbId = openroad->getDb()->getId();
+	PartClusManager::PartClusManagerKernel * kernel = openroad->getPartClusManager();
+	kernel->setDbId(dbId);
 };
 
 void deletePartClusManager(PartClusManager::PartClusManagerKernel *partclusmanager);

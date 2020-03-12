@@ -35,9 +35,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-
-#include "DBWrapper.h"
-#include "Graph.h"
+#include "GraphDecomposition.h"
 #include <iostream>
 
 namespace PartClusManager {
@@ -99,8 +97,9 @@ class PartClusManagerKernel {
 protected:
 
 private:
-        DBWrapper   _dbWrapper;
         PartOptions _options;
+	unsigned _dbId;
+	Graph _graph;
 
 public:
         PartClusManagerKernel() = default;
@@ -112,6 +111,8 @@ public:
         void runMlPart();
         void runMlPart(const Graph& graph, const PartOptions& options);
         PartOptions& getOptions() { return _options; }
+	void setDbId(unsigned id) {_dbId = id;}
+	void graph();
 };
 
 }

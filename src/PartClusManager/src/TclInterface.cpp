@@ -39,7 +39,6 @@
 #include "PartClusManagerKernel.h"
 #include "openroad/OpenRoad.hh"
 
-
 namespace PartClusManager {
 
 void set_tool(const char* name) {
@@ -114,4 +113,4 @@ void run_partitioning() {
         kernel->runPartitioning();
 }
 
-}
+} // end namespace

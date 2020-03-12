@@ -34,19 +34,45 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
-
+#include <stdint.h>
+#include "Graph.h"
 #include "DBWrapper.h"
-#include "opendb/db.h"
+#include <math.h>
+#include <iostream>
+#include <algorithm>
+
+namespace odb{
+class dbBlock;
+class dbNet;
+}
 
 namespace PartClusManager {
 
-void DBWrapper::setDb(unsigned id){
-	_db = odb::dbDatabase::getDatabase(id);
-	_chip = _db->getChip();
-}
+enum GraphType : uint8_t {
+        CLIQUE,
+        HYBRID,
+        HYBRID_OLD,
+        STAR,
+        STAR_OLD
+};
 
-odb::dbBlock * DBWrapper::getBlock(){
-	return _chip->getBlock();
-}
+class GraphDecomposition {
+public:
+        GraphDecomposition() {}
+	void initStructs(unsigned dbId);
+	void createGraph(GraphType graphType, Graph & graph);
+	void setWeightingOption(int option);
+private:
+	DBWrapper _dbWrapper;
+	odb::dbBlock* _block;
+	std::vector<std::vector<std::pair<int,int>>> adjMatrix;
+	int _weightingOption;
+	void createCliqueGraph(Graph &graph, odb::dbNet* net);
+	void connectPins(int firstPin, int secondPin, int weight);
+	float computeWeight(int nPins);
+	void transformGraph(Graph &graph);
+	void weightRange(Graph & graph, int maxRange);
+
+};
 
 }

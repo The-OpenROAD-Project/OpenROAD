@@ -36,7 +36,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PartClusManagerKernel.h"
-
 namespace PartClusManager {
 
 void PartClusManagerKernel::runPartitioning() {
@@ -51,6 +50,7 @@ void PartClusManagerKernel::runPartitioning() {
 
 void PartClusManagerKernel::runChaco() {
         std::cout << "Running chaco...\n";
+        graph();	
 }
 
 void PartClusManagerKernel::runChaco(const Graph& graph, const PartOptions& options) {
@@ -68,6 +68,12 @@ void PartClusManagerKernel::runMlPart() {
 }
 
 void PartClusManagerKernel::runMlPart(const Graph& graph, const PartOptions& options) {        
+}
+
+void PartClusManagerKernel::graph(){
+	GraphDecomposition graphDecomp;
+	graphDecomp.initStructs(_dbId);
+	graphDecomp.createGraph(GraphType::HYBRID, _graph);
 }
 
 }

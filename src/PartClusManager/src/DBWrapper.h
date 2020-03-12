@@ -35,15 +35,29 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef DBWRAPPER_h
+#define DBWRAPPER_h
+
+namespace odb{
+class dbDatabase;
+class dbChip;
+class dbBlock;
+}
+
 namespace PartClusManager {
 
 class DBWrapper {
 public:
         DBWrapper() = default;
+	void setDb(unsigned id);
+	odb::dbBlock* getBlock();
         
 private:
+	odb::dbDatabase *_db;
+	odb::dbChip	*_chip;
         
 };
 
 }
 
+#endif

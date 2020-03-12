@@ -39,4 +39,11 @@
 
 namespace PartClusManager {
 
+bool Graph::isInMap(std::string pinName){
+	if (instToIdx.find(pinName) != instToIdx.end())
+		return true;
+	else
+		return false;
+}
+
 }

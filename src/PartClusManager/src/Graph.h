@@ -35,21 +35,28 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdint.h>
+#include <vector>
+#include <string>
+#include <map>
 
 namespace PartClusManager {
-
-enum GraphType : uint8_t {
-        CLIQUE,
-        HYBRID,
-        HYBRID_OLD,
-        STAR,
-        STAR_OLD
-};
 
 class Graph {
 public:
         Graph() {}
-protected:
+	std::vector<int> & getEdgeWeights(){ return edgeWeights;}
+	std::vector<int> & getVertexWeights(){ return vertexWeights;}
+	std::vector<int> & getColIdx(){return colIdx;}
+	std::vector<int> & getRowPtr(){return rowPtr;}
+	std::map<std::string, int> & getMap(){return instToIdx;}
+	bool isInMap(std::string pinName);
+	int getNextIdx(){return vertexWeights.size();}
+private:
+	std::vector<int> edgeWeights;
+	std::vector<int> vertexWeights;
+	std::vector<int> colIdx;
+	std::vector<int> rowPtr;
+	std::map<std::string, int> instToIdx;
 
 };
 
