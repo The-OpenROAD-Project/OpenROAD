@@ -81,8 +81,10 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols) {
                         ++noSlewDegradationCount;
                         ++lutLine.pinSlew;
                 }
-                
-                WireSegment& segment = createWireSegment((unsigned) (lutLine.wirelength), (unsigned) (lutLine.load), 
+
+                unsigned length = toInternalLengthUnit(lutLine.wirelength);
+
+                WireSegment& segment = createWireSegment((unsigned) (length), (unsigned) (lutLine.load), 
                                                          (unsigned) (lutLine.pinSlew), lutLine.totalPower,
                                                          (unsigned) (lutLine.pinArrival), (unsigned) (lutLine.totalcap), (unsigned) (lutLine.inSlew));
                 
@@ -149,6 +151,7 @@ void TechChar::parseLut(const std::string& file) {
                         std::exit(1);   
                 }
                 _options->setWireSegmentUnit(presetWireUnit);
+                setLenghthUnit(static_cast<unsigned> (presetWireUnit)/2);
         }
         
         initLengthUnits();
@@ -583,6 +586,9 @@ void TechChar::initCharacterization() {
                 std::cout << "Error generating the wirelenghts to test. Check your -wire_unit parameter or technology files.\n";
                 std::exit(1);
         }
+
+        float dbUnitsPerMicron = static_cast<float> (block->getDbUnitsPerMicron());
+        setLenghthUnit(static_cast<unsigned> ( ((_charBuf->getHeight() * 10)/2) / dbUnitsPerMicron));
 
         //Gets the max slew and max cap if they weren't added as parameters.
         float maxSlew = 0.0;

@@ -124,7 +124,7 @@ public:
         typedef uint32_t Key;
         static const unsigned NUM_BITS_PER_FIELD = 10;
         static const unsigned MAX_NORMALIZED_VAL = 1023;
-        static const unsigned LENGTH_UNIT_MICRON = 10;
+        unsigned LENGTH_UNIT_MICRON = 10;
 
         //SolutionData represents the various different structures of the characterization segment. Ports, insts, nets...
         struct SolutionData {
@@ -201,6 +201,7 @@ public:
         unsigned getMaxSlew() const { return _maxSlew; }
         void setActualMinInputCap(unsigned cap) { _actualMinInputCap = cap; }
         unsigned getActualMinInputCap() const { return _actualMinInputCap; }
+        void setLenghthUnit(unsigned length) {LENGTH_UNIT_MICRON = length; }
         unsigned getLengthUnit() const { return _lengthUnit; }
        
         void createFakeEntries(unsigned length, unsigned fakeLength);
