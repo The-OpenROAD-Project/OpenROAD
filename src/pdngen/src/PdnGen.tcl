@@ -718,7 +718,7 @@ proc use_arrayspacing {layer_name rows columns} {
   return 1
 }
 
-proc determine_num_via_columns {constraints} {
+proc determine_num_via_columns {via_info constraints} {
   variable upper_width
   variable lower_width
   variable lower_dir
@@ -729,6 +729,7 @@ proc determine_num_via_columns {constraints} {
   variable cut_width
   variable xcut_pitch
   variable xcut_spacing
+  variable def_units
   
   # What are the maximum number of columns that we can fit in this space?
   set i 1
@@ -779,7 +780,7 @@ proc determine_num_via_columns {constraints} {
   return $columns
 }
 
-proc determine_num_via_rows {constraints} {
+proc determine_num_via_rows {via_info constraints} {
   variable cut_height
   variable ycut_pitch
   variable ycut_spacing
@@ -790,6 +791,7 @@ proc determine_num_via_rows {constraints} {
   variable max_lower_enclosure
   variable min_upper_enclosure
   variable max_upper_enclosure
+  variable def_units
     
   # What are the maximum number of rows that we can fit in this space?
   set i 1
@@ -1181,12 +1183,13 @@ proc get_via_option {lower width height constraints} {
   init_via_width_height $lower $width $height $constraints
   get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min($upper_width,$upper_height)]
 
-  set columns [determine_num_via_columns $via_info]
-  set rows    [determine_num_via_rows    $via_info]
-
   # debug "split cuts? [dict exists $constraints split_cuts]"
   # debug "lower $lower upper $upper"
   
+  # Determines the maximum number of rows and columns that can fit into this width/height
+  set columns [determine_num_via_columns $via_info $constraints]
+  set rows    [determine_num_via_rows    $via_info $constraints]
+
   if {[dict exists $constraints split_cuts] && ([lsearch -exact [dict get $constraints split_cuts] $lower] > -1 || [lsearch -exact [dict get $constraints split_cuts] $upper] > -1)} {
     # debug "via_split_cuts_rule"
     set rules [via_split_cuts_rule $rows $columns $constraints]
@@ -2776,12 +2779,16 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
   set layer_pitch [$layer getPitch]
   set layer_width [$layer getWidth]
   # debug "Layer - [$layer getName], pitch $layer_pitch, width $layer_width"
+  set tracks [$block findTrackGrid $layer]
+  set offsetX [lindex [$tracks getGridX] 0]
+  set offsetY [lindex [$tracks getGridY] 0]
+
   set core_area [get_core_area]
   # debug "core_area $core_area"
-  set relative_xMin [expr $xMin - [lindex $core_area 0]]
-  set relative_xMax [expr $xMax - [lindex $core_area 0]]
-  set relative_yMin [expr $yMin - [lindex $core_area 1]]
-  set relative_yMax [expr $yMax - [lindex $core_area 1]]
+  set relative_xMin [expr $xMin - $offsetX]
+  set relative_xMax [expr $xMax - $offsetX]
+  set relative_yMin [expr $yMin - $offsetY]
+  set relative_yMax [expr $yMax - $offsetY]
   # debug "relative to core area $relative_xMin $relative_yMin $relative_xMax $relative_yMax"
   
   # debug "OBS: [$layer getName] $xMin $yMin $xMax $yMax"
@@ -2797,10 +2804,10 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
     }
     for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
       set obs [odb::dbObstruction_create $block $layer \
-        [expr $relative_xMin + [lindex $core_area 0]] \
-        [expr $i * $layer_pitch + [lindex $core_area 1] - $layer_width / 2] \
-        [expr $relative_xMax + [lindex $core_area 0]] \
-        [expr $i * $layer_pitch + [lindex $core_area 1] + $layer_width / 2] \
+        $xMin \
+        [expr $i * $layer_pitch + $offsetY - $layer_width / 2] \
+        $xMax \
+        [expr $i * $layer_pitch + $offsetY + $layer_width / 2] \
       ]
     }
   } else {
@@ -2814,10 +2821,10 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
     }
     for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
       set obs [odb::dbObstruction_create $block $layer \
-        [expr $i * $layer_pitch + [lindex $core_area 0] - $layer_width / 2] \
-        [expr $relative_yMin + [lindex $core_area 1]] \
-        [expr $i * $layer_pitch + [lindex $core_area 0] + $layer_width / 2] \
-        [expr $relative_yMax + [lindex $core_area 1]] \
+        [expr $i * $layer_pitch + $offsetX - $layer_width / 2] \
+        $yMin \
+        [expr $i * $layer_pitch + $offsetX + $layer_width / 2] \
+        $yMax \
       ]
     }
   }
