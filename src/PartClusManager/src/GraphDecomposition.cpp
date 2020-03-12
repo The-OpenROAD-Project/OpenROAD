@@ -49,9 +49,9 @@ void GraphDecomposition::createGraph(GraphType graphType, Graph &graph){
 	for (odb::dbNet* net : _block->getNets()){
 		int nITerms = (net->getITerms()).size();
 		int nBTerms = (net->getBTerms()).size();
-		if (nITerms + nBTerms > 50)
-			continue;
-		createCliqueGraph(graph, net);
+		//if (nITerms + nBTerms > 50)
+		//	continue;
+		createStarGraph(graph, net);
 	}
 	transformGraph(graph);
 	weightRange(graph, 100);
@@ -129,6 +129,22 @@ void GraphDecomposition::weightRange(Graph & graph, int maxRange){
 	}
 }
 
+void GraphDecomposition::connectStarPins(int firstPin, int secondPin, int weight){
+	bool isConnected = false;
+	if (firstPin == secondPin)
+		return;
+	int idx = -1;
+	for (std::pair<int, int> i : adjMatrix[firstPin]) {
+		idx++;
+		if (i.first == secondPin){
+			isConnected = true;
+			break;
+		}
+	}	
+	if (!isConnected)
+		adjMatrix[firstPin].push_back(std::make_pair(secondPin, weight));
+	
+}
 
 void GraphDecomposition::connectPins(int firstPin, int secondPin, int weight){
 	bool isConnected = false;
@@ -148,6 +164,59 @@ void GraphDecomposition::connectPins(int firstPin, int secondPin, int weight){
 		adjMatrix[firstPin][idx].second += weight;
 	}
 	
+}
+
+void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
+	std::vector<int> netVertices;
+	std::vector<int> & vertexWeights = graph.getVertexWeights();
+	std::map<std::string, int> & map = graph.getMap();
+	int driveIdx = -1;
+
+	for (odb::dbBTerm* bterm : net->getBTerms()){
+		for (odb::dbBPin * pin : bterm->getBPins()){
+			if (!graph.isInMap(bterm->getName())){ 
+				odb::dbBox * box = pin->getBox();
+				long length = box->getLength();
+				long width = box->getWidth();
+				long area = length * width;
+				int nextIdx = graph.getNextIdx(); 
+				map[bterm->getName()] = nextIdx;
+				vertexWeights.push_back(area);
+				std::vector<std::pair<int,int>> aux;
+				adjMatrix.push_back(aux);
+			}
+			netVertices.push_back(map[bterm->getName()]);
+			if (bterm->getIoType() == odb::dbIoType::INPUT)
+				driveIdx = netVertices.size() - 1;
+		}
+	}
+	
+	for (odb::dbITerm * iterm : net->getITerms()){
+		odb::dbInst * inst = iterm->getInst();
+		if (!graph.isInMap(inst->getName())){
+			odb::dbBox * bbox = inst->getBBox();
+			int length = bbox->getLength();
+			int width = bbox->getWidth();
+			int area = length * width;	
+			int nextIdx = graph.getNextIdx();
+			map[inst->getName()] = nextIdx;
+			vertexWeights.push_back(area);
+			std::vector<std::pair<int,int>> aux;
+			adjMatrix.push_back(aux);
+		}
+		netVertices.push_back(map[inst->getName()]);
+		if (driveIdx == -1)
+			if (iterm->isOutputSignal())
+				driveIdx= netVertices.size() - 1;
+	}
+	int weight = 1; 
+	if (driveIdx == -1)
+		driveIdx = 0;
+	for (int i =0; i < netVertices.size(); i++){
+		if (i != driveIdx)
+			connectStarPins(netVertices[i], netVertices[driveIdx], weight);
+			connectStarPins(netVertices[driveIdx], netVertices[i], weight);
+	}
 }
 
 void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){

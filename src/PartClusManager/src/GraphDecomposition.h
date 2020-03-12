@@ -68,7 +68,9 @@ private:
 	std::vector<std::vector<std::pair<int,int>>> adjMatrix;
 	int _weightingOption;
 	void createCliqueGraph(Graph &graph, odb::dbNet* net);
+	void createStarGraph(Graph & graph, odb::dbNet* net);
 	void connectPins(int firstPin, int secondPin, int weight);
+	void connectStarPins(int firstPin, int secondPin, int weight);
 	float computeWeight(int nPins);
 	void transformGraph(Graph &graph);
 	void weightRange(Graph & graph, int maxRange);
