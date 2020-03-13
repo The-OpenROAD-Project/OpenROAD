@@ -732,6 +732,7 @@ proc determine_num_via_columns {via_info constraints} {
   variable cut_width
   variable xcut_pitch
   variable xcut_spacing
+  variable def_units
   
   # What are the maximum number of columns that we can fit in this space?
   set i 1
@@ -805,7 +806,8 @@ proc determine_num_via_rows {via_info constraints} {
   variable max_lower_enclosure
   variable min_upper_enclosure
   variable max_upper_enclosure
-    
+  variable def_units
+
   # What are the maximum number of rows that we can fit in this space?
   set i 1
   if {$lower_dir == "hor"} {
