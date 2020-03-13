@@ -120,7 +120,8 @@ proc check_placement { args } {
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
   if { [opendp::check_placement_cmd $verbose] } {
-    ord::error "placement check failed."
+    #ord::error "placement check failed."
+    ord::warn "placement check failed."
   }
 }
 

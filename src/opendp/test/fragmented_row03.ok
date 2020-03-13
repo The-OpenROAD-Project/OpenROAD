@@ -38,5 +38,6 @@ site check ==> FAIL (1)
 power check ==> PASS 
 placed_check ==> FAIL (1)
 overlap_check ==> PASS 
-Error: placement check failed.
+Warning: placement check failed.
+
 No differences found.
