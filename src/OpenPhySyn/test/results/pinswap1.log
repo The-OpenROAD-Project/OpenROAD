@@ -1,0 +1,104 @@
+1
+Notice 0: Reading LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: pinswap1.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 482 components and 2074 component-terminals.
+Notice 0:     Created 385 nets and 1110 connections.
+Notice 0: Finished DEF file: pinswap1.def
+Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+     Delay       Time   Description
+---------------------------------------------------------------
+   0.00000    0.00000   clock core_clock (rise edge)
+   0.00000    0.00000   clock network delay (ideal)
+   0.00000    0.00000 ^ _596_/CK (DFF_X1)
+   0.16044    0.16044 ^ _596_/Q (DFF_X1)
+   0.05985    0.22028 ^ _399_/ZN (XNOR2_X2)
+   0.02098    0.24126 v _421_/ZN (AOI21_X4)
+   0.01332    0.25459 ^ _427_/ZN (INV_X4)
+   0.01458    0.26917 v _438_/ZN (NAND2_X2)
+   0.01980    0.28897 ^ _439_/ZN (NAND2_X4)
+   0.01324    0.30220 v _470_/ZN (NAND2_X2)
+   0.01861    0.32082 ^ _473_/ZN (NAND2_X2)
+   0.03150    0.35232 ^ _506_/ZN (AND2_X2)
+   0.00738    0.35971 v _507_/ZN (INV_X2)
+   0.02736    0.38706 v _510_/ZN (AND3_X4)
+   0.05743    0.44449 v _524_/ZN (OR3_X4)
+   0.02604    0.47053 ^ _528_/ZN (AOI21_X4)
+   0.00938    0.47991 v _535_/ZN (NOR2_X2)
+   0.11535    0.59526 ^ _536_/ZN (XNOR2_X1)
+   0.04449    0.63975 ^ _537_/ZN (AND2_X2)
+   0.01413    0.65388 v _540_/ZN (OAI21_X1)
+   0.01983    0.67371 ^ _541_/ZN (OAI21_X1)
+   0.00001    0.67372 ^ _594_/D (DFF_X1)
+              0.67372   data arrival time
+
+  10.00000   10.00000   clock core_clock (rise edge)
+   0.00000   10.00000   clock network delay (ideal)
+   0.00000   10.00000   clock reconvergence pessimism
+             10.00000 ^ _594_/CK (DFF_X1)
+  -0.03373    9.96628   library setup time
+              9.96628   data required time
+---------------------------------------------------------------
+              9.96628   data required time
+             -0.67372   data arrival time
+---------------------------------------------------------------
+              9.29256   slack (MET)
+
+
+[info] Invoking pin_swap transform
+[info] Finished pin_swap transform (2)
+Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+     Delay       Time   Description
+---------------------------------------------------------------
+   0.00000    0.00000   clock core_clock (rise edge)
+   0.00000    0.00000   clock network delay (ideal)
+   0.00000    0.00000 ^ _596_/CK (DFF_X1)
+   0.15843    0.15843 ^ _596_/Q (DFF_X1)
+   0.05969    0.21812 ^ _399_/ZN (XNOR2_X2)
+   0.02098    0.23909 v _421_/ZN (AOI21_X4)
+   0.01332    0.25242 ^ _427_/ZN (INV_X4)
+   0.01467    0.26709 v _438_/ZN (NAND2_X2)
+   0.01984    0.28692 ^ _439_/ZN (NAND2_X4)
+   0.01324    0.30016 v _470_/ZN (NAND2_X2)
+   0.01861    0.31877 ^ _473_/ZN (NAND2_X2)
+   0.03150    0.35028 ^ _506_/ZN (AND2_X2)
+   0.00738    0.35766 v _507_/ZN (INV_X2)
+   0.02736    0.38502 v _510_/ZN (AND3_X4)
+   0.05743    0.44245 v _524_/ZN (OR3_X4)
+   0.02604    0.46848 ^ _528_/ZN (AOI21_X4)
+   0.00938    0.47786 v _535_/ZN (NOR2_X2)
+   0.11535    0.59321 ^ _536_/ZN (XNOR2_X1)
+   0.04449    0.63771 ^ _537_/ZN (AND2_X2)
+   0.01413    0.65184 v _540_/ZN (OAI21_X1)
+   0.01983    0.67166 ^ _541_/ZN (OAI21_X1)
+   0.00001    0.67167 ^ _594_/D (DFF_X1)
+              0.67167   data arrival time
+
+  10.00000   10.00000   clock core_clock (rise edge)
+   0.00000   10.00000   clock network delay (ideal)
+   0.00000   10.00000   clock reconvergence pessimism
+             10.00000 ^ _594_/CK (DFF_X1)
+  -0.03373    9.96628   library setup time
+              9.96628   data required time
+---------------------------------------------------------------
+              9.96628   data required time
+             -0.67167   data arrival time
+---------------------------------------------------------------
+              9.29460   slack (MET)
+
+
+No differences found.

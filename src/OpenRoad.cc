@@ -33,6 +33,7 @@
 #include "init_fp//MakeInitFloorplan.hh"
 #include "ioPlacer/src/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
+#include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
@@ -40,6 +41,7 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
+#include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #include "pdnsim/MakePDNSim.hh"
 
 namespace sta {
@@ -76,6 +78,7 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deletePsn(psn_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -115,6 +118,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
+  psn_ = makePsn();
   pdnsim_ = makePDNSim();
 
   // Init components.
@@ -136,6 +140,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
+  initPsn(this);
   initPDNSim(this);
   
   // Import exported commands to global namespace.

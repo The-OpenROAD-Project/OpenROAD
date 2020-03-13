@@ -1,0 +1,69 @@
+VERSION 5.7 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN counter ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 0 0 ) ;
+
+
+
+COMPONENTS 12 ;
+- _d0_ DFFPOSX1 ;
+- _d1_ DFFPOSX1 ;
+- _d2_ DFFPOSX1 ;
+- _d3_ DFFPOSX1 ;
+- _d4_ DFFPOSX1 ;
+- _d5_ DFFPOSX1 ;
+- _d6_ DFFPOSX1 ;
+- _d7_ DFFPOSX1 ;
+- _d8_ DFFPOSX1 ;
+- _g0_ NOR2X1 ;
+- _g1_ NOR2X1 ;
+- _g2_ NOR2X1 ;
+END COMPONENTS
+
+PINS 12 ;
+- inp0 + NET inp0 + DIRECTION INPUT ;
+- inp1 + NET inp1 + DIRECTION INPUT ;
+- clk + NET clk + DIRECTION INPUT ;
+- out[8] + NET out[8] + DIRECTION OUTPUT ;
+- out[7] + NET out[7] + DIRECTION OUTPUT ;
+- out[6] + NET out[6] + DIRECTION OUTPUT ;
+- out[5] + NET out[5] + DIRECTION OUTPUT ;
+- out[4] + NET out[4] + DIRECTION OUTPUT ;
+- out[3] + NET out[3] + DIRECTION OUTPUT ;
+- out[2] + NET out[2] + DIRECTION OUTPUT ;
+- out[1] + NET out[1] + DIRECTION OUTPUT ;
+- out[0] + NET out[0] + DIRECTION OUTPUT ;
+END PINS
+
+NETS 24 ;
+- _w0_ ( _g0_ Y ) ( _d1_ D ) ( _d0_ D ) ( _d2_ D ) ;
+- _w1_ ( _d5_ D ) ( _g1_ Y ) ( _d3_ D ) ( _d4_ D ) ;
+- _w2_ ( _g2_ Y ) ( _d6_ D ) ( _d8_ D ) ( _d7_ D ) ;
+- _xout0 ( _d0_ Q ) ;
+- _xout1 ( _d1_ Q ) ;
+- _xout2 ( _d2_ Q ) ;
+- _xout3 ( _d3_ Q ) ;
+- _xout4 ( _d4_ Q ) ;
+- _xout5 ( _d5_ Q ) ;
+- _xout6 ( _d6_ Q ) ;
+- _xout7 ( _d7_ Q ) ;
+- _xout8 ( _d8_ Q ) ;
+- clk ( PIN clk ) ( _d5_ CLK ) ( _d3_ CLK ) ( _d6_ CLK ) ( _d4_ CLK ) ( _d1_ CLK ) ( _d8_ CLK )
+  ( _d0_ CLK ) ( _d2_ CLK ) ( _d7_ CLK ) ;
+- inp0 ( _g2_ A ) ( PIN inp0 ) ( _g1_ A ) ( _g0_ A ) ;
+- inp1 ( _g2_ B ) ( PIN inp1 ) ( _g0_ B ) ( _g1_ B ) ;
+- out[0] ( PIN out[0] ) ( _d0_ Q ) ;
+- out[1] ( PIN out[1] ) ( _d1_ Q ) ;
+- out[2] ( PIN out[2] ) ( _d2_ Q ) ;
+- out[3] ( PIN out[3] ) ( _d3_ Q ) ;
+- out[4] ( _d4_ Q ) ( PIN out[4] ) ;
+- out[5] ( PIN out[5] ) ( _d5_ Q ) ;
+- out[6] ( PIN out[6] ) ( _d6_ Q ) ;
+- out[7] ( PIN out[7] ) ( _d7_ Q ) ;
+- out[8] ( PIN out[8] ) ( _d8_ Q ) ;
+END NETS
+
+END DESIGN

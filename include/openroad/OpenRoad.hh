@@ -63,6 +63,10 @@ namespace OpenRCX {
 class Ext;
 }
 
+namespace psn {
+class Psn;
+}
+
 namespace pdnsim {
 class PDNSim;
 }
@@ -134,6 +138,7 @@ private:
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
 
