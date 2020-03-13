@@ -671,7 +671,8 @@ proc get_adjusted_width {layer width} {
   set widthtable [get_widthtable $layer]
 
   if {[llength $widthtable] == 0} {return $width}
-  if {[lsearch -exact $widthtable $width] > 0} {return $width}
+  # debug "widthtable $layer ($width): $widthtable"
+  if {[lsearch -exact $widthtable $width] > -1} {return $width}
   if {$width > [lindex $widthtable end]} {return $width}
 
   foreach value $widthtable {
@@ -721,6 +722,8 @@ proc use_arrayspacing {layer_name rows columns} {
 proc determine_num_via_columns {via_info constraints} {
   variable upper_width
   variable lower_width
+  variable upper_height
+  variable lower_height
   variable lower_dir
   variable min_lower_enclosure
   variable max_lower_enclosure
@@ -729,7 +732,6 @@ proc determine_num_via_columns {via_info constraints} {
   variable cut_width
   variable xcut_pitch
   variable xcut_spacing
-  variable def_units
   
   # What are the maximum number of columns that we can fit in this space?
   set i 1
@@ -769,14 +771,24 @@ proc determine_num_via_columns {via_info constraints} {
       if {$upper_concave_enclosure > $max_upper_enclosure} {
         set max_upper_enclosure $upper_concave_enclosure
       }
-
-      set lower_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $max_lower_enclosure]
-      set upper_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $max_upper_enclosure]
-      set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
-      set upper_width [get_adjusted_width [dict get $via_info lower layer] $upper_width]
     }
+
   }
-  
+  # debug "$lower_dir"
+  if {$lower_dir == "hor"} {
+    if {[dict get $constraints stack_top] != [dict get $via_info upper layer]} {
+      get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min([expr $cut_width + $xcut_pitch * ($columns - 1)],$upper_height)]
+      set upper_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $min_upper_enclosure]
+    }
+  } else {
+    get_via_enclosure $via_info [expr min([expr $cut_width + $xcut_pitch * ($columns - 1)],$lower_height)] [expr min($upper_width,$upper_height)]
+    set lower_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $min_lower_enclosure]
+  }
+  # debug "cols $columns W: lower $lower_width upper $upper_width"
+  set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
+  set upper_width [get_adjusted_width [dict get $via_info upper layer] $upper_width]
+  # debug "cols $columns W: lower $lower_width upper $upper_width"
+
   return $columns
 }
 
@@ -786,12 +798,13 @@ proc determine_num_via_rows {via_info constraints} {
   variable ycut_spacing
   variable upper_height
   variable lower_height
+  variable lower_width
+  variable upper_width
   variable lower_dir
   variable min_lower_enclosure
   variable max_lower_enclosure
   variable min_upper_enclosure
   variable max_upper_enclosure
-  variable def_units
     
   # What are the maximum number of rows that we can fit in this space?
   set i 1
@@ -831,12 +844,26 @@ proc determine_num_via_rows {via_info constraints} {
         set max_upper_enclosure $upper_concave_enclosure
       }
 
-      set lower_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $max_lower_enclosure]
-      set upper_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $max_upper_enclosure]
-      set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
-      set upper_height [get_adjusted_width [dict get $via_info lower layer] $upper_height]
     }                                                                              
   }
+  if {$lower_dir == "hor"} {
+    get_via_enclosure $via_info [expr min($lower_width,[expr $cut_height + $ycut_pitch * ($rows - 1)])] [expr min($upper_width,$upper_height)]
+    set lower_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_lower_enclosure]
+    # debug "modify lower_height to $lower_height ($cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_lower_enclosure"
+  } else {
+    # debug "[dict get $constraints stack_top] != [dict get $via_info upper layer]"
+    if {[dict get $constraints stack_top] != [dict get $via_info upper layer]} {
+      get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min($upper_width,[expr $cut_height + $ycut_pitch * ($rows - 1)])]
+      set upper_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_upper_enclosure]
+      # debug "modify upper_height to $upper_height ($cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_upper_enclosure"
+    }
+  }
+  # debug "$rows H: lower $lower_height upper $upper_height"
+  set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
+  set upper_height [get_adjusted_width [dict get $via_info upper layer] $upper_height]
+  # debug "$rows H: lower $lower_height upper $upper_height"
+
+
   return $rows
 }
 
@@ -959,6 +986,7 @@ proc via_generate_rule {rule_name rows columns constraints} {
   set lower [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
   set upper [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
   # debug "rule $rule_name"
+  # debug "lower: width $lower_width height $lower_height"
   # debug "lower: enc_width $lower_enc_width enc_height $lower_enc_height enclosure_rule $max_lower_enclosure $min_lower_enclosure"
   # debug "lower: enclosure [dict get $lower xEnclosure] [dict get $lower yEnclosure]"
 
@@ -1190,6 +1218,9 @@ proc get_via_option {lower width height constraints} {
   set columns [determine_num_via_columns $via_info $constraints]
   set rows    [determine_num_via_rows    $via_info $constraints]
 
+  # debug "lower_width $lower_width min_lower_enclosure $min_lower_enclosure"
+  # debug "upper_width $upper_width min_upper_enclosure $min_upper_enclosure"
+  
   if {[dict exists $constraints split_cuts] && ([lsearch -exact [dict get $constraints split_cuts] $lower] > -1 || [lsearch -exact [dict get $constraints split_cuts] $upper] > -1)} {
     # debug "via_split_cuts_rule"
     set rules [via_split_cuts_rule $rows $columns $constraints]
@@ -2774,7 +2805,6 @@ proc generate_obstructions {layer_name} {
 proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} {
   variable block
   
-  # debug "OBS: [$layer getName] $xMin $yMin $xMax $yMax"
 
   set layer_pitch [$layer getPitch]
   set layer_width [$layer getWidth]
@@ -2783,8 +2813,8 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
   set offsetX [lindex [$tracks getGridX] 0]
   set offsetY [lindex [$tracks getGridY] 0]
 
-  set core_area [get_core_area]
-  # debug "core_area $core_area"
+  # debug "OBS: [$layer getName] $xMin $yMin $xMax $yMax (dx [expr $xMax - $xMin] dy [expr $yMax - $yMin])"
+  # debug "Offsets: x $offsetX y $offsetY"
   set relative_xMin [expr $xMin - $offsetX]
   set relative_xMax [expr $xMax - $offsetX]
   set relative_yMin [expr $yMin - $offsetY]
@@ -2795,13 +2825,14 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
   # Determine which tracks are blocked
   if {[get_dir [$layer getName]] == "hor"} {
     set pitch_start [expr $relative_yMin / $layer_pitch]
-    if {$relative_yMin % $layer_pitch > ($min_spacing + $layer_width / 2)} {
+    if {$relative_yMin % $layer_pitch >= ($min_spacing + $layer_width / 2)} {
       incr pitch_start
     }
     set pitch_end [expr $relative_yMax / $layer_pitch]
     if {$relative_yMax % $layer_pitch > $layer_width / 2} {
       incr pitch_end
     }
+    # debug "pitch: start $pitch_start end $pitch_end"
     for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
       set obs [odb::dbObstruction_create $block $layer \
         $xMin \
@@ -2812,13 +2843,14 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
     }
   } else {
     set pitch_start [expr $relative_xMin / $layer_pitch]
-    if {$relative_xMin % $layer_pitch > ($min_spacing + $layer_width / 2)} {
+    if {$relative_xMin % $layer_pitch >= ($min_spacing + $layer_width / 2)} {
       incr pitch_start
     }
     set pitch_end [expr $relative_xMax / $layer_pitch]
     if {$relative_xMax % $layer_pitch > $layer_width / 2} {
       incr pitch_end
     }
+    # debug "pitch: start $pitch_start end $pitch_end"
     for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
       set obs [odb::dbObstruction_create $block $layer \
         [expr $i * $layer_pitch + $offsetX - $layer_width / 2] \
