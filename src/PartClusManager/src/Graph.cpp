@@ -39,11 +39,48 @@
 
 namespace PartClusManager {
 
-bool Graph::isInMap(std::string pinName){
-	if (instToIdx.find(pinName) != instToIdx.end())
-		return true;
-	else
-		return false;
+void Graph::computeWeightRange(int maxRange){
+	std::vector<int> edgeWeight = _edgeWeights;
+        std::vector<double> vertexWeight = _vertexWeights;
+        double percentile = 0.99; //Exclude possible outliers
+
+        std::sort(edgeWeight.begin(), edgeWeight.end());
+        std::sort(vertexWeight.begin(), vertexWeight.end());
+
+        int eSize = edgeWeight.size();
+        int vSize = vertexWeight.size();
+	
+	eSize = (int)(eSize * percentile);
+        vSize = (int)(vSize * percentile);
+        edgeWeight.resize(eSize);
+        edgeWeight.shrink_to_fit();
+        vertexWeight.resize(vSize);
+        vertexWeight.shrink_to_fit();
+
+        int maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
+        double maxVWeight = *std::max_element(vertexWeight.begin(), vertexWeight.end());
+        int minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
+        double minVWeight = *std::min_element(vertexWeight.begin(), vertexWeight.end());
+
+        for (int & weight : _edgeWeights){
+                weight = std::min(weight, maxEWeight);
+                if (minEWeight == maxEWeight){
+                        weight = maxRange;
+                }
+                else{
+                        weight = (int)((((weight - minEWeight) * (maxRange -1))/(maxEWeight - minEWeight)) + 1);
+                }
+        }
+        for (double & weight : _vertexWeights){
+                weight = std::min(weight, maxVWeight);
+                if (minVWeight == maxVWeight){
+                        weight = maxRange;
+                }
+                else{
+                        weight = (double)((((weight - minVWeight) * (maxRange -1))/(maxVWeight - minVWeight)) + 1);
+                }
+        }	
+
 }
 
 }

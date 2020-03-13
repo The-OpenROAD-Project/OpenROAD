@@ -36,12 +36,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdint.h>
 #include "Graph.h"
-#include "DBWrapper.h"
 #include <math.h>
 #include <iostream>
-#include <algorithm>
 
 namespace odb{
+class dbDatabase;
+class dbChip;
 class dbBlock;
 class dbNet;
 }
@@ -59,12 +59,13 @@ enum GraphType : uint8_t {
 class GraphDecomposition {
 public:
         GraphDecomposition() {}
-	void initStructs(unsigned dbId);
+	void init(unsigned dbId);
 	void createGraph(GraphType graphType, Graph & graph);
 	void setWeightingOption(int option);
 private:
-	DBWrapper _dbWrapper;
 	odb::dbBlock* _block;
+	odb::dbDatabase *_db;
+	odb::dbChip *_chip;
 	std::vector<std::vector<std::pair<int,int>>> adjMatrix;
 	int _weightingOption;
 	void createCliqueGraph(Graph &graph, odb::dbNet* net);
@@ -72,8 +73,7 @@ private:
 	void connectPins(int firstPin, int secondPin, int weight);
 	void connectStarPins(int firstPin, int secondPin, int weight);
 	float computeWeight(int nPins);
-	void transformGraph(Graph &graph);
-	void weightRange(Graph & graph, int maxRange);
+	void createCompressedMatrix(Graph &graph);
 
 };
 

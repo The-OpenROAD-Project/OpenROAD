@@ -40,9 +40,10 @@
 
 namespace PartClusManager{
 
-void GraphDecomposition::initStructs(unsigned dbId){
-	_dbWrapper.setDb(dbId);
-	_block = _dbWrapper.getBlock();
+void GraphDecomposition::init(unsigned dbId){
+	_db = odb::dbDatabase::getDatabase(dbId);
+	_chip = _db->getChip();
+	_block = _chip->getBlock();
 }
 
 void GraphDecomposition::createGraph(GraphType graphType, Graph &graph){
@@ -53,8 +54,8 @@ void GraphDecomposition::createGraph(GraphType graphType, Graph &graph){
 		//	continue;
 		createStarGraph(graph, net);
 	}
-	transformGraph(graph);
-	weightRange(graph, 100);
+	createCompressedMatrix(graph);
+	graph.computeWeightRange(100);
 }
 
 void GraphDecomposition::setWeightingOption(int option){
@@ -62,70 +63,21 @@ void GraphDecomposition::setWeightingOption(int option){
 }
 
 float GraphDecomposition::computeWeight(int nPins){
-	float weight;
 	switch(_weightingOption){
 		case 1:
-			weight = 1/(float)(nPins-1);
-			break;
+			return 1.0/(nPins-1);
 		case 2:
-			weight = 4/(float)(nPins*(nPins-1));
-			break;
+			return 4.0/(nPins*(nPins-1));
 		case 3:
-			weight = 4/(float)(nPins*nPins - (nPins % 2));
-			break;
+			return 4.0/(nPins*nPins - (nPins % 2));
 		case 4:
-			weight = 6/(float) (nPins*(nPins+1));
-			break;
+			return 6.0/(nPins*(nPins+1));
 		case 5:
-			weight = pow((2/(float)nPins),1.5);
-			break;
+			return pow((2.0/nPins),1.5);
 		case 6:
-			weight = pow((2/(float)nPins),3);
-			break;			
+			return pow((2.0/nPins),3);
 		case 7:
-			weight = 2/(float) nPins;
-			break;
-	}
-	return weight;
-}
-
-void GraphDecomposition::weightRange(Graph & graph, int maxRange){
-	std::vector<int> edgeWeight = graph.getEdgeWeights();
-	std::vector<int> vertexWeight = graph.getVertexWeights();
-	
-	std::sort(edgeWeight.begin(), edgeWeight.end());
-	std::sort(vertexWeight.begin(), vertexWeight.end());
-
-	int eSize = edgeWeight.size();
-	int vSize = vertexWeight.size();
-	
-	eSize = (int)(eSize * 0.99);
-	vSize = (int)(vSize * 0.99);
-	edgeWeight.resize(eSize);
-	edgeWeight.shrink_to_fit();
-	vertexWeight.resize(vSize);
-	vertexWeight.shrink_to_fit();
-
-	int maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
-	int maxVWeight = *std::max_element(vertexWeight.begin(), vertexWeight.end());
-	int minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
-	int minVWeight = *std::min_element(vertexWeight.begin(), vertexWeight.end());
-
-	for (int & weight : graph.getEdgeWeights()){
-		if (weight > maxEWeight)
-			weight = maxEWeight;
-		if (minEWeight == maxEWeight)
-			weight = maxRange;
-		else
-			weight = (int)((((weight - minEWeight) * (maxRange -1))/(maxEWeight - minEWeight)) + 1);
-	}
-	for (int & weight : graph.getVertexWeights()){
-		if (weight > maxVWeight)
-			weight = maxVWeight;
-		if (minVWeight == maxVWeight)
-			weight = maxRange;
-		else
-			weight = (int)((((weight - minVWeight) * (maxRange -1))/(maxVWeight - minVWeight)) + 1);
+			return 2.0/nPins;
 	}
 }
 
@@ -168,8 +120,6 @@ void GraphDecomposition::connectPins(int firstPin, int secondPin, int weight){
 
 void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 	std::vector<int> netVertices;
-	std::vector<int> & vertexWeights = graph.getVertexWeights();
-	std::map<std::string, int> & map = graph.getMap();
 	int driveIdx = -1;
 
 	for (odb::dbBTerm* bterm : net->getBTerms()){
@@ -179,13 +129,13 @@ void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 				long length = box->getLength();
 				long width = box->getWidth();
 				long area = length * width;
-				int nextIdx = graph.getNextIdx(); 
-				map[bterm->getName()] = nextIdx;
-				vertexWeights.push_back(area);
+				int nextIdx = graph.computeNextVertexIdx(); 
+				graph.addMapping(bterm->getName(), nextIdx);
+				graph.addVertexWeight(area);
 				std::vector<std::pair<int,int>> aux;
 				adjMatrix.push_back(aux);
 			}
-			netVertices.push_back(map[bterm->getName()]);
+			netVertices.push_back(graph.getMapping(bterm->getName()));
 			if (bterm->getIoType() == odb::dbIoType::INPUT)
 				driveIdx = netVertices.size() - 1;
 		}
@@ -198,13 +148,13 @@ void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 			int length = bbox->getLength();
 			int width = bbox->getWidth();
 			int area = length * width;	
-			int nextIdx = graph.getNextIdx();
-			map[inst->getName()] = nextIdx;
-			vertexWeights.push_back(area);
+			int nextIdx = graph.computeNextVertexIdx();
+			graph.addMapping(inst->getName(), nextIdx);
+			graph.addVertexWeight(area);
 			std::vector<std::pair<int,int>> aux;
 			adjMatrix.push_back(aux);
 		}
-		netVertices.push_back(map[inst->getName()]);
+		netVertices.push_back(graph.getMapping(inst->getName()));
 		if (driveIdx == -1)
 			if (iterm->isOutputSignal())
 				driveIdx= netVertices.size() - 1;
@@ -221,8 +171,6 @@ void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 
 void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 	std::vector<int> netVertices;
-	std::vector<int> & vertexWeights = graph.getVertexWeights();
-	std::map<std::string, int> & map = graph.getMap();
 	int nITerms = (net->getITerms()).size();
 	int nBTerms = (net->getBTerms()).size();
 	for (odb::dbBTerm* bterm : net->getBTerms()){
@@ -232,13 +180,13 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 				long length = box->getLength();
 				long width = box->getWidth();
 				long area = length * width;
-				int nextIdx = graph.getNextIdx(); 
-				map[bterm->getName()] = nextIdx;
-				vertexWeights.push_back(area);
+				int nextIdx = graph.computeNextVertexIdx(); 
+				graph.addMapping(bterm->getName(), nextIdx);
+				graph.addVertexWeight(area);
 				std::vector<std::pair<int,int>> aux;
 				adjMatrix.push_back(aux);
 			}
-			netVertices.push_back(map[bterm->getName()]);
+			netVertices.push_back(graph.getMapping(bterm->getName()));
 		}
 	}
 	
@@ -249,13 +197,13 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 			int length = bbox->getLength();
 			int width = bbox->getWidth();
 			int area = length * width;	
-			int nextIdx = graph.getNextIdx();
-			map[inst->getName()] = nextIdx;
-			vertexWeights.push_back(area);
+			int nextIdx = graph.computeNextVertexIdx();
+			graph.addMapping(inst->getName(), nextIdx);
+			graph.addVertexWeight(area);
 			std::vector<std::pair<int,int>> aux;
 			adjMatrix.push_back(aux);
 		}
-		netVertices.push_back(map[inst->getName()]);
+		netVertices.push_back(graph.getMapping(inst->getName()));
 	}
 	int weight = (int) computeWeight(nITerms + nBTerms); 
 	for (int i =0; i < netVertices.size(); i++){
@@ -268,18 +216,15 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 
 }
 
-void GraphDecomposition::transformGraph(Graph & graph){
-	std::vector<int> & edgeWeights = graph.getEdgeWeights();
-	std::vector<int> & colIdx = graph.getColIdx();
-	std::vector<int> & rowPtr = graph.getRowPtr();
-	for (std::vector<std::pair<int,int>> node : adjMatrix){
-		rowPtr.push_back(edgeWeights.size());
-		for (std::pair<int,int> connection : node){
-			edgeWeights.push_back(connection.second);
-			colIdx.push_back(connection.first);
+void GraphDecomposition::createCompressedMatrix(Graph & graph){
+	for (std::vector<std::pair<int,int>> & node : adjMatrix){
+		int nextPtr = graph.computeNextRowPtr();
+		graph.addRowPtr(nextPtr);
+		for (std::pair<int,int> & connection : node){
+			graph.addEdgeWeight(connection.second);
+			graph.addColIdx(connection.first);
 		}
 	}	
-
 }
 
 }

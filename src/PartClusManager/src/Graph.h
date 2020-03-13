@@ -38,25 +38,42 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <algorithm>
+#include <math.h>
 
 namespace PartClusManager {
 
 class Graph {
 public:
         Graph() {}
-	std::vector<int> & getEdgeWeights(){ return edgeWeights;}
-	std::vector<int> & getVertexWeights(){ return vertexWeights;}
-	std::vector<int> & getColIdx(){return colIdx;}
-	std::vector<int> & getRowPtr(){return rowPtr;}
-	std::map<std::string, int> & getMap(){return instToIdx;}
-	bool isInMap(std::string pinName);
-	int getNextIdx(){return vertexWeights.size();}
+	int getEdgeWeight (int idx) const { return _edgeWeights[idx];}
+	double getVertexWeight(int idx) const { return _vertexWeights[idx];}
+	int getColIdx(int idx) const {return _colIdx[idx];}
+	int getRowPtr(int idx) const {return _rowPtr[idx];}
+	int getMapping(std::string inst){return _instToIdx[inst];}
+
+	void addEdgeWeight(int weight){_edgeWeights.push_back(weight);} 
+	void addVertexWeight(int weight){_vertexWeights.push_back(weight);} 
+	void addColIdx(int idx){_colIdx.push_back(idx);} 
+	void addRowPtr(int idx){_rowPtr.push_back(idx);} 
+	void addMapping(std::string inst, int idx){_instToIdx[inst] = idx;}
+
+	inline bool isInMap (std::string pinName) const{
+		if (_instToIdx.find(pinName) != _instToIdx.end())
+        		return true;
+    		else
+        		return false;
+	}
+
+	void computeWeightRange(int maxRange);
+	int computeNextVertexIdx() const {return _vertexWeights.size();}
+	int computeNextRowPtr() const {return _edgeWeights.size();}
 private:
-	std::vector<int> edgeWeights;
-	std::vector<int> vertexWeights;
-	std::vector<int> colIdx;
-	std::vector<int> rowPtr;
-	std::map<std::string, int> instToIdx;
+	std::vector<int> _edgeWeights;
+	std::vector<double> _vertexWeights;
+	std::vector<int> _colIdx;
+	std::vector<int> _rowPtr;
+	std::map<std::string, int> _instToIdx;
 
 };
 
