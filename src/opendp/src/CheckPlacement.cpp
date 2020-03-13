@@ -184,22 +184,27 @@ bool Opendp::overlap_check(bool verbose) {
   Grid *grid = makeGrid();
 
   for(Cell& cell : cells_) {
-    int grid_x = gridPaddedX(&cell);
+    int grid_x, x_ur;
     int grid_y = gridY(&cell);
-
-    int x_ur = gridPaddedEndX(&cell);
     int y_ur = gridEndY(&cell);
 
     // Fixed cells can be outside DIEAREA.
-    if (!isFixed(&cell)
-	&& (grid_x < 0
-	    || grid_y < 0
-	    || x_ur > row_site_count_
-	    || y_ur > row_count_)) {
-      printf("Cell %s %sis outside the core boundary.\n",
-	     cell.name(),
-	     isPadded(&cell) ? "with padding " : "");
-      fail = true;
+    if (isFixed(&cell)) {
+      grid_x = gridX(&cell);
+      x_ur = gridEndX(&cell);
+    }
+    else {
+      grid_x = gridPaddedX(&cell);
+      x_ur = gridPaddedEndX(&cell);
+      if (grid_x < 0
+	  || grid_y < 0
+	  || x_ur > row_site_count_
+	  || y_ur > row_count_) {
+	printf("Cell %s %sis outside the core boundary.\n",
+	       cell.name(),
+	       isPadded(&cell) ? "with padding " : "");
+	fail = true;
+      }
     }
 
     grid_x = max(0, grid_x);
