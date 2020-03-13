@@ -40,26 +40,53 @@
 
 namespace PartClusManager{
 
-void GraphDecomposition::init(unsigned dbId){
+void GraphDecomposition::init(int dbId){
 	_db = odb::dbDatabase::getDatabase(dbId);
 	_chip = _db->getChip();
 	_block = _chip->getBlock();
 }
 
-void GraphDecomposition::createGraph(GraphType graphType, Graph &graph){
+GraphType GraphDecomposition::resolveModel(std::string graphModel){
+	if (graphModel == "clique"){
+		return CLIQUE;
+	}
+	if (graphModel == "star"){
+		return STAR;
+	}
+	if (graphModel == "hybrid"){
+		return HYBRID;
+	}
+}
+
+void GraphDecomposition::createGraph(Graph &graph, std::string graphModelS, unsigned weightingOption, 
+				unsigned maxEdgeWeight, unsigned maxVertexWeight, unsigned threshold){
+
+	_weightingOption = weightingOption;
+	GraphType graphModel = resolveModel(graphModelS);
+
 	for (odb::dbNet* net : _block->getNets()){
 		int nITerms = (net->getITerms()).size();
 		int nBTerms = (net->getBTerms()).size();
-		//if (nITerms + nBTerms > 50)
-		//	continue;
-		createStarGraph(graph, net);
+		switch(graphModel){
+			case CLIQUE:
+				if (nITerms + nBTerms > threshold)
+					continue;
+				createCliqueGraph(graph, net);
+				break;
+			case STAR:
+				createStarGraph(graph, net);
+				break;
+			case HYBRID:
+				if (nITerms + nBTerms > threshold){ 
+					createStarGraph(graph, net);
+				} else{ 
+					createCliqueGraph(graph, net);
+				}
+				break;
+		}
 	}
 	createCompressedMatrix(graph);
-	graph.computeWeightRange(100);
-}
-
-void GraphDecomposition::setWeightingOption(int option){
-	_weightingOption = option;
+	graph.computeWeightRange(maxEdgeWeight, maxVertexWeight);
 }
 
 float GraphDecomposition::computeWeight(int nPins){

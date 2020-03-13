@@ -41,6 +41,7 @@ sta::define_cmd_args "partition_netlist" { [-tool name] \
                                           [-clique_threshold value] \
                                           [-weight_model name] \
                                           [-max_edge_weight value] \
+                                          [-max_vertex_weight value] \
                                           [-num_starts value] \
                                           [-balance_constraint value] \
                                           [-coarsening_ratio value] \
@@ -56,6 +57,7 @@ proc partition_netlist { args } {
           -clique_threshold \
           -weight_model \
           -max_edge_weight \
+          -max_vertex_weight \
           -num_starts \
           -balance_constraint \
           -coarsening_ratio \
@@ -99,7 +101,7 @@ proc partition_netlist { args } {
   }
 
   # Graph model
-  set graph_models "clique start hybrid"
+  set graph_models "clique star hybrid"
   if { [info exists keys(-graph_model)] } {
     if { $keys(-graph_model) in $graph_models } {
     } else {
@@ -128,6 +130,17 @@ proc partition_netlist { args } {
       return
     } else {
        PartClusManager::set_max_edge_weight $keys(-max_edge_weight)
+    }       
+  }
+
+  # Max vertex weight
+  if { [info exists keys(-max_vertex_weight)] } {
+       if { !([string is integer $keys(-max_vertex_weight)] && \
+              $keys(-max_vertex_weight) >= 1 && $keys(-max_vertex_weight) <= 32768) } {
+      puts "\[ERROR\] Argument -max_vertex_weight should be an integer in the range \[1, 32768\]"
+      return
+    } else {
+       PartClusManager::set_max_vertex_weight $keys(-max_vertex_weight)
     }       
   }
 

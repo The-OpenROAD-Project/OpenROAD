@@ -77,6 +77,12 @@ void set_max_edge_weight(unsigned value) {
         kernel->getOptions().setMaxEdgeWeight(value);
 }
 
+void set_max_vertex_weight(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setMaxVertexWeight(value);
+}
+
 void set_num_starts(unsigned value) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();

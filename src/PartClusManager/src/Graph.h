@@ -65,7 +65,7 @@ public:
         		return false;
 	}
 
-	void computeWeightRange(int maxRange);
+	void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
 	int computeNextVertexIdx() const {return _vertexWeights.size();}
 	int computeNextRowPtr() const {return _edgeWeights.size();}
 private:

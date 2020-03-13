@@ -65,18 +65,20 @@ public:
         void setTool(const std::string& tool) { _tool = tool; }
         std::string getTool() const { return _tool; } 
         void setGraphModel(const std::string& graphModel) { _graphModel = graphModel; }
-        std::string getGraphModel() const { return _tool; } 
+        std::string getGraphModel() const { return _graphModel; } 
         void setCliqueThreshold(unsigned threshold) { _cliqueThreshold = threshold; }
         unsigned getCliqueThreshold() const { return _cliqueThreshold; } 
         void setWeightModel(unsigned model) { _weightModel = model; }
         unsigned getWeightModel() const { return _weightModel; } 
         void setMaxEdgeWeight(unsigned weight) { _maxEdgeWeight = weight; }
         unsigned getMaxEdgeWeight() const { return _maxEdgeWeight; }
+        void setMaxVertexWeight(unsigned weight) { _maxVertexWeight = weight; }
+        unsigned getMaxVertexWeight() const { return _maxVertexWeight; }
         void setBalanceConstraint(unsigned constraint) { _balanceConstraint = constraint; }
         unsigned getBalanceConstraint() const { return _balanceConstraint; }
 
 private:
-        unsigned        _numStarts              = 0;
+        unsigned        _numStarts              = 1;
         unsigned        _targetPartitions       = 0;
         bool            _weightedVertices       = false;
         double          _coarRatio              = 0.8;
@@ -88,8 +90,9 @@ private:
         std::string     _tool                   = "chaco";
         std::string     _graphModel             = "clique";
         unsigned        _cliqueThreshold        = 50;
-        unsigned        _weightModel            = 7;
+        unsigned        _weightModel            = 1;
         unsigned        _maxEdgeWeight          = 100; 
+        unsigned        _maxVertexWeight        = 100; 
         unsigned        _balanceConstraint      = 5; 
 }; 
 

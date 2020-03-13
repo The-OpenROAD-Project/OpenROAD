@@ -72,7 +72,8 @@ void PartClusManagerKernel::runMlPart(const Graph& graph, const PartOptions& opt
 void PartClusManagerKernel::graph(){
 	GraphDecomposition graphDecomp;
 	graphDecomp.init(_dbId);
-	graphDecomp.createGraph(GraphType::HYBRID, _graph);
+	graphDecomp.createGraph(_graph, _options.getGraphModel(), _options.getWeightModel(), _options.getMaxEdgeWeight(), 
+					_options.getMaxVertexWeight(), _options.getCliqueThreshold());
 }
 
 }

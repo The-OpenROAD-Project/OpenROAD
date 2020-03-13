@@ -59,15 +59,16 @@ enum GraphType : uint8_t {
 class GraphDecomposition {
 public:
         GraphDecomposition() {}
-	void init(unsigned dbId);
-	void createGraph(GraphType graphType, Graph & graph);
-	void setWeightingOption(int option);
+	void createGraph(Graph &graph, std::string graphModelS, unsigned weightingOption,
+                                unsigned maxEdgeWeight, unsigned maxVertexWeight, unsigned threshold);
+	void init(int dbId);
 private:
 	odb::dbBlock* _block;
 	odb::dbDatabase *_db;
 	odb::dbChip *_chip;
-	std::vector<std::vector<std::pair<int,int>>> adjMatrix;
 	int _weightingOption;
+	std::vector<std::vector<std::pair<int,int>>> adjMatrix;
+	GraphType resolveModel(std::string graphModel);
 	void createCliqueGraph(Graph &graph, odb::dbNet* net);
 	void createStarGraph(Graph & graph, odb::dbNet* net);
 	void connectPins(int firstPin, int secondPin, int weight);
