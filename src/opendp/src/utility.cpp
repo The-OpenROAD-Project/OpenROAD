@@ -104,9 +104,9 @@ void Opendp::power_mapping() {
 }
 
 void Opendp::displacementStats(// Return values.
-			       int &avg_displacement,
-			       int &sum_displacement,
-			       int &max_displacement) {
+			       int64_t &avg_displacement,
+			       int64_t &sum_displacement,
+			       int64_t &max_displacement) {
   avg_displacement = 0;
   sum_displacement = 0;
   max_displacement = 0;

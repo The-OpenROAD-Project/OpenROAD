@@ -140,9 +140,9 @@ class Opendp {
   void reportDesignStats();
   double hpwl(bool initial);
   void displacementStats(// Return values.
-			 int &avg_displacement,
-			 int &sum_displacement,
-			 int &max_displacement);
+			 int64_t &avg_displacement,
+			 int64_t &sum_displacement,
+			 int64_t &max_displacement);
   void reportGrid();
 
  private:

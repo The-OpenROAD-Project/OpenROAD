@@ -239,31 +239,29 @@ void Opendp::findDesignStats() {
   fixed_inst_count_ = 0;
   multi_height_inst_count_ = 0;
   movable_area_ = fixed_area_ = 0;
+  max_cell_height_ = 0;
 
   for(Cell &cell : cells_) {
-    int cell_area = cell.area();
+    dbMaster *master = cell.db_inst_->getMaster();
+    int64_t cell_area = cell.area();
     if(isFixed(&cell)) {
-      fixed_area_ += cell_area;
+      if (master->getType() == dbMasterType::CORE)
+	fixed_area_ += cell_area;
       fixed_inst_count_++;
     }
-    else
+    else {
       movable_area_ += cell_area;
-    if(isMultiRow(&cell))
-      multi_height_inst_count_++;
+      if(isMultiRow(&cell))
+	multi_height_inst_count_++;
+
+      int cell_height = gridNearestHeight(&cell);
+      if(cell_height > max_cell_height_)
+	max_cell_height_ = cell_height;
+    }
   }
 
   design_area_ = row_count_ * static_cast< int64_t >(row_site_count_)
     * site_width_ * row_height_;
-
-  max_cell_height_ = 0;
-  for(Cell &cell : cells_) {
-    dbMaster *master = cell.db_inst_->getMaster();
-    if(!isFixed(&cell) && isMultiRow(&cell) &&
-       master->getType() == dbMasterType::CORE) {
-      int cell_height = gridNearestHeight(&cell);
-      if(cell_height > max_cell_height_) max_cell_height_ = cell_height;
-    }
-  }
 
   design_util_ =
       static_cast< double >(movable_area_) / (design_area_ - fixed_area_);
@@ -297,7 +295,7 @@ void Opendp::reportDesignStats() {
 }
 
 void Opendp::reportLegalizationStats() {
-  int avg_displacement, sum_displacement, max_displacement;
+  int64_t avg_displacement, sum_displacement, max_displacement;
   displacementStats(avg_displacement, sum_displacement, max_displacement);
 
   cout << "-------------------- Placement Analysis ------------------------" << endl;
