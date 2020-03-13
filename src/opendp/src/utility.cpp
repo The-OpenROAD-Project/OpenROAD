@@ -130,8 +130,8 @@ double Opendp::hpwl(bool initial) {
       dbInst* inst = iterm->getInst();
       Cell* cell = db_inst_map_[inst];
       int x, y;
-      if(initial) {
-	initLocation(cell, x, y);
+      if(initial || cell == nullptr) {
+	initLocation(inst, x, y);
       }
       else {
         x = cell->x_;

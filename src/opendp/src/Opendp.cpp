@@ -245,8 +245,7 @@ void Opendp::findDesignStats() {
     dbMaster *master = cell.db_inst_->getMaster();
     int64_t cell_area = cell.area();
     if(isFixed(&cell)) {
-      if (master->getType() == dbMasterType::CORE)
-	fixed_area_ += cell_area;
+      fixed_area_ += cell_area;
       fixed_inst_count_++;
     }
     else {
@@ -339,8 +338,17 @@ Opendp::initLocation(Cell *cell,
 		     int &x,
 		     int &y)
 {
+  initLocation(cell->db_inst_, x, y);
+}
+
+void
+Opendp::initLocation(dbInst* inst,
+		     // Return values.
+		     int &x,
+		     int &y)
+{
   int loc_x, loc_y;
-  cell->db_inst_->getLocation(loc_x, loc_y);
+  inst->getLocation(loc_x, loc_y);
   x = loc_x - core_.xMin();
   y = loc_y - core_.yMin();
 }

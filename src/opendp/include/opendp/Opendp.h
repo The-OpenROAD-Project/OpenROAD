@@ -250,6 +250,10 @@ class Opendp {
   void initLocation(Cell *cell,
 		    int &x,
 		    int &y);
+  void initLocation(dbInst* inst,
+		    // Return values.
+		    int &x,
+		    int &y);
   void initPaddedLoc(Cell *cell,
 		     int &x,
 		     int &y);

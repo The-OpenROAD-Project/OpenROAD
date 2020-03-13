@@ -71,8 +71,10 @@ using odb::dbSigType;
 using odb::dbRegion;
 using odb::dbSWire;
 using odb::dbSBox;
+using odb::dbMasterType;
 
 static bool swapWidthHeight(dbOrientType orient);
+static bool placeMasterType(dbMasterType type);
 
 void Opendp::dbToOpendp() {
   // LEF
@@ -156,25 +158,58 @@ void Opendp::makeCells() {
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
-    cells_.push_back(Cell());
-    Cell &cell = cells_.back();
-    cell.db_inst_ = db_inst;
-    db_inst_map_[db_inst] = &cell;
-
     dbMaster *master = db_inst->getMaster();
-    int width = master->getWidth();
-    int height = master->getHeight();
-    if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
-    cell.width_ = width;
-    cell.height_ = height;
+    // Prune PAD/COVER/RING/ENDCAP instances.
+    if (placeMasterType(master->getType())) {
+      cells_.push_back(Cell());
+      Cell &cell = cells_.back();
+      cell.db_inst_ = db_inst;
+      db_inst_map_[db_inst] = &cell;
 
-    int init_x, init_y;
-    initLocation(&cell, init_x, init_y);
-    // Shift by core lower left.
-    cell.x_ = init_x;
-    cell.y_ = init_y;
-    cell.orient_ = db_inst->getOrient();
-    cell.is_placed_ = isFixed(&cell);
+      int width = master->getWidth();
+      int height = master->getHeight();
+      if(swapWidthHeight(db_inst->getOrient())) std::swap(width, height);
+      cell.width_ = width;
+      cell.height_ = height;
+
+      int init_x, init_y;
+      initLocation(&cell, init_x, init_y);
+      // Shift by core lower left.
+      cell.x_ = init_x;
+      cell.y_ = init_y;
+      cell.orient_ = db_inst->getOrient();
+      cell.is_placed_ = isFixed(&cell);
+    }
+  }
+}
+
+// Use switch so if new types are added we get a compiler warning.
+static bool placeMasterType(dbMasterType type) {
+  switch (type) {
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_SPACER:
+  case dbMasterType::BLOCK:
+    return true;
+  case dbMasterType::NONE:
+  case dbMasterType::COVER:
+  case dbMasterType::RING:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    return false;
   }
 }
 
