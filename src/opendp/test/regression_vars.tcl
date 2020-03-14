@@ -106,6 +106,7 @@ record_tests {
   simple06
   simple07
   simple08
+  simple09
   fence01
   fence02
   fence03

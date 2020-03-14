@@ -418,33 +418,21 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
   }
   else {
     int x_max = row_site_count_ - gridPaddedWidth(cell);
+    if (grid_x < 0)
+      grid_x = 0;
+    else if (grid_x > x_max)
+      grid_x = x_max;
     // magic number alert
-    if (grid_x - diamond_search_height_ * 5 < 0) {
-      x_start = 0;
-      x_end = min(diamond_search_height_ * 10, x_max);
-    }
-    else if (grid_x + diamond_search_height_ * 5 > x_max) {
-      x_start = max(x_max - diamond_search_height_ * 10, 0);
-      x_end = x_max;
-    }
-    else {
-      x_start = grid_x - diamond_search_height_ * 5;
-      x_end = grid_x + diamond_search_height_ * 5;
-    }
+    x_start = max(grid_x - diamond_search_height_ * 5, 0);    
+    x_end = min(grid_x + diamond_search_height_ * 5, x_max);
 
     int y_max = row_count_ - gridHeight(cell);
-    if (grid_y - diamond_search_height_ < 0) {
-      y_start = 0;
-      y_end = min(diamond_search_height_ * 2, y_max);
-    }
-    else if (grid_y + diamond_search_height_ > y_max) {
-      y_start = max(y_max - diamond_search_height_ * 2, 0);
-      y_end = y_max;
-    }
-    else {
-      y_start = grid_y - diamond_search_height_;
-      y_end = grid_y + diamond_search_height_;
-    }
+    if (grid_y < 0)
+      grid_y = 0;
+    else if (grid_y > y_max)
+      grid_y = y_max;
+    y_start = max(grid_y - diamond_search_height_, 0);    
+    y_end = min(grid_y + diamond_search_height_, y_max);
   }
 #ifdef ODP_DEBUG
   cout << " == Start Diamond Search ==  " << endl;
