@@ -11,15 +11,15 @@ DESIGN reg1 ;
 
 UNITS DISTANCE MICRONS 100 ;
 
-DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+DIEAREA ( 0 0 ) ( 10000 10000 ) ;
 
 
 COMPONENTS 5 ;
-- r1 snl_ffqx1 + PLACED   ( 10000 20000 ) N ;
-- r2 snl_ffqx1 + PLACED   ( 20000 10000 ) N ;
-- r3 snl_ffqx1 + PLACED   ( 30000 30000 ) N ;
-- u1 snl_bufx1 + PLACED   ( 40000 10000 ) N ;
-- u2 snl_and02x1 + PLACED ( 10000 40000 ) N ;
+- r1 snl_ffqx1 + PLACED   ( 1000 2000 ) N ;
+- r2 snl_ffqx1 + PLACED   ( 2000 1000 ) N ;
+- r3 snl_ffqx1 + PLACED   ( 3000 3000 ) N ;
+- u1 snl_bufx1 + PLACED   ( 4000 1000 ) N ;
+- u2 snl_and02x1 + PLACED ( 1000 4000 ) N ;
 END COMPONENTS
 
 PINS 3 ;

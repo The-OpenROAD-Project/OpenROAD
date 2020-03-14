@@ -12,10 +12,10 @@ Notice 0:     Created 5 components and 25 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 2 nets and 10 connections.
 Notice 0: Finished DEF file: rebuffer2.def
-Design area 5000 u^2 50% utilization.
+Design area 5000 u^2 2% utilization.
 Resized 1 instances.
-Design area 5000 u^2 50% utilization.
+Design area 5000 u^2 2% utilization.
 Found 1 max capacitance violations.
 Inserted 2 buffers in 1 nets.
 Found 2 max slew violations.
-Design area 7000 u^2 70% utilization.
+Design area 7000 u^2 3% utilization.

@@ -2,7 +2,7 @@
 # r1 driving r2-r5 from end
 ###############################################################################
 
-VERSION 5.5 ; 
+VERSION 5.8 ; 
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
@@ -11,7 +11,7 @@ DESIGN reg1 ;
 
 UNITS DISTANCE MICRONS 1000 ;
 
-DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+DIEAREA ( 0 0 ) ( 500000 500000 ) ;
 
 COMPONENTS 5 ;
 - r1 snl_ffqx1 + PLACED   ( 100000 100000 ) N ;

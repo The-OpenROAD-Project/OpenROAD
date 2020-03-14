@@ -96,7 +96,6 @@ Resizer::Resizer() :
   unique_net_index_(1),
   unique_inst_index_(1),
   resize_count_(0),
-  core_area_(0.0),
   design_area_(0.0)
 {
 }
@@ -107,6 +106,7 @@ Resizer::init(Tcl_Interp *interp,
 	      dbSta *sta)
 {
   db_ = db;
+  block_ = nullptr;
   sta_ = sta;
   db_network_ = sta->getDbNetwork();
   copyState(sta);
@@ -121,17 +121,16 @@ Resizer::init(Tcl_Interp *interp,
 double
 Resizer::coreArea() const
 {
-  dbBlock *block = db_->getChip()->getBlock();
-  adsRect rect = ord::getCore(block);
-  return dbuToMeters(rect.dx()) * dbuToMeters(rect.dy());
+  return dbuToMeters(core_.dx()) * dbuToMeters(core_.dy());
 }
 
 double
 Resizer::utilization()
 {
+  ensureBlock();
   double core_area = coreArea();
   if (core_area > 0.0)
-    return designArea() / core_area;
+    return design_area_ / core_area;
   else
     return 1.0;
 }
@@ -170,11 +169,22 @@ VertexLevelLess::operator()(const Vertex *vertex1,
 
 ////////////////////////////////////////////////////////////////
 
+// block_ indicates core_, design_area_, db_network_ etc valid.
+void
+Resizer::ensureBlock()
+{
+  // block_ indicates core_, design_area_
+  if (block_ == nullptr) {
+    block_ = db_->getChip()->getBlock();
+    core_ = ord::getCore(block_);
+    design_area_ = findDesignArea();
+  }
+}
+
 void
 Resizer::init()
 {
-  // Init design_area_.
-  designArea();
+  ensureBlock();
   db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
@@ -305,13 +315,23 @@ Resizer::bufferInput(Pin *top_pin,
   }
 }
 
+// Return the point inside rect that is closest to pt.
+adsPoint
+closestPtInRect(adsRect rect,
+		adsPoint pt)
+{
+  return adsPoint(min(max(pt.getX(), rect.xMin()), rect.xMax()),
+		  min(max(pt.getY(), rect.yMin()), rect.yMax()));
+}
+
 void
 Resizer::setLocation(Instance *inst,
 		     adsPoint pt)
 {
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dinst->setLocation(pt.getX(), pt.getY());
+  adsPoint inside = closestPtInRect(core_, pt);
+  dinst->setLocation(inside.getX(), inside.getY());
 }
 
 adsPoint
@@ -1006,7 +1026,7 @@ Resizer::deleteRebufferOptions()
 
 ////////////////////////////////////////////////////////////////
 
-// Assumes resizerPreambnle has been called.
+// Assumes resizePreamble has been called.
 void
 Resizer::repairMaxCapSlew(bool repair_max_cap,
 			  bool repair_max_slew,
@@ -2188,14 +2208,19 @@ Resizer::gateDelay(LibertyPort *out_port,
 double
 Resizer::designArea()
 {
-  if (design_area_ == 0.0) {
-    dbBlock *block = db_->getChip()->getBlock();
-    for (dbInst *inst : block->getInsts()) {
-      dbMaster *master = inst->getMaster();
-      design_area_ += area(master);
-    }
-  }
+  ensureBlock();
   return design_area_;
+}
+
+double
+Resizer::findDesignArea()
+{
+  double design_area = 0.0;
+  for (dbInst *inst : block_->getInsts()) {
+    dbMaster *master = inst->getMaster();
+    design_area += area(master);
+  }
+  return design_area;
 }
 
 adsPoint
