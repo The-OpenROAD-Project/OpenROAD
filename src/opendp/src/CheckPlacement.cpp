@@ -36,6 +36,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+// CORE  to CORE  padded footprints must not overlap
+// BLOCK to CORE  footprints must not overlap (padding ignored)
+// BLOCK to BLOCK footprints must not overlap (padding ignored)
+// The rules above apply to both FIXED or PLACED instances
+// Instances of all other CLASSes are not checked (ignored)
+
 #include <iostream>
 #include <limits>
 #include <iomanip>
