@@ -40,6 +40,7 @@
 #include <limits>
 #include <iomanip>
 #include <cmath>
+#include "openroad/Error.hh"
 #include "opendp/Opendp.h"
 
 namespace opendp {
@@ -192,9 +193,9 @@ bool Opendp::overlap_check(bool verbose) {
 	|| grid_y < 0
 	|| x_ur > row_site_count_
 	|| y_ur > row_count_) {
-      printf("Cell %s %sis outside the core boundary.\n",
-	     cell.name(),
-	     isPadded(&cell) ? "with padding " : "");
+      ord::warn("Cell %s %sis outside the core boundary.",
+		cell.name(),
+		isPadded(&cell) ? "with padding " : "");
       fail = true;
     }
 

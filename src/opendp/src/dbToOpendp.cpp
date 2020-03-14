@@ -159,7 +159,7 @@ void Opendp::makeCells() {
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
-    // Prune PAD/COVER/RING/ENDCAP instances.
+    // Ignore PAD/COVER/RING/ENDCAP instances.
     if (placeMasterType(master->getType())) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();

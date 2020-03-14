@@ -360,7 +360,8 @@ Opendp::initPaddedLoc(Cell *cell,
 		      int &y)
 {
   initLocation(cell, x, y);
-  x -= pad_left_ * site_width_;
+  if (isPadded(cell))
+    x -= pad_left_ * site_width_;
 }
 
 int Opendp::disp(Cell *cell) {
@@ -379,11 +380,18 @@ int Opendp::gridEndY() {
 }
 
 int Opendp::paddedWidth(Cell *cell) {
-  return cell->width_ + (pad_left_ + pad_right_) * site_width_;
+  if (isPadded(cell))
+    return cell->width_ + (pad_left_ + pad_right_) * site_width_;
+  else
+    return cell->width_;
 }
 
+// Cells only exist for CLASS BLOCK and CORE_* instances.
+// CORE_* instances are padded
+// BLOCK instances are not padded
 bool Opendp::isPadded(Cell *cell) {
-  return pad_left_  > 0 || pad_right_ > 0;
+  return cell->db_inst_->getMaster()->getType() != dbMasterType::BLOCK
+    && (pad_left_  > 0 || pad_right_ > 0);
 }
 
 int Opendp::gridPaddedWidth(Cell *cell) {
@@ -417,7 +425,10 @@ int Opendp::gridX(Cell *cell) {
 }
 
 int Opendp::gridPaddedX(Cell *cell) {
-  return gridX(cell->x_ - pad_left_);
+  if (isPadded(cell))
+    return gridX(cell->x_ - pad_left_);
+  else
+    return gridX(cell->x_);
 }
 
 int Opendp::gridY(Cell *cell) {
@@ -427,12 +438,14 @@ int Opendp::gridY(Cell *cell) {
 void Opendp::setGridPaddedLoc(Cell *cell,
 			      int x,
 			      int y) {
-  cell->x_ = (x + pad_left_) * site_width_;
+  cell->x_ = (x + (isPadded(cell) ? pad_left_ : 0)) * site_width_;
   cell->y_ = y * row_height_;
 }
 
 int Opendp::gridPaddedEndX(Cell *cell) {
-  return divCeil(cell->x_ + cell->width_ + pad_right_ * site_width_, site_width_);
+  return divCeil(cell->x_ + cell->width_
+		 + (isPadded(cell) ? pad_right_ * site_width_ : 0),
+		 site_width_);
 }
 
 int Opendp::gridEndX(Cell *cell) {

@@ -37,6 +37,6 @@ row check ==> PASS
 site check ==> PASS 
 power check ==> PASS 
 placed_check ==> FAIL (1)
-Cell _277_ with padding is outside the core boundary.
+Warning: Cell _277_ with padding is outside the core boundary.
 overlap_check ==> FAIL 
 Warning: placement check failed.
