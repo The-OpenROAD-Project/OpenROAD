@@ -328,23 +328,14 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
 	    // cout << "BinSearch: chk " << k << " " << l << endl;
-	    if(grid_[k][l].cell != nullptr || !grid_[k][l].is_valid) {
-	      // cout << "BinSearch: chk " << k << " " << l << " NonEmpty" << endl;
+	    if(grid_[k][l].cell != nullptr
+	       || !grid_[k][l].is_valid
+	       // check group regions
+	       || (cell->inGroup()
+		   && grid_[k][l].group_ != cell->group_)
+	       || (!cell->inGroup() && grid_[k][l].group_ != nullptr)) {
               available = false;
               break;
-            }
-            // check group regions
-            if(cell->inGroup()) {
-              if(grid_[k][l].group_ != cell->group_) {
-                available = false;
-		break;
-	      }
-            }
-            else {
-              if(grid_[k][l].group_ != nullptr) {
-		available = false;
-		break;
-	      }
             }
           }
           if(!available) break;
@@ -364,6 +355,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
       bool available = true;
       if(x + i + x_step > coreGridMaxX()) {
         available = false;
+
       }
       else {
         for(int k = y; k < y + y_step; k++) {
@@ -386,7 +378,6 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
 	      }
             }
           }
-          if(!available) break;
         }
       }
       if(available) {
