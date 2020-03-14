@@ -390,8 +390,17 @@ int Opendp::paddedWidth(Cell *cell) {
 // CORE_* instances are padded
 // BLOCK instances are not padded
 bool Opendp::isPadded(Cell *cell) {
-  return cell->db_inst_->getMaster()->getType() != dbMasterType::BLOCK
+  return isClassCore(cell)
     && (pad_left_  > 0 || pad_right_ > 0);
+}
+
+bool Opendp::isClassBlock(Cell *cell) {
+  return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
+}
+
+// Cells are only created for CLASS BLOCK and CORE instances.
+bool Opendp::isClassCore(Cell *cell) {
+  return !isClassBlock(cell);
 }
 
 int Opendp::gridPaddedWidth(Cell *cell) {

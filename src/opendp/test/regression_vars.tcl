@@ -120,6 +120,7 @@ record_tests {
   pad02
   pad03
   pad04
+  pad05
   overlap1
   fillers1
   fillers2

@@ -71,11 +71,11 @@ bool Opendp::row_check(bool verbose) {
   bool fail = false;
   int count = 0;
   for(Cell& cell : cells_) {
-    if(!isFixed(&cell)) {
+    if(isClassCore(&cell)) {
       if(cell.y_ % row_height_ != 0) {
 	if (verbose)
 	  cout << "row_check fail => " << cell.name()
-	       << " y : " << cell.y_ << endl;
+	       << " y : " << cell.y_ + core_.yMin() << endl;
 	fail = true;
 	count++;
       }
@@ -94,11 +94,11 @@ bool Opendp::site_check(bool verbose) {
   bool fail = false;
   int count = 0;
   for(Cell& cell : cells_) {
-    if(!isFixed(&cell)) {
+    if(isClassCore(&cell)) {
       if(cell.x_ % site_width_ != 0) {
 	if (verbose)
 	  cout << "site check fail ==> " << cell.name()
-	       << " x_ : " << cell.x_ << endl;
+	       << " x : " << cell.x_ + core_.xMin() << endl;
 	fail = true;
 	count++;
       }
@@ -115,7 +115,7 @@ bool Opendp::power_line_check(bool verbose) {
   bool fail = false;
   int count = 0;
   for(Cell& cell : cells_) {
-    if(!isFixed(&cell)
+    if(isClassCore(&cell)
        // Magic number alert
        // Shouldn't this be odd test instead of 1 or 3? -cherry
        && !(cell.height_ == row_height_ || cell.height_ == row_height_ * 3)
