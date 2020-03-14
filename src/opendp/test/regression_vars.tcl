@@ -106,6 +106,7 @@ record_tests {
   simple06
   simple07
   simple08
+  simple09
   fence01
   fence02
   fence03
@@ -120,6 +121,7 @@ record_tests {
   pad02
   pad03
   pad04
+  pad05
   overlap1
   fillers1
   fillers2

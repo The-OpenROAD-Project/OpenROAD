@@ -328,18 +328,14 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
 	    // cout << "BinSearch: chk " << k << " " << l << endl;
-	    if(grid_[k][l].cell != nullptr || !grid_[k][l].is_valid) {
-	      // cout << "BinSearch: chk " << k << " " << l << " NonEmpty" << endl;
+	    if(grid_[k][l].cell != nullptr
+	       || !grid_[k][l].is_valid
+	       // check group regions
+	       || (cell->inGroup()
+		   && grid_[k][l].group_ != cell->group_)
+	       || (!cell->inGroup() && grid_[k][l].group_ != nullptr)) {
               available = false;
               break;
-            }
-            // check group regions
-            if(cell->inGroup()) {
-              if(grid_[k][l].group_ != cell->group_)
-                available = false;
-            }
-            else {
-              if(grid_[k][l].group_ != nullptr) available = false;
             }
           }
           if(!available) break;
@@ -353,11 +349,13 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
     }
   }
   else {
+    // magic number alert
     for(int i = 0; i < 10; i++) {
       // check all grids are empty
       bool available = true;
       if(x + i + x_step > coreGridMaxX()) {
         available = false;
+
       }
       else {
         for(int k = y; k < y + y_step; k++) {
@@ -368,14 +366,18 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
             }
             // check group regions
             if(cell->inGroup()) {
-              if(grid_[k][l].group_ != cell->group_)
+              if(grid_[k][l].group_ != cell->group_) {
                 available = false;
+		break;
+	      }
             }
             else {
-              if(grid_[k][l].group_ != nullptr) available = false;
+              if(grid_[k][l].group_ != nullptr) {
+		available = false;
+		break;
+	      }
             }
           }
-          if(!available) break;
         }
       }
       if(available) {
@@ -416,33 +418,21 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
   }
   else {
     int x_max = row_site_count_ - gridPaddedWidth(cell);
+    if (grid_x < 0)
+      grid_x = 0;
+    else if (grid_x > x_max)
+      grid_x = x_max;
     // magic number alert
-    if (grid_x - diamond_search_height_ * 5 < 0) {
-      x_start = 0;
-      x_end = min(diamond_search_height_ * 10, x_max);
-    }
-    else if (grid_x + diamond_search_height_ * 5 > x_max) {
-      x_start = max(x_max - diamond_search_height_ * 10, 0);
-      x_end = x_max;
-    }
-    else {
-      x_start = grid_x - diamond_search_height_ * 5;
-      x_end = grid_x + diamond_search_height_ * 5;
-    }
+    x_start = max(grid_x - diamond_search_height_ * 5, 0);    
+    x_end = min(grid_x + diamond_search_height_ * 5, x_max);
 
     int y_max = row_count_ - gridHeight(cell);
-    if (grid_y - diamond_search_height_ < 0) {
-      y_start = 0;
-      y_end = min(diamond_search_height_ * 2, y_max);
-    }
-    else if (grid_y + diamond_search_height_ > y_max) {
-      y_start = max(y_max - diamond_search_height_ * 2, 0);
-      y_end = y_max;
-    }
-    else {
-      y_start = grid_y - diamond_search_height_;
-      y_end = grid_y + diamond_search_height_;
-    }
+    if (grid_y < 0)
+      grid_y = 0;
+    else if (grid_y > y_max)
+      grid_y = y_max;
+    y_start = max(grid_y - diamond_search_height_, 0);    
+    y_end = min(grid_y + diamond_search_height_, y_max);
   }
 #ifdef ODP_DEBUG
   cout << " == Start Diamond Search ==  " << endl;
@@ -631,27 +621,25 @@ int Opendp::dist_benefit(Cell* cell, int x, int y) {
 }
 
 bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
-  if(cell1 == cell2)
-    return false;
-  else if(cell1->db_inst_->getMaster() != cell2->db_inst_->getMaster())
-    return false;
-  else if(isFixed(cell1) || isFixed(cell2))
-    return false;
+  if(cell1 != cell2
+     && cell1->db_inst_->getMaster() == cell2->db_inst_->getMaster()
+     && !isFixed(cell1)
+     && !isFixed(cell2)) {
+    int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +
+      dist_benefit(cell2, cell1->x_, cell1->y_);
 
-  int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +
-                dist_benefit(cell2, cell1->x_, cell1->y_);
+    if(benefit < 0) {
+      int grid_x1 = gridPaddedX(cell2);
+      int grid_y1 = gridY(cell2);
+      int grid_x2 = gridPaddedX(cell1);
+      int grid_y2 = gridY(cell1);
 
-  if(benefit < 0) {
-    int grid_x1 = gridPaddedX(cell2);
-    int grid_y1 = gridY(cell2);
-    int grid_x2 = gridPaddedX(cell1);
-    int grid_y2 = gridY(cell1);
-
-    erase_pixel(cell1);
-    erase_pixel(cell2);
-    paint_pixel(cell1, grid_x1, grid_y1);
-    paint_pixel(cell2, grid_x2, grid_y2);
-    return true;
+      erase_pixel(cell1);
+      erase_pixel(cell2);
+      paint_pixel(cell1, grid_x1, grid_y1);
+      paint_pixel(cell2, grid_x2, grid_y2);
+      return true;
+    }
   }
   return false;
 }

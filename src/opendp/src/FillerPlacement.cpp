@@ -96,8 +96,8 @@ Opendp::makeCellGrid()
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
-    // Fixed cells can be outside core.
-    if(isFixed(&cell)) {
+    // BLOCK instances can be outside core.
+    if(isClassBlock(&cell)) {
       grid_x = max(0, grid_x);
       grid_y = max(0, grid_y);
       x_ur = min(x_ur, row_site_count_);

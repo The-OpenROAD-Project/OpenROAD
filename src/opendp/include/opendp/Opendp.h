@@ -259,6 +259,8 @@ class Opendp {
 		     int &y);
   int paddedWidth(Cell *cell);
   bool isPadded(Cell *cell);
+  bool isClassBlock(Cell *cell);
+  bool isClassCore(Cell *cell);
   int disp(Cell *cell);
   int coreGridMaxX();
   int coreGridMaxY();
