@@ -926,28 +926,32 @@ RebufferOption::print(int level,
   switch (type_) {
   case RebufferOptionType::sink:
     // %*s format indents level spaces.
-    printf("%*sload %s cap %s req %s\n",
+    printf("%*sload %s (%d, %d) cap %s req %s\n",
 	   level, "",
 	   sdc_network->pathName(load_pin_),
+	   location_.x(), location_.y(),
 	   units->capacitanceUnit()->asString(cap_),
 	   delayAsString(required_, resizer));
     break;
   case RebufferOptionType::wire:
-    printf("%*swire cap %s req %s\n",
+    printf("%*swire (%d, %d) cap %s req %s\n",
 	   level, "",
+	   location_.x(), location_.y(),
 	   units->capacitanceUnit()->asString(cap_),
 	   delayAsString(required_, resizer));
     break;
   case RebufferOptionType::buffer:
-    printf("%*sbuffer cap %s req %s\n",
+    printf("%*sbuffer (%d, %d) cap %s req %s\n",
 	   level, "",
+	   location_.x(), location_.y(),
 	   units->capacitanceUnit()->asString(cap_),
 	   delayAsString(required_, resizer));
 
     break;
   case RebufferOptionType::junction:
-    printf("%*sjunction cap %s req %s\n",
+    printf("%*sjunction (%d, %d) cap %s req %s\n",
 	   level, "",
+	   location_.x(), location_.y(),
 	   units->capacitanceUnit()->asString(cap_),
 	   delayAsString(required_, resizer));
 
@@ -1211,6 +1215,8 @@ Resizer::rebuffer(const Pin *drvr_pin,
 		    delayAsString(gate_delay, this),
 		    delayAsString(slack, this),
 		    units_->capacitanceUnit()->asString(p->cap()));
+	if (debug_->check("rebuffer", 4))
+	  p->printTree(this);
 	if (fuzzyGreater(slack, best_slack)) {
 	  best_slack = slack;
 	  best_option = p;
@@ -1219,7 +1225,8 @@ Resizer::rebuffer(const Pin *drvr_pin,
       if (best_option) {
 	Delay gate_delay = gateDelay(drvr_port, best_option->cap());
 	Slack slack = best_option->required() - gate_delay;
-	debugPrint4(debug_, "rebuffer", 3, "best req %s - %s = %s cap %s\n",
+	debugPrint5(debug_, "rebuffer", 3, "best   %d buffers req %s - %s = %s cap %s\n",
+		    best_option->bufferCount(),
 		    delayAsString(best_option->required(), this),
 		    delayAsString(gate_delay, this),
 		    delayAsString(slack, this),
@@ -1299,7 +1306,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
 					     pin,
 					     tree->location(k),
 					     nullptr, nullptr);
-      if (debug_->check("rebuffer", 3))
+      if (debug_->check("rebuffer", 4))
 	z->print(level, this);
       RebufferOptionSeq Z;
       Z.push_back(z);
@@ -1402,7 +1409,10 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   if (best_ref) {
     RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
 					   bufferInputCapacitance(buffer_cell),
+					   // Seems like this double counts
+					   // the delay driving this option.
 					   best_req,
+					   //best_ref->required(),
 					   nullptr,
 					   // Locate buffer at opposite end of wire.
 					   prev_loc,
@@ -2127,6 +2137,8 @@ Required
 Resizer::pinRequired(const Pin *pin)
 {
   Vertex *vertex = graph_->pinLoadVertex(pin);
+  PathAnalysisPt *path_ap = corner_->findPathAnalysisPt(min_max_);
+  //  Required required = sta_->vertexRequired(vertex, RiseFall::fall(), path_ap);
   Required required = sta_->vertexRequired(vertex, min_max_);
   if (fuzzyInf(required))
     // Unconstrained pin.
@@ -2149,7 +2161,7 @@ Resizer::gateDelay(LibertyPort *out_port,
 {
   LibertyCell *cell = out_port->libertyCell();
   // Max rise/fall delays.
-  ArcDelay max_delay = -INF;
+  ArcDelay max_delay[RiseFall::index_count] = {-INF, -INF};
   LibertyCellTimingArcSetIterator set_iter(cell);
   while (set_iter.hasNext()) {
     TimingArcSet *arc_set = set_iter.next();
@@ -2158,6 +2170,7 @@ Resizer::gateDelay(LibertyPort *out_port,
       while (arc_iter.hasNext()) {
 	TimingArc *arc = arc_iter.next();
 	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+	int out_rf_index = arc->toTrans()->asRiseFall()->index();
 	float in_slew = tgt_slews_[in_rf->index()];
 	ArcDelay gate_delay;
 	Slew drvr_slew;
@@ -2165,11 +2178,11 @@ Resizer::gateDelay(LibertyPort *out_port,
 				   nullptr, 0.0, pvt_, dcalc_ap_,
 				   gate_delay,
 				   drvr_slew);
-	max_delay = max(max_delay, gate_delay);
+	max_delay[out_rf_index] = max(max_delay[out_rf_index], gate_delay);
       }
     }
   }
-  return max_delay;
+  return max(max_delay[RiseFall::riseIndex()], max_delay[RiseFall::fallIndex()]);
 }
 
 double
