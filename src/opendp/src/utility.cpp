@@ -335,11 +335,16 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
             }
             // check group regions
             if(cell->inGroup()) {
-              if(grid_[k][l].group_ != cell->group_)
+              if(grid_[k][l].group_ != cell->group_) {
                 available = false;
+		break;
+	      }
             }
             else {
-              if(grid_[k][l].group_ != nullptr) available = false;
+              if(grid_[k][l].group_ != nullptr) {
+		available = false;
+		break;
+	      }
             }
           }
           if(!available) break;
@@ -353,6 +358,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
     }
   }
   else {
+    // magic number alert
     for(int i = 0; i < 10; i++) {
       // check all grids are empty
       bool available = true;
@@ -368,11 +374,16 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
             }
             // check group regions
             if(cell->inGroup()) {
-              if(grid_[k][l].group_ != cell->group_)
+              if(grid_[k][l].group_ != cell->group_) {
                 available = false;
+		break;
+	      }
             }
             else {
-              if(grid_[k][l].group_ != nullptr) available = false;
+              if(grid_[k][l].group_ != nullptr) {
+		available = false;
+		break;
+	      }
             }
           }
           if(!available) break;
