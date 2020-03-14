@@ -631,27 +631,25 @@ int Opendp::dist_benefit(Cell* cell, int x, int y) {
 }
 
 bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
-  if(cell1 == cell2)
-    return false;
-  else if(cell1->db_inst_->getMaster() != cell2->db_inst_->getMaster())
-    return false;
-  else if(isFixed(cell1) || isFixed(cell2))
-    return false;
+  if(cell1 != cell2
+     && cell1->db_inst_->getMaster() == cell2->db_inst_->getMaster()
+     && !isFixed(cell1)
+     && !isFixed(cell2)) {
+    int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +
+      dist_benefit(cell2, cell1->x_, cell1->y_);
 
-  int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +
-                dist_benefit(cell2, cell1->x_, cell1->y_);
+    if(benefit < 0) {
+      int grid_x1 = gridPaddedX(cell2);
+      int grid_y1 = gridY(cell2);
+      int grid_x2 = gridPaddedX(cell1);
+      int grid_y2 = gridY(cell1);
 
-  if(benefit < 0) {
-    int grid_x1 = gridPaddedX(cell2);
-    int grid_y1 = gridY(cell2);
-    int grid_x2 = gridPaddedX(cell1);
-    int grid_y2 = gridY(cell1);
-
-    erase_pixel(cell1);
-    erase_pixel(cell2);
-    paint_pixel(cell1, grid_x1, grid_y1);
-    paint_pixel(cell2, grid_x2, grid_y2);
-    return true;
+      erase_pixel(cell1);
+      erase_pixel(cell2);
+      paint_pixel(cell1, grid_x1, grid_y1);
+      paint_pixel(cell2, grid_x2, grid_y2);
+      return true;
+    }
   }
   return false;
 }
