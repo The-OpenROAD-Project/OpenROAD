@@ -15,4 +15,4 @@ Notice 0: Finished DEF file: ./results/hi_fanout.def
  VSS 0.00
  VDD 0.00
 Found 1 max capacitance violations.
-Inserted 11 buffers in 1 nets.
+Inserted 6 buffers in 1 nets.

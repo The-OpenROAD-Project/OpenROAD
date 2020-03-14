@@ -26,7 +26,7 @@ r1/Q                                    1.50    1.77   -0.27 (VIOLATED)
 r2/Q                                    1.50    1.77   -0.27 (VIOLATED)
 
 Found 5 max slew violations.
-Inserted 4 buffers in 4 nets.
+Inserted 4 buffers in 5 nets.
 max_transition
 
 Pin                                    Limit   Trans   Slack
