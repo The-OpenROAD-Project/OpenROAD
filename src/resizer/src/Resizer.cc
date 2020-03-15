@@ -1588,26 +1588,28 @@ Resizer::bufferLoads(Pin *drvr_pin,
   buffer_cell->bufferPorts(buffer_in, buffer_out);
   for (int i = 0; i < buffer_count; i++) {
     PinSeq &loads = grouped_loads[i];
-    adsPoint center = findCenter(loads);
+    if (loads.size()) {
+      adsPoint center = findCenter(loads);
 
-    string load_net_name = makeUniqueNetName();
-    Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
-    string inst_name = makeUniqueBufferName();
-    Instance *buffer = db_network_->makeInstance(buffer_cell,
-						 inst_name.c_str(),
-						 top_inst);
-    setLocation(buffer, center);
-    inserted_buffer_count_++;
-    design_area_ += area(db_network_->cell(buffer_cell));
+      string load_net_name = makeUniqueNetName();
+      Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
+      string inst_name = makeUniqueBufferName();
+      Instance *buffer = db_network_->makeInstance(buffer_cell,
+						   inst_name.c_str(),
+						   top_inst);
+      setLocation(buffer, center);
+      inserted_buffer_count_++;
+      design_area_ += area(db_network_->cell(buffer_cell));
 
-    sta_->connectPin(buffer, buffer_in, net);
-    sta_->connectPin(buffer, buffer_out, load_net);
+      sta_->connectPin(buffer, buffer_in, net);
+      sta_->connectPin(buffer, buffer_out, load_net);
 
-    for (Pin *load : loads) {
-      Instance *load_inst = network_->instance(load);
-      Port *load_port = network_->port(load);
-      sta_->disconnectPin(load);
-      sta_->connectPin(load_inst, load_port, load_net);
+      for (Pin *load : loads) {
+	Instance *load_inst = network_->instance(load);
+	Port *load_port = network_->port(load);
+	sta_->disconnectPin(load);
+	sta_->connectPin(load_inst, load_port, load_net);
+      }
     }
   }
 }
