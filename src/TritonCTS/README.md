@@ -62,8 +62,8 @@ read_sdc "mysdc.sdc"
 
 report_checks
 
-clock_tree_synthesis -lut_txt "lut.txt" \
-                     -sol_lit "sol_list.txt" \
+clock_tree_synthesis -lut_file "lut.txt" \
+                     -sol_list "sol_list.txt" \
                      -root_buf "BUF_X4" \
                      -wire_unit 20 \
                      -clk_nets "clk" 
