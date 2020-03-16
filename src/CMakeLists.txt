@@ -78,6 +78,7 @@ set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
 set_property(SOURCE ${OPENDB_SWIG_FILE}
   PROPERTY CPLUSPLUS ON
 )
+
 # Ubuntu 18.04 cmake version 3.10.2 does not support the
 # COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
 # them into SWIG_FLAGS for the time being.
@@ -88,6 +89,11 @@ set_property(SOURCE ${OPENDB_SWIG_FILE}
   ${OPENDB_SWIG_WARNINGS}
   -I${OPENDB_HOME}/include/opendb
   -I${OPENDB_HOME}/src/swig/tcl
+)
+
+set_property(SOURCE ${OPENDB_SWIG_FILE}
+  PROPERTY DEPENDS
+  Exception.i
 )
 
 swig_add_library(opendb_swig
