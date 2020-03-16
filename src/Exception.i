@@ -21,13 +21,14 @@
 
 %exception {
   try { $function }
-  // This catches ord::Error, sta::StaException and std errors.
-  catch (std::exception &excp) {
-    Tcl_AppendResult(interp, "Error: ", excp.what(), NULL);
-    return TCL_ERROR;
-  }
   catch (std::bad_alloc &) {
     fprintf(stderr, "Error: out of memory.");
     exit(0);
+  }
+  // This catches ord::Error, sta::StaException and std errors.
+  catch (std::exception &excp) {
+    char *msg = sta::stringPrint("Error: %s", excp.what());
+    Tcl_SetResult(interp, msg, nullptr);
+    return TCL_ERROR;
   }
 }
