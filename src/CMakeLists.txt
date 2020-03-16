@@ -104,7 +104,6 @@ swig_add_library(opendb_swig
 
 target_include_directories(opendb_swig
   PRIVATE
-  ${OPENSTA_HOME}/util
   ${Boost_INCLUDE_DIRS}
   ${TCL_INCLUDE_PATH}
 )

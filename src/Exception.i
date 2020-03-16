@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "StringUtil.hh"
+#include <string>
 #include "openroad/Error.hh"
 
 %}
@@ -28,8 +28,10 @@
   }
   // This catches ord::Error, sta::Exception and std errors.
   catch (std::exception &excp) {
-    char *msg = sta::stringPrint("Error: %s", excp.what());
-    Tcl_SetResult(interp, msg, nullptr);
+    std::string msg = "Error: ";
+    msg += excp.what();
+    Tcl_SetResult(interp, const_cast<char*>(msg.c_str()),
+		  TCL_VOLATILE);
     return TCL_ERROR;
   }
 }
