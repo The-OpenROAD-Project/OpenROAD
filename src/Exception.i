@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "StringUtil.hh"
 #include "openroad/Error.hh"
 
 %}
@@ -25,7 +26,7 @@
     fprintf(stderr, "Error: out of memory.");
     exit(0);
   }
-  // This catches ord::Error, sta::StaException and std errors.
+  // This catches ord::Error, sta::Exception and std errors.
   catch (std::exception &excp) {
     char *msg = sta::stringPrint("Error: %s", excp.what());
     Tcl_SetResult(interp, msg, nullptr);
