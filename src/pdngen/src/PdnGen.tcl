@@ -74,7 +74,7 @@ variable site_width
 variable site_name
 variable row_height
 variable metal_layers {}
-variable metal_layers_dir {}
+variable layers {}
 variable blockages {} 
 variable instances {}
 variable default_template_name {}
@@ -130,18 +130,16 @@ proc lmap {args} {
 }
 
 proc get_dir {layer_name} {
-  variable metal_layers 
-  variable metal_layers_dir 
+  variable layers 
+
   if {[regexp {.*_PIN_(hor|ver)} $layer_name - dir]} {
     return $dir
   }
   
-  set idx [lsearch -exact $metal_layers $layer_name]
-  if {[lindex $metal_layers_dir $idx] == "HORIZONTAL"} {
-    return "hor"
-  } else {
-    return "ver"
+  if {![dict exists $layers $layer_name direction]} {
+    critical 33 "Unknown direction for layer $layer_name"
   }
+  return [dict get $layers $layer_name direction]
 }
 
 proc get_rails_layers {} {
@@ -617,12 +615,6 @@ proc set_layer_info {layer_info} {
   set layers $layer_info
 }
 
-proc get_layer_info {} {
-  variable layers 
-  
-  return $layers
-}
-
 proc read_widthtable {layer_name} {
   variable tech
   variable def_units
@@ -733,7 +725,7 @@ proc determine_num_via_columns {via_info constraints} {
   variable xcut_pitch
   variable xcut_spacing
   variable def_units
-  
+
   # What are the maximum number of columns that we can fit in this space?
   set i 1
   if {$lower_dir == "hor"} {
@@ -807,7 +799,7 @@ proc determine_num_via_rows {via_info constraints} {
   variable min_upper_enclosure
   variable max_upper_enclosure
   variable def_units
-
+  
   # What are the maximum number of rows that we can fit in this space?
   set i 1
   if {$lower_dir == "hor"} {
@@ -1291,14 +1283,55 @@ proc get_via {lower width height constraints} {
   return $rule_name
 }
 
-proc instantiate_via {physical_via_name x y} {
+proc instantiate_via {physical_via_name x y constraints} {
   variable physical_viarules
+  variable block
+  variable layers
   
   set via_insts {}
+
   foreach via [dict get $physical_viarules $physical_via_name] {
-    dict set via x [expr $x + [dict get $via origin_x]]
-    dict set via y [expr $y + [dict get $via origin_y]]
-    # debug "via $via"
+    # debug "via x $x y $y $via"
+    set x_location [expr $x + [dict get $via origin_x]]
+    set y_location [expr $y + [dict get $via origin_y]]
+
+    set lower_layer_name [lindex [dict get $via layers] 0]
+    set upper_layer_name [lindex [dict get $via layers] 2]
+
+    if {[dict exists $constraints ongrid]} {
+      if {[lsearch -exact [dict get $constraints ongrid] $lower_layer_name] > -1} {
+        if {[get_dir $lower_layer_name] == "hor"} {
+          set y_pitch [dict get $layers $lower_layer_name pitch]
+          set y_offset [dict get $layers $lower_layer_name offsetY]
+
+          set y_location [expr ($y - $y_offset + $y_pitch / 2) / $y_pitch * $y_pitch + $y_offset + [dict get $via origin_y]]
+        } else {
+          set x_pitch [dict get $layers $lower_layer_name pitch]
+          set x_offset [dict get $layers $lower_layer_name offsetX]
+          
+          set x_location [expr ($x - $x_offset + $x_pitch / 2) / $x_pitch * $x_pitch + $x_offset + [dict get $via origin_x]]
+        }
+      }
+      if {[lsearch -exact [dict get $constraints ongrid] $upper_layer_name] > -1} {
+        if {[get_dir $lower_layer_name] == "hor"} {
+          set x_pitch [dict get $layers $upper_layer_name pitch]
+          set x_offset [dict get $layers $upper_layer_name offsetX]
+          
+          set x_location [expr ($x - $x_offset + $x_pitch / 2) / $x_pitch * $x_pitch + $x_offset + [dict get $via origin_x]]
+        } else {
+          set y_pitch [dict get $layers $upper_layer_name pitch]
+          set y_offset [dict get $layers $upper_layer_name offsetY]
+
+          set y_location [expr ($y - $y_offset + $y_pitch / 2) / $y_pitch * $y_pitch + $y_offset + [dict get $via origin_y]]
+        }
+      }
+    }
+    # debug "x: $x -> $x_location"
+    # debug "y: $y -> $y_location"
+
+    dict set via x $x_location
+    dict set via y $y_location
+    
     lappend via_insts $via
   }
   return $via_insts
@@ -1338,7 +1371,7 @@ proc generate_vias {layer1 layer2 intersections constraints} {
     dict set constraints stack_top $layer2_name
     foreach lay $connection_layers {
       set via_name [get_via $lay $width $height $constraints]
-      foreach via [instantiate_via $via_name $x $y] {
+      foreach via [instantiate_via $via_name $x $y $constraints] {
         lappend vias $via
       }
     }
@@ -1367,7 +1400,6 @@ proc generate_via_stacks {l1 l2 tag constraints} {
   variable logical_viarules
   variable stripe_locs
   variable def_units
-  variable metal_layers
   variable grid_data
   
   set area [dict get $grid_data area]
@@ -2629,7 +2661,8 @@ proc print_spacing_table {layer_name} {
 
 proc get_twowidths_table {table_type} {
   variable metal_layers
-
+  set twowidths_table {}
+  
   foreach layer_name $metal_layers {
     set spacing_table [get_spacingtables $layer_name]
     set prls {}
@@ -2689,8 +2722,12 @@ proc get_preferred_direction_spacing {layer_name width prl} {
 
   # debug "$layer_name $width $prl"
   # debug "twowidths_table $twowidths_table"
-  set width_key [select_from_table [dict get $twowidths_table $layer_name] $width]
-  set prl_key   [select_from_table [dict get $twowidths_table $layer_name $width_key] $prl]
+  if {$twowidths_table == {}} {
+    return [[find_layer $layer_name] getSpacing]
+  } else {
+    set width_key [select_from_table [dict get $twowidths_table $layer_name] $width]
+    set prl_key   [select_from_table [dict get $twowidths_table $layer_name $width_key] $prl]
+  }
   
   return [dict get $twowidths_table $layer_name $width_key $prl_key]
 }
@@ -2713,7 +2750,7 @@ proc create_obstructions {layer_name polygons} {
   set layer [find_layer $layer_name]
   set min_spacing [get_preferred_direction_spacing $layer_name 0 0]
 
-  # debug "Num polygons [llength [odb::odb_getPolygons $stripe_locs($layer_name,$tag)]]"
+  # debug "Num polygons [llength $polygons]"
 
   foreach polygon $polygons {
     set points [::odb::odb_getPoints $polygon]
@@ -2744,17 +2781,19 @@ proc create_obstructions {layer_name polygons} {
   }
 }
 
-proc updateShapeSet {shape_set x y rect} {
-  set minX [expr $x + [lindex $rect 0]]
-  set minY [expr $y + [lindex $rect 1]]
-  set maxX [expr $x + [lindex $rect 2]]
-  set maxY [expr $y + [lindex $rect 3]]
-
-  if {$shape_set == {}} {
-    return [odb::odb_newSetFromRect $minX $minY $maxX $maxY]
-  } else {
-    return [odb::odb_orSet $shape_set [odb::odb_newSetFromRect $minX $minY $maxX $maxY]]
+proc combine {lside rside} {
+  # debug "l [llength $lside] r [llength $rside]"
+  if {[llength $lside] > 1} {
+    set lside [combine [lrange $lside 0 [expr [llength $lside] / 2 - 1]] [lrange $lside [expr [llength $lside] / 2] end]]
   }
+  if {[llength $rside] > 1} {
+    set rside [combine [lrange $rside 0 [expr [llength $rside] / 2 - 1]] [lrange $rside [expr [llength $rside] / 2] end]]
+  }
+  return [odb::odb_orSet $lside $rside]
+}
+
+proc shapes_to_polygonSet {shapes} {
+  return [combine [lrange $shapes 0 [expr [llength $shapes] / 2 - 1]] [lrange $shapes [expr [llength $shapes] / 2] end]]
 }
 
 proc generate_obstructions {layer_name} {
@@ -2775,7 +2814,7 @@ proc generate_obstructions {layer_name} {
       set block_shapes [odb::odb_orSet $block_shapes $stripe_locs($layer_name,$tag)]
     }
   }
-  
+  set via_shapes 0
   variable vias
   # debug "vias - [llength $vias]"
   foreach via $vias {
@@ -2790,18 +2829,20 @@ proc generate_obstructions {layer_name} {
       set upper_layer_name [lindex [dict get $via_inst layers] 2]
 
       if {$lower_layer_name == $layer_name && [dict exists $via_inst lower_rect]} {        
-        set block_shapes [updateShapeSet $block_shapes $x $y [dict get $via_inst lower_rect]]
+        lappend block_shapes [odb::odb_newSetFromRect {*}[transform_box {*}[dict get $via_inst lower_rect] [list $x $y] "R0"]]
         incr via_shapes
       } elseif {$upper_layer_name == $layer_name && [dict exists $via_inst upper_rect]} {
-        set block_shapes [updateShapeSet $block_shapes $x $y [dict get $via_inst upper_rect]]
+        lappend block_shapes [odb::odb_newSetFromRect {*}[transform_box {*}[dict get $via_inst upper_rect] [list $x $y] "R0"]]
         incr via_shapes
       }
     }
   }
   # debug "Via shapes $layer_name $via_shapes"
   if {$block_shapes != {}} {
-    create_obstructions $layer_name [odb::odb_getPolygons $block_shapes]
+  # debug "create_obstructions [llength $block_shapes]"
+    create_obstructions $layer_name [odb::odb_getPolygons [shapes_to_polygonSet $block_shapes]]
   }
+  # debug "end"
 }
 
 proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} {
@@ -2977,6 +3018,7 @@ proc add_grid {} {
       generate_obstructions $layer_name
     }
   }
+  # debug "end"
 }
 
 proc select_instance_specification {instance} {
@@ -3052,18 +3094,31 @@ proc get_instance_specification {instance} {
 proc init_metal_layers {} {
   variable tech
   variable metal_layers
-  variable metal_layers_dir
-
-  set metal_layers {}        
-  set metal_layers_dir {}
+  variable layers
+  variable block
   
+  set metal_layers {}        
+
   foreach layer [$tech getLayers] {
     if {[$layer getType] == "ROUTING"} {
       set_prop_lines $layer LEF58_TYPE
       # Layers that have LEF58_TYPE are not normal ROUTING layers, so should not be considered
       if {![empty_propline]} {continue}
-      lappend metal_layers [$layer getName]
-      lappend metal_layers_dir [$layer getDirection]
+
+      set layer_name [$layer getName]
+      lappend metal_layers $layer_name
+      
+      if {[$layer getDirection] == "HORIZONTAL"} {
+        dict set layers $layer_name direction "hor"
+      } else {
+        dict set layers $layer_name direction "ver"
+      }
+
+      dict set layers $layer_name pitch [$layer getPitch]
+
+      set tracks [$block findTrackGrid $layer]
+      dict set layers $layer_name offsetX [lindex [$tracks getGridX] 0]
+      dict set layers $layer_name offsetY [lindex [$tracks getGridY] 0]
     }
   }
 }
@@ -3400,8 +3455,6 @@ proc core_area_boundary {} {
 }
 
 proc get_instance_blockages {instances} {
-  variable metal_layers
-
   set blockages {}
   
   foreach inst $instances {
