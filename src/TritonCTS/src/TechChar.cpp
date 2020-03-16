@@ -511,15 +511,36 @@ void TechChar::initCharacterization() {
         //Gets the chip, openSta and networks.
         ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
         _dbNetworkChar = openRoad->getDbNetwork();
+        if (_dbNetworkChar == nullptr){
+                std::cout << "Network not found! Check your lef/def/verilog file.\n";
+                std::exit(1);
+        }
         _db = odb::dbDatabase::getDatabase(_options->getDbId());
+        if (_db == nullptr){
+                std::cout << "Database not found! Check your lef/def/verilog file.\n";
+                std::exit(1);
+        }
         odb::dbChip* chip  = _db->getChip();
+        if (chip == nullptr){
+                std::cout << "Chip not found! Check your lef/def/verilog file.\n";
+                std::exit(1);
+        }
         odb::dbBlock* block = chip->getBlock();
+        if (block == nullptr){
+                std::cout << "Block not found! Check your lef/def/verilog file.\n";
+                std::exit(1);
+        }
         _openSta = openRoad->getSta();
         sta::Network* networkChar = _openSta->network();
+        if (networkChar == nullptr){
+                std::cout << "Network not found! Check your lef/def/verilog file.\n";
+                std::exit(1);
+        }
+        float dbUnitsPerMicron = static_cast<float> (block->getDbUnitsPerMicron());
 
         //Change resPerSqr and capPerSqr to DBU units.
-        double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0,-12))/2000;
-        double newResPerSqr = (_options->getResPerSqr())/2000;
+        double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0,-12))/dbUnitsPerMicron;
+        double newResPerSqr = (_options->getResPerSqr())/dbUnitsPerMicron;
         _options->setCapPerSqr(newCapPerSqr); // picofarad/micron to farad/DBU
         _options->setResPerSqr(newResPerSqr); // ohm/micron to ohm/DBU
 
@@ -533,6 +554,10 @@ void TechChar::initCharacterization() {
 
         //Gets the buffer masters and its in/out pins.
         std::vector<std::string> masterVector = _options->getBufferList();
+        if (masterVector.size() < 1){
+                std::cout << "Buffer not found! Check your -buf_list input.\n";
+                std::exit(1);
+        }
         odb::dbMaster* testBuf = nullptr;
         for (std::string masterString : masterVector) {
                 testBuf = _db->findMaster(masterString.c_str());
@@ -587,7 +612,6 @@ void TechChar::initCharacterization() {
                 std::exit(1);
         }
 
-        float dbUnitsPerMicron = static_cast<float> (block->getDbUnitsPerMicron());
         setLenghthUnit(static_cast<unsigned> ( ((_charBuf->getHeight() * 10)/2) / dbUnitsPerMicron));
 
         //Gets the max slew and max cap if they weren't added as parameters.
