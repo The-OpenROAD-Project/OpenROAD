@@ -303,8 +303,8 @@ Resizer::bufferInput(Pin *top_pin,
     NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
     while (pin_iter->hasNext()) {
       Pin *pin = pin_iter->next();
+      // Leave input port pin connected to input_net.
       if (pin != top_pin) {
-	// Leave input port pin connected to input_net.
 	sta_->disconnectPin(pin);
 	Port *pin_port = db_network_->port(pin);
 	sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
@@ -1086,10 +1086,12 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
     printf("Found %d max capacitance violations.\n", max_cap_violation_count);
   if (max_slew_violation_count > 0)
     printf("Found %d max slew violations.\n", max_slew_violation_count);
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
     printf("Inserted %d buffers in %d nets.\n",
 	   inserted_buffer_count_,
 	   repaired_net_count);
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
 void
@@ -1578,6 +1580,8 @@ Resizer::bufferLoads(Pin *drvr_pin,
 		     int max_fanout,
 		     LibertyCell *buffer_cell)
 {
+  debugPrint1(debug_, "buffer_loads", 2, "driver %s\n",
+	      sdc_network_->pathName(drvr_pin));
   GroupedPins grouped_loads;
   groupLoadsSteiner(drvr_pin, buffer_count, max_fanout, grouped_loads);
   //reportGroupedLoads(grouped_loads);
