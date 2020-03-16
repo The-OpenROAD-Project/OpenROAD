@@ -395,10 +395,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
   return false;
 }
 
-bool Opendp::diamondSearch(Cell* cell, int x, int y,
-			   // Return value
-			   Pixel *&pixel) {
-  pixel = nullptr;
+Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   int grid_x = gridX(x);
   int grid_y = gridY(y);
 
@@ -451,16 +448,14 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
   if(binSearch(grid_x, cell, min(x_end, max(x_start, grid_x)),
 	       max(y_start, min(y_end, grid_y)),
 	       avail_x, avail_y)) {
-    pixel = &grid_[avail_y][avail_x];
-    return true;
+    return &grid_[avail_y][avail_x];
   }
 
   // magic number alert
   double height_factor = (design_util_ > 0.6 || fixed_inst_count_ > 0) ? 2 : .5;
   for(int i = 1; i < diamond_search_height_ * height_factor; i++) {
-    vector< Pixel* > avail;
-    avail.reserve(i * 4);
-
+    Pixel *pixel = nullptr;
+    int best_dist = 0;
     // right side
     for(int j = 1; j < i * 2; j++) {
       int x_offset = -((j + 1) / 2);
@@ -471,8 +466,14 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
 		   min(x_end, max(x_start, grid_x + x_offset * 10)),
 		   min(y_end, max(y_start, grid_y + y_offset)),
 		   avail_x, avail_y)) {
-        pixel = &grid_[avail_y][avail_x];
-        avail.push_back(pixel);
+        Pixel *avail = &grid_[avail_y][avail_x];
+	int avail_dist = abs(x - avail->grid_x_ * site_width_) +
+	  abs(y - avail->grid_y_ * row_height_);
+        if (pixel == nullptr
+	    || avail_dist < best_dist) {
+	  pixel = avail;
+	  best_dist = avail_dist;
+	}
       }
     }
 
@@ -486,28 +487,20 @@ bool Opendp::diamondSearch(Cell* cell, int x, int y,
 		   min(x_end, max(x_start, (grid_x + x_offset * 10))),
 		   min(y_end, max(y_start, (grid_y + y_offset))),
 		   avail_x, avail_y)) {
-        pixel = &grid_[avail_y][avail_x];
-        avail.push_back(pixel);
+        Pixel *avail = &grid_[avail_y][avail_x];
+	int avail_dist = abs(x - avail->grid_x_ * site_width_) +
+	  abs(y - avail->grid_y_ * row_height_);
+        if (pixel == nullptr
+	    || avail_dist < best_dist) {
+	  pixel = avail;
+	  best_dist = avail_dist;
+	}
       }
     }
-
-    // check from vector
-    int dist = numeric_limits<int>::max();
-    int best = -1;
-    for(int j = 0; j < avail.size(); j++) {
-      int temp_dist = abs(x - avail[j]->grid_x_ * site_width_) +
-                      abs(y - avail[j]->grid_y_ * row_height_);
-      if(temp_dist < dist) {
-        dist = temp_dist;
-        best = j;
-      }
-    }
-    if(best != -1) {
-      pixel = avail[best];
-      return true;
-    }
+    if (pixel)
+      return pixel;
   }
-  return false;
+  return nullptr;
 }
 
 bool Opendp::shift_move(Cell* cell) {
@@ -556,11 +549,11 @@ bool Opendp::map_move(Cell* cell) {
 }
 
 bool Opendp::map_move(Cell* cell, int x, int y) {
-  Pixel* pixel;
-  if(diamondSearch(cell, x, y, pixel)) {
-    Pixel* near_pixel;
-    if(diamondSearch(cell, pixel->grid_x_ * site_width_, pixel->grid_y_ * row_height_,
-		     near_pixel)) {
+  Pixel* pixel = diamondSearch(cell, x, y);
+  if(pixel) {
+    Pixel *near_pixel = diamondSearch(cell, pixel->grid_x_ * site_width_,
+				      pixel->grid_y_ * row_height_);
+    if(near_pixel) {
       paint_pixel(cell, near_pixel->grid_x_, near_pixel->grid_y_);
     }
     else {
@@ -647,8 +640,8 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
 bool Opendp::refine_move(Cell* cell) {
   int init_x, init_y;
   initLocation(cell, init_x, init_y);
-  Pixel* pixel;
-  if(diamondSearch(cell, init_x, init_y, pixel)) {
+  Pixel* pixel = diamondSearch(cell, init_x, init_y);
+  if(pixel) {
     double new_dist = abs(init_x - pixel->grid_x_ * site_width_)
       + abs(init_y - pixel->grid_y_ * row_height_);
     if(max_displacement_constraint_

@@ -181,9 +181,7 @@ class Opendp {
 		 // Return values
 		 int &avail_x,
 		 int &avail_y);
-  bool diamondSearch(Cell* cell, int x, int y,
-		     // Return value
-		     Pixel *&pixel);
+  Pixel *diamondSearch(Cell* cell, int x, int y);
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
