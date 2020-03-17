@@ -710,6 +710,11 @@ proc tapcell { args } {
         for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
             set master [$db findMaster $tapcell_master]
             set inst_name "PHY_${cnt}"
+	    set tap_width [$master getWidth]
+
+	    if { [[expr $x + $tap_width] >= [expr $urx - $endcap_cpp*$site_x]]  } {
+	 	continue
+	    }
 
             if { [string match [$master getConstName] $tapcell_master] } {
                 if {$add_boundary_cell == true} {
