@@ -21,8 +21,9 @@ struct Tcl_Interp;
 
 namespace odb {
 class dbDatabase;
-class adsRect;
 class dbBlock;
+class adsPoint;
+class adsRect;
 }
 
 namespace sta {
@@ -149,5 +150,10 @@ private:
 // Return the bounding box of the db rows.
 odb::adsRect
 getCore(odb::dbBlock *block);
+
+// Return the point inside rect that is closest to pt.
+odb::adsPoint
+closestPtInRect(odb::adsRect rect,
+		odb::adsPoint pt);
 
 } // namespace

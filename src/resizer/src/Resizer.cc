@@ -56,6 +56,7 @@ using std::string;
 using std::to_string;
 
 using ord::warn;
+using ord::closestPtInRect;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
@@ -313,15 +314,6 @@ Resizer::bufferInput(Pin *top_pin,
     sta_->connectPin(buffer, input, input_net);
     sta_->connectPin(buffer, output, buffer_out);
   }
-}
-
-// Return the point inside rect that is closest to pt.
-adsPoint
-closestPtInRect(adsRect rect,
-		adsPoint pt)
-{
-  return adsPoint(min(max(pt.getX(), rect.xMin()), rect.xMax()),
-		  min(max(pt.getY(), rect.yMin()), rect.yMax()));
 }
 
 void

@@ -44,6 +44,7 @@
 #include <cmath>
 #include <map>
 #include "openroad/Error.hh"
+#include "openroad/OpenRoad.hh"  // closestPtInRect
 #include "opendp/Opendp.h"
 
 namespace opendp {
