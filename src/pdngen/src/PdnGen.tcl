@@ -149,7 +149,7 @@ proc debug {message} {
   if {[dict exists $state line]} {
     set str "$str[dict get $state line]"
   }
-  show_message DEBUG "$str: $message"
+  puts [set_message DEBUG "$str: $message"]
 }
 
 proc information {id message} {
@@ -1055,6 +1055,22 @@ proc via_generate_rule {rule_name rows columns constraints} {
 }
 
 proc via_generate_array_rule {rule_name rows columns} {
+  variable via_info
+  variable xcut_pitch
+  variable ycut_pitch
+  variable xcut_spacing
+  variable ycut_spacing
+  variable cut_height
+  variable cut_width
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+
   # We need array vias -
   # if the min(rows,columns) > ARRAYCUTS
   #   determine which direction gives best number of CUTs wide using min(ARRAYCUTS)
@@ -1062,8 +1078,16 @@ proc via_generate_array_rule {rule_name rows columns} {
   #   Add vias to the rule with appropriate origin setting
   # else
   #   add a single via with min(rows,columns) cuts - hor/ver as required
+
+  
   set spacing_rule [get_arrayspacing_rule [dict get $via_info cut layer]]
   set array_size [expr min($rows, $columns)]
+
+  set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+  set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+
   if {$array_size > [lindex [dict keys [dict get $spacing_rule arraycuts]] end]} {
     # debug "Multi-viaArrayspacing rule"
     set use_array_size [lindex [dict keys [dict get $spacing_rule arraycuts]] 0]
@@ -1076,11 +1100,10 @@ proc via_generate_array_rule {rule_name rows columns} {
     set array_spacing [expr max($xcut_spacing,$ycut_spacing,[dict get $spacing_rule arraycuts $use_array_size spacing])]
 
     set rule [list \
-      rule [lindex [select_via_info $lower] 0] \
+      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
       cutsize [dict get $via_info cut size] \
-      layers [list $lower [dict get $via_info cut layer] $upper] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
-      enclosure $via_enclosure \
       origin_x 0 \
       origin_y 0 \
     ]
@@ -1090,9 +1113,22 @@ proc via_generate_array_rule {rule_name rows columns} {
       # Split into num_arrays rows of arrays
       set array_min_size [expr [lindex [dict get $via_info cut size] 0] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
       set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
+      debug "Split into $num_arrays rows of arrays"
+
+      set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
+      set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
+
+      set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+      set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
 
       dict set rule rowcol [list $use_array_size $columns]
       dict set rule name "[dict get $via_info cut layer]_ARRAY_${use_array_size}X${columns}"
+      dict set rule enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ]
 
       set y [expr $array_min_size / 2 - $total_array_size / 2]
       for {set i 0} {$i < $num_arrays} {incr i} {
@@ -1104,9 +1140,22 @@ proc via_generate_array_rule {rule_name rows columns} {
       # Split into num_arrays columns of arrays
       set array_min_size [expr [lindex [dict get $via_info cut size] 1] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
       set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
+      debug "Split into $num_arrays columns of arrays"
+
+      set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
+      set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
+
+      set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+      set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
 
       dict set rule rowcol [list $rows $use_array_size]
       dict set rule name "[dict get $via_info cut layer]_ARRAY_${rows}X${use_array_size}"
+      dict set rule enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ]
 
       set x [expr $array_min_size / 2 - $total_array_size / 2]
       for {set i 0} {$i < $num_arrays} {incr i} {
@@ -1116,22 +1165,30 @@ proc via_generate_array_rule {rule_name rows columns} {
       }
     }
   } else {
-    # debug "Arrayspacing rule"
+    debug "Arrayspacing rule"
+    set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+    set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
+
     set rule [list \
       name $rule_name \
-      rule [lindex [select_via_info $lower] 0] \
+      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
       cutsize [dict get $via_info cut size] \
-      layers [list $lower [dict get $via_info cut layer] $upper] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
       rowcol [list $rows $columns] \
-      enclosure $via_enclosure \
+      enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ] \
       origin_x 0 \
       origin_y 0 \
     ]
     set rule_list [list $rule]
   }
   
-  return $rules_list
+  return $rule_list
 }
 
 proc via_split_cuts_rule {rows columns constraints} {
