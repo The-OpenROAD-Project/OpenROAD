@@ -86,7 +86,7 @@ proc pdngen { args } {
   set config_file $args
 
   if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg]} {
-    if {[regexp {\[PDNGEN\-[0-9]*\]} $error_msg]} {
+    if {[regexp {\[PDNG\-[0-9]*\]} $error_msg]} {
       puts $error_msg
     } else {
       pdngen::critical 9999 "Unexpected error: $error_msg"
@@ -153,19 +153,19 @@ proc debug {message} {
 }
 
 proc information {id message} {
-  puts [set_message INFO [format "\[PDNGEN-%04d\] %s" $id $message]]
+  puts [set_message INFO [format "\[PDNG-%04d\] %s" $id $message]]
 }
 
 proc warning {id message} {
-  puts [set_message WARNING [format "\[PDNGEN-%04d\] %s" $id $message]]
+  puts [set_message WARN [format "\[PDNG-%04d\] %s" $id $message]]
 }
 
 proc err {id message} {
-  error [set_message ERROR [format "\[PDNGEN-%04d\] %s" $id $message]]
+  error [set_message ERROR [format "\[PDNG-%04d\] %s" $id $message]]
 }
 
 proc critical {id message} {
-  error [set_message CRITICAL [format "\[PDNGEN-%04d\] %s" $id $message]]
+  error [set_message CRIT [format "\[PDNG-%04d\] %s" $id $message]]
 }
 
 proc lmap {args} {

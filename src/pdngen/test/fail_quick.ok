@@ -10,9 +10,9 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 482 components and 2074 component-terminals.
 Notice 0:     Created 385 nets and 1110 connections.
 Notice 0: Finished DEF file: fail_quick/floorplan.def
-[INFO] [PDNGEN-0016] Power Delivery Network Generator: Generating PDN
-[INFO] [PDNGEN-0016]   config: fail_quick/PDN.cfg
-[INFO] [PDNGEN-0008] Design Name is gcd
-[INFO] [PDNGEN-0009] Reading technology data
-[CRITICAL] [PDNGEN-0030] Layer specified for std. cell rails 'M1' not in list of layers.
+[INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
+[INFO] [PDNG-0016]   config: fail_quick/PDN.cfg
+[INFO] [PDNG-0008] Design Name is gcd
+[INFO] [PDNG-0009] Reading technology data
+[CRITICAL] [PDNG-0030] Layer specified for std. cell rails 'M1' not in list of layers.
 Error: fail_quick.tcl, 6 Execution stopped
