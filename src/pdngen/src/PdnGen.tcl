@@ -161,7 +161,7 @@ proc warning {id message} {
 }
 
 proc err {id message} {
-  error [set_message ERROR [format "\[PDNG-%04d\] %s" $id $message]]
+  puts [set_message ERROR [format "\[PDNG-%04d\] %s" $id $message]]
 }
 
 proc critical {id message} {
