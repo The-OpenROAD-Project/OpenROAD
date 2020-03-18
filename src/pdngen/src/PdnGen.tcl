@@ -86,11 +86,12 @@ proc pdngen { args } {
   set config_file $args
 
   if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg]} {
-    if {[regexp {\[PDNGEN\]} $error_msg} {
-      error "Execution stopped"
+    if {[regexp {\[PDNGEN\-[0-9]*\]} $error_msg]} {
+      puts $error_msg
     } else {
       pdngen::critical 9999 "Unexpected error: $error_msg"
     }
+    error "Execution stopped"
   }
 }
 
@@ -132,8 +133,8 @@ variable twowidths_table {}
 variable twowidths_table_wrongdirection {}
 
 #This file contains procedures that are used for PDN generation
-proc show_message {level message} {
-  puts "\[$level\] $message"
+proc set_message {level message} {
+  return "\[$level\] $message"
 }
 
 proc debug {message} {
@@ -152,21 +153,19 @@ proc debug {message} {
 }
 
 proc information {id message} {
-  show_message INFO [format "\[PDNGEN-%04d\] %s" $id $message]
+  puts [set_message INFO [format "\[PDNGEN-%04d\] %s" $id $message]]
 }
 
 proc warning {id message} {
-  show_message WARNING [format "\[PDNGEN-%04d\] %s" $id $message]
+  puts [set_message WARNING [format "\[PDNGEN-%04d\] %s" $id $message]]
 }
 
 proc err {id message} {
-  show_message ERROR [format "\[PDNGEN-%04d\] %s" $id $message]
-  error "Execution stopped"
+  error [set_message ERROR [format "\[PDNGEN-%04d\] %s" $id $message]]
 }
 
 proc critical {id message} {
-  show_message CRITICAL [format "\[PDNGEN-%04d\] %s" $id $message]
-  error "Execution stopped"
+  error [set_message CRITICAL [format "\[PDNGEN-%04d\] %s" $id $message]]
 }
 
 proc lmap {args} {
