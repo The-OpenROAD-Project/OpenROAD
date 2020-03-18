@@ -120,6 +120,7 @@ proc list_delete { list delete } {
 record_tests {
 test_gcd
 test_gcd_dual_rails
+fail_quick
 }
 #  gcd_flow1
 
