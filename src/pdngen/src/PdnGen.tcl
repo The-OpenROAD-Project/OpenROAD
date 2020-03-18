@@ -30,6 +30,52 @@
 
 #sta::define_cmd_args "pdngen" {[-verbose] config_file}
 
+# Messages:
+# 
+# Information
+# 2 "No shapes on layer $l1 for $tag"
+# 3 "No shapes on layer $l2 for $tag"
+# 8 "Design Name is $design_name"
+# 9 "Reading technology data"
+# 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
+# 11 "****** INFO ******"
+# 12 "**** END INFO ****"
+# 13 "Inserting stdcell grid - [dict get $specification name]"
+# 14 "Inserting stdcell grid"
+# 15 "Writing to database"
+# 16 "##Power Delivery Network Generator: Generating PDN"
+# 16 "##  config: $config"
+# 32 "Generating blockages for TrionRoute"
+#
+# Warning
+# 1 "run_pdngen is deprecated. Use pdngen."
+# 4 "Unexpected number of points in connection shape ($l1,$l2 $tag [llength $points])"
+# 5 (points list)
+# 6 "Unexpected number of points in shape ($lay $signal_type [llength $points])"
+# 7 (points list)
+# 17 "No stdcell grid specification found - no rails inserted"
+# 18 "No macro grid specifications found - no straps added"
+# 
+# Error
+# 
+# Critical
+# 19 "Cannot find layer $layer_name in loaded technology"
+# 20 "Failed to read CUTCLASS property '$line'"
+# 21 "Failed to read ENCLOSURE property '$line'"
+# 22 "Cant find lower metal layer $layer1"
+# 23 "Cant find upper metal layer $layer2"
+# 24 "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
+# 25 "Unexpected row orientation $orient for row [$row getName]"
+# 26 "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
+# 27 "Illegal orientation $orientation specified"
+# 28 "File $PDN_cfg does not exist, or exists but empty"
+# 29 "Illegal number of elements defined for ::halo \"$::halo\" (1, 2 or 4 allowed)"
+# 30 "Layer specified for std. cell rails '$layer' not in list of layers."
+# 31 "No matching grid specification found for $instance"
+# 33 "Unknown direction for layer $layer_name"
+#
+# 9999 - Unexpected error
+
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
     keys {} flags {-verbose}
@@ -39,10 +85,12 @@ proc pdngen { args } {
   sta::check_argc_eq1 "pdngen" $args
   set config_file $args
 
-  if { [catch { pdngen::apply_pdn $config_file $verbose } error_msg] } {
-    #puts $errorInfo
-    pdngen::critical 0 $error_msg
-    error ""
+  if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg]} {
+    if {[regexp {\[PDNGEN\]} $error_msg} {
+      error "Execution stopped"
+    } else {
+      pdngen::critical 9999 "Unexpected error: $error_msg"
+    }
   }
 }
 
@@ -113,10 +161,12 @@ proc warning {id message} {
 
 proc err {id message} {
   show_message ERROR [format "\[PDNGEN-%04d\] %s" $id $message]
+  error "Execution stopped"
 }
 
 proc critical {id message} {
   show_message CRITICAL [format "\[PDNGEN-%04d\] %s" $id $message]
+  error "Execution stopped"
 }
 
 proc lmap {args} {
@@ -145,10 +195,12 @@ proc get_dir {layer_name} {
 proc get_rails_layers {} {
   variable design_data
   
-  foreach type [dict keys [dict get $design_data grid]] {
-    dict for {name specification} [dict get $design_data grid $type] {
-      if {[dict exists $specification rails]} {
-        return [dict keys [dict get $specification rails]]
+  if {[dict exists $design_data grid]} {
+    foreach type [dict keys [dict get $design_data grid]] {
+      dict for {name specification} [dict get $design_data grid $type] {
+        if {[dict exists $specification rails]} {
+          return [dict keys [dict get $specification rails]]
+        }
       }
     }
   }
@@ -210,7 +262,7 @@ proc find_layer {layer_name} {
   variable tech
 
   if {[set layer [$tech findLayer $layer_name]] == "NULL"} {
-    error "Cannot find layer $layer_name in loaded technology"
+    critical 19 "Cannot find layer $layer_name in loaded technology"
   }
   return $layer
 }
@@ -386,7 +438,7 @@ proc read_cutclass {layer_name} {
   while {![empty_propline]} {
     set line [read_propline]
     if {![regexp {CUTCLASS\s+([^\s]+)\s+WIDTH\s+([^\s]+)\s+LENGTH\s+([^\s]+)} $line - cut_class width length]} {
-      error "Failed to read CUTCLASS property '$line'"
+      critical 20 "Failed to read CUTCLASS property '$line'"
     }
     if {$min_area == -1 || [expr $width * $length] < $min_area} {
       dict set default_cutclass $layer_name $cut_class
@@ -447,7 +499,7 @@ proc read_enclosures {layer_name} {
     set width [expr round($width * $def_units)]
     
     if {![regexp {ENCLOSURE CUTCLASS\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)} $line - cut_class overlap1 overlap2]} {
-      error "Failed to read ENCLOSURE property '$line'"
+      critical 21 "Failed to read ENCLOSURE property '$line'"
     }
     dict set enclosure overlap1 [expr round($overlap1 * $def_units)]
     dict set enclosure overlap2 [expr round($overlap2 * $def_units)]
@@ -1348,15 +1400,15 @@ proc generate_vias {layer1 layer2 intersections constraints} {
   
   set i1 [lsearch -exact $metal_layers $layer1_name]
   set i2 [lsearch -exact $metal_layers $layer2_name]
-  if {$i1 == -1} {error "Cant find layer $layer1"}
-  if {$i2 == -1} {error "Cant find layer $layer2"}
+  if {$i1 == -1} {critical 21 "Cant find lower metal layer $layer1"}
+  if {$i2 == -1} {critical 22 "Cant find upper metal layer $layer2"}
 
   # For each layer between l1 and l2, add vias at the intersection
   # debug "  # Intersections [llength $intersections]"
   set count 0
   foreach intersection $intersections {
     if {![dict exists $logical_viarules [dict get $intersection rule]]} {
-      error "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
+      critical 24 "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
     }
     set logical_rule [dict get $logical_viarules [dict get $intersection rule]]
 
@@ -1483,7 +1535,7 @@ proc generate_lower_metal_followpin_rails {} {
         set vss_y [$box yMax]
       }
       default {
-        error "unexpected row orientation $orient for row [$row getName]"
+        critical 25 "Unexpected row orientation $orient for row [$row getName]"
       }
     }
     foreach lay [get_rails_layers] {
@@ -1537,7 +1589,7 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
       add_stripe $layer $tag $box
     }
   } else {
-    error "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
+    critical 26 "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
   }
 }
 
@@ -2033,11 +2085,11 @@ proc export_opendb_specialnets {} {
   variable design_data
   
   foreach net_name [dict get $design_data power_nets] {
-    export_opendb_specialnet "VDD" "POWER"
+    export_opendb_specialnet $net_name "POWER"
   }
 
   foreach net_name [dict get $design_data ground_nets] {
-    export_opendb_specialnet "VSS" "GROUND"
+    export_opendb_specialnet $net_name "GROUND"
   }
   
 }
@@ -2127,7 +2179,7 @@ proc transform_box {xmin ymin xmax ymax origin orientation} {
     MY    {set new_box [list [expr -1 * $xmax] $ymin [expr -1 * $xmin] $ymax]}
     MXR90 {set new_box [list $ymin $xmin $ymax $xmax]}
     MYR90 {set new_box [list [expr -1 * $ymax] [expr -1 * $xmax] [expr -1 * $ymin] [expr -1 * $xmin]]}
-    default {error "Illegal orientation $orientation specified"}
+    default {critical 27 "Illegal orientation $orientation specified"}
   }
   return [list \
     [expr [lindex $new_box 0] + [lindex $origin 0]] \
@@ -2228,7 +2280,9 @@ proc get_core_area {} {
 proc write_pdn_strategy {} {
   variable design_data
   
-  set_pdn_string_property_value "strategy" [dict get $design_data grid]
+  if {[dict exists $design_data grid]} {
+    set_pdn_string_property_value "strategy" [dict get $design_data grid]
+  }
 }
 
 proc init {{PDN_cfg "PDN.cfg"}} {
@@ -2254,7 +2308,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   
 #    set ::start_time [clock clicks -milliseconds]
   if {![file_exists_non_empty $PDN_cfg]} {
-    error "File $PDN_cfg does not exist, or exists but empty"
+    critical 28 "File $PDN_cfg does not exist, or exists but empty"
   }
 
   set tech [$db getTech]
@@ -2334,7 +2388,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     } elseif {[llength $::halo] == 4} {
       set default_halo $::halo
     } else {
-      error "ERROR: Illegal number of elements defined for ::halo \"$::halo\""
+      critical 29 "Illegal number of elements defined for ::halo \"$::halo\" (1, 2 or 4 allowed)"
     }
   } else {
     set default_halo "0 0 0 0"
@@ -2366,8 +2420,10 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   # debug "get_memory_instance_pg_pins"
   get_memory_instance_pg_pins
 
-  set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
-
+  if {[dict exists $design_data grid stdcell]} {
+    set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
+  }
+  
   # debug "Set the core area"
   # Set the core area
   if {[info vars ::core_area_llx] != "" && [info vars ::core_area_lly] != "" && [info vars ::core_area_urx] != "" && [info vars ::core_area_ury] != ""} {
@@ -2385,7 +2441,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
     if {[lsearch -exact $metal_layers $layer] < 0} {
-      error "ERROR: Layer specified for std. cell rails '$layer' not in list of layers."
+      critical 30 "Layer specified for std. cell rails '$layer' not in list of layers."
     }
   }
   # debug "end"
@@ -2849,7 +2905,7 @@ proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} 
   variable block
   
 
-  set layer_pitch [$layer getPitch]
+  set layer_pitch [get_pitch $layer]
   set layer_width [$layer getWidth]
   # debug "Layer - [$layer getName], pitch $layer_pitch, width $layer_width"
   set tracks [$block findTrackGrid $layer]
@@ -3013,6 +3069,7 @@ proc add_grid {} {
   }
 
   if {[dict exists $grid_data obstructions]} {
+    information 32 "Generating blockages for TritonRoute"
     # debug "Obstructions: [dict get $grid_data obstructions]"
     foreach layer_name [dict get $grid_data obstructions] {
       generate_obstructions $layer_name
@@ -3075,7 +3132,7 @@ proc select_instance_specification {instance} {
 
   }
 
-  error "Error: no matching grid specification found for $instance"
+  critical 31 "No matching grid specification found for $instance"
 }
 
 proc get_instance_specification {instance} {
@@ -3089,6 +3146,18 @@ proc get_instance_specification {instance} {
   dict set specification area [dict get $instances $instance macro_boundary]
   
   return $specification
+}
+
+proc get_pitch {layer} {
+  if {[$layer hasXYPitch]} {
+    if {[get_dir [$layer getName]] == "hor"} {
+      return [$layer getPitchY]
+    } else {
+      return [$layer getPitchX]
+    }
+  } else {
+    return [$layer getPitch]
+  }
 }
 
 proc init_metal_layers {} {
@@ -3114,7 +3183,7 @@ proc init_metal_layers {} {
         dict set layers $layer_name direction "ver"
       }
 
-      dict set layers $layer_name pitch [$layer getPitch]
+      dict set layers $layer_name pitch [get_pitch $layer]
 
       set tracks [$block findTrackGrid $layer]
       dict set layers $layer_name offsetX [lindex [$tracks getGridX] 0]
@@ -3315,16 +3384,6 @@ proc write_template_placement {} {
   }
 
   set_pdn_string_property_value "plan_template" $str
-}
-
-proc set_default_template {name} {
-  variable design_data
-  
-  dict set design_data config default_template_name $name
-}
-
-proc get_specification_template {x y} {
-  variable default_grid_data
 }
 
 proc get_extent {polygon_set} {
@@ -3567,13 +3626,28 @@ proc plan_grid {} {
   
   ################################## Main Code #################################
 
+  if {![dict exists $design_data grid stdcell]} {
+    warning 17 "No stdcell grid specification found - no rails inserted"
+  }
+
+  if {![dict exists $design_data grid macro]} {
+    warning 18 "No macro grid specifications found - no straps added"
+  }
+
   information 11 "****** INFO ******"
-  dict for {name specification} [dict get $design_data grid stdcell] {
-    print_strategy stdcell $specification
+
+  if {[dict exists $design_data grid stdcell]} {
+    dict for {name specification} [dict get $design_data grid stdcell] {
+      print_strategy stdcell $specification
+    }
   }
-  dict for {name specification} [dict get $design_data grid macro] {
-    print_strategy macro $specification
+
+  if {[dict exists $design_data grid macro]} {
+    dict for {name specification} [dict get $design_data grid macro] {
+      print_strategy macro $specification
+    }
   }
+
   information 12 "**** END INFO ****"
 
   set specification $default_grid_data
@@ -3619,8 +3693,8 @@ proc apply_pdn {config is_verbose} {
 
   set ::start_time [clock clicks -milliseconds]
   if {$verbose} {
-    information 16 "##Power Delivery Network Generator: Generating PDN"
-    information 16 "##  config: $config"
+    information 16 "Power Delivery Network Generator: Generating PDN"
+    information 16 "  config: $config"
   }
   
   apply $config
