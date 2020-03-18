@@ -448,15 +448,19 @@ void TechChar::writeSol(const std::string& filename) const {
         file.precision(15);
         forEachWireSegment( [&] (unsigned idx, const WireSegment& segment) {
                         file << idx << " ";
-                        for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-                                float wirelengthValue = segment.getBufferLocation(idx) * ((float) (segment.getLength()) * (float) (_options->getWireSegmentUnit()));
-                                file << (unsigned long) (wirelengthValue);
-                                if (segment.isBuffered()){
+                        
+                        if (segment.isBuffered()) {
+                                for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
+                                        float wirelengthValue = segment.getBufferLocation(idx) * ((float) (segment.getLength()) * (float) (_options->getWireSegmentUnit()));
+                                        file << (unsigned long) (wirelengthValue);
                                         file << "," << segment.getBufferMaster(idx);
-                                }      
-                                if (!(idx + 1 >= segment.getNumBuffers())) {
-                                        file << ",";
+                                        if (!(idx + 1 >= segment.getNumBuffers())) {
+                                                file << ",";
+                                        }
                                 }
+                        } else {
+                                float wirelengthValue = (float) (segment.getLength()) * (float) (_options->getWireSegmentUnit());
+                                file << (unsigned long) (wirelengthValue);
                         }
 
                         file << "\n";
@@ -755,6 +759,8 @@ void TechChar::createStaInstance() {
         //Creates the new instance based on the charcterization block.
         if (_openStaChar != nullptr){
                 _openStaChar->clear();
+                delete _openStaChar;
+                _openStaChar = nullptr;
         }
         _openStaChar = sta::makeBlockSta(_charBlock);
         //Sets the current OpenSTA instance as the new one just created.
@@ -1215,6 +1221,8 @@ void TechChar::create() {
         }
         if (_openStaChar != nullptr){
                 _openStaChar->clear();
+                delete _openStaChar;
+                _openStaChar = nullptr;
         }
 }
 
