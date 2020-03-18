@@ -210,16 +210,19 @@ class Opendp {
   void erase_pixel(Cell* cell);
   void paint_pixel(Cell* cell, int grid_x, int grid_y);
 
-  bool row_check(bool verbose);
-  bool site_check(bool verbose);
-  bool power_line_check(bool verbose);
-  bool placed_check(bool verbose);
-  bool overlap_check(bool verbose);
+  bool checkPowerLine(Cell &cell);
+  bool checkInCore(Cell &cell);
+  bool checkOverlap(Cell &cell,
+		    Grid *grid);
+  void reportFailures(vector<Cell*> failures,
+		      const char *msg,
+		      bool verbose);
+
   void rectDist(Cell *cell,
 		adsRect *rect,
 		// Return values.
-		int x_tar,
-		int y_tar);
+		int x,
+		int y);
   int rectDist(Cell *cell,
 	       adsRect *rect);
   power rowTopPower(int row);

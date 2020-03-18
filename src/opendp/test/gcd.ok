@@ -32,9 +32,4 @@ original HPWL              : 6.94e+03
 legalized HPWL             : 7.75e+03
 delta HPWL                 : 12%
 ----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
 No differences found.

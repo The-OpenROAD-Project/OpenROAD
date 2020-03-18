@@ -33,10 +33,7 @@ original HPWL              : 1.77
 legalized HPWL             : 1.77
 delta HPWL                 : 0%
 ----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==> FAIL (1)
-Warning: Cell _277_ with padding is outside the core boundary.
-overlap_check ==> FAIL 
-Warning: placement check failed.
+Warning: Placed check failed (1).
+ _277_
+Warning: Placed in core check failed (1).
+ _277_
