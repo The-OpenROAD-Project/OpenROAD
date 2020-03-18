@@ -21,6 +21,8 @@
 
 namespace sta {
 
+using odb::adsRect;
+
 class RebufferOption;
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
@@ -52,7 +54,6 @@ public:
   // 0.0 - 1.0 (100%) of core size.
   double utilization();
 
-  void init();
   void setDontUse(LibertyCellSeq *dont_use);
   void setMaxUtilization(double max_utilization);
   void resizePreamble(LibertyLibrarySeq *resize_libs);
@@ -96,6 +97,9 @@ public:
   double maxLoadManhattenDistance(Pin *drvr_pin);
 
 protected:
+  void init();
+  void ensureBlock();
+  double findDesignArea();
   void ensureCorner();
   void initCorner(Corner *corner);
   void ensureClkNets();
@@ -130,8 +134,14 @@ protected:
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
-  bool hasMaxCapViolation(const Pin *pin);
-  bool hasMaxSlewViolation(const Pin *pin);
+  void checkMaxCapViolation(const Pin *pin,
+			    // Return values
+			    bool &violation,
+			    float &limit_ratio);
+  void checkMaxSlewViolation(const Pin *pin,
+			     // Return values
+			     bool &violation,
+			     float &limit_ratio);
   void slewLimit(const Pin *pin,
 		 const MinMax *min_max,
 		 // Return values.
@@ -239,6 +249,9 @@ protected:
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;
+  dbBlock *block_;
+  adsRect core_;
+  double design_area_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;
@@ -254,8 +267,6 @@ protected:
   int resize_count_;
   int inserted_buffer_count_;
   int rebuffer_net_count_;
-  double core_area_;
-  double design_area_;
   RebufferOptionSeq rebuffer_options_;
   friend class RebufferOption;
 };

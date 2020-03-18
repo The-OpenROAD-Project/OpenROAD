@@ -33,6 +33,7 @@
 #include "init_fp//MakeInitFloorplan.hh"
 #include "ioPlacer/src/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
+#include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
@@ -40,6 +41,7 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
+#include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #include "pdnsim/MakePDNSim.hh"
 
 namespace sta {
@@ -54,10 +56,14 @@ extern int Opendbtcl_Init(Tcl_Interp *interp);
 
 namespace ord {
 
+using std::min;
+using std::max;
+
 using odb::dbLib;
 using odb::dbDatabase;
 using odb::dbBlock;
 using odb::adsRect;
+using odb::adsPoint;
 
 using sta::evalTclInit;
 using sta::dbSta;
@@ -76,6 +82,7 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deletePsn(psn_);
   odb::dbDatabase::destroy(db_);
 }
 
@@ -115,6 +122,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
+  psn_ = makePsn();
   pdnsim_ = makePDNSim();
 
   // Init components.
@@ -136,6 +144,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
+  initPsn(this);
   initPDNSim(this);
   
   // Import exported commands to global namespace.
@@ -269,6 +278,11 @@ OpenRoad::getCore()
   return ord::getCore(db_->getChip()->getBlock());
 }
 
+////////////////////////////////////////////////////////////////
+
+// Need a header for these functions cherry uses in
+// InitFloorplan, Resizer, OpenDP.
+
 adsRect
 getCore(dbBlock *block)
 {
@@ -288,6 +302,15 @@ getCore(dbBlock *block)
     // Default to die area if there aren't any rows.
     block->getDieArea(core);
   return core;
+}
+
+// Return the point inside rect that is closest to pt.
+adsPoint
+closestPtInRect(adsRect rect,
+		adsPoint pt)
+{
+  return adsPoint(min(max(pt.getX(), rect.xMin()), rect.xMax()),
+		  min(max(pt.getY(), rect.yMin()), rect.yMax()));
 }
 
 } // namespace

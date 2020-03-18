@@ -140,9 +140,9 @@ class Opendp {
   void reportDesignStats();
   double hpwl(bool initial);
   void displacementStats(// Return values.
-			 int &avg_displacement,
-			 int &sum_displacement,
-			 int &max_displacement);
+			 int64_t &avg_displacement,
+			 int64_t &sum_displacement,
+			 int64_t &max_displacement);
   void reportGrid();
 
  private:
@@ -181,9 +181,7 @@ class Opendp {
 		 // Return values
 		 int &avail_x,
 		 int &avail_y);
-  bool diamondSearch(Cell* cell, int x, int y,
-		     // Return value
-		     Pixel *&pixel);
+  Pixel *diamondSearch(Cell* cell, int x, int y);
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
@@ -212,16 +210,19 @@ class Opendp {
   void erase_pixel(Cell* cell);
   void paint_pixel(Cell* cell, int grid_x, int grid_y);
 
-  bool row_check(bool verbose);
-  bool site_check(bool verbose);
-  bool power_line_check(bool verbose);
-  bool placed_check(bool verbose);
-  bool overlap_check(bool verbose);
+  bool checkPowerLine(Cell &cell);
+  bool checkInCore(Cell &cell);
+  bool checkOverlap(Cell &cell,
+		    Grid *grid);
+  void reportFailures(vector<Cell*> failures,
+		      const char *msg,
+		      bool verbose);
+
   void rectDist(Cell *cell,
 		adsRect *rect,
 		// Return values.
-		int x_tar,
-		int y_tar);
+		int x,
+		int y);
   int rectDist(Cell *cell,
 	       adsRect *rect);
   power rowTopPower(int row);
@@ -250,11 +251,17 @@ class Opendp {
   void initLocation(Cell *cell,
 		    int &x,
 		    int &y);
+  void initLocation(dbInst* inst,
+		    // Return values.
+		    int &x,
+		    int &y);
   void initPaddedLoc(Cell *cell,
 		     int &x,
 		     int &y);
   int paddedWidth(Cell *cell);
   bool isPadded(Cell *cell);
+  bool isClassBlock(Cell *cell);
+  bool isClassCore(Cell *cell);
   int disp(Cell *cell);
   int coreGridMaxX();
   int coreGridMaxY();

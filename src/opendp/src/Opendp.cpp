@@ -44,6 +44,7 @@
 #include <cmath>
 #include <map>
 #include "openroad/Error.hh"
+#include "openroad/OpenRoad.hh"  // closestPtInRect
 #include "opendp/Opendp.h"
 
 namespace opendp {
@@ -239,31 +240,28 @@ void Opendp::findDesignStats() {
   fixed_inst_count_ = 0;
   multi_height_inst_count_ = 0;
   movable_area_ = fixed_area_ = 0;
+  max_cell_height_ = 0;
 
   for(Cell &cell : cells_) {
-    int cell_area = cell.area();
+    dbMaster *master = cell.db_inst_->getMaster();
+    int64_t cell_area = cell.area();
     if(isFixed(&cell)) {
       fixed_area_ += cell_area;
       fixed_inst_count_++;
     }
-    else
+    else {
       movable_area_ += cell_area;
-    if(isMultiRow(&cell))
-      multi_height_inst_count_++;
+      if(isMultiRow(&cell))
+	multi_height_inst_count_++;
+
+      int cell_height = gridNearestHeight(&cell);
+      if(cell_height > max_cell_height_)
+	max_cell_height_ = cell_height;
+    }
   }
 
   design_area_ = row_count_ * static_cast< int64_t >(row_site_count_)
     * site_width_ * row_height_;
-
-  max_cell_height_ = 0;
-  for(Cell &cell : cells_) {
-    dbMaster *master = cell.db_inst_->getMaster();
-    if(!isFixed(&cell) && isMultiRow(&cell) &&
-       master->getType() == dbMasterType::CORE) {
-      int cell_height = gridNearestHeight(&cell);
-      if(cell_height > max_cell_height_) max_cell_height_ = cell_height;
-    }
-  }
 
   design_util_ =
       static_cast< double >(movable_area_) / (design_area_ - fixed_area_);
@@ -297,7 +295,7 @@ void Opendp::reportDesignStats() {
 }
 
 void Opendp::reportLegalizationStats() {
-  int avg_displacement, sum_displacement, max_displacement;
+  int64_t avg_displacement, sum_displacement, max_displacement;
   displacementStats(avg_displacement, sum_displacement, max_displacement);
 
   cout << "-------------------- Placement Analysis ------------------------" << endl;
@@ -341,8 +339,17 @@ Opendp::initLocation(Cell *cell,
 		     int &x,
 		     int &y)
 {
+  initLocation(cell->db_inst_, x, y);
+}
+
+void
+Opendp::initLocation(dbInst* inst,
+		     // Return values.
+		     int &x,
+		     int &y)
+{
   int loc_x, loc_y;
-  cell->db_inst_->getLocation(loc_x, loc_y);
+  inst->getLocation(loc_x, loc_y);
   x = loc_x - core_.xMin();
   y = loc_y - core_.yMin();
 }
@@ -354,7 +361,8 @@ Opendp::initPaddedLoc(Cell *cell,
 		      int &y)
 {
   initLocation(cell, x, y);
-  x -= pad_left_ * site_width_;
+  if (isPadded(cell))
+    x -= pad_left_ * site_width_;
 }
 
 int Opendp::disp(Cell *cell) {
@@ -373,11 +381,27 @@ int Opendp::gridEndY() {
 }
 
 int Opendp::paddedWidth(Cell *cell) {
-  return cell->width_ + (pad_left_ + pad_right_) * site_width_;
+  if (isPadded(cell))
+    return cell->width_ + (pad_left_ + pad_right_) * site_width_;
+  else
+    return cell->width_;
 }
 
+// Cells only exist for CLASS BLOCK and CORE_* instances.
+// CORE_* instances are padded
+// BLOCK instances are not padded
 bool Opendp::isPadded(Cell *cell) {
-  return pad_left_  > 0 || pad_right_ > 0;
+  return isClassCore(cell)
+    && (pad_left_  > 0 || pad_right_ > 0);
+}
+
+bool Opendp::isClassBlock(Cell *cell) {
+  return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
+}
+
+// Cells are only created for CLASS BLOCK and CORE instances.
+bool Opendp::isClassCore(Cell *cell) {
+  return !isClassBlock(cell);
 }
 
 int Opendp::gridPaddedWidth(Cell *cell) {
@@ -411,7 +435,10 @@ int Opendp::gridX(Cell *cell) {
 }
 
 int Opendp::gridPaddedX(Cell *cell) {
-  return gridX(cell->x_ - pad_left_);
+  if (isPadded(cell))
+    return gridX(cell->x_ - pad_left_);
+  else
+    return gridX(cell->x_);
 }
 
 int Opendp::gridY(Cell *cell) {
@@ -421,12 +448,14 @@ int Opendp::gridY(Cell *cell) {
 void Opendp::setGridPaddedLoc(Cell *cell,
 			      int x,
 			      int y) {
-  cell->x_ = (x + pad_left_) * site_width_;
+  cell->x_ = (x + (isPadded(cell) ? pad_left_ : 0)) * site_width_;
   cell->y_ = y * row_height_;
 }
 
 int Opendp::gridPaddedEndX(Cell *cell) {
-  return divCeil(cell->x_ + cell->width_ + pad_right_ * site_width_, site_width_);
+  return divCeil(cell->x_ + cell->width_
+		 + (isPadded(cell) ? pad_right_ * site_width_ : 0),
+		 site_width_);
 }
 
 int Opendp::gridEndX(Cell *cell) {

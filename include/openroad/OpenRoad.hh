@@ -21,8 +21,9 @@ struct Tcl_Interp;
 
 namespace odb {
 class dbDatabase;
-class adsRect;
 class dbBlock;
+class adsPoint;
+class adsRect;
 }
 
 namespace sta {
@@ -61,6 +62,10 @@ class Replace;
 
 namespace OpenRCX {
 class Ext;
+}
+
+namespace psn {
+class Psn;
 }
 
 namespace pdnsim {
@@ -134,6 +139,7 @@ private:
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
 
@@ -144,5 +150,10 @@ private:
 // Return the bounding box of the db rows.
 odb::adsRect
 getCore(odb::dbBlock *block);
+
+// Return the point inside rect that is closest to pt.
+odb::adsPoint
+closestPtInRect(odb::adsRect rect,
+		odb::adsPoint pt);
 
 } // namespace

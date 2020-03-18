@@ -1,0 +1,39 @@
+###############################################################################
+# r1 driving r2-r3 from end
+###############################################################################
+
+VERSION 5.8 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN reg1 ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 500000 500000 ) ;
+
+COMPONENTS 5 ;
+- r1 snl_ffqx1 + PLACED   ( 100000 100000 ) N ;
+- r2 snl_ffqx1 + PLACED   ( 100000 200000 ) N ;
+- r3 snl_ffqx1 + PLACED   ( 100000 300000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
+  + LAYER M1 ( -100 0 ) ( 100 1040 ) + FIXED ( 100000 100000 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 2 ;
+- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ( r3 CP ) ;
+- r1q ( r1 Q ) ( r2 D ) ( r3 D ) ;
+END NETS
+
+END DESIGN

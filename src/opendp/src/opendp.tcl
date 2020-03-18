@@ -35,21 +35,6 @@
 # -constraints is an undocumented option for worthless academic contests
 sta::define_cmd_args "detailed_placement" {[-constraints constraints_file]}
 
-proc legalize_placement { args } {
-  sta::parse_key_args "legalize_placement" args \
-    keys {} flags {-verbose}
-
-  ord::warn "the legalize_placement command has been renamed to 'detailed_placement'."
-  set verbose [info exists flags(-verbose)]
-  sta::check_argc_eq0 "legalize_placement" $args
-  if { [ord::db_has_rows] } {
-    opendp::detailed_placement 0
-  } else {
-    ord::error "no rows defined in design. Use initialize_floorplan to add rows."
-  }
-  opendp::check_placement_cmd $verbose
-}
-
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-constraints} flags {}
@@ -73,12 +58,6 @@ sta::define_cmd_args "set_placement_padding" { [-global]\
 						 [-right site_count]\
 						 [-left site_count] \
 					       }
-
-proc set_padding { args } {
-  ord::warn "the set_padding command has been renamed to 'set_placement_padding'."
-  eval [concat set_placement_padding $args]
-
-}
 
 proc set_placement_padding { args } {
   sta::parse_key_args "set_placement_padding" args \
@@ -119,9 +98,7 @@ proc check_placement { args } {
 
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
-  if { [opendp::check_placement_cmd $verbose] } {
-    ord::error "placement check failed."
-  }
+  opendp::check_placement_cmd $verbose
 }
 
 namespace eval opendp {

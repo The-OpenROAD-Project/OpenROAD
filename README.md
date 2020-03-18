@@ -453,6 +453,41 @@ Options description:
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
 
 
+#### Logical and Physical Optimizations
+
+OpenPhySyn Perform additional timing and area optimization.
+
+```
+set_psn_wire_rc [-layer layer_name]
+            [-resistance res_per_micron ]
+      [-capacitance cap_per_micron]
+```
+The `set_psn_wire_rc` command sets the average wire resistance/capacitance per micron; you can use -layer <layer_name> only to extract the value from the LEF technology. It should be invoked before physical optimization commands.
+
+```
+optimize_logic
+        [-tiehi tiehi_cell_name] 
+        [-tielo tielo_cell_name] 
+```
+The `optimize_logic` command should be run after the logic synthesis on hierarical designs to perform logic optimization; currently, it performs constant propagation to reduce the design area. You can optionally specify the name of tie-hi/tie-lo liberty cell names to use for the optimization.
+
+```
+optimize_design
+        [-no_gate_clone]
+        [-no_pin_swap]
+        [-clone_max_cap_factor factor]
+        [-clone_non_largest_cells]
+```
+The `optimize_design` command can be used for additional timing optimization, it should be run after the global placmenet. Currently it peforms gate cloning and comuttaitve pin swapping to enhance the timing.
+
+```
+optimize_fanout
+        -buffer_cell buffer_cell_name
+        -max_fanout max_fanout
+```
+The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
+
+
 #### PDN analysis
 
 PDNSim IR analysis.
