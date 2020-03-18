@@ -286,46 +286,51 @@ void Opendp::findDesignStats() {
 }
 
 void Opendp::reportDesignStats() {
-  cout.precision(3);
-  cout << "-------------------- Design Stats ------------------------------" << endl;
-  cout << "core area                  : (" << core_.xMin() << ", " << core_.yMin()
-       << ") (" << core_.xMax() << ", " << core_.yMax() << ")" << endl;
-  cout << "total cells                : " << block_->getInsts().size() << endl;
-  cout << "multi cells                : " << multi_height_inst_count_ << endl;
-  cout << "fixed cells                : " << fixed_inst_count_ << endl;
-  cout << "nets                       : " << block_->getNets().size() << endl;
-
-  cout << "design area                : " << static_cast< double >(design_area_) << endl;
-  cout << "total fixed area           : " << static_cast< double >(fixed_area_) << endl;
-  cout << "total movable area         : " << static_cast< double >(movable_area_) << endl;
-  cout << "design utilization         : " << design_util_ * 100.00 << "%" << endl;
-  cout << "rows                       : " << row_count_ << endl;
-  cout << "row height                 : " << row_height_ << endl;
+  printf("Design Stats\n");
+  printf("------------------------------\n");
+  printf("total instances       %6d\n", block_->getInsts().size());
+  printf("multi instances       %6d\n",  multi_height_inst_count_);
+  printf("fixed instances       %6d\n", fixed_inst_count_);
+  printf("nets                  %6d\n", block_->getNets().size());
+  printf("design area           %6.1f u^2\n",
+	 dbuAreaToMicrons(design_area_));
+  printf("fixed area            %6.1f u^2\n",
+	 dbuAreaToMicrons(fixed_area_));
+  printf("movable area          %6.1f u^2\n",
+	 dbuAreaToMicrons(movable_area_));
+  printf("utilization           %6.0f %%\n", design_util_ * 100);
+  printf("rows                  %6d\n", row_count_);
+  printf("row height            %6.1f u\n",
+	 dbuToMicrons(row_height_));
   if(max_cell_height_ > 1)
-    cout << "max multi_cell height      : " << max_cell_height_ << endl;
+    printf("max height            %6d rows\n",
+	   max_cell_height_);
   if(groups_.size() > 0)
-  cout << "group count                : " << groups_.size() << endl;
-  cout << "----------------------------------------------------------------" << endl;
+    printf("group count           %6lu\n", groups_.size());
+  printf("\n");
 }
 
 void Opendp::reportLegalizationStats() {
   int64_t avg_displacement, sum_displacement, max_displacement;
   displacementStats(avg_displacement, sum_displacement, max_displacement);
 
-  cout << "-------------------- Placement Analysis ------------------------" << endl;
-  cout.precision(3);
-  cout << "total displacement         : " << sum_displacement << endl;
-  cout << "average displacement       : " << avg_displacement << endl;
-  cout << "max displacement           : " << max_displacement << endl;
+  printf("Placement Analysis\n");
+  printf("------------------------------\n");
+  printf("total displacement    %6.1f u\n",
+	 dbuToMicrons(sum_displacement));
+  printf("average displacement  %6.1f u\n",
+	 dbuToMicrons(avg_displacement));
+  printf("max displacement      %6.1f u\n",
+	 dbuToMicrons(max_displacement));
   double hpwl_orig = hpwl(true);
-  cout << "original HPWL              : " << hpwl_orig << endl;
+  printf("original HPWL         %6.1f u\n",
+	 dbuToMicrons(hpwl_orig));
   double hpwl_legal = hpwl(false);
-  cout << "legalized HPWL             : " << hpwl_legal << endl;
+  printf("legalized HPWL        %6.1f u\n",
+	 dbuToMicrons(hpwl_legal));
   double hpwl_delta = (hpwl_legal - hpwl_orig) / hpwl_orig * 100;
-  cout.precision(0);
-  cout << std::fixed;
-  cout << "delta HPWL                 : " << hpwl_delta << "%" << endl;
-  cout << "----------------------------------------------------------------" << endl;
+  printf("delta HPWL            %6.0f %%\n", hpwl_delta);
+  printf("\n");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -489,7 +494,13 @@ int Opendp::coreGridMaxY() {
 }
 
 double Opendp::dbuToMicrons(int64_t dbu) {
-  return static_cast< double >(dbu) / db_->getTech()->getDbUnitsPerMicron();
+  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
+double Opendp::dbuAreaToMicrons(int64_t dbu_area) {
+  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  return dbu_area / (dbu_micron * dbu_micron);
 }
 
 int divRound(int dividend, int divisor) {

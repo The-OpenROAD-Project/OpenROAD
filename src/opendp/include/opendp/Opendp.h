@@ -138,7 +138,7 @@ class Opendp {
   void fillerPlacement(StringSeq *filler_master_names);
   void reportLegalizationStats();
   void reportDesignStats();
-  double hpwl(bool initial);
+  int64_t hpwl(bool initial);
   void displacementStats(// Return values.
 			 int64_t &avg_displacement,
 			 int64_t &sum_displacement,
@@ -156,6 +156,7 @@ class Opendp {
   void makeGroups();
   void findRowPower();
   double dbuToMicrons(int64_t dbu);
+  double dbuAreaToMicrons(int64_t dbu_area);
   bool isFixed(Cell* cell);  // fixed cell or not
   bool isMultiRow(Cell* cell);
   power topPower(Cell* cell);

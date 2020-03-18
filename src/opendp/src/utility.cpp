@@ -128,7 +128,7 @@ void Opendp::displacementStats(// Return values.
   avg_displacement = sum_displacement / cells_.size();
 }
 
-double Opendp::hpwl(bool initial) {
+int64_t Opendp::hpwl(bool initial) {
   int64_t hpwl = 0;
   for(dbNet *net : block_->getNets()) {
     adsRect box;
@@ -186,7 +186,7 @@ double Opendp::hpwl(bool initial) {
     int perimeter = box.dx() + box.dy();
     hpwl += perimeter;
   }
-  return dbuToMicrons(hpwl);
+  return hpwl;
 }
 
 pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
