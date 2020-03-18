@@ -63,177 +63,112 @@ using std::vector;
 
 using odb::adsRect;
 
+using ord::warn;
+
 bool Opendp::checkPlacement(bool verbose) {
-  bool fail = false;
-  fail |= row_check(verbose);
-  fail |= site_check(verbose);
-  fail |= power_line_check(verbose);
-  fail |= placed_check(verbose);
-  fail |= overlap_check(verbose);
-  return fail;
-}
+  vector<Cell*> placed_failures;
+  vector<Cell*> in_core_failures;
+  vector<Cell*> overlap_failures;
+  vector<Cell*> row_failures;
+  vector<Cell*> site_failures;
+  vector<Cell*> power_line_failures;
 
-bool Opendp::row_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(isClassCore(&cell)) {
-      if(cell.y_ % row_height_ != 0) {
-	if (verbose)
-	  cout << "row_check fail => " << cell.name()
-	       << " y : " << cell.y_ + core_.yMin() << endl;
-	fail = true;
-	count++;
-      }
-    }
-  }
-
-  if(fail)
-    cout << "row check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "row check ==> PASS " << endl;
-
-  return fail;
-}
-
-bool Opendp::site_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(isClassCore(&cell)) {
-      if(cell.x_ % site_width_ != 0) {
-	if (verbose)
-	  cout << "site check fail ==> " << cell.name()
-	       << " x : " << cell.x_ + core_.xMin() << endl;
-	fail = true;
-	count++;
-      }
-    }
-  }
-  if(fail)
-    cout << "site check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "site check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::power_line_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(isClassCore(&cell)
-       // Magic number alert
-       // Shouldn't this be odd test instead of 1 or 3? -cherry
-       && !(cell.height_ == row_height_ || cell.height_ == row_height_ * 3)
-       // should removed later
-       && cell.inGroup()) {
-      int y_size = gridHeight(&cell);
-      int grid_y = gridY(&cell);
-      power top_power = topPower(&cell);
-      if(y_size % 2 == 0) {
-	if(top_power == rowTopPower(grid_y)) {
-	  cout << "power check fail ( even height ) ==> "
-	      << cell.name() << endl;
-	  fail = true;
-	  count++;
-	}
-      }
-      else {
-	if(top_power == rowTopPower(grid_y)) {
-	  if(cell.db_inst_->getOrient() != dbOrientType::R0) {
-	    cout << "power check fail ( Should be N ) ==> "
-		<< cell.name() << endl;
-	    fail = true;
-	    count++;
-	  }
-	}
-	else {
-	  if(cell.db_inst_->getOrient() != dbOrientType::MX) {
-	    cout << "power_check fail ( Should be FS ) ==> "
-		<< cell.name() << endl;
-	    fail = true;
-	    count++;
-	  }
-	}
-      }
-    }
-  }
-
-  if(fail)
-    cout << "power check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "power check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::placed_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(!cell.is_placed_) {
-      if (verbose)
-	cout << "placed check fail ==> " << cell.name() << endl;
-      fail = true;
-      count++;
-    }
-  }
-
-  if(fail)
-    cout << "placed_check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "placed_check ==>> PASS " << endl;
-
-  return fail;
-}
-
-bool Opendp::overlap_check(bool verbose) {
-  bool fail = false;
   Grid *grid = makeGrid();
-
   for(Cell& cell : cells_) {
-    int grid_x = gridPaddedX(&cell);
-    int x_ur = gridPaddedEndX(&cell);
-    int grid_y = gridY(&cell);
-    int y_ur = gridEndY(&cell);
-    if (grid_x < 0
-	|| grid_y < 0
-	|| x_ur > row_site_count_
-	|| y_ur > row_count_) {
-      ord::warn("Cell %s %sis outside the core boundary.",
-		cell.name(),
-		isPadded(&cell) ? "with padding " : "");
-      fail = true;
-    }
-
-    grid_x = max(0, grid_x);
-    grid_y = max(0, grid_y);
-    x_ur = min(x_ur, row_site_count_);
-    y_ur = min(y_ur, row_count_);
-
-    for(int j = grid_y; j < y_ur; j++) {
-      for(int k = grid_x; k < x_ur; k++) {
-        if(grid[j][k].cell == nullptr) {
-          grid[j][k].cell = &cell;
-          grid[j][k].util = 1.0;
-        }
-        else {
-	  if (verbose)
-	    cout << "overlap_check ==> FAIL ( cell " << cell.name()
-		 << " overlaps " << grid[j][k].cell->name() << " ) "
-		 << " ( " << (k * site_width_ + core_.xMin()) << ", "
-		 << (j * row_height_ + core_.yMin()) << " )" << endl;
-	  fail = true;
-        }
+    if(isClassCore(&cell)) {
+      // Placed check
+      // Row check
+      if (cell.y_ % row_height_ != 0)
+	row_failures.push_back(&cell);
+      // Site check
+      if(cell.x_ % site_width_ != 0)
+	site_failures.push_back(&cell);
+      if(checkPowerLine(cell)) {
+	checkPowerLine(cell);
+	power_line_failures.push_back(&cell);
       }
     }
+    if(!cell.is_placed_)
+      placed_failures.push_back(&cell);
+    if(checkInCore(cell))
+      in_core_failures.push_back(&cell);
+    if(checkOverlap(cell, grid))
+      overlap_failures.push_back(&cell);
   }
   deleteGrid(grid);
 
-  if(fail)
-    cout << "overlap_check ==> FAIL " << endl;
-  else
-    cout << "overlap_check ==> PASS " << endl;
-  return fail;
+  reportFailures(placed_failures, "Placed", verbose);
+  reportFailures(in_core_failures, "Placed in core", verbose);
+  reportFailures(overlap_failures, "Overlap check failed.", verbose);
+  reportFailures(row_failures, "Row", verbose);
+  reportFailures(site_failures, "Site", verbose);
+  reportFailures(power_line_failures, "Power line", verbose);
+
+  return power_line_failures.size()
+    || placed_failures.size()
+    || in_core_failures.size()
+    || overlap_failures.size()
+    || row_failures.size()
+    || site_failures.size();
+}
+
+void Opendp::reportFailures(vector<Cell*> failures,
+			    const char *msg,
+			    bool verbose) {
+  if (failures.size()) {
+    warn("%s check failed (%d).", msg, failures.size());
+    if (verbose) {
+      for(Cell *cell : failures) {
+	printf(" %s\n", cell->name());
+      }
+    }
+  }
+}
+
+bool Opendp::checkPowerLine(Cell &cell) {
+  int height = gridHeight(&cell);
+  dbOrientType orient = cell.db_inst_->getOrient();
+  int grid_y = gridY(&cell);
+  power top_power = topPower(&cell);
+  return !(height == 1 || height == 3)
+    && ((height % 2 == 0)
+	// Even height
+	? top_power == rowTopPower(grid_y)
+	// Odd height
+	: (top_power == rowTopPower(grid_y)
+		? orient != dbOrientType::R0
+		: orient != dbOrientType::MX));
+}
+
+bool Opendp::checkInCore(Cell &cell) {
+  return gridPaddedX(&cell) < 0
+    || gridY(&cell) < 0
+    || gridPaddedEndX(&cell) > row_site_count_
+    || gridEndY(&cell) > row_count_;
+}
+
+bool Opendp::checkOverlap(Cell &cell,
+			  Grid *grid) {
+  int grid_x = gridPaddedX(&cell);
+  int x_ur = gridPaddedEndX(&cell);
+  int grid_y = gridY(&cell);
+  int y_ur = gridEndY(&cell);
+  grid_x = max(0, grid_x);
+  grid_y = max(0, grid_y);
+  x_ur = min(x_ur, row_site_count_);
+  y_ur = min(y_ur, row_count_);
+  
+  for(int j = grid_y; j < y_ur; j++) {
+    for(int k = grid_x; k < x_ur; k++) {
+      if(grid[j][k].cell)
+	return true;
+      else {
+	grid[j][k].cell = &cell;
+	grid[j][k].util = 1.0;
+      }
+    }
+  }
+  return false;
 }
 
 }  // namespace opendp

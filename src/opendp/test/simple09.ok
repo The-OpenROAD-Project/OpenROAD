@@ -32,8 +32,3 @@ original HPWL              : 2e+03
 legalized HPWL             : 6.01e+03
 delta HPWL                 : 200%
 ----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
