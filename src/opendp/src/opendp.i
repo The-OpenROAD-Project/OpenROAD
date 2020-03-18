@@ -146,4 +146,18 @@ report_placement_grid()
   opendp->reportGrid();
 }
 
+void
+set_power_net_name(const char *power_name)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPowerNetName(power_name);
+}
+
+void
+set_ground_net_name(const char *ground_name)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setGroundNetName(ground_name);
+}
+
 %} // inline

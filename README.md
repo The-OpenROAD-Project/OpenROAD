@@ -388,11 +388,15 @@ set_placement_padding -global [-left pad_left] [-right pad_right]
 detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters
+set_power_net [-power power_name] [-ground ground_net]
 ```
 
 The `set_placement_padding` command sets left and right padding in multiples of
 the row site width. Use the `set_padding` command before legalizing
 placement to leave room for routing.
+
+The `set_power_net` command is used to set the power and ground
+special net names. The defaults are `VDD` and `VSS`.
 
 The `check_placement` command checks the placement legality. It returns `1` if the
 placement is legal.

@@ -118,6 +118,8 @@ Group::Group() : name(""), util(0.0){}
 Opendp::Opendp()
   : pad_right_(0),
     pad_left_(0),
+    power_net_name_("VDD"),
+    ground_net_name_("VSS"),
     grid_(nullptr)
 {
 }
@@ -140,6 +142,14 @@ void Opendp::clear() {
   db_inst_map_.clear();
   deleteGrid(grid_);
   grid_ = nullptr;
+}
+
+void Opendp::setPowerNetName(const char *power_name) {
+  power_net_name_ = power_name;
+}
+
+void Opendp::setGroundNetName(const char *ground_name) {
+  ground_net_name_ = ground_name;
 }
 
 void Opendp::setPaddingGlobal(int left,

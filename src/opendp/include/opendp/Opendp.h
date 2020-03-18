@@ -143,6 +143,8 @@ class Opendp {
 			 int64_t &avg_displacement,
 			 int64_t &sum_displacement,
 			 int64_t &max_displacement);
+  void setPowerNetName(const char *power_name);
+  void setGroundNetName(const char *ground_name);
   void reportGrid();
 
  private:
@@ -278,6 +280,8 @@ class Opendp {
   dbBlock* block_;
   int pad_left_;
   int pad_right_;
+  const char *power_net_name_;
+  const char *ground_net_name_;
 
   std::vector< Cell > cells_;
   std::vector< Group > groups_;
