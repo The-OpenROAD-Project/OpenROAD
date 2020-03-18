@@ -98,6 +98,7 @@ proc list_delete { list delete } {
 
 # Record tests in /test
 record_tests {
+  check1
   simple01
   simple02
   simple03

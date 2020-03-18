@@ -66,6 +66,8 @@ using odb::adsRect;
 using ord::warn;
 
 bool Opendp::checkPlacement(bool verbose) {
+  if (cells_.empty())
+    importDb();
   vector<Cell*> placed_failures;
   vector<Cell*> in_core_failures;
   vector<Cell*> overlap_failures;
@@ -76,7 +78,6 @@ bool Opendp::checkPlacement(bool verbose) {
   Grid *grid = makeGrid();
   for(Cell& cell : cells_) {
     if(isClassCore(&cell)) {
-      // Placed check
       // Row check
       if (cell.y_ % row_height_ != 0)
 	row_failures.push_back(&cell);
@@ -88,6 +89,7 @@ bool Opendp::checkPlacement(bool verbose) {
 	power_line_failures.push_back(&cell);
       }
     }
+    // Placed check
     if(!cell.is_placed_)
       placed_failures.push_back(&cell);
     if(checkInCore(cell))
@@ -95,7 +97,6 @@ bool Opendp::checkPlacement(bool verbose) {
     if(checkOverlap(cell, grid))
       overlap_failures.push_back(&cell);
   }
-  deleteGrid(grid);
 
   reportFailures(placed_failures, "Placed", verbose);
   reportFailures(in_core_failures, "Placed in core", verbose);
@@ -103,6 +104,8 @@ bool Opendp::checkPlacement(bool verbose) {
   reportFailures(row_failures, "Row", verbose);
   reportFailures(site_failures, "Site", verbose);
   reportFailures(power_line_failures, "Power line", verbose);
+
+  deleteGrid(grid);
 
   return power_line_failures.size()
     || placed_failures.size()

@@ -146,6 +146,7 @@ class Opendp {
   void reportGrid();
 
  private:
+  void importDb();
   void dbToOpendp();
   void makeMacros(dbLib* db_lib);
   void examineRows();

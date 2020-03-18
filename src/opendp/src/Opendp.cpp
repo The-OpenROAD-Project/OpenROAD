@@ -148,11 +148,16 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-void Opendp::detailedPlacement(int max_displacment) {
+void Opendp::importDb() {
   clear();
-  max_displacement_constraint_ = max_displacment;
   dbToOpendp();
   initAfterImport();
+  power_mapping();
+}
+
+void Opendp::detailedPlacement(int max_displacment) {
+  importDb();
+  max_displacement_constraint_ = max_displacment;
   reportDesignStats();
   detailedPlacement();
   reportLegalizationStats();
@@ -161,7 +166,6 @@ void Opendp::detailedPlacement(int max_displacment) {
 
 void Opendp::initAfterImport() {
   findDesignStats();
-  power_mapping();
 
   // dummy cell generation
   dummy_cell_.is_placed_ = true;
