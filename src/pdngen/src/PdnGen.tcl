@@ -1271,7 +1271,7 @@ proc get_via_option {lower width height constraints} {
     set rules [via_split_cuts_rule $rows $columns $constraints]
   } elseif {[use_arrayspacing [dict get $via_info cut layer] $rows $columns]} {
     # debug "via_generate_array_rule"
-    set rules [via_generate_array_rule $rule_name $rows $columns]
+    set rules [via_generate_array_rule [get_viarule_name $lower $width $height] $rows $columns]
   } else {
     # debug "via_generate_rule"
     set rules [via_generate_rule [get_viarule_name $lower $width $height] $rows $columns $constraints]
