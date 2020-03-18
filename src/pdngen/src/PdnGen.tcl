@@ -33,8 +33,6 @@
 # Messages:
 # 
 # Information
-# 2 "No shapes on layer $l1 for $tag"
-# 3 "No shapes on layer $l2 for $tag"
 # 8 "Design Name is $design_name"
 # 9 "Reading technology data"
 # 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
@@ -49,6 +47,8 @@
 #
 # Warning
 # 1 "run_pdngen is deprecated. Use pdngen."
+# 2 "No shapes on layer $l1 for $tag"
+# 3 "No shapes on layer $l2 for $tag"
 # 4 "Unexpected number of points in connection shape ($l1,$l2 $tag [llength $points])"
 # 5 (points list)
 # 6 "Unexpected number of points in shape ($lay $signal_type [llength $points])"
@@ -1466,11 +1466,11 @@ proc generate_via_stacks {l1 l2 tag constraints} {
   
   set ignore_count 0
   if {[array names stripe_locs "$l1,$tag"] == ""} {
-    information 2 "No shapes on layer $l1 for $tag"
+    warning 2 "No shapes on layer $l1 for $tag"
     return {}
   }
   if {[array names stripe_locs "$l2,$tag"] == ""} {
-    information 3 "No shapes on layer $l2 for $tag"
+    warning 3 "No shapes on layer $l2 for $tag"
     return {}
   }
   set intersection [odb::odb_andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)]
@@ -2011,7 +2011,7 @@ proc export_opendb_specialnet {net_name signal_type} {
   foreach inst [$block getInsts] {
     set master [$inst getMaster]
     foreach mterm [$master getMTerms] {
-      if {[$mterm getSigType] == $signal_type} {
+      if {[$mterm getSigType] == $signal_type && [dict exists $global_connections $net_name]} {
         foreach pattern [dict get $global_connections $net_name] {
           if {[regexp [dict get $pattern inst_name] [$inst getName]] &&
             [regexp [dict get $pattern pin_name] [$mterm getName]]} {
