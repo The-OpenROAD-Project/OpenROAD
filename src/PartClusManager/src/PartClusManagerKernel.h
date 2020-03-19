@@ -60,8 +60,8 @@ public:
         double getCutHopRatio() { return _cutHopRatio; }
         void setArchitecture(bool enable) { _architecture = enable; } 
         bool getArchitecture() const { return _architecture; }
-        void setArchTopology(const std::string& archString) { _archTopology = archString; }
-        std::string getArchTopology() const { return _archTopology; } 
+        void setArchTopology(const std::vector<int>& arch) { _archTopology = arch; }
+        std::vector<int> getArchTopology() const { return _archTopology; } 
         void setTool(const std::string& tool) { _tool = tool; }
         std::string getTool() const { return _tool; } 
         void setGraphModel(const std::string& graphModel) { _graphModel = graphModel; }
@@ -78,22 +78,22 @@ public:
         unsigned getBalanceConstraint() const { return _balanceConstraint; }
 
 private:
-        unsigned        _numStarts              = 1;
-        unsigned        _targetPartitions       = 0;
-        bool            _weightedVertices       = false;
-        double          _coarRatio              = 0.8;
-        unsigned        _coarVertices           = 2500;
-        bool            _termProp               = true;
-        double          _cutHopRatio            = 1.0;
-        bool            _architecture           = false;
-        std::string     _archTopology           = "";
-        std::string     _tool                   = "chaco";
-        std::string     _graphModel             = "clique";
-        unsigned        _cliqueThreshold        = 50;
-        unsigned        _weightModel            = 1;
-        unsigned        _maxEdgeWeight          = 100; 
-        unsigned        _maxVertexWeight        = 100; 
-        unsigned        _balanceConstraint      = 5; 
+        unsigned                _numStarts              = 1;
+        unsigned                _targetPartitions       = 0;
+        bool                    _weightedVertices       = false;
+        double                  _coarRatio              = 0.8;
+        unsigned                _coarVertices           = 2500;
+        bool                    _termProp               = true;
+        double                  _cutHopRatio            = 1.0;
+        std::string             _tool                   = "chaco";
+        std::string             _graphModel             = "clique";
+        unsigned                _cliqueThreshold        = 50;
+        unsigned                _weightModel            = 1;
+        unsigned                _maxEdgeWeight          = 100; 
+        unsigned                _maxVertexWeight        = 100; 
+        unsigned                _balanceConstraint      = 5; 
+        bool                    _architecture           = false;
+        std::vector<int>        _archTopology;
 }; 
 
 class PartClusManagerKernel {

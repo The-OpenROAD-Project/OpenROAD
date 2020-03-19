@@ -4,6 +4,8 @@ project(PartClusManager)
 
 set(BIN_NAME "PartClusManager")
 
+add_subdirectory(third_party/chaco/code)
+
 set(CMAKE_CXX_STANDARD 11)
 
 #include(${PROJECT_SOURCE_DIR}/cmake/FindTCL.cmake)
@@ -34,8 +36,10 @@ include_directories(${PARTCLUSMANAGER_HOME}/src
 		    ${OPENDB_HOME}/include
                     ${OPENSTA_HOME}/app
 		    ${TCL_INCLUDE_PATH}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/chaco/code
                    ) 
 
 target_link_libraries(${BIN_NAME} INTERFACE
                       ${TCL_LIB}
+                      Chaco
                      )
