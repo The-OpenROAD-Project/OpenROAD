@@ -155,13 +155,16 @@ bool Opendp::checkPowerLine(Cell &cell) {
   int grid_y = gridY(&cell);
   power top_power = topPower(&cell);
   return !(height == 1 || height == 3)
-    && ((height % 2 == 0)
-	// Even height
-	? top_power == rowTopPower(grid_y)
-	// Odd height
-	: (top_power == rowTopPower(grid_y)
-		? orient != dbOrientType::R0
-		: orient != dbOrientType::MX));
+    // Everything below here is probably wrong but never exercised.
+    && ((height % 2 == 0
+	 // Even height
+	 && top_power == rowTopPower(grid_y))
+	|| (height % 2 == 1
+	    // Odd height
+	    && ((top_power == rowTopPower(grid_y)
+		 && orient != dbOrientType::R0)
+		|| (top_power != rowTopPower(grid_y)
+		    && orient != dbOrientType::MX))));
 }
 
 bool Opendp::checkInCore(Cell &cell) {

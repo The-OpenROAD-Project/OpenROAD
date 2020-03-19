@@ -240,13 +240,13 @@ Opendp::deleteGrid(Grid *grid)
   }
 }
 
+
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    int x = core_.xMin() + cell.x_;
-    int y = core_.yMin() + cell.y_;
     dbInst *db_inst_ = cell.db_inst_;
     db_inst_->setOrient(cell.orient_);
-    db_inst_->setLocation(x, y);
+    db_inst_->setLocation(core_.xMin() + cell.x_,
+			  core_.yMin() + cell.y_);
   }
 }
 
@@ -338,13 +338,13 @@ void Opendp::reportLegalizationStats() {
 power
 Opendp::rowTopPower(int row)
 {
-  return ((row0_top_power_is_vdd_ ? row : row+1) % 2 == 0) ? VDD : VSS;
+  return ((row0_top_power_is_vdd_ ? row : row + 1) % 2 == 0) ? VDD : VSS;
 }
 
 dbOrientType
 Opendp::rowOrient(int row)
 {
-  // orient flips. e.g. R0 -> MX -> R0 -> MX -> ...
+  // Row orient flips R0 -> MX -> R0 -> MX ...
   return ((row0_orient_is_r0_ ? row : row + 1) % 2 == 0)
     ? dbOrientType::R0
     : dbOrientType::MX;
