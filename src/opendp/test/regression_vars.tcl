@@ -106,7 +106,6 @@ record_tests {
   simple03
   simple04
   simple05
-  simple06
   simple07
   simple08
   simple09
