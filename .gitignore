@@ -29,3 +29,4 @@ src/FastRoute/test/src
 src/tapcell/test/src
 src/TritonCTS/test/src
 src/ioPlacer/test/src
+src/PDNSim/test/results
