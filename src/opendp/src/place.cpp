@@ -77,7 +77,6 @@ void Opendp::detailedPlacement() {
 
     // naive method placement ( Multi -> single )
     group_cell_placement();
-    cout << " group_cell_placement done .. " << endl;
     for(Group &group : groups_) {
       for(int j = 0; j < 3; j++) {
         int count_a = group_refine(&group);
@@ -91,7 +90,7 @@ void Opendp::detailedPlacement() {
 
 void Opendp::non_group_cell_pre_placement() {
   for(Cell& cell : cells_) {
-    bool inGroup = false;
+    bool in_group = false;
     adsRect* target;
     pair< int, int > coord;
     if(!cell.inGroup() && !cell.is_placed_) {
@@ -99,12 +98,12 @@ void Opendp::non_group_cell_pre_placement() {
 	Group* group = &groups_[j];
 	for(adsRect& rect : group->regions) {
 	  if(check_overlap(&cell, &rect)) {
-	    inGroup = true;
+	    in_group = true;
 	    target = &rect;
 	  }
 	}
       }
-      if(inGroup) {
+      if(in_group) {
 	pair< int, int > coord =
           nearest_coord_to_rect_boundary(&cell, target);
 	if(map_move(&cell, coord.first, coord.second))
@@ -185,7 +184,6 @@ void Opendp::group_cell_placement() {
 	if(isMultiRow(cell)) {
 	  multi_pass = map_move(cell);
 	  if(!multi_pass) {
-	    cout << "map_move fail" << endl;
 	    break;
 	  }
 	}
@@ -203,7 +201,6 @@ void Opendp::group_cell_placement() {
 	  if(!isMultiRow(cell)) {
 	    single_pass = map_move(cell);
 	    if(!single_pass) {
-	      cout << "map_move fail (single cell)" << endl;
 	      break;
 	    }
 	  }

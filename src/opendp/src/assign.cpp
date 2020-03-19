@@ -177,10 +177,6 @@ void Opendp::group_pixel_assign() {
             grid_[k][l].util = 1.0;
 	  }
           else if(grid_[k][l].util > 0 && grid_[k][l].util < 1) {
-#ifdef ODP_DEBUG
-            cout << "grid[" << k << "][" << l << "]" << endl;
-            cout << "util : " << grid_[k][l].util << endl;
-#endif
             grid_[k][l].cell = &dummy_cell_;
             grid_[k][l].util = 0.0;
             grid_[k][l].is_valid = false;

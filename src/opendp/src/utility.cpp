@@ -235,69 +235,62 @@ pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
   else if(y + cell->height_ > rect->yMax())
     temp_y = rect->yMax() - cell->height_;
 
-#ifdef ODP_DEBUG
-  cout << " - - - - - - - - - - - - - - - " << endl;
-  cout << " input x_ : " << x << endl;
-  cout << " input y_ : " << y << endl;
-  cout << " found x_ : " << temp_x << endl;
-  cout << " found y_ : " << temp_y << endl;
-#endif
-
   return make_pair(temp_x, temp_y);
 }
 
 int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
-  int temp_x = 0;
-  int temp_y = 0;
+  int dist_x = 0;
+  int dist_y = 0;
 
   if(x < rect->xMin())
-    temp_x = rect->xMin() - x;
+    dist_x = rect->xMin() - x;
   else if(x + paddedWidth(cell) > rect->xMax())
-    temp_x = x + paddedWidth(cell) - rect->xMax();
+    dist_x = x + paddedWidth(cell) - rect->xMax();
 
   if(y < rect->yMin())
-    temp_y = rect->yMin() - y;
+    dist_y = rect->yMin() - y;
   else if(y + cell->height_ > rect->yMax())
-    temp_y = y + cell->height_ - rect->yMax();
+    dist_y = y + cell->height_ - rect->yMax();
 
-  assert(temp_y >= 0);
-  assert(temp_x >= 0);
+  assert(dist_y >= 0);
+  assert(dist_x >= 0);
 
-  return temp_y + temp_x;
+  return dist_y + dist_x;
 }
 
-bool Opendp::check_overlap(adsRect cell, adsRect box) {
-  if(box.xMin() >= cell.xMax() || box.xMax() <= cell.xMin()) return false;
-  if(box.yMin() >= cell.yMax() || box.yMax() <= cell.yMin()) return false;
-  return true;
+bool Opendp::check_overlap(adsRect rect, adsRect box) {
+  return box.xMin() < rect.xMax()
+    && box.xMax() > rect.xMin()
+    && box.yMin() < rect.yMax()
+    && box.yMax() > rect.yMin();
 }
 
 bool Opendp::check_overlap(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
 
-  if(rect->xMax() <= x || rect->xMin() >= x + paddedWidth(cell)) return false;
-  if(rect->yMax() <= y || rect->yMin() >= y + cell->height_) return false;
-
-  return true;
+  return x + paddedWidth(cell) > rect->xMin()
+    && x < rect->xMax()
+    && y + cell->height_ > rect->yMin()
+    && y < rect->yMax();
 }
 
-bool Opendp::check_inside(adsRect cell, adsRect box) {
-  if(box.xMin() > cell.xMin() || box.xMax() < cell.xMax()) return false;
-  if(box.yMin() > cell.yMin() || box.yMax() < cell.yMax()) return false;
-  return true;
+bool Opendp::check_inside(adsRect rect, adsRect box) {
+  return rect.xMin() >= box.xMin()
+    && rect.xMax() <= box.xMax()
+    && rect.yMin() >= box.yMin()
+    && rect.yMax() <= box.yMax();
 }
 
 bool Opendp::check_inside(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
-
-  if(rect->xMax() < x + paddedWidth(cell) || rect->xMin() > x) return false;
-  if(rect->yMax() < y + cell->height_ || rect->yMin() > y) return false;
-
-  return true;
+  return x >= rect->xMin()
+    && x + paddedWidth(cell) <= rect->xMax()
+    && y >= rect->yMin()
+    && y + cell->height_ <= rect->yMax();
 }
 
 bool Opendp::binSearch(int grid_x, Cell* cell,
@@ -335,7 +328,6 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
       else {
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
-	    // cout << "BinSearch: chk " << k << " " << l << endl;
 	    if(grid_[k][l].cell != nullptr
 	       || !grid_[k][l].is_valid
 	       // check group regions
@@ -390,9 +382,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
       }
       if(available) {
 #ifdef ODP_DEBUG
-        cout << " found pos x - y : " << x << " - " << y << " Finish Search "
-             << endl;
-        cout << " - - - - - - - - - - - - - - - - - - - - - - - - " << endl;
+        cout << " found pos x - y : " << x << " - " << y << endl;
 #endif
 	avail_x = x + i;
 	avail_y = y;
