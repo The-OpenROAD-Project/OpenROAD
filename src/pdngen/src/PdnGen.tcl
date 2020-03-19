@@ -1113,7 +1113,7 @@ proc via_generate_array_rule {rule_name rows columns} {
       # Split into num_arrays rows of arrays
       set array_min_size [expr [lindex [dict get $via_info cut size] 0] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
       set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
-      debug "Split into $num_arrays rows of arrays"
+      # debug "Split into $num_arrays rows of arrays"
 
       set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
       set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
@@ -1140,7 +1140,7 @@ proc via_generate_array_rule {rule_name rows columns} {
       # Split into num_arrays columns of arrays
       set array_min_size [expr [lindex [dict get $via_info cut size] 1] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
       set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
-      debug "Split into $num_arrays columns of arrays"
+      # debug "Split into $num_arrays columns of arrays"
 
       set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
       set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
@@ -1165,7 +1165,7 @@ proc via_generate_array_rule {rule_name rows columns} {
       }
     }
   } else {
-    debug "Arrayspacing rule"
+    # debug "Arrayspacing rule"
     set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
     set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
 
@@ -1953,7 +1953,7 @@ proc import_macro_boundaries {} {
     # the cell lies outside the area where we are adding a power grid.
     set box [odb::odb_newSetFromRect $llx $lly $urx $ury]
     if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
-      debug "Instance $instance does not lie in the cell area"
+      # debug "Instance $instance does not lie in the cell area"
       set instances [dict remove $instances $instance]
       continue
     }
@@ -2299,7 +2299,7 @@ proc get_memory_instance_pg_pins {} {
     set bbox [$inst getBBox]
     set box [odb::odb_newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
     if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
-      debug "Instance [$inst getName] does not lie in the cell area"
+      # debug "Instance [$inst getName] does not lie in the cell area"
       continue
     }
     
