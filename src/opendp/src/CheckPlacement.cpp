@@ -68,6 +68,7 @@ using ord::warn;
 bool Opendp::checkPlacement(bool verbose) {
   if (cells_.empty())
     importDb();
+
   vector<Cell*> placed_failures;
   vector<Cell*> in_core_failures;
   vector<Cell*> overlap_failures;
@@ -100,7 +101,8 @@ bool Opendp::checkPlacement(bool verbose) {
 
   reportFailures(placed_failures, "Placed", verbose);
   reportFailures(in_core_failures, "Placed in core", verbose);
-  reportFailures(overlap_failures, "Overlap check failed.", verbose);
+  reportOverlapFailures(overlap_failures,
+			"Overlap check failed.", verbose, grid);
   reportFailures(row_failures, "Row", verbose);
   reportFailures(site_failures, "Site", verbose);
   reportFailures(power_line_failures, "Power line", verbose);
@@ -128,6 +130,25 @@ void Opendp::reportFailures(vector<Cell*> failures,
   }
 }
 
+void Opendp::reportOverlapFailures(vector<Cell*> failures,
+				   const char *msg,
+				   bool verbose,
+				   Grid *grid) {
+  if (failures.size()) {
+    warn("%s check failed (%d).", msg, failures.size());
+    if (verbose) {
+      for(Cell *cell : failures) {
+	Cell *overlap = checkOverlap(*cell, grid);
+	printf(" %s%s overlaps %s%s\n",
+	       cell->name(),
+	       isPadded(cell) ? " padded" : "",
+	       overlap->name(),
+	       isPadded(overlap) ? " padded" : "");
+      }
+    }
+  }
+}
+
 bool Opendp::checkPowerLine(Cell &cell) {
   int height = gridHeight(&cell);
   dbOrientType orient = cell.db_inst_->getOrient();
@@ -150,7 +171,8 @@ bool Opendp::checkInCore(Cell &cell) {
     || gridEndY(&cell) > row_count_;
 }
 
-bool Opendp::checkOverlap(Cell &cell,
+
+Cell *Opendp::checkOverlap(Cell &cell,
 			  Grid *grid) {
   int grid_x = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
@@ -163,15 +185,16 @@ bool Opendp::checkOverlap(Cell &cell,
   
   for(int j = grid_y; j < y_ur; j++) {
     for(int k = grid_x; k < x_ur; k++) {
-      if(grid[j][k].cell)
-	return true;
+      Pixel &pixel = grid[j][k];
+      if(pixel.cell)
+	return pixel.cell;
       else {
-	grid[j][k].cell = &cell;
-	grid[j][k].util = 1.0;
+	pixel.cell = &cell;
+	pixel.util = 1.0;
       }
     }
   }
-  return false;
+  return nullptr;
 }
 
 }  // namespace opendp

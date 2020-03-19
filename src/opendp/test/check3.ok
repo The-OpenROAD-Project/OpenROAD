@@ -1,0 +1,13 @@
+Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: 
+Reading DEF file: check3.def
+Notice 0: Design: ten_cells
+Notice 0:     Created 2 components and 10 component-terminals.
+Notice 0: Finished DEF file: check3.def
+Warning: could not find power special net
+Warning: Overlap check failed. check failed (1).
+ _284_ padded overlaps _285_ padded

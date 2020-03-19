@@ -99,6 +99,8 @@ proc list_delete { list delete } {
 # Record tests in /test
 record_tests {
   check1
+  check2
+  check3
   simple01
   simple02
   simple03

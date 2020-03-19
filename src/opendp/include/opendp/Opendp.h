@@ -216,11 +216,15 @@ class Opendp {
 
   bool checkPowerLine(Cell &cell);
   bool checkInCore(Cell &cell);
-  bool checkOverlap(Cell &cell,
-		    Grid *grid);
+  Cell *checkOverlap(Cell &cell,
+		     Grid *grid);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
+  void reportOverlapFailures(vector<Cell*> failures,
+			     const char *msg,
+			     bool verbose,
+			     Grid *grid);
 
   void rectDist(Cell *cell,
 		adsRect *rect,

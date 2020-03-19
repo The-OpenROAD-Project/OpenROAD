@@ -40,7 +40,7 @@ delta HPWL                 3 %
 Warning: Placed check failed (1).
  _281_
 Warning: Overlap check failed. check failed (1).
- _281_
+ _281_ overlaps _282_
 Warning: Site check failed (1).
  _281_
 Warning: Power line check failed (1).
