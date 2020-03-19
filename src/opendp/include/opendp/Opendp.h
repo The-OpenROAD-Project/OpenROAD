@@ -173,8 +173,7 @@ class Opendp {
 
   void power_mapping();
   void detailedPlacement();
-  std::pair< int, int > nearest_coord_to_rect_boundary(Cell* cell,
-                                                       adsRect* rect);
+  std::pair< int, int > nearestPt(Cell* cell, adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
   bool check_overlap(adsRect cell, adsRect box);
   bool check_overlap(Cell* cell, adsRect* rect);
@@ -195,16 +194,16 @@ class Opendp {
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
-  void non_group_cell_pre_placement();
-  void group_cell_pre_placement();
-  void non_group_cell_placement();
-  void group_cell_placement();
-  void brick_placement1(Group* group);
-  void brick_placement2(Group* group);
-  int group_refine(Group* group);
-  int group_annealing(Group* group);
-  int non_group_annealing();
-  int non_group_refine();
+  void prePlace();
+  void prePlaceGroups();
+  void place();
+  void placeGroups();
+  void brickPlace1(Group* group);
+  void brickPlace2(Group* group);
+  int groupRefine(Group* group);
+  int anneal(Group* group);
+  int anneal();
+  int refine();
 
   // assign.cpp
   void fixed_cell_assign();
@@ -328,7 +327,7 @@ class Opendp {
   // Magic numbers
   int diamond_search_height_;  // grid units
   static constexpr double group_refine_percent_ = .05;
-  static constexpr double non_group_refine_percent_ = .02;
+  static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
 };
 

@@ -189,8 +189,7 @@ int64_t Opendp::hpwl(bool initial) {
   return hpwl;
 }
 
-pair< int, int > Opendp::nearest_coord_to_rect_boundary(Cell* cell,
-                                                        adsRect* rect) {
+pair< int, int > Opendp::nearestPt(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
   int size_x = gridNearestWidth(cell);
