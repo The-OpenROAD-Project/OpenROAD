@@ -58,8 +58,6 @@ public:
         bool getTermProp() const { return _termProp; }
         void setCutHopRatio(double ratio) { _cutHopRatio = ratio; }
         double getCutHopRatio() { return _cutHopRatio; }
-        void setArchitecture(bool enable) { _architecture = enable; } 
-        bool getArchitecture() const { return _architecture; }
         void setArchTopology(const std::vector<int>& arch) { _archTopology = arch; }
         std::vector<int> getArchTopology() const { return _archTopology; } 
         void setTool(const std::string& tool) { _tool = tool; }
@@ -76,6 +74,8 @@ public:
         unsigned getMaxVertexWeight() const { return _maxVertexWeight; }
         void setBalanceConstraint(unsigned constraint) { _balanceConstraint = constraint; }
         unsigned getBalanceConstraint() const { return _balanceConstraint; }
+        void setSeeds(const std::vector<int>& seeds) { _seeds = seeds; }
+        std::vector<int> getSeeds() const { return _seeds; } 
 
 private:
         unsigned                _numStarts              = 1;
@@ -92,8 +92,8 @@ private:
         unsigned                _maxEdgeWeight          = 100; 
         unsigned                _maxVertexWeight        = 100; 
         unsigned                _balanceConstraint      = 5; 
-        bool                    _architecture           = false;
         std::vector<int>        _archTopology;
+        std::vector<int>        _seeds;
 }; 
 
 class PartClusManagerKernel {

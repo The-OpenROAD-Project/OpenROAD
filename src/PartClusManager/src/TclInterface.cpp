@@ -38,6 +38,11 @@
 #include "TclInterface.h"
 #include "PartClusManagerKernel.h"
 #include "openroad/OpenRoad.hh"
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <vector>
+#include <time.h>
 
 namespace PartClusManager {
 
@@ -111,6 +116,45 @@ void set_cut_hop_ratio(float value) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
         kernel->getOptions().setCutHopRatio(value);
+}
+
+void set_architecture(const char* topology) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        std::stringstream ss(topology);
+        std::istream_iterator<int> begin(ss);
+        std::istream_iterator<int> end;
+        std::vector<int> archTopology(begin, end);
+        kernel->getOptions().setArchTopology(archTopology);
+}
+
+void set_seeds(const char* seeds) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        std::stringstream ss(seeds);
+        std::istream_iterator<int> begin(ss);
+        std::istream_iterator<int> end;
+        std::vector<int> seedVector(begin, end);
+        kernel->getOptions().setSeeds(seedVector);
+}
+
+void generate_seeds(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        std::vector<int> seedVector;
+        for (int i = 0; i < value; i++)
+        {
+                int seedVar = 5;
+                int seed = 0;
+                do
+                {
+                        std::srand(time(NULL) + (i * 1000) + (seedVar * 50));
+                        seed = std::rand();
+                        seedVar += 5;
+                } while (std::find(seedVector.begin(), seedVector.end(), seed) != seedVector.end());
+                seedVector.push_back(seed);
+        }
+        kernel->getOptions().setSeeds(seedVector);
 }
 
 void run_partitioning() {

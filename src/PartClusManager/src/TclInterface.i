@@ -52,5 +52,8 @@ extern void set_balance_constraints(unsigned value);
 extern void set_coarsening_ratio(float value);
 extern void set_enable_term_prop(bool value);
 extern void set_cut_hop_ratio(float value);
+extern void set_architecture(const char* topology);
+extern void set_seeds(const char* seeds);
+extern void generate_seeds(unsigned value);
 extern void run_partitioning();
 }

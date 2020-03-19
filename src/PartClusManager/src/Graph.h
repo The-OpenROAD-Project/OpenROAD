@@ -50,19 +50,18 @@ public:
 	double getVertexWeight(int idx) const { return _vertexWeights[idx];}
 	int getColIdx(int idx) const {return _colIdx[idx];}
 	int getRowPtr(int idx) const {return _rowPtr[idx];}
-	short getAssignment(int idx) const {return _idxToPart[idx];} 
 	int getMapping(std::string inst){return _instToIdx[inst];}
 	std::vector<int> getEdgeWeight() const { return _edgeWeights;};
 	std::vector<double> getVertexWeight() const { return _vertexWeights;};
 	std::vector<int> getColIdx() const { return _colIdx;};
 	std::vector<int> getRowPtr() const { return _rowPtr;};
-	std::vector<short> getIdxToPart() const { return _idxToPart;};
+	std::vector<std::vector<short>> getAssignments() const {return _seedAssignments;} 
 
 	void addEdgeWeight(int weight){_edgeWeights.push_back(weight);} 
 	void addVertexWeight(int weight){_vertexWeights.push_back(weight);} 
 	void addColIdx(int idx){_colIdx.push_back(idx);} 
 	void addRowPtr(int idx){_rowPtr.push_back(idx);} 
-	void addAssignment(int part){_idxToPart.push_back(part);} 
+	void addAssignment(std::vector<short> idxToPart){_seedAssignments.push_back(idxToPart);} 
 	void addMapping(std::string inst, int idx){_instToIdx[inst] = idx;}
 
 	inline bool isInMap (std::string pinName) const{
@@ -80,7 +79,7 @@ private:
 	std::vector<double> _vertexWeights;
 	std::vector<int> _colIdx;
 	std::vector<int> _rowPtr;
-	std::vector<short> _idxToPart;
+	std::vector<std::vector<short>> _seedAssignments;
 	std::map<std::string, int> _instToIdx;
 
 };

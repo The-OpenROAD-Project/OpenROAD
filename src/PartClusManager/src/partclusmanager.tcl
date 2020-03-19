@@ -48,6 +48,8 @@ sta::define_cmd_args "partition_netlist" { [-tool name] \
                                           [-coarsening_vertices value] \
                                           [-enable_term_prop value] \
                                           [-cut_hop_ratio value] \
+                                          [-architecture value] \
+                                          [-seeds value] \
                                          }
 proc partition_netlist { args } {
   sta::parse_key_args "partition_netlist" args \
@@ -62,6 +64,8 @@ proc partition_netlist { args } {
           -balance_constraint \
           -coarsening_ratio \
           -cut_hop_ratio \ 
+          -architecture \
+          -seeds \
          } flags { -enable_perm_prop \ 
          }
 
@@ -191,6 +195,22 @@ proc partition_netlist { args } {
     } else {
        PartClusManager::set_cut_hop_ratio $keys(-cut_hop_ratio)
     }       
+  }
+
+  # Architecture
+  if { [info exists keys(-architecture)] } {
+        PartClusManager::set_architecture $keys(-architecture)
+  }
+
+  # Seeds
+  if { [info exists keys(-seeds)] } {
+        PartClusManager::set_seeds $keys(-seeds)
+  } else {
+        if {! [info exists keys(-num_starts)]} {
+              puts "\[ERROR\] Missing argument -seeds or -num_starts."
+              return
+        }
+        PartClusManager::generate_seeds $keys(-num_starts)
   }
 
   PartClusManager::run_partitioning

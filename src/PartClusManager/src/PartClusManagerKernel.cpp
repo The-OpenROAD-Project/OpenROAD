@@ -61,14 +61,11 @@ void PartClusManagerKernel::runChaco() {
 	std::vector<int> rowPtr = _graph.getRowPtr();
         int numVertices = vertexWeights.size();
         
-        int architecture = 0;
-        if (_options.getArchitecture()){
-                architecture = _options.getArchTopology().size();
-        }
+        int architecture = _options.getArchTopology().size();
         int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
-        if (_options.getArchitecture()){
+        if (architecture > 0){
                 std::vector<int> archTopology = _options.getArchTopology();
-                for (int i = 0; i < architecture; i++)
+                for (int i = 0; ((i < architecture) && (i < 3)) ; i++)
                 {
                         mesh_dims[i] = archTopology[i];
                 }
@@ -78,60 +75,61 @@ void PartClusManagerKernel::runChaco() {
 
         int numVertCoar = _options.getCoarVertices();
 
-        std::srand(time(NULL));
-        long seed = std::rand();
+        for (long seed : _options.getSeeds()) {
+                int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
+                int* currentIndex = starts;
+                for (int pointer : rowPtr){
+                        *currentIndex = (pointer); 
+                        currentIndex++;
+                }
+                *currentIndex = colIdx.size(); // Needed so Chaco can find the end of the interval of the last vertex
 
-        int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
-        int* currentIndex = starts;
-        for (int pointer : rowPtr){
-                *currentIndex = (pointer); 
-                currentIndex++;
+                int* vweights = (int*) malloc((unsigned) numVertices * sizeof(int));
+                currentIndex = vweights;
+                for (int weigth : vertexWeights){
+                        *currentIndex = weigth; 
+                        currentIndex++;
+                }
+
+                int* adjacency = (int*) malloc((unsigned) colIdx.size() * sizeof(int));
+                currentIndex = adjacency;
+                for (int pointer : colIdx){
+                        *currentIndex = (pointer + 1); 
+                        currentIndex++;
+                }
+
+                float* eweights = (float*) malloc((unsigned) colIdx.size() * sizeof(float));
+                float* currentIndexFloat = eweights;
+                for (int weigth : edgeWeights){
+                        *currentIndexFloat = weigth; 
+                        currentIndexFloat++;
+                }
+
+                short* assigment = (short*) malloc((unsigned) numVertices * sizeof(short));
+                interface_wrap(numVertices,                             /* number of vertices */
+                        starts, adjacency, vweights, eweights,   /* graph definition for chaco */
+                        NULL, NULL, NULL,                        /* x y z positions for the inertial method, not needed for multi-level KL */
+                        NULL, NULL,                              /* output assigment name and file, isn't needed because internal methods of PartClusManager are used instead */
+                        assigment,                               /* vertex assigment vector. Contains the set that each vector is present on.*/
+                        architecture, hypercubeDims, mesh_dims,  /* architecture, architecture topology and the hypercube dimensions (number of 2-way divisions) */
+                        NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
+                        1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
+                        0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
+                        0.001, seed);                            /* tolerance on eigenvectors (hard-coded, not used) and the seed */
+                
+                std::vector<short> chacoResult;
+                for (int i = 0; i < numVertices; i++)
+                {
+                        short* currentpointer = assigment + i;
+                        chacoResult.push_back(*currentpointer);
+                }
+                _graph.addAssignment(chacoResult);
+                free(assigment);
         }
-        *currentIndex = colIdx.size(); // Needed so Chaco can find the end of the interval of the last vertex
 
-        int* vweights = (int*) malloc((unsigned) numVertices * sizeof(int));
-        currentIndex = vweights;
-        for (int weigth : vertexWeights){
-                *currentIndex = weigth; 
-                currentIndex++;
-        }
-
-        int* adjacency = (int*) malloc((unsigned) colIdx.size() * sizeof(int));
-        currentIndex = adjacency;
-        for (int pointer : colIdx){
-                *currentIndex = (pointer + 1); 
-                currentIndex++;
-        }
-
-        float* eweights = (float*) malloc((unsigned) colIdx.size() * sizeof(float));
-        float* currentIndexFloat = eweights;
-        for (int weigth : edgeWeights){
-                *currentIndexFloat = weigth; 
-                currentIndexFloat++;
-        }
-
-        short* assigment = (short*) malloc((unsigned) numVertices * sizeof(short));
-        interface_wrap(numVertices,                                       /* number of vertices */
-                       starts, adjacency, vweights, eweights,   /* graph definition for chaco */
-                       NULL, NULL, NULL,                        /* x y z positions for the inertial method, not needed for multi-level KL */
-		       NULL, NULL,                              /* output assigment name and file, isn't needed because internal methods of PartClusManager are used instead */
-		       assigment,                               /* vertex assigment vector. Contains the set that each vector is present on.*/
-                       architecture, hypercubeDims, mesh_dims,  /* architecture, architecture topology and the hypercube dimensions (number of 2-way divisions) */
-                       NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
-		       1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
-                       0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
-		       0.001, seed);                            /* tolerance on eigenvectors (hard-coded, not used) and the seed */
-        
-        for (int i = 0; i < numVertices; i++)
-	{
-		short* currentpointer = assigment + i;
-                _graph.addAssignment(*currentpointer);
-	}
-
-        free(assigment);
         free(mesh_dims);
 
-        std::cout << "Chaco run completed. Seed used: " << seed << ".\n";
+        std::cout << "Chaco run completed.\n";
 }
 
 void PartClusManagerKernel::runChaco(const Graph& graph, const PartOptions& options) {
