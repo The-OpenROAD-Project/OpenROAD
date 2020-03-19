@@ -156,8 +156,7 @@ void Opendp::group_pixel_assign() {
         }
         if(rect.xMax() % site_width_ != 0) {
           grid_[k][col_end - 1].util -=
-	    // magic number alert
-	    ((200 - rect.xMax()) % site_width_) / static_cast<double>(site_width_);
+	    ((site_width_ - rect.xMax()) % site_width_) / static_cast<double>(site_width_);
         }
       }
     }
