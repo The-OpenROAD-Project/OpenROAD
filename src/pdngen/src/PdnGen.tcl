@@ -439,7 +439,7 @@ proc read_cutclass {layer_name} {
     if {![regexp {CUTCLASS\s+([^\s]+)\s+WIDTH\s+([^\s]+)\s+LENGTH\s+([^\s]+)} $line - cut_class width length]} {
       critical 20 "Failed to read CUTCLASS property '$line'"
     }
-    if {$min_area == -1 || [expr $width * $length] < $min_area} {
+    if {$min_area == -1 || ($width * $length) < $min_area} {
       dict set default_cutclass $layer_name $cut_class
       set min_area [expr $width * $length]
     }
@@ -750,11 +750,11 @@ proc use_arrayspacing {layer_name rows columns} {
     # debug "Matching entry in arrayspacing"
     return 1
   }
-  if {[expr min($rows,$columns)] < [lindex [dict keys [dict get $arrayspacing arraycuts]] 0]} {
+  if {min($rows,$columns) < [lindex [dict keys [dict get $arrayspacing arraycuts]] 0]} {
     # debug "row/columns less than min array spacing"
     return 0
   }
-  if {[expr min($rows,$columns)] > [lindex [dict keys [dict get $arrayspacing arraycuts]] end]} {
+  if {min($rows,$columns) > [lindex [dict keys [dict get $arrayspacing arraycuts]] end]} {
     # debug "row/columns greater than min array spacing"
     return 1
   }
@@ -805,12 +805,12 @@ proc determine_num_via_columns {via_info constraints} {
     if {$columns > [dict get $constraints max_columns]} {
       set columns [dict get $constraints max_columns]
 
-      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $lower]
+      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info lower layer]]
       # debug "$lower_concave_enclosure $max_lower_enclosure"
       if {$lower_concave_enclosure > $max_lower_enclosure} {
         set max_lower_enclosure $lower_concave_enclosure
       }
-      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $upper]
+      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info upper layer]]
       # debug "$upper_concave_enclosure $max_upper_enclosure"
       if {$upper_concave_enclosure > $max_upper_enclosure} {
         set max_upper_enclosure $upper_concave_enclosure
@@ -878,12 +878,12 @@ proc determine_num_via_rows {via_info constraints} {
     if {$rows > [dict get $constraints max_rows]} {
       set rows [dict get $constraints max_rows]
 
-      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $lower]
+      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info lower layer]]
       # debug "$lower_concave_enclosure $max_lower_enclosure"
       if {$lower_concave_enclosure > $max_lower_enclosure} {
         set max_lower_enclosure $lower_concave_enclosure
       }
-      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $upper]
+      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info upper layer]]
       # debug "$upper_concave_enclosure $max_upper_enclosure"
       if {$upper_concave_enclosure > $max_upper_enclosure} {
         set max_upper_enclosure $upper_concave_enclosure
@@ -1939,6 +1939,8 @@ proc import_macro_boundaries {} {
 
   set instances [import_def_components [dict keys $macros]]
 
+  set boundary [get_stdcell_area]
+    
   foreach instance [dict keys $instances] {
     set macro_name [dict get $instances $instance macro]
 
@@ -1946,6 +1948,15 @@ proc import_macro_boundaries {} {
     set lly [dict get $instances $instance ymin]
     set urx [dict get $instances $instance xmax]
     set ury [dict get $instances $instance ymax]
+
+    # If there are no shapes left after 'and'ing the boundard with the cell, then
+    # the cell lies outside the area where we are adding a power grid.
+    set box [odb::odb_newSetFromRect $llx $lly $urx $ury]
+    if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
+      debug "Instance $instance does not lie in the cell area"
+      set instances [dict remove $instances $instance]
+      continue
+    }
 
     dict set instances $instance macro_boundary [list $llx $lly $urx $ury]
 
@@ -1967,6 +1978,7 @@ proc import_def_components {macros} {
   variable block
   set instances {}
   # debug "$macros"
+
   foreach inst [$block getInsts] {
     set macro_name [[$inst getMaster] getName]
     if {[lsearch -exact $macros $macro_name] != -1} {
@@ -2187,7 +2199,7 @@ proc write_opendb_row {height start end} {
   if {$start == $end} {return}
   
   set llx [lindex [dict get $design_data config core_area] 0]
-  if {[expr { int($start - $llx) % $site_width}] == 0} {
+  if {(int($start - $llx) % $site_width) == 0} {
       set x $start
   } else {
       set offset [expr { int($start - $llx) % $site_width}]
@@ -2257,6 +2269,7 @@ proc get_memory_instance_pg_pins {} {
   variable block
 
   # debug "start"
+  set boundary [get_stdcell_area]
 
   foreach inst [$block getInsts] {
     set inst_name [$inst getName]
@@ -2281,6 +2294,15 @@ proc get_memory_instance_pg_pins {} {
     if {[$master getType] == "CORE_TIEHIGH"} {continue}
     if {[$master getType] == "CORE_TIELOW"} {continue}
 
+    # If there are no shapes left after 'and'ing the boundard with the cell, then
+    # the cell lies outside the area where we are adding a power grid.
+    set bbox [$inst getBBox]
+    set box [odb::odb_newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+    if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
+      debug "Instance [$inst getName] does not lie in the cell area"
+      continue
+    }
+    
     # debug "cell name - [$master getName]"
 
     foreach term_name [concat [get_macro_power_pins $inst_name] [get_macro_ground_pins $inst_name]] {
@@ -2317,7 +2339,7 @@ proc get_memory_instance_pg_pins {} {
       }
     }    
   }
-  # debug get_memory_instance_pg_pins "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+  # debug "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
   # debug "end"
 }
 
@@ -2467,15 +2489,6 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     }
   }
 
-  ########################################
-  # Creating blockages based on macro locations
-  #######################################
-  # debug "import_macro_boundaries"
-  import_macro_boundaries
-
-  # debug "get_memory_instance_pg_pins"
-  get_memory_instance_pg_pins
-
   if {[dict exists $design_data grid stdcell]} {
     set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
   }
@@ -2494,6 +2507,15 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     set_core_area {*}[get_extent [get_stdcell_plus_area]]
   }
   
+  ########################################
+  # Creating blockages based on macro locations
+  #######################################
+  # debug "import_macro_boundaries"
+  import_macro_boundaries
+
+  # debug "get_memory_instance_pg_pins"
+  get_memory_instance_pg_pins
+
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
     if {[lsearch -exact $metal_layers $layer] < 0} {
@@ -2579,9 +2601,9 @@ proc get_quadrant {x y} {
   set test_x [expr $x - [lindex $die_area 0]]
   set test_y [expr $y - [lindex $die_area 1]]
   # debug "$dw * $test_y ([expr $dw * $test_y]) > expr $dh * $test_x ([expr $dh * $test_x])"
-  if {[expr $dw * $test_y] > [expr $dh * $test_x]} {
+  if {$dw * $test_y > $dh * $test_x} {
     # Top or left
-    if {[expr $dw * $test_y] + [expr $dh * $test_x] > [expr $dw * $dh]} {
+    if {($dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
       # Top or right
       return "t"
     } else {
@@ -2590,7 +2612,7 @@ proc get_quadrant {x y} {
     }
   } else {
     # Bottom or right
-    if {[expr $dw * $test_y] + [expr $dh * $test_x] > [expr $dw * $dh]} {
+    if {)$dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
       # Top or right
       return "r"
     } else {
