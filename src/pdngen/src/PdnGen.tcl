@@ -44,6 +44,7 @@
 # 16 "##Power Delivery Network Generator: Generating PDN"
 # 16 "##  config: $config"
 # 32 "Generating blockages for TrionRoute"
+# 34 "Inserting macro grid for instance $instance"
 #
 # Warning
 # 1 "run_pdngen is deprecated. Use pdngen."
@@ -3683,11 +3684,15 @@ proc add_blockages {more_blockages} {
 proc add_macro_based_grids {} {
   variable instances
   variable grid_data
+  variable verbose
   
   set_blockages {}
   if {[llength [dict keys $instances]] > 0} {
     information 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
     foreach instance [dict keys $instances] {
+      if {$verbose == 1} {
+        information 34 "  - grid for instance $instance"
+      }
       # debug "$instance [get_instance_specification $instance]"
       set grid_data [get_instance_specification $instance]
       add_grid 
