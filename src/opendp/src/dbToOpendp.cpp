@@ -192,8 +192,9 @@ static bool placeMasterType(dbMasterType type) {
   case dbMasterType::CORE_TIELOW:
   case dbMasterType::CORE_SPACER:
   case dbMasterType::BLOCK:
-    return true;
+    // Kludge because CORE WELLTAP is not recognized by OpenDB
   case dbMasterType::NONE:
+    return true;
   case dbMasterType::COVER:
   case dbMasterType::RING:
   case dbMasterType::PAD:
