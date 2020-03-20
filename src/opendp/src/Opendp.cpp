@@ -287,26 +287,26 @@ void Opendp::findDesignStats() {
 
 void Opendp::reportDesignStats() {
   printf("Design Stats\n");
-  printf("------------------------------\n");
-  printf("total instances       %6d\n", block_->getInsts().size());
-  printf("multi instances       %6d\n",  multi_height_inst_count_);
-  printf("fixed instances       %6d\n", fixed_inst_count_);
-  printf("nets                  %6d\n", block_->getNets().size());
-  printf("design area           %6.1f u^2\n",
+  printf("--------------------------------\n");
+  printf("total instances      %8d\n", block_->getInsts().size());
+  printf("multi instances      %8d\n",  multi_height_inst_count_);
+  printf("fixed instances      %8d\n", fixed_inst_count_);
+  printf("nets                 %8d\n", block_->getNets().size());
+  printf("design area          %8.1f u^2\n",
 	 dbuAreaToMicrons(design_area_));
-  printf("fixed area            %6.1f u^2\n",
+  printf("fixed area           %8.1f u^2\n",
 	 dbuAreaToMicrons(fixed_area_));
-  printf("movable area          %6.1f u^2\n",
+  printf("movable area         %8.1f u^2\n",
 	 dbuAreaToMicrons(movable_area_));
-  printf("utilization           %6.0f %%\n", design_util_ * 100);
-  printf("rows                  %6d\n", row_count_);
-  printf("row height            %6.1f u\n",
+  printf("utilization          %8.0f %%\n", design_util_ * 100);
+  printf("rows                 %8d\n", row_count_);
+  printf("row height           %8.1f u\n",
 	 dbuToMicrons(row_height_));
   if(max_cell_height_ > 1)
-    printf("max height            %6d rows\n",
+    printf("max height           %8d rows\n",
 	   max_cell_height_);
   if(groups_.size() > 0)
-    printf("group count           %6lu\n", groups_.size());
+    printf("group count          %8lu\n", groups_.size());
   printf("\n");
 }
 
@@ -315,21 +315,21 @@ void Opendp::reportLegalizationStats() {
   displacementStats(avg_displacement, sum_displacement, max_displacement);
 
   printf("Placement Analysis\n");
-  printf("------------------------------\n");
-  printf("total displacement    %6.1f u\n",
+  printf("--------------------------------\n");
+  printf("total displacement   %8.1f u\n",
 	 dbuToMicrons(sum_displacement));
-  printf("average displacement  %6.1f u\n",
+  printf("average displacement %8.1f u\n",
 	 dbuToMicrons(avg_displacement));
-  printf("max displacement      %6.1f u\n",
+  printf("max displacement     %8.1f u\n",
 	 dbuToMicrons(max_displacement));
   double hpwl_orig = hpwl(true);
-  printf("original HPWL         %6.1f u\n",
+  printf("original HPWL        %8.1f u\n",
 	 dbuToMicrons(hpwl_orig));
   double hpwl_legal = hpwl(false);
-  printf("legalized HPWL        %6.1f u\n",
+  printf("legalized HPWL       %8.1f u\n",
 	 dbuToMicrons(hpwl_legal));
   double hpwl_delta = (hpwl_legal - hpwl_orig) / hpwl_orig * 100;
-  printf("delta HPWL            %6.0f %%\n", hpwl_delta);
+  printf("delta HPWL           %8.0f %%\n", hpwl_delta);
   printf("\n");
 }
 

@@ -12,25 +12,25 @@ Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: simple01.def
 Design Stats
-------------------------------
-total instances            1
-multi instances            0
-fixed instances            0
-nets                       4
-design area             34.0 u^2
-fixed area               0.0 u^2
-movable area             1.9 u^2
-utilization                5 %
-rows                       4
-row height               1.4 u
+--------------------------------
+total instances             1
+multi instances             0
+fixed instances             0
+nets                        4
+design area              34.0 u^2
+fixed area                0.0 u^2
+movable area              1.9 u^2
+utilization                 5 %
+rows                        4
+row height                1.4 u
 
 Placement Analysis
-------------------------------
-total displacement       4.2 u
-average displacement     4.2 u
-max displacement         4.2 u
-original HPWL            1.8 u
-legalized HPWL          10.3 u
-delta HPWL               480 %
+--------------------------------
+total displacement        4.2 u
+average displacement      4.2 u
+max displacement          4.2 u
+original HPWL             1.8 u
+legalized HPWL           10.3 u
+delta HPWL                480 %
 
 No differences found.

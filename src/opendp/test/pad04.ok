@@ -12,25 +12,25 @@ Notice 0:     Created 2 special nets and 20 connections.
 Notice 0:     Created 11 nets and 25 connections.
 Notice 0: Finished DEF file: pad04.def
 Design Stats
-------------------------------
-total instances           10
-multi instances            0
-fixed instances            0
-nets                      13
-design area             34.0 u^2
-fixed area               0.0 u^2
-movable area             8.5 u^2
-utilization               25 %
-rows                       4
-row height               1.4 u
+--------------------------------
+total instances            10
+multi instances             0
+fixed instances             0
+nets                       13
+design area              34.0 u^2
+fixed area                0.0 u^2
+movable area              8.5 u^2
+utilization                25 %
+rows                        4
+row height                1.4 u
 
 Placement Analysis
-------------------------------
-total displacement       0.0 u
-average displacement     0.0 u
-max displacement         0.0 u
-original HPWL           53.1 u
-legalized HPWL          53.1 u
-delta HPWL                 0 %
+--------------------------------
+total displacement        0.0 u
+average displacement      0.0 u
+max displacement          0.0 u
+original HPWL            53.1 u
+legalized HPWL           53.1 u
+delta HPWL                  0 %
 
 No differences found.
