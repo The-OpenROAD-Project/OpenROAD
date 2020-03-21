@@ -170,12 +170,12 @@ void Opendp::group_pixel_assign() {
 
         // Assign group to each pixel.
         for(int l = col_start; l < col_end; l++) {
-          if(abs(grid_[k][l].util - 1.0) < 1e-6) {
+          if(grid_[k][l].util == 1.0) {
             grid_[k][l].group_ = &group;
 	    grid_[k][l].is_valid = true;
             grid_[k][l].util = 1.0;
 	  }
-          else if(grid_[k][l].util > 0 && grid_[k][l].util < 1) {
+          else if(grid_[k][l].util > 0.0 && grid_[k][l].util < 1.0) {
             grid_[k][l].cell = &dummy_cell_;
             grid_[k][l].util = 0.0;
             grid_[k][l].is_valid = false;

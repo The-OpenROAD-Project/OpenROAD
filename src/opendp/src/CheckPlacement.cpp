@@ -212,7 +212,6 @@ Cell *Opendp::checkOverlap(Cell &cell,
 	return pixel.cell;
       else {
 	pixel.cell = &cell;
-	pixel.util = 1.0;
       }
     }
   }
