@@ -80,11 +80,11 @@ typedef vector<dbMaster*> dbMasterSeq;
 // gap -> sequence of masters to fill the gap
 typedef vector<dbMasterSeq> GapFillers;
 
-enum power { undefined, VDD, VSS };
+enum Power { undefined, VDD, VSS };
 
 struct Macro {
   bool is_multi_row_;
-  power top_power_;    // VDD/VSS
+  Power top_power_;    // VDD/VSS
 };
 
 struct Cell {
@@ -154,7 +154,6 @@ class Opendp {
  private:
   void importDb();
   void dbToOpendp();
-  void makeMacros(dbLib* db_lib);
   void examineRows();
   void makeCells();
   bool isPlacedType(dbMasterType type);
@@ -164,7 +163,7 @@ class Opendp {
   double dbuAreaToMicrons(int64_t dbu_area);
   bool isFixed(Cell* cell);  // fixed cell or not
   bool isMultiRow(Cell* cell);
-  power topPower(Cell* cell);
+  Power topPower(Cell* cell);
   void updateDbInstLocations();
 
   void defineTopPower(Macro &macro,
@@ -176,7 +175,6 @@ class Opendp {
   void findDesignStats();
   void copy_init_to_final();
 
-  void power_mapping();
   void detailedPlacement();
   adsPoint nearestPt(Cell* cell, adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
@@ -239,7 +237,7 @@ class Opendp {
 		int y);
   int rectDist(Cell *cell,
 	       adsRect *rect);
-  power rowTopPower(int row);
+  Power rowTopPower(int row);
   dbOrientType rowOrient(int row);
 
   Grid *makeGrid();
@@ -302,9 +300,10 @@ class Opendp {
   map< dbInst*, Cell* > db_inst_map_;
 
   adsRect core_;
-  power initial_power_;
+  Power initial_power_;
   bool row0_orient_is_r0_;
   bool row0_top_power_is_vdd_;
+  Power macro_top_power_;
   int row_height_; // dbu
   int site_width_;
   int row_count_;

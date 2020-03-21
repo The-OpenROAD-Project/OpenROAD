@@ -103,7 +103,7 @@ Opendp::isMultiRow(Cell *cell)
   return db_master_map_[cell->db_inst_->getMaster()].is_multi_row_;
 }
 
-power
+Power
 Opendp::topPower(Cell *cell)
 {
   return db_master_map_[cell->db_inst_->getMaster()].top_power_;
@@ -160,7 +160,6 @@ void Opendp::importDb() {
   clear();
   dbToOpendp();
   initAfterImport();
-  power_mapping();
 }
 
 void Opendp::detailedPlacement(int max_displacment) {
@@ -333,7 +332,7 @@ void Opendp::reportLegalizationStats() {
 
 ////////////////////////////////////////////////////////////////
 
-power
+Power
 Opendp::rowTopPower(int row)
 {
   return ((row0_top_power_is_vdd_ ? row : row + 1) % 2 == 0) ? VDD : VSS;

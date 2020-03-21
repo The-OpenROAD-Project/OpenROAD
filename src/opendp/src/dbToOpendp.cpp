@@ -74,25 +74,27 @@ using odb::dbSBox;
 static bool swapWidthHeight(dbOrientType orient);
 
 void Opendp::dbToOpendp() {
-  // LEF
-  for(auto db_lib : db_->getLibs())
-    makeMacros(db_lib);
-
   block_ = db_->getChip()->getBlock();
   core_ = ord::getCore(block_);
 
+  macro_top_power_ = undefined;
+  vector<dbMaster*> masters;
+  block_->getMasters(masters);
+  for(auto master : masters) {
+    struct Macro &macro = db_master_map_[master];
+    defineTopPower(macro, master);
+  }
   examineRows();
   makeCells();
   makeGroups();
   findRowPower();
-}
 
-void Opendp::makeMacros(dbLib *db_lib) {
-  auto db_masters = db_lib->getMasters();
-  for(auto db_master : db_masters) {
-    struct Macro &macro = db_master_map_[db_master];
-    defineTopPower(macro, db_master);
+  if(macro_top_power_ == Power::undefined) {
+    error("Cannot find MACRO with VDD/VSS pins.");
   }
+
+  Power row_power = (initial_power_ == undefined) ? macro_top_power_ : initial_power_;
+  row0_top_power_is_vdd_ = (row_power == VDD);
 }
 
 void Opendp::defineTopPower(Macro &macro,
@@ -107,12 +109,17 @@ void Opendp::defineTopPower(Macro &macro,
       gnd = mterm;
   }
 
-  int power_y_max = power ? find_ymax(power) : 0;
-  int gnd_y_max = gnd ? find_ymax(gnd) : 0;
-  macro.top_power_ = (power_y_max > gnd_y_max) ? VDD : VSS;
+  if (power && gnd) {
+    bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
+    macro.is_multi_row_ = is_multi_row;
 
-  macro.is_multi_row_ = power && gnd
-    && (power->getMPins().size() > 1 || gnd->getMPins().size() > 1);
+    int power_y_max = find_ymax(power);
+    int gnd_y_max = find_ymax(gnd);
+    Power top_power = (power_y_max > gnd_y_max) ? VDD : VSS;
+    macro.top_power_ = top_power;
+    if(!is_multi_row)
+      macro_top_power_ = top_power;
+  }
 }
 
 int Opendp::find_ymax(dbMTerm *mterm) {
@@ -233,7 +240,7 @@ void Opendp::makeGroups() {
 }
 
 void Opendp::findRowPower() {
-  initial_power_ = power::undefined;
+  initial_power_ = Power::undefined;
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
   for(dbNet *net : block_->getNets()) {

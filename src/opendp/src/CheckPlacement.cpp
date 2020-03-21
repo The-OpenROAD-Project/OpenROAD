@@ -170,7 +170,7 @@ bool Opendp::checkPowerLine(Cell &cell) {
   int height = gridHeight(&cell);
   dbOrientType orient = cell.db_inst_->getOrient();
   int grid_y = gridY(&cell);
-  power top_power = topPower(&cell);
+  Power top_power = topPower(&cell);
   return !(height == 1 || height == 3)
     // Everything below here is probably wrong but never exercised.
     && ((height % 2 == 0

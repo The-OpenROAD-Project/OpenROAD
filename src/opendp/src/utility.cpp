@@ -82,33 +82,6 @@ using odb::dbBPin;
 using odb::dbNet;
 using odb::dbPlacementStatus;
 
-void Opendp::power_mapping() {
-  power macro_top_power = undefined;
-  bool found_multi = false;
-  for(auto master_macro : db_master_map_) {
-    Macro &macro = master_macro.second;
-    if(macro.is_multi_row_) {
-      found_multi = true;
-    }
-    if(!macro.is_multi_row_ && macro.top_power_ != power::undefined) {
-      macro_top_power = macro.top_power_;
-      break;
-    }
-  }
-
-  if(found_multi && initial_power_ == undefined) {
-    error("Cannot find VDD/VSS SPECIALNETS definition."
-	  "Please remove multi-height cells or define SPECIALNETS for VDD/VSS nets.");
-  }
-
-  if(macro_top_power == power::undefined) {
-    error("Cannot find MACRO with VDD/VSS pins.");
-  }
-
-  power row_power = (initial_power_ == undefined) ? macro_top_power : initial_power_;
-  row0_top_power_is_vdd_ = (row_power == VDD);
-}
-
 void Opendp::displacementStats(// Return values.
 			       int64_t &avg_displacement,
 			       int64_t &sum_displacement,
