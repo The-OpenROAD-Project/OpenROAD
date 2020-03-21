@@ -54,8 +54,11 @@ namespace opendp {
 
 using std::string;
 using std::vector;
+using std::set;
+using std::map;
 
 using odb::adsRect;
+using odb::adsPoint;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -72,7 +75,7 @@ class Pixel;
 struct Group;
 
 typedef Pixel* Grid;
-typedef std::vector<std::string> StringSeq;
+typedef vector<string> StringSeq;
 typedef vector<dbMaster*> dbMasterSeq;
 // gap -> sequence of masters to fill the gap
 typedef vector<dbMasterSeq> GapFillers;
@@ -103,9 +106,9 @@ struct Cell {
 struct Group {
   Group();
 
-  std::string name;
-  std::vector< adsRect > regions;
-  std::vector< Cell* > siblings;
+  string name;
+  vector< adsRect > regions;
+  vector< Cell* > cells_;
   adsRect boundary;
   double util;
 };
@@ -121,7 +124,7 @@ struct Pixel {
 
 ////////////////////////////////////////////////////////////////
 
-typedef std::set<dbMaster*> dbMasterSet;
+typedef set<dbMaster*> dbMasterSet;
 
 class Opendp {
  public:
@@ -175,7 +178,7 @@ class Opendp {
 
   void power_mapping();
   void detailedPlacement();
-  std::pair< int, int > nearestPt(Cell* cell, adsRect* rect);
+  adsPoint nearestPt(Cell* cell, adsRect* rect);
   int dist_for_rect(Cell* cell, adsRect* rect);
   bool check_overlap(adsRect cell, adsRect box);
   bool check_overlap(Cell* cell, adsRect* rect);
@@ -190,8 +193,8 @@ class Opendp {
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
-  std::vector< Cell* > overlap_cells(Cell* cell);
-  std::set< Cell* > get_cells_from_boundary(adsRect* rect);
+  vector< Cell* > overlap_cells(Cell* cell);
+  set< Cell* > get_cells_from_boundary(adsRect* rect);
   int dist_benefit(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
@@ -292,11 +295,11 @@ class Opendp {
   const char *power_net_name_;
   const char *ground_net_name_;
 
-  std::vector< Cell > cells_;
-  std::vector< Group > groups_;
+  vector< Cell > cells_;
+  vector< Group > groups_;
 
-  std::map< dbMaster*, Macro > db_master_map_;
-  std::map< dbInst*, Cell* > db_inst_map_;
+  map< dbMaster*, Macro > db_master_map_;
+  map< dbInst*, Cell* > db_inst_map_;
 
   adsRect core_;
   power initial_power_;

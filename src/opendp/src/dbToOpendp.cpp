@@ -50,7 +50,6 @@ using std::max;
 using std::min;
 using std::numeric_limits;
 using std::ofstream;
-using std::pair;
 using std::string;
 using std::to_string;
 using std::vector;
@@ -226,7 +225,7 @@ void Opendp::makeGroups() {
 
       for (auto db_inst : db_region->getRegionInsts()) {
 	Cell *cell = db_inst_map_[db_inst];
-	group.siblings.push_back(cell);
+	group.cells_.push_back(cell);
 	cell->group_ = &group;
       }
     }

@@ -48,8 +48,6 @@ using std::abs;
 using std::cerr;
 using std::cout;
 using std::endl;
-using std::make_pair;
-using std::pair;
 using std::sort;
 using std::string;
 using std::vector;
@@ -82,7 +80,6 @@ void Opendp::prePlace() {
   for(Cell& cell : cells_) {
     bool in_group = false;
     adsRect* target;
-    pair< int, int > coord;
     if(!cell.inGroup() && !cell.is_placed_) {
       for(int j = 0; j < groups_.size(); j++) {
 	Group* group = &groups_[j];
@@ -94,9 +91,8 @@ void Opendp::prePlace() {
 	}
       }
       if(in_group) {
-	pair< int, int > coord =
-          nearestPt(&cell, target);
-	if(map_move(&cell, coord.first, coord.second))
+	adsPoint nearest = nearestPt(&cell, target);
+	if(map_move(&cell, nearest.x(), nearest.y()))
 	  cell.hold_ = true;
       }
     }
@@ -105,7 +101,7 @@ void Opendp::prePlace() {
 
 void Opendp::prePlaceGroups() {
   for(Group &group : groups_) {
-    for(Cell* cell : group.siblings) {
+    for(Cell* cell : group.cells_) {
       if(!(isFixed(cell) || cell->is_placed_)) {
 	int dist = numeric_limits<int>::max();
 	bool in_group = false;
@@ -120,9 +116,8 @@ void Opendp::prePlaceGroups() {
 	  }
 	}
 	if(!in_group) {
-	  pair< int, int > coord =
-            nearestPt(cell, target);
-	  if(map_move(cell, coord.first, coord.second)) cell->hold_ = true;
+	  adsPoint nearest = nearestPt(cell, target);
+	  if(map_move(cell, nearest.x(), nearest.y())) cell->hold_ = true;
 	}
       }
     }
@@ -171,7 +166,7 @@ void Opendp::placeGroups() {
     bool multi_pass = true;
     vector< Cell* > cell_list;
     cell_list.reserve(cells_.size());
-    for(Cell* cell : group.siblings) {
+    for(Cell* cell : group.cells_) {
       if(!isFixed(cell) && !cell->is_placed_) {
 	cell_list.push_back(cell);
       }
@@ -211,11 +206,12 @@ void Opendp::placeGroups() {
 
     if(!single_pass || !multi_pass) {
       // Erase group cells
-      for(Cell* cell : group.siblings) {
+      for(Cell* cell : group.cells_) {
         erase_pixel(cell);
       }
 
       // determine brick placement by utilization
+      // magic number alert
       if(group.util > 0.95) {
         brickPlace1(&group);
       }
@@ -262,7 +258,7 @@ Opendp::rectDist(Cell *cell,
 // place toward group edges
 void Opendp::brickPlace1(Group* group) {
   adsRect *boundary = &group->boundary;
-  vector< Cell* > sort_by_dist(group->siblings);
+  vector< Cell* > sort_by_dist(group->cells_);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
        [&](Cell* cell1, Cell* cell2) {
@@ -282,7 +278,7 @@ void Opendp::brickPlace1(Group* group) {
 
 // place toward region edges
 void Opendp::brickPlace2(Group* group) {
-  vector< Cell* > sort_by_dist(group->siblings);
+  vector< Cell* > sort_by_dist(group->cells_);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
        [&](Cell* cell1, Cell* cell2) {
@@ -303,7 +299,7 @@ void Opendp::brickPlace2(Group* group) {
 }
 
 int Opendp::groupRefine(Group* group) {
-  vector< Cell* > sort_by_disp(group->siblings);
+  vector< Cell* > sort_by_disp(group->cells_);
 
   sort(sort_by_disp.begin(), sort_by_disp.end(),
        [&](Cell* cell1, Cell* cell2) {
@@ -325,9 +321,9 @@ int Opendp::anneal(Group* group) {
   int count = 0;
 
   // magic number alert
-  for(int i = 0; i < 1000 * group->siblings.size(); i++) {
-    Cell* cell1 = group->siblings[rand() % group->siblings.size()];
-    Cell* cell2 = group->siblings[rand() % group->siblings.size()];
+  for(int i = 0; i < 1000 * group->cells_.size(); i++) {
+    Cell* cell1 = group->cells_[rand() % group->cells_.size()];
+    Cell* cell2 = group->cells_[rand() % group->cells_.size()];
 
     if(!cell1->hold_ && !cell2->hold_) {
       if(swap_cell(cell1, cell2)) count++;

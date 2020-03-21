@@ -49,7 +49,6 @@ using std::endl;
 using std::max;
 using std::min;
 using std::abs;
-using std::pair;
 using std::round;
 using std::numeric_limits;
 
@@ -104,7 +103,7 @@ void Opendp::group_cell_region_assign() {
     int64_t area = site_count * site_width_ * row_height_;
 
     int64_t cell_area = 0;
-    for(Cell* cell : group.siblings) {
+    for(Cell* cell : group.cells_) {
       cell_area += cell->area();
     }
     group.util = static_cast<double>(cell_area) / area;

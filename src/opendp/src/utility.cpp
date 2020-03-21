@@ -57,11 +57,9 @@ using std::cout;
 using std::endl;
 using std::floor;
 using std::ifstream;
-using std::make_pair;
 using std::max;
 using std::min;
 using std::ofstream;
-using std::pair;
 using std::round;
 using std::string;
 using std::to_string;
@@ -189,7 +187,7 @@ int64_t Opendp::hpwl(bool initial) {
   return hpwl;
 }
 
-pair< int, int > Opendp::nearestPt(Cell* cell, adsRect* rect) {
+adsPoint Opendp::nearestPt(Cell* cell, adsRect* rect) {
   int x, y;
   initLocation(cell, x, y);
   int size_x = gridNearestWidth(cell);
@@ -219,9 +217,9 @@ pair< int, int > Opendp::nearestPt(Cell* cell, adsRect* rect) {
     assert(dist_x >= 0);
     assert(dist_y >= 0);
     if(dist_x < dist_y)
-      return make_pair(temp_x, y);
+      return adsPoint(temp_x, y);
     else
-      return make_pair(x, temp_y);
+      return adsPoint(x, temp_y);
   }
 
   if(x < rect->xMin())
@@ -234,7 +232,7 @@ pair< int, int > Opendp::nearestPt(Cell* cell, adsRect* rect) {
   else if(y + cell->height_ > rect->yMax())
     temp_y = rect->yMax() - cell->height_;
 
-  return make_pair(temp_x, temp_y);
+  return adsPoint(temp_x, temp_y);
 }
 
 int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {

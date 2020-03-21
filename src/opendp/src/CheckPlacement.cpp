@@ -57,11 +57,9 @@ namespace opendp {
 
 using std::cout;
 using std::endl;
-using std::make_pair;
 using std::max;
 using std::min;
 using std::ofstream;
-using std::pair;
 using std::to_string;
 using std::vector;
 
