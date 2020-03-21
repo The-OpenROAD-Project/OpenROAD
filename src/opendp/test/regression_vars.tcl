@@ -101,17 +101,15 @@ record_tests {
   check1
   check2
   check3
-  simple01
-  simple02
-  simple03
-  simple04
-  simple05
-  simple07
-  simple08
-  simple09
+  check4
+  check5
+  check6
+  check7
   fence01
   fence02
   fence03
+  fillers1
+  fillers2
   fragmented_row01
   fragmented_row02
   fragmented_row03
@@ -124,9 +122,14 @@ record_tests {
   pad03
   pad04
   pad05
-  overlap1
-  fillers1
-  fillers2
+  simple01
+  simple02
+  simple03
+  simple04
+  simple05
+  simple07
+  simple08
+  simple09
   aes
   gcd
   ibex

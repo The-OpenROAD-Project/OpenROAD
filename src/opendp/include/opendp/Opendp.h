@@ -66,6 +66,7 @@ using odb::dbMTerm;
 using odb::dbOrientType;
 using odb::dbRow;
 using odb::dbSite;
+using odb::dbMasterType;
 
 class Pixel;
 struct Group;
@@ -153,6 +154,7 @@ class Opendp {
   void makeMacros(dbLib* db_lib);
   void examineRows();
   void makeCells();
+  bool isPlacedType(dbMasterType type);
   void makeGroups();
   void findRowPower();
   double dbuToMicrons(int64_t dbu);
@@ -213,6 +215,8 @@ class Opendp {
   void erase_pixel(Cell* cell);
   void paint_pixel(Cell* cell, int grid_x, int grid_y);
 
+  // checkPlacement
+  bool isPlaced(Cell *cell);
   bool checkPowerLine(Cell &cell);
   bool checkInCore(Cell &cell);
   Cell *checkOverlap(Cell &cell,
@@ -265,10 +269,11 @@ class Opendp {
   void initPaddedLoc(Cell *cell,
 		     int &x,
 		     int &y);
+  bool isStdCell(Cell *cell);
+  bool isBlock(Cell *cell);
   int paddedWidth(Cell *cell);
+  bool isPaddedType(Cell *cell);
   bool isPadded(Cell *cell);
-  bool isClassBlock(Cell *cell);
-  bool isClassCore(Cell *cell);
   int disp(Cell *cell);
   int coreGridMaxX();
   int coreGridMaxY();

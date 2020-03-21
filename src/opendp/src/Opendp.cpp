@@ -203,7 +203,7 @@ void Opendp::initAfterImport() {
 
   // fixed cell marking
   fixed_cell_assign();
-  // group id mapping & x_axis dummycell insertion
+  // group mapping & x_axis dummycell insertion
   group_pixel_assign2();
   // y axis dummycell insertion
   group_pixel_assign();
@@ -391,6 +391,109 @@ int Opendp::disp(Cell *cell) {
          abs(init_y - cell->y_);
 }
 
+bool Opendp::isPlacedType(dbMasterType type) {
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_SPACER:
+  case dbMasterType::BLOCK:
+    // Kludge because CORE WELLTAP is not recognized by OpenDB
+  case dbMasterType::NONE:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    return true;
+    // These classes are completely ignored by the placer.
+  case dbMasterType::COVER:
+  case dbMasterType::RING:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+    return false;
+  }
+}
+
+bool Opendp::isPaddedType(Cell *cell) {
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+    // Kludge because CORE WELLTAP is not recognized by OpenDB
+  case dbMasterType::NONE:
+    return true;
+  case dbMasterType::CORE_SPACER:
+  case dbMasterType::BLOCK:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    // These classes are completely ignored by the placer.
+  case dbMasterType::COVER:
+  case dbMasterType::RING:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+    return false;
+  }
+}
+
+bool Opendp::isStdCell(Cell *cell) {
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_SPACER:
+    return true;
+    // Kludge because CORE WELLTAP is not recognized by OpenDB
+  case dbMasterType::NONE:
+  case dbMasterType::BLOCK:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    // These classes are completely ignored by the placer.
+  case dbMasterType::COVER:
+  case dbMasterType::RING:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+    return false;
+  }
+}
+
+bool Opendp::isBlock(Cell *cell) {
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  return type == dbMasterType::BLOCK;
+}
+
 int Opendp::gridEndX() {
   return divCeil(core_.dx(), site_width_);
 }
@@ -406,21 +509,9 @@ int Opendp::paddedWidth(Cell *cell) {
     return cell->width_;
 }
 
-// Cells only exist for CLASS BLOCK and CORE_* instances.
-// CORE_* instances are padded
-// BLOCK instances are not padded
 bool Opendp::isPadded(Cell *cell) {
-  return isClassCore(cell)
+  return isPaddedType(cell)
     && (pad_left_  > 0 || pad_right_ > 0);
-}
-
-bool Opendp::isClassBlock(Cell *cell) {
-  return cell->db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
-}
-
-// Cells are only created for CLASS BLOCK and CORE instances.
-bool Opendp::isClassCore(Cell *cell) {
-  return !isClassBlock(cell);
 }
 
 int Opendp::gridPaddedWidth(Cell *cell) {

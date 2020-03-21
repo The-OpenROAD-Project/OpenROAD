@@ -130,22 +130,22 @@ void Opendp::prePlaceGroups() {
 }
 
 void Opendp::place() {
-  vector< Cell* > cell_list;
-  cell_list.reserve(cells_.size());
+  vector< Cell* > sorted_cells;
+  sorted_cells.reserve(cells_.size());
 
   for(Cell& cell : cells_) {
     if(!(isFixed(&cell) || cell.inGroup() || cell.is_placed_))
-      cell_list.push_back(&cell);
+      sorted_cells.push_back(&cell);
   }
-  sort(cell_list.begin(), cell_list.end(), cellAreaLess);
+  sort(sorted_cells.begin(), sorted_cells.end(), cellAreaLess);
 
-  for(Cell* cell : cell_list) {
+  for(Cell* cell : sorted_cells) {
     if(isMultiRow(cell)) {
       if(!map_move(cell))
 	shift_move(cell);
     }
   }
-  for(Cell* cell : cell_list) {
+  for(Cell* cell : sorted_cells) {
     if(!isMultiRow(cell)) {
       if(!map_move(cell)) {
 	shift_move(cell);

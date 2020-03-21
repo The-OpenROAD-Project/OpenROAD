@@ -35,8 +35,8 @@ VIAS 3 ;
     - via6_960x2800 + VIARULE Via6Array-0 + CUTSIZE 280 280  + LAYERS metal6 metal7 via6  + CUTSPACING 320 320  + ENCLOSURE 340 360 340 360  + ROWCOL 4 1  ;
 END VIAS
 COMPONENTS 2 ;
-    - _277_ BUF_X4 + PLACED ( 4560 2800 ) FS ;
-    - FILL01 FILLCELL_X1 + FIXED ( 3952 2800 ) N ;
+    - _277_ BUF_X1 + PLACED ( 3800 2800 ) N ;
+    - block1 BLOCK1 + FIXED ( 4940 2810 ) N ;
 END COMPONENTS
 PINS 2 ;
     - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
@@ -77,7 +77,7 @@ SPECIALNETS 2 ;
       NEW metal1 340 + SHAPE FOLLOWPIN ( 3800 5600 ) ( 15960 5600 ) ;
 END SPECIALNETS
 NETS 2 ;
-    - input ( PIN input ) ( _277_ A ) + USE SIGNAL ;
-    - out ( PIN out ) ( _277_ Z ) + USE SIGNAL ;
+    - input ( PIN input ) + USE SIGNAL ;
+    - out ( PIN out ) + USE SIGNAL ;
 END NETS
 END DESIGN

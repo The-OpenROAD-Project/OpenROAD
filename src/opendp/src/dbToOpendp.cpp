@@ -71,10 +71,8 @@ using odb::dbSigType;
 using odb::dbRegion;
 using odb::dbSWire;
 using odb::dbSBox;
-using odb::dbMasterType;
 
 static bool swapWidthHeight(dbOrientType orient);
-static bool placeMasterType(dbMasterType type);
 
 void Opendp::dbToOpendp() {
   // LEF
@@ -159,8 +157,7 @@ void Opendp::makeCells() {
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
-    // Ignore PAD/COVER/RING/ENDCAP instances.
-    if (placeMasterType(master->getType())) {
+    if (isPlacedType(master->getType())) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
       cell.db_inst_ = db_inst;
@@ -180,37 +177,6 @@ void Opendp::makeCells() {
       cell.orient_ = db_inst->getOrient();
       cell.is_placed_ = isFixed(&cell);
     }
-  }
-}
-
-// Use switch so if new types are added we get a compiler warning.
-static bool placeMasterType(dbMasterType type) {
-  switch (type) {
-  case dbMasterType::CORE:
-  case dbMasterType::CORE_FEEDTHRU:
-  case dbMasterType::CORE_TIEHIGH:
-  case dbMasterType::CORE_TIELOW:
-  case dbMasterType::CORE_SPACER:
-  case dbMasterType::BLOCK:
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
-    return true;
-  case dbMasterType::COVER:
-  case dbMasterType::RING:
-  case dbMasterType::PAD:
-  case dbMasterType::PAD_INPUT:
-  case dbMasterType::PAD_OUTPUT:
-  case dbMasterType::PAD_INOUT:
-  case dbMasterType::PAD_POWER:
-  case dbMasterType::PAD_SPACER:
-  case dbMasterType::ENDCAP:
-  case dbMasterType::ENDCAP_PRE:
-  case dbMasterType::ENDCAP_POST:
-  case dbMasterType::ENDCAP_TOPLEFT:
-  case dbMasterType::ENDCAP_TOPRIGHT:
-  case dbMasterType::ENDCAP_BOTTOMLEFT:
-  case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    return false;
   }
 }
 

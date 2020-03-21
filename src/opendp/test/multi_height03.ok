@@ -37,8 +37,6 @@ original HPWL            79.8 u
 legalized HPWL           81.9 u
 delta HPWL                  3 %
 
-Warning: Placed check failed (1).
- _281_
 Warning: Overlap check failed. check failed (1).
  _281_ overlaps _282_
 Warning: Site check failed (1).

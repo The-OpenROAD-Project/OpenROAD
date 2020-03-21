@@ -36,11 +36,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-// CORE  to CORE  padded footprints must not overlap
-// BLOCK to CORE  footprints must not overlap (padding ignored)
-// BLOCK to BLOCK footprints must not overlap (padding ignored)
+// CORE and varients except SPACER
+// CORE-SP = CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL, CORE WELLTAP
+
+// COVER *, RING, PAD * - ignored
+// CORE-SP to CORE-SP - padded footprints must not overlap
+// CORE-SP to BLOCK * - no overlap (padding ignored)
+// CORE-SP to ENDCAP *, CORE SPACER - no overlap (padding ignored)
+// BLOCK * to BLOCK * - no checking
 // The rules above apply to both FIXED or PLACED instances
-// Instances of all other CLASSes are not checked (ignored)
 
 #include <iostream>
 #include <limits>
@@ -62,6 +66,7 @@ using std::to_string;
 using std::vector;
 
 using odb::adsRect;
+using odb::dbPlacementStatus;
 
 using ord::warn;
 
@@ -78,7 +83,7 @@ bool Opendp::checkPlacement(bool verbose) {
 
   Grid *grid = makeGrid();
   for(Cell& cell : cells_) {
-    if(isClassCore(&cell)) {
+    if(isStdCell(&cell)) {
       // Row check
       if (cell.y_ % row_height_ != 0)
 	row_failures.push_back(&cell);
@@ -91,7 +96,7 @@ bool Opendp::checkPlacement(bool verbose) {
       }
     }
     // Placed check
-    if(!cell.is_placed_)
+    if(!isPlaced(&cell))
       placed_failures.push_back(&cell);
     if(checkInCore(cell))
       in_core_failures.push_back(&cell);
@@ -127,6 +132,20 @@ void Opendp::reportFailures(vector<Cell*> failures,
 	printf(" %s\n", cell->name());
       }
     }
+  }
+}
+
+bool Opendp::isPlaced(Cell *cell) {
+  switch (cell->db_inst_->getPlacementStatus()) {
+  case dbPlacementStatus::PLACED:
+  case dbPlacementStatus::FIRM:
+  case dbPlacementStatus::LOCKED:
+  case dbPlacementStatus::COVER:
+    return true;
+  case dbPlacementStatus::NONE:
+  case dbPlacementStatus::UNPLACED:
+  case dbPlacementStatus::SUGGESTED:
+    return false;
   }
 }
 
@@ -176,7 +195,7 @@ bool Opendp::checkInCore(Cell &cell) {
 
 
 Cell *Opendp::checkOverlap(Cell &cell,
-			  Grid *grid) {
+			   Grid *grid) {
   int grid_x = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
   int grid_y = gridY(&cell);
