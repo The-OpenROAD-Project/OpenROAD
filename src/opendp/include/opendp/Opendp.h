@@ -57,8 +57,8 @@ using std::vector;
 using std::set;
 using std::map;
 
-using odb::adsRect;
-using odb::adsPoint;
+using odb::Rect;
+using odb::Point;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -100,16 +100,16 @@ struct Cell {
   bool is_placed_;
   bool hold_;
   Group* group_;
-  adsRect *region_;  // group rect
+  Rect *region_;  // group rect
 };
 
 struct Group {
   Group();
 
   string name;
-  vector< adsRect > regions;
+  vector< Rect > regions;
   vector< Cell* > cells_;
-  adsRect boundary;
+  Rect boundary;
   double util;
 };
 
@@ -176,12 +176,12 @@ class Opendp {
   void copy_init_to_final();
 
   void detailedPlacement();
-  adsPoint nearestPt(Cell* cell, adsRect* rect);
-  int dist_for_rect(Cell* cell, adsRect* rect);
-  bool check_overlap(adsRect cell, adsRect box);
-  bool check_overlap(Cell* cell, adsRect* rect);
-  bool check_inside(adsRect cell, adsRect box);
-  bool check_inside(Cell* cell, adsRect* rect);
+  Point nearestPt(Cell* cell, Rect* rect);
+  int dist_for_rect(Cell* cell, Rect* rect);
+  bool check_overlap(Rect cell, Rect box);
+  bool check_overlap(Cell* cell, Rect* rect);
+  bool check_inside(Rect cell, Rect box);
+  bool check_inside(Cell* cell, Rect* rect);
   bool binSearch(int grid_x, Cell* cell,
 		 int x, int y,
 		 // Return values
@@ -192,7 +192,7 @@ class Opendp {
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
   vector< Cell* > overlap_cells(Cell* cell);
-  set< Cell* > get_cells_from_boundary(adsRect* rect);
+  set< Cell* > get_cells_from_boundary(Rect* rect);
   int dist_benefit(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
@@ -231,12 +231,12 @@ class Opendp {
 			     Grid *grid);
 
   void rectDist(Cell *cell,
-		adsRect *rect,
+		Rect *rect,
 		// Return values.
 		int x,
 		int y);
   int rectDist(Cell *cell,
-	       adsRect *rect);
+	       Rect *rect);
   Power rowTopPower(int row);
   dbOrientType rowOrient(int row);
 
@@ -299,7 +299,7 @@ class Opendp {
   map< dbMaster*, Macro > db_master_map_;
   map< dbInst*, Cell* > db_inst_map_;
 
-  adsRect core_;
+  Rect core_;
   Power initial_power_;
   bool row0_orient_is_r0_;
   bool row0_top_power_is_vdd_;

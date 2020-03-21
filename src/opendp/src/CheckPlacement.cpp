@@ -63,7 +63,7 @@ using std::ofstream;
 using std::to_string;
 using std::vector;
 
-using odb::adsRect;
+using odb::Rect;
 using odb::dbPlacementStatus;
 
 using ord::warn;

@@ -79,11 +79,11 @@ void Opendp::detailedPlacement() {
 void Opendp::prePlace() {
   for(Cell& cell : cells_) {
     bool in_group = false;
-    adsRect* target;
+    Rect* target;
     if(!cell.inGroup() && !cell.is_placed_) {
       for(int j = 0; j < groups_.size(); j++) {
 	Group* group = &groups_[j];
-	for(adsRect& rect : group->regions) {
+	for(Rect& rect : group->regions) {
 	  if(check_overlap(&cell, &rect)) {
 	    in_group = true;
 	    target = &rect;
@@ -91,7 +91,7 @@ void Opendp::prePlace() {
 	}
       }
       if(in_group) {
-	adsPoint nearest = nearestPt(&cell, target);
+	Point nearest = nearestPt(&cell, target);
 	if(map_move(&cell, nearest.x(), nearest.y()))
 	  cell.hold_ = true;
       }
@@ -105,8 +105,8 @@ void Opendp::prePlaceGroups() {
       if(!(isFixed(cell) || cell->is_placed_)) {
 	int dist = numeric_limits<int>::max();
 	bool in_group = false;
-	adsRect* target;
-	for(adsRect& rect : group.regions) {
+	Rect* target;
+	for(Rect& rect : group.regions) {
 	  if(check_inside(cell, &rect))
 	    in_group = true;
 	  int temp_dist = dist_for_rect(cell, &rect);
@@ -116,7 +116,7 @@ void Opendp::prePlaceGroups() {
 	  }
 	}
 	if(!in_group) {
-	  adsPoint nearest = nearestPt(cell, target);
+	  Point nearest = nearestPt(cell, target);
 	  if(map_move(cell, nearest.x(), nearest.y())) cell->hold_ = true;
 	}
       }
@@ -224,7 +224,7 @@ void Opendp::placeGroups() {
 
 void
 Opendp::rectDist(Cell *cell,
-		 adsRect *rect,
+		 Rect *rect,
 		 // Return values.
 		 int x,
 		 int y)
@@ -245,7 +245,7 @@ Opendp::rectDist(Cell *cell,
 
 int
 Opendp::rectDist(Cell *cell,
-		 adsRect *rect)
+		 Rect *rect)
 {
   int x, y;
   rectDist(cell, rect,
@@ -257,7 +257,7 @@ Opendp::rectDist(Cell *cell,
 
 // place toward group edges
 void Opendp::brickPlace1(Group* group) {
-  adsRect *boundary = &group->boundary;
+  Rect *boundary = &group->boundary;
   vector< Cell* > sort_by_dist(group->cells_);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),

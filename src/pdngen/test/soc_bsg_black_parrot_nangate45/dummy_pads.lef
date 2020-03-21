@@ -1,0 +1,1356 @@
+VERSION 5.8 ;
+
+#NAMESCASESENSITIVE ON ;
+USEMINSPACING OBS OFF ;
+#BUSBITCHARS "[]" ;
+
+# UNITS
+# YBASE MICRON 1000 ;
+# END UNITS
+
+SITE IOSITE
+  SYMMETRY Y ;
+  CLASS PAD ;
+  SIZE    1.000 BY 140.000 ;
+END IOSITE
+
+MACRO PAD
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 45 BY 84 ;
+  SYMMETRY X Y R90 ;
+  PIN PAD
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal10 ;
+        RECT 0 0 45 84 ;
+    END
+  END PAD
+END PAD
+
+MACRO PADCELL_SIG_V
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  FOREIGN PADCELL_SIG_V 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  SITE IOSITE ;
+  PIN PAD 
+    USE SIGNAL ;
+    DIRECTION INOUT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+  END PAD
+  PIN A
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal5 ; 
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal6 ; 
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal7 ; 
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal8 ;
+        RECT 13.170 139.900 13.330 140.000 ;
+      LAYER metal9 ;
+        RECT 13.170 139.900 13.330 140.000 ;
+    END
+  END A
+  PIN Y
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal5 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal6 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal7 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal8 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+      LAYER metal9 ;
+        RECT 28.936 139.900 29.096 140.000 ;
+    END
+  END Y
+  PIN PU
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal5 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal6 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal7 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal8 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal9 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+    END
+  END PU
+  PIN OE
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal5 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal6 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal7 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal8 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal9 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+    END
+  END OE
+END PADCELL_SIG_V
+
+MACRO PADCELL_SIG_H
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN PAD 
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+  END PAD
+  PIN A
+    USE SIGNAL ;
+    DIRECTION INPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 13.170 104.900 13.330 105.000 ;
+      LAYER metal5 ; 
+        RECT 13.170 104.900 13.330 105.000 ;
+      LAYER metal6 ; 
+        RECT 13.170 104.900 13.330 105.000 ;
+      LAYER metal7 ; 
+        RECT 13.170 104.900 13.330 105.000 ;
+      LAYER metal8 ;
+        RECT 13.170 104.900 13.330 105.000 ;
+      LAYER metal9 ;
+        RECT 13.170 104.900 13.330 105.000 ;
+    END
+  END A
+  PIN Y
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 28.936 104.900 29.096 105.000 ;
+      LAYER metal5 ; 
+        RECT 28.936 104.900 29.096 105.000 ;
+      LAYER metal6 ; 
+        RECT 28.936 104.900 29.096 105.000 ;
+      LAYER metal7 ; 
+        RECT 28.936 104.900 29.096 105.000 ;
+      LAYER metal8 ; 
+        RECT 28.936 104.900 29.096 105.000 ;
+      LAYER metal9 ; 
+        RECT 28.936 104.900 29.096 105.000 ;
+    END
+  END Y
+  PIN PU
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal5 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal6 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal7 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal8 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal9 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+    END
+  END PU
+  PIN OE
+    USE SIGNAL ;
+    DIRECTION OUTPUT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal5 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal6 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal7 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal8 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+      LAYER metal9 ;
+        RECT 15.170 139.900 15.330 140.000 ;
+    END
+  END OE
+END PADCELL_SIG_H
+
+MACRO PADCELL_VDD_V
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal4 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal4 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal4 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal4 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal4 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal4 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal4 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal4 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal4 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal4 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal5 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal5 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal5 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal5 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal5 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal5 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal5 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal5 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal5 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal5 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal5 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal6 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal6 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal6 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal6 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal6 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal6 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal6 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal6 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal6 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal6 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal6 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal7 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal7 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal7 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal7 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal7 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal7 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal7 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal7 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal7 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal7 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal7 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal8 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal8 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal8 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal8 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal8 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal8 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal8 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal8 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal8 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal8 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal8 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal9 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal9 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal9 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal9 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal9 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal9 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal9 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal9 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal9 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal9 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal9 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_VDD_V
+
+MACRO PADCELL_VDD_H
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal4 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal4 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal4 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal4 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal4 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal4 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal4 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal4 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal4 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal4 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal5 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal5 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal5 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal5 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal5 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal5 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal5 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal5 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal5 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal5 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal5 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal6 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal6 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal6 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal6 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal6 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal6 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal6 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal6 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal6 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal6 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal6 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal7 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal7 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal7 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal7 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal7 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal7 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal7 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal7 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal7 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal7 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal7 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal8 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal8 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal8 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal8 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal8 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal8 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal8 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal8 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal8 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal8 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal8 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal9 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal9 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal9 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal9 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal9 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal9 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal9 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal9 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal9 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal9 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal9 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_VDD_H
+
+MACRO PADCELL_VSS_H
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal4 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal4 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal4 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal4 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal4 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal4 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal4 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal4 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal4 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal4 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal5 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal5 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal5 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal5 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal5 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal5 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal5 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal5 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal5 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal5 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal5 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal6 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal6 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal6 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal6 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal6 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal6 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal6 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal6 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal6 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal6 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal6 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal7 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal7 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal7 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal7 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal7 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal7 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal7 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal7 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal7 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal7 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal7 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal8 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal8 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal8 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal8 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal8 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal8 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal8 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal8 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal8 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal8 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal8 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal9 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal9 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal9 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal9 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal9 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal9 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal9 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal9 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal9 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal9 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal9 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN DVDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_VSS_H
+
+MACRO PADCELL_VSS_V
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal4 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal4 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal4 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal4 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal4 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal4 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal4 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal4 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal4 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal4 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal5 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal5 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal5 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal5 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal5 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal5 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal5 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal5 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal5 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal5 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal5 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal6 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal6 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal6 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal6 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal6 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal6 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal6 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal6 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal6 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal6 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal6 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal7 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal7 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal7 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal7 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal7 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal7 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal7 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal7 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal7 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal7 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal7 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal8 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal8 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal8 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal8 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal8 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal8 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal8 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal8 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal8 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal8 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal8 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal9 ;
+      RECT 23.155 104.900 23.945 105.000 ;
+      LAYER metal9 ;
+      RECT 20.995 104.900 21.785 105.000 ;
+      LAYER metal9 ;
+      RECT 18.835 104.900 19.625 105.000 ;
+      LAYER metal9 ;
+      RECT 16.565 104.900 17.355 105.000 ;
+      LAYER metal9 ;
+      RECT 14.295 104.900 15.085 105.000 ;
+      LAYER metal9 ;
+      RECT 12.135 104.900 12.925 105.000 ;
+      LAYER metal9 ;
+      RECT 9.975 104.900 10.765 105.000 ;
+      LAYER metal9 ;
+      RECT 7.815 104.900 8.605 105.000 ;
+      LAYER metal9 ;
+      RECT 5.655 104.900 6.445 105.000 ;
+      LAYER metal9 ;
+      RECT 3.495 104.900 4.285 105.000 ;
+      LAYER metal9 ;
+      RECT 1.335 104.900 2.125 105.000 ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN DVDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_VSS_V
+
+MACRO PADCELL_VDDIO_H
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN DVDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_VDDIO_H
+
+MACRO PADCELL_VDDIO_V
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN DVDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PADCELL_VDDIO_V
+
+MACRO PADCELL_VSSIO_H
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN DVSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+END PADCELL_VSSIO_H
+
+MACRO PADCELL_VSSIO_V
+  CLASS PAD AREAIO ;
+  ORIGIN 0 0 ;
+  SIZE 25.0 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN DVSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS BUMP ;
+      LAYER metal10 ;
+        RECT 15.0 50.0 20.0 55.0 ;
+    END
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+END PADCELL_VSSIO_V
+
+MACRO PAD_CORNER
+  CLASS ENDCAP BOTTOMLEFT ;
+  ORIGIN 0 0 ;
+  SIZE 140 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PAD_CORNER
+
+MACRO PAD_FILL1_V
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 1 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PAD_FILL1_V
+
+MACRO PAD_FILL5_V
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+  PIN VDD
+    USE POWER ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 20.0 0.100 21.0 ;
+      LAYER metal4 ;
+      RECT 24.90 20.0 25.00 21.0 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 40.0 0.100 41.0 ;
+      LAYER metal4 ;
+      RECT 24.90 40.0 25.00 41.0 ;
+    END
+  END VSS
+  PIN DVDD
+    USE GROUND ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 60.0 0.100 61.0 ;
+      LAYER metal4 ;
+      RECT 24.90 60.0 25.00 61.0 ;
+    END
+  END DVDD
+  PIN DVSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      CLASS CORE ;
+      LAYER metal4 ;
+      RECT 0.000 80.0 0.100 81.0 ;
+      LAYER metal4 ;
+      RECT 24.90 80.0 25.00 81.0 ;
+    END
+  END DVSS
+END PAD_FILL5_V
+
+MACRO PAD_FILL1_H
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 140 BY 1 ;
+  SYMMETRY X Y R90 ;
+END PAD_FILL1_H
+
+MACRO PAD_FILL5_H
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 140 BY 5 ;
+  SYMMETRY X Y R90 ;
+END PAD_FILL5_H
+
+MACRO PADCELL_PWRDET_V
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PADCELL_PWRDET_V
+
+MACRO PADCELL_PWRDET_H
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PADCELL_PWRDET_H
+
+MACRO PADCELL_CBRK_V
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PADCELL_CBRK_V
+
+MACRO PADCELL_CBRK_H
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PADCELL_CBRK_H
+
+MACRO PADCELL_FBRK_V
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PADCELL_FBRK_V
+
+MACRO PADCELL_FBRK_H
+  CLASS PAD SPACER ;
+  ORIGIN 0 0 ;
+  SIZE 5 BY 140 ;
+  SYMMETRY X Y R90 ;
+END PADCELL_FBRK_H
+
+
+MACRO MARKER 
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 5.0 BY 1.4 ;
+  SYMMETRY X Y ;
+  OBS
+    LAYER metal1 ;
+    RECT 0.0 0.0 5.0 1.4 ;
+    LAYER metal2 ;
+    RECT 0.0 0.0 5.0 1.4 ;
+    LAYER metal3 ;
+    RECT 0.0 0.0 5.0 1.4 ;
+    LAYER metal4 ;
+    RECT 0.0 0.0 5.0 1.4 ;
+    LAYER metal5 ;
+    RECT 0.0 0.0 5.0 1.4 ;
+  END
+END MARKER
+
+END LIBRARY

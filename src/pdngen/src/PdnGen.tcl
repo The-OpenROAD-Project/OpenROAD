@@ -44,6 +44,7 @@
 # 16 "##Power Delivery Network Generator: Generating PDN"
 # 16 "##  config: $config"
 # 32 "Generating blockages for TrionRoute"
+# 34 "Inserting macro grid for instance $instance"
 #
 # Warning
 # 1 "run_pdngen is deprecated. Use pdngen."
@@ -149,7 +150,7 @@ proc debug {message} {
   if {[dict exists $state line]} {
     set str "$str[dict get $state line]"
   }
-  show_message DEBUG "$str: $message"
+  puts [set_message DEBUG "$str: $message"]
 }
 
 proc information {id message} {
@@ -439,7 +440,7 @@ proc read_cutclass {layer_name} {
     if {![regexp {CUTCLASS\s+([^\s]+)\s+WIDTH\s+([^\s]+)\s+LENGTH\s+([^\s]+)} $line - cut_class width length]} {
       critical 20 "Failed to read CUTCLASS property '$line'"
     }
-    if {$min_area == -1 || [expr $width * $length] < $min_area} {
+    if {$min_area == -1 || ($width * $length) < $min_area} {
       dict set default_cutclass $layer_name $cut_class
       set min_area [expr $width * $length]
     }
@@ -750,11 +751,11 @@ proc use_arrayspacing {layer_name rows columns} {
     # debug "Matching entry in arrayspacing"
     return 1
   }
-  if {[expr min($rows,$columns)] < [lindex [dict keys [dict get $arrayspacing arraycuts]] 0]} {
+  if {min($rows,$columns) < [lindex [dict keys [dict get $arrayspacing arraycuts]] 0]} {
     # debug "row/columns less than min array spacing"
     return 0
   }
-  if {[expr min($rows,$columns)] > [lindex [dict keys [dict get $arrayspacing arraycuts]] end]} {
+  if {min($rows,$columns) > [lindex [dict keys [dict get $arrayspacing arraycuts]] end]} {
     # debug "row/columns greater than min array spacing"
     return 1
   }
@@ -805,12 +806,12 @@ proc determine_num_via_columns {via_info constraints} {
     if {$columns > [dict get $constraints max_columns]} {
       set columns [dict get $constraints max_columns]
 
-      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $lower]
+      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info lower layer]]
       # debug "$lower_concave_enclosure $max_lower_enclosure"
       if {$lower_concave_enclosure > $max_lower_enclosure} {
         set max_lower_enclosure $lower_concave_enclosure
       }
-      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $upper]
+      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info upper layer]]
       # debug "$upper_concave_enclosure $max_upper_enclosure"
       if {$upper_concave_enclosure > $max_upper_enclosure} {
         set max_upper_enclosure $upper_concave_enclosure
@@ -878,12 +879,12 @@ proc determine_num_via_rows {via_info constraints} {
     if {$rows > [dict get $constraints max_rows]} {
       set rows [dict get $constraints max_rows]
 
-      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $lower]
+      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info lower layer]]
       # debug "$lower_concave_enclosure $max_lower_enclosure"
       if {$lower_concave_enclosure > $max_lower_enclosure} {
         set max_lower_enclosure $lower_concave_enclosure
       }
-      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $upper]
+      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info upper layer]]
       # debug "$upper_concave_enclosure $max_upper_enclosure"
       if {$upper_concave_enclosure > $max_upper_enclosure} {
         set max_upper_enclosure $upper_concave_enclosure
@@ -1055,6 +1056,22 @@ proc via_generate_rule {rule_name rows columns constraints} {
 }
 
 proc via_generate_array_rule {rule_name rows columns} {
+  variable via_info
+  variable xcut_pitch
+  variable ycut_pitch
+  variable xcut_spacing
+  variable ycut_spacing
+  variable cut_height
+  variable cut_width
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+
   # We need array vias -
   # if the min(rows,columns) > ARRAYCUTS
   #   determine which direction gives best number of CUTs wide using min(ARRAYCUTS)
@@ -1062,8 +1079,16 @@ proc via_generate_array_rule {rule_name rows columns} {
   #   Add vias to the rule with appropriate origin setting
   # else
   #   add a single via with min(rows,columns) cuts - hor/ver as required
+
+  
   set spacing_rule [get_arrayspacing_rule [dict get $via_info cut layer]]
   set array_size [expr min($rows, $columns)]
+
+  set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+  set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+
   if {$array_size > [lindex [dict keys [dict get $spacing_rule arraycuts]] end]} {
     # debug "Multi-viaArrayspacing rule"
     set use_array_size [lindex [dict keys [dict get $spacing_rule arraycuts]] 0]
@@ -1076,11 +1101,10 @@ proc via_generate_array_rule {rule_name rows columns} {
     set array_spacing [expr max($xcut_spacing,$ycut_spacing,[dict get $spacing_rule arraycuts $use_array_size spacing])]
 
     set rule [list \
-      rule [lindex [select_via_info $lower] 0] \
+      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
       cutsize [dict get $via_info cut size] \
-      layers [list $lower [dict get $via_info cut layer] $upper] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
-      enclosure $via_enclosure \
       origin_x 0 \
       origin_y 0 \
     ]
@@ -1090,9 +1114,22 @@ proc via_generate_array_rule {rule_name rows columns} {
       # Split into num_arrays rows of arrays
       set array_min_size [expr [lindex [dict get $via_info cut size] 0] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
       set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
+      # debug "Split into $num_arrays rows of arrays"
+
+      set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
+      set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
+
+      set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+      set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
 
       dict set rule rowcol [list $use_array_size $columns]
       dict set rule name "[dict get $via_info cut layer]_ARRAY_${use_array_size}X${columns}"
+      dict set rule enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ]
 
       set y [expr $array_min_size / 2 - $total_array_size / 2]
       for {set i 0} {$i < $num_arrays} {incr i} {
@@ -1104,9 +1141,22 @@ proc via_generate_array_rule {rule_name rows columns} {
       # Split into num_arrays columns of arrays
       set array_min_size [expr [lindex [dict get $via_info cut size] 1] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
       set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
+      # debug "Split into $num_arrays columns of arrays"
+
+      set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
+      set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
+
+      set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+      set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
 
       dict set rule rowcol [list $rows $use_array_size]
       dict set rule name "[dict get $via_info cut layer]_ARRAY_${rows}X${use_array_size}"
+      dict set rule enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ]
 
       set x [expr $array_min_size / 2 - $total_array_size / 2]
       for {set i 0} {$i < $num_arrays} {incr i} {
@@ -1117,21 +1167,29 @@ proc via_generate_array_rule {rule_name rows columns} {
     }
   } else {
     # debug "Arrayspacing rule"
+    set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+    set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
+
     set rule [list \
       name $rule_name \
-      rule [lindex [select_via_info $lower] 0] \
+      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
       cutsize [dict get $via_info cut size] \
-      layers [list $lower [dict get $via_info cut layer] $upper] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
       rowcol [list $rows $columns] \
-      enclosure $via_enclosure \
+      enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ] \
       origin_x 0 \
       origin_y 0 \
     ]
     set rule_list [list $rule]
   }
   
-  return $rules_list
+  return $rule_list
 }
 
 proc via_split_cuts_rule {rows columns constraints} {
@@ -1882,6 +1940,8 @@ proc import_macro_boundaries {} {
 
   set instances [import_def_components [dict keys $macros]]
 
+  set boundary [get_stdcell_area]
+    
   foreach instance [dict keys $instances] {
     set macro_name [dict get $instances $instance macro]
 
@@ -1889,6 +1949,15 @@ proc import_macro_boundaries {} {
     set lly [dict get $instances $instance ymin]
     set urx [dict get $instances $instance xmax]
     set ury [dict get $instances $instance ymax]
+
+    # If there are no shapes left after 'and'ing the boundard with the cell, then
+    # the cell lies outside the area where we are adding a power grid.
+    set box [odb::odb_newSetFromRect $llx $lly $urx $ury]
+    if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
+      # debug "Instance $instance does not lie in the cell area"
+      set instances [dict remove $instances $instance]
+      continue
+    }
 
     dict set instances $instance macro_boundary [list $llx $lly $urx $ury]
 
@@ -1910,6 +1979,7 @@ proc import_def_components {macros} {
   variable block
   set instances {}
   # debug "$macros"
+
   foreach inst [$block getInsts] {
     set macro_name [[$inst getMaster] getName]
     if {[lsearch -exact $macros $macro_name] != -1} {
@@ -2130,7 +2200,7 @@ proc write_opendb_row {height start end} {
   if {$start == $end} {return}
   
   set llx [lindex [dict get $design_data config core_area] 0]
-  if {[expr { int($start - $llx) % $site_width}] == 0} {
+  if {(int($start - $llx) % $site_width) == 0} {
       set x $start
   } else {
       set offset [expr { int($start - $llx) % $site_width}]
@@ -2200,6 +2270,7 @@ proc get_memory_instance_pg_pins {} {
   variable block
 
   # debug "start"
+  set boundary [get_stdcell_area]
 
   foreach inst [$block getInsts] {
     set inst_name [$inst getName]
@@ -2224,6 +2295,15 @@ proc get_memory_instance_pg_pins {} {
     if {[$master getType] == "CORE_TIEHIGH"} {continue}
     if {[$master getType] == "CORE_TIELOW"} {continue}
 
+    # If there are no shapes left after 'and'ing the boundard with the cell, then
+    # the cell lies outside the area where we are adding a power grid.
+    set bbox [$inst getBBox]
+    set box [odb::odb_newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+    if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
+      # debug "Instance [$inst getName] does not lie in the cell area"
+      continue
+    }
+    
     # debug "cell name - [$master getName]"
 
     foreach term_name [concat [get_macro_power_pins $inst_name] [get_macro_ground_pins $inst_name]] {
@@ -2260,7 +2340,7 @@ proc get_memory_instance_pg_pins {} {
       }
     }    
   }
-  # debug get_memory_instance_pg_pins "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+  # debug "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
   # debug "end"
 }
 
@@ -2410,15 +2490,6 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     }
   }
 
-  ########################################
-  # Creating blockages based on macro locations
-  #######################################
-  # debug "import_macro_boundaries"
-  import_macro_boundaries
-
-  # debug "get_memory_instance_pg_pins"
-  get_memory_instance_pg_pins
-
   if {[dict exists $design_data grid stdcell]} {
     set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
   }
@@ -2437,6 +2508,15 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     set_core_area {*}[get_extent [get_stdcell_plus_area]]
   }
   
+  ########################################
+  # Creating blockages based on macro locations
+  #######################################
+  # debug "import_macro_boundaries"
+  import_macro_boundaries
+
+  # debug "get_memory_instance_pg_pins"
+  get_memory_instance_pg_pins
+
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
     if {[lsearch -exact $metal_layers $layer] < 0} {
@@ -2522,9 +2602,9 @@ proc get_quadrant {x y} {
   set test_x [expr $x - [lindex $die_area 0]]
   set test_y [expr $y - [lindex $die_area 1]]
   # debug "$dw * $test_y ([expr $dw * $test_y]) > expr $dh * $test_x ([expr $dh * $test_x])"
-  if {[expr $dw * $test_y] > [expr $dh * $test_x]} {
+  if {$dw * $test_y > $dh * $test_x} {
     # Top or left
-    if {[expr $dw * $test_y] + [expr $dh * $test_x] > [expr $dw * $dh]} {
+    if {($dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
       # Top or right
       return "t"
     } else {
@@ -2533,7 +2613,7 @@ proc get_quadrant {x y} {
     }
   } else {
     # Bottom or right
-    if {[expr $dw * $test_y] + [expr $dh * $test_x] > [expr $dw * $dh]} {
+    if {)$dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
       # Top or right
       return "r"
     } else {
@@ -3604,11 +3684,15 @@ proc add_blockages {more_blockages} {
 proc add_macro_based_grids {} {
   variable instances
   variable grid_data
+  variable verbose
   
   set_blockages {}
   if {[llength [dict keys $instances]] > 0} {
     information 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
     foreach instance [dict keys $instances] {
+      if {$verbose == 1} {
+        information 34 "  - grid for instance $instance"
+      }
       # debug "$instance [get_instance_specification $instance]"
       set grid_data [get_instance_specification $instance]
       add_grid 

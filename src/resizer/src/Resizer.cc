@@ -60,7 +60,7 @@ using ord::closestPtInRect;
 
 using odb::dbInst;
 using odb::dbPlacementStatus;
-using odb::adsRect;
+using odb::Rect;
 
 extern "C" {
 extern int Resizer_Init(Tcl_Interp *interp);
@@ -71,7 +71,7 @@ extern const char *resizer_tcl_inits[];
 bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
-adsPoint
+Point
 pinLocation(Pin *pin,
 	    const dbNetwork *network);
 
@@ -318,21 +318,21 @@ Resizer::bufferInput(Pin *top_pin,
 
 void
 Resizer::setLocation(Instance *inst,
-		     adsPoint pt)
+		     Point pt)
 {
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  adsPoint inside = closestPtInRect(core_, pt);
+  Point inside = closestPtInRect(core_, pt);
   dinst->setLocation(inside.getX(), inside.getY());
 }
 
-adsPoint
+Point
 Resizer::location(Instance *inst)
 {
   dbInst *dinst = db_network_->staToDb(inst);
   int x, y;
   dinst->getOrigin(x, y);
-  return adsPoint(x, y);
+  return Point(x, y);
 }
 
 void
@@ -792,7 +792,7 @@ Resizer::makeNetParasitics(const Net *net)
 							     parasitics_ap_);
     int branch_count = tree->branchCount();
     for (int i = 0; i < branch_count; i++) {
-      adsPoint pt1, pt2;
+      Point pt1, pt2;
       Pin *pin1, *pin2;
       int steiner_pt1, steiner_pt2;
       int wire_length_dbu;
@@ -853,7 +853,7 @@ public:
 		 float cap,
 		 Required required,
 		 Pin *load_pin,
-		 adsPoint location,
+		 Point location,
 		 RebufferOption *ref,
 		 RebufferOption *ref2);
   ~RebufferOption();
@@ -867,7 +867,7 @@ public:
   Required required() const { return required_; }
   Required bufferRequired(LibertyCell *buffer_cell,
 			  Resizer *resizer) const;
-  adsPoint location() const { return location_; }
+  Point location() const { return location_; }
   Pin *loadPin() const { return load_pin_; }
   RebufferOption *ref() const { return ref_; }
   RebufferOption *ref2() const { return ref2_; }
@@ -878,7 +878,7 @@ private:
   float cap_;
   Required required_;
   Pin *load_pin_;
-  adsPoint location_;
+  Point location_;
   RebufferOption *ref_;
   RebufferOption *ref2_;
 };
@@ -887,7 +887,7 @@ RebufferOption::RebufferOption(RebufferOptionType type,
 			       float cap,
 			       Required required,
 			       Pin *load_pin,
-			       adsPoint location,
+			       Point location,
 			       RebufferOption *ref,
 			       RebufferOption *ref2) :
   type_(type),
@@ -999,7 +999,7 @@ Resizer::makeRebufferOption(RebufferOptionType type,
 			    float cap,
 			    Required required,
 			    Pin *load_pin,
-			    adsPoint location,
+			    Point location,
 			    RebufferOption *ref,
 			    RebufferOption *ref2)
 {
@@ -1409,8 +1409,8 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   RebufferOptionSeq Z1;
   Required best_req = -INF;
   RebufferOption *best_ref = nullptr;
-  adsPoint k_loc = tree->location(k);
-  adsPoint prev_loc = tree->location(prev);
+  Point k_loc = tree->location(k);
+  Point prev_loc = tree->location(prev);
   int wire_length_dbu = abs(k_loc.x() - prev_loc.x())
     + abs(k_loc.y() - prev_loc.y());
   float wire_length = dbuToMeters(wire_length_dbu);
@@ -1585,7 +1585,7 @@ Resizer::bufferLoads(Pin *drvr_pin,
   for (int i = 0; i < buffer_count; i++) {
     PinSeq &loads = grouped_loads[i];
     if (loads.size()) {
-      adsPoint center = findCenter(loads);
+      Point center = findCenter(loads);
 
       string load_net_name = makeUniqueNetName();
       Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
@@ -1619,23 +1619,23 @@ Resizer::groupLoadsCluster(Pin *drvr_pin,
 			   // Return value.
 			   GroupedPins &grouped_loads)
 {
-  Vector<adsPoint> centers;
+  Vector<Point> centers;
   grouped_loads.resize(group_count);
   centers.resize(group_count);
 
   PinSeq loads;
   findLoads(drvr_pin, loads);
   // Find the bbox of the loads.
-  adsRect bbox;
+  Rect bbox;
   bbox.mergeInit();
   for (Pin *load : loads) {
-    adsPoint loc = pinLocation(load, db_network_);
-    adsRect r(loc.x(), loc.y(), loc.x(), loc.y());
+    Point loc = pinLocation(load, db_network_);
+    Rect r(loc.x(), loc.y(), loc.x(), loc.y());
     bbox.merge(r);
   }
   // Choose initial centers on bbox diagonal.
   for(int i = 0; i < group_count; i++) {
-    adsPoint center(bbox.xMin() + i * bbox.dx() / group_count,
+    Point center(bbox.xMin() + i * bbox.dx() / group_count,
 		    bbox.yMin() + i * bbox.dy() / group_count);
     centers[i] = center;
   }
@@ -1646,12 +1646,12 @@ Resizer::groupLoadsCluster(Pin *drvr_pin,
 
     // Assign each load to the group with the nearest center.
     for (Pin *load : loads) {
-      adsPoint loc = pinLocation(load, db_network_);
+      Point loc = pinLocation(load, db_network_);
       int64_t min_dist2 = std::numeric_limits<int64_t>::max();
       int min_index = 0;
       for(int i = 0; i < group_count; i++) {
-	adsPoint center = centers[i];
-	int64_t dist2 = adsPoint::squaredDistance(loc, center);
+	Point center = centers[i];
+	int64_t dist2 = Point::squaredDistance(loc, center);
 	if (dist2 < min_dist2) {
 	  min_dist2 = dist2;
 	  min_index = i;
@@ -1663,7 +1663,7 @@ Resizer::groupLoadsCluster(Pin *drvr_pin,
     // Find the center of each group.
     for (int i = 0; i < group_count; i++) {
       Vector<Pin*> &loads = grouped_loads[i];
-      adsPoint center = findCenter(loads);
+      Point center = findCenter(loads);
       centers[i] = center;
     }
   }
@@ -1729,11 +1729,11 @@ Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
   for (Vector<Pin*> &loads : grouped_loads) {
     if (!loads.empty()) {
       printf("Group %d %lu members\n", i, loads.size());
-      adsPoint center = findCenter(loads);
+      Point center = findCenter(loads);
       double max_dist = 0.0;
       double sum_dist = 0.0;
       for (Pin *load : loads) {
-	uint64_t dist2 = adsPoint::squaredDistance(pinLocation(load, db_network_),
+	uint64_t dist2 = Point::squaredDistance(pinLocation(load, db_network_),
 						   center);
 	double dist = std::sqrt(dist2);
 	printf(" %.2e %s\n", dbuToMeters(dist), db_network_->pathName(load));
@@ -1749,29 +1749,29 @@ Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
   }
 }
 
-adsPoint
+Point
 Resizer::findCenter(PinSeq &pins)
 {
-  adsPoint sum(0, 0);
+  Point sum(0, 0);
   for (Pin *pin : pins) {
-    adsPoint loc = pinLocation(pin, db_network_);
+    Point loc = pinLocation(pin, db_network_);
     sum.x() += loc.x();
     sum.y() += loc.y();
   }
-  return adsPoint(sum.x() / pins.size(), sum.y() / pins.size());
+  return Point(sum.x() / pins.size(), sum.y() / pins.size());
 }
 
 double
 Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
 {
-  adsPoint drvr_loc = pinLocation(drvr_pin, db_network_);
+  Point drvr_loc = pinLocation(drvr_pin, db_network_);
   NetPinIterator *pin_iter = network_->pinIterator(network_->net(drvr_pin));
   int64_t max_dist = 0;
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     if (network_->isLoad(pin)) {
-      adsPoint loc = pinLocation(pin, db_network_);
-      int64_t dist = adsPoint::manhattanDistance(loc, drvr_loc);
+      Point loc = pinLocation(pin, db_network_);
+      int64_t dist = Point::manhattanDistance(loc, drvr_loc);
       if (dist > max_dist)
 	max_dist = dist;
     }
@@ -1810,12 +1810,12 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 
       // Place the original tie instance in the center of it's loads.
       PinSeq &loads = grouped_loads[0];
-      adsPoint center = findCenter(loads);
+      Point center = findCenter(loads);
       setLocation(inst, center);
 
       for (int i = 0; i < clone_count; i++) {
 	PinSeq &loads = grouped_loads[i + 1];
-	adsPoint center = findCenter(loads);
+	Point center = findCenter(loads);
 
 	string clone_name = makeUniqueInstName(inst_name);
 	Instance *clone = sta_->makeInstance(clone_name.c_str(),
@@ -2245,7 +2245,7 @@ Resizer::findDesignArea()
   return design_area;
 }
 
-adsPoint
+Point
 pinLocation(Pin *pin,
 	    const dbNetwork *network)
 {
@@ -2256,14 +2256,14 @@ pinLocation(Pin *pin,
     dbInst *inst = iterm->getInst();
     int x, y;
     inst->getOrigin(x, y);
-    return adsPoint(x, y);
+    return Point(x, y);
   }
   if (bterm) {
     int x, y;
     if (bterm->getFirstPinLocation(x, y))
-      return adsPoint(x, y);
+      return Point(x, y);
   }
-  return adsPoint(0, 0);
+  return Point(0, 0);
 }  
 
 bool

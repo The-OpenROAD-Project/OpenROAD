@@ -21,7 +21,7 @@
 
 namespace sta {
 
-using odb::adsRect;
+using odb::Rect;
 
 class RebufferOption;
 
@@ -178,9 +178,9 @@ protected:
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
-  adsPoint location(Instance *inst);
+  Point location(Instance *inst);
   void setLocation(Instance *inst,
-		   adsPoint pt);
+		   Point pt);
   Pin *singleOutputPin(const Instance *inst);
   double area(dbMaster *master);
   double area(Cell *cell);
@@ -191,7 +191,7 @@ protected:
 				     float cap,
 				     Required required,
 				     Pin *load_pin,
-				     adsPoint location,
+				     Point location,
 				     RebufferOption *ref,
 				     RebufferOption *ref2);
   void deleteRebufferOptions();
@@ -238,7 +238,7 @@ protected:
 			 int &group_index,
 			 GroupedPins &grouped_loads);
   void reportGroupedLoads(GroupedPins &grouped_loads);
-  adsPoint findCenter(PinSeq &pins);
+  Point findCenter(PinSeq &pins);
 
   float wire_res_;
   float wire_cap_;
@@ -250,7 +250,7 @@ protected:
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
-  adsRect core_;
+  Rect core_;
   double design_area_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;

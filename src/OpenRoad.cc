@@ -62,8 +62,8 @@ using std::max;
 using odb::dbLib;
 using odb::dbDatabase;
 using odb::dbBlock;
-using odb::adsRect;
-using odb::adsPoint;
+using odb::Rect;
+using odb::Point;
 
 using sta::evalTclInit;
 using sta::dbSta;
@@ -272,7 +272,7 @@ OpenRoad::unitsInitialized()
   return getDbNetwork()->defaultLibertyLibrary() != nullptr;
 }
 
-odb::adsRect
+odb::Rect
 OpenRoad::getCore()
 {
   return ord::getCore(db_->getChip()->getBlock());
@@ -283,17 +283,17 @@ OpenRoad::getCore()
 // Need a header for these functions cherry uses in
 // InitFloorplan, Resizer, OpenDP.
 
-adsRect
+Rect
 getCore(dbBlock *block)
 {
-  odb::adsRect core;
+  odb::Rect core;
   auto rows = block->getRows();
   if (rows.size() > 0) {
     core.mergeInit();
     for(auto db_row : block->getRows()) {
       int orig_x, orig_y;
       db_row->getOrigin(orig_x, orig_y);
-      odb::adsRect row_bbox;
+      odb::Rect row_bbox;
       db_row->getBBox(row_bbox);
       core.merge(row_bbox);
     }
@@ -305,12 +305,12 @@ getCore(dbBlock *block)
 }
 
 // Return the point inside rect that is closest to pt.
-adsPoint
-closestPtInRect(adsRect rect,
-		adsPoint pt)
+Point
+closestPtInRect(Rect rect,
+		Point pt)
 {
-  return adsPoint(min(max(pt.getX(), rect.xMin()), rect.xMax()),
-		  min(max(pt.getY(), rect.yMin()), rect.yMax()));
+  return Point(min(max(pt.getX(), rect.xMin()), rect.xMax()),
+               min(max(pt.getY(), rect.yMin()), rect.yMax()));
 }
 
 } // namespace

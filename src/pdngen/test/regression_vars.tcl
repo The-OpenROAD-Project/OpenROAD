@@ -121,6 +121,7 @@ record_tests {
 test_gcd
 test_gcd_dual_rails
 fail_quick
+soc_bsg_black_parrot_nangate45
 }
 #  gcd_flow1
 
@@ -131,6 +132,7 @@ fail_quick
 # Medium speed tests.
 # run time <15s with optimized compile
 define_test_group med {
+soc_bsg_black_parrot_nangate45
 }
 
 define_test_group slow {

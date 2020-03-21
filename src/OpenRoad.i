@@ -249,7 +249,7 @@ db_has_tech()
   return getDb()->getTech() != nullptr;
 }
 
-odb::adsRect
+odb::Rect
 get_db_core()
 {
   OpenRoad *ord = getOpenRoad();
