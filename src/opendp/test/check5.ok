@@ -9,9 +9,8 @@ Notice 0: Finished LEF file:  extra.lef
 Notice 0: 
 Reading DEF file: check5.def
 Notice 0: Design: single_cell
-Notice 0: error: unknown library cell referenced (block1) for instance (BLOCK)
-Notice 0: error: unknown library cell referenced (block2) for instance (BLOCK)
 Notice 0:     Created 2 pins.
-Notice 0:     Created 2 special nets and 0 connections.
+Notice 0:     Created 2 components and 14 component-terminals.
+Notice 0:     Created 2 special nets and 4 connections.
 Notice 0:     Created 2 nets and 0 connections.
 Notice 0: Finished DEF file: check5.def

@@ -206,8 +206,12 @@ Cell *Opendp::checkOverlap(Cell &cell,
   for(int j = grid_y; j < y_ur; j++) {
     for(int k = grid_x; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
-      if(pixel.cell)
-	return pixel.cell;
+      if(pixel.cell) {
+	// BLOCK/BLOCK overlaps allowed
+	if (!(isBlock(&cell)
+	      && isBlock(pixel.cell)))
+	  return pixel.cell;
+      }
       else {
 	pixel.cell = &cell;
       }
