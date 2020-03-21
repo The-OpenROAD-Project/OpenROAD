@@ -61,7 +61,7 @@ using std::pair;
 using std::to_string;
 using std::vector;
 
-using odb::adsRect;
+using odb::Rect;
 
 using ord::warn;
 

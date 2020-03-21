@@ -114,11 +114,11 @@ void Opendp::group_cell_region_assign() {
 void Opendp::group_pixel_assign2() {
   for(int i = 0; i < row_count_; i++) {
     for(int j = 0; j < row_site_count_; j++) {
-      adsRect grid2;
+      Rect grid2;
       grid2.init(j * site_width_, i * row_height_,
 		(j + 1) * site_width_, (i + 1) * row_height_);
       for(Group& group : groups_) {
-        for(adsRect &rect : group.regions) {
+        for(Rect &rect : group.regions) {
 	  if(!check_inside(grid2, rect) &&
              check_overlap(grid2, rect)) {
             grid_[i][j].util = 0.0;
@@ -139,7 +139,7 @@ void Opendp::group_pixel_assign() {
   }
 
   for(Group& group : groups_) {
-    for(adsRect &rect : group.regions) {
+    for(Rect &rect : group.regions) {
       int row_start = divCeil(rect.yMin(), row_height_);
       int row_end = divFloor(rect.yMax(), row_height_);
 
@@ -160,7 +160,7 @@ void Opendp::group_pixel_assign() {
         }
       }
     }
-    for(adsRect& rect : group.regions) {
+    for(Rect& rect : group.regions) {
       int row_start = divCeil(rect.yMin(), row_height_);
       int row_end = divFloor(rect.yMax(), row_height_);
 

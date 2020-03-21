@@ -58,7 +58,7 @@ using std::vector;
 using ord::error;
 using ord::warn;
 
-using odb::adsRect;
+using odb::Rect;
 using odb::dbBox;
 using odb::dbNet;
 using odb::dbMaster;
@@ -248,7 +248,7 @@ void Opendp::makeGroups() {
       group.boundary.mergeInit();
       auto boundaries = db_region->getParent()->getBoundaries();
       for(dbBox *boundary : boundaries) {
-	adsRect box;
+	Rect box;
 	boundary->getBox(box);
 	box = box.intersect(core_);
 	// offset region to core origin

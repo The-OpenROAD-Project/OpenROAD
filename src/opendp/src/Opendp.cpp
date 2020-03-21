@@ -66,7 +66,7 @@ using std::max;
 
 using ord::error;
 
-using odb::adsRect;
+using odb::Rect;
 using odb::dbBox;
 using odb::dbITerm;
 using odb::dbMasterType;

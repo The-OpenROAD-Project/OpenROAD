@@ -55,7 +55,7 @@ namespace opendp {
 using std::string;
 using std::vector;
 
-using odb::adsRect;
+using odb::Rect;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -96,16 +96,16 @@ struct Cell {
   bool is_placed_;
   bool hold_;
   Group* group_;
-  adsRect *region_;  // group rect
+  Rect *region_;  // group rect
 };
 
 struct Group {
   Group();
 
   std::string name;
-  std::vector< adsRect > regions;
+  std::vector< Rect > regions;
   std::vector< Cell* > siblings;
-  adsRect boundary;
+  Rect boundary;
   double util;
 };
 
@@ -173,12 +173,12 @@ class Opendp {
 
   void power_mapping();
   void detailedPlacement();
-  std::pair< int, int > nearestPt(Cell* cell, adsRect* rect);
-  int dist_for_rect(Cell* cell, adsRect* rect);
-  bool check_overlap(adsRect cell, adsRect box);
-  bool check_overlap(Cell* cell, adsRect* rect);
-  bool check_inside(adsRect cell, adsRect box);
-  bool check_inside(Cell* cell, adsRect* rect);
+  std::pair< int, int > nearestPt(Cell* cell, Rect* rect);
+  int dist_for_rect(Cell* cell, Rect* rect);
+  bool check_overlap(Rect cell, Rect box);
+  bool check_overlap(Cell* cell, Rect* rect);
+  bool check_inside(Rect cell, Rect box);
+  bool check_inside(Cell* cell, Rect* rect);
   bool binSearch(int grid_x, Cell* cell,
 		 int x, int y,
 		 // Return values
@@ -189,7 +189,7 @@ class Opendp {
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
   std::vector< Cell* > overlap_cells(Cell* cell);
-  std::set< Cell* > get_cells_from_boundary(adsRect* rect);
+  std::set< Cell* > get_cells_from_boundary(Rect* rect);
   int dist_benefit(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
@@ -226,12 +226,12 @@ class Opendp {
 			     Grid *grid);
 
   void rectDist(Cell *cell,
-		adsRect *rect,
+		Rect *rect,
 		// Return values.
 		int x,
 		int y);
   int rectDist(Cell *cell,
-	       adsRect *rect);
+	       Rect *rect);
   power rowTopPower(int row);
   dbOrientType rowOrient(int row);
 
@@ -293,7 +293,7 @@ class Opendp {
   std::map< dbMaster*, Macro > db_master_map_;
   std::map< dbInst*, Cell* > db_inst_map_;
 
-  adsRect core_;
+  Rect core_;
   power initial_power_;
   bool row0_orient_is_r0_;
   bool row0_top_power_is_vdd_;

@@ -43,9 +43,9 @@
 #include "opendp/Opendp.h"
 
 namespace ord {
-odb::adsPoint
-closestPtInRect(odb::adsRect rect,
-		odb::adsPoint pt);
+odb::Point
+closestPtInRect(odb::Rect rect,
+		odb::Point pt);
 }
 
 namespace opendp {
@@ -73,8 +73,8 @@ using ord::error;
 using ord::warn;
 using ord::closestPtInRect;
 
-using odb::adsRect;
-using odb::adsPoint;
+using odb::Rect;
+using odb::Point;
 using odb::dbBox;
 using odb::dbITerm;
 using odb::dbMTerm;
@@ -131,7 +131,7 @@ void Opendp::displacementStats(// Return values.
 int64_t Opendp::hpwl(bool initial) {
   int64_t hpwl = 0;
   for(dbNet *net : block_->getNets()) {
-    adsRect box;
+    Rect box;
     box.mergeInit();
 
     for(dbITerm *iterm : net->getITerms()) {
@@ -146,7 +146,7 @@ int64_t Opendp::hpwl(bool initial) {
         y = cell->y_;
       }
       // Use inst center if no mpins.
-      adsRect iterm_rect(x, y, x, y);
+      Rect iterm_rect(x, y, x, y);
       dbMTerm* mterm = iterm->getMTerm();
       auto mpins = mterm->getMPins();
       if(mpins.size()) {
@@ -155,11 +155,11 @@ int64_t Opendp::hpwl(bool initial) {
         auto geom = pin->getGeometry();
         if(geom.size()) {
           dbBox* pin_box = *geom.begin();
-          adsRect pin_rect;
+          Rect pin_rect;
           pin_box->getBox(pin_rect);
           int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
           int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
-          iterm_rect = adsRect(x + center_x, y + center_y,
+          iterm_rect = Rect(x + center_x, y + center_y,
 			       x + center_x, y + center_y);
         }
       }
@@ -171,13 +171,13 @@ int64_t Opendp::hpwl(bool initial) {
         dbPlacementStatus status = bpin->getPlacementStatus();
         if(status.isPlaced()) {
           dbBox* pin_box = bpin->getBox();
-          adsRect pin_rect;
+          Rect pin_rect;
           pin_box->getBox(pin_rect);
           int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
           int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
           int core_center_x = center_x - core_.xMin();
           int core_center_y = center_y - core_.yMin();
-          adsRect pin_center(core_center_x, core_center_y, core_center_x,
+          Rect pin_center(core_center_x, core_center_y, core_center_x,
                              core_center_y);
           box.merge(pin_center);
         }
@@ -189,7 +189,7 @@ int64_t Opendp::hpwl(bool initial) {
   return hpwl;
 }
 
-pair< int, int > Opendp::nearestPt(Cell* cell, adsRect* rect) {
+pair< int, int > Opendp::nearestPt(Cell* cell, Rect* rect) {
   int x, y;
   initLocation(cell, x, y);
   int size_x = gridNearestWidth(cell);
@@ -237,7 +237,7 @@ pair< int, int > Opendp::nearestPt(Cell* cell, adsRect* rect) {
   return make_pair(temp_x, temp_y);
 }
 
-int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {
+int Opendp::dist_for_rect(Cell* cell, Rect* rect) {
   int x, y;
   initLocation(cell, x, y);
   int dist_x = 0;
@@ -259,14 +259,14 @@ int Opendp::dist_for_rect(Cell* cell, adsRect* rect) {
   return dist_y + dist_x;
 }
 
-bool Opendp::check_overlap(adsRect rect, adsRect box) {
+bool Opendp::check_overlap(Rect rect, Rect box) {
   return box.xMin() < rect.xMax()
     && box.xMax() > rect.xMin()
     && box.yMin() < rect.yMax()
     && box.yMax() > rect.yMin();
 }
 
-bool Opendp::check_overlap(Cell* cell, adsRect* rect) {
+bool Opendp::check_overlap(Cell* cell, Rect* rect) {
   int x, y;
   initLocation(cell, x, y);
 
@@ -276,14 +276,14 @@ bool Opendp::check_overlap(Cell* cell, adsRect* rect) {
     && y < rect->yMax();
 }
 
-bool Opendp::check_inside(adsRect rect, adsRect box) {
+bool Opendp::check_inside(Rect rect, Rect box) {
   return rect.xMin() >= box.xMin()
     && rect.xMax() <= box.xMax()
     && rect.yMin() >= box.yMin()
     && rect.yMax() <= box.yMax();
 }
 
-bool Opendp::check_inside(Cell* cell, adsRect* rect) {
+bool Opendp::check_inside(Cell* cell, Rect* rect) {
   int x, y;
   initLocation(cell, x, y);
   return x >= rect->xMin()
@@ -399,21 +399,21 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   // Restrict check to group region.
   Group* group = cell->group_;
   if(group) {
-    adsRect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
+    Rect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
 			  divCeil(group->boundary.yMin(), row_height_),
 			  group->boundary.xMax() / site_width_,
 			  group->boundary.yMax() / row_height_);
-    adsPoint in_boundary = closestPtInRect(grid_boundary,
-					   adsPoint(grid_x, grid_y));
+    Point in_boundary = closestPtInRect(grid_boundary,
+					   Point(grid_x, grid_y));
     grid_x = in_boundary.x();
     grid_y = in_boundary.y();
   }
 
   // Restrict check to core.
-  adsRect core(0, 0,
+  Rect core(0, 0,
 	       row_site_count_ - gridPaddedWidth(cell),
 	       row_count_ - gridHeight(cell));
-  adsPoint in_core = closestPtInRect(core, adsPoint(grid_x, grid_y));
+  Point in_core = closestPtInRect(core, Point(grid_x, grid_y));
   int avail_x, avail_y;
   if(binSearch(grid_x, cell, in_core.x(), in_core.y(),
 	       avail_x, avail_y)) {
@@ -423,12 +423,12 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   // magic number alert
   int diamond_search_width = diamond_search_height_ * 5;
   // Set search boundary max / min
-  adsPoint start = closestPtInRect(core,
-				   adsPoint(grid_x - diamond_search_width,
-					    grid_y - diamond_search_height_));
-  adsPoint end = closestPtInRect(core,
-				 adsPoint(grid_x + diamond_search_width,
-					  grid_y + diamond_search_height_));;
+  Point start = closestPtInRect(core,
+                                Point(grid_x - diamond_search_width,
+                                      grid_y - diamond_search_height_));
+  Point end = closestPtInRect(core,
+                              Point(grid_x + diamond_search_width,
+                                    grid_y + diamond_search_height_));;
   int x_start = start.x();
   int y_start = start.y();
   int x_end = end.x();
@@ -507,7 +507,7 @@ bool Opendp::shift_move(Cell* cell) {
   int x, y;
   initLocation(cell, x, y);
   // set region boundary
-  adsRect rect;
+  Rect rect;
   // magic number alert
   int boundary_margin = 3;
   rect.reset(max(0, x - paddedWidth(cell) * boundary_margin),
@@ -585,7 +585,7 @@ vector< Cell* > Opendp::overlap_cells(Cell* cell) {
 }
 
 // rect should be position
-set< Cell* > Opendp::get_cells_from_boundary(adsRect* rect) {
+set< Cell* > Opendp::get_cells_from_boundary(Rect* rect) {
   int x_start = divFloor(rect->xMin(), site_width_);
   int y_start = divFloor(rect->yMin(), row_height_);
   int x_end = divFloor(rect->xMax(), site_width_);
