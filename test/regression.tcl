@@ -48,6 +48,8 @@
 # Customize "regression_vars.tcl" to locate the directory and name of the
 # application to run as well as the test names. Each test is a tcl command file.
 
+source [file join [file dirname [file normalize [info script]]] "regression_vars.tcl"]
+
 proc regression_main {} {
   global argv
   exit [regression_body $argv]
@@ -120,8 +122,8 @@ proc parse_args { cmd_argv } {
     }
   }
   if { $cmd_argv == {} } {
-    # Default is to run fast tests.
-    set tests [group_tests fast]
+    # Default is to run all tests.
+    set tests [group_tests all]
   } else {
     set tests [expand_tests $cmd_argv]
   }

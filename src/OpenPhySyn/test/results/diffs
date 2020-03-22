@@ -1,0 +1,15 @@
+*** /Users/cherry/sta/openroad/src/OpenPhySyn/test/clone1.ok	2020-03-21 14:36:27.000000000 -0700
+--- /Users/cherry/sta/openroad/src/OpenPhySyn/test/results/clone1.log	2020-03-21 17:04:10.000000000 -0700
+***************
+*** 12,16 ****
+  Notice 0:     Created 18742 nets and 61856 connections.
+  Notice 0: Finished DEF file: clone1.def
+  [info] Invoking gate_clone transform
+! [info] Finished gate_clone transform (8)
+! No differences found.
+--- 12,16 ----
+  Notice 0:     Created 18742 nets and 61856 connections.
+  Notice 0: Finished DEF file: clone1.def
+  [info] Invoking gate_clone transform
+! [info] Finished gate_clone transform (15)
+! Differences found at line 242.
