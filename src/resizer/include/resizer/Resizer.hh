@@ -16,10 +16,13 @@
 
 #pragma once
 
+#include <array>
 #include "db_sta/dbSta.hh"
 #include "SteinerTree.hh"
 
 namespace sta {
+
+using std::array;
 
 using odb::Rect;
 
@@ -30,6 +33,7 @@ typedef Vector<RebufferOption*> RebufferOptionSeq;
 enum class RebufferOptionType { sink, junction, wire, buffer };
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
+typedef array<Required, RiseFall::index_count> Requireds;
 
 class Resizer : public StaState
 {
@@ -167,10 +171,12 @@ protected:
   float portCapacitance(const LibertyPort *port);
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
-  Required pinRequired(const Pin *pin);
+  Requireds pinRequireds(const Pin *pin);
   float gateDelay(LibertyPort *out_port,
+		  RiseFall *rf,
 		  float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
+		    RiseFall *rf,
 		    float load_cap);
   string makeUniqueNetName();
   string makeUniqueBufferName();
@@ -189,7 +195,7 @@ protected:
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
 				     float cap,
-				     Required required,
+				     Requireds requireds,
 				     Pin *load_pin,
 				     Point location,
 				     RebufferOption *ref,
