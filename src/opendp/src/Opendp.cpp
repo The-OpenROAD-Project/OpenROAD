@@ -396,9 +396,11 @@ bool Opendp::isPlacedType(dbMasterType type) {
   case dbMasterType::CORE_TIEHIGH:
   case dbMasterType::CORE_TIELOW:
   case dbMasterType::CORE_SPACER:
+  case dbMasterType::CORE_WELLTAP:
+  case dbMasterType::CORE_ANTENNACELL:
   case dbMasterType::BLOCK:
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:
@@ -409,13 +411,16 @@ bool Opendp::isPlacedType(dbMasterType type) {
     return true;
     // These classes are completely ignored by the placer.
   case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
   case dbMasterType::RING:
   case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
   case dbMasterType::PAD_INPUT:
   case dbMasterType::PAD_OUTPUT:
   case dbMasterType::PAD_INOUT:
   case dbMasterType::PAD_POWER:
   case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
     return false;
   }
 }
@@ -425,14 +430,16 @@ bool Opendp::isPaddedType(Cell *cell) {
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
   case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
   case dbMasterType::CORE_FEEDTHRU:
   case dbMasterType::CORE_TIEHIGH:
   case dbMasterType::CORE_TIELOW:
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
+  case dbMasterType::CORE_WELLTAP:
     return true;
   case dbMasterType::CORE_SPACER:
   case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:
@@ -442,13 +449,16 @@ bool Opendp::isPaddedType(Cell *cell) {
   case dbMasterType::ENDCAP_BOTTOMRIGHT:
     // These classes are completely ignored by the placer.
   case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
   case dbMasterType::RING:
   case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
   case dbMasterType::PAD_INPUT:
   case dbMasterType::PAD_OUTPUT:
   case dbMasterType::PAD_INOUT:
   case dbMasterType::PAD_POWER:
   case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
     return false;
   }
 }
@@ -458,14 +468,16 @@ bool Opendp::isStdCell(Cell *cell) {
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
   case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
   case dbMasterType::CORE_FEEDTHRU:
   case dbMasterType::CORE_TIEHIGH:
   case dbMasterType::CORE_TIELOW:
   case dbMasterType::CORE_SPACER:
+  case dbMasterType::CORE_WELLTAP:
     return true;
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
   case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:
@@ -475,13 +487,16 @@ bool Opendp::isStdCell(Cell *cell) {
   case dbMasterType::ENDCAP_BOTTOMRIGHT:
     // These classes are completely ignored by the placer.
   case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
   case dbMasterType::RING:
   case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
   case dbMasterType::PAD_INPUT:
   case dbMasterType::PAD_OUTPUT:
   case dbMasterType::PAD_INOUT:
   case dbMasterType::PAD_POWER:
   case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
     return false;
   }
 }
