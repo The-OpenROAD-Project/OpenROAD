@@ -34,6 +34,7 @@ enum class RebufferOptionType { sink, junction, wire, buffer };
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
+typedef array<Slew,  RiseFall::index_count> TgtSlews;
 
 class Resizer : public StaState
 {
@@ -117,9 +118,9 @@ protected:
   void makeEquivCells(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrary *library,
-		       Slew slews[]);
+		       TgtSlews &slews);
   void findTargetLoad(LibertyCell *cell,
-		      Slew slews[]);
+		      TgtSlews &slews);
   float findTargetLoad(LibertyCell *cell,
 		       TimingArc *arc,
 		       Slew in_slew,
@@ -267,7 +268,7 @@ protected:
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
-  Slew tgt_slews_[RiseFall::index_count];
+  TgtSlews tgt_slews_;
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;

@@ -570,7 +570,7 @@ Resizer::targetLoadCap(LibertyCell *cell)
 
 void
 Resizer::findTargetLoads(LibertyLibrary *library,
-			 Slew slews[])
+			 TgtSlews &slews)
 {
   LibertyCellIterator cell_iter(library);
   while (cell_iter.hasNext()) {
@@ -581,7 +581,7 @@ Resizer::findTargetLoads(LibertyLibrary *library,
 
 void
 Resizer::findTargetLoad(LibertyCell *cell,
-			Slew slews[])
+			TgtSlews &slews)
 {
   LibertyCellTimingArcSetIterator arc_set_iter(cell);
   float target_load_sum = 0.0;
