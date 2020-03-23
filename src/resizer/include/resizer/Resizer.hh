@@ -16,10 +16,13 @@
 
 #pragma once
 
+#include <array>
 #include "db_sta/dbSta.hh"
 #include "SteinerTree.hh"
 
 namespace sta {
+
+using std::array;
 
 using odb::Rect;
 
@@ -30,6 +33,8 @@ typedef Vector<RebufferOption*> RebufferOptionSeq;
 enum class RebufferOptionType { sink, junction, wire, buffer };
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
+typedef array<Required, RiseFall::index_count> Requireds;
+typedef array<Slew,  RiseFall::index_count> TgtSlews;
 
 class Resizer : public StaState
 {
@@ -113,9 +118,9 @@ protected:
   void makeEquivCells(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrary *library,
-		       Slew slews[]);
+		       TgtSlews &slews);
   void findTargetLoad(LibertyCell *cell,
-		      Slew slews[]);
+		      TgtSlews &slews);
   float findTargetLoad(LibertyCell *cell,
 		       TimingArc *arc,
 		       Slew in_slew,
@@ -167,10 +172,12 @@ protected:
   float portCapacitance(const LibertyPort *port);
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
-  Required pinRequired(const Pin *pin);
+  Requireds pinRequireds(const Pin *pin);
   float gateDelay(LibertyPort *out_port,
+		  RiseFall *rf,
 		  float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
+		    RiseFall *rf,
 		    float load_cap);
   string makeUniqueNetName();
   string makeUniqueBufferName();
@@ -189,7 +196,7 @@ protected:
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
 				     float cap,
-				     Required required,
+				     Requireds requireds,
 				     Pin *load_pin,
 				     Point location,
 				     RebufferOption *ref,
@@ -261,7 +268,7 @@ protected:
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
-  Slew tgt_slews_[RiseFall::index_count];
+  TgtSlews tgt_slews_;
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;
