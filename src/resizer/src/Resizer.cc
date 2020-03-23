@@ -438,9 +438,9 @@ Resizer::resizeToTargetSlew(Instance *inst)
 	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
 	LibertyCell *best_cell = nullptr;
 	float best_ratio = 0.0;
-	auto equiv_cells = sta_->equivCells(cell);
+	LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
 	if (equiv_cells) {
-	  for (auto target_cell : *equiv_cells) {
+	  for (LibertyCell *target_cell : *equiv_cells) {
 	    if (!dontUse(target_cell)) {
 	      float target_load = (*target_load_map_)[target_cell];
 	      float ratio = target_load / load_cap;
@@ -532,7 +532,7 @@ void
 Resizer::setDontUse(LibertyCellSeq *dont_use)
 {
   if (dont_use) {
-    for (auto cell : *dont_use)
+    for (LibertyCell *cell : *dont_use)
       dont_use_.insert(cell);
   }
 }
@@ -555,7 +555,7 @@ Resizer::findTargetLoads(LibertyLibrarySeq *resize_libs)
   findBufferTargetSlews(resize_libs);
   if (target_load_map_ == nullptr)
     target_load_map_ = new CellTargetLoadMap;
-  for (auto lib : *resize_libs)
+  for (LibertyLibrary *lib : *resize_libs)
     findTargetLoads(lib, tgt_slews_);
 }
 
@@ -574,7 +574,7 @@ Resizer::findTargetLoads(LibertyLibrary *library,
 {
   LibertyCellIterator cell_iter(library);
   while (cell_iter.hasNext()) {
-    auto cell = cell_iter.next();
+    LibertyCell *cell = cell_iter.next();
     findTargetLoad(cell, slews);
   }
 }
@@ -587,8 +587,8 @@ Resizer::findTargetLoad(LibertyCell *cell,
   float target_load_sum = 0.0;
   int arc_count = 0;
   while (arc_set_iter.hasNext()) {
-    auto arc_set = arc_set_iter.next();
-    auto role = arc_set->role();
+    TimingArcSet *arc_set = arc_set_iter.next();
+    TimingRole *role = arc_set->role();
     if (!role->isTimingCheck()
 	&& role != TimingRole::tristateDisable()
 	&& role != TimingRole::tristateEnable()) {
@@ -658,12 +658,12 @@ Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
   tgt_slews_[RiseFall::fallIndex()] = 0.0;
   int tgt_counts[RiseFall::index_count]{0};
   
-  for (auto lib : *resize_libs) {
+  for (LibertyLibrary *lib : *resize_libs) {
     Slew slews[RiseFall::index_count]{0.0};
     int counts[RiseFall::index_count]{0};
     
     findBufferTargetSlews(lib, slews, counts);
-    for (auto rf : RiseFall::rangeIndex()) {
+    for (int rf : RiseFall::rangeIndex()) {
       tgt_slews_[rf] += slews[rf];
       tgt_counts[rf] += counts[rf];
       slews[rf] /= counts[rf];
@@ -674,7 +674,7 @@ Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
 		slews[RiseFall::fallIndex()]);
   }
 
-  for (auto rf : RiseFall::rangeIndex())
+  for (int rf : RiseFall::rangeIndex())
     tgt_slews_[rf] /= tgt_counts[rf];
 
   debugPrint2(debug_, "resizer", 1, "target_slews = %.2e/%.2e\n",
@@ -688,13 +688,13 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
 			       Slew slews[],
 			       int counts[])
 {
-  for (auto buffer : *library->buffers()) {
+  for (LibertyCell *buffer : *library->buffers()) {
     if (!dontUse(buffer)) {
       LibertyPort *input, *output;
       buffer->bufferPorts(input, output);
-      auto arc_sets = buffer->timingArcSets(input, output);
+      TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
       if (arc_sets) {
-	for (auto arc_set : *arc_sets) {
+	for (TimingArcSet *arc_set : *arc_sets) {
 	  TimingArcSetArcIterator arc_iter(arc_set);
 	  while (arc_iter.hasNext()) {
 	    TimingArc *arc = arc_iter.next();
@@ -738,7 +738,7 @@ Resizer::findClkNets()
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
   PinSet clk_pins;
   search_->findClkVertexPins(clk_pins);
-  for (auto pin : clk_pins) {
+  for (Pin *pin : clk_pins) {
     Vertex *vertex, *bidirect_drvr_vertex;
     graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
     bfs.enqueue(vertex);
@@ -1140,7 +1140,7 @@ Resizer::checkMaxSlewViolation(const Pin *pin,
   float limit;
   bool exists;
   slewLimit(pin, MinMax::max(), limit, exists);
-  for (auto rf : RiseFall::range()) {
+  for (RiseFall *rf : RiseFall::range()) {
     Slew slew;
     slew  = graph_->slew(vertex, rf, dcalc_ap_->index());
     if (slew > limit) {
@@ -1269,7 +1269,7 @@ Resizer::rebuffer(const Pin *drvr_pin,
       RebufferOption *best_option = nullptr;
       int best_index = 0;
       int i = 1;
-      for (auto p : Z) {
+      for (RebufferOption *p : Z) {
 	// Find required for drvr_pin into option.
 	Delays  gate_delays{gateDelay(drvr_port, RiseFall::rise(), p->cap()),
 			    gateDelay(drvr_port, RiseFall::fall(), p->cap())};
@@ -1360,8 +1360,8 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
 					      level + 1, buffer_cell);
       RebufferOptionSeq Z;
       // Combine the options from both branches.
-      for (auto p : Zl) {
-	for (auto q : Zr) {
+      for (RebufferOption *p : Zl) {
+	for (RebufferOption *q : Zr) {
 	  Requireds junc_reqs{min(p->required(RiseFall::rise()),
 				  q->required(RiseFall::rise())),
 			      min(p->required(RiseFall::fall()),
@@ -1384,14 +1384,14 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
 	      });
       int si = 0;
       for (size_t pi = 0; pi < Z.size(); pi++) {
-	auto p = Z[pi];
+	RebufferOption *p = Z[pi];
 	float Lp = p->cap();
 	// Remove options by shifting down with index si.
 	si = pi + 1;
 	// Because the options are sorted we don't have to look
 	// beyond the first option.
 	for (size_t qi = pi + 1; qi < Z.size(); qi++) {
-	  auto q = Z[qi];
+	  RebufferOption *q = Z[qi];
 	  float Lq = q->cap();
 	  // We know Tq <= Tp from the sort so we don't need to check req.
 	  // If q is the same or worse than p, remove solution q.
@@ -1426,7 +1426,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   float wire_cap = wire_length * wire_cap_;
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
-  for (auto p : Z) {
+  for (RebufferOption *p : Z) {
     // account for wire delay
     Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
 		   p->required(RiseFall::fall()) - wire_delay};
@@ -2019,19 +2019,19 @@ Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
     fanins.push_back(vertex);
   }
   sort(fanins, [&](Vertex *v1, Vertex *v2)
-	      { float w1 = weight_map[v1];
-		float w2 = weight_map[v2];
-		if (fuzzyEqual(w1, w2)) {
-		  float gap1 = slackGap(v1);
-		  float gap2 = slackGap(v2);
-		  // Break ties based on the hold/setup gap.
-		  if (fuzzyEqual(gap1, gap2))
-		    return v1->level() > v2->level();
-		  else
-		    return gap1 > gap2;
-		}
-		else
-		  return w1 < w2;});
+	       { float w1 = weight_map[v1];
+		 float w2 = weight_map[v2];
+		 if (fuzzyEqual(w1, w2)) {
+		   float gap1 = slackGap(v1);
+		   float gap2 = slackGap(v2);
+		   // Break ties based on the hold/setup gap.
+		   if (fuzzyEqual(gap1, gap2))
+		     return v1->level() > v2->level();
+		   else
+		     return gap1 > gap2;
+		 }
+		 else
+		   return w1 < w2;});
 }
 
 // Gap between min setup and hold slacks.
@@ -2053,7 +2053,7 @@ cellDriveResistance(const LibertyCell *cell)
 {
   LibertyCellPortBitIterator port_iter(cell);
   while (port_iter.hasNext()) {
-    auto port = port_iter.next();
+    LibertyPort *port = port_iter.next();
     if (port->direction()->isOutput())
       return port->driveResistance();
   }
