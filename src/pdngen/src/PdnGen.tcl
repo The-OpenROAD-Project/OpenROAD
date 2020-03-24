@@ -1915,21 +1915,7 @@ proc import_macro_boundaries {} {
   set macros {}
   foreach lib $libs {
     foreach cell [$lib getMasters] {
-      if {[$cell getType] == "CORE"} {continue}
-      if {[$cell getType] == "IO"} {continue}
-      if {[$cell getType] == "PAD"} {continue}
-      if {[$cell getType] == "PAD_SPACER"} {continue}
-      if {[$cell getType] == "SPACER"} {continue}
-      if {[$cell getType] == "NONE"} {continue}
-      if {[$cell getType] == "ENDCAP_PRE"} {continue}
-      if {[$cell getType] == "ENDCAP_BOTTOMLEFT"} {continue}
-      if {[$cell getType] == "ENDCAP_BOTTOMRIGHT"} {continue}
-      if {[$cell getType] == "ENDCAP_TOPLEFT"} {continue}
-      if {[$cell getType] == "ENDCAP_TOPRIGHT"} {continue}
-      if {[$cell getType] == "ENDCAP"} {continue}
-      if {[$cell getType] == "CORE_SPACER"} {continue}
-      if {[$cell getType] == "CORE_TIEHIGH"} {continue}
-      if {[$cell getType] == "CORE_TIELOW"} {continue}
+      if {[$cell getType] != "BLOCK"} {continue}
 
       dict set macros [$cell getName] [list \
         width  [$cell getWidth] \
@@ -2276,24 +2262,7 @@ proc get_memory_instance_pg_pins {} {
     set inst_name [$inst getName]
     set master [$inst getMaster]
 
-    if {[$master getType] == "CORE"} {continue}
-    if {[$master getType] == "IO"} {continue}
-    if {[$master getType] == "PAD"} {continue}
-    if {[$master getType] == "PAD_SPACER"} {continue}
-    if {[$master getType] == "SPACER"} {continue}
-    if {[$master getType] == "NONE"} {continue}
-    if {[$master getType] == "ENDCAP_PRE"} {continue}
-    if {[$master getType] == "ENDCAP_BOTTOMLEFT"} {continue}
-    if {[$master getType] == "ENDCAP_BOTTOMRIGHT"} {continue}
-    if {[$master getType] == "ENDCAP_TOPLEFT"} {continue}
-    if {[$master getType] == "ENDCAP_TOPRIGHT"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "CORE_SPACER"} {continue}
-    if {[$master getType] == "CORE_TIEHIGH"} {continue}
-    if {[$master getType] == "CORE_TIELOW"} {continue}
+    if {[$master getType] != "BLOCK"} {continue}
 
     # If there are no shapes left after 'and'ing the boundard with the cell, then
     # the cell lies outside the area where we are adding a power grid.
