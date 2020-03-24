@@ -240,10 +240,12 @@ Opendp::deleteGrid(Grid *grid)
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    dbInst *db_inst_ = cell.db_inst_;
-    db_inst_->setOrient(cell.orient_);
-    db_inst_->setLocation(core_.xMin() + cell.x_,
-			  core_.yMin() + cell.y_);
+    if (cell.is_placed_) {
+      dbInst *db_inst_ = cell.db_inst_;
+      db_inst_->setOrient(cell.orient_);
+      db_inst_->setLocation(core_.xMin() + cell.x_,
+			    core_.yMin() + cell.y_);
+    }
   }
 }
 
