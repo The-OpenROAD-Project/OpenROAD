@@ -138,4 +138,15 @@ proc get_masters_arg { master_names } {
   return $names;
 }
 
+proc report_inst_bbox { inst_name } {
+  set block [ord::get_db_block]
+  set inst [$block findInst $inst_name]
+  if { $inst != "NULL" } {
+    set bbox [$inst getBBox]
+    return "[$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]"
+  } else {
+    error "cannot find instance $inst_name"
+  }
+}
+
 }

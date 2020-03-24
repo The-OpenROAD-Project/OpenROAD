@@ -132,7 +132,6 @@ soc_bsg_black_parrot_nangate45
 # Medium speed tests.
 # run time <15s with optimized compile
 define_test_group med {
-soc_bsg_black_parrot_nangate45
 }
 
 define_test_group slow {

@@ -240,16 +240,17 @@ Opendp::deleteGrid(Grid *grid)
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    dbInst *db_inst_ = cell.db_inst_;
-    db_inst_->setOrient(cell.orient_);
-    db_inst_->setLocation(core_.xMin() + cell.x_,
-			  core_.yMin() + cell.y_);
+    if (cell.is_placed_) {
+      dbInst *db_inst_ = cell.db_inst_;
+      db_inst_->setOrient(cell.orient_);
+      db_inst_->setLocation(core_.xMin() + cell.x_,
+			    core_.yMin() + cell.y_);
+    }
   }
 }
 
 void Opendp::findDesignStats() {
   fixed_inst_count_ = 0;
-  multi_height_inst_count_ = 0;
   movable_area_ = fixed_area_ = 0;
   max_cell_height_ = 0;
 
@@ -262,9 +263,6 @@ void Opendp::findDesignStats() {
     }
     else {
       movable_area_ += cell_area;
-      if(isMultiRow(&cell))
-	multi_height_inst_count_++;
-
       int cell_height = gridNearestHeight(&cell);
       if(cell_height > max_cell_height_)
 	max_cell_height_ = cell_height;
@@ -286,7 +284,7 @@ void Opendp::reportDesignStats() {
   printf("Design Stats\n");
   printf("--------------------------------\n");
   printf("total instances      %8d\n", block_->getInsts().size());
-  printf("multi instances      %8d\n",  multi_height_inst_count_);
+  printf("multi instances      %8d\n",  multi_row_inst_count_);
   printf("fixed instances      %8d\n", fixed_inst_count_);
   printf("nets                 %8d\n", block_->getNets().size());
   printf("design area          %8.1f u^2\n",
@@ -350,19 +348,19 @@ Opendp::rowOrient(int row)
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::initLocation(Cell *cell,
-		     // Return values.
-		     int &x,
-		     int &y)
+Opendp::initialLocation(Cell *cell,
+			// Return values.
+			int &x,
+			int &y)
 {
-  initLocation(cell->db_inst_, x, y);
+  initialLocation(cell->db_inst_, x, y);
 }
 
 void
-Opendp::initLocation(dbInst* inst,
-		     // Return values.
-		     int &x,
-		     int &y)
+Opendp::initialLocation(dbInst* inst,
+			// Return values.
+			int &x,
+			int &y)
 {
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
@@ -371,19 +369,19 @@ Opendp::initLocation(dbInst* inst,
 }
 
 void
-Opendp::initPaddedLoc(Cell *cell,
-		      // Return values.
-		      int &x,
-		      int &y)
+Opendp::initialPaddedLocation(Cell *cell,
+			      // Return values.
+			      int &x,
+			      int &y)
 {
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
   if (isPadded(cell))
     x -= pad_left_ * site_width_;
 }
 
 int Opendp::disp(Cell *cell) {
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initialLocation(cell, init_x, init_y);
   return abs(init_x - cell->x_) +
          abs(init_y - cell->y_);
 }
@@ -396,9 +394,11 @@ bool Opendp::isPlacedType(dbMasterType type) {
   case dbMasterType::CORE_TIEHIGH:
   case dbMasterType::CORE_TIELOW:
   case dbMasterType::CORE_SPACER:
+  case dbMasterType::CORE_WELLTAP:
+  case dbMasterType::CORE_ANTENNACELL:
   case dbMasterType::BLOCK:
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:
@@ -409,13 +409,16 @@ bool Opendp::isPlacedType(dbMasterType type) {
     return true;
     // These classes are completely ignored by the placer.
   case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
   case dbMasterType::RING:
   case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
   case dbMasterType::PAD_INPUT:
   case dbMasterType::PAD_OUTPUT:
   case dbMasterType::PAD_INOUT:
   case dbMasterType::PAD_POWER:
   case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
     return false;
   }
 }
@@ -425,14 +428,16 @@ bool Opendp::isPaddedType(Cell *cell) {
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
   case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
   case dbMasterType::CORE_FEEDTHRU:
   case dbMasterType::CORE_TIEHIGH:
   case dbMasterType::CORE_TIELOW:
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
+  case dbMasterType::CORE_WELLTAP:
     return true;
   case dbMasterType::CORE_SPACER:
   case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:
@@ -442,13 +447,16 @@ bool Opendp::isPaddedType(Cell *cell) {
   case dbMasterType::ENDCAP_BOTTOMRIGHT:
     // These classes are completely ignored by the placer.
   case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
   case dbMasterType::RING:
   case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
   case dbMasterType::PAD_INPUT:
   case dbMasterType::PAD_OUTPUT:
   case dbMasterType::PAD_INOUT:
   case dbMasterType::PAD_POWER:
   case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
     return false;
   }
 }
@@ -458,14 +466,16 @@ bool Opendp::isStdCell(Cell *cell) {
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
   case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
   case dbMasterType::CORE_FEEDTHRU:
   case dbMasterType::CORE_TIEHIGH:
   case dbMasterType::CORE_TIELOW:
   case dbMasterType::CORE_SPACER:
+  case dbMasterType::CORE_WELLTAP:
     return true;
-    // Kludge because CORE WELLTAP is not recognized by OpenDB
-  case dbMasterType::NONE:
   case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:
@@ -475,13 +485,16 @@ bool Opendp::isStdCell(Cell *cell) {
   case dbMasterType::ENDCAP_BOTTOMRIGHT:
     // These classes are completely ignored by the placer.
   case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
   case dbMasterType::RING:
   case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
   case dbMasterType::PAD_INPUT:
   case dbMasterType::PAD_OUTPUT:
   case dbMasterType::PAD_INOUT:
   case dbMasterType::PAD_POWER:
   case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
     return false;
   }
 }

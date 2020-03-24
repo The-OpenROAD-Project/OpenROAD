@@ -1,4 +1,4 @@
-# rebuffer input/output ports
+# buffer input/output ports
 source "helpers.tcl"
 read_liberty liberty1.lib
 read_lef liberty1.lef

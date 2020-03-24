@@ -58,22 +58,26 @@ using ord::warn;
 static bool cellAreaLess(Cell* cell1, Cell* cell2);
 
 void Opendp::detailedPlacement() {
-  if(!groups_.empty()) {
-    prePlaceGroups();
-    prePlace();
-
-    // naive method placement ( Multi -> single )
+  if(!groups_.empty()) 
     placeGroups();
-    for(Group &group : groups_) {
-      for(int pass = 0; pass < 3; pass++) {
-        int refine_count = groupRefine(&group);
-        int anneal_count = anneal(&group);
-        // magic number alert
-	if(refine_count < 10 || anneal_count < 100) break;
-      }
+  place();
+}
+
+void Opendp::placeGroups() {
+  prePlaceGroups();
+  prePlace();
+
+  // naive placement method ( multi -> single )
+  placeGroups2();
+  for(Group &group : groups_) {
+    // magic number alert
+    for(int pass = 0; pass < 3; pass++) {
+      int refine_count = groupRefine(&group);
+      int anneal_count = anneal(&group);
+      // magic number alert
+      if(refine_count < 10 || anneal_count < 100) break;
     }
   }
-  place();
 }
 
 void Opendp::prePlace() {
@@ -134,10 +138,13 @@ void Opendp::place() {
   }
   sort(sorted_cells.begin(), sorted_cells.end(), cellAreaLess);
 
-  for(Cell* cell : sorted_cells) {
-    if(isMultiRow(cell)) {
-      if(!map_move(cell))
-	shift_move(cell);
+  // Place multi-row instances first.
+  if (multi_row_inst_count_ > 0) {
+    for(Cell* cell : sorted_cells) {
+      if(isMultiRow(cell)) {
+	if(!map_move(cell))
+	  shift_move(cell);
+      }
     }
   }
   for(Cell* cell : sorted_cells) {
@@ -160,7 +167,7 @@ static bool cellAreaLess(Cell* cell1, Cell* cell2) {
     return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
-void Opendp::placeGroups() {
+void Opendp::placeGroups2() {
   for(Group &group : groups_) {
     bool single_pass = true;
     bool multi_pass = true;
@@ -232,7 +239,7 @@ Opendp::rectDist(Cell *cell,
   x = 0;
   y = 0;
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initialLocation(cell, init_x, init_y);
   if(init_x > (rect->xMin() + rect->xMax()) / 2)
     x = rect->xMax();
   else
@@ -251,7 +258,7 @@ Opendp::rectDist(Cell *cell,
   rectDist(cell, rect,
 	   x, y);
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initialLocation(cell, init_x, init_y);
   return abs(init_x - x) + abs(init_y - y);
 }
 
@@ -325,7 +332,9 @@ int Opendp::anneal(Group* group) {
     Cell* cell1 = group->cells_[rand() % group->cells_.size()];
     Cell* cell2 = group->cells_[rand() % group->cells_.size()];
 
-    if(!cell1->hold_ && !cell2->hold_) {
+    if(cell1 != cell2
+       && !cell1->hold_
+       && !cell2->hold_) {
       if(swap_cell(cell1, cell2)) count++;
     }
   }

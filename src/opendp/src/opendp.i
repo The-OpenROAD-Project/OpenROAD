@@ -140,13 +140,6 @@ filler_placement_cmd(StringSeq *fillers)
 }
 
 void
-report_placement_grid()
-{
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->reportGrid();
-}
-
-void
 set_power_net_name(const char *power_name)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
@@ -158,6 +151,14 @@ set_ground_net_name(const char *ground_name)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setGroundNetName(ground_name);
+}
+
+// Debugging command for small test cases.
+void
+report_placement_grid()
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->reportGrid();
 }
 
 %} // inline

@@ -48,6 +48,7 @@
 
 #include "opendb/db.h"
 
+// Remove leading underscore to enable debug printing.
 #define _ODP_DEBUG
 
 namespace opendp {
@@ -197,10 +198,11 @@ class Opendp {
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
+  void placeGroups();
   void prePlace();
   void prePlaceGroups();
   void place();
-  void placeGroups();
+  void placeGroups2();
   void brickPlace1(Group* group);
   void brickPlace2(Group* group);
   int groupRefine(Group* group);
@@ -260,16 +262,18 @@ class Opendp {
   void setGridPaddedLoc(Cell *cell,
 			int x,
 			int y);
-  void initLocation(Cell *cell,
-		    int &x,
-		    int &y);
-  void initLocation(dbInst* inst,
-		    // Return values.
-		    int &x,
-		    int &y);
-  void initPaddedLoc(Cell *cell,
-		     int &x,
-		     int &y);
+  void initialLocation(dbInst* inst,
+		       // Return values.
+		       int &x,
+		       int &y);
+  void initialLocation(Cell *cell,
+		       // Return values.
+		       int &x,
+		       int &y);
+  void initialPaddedLocation(Cell *cell,
+			     // Return values.
+			     int &x,
+			     int &y);
   bool isStdCell(Cell *cell);
   bool isBlock(Cell *cell);
   int paddedWidth(Cell *cell);
@@ -317,7 +321,7 @@ class Opendp {
 
   // Design stats.
   int fixed_inst_count_;
-  int multi_height_inst_count_;
+  int multi_row_inst_count_;
   // total placeable area (excluding row blockages) dbu^2
   int64_t design_area_;
   // total movable cell area dbu^2
