@@ -110,7 +110,7 @@ int64_t Opendp::hpwl(bool initial) {
       Cell* cell = db_inst_map_[inst];
       int x, y;
       if(initial || cell == nullptr) {
-	initLocation(inst, x, y);
+	initialLocation(inst, x, y);
       }
       else {
         x = cell->x_;
@@ -162,7 +162,7 @@ int64_t Opendp::hpwl(bool initial) {
 
 Point Opendp::nearestPt(Cell* cell, Rect* rect) {
   int x, y;
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
   int size_x = gridNearestWidth(cell);
   int size_y = gridNearestHeight(cell);
   int temp_x = x;
@@ -210,7 +210,7 @@ Point Opendp::nearestPt(Cell* cell, Rect* rect) {
 
 int Opendp::dist_for_rect(Cell* cell, Rect* rect) {
   int x, y;
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
   int dist_x = 0;
   int dist_y = 0;
 
@@ -239,7 +239,7 @@ bool Opendp::check_overlap(Rect rect, Rect box) {
 
 bool Opendp::check_overlap(Cell* cell, Rect* rect) {
   int x, y;
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
 
   return x + paddedWidth(cell) > rect->xMin()
     && x < rect->xMax()
@@ -256,7 +256,7 @@ bool Opendp::check_inside(Rect rect, Rect box) {
 
 bool Opendp::check_inside(Cell* cell, Rect* rect) {
   int x, y;
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
   return x >= rect->xMin()
     && x + paddedWidth(cell) <= rect->xMax()
     && y >= rect->yMin()
@@ -476,7 +476,7 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
 
 bool Opendp::shift_move(Cell* cell) {
   int x, y;
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
   // set region boundary
   Rect rect;
   // magic number alert
@@ -504,7 +504,7 @@ bool Opendp::shift_move(Cell* cell) {
   for(Cell* around_cell : overlap_region_cells) {
     if(cell->inGroup() == around_cell->inGroup()) {
       int x, y;
-      initLocation(around_cell, x, y);
+      initialLocation(around_cell, x, y);
       if(!map_move(around_cell, x, y)) {
         return false;
       }
@@ -515,7 +515,7 @@ bool Opendp::shift_move(Cell* cell) {
 
 bool Opendp::map_move(Cell* cell) {
   int init_x, init_y;
-  initPaddedLoc(cell, init_x, init_y);
+  initialPaddedLocation(cell, init_x, init_y);
   return map_move(cell, init_x, init_y);
 }
 
@@ -576,7 +576,7 @@ set< Cell* > Opendp::get_cells_from_boundary(Rect* rect) {
 
 int Opendp::dist_benefit(Cell* cell, int x, int y) {
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initialLocation(cell, init_x, init_y);
   int curr_dist = abs(cell->x_ - init_x) +
                   abs(cell->y_ - init_y);
   int new_dist = abs(init_x - x) +
@@ -610,7 +610,7 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
 
 bool Opendp::refine_move(Cell* cell) {
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initialLocation(cell, init_x, init_y);
   Pixel* pixel = diamondSearch(cell, init_x, init_y);
   if(pixel) {
     double new_dist = abs(init_x - pixel->grid_x_ * site_width_)

@@ -112,6 +112,8 @@ void Opendp::defineTopPower(Macro &macro,
   if (power && gnd) {
     bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
     macro.is_multi_row_ = is_multi_row;
+    if (is_multi_row)
+      multi_row_inst_count_++;
 
     int power_y_max = find_ymax(power);
     int gnd_y_max = find_ymax(gnd);
@@ -176,7 +178,7 @@ void Opendp::makeCells() {
       cell.height_ = height;
 
       int init_x, init_y;
-      initLocation(&cell, init_x, init_y);
+      initialLocation(&cell, init_x, init_y);
       // Shift by core lower left.
       cell.x_ = init_x;
       cell.y_ = init_y;

@@ -249,7 +249,6 @@ void Opendp::updateDbInstLocations() {
 
 void Opendp::findDesignStats() {
   fixed_inst_count_ = 0;
-  multi_height_inst_count_ = 0;
   movable_area_ = fixed_area_ = 0;
   max_cell_height_ = 0;
 
@@ -262,9 +261,6 @@ void Opendp::findDesignStats() {
     }
     else {
       movable_area_ += cell_area;
-      if(isMultiRow(&cell))
-	multi_height_inst_count_++;
-
       int cell_height = gridNearestHeight(&cell);
       if(cell_height > max_cell_height_)
 	max_cell_height_ = cell_height;
@@ -286,7 +282,7 @@ void Opendp::reportDesignStats() {
   printf("Design Stats\n");
   printf("--------------------------------\n");
   printf("total instances      %8d\n", block_->getInsts().size());
-  printf("multi instances      %8d\n",  multi_height_inst_count_);
+  printf("multi instances      %8d\n",  multi_row_inst_count_);
   printf("fixed instances      %8d\n", fixed_inst_count_);
   printf("nets                 %8d\n", block_->getNets().size());
   printf("design area          %8.1f u^2\n",
@@ -350,19 +346,19 @@ Opendp::rowOrient(int row)
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::initLocation(Cell *cell,
-		     // Return values.
-		     int &x,
-		     int &y)
+Opendp::initialLocation(Cell *cell,
+			// Return values.
+			int &x,
+			int &y)
 {
-  initLocation(cell->db_inst_, x, y);
+  initialLocation(cell->db_inst_, x, y);
 }
 
 void
-Opendp::initLocation(dbInst* inst,
-		     // Return values.
-		     int &x,
-		     int &y)
+Opendp::initialLocation(dbInst* inst,
+			// Return values.
+			int &x,
+			int &y)
 {
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
@@ -371,19 +367,19 @@ Opendp::initLocation(dbInst* inst,
 }
 
 void
-Opendp::initPaddedLoc(Cell *cell,
-		      // Return values.
-		      int &x,
-		      int &y)
+Opendp::initialPaddedLocation(Cell *cell,
+			      // Return values.
+			      int &x,
+			      int &y)
 {
-  initLocation(cell, x, y);
+  initialLocation(cell, x, y);
   if (isPadded(cell))
     x -= pad_left_ * site_width_;
 }
 
 int Opendp::disp(Cell *cell) {
   int init_x, init_y;
-  initLocation(cell, init_x, init_y);
+  initialLocation(cell, init_x, init_y);
   return abs(init_x - cell->x_) +
          abs(init_y - cell->y_);
 }
