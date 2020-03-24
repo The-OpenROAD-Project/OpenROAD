@@ -58,22 +58,26 @@ using ord::warn;
 static bool cellAreaLess(Cell* cell1, Cell* cell2);
 
 void Opendp::detailedPlacement() {
-  if(!groups_.empty()) {
-    prePlaceGroups();
-    prePlace();
-
-    // naive method placement ( Multi -> single )
+  if(!groups_.empty()) 
     placeGroups();
-    for(Group &group : groups_) {
-      for(int pass = 0; pass < 3; pass++) {
-        int refine_count = groupRefine(&group);
-        int anneal_count = anneal(&group);
-        // magic number alert
-	if(refine_count < 10 || anneal_count < 100) break;
-      }
+  place();
+}
+
+void Opendp::placeGroups() {
+  prePlaceGroups();
+  prePlace();
+
+  // naive placement method ( multi -> single )
+  placeGroups2();
+  for(Group &group : groups_) {
+    // magic number alert
+    for(int pass = 0; pass < 3; pass++) {
+      int refine_count = groupRefine(&group);
+      int anneal_count = anneal(&group);
+      // magic number alert
+      if(refine_count < 10 || anneal_count < 100) break;
     }
   }
-  place();
 }
 
 void Opendp::prePlace() {
@@ -163,7 +167,7 @@ static bool cellAreaLess(Cell* cell1, Cell* cell2) {
     return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
-void Opendp::placeGroups() {
+void Opendp::placeGroups2() {
   for(Group &group : groups_) {
     bool single_pass = true;
     bool multi_pass = true;

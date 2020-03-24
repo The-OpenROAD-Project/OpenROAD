@@ -197,10 +197,11 @@ class Opendp {
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
+  void placeGroups();
   void prePlace();
   void prePlaceGroups();
   void place();
-  void placeGroups();
+  void placeGroups2();
   void brickPlace1(Group* group);
   void brickPlace2(Group* group);
   int groupRefine(Group* group);

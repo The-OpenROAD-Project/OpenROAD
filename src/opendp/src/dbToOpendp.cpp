@@ -112,8 +112,6 @@ void Opendp::defineTopPower(Macro &macro,
   if (power && gnd) {
     bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
     macro.is_multi_row_ = is_multi_row;
-    if (is_multi_row)
-      multi_row_inst_count_++;
 
     int power_y_max = find_ymax(power);
     int gnd_y_max = find_ymax(gnd);
@@ -161,6 +159,8 @@ void Opendp::examineRows() {
 }
 
 void Opendp::makeCells() {
+  multi_row_inst_count_ = 0;
+
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
@@ -184,6 +184,10 @@ void Opendp::makeCells() {
       cell.y_ = init_y;
       cell.orient_ = db_inst->getOrient();
       cell.is_placed_ = isFixed(&cell);
+
+      Macro &macro = db_master_map_[master];
+      if (macro.is_multi_row_)
+	multi_row_inst_count_++;
     }
   }
 }
