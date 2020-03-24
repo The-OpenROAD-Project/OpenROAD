@@ -54,6 +54,69 @@ using std::numeric_limits;
 
 using ord::error;
 
+void Opendp::initGrid() {
+  // Make pixel grid
+  grid_ = makeGrid();
+
+  // Fragmented Row Handling
+  for(auto db_row : block_->getRows()) {
+    int orig_x, orig_y;
+    db_row->getOrigin(orig_x, orig_y);
+
+    int x_start = (orig_x - core_.xMin()) / site_width_;
+    int y_start = (orig_y - core_.yMin()) / row_height_;
+
+    int x_end = x_start + db_row->getSiteCount();
+    int y_end = y_start + 1;
+
+    for(int i = x_start; i < x_end; i++) {
+      for(int j = y_start; j < y_end; j++) {
+        grid_[j][i].is_valid = true;
+      }
+    }
+  }
+
+  // fixed cell marking
+  fixed_cell_assign();
+  // group mapping & x_axis dummycell insertion
+  group_pixel_assign2();
+  // y axis dummycell insertion
+  group_pixel_assign();
+}
+
+Grid *
+Opendp::makeGrid()
+{
+  Grid *grid = new Pixel*[row_count_];
+  for(int i = 0; i < row_count_; i++) {
+    grid[i] = new Pixel[row_site_count_];
+
+    for(int j = 0; j < row_site_count_; j++) {
+      Pixel &pixel = grid[i][j];
+      pixel.grid_y_ = i;
+      pixel.grid_x_ = j;
+      pixel.cell = nullptr;
+      pixel.group_ = nullptr;
+      pixel.util = 0.0;
+      pixel.is_valid = false;
+    }
+  }
+  return grid;
+}
+
+void
+Opendp::deleteGrid(Grid *grid)
+{
+  if (grid) {
+    for(int i = 0; i < row_count_; i++) {
+      delete [] grid[i];
+    }
+    delete grid;
+  }
+}
+
+////////////////////////////////////////////////////////////////
+
 void Opendp::fixed_cell_assign() {
   for(Cell &cell : cells_) {
     if(isFixed(&cell)) {
@@ -120,13 +183,13 @@ void Opendp::group_cell_region_assign() {
 void Opendp::group_pixel_assign2() {
   for(int i = 0; i < row_count_; i++) {
     for(int j = 0; j < row_site_count_; j++) {
-      Rect grid2;
-      grid2.init(j * site_width_, i * row_height_,
-		(j + 1) * site_width_, (i + 1) * row_height_);
+      Rect sub;
+      sub.init(j * site_width_, i * row_height_,
+	       (j + 1) * site_width_, (i + 1) * row_height_);
       for(Group& group : groups_) {
         for(Rect &rect : group.regions) {
-	  if(!check_inside(grid2, rect) &&
-             check_overlap(grid2, rect)) {
+	  if(!check_inside(sub, rect) &&
+             check_overlap(sub, rect)) {
             grid_[i][j].util = 0.0;
             grid_[i][j].cell = &dummy_cell_;
             grid_[i][j].is_valid = false;

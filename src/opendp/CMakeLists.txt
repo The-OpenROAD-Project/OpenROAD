@@ -34,10 +34,10 @@ add_library(opendp
   src/Opendp.cpp
   src/dbToOpendp.cpp
   src/MakeOpendp.cpp
-  src/assign.cpp
+  src/Grid.cpp
   src/CheckPlacement.cpp
-  src/place.cpp
-  src/utility.cpp
+  src/Place.cpp
+  src/Utility.cpp
   src/FillerPlacement.cpp
 
   ${OPENDP_WRAP}
