@@ -381,10 +381,10 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   }
 
   // Restrict check to core.
-  Rect core(0, 0,
-	       row_site_count_ - gridPaddedWidth(cell),
-	       row_count_ - gridHeight(cell));
-  Point in_core = closestPtInRect(core, Point(grid_x, grid_y));
+  Rect grid_core(0, 0,
+		 row_site_count_ - gridPaddedWidth(cell),
+		 row_count_ - gridHeight(cell));
+  Point in_core = closestPtInRect(grid_core, Point(grid_x, grid_y));
   int avail_x, avail_y;
   if(binSearch(grid_x, cell, in_core.x(), in_core.y(),
 	       avail_x, avail_y)) {
@@ -394,10 +394,10 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   // magic number alert
   int diamond_search_width = diamond_search_height_ * 5;
   // Set search boundary max / min
-  Point start = closestPtInRect(core,
+  Point start = closestPtInRect(grid_core,
                                 Point(grid_x - diamond_search_width,
                                       grid_y - diamond_search_height_));
-  Point end = closestPtInRect(core,
+  Point end = closestPtInRect(grid_core,
                               Point(grid_x + diamond_search_width,
                                     grid_y + diamond_search_height_));;
   int x_start = start.x();
@@ -500,12 +500,13 @@ bool Opendp::shift_move(Cell* cell) {
     return false;
   }
 
-  // rebuild erased cells
+  // re-place erased cells
   for(Cell* around_cell : overlap_region_cells) {
     if(cell->inGroup() == around_cell->inGroup()) {
       int x, y;
-      initialLocation(around_cell, x, y);
+      initialPaddedLocation(around_cell, x, y);
       if(!map_move(around_cell, x, y)) {
+	warn("detailed placement failed on %s", around_cell->name());
         return false;
       }
     }
