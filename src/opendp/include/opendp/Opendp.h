@@ -48,6 +48,7 @@
 
 #include "opendb/db.h"
 
+// Remove leading underscore to enable debug printing.
 #define _ODP_DEBUG
 
 namespace opendp {
