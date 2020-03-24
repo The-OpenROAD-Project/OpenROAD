@@ -585,7 +585,10 @@ int Opendp::dist_benefit(Cell* cell, int x, int y) {
 
 bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
   if(cell1 != cell2
-     && cell1->db_inst_->getMaster() == cell2->db_inst_->getMaster()
+     && !cell1->hold_
+     && !cell2->hold_
+     && cell1->width_ == cell2->width_
+     && cell1->height_ == cell2->height_
      && !isFixed(cell1)
      && !isFixed(cell2)) {
     int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +

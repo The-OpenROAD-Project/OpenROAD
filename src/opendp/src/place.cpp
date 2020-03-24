@@ -156,6 +156,8 @@ void Opendp::place() {
       }
     }
   }
+  // This has negligible benefit -cherry
+  //anneal();
 }
 
 static bool cellAreaLess(Cell* cell1, Cell* cell2) {
@@ -326,15 +328,10 @@ int Opendp::anneal(Group* group) {
   int count = 0;
 
   // magic number alert
-  for(int i = 0; i < 1000 * group->cells_.size(); i++) {
+  for(int i = 0; i < 100 * group->cells_.size(); i++) {
     Cell* cell1 = group->cells_[rand() % group->cells_.size()];
     Cell* cell2 = group->cells_[rand() % group->cells_.size()];
-
-    if(cell1 != cell2
-       && !cell1->hold_
-       && !cell2->hold_) {
-      if(swap_cell(cell1, cell2)) count++;
-    }
+    if(swap_cell(cell1, cell2)) count++;
   }
   return count;
 }
@@ -347,9 +344,7 @@ int Opendp::anneal() {
   for(int i = 0; i < 100 * cells_.size(); i++) {
     Cell* cell1 = &cells_[rand() % cells_.size()];
     Cell* cell2 = &cells_[rand() % cells_.size()];
-    if(!cell1->hold_ && !cell2->hold_) {
-      if(swap_cell(cell1, cell2)) count++;
-    }
+    if(swap_cell(cell1, cell2)) count++;
   }
   return count;
 }
