@@ -145,8 +145,9 @@ void Opendp::fixed_cell_assign() {
 #endif
       for(int j = y_start; j < y_end; j++) {
         for(int k = x_start; k < x_end; k++) {
-          grid_[j][k].cell = &cell;
-          grid_[j][k].util = 1.0;
+	  Pixel &pixel = grid_[j][k];
+          pixel.cell = &cell;
+          pixel.util = 1.0;
         }
       }
     }
@@ -158,8 +159,9 @@ void Opendp::group_cell_region_assign() {
     int64_t site_count = 0;
     for(int j = 0; j < row_count_; j++) {
       for(int k = 0; k < row_site_count_; k++) {
-	if(grid_[j][k].is_valid
-	   && grid_[j][k].group_ == &group)
+	Pixel &pixel = grid_[j][k];
+	if(pixel.is_valid
+	   && pixel.group_ == &group)
 	  site_count++;
       }
     }
@@ -190,9 +192,10 @@ void Opendp::group_pixel_assign2() {
         for(Rect &rect : group.regions) {
 	  if(!check_inside(sub, rect) &&
              check_overlap(sub, rect)) {
-            grid_[i][j].util = 0.0;
-            grid_[i][j].cell = &dummy_cell_;
-            grid_[i][j].is_valid = false;
+            Pixel &pixel = grid_[i][j];
+	    pixel.util = 0.0;
+            pixel.cell = &dummy_cell_;
+            pixel.is_valid = false;
           }
         }
       }
@@ -239,15 +242,16 @@ void Opendp::group_pixel_assign() {
 
         // Assign group to each pixel.
         for(int l = col_start; l < col_end; l++) {
-          if(grid_[k][l].util == 1.0) {
-            grid_[k][l].group_ = &group;
-	    grid_[k][l].is_valid = true;
-            grid_[k][l].util = 1.0;
+	  Pixel &pixel = grid_[k][l];
+          if(pixel.util == 1.0) {
+            pixel.group_ = &group;
+	    pixel.is_valid = true;
+            pixel.util = 1.0;
 	  }
-          else if(grid_[k][l].util > 0.0 && grid_[k][l].util < 1.0) {
-            grid_[k][l].cell = &dummy_cell_;
-            grid_[k][l].util = 0.0;
-            grid_[k][l].is_valid = false;
+          else if(pixel.util > 0.0 && pixel.util < 1.0) {
+            pixel.cell = &dummy_cell_;
+            pixel.util = 0.0;
+            pixel.is_valid = false;
           }
         }
       }
@@ -261,8 +265,9 @@ void Opendp::erase_pixel(Cell* cell) {
     int y_step = gridHeight(cell);
     for(int i = gridY(cell); i < gridY(cell) + y_step; i++) {
       for(int j = gridPaddedX(cell); j < gridPaddedX(cell) + x_step; j++) {
-	grid_[i][j].cell = nullptr;
-	grid_[i][j].util = 0;
+	Pixel &pixel = grid_[i][j];
+	pixel.cell = nullptr;
+	pixel.util = 0;
       }
     }
     cell->x_ = 0;
@@ -290,12 +295,13 @@ void Opendp::paint_pixel(Cell* cell, int grid_x, int grid_y) {
 
   for(int i = grid_y; i < grid_y + y_step; i++) {
     for(int j = grid_x; j < grid_x + x_step; j++) {
-      if(grid_[i][j].cell != nullptr) {
+      Pixel &pixel = grid_[i][j];
+      if(pixel.cell != nullptr) {
         error("Cannot paint grid because it is already occupied.");
       }
       else {
-        grid_[i][j].cell = cell;
-        grid_[i][j].util = 1.0;
+        pixel.cell = cell;
+        pixel.util = 1.0;
       }
     }
   }

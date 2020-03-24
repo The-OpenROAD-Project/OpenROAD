@@ -620,12 +620,13 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
       else {
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
-	    if(grid_[k][l].cell != nullptr
-	       || !grid_[k][l].is_valid
+	    Pixel &pixel = grid_[k][l];
+	    if(pixel.cell != nullptr
+	       || !pixel.is_valid
 	       // check group regions
 	       || (cell->inGroup()
-		   && grid_[k][l].group_ != cell->group_)
-	       || (!cell->inGroup() && grid_[k][l].group_ != nullptr)) {
+		   && pixel.group_ != cell->group_)
+	       || (!cell->inGroup() && pixel.group_ != nullptr)) {
               available = false;
               break;
             }
@@ -652,19 +653,20 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
       else {
         for(int k = y; k < y + y_step; k++) {
           for(int l = x + i; l < x + i + x_step; l++) {
-            if(grid_[k][l].cell != nullptr || !grid_[k][l].is_valid) {
+	    Pixel &pixel = grid_[k][l];
+            if(pixel.cell != nullptr || !pixel.is_valid) {
               available = false;
               break;
             }
             // check group regions
             if(cell->inGroup()) {
-              if(grid_[k][l].group_ != cell->group_) {
+              if(pixel.group_ != cell->group_) {
                 available = false;
 		break;
 	      }
             }
             else {
-              if(grid_[k][l].group_ != nullptr) {
+              if(pixel.group_ != nullptr) {
 		available = false;
 		break;
 	      }
