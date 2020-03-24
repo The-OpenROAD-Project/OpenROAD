@@ -130,7 +130,8 @@ void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
   // magic number alert
-  diamond_search_height_ = 400;
+  diamond_search_height_ = 10;
+  diamond_search_width_ = diamond_search_height_ * 5;
   max_displacement_constraint_ = 0;
 
   db_master_map_.clear();

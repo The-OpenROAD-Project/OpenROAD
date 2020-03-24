@@ -64,6 +64,8 @@ void Opendp::detailedPlacement() {
 }
 
 void Opendp::placeGroups() {
+  group_cell_region_assign();
+
   prePlaceGroups();
   prePlace();
 
@@ -171,17 +173,16 @@ void Opendp::placeGroups2() {
   for(Group &group : groups_) {
     bool single_pass = true;
     bool multi_pass = true;
-    vector< Cell* > cell_list;
-    cell_list.reserve(cells_.size());
+    vector< Cell* > group_cells;
+    group_cells.reserve(cells_.size());
     for(Cell* cell : group.cells_) {
       if(!isFixed(cell) && !cell->is_placed_) {
-	cell_list.push_back(cell);
+	group_cells.push_back(cell);
       }
     }
-    sort(cell_list.begin(), cell_list.end(), cellAreaLess);
-    // place multi-deck cells on each group region
-    for(int j = 0; j < cell_list.size(); j++) {
-      Cell* cell = cell_list[j];
+    sort(group_cells.begin(), group_cells.end(), cellAreaLess);
+    // Place multi-row cells on each group region.
+    for(Cell* cell : group_cells) {
       if(!isFixed(cell) && !cell->is_placed_) {
 	assert(cell->inGroup());
 	if(isMultiRow(cell)) {
@@ -192,13 +193,9 @@ void Opendp::placeGroups2() {
 	}
       }
     }
-    // cout << "Group util : " << group->util << endl;
     if(multi_pass) {
-      //				cout << " Group : " << group->name <<
-      //" multi-deck placement done - ";
-      // place single-deck cells on each group region
-      for(int j = 0; j < cell_list.size(); j++) {
-        Cell* cell = cell_list[j];
+      // Place single-row cells in each group region.
+      for(Cell* cell : group_cells) {
         if(!isFixed(cell) && !cell->is_placed_) {
 	  assert(cell->inGroup());
 	  if(!isMultiRow(cell)) {
@@ -323,6 +320,7 @@ int Opendp::groupRefine(Group* group) {
   return count;
 }
 
+// This is NOT annealing -cherry
 int Opendp::anneal(Group* group) {
   srand(rand_seed_);
   int count = 0;
@@ -341,6 +339,7 @@ int Opendp::anneal(Group* group) {
   return count;
 }
 
+// This is NOT annealing -cherry
 int Opendp::anneal() {
   srand(rand_seed_);
   int count = 0;

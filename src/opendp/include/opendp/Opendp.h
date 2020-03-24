@@ -337,6 +337,7 @@ class Opendp {
 
   // Magic numbers
   int diamond_search_height_;  // grid units
+  int diamond_search_width_;   // grid units
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;

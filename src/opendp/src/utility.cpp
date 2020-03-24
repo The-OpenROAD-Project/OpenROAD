@@ -391,14 +391,12 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
     return &grid_[avail_y][avail_x];
   }
 
-  // magic number alert
-  int diamond_search_width = diamond_search_height_ * 5;
   // Set search boundary max / min
   Point start = closestPtInRect(grid_core,
-                                Point(grid_x - diamond_search_width,
+                                Point(grid_x - diamond_search_width_,
                                       grid_y - diamond_search_height_));
   Point end = closestPtInRect(grid_core,
-                              Point(grid_x + diamond_search_width,
+                              Point(grid_x + diamond_search_width_,
                                     grid_y + diamond_search_height_));;
   int x_start = start.x();
   int y_start = start.y();

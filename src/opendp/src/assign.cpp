@@ -105,6 +105,13 @@ void Opendp::group_cell_region_assign() {
     int64_t cell_area = 0;
     for(Cell* cell : group.cells_) {
       cell_area += cell->area();
+
+      for(Rect &rect : group.regions) {
+	if (check_inside(cell, &rect))
+	  cell->region_ = &rect;
+      }
+      if(cell->region_ == nullptr)
+	cell->region_ = &group.regions[0];
     }
     group.util = static_cast<double>(cell_area) / area;
   }
