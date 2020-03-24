@@ -421,10 +421,10 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
      && cell1->height_ == cell2->height_
      && !isFixed(cell1)
      && !isFixed(cell2)) {
-    int benefit = dist_benefit(cell1, cell2->x_, cell2->y_) +
-      dist_benefit(cell2, cell1->x_, cell1->y_);
+    int dist_change = distChange(cell1, cell2->x_, cell2->y_) +
+      distChange(cell2, cell1->x_, cell1->y_);
 
-    if(benefit < 0) {
+    if(dist_change < 0) {
       int grid_x1 = gridPaddedX(cell2);
       int grid_y1 = gridY(cell2);
       int grid_x2 = gridPaddedX(cell1);
@@ -445,15 +445,16 @@ bool Opendp::refine_move(Cell* cell) {
   initialLocation(cell, init_x, init_y);
   Pixel* pixel = diamondSearch(cell, init_x, init_y);
   if(pixel) {
-    double new_dist = abs(init_x - pixel->grid_x_ * site_width_)
+    double dist = abs(init_x - pixel->grid_x_ * site_width_)
       + abs(init_y - pixel->grid_y_ * row_height_);
     if(max_displacement_constraint_
-       && (new_dist / row_height_ > max_displacement_constraint_))
+       && (dist / row_height_ > max_displacement_constraint_))
       return false;
 
-    int benefit = dist_benefit(cell, pixel->grid_x_ * site_width_,
-                               pixel->grid_y_ * row_height_);
-    if(benefit < 0) {
+    int dist_change = distChange(cell, pixel->grid_x_ * site_width_,
+				 pixel->grid_y_ * row_height_);
+
+    if(dist_change < 0) {
       erase_pixel(cell);
       paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
       return true;
@@ -465,7 +466,7 @@ bool Opendp::refine_move(Cell* cell) {
     return false;
 }
 
-int Opendp::dist_benefit(Cell* cell, int x, int y) {
+int Opendp::distChange(Cell* cell, int x, int y) {
   int init_x, init_y;
   initialLocation(cell, init_x, init_y);
   int curr_dist = abs(cell->x_ - init_x) +
@@ -485,11 +486,11 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   Group* group = cell->group_;
   if(group) {
     Rect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
-			  divCeil(group->boundary.yMin(), row_height_),
-			  group->boundary.xMax() / site_width_,
-			  group->boundary.yMax() / row_height_);
+		       divCeil(group->boundary.yMin(), row_height_),
+		       group->boundary.xMax() / site_width_,
+		       group->boundary.yMax() / row_height_);
     Point in_boundary = closestPtInRect(grid_boundary,
-					   Point(grid_x, grid_y));
+					Point(grid_x, grid_y));
     grid_x = in_boundary.x();
     grid_y = in_boundary.y();
   }

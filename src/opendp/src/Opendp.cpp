@@ -124,6 +124,10 @@ Opendp::Opendp()
     ground_net_name_("VSS"),
     grid_(nullptr)
 {
+  // magic number alert
+  diamond_search_height_ = 10;
+  diamond_search_width_ = diamond_search_height_ * 5;
+  max_displacement_constraint_ = 0;
 }
 
 Opendp::~Opendp() {
@@ -133,11 +137,6 @@ Opendp::~Opendp() {
 void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
-  // magic number alert
-  diamond_search_height_ = 10;
-  diamond_search_width_ = diamond_search_height_ * 5;
-  max_displacement_constraint_ = 0;
-
   db_master_map_.clear();
   cells_.clear();
   groups_.clear();
@@ -223,7 +222,7 @@ void Opendp::reportDesignStats() {
   printf("Design Stats\n");
   printf("--------------------------------\n");
   printf("total instances      %8d\n", block_->getInsts().size());
-  printf("multi instances      %8d\n",  multi_row_inst_count_);
+  printf("multi row instances  %8d\n",  multi_row_inst_count_);
   printf("fixed instances      %8d\n", fixed_inst_count_);
   printf("nets                 %8d\n", block_->getNets().size());
   printf("design area          %8.1f u^2\n",

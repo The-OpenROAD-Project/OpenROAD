@@ -16,7 +16,7 @@ Notice 0: Finished DEF file: multi_height02.def
 Design Stats
 --------------------------------
 total instances            10
-multi instances             1
+multi row instances         1
 fixed instances             0
 nets                       13
 design area              40.0 u^2

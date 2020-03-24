@@ -192,7 +192,7 @@ class Opendp {
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
   set< Cell* > gridCellsInBoundary(Rect* rect);
-  int dist_benefit(Cell* cell, int x, int y);
+  int distChange(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 

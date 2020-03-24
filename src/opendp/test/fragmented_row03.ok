@@ -14,7 +14,7 @@ Warning: could not find power special net
 Design Stats
 --------------------------------
 total instances             1
-multi instances             0
+multi row instances         0
 fixed instances             0
 nets                        2
 design area               4.8 u^2
