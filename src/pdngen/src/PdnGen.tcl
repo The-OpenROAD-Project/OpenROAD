@@ -2613,7 +2613,7 @@ proc get_quadrant {x y} {
     }
   } else {
     # Bottom or right
-    if {)$dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
+    if {($dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
       # Top or right
       return "r"
     } else {
