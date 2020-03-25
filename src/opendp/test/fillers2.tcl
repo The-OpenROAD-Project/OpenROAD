@@ -1,4 +1,4 @@
-# place_fillers with set_placement_padding
+# filler_placement with set_placement_padding
 source helpers.tcl
 read_lef Nangate45.lef
 read_def simple01.def
