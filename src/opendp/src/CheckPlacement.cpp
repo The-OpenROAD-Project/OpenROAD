@@ -104,7 +104,7 @@ bool Opendp::checkPlacement(bool verbose) {
 
   reportFailures(placed_failures, "Placed", verbose);
   reportFailures(in_core_failures, "Placed in core", verbose);
-  reportOverlapFailures(overlap_failures, "Overlap.", verbose, grid);
+  reportOverlapFailures(overlap_failures, "Overlap", verbose, grid);
   reportFailures(row_failures, "Row", verbose);
   reportFailures(site_failures, "Site", verbose);
   reportFailures(power_line_failures, "Power line", verbose);
