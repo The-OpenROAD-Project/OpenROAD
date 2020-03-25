@@ -82,7 +82,7 @@ short     (*hops)[MAXSETS];	/* between-set hop cost for KL */
     void      merge_assignments(), make_setlists();
 
     if (DEBUG_TRACE > 0) {
-	printf("<Entering balance>\n");
+	//printf("<Entering balance>\n");
     }
 
     if (global_method != 7) {	/* Not read from file. */
@@ -289,8 +289,8 @@ short     (*hops)[MAXSETS];	/* between-set hop cost for KL */
 	}
 
 	if (DEBUG_TRACE > 1) {
-	    printf("About to call divide with nvtxs = %d, nedges = %d, ",
-		   subnvtxs, subnedges);
+	    //printf("About to call divide with nvtxs = %d, nedges = %d, ",
+		//   subnvtxs, subnedges);
 	    if (!architecture)
 		printf("ndims = %d\n", set->ndims);
 	    else if (architecture == 1)

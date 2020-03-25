@@ -291,9 +291,9 @@ FILE     *pfile;		/* file with new user parameters */
 			printf(" ERROR reading value for `%s' in line %d parameter file %s\n",
 			       ipnames[i], linenum, PARAMS_FILENAME);
 			if (Output_File != NULL) {
-			    fprintf(Output_File,
-				" ERROR reading value for `%s' in line %d parameter file %s\n",
-			        ipnames[i], linenum, PARAMS_FILENAME);
+			    //fprintf(Output_File,
+				//" ERROR reading value for `%s' in line %d parameter file %s\n",
+			    //    ipnames[i], linenum, PARAMS_FILENAME);
 			}
 		    }
 		}
@@ -315,9 +315,9 @@ FILE     *pfile;		/* file with new user parameters */
 			    printf(" ERROR reading value for `%s' in line %d parameter file %s\n",
 				   TFpnames[i], linenum, PARAMS_FILENAME);
 			    if (Output_File != NULL) {
-			        fprintf(Output_File,
-				    " ERROR reading value for `%s' in line %d parameter file %s\n",
-			            TFpnames[i], linenum, PARAMS_FILENAME);
+			        //fprintf(Output_File,
+				    //" ERROR reading value for `%s' in line %d parameter file %s\n",
+			        //    TFpnames[i], linenum, PARAMS_FILENAME);
 			    }
 			}
 		    }
@@ -340,9 +340,9 @@ FILE     *pfile;		/* file with new user parameters */
 			    printf(" ERROR reading value for `%s' in line %d parameter file %s\n",
 				   lpnames[i], linenum, PARAMS_FILENAME);
 			    if (Output_File != NULL) {
-			        fprintf(Output_File,
-				    " ERROR reading value for `%s' in line %d parameter file %s\n",
-				    lpnames[i], linenum, PARAMS_FILENAME);
+			        //fprintf(Output_File,
+				    //" ERROR reading value for `%s' in line %d parameter file %s\n",
+				    //lpnames[i], linenum, PARAMS_FILENAME);
 			    }
 			}
 		    }
@@ -365,9 +365,9 @@ FILE     *pfile;		/* file with new user parameters */
 			    printf(" ERROR reading value for `%s' in line %d parameter file %s\n",
 				   cpnames[i], linenum, PARAMS_FILENAME);
 			    if (Output_File != NULL) {
-			        fprintf(Output_File,
-				    " ERROR reading value for `%s' in line %d parameter file %s\n",
-				    cpnames[i], linenum, PARAMS_FILENAME);
+			        //fprintf(Output_File,
+				    //" ERROR reading value for `%s' in line %d parameter file %s\n",
+				    //cpnames[i], linenum, PARAMS_FILENAME);
 			    }
 			}
 		    }
@@ -390,9 +390,9 @@ FILE     *pfile;		/* file with new user parameters */
 			    printf(" ERROR reading value for `%s' in line %d parameter file %s\n",
 				   dpnames[i], linenum, PARAMS_FILENAME);
 			    if (Output_File != NULL) {
-			        fprintf(Output_File,
-				    " ERROR reading value for `%s' in line %d parameter file %s\n",
-				    dpnames[i], linenum, PARAMS_FILENAME);
+			        //fprintf(Output_File,
+				    //" ERROR reading value for `%s' in line %d parameter file %s\n",
+				    //dpnames[i], linenum, PARAMS_FILENAME);
 			    }
 			}
 		    }
@@ -403,9 +403,9 @@ FILE     *pfile;		/* file with new user parameters */
 		printf(" WARNING: Parameter `%s' on line %d of file %s not recognized\n",
 		       id, linenum, PARAMS_FILENAME);
 		if (Output_File != NULL) {
-		    fprintf(Output_File,
-			" WARNING: Parameter `%s' on line %d of file %s not recognized\n",
-			id, linenum, PARAMS_FILENAME);
+		    //fprintf(Output_File,
+			//" WARNING: Parameter `%s' on line %d of file %s not recognized\n",
+			//id, linenum, PARAMS_FILENAME);
 		}
 	    }
 	}

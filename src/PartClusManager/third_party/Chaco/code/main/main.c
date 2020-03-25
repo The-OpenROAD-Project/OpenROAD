@@ -66,20 +66,20 @@ int       main()
     void      input_queries(), smalloc_stats(), read_params(), clear_timing();
 
     if (DEBUG_TRACE > 0) {
-	printf("<Entering main>\n");
+	//printf("<Entering main>\n");
     }
 
     if (PRINT_HEADERS) {
-        printf("\n                    Chaco 2.0\n");
-        printf("          Sandia National Laboratories\n\n");
+        //printf("\n                    Chaco 2.0\n");
+        //printf("          Sandia National Laboratories\n\n");
     }
 
     Using_Main = TRUE;
     another = TRUE;
     params_file = fopen(PARAMS_FILENAME, "r");
     if (params_file == NULL && DEBUG_PARAMS > 1) {
-	printf("Parameter file `%s' not found; using default parameters.\n",
-	       PARAMS_FILENAME);
+	//printf("Parameter file `%s' not found; using default parameters.\n",
+	//       PARAMS_FILENAME);
     }
 
     while (another) {
@@ -168,7 +168,7 @@ skip:
 	sfree((char *) assignment);
 
 	if (DEBUG_MEMORY > 0) {
-	    printf("\n");
+	    //printf("\n");
 	    smalloc_stats();
 	}
 
@@ -180,7 +180,7 @@ skip:
 	}
 	if (another) {
 	    clear_timing();
-	    printf("\n------------------------------------------------\n\n");
+	    //printf("\n------------------------------------------------\n\n");
 	    fflush(stdout);
 	}
     }
@@ -188,7 +188,7 @@ skip:
 	fclose(params_file);
 
     if (DEBUG_TRACE > 1) {
-	printf("<Leaving main>\n");
+	//printf("<Leaving main>\n");
     }
     
     return(0);

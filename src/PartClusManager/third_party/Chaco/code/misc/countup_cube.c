@@ -157,14 +157,14 @@ int       using_ewgts;		/* are edge weights being used? */
 	maxbdy = minbdy = 0;
 	maxneighbors = minneighbors = 0;
 
-	printf("\nAfter level %d  (nsets = %d):\n", level, nsets);
+	/*printf("\nAfter level %d  (nsets = %d):\n", level, nsets);
 	if (print2file)
 	    fprintf(outfile, "\nAfter level %d  (nsets = %d):\n", level, nsets);
 	if (print_lev < 0) {
 	    printf("    set    size      cuts       hops   bndy_vtxs    adj_sets\n");
 	    if (print2file)
 		fprintf(outfile, "    set    size      cuts       hops   bndy_vtxs    adj_sets\n");
-	}
+	}*/
 	for (set = 0; set < nsets; set++) {
 	    internal = setsize[set];
 	    for (i = 0; i < nsets; i++)
@@ -260,7 +260,7 @@ int       using_ewgts;		/* are edge weights being used? */
 	}
 	ncuts /= 2;
 	nhops /= 2;
-
+	/*
 	printf("\n");
 	printf("                            Total      Max/Set      Min/Set\n");
 	printf("                            -----      -------      -------\n");
@@ -278,7 +278,7 @@ int       using_ewgts;		/* are edge weights being used? */
 		total_neighbors, maxneighbors, minneighbors);
 	printf("Internal Vertices:    %11d  %11d  %11d\n\n",
 		total_internal, max_internal, min_internal);
-
+	*/
 	if (print2file) {
 	    fprintf(outfile, "\n");
 	    fprintf(outfile, "                            Total      Max/Set      Min/Set\n");

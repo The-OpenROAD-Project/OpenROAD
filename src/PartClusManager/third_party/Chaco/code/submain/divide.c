@@ -73,7 +73,7 @@ int       striping;		/* partition by striping into pieces? */
     double    find_maxdeg();
 
     if (DEBUG_TRACE > 0) {
-	printf("<Entering divide, nvtxs = %d, nedges = %d>\n", nvtxs, nedges);
+	//printf("<Entering divide, nvtxs = %d, nedges = %d>\n", nvtxs, nedges);
     }
 
     if (nvtxs <= 0) return;
@@ -164,7 +164,7 @@ int       striping;		/* partition by striping into pieces? */
 		count_weights(graph, nvtxs, assignment, nsets + 1,
 			      weights, using_vwgts);
 		if (DEBUG_KL > 0) {
-		    printf("After KL, before bpm_improve\n");
+		    //printf("After KL, before bpm_improve\n");
 		    countup_vtx_sep(graph, nvtxs, assignment);
 		}
 		bpm_improve(graph, assignment, goal, max_dev, &bndy_list,
@@ -188,12 +188,12 @@ int       striping;		/* partition by striping into pieces? */
 	    mark = (short *) &(yvecs[1][0]);
 	    make_connected(graph, nvtxs, &nedges, mark, active, &cdata, using_ewgts);
 	    if (DEBUG_CONNECTED > 0) {
-		printf("Enforcing connectivity\n");
+		//printf("Enforcing connectivity\n");
 		print_connected(cdata);
 	    }
 	}
 	else if (DEBUG_CONNECTED > 0) {
-	    printf("Not enforcing connectivity\n");
+	    //printf("Not enforcing connectivity\n");
 	}
 
 	maxdeg = find_maxdeg(graph, nvtxs, using_ewgts, (float *) NULL);
@@ -276,7 +276,7 @@ int       striping;		/* partition by striping into pieces? */
 		find_side_bndy(graph, nvtxs, assignment, i, 2, &bndy_list);
 		count_weights(graph, nvtxs, assignment, nsets + 1, weights, (vwgt_max != 1));
 		if (DEBUG_KL > 0) {
-		    printf("After KL, before bpm_improve\n");
+		    //printf("After KL, before bpm_improve\n");
 		    countup_vtx_sep(graph, nvtxs, assignment);
 		}
 		bpm_improve(graph, assignment, goal, max_dev, &bndy_list,
@@ -288,7 +288,7 @@ int       striping;		/* partition by striping into pieces? */
 	find_bndy(graph, nvtxs, assignment, 2, &bndy_list);
 	count_weights(graph, nvtxs, assignment, nsets + 1, weights, (vwgt_max != 1));
 	if (DEBUG_KL > 0) {
-	    printf("Before bpm_improve\n");
+	    //printf("Before bpm_improve\n");
 	    countup_vtx_sep(graph, nvtxs, assignment);
 	}
 	max_dev = vwgt_max;

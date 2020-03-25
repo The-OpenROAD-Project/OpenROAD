@@ -104,7 +104,7 @@ long      seed;			/* for random graph mutations */
 
 
     if (DEBUG_TRACE > 0) {
-	printf("<Entering submain>\n");
+	//printf("<Entering submain>\n");
     }
 
     /* First check all the input for consistency. */
@@ -131,7 +131,7 @@ long      seed;			/* for random graph mutations */
 	fclose(outfile);
 	outfile = fopen(outfilename, "a");
 	if (append) {
-	    fprintf(outfile, "\n------------------------------------------------\n\n");
+	    //fprintf(outfile, "\n------------------------------------------------\n\n");
 	}
     }
     else {
@@ -141,8 +141,8 @@ long      seed;			/* for random graph mutations */
     Output_File = outfile;
 
     if (outfile != NULL && PRINT_HEADERS) {
-        fprintf(outfile, "\n                    Chaco 2.0\n");
-        fprintf(outfile, "          Sandia National Laboratories\n\n");
+        //fprintf(outfile, "\n                    Chaco 2.0\n");
+        //fprintf(outfile, "          Sandia National Laboratories\n\n");
     }
 
     if (CHECK_INPUT) {		/* Check the input for inconsistencies. */
@@ -171,10 +171,10 @@ long      seed;			/* for random graph mutations */
     }
 
     if (PRINT_HEADERS) {
-        printf("\n\nStarting to partition ...\n\n");
+        //printf("\n\nStarting to partition ...\n\n");
 	if (Output_File != NULL ) {
-            fprintf(Output_File,
-	    "\n\nStarting to partition ... (residual, warning and error messages only)\n\n");
+            //fprintf(Output_File,
+	    //"\n\nStarting to partition ... (residual, warning and error messages only)\n\n");
 	}
     }
 
@@ -185,10 +185,10 @@ long      seed;			/* for random graph mutations */
     machine_params(&DOUBLE_EPSILON, &DOUBLE_MAX, &RAND_MAXIMUM);
 
     if (DEBUG_MACH_PARAMS > 0) {
-	printf("Machine parameters:\n");
-	printf("  DOUBLE_EPSILON = %e\n", DOUBLE_EPSILON);
-	printf("  DOUBLE_MAX = %e\n", DOUBLE_MAX);
-	printf("  RAND_MAXIMUM = %d\n\n", RAND_MAXIMUM);
+	//printf("Machine parameters:\n");
+	//printf("  DOUBLE_EPSILON = %e\n", DOUBLE_EPSILON);
+	//printf("  DOUBLE_MAX = %e\n", DOUBLE_MAX);
+	//printf("  RAND_MAXIMUM = %d\n\n", RAND_MAXIMUM);
     }
 
     nsets = (1 << ndims);
@@ -277,9 +277,9 @@ long      seed;			/* for random graph mutations */
 	j = TRUE;
         for (i = 1; i <= REFINE_PARTITION && j; i++) {	/* Reduce cuts w/ KL? */
 	    if (DEBUG_REFINE_PART > 0) {
-		printf("\n\nBefore pass %d to refine partition:\n", i);
+		//printf("\n\nBefore pass %d to refine partition:\n", i);
 		if (outfile != NULL) {
-		    fprintf(outfile, "\n\nBefore pass %d to refine partition:\n", i);
+		    //fprintf(outfile, "\n\nBefore pass %d to refine partition:\n", i);
 		}
 	        countup(graph, nvtxs, assignment, ndims, architecture, ndims_tot,
 		        mesh_dims, OUTPUT_METRICS, outfile, using_ewgts);
@@ -292,9 +292,9 @@ long      seed;			/* for random graph mutations */
     if (graph != NULL) {
 	if (INTERNAL_VERTICES) {
 	    if (DEBUG_INTERNAL > 0) {
-		printf("\n\nBefore increasing internal vertices:\n");
+		//printf("\n\nBefore increasing internal vertices:\n");
 		if (outfile != NULL) {
-		    fprintf(outfile, "\n\nBefore increasing internal vertices:\n");
+		    //fprintf(outfile, "\n\nBefore increasing internal vertices:\n");
 		}
 	        countup(graph, nvtxs, assignment, ndims, architecture, ndims_tot,
 		        mesh_dims, OUTPUT_METRICS, outfile, using_ewgts);
@@ -307,9 +307,9 @@ long      seed;			/* for random graph mutations */
     if (graph != NULL) {
         if (REFINE_MAP) {		/* Improve the mapping to processors? */
 	    if (DEBUG_REFINE_MAP > 0) {
-		printf("\n\nBefore refining mapping to processors:\n");
+		//printf("\n\nBefore refining mapping to processors:\n");
 		if (outfile != NULL) {
-		    fprintf(outfile, "\n\nBefore refining mapping to processors:\n");
+		    //fprintf(outfile, "\n\nBefore refining mapping to processors:\n");
 		}
 	        countup(graph, nvtxs, assignment, ndims, architecture, ndims_tot,
 		        mesh_dims, OUTPUT_METRICS, outfile, using_ewgts);
@@ -335,9 +335,9 @@ long      seed;			/* for random graph mutations */
 	time1 = seconds();
 	if (graph != NULL) {
             if (PRINT_HEADERS) {
-                printf("\n\n                     Partitioning Results\n");
+                //printf("\n\n                     Partitioning Results\n");
 		if (outfile != NULL) {
-                fprintf(outfile, "\n\n                     Partitioning Results\n");
+                //fprintf(outfile, "\n\n                     Partitioning Results\n");
 		}
             }
 

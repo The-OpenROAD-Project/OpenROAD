@@ -72,7 +72,7 @@ FILE     *outfile;		/* file to print output to */
 	    tempfile = stdout;
 	}
 
-
+	/*
 	if (OUTPUT_TIME > 0) {
 	    if (total_time != 0) {
 		fprintf(tempfile, "\nTotal time: %g sec.\n", total_time);
@@ -187,6 +187,7 @@ FILE     *outfile;		/* file to print output to */
 		    fprintf(tempfile, "  other %g\n", other_time);
 	    }
 	}
+	*/
     }
 }
 

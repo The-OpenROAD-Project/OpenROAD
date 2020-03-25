@@ -95,10 +95,10 @@ short    *assignment;		/* values to be printed */
 	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
 	printf("         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
         if (Output_File != NULL) {
-	    fprintf(Output_File,
-		"WARNING: Possible error in assignment file `%s'\n", inassignname);
-	    fprintf(Output_File,
-		"         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
+	    //fprintf(Output_File,
+		//"WARNING: Possible error in assignment file `%s'\n", inassignname);
+	    //fprintf(Output_File,
+		//"         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
 	}
     }
 
@@ -114,10 +114,10 @@ short    *assignment;		/* values to be printed */
 	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
 	printf("         Numerical data found after expected end of file\n");
         if (Output_File != NULL) { 
-	    fprintf(Output_File,
-		"WARNING: Possible error in assignment file `%s'\n", inassignname);
-	    fprintf(Output_File,
-		"         Numerical data found after expected end of file\n");
+	    //fprintf(Output_File,
+		//"WARNING: Possible error in assignment file `%s'\n", inassignname);
+	    //fprintf(Output_File,
+		//"         Numerical data found after expected end of file\n");
 	}
     }
 

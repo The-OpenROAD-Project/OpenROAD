@@ -38,6 +38,13 @@
 #include "GraphDecomposition.h"
 #include <iostream>
 
+namespace odb{
+class dbDatabase;
+class dbChip;
+class dbBlock;
+class dbNet;
+}
+
 namespace PartClusManager {
 
 class PartOptions {
@@ -96,6 +103,54 @@ private:
         std::vector<int>        _seeds;
 }; 
 
+class PartResults {
+public:
+        void addResult(std::vector<short> currentAssignment, unsigned long runtime, int seed) {
+                _assignmentResults.push_back(currentAssignment);
+                _runtimeResults.push_back(runtime);
+                _seeds.push_back(seed);
+        }
+        std::vector<short> getResult(unsigned idx){ return _assignmentResults[idx]; }
+        unsigned long getResultRuntime(unsigned idx){ return _runtimeResults[idx]; }
+        int getResultSeed(unsigned idx){ return _seeds[idx]; }
+        void setToolName(std::string name) { _toolName = name; }
+        std::string getToolName() { return _toolName; }
+        void setPartitionId(unsigned id) { _partitionId = id; }
+        unsigned getPartitionId() { return _partitionId; }
+        void setBestSolutionIdx(unsigned idx) { _bestSolutionIdx = idx; }
+        unsigned getBestSolutionIdx() { return _bestSolutionIdx; }
+        void setNumOfRuns(unsigned runs) { _numOfRuns = runs; }
+        unsigned getNumOfRuns() { return _numOfRuns; }
+        void setBestSetSize(double result) { _bestSetSizeSD = result; }
+        double getBestSetSize() { return _bestSetSizeSD; }
+        void setBestSetArea(double result) { _bestSetAreaSD = result; }
+        double getBestSetArea() { return _bestSetAreaSD; }
+        void setBestNumTerminals(unsigned long result) { _bestNumTerminals = result; }
+        unsigned long getBestNumTerminals() { return _bestNumTerminals; }
+        void setBestNumHyperedgeCuts(unsigned long result) { _bestNumHyperedgeCuts = result; }
+        unsigned long getBestNumHyperedgeCuts() { return _bestNumHyperedgeCuts; }
+        void setBestRuntime(unsigned long result) { _bestRuntime = result; }
+        unsigned long getBestRuntime() { return _bestRuntime; }
+        void setBestHopWeigth(unsigned long result) { _bestHopWeigth = result; }
+        unsigned long getBestHopWeigth() { return _bestHopWeigth; }
+
+private:
+        std::vector<std::vector<short>> _assignmentResults;
+        std::vector<unsigned long>      _runtimeResults;
+        std::vector<int>                _seeds;
+        std::string                     _toolName               = "";
+        unsigned                        _partitionId            = 0;
+        unsigned                        _bestSolutionIdx        = 0;
+        unsigned                        _numOfRuns              = 0;
+        double                          _bestSetSizeSD          = 0;
+        double                          _bestSetAreaSD          = 0;
+        unsigned long                   _bestNumTerminals       = 0;
+        unsigned long                   _bestNumHyperedgeCuts   = 0;
+        unsigned long                   _bestRuntime            = 0;
+        unsigned long                   _bestHopWeigth          = 0;
+
+};
+
 class PartClusManagerKernel {
 protected:
 
@@ -103,6 +158,7 @@ private:
         PartOptions _options;
 	unsigned _dbId;
 	Graph _graph;
+        std::vector<PartResults> _results;
 
 public:
         PartClusManagerKernel() = default;
@@ -116,6 +172,9 @@ public:
         PartOptions& getOptions() { return _options; }
 	void setDbId(unsigned id) {_dbId = id;}
 	void graph();
+        unsigned generatePartitionId();
+        void computePartitionResult(unsigned partitionId);
+        void reportPartitionResult(unsigned partitionId);
 };
 
 }

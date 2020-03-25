@@ -40,6 +40,8 @@ extern "C" {
     #include "main/ChacoWrapper.h"
 }
 #include<time.h>
+#include <chrono>
+#include "opendb/db.h"
 namespace PartClusManager {
 
 void PartClusManagerKernel::runPartitioning() {
@@ -54,7 +56,14 @@ void PartClusManagerKernel::runPartitioning() {
 }
 
 void PartClusManagerKernel::runChaco() {
-        std::cout << "Running chaco...\n";
+        std::cout << "\nRunning chaco...\n";
+
+        PartResults currentResults;
+        currentResults.setToolName(_options.getTool());
+        unsigned partitionId = generatePartitionId();
+        currentResults.setPartitionId(partitionId);
+        currentResults.setNumOfRuns(_options.getSeeds().size());
+
         std::vector<int> edgeWeights = _graph.getEdgeWeight();
 	std::vector<double> vertexWeights = _graph.getVertexWeight();
 	std::vector<int> colIdx = _graph.getColIdx();
@@ -76,6 +85,9 @@ void PartClusManagerKernel::runChaco() {
         int numVertCoar = _options.getCoarVertices();
 
         for (long seed : _options.getSeeds()) {
+                auto start = std::chrono::system_clock::now();
+                std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+
                 int* starts = (int*) malloc((unsigned) (numVertices + 1) * sizeof(int));
                 int* currentIndex = starts;
                 for (int pointer : rowPtr){
@@ -107,15 +119,15 @@ void PartClusManagerKernel::runChaco() {
 
                 short* assigment = (short*) malloc((unsigned) numVertices * sizeof(short));
                 interface_wrap(numVertices,                             /* number of vertices */
-                        starts, adjacency, vweights, eweights,   /* graph definition for chaco */
-                        NULL, NULL, NULL,                        /* x y z positions for the inertial method, not needed for multi-level KL */
-                        NULL, NULL,                              /* output assigment name and file, isn't needed because internal methods of PartClusManager are used instead */
-                        assigment,                               /* vertex assigment vector. Contains the set that each vector is present on.*/
-                        architecture, hypercubeDims, mesh_dims,  /* architecture, architecture topology and the hypercube dimensions (number of 2-way divisions) */
-                        NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
-                        1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
-                        0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
-                        0.001, seed);                            /* tolerance on eigenvectors (hard-coded, not used) and the seed */
+                               starts, adjacency, vweights, eweights,   /* graph definition for chaco */
+                               NULL, NULL, NULL,                        /* x y z positions for the inertial method, not needed for multi-level KL */
+                               NULL, NULL,                              /* output assigment name and file, isn't needed because internal methods of PartClusManager are used instead */
+                               assigment,                               /* vertex assigment vector. Contains the set that each vector is present on.*/
+                               architecture, hypercubeDims, mesh_dims,  /* architecture, architecture topology and the hypercube dimensions (number of 2-way divisions) */
+                               NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
+                               1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
+                               0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
+                               0.001, seed);                            /* tolerance on eigenvectors (hard-coded, not used) and the seed */
                 
                 std::vector<short> chacoResult;
                 for (int i = 0; i < numVertices; i++)
@@ -123,13 +135,21 @@ void PartClusManagerKernel::runChaco() {
                         short* currentpointer = assigment + i;
                         chacoResult.push_back(*currentpointer);
                 }
-                _graph.addAssignment(chacoResult);
+
+                auto end = std::chrono::system_clock::now();
+                unsigned long runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                currentResults.addResult(chacoResult, runtime, seed);
                 free(assigment);
+
+                std::cout << "Partitioned graph for seed " << seed << " in " << runtime << " ms.\n";
         }
-
+        _results.push_back(currentResults);
         free(mesh_dims);
+        computePartitionResult(partitionId);
+        reportPartitionResult(partitionId);
 
-        std::cout << "Chaco run completed.\n";
+        std::cout << "Chaco run completed. Partition ID = " << partitionId << ".\n";
 }
 
 void PartClusManagerKernel::runChaco(const Graph& graph, const PartOptions& options) {
@@ -154,6 +174,193 @@ void PartClusManagerKernel::graph(){
 	graphDecomp.init(_dbId);
 	graphDecomp.createGraph(_graph, _options.getGraphModel(), _options.getWeightModel(), _options.getMaxEdgeWeight(), 
 					_options.getMaxVertexWeight(), _options.getCliqueThreshold());
+}
+
+unsigned PartClusManagerKernel::generatePartitionId(){
+        unsigned sizeOfResults = _results.size();
+        return sizeOfResults;
+}
+
+void PartClusManagerKernel::computePartitionResult(unsigned partitionId){
+        odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
+	odb::dbChip* chip = db->getChip();
+	odb::dbBlock* block = chip->getBlock();
+        std::vector<unsigned long> setSizes;
+        std::vector<unsigned long> setAreas;
+
+        PartResults currentResults = _results[partitionId];
+        for (unsigned idx = 0; idx < currentResults.getNumOfRuns(); idx++)
+        {
+                std::vector<short> currentAssignment = currentResults.getResult(idx);
+                unsigned long currentRuntime = currentResults.getResultRuntime(idx);
+                int currentSeed = currentResults.getResultSeed(idx);
+
+                unsigned long terminalCounter = 0; 
+                unsigned long cutCounter = 0; 
+                unsigned long edgeTotalWeigth = 0; 
+                std::map<short, unsigned long> setSize; 
+                std::map<short, unsigned long> setArea; 
+                std::vector<unsigned> computedVertices;
+
+                for (odb::dbNet* net : block->getNets()){
+                        int nITerms = (net->getITerms()).size();
+                        int nBTerms = (net->getBTerms()).size();
+                        if (net->isSpecial() || (nITerms + nBTerms) < 2){
+                                continue;
+                        }
+
+                        short currentInstPart = 9999;
+                        bool edgeWasCut = false;
+                        std::vector<short> parentPartitions;
+                        std::vector<unsigned> netVertices;
+                        
+                        //Terminals ----------
+                        for (odb::dbITerm* iterm : net->getITerms()){
+                                odb::dbInst* inst = iterm->getInst();
+                                if ( !(_graph.isInMap(inst->getName())) ){
+                                        edgeWasCut = true;
+                                        terminalCounter = terminalCounter + 1;
+                                        continue;
+                                }
+                                unsigned idx = _graph.getMapping(inst->getName());
+                                short cl = currentAssignment[idx];
+                                //Got the cluster that the ITerm was part of.
+                                if (currentInstPart == 9999){
+                                        //If this is the first pass, set the cluster index in the currentInstPart variable.
+                                        currentInstPart = cl;
+                                } else if ((currentInstPart != cl) && (std::find(parentPartitions.begin(), parentPartitions.end(), cl) == parentPartitions.end())){
+                                        //If the cluster changed, and it change to a cluster that wasn't previously computed in this net, add a new terminal to the old cluster.
+                                        parentPartitions.push_back(currentInstPart); //Old cluster can't be used anymore for this net.
+                                        terminalCounter = terminalCounter + 1;
+                                        //The new cluster becomes the old one.
+                                        currentInstPart = cl;
+                                        //The edge was CUT! (new hypercut edge.)
+                                        edgeWasCut = true;
+                                }
+                                netVertices.push_back(idx);
+                                //Set size and area ----------
+                                if (std::find(computedVertices.begin(), computedVertices.end(), idx) == computedVertices.end()){
+                                        if ( setSize.find(cl) == setSize.end() ) {
+                                                setSize[cl] = 1;
+                                                setArea[cl] = _graph.getVertexWeight(idx);
+                                        } else {
+                                                setSize[cl] = setSize[cl] + 1;
+                                                setArea[cl] = setArea[cl] + _graph.getVertexWeight(idx);
+                                        }
+                                        computedVertices.push_back(idx);
+                                }
+                        }
+                        for (odb::dbBTerm* bterm : net->getBTerms()){
+                                if ( !(_graph.isInMap(bterm->getName())) ){
+                                        edgeWasCut = true;
+                                        terminalCounter = terminalCounter + 1;
+                                        continue;
+                                }
+                                unsigned idx = _graph.getMapping(bterm->getName());
+                                short cl = currentAssignment[idx];
+                                //Got the cluster that the BTerm was part of.
+                                if (currentInstPart == 9999){
+                                        //If this is the first pass, set the cluster index in the currentInstPart variable.
+                                        currentInstPart = cl;
+                                } else if ((currentInstPart != cl) && (std::find(parentPartitions.begin(), parentPartitions.end(), cl) == parentPartitions.end())){
+                                        //If the cluster changed, and it change to a cluster that wasn't previously computed in this net, add a new terminal to the old cluster.
+                                        parentPartitions.push_back(currentInstPart); //Old cluster can't be used anymore for this net.
+                                        terminalCounter = terminalCounter + 1;
+                                        //The new cluster becomes the old one.
+                                        currentInstPart = cl;
+                                        //The edge was CUT! (new hypercut edge.)
+                                        edgeWasCut = true;
+                                }
+                                netVertices.push_back(idx);
+                                //Set size and area ----------
+                                if (std::find(computedVertices.begin(), computedVertices.end(), idx) == computedVertices.end()){
+                                        if ( setSize.find(cl) == setSize.end() ) {
+                                                setSize[cl] = 1;
+                                                setArea[cl] = _graph.getVertexWeight(idx);
+                                        } else {
+                                                setSize[cl] = setSize[cl] + 1;
+                                                setArea[cl] = setArea[cl] + _graph.getVertexWeight(idx);
+                                        }
+                                        computedVertices.push_back(idx);
+                                }
+                        }
+                        if (edgeWasCut && (std::find(parentPartitions.begin(), parentPartitions.end(), currentInstPart) == parentPartitions.end()) && (currentInstPart != 9999)){
+                                //If the edge was cut, and the last cluster wasn't previously computed for this new, add a new terminal to that cluster.
+                                terminalCounter = terminalCounter + 1;
+                        }
+                        //HyperEdge Cuts ----------
+                        if (edgeWasCut){
+                                //If the edge was cut, a hyperedge cut is present for this net.
+                                cutCounter = cutCounter + 1;
+                                //Also add the total weigth for this hyperedge cut.
+                                unsigned currentVertex = netVertices.back();
+                                netVertices.pop_back();
+                                int currentRow = _graph.getRowPtr(currentVertex);
+                                unsigned vertexEnd = 0;
+                                if (_graph.getRowPtr().size() == (currentVertex + 1)){
+                                        vertexEnd = _graph.getColIdx().size();
+                                } else {
+                                        vertexEnd = _graph.getRowPtr(currentVertex + 1);
+                                }
+                                while (currentRow < vertexEnd)
+                                {
+                                        unsigned currentConnection = _graph.getColIdx(currentRow);
+                                        if (std::find(netVertices.begin(), netVertices.end(), currentConnection) != netVertices.end()) {
+                                                edgeTotalWeigth = edgeTotalWeigth + _graph.getEdgeWeight(currentRow);
+                                        }
+                                        currentRow++;
+                                }
+                        }
+                }
+
+                //Check if the current assignment is better than the last one.
+                if ((cutCounter < currentResults.getBestNumHyperedgeCuts()) || (currentResults.getBestNumHyperedgeCuts() == 0)){
+                        currentResults.setBestSolutionIdx(idx);
+                        currentResults.setBestRuntime(currentRuntime);
+                        currentResults.setBestNumHyperedgeCuts(cutCounter);
+                        currentResults.setBestNumTerminals(terminalCounter);
+                        currentResults.setBestHopWeigth(edgeTotalWeigth);
+
+                        double currentSum = 0;
+                        for (std::pair<short, unsigned long> clusterSize : setSize) {
+                                currentSum = currentSum + clusterSize.second;
+                        }
+                        double currentMean = currentSum / setSize.size();
+                        double sizeSD = 0;
+                        for (std::pair<short, unsigned long> clusterSize : setSize) {
+                                sizeSD = sizeSD + std::pow(clusterSize.second - currentMean, 2);
+                        }
+                        sizeSD = std::sqrt(sizeSD / setSize.size());
+                        currentResults.setBestSetSize(sizeSD);
+
+                        currentSum = 0;
+                        for (std::pair<short, unsigned long> clusterArea : setArea) {
+                                currentSum = currentSum + clusterArea.second;
+                        }
+                        currentMean = currentSum / setArea.size();
+                        double areaSD = 0;
+                        for (std::pair<short, unsigned long> clusterArea : setArea) {
+                                areaSD = areaSD + std::pow(clusterArea.second - currentMean, 2);
+                        }
+                        areaSD = std::sqrt(areaSD / setArea.size());
+                        currentResults.setBestSetArea(areaSD);
+                }
+        }
+        _results[partitionId] = currentResults;
+}
+
+void PartClusManagerKernel::reportPartitionResult(unsigned partitionId){
+        PartResults currentResults = _results[partitionId];
+        std::cout << "\nPartitioning Results for ID = " << partitionId << " and Tool = " << currentResults.getToolName() << ".\n";
+        unsigned bestIdx = currentResults.getBestSolutionIdx();
+        int seed = currentResults.getResultSeed(bestIdx);
+        std::cout << "Best results used seed " << seed << ".\n";
+        std::cout << "Number of Hyperedge Cuts = " << currentResults.getBestNumHyperedgeCuts() << ".\n";
+        std::cout << "Number of Terminals = " << currentResults.getBestNumTerminals() << ".\n";
+        std::cout << "Cluster Size SD = " << currentResults.getBestSetSize() << ".\n";
+        std::cout << "Cluster Area SD = " << currentResults.getBestSetArea() << ".\n";
+        std::cout << "Total Hop Weigth = " << currentResults.getBestHopWeigth() << ".\n";
+        std::cout << "Total Runtime = " << currentResults.getBestRuntime() << ".\n\n";
 }
 
 }

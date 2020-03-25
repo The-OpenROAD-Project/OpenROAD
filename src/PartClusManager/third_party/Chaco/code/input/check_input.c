@@ -58,13 +58,13 @@ double    eigtol;		/* tolerance for eigen-pairs */
 	    if (graphname != NULL)
 		printf("ERRORS in graph input file %s.\n", graphname);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERRORS in graph input file %s.\n",
-			graphname);
+		    //fprintf(Output_File, "ERRORS in graph input file %s.\n",
+			//graphname);
 		}
 	    else
 		printf("ERRORS in graph.\n");
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERRORS in graph.\n");
+		    //fprintf(Output_File, "ERRORS in graph.\n");
 		}
 	}
     }
@@ -142,9 +142,9 @@ double    eigtol;		/* tolerance for eigen-pairs */
 	    printf("WARNING: Number of vertices in coarse graph (%d) being reset to %d.\n",
 		   *vmax, i);
 	    if (Output_File != NULL) {
-	        fprintf(Output_File,
-		    "WARNING: Number of vertices in coarse graph (%d) being reset to %d.\n",
-		    *vmax, i);
+	        //fprintf(Output_File,
+		    //"WARNING: Number of vertices in coarse graph (%d) being reset to %d.\n",
+		    //*vmax, i);
 	    }
 	    *vmax = i;
 	}
@@ -287,15 +287,15 @@ int       ndims;		/* number of eigenvectors */
     if (OUTPUT_METRICS < -2 || OUTPUT_METRICS > 2) {
 	printf("WARNING: OUTPUT_METRICS (%d) should be in [-2,2].\n", OUTPUT_METRICS);
 	if (Output_File != NULL) {
-	    fprintf(Output_File,
-		"WARNING: OUTPUT_METRICS (%d) should be in [-2,2].\n", OUTPUT_METRICS);
+	    //fprintf(Output_File,
+		//"WARNING: OUTPUT_METRICS (%d) should be in [-2,2].\n", OUTPUT_METRICS);
 	}
     }
     if (OUTPUT_TIME < 0 || OUTPUT_TIME > 2) {
 	printf("WARNING: OUTPUT_TIME (%d) should be in [0,2].\n", OUTPUT_TIME);
 	if (Output_File != NULL) {
-	    fprintf(Output_File,
-		"WARNING: OUTPUT_TIME (%d) should be in [0,2].\n", OUTPUT_TIME);
+	    //fprintf(Output_File,
+		//"WARNING: OUTPUT_TIME (%d) should be in [0,2].\n", OUTPUT_TIME);
 	}
     }
 
@@ -324,8 +324,8 @@ int       ndims;		/* number of eigenvectors */
 	if (LANCZOS_SO_INTERVAL == 1) {
 	    printf("WARNING: More efficient if LANCZOS_SO_INTERVAL = 2, not 1.\n");
 	    if (Output_File != NULL) {
-	        fprintf(Output_File,
-		    "WARNING: More efficient if LANCZOS_SO_INTERVAL = 2, not 1.\n");
+	        //fprintf(Output_File,
+		    //"WARNING: More efficient if LANCZOS_SO_INTERVAL = 2, not 1.\n");
 	    }
 	}
 	if (BISECTION_SAFETY <= 0) {
@@ -342,18 +342,18 @@ int       ndims;		/* number of eigenvectors */
 	    printf("WARNING: WARNING_ORTHTOL (%g) should be positive.\n",
 		WARNING_ORTHTOL);
 	    if (Output_File != NULL) {
-	        fprintf(Output_File,
-		    "WARNING: WARNING_ORTHTOL (%g) should be positive.\n",
-		    WARNING_ORTHTOL);
+	        //fprintf(Output_File,
+		    //"WARNING: WARNING_ORTHTOL (%g) should be positive.\n",
+		    //WARNING_ORTHTOL);
 	    }
 	}
 	if (WARNING_MISTOL == 0) {
 	    printf("WARNING: WARNING_MISTOL (%g) should be positive.\n",
 		WARNING_MISTOL);
 	    if (Output_File != NULL) {
-	        fprintf(Output_File,
-		    "WARNING: WARNING_MISTOL (%g) should be positive.\n",
-		    WARNING_MISTOL);
+	        //fprintf(Output_File,
+		    //"WARNING: WARNING_MISTOL (%g) should be positive.\n",
+		    //WARNING_MISTOL);
 	    }
 	}
 

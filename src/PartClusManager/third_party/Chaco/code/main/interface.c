@@ -63,7 +63,7 @@ long      seed;			/* for random graph mutations */
     void      free_graph(), read_params(), strout();
 
     if (DEBUG_TRACE > 0) {
-	printf("<Entering interface>\n");
+	//printf("<Entering interface>\n");
     }
 
     flag = 0;
@@ -74,8 +74,8 @@ long      seed;			/* for random graph mutations */
 	start_time = seconds();
 	params_file = fopen(PARAMS_FILENAME, "r");
 	if (params_file == NULL && DEBUG_PARAMS > 1) {
-	    printf("Parameter file `%s' not found; using default parameters.\n",
-		   PARAMS_FILENAME);
+	    //printf("Parameter file `%s' not found; using default parameters.\n",
+		//   PARAMS_FILENAME);
 	}
 	read_params(params_file);
     }

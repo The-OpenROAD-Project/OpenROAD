@@ -76,8 +76,8 @@ float   **eweights;		/* edge weight list data */
 	printf("ERROR in graph file `%s':", inname);
 	printf(" Invalid number of vertices (%d).\n", *nvtxs);
 	if (Output_File != NULL) {
-	    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-	    fprintf(Output_File, " Invalid number of vertices (%d).\n", *nvtxs);
+	    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+	    //fprintf(Output_File, " Invalid number of vertices (%d).\n", *nvtxs);
 	}
 	fclose(fin);
 	return(1);
@@ -88,8 +88,8 @@ float   **eweights;		/* edge weight list data */
 	printf("ERROR in graph file `%s':", inname);
 	printf(" Invalid number of expected edges (%d).\n", narcs);
 	if (Output_File != NULL) {
-	    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-	    fprintf(Output_File, " Invalid number of expected edges (%d).\n", narcs);
+	    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+	    //fprintf(Output_File, " Invalid number of expected edges (%d).\n", narcs);
 	}
 	fclose(fin);
 	return(1);
@@ -152,8 +152,8 @@ j++;
 		printf("ERROR in graph file `%s':", inname);
 		printf(" no vertex number in line %d.\n", line_num);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		    fprintf(Output_File, " no vertex number in line %d.\n", line_num);
+		    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		    //fprintf(Output_File, " no vertex number in line %d.\n", line_num);
 		}
 		fclose(fin);
 		return (1);
@@ -162,9 +162,9 @@ j++;
 		printf("ERROR in graph file `%s':", inname);
 		printf(" out-of-order vertex number in line %d.\n", line_num);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		    fprintf(Output_File,
-			" out-of-order vertex number in line %d.\n", line_num);
+		    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		    //fprintf(Output_File,
+			//" out-of-order vertex number in line %d.\n", line_num);
 		}
 		fclose(fin);
 		return (1);
@@ -189,8 +189,8 @@ j++;
 		printf("ERROR in graph file `%s':", inname);
 		printf(" no weight for vertex %d.\n", vertex);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		    fprintf(Output_File, " no weight for vertex %d.\n", vertex);
+		    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		    //fprintf(Output_File, " no weight for vertex %d.\n", vertex);
 		}
 		fclose(fin);
 		return (1);
@@ -199,9 +199,9 @@ j++;
 		printf("ERROR in graph file `%s':", inname);
 		printf(" zero or negative weight entered for vertex %d.\n", vertex);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		    fprintf(Output_File,
-			" zero or negative weight entered for vertex %d.\n", vertex);
+		    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		    //fprintf(Output_File,
+			//" zero or negative weight entered for vertex %d.\n", vertex);
 		}
 		fclose(fin);
 		return (1);
@@ -231,10 +231,10 @@ neighbor++;
 		printf(" nvtxs=%d, but edge (%d,%d) was input.\n",
 		       *nvtxs, vertex, neighbor);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		    fprintf(Output_File,
-			" nvtxs=%d, but edge (%d,%d) was input.\n",
-			*nvtxs, vertex, neighbor);
+		    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		    //fprintf(Output_File,
+			//" nvtxs=%d, but edge (%d,%d) was input.\n",
+			//*nvtxs, vertex, neighbor);
 		}
 		fclose(fin);
 		return (1);
@@ -244,10 +244,10 @@ neighbor++;
 		printf(" zero or negative vertex in edge (%d,%d).\n",
 		       vertex, neighbor);
 		if (Output_File != NULL) {
-		    fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		    fprintf(Output_File,
-		        " zero or negative vertex in edge (%d,%d).\n",
-			vertex, neighbor);
+		    //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		    //fprintf(Output_File,
+		    //    " zero or negative vertex in edge (%d,%d).\n",
+			//vertex, neighbor);
 		}
 		fclose(fin);
 		return (1);
@@ -258,8 +258,8 @@ neighbor++;
 		    printf("WARNING: Self edge (%d, %d) being ignored.\n",
 			   vertex, vertex);
     		    if (Output_File != NULL) {
-		        fprintf(Output_File,
-			    "WARNING: Self edge (%d, %d) being ignored.\n", vertex, vertex);
+		        //fprintf(Output_File,
+			    //"WARNING: Self edge (%d, %d) being ignored.\n", vertex, vertex);
 		    }
 		}
 		skip_flag = TRUE;
@@ -277,9 +277,9 @@ neighbor++;
 		    printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n",
 			vertex, neighbor);
 		    if (Output_File != NULL) {
-			fprintf(Output_File,
-			    "WARNING: Multiple occurences of edge (%d,%d) ignored\n",
-			    vertex, neighbor);
+			//fprintf(Output_File,
+			//    "WARNING: Multiple occurences of edge (%d,%d) ignored\n",
+			//    vertex, neighbor);
 		    }
 		    skip_flag = TRUE;
 		    if (!ignore_me) {
@@ -296,9 +296,9 @@ neighbor++;
 		    printf("ERROR in graph file `%s':", inname);
 		    printf(" no weight for edge (%d,%d).\n", vertex, neighbor);
 		    if (Output_File != NULL) {
-		        fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		        fprintf(Output_File,
-			    " no weight for edge (%d,%d).\n", vertex, neighbor);
+		        //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		        //fprintf(Output_File,
+			//    " no weight for edge (%d,%d).\n", vertex, neighbor);
 		    }
 		    fclose(fin);
 		    return (1);
@@ -308,9 +308,9 @@ neighbor++;
 		    printf("WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
 			   vertex, neighbor);
     		    if (Output_File != NULL) {
-		        fprintf(Output_File,
-			    "WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
-			    vertex, neighbor);
+		        //fprintf(Output_File,
+			//    "WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
+			//    vertex, neighbor);
 		    }
 		    skip_flag = TRUE;
 		    if (!ignore_me) {
@@ -335,10 +335,10 @@ neighbor++;
 		    printf(" Edge (%d, %d) entered but not (%d, %d)\n",
 			   vertex, neighbor, neighbor, vertex);
 		    if (Output_File != NULL) {
-		        fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		        fprintf(Output_File,
-			    " Edge (%d, %d) entered but not (%d, %d)\n",
-			    vertex, neighbor, neighbor, vertex);
+		        //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		        //fprintf(Output_File,
+			//    " Edge (%d, %d) entered but not (%d, %d)\n",
+			//    vertex, neighbor, neighbor, vertex);
 		    }
 		    error_flag = 1;
 		}
@@ -351,10 +351,10 @@ neighbor++;
 		    printf(" at least %d adjacencies entered, but nedges = %d\n",
 			nedges, narcs);
 		    if (Output_File != NULL) {
-		        fprintf(Output_File, "ERROR in graph file `%s':", inname);
-		        fprintf(Output_File,
-			    " at least %d adjacencies entered, but nedges = %d\n",
-			    nedges, narcs);
+		        //fprintf(Output_File, "ERROR in graph file `%s':", inname);
+		        //fprintf(Output_File,
+			 //   " at least %d adjacencies entered, but nedges = %d\n",
+			 //   nedges, narcs);
 		    }
 		    fclose(fin);
 		    return (1);
@@ -387,10 +387,10 @@ neighbor++;
 	printf("WARNING: Possible error in graph file `%s'\n", inname);
 	printf("         Data found after expected end of file\n");
         if (Output_File != NULL) {
-	    fprintf(Output_File,
-		"WARNING: Possible error in graph file `%s'\n", inname);
-	    fprintf(Output_File,
-		"         Data found after expected end of file\n");
+	    //fprintf(Output_File,
+		//"WARNING: Possible error in graph file `%s'\n", inname);
+	    //fprintf(Output_File,
+		//"         Data found after expected end of file\n");
 	}
     }
 
@@ -399,8 +399,8 @@ neighbor++;
     if (self_edge > 1 && CHECK_INPUT) {
 	printf("WARNING: %d self edges were read and ignored.\n", self_edge);
         if (Output_File != NULL) {
-	    fprintf(Output_File,
-		"WARNING: %d self edges were read and ignored.\n", self_edge);
+	    //fprintf(Output_File,
+		//"WARNING: %d self edges were read and ignored.\n", self_edge);
 	}
     }
 
@@ -416,9 +416,9 @@ neighbor++;
 	    printf("WARNING: I expected %d edges entered twice, but I only count %d.\n",
 	        narcs, nedges);
     	    if (Output_File != NULL) {
-	        fprintf(Output_File,
-		    "WARNING: I expected %d edges entered twice, but I only count %d.\n",
-	            narcs, nedges);
+	        //fprintf(Output_File,
+		    //"WARNING: I expected %d edges entered twice, but I only count %d.\n",
+	        //    narcs, nedges);
 	    }
 	}
     }
