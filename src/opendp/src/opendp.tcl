@@ -104,8 +104,10 @@ sta::define_cmd_args "filler_placement" { filler_masters }
 
 proc filler_placement { args } {
   sta::check_argc_eq1 "filler_placement" $args
-  set fillers [opendp::get_masters_arg $args]
-  opendp::filler_placement_cmd $fillers
+  set fillers [opendp::get_masters_arg [lindex $args 0]]
+  if { [llength $fillers] > 0 } {
+    opendp::filler_placement_cmd $fillers
+  }
 }
 
 sta::define_cmd_args "check_placement" {[-verbose]}
@@ -126,16 +128,21 @@ proc get_masters_arg { master_names } {
   set db [ord::get_db]
   set names {}
   foreach name $master_names {
+    set matched 0
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
 	set master_name [$master getConstName]
 	if { [regexp $name $master_name] } {
 	  lappend names $master_name
+	  set matched 1
 	}
       }
     }
+    if { !$matched } {
+      puts "Warning: $name did not match any masters."
+    }
   }
-  return $names;
+  return $names
 }
 
 proc report_inst_bbox { inst_name } {

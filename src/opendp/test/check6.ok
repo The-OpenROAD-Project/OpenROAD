@@ -24,6 +24,7 @@ design area              34.0 u^2
 fixed area                4.0 u^2
 movable area              0.8 u^2
 utilization                 3 %
+utilization padded          3 %
 rows                        4
 row height                1.4 u
 
