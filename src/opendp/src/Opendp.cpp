@@ -2,7 +2,7 @@
 // Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu Woo(mwoo@eng.ucsd.edu)
 //          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
 // Rewrite by James Cherry, Parallax Software, Inc.
-
+//
 // BSD 3-Clause License
 //
 // Copyright (c) 2019, James Cherry, Parallax Software, Inc.
@@ -65,11 +65,15 @@ using std::max;
 using ord::error;
 
 using odb::Rect;
+using odb::dbBPin;
+using odb::dbBTerm;
+using odb::dbBox;
 using odb::dbBox;
 using odb::dbITerm;
-using odb::dbMasterType;
 using odb::dbMPin;
 using odb::dbMTerm;
+using odb::dbMasterType;
+using odb::dbNet;
 using odb::dbPlacementStatus;
 
 Cell::Cell()
@@ -120,6 +124,10 @@ Opendp::Opendp()
     ground_net_name_("VSS"),
     grid_(nullptr)
 {
+  // magic number alert
+  diamond_search_height_ = 10;
+  diamond_search_width_ = diamond_search_height_ * 5;
+  max_displacement_constraint_ = 0;
 }
 
 Opendp::~Opendp() {
@@ -129,10 +137,6 @@ Opendp::~Opendp() {
 void Opendp::init(dbDatabase *db) { db_ = db; }
 
 void Opendp::clear() {
-  // magic number alert
-  diamond_search_height_ = 400;
-  max_displacement_constraint_ = 0;
-
   db_master_map_.clear();
   cells_.clear();
   groups_.clear();
@@ -140,6 +144,7 @@ void Opendp::clear() {
   db_inst_map_.clear();
   deleteGrid(grid_);
   grid_ = nullptr;
+  dummy_cell_.is_placed_ = true;
 }
 
 void Opendp::setPowerNetName(const char *power_name) {
@@ -159,7 +164,7 @@ void Opendp::setPaddingGlobal(int left,
 void Opendp::importDb() {
   clear();
   dbToOpendp();
-  initAfterImport();
+  findDesignStats();
 }
 
 void Opendp::detailedPlacement(int max_displacment) {
@@ -170,73 +175,6 @@ void Opendp::detailedPlacement(int max_displacment) {
   reportLegalizationStats();
   updateDbInstLocations();
 }
-
-void Opendp::initAfterImport() {
-  findDesignStats();
-
-  // dummy cell generation
-  dummy_cell_.is_placed_ = true;
-
-  // Make pixel grid
-  grid_ = makeGrid();
-
-  // Fragmented Row Handling
-  for(auto db_row : block_->getRows()) {
-    int orig_x, orig_y;
-    db_row->getOrigin(orig_x, orig_y);
-
-    int x_start = (orig_x - core_.xMin()) / site_width_;
-    int y_start = (orig_y - core_.yMin()) / row_height_;
-
-    int x_end = x_start + db_row->getSiteCount();
-    int y_end = y_start + 1;
-
-    for(int i = x_start; i < x_end; i++) {
-      for(int j = y_start; j < y_end; j++) {
-        grid_[j][i].is_valid = true;
-      }
-    }
-  }
-
-  // fixed cell marking
-  fixed_cell_assign();
-  // group mapping & x_axis dummycell insertion
-  group_pixel_assign2();
-  // y axis dummycell insertion
-  group_pixel_assign();
-}
-
-Grid *
-Opendp::makeGrid()
-{
-  Grid *grid = new Pixel*[row_count_];
-  for(int i = 0; i < row_count_; i++) {
-    grid[i] = new Pixel[row_site_count_];
-
-    for(int j = 0; j < row_site_count_; j++) {
-      Pixel &pixel = grid[i][j];
-      pixel.grid_y_ = i;
-      pixel.grid_x_ = j;
-      pixel.cell = nullptr;
-      pixel.group_ = nullptr;
-      pixel.util = 0.0;
-      pixel.is_valid = false;
-    }
-  }
-  return grid;
-}
-
-void
-Opendp::deleteGrid(Grid *grid)
-{
-  if (grid) {
-    for(int i = 0; i < row_count_; i++) {
-      delete [] grid[i];
-    }
-    delete grid;
-  }
-}
-
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
@@ -293,7 +231,7 @@ void Opendp::reportDesignStats() {
   printf("Design Stats\n");
   printf("--------------------------------\n");
   printf("total instances      %8d\n", block_->getInsts().size());
-  printf("multi instances      %8d\n",  multi_row_inst_count_);
+  printf("multi row instances  %8d\n",  multi_row_inst_count_);
   printf("fixed instances      %8d\n", fixed_inst_count_);
   printf("nets                 %8d\n", block_->getNets().size());
   printf("design area          %8.1f u^2\n",
@@ -336,6 +274,86 @@ void Opendp::reportLegalizationStats() {
   double hpwl_delta = (hpwl_legal - hpwl_orig) / hpwl_orig * 100;
   printf("delta HPWL           %8.0f %%\n", hpwl_delta);
   printf("\n");
+}
+
+////////////////////////////////////////////////////////////////
+
+void Opendp::displacementStats(// Return values.
+			       int64_t &avg_displacement,
+			       int64_t &sum_displacement,
+			       int64_t &max_displacement) {
+  avg_displacement = 0;
+  sum_displacement = 0;
+  max_displacement = 0;
+
+  for(Cell& cell : cells_) {
+    int displacement = disp(&cell);
+    sum_displacement += displacement;
+    if(displacement > max_displacement)
+      max_displacement = displacement;
+  }
+  avg_displacement = sum_displacement / cells_.size();
+}
+
+int64_t Opendp::hpwl(bool initial) {
+  int64_t hpwl = 0;
+  for(dbNet *net : block_->getNets()) {
+    Rect box;
+    box.mergeInit();
+
+    for(dbITerm *iterm : net->getITerms()) {
+      dbInst* inst = iterm->getInst();
+      Cell* cell = db_inst_map_[inst];
+      int x, y;
+      if(initial || cell == nullptr) {
+	initialLocation(inst, x, y);
+      }
+      else {
+        x = cell->x_;
+        y = cell->y_;
+      }
+      // Use inst center if no mpins.
+      Rect iterm_rect(x, y, x, y);
+      dbMTerm* mterm = iterm->getMTerm();
+      auto mpins = mterm->getMPins();
+      if(mpins.size()) {
+        // Pick a pin, any pin.
+        dbMPin* pin = *mpins.begin();
+        auto geom = pin->getGeometry();
+        if(geom.size()) {
+          dbBox* pin_box = *geom.begin();
+          Rect pin_rect;
+          pin_box->getBox(pin_rect);
+          int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
+          int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
+          iterm_rect = Rect(x + center_x, y + center_y,
+			       x + center_x, y + center_y);
+        }
+      }
+      box.merge(iterm_rect);
+    }
+
+    for(dbBTerm *bterm : net->getBTerms()) {
+      for(dbBPin *bpin : bterm->getBPins()) {
+        dbPlacementStatus status = bpin->getPlacementStatus();
+        if(status.isPlaced()) {
+          dbBox* pin_box = bpin->getBox();
+          Rect pin_rect;
+          pin_box->getBox(pin_rect);
+          int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
+          int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
+          int core_center_x = center_x - core_.xMin();
+          int core_center_y = center_y - core_.yMin();
+          Rect pin_center(core_center_x, core_center_y, core_center_x,
+                             core_center_y);
+          box.merge(pin_center);
+        }
+      }
+    }
+    int perimeter = box.dx() + box.dy();
+    hpwl += perimeter;
+  }
+  return hpwl;
 }
 
 ////////////////////////////////////////////////////////////////

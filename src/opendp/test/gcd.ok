@@ -14,7 +14,7 @@ Warning: could not find power special net
 Design Stats
 --------------------------------
 total instances           549
-multi instances             0
+multi row instances         0
 fixed instances           255
 nets                      364
 design area           14266.9 u^2
@@ -27,11 +27,11 @@ row height                1.4 u
 
 Placement Analysis
 --------------------------------
-total displacement      678.8 u
+total displacement      676.5 u
 average displacement      1.2 u
-max displacement         13.9 u
+max displacement         10.4 u
 original HPWL          6944.8 u
-legalized HPWL         7753.4 u
-delta HPWL                 12 %
+legalized HPWL         7740.7 u
+delta HPWL                 11 %
 
 No differences found.

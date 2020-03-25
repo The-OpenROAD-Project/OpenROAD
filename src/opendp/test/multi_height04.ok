@@ -16,7 +16,7 @@ Notice 0: Finished DEF file: multi_height04.def
 Design Stats
 --------------------------------
 total instances            10
-multi instances             1
+multi row instances         1
 fixed instances             0
 nets                       13
 design area              40.0 u^2
@@ -38,7 +38,7 @@ original HPWL            79.8 u
 legalized HPWL           81.9 u
 delta HPWL                  3 %
 
-Warning: Overlap check failed. check failed (1).
+Warning: Overlap check failed (1).
  _281_ overlaps _282_
 Warning: Site check failed (1).
  _281_
