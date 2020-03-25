@@ -175,7 +175,7 @@ proc format_grid { x w } {
   if { [expr $x % $w] == 0 } {
     return [expr $x / $w]
   } else {
-    return [format "%.1f" [expr $x / $w]]
+    return [format "%.2f" [expr $x / $w]]
   }
 }
 
