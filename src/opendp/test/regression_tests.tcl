@@ -11,6 +11,7 @@ record_tests {
   fence03
   fillers1
   fillers2
+  fillers3
   fragmented_row01
   fragmented_row02
   fragmented_row03
