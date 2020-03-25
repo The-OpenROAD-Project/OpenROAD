@@ -189,18 +189,24 @@ void Opendp::updateDbInstLocations() {
 
 void Opendp::findDesignStats() {
   fixed_inst_count_ = 0;
-  movable_area_ = fixed_area_ = 0;
+  fixed_area_ = 0;
+  fixed_padded_area_ = 0;
+  movable_area_ = 0;
+  movable_padded_area_ = 0;
   max_cell_height_ = 0;
 
   for(Cell &cell : cells_) {
     dbMaster *master = cell.db_inst_->getMaster();
     int64_t cell_area = cell.area();
+    int64_t cell_padded_area = paddedArea(&cell);
     if(isFixed(&cell)) {
       fixed_area_ += cell_area;
+      fixed_padded_area_ += cell_padded_area;
       fixed_inst_count_++;
     }
     else {
       movable_area_ += cell_area;
+      movable_padded_area_ += cell_padded_area;
       int cell_height = gridNearestHeight(&cell);
       if(cell_height > max_cell_height_)
 	max_cell_height_ = cell_height;
@@ -210,8 +216,11 @@ void Opendp::findDesignStats() {
   design_area_ = row_count_ * static_cast< int64_t >(row_site_count_)
     * site_width_ * row_height_;
 
-  design_util_ =
-      static_cast< double >(movable_area_) / (design_area_ - fixed_area_);
+  design_util_ = static_cast< double >(movable_area_)
+    / (design_area_ - fixed_area_);
+
+  design_padded_util_ = static_cast< double >(movable_padded_area_)
+    / (design_area_ - fixed_padded_area_);
 
   if(design_util_ > 1.0) {
     error("utilization exceeds 100%.");
@@ -232,6 +241,7 @@ void Opendp::reportDesignStats() {
   printf("movable area         %8.1f u^2\n",
 	 dbuAreaToMicrons(movable_area_));
   printf("utilization          %8.0f %%\n", design_util_ * 100);
+  printf("utilization padded   %8.0f %%\n", design_padded_util_ * 100);
   printf("rows                 %8d\n", row_count_);
   printf("row height           %8.1f u\n",
 	 dbuToMicrons(row_height_));
@@ -548,6 +558,10 @@ int Opendp::gridPaddedWidth(Cell *cell) {
 
 int Opendp::gridHeight(Cell *cell) {
   return divCeil(cell->height_, row_height_);
+}
+
+int64_t Opendp::paddedArea(Cell *cell) {
+  return paddedWidth(cell) * cell->height_;
 }
 
 // Callers should probably be using gridPaddedWidth.

@@ -220,7 +220,8 @@ class Opendp {
   bool checkPowerLine(Cell &cell);
   bool checkInCore(Cell &cell);
   Cell *checkOverlap(Cell &cell,
-		     Grid *grid);
+		     Grid *grid,
+		     bool padded);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
@@ -247,6 +248,7 @@ class Opendp {
   int gridEndX();
   int gridEndY();
   int gridPaddedWidth(Cell* cell);
+  int64_t paddedArea(Cell *cell);
   int gridNearestHeight(Cell* cell);
   int gridNearestWidth(Cell* cell);
   int gridHeight(Cell* cell);
@@ -323,9 +325,12 @@ class Opendp {
   int64_t design_area_;
   // total movable cell area dbu^2
   int64_t movable_area_;
-  // total fixed cell area (excluding terminal NIs) dbu^2
+  int64_t movable_padded_area_;
+  // total fixed cell area dbu^2
   int64_t fixed_area_;
+  int64_t fixed_padded_area_;
   double design_util_;
+  double design_padded_util_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters

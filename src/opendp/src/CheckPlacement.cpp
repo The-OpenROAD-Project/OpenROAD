@@ -98,14 +98,13 @@ bool Opendp::checkPlacement(bool verbose) {
       placed_failures.push_back(&cell);
     if(checkInCore(cell))
       in_core_failures.push_back(&cell);
-    if(checkOverlap(cell, grid))
+    if(checkOverlap(cell, grid, true))
       overlap_failures.push_back(&cell);
   }
 
   reportFailures(placed_failures, "Placed", verbose);
   reportFailures(in_core_failures, "Placed in core", verbose);
-  reportOverlapFailures(overlap_failures,
-			"Overlap check failed.", verbose, grid);
+  reportOverlapFailures(overlap_failures, "Overlap.", verbose, grid);
   reportFailures(row_failures, "Row", verbose);
   reportFailures(site_failures, "Site", verbose);
   reportFailures(power_line_failures, "Power line", verbose);
@@ -155,7 +154,7 @@ void Opendp::reportOverlapFailures(vector<Cell*> failures,
     warn("%s check failed (%d).", msg, failures.size());
     if (verbose) {
       for(Cell *cell : failures) {
-	Cell *overlap = checkOverlap(*cell, grid);
+	Cell *overlap = checkOverlap(*cell, grid, true);
 	printf(" %s%s overlaps %s%s\n",
 	       cell->name(),
 	       isPadded(cell) ? " padded" : "",
@@ -192,19 +191,28 @@ bool Opendp::checkInCore(Cell &cell) {
 }
 
 
+// Return the cell this cell overlaps.
 Cell *Opendp::checkOverlap(Cell &cell,
-			   Grid *grid) {
-  int grid_x = gridPaddedX(&cell);
-  int x_ur = gridPaddedEndX(&cell);
-  int grid_y = gridY(&cell);
+			   Grid *grid,
+			   bool padded) {
+  int x_ll, x_ur;
+  if (padded) {
+    x_ll = gridPaddedX(&cell);
+    x_ur = gridPaddedEndX(&cell);
+  }
+  else {
+    x_ll = gridX(&cell);
+    x_ur = gridEndX(&cell);
+  }
+  int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
-  grid_x = max(0, grid_x);
-  grid_y = max(0, grid_y);
+  x_ll = max(0, x_ll);
+  y_ll = max(0, y_ll);
   x_ur = min(x_ur, row_site_count_);
   y_ur = min(y_ur, row_count_);
   
-  for(int j = grid_y; j < y_ur; j++) {
-    for(int k = grid_x; k < x_ur; k++) {
+  for(int j = y_ll; j < y_ur; j++) {
+    for(int k = x_ll; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
       if(pixel.cell) {
 	// BLOCK/BLOCK overlaps allowed
