@@ -165,10 +165,17 @@ proc get_inst_grid_bbox { inst_name } {
   set height [$site getHeight]
   if { $inst != "NULL" } {
     set bbox [$inst getBBox]
-    #return "[format %.1f [expr [$bbox xMin] / $width]] [format %.1f [expr [$bbox yMin] / $height]] [format %.1f [expr [$bbox xMax] / $width]] [format %.1f [expr [$bbox yMax] / $height]]"
-    return "[expr [$bbox xMin] / $width] [expr [$bbox yMin] / $height] [expr [$bbox xMax] / $width] [expr [$bbox yMax] / $height]"
+    return "[format_grid [$bbox xMin] $width] [format_grid [$bbox yMin] $height] [format_grid [$bbox xMax] $width] [format_grid [$bbox yMax] $height]"
   } else {
     error "cannot find instance $inst_name"
+  }
+}
+
+proc format_grid { x w } {
+  if { [expr $x % $w] == 0 } {
+    return [expr $x / $w]
+  } else {
+    return [format "%.1f" [expr $x / $w]]
   }
 }
 
