@@ -222,13 +222,15 @@ class Opendp {
   Cell *checkOverlap(Cell &cell,
 		     Grid *grid,
 		     bool padded);
+  bool overlap(Cell *cell1, Cell *cell2, bool padded);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
-  void reportOverlapFailures(vector<Cell*> failures,
-			     const char *msg,
-			     bool verbose,
-			     Grid *grid);
+  void reportFailures(vector<Cell*> failures,
+		      const char *msg,
+		      bool verbose,
+		      std::function<void(Cell *cell)> report_failure);
+  void reportOverlapFailure(Cell *cell, Grid *grid, bool padded);
 
   void rectDist(Cell *cell,
 		Rect *rect,
@@ -239,6 +241,7 @@ class Opendp {
 	       Rect *rect);
   Power rowTopPower(int row);
   dbOrientType rowOrient(int row);
+  bool havePadding();
 
   Grid *makeGrid();
   void deleteGrid(Grid *grid);

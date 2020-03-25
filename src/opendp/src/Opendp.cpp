@@ -161,6 +161,10 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
+bool Opendp::havePadding() {
+  return pad_left_ > 0 || pad_right_ > 0;
+}
+
 void Opendp::importDb() {
   clear();
   dbToOpendp();

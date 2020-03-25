@@ -145,12 +145,28 @@ proc get_masters_arg { master_names } {
   return $names
 }
 
-proc report_inst_bbox { inst_name } {
+proc get_inst_bbox { inst_name } {
   set block [ord::get_db_block]
   set inst [$block findInst $inst_name]
   if { $inst != "NULL" } {
     set bbox [$inst getBBox]
     return "[$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]"
+  } else {
+    error "cannot find instance $inst_name"
+  }
+}
+
+proc get_inst_grid_bbox { inst_name } {
+  set block [ord::get_db_block]
+  set inst [$block findInst $inst_name]
+  set rows [$block getRows]
+  set site [[lindex $rows 0] getSite]
+  set width [$site getWidth]
+  set height [$site getHeight]
+  if { $inst != "NULL" } {
+    set bbox [$inst getBBox]
+    #return "[format %.1f [expr [$bbox xMin] / $width]] [format %.1f [expr [$bbox yMin] / $height]] [format %.1f [expr [$bbox xMax] / $width]] [format %.1f [expr [$bbox yMax] / $height]]"
+    return "[expr [$bbox xMin] / $width] [expr [$bbox yMin] / $height] [expr [$bbox xMax] / $width] [expr [$bbox yMax] / $height]"
   } else {
     error "cannot find instance $inst_name"
   }
