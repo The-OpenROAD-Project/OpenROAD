@@ -55,6 +55,9 @@ using odb::dbPlacementStatus;
 void
 Opendp::fillerPlacement(StringSeq *filler_master_names)
 {
+  if (cells_.empty())
+    importDb();
+
   findFillerMasters(filler_master_names);
   gap_fillers_.clear();
   filler_count_ = 0;
@@ -160,17 +163,20 @@ Opendp::gapFillers(int gap)
   dbMasterSeq &fillers = gap_fillers_[gap];
   if (fillers.empty()) {
     int width = 0;
+    dbMaster *smallest_filler = filler_masters_[filler_masters_.size() - 1];
+    bool have_filler1 = smallest_filler->getWidth() == site_width_;
     for (dbMaster *filler_master : filler_masters_) {
       int filler_width = filler_master->getWidth() / site_width_;
-      while ((width + filler_width) <= gap) {
+      while ((width + filler_width) <= gap
+	     && (have_filler1
+		 || (width + filler_width) != gap - 1)) {
 	fillers.push_back(filler_master);
 	width += filler_width;
 	if (width == gap)
 	  return fillers;
       }
     }
-    string msg = "could not fill gap " + std::to_string(gap);
-    error(msg.c_str());
+    error("could not fill gap of size %d", gap);
     return fillers;
   }
   else
