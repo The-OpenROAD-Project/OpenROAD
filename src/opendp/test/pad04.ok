@@ -14,7 +14,7 @@ Notice 0: Finished DEF file: pad04.def
 Design Stats
 --------------------------------
 total instances            10
-multi instances             0
+multi row instances         0
 fixed instances             0
 nets                       13
 design area              34.0 u^2

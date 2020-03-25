@@ -17,7 +17,7 @@ Notice 0: Finished DEF file: check6.def
 Design Stats
 --------------------------------
 total instances             2
-multi instances             0
+multi row instances         0
 fixed instances             1
 nets                        4
 design area              34.0 u^2

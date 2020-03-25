@@ -77,13 +77,7 @@ void Opendp::dbToOpendp() {
   block_ = db_->getChip()->getBlock();
   core_ = ord::getCore(block_);
 
-  macro_top_power_ = undefined;
-  vector<dbMaster*> masters;
-  block_->getMasters(masters);
-  for(auto master : masters) {
-    struct Macro &macro = db_master_map_[master];
-    defineTopPower(macro, master);
-  }
+  makeMacros();
   examineRows();
   makeCells();
   makeGroups();
@@ -95,6 +89,16 @@ void Opendp::dbToOpendp() {
 
   Power row_power = (initial_power_ == undefined) ? macro_top_power_ : initial_power_;
   row0_top_power_is_vdd_ = (row_power == VDD);
+}
+
+void Opendp::makeMacros() {
+  macro_top_power_ = undefined;
+  vector<dbMaster*> masters;
+  block_->getMasters(masters);
+  for(auto master : masters) {
+    struct Macro &macro = db_master_map_[master];
+    defineTopPower(macro, master);
+  }
 }
 
 void Opendp::defineTopPower(Macro &macro,

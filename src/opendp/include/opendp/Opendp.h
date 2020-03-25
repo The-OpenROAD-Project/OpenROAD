@@ -155,6 +155,7 @@ class Opendp {
  private:
   void importDb();
   void dbToOpendp();
+  void makeMacros();
   void examineRows();
   void makeCells();
   bool isPlacedType(dbMasterType type);
@@ -171,10 +172,8 @@ class Opendp {
 		      dbMaster *master);
   int find_ymax(dbMTerm* term);
 
-  // read files for legalizer - parser.cpp
-  void initAfterImport();
+  void initGrid();
   void findDesignStats();
-  void copy_init_to_final();
 
   void detailedPlacement();
   Point nearestPt(Cell* cell, Rect* rect);
@@ -192,9 +191,8 @@ class Opendp {
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
-  vector< Cell* > overlap_cells(Cell* cell);
-  set< Cell* > get_cells_from_boundary(Rect* rect);
-  int dist_benefit(Cell* cell, int x, int y);
+  set< Cell* > gridCellsInBoundary(Rect* rect);
+  int distChange(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
@@ -210,7 +208,6 @@ class Opendp {
   int anneal();
   int refine();
 
-  // assign.cpp
   void fixed_cell_assign();
   void group_cell_region_assign();
   void group_pixel_assign();
@@ -342,6 +339,7 @@ class Opendp {
 
   // Magic numbers
   int diamond_search_height_;  // grid units
+  int diamond_search_width_;   // grid units
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
