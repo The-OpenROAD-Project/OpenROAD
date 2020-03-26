@@ -10,30 +10,30 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 482 components and 2074 component-terminals.
 Notice 0:     Created 385 nets and 1110 connections.
 Notice 0: Finished DEF file: gcd/floorplan.def
-##Power Delivery Network Generator: Generating PDN
-##  config: gcd/PDN.cfg
-Design Name is gcd
-Reading BEOL LEF and gathering information ...
-****** INFO ******
+[INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
+[INFO] [PDNG-0016]   config: gcd/PDN.cfg
+[INFO] [PDNG-0008] Design Name is gcd
+[INFO] [PDNG-0009] Reading technology data
+[INFO] [PDNG-0011] ****** INFO ******
 Type: stdcell, grid
     Stdcell Rails
-      Layer: metal1 - Width: 0.170 Pitch: 2.400 Offset: 0.000
+      Layer: metal1 -  width: 0.170  pitch: 2.400  offset: 0.000 
     Straps
-      Layer: metal4 - Width: 0.480 Pitch: 56.000 Offset: 2.000
-      Layer: metal7 - Width: 1.400 Pitch: 40.000 Offset: 2.000
+      Layer: metal4 -  width: 0.480  pitch: 56.000  offset: 2.000 
+      Layer: metal7 -  width: 1.400  pitch: 40.000  offset: 2.000 
     Connect: {metal1 metal4} {metal4 metal7}
 Type: macro, macro_1
     Macro orientation: R0 R180 MX MY
     Straps
-      Layer: metal5 - Width: 0.930 Pitch: 40.000 Offset: 2.000
-      Layer: metal6 - Width: 0.930 Pitch: 40.000 Offset: 2.000
+      Layer: metal5 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
     Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
 Type: macro, macro_2
     Macro orientation: R90 R270 MXR90 MYR90
     Straps
-      Layer: metal6 - Width: 0.930 Pitch: 40.000 Offset: 2.000
+      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
     Connect: {metal4_PIN_hor metal6} {metal6 metal7}
-**** END INFO ****
-Inserting stdcell grid - grid
-Writing to database
+[INFO] [PDNG-0012] **** END INFO ****
+[INFO] [PDNG-0013] Inserting stdcell grid - grid
+[INFO] [PDNG-0015] Writing to database
 No differences found.

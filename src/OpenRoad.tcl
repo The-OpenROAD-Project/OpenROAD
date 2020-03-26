@@ -110,7 +110,25 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
+################################################################
+
 namespace eval ord {
+
+trace variable ::file_continue_on_error "w" \
+  ord::trace_file_continue_on_error
+
+# Sync with sta::sta_continue_on_error used by 'source' proc defined by OpenSTA.
+proc trace_file_continue_on_error { name1 name2 op } {
+  set ::sta_continue_on_error $::file_continue_on_error
+}
+
+proc error { what } {
+  ::error "Error: $what"
+}
+
+proc warn { what } {
+  puts "Warning: $what"
+}
 
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
@@ -119,4 +137,14 @@ proc ensure_units_initialized { } {
 }
 
 # namespace ord
+}
+
+# redefine sta::sta_error to call ord::error
+namespace eval sta {
+
+proc sta_error { msg } {
+  ord::error $msg
+}
+
+# namespace sta
 }

@@ -20,7 +20,7 @@ set(DBSTA_WRAP ${CMAKE_CURRENT_BINARY_DIR}/dbSta_wrap.cc)
 set(DBSTA_SWIG_FILES
   ${DBSTA_HOME}/src/dbSta.i
 
-  ${OPENSTA_HOME}/tcl/StaException.i
+  ${OPENSTA_HOME}/tcl/Exception.i
   ${OPENSTA_HOME}/tcl/StaTcl.i
   ${OPENSTA_HOME}/tcl/NetworkEdit.i
   ${OPENSTA_HOME}/sdf/Sdf.i

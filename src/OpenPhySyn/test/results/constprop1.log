@@ -1,0 +1,18 @@
+1
+Notice 0: Reading LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: constprop1.def
+Notice 0: Design: Constants
+Notice 0:     Created 11 pins.
+Notice 0:     Created 12 components and 56 component-terminals.
+Notice 0:     Created 20 nets and 32 connections.
+Notice 0: Finished DEF file: constprop1.def
+No. Instances: 12
+[info] Invoking constant_propagation transform
+[info] Finished constant_propagation transform (5)
+No. Instances: 10
+No differences found.

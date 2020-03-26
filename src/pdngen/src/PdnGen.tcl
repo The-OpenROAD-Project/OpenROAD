@@ -28,7 +28,54 @@
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-sta::define_cmd_args "pdngen" {[-verbose] config_file}
+#sta::define_cmd_args "pdngen" {[-verbose] config_file}
+
+# Messages:
+# 
+# Information
+# 8 "Design Name is $design_name"
+# 9 "Reading technology data"
+# 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
+# 11 "****** INFO ******"
+# 12 "**** END INFO ****"
+# 13 "Inserting stdcell grid - [dict get $specification name]"
+# 14 "Inserting stdcell grid"
+# 15 "Writing to database"
+# 16 "##Power Delivery Network Generator: Generating PDN"
+# 16 "##  config: $config"
+# 32 "Generating blockages for TrionRoute"
+# 34 "Inserting macro grid for instance $instance"
+#
+# Warning
+# 1 "run_pdngen is deprecated. Use pdngen."
+# 2 "No shapes on layer $l1 for $tag"
+# 3 "No shapes on layer $l2 for $tag"
+# 4 "Unexpected number of points in connection shape ($l1,$l2 $tag [llength $points])"
+# 5 (points list)
+# 6 "Unexpected number of points in shape ($lay $signal_type [llength $points])"
+# 7 (points list)
+# 17 "No stdcell grid specification found - no rails inserted"
+# 18 "No macro grid specifications found - no straps added"
+# 
+# Error
+# 
+# Critical
+# 19 "Cannot find layer $layer_name in loaded technology"
+# 20 "Failed to read CUTCLASS property '$line'"
+# 21 "Failed to read ENCLOSURE property '$line'"
+# 22 "Cant find lower metal layer $layer1"
+# 23 "Cant find upper metal layer $layer2"
+# 24 "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
+# 25 "Unexpected row orientation $orient for row [$row getName]"
+# 26 "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
+# 27 "Illegal orientation $orientation specified"
+# 28 "File $PDN_cfg does not exist, or exists but empty"
+# 29 "Illegal number of elements defined for ::halo \"$::halo\" (1, 2 or 4 allowed)"
+# 30 "Layer specified for std. cell rails '$layer' not in list of layers."
+# 31 "No matching grid specification found for $instance"
+# 33 "Unknown direction for layer $layer_name"
+#
+# 9999 - Unexpected error
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -38,15 +85,20 @@ proc pdngen { args } {
 
   sta::check_argc_eq1 "pdngen" $args
   set config_file $args
-  #ord::ensure_linked
-  if { [catch { pdngen::apply_pdn $config_file $verbose } error_msg] } {
-    puts $error_msg
+
+  if {[catch {pdngen::apply_pdn $config_file $verbose } error_msg]} {
+    if {[regexp {\[PDNG\-[0-9]*\]} $error_msg]} {
+      puts $error_msg
+    } else {
+      pdngen::critical 9999 "Unexpected error: $error_msg"
+    }
+    error "Execution stopped"
   }
 }
 
 # temporary alias to old name
 proc run_pdngen { args } {
-  puts "Warning: run_pdngen is deprecated. Use pdngen."
+  pdngen::warning 1 "run_pdngen is deprecated. Use pdngen."
   pdngen $args
 }
 
@@ -72,14 +124,50 @@ variable site_width
 variable site_name
 variable row_height
 variable metal_layers {}
-variable metal_layers_dir {}
+variable layers {}
 variable blockages {} 
 variable instances {}
 variable default_template_name {}
 variable template {}
 variable default_cutclass {}
+variable twowidths_table {}
+variable twowidths_table_wrongdirection {}
 
 #This file contains procedures that are used for PDN generation
+proc set_message {level message} {
+  return "\[$level\] $message"
+}
+
+proc debug {message} {
+  set state [info frame -1]
+  set str ""
+  if {[dict exists $state file]} {
+    set str "$str[dict get $state file]:"
+  }
+  if {[dict exists $state proc]} {
+    set str "$str[dict get $state proc]:"
+  }
+  if {[dict exists $state line]} {
+    set str "$str[dict get $state line]"
+  }
+  puts [set_message DEBUG "$str: $message"]
+}
+
+proc information {id message} {
+  puts [set_message INFO [format "\[PDNG-%04d\] %s" $id $message]]
+}
+
+proc warning {id message} {
+  puts [set_message WARN [format "\[PDNG-%04d\] %s" $id $message]]
+}
+
+proc err {id message} {
+  puts [set_message ERROR [format "\[PDNG-%04d\] %s" $id $message]]
+}
+
+proc critical {id message} {
+  error [set_message CRIT [format "\[PDNG-%04d\] %s" $id $message]]
+}
 
 proc lmap {args} {
   set result {}
@@ -92,31 +180,31 @@ proc lmap {args} {
 }
 
 proc get_dir {layer_name} {
-  variable metal_layers 
-  variable metal_layers_dir 
+  variable layers 
+
   if {[regexp {.*_PIN_(hor|ver)} $layer_name - dir]} {
     return $dir
   }
   
-  set idx [lsearch -exact $metal_layers $layer_name]
-  if {[lindex $metal_layers_dir $idx] == "HORIZONTAL"} {
-    return "hor"
-  } else {
-    return "ver"
+  if {![dict exists $layers $layer_name direction]} {
+    critical 33 "Unknown direction for layer $layer_name"
   }
+  return [dict get $layers $layer_name direction]
 }
 
 proc get_rails_layers {} {
   variable design_data
   
-  foreach type [dict keys [dict get $design_data grid]] {
-    dict for {name specification} [dict get $design_data grid $type] {
-      if {[dict exists $specification rails]} {
-        return [dict keys [dict get $specification rails]]
+  if {[dict exists $design_data grid]} {
+    foreach type [dict keys [dict get $design_data grid]] {
+      dict for {name specification} [dict get $design_data grid $type] {
+        if {[dict exists $specification rails]} {
+          return [dict keys [dict get $specification rails]]
+        }
       }
     }
   }
-  error "Cannot determine layer to use for stdcell rails"
+  return {}
 }
 
 proc is_rails_layer {layer} {
@@ -174,7 +262,7 @@ proc find_layer {layer_name} {
   variable tech
 
   if {[set layer [$tech findLayer $layer_name]] == "NULL"} {
-    error "Cannot find layer $layer_name in loaded technology"
+    critical 19 "Cannot find layer $layer_name in loaded technology"
   }
   return $layer
 }
@@ -209,9 +297,87 @@ proc read_spacing {layer_name} {
       }
     }
   }
-  # puts "read_spacing: $layer_name $spacing"
+  # debug "$layer_name $spacing"
   dict set layers $layer_name spacing $spacing 
-  # puts "read_spacing: $layer_name [dict get $layers $layer_name]"
+  # debug "$layer_name [dict get $layers $layer_name]"
+}
+
+proc read_spacingtables {layer_name} {
+  variable layers 
+  variable def_units
+
+  set layer [find_layer $layer_name]
+  set prls {}
+
+  if {[$layer hasTwoWidthsSpacingRules]} {
+    set type "TWOWIDTHS"
+    set subtype "NONE"
+    
+    set table_size [$layer getTwoWidthsSpacingTableNumWidths]
+    for {set i 0} {$i < $table_size} {incr i} {
+      set width [$layer getTwoWidthsSpacingTableWidth $i]
+
+      if {[$layer getTwoWidthsSpacingTableHasPRL $i]} {
+        set prl [$layer getTwoWidthsSpacingTablePRL $i] 
+      } else {
+        set prl 0
+      }
+      set spacings {}
+      for {set j 0} {$j < $table_size} {incr j} {
+        lappend spacings [$layer getTwoWidthsSpacingTableEntry $i $j]
+      }
+      
+      dict set layers $layer_name spacingtable $type $subtype $width [list prl $prl spacings $spacings]
+    }
+  }
+  
+  set_prop_lines $layer LEF58_SPACINGTABLE
+  set spacing {}
+
+  while {![empty_propline]} {
+    set line [read_propline]
+    # debug "$line"
+    set type [lindex $line 1]
+    set subtype [lindex $line 2]
+    
+    set table_entry_indexes [lsearch -exact -all $line "WIDTH"] 
+    set num_entries [llength $table_entry_indexes]
+    
+    foreach start_index $table_entry_indexes {
+      set pos $start_index
+      incr pos
+      set width [expr round([lindex $line $pos] * $def_units)]
+      incr pos
+      if {[lindex $line $pos] == "PRL"} {
+        incr pos
+        set prl [expr round([lindex $line $pos] * $def_units)]
+        incr pos
+      } else {
+        set prl 0
+      }
+      set spacings {}
+      for {set i 0} {$i < $num_entries} {incr i} {
+        # debug "[expr $i + $pos] [lindex $line [expr $i + $pos]]"
+        lappend spacings [expr round([lindex $line [expr $i + $pos]] * $def_units)]
+      }
+      dict set layers $layer_name spacingtable $type $subtype $width [list prl $prl spacings $spacings]
+    }
+  }
+   
+  if {![dict exists $layers $layer_name spacingtable]} {
+    dict set layers $layer_name spacingtable {}
+  }
+  # debug "$layer_name [dict get $layers $layer_name]"
+}
+
+proc get_spacingtables {layer_name} {
+  variable layers
+  
+  if {![dict exists $layers $layer_name spacingtable]} {
+    read_spacingtables $layer_name
+  }
+  
+  return [dict get $layers $layer_name spacingtable]
 }
 
 proc get_concave_spacing_value {layer_name other_layer_name} {
@@ -221,7 +387,7 @@ proc get_concave_spacing_value {layer_name other_layer_name} {
   if {![dict exists $layers $layer_name spacing]} {
     read_spacing $layer_name
   }
-  # puts "get_concave_spacing_value: $layer_name [dict get $layers $layer_name]"
+  # debug "$layer_name [dict get $layers $layer_name]"
   if {[dict exists $layers $layer_name spacing [dict get $default_cutclass $layer_name] $other_layer_name concave]} {
     return [dict get $layers $layer_name spacing [dict get $default_cutclass $layer_name] $other_layer_name concave]
   }
@@ -260,7 +426,6 @@ proc read_arrayspacing {layer_name} {
 }
 
 proc read_cutclass {layer_name} {
-  variable tech
   variable layers 
   variable def_units
   variable default_cutclass
@@ -273,9 +438,9 @@ proc read_cutclass {layer_name} {
   while {![empty_propline]} {
     set line [read_propline]
     if {![regexp {CUTCLASS\s+([^\s]+)\s+WIDTH\s+([^\s]+)\s+LENGTH\s+([^\s]+)} $line - cut_class width length]} {
-      error "Failed to read CUTCLASS property '$line'"
+      critical 20 "Failed to read CUTCLASS property '$line'"
     }
-    if {$min_area == -1 || [expr $width * $length] < $min_area} {
+    if {$min_area == -1 || ($width * $length) < $min_area} {
       dict set default_cutclass $layer_name $cut_class
       set min_area [expr $width * $length]
     }
@@ -284,7 +449,6 @@ proc read_cutclass {layer_name} {
 }
 
 proc read_enclosures {layer_name} {
-  variable tech
   variable layers 
   variable def_units
   
@@ -294,25 +458,39 @@ proc read_enclosures {layer_name} {
 
   while {![empty_propline]} {
     set line [read_propline]
-    set flags {}
+    # debug "$line"
+    set enclosure {}
     if {[set idx [lsearch -exact $line EOL]] > -1} {
-      # Don't need to handle this rule type
       continue
+      dict set enclosure eol [expr round([lindex $line [expr $idx + 1]] * $def_units)]
+      set line [lreplace $line $idx [expr $idx + 1]]
+    }
+    if {[set idx [lsearch -exact $line EOLONLY]] > -1} {
+      dict set enclosure eolonly 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch -exact $line SHORTEDGEONEOL]] > -1} {
+      dict set enclosure shortedgeoneol 1
+      set line [lreplace $line $idx $idx]
+    }
+    if {[set idx [lsearch -exact $line MINLENGTH]] > -1} {
+      dict set enclosure minlength [expr round([lindex $line [expr $idx + 1]] * $def_units)]
+      set line [lreplace $line $idx [expr $idx + 1]]
     }
     if {[set idx [lsearch -exact $line ABOVE]] > -1} {
-      dict set flags above 1
+      dict set enclosure above 1
       set line [lreplace $line $idx $idx]
     }
     if {[set idx [lsearch -exact $line BELOW]] > -1} {
-      dict set flags below 1
+      dict set enclosure below 1
       set line [lreplace $line $idx $idx]
     }
     if {[set idx [lsearch -exact $line END]] > -1} {
-      dict set flags end 1
+      dict set enclosure end 1
       set line [lreplace $line $idx $idx]
     }
     if {[set idx [lsearch -exact $line SIDE]] > -1} {
-      dict set flags side 1
+      dict set enclosure side 1
       set line [lreplace $line $idx $idx]
     }
 
@@ -321,22 +499,30 @@ proc read_enclosures {layer_name} {
     set width [expr round($width * $def_units)]
     
     if {![regexp {ENCLOSURE CUTCLASS\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)} $line - cut_class overlap1 overlap2]} {
-      error "Failed to read ENCLOSURE property '$line'"
+      critical 21 "Failed to read ENCLOSURE property '$line'"
     }
-    
+    dict set enclosure overlap1 [expr round($overlap1 * $def_units)]
+    dict set enclosure overlap2 [expr round($overlap2 * $def_units)]
+    # debug "class - $cut_class enclosure - $enclosure"
     if {$prev_cutclass != $cut_class} {
       set enclosures {}
       set prev_cutclass $cut_class
     }
-    dict lappend enclosures $width [list [expr round($overlap1 * $def_units)] [expr round($overlap2 * $def_units)]]
+    dict lappend enclosures $width $enclosure
     dict set layers $layer_name cutclass $cut_class enclosures $enclosures 
   }
+  # debug "end"
 }
 
-proc get_via_enclosure {via_info width} {
+proc get_via_enclosure {via_info lower_width upper_width} {
   variable layers
   variable default_cutclass
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
   
+  # debug "via_info $via_info width $lower_width,$upper_width"
   set layer_name [dict get $via_info cut layer]
   
   if {![dict exists $layers $layer_name cutclass]} {
@@ -344,7 +530,7 @@ proc get_via_enclosure {via_info width} {
     read_enclosures $layer_name
   }
 
-  if {![dict exists $default_cutclass $layer_name]} {
+  if {!([dict exists $default_cutclass $layer_name] && [dict exists $layers $layer_name cutclass [dict get $default_cutclass $layer_name] enclosures])} {
     set lower_enclosure [dict get $via_info lower enclosure]
     set upper_enclosure [dict get $via_info upper enclosure]
 
@@ -369,31 +555,101 @@ proc get_via_enclosure {via_info width} {
     set selected_enclosure [list $min_lower_enclosure $max_lower_enclosure $min_upper_enclosure $max_upper_enclosure]
   } else {
     set enclosures [dict get $layers $layer_name cutclass [dict get $default_cutclass $layer_name] enclosures]
+    # debug "Enclosure set $enclosures"
+    set upper_enclosures {}
+    set lower_enclosures {}
+    
+    set width $lower_width
+      
     foreach size [lreverse [dict keys $enclosures]] {
       if {$width >= $size} {
           break
       }
     }
 
-    set enclosure [dict get $enclosures $size]
-    # puts "get_via_enclosure: enclosure: $enclosure"
-    if {[llength $enclosure] > 1} {
-      set selected_enclosure [list {*}[lindex $enclosure 0] {*}[lindex $enclosure 0]]
-      set selected_min [expr min([lindex $selected_enclosure 0], [lindex $selected_enclosure 1])]
-      foreach enc [lrange $enclosure 1 end] {
-        set cur_min [expr min([lindex $enc 0], [lindex $enc 1])]
-        if {$cur_min < $selected_min} {
-          set selected_min $cur_min
-          set selected_enclosure [list {*}$enc {*}$enc]
+    set enclosure_list [dict get $enclosures $size]
+    # debug "Initial enclosure_list (size = $size)- $enclosure_list"
+    if {$size > 0} {
+      foreach enclosure $enclosure_list {
+        if {![dict exists $enclosure above]} {
+          lappend lower_enclosures $enclosure
         }
       }
-    } else { 
-      set selected_enclosure [list {*}[lindex $enclosure 0] {*}[lindex $enclosure 0]]
     }
-  }
-  # puts "get_via_enclosure: $selected_enclosure"
-  return $selected_enclosure
 
+    set width $upper_width
+      
+    foreach size [lreverse [dict keys $enclosures]] {
+      if {$width >= $size} {
+          break
+      }
+    }
+
+    set enclosure_list [dict get $enclosures $size]
+    # debug "Initial enclosure_list (size = $size)- $enclosure_list"
+    if {$size > 0} {
+      foreach enclosure $enclosure_list {
+        if {![dict exists $enclosure above]} {
+          lappend upper_enclosures $enclosure
+        }
+      }
+    }
+
+    if {[llength $upper_enclosures] == 0} {
+      set zero_enclosures_list [dict get $enclosures 0]
+      foreach enclosure $zero_enclosures_list {
+        if {![dict exists $enclosure below]} {
+          lappend upper_enclosures $enclosure
+        }
+      }
+    }
+    if {[llength $lower_enclosures] == 0} {
+      set zero_enclosures_list [dict get $enclosures 0]
+      foreach enclosure $zero_enclosures_list {
+        if {![dict exists $enclosure above]} {
+          lappend lower_enclosures $enclosure
+        }
+      }
+    }
+    set upper_min -1
+    set lower_min -1
+    if {[llength $upper_enclosures] > 1} {
+      foreach enclosure $upper_enclosures {
+        # debug "upper enclosure - $enclosure"
+        set this_min [expr min([dict get $enclosure overlap1], [dict get $enclosure overlap2])]
+        if {$upper_min < 0 || $this_min < $upper_min} {
+          set upper_min $this_min
+          set upper_enc [list [dict get $enclosure overlap1] [dict get $enclosure overlap2]]
+          # debug "upper_enc: $upper_enc"
+        }
+      }
+    } else {
+      set enclosure [lindex $upper_enclosures 0]
+      set upper_enc [list [dict get $enclosure overlap1] [dict get $enclosure overlap2]]
+    }
+    if {[llength $lower_enclosures] > 1} {
+      foreach enclosure $lower_enclosures {
+        # debug "lower enclosure - $enclosure"
+        set this_min [expr min([dict get $enclosure overlap1], [dict get $enclosure overlap2])]
+        if {$lower_min < 0 || $this_min < $lower_min} {
+          set lower_min $this_min
+          set lower_enc [list [dict get $enclosure overlap1] [dict get $enclosure overlap2]]
+        }
+      }
+      # debug "[llength $lower_enclosures] lower_enc: $lower_enc"
+    } else {
+      set enclosure [lindex $lower_enclosures 0]
+      set lower_enc [list [dict get $enclosure overlap1] [dict get $enclosure overlap2]]
+      # debug "1 lower_enc: lower_enc: $lower_enc"
+    }
+    set selected_enclosure [list {*}$lower_enc {*}$upper_enc]
+  }
+  # debug "selected $selected_enclosure"
+  set min_lower_enclosure [expr min([lindex $selected_enclosure 0], [lindex $selected_enclosure 1])]
+  set max_lower_enclosure [expr max([lindex $selected_enclosure 0], [lindex $selected_enclosure 1])]
+  set min_upper_enclosure [expr min([lindex $selected_enclosure 2], [lindex $selected_enclosure 3])]
+  set max_upper_enclosure [expr max([lindex $selected_enclosure 2], [lindex $selected_enclosure 3])]
+  # debug "enclosures - min_lower $min_lower_enclosure max_lower $max_lower_enclosure min_upper $min_upper_enclosure max_upper $max_upper_enclosure"
 }
 
 proc select_via_info {lower} {
@@ -409,12 +665,6 @@ proc set_layer_info {layer_info} {
   variable layers
   
   set layers $layer_info
-}
-
-proc get_layer_info {} {
-  variable layers 
-  
-  return $layers
 }
 
 proc read_widthtable {layer_name} {
@@ -465,7 +715,8 @@ proc get_adjusted_width {layer width} {
   set widthtable [get_widthtable $layer]
 
   if {[llength $widthtable] == 0} {return $width}
-  if {[lsearch -exact $widthtable $width] > 0} {return $width}
+  # debug "widthtable $layer ($width): $widthtable"
+  if {[lsearch -exact $widthtable $width] > -1} {return $width}
   if {$width > [lindex $widthtable end]} {return $width}
 
   foreach value $widthtable {
@@ -489,289 +740,611 @@ proc get_arrayspacing_rule {layer_name} {
 
 proc use_arrayspacing {layer_name rows columns} {
   set arrayspacing [get_arrayspacing_rule $layer_name]
-  # puts "use_arrayspacing: $arrayspacing"
-  # puts "use_arrayspacing: $rows $columns"
+  # debug "$arrayspacing"
+  # debug "$rows $columns"
   if {[llength $arrayspacing] == 0} {
-    # puts "use_arrayspacing: No array spacing rule defined"
+    # debug "No array spacing rule defined"
     return 0
   }
-  # puts "use_arrayspacing: [dict keys [dict get $arrayspacing arraycuts]]"
+  # debug "[dict keys [dict get $arrayspacing arraycuts]]"
   if {[dict exists $arrayspacing arraycuts [expr min($rows,$columns)]]} {
-    # puts "use_arrayspacing: Matching entry in arrayspacing"
+    # debug "Matching entry in arrayspacing"
     return 1
   }
-  if {[expr min($rows,$columns)] < [lindex [dict keys [dict get $arrayspacing arraycuts]] 0]} {
-    # puts "use_arrayspacing: row/columns less than min array spacing"
+  if {min($rows,$columns) < [lindex [dict keys [dict get $arrayspacing arraycuts]] 0]} {
+    # debug "row/columns less than min array spacing"
     return 0
   }
-  if {[expr min($rows,$columns)] > [lindex [dict keys [dict get $arrayspacing arraycuts]] end]} {
-    # puts "use_arrayspacing: row/columns greater than min array spacing"
+  if {min($rows,$columns) > [lindex [dict keys [dict get $arrayspacing arraycuts]] end]} {
+    # debug "row/columns greater than min array spacing"
     return 1
   }
-  # puts "use_arrayspacing: default 1"
+  # debug "default 1"
   return 1
+}
+
+proc determine_num_via_columns {via_info constraints} {
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable lower_dir
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+  variable cut_width
+  variable xcut_pitch
+  variable xcut_spacing
+  variable def_units
+
+  # What are the maximum number of columns that we can fit in this space?
+  set i 1
+  if {$lower_dir == "hor"} {
+    set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
+    set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $max_upper_enclosure]
+  } else {
+    set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $max_lower_enclosure]
+    set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
+  }
+  if {[dict exists $constraints cut_pitch]} {set xcut_pitch [expr round([dict get $constraints cut_pitch] * $def_units)]}
+  
+  while {$via_width_lower < $lower_width && $via_width_upper < $upper_width} {
+    incr i
+    if {$lower_dir == "hor"} {
+      set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $max_lower_enclosure]
+      set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
+    } else {
+      set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
+      set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $max_upper_enclosure]
+    }
+  }
+  set xcut_spacing [expr $xcut_pitch - $cut_width]
+  set columns [expr max(1, $i - 1)]
+  # debug "cols $columns W: via_width_lower $via_width_lower >= lower_width $lower_width || via_width_upper $via_width_upper >= upper_width $upper_width"
+  if {[dict exists $constraints max_columns]} {
+    if {$columns > [dict get $constraints max_columns]} {
+      set columns [dict get $constraints max_columns]
+
+      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info lower layer]]
+      # debug "$lower_concave_enclosure $max_lower_enclosure"
+      if {$lower_concave_enclosure > $max_lower_enclosure} {
+        set max_lower_enclosure $lower_concave_enclosure
+      }
+      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info upper layer]]
+      # debug "$upper_concave_enclosure $max_upper_enclosure"
+      if {$upper_concave_enclosure > $max_upper_enclosure} {
+        set max_upper_enclosure $upper_concave_enclosure
+      }
+    }
+
+  }
+  # debug "$lower_dir"
+  if {$lower_dir == "hor"} {
+    if {[dict get $constraints stack_top] != [dict get $via_info upper layer]} {
+      get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min([expr $cut_width + $xcut_pitch * ($columns - 1)],$upper_height)]
+      set upper_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $min_upper_enclosure]
+    }
+  } else {
+    get_via_enclosure $via_info [expr min([expr $cut_width + $xcut_pitch * ($columns - 1)],$lower_height)] [expr min($upper_width,$upper_height)]
+    set lower_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $min_lower_enclosure]
+  }
+  # debug "cols $columns W: lower $lower_width upper $upper_width"
+  set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
+  set upper_width [get_adjusted_width [dict get $via_info upper layer] $upper_width]
+  # debug "cols $columns W: lower $lower_width upper $upper_width"
+
+  return $columns
+}
+
+proc determine_num_via_rows {via_info constraints} {
+  variable cut_height
+  variable ycut_pitch
+  variable ycut_spacing
+  variable upper_height
+  variable lower_height
+  variable lower_width
+  variable upper_width
+  variable lower_dir
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+  variable def_units
+  
+  # What are the maximum number of rows that we can fit in this space?
+  set i 1
+  if {$lower_dir == "hor"} {
+    set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
+    set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $max_upper_enclosure]
+  } else {
+    set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $max_lower_enclosure]
+    set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
+  }
+  if {[dict exists $constraints cut_pitch]} {set ycut_pitch [expr round([dict get $constraints cut_pitch] * $def_units)]}
+  while {$via_height_lower < $lower_height || $via_height_upper < $upper_height} {
+    incr i
+    if {$lower_dir == "hor"} {
+      set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
+      set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $max_upper_enclosure]
+    } else {
+      set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $max_lower_enclosure]
+      set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
+    }
+  }
+  set ycut_spacing [expr $ycut_pitch - $cut_height]
+  set rows [expr max(1,$i - 1)]
+  # debug "$rows H: $via_height_lower >= $lower_height && $via_height_upper >= $upper_height"
+  if {[dict exists $constraints max_rows]} {
+    if {$rows > [dict get $constraints max_rows]} {
+      set rows [dict get $constraints max_rows]
+
+      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info lower layer]]
+      # debug "$lower_concave_enclosure $max_lower_enclosure"
+      if {$lower_concave_enclosure > $max_lower_enclosure} {
+        set max_lower_enclosure $lower_concave_enclosure
+      }
+      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] [dict get $via_info upper layer]]
+      # debug "$upper_concave_enclosure $max_upper_enclosure"
+      if {$upper_concave_enclosure > $max_upper_enclosure} {
+        set max_upper_enclosure $upper_concave_enclosure
+      }
+
+    }                                                                              
+  }
+  if {$lower_dir == "hor"} {
+    get_via_enclosure $via_info [expr min($lower_width,[expr $cut_height + $ycut_pitch * ($rows - 1)])] [expr min($upper_width,$upper_height)]
+    set lower_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_lower_enclosure]
+    # debug "modify lower_height to $lower_height ($cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_lower_enclosure"
+  } else {
+    # debug "[dict get $constraints stack_top] != [dict get $via_info upper layer]"
+    if {[dict get $constraints stack_top] != [dict get $via_info upper layer]} {
+      get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min($upper_width,[expr $cut_height + $ycut_pitch * ($rows - 1)])]
+      set upper_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_upper_enclosure]
+      # debug "modify upper_height to $upper_height ($cut_height + $ycut_pitch * ($rows - 1) + 2 * $min_upper_enclosure"
+    }
+  }
+  # debug "$rows H: lower $lower_height upper $upper_height"
+  set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
+  set upper_height [get_adjusted_width [dict get $via_info upper layer] $upper_height]
+  # debug "$rows H: lower $lower_height upper $upper_height"
+
+
+  return $rows
+}
+
+proc init_via_width_height {lower_layer width height constraints} {
+  variable def_units
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable lower_dir
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+  variable cut_width
+  variable cut_height
+  variable xcut_pitch
+  variable ycut_pitch
+  variable xcut_spacing
+  variable ycut_spacing
+
+  set via_info [lindex [select_via_info $lower_layer] 1]
+  set upper_layer [dict get $via_info upper layer]
+
+  set xcut_pitch [lindex [dict get $via_info cut spacing] 0]
+  set ycut_pitch [lindex [dict get $via_info cut spacing] 0]
+
+  set cut_width   [lindex [dict get $via_info cut size] 0]
+  set cut_height  [lindex [dict get $via_info cut size] 1]
+  
+  if {[dict exists $constraints split_cuts $lower_layer]} {
+    if {[get_dir $lower_layer] == "hor"} {
+      set ycut_pitch [expr round([dict get $constraints split_cuts $lower_layer] * $def_units)]
+    } else {
+      set xcut_pitch [expr round([dict get $constraints split_cuts $lower_layer] * $def_units)]
+    }
+  } 
+
+  if {[dict exists $constraints split_cuts $upper_layer]} {
+    if {[get_dir $upper_layer] == "hor"} {
+      set ycut_pitch [expr round([dict get $constraints split_cuts $upper_layer] * $def_units)]
+    } else {
+      set xcut_pitch [expr round([dict get $constraints split_cuts $upper_layer] * $def_units)]
+    }
+  } 
+
+  if {[dict exists $constraints width $lower_layer]} {
+    if {[get_dir $lower_layer] == "hor"} {
+      set lower_height [expr round([dict get $constraints width $lower_layer] * $def_units)]
+      set lower_width  [get_adjusted_width $lower_layer $width]
+    } else {
+      set lower_width [expr round([dict get $constraints width $lower_layer] * $def_units)]
+      set lower_height [get_adjusted_width $lower_layer $height]
+    }
+  } else {
+    # Adjust the width and height values to the next largest allowed value if necessary
+    set lower_width  [get_adjusted_width $lower_layer $width]
+    set lower_height [get_adjusted_width $lower_layer $height]
+  }
+  if {[dict exists $constraints width $upper_layer]} {
+    if {[get_dir $upper_layer] == "hor"} {
+      set upper_height [expr round([dict get $constraints width $upper_layer] * $def_units)]
+      set upper_width  [get_adjusted_width $upper_layer $width]
+    } else {
+      set upper_width [expr round([dict get $constraints width $upper_layer] * $def_units)]
+      set upper_height [get_adjusted_width $upper_layer $height]
+    }
+  } else {
+    set upper_width  [get_adjusted_width $upper_layer $width]
+    set upper_height [get_adjusted_width $upper_layer $height]
+  }
+  # debug "lower (width $lower_width height $lower_height) upper (width $upper_width height $upper_height)"
+  # debug "min - \[expr min($lower_width,$lower_height,$upper_width,$upper_height)\]"
+}
+
+proc get_enclosure_by_direction {layer xenc yenc max_enclosure min_enclosure} {
+  set info {}
+  if {$xenc > $max_enclosure && $yenc > $min_enclosure || $xenc > $min_enclosure && $yenc > $max_enclosure} {
+    # If the current enclosure values meet the min/max enclosure requirements either way round, then keep
+    # the current enclsoure settings
+    dict set info xEnclosure $xenc
+    dict set info yEnclosure $yenc
+  } else {
+    # Enforce min/max enclosure rule, with max_enclosure along the preferred direction of the layer.
+    if {[get_dir $layer] == "hor"} {
+      dict set info xEnclosure [expr max($xenc,$max_enclosure)]
+      dict set info yEnclosure [expr max($yenc,$min_enclosure)]
+    } else {
+      dict set info xEnclosure [expr max($xenc,$min_enclosure)]
+      dict set info yEnclosure [expr max($yenc,$max_enclosure)]
+    }
+  }
+  
+  return $info
+}
+
+proc via_generate_rule {rule_name rows columns constraints} {
+  variable via_info
+  variable xcut_pitch
+  variable ycut_pitch
+  variable xcut_spacing
+  variable ycut_spacing
+  variable cut_height
+  variable cut_width
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable lower_dir
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+
+  set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+  set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+  
+  set lower [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+  set upper [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
+  # debug "rule $rule_name"
+  # debug "lower: width $lower_width height $lower_height"
+  # debug "lower: enc_width $lower_enc_width enc_height $lower_enc_height enclosure_rule $max_lower_enclosure $min_lower_enclosure"
+  # debug "lower: enclosure [dict get $lower xEnclosure] [dict get $lower yEnclosure]"
+
+  return [list [list \
+    name $rule_name \
+    rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
+    cutsize [dict get $via_info cut size] \
+    layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
+    cutspacing [list $xcut_spacing $ycut_spacing] \
+    rowcol [list $rows $columns] \
+    lower_rect [list [expr -1 * $lower_width / 2] [expr -1 * $lower_height / 2] [expr $lower_width / 2] [expr $lower_height / 2]] \
+    upper_rect [list [expr -1 * $upper_width / 2] [expr -1 * $upper_height / 2] [expr $upper_width / 2] [expr $upper_height / 2]] \
+    enclosure [list \
+      [dict get $lower xEnclosure] \
+      [dict get $lower yEnclosure] \
+      [dict get $upper xEnclosure] \
+      [dict get $upper yEnclosure] \
+    ] \
+    origin_x 0 origin_y 0
+  ]]
+}
+
+proc via_generate_array_rule {rule_name rows columns} {
+  variable via_info
+  variable xcut_pitch
+  variable ycut_pitch
+  variable xcut_spacing
+  variable ycut_spacing
+  variable cut_height
+  variable cut_width
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+
+  # We need array vias -
+  # if the min(rows,columns) > ARRAYCUTS
+  #   determine which direction gives best number of CUTs wide using min(ARRAYCUTS)
+  #   After adding ARRAYs, is there space for more vias
+  #   Add vias to the rule with appropriate origin setting
+  # else
+  #   add a single via with min(rows,columns) cuts - hor/ver as required
+
+  
+  set spacing_rule [get_arrayspacing_rule [dict get $via_info cut layer]]
+  set array_size [expr min($rows, $columns)]
+
+  set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+  set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
+  set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
+
+  if {$array_size > [lindex [dict keys [dict get $spacing_rule arraycuts]] end]} {
+    # debug "Multi-viaArrayspacing rule"
+    set use_array_size [lindex [dict keys [dict get $spacing_rule arraycuts]] 0]
+    foreach other_array_size [lrange [dict keys [dict get $spacing_rule arraycuts]] 1 end] {
+      if {$array_size % $use_array_size > $array_size % $other_array_size} {
+        set use_array_size $other_array_size
+      }
+    }
+    set num_arrays [expr $array_size / $use_array_size]
+    set array_spacing [expr max($xcut_spacing,$ycut_spacing,[dict get $spacing_rule arraycuts $use_array_size spacing])]
+
+    set rule [list \
+      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
+      cutsize [dict get $via_info cut size] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
+      cutspacing [list $xcut_spacing $ycut_spacing] \
+      origin_x 0 \
+      origin_y 0 \
+    ]
+    # debug "$rule"
+    set rule_list {}
+    if {$array_size == $rows} {
+      # Split into num_arrays rows of arrays
+      set array_min_size [expr [lindex [dict get $via_info cut size] 0] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
+      set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
+      # debug "Split into $num_arrays rows of arrays"
+
+      set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
+      set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($use_array_size - 1))) / 2)]
+
+      set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+      set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
+
+      dict set rule rowcol [list $use_array_size $columns]
+      dict set rule name "[dict get $via_info cut layer]_ARRAY_${use_array_size}X${columns}"
+      dict set rule enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ]
+
+      set y [expr $array_min_size / 2 - $total_array_size / 2]
+      for {set i 0} {$i < $num_arrays} {incr i} {
+        dict set rule origin_y $y
+        lappend rule_list $rule
+        set y [expr $y + $array_spacing + $array_min_size]
+      }
+    } else {
+      # Split into num_arrays columns of arrays
+      set array_min_size [expr [lindex [dict get $via_info cut size] 1] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
+      set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
+      # debug "Split into $num_arrays columns of arrays"
+
+      set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
+      set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($use_array_size - 1))) / 2)]
+
+      set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+      set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
+
+      dict set rule rowcol [list $rows $use_array_size]
+      dict set rule name "[dict get $via_info cut layer]_ARRAY_${rows}X${use_array_size}"
+      dict set rule enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ]
+
+      set x [expr $array_min_size / 2 - $total_array_size / 2]
+      for {set i 0} {$i < $num_arrays} {incr i} {
+        dict set rule origin_x $x
+        lappend rule_list $rule
+        set x [expr $x + $array_spacing + $array_min_size]
+      }
+    }
+  } else {
+    # debug "Arrayspacing rule"
+    set lower_enc [get_enclosure_by_direction [dict get $via_info lower layer] $lower_enc_width $lower_enc_height $max_lower_enclosure $min_lower_enclosure]
+    set upper_enc [get_enclosure_by_direction [dict get $via_info upper layer] $upper_enc_width $upper_enc_height $max_upper_enclosure $min_upper_enclosure]
+
+    set rule [list \
+      name $rule_name \
+      rule [lindex [select_via_info [dict get $via_info lower layer]] 0] \
+      cutsize [dict get $via_info cut size] \
+      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
+      cutspacing [list $xcut_spacing $ycut_spacing] \
+      rowcol [list $rows $columns] \
+      enclosure [list \
+        [dict get $lower_enc xEnclosure] \
+        [dict get $lower_enc yEnclosure] \
+        [dict get $upper_enc xEnclosure] \
+        [dict get $upper_enc yEnclosure] \
+      ] \
+      origin_x 0 \
+      origin_y 0 \
+    ]
+    set rule_list [list $rule]
+  }
+  
+  return $rule_list
+}
+
+proc via_split_cuts_rule {rows columns constraints} {
+  variable tech
+  variable def_units
+  variable via_info
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+  variable cut_width
+  variable cut_height
+  variable xcut_pitch
+  variable ycut_pitch
+  variable xcut_spacing
+  variable ycut_spacing
+
+  set lower_rects {}
+  set cut_rects   {}
+  set upper_rects {}
+
+  set lower [dict get $via_info lower layer]
+  set upper [dict get $via_info upper layer]
+  # debug $via_info
+  # debug "lower $lower upper $upper"
+  
+  set rule {}
+  set rule [list \
+    rule [lindex [select_via_info $lower] 0] \
+    cutsize [dict get $via_info cut size] \
+    layers [list $lower [dict get $via_info cut layer] $upper] \
+    cutspacing [list $xcut_spacing $ycut_spacing] \
+    rowcol [list 1 1] \
+  ]
+
+  # Enclosure was calculated from full width of intersection - need to recalculate for min cut size.
+  get_via_enclosure $via_info 0 0
+
+  # Area is stored in real units, adjust to def_units
+  set lower_area [expr round([[find_layer $lower] getArea] * $def_units * $def_units)]
+  set upper_area [expr round([[find_layer $upper] getArea] * $def_units * $def_units)]
+
+  if {[get_dir $lower] == "hor"} {
+    if {[dict exists $constraints split_cuts $lower]} {
+      set lower_height [expr $cut_height + $min_lower_enclosure]
+      set min_lower_length [expr $lower_area / $lower_height]
+      if {$min_lower_length % 2 == 1} {incr min_lower_length}
+      set max_lower_enclosure [expr max(($min_lower_length - $cut_width) / 2, $max_lower_enclosure)]
+    }
+    
+    if {[dict exists $constraints split_cuts $upper]} {
+      set upper_width [expr $cut_width + $min_upper_enclosure]
+      set min_upper_length [expr $upper_area / $upper_width]
+      if {$min_upper_length % 2 == 1} {incr min_upper_length}
+      set max_upper_enclosure [expr max(($min_upper_length - $cut_height) / 2, $max_upper_enclosure)]
+    }
+    
+    set width [expr $max_lower_enclosure * 2 + $cut_width]
+    set height [expr $max_upper_enclosure * 2 + $cut_width]
+
+    dict set rule name [get_viarule_name $lower $width $height]
+    dict set rule enclosure [list $max_lower_enclosure $min_lower_enclosure $min_upper_enclosure $max_upper_enclosure]
+  } else {
+    if {[dict exists $constraints split_cuts $lower]} {
+      set lower_width [expr $cut_width + $min_lower_enclosure]
+      set min_lower_length [expr $lower_area / $lower_width]
+      if {$min_lower_length % 2 == 1} {incr min_lower_length}
+      set max_lower_enclosure [expr max(($min_lower_length - $cut_width) / 2, $max_lower_enclosure)]
+    }
+    
+    if {[dict exists $constraints split_cuts $upper]} {
+      set upper_height [expr $cut_height + $min_upper_enclosure]
+      set min_upper_length [expr $upper_area / $upper_height]
+      if {$min_upper_length % 2 == 1} {incr min_upper_length}
+      set max_upper_enclosure [expr max(($min_upper_length - $cut_height) / 2, $max_upper_enclosure)]
+    }
+    
+    set width [expr $max_upper_enclosure * 2 + $cut_width]
+    set height [expr $max_lower_enclosure * 2 + $cut_width]
+
+    dict set rule name [get_viarule_name $lower $width $height]
+    dict set rule enclosure [list $min_lower_enclosure $max_lower_enclosure $max_upper_enclosure $min_upper_enclosure]
+  }
+  # debug "min_lower_enclosure $min_lower_enclosure"
+  # debug "lower $lower upper $upper enclosure [dict get $rule enclosure]"
+
+  for {set i 0} {$i < $rows} {incr i} {
+    for {set j 0} {$j < $columns} {incr j} {
+      set centre_x [expr round(($j - (($columns - 1) / 2.0)) * $xcut_pitch)]
+      set centre_y [expr round(($i - (($rows - 1)    / 2.0)) * $ycut_pitch)]
+      
+      dict set rule origin_x $centre_x
+      dict set rule origin_y $centre_y
+      lappend rule_list $rule
+    }
+  }
+  # debug "split into [llength $rule_list] vias"
+  return $rule_list
 }
 
 # Given the via rule expressed in via_info, what is the via with the largest cut area that we can make
 # Try using a via generate rule
 proc get_via_option {lower width height constraints} {
-# puts "get_via_option {$lower $width $height}"
+  variable upper_width
+  variable lower_width
+  variable upper_height
+  variable lower_height
+  variable lower_dir
+  variable min_lower_enclosure
+  variable max_lower_enclosure
+  variable min_upper_enclosure
+  variable max_upper_enclosure
+  variable via_info
+  
+
+  # debug "get_via_option: {$lower $width $height}"
   set via_info [lindex [select_via_info $lower] 1]
   set lower_dir [get_dir $lower]
 
   set upper [dict get $via_info upper layer]
+
+  init_via_width_height $lower $width $height $constraints
+  get_via_enclosure $via_info [expr min($lower_width,$lower_height)] [expr min($upper_width,$upper_height)]
+
+  # debug "split cuts? [dict exists $constraints split_cuts]"
+  # debug "lower $lower upper $upper"
   
-  set cut_width  [lindex [dict get $via_info cut size] 0]
-  set cut_height [lindex [dict get $via_info cut size] 1]
+  # Determines the maximum number of rows and columns that can fit into this width/height
+  set columns [determine_num_via_columns $via_info $constraints]
+  set rows    [determine_num_via_rows    $via_info $constraints]
 
-  # Adjust the width and height values to the next largest allowed value if necessary
-  set lower_width  [get_adjusted_width $lower $width]
-  set lower_height [get_adjusted_width $lower $height]
-  set upper_width  [get_adjusted_width $upper $width]
-  set upper_height [get_adjusted_width $upper $height]
+  # debug "lower_width $lower_width min_lower_enclosure $min_lower_enclosure"
+  # debug "upper_width $upper_width min_upper_enclosure $min_upper_enclosure"
   
-  set via_enclosure [get_via_enclosure $via_info [expr min($lower_width,$lower_height,$upper_width,$upper_height)]]
-  set min_lower_enclosure [lindex $via_enclosure 0]
-  set max_lower_enclosure [lindex $via_enclosure 1]
-  set min_upper_enclosure [lindex $via_enclosure 2]
-  set max_upper_enclosure [lindex $via_enclosure 3]
-
-  # What are the maximum number of rows and columns that we can fit in this space?
-  set i 0
-  set via_width_lower 0
-  set via_width_upper 0
-  set xcut_pitch [lindex [dict get $via_info cut spacing] 0]
-  while {$via_width_lower < $lower_width && $via_width_upper < $upper_width} {
-    # puts "get_via_option: W: $via_width_lower < $lower_width && $via_width_upper < $upper_width"
-    incr i
-    set via_width_lower [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
-    set via_width_upper [expr $cut_width + $xcut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
-  }
-  set xcut_spacing [expr $xcut_pitch - $cut_width]
-  set columns [expr $i - 1]
-  if {[dict exists $constraints max_columns]} {
-    if {$columns > [dict get $constraints max_columns]} {
-      set columns [dict get $constraints max_columns]
-
-      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $lower]
-      # puts "get_via_option: $lower_concave_enclosure $max_lower_enclosure"
-      if {$lower_concave_enclosure > $max_lower_enclosure} {
-        set max_lower_enclosure $lower_concave_enclosure
-      }
-      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $upper]
-      # puts "get_via_option: $upper_concave_enclosure $max_upper_enclosure"
-      if {$upper_concave_enclosure > $max_upper_enclosure} {
-        set max_upper_enclosure $upper_concave_enclosure
-      }
-
-      set lower_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $max_lower_enclosure]
-      set upper_width [expr $cut_width + $xcut_pitch * ($columns - 1) + 2 * $max_upper_enclosure]
-      set lower_width [get_adjusted_width [dict get $via_info lower layer] $lower_width]
-      set upper_width [get_adjusted_width [dict get $via_info lower layer] $upper_width]
-    }
-  }
-  set i 0
-  set via_height_lower 0
-  set via_height_upper 0
-  set ycut_pitch [lindex [dict get $via_info cut spacing] 1]
-  while {$via_height_lower < $lower_height && $via_height_upper < $upper_height} {
-    # puts "get_via_option: H: $via_height_lower < $lower_height && $via_height_upper < $upper_height"
-    incr i
-    set via_height_lower [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_lower_enclosure]
-    set via_height_upper [expr $cut_height + $ycut_pitch * ($i - 1) + 2 * $min_upper_enclosure]
-  }
-  set ycut_spacing [expr $ycut_pitch - $cut_height]
-  set rows [expr $i - 1]
-  if {[dict exists $constraints max_rows]} {
-    if {$columns > [dict get $constraints max_columns]} {
-      set columns [dict get $constraints max_columns]
-
-      set lower_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $lower]
-      # puts "get_via_option: $lower_concave_enclosure $max_lower_enclosure"
-      if {$lower_concave_enclosure > $max_lower_enclosure} {
-        set max_lower_enclosure $lower_concave_enclosure
-      }
-      set upper_concave_enclosure [get_concave_spacing_value [dict get $via_info cut layer] $upper]
-      # puts "get_via_option: $upper_concave_enclosure $max_upper_enclosure"
-      if {$upper_concave_enclosure > $max_upper_enclosure} {
-        set max_upper_enclosure $upper_concave_enclosure
-      }
-
-      set lower_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $max_lower_enclosure]
-      set upper_height [expr $cut_height + $ycut_pitch * ($rows - 1) + 2 * $max_upper_enclosure]
-      set lower_height [get_adjusted_width [dict get $via_info lower layer] $lower_height]
-      set upper_height [get_adjusted_width [dict get $via_info lower layer] $upper_height]
-    }                                                                              
-  }
-
-  if {![use_arrayspacing [dict get $via_info cut layer] $rows $columns]} {
-    set lower_enc_width  [expr round(($lower_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-    set lower_enc_height [expr round(($lower_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
-    set upper_enc_width  [expr round(($upper_width  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-    set upper_enc_height [expr round(($upper_height - ($cut_height  + $ycut_pitch * ($rows    - 1))) / 2)]
-
-    # Adjust calculated via width values to ensure that an allowed size is generated
-    set lower_size_max_enclosure [get_adjusted_width $lower [expr round(($cut_width   + $xcut_pitch * ($columns - 1) + $max_lower_enclosure * 2))]]
-    set upper_size_max_enclosure [get_adjusted_width $upper [expr round(($cut_width   + $xcut_pitch * ($columns - 1) + $max_upper_enclosure * 2))]]
-
-    set max_lower_enclosure [expr round(($lower_size_max_enclosure  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-    set max_upper_enclosure [expr round(($upper_size_max_enclosure  - ($cut_width   + $xcut_pitch * ($columns - 1))) / 2)]
-
-    # Use the largest value of enclosure in the direction of the layer
-    # Use the smallest value of enclosure perpendicular to direction of the layer
-    if {$lower_dir == "hor"} {
-      if {$lower_enc_height < $max_lower_enclosure} {
-        set xBotEnc $max_lower_enclosure
-        if {$lower_enc_width > $xBotEnc} {
-          set xBotEnc $lower_enc_width
-        }
-      } else {
-        set xBotEnc $lower_enc_width
-      }
-      set yBotEnc $lower_enc_height
-    } else {
-      set xBotEnc $lower_enc_width
-      if {$lower_enc_width < $max_lower_enclosure} {
-        set yBotEnc $max_lower_enclosure
-        if {$lower_enc_height > $yBotEnc} {
-          set yBotEnc $lower_enc_height
-        }
-      } else {
-        set yBotEnc $lower_enc_height
-      }
-    }
-
-    # Use the largest value of enclosure in the direction of the layer
-    # Use the smallest value of enclosure perpendicular to direction of the layer
-    if {[get_dir $upper] == "hor"} {
-      if {$upper_enc_height < $max_upper_enclosure} {
-        set xTopEnc $max_upper_enclosure
-        if {$upper_enc_width > $xTopEnc} {
-          set xTopEnc $upper_enc_width
-        }
-      } else {
-        set xTopEnc $upper_enc_width
-      }
-      set yTopEnc $upper_enc_height
-    } else {
-      set xTopEnc $upper_enc_width
-      if {$upper_enc_width < $max_upper_enclosure} {
-        set yTopEnc $max_upper_enclosure
-        if {$upper_enc_height > $yTopEnc} {
-          set yTopEnc $upper_enc_height
-        }
-      } else {
-        set yTopEnc $upper_enc_height
-      }
-    }
-
-    set rule [list \
-      name [get_viarule_name $lower $width $height] \
-      rule [lindex [select_via_info $lower] 0] \
-      cutsize [dict get $via_info cut size] \
-      layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] $upper] \
-      cutspacing [list \
-        [expr [lindex [dict get $via_info cut spacing] 0] - [lindex [dict get $via_info cut size] 0]] \
-        [expr [lindex [dict get $via_info cut spacing] 1] - [lindex [dict get $via_info cut size] 1]] \
-      ] \
-      rowcol [list $rows $columns] \
-      enclosure [list $xBotEnc $yBotEnc $xTopEnc $yTopEnc] \
-      origin_x 0 origin_y 0]
-    set rule_list [list $rule]
+  if {[dict exists $constraints split_cuts] && ([lsearch -exact [dict get $constraints split_cuts] $lower] > -1 || [lsearch -exact [dict get $constraints split_cuts] $upper] > -1)} {
+    # debug "via_split_cuts_rule"
+    set rules [via_split_cuts_rule $rows $columns $constraints]
+  } elseif {[use_arrayspacing [dict get $via_info cut layer] $rows $columns]} {
+    # debug "via_generate_array_rule"
+    set rules [via_generate_array_rule [get_viarule_name $lower $width $height] $rows $columns]
   } else {
-    # We need array vias -
-    # if the min(rows,columns) > ARRAYCUTS
-    #   determine which direction gives best number of CUTs wide using min(ARRAYCUTS)
-    #   After adding ARRAYs, is there space for more vias
-    #   Add vias to the rule with appropriate origin setting
-    # else
-    #   add a single via with min(rows,columns) cuts - hor/ver as required
-    set spacing_rule [get_arrayspacing_rule [dict get $via_info cut layer]]
-    set array_size [expr min($rows, $columns)]
-    if {$array_size > [lindex [dict keys [dict get $spacing_rule arraycuts]] end]} {
-      # puts "get_via_option: Multi-viaArrayspacing rule"
-      set use_array_size [lindex [dict keys [dict get $spacing_rule arraycuts]] 0]
-      foreach other_array_size [lrange [dict keys [dict get $spacing_rule arraycuts]] 1 end] {
-        if {$array_size % $use_array_size > $array_size % $other_array_size} {
-          set use_array_size $other_array_size
-        }
-      }
-      set num_arrays [expr $array_size / $use_array_size]
-      set array_spacing [dict get $spacing_rule arraycuts $use_array_size spacing]
-      
-      set rule [list \
-        rule [lindex [select_via_info $lower] 0] \
-        cutsize [dict get $via_info cut size] \
-        layers [list $lower [dict get $via_info cut layer] $upper] \
-        cutspacing [list \
-          [dict get $spacing_rule cutspacing] \
-          [dict get $spacing_rule cutspacing]  \
-        ] \
-        enclosure $via_enclosure \
-        origin_x 0 \
-        origin_y 0 \
-      ]
-      # puts "get_via_option: $rule"
-      set rule_list {}
-      if {$array_size == $rows} {
-        # Split into num_arrays rows of arrays
-        set array_min_size [expr [lindex [dict get $via_info cut size] 0] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
-        set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
-
-        dict set rule rowcol [list $use_array_size $columns]
-        dict set rule name "[dict get $via_info cut layer]_ARRAY_${use_array_size}X${columns}"
-
-        set y [expr $array_min_size / 2 - $total_array_size / 2]
-        for {set i 0} {$i < $num_arrays} {incr i} {
-          dict set rule origin_y $y
-          lappend rule_list $rule
-          set y [expr $y + $array_spacing + $array_min_size]
-        }
-      } else {
-        # Split into num_arrays columns of arrays
-        set array_min_size [expr [lindex [dict get $via_info cut size] 1] * $use_array_size + [dict get $spacing_rule cutspacing] * ($use_array_size - 1)]
-        set total_array_size [expr $array_min_size * $num_arrays + $array_spacing * ($num_arrays - 1)]
-
-        dict set rule rowcol [list $rows $use_array_size]
-        dict set rule name "[dict get $via_info cut layer]_ARRAY_${rows}X${use_array_size}"
-
-        set x [expr $array_min_size / 2 - $total_array_size / 2]
-        for {set i 0} {$i < $num_arrays} {incr i} {
-          dict set rule origin_x $x
-          lappend rule_list $rule
-          set x [expr $x + $array_spacing + $array_min_size]
-        }
-      }
-    } else {
-      # puts "get_via_option: Arrayspacing rule"
-      set rule [list \
-        name [get_viarule_name $lower $width $height] \
-        rule [lindex [select_via_info $lower] 0] \
-        cutsize [dict get $via_info cut size] \
-        layers [list $lower [dict get $via_info cut layer] $upper] \
-        cutspacing [list \
-          [dict get $spacing_rule cutspacing] \
-          [dict get $spacing_rule cutspacing]  \
-        ] \
-        rowcol [list $rows $columns] \
-        enclosure $via_enclosure \
-        origin_x 0 \
-        origin_y 0 \
-      ]
-      set rule_list [list $rule]
-    }
+    # debug "via_generate_rule"
+    set rules [via_generate_rule [get_viarule_name $lower $width $height] $rows $columns $constraints]
   }
   
-  return $rule_list
+  return $rules
 }
 
 proc get_viarule_name {lower width height} {
   set rules [select_via_info $lower]
   set first_key [lindex [dict keys $rules] 0]
   #if {![dict exists $rules $first_key cut layer]} {
-  #  puts "get_viarule_name: $lower $width $height"
-  #  puts "get_viarule_name: $rules"
-  #  puts "get_viarule_name: $first_key"
+  #  debug "$lower $width $height"
+  #  debug "$rules"
+  #  debug "$first_key"
   #}
   set cut_layer [dict get $rules $first_key cut layer]
 
@@ -813,19 +1386,61 @@ proc get_via {lower width height constraints} {
       }
     }
     dict set physical_viarules $rule_name $selected_rule
-    # puts "get_via: Via [dict size $physical_viarules]: $rule_name"
+    # debug "Via [dict size $physical_viarules]: $rule_name"
   }
 
   return $rule_name
 }
 
-proc instantiate_via {physical_via_name x y} {
+proc instantiate_via {physical_via_name x y constraints} {
   variable physical_viarules
+  variable block
+  variable layers
   
   set via_insts {}
+
   foreach via [dict get $physical_viarules $physical_via_name] {
-    dict set via x [expr $x + [dict get $via origin_x]]
-    dict set via y [expr $y + [dict get $via origin_y]]
+    # debug "via x $x y $y $via"
+    set x_location [expr $x + [dict get $via origin_x]]
+    set y_location [expr $y + [dict get $via origin_y]]
+
+    set lower_layer_name [lindex [dict get $via layers] 0]
+    set upper_layer_name [lindex [dict get $via layers] 2]
+
+    if {[dict exists $constraints ongrid]} {
+      if {[lsearch -exact [dict get $constraints ongrid] $lower_layer_name] > -1} {
+        if {[get_dir $lower_layer_name] == "hor"} {
+          set y_pitch [dict get $layers $lower_layer_name pitch]
+          set y_offset [dict get $layers $lower_layer_name offsetY]
+
+          set y_location [expr ($y - $y_offset + $y_pitch / 2) / $y_pitch * $y_pitch + $y_offset + [dict get $via origin_y]]
+        } else {
+          set x_pitch [dict get $layers $lower_layer_name pitch]
+          set x_offset [dict get $layers $lower_layer_name offsetX]
+          
+          set x_location [expr ($x - $x_offset + $x_pitch / 2) / $x_pitch * $x_pitch + $x_offset + [dict get $via origin_x]]
+        }
+      }
+      if {[lsearch -exact [dict get $constraints ongrid] $upper_layer_name] > -1} {
+        if {[get_dir $lower_layer_name] == "hor"} {
+          set x_pitch [dict get $layers $upper_layer_name pitch]
+          set x_offset [dict get $layers $upper_layer_name offsetX]
+          
+          set x_location [expr ($x - $x_offset + $x_pitch / 2) / $x_pitch * $x_pitch + $x_offset + [dict get $via origin_x]]
+        } else {
+          set y_pitch [dict get $layers $upper_layer_name pitch]
+          set y_offset [dict get $layers $upper_layer_name offsetY]
+
+          set y_location [expr ($y - $y_offset + $y_pitch / 2) / $y_pitch * $y_pitch + $y_offset + [dict get $via origin_y]]
+        }
+      }
+    }
+    # debug "x: $x -> $x_location"
+    # debug "y: $y -> $y_location"
+
+    dict set via x $x_location
+    dict set via y $y_location
+    
     lappend via_insts $via
   }
   return $via_insts
@@ -842,15 +1457,15 @@ proc generate_vias {layer1 layer2 intersections constraints} {
   
   set i1 [lsearch -exact $metal_layers $layer1_name]
   set i2 [lsearch -exact $metal_layers $layer2_name]
-  if {$i1 == -1} {error "Cant find layer $layer1"}
-  if {$i2 == -1} {error "Cant find layer $layer2"}
+  if {$i1 == -1} {critical 21 "Cant find lower metal layer $layer1"}
+  if {$i2 == -1} {critical 22 "Cant find upper metal layer $layer2"}
 
   # For each layer between l1 and l2, add vias at the intersection
-  # puts "  # Intersections [llength $intersections]"
+  # debug "  # Intersections [llength $intersections]"
   set count 0
   foreach intersection $intersections {
     if {![dict exists $logical_viarules [dict get $intersection rule]]} {
-      error "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
+      critical 24 "Missing key [dict get $intersection rule]\nAvailable keys [dict keys $logical_viarules]"
     }
     set logical_rule [dict get $logical_viarules [dict get $intersection rule]]
 
@@ -860,18 +1475,19 @@ proc generate_vias {layer1 layer2 intersections constraints} {
     set height  [dict get $logical_rule height]
     
     set connection_layers [lrange $metal_layers $i1 [expr $i2 - 1]]
-    # puts "  # Connection layers: [llength $connection_layers]"
-    # puts "  Connection layers: $connection_layers"
+    # debug "  # Connection layers: [llength $connection_layers]"
+    # debug "  Connection layers: $connection_layers"
+    dict set constraints stack_top $layer2_name
     foreach lay $connection_layers {
       set via_name [get_via $lay $width $height $constraints]
-      foreach via [instantiate_via $via_name $x $y] {
+      foreach via [instantiate_via $via_name $x $y $constraints] {
         lappend vias $via
       }
     }
     
     incr count
     #if {$count % 1000 == 0} {
-    #  puts "  # $count / [llength $intersections]"
+    #  debug "  # $count / [llength $intersections]"
     #}
   }
   
@@ -889,12 +1505,11 @@ proc get_layers_from_to {from to} {
 }
 
 ## Proc to generate via locations, both for a normal via and stacked via
-proc generate_via_stacks {l1 l2 tag grid_data constraints} {
+proc generate_via_stacks {l1 l2 tag constraints} {
   variable logical_viarules
   variable stripe_locs
   variable def_units
-  variable metal_layers
-  variable blockages
+  variable grid_data
   
   set area [dict get $grid_data area]
   
@@ -903,164 +1518,90 @@ proc generate_via_stacks {l1 l2 tag grid_data constraints} {
   set intersections ""
   #check if layer pair is orthogonal, case 1
   set layer1 $l1
-  if {[lsearch -exact $metal_layers $layer1] != -1} {
-    set layer1_direction [get_dir $layer1]
-  } elseif {[regexp {(.*)_PIN_(hor|ver)} $l1 - layer1 layer1_direction]} {
-    #
-  } else {
-    puts "Invalid direction for layer $l1"
-  }
+  regexp {(.*)_PIN_(hor|ver)} $l1 - layer1 direction
   
   set layer2 $l2
   
   set ignore_count 0
-
-  if {$layer1_direction == "hor" && [get_dir $l2] == "ver"} {
-
-    if {[array names stripe_locs "$l1,$tag"] != ""} {
-      ## puts "Checking [llength $stripe_locs($l1,$tag)] horizontal stripes on $l1, $tag"
-      ## puts "  versus [llength $stripe_locs($l2,$tag)] vertical   stripes on $l2, $tag"
-      ## puts "     and [llength $blockage] blockages"
-      #loop over each stripe of layer 1 and layer 2 
-      foreach l1_str $stripe_locs($l1,$tag) {
-        set a1  [lindex $l1_str 1]
-        set layer1_width [lindex $l1_str 3]
-
-        foreach l2_str $stripe_locs($l2,$tag) {
-          set flag 1
-          set a2      [lindex $l2_str 0]
-          set layer2_width [lindex $l2_str 3]
-
-          # Ignore if outside the area
-          if {!($a2 >= [lindex $area 0] && $a2 <= [lindex $area 2] && $a1 >= [lindex $area 1] && $a1 <= [lindex $area 3])} {continue}
-          if {$a2 > [lindex $l1_str 2] || $a2 < [lindex $l1_str 0]} {continue}
-          if {$a1 > [lindex $l2_str 2] || $a1 < [lindex $l2_str 1]} {continue}
-
-          if {[lindex $l2_str 1] == [lindex $area 3]} {continue}
-          if {[lindex $l2_str 2] == [lindex $area 1]} {continue}
-
-          #loop over each blockage geometry (macros are blockages)
-          foreach layer [get_layers_from_to $layer1 $layer2] {
-            if {[dict exists $blockages $layer]} {
-              ## puts "     and [llength [dict get $blockages $layer]] blockages"
-              foreach blk [dict get $blockages $layer] {
-                set b1 [lindex $blk 0]
-                set b2 [lindex $blk 1]
-                set b3 [lindex $blk 2]
-                set b4 [lindex $blk 3]
-                ## Check if stripes are to be blocked on these blockages (blockages are specific to each layer). If yes, do not drop vias
-                if {($a2 > $b1 && $a2 < $b3 && $a1 > $b2 && $a1 < $b4 ) } {
-                  set flag 0
-                  break
-                } 
-                if {$a2 > $b1 && $a2 < $b3 && $a1 == $b2 && $a1 == [lindex $area 1]} {
-                  set flag 0
-                  break
-                } 
-                if {$a2 > $b1 && $a2 < $b3 && $a1 == $b4 && $a1 == [lindex $area 3]} {
-                  set flag 0
-                  break
-                }
-              }
-            }
-            if {$flag == 0} {break}
-          }
-
-          if {$flag == 1} {
-            ## if no blockage restriction, append intersecting points to this "intersections"
-            if {[regexp {.*_PIN_(hor|ver)} $l1 - dir]} {
-              set layer1_width [lindex $l1_str 3] ; # Already in def units
-            }
-            set rule_name ${l1}${layer2}_${layer2_width}x${layer1_width}
-            if {![dict exists $logical_viarules $rule_name]} {
-              dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width ${layer2_width} height ${layer1_width}]
-            }
-            lappend intersections "rule $rule_name x $a2 y $a1"
-          }
-        }
-      }
-    }
-
-  } elseif {$layer1_direction == "ver" && [get_dir $l2] == "hor"} {
-    ##Second case of orthogonal intersection, similar criteria as above, but just flip of coordinates to find intersections
-    if {[array names stripe_locs "$l1,$tag"] != ""} {
-      ## puts "Checking [llength $stripe_locs($l1,$tag)] vertical   stripes on $l1, $tag"
-      ## puts "  versus [llength $stripe_locs($l2,$tag)] horizontal stripes on $l2, $tag"
-      foreach l1_str $stripe_locs($l1,$tag) {
-        set n1  [lindex $l1_str 0]
-        set layer1_width [lindex $l1_str 3]
-        foreach l2_str $stripe_locs($l2,$tag) {
-          set flag 1
-          set n2      [lindex $l2_str 1]
-          set layer2_width [lindex $l2_str 3]
-
-          # Ignore if outside the area
-          if {!($n1 >= [lindex $area 0] && $n1 <= [lindex $area 2] && $n2 >= [lindex $area 1] && $n2 <= [lindex $area 3])} {continue}
-          if {$n2 > [lindex $l1_str 2] || $n2 < [lindex $l1_str 1]} {continue}
-          if {$n1 > [lindex $l2_str 2] || $n1 < [lindex $l2_str 0]} {continue}
-
-          foreach layer [get_layers_from_to $layer1 $layer2] {
-            if {[dict exists $blockages $layer]} {
-              ## puts "     and [llength [dict get $blockages $layer]] blockages"
-              foreach blk [dict get $blockages $layer] {
-                set b1 [lindex $blk 0]
-                set b2 [lindex $blk 1]
-                set b3 [lindex $blk 2]
-                set b4 [lindex $blk 3]
-                if {($n1 >= $b1 && $n1 <= $b3 && $n2 >= $b2 && $n2 <= $b4)} {
-                    set flag 0
-                    break
-                }
-              }
-            }
-            if {$flag == 0} {break}
-          }
-
-          if {$flag == 1} {
-              ## if no blockage restriction, append intersecting points to this "intersections"
-              if {[regexp {.*_PIN_(hor|ver)} $l1 - dir]} {
-                set layer1_width [lindex $l1_str 3] ; # Already in def units
-              }
-              set rule_name ${l1}${layer2}_${layer1_width}x${layer2_width}
-              if {![dict exists $logical_viarules $rule_name]} {
-                dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width ${layer1_width} height ${layer2_width}]
-              }
-              lappend intersections "rule $rule_name x $n1 y $n2"
-          }
-
-
-        }
-      }
-    }
-  } else { 
-    #Check if stripes have orthogonal intersections. If not, exit
-    error "ERROR: Adding vias between same direction layers is not supported yet.\nLayer: $l1, Direction: $layer1_direction\nLayer: $l2, Direction: [get_dir $l2]"
+  if {[array names stripe_locs "$l1,$tag"] == ""} {
+    warning 2 "No shapes on layer $l1 for $tag"
+    return {}
   }
+  if {[array names stripe_locs "$l2,$tag"] == ""} {
+    warning 3 "No shapes on layer $l2 for $tag"
+    return {}
+  }
+  set intersection [odb::odb_andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)]
+
+  foreach shape [::odb::odb_getPolygons $intersection] {
+    set points [::odb::odb_getPoints $shape]
+    if {[llength $points] != 4} {
+        variable def_units
+        warning 4 "Unexpected number of points in connection shape ($l1,$l2 $tag [llength $points])"
+        set str "    "
+        foreach point $points {set str "$str ([expr 1.0 * [$point getX] / $def_units ] [expr 1.0 * [$point getY] / $def_units]) "}
+        warning 5 $str
+        continue
+    }
+    set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+    set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+    set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+    set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+
+    set width [expr $xMax - $xMin]
+    set height [expr $yMax - $yMin]
+
+    set rule_name ${l1}${layer2}_${width}x${height}
+    if {![dict exists $logical_viarules $rule_name]} {
+      dict set logical_viarules $rule_name [list lower $l1 upper $layer2 width $width height $height]
+    }
+    lappend intersections "rule $rule_name x [expr ($xMax + $xMin) / 2] y [expr ($yMax + $yMin) / 2]"
+  }
+  
+  # debug generate_via_stacks "Added [llength $intersections] intersections"
 
   return [generate_vias $l1 $l2 $intersections $constraints]
 }
 
-# proc to generate follow pin layers or standard cell rails
-proc generate_lower_metal_followpin_rails {tag grid_data} {
+proc add_stripe {layer type polygon_set} {
   variable stripe_locs
-  variable row_height
-  variable rails_start_with
+  # debug "start"
+  if {[array names stripe_locs "$layer,$type"] == ""} {
+    set stripe_locs($layer,$type) $polygon_set
+  } else {
+    set stripe_locs($layer,$type) [::odb::odb_orSet $stripe_locs($layer,$type) $polygon_set]
+  }
+  # debug "end"
+}
 
-  set area [dict get $grid_data area]
-  #Assumes horizontal stripes
-  foreach lay [get_rails_layers] {
-
-    if {$tag == $rails_start_with} { ;#If starting from bottom with this net, 
-        set lly [lindex $area 1]
-    } else {
-        set lly [expr {[lindex $area 1] + $row_height}]
+# proc to generate follow pin layers or standard cell rails
+proc generate_lower_metal_followpin_rails {} {
+  variable block
+  variable grid_data
+  
+  foreach row [$block getRows] {
+    set orient [$row getOrient]
+    set box [$row getBBox]
+    switch -exact $orient {
+      R0 {
+        set vdd_y [$box yMax]
+        set vss_y [$box yMin]
+      }
+      MX {
+        set vdd_y [$box yMin]
+        set vss_y [$box yMax]
+      }
+      default {
+        critical 25 "Unexpected row orientation $orient for row [$row getName]"
+      }
     }
-    lappend stripe_locs($lay,$tag) "[lindex $area 0] $lly [lindex $area 2] [dict get $grid_data rails $lay width]"
-
-
-    #Rail every alternate rows - Assuming horizontal rows and full width rails
-    for {set y [expr {$lly + (2 * $row_height)}]} {$y <= [lindex $area 3]} {set y [expr {$y + (2 * $row_height)}]} {
-      lappend stripe_locs($lay,$tag) "[lindex $area 0] $y [lindex $area 2] [dict get $grid_data rails $lay width]"
+    foreach lay [get_rails_layers] {
+      set width [dict get $grid_data rails $lay width]
+      set vdd_box [::odb::odb_newSetFromRect [$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]]
+      set vss_box [::odb::odb_newSetFromRect [$box xMin] [expr $vss_y - $width / 2] [$box xMax] [expr $vss_y + $width / 2]]
+      # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
+      add_stripe $lay "POWER" $vdd_box
+      add_stripe $lay "GROUND" $vss_box
     }
   }
 }
@@ -1068,7 +1609,6 @@ proc generate_lower_metal_followpin_rails {tag grid_data} {
 
 # proc for creating pdn mesh for upper metal layers
 proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
-  variable stripe_locs
   variable stripes_start_with
 
 # If the grid_data defines a spacing for the layer, then:
@@ -1076,223 +1616,272 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
 # otherwise:
 #    place the second stripe pitch / 2 away from the first, 
 #
-    set n_straps 0
-    if {[get_dir $layer] == "hor"} {
-        set offset [expr [lindex $area 1] + [dict get $layer_info offset]]
-        if {$tag != $stripes_start_with} { ;#If not starting from bottom with this net, 
-          if {[dict exists $layer_info spacing]} {
-            set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
-          } else {
-            set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
-          }
-        }
-        #if {$layer == "M7"} {
-        #puts "Area: $area"
-        #puts "Offset: $offset"
-        #puts "Width: [dict get $layer_info width]"
-        #}
-        for {set y $offset} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
-            lappend stripe_locs($layer,$tag) "[lindex $area 0] $y [lindex $area 2] [dict get $layer_info width]"
-            incr n_straps
-        }
-    } elseif {[get_dir $layer] == "ver"} {
-        set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
+  set width [dict get $layer_info width]
 
-        if {$tag != $stripes_start_with} { ;#If not starting from bottom with this net, 
-          if {[dict exists $layer_info spacing]} {
-            set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
-          } else {
-            set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
-          }
-        }
-        for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $layer_info width]}]} {set x [expr {[dict get $layer_info pitch] + $x}]} {
-            lappend stripe_locs($layer,$tag) "$x [lindex $area 1] [lindex $area 3] [dict get $layer_info width]"
-            incr n_straps
-        }
-    } else {
-        error "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
-    }
-    #if {$layer == "M7"} {
-    #puts "      Straps added: $n_straps"
-    #}
-}
-
-# this proc chops down metal stripes wherever they are to be blocked
-# inputs to this proc are layer name, domain (tag), and blockage bbox cooridnates
-
-proc generate_metal_with_blockage {area layer layer_width tag b1 b2 b3 b4} {
-  variable stripe_locs
-    set temp_locs($layer,$tag) ""
-    set temp_locs($layer,$tag) $stripe_locs($layer,$tag)
-    set stripe_locs($layer,$tag) ""
-    foreach l_str $temp_locs($layer,$tag) {
-        set loc1 [lindex $l_str 0]
-        set loc2 [lindex $l_str 1]
-        set loc3 [lindex $l_str 2]
-        location_stripe_blockage $area $loc1 $loc2 $loc3 $layer $layer_width $tag $b1 $b2 $b3 $b4
-    }
-        
-    set stripe_locs($layer,$tag) [lsort -unique $stripe_locs($layer,$tag)]
-}
-
-# sub proc called from previous proc
-proc location_stripe_blockage {area loc1 loc2 loc3 lay layer_width tag b1 b2 b3 b4} {
-  variable stripe_locs
-
-    set area_llx [lindex $area 0]
-    set area_lly [lindex $area 1]
-    set area_urx [lindex $area 2]
-    set area_ury [lindex $area 3]
-
-    if {[get_dir $lay] == "hor"} {
-        ##Check if stripe is passing through blockage
-        ##puts "HORIZONTAL BLOCKAGE "
-        set x1 $loc1
-        set y1 [expr $loc2 - $layer_width/2]
-        if {[lindex $area 1] > $y1} {
-          set y1 [lindex $area 1]
-        }
-        set y1 [expr $loc2 - $layer_width/2]
-        set x2 $loc3
-        set y2 [expr $y1 +  $layer_width]
-        if {[lindex $area 3] < $y2} {
-          set y2 [lindex $area 3]
-        }
-
-        #puts "segment:  [format {%9.1f %9.1f} $loc1 $loc3]"              
-        #puts "blockage: [format {%9.1f %9.1f} $b1 $b3]"
-        if {  ($y1 >= $b2) && ($y2 <= $b4) && ( ($x1 <= $b3 && $x2 >= $b3) || ($x1 <= $b1 && $x2 >= $b1)  || ($x1 <= $b1 && $x2 >= $b3) || ($x1 <= $b3 && $x2 >= $b1) )  } {
-
-            if {$x1 <= $b1 && $x2 >= $b3} { 
-                #puts "  CASE3 of blockage in between left and right edge of core, cut the stripe into two segments"
-                #puts "    $x1 $loc2 $b1"
-                #puts "    $b3 $loc2 $x2"
-                lappend stripe_locs($lay,$tag) "$x1 $loc2 $b1 $layer_width"
-                lappend stripe_locs($lay,$tag) "$b3 $loc2 $x2 $layer_width"     
-            } elseif {$x1 <= $b3 && $x2 >= $b3} {   
-                #puts "  CASE3 of blockage in between left and right edge of core, but stripe extending out only in one side (right)"
-                #puts "    $b3 $loc2 $x2"
-                lappend stripe_locs($lay,$tag) "$b3 $loc2 $x2 $layer_width"     
-            } elseif {$x1 <= $b1 && $x2 >= $b1} {   
-                #puts "  CASE3 of blockage in between left and right edge of core, but stripe extending out only in one side (left)"
-                #puts "    $x1 $loc2 $b1"
-                lappend stripe_locs($lay,$tag) "$x1 $loc2 $b1 $layer_width"
-            } else {
-              #puts "  CASE5 no match - eliminated segment"
-              #puts "    $loc1 $loc2 $loc3"
-            }
-        } else {
-            lappend stripe_locs($lay,$tag) "$x1 $loc2 $x2 $layer_width"
-            #puts "stripe does not pass thru any layer blockage --- CASE 4 (do not change the stripe location)"
-        }
-    }
-
-    if {[get_dir $lay] == "ver"} {
-        ##Check if veritcal stripe is passing through blockage, same strategy as above
-        set x1 $loc1 ;# [expr max($loc1 -  [dict get $layer_info width]/2, [lindex $area 0])]
-        set y1 $loc2
-        set x2 $loc1 ;# [expr min($loc1 +  [dict get $layer_info width]/2, [lindex $area 2])]
-        set y2 $loc3
-        if {[lindex $area 0] > $x1} {
-          set x1 [lindex $area 0]
-        }
-        if {[lindex $area 2] < $x2} {
-          set x2 [lindex $area 2]
-        }
-
-        if {$x2 > $b1 && $x1 < $b3} {
-
-            if {$y1 <= $b2 && $y2 >= $b4} { 
-                ##puts "CASE3 of blockage in between top and bottom edge of core, cut the stripe into two segments
-                lappend stripe_locs($lay,$tag) "$loc1 $y1 $b2 $layer_width"
-                lappend stripe_locs($lay,$tag) "$loc1 $b4 $y2 $layer_width"     
-            } elseif {$y1 <= $b4 && $y2 >= $b4} {   
-                ##puts "CASE3 of blockage in between top and bottom edge of core, but stripe extending out only in one side (right)"
-                lappend stripe_locs($lay,$tag) "$loc1 $b4 $y2 $layer_width"     
-            } elseif {$y1 <= $b2 && $y2 >= $b2} {   
-                ##puts "CASE3 of blockage in between top and bottom edge of core, but stripe extending out only in one side (left)"
-                lappend stripe_locs($lay,$tag) "$loc1 $y1 $b2 $layer_width"
-            } elseif {$y1 <= $b4 && $y1 >= $b2 && $y2 >= $b2 && $y2 <= $b4} {       
-                ##completely enclosed - remove segment
-            } else {
-              #puts "  CASE5 no match"
-              #puts "    $loc1 $loc2 $loc3"
-              lappend stripe_locs($lay,$tag) "$loc1 $y1 $y2 $layer_width"
-            }
-        } else {
-            lappend stripe_locs($lay,$tag) "$loc1 $y1 $y2 $layer_width"
-        }
-    }
-}
-
-
-## this is a top-level proc to generate PDN stripes and insert vias between these stripes
-proc generate_stripes_vias {tag net_name grid_data} {
-  variable vias
-  variable blockages
-  variable plan_template
-  variable template
-
-  #puts "Adding stripes for $net_name ..."
-  if {[dict exists $grid_data rails]} {
-    set area [dict get $grid_data area]
-    foreach lay [dict keys [dict get $grid_data rails]] {
-        #Std. cell rails
-      #puts "    Layer $lay ..."
-      generate_lower_metal_followpin_rails $tag $grid_data
-      if {[dict exists $blockages $lay]} {
-        foreach blk [dict get $blockages $lay] {
-          generate_metal_with_blockage $area $lay [dict get $grid_data rails $lay width] $tag {*}$blk
-        }
+  if {[get_dir $layer] == "hor"} {
+    set offset [expr [lindex $area 1] + [dict get $layer_info offset]]
+    if {$tag != $stripes_start_with} { ;#If not starting from bottom with this net, 
+      if {[dict exists $layer_info spacing]} {
+        set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
+      } else {
+        set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
       }
     }
+    for {set y $offset} {$y < [expr {[lindex $area 3] - [dict get $layer_info width]}]} {set y [expr {[dict get $layer_info pitch] + $y}]} {
+      set box [::odb::odb_newSetFromRect [lindex $area 0] [expr $y - $width / 2] [lindex $area 2] [expr $y + $width / 2]]
+      add_stripe $layer $tag $box
+    }
+  } elseif {[get_dir $layer] == "ver"} {
+    set offset [expr [lindex $area 0] + [dict get $layer_info offset]]
+
+    if {$tag != $stripes_start_with} { ;#If not starting from bottom with this net, 
+      if {[dict exists $layer_info spacing]} {
+        set offset [expr {$offset + [dict get $layer_info spacing] + [dict get $layer_info width]}]
+      } else {
+        set offset [expr {$offset + ([dict get $layer_info pitch] / 2)}]
+      }
+    }
+    for {set x $offset} {$x < [expr {[lindex $area 2] - [dict get $layer_info width]}]} {set x [expr {[dict get $layer_info pitch] + $x}]} {
+      set box [::odb::odb_newSetFromRect [expr $x - $width / 2] [lindex $area 1] [expr $x + $width / 2] [lindex $area 3]]
+      add_stripe $layer $tag $box
+    }
+  } else {
+    critical 26 "Invalid direction \"[get_dir $layer]\" for metal layer ${layer}. Should be either \"hor\" or \"ver\"."
   }
+}
+
+proc adjust_area_for_core_rings {layer area} {
+  variable grid_data
+
+  set core_offset [dict get $grid_data core_ring $layer core_offset]
+  set width [dict get $grid_data core_ring $layer width]
+  set spacing [dict get $grid_data core_ring $layer spacing]
+
+  if {[get_dir $layer] == "hor"} {
+    set extended_area [list \
+      [expr [lindex $area 0] - $core_offset - $width - $spacing - $width / 2] \
+      [lindex $area 1] \
+      [expr [lindex $area 2] + $core_offset + $width + $spacing + $width / 2] \
+      [lindex $area 3] \
+    ]
+  } else {
+    set extended_area [list \
+      [lindex $area 0] \
+      [expr [lindex $area 1] - $core_offset - $width - $spacing - $width / 2] \
+      [lindex $area 2] \
+      [expr [lindex $area 3] + $core_offset + $width + $spacing + $width / 2] \
+    ]
+  }
+  return $extended_area
+}
+
+## this is a top-level proc to generate PDN stripes and insert vias between these stripes
+proc generate_stripes {tag} {
+  variable plan_template
+  variable template
+  variable grid_data
+
+  if {![dict exists $grid_data straps]} {return}
   foreach lay [dict keys [dict get $grid_data straps]] {
-    # puts "    Layer $lay ..."
+    # debug generate_stripes "    Layer $lay ..."
 
     #Upper layer stripes
     if {[dict exists $grid_data straps $lay width]} {
-      set area [dict get $grid_data area]
-      generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
-      if {[dict exists $blockages $lay]} {
-        foreach blk [dict get $blockages $lay] {
-          generate_metal_with_blockage $area $lay [dict get $grid_data straps $lay width] $tag {*}$blk
-        }
+      if {[get_dir $lay] == "hor"} {
+        set area [get_core_area]
+      } else {
+        set area [dict get $grid_data area]
       }
+      if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $lay]} {
+        set area [adjust_area_for_core_rings $lay $area]
+      }
+      generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
     } else {
       foreach x [lsort -integer [dict keys $plan_template]] {
         foreach y [lsort -integer [dict keys [dict get $plan_template $x]]] {
           set template_name [dict get $plan_template $x $y]
           set layer_info [dict get $grid_data straps $lay $template_name]
           set area [list $x $y [expr $x + [dict get $template width]] [expr $y + [dict get $template height]]]
+          # debug "Adding straps for $area"
           generate_upper_metal_mesh_stripes $tag $lay $layer_info $area
-          if {[dict exists $blockages $lay]} {
-            foreach blk [dict get $blockages $lay] {
-              generate_metal_with_blockage $area $lay [dict get $layer_info width] $tag {*}$blk
-            }
-          }
         }
       }
     }
   }
+}
+
+proc cut_blocked_areas {tag} {
+  variable stripe_locs
+  variable grid_data
+  
+  if {![dict exists  $grid_data straps]} {return}
+
+  foreach layer_name [dict keys [dict get $grid_data straps]] {
+    if {[dict exists $grid_data straps $layer_name width]} {
+      set width [dict get $grid_data straps $layer_name width]
+    } else {
+      set template_name [lindex [dict get $grid_data template names] 0]
+      set width [dict get $grid_data straps $layer_name $template_name width]
+    }
+
+    set blockages [get_blockages]
+    if {[dict exists $blockages $layer_name]} {
+      set stripe_locs($layer_name,$tag) [::odb::odb_subtractSet $stripe_locs($layer_name,$tag) [dict get $blockages $layer_name]]
+
+      # Trim any shapes that are less than the width of the wire
+      set size_by [expr $width / 2 - 1]
+      set trimmed_set [::odb::odb_shrinkSet $stripe_locs($layer_name,$tag) $size_by]
+      set stripe_locs($layer_name,$tag) [::odb::odb_bloatSet $trimmed_set $size_by]
+    }
+  }
+}
+
+proc generate_grid_vias {tag net_name} {
+  variable vias
+  variable grid_data
 
   #Via stacks
   if {[dict exists $grid_data connect]} {
-    # puts "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
+    # debug "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
     foreach connection [dict get $grid_data connect] {
         set l1 [lindex $connection 0]
         set l2 [lindex $connection 1]
-        # puts "    $l1 to $l2"
+        # debug "    $l1 to $l2"
         set constraints {}
         if {[dict exists $connection constraints]} {
           set constraints [dict get $connection constraints]
         }
-        # puts "    Constraints: $constraints"
-        set connections [generate_via_stacks $l1 $l2 $tag $grid_data $constraints]
+        # debug "    Constraints: $constraints"
+        set connections [generate_via_stacks $l1 $l2 $tag $constraints]
         lappend vias [list net_name $net_name connections $connections]
     }
   }
-  # puts "End"
+  # debug "End"
+}
+
+proc get_core_ring_centre {type side layer_info} {
+  variable grid_data
+
+  set area [find_core_area]
+  set xMin [lindex $area 0]
+  set yMin [lindex $area 1]
+  set xMax [lindex $area 2]
+  set yMax [lindex $area 3]
+  set core_offset [dict get $layer_info core_offset]
+  set spacing [dict get $layer_info spacing]
+  set width [dict get $layer_info width]
+
+  # debug "area        $area"
+  # debug "core_offset $core_offset"
+  # debug "spacing     $spacing"
+  # debug "width       $width"
+  switch $type {
+    "POWER" {
+      switch $side {
+        "t" {return [expr $yMax + $core_offset]}
+        "b" {return [expr $yMin - $core_offset]} 
+        "l" {return [expr $xMin - $core_offset]} 
+        "r" {return [expr $xMax + $core_offset]}
+      }
+    }
+    "GROUND" {
+      switch $side {
+        "t" {return [expr $yMax + $core_offset + $spacing + $width]}
+        "b" {return [expr $yMin - $core_offset - $spacing - $width]} 
+        "l" {return [expr $xMin - $core_offset - $spacing - $width]} 
+        "r" {return [expr $xMax + $core_offset + $spacing + $width]}
+      }
+    }
+  }
+}
+
+proc generate_core_rings {} {
+  variable grid_data
+  
+  dict for {layer layer_info} [dict get $grid_data core_ring] {
+    set area [find_core_area]
+    set xMin [lindex $area 0]
+    set yMin [lindex $area 1]
+    set xMax [lindex $area 2]
+    set yMax [lindex $area 3]
+    set core_offset [dict get $layer_info core_offset]
+    set spacing [dict get $layer_info spacing]
+    set width [dict get $layer_info width]
+    
+    set inner_lx [expr $xMin - $core_offset]
+    set inner_ly [expr $yMin - $core_offset]
+    set inner_ux [expr $xMax + $core_offset]
+    set inner_uy [expr $yMax + $core_offset]
+
+    set outer_lx [expr $xMin - $core_offset - $spacing - $width]
+    set outer_ly [expr $yMin - $core_offset - $spacing - $width]
+    set outer_ux [expr $xMax + $core_offset + $spacing + $width]
+    set outer_uy [expr $yMax + $core_offset + $spacing + $width]
+
+    if {[get_dir $layer] == "hor"} {
+      add_stripe $layer POWER \
+        [odb::odb_newSetFromRect \
+          [expr $inner_lx - $width / 2] \
+          [expr $inner_ly - $width / 2] \
+          [expr $inner_ux + $width / 2] \
+          [expr $inner_ly + $width / 2] \
+        ]
+      add_stripe $layer POWER \
+        [odb::odb_newSetFromRect \
+          [expr $inner_lx - $width / 2] \
+          [expr $inner_uy - $width / 2] \
+          [expr $inner_ux + $width / 2] \
+          [expr $inner_uy + $width / 2] \
+        ]
+
+      add_stripe $layer GROUND \
+        [odb::odb_newSetFromRect \
+          [expr $outer_lx - $width / 2] \
+          [expr $outer_ly - $width / 2] \
+          [expr $outer_ux + $width / 2] \
+          [expr $outer_ly + $width / 2] \
+        ]
+
+      add_stripe $layer GROUND \
+        [odb::odb_newSetFromRect \
+          [expr $outer_lx - $width / 2] \
+          [expr $outer_uy - $width / 2] \
+          [expr $outer_ux + $width / 2] \
+          [expr $outer_uy + $width / 2] \
+        ]
+    } else {
+      add_stripe $layer POWER \
+        [odb::odb_newSetFromRect \
+          [expr $inner_lx - $width / 2] \
+          [expr $inner_ly - $width / 2] \
+          [expr $inner_lx + $width / 2] \
+          [expr $inner_uy + $width / 2] \
+        ]
+      add_stripe $layer POWER \
+        [odb::odb_newSetFromRect \
+          [expr $inner_ux - $width / 2] \
+          [expr $inner_ly - $width / 2] \
+          [expr $inner_ux + $width / 2] \
+          [expr $inner_uy + $width / 2] \
+        ]
+
+      add_stripe $layer GROUND \
+        [odb::odb_newSetFromRect \
+          [expr $outer_lx - $width / 2] \
+          [expr $outer_ly - $width / 2] \
+          [expr $outer_lx + $width / 2] \
+          [expr $outer_uy + $width / 2] \
+        ]
+
+      add_stripe $layer GROUND \
+        [odb::odb_newSetFromRect \
+          [expr $outer_ux - $width / 2] \
+          [expr $outer_ly - $width / 2] \
+          [expr $outer_ux + $width / 2] \
+          [expr $outer_uy + $width / 2] \
+        ]
+    }
+  }
 }
 
 proc get_macro_boundaries {} {
@@ -1322,24 +1911,11 @@ proc import_macro_boundaries {} {
   variable macros
   variable instances
 
+  # debug "start"
   set macros {}
   foreach lib $libs {
     foreach cell [$lib getMasters] {
-      if {[$cell getType] == "CORE"} {continue}
-      if {[$cell getType] == "IO"} {continue}
-      if {[$cell getType] == "PAD"} {continue}
-      if {[$cell getType] == "PAD_SPACER"} {continue}
-      if {[$cell getType] == "SPACER"} {continue}
-      if {[$cell getType] == "NONE"} {continue}
-      if {[$cell getType] == "ENDCAP_PRE"} {continue}
-      if {[$cell getType] == "ENDCAP_BOTTOMLEFT"} {continue}
-      if {[$cell getType] == "ENDCAP_BOTTOMRIGHT"} {continue}
-      if {[$cell getType] == "ENDCAP_TOPLEFT"} {continue}
-      if {[$cell getType] == "ENDCAP_TOPRIGHT"} {continue}
-      if {[$cell getType] == "ENDCAP"} {continue}
-      if {[$cell getType] == "CORE_SPACER"} {continue}
-      if {[$cell getType] == "CORE_TIEHIGH"} {continue}
-      if {[$cell getType] == "CORE_TIELOW"} {continue}
+      if {[$cell getType] != "BLOCK"} {continue}
 
       dict set macros [$cell getName] [list \
         width  [$cell getWidth] \
@@ -1350,6 +1926,8 @@ proc import_macro_boundaries {} {
 
   set instances [import_def_components [dict keys $macros]]
 
+  set boundary [get_stdcell_area]
+    
   foreach instance [dict keys $instances] {
     set macro_name [dict get $instances $instance macro]
 
@@ -1357,6 +1935,15 @@ proc import_macro_boundaries {} {
     set lly [dict get $instances $instance ymin]
     set urx [dict get $instances $instance xmax]
     set ury [dict get $instances $instance ymax]
+
+    # If there are no shapes left after 'and'ing the boundard with the cell, then
+    # the cell lies outside the area where we are adding a power grid.
+    set box [odb::odb_newSetFromRect $llx $lly $urx $ury]
+    if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
+      # debug "Instance $instance does not lie in the cell area"
+      set instances [dict remove $instances $instance]
+      continue
+    }
 
     dict set instances $instance macro_boundary [list $llx $lly $urx $ury]
 
@@ -1368,16 +1955,21 @@ proc import_macro_boundaries {} {
 
     dict set instances $instance halo_boundary [list $llx $lly $urx $ury]
   }
+  
+  # debug "end"
+  
 }
 
 proc import_def_components {macros} {
   variable design_data
   variable block
   set instances {}
+  # debug "$macros"
 
   foreach inst [$block getInsts] {
     set macro_name [[$inst getMaster] getName]
     if {[lsearch -exact $macros $macro_name] != -1} {
+      # debug "macro $macro_name"
       set data {}
       dict set data name [$inst getName]
       dict set data macro $macro_name
@@ -1399,10 +1991,12 @@ proc import_def_components {macros} {
       } else {
         dict set data halo [dict get $design_data config default_halo]
       }
+      # debug "data $data"
 
       dict set instances [$inst getName] $data
     }
   }
+  # debug "end"
 
   return $instances
 }
@@ -1423,19 +2017,20 @@ proc export_opendb_vias {} {
   variable physical_viarules
   variable block
   variable tech
+  # debug "[llength $physical_viarules]"
   dict for {name rules} $physical_viarules {
     foreach rule $rules {
-      # puts "export_opendb_vias: $rule"
+      # debug "$rule"
       set via [$block findVia [dict get $rule name]]
       if {$via == "NULL"} {
         set via [odb::dbVia_create $block [dict get $rule name]]
-        # puts "export_opendb_vias: Via $via"
+        # debug "Via $via"
 
         $via setViaGenerateRule [$tech findViaGenerateRule [dict get $rule rule]]
         set params [$via getViaParams]
         $params setBottomLayer [$tech findLayer [lindex [dict get $rule layers] 0]]
-        $params setCutLayer [$tech findLayer [lindex [dict get $rule layers] 2]]
-        $params setTopLayer [$tech findLayer [lindex [dict get $rule layers] 1]]
+        $params setCutLayer [$tech findLayer [lindex [dict get $rule layers] 1]]
+        $params setTopLayer [$tech findLayer [lindex [dict get $rule layers] 2]]
         $params setXCutSize [lindex [dict get $rule cutsize] 0]
         $params setYCutSize [lindex [dict get $rule cutsize] 1]
         $params setXCutSpacing [lindex [dict get $rule cutspacing] 0]
@@ -1451,7 +2046,7 @@ proc export_opendb_vias {} {
       }
     }
   }
-  # puts "export_opendb_vias: end"
+  # debug "end"
 }
 
 proc export_opendb_specialnet {net_name signal_type} {
@@ -1472,7 +2067,7 @@ proc export_opendb_specialnet {net_name signal_type} {
   foreach inst [$block getInsts] {
     set master [$inst getMaster]
     foreach mterm [$master getMTerms] {
-      if {[$mterm getSigType] == $signal_type} {
+      if {[$mterm getSigType] == $signal_type && [dict exists $global_connections $net_name]} {
         foreach pattern [dict get $global_connections $net_name] {
           if {[regexp [dict get $pattern inst_name] [$inst getName]] &&
             [regexp [dict get $pattern pin_name] [$mterm getName]]} {
@@ -1490,49 +2085,54 @@ proc export_opendb_specialnet {net_name signal_type} {
   $net setWildConnected
   set swire [odb::dbSWire_create $net "ROUTED"]
 
+  # debug "layers - $metal_layers"
   foreach lay $metal_layers {
-    set layer [$tech findLayer $lay]
+    if {[array names stripe_locs "$lay,$signal_type"] == ""} {continue}
 
-    set dir [get_dir $lay]
-    if {$dir == "hor"} {
-      foreach l_str $stripe_locs($lay,$signal_type) {
-        set l1 [lindex $l_str 0]
-        set l2 [lindex $l_str 1]
-        set l3 [lindex $l_str 2]
-        set width [lindex $l_str 3]
-        set wire_type "STRIPE"
-        if {[is_rails_layer $lay]} {set wire_type "FOLLOWPIN"}
-        if {$l1 == $l3} {continue}
-        odb::dbSBox_create $swire $layer [expr round($l1)] [expr round($l2 - ($width/2))] [expr round($l3)] [expr round($l2 + ($width/2))] $wire_type
+    set layer [find_layer $lay]
+
+    foreach shape [::odb::odb_getPolygons $stripe_locs($lay,$signal_type)] {
+      set points [::odb::odb_getPoints $shape]
+      if {[llength $points] != 4} {
+        variable def_units
+        warning 6 "Unexpected number of points in shape ($lay $signal_type [llength $points])"
+        set str "    "
+        foreach point $points {set str "$str ([expr 1.0 * [$point getX] / $def_units ] [expr 1.0 * [$point getY] / $def_units]) "}
+        warning 7 $str
+        continue
       }
-    } elseif {$dir == "ver"} {
-      foreach l_str $stripe_locs($lay,$signal_type) {
-        set l1 [lindex $l_str 0]
-        set l2 [lindex $l_str 1]
-        set l3 [lindex $l_str 2]
-        set width [lindex $l_str 3]
-        set wire_type "STRIPE"
-        if {[is_rails_layer $lay]} {set wire_type "FOLLOWPIN"}
-        if {$l2 == $l3} {continue}
-        odb::dbSBox_create $swire $layer [expr round($l1 - ($width/2))] [expr round($l2)] [expr round($l1 + ($width/2))] [expr round($l3)] $wire_type
-      }               
+      set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+      set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+      set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+      set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+
+      set width [expr $xMax - $xMin]
+      set height [expr $yMax - $yMin]
+
+      set wire_type "STRIPE"
+      if {[is_rails_layer $lay]} {set wire_type "FOLLOWPIN"}
+      # debug "$xMin $yMin $xMax $yMax $wire_type"
+      odb::dbSBox_create $swire $layer $xMin $yMin $xMax $yMax $wire_type
     }
   }
+
   variable vias
+  # debug "vias - [llength $vias]"
   foreach via $vias {
     if {[dict get $via net_name] == $net_name} {
       # For each layer between l1 and l2, add vias at the intersection
       foreach via_inst [dict get $via connections] {
-#        puts "export_opendb_specialnet: $via_inst"
+        # debug "$via_inst"
         set via_name [dict get $via_inst name]
         set x        [dict get $via_inst x]
         set y        [dict get $via_inst y]
-#        puts "export_opendb_specialnet: $via_name $x $y [$block findVia $via_name]"
+        # debug "$via_name $x $y [$block findVia $via_name]"
         odb::dbSBox_create $swire [$block findVia $via_name] $x $y "STRIPE"
-#        puts "export_opendb_specialnet: via created"
+        # debug "via created"
       }
     }
   }
+  # debug "end"
 }
   
 proc export_opendb_specialnets {} {
@@ -1540,11 +2140,11 @@ proc export_opendb_specialnets {} {
   variable design_data
   
   foreach net_name [dict get $design_data power_nets] {
-    export_opendb_specialnet "VDD" "POWER"
+    export_opendb_specialnet $net_name "POWER"
   }
 
   foreach net_name [dict get $design_data ground_nets] {
-    export_opendb_specialnet "VSS" "GROUND"
+    export_opendb_specialnet $net_name "GROUND"
   }
   
 }
@@ -1586,7 +2186,7 @@ proc write_opendb_row {height start end} {
   if {$start == $end} {return}
   
   set llx [lindex [dict get $design_data config core_area] 0]
-  if {[expr { int($start - $llx) % $site_width}] == 0} {
+  if {(int($start - $llx) % $site_width) == 0} {
       set x $start
   } else {
       set offset [expr { int($start - $llx) % $site_width}]
@@ -1597,92 +2197,6 @@ proc write_opendb_row {height start end} {
   
   odb::dbRow_create $block ROW_$row_index $site $x $height [orientation $height] "HORIZONTAL" $num $site_width
   incr row_index
-}
-
-## Obsolete
-proc export_opendb_rows {} {
-  variable stripe_locs
-  variable row_height
-  variable row_index
-
-  set row_index 1
-  
-  set stripes [concat $stripe_locs([get_rails_layers],POWER) $stripe_locs([get_rails_layers],GROUND)]
-  set new_stripes {}
-  foreach stripe $stripes {
-    if {[lindex $stripe 0] != [lindex $stripe 2]} {
-      lappend new_stripes $stripe
-    }
-  }
-  set stripes $new_stripes
-  set stripes [lsort -real -index 1 $stripes]
-  set heights {}
-  foreach stripe $stripes {
-    lappend heights [lindex $stripe 1]
-  }
-  set heights [lsort -unique -real $heights]
-
-  init_orientation [lindex $heights 0]
-
-  foreach height [lrange $heights 0 end-1] {
-    set rails {}
-    foreach stripe $stripes {
-      if {[lindex $stripe 1] == $height} {
-        lappend rails $stripe
-      }
-    }
-    set lower_rails [lsort -real -index 2 $rails]
-    set rails {}
-    foreach stripe $stripes {
-      if {[lindex $stripe 1] == ($height + $row_height)} {
-        lappend rails $stripe
-      }
-    }
-    set upper_rails [lsort -real -index 2 $rails]
-    set upper_extents {}
-    foreach upper_rail $upper_rails {
-      lappend upper_extents [lindex $upper_rail 0]
-      lappend upper_extents [lindex $upper_rail 2]
-    }
-
-    foreach lrail $lower_rails {
-      set idx 0
-      set start [lindex $lrail 0]
-      set end   [lindex $lrail 2]
-
-      # Find index of first number that is greater than the start position of this rail
-      while {$idx < [llength $upper_extents]} {
-        if {[lindex $upper_extents $idx] > $start} {
-          break
-        }
-        incr idx
-      }
-
-      if {[lindex $upper_extents $idx] <= $start} {
-        continue
-      }
-
-      if {$idx % 2 == 0} {
-        # If the index is even, then the start of the rail has no matching rail above it
-        set row_start [lindex $upper_extents $idx]
-        incr idx
-      } else {
-        # If the index is odd, then the start of the rail has matchin rail above it
-        set row_start $start
-      }
-
-      if {$end <= [lindex $upper_extents $idx]} {
-        write_opendb_row $height $row_start $end
-        
-      } else {
-        while {$idx < [llength $upper_extents] && $end > [lindex $upper_extents [expr $idx + 1]]} {
-          write_opendb_row $height $row_start [lindex $upper_extents $idx]
-          set row_start [lindex $upper_extents [expr $idx + 1]]
-          set idx [expr $idx + 2]
-        }
-      }
-    }
-  }
 }
 
 ## procedure for file existence check, returns 0 if file does not exist or file exists, but empty
@@ -1720,7 +2234,7 @@ proc transform_box {xmin ymin xmax ymax origin orientation} {
     MY    {set new_box [list [expr -1 * $xmax] $ymin [expr -1 * $xmin] $ymax]}
     MXR90 {set new_box [list $ymin $xmin $ymax $xmax]}
     MYR90 {set new_box [list [expr -1 * $ymax] [expr -1 * $xmax] [expr -1 * $ymin] [expr -1 * $xmin]]}
-    default {error "Illegal orientation $orientation specified"}
+    default {critical 27 "Illegal orientation $orientation specified"}
   }
   return [list \
     [expr [lindex $new_box 0] + [lindex $origin 0]] \
@@ -1740,30 +2254,26 @@ proc set_template_size {width height} {
 
 proc get_memory_instance_pg_pins {} {
   variable block
-  variable stripe_locs
+
+  # debug "start"
+  set boundary [get_stdcell_area]
 
   foreach inst [$block getInsts] {
     set inst_name [$inst getName]
     set master [$inst getMaster]
 
-    if {[$master getType] == "CORE"} {continue}
-    if {[$master getType] == "IO"} {continue}
-    if {[$master getType] == "PAD"} {continue}
-    if {[$master getType] == "PAD_SPACER"} {continue}
-    if {[$master getType] == "SPACER"} {continue}
-    if {[$master getType] == "NONE"} {continue}
-    if {[$master getType] == "ENDCAP_PRE"} {continue}
-    if {[$master getType] == "ENDCAP_BOTTOMLEFT"} {continue}
-    if {[$master getType] == "ENDCAP_BOTTOMRIGHT"} {continue}
-    if {[$master getType] == "ENDCAP_TOPLEFT"} {continue}
-    if {[$master getType] == "ENDCAP_TOPRIGHT"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "ENDCAP"} {continue}
-    if {[$master getType] == "CORE_SPACER"} {continue}
-    if {[$master getType] == "CORE_TIEHIGH"} {continue}
-    if {[$master getType] == "CORE_TIELOW"} {continue}
+    if {[$master getType] != "BLOCK"} {continue}
+
+    # If there are no shapes left after 'and'ing the boundard with the cell, then
+    # the cell lies outside the area where we are adding a power grid.
+    set bbox [$inst getBBox]
+    set box [odb::odb_newSetFromRect [$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]]
+    if {[llength [odb::odb_getPolygons [odb::odb_andSet $boundary $box]]] == 0} {
+      # debug "Instance [$inst getName] does not lie in the cell area"
+      continue
+    }
+    
+    # debug "cell name - [$master getName]"
 
     foreach term_name [concat [get_macro_power_pins $inst_name] [get_macro_ground_pins $inst_name]] {
       set inst_term [$inst findITerm $term_name]
@@ -1771,7 +2281,7 @@ proc get_memory_instance_pg_pins {} {
       
       set mterm [$inst_term getMTerm]
       set type [$mterm getSigType]
-
+      set pin_shapes {}
       foreach mPin [$mterm getMPins] {
         foreach geom [$mPin getGeometry] {
           set layer [[$geom getTechLayer] getName]
@@ -1781,23 +2291,26 @@ proc get_memory_instance_pg_pins {} {
           set height [expr abs([lindex $box 3] - [lindex $box 1])]
 
           if {$width > $height} {
-            set xl [lindex $box 0]
-            set xu [lindex $box 2]
-            set y  [expr ([lindex $box 1] + [lindex $box 3])/2]
-            set width [expr abs([lindex $box 3] - [lindex $box 1])]
-            lappend stripe_locs(${layer}_PIN_hor,$type) [list $xl $y $xu $width]
+            set layer_name ${layer}_PIN_hor
           } else {
-            set x  [expr ([lindex $box 0] + [lindex $box 2])/2]
-            set yl [lindex $box 1]
-            set yu [lindex $box 3]
-            set width [expr abs([lindex $box 2] - [lindex $box 0])]
-            lappend stripe_locs(${layer}_PIN_ver,$type) [list $x $yl $yu $width]
+            set layer_name ${layer}_PIN_ver
           }
+          set pin_shape [odb::odb_newSetFromRect {*}$box]
+          # debug "$pin_shapes"
+          if {![dict exists $pin_shapes $layer_name]} {
+            dict set pin_shapes $layer_name $pin_shape
+          } else {
+            dict set pin_shapes $layer_name [odb::odb_orSet [dict get $pin_shapes $layer_name] $pin_shape]
+          }            
         }
+      }
+      dict for {layer_name shapes} $pin_shapes {
+        add_stripe $layer_name $type $shapes
       }
     }    
   }
-#    puts "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+  # debug "Total walltime till macro pin geometry creation = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+  # debug "end"
 }
 
 proc set_core_area {xmin ymin xmax ymax} {
@@ -1806,10 +2319,18 @@ proc set_core_area {xmin ymin xmax ymax} {
   dict set design_data config core_area [list $xmin $ymin $xmax $ymax]
 }
 
+proc get_core_area {} {
+  variable design_data
+
+  return [get_extent [get_stdcell_area]]
+}
+
 proc write_pdn_strategy {} {
   variable design_data
   
-  set_pdn_string_property_value "strategy" [dict get $design_data grid]
+  if {[dict exists $design_data grid]} {
+    set_pdn_string_property_value "strategy" [dict get $design_data grid]
+  }
 }
 
 proc init {{PDN_cfg "PDN.cfg"}} {
@@ -1831,10 +2352,11 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   variable stripes_start_with
   variable rails_start_with
   variable physical_viarules
+  variable stdcell_area
   
 #    set ::start_time [clock clicks -milliseconds]
   if {![file_exists_non_empty $PDN_cfg]} {
-    error "File $PDN_cfg does not exist, or exists but empty"
+    critical 28 "File $PDN_cfg does not exist, or exists but empty"
   }
 
   set tech [$db getTech]
@@ -1845,6 +2367,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 
   set design_data {}
   set physical_viarules {}
+  set stdcell_area ""
   
   source $PDN_cfg
   write_pdn_strategy 
@@ -1853,9 +2376,10 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   init_via_tech
   
   set die_area [$block getDieArea]
-  puts "Design Name is $design_name"
+  information 8 "Design Name is $design_name"
   set def_output "${design_name}_pdn.def"
   
+  # debug "examine vars"
   if {[info vars ::power_nets] == ""} {
     set ::power_nets "VDD"
   }
@@ -1893,9 +2417,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   set row_height [$site getHeight]
 
   ##### Get information from BEOL LEF
-  puts "Reading BEOL LEF and gathering information ..."
-
-#        puts " DONE \[Total elapsed walltime = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds\]"
+  information 9 "Reading technology data"
 
   if {[info vars ::layers] != ""} {
     foreach layer $::layers {
@@ -1914,7 +2436,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     } elseif {[llength $::halo] == 4} {
       set default_halo $::halo
     } else {
-      error "ERROR: Illegal number of elements defined for ::halo \"$::halo\""
+      critical 29 "Illegal number of elements defined for ::halo \"$::halo\" (1, 2 or 4 allowed)"
     }
   } else {
     set default_halo "0 0 0 0"
@@ -1925,20 +2447,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   dict set design_data config die_area     [list [$die_area xMin]  [$die_area yMin] [$die_area xMax] [$die_area yMax]]
   dict set design_data config default_halo [lmap x $default_halo {expr $x * $def_units}]
          
-  if {[info vars ::core_area_llx] != "" && [info vars ::core_area_lly] != "" && [info vars ::core_area_urx] != "" && [info vars ::core_area_ury] != ""} {
-     set_core_area \
-       [expr round($::core_area_llx * $def_units)] \
-       [expr round($::core_area_lly * $def_units)] \
-       [expr round($::core_area_urx * $def_units)] \
-       [expr round($::core_area_ury * $def_units)]
-  } else {
-    set_core_area {*}[find_core_area]
-  }
-  
-  foreach lay $metal_layers { 
-    set stripe_locs($lay,POWER) ""
-    set stripe_locs($lay,GROUND) ""
-  }
+  array unset stripe_locs
 
   ########################################
   # Remove existing power/ground nets
@@ -1950,23 +2459,40 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     }
   }
 
+  if {[dict exists $design_data grid stdcell]} {
+    set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
+  }
+  
+  # debug "Set the core area"
+  # Set the core area
+  if {[info vars ::core_area_llx] != "" && [info vars ::core_area_lly] != "" && [info vars ::core_area_urx] != "" && [info vars ::core_area_ury] != ""} {
+     # The core area is larger than the stdcell area by half a rail, since the stdcell rails extend beyond the rails
+
+     set_core_area \
+       [expr round($::core_area_llx * $def_units)] \
+       [expr round($::core_area_lly * $def_units)] \
+       [expr round($::core_area_urx * $def_units)] \
+       [expr round($::core_area_ury * $def_units)]
+  } else {
+    set_core_area {*}[get_extent [get_stdcell_plus_area]]
+  }
+  
   ########################################
   # Creating blockages based on macro locations
   #######################################
+  # debug "import_macro_boundaries"
   import_macro_boundaries
 
+  # debug "get_memory_instance_pg_pins"
   get_memory_instance_pg_pins
-
-  set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
 
   ##### Basic sanity checks to see if inputs are given correctly
   foreach layer [get_rails_layers] {
     if {[lsearch -exact $metal_layers $layer] < 0} {
-      error "ERROR: Layer specified for std. cell rails '$layer' not in list of layers."
+      critical 30 "Layer specified for std. cell rails '$layer' not in list of layers."
     }
   }
-
-#        puts "Total walltime till PDN setup = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+  # debug "end"
 
   return $design_data
 }
@@ -1974,7 +2500,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 proc convert_layer_spec_to_def_units {data} {
   variable def_units
   
-  foreach key {width pitch spacing offset} {
+  foreach key {width pitch spacing offset core_offset} {
     if {[dict exists $data $key]} {
       dict set data $key [expr round([dict get $data $key] * $def_units)]
     }
@@ -1996,6 +2522,12 @@ proc specify_grid {type specification} {
   }
   set spec_name [dict get $spec name]
   
+  if {[dict exists $specification core_ring]} {
+    dict for {layer data} [dict get $specification core_ring] {
+      dict set spec core_ring $layer [convert_layer_spec_to_def_units $data]
+    }
+  }
+  
   if {[dict exists $specification rails]} {
     dict for {layer data} [dict get $specification rails] {
       dict set spec rails $layer [convert_layer_spec_to_def_units $data]
@@ -2008,16 +2540,20 @@ proc specify_grid {type specification} {
       }
     }
   }
-  dict for {layer data} [dict get $specification straps] {
-    dict set spec straps $layer [convert_layer_spec_to_def_units $data]
-    if {[dict exists $specification template]} {
-      foreach template [dict get $specification template names] {
-        if {[dict exists $specification straps $layer $template]} {
-          dict set spec straps $layer $template [convert_layer_spec_to_def_units [dict get $specification straps $layer $template]]
+  
+  if {[dict exists $specification straps]} {
+    dict for {layer data} [dict get $specification straps] {
+      dict set spec straps $layer [convert_layer_spec_to_def_units $data]
+      if {[dict exists $specification template]} {
+        foreach template [dict get $specification template names] {
+          if {[dict exists $specification straps $layer $template]} {
+            dict set spec straps $layer $template [convert_layer_spec_to_def_units [dict get $specification straps $layer $template]]
+          }
         }
       }
     }
   }
+  
   if {[dict exists $specification template]} {
     set_template_size {*}[dict get $specification template size]
   }
@@ -2025,28 +2561,575 @@ proc specify_grid {type specification} {
   dict set design_data grid $type $spec_name $spec
 }
 
-proc add_grid {grid_data} {
+proc get_quadrant {x y} {
   variable design_data
   
-  ## Power nets
-  ## puts "Power straps"
-  foreach pwr_net [dict get $design_data power_nets] {
-    set tag "POWER"
-    generate_stripes_vias $tag $pwr_net $grid_data
+  set die_area [dict get $design_data config die_area]
+  set dw [expr [lindex $die_area 2] - [lindex $die_area 0]]
+  set dh [expr [lindex $die_area 3] - [lindex $die_area 1]]
+  
+  set test_x [expr $x - [lindex $die_area 0]]
+  set test_y [expr $y - [lindex $die_area 1]]
+  # debug "$dw * $test_y ([expr $dw * $test_y]) > expr $dh * $test_x ([expr $dh * $test_x])"
+  if {$dw * $test_y > $dh * $test_x} {
+    # Top or left
+    if {($dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
+      # Top or right
+      return "t"
+    } else {
+      # Bottom or left
+      return "l"
+    }
+  } else {
+    # Bottom or right
+    if {($dw * $test_y) + ($dh * $test_x) > ($dw * $dh)} {
+      # Top or right
+      return "r"
+    } else {
+      # Bottom or left
+      return "b"
+    }
   }
-  ## Ground nets
-  ## puts "Ground straps"
-  foreach gnd_net [dict get $design_data ground_nets] {
-    set tag "GROUND"
-    generate_stripes_vias $tag $gnd_net $grid_data
+}
+
+proc get_core_facing_pins {instance pin_name side layer} {
+  variable block
+  set geoms {}
+  set core_pins {}
+  set inst [$block findInst [dict get $instance name]]
+  set pins [[[$inst findITerm $pin_name] getMTerm] getMPins]
+  
+  # debug "start"
+  foreach pin $pins {
+    foreach geom [$pin getGeometry] {
+      if {[[$geom getTechLayer] getName] != $layer} {continue}
+      lappend geoms $geom
+    }
+  }
+  # debug "$pins"
+  foreach geom $geoms {
+    set ipin [transform_box [$geom xMin] [$geom yMin] [$geom xMax] [$geom yMax] [$inst getOrigin] [$inst getOrient]]
+    # debug "$ipin [[$inst getBBox] xMin] [[$inst getBBox] yMin] [[$inst getBBox] xMax] [[$inst getBBox] yMax] "
+    switch $side {
+      "t" {
+        if {[lindex $ipin 1] == [[$inst getBBox] yMin]} {
+          lappend core_pins [list \
+            centre [expr ([lindex $ipin 2] + [lindex $ipin 0]) / 2] \
+            width [expr [lindex $ipin 2] - [lindex $ipin 0]] \
+          ]
+        }
+      }
+      "b" {
+        if {[lindex $ipin 3] == [[$inst getBBox] yMax]} {
+          lappend core_pins [list \
+            centre [expr ([lindex $ipin 2] + [lindex $ipin 0]) / 2] \
+            width [expr [lindex $ipin 2] - [lindex $ipin 0]] \
+          ]
+        }
+      }
+      "l" {
+        if {[lindex $ipin 2] == [[$inst getBBox] xMax]} {
+          lappend core_pins [list \
+            centre [expr ([lindex $ipin 3] + [lindex $ipin 1]) / 2] \
+            width [expr [lindex $ipin 3] - [lindex $ipin 1]] \
+          ]
+        }
+      } 
+      "r" {
+        if {[lindex $ipin 0] == [[$inst getBBox] xMin]} {
+          lappend core_pins [list \
+            centre [expr ([lindex $ipin 3] + [lindex $ipin 1]) / 2] \
+            width [expr [lindex $ipin 3] - [lindex $ipin 1]] \
+          ]
+        }
+      }
+    }
+  }
+  # debug "$core_pins"
+  return $core_pins
+}
+
+proc connect_pads_to_core_ring {type pin_name pads} {
+  variable grid_data
+  # debug "start - pads $pads"
+  dict for {inst_name instance} [import_def_components $pads] {
+    # debug "inst $inst_name"
+    set side [get_quadrant [dict get $instance x] [dict get $instance y]]
+    # debug "inst [dict get $instance name] x [dict get $instance x] y [dict get $instance y] side $side"
+    switch $side {
+      "t" {
+        set required_direction "ver"
+      }
+      "b" {
+        set required_direction "ver"
+      }
+      "l" {
+        set required_direction "hor"
+      }
+      "r" {
+        set required_direction "hor"
+      }
+    }
+    foreach non_pref_layer [dict keys [dict get $grid_data core_ring]] {
+      if {[get_dir $non_pref_layer] != $required_direction} {
+        set non_pref_layer_info [dict get $grid_data core_ring $non_pref_layer]
+        break
+      }
+    }
+    # debug "find_layer"
+    foreach pref_layer [dict keys [dict get $grid_data core_ring]] {
+      if {[get_dir $pref_layer] == $required_direction} {
+        break
+      }
+    }
+    switch $side {
+      "t" {
+        set y_min [expr [get_core_ring_centre $type $side $non_pref_layer_info] - [dict get $grid_data core_ring $non_pref_layer width] / 2]
+        set y_min_blk [expr $y_min - [dict get $grid_data core_ring $non_pref_layer spacing]]
+        set y_max [dict get $instance ymin]
+        # debug "t: [dict get $instance xmin] $y_min_blk [dict get $instance xmax] [dict get $instance ymax]"
+        add_blockage $pref_layer [odb::odb_newSetFromRect [dict get $instance xmin] $y_min_blk [dict get $instance xmax] [dict get $instance ymax]]
+      }
+      "b" {
+        # debug "[get_core_ring_centre $type $side $non_pref_layer_info] + [dict get $grid_data core_ring $non_pref_layer width] / 2"
+        set y_max [expr [get_core_ring_centre $type $side $non_pref_layer_info] + [dict get $grid_data core_ring $non_pref_layer width] / 2]
+        set y_max_blk [expr $y_max + [dict get $grid_data core_ring $non_pref_layer spacing]]
+        set y_min [dict get $instance ymax]
+        # debug "b: [dict get $instance xmin] [dict get $instance ymin] [dict get $instance xmax] $y_max"
+        add_blockage $pref_layer [odb::odb_newSetFromRect [dict get $instance xmin] [dict get $instance ymin] [dict get $instance xmax] $y_max_blk]
+        # debug "end b"
+      }
+      "l" {
+        set x_max [expr [get_core_ring_centre $type $side $non_pref_layer_info] + [dict get $grid_data core_ring $non_pref_layer width] / 2]
+        set x_max_blk [expr $x_max + [dict get $grid_data core_ring $non_pref_layer spacing]]
+        set x_min [dict get $instance xmax]
+        # debug "l: [dict get $instance xmin] [dict get $instance ymin] $x_max [dict get $instance ymax]"
+        add_blockage $pref_layer [odb::odb_newSetFromRect [dict get $instance xmin] [dict get $instance ymin] $x_max_blk [dict get $instance ymax]]
+      }
+      "r" {
+        set x_min [expr [get_core_ring_centre $type $side $non_pref_layer_info] - [dict get $grid_data core_ring $non_pref_layer width] / 2]
+        set x_min_blk [expr $x_min - [dict get $grid_data core_ring $non_pref_layer spacing]]
+        set x_max [dict get $instance xmin]
+        # debug "r: $x_min_blk [dict get $instance ymin] [dict get $instance xmax] [dict get $instance ymax]"
+        add_blockage $pref_layer [odb::odb_newSetFromRect $x_min_blk [dict get $instance ymin] [dict get $instance xmax] [dict get $instance ymax]]
+      }
+    }
+
+    # debug "$pref_layer"
+    foreach pin_geometry [get_core_facing_pins $instance $pin_name $side $pref_layer] {
+      set centre [dict get $pin_geometry centre]
+      set width  [dict get $pin_geometry width]
+      if {$required_direction == "hor"} {
+        # debug "added_strap $pref_layer $type $x_min [expr $centre - $width / 2] $x_max [expr $centre + $width / 2]"
+        add_stripe $pref_layer "PAD_$type" [odb::odb_newSetFromRect $x_min [expr $centre - $width / 2] $x_max [expr $centre + $width / 2]]
+      } else {
+        # debug "added_strap $pref_layer $type [expr $centre - $width / 2] $y_min [expr $centre + $width / 2] $y_max"
+        add_stripe $pref_layer "PAD_$type" [odb::odb_newSetFromRect [expr $centre - $width / 2] $y_min [expr $centre + $width / 2] $y_max]
+      }
+    }
+  }
+  # debug "end"
+}
+
+proc add_pad_straps {tag} {
+  variable stripe_locs
+  
+  foreach pad_connection [array names stripe_locs "*,PAD_*"] {
+    if {![regexp "(.*),PAD_$tag" $pad_connection - layer]} {continue}
+    # debug "$pad_connection"
+    if {[array names stripe_locs "$layer,$tag"] != ""} {
+      # debug add_pad_straps "Before: $layer [llength [::odb::odb_getPolygons $stripe_locs($layer,$tag)]]"
+      # debug add_pad_straps "Adding: [llength [::odb::odb_getPolygons $stripe_locs($pad_connection)]]"
+      add_stripe $layer $tag $stripe_locs($pad_connection)
+      # debug add_pad_straps "After:  $layer [llength [::odb::odb_getPolygons $stripe_locs($layer,$tag)]]"
+    }
+  }
+}
+
+proc print_spacing_table {layer_name} {
+  set layer [find_layer $layer_name]
+  if {[$layer hasTwoWidthsSpacingRules]} {
+    set table_size [$layer getTwoWidthsSpacingTableNumWidths]
+    for {set i 0} {$i < $table_size} {incr i} {
+      set width [$layer getTwoWidthsSpacingTableWidth $i]
+      puts -nonewline "WIDTH $width "
+      if {[$layer getTwoWidthsSpacingTableHasPRL $i]} {
+        set prl [$layer getTwoWidthsSpacingTablePRL $i] 
+        puts -nonewline "PRL $prl "
+      }
+      puts -nonewline "[$layer getTwoWidthsSpacingTableEntry 0 $i] "
+    }
+    puts ""
+  }
+}
+
+proc get_twowidths_table {table_type} {
+  variable metal_layers
+  set twowidths_table {}
+  
+  foreach layer_name $metal_layers {
+    set spacing_table [get_spacingtables $layer_name]
+    set prls {}
+
+    if {[dict exists $spacing_table TWOWIDTHS $table_type]} {
+      set layer_spacing_table [dict get $spacing_table TWOWIDTHS $table_type]
+      set table_size [dict size $layer_spacing_table]
+      set table_widths [dict keys $layer_spacing_table]
+
+      for {set i 0} {$i < $table_size} {incr i} {
+
+        set width [lindex $table_widths $i]
+        set spacing [lindex [dict get $layer_spacing_table $width spacings] $i]
+
+        if {[dict get $layer_spacing_table $width prl] != 0} {
+          set prl [dict get $layer_spacing_table $width prl] 
+          set update_prls {}
+          dict for {prl_entry prl_setting} $prls {
+            if {$prl <= [lindex $prl_entry 0]} {break}
+            dict set update_prls $prl_entry $prl_setting
+            dict set twowidths_table $layer_name $width $prl_entry $prl_setting
+          }
+          dict set update_prls $prl $spacing
+          dict set twowidths_table $layer_name $width $prl $spacing
+          set prls $update_prls
+        } else {
+          set prls {}
+          dict set prls 0 $spacing
+          dict set twowidths_table $layer_name $width 0 $spacing
+        }
+      }
+    }
+  }
+  
+  return $twowidths_table
+}
+
+proc get_twowidths_tables {} {
+  variable twowidths_table
+  variable twowidths_table_wrongdirection
+  
+  set twowidths_table [get_twowidths_table NONE]
+  set twowidths_table_wrongdirection [get_twowidths_table WRONGDIRECTION]
+}
+
+proc select_from_table {table width} {
+  foreach value [lreverse [lsort -integer [dict keys $table]]] {
+    if {$width > $value} {
+      return $value
+    }
+  }
+  return [lindex [dict keys $table] 0]
+}
+
+proc get_preferred_direction_spacing {layer_name width prl} {
+  variable twowidths_table
+
+  # debug "$layer_name $width $prl"
+  # debug "twowidths_table $twowidths_table"
+  if {$twowidths_table == {}} {
+    return [[find_layer $layer_name] getSpacing]
+  } else {
+    set width_key [select_from_table [dict get $twowidths_table $layer_name] $width]
+    set prl_key   [select_from_table [dict get $twowidths_table $layer_name $width_key] $prl]
+  }
+  
+  return [dict get $twowidths_table $layer_name $width_key $prl_key]
+}
+
+proc get_nonpreferred_direction_spacing {layer_name width prl} {
+  variable twowidths_table_wrongdirection
+  
+  # debug "twowidths_table_wrong_direction $twowidths_table_wrongdirection"
+  if {[dict exists $twowidths_table_wrongdirection $layer_name]} {
+    set width_key [select_from_table [dict get $twowidths_table_wrongdirection $layer_name] $width]
+    set prl_key   [select_from_table [dict get $twowidths_table_wrongdirection $layer_name $width_key] $prl]
+  } else {
+    return [get_preferred_direction_spacing $layer_name $width $prl]
+  }
+  
+  return [dict get $twowidths_table_wrongdirection $layer_name $width_key $prl_key]
+}
+
+proc create_obstructions {layer_name polygons} {
+  set layer [find_layer $layer_name]
+  set min_spacing [get_preferred_direction_spacing $layer_name 0 0]
+
+  # debug "Num polygons [llength $polygons]"
+
+  foreach polygon $polygons {
+    set points [::odb::odb_getPoints $polygon]
+    if {[llength $points] != 4} {
+      warning 6 "Unexpected number of points in stripe of $layer_name"
+      continue
+    }
+    set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+    set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
+    set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+    set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
+
+    if {[get_dir $layer_name] == "hor"} {
+      set required_spacing_pref    [get_preferred_direction_spacing $layer_name [expr $yMax - $yMin] [expr $xMax - $xMin]]
+      set required_spacing_nonpref [get_nonpreferred_direction_spacing $layer_name [expr $xMax - $xMin] [expr $yMax - $yMin]]
+
+      set y_change [expr $required_spacing_pref    - $min_spacing]
+      set x_change [expr $required_spacing_nonpref - $min_spacing]
+    } else {
+      set required_spacing_pref    [get_preferred_direction_spacing $layer_name [expr $xMax - $xMin] [expr $yMax - $yMin]]
+      set required_spacing_nonpref [get_nonpreferred_direction_spacing $layer_name [expr $yMax - $yMin] [expr $xMax - $xMin]]
+
+      set x_change [expr $required_spacing_pref    - $min_spacing]
+      set y_change [expr $required_spacing_nonpref - $min_spacing]
+    }
+
+    create_obstruction_object_blockage $layer $min_spacing [expr $xMin - $x_change] [expr $yMin - $y_change] [expr $xMax + $x_change] [expr $yMax + $y_change]
+  }
+}
+
+proc combine {lside rside} {
+  # debug "l [llength $lside] r [llength $rside]"
+  if {[llength $lside] > 1} {
+    set lside [combine [lrange $lside 0 [expr [llength $lside] / 2 - 1]] [lrange $lside [expr [llength $lside] / 2] end]]
+  }
+  if {[llength $rside] > 1} {
+    set rside [combine [lrange $rside 0 [expr [llength $rside] / 2 - 1]] [lrange $rside [expr [llength $rside] / 2] end]]
+  }
+  return [odb::odb_orSet $lside $rside]
+}
+
+proc shapes_to_polygonSet {shapes} {
+  return [combine [lrange $shapes 0 [expr [llength $shapes] / 2 - 1]] [lrange $shapes [expr [llength $shapes] / 2] end]]
+}
+
+proc generate_obstructions {layer_name} {
+  variable stripe_locs
+  
+  # debug "layer $layer_name"
+  get_twowidths_tables
+
+  set block_shapes {}
+  foreach tag {"POWER" "GROUND"} {
+    if {[array names stripe_locs $layer_name,$tag] == ""} {
+      # debug "No polygons on $layer_name,$tag"
+      continue
+    }
+    if {$block_shapes == {}} {
+      set block_shapes $stripe_locs($layer_name,$tag)
+    } else {
+      set block_shapes [odb::odb_orSet $block_shapes $stripe_locs($layer_name,$tag)]
+    }
+  }
+  set via_shapes 0
+  variable vias
+  # debug "vias - [llength $vias]"
+  foreach via $vias {
+    # For each layer between l1 and l2, add vias at the intersection
+    foreach via_inst [dict get $via connections] {
+      # debug "$via_inst"
+      set via_name [dict get $via_inst name]
+      set x        [dict get $via_inst x]
+      set y        [dict get $via_inst y]
+
+      set lower_layer_name [lindex [dict get $via_inst layers] 0]
+      set upper_layer_name [lindex [dict get $via_inst layers] 2]
+
+      if {$lower_layer_name == $layer_name && [dict exists $via_inst lower_rect]} {        
+        lappend block_shapes [odb::odb_newSetFromRect {*}[transform_box {*}[dict get $via_inst lower_rect] [list $x $y] "R0"]]
+        incr via_shapes
+      } elseif {$upper_layer_name == $layer_name && [dict exists $via_inst upper_rect]} {
+        lappend block_shapes [odb::odb_newSetFromRect {*}[transform_box {*}[dict get $via_inst upper_rect] [list $x $y] "R0"]]
+        incr via_shapes
+      }
+    }
+  }
+  # debug "Via shapes $layer_name $via_shapes"
+  if {$block_shapes != {}} {
+  # debug "create_obstructions [llength $block_shapes]"
+    create_obstructions $layer_name [odb::odb_getPolygons [shapes_to_polygonSet $block_shapes]]
+  }
+  # debug "end"
+}
+
+proc create_obstruction_object_blockage {layer min_spacing xMin yMin xMax yMax} {
+  variable block
+  
+
+  set layer_pitch [get_pitch $layer]
+  set layer_width [$layer getWidth]
+  # debug "Layer - [$layer getName], pitch $layer_pitch, width $layer_width"
+  set tracks [$block findTrackGrid $layer]
+  set offsetX [lindex [$tracks getGridX] 0]
+  set offsetY [lindex [$tracks getGridY] 0]
+
+  # debug "OBS: [$layer getName] $xMin $yMin $xMax $yMax (dx [expr $xMax - $xMin] dy [expr $yMax - $yMin])"
+  # debug "Offsets: x $offsetX y $offsetY"
+  set relative_xMin [expr $xMin - $offsetX]
+  set relative_xMax [expr $xMax - $offsetX]
+  set relative_yMin [expr $yMin - $offsetY]
+  set relative_yMax [expr $yMax - $offsetY]
+  # debug "relative to core area $relative_xMin $relative_yMin $relative_xMax $relative_yMax"
+  
+  # debug "OBS: [$layer getName] $xMin $yMin $xMax $yMax"
+  # Determine which tracks are blocked
+  if {[get_dir [$layer getName]] == "hor"} {
+    set pitch_start [expr $relative_yMin / $layer_pitch]
+    if {$relative_yMin % $layer_pitch >= ($min_spacing + $layer_width / 2)} {
+      incr pitch_start
+    }
+    set pitch_end [expr $relative_yMax / $layer_pitch]
+    if {$relative_yMax % $layer_pitch > $layer_width / 2} {
+      incr pitch_end
+    }
+    # debug "pitch: start $pitch_start end $pitch_end"
+    for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
+      set obs [odb::dbObstruction_create $block $layer \
+        $xMin \
+        [expr $i * $layer_pitch + $offsetY - $layer_width / 2] \
+        $xMax \
+        [expr $i * $layer_pitch + $offsetY + $layer_width / 2] \
+      ]
+    }
+  } else {
+    set pitch_start [expr $relative_xMin / $layer_pitch]
+    if {$relative_xMin % $layer_pitch >= ($min_spacing + $layer_width / 2)} {
+      incr pitch_start
+    }
+    set pitch_end [expr $relative_xMax / $layer_pitch]
+    if {$relative_xMax % $layer_pitch > $layer_width / 2} {
+      incr pitch_end
+    }
+    # debug "pitch: start $pitch_start end $pitch_end"
+    for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
+      set obs [odb::dbObstruction_create $block $layer \
+        [expr $i * $layer_pitch + $offsetX - $layer_width / 2] \
+        $yMin \
+        [expr $i * $layer_pitch + $offsetX + $layer_width / 2] \
+        $yMax \
+      ]
+    }
+  }
+}
+
+proc create_obstruction_object_net {layer min_spacing xMin yMin xMax yMax} {
+  variable block
+  variable obstruction_index
+  
+  incr obstruction_index
+  set net_name "obstruction_$obstruction_index"
+  if {[set obs_net [$block findNet $net_name]] == "NULL"} {
+    set obs_net [odb::dbNet_create $block $net_name]
+  }
+  # debug "obs_net [$obs_net getName]"
+  if {[set wire [$obs_net getWire]] == "NULL"} {
+    set wire [odb::dbWire_create $obs_net]
+  }
+  # debug "Wire - net [[$wire getNet] getName]"
+  set encoder [odb::dbWireEncoder]
+  $encoder begin $wire
+  
+  set layer_pitch [$layer getPitch]
+  set layer_width [$layer getWidth]
+  # debug "Layer - [$layer getName], pitch $layer_pitch, width $layer_width"
+  set core_area [get_core_area]
+  # debug "core_area $core_area"
+  set relative_xMin [expr $xMin - [lindex $core_area 0]]
+  set relative_xMax [expr $xMax - [lindex $core_area 0]]
+  set relative_yMin [expr $yMin - [lindex $core_area 1]]
+  set relative_yMax [expr $yMax - [lindex $core_area 1]]
+  # debug "relative to core area $relative_xMin $relative_yMin $relative_xMax $relative_yMax"
+  
+  # debug "OBS: [$layer getName] $xMin $yMin $xMax $yMax"
+  # Determine which tracks are blocked
+  if {[get_dir [$layer getName]] == "hor"} {
+    set pitch_start [expr $relative_yMin / $layer_pitch]
+    if {$relative_yMin % $layer_pitch > ($min_spacing + $layer_width / 2)} {
+      incr pitch_start
+    }
+    set pitch_end [expr $relative_yMax / $layer_pitch]
+    if {$relative_yMax % $layer_pitch > $layer_width / 2} {
+      incr pitch_end
+    }
+    for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
+      $encoder newPath $layer ROUTED
+      $encoder addPoint [expr $relative_xMin + [lindex $core_area 0]] [expr $i * $layer_pitch + [lindex $core_area 1]]
+      $encoder addPoint [expr $relative_xMax + [lindex $core_area 0]] [expr $i * $layer_pitch + [lindex $core_area 1]]
+    }
+  } else {
+    set pitch_start [expr $relative_xMin / $layer_pitch]
+    if {$relative_xMin % $layer_pitch > ($min_spacing + $layer_width / 2)} {
+      incr pitch_start
+    }
+    set pitch_end [expr $relative_xMax / $layer_pitch]
+    if {$relative_xMax % $layer_pitch > $layer_width / 2} {
+      incr pitch_end
+    }
+    for {set i $pitch_start} {$i <= $pitch_end} {incr i} {
+      $encoder newPath $layer ROUTED
+      $encoder addPoint [expr $i * $layer_pitch + [lindex $core_area 0]] [expr $relative_yMin + [lindex $core_area 1]]
+      $encoder addPoint [expr $i * $layer_pitch + [lindex $core_area 0]] [expr $relative_yMax + [lindex $core_area 1]]
+    }
+  }
+  $encoder end
+}
+
+proc add_grid {} {
+  variable design_data
+  variable grid_data
+  
+  if {[dict exists $grid_data core_ring]} {
+    generate_core_rings
+    if {[dict exists $grid_data pwr_pads]} {
+      connect_pads_to_core_ring \
+        "GROUND" \
+        [lindex [dict get $design_data ground_nets] 0] \
+        [dict get $grid_data gnd_pads]
+    }
+    if {[dict exists $grid_data pwr_pads]} {
+      connect_pads_to_core_ring \
+        "POWER" \
+        [lindex [dict get $design_data power_nets] 0] \
+        [dict get $grid_data pwr_pads]
+    }
+  }
+  
+  # debug "Adding stdcell rails"
+  if {[dict exists $grid_data rails]} {
+    set area [dict get $grid_data area]
+    generate_lower_metal_followpin_rails
   }
 
+  ## Power nets
+  # debug "Power straps"
+  foreach pwr_net [dict get $design_data power_nets] {
+    set tag "POWER"
+    generate_stripes $tag
+    cut_blocked_areas $tag
+    add_pad_straps $tag
+    generate_grid_vias $tag $pwr_net
+  }
+  ## Ground nets
+  # debug "Ground straps"
+  foreach gnd_net [dict get $design_data ground_nets] {
+    set tag "GROUND"
+    generate_stripes $tag
+    cut_blocked_areas $tag
+    add_pad_straps $tag
+    generate_grid_vias $tag $gnd_net
+  }
+
+  if {[dict exists $grid_data obstructions]} {
+    information 32 "Generating blockages for TritonRoute"
+    # debug "Obstructions: [dict get $grid_data obstructions]"
+    foreach layer_name [dict get $grid_data obstructions] {
+      generate_obstructions $layer_name
+    }
+  }
+  # debug "end"
 }
 
 proc select_instance_specification {instance} {
   variable design_data
   variable instances
-
+  # debug "start $instance"
   if {[dict exists $design_data grid macro]} {
     set macro_specifications [dict get $design_data grid macro]
 
@@ -2054,6 +3137,7 @@ proc select_instance_specification {instance} {
     dict for {name specification} $macro_specifications {
       if {![dict exists $specification instance]} {continue}
       if {[dict get $specification instance] == $instance} {
+        # debug "instname found, end"
         return $specification
       }
     }
@@ -2061,10 +3145,11 @@ proc select_instance_specification {instance} {
     if {[dict exists $instances $instance]} {
       set instance_macro [dict get $instances $instance macro]
 
-      # If there are orientation based specifcations for this macro, use the appropriate one if available
+      # If there are orientation based specifcations for this macro, use the appropriate one if available && [dict get $spec orient]
       dict for {name spec} $macro_specifications {
-        if {!([dict exists $spec macro] && [dict get $spec orient] && [dict get $spec macro] == $instance_macro)} {continue}
+        if {!([dict exists $spec macro] && [dict exists $spec orient] && [dict get $spec macro] == $instance_macro)} {continue}
         if {[lsearch -exact [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
+          # dbug "select_instance_specification: macro orientation found, end"
           return $spec
         }
       }
@@ -2072,29 +3157,30 @@ proc select_instance_specification {instance} {
       # There should only be one macro specific spec that doesnt have an orientation qualifier
       dict for {name spec} $macro_specifications {
         if {!([dict exists $spec macro] && [dict get $spec macro] == $instance_macro)} {continue}
-        if {[lsearch -exact [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
-          return $spec
-        }
+        # debug "macro, no orientation found, end"
+        return $spec
       }
 
       # If there are orientation based specifcations, use the appropriate one if available
       dict for {name spec} $macro_specifications {
         if {!(![dict exists $spec macro] && ![dict exists $spec instance] && [dict exists $spec orient])} {continue}
         if {[lsearch -exact [dict get $spec orient] [dict get $instances $instance orient]] != -1} {
+          # debug "other end"
           return $spec
         }
       }
     }
 
-    # There should only be one macro specific spec that doesnt have an orientation qualifier
+    # There should only be one non-macro specific spec that doesnt have an orientation qualifier
     dict for {name spec} $macro_specifications {
       if {!(![dict exists $spec macro] && ![dict exists $spec instance])} {continue}
+      # debug "no macro, no instance, end"
       return $spec
     }
 
   }
 
-  error "Error: no matching grid specification found for $instance"
+  critical 31 "No matching grid specification found for $instance"
 }
 
 proc get_instance_specification {instance} {
@@ -2102,29 +3188,54 @@ proc get_instance_specification {instance} {
 
   set specification [select_instance_specification $instance]
 
-  if {![dict exists $specification blockage]} {
-    dict set specification blockage {}
+  if {![dict exists $specification blockages]} {
+    dict set specification blockages {}
   }
   dict set specification area [dict get $instances $instance macro_boundary]
   
   return $specification
 }
 
+proc get_pitch {layer} {
+  if {[$layer hasXYPitch]} {
+    if {[get_dir [$layer getName]] == "hor"} {
+      return [$layer getPitchY]
+    } else {
+      return [$layer getPitchX]
+    }
+  } else {
+    return [$layer getPitch]
+  }
+}
+
 proc init_metal_layers {} {
   variable tech
   variable metal_layers
-  variable metal_layers_dir
-
-  set metal_layers {}        
-  set metal_layers_dir {}
+  variable layers
+  variable block
   
+  set metal_layers {}        
+
   foreach layer [$tech getLayers] {
     if {[$layer getType] == "ROUTING"} {
       set_prop_lines $layer LEF58_TYPE
       # Layers that have LEF58_TYPE are not normal ROUTING layers, so should not be considered
       if {![empty_propline]} {continue}
-      lappend metal_layers [$layer getName]
-      lappend metal_layers_dir [$layer getDirection]
+
+      set layer_name [$layer getName]
+      lappend metal_layers $layer_name
+      
+      if {[$layer getDirection] == "HORIZONTAL"} {
+        dict set layers $layer_name direction "hor"
+      } else {
+        dict set layers $layer_name direction "ver"
+      }
+
+      dict set layers $layer_name pitch [get_pitch $layer]
+
+      set tracks [$block findTrackGrid $layer]
+      dict set layers $layer_name offsetX [lindex [$tracks getGridX] 0]
+      dict set layers $layer_name offsetY [lindex [$tracks getGridY] 0]
     }
   }
 }
@@ -2153,27 +3264,22 @@ proc get_macro_blockage_layers {instance} {
   variable metal_layers
   
   set specification [select_instance_specification $instance]
-  if {[dict exists $specification blockage]} {
-    return [dict get $specification blockage]
+  if {[dict exists $specification blockages]} {
+    return [dict get $specification blockages]
   }
-  return [lrange $metal_layers 0 3]
+  return $metal_layers
 }
 
-proc print_layer_details {layer_name layer indent} {
+proc report_layer_details {layer} {
   variable def_units
   
-   if {[dict exists $layer spacing]} {
-     puts [format " - Width: %.3f Pitch: %.3f Spacing: %.3f Offset: %.3f" \
-       [expr 1.0 * [dict get $layer width] / $def_units] \
-       [expr 1.0 * [dict get $layer pitch] / $def_units] \
-       [expr 1.0 * [dict get $layer spacing] / $def_units] \
-       [expr 1.0 * [dict get $layer offset] / $def_units]]
-   } else {
-     puts [format " - Width: %.3f Pitch: %.3f Offset: %.3f" \
-       [expr 1.0 * [dict get $layer width] / $def_units] \
-       [expr 1.0 * [dict get $layer pitch] / $def_units] \
-       [expr 1.0 * [dict get $layer offset] / $def_units]]
-   }
+  set str " - "
+  foreach element {width pitch spacing offset core_offset} {
+    if {[dict exists $layer $element]} {
+      set str [format "$str $element: %.3f " [expr 1.0 * [dict get $layer $element] / $def_units]]
+    }
+  }
+  return $str
 }
 
 proc print_strategy {type specification} {
@@ -2182,26 +3288,45 @@ proc print_strategy {type specification} {
   } else {
     puts "Type: $type"
   }
+  if {[dict exists $specification core_ring]} {
+    puts "    Core Rings"
+    dict for {layer_name layer} [dict get $specification core_ring] {
+      puts -nonewline "      Layer: $layer_name"
+      if {[dict exists $layer width]} {
+        set str [report_layer_details $layer]
+        puts $str
+      } else {
+        puts ""
+        foreach template [dict keys $layer] {
+          puts -nonewline [format "          %-14s" $template]
+          set str [report_layer_details [dict get $layer $template]]
+          puts $str
+        }
+      }
+    }
+  }
   if {[dict exists $specification rails]} {
     puts "    Stdcell Rails"
     dict for {layer_name layer} [dict get $specification rails] {
       puts -nonewline "      Layer: $layer_name"
       if {[dict exists $layer width]} {
-        print_layer_details $layer_name $layer 4
+        set str [report_layer_details $layer]
+        puts $str
       } else {
         puts ""
         foreach template [dict keys $layer] {
           puts -nonewline [format "          %-14s" $template]
-          print_layer_details $layer_name [dict get $layer $template] 8
+          set str [report_layer_details [dict get $layer $template]]
+          puts $str
         }
       }
     }
   }
   if {[dict exists $specification instance]} {
-    puts "    Instance: [dict get $specification orient]"
+    puts "    Instance: [dict get $specification instance]"
   }
   if {[dict exists $specification macro]} {
-    puts "    Macro: [dict get $specification orient]"
+    puts "    Macro: [dict get $specification macro]"
   }
   if {[dict exists $specification orient]} {
     puts "    Macro orientation: [dict get $specification orient]"
@@ -2211,17 +3336,21 @@ proc print_strategy {type specification} {
     dict for {layer_name layer} [dict get $specification straps] {
       puts -nonewline "      Layer: $layer_name"
       if {[dict exists $layer width]} {
-        print_layer_details $layer_name $layer 4
+        set str [report_layer_details $layer]
+        puts $str
       } else {
         puts ""
         foreach template [dict keys $layer] {
           puts -nonewline [format "          %-14s" $template]
-          print_layer_details $layer_name [dict get $layer $template] 8
+          set str [report_layer_details [dict get $layer $template]]
+          puts $str
         }
       }
     }
   }
-  puts "    Connect: [dict get $specification connect]"
+  if {[dict exists $specification connect]} {
+    puts "    Connect: [dict get $specification connect]"
+  }
 }
 
 proc read_template_placement {} {
@@ -2305,45 +3434,102 @@ proc write_template_placement {} {
   set_pdn_string_property_value "plan_template" $str
 }
 
-proc set_default_template {name} {
-  variable design_data
+proc get_extent {polygon_set} {
+  set first_point  [lindex [odb::odb_getPoints [lindex [odb::odb_getPolygons $polygon_set] 0]] 0]
+  set minX [set maxX [$first_point getX]]
+  set minY [set maxY [$first_point getY]]
+
+  foreach shape [odb::odb_getPolygons $polygon_set] {
+    foreach point [odb::odb_getPoints $shape] {
+      set x [$point getX]
+      set y [$point getY]
+      set minX [expr min($minX,$x)]
+      set maxX [expr max($maxX,$x)]
+      set minY [expr min($minY,$y)]
+      set maxY [expr max($maxY,$y)]
+    }
+  }
+
+  return [list $minX $minY $maxX $maxY]
+}
+
+proc get_stdcell_plus_area {} {
+  variable stdcell_area
+  variable stdcell_plus_area
   
-  dict set design_data config default_template_name $name
+  if {$stdcell_area == ""} {
+    get_stdcell_area
+  }
+  # debug "stdcell_area      [get_extent $stdcell_area]"
+  # debug "stdcell_plus_area [get_extent $stdcell_plus_area]"
+  return $stdcell_plus_area
 }
 
-proc get_specification_template {x y} {
-  variable default_grid_data
-}
-
-proc find_core_area {} {
+proc get_stdcell_area {} {
   variable block
-    
+  variable stdcell_area
+  variable stdcell_plus_area
+  
+  if {$stdcell_area != ""} {return $stdcell_area}
+  set rails_width [get_rails_max_width]
+  
   set rows [$block getRows]
   set first_row [[lindex $rows 0] getBBox]
-    
+
   set minX [$first_row xMin]
   set maxX [$first_row xMax]
   set minY [$first_row yMin]
   set maxY [$first_row yMax]
+  set stdcell_area [odb::odb_newSetFromRect $minX $minY $maxX $maxY]
+  set stdcell_plus_area [odb::odb_newSetFromRect $minX [expr $minY - $rails_width / 2] $maxX [expr $maxY + $rails_width / 2]]
     
-  foreach row [lrange [$block getRows] 1 end] {
+  foreach row [lrange $rows 1 end] {
     set box [$row getBBox]
-    if {[set xMin [$box xMin]] < $minX} {set minX $xMin}
-    if {[set xMax [$box xMax]] > $maxX} {set maxX $xMax}
-    if {[set yMin [$box yMin]] < $minY} {set minY $yMin}
-    if {[set yMax [$box yMax]] > $maxY} {set maxY $yMax}
+    set minX [$box xMin]
+    set maxX [$box xMax]
+    set minY [$box yMin]
+    set maxY [$box yMax]
+    set stdcell_area [odb::odb_orSet $stdcell_area [odb::odb_newSetFromRect $minX $minY $maxX $maxY]]
+    set stdcell_plus_area [odb::odb_orSet $stdcell_plus_area [odb::odb_newSetFromRect $minX [expr $minY - $rails_width / 2] $maxX [expr $maxY + $rails_width / 2]]]
+  }
+
+  return $stdcell_area
+}
+
+proc find_core_area {} {
+  variable block
+  
+  set area [get_stdcell_area]
+
+  return [get_extent $area]
+}
+
+proc get_rails_max_width {} {
+  variable design_data
+  variable default_grid_data
+  
+  set max_width 0
+  foreach layer [get_rails_layers] {
+     if {[dict exists $default_grid_data rails $layer]} {
+       if {[set width [dict get $default_grid_data rails $layer width]] > $max_width} {
+         set max_width $width
+       }
+     }
   }
   
-  return [list $minX $minY $maxX $maxY]
+  return $max_width
 }
 
 proc core_area_boundary {} {
   variable design_data
   variable template
   variable metal_layers
-
-  set core_area [dict get $design_data config core_area]
-  set llx [lindex $core_area 0]
+  variable grid_data
+  
+  set core_area [find_core_area]
+  # We need to allow the rails to extend by half a rails width in the y direction, since the rails overlap the core_area
+  
+  set llx [lindex $core_area 0] 
   set lly [lindex $core_area 1]
   set urx [lindex $core_area 2]
   set ury [lindex $core_area 3]
@@ -2361,15 +3547,14 @@ proc core_area_boundary {} {
   
   # Add blockages around the outside of the core area in order to trim back the templates.
   #
-  set blockages {}
-  set boundary [list \
-    [list [expr $llx - $width] [expr $lly - $height] $llx [expr $ury + $height]] \
-    [list [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly] \
-    [list [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]] \
-    [list $urx [expr $lly - $height] [expr $urx + $width] [expr $ury + $height]] \
-  ]
+  set boundary [odb::odb_newSetFromRect [expr $llx - $width] [expr $lly - $height] $llx [expr $ury + $height]]
+  set boundary [odb::odb_orSet $boundary [odb::odb_newSetFromRect [expr $llx - $width] [expr $lly - $height] [expr $urx + $width] $lly]]
+  set boundary [odb::odb_orSet $boundary [odb::odb_newSetFromRect [expr $llx - $width] $ury [expr $urx + $width] [expr $ury + $height]]]
+  set boundary [odb::odb_orSet $boundary [odb::odb_newSetFromRect $urx [expr $lly - $height] [expr $urx + $width] [expr $ury + $height]]]
+  set boundary [odb::odb_subtractSet $boundary [get_stdcell_plus_area]]
   
   foreach layer $metal_layers {
+    if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $layer]} {continue}
     dict set blockages $layer $boundary
   }
 
@@ -2377,13 +3562,16 @@ proc core_area_boundary {} {
 }
 
 proc get_instance_blockages {instances} {
-  variable metal_layers
-
   set blockages {}
   
   foreach inst $instances {
     foreach layer [get_macro_blockage_layers $inst] {
-      dict lappend blockages $layer [list [get_instance_llx $inst] [get_instance_lly $inst] [get_instance_urx $inst] [get_instance_ury $inst]]
+      set box [odb::odb_newSetFromRect [get_instance_llx $inst] [get_instance_lly $inst] [get_instance_urx $inst] [get_instance_ury $inst]]
+      if {[dict exists $blockages $layer]} {
+        dict set blockages $layer [odb::odb_orSet [dict get $blockages $layer] $box]
+      } else {
+        dict set blockages $layer $box
+      }
     }
   }
 
@@ -2438,26 +3626,45 @@ proc set_blockages {these_blockages} {
   set blockages $these_blockages
 }
   
+proc get_blockages {} {
+  variable blockages
+  
+  return $blockages
+}
+  
+proc add_blockage {layer blockage} {
+  variable blockages
+  
+  if {[dict exists $blockages $layer]} {
+    dict set blockages $layer [odb::odb_orSet [dict get $blockages $layer] $blockage]
+  } else {
+    dict set blockages $layer $blockage
+  }
+}
+  
 proc add_blockages {more_blockages} {
   variable blockages
   
-  dict for {layer blocks} $more_blockages {
-    if {[dict exists $blockages $layer]} {
-      dict set blockages $layer [concat [dict get $blockages $layer] $blocks]
-    } else {
-      dict set blockages $layer $blocks
-    }
+  dict for {layer blockage} $more_blockages {
+    add_blockage $layer $blockage
   }
 }
 
 proc add_macro_based_grids {} {
   variable instances
-
+  variable grid_data
+  variable verbose
+  
   set_blockages {}
   if {[llength [dict keys $instances]] > 0} {
-    puts "Inserting macro grid for [llength [dict keys $instances]] macros"
+    information 10 "Inserting macro grid for [llength [dict keys $instances]] macros"
     foreach instance [dict keys $instances] {
-      add_grid [get_instance_specification $instance]
+      if {$verbose == 1} {
+        information 34 "  - grid for instance $instance"
+      }
+      # debug "$instance [get_instance_specification $instance]"
+      set grid_data [get_instance_specification $instance]
+      add_grid 
     }
   }
 }
@@ -2467,30 +3674,46 @@ proc plan_grid {} {
   variable instances
   variable default_grid_data
   variable def_units
-  variable blockages 
+  variable grid_data
   
   ################################## Main Code #################################
 
-  puts "****** INFO ******"
-  dict for {name specification} [dict get $design_data grid stdcell] {
-    print_strategy stdcell $specification
+  if {![dict exists $design_data grid stdcell]} {
+    warning 17 "No stdcell grid specification found - no rails inserted"
   }
-  dict for {name specification} [dict get $design_data grid macro] {
-    print_strategy macro $specification
+
+  if {![dict exists $design_data grid macro]} {
+    warning 18 "No macro grid specifications found - no straps added"
   }
-  puts "**** END INFO ****"
+
+  information 11 "****** INFO ******"
+
+  if {[dict exists $design_data grid stdcell]} {
+    dict for {name specification} [dict get $design_data grid stdcell] {
+      print_strategy stdcell $specification
+    }
+  }
+
+  if {[dict exists $design_data grid macro]} {
+    dict for {name specification} [dict get $design_data grid macro] {
+      print_strategy macro $specification
+    }
+  }
+
+  information 12 "**** END INFO ****"
 
   set specification $default_grid_data
   if {[dict exists $specification name]} {
-    puts "Inserting stdcell grid - [dict get $specification name]"
+    information 13 "Inserting stdcell grid - [dict get $specification name]"
   } else {
-    puts "Inserting stdcell grid"
+    information 14 "Inserting stdcell grid"
   }
 
-  dict set specification blockage $blockages
   if {![dict exists $specification area]} {
     dict set specification area [dict get $design_data config core_area]
   }
+
+  set grid_data $specification
 
   set_blockages [get_instance_blockages [dict keys $instances]]
   add_blockages [core_area_boundary]        
@@ -2499,13 +3722,13 @@ proc plan_grid {} {
     read_template_placement
   }
   
-  add_grid $specification
+  add_grid
 
   add_macro_based_grids
 }
 
 proc opendb_update_grid {} {
-  puts "Writing to database"
+  information 15 "Writing to database"
   export_opendb_vias
   export_opendb_specialnets
 }
@@ -2522,8 +3745,8 @@ proc apply_pdn {config is_verbose} {
 
   set ::start_time [clock clicks -milliseconds]
   if {$verbose} {
-    puts "##Power Delivery Network Generator: Generating PDN"
-    puts "##  config: $config"
+    information 16 "Power Delivery Network Generator: Generating PDN"
+    information 16 "  config: $config"
   }
   
   apply $config
@@ -2538,7 +3761,7 @@ proc apply {config} {
   opendb_update_grid
 
   if {$verbose} {
-#    puts "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
+#    debug apply "Total walltime to generate PDN DEF = [expr {[expr {[clock clicks -milliseconds] - $::start_time}]/1000.0}] seconds"
   }
 }
 

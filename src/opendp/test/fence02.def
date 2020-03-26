@@ -1,4 +1,4 @@
-VERSION 5.6 ;
+VERSION 5.8 ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN ten_cells ;
@@ -51,8 +51,8 @@ PINS 2 ;
 END PINS
 
 NETS 11 ;
-- input
-  ( PIN input ) ( f1/_277_ Z ) ;
+- out
+  ( PIN out ) ( f1/_277_ Z ) ;
 - net1  
   ( f1/_277_ A ) ( f0/_284_ A2 ) ( f1/_276_ ZN ) ;
 - net2
@@ -71,8 +71,8 @@ NETS 11 ;
   ( f0/_285_ A2 ) ( f0/_284_ ZN ) ;
 - net9
   ( f0/_282_ A1 ) ( f0/_285_ ZN ) ;
-- out 
-  ( PIN out ) ( f0/_285_ A1 ) ; 
+- input
+  ( PIN input ) ( f0/_285_ A1 ) ; 
 END NETS
 
 REGIONS 2 ;

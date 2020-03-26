@@ -17,12 +17,16 @@ Makefile
 /build
 /test/results
 
+/flow
+
 include/openroad/Version.hh
 
 src/init_fp/test/results
 src/resizer/test/results
 src/pdngen/test/results
+src/OpenPhySyn/test/results
 src/FastRoute/test/src
 src/tapcell/test/src
 src/TritonCTS/test/src
 src/ioPlacer/test/src
+src/PDNSim/test/results

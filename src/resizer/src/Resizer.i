@@ -42,20 +42,6 @@ LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
 		      Tcl_Interp *interp);
 
-void
-networkLibertyLibraries(Network *network,
-			// Return value.
-			LibertyLibrarySeq &libs)
-{
-  
-  LibertyLibraryIterator *lib_iter = network->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    LibertyLibrary *lib = lib_iter->next();
-    libs.push_back(lib);
-  }
-  delete lib_iter;
-}
-
 } // namespace
 
 using ord::getResizer;
@@ -127,6 +113,8 @@ using sta::LibertyPort;
 // C++ functions visible as TCL functions.
 //
 ////////////////////////////////////////////////////////////////
+
+%include "../../Exception.i"
 
 %inline %{
 
@@ -201,6 +189,7 @@ buffer_inputs(LibertyCell *buffer_cell)
 void
 buffer_outputs(LibertyCell *buffer_cell)
 {
+  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->bufferOutputs(buffer_cell);
 }
@@ -240,12 +229,16 @@ resize_instance_to_target_slew(Instance *inst)
   resizer->resizeToTargetSlew(inst);
 }
 
+// for testing
 void
 rebuffer_net(Net *net,
 	     LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  LibertyLibrarySeq *resize_libs = new LibertyLibrarySeq;
+  resize_libs->push_back(buffer_cell->libertyLibrary());
+  resizer->resizePreamble(resize_libs);
   resizer->rebuffer(net, buffer_cell);
 }
 

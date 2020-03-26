@@ -1,0 +1,18 @@
+Notice 0: Reading LEF file:  liberty1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 7 library cells
+Notice 0: Finished LEF file:  liberty1.lef
+Notice 0: 
+Reading DEF file: ./results/hi_fanout.def
+Notice 0: Design: hi_fanout
+Notice 0:     Created 1 pins.
+Notice 0:     Created 41 components and 205 component-terminals.
+Notice 0:     Created 2 special nets and 82 connections.
+Notice 0:     Created 2 nets and 82 connections.
+Notice 0: Finished DEF file: ./results/hi_fanout.def
+ clk1 3.01
+ r1q 2.73
+ VSS 0.00
+ VDD 0.00
+Found 1 max capacitance violations.
+Inserted 6 buffers in 1 nets.

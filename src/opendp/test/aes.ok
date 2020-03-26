@@ -1,0 +1,37 @@
+Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: 
+Reading DEF file: aes_cipher_top_replace.def
+Notice 0: Design: aes_cipher_top
+Notice 0:     Created 391 pins.
+Notice 0:     Created 21340 components and 108388 component-terminals.
+Notice 0:     Created 19675 nets and 65708 connections.
+Notice 0: Finished DEF file: aes_cipher_top_replace.def
+Warning: could not find power special net
+Design Stats
+--------------------------------
+total instances         21340
+multi row instances         0
+fixed instances          2457
+nets                    19675
+design area          289247.9 u^2
+fixed area              653.6 u^2
+movable area          24135.5 u^2
+utilization                 8 %
+utilization padded          8 %
+rows                      351
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement    21325.9 u
+average displacement      1.0 u
+max displacement          4.8 u
+original HPWL        364347.7 u
+legalized HPWL       372465.5 u
+delta HPWL                  2 %
+
+No differences found.

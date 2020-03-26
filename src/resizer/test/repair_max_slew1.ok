@@ -1,6 +1,6 @@
 Notice 0: Reading LEF file:  liberty1.lef
 Notice 0:     Created 2 technology layers
-Notice 0:     Created 6 library cells
+Notice 0:     Created 7 library cells
 Notice 0: Finished LEF file:  liberty1.lef
 Notice 0: 
 Reading DEF file: reg3.def
@@ -25,8 +25,8 @@ u2/Z                                    1.50    1.97   -0.47 (VIOLATED)
 r1/Q                                    1.50    1.77   -0.27 (VIOLATED)
 r2/Q                                    1.50    1.77   -0.27 (VIOLATED)
 
-Found 6 max slew violations.
-Inserted 4 buffers in 4 nets.
+Found 5 max slew violations.
+Inserted 4 buffers in 5 nets.
 max_transition
 
 Pin                                    Limit   Trans   Slack

@@ -87,20 +87,20 @@ proc resize { args } {
 
   set buffer_inputs [info exists flags(-buffer_inputs)]
   if { $buffer_inputs } {
-    sta_warn "resize -buffer_inputs is deprecated. Use the buffer_ports command."
+    ord::warn "resize -buffer_inputs is deprecated. Use the buffer_ports command."
   }
   set buffer_outputs [info exists flags(-buffer_outputs)]
   if { $buffer_outputs } {
-    sta_warn "resize -buffer_outputs is deprecated. Use the buffer_ports command."
+    ord::warn "resize -buffer_outputs is deprecated. Use the buffer_ports command."
   }
   set resize [info exists flags(-resize)]
   set repair_max_cap [info exists flags(-repair_max_cap)]
   if { $repair_max_cap } {
-    sta_warn "resize -repair_max_cap is deprecated. Use the repair_max_cap command."
+    ord::warn "resize -repair_max_cap is deprecated. Use the repair_max_cap command."
   }
   set repair_max_slew [info exists flags(-repair_max_slew)]
   if { $repair_max_slew } {
-    sta_warn "resize -repair_max_slew is deprecated. Use the repair_max_slew command."
+    ord::warn "resize -repair_max_slew is deprecated. Use the repair_max_slew command."
   }
   # With no options you get the whole salmai.
   if { !($buffer_inputs || $buffer_outputs || $resize \
@@ -295,7 +295,7 @@ proc report_floating_nets { args } {
   set floating_nets [find_floating_nets]
   set floating_net_count [llength $floating_nets]
   if { $floating_net_count > 0 } {
-    puts "Warning: found $floating_net_count floatiing nets."
+    ord::warn "found $floating_net_count floatiing nets."
     if { $verbose } {
       foreach net $floating_nets {
 	puts " [get_full_name $net]"

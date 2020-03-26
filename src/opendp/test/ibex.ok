@@ -1,0 +1,37 @@
+Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: 
+Reading DEF file: ibex_core_replace.def
+Notice 0: Design: ibex_core
+Notice 0:     Created 231 pins.
+Notice 0:     Created 34184 components and 173049 component-terminals.
+Notice 0:     Created 33171 nets and 104681 connections.
+Notice 0: Finished DEF file: ibex_core_replace.def
+Warning: could not find power special net
+Design Stats
+--------------------------------
+total instances         34184
+multi row instances         0
+fixed instances          4883
+nets                    33171
+design area          662017.6 u^2
+fixed area             1298.9 u^2
+movable area          49735.6 u^2
+utilization                 8 %
+utilization padded          8 %
+rows                      514
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement    29151.9 u
+average displacement      0.9 u
+max displacement          4.4 u
+original HPWL        638365.8 u
+legalized HPWL       653315.2 u
+delta HPWL                  2 %
+
+No differences found.

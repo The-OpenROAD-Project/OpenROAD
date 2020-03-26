@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef STEINER_TREE_H
-#define STEINER_TREE_H
+#pragma once
 
 #include "Hash.hh"
 #include "UnorderedMap.hh"
@@ -27,7 +26,7 @@
 
 namespace sta {
 
-using odb::adsPoint;
+using odb::Point;
 
 class SteinerTree;
 
@@ -40,10 +39,10 @@ makeSteinerTree(const Net *net,
 		bool find_left_rights,
 		dbNetwork *network);
 
-class adsPointHash
+class PointHash
 {
 public:
-  size_t operator()(const adsPoint &pt) const
+  size_t operator()(const Point &pt) const
   {
     size_t hash = hash_init_value;
     hashIncr(hash, pt.x());
@@ -52,11 +51,11 @@ public:
   }
 };
 
-class adsPointEqual
+class PointEqual
 {
 public:
-  bool operator()(const adsPoint &pt1,
-		  const adsPoint &pt2) const
+  bool operator()(const Point &pt1,
+		  const Point &pt2) const
   {
     return pt1.x() == pt2.x()
       && pt1.y() == pt2.y();
@@ -76,10 +75,10 @@ public:
   int branchCount() const;
   void branch(int index,
 	      // Return values.
-	      adsPoint &pt1,
+	      Point &pt1,
 	      Pin *&pin1,
 	      int &steiner_pt1,
-	      adsPoint &pt2,
+	      Point &pt2,
 	      Pin *&pin2,
 	      int &steiner_pt2,
 	      int &wire_length);
@@ -96,7 +95,7 @@ public:
   Pin *pin(SteinerPt pt) const;
   bool isLoad(SteinerPt pt,
 	      const Network *network);
-  adsPoint location(SteinerPt pt) const;
+  Point location(SteinerPt pt) const;
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
@@ -121,10 +120,9 @@ protected:
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;
   // location -> pin (any pin if there are multiple at the location).
-  UnorderedMap<adsPoint, Pin*, adsPointHash, adsPointEqual> loc_pin_map_;
+  UnorderedMap<Point, Pin*, PointHash, PointEqual> loc_pin_map_;
   SteinerPtSeq left_;
   SteinerPtSeq right_;
 };
 
 } // namespace
-#endif

@@ -29,7 +29,7 @@ make
 OpenROAD git submodules (cloned by the --recursive flag) are located in `/src`.
 
 The default build type is RELEASE to compile optimized code.
-The resulting executable is in `build/resizer`.
+The resulting executable is in `build/src/openroad`.
 
 Optional CMake variables passed as -D<var>=<value> arguments to CMake are show below.
 
@@ -94,6 +94,20 @@ write_verilog filename
 read_db filename
 write_db filename
 ```
+
+Use the Tcl `source` command to read commands from a file.
+
+```
+source [-echo] file
+```
+
+If an error is encountered in a command while reading the command file,
+the error is printed and no more commands are read from the file. If
+`file_continue_on_error` is `1` OpenROAD will continue reading commands
+after the error.
+
+If `exit_on_error` is `1` OpenROAD will exit when it encounters an
+error.
 
 OpenROAD can be used to make a OpenDB database from LEF/DEF, or
 Verilog (flat or hierarchical). Once the database is made it can be
@@ -366,16 +380,31 @@ estimated wires used for timing.
 
 #### Detailed Placement
 
-Legalize a design that has been globally placed.
+The `detailed_placement` command does detailed placement of instances
+to legal locations after global placement.
 
 ```
-set_padding -global [-left pad_left] [-right pad_right]
-legalize_placement
-
+set_placement_padding -global [-left pad_left] [-right pad_right]
+detailed_placement [-max_displacement rows]
+check_placement [-verbose]
+filler_placement filler_masters
+set_power_net [-power power_name] [-ground ground_net]
 ```
 
-The `set_padding` command sets left and right padding in multiples of
-the row site width.
+The `set_placement_padding` command sets left and right padding in multiples of
+the row site width. Use the `set_padding` command before legalizing
+placement to leave room for routing.
+
+The `set_power_net` command is used to set the power and ground
+special net names. The defaults are `VDD` and `VSS`.
+
+The `check_placement` command checks the placement legality. It returns `1` if the
+placement is legal.
+
+The `filler_placement` command fills gaps between detail placed instances
+to connect the power and ground rails in the rows. `filler_masters` is
+a list of master/macro names to use for filling the gaps. Wildcard matching
+is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
 
 #### Clock Tree Synthesis
 
@@ -470,3 +499,53 @@ Options description:
 ###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
 ###### NOTE 2: the first routing layer of the design have index equal to 1
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
+
+
+#### Logical and Physical Optimizations
+
+OpenPhySyn Perform additional timing and area optimization.
+
+```
+set_psn_wire_rc [-layer layer_name]
+            [-resistance res_per_micron ]
+      [-capacitance cap_per_micron]
+```
+The `set_psn_wire_rc` command sets the average wire resistance/capacitance per micron; you can use -layer <layer_name> only to extract the value from the LEF technology. It should be invoked before physical optimization commands.
+
+```
+optimize_logic
+        [-tiehi tiehi_cell_name] 
+        [-tielo tielo_cell_name] 
+```
+The `optimize_logic` command should be run after the logic synthesis on hierarical designs to perform logic optimization; currently, it performs constant propagation to reduce the design area. You can optionally specify the name of tie-hi/tie-lo liberty cell names to use for the optimization.
+
+```
+optimize_design
+        [-no_gate_clone]
+        [-no_pin_swap]
+        [-clone_max_cap_factor factor]
+        [-clone_non_largest_cells]
+```
+The `optimize_design` command can be used for additional timing optimization, it should be run after the global placmenet. Currently it peforms gate cloning and comuttaitve pin swapping to enhance the timing.
+
+```
+optimize_fanout
+        -buffer_cell buffer_cell_name
+        -max_fanout max_fanout
+```
+The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
+
+
+#### PDN analysis
+
+PDNSim IR analysis.
+Report worst IR drop given a placed and PDN synthesized design
+
+```
+analyze_power_grid -vsrc <voltage_source_location_file>
+```
+
+Options description:
+- **vsrc**: Set the location of the power C4 bumps/IO pins
+
+###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).

@@ -1,0 +1,40 @@
+Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: Reading LEF file:  extra.lef
+Notice 0:     Created 4 library cells
+Notice 0: Finished LEF file:  extra.lef
+Notice 0: 
+Reading DEF file: check6.def
+Notice 0: Design: single_cell
+Notice 0:     Created 2 pins.
+Notice 0:     Created 2 components and 11 component-terminals.
+Notice 0:     Created 2 special nets and 4 connections.
+Notice 0:     Created 2 nets and 0 connections.
+Notice 0: Finished DEF file: check6.def
+Design Stats
+--------------------------------
+total instances             2
+multi row instances         0
+fixed instances             1
+nets                        4
+design area              34.0 u^2
+fixed area                4.0 u^2
+movable area              0.8 u^2
+utilization                 3 %
+utilization padded          4 %
+rows                        4
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement        2.7 u
+average displacement      1.3 u
+max displacement          2.7 u
+original HPWL             2.5 u
+legalized HPWL            2.9 u
+delta HPWL                 15 %
+
+No differences found.

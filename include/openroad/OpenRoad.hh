@@ -11,8 +11,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENROAD_H
-#define OPENROAD_H
+#pragma once
 
 #include <string>
 
@@ -22,8 +21,9 @@ struct Tcl_Interp;
 
 namespace odb {
 class dbDatabase;
-class adsRect;
 class dbBlock;
+class Point;
+class Rect;
 }
 
 namespace sta {
@@ -64,6 +64,14 @@ namespace OpenRCX {
 class Ext;
 }
 
+namespace psn {
+class Psn;
+}
+
+namespace pdnsim {
+class PDNSim;
+}
+
 namespace ord {
 
 using std::string;
@@ -92,8 +100,9 @@ public:
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
+  pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   // Return the bounding box of the db rows.
-  odb::adsRect getCore();
+  odb::Rect getCore();
   // Return true if the command units have been initialized.
   bool unitsInitialized();
 
@@ -130,16 +139,21 @@ private:
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  psn::Psn *psn_;
   replace::Replace *replace_;
+  pdnsim::PDNSim *pdnsim_; 
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
 };
 
 // Return the bounding box of the db rows.
-odb::adsRect
+odb::Rect
 getCore(odb::dbBlock *block);
 
-} // namespace
+// Return the point inside rect that is closest to pt.
+odb::Point
+closestPtInRect(odb::Rect rect,
+		odb::Point pt);
 
-#endif
+} // namespace

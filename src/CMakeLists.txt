@@ -28,11 +28,14 @@ set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
+set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
+set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
+  Error.cc
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -75,6 +78,7 @@ set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
 set_property(SOURCE ${OPENDB_SWIG_FILE}
   PROPERTY CPLUSPLUS ON
 )
+
 # Ubuntu 18.04 cmake version 3.10.2 does not support the
 # COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
 # them into SWIG_FLAGS for the time being.
@@ -87,6 +91,11 @@ set_property(SOURCE ${OPENDB_SWIG_FILE}
   -I${OPENDB_HOME}/src/swig/tcl
 )
 
+set_property(SOURCE ${OPENDB_SWIG_FILE}
+  PROPERTY DEPENDS
+  Exception.i
+)
+
 swig_add_library(opendb_swig
   LANGUAGE tcl
   TYPE STATIC
@@ -94,7 +103,7 @@ swig_add_library(opendb_swig
 )
 
 target_include_directories(opendb_swig
-  PUBLIC
+  PRIVATE
   ${Boost_INCLUDE_DIRS}
   ${TCL_INCLUDE_PATH}
 )
@@ -111,6 +120,7 @@ set(OPENROAD_SWIG_FILE OpenRoad.i)
 set_property(SOURCE ${OPENROAD_SWIG_FILE}
   PROPERTY CPLUSPLUS ON
 )
+
 # Ubuntu 18.04 cmake version 3.10.2 does not support the
 # COMPILE_OPTIONS and INCLUDE_DIRECTORIES properties, so cram
 # them into SWIG_FLAGS for the time being.
@@ -121,6 +131,11 @@ set_property(SOURCE ${OPENROAD_SWIG_FILE}
   -I${DBSTA_HOME}/include
   -I${OPENROAD_HOME}/src
   -I${OPENDB_HOME}/include
+)
+
+set_property(SOURCE ${OPENROAD_SWIG_FILE}
+  PROPERTY DEPENDS
+  Exception.i
 )
 
 swig_add_library(openroad_swig
@@ -210,6 +225,8 @@ add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
+add_subdirectory(OpenPhySyn)
+add_subdirectory(PDNSim)
 
 ################################################################
 
@@ -234,10 +251,12 @@ target_include_directories(openroad
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
+  ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
+  ${PDNSIM_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
   )
@@ -261,6 +280,8 @@ target_link_libraries(openroad
   TritonMacroPlace
   ParquetFP
   ABKCommon
+  OpenPhySyn
+  pdnsim
   zlib
   tm
   defin

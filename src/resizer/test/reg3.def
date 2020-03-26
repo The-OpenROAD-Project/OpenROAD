@@ -2,7 +2,7 @@
 # reg1 with clock pins tied together and placement
 ###############################################################################
 
-VERSION 5.5 ; 
+VERSION 5.8 ; 
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
@@ -11,7 +11,7 @@ DESIGN reg1 ;
 
 UNITS DISTANCE MICRONS 100 ;
 
-DIEAREA ( 0 0 ) ( 10000 10000 ) ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
 
 
 COMPONENTS 5 ;

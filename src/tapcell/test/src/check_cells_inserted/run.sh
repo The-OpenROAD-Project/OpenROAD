@@ -46,7 +46,7 @@ fi
 binary=$1
 testdir=$2
 
-$binary -no-init < run.tcl > test.log 2>&1
+$binary -no_init < run.tcl > test.log 2>&1
 
 obs_report0=$(grep -e '---- #Endcaps inserted:' ./test.log)
 obs_report1=$(grep -e '---- #Endcaps inserted:' ./test.log)

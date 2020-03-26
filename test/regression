@@ -22,21 +22,27 @@ exec tclsh $0 ${1+"$@"}
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
-set ord_dir [file dirname $test_dir]
+set openroad_dir [file dirname $test_dir]
 
-source [file join $test_dir "regression_vars.tcl"]
 source [file join $test_dir "regression.tcl"]
 
-set tool_scripts {"InitFloorplan" "src/init_fp/test/regression" \
+record_tests {
+  error1
+}
+
+set tool_scripts {"init_fp" "src/init_fp/test/regression" \
 		    "dbSta" "src/dbSta/test/regression" \
 		    "IoPlacer" "src/ioPlacer/test/regression" \
 		    "PDNgen" "src/pdngen/test/regression" \
 		    "TritonMacroPlace" "src/TritonMacroPlace/test/regression" \
 		    "Resizer" "src/resizer/test/regression" \
+		    "Replace" "src/replace/test/regression" \
 		    "TritonCTS" "src/TritonCTS/test/regression" \
 		    "OpenDP" "src/opendp/test/regression" \
 		    "FastRoute" "src/FastRoute/test/regression" \
 		    "TapCell" "src/tapcell/test/regression" \
+		    "OpenPhySyn" "src/OpenPhySyn/test/regression" \
+		    "PDNSim" "src/PDNSim/test/regression" \
 		  }
 
 foreach tool $argv {
@@ -60,14 +66,11 @@ if { [run_tool_tests "openroad"] } {
   incr tool_errors [regression_body {}]
 }
 
-# side lined
-# "Replace" "src/replace/test/regression" \
-
 foreach {tool script} $tool_scripts {
   if { [run_tool_tests $tool] } {
     puts "------------------------------------------------------"
     puts $tool
-    if { [catch "exec [file join $ord_dir $script] >@stdout"] } {
+    if { [catch "exec [file join $openroad_dir $script] >@stdout"] } {
       incr tool_errors
     }
   }
