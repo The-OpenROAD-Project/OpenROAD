@@ -270,8 +270,6 @@ void Opendp::erase_pixel(Cell* cell) {
 	pixel.util = 0;
       }
     }
-    cell->x_ = 0;
-    cell->y_ = 0;
     cell->is_placed_ = false;
     cell->hold_ = false;
   }
