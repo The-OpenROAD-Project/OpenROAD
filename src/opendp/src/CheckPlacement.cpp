@@ -69,14 +69,12 @@ using odb::dbPlacementStatus;
 using ord::warn;
 
 bool Opendp::checkPlacement(bool verbose) {
-  if (cells_.empty())
-    importDb();
+  importDb();
 
   vector<Cell*> placed_failures;
   vector<Cell*> in_core_failures;
   vector<Cell*> overlap_failures;
   vector<Cell*> overlap_padded_failures;
-  vector<Cell*> row_failures;
   vector<Cell*> site_failures;
   vector<Cell*> power_line_failures;
 
@@ -84,11 +82,9 @@ bool Opendp::checkPlacement(bool verbose) {
   bool have_padding = havePadding();
   for(Cell& cell : cells_) {
     if(isStdCell(&cell)) {
-      // Row check
-      if (cell.y_ % row_height_ != 0)
-	row_failures.push_back(&cell);
       // Site check
-      if(cell.x_ % site_width_ != 0)
+      if(cell.x_ % site_width_ != 0
+	 || cell.y_ % row_height_ != 0)
 	site_failures.push_back(&cell);
       if(checkPowerLine(cell)) {
 	checkPowerLine(cell);
@@ -113,7 +109,6 @@ bool Opendp::checkPlacement(bool verbose) {
   if (have_padding)
     reportFailures(overlap_padded_failures, "Overlap padded", verbose,
 		   [&] (Cell *cell) -> void {reportOverlapFailure(cell, grid, true); });
-  reportFailures(row_failures, "Row", verbose);
   reportFailures(site_failures, "Site", verbose);
   reportFailures(power_line_failures, "Power line", verbose);
 
@@ -123,7 +118,6 @@ bool Opendp::checkPlacement(bool verbose) {
     || placed_failures.size()
     || in_core_failures.size()
     || overlap_failures.size()
-    || row_failures.size()
     || site_failures.size();
 }
 

@@ -154,7 +154,8 @@ class Opendp {
 
  private:
   void importDb();
-  void dbToOpendp();
+  void importClear();
+  void reportImportWarnings();
   void makeMacros();
   void examineRows();
   void makeCells();
