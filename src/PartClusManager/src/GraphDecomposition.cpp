@@ -37,6 +37,7 @@
 
 #include "GraphDecomposition.h"
 #include "opendb/db.h"
+#include <fstream>
 
 namespace PartClusManager{
 
@@ -108,39 +109,29 @@ float GraphDecomposition::computeWeight(int nPins){
 	}
 }
 
-void GraphDecomposition::connectStarPins(int firstPin, int secondPin, int weight){
+void GraphDecomposition::connectStarPins(int firstPin, int secondPin, float weight){
 	bool isConnected = false;
 	if (firstPin == secondPin)
 		return;
-	int idx = -1;
-	for (std::pair<int, int> i : adjMatrix[firstPin]) {
-		idx++;
-		if (i.first == secondPin){
+        if (adjMatrix[firstPin].find(secondPin) != adjMatrix[firstPin].end())
 			isConnected = true;
-			break;
-		}
-	}	
+
 	if (!isConnected)
-		adjMatrix[firstPin].push_back(std::make_pair(secondPin, weight));
+		adjMatrix[firstPin][secondPin] = weight;
 	
 }
 
-void GraphDecomposition::connectPins(int firstPin, int secondPin, int weight){
+void GraphDecomposition::connectPins(int firstPin, int secondPin, float weight){
 	bool isConnected = false;
 	if (firstPin == secondPin)
 		return;
-	int idx = -1;
-	for (std::pair<int, int> i : adjMatrix[firstPin]) {
-		idx++;
-		if (i.first == secondPin){
+        if (adjMatrix[firstPin].find(secondPin) != adjMatrix[firstPin].end())
 			isConnected = true;
-			break;
-		}
-	}	
+
 	if (!isConnected){
-		adjMatrix[firstPin].push_back(std::make_pair(secondPin, weight));
+		adjMatrix[firstPin][secondPin] = weight;
 	} else{
-		adjMatrix[firstPin][idx].second += weight;
+		adjMatrix[firstPin][secondPin] += weight;
 	}
 	
 }
@@ -153,13 +144,13 @@ void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 		for (odb::dbBPin * pin : bterm->getBPins()){
 			if (!graph.isInMap(bterm->getName())){ 
 				odb::dbBox * box = pin->getBox();
-				long length = box->getLength();
-				long width = box->getWidth();
-				long area = length * width;
+				long long int length = box->getLength();
+				long long int width = box->getWidth();
+				long long int area = length * width;
 				int nextIdx = graph.computeNextVertexIdx(); 
 				graph.addMapping(bterm->getName(), nextIdx);
 				graph.addVertexWeight(area);
-				std::vector<std::pair<int,int>> aux;
+				std::map<int,float> aux;
 				adjMatrix.push_back(aux);
 			}
 			netVertices.push_back(graph.getMapping(bterm->getName()));
@@ -172,13 +163,13 @@ void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 		odb::dbInst * inst = iterm->getInst();
 		if (!graph.isInMap(inst->getName())){
 			odb::dbBox * bbox = inst->getBBox();
-			int length = bbox->getLength();
-			int width = bbox->getWidth();
-			int area = length * width;	
+			long long int length = bbox->getLength();
+			long long int width = bbox->getWidth();
+			long long int area = length * width;	
 			int nextIdx = graph.computeNextVertexIdx();
 			graph.addMapping(inst->getName(), nextIdx);
 			graph.addVertexWeight(area);
-			std::vector<std::pair<int,int>> aux;
+			std::map<int,float> aux;
 			adjMatrix.push_back(aux);
 		}
 		netVertices.push_back(graph.getMapping(inst->getName()));
@@ -186,7 +177,7 @@ void GraphDecomposition::createStarGraph(Graph & graph, odb::dbNet* net){
 			if (iterm->isOutputSignal())
 				driveIdx= netVertices.size() - 1;
 	}
-	int weight = 1; 
+	float weight = 1; 
 	if (driveIdx == -1)
 		driveIdx = 0;
 	for (int i =0; i < netVertices.size(); i++){
@@ -204,13 +195,13 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 		for (odb::dbBPin * pin : bterm->getBPins()){
 			if (!graph.isInMap(bterm->getName())){ 
 				odb::dbBox * box = pin->getBox();
-				long length = box->getLength();
-				long width = box->getWidth();
-				long area = length * width;
+				long long int length = box->getLength();
+				long long int width = box->getWidth();
+				long long int area = length * width;
 				int nextIdx = graph.computeNextVertexIdx(); 
 				graph.addMapping(bterm->getName(), nextIdx);
 				graph.addVertexWeight(area);
-				std::vector<std::pair<int,int>> aux;
+				std::map<int,float> aux;
 				adjMatrix.push_back(aux);
 			}
 			netVertices.push_back(graph.getMapping(bterm->getName()));
@@ -221,18 +212,18 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 		odb::dbInst * inst = iterm->getInst();
 		if (!graph.isInMap(inst->getName())){
 			odb::dbBox * bbox = inst->getBBox();
-			int length = bbox->getLength();
-			int width = bbox->getWidth();
-			int area = length * width;	
+			long long int length = bbox->getLength();
+			long long int width = bbox->getWidth();
+			long long int area = length * width;	
 			int nextIdx = graph.computeNextVertexIdx();
 			graph.addMapping(inst->getName(), nextIdx);
 			graph.addVertexWeight(area);
-			std::vector<std::pair<int,int>> aux;
+			std::map<int,float> aux;
 			adjMatrix.push_back(aux);
 		}
 		netVertices.push_back(graph.getMapping(inst->getName()));
 	}
-	int weight = (int) computeWeight(nITerms + nBTerms); 
+	float weight = computeWeight(nITerms + nBTerms); 
 	for (int i =0; i < netVertices.size(); i++){
 		for (int j = i+1; j < netVertices.size(); j++){
 			connectPins(netVertices[i], netVertices[j], weight);		
@@ -244,14 +235,17 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 }
 
 void GraphDecomposition::createCompressedMatrix(Graph & graph){
-	for (std::vector<std::pair<int,int>> & node : adjMatrix){
+
+
+	for (std::map<int,float> & node : adjMatrix){
 		int nextPtr = graph.computeNextRowPtr();
 		graph.addRowPtr(nextPtr);
-		for (std::pair<int,int> & connection : node){
+		for (std::pair<const int,float> & connection : node){
 			graph.addEdgeWeight(connection.second);
 			graph.addColIdx(connection.first);
 		}
 	}	
+	
 }
 
 }

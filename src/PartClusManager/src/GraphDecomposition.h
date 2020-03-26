@@ -67,12 +67,12 @@ private:
 	odb::dbDatabase *_db;
 	odb::dbChip *_chip;
 	int _weightingOption;
-	std::vector<std::vector<std::pair<int,int>>> adjMatrix;
+	std::vector<std::map<int,float>> adjMatrix;
 	GraphType resolveModel(std::string graphModel);
 	void createCliqueGraph(Graph &graph, odb::dbNet* net);
 	void createStarGraph(Graph & graph, odb::dbNet* net);
-	void connectPins(int firstPin, int secondPin, int weight);
-	void connectStarPins(int firstPin, int secondPin, int weight);
+	void connectPins(int firstPin, int secondPin, float weight);
+	void connectStarPins(int firstPin, int secondPin, float weight);
 	float computeWeight(int nPins);
 	void createCompressedMatrix(Graph &graph);
 

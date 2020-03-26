@@ -64,8 +64,8 @@ void PartClusManagerKernel::runChaco() {
         currentResults.setPartitionId(partitionId);
         currentResults.setNumOfRuns(_options.getSeeds().size());
 
-        std::vector<int> edgeWeights = _graph.getEdgeWeight();
-	std::vector<double> vertexWeights = _graph.getVertexWeight();
+        std::vector<float> edgeWeights = _graph.getEdgeWeight();
+	std::vector<long long int> vertexWeights = _graph.getVertexWeight();
 	std::vector<int> colIdx = _graph.getColIdx();
 	std::vector<int> rowPtr = _graph.getRowPtr();
         int numVertices = vertexWeights.size();
@@ -174,6 +174,7 @@ void PartClusManagerKernel::graph(){
 	graphDecomp.init(_dbId);
 	graphDecomp.createGraph(_graph, _options.getGraphModel(), _options.getWeightModel(), _options.getMaxEdgeWeight(), 
 					_options.getMaxVertexWeight(), _options.getCliqueThreshold());
+	
 }
 
 unsigned PartClusManagerKernel::generatePartitionId(){

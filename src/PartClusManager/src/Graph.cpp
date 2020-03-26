@@ -36,12 +36,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Graph.h"
+#include <iostream>
 
 namespace PartClusManager {
 
 void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
-	std::vector<int> edgeWeight = _edgeWeights;
-        std::vector<double> vertexWeight = _vertexWeights;
+	std::vector<float> edgeWeight = _edgeWeights;
+        std::vector<long long int> vertexWeight = _vertexWeights;
         double percentile = 0.99; //Exclude possible outliers
 
         std::sort(edgeWeight.begin(), edgeWeight.end());
@@ -57,12 +58,12 @@ void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
         vertexWeight.resize(vSize);
         vertexWeight.shrink_to_fit();
 
-        int maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
-        double maxVWeight = *std::max_element(vertexWeight.begin(), vertexWeight.end());
-        int minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
-        double minVWeight = *std::min_element(vertexWeight.begin(), vertexWeight.end());
+        float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
+        long long int maxVWeight = *std::max_element(vertexWeight.begin(), vertexWeight.end());
+        float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
+        long long int minVWeight = *std::min_element(vertexWeight.begin(), vertexWeight.end());
 
-        for (int & weight : _edgeWeights){
+        for (float & weight : _edgeWeights){
                 weight = std::min(weight, maxEWeight);
                 if (minEWeight == maxEWeight){
                         weight = maxEdgeWeight;
@@ -71,13 +72,13 @@ void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
                         weight = (int)((((weight - minEWeight) * (maxEdgeWeight -1))/(maxEWeight - minEWeight)) + 1);
                 }
         }
-        for (double & weight : _vertexWeights){
+        for (long long int & weight : _vertexWeights){
                 weight = std::min(weight, maxVWeight);
                 if (minVWeight == maxVWeight){
                         weight = maxVertexWeight;
                 }
                 else{
-                        weight = (double)((((weight - minVWeight) * (maxVertexWeight -1))/(maxVWeight - minVWeight)) + 1);
+                        weight = (long long int)((((weight - minVWeight) * (maxVertexWeight -1))/(maxVWeight - minVWeight)) + 1);
                 }
         }	
 
