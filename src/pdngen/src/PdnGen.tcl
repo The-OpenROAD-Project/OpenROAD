@@ -56,6 +56,7 @@
 # 7 (points list)
 # 17 "No stdcell grid specification found - no rails inserted"
 # 18 "No macro grid specifications found - no straps added"
+# 35 "No track information found for layer $layer_name"
 # 
 # Error
 # 
@@ -1564,14 +1565,29 @@ proc generate_via_stacks {l1 l2 tag constraints} {
 }
 
 proc add_stripe {layer type polygon_set} {
-  variable stripe_locs
+  variable stripes
   # debug "start"
-  if {[array names stripe_locs "$layer,$type"] == ""} {
-    set stripe_locs($layer,$type) $polygon_set
-  } else {
-    set stripe_locs($layer,$type) [::odb::odb_orSet $stripe_locs($layer,$type) $polygon_set]
-  }
+  lappend stripes($layer,$type) $polygon_set
   # debug "end"
+}
+
+proc merge_stripes {} {
+  variable stripes
+  variable stripe_locs
+  
+  foreach stripe_set [array names stripes] {
+    # debug "$stripe_set [llength $stripes($stripe_set)]"
+    if {[llength $stripes($stripe_set)] > 0} {
+      set merged_stripes [shapes_to_polygonSet $stripes($stripe_set)]
+      if {[array names stripe_locs $stripe_set] != ""} { 
+        # debug "$stripe_locs($stripe_set)"
+        set stripe_locs($stripe_set) [odb::odb_orSet $stripe_locs($stripe_set) $merged_stripes]
+      } else {
+        set stripe_locs($stripe_set) $merged_stripes
+      }
+    }
+    set stripes($stripe_set) {}
+  }
 }
 
 # proc to generate follow pin layers or standard cell rails
@@ -1687,14 +1703,11 @@ proc generate_stripes {tag} {
 
     #Upper layer stripes
     if {[dict exists $grid_data straps $lay width]} {
-      if {[get_dir $lay] == "hor"} {
-        set area [get_core_area]
-      } else {
-        set area [dict get $grid_data area]
-      }
+      set area [dict get $grid_data area]
       if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $lay]} {
         set area [adjust_area_for_core_rings $lay $area]
       }
+      # debug "area=$area (spec area=[dict get $grid_data area])"
       generate_upper_metal_mesh_stripes $tag $lay [dict get $grid_data straps $lay] $area
     } else {
       foreach x [lsort -integer [dict keys $plan_template]] {
@@ -1926,7 +1939,7 @@ proc import_macro_boundaries {} {
 
   set instances [import_def_components [dict keys $macros]]
 
-  set boundary [get_stdcell_area]
+  set boundary [odb::odb_newSetFromRect {*}[get_core_area]]
     
   foreach instance [dict keys $instances] {
     set macro_name [dict get $instances $instance macro]
@@ -2090,7 +2103,6 @@ proc export_opendb_specialnet {net_name signal_type} {
     if {[array names stripe_locs "$lay,$signal_type"] == ""} {continue}
 
     set layer [find_layer $lay]
-
     foreach shape [::odb::odb_getPolygons $stripe_locs($lay,$signal_type)] {
       set points [::odb::odb_getPoints $shape]
       if {[llength $points] != 4} {
@@ -2254,9 +2266,10 @@ proc set_template_size {width height} {
 
 proc get_memory_instance_pg_pins {} {
   variable block
+  variable metal_layers
 
   # debug "start"
-  set boundary [get_stdcell_area]
+  set boundary [odb::odb_newSetFromRect {*}[get_core_area]]
 
   foreach inst [$block getInsts] {
     set inst_name [$inst getName]
@@ -2285,6 +2298,8 @@ proc get_memory_instance_pg_pins {} {
       foreach mPin [$mterm getMPins] {
         foreach geom [$mPin getGeometry] {
           set layer [[$geom getTechLayer] getName]
+          if {[lsearch -exact $metal_layers $layer] == -1} {continue}
+
           set box [transform_box [$geom xMin] [$geom yMin] [$geom xMax] [$geom yMax] [$inst getOrigin] [$inst getOrient]]
 
           set width  [expr abs([lindex $box 2] - [lindex $box 0])]
@@ -2368,13 +2383,14 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   set design_data {}
   set physical_viarules {}
   set stdcell_area ""
-  
+ 
+  # debug "start" 
   source $PDN_cfg
   write_pdn_strategy 
   
   init_metal_layers
   init_via_tech
-  
+ 
   set die_area [$block getDieArea]
   information 8 "Design Name is $design_name"
   set def_output "${design_name}_pdn.def"
@@ -2897,6 +2913,9 @@ proc combine {lside rside} {
 }
 
 proc shapes_to_polygonSet {shapes} {
+  if {[llength $shapes] == 1} {
+    return $shapes
+  }
   return [combine [lrange $shapes 0 [expr [llength $shapes] / 2 - 1]] [lrange $shapes [expr [llength $shapes] / 2] end]]
 }
 
@@ -3092,6 +3111,7 @@ proc add_grid {} {
   }
   
   # debug "Adding stdcell rails"
+  # debug "area: [dict get $grid_data area]"
   if {[dict exists $grid_data rails]} {
     set area [dict get $grid_data area]
     generate_lower_metal_followpin_rails
@@ -3102,6 +3122,19 @@ proc add_grid {} {
   foreach pwr_net [dict get $design_data power_nets] {
     set tag "POWER"
     generate_stripes $tag
+  }
+  ## Ground nets
+  # debug "Ground straps"
+  foreach gnd_net [dict get $design_data ground_nets] {
+    set tag "GROUND"
+    generate_stripes $tag
+  }
+  merge_stripes
+
+  ## Power nets
+  # debug "Power straps"
+  foreach pwr_net [dict get $design_data power_nets] {
+    set tag "POWER"
     cut_blocked_areas $tag
     add_pad_straps $tag
     generate_grid_vias $tag $pwr_net
@@ -3110,7 +3143,6 @@ proc add_grid {} {
   # debug "Ground straps"
   foreach gnd_net [dict get $design_data ground_nets] {
     set tag "GROUND"
-    generate_stripes $tag
     cut_blocked_areas $tag
     add_pad_straps $tag
     generate_grid_vias $tag $gnd_net
@@ -3230,12 +3262,15 @@ proc init_metal_layers {} {
       } else {
         dict set layers $layer_name direction "ver"
       }
-
       dict set layers $layer_name pitch [get_pitch $layer]
 
       set tracks [$block findTrackGrid $layer]
-      dict set layers $layer_name offsetX [lindex [$tracks getGridX] 0]
-      dict set layers $layer_name offsetY [lindex [$tracks getGridY] 0]
+      if {$tracks == "NULL"} {
+        warning 35 "No track information found for layer $layer_name"
+      } else {
+        dict set layers $layer_name offsetX [lindex [$tracks getGridX] 0]
+        dict set layers $layer_name offsetY [lindex [$tracks getGridY] 0]
+      }
     }
   }
 }
@@ -3664,6 +3699,8 @@ proc add_macro_based_grids {} {
       }
       # debug "$instance [get_instance_specification $instance]"
       set grid_data [get_instance_specification $instance]
+      # debug "area=[dict get $grid_data area]"
+      variable stripe_locs
       add_grid 
     }
   }
