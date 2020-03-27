@@ -38,13 +38,10 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <map>
-#include <unordered_map>
 #include <set>
 #include <vector>
+#include <functional>
 
 #include "opendb/db.h"
 
