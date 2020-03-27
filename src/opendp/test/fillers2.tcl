@@ -5,6 +5,8 @@ read_def simple01.def
 set_placement_padding -global -left 2 -right 2
 detailed_placement
 filler_placement FILL*
+# disable padding for placement checks
+set_placement_padding -global -left 0 -right 0
 check_placement
 
 set def_file [make_result_file fillers2.def]
