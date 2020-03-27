@@ -25,13 +25,13 @@ Type: stdcell, grid
 Type: macro, macro_1
     Macro orientation: R0 R180 MX MY
     Straps
-      Layer: metal5 -  width: 0.930  pitch: 40.000  offset: 2.000 
-      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal5 -  width: 0.930  pitch: 10.000  offset: 2.000 
+      Layer: metal6 -  width: 0.930  pitch: 10.000  offset: 2.000 
     Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
 Type: macro, macro_2
     Macro orientation: R90 R270 MXR90 MYR90
     Straps
-      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6 -  width: 0.930  pitch: 10.000  offset: 2.000 
     Connect: {metal4_PIN_hor metal6} {metal6 metal7}
 [INFO] [PDNG-0012] **** END INFO ****
 [INFO] [PDNG-0013] Inserting stdcell grid - grid
