@@ -657,7 +657,15 @@ proc tapcell { args } {
 
         set inst2_name "PHY_${cnt}"
         set inst2 [odb::dbInst_create $block $master $inst2_name]
-        $inst2 setOrient $ori
+        set right_ori $ori
+        if {[string match "MX" $ori]} {
+            set right_ori "R180"
+        } else {
+            if {[string match "R0" $ori]} {
+                set right_ori "MY"
+            }
+        }
+        $inst2 setOrient $right_ori
         $inst2 setLocation $loc_2_x $loc_2_y
         $inst2 setPlacementStatus LOCKED
 
