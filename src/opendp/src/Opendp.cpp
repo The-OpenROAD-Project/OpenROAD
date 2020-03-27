@@ -125,7 +125,7 @@ Opendp::Opendp()
     grid_(nullptr)
 {
   // magic number alert
-  diamond_search_height_ = 10;
+  diamond_search_height_ = 100;
   diamond_search_width_ = diamond_search_height_ * 5;
   max_displacement_constraint_ = 0;
 }

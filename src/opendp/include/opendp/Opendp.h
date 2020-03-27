@@ -207,6 +207,7 @@ class Opendp {
   int anneal(Group* group);
   int anneal();
   int refine();
+  bool cellFitsInCore(Cell *cell);
 
   void fixed_cell_assign();
   void group_cell_region_assign();
