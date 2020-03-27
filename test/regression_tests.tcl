@@ -1,4 +1,4 @@
 record_tests {
   error1
+  gcd_flow1
 }
-#  gcd_flow1
