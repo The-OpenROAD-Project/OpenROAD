@@ -110,13 +110,10 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   db_ = dbDatabase::create();
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
-  // Only idiots need casts here. Don't copy this.
-  ioPlacer_ = (ioPlacer::IOPlacementKernel*) makeIoplacer();
+  ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
-  // Only idiots need casts here. Don't copy this.
-  fastRoute_ = (FastRoute::FastRouteKernel*) makeFastRoute();
-
+  fastRoute_ = makeFastRoute();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
