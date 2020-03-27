@@ -3,7 +3,33 @@ Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  NangateOpenCellLibrary.lef
-Info: Added 29 rows of 218 sites.
+Info: Added 34 rows of 252 sites.
+[INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
+[INFO] [PDNG-0016]   config: gcd_pdn.cfg
+[INFO] [PDNG-0008] Design Name is gcd
+[INFO] [PDNG-0009] Reading technology data
+[INFO] [PDNG-0011] ****** INFO ******
+Type: stdcell, grid
+    Stdcell Rails
+      Layer: metal1 -  width: 0.170  pitch: 2.400  offset: 0.000 
+    Straps
+      Layer: metal4 -  width: 0.480  pitch: 56.000  offset: 2.000 
+      Layer: metal7 -  width: 1.400  pitch: 40.000  offset: 2.000 
+    Connect: {metal1 metal4} {metal4 metal7}
+Type: macro, macro_1
+    Macro orientation: R0 R180 MX MY
+    Straps
+      Layer: metal5 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
+Type: macro, macro_2
+    Macro orientation: R90 R270 MXR90 MYR90
+    Straps
+      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {metal4_PIN_hor metal6} {metal6 metal7}
+[INFO] [PDNG-0012] **** END INFO ****
+[INFO] [PDNG-0013] Inserting stdcell grid - grid
+[INFO] [PDNG-0015] Writing to database
 Startpoint: _878_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
@@ -12,7 +38,7 @@ Path Type: max
   Delay    Time   Description
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
-   0.00    0.00   clock network delay (ideal)
+   0.00    0.00   clock network delay (propagated)
    0.00    0.00 ^ _878_/CK (DFF_X1)
    0.08    0.08 ^ _878_/Q (DFF_X1)
    0.10    0.18 ^ _752_/Z (BUF_X1)
@@ -38,7 +64,7 @@ Path Type: max
            0.64   data arrival time
 
   10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (ideal)
+   0.00   10.00   clock network delay (propagated)
    0.00   10.00   clock reconvergence pessimism
           10.00 ^ _876_/CK (DFF_X1)
   -0.04    9.96   library setup time
@@ -51,6 +77,25 @@ Path Type: max
 
 
 Resized 198 instances.
+Inserted 0 hold buffers.
+Warning: found 16 floatiing nets.
+ _422_
+ _423_
+ _424_
+ _425_
+ _426_
+ _427_
+ _428_
+ _429_
+ _430_
+ _431_
+ _432_
+ _433_
+ _434_
+ _435_
+ _436_
+ _437_
+Design area 2496 u^2 27% utilization.
 Startpoint: _881_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
@@ -59,7 +104,7 @@ Path Type: max
   Delay    Time   Description
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
-   0.00    0.00   clock network delay (ideal)
+   0.00    0.00   clock network delay (propagated)
    0.00    0.00 ^ _881_/CK (DFF_X1)
    0.08    0.08 ^ _881_/Q (DFF_X1)
    0.04    0.13 ^ _746_/Z (BUF_X1)
@@ -83,7 +128,7 @@ Path Type: max
            0.66   data arrival time
 
   10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (ideal)
+   0.00   10.00   clock network delay (propagated)
    0.00   10.00   clock reconvergence pessimism
           10.00 ^ _876_/CK (DFF_X1)
   -0.04    9.96   library setup time
@@ -95,156 +140,182 @@ Path Type: max
            9.30   slack (MET)
 
 
-[INFO] TargetDensity = 1.000000
-[PROC] Begin Filling Replace Structure ...
-[INFO] DEF DBU = 2000
-[INFO] RowHeight = 2800.000000
-[INFO] ScaleDownUnit = 311.111115
-[INFO] CoreAreaLxLy = (0.000000, 0.000000)
-[INFO] CoreAreaUxUy = (82840.000000, 81200.000000)
-[INFO] OffsetCoordi = (0.000000, 0.000000)
-[INFO] ScaleDownRowHeight = 9.000000
-[INFO] Modules = 455
-[INFO] Terminals = 54
-[PROC] Begin Generate Nets ...
+[INFO] DBU = 2000
+[INFO] SiteSize = (380, 2800)
+[INFO] CoreAreaLxLy = (0, 0)
+[INFO] CoreAreaUxUy = (95760, 95200)
+[INFO] NumInstances = 455
+[INFO] NumPlaceInstances = 455
+[INFO] NumFixedInstances = 0
+[INFO] NumDummyInstances = 0
 [INFO] NumNets = 526
 [INFO] NumPins = 1446
-[PROC] End Generate Nets
-[PROC] Begin Generate Rows ...
-[INFO] RowSize = (0.003926, 9.000000)
-[INFO] NumRows = 29
-[PROC] End Generate Rows
-[INFO] AspectRatio = 0.980203
-[INFO] RowMinXY = (0.000000, 0.000000)
-[INFO] RowMaxXY = (266.271423, 261.000000)
-[INFO] NumPlaceStdCells = 455
-[INFO] NumPlaceMacros = 0
-[INFO] RowSize = (0.003926, 9.000000)
-[INFO] NumRows = 29
-[INFO] GlobalAreaLxLy = (0.000000, 0.000000)
-[INFO] GlobalAreaUxUy = (266.271423, 261.000000)
-[INFO] PlaceAreaLxLy = (0.000000, 0.000000)
-[INFO] PlaceAreaUxUy = (266.271423, 261.000000)
-[PROC] End Filling Replace Structure
-PROC:  Conjugate Gradient (CG) method to obtain the IP
-INFO:  The Initial HPWL is 1661.617458
-INFO:  The Matrix Size is 455
-INFO:  IP  0,  CG Error 0.000000,  HPWL 2240.165107,  CPUtime 0.00
-INFO:  IP  1,  CG Error 0.000000,  HPWL 2065.634505,  CPUtime 0.00
-INFO:  IP  2,  CG Error 0.000000,  HPWL 2066.495031,  CPUtime 0.00
-INFO:  IP  3,  CG Error 0.000000,  HPWL 2060.869770,  CPUtime 0.00
-INFO:  IP  4,  CG Error 0.000000,  HPWL 2069.419913,  CPUtime 0.00
-INFO:  IP  5,  CG Error 0.000000,  HPWL 2063.604344,  CPUtime 0.00
-===HPWL(MICRON)====================================
-  Mode  : Initial Placement
-  HPWL  : 3254.7421
-          x= 1673.1522 y= 1581.5899
-===================================================
-[INFO] TotalPlaceArea = 69496.843750
-[INFO] TotalFixedArea = 0.000000
-[INFO] TotalWhiteSpaceArea = 69496.843750
-[INFO] TotalPlaceMacrosArea = 0.000000
-[INFO] TotalPlaceStdCellsArea = 28482.484375
-[INFO] Util(%) = 40.983852
-[INFO] 80pCellArea = 56.546181
-[INFO] FillerInit: TotalFillerArea = 41014.359375
-[INFO] FillerInit: NumFillerCells = 725
-[INFO] FillerInit: FillerCellArea = 56.546364
-[INFO] FillerInit: FillerCellSize = (6.282929, 9.000000)
-[INFO] FillerInit: NumCells = 1180
-[INFO] FillerInit: NumModules = 455
-[INFO] FillerInit: NumFillers = 725
-INFO:  D_MSH = 1024 
-INFO:  MSH(X, Y) = (32, 32)
-INFO:  dim_bin_cGP2D.(x,y) = (32, 32)
-cell Init 2D:
-tier->bin_stp: (8.3210 8.1562)
-tier->half_bin_stp: (4.1605 4.0781)
-PROC:  Start NESTEROV's Optimization
-PROC:    Global Lagrangian Multiplier is Applied
-[INFO] Timing: WNS = 9.33992e-09
-[INFO] Timing: TNS = 0
-[INFO] Nesterov: 0 OverFlow: 0.8429 ScaledHpwl: 13267.2852
-[INFO] Timing: WNS = 9.34015e-09
-[INFO] Timing: TNS = 0
-[INFO] Nesterov: 10 OverFlow: 0.7397 ScaledHpwl: 15685.9160
-[INFO] Nesterov: 20 OverFlow: 0.7436 ScaledHpwl: 15501.2344
-[INFO] Nesterov: 30 OverFlow: 0.7467 ScaledHpwl: 15489.9746
-[INFO] Nesterov: 40 OverFlow: 0.7463 ScaledHpwl: 15504.2832
-[INFO] Nesterov: 50 OverFlow: 0.7460 ScaledHpwl: 15500.4062
-[INFO] Nesterov: 60 OverFlow: 0.7461 ScaledHpwl: 15498.0586
-[INFO] Nesterov: 70 OverFlow: 0.7461 ScaledHpwl: 15496.3564
-[INFO] Nesterov: 80 OverFlow: 0.7460 ScaledHpwl: 15497.8828
-[INFO] Nesterov: 90 OverFlow: 0.7459 ScaledHpwl: 15500.2344
-[INFO] Nesterov: 100 OverFlow: 0.7459 ScaledHpwl: 15503.1875
-[INFO] Nesterov: 110 OverFlow: 0.7457 ScaledHpwl: 15507.2725
-[INFO] Nesterov: 120 OverFlow: 0.7454 ScaledHpwl: 15513.2451
-[INFO] Nesterov: 130 OverFlow: 0.7450 ScaledHpwl: 15525.3232
-[INFO] Nesterov: 140 OverFlow: 0.7443 ScaledHpwl: 15545.6055
-[INFO] Nesterov: 150 OverFlow: 0.7432 ScaledHpwl: 15577.4766
-[INFO] Nesterov: 160 OverFlow: 0.7417 ScaledHpwl: 15623.8984
-[INFO] Nesterov: 170 OverFlow: 0.7390 ScaledHpwl: 15684.2930
-[INFO] Nesterov: 180 OverFlow: 0.7333 ScaledHpwl: 15764.6387
-[INFO] Nesterov: 190 OverFlow: 0.7232 ScaledHpwl: 15856.7637
-[INFO] Nesterov: 200 OverFlow: 0.7149 ScaledHpwl: 15992.4004
-[INFO] Nesterov: 210 OverFlow: 0.7021 ScaledHpwl: 16247.4277
-[INFO] Nesterov: 220 OverFlow: 0.6796 ScaledHpwl: 16455.3184
-[INFO] Nesterov: 230 OverFlow: 0.6523 ScaledHpwl: 16681.8496
-[INFO] Timing: WNS = 9.34017e-09
-[INFO] Timing: TNS = 0
-[INFO] Nesterov: 240 OverFlow: 0.6208 ScaledHpwl: 16984.5742
-[INFO] Nesterov: 250 OverFlow: 0.5789 ScaledHpwl: 17220.8281
-[INFO] Nesterov: 260 OverFlow: 0.5384 ScaledHpwl: 17467.2617
-[INFO] Nesterov: 270 OverFlow: 0.4938 ScaledHpwl: 17689.3945
-[INFO] Timing: WNS = 9.3404e-09
-[INFO] Timing: TNS = 0
-[INFO] Nesterov: 280 OverFlow: 0.4412 ScaledHpwl: 17989.7852
-[INFO] Nesterov: 290 OverFlow: 0.3959 ScaledHpwl: 18068.6484
-[INFO] Nesterov: 300 OverFlow: 0.3447 ScaledHpwl: 18177.9102
-[INFO] Nesterov: 310 OverFlow: 0.3048 ScaledHpwl: 18160.0762
-[INFO] Timing: WNS = 9.34041e-09
-[INFO] Timing: TNS = 0
-[INFO] Nesterov: 320 OverFlow: 0.2631 ScaledHpwl: 18145.1211
-[INFO] Nesterov: 330 OverFlow: 0.2263 ScaledHpwl: 18203.9531
-[INFO] Timing: WNS = 9.34036e-09
-[INFO] Timing: TNS = 0
-[INFO] Nesterov: 340 OverFlow: 0.1910 ScaledHpwl: 18232.4199
-[INFO] Nesterov: 350 OverFlow: 0.1733 ScaledHpwl: 18252.6152
-[INFO] Nesterov: 360 OverFlow: 0.1419 ScaledHpwl: 18302.0391
-[INFO] Nesterov: 370 OverFlow: 0.1170 ScaledHpwl: 18356.8398
-[INFO] Timing: WNS = 9.3405e-09
-[INFO] Timing: TNS = 0
-HP wire length: 2854
-Worst slack: 9.34e+00
-Total negative slack: 0.00e+00
-CoreArea: 
-0.000000 : 0.000000 - 82840.000000 : 81200.000000
-DieArea: 
-0.000000 : 0.000000 - 82840.000000 : 81200.000000
- non_group_cell_region_assign done ..
- - - - - - - - - - - - - - - - - - - - - - - - - 
- non_group_cell_placement done .. 
- - - - - - - - - - - - - - - - - - - - - - - - - 
- ==== CHECK LEGALITY ==== 
- row_check ==>> PASS 
- site_check ==>> PASS 
- power_check ==>> PASS 
- edge_check ==>> PASS 
- placed_check ==>> PASS 
- overlap_check ==>> PASS 
--------------------- DESIGN ANALYSIS ------------------------------
-  total cells              : 455
-  multi cells              : 0
-  fixed cells              : 0
-  total nets               : 526
-  design area              : 6726608000.0000
-  total f_area             : 0.0000
-  total m_area             : 2496144000.0000
-  design util              : 37.1085
-  num rows                 : 29
-  row height               : 2800.0000
--------------------------------------------------------------------
-Startpoint: _858_ (rising edge-triggered flip-flop clocked by core_clock)
+[INFO] DieAreaLxLy = (0, -170)
+[INFO] DieAreaUxUy = (136620, 179200)
+[INFO] CoreAreaLxLy = (0, 0)
+[INFO] CoreAreaUxUy = (95760, 95200)
+[INFO] CoreArea = 9116352000
+[INFO] NonPlaceInstsArea = 0
+[INFO] PlaceInstsArea = 2756824000
+[INFO] Util(%) = 30.240429
+[INFO] StdInstsArea = 2756824000
+[INFO] MacroInstsArea = 0
+[InitialPlace]  Iter: 1 CG Error: 1.05416e-07 HPWL: 8214580
+[InitialPlace]  Iter: 2 CG Error: 1.07103e-07 HPWL: 6996324
+[InitialPlace]  Iter: 3 CG Error: 9.11604e-08 HPWL: 6988568
+[InitialPlace]  Iter: 4 CG Error: 4.2424e-08 HPWL: 6993752
+[InitialPlace]  Iter: 5 CG Error: 1.0961e-07 HPWL: 6997827
+[INFO] FillerInit: NumGCells = 1102
+[INFO] FillerInit: NumGNets = 526
+[INFO] FillerInit: NumGPins = 1446
+[INFO] TargetDensity = 0.700000
+[INFO] AveragePlaceInstArea = 6058953
+[INFO] IdealBinArea = 8655647
+[INFO] IdealBinCnt = 1053
+[INFO] TotalBinArea = 9116352000
+[INFO] BinCnt = (32, 32)
+[INFO] BinSize = (2993, 2975)
+[INFO] NumBins = 1024
+[NesterovSolve] Iter: 1 overflow: 0.906445 HPWL: 4405927
+[NesterovSolve] Iter: 10 overflow: 0.754795 HPWL: 5760118
+[NesterovSolve] Iter: 20 overflow: 0.751329 HPWL: 5747516
+[NesterovSolve] Iter: 30 overflow: 0.752463 HPWL: 5742818
+[NesterovSolve] Iter: 40 overflow: 0.752445 HPWL: 5746607
+[NesterovSolve] Iter: 50 overflow: 0.75247 HPWL: 5745224
+[NesterovSolve] Iter: 60 overflow: 0.752328 HPWL: 5745394
+[NesterovSolve] Iter: 70 overflow: 0.752254 HPWL: 5744751
+[NesterovSolve] Iter: 80 overflow: 0.752273 HPWL: 5745187
+[NesterovSolve] Iter: 90 overflow: 0.752039 HPWL: 5746966
+[NesterovSolve] Iter: 100 overflow: 0.751472 HPWL: 5749377
+[NesterovSolve] Iter: 110 overflow: 0.750926 HPWL: 5752627
+[NesterovSolve] Iter: 120 overflow: 0.749845 HPWL: 5758052
+[NesterovSolve] Iter: 130 overflow: 0.748544 HPWL: 5768462
+[NesterovSolve] Iter: 140 overflow: 0.7467 HPWL: 5783998
+[NesterovSolve] Iter: 150 overflow: 0.743748 HPWL: 5805813
+[NesterovSolve] Iter: 160 overflow: 0.740194 HPWL: 5834577
+[NesterovSolve] Iter: 170 overflow: 0.732845 HPWL: 5866825
+[NesterovSolve] Iter: 180 overflow: 0.721277 HPWL: 5909144
+[NesterovSolve] Iter: 190 overflow: 0.707593 HPWL: 5982519
+[NesterovSolve] Iter: 200 overflow: 0.685309 HPWL: 6051415
+[NesterovSolve] Iter: 210 overflow: 0.657027 HPWL: 6131841
+[NesterovSolve] Iter: 220 overflow: 0.62172 HPWL: 6209800
+[NesterovSolve] Iter: 230 overflow: 0.581384 HPWL: 6289536
+[NesterovSolve] Iter: 240 overflow: 0.533591 HPWL: 6343766
+[NesterovSolve] Iter: 250 overflow: 0.486805 HPWL: 6395916
+[NesterovSolve] Iter: 260 overflow: 0.443329 HPWL: 6421207
+[NesterovSolve] Iter: 270 overflow: 0.390982 HPWL: 6433762
+[NesterovSolve] Iter: 280 overflow: 0.349539 HPWL: 6484001
+[NesterovSolve] Iter: 290 overflow: 0.315804 HPWL: 6526934
+[NesterovSolve] Iter: 300 overflow: 0.289067 HPWL: 6558296
+[NesterovSolve] Iter: 310 overflow: 0.254349 HPWL: 6564639
+[NesterovSolve] Iter: 320 overflow: 0.221857 HPWL: 6594726
+[NesterovSolve] Iter: 330 overflow: 0.193134 HPWL: 6615688
+[NesterovSolve] Iter: 340 overflow: 0.169622 HPWL: 6651729
+[NesterovSolve] Iter: 350 overflow: 0.143702 HPWL: 6666689
+[NesterovSolve] Iter: 360 overflow: 0.123765 HPWL: 6680354
+[NesterovSolve] Iter: 370 overflow: 0.111985 HPWL: 6707393
+[NesterovSolve] Finished with Overflow: 0.0998969
+ *****************
+ * TritonCTS 2.0 *
+ *****************
+ Current time: Fri Mar 27 11:58:51 2020
+ *****************************
+ *  Import characterization  *
+ *****************************
+ Reading LUT file "nangate45.lut"
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1          52           1          24
+    [WARNING] 180 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 4994
+    Num keys in characterization LUT: 1677
+    Actual min input cap: 8
+ Reading solution list file "nangate45.sol_list"
+ **********************
+ *  Find clock roots  *
+ **********************
+ User did not specify clock roots.
+ Using OpenSTA to find clock roots.
+ Looking for clock sources...
+    Clock names: clk 
+ ************************
+ *  Populate TritonCTS  *
+ ************************
+ Initializing clock nets
+ Number of user-input clocks: 1 ( "clk" )
+ Looking for clock nets in the design
+ Net "clk" found
+clk
+ ****************************
+ *  Check characterization  *
+ ****************************
+    The chacterization used 1 buffer(s) types. All of them are in the loaded DB.
+ ***********************
+ *  Build clock trees  *
+ ***********************
+ Generating H-Tree topology for net clk...
+    Tot. number of sinks: 35
+ Wire segment unit: 20000 dbu (10 um)
+ Original sink region: [(15947, 14816), (84637, 68480)]
+ Normalized sink region: [(0.79735, 0.7408), (4.23185, 3.424)]
+    Width:  3.4345
+    Height: 2.6832
+ [WARNING] Creating fake entries in the LUT.
+ Level 1
+    Direction: Horizontal
+    # sinks per sub-region: 18
+    Sub-region size: 1.71725 X 2.6832
+    Segment length (rounded): 1
+    Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: 1
+ Level 2
+    Direction: Vertical
+    # sinks per sub-region: 9
+    Sub-region size: 1.71725 X 1.3416
+    Segment length (rounded): 1
+    Key: 5039 outSlew: 12 load: 1 length: 1 isBuffered: 1
+ Stop criterion found. Max number of sinks is (15)
+ Building clock sub nets...
+ Number of sinks covered: 35
+ Clock topology of net "clk" done.
+ ****************
+ * Post CTS opt *
+ ****************
+ Avg. source sink dist: 21587 dbu.
+ Num outlier sinks: 0
+ ********************
+ * Write data to DB *
+ ********************
+ Writing clock net "clk" to DB
+    Created 7 clock buffers.
+    Created 7 clock nets.
+
+ Current time: Fri Mar 27 11:58:51 2020
+ ... End of TritonCTS execution.
+Design Stats
+--------------------------------
+total instances           462
+multi row instances         0
+fixed instances             0
+nets                      535
+design area            2279.1 u^2
+fixed area                0.0 u^2
+movable area            630.7 u^2
+utilization                28 %
+utilization padded         71 %
+rows                       34
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement     2986.8 u
+average displacement      6.5 u
+max displacement         24.4 u
+original HPWL          3730.5 u
+legalized HPWL         8138.8 u
+delta HPWL                118 %
+
+Placed 883 filler instances.
+Startpoint: _881_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -252,28 +323,39 @@ Path Type: max
   Delay    Time   Description
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _858_/CK (DFF_X1)
-   0.09    0.09 ^ _858_/Q (DFF_X1)
-   0.04    0.14 ^ _759_/Z (BUF_X2)
-   0.03    0.17 ^ _548_/ZN (OR2_X1)
-   0.04    0.20 ^ _549_/Z (BUF_X2)
-   0.04    0.25 ^ _550_/Z (BUF_X2)
-   0.35    0.59 v _682_/ZN (OAI21_X1)
-   0.03    0.62 v _810_/Z (CLKBUF_X1)
-   0.00    0.62 v _876_/D (DFF_X1)
-           0.62   data arrival time
+   0.00    0.00   clock network delay (propagated)
+   0.00    0.00 ^ _881_/CK (DFF_X1)
+   0.08    0.08 ^ _881_/Q (DFF_X1)
+   0.04    0.13 ^ _746_/Z (BUF_X1)
+   0.05    0.18 ^ _477_/ZN (XNOR2_X1)
+   0.06    0.24 ^ _478_/ZN (AND2_X1)
+   0.04    0.28 ^ _538_/ZN (AND2_X1)
+   0.01    0.29 v _611_/ZN (NAND2_X1)
+   0.03    0.32 ^ _614_/ZN (NAND2_X1)
+   0.04    0.36 ^ _647_/ZN (AND2_X1)
+   0.01    0.36 v _648_/ZN (INV_X1)
+   0.03    0.40 v _651_/ZN (AND3_X1)
+   0.07    0.47 v _665_/ZN (OR3_X1)
+   0.04    0.51 ^ _669_/ZN (AOI21_X1)
+   0.01    0.52 v _676_/ZN (NOR2_X1)
+   0.04    0.56 v _677_/ZN (XNOR2_X1)
+   0.03    0.59 v _678_/ZN (AND2_X1)
+   0.03    0.62 ^ _681_/ZN (OAI21_X1)
+   0.02    0.63 v _682_/ZN (OAI21_X1)
+   0.03    0.66 v _810_/Z (CLKBUF_X1)
+   0.00    0.66 v _876_/D (DFF_X1)
+           0.66   data arrival time
 
   10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (ideal)
+   0.00   10.00   clock network delay (propagated)
    0.00   10.00   clock reconvergence pessimism
           10.00 ^ _876_/CK (DFF_X1)
   -0.04    9.96   library setup time
            9.96   data required time
 ---------------------------------------------------------
            9.96   data required time
-          -0.62   data arrival time
+          -0.66   data arrival time
 ---------------------------------------------------------
-           9.34   slack (MET)
+           9.30   slack (MET)
 
 
