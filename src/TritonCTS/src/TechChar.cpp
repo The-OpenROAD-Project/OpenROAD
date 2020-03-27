@@ -759,8 +759,6 @@ void TechChar::createStaInstance() {
         //Creates the new instance based on the charcterization block.
         if (_openStaChar != nullptr){
                 _openStaChar->clear();
-                delete _openStaChar;
-                _openStaChar = nullptr;
         }
         _openStaChar = sta::makeBlockSta(_charBlock);
         //Sets the current OpenSTA instance as the new one just created.
