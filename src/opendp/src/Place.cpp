@@ -152,21 +152,31 @@ void Opendp::place() {
   // Place multi-row instances first.
   if (multi_row_inst_count_ > 0) {
     for(Cell* cell : sorted_cells) {
-      if(isMultiRow(cell)) {
+      if(isMultiRow(cell)
+	 && cellFitsInCore(cell)) {
 	if(!map_move(cell))
 	  shift_move(cell);
       }
     }
   }
   for(Cell* cell : sorted_cells) {
-    if(!isMultiRow(cell)) {
-      if(!map_move(cell)) {
-	shift_move(cell);
+    if (cellFitsInCore(cell)) {
+      if(!isMultiRow(cell)) {
+	if(!map_move(cell)) {
+	  shift_move(cell);
+	}
       }
     }
+    else
+      warn("instance %s does not fit inside the ROW core area.", cell->name());
   }
   // This has negligible benefit -cherry
   //anneal();
+}
+
+bool Opendp::cellFitsInCore(Cell *cell) {
+  return gridPaddedWidth(cell) <= row_site_count_
+    && gridHeight(cell) <= row_count_;
 }
 
 static bool cellAreaLess(Cell* cell1, Cell* cell2) {

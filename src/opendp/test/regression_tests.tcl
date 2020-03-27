@@ -33,6 +33,7 @@ record_tests {
   simple07
   simple08
   simple09
+  simple10
   aes
   gcd
   ibex
