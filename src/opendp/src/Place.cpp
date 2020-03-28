@@ -601,14 +601,14 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
 		       // Return values
 		       int &avail_x,
 		       int &avail_y) {
-  int x_step = gridPaddedWidth(cell);
-  int y_step = gridHeight(cell);
+  int x_end = x + gridPaddedWidth(cell);
+  int height = gridHeight(cell);
+  int y_end = y + height;
 
   // Check y is beyond the border.
-  assert((core_.yMax() / row_height_) == coreGridMaxY());
-  if((y + y_step) > (core_.yMax() / row_height_)
+  if(y_end > coreGridMaxY()
      // Check top power for even row multi-deck cell.
-     || (y_step % 2 == 0
+     || (height % 2 == 0
 	 && rowTopPower(y) == topPower(cell))) {
     return false;
   }
@@ -626,12 +626,12 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
       // check all grids are empty
       bool available = true;
 
-      if(x + i + x_step > coreGridMaxX()) {
+      if(x_end + i > coreGridMaxX()) {
         available = false;
       }
       else {
-        for(int k = y; k < y + y_step; k++) {
-          for(int l = x + i; l < x + i + x_step; l++) {
+        for(int k = y; k < y_end; k++) {
+          for(int l = x + i; l < x_end + i; l++) {
 	    Pixel &pixel = grid_[k][l];
 	    if(pixel.cell != nullptr
 	       || !pixel.is_valid
@@ -658,13 +658,13 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
     for(int i = 0; i < 10; i++) {
       // check all grids are empty
       bool available = true;
-      if(x + i + x_step > coreGridMaxX()) {
+      if(x_end + i > coreGridMaxX()) {
         available = false;
 
       }
       else {
-        for(int k = y; k < y + y_step; k++) {
-          for(int l = x + i; l < x + i + x_step; l++) {
+        for(int k = y; k < y_end; k++) {
+          for(int l = x + i; l < x_end + i; l++) {
 	    Pixel &pixel = grid_[k][l];
             if(pixel.cell != nullptr || !pixel.is_valid) {
               available = false;
