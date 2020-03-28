@@ -605,6 +605,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
   int y_step = gridHeight(cell);
 
   // Check y is beyond the border.
+  assert((core_.yMax() / row_height_) == coreGridMaxY());
   if((y + y_step) > (core_.yMax() / row_height_)
      // Check top power for even row multi-deck cell.
      || (y_step % 2 == 0
