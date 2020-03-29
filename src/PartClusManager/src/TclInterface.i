@@ -56,4 +56,6 @@ extern void set_architecture(const char* topology);
 extern void set_seeds(const char* seeds);
 extern void generate_seeds(unsigned value);
 extern void run_partitioning();
+extern void write_partitioning_to_db(unsigned id);
+extern void dump_part_id_to_file(const char* name); 
 }

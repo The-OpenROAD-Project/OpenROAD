@@ -142,13 +142,13 @@ void generate_seeds(unsigned value) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
         std::vector<int> seedVector;
+        std::srand(42);
         for (int i = 0; i < value; i++)
         {
                 int seedVar = 5;
                 int seed = 0;
                 do
                 {
-                        std::srand(time(NULL) + (i * 1000) + (seedVar * 50));
                         seed = std::rand();
                         seedVar += 5;
                 } while (std::find(seedVector.begin(), seedVector.end(), seed) != seedVector.end());
@@ -161,6 +161,18 @@ void run_partitioning() {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
         kernel->runPartitioning();
+}
+
+void write_partitioning_to_db(unsigned id) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->writePartitioningToDb(id);
+}
+
+void dump_part_id_to_file(const char *name) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->dumpPartIdToFile(name);
 }
 
 } // end namespace

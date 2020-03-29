@@ -46,41 +46,41 @@ namespace PartClusManager {
 class Graph {
 public:
         Graph() {}
-	float getEdgeWeight (int idx) const { return _edgeWeights[idx];}
-	long long int getVertexWeight(int idx) const { return _vertexWeights[idx];}
-	int getColIdx(int idx) const {return _colIdx[idx];}
-	int getRowPtr(int idx) const {return _rowPtr[idx];}
-	int getMapping(std::string inst){return _instToIdx[inst];}
-	std::vector<float> getEdgeWeight() const { return _edgeWeights;};
-	std::vector<long long int> getVertexWeight() const { return _vertexWeights;};
-	std::vector<int> getColIdx() const { return _colIdx;};
-	std::vector<int> getRowPtr() const { return _rowPtr;};
+        float getEdgeWeight (int idx) const { return _edgeWeights[idx];}
+        long long int getVertexWeight(int idx) const { return _vertexWeights[idx];}
+        int getColIdx(int idx) const {return _colIdx[idx];}
+        int getRowPtr(int idx) const {return _rowPtr[idx];}
+        int getMapping(std::string inst){return _instToIdx[inst];}
+        const std::vector<float>& getEdgeWeight() const { return _edgeWeights;};
+        const std::vector<long long int>& getVertexWeight() const { return _vertexWeights;};
+        const std::vector<int>& getColIdx() const { return _colIdx;};
+        const std::vector<int>& getRowPtr() const { return _rowPtr;};
 
-	void addEdgeWeight(float weight){_edgeWeights.push_back(weight);} 
-	void addVertexWeight(long long int weight){_vertexWeights.push_back(weight);} 
-	void addColIdx(int idx){_colIdx.push_back(idx);} 
-	void addRowPtr(int idx){_rowPtr.push_back(idx);} 
-	void addMapping(std::string inst, int idx){_instToIdx[inst] = idx;}
-	std::map<std::string, int> & getMap(){return _instToIdx;}
+        void addEdgeWeight(float weight){_edgeWeights.push_back(weight);} 
+        void addVertexWeight(long long int weight){_vertexWeights.push_back(weight);} 
+        void addColIdx(int idx){_colIdx.push_back(idx);} 
+        void addRowPtr(int idx){_rowPtr.push_back(idx);} 
+        void addMapping(std::string inst, int idx){_instToIdx[inst] = idx;}
+        std::map<std::string, int> & getMap(){return _instToIdx;}
 
-	inline bool isInMap (std::string pinName) const{
-		if (_instToIdx.find(pinName) != _instToIdx.end())
-        		return true;
-    		else
-        		return false;
-	}
+        inline bool isInMap (std::string pinName) const{
+                if (_instToIdx.find(pinName) != _instToIdx.end())
+                        return true;
+                else
+                        return false;
+        }
 
-	void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
-	int computeNextVertexIdx() const {return _vertexWeights.size();}
-	int computeNextRowPtr() const {return _edgeWeights.size();}
-	int getNumEdges() const {return _edgeWeights.size();}
-	int getNumVertex() const {return _vertexWeights.size();}
+        void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
+        int computeNextVertexIdx() const {return _vertexWeights.size();}
+        int computeNextRowPtr() const {return _edgeWeights.size();}
+        int getNumEdges() const {return _edgeWeights.size();}
+        int getNumVertex() const {return _vertexWeights.size();}
 private:
-	std::vector<float> _edgeWeights;
-	std::vector<long long int> _vertexWeights;
-	std::vector<int> _colIdx;
-	std::vector<int> _rowPtr;
-	std::map<std::string, int> _instToIdx;
+        std::vector<float> _edgeWeights;
+        std::vector<long long int> _vertexWeights;
+        std::vector<int> _colIdx;
+        std::vector<int> _rowPtr;
+        std::map<std::string, int> _instToIdx;
 
 };
 

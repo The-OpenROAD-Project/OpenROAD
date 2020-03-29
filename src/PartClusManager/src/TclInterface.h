@@ -52,5 +52,7 @@ void set_architecture(const char* topology);
 void set_seeds(const char* seeds);
 void generate_seeds(unsigned value);
 void run_partitioning();
+void write_partitioning_to_db(unsigned id);
+void dump_part_id_to_file(const char *name);
 }
 

@@ -12,7 +12,7 @@ testdir=$(cd "$(dirname "$0")" && pwd -P)
 binary=$testdir/../../../build/src/openroad
 failed=0
 
-echo " > TritonCTS binary: $binary"
+echo " > PartClusManager binary: $binary"
 if [ ! -e $binary ] ; 
 then
 	echo "    - Binary not found. Exiting...\n" 

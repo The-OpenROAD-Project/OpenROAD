@@ -66,7 +66,7 @@ public:
         void setCutHopRatio(double ratio) { _cutHopRatio = ratio; }
         double getCutHopRatio() { return _cutHopRatio; }
         void setArchTopology(const std::vector<int>& arch) { _archTopology = arch; }
-        std::vector<int> getArchTopology() const { return _archTopology; } 
+        const std::vector<int>& getArchTopology() const { return _archTopology; } 
         void setTool(const std::string& tool) { _tool = tool; }
         std::string getTool() const { return _tool; } 
         void setGraphModel(const std::string& graphModel) { _graphModel = graphModel; }
@@ -82,7 +82,7 @@ public:
         void setBalanceConstraint(unsigned constraint) { _balanceConstraint = constraint; }
         unsigned getBalanceConstraint() const { return _balanceConstraint; }
         void setSeeds(const std::vector<int>& seeds) { _seeds = seeds; }
-        std::vector<int> getSeeds() const { return _seeds; } 
+        const std::vector<int>& getSeeds() const { return _seeds; } 
 
 private:
         unsigned                _numStarts              = 1;
@@ -110,29 +110,29 @@ public:
                 _runtimeResults.push_back(runtime);
                 _seeds.push_back(seed);
         }
-        std::vector<short> getResult(unsigned idx){ return _assignmentResults[idx]; }
-        unsigned long getResultRuntime(unsigned idx){ return _runtimeResults[idx]; }
-        int getResultSeed(unsigned idx){ return _seeds[idx]; }
+        const std::vector<short>& getResult(unsigned idx) const { return _assignmentResults[idx]; }
+        unsigned long getResultRuntime(unsigned idx) const { return _runtimeResults[idx]; }
+        int getResultSeed(unsigned idx) const { return _seeds[idx]; }
         void setToolName(std::string name) { _toolName = name; }
-        std::string getToolName() { return _toolName; }
+        std::string getToolName() const { return _toolName; }
         void setPartitionId(unsigned id) { _partitionId = id; }
-        unsigned getPartitionId() { return _partitionId; }
+        unsigned getPartitionId() const { return _partitionId; }
         void setBestSolutionIdx(unsigned idx) { _bestSolutionIdx = idx; }
-        unsigned getBestSolutionIdx() { return _bestSolutionIdx; }
+        unsigned getBestSolutionIdx() const { return _bestSolutionIdx; }
         void setNumOfRuns(unsigned runs) { _numOfRuns = runs; }
-        unsigned getNumOfRuns() { return _numOfRuns; }
+        unsigned getNumOfRuns() const { return _numOfRuns; }
         void setBestSetSize(double result) { _bestSetSizeSD = result; }
-        double getBestSetSize() { return _bestSetSizeSD; }
+        double getBestSetSize() const { return _bestSetSizeSD; }
         void setBestSetArea(double result) { _bestSetAreaSD = result; }
-        double getBestSetArea() { return _bestSetAreaSD; }
+        double getBestSetArea() const { return _bestSetAreaSD; }
         void setBestNumTerminals(unsigned long result) { _bestNumTerminals = result; }
-        unsigned long getBestNumTerminals() { return _bestNumTerminals; }
+        unsigned long getBestNumTerminals() const { return _bestNumTerminals; }
         void setBestNumHyperedgeCuts(unsigned long result) { _bestNumHyperedgeCuts = result; }
-        unsigned long getBestNumHyperedgeCuts() { return _bestNumHyperedgeCuts; }
+        unsigned long getBestNumHyperedgeCuts() const { return _bestNumHyperedgeCuts; }
         void setBestRuntime(unsigned long result) { _bestRuntime = result; }
-        unsigned long getBestRuntime() { return _bestRuntime; }
+        unsigned long getBestRuntime() const { return _bestRuntime; }
         void setBestHopWeigth(unsigned long result) { _bestHopWeigth = result; }
-        unsigned long getBestHopWeigth() { return _bestHopWeigth; }
+        unsigned long getBestHopWeigth() const { return _bestHopWeigth; }
 
 private:
         std::vector<std::vector<short>> _assignmentResults;
@@ -153,8 +153,10 @@ private:
 
 class PartClusManagerKernel {
 protected:
+        odb::dbBlock* getDbBlock() const;
+        unsigned getNumPartitioningResults() const { return _results.size(); }
+        PartResults& getPartitioningResult(unsigned id) { return _results[id]; }
 
-private:
         PartOptions _options;
 	unsigned _dbId;
 	Graph _graph;
@@ -175,6 +177,8 @@ public:
         unsigned generatePartitionId();
         void computePartitionResult(unsigned partitionId);
         void reportPartitionResult(unsigned partitionId);
+        void writePartitioningToDb(unsigned partitionId);
+        void dumpPartIdToFile(std::string name);
 };
 
 }
