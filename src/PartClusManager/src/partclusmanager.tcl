@@ -220,6 +220,10 @@ proc partition_netlist { args } {
   return $bestId
 }
 
+#--------------------------------------------------------------------
+# Evaluate partitioning command
+#--------------------------------------------------------------------
+
 sta::define_cmd_args "evaluate_partitioning" { [-partition_ids ids] \
                                                [-evaluation_function function] \
                                              }
