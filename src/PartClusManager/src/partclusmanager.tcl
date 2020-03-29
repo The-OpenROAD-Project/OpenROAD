@@ -36,20 +36,20 @@
 # ////////////////////////////////////////////////////////////////////////////////
 
 sta::define_cmd_args "partition_netlist" { [-tool name] \
-                                          [-target_partitions value] \
-                                          [-graph_model name] \
-                                          [-clique_threshold value] \
-                                          [-weight_model name] \
-                                          [-max_edge_weight value] \
-                                          [-max_vertex_weight value] \
-                                          [-num_starts value] \
-                                          [-balance_constraint value] \
-                                          [-coarsening_ratio value] \
-                                          [-coarsening_vertices value] \
-                                          [-enable_term_prop value] \
-                                          [-cut_hop_ratio value] \
-                                          [-architecture value] \
-                                          [-seeds value] \
+                                           [-target_partitions value] \
+                                           [-graph_model name] \
+                                           [-clique_threshold value] \
+                                           [-weight_model name] \
+                                           [-max_edge_weight value] \
+                                           [-max_vertex_weight value] \
+                                           [-num_starts value] \
+                                           [-balance_constraint value] \
+                                           [-coarsening_ratio value] \
+                                           [-coarsening_vertices value] \
+                                           [-enable_term_prop value] \
+                                           [-cut_hop_ratio value] \
+                                           [-architecture value] \
+                                           [-seeds value] \
                                          }
 proc partition_netlist { args } {
   sta::parse_key_args "partition_netlist" args \
@@ -212,6 +212,36 @@ proc partition_netlist { args } {
         }
         PartClusManager::generate_seeds $keys(-num_starts)
   }
+  set bestId [PartClusManager::run_partitioning]
+  return $bestId
+}
 
-  PartClusManager::run_partitioning
+sta::define_cmd_args "evaluate_partitioning" { [-partition_ids ids] \
+                                               [-evaluation_function function] \
+                                             }
+proc evaluate_partitioning { args } {
+  sta::parse_key_args "evaluate_partitioning" args \
+    keys {-partition_ids \
+          -evaluation_function \
+         } flags {}
+    
+  # Partition IDs
+  if { [info exists keys(-partition_ids)] } {
+        PartClusManager::set_partition_ids_to_test $keys(-partition_ids)
+  } else {
+        puts "\[ERROR\] Missing argument -partition_ids."
+        return
+  }
+
+  # Evaluation Function
+  set functions "terminals hyperedges size area runtime hops"
+  if { [info exists keys(-evaluation_function)] } {
+        if { !($keys(-evaluation_function) in $functions) } {
+          puts "\[ERROR\] Invalid function. Use one of the following: $functions"
+          return
+        }
+        PartClusManager::set_evaluation_function $keys(-evaluation_function)
+  }
+
+  PartClusManager::evaluate_partitioning
 }

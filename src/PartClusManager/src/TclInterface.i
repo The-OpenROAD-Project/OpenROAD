@@ -55,5 +55,8 @@ extern void set_cut_hop_ratio(float value);
 extern void set_architecture(const char* topology);
 extern void set_seeds(const char* seeds);
 extern void generate_seeds(unsigned value);
-extern void run_partitioning();
+extern void set_partition_ids_to_test(const char* seeds);
+extern void set_evaluation_function(const char* function);
+extern unsigned run_partitioning();
+extern void evaluate_partitioning();
 }

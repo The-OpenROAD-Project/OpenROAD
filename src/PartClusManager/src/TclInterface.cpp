@@ -157,10 +157,35 @@ void generate_seeds(unsigned value) {
         kernel->getOptions().setSeeds(seedVector);
 }
 
-void run_partitioning() {
+void set_partition_ids_to_test(const char* ids) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        std::stringstream ss(ids);
+        std::istream_iterator<int> begin(ss);
+        std::istream_iterator<int> end;
+        std::vector<int> partIds(begin, end);
+        kernel->getOptions().setPartitionsToTest(partIds);
+}
+
+void set_evaluation_function(const char* function) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setEvaluationFunction(function);
+}
+
+unsigned run_partitioning() {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
         kernel->runPartitioning();
+        unsigned id = kernel->getCurrentId();
+        return id;
+}
+
+
+void evaluate_partitioning() {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->evaluatePartitioning();
 }
 
 } // end namespace

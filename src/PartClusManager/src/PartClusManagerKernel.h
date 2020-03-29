@@ -66,7 +66,7 @@ public:
         void setCutHopRatio(double ratio) { _cutHopRatio = ratio; }
         double getCutHopRatio() { return _cutHopRatio; }
         void setArchTopology(const std::vector<int>& arch) { _archTopology = arch; }
-        std::vector<int> getArchTopology() const { return _archTopology; } 
+        const std::vector<int>& getArchTopology() const { return _archTopology; } 
         void setTool(const std::string& tool) { _tool = tool; }
         std::string getTool() const { return _tool; } 
         void setGraphModel(const std::string& graphModel) { _graphModel = graphModel; }
@@ -82,7 +82,11 @@ public:
         void setBalanceConstraint(unsigned constraint) { _balanceConstraint = constraint; }
         unsigned getBalanceConstraint() const { return _balanceConstraint; }
         void setSeeds(const std::vector<int>& seeds) { _seeds = seeds; }
-        std::vector<int> getSeeds() const { return _seeds; } 
+        const std::vector<int>& getSeeds() const { return _seeds; } 
+        void setPartitionsToTest(const std::vector<int>& partIds) { _partitionsToTest = partIds; }
+        const std::vector<int>& getPartitionsToTest() const { return _partitionsToTest; } 
+        void setEvaluationFunction(const std::string& function) { _evaluationFunction = function; }
+        std::string getEvaluationFunction() const { return _evaluationFunction; } 
 
 private:
         unsigned                _numStarts              = 1;
@@ -94,6 +98,7 @@ private:
         double                  _cutHopRatio            = 1.0;
         std::string             _tool                   = "chaco";
         std::string             _graphModel             = "clique";
+        std::string             _evaluationFunction     = "hyperedges";
         unsigned                _cliqueThreshold        = 50;
         unsigned                _weightModel            = 1;
         unsigned                _maxEdgeWeight          = 100; 
@@ -101,6 +106,7 @@ private:
         unsigned                _balanceConstraint      = 5; 
         std::vector<int>        _archTopology;
         std::vector<int>        _seeds;
+        std::vector<int>        _partitionsToTest;
 }; 
 
 class PartResults {
@@ -110,29 +116,29 @@ public:
                 _runtimeResults.push_back(runtime);
                 _seeds.push_back(seed);
         }
-        std::vector<short> getResult(unsigned idx){ return _assignmentResults[idx]; }
-        unsigned long getResultRuntime(unsigned idx){ return _runtimeResults[idx]; }
-        int getResultSeed(unsigned idx){ return _seeds[idx]; }
+        const std::vector<short>& getResult(unsigned idx) const { return _assignmentResults[idx]; }
+        unsigned long getResultRuntime(unsigned idx) const { return _runtimeResults[idx]; }
+        int getResultSeed(unsigned idx) const { return _seeds[idx]; }
         void setToolName(std::string name) { _toolName = name; }
-        std::string getToolName() { return _toolName; }
+        std::string getToolName() const { return _toolName; }
         void setPartitionId(unsigned id) { _partitionId = id; }
-        unsigned getPartitionId() { return _partitionId; }
+        unsigned getPartitionId() const { return _partitionId; }
         void setBestSolutionIdx(unsigned idx) { _bestSolutionIdx = idx; }
-        unsigned getBestSolutionIdx() { return _bestSolutionIdx; }
+        unsigned getBestSolutionIdx() const { return _bestSolutionIdx; }
         void setNumOfRuns(unsigned runs) { _numOfRuns = runs; }
-        unsigned getNumOfRuns() { return _numOfRuns; }
+        unsigned getNumOfRuns() const { return _numOfRuns; }
         void setBestSetSize(double result) { _bestSetSizeSD = result; }
-        double getBestSetSize() { return _bestSetSizeSD; }
+        double getBestSetSize() const { return _bestSetSizeSD; }
         void setBestSetArea(double result) { _bestSetAreaSD = result; }
-        double getBestSetArea() { return _bestSetAreaSD; }
+        double getBestSetArea() const { return _bestSetAreaSD; }
         void setBestNumTerminals(unsigned long result) { _bestNumTerminals = result; }
-        unsigned long getBestNumTerminals() { return _bestNumTerminals; }
+        unsigned long getBestNumTerminals() const { return _bestNumTerminals; }
         void setBestNumHyperedgeCuts(unsigned long result) { _bestNumHyperedgeCuts = result; }
-        unsigned long getBestNumHyperedgeCuts() { return _bestNumHyperedgeCuts; }
+        unsigned long getBestNumHyperedgeCuts() const { return _bestNumHyperedgeCuts; }
         void setBestRuntime(unsigned long result) { _bestRuntime = result; }
-        unsigned long getBestRuntime() { return _bestRuntime; }
+        unsigned long getBestRuntime() const { return _bestRuntime; }
         void setBestHopWeigth(unsigned long result) { _bestHopWeigth = result; }
-        unsigned long getBestHopWeigth() { return _bestHopWeigth; }
+        unsigned long getBestHopWeigth() const { return _bestHopWeigth; }
 
 private:
         std::vector<std::vector<short>> _assignmentResults;
@@ -163,6 +169,7 @@ private:
 public:
         PartClusManagerKernel() = default;
         void runPartitioning();
+        void evaluatePartitioning();
         void runChaco();
         void runChaco(const Graph& graph, const PartOptions& options);
         void runGpMetis();
@@ -170,10 +177,12 @@ public:
         void runMlPart();
         void runMlPart(const Graph& graph, const PartOptions& options);
         PartOptions& getOptions() { return _options; }
+        unsigned getCurrentId() { return (_results.size() - 1); }
 	void setDbId(unsigned id) {_dbId = id;}
 	void graph();
         unsigned generatePartitionId();
-        void computePartitionResult(unsigned partitionId);
+        void computePartitionResult(unsigned partitionId, std::string function);
+        bool comparePartitionings(const PartResults oldPartition, const PartResults newPartition, std::string function);
         void reportPartitionResult(unsigned partitionId);
 };
 

@@ -146,8 +146,6 @@ void PartClusManagerKernel::runChaco() {
         }
         _results.push_back(currentResults);
         free(mesh_dims);
-        computePartitionResult(partitionId);
-        reportPartitionResult(partitionId);
 
         std::cout << "Chaco run completed. Partition ID = " << partitionId << ".\n";
 }
@@ -182,7 +180,38 @@ unsigned PartClusManagerKernel::generatePartitionId(){
         return sizeOfResults;
 }
 
-void PartClusManagerKernel::computePartitionResult(unsigned partitionId){
+// Evaluate Partitioning
+
+void PartClusManagerKernel::evaluatePartitioning() {
+        std::vector<int> partVector = _options.getPartitionsToTest();
+        std::string evaluationFunction = _options.getEvaluationFunction();
+        //Checks if IDs are valid
+        for (int partId : partVector) {
+                if (partId >= _results.size()){
+                        std::cout << "Invalid Partition ID!\n";
+                        std::exit(1);
+                }
+        }
+        int bestId = -1;
+        for (int partId : partVector) {
+                //Computes the results for the current Partition ID
+                computePartitionResult(partId, evaluationFunction);
+                //Compares the results for the current ID with the best one (if it exists).
+                if (bestId == -1) {
+                        bestId = partId;
+                } else {
+                        //If the new ID presents better results than the last one, update the bestId.
+                        bool isNewIdBetter = comparePartitionings(_results[bestId], _results[partId], evaluationFunction);
+                        if (isNewIdBetter){
+                                bestId = partId;
+                        }
+                }
+        }
+
+        reportPartitionResult(bestId);
+}
+
+void PartClusManagerKernel::computePartitionResult(unsigned partitionId, std::string function){
         odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
 	odb::dbChip* chip = db->getChip();
 	odb::dbBlock* block = chip->getBlock();
@@ -313,41 +342,75 @@ void PartClusManagerKernel::computePartitionResult(unsigned partitionId){
                                 }
                         }
                 }
+                
+                //Computation for the standard deviation of set size 
+                double currentSum = 0;
+                for (std::pair<short, unsigned long> clusterSize : setSize) {
+                        currentSum = currentSum + clusterSize.second;
+                }
+                double currentMean = currentSum / setSize.size();
+                double sizeSD = 0;
+                for (std::pair<short, unsigned long> clusterSize : setSize) {
+                        sizeSD = sizeSD + std::pow(clusterSize.second - currentMean, 2);
+                }
+                sizeSD = std::sqrt(sizeSD / setSize.size());
 
-                //Check if the current assignment is better than the last one.
-                if ((cutCounter < currentResults.getBestNumHyperedgeCuts()) || (currentResults.getBestNumHyperedgeCuts() == 0)){
+                //Computation for the standard deviation of set area 
+                currentSum = 0;
+                for (std::pair<short, unsigned long> clusterArea : setArea) {
+                        currentSum = currentSum + clusterArea.second;
+                }
+                currentMean = currentSum / setArea.size();
+                double areaSD = 0;
+                for (std::pair<short, unsigned long> clusterArea : setArea) {
+                        areaSD = areaSD + std::pow(clusterArea.second - currentMean, 2);
+                }
+                areaSD = std::sqrt(areaSD / setArea.size());
+
+                //Check if the current assignment is better than the last one. "terminals hyperedges size area runtime hops"
+                bool isBetter = false;
+                if (function == "hyperedges") {
+                        isBetter = ((cutCounter < currentResults.getBestNumHyperedgeCuts()) || (currentResults.getBestNumHyperedgeCuts() == 0));
+                } else if (function == "terminals") {
+                        isBetter = ((terminalCounter < currentResults.getBestNumTerminals()) || (currentResults.getBestNumTerminals() == 0));
+                } else if (function == "size") {
+                        isBetter = ((sizeSD < currentResults.getBestSetSize()) || (currentResults.getBestSetSize() == 0));
+                } else if (function == "area") {
+                        isBetter = ((areaSD < currentResults.getBestSetArea()) || (currentResults.getBestSetArea() == 0));
+                } else if (function == "hops") {
+                        isBetter = ((edgeTotalWeigth < currentResults.getBestHopWeigth()) || (currentResults.getBestHopWeigth() == 0));
+                } else {
+                        isBetter = ((currentRuntime < currentResults.getBestRuntime()) || (currentResults.getBestRuntime() == 0));
+                }
+                if (isBetter){
                         currentResults.setBestSolutionIdx(idx);
                         currentResults.setBestRuntime(currentRuntime);
                         currentResults.setBestNumHyperedgeCuts(cutCounter);
                         currentResults.setBestNumTerminals(terminalCounter);
                         currentResults.setBestHopWeigth(edgeTotalWeigth);
-
-                        double currentSum = 0;
-                        for (std::pair<short, unsigned long> clusterSize : setSize) {
-                                currentSum = currentSum + clusterSize.second;
-                        }
-                        double currentMean = currentSum / setSize.size();
-                        double sizeSD = 0;
-                        for (std::pair<short, unsigned long> clusterSize : setSize) {
-                                sizeSD = sizeSD + std::pow(clusterSize.second - currentMean, 2);
-                        }
-                        sizeSD = std::sqrt(sizeSD / setSize.size());
                         currentResults.setBestSetSize(sizeSD);
-
-                        currentSum = 0;
-                        for (std::pair<short, unsigned long> clusterArea : setArea) {
-                                currentSum = currentSum + clusterArea.second;
-                        }
-                        currentMean = currentSum / setArea.size();
-                        double areaSD = 0;
-                        for (std::pair<short, unsigned long> clusterArea : setArea) {
-                                areaSD = areaSD + std::pow(clusterArea.second - currentMean, 2);
-                        }
-                        areaSD = std::sqrt(areaSD / setArea.size());
                         currentResults.setBestSetArea(areaSD);
                 }
         }
         _results[partitionId] = currentResults;
+}
+
+bool PartClusManagerKernel::comparePartitionings(PartResults oldPartition, PartResults newPartition, std::string function) {
+        bool isBetter = false;
+        if (function == "hyperedges") {
+                isBetter = newPartition.getBestNumHyperedgeCuts() < oldPartition.getBestNumHyperedgeCuts();
+        } else if (function == "terminals") {
+                isBetter = newPartition.getBestNumTerminals() < oldPartition.getBestNumTerminals();
+        } else if (function == "size") {
+                isBetter = newPartition.getBestSetSize() < oldPartition.getBestSetSize();
+        } else if (function == "area") {
+                isBetter = newPartition.getBestSetArea() < oldPartition.getBestSetArea();
+        } else if (function == "hops") {
+                isBetter = newPartition.getBestHopWeigth() < oldPartition.getBestHopWeigth();
+        } else {
+                isBetter = newPartition.getBestRuntime() < oldPartition.getBestRuntime();
+        }
+        return isBetter;
 }
 
 void PartClusManagerKernel::reportPartitionResult(unsigned partitionId){
