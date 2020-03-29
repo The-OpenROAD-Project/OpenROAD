@@ -76,6 +76,8 @@ foreach {tool script} $tool_scripts {
 puts "------------------------------------------------------"
 if { $tool_errors } {
   puts "Found $tool_errors tool regression failures."
+} else {
+  puts "Passed all tool regressions."
 }
 
 exit $tool_errors
