@@ -283,15 +283,23 @@ Detailed documentation should be the tool/README.md file.
 
 ### Tool Checklist
 
-OpenROAD submodules reference tool `openroad` branch head
+OpenROAD submodules reference tool `openroad` branch head.
 No `develop`, `openroad_app`, `openroad_build` branches.
+
+Submodules used by more than one tool belong in /src, not duplicated
+in each tool repo.
 
 CMakeLists.txt does not use glob.
 https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1
 
+CMakeLists.txt does not defin CFLAGS 
+ CMAKE_CXX_FLAGS
+ CMAKE_CXX_FLAGS_DEBUG
+ CMAKE_CXX_FLAGS_RELEASE
+
 No main.cpp or main procedure.
 
-No compiler warnings for gcc, clang with optimization enabled.
+No compiler warnings for gcc or clang with optimization enabled.
 
 Does not call flute::readLUT (called once by OpenRoad).
 
@@ -311,14 +319,14 @@ No jenkins/, Jenkinsfile, Dockerfile in tool directory.
 regression script named "test/regression" with default argument that runs
 tests. Not tests/regression-tcl.sh, not test/run_tests.py etc.
 
-Regression runs independent of current directory.
+tool/test/regression script runs independent of current directory.
 
 Regression only prints test results or summary, does not belch 1000s
 of lines of output.
 
 Test scripts use OpenROAD tcl commands (not itcl, not internal accessors).
 
-Regressions report no memory errors with valgrind.
+Regressions report no memory errors with valgrind (stretch goal).
 
 Regressions report no memory leaks with valgrind (difficult).
 
