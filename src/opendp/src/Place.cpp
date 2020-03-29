@@ -542,8 +542,6 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   int diamond_height = diamond_search_height_
     // magic number alert
     * ((design_util_ > 0.6 || fixed_inst_count_ > 0) ? 2 : .5);
-  // magic number alert
-  int diamond_width_factor = 10;
   for(int i = 1; i <  diamond_height; i++) {
     Pixel *pixel = nullptr;
     int best_dist = 0;
@@ -555,7 +553,7 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
 	y_offset = -y_offset;
       if(binSearch(grid_x, cell,
 		   min(x_end, max(x_start,
-				  grid_x + x_offset * diamond_width_factor)),
+				  grid_x + x_offset * bin_search_width_)),
 		   min(y_end, max(y_start, grid_y + y_offset)),
 		   avail_x, avail_y)) {
         Pixel *avail = &grid_[avail_y][avail_x];
@@ -577,7 +575,7 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
 	y_offset = -y_offset;
       if(binSearch(grid_x, cell,
 		   min(x_end, max(x_start,
-				  grid_x + x_offset * diamond_width_factor)),
+				  grid_x + x_offset * bin_search_width_)),
 		   min(y_end, max(y_start, grid_y + y_offset)),
 		   avail_x, avail_y)) {
         Pixel *avail = &grid_[avail_y][avail_x];
@@ -621,8 +619,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
   cout << " target y : " << y << endl;
 #endif
   if(grid_x > x) {
-    // magic number alert
-    for(int i = 9; i >= 0; i--) {
+    for(int i = bin_search_width_ - 1; i >= 0; i--) {
       // check all grids are empty
       bool available = true;
 
@@ -654,8 +651,7 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
     }
   }
   else {
-    // magic number alert
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < bin_search_width_; i++) {
       // check all grids are empty
       bool available = true;
       if(x_end + i > coreGridMaxX()) {
