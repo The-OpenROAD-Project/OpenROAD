@@ -41,6 +41,7 @@ extern "C" {
 }
 #include<time.h>
 #include <chrono>
+#include <fstream>
 #include "opendb/db.h"
 namespace PartClusManager {
 
@@ -425,6 +426,59 @@ void PartClusManagerKernel::reportPartitionResult(unsigned partitionId){
         std::cout << "Cluster Area SD = " << currentResults.getBestSetArea() << ".\n";
         std::cout << "Total Hop Weigth = " << currentResults.getBestHopWeigth() << ".\n";
         std::cout << "Total Runtime = " << currentResults.getBestRuntime() << ".\n\n";
+}
+
+odb::dbBlock* PartClusManagerKernel::getDbBlock() const {
+        odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
+        odb::dbChip* chip = db->getChip();
+        odb::dbBlock* block = chip->getBlock();
+        return block;
+}
+
+void PartClusManagerKernel::writePartitioningToDb(unsigned partitioningId) {
+        std::cout << "[INFO] Writing partition id's to DB.\n";
+        if (partitioningId >= getNumPartitioningResults()) {
+                std::cout << "[ERROR] Partition id out of range ("
+                          << partitioningId << ").\n";
+                return;
+        }
+
+        PartResults &results = getPartitioningResult(partitioningId);
+        unsigned bestSolutionIdx = results.getBestSolutionIdx();
+        const std::vector<short>& result = results.getResult(bestSolutionIdx);
+
+        odb::dbBlock* block = getDbBlock();
+        for (odb::dbInst* inst: block->getInsts()) {
+                std::string instName = inst->getName();
+                int instIdx = _graph.getMapping(instName);
+                short partitionId = result[instIdx];
+                
+                odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
+                if (!propId) {
+                        propId = odb::dbIntProperty::create(inst, "partition_id", partitionId);
+                } else {
+                        propId->setValue(partitionId);
+                }
+        }
+
+        std::cout << "[INFO] Writing done.\n";
+}
+
+void PartClusManagerKernel::dumpPartIdToFile(std::string name) {
+        std::ofstream file(name);
+
+        odb::dbBlock* block = getDbBlock();
+        for (odb::dbInst* inst: block->getInsts()) {
+                std::string instName = inst->getName();
+                odb::dbIntProperty* propId = odb::dbIntProperty::find(inst, "partition_id");
+                if (!propId) {
+                        std::cout << "[ERROR] Property not found for inst " << instName << "\n";
+                        continue;
+                }
+                file << instName << " " << propId->getValue() << "\n";
+        }
+
+        file.close();
 }
 
 }

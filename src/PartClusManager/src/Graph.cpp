@@ -41,7 +41,7 @@
 namespace PartClusManager {
 
 void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
-	std::vector<float> edgeWeight = _edgeWeights;
+        std::vector<float> edgeWeight = _edgeWeights;
         std::vector<long long int> vertexWeight = _vertexWeights;
         double percentile = 0.99; //Exclude possible outliers
 
@@ -50,8 +50,8 @@ void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
 
         int eSize = edgeWeight.size();
         int vSize = vertexWeight.size();
-	
-	eSize = (int)(eSize * percentile);
+        
+        eSize = (int)(eSize * percentile);
         vSize = (int)(vSize * percentile);
         edgeWeight.resize(eSize);
         edgeWeight.shrink_to_fit();
@@ -80,7 +80,7 @@ void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
                 else{
                         weight = (long long int)((((weight - minVWeight) * (maxVertexWeight -1))/(maxVWeight - minVWeight)) + 1);
                 }
-        }	
+        }        
 
 }
 

@@ -35,6 +35,10 @@
 # // POSSIBILITY OF SUCH DAMAGE.
 # ////////////////////////////////////////////////////////////////////////////////
 
+#--------------------------------------------------------------------
+# Partition netlist command
+#--------------------------------------------------------------------
+
 sta::define_cmd_args "partition_netlist" { [-tool name] \
                                            [-target_partitions value] \
                                            [-graph_model name] \
@@ -244,4 +248,33 @@ proc evaluate_partitioning { args } {
   }
 
   PartClusManager::evaluate_partitioning
+}
+
+#--------------------------------------------------------------------
+# Write partition to DB command
+#--------------------------------------------------------------------
+
+sta::define_cmd_args "write_partitioning_to_db" { [-partitioning_id id] \
+                                                  [-dump_to_file name] \
+                                                }
+
+proc write_partitioning_to_db { args } {
+  sta::parse_key_args "write_partitioning_to_db" args \
+    keys { -partitioning_id \
+           -dump_to_file \
+         } flags { }
+
+  set partitioning_id 0
+  if { ![info exists keys(-partitioning_id)] } {
+    puts "\[ERROR\] Missing mandatory argument -partitioning_id"
+    return
+  } else {
+    set partition_id $keys(-partitioning_id)
+  } 
+  
+  PartClusManager::write_partitioning_to_db $partitioning_id
+
+  if { [info exists keys(-dump_to_file)] } {
+    PartClusManager::dump_part_id_to_file $keys(-dump_to_file)
+  } 
 }

@@ -59,4 +59,6 @@ extern void set_partition_ids_to_test(const char* seeds);
 extern void set_evaluation_function(const char* function);
 extern unsigned run_partitioning();
 extern void evaluate_partitioning();
+extern void write_partitioning_to_db(unsigned id);
+extern void dump_part_id_to_file(const char* name); 
 }

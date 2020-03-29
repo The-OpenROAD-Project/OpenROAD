@@ -159,8 +159,10 @@ private:
 
 class PartClusManagerKernel {
 protected:
+        odb::dbBlock* getDbBlock() const;
+        unsigned getNumPartitioningResults() const { return _results.size(); }
+        PartResults& getPartitioningResult(unsigned id) { return _results[id]; }
 
-private:
         PartOptions _options;
 	unsigned _dbId;
 	Graph _graph;
@@ -184,6 +186,8 @@ public:
         void computePartitionResult(unsigned partitionId, std::string function);
         bool comparePartitionings(const PartResults oldPartition, const PartResults newPartition, std::string function);
         void reportPartitionResult(unsigned partitionId);
+        void writePartitioningToDb(unsigned partitionId);
+        void dumpPartIdToFile(std::string name);
 };
 
 }
