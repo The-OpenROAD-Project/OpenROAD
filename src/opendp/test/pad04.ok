@@ -14,13 +14,14 @@ Notice 0: Finished DEF file: pad04.def
 Design Stats
 --------------------------------
 total instances            10
-multi instances             0
+multi row instances         0
 fixed instances             0
 nets                       13
 design area              34.0 u^2
 fixed area                0.0 u^2
 movable area              8.5 u^2
 utilization                25 %
+utilization padded         56 %
 rows                        4
 row height                1.4 u
 

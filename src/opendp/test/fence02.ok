@@ -16,13 +16,14 @@ Warning: could not find power special net
 Design Stats
 --------------------------------
 total instances            10
-multi instances             0
+multi row instances         0
 fixed instances             1
 nets                       11
 design area              16.5 u^2
 fixed area                0.5 u^2
 movable area              8.0 u^2
 utilization                50 %
+utilization padded         50 %
 rows                        2
 row height                1.4 u
 group count                 2

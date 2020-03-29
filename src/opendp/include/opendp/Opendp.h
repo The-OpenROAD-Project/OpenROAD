@@ -38,13 +38,10 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <map>
-#include <unordered_map>
 #include <set>
 #include <vector>
+#include <functional>
 
 #include "opendb/db.h"
 
@@ -154,7 +151,9 @@ class Opendp {
 
  private:
   void importDb();
-  void dbToOpendp();
+  void importClear();
+  void reportImportWarnings();
+  void makeMacros();
   void examineRows();
   void makeCells();
   bool isPlacedType(dbMasterType type);
@@ -171,10 +170,8 @@ class Opendp {
 		      dbMaster *master);
   int find_ymax(dbMTerm* term);
 
-  // read files for legalizer - parser.cpp
-  void initAfterImport();
+  void initGrid();
   void findDesignStats();
-  void copy_init_to_final();
 
   void detailedPlacement();
   Point nearestPt(Cell* cell, Rect* rect);
@@ -192,9 +189,8 @@ class Opendp {
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
-  vector< Cell* > overlap_cells(Cell* cell);
-  set< Cell* > get_cells_from_boundary(Rect* rect);
-  int dist_benefit(Cell* cell, int x, int y);
+  set< Cell* > gridCellsInBoundary(Rect* rect);
+  int distChange(Cell* cell, int x, int y);
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
@@ -209,8 +205,8 @@ class Opendp {
   int anneal(Group* group);
   int anneal();
   int refine();
+  bool cellFitsInCore(Cell *cell);
 
-  // assign.cpp
   void fixed_cell_assign();
   void group_cell_region_assign();
   void group_pixel_assign();
@@ -223,14 +219,17 @@ class Opendp {
   bool checkPowerLine(Cell &cell);
   bool checkInCore(Cell &cell);
   Cell *checkOverlap(Cell &cell,
-		     Grid *grid);
+		     Grid *grid,
+		     bool padded);
+  bool overlap(Cell *cell1, Cell *cell2, bool padded);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
-  void reportOverlapFailures(vector<Cell*> failures,
-			     const char *msg,
-			     bool verbose,
-			     Grid *grid);
+  void reportFailures(vector<Cell*> failures,
+		      const char *msg,
+		      bool verbose,
+		      std::function<void(Cell *cell)> report_failure);
+  void reportOverlapFailure(Cell *cell, Grid *grid, bool padded);
 
   void rectDist(Cell *cell,
 		Rect *rect,
@@ -241,6 +240,7 @@ class Opendp {
 	       Rect *rect);
   Power rowTopPower(int row);
   dbOrientType rowOrient(int row);
+  bool havePadding();
 
   Grid *makeGrid();
   void deleteGrid(Grid *grid);
@@ -250,6 +250,7 @@ class Opendp {
   int gridEndX();
   int gridEndY();
   int gridPaddedWidth(Cell* cell);
+  int64_t paddedArea(Cell *cell);
   int gridNearestHeight(Cell* cell);
   int gridNearestWidth(Cell* cell);
   int gridHeight(Cell* cell);
@@ -326,9 +327,12 @@ class Opendp {
   int64_t design_area_;
   // total movable cell area dbu^2
   int64_t movable_area_;
-  // total fixed cell area (excluding terminal NIs) dbu^2
+  int64_t movable_padded_area_;
+  // total fixed cell area dbu^2
   int64_t fixed_area_;
+  int64_t fixed_padded_area_;
   double design_util_;
+  double design_padded_util_;
 
   dbMasterSeq filler_masters_;
   // gap (in sites) -> seq of masters
@@ -337,6 +341,7 @@ class Opendp {
 
   // Magic numbers
   int diamond_search_height_;  // grid units
+  int diamond_search_width_;   // grid units
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
