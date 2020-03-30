@@ -32,11 +32,10 @@ repair_hold_violations -buffer_cell $buffer_cell
 report_floating_nets -verbose
 report_design_area
 
-# prints time
-# clock_tree_synthesis -lut_file nangate45.lut \
-#   -sol_list nangate45.sol_list \
-#   -root_buf BUF_X4 \
-#   -wire_unit 20
+clock_tree_synthesis -lut_file nangate45.lut \
+  -sol_list nangate45.sol_list \
+  -root_buf BUF_X4 \
+  -wire_unit 20
 
 set_placement_padding -global -right 8
 detailed_placement

@@ -182,31 +182,104 @@ Warning: found 16 floatiing nets.
  _436_
  _437_
 Design area 2628 u^2 29% utilization.
+ *****************
+ * TritonCTS 2.0 *
+ *****************
+ *****************************
+ *  Import characterization  *
+ *****************************
+ Reading LUT file "nangate45.lut"
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1          52           1          24
+    [WARNING] 180 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 4994
+    Num keys in characterization LUT: 1677
+    Actual min input cap: 8
+ Reading solution list file "nangate45.sol_list"
+ **********************
+ *  Find clock roots  *
+ **********************
+ User did not specify clock roots.
+ Using OpenSTA to find clock roots.
+ Looking for clock sources...
+    Clock names: clk 
+ ************************
+ *  Populate TritonCTS  *
+ ************************
+ Initializing clock nets
+ Number of user-input clocks: 1 ( "clk" )
+ Looking for clock nets in the design
+ Net "clk" found
+clk
+ ****************************
+ *  Check characterization  *
+ ****************************
+    The chacterization used 1 buffer(s) types. All of them are in the loaded DB.
+ ***********************
+ *  Build clock trees  *
+ ***********************
+ Generating H-Tree topology for net clk...
+    Tot. number of sinks: 35
+ Wire segment unit: 20000 dbu (10 um)
+ Original sink region: [(16262, 15776), (86455, 67848)]
+ Normalized sink region: [(0.8131, 0.7888), (4.32275, 3.3924)]
+    Width:  3.50965
+    Height: 2.6036
+ [WARNING] Creating fake entries in the LUT.
+ Level 1
+    Direction: Horizontal
+    # sinks per sub-region: 18
+    Sub-region size: 1.75483 X 2.6036
+    Segment length (rounded): 1
+    Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: 1
+ Level 2
+    Direction: Vertical
+    # sinks per sub-region: 9
+    Sub-region size: 1.75483 X 1.3018
+    Segment length (rounded): 1
+    Key: 5039 outSlew: 12 load: 1 length: 1 isBuffered: 1
+ Stop criterion found. Max number of sinks is (15)
+ Building clock sub nets...
+ Number of sinks covered: 35
+ Clock topology of net "clk" done.
+ ****************
+ * Post CTS opt *
+ ****************
+ Avg. source sink dist: 20168.3 dbu.
+ Num outlier sinks: 0
+ ********************
+ * Write data to DB *
+ ********************
+ Writing clock net "clk" to DB
+    Created 7 clock buffers.
+    Created 7 clock nets.
+ ... End of TritonCTS execution.
 Design Stats
 --------------------------------
-total instances           523
+total instances           530
 multi row instances         0
 fixed instances            68
-nets                      528
+nets                      535
 design area            2279.1 u^2
 fixed area               18.1 u^2
-movable area            638.9 u^2
-utilization                28 %
-utilization padded         76 %
+movable area            645.6 u^2
+utilization                29 %
+utilization padded         77 %
 rows                       34
 row height                1.4 u
 
 Placement Analysis
 --------------------------------
-total displacement     3074.9 u
-average displacement      5.9 u
-max displacement         29.5 u
-original HPWL          3632.2 u
-legalized HPWL         8104.4 u
-delta HPWL                123 %
+total displacement     3233.2 u
+average displacement      6.1 u
+max displacement         30.4 u
+original HPWL          3753.0 u
+legalized HPWL         8401.9 u
+delta HPWL                124 %
 
 Warning: Placed in core check failed (34).
-Placed 879 filler instances.
+Placed 868 filler instances.
 Startpoint: _884_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _872_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
