@@ -26,3 +26,4 @@ output load by set_load
 
 
 We can create a new tcl command in openroad.i to create a second opensta instance, load it with the template netlist, run independent of opendb and openroad, and save the LUT in a member variable of CTS.
+
