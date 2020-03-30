@@ -1,0 +1,504 @@
+Footprint definition {
+  Type Wirebond
+
+  die_area {0 0 3000.000 3000.000}
+  core_area {180.012 180.096 2819.964 2819.712}
+
+  offsets 35
+  tracks track.info
+  pin_layer metal10
+  
+  pad_inst_name "u_%s"
+  
+  place {
+    marker0 {type marker cell {centre {x 1200.000 y 1200.000} orient R0}}
+  }
+
+  padcells {                       
+    bottom {                                                                     
+      sig0     {type sig cell {centre {x  292.000 y 105.000} orient R0} bondpad {centre {x  292.000 y  63.293} orient R0}}
+      sig1     {type sig cell {centre {x  362.000 y 105.000} orient R0} bondpad {centre {x  362.000 y  63.293} orient R0}}
+      sig2     {type sig cell {centre {x  432.000 y 105.000} orient R0} bondpad {centre {x  432.000 y  63.293} orient R0}}
+      sig3     {type sig cell {centre {x  502.000 y 105.000} orient R0} bondpad {centre {x  502.000 y  63.293} orient R0}}
+      sig4     {type sig cell {centre {x  607.000 y 105.000} orient R0} bondpad {centre {x  607.000 y  63.293} orient R0}}
+      sig5     {type sig cell {centre {x  677.000 y 105.000} orient R0} bondpad {centre {x  677.000 y  63.293} orient R0}}
+      sig6     {type sig cell {centre {x  747.000 y 105.000} orient R0} bondpad {centre {x  747.000 y  63.293} orient R0}}
+      sig7     {type sig cell {centre {x  817.000 y 105.000} orient R0} bondpad {centre {x  817.000 y  63.293} orient R0}}
+      sig8     {type sig cell {centre {x  887.000 y 105.000} orient R0} bondpad {centre {x  887.000 y  63.293} orient R0}}
+      sig9     {type sig cell {centre {x  957.000 y 105.000} orient R0} bondpad {centre {x  957.000 y  63.293} orient R0}}
+      sig10    {type sig cell {centre {x 1027.000 y 105.000} orient R0} bondpad {centre {x 1027.000 y  63.293} orient R0}}
+      sig11    {type sig cell {centre {x 1097.000 y 105.000} orient R0} bondpad {centre {x 1097.000 y  63.293} orient R0}}
+      sig12    {type sig cell {centre {x 1167.000 y 105.000} orient R0} bondpad {centre {x 1167.000 y  63.293} orient R0}}
+      sig13    {type sig cell {centre {x 1272.000 y 105.000} orient R0} bondpad {centre {x 1272.000 y  63.293} orient R0}}
+      sig14    {type sig cell {centre {x 1342.000 y 105.000} orient R0} bondpad {centre {x 1342.000 y  63.293} orient R0}}
+      sig15    {type sig cell {centre {x 1412.000 y 105.000} orient R0} bondpad {centre {x 1412.000 y  63.293} orient R0}}
+      sig16    {type sig cell {centre {x 1482.000 y 105.000} orient R0} bondpad {centre {x 1482.000 y  63.293} orient R0}}
+      sig17    {type sig cell {centre {x 1552.000 y 105.000} orient R0} bondpad {centre {x 1552.000 y  63.293} orient R0}}
+      sig18    {type sig cell {centre {x 1622.000 y 105.000} orient R0} bondpad {centre {x 1622.000 y  63.293} orient R0}}
+      sig19    {type sig cell {centre {x 1692.000 y 105.000} orient R0} bondpad {centre {x 1692.000 y  63.293} orient R0}}
+      sig20    {type sig cell {centre {x 1762.000 y 105.000} orient R0} bondpad {centre {x 1762.000 y  63.293} orient R0}}
+      sig21    {type sig cell {centre {x 1867.000 y 105.000} orient R0} bondpad {centre {x 1867.000 y  63.293} orient R0}}
+      sig22    {type sig cell {centre {x 1937.000 y 105.000} orient R0} bondpad {centre {x 1937.000 y  63.293} orient R0}}
+      sig23    {type sig cell {centre {x 2007.000 y 105.000} orient R0} bondpad {centre {x 2007.000 y  63.293} orient R0}}
+      sig24    {type sig cell {centre {x 2077.000 y 105.000} orient R0} bondpad {centre {x 2077.000 y  63.293} orient R0}}
+      sig25    {type sig cell {centre {x 2147.000 y 105.000} orient R0} bondpad {centre {x 2147.000 y  63.293} orient R0}}
+      sig26    {type sig cell {centre {x 2217.000 y 105.000} orient R0} bondpad {centre {x 2217.000 y  63.293} orient R0}}
+      sig27    {type sig cell {centre {x 2287.000 y 105.000} orient R0} bondpad {centre {x 2287.000 y  63.293} orient R0}}
+      sig28    {type sig cell {centre {x 2357.000 y 105.000} orient R0} bondpad {centre {x 2357.000 y  63.293} orient R0}}
+      sig29    {type sig cell {centre {x 2427.000 y 105.000} orient R0} bondpad {centre {x 2427.000 y  63.293} orient R0}}
+      sig30    {type sig cell {centre {x 2532.000 y 105.000} orient R0} bondpad {centre {x 2532.000 y  63.293} orient R0}}
+      sig31    {type sig cell {centre {x 2602.000 y 105.000} orient R0} bondpad {centre {x 2602.000 y  63.293} orient R0}}
+      sig32    {type sig cell {centre {x 2672.000 y 105.000} orient R0} bondpad {centre {x 2672.000 y  63.293} orient R0}}
+      sig33    {type sig cell {centre {x 2742.000 y 105.000} orient R0} bondpad {centre {x 2742.000 y  63.293} orient R0}}
+      vzz_0    {type vzz cell {centre {x  257.000 y 105.000} orient R0} bondpad {centre {x  257.000 y 149.893} orient R0}}
+      v18_0    {type v18 cell {centre {x  327.000 y 105.000} orient R0} bondpad {centre {x  327.000 y 149.893} orient R0}}
+      vss_0    {type vss cell {centre {x  397.000 y 105.000} orient R0} bondpad {centre {x  397.000 y 149.893} orient R0}}
+      vdd_0    {type vdd cell {centre {x  467.000 y 105.000} orient R0} bondpad {centre {x  467.000 y 149.893} orient R0}}
+      vzz_1    {type vzz cell {centre {x  537.000 y 105.000} orient R0} bondpad {centre {x  537.000 y 149.893} orient R0}}
+      v18_1    {type v18 cell {centre {x  642.000 y 105.000} orient R0} bondpad {centre {x  642.000 y 149.893} orient R0}}
+      vss_1    {type vss cell {centre {x  712.000 y 105.000} orient R0} bondpad {centre {x  712.000 y 149.893} orient R0}}
+      vdd_1    {type vdd cell {centre {x  782.000 y 105.000} orient R0} bondpad {centre {x  782.000 y 149.893} orient R0}}
+      vzz_2    {type vzz cell {centre {x  852.000 y 105.000} orient R0} bondpad {centre {x  852.000 y 149.893} orient R0}}
+      v18_2    {type v18 cell {centre {x  922.000 y 105.000} orient R0} bondpad {centre {x  922.000 y 149.893} orient R0}}
+      vss_2    {type vss cell {centre {x  992.000 y 105.000} orient R0} bondpad {centre {x  992.000 y 149.893} orient R0}}
+      vdd_2    {type vdd cell {centre {x 1062.000 y 105.000} orient R0} bondpad {centre {x 1062.000 y 149.893} orient R0}}
+      vzz_3    {type vzz cell {centre {x 1132.000 y 105.000} orient R0} bondpad {centre {x 1132.000 y 149.893} orient R0}}
+      v18_3    {type v18 cell {centre {x 1237.000 y 105.000} orient R0} bondpad {centre {x 1237.000 y 149.893} orient R0}}
+      vss_3    {type vss cell {centre {x 1307.000 y 105.000} orient R0} bondpad {centre {x 1307.000 y 149.893} orient R0}}
+      vdd_3    {type vdd cell {centre {x 1377.000 y 105.000} orient R0} bondpad {centre {x 1377.000 y 149.893} orient R0}}
+      vzz_4    {type vzz cell {centre {x 1447.000 y 105.000} orient R0} bondpad {centre {x 1447.000 y 149.893} orient R0}}
+      v18_4    {type v18 cell {centre {x 1517.000 y 105.000} orient R0} bondpad {centre {x 1517.000 y 149.893} orient R0}}
+      vss_4    {type vss cell {centre {x 1587.000 y 105.000} orient R0} bondpad {centre {x 1587.000 y 149.893} orient R0}}
+      vdd_4    {type vdd cell {centre {x 1657.000 y 105.000} orient R0} bondpad {centre {x 1657.000 y 149.893} orient R0}}
+      vzz_5    {type vzz cell {centre {x 1727.000 y 105.000} orient R0} bondpad {centre {x 1727.000 y 149.893} orient R0}}
+      v18_5    {type v18 cell {centre {x 1797.000 y 105.000} orient R0} bondpad {centre {x 1797.000 y 149.893} orient R0}}
+      vss_5    {type vss cell {centre {x 1902.000 y 105.000} orient R0} bondpad {centre {x 1902.000 y 149.893} orient R0}}
+      vdd_5    {type vdd cell {centre {x 1972.000 y 105.000} orient R0} bondpad {centre {x 1972.000 y 149.893} orient R0}}
+      vzz_6    {type vzz cell {centre {x 2042.000 y 105.000} orient R0} bondpad {centre {x 2042.000 y 149.893} orient R0}}
+      v18_6    {type v18 cell {centre {x 2112.000 y 105.000} orient R0} bondpad {centre {x 2112.000 y 149.893} orient R0}}
+      vss_6    {type vss cell {centre {x 2182.000 y 105.000} orient R0} bondpad {centre {x 2182.000 y 149.893} orient R0}}
+      vdd_6    {type vdd cell {centre {x 2252.000 y 105.000} orient R0} bondpad {centre {x 2252.000 y 149.893} orient R0}}
+      vzz_7    {type vzz cell {centre {x 2322.000 y 105.000} orient R0} bondpad {centre {x 2322.000 y 149.893} orient R0}}
+      v18_7    {type v18 cell {centre {x 2392.000 y 105.000} orient R0} bondpad {centre {x 2392.000 y 149.893} orient R0}}
+      vss_7    {type vss cell {centre {x 2497.000 y 105.000} orient R0} bondpad {centre {x 2497.000 y 149.893} orient R0}}
+      vdd_7    {type vdd cell {centre {x 2567.000 y 105.000} orient R0} bondpad {centre {x 2567.000 y 149.893} orient R0}}
+      vzz_8    {type vzz cell {centre {x 2637.000 y 105.000} orient R0} bondpad {centre {x 2637.000 y 149.893} orient R0}}
+      v18_8    {type v18 cell {centre {x 2707.000 y 105.000} orient R0} bondpad {centre {x 2707.000 y 149.893} orient R0}}
+      cbrk0    {type cbk cell {centre {x  239.500 y 105.000} orient R0}}
+      cbrk1    {type cbk cell {centre {x  869.500 y 105.000} orient R0}}
+      cbrk2    {type cbk cell {centre {x 1499.500 y 105.000} orient R0}}
+      cbrk3    {type cbk cell {centre {x 2129.500 y 105.000} orient R0}}
+      cbrk4    {type cbk cell {centre {x 2759.500 y 105.000} orient R0}}
+      pwrdet0  {type pdt cell {centre {x  572.000 y 105.000} orient R0}}
+      pwrdet1  {type pdt cell {centre {x 1202.000 y 105.000} orient R0}}
+      pwrdet2  {type pdt cell {centre {x 1832.000 y 105.000} orient R0}}
+      pwrdet3  {type pdt cell {centre {x 2462.000 y 105.000} orient R0}}
+    }
+    right {
+      sig34    {type sig cell {centre {x 2895.000 y  292.000} orient R90} bondpad {centre {x 2936.707 y  292.000} orient R90}}
+      sig35    {type sig cell {centre {x 2895.000 y  362.000} orient R90} bondpad {centre {x 2936.707 y  362.000} orient R90}}
+      sig36    {type sig cell {centre {x 2895.000 y  432.000} orient R90} bondpad {centre {x 2936.707 y  432.000} orient R90}}
+      sig37    {type sig cell {centre {x 2895.000 y  502.000} orient R90} bondpad {centre {x 2936.707 y  502.000} orient R90}}
+      sig38    {type sig cell {centre {x 2895.000 y  607.000} orient R90} bondpad {centre {x 2936.707 y  607.000} orient R90}}
+      sig39    {type sig cell {centre {x 2895.000 y  677.000} orient R90} bondpad {centre {x 2936.707 y  677.000} orient R90}}
+      sig40    {type sig cell {centre {x 2895.000 y  747.000} orient R90} bondpad {centre {x 2936.707 y  747.000} orient R90}}
+      sig41    {type sig cell {centre {x 2895.000 y  817.000} orient R90} bondpad {centre {x 2936.707 y  817.000} orient R90}}
+      sig42    {type sig cell {centre {x 2895.000 y  887.000} orient R90} bondpad {centre {x 2936.707 y  887.000} orient R90}}
+      sig43    {type sig cell {centre {x 2895.000 y  957.000} orient R90} bondpad {centre {x 2936.707 y  957.000} orient R90}}
+      sig44    {type sig cell {centre {x 2895.000 y 1027.000} orient R90} bondpad {centre {x 2936.707 y 1027.000} orient R90}}
+      sig45    {type sig cell {centre {x 2895.000 y 1097.000} orient R90} bondpad {centre {x 2936.707 y 1097.000} orient R90}}
+      sig46    {type sig cell {centre {x 2895.000 y 1167.000} orient R90} bondpad {centre {x 2936.707 y 1167.000} orient R90}}
+      sig47    {type sig cell {centre {x 2895.000 y 1272.000} orient R90} bondpad {centre {x 2936.707 y 1272.000} orient R90}}
+      sig48    {type sig cell {centre {x 2895.000 y 1342.000} orient R90} bondpad {centre {x 2936.707 y 1342.000} orient R90}}
+      sig49    {type sig cell {centre {x 2895.000 y 1412.000} orient R90} bondpad {centre {x 2936.707 y 1412.000} orient R90}}
+      sig50    {type sig cell {centre {x 2895.000 y 1482.000} orient R90} bondpad {centre {x 2936.707 y 1482.000} orient R90}}
+      sig51    {type sig cell {centre {x 2895.000 y 1552.000} orient R90} bondpad {centre {x 2936.707 y 1552.000} orient R90}}
+      sig52    {type sig cell {centre {x 2895.000 y 1622.000} orient R90} bondpad {centre {x 2936.707 y 1622.000} orient R90}}
+      sig53    {type sig cell {centre {x 2895.000 y 1692.000} orient R90} bondpad {centre {x 2936.707 y 1692.000} orient R90}}
+      sig54    {type sig cell {centre {x 2895.000 y 1762.000} orient R90} bondpad {centre {x 2936.707 y 1762.000} orient R90}}
+      sig55    {type sig cell {centre {x 2895.000 y 1867.000} orient R90} bondpad {centre {x 2936.707 y 1867.000} orient R90}}
+      sig56    {type sig cell {centre {x 2895.000 y 1937.000} orient R90} bondpad {centre {x 2936.707 y 1937.000} orient R90}}
+      sig57    {type sig cell {centre {x 2895.000 y 2007.000} orient R90} bondpad {centre {x 2936.707 y 2007.000} orient R90}}
+      sig58    {type sig cell {centre {x 2895.000 y 2077.000} orient R90} bondpad {centre {x 2936.707 y 2077.000} orient R90}}
+      sig59    {type sig cell {centre {x 2895.000 y 2147.000} orient R90} bondpad {centre {x 2936.707 y 2147.000} orient R90}}
+      sig60    {type sig cell {centre {x 2895.000 y 2217.000} orient R90} bondpad {centre {x 2936.707 y 2217.000} orient R90}}
+      sig61    {type sig cell {centre {x 2895.000 y 2287.000} orient R90} bondpad {centre {x 2936.707 y 2287.000} orient R90}}
+      sig62    {type sig cell {centre {x 2895.000 y 2357.000} orient R90} bondpad {centre {x 2936.707 y 2357.000} orient R90}}
+      sig63    {type sig cell {centre {x 2895.000 y 2427.000} orient R90} bondpad {centre {x 2936.707 y 2427.000} orient R90}}
+      sig64    {type sig cell {centre {x 2895.000 y 2532.000} orient R90} bondpad {centre {x 2936.707 y 2532.000} orient R90}}
+      sig65    {type sig cell {centre {x 2895.000 y 2602.000} orient R90} bondpad {centre {x 2936.707 y 2602.000} orient R90}}
+      sig66    {type sig cell {centre {x 2895.000 y 2672.000} orient R90} bondpad {centre {x 2936.707 y 2672.000} orient R90}}
+      sig67    {type sig cell {centre {x 2895.000 y 2742.000} orient R90} bondpad {centre {x 2936.707 y 2742.000} orient R90}}
+      vss_8    {type vss cell {centre {x 2895.000 y  257.000} orient R90} bondpad {centre {x 2850.161 y  257.000} orient R90}}
+      vdd_8    {type vdd cell {centre {x 2895.000 y  327.000} orient R90} bondpad {centre {x 2850.161 y  327.000} orient R90}}
+      vzz_9    {type vzz cell {centre {x 2895.000 y  397.000} orient R90} bondpad {centre {x 2850.161 y  397.000} orient R90}}
+      v18_9    {type v18 cell {centre {x 2895.000 y  467.000} orient R90} bondpad {centre {x 2850.161 y  467.000} orient R90}}
+      vss_9    {type vss cell {centre {x 2895.000 y  537.000} orient R90} bondpad {centre {x 2850.161 y  537.000} orient R90}}
+      vdd_9    {type vdd cell {centre {x 2895.000 y  642.000} orient R90} bondpad {centre {x 2850.161 y  642.000} orient R90}}
+      vzz_10   {type vzz cell {centre {x 2895.000 y  712.000} orient R90} bondpad {centre {x 2850.161 y  712.000} orient R90}}
+      v18_10   {type v18 cell {centre {x 2895.000 y  782.000} orient R90} bondpad {centre {x 2850.161 y  782.000} orient R90}}
+      vss_10   {type vss cell {centre {x 2895.000 y  852.000} orient R90} bondpad {centre {x 2850.161 y  852.000} orient R90}}
+      vdd_10   {type vdd cell {centre {x 2895.000 y  922.000} orient R90} bondpad {centre {x 2850.161 y  922.000} orient R90}}
+      vzz_11   {type vzz cell {centre {x 2895.000 y  992.000} orient R90} bondpad {centre {x 2850.161 y  992.000} orient R90}}
+      v18_11   {type v18 cell {centre {x 2895.000 y 1062.000} orient R90} bondpad {centre {x 2850.161 y 1062.000} orient R90}}
+      vss_11   {type vss cell {centre {x 2895.000 y 1132.000} orient R90} bondpad {centre {x 2850.161 y 1132.000} orient R90}}
+      vdd_11   {type vdd cell {centre {x 2895.000 y 1237.000} orient R90} bondpad {centre {x 2850.161 y 1237.000} orient R90}}
+      vzz_12   {type vzz cell {centre {x 2895.000 y 1307.000} orient R90} bondpad {centre {x 2850.161 y 1307.000} orient R90}}
+      v18_12   {type v18 cell {centre {x 2895.000 y 1377.000} orient R90} bondpad {centre {x 2850.161 y 1377.000} orient R90}}
+      vss_12   {type vss cell {centre {x 2895.000 y 1447.000} orient R90} bondpad {centre {x 2850.161 y 1447.000} orient R90}}
+      vdd_12   {type vdd cell {centre {x 2895.000 y 1517.000} orient R90} bondpad {centre {x 2850.161 y 1517.000} orient R90}}
+      vzz_13   {type vzz cell {centre {x 2895.000 y 1587.000} orient R90} bondpad {centre {x 2850.161 y 1587.000} orient R90}}
+      v18_13   {type v18 cell {centre {x 2895.000 y 1657.000} orient R90} bondpad {centre {x 2850.161 y 1657.000} orient R90}}
+      vss_13   {type vss cell {centre {x 2895.000 y 1727.000} orient R90} bondpad {centre {x 2850.161 y 1727.000} orient R90}}
+      vdd_13   {type vdd cell {centre {x 2895.000 y 1797.000} orient R90} bondpad {centre {x 2850.161 y 1797.000} orient R90}}
+      vzz_14   {type vzz cell {centre {x 2895.000 y 1902.000} orient R90} bondpad {centre {x 2850.161 y 1902.000} orient R90}}
+      v18_14   {type v18 cell {centre {x 2895.000 y 1972.000} orient R90} bondpad {centre {x 2850.161 y 1972.000} orient R90}}
+      vss_14   {type vss cell {centre {x 2895.000 y 2042.000} orient R90} bondpad {centre {x 2850.161 y 2042.000} orient R90}}
+      vdd_14   {type vdd cell {centre {x 2895.000 y 2112.000} orient R90} bondpad {centre {x 2850.161 y 2112.000} orient R90}}
+      vzz_15   {type vzz cell {centre {x 2895.000 y 2182.000} orient R90} bondpad {centre {x 2850.161 y 2182.000} orient R90}}
+      v18_15   {type v18 cell {centre {x 2895.000 y 2252.000} orient R90} bondpad {centre {x 2850.161 y 2252.000} orient R90}}
+      vss_15   {type vss cell {centre {x 2895.000 y 2322.000} orient R90} bondpad {centre {x 2850.161 y 2322.000} orient R90}}
+      vdd_15   {type vdd cell {centre {x 2895.000 y 2392.000} orient R90} bondpad {centre {x 2850.161 y 2392.000} orient R90}}
+      vzz_16   {type vzz cell {centre {x 2895.000 y 2497.000} orient R90} bondpad {centre {x 2850.161 y 2497.000} orient R90}}
+      v18_16   {type v18 cell {centre {x 2895.000 y 2567.000} orient R90} bondpad {centre {x 2850.161 y 2567.000} orient R90}}
+      vss_16   {type vss cell {centre {x 2895.000 y 2637.000} orient R90} bondpad {centre {x 2850.161 y 2637.000} orient R90}}
+      vdd_16   {type vdd cell {centre {x 2895.000 y 2707.000} orient R90} bondpad {centre {x 2850.161 y 2707.000} orient R90}}
+      cbrk5    {type cbk cell {centre {x 2895.000 y  239.500} orient R90}}
+      cbrk6    {type cbk cell {centre {x 2895.000 y  869.500} orient R90}}
+      cbrk7    {type cbk cell {centre {x 2895.000 y 1499.500} orient R90}}
+      cbrk8    {type cbk cell {centre {x 2895.000 y 2129.500} orient R90}}
+      cbrk9    {type cbk cell {centre {x 2895.000 y 2759.500} orient R90}}
+      pwrdet4  {type pdt cell {centre {x 2895.000 y  572.000} orient R90}}
+      pwrdet5  {type pdt cell {centre {x 2895.000 y 1202.000} orient R90}}
+      pwrdet6  {type pdt cell {centre {x 2895.000 y 1832.000} orient R90}}
+      pwrdet7  {type pdt cell {centre {x 2895.000 y 2462.000} orient R90}}
+    }
+    top {
+      sig68     {type sig cell {centre {x 2760.000 y 2895.000} orient R180} bondpad {centre {x 2760.000 y 2850.161} orient R180}}
+      sig69     {type sig cell {centre {x 2690.000 y 2895.000} orient R180} bondpad {centre {x 2690.000 y 2850.161} orient R180}}
+      sig70     {type sig cell {centre {x 2620.000 y 2895.000} orient R180} bondpad {centre {x 2620.000 y 2850.161} orient R180}}
+      sig71     {type sig cell {centre {x 2550.000 y 2895.000} orient R180} bondpad {centre {x 2550.000 y 2850.161} orient R180}}
+      sig72     {type sig cell {centre {x 2445.000 y 2895.000} orient R180} bondpad {centre {x 2445.000 y 2850.161} orient R180}}
+      sig73     {type sig cell {centre {x 2375.000 y 2895.000} orient R180} bondpad {centre {x 2375.000 y 2850.161} orient R180}}
+      sig74     {type sig cell {centre {x 2305.000 y 2895.000} orient R180} bondpad {centre {x 2305.000 y 2850.161} orient R180}}
+      sig75     {type sig cell {centre {x 2235.000 y 2895.000} orient R180} bondpad {centre {x 2235.000 y 2850.161} orient R180}}
+      sig76     {type sig cell {centre {x 2165.000 y 2895.000} orient R180} bondpad {centre {x 2165.000 y 2850.161} orient R180}}
+      sig77     {type sig cell {centre {x 2095.000 y 2895.000} orient R180} bondpad {centre {x 2095.000 y 2850.161} orient R180}}
+      sig78     {type sig cell {centre {x 2025.000 y 2895.000} orient R180} bondpad {centre {x 2025.000 y 2850.161} orient R180}}
+      sig79     {type sig cell {centre {x 1955.000 y 2895.000} orient R180} bondpad {centre {x 1955.000 y 2850.161} orient R180}}
+      sig80     {type sig cell {centre {x 1850.000 y 2895.000} orient R180} bondpad {centre {x 1850.000 y 2850.161} orient R180}}
+      sig81     {type sig cell {centre {x 1780.000 y 2895.000} orient R180} bondpad {centre {x 1780.000 y 2850.161} orient R180}}
+      sig82     {type sig cell {centre {x 1710.000 y 2895.000} orient R180} bondpad {centre {x 1710.000 y 2850.161} orient R180}}
+      sig83     {type sig cell {centre {x 1640.000 y 2895.000} orient R180} bondpad {centre {x 1640.000 y 2850.161} orient R180}}
+      sig84     {type sig cell {centre {x 1570.000 y 2895.000} orient R180} bondpad {centre {x 1570.000 y 2850.161} orient R180}}
+      sig85     {type sig cell {centre {x 1500.000 y 2895.000} orient R180} bondpad {centre {x 1500.000 y 2850.161} orient R180}}
+      sig86     {type sig cell {centre {x 1395.000 y 2895.000} orient R180} bondpad {centre {x 1395.000 y 2850.161} orient R180}}
+      sig87     {type sig cell {centre {x 1325.000 y 2895.000} orient R180} bondpad {centre {x 1325.000 y 2850.161} orient R180}}
+      sig88     {type sig cell {centre {x 1255.000 y 2895.000} orient R180} bondpad {centre {x 1255.000 y 2850.161} orient R180}}
+      sig89     {type sig cell {centre {x 1185.000 y 2895.000} orient R180} bondpad {centre {x 1185.000 y 2850.161} orient R180}}
+      sig90     {type sig cell {centre {x 1115.000 y 2895.000} orient R180} bondpad {centre {x 1115.000 y 2850.161} orient R180}}
+      sig91     {type sig cell {centre {x 1045.000 y 2895.000} orient R180} bondpad {centre {x 1045.000 y 2850.161} orient R180}}
+      sig92     {type sig cell {centre {x  940.000 y 2895.000} orient R180} bondpad {centre {x  940.000 y 2850.161} orient R180}}
+      sig93     {type sig cell {centre {x  870.000 y 2895.000} orient R180} bondpad {centre {x  870.000 y 2850.161} orient R180}}
+      sig94     {type sig cell {centre {x  800.000 y 2895.000} orient R180} bondpad {centre {x  800.000 y 2850.161} orient R180}}
+      sig95     {type sig cell {centre {x  730.000 y 2895.000} orient R180} bondpad {centre {x  730.000 y 2850.161} orient R180}}
+      sig96     {type sig cell {centre {x  660.000 y 2895.000} orient R180} bondpad {centre {x  660.000 y 2850.161} orient R180}}
+      sig97     {type sig cell {centre {x  590.000 y 2895.000} orient R180} bondpad {centre {x  590.000 y 2850.161} orient R180}}
+      sig98     {type sig cell {centre {x  520.000 y 2895.000} orient R180} bondpad {centre {x  520.000 y 2850.161} orient R180}}
+      sig99     {type sig cell {centre {x  415.000 y 2895.000} orient R180} bondpad {centre {x  415.000 y 2850.161} orient R180}}
+      sig100    {type sig cell {centre {x  345.000 y 2895.000} orient R180} bondpad {centre {x  345.000 y 2850.161} orient R180}}
+      sig101    {type sig cell {centre {x  275.000 y 2895.000} orient R180} bondpad {centre {x  275.000 y 2850.161} orient R180}}
+      vzz_17    {type vzz cell {centre {x 2725.000 y 2895.000} orient R180} bondpad {centre {x 2725.000 y 2936.707} orient R180}}
+      v18_17    {type v18 cell {centre {x 2655.000 y 2895.000} orient R180} bondpad {centre {x 2655.000 y 2936.707} orient R180}}
+      vss_17    {type vss cell {centre {x 2585.000 y 2895.000} orient R180} bondpad {centre {x 2585.000 y 2936.707} orient R180}}
+      vdd_17    {type vdd cell {centre {x 2515.000 y 2895.000} orient R180} bondpad {centre {x 2515.000 y 2936.707} orient R180}}
+      vzz_18    {type vzz cell {centre {x 2410.000 y 2895.000} orient R180} bondpad {centre {x 2410.000 y 2936.707} orient R180}}
+      v18_18    {type v18 cell {centre {x 2340.000 y 2895.000} orient R180} bondpad {centre {x 2340.000 y 2936.707} orient R180}}
+      vss_18    {type vss cell {centre {x 2270.000 y 2895.000} orient R180} bondpad {centre {x 2270.000 y 2936.707} orient R180}}
+      vdd_18    {type vdd cell {centre {x 2200.000 y 2895.000} orient R180} bondpad {centre {x 2200.000 y 2936.707} orient R180}}
+      vzz_19    {type vzz cell {centre {x 2130.000 y 2895.000} orient R180} bondpad {centre {x 2130.000 y 2936.707} orient R180}}
+      v18_19    {type v18 cell {centre {x 2060.000 y 2895.000} orient R180} bondpad {centre {x 2060.000 y 2936.707} orient R180}}
+      vss_19    {type vss cell {centre {x 1990.000 y 2895.000} orient R180} bondpad {centre {x 1990.000 y 2936.707} orient R180}}
+      vdd_19    {type vdd cell {centre {x 1920.000 y 2895.000} orient R180} bondpad {centre {x 1920.000 y 2936.707} orient R180}}
+      vzz_20    {type vzz cell {centre {x 1815.000 y 2895.000} orient R180} bondpad {centre {x 1815.000 y 2936.707} orient R180}}
+      v18_20    {type v18 cell {centre {x 1745.000 y 2895.000} orient R180} bondpad {centre {x 1745.000 y 2936.707} orient R180}}
+      vss_20    {type vss cell {centre {x 1675.000 y 2895.000} orient R180} bondpad {centre {x 1675.000 y 2936.707} orient R180}}
+      vdd_20    {type vdd cell {centre {x 1605.000 y 2895.000} orient R180} bondpad {centre {x 1605.000 y 2936.707} orient R180}}
+      vss_pll   {type vsa cell {centre {x 1535.000 y 2895.000} orient R180} bondpad {centre {x 1535.000 y 2936.707} orient R180}}
+      vdd_pll   {type vda cell {centre {x 1465.000 y 2895.000} orient R180} bondpad {centre {x 1465.000 y 2936.707} orient R180}}
+      vzz_21    {type vzz cell {centre {x 1360.000 y 2895.000} orient R180} bondpad {centre {x 1360.000 y 2936.707} orient R180}}
+      v18_21    {type v18 cell {centre {x 1290.000 y 2895.000} orient R180} bondpad {centre {x 1290.000 y 2936.707} orient R180}}
+      vss_21    {type vss cell {centre {x 1220.000 y 2895.000} orient R180} bondpad {centre {x 1220.000 y 2936.707} orient R180}}
+      vdd_21    {type vdd cell {centre {x 1150.000 y 2895.000} orient R180} bondpad {centre {x 1150.000 y 2936.707} orient R180}}
+      vzz_22    {type vzz cell {centre {x 1080.000 y 2895.000} orient R180} bondpad {centre {x 1080.000 y 2936.707} orient R180}}
+      v18_22    {type v18 cell {centre {x  975.000 y 2895.000} orient R180} bondpad {centre {x  975.000 y 2936.707} orient R180}}
+      vss_22    {type vss cell {centre {x  905.000 y 2895.000} orient R180} bondpad {centre {x  905.000 y 2936.707} orient R180}}
+      vdd_22    {type vdd cell {centre {x  835.000 y 2895.000} orient R180} bondpad {centre {x  835.000 y 2936.707} orient R180}}
+      vzz_23    {type vzz cell {centre {x  765.000 y 2895.000} orient R180} bondpad {centre {x  765.000 y 2936.707} orient R180}}
+      v18_23    {type v18 cell {centre {x  695.000 y 2895.000} orient R180} bondpad {centre {x  695.000 y 2936.707} orient R180}}
+      vss_23    {type vss cell {centre {x  625.000 y 2895.000} orient R180} bondpad {centre {x  625.000 y 2936.707} orient R180}}
+      vdd_23    {type vdd cell {centre {x  555.000 y 2895.000} orient R180} bondpad {centre {x  555.000 y 2936.707} orient R180}}
+      vzz_24    {type vzz cell {centre {x  450.000 y 2895.000} orient R180} bondpad {centre {x  450.000 y 2936.707} orient R180}}
+      v18_24    {type v18 cell {centre {x  380.000 y 2895.000} orient R180} bondpad {centre {x  380.000 y 2936.707} orient R180}}
+      vss_24    {type vss cell {centre {x  310.000 y 2895.000} orient R180} bondpad {centre {x  310.000 y 2936.707} orient R180}}
+      vdd_24    {type vdd cell {centre {x  240.000 y 2895.000} orient R180} bondpad {centre {x  240.000 y 2936.707} orient R180}}
+      cbrk10    {type cbk cell {centre {x 2777.500 y 2895.000} orient R180}}
+      cbrk11    {type cbk cell {centre {x 2182.500 y 2895.000} orient R180}}
+      brk0      {type fbk cell {centre {x 1587.500 y 2895.000} orient R180}}
+      brk1      {type fbk cell {centre {x 1272.500 y 2895.000} orient R180}}
+      cbrk12    {type cbk cell {centre {x  747.500 y 2895.000} orient R180}}
+      cbrk13    {type cbk cell {centre {x  222.500 y 2895.000} orient R180}}
+      pwrdet8   {type pdt cell {centre {x  485.000 y 2895.000} orient R180}}
+      pwrdet9   {type pdt cell {centre {x 1010.000 y 2895.000} orient R180}}
+      pwrdet10  {type pdt cell {centre {x 1430.000 y 2895.000} orient R180}}
+      pwrdet11  {type pdt cell {centre {x 1885.000 y 2895.000} orient R180}}
+      pwrdet12  {type pdt cell {centre {x 2480.000 y 2895.000} orient R180}}
+    }                                           
+    left {                                      
+      sig102    {type vss cell {centre {x 105.000 y 2755.000} orient R270} bondpad {centre {x  63.293 y 2755.000} orient R270}}
+      sig103    {type vdd cell {centre {x 105.000 y 2681.000} orient R270} bondpad {centre {x  63.293 y 2681.000} orient R270}}
+      sig104    {type sig cell {centre {x 105.000 y 2607.000} orient R270} bondpad {centre {x  63.293 y 2607.000} orient R270}}
+      sig105    {type sig cell {centre {x 105.000 y 2533.000} orient R270} bondpad {centre {x  63.293 y 2533.000} orient R270}}
+      sig106    {type sig cell {centre {x 105.000 y 2422.000} orient R270} bondpad {centre {x  63.293 y 2422.000} orient R270}}
+      sig107    {type sig cell {centre {x 105.000 y 2348.000} orient R270} bondpad {centre {x  63.293 y 2348.000} orient R270}}
+      sig108    {type sig cell {centre {x 105.000 y 2274.000} orient R270} bondpad {centre {x  63.293 y 2274.000} orient R270}}
+      sig109    {type sig cell {centre {x 105.000 y 2200.000} orient R270} bondpad {centre {x  63.293 y 2200.000} orient R270}}
+      sig110    {type sig cell {centre {x 105.000 y 2128.000} orient R270} bondpad {centre {x  63.293 y 2128.000} orient R270}}
+      sig111    {type sig cell {centre {x 105.000 y 2054.000} orient R270} bondpad {centre {x  63.293 y 2054.000} orient R270}}
+      sig112    {type sig cell {centre {x 105.000 y 1980.000} orient R270} bondpad {centre {x  63.293 y 1980.000} orient R270}}
+      sig113    {type sig cell {centre {x 105.000 y 1906.000} orient R270} bondpad {centre {x  63.293 y 1906.000} orient R270}}
+      sig114    {type sig cell {centre {x 105.000 y 1795.000} orient R270} bondpad {centre {x  63.293 y 1795.000} orient R270}}
+      sig115    {type sig cell {centre {x 105.000 y 1721.000} orient R270} bondpad {centre {x  63.293 y 1721.000} orient R270}}
+      sig116    {type sig cell {centre {x 105.000 y 1647.000} orient R270} bondpad {centre {x  63.293 y 1647.000} orient R270}}
+      sig117    {type sig cell {centre {x 105.000 y 1573.000} orient R270} bondpad {centre {x  63.293 y 1573.000} orient R270}}
+      sig118    {type sig cell {centre {x 105.000 y 1501.000} orient R270} bondpad {centre {x  63.293 y 1501.000} orient R270}}
+      sig119    {type sig cell {centre {x 105.000 y 1427.000} orient R270} bondpad {centre {x  63.293 y 1427.000} orient R270}}
+      sig120    {type sig cell {centre {x 105.000 y 1353.000} orient R270} bondpad {centre {x  63.293 y 1353.000} orient R270}}
+      sig121    {type sig cell {centre {x 105.000 y 1279.000} orient R270} bondpad {centre {x  63.293 y 1279.000} orient R270}}
+      sig122    {type sig cell {centre {x 105.000 y 1168.000} orient R270} bondpad {centre {x  63.293 y 1168.000} orient R270}}
+      sig123    {type sig cell {centre {x 105.000 y 1094.000} orient R270} bondpad {centre {x  63.293 y 1094.000} orient R270}}
+      sig124    {type sig cell {centre {x 105.000 y 1020.000} orient R270} bondpad {centre {x  63.293 y 1020.000} orient R270}}
+      sig125    {type sig cell {centre {x 105.000 y  946.000} orient R270} bondpad {centre {x  63.293 y  946.000} orient R270}}
+      sig126    {type sig cell {centre {x 105.000 y  874.000} orient R270} bondpad {centre {x  63.293 y  874.000} orient R270}}
+      sig127    {type sig cell {centre {x 105.000 y  800.000} orient R270} bondpad {centre {x  63.293 y  800.000} orient R270}}
+      sig128    {type sig cell {centre {x 105.000 y  726.000} orient R270} bondpad {centre {x  63.293 y  726.000} orient R270}}
+      sig129    {type sig cell {centre {x 105.000 y  652.000} orient R270} bondpad {centre {x  63.293 y  652.000} orient R270}}
+      sig130    {type sig cell {centre {x 105.000 y  578.000} orient R270} bondpad {centre {x  63.293 y  578.000} orient R270}}
+      sig131    {type sig cell {centre {x 105.000 y  467.000} orient R270} bondpad {centre {x  63.293 y  467.000} orient R270}}
+      sig132    {type sig cell {centre {x 105.000 y  393.000} orient R270} bondpad {centre {x  63.293 y  393.000} orient R270}}
+      sig133    {type sig cell {centre {x 105.000 y  319.000} orient R270} bondpad {centre {x  63.293 y  319.000} orient R270}}
+      sig134    {type sig cell {centre {x 105.000 y  245.000} orient R270} bondpad {centre {x  63.293 y  245.000} orient R270}}
+      vzz_25    {type vzz cell {centre {x 105.000 y 2718.000} orient R270} bondpad {centre {x 149.893 y 2718.000} orient R270}}
+      v18_25    {type v18 cell {centre {x 105.000 y 2644.000} orient R270} bondpad {centre {x 149.893 y 2644.000} orient R270}}
+      vss_25    {type vss cell {centre {x 105.000 y 2570.000} orient R270} bondpad {centre {x 149.893 y 2570.000} orient R270}}
+      vdd_25    {type vdd cell {centre {x 105.000 y 2496.000} orient R270} bondpad {centre {x 149.893 y 2496.000} orient R270}}
+      vzz_26    {type vzz cell {centre {x 105.000 y 2385.000} orient R270} bondpad {centre {x 149.893 y 2385.000} orient R270}}
+      v18_26    {type v18 cell {centre {x 105.000 y 2311.000} orient R270} bondpad {centre {x 149.893 y 2311.000} orient R270}}
+      vss_26    {type vss cell {centre {x 105.000 y 2237.000} orient R270} bondpad {centre {x 149.893 y 2237.000} orient R270}}
+      vdd_26    {type vdd cell {centre {x 105.000 y 2163.000} orient R270} bondpad {centre {x 149.893 y 2163.000} orient R270}}
+      vzz_27    {type vzz cell {centre {x 105.000 y 2091.000} orient R270} bondpad {centre {x 149.893 y 2091.000} orient R270}}
+      v18_27    {type v18 cell {centre {x 105.000 y 2017.000} orient R270} bondpad {centre {x 149.893 y 2017.000} orient R270}}
+      vss_27    {type vss cell {centre {x 105.000 y 1943.000} orient R270} bondpad {centre {x 149.893 y 1943.000} orient R270}}
+      vdd_27    {type vdd cell {centre {x 105.000 y 1869.000} orient R270} bondpad {centre {x 149.893 y 1869.000} orient R270}}
+      vzz_28    {type vzz cell {centre {x 105.000 y 1758.000} orient R270} bondpad {centre {x 149.893 y 1758.000} orient R270}}
+      v18_28    {type v18 cell {centre {x 105.000 y 1684.000} orient R270} bondpad {centre {x 149.893 y 1684.000} orient R270}}
+      vss_28    {type vss cell {centre {x 105.000 y 1610.000} orient R270} bondpad {centre {x 149.893 y 1610.000} orient R270}}
+      vdd_28    {type vdd cell {centre {x 105.000 y 1536.000} orient R270} bondpad {centre {x 149.893 y 1536.000} orient R270}}
+      vzz_29    {type vsa cell {centre {x 105.000 y 1464.000} orient R270} bondpad {centre {x 149.893 y 1464.000} orient R270}}
+      v18_29    {type vda cell {centre {x 105.000 y 1390.000} orient R270} bondpad {centre {x 149.893 y 1390.000} orient R270}}
+      vss_29    {type vzz cell {centre {x 105.000 y 1316.000} orient R270} bondpad {centre {x 149.893 y 1316.000} orient R270}}
+      vdd_29    {type v18 cell {centre {x 105.000 y 1242.000} orient R270} bondpad {centre {x 149.893 y 1242.000} orient R270}}
+      vzz_30    {type vss cell {centre {x 105.000 y 1131.000} orient R270} bondpad {centre {x 149.893 y 1131.000} orient R270}}
+      v18_30    {type vdd cell {centre {x 105.000 y 1057.000} orient R270} bondpad {centre {x 149.893 y 1057.000} orient R270}}
+      vss_30    {type vzz cell {centre {x 105.000 y  983.000} orient R270} bondpad {centre {x 149.893 y  983.000} orient R270}}
+      vdd_30    {type v18 cell {centre {x 105.000 y  909.000} orient R270} bondpad {centre {x 149.893 y  909.000} orient R270}}
+      vzz_31    {type vss cell {centre {x 105.000 y  837.000} orient R270} bondpad {centre {x 149.893 y  837.000} orient R270}}
+      v18_31    {type vdd cell {centre {x 105.000 y  763.000} orient R270} bondpad {centre {x 149.893 y  763.000} orient R270}}
+      vss_31    {type vzz cell {centre {x 105.000 y  689.000} orient R270} bondpad {centre {x 149.893 y  689.000} orient R270}}
+      vdd_31    {type v18 cell {centre {x 105.000 y  615.000} orient R270} bondpad {centre {x 149.893 y  615.000} orient R270}}
+      vzz_32    {type vss cell {centre {x 105.000 y  504.000} orient R270} bondpad {centre {x 149.893 y  504.000} orient R270}}
+      v18_32    {type vdd cell {centre {x 105.000 y  430.000} orient R270} bondpad {centre {x 149.893 y  430.000} orient R270}}
+      vss_32    {type vzz cell {centre {x 105.000 y  356.000} orient R270} bondpad {centre {x 149.893 y  356.000} orient R270}}
+      vdd_32    {type v18 cell {centre {x 105.000 y  282.000} orient R270} bondpad {centre {x 149.893 y  282.000} orient R270}}
+      cbrk14    {type cbk cell {centre {x 105.000 y 2772.500} orient R270}}                                
+      cbrk15    {type cbk cell {centre {x 105.000 y 2145.500} orient R270}}                                
+      cbrk16    {type cbk cell {centre {x 105.000 y 1518.500} orient R270}}                                
+      cbrk17    {type cbk cell {centre {x 105.000 y  891.500} orient R270}}
+      cbrk18    {type cbk cell {centre {x 105.000 y  227.500} orient R270}}
+      pwrdet13  {type pdt cell {centre {x 105.000 y 2459.000} orient R270}}
+      pwrdet12  {type pdt cell {centre {x 105.000 y 1832.000} orient R270}}
+      pwrdet15  {type pdt cell {centre {x 105.000 y 1205.000} orient R270}}
+      pwrdet16  {type pdt cell {centre {x 105.000 y  541.000} orient R270}}
+    }                                                         
+  }                                                           
+}                                                             
+                                                              
+Footprint library {
+  types {
+    sig PADCELL_SIG
+    vda PADCELL_VDD
+    vsa PADCELL_VSS
+    vdd PADCELL_VDD
+    vss PADCELL_VSS
+    v18 PADCELL_VDDIO
+    vzz PADCELL_VSSIO
+    cbk PADCELL_CBRK
+    pdt PADCELL_PWRDET
+    fbk PADCELL_FBRK
+    bondpad PAD
+    corner PAD_CORNER
+    fill {PAD_FILL5 PAD_FILL1}
+    marker MARKER
+  }
+  
+  cells {
+    PADCELL_SIG {
+      cell_name {top PADCELL_SIG_V bottom PADCELL_SIG_V left PADCELL_SIG_H right PADCELL_SIG_H}
+      parameters {
+        direction {"input" "output"} 
+        schmitt {0 1} 
+        pull {"no" "hi" "lo"} 
+        drive {"low" "mid" "lrg" "xlrg"} 
+        core_power {}
+        core_ground {}
+        io_power {}
+        io_ground {}
+        core_signal {}
+        signal {}
+        ctrl {}
+      }
+      default_parameters {
+        direction input 
+        pull "no" 
+        drive "xlrg" 
+        core_power "VDD"
+        core_ground "VSS"
+        io_power "DVDD"
+        io_ground "DVSS"
+        ctrl 0
+      }
+      signal_connections {
+        OE    {$direction == "input" ? "1'b1" : "1'b0"}  
+        PU    {$direction == "input" && $pull != "up" ? "1'b1" : "1'b0"}
+        DRV   {$direction == "output" && $drive == "low" ? "2'b00" : $drive == "mid" ? "2'b01" ? $drive == "lrg" ? "2'b10" : $drive == "xlrg" "2'b11"}
+        Y     {$direction == "input"  ? $core_signal : ""}
+        A     {$direction == "output" ? $core_signal : "1'b0"}
+      }
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+        PAD     {1 ? $signal : $signal}
+      }
+      pg_connections {
+        VDD  {1 ? $core_power :  $core_power}
+        VSS  {1 ? $core_ground :  $core_ground}
+        DVDD {1 ? $io_power :  $io_power}
+        DVSS {1 ? $io_ground :  $io_ground}
+      }
+    }
+    PADCELL_VDD {
+      cell_name {top PADCELL_VDD_V bottom PADCELL_VDD_V left PADCELL_VDD_H right PADCELL_VDD_H}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+        PAD     {1 ? $signal : $signal}
+      }
+      pg_connections {
+        VDD  {1 ? $core_power : $core_power}
+        VSS  {1 ? $core_ground : $core_ground}
+        DVDD {1 ? $io_power : $io_power}
+        DVSS {1 ? $io_ground : $io_ground}
+      }
+    }
+    PADCELL_VSS {
+      cell_name {top PADCELL_VSS_V bottom PADCELL_VSS_V left PADCELL_VSS_H right PADCELL_VSS_H}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+        PAD     {1 ? $signal : $signal}
+      }
+      pg_connections {
+        VDD  {1 ? $core_power :  $core_power}
+        VSS  {1 ? $core_ground :  $core_ground}
+        DVDD {1 ? $io_power :  $io_power}
+        DVSS {1 ? $io_ground :  $io_ground}
+      }
+    }
+    PADCELL_VDDIO {
+      cell_name {top PADCELL_VDDIO_V bottom PADCELL_VDDIO_V left PADCELL_VDDIO_H right PADCELL_VDDIO_H}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+        PAD     {1 ? $signal : $signal}
+      }
+      pg_connections {
+        VDD  {1 ? $core_power :  $core_power}
+        VSS  {1 ? $core_ground :  $core_ground}
+        DVDD {1 ? $io_power :  $io_power}
+        DVSS {1 ? $io_ground :  $io_ground}
+      }
+    }
+    PADCELL_VSSIO {
+      cell_name {top PADCELL_VSSIO_V bottom PADCELL_VSSIO_V left PADCELL_VSSIO_H right PADCELL_VSSIO_H}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+        PAD     {1 ? $signal : $signal}
+      }
+      pg_connections {
+        VDD  {1 ? $core_power :  $core_power}
+        VSS  {1 ? $core_ground :  $core_ground}
+        DVDD {1 ? $io_power :  $io_power}
+        DVSS {1 ? $io_ground :  $io_ground}
+      }
+    }
+    PADCELL_CBRK {
+      cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H}
+      orient {bottom R0 right R90 top R180 left R270}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+      }
+    }
+    PADCELL_FBRK {
+      cell_name {bottom PADCELL_FBRK_V right PADCELL_FBRK_H top PADCELL_FBRK_V left PADCELL_FBRK_H}
+      orient {bottom R0 right R90 top R180 left R270}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+      }
+    }
+    PADCELL_PWRDET {
+      cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H}
+      orient {bottom R0 right R90 top R180 left R270}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+      }
+    }
+    PAD_FILL5 {
+      cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H}
+      orient {bottom R0 right MY top R180 left MX}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+      }
+    }
+    PAD_FILL1 {
+      cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H}
+      orient {bottom R0 right MY top R180 left MX}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+      }
+    }
+    PAD_CORNER {
+      orient {ll R0 lr R90 ul R180 ur R270}
+      special_connections {
+        RETN    {1 ? "retn_$section" : ""}
+        SNS     {1 ? "sns_$section" : ""}
+      }
+    }
+  }
+}
+

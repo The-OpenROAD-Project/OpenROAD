@@ -77,7 +77,7 @@ typedef sta::PinSet         BlockTermSet;
 typedef sta::PinSet         InstanceTermSet;
 typedef sta::PortDirection  PinDirection;
 typedef sta::Term           Term;
-typedef odb::adsPoint       Point;
+typedef odb::Point          Point;
 typedef OpenStaHandler      DatabaseHandler;
 typedef sta::dbSta          DatabaseSta;
 typedef sta::dbNetwork      DatabaseStaNetwork;

@@ -11,30 +11,27 @@ Notice 0:     Created 34184 components and 173049 component-terminals.
 Notice 0:     Created 33171 nets and 104681 connections.
 Notice 0: Finished DEF file: ibex_core_replace.def
 Warning: could not find power special net
--------------------- Design Stats ------------------------------
-core area                  : (28000, 28000) (1867960, 1467200)
-total cells                : 34184
-multi cells                : 0
-fixed cells                : 4883
-nets                       : 33171
-design area                : 2.65e+12
-total fixed area           : 5.2e+09
-total movable area         : 1.99e+11
-design utilization         : 7.53%
-rows                       : 514
-row height                 : 2800
-----------------------------------------------------------------
--------------------- Placement Analysis ------------------------
-total displacement         : 58303741
-average displacement       : 1705
-max displacement           : 8852
-original HPWL              : 6.38e+05
-legalized HPWL             : 6.53e+05
-delta HPWL                 : 2%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
+Design Stats
+--------------------------------
+total instances         34184
+multi row instances         0
+fixed instances          4883
+nets                    33171
+design area          662017.6 u^2
+fixed area             1298.9 u^2
+movable area          49735.6 u^2
+utilization                 8 %
+utilization padded          8 %
+rows                      514
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement    29151.9 u
+average displacement      0.9 u
+max displacement          4.4 u
+original HPWL        638365.8 u
+legalized HPWL       653315.2 u
+delta HPWL                  2 %
+
 No differences found.

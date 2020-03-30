@@ -36,11 +36,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-// CORE  to CORE  padded footprints must not overlap
-// BLOCK to CORE  footprints must not overlap (padding ignored)
-// BLOCK to BLOCK footprints must not overlap (padding ignored)
+// CORE and varients except SPACER
+// CORE-SP = CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL, CORE WELLTAP
+
+// COVER *, RING, PAD * - ignored
+// CORE-SP to CORE-SP - padded footprints must not overlap
+// CORE-SP to BLOCK * - no overlap (padding ignored)
+// CORE-SP to ENDCAP *, CORE SPACER - no overlap (padding ignored)
+// BLOCK * to BLOCK * - no checking
 // The rules above apply to both FIXED or PLACED instances
-// Instances of all other CLASSes are not checked (ignored)
 
 #include <iostream>
 #include <limits>
@@ -53,187 +57,192 @@ namespace opendp {
 
 using std::cout;
 using std::endl;
-using std::make_pair;
 using std::max;
 using std::min;
 using std::ofstream;
-using std::pair;
 using std::to_string;
 using std::vector;
 
-using odb::adsRect;
+using odb::Rect;
+using odb::dbPlacementStatus;
+
+using ord::warn;
 
 bool Opendp::checkPlacement(bool verbose) {
-  bool fail = false;
-  fail |= row_check(verbose);
-  fail |= site_check(verbose);
-  fail |= power_line_check(verbose);
-  fail |= placed_check(verbose);
-  fail |= overlap_check(verbose);
-  return fail;
-}
+  importDb();
 
-bool Opendp::row_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(isClassCore(&cell)) {
-      if(cell.y_ % row_height_ != 0) {
-	if (verbose)
-	  cout << "row_check fail => " << cell.name()
-	       << " y : " << cell.y_ + core_.yMin() << endl;
-	fail = true;
-	count++;
-      }
-    }
-  }
+  vector<Cell*> placed_failures;
+  vector<Cell*> in_core_failures;
+  vector<Cell*> overlap_failures;
+  vector<Cell*> overlap_padded_failures;
+  vector<Cell*> site_failures;
+  vector<Cell*> power_line_failures;
 
-  if(fail)
-    cout << "row check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "row check ==> PASS " << endl;
-
-  return fail;
-}
-
-bool Opendp::site_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(isClassCore(&cell)) {
-      if(cell.x_ % site_width_ != 0) {
-	if (verbose)
-	  cout << "site check fail ==> " << cell.name()
-	       << " x : " << cell.x_ + core_.xMin() << endl;
-	fail = true;
-	count++;
-      }
-    }
-  }
-  if(fail)
-    cout << "site check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "site check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::power_line_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(isClassCore(&cell)
-       // Magic number alert
-       // Shouldn't this be odd test instead of 1 or 3? -cherry
-       && !(cell.height_ == row_height_ || cell.height_ == row_height_ * 3)
-       // should removed later
-       && cell.inGroup()) {
-      int y_size = gridHeight(&cell);
-      int grid_y = gridY(&cell);
-      power top_power = topPower(&cell);
-      if(y_size % 2 == 0) {
-	if(top_power == rowTopPower(grid_y)) {
-	  cout << "power check fail ( even height ) ==> "
-	      << cell.name() << endl;
-	  fail = true;
-	  count++;
-	}
-      }
-      else {
-	if(top_power == rowTopPower(grid_y)) {
-	  if(cell.db_inst_->getOrient() != dbOrientType::R0) {
-	    cout << "power check fail ( Should be N ) ==> "
-		<< cell.name() << endl;
-	    fail = true;
-	    count++;
-	  }
-	}
-	else {
-	  if(cell.db_inst_->getOrient() != dbOrientType::MX) {
-	    cout << "power_check fail ( Should be FS ) ==> "
-		<< cell.name() << endl;
-	    fail = true;
-	    count++;
-	  }
-	}
-      }
-    }
-  }
-
-  if(fail)
-    cout << "power check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "power check ==> PASS " << endl;
-  return fail;
-}
-
-bool Opendp::placed_check(bool verbose) {
-  bool fail = false;
-  int count = 0;
-  for(Cell& cell : cells_) {
-    if(!cell.is_placed_) {
-      if (verbose)
-	cout << "placed check fail ==> " << cell.name() << endl;
-      fail = true;
-      count++;
-    }
-  }
-
-  if(fail)
-    cout << "placed_check ==> FAIL (" << count << ")" << endl;
-  else
-    cout << "placed_check ==>> PASS " << endl;
-
-  return fail;
-}
-
-bool Opendp::overlap_check(bool verbose) {
-  bool fail = false;
   Grid *grid = makeGrid();
-
+  bool have_padding = havePadding();
   for(Cell& cell : cells_) {
-    int grid_x = gridPaddedX(&cell);
-    int x_ur = gridPaddedEndX(&cell);
-    int grid_y = gridY(&cell);
-    int y_ur = gridEndY(&cell);
-    if (grid_x < 0
-	|| grid_y < 0
-	|| x_ur > row_site_count_
-	|| y_ur > row_count_) {
-      ord::warn("Cell %s %sis outside the core boundary.",
-		cell.name(),
-		isPadded(&cell) ? "with padding " : "");
-      fail = true;
-    }
-
-    grid_x = max(0, grid_x);
-    grid_y = max(0, grid_y);
-    x_ur = min(x_ur, row_site_count_);
-    y_ur = min(y_ur, row_count_);
-
-    for(int j = grid_y; j < y_ur; j++) {
-      for(int k = grid_x; k < x_ur; k++) {
-        if(grid[j][k].cell == nullptr) {
-          grid[j][k].cell = &cell;
-          grid[j][k].util = 1.0;
-        }
-        else {
-	  if (verbose)
-	    cout << "overlap_check ==> FAIL ( cell " << cell.name()
-		 << " overlaps " << grid[j][k].cell->name() << " ) "
-		 << " ( " << (k * site_width_ + core_.xMin()) << ", "
-		 << (j * row_height_ + core_.yMin()) << " )" << endl;
-	  fail = true;
-        }
+    if(isStdCell(&cell)) {
+      // Site check
+      if(cell.x_ % site_width_ != 0
+	 || cell.y_ % row_height_ != 0)
+	site_failures.push_back(&cell);
+      if(checkPowerLine(cell)) {
+	checkPowerLine(cell);
+	power_line_failures.push_back(&cell);
       }
     }
+    // Placed check
+    if(!isPlaced(&cell))
+      placed_failures.push_back(&cell);
+    if(checkInCore(cell))
+      in_core_failures.push_back(&cell);
+    if(checkOverlap(cell, grid, false))
+      overlap_failures.push_back(&cell);
+    if(have_padding && checkOverlap(cell, grid, true))
+      overlap_padded_failures.push_back(&cell);
   }
+
+  reportFailures(placed_failures, "Placed", verbose);
+  reportFailures(in_core_failures, "Placed in core", verbose);
+  reportFailures(overlap_failures, "Overlap", verbose,
+		 [&] (Cell *cell) -> void {reportOverlapFailure(cell, grid, false); });
+  if (have_padding)
+    reportFailures(overlap_padded_failures, "Overlap padded", verbose,
+		   [&] (Cell *cell) -> void {reportOverlapFailure(cell, grid, true); });
+  reportFailures(site_failures, "Site", verbose);
+  reportFailures(power_line_failures, "Power line", verbose);
+
   deleteGrid(grid);
 
-  if(fail)
-    cout << "overlap_check ==> FAIL " << endl;
-  else
-    cout << "overlap_check ==> PASS " << endl;
-  return fail;
+  return power_line_failures.size()
+    || placed_failures.size()
+    || in_core_failures.size()
+    || overlap_failures.size()
+    || site_failures.size();
+}
+
+void Opendp::reportFailures(vector<Cell*> failures,
+			    const char *msg,
+			    bool verbose) {
+  reportFailures(failures, msg, verbose,
+		 [] (Cell *cell) -> void { printf(" %s\n", cell->name()); });
+}
+
+void Opendp::reportFailures(vector<Cell*> failures,
+			    const char *msg,
+			    bool verbose,
+			    std::function<void(Cell *cell)> report_failure) {
+  if (failures.size()) {
+    warn("%s check failed (%d).", msg, failures.size());
+    if (verbose) {
+      for(Cell *cell : failures) {
+	report_failure(cell);
+      }
+    }
+  }
+}
+
+void Opendp::reportOverlapFailure(Cell *cell, Grid *grid, bool padded) {
+  Cell *overlap = checkOverlap(*cell, grid, padded);
+  printf(" %s overlaps %s\n",
+	 cell->name(),
+	 overlap->name());
+}
+
+bool Opendp::isPlaced(Cell *cell) {
+  switch (cell->db_inst_->getPlacementStatus()) {
+  case dbPlacementStatus::PLACED:
+  case dbPlacementStatus::FIRM:
+  case dbPlacementStatus::LOCKED:
+  case dbPlacementStatus::COVER:
+    return true;
+  case dbPlacementStatus::NONE:
+  case dbPlacementStatus::UNPLACED:
+  case dbPlacementStatus::SUGGESTED:
+    return false;
+  }
+}
+
+bool Opendp::checkPowerLine(Cell &cell) {
+  int height = gridHeight(&cell);
+  dbOrientType orient = cell.db_inst_->getOrient();
+  int grid_y = gridY(&cell);
+  Power top_power = topPower(&cell);
+  return !(height == 1 || height == 3)
+    // Everything below here is probably wrong but never exercised.
+    && ((height % 2 == 0
+	 // Even height
+	 && top_power == rowTopPower(grid_y))
+	|| (height % 2 == 1
+	    // Odd height
+	    && ((top_power == rowTopPower(grid_y)
+		 && orient != dbOrientType::R0)
+		|| (top_power != rowTopPower(grid_y)
+		    && orient != dbOrientType::MX))));
+}
+
+bool Opendp::checkInCore(Cell &cell) {
+  return gridPaddedX(&cell) < 0
+    || gridY(&cell) < 0
+    || gridPaddedEndX(&cell) > row_site_count_
+    || gridEndY(&cell) > row_count_;
+}
+
+
+// Return the cell this cell overlaps.
+Cell *Opendp::checkOverlap(Cell &cell,
+			   Grid *grid,
+			   bool padded) {
+  int x_ll = gridPaddedX(&cell);
+  int x_ur = gridPaddedEndX(&cell);
+  int y_ll = gridY(&cell);
+  int y_ur = gridEndY(&cell);
+  x_ll = max(0, x_ll);
+  y_ll = max(0, y_ll);
+  x_ur = min(x_ur, row_site_count_);
+  y_ur = min(y_ur, row_count_);
+  
+  for(int j = y_ll; j < y_ur; j++) {
+    for(int k = x_ll; k < x_ur; k++) {
+      Pixel &pixel = grid[j][k];
+      Cell *pixel_cell = pixel.cell;
+      if(pixel_cell) {
+	if (pixel_cell != &cell
+	    && overlap(&cell, pixel_cell, padded)
+	    // BLOCK/BLOCK overlaps allowed
+	    && !(isBlock(&cell)
+		 && isBlock(pixel_cell)))
+	  return pixel_cell;
+      }
+      else {
+	pixel.cell = &cell;
+      }
+    }
+  }
+  return nullptr;
+}
+
+bool Opendp::overlap(Cell *cell1, Cell *cell2, bool padded) {
+  int x_ll1, x_ur1, y_ll1, y_ur1;
+  int x_ll2, x_ur2, y_ll2, y_ur2;
+  if (padded) {
+    initialPaddedLocation(cell1, x_ll1, y_ll1);
+    initialPaddedLocation(cell2, x_ll2, y_ll2);
+    x_ur1 = x_ll1 + paddedWidth(cell1);
+    x_ur2 = x_ll2 + paddedWidth(cell2);
+  }
+  else {
+    initialLocation(cell1, x_ll1, y_ll1);
+    initialLocation(cell2, x_ll2, y_ll2);
+    x_ur1 = x_ll1 + cell1->width_;
+    x_ur2 = x_ll2 + cell2->width_;
+  }
+  y_ur1 = y_ll1 + cell1->height_;
+  y_ur2 = y_ll2 + cell2->height_;
+  return x_ll1 < x_ur2
+    && x_ur1 > x_ll2
+    && y_ll1 < y_ur2
+    && y_ur1 > y_ll2;
 }
 
 }  // namespace opendp

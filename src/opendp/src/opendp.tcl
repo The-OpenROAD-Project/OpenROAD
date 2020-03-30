@@ -82,12 +82,32 @@ proc set_placement_padding { args } {
   }
 }
 
+sta::define_cmd_args "set_power_net" { [-power power_name]\
+					 [-ground ground_net] }
+
+proc set_power_net { args } {
+  sta::parse_key_args "set_power_net" args \
+    keys {-power -ground} flags {}
+
+  sta::check_argc_eq0 "set_power_net" $args
+  if { [info exists keys(-power)] } {
+    set power $keys(-power)
+    opendp::set_power_net_name $power
+  }
+  if { [info exists keys(-ground)] } {
+    set ground $keys(-ground)
+    opendp::set_ground_net_name $ground
+  }
+}
+
 sta::define_cmd_args "filler_placement" { filler_masters }
 
 proc filler_placement { args } {
   sta::check_argc_eq1 "filler_placement" $args
-  set fillers [opendp::get_masters_arg $args]
-  opendp::filler_placement_cmd $fillers
+  set fillers [opendp::get_masters_arg [lindex $args 0]]
+  if { [llength $fillers] > 0 } {
+    opendp::filler_placement_cmd $fillers
+  }
 }
 
 sta::define_cmd_args "check_placement" {[-verbose]}
@@ -98,10 +118,7 @@ proc check_placement { args } {
 
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
-  if { [opendp::check_placement_cmd $verbose] } {
-    #ord::error "placement check failed."
-    ord::warn "placement check failed."
-  }
+  opendp::check_placement_cmd $verbose
 }
 
 namespace eval opendp {
@@ -111,16 +128,55 @@ proc get_masters_arg { master_names } {
   set db [ord::get_db]
   set names {}
   foreach name $master_names {
+    set matched 0
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
 	set master_name [$master getConstName]
 	if { [regexp $name $master_name] } {
 	  lappend names $master_name
+	  set matched 1
 	}
       }
     }
+    if { !$matched } {
+      puts "Warning: $name did not match any masters."
+    }
   }
-  return $names;
+  return $names
+}
+
+proc get_inst_bbox { inst_name } {
+  set block [ord::get_db_block]
+  set inst [$block findInst $inst_name]
+  if { $inst != "NULL" } {
+    set bbox [$inst getBBox]
+    return "[$bbox xMin] [$bbox yMin] [$bbox xMax] [$bbox yMax]"
+  } else {
+    error "cannot find instance $inst_name"
+  }
+}
+
+proc get_inst_grid_bbox { inst_name } {
+  set block [ord::get_db_block]
+  set inst [$block findInst $inst_name]
+  set rows [$block getRows]
+  set site [[lindex $rows 0] getSite]
+  set width [$site getWidth]
+  set height [$site getHeight]
+  if { $inst != "NULL" } {
+    set bbox [$inst getBBox]
+    return "[format_grid [$bbox xMin] $width] [format_grid [$bbox yMin] $height] [format_grid [$bbox xMax] $width] [format_grid [$bbox yMax] $height]"
+  } else {
+    error "cannot find instance $inst_name"
+  }
+}
+
+proc format_grid { x w } {
+  if { [expr $x % $w] == 0 } {
+    return [expr $x / $w]
+  } else {
+    return [format "%.2f" [expr $x / double($w)]]
+  }
 }
 
 }

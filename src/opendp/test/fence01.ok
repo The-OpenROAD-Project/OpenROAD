@@ -13,32 +13,28 @@ Notice 0:     Created 10 components and 45 component-terminals.
 Notice 0:     Created 11 nets and 25 connections.
 Notice 0: Finished DEF file: fence01.def
 Warning: could not find power special net
--------------------- Design Stats ------------------------------
-core area                  : (28000, 28000) (39780, 33600)
-total cells                : 10
-multi cells                : 0
-fixed cells                : 0
-nets                       : 11
-design area                : 6.6e+07
-total fixed area           : 0
-total movable area         : 3.4e+07
-design utilization         : 51.6%
-rows                       : 2
-row height                 : 2800
-group count                : 2
-----------------------------------------------------------------
- group_cell_placement done .. 
--------------------- Placement Analysis ------------------------
-total displacement         : 18240
-average displacement       : 1824
-max displacement           : 6460
-original HPWL              : 80.2
-legalized HPWL             : 88.3
-delta HPWL                 : 10%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
+Design Stats
+--------------------------------
+total instances            10
+multi row instances         0
+fixed instances             0
+nets                       11
+design area              16.5 u^2
+fixed area                0.0 u^2
+movable area              8.5 u^2
+utilization                52 %
+utilization padded         52 %
+rows                        2
+row height                1.4 u
+group count                 2
+
+Placement Analysis
+--------------------------------
+total displacement        9.1 u
+average displacement      0.9 u
+max displacement          3.2 u
+original HPWL            80.2 u
+legalized HPWL           88.3 u
+delta HPWL                 10 %
+
 No differences found.

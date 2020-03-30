@@ -16,12 +16,15 @@
 
 #pragma once
 
+#include <array>
 #include "db_sta/dbSta.hh"
 #include "SteinerTree.hh"
 
 namespace sta {
 
-using odb::adsRect;
+using std::array;
+
+using odb::Rect;
 
 class RebufferOption;
 
@@ -30,6 +33,8 @@ typedef Vector<RebufferOption*> RebufferOptionSeq;
 enum class RebufferOptionType { sink, junction, wire, buffer };
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
+typedef array<Required, RiseFall::index_count> Requireds;
+typedef array<Slew,  RiseFall::index_count> TgtSlews;
 
 class Resizer : public StaState
 {
@@ -113,9 +118,9 @@ protected:
   void makeEquivCells(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrary *library,
-		       Slew slews[]);
+		       TgtSlews &slews);
   void findTargetLoad(LibertyCell *cell,
-		      Slew slews[]);
+		      TgtSlews &slews);
   float findTargetLoad(LibertyCell *cell,
 		       TimingArc *arc,
 		       Slew in_slew,
@@ -167,10 +172,12 @@ protected:
   float portCapacitance(const LibertyPort *port);
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
-  Required pinRequired(const Pin *pin);
+  Requireds pinRequireds(const Pin *pin);
   float gateDelay(LibertyPort *out_port,
+		  RiseFall *rf,
 		  float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
+		    RiseFall *rf,
 		    float load_cap);
   string makeUniqueNetName();
   string makeUniqueBufferName();
@@ -178,9 +185,9 @@ protected:
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
-  adsPoint location(Instance *inst);
+  Point location(Instance *inst);
   void setLocation(Instance *inst,
-		   adsPoint pt);
+		   Point pt);
   Pin *singleOutputPin(const Instance *inst);
   double area(dbMaster *master);
   double area(Cell *cell);
@@ -189,9 +196,9 @@ protected:
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
 				     float cap,
-				     Required required,
+				     Requireds requireds,
 				     Pin *load_pin,
-				     adsPoint location,
+				     Point location,
 				     RebufferOption *ref,
 				     RebufferOption *ref2);
   void deleteRebufferOptions();
@@ -238,7 +245,7 @@ protected:
 			 int &group_index,
 			 GroupedPins &grouped_loads);
   void reportGroupedLoads(GroupedPins &grouped_loads);
-  adsPoint findCenter(PinSeq &pins);
+  Point findCenter(PinSeq &pins);
 
   float wire_res_;
   float wire_cap_;
@@ -250,7 +257,7 @@ protected:
   dbNetwork *db_network_;
   dbDatabase *db_;
   dbBlock *block_;
-  adsRect core_;
+  Rect core_;
   double design_area_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
@@ -261,7 +268,7 @@ protected:
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
-  Slew tgt_slews_[RiseFall::index_count];
+  TgtSlews tgt_slews_;
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;

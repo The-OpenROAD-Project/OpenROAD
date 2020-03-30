@@ -11,32 +11,29 @@ Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: simple01.def
--------------------- Design Stats ------------------------------
-core area                  : (3800, 2800) (15960, 14000)
-total cells                : 1
-multi cells                : 0
-fixed cells                : 0
-nets                       : 4
-design area                : 1.36e+08
-total fixed area           : 0
-total movable area         : 7.45e+06
-design utilization         : 5.47%
-rows                       : 4
-row height                 : 2800
-----------------------------------------------------------------
-Warning: detailed placement failed on _277_
--------------------- Placement Analysis ------------------------
-total displacement         : 0
-average displacement       : 0
-max displacement           : 0
-original HPWL              : 1.77
-legalized HPWL             : 1.77
-delta HPWL                 : 0%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==> FAIL (1)
-Warning: Cell _277_ with padding is outside the core boundary.
-overlap_check ==> FAIL 
-Warning: placement check failed.
+Design Stats
+--------------------------------
+total instances             1
+multi row instances         0
+fixed instances             0
+nets                        4
+design area              34.0 u^2
+fixed area                0.0 u^2
+movable area              1.9 u^2
+utilization                 5 %
+utilization padded         29 %
+rows                        4
+row height                1.4 u
+
+Warning: instance _277_ does not fit inside the ROW core area.
+Placement Analysis
+--------------------------------
+total displacement        0.0 u
+average displacement      0.0 u
+max displacement          0.0 u
+original HPWL             1.8 u
+legalized HPWL            1.8 u
+delta HPWL                  0 %
+
+Warning: Placed in core check failed (1).
+ _277_

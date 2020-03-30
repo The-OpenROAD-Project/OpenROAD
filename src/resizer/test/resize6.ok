@@ -16,6 +16,5 @@ Design area 5000 u^2 2% utilization.
 Resized 1 instances.
 Design area 5000 u^2 2% utilization.
 Found 1 max capacitance violations.
-Inserted 2 buffers in 1 nets.
-Found 2 max slew violations.
-Design area 7000 u^2 3% utilization.
+Found 1 max slew violations.
+Design area 5000 u^2 2% utilization.

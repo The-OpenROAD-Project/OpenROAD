@@ -21,8 +21,9 @@ struct Tcl_Interp;
 
 namespace odb {
 class dbDatabase;
-class adsRect;
 class dbBlock;
+class Point;
+class Rect;
 }
 
 namespace sta {
@@ -101,7 +102,7 @@ public:
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   // Return the bounding box of the db rows.
-  odb::adsRect getCore();
+  odb::Rect getCore();
   // Return true if the command units have been initialized.
   bool unitsInitialized();
 
@@ -147,7 +148,12 @@ private:
 };
 
 // Return the bounding box of the db rows.
-odb::adsRect
+odb::Rect
 getCore(odb::dbBlock *block);
+
+// Return the point inside rect that is closest to pt.
+odb::Point
+closestPtInRect(odb::Rect rect,
+		odb::Point pt);
 
 } // namespace

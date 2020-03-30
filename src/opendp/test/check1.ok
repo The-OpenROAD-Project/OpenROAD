@@ -1,0 +1,15 @@
+Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: 
+Reading DEF file: simple01.def
+Notice 0: Design: single_cell
+Notice 0:     Created 2 pins.
+Notice 0:     Created 1 components and 4 component-terminals.
+Notice 0:     Created 2 special nets and 2 connections.
+Notice 0:     Created 2 nets and 2 connections.
+Notice 0: Finished DEF file: simple01.def
+Warning: Placed in core check failed (1).
+ _277_

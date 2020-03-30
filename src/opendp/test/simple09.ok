@@ -11,29 +11,26 @@ Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: simple09.def
--------------------- Design Stats ------------------------------
-core area                  : (3003800, 3002800) (6423800, 3014000)
-total cells                : 1
-multi cells                : 0
-fixed cells                : 0
-nets                       : 4
-design area                : 3.83e+10
-total fixed area           : 0
-total movable area         : 7.45e+06
-design utilization         : 0.0194%
-rows                       : 4
-row height                 : 2800
-----------------------------------------------------------------
--------------------- Placement Analysis ------------------------
-total displacement         : 4006600
-average displacement       : 4006600
-max displacement           : 4006600
-original HPWL              : 2e+03
-legalized HPWL             : 6.01e+03
-delta HPWL                 : 200%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
+Design Stats
+--------------------------------
+total instances             1
+multi row instances         0
+fixed instances             0
+nets                        4
+design area            9576.0 u^2
+fixed area                0.0 u^2
+movable area              1.9 u^2
+utilization                 0 %
+utilization padded          0 %
+rows                        4
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement     2003.3 u
+average displacement   2003.3 u
+max displacement       2003.3 u
+original HPWL          2001.8 u
+legalized HPWL         6008.4 u
+delta HPWL                200 %
+

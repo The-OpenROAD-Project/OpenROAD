@@ -11,30 +11,27 @@ Notice 0:     Created 549 components and 2166 component-terminals.
 Notice 0:     Created 364 nets and 1068 connections.
 Notice 0: Finished DEF file: gcd_replace.def
 Warning: could not find power special net
--------------------- Design Stats ------------------------------
-core area                  : (28000, 28000) (267780, 266000)
-total cells                : 549
-multi cells                : 0
-fixed cells                : 255
-nets                       : 364
-design area                : 5.71e+10
-total fixed area           : 2.71e+08
-total movable area         : 2.28e+09
-design utilization         : 4.01%
-rows                       : 85
-row height                 : 2800
-----------------------------------------------------------------
--------------------- Placement Analysis ------------------------
-total displacement         : 1357615
-average displacement       : 2472
-max displacement           : 27829
-original HPWL              : 6.94e+03
-legalized HPWL             : 7.75e+03
-delta HPWL                 : 12%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
+Design Stats
+--------------------------------
+total instances           549
+multi row instances         0
+fixed instances           255
+nets                      364
+design area           14266.9 u^2
+fixed area               67.8 u^2
+movable area            569.8 u^2
+utilization                 4 %
+utilization padded          4 %
+rows                       85
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement      678.8 u
+average displacement      1.2 u
+max displacement         13.9 u
+original HPWL          6944.8 u
+legalized HPWL         7753.4 u
+delta HPWL                 12 %
+
 No differences found.

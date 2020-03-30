@@ -11,33 +11,30 @@ Notice 0:     Created 1 components and 4 component-terminals.
 Notice 0:     Created 2 nets and 2 connections.
 Notice 0: Finished DEF file: fragmented_row03.def
 Warning: could not find power special net
--------------------- Design Stats ------------------------------
-core area                  : (28000, 28000) (34840, 30800)
-total cells                : 1
-multi cells                : 0
-fixed cells                : 0
-nets                       : 2
-design area                : 1.92e+07
-total fixed area           : 0
-total movable area         : 7.45e+06
-design utilization         : 38.9%
-rows                       : 1
-row height                 : 2800
-----------------------------------------------------------------
-Warning: detailed placement failed on _277_
--------------------- Placement Analysis ------------------------
-total displacement         : 0
-average displacement       : 0
-max displacement           : 0
-original HPWL              : 61
-legalized HPWL             : 61
-delta HPWL                 : 0%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> FAIL (1)
-power check ==> PASS 
-placed_check ==> FAIL (1)
-overlap_check ==> PASS 
-Warning: placement check failed.
+Design Stats
+--------------------------------
+total instances             1
+multi row instances         0
+fixed instances             0
+nets                        2
+design area               4.8 u^2
+fixed area                0.0 u^2
+movable area              1.9 u^2
+utilization                39 %
+utilization padded         39 %
+rows                        1
+row height                1.4 u
 
+Warning: detailed placement failed on _277_
+Placement Analysis
+--------------------------------
+total displacement        0.0 u
+average displacement      0.0 u
+max displacement          0.0 u
+original HPWL            61.0 u
+legalized HPWL           61.0 u
+delta HPWL                  0 %
+
+Warning: Site check failed (1).
+ _277_
 No differences found.

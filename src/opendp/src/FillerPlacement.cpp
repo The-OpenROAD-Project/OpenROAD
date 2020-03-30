@@ -55,6 +55,9 @@ using odb::dbPlacementStatus;
 void
 Opendp::fillerPlacement(StringSeq *filler_master_names)
 {
+  if (cells_.empty())
+    importDb();
+
   findFillerMasters(filler_master_names);
   gap_fillers_.clear();
   filler_count_ = 0;
@@ -96,18 +99,11 @@ Opendp::makeCellGrid()
     int x_ur = gridEndX(&cell);
     int y_ur = gridEndY(&cell);
 
-    // BLOCK instances can be outside core.
-    if(isClassBlock(&cell)) {
-      grid_x = max(0, grid_x);
-      grid_y = max(0, grid_y);
-      x_ur = min(x_ur, row_site_count_);
-      y_ur = min(y_ur, row_count_);
-    }
-
-    assert(grid_x >= 0);
-    assert(grid_y >= 0);
-    assert(x_ur <= row_site_count_);
-    assert(y_ur <= row_count_);
+    // Don't barf if cell is outside the core.
+    grid_x = max(0, grid_x);
+    grid_y = max(0, grid_y);
+    x_ur = min(x_ur, row_site_count_);
+    y_ur = min(y_ur, row_count_);
 
     for(int j = grid_y; j < y_ur; j++) {
       for(int k = grid_x; k < x_ur; k++) {
@@ -161,17 +157,20 @@ Opendp::gapFillers(int gap)
   dbMasterSeq &fillers = gap_fillers_[gap];
   if (fillers.empty()) {
     int width = 0;
+    dbMaster *smallest_filler = filler_masters_[filler_masters_.size() - 1];
+    bool have_filler1 = smallest_filler->getWidth() == site_width_;
     for (dbMaster *filler_master : filler_masters_) {
       int filler_width = filler_master->getWidth() / site_width_;
-      while ((width + filler_width) <= gap) {
+      while ((width + filler_width) <= gap
+	     && (have_filler1
+		 || (width + filler_width) != gap - 1)) {
 	fillers.push_back(filler_master);
 	width += filler_width;
 	if (width == gap)
 	  return fillers;
       }
     }
-    string msg = "could not fill gap " + std::to_string(gap);
-    error(msg.c_str());
+    error("could not fill gap of size %d", gap);
     return fillers;
   }
   else

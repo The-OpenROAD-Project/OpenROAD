@@ -50,7 +50,6 @@ using std::max;
 using std::min;
 using std::numeric_limits;
 using std::ofstream;
-using std::pair;
 using std::string;
 using std::to_string;
 using std::vector;
@@ -58,7 +57,7 @@ using std::vector;
 using ord::error;
 using ord::warn;
 
-using odb::adsRect;
+using odb::Rect;
 using odb::dbBox;
 using odb::dbNet;
 using odb::dbMaster;
@@ -71,30 +70,41 @@ using odb::dbSigType;
 using odb::dbRegion;
 using odb::dbSWire;
 using odb::dbSBox;
-using odb::dbMasterType;
 
 static bool swapWidthHeight(dbOrientType orient);
-static bool placeMasterType(dbMasterType type);
 
-void Opendp::dbToOpendp() {
-  // LEF
-  for(auto db_lib : db_->getLibs())
-    makeMacros(db_lib);
-
+void Opendp::importDb() {
   block_ = db_->getChip()->getBlock();
   core_ = ord::getCore(block_);
 
+  importClear();
+  makeMacros();
   examineRows();
   makeCells();
   makeGroups();
   findRowPower();
+
+  Power row_power = (initial_power_ == undefined) ? macro_top_power_ : initial_power_;
+  row0_top_power_is_vdd_ = (row_power == VDD);
 }
 
-void Opendp::makeMacros(dbLib *db_lib) {
-  auto db_masters = db_lib->getMasters();
-  for(auto db_master : db_masters) {
-    struct Macro &macro = db_master_map_[db_master];
-    defineTopPower(macro, db_master);
+void Opendp::importClear() {
+  db_master_map_.clear();
+  cells_.clear();
+  groups_.clear();
+  db_master_map_.clear();
+  db_inst_map_.clear();
+  deleteGrid(grid_);
+  grid_ = nullptr;
+}
+
+void Opendp::makeMacros() {
+  macro_top_power_ = undefined;
+  vector<dbMaster*> masters;
+  block_->getMasters(masters);
+  for(auto master : masters) {
+    struct Macro &macro = db_master_map_[master];
+    defineTopPower(macro, master);
   }
 }
 
@@ -110,12 +120,17 @@ void Opendp::defineTopPower(Macro &macro,
       gnd = mterm;
   }
 
-  int power_y_max = power ? find_ymax(power) : 0;
-  int gnd_y_max = gnd ? find_ymax(gnd) : 0;
-  macro.top_power_ = (power_y_max > gnd_y_max) ? VDD : VSS;
+  if (power && gnd) {
+    bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
+    macro.is_multi_row_ = is_multi_row;
 
-  macro.is_multi_row_ = power && gnd
-    && (power->getMPins().size() > 1 || gnd->getMPins().size() > 1);
+    int power_y_max = find_ymax(power);
+    int gnd_y_max = find_ymax(gnd);
+    Power top_power = (power_y_max > gnd_y_max) ? VDD : VSS;
+    macro.top_power_ = top_power;
+    if(!is_multi_row)
+      macro_top_power_ = top_power;
+  }
 }
 
 int Opendp::find_ymax(dbMTerm *mterm) {
@@ -155,12 +170,13 @@ void Opendp::examineRows() {
 }
 
 void Opendp::makeCells() {
+  multi_row_inst_count_ = 0;
+
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for(auto db_inst : db_insts) {
     dbMaster *master = db_inst->getMaster();
-    // Ignore PAD/COVER/RING/ENDCAP instances.
-    if (placeMasterType(master->getType())) {
+    if (isPlacedType(master->getType())) {
       cells_.push_back(Cell());
       Cell &cell = cells_.back();
       cell.db_inst_ = db_inst;
@@ -173,43 +189,17 @@ void Opendp::makeCells() {
       cell.height_ = height;
 
       int init_x, init_y;
-      initLocation(&cell, init_x, init_y);
+      initialLocation(&cell, init_x, init_y);
       // Shift by core lower left.
       cell.x_ = init_x;
       cell.y_ = init_y;
       cell.orient_ = db_inst->getOrient();
       cell.is_placed_ = isFixed(&cell);
-    }
-  }
-}
 
-// Use switch so if new types are added we get a compiler warning.
-static bool placeMasterType(dbMasterType type) {
-  switch (type) {
-  case dbMasterType::CORE:
-  case dbMasterType::CORE_FEEDTHRU:
-  case dbMasterType::CORE_TIEHIGH:
-  case dbMasterType::CORE_TIELOW:
-  case dbMasterType::CORE_SPACER:
-  case dbMasterType::BLOCK:
-    return true;
-  case dbMasterType::NONE:
-  case dbMasterType::COVER:
-  case dbMasterType::RING:
-  case dbMasterType::PAD:
-  case dbMasterType::PAD_INPUT:
-  case dbMasterType::PAD_OUTPUT:
-  case dbMasterType::PAD_INOUT:
-  case dbMasterType::PAD_POWER:
-  case dbMasterType::PAD_SPACER:
-  case dbMasterType::ENDCAP:
-  case dbMasterType::ENDCAP_PRE:
-  case dbMasterType::ENDCAP_POST:
-  case dbMasterType::ENDCAP_TOPLEFT:
-  case dbMasterType::ENDCAP_TOPRIGHT:
-  case dbMasterType::ENDCAP_BOTTOMLEFT:
-  case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    return false;
+      Macro &macro = db_master_map_[master];
+      if (macro.is_multi_row_)
+	multi_row_inst_count_++;
+    }
   }
 }
 
@@ -247,7 +237,7 @@ void Opendp::makeGroups() {
       group.boundary.mergeInit();
       auto boundaries = db_region->getParent()->getBoundaries();
       for(dbBox *boundary : boundaries) {
-	adsRect box;
+	Rect box;
 	boundary->getBox(box);
 	box = box.intersect(core_);
 	// offset region to core origin
@@ -259,7 +249,7 @@ void Opendp::makeGroups() {
 
       for (auto db_inst : db_region->getRegionInsts()) {
 	Cell *cell = db_inst_map_[db_inst];
-	group.siblings.push_back(cell);
+	group.cells_.push_back(cell);
 	cell->group_ = &group;
       }
     }
@@ -267,14 +257,13 @@ void Opendp::makeGroups() {
 }
 
 void Opendp::findRowPower() {
-  initial_power_ = power::undefined;
-  const char *power_net_name = "VDD";
+  initial_power_ = Power::undefined;
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
   for(dbNet *net : block_->getNets()) {
     if (net->isSpecial()) {
       const char *net_name = net->getConstName();
-      if (strcasecmp(net_name, power_net_name) == 0) {
+      if (strcasecmp(net_name, power_net_name_) == 0) {
 	for (dbSWire *swire : net->getSWires()) {
 	  for (dbSBox *sbox : swire->getWires()) {
 	    min_vdd_y = min(min_vdd_y, sbox->yMin());
@@ -286,7 +275,13 @@ void Opendp::findRowPower() {
   }
   if (found_vdd)
     initial_power_ = divRound(min_vdd_y, row_height_) % 2 == 0 ? VDD : VSS;
-  else
+}
+
+void Opendp::reportImportWarnings() {
+  if(macro_top_power_ == Power::undefined) {
+    warn("Cannot find MACRO with VDD/VSS pins.");
+  }
+  if (initial_power_ == Power::undefined)
     warn("could not find power special net");
 }
 

@@ -11,30 +11,27 @@ Notice 0:     Created 10 components and 45 component-terminals.
 Notice 0:     Created 11 nets and 25 connections.
 Notice 0: Finished DEF file: simple05.def
 Warning: could not find power special net
--------------------- Design Stats ------------------------------
-core area                  : (28000, 28000) (39780, 33600)
-total cells                : 10
-multi cells                : 0
-fixed cells                : 1
-nets                       : 11
-design area                : 6.6e+07
-total fixed area           : 3.19e+06
-total movable area         : 3.09e+07
-design utilization         : 49.2%
-rows                       : 2
-row height                 : 2800
-----------------------------------------------------------------
--------------------- Placement Analysis ------------------------
-total displacement         : 4560
-average displacement       : 456
-max displacement           : 3420
-original HPWL              : 80.2
-legalized HPWL             : 80.5
-delta HPWL                 : 0%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> PASS 
-power check ==> PASS 
-placed_check ==>> PASS 
-overlap_check ==> PASS 
+Design Stats
+--------------------------------
+total instances            10
+multi row instances         0
+fixed instances             1
+nets                       11
+design area              16.5 u^2
+fixed area                0.8 u^2
+movable area              7.7 u^2
+utilization                49 %
+utilization padded         49 %
+rows                        2
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement        2.3 u
+average displacement      0.2 u
+max displacement          1.7 u
+original HPWL            80.2 u
+legalized HPWL           80.5 u
+delta HPWL                  0 %
+
 No differences found.

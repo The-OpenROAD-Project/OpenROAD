@@ -249,7 +249,19 @@ db_has_tech()
   return getDb()->getTech() != nullptr;
 }
 
-odb::adsRect
+odb::dbBlock *
+get_db_block()
+{
+  odb::dbDatabase *db = getDb();
+  if (db) {
+    odb::dbChip *chip = db->getChip();
+    if (chip)
+      return chip->getBlock();
+  }
+  return nullptr;
+}
+
+odb::Rect
 get_db_core()
 {
   OpenRoad *ord = getOpenRoad();

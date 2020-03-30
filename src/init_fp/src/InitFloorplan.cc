@@ -58,7 +58,7 @@ using odb::dbSite;
 using odb::dbRow;
 using odb::dbRowDir;
 using odb::dbTechLayer;
-using odb::adsRect;
+using odb::Rect;
 using odb::dbOrientType;
 using odb::dbTechLayerDir;
 using odb::dbTrackGrid;
@@ -132,11 +132,11 @@ protected:
 		int core_uy);
   dbSite *findSite(const char *site_name);
   void makeTracks(const char *tracks_file,
-		  adsRect &die_area);
-  void makeTracks(adsRect &die_area);
+		  Rect &die_area);
+  void makeTracks(Rect &die_area);
   void readTracks(const char *tracks_file);
   void autoPlacePins(dbTechLayer *pin_layer,
-		     adsRect &core);
+		     Rect &core);
   int metersToMfgGrid(double dist) const;
   double dbuToMeters(uint dist) const;
 
@@ -270,10 +270,10 @@ InitFloorplan::initFloorplan(double die_lx,
 			     const char *site_name,
 			     const char *tracks_file)
 {
-  adsRect die_area(metersToMfgGrid(die_lx),
-		   metersToMfgGrid(die_ly),
-		   metersToMfgGrid(die_ux),
-		   metersToMfgGrid(die_uy));
+  Rect die_area(metersToMfgGrid(die_lx),
+                metersToMfgGrid(die_ly),
+                metersToMfgGrid(die_ux),
+                metersToMfgGrid(die_uy));
   block_->setDieArea(die_area);
 
   if (site_name && site_name[0]
@@ -342,7 +342,7 @@ InitFloorplan::findSite(const char *site_name)
 
 void
 InitFloorplan::makeTracks(const char *tracks_file,
-			  adsRect &die_area)
+			  Rect &die_area)
 {
   readTracks(tracks_file);
   dbTech *tech = db_->getTech();
@@ -429,7 +429,7 @@ Track::Track(string layer,
 }
 
 void
-InitFloorplan::makeTracks(adsRect &die_area)
+InitFloorplan::makeTracks(Rect &die_area)
 {
   dbTech *tech = db_->getTech();
   dbSet<dbTechLayer> layers = tech->getLayers();
@@ -500,7 +500,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
       dbTech *tech = db_->getTech();
       dbTechLayer *pin_layer = tech->findLayer(pin_layer_name);
       if (pin_layer) {
-	adsRect core = ord::getCore(block_);
+	Rect core = ord::getCore(block_);
 	autoPlacePins(pin_layer, core);
       }
       else
@@ -511,7 +511,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
 
 void
 InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
-			     adsRect &core)
+			     Rect &core)
 {
   dbSet<dbBTerm> bterms = block_->getBTerms();
   int pin_count = bterms.size();

@@ -13,34 +13,35 @@ Notice 0:     Created 10 components and 46 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 11 nets and 25 connections.
 Notice 0: Finished DEF file: multi_height03.def
--------------------- Design Stats ------------------------------
-core area                  : (28000, 28000) (48000, 36000)
-total cells                : 10
-multi cells                : 1
-fixed cells                : 0
-nets                       : 13
-design area                : 1.6e+08
-total fixed area           : 0
-total movable area         : 9.92e+07
-design utilization         : 62%
-rows                       : 2
-row height                 : 4000
-max multi_cell height      : 2
-----------------------------------------------------------------
-Warning: detailed placement failed on _281_
--------------------- Placement Analysis ------------------------
-total displacement         : 15380
-average displacement       : 1538
-max displacement           : 4240
-original HPWL              : 79.8
-legalized HPWL             : 81.9
-delta HPWL                 : 3%
-----------------------------------------------------------------
-row check ==> PASS 
-site check ==> FAIL (1)
-power check ==> PASS 
-placed_check ==> FAIL (1)
-overlap_check ==> FAIL 
-Warning: placement check failed.
+Design Stats
+--------------------------------
+total instances            10
+multi row instances         1
+fixed instances             0
+nets                       13
+design area              40.0 u^2
+fixed area                0.0 u^2
+movable area             24.8 u^2
+utilization                62 %
+utilization padded         62 %
+rows                        2
+row height                2.0 u
+max height                  2 rows
 
+Warning: detailed placement failed on _281_
+Placement Analysis
+--------------------------------
+total displacement        7.7 u
+average displacement      0.8 u
+max displacement          2.1 u
+original HPWL            79.8 u
+legalized HPWL           81.9 u
+delta HPWL                  3 %
+
+Warning: Overlap check failed (1).
+ _281_ overlaps _282_
+Warning: Site check failed (1).
+ _281_
+Warning: Power line check failed (1).
+ _281_
 No differences found.
