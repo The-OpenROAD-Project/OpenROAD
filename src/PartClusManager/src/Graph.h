@@ -75,6 +75,12 @@ public:
         int computeNextRowPtr() const {return _edgeWeights.size();}
         int getNumEdges() const {return _edgeWeights.size();}
         int getNumVertex() const {return _vertexWeights.size();}
+        
+        void clearGraph() {_edgeWeights.clear();
+                           _vertexWeights.clear();
+                           _colIdx.clear();
+                           _rowPtr.clear();
+                           _instToIdx.clear();}
 private:
         std::vector<float> _edgeWeights;
         std::vector<long long int> _vertexWeights;

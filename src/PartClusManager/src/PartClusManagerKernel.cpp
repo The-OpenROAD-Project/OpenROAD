@@ -45,6 +45,8 @@ extern "C" {
 #include "opendb/db.h"
 namespace PartClusManager {
 
+// Partition Netlist
+
 void PartClusManagerKernel::runPartitioning() {
         graph();
         if (_options.getTool() == "mlpart") {
@@ -54,16 +56,18 @@ void PartClusManagerKernel::runPartitioning() {
         } else {
                 runChaco();
         }
+        _graph.clearGraph();
 }
 
 void PartClusManagerKernel::runChaco() {
         std::cout << "\nRunning chaco...\n";
 
-        PartResults currentResults;
+        PartSolutions currentResults;
         currentResults.setToolName(_options.getTool());
         unsigned partitionId = generatePartitionId();
         currentResults.setPartitionId(partitionId);
         currentResults.setNumOfRuns(_options.getSeeds().size());
+        std::string evaluationFunction = _options.getEvaluationFunction();
 
         std::vector<float> edgeWeights = _graph.getEdgeWeight();
 	std::vector<long long int> vertexWeights = _graph.getVertexWeight();
@@ -140,13 +144,14 @@ void PartClusManagerKernel::runChaco() {
                 auto end = std::chrono::system_clock::now();
                 unsigned long runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-                currentResults.addResult(chacoResult, runtime, seed);
+                currentResults.addAssignment(chacoResult, runtime, seed);
                 free(assigment);
 
                 std::cout << "Partitioned graph for seed " << seed << " in " << runtime << " ms.\n";
         }
         _results.push_back(currentResults);
         free(mesh_dims);
+        computePartitionResult(partitionId, evaluationFunction);
 
         std::cout << "Chaco run completed. Partition ID = " << partitionId << ".\n";
 }
@@ -189,20 +194,19 @@ void PartClusManagerKernel::evaluatePartitioning() {
         //Checks if IDs are valid
         for (int partId : partVector) {
                 if (partId >= _results.size()){
-                        std::cout << "Invalid Partition ID!\n";
                         std::exit(1);
                 }
         }
         int bestId = -1;
         for (int partId : partVector) {
-                //Computes the results for the current Partition ID
-                computePartitionResult(partId, evaluationFunction);
                 //Compares the results for the current ID with the best one (if it exists).
                 if (bestId == -1) {
                         bestId = partId;
                 } else {
                         //If the new ID presents better results than the last one, update the bestId.
-                        bool isNewIdBetter = comparePartitionings(_results[bestId], _results[partId], evaluationFunction);
+                        bool isNewIdBetter = comparePartitionings(getPartitioningResult(bestId),
+                                                                  getPartitioningResult(partId),
+                                                                  evaluationFunction);
                         if (isNewIdBetter){
                                 bestId = partId;
                         }
@@ -219,12 +223,12 @@ void PartClusManagerKernel::computePartitionResult(unsigned partitionId, std::st
         std::vector<unsigned long> setSizes;
         std::vector<unsigned long> setAreas;
 
-        PartResults currentResults = _results[partitionId];
+        PartSolutions currentResults = _results[partitionId];
         for (unsigned idx = 0; idx < currentResults.getNumOfRuns(); idx++)
         {
-                std::vector<short> currentAssignment = currentResults.getResult(idx);
-                unsigned long currentRuntime = currentResults.getResultRuntime(idx);
-                int currentSeed = currentResults.getResultSeed(idx);
+                std::vector<short> currentAssignment = currentResults.getAssignment(idx);
+                unsigned long currentRuntime = currentResults.getRuntime(idx);
+                int currentSeed = currentResults.getSeed(idx);
 
                 unsigned long terminalCounter = 0; 
                 unsigned long cutCounter = 0; 
@@ -396,7 +400,7 @@ void PartClusManagerKernel::computePartitionResult(unsigned partitionId, std::st
         _results[partitionId] = currentResults;
 }
 
-bool PartClusManagerKernel::comparePartitionings(PartResults oldPartition, PartResults newPartition, std::string function) {
+bool PartClusManagerKernel::comparePartitionings(PartSolutions oldPartition, PartSolutions newPartition, std::string function) {
         bool isBetter = false;
         if (function == "hyperedges") {
                 isBetter = newPartition.getBestNumHyperedgeCuts() < oldPartition.getBestNumHyperedgeCuts();
@@ -415,10 +419,10 @@ bool PartClusManagerKernel::comparePartitionings(PartResults oldPartition, PartR
 }
 
 void PartClusManagerKernel::reportPartitionResult(unsigned partitionId){
-        PartResults currentResults = _results[partitionId];
+        PartSolutions currentResults = _results[partitionId];
         std::cout << "\nPartitioning Results for ID = " << partitionId << " and Tool = " << currentResults.getToolName() << ".\n";
         unsigned bestIdx = currentResults.getBestSolutionIdx();
-        int seed = currentResults.getResultSeed(bestIdx);
+        int seed = currentResults.getSeed(bestIdx);
         std::cout << "Best results used seed " << seed << ".\n";
         std::cout << "Number of Hyperedge Cuts = " << currentResults.getBestNumHyperedgeCuts() << ".\n";
         std::cout << "Number of Terminals = " << currentResults.getBestNumTerminals() << ".\n";
@@ -427,6 +431,8 @@ void PartClusManagerKernel::reportPartitionResult(unsigned partitionId){
         std::cout << "Total Hop Weigth = " << currentResults.getBestHopWeigth() << ".\n";
         std::cout << "Total Runtime = " << currentResults.getBestRuntime() << ".\n\n";
 }
+
+// Write Partitioning To DB
 
 odb::dbBlock* PartClusManagerKernel::getDbBlock() const {
         odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
@@ -443,9 +449,9 @@ void PartClusManagerKernel::writePartitioningToDb(unsigned partitioningId) {
                 return;
         }
 
-        PartResults &results = getPartitioningResult(partitioningId);
+        PartSolutions &results = getPartitioningResult(partitioningId);
         unsigned bestSolutionIdx = results.getBestSolutionIdx();
-        const std::vector<short>& result = results.getResult(bestSolutionIdx);
+        const std::vector<short>& result = results.getAssignment(bestSolutionIdx);
 
         odb::dbBlock* block = getDbBlock();
         for (odb::dbInst* inst: block->getInsts()) {

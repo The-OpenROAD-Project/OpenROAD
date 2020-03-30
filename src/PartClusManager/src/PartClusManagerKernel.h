@@ -109,16 +109,16 @@ private:
         std::vector<int>        _partitionsToTest;
 }; 
 
-class PartResults {
+class PartSolutions {
 public:
-        void addResult(std::vector<short> currentAssignment, unsigned long runtime, int seed) {
+        void addAssignment(std::vector<short> currentAssignment, unsigned long runtime, int seed) {
                 _assignmentResults.push_back(currentAssignment);
                 _runtimeResults.push_back(runtime);
                 _seeds.push_back(seed);
         }
-        const std::vector<short>& getResult(unsigned idx) const { return _assignmentResults[idx]; }
-        unsigned long getResultRuntime(unsigned idx) const { return _runtimeResults[idx]; }
-        int getResultSeed(unsigned idx) const { return _seeds[idx]; }
+        const std::vector<short>& getAssignment(unsigned idx) const { return _assignmentResults[idx]; }
+        unsigned long getRuntime(unsigned idx) const { return _runtimeResults[idx]; }
+        int getSeed(unsigned idx) const { return _seeds[idx]; }
         void setToolName(std::string name) { _toolName = name; }
         std::string getToolName() const { return _toolName; }
         void setPartitionId(unsigned id) { _partitionId = id; }
@@ -161,12 +161,12 @@ class PartClusManagerKernel {
 protected:
         odb::dbBlock* getDbBlock() const;
         unsigned getNumPartitioningResults() const { return _results.size(); }
-        PartResults& getPartitioningResult(unsigned id) { return _results[id]; }
+        PartSolutions& getPartitioningResult(unsigned id) { return _results[id]; }
 
         PartOptions _options;
 	unsigned _dbId;
 	Graph _graph;
-        std::vector<PartResults> _results;
+        std::vector<PartSolutions> _results;
 
 public:
         PartClusManagerKernel() = default;
@@ -184,7 +184,7 @@ public:
 	void graph();
         unsigned generatePartitionId();
         void computePartitionResult(unsigned partitionId, std::string function);
-        bool comparePartitionings(const PartResults oldPartition, const PartResults newPartition, std::string function);
+        bool comparePartitionings(const PartSolutions oldPartition, const PartSolutions newPartition, std::string function);
         void reportPartitionResult(unsigned partitionId);
         void writePartitioningToDb(unsigned partitionId);
         void dumpPartIdToFile(std::string name);

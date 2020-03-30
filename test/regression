@@ -39,6 +39,7 @@ set tool_scripts {"init_fp" "src/init_fp/test/regression" \
 		    "FastRoute" "src/FastRoute/test/regression" \
 		    "TapCell" "src/tapcell/test/regression" \
 		    "PDNSim" "src/PDNSim/test/regression" \
+        "PartClusManager" "src/PartClusManager/test/regression" \
 		  }
 
 foreach tool $argv {
