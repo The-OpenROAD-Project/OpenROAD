@@ -97,7 +97,7 @@ Path Type: max
 [INFO] NumNets = 526
 [INFO] NumPins = 1446
 [INFO] DieAreaLxLy = (0, -170)
-[INFO] DieAreaUxUy = (136620, 179200)
+[INFO] DieAreaUxUy = (180120, 179200)
 [INFO] CoreAreaLxLy = (0, 0)
 [INFO] CoreAreaUxUy = (95760, 95200)
 [INFO] CoreArea = 9116352000
