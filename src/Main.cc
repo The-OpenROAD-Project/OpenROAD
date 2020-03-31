@@ -15,6 +15,11 @@
 
 #include <stdio.h>
 #include <tcl.h>
+#ifdef ENABLE_READLINE
+  // If you get an error on this include be sure you have
+  //   the package tcl-tclreadline-devel installed
+  #include <tclreadline.h>
+#endif
 #include "Machine.hh"
 #include "StringUtil.hh"
 #include "StaMain.hh"
@@ -64,6 +69,30 @@ main(int argc,
   }
 }
 
+#ifdef ENABLE_READLINE
+static int
+tclReadlineInit(Tcl_Interp *interp)
+{
+  std::array<const char *, 8> readline_cmds = {
+    "history",
+    "history event",
+    "eval $auto_index(::tclreadline::ScriptCompleter)",
+    "::tclreadline::readline builtincompleter true",
+    "::tclreadline::readline customcompleter ::tclreadline::ScriptCompleter",
+    "proc ::tclreadline::prompt1 {} { return \"openroad " OPENROAD_VERSION "> \" }",
+    "proc ::tclreadline::prompt2 {} { return \"...> \" }",
+    "::tclreadline::Loop"
+  };
+
+  for (auto cmd : readline_cmds) {
+    if (TCL_ERROR == Tcl_Eval(interp, cmd)) {
+      return TCL_ERROR;
+    }
+  }
+  return TCL_OK;
+}
+#endif
+
 static int
 tclAppInit(Tcl_Interp *interp)
 {
@@ -78,7 +107,18 @@ tclAppInit(int argc,
 	   Tcl_Interp *interp)
 {
   // source init.tcl
-  Tcl_Init(interp);
+  if (Tcl_Init(interp) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+#ifdef ENABLE_READLINE
+  if (Tclreadline_Init(interp) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+  Tcl_StaticPackage(interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
+  if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
+    printf("Failed to load tclreadline\n");
+  }
+#endif
   ord::initOpenRoad(interp);
 
   if (!findCmdLineFlag(argc, argv, "-no_splash"))
@@ -104,7 +144,11 @@ tclAppInit(int argc,
       }
     }
   }
+#ifdef ENABLE_READLINE
+  return tclReadlineInit(interp);
+#else
   return TCL_OK;
+#endif
 }
 
 static void

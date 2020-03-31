@@ -292,6 +292,13 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
 )
 
+# tclReadline
+if (TCL_READLINE_LIBRARY)
+  add_definitions(-DENABLE_READLINE)
+  target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
+endif()
+
+
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
