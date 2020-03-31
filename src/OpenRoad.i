@@ -137,7 +137,10 @@ using ord::getDb;
 using ord::ensureLinked;
 
 using odb::dbDatabase;
-
+using odb::dbBlock;
+using odb::dbTechLayer;
+using odb::dbTrackGrid;
+using odb::dbTech;
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -282,6 +285,42 @@ db_has_rows()
   return db->getChip()
     && db->getChip()->getBlock()
     && db->getChip()->getBlock()->getRows().size() > 0;
+}
+
+bool
+db_layer_has_tracks(unsigned layerId, bool hor)
+{
+  dbDatabase *db = OpenRoad::openRoad()->getDb();
+  dbBlock *block = db->getChip()->getBlock();
+  dbTech* tech = db->getTech();
+  
+  dbTechLayer *layer = tech->findRoutingLayer(layerId);
+  if (!layer) {
+    return false;
+  }
+    
+  dbTrackGrid *trackGrid = block->findTrackGrid(layer);
+  if (!trackGrid) {
+    return false;
+  }
+
+  if (hor) {
+    return trackGrid->getNumGridPatternsY() > 0; 
+  } else {
+    return trackGrid->getNumGridPatternsX() > 0; 
+  } 
+}
+
+bool
+db_layer_has_hor_tracks(unsigned layerId)
+{
+  db_layer_has_tracks(layerId, true);
+}
+
+bool
+db_layer_has_ver_tracks(unsigned layerId)
+{
+  db_layer_has_tracks(layerId, false);
 }
 
 sta::Sta *
