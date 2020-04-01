@@ -34,10 +34,12 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
-# Install boost
-RUN yum install -y boost-devel && \
-    yum clean -y all && \
-    rm -rf /var/lib/apt/lists/*
+# installing boost for build dependency
+RUN wget https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.bz2/download && \
+    tar -xf download && \
+    cd boost_1_72_0 && \
+    ./bootstrap.sh && \
+    ./b2 install --with-iostreams -j $(nproc)
 
 RUN useradd -ms /bin/bash openroad
 
