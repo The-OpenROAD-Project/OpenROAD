@@ -51,7 +51,8 @@ $binary -no_init < run.tcl > test.log 2>&1
 obs_report0=$(grep -e '---- #Endcaps inserted:' ./test.log)
 obs_report1=$(grep -e '---- #Endcaps inserted:' ./test.log)
 
-
+mkdir -p ../../results/test_cells_inserted/
+cp test.log ../../results/test_cells_inserted/tapcell.log
 
 if grep -q -e "$obs_report0" golden.cells && grep -q -e "$obs_report1" golden.cells;
 then
