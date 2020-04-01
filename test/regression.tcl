@@ -43,10 +43,13 @@
 # the differences.
 #
 # You should NOT need to modify this script.
-# To setup the regression script customize the scripts "regresssion" and "save_ok"
-# to source "regression_vars.tcl" and "regression.tcl" as in this example.
-# Customize "regression_vars.tcl" to locate the directory and name of the
-# application to run as well as the test names. Each test is a tcl command file.
+# Customization unique to an application is in "regression_vars.tcl".
+# In this case the application is OpenROAD, so nothing should need to be changed
+# in "regression_vars.tcl".
+#
+# Customize the scripts "regresssion" and "save_ok" to source this file
+# and a file that defines the test scripts, "regresion_tests.tcl".
+# Each test is a tcl command file.
 
 source [file join [file dirname [file normalize [info script]]] "regression_vars.tcl"]
 

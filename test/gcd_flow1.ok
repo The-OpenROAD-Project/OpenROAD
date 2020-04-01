@@ -278,7 +278,6 @@ original HPWL          3753.0 u
 legalized HPWL         8401.9 u
 delta HPWL                124 %
 
-Warning: Placed in core check failed (34).
 Placed 868 filler instances.
 Startpoint: _884_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _872_ (rising edge-triggered flip-flop clocked by core_clock)
