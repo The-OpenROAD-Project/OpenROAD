@@ -35,7 +35,8 @@ double    eigtol;		/* tolerance on eigenvectors */
 long      seed;			/* random number seed */
 FILE     *outfile;		/* file to write output to */
 {
-    extern int DEBUG_TRACE;	/* trace main execution path? */
+    extern int DEBUG_PARTCLUSMANAGER;
+	extern int DEBUG_TRACE;	/* trace main execution path? */
     extern int ECHO;		/* copy input parameters back to screen? */
     extern int OUT_ASSIGN_INV;	/* assignment output in inverted format? */
     extern int IN_ASSIGN_INV;	/* assignment input in inverted format? */
@@ -59,37 +60,37 @@ FILE     *outfile;		/* file to write output to */
 	}
 	//fprintf(tempfile, "\n");
 
-	if (PRINT_HEADERS) {
-            //fprintf(tempfile, "\n           Input and Parameter Values\n\n");
+	if (PRINT_HEADERS && DEBUG_PARTCLUSMANAGER) {
+            fprintf(tempfile, "\n           Input and Parameter Values\n\n");
         }
 
-	if (graphname != NULL) {
+	if (graphname != NULL && DEBUG_PARTCLUSMANAGER) {
 	    //fprintf(tempfile, "Graph file: `%s', ", graphname);
 	}
 	//fprintf(tempfile, "# vertices = %d, # edges = %d\n", nvtxs, nedges);
 
 	/* Print global partitioning strategy. */
 	//fprintf(tempfile, "Global method: ");
-	if (global_method == 1) {
-	    //fprintf(tempfile, "Multilevel-KL\n");
+	if (global_method == 1  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Multilevel-KL\n");
 	}
-	else if (global_method == 2) {
-	    //fprintf(tempfile, "Spectral\n");
+	else if (global_method == 2  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Spectral\n");
 	}
-	else if (global_method == 3) {
-	    //fprintf(tempfile, "Inertial\n");
+	else if (global_method == 3  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Inertial\n");
 	}
-	else if (global_method == 4) {
-	    //fprintf(tempfile, "Linear\n");
+	else if (global_method == 4  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Linear\n");
 	}
-	else if (global_method == 5) {
-	    //fprintf(tempfile, "Random\n");
+	else if (global_method == 5  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Random\n");
 	}
-	else if (global_method == 6) {
-	    //fprintf(tempfile, "Scattered\n");
+	else if (global_method == 6  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Scattered\n");
 	}
-	else if (global_method == 6) {
-	    //fprintf(tempfile, "Read-From-File ");
+	else if (global_method == 6  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Read-From-File ");
 	    if (IN_ASSIGN_INV) {
 		printf("(inverted format)\n");
 	    }
@@ -98,68 +99,68 @@ FILE     *outfile;		/* file to write output to */
 	    }
 	}
 
-	if (global_method == 1) {
-	    //fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
-	    //fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
+	if (global_method == 1  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
+	    fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
 	}
 
-	else if (global_method == 2) {
+	else if (global_method == 2  && DEBUG_PARTCLUSMANAGER) {
 	    if (rqi_flag) {
-		//fprintf(tempfile, "Multilevel RQI/Symmlq eigensolver\n");
-		//fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
-		//fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
+		fprintf(tempfile, "Multilevel RQI/Symmlq eigensolver\n");
+		fprintf(tempfile, "Number of vertices to coarsen down to: %d\n", vmax);
+		fprintf(tempfile, "Eigen tolerance: %g\n", eigtol);
 	    }
 	}
 
-	else if (global_method == 3) {
+	else if (global_method == 3  && DEBUG_PARTCLUSMANAGER) {
 	    if (geomname != NULL) {
-		//fprintf(tempfile, "Geometry input file: `%s', Dimensionality = %d\n", geomname, igeom);
+		fprintf(tempfile, "Geometry input file: `%s', Dimensionality = %d\n", geomname, igeom);
 	    }
 	}
 
-	else if (global_method == 7) {
-	    //fprintf(tempfile, "Assignment input file: `%s'\n", inassignname);
+	else if (global_method == 7  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Assignment input file: `%s'\n", inassignname);
 	}
 
 
 	/* Now describe local method. */
-	if (local_method == 1) {
-	    //fprintf(tempfile, "Local method: Kernighan-Lin\n");
+	if (local_method == 1  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Local method: Kernighan-Lin\n");
 	}
-	else if (local_method == 2) {
-	    //fprintf(tempfile, "Local method: None\n");
+	else if (local_method == 2  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Local method: None\n");
 	}
 
 	/* Now describe target architecture. */
-	if (architecture == 0) {
-	    //fprintf(tempfile, "Partitioning target: %d-dimensional hypercube\n", ndims_tot);
+	if (architecture == 0  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Partitioning target: %d-dimensional hypercube\n", ndims_tot);
 	}
-	else if (architecture > 0) {
-	    //fprintf(tempfile, "Partitioning target: %d-dimensional mesh of size ", architecture);
-	    //if (architecture == 1)
-		//fprintf(tempfile, "%d\n", mesh_dims[0]);
-	    //else if (architecture == 2)
-		//fprintf(tempfile, "%dx%d\n", mesh_dims[0], mesh_dims[1]);
-	    //else if (architecture == 3)
-		//fprintf(tempfile, "%dx%dx%d\n", mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+	else if (architecture > 0  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Partitioning target: %d-dimensional mesh of size ", architecture);
+	    if (architecture == 1)
+		fprintf(tempfile, "%d\n", mesh_dims[0]);
+	    else if (architecture == 2)
+		fprintf(tempfile, "%dx%d\n", mesh_dims[0], mesh_dims[1]);
+	    else if (architecture == 3)
+		fprintf(tempfile, "%dx%dx%d\n", mesh_dims[0], mesh_dims[1], mesh_dims[2]);
 	}
 
-	if (ndims == 1) {
-	    //fprintf(tempfile, "Partitioning mode: Bisection\n");
+	if (ndims == 1  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Partitioning mode: Bisection\n");
 	}
-	else if (ndims == 2) {
-	    //fprintf(tempfile, "Partitioning mode: Quadrisection\n");
+	else if (ndims == 2  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Partitioning mode: Quadrisection\n");
 	}
-	else if (ndims == 3) {
-	    //fprintf(tempfile, "Partitioning mode: Octasection\n");
+	else if (ndims == 3  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Partitioning mode: Octasection\n");
 	}
 
 /* Add stuff about communications simulator. */
 
 	//fprintf(tempfile, "Random seed: %ld\n", seed);
 
-	if (outassignname != NULL) {
-	    //fprintf(tempfile, "Assignment output file: `%s' ", outassignname);
+	if (outassignname != NULL  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Assignment output file: `%s' ", outassignname);
 	    if (OUT_ASSIGN_INV) {
 		printf("(inverted format)\n");
 	    }
@@ -167,11 +168,11 @@ FILE     *outfile;		/* file to write output to */
 		printf("(normal format)\n");
 	    }
 	}
-	if (outfilename != NULL) {
-	    //fprintf(tempfile, "Output file: `%s'\n", outfilename);
+	if (outfilename != NULL  && DEBUG_PARTCLUSMANAGER) {
+	    fprintf(tempfile, "Output file: `%s'\n", outfilename);
 	}
 
-	if (ECHO > 1 || ECHO < -1) {
+	if ((ECHO > 1 || ECHO < -1) && DEBUG_PARTCLUSMANAGER) {
 	    reflect_params(tempfile, global_method, local_method,
 			   rqi_flag, ndims);
 	}
@@ -268,195 +269,195 @@ int       ndims;		/* number of eigenvectors to generate */
 
     char     *true_or_false();
 
-    //fprintf(tempfile, "Active Parameters:\n");
+    fprintf(tempfile, "Active Parameters:\n");
 
-    //fprintf(tempfile, "  CHECK_INPUT = %s\n", true_or_false(CHECK_INPUT));
+    fprintf(tempfile, "  CHECK_INPUT = %s\n", true_or_false(CHECK_INPUT));
 
     if (global_method == 1 || global_method == 2) {
-	//fprintf(tempfile, "  LANCZOS_TYPE:  ");
+	fprintf(tempfile, "  LANCZOS_TYPE:  ");
 	if (LANCZOS_TYPE == 1) {
-	    //fprintf(tempfile, " Full orthogonalization");
+	    fprintf(tempfile, " Full orthogonalization");
 	}
 	else if (LANCZOS_TYPE == 2) {
-	    //fprintf(tempfile, "Full orthogonalization, inverse operator");
+	    fprintf(tempfile, "Full orthogonalization, inverse operator");
 	}
 	else if (LANCZOS_TYPE == 3) {
-	    //fprintf(tempfile, "Selective orthogonalization");
+	    fprintf(tempfile, "Selective orthogonalization");
 	}
 	else if (LANCZOS_TYPE == 4) {
 	    if (EXPERT) {
-	        //fprintf(tempfile, "Selective orthogonalization against both ends");
+	        fprintf(tempfile, "Selective orthogonalization against both ends");
 	    }
 	    else {	/* Check input should catch this, but just in case ... */
 		LANCZOS_TYPE = 3;
-	        //fprintf(tempfile, "Selective orthogonalization");
+	        fprintf(tempfile, "Selective orthogonalization");
 	    }
 	}
 	if (TERM_PROP) {
-	    //fprintf(tempfile, " OR extended");
+	    fprintf(tempfile, " OR extended");
 	}
-	//fprintf(tempfile, "\n");
+	fprintf(tempfile, "\n");
 	    
 
-	//fprintf(tempfile, "  EIGEN_TOLERANCE = %g\n", EIGEN_TOLERANCE);
+	fprintf(tempfile, "  EIGEN_TOLERANCE = %g\n", EIGEN_TOLERANCE);
 	if (SRESTOL > 0) {
-	    //fprintf(tempfile, "  SRESTOL = %g\n", SRESTOL);
+	    fprintf(tempfile, "  SRESTOL = %g\n", SRESTOL);
 	}
 	else {
-	    //fprintf(tempfile,
-		//"  SRESTOL = %g ... autoset to square of eigen tolerance\n", SRESTOL);
+	    fprintf(tempfile,
+		"  SRESTOL = %g ... autoset to square of eigen tolerance\n", SRESTOL);
 	}
-	/*if (LANCZOS_MAXITNS > 0) //fprintf(tempfile,
+	if (LANCZOS_MAXITNS > 0) fprintf(tempfile,
 	    "  LANCZOS_MAXITNS = %d\n", LANCZOS_MAXITNS);
-	else //fprintf(tempfile,
+	else fprintf(tempfile,
 	    "  LANCZOS_MAXITNS = %d ... autoset to twice # vertices\n", LANCZOS_MAXITNS);
-	if (LANCZOS_SO_PRECISION == 1) //fprintf(tempfile,
+	if (LANCZOS_SO_PRECISION == 1) fprintf(tempfile,
 	    "  LANCZOS_SO_PRECISION = 1 ... single precision\n");  
-	else //fprintf(tempfile, "  LANCZOS_SO_PRECISION = 2 ... double precision\n");  
-	//fprintf(tempfile, "  LANCZOS_SO_INTERVAL = %d\n", LANCZOS_SO_INTERVAL);
-        if (LANCZOS_CONVERGENCE_MODE == 1) //fprintf(tempfile,
+	else fprintf(tempfile, "  LANCZOS_SO_PRECISION = 2 ... double precision\n");  
+	fprintf(tempfile, "  LANCZOS_SO_INTERVAL = %d\n", LANCZOS_SO_INTERVAL);
+        if (LANCZOS_CONVERGENCE_MODE == 1) fprintf(tempfile,
 	    "  LANCZOS_CONVERGENCE_MODE = 1 ... partition tolerance\n");
-        else //fprintf(tempfile,
+        else fprintf(tempfile,
 	    "  LANCZOS_CONVERGENCE_MODE = 0 ... residual tolerance\n");
-	//fprintf(tempfile, "  BISECTION_SAFETY = %g\n", BISECTION_SAFETY);
+	fprintf(tempfile, "  BISECTION_SAFETY = %g\n", BISECTION_SAFETY);
         if (LANCZOS_TYPE == 3 || LANCZOS_TYPE == 4) {
-	    if (LANCZOS_TIME == 0) //fprintf(tempfile,
+	    if (LANCZOS_TIME == 0) fprintf(tempfile,
 		"  LANCZOS_TIME = 0 ... no detailed timing\n");
-	    else //fprintf(tempfile,
+	    else fprintf(tempfile,
 		"  LANCZOS_TIME = 1 ... detailed timing\n");
-	}*/
+	}
 
 	if (WARNING_EVECS > 0) {
-	    //fprintf(tempfile, "  WARNING_EVECS = %d\n", WARNING_EVECS);
+	    fprintf(tempfile, "  WARNING_EVECS = %d\n", WARNING_EVECS);
 	}
 
-        /*if (MAPPING_TYPE == 0) //fprintf(tempfile, "  MAPPING_TYPE = 0 ... cut at origin\n");
-        else if (MAPPING_TYPE == 1) //fprintf(tempfile,
+        if (MAPPING_TYPE == 0) fprintf(tempfile, "  MAPPING_TYPE = 0 ... cut at origin\n");
+        else if (MAPPING_TYPE == 1) fprintf(tempfile,
 	    "  MAPPING_TYPE = 1 ... min-cost assignment\n");
-        else if (MAPPING_TYPE == 2) //fprintf(tempfile,
+        else if (MAPPING_TYPE == 2) fprintf(tempfile,
 	    "  MAPPING_TYPE = 2 ... recursive median\n");
-        else if (MAPPING_TYPE == 3) //fprintf(tempfile,
-	    "  MAPPING_TYPE = 3 ... independent medians\n");*/
+        else if (MAPPING_TYPE == 3) fprintf(tempfile,
+	    "  MAPPING_TYPE = 3 ... independent medians\n");
 
-	//fprintf(tempfile, "  MAKE_CONNECTED = %s\n", true_or_false(MAKE_CONNECTED));
-	//fprintf(tempfile, "  PERTURB = %s\n",true_or_false(PERTURB));
+	fprintf(tempfile, "  MAKE_CONNECTED = %s\n", true_or_false(MAKE_CONNECTED));
+	fprintf(tempfile, "  PERTURB = %s\n",true_or_false(PERTURB));
 	if (PERTURB) {
-	    //fprintf(tempfile, "    NPERTURB = %d\n",NPERTURB);
-	    //fprintf(tempfile, "    PERTURB_MAX = %g\n",PERTURB_MAX);
+	    fprintf(tempfile, "    NPERTURB = %d\n",NPERTURB);
+	    fprintf(tempfile, "    PERTURB_MAX = %g\n",PERTURB_MAX);
 	}
 	if (ndims == 3) {
-	    //fprintf(tempfile, "  OPT3D_NTRIES = %d\n", OPT3D_NTRIES);
+	    fprintf(tempfile, "  OPT3D_NTRIES = %d\n", OPT3D_NTRIES);
 	}
     }
     if (global_method == 1) {
-	//fprintf(tempfile, "  COARSEN_RATIO_MIN = %g\n", COARSEN_RATIO_MIN);
-	//fprintf(tempfile, "  COARSE_NLEVEL_KL = %d\n", COARSE_NLEVEL_KL);
-	//fprintf(tempfile, "  MATCH_TYPE = %d\n", MATCH_TYPE);
-	//fprintf(tempfile, "  HEAVY_MATCH = %s\n", true_or_false(HEAVY_MATCH));
-	//fprintf(tempfile, "  COARSE_KL_BOTTOM = %s\n", true_or_false(COARSE_KL_BOTTOM));
-	//fprintf(tempfile, "  COARSEN_VWGTS = %s\n", true_or_false(COARSEN_VWGTS));
-	//fprintf(tempfile, "  COARSEN_EWGTS = %s\n", true_or_false(COARSEN_EWGTS));
-	//fprintf(tempfile, "  KL_ONLY_BNDY = %s\n", true_or_false(KL_ONLY_BNDY));
-/*
-	if (LIMIT_KL_EWGTS) {
-	    //fprintf(tempfile, "  LIMIT_KL_EWGTS = %s, EWGT_RATIO_MAX = %g\n",
+	fprintf(tempfile, "  COARSEN_RATIO_MIN = %g\n", COARSEN_RATIO_MIN);
+	fprintf(tempfile, "  COARSE_NLEVEL_KL = %d\n", COARSE_NLEVEL_KL);
+	fprintf(tempfile, "  MATCH_TYPE = %d\n", MATCH_TYPE);
+	fprintf(tempfile, "  HEAVY_MATCH = %s\n", true_or_false(HEAVY_MATCH));
+	fprintf(tempfile, "  COARSE_KL_BOTTOM = %s\n", true_or_false(COARSE_KL_BOTTOM));
+	fprintf(tempfile, "  COARSEN_VWGTS = %s\n", true_or_false(COARSEN_VWGTS));
+	fprintf(tempfile, "  COARSEN_EWGTS = %s\n", true_or_false(COARSEN_EWGTS));
+	fprintf(tempfile, "  KL_ONLY_BNDY = %s\n", true_or_false(KL_ONLY_BNDY));
+
+	/*if (LIMIT_KL_EWGTS) {
+	    fprintf(tempfile, "  LIMIT_KL_EWGTS = %s, EWGT_RATIO_MAX = %g\n",
 		    true_or_false(LIMIT_KL_EWGTS), EWGT_RATIO_MAX);
 	}
 	else {
-	    //fprintf(tempfile, "  LIMIT_KL_EWGTS = %s\n", true_or_false(LIMIT_KL_EWGTS));
-	}
-*/
+	    fprintf(tempfile, "  LIMIT_KL_EWGTS = %s\n", true_or_false(LIMIT_KL_EWGTS));
+	}*/
+
     }
 
-    /*if (global_method == 2 && rqi_flag) {
-	//fprintf(tempfile, "  COARSE_NLEVEL_RQI = %d\n", COARSE_NLEVEL_RQI);
+    if (global_method == 2 && rqi_flag) {
+	fprintf(tempfile, "  COARSE_NLEVEL_RQI = %d\n", COARSE_NLEVEL_RQI);
         if (RQI_CONVERGENCE_MODE == 1)
-	    //fprintf(tempfile, "  RQI_CONVERGENCE_MODE = 1 ... partition tolerance\n");
-        else //fprintf(tempfile, "  RQI_CONVERGENCE_MODE = 0 ... residual tolerance\n");
-	//fprintf(tempfile, "  COARSEN_RATIO_MIN = %g\n", COARSEN_RATIO_MIN);
-	//fprintf(tempfile, "  COARSEN_VWGTS = %s\n", true_or_false(COARSEN_VWGTS));
-	//fprintf(tempfile, "  COARSEN_EWGTS = %s\n", true_or_false(COARSEN_EWGTS));
-    }*/
+	    fprintf(tempfile, "  RQI_CONVERGENCE_MODE = 1 ... partition tolerance\n");
+        else fprintf(tempfile, "  RQI_CONVERGENCE_MODE = 0 ... residual tolerance\n");
+	fprintf(tempfile, "  COARSEN_RATIO_MIN = %g\n", COARSEN_RATIO_MIN);
+	fprintf(tempfile, "  COARSEN_VWGTS = %s\n", true_or_false(COARSEN_VWGTS));
+	fprintf(tempfile, "  COARSEN_EWGTS = %s\n", true_or_false(COARSEN_EWGTS));
+    }
 
     if (global_method == 1 || local_method == 1) {
-	//fprintf(tempfile, "  KL_RANDOM = %s\n", true_or_false(KL_RANDOM));
+	fprintf(tempfile, "  KL_RANDOM = %s\n", true_or_false(KL_RANDOM));
 	if (KL_METRIC == 1) {
-	    //fprintf(tempfile, "  KL_METRIC = Cuts\n");
+	    fprintf(tempfile, "  KL_METRIC = Cuts\n");
 	}
 	else if (KL_METRIC == 2) {
-	    //fprintf(tempfile, "  KL_METRIC = Hops\n");
+	    fprintf(tempfile, "  KL_METRIC = Hops\n");
 	}
-	//fprintf(tempfile, "  KL_NTRIES_BAD = %d\n", KL_NTRIES_BAD);
-	//fprintf(tempfile, "  KL_BAD_MOVES = %d\n", KL_BAD_MOVES);
-	//fprintf(tempfile, "  KL_UNDO_LIST = %s\n", true_or_false(KL_UNDO_LIST));
-	//fprintf(tempfile, "  KL_IMBALANCE = %g\n", KL_IMBALANCE);
+	fprintf(tempfile, "  KL_NTRIES_BAD = %d\n", KL_NTRIES_BAD);
+	fprintf(tempfile, "  KL_BAD_MOVES = %d\n", KL_BAD_MOVES);
+	fprintf(tempfile, "  KL_UNDO_LIST = %s\n", true_or_false(KL_UNDO_LIST));
+	fprintf(tempfile, "  KL_IMBALANCE = %g\n", KL_IMBALANCE);
     }
 
     if (global_method == 1 || global_method == 2 || local_method == 1) {
-	//fprintf(tempfile, "  TERM_PROP = %s\n", true_or_false(TERM_PROP));
+	fprintf(tempfile, "  TERM_PROP = %s\n", true_or_false(TERM_PROP));
 	if (TERM_PROP) {
-	    //fprintf(tempfile, "    CUT_TO_HOP_COST = %g\n", CUT_TO_HOP_COST);
+	    fprintf(tempfile, "    CUT_TO_HOP_COST = %g\n", CUT_TO_HOP_COST);
 	}
     }
 
     if (SEQUENCE) {
-	//fprintf(tempfile, "  SEQUENCE = %s, Sequence file name = `%s'\n",
-	//	true_or_false(SEQUENCE), SEQ_FILENAME);
+	fprintf(tempfile, "  SEQUENCE = %s, Sequence file name = `%s'\n",
+		true_or_false(SEQUENCE), SEQ_FILENAME);
     }
 
-    //fprintf(tempfile, "  OUTPUT_METRICS = %d\n", OUTPUT_METRICS);
-    //fprintf(tempfile, "  MAKE_VWGTS = %s\n", true_or_false(MAKE_VWGTS));
-    //fprintf(tempfile, "  REFINE_MAP = %s\n", true_or_false(REFINE_MAP));
-    //fprintf(tempfile, "  REFINE_PARTITION = %d\n", REFINE_PARTITION);
-    //fprintf(tempfile, "  INTERNAL_VERTICES = %s\n", true_or_false(INTERNAL_VERTICES));
+    fprintf(tempfile, "  OUTPUT_METRICS = %d\n", OUTPUT_METRICS);
+    fprintf(tempfile, "  MAKE_VWGTS = %s\n", true_or_false(MAKE_VWGTS));
+    fprintf(tempfile, "  REFINE_MAP = %s\n", true_or_false(REFINE_MAP));
+    fprintf(tempfile, "  REFINE_PARTITION = %d\n", REFINE_PARTITION);
+    fprintf(tempfile, "  INTERNAL_VERTICES = %s\n", true_or_false(INTERNAL_VERTICES));
 
     if (SIMULATOR > 0) {
-        //fprintf(tempfile, "  SIMULATOR = %d\n", SIMULATOR);
-        //fprintf(tempfile, "  SIMULATION_ITNS = %d\n", SIMULATION_ITNS);
-        //fprintf(tempfile, "  CUT_COST = %g\n", CUT_COST);
-        //fprintf(tempfile, "  HOP_COST = %g\n", HOP_COST);
-        //fprintf(tempfile, "  BDY_COST = %g\n", BDY_COST);
-        //fprintf(tempfile, "  BDY_HOP_COST = %g\n", BDY_HOP_COST);
-        //fprintf(tempfile, "  STARTUP_COST = %g\n", STARTUP_COST);
+        fprintf(tempfile, "  SIMULATOR = %d\n", SIMULATOR);
+        fprintf(tempfile, "  SIMULATION_ITNS = %d\n", SIMULATION_ITNS);
+        fprintf(tempfile, "  CUT_COST = %g\n", CUT_COST);
+        fprintf(tempfile, "  HOP_COST = %g\n", HOP_COST);
+        fprintf(tempfile, "  BDY_COST = %g\n", BDY_COST);
+        fprintf(tempfile, "  BDY_HOP_COST = %g\n", BDY_HOP_COST);
+        fprintf(tempfile, "  STARTUP_COST = %g\n", STARTUP_COST);
     }
 
     /* Now print out all the nonzero debug parameters. */
-	/*
+	
     if (DEBUG_CONNECTED) 
-	//fprintf(tempfile, "  DEBUG_CONNECTED = %d\n", DEBUG_CONNECTED);
+	fprintf(tempfile, "  DEBUG_CONNECTED = %d\n", DEBUG_CONNECTED);
     if (DEBUG_PERTURB) 
-	//fprintf(tempfile, "  DEBUG_PERTURB = %d\n", DEBUG_PERTURB);
+	fprintf(tempfile, "  DEBUG_PERTURB = %d\n", DEBUG_PERTURB);
     if (DEBUG_ASSIGN) 
-	//fprintf(tempfile, "  DEBUG_ASSIGN = %d\n", DEBUG_ASSIGN);
+	fprintf(tempfile, "  DEBUG_ASSIGN = %d\n", DEBUG_ASSIGN);
     if (DEBUG_INERTIAL) 
-	//fprintf(tempfile, "  DEBUG_INERTIAL = %d\n", DEBUG_INERTIAL);
+	fprintf(tempfile, "  DEBUG_INERTIAL = %d\n", DEBUG_INERTIAL);
     if (DEBUG_OPTIMIZE) 
-	//fprintf(tempfile, "  DEBUG_OPTIMIZE = %d\n", DEBUG_OPTIMIZE);
+	fprintf(tempfile, "  DEBUG_OPTIMIZE = %d\n", DEBUG_OPTIMIZE);
     if (DEBUG_BPMATCH) 
-	//fprintf(tempfile, "  DEBUG_BPMATCH = %d\n", DEBUG_BPMATCH);
+	fprintf(tempfile, "  DEBUG_BPMATCH = %d\n", DEBUG_BPMATCH);
     if (DEBUG_COARSEN) 
-	//fprintf(tempfile, "  DEBUG_COARSEN = %d\n", DEBUG_COARSEN);
+	fprintf(tempfile, "  DEBUG_COARSEN = %d\n", DEBUG_COARSEN);
     if (DEBUG_EVECS) 
-	//fprintf(tempfile, "  DEBUG_EVECS = %d\n", DEBUG_EVECS);
+	fprintf(tempfile, "  DEBUG_EVECS = %d\n", DEBUG_EVECS);
     if (DEBUG_KL) 
-	//fprintf(tempfile, "  DEBUG_KL = %d\n", DEBUG_KL);
+	fprintf(tempfile, "  DEBUG_KL = %d\n", DEBUG_KL);
     if (DEBUG_MEMORY) 
-	//fprintf(tempfile, "  DEBUG_MEMORY = %d\n", DEBUG_MEMORY);
+	fprintf(tempfile, "  DEBUG_MEMORY = %d\n", DEBUG_MEMORY);
     if (DEBUG_INPUT) 
-	//fprintf(tempfile, "  DEBUG_INPUT = %d\n", DEBUG_INPUT);
+	fprintf(tempfile, "  DEBUG_INPUT = %d\n", DEBUG_INPUT);
     if (DEBUG_PARAMS) 
-	//fprintf(tempfile, "  DEBUG_PARAMS = %d\n", DEBUG_PARAMS);
+	fprintf(tempfile, "  DEBUG_PARAMS = %d\n", DEBUG_PARAMS);
     if (DEBUG_INTERNAL) 
-	//fprintf(tempfile, "  DEBUG_INTERNAL = %d\n", DEBUG_INTERNAL);
+	fprintf(tempfile, "  DEBUG_INTERNAL = %d\n", DEBUG_INTERNAL);
     if (DEBUG_REFINE_PART) 
-	//fprintf(tempfile, "  DEBUG_REFINE_PART = %d\n", DEBUG_REFINE_PART);
+	fprintf(tempfile, "  DEBUG_REFINE_PART = %d\n", DEBUG_REFINE_PART);
     if (DEBUG_REFINE_MAP) 
-	//fprintf(tempfile, "  DEBUG_REFINE_MAP = %d\n", DEBUG_REFINE_MAP);
+	fprintf(tempfile, "  DEBUG_REFINE_MAP = %d\n", DEBUG_REFINE_MAP);
     if (DEBUG_SIMULATOR) 
-	//fprintf(tempfile, "  DEBUG_SIMULATOR = %d\n", DEBUG_SIMULATOR);
+	fprintf(tempfile, "  DEBUG_SIMULATOR = %d\n", DEBUG_SIMULATOR);
     if (DEBUG_TRACE) 
-	//fprintf(tempfile, "  DEBUG_TRACE = %d\n", DEBUG_TRACE);
+	fprintf(tempfile, "  DEBUG_TRACE = %d\n", DEBUG_TRACE);
     if (DEBUG_MACH_PARAMS) 
-	//fprintf(tempfile, "  DEBUG_MACH_PARAMS = %d\n", DEBUG_MACH_PARAMS);
-	*/
+	fprintf(tempfile, "  DEBUG_MACH_PARAMS = %d\n", DEBUG_MACH_PARAMS);
+	
 }

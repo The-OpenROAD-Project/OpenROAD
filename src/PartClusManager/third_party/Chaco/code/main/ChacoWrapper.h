@@ -1,9 +1,13 @@
+#include "params.h"
+
 int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, float *ewgts, float *x, float *y, float *z,
 		              char *outassignname, char *outfilename,
 		              short *assignment,
 		              int architecture, int ndims_tot, int mesh_dims[3], double *goal,
 		              int global_method, int local_method, int rqi_flag, int vmax, int ndims,
-		              double eigtol, long seed);
+		              double eigtol, long seed,
+					  int tprop, double kl_inbalance, double coarsening_ratio, double cut_to_hop_cost,
+					  int debug_print);
 
 //int       nvtxs;		/* number of vertices in full graph */
 //int      *start;		/* start of edge list for each vertex */
@@ -25,3 +29,8 @@ int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, floa
 //int       ndims;		/* number of eigenvectors (2^d sets) */
 //double    eigtol;		/* tolerance on eigenvectors */
 //long      seed;			/* for random graph mutations */
+//int 		tprop;	  /* perform terminal propagation */
+//double 	kl_inbalance;	/* imbalance tolerated by KL */
+//double 	coarsening_ratio; /* min vtx reduction at each coarsen stage */
+//double 	cut_to_hop_cost;	/* relative cut/hop importance */
+//int 		debug_print;	/* debug text for PartClusManager */

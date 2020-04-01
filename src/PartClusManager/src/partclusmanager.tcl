@@ -67,11 +67,13 @@ proc partition_netlist { args } {
           -num_starts \
           -balance_constraint \
           -coarsening_ratio \
+          -coarsening_vertices \
+          -enable_term_prop \
           -cut_hop_ratio \ 
           -architecture \
           -seeds \
-         } flags { -enable_perm_prop \ 
-         }
+          -set_max_vertex_weight \
+         } flags {}
 
   # Tool
   set tools "chaco gpmetis mlpart"
@@ -94,7 +96,10 @@ proc partition_netlist { args } {
     puts "\[ERROR\] Argument -target_partitions should be an integer in the range \[2, 32768\]"
     return
   } else {
-    PartClusManager::set_target_partitions $keys(-target_partitions)     
+    PartClusManager::set_target_partitions $keys(-target_partitions) 
+    if {$keys(-target_partitions) % 2} {
+          PartClusManager::set_architecture "1 $keys(-target_partitions)"
+    }
   }
 
   # Clique threshold
@@ -185,8 +190,13 @@ proc partition_netlist { args } {
     }       
   }
 
+  # Coarsening vertices
+  if { [info exists keys(-coarsening_vertices)] } {
+       PartClusManager::set_coarsening_vertices $keys(-coarsening_vertices)
+  }
+
   # Terminal propagation 
-  if { [info exists flags(-enable_term_prop)] } {
+  if { [info exists keys(-enable_term_prop)] } {
        PartClusManager::set_enable_term_prop $keys(-enable_term_prop)
   }
 

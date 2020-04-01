@@ -89,6 +89,17 @@ void PartClusManagerKernel::runChaco() {
 
         int numVertCoar = _options.getCoarVertices();
 
+        int termPropagation = 0;
+        if (_options.getTermProp()) {
+                termPropagation = 1;
+        }
+
+        double inbalance = (double) _options.getBalanceConstraint() / 100;
+
+        double coarRatio = _options.getCoarRatio();
+
+        double cutCost = _options.getCutHopRatio();
+
         for (long seed : _options.getSeeds()) {
                 auto start = std::chrono::system_clock::now();
                 std::time_t startTime = std::chrono::system_clock::to_time_t(start);
@@ -132,7 +143,10 @@ void PartClusManagerKernel::runChaco() {
                                NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
                                1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
                                0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
-                               0.001, seed);                            /* tolerance on eigenvectors (hard-coded, not used) and the seed */
+                               0.001, seed,                             /* tolerance on eigenvectors (hard-coded, not used) and the seed */
+                               termPropagation, inbalance,              /* terminal propagation enable and inbalance */
+                               coarRatio, cutCost,                      /* coarsening ratio and cut to hop cost */
+                               0);                                      /* debug text enable */
                 
                 std::vector<short> chacoResult;
                 for (int i = 0; i < numVertices; i++)

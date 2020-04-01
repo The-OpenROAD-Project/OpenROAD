@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "defs.h"
+#include "params.h"
 #include "structs.h"
 
 /* Print metrics of partition quality. */
@@ -58,6 +59,7 @@ int       using_ewgts;		/* are edge weights being used? */
     int       x1, y1, z1;	/* mesh location of vertex */
     int       x2, y2, z2;	/* mesh location of neighboring vertex */
     int       i, j;		/* loop counters */
+	extern int DEBUG_PARTCLUSMANAGER;
     double   *smalloc();
     int       abs(), sfree();
 
@@ -140,6 +142,7 @@ int       using_ewgts;		/* are edge weights being used? */
     total_internal = 0;
     min_internal = max_size;
     max_internal = 0;
+	if (DEBUG_PARTCLUSMANAGER) {
     printf("\nAfter full partitioning  (nsets = %d)\n", nsets);
     if (print2file)
 	fprintf(outfile, "\nAfter full partitioning (nsets = %d)\n", nsets);
@@ -148,6 +151,7 @@ int       using_ewgts;		/* are edge weights being used? */
 	if (print2file)
 	    fprintf(outfile, "    set    size      cuts       hops   bndy_vtxs    adj_sets\n");
     }
+	}
     for (set = 0; set < nsets; set++) {
 	/* Compute number of set neighbors, and number of vtxs on boundary. */
 	internal = setsize[set];
@@ -240,6 +244,7 @@ int       using_ewgts;		/* are edge weights being used? */
     }
     ncuts /= 2;
     nhops /= 2;
+	if (DEBUG_PARTCLUSMANAGER) {
     printf("\n");
     printf("                            Total      Max/Set      Min/Set\n");
     printf("                            -----      -------      -------\n");
@@ -257,7 +262,7 @@ int       using_ewgts;		/* are edge weights being used? */
     	total_neighbors, maxneighbors, minneighbors);
     printf("Internal Vertices:    %11d  %11d  %11d\n\n",
     	total_internal, max_internal, min_internal);
-
+	}
 
     if (print2file) {
 

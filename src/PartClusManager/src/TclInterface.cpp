@@ -106,10 +106,20 @@ void set_coarsening_ratio(float value) {
         kernel->getOptions().setCoarRatio(value);
 }
 
-void set_enable_term_prop(bool value) {
+void set_coarsening_vertices(unsigned value) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
-        kernel->getOptions().setTermProp(value);
+        kernel->getOptions().setCoarVertices(value);
+}
+
+void set_enable_term_prop(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        if (value > 0){
+                kernel->getOptions().setTermProp(true);
+        } else {
+                kernel->getOptions().setTermProp(false);
+        } 
 }
 
 void set_cut_hop_ratio(float value) {
