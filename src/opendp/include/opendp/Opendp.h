@@ -219,9 +219,9 @@ class Opendp {
   bool checkPowerLine(Cell &cell);
   bool checkInCore(Cell &cell);
   Cell *checkOverlap(Cell &cell,
-		     Grid *grid,
-		     bool padded);
-  bool overlap(Cell *cell1, Cell *cell2, bool padded);
+		     Grid *grid);
+  bool overlap(Cell *cell1, Cell *cell2);
+  bool isCrWtBlClass(Cell *cell);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
@@ -229,7 +229,7 @@ class Opendp {
 		      const char *msg,
 		      bool verbose,
 		      std::function<void(Cell *cell)> report_failure);
-  void reportOverlapFailure(Cell *cell, Grid *grid, bool padded);
+  void reportOverlapFailure(Cell *cell, Grid *grid);
 
   void rectDist(Cell *cell,
 		Rect *rect,
