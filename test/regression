@@ -25,10 +25,7 @@ set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname $test_dir]
 
 source [file join $test_dir "regression.tcl"]
-
-record_tests {
-  error1
-}
+source [file join $test_dir "regression_tests.tcl"]
 
 set tool_scripts {"init_fp" "src/init_fp/test/regression" \
 		    "dbSta" "src/dbSta/test/regression" \
@@ -79,6 +76,8 @@ foreach {tool script} $tool_scripts {
 puts "------------------------------------------------------"
 if { $tool_errors } {
   puts "Found $tool_errors tool regression failures."
+} else {
+  puts "Passed all tool regressions."
 }
 
 exit $tool_errors
