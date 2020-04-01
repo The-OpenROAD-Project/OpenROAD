@@ -47,5 +47,4 @@ COPY . /OpenROAD
 WORKDIR /OpenROAD
 
 # Build
-RUN mkdir build
-RUN cd build && cmake .. && make -j 4
+RUN cmake -B build . && cmake --build build -j 4
