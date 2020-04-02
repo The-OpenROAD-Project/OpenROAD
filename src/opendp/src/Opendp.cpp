@@ -578,7 +578,7 @@ int Opendp::gridX(Cell *cell) {
 
 int Opendp::gridPaddedX(Cell *cell) {
   if (isPadded(cell))
-    return gridX(cell->x_ - pad_left_);
+    return gridX(cell->x_ - pad_left_ * site_width_);
   else
     return gridX(cell->x_);
 }
