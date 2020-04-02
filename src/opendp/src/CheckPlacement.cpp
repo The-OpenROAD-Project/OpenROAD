@@ -180,7 +180,7 @@ bool Opendp::checkInCore(Cell &cell) {
 
 //    CR WT BL SP EC
 // CR  P  P  P  O  O
-// WT  P  P  P  O  O
+// WT  P  O  P  O  O
 // BL  P  P  -  O  O
 // SP  O  O  O  O  O
 // EC  O  O  O  O  O
@@ -226,7 +226,7 @@ bool Opendp::overlap(Cell *cell1, Cell *cell2) {
       && isBlock(cell2))
     return false;
   else {
-    bool padded = havePadding() && isCrWtBlClass(cell1) && isCrWtBlClass(cell1);
+    bool padded = havePadding() && isOverlapPadded(cell1, cell2);
     int x_ll1, x_ur1, y_ll1, y_ur1;
     int x_ll2, x_ur2, y_ll2, y_ur2;
     if (padded) {
@@ -250,6 +250,12 @@ bool Opendp::overlap(Cell *cell1, Cell *cell2) {
   }
 }
 
+bool Opendp::isOverlapPadded(Cell *cell1, Cell *cell2) {
+  return isCrWtBlClass(cell1)
+    && isCrWtBlClass(cell2)
+    && !(isWtClass(cell1) && isWtClass(cell2));
+}
+
 bool Opendp::isCrWtBlClass(Cell *cell) {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
@@ -265,6 +271,44 @@ bool Opendp::isCrWtBlClass(Cell *cell) {
   case dbMasterType::BLOCK_SOFT:
     return true;
   case dbMasterType::CORE_SPACER:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    // These classes are completely ignored by the placer.
+  case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
+  case dbMasterType::RING:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
+    return false;
+  }
+}
+
+bool Opendp::isWtClass(Cell *cell) {
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+  case dbMasterType::CORE_WELLTAP:
+    return true;
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_SPACER:
+  case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
   case dbMasterType::ENDCAP:
   case dbMasterType::ENDCAP_PRE:
   case dbMasterType::ENDCAP_POST:

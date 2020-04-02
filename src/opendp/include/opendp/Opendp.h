@@ -221,7 +221,9 @@ class Opendp {
   Cell *checkOverlap(Cell &cell,
 		     Grid *grid);
   bool overlap(Cell *cell1, Cell *cell2);
+  bool isOverlapPadded(Cell *cell1, Cell *cell2);
   bool isCrWtBlClass(Cell *cell);
+  bool isWtClass(Cell *cell);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
