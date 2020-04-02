@@ -4,11 +4,18 @@ LABEL maintainer="Abdelrahman Hosny <abdelrahman_hosny@brown.edu>"
 # Install dev and runtime dependencies
 RUN yum group install -y "Development Tools" \
     && yum install -y https://centos7.iuscommunity.org/ius-release.rpm \
-    && yum install -y wget centos-release-scl devtoolset-8 \
+    && yum install -y centos-release-scl \
+    && yum install -y wget devtoolset-8 \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
     python36u python36u-libs python36u-devel python36u-pip && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
+
+ENV CC=/opt/rh/devtoolset-8/root/usr/bin/gcc \
+    CPP=/opt/rh/devtoolset-8/root/usr/bin/cpp \
+    CXX=/opt/rh/devtoolset-8/root/usr/bin/g++ \
+    PATH=/opt/rh/devtoolset-8/root/usr/bin:$PATH \
+    LD_LIBRARY_PATH=/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib:/opt/rh/devtoolset-8/root/usr/lib64/dyninst:/opt/rh/devtoolset-8/root/usr/lib/dyninst:/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib:$LD_LIBRARY_PATH
 
 # Install CMake
 RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
@@ -34,10 +41,12 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
-# Install boost
-RUN yum install -y boost-devel && \
-    yum clean -y all && \
-    rm -rf /var/lib/apt/lists/*
+# installing boost for build dependency
+RUN wget https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.bz2/download && \
+    tar -xf download && \
+    cd boost_1_72_0 && \
+    ./bootstrap.sh && \
+    ./b2 install --with-iostreams -j $(nproc)
 
 RUN useradd -ms /bin/bash openroad
 

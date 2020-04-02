@@ -400,3 +400,6 @@ if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/external/StandardTransforms")
     include(Transforms)
 endif()
+
+target_link_libraries(${LIBRARY_NAME} PRIVATE
+$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>)
