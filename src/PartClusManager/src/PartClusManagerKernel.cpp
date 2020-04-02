@@ -56,7 +56,6 @@ void PartClusManagerKernel::runPartitioning() {
         } else {
                 runChaco();
         }
-        _graph.clearGraph();
 }
 
 void PartClusManagerKernel::runChaco() {
@@ -188,6 +187,7 @@ void PartClusManagerKernel::runMlPart(const Graph& graph, const PartOptions& opt
 }
 
 void PartClusManagerKernel::graph(){
+        _graph.clearGraph();
 	GraphDecomposition graphDecomp;
 	graphDecomp.init(_dbId);
 	graphDecomp.createGraph(_graph, _options.getGraphModel(), _options.getWeightModel(), _options.getMaxEdgeWeight(), 
