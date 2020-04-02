@@ -72,7 +72,6 @@ proc partition_netlist { args } {
           -cut_hop_ratio \ 
           -architecture \
           -seeds \
-          -set_max_vertex_weight \
          } flags {}
 
   # Tool

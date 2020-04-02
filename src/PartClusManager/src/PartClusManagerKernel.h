@@ -92,9 +92,9 @@ private:
         unsigned                _numStarts              = 1;
         unsigned                _targetPartitions       = 0;
         bool                    _weightedVertices       = false;
-        double                  _coarRatio              = 0.8;
+        double                  _coarRatio              = 0.7;
         unsigned                _coarVertices           = 2500;
-        bool                    _termProp               = true;
+        bool                    _termProp               = false;
         double                  _cutHopRatio            = 1.0;
         std::string             _tool                   = "chaco";
         std::string             _graphModel             = "clique";
@@ -103,7 +103,7 @@ private:
         unsigned                _weightModel            = 1;
         unsigned                _maxEdgeWeight          = 100; 
         unsigned                _maxVertexWeight        = 100; 
-        unsigned                _balanceConstraint      = 5; 
+        unsigned                _balanceConstraint      = 0; 
         std::vector<int>        _archTopology;
         std::vector<int>        _seeds;
         std::vector<int>        _partitionsToTest;

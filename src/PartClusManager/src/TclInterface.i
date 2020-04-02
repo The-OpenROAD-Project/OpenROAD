@@ -47,6 +47,7 @@ extern void set_graph_model(const char* name);
 extern void set_clique_threshold(unsigned value);
 extern void set_weight_model(unsigned value);
 extern void set_max_edge_weight(unsigned value);
+extern void set_max_vertex_weight(unsigned value);
 extern void set_num_starts(unsigned value);
 extern void set_balance_constraints(unsigned value);
 extern void set_coarsening_ratio(float value);
