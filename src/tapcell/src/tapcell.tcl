@@ -657,7 +657,15 @@ proc tapcell { args } {
 
         set inst2_name "PHY_${cnt}"
         set inst2 [odb::dbInst_create $block $master $inst2_name]
-        $inst2 setOrient $ori
+        set right_ori $ori
+        if {[string match "MX" $ori]} {
+            set right_ori "R180"
+        } else {
+            if {[string match "R0" $ori]} {
+                set right_ori "MY"
+            }
+        }
+        $inst2 setOrient $right_ori
         $inst2 setLocation $loc_2_x $loc_2_y
         $inst2 setPlacementStatus LOCKED
 
@@ -677,6 +685,9 @@ proc tapcell { args } {
     set max_y [tapcell::get_max_rows_y $rows]
     
     set tapcell_count 0
+    set endcap_master [$db findMaster $endcap_master]
+    set endcap_width [$endcap_master getWidth]
+
     foreach row $rows {
         set site_x [[$row getSite] getWidth]
         set llx [[$row getBBox] xMin]
@@ -710,6 +721,9 @@ proc tapcell { args } {
         for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
             set master [$db findMaster $tapcell_master]
             set inst_name "PHY_${cnt}"
+    	    set tap_width [$master getWidth]
+            set tap_urx [expr $x + $tap_width]
+            set end_llx [expr $urx - $endcap_width]
 
             if { [string match [$master getConstName] $tapcell_master] } {
                 if {$add_boundary_cell == true} {
@@ -725,6 +739,10 @@ proc tapcell { args } {
                 set x_end [expr $x + $site_x]
 
                 if {($x != $min_x) && ($x_end != $max_x)} {
+                    if { $tap_urx > $end_llx } {
+                        puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
+                        continue
+                    }
                     set inst [odb::dbInst_create $block $master $inst_name]
                     $inst setOrient $ori
 
