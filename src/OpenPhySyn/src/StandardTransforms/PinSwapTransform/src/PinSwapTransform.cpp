@@ -39,7 +39,8 @@
 #include <algorithm>
 #include <sstream>
 
-using namespace psn;
+namespace psn
+{
 
 PinSwapTransform::PinSwapTransform() : swap_count_(0)
 {
@@ -209,4 +210,5 @@ DEFINE_TRANSFORM_VIRTUALS(
     "Performs timing-driven/power-driven commutative pin swapping optimization",
     "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
 
+} // namespace psn
 #endif

@@ -38,7 +38,8 @@
 
 #include <sstream>
 
-using namespace psn;
+namespace psn
+{
 
 ConstantPropagationTransform::ConstantPropagationTransform() : prop_count_(0)
 {
@@ -698,4 +699,6 @@ DEFINE_TRANSFORM_VIRTUALS(
     "Usage: transform constant_propagation [enable-inverter-replacement] "
     "[max-depth] [tie-hi cell] [tie-lo]"
     "cell] [inverter_cell]")
+
+} // namespace psn
 #endif

@@ -41,7 +41,8 @@
 #include <algorithm>
 #include <cmath>
 
-using namespace psn;
+namespace psn
+{
 
 int
 BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
@@ -366,4 +367,5 @@ DEFINE_TRANSFORM_VIRTUALS(BufferFanoutTransform, "buffer_fanout", "1.0.0",
                           "Inserts buffers based on max fan-out",
                           "Usage: transform buffer_fanout "
                           "<max_fanout> <buffer_cell>")
+} // namespace psn
 #endif

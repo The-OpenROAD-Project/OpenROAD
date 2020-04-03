@@ -37,7 +37,8 @@
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/StringUtils.hpp"
 
-using namespace psn;
+namespace psn
+{
 
 GateCloningTransform::GateCloningTransform() : net_index_(0), clone_index_(0)
 {
@@ -299,4 +300,5 @@ DEFINE_TRANSFORM_VIRTUALS(GateCloningTransform, "gate_clone", "1.0.0",
                           "Performs load-driven gate cloning",
                           "Usage: transform gate_clone "
                           "<float: max-cap-factor> <boolean: clone-gates-only>")
+} // namespace psn
 #endif

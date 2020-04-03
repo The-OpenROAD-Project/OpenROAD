@@ -35,7 +35,8 @@
 #include <cmath>
 #include "OpenPhySyn/PsnLogger.hpp"
 
-using namespace psn;
+namespace psn
+{
 
 int
 HelloTransform::addWire(Psn* psn_inst, std::string name)
@@ -74,4 +75,6 @@ DEFINE_TRANSFORM_VIRTUALS(
     "Hello transform, a toy transform that adds an unconnected net",
     "Usage:\n transform hello_transform "
     "<net_name>\n")
+
+} // namespace psn
 #endif
