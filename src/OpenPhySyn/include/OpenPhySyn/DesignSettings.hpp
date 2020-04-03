@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_DESIGN_SETTINGS__
-#define __PSN_DESIGN_SETTINGS__
+#pragma once
 
 namespace psn
 {
@@ -54,4 +53,3 @@ private:
     float cap_per_micron_;
 };
 } // namespace psn
-#endif

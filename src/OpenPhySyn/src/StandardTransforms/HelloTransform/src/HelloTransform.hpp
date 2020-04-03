@@ -29,9 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#pragma once
+
 #ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
-#ifndef __PSN_HELLO_TRANSFORM__
-#define __PSN_HELLO_TRANSFORM__
 
 #include "OpenPhySyn/DatabaseHandler.hpp"
 #include "OpenPhySyn/Psn.hpp"
@@ -56,5 +56,4 @@ DEFINE_TRANSFORM(
     "<net_name>\n")
 
 } // namespace psn
-#endif
 #endif

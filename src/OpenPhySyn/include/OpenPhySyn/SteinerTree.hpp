@@ -29,12 +29,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_STEINER_TREE__
-#define __PSN_STEINER_TREE__
-#include <flute.h>
+#pragma once
+
 #include <memory>
 #include <unordered_map>
 #include "OpenPhySyn/Types.hpp"
+#include "flute.h"
 
 #define FLUTE_DTYPE int
 namespace psn
@@ -206,4 +206,3 @@ public:
     int           wire_length_;
 };
 } // namespace psn
-#endif

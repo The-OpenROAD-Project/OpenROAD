@@ -28,9 +28,11 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#pragma once
+
 #ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
-#ifndef __PSN_PIN_SWAP_TRANSFORM__
-#define __PSN_PIN_SWAP_TRANSFORM__
+
 #include <cstring>
 #include <memory>
 #include "OpenPhySyn/PsnTransform.hpp"
@@ -57,5 +59,4 @@ DEFINE_TRANSFORM(
     "Performs timing-driven/power-driven commutative pin swapping optimization",
     "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
 } // namespace psn
-#endif
 #endif

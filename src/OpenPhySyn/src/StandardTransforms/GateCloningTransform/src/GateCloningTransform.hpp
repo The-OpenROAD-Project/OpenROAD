@@ -28,9 +28,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#pragma once
+
 #ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
-#ifndef __PSN_GATE_CLONING_TRANSFORM__
-#define __PSN_GATE_CLONING_TRANSFORM__
 
 #include <memory>
 #include "OpenPhySyn/PsnLogger.hpp"
@@ -70,5 +71,4 @@ DEFINE_TRANSFORM(GateCloningTransform, "gate_clone", "1.0.0",
                  "Usage: transform gate_clone "
                  "<float: max-cap-factor> <boolean: clone-gates-only>")
 } // namespace psn
-#endif
 #endif

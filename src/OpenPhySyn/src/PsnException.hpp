@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_PSN_EXCEPTION__
-#define __PSN_PSN_EXCEPTION__
+#pragma once
+
 #include <exception>
 #include <string>
 
@@ -186,4 +186,3 @@ private:
 };
 
 } // namespace psn
-#endif

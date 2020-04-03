@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_TYPES__
-#define __PSN_TYPES__
+#pragma once
 
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
@@ -98,4 +97,3 @@ public:
     }
 };
 } // namespace psn
-#endif

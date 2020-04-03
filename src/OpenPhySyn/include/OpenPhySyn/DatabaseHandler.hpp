@@ -28,8 +28,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef __PSN_DATABASE_HANDLER__
-#define __PSN_DATABASE_HANDLER__
+#pragma once
+
 #include "OpenPhySyn/PathPoint.hpp"
 #include "OpenPhySyn/Types.hpp"
 
@@ -258,4 +258,3 @@ private:
 
 typedef OpenStaHandler DatabaseHandler;
 }; // namespace psn
-#endif

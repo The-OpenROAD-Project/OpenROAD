@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_TRANSFORM__
-#define __PSN_TRANSFORM__
+#pragma once
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -126,4 +126,3 @@ public:                                                                        \
 #endif
 
 } // namespace psn
-#endif /* ifndef __TRANSFORM__ */
