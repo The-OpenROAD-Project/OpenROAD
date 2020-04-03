@@ -304,16 +304,6 @@ if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
   endif()
 endif()
 
-
-CHECK_SYMBOL_EXISTS(std::filesystem::path::preferred_separator filesystem cxx17fs)
-
-if(cxx17fs AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.2)
-set(PUBLIC_LIBRARIES
-  ${PUBLIC_LIBRARIES}
-  stdc++fs
-)
-endif()
-
 # Stand-alone executable specific libraries
 set(PUBLIC_EXEC_LIBRARIES
 )

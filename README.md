@@ -8,13 +8,17 @@ timing analysis.
 
 The OpenROAD build requires the following packages:
 
-  * cmake 3.9
-  * gcc or clang
-  * bison
-  * flex
-  * swig 3.0
-  * boost
-  * tcl 8.5
+Tools
+  * cmake 3.14
+  * gcc 8.3.0 or clang
+  * bison 3.0.5
+  * flex 2.6.4
+  * swig 4.0
+
+Libraries
+  * eigen https://gitlab.com/libeigen/eigen.git
+  * boost 1.68
+  * tcl 8.6
   * zlib
 
 ```

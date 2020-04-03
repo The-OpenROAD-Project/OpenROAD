@@ -41,12 +41,20 @@ RUN yum remove -y swig \
     && cd .. \
     && rm -rf swig-rel-4.0.1
 
-# installing boost for build dependency
+# boost 1.68 required for TritonRoute but 1.68 unavailable
 RUN wget https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.bz2/download && \
     tar -xf download && \
     cd boost_1_72_0 && \
     ./bootstrap.sh && \
     ./b2 install --with-iostreams -j $(nproc)
+
+# eigen required by replace, TritonMacroPlace
+RUN git clone https://gitlab.com/libeigen/eigen.git \
+    && cd eigen \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make install
 
 RUN useradd -ms /bin/bash openroad
 
