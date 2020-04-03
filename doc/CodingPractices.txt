@@ -117,8 +117,10 @@ use
 
 Don't put magic numbers in the code.
 Use a variable with a name that captures the intent.
+Document the units if they exist.
 
 examples of unnamed magic numbers:
+  referenceHpwl_= 446000000;
   coeffV = 1.36;
   coeffV = 1.2;
   double nearest_dist = 99999999999;
