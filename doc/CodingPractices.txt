@@ -2,6 +2,8 @@ This is a compilation of many idioms in openroad code that I consider
 undesirable. Obviously other programmers have different opinions or
 they would be so pervasive.  James Cherry 04/2020
 
+................................................................
+
 Don't comment out code.
 Remove it.
 git provides a complete history of the code if you want to look backwards.
@@ -237,71 +239,49 @@ is simply
 
 ....
 
-Don't change compile flags in cmake files.
- set(CMAKE_CXX_FLAGS "-O3")
- set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
- set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
-....
-
-Don't put /'s in cmake directory names.
-Cmake knows they are directories.
- target_include_directories( ABKCommon
-   PUBLIC
-   ${ABKCOMMON_HOME}
-   src/
-   )
-
-....
-
-Don't put /'s in .gitignore directory names.
- test/
-
-....
-
-Don't put file names in .gitignore ignored directories.
- test/results
- test/results/diffs
-
-....
-
 Don't use <>'s to include anything but system headers.
 Your project's headers should NEVER be in <>'s.
-  #include <opendb/db.h>
-  #include <ABKCommon/uofm_alloc.h>
+ #include <opendb/db.h>
+ #include <ABKCommon/uofm_alloc.h>
+ #include <OpenSTA/liberty/Liberty.hh>
+ #include <opendb/db.h>
+ #include <opendb/dbTypes.h>
+ #include <opendb/defin.h>
+ #include <opendb/defout.h>
+ #include <opendb/lefin.h>
+
+https://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html
+https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename
 ....
 
-Don't list compile artifacts in .gitignore
-They all end up in the build directory so each file type does not have
-to appear in .gitignore.
+Don't make "include the kitchen sink" headers and include them in every source file.
+This is convenient (lazy) but slows the builds down for everyone.
+Make each source file include just the headers it actually needs.
 
-All of the following is nonsense that has propagated faster than covid
-in student code:
+Types.hpp
+#include <OpenSTA/liberty/Liberty.hh>
+#include <opendb/db.h>
+#include <opendb/dbTypes.h>
+// It should be obvious that every source file is not reading def.
+#include <opendb/defin.h>
+// or writing it.
+#include <opendb/defout.h>
+#include <opendb/lefin.h>
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+Note this example also incorrectly uses <>'s around openroad headers.
 
-# Precompiled Headers
-*.gch
-*.pch
+....
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+Use class declarations if you are only refering to object by pointer instead of
+including their complete class definition. This can vastly reduce the code
+the compiler has to process.
 
-# Fortran module files
-*.mod
-*.smod
+class Network;
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+instead of
+#include "Network.hh"
 
 ....
 
@@ -352,3 +332,67 @@ namespace MacroPlace {
 Use nullptr instead of NULL.
 This is the C++ approved version of the ancient C #define.
 
+................................................................
+cmake
+
+Don't change compile flags in cmake files.
+ set(CMAKE_CXX_FLAGS "-O3")
+ set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
+ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+....
+
+Don't put /'s in cmake directory names.
+Cmake knows they are directories.
+ target_include_directories( ABKCommon
+   PUBLIC
+   ${ABKCOMMON_HOME}
+   src/
+   )
+
+
+................................................................
+git
+
+Don't put /'s in .gitignore directory names.
+ test/
+
+....
+
+Don't put file names in .gitignore ignored directories.
+ test/results
+ test/results/diffs
+
+....
+
+Don't list compile artifacts in .gitignore
+They all end up in the build directory so each file type does not have
+to appear in .gitignore.
+
+All of the following is nonsense that has propagated faster than covid
+in student code:
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
