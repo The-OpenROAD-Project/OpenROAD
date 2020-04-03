@@ -23,13 +23,12 @@ set(OPENPHYSYN_LINKED_TRANSFORMS "")
 set(OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY ${LIBRARY_NAME})
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated")
+set(OPENPHYSYN_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENPHYSYN_CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
+  set(OPENPHYSYN_CMAKE_CXX_FLAGS "${OPENPHYSYN_CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
+  set(OPENPHYSYN_CMAKE_CXX_FLAGS "${OPENPHYSYN_CMAKE_CXX_FLAGS} -rdynamic")
 endif()
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
 # Tool build configuration
@@ -87,7 +86,7 @@ endif()
 
 string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 include(CheckSymbolExists)
 include(ConfigSafeGuards)
 include(Colors)
@@ -350,6 +349,8 @@ flute
 
 # Compile all sources into a library.
 add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+set_target_properties(${LIBRARY_NAME} PROPERTIES COMPILE_FLAGS ${OPENPHYSYN_CMAKE_CXX_FLAGS})
+
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES})

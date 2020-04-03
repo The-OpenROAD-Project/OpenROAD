@@ -31,6 +31,7 @@
 
 #include "Exports.hpp"
 #include <memory>
+#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/Psn.hpp"
 
 namespace psn

@@ -36,11 +36,15 @@
 #include <tcl.h>
 #include "Config.hpp"
 #include "FileUtils.hpp"
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/PsnLogger.hpp"
 #include "PsnException.hpp"
 #include "StringUtils.hpp"
 #include "TransformHandler.hpp"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 
 #ifdef OPENPHYSYN_AUTO_LINK
 #include "StandardTransforms/BufferFanoutTransform/src/BufferFanoutTransform.hpp"
@@ -79,7 +83,7 @@ Psn::Psn(DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     settings_   = new DesignSettings();
-    db_handler_ = new DatabaseHandler(sta_);
+    db_handler_ = new DatabaseHandler(this, sta_);
 }
 
 void

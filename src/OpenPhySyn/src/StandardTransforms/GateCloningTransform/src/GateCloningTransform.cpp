@@ -33,6 +33,7 @@
 
 #include "GateCloningTransform.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/Psn.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/StringUtils.hpp"

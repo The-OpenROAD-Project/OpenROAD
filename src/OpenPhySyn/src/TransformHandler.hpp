@@ -33,10 +33,10 @@
 
 #include <functional>
 #include <memory>
-#include "OpenPhySyn/PsnTransform.hpp"
 
 namespace psn
 {
+class PsnTransform;
 class TransformHandler
 {
     std::function<std::shared_ptr<PsnTransform>()> load_;

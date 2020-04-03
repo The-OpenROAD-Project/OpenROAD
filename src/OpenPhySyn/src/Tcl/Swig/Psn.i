@@ -83,6 +83,5 @@ DatabaseHandler *handler();
 
 %rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2) const;
 %rename(pt_hash) psn::PointHash::operator()(const Point& pt) const;
-%include "include/OpenPhySyn/DatabaseHandler.hpp"
 
 %include "Exports.hpp"

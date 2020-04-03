@@ -31,9 +31,12 @@
 
 #pragma once
 
+#include <memory>
+#include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "OpenPhySyn/LogLevel.hpp"
+
 namespace psn
 {
 class PsnLogger

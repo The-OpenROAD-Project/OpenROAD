@@ -47,9 +47,8 @@ std::vector<InstanceTerm*>
 OpenDBHandler::pins(Net* net) const
 {
     std::vector<InstanceTerm*> terms;
-    InstanceTermSet            term_set = net->getITerms();
-    for (InstanceTermSet::iterator itr = term_set.begin();
-         itr != term_set.end(); itr++)
+    auto                       term_set = net->getITerms();
+    for (auto itr = term_set.begin(); itr != term_set.end(); itr++)
     {
         InstanceTerm* inst_term = (*itr);
         terms.push_back(inst_term);
@@ -60,9 +59,8 @@ std::vector<InstanceTerm*>
 OpenDBHandler::pins(Instance* inst) const
 {
     std::vector<InstanceTerm*> terms;
-    InstanceTermSet            term_set = inst->getITerms();
-    for (InstanceTermSet::iterator itr = term_set.begin();
-         itr != term_set.end(); itr++)
+    auto                       term_set = inst->getITerms();
+    for (auto itr = term_set.begin(); itr != term_set.end(); itr++)
     {
         InstanceTerm* inst_term = (*itr);
         terms.push_back(inst_term);
@@ -126,9 +124,8 @@ OpenDBHandler::faninPin(InstanceTerm* term) const
 InstanceTerm*
 OpenDBHandler::faninPin(Net* net) const
 {
-    InstanceTermSet terms = net->getITerms();
-    for (InstanceTermSet::iterator itr = terms.begin(); itr != terms.end();
-         itr++)
+    auto terms = net->getITerms();
+    for (auto itr = terms.begin(); itr != terms.end(); itr++)
     {
         InstanceTerm* inst_term = (*itr);
         Instance*     inst      = itr->getInst();
@@ -687,10 +684,9 @@ OpenDBHandler::del(Net* net) const
 int
 OpenDBHandler::disconnectAll(Net* net) const
 {
-    int             count   = 0;
-    InstanceTermSet net_set = net->getITerms();
-    for (InstanceTermSet::iterator itr = net_set.begin(); itr != net_set.end();
-         itr++)
+    int  count   = 0;
+    auto net_set = net->getITerms();
+    for (auto itr = net_set.begin(); itr != net_set.end(); itr++)
     {
         InstanceTerm::disconnect(*itr);
         count++;
@@ -758,8 +754,9 @@ OpenDBHandler::nets() const
     {
         return std::vector<Net*>();
     }
-    NetSet net_set = block->getNets();
-    for (NetSet::iterator itr = net_set.begin(); itr != net_set.end(); itr++)
+    sta::NetSet net_set = block->getNets();
+    for (sta::NetSet::iterator itr = net_set.begin(); itr != net_set.end();
+         itr++)
     {
         nets.push_back(*itr);
     }
@@ -831,7 +828,7 @@ OpenDBHandler::name(LibraryTerm* object) const
 Library*
 OpenDBHandler::library() const
 {
-    LibrarySet libs = db_->getLibs();
+    auto libs = db_->getLibs();
 
     if (!libs.size())
     {

@@ -30,6 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "TransformHandler.hpp"
 #include <dlfcn.h>
+#include "OpenPhySyn/PsnTransform.hpp"
 #include "PsnException.hpp"
 
 namespace psn
