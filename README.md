@@ -542,6 +542,7 @@ PDNSim IR analysis.
 Report worst IR drop given a placed and PDN synthesized design
 
 ```
+check_power_grid -vsrc <voltage_source_location_file>
 analyze_power_grid -vsrc <voltage_source_location_file>
 ```
 
