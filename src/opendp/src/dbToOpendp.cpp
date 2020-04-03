@@ -216,6 +216,8 @@ static bool swapWidthHeight(dbOrientType orient) {
     case dbOrientType::MX:
       return false;
   }
+  // gcc warning
+  return false;
 }
 
 // OpenDB represents groups as regions with the parent pointing to

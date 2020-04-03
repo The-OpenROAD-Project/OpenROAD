@@ -439,6 +439,8 @@ bool Opendp::isPlacedType(dbMasterType type) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isPaddedType(Cell *cell) {
@@ -477,6 +479,8 @@ bool Opendp::isPaddedType(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isStdCell(Cell *cell) {
@@ -515,6 +519,8 @@ bool Opendp::isStdCell(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isBlock(Cell *cell) {

@@ -141,6 +141,8 @@ bool Opendp::isPlaced(Cell *cell) {
   case dbPlacementStatus::SUGGESTED:
     return false;
   }
+  // gcc warning
+  return false;
 }
 
 bool Opendp::checkPowerLine(Cell &cell) {
@@ -292,44 +294,13 @@ bool Opendp::isCrWtBlClass(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isWtClass(Cell *cell) {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-  case dbMasterType::CORE_WELLTAP:
-    return true;
-  case dbMasterType::CORE:
-  case dbMasterType::CORE_ANTENNACELL:
-  case dbMasterType::CORE_FEEDTHRU:
-  case dbMasterType::CORE_TIEHIGH:
-  case dbMasterType::CORE_TIELOW:
-  case dbMasterType::CORE_SPACER:
-  case dbMasterType::BLOCK:
-  case dbMasterType::BLOCK_BLACKBOX:
-  case dbMasterType::BLOCK_SOFT:
-  case dbMasterType::ENDCAP:
-  case dbMasterType::ENDCAP_PRE:
-  case dbMasterType::ENDCAP_POST:
-  case dbMasterType::ENDCAP_TOPLEFT:
-  case dbMasterType::ENDCAP_TOPRIGHT:
-  case dbMasterType::ENDCAP_BOTTOMLEFT:
-  case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    // These classes are completely ignored by the placer.
-  case dbMasterType::COVER:
-  case dbMasterType::COVER_BUMP:
-  case dbMasterType::RING:
-  case dbMasterType::PAD:
-  case dbMasterType::PAD_AREAIO:
-  case dbMasterType::PAD_INPUT:
-  case dbMasterType::PAD_OUTPUT:
-  case dbMasterType::PAD_INOUT:
-  case dbMasterType::PAD_POWER:
-  case dbMasterType::PAD_SPACER:
-  case dbMasterType::NONE:
-    return false;
-  }
+  return type == dbMasterType::CORE_WELLTAP;
 }
 
 }  // namespace opendp
