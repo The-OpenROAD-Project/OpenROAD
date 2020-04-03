@@ -199,19 +199,14 @@ OpenStaHandler::tiehiCells() const
             auto cell        = cell_iter.next();
             auto output_pins = libraryOutputPins(cell);
 
-            if (!isSingleOutputCombinational(cell))
+            if (isSingleOutputCombinational(cell))
             {
-                continue;
-            }
-            auto           output_pin  = output_pins[0];
-            sta::FuncExpr* output_func = output_pin->function();
-            if (!output_func)
-            {
-                continue;
-            }
-            if (output_func->op() == sta::FuncExpr::op_one)
-            {
-                cells.push_back(cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func && output_func->op() == sta::FuncExpr::op_one)
+                {
+                    cells.push_back(cell);
+                }
             }
         }
     }
@@ -231,19 +226,14 @@ OpenStaHandler::inverterCells() const
             auto output_pins = libraryOutputPins(cell);
             auto input_pins  = libraryInputPins(cell);
 
-            if (!isSingleOutputCombinational(cell) || input_pins.size() != 1)
+            if (isSingleOutputCombinational(cell) && input_pins.size() == 1)
             {
-                continue;
-            }
-            auto           output_pin  = output_pins[0];
-            sta::FuncExpr* output_func = output_pin->function();
-            if (!output_func)
-            {
-                continue;
-            }
-            if (output_func->op() == sta::FuncExpr::op_not)
-            {
-                cells.push_back(cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func && output_func->op() == sta::FuncExpr::op_not)
+                {
+                    cells.push_back(cell);
+                }
             }
         }
     }
@@ -312,19 +302,14 @@ OpenStaHandler::tieloCells() const
             auto cell        = cell_iter.next();
             auto output_pins = libraryOutputPins(cell);
 
-            if (!isSingleOutputCombinational(cell))
+            if (isSingleOutputCombinational(cell))
             {
-                continue;
-            }
-            auto           output_pin  = output_pins[0];
-            sta::FuncExpr* output_func = output_pin->function();
-            if (!output_func)
-            {
-                continue;
-            }
-            if (output_func->op() == sta::FuncExpr::op_zero)
-            {
-                cells.push_back(cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func && output_func->op() == sta::FuncExpr::op_zero)
+                {
+                    cells.push_back(cell);
+                }
             }
         }
     }
@@ -879,20 +864,20 @@ OpenStaHandler::pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
         {
             sta::TimingArc* arc = itr.next();
             if ((is_rise &&
-                 arc->toTrans()->asRiseFall() != sta::RiseFall::rise()) ||
+                 arc->toTrans()->asRiseFall() == sta::RiseFall::rise()) ||
                 (!is_rise &&
-                 arc->toTrans()->asRiseFall() != sta::RiseFall::fall()))
+                 arc->toTrans()->asRiseFall() == sta::RiseFall::fall()))
             {
-                continue;
-            }
-            sta::GateTableModel* model =
-                dynamic_cast<sta::GateTableModel*>(arc->model());
-            auto delay_slew_model =
-                is_delay ? model->delayModel() : model->slewModel();
-            if (model)
-            {
-                return delay_slew_model->findValue(
-                    lib_cell->libertyLibrary(), lib_cell, pvt_, slew, cap, 0);
+                sta::GateTableModel* model =
+                    dynamic_cast<sta::GateTableModel*>(arc->model());
+                auto delay_slew_model =
+                    is_delay ? model->delayModel() : model->slewModel();
+                if (model)
+                {
+                    return delay_slew_model->findValue(
+                        lib_cell->libertyLibrary(), lib_cell, pvt_, slew, cap,
+                        0);
+                }
             }
         }
     }
@@ -918,28 +903,27 @@ OpenStaHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
         {
             sta::TimingArc* arc = itr.next();
             if ((is_rise &&
-                 arc->toTrans()->asRiseFall() != sta::RiseFall::rise()) ||
+                 arc->toTrans()->asRiseFall() == sta::RiseFall::rise()) ||
                 (!is_rise &&
-                 arc->toTrans()->asRiseFall() != sta::RiseFall::fall()))
+                 arc->toTrans()->asRiseFall() == sta::RiseFall::fall()))
             {
-                continue;
-            }
-            sta::GateTableModel* model =
-                dynamic_cast<sta::GateTableModel*>(arc->model());
-            auto delay_slew_model =
-                is_delay ? model->delayModel() : model->slewModel();
-            if (model)
-            {
-                auto axis1 = delay_slew_model->axis1();
-                auto axis2 = delay_slew_model->axis2();
-                for (size_t i = 0; i < axis1->size(); i++)
+                sta::GateTableModel* model =
+                    dynamic_cast<sta::GateTableModel*>(arc->model());
+                auto delay_slew_model =
+                    is_delay ? model->delayModel() : model->slewModel();
+                if (model)
                 {
-                    for (size_t j = 0; j < axis2->size(); j++)
+                    auto axis1 = delay_slew_model->axis1();
+                    auto axis2 = delay_slew_model->axis2();
+                    for (size_t i = 0; i < axis1->size(); i++)
                     {
-                        sum += delay_slew_model->findValue(
-                            lib_cell->libertyLibrary(), lib_cell, pvt_,
-                            axis1->axisValue(i), axis2->axisValue(j), 0);
-                        count++;
+                        for (size_t j = 0; j < axis2->size(); j++)
+                        {
+                            sum += delay_slew_model->findValue(
+                                lib_cell->libertyLibrary(), lib_cell, pvt_,
+                                axis1->axisValue(i), axis2->axisValue(j), 0);
+                            count++;
+                        }
                     }
                 }
             }
@@ -1629,39 +1613,26 @@ OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
             while (arc_it.hasNext())
             {
                 sta::TimingArc* arc = arc_it.next();
-                if (from && arc->from() != from)
+                if (!from || (from && arc->from() == from))
                 {
-                    continue;
-                }
-                if (rise_fall != -1)
-                {
-                    if (rise_fall)
-                    { //  1 is rising edge
-                        if (arc->toTrans()->asRiseFall() !=
-                            sta::RiseFall::rise())
-                        {
-                            continue;
-                        }
-                    }
-                    else
-                    { // 0 is falling edge
-
-                        if (arc->toTrans()->asRiseFall() !=
-                            sta::RiseFall::fall())
-                        {
-                            continue;
-                        }
+                    if (rise_fall != -1 ||
+                        (rise_fall == 1 && arc->toTrans()->asRiseFall() ==
+                                               sta::RiseFall::rise()) ||
+                        (rise_fall == 0 &&
+                         arc->toTrans()->asRiseFall() == sta::RiseFall::fall()))
+                    {
+                        // 1 is rising edge
+                        // 0 is falling edge
+                        float         load_cap = loadCapacitance(to);
+                        sta::ArcDelay gate_delay;
+                        sta::Slew     tmp_slew;
+                        sta::Slew*    slew = drvr_slew ? drvr_slew : &tmp_slew;
+                        sta_->arcDelayCalc()->gateDelay(
+                            lib_cell, arc, in_slew, load_cap, nullptr, 0.0,
+                            pvt_, dcalc_ap_, gate_delay, *slew);
+                        max = std::max(max, gate_delay);
                     }
                 }
-
-                float         load_cap = loadCapacitance(to);
-                sta::ArcDelay gate_delay;
-                sta::Slew     tmp_slew;
-                sta::Slew*    slew = drvr_slew ? drvr_slew : &tmp_slew;
-                sta_->arcDelayCalc()->gateDelay(lib_cell, arc, in_slew,
-                                                load_cap, nullptr, 0.0, pvt_,
-                                                dcalc_ap_, gate_delay, *slew);
-                max = std::max(max, gate_delay);
             }
         }
     }

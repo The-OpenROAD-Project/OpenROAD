@@ -117,13 +117,12 @@ ConstantPropagationTransform::isTiedToConstant(Psn*          psn_inst,
         int temp                        = i;
         for (InstanceTerm* in_pin : in_pins)
         {
-            if (in_pin == constant_term)
+            if (in_pin != constant_term)
             {
-                continue;
+                LibraryTerm* library_pin = handler.libraryPin(in_pin);
+                sim_vals[library_pin]    = temp & 1;
+                temp >>= 1;
             }
-            LibraryTerm* library_pin = handler.libraryPin(in_pin);
-            sim_vals[library_pin]    = temp & 1;
-            temp >>= 1;
         }
         int result = handler.evaluateFunctionExpression(out_pin, sim_vals);
         if (last_val == -1)
@@ -169,287 +168,322 @@ ConstantPropagationTransform::propagateTieHiLoCell(
 
     for (auto& pin : fanout_pins)
     {
-        if (deleted_pins.count(pin))
+        if (!deleted_pins.count(pin))
         {
-            continue;
-        }
-        auto fanout_inst = handler.instance(pin);
-        if (!fanout_inst || fanout_inst == inst)
-        {
-            continue;
-        }
-        auto fanout_inst_input_pins = handler.inputPins(fanout_inst);
-        if (!handler.isSingleOutputCombinational(fanout_inst))
-        {
-            continue;
-        }
-        auto fanout_inst_output_pin = handler.outputPins(fanout_inst)[0];
-        auto fanout_net             = handler.net(fanout_inst_output_pin);
-        auto is_const               = isTiedToConstant(psn_inst, pin, is_tiehi);
-
-        if (is_const >= 0)
-        {
-            if (tiehi_cell && is_const == 1)
+            auto fanout_inst = handler.instance(pin);
+            if (fanout_inst && fanout_inst != inst &&
+                handler.isSingleOutputCombinational(fanout_inst))
             {
-                auto tiehi_net = handler.net(handler.outputPins(tiehi_cell)[0]);
-                PSN_LOG_DEBUG("{} is tied to 1.", handler.name(fanout_inst));
-                // for cell in fanout cells
-                // propagateTieHiLoCell(psn_inst, true, fanout_inst, max_depth?
-                // max_depth-1: 0, tiehi_cell, tielo_cell);
-                // Remove fanout_inst and Connect all fanouts to tiehi;
-                propagateTieHiLoCell(
-                    psn_inst, true, fanout_inst_output_pin,
-                    max_depth == -1 ? max_depth : max_depth - 1,
-                    invereter_replace, tiehi_cell, tielo_cell,
-                    inverter_lib_cell, smallest_buffer_lib_cell, tiehi_lib_cell,
-                    tielo_lib_cell, visited, deleted_inst, deleted_pins);
-                if (deleted_inst.count(fanout_inst))
+
+                auto fanout_inst_input_pins = handler.inputPins(fanout_inst);
+
+                auto fanout_inst_output_pin =
+                    handler.outputPins(fanout_inst)[0];
+                auto fanout_net = handler.net(fanout_inst_output_pin);
+                auto is_const   = isTiedToConstant(psn_inst, pin, is_tiehi);
+
+                if (is_const >= 0)
                 {
-                    continue;
-                }
-                PSN_LOG_DEBUG("Removing {}/{} (constant 1)",
-                              handler.name(fanout_inst),
-                              handler.name(handler.libraryCell(fanout_inst)));
-                auto   fanout_sink_pins = handler.fanoutPins(fanout_net, true);
-                size_t toplevel_count   = 0;
-                for (auto& sink_pin : fanout_sink_pins)
-                {
-                    PSN_LOG_DEBUG("Connected {} to tielo",
-                                  handler.name(sink_pin));
-                    // There does not seem to be a way for the DB to connect two
-                    // nets So for the top-level port add tie-cell or buffer to
-                    // connect multiple nets.
-                    if (handler.isTopLevel(sink_pin))
+                    if (tiehi_cell && is_const == 1)
                     {
-                        if (tiehi_lib_cell)
+                        auto tiehi_net =
+                            handler.net(handler.outputPins(tiehi_cell)[0]);
+                        PSN_LOG_DEBUG("{} is tied to 1.",
+                                      handler.name(fanout_inst));
+                        // for cell in fanout cells
+                        // propagateTieHiLoCell(psn_inst, true, fanout_inst,
+                        // max_depth? max_depth-1: 0, tiehi_cell, tielo_cell);
+                        // Remove fanout_inst and Connect all fanouts to tiehi;
+                        propagateTieHiLoCell(
+                            psn_inst, true, fanout_inst_output_pin,
+                            max_depth == -1 ? max_depth : max_depth - 1,
+                            invereter_replace, tiehi_cell, tielo_cell,
+                            inverter_lib_cell, smallest_buffer_lib_cell,
+                            tiehi_lib_cell, tielo_lib_cell, visited,
+                            deleted_inst, deleted_pins);
+                        if (!deleted_inst.count(fanout_inst))
                         {
-                            auto out_tiehi_inst = handler.createInstance(
-                                std::string("tiehi_output_" +
-                                            handler.name(sink_pin))
-                                    .c_str(),
-                                tiehi_lib_cell);
+                            PSN_LOG_DEBUG(
+                                "Removing {}/{} (constant 1)",
+                                handler.name(fanout_inst),
+                                handler.name(handler.libraryCell(fanout_inst)));
+                            auto fanout_sink_pins =
+                                handler.fanoutPins(fanout_net, true);
+                            size_t toplevel_count = 0;
+                            for (auto& sink_pin : fanout_sink_pins)
+                            {
+                                PSN_LOG_DEBUG("Connected {} to tielo",
+                                              handler.name(sink_pin));
+                                // There does not seem to be a way for the DB to
+                                // connect two nets So for the top-level port
+                                // add tie-cell or buffer to connect multiple
+                                // nets.
+                                if (handler.isTopLevel(sink_pin))
+                                {
+                                    if (tiehi_lib_cell)
+                                    {
+                                        auto out_tiehi_inst =
+                                            handler.createInstance(
+                                                std::string(
+                                                    "tiehi_output_" +
+                                                    handler.name(sink_pin))
+                                                    .c_str(),
+                                                tiehi_lib_cell);
 
-                            auto out_tiehi_out_pin =
-                                handler.outputPins(out_tiehi_inst)[0];
-                            auto sink_net = handler.net(handler.term(sink_pin));
+                                        auto out_tiehi_out_pin =
+                                            handler.outputPins(
+                                                out_tiehi_inst)[0];
+                                        auto sink_net =
+                                            handler.net(handler.term(sink_pin));
 
-                            handler.connect(sink_net, out_tiehi_out_pin);
+                                        handler.connect(sink_net,
+                                                        out_tiehi_out_pin);
+                                    }
+                                    else
+                                    {
+                                        auto out_buff_inst =
+                                            handler.createInstance(
+                                                std::string(
+                                                    "buf_output_" +
+                                                    handler.name(sink_pin))
+                                                    .c_str(),
+                                                smallest_buffer_lib_cell);
+
+                                        auto out_buff_out_pin =
+                                            handler.outputPins(
+                                                out_buff_inst)[0];
+                                        auto out_buff_in_pin =
+                                            handler.inputPins(out_buff_inst)[0];
+                                        auto sink_net =
+                                            handler.net(handler.term(sink_pin));
+
+                                        handler.connect(sink_net,
+                                                        out_buff_out_pin);
+                                        handler.connect(tiehi_net,
+                                                        out_buff_in_pin);
+                                    }
+                                    toplevel_count++;
+                                }
+                                else
+                                {
+                                    handler.disconnect(sink_pin);
+                                    handler.connect(tiehi_net, sink_pin);
+                                }
+                            }
+
+                            assert(
+                                handler.fanoutPins(fanout_net, true).size() ==
+                                toplevel_count);
+                            handler.del(fanout_inst);
+                            deleted_inst.insert(fanout_inst);
+                            deleted_pins.insert(fanout_inst_output_pin);
+                            for (auto& p : fanout_inst_input_pins)
+                            {
+                                deleted_pins.insert(p);
+                            }
+                            prop_count_++;
                         }
-                        else
+                    }
+                    else if (tielo_cell && is_const == 0)
+                    {
+                        auto tielo_net =
+                            handler.net(handler.outputPins(tielo_cell)[0]);
+                        PSN_LOG_DEBUG("{} is tied to 0.",
+                                      handler.name(fanout_inst));
+                        // for cell in fanout cells
+                        // propagateTieHiLoCell(psn_inst, false, fanout_inst,
+                        // max_depth? max_depth-1: 0, tiehi_cell, tielo_cell);
+                        // Remove fanout_inst and Connect all fanouts to tiehi;
+                        // Remove fanout_inst and Connect all fanouts to tielo;
+
+                        propagateTieHiLoCell(
+                            psn_inst, false, fanout_inst_output_pin,
+                            max_depth == -1 ? max_depth : max_depth - 1,
+                            invereter_replace, tiehi_cell, tielo_cell,
+                            inverter_lib_cell, smallest_buffer_lib_cell,
+                            tiehi_lib_cell, tielo_lib_cell, visited,
+                            deleted_inst, deleted_pins);
+
+                        if (!deleted_inst.count(fanout_inst))
                         {
-                            auto out_buff_inst = handler.createInstance(
-                                std::string("buf_output_" +
-                                            handler.name(sink_pin))
-                                    .c_str(),
-                                smallest_buffer_lib_cell);
+                            auto fanout_sink_pins =
+                                handler.fanoutPins(fanout_net, true);
+                            PSN_LOG_DEBUG(
+                                "Removing {}/{} (constant 0)",
+                                handler.name(fanout_inst),
+                                handler.name(handler.libraryCell(fanout_inst)));
+                            size_t toplevel_count = 0;
+                            for (auto& sink_pin : fanout_sink_pins)
+                            {
+                                PSN_LOG_DEBUG("Connected {} to tielo",
+                                              handler.name(sink_pin));
 
-                            auto out_buff_out_pin =
-                                handler.outputPins(out_buff_inst)[0];
-                            auto out_buff_in_pin =
-                                handler.inputPins(out_buff_inst)[0];
-                            auto sink_net = handler.net(handler.term(sink_pin));
+                                // There does not seem to be a way for the DB to
+                                // connect two nets So for the top-level port
+                                // add tie-cell or buffer to connect multiple
+                                // nets.
+                                if (handler.isTopLevel(sink_pin))
+                                {
+                                    if (tielo_lib_cell)
+                                    {
+                                        auto out_tielo_inst =
+                                            handler.createInstance(
+                                                std::string(
+                                                    "tielo_output_" +
+                                                    handler.name(sink_pin))
+                                                    .c_str(),
+                                                tielo_lib_cell);
 
-                            handler.connect(sink_net, out_buff_out_pin);
-                            handler.connect(tiehi_net, out_buff_in_pin);
+                                        auto out_tielo_out_pin =
+                                            handler.outputPins(
+                                                out_tielo_inst)[0];
+                                        auto sink_net =
+                                            handler.net(handler.term(sink_pin));
+
+                                        handler.connect(sink_net,
+                                                        out_tielo_out_pin);
+                                    }
+                                    else
+                                    {
+                                        auto out_buff_inst =
+                                            handler.createInstance(
+                                                std::string(
+                                                    "buf_output_" +
+                                                    handler.name(sink_pin))
+                                                    .c_str(),
+                                                smallest_buffer_lib_cell);
+
+                                        auto out_buff_out_pin =
+                                            handler.outputPins(
+                                                out_buff_inst)[0];
+                                        auto out_buff_in_pin =
+                                            handler.inputPins(out_buff_inst)[0];
+                                        auto sink_net =
+                                            handler.net(handler.term(sink_pin));
+
+                                        handler.connect(sink_net,
+                                                        out_buff_out_pin);
+                                        handler.connect(tielo_net,
+                                                        out_buff_in_pin);
+                                    }
+                                    toplevel_count++;
+                                }
+                                else
+                                {
+                                    handler.disconnect(sink_pin);
+                                    handler.connect(tielo_net, sink_pin);
+                                }
+                            }
+
+                            assert(
+                                handler.fanoutPins(fanout_net, true).size() ==
+                                toplevel_count);
+                            handler.del(fanout_inst);
+                            deleted_inst.insert(fanout_inst);
+                            deleted_pins.insert(fanout_inst_output_pin);
+                            for (auto& p : fanout_inst_input_pins)
+                            {
+                                deleted_pins.insert(p);
+                            }
+                            prop_count_++;
                         }
-                        toplevel_count++;
-                    }
-                    else
-                    {
-                        handler.disconnect(sink_pin);
-                        handler.connect(tiehi_net, sink_pin);
                     }
                 }
-
-                assert(handler.fanoutPins(fanout_net, true).size() ==
-                       toplevel_count);
-                handler.del(fanout_inst);
-                deleted_inst.insert(fanout_inst);
-                deleted_pins.insert(fanout_inst_output_pin);
-                for (auto& p : fanout_inst_input_pins)
+                else if (fanout_inst_input_pins.size() == 2)
                 {
-                    deleted_pins.insert(p);
-                }
-                prop_count_++;
-            }
-            else if (tielo_cell && is_const == 0)
-            {
-                auto tielo_net = handler.net(handler.outputPins(tielo_cell)[0]);
-                PSN_LOG_DEBUG("{} is tied to 0.", handler.name(fanout_inst));
-                // for cell in fanout cells
-                // propagateTieHiLoCell(psn_inst, false, fanout_inst, max_depth?
-                // max_depth-1: 0, tiehi_cell, tielo_cell); Remove fanout_inst
-                // and Connect all fanouts to tiehi; Remove fanout_inst and
-                // Connect all fanouts to tielo;
-
-                propagateTieHiLoCell(
-                    psn_inst, false, fanout_inst_output_pin,
-                    max_depth == -1 ? max_depth : max_depth - 1,
-                    invereter_replace, tiehi_cell, tielo_cell,
-                    inverter_lib_cell, smallest_buffer_lib_cell, tiehi_lib_cell,
-                    tielo_lib_cell, visited, deleted_inst, deleted_pins);
-
-                if (deleted_inst.count(fanout_inst))
-                {
-
-                    continue;
-                }
-
-                auto fanout_sink_pins = handler.fanoutPins(fanout_net, true);
-                PSN_LOG_DEBUG("Removing {}/{} (constant 0)",
-                              handler.name(fanout_inst),
-                              handler.name(handler.libraryCell(fanout_inst)));
-                size_t toplevel_count = 0;
-                for (auto& sink_pin : fanout_sink_pins)
-                {
-                    PSN_LOG_DEBUG("Connected {} to tielo",
-                                  handler.name(sink_pin));
-
-                    // There does not seem to be a way for the DB to connect two
-                    // nets So for the top-level port add tie-cell or buffer to
-                    // connect multiple nets.
-                    if (handler.isTopLevel(sink_pin))
-                    {
-                        if (tielo_lib_cell)
-                        {
-                            auto out_tielo_inst = handler.createInstance(
-                                std::string("tielo_output_" +
-                                            handler.name(sink_pin))
-                                    .c_str(),
-                                tielo_lib_cell);
-
-                            auto out_tielo_out_pin =
-                                handler.outputPins(out_tielo_inst)[0];
-                            auto sink_net = handler.net(handler.term(sink_pin));
-
-                            handler.connect(sink_net, out_tielo_out_pin);
-                        }
-                        else
-                        {
-                            auto out_buff_inst = handler.createInstance(
-                                std::string("buf_output_" +
-                                            handler.name(sink_pin))
-                                    .c_str(),
-                                smallest_buffer_lib_cell);
-
-                            auto out_buff_out_pin =
-                                handler.outputPins(out_buff_inst)[0];
-                            auto out_buff_in_pin =
-                                handler.inputPins(out_buff_inst)[0];
-                            auto sink_net = handler.net(handler.term(sink_pin));
-
-                            handler.connect(sink_net, out_buff_out_pin);
-                            handler.connect(tielo_net, out_buff_in_pin);
-                        }
-                        toplevel_count++;
-                    }
-                    else
-                    {
-                        handler.disconnect(sink_pin);
-                        handler.connect(tielo_net, sink_pin);
-                    }
-                }
-
-                assert(handler.fanoutPins(fanout_net, true).size() ==
-                       toplevel_count);
-                handler.del(fanout_inst);
-                deleted_inst.insert(fanout_inst);
-                deleted_pins.insert(fanout_inst_output_pin);
-                for (auto& p : fanout_inst_input_pins)
-                {
-                    deleted_pins.insert(p);
-                }
-                prop_count_++;
-            }
-        }
-        else if (fanout_inst_input_pins.size() == 2)
-        {
-            InstanceTerm* other_pin = nullptr;
-            for (auto& p : fanout_inst_input_pins)
-            {
-                if (p != pin)
-                {
-                    other_pin = p;
-                    break;
-                }
-            }
-            if (other_pin)
-            {
-                int is_tied_to_input =
-                    isTiedToInput(psn_inst, other_pin, pin, is_tiehi);
-                if (is_tied_to_input == 1)
-                {
-                    auto fanout_sink_pins =
-                        handler.fanoutPins(fanout_net, true);
-                    PSN_LOG_DEBUG(
-                        "{} is tied to input {}/{}. Constant pin: {}",
-                        handler.name(fanout_inst),
-                        handler.name(handler.libraryCell(fanout_inst)),
-                        handler.name(other_pin), handler.name(pin));
-                    auto other_pin_net = handler.net(other_pin);
-                    for (auto& sink_pin : fanout_sink_pins)
-                    {
-                        PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
-                                      handler.name(sink_pin),
-                                      handler.name(other_pin),
-                                      handler.name(other_pin_net));
-                        handler.disconnect(sink_pin);
-                        handler.connect(other_pin_net, sink_pin);
-                    }
-                    assert(handler.fanoutPins(fanout_net, true).size() == 0);
-                    PSN_LOG_DEBUG("Removing {} (constant input)",
-                                  handler.name(fanout_inst));
-                    handler.del(fanout_inst);
-                    deleted_inst.insert(fanout_inst);
-                    deleted_pins.insert(fanout_inst_output_pin);
+                    InstanceTerm* other_pin = nullptr;
                     for (auto& p : fanout_inst_input_pins)
                     {
-                        deleted_pins.insert(p);
+                        if (p != pin)
+                        {
+                            other_pin = p;
+                            break;
+                        }
                     }
-                    prop_count_++;
-                }
-                else if (invereter_replace && inverter_lib_cell &&
-                         is_tied_to_input == -1)
-                {
-                    auto fanout_sink_pins =
-                        handler.fanoutPins(fanout_net, true);
-
-                    auto other_pin_net = handler.net(other_pin);
-                    auto inst_name     = handler.name(fanout_inst);
-                    auto inv_name      = inst_name + "_folded_inverter";
-                    auto out_net_name  = inst_name + "_folder_inverter_out";
-                    auto new_inverter  = handler.createInstance(
-                        inv_name.c_str(), inverter_lib_cell);
-                    auto inverter_input_pin =
-                        handler.libraryInputPins(inverter_lib_cell)[0];
-                    auto inverter_output_pin =
-                        handler.libraryOutputPins(inverter_lib_cell)[0];
-                    auto inverter_output_net =
-                        handler.createNet(out_net_name.c_str());
-                    handler.disconnect(other_pin);
-                    handler.connect(other_pin_net, new_inverter,
-                                    inverter_input_pin);
-                    handler.connect(inverter_output_net, new_inverter,
-                                    inverter_output_pin);
-                    for (auto& sink_pin : fanout_sink_pins)
+                    if (other_pin)
                     {
-                        PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
-                                      handler.name(sink_pin),
-                                      handler.name(other_pin),
-                                      handler.name(other_pin_net));
-                        handler.disconnect(sink_pin);
-                        handler.connect(inverter_output_net, sink_pin);
-                    }
-                    assert(handler.fanoutPins(fanout_net, true).size() == 0);
+                        int is_tied_to_input =
+                            isTiedToInput(psn_inst, other_pin, pin, is_tiehi);
+                        if (is_tied_to_input == 1)
+                        {
+                            auto fanout_sink_pins =
+                                handler.fanoutPins(fanout_net, true);
+                            PSN_LOG_DEBUG(
+                                "{} is tied to input {}/{}. Constant pin: {}",
+                                handler.name(fanout_inst),
+                                handler.name(handler.libraryCell(fanout_inst)),
+                                handler.name(other_pin), handler.name(pin));
+                            auto other_pin_net = handler.net(other_pin);
+                            for (auto& sink_pin : fanout_sink_pins)
+                            {
+                                PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
+                                              handler.name(sink_pin),
+                                              handler.name(other_pin),
+                                              handler.name(other_pin_net));
+                                handler.disconnect(sink_pin);
+                                handler.connect(other_pin_net, sink_pin);
+                            }
+                            assert(
+                                handler.fanoutPins(fanout_net, true).size() ==
+                                0);
+                            PSN_LOG_DEBUG("Removing {} (constant input)",
+                                          handler.name(fanout_inst));
+                            handler.del(fanout_inst);
+                            deleted_inst.insert(fanout_inst);
+                            deleted_pins.insert(fanout_inst_output_pin);
+                            for (auto& p : fanout_inst_input_pins)
+                            {
+                                deleted_pins.insert(p);
+                            }
+                            prop_count_++;
+                        }
+                        else if (invereter_replace && inverter_lib_cell &&
+                                 is_tied_to_input == -1)
+                        {
+                            auto fanout_sink_pins =
+                                handler.fanoutPins(fanout_net, true);
 
-                    handler.del(fanout_inst);
-                    deleted_inst.insert(fanout_inst);
-                    deleted_pins.insert(fanout_inst_output_pin);
-                    for (auto& p : fanout_inst_input_pins)
-                    {
-                        deleted_pins.insert(p);
+                            auto other_pin_net = handler.net(other_pin);
+                            auto inst_name     = handler.name(fanout_inst);
+                            auto inv_name      = inst_name + "_folded_inverter";
+                            auto out_net_name =
+                                inst_name + "_folder_inverter_out";
+                            auto new_inverter = handler.createInstance(
+                                inv_name.c_str(), inverter_lib_cell);
+                            auto inverter_input_pin =
+                                handler.libraryInputPins(inverter_lib_cell)[0];
+                            auto inverter_output_pin =
+                                handler.libraryOutputPins(inverter_lib_cell)[0];
+                            auto inverter_output_net =
+                                handler.createNet(out_net_name.c_str());
+                            handler.disconnect(other_pin);
+                            handler.connect(other_pin_net, new_inverter,
+                                            inverter_input_pin);
+                            handler.connect(inverter_output_net, new_inverter,
+                                            inverter_output_pin);
+                            for (auto& sink_pin : fanout_sink_pins)
+                            {
+                                PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
+                                              handler.name(sink_pin),
+                                              handler.name(other_pin),
+                                              handler.name(other_pin_net));
+                                handler.disconnect(sink_pin);
+                                handler.connect(inverter_output_net, sink_pin);
+                            }
+                            assert(
+                                handler.fanoutPins(fanout_net, true).size() ==
+                                0);
+
+                            handler.del(fanout_inst);
+                            deleted_inst.insert(fanout_inst);
+                            deleted_pins.insert(fanout_inst_output_pin);
+                            for (auto& p : fanout_inst_input_pins)
+                            {
+                                deleted_pins.insert(p);
+                            }
+                            prop_count_++;
+                        }
                     }
-                    prop_count_++;
                 }
             }
         }
@@ -553,48 +587,47 @@ ConstantPropagationTransform::propagateConstants(
         auto                              instances = handler.instances();
         for (auto instance : instances)
         {
-            if (deleted_insts.count(instance))
+            if (!deleted_insts.count(instance))
             {
-                continue;
-            }
-            auto instance_lib_cell = handler.libraryCell(instance);
-            if (tiehi_cells.count(instance_lib_cell))
-            {
-                auto output_pin = handler.outputPins(instance)[0];
-                PSN_LOG_DEBUG("Tie-Hi Instance {}", handler.name(instance));
-                propagateTieHiLoCell(
-                    psn_inst, true, output_pin, max_depth, invereter_replace,
-                    instance, first_tilo, inverter_lib_cell,
-                    smallest_buffer_lib_cell, tiehi_cell, tielo_cell, visited,
-                    deleted_insts, deleted_pins);
-                auto out_pins = handler.outputPins(instance, true);
-                if (out_pins.size() == 0)
+                auto instance_lib_cell = handler.libraryCell(instance);
+                if (tiehi_cells.count(instance_lib_cell))
                 {
-                    handler.del(instance);
-                    deleted_insts.insert(instance);
-                    for (auto& p : out_pins)
+                    auto output_pin = handler.outputPins(instance)[0];
+                    PSN_LOG_DEBUG("Tie-Hi Instance {}", handler.name(instance));
+                    propagateTieHiLoCell(
+                        psn_inst, true, output_pin, max_depth,
+                        invereter_replace, instance, first_tilo,
+                        inverter_lib_cell, smallest_buffer_lib_cell, tiehi_cell,
+                        tielo_cell, visited, deleted_insts, deleted_pins);
+                    auto out_pins = handler.outputPins(instance, true);
+                    if (out_pins.size() == 0)
                     {
-                        deleted_pins.insert(p);
+                        handler.del(instance);
+                        deleted_insts.insert(instance);
+                        for (auto& p : out_pins)
+                        {
+                            deleted_pins.insert(p);
+                        }
                     }
                 }
-            }
-            else if (tielo_cells.count(instance_lib_cell))
-            {
-                auto output_pin = handler.outputPins(instance)[0];
-                PSN_LOG_DEBUG("Tie-Lo Instance {}", handler.name(instance));
-                propagateTieHiLoCell(
-                    psn_inst, false, output_pin, max_depth, invereter_replace,
-                    first_tihi, instance, inverter_lib_cell,
-                    smallest_buffer_lib_cell, tiehi_cell, tielo_cell, visited,
-                    deleted_insts, deleted_pins);
-                auto out_pins = handler.outputPins(instance, true);
-                if (out_pins.size() == 0)
+                else if (tielo_cells.count(instance_lib_cell))
                 {
-                    handler.del(instance);
-                    deleted_insts.insert(instance);
-                    for (auto& p : out_pins)
+                    auto output_pin = handler.outputPins(instance)[0];
+                    PSN_LOG_DEBUG("Tie-Lo Instance {}", handler.name(instance));
+                    propagateTieHiLoCell(
+                        psn_inst, false, output_pin, max_depth,
+                        invereter_replace, first_tihi, instance,
+                        inverter_lib_cell, smallest_buffer_lib_cell, tiehi_cell,
+                        tielo_cell, visited, deleted_insts, deleted_pins);
+                    auto out_pins = handler.outputPins(instance, true);
+                    if (out_pins.size() == 0)
                     {
-                        deleted_pins.insert(p);
+                        handler.del(instance);
+                        deleted_insts.insert(instance);
+                        for (auto& p : out_pins)
+                        {
+                            deleted_pins.insert(p);
+                        }
                     }
                 }
             }

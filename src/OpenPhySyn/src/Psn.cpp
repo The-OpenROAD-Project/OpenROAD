@@ -203,24 +203,21 @@ Psn::loadTransforms()
 
     for (auto& transform_parent_path : transforms_dirs)
     {
-        if (!transform_parent_path.length())
+        if (transform_parent_path.length() &&
+            FileUtils::isDirectory(transform_parent_path))
         {
-            continue;
-        }
-        if (!FileUtils::isDirectory(transform_parent_path))
-        {
-            continue;
-        }
-        std::vector<std::string> transforms_paths =
-            FileUtils::readDirectory(transform_parent_path);
-        for (auto& path : transforms_paths)
-        {
-            PSN_LOG_DEBUG("Loading transform {}", path);
-            handlers.push_back(TransformHandler(path));
-        }
 
-        PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
-                      transform_parent_path);
+            std::vector<std::string> transforms_paths =
+                FileUtils::readDirectory(transform_parent_path);
+            for (auto& path : transforms_paths)
+            {
+                PSN_LOG_DEBUG("Loading transform {}", path);
+                handlers.push_back(TransformHandler(path));
+            }
+
+            PSN_LOG_DEBUG("Found {} transforms under {}.",
+                          transforms_paths.size(), transform_parent_path);
+        }
     }
 #endif
     for (auto tr : handlers)
