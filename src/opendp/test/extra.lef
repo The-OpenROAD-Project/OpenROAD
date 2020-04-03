@@ -1,4 +1,5 @@
 # Fake macros for testing
+# class BLOCK, CORE WELLTAP, CORE SPACER
 
 VERSION 5.8 ;
 BUSBITCHARS "[]" ;
@@ -114,7 +115,7 @@ MACRO WELLTAP1
   ORIGIN 0 0 ;
   SYMMETRY X Y ;
   SITE FreePDK45_38x28_10R_NP_162NW_34O ;
-  SIZE 0.228 BY 1.4 ;
+  SIZE 0.19 BY 1.4 ;
   PIN VDD
     DIRECTION INOUT ;
     USE power ;

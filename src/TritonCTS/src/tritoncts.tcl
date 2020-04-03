@@ -42,53 +42,121 @@
 
 sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-sol_list slist] \
+                                             [-buf_list buflist] \
                                              [-root_buf buf] \
                                              [-wire_unit unit] \
+                                             [-max_cap cap] \
+                                             [-max_slew slew] \
                                              [-clk_nets nets] \ 
+                                             [-out_path path] \
+                                             [-sqr_cap capvalue] \
+                                             [-sqr_res resvalue] \
+                                             [-only_characterization enable] \
+                                             [-slew_inter slewvalue] \
+                                             [-cap_inter capvalue] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -wire_unit -clk_nets} flags {}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -only_characterization -slew_inter -cap_inter} flags {}
 
   set cts [get_triton_cts]
 
+  #Clock Tree Synthesis TCL -> Required commands:
+  #                               -lut_file , -sol_list , -root-buf, -wire_unit
+  #                                               or
+  #                               -buf_list , -sqr_cap , -sqr_res
+  #                         -> Other commands can be used as extra parameters or in conjunction with each other:
+  #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
+
+
+  if { [info exists keys(-only_characterization)] } {
+	  set enable $keys(-only_characterization)
+    $cts set_only_characterization $enable 
+  } 
+
   if { [info exists keys(-lut_file)] } {
-        set lut $keys(-lut_file)
-  } else {
-        puts "Missing argument -lut_file"
-        exit
-  }
+	  set lut $keys(-lut_file)
+    $cts set_lut_file $lut 
+  } 
  
   if { [info exists keys(-sol_list)] } {
-        set sol_list $keys(-sol_list)
-  } else {
-        puts "Missing argument -sol_list"
-        exit
-  }
+	  set sol_list $keys(-sol_list)
+    $cts set_sol_list_file $sol_list
+  } 
 
-  if { [info exists keys(-root_buf)] } {
-        set root_buf $keys(-root_buf)
+  if { [info exists keys(-buf_list)] } {
+    set buf_list $keys(-buf_list)
+    $cts set_buffer_list $buf_list
   } else {
-        puts "Missing argument -root_buf"
-        exit
+    if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
+      #User must either input a lut file or the buffer list.
+      puts "Missing argument -buf_list or -lut_file / -sol_list"
+      exit
+    }
   }
 
   if { [info exists keys(-wire_unit)] } {
-        set wire_unit $keys(-wire_unit)
-  } else {
-        puts "Missing argument -wire_unit"
-        exit
-  }
+    set wire_unit $keys(-wire_unit)
+    $cts set_wire_segment_distance_unit $wire_unit
+  } 
+
+  if { [info exists keys(-max_cap)] } {
+    set max_cap_value $keys(-max_cap)
+    $cts set_max_char_cap $max_cap_value
+  } 
+
+  if { [info exists keys(-max_slew)] } {
+    set max_slew_value $keys(-max_slew)
+    $cts set_max_char_slew $max_slew_value
+  } 
 
   if { [info exists keys(-clk_nets)] } {
-        set clk_nets $keys(-clk_nets)
-        $cts set_clock_nets $clk_nets
+    set clk_nets $keys(-clk_nets)
+    $cts set_clock_nets $clk_nets
   }
 
-  $cts set_lut_file $lut 
-  $cts set_sol_list_file $sol_list
-  $cts set_wire_segment_distance_unit $wire_unit
-  $cts set_root_buffer $root_buf
+  if { [info exists keys(-slew_inter)] } {
+	  set slew $keys(-slew_inter)
+    $cts set_slew_inter $slew 
+  } 
+
+  if { [info exists keys(-cap_inter)] } {
+	  set cap $keys(-cap_inter)
+    $cts set_cap_inter $cap 
+  } 
+
+  if { [info exists keys(-root_buf)] } {
+    set root_buf $keys(-root_buf)
+    $cts set_root_buffer $root_buf
+  } else {
+    if { [info exists keys(-buf_list)] } {
+      #If using -buf_list, the first buffer can become the root buffer.
+      $cts set_root_buffer [lindex $buf_list 0]
+    } else {
+      #User must enter at least one of -root_buf or -buf_list.
+      puts "Missing argument -root_buf"
+      exit
+    }
+  }
+
+  if { [info exists keys(-out_path)] && (![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]) } {
+    set out_path $keys(-out_path)
+    $cts set_out_path $out_path
+  }
+
+  if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
+    if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] } {
+      set sqr_cap $keys(-sqr_cap)
+      $cts set_cap_per_sqr $sqr_cap
+      set sqr_res $keys(-sqr_res)
+      $cts set_res_per_sqr $sqr_res
+    } else {
+      #User must enter capacitance and resistance per square (um²) when creating a new characterization.
+      puts "Missing argument -sqr_cap and/or -sqr_res"
+      exit
+    }
+  }
+
   $cts run_triton_cts
 }

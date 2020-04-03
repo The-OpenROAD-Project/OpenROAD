@@ -439,6 +439,8 @@ bool Opendp::isPlacedType(dbMasterType type) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isPaddedType(Cell *cell) {
@@ -477,6 +479,8 @@ bool Opendp::isPaddedType(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isStdCell(Cell *cell) {
@@ -515,6 +519,8 @@ bool Opendp::isStdCell(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isBlock(Cell *cell) {
@@ -578,7 +584,7 @@ int Opendp::gridX(Cell *cell) {
 
 int Opendp::gridPaddedX(Cell *cell) {
   if (isPadded(cell))
-    return gridX(cell->x_ - pad_left_);
+    return gridX(cell->x_ - pad_left_ * site_width_);
   else
     return gridX(cell->x_);
 }

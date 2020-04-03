@@ -7,11 +7,9 @@ link_design gcd
 read_sdc gcd.sdc
 
 initialize_floorplan -site FreePDK45_38x28_10R_NP_162NW_34O \
-  -utilization 30
+  -utilization 30 -tracks nangate45.tracks
 
-auto_place_pins metal1
-# pukes
-#io_placer -random -hor_layer 3 -ver_layer 2
+io_placer -random -hor_layer 3 -ver_layer 2
 
 source nangate45.tapcell
 pdngen -verbose gcd_pdn.cfg
@@ -43,7 +41,7 @@ check_placement
 
 filler_placement FILL*
 
-# assertion failure
+# seg faults unreliably
 # fastroute -output_file [make_result_file gcd.route_guide] \
 #           -max_routing_layer 10 \
 #           -unidirectional_routing true \

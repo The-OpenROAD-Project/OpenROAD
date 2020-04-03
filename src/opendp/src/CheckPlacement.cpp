@@ -6,7 +6,6 @@
 // BSD 3-Clause License
 //
 // Copyright (c) 2019, James Cherry, Parallax Software, Inc.
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,16 +35,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-// CORE and varients except SPACER
-// CORE-SP = CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL, CORE WELLTAP
-
-// COVER *, RING, PAD * - ignored
-// CORE-SP to CORE-SP - padded footprints must not overlap
-// CORE-SP to BLOCK * - no overlap (padding ignored)
-// CORE-SP to ENDCAP *, CORE SPACER - no overlap (padding ignored)
-// BLOCK * to BLOCK * - no checking
-// The rules above apply to both FIXED or PLACED instances
-
 #include <iostream>
 #include <limits>
 #include <iomanip>
@@ -59,8 +48,6 @@ using std::cout;
 using std::endl;
 using std::max;
 using std::min;
-using std::ofstream;
-using std::to_string;
 using std::vector;
 
 using odb::Rect;
@@ -74,12 +61,10 @@ bool Opendp::checkPlacement(bool verbose) {
   vector<Cell*> placed_failures;
   vector<Cell*> in_core_failures;
   vector<Cell*> overlap_failures;
-  vector<Cell*> overlap_padded_failures;
   vector<Cell*> site_failures;
   vector<Cell*> power_line_failures;
 
   Grid *grid = makeGrid();
-  bool have_padding = havePadding();
   for(Cell& cell : cells_) {
     if(isStdCell(&cell)) {
       // Site check
@@ -96,19 +81,14 @@ bool Opendp::checkPlacement(bool verbose) {
       placed_failures.push_back(&cell);
     if(checkInCore(cell))
       in_core_failures.push_back(&cell);
-    if(checkOverlap(cell, grid, false))
+    if(checkOverlap(cell, grid))
       overlap_failures.push_back(&cell);
-    if(have_padding && checkOverlap(cell, grid, true))
-      overlap_padded_failures.push_back(&cell);
   }
 
   reportFailures(placed_failures, "Placed", verbose);
   reportFailures(in_core_failures, "Placed in core", verbose);
   reportFailures(overlap_failures, "Overlap", verbose,
-		 [&] (Cell *cell) -> void {reportOverlapFailure(cell, grid, false); });
-  if (have_padding)
-    reportFailures(overlap_padded_failures, "Overlap padded", verbose,
-		   [&] (Cell *cell) -> void {reportOverlapFailure(cell, grid, true); });
+		 [&] (Cell *cell) -> void {reportOverlapFailure(cell, grid); });
   reportFailures(site_failures, "Site", verbose);
   reportFailures(power_line_failures, "Power line", verbose);
 
@@ -142,8 +122,8 @@ void Opendp::reportFailures(vector<Cell*> failures,
   }
 }
 
-void Opendp::reportOverlapFailure(Cell *cell, Grid *grid, bool padded) {
-  Cell *overlap = checkOverlap(*cell, grid, padded);
+void Opendp::reportOverlapFailure(Cell *cell, Grid *grid) {
+  Cell *overlap = checkOverlap(*cell, grid);
   printf(" %s overlaps %s\n",
 	 cell->name(),
 	 overlap->name());
@@ -161,6 +141,8 @@ bool Opendp::isPlaced(Cell *cell) {
   case dbPlacementStatus::SUGGESTED:
     return false;
   }
+  // gcc warning
+  return false;
 }
 
 bool Opendp::checkPowerLine(Cell &cell) {
@@ -182,17 +164,38 @@ bool Opendp::checkPowerLine(Cell &cell) {
 }
 
 bool Opendp::checkInCore(Cell &cell) {
-  return gridPaddedX(&cell) < 0
+  return gridX(&cell) < 0
     || gridY(&cell) < 0
-    || gridPaddedEndX(&cell) > row_site_count_
+    || gridEndX(&cell) > row_site_count_
     || gridEndY(&cell) > row_count_;
 }
 
 
+// COVER *, RING, PAD * - ignored
+
+// There are 5 groups of CLASSes
+// CR = {CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL}
+// WT = CORE WELLTAP
+// SP = CORE SPACER
+// EC = ENDCAP *
+// BL = BLOCK *
+
+//    CR WT BL SP EC
+// CR  P  P  P  O  O
+// WT  P  O  P  O  O
+// BL  P  P  -  O  O
+// SP  O  O  O  O  O
+// EC  O  O  O  O  O
+//
+// P = no padded overlap
+// O = no overlap (padding ignored)
+//
+// The rules apply to both FIXED or PLACED instances
+
 // Return the cell this cell overlaps.
+
 Cell *Opendp::checkOverlap(Cell &cell,
-			   Grid *grid,
-			   bool padded) {
+			   Grid *grid) {
   int x_ll = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
   int y_ll = gridY(&cell);
@@ -208,10 +211,7 @@ Cell *Opendp::checkOverlap(Cell &cell,
       Cell *pixel_cell = pixel.cell;
       if(pixel_cell) {
 	if (pixel_cell != &cell
-	    && overlap(&cell, pixel_cell, padded)
-	    // BLOCK/BLOCK overlaps allowed
-	    && !(isBlock(&cell)
-		 && isBlock(pixel_cell)))
+	    && overlap(&cell, pixel_cell))
 	  return pixel_cell;
       }
       else {
@@ -222,27 +222,85 @@ Cell *Opendp::checkOverlap(Cell &cell,
   return nullptr;
 }
 
-bool Opendp::overlap(Cell *cell1, Cell *cell2, bool padded) {
-  int x_ll1, x_ur1, y_ll1, y_ur1;
-  int x_ll2, x_ur2, y_ll2, y_ur2;
-  if (padded) {
-    initialPaddedLocation(cell1, x_ll1, y_ll1);
-    initialPaddedLocation(cell2, x_ll2, y_ll2);
-    x_ur1 = x_ll1 + paddedWidth(cell1);
-    x_ur2 = x_ll2 + paddedWidth(cell2);
-  }
+bool Opendp::overlap(Cell *cell1, Cell *cell2) {
+  // BLOCK/BLOCK overlaps allowed
+  if (isBlock(cell1)
+      && isBlock(cell2))
+    return false;
   else {
-    initialLocation(cell1, x_ll1, y_ll1);
-    initialLocation(cell2, x_ll2, y_ll2);
-    x_ur1 = x_ll1 + cell1->width_;
-    x_ur2 = x_ll2 + cell2->width_;
+    bool padded = havePadding() && isOverlapPadded(cell1, cell2);
+    int x_ll1, x_ur1, y_ll1, y_ur1;
+    int x_ll2, x_ur2, y_ll2, y_ur2;
+    if (padded) {
+      initialPaddedLocation(cell1, x_ll1, y_ll1);
+      initialPaddedLocation(cell2, x_ll2, y_ll2);
+      x_ur1 = x_ll1 + paddedWidth(cell1);
+      x_ur2 = x_ll2 + paddedWidth(cell2);
+    }
+    else {
+      initialLocation(cell1, x_ll1, y_ll1);
+      initialLocation(cell2, x_ll2, y_ll2);
+      x_ur1 = x_ll1 + cell1->width_;
+      x_ur2 = x_ll2 + cell2->width_;
+    }
+    y_ur1 = y_ll1 + cell1->height_;
+    y_ur2 = y_ll2 + cell2->height_;
+    return x_ll1 < x_ur2
+      && x_ur1 > x_ll2
+      && y_ll1 < y_ur2
+      && y_ur1 > y_ll2;
   }
-  y_ur1 = y_ll1 + cell1->height_;
-  y_ur2 = y_ll2 + cell2->height_;
-  return x_ll1 < x_ur2
-    && x_ur1 > x_ll2
-    && y_ll1 < y_ur2
-    && y_ur1 > y_ll2;
+}
+
+bool Opendp::isOverlapPadded(Cell *cell1, Cell *cell2) {
+  return isCrWtBlClass(cell1)
+    && isCrWtBlClass(cell2)
+    && !(isWtClass(cell1) && isWtClass(cell2));
+}
+
+bool Opendp::isCrWtBlClass(Cell *cell) {
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_WELLTAP:
+  case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
+    return true;
+  case dbMasterType::CORE_SPACER:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+    // These classes are completely ignored by the placer.
+  case dbMasterType::COVER:
+  case dbMasterType::COVER_BUMP:
+  case dbMasterType::RING:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
+    return false;
+  }
+  // gcc warniing
+  return false;
+}
+
+bool Opendp::isWtClass(Cell *cell) {
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  return type == dbMasterType::CORE_WELLTAP;
 }
 
 }  // namespace opendp
