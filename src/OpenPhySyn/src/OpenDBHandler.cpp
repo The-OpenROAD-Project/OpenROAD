@@ -31,9 +31,9 @@
 
 #ifdef USE_OPENDB_DB_HANDLER
 
-#include <OpenPhySyn/OpenDBHandler.hpp>
-#include <OpenPhySyn/PathPoint.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
+#include "OpenPhySyn/OpenDBHandler.hpp"
+#include "OpenPhySyn/PathPoint.hpp"
+#include "OpenPhySyn/PsnLogger.hpp"
 
 #include <set>
 

@@ -29,9 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <OpenPhySyn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree.hpp>
+#include "OpenPhySyn/SteinerTree.hpp"
 #include <algorithm>
+#include "OpenPhySyn/Psn.hpp"
 #include "PsnException.hpp"
 namespace psn
 {

@@ -32,8 +32,6 @@
 #ifndef __PSN_DESIGN_SETTINGS__
 #define __PSN_DESIGN_SETTINGS__
 
-#include <string>
-
 namespace psn
 {
 class DesignSettings

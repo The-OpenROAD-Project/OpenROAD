@@ -29,9 +29,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "TransformHandler.hpp"
+#include <dlfcn.h>
 #include "PsnException.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenPhySyn/PsnGlobal.hpp>
+
 namespace psn
 {
 TransformHandler::TransformHandler(std::string name)
@@ -54,13 +54,16 @@ TransformHandler::TransformHandler(std::string name)
     }
 }
 #ifdef OPENPHYSYN_AUTO_LINK
-TransformHandler::TransformHandler(std::string trName, std::shared_ptr<PsnTransform> transform)
+TransformHandler::TransformHandler(std::string                   trName,
+                                   std::shared_ptr<PsnTransform> transform)
 {
-    instance = transform;
-    get_name_        = [=]()->const char*{return transform.get()->name();};
-    get_version_        = [=]()->const char*{return transform.get()->version();};
-    get_help_        = [=]()->const char*{return transform.get()->help();};
-    get_description_        = [=]()->const char*{return transform.get()->description();};
+    instance     = transform;
+    get_name_    = [=]() -> const char* { return transform.get()->name(); };
+    get_version_ = [=]() -> const char* { return transform.get()->version(); };
+    get_help_    = [=]() -> const char* { return transform.get()->help(); };
+    get_description_ = [=]() -> const char* {
+        return transform.get()->description();
+    };
 }
 #endif
 

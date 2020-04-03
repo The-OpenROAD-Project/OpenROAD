@@ -31,9 +31,9 @@
 
 #ifndef __PSN_TRANSFORM__
 #define __PSN_TRANSFORM__
-#include <OpenPhySyn/Types.hpp>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace psn
 {
@@ -80,6 +80,13 @@ public:
     };
 #define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
                          transformDescription, transformHelp)
+#define OPENPHYSYN_TRANSFORM                                                   \
+public:                                                                        \
+    const char*                        help() override;                        \
+    const char*                        version() override;                     \
+    const char*                        name() override;                        \
+    const char*                        description() override;                 \
+    std::shared_ptr<psn::PsnTransform> load() override;
 #else
 #define DEFINE_TRANSFORM_VIRTUALS(classType, transformName, transformVersion,  \
                                   transformDescription, transformHelp)
@@ -115,6 +122,8 @@ public:
             return transformDescription;                                       \
         }                                                                      \
     }
+#define OPENPHYSYN_TRANSFORM
 #endif
+
 } // namespace psn
 #endif /* ifndef __TRANSFORM__ */

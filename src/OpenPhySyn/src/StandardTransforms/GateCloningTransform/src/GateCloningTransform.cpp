@@ -32,14 +32,10 @@
 #ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
 
 #include "GateCloningTransform.hpp"
-#include <OpenPhySyn/PsnGlobal.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenPhySyn/StringUtils.hpp>
-
-#include <algorithm>
-#include <cmath>
-#include <limits>
-#include <sstream>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "OpenPhySyn/StringUtils.hpp"
 
 using namespace psn;
 
@@ -67,7 +63,7 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
 {
     DatabaseHandler& handler = *(psn_inst->handler());
     float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
-    
+
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
     {
@@ -221,7 +217,7 @@ GateCloningTransform::cloneInstance(psn::Psn*                          psn_inst,
     {
         std::string instance_name = makeUniqueCloneName(psn_inst);
         auto        cell          = handler.libraryCell(inst);
-        Instance* cloned_inst =
+        Instance*   cloned_inst =
             handler.createInstance(instance_name.c_str(), cell);
         handler.setLocation(cloned_inst, handler.location(output_pin));
         handler.connect(clone_net, cloned_inst, output_port);
@@ -300,7 +296,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
 }
 
 DEFINE_TRANSFORM_VIRTUALS(GateCloningTransform, "gate_clone", "1.0.0",
-                 "Performs load-driven gate cloning",
-                 "Usage: transform gate_clone "
-                 "<float: max-cap-factor> <boolean: clone-gates-only>")
+                          "Performs load-driven gate cloning",
+                          "Usage: transform gate_clone "
+                          "<float: max-cap-factor> <boolean: clone-gates-only>")
 #endif

@@ -33,27 +33,20 @@
 #ifndef __PSN_HELLO_TRANSFORM__
 #define __PSN_HELLO_TRANSFORM__
 
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/Psn.hpp>
-#include <OpenPhySyn/PsnTransform.hpp>
-#include <OpenPhySyn/Types.hpp>
-#include <cstring>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnTransform.hpp"
+#include "OpenPhySyn/Types.hpp"
 
-
-namespace psn {
+namespace psn
+{
 class HelloTransform : public PsnTransform
 {
 private:
 public:
     int addWire(Psn* psn_inst, std::string name);
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-#ifdef OPENPHYSYN_AUTO_LINK
-    const char* help() override;
-    const char* version() override;
-    const char* name() override;
-    const char* description() override;
-    std::shared_ptr<psn::PsnTransform> load() override;
-#endif
+    OPENPHYSYN_TRANSFORM
 };
 
 DEFINE_TRANSFORM(
@@ -62,6 +55,6 @@ DEFINE_TRANSFORM(
     "Usage:\n transform hello_transform "
     "<net_name>\n")
 
-}
+} // namespace psn
 #endif
 #endif

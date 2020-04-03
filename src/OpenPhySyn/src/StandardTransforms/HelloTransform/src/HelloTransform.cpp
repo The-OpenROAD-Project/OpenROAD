@@ -31,9 +31,9 @@
 #ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
 
 #include "HelloTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
 #include <algorithm>
 #include <cmath>
+#include "OpenPhySyn/PsnLogger.hpp"
 
 using namespace psn;
 

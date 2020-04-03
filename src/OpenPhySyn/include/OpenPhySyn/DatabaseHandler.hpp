@@ -30,11 +30,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #ifndef __PSN_DATABASE_HANDLER__
 #define __PSN_DATABASE_HANDLER__
-#include <OpenPhySyn/PathPoint.hpp>
-#include <OpenPhySyn/PsnGlobal.hpp>
-#include <OpenPhySyn/Types.hpp>
+#include "OpenPhySyn/PathPoint.hpp"
+#include "OpenPhySyn/Types.hpp"
 
-#include <PsnLogger.hpp>
 #include <unordered_map>
 #include <vector>
 namespace psn

@@ -30,19 +30,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
 #include "PinSwapTransform.hpp"
-#include <OpenPhySyn/PathPoint.hpp>
-#include <OpenPhySyn/PsnGlobal.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/dcalc/GraphDelayCalc.hh>
-#include <OpenSTA/liberty/TimingArc.hh>
-#include <OpenSTA/liberty/TimingModel.hh>
-#include <OpenSTA/liberty/TimingRole.hh>
-#include <OpenSTA/search/Corner.hh>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/PathPoint.hpp"
+#include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "OpenPhySyn/PsnLogger.hpp"
 
 #include <algorithm>
-#include <cmath>
-#include <limits>
 #include <sstream>
 
 using namespace psn;

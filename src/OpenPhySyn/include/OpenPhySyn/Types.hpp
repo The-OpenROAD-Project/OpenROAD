@@ -35,16 +35,13 @@
 // Temproary fix for OpenSTA
 #define THROW_DCL throw()
 
-#include <OpenSTA/liberty/Liberty.hh>
-#include <opendb/db.h>
-#include <opendb/dbTypes.h>
-#include <opendb/defin.h>
-#include <opendb/defout.h>
-#include <opendb/lefin.h>
 #include <tuple>
 #include <unordered_map>
+#include "OpenSTA/liberty/Liberty.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "opendb/db.h"
+#include "opendb/dbTypes.h"
 namespace psn
 {
 class OpenDBHandler;
@@ -66,9 +63,6 @@ typedef sta::LibertyCell    LibraryCell;
 typedef odb::dbLib          Library;
 typedef odb::dbTech         LibraryTechnology;
 typedef sta::Net            Net;
-typedef odb::defin          DefParser;
-typedef odb::defout         DefOut;
-typedef odb::lefin          LefParser;
 typedef sta::LibertyLibrary Liberty;
 
 typedef odb::dbSet<Library> LibrarySet;

@@ -33,10 +33,9 @@
 #define __PSN_STRING_UTILS__
 #include <algorithm>
 #include <fstream>
-#include <libgen.h>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <sys/stat.h>
 #include <vector>
 
 namespace psn

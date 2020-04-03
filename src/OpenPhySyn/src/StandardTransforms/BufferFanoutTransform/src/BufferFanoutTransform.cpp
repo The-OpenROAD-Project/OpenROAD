@@ -32,8 +32,10 @@
 #ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
 
 #include "BufferFanoutTransform.hpp"
-#include <OpenPhySyn/PsnGlobal.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "OpenPhySyn/PsnLogger.hpp"
 #include "StringUtils.hpp"
 
 #include <algorithm>
@@ -346,7 +348,7 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return -1;
 }
 DEFINE_TRANSFORM_VIRTUALS(BufferFanoutTransform, "buffer_fanout", "1.0.0",
-                 "Inserts buffers based on max fan-out",
-                 "Usage: transform buffer_fanout "
-                 "<max_fanout> <buffer_cell>")
+                          "Inserts buffers based on max fan-out",
+                          "Usage: transform buffer_fanout "
+                          "<max_fanout> <buffer_cell>")
 #endif

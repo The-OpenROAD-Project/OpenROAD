@@ -31,20 +31,11 @@
 #ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
 
 #include "ConstantPropagationTransform.hpp"
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenPhySyn/PathPoint.hpp>
-#include <OpenPhySyn/PsnGlobal.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/dcalc/GraphDelayCalc.hh>
-#include <OpenSTA/liberty/TimingArc.hh>
-#include <OpenSTA/liberty/TimingModel.hh>
-#include <OpenSTA/liberty/TimingRole.hh>
-#include <OpenSTA/search/Corner.hh>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
 #include "StringUtils.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <limits>
 #include <sstream>
 
 using namespace psn;

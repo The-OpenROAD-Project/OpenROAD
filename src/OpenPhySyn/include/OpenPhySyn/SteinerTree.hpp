@@ -31,10 +31,10 @@
 
 #ifndef __PSN_STEINER_TREE__
 #define __PSN_STEINER_TREE__
-#include <OpenPhySyn/Types.hpp>
 #include <flute.h>
 #include <memory>
 #include <unordered_map>
+#include "OpenPhySyn/Types.hpp"
 
 #define FLUTE_DTYPE int
 namespace psn

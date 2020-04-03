@@ -31,9 +31,9 @@
 
 #ifndef __PSN_EXPORTS__
 #define __PSN_EXPORTS__
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/SteinerTree.hpp>
-#include <OpenPhySyn/Types.hpp>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/SteinerTree.hpp"
+#include "OpenPhySyn/Types.hpp"
 
 namespace psn
 {

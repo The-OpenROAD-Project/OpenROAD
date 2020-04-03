@@ -32,21 +32,20 @@
 #ifndef __PSN_TRANSFORM_HANDLER__
 #define __PSN_TRANSFORM_HANDLER__
 
-#include <PsnTransform.hpp>
-#include <dlfcn.h>
-#include <memory>
 #include <functional>
+#include <memory>
+#include "OpenPhySyn/PsnTransform.hpp"
 
 namespace psn
 {
 class TransformHandler
 {
-    std::function<std::shared_ptr<PsnTransform> ()> load_;
-    void* handle_;
-    std::function<const char* ()> get_name_;
-    std::function<const char* ()> get_version_;
-    std::function<const char* ()> get_help_;
-    std::function<const char* ()> get_description_;
+    std::function<std::shared_ptr<PsnTransform>()> load_;
+    void*                                          handle_;
+    std::function<const char*()>                   get_name_;
+    std::function<const char*()>                   get_version_;
+    std::function<const char*()>                   get_help_;
+    std::function<const char*()>                   get_description_;
 
     std::shared_ptr<PsnTransform> instance;
 

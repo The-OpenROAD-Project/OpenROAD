@@ -31,7 +31,7 @@
 
 #ifndef __PSN_PATH_POINT__
 #define __PSN_PATH_POINT__
-#include <OpenPhySyn/Types.hpp>
+#include "OpenPhySyn/Types.hpp"
 
 namespace psn
 {

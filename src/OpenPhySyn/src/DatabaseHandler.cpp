@@ -32,30 +32,29 @@
 // Temproary fix for OpenSTA import ordering
 #define THROW_DCL throw()
 
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/dcalc/DcalcAnalysisPt.hh>
-#include <OpenSTA/dcalc/GraphDelayCalc.hh>
-#include <OpenSTA/graph/Graph.hh>
-#include <OpenSTA/liberty/FuncExpr.hh>
-#include <OpenSTA/liberty/TableModel.hh>
-#include <OpenSTA/liberty/TimingArc.hh>
-#include <OpenSTA/liberty/TimingModel.hh>
-#include <OpenSTA/liberty/TimingRole.hh>
-#include <OpenSTA/liberty/Transition.hh>
-#include <OpenSTA/network/NetworkCmp.hh>
-#include <OpenSTA/network/PortDirection.hh>
-#include <OpenSTA/sdc/Sdc.hh>
-#include <OpenSTA/search/Corner.hh>
-#include <OpenSTA/search/PathEnd.hh>
-#include <OpenSTA/search/PathExpanded.hh>
-#include <OpenSTA/search/Power.hh>
-#include <OpenSTA/search/Search.hh>
-#include <OpenSTA/util/PatternMatch.hh>
+#include "OpenPhySyn/DatabaseHandler.hpp"
 #include <algorithm>
-#include <cmath>
 #include <set>
+#include "OpenPhySyn/PsnLogger.hpp"
+#include "OpenSTA/dcalc/ArcDelayCalc.hh"
+#include "OpenSTA/dcalc/DcalcAnalysisPt.hh"
+#include "OpenSTA/dcalc/GraphDelayCalc.hh"
+#include "OpenSTA/graph/Graph.hh"
+#include "OpenSTA/liberty/FuncExpr.hh"
+#include "OpenSTA/liberty/TableModel.hh"
+#include "OpenSTA/liberty/TimingArc.hh"
+#include "OpenSTA/liberty/TimingModel.hh"
+#include "OpenSTA/liberty/TimingRole.hh"
+#include "OpenSTA/liberty/Transition.hh"
+#include "OpenSTA/network/NetworkCmp.hh"
+#include "OpenSTA/network/PortDirection.hh"
+#include "OpenSTA/sdc/Sdc.hh"
+#include "OpenSTA/search/Corner.hh"
+#include "OpenSTA/search/PathEnd.hh"
+#include "OpenSTA/search/PathExpanded.hh"
+#include "OpenSTA/search/Power.hh"
+#include "OpenSTA/search/Search.hh"
+#include "OpenSTA/util/PatternMatch.hh"
 
 namespace psn
 {

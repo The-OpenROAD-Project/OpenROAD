@@ -31,13 +31,13 @@
 
 #ifndef __PSN_PSN__
 #define __PSN_PSN__
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/DesignSettings.hpp>
-#include <OpenPhySyn/LogLevel.hpp>
-#include <OpenPhySyn/PsnTransform.hpp>
-#include <OpenPhySyn/TransformInfo.hpp>
-#include <OpenPhySyn/Types.hpp>
-#include <OpenSTA/network/ConcreteNetwork.hh>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/DesignSettings.hpp"
+#include "OpenPhySyn/LogLevel.hpp"
+#include "OpenPhySyn/PsnTransform.hpp"
+#include "OpenPhySyn/TransformInfo.hpp"
+#include "OpenPhySyn/Types.hpp"
+#include "OpenSTA/network/ConcreteNetwork.hh"
 
 #include <unordered_map>
 

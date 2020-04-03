@@ -32,10 +32,9 @@
 #ifndef __PSN_PSN_LOGGER__
 #define __PSN_PSN_LOGGER__
 
-#include <OpenPhySyn/LogLevel.hpp>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
+#include "OpenPhySyn/LogLevel.hpp"
 namespace psn
 {
 class PsnLogger
