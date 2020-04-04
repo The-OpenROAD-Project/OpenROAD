@@ -41,8 +41,10 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
-#include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #include "pdnsim/MakePDNSim.hh"
+#if BUILD_OPENPHYSYN
+  #include "OpenPhySyn/MakeOpenPhySyn.hpp"
+#endif
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -82,7 +84,9 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+#if BUILD_OPENPHYSYN
   deletePsn(psn_);
+#endif
   odb::dbDatabase::destroy(db_);
 }
 
@@ -119,8 +123,10 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
-  psn_ = makePsn();
   pdnsim_ = makePDNSim();
+#if BUILD_OPENPHYSYN
+  psn_ = makePsn();
+#endif
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -141,9 +147,11 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
-  initPsn(this);
   initPDNSim(this);
-  
+#if BUILD_OPENPHYSYN
+    initPsn(this);
+#endif
+
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");

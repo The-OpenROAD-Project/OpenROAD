@@ -17,7 +17,7 @@ pdngen -verbose gcd_pdn.cfg
 # Pre-sizing wireload timing
 report_checks
 
-global_placement -timing_driven
+global_placement
 
 set buffer_cell BUF_X4
 set_wire_rc -layer metal2
@@ -42,12 +42,12 @@ check_placement
 filler_placement FILL*
 
 # seg faults unreliably
-# fastroute -output_file [make_result_file gcd.route_guide] \
-#           -max_routing_layer 10 \
-#           -unidirectional_routing true \
-#           -capacity_adjustment 0.15 \
-#           -layers_adjustments {{2 0.5} {3 0.5}} \
-#           -overflow_iterations 200
+fastroute -output_file [make_result_file gcd.route_guide] \
+          -max_routing_layer 10 \
+          -unidirectional_routing true \
+          -capacity_adjustment 0.15 \
+          -layers_adjustments {{2 0.5} {3 0.5}} \
+          -overflow_iterations 200
 
 report_checks
 
