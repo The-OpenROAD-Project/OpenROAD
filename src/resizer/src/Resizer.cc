@@ -1013,6 +1013,7 @@ RebufferOption::bufferCount() const
   case RebufferOptionType::sink:
     return 0;
   }
+  return 0;
 }
 
 RebufferOption *
