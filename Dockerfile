@@ -56,6 +56,15 @@ RUN git clone https://gitlab.com/libeigen/eigen.git \
     && cmake .. \
     && make install
 
+# spdlog required by OpenPhySyn
+RUN git clone https://github.com/gabime/spdlog.git \
+    && cd spdlog \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make -j $(nproc) \
+    && make install
+
 RUN useradd -ms /bin/bash openroad
 
 FROM base-dependencies AS builder

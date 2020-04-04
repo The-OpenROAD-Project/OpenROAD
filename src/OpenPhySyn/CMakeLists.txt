@@ -13,7 +13,6 @@ option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
 option(OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS "Automatically link built transforms" ON)
-option(OPENPHYSYN_TRANSFORM_PRECOMPILE_LOGGER "Pre-compile OpenPhySyn spdlog" OFF)
 
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
@@ -53,12 +52,7 @@ set(PSN_HOME
 )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
 
-if(NOT DEFINED SPD_LOG_HOME)
-set(SPD_LOG_HOME
-  ${PROJECT_SOURCE_DIR}/external/spdlog
-)
-endif()
-
+find_package(spdlog REQUIRED)
 
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
@@ -245,7 +239,6 @@ set(PUBLIC_INCLUDE_DIRS
 )
 set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external/doctest
-  ${PROJECT_SOURCE_DIR}/external/spdlog
   ${PROJECT_SOURCE_DIR}/external/cxxopts/include
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
   ${PROJECT_SOURCE_DIR}/external/flute
@@ -345,22 +338,7 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES COMPILE_FLAGS ${OPENPHYSYN_CMAK
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES})
 
-# Precompile spdlog
-if(${OPENPHYSYN_TRANSFORM_PRECOMPILE_LOGGER})
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
-target_precompile_headers(${LIBRARY_NAME}
-  PRIVATE
-    ${SPD_LOG_HOME}/sinks/basic_file_sink.h
-    ${SPD_LOG_HOME}/sinks/stdout_color_sinks.h
-    ${SPD_LOG_HOME}/spdlog.h
-)
-else()
-include(PrecompiledHeader)
-add_precompiled_header(${LIBRARY_NAME} ${SPD_LOG_HOME}/sinks/basic_file_sink.h FORCEINCLUDE)
-add_precompiled_header(${LIBRARY_NAME} ${SPD_LOG_HOME}/sinks/stdout_color_sinks.h FORCEINCLUDE)
-add_precompiled_header(${LIBRARY_NAME} ${SPD_LOG_HOME}/spdlog.h FORCEINCLUDE)
-endif()
-endif()
+
 
 
 include_directories (
