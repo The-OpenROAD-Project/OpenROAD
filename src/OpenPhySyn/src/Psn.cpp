@@ -32,19 +32,19 @@
 // Temproary fix for OpenSTA import ordering
 #define THROW_DCL throw()
 
-#include <Config.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/network/ConcreteNetwork.hh>
-#include <OpenSTA/search/Search.hh>
-#include <OpenSTA/search/Sta.hh>
-#include <Psn.hpp>
-#include <flute.h>
+#include "Psn.hpp"
 #include <tcl.h>
+#include "Config.hpp"
 #include "FileUtils.hpp"
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/DesignSettings.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "OpenPhySyn/PsnLogger.hpp"
 #include "PsnException.hpp"
 #include "StringUtils.hpp"
 #include "TransformHandler.hpp"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 
 #ifdef OPENPHYSYN_AUTO_LINK
 #include "StandardTransforms/BufferFanoutTransform/src/BufferFanoutTransform.hpp"
@@ -83,7 +83,7 @@ Psn::Psn(DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     settings_   = new DesignSettings();
-    db_handler_ = new DatabaseHandler(sta_);
+    db_handler_ = new DatabaseHandler(this, sta_);
 }
 
 void
@@ -165,31 +165,37 @@ int
 Psn::loadTransforms()
 {
     std::vector<psn::TransformHandler> handlers;
-    int         load_count = 0;
+    int                                load_count = 0;
 
 #ifdef OPENPHYSYN_AUTO_LINK
 #ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
-    handlers.push_back(TransformHandler("hello_transform", std::make_shared<HelloTransform>()));
+    handlers.push_back(TransformHandler("hello_transform",
+                                        std::make_shared<HelloTransform>()));
 #endif
 #ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
-    handlers.push_back(TransformHandler("buffer_fanout", std::make_shared<BufferFanoutTransform>()));
+    handlers.push_back(TransformHandler(
+        "buffer_fanout", std::make_shared<BufferFanoutTransform>()));
 #endif
 #ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
-    handlers.push_back(TransformHandler("gate_clone", std::make_shared<GateCloningTransform>()));
+    handlers.push_back(TransformHandler(
+        "gate_clone", std::make_shared<GateCloningTransform>()));
 #endif
 #ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
-    handlers.push_back(TransformHandler("pin_swap", std::make_shared<PinSwapTransform>()));
+    handlers.push_back(
+        TransformHandler("pin_swap", std::make_shared<PinSwapTransform>()));
 #endif
 #ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
-    handlers.push_back(TransformHandler("constant_propagation", std::make_shared<ConstantPropagationTransform>()));
+    handlers.push_back(
+        TransformHandler("constant_propagation",
+                         std::make_shared<ConstantPropagationTransform>()));
 #endif
 
 #else
-    std::string                        transforms_paths(
+    std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
-        ":" + FileUtils::joinPath(exec_path_, "./transforms") +
-        ":" + FileUtils::joinPath(exec_path_, "../transforms"));
-    const char* env_path   = std::getenv("PSN_TRANSFORM_PATH");
+        ":" + FileUtils::joinPath(exec_path_, "./transforms") + ":" +
+        FileUtils::joinPath(exec_path_, "../transforms"));
+    const char* env_path = std::getenv("PSN_TRANSFORM_PATH");
 
     if (env_path)
     {
@@ -201,24 +207,21 @@ Psn::loadTransforms()
 
     for (auto& transform_parent_path : transforms_dirs)
     {
-        if (!transform_parent_path.length())
+        if (transform_parent_path.length() &&
+            FileUtils::isDirectory(transform_parent_path))
         {
-            continue;
-        }
-        if (!FileUtils::isDirectory(transform_parent_path))
-        {
-            continue;
-        }
-        std::vector<std::string> transforms_paths =
-            FileUtils::readDirectory(transform_parent_path);
-        for (auto& path : transforms_paths)
-        {
-            PSN_LOG_DEBUG("Loading transform {}", path);
-            handlers.push_back(TransformHandler(path));
-        }
 
-        PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
-                      transform_parent_path);
+            std::vector<std::string> transforms_paths =
+                FileUtils::readDirectory(transform_parent_path);
+            for (auto& path : transforms_paths)
+            {
+                PSN_LOG_DEBUG("Loading transform {}", path);
+                handlers.push_back(TransformHandler(path));
+            }
+
+            PSN_LOG_DEBUG("Found {} transforms under {}.",
+                          transforms_paths.size(), transform_parent_path);
+        }
     }
 #endif
     for (auto tr : handlers)

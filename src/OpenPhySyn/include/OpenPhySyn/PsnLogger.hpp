@@ -29,13 +29,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_PSN_LOGGER__
-#define __PSN_PSN_LOGGER__
+#pragma once
 
-#include <OpenPhySyn/LogLevel.hpp>
+#include <memory>
+#include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
+#include "OpenPhySyn/LogLevel.hpp"
+
 namespace psn
 {
 class PsnLogger
@@ -104,4 +105,3 @@ private:
     std::shared_ptr<spdlog::logger>                      logger_;
 };
 } // namespace psn
-#endif //__PSN_DEMO__

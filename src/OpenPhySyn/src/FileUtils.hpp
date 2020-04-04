@@ -29,8 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_FILE_UTILS__
-#define __PSN_FILE_UTILS__
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -52,4 +52,3 @@ public:
     static std::string              executablePath();
 };
 } // namespace psn
-#endif

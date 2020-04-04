@@ -30,9 +30,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "Exports.hpp"
-#include <OpenPhySyn/Psn.hpp>
 #include <memory>
-#include "PsnLogger.hpp"
+#include "OpenPhySyn/DesignSettings.hpp"
+#include "OpenPhySyn/Psn.hpp"
 
 namespace psn
 {

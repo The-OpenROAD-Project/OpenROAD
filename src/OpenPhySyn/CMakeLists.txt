@@ -13,6 +13,7 @@ option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
 option(OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS "Automatically link built transforms" ON)
+option(OPENPHYSYN_TRANSFORM_PRECOMPILE_LOGGER "Pre-compile OpenPhySyn spdlog" OFF)
 
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
@@ -22,13 +23,12 @@ set(OPENPHYSYN_LINKED_TRANSFORMS "")
 set(OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY ${LIBRARY_NAME})
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated-copy  ")
+set(OPENPHYSYN_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENPHYSYN_CMAKE_CXX_FLAGS} -pthread -Wno-error -Wno-deprecated")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
+  set(OPENPHYSYN_CMAKE_CXX_FLAGS "${OPENPHYSYN_CMAKE_CXX_FLAGS} -rdynamic -Wl,-export_dynamic -Wno-unused-command-line-argument")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
+  set(OPENPHYSYN_CMAKE_CXX_FLAGS "${OPENPHYSYN_CMAKE_CXX_FLAGS} -rdynamic")
 endif()
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
 # Tool build configuration
@@ -52,6 +52,12 @@ set(PSN_HOME
   ${PROJECT_SOURCE_DIR}
 )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
+
+if(NOT DEFINED SPD_LOG_HOME)
+set(SPD_LOG_HOME
+  ${PROJECT_SOURCE_DIR}/external/spdlog
+)
+endif()
 
 
 # Default to bulding optimnized/release executable.
@@ -80,7 +86,7 @@ endif()
 
 string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 include(CheckSymbolExists)
 include(ConfigSafeGuards)
 include(Colors)
@@ -107,17 +113,6 @@ endif()
 find_package(ZLIB REQUIRED)
 
 
-# Build spdlok
-if(NOT DEFINED SPD_LOG_HOME)
-set(SPD_LOG_HOME
-  ${PROJECT_SOURCE_DIR}/external/spdlog
-)
-endif()
-
-
-# Add spdlog
-add_subdirectory(external/spdlog)
-
 
 
 message(STATUS "OpenPhySyn version: ${PROJECT_VERSION}")
@@ -130,11 +125,9 @@ message(STATUS "OpenPhySyn Git SHA: ${OPENPHYSYN_GIT_SHA1}")
 
 
 
-set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_wrap.cc)
-set(PSN_LIBRARY_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cc)
-set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-copy")
+set(PSN_WRAP  ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Psn_lib_wrap.cc)
+set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated -Wno-unused-variable -Wno-unused-parameter")
 set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
-set_source_files_properties(${PSN_LIBRARY_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
 set(PSN_SOURCES_NO_MAIN_NO_WRAP
@@ -163,7 +156,6 @@ set(PSN_OPENROAD_LIBRARY_FILE
 
 set(PSN_SOURCES_NO_MAIN
     ${PSN_SOURCES_NO_MAIN_NO_WRAP}
-    ${PSN_WRAP}
 )
 set(PSN_SOURCES 
     ${PSN_SOURCES_NO_MAIN}
@@ -346,11 +338,29 @@ flute
 
 
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_LIBRARY_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+set_target_properties(${LIBRARY_NAME} PROPERTIES COMPILE_FLAGS ${OPENPHYSYN_CMAKE_CXX_FLAGS})
+
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES}) 
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES})
 
+# Precompile spdlog
+if(${OPENPHYSYN_TRANSFORM_PRECOMPILE_LOGGER})
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+target_precompile_headers(${LIBRARY_NAME}
+  PRIVATE
+    ${SPD_LOG_HOME}/sinks/basic_file_sink.h
+    ${SPD_LOG_HOME}/sinks/stdout_color_sinks.h
+    ${SPD_LOG_HOME}/spdlog.h
+)
+else()
+include(PrecompiledHeader)
+add_precompiled_header(${LIBRARY_NAME} ${SPD_LOG_HOME}/sinks/basic_file_sink.h FORCEINCLUDE)
+add_precompiled_header(${LIBRARY_NAME} ${SPD_LOG_HOME}/sinks/stdout_color_sinks.h FORCEINCLUDE)
+add_precompiled_header(${LIBRARY_NAME} ${SPD_LOG_HOME}/spdlog.h FORCEINCLUDE)
+endif()
+endif()
 
 
 include_directories (
@@ -362,16 +372,9 @@ include_directories (
 
 target_compile_definitions(${LIBRARY_NAME} PRIVATE -DOPENROAD_OPENPHYSYN_LIBRARY_BUILD)
 
-set_property(TARGET ${LIBRARY_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 
 add_custom_command(OUTPUT ${PSN_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
-  WORKING_DIRECTORY ${PSN_HOME}
-  DEPENDS ${PSN_SWIG_FILES}
-)
-add_custom_command(OUTPUT ${PSN_LIBRARY_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} ${SWIG_PSN_LIB_FLAGS} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_LIBRARY_WRAP} ${PSN_SWIG_FILES}
+  COMMAND ${SWIG_EXECUTABLE} ${SWIG_PSN_LIB_FLAGS} ${SWIG_FLAGS} -tcl8 -c++ -namespace -prefix psn -I${PROJECT_SOURCE_DIR}/src -o ${PSN_WRAP} ${PSN_SWIG_FILES}
   WORKING_DIRECTORY ${PSN_HOME}
   DEPENDS ${PSN_SWIG_FILES}
 )
@@ -383,7 +386,6 @@ endif()
 
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES 
   ${PSN_WRAP}
-  ${PSN_LIBRARY_WRAP}
 )
 
 if(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED)

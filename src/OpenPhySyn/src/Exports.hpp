@@ -29,11 +29,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_EXPORTS__
-#define __PSN_EXPORTS__
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/SteinerTree.hpp>
-#include <OpenPhySyn/Types.hpp>
+#pragma once
+
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/SteinerTree.hpp"
+#include "OpenPhySyn/Types.hpp"
 
 namespace psn
 {
@@ -60,5 +60,3 @@ Database&        get_database();
 SteinerTree*     make_steiner_tree(const char* pin_name);
 SteinerTree*     make_steiner_tree(Net* net);
 } // namespace psn
-
-#endif

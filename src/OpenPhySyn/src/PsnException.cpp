@@ -69,7 +69,7 @@ PsnException::setMessage(std::string& message)
     fmt_msg_ = name_ + ": " + msg_;
 }
 
-PsnException::~PsnException()
+PsnException::~PsnException() throw()
 {
 }
 

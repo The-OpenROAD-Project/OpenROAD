@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_FILESYSTEM_LEGACY_HELPERS__
-#define __PSN_FILESYSTEM_LEGACY_HELPERS__
+#pragma once
 
 #include <string>
 #include <vector>
@@ -89,4 +88,3 @@ std::vector<directory_entry> directory_iterator(const path target_path);
 } // namespace filesystem
 
 } // namespace psn
-#endif

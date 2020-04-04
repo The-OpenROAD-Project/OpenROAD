@@ -29,24 +29,22 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_TRANSFORM_HANDLER__
-#define __PSN_TRANSFORM_HANDLER__
+#pragma once
 
-#include <PsnTransform.hpp>
-#include <dlfcn.h>
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace psn
 {
+class PsnTransform;
 class TransformHandler
 {
-    std::function<std::shared_ptr<PsnTransform> ()> load_;
-    void* handle_;
-    std::function<const char* ()> get_name_;
-    std::function<const char* ()> get_version_;
-    std::function<const char* ()> get_help_;
-    std::function<const char* ()> get_description_;
+    std::function<std::shared_ptr<PsnTransform>()> load_;
+    void*                                          handle_;
+    std::function<const char*()>                   get_name_;
+    std::function<const char*()>                   get_version_;
+    std::function<const char*()>                   get_help_;
+    std::function<const char*()>                   get_description_;
 
     std::shared_ptr<PsnTransform> instance;
 
@@ -66,5 +64,3 @@ public:
     std::shared_ptr<PsnTransform> load();
 };
 } // namespace psn
-
-#endif //__TRANSFORM_HANDLER__

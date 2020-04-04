@@ -31,8 +31,8 @@
 
 // Reader utilities for unit tests
 
-#ifndef __PSN_TEST_READERS__
-#define __PSN_TEST_READERS__
+#pragma once
+
 #define THROW_DCL throw()
 
 #include "db_sta/dbNetwork.hh"
@@ -54,4 +54,3 @@ void readLef(dbDatabase* db, dbSta* sta_state, const char* filename,
 void readDef(dbDatabase* db, dbSta* sta_state, const char* filename);
 void readLiberty(dbSta* sta_state, const char* filename);
 } // namespace psn
-#endif

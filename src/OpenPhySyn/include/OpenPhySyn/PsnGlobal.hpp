@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_GLOBAL__
-#define __PSN_GLOBAL__
+#pragma once
 
 #define PSN_UNUSED(arg) (void)arg;
 #define PSN_LOG_ERROR psn::PsnLogger::instance().error
@@ -44,5 +43,3 @@
 #define PSN_HANDLER_UNSUPPORTED_METHOD(HANDLER_NAME, METHOD_NAME)              \
     PSN_LOG_ERROR("The method " #METHOD_NAME                                   \
                   " is not supported by " #HANDLER_NAME);
-
-#endif
