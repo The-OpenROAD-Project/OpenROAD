@@ -20,6 +20,8 @@ Libraries
   * boost 1.68
   * tcl 8.6
   * zlib
+  * eigen
+  * CImg (optional)
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
