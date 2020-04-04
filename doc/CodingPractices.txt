@@ -170,6 +170,14 @@ Same here:
 
 ....
 
+Break long functions into smaller ones, preferably that fit on one screen.
+
+162 lines void DBWrapper::initNetlist() {
+246 lines static vector<pair<Partition, Partition>> GetPart(
+263 lines void MacroCircuit::FillVertexEdge() {
+
+....
+
 Don't use malloc.
 Use new.
 We are writting C++, not C.
@@ -352,6 +360,19 @@ Cmake knows they are directories.
    src/
    )
 
+
+....
+Use range iteration.
+c++ iterators are ugly and verbose.
+
+Instead of
+        odb::dbSet<odb::dbNet>::iterator nIter;
+        for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
+                odb::dbNet* currNet = *nIter;
+
+use
+
+        for (odb::dbNet* currNet : nets) {
 
 ................................................................
 git
