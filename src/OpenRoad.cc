@@ -11,22 +11,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "openroad/OpenRoad.hh"
+
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
 #include "opendb/lefin.h"
 #include "opendb/defin.h"
 #include "opendb/defout.h"
 
-#include "Machine.hh"
-#include "VerilogWriter.hh"
-#include "StaMain.hh"
+#include "sta/VerilogWriter.hh"
+#include "sta/StaMain.hh"
 
 #include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbNetwork.hh"
-#include "openroad/OpenRoad.hh"
+
 #include "openroad/InitOpenRoad.hh"
 #include "flute3/flute.h"
 

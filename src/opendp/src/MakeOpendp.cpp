@@ -32,11 +32,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "opendp/MakeOpendp.h"
+
 #include <tcl.h>
-#include "StaMain.hh"
+
+#include "sta/StaMain.hh"
 #include "openroad/OpenRoad.hh"
 #include "opendp/Opendp.h"
-#include "opendp/MakeOpendp.h"
 
 namespace sta {
 // Tcl files encoded into strings.

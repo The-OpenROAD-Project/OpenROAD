@@ -18,11 +18,12 @@
 
 #include <tcl.h>
 
-#include "dbSdcNetwork.hh"
+#include "sta/StaMain.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
+#include "dbSdcNetwork.hh"
 
 namespace ord {
 

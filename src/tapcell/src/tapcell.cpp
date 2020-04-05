@@ -34,7 +34,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "tapcell/tapcell.h"
-#include "StaMain.hh"
+#include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.

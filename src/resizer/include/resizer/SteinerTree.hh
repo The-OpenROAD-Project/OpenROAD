@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "Hash.hh"
-#include "UnorderedMap.hh"
+#include "sta/Hash.hh"
+#include "sta/UnorderedMap.hh"
 #include "opendb/geom.h"
 #include "db_sta/dbNetwork.hh"
 

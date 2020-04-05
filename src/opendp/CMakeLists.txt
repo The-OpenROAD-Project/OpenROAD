@@ -74,6 +74,6 @@ target_include_directories(opendp
   ${OPENDP_HOME}/src
   ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/app
+  ${OPENSTA_HOME}/include
   ${TCL_INCLUDE_PATH}
  )

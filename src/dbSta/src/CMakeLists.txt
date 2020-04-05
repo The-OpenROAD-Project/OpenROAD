@@ -53,7 +53,7 @@ add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
   )
 
 add_custom_command(OUTPUT ${DBSTA_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME} -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${DBSTA_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src/dbSta
   DEPENDS ${DBSTA_SWIG_FILES}
@@ -70,10 +70,15 @@ add_library(dbSta
 
 target_include_directories(dbSta
   PUBLIC
-  ${OPENROAD_HOME}/include
   ${DBSTA_HOME}/include
+
   PRIVATE
-  ${OPENSTA_HOME}/include
+  ${DBSTA_HOME}/include/db_sta
+  ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include
   ${TCL_INCLUDE_PATH}
+  ${OPENSTA_HOME}/include
+  # Unfortunate side-effect of swig include StaTcl.i
+  ${OPENSTA_HOME}/include/sta
+  ${OPENSTA_HOME}
   )

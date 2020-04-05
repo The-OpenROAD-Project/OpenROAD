@@ -18,7 +18,7 @@
 #define DB_STA_H
 
 #include "opendb/db.h"
-#include "sta/search/Sta.hh"
+#include "sta/Sta.hh"
 
 namespace sta {
 

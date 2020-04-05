@@ -46,7 +46,7 @@
 #include "CtsOptions.h"
 #include "openroad/OpenRoad.hh"
 #include "db_sta/dbNetwork.hh"
-#include "Corner.hh"
+#include "sta/Corner.hh"
 
 #include <iostream>
 #include <vector>

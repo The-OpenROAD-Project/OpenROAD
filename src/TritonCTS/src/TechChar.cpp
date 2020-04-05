@@ -42,14 +42,13 @@
 
 #include "TechChar.h"
 
-#include "Machine.hh"
-#include "Sdc.hh"
-#include "Liberty.hh"
-#include "PathAnalysisPt.hh"
-#include "Units.hh"
-#include "Search.hh"
-#include "Power.hh"
-#include "Graph.hh"
+#include "sta/Sdc.hh"
+#include "sta/Liberty.hh"
+#include "sta/PathAnalysisPt.hh"
+#include "sta/Units.hh"
+#include "sta/Search.hh"
+#include "sta/Power.hh"
+#include "sta/Graph.hh"
 #include "db_sta/dbSta.hh"
 
 #include <fstream>
