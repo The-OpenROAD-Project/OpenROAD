@@ -663,7 +663,7 @@ NETS 385 ;
       ( _568_ S ) ( _570_ S ) ( _572_ S ) ( _574_ S ) ( _576_ Q ) + USE SIGNAL ;
     - req_val ( PIN req_val ) ( _319_ A4 ) ( _323_ C2 ) + USE SIGNAL ;
     - reset ( PIN reset ) ( _309_ A ) ( _313_ A2 ) ( _323_ A ) ( _324_ A2 ) + USE SIGNAL ;
-    - resp_msg[15] ( PIN resp_msg[15] ) ( _537_ A1 ) ( _536_ ZN ) + USE SIGNAL ;
+    - resp_msg[15] ( PIN resp_msg[15] ) ( _537_ A2 ) ( _536_ ZN ) + USE SIGNAL ;
     - resp_msg[14] ( PIN resp_msg[14] ) ( _529_ ZN ) ( _530_ A1 ) + USE SIGNAL ;
     - resp_msg[13] ( PIN resp_msg[13] ) ( _519_ ZN ) ( _520_ A1 ) + USE SIGNAL ;
     - resp_msg[12] ( PIN resp_msg[12] ) ( _511_ ZN ) ( _512_ A1 ) + USE SIGNAL ;
@@ -855,7 +855,7 @@ NETS 385 ;
     - _162_ ( _411_ ZN ) ( _418_ A ) + USE SIGNAL ;
     - _163_ ( _412_ ZN ) ( _413_ A2 ) + USE SIGNAL ;
     - _164_ ( _413_ ZN ) ( _414_ A ) ( _484_ A2 ) ( _493_ A1 ) ( _512_ A2 ) ( _520_ A2 ) ( _530_ A2 ) + USE SIGNAL ;
-    - _165_ ( _537_ A2 ) ( _414_ Z ) ( _417_ A1 ) ( _423_ A1 ) ( _432_ A1 ) ( _441_ A1 ) ( _449_ A1 )
+    - _165_ ( _537_ A1 ) ( _414_ Z ) ( _417_ A1 ) ( _423_ A1 ) ( _432_ A1 ) ( _441_ A1 ) ( _449_ A1 )
       ( _457_ A1 ) ( _466_ A1 ) ( _475_ A1 ) ( _503_ A2 ) + USE SIGNAL ;
     - _166_ ( _421_ B2 ) ( _415_ ZN ) ( _416_ B ) + USE SIGNAL ;
     - _167_ ( _417_ ZN ) ( _418_ B ) + USE SIGNAL ;

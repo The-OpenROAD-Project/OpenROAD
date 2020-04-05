@@ -12,6 +12,7 @@ record_tests {
   fillers1
   fillers2
   fillers3
+  fillers4
   fragmented_row01
   fragmented_row02
   fragmented_row03
@@ -32,6 +33,7 @@ record_tests {
   simple07
   simple08
   simple09
+  simple10
   aes
   gcd
   ibex

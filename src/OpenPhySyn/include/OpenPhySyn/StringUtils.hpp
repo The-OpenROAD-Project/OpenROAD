@@ -29,14 +29,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_STRING_UTILS__
-#define __PSN_STRING_UTILS__
+#pragma once
+
 #include <algorithm>
 #include <fstream>
-#include <libgen.h>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <sys/stat.h>
 #include <vector>
 
 namespace psn
@@ -84,4 +83,3 @@ public:
     }
 };
 } // namespace psn
-#endif

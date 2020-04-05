@@ -124,8 +124,9 @@ Opendp::Opendp()
     ground_net_name_("VSS"),
     grid_(nullptr)
 {
+  dummy_cell_.is_placed_ = true;
   // magic number alert
-  diamond_search_height_ = 10;
+  diamond_search_height_ = 100;
   diamond_search_width_ = diamond_search_height_ * 5;
   max_displacement_constraint_ = 0;
 }
@@ -135,17 +136,6 @@ Opendp::~Opendp() {
 }
 
 void Opendp::init(dbDatabase *db) { db_ = db; }
-
-void Opendp::clear() {
-  db_master_map_.clear();
-  cells_.clear();
-  groups_.clear();
-  db_master_map_.clear();
-  db_inst_map_.clear();
-  deleteGrid(grid_);
-  grid_ = nullptr;
-  dummy_cell_.is_placed_ = true;
-}
 
 void Opendp::setPowerNetName(const char *power_name) {
   power_net_name_ = power_name;
@@ -161,14 +151,14 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-void Opendp::importDb() {
-  clear();
-  dbToOpendp();
-  findDesignStats();
+bool Opendp::havePadding() {
+  return pad_left_ > 0 || pad_right_ > 0;
 }
 
 void Opendp::detailedPlacement(int max_displacment) {
   importDb();
+  reportImportWarnings();
+  findDesignStats();
   max_displacement_constraint_ = max_displacment;
   reportDesignStats();
   detailedPlacement();
@@ -178,7 +168,7 @@ void Opendp::detailedPlacement(int max_displacment) {
 
 void Opendp::updateDbInstLocations() {
   for (Cell &cell : cells_) {
-    if (cell.is_placed_) {
+    if(!isFixed(&cell) && isStdCell(&cell)) {
       dbInst *db_inst_ = cell.db_inst_;
       db_inst_->setOrient(cell.orient_);
       db_inst_->setLocation(core_.xMin() + cell.x_,
@@ -449,6 +439,8 @@ bool Opendp::isPlacedType(dbMasterType type) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isPaddedType(Cell *cell) {
@@ -487,6 +479,8 @@ bool Opendp::isPaddedType(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isStdCell(Cell *cell) {
@@ -525,6 +519,8 @@ bool Opendp::isStdCell(Cell *cell) {
   case dbMasterType::NONE:
     return false;
   }
+  // gcc warniing
+  return false;
 }
 
 bool Opendp::isBlock(Cell *cell) {
@@ -588,7 +584,7 @@ int Opendp::gridX(Cell *cell) {
 
 int Opendp::gridPaddedX(Cell *cell) {
   if (isPadded(cell))
-    return gridX(cell->x_ - pad_left_);
+    return gridX(cell->x_ - pad_left_ * site_width_);
   else
     return gridX(cell->x_);
 }
@@ -649,14 +645,12 @@ int divFloor(int dividend, int divisor) {
 }
 
 void Opendp::reportGrid() {
-  clear();
-  dbToOpendp();
+  importDb();
   Grid *grid = makeCellGrid();
   reportGrid(grid);
 }
 
-void Opendp::reportGrid(Grid *grid)
-{
+void Opendp::reportGrid(Grid *grid) {
   std::map<Cell*, int> cell_index;
   int i = 0;
   for(Cell& cell : cells_) {

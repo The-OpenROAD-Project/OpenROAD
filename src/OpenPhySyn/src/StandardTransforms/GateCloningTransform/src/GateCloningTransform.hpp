@@ -28,33 +28,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#pragma once
+
 #ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
-#ifndef __PSN_GATE_CLONING_TRANSFORM__
-#define __PSN_GATE_CLONING_TRANSFORM__
 
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/Psn.hpp>
-#include <OpenPhySyn/PsnTransform.hpp>
-#include <OpenPhySyn/SteinerTree.hpp>
-#include <OpenPhySyn/Types.hpp>
-#include <cstring>
 #include <memory>
-
-namespace psn {
+#include "OpenPhySyn/PsnLogger.hpp"
+#include "OpenPhySyn/PsnTransform.hpp"
+#include "OpenPhySyn/SteinerTree.hpp"
+#include "OpenPhySyn/Types.hpp"
+namespace psn
+{
 class GateCloningTransform : public PsnTransform
 {
 private:
     void cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                    bool clone_largest_only);
-    void topDownClone(Psn*                          psn_inst,
-                      std::unique_ptr<SteinerTree>& tree,
+    void topDownClone(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
                       SteinerPoint k, float c_limit);
-    void topDownConnect(Psn*                          psn_inst,
-                        std::unique_ptr<SteinerTree>& tree,
+    void topDownConnect(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
                         SteinerPoint k, Net* net);
-    void cloneInstance(Psn*                          psn_inst,
-                       std::unique_ptr<SteinerTree>& tree,
-                       SteinerPoint                  k);
+    void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
+                       SteinerPoint k);
     std::string makeUniqueNetName(Psn* psn_inst);
     std::string makeUniqueCloneName(Psn* psn_inst);
 
@@ -64,24 +60,15 @@ private:
 
 public:
     GateCloningTransform();
-    int gateClone(Psn* psn_inst, float cap_factor,
-                  bool clone_largest_only);
+    int gateClone(Psn* psn_inst, float cap_factor, bool clone_largest_only);
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-#ifdef OPENPHYSYN_AUTO_LINK
-    const char* help() override;
-    const char* version() override;
-    const char* name() override;
-    const char* description() override;
-    std::shared_ptr<psn::PsnTransform> load() override;
-#endif
+    OPENPHYSYN_TRANSFORM
 };
-
 
 DEFINE_TRANSFORM(GateCloningTransform, "gate_clone", "1.0.0",
                  "Performs load-driven gate cloning",
                  "Usage: transform gate_clone "
                  "<float: max-cap-factor> <boolean: clone-gates-only>")
-}
-#endif
+} // namespace psn
 #endif

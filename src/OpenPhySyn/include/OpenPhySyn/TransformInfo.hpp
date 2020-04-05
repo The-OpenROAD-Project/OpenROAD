@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_TRANSFORM_INFO__
-#define __PSN_TRANSFORM_INFO__
+#pragma once
 
 #include <string>
 
@@ -56,4 +55,3 @@ private:
     std::string description_;
 };
 } // namespace psn
-#endif

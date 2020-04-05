@@ -261,17 +261,15 @@ void Opendp::group_pixel_assign() {
 
 void Opendp::erase_pixel(Cell* cell) {
   if(!(isFixed(cell) || !cell->is_placed_)) {
-    int x_step = gridPaddedWidth(cell);
-    int y_step = gridHeight(cell);
-    for(int i = gridY(cell); i < gridY(cell) + y_step; i++) {
-      for(int j = gridPaddedX(cell); j < gridPaddedX(cell) + x_step; j++) {
+    int x_end = gridEndX(cell);
+    int y_end = gridEndY(cell);
+    for(int i = gridY(cell); i < y_end; i++) {
+      for(int j = gridPaddedX(cell); j < x_end; j++) {
 	Pixel &pixel = grid_[i][j];
 	pixel.cell = nullptr;
 	pixel.util = 0;
       }
     }
-    cell->x_ = 0;
-    cell->y_ = 0;
     cell->is_placed_ = false;
     cell->hold_ = false;
   }

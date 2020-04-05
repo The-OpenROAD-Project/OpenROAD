@@ -76,12 +76,11 @@ Each tool should use a unique namespace for all of its code.  The same
 namespace should be used for any Tcl commands.  Internal Tcl commands
 stay inside the namespace, user visible Tcl commands will be exported
 to the global namespace. User commands should be simple Tcl commands
-such as 'global_place_design' that do not create tool instances that
-must be based to the commands. Defining Tcl commands for a tool class
-is fine for internals, but not for user visible commands. Commands
-have an implicit argument of the current OpenROAD class
-object. Functions to get individual tools from the OpenROAD object can
-be defined.
+such as 'global_placement' that do not create tool instances that must
+be based to the commands. Defining Tcl commands for a tool class is
+fine for internals, but not for user visible commands. Commands have
+an implicit argument of the current OpenROAD class object. Functions
+to get individual tools from the OpenROAD object can be defined.
 
 ### Initialization (c++ tools only)
 
@@ -153,8 +152,9 @@ thousands of lines of internal tool info.
 Regression scripts should pass the `-no_init` option to openroad so that a
 user's init file is not sourced before the tests runs.
 
-Regression scripts should add output files or directories to `.gitignore` so that running
-does note leave the source repository "dirty".
+Regression scripts should add output files or directories to
+`.gitignore` so that running does note leave the source repository
+"dirty".
 
 ### Builds
 
@@ -283,15 +283,38 @@ Detailed documentation should be the tool/README.md file.
 
 ### Tool Checklist
 
-OpenROAD submodules reference tool `openroad` branch head
-No `develop`, `openroad_app`, `openroad_build` branches.
+Tools should make every attempt to minimize external dependencies.
+Linking libraries other than those currently in use complicates the
+builds and sacrifices the portability of OpenROAD. OpenROAD should be
+portable to many different compiler/operating system versions and
+dependencies make this vastly more complicated.
+
+OpenROAD submodules reference tool `openroad` branch head.
+No git `develop`, `openroad_app`, or `openroad_build` branches.
+
+Submodules used by more than one tool belong in /src, not duplicated
+in each tool repo.
+
+CMakeLists.txt does not use
+ add_compile_options
+ include_directories
+ link_directories
+ link_libraries
+Use target_ versions instead.
+See https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1
 
 CMakeLists.txt does not use glob.
-https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1
+Use explicit lists of source files and headers instead.
+
+CMakeLists.txt does not define CFLAGS 
+ CMAKE_CXX_FLAGS
+ CMAKE_CXX_FLAGS_DEBUG
+ CMAKE_CXX_FLAGS_RELEASE
+Let the top level and defaults control these.
 
 No main.cpp or main procedure.
 
-No compiler warnings for gcc, clang with optimization enabled.
+No compiler warnings for gcc or clang with optimization enabled.
 
 Does not call flute::readLUT (called once by OpenRoad).
 
@@ -308,17 +331,22 @@ Use command arguments or support commands.
 
 No jenkins/, Jenkinsfile, Dockerfile in tool directory.
 
-regression script named "test/regression" with default argument that runs
+regression script named "test/regression" with no arguments that runs
 tests. Not tests/regression-tcl.sh, not test/run_tests.py etc.
 
-Regression runs independent of current directory.
+regression script should run independent of current directory.
+For example, ../test/regression should work.
 
-Regression only prints test results or summary, does not belch 1000s
+regression should only print test results or summary, not belch 1000s
 of lines of output.
 
 Test scripts use OpenROAD tcl commands (not itcl, not internal accessors).
 
-Regressions report no memory errors with valgrind.
+regression script should only write files in a directory that is in
+the tool's .gitignore so the hierarchy does not have modified files in
+it as a result or running the regressions.
+
+Regressions report no memory errors with valgrind (stretch goal).
 
 Regressions report no memory leaks with valgrind (difficult).
 

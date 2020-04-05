@@ -17,9 +17,6 @@
 [submodule "src/FastRoute"]
 	path = src/FastRoute
 	url = https://github.com/The-OpenROAD-Project/FastRoute.git
-[submodule "src/eigen"]
-	path = src/eigen
-	url = https://gitlab.com/libeigen/eigen.git
 [submodule "src/TritonMacroPlace"]
 	path = src/TritonMacroPlace
 	url = https://github.com/The-OpenROAD-Project/TritonMacroPlace.git

@@ -28,18 +28,17 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
-#ifndef __PSN_CONSTANT_PROPAGATION_TRANSFORM__
-#define __PSN_CONSTANT_PROPAGATION_TRANSFORM__
+#pragma once
 
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/Types.hpp>
-#include <OpenPhySyn/Psn.hpp>
-#include <OpenPhySyn/SteinerTree.hpp>
-#include <OpenPhySyn/PsnTransform.hpp>
-#include <cstring>
+#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
+
 #include <memory>
+#include <string>
 #include <unordered_set>
+#include <vector>
+#include "OpenPhySyn/PsnLogger.hpp"
+#include "OpenPhySyn/PsnTransform.hpp"
+#include "OpenPhySyn/Types.hpp"
 
 namespace psn
 {
@@ -70,13 +69,8 @@ public:
     ConstantPropagationTransform();
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-#ifdef OPENPHYSYN_AUTO_LINK
-    const char* help() override;
-    const char* version() override;
-    const char* name() override;
-    const char* description() override;
-    std::shared_ptr<psn::PsnTransform> load() override;
-#endif
+
+    OPENPHYSYN_TRANSFORM
 };
 
 DEFINE_TRANSFORM(
@@ -87,5 +81,4 @@ DEFINE_TRANSFORM(
     "cell] [inverter_cell]")
 } // namespace psn
 
-#endif
 #endif

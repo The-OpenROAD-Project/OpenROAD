@@ -30,22 +30,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
 #include "PinSwapTransform.hpp"
-#include <OpenPhySyn/PathPoint.hpp>
-#include <OpenPhySyn/PsnGlobal.hpp>
-#include <OpenPhySyn/PsnLogger.hpp>
-#include <OpenSTA/dcalc/ArcDelayCalc.hh>
-#include <OpenSTA/dcalc/GraphDelayCalc.hh>
-#include <OpenSTA/liberty/TimingArc.hh>
-#include <OpenSTA/liberty/TimingModel.hh>
-#include <OpenSTA/liberty/TimingRole.hh>
-#include <OpenSTA/search/Corner.hh>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/PathPoint.hpp"
+#include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "OpenPhySyn/PsnLogger.hpp"
 
 #include <algorithm>
-#include <cmath>
-#include <limits>
 #include <sstream>
 
-using namespace psn;
+namespace psn
+{
 
 PinSwapTransform::PinSwapTransform() : swap_count_(0)
 {
@@ -67,35 +62,33 @@ PinSwapTransform::powerPinSwap(psn::Psn* psn_inst, int path_count)
             auto pin     = point.pin();
             auto is_rise = point.isRise();
             auto inst    = handler.instance(pin);
-            if (!handler.isInput(pin))
+            if (handler.isInput(pin))
             {
-                continue;
-            }
-            auto input_pins  = handler.inputPins(inst);
-            auto output_pins = handler.outputPins(inst);
+                auto input_pins  = handler.inputPins(inst);
+                auto output_pins = handler.outputPins(inst);
 
-            if (input_pins.size() < 2 || output_pins.size() != 1)
-            {
-                continue;
-            }
-
-            auto out_pin = output_pins[0];
-            for (auto& in_pin : input_pins)
-            {
-                if (in_pin != pin && handler.isCommutative(in_pin, pin))
+                if (input_pins.size() >= 2 && output_pins.size() == 1)
                 {
-                    float current_slew = handler.slew(out_pin, is_rise);
-                    handler.swapPins(pin, in_pin);
-                    float new_slew = handler.slew(out_pin, is_rise);
-                    if (new_slew > current_slew)
+                    auto out_pin = output_pins[0];
+                    for (auto& in_pin : input_pins)
                     {
-                        PSN_LOG_DEBUG("Accepted Swap: {} <-> {}",
-                                      handler.name(pin), handler.name(in_pin));
-                        swap_count_++;
-                    }
-                    else
-                    {
-                        handler.swapPins(pin, in_pin);
+                        if (in_pin != pin && handler.isCommutative(in_pin, pin))
+                        {
+                            float current_slew = handler.slew(out_pin, is_rise);
+                            handler.swapPins(pin, in_pin);
+                            float new_slew = handler.slew(out_pin, is_rise);
+                            if (new_slew > current_slew)
+                            {
+                                PSN_LOG_DEBUG("Accepted Swap: {} <-> {}",
+                                              handler.name(pin),
+                                              handler.name(in_pin));
+                                swap_count_++;
+                            }
+                            else
+                            {
+                                handler.swapPins(pin, in_pin);
+                            }
+                        }
                     }
                 }
             }
@@ -119,34 +112,34 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst)
         auto inst     = handler.instance(pin);
         auto ap_index = point.analysisPointIndex();
 
-        if (!handler.isInput(pin))
+        if (handler.isInput(pin))
         {
-            continue;
-        }
-        auto input_pins  = handler.inputPins(inst);
-        auto output_pins = handler.outputPins(inst);
-        if (input_pins.size() < 2 || output_pins.size() != 1)
-        {
-            continue;
-        }
-        auto out_pin = output_pins[0];
-        for (auto& in_pin : input_pins)
-        {
-            if (in_pin != pin && handler.isCommutative(in_pin, pin))
+            auto input_pins  = handler.inputPins(inst);
+            auto output_pins = handler.outputPins(inst);
+            if (input_pins.size() >= 2 && output_pins.size() == 1)
             {
-                float current_arrival =
-                    handler.arrival(out_pin, ap_index, is_rise);
-                handler.swapPins(pin, in_pin);
-                float new_arrival = handler.arrival(out_pin, ap_index, is_rise);
-                if (new_arrival < current_arrival)
+                auto out_pin = output_pins[0];
+                for (auto& in_pin : input_pins)
                 {
-                    PSN_LOG_DEBUG("Accepted Swap: {} <-> {}", handler.name(pin),
-                                  handler.name(in_pin));
-                    swap_count_++;
-                }
-                else
-                {
-                    handler.swapPins(pin, in_pin);
+                    if (in_pin != pin && handler.isCommutative(in_pin, pin))
+                    {
+                        float current_arrival =
+                            handler.arrival(out_pin, ap_index, is_rise);
+                        handler.swapPins(pin, in_pin);
+                        float new_arrival =
+                            handler.arrival(out_pin, ap_index, is_rise);
+                        if (new_arrival < current_arrival)
+                        {
+                            PSN_LOG_DEBUG("Accepted Swap: {} <-> {}",
+                                          handler.name(pin),
+                                          handler.name(in_pin));
+                            swap_count_++;
+                        }
+                        else
+                        {
+                            handler.swapPins(pin, in_pin);
+                        }
+                    }
                 }
             }
         }
@@ -217,4 +210,5 @@ DEFINE_TRANSFORM_VIRTUALS(
     "Performs timing-driven/power-driven commutative pin swapping optimization",
     "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
 
+} // namespace psn
 #endif

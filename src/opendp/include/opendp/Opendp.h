@@ -38,13 +38,10 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <map>
-#include <unordered_map>
 #include <set>
 #include <vector>
+#include <functional>
 
 #include "opendb/db.h"
 
@@ -154,7 +151,8 @@ class Opendp {
 
  private:
   void importDb();
-  void dbToOpendp();
+  void importClear();
+  void reportImportWarnings();
   void makeMacros();
   void examineRows();
   void makeCells();
@@ -207,6 +205,7 @@ class Opendp {
   int anneal(Group* group);
   int anneal();
   int refine();
+  bool cellFitsInCore(Cell *cell);
 
   void fixed_cell_assign();
   void group_cell_region_assign();
@@ -220,15 +219,19 @@ class Opendp {
   bool checkPowerLine(Cell &cell);
   bool checkInCore(Cell &cell);
   Cell *checkOverlap(Cell &cell,
-		     Grid *grid,
-		     bool padded);
+		     Grid *grid);
+  bool overlap(Cell *cell1, Cell *cell2);
+  bool isOverlapPadded(Cell *cell1, Cell *cell2);
+  bool isCrWtBlClass(Cell *cell);
+  bool isWtClass(Cell *cell);
   void reportFailures(vector<Cell*> failures,
 		      const char *msg,
 		      bool verbose);
-  void reportOverlapFailures(vector<Cell*> failures,
-			     const char *msg,
-			     bool verbose,
-			     Grid *grid);
+  void reportFailures(vector<Cell*> failures,
+		      const char *msg,
+		      bool verbose,
+		      std::function<void(Cell *cell)> report_failure);
+  void reportOverlapFailure(Cell *cell, Grid *grid);
 
   void rectDist(Cell *cell,
 		Rect *rect,
@@ -239,6 +242,7 @@ class Opendp {
 	       Rect *rect);
   Power rowTopPower(int row);
   dbOrientType rowOrient(int row);
+  bool havePadding();
 
   Grid *makeGrid();
   void deleteGrid(Grid *grid);
@@ -340,6 +344,7 @@ class Opendp {
   // Magic numbers
   int diamond_search_height_;  // grid units
   int diamond_search_width_;   // grid units
+  static constexpr int bin_search_width_ = 10;
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;

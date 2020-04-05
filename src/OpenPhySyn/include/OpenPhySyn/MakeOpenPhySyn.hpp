@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_MAKE_OPEN_PHY_SYN__
-#define __PSN_MAKE_OPEN_PHY_SYN__
+#pragma once
 
 namespace psn
 {
@@ -49,4 +48,3 @@ void deletePsn(psn::Psn* psn);
 void initPsn(OpenRoad* openroad);
 
 } // namespace ord
-#endif

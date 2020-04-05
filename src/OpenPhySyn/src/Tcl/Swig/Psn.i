@@ -31,11 +31,11 @@
 %module psn
 %{
 #include "Exports.hpp"
-#include <OpenPhySyn/Psn.hpp>
+#include "OpenPhySyn/Psn.hpp"
 
 #include <memory>
-#include <OpenPhySyn/SteinerTree.hpp>
-#include <OpenPhySyn/DatabaseHandler.hpp>
+#include "OpenPhySyn/SteinerTree.hpp"
+#include "OpenPhySyn/DatabaseHandler.hpp"
 using namespace psn;
 DatabaseHandler *handler() {
    return Psn::instance().handler();
@@ -80,19 +80,8 @@ DatabaseHandler *handler();
 %typemap(in) (ulong) = (int);
 
 
-#ifdef OPENROAD_OPENPHYSYN_LIBRARY_BUILD
-%ignore     import_def;
-%ignore     import_lef;
-%ignore     import_lib;
-%ignore     import_liberty;
-%ignore     export_def;
-%ignore     print_liberty_cells;
-%ignore psn::Psn::initialize;
-#endif
 
-%include "include/OpenPhySyn/Types.hpp"
-%rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2);
-%rename(pt_hash) psn::PointHash::operator()(const Point& pt);
-%include "include/OpenPhySyn/DatabaseHandler.hpp"
+%rename(pt_eq) psn::PointEqual::operator()(const Point& pt1, const Point& pt2) const;
+%rename(pt_hash) psn::PointHash::operator()(const Point& pt) const;
 
 %include "Exports.hpp"

@@ -40,8 +40,6 @@
 #include <dirent.h>
 #endif
 
-#include "PsnException.hpp"
-
 namespace psn
 {
 namespace filesystem

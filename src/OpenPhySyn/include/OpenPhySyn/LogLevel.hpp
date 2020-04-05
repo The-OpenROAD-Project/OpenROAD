@@ -29,8 +29,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_LOG_LEVEL__
-#define __PSN_LOG_LEVEL__
+#pragma once
 
 namespace psn
 {
@@ -45,4 +44,3 @@ enum class LogLevel
     off
 };
 } // namespace psn
-#endif //__PSN_DEMO__

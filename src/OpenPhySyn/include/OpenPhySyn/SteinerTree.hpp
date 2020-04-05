@@ -29,12 +29,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PSN_STEINER_TREE__
-#define __PSN_STEINER_TREE__
-#include <OpenPhySyn/Types.hpp>
-#include <flute.h>
+#pragma once
+
 #include <memory>
 #include <unordered_map>
+#include <vector>
+#include "OpenPhySyn/Types.hpp"
+#include "flute.h"
+#include "opendb/geom.h"
 
 #define FLUTE_DTYPE int
 namespace psn
@@ -43,6 +45,28 @@ class Psn;
 typedef int SteinerPoint;
 const int   SteinerNull = -1;
 class SteinerBranch;
+
+class PointHash
+{
+public:
+    size_t
+    operator()(const Point& pt) const
+    {
+        size_t h1 = std::hash<int>()(pt.x());
+        size_t h2 = std::hash<int>()(pt.y());
+        return h1 ^ h2;
+    }
+};
+
+class PointEqual
+{
+public:
+    bool
+    operator()(const Point& pt1, const Point& pt2) const
+    {
+        return pt1.x() == pt2.x() && pt1.y() == pt2.y();
+    }
+};
 
 class SteinerTree
 {
@@ -56,6 +80,7 @@ public:
     SteinerBranch branch(int index) const;
 
     SteinerPoint driverPoint() const;
+    Net*         net() const;
 
     bool isPlaced() const;
 
@@ -71,6 +96,15 @@ public:
 
     float totalLoad(float cap_per_micron) const;
     float subtreeLoad(float cap_per_micron, SteinerPoint pt) const;
+
+    float  pinsCapacitance() const;
+    size_t pinCount() const;
+
+    float                      wirelength() const;
+    float                      subtreeWirelength(SteinerPoint pt) const;
+    std::vector<InstanceTerm*> pins() const;
+
+    InstanceTerm* alias(SteinerPoint pt);
 
     ~SteinerTree();
 
@@ -94,6 +128,7 @@ private:
     std::vector<InstanceTerm*> point_pin_map_;
     std::unordered_map<Point, InstanceTerm*, PointHash, PointEqual> pin_loc_;
     Psn*                                                            psn_;
+    Net*                                                            net_;
 };
 class SteinerBranch
 {
@@ -205,5 +240,5 @@ public:
     SteinerPoint  steiner_pt2_;
     int           wire_length_;
 };
+
 } // namespace psn
-#endif

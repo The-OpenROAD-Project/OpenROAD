@@ -25,7 +25,7 @@ utilization padded         29 %
 rows                        4
 row height                1.4 u
 
-Warning: detailed placement failed on _277_
+Warning: instance _277_ does not fit inside the ROW core area.
 Placement Analysis
 --------------------------------
 total displacement        0.0 u

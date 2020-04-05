@@ -17,7 +17,7 @@ exec tclsh $0 ${1+"$@"}
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Usage: regression tool [tool2...]
+# Usage: regression [openroad | openroad_test | tool]...
 # where tool is name of an openroad tool.
 
 # Directory containing tests.
@@ -25,53 +25,69 @@ set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname $test_dir]
 
 source [file join $test_dir "regression.tcl"]
+source [file join $test_dir "regression_tests.tcl"]
 
-record_tests {
-  error1
+proc define_tool_script { tool script } {
+  global tool_scripts
+  dict set tool_scripts $tool $script
 }
 
-set tool_scripts {"init_fp" "src/init_fp/test/regression" \
-		    "dbSta" "src/dbSta/test/regression" \
-		    "IoPlacer" "src/ioPlacer/test/regression" \
-		    "PDNgen" "src/pdngen/test/regression" \
-		    "TritonMacroPlace" "src/TritonMacroPlace/test/regression" \
-		    "Resizer" "src/resizer/test/regression" \
-		    "Replace" "src/replace/test/regression" \
-		    "TritonCTS" "src/TritonCTS/test/regression" \
-		    "OpenDP" "src/opendp/test/regression" \
-		    "FastRoute" "src/FastRoute/test/regression" \
-		    "TapCell" "src/tapcell/test/regression" \
-		    "OpenPhySyn" "src/OpenPhySyn/test/regression" \
-		    "PDNSim" "src/PDNSim/test/regression" \
-		  }
-
-foreach tool $argv {
-  if { !([string equal -nocase $tool "openroad"]
-	 || [lsearch -nocase $tool_scripts $tool] != -1) } {
-    puts "$tool is not an openroad tool name."
-  }
-}
+define_tool_script "init_fp" "src/init_fp/test/regression"
+define_tool_script "dbSta" "src/dbSta/test/regression"
+define_tool_script "IoPlacer" "src/ioPlacer/test/regression"
+define_tool_script "PDNgen" "src/pdngen/test/regression"
+define_tool_script "TritonMacroPlace" "src/TritonMacroPlace/test/regression"
+define_tool_script "Resizer" "src/resizer/test/regression"
+define_tool_script "Replace" "src/replace/test/regression"
+define_tool_script "TritonCTS" "src/TritonCTS/test/regression"
+define_tool_script "OpenDP" "src/opendp/test/regression"
+define_tool_script "FastRoute" "src/FastRoute/test/regression"
+define_tool_script "TapCell" "src/tapcell/test/regression"
+define_tool_script "OpenPhySyn" "src/OpenPhySyn/test/regression"
+define_tool_script "PDNSim" "src/PDNSim/test/regression"
 
 proc run_tool_tests { tool } {
   global argv tool_scripts
   return [expr { $argv == {} || [lsearch -nocase $argv $tool] != -1 }]
 }
 
-set tool_errors 0
+proc run_openroad_tests { } {
+  global tool_errors
 
-# Flow based tests (MIA)
-if { [run_tool_tests "openroad"] } {
   puts "------------------------------------------------------"
   puts "OpenROAD"
   incr tool_errors [regression_body {}]
 }
 
-foreach {tool script} $tool_scripts {
-  if { [run_tool_tests $tool] } {
-    puts "------------------------------------------------------"
-    puts $tool
-    if { [catch "exec [file join $openroad_dir $script] >@stdout"] } {
-      incr tool_errors
+
+proc run_tool_tests { tool } {
+  global tool_errors openroad_dir tool_scripts
+
+  puts "------------------------------------------------------"
+  puts $tool
+  set script [dict get $tool_scripts $tool]
+  if { [catch "exec [file join $openroad_dir $script] >@stdout"] } {
+    incr tool_errors
+  }
+}
+
+set tool_errors 0
+
+if { $argv == {} } {
+  run_openroad_tests
+  dict for {tool script} $tool_scripts {
+    run_tool_tests $tool
+  }
+} else {
+  foreach tool $argv {
+    if { [string equal -nocase $tool "openroad"] } {
+      run_openroad_tests
+    } elseif { [lsearch [group_tests "all"] $tool] != -1 } {
+      incr tool_errors [regression_body $tool]
+    } elseif { [dict exists $tool_scripts $tool] } {
+      run_tool_tests $tool
+    } else {
+      puts "$tool is not an openroad test or tool name."
     }
   }
 }
@@ -79,6 +95,8 @@ foreach {tool script} $tool_scripts {
 puts "------------------------------------------------------"
 if { $tool_errors } {
   puts "Found $tool_errors tool regression failures."
+} else {
+  puts "Passed all tool regressions."
 }
 
 exit $tool_errors

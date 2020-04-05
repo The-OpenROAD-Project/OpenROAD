@@ -73,22 +73,29 @@ using odb::dbSBox;
 
 static bool swapWidthHeight(dbOrientType orient);
 
-void Opendp::dbToOpendp() {
+void Opendp::importDb() {
   block_ = db_->getChip()->getBlock();
   core_ = ord::getCore(block_);
 
+  importClear();
   makeMacros();
   examineRows();
   makeCells();
   makeGroups();
   findRowPower();
 
-  if(macro_top_power_ == Power::undefined) {
-    error("Cannot find MACRO with VDD/VSS pins.");
-  }
-
   Power row_power = (initial_power_ == undefined) ? macro_top_power_ : initial_power_;
   row0_top_power_is_vdd_ = (row_power == VDD);
+}
+
+void Opendp::importClear() {
+  db_master_map_.clear();
+  cells_.clear();
+  groups_.clear();
+  db_master_map_.clear();
+  db_inst_map_.clear();
+  deleteGrid(grid_);
+  grid_ = nullptr;
 }
 
 void Opendp::makeMacros() {
@@ -209,6 +216,8 @@ static bool swapWidthHeight(dbOrientType orient) {
     case dbOrientType::MX:
       return false;
   }
+  // gcc warning
+  return false;
 }
 
 // OpenDB represents groups as regions with the parent pointing to
@@ -268,7 +277,13 @@ void Opendp::findRowPower() {
   }
   if (found_vdd)
     initial_power_ = divRound(min_vdd_y, row_height_) % 2 == 0 ? VDD : VSS;
-  else
+}
+
+void Opendp::reportImportWarnings() {
+  if(macro_top_power_ == Power::undefined) {
+    warn("Cannot find MACRO with VDD/VSS pins.");
+  }
+  if (initial_power_ == Power::undefined)
     warn("could not find power special net");
 }
 

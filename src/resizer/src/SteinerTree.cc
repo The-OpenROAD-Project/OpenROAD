@@ -27,6 +27,7 @@
 
 namespace sta {
 
+using std::abs;
 using std::string;
 using odb::dbShape;
 using odb::dbPlacementStatus;

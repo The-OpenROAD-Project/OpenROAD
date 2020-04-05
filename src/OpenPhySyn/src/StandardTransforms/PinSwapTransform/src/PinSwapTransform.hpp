@@ -28,18 +28,17 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#pragma once
+
 #ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
-#ifndef __PSN_PIN_SWAP_TRANSFORM__
-#define __PSN_PIN_SWAP_TRANSFORM__
-#include <OpenPhySyn/DatabaseHandler.hpp>
-#include <OpenPhySyn/Psn.hpp>
-#include <OpenPhySyn/PsnTransform.hpp>
-#include <OpenPhySyn/SteinerTree.hpp>
-#include <OpenPhySyn/Types.hpp>
+
 #include <cstring>
 #include <memory>
+#include "OpenPhySyn/PsnTransform.hpp"
 
-namespace psn {
+namespace psn
+{
 class PinSwapTransform : public PsnTransform
 {
 private:
@@ -52,19 +51,12 @@ public:
     int powerPinSwap(Psn* psn_inst, int path_count);
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-#ifdef OPENPHYSYN_AUTO_LINK
-    const char* help() override;
-    const char* version() override;
-    const char* name() override;
-    const char* description() override;
-    std::shared_ptr<psn::PsnTransform> load() override;
-#endif
+    OPENPHYSYN_TRANSFORM
 };
 
 DEFINE_TRANSFORM(
     PinSwapTransform, "pin_swap", "1.0.0",
     "Performs timing-driven/power-driven commutative pin swapping optimization",
     "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
-}
-#endif
+} // namespace psn
 #endif
