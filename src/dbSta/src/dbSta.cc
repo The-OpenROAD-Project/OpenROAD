@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "db_sta/dbSta.hh"
+
 #include <tcl.h>
-#include "Machine.hh"
-#include "StaMain.hh"
+
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"

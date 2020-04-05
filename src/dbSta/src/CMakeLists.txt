@@ -47,20 +47,6 @@ set(DBSTA_TCL_FILES
   ${DBSTA_HOME}/src/dbReadVerilog.tcl
   )
 
-set(OPENSTA_INCLUDE_DIRS
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/sdf
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/verilog
-  ${OPENSTA_HOME}/app
-  )
-
 add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
   COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${DBSTA_TCL_INIT} dbsta_tcl_inits ${DBSTA_TCL_FILES}
   DEPENDS ${DBSTA_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
@@ -87,6 +73,7 @@ target_include_directories(dbSta
   ${OPENROAD_HOME}/include
   ${DBSTA_HOME}/include
   PRIVATE
-  ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include
+  ${OPENSTA_HOME}/include
+  ${OPENDB_HOME}/include
   ${TCL_INCLUDE_PATH}
   )
