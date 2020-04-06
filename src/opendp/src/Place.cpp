@@ -268,7 +268,7 @@ void Opendp::brickPlace1(const Group* group)
 
   for (Cell* cell : sort_by_dist) {
     int x, y;
-    rectDist(cell, boundary);
+    rectDist(cell, boundary, &x, &y);
 
     bool valid = map_move(cell, x, y);
     if (!valid) {
@@ -303,7 +303,7 @@ int Opendp::groupRefine(const Group* group)
   vector<Cell*> sort_by_disp(group->cells_);
 
   sort(sort_by_disp.begin(), sort_by_disp.end(), [&](Cell* cell1, Cell* cell2) {
-    return (disp(cell1) > disp(cell1));
+    return (disp(cell1) > disp(cell2));
   });
 
   int count = 0;
@@ -489,12 +489,10 @@ bool Opendp::refine_move(Cell* cell)
       erase_pixel(cell);
       paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
       return true;
-    } else {
-      return false;
-    }
-  } else {
+    } 
     return false;
   }
+  return false;
 }
 
 int Opendp::distChange(const Cell* cell, int x, int y) const
