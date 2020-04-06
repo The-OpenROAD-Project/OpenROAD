@@ -139,12 +139,12 @@ class Opendp
  public:
   Opendp();
   ~Opendp();
-  
+
   Opendp(const Opendp&) = delete;
   Opendp& operator=(const Opendp&) = delete;
-  Opendp(const Opendp&&) = delete;
+  Opendp(const Opendp&&)           = delete;
   Opendp& operator=(const Opendp&&) = delete;
-  
+
   void clear();
   void init(dbDatabase* db);
   // legalize/report
