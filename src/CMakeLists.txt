@@ -225,8 +225,11 @@ add_subdirectory(FastRoute)
 add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
-add_subdirectory(OpenPhySyn)
 add_subdirectory(PDNSim)
+
+if(BUILD_OPENPHYSYN)
+  add_subdirectory(OpenPhySyn)
+endif()
 
 ################################################################
 
@@ -280,7 +283,6 @@ target_link_libraries(openroad
   TritonMacroPlace
   ParquetFP
   ABKCommon
-  OpenPhySyn
   pdnsim
   zlib
   tm
@@ -292,12 +294,15 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
 )
 
+if (BUILD_OPENPHYSYN)
+  target_link_libraries(openroad OpenPhySyn)
+endif()
+
 # tclReadline
 if (TCL_READLINE_LIBRARY)
   add_definitions(-DENABLE_READLINE)
   target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
 endif()
-
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
