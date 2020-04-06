@@ -2509,13 +2509,8 @@ proc get_memory_instance_pg_pins {} {
           } else {
             set layer_name ${layer}_PIN_ver
           }
-          set pin_shape [odb::newSetFromRect {*}$box]
-          # debug "$pin_shapes"
-          if {![dict exists $pin_shapes $layer_name]} {
-            dict set pin_shapes $layer_name $pin_shape
-          } else {
-            dict set pin_shapes $layer_name [odb::orSet [dict get $pin_shapes $layer_name] $pin_shape]
-          }            
+
+          add_stripe $layer_name $type [odb::newSetFromRect {*}$box]
         }
       }
     }    
