@@ -29,7 +29,22 @@ add_custom_command(OUTPUT ${PARTCLUSMANAGER_TCL_INIT}
         DEPENDS ${PARTCLUSMANAGER_HOME}/src/partclusmanager.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
 )
 
-file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+###########################################################
+# Source files
+###########################################################
+
+set(SRC_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Graph.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/GraphDecomposition.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/MakePartclusmanager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PartClusManagerKernel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.cpp
+   )
+
+###########################################################
+# Library
+###########################################################
+
 add_library(${BIN_NAME} ${SRC_FILES} ${PARTCLUSMANAGER_WRAP} ${PARTCLUSMANAGER_TCL_INIT})
 
 include_directories(${PARTCLUSMANAGER_HOME}/src
