@@ -33,10 +33,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "opendp/MakeOpendp.h"
+
 #include <tcl.h>
-#include "StaMain.hh"
-#include "opendp/Opendp.h"
+
+#include "sta/StaMain.hh"
 #include "openroad/OpenRoad.hh"
+#include "opendp/Opendp.h"
 
 namespace sta {
 // Tcl files encoded into strings.

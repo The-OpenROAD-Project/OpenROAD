@@ -38,15 +38,7 @@ include_directories(${TRITONCTS_HOME}/src
                     ${OPENDB_HOME}/include/opendb
                     ${OPENROAD_HOME}/include
                     ${DBSTA_HOME}/include
-                    ${OPENSTA_HOME}/graph
-                    ${OPENSTA_HOME}/liberty
-                    ${OPENSTA_HOME}/network
-                    ${OPENSTA_HOME}/parasitics
-                    ${OPENSTA_HOME}/sdc
-                    ${OPENSTA_HOME}/search
-                    ${OPENSTA_HOME}/util
-                    ${OPENSTA_HOME}/verilog
-                    ${OPENSTA_HOME}/app
+                    ${OPENSTA_HOME}/include
 		    ${TCL_INCLUDE_PATH}
                    ) 
 

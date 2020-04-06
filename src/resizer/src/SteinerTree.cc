@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <fstream>
-#include <string>
-#include "Machine.hh"
-#include "Report.hh"
-#include "Error.hh"
-#include "Debug.hh"
-#include "NetworkCmp.hh"
 #include "resizer/SteinerTree.hh"
 
+#include <fstream>
+#include <string>
+
+#include "sta/Report.hh"
+#include "sta/Error.hh"
+#include "sta/Debug.hh"
+#include "sta/NetworkCmp.hh"
 #include "opendb/dbShape.h"
 
 namespace sta {

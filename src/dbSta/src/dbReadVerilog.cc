@@ -13,16 +13,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "dbReadVerilog.hh"
+
 #include <map>
-#include "Machine.hh"
-#include "Error.hh"
-#include "Report.hh"
-#include "Debug.hh"
-#include "Vector.hh"
-#include "PortDirection.hh"
-#include "ConcreteNetwork.hh"
-#include "NetworkCmp.hh"
-#include "VerilogReader.hh"
+
+#include "sta/Error.hh"
+#include "sta/Report.hh"
+#include "sta/Debug.hh"
+#include "sta/Vector.hh"
+#include "sta/PortDirection.hh"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/NetworkCmp.hh"
+#include "sta/VerilogReader.hh"
 
 #include "db_sta/dbNetwork.hh"
 #include "opendb/db.h"

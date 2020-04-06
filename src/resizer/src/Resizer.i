@@ -19,9 +19,9 @@
 %{
 
 #include <cstdint>
-#include "Machine.hh"
-#include "Error.hh"
-#include "Liberty.hh"
+
+#include "sta/Error.hh"
+#include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
 
 namespace ord {

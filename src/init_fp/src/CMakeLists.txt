@@ -42,6 +42,7 @@ target_include_directories(init_fp
   PUBLIC ${INIT_FP_HOME}/include
   PRIVATE
   ${OPENROAD_HOME}/include
+  ${OPENSTA_HOME}/include
   ${DBSTA_HOME}/include
   ${OPENDB_HOME}/include
   ${OPENSTA_INCLUDE_DIRS}

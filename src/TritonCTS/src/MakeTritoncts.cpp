@@ -43,7 +43,7 @@
 #include "MakeTritoncts.h"
 #include "openroad/OpenRoad.hh"
 #include "db.h"
-#include "StaMain.hh"
+#include "sta/StaMain.hh"
 #include "TritonCTSKernel.h"
 
 namespace sta {

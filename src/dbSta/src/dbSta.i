@@ -2,7 +2,6 @@
 
 %{
 
-#include "Machine.hh"
 #include "opendb/db.h"
 #include "db_sta/dbSta.hh"
 
@@ -10,11 +9,11 @@
 
 %include "../../src/Exception.i"
 // OpenSTA swig files
-%include "StaTcl.i"
-%include "NetworkEdit.i"
-%include "Sdf.i"
-%include "DelayCalc.i"
-%include "Parasitics.i"
+%include "tcl/StaTcl.i"
+%include "tcl/NetworkEdit.i"
+%include "sdf/Sdf.i"
+%include "dcalc/DelayCalc.i"
+%include "parasitics/Parasitics.i"
 
 %inline %{
 
