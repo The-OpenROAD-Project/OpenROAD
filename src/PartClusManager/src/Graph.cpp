@@ -40,48 +40,65 @@
 
 namespace PartClusManager {
 
-void Graph::computeWeightRange(int maxEdgeWeight, int maxVertexWeight){
+void Graph::computeEdgeWeightRange(int maxEdgeWeight){
         std::vector<float> edgeWeight = _edgeWeights;
-        std::vector<long long int> vertexWeight = _vertexWeights;
         double percentile = 0.99; //Exclude possible outliers
 
         std::sort(edgeWeight.begin(), edgeWeight.end());
-        std::sort(vertexWeight.begin(), vertexWeight.end());
 
         int eSize = edgeWeight.size();
-        int vSize = vertexWeight.size();
         
         eSize = (int)(eSize * percentile);
-        vSize = (int)(vSize * percentile);
         edgeWeight.resize(eSize);
         edgeWeight.shrink_to_fit();
+
+        float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
+        float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
+
+        for (float & weight : _edgeWeights){
+		int auxWeight;
+                weight = std::min(weight, maxEWeight);
+                if (minEWeight == maxEWeight){
+                        auxWeight = maxEdgeWeight;
+                }
+                else{
+                        auxWeight = (int)((((weight - minEWeight) * (maxEdgeWeight -1))/(maxEWeight - minEWeight)) + 1);
+                }
+		_edgeWeightsNormalized.push_back(auxWeight);
+        }
+
+	_edgeWeights.clear();
+	_edgeWeights.shrink_to_fit();
+}
+
+void Graph::computeVertexWeightRange(int maxVertexWeight){
+        std::vector<long long int> vertexWeight = _vertexWeights;
+        double percentile = 0.99; //Exclude possible outliers
+
+        std::sort(vertexWeight.begin(), vertexWeight.end());
+
+        int vSize = vertexWeight.size();
+        
+        vSize = (int)(vSize * percentile);
         vertexWeight.resize(vSize);
         vertexWeight.shrink_to_fit();
 
-        float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
         long long int maxVWeight = *std::max_element(vertexWeight.begin(), vertexWeight.end());
-        float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
         long long int minVWeight = *std::min_element(vertexWeight.begin(), vertexWeight.end());
 
-        for (float & weight : _edgeWeights){
-                weight = std::min(weight, maxEWeight);
-                if (minEWeight == maxEWeight){
-                        weight = maxEdgeWeight;
-                }
-                else{
-                        weight = (int)((((weight - minEWeight) * (maxEdgeWeight -1))/(maxEWeight - minEWeight)) + 1);
-                }
-        }
         for (long long int & weight : _vertexWeights){
+		int auxWeight;
                 weight = std::min(weight, maxVWeight);
                 if (minVWeight == maxVWeight){
-                        weight = maxVertexWeight;
+                        auxWeight = maxVertexWeight;
                 }
                 else{
-                        weight = (long long int)((((weight - minVWeight) * (maxVertexWeight -1))/(maxVWeight - minVWeight)) + 1);
+                        auxWeight = (int)((((weight - minVWeight) * (maxVertexWeight -1))/(maxVWeight - minVWeight)) + 1);
                 }
-        }        
-
+		_vertexWeightsNormalized.push_back(auxWeight);
+        }	
+	_vertexWeights.clear();
+	_vertexWeights.shrink_to_fit();
 }
 
 }

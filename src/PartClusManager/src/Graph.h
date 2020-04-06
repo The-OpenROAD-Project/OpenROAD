@@ -46,17 +46,18 @@ namespace PartClusManager {
 class Graph {
 public:
         Graph() {}
-        float getEdgeWeight (int idx) const { return _edgeWeights[idx];}
-        long long int getVertexWeight(int idx) const { return _vertexWeights[idx];}
-        int getColIdx(int idx) const {return _colIdx[idx];}
-        int getRowPtr(int idx) const {return _rowPtr[idx];}
-        int getMapping(std::string inst){return _instToIdx[inst];}
-        const std::vector<float>& getEdgeWeight() const { return _edgeWeights;};
-        const std::vector<long long int>& getVertexWeight() const { return _vertexWeights;};
-        const std::vector<int>& getColIdx() const { return _colIdx;};
-        const std::vector<int>& getRowPtr() const { return _rowPtr;};
+	int getEdgeWeight (int idx) const { return _edgeWeightsNormalized[idx];}
+	int getVertexWeight(int idx) const { return _vertexWeightsNormalized[idx];}
+	int getColIdx(int idx) const {return _colIdx[idx];}
+	int getRowPtr(int idx) const {return _rowPtr[idx];}
+	int getMapping(std::string inst){return _instToIdx[inst];}
+	std::vector<int> getEdgeWeight() const { return _edgeWeightsNormalized;};
+	std::vector<int> getVertexWeight() const { return _vertexWeightsNormalized;};
+	std::vector<int> getColIdx() const { return _colIdx;};
+	std::vector<int> getRowPtr() const { return _rowPtr;};
 
         void addEdgeWeight(float weight){_edgeWeights.push_back(weight);} 
+        void addEdgeWeightNormalized(int weight){_edgeWeightsNormalized.push_back(weight);} 
         void addVertexWeight(long long int weight){_vertexWeights.push_back(weight);} 
         void addColIdx(int idx){_colIdx.push_back(idx);} 
         void addRowPtr(int idx){_rowPtr.push_back(idx);} 
@@ -70,23 +71,33 @@ public:
                         return false;
         }
 
-        void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
-        int computeNextVertexIdx() const {return _vertexWeights.size();}
-        int computeNextRowPtr() const {return _edgeWeights.size();}
-        int getNumEdges() const {return _edgeWeights.size();}
-        int getNumVertex() const {return _vertexWeights.size();}
-        
         void clearGraph() {_edgeWeights.clear();
                            _vertexWeights.clear();
                            _colIdx.clear();
                            _rowPtr.clear();
                            _instToIdx.clear();}
+
+        void clearHypergraph() {_colIdx.clear();
+                           _rowPtr.clear();
+			   _edgeWeightsNormalized.clear();}
+
+	void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
+	void computeVertexWeightRange(int maxVertexWeight);
+	void computeEdgeWeightRange(int maxEdgeWeight);
+	int computeNextVertexIdx() const {return _vertexWeights.size();}
+	int computeNextRowPtr() const {return _colIdx.size();}
+	int getNumEdges() const {return _edgeWeightsNormalized.size();}
+	int getNumVertex() const {return _vertexWeightsNormalized.size();}
+	int getNumColIdx() const {return  _colIdx.size();}
+	int getNumRowPtr() const {return  _rowPtr.size();}
 private:
-        std::vector<float> _edgeWeights;
-        std::vector<long long int> _vertexWeights;
-        std::vector<int> _colIdx;
-        std::vector<int> _rowPtr;
-        std::map<std::string, int> _instToIdx;
+	std::vector<float> _edgeWeights;
+	std::vector<int> _edgeWeightsNormalized;
+	std::vector<long long int> _vertexWeights;
+	std::vector<int> _vertexWeightsNormalized;
+	std::vector<int> _colIdx;
+	std::vector<int> _rowPtr;
+	std::map<std::string, int> _instToIdx;
 
 };
 

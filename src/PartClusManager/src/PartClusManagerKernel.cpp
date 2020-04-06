@@ -68,8 +68,8 @@ void PartClusManagerKernel::runChaco() {
         currentResults.setNumOfRuns(_options.getSeeds().size());
         std::string evaluationFunction = _options.getEvaluationFunction();
 
-        std::vector<float> edgeWeights = _graph.getEdgeWeight();
-	std::vector<long long int> vertexWeights = _graph.getVertexWeight();
+        std::vector<int> edgeWeights = _graph.getEdgeWeight();
+	std::vector<int> vertexWeights = _graph.getVertexWeight();
 	std::vector<int> colIdx = _graph.getColIdx();
 	std::vector<int> rowPtr = _graph.getRowPtr();
         int numVertices = vertexWeights.size();

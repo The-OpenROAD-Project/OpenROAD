@@ -68,6 +68,8 @@ void GraphDecomposition::createGraph(Graph &graph, std::string graphModelS, unsi
 	for (odb::dbNet* net : _block->getNets()){
 		int nITerms = (net->getITerms()).size();
 		int nBTerms = (net->getBTerms()).size();
+		if (nITerms + nBTerms < 2)
+			continue;
 		switch(graphModel){
 			case CLIQUE:
 				if (nITerms + nBTerms > threshold)
@@ -87,7 +89,8 @@ void GraphDecomposition::createGraph(Graph &graph, std::string graphModelS, unsi
 		}
 	}
 	createCompressedMatrix(graph);
-	graph.computeWeightRange(maxEdgeWeight, maxVertexWeight);
+	graph.computeVertexWeightRange(maxVertexWeight);
+	graph.computeEdgeWeightRange(maxEdgeWeight);
 }
 
 float GraphDecomposition::computeWeight(int nPins){
@@ -235,7 +238,6 @@ void GraphDecomposition::createCliqueGraph(Graph & graph, odb::dbNet* net){
 }
 
 void GraphDecomposition::createCompressedMatrix(Graph & graph){
-
 
 	for (std::map<int,float> & node : adjMatrix){
 		int nextPtr = graph.computeNextRowPtr();

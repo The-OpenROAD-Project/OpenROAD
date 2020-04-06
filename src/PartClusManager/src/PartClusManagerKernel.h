@@ -35,7 +35,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "GraphDecomposition.h"
+#include "HypergraphDecomposition.h"
 #include <iostream>
 
 namespace odb{
