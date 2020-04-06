@@ -71,8 +71,8 @@ public:
                         return false;
         }
 
-        void clearGraph() {_edgeWeights.clear();
-                           _vertexWeights.clear();
+        void clearGraph() {_edgeWeightsNormalized.clear();
+                           _vertexWeightsNormalized.clear();
                            _colIdx.clear();
                            _rowPtr.clear();
                            _instToIdx.clear();}

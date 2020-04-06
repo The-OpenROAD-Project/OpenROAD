@@ -5,6 +5,7 @@ project(PartClusManager)
 set(BIN_NAME "PartClusManager")
 
 add_subdirectory(${PARTCLUSMANAGER_HOME}/third_party/Chaco/code)
+add_subdirectory(${PARTCLUSMANAGER_HOME}/third_party/Metis)
 add_subdirectory(${PARTCLUSMANAGER_HOME}/third_party/MLPart)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -38,11 +39,13 @@ include_directories(${PARTCLUSMANAGER_HOME}/src
                     ${OPENSTA_HOME}/app
 		    ${TCL_INCLUDE_PATH}
                     ${PARTCLUSMANAGER_HOME}/third_party/Chaco/code
+                    ${PARTCLUSMANAGER_HOME}/third_party/Metis/include
                     ${PARTCLUSMANAGER_HOME}/third_party/MLPart/src
                    ) 
 
 target_link_libraries(${BIN_NAME} INTERFACE
                       ${TCL_LIB}
                       Chaco
+		      metis
 		      MLPart
                      )

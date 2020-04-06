@@ -43,6 +43,7 @@ extern "C" {
 #include <chrono>
 #include <fstream>
 #include "opendb/db.h"
+#include "metis.h"
 #include "MLPart.h"
 
 namespace PartClusManager {
@@ -177,6 +178,82 @@ void PartClusManagerKernel::runChaco(const Graph& graph, const PartOptions& opti
 
 void PartClusManagerKernel::runGpMetis() {
         std::cout << "Running GPMetis...\n";
+        PartSolutions currentResults;
+        currentResults.setToolName(_options.getTool());
+        unsigned partitionId = generatePartitionId();
+        currentResults.setPartitionId(partitionId);
+        currentResults.setNumOfRuns(_options.getSeeds().size());
+        std::string evaluationFunction = _options.getEvaluationFunction();
+
+	idx_t edgeCut;
+	idx_t nPartitions = _options.getTargetPartitions();
+        int numVertices = _graph.getNumVertex();
+	int numEdges = _graph.getNumEdges();
+	idx_t constraints = 1;
+	idx_t options[METIS_NOPTIONS];
+	METIS_SetDefaultOptions(options);
+
+	options[METIS_OPTION_PTYPE] = METIS_PTYPE_RB;
+	options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
+        options[METIS_OPTION_NUMBERING] = 0;
+        options[METIS_OPTION_UFACTOR] = _options.getBalanceConstraint() * 10;
+
+        idx_t * vertexWeights = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
+        idx_t * rowPtr = (idx_t*) malloc((unsigned) (numVertices+1) * sizeof(idx_t));
+        idx_t * colIdx = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
+        idx_t * edgeWeights = (idx_t*) malloc((unsigned) numEdges * sizeof(idx_t));
+        for (int i=0; i < numVertices; i++){
+		vertexWeights[i] = _graph.getVertexWeight(i);
+		edgeWeights[i] = _graph.getEdgeWeight(i);
+		rowPtr[i] = _graph.getRowPtr(i);
+		colIdx[i] = _graph.getColIdx(i);
+        }
+	rowPtr[numVertices] = numEdges;
+
+	for (int i = numVertices; i < numEdges; i++){
+		edgeWeights[i] = _graph.getEdgeWeight(i);
+		colIdx[i] = _graph.getColIdx(i);
+	}
+	for (int seed : _options.getSeeds()) {
+		std::vector<short> gpmetisResults;
+		auto start = std::chrono::system_clock::now();
+		std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+		options[METIS_OPTION_SEED] = seed;
+        	idx_t * parts = (idx_t*) malloc((unsigned) numVertices * sizeof(idx_t));
+	
+		METIS_PartGraphRecursive(&numVertices, 
+					&constraints, 
+					rowPtr, 
+					colIdx, 
+					vertexWeights, 
+					NULL, 
+					edgeWeights, 
+					&nPartitions, 
+					NULL, 
+					NULL, 
+					options, 
+					&edgeCut, 
+					parts);
+		
+		for (int i=0; i < numVertices; i++) gpmetisResults.push_back(parts[i]);
+                auto end = std::chrono::system_clock::now();
+                unsigned long runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                currentResults.addAssignment(gpmetisResults, runtime, seed);
+		free(parts);
+
+                std::cout << "Partitioned graph for seed " << seed << " in " << runtime << " ms.\n";
+        }
+	free(vertexWeights);
+	free(rowPtr);
+	free(colIdx);
+	free(edgeWeights);
+        _results.push_back(currentResults);
+        computePartitionResult(partitionId, evaluationFunction);
+
+        std::cout << "GPMetis run completed. Partition ID = " << partitionId << ".\n";
+
+	
 }
 
 void PartClusManagerKernel::runGpMetis(const Graph& graph, const PartOptions& options) {

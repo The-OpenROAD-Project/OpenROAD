@@ -103,7 +103,7 @@ private:
         unsigned                _weightModel            = 1;
         unsigned                _maxEdgeWeight          = 100; 
         unsigned                _maxVertexWeight        = 100; 
-        unsigned                _balanceConstraint      = 0; 
+        unsigned                _balanceConstraint      = 2; 
         std::vector<int>        _archTopology;
         std::vector<int>        _seeds;
         std::vector<int>        _partitionsToTest;
