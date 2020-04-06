@@ -41,17 +41,12 @@
 
 namespace opendp {
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::fixed;
 using std::ifstream;
 using std::max;
 using std::min;
 using std::numeric_limits;
 using std::ofstream;
 using std::string;
-using std::to_string;
 using std::vector;
 
 using ord::error;
@@ -63,9 +58,7 @@ using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbOrientType;
-using odb::dbPlacementStatus;
 using odb::dbRegion;
-using odb::dbRowDir;
 using odb::dbSBox;
 using odb::dbSigType;
 using odb::dbSWire;
@@ -125,7 +118,7 @@ void Opendp::defineTopPower(Macro* macro, dbMaster* master)
     }
   }
 
-  if (power && gnd) {
+  if (power != nullptr && gnd != nullptr) {
     bool is_multi_row
         = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
     macro->is_multi_row_ = is_multi_row;
@@ -172,7 +165,6 @@ void Opendp::examineRows()
     row_site_count_ = divFloor(core_.dx(), site_width_);
     row_count_      = divFloor(core_.dy(), row_height_);
 
-    dbOrientType orient = bottom_row->getOrient();
     row0_orient_is_r0_  = (bottom_row->getOrient() == dbOrientType::R0);
   } else {
     error("no rows found.");
@@ -247,11 +239,11 @@ void Opendp::makeGroups()
   groups_.reserve(block_->getRegions().size());
   for (auto db_region : db_regions) {
     dbRegion* parent = db_region->getParent();
-    if (parent) {
-      groups_.push_back(Group());
+    if (parent != nullptr) {
+      groups_.emplace_back(Group());
       struct Group& group      = groups_.back();
       string        group_name = db_region->getName();
-      group.name               = group_name.c_str();
+      group.name               = group_name;
       group.boundary.mergeInit();
       auto boundaries = db_region->getParent()->getBoundaries();
       for (dbBox* boundary : boundaries) {

@@ -44,14 +44,8 @@
 
 namespace opendp {
 
-using std::abs;
-using std::cerr;
-using std::cout;
-using std::endl;
 using std::max;
 using std::min;
-using std::numeric_limits;
-using std::round;
 
 using ord::error;
 
@@ -107,7 +101,7 @@ Grid* Opendp::makeGrid()
 
 void Opendp::deleteGrid(Grid* grid)
 {
-  if (grid) {
+  if (grid != nullptr) {
     for (int i = 0; i < row_count_; i++) {
       delete[] grid[i];
     }
@@ -161,8 +155,9 @@ void Opendp::group_cell_region_assign()
     for (int j = 0; j < row_count_; j++) {
       for (int k = 0; k < row_site_count_; k++) {
         Pixel& pixel = grid_[j][k];
-        if (pixel.is_valid && pixel.group_ == &group)
+        if (pixel.is_valid && pixel.group_ == &group) {
           site_count++;
+        }
       }
     }
     int64_t area = site_count * site_width_ * row_height_;

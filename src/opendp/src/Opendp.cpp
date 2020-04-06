@@ -37,7 +37,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/Opendp.h"
 #include <cfloat>
 #include <cmath>
 #include <fstream>
@@ -45,23 +44,16 @@
 #include <limits>
 #include <map>
 #include <ostream>
+#include "opendp/Opendp.h"
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"  // closestPtInRect
 
 namespace opendp {
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::fixed;
 using std::ifstream;
-using std::max;
 using std::ofstream;
 using std::round;
-using std::setprecision;
 using std::string;
-using std::to_string;
-using std::vector;
 
 using ord::error;
 
@@ -76,7 +68,16 @@ using odb::dbNet;
 using odb::dbPlacementStatus;
 using odb::Rect;
 
-Cell::Cell() : hold_(false), group_(nullptr), region_(nullptr)
+Cell::Cell()
+    : db_inst_(nullptr),
+      x_(0),
+      y_(0),
+      width_(0),
+      height_(0),
+      is_placed_(false),
+      hold_(false),
+      group_(nullptr),
+      region_(nullptr)
 {
 }
 
@@ -117,7 +118,7 @@ Power Opendp::topPower(const Cell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Group::Group() : name(""), util(0.0)
+Group::Group() : util(0.0)
 {
 }
 
@@ -316,11 +317,11 @@ int64_t Opendp::hpwl(bool initial) const
       Rect     iterm_rect(x, y, x, y);
       dbMTerm* mterm = iterm->getMTerm();
       auto     mpins = mterm->getMPins();
-      if (mpins.size()) {
+      if (!mpins.empty()) {
         // Pick a pin, any pin.
         dbMPin* pin  = *mpins.begin();
         auto    geom = pin->getGeometry();
-        if (geom.size()) {
+        if (!geom.empty()) {
           dbBox* pin_box = *geom.begin();
           Rect   pin_rect;
           pin_box->getBox(pin_rect);
@@ -553,9 +554,8 @@ int Opendp::paddedWidth(const Cell* cell) const
 {
   if (isPadded(cell)) {
     return cell->width_ + (pad_left_ + pad_right_) * site_width_;
-  } else {
-    return cell->width_;
-  }
+  } 
+  return cell->width_;
 }
 
 bool Opendp::isPadded(const Cell* cell) const
@@ -609,9 +609,8 @@ int Opendp::gridPaddedX(const Cell* cell) const
 {
   if (isPadded(cell)) {
     return gridX(cell->x_ - pad_left_ * site_width_);
-  } else {
-    return gridX(cell->x_);
-  }
+  } 
+  return gridX(cell->x_);
 }
 
 int Opendp::gridY(const Cell* cell) const
@@ -711,7 +710,7 @@ void Opendp::reportGrid(const Grid* grid) const
     printf("%3d", i);
     for (int j = 0; j < row_site_count_; j++) {
       const Cell* cell = grid[i][j].cell;
-      if (cell) {
+      if (cell != nullptr) {
         printf("|%3d", cell_index[cell]);
       } else {
         printf("|   ");

@@ -187,7 +187,7 @@ class Opendp
   int         dist_for_rect(const Cell* cell, const Rect* rect) const;
   static bool check_overlap(const Rect& cell, const Rect& box);
   bool        check_overlap(const Cell* cell, const Rect* rect) const;
-  static bool check_inside(const Rect cell, const Rect box);
+  static bool check_inside(const Rect& cell, const Rect& box);
   bool        check_inside(const Cell* cell, const Rect* rect) const;
   bool        binSearch(int         grid_x,
                         const Cell* cell,
@@ -237,11 +237,12 @@ class Opendp
   void        reportFailures(const vector<Cell*>& failures,
                              const char*          msg,
                              bool                 verbose) const;
-  void        reportFailures(const vector<Cell*>&            failures,
-                             const char*                     msg,
-                             bool                            verbose,
-                             std::function<void(Cell* cell)> report_failure) const;
-  void        reportOverlapFailure(const Cell* cell, const Grid* grid) const;
+  void        reportFailures(
+             const vector<Cell*>&                   failures,
+             const char*                            msg,
+             bool                                   verbose,
+             const std::function<void(Cell* cell)>& report_failure) const;
+  void reportOverlapFailure(const Cell* cell, const Grid* grid) const;
 
   void         rectDist(const Cell* cell,
                         const Rect* rect,
