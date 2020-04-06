@@ -170,17 +170,24 @@ Same here:
 
 ....
 
+Don't use malloc.
+Use new.
+We are writting C++, not C.
+
+....
+
+Don't use C style arrays.
+There is no bounds checks for them so they invite subtle memory errors to unwitting
+programmers that fail to use valgrind.
+Use std::vector or std::array.
+
+....
+
 Break long functions into smaller ones, preferably that fit on one screen.
 
 162 lines void DBWrapper::initNetlist() {
 246 lines static vector<pair<Partition, Partition>> GetPart(
 263 lines void MacroCircuit::FillVertexEdge() {
-
-....
-
-Don't use malloc.
-Use new.
-We are writting C++, not C.
 
 ....
 
@@ -190,7 +197,7 @@ Use the std versions
 
 ....
 
-Don't use C abs, fabs or fabsf.
+Don't use C stdlib.h abs, fabs or fabsf.
 They fail miserably if the wrong arg type is passed to them.
 Use std::abs.
 
@@ -246,6 +253,11 @@ is simply
         if(grid[j][k].group != UINT_MAX
            && grid[j][k].isValid
            && groups[grid[j][k].group].name == theGroup->name)
+
+....
+
+Don't call return at the end of a function that does not return a value.
+
 
 ....
 
