@@ -43,7 +43,7 @@ namespace ord {
 class OpenRoad;
 
 opendp::Opendp* makeOpendp();
-void initOpendp(OpenRoad* openroad);
-void deleteOpendp(opendp::Opendp* opendp);
+void            initOpendp(OpenRoad* openroad);
+void            deleteOpendp(opendp::Opendp* opendp);
 
 }  // namespace ord
