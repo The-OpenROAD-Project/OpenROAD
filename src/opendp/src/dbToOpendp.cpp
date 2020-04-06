@@ -104,11 +104,11 @@ void Opendp::makeMacros() {
   block_->getMasters(masters);
   for(auto master : masters) {
     struct Macro &macro = db_master_map_[master];
-    defineTopPower(macro, master);
+    defineTopPower(&macro, master);
   }
 }
 
-void Opendp::defineTopPower(Macro &macro,
+void Opendp::defineTopPower(Macro *macro,
 			    dbMaster *master) {
   dbMTerm *power = nullptr;
   dbMTerm *gnd = nullptr;
@@ -122,18 +122,18 @@ void Opendp::defineTopPower(Macro &macro,
 
   if (power && gnd) {
     bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
-    macro.is_multi_row_ = is_multi_row;
+    macro->is_multi_row_ = is_multi_row;
 
     int power_y_max = find_ymax(power);
     int gnd_y_max = find_ymax(gnd);
     Power top_power = (power_y_max > gnd_y_max) ? VDD : VSS;
-    macro.top_power_ = top_power;
+    macro->top_power_ = top_power;
     if(!is_multi_row)
       macro_top_power_ = top_power;
   }
 }
 
-int Opendp::find_ymax(dbMTerm *mterm) {
+int Opendp::find_ymax(dbMTerm *mterm) const {
   int ymax = 0;
   for(dbMPin *mpin : mterm->getMPins()) {
     for(dbBox *box : mpin->getGeometry()) ymax = max(ymax, box->yMax());
@@ -189,7 +189,7 @@ void Opendp::makeCells() {
       cell.height_ = height;
 
       int init_x, init_y;
-      initialLocation(&cell, init_x, init_y);
+      initialLocation(&cell, &init_x, &init_y);
       // Shift by core lower left.
       cell.x_ = init_x;
       cell.y_ = init_y;

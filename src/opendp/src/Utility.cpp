@@ -52,9 +52,9 @@ using std::endl;
 using odb::Rect;
 using odb::Point;
 
-Point Opendp::nearestPt(Cell* cell, Rect* rect) {
+Point Opendp::nearestPt(const Cell* cell, const Rect* rect) const {
   int x, y;
-  initialLocation(cell, x, y);
+  initialLocation(cell, &x, &y);
   int size_x = gridNearestWidth(cell);
   int size_y = gridNearestHeight(cell);
   int temp_x = x;
@@ -100,9 +100,9 @@ Point Opendp::nearestPt(Cell* cell, Rect* rect) {
   return Point(temp_x, temp_y);
 }
 
-int Opendp::dist_for_rect(Cell* cell, Rect* rect) {
+int Opendp::dist_for_rect(const Cell* cell, const Rect* rect) const {
   int x, y;
-  initialLocation(cell, x, y);
+  initialLocation(cell, &x, &y);
   int dist_x = 0;
   int dist_y = 0;
 
@@ -122,16 +122,17 @@ int Opendp::dist_for_rect(Cell* cell, Rect* rect) {
   return dist_y + dist_x;
 }
 
-bool Opendp::check_overlap(Rect rect, Rect box) {
+/* static */
+bool Opendp::check_overlap(const Rect &rect, const Rect &box) {
   return box.xMin() < rect.xMax()
     && box.xMax() > rect.xMin()
     && box.yMin() < rect.yMax()
     && box.yMax() > rect.yMin();
 }
 
-bool Opendp::check_overlap(Cell* cell, Rect* rect) {
+bool Opendp::check_overlap(const Cell* cell, const Rect* rect) const {
   int x, y;
-  initialPaddedLocation(cell, x, y);
+  initialPaddedLocation(cell, &x, &y);
 
   return x + paddedWidth(cell) > rect->xMin()
     && x < rect->xMax()
@@ -139,23 +140,24 @@ bool Opendp::check_overlap(Cell* cell, Rect* rect) {
     && y < rect->yMax();
 }
 
-bool Opendp::check_inside(Rect rect, Rect box) {
+/* static */
+bool Opendp::check_inside(const Rect rect, const Rect box) {
   return rect.xMin() >= box.xMin()
     && rect.xMax() <= box.xMax()
     && rect.yMin() >= box.yMin()
     && rect.yMax() <= box.yMax();
 }
 
-bool Opendp::check_inside(Cell* cell, Rect* rect) {
+bool Opendp::check_inside(const Cell* cell, const Rect* rect) const {
   int x, y;
-  initialPaddedLocation(cell, x, y);
+  initialPaddedLocation(cell, &x, &y);
   return x >= rect->xMin()
     && x + paddedWidth(cell) <= rect->xMax()
     && y >= rect->yMin()
     && y + cell->height_ <= rect->yMax();
 }
 
-set< Cell* > Opendp::gridCellsInBoundary(Rect* rect) {
+set< Cell* > Opendp::gridCellsInBoundary(const Rect* rect) const {
   int x_start = divFloor(rect->xMin(), site_width_);
   int y_start = divFloor(rect->yMin(), row_height_);
   int x_end = divFloor(rect->xMax(), site_width_);
@@ -164,7 +166,7 @@ set< Cell* > Opendp::gridCellsInBoundary(Rect* rect) {
   set< Cell* > cells;
   for(int i = y_start; i < y_end; i++) {
     for(int j = x_start; j < x_end; j++) {
-      Cell *cell = grid_[i][j].cell;
+      Cell *cell = const_cast<Cell*>(grid_[i][j].cell);
       if(cell && !isFixed(cell)) {
 	cells.insert(cell);
       }
@@ -174,35 +176,35 @@ set< Cell* > Opendp::gridCellsInBoundary(Rect* rect) {
 }
 
 void
-Opendp::rectDist(Cell *cell,
-		 Rect *rect,
+Opendp::rectDist(const Cell *cell,
+		 const Rect *rect,
 		 // Return values.
-		 int &x,
-		 int &y)
+		 int *x,
+		 int *y) const
 {
-  x = 0;
-  y = 0;
+  *x = 0;
+  *y = 0;
   int init_x, init_y;
-  initialLocation(cell, init_x, init_y);
+  initialLocation(cell, &init_x, &init_y);
   if(init_x > (rect->xMin() + rect->xMax()) / 2)
-    x = rect->xMax();
+    *x = rect->xMax();
   else
-    x = rect->xMin();
+    *x = rect->xMin();
   if(init_y > (rect->yMin() + rect->yMax()) / 2)
-    y = rect->yMax();
+    *y = rect->yMax();
   else
-    y = rect->yMin();
+    *y = rect->yMin();
 }
 
 int
-Opendp::rectDist(Cell *cell,
-		 Rect *rect)
+Opendp::rectDist(const Cell *cell,
+		 const Rect *rect) const
 {
   int x, y;
   rectDist(cell, rect,
-	   x, y);
+	   &x, &y);
   int init_x, init_y;
-  initialLocation(cell, init_x, init_y);
+  initialLocation(cell, &init_x, &init_y);
   return abs(init_x - x) + abs(init_y - y);
 }
 

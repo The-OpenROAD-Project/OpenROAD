@@ -72,11 +72,11 @@ using odb::dbMasterType;
 class Pixel;
 struct Group;
 
-typedef Pixel* Grid;
-typedef vector<string> StringSeq;
-typedef vector<dbMaster*> dbMasterSeq;
+using Grid = Pixel*;
+using StringSeq = vector<string> ;
+using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
-typedef vector<dbMasterSeq> GapFillers;
+using GapFillers = vector<dbMasterSeq>;
 
 enum Power { undefined, VDD, VSS };
 
@@ -87,9 +87,9 @@ struct Macro {
 
 struct Cell {
   Cell();
-  const char *name();
-  bool inGroup() { return group_ != nullptr; }
-  int64_t area();
+  const char *name() const;
+  bool inGroup() const { return group_ != nullptr; }
+  int64_t area() const;
 
   dbInst* db_inst_;
   int x_, y_;		       // lower left wrt core DBU
@@ -115,7 +115,7 @@ struct Pixel {
   int grid_x_;
   int grid_y_;
   Group* group_;
-  Cell* cell;
+  const Cell* cell;
   double util;
   bool is_valid;  // false for dummy cells
 };
@@ -137,14 +137,14 @@ class Opendp {
 			int right);
   // Return true if illegal.
   bool checkPlacement(bool verbose);
-  void fillerPlacement(StringSeq *filler_master_names);
-  void reportLegalizationStats();
-  void reportDesignStats();
-  int64_t hpwl(bool initial);
+  void fillerPlacement(const StringSeq *filler_master_names);
+  void reportLegalizationStats() const;
+  void reportDesignStats() const;
+  int64_t hpwl(bool initial) const;
   void displacementStats(// Return values.
-			 int64_t &avg_displacement,
-			 int64_t &sum_displacement,
-			 int64_t &max_displacement);
+			 int64_t *avg_displacement,
+			 int64_t *sum_displacement,
+			 int64_t *max_displacement) const;
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
   void reportGrid();
@@ -156,41 +156,41 @@ class Opendp {
   void makeMacros();
   void examineRows();
   void makeCells();
-  bool isPlacedType(dbMasterType type);
+  static bool isPlacedType(dbMasterType type);
   void makeGroups();
   void findRowPower();
-  double dbuToMicrons(int64_t dbu);
-  double dbuAreaToMicrons(int64_t dbu_area);
-  bool isFixed(Cell* cell);  // fixed cell or not
-  bool isMultiRow(Cell* cell);
-  Power topPower(Cell* cell);
+  double dbuToMicrons(int64_t dbu) const;
+  double dbuAreaToMicrons(int64_t dbu_area) const;
+  bool isFixed(const Cell* cell) const;  // fixed cell or not
+  bool isMultiRow(const Cell* cell) const;
+  Power topPower(const Cell* cell) const;
   void updateDbInstLocations();
 
-  void defineTopPower(Macro &macro,
+  void defineTopPower(Macro *macro,
 		      dbMaster *master);
-  int find_ymax(dbMTerm* term);
+  int find_ymax(dbMTerm* term) const;
 
   void initGrid();
   void findDesignStats();
 
   void detailedPlacement();
-  Point nearestPt(Cell* cell, Rect* rect);
-  int dist_for_rect(Cell* cell, Rect* rect);
-  bool check_overlap(Rect cell, Rect box);
-  bool check_overlap(Cell* cell, Rect* rect);
-  bool check_inside(Rect cell, Rect box);
-  bool check_inside(Cell* cell, Rect* rect);
-  bool binSearch(int grid_x, Cell* cell,
+  Point nearestPt(const Cell* cell, const Rect* rect) const;
+  int dist_for_rect(const Cell* cell, const Rect* rect) const;
+  static bool check_overlap(const Rect &cell, const Rect &box);
+  bool check_overlap(const Cell* cell, const Rect* rect) const;
+  static bool check_inside(const Rect cell, const Rect box);
+  bool check_inside(const Cell* cell, const Rect* rect) const;
+  bool binSearch(int grid_x, const Cell* cell,
 		 int x, int y,
 		 // Return values
-		 int &avail_x,
-		 int &avail_y);
-  Pixel *diamondSearch(Cell* cell, int x, int y);
+		 int *avail_x,
+		 int *avail_y) const;
+  Pixel *diamondSearch(const Cell* cell, int x, int y) const;
   bool shift_move(Cell* cell);
   bool map_move(Cell* cell);
   bool map_move(Cell* cell, int x, int y);
-  set< Cell* > gridCellsInBoundary(Rect* rect);
-  int distChange(Cell* cell, int x, int y);
+  set< Cell* > gridCellsInBoundary(const Rect* rect) const;
+  int distChange(const Cell* cell, int x, int y) const;
   bool swap_cell(Cell* cell1, Cell* cell2);
   bool refine_move(Cell* cell);
 
@@ -199,9 +199,9 @@ class Opendp {
   void prePlaceGroups();
   void place();
   void placeGroups2();
-  void brickPlace1(Group* group);
-  void brickPlace2(Group* group);
-  int groupRefine(Group* group);
+  void brickPlace1(const Group* group);
+  void brickPlace2(const Group* group);
+  int groupRefine(const Group* group);
   int anneal(Group* group);
   int anneal();
   int refine();
@@ -215,83 +215,83 @@ class Opendp {
   void paint_pixel(Cell* cell, int grid_x, int grid_y);
 
   // checkPlacement
-  bool isPlaced(Cell *cell);
-  bool checkPowerLine(Cell &cell);
-  bool checkInCore(Cell &cell);
-  Cell *checkOverlap(Cell &cell,
-		     Grid *grid);
-  bool overlap(Cell *cell1, Cell *cell2);
-  bool isOverlapPadded(Cell *cell1, Cell *cell2);
-  bool isCrWtBlClass(Cell *cell);
-  bool isWtClass(Cell *cell);
-  void reportFailures(vector<Cell*> failures,
+  static bool isPlaced(const Cell *cell);
+  bool checkPowerLine(const Cell &cell) const;
+  bool checkInCore(const Cell &cell) const;
+  const Cell *checkOverlap(const Cell &cell,
+                           const Grid *grid) const;
+  bool overlap(const Cell *cell1, const Cell *cell2) const;
+  bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
+  bool isCrWtBlClass(const Cell *cell) const;
+  bool isWtClass(const Cell *cell) const;
+  void reportFailures(const vector<Cell*> &failures,
 		      const char *msg,
-		      bool verbose);
-  void reportFailures(vector<Cell*> failures,
+		      bool verbose) const;
+  void reportFailures(const vector<Cell*> &failures,
 		      const char *msg,
 		      bool verbose,
-		      std::function<void(Cell *cell)> report_failure);
-  void reportOverlapFailure(Cell *cell, Grid *grid);
+		      std::function<void(Cell *cell)> report_failure) const;
+  void reportOverlapFailure(const Cell *cell, const Grid *grid) const;
 
-  void rectDist(Cell *cell,
-		Rect *rect,
+  void rectDist(const Cell *cell,
+		const Rect *rect,
 		// Return values.
-		int &x,
-		int &y);
-  int rectDist(Cell *cell,
-	       Rect *rect);
-  Power rowTopPower(int row);
-  dbOrientType rowOrient(int row);
-  bool havePadding();
+		int *x,
+		int *y) const;
+  int rectDist(const Cell *cell,
+	       const Rect *rect) const;
+  Power rowTopPower(int row) const;
+  dbOrientType rowOrient(int row) const;
+  bool havePadding() const;
 
   Grid *makeGrid();
   void deleteGrid(Grid *grid);
   // Cell initial location wrt core origin.
-  int gridX(int x);
-  int gridY(int y);
-  int gridEndX();
-  int gridEndY();
-  int gridPaddedWidth(Cell* cell);
-  int64_t paddedArea(Cell *cell);
-  int gridNearestHeight(Cell* cell);
-  int gridNearestWidth(Cell* cell);
-  int gridHeight(Cell* cell);
-  int gridX(Cell* cell);
-  int gridPaddedX(Cell* cell);
-  int gridY(Cell* cell);
-  int gridPaddedEndX(Cell *cell);
-  int gridEndX(Cell *cell);
-  int gridEndY(Cell *cell);
+  int gridX(int x) const;
+  int gridY(int y) const;
+  int gridEndX() const;
+  int gridEndY() const;
+  int gridPaddedWidth(const Cell* cell) const;
+  int64_t paddedArea(const Cell *cell) const;
+  int gridNearestHeight(const Cell* cell) const;
+  int gridNearestWidth(const Cell* cell) const;
+  int gridHeight(const Cell* cell) const;
+  int gridX(const Cell* cell) const;
+  int gridPaddedX(const Cell* cell) const;
+  int gridY(const Cell* cell) const;
+  int gridPaddedEndX(const Cell *cell) const;
+  int gridEndX(const Cell *cell) const;
+  int gridEndY(const Cell *cell) const;
   void setGridPaddedLoc(Cell *cell,
 			int x,
-			int y);
-  void initialLocation(dbInst* inst,
+			int y) const;
+  void initialLocation(const dbInst* inst,
 		       // Return values.
-		       int &x,
-		       int &y);
-  void initialLocation(Cell *cell,
+		       int *x,
+		       int *y) const;
+  void initialLocation(const Cell *cell,
 		       // Return values.
-		       int &x,
-		       int &y);
-  void initialPaddedLocation(Cell *cell,
+		       int *x,
+		       int *y) const;
+  void initialPaddedLocation(const Cell *cell,
 			     // Return values.
-			     int &x,
-			     int &y);
-  bool isStdCell(Cell *cell);
-  bool isBlock(Cell *cell);
-  int paddedWidth(Cell *cell);
-  bool isPaddedType(Cell *cell);
-  bool isPadded(Cell *cell);
-  int disp(Cell *cell);
-  int coreGridMaxX();
-  int coreGridMaxY();
+			     int *x,
+			     int *xoy) const;
+  bool isStdCell(const Cell *cell) const;
+  static bool isBlock(const Cell *cell);
+  int paddedWidth(const Cell *cell) const;
+  bool isPaddedType(const Cell *cell) const;
+  bool isPadded(const Cell *cell) const;
+  int disp(const Cell *cell) const;
+  int coreGridMaxX() const;
+  int coreGridMaxY() const;
   // Place fillers
-  void findFillerMasters(StringSeq *filler_master_names);
+  void findFillerMasters(const StringSeq *filler_master_names);
   dbMasterSeq &gapFillers(int gap);
   Grid *makeCellGrid();  
-  void placeRowFillers(Grid *grid,
+  void placeRowFillers(const Grid *grid,
 		       int row);
-  void reportGrid(Grid *grid);
+  void reportGrid(const Grid *grid) const;
 
   dbDatabase* db_;
   dbBlock* block_;
@@ -303,7 +303,7 @@ class Opendp {
   vector< Cell > cells_;
   vector< Group > groups_;
 
-  map< dbMaster*, Macro > db_master_map_;
+  map< const dbMaster*, Macro > db_master_map_;
   map< dbInst*, Cell* > db_inst_map_;
 
   Rect core_;

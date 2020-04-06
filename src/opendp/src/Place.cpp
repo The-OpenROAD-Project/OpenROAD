@@ -64,7 +64,7 @@ using std::numeric_limits;
 using ord::warn;
 using ord::closestPtInRect;
 
-static bool cellAreaLess(Cell* cell1, Cell* cell2);
+static bool cellAreaLess(const Cell* cell1, const Cell* cell2);
 
 void Opendp::detailedPlacement() {
   initGrid();
@@ -179,7 +179,7 @@ bool Opendp::cellFitsInCore(Cell *cell) {
     && gridHeight(cell) <= row_count_;
 }
 
-static bool cellAreaLess(Cell* cell1, Cell* cell2) {
+static bool cellAreaLess(const Cell* cell1, const Cell* cell2) {
   int area1 = cell1->area();
   int area2 = cell2->area();
   if(area1 > area2)
@@ -248,8 +248,8 @@ void Opendp::placeGroups2() {
 }
 
 // place toward group edges
-void Opendp::brickPlace1(Group* group) {
-  Rect *boundary = &group->boundary;
+void Opendp::brickPlace1(const Group* group) {
+  const Rect *boundary = &group->boundary;
   vector< Cell* > sort_by_dist(group->cells_);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
@@ -269,7 +269,7 @@ void Opendp::brickPlace1(Group* group) {
 }
 
 // place toward region edges
-void Opendp::brickPlace2(Group* group) {
+void Opendp::brickPlace2(const Group* group) {
   vector< Cell* > sort_by_dist(group->cells_);
 
   sort(sort_by_dist.begin(), sort_by_dist.end(),
@@ -281,7 +281,7 @@ void Opendp::brickPlace2(Group* group) {
     if(!cell->hold_) {
       int x, y;
       rectDist(cell, cell->region_,
-	       x, y);
+	       &x, &y);
       bool valid = map_move(cell, x, y);
       if(!valid) {
 	warn("cannot place instance (brick place 2) %s" , cell->name());
@@ -290,7 +290,7 @@ void Opendp::brickPlace2(Group* group) {
   }
 }
 
-int Opendp::groupRefine(Group* group) {
+int Opendp::groupRefine(const Group* group) {
   vector< Cell* > sort_by_disp(group->cells_);
 
   sort(sort_by_disp.begin(), sort_by_disp.end(),
@@ -362,7 +362,7 @@ int Opendp::refine() {
 
 bool Opendp::map_move(Cell* cell) {
   int init_x, init_y;
-  initialPaddedLocation(cell, init_x, init_y);
+  initialPaddedLocation(cell, &init_x, &init_y);
   return map_move(cell, init_x, init_y);
 }
 
@@ -385,7 +385,7 @@ bool Opendp::map_move(Cell* cell, int x, int y) {
 
 bool Opendp::shift_move(Cell* cell) {
   int x, y;
-  initialLocation(cell, x, y);
+  initialLocation(cell, &x, &y);
   // set region boundary
   Rect rect;
   // magic number alert
@@ -394,7 +394,7 @@ bool Opendp::shift_move(Cell* cell) {
 	     max(0, y - cell->height_ * boundary_margin),
 	     min(static_cast<int>(core_.dx()), x + paddedWidth(cell) * boundary_margin),
 	     min(static_cast<int>(core_.dy()), y + cell->height_ * boundary_margin));
-  set< Cell* > overlap_region_cells = gridCellsInBoundary(&rect);
+  const set< Cell* > overlap_region_cells = gridCellsInBoundary(&rect);
 
   // erase region cells
   for(Cell* around_cell : overlap_region_cells) {
@@ -413,7 +413,7 @@ bool Opendp::shift_move(Cell* cell) {
   for(Cell* around_cell : overlap_region_cells) {
     if(cell->inGroup() == around_cell->inGroup()) {
       int x, y;
-      initialPaddedLocation(around_cell, x, y);
+      initialPaddedLocation(around_cell, &x, &y);
       if(!map_move(around_cell, x, y)) {
 	warn("detailed placement failed on %s", around_cell->name());
         return false;
@@ -452,7 +452,7 @@ bool Opendp::swap_cell(Cell* cell1, Cell* cell2) {
 
 bool Opendp::refine_move(Cell* cell) {
   int init_x, init_y;
-  initialLocation(cell, init_x, init_y);
+  initialLocation(cell, &init_x, &init_y);
   Pixel* pixel = diamondSearch(cell, init_x, init_y);
   if(pixel) {
     double dist = abs(init_x - pixel->grid_x_ * site_width_)
@@ -476,9 +476,9 @@ bool Opendp::refine_move(Cell* cell) {
     return false;
 }
 
-int Opendp::distChange(Cell* cell, int x, int y) {
+int Opendp::distChange(const Cell* cell, int x, int y) const {
   int init_x, init_y;
-  initialLocation(cell, init_x, init_y);
+  initialLocation(cell, &init_x, &init_y);
   int curr_dist = abs(cell->x_ - init_x) +
                   abs(cell->y_ - init_y);
   int new_dist = abs(init_x - x) +
@@ -488,7 +488,7 @@ int Opendp::distChange(Cell* cell, int x, int y) {
 
 ////////////////////////////////////////////////////////////////
 
-Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
+Pixel *Opendp::diamondSearch(const Cell* cell, int x, int y) const {
   int grid_x = gridX(x);
   int grid_y = gridY(y);
 
@@ -512,7 +512,7 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   Point in_core = closestPtInRect(grid_core, Point(grid_x, grid_y));
   int avail_x, avail_y;
   if(binSearch(grid_x, cell, in_core.x(), in_core.y(),
-	       avail_x, avail_y)) {
+	       &avail_x, &avail_y)) {
     return &grid_[avail_y][avail_x];
   }
 
@@ -555,7 +555,7 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
 		   min(x_end, max(x_start,
 				  grid_x + x_offset * bin_search_width_)),
 		   min(y_end, max(y_start, grid_y + y_offset)),
-		   avail_x, avail_y)) {
+		   &avail_x, &avail_y)) {
         Pixel *avail = &grid_[avail_y][avail_x];
 	int avail_dist = abs(x - avail->grid_x_ * site_width_) +
 	  abs(y - avail->grid_y_ * row_height_);
@@ -577,7 +577,7 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
 		   min(x_end, max(x_start,
 				  grid_x + x_offset * bin_search_width_)),
 		   min(y_end, max(y_start, grid_y + y_offset)),
-		   avail_x, avail_y)) {
+		   &avail_x, &avail_y)) {
         Pixel *avail = &grid_[avail_y][avail_x];
 	int avail_dist = abs(x - avail->grid_x_ * site_width_) +
 	  abs(y - avail->grid_y_ * row_height_);
@@ -594,11 +594,11 @@ Pixel *Opendp::diamondSearch(Cell* cell, int x, int y) {
   return nullptr;
 }
 
-bool Opendp::binSearch(int grid_x, Cell* cell,
+bool Opendp::binSearch(int grid_x, const Cell* cell,
 		       int x, int y,
 		       // Return values
-		       int &avail_x,
-		       int &avail_y) {
+		       int *avail_x,
+		       int *avail_y) const {
   int x_end = x + gridPaddedWidth(cell);
   int height = gridHeight(cell);
   int y_end = y + height;
@@ -644,8 +644,8 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
         }
       }
       if(available) {
-	avail_x = x + i;
-	avail_y = y;
+	*avail_x = x + i;
+	*avail_y = y;
         return true;
       }
     }
@@ -683,8 +683,8 @@ bool Opendp::binSearch(int grid_x, Cell* cell,
         }
       }
       if(available) {
-	avail_x = x + i;
-	avail_y = y;
+	*avail_x = x + i;
+	*avail_y = y;
 	return true;
       }
     }

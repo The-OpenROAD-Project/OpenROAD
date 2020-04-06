@@ -81,12 +81,12 @@ Cell::Cell()
     group_(nullptr),
     region_(nullptr) {}
 
-const char *Cell::name() {
+const char *Cell::name() const {
   return db_inst_->getConstName();
 }
 
 int64_t
-Cell::area()
+Cell::area() const
 {
   dbMaster *master = db_inst_->getMaster();
   return master->getWidth() * master->getHeight();
@@ -94,7 +94,7 @@ Cell::area()
 
 ////////////////////////////////////////////////////////////////
 
-bool Opendp::isFixed(Cell *cell) {
+bool Opendp::isFixed(const Cell *cell) const {
   return cell == &dummy_cell_ ||
          cell->db_inst_->getPlacementStatus() == dbPlacementStatus::FIRM ||
          cell->db_inst_->getPlacementStatus() == dbPlacementStatus::LOCKED ||
@@ -102,15 +102,19 @@ bool Opendp::isFixed(Cell *cell) {
 }
 
 bool
-Opendp::isMultiRow(Cell *cell)
+Opendp::isMultiRow(const Cell *cell) const
 {
-  return db_master_map_[cell->db_inst_->getMaster()].is_multi_row_;
+  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
+  assert(iter != db_master_map_.end());
+  return iter->second.is_multi_row_;
 }
 
 Power
-Opendp::topPower(Cell *cell)
+Opendp::topPower(const Cell *cell) const
 {
-  return db_master_map_[cell->db_inst_->getMaster()].top_power_;
+  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
+  assert(iter != db_master_map_.end());
+  return iter->second.top_power_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -151,7 +155,7 @@ void Opendp::setPaddingGlobal(int left,
   pad_right_ = right;
 }
 
-bool Opendp::havePadding() {
+bool Opendp::havePadding() const {
   return pad_left_ > 0 || pad_right_ > 0;
 }
 
@@ -186,7 +190,6 @@ void Opendp::findDesignStats() {
   max_cell_height_ = 0;
 
   for(Cell &cell : cells_) {
-    dbMaster *master = cell.db_inst_->getMaster();
     int64_t cell_area = cell.area();
     int64_t cell_padded_area = paddedArea(&cell);
     if(isFixed(&cell)) {
@@ -217,7 +220,7 @@ void Opendp::findDesignStats() {
   }
 }
 
-void Opendp::reportDesignStats() {
+void Opendp::reportDesignStats() const {
   printf("Design Stats\n");
   printf("--------------------------------\n");
   printf("total instances      %8d\n", block_->getInsts().size());
@@ -243,9 +246,9 @@ void Opendp::reportDesignStats() {
   printf("\n");
 }
 
-void Opendp::reportLegalizationStats() {
+void Opendp::reportLegalizationStats() const {
   int64_t avg_displacement, sum_displacement, max_displacement;
-  displacementStats(avg_displacement, sum_displacement, max_displacement);
+  displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
 
   printf("Placement Analysis\n");
   printf("--------------------------------\n");
@@ -269,23 +272,23 @@ void Opendp::reportLegalizationStats() {
 ////////////////////////////////////////////////////////////////
 
 void Opendp::displacementStats(// Return values.
-			       int64_t &avg_displacement,
-			       int64_t &sum_displacement,
-			       int64_t &max_displacement) {
-  avg_displacement = 0;
-  sum_displacement = 0;
-  max_displacement = 0;
+			       int64_t *avg_displacement,
+			       int64_t *sum_displacement,
+			       int64_t *max_displacement) const {
+  *avg_displacement = 0;
+  *sum_displacement = 0;
+  *max_displacement = 0;
 
-  for(Cell& cell : cells_) {
+  for(const Cell& cell : cells_) {
     int displacement = disp(&cell);
-    sum_displacement += displacement;
-    if(displacement > max_displacement)
-      max_displacement = displacement;
+    *sum_displacement += displacement;
+    if(displacement > *max_displacement)
+      *max_displacement = displacement;
   }
-  avg_displacement = sum_displacement / cells_.size();
+  *avg_displacement = *sum_displacement / cells_.size();
 }
 
-int64_t Opendp::hpwl(bool initial) {
+int64_t Opendp::hpwl(bool initial) const {
   int64_t hpwl = 0;
   for(dbNet *net : block_->getNets()) {
     Rect box;
@@ -293,10 +296,12 @@ int64_t Opendp::hpwl(bool initial) {
 
     for(dbITerm *iterm : net->getITerms()) {
       dbInst* inst = iterm->getInst();
-      Cell* cell = db_inst_map_[inst];
+      auto iter = db_inst_map_.find(inst);
+      assert(iter != db_inst_map_.end());
+      const Cell* cell = iter->second;
       int x, y;
       if(initial || cell == nullptr) {
-	initialLocation(inst, x, y);
+	initialLocation(inst, &x, &y);
       }
       else {
         x = cell->x_;
@@ -349,13 +354,13 @@ int64_t Opendp::hpwl(bool initial) {
 ////////////////////////////////////////////////////////////////
 
 Power
-Opendp::rowTopPower(int row)
+Opendp::rowTopPower(int row) const
 {
   return ((row0_top_power_is_vdd_ ? row : row + 1) % 2 == 0) ? VDD : VSS;
 }
 
 dbOrientType
-Opendp::rowOrient(int row)
+Opendp::rowOrient(int row) const
 {
   // Row orient flips R0 -> MX -> R0 -> MX ...
   return ((row0_orient_is_r0_ ? row : row + 1) % 2 == 0)
@@ -366,44 +371,45 @@ Opendp::rowOrient(int row)
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::initialLocation(Cell *cell,
+Opendp::initialLocation(const Cell *cell,
 			// Return values.
-			int &x,
-			int &y)
+			int *x,
+			int *y) const
 {
   initialLocation(cell->db_inst_, x, y);
 }
 
 void
-Opendp::initialLocation(dbInst* inst,
+Opendp::initialLocation(const dbInst* inst,
 			// Return values.
-			int &x,
-			int &y)
+			int *x,
+			int *y) const
 {
   int loc_x, loc_y;
   inst->getLocation(loc_x, loc_y);
-  x = loc_x - core_.xMin();
-  y = loc_y - core_.yMin();
+  *x = loc_x - core_.xMin();
+  *y = loc_y - core_.yMin();
 }
 
 void
-Opendp::initialPaddedLocation(Cell *cell,
+Opendp::initialPaddedLocation(const Cell *cell,
 			      // Return values.
-			      int &x,
-			      int &y)
+			      int *x,
+			      int *y) const
 {
   initialLocation(cell, x, y);
   if (isPadded(cell))
-    x -= pad_left_ * site_width_;
+    *x -= pad_left_ * site_width_;
 }
 
-int Opendp::disp(Cell *cell) {
+int Opendp::disp(const Cell *cell) const {
   int init_x, init_y;
-  initialLocation(cell, init_x, init_y);
+  initialLocation(cell, &init_x, &init_y);
   return abs(init_x - cell->x_) +
          abs(init_y - cell->y_);
 }
 
+/* static */
 bool Opendp::isPlacedType(dbMasterType type) {
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -443,7 +449,7 @@ bool Opendp::isPlacedType(dbMasterType type) {
   return false;
 }
 
-bool Opendp::isPaddedType(Cell *cell) {
+bool Opendp::isPaddedType(const Cell *cell) const {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -483,7 +489,7 @@ bool Opendp::isPaddedType(Cell *cell) {
   return false;
 }
 
-bool Opendp::isStdCell(Cell *cell) {
+bool Opendp::isStdCell(const Cell *cell) const {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -523,111 +529,112 @@ bool Opendp::isStdCell(Cell *cell) {
   return false;
 }
 
-bool Opendp::isBlock(Cell *cell) {
+/* static */
+bool Opendp::isBlock(const Cell *cell) {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   return type == dbMasterType::BLOCK;
 }
 
-int Opendp::gridEndX() {
+int Opendp::gridEndX() const {
   return divCeil(core_.dx(), site_width_);
 }
 
-int Opendp::gridEndY() {
+int Opendp::gridEndY() const {
   return divCeil(core_.dy(), row_height_);
 }
 
-int Opendp::paddedWidth(Cell *cell) {
+int Opendp::paddedWidth(const Cell *cell) const {
   if (isPadded(cell))
     return cell->width_ + (pad_left_ + pad_right_) * site_width_;
   else
     return cell->width_;
 }
 
-bool Opendp::isPadded(Cell *cell) {
+bool Opendp::isPadded(const Cell *cell) const {
   return isPaddedType(cell)
     && (pad_left_  > 0 || pad_right_ > 0);
 }
 
-int Opendp::gridPaddedWidth(Cell *cell) {
+int Opendp::gridPaddedWidth(const Cell *cell) const {
   return divCeil(paddedWidth(cell), site_width_);
 }
 
-int Opendp::gridHeight(Cell *cell) {
+int Opendp::gridHeight(const Cell *cell) const {
   return divCeil(cell->height_, row_height_);
 }
 
-int64_t Opendp::paddedArea(Cell *cell) {
+int64_t Opendp::paddedArea(const Cell *cell) const {
   return paddedWidth(cell) * cell->height_;
 }
 
 // Callers should probably be using gridPaddedWidth.
-int Opendp::gridNearestWidth(Cell *cell) {
+int Opendp::gridNearestWidth(const Cell *cell) const {
   return divRound(paddedWidth(cell), site_width_);
 }
 
 // Callers should probably be using gridHeight.
-int Opendp::gridNearestHeight(Cell *cell) {
+int Opendp::gridNearestHeight(const Cell *cell) const {
   return divRound(cell->height_, row_height_);
 }
 
-int Opendp::gridX(int x) {
+int Opendp::gridX(int x) const {
   return x / site_width_;
 }
 
-int Opendp::gridY(int y) {
+int Opendp::gridY(int y) const {
   return y / row_height_;
 }
 
-int Opendp::gridX(Cell *cell) {
+int Opendp::gridX(const Cell *cell) const {
   return gridX(cell->x_);
 }
 
-int Opendp::gridPaddedX(Cell *cell) {
+int Opendp::gridPaddedX(const Cell *cell) const {
   if (isPadded(cell))
     return gridX(cell->x_ - pad_left_ * site_width_);
   else
     return gridX(cell->x_);
 }
 
-int Opendp::gridY(Cell *cell) {
+int Opendp::gridY(const Cell *cell) const {
   return gridY(cell->y_);
 }
 
 void Opendp::setGridPaddedLoc(Cell *cell,
 			      int x,
-			      int y) {
+			      int y) const {
   cell->x_ = (x + (isPadded(cell) ? pad_left_ : 0)) * site_width_;
   cell->y_ = y * row_height_;
 }
 
-int Opendp::gridPaddedEndX(Cell *cell) {
+int Opendp::gridPaddedEndX(const Cell *cell) const {
   return divCeil(cell->x_ + cell->width_
 		 + (isPadded(cell) ? pad_right_ * site_width_ : 0),
 		 site_width_);
 }
 
-int Opendp::gridEndX(Cell *cell) {
+int Opendp::gridEndX(const Cell *cell) const {
   return divCeil(cell->x_ + cell->width_, site_width_);
 }
 
-int Opendp::gridEndY(Cell *cell) {
+int Opendp::gridEndY(const Cell *cell) const {
   return divCeil(cell->y_ + row_height_, row_height_);
 }
 
-int Opendp::coreGridMaxX() {
+int Opendp::coreGridMaxX() const {
   return divRound(core_.xMax(), site_width_);
 }
 
-int Opendp::coreGridMaxY() {
+int Opendp::coreGridMaxY() const {
   return divRound(core_.yMax(), row_height_);
 }
 
-double Opendp::dbuToMicrons(int64_t dbu) {
+double Opendp::dbuToMicrons(int64_t dbu) const {
   double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu / dbu_micron;
 }
 
-double Opendp::dbuAreaToMicrons(int64_t dbu_area) {
+double Opendp::dbuAreaToMicrons(int64_t dbu_area) const {
   double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
   return dbu_area / (dbu_micron * dbu_micron);
 }
@@ -646,14 +653,14 @@ int divFloor(int dividend, int divisor) {
 
 void Opendp::reportGrid() {
   importDb();
-  Grid *grid = makeCellGrid();
+  const Grid *grid = makeCellGrid();
   reportGrid(grid);
 }
 
-void Opendp::reportGrid(Grid *grid) {
-  std::map<Cell*, int> cell_index;
+void Opendp::reportGrid(const Grid *grid) const {
+  std::map<const Cell*, int> cell_index;
   int i = 0;
-  for(Cell& cell : cells_) {
+  for(const Cell& cell : cells_) {
     cell_index[&cell] = i;
     i++;
   }
@@ -673,7 +680,7 @@ void Opendp::reportGrid(Grid *grid) {
   for(int i = row_count_ - 1; i >= 0; i--) {
     printf("%3d", i);
     for(int j = 0; j < row_site_count_; j++) {
-      Cell* cell = grid[i][j].cell;
+      const Cell* cell = grid[i][j].cell;
       if (cell)
 	printf("|%3d", cell_index[cell]);
       else
@@ -684,7 +691,7 @@ void Opendp::reportGrid(Grid *grid) {
   printf("\n");
 
   i = 0;
-  for(Cell& cell : cells_) {
+  for(const Cell& cell : cells_) {
     printf("%3d %s\n", i, cell.name());
     i++;
   }

@@ -53,7 +53,7 @@ using odb::dbLib;
 using odb::dbPlacementStatus;
 
 void
-Opendp::fillerPlacement(StringSeq *filler_master_names)
+Opendp::fillerPlacement(const StringSeq *filler_master_names)
 {
   if (cells_.empty())
     importDb();
@@ -68,10 +68,10 @@ Opendp::fillerPlacement(StringSeq *filler_master_names)
 }
 
 void
-Opendp::findFillerMasters(StringSeq *filler_master_names)
+Opendp::findFillerMasters(const StringSeq *filler_master_names)
 {
   filler_masters_.clear();
-  for(string &master_name : *filler_master_names) {
+  for(const string &master_name : *filler_master_names) {
     for (dbLib *lib : db_->getLibs()) {
       dbMaster *master = lib->findMaster(master_name.c_str());
       if (master) {
@@ -115,7 +115,7 @@ Opendp::makeCellGrid()
 }
 
 void
-Opendp::placeRowFillers(Grid *grid,
+Opendp::placeRowFillers(const Grid *grid,
 			int row)
 {
   dbOrientType orient = rowOrient(row);
