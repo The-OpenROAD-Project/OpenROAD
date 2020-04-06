@@ -191,10 +191,10 @@ creates a metal shape for each I/O pin using min-area rules.
 
 Use the following command to perform I/O pin assignment:
 ```
-place_ios [-hor_layer h_layer] \ 
-		 [-ver_layer v_layer] \
-		 [-random_seed seed] \
-		 [-random] \
+place_ios [-hor_layer h_layer]  
+          [-ver_layer v_layer] 
+	  [-random_seed seed] 
+          [-random] 
 ```
 - ``-hor_layer`` (mandatory). Set the layer to create the metal shapes 
 of I/O pins assigned to horizontal tracks. 
