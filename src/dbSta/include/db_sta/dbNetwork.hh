@@ -17,8 +17,8 @@
 #ifndef STA_DB_NETWORK_H
 #define STA_DB_NETWORK_H
 
-#include "ConcreteNetwork.hh"
-#include "GraphClass.hh"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/GraphClass.hh"
 #include "opendb/db.h"
 
 namespace sta {

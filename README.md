@@ -16,12 +16,12 @@ Tools
   * swig 4.0
 
 Libraries
-  * eigen https://gitlab.com/libeigen/eigen.git
   * boost 1.68
   * tcl 8.6
   * zlib
   * eigen
-  * CImg (optional)
+  * CImg (optional for replace)
+  * spdlog (optional for OpenPhySyn)
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git

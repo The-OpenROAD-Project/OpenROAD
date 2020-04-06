@@ -21,9 +21,9 @@
   //   the package tcl-tclreadline-devel installed
   #include <tclreadline.h>
 #endif
-#include "Machine.hh"
-#include "StringUtil.hh"
-#include "StaMain.hh"
+
+#include "sta/StringUtil.hh"
+#include "sta/StaMain.hh"
 #include "openroad/Version.hh"
 #include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"

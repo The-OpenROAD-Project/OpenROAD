@@ -28,6 +28,7 @@ class NetworkReader;
 namespace ord {
 
 class dbVerilogNetwork;
+class OpenRoad;
 
 using odb::dbDatabase;
 using sta::NetworkReader;

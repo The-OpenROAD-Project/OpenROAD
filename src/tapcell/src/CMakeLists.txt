@@ -61,6 +61,6 @@ target_include_directories(tapcell
   PRIVATE
   ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/app
+  ${OPENSTA_HOME}/include
   ${TCL_INCLUDE_PATH}
   )

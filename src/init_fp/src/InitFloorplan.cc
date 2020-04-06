@@ -16,12 +16,11 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include "Machine.hh"
-#include "Error.hh"
-#include "Report.hh"
-#include "StringUtil.hh"
-#include "Vector.hh"
-#include "PortDirection.hh"
+#include "sta/Error.hh"
+#include "sta/Report.hh"
+#include "sta/StringUtil.hh"
+#include "sta/Vector.hh"
+#include "sta/PortDirection.hh"
 #include "opendb/db.h"
 #include "opendb/dbTransform.h"
 #include "openroad/OpenRoad.hh"

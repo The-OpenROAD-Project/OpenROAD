@@ -128,6 +128,7 @@ set_property(SOURCE ${OPENROAD_SWIG_FILE}
   PROPERTY SWIG_FLAGS
   -module openroad
   -namespace -prefix ord
+  -I${OPENSTA_HOME}/include
   -I${DBSTA_HOME}/include
   -I${OPENROAD_HOME}/src
   -I${OPENDB_HOME}/include
@@ -157,15 +158,8 @@ target_include_directories(openroad_swig
   ${OPENROAD_HOME}/include
 
   PRIVATE
-  ${OPENROAD_HOME}/src
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/search
-
+  ${OPENROAD_HOME}/include
+  ${OPENSTA_HOME}/include
   ${DBSTA_HOME}/include
   ${OPENDB_HOME}/include
 
@@ -197,18 +191,6 @@ set(BUILD_TCL false)
 # This allows the tool to have any custom CMake/C++ configuration for the top-level built
 set(OPENROAD_BUILD ON)
 add_definitions(-DOPENROAD_BUILD)
-
-set(OPENSTA_INCLUDE_DIRS
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/app
-  )
 
 # Build flow tools
 add_subdirectory(init_fp)
@@ -248,6 +230,7 @@ target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
   PRIVATE
   ${OPENROAD_HOME}/src
+  ${OPENSTA_HOME}/include
   ${INIT_FP_HOME}/include
   ${OPENDB_HOME}/include
   ${REPLACE_HOME}/include

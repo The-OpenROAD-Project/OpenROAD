@@ -47,27 +47,13 @@ set(DBSTA_TCL_FILES
   ${DBSTA_HOME}/src/dbReadVerilog.tcl
   )
 
-set(OPENSTA_INCLUDE_DIRS
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/sdf
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/verilog
-  ${OPENSTA_HOME}/app
-  )
-
 add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
   COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${DBSTA_TCL_INIT} dbsta_tcl_inits ${DBSTA_TCL_FILES}
   DEPENDS ${DBSTA_TCL_FILES} ${OPENSTA_HOME}/etc/TclEncode.tcl
   )
 
 add_custom_command(OUTPUT ${DBSTA_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME}/tcl -I${OPENSTA_HOME}/dcalc -I${OPENSTA_HOME}/parasitics -I${OPENSTA_HOME}/sdf -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME} -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${DBSTA_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src/dbSta
   DEPENDS ${DBSTA_SWIG_FILES}
@@ -84,9 +70,15 @@ add_library(dbSta
 
 target_include_directories(dbSta
   PUBLIC
-  ${OPENROAD_HOME}/include
   ${DBSTA_HOME}/include
+
   PRIVATE
-  ${OPENSTA_INCLUDE_DIRS} ${OPENDB_HOME}/include
+  ${DBSTA_HOME}/include/db_sta
+  ${OPENROAD_HOME}/include
+  ${OPENDB_HOME}/include
   ${TCL_INCLUDE_PATH}
+  ${OPENSTA_HOME}/include
+  # Unfortunate side-effect of swig include StaTcl.i
+  ${OPENSTA_HOME}/include/sta
+  ${OPENSTA_HOME}
   )

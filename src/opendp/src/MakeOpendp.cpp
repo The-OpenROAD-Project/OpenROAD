@@ -32,29 +32,38 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "opendp/MakeOpendp.h"
+
 #include <tcl.h>
-#include "StaMain.hh"
+
+#include "sta/StaMain.hh"
 #include "openroad/OpenRoad.hh"
 #include "opendp/Opendp.h"
-#include "opendp/MakeOpendp.h"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char *opendp_tcl_inits[];
+extern const char* opendp_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Opendp_Init(Tcl_Interp *interp);
+extern int Opendp_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-opendp::Opendp *makeOpendp() { return new opendp::Opendp; }
+opendp::Opendp* makeOpendp()
+{
+  return new opendp::Opendp;
+}
 
-void deleteOpendp(opendp::Opendp *opendp) { delete opendp; }
+void deleteOpendp(opendp::Opendp* opendp)
+{
+  delete opendp;
+}
 
-void initOpendp(OpenRoad *openroad) {
-  Tcl_Interp *tcl_interp = openroad->tclInterp();
+void initOpendp(OpenRoad* openroad)
+{
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Opendp_Init(tcl_interp);
   // Eval encoded sta TCL sources.

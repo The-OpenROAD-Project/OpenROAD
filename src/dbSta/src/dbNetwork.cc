@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "Machine.hh"
-#include "Report.hh"
-#include "PatternMatch.hh"
-#include "PortDirection.hh"
-#include "Liberty.hh"
 #include "db_sta/dbNetwork.hh"
+
+#include "sta/Report.hh"
+#include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Liberty.hh"
 
 #include "opendb/db.h"
 
