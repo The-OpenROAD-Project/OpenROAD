@@ -177,8 +177,8 @@ void
 Opendp::rectDist(Cell *cell,
 		 Rect *rect,
 		 // Return values.
-		 int x,
-		 int y)
+		 int &x,
+		 int &y)
 {
   x = 0;
   y = 0;

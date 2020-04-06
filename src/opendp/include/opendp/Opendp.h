@@ -236,8 +236,8 @@ class Opendp {
   void rectDist(Cell *cell,
 		Rect *rect,
 		// Return values.
-		int x,
-		int y);
+		int &x,
+		int &y);
   int rectDist(Cell *cell,
 	       Rect *rect);
   Power rowTopPower(int row);
