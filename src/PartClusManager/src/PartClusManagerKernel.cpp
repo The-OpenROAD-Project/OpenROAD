@@ -43,17 +43,20 @@ extern "C" {
 #include <chrono>
 #include <fstream>
 #include "opendb/db.h"
+#include "MLPart.h"
+
 namespace PartClusManager {
 
 // Partition Netlist
 
 void PartClusManagerKernel::runPartitioning() {
-        graph();
         if (_options.getTool() == "mlpart") {
                 runMlPart();
         } else if (_options.getTool() == "gpmetis") {
+        	graph();
                 runGpMetis();
         } else {
+        	graph();
                 runChaco();
         }
 }
@@ -181,10 +184,113 @@ void PartClusManagerKernel::runGpMetis(const Graph& graph, const PartOptions& op
 
 void PartClusManagerKernel::runMlPart() {        
         std::cout << "Running MLPart...\n";
+        _graph.clearGraph();
+	HypergraphDecomposition hypergraphDecomp;
+	hypergraphDecomp.init(_dbId);
+	hypergraphDecomp.constructMap(_graph, _options.getMaxVertexWeight());
+
+        PartSolutions currentResults;
+        currentResults.setToolName(_options.getTool());
+        unsigned partitionId = generatePartitionId();
+        currentResults.setPartitionId(partitionId);
+        currentResults.setNumOfRuns(_options.getSeeds().size());
+        std::string evaluationFunction = _options.getEvaluationFunction();
+
+	int numVertices = _graph.getNumVertex();
+	std::vector<short> clusters(numVertices, 0);
+	double tolerance =  _options.getBalanceConstraint() / 100.0;
+	double balanceArray[2] = {0.5,0.5};
+
+	for (long seed : _options.getSeeds()){
+		std::vector<short> partitions;
+		int countPartitions = 0;
+		partitions.push_back(0);
+
+                auto start = std::chrono::system_clock::now();
+                std::time_t startTime = std::chrono::system_clock::to_time_t(start);
+		while(partitions.size() < _options.getTargetPartitions()){
+			std::vector<short> auxPartitions;
+			for (int p : partitions){
+				countPartitions++;
+				hypergraphDecomp.createHypergraph(_graph, clusters, p);
+				int numEdges = _graph.getNumEdges();
+				int numColIdx = _graph.getNumColIdx();
+				numVertices = _graph.getNumVertex();
+
+				double * vertexWeights = (double*) malloc((unsigned) numVertices * sizeof(double));
+				int * rowPtr = (int*) malloc((unsigned) (numEdges+ 1) * sizeof(int));
+				int * colIdx = (int*) malloc((unsigned) numColIdx * sizeof(int));
+				double * edgeWeights = (double*) malloc((unsigned) numEdges * sizeof(double));
+				int *part = (int*) malloc((unsigned) numVertices * sizeof(int));
+
+				for (int j=0; j< numVertices; j++) part[j] = -1;
+
+				for (int i=0; i < numVertices; i++){
+					vertexWeights[i] = _graph.getVertexWeight(i) / _options.getMaxVertexWeight();
+				}
+				for (int i=0; i < numColIdx; i++){
+					colIdx[i] = _graph.getColIdx(i);
+				}
+				for (int i = 0; i < numEdges; i++){
+					rowPtr[i] = _graph.getRowPtr(i);
+					edgeWeights[i] = _graph.getEdgeWeight(i);
+				}
+				rowPtr[numEdges] = _graph.getRowPtr(numEdges);
+				UMpack_mlpart(numVertices,  
+						numEdges, 
+						vertexWeights, 
+						rowPtr, 
+						colIdx, 
+						edgeWeights, 
+						2, //Number of Partitions
+						balanceArray, 
+						tolerance, 
+						part, 
+						1, // Starts Per Run #TODO: add a tcl command
+						1, // Number of Runs 
+						0, // Debug Level 
+						seed);
+
+				int countPart = 0;
+				for (int i =0; i < numVertices; i++){
+					if (clusters[i] == p){
+						if (part[countPart] == 0)
+							clusters[i] = p; 
+						else
+							clusters[i] = countPartitions;
+						countPart++;
+					}
+				}
+				free(vertexWeights);
+				free(rowPtr);
+				free(colIdx);
+				free(edgeWeights);
+				free(part);
+
+				_graph.clearHypergraph();
+				auxPartitions.push_back(countPartitions);
+			}
+
+			partitions.insert(partitions.end(), auxPartitions.begin(), auxPartitions.end());
+		}
+                auto end = std::chrono::system_clock::now();
+                unsigned long runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                currentResults.addAssignment(clusters, runtime, seed);
+		std::fill(clusters.begin(), clusters.end(), 0);
+
+                std::cout << "Partitioned graph for seed " << seed << " in " << runtime << " ms.\n";
+        }
+        _results.push_back(currentResults);
+        computePartitionResult(partitionId, evaluationFunction);
+
+        std::cout << "MLPart run completed. Partition ID = " << partitionId << ".\n";
 }
+
 
 void PartClusManagerKernel::runMlPart(const Graph& graph, const PartOptions& options) {        
 }
+
 
 void PartClusManagerKernel::graph(){
         _graph.clearGraph();
