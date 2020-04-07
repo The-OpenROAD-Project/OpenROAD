@@ -42,9 +42,8 @@
 
 #include "StaEngine.h"
 
-#include "Machine.hh"
-#include "Network.hh"
-#include "Sdc.hh"
+#include "sta/Network.hh"
+#include "sta/Sdc.hh"
 #include "openroad/OpenRoad.hh"
 #include "db_sta/dbSta.hh"
 

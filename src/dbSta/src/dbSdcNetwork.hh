@@ -17,7 +17,7 @@
 #ifndef DB_SDC_NETWORK_H
 #define DB_SDC_NETWORK_H
 
-#include "SdcNetwork.hh"
+#include "sta/SdcNetwork.hh"
 
 namespace sta {
 
