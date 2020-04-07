@@ -88,6 +88,8 @@ void PartClusManagerKernel::runChaco() {
 
         int numVertCoar = _options.getCoarVertices();
 
+        int refinement = _options.getRefinement();
+
         int termPropagation = 0;
         if (_options.getTermProp()) {
                 termPropagation = 1;
@@ -145,7 +147,7 @@ void PartClusManagerKernel::runChaco() {
                                0.001, seed,                             /* tolerance on eigenvectors (hard-coded, not used) and the seed */
                                termPropagation, inbalance,              /* terminal propagation enable and inbalance */
                                coarRatio, cutCost,                      /* coarsening ratio and cut to hop cost */
-                               0);                                      /* debug text enable */
+                               0, refinement);                          /* debug text enable and refinement */
                 
                 std::vector<short> chacoResult;
                 for (int i = 0; i < numVertices; i++)

@@ -53,6 +53,7 @@ sta::define_cmd_args "partition_netlist" { [-tool name] \
                                            [-enable_term_prop value] \
                                            [-cut_hop_ratio value] \
                                            [-architecture value] \
+                                           [-refinement value] \
                                            [-seeds value] \
                                          }
 proc partition_netlist { args } {
@@ -71,6 +72,7 @@ proc partition_netlist { args } {
           -enable_term_prop \
           -cut_hop_ratio \ 
           -architecture \
+          -refinement \
           -seeds \
          } flags {}
 
@@ -213,6 +215,11 @@ proc partition_netlist { args } {
   # Architecture
   if { [info exists keys(-architecture)] } {
         PartClusManager::set_architecture $keys(-architecture)
+  }
+
+  # Architecture
+  if { [info exists keys(-refinement)] } {
+        PartClusManager::set_refinement $keys(-refinement)
   }
 
   # Seeds

@@ -81,6 +81,8 @@ public:
         unsigned getMaxVertexWeight() const { return _maxVertexWeight; }
         void setBalanceConstraint(unsigned constraint) { _balanceConstraint = constraint; }
         unsigned getBalanceConstraint() const { return _balanceConstraint; }
+        void setRefinement(unsigned number) { _refinement = number; }
+        unsigned getRefinement() const { return _refinement; }
         void setSeeds(const std::vector<int>& seeds) { _seeds = seeds; }
         const std::vector<int>& getSeeds() const { return _seeds; } 
         void setPartitionsToTest(const std::vector<int>& partIds) { _partitionsToTest = partIds; }
@@ -104,6 +106,7 @@ private:
         unsigned                _maxEdgeWeight          = 100; 
         unsigned                _maxVertexWeight        = 100; 
         unsigned                _balanceConstraint      = 0; 
+        unsigned                _refinement             = 0;
         std::vector<int>        _archTopology;
         std::vector<int>        _seeds;
         std::vector<int>        _partitionsToTest;

@@ -55,6 +55,7 @@ extern void set_coarsening_vertices(unsigned value);
 extern void set_enable_term_prop(unsigned value);
 extern void set_cut_hop_ratio(float value);
 extern void set_architecture(const char* topology);
+extern void set_refinement(unsigned value);
 extern void set_seeds(const char* seeds);
 extern void generate_seeds(unsigned value);
 extern void set_partition_ids_to_test(const char* seeds);

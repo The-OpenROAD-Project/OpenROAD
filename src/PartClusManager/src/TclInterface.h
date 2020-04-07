@@ -50,6 +50,7 @@ void set_coarsening_vertices(unsigned value);
 void set_enable_term_prop(unsigned value);
 void set_cut_hop_ratio(float value);
 void set_architecture(const char* topology);
+void set_refinement(unsigned value);
 void set_seeds(const char* seeds);
 void generate_seeds(unsigned value);
 void set_partition_ids_to_test(const char* ids);

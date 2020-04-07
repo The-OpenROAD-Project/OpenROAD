@@ -7,7 +7,7 @@ int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, floa
 		              int global_method, int local_method, int rqi_flag, int vmax, int ndims,
 		              double eigtol, long seed,
 					  int tprop, double kl_inbalance, double coarsening_ratio, double cut_to_hop_cost,
-					  int debug_print)
+					  int debug_print, int refine_part)
 {
 
 	extern int TERM_PROP;	  /* perform terminal propagation */
@@ -15,18 +15,21 @@ int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, floa
 	extern double COARSEN_RATIO_MIN; /* min vtx reduction at each coarsen stage */
     extern double CUT_TO_HOP_COST;	/* ..if so, relative cut/hop importance */
 	extern int DEBUG_PARTCLUSMANAGER;
+	extern int REFINE_PARTITION;
 
 	static int *termprop = &TERM_PROP;
 	static double *inbalance = &KL_IMBALANCE;
 	static double *coarratio = &COARSEN_RATIO_MIN;
 	static double *cutcost = &CUT_TO_HOP_COST;
 	static int *printtext = &DEBUG_PARTCLUSMANAGER;
+	static int *refine = &REFINE_PARTITION;
 
 	*termprop = tprop;
 	*inbalance = kl_inbalance;
 	*coarratio = coarsening_ratio;
 	*cutcost = cut_to_hop_cost;
 	*printtext = debug_print;
+	*refine = refine_part;
 
 
 	interface(nvtxs, start, adjacency, vwgts, ewgts, x, y, z,

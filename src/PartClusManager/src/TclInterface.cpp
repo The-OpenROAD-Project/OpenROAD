@@ -138,6 +138,12 @@ void set_architecture(const char* topology) {
         kernel->getOptions().setArchTopology(archTopology);
 }
 
+void set_refinement(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setRefinement(value);
+}
+
 void set_seeds(const char* seeds) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
