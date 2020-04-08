@@ -43,7 +43,7 @@ define_tool_script "TritonCTS" "src/TritonCTS/test/regression"
 define_tool_script "OpenDP" "src/opendp/test/regression"
 define_tool_script "FastRoute" "src/FastRoute/test/regression"
 define_tool_script "TapCell" "src/tapcell/test/regression"
-#define_tool_script "OpenPhySyn" "src/OpenPhySyn/test/regression"
+define_tool_script "OpenPhySyn" "src/OpenPhySyn/test/regression"
 define_tool_script "PDNSim" "src/PDNSim/test/regression"
 
 proc run_tool_tests { tool } {
