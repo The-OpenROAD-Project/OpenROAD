@@ -119,7 +119,7 @@ public:
     {
         if (level_ <= LogLevel::warn)
         {
-            print(args...);
+            printError(args...);
         }
     }
 
@@ -129,7 +129,7 @@ public:
     {
         if (level_ <= LogLevel::critical)
         {
-            print(args...);
+            printError(args...);
         }
     }
     template<typename... Args>
@@ -138,7 +138,7 @@ public:
     {
         if (level_ <= LogLevel::error)
         {
-            print(args...);
+            printError(args...);
         }
     }
     static PsnLogger& instance();

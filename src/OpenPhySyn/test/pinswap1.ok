@@ -55,8 +55,8 @@ Path Type: max
               9.29256   slack (MET)
 
 
-[info] Invoking pin_swap transform
-[info] Finished pin_swap transform (3)
+Invoking pin_swap transform 
+Finished pin_swap transform ( 3 ) 
 Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _588_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock

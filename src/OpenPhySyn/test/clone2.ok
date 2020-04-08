@@ -11,6 +11,6 @@ Notice 0:     Created 12 pins.
 Notice 0:     Created 12 components and 69 component-terminals.
 Notice 0:     Created 24 nets and 45 connections.
 Notice 0: Finished DEF file: clone2.def
-[info] Invoking gate_clone transform
-[info] Finished gate_clone transform (1)
+Invoking gate_clone transform 
+Finished gate_clone transform ( 1 ) 
 No differences found.

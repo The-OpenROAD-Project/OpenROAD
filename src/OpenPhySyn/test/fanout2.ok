@@ -11,8 +11,8 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 482 components and 2074 component-terminals.
 Notice 0:     Created 385 nets and 1110 connections.
 Notice 0: Finished DEF file: fanout2.def
-[info] Invoking buffer_fanout transform
-[info] High fanout nets [9]: 
-[info] Added 16 buffers
-[info] Finished buffer_fanout transform (16)
+Invoking buffer_fanout transform 
+High fanout nets [ 9 ]:  
+Added 16 buffers 
+Finished buffer_fanout transform ( 16 ) 
 No differences found.
