@@ -12,7 +12,7 @@ Notice 0:     Created 17821 components and 98022 component-terminals.
 Notice 0:     Created 18610 nets and 62380 connections.
 Notice 0: Finished DEF file: constprop3.def
 No. Instances: 17821
-[info] Invoking constant_propagation transform
-[info] Finished constant_propagation transform (96)
+Invoking constant_propagation transform 
+Finished constant_propagation transform ( 96 ) 
 No. Instances: 17773
 Differences found at line 1.

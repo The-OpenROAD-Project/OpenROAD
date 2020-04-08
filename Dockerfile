@@ -56,15 +56,6 @@ RUN git clone https://gitlab.com/libeigen/eigen.git \
     && cmake .. \
     && make install
 
-# spdlog required by OpenPhySyn
-RUN git clone https://github.com/gabime/spdlog.git \
-    && cd spdlog \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && make -j $(nproc) \
-    && make install
-
 # lemon required by TritonCTS (no package for CentOS!)
 #  (On Ubuntu liblemon-dev can be used instead)
 RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \

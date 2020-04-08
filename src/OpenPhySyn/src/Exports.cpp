@@ -31,7 +31,6 @@
 
 #include "Exports.hpp"
 #include <memory>
-#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/Psn.hpp"
 
 namespace psn
@@ -62,7 +61,7 @@ set_wire_res_cap(const char* layer_name)
 int
 set_max_area(float area)
 {
-    Psn::instance().settings()->setMaxArea(area);
+    Psn::instance().handler()->setMaximumArea(area);
     return 1;
 }
 

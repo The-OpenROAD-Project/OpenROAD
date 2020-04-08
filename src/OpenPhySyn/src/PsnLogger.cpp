@@ -30,41 +30,27 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "OpenPhySyn/PsnLogger.hpp"
-#include <memory>
-#include <spdlog/spdlog.h>
 
 namespace psn
 {
 
 PsnLogger::PsnLogger() : pattern_("%+")
 {
-    console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    file_sink_    = nullptr;
-    logger_       = std::make_shared<spdlog::logger>(
-        "", spdlog::sinks_init_list({console_sink_}));
-    spdlog::set_default_logger(logger_);
     resetDefaultPattern();
     setLevel(LogLevel::info);
 }
 PsnLogger::~PsnLogger()
 {
-    logger_->flush();
 }
 void
 PsnLogger::setPattern(std::string pattern)
 {
     pattern_ = pattern;
-    console_sink_->set_pattern(pattern);
-    logger_->set_pattern(pattern);
-    if (file_sink_ != nullptr)
-    {
-        file_sink_->set_pattern(pattern);
-    }
 }
 void
 PsnLogger::resetDefaultPattern()
 {
-    setPattern("%+");
+    setPattern("");
 }
 
 PsnLogger&
@@ -75,80 +61,8 @@ PsnLogger::instance()
 }
 
 void
-PsnLogger::setLogFile(std::string log_file)
-{
-    file_sink_ =
-        std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file, true);
-    logger_ = std::make_shared<spdlog::logger>(
-        "", spdlog::sinks_init_list({file_sink_, console_sink_}));
-    logger_->flush_on(spdlog::level::info);
-    spdlog::set_default_logger(logger_);
-    setPattern(pattern_);
-    setLevel(level_);
-}
-
-void
 PsnLogger::setLevel(LogLevel level)
 {
     level_ = level;
-    switch (level_)
-    {
-    case LogLevel::trace:
-        logger_->set_level(spdlog::level::trace);
-        console_sink_->set_level(spdlog::level::trace);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::trace);
-        }
-        break;
-    case LogLevel::debug:
-        logger_->set_level(spdlog::level::debug);
-        console_sink_->set_level(spdlog::level::debug);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::debug);
-        }
-        break;
-    case LogLevel::info:
-        logger_->set_level(spdlog::level::info);
-        console_sink_->set_level(spdlog::level::info);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::info);
-        }
-        break;
-    case LogLevel::warn:
-        logger_->set_level(spdlog::level::warn);
-        console_sink_->set_level(spdlog::level::warn);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::warn);
-        }
-        break;
-    case LogLevel::error:
-        logger_->set_level(spdlog::level::err);
-        console_sink_->set_level(spdlog::level::err);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::err);
-        }
-        break;
-    case LogLevel::critical:
-        logger_->set_level(spdlog::level::critical);
-        console_sink_->set_level(spdlog::level::critical);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::critical);
-        }
-        break;
-    case LogLevel::off:
-        logger_->set_level(spdlog::level::off);
-        console_sink_->set_level(spdlog::level::off);
-        if (file_sink_ != nullptr)
-        {
-            file_sink_->set_level(spdlog::level::off);
-        }
-        break;
-    }
 }
 } // namespace psn

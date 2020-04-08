@@ -33,7 +33,6 @@
 
 #include "GateCloningTransform.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
-#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/Psn.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/StringUtils.hpp"
@@ -50,7 +49,7 @@ GateCloningTransform::gateClone(Psn* psn_inst, float cap_factor,
 {
     clone_count_             = 0;
     DatabaseHandler& handler = *(psn_inst->handler());
-    PSN_LOG_DEBUG("Clone {} {}", cap_factor, clone_largest_only);
+    PSN_LOG_DEBUG("Clone", cap_factor, clone_largest_only);
     std::vector<InstanceTerm*> level_drvrs = handler.levelDriverPins();
     for (auto& pin : level_drvrs)
     {
@@ -63,8 +62,8 @@ void
 GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                                 bool clone_largest_only)
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    DatabaseHandler& handler        = *(psn_inst->handler());
+    float            cap_per_micron = handler.capacitancePerMicron();
 
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
@@ -89,24 +88,12 @@ GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
     float output_target_load = handler.targetLoad(cell);
 
     float c_limit = cap_factor * output_target_load;
-    PSN_LOG_TRACE("{} {} output_target_load: {}", handler.name(inst),
-                  handler.name(cell), output_target_load);
-    PSN_LOG_TRACE("{} {} cap_per_micron: {}", handler.name(inst),
-                  handler.name(cell), cap_per_micron);
-    PSN_LOG_TRACE("{} {} c_limit: {}", handler.name(inst), handler.name(cell),
-                  c_limit);
-    PSN_LOG_TRACE("{} {} total_net_load: {}", handler.name(inst),
-                  handler.name(cell), total_net_load);
     if ((c_limit - total_net_load) > std::numeric_limits<float>::epsilon())
     {
-        PSN_LOG_TRACE("{} {} load is fine", handler.name(inst),
-                      handler.name(cell));
         return;
     }
     if (clone_largest_only && cell != handler.largestLibraryCell(cell))
     {
-        PSN_LOG_TRACE("{} {} is not the largest cell", handler.name(inst),
-                      handler.name(cell));
         return;
     }
 
@@ -125,8 +112,8 @@ GateCloningTransform::topDownClone(psn::Psn*                          psn_inst,
                                    std::unique_ptr<psn::SteinerTree>& tree,
                                    psn::SteinerPoint k, float c_limit)
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    DatabaseHandler& handler        = *(psn_inst->handler());
+    float            cap_per_micron = handler.capacitancePerMicron();
 
     SteinerPoint drvr = tree->driverPoint();
 

@@ -32,6 +32,8 @@
 
 #ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
 
+#include <cassert>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <unordered_set>

@@ -31,77 +31,125 @@
 
 #pragma once
 
-#include <memory>
-#include <spdlog/logger.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include "OpenPhySyn/LogLevel.hpp"
+#include <iostream>
 
 namespace psn
 {
+enum class LogLevel
+{
+    trace    = 0,
+    debug    = 1,
+    info     = 2,
+    warn     = 3,
+    error    = 4,
+    critical = 5,
+    off      = 6
+};
 class PsnLogger
 {
+    template<typename Arg, typename... Args>
+    void
+    print(Arg&& arg, Args&&... args) const
+    {
+        std::cout << arg << " ";
+        print(args...);
+    }
+    void
+    print() const
+    {
+        std::cout << std::endl;
+    }
+    template<typename Arg, typename... Args>
+    void
+    printError(Arg&& arg, Args&&... args) const
+    {
+        std::cerr << arg << " ";
+        print(args...);
+    }
+    void
+    printError() const
+    {
+        std::cerr << std::endl;
+    }
+
 public:
     template<typename... Args>
     void
     trace(Args&&... args) const
     {
-        logger_->trace(args...);
+        if (level_ <= LogLevel::trace)
+        {
+            print(args...);
+        }
     }
     template<typename... Args>
     void
     debug(Args&&... args) const
     {
-        logger_->debug(args...);
+        if (level_ <= LogLevel::debug)
+        {
+            print(args...);
+        }
     }
     template<typename... Args>
     void
     info(Args&&... args) const
     {
-        logger_->info(args...);
+        if (level_ <= LogLevel::info)
+        {
+            print(args...);
+        }
     }
     template<typename... Args>
     void
     raw(Args&&... args)
     {
         std::string current_pattern = pattern_;
-        setPattern("%v");
-        logger_->info(args...);
+        setPattern("");
+        if (level_ <= LogLevel::info)
+        {
+            print(args...);
+        }
         setPattern(current_pattern);
     }
     template<typename... Args>
     void
     warn(Args&&... args) const
     {
-        logger_->warn(args...);
+        if (level_ <= LogLevel::warn)
+        {
+            printError(args...);
+        }
     }
 
     template<typename... Args>
     void
     critical(Args&&... args) const
     {
-        logger_->critical(args...);
+        if (level_ <= LogLevel::critical)
+        {
+            printError(args...);
+        }
     }
     template<typename... Args>
     void
     error(Args&&... args) const
     {
-        logger_->error(args...);
+        if (level_ <= LogLevel::error)
+        {
+            printError(args...);
+        }
     }
     static PsnLogger& instance();
 
     void resetDefaultPattern();
     void setPattern(std::string pattern);
     void setLevel(LogLevel level);
-    void setLogFile(std::string log_file);
 
 private:
     PsnLogger();
     ~PsnLogger();
-    LogLevel                                             level_;
-    std::string                                          pattern_;
-    std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
-    std::shared_ptr<spdlog::sinks::basic_file_sink_mt>   file_sink_;
-    std::shared_ptr<spdlog::logger>                      logger_;
+    LogLevel    level_;
+    std::string pattern_;
 };
 } // namespace psn

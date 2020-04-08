@@ -11,6 +11,6 @@ Notice 0:     Created 388 pins.
 Notice 0:     Created 18916 components and 99688 component-terminals.
 Notice 0:     Created 18742 nets and 61856 connections.
 Notice 0: Finished DEF file: clone1.def
-[info] Invoking gate_clone transform
-[info] Finished gate_clone transform (8)
+Invoking gate_clone transform 
+Finished gate_clone transform ( 8 ) 
 No differences found.

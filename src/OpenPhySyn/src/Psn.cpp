@@ -37,13 +37,11 @@
 #include "Config.hpp"
 #include "FileUtils.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
-#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/PsnLogger.hpp"
 #include "PsnException.hpp"
 #include "StringUtils.hpp"
 #include "TransformHandler.hpp"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
 #ifdef OPENPHYSYN_AUTO_LINK
@@ -57,32 +55,18 @@
 extern "C"
 {
     extern int Psn_Init(Tcl_Interp* interp);
-    extern int Sta_Init(Tcl_Interp* interp);
 }
-namespace sta
-{
-extern void        evalTclInit(Tcl_Interp* interp, const char* inits[]);
-extern const char* tcl_inits[];
-} // namespace sta
 
 namespace psn
 {
-using sta::evalTclInit;
-using sta::tcl_inits;
 
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
 Psn::Psn(DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 {
-    if (sta == nullptr)
-    {
-        initializeDatabase();
-        initializeSta();
-    }
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
-    settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(this, sta_);
 }
 
@@ -107,7 +91,6 @@ Psn::initialize(DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
 
 Psn::~Psn()
 {
-    delete settings_;
     delete db_handler_;
 }
 
@@ -134,12 +117,6 @@ Psn::handler() const
     return db_handler_;
 }
 
-DesignSettings*
-Psn::settings() const
-{
-    return settings_;
-}
-
 Psn&
 Psn::instance()
 {
@@ -152,12 +129,6 @@ Psn::instance()
 Psn*
 Psn::instancePtr()
 {
-#ifndef OPENROAD_BUILD
-    if (!is_initialized_)
-    {
-        PSN_LOG_CRITICAL("OpenPhySyn is not initialized!");
-    }
-#endif
     return psn_instance_;
 }
 
@@ -215,12 +186,12 @@ Psn::loadTransforms()
                 FileUtils::readDirectory(transform_parent_path);
             for (auto& path : transforms_paths)
             {
-                PSN_LOG_DEBUG("Loading transform {}", path);
+                PSN_LOG_DEBUG("Loading transform", path);
                 handlers.push_back(TransformHandler(path));
             }
 
-            PSN_LOG_DEBUG("Found {} transforms under {}.",
-                          transforms_paths.size(), transform_parent_path);
+            PSN_LOG_DEBUG("Found", transforms_paths.size(), "transforms under",
+                          transform_parent_path);
         }
     }
 #endif
@@ -237,9 +208,8 @@ Psn::loadTransforms()
         }
         else
         {
-            PSN_LOG_WARN(
-                "Transform {} was already loaded, discarding subsequent loads",
-                tr_name);
+            PSN_LOG_WARN("Transform", tr_name,
+                         "was already loaded, discarding subsequent loads");
         }
     }
     return load_count;
@@ -267,22 +237,22 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
         }
         if (args.size() && args[0] == "version")
         {
-            PSN_LOG_INFO("{}", transforms_info_[transform_name].version());
+            PSN_LOG_INFO(transforms_info_[transform_name].version());
             return 0;
         }
         else if (args.size() && args[0] == "help")
         {
-            PSN_LOG_INFO("{}", transforms_info_[transform_name].help());
+            PSN_LOG_INFO(transforms_info_[transform_name].help());
             return 0;
         }
         else
         {
 
-            PSN_LOG_INFO("Invoking {} transform", transform_name);
+            PSN_LOG_INFO("Invoking", transform_name, "transform");
             int rc = transforms_[transform_name]->run(this, args);
             sta_->ensureLevelized();
             handler()->resetDelays();
-            PSN_LOG_INFO("Finished {} transform ({})", transform_name, rc);
+            PSN_LOG_INFO("Finished", transform_name, "transform (", rc, ")");
             return rc;
         }
     }
@@ -380,12 +350,12 @@ Psn::printVersion(bool raw_str)
     if (raw_str)
     {
 
-        PSN_LOG_RAW("OpenPhySyn: {}", PSN_VERSION_STRING);
+        PSN_LOG_RAW("OpenPhySyn:", PSN_VERSION_STRING);
     }
     else
     {
 
-        PSN_LOG_INFO("OpenPhySyn: {}", PSN_VERSION_STRING);
+        PSN_LOG_INFO("OpenPhySyn:", PSN_VERSION_STRING);
     }
 }
 void
@@ -497,7 +467,7 @@ Psn::printCommands(bool raw_str)
         "info, warn, error, critical, off]\n"
         "set_log_pattern <pattern>             Set log printing pattern, refer "
         "to spdlog logger for pattern formats";
-    PSN_LOG_RAW("{}", commands_str);
+    PSN_LOG_RAW(commands_str);
 }
 void
 Psn::printTransforms(bool raw_str)
@@ -569,7 +539,7 @@ Psn::setLogLevel(const char* level)
     }
     else
     {
-        PSN_LOG_ERROR("Invalid log level {}", level);
+        PSN_LOG_ERROR("Invalid log level", level);
         return false;
     }
     return true;
@@ -601,7 +571,7 @@ Psn::sourceTclScript(const char* script_path)
 {
     if (!FileUtils::pathExists(script_path))
     {
-        PSN_LOG_ERROR("Failed to open {}", script_path);
+        PSN_LOG_ERROR("Failed to open", script_path);
         return -1;
     }
     if (interp_ == nullptr)
@@ -616,8 +586,8 @@ Psn::sourceTclScript(const char* script_path)
     }
     catch (FileException& e)
     {
-        PSN_LOG_ERROR("Failed to open {}", script_path);
-        PSN_LOG_ERROR("{}", e.what());
+        PSN_LOG_ERROR("Failed to open", script_path);
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
     if (evaluateTclCommands(script_content.c_str()) == TCL_ERROR)
@@ -629,10 +599,12 @@ Psn::sourceTclScript(const char* script_path)
 void
 Psn::setWireRC(float res_per_micon, float cap_per_micron)
 {
-    handler()->resetDelays();
-    settings()
-        ->setResistancePerMicron(res_per_micon)
-        ->setCapacitancePerMicron(cap_per_micron);
+    if (!database() || database()->getChip() == nullptr)
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return;
+    }
+    handler()->setWireRC(res_per_micon, cap_per_micron);
 }
 
 int
@@ -649,7 +621,7 @@ Psn::setWireRC(const char* layer_name)
     auto layer = tech->findLayer(layer_name);
     if (!layer)
     {
-        PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
+        PSN_LOG_ERROR("Could not find layer with the name", layer_name);
         return -1;
     }
     auto  width         = handler()->dbuToMicrons(layer->getWidth());
@@ -663,29 +635,6 @@ Psn::setWireRC(const char* layer_name)
 }
 
 // Private methods:
-int
-Psn::initializeDatabase()
-{
-    if (db_ == nullptr)
-    {
-        db_ = odb::dbDatabase::create();
-    }
-    return 0;
-}
-int
-Psn::initializeSta(Tcl_Interp* interp)
-{
-    if (interp == nullptr)
-    {
-        // This is a very bad solution! but temporarily until
-        // dbSta can take a database without interp..
-        interp = Tcl_CreateInterp();
-        Tcl_Init(interp);
-    }
-    sta_ = new DatabaseSta;
-    sta_->init(interp, db_);
-    return 0;
-}
 
 void
 Psn::clearDatabase()

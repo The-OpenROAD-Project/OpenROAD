@@ -33,37 +33,40 @@
 #define THROW_DCL throw()
 
 #include "OpenPhySyn/DatabaseHandler.hpp"
+
 #include "sta/Graph.hh"
 #include "sta/Parasitics.hh"
+
 #include <algorithm>
 #include <set>
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/PsnLogger.hpp"
 #include "OpenPhySyn/SteinerTree.hpp"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "opendb/db.h"
+#include "opendb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Bfs.hh"
+#include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Graph.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PathEnd.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Power.hh"
+#include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/Bfs.hh"
-#include "sta/Corner.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Power.hh"
-#include "sta/Search.hh"
-#include "sta/PatternMatch.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "opendb/db.h"
-#include "opendb/dbTypes.h"
 
 namespace psn
 {
@@ -1606,7 +1609,7 @@ OpenStaHandler::setDontUse(std::vector<std::string>& cell_names)
         auto cell = libraryCell(name.c_str());
         if (!cell)
         {
-            PSN_LOG_WARN("Cannot find cell with the name {}", name);
+            PSN_LOG_WARN("Cannot find cell with the name", name);
         }
         else
         {

@@ -12,7 +12,7 @@ Notice 0:     Created 12 components and 56 component-terminals.
 Notice 0:     Created 20 nets and 32 connections.
 Notice 0: Finished DEF file: constprop1.def
 No. Instances: 12
-[info] Invoking constant_propagation transform
-[info] Finished constant_propagation transform (5)
+Invoking constant_propagation transform 
+Finished constant_propagation transform ( 5 ) 
 No. Instances: 10
 No differences found.

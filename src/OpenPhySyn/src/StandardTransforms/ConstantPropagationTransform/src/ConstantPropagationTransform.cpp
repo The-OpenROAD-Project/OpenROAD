@@ -163,9 +163,6 @@ ConstantPropagationTransform::propagateTieHiLoCell(
 
     auto inst_out_pin = inst_out_pins[0];
     auto fanout_pins  = handler.fanoutPins(handler.net(inst_out_pin), true);
-    PSN_LOG_DEBUG("propagateTieHiLoCell({} / {}: {}) [{}]", handler.name(inst),
-                  handler.name(handler.libraryCell(inst)),
-                  handler.name(inst_out_pin), is_tiehi);
 
     for (auto& pin : fanout_pins)
     {
@@ -189,8 +186,8 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     {
                         auto tiehi_net =
                             handler.net(handler.outputPins(tiehi_cell)[0]);
-                        PSN_LOG_DEBUG("{} is tied to 1.",
-                                      handler.name(fanout_inst));
+                        PSN_LOG_DEBUG(handler.name(fanout_inst),
+                                      "is tied to 1.");
                         // for cell in fanout cells
                         // propagateTieHiLoCell(psn_inst, true, fanout_inst,
                         // max_depth? max_depth-1: 0, tiehi_cell, tielo_cell);
@@ -205,16 +202,16 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                         if (!deleted_inst.count(fanout_inst))
                         {
                             PSN_LOG_DEBUG(
-                                "Removing {}/{} (constant 1)",
-                                handler.name(fanout_inst),
+                                "Removing", handler.name(fanout_inst),
                                 handler.name(handler.libraryCell(fanout_inst)));
                             auto fanout_sink_pins =
                                 handler.fanoutPins(fanout_net, true);
                             size_t toplevel_count = 0;
                             for (auto& sink_pin : fanout_sink_pins)
                             {
-                                PSN_LOG_DEBUG("Connected {} to tielo",
-                                              handler.name(sink_pin));
+                                PSN_LOG_DEBUG("Connected",
+                                              handler.name(sink_pin),
+                                              "to tielo");
                                 // There does not seem to be a way for the DB to
                                 // connect two nets So for the top-level port
                                 // add tie-cell or buffer to connect multiple
@@ -289,8 +286,8 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                     {
                         auto tielo_net =
                             handler.net(handler.outputPins(tielo_cell)[0]);
-                        PSN_LOG_DEBUG("{} is tied to 0.",
-                                      handler.name(fanout_inst));
+                        PSN_LOG_DEBUG(handler.name(fanout_inst),
+                                      "is tied to 0.");
                         // for cell in fanout cells
                         // propagateTieHiLoCell(psn_inst, false, fanout_inst,
                         // max_depth? max_depth-1: 0, tiehi_cell, tielo_cell);
@@ -310,14 +307,13 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                             auto fanout_sink_pins =
                                 handler.fanoutPins(fanout_net, true);
                             PSN_LOG_DEBUG(
-                                "Removing {}/{} (constant 0)",
-                                handler.name(fanout_inst),
+                                "Removing", handler.name(fanout_inst),
                                 handler.name(handler.libraryCell(fanout_inst)));
                             size_t toplevel_count = 0;
                             for (auto& sink_pin : fanout_sink_pins)
                             {
-                                PSN_LOG_DEBUG("Connected {} to tielo",
-                                              handler.name(sink_pin));
+                                PSN_LOG_DEBUG(handler.name(sink_pin),
+                                              "connected to tielo");
 
                                 // There does not seem to be a way for the DB to
                                 // connect two nets So for the top-level port
@@ -409,25 +405,18 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                         {
                             auto fanout_sink_pins =
                                 handler.fanoutPins(fanout_net, true);
-                            PSN_LOG_DEBUG(
-                                "{} is tied to input {}/{}. Constant pin: {}",
-                                handler.name(fanout_inst),
-                                handler.name(handler.libraryCell(fanout_inst)),
-                                handler.name(other_pin), handler.name(pin));
+                            PSN_LOG_DEBUG(handler.name(fanout_inst),
+                                          "is tied to input");
                             auto other_pin_net = handler.net(other_pin);
                             for (auto& sink_pin : fanout_sink_pins)
                             {
-                                PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
-                                              handler.name(sink_pin),
-                                              handler.name(other_pin),
-                                              handler.name(other_pin_net));
                                 handler.disconnect(sink_pin);
                                 handler.connect(other_pin_net, sink_pin);
                             }
                             assert(
                                 handler.fanoutPins(fanout_net, true).size() ==
                                 0);
-                            PSN_LOG_DEBUG("Removing {} (constant input)",
+                            PSN_LOG_DEBUG("Removing (constant input)",
                                           handler.name(fanout_inst));
                             handler.del(fanout_inst);
                             deleted_inst.insert(fanout_inst);
@@ -464,10 +453,6 @@ ConstantPropagationTransform::propagateTieHiLoCell(
                                             inverter_output_pin);
                             for (auto& sink_pin : fanout_sink_pins)
                             {
-                                PSN_LOG_DEBUG("Connect {} to driver of {} [{}]",
-                                              handler.name(sink_pin),
-                                              handler.name(other_pin),
-                                              handler.name(other_pin_net));
                                 handler.disconnect(sink_pin);
                                 handler.connect(inverter_output_net, sink_pin);
                             }
@@ -516,7 +501,7 @@ ConstantPropagationTransform::propagateConstants(
         LibraryCell* cell = handler.libraryCell(tiehi_cell_name.c_str());
         if (!cell)
         {
-            PSN_LOG_ERROR("TieHi {} not found!", tiehi_cell_name);
+            PSN_LOG_ERROR("TieHi not found!", tiehi_cell_name);
             return -1;
         }
         tiehi_cells.insert(cell);
@@ -532,7 +517,7 @@ ConstantPropagationTransform::propagateConstants(
         LibraryCell* cell = handler.libraryCell(tielo_cell_name.c_str());
         if (!cell)
         {
-            PSN_LOG_ERROR("TieLo {} not found!", tielo_cell_name);
+            PSN_LOG_ERROR("TieLo not found!", tielo_cell_name);
             return -1;
         }
         tielo_cells.insert(cell);
@@ -580,8 +565,6 @@ ConstantPropagationTransform::propagateConstants(
     const int iteration_count = 1;
     for (int i = 0; i < iteration_count; ++i)
     {
-        PSN_LOG_DEBUG("Constant Propagation Iteration {}/{}", i + 1,
-                      iteration_count);
         std::unordered_set<Instance*>     visited;
         std::unordered_set<Instance*>     deleted_insts;
         std::unordered_set<InstanceTerm*> deleted_pins;
@@ -594,7 +577,7 @@ ConstantPropagationTransform::propagateConstants(
                 if (tiehi_cells.count(instance_lib_cell))
                 {
                     auto output_pin = handler.outputPins(instance)[0];
-                    PSN_LOG_DEBUG("Tie-Hi Instance {}", handler.name(instance));
+                    PSN_LOG_DEBUG("Tie-Hi Instance", handler.name(instance));
                     propagateTieHiLoCell(
                         psn_inst, true, output_pin, max_depth,
                         invereter_replace, instance, first_tilo,
@@ -614,7 +597,7 @@ ConstantPropagationTransform::propagateConstants(
                 else if (tielo_cells.count(instance_lib_cell))
                 {
                     auto output_pin = handler.outputPins(instance)[0];
-                    PSN_LOG_DEBUG("Tie-Lo Instance {}", handler.name(instance));
+                    PSN_LOG_DEBUG("Tie-Lo Instance", handler.name(instance));
                     propagateTieHiLoCell(
                         psn_inst, false, output_pin, max_depth,
                         invereter_replace, first_tihi, instance,
