@@ -1,5 +1,0 @@
-<map id="GlpkBase" name="GlpkBase">
-<area shape="rect" id="node5" href="$a00180.html" title="Interface for the GLPK LP solver. " alt="" coords="5,155,69,181"/>
-<area shape="rect" id="node7" href="$a00181.html" title="Interface for the GLPK MIP solver. " alt="" coords="94,155,164,181"/>
-<area shape="rect" id="node2" href="$a00247.html" title="Common base class for LP and MIP solvers. " alt="" coords="49,5,116,32"/>
-</map>
