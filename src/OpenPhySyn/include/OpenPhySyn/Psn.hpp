@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "OpenPhySyn/LogLevel.hpp"
 #include "OpenPhySyn/PsnTransform.hpp"
 #include "OpenPhySyn/TransformInfo.hpp"
 #include "OpenPhySyn/Types.hpp"
@@ -41,6 +40,7 @@
 class Tcl_Interp;
 namespace psn
 {
+enum class LogLevel;
 class Psn
 {
 public:

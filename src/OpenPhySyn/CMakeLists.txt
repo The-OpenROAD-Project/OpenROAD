@@ -50,8 +50,6 @@ set(PSN_HOME
 )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PSN_HOME}/cmake")
 
-find_package(spdlog REQUIRED)
-
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)

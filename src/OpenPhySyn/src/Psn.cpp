@@ -424,11 +424,11 @@ POSSIBILITY OF SUCH DAMAGE."
     PSN_LOG_RAW("");
     if (raw_str)
     {
-        PSN_LOG_RAW(license);
+        PSN_LOG_RAW("%s", license);
     }
     else
     {
-        PSN_LOG_INFO(license);
+        PSN_LOG_INFO("%s", license);
     }
 }
 void
@@ -507,11 +507,11 @@ Psn::printTransforms(bool raw_str)
         transform_str += transforms_info_[it->first].description();
         if (raw_str)
         {
-            PSN_LOG_RAW(transform_str);
+            PSN_LOG_RAW("%s", transform_str);
         }
         else
         {
-            PSN_LOG_INFO(transform_str);
+            PSN_LOG_INFO("%s", transform_str);
         }
         PSN_LOG_RAW("");
     }

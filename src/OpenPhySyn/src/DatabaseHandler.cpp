@@ -1605,7 +1605,7 @@ OpenStaHandler::setDontUse(std::vector<std::string>& cell_names)
         auto cell = libraryCell(name.c_str());
         if (!cell)
         {
-            PSN_LOG_WARN("Cannot find cell with the name {}", name);
+            PSN_LOG_WARN("Cannot find cell with the name %s", name.c_str());
         }
         else
         {
