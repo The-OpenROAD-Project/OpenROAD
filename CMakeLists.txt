@@ -22,6 +22,10 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
 endif()
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+# Allows <PackageName>_ROOT to be used
+cmake_policy(SET CMP0074 NEW)
+endif()
 
 project(OpenROAD VERSION 1.1.0
   LANGUAGES CXX
