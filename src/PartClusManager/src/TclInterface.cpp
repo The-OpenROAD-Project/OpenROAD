@@ -154,6 +154,12 @@ void set_seeds(const char* seeds) {
         kernel->getOptions().setSeeds(seedVector);
 }
 
+void set_existing_id(int value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setExistingID(value);
+}
+
 void generate_seeds(unsigned value) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();

@@ -75,12 +75,14 @@ void PartClusManagerKernel::runChaco() {
         int numVertices = vertexWeights.size();
         
         int architecture = _options.getArchTopology().size();
+        int architectureDims = 1;
         int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
         if (architecture > 0){
                 std::vector<int> archTopology = _options.getArchTopology();
                 for (int i = 0; ((i < architecture) && (i < 3)) ; i++)
                 {
                         mesh_dims[i] = archTopology[i];
+                        architectureDims = architectureDims * archTopology[i];
                 }
         }
 
@@ -100,6 +102,10 @@ void PartClusManagerKernel::runChaco() {
         double coarRatio = _options.getCoarRatio();
 
         double cutCost = _options.getCutHopRatio();
+
+        int partitioningMethod = 1; //Multi-level KL
+
+        int kWay = 1; //recursive 2-way
 
         for (long seed : _options.getSeeds()) {
                 auto start = std::chrono::system_clock::now();
@@ -135,6 +141,44 @@ void PartClusManagerKernel::runChaco() {
                 }
 
                 short* assigment = (short*) malloc((unsigned) numVertices * sizeof(short));
+
+                int oldTargetPartitions = 0;
+
+                if (_options.getExistingID() > -1) {
+                        //If a previous solution ID already exists...
+                        PartSolutions existingResult = _results[_options.getExistingID()];
+                        unsigned existingBestIdx = existingResult.getBestSolutionIdx();
+                        const std::vector<short>& vertexResult = existingResult.getAssignment(existingBestIdx);
+                        //Gets the vertex assignments results from the last ID.
+                        short* currentIndexShort = assigment;
+                        for(short existingPartId : vertexResult) {
+                                //Apply the Partition IDs to the current assignment vector.
+                                if (existingPartId > oldTargetPartitions){
+                                        oldTargetPartitions = existingPartId;
+                                }
+                                *currentIndexShort = existingPartId; 
+                                currentIndexShort++;
+                        }
+
+                        partitioningMethod = 7;
+                        kWay = hypercubeDims;
+                        oldTargetPartitions = oldTargetPartitions + 1;
+
+                        if (architecture) {
+                                hypercubeDims = (int) (std::sqrt( (float) (architectureDims) ));
+                                kWay = hypercubeDims;
+                                if (kWay > 3 || architectureDims < oldTargetPartitions || architectureDims % 2 == 1) {
+                                        std::cout << "Graph has too many sets (>8), the number of target partitions changed or the architecture is invalid.";
+                                        std::exit(1);
+                                }
+                        } else {
+                                if (kWay > 3 || _options.getTargetPartitions() <  oldTargetPartitions) {
+                                        std::cout << "Graph has too many sets (>8) or the number of target partitions changed.";
+                                        std::exit(1);
+                                } 
+                        }
+                }
+
                 interface_wrap(numVertices,                             /* number of vertices */
                                starts, adjacency, vweights, eweights,   /* graph definition for chaco */
                                NULL, NULL, NULL,                        /* x y z positions for the inertial method, not needed for multi-level KL */
@@ -142,8 +186,8 @@ void PartClusManagerKernel::runChaco() {
                                assigment,                               /* vertex assigment vector. Contains the set that each vector is present on.*/
                                architecture, hypercubeDims, mesh_dims,  /* architecture, architecture topology and the hypercube dimensions (number of 2-way divisions) */
                                NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
-                               1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
-                               0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
+                               partitioningMethod, 1,                   /* constants that define the methods used by the partitioner -> multi-level KL, KL refinement */
+                               0, numVertCoar, kWay,                    /* disables the eigensolver, number of vertices to coarsen down to and bisection/quadrisection/octasection */
                                0.001, seed,                             /* tolerance on eigenvectors (hard-coded, not used) and the seed */
                                termPropagation, inbalance,              /* terminal propagation enable and inbalance */
                                coarRatio, cutCost,                      /* coarsening ratio and cut to hop cost */
