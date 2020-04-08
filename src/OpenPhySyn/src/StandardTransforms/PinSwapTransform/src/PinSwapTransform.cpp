@@ -56,7 +56,7 @@ PinSwapTransform::powerPinSwap(psn::Psn* psn_inst, int path_count)
     int  path_index = 1;
     for (auto& path : paths)
     {
-        PSN_LOG_DEBUG("Optimizing path {}/{}", path_index++, paths.size());
+        PSN_LOG_DEBUG("Optimizing path", path_index++, "/", paths.size());
         for (auto& point : path)
         {
             auto pin     = point.pin();

@@ -53,27 +53,27 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     LibraryCell*     cell    = handler.libraryCell(buffer_cell.c_str());
     if (!cell)
     {
-        PSN_LOG_ERROR("Buffer {} not found!", buffer_cell);
+        PSN_LOG_ERROR("Buffer", buffer_cell, "not found!");
         return -1;
     }
     auto buffer_input_pins  = handler.libraryInputPins(cell);
     auto buffer_output_pins = handler.libraryOutputPins(cell);
     if (buffer_input_pins.size() != 1)
     {
-        PSN_LOG_ERROR("Invalid buffer cell, number of input pins is {}",
+        PSN_LOG_ERROR("Invalid buffer cell, number of input pins is",
                       buffer_input_pins.size());
         return -1;
     }
     if (buffer_output_pins.size() != 1)
     {
-        PSN_LOG_ERROR("Invalid buffer cell, number of output pins is {}",
+        PSN_LOG_ERROR("Invalid buffer cell, number of output pins is",
                       buffer_output_pins.size());
         return -1;
     }
     if (max_fanout < 2)
     {
-        PSN_LOG_ERROR("Invalid max_fanout value {}, minimum is 2",
-                      buffer_output_pins.size());
+        PSN_LOG_ERROR("Invalid max_fanout value", buffer_output_pins.size(),
+                      "minimum is 2");
         return -1;
     }
     LibraryTerm*      cell_in_pin  = *(buffer_input_pins.begin());
@@ -88,11 +88,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             high_fanout_nets.push_back(net);
         }
     }
-    PSN_LOG_INFO("High fanout nets [{}]: ", high_fanout_nets.size());
+    PSN_LOG_INFO("High fanout nets [", high_fanout_nets.size(), "]: ");
     for (auto& net : high_fanout_nets)
     {
-        PSN_LOG_DEBUG("Net: {} {}", handler.name(net),
-                      handler.fanoutCount(net));
+        PSN_LOG_DEBUG("Net:", handler.name(net), handler.fanoutCount(net));
     }
     auto clock_pins = handler.clockPins();
 
@@ -112,10 +111,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
 #endif
         if (source_pin && !clock_pins.count(source_pin))
         {
-            PSN_LOG_DEBUG("Buffering: {}", handler.name(net));
+            PSN_LOG_DEBUG("Buffering:", handler.name(net));
             auto fanout_pins        = handler.fanoutPins(net);
             int  net_sink_pin_count = fanout_pins.size();
-            PSN_LOG_DEBUG("Sink count: {}", net_sink_pin_count);
+            PSN_LOG_DEBUG("Sink count:", net_sink_pin_count);
             int              iter = net_sink_pin_count;
             std::vector<int> buffer_hier;
             while (iter > max_fanout)
@@ -161,19 +160,21 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                                 if (!new_buffer)
                                 {
                                     PSN_LOG_CRITICAL(
-                                        "Failed to create buffer instance {}, "
+                                        "Failed to create buffer instance",
+                                        buf_name,
+                                        ", "
                                         "cannot recover the design, you may "
                                         "need "
-                                        "to restart the flow.",
-                                        buf_name);
+                                        "to restart the flow.");
                                 }
                                 if (!new_net)
                                 {
-                                    PSN_LOG_CRITICAL("Failed to create net {}, "
+                                    PSN_LOG_CRITICAL("Failed to create net",
+                                                     net_name,
+                                                     ", "
                                                      "cannot recover the "
                                                      "design, you may need "
-                                                     "to restart the flow.",
-                                                     net_name);
+                                                     "to restart the flow.");
                                 }
                                 if (new_buffer && new_net)
                                 {
@@ -195,11 +196,12 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                                         if (!parent_net)
                                         {
                                             PSN_LOG_CRITICAL(
-                                                "Failed to find net {}, "
+                                                "Failed to find net",
+                                                parent_buf_net_name,
+                                                ", "
                                                 "cannot recover the "
                                                 "design, you may need "
-                                                "to restart the flow.",
-                                                parent_buf_net_name);
+                                                "to restart the flow.");
                                         }
                                         else
                                         {
@@ -222,18 +224,16 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                     if (!new_buffer)
                     {
                         PSN_LOG_CRITICAL(
-                            "Failed to create buffer {}, "
+                            "Failed to create buffer", buf_name,
+                            ", "
                             "cannot recover the design, you may need "
-                            "to restart the flow.",
-                            buf_name);
+                            "to restart the flow.");
                     }
                     if (!new_net)
                     {
-                        PSN_LOG_CRITICAL(
-                            "Failed to create net {}, "
-                            "cannot recover the design, you may need "
-                            "to restart the flow.",
-                            net_name);
+                        PSN_LOG_CRITICAL("Failed to create net", net_name,
+                                         ", cannot recover the design, you may "
+                                         "need to restart the flow.");
                     }
                     if (new_buffer && new_net)
                     {
@@ -266,10 +266,9 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                             else
                             {
                                 PSN_LOG_CRITICAL(
-                                    "Failed to find net {}, "
-                                    "cannot recover the design, you may need "
-                                    "to restart the flow.",
-                                    current_buf_net_name);
+                                    "Failed to find net", current_buf_net_name,
+                                    ",  cannot recover the design, you may "
+                                    "need to restart the flow.");
                             }
                         }
                     }
@@ -278,7 +277,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             }
         }
     }
-    PSN_LOG_INFO("Added {} buffers", create_buffer_count);
+    PSN_LOG_INFO("Added", create_buffer_count, "buffers");
 
     return create_buffer_count;
 }

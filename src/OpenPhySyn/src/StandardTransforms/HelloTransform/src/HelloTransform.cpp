@@ -50,16 +50,10 @@ int
 HelloTransform::run(Psn* psn_inst, std::vector<std::string> args)
 {
 
-    PSN_LOG_DEBUG("Passed arguments:");
-    for (auto& arg : args)
-    {
-        PSN_LOG_DEBUG("{}", arg);
-    }
-
     if (args.size() == 1)
     {
         std::string net_name = args[0];
-        PSN_LOG_INFO("Adding random wire {}", net_name);
+        PSN_LOG_INFO("Adding random wire", net_name);
         return addWire(psn_inst, net_name);
     }
     else

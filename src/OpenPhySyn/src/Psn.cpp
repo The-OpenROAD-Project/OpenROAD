@@ -200,12 +200,12 @@ Psn::loadTransforms()
                 FileUtils::readDirectory(transform_parent_path);
             for (auto& path : transforms_paths)
             {
-                PSN_LOG_DEBUG("Loading transform {}", path);
+                PSN_LOG_DEBUG("Loading transform", path);
                 handlers.push_back(TransformHandler(path));
             }
 
-            PSN_LOG_DEBUG("Found {} transforms under {}.",
-                          transforms_paths.size(), transform_parent_path);
+            PSN_LOG_DEBUG("Found", transforms_paths.size(), "transforms under",
+                          transform_parent_path);
         }
     }
 #endif
@@ -222,9 +222,8 @@ Psn::loadTransforms()
         }
         else
         {
-            PSN_LOG_WARN(
-                "Transform {} was already loaded, discarding subsequent loads",
-                tr_name);
+            PSN_LOG_WARN("Transform", tr_name,
+                         "was already loaded, discarding subsequent loads");
         }
     }
     return load_count;
@@ -252,22 +251,22 @@ Psn::runTransform(std::string transform_name, std::vector<std::string> args)
         }
         if (args.size() && args[0] == "version")
         {
-            PSN_LOG_INFO("{}", transforms_info_[transform_name].version());
+            PSN_LOG_INFO(transforms_info_[transform_name].version());
             return 0;
         }
         else if (args.size() && args[0] == "help")
         {
-            PSN_LOG_INFO("{}", transforms_info_[transform_name].help());
+            PSN_LOG_INFO(transforms_info_[transform_name].help());
             return 0;
         }
         else
         {
 
-            PSN_LOG_INFO("Invoking {} transform", transform_name);
+            PSN_LOG_INFO("Invoking", transform_name, "transform");
             int rc = transforms_[transform_name]->run(this, args);
             sta_->ensureLevelized();
             handler()->resetDelays();
-            PSN_LOG_INFO("Finished {} transform ({})", transform_name, rc);
+            PSN_LOG_INFO("Finished", transform_name, "transform (", rc, ")");
             return rc;
         }
     }
@@ -365,12 +364,12 @@ Psn::printVersion(bool raw_str)
     if (raw_str)
     {
 
-        PSN_LOG_RAW("OpenPhySyn: {}", PSN_VERSION_STRING);
+        PSN_LOG_RAW("OpenPhySyn:", PSN_VERSION_STRING);
     }
     else
     {
 
-        PSN_LOG_INFO("OpenPhySyn: {}", PSN_VERSION_STRING);
+        PSN_LOG_INFO("OpenPhySyn:", PSN_VERSION_STRING);
     }
 }
 void
@@ -424,11 +423,11 @@ POSSIBILITY OF SUCH DAMAGE."
     PSN_LOG_RAW("");
     if (raw_str)
     {
-        PSN_LOG_RAW("%s", license);
+        PSN_LOG_RAW(license);
     }
     else
     {
-        PSN_LOG_INFO("%s", license);
+        PSN_LOG_INFO(license);
     }
 }
 void
@@ -482,7 +481,7 @@ Psn::printCommands(bool raw_str)
         "info, warn, error, critical, off]\n"
         "set_log_pattern <pattern>             Set log printing pattern, refer "
         "to spdlog logger for pattern formats";
-    PSN_LOG_RAW("{}", commands_str);
+    PSN_LOG_RAW(commands_str);
 }
 void
 Psn::printTransforms(bool raw_str)
@@ -507,11 +506,11 @@ Psn::printTransforms(bool raw_str)
         transform_str += transforms_info_[it->first].description();
         if (raw_str)
         {
-            PSN_LOG_RAW("%s", transform_str);
+            PSN_LOG_RAW(transform_str);
         }
         else
         {
-            PSN_LOG_INFO("%s", transform_str);
+            PSN_LOG_INFO(transform_str);
         }
         PSN_LOG_RAW("");
     }
@@ -554,7 +553,7 @@ Psn::setLogLevel(const char* level)
     }
     else
     {
-        PSN_LOG_ERROR("Invalid log level {}", level);
+        PSN_LOG_ERROR("Invalid log level", level);
         return false;
     }
     return true;
@@ -586,7 +585,7 @@ Psn::sourceTclScript(const char* script_path)
 {
     if (!FileUtils::pathExists(script_path))
     {
-        PSN_LOG_ERROR("Failed to open {}", script_path);
+        PSN_LOG_ERROR("Failed to open", script_path);
         return -1;
     }
     if (interp_ == nullptr)
@@ -601,8 +600,8 @@ Psn::sourceTclScript(const char* script_path)
     }
     catch (FileException& e)
     {
-        PSN_LOG_ERROR("Failed to open {}", script_path);
-        PSN_LOG_ERROR("{}", e.what());
+        PSN_LOG_ERROR("Failed to open", script_path);
+        PSN_LOG_ERROR(e.what());
         return -1;
     }
     if (evaluateTclCommands(script_content.c_str()) == TCL_ERROR)
@@ -636,7 +635,7 @@ Psn::setWireRC(const char* layer_name)
     auto layer = tech->findLayer(layer_name);
     if (!layer)
     {
-        PSN_LOG_ERROR("Could not find layer with the name {}.", layer_name);
+        PSN_LOG_ERROR("Could not find layer with the name", layer_name);
         return -1;
     }
     auto  width         = handler()->dbuToMicrons(layer->getWidth());

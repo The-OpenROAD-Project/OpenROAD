@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <memory>
 
 namespace psn
@@ -47,72 +48,97 @@ enum class LogLevel
 };
 class PsnLogger
 {
+    template<typename Arg, typename... Args>
+    void
+    print(Arg&& arg, Args&&... args) const
+    {
+        std::cout << arg << " ";
+        print(args...);
+    }
+    void
+    print() const
+    {
+        std::cout << std::endl;
+    }
+    template<typename Arg, typename... Args>
+    void
+    printError(Arg&& arg, Args&&... args) const
+    {
+        std::cerr << arg << " ";
+        print(args...);
+    }
+    void
+    printError() const
+    {
+        std::cerr << std::endl;
+    }
+
 public:
     template<typename... Args>
     void
-    trace(const char* format, Args&&... args) const
+    trace(Args&&... args) const
     {
         if (level_ <= LogLevel::trace)
         {
-            std::printf(format, args...);
+            print(args...);
         }
     }
     template<typename... Args>
     void
-    debug(const char* format, Args&&... args) const
+    debug(Args&&... args) const
     {
         if (level_ <= LogLevel::debug)
         {
-            std::printf(format, args...);
+            print(args...);
         }
     }
     template<typename... Args>
     void
-    info(const char* format, Args&&... args) const
+    info(Args&&... args) const
     {
         if (level_ <= LogLevel::info)
         {
-            std::printf(format, args...);
+            print(args...);
         }
     }
     template<typename... Args>
     void
-    raw(const char* format, Args&&... args)
+    raw(Args&&... args)
     {
         std::string current_pattern = pattern_;
         setPattern("");
         if (level_ <= LogLevel::info)
         {
-            std::printf(format, args...);
+            print(args...);
         }
         setPattern(current_pattern);
     }
     template<typename... Args>
     void
-    warn(const char* format, Args&&... args) const
+    warn(Args&&... args) const
     {
         if (level_ <= LogLevel::warn)
         {
-            std::printf(format, args...);
+            print(args...);
         }
     }
 
     template<typename... Args>
     void
-    critical(const char* format, Args&&... args) const
+    critical(Args&&... args) const
     {
         if (level_ <= LogLevel::critical)
         {
-            std::printf(format, args...);
+            print(args...);
         }
     }
     template<typename... Args>
     void
-    error(const char* format, Args&&... args) const
+    error(Args&&... args) const
     {
         if (level_ <= LogLevel::error)
         {
-            std::printf(format, args...);
+            print(args...);
         }
     }
     static PsnLogger& instance();
