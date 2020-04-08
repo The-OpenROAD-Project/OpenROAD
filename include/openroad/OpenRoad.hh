@@ -140,7 +140,7 @@ private:
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
-#if BUILD_OPENPHYSYN
+#ifdef BUILD_OPENPHYSYN
   psn::Psn *psn_;
 #endif
   replace::Replace *replace_;

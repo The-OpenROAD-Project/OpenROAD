@@ -43,7 +43,7 @@
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "pdnsim/MakePDNSim.hh"
-#if BUILD_OPENPHYSYN
+#ifdef BUILD_OPENPHYSYN
   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #endif
 
@@ -85,7 +85,7 @@ OpenRoad::~OpenRoad()
   deleteDbSta(sta_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-#if BUILD_OPENPHYSYN
+#ifdef BUILD_OPENPHYSYN
   deletePsn(psn_);
 #endif
   odb::dbDatabase::destroy(db_);
@@ -125,7 +125,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
-#if BUILD_OPENPHYSYN
+#ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif
 
@@ -149,7 +149,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTritonMp(this);
   initOpenRCX(this);
   initPDNSim(this);
-#if BUILD_OPENPHYSYN
+#ifdef BUILD_OPENPHYSYN
     initPsn(this);
 #endif
 
