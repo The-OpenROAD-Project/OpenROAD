@@ -1,8 +1,0 @@
-<map id="LpSolver" name="LpSolver">
-<area shape="rect" id="node5" href="$a00087.html" title="Interface for the CLP solver. " alt="" coords="5,155,60,181"/>
-<area shape="rect" id="node7" href="$a00114.html" title="Interface for the CPLEX LP solver. " alt="" coords="85,155,155,181"/>
-<area shape="rect" id="node9" href="$a00180.html" title="Interface for the GLPK LP solver. " alt="" coords="179,155,243,181"/>
-<area shape="rect" id="node11" href="$a00248.html" title="Skeleton class for an LP solver interface. " alt="" coords="267,155,353,181"/>
-<area shape="rect" id="node13" href="$a00411.html" title="Interface for the SOPLEX solver. " alt="" coords="379,155,452,181"/>
-<area shape="rect" id="node2" href="$a00247.html" title="Common base class for LP and MIP solvers. " alt="" coords="177,5,244,32"/>
-</map>

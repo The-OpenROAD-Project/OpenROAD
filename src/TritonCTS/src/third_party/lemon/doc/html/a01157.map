@@ -1,5 +1,0 @@
-<map id="Graph::Arc" name="Graph::Arc">
-<area shape="rect" id="node3" href="$a00027.html" title="Iterator class for the arcs. " alt="" coords="5,80,53,107"/>
-<area shape="rect" id="node5" href="$a00211.html" title="Iterator class for the incoming arcs of a node. " alt="" coords="77,80,135,107"/>
-<area shape="rect" id="node7" href="$a00297.html" title="Iterator class for the outgoing arcs of a node. " alt="" coords="160,80,229,107"/>
-</map>
