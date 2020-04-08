@@ -71,7 +71,7 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && tar -xf lemon-1.3.1.tar.gz \
     && cd lemon-1.3.1 \
     && cmake -B build . \
-    && cmake --build build -j $(nproc) -t install
+    && cmake --build build -j $(nproc) --target install
 
 RUN useradd -ms /bin/bash openroad
 
