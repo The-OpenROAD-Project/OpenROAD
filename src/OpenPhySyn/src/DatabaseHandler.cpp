@@ -33,6 +33,10 @@
 #define THROW_DCL throw()
 
 #include "OpenPhySyn/DatabaseHandler.hpp"
+
+#include "sta/Graph.hh"
+#include "sta/Parasitics.hh"
+
 #include <algorithm>
 #include <set>
 #include "OpenPhySyn/PsnGlobal.hpp"
