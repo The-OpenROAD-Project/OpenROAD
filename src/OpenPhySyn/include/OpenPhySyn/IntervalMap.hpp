@@ -35,6 +35,8 @@
 #include <limits>
 #include <map>
 
+// IntervalMap can be used to map an interval/range to an arbitrary value
+// Useful for for caching cells associated with numerical ranges.
 template<typename Key, typename Value>
 class IntervalMap
 {
