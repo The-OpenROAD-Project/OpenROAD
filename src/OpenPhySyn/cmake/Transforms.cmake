@@ -40,59 +40,27 @@ set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE FILEPAT
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
 add_subdirectory(src/StandardTransforms/HelloTransform)
 
-if(NOT ${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
-install(
-  TARGETS hello_transform
-  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
-)
-endif()
-
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 add_subdirectory(src/StandardTransforms/BufferFanoutTransform)
 
-if(NOT ${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
-install(
-  TARGETS buffer_fanout
-  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
-)
-endif()
 
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
 add_subdirectory(src/StandardTransforms/GateCloningTransform)
 
-if(NOT ${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
-install(
-  TARGETS gate_clone
-  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
-)
-endif()
-
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
 add_subdirectory(src/StandardTransforms/PinSwapTransform)
 
-if(NOT ${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
-install(
-  TARGETS pin_swap
-  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
-)
-endif()
 
 endif()
 
 if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
 add_subdirectory(src/StandardTransforms/ConstantPropagationTransform)
 
-if(NOT ${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
-install(
-  TARGETS constant_propagation
-  DESTINATION ${PSN_TRANSFORM_INSTALL_PATH}
-)
-endif()
 
 endif()

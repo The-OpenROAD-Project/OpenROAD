@@ -1,7 +1,5 @@
 project(OpenPhySynPinSwapTransform VERSION 1.0.0 LANGUAGES CXX)
 
-find_package(spdlog REQUIRED)
-
 set(TRANSFORM_NAME pin_swap)
 
 
@@ -42,7 +40,6 @@ endif()
 target_include_directories(${TRANSFORM_NAME} PUBLIC
   src/
   ${PSN_HOME}/include/
-  ${PSN_HOME}/external/spdlog/include
   ${OPENDB_HOME}/include
   ${OPENDB_HOME}/src
   ${OPENDB_HOME}/src/db
@@ -52,7 +49,6 @@ target_include_directories(${TRANSFORM_NAME} PUBLIC
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
 ${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
-spdlog::spdlog_header_only
 )
 
 if (DEFINED "TRANSFORMS_BUILD_DIR")
