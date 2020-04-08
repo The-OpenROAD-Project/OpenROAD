@@ -33,7 +33,6 @@
 
 #include "GateCloningTransform.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
-#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/Psn.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/StringUtils.hpp"
@@ -63,8 +62,8 @@ void
 GateCloningTransform::cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                                 bool clone_largest_only)
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    DatabaseHandler& handler        = *(psn_inst->handler());
+    float            cap_per_micron = handler.capacitancePerMicron();
 
     auto output_pins = handler.outputPins(inst);
     if (!output_pins.size())
@@ -125,8 +124,8 @@ GateCloningTransform::topDownClone(psn::Psn*                          psn_inst,
                                    std::unique_ptr<psn::SteinerTree>& tree,
                                    psn::SteinerPoint k, float c_limit)
 {
-    DatabaseHandler& handler = *(psn_inst->handler());
-    float cap_per_micron     = psn_inst->settings()->capacitancePerMicron();
+    DatabaseHandler& handler        = *(psn_inst->handler());
+    float            cap_per_micron = handler.capacitancePerMicron();
 
     SteinerPoint drvr = tree->driverPoint();
 

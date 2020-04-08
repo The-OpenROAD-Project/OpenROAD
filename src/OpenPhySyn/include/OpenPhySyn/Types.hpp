@@ -31,9 +31,6 @@
 
 #pragma once
 
-// Temproary fix for OpenSTA
-#define THROW_DCL throw()
-
 namespace sta
 {
 class dbSta;

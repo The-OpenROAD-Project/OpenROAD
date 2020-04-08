@@ -37,7 +37,6 @@
 #include "Config.hpp"
 #include "FileUtils.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
-#include "OpenPhySyn/DesignSettings.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/PsnLogger.hpp"
 #include "PsnException.hpp"
@@ -82,7 +81,6 @@ Psn::Psn(DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
     }
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
-    settings_   = new DesignSettings();
     db_handler_ = new DatabaseHandler(this, sta_);
 }
 
@@ -107,7 +105,6 @@ Psn::initialize(DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
 
 Psn::~Psn()
 {
-    delete settings_;
     delete db_handler_;
 }
 
@@ -134,12 +131,6 @@ Psn::handler() const
     return db_handler_;
 }
 
-DesignSettings*
-Psn::settings() const
-{
-    return settings_;
-}
-
 Psn&
 Psn::instance()
 {
@@ -152,12 +143,6 @@ Psn::instance()
 Psn*
 Psn::instancePtr()
 {
-#ifndef OPENROAD_BUILD
-    if (!is_initialized_)
-    {
-        PSN_LOG_CRITICAL("OpenPhySyn is not initialized!");
-    }
-#endif
     return psn_instance_;
 }
 
@@ -629,10 +614,12 @@ Psn::sourceTclScript(const char* script_path)
 void
 Psn::setWireRC(float res_per_micon, float cap_per_micron)
 {
-    handler()->resetDelays();
-    settings()
-        ->setResistancePerMicron(res_per_micon)
-        ->setCapacitancePerMicron(cap_per_micron);
+    if (!database() || database()->getChip() == nullptr)
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return;
+    }
+    handler()->setWireRC(res_per_micon, cap_per_micron);
 }
 
 int

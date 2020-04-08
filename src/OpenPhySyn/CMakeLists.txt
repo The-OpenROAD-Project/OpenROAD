@@ -31,11 +31,9 @@ endif()
 
 
 # Tool build configuration
-option(OPENROAD_BUILD "Indicates if the tool is being built as a module in the top level application" OFF)
 set(OPENPHYSYN_DATABASE_HANDLER "OpenSTA" CACHE STRING "Specify the database handler type, can be OpenDB or OpenSTA")
 
 
-add_definitions(-DOPENROAD_BUILD)
 if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
 add_definitions(-DOPENPHYSYN_AUTO_LINK)
 set(OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY "")
@@ -43,7 +41,7 @@ endif()
 
 set(SWIG_FLAGS "-w467,72,503,509")
 set(SWIG_PSN_LIB_FLAGS "")
-set(SWIG_FLAGS "-DOPENROAD_BUILD -DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
+set(SWIG_FLAGS "-DSWIG_DIRECTOR_STATIC ${SWIG_FLAGS}")
 set(SWIG_PSN_LIB_FLAGS "-DOPENROAD_OPENPHYSYN_LIBRARY_BUILD")
 
 
@@ -124,10 +122,9 @@ set(SWIG_SOURCE_COMPILE_FLAGS "-Wno-cast-qual -Wno-deprecated -Wno-unused-variab
 set_source_files_properties(${PSN_WRAP} PROPERTIES COMPILE_FLAGS ${SWIG_SOURCE_COMPILE_FLAGS})
 
 set(PSN_MAIN ${PSN_HOME}/app/PsnMain.cpp)
-set(PSN_SOURCES_NO_MAIN_NO_WRAP
+set(PSN_SOURCES
     ${PSN_HOME}/src/Psn.cpp
     ${PSN_HOME}/src/Exports.cpp
-    ${PSN_HOME}/src/DesignSettings.cpp
     ${PSN_HOME}/src/SteinerTree.cpp
     ${PSN_HOME}/src/PsnLogger.cpp
     ${PSN_HOME}/src/DatabaseHandler.cpp
@@ -140,84 +137,32 @@ set(PSN_SOURCES_NO_MAIN_NO_WRAP
     ${PSN_HOME}/src/PsnGlobal.cpp
     ${PSN_HOME}/src/PsnException.cpp
     ${PSN_HOME}/src/PathPoint.cpp
-)
-
-set(PSN_OPENROAD_LIBRARY_FILE
-  ${PSN_HOME}/src/MakeOpenPhySyn.cpp
+    ${PSN_HOME}/src/MakeOpenPhySyn.cpp
+    ${PSN_WRAP}
 )
 
 
 
-set(PSN_SOURCES_NO_MAIN
-    ${PSN_SOURCES_NO_MAIN_NO_WRAP}
-)
-set(PSN_SOURCES 
-    ${PSN_SOURCES_NO_MAIN}
-    ${PSN_MAIN}
-)
 
-set(PSN_TESTFILES        # All .cpp files in tests/
-    ${PROJECT_SOURCE_DIR}/tests/doctest/SteinerTree.cpp
-    ${PROJECT_SOURCE_DIR}/tests/doctest/HelloTransform.cpp
-    ${PROJECT_SOURCE_DIR}/tests/doctest/Sta.cpp
-    ${PROJECT_SOURCE_DIR}/tests/doctest/TestMain.cpp
-    ${PROJECT_SOURCE_DIR}/tests/doctest/Readers.cpp
-)
 if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
-set(PSN_TESTFILES
-  ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/doctest/HelloTransform.cpp
-)
 add_definitions(-DOPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED)
 endif()
+
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
-set(PSN_TESTFILES
-  ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/doctest/BufferFanout.cpp
-  ${PROJECT_SOURCE_DIR}/tests/doctest/BufferTopPort.cpp
-)
 add_definitions(-DOPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED)
 endif()
+
 if (${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
-set(PSN_TESTFILES
-  ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/doctest/GateClone.cpp
-)
 add_definitions(-DOPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED)
 endif()
+
 if (${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
-set(PSN_TESTFILES
-  ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/doctest/PinSwap.cpp
-  ${PROJECT_SOURCE_DIR}/tests/doctest/PinSwapPower.cpp
-)
 add_definitions(-DOPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED)
 endif()
+
 if (${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
-set(PSN_TESTFILES
-  ${PSN_TESTFILES}
-  ${PROJECT_SOURCE_DIR}/tests/doctest/SimpleConstantPropagation.cpp
-  ${PROJECT_SOURCE_DIR}/tests/doctest/SimpleConstantPropagationInversion.cpp
-  ${PROJECT_SOURCE_DIR}/tests/doctest/ComplexConstantPropagation.cpp
-)
 add_definitions(-DOPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED)
 endif()
-
-
-set(PSN_SOURCES
-    ${PSN_SOURCES}
-    ${DBSTA_TCL_INIT}
-)
-
-set(PSN_TESTFILES
-    ${PSN_TESTFILES}
-    ${DBSTA_TCL_INIT}
-)
-add_custom_target(
-  opensta-tcl-init
-  DEPENDS ${DBSTA_TCL_INIT}
-)
-
 
 
 
@@ -289,16 +234,7 @@ if(${OPENPHYSYN_TRANSFORM_AUTO_LINK_TRANSFORMS})
   endif()
 endif()
 
-# Stand-alone executable specific libraries
-set(PUBLIC_EXEC_LIBRARIES
-)
 
-if (${OPENPHYSYN_TF_ENABLED})
-set(PUBLIC_LIBRARIES
-  ${PUBLIC_LIBRARIES}
-  Cpp-Taskflow
-)
-endif()
 
 
 set(PRIVATE_INCLUDE_DIRS
@@ -322,16 +258,10 @@ set(PRIVATE_INCLUDE_DIRS
   flute3
 )
 
-set(PUBLIC_EXEC_LIBRARIES
-opendb
-dbSta
-OpenSTA
-flute
-)
 
 
 # Compile all sources into a library.
-add_library(${LIBRARY_NAME} ${PSN_SOURCES_NO_MAIN_NO_WRAP} ${PSN_WRAP} ${PSN_OPENROAD_LIBRARY_FILE})
+add_library(${LIBRARY_NAME} ${PSN_SOURCES})
 set_target_properties(${LIBRARY_NAME} PROPERTIES COMPILE_FLAGS ${OPENPHYSYN_CMAKE_CXX_FLAGS})
 
 

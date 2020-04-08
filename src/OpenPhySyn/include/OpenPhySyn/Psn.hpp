@@ -41,7 +41,6 @@
 class Tcl_Interp;
 namespace psn
 {
-class DesignSettings;
 class Psn
 {
 public:
@@ -68,7 +67,6 @@ public:
     virtual int  setWireRC(const char* layer_name);
 
     virtual DatabaseHandler* handler() const;
-    virtual DesignSettings*  settings() const;
 
     virtual void printVersion(bool raw_str = false);
     virtual void printUsage(bool raw_str = false, bool print_transforms = true,
@@ -91,7 +89,6 @@ public:
 
 private:
     Psn(DatabaseSta* sta = nullptr);
-    DesignSettings*  settings_;
     DatabaseSta*     sta_;
     Database*        db_;
     DatabaseHandler* db_handler_;
