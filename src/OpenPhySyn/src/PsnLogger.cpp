@@ -30,7 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "OpenPhySyn/PsnLogger.hpp"
-#include <memory>
 
 namespace psn
 {
