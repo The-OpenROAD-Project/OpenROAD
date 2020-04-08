@@ -243,7 +243,6 @@ set(PRIVATE_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/external/StandardTransforms
   ${PROJECT_SOURCE_DIR}/external/flute
   ${TCL_INCLUDE_PATH}
-  ${SPD_LOG_HOME}/include
   ${FLUTE_HOME}/include
   ${OPENDB_HOME}/include
   ${DBSTA_HOME}/include
@@ -307,18 +306,6 @@ set(PRIVATE_INCLUDE_DIRS
   ${OPENROAD_HOME}/src
   ${OPENROAD_HOME}/src/flute3
   ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}/app
-  ${OPENSTA_HOME}/dcalc
-  ${OPENSTA_HOME}/graph
-  ${OPENSTA_HOME}/liberty
-  ${OPENSTA_HOME}/network
-  ${OPENSTA_HOME}/parasitics
-  ${OPENSTA_HOME}/sdc
-  ${OPENSTA_HOME}/sdf
-  ${OPENSTA_HOME}/search
-  ${OPENSTA_HOME}/util
-  ${OPENSTA_HOME}/verilog
-  ${OPENSTA_HOME}/${CUDD_INCLUDE}
   flute3
 )
 
@@ -336,7 +323,7 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES COMPILE_FLAGS ${OPENPHYSYN_CMAK
 
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES})
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES} OpenSTA)
 
 
 
