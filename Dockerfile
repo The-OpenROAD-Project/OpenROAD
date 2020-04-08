@@ -7,7 +7,7 @@ RUN yum group install -y "Development Tools" \
     && yum install -y centos-release-scl \
     && yum install -y wget devtoolset-8 \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
-    python36u python36u-libs python36u-devel python36u-pip liblemon-dev && \
+    python36u python36u-libs python36u-devel python36u-pip && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
@@ -64,6 +64,14 @@ RUN git clone https://github.com/gabime/spdlog.git \
     && cmake .. \
     && make -j $(nproc) \
     && make install
+
+# lemon required by TritonCTS (no package for CentOS!)
+#  (On Ubuntu liblemon-dev can be used instead)
+RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
+    tar -xf lemon-1.3.1.tar.gz && \
+    cd lemon-1.3.1 && \
+    && cmake -B build . \
+    && cmake --build build -j $(nproc) -t install
 
 RUN useradd -ms /bin/bash openroad
 
