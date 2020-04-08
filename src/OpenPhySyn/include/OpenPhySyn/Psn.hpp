@@ -94,9 +94,6 @@ private:
     DatabaseHandler* db_handler_;
     std::string      exec_path_;
 
-    int initializeDatabase();
-    int initializeSta(Tcl_Interp* interp = nullptr);
-
     std::unordered_map<std::string, std::shared_ptr<PsnTransform>> transforms_;
     std::unordered_map<std::string, TransformInfo> transforms_info_;
     Tcl_Interp*                                    interp_;

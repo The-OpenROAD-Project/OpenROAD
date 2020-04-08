@@ -42,7 +42,6 @@
 #include "PsnException.hpp"
 #include "StringUtils.hpp"
 #include "TransformHandler.hpp"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
 #ifdef OPENPHYSYN_AUTO_LINK
@@ -56,29 +55,16 @@
 extern "C"
 {
     extern int Psn_Init(Tcl_Interp* interp);
-    extern int Sta_Init(Tcl_Interp* interp);
 }
-namespace sta
-{
-extern void        evalTclInit(Tcl_Interp* interp, const char* inits[]);
-extern const char* tcl_inits[];
-} // namespace sta
 
 namespace psn
 {
-using sta::evalTclInit;
-using sta::tcl_inits;
 
 Psn* Psn::psn_instance_;
 bool Psn::is_initialized_ = false;
 
 Psn::Psn(DatabaseSta* sta) : sta_(sta), db_(nullptr), interp_(nullptr)
 {
-    if (sta == nullptr)
-    {
-        initializeDatabase();
-        initializeSta();
-    }
     exec_path_  = FileUtils::executablePath();
     db_         = sta_->db();
     db_handler_ = new DatabaseHandler(this, sta_);
@@ -649,29 +635,6 @@ Psn::setWireRC(const char* layer_name)
 }
 
 // Private methods:
-int
-Psn::initializeDatabase()
-{
-    if (db_ == nullptr)
-    {
-        db_ = odb::dbDatabase::create();
-    }
-    return 0;
-}
-int
-Psn::initializeSta(Tcl_Interp* interp)
-{
-    if (interp == nullptr)
-    {
-        // This is a very bad solution! but temporarily until
-        // dbSta can take a database without interp..
-        interp = Tcl_CreateInterp();
-        Tcl_Init(interp);
-    }
-    sta_ = new DatabaseSta;
-    sta_->init(interp, db_);
-    return 0;
-}
 
 void
 Psn::clearDatabase()
