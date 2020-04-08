@@ -31,7 +31,7 @@ project(OpenROAD VERSION 1.1.0
   LANGUAGES CXX
 )
 
-option(BUILD_OPENPHYSYN "Build OpenPhySyn" OFF)
+option(BUILD_OPENPHYSYN "Build OpenPhySyn" ON)
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 
