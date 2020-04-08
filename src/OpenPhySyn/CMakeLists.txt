@@ -246,8 +246,6 @@ set(PRIVATE_INCLUDE_DIRS
   ${OPENROAD_HOME}/include
   ${OPENROAD_HOME}/src
   ${OPENROAD_HOME}/src/flute3
-  ${OPENDB_HOME}/include
-  flute3
 )
 
 

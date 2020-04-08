@@ -2,46 +2,15 @@ project(OpenPhySynGateCloningTransform VERSION 1.0.0 LANGUAGES CXX)
 
 set(TRANSFORM_NAME gate_clone)
 
-set(PSN_HOME "/usr/include/OpenPhySyn" CACHE FILEPATH "The path to OpenPhySyn includes")
-
-IF(NOT EXISTS ${PSN_HOME})
-message( FATAL_ERROR "Cannot find OpenPhySyn headers, set PSN_HOME option." )
-endif()
-
-if(NOT DEFINED OPENDB_HOME)
-  set(OPENDB_HOME ${PSN_HOME}/external/OpenDB CACHE FILEPATH "The path to OpenDB includes")
-endif()
-
-if(NOT DEFINED OPENSTA_HOME)
-  set(OPENSTA_HOME ${PSN_HOME}/external/OpenSTA  CACHE FILEPATH "The path to OpenSTA" )
-endif()
-
-IF(NOT EXISTS ${OPENDB_HOME})
-message( FATAL_ERROR "${OPENDB_HOME} -- ${PSN_HOME} Cannot find OpenDB headers, set OPENDB_HOME option." )
-endif()
-IF(NOT EXISTS ${OPENSTA_HOME})
-message( FATAL_ERROR "Cannot find OpenSTA headers, set OPENSTA_HOME option." )
-endif()
-
-set(PSN_LIB_PATH "" CACHE STRING "Set OpenPhySyn built library path" 0)
-
-if(NOT PSN_LIB_PATH STREQUAL 0)
-link_directories(${PSN_LIB_PATH})
-endif()
 
 add_library(${TRANSFORM_NAME}  src/GateCloningTransform.cpp)
 target_compile_definitions(${TRANSFORM_NAME} INTERFACE OPENPHYSYN_TRANSFORM_BUILD)
 
-target_include_directories(${TRANSFORM_NAME} PUBLIC
-  src/
-  ${PSN_HOME}/include/
-  ${OPENDB_HOME}/include
-  ${OPENSTA_HOME}
-)
 
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
 ${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
+OpenSTA
 )
 
 if (DEFINED "TRANSFORMS_BUILD_DIR")
