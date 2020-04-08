@@ -1,5 +1,7 @@
 project(OpenPhySynHelloTransform VERSION 1.0.0 LANGUAGES CXX)
 
+find_package(spdlog REQUIRED)
+
 set(TRANSFORM_NAME hello_transform)
 
 set(PSN_HOME "/usr/include/OpenPhySyn" CACHE FILEPATH "The path to OpenPhySyn includes")
@@ -49,6 +51,7 @@ target_include_directories(${TRANSFORM_NAME} PUBLIC
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
 ${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
+spdlog::spdlog_header_only
 )
 
 if (DEFINED "TRANSFORMS_BUILD_DIR")
