@@ -51,7 +51,7 @@ target_include_directories(${TRANSFORM_NAME} PUBLIC
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
 ${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
-spdlog::spdlog_header_only
+spdlog::spdlog
 )
 
 if (DEFINED "TRANSFORMS_BUILD_DIR")
