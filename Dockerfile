@@ -7,7 +7,7 @@ RUN yum group install -y "Development Tools" \
     && yum install -y centos-release-scl \
     && yum install -y wget devtoolset-8 \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
-    python36u python36u-libs python36u-devel python36u-pip && \
+    python36u python36u-libs python36u-devel python36u-pip liblemon-dev && \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
