@@ -1,4 +1,4 @@
-OpenROAD 1.1.0 8c18bf639c
+OpenROAD 1.1.0 6d44a8d5a7
 License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
 
 This is free software, and you are free to change and redistribute it
@@ -18,7 +18,8 @@ Notice 0:     Created 18831 nets and 62019 connections.
 Notice 0: Finished DEF file: aes.def
 
 Running chaco...
-Partitioned graph for seed 71876166 in 24 ms.
+Partitioned graph for seed 71876166 in 36 ms.
+Chaco run completed. Partition ID = 0.
 
 Partitioning Results for ID = 0 and Tool = chaco.
 Best results used seed 71876166.
@@ -27,8 +28,7 @@ Number of Terminals = 475.
 Cluster Size SD = 194.5.
 Cluster Area SD = 29.5.
 Total Hop Weigth = 14897.
-Total Runtime = 24.
+Total Runtime = 36.
 
-Chaco run completed. Partition ID = 0.
 [INFO] Writing partition id's to DB.
 [INFO] Writing done.

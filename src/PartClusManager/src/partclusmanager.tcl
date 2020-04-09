@@ -53,7 +53,9 @@ sta::define_cmd_args "partition_netlist" { [-tool name] \
                                            [-enable_term_prop value] \
                                            [-cut_hop_ratio value] \
                                            [-architecture value] \
+                                           [-refinement value] \
                                            [-seeds value] \
+                                           [-partition_id value] \
                                          }
 proc partition_netlist { args } {
   sta::parse_key_args "partition_netlist" args \
@@ -71,7 +73,9 @@ proc partition_netlist { args } {
           -enable_term_prop \
           -cut_hop_ratio \ 
           -architecture \
+          -refinement \
           -seeds \
+          -partition_id \
          } flags {}
 
   # Tool
@@ -215,6 +219,11 @@ proc partition_netlist { args } {
         PartClusManager::set_architecture $keys(-architecture)
   }
 
+  # Refinement
+  if { [info exists keys(-refinement)] } {
+        PartClusManager::set_refinement $keys(-refinement)
+  }
+
   # Seeds
   if { [info exists keys(-seeds)] } {
         PartClusManager::set_seeds $keys(-seeds)
@@ -225,7 +234,14 @@ proc partition_netlist { args } {
         }
         PartClusManager::generate_seeds $keys(-num_starts)
   }
+
+  # Partition Id (for exisisting partitions)
+  if { [info exists keys(-partition_id)] } {
+        PartClusManager::set_existing_id $keys(-partition_id)
+  }
+
   set bestId [PartClusManager::run_partitioning]
+  
   return $bestId
 }
 

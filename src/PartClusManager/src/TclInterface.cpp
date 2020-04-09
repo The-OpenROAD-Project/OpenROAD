@@ -138,6 +138,12 @@ void set_architecture(const char* topology) {
         kernel->getOptions().setArchTopology(archTopology);
 }
 
+void set_refinement(unsigned value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setRefinement(value);
+}
+
 void set_seeds(const char* seeds) {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
@@ -146,6 +152,12 @@ void set_seeds(const char* seeds) {
         std::istream_iterator<int> end;
         std::vector<int> seedVector(begin, end);
         kernel->getOptions().setSeeds(seedVector);
+}
+
+void set_existing_id(int value) {
+        ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+        PartClusManagerKernel* kernel = openroad->getPartClusManager();
+        kernel->getOptions().setExistingID(value);
 }
 
 void generate_seeds(unsigned value) {
