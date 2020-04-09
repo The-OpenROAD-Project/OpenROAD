@@ -85,11 +85,11 @@ class dbVerilogNetwork;
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
-public:
   OpenRoad();
   ~OpenRoad();
+public:
   // Singleton accessor used by tcl command interpreter.
-  static OpenRoad *openRoad() { return openroad_; }
+  static OpenRoad *openRoad();
   void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }

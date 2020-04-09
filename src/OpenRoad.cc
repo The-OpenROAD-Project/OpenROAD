@@ -99,13 +99,21 @@ OpenRoad::getDbNetwork()
   return sta_->getDbNetwork();
 }
 
+/* static */
+OpenRoad *OpenRoad::openRoad()
+{
+  if (openroad_ == nullptr) {
+    openroad_ = new OpenRoad;    
+  }
+  return openroad_;
+}
+
 ////////////////////////////////////////////////////////////////
 
 void
 initOpenRoad(Tcl_Interp *interp)
 {
-  OpenRoad *openroad = new OpenRoad;
-  openroad->init(interp);
+  OpenRoad::openRoad()->init(interp);
 }
 
 void
