@@ -39,13 +39,14 @@
 #endif
 
 #include <ClusteredHGraph/clustHGRegistry.h>
+#include "newcasecmp.h"
 
 using std::ostream;
 using std::cout;
 using std::endl;
 
 #define SEARCH_FOR(NAME) \
-        if (!strcasecmp(clustName, #NAME)) _type = NAME;
+        if (!newstrcasecmp(clustName, #NAME)) _type = NAME;
 
 ClHG_ClusteringType::ClHG_ClusteringType(int argc, const char* argv[]) {
         _type = static_cast<Type>(UINT_MAX);

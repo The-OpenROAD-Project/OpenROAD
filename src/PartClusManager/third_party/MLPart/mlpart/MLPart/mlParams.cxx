@@ -161,7 +161,7 @@ MLPartParams::Parameters(int argc, const char *argv[]) : PartitionerParams(argc,
         DoubleParam lastVCycleImproveThreshold_("lastVCycleImproveThreshold", argc, argv);
 
 #define SEARCH_FOR1(NAME) \
-        if (!strcasecmp(savePartProb_, #NAME)) savePartProb = NAME;
+        if (!newstrcasecmp(savePartProb_, #NAME)) savePartProb = NAME;
 
         if (savePartProb_.found()) {
                 SEARCH_FOR1(NeverSave)
@@ -173,7 +173,7 @@ MLPartParams::Parameters(int argc, const char *argv[]) : PartitionerParams(argc,
         }
 
 #define SEARCH_FOR2(NAME) \
-        if (!strcasecmp(Vcycling_, #NAME)) Vcycling = NAME;
+        if (!newstrcasecmp(Vcycling_, #NAME)) Vcycling = NAME;
 
         if (Vcycling_.found()) {
                 SEARCH_FOR2(NoVcycles)
@@ -222,13 +222,13 @@ MLPartParams::Parameters(int argc, const char *argv[]) : PartitionerParams(argc,
         if (toleranceAlpha_.found()) toleranceAlpha = toleranceAlpha_;
 
         if (useTwoPartCalls_.found()) {
-                if (!strcasecmp(useTwoPartCalls_, "ALL"))
+                if (!newstrcasecmp(useTwoPartCalls_, "ALL"))
                         useTwoPartCalls = ALL;
-                else if (!strcasecmp(useTwoPartCalls_, "TOPONLY"))
+                else if (!newstrcasecmp(useTwoPartCalls_, "TOPONLY"))
                         useTwoPartCalls = TOPONLY;
-                else if (!strcasecmp(useTwoPartCalls_, "ALLBUTLAST"))
+                else if (!newstrcasecmp(useTwoPartCalls_, "ALLBUTLAST"))
                         useTwoPartCalls = ALLBUTLAST;
-                else if (!strcasecmp(useTwoPartCalls_, "NEVER"))
+                else if (!newstrcasecmp(useTwoPartCalls_, "NEVER"))
                         useTwoPartCalls = NEVER;
                 else
                         abkfatal(0, "unknown option for useTwoPartCalls");

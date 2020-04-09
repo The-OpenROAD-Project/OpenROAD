@@ -47,7 +47,7 @@ using std::endl;
 using std::setw;
 
 #define SEARCH_FOR(NAME) \
-        if (!strcasecmp(evalName, #NAME)) _type = NAME;
+        if (!newstrcasecmp(evalName, #NAME)) _type = NAME;
 
 PartEvalType::PartEvalType(int argc, const char* argv[]) {
         _type = NetCutWNetVec;  // static_cast<Type>(UINT_MAX);

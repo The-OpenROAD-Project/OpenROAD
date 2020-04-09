@@ -50,6 +50,7 @@
 #include "abkstring.h"
 #include "abkassert.h"
 #include "abkio.h"
+#include "newcasecmp.h"
 #define eh eathash
 
 using std::istream;
@@ -158,10 +159,10 @@ istream& impl_needcaseword(istream& in, const char* word, int lineNo = -1) {
         in >> buffer;
         if (lineNo > 0) {
                 sprintf(errMess, " '%s' expected near line %d. Got %s ", word, lineNo, buffer);
-                abkfatal2(strcasecmp(buffer, word) == 0, errMess, lineNo);
+                abkfatal2(newstrcasecmp(buffer, word) == 0, errMess, lineNo);
         } else {
                 sprintf(errMess, " '%s' expected. Got %s ", word, buffer);
-                abkfatal(strcasecmp(buffer, word) == 0, errMess);
+                abkfatal(newstrcasecmp(buffer, word) == 0, errMess);
         }
         return in;
 }

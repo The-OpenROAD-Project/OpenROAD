@@ -337,7 +337,7 @@ void BaseMLPart::_callPartitioner(const HGraphFixed& hgraph, const Partitioning&
                         }
                 }
                 if (actualNum != mainBuf->endUsedSoln()) {
-                        cerr << "Could not generate enough initial solutions:" << cerr << "  was looking for " << mainBuf->endUsedSoln() - mainBuf->beginUsedSoln();
+                        cerr << "Could not generate enough initial solutions:" << "  was looking for " << mainBuf->endUsedSoln() - mainBuf->beginUsedSoln();
                         cerr << "  and found only  " << actualNum - mainBuf->beginUsedSoln() << endl;
                         mainBuf->setEndUsedSoln(actualNum);
                         shadowBuf->setEndUsedSoln(actualNum);

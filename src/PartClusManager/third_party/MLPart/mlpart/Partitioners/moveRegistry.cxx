@@ -43,13 +43,14 @@
 #include <iostream>
 #include "ABKCommon/abkcommon.h"
 #include "moveRegistry.h"
+#include "newcasecmp.h"
 
 using std::cout;
 using std::endl;
 using std::ostream;
 
 #define SEARCH_FOR(NAME) \
-        if (!strcasecmp(moveManName, #NAME)) _type = NAME;
+        if (!newstrcasecmp(moveManName, #NAME)) _type = NAME;
 
 char MoveManagerType::strbuf[32];
 
@@ -70,8 +71,8 @@ MoveManagerType::MoveManagerType(int argc, const char* argv[])
 
         if (moveManName.found()) {
                 SEARCH_FOR(FMwCutLineRef)
-                else if (!strcasecmp(moveManName, "FMwCLR")) _type = FMwCutLineRef;
-                else SEARCH_FOR(FMDD) else SEARCH_FOR(FMUCLA) else SEARCH_FOR(FMHybrid) else SEARCH_FOR(FM) else SEARCH_FOR(SA) else SEARCH_FOR(RandomGreedy) else SEARCH_FOR(HMetis) else SEARCH_FOR(AGreed) else if (!strcasecmp(moveManName, "Greedy")) _type = FM;
+                else if (!newstrcasecmp(moveManName, "FMwCLR")) _type = FMwCutLineRef;
+                else SEARCH_FOR(FMDD) else SEARCH_FOR(FMUCLA) else SEARCH_FOR(FMHybrid) else SEARCH_FOR(FM) else SEARCH_FOR(SA) else SEARCH_FOR(RandomGreedy) else SEARCH_FOR(HMetis) else SEARCH_FOR(AGreed) else if (!newstrcasecmp(moveManName, "Greedy")) _type = FM;
                 else abkfatal3(0, " -part ", moveManName, " (can't assign move manager)\n");
         }
         _type = FM;

@@ -39,6 +39,7 @@ set(SRC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/MakePartclusmanager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/PartClusManagerKernel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/TclInterface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/HypergraphDecomposition.cpp
    )
 
 ###########################################################

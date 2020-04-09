@@ -45,6 +45,7 @@
 #define _HGRAPHFIXED_H_
 
 #include "ABKCommon/abkcommon.h"
+#include "newcasecmp.h"
 #include "ABKCommon/sgi_hash_map.h"
 #include "Ctainers/listO1size.h"
 #include "hgBase.h"
@@ -71,7 +72,7 @@ struct HGeqstr {
         bool operator()(const char* s1, const char* s2) const
             //{ return strcasecmp(s1, s2) < 0; }
         {
-                return strcasecmp(s1, s2) == 0;
+                return newstrcasecmp(s1, s2) == 0;
         }
 };
 

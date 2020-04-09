@@ -117,7 +117,7 @@ bool PartitioningProblem::read(const char* baseFileName) {
                         abkfatal(!strcmp(word2, ":"),
                                  " Error in aux file: space-separated column "
                                  "expected");
-                        if (!strcasecmp(word1, "CD")) {
+                        if (!newstrcasecmp(word1, "CD")) {
                                 auxFile >> word1;
                                 auxFile >> needeol(lineNo++);
                                 if (word1[0] == pathDelimWindows || word1[0] == pathDelimUnix)
@@ -127,7 +127,7 @@ bool PartitioningProblem::read(const char* baseFileName) {
                                 char fDel[2];
                                 sprintf(fDel, "%c", pathDelim);
                                 if (word1[strlen(word1) - 1] != pathDelimWindows || word1[0] == pathDelimUnix) strcat(dir, fDel);
-                        } else if (!strcasecmp(word1, "PartProb")) {
+                        } else if (!newstrcasecmp(word1, "PartProb")) {
                                 found = true;
                                 auxFile.getline(oneLine, 1023);
                                 unsigned len = strlen(oneLine), fileNum = 0;
@@ -684,9 +684,9 @@ bool PartitioningProblem::readBLK(istream& blkFile) {
         for (k = 0; k != numWeights; k++) {
                 char yesno[255];
                 blkFile >> noeol(lineNo) >> isword(lineNo) >> yesno;
-                if (strcasecmp(yesno, "yes") == 0 || strcasecmp(yesno, "y") == 0)
+                if (newstrcasecmp(yesno, "yes") == 0 || newstrcasecmp(yesno, "y") == 0)
                         relativeCaps[k] = true;
-                else if (strcasecmp(yesno, "no") == 0 || strcasecmp(yesno, "n") == 0)
+                else if (newstrcasecmp(yesno, "no") == 0 || newstrcasecmp(yesno, "n") == 0)
                         relativeCaps[k] = false;
                 else
                         abkfatal2(0, "'yes' or 'no' expected in line ", lineNo);
@@ -731,7 +731,7 @@ bool PartitioningProblem::readBLK(istream& blkFile) {
                 char partId[256], rect[256];
                 blkFile >> eathash(lineNo) >> isword(lineNo) >> partId >> noeol(lineNo) >> rect >> noeol(lineNo);
 
-                abkfatal2(strcasecmp(rect, "rect") == 0, "'rect' expected in line", lineNo);
+                abkfatal2(newstrcasecmp(rect, "rect") == 0, "'rect' expected in line", lineNo);
                 double xMin, yMin, xMax, yMax;
                 blkFile >> my_isnumber(lineNo) >> xMin >> my_isnumber(lineNo) >> yMin >> my_isnumber(lineNo) >> xMax >> my_isnumber(lineNo) >> yMax;
                 BBox box(xMin, yMin, xMax, yMax);
