@@ -63,6 +63,8 @@ using std::min;
 using std::max;
 
 using odb::dbLib;
+using odb::dbTech;
+using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbBlock;
 using odb::Rect;
@@ -167,17 +169,22 @@ OpenRoad::readLef(const char *filename,
 		  bool make_library)
 {
   odb::lefin lef_reader(db_, false);
+  dbLib *lib = nullptr;
+  dbTech *tech = nullptr;
   if (make_tech && make_library) {
-    dbLib *lib = lef_reader.createTechAndLib(lib_name, filename);
-    if (lib)
-      sta_->readLefAfter(lib);
+    lib = lef_reader.createTechAndLib(lib_name, filename);
+    tech = db_->getTech();
+  } else if (make_tech) {
+    tech = lef_reader.createTech(filename);
+  } else if (make_library) {
+    lib = lef_reader.createLib(lib_name, filename);
   }
-  else if (make_tech)
-    lef_reader.createTech(filename);
-  else if (make_library) {
-    dbLib *lib = lef_reader.createLib(lib_name, filename);
-    if (lib)
-      sta_->readLefAfter(lib);
+
+  // both are null on parser failure
+  if (lib != nullptr || tech != nullptr) {
+    for (Observer* observer : observers_) {
+      observer->postReadLef(tech, lib);
+    }
   }
 }
 
@@ -188,13 +195,20 @@ OpenRoad::readDef(const char *filename, bool order_wires)
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
-  def_reader.createChip(search_libs, filename);
+  dbChip* chip = def_reader.createChip(search_libs, filename);
+  if (chip == nullptr) { // parser failed
+    return;
+  }
+  dbBlock* block = chip->getBlock();
   if (order_wires) {
-    odb::orderWires(db_->getChip()->getBlock(),
+    odb::orderWires(block,
                     nullptr /* net_name_or_id*/,
                     false /* force */);
   }
-  sta_->readDefAfter();
+
+  for (Observer* observer : observers_) {
+    observer->postReadDef(block);
+  }
 }
 
 static odb::defout::Version
@@ -233,10 +247,15 @@ void
 OpenRoad::readDb(const char *filename)
 {
   FILE *stream = fopen(filename, "r");
-  if (stream) {
-    db_->read(stream);
-    sta_->readDbAfter();
-    fclose(stream);
+  if (stream == nullptr) {
+    return;
+  }
+
+  db_->read(stream);
+  fclose(stream);
+
+  for (Observer* observer : observers_) {
+    observer->postReadDb(db_);
   }
 }
 
@@ -261,7 +280,9 @@ OpenRoad::linkDesign(const char *design_name)
 
 {
   dbLinkDesign(design_name, verilog_network_, db_);
-  sta_->readDbAfter();
+  for (Observer* observer : observers_) {
+    observer->postReadDb(db_);
+  }
 }
 
 void
@@ -283,6 +304,26 @@ OpenRoad::getCore()
 {
   return ord::getCore(db_->getChip()->getBlock());
 }
+
+void OpenRoad::addObserver(Observer *observer)
+{
+  observer->owner_ = this;
+  observers_.insert(observer);
+}
+
+void OpenRoad::removeObserver(Observer *observer)
+{
+  observer->owner_ = nullptr;
+  observers_.erase(observer);
+}
+
+OpenRoad::Observer::~Observer()
+{
+  if (owner_) {
+    owner_->removeObserver(this);
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////
 

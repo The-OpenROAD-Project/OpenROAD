@@ -19,6 +19,7 @@
 
 #include "opendb/db.h"
 #include "sta/Sta.hh"
+#include "openroad/OpenRoad.hh"
 
 namespace sta {
 
@@ -29,7 +30,7 @@ using odb::dbLib;
 using odb::dbNet;
 using odb::dbBlock;
 
-class dbSta : public Sta
+class dbSta : public Sta, public ord::OpenRoad::Observer
 {
 public:
   dbSta();
@@ -37,11 +38,9 @@ public:
 	    dbDatabase *db);
 
   dbDatabase *db() { return db_; }
-  virtual void makeComponents();
+  virtual void makeComponents() override;
   dbNetwork *getDbNetwork() { return db_network_; }
-  void readLefAfter(dbLib *lib);
-  void readDefAfter();
-  void readDbAfter();
+
   virtual LibertyLibrary *readLiberty(const char *filename,
 				      Corner *corner,
 				      const MinMaxAll *min_max,
@@ -50,6 +49,11 @@ public:
   Slack netSlack(const dbNet *net,
 		 const MinMax *min_max);
   using Sta::netSlack;
+
+  // From ord::OpenRoad::Observer
+  virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
+  virtual void postReadDef(odb::dbBlock* block) override;
+  virtual void postReadDb(odb::dbDatabase* db) override;
 
 protected:
   virtual void makeNetwork();

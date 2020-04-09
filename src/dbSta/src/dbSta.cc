@@ -36,8 +36,9 @@ makeDbSta()
 void
 initDbSta(OpenRoad *openroad)
 {
-  openroad->getSta()->init(openroad->tclInterp(),
-			   openroad->getDb());
+  auto* sta = openroad->getSta();
+  sta->init(openroad->tclInterp(), openroad->getDb());
+  openroad->addObserver(sta);
 }
 
 void
@@ -112,20 +113,19 @@ dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-void
-dbSta::readLefAfter(dbLib *lib)
+void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 {
-  db_network_->readLefAfter(lib);
+  if (library) {
+    db_network_->readLefAfter(library);
+  }
 }
 
-void
-dbSta::readDefAfter()
+void dbSta::postReadDef(odb::dbBlock* block)
 {
   db_network_->readDefAfter();
 }
 
-void
-dbSta::readDbAfter()
+void dbSta::postReadDb(odb::dbDatabase* db)
 {
   db_network_->readDbAfter();
 }

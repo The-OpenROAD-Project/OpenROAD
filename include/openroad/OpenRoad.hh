@@ -14,6 +14,7 @@
 #pragma once
 
 #include <string>
+#include <set>
 #include "Version.hh"
 
 extern "C" {
@@ -23,6 +24,8 @@ struct Tcl_Interp;
 namespace odb {
 class dbDatabase;
 class dbBlock;
+class dbTech;
+class dbLib;
 class Point;
 class Rect;
 }
@@ -127,6 +130,25 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
+  // Observer interface
+  class Observer
+  {
+  public:
+    virtual ~Observer();
+
+    // Either pointer could be null
+    virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) = 0;
+    virtual void postReadDef(odb::dbBlock* block) = 0;
+    virtual void postReadDb(odb::dbDatabase* db) = 0;
+
+  private:
+    OpenRoad* owner_ = nullptr;
+    friend class OpenRoad;
+  };
+
+  void addObserver(Observer *observer);
+  void removeObserver(Observer *observer);
+
 private:
   Tcl_Interp *tcl_interp_;
   odb::dbDatabase *db_;
@@ -145,6 +167,8 @@ private:
 #endif
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
+
+  std::set<Observer *> observers_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
