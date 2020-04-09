@@ -4,7 +4,7 @@ set -e
 mkdir -p /OpenROAD/build
 cd /OpenROAD
 cmake -B build
-cmake --build build -j 4
+cmake --build build -j 8
 
 # Capture the commit we are testing for use in flow testing
 commit=`git rev-parse --verify HEAD`
