@@ -9,6 +9,7 @@ Footprint definition {
   pin_layer metal10
   
   pad_inst_name "u_%s"
+  pad_pin_name "p_%s"
   
   place {
     marker0 {type marker cell {centre {x 1200.000 y 1200.000} orient R0}}
@@ -368,7 +369,7 @@ Footprint library {
         ctrl {}
       }
       default_parameters {
-        direction input 
+        direction "input" 
         pull "no" 
         drive "xlrg" 
         core_power "VDD"
@@ -380,14 +381,14 @@ Footprint library {
       signal_connections {
         OE    {$direction == "input" ? "1'b1" : "1'b0"}  
         PU    {$direction == "input" && $pull != "up" ? "1'b1" : "1'b0"}
-        DRV   {$direction == "output" && $drive == "low" ? "2'b00" : $drive == "mid" ? "2'b01" ? $drive == "lrg" ? "2'b10" : $drive == "xlrg" "2'b11"}
+        DRV   {$direction == "output" ? ($drive == "low" ? "2'b00" : $drive == "mid" ? "2'b01" : $drive == "lrg" ? "2'b10" : $drive == "xlrg" ? "2'b11" : "2'b00") : "2'b00"}
         Y     {$direction == "input"  ? $core_signal : ""}
         A     {$direction == "output" ? $core_signal : "1'b0"}
       }
       special_connections {
-        RETN    {1 ? "retn_$section" : ""}
-        SNS     {1 ? "sns_$section" : ""}
-        PAD     {1 ? $signal : $signal}
+        RETN    {"retn_$section"}
+        SNS     {"sns_$section"}
+        PAD     {$signal}
       }
       pg_connections {
         VDD  {1 ? $core_power :  $core_power}
@@ -453,6 +454,7 @@ Footprint library {
       }
     }
     PADCELL_CBRK {
+      physical_only 1
       cell_name {bottom PADCELL_CBRK_V right PADCELL_CBRK_H top PADCELL_CBRK_V left PADCELL_CBRK_H}
       orient {bottom R0 right R90 top R180 left R270}
       special_connections {
@@ -461,6 +463,7 @@ Footprint library {
       }
     }
     PADCELL_FBRK {
+      physical_only 1
       cell_name {bottom PADCELL_FBRK_V right PADCELL_FBRK_H top PADCELL_FBRK_V left PADCELL_FBRK_H}
       orient {bottom R0 right R90 top R180 left R270}
       special_connections {
@@ -469,6 +472,7 @@ Footprint library {
       }
     }
     PADCELL_PWRDET {
+      physical_only 1
       cell_name {bottom PADCELL_PWRDET_V right PADCELL_PWRDET_H top PADCELL_PWRDET_V left PADCELL_PWRDET_H}
       orient {bottom R0 right R90 top R180 left R270}
       special_connections {
@@ -477,6 +481,7 @@ Footprint library {
       }
     }
     PAD_FILL5 {
+      physical_only 1
       cell_name {bottom PAD_FILL5_V right PAD_FILL5_H top PAD_FILL5_V left PAD_FILL5_H}
       orient {bottom R0 right MY top R180 left MX}
       special_connections {
@@ -485,6 +490,7 @@ Footprint library {
       }
     }
     PAD_FILL1 {
+      physical_only 1
       cell_name {bottom PAD_FILL1_V right PAD_FILL1_H top PAD_FILL1_V left PAD_FILL1_H}
       orient {bottom R0 right MY top R180 left MX}
       special_connections {
@@ -493,6 +499,7 @@ Footprint library {
       }
     }
     PAD_CORNER {
+      physical_only 1
       orient {ll R0 lr R90 ul R180 ur R270}
       special_connections {
         RETN    {1 ? "retn_$section" : ""}
