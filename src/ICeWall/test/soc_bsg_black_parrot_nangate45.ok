@@ -7,4 +7,6 @@ Notice 0: Reading LEF file:  soc_bsg_black_parrot_nangate45/dummy_pads.lef
 Notice 0:     Created 23 library cells
 Notice 0: Finished LEF file:  soc_bsg_black_parrot_nangate45/dummy_pads.lef
 Info: Added 1886 rows of 13894 sites.
+[ERROR] [ICEW-0011] Expected instance u_p_ddr_dm_1_o for signal u_p_ddr_dm_1_o not found
+[ERROR] [ICEW-0004] Cannot find a terminal p_p_ddr_dm_1_o to associate with bondpad bp_u_p_ddr_dm_1_o
 No differences found.
