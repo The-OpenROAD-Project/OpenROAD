@@ -304,7 +304,7 @@ int64_t Opendp::hpwl(bool initial) const
     for (dbITerm* iterm : net->getITerms()) {
       dbInst* inst = iterm->getInst();
       const Cell* cell = nullptr;
-      if (isPlacedType(inst->getMaster()->getType())) {
+      if (inst->getMaster()->isCoreAutoPlaceable()) {
         auto iter = db_inst_map_.find(inst);
         assert(iter != db_inst_map_.end());
         cell = iter->second;
@@ -411,47 +411,6 @@ int Opendp::disp(const Cell* cell) const
   int init_x, init_y;
   initialLocation(cell, &init_x, &init_y);
   return abs(init_x - cell->x_) + abs(init_y - cell->y_);
-}
-
-/* static */
-bool Opendp::isPlacedType(dbMasterType type)
-{
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-      return true;
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return false;
-  }
-  // gcc warniing
-  return false;
 }
 
 bool Opendp::isPaddedType(const Cell* cell) const

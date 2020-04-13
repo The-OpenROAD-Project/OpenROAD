@@ -179,7 +179,7 @@ void Opendp::makeCells()
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
     dbMaster* master = db_inst->getMaster();
-    if (isPlacedType(master->getType())) {
+    if (master->isCoreAutoPlaceable()) {
       cells_.push_back(Cell());
       Cell& cell            = cells_.back();
       cell.db_inst_         = db_inst;

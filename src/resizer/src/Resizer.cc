@@ -505,19 +505,7 @@ Resizer::area(Cell *cell)
 double
 Resizer::area(dbMaster *master)
 {
-  switch (master->getType()) {
-    // These are not placed in the core area
-  case odb::dbMasterType::PAD:
-  case odb::dbMasterType::PAD_INPUT:
-  case odb::dbMasterType::PAD_OUTPUT:
-  case odb::dbMasterType::PAD_INOUT:
-  case odb::dbMasterType::PAD_POWER:
-  case odb::dbMasterType::PAD_SPACER:
-  case odb::dbMasterType::PAD_AREAIO:
-    // These power structures don't consume placement area
-  case odb::dbMasterType::COVER:
-  case odb::dbMasterType::COVER_BUMP:
-  case odb::dbMasterType::RING:
+  if (!master->isCoreAutoPlaceable()) {
     return 0;
   }
   return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
