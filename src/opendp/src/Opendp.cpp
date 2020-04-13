@@ -303,9 +303,12 @@ int64_t Opendp::hpwl(bool initial) const
 
     for (dbITerm* iterm : net->getITerms()) {
       dbInst* inst = iterm->getInst();
-      auto    iter = db_inst_map_.find(inst);
-      assert(iter != db_inst_map_.end());
-      const Cell* cell = iter->second;
+      const Cell* cell = nullptr;
+      if (isPlacedType(inst->getMaster()->getType())) {
+        auto iter = db_inst_map_.find(inst);
+        assert(iter != db_inst_map_.end());
+        cell = iter->second;
+      }
       int         x, y;
       if (initial || cell == nullptr) {
         initialLocation(inst, &x, &y);
