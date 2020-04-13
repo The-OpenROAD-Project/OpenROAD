@@ -42,17 +42,11 @@
 #include <cstdlib>
 #include "opendp/Opendp.h"
 #include "openroad/Error.hh"
-
-namespace ord {
-odb::Point closestPtInRect(odb::Rect rect, odb::Point pt);
-}
+#include "openroad/OpenRoad.hh"
 
 namespace opendp {
 
 using std::abs;
-using std::cerr;
-using std::cout;
-using std::endl;
 using std::max;
 using std::min;
 using std::numeric_limits;
@@ -127,7 +121,7 @@ void Opendp::prePlaceGroups()
       if (!(isFixed(cell) || cell->is_placed_)) {
         int   dist     = numeric_limits<int>::max();
         bool  in_group = false;
-        Rect* target;
+        Rect* target = nullptr;
         for (Rect& rect : group.regions) {
           if (check_inside(cell, &rect)) {
             in_group = true;
@@ -178,8 +172,9 @@ void Opendp::place()
           shift_move(cell);
         }
       }
-    } else
+    } else {
       warn("instance %s does not fit inside the ROW core area.", cell->name());
+    }
   }
   // This has negligible benefit -cherry
   // anneal();
@@ -197,11 +192,11 @@ static bool cellAreaLess(const Cell* cell1, const Cell* cell2)
   int area2 = cell2->area();
   if (area1 > area2) {
     return true;
-  } else if (area1 < area2) {
-    return false;
-  } else {
-    return cell1->db_inst_->getId() < cell2->db_inst_->getId();
   }
+  if (area1 < area2) {
+    return false;
+  }
+  return cell1->db_inst_->getId() < cell2->db_inst_->getId();
 }
 
 void Opendp::placeGroups2()
@@ -273,7 +268,7 @@ void Opendp::brickPlace1(const Group* group)
 
   for (Cell* cell : sort_by_dist) {
     int x, y;
-    rectDist(cell, boundary);
+    rectDist(cell, boundary, &x, &y);
 
     bool valid = map_move(cell, x, y);
     if (!valid) {
@@ -308,7 +303,7 @@ int Opendp::groupRefine(const Group* group)
   vector<Cell*> sort_by_disp(group->cells_);
 
   sort(sort_by_disp.begin(), sort_by_disp.end(), [&](Cell* cell1, Cell* cell2) {
-    return (disp(cell1) > disp(cell1));
+    return (disp(cell1) > disp(cell2));
   });
 
   int count = 0;
@@ -394,17 +389,17 @@ bool Opendp::map_move(Cell* cell)
 bool Opendp::map_move(Cell* cell, int x, int y)
 {
   Pixel* pixel = diamondSearch(cell, x, y);
-  if (pixel) {
+  if (pixel != nullptr) {
     Pixel* near_pixel = diamondSearch(
         cell, pixel->grid_x_ * site_width_, pixel->grid_y_ * row_height_);
-    if (near_pixel) {
+    if (near_pixel != nullptr) {
       paint_pixel(cell, near_pixel->grid_x_, near_pixel->grid_y_);
     } else {
       paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
     }
     return true;
-  } else
-    return false;
+  } 
+  return false;
 }
 
 bool Opendp::shift_move(Cell* cell)
@@ -479,12 +474,13 @@ bool Opendp::refine_move(Cell* cell)
   int init_x, init_y;
   initialLocation(cell, &init_x, &init_y);
   Pixel* pixel = diamondSearch(cell, init_x, init_y);
-  if (pixel) {
+  if (pixel != nullptr) {
     double dist = abs(init_x - pixel->grid_x_ * site_width_)
                   + abs(init_y - pixel->grid_y_ * row_height_);
-    if (max_displacement_constraint_
-        && (dist / row_height_ > max_displacement_constraint_))
+    if (max_displacement_constraint_ != 0
+        && (dist / row_height_ > max_displacement_constraint_)) {
       return false;
+    }
 
     int dist_change = distChange(
         cell, pixel->grid_x_ * site_width_, pixel->grid_y_ * row_height_);
@@ -493,10 +489,10 @@ bool Opendp::refine_move(Cell* cell)
       erase_pixel(cell);
       paint_pixel(cell, pixel->grid_x_, pixel->grid_y_);
       return true;
-    } else
-      return false;
-  } else
+    } 
     return false;
+  }
+  return false;
 }
 
 int Opendp::distChange(const Cell* cell, int x, int y) const
@@ -517,7 +513,7 @@ Pixel* Opendp::diamondSearch(const Cell* cell, int x, int y) const
 
   // Restrict check to group region.
   Group* group = cell->group_;
-  if (group) {
+  if (group != nullptr) {
     Rect  grid_boundary(divCeil(group->boundary.xMin(), site_width_),
                        divCeil(group->boundary.yMin(), row_height_),
                        group->boundary.xMax() / site_width_,
@@ -616,7 +612,7 @@ Pixel* Opendp::diamondSearch(const Cell* cell, int x, int y) const
         }
       }
     }
-    if (pixel) {
+    if (pixel != nullptr) {
       return pixel;
     }
   }

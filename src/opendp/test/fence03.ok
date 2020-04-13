@@ -30,11 +30,11 @@ group count                 2
 
 Placement Analysis
 --------------------------------
-total displacement        5.3 u
-average displacement      0.5 u
-max displacement          1.7 u
+total displacement        3.9 u
+average displacement      0.4 u
+max displacement          1.4 u
 original HPWL            80.2 u
-legalized HPWL           81.4 u
-delta HPWL                  1 %
+legalized HPWL           83.0 u
+delta HPWL                  3 %
 
 No differences found.

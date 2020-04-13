@@ -46,9 +46,6 @@
 namespace opendp {
 
 using std::abs;
-using std::cerr;
-using std::cout;
-using std::endl;
 
 using odb::Point;
 using odb::Rect;
@@ -57,8 +54,6 @@ Point Opendp::nearestPt(const Cell* cell, const Rect* rect) const
 {
   int x, y;
   initialLocation(cell, &x, &y);
-  int size_x = gridNearestWidth(cell);
-  int size_y = gridNearestHeight(cell);
   int temp_x = x;
   int temp_y = y;
 
@@ -83,9 +78,8 @@ Point Opendp::nearestPt(const Cell* cell, const Rect* rect) const
     assert(dist_y >= 0);
     if (dist_x < dist_y) {
       return Point(temp_x, y);
-    } else {
-      return Point(x, temp_y);
-    }
+    } 
+    return Point(x, temp_y);
   }
 
   if (x < rect->xMin()) {
@@ -129,10 +123,10 @@ int Opendp::dist_for_rect(const Cell* cell, const Rect* rect) const
 }
 
 /* static */
-bool Opendp::check_overlap(const Rect& rect, const Rect& box)
+bool Opendp::check_overlap(const Rect& cell, const Rect& box)
 {
-  return box.xMin() < rect.xMax() && box.xMax() > rect.xMin()
-         && box.yMin() < rect.yMax() && box.yMax() > rect.yMin();
+  return box.xMin() < cell.xMax() && box.xMax() > cell.xMin()
+         && box.yMin() < cell.yMax() && box.yMax() > cell.yMin();
 }
 
 bool Opendp::check_overlap(const Cell* cell, const Rect* rect) const
@@ -145,10 +139,10 @@ bool Opendp::check_overlap(const Cell* cell, const Rect* rect) const
 }
 
 /* static */
-bool Opendp::check_inside(const Rect rect, const Rect box)
+bool Opendp::check_inside(const Rect& cell, const Rect& box)
 {
-  return rect.xMin() >= box.xMin() && rect.xMax() <= box.xMax()
-         && rect.yMin() >= box.yMin() && rect.yMax() <= box.yMax();
+  return cell.xMin() >= box.xMin() && cell.xMax() <= box.xMax()
+         && cell.yMin() >= box.yMin() && cell.yMax() <= box.yMax();
 }
 
 bool Opendp::check_inside(const Cell* cell, const Rect* rect) const
@@ -170,7 +164,7 @@ set<Cell*> Opendp::gridCellsInBoundary(const Rect* rect) const
   for (int i = y_start; i < y_end; i++) {
     for (int j = x_start; j < x_end; j++) {
       Cell* cell = const_cast<Cell*>(grid_[i][j].cell);
-      if (cell && !isFixed(cell)) {
+      if (cell != nullptr && !isFixed(cell)) {
         cells.insert(cell);
       }
     }

@@ -45,14 +45,11 @@
 
 namespace opendp {
 
-using std::cout;
-using std::endl;
 using std::max;
 using std::min;
 using std::vector;
 
 using odb::dbPlacementStatus;
-using odb::Rect;
 
 using ord::warn;
 
@@ -70,8 +67,9 @@ bool Opendp::checkPlacement(bool verbose)
   for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site check
-      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0)
+      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
         site_failures.push_back(&cell);
+      }
       if (checkPowerLine(cell)) {
         checkPowerLine(cell);
         power_line_failures.push_back(&cell);
@@ -84,7 +82,7 @@ bool Opendp::checkPlacement(bool verbose)
     if (checkInCore(cell)) {
       in_core_failures.push_back(&cell);
     }
-    if (checkOverlap(cell, grid)) {
+    if (checkOverlap(cell, grid) != nullptr) {
       overlap_failures.push_back(&cell);
     }
   }
@@ -99,9 +97,9 @@ bool Opendp::checkPlacement(bool verbose)
 
   deleteGrid(grid);
 
-  return power_line_failures.size() || placed_failures.size()
-         || in_core_failures.size() || overlap_failures.size()
-         || site_failures.size();
+  return !power_line_failures.empty() || !placed_failures.empty()
+         || !in_core_failures.empty() || !overlap_failures.empty()
+         || !site_failures.empty();
 }
 
 void Opendp::reportFailures(const vector<Cell*>& failures,
@@ -114,12 +112,12 @@ void Opendp::reportFailures(const vector<Cell*>& failures,
 }
 
 void Opendp::reportFailures(
-    const vector<Cell*>&            failures,
-    const char*                     msg,
-    bool                            verbose,
-    std::function<void(Cell* cell)> report_failure) const
+    const vector<Cell*>&                   failures,
+    const char*                            msg,
+    bool                                   verbose,
+    const std::function<void(Cell* cell)>& report_failure) const
 {
-  if (failures.size()) {
+  if (!failures.empty()) {
     warn("%s check failed (%d).", msg, failures.size());
     if (verbose) {
       for (Cell* cell : failures) {
@@ -215,9 +213,10 @@ const Cell* Opendp::checkOverlap(const Cell& cell, const Grid* grid) const
     for (int k = x_ll; k < x_ur; k++) {
       Pixel&      pixel      = grid[j][k];
       const Cell* pixel_cell = pixel.cell;
-      if (pixel_cell) {
-        if (pixel_cell != &cell && overlap(&cell, pixel_cell))
+      if (pixel_cell != nullptr) {
+        if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
           return pixel_cell;
+        }
       } else {
         pixel.cell = &cell;
       }
@@ -231,25 +230,25 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   // BLOCK/BLOCK overlaps allowed
   if (isBlock(cell1) && isBlock(cell2)) {
     return false;
-  } else {
-    bool padded = havePadding() && isOverlapPadded(cell1, cell2);
-    int  x_ll1, x_ur1, y_ll1, y_ur1;
-    int  x_ll2, x_ur2, y_ll2, y_ur2;
-    if (padded) {
-      initialPaddedLocation(cell1, &x_ll1, &y_ll1);
-      initialPaddedLocation(cell2, &x_ll2, &y_ll2);
-      x_ur1 = x_ll1 + paddedWidth(cell1);
-      x_ur2 = x_ll2 + paddedWidth(cell2);
-    } else {
-      initialLocation(cell1, &x_ll1, &y_ll1);
-      initialLocation(cell2, &x_ll2, &y_ll2);
-      x_ur1 = x_ll1 + cell1->width_;
-      x_ur2 = x_ll2 + cell2->width_;
-    }
-    y_ur1 = y_ll1 + cell1->height_;
-    y_ur2 = y_ll2 + cell2->height_;
-    return x_ll1 < x_ur2 && x_ur1 > x_ll2 && y_ll1 < y_ur2 && y_ur1 > y_ll2;
   }
+
+  bool padded = havePadding() && isOverlapPadded(cell1, cell2);
+  int  x_ll1, x_ur1, y_ll1, y_ur1;
+  int  x_ll2, x_ur2, y_ll2, y_ur2;
+  if (padded) {
+    initialPaddedLocation(cell1, &x_ll1, &y_ll1);
+    initialPaddedLocation(cell2, &x_ll2, &y_ll2);
+    x_ur1 = x_ll1 + paddedWidth(cell1);
+    x_ur2 = x_ll2 + paddedWidth(cell2);
+  } else {
+    initialLocation(cell1, &x_ll1, &y_ll1);
+    initialLocation(cell2, &x_ll2, &y_ll2);
+    x_ur1 = x_ll1 + cell1->width_;
+    x_ur2 = x_ll2 + cell2->width_;
+  }
+  y_ur1 = y_ll1 + cell1->height_;
+  y_ur2 = y_ll2 + cell2->height_;
+  return x_ll1 < x_ur2 && x_ur1 > x_ll2 && y_ll1 < y_ur2 && y_ur1 > y_ll2;
 }
 
 bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const

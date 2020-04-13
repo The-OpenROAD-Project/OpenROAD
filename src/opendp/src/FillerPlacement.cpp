@@ -44,7 +44,6 @@ using std::endl;
 using std::max;
 using std::min;
 using std::to_string;
-using std::vector;
 
 using ord::error;
 
@@ -62,8 +61,9 @@ void Opendp::fillerPlacement(const StringSeq* filler_master_names)
   gap_fillers_.clear();
   filler_count_ = 0;
   Grid* grid    = makeCellGrid();
-  for (int row = 0; row < row_count_; row++)
+  for (int row = 0; row < row_count_; row++) {
     placeRowFillers(grid, row);
+  }
   cout << "Placed " << to_string(filler_count_) << " filler instances." << endl;
 }
 
@@ -73,7 +73,7 @@ void Opendp::findFillerMasters(const StringSeq* filler_master_names)
   for (const string& master_name : *filler_master_names) {
     for (dbLib* lib : db_->getLibs()) {
       dbMaster* master = lib->findMaster(master_name.c_str());
-      if (master) {
+      if (master != nullptr) {
         filler_masters_.push_back(master);
         break;
       }
@@ -119,8 +119,9 @@ void Opendp::placeRowFillers(const Grid* grid, int row)
   while (j < row_site_count_) {
     if (grid[row][j].cell == nullptr) {
       int k = j;
-      while (grid[row][k].cell == nullptr && k < row_site_count_)
+      while (grid[row][k].cell == nullptr && k < row_site_count_) {
         k++;
+      }
       int gap = k - j;
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq& fillers = gapFillers(gap);
@@ -139,8 +140,9 @@ void Opendp::placeRowFillers(const Grid* grid, int row)
         k += master->getWidth() / site_width_;
       }
       j += gap;
-    } else
+    } else {
       j++;
+    }
   }
 }
 
@@ -168,8 +170,9 @@ dbMasterSeq& Opendp::gapFillers(int gap)
     }
     error("could not fill gap of size %d", gap);
     return fillers;
-  } else
+  } else {
     return fillers;
+  }
 }
 
 }  // namespace opendp
