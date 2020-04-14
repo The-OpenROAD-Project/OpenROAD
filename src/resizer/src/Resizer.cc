@@ -760,6 +760,16 @@ Resizer::findClkNets()
 bool
 Resizer::isClock(Net *net)
 {
+  dbNet* db_net = db_network_->staToDb(net);
+  int connections = db_net->getITermCount();
+  if (connections > 1000) {
+    // Lying but this is only used to skip nets which is
+    // what we want to do.  Hack for clocks nets which
+    // aren't recognized for some reason.
+    printf("Skipping net %s - too many connections %d\n",
+           db_net->getName().c_str(), connections);
+    return true;
+  }
   return clk_nets_.hasKey(net);
 }
 
