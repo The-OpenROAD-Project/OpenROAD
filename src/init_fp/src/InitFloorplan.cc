@@ -360,12 +360,12 @@ InitFloorplan::makeTracks(const char *tracks_file,
       switch (dir) {
       case 'X':
 	width = die_area.dx();
-	track_count = (width - offset) / pitch;
+	track_count = (width - offset) / pitch + 1;
 	grid->addGridPatternX(die_area.xMin() + offset, track_count, pitch);
 	break;
       case 'Y':
 	width = die_area.dy();
-	track_count = (width - offset) / pitch;
+	track_count = (width - offset) / pitch + 1;
 	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
 	break;
       default:
