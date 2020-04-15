@@ -469,6 +469,11 @@ void TechChar::writeSol(const std::string& filename) const {
 }
 
 void TechChar::createFakeEntries(unsigned length, unsigned fakeLength) {
+	// This condition would just duplicate wires that already exist
+	if (length == fakeLength) {
+		return;
+	}
+
         std::cout << " [WARNING] Creating fake entries in the LUT.\n";
         for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
                 for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
@@ -478,7 +483,7 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength) {
                                         unsigned delay = seg.getDelay();
                                         unsigned inputCap = seg.getInputCap();
                                         unsigned inputSlew = seg.getInputSlew();
-
+						
                                         WireSegment& fakeSeg = createWireSegment(fakeLength,
                                                                                  load, 
                                                                                  outSlew,
