@@ -40,13 +40,14 @@
 #include "ABKCommon/abkcommon.h"
 #include "solnGenRegistry.h"
 #include <iostream>
+#include "newcasecmp.h"
 
 using std::ostream;
 using std::cout;
 using std::endl;
 
 #define SEARCH_FOR(NAME) \
-        if (!strcasecmp(solnGen, #NAME)) _type = NAME;
+        if (!newstrcasecmp(solnGen, #NAME)) _type = NAME;
 
 char SolnGenType::strbuf[32];
 

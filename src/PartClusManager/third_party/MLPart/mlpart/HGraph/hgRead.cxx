@@ -40,6 +40,7 @@
 #endif
 
 #include <ABKCommon/abkcommon.h>
+#include "newcasecmp.h"
 #include <ABKCommon/pathDelims.h>
 #include <Ctainers/bitBoard.h>
 #include <HGraph/hgFixed.h>
@@ -157,7 +158,7 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                   " Error in aux file: space-separated column "
                                   "expected. got:",
                                   word2);
-                        if (!strcasecmp(word1, "CD")) {
+                        if (!newstrcasecmp(word1, "CD")) {
                                 auxFile >> word1;
                                 auxFile >> needeol(lineno++);
                                 if (word1[0] == pathDelimWindows || word1[0] == pathDelimUnix)
@@ -167,7 +168,7 @@ void HGraphFixed::parseAux(const char* baseFileName) {
                                 char fDel[2];
                                 sprintf(fDel, "%c", pathDelim);
                                 if (word1[strlen(word1) - 1] != pathDelimWindows || word1[0] == pathDelimUnix) dir += fDel;
-                        } else if (!strcasecmp(word1, "HGraph") || !strcasecmp(word1, "HGraphWPins") || !strcasecmp(word1, "PartProb") || !strcasecmp(word1, "FPPROBLEM") || !strcasecmp(word1, "RowBasedPlacement"))  // used in
+                        } else if (!newstrcasecmp(word1, "HGraph") || !newstrcasecmp(word1, "HGraphWPins") || !newstrcasecmp(word1, "PartProb") || !newstrcasecmp(word1, "FPPROBLEM") || !newstrcasecmp(word1, "RowBasedPlacement"))  // used in
                                                                                                                                                                                                                        // RBPl
                                                                                                                                                                                                                        // ctor
                         {
@@ -542,7 +543,7 @@ void HGraphFixed::readNodes(const char* nodesFileName) {
 
                 while (!nodes.eof() && nodes.peek() != '\n' && nodes.peek() != '\r') {
                         nodes >> cName;
-                        if (!strcasecmp(cName.c_str(), "terminal")) {
+                        if (!newstrcasecmp(cName.c_str(), "terminal")) {
                                 isTerminal = true;
                                 nodes >> skiptoeol;
                                 break;

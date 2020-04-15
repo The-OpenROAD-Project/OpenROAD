@@ -50,12 +50,14 @@ void set_coarsening_vertices(unsigned value);
 void set_enable_term_prop(unsigned value);
 void set_cut_hop_ratio(float value);
 void set_architecture(const char* topology);
+void set_refinement(unsigned value);
 void set_seeds(const char* seeds);
+void set_existing_id(int value);
 void generate_seeds(unsigned value);
 void set_partition_ids_to_test(const char* ids);
 void set_evaluation_function(const char* function);
 unsigned run_partitioning();
-void evaluate_partitioning();
+unsigned evaluate_partitioning();
 void write_partitioning_to_db(unsigned id);
 void dump_part_id_to_file(const char *name);
 }

@@ -39,7 +39,7 @@
 extern "C" {
     #include "main/ChacoWrapper.h"
 }
-#include<time.h>
+#include <time.h>
 #include <chrono>
 #include <fstream>
 #include "opendb/db.h"
@@ -51,13 +51,13 @@ namespace PartClusManager {
 // Partition Netlist
 
 void PartClusManagerKernel::runPartitioning() {
+        hypergraph();
+        graph();
         if (_options.getTool() == "mlpart") {
                 runMlPart();
         } else if (_options.getTool() == "gpmetis") {
-        	graph();
                 runGpMetis();
         } else {
-        	graph();
                 runChaco();
         }
 }
@@ -79,18 +79,22 @@ void PartClusManagerKernel::runChaco() {
         int numVertices = vertexWeights.size();
         
         int architecture = _options.getArchTopology().size();
+        int architectureDims = 1;
         int* mesh_dims = (int*) malloc((unsigned) 3 * sizeof(int));
         if (architecture > 0){
                 std::vector<int> archTopology = _options.getArchTopology();
                 for (int i = 0; ((i < architecture) && (i < 3)) ; i++)
                 {
                         mesh_dims[i] = archTopology[i];
+                        architectureDims = architectureDims * archTopology[i];
                 }
         }
 
         int hypercubeDims = (int) (std::sqrt( (float) (_options.getTargetPartitions()) ));
 
         int numVertCoar = _options.getCoarVertices();
+
+        int refinement = _options.getRefinement();
 
         int termPropagation = 0;
         if (_options.getTermProp()) {
@@ -102,6 +106,10 @@ void PartClusManagerKernel::runChaco() {
         double coarRatio = _options.getCoarRatio();
 
         double cutCost = _options.getCutHopRatio();
+
+        int partitioningMethod = 1; //Multi-level KL
+
+        int kWay = 1; //recursive 2-way
 
         for (long seed : _options.getSeeds()) {
                 auto start = std::chrono::system_clock::now();
@@ -137,6 +145,44 @@ void PartClusManagerKernel::runChaco() {
                 }
 
                 short* assigment = (short*) malloc((unsigned) numVertices * sizeof(short));
+
+                int oldTargetPartitions = 0;
+
+                if (_options.getExistingID() > -1) {
+                        //If a previous solution ID already exists...
+                        PartSolutions existingResult = _results[_options.getExistingID()];
+                        unsigned existingBestIdx = existingResult.getBestSolutionIdx();
+                        const std::vector<short>& vertexResult = existingResult.getAssignment(existingBestIdx);
+                        //Gets the vertex assignments results from the last ID.
+                        short* currentIndexShort = assigment;
+                        for(short existingPartId : vertexResult) {
+                                //Apply the Partition IDs to the current assignment vector.
+                                if (existingPartId > oldTargetPartitions){
+                                        oldTargetPartitions = existingPartId;
+                                }
+                                *currentIndexShort = existingPartId; 
+                                currentIndexShort++;
+                        }
+
+                        partitioningMethod = 7;
+                        kWay = hypercubeDims;
+                        oldTargetPartitions = oldTargetPartitions + 1;
+
+                        if (architecture) {
+                                hypercubeDims = (int) (std::sqrt( (float) (architectureDims) ));
+                                kWay = hypercubeDims;
+                                if (kWay > 3 || architectureDims < oldTargetPartitions || architectureDims % 2 == 1) {
+                                        std::cout << "Graph has too many sets (>8), the number of target partitions changed or the architecture is invalid.";
+                                        std::exit(1);
+                                }
+                        } else {
+                                if (kWay > 3 || _options.getTargetPartitions() <  oldTargetPartitions) {
+                                        std::cout << "Graph has too many sets (>8) or the number of target partitions changed.";
+                                        std::exit(1);
+                                } 
+                        }
+                }
+
                 interface_wrap(numVertices,                             /* number of vertices */
                                starts, adjacency, vweights, eweights,   /* graph definition for chaco */
                                NULL, NULL, NULL,                        /* x y z positions for the inertial method, not needed for multi-level KL */
@@ -144,20 +190,29 @@ void PartClusManagerKernel::runChaco() {
                                assigment,                               /* vertex assigment vector. Contains the set that each vector is present on.*/
                                architecture, hypercubeDims, mesh_dims,  /* architecture, architecture topology and the hypercube dimensions (number of 2-way divisions) */
                                NULL,                                    /* desired set sizes for each set, computed automatically, so it isn't needed */
-                               1, 1,                                    /* constants that define the methods used by the partitioner -> multi-level KL, 2-way */
-                               0, numVertCoar, 1,                       /* disables the eigensolver, number of vertices to coarsen down to and the number of eigenvectors (hard-coded, not used) */
+                               partitioningMethod, 1,                   /* constants that define the methods used by the partitioner -> multi-level KL, KL refinement */
+                               0, numVertCoar, kWay,                    /* disables the eigensolver, number of vertices to coarsen down to and bisection/quadrisection/octasection */
                                0.001, seed,                             /* tolerance on eigenvectors (hard-coded, not used) and the seed */
                                termPropagation, inbalance,              /* terminal propagation enable and inbalance */
                                coarRatio, cutCost,                      /* coarsening ratio and cut to hop cost */
-                               0);                                      /* debug text enable */
-                
-                std::vector<short> chacoResult;
-                for (int i = 0; i < numVertices; i++)
-                {
-                        short* currentpointer = assigment + i;
-                        chacoResult.push_back(*currentpointer);
-                }
+                               0, refinement);                          /* debug text enable and refinement */
 
+                std::vector<short> chacoResult;
+                
+                if (1) { // if clustering
+                        for (int i = 0; i < numVertices; i++) {
+                                short* currentpointer = assigment + i;
+                                chacoResult.push_back(*currentpointer);
+                        }
+                } else {
+                        int* clusteringResults = clustering_wrap();
+                        for (int i = 0; i < numVertices; i++) {
+                                int* currentpointer = (clusteringResults + 1) + i;
+                                chacoResult.push_back(*currentpointer);
+                                //std::cout << "part Idx: " << i << " mapped to cluster:" << *currentpointer << ".\n";
+                        }
+                        free(clusteringResults);
+                }
                 auto end = std::chrono::system_clock::now();
                 unsigned long runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
@@ -171,9 +226,6 @@ void PartClusManagerKernel::runChaco() {
         computePartitionResult(partitionId, evaluationFunction);
 
         std::cout << "Chaco run completed. Partition ID = " << partitionId << ".\n";
-}
-
-void PartClusManagerKernel::runChaco(const Graph& graph, const PartOptions& options) {
 }
 
 void PartClusManagerKernel::runGpMetis() {
@@ -256,15 +308,11 @@ void PartClusManagerKernel::runGpMetis() {
 	
 }
 
-void PartClusManagerKernel::runGpMetis(const Graph& graph, const PartOptions& options) {
-}
-
 void PartClusManagerKernel::runMlPart() {        
         std::cout << "Running MLPart...\n";
-        _graph.clearGraph();
-	HypergraphDecomposition hypergraphDecomp;
+
+        HypergraphDecomposition hypergraphDecomp;
 	hypergraphDecomp.init(_dbId);
-	hypergraphDecomp.constructMap(_graph, _options.getMaxVertexWeight());
 
         PartSolutions currentResults;
         currentResults.setToolName(_options.getTool());
@@ -273,7 +321,7 @@ void PartClusManagerKernel::runMlPart() {
         currentResults.setNumOfRuns(_options.getSeeds().size());
         std::string evaluationFunction = _options.getEvaluationFunction();
 
-	int numVertices = _graph.getNumVertex();
+	int numVertices = _hypergraph.getNumVertex();
 	std::vector<short> clusters(numVertices, 0);
 	double tolerance =  _options.getBalanceConstraint() / 100.0;
 	double balanceArray[2] = {0.5,0.5};
@@ -289,10 +337,10 @@ void PartClusManagerKernel::runMlPart() {
 			std::vector<short> auxPartitions;
 			for (int p : partitions){
 				countPartitions++;
-				hypergraphDecomp.createHypergraph(_graph, clusters, p);
-				int numEdges = _graph.getNumEdges();
-				int numColIdx = _graph.getNumColIdx();
-				numVertices = _graph.getNumVertex();
+				hypergraphDecomp.createHypergraph(_hypergraph, clusters, p);
+				int numEdges = _hypergraph.getNumEdges();
+				int numColIdx = _hypergraph.getNumColIdx();
+				numVertices = _hypergraph.getNumVertex();
 
 				double * vertexWeights = (double*) malloc((unsigned) numVertices * sizeof(double));
 				int * rowPtr = (int*) malloc((unsigned) (numEdges+ 1) * sizeof(int));
@@ -303,16 +351,16 @@ void PartClusManagerKernel::runMlPart() {
 				for (int j=0; j< numVertices; j++) part[j] = -1;
 
 				for (int i=0; i < numVertices; i++){
-					vertexWeights[i] = _graph.getVertexWeight(i) / _options.getMaxVertexWeight();
+					vertexWeights[i] = _hypergraph.getVertexWeight(i) / _options.getMaxVertexWeight();
 				}
 				for (int i=0; i < numColIdx; i++){
-					colIdx[i] = _graph.getColIdx(i);
+					colIdx[i] = _hypergraph.getColIdx(i);
 				}
 				for (int i = 0; i < numEdges; i++){
-					rowPtr[i] = _graph.getRowPtr(i);
-					edgeWeights[i] = _graph.getEdgeWeight(i);
+					rowPtr[i] = _hypergraph.getRowPtr(i);
+					edgeWeights[i] = _hypergraph.getEdgeWeight(i);
 				}
-				rowPtr[numEdges] = _graph.getRowPtr(numEdges);
+				rowPtr[numEdges] = _hypergraph.getRowPtr(numEdges);
 				UMpack_mlpart(numVertices,  
 						numEdges, 
 						vertexWeights, 
@@ -344,7 +392,7 @@ void PartClusManagerKernel::runMlPart() {
 				free(edgeWeights);
 				free(part);
 
-				_graph.clearHypergraph();
+				_hypergraph.clearHypergraph();
 				auxPartitions.push_back(countPartitions);
 			}
 
@@ -364,11 +412,6 @@ void PartClusManagerKernel::runMlPart() {
         std::cout << "MLPart run completed. Partition ID = " << partitionId << ".\n";
 }
 
-
-void PartClusManagerKernel::runMlPart(const Graph& graph, const PartOptions& options) {        
-}
-
-
 void PartClusManagerKernel::graph(){
         _graph.clearGraph();
 	GraphDecomposition graphDecomp;
@@ -376,6 +419,16 @@ void PartClusManagerKernel::graph(){
 	graphDecomp.createGraph(_graph, _options.getGraphModel(), _options.getWeightModel(), _options.getMaxEdgeWeight(), 
 					_options.getMaxVertexWeight(), _options.getCliqueThreshold());
 	
+}
+
+void PartClusManagerKernel::hypergraph(){
+        _hypergraph.clearGraph();
+	HypergraphDecomposition hypergraphDecomp;
+	hypergraphDecomp.init(_dbId);
+	hypergraphDecomp.constructMap(_hypergraph, _options.getMaxVertexWeight());
+        int numVertices = _hypergraph.getNumVertex();
+        std::vector<short> clusters(numVertices, 0);
+        hypergraphDecomp.createHypergraph(_hypergraph, clusters, 0);
 }
 
 unsigned PartClusManagerKernel::generatePartitionId(){
@@ -411,6 +464,7 @@ void PartClusManagerKernel::evaluatePartitioning() {
         }
 
         reportPartitionResult(bestId);
+        setCurrentBestId(bestId);
 }
 
 void PartClusManagerKernel::computePartitionResult(unsigned partitionId, std::string function){

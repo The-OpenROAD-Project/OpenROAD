@@ -52,6 +52,7 @@
 #include "abkstring.h"
 #include "paramproc.h"
 #include "abkassert.h"
+#include "newcasecmp.h"
 static char _uninitialized[] = "Uninitialized";
 
 Param::Param(Type pt, int argc, const char* const argv[]) : _b(false), _on(false), _i(INT_MAX), _u(unsigned(-1)), _d(-1.29384756657), _s(_uninitialized), _pt(pt), _key("") {
@@ -81,7 +82,7 @@ Param::Param(const char* key, Type pt, int argc, const char* const argv[]) : _b(
                         } else
                                 _on = true;
 
-                        if (strcasecmp(start, _key) == 0) {
+                        if (newstrcasecmp(start, _key) == 0) {
                                 _b = true;
                                 if (n + 1 < argc) {
                                         switch (_pt) {

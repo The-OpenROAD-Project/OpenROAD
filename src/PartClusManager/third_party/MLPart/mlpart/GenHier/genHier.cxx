@@ -37,6 +37,7 @@
 #endif
 
 #include "genHier.h"
+#include "newcasecmp.h"
 
 using std::ifstream;
 using std::ofstream;
@@ -55,13 +56,13 @@ GenericHierarchy::GenericHierarchy(const char* hclFileName) : _root(UINT_MAX) {
 
         while (hclFile) {
                 hclFile >> tmp;
-                if (!strcasecmp(tmp, "</created>")) break;
+                if (!newstrcasecmp(tmp, "</created>")) break;
         }
 
         hclFile >> needcaseword("<author>");
         while (hclFile) {
                 hclFile >> tmp;
-                if (!strcasecmp(tmp, "</author>")) break;
+                if (!newstrcasecmp(tmp, "</author>")) break;
         }
 
         hclFile >> needcaseword("</header>");
@@ -72,14 +73,14 @@ GenericHierarchy::GenericHierarchy(const char* hclFileName) : _root(UINT_MAX) {
         hclFile >> tmp;
 
         // collect all node names, setup mapping from name->id;
-        while (strcasecmp(tmp, "</body>")) {
-                abkfatal2(!strcasecmp(tmp, "<cluster"), "expected '<cluster', got ", tmp);
+        while (newstrcasecmp(tmp, "</body>")) {
+                abkfatal2(!newstrcasecmp(tmp, "<cluster"), "expected '<cluster', got ", tmp);
                 hclFile >> tmp;
                 numNodes++;
                 // this assumes that there will be no spaces.
                 // i.e.  'name="cellName"' and 'parent="p1"'
                 // levels are ignored
-                while (strcasecmp(tmp, "/>")) {
+                while (newstrcasecmp(tmp, "/>")) {
                         if (strstr(tmp, "name") || strstr(tmp, "NAME")) {
                                 char* namePtr = strstr(tmp, "\"") + 1;
                                 char* endPtr = strstr(namePtr, "\"");

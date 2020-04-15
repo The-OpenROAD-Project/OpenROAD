@@ -39,6 +39,7 @@
 
 #include <Placement/layoutBBoxes.h>
 #include <Placement/xyDraw.h>
+#include "newcasecmp.h"
 
 using std::ifstream;
 using std::ofstream;
@@ -51,9 +52,9 @@ void LayoutBBoxes::readBlocks(istream& in) {
         char word1[100], word2[100], word3[100];
         unsigned nBoxes;
         in >> eathash(lineNo) >> word1 >> word2 >> word3;
-        abkfatal(strcasecmp(word1, "Total") == 0, "Blocks files should start with \'Total blocks :\'\n");
-        abkfatal(strcasecmp(word2, "blocks") == 0, "Blocks files should start with \'Total blocks :\'\n");
-        abkfatal(strcasecmp(word3, ":") == 0, "Blocks files should start with \'Total blocks :\'\n");
+        abkfatal(newstrcasecmp(word1, "Total") == 0, "Blocks files should start with \'Total blocks :\'\n");
+        abkfatal(newstrcasecmp(word2, "blocks") == 0, "Blocks files should start with \'Total blocks :\'\n");
+        abkfatal(newstrcasecmp(word3, ":") == 0, "Blocks files should start with \'Total blocks :\'\n");
         in >> my_isnumber(lineNo) >> nBoxes >> skiptoeol;
 
         abkfatal(nBoxes > 0, "Empty box list");

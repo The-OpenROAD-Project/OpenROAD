@@ -7,7 +7,7 @@ int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, floa
 		              int global_method, int local_method, int rqi_flag, int vmax, int ndims,
 		              double eigtol, long seed,
 					  int tprop, double kl_inbalance, double coarsening_ratio, double cut_to_hop_cost,
-					  int debug_print);
+					  int debug_print, int refine_part);
 
 //int       nvtxs;		/* number of vertices in full graph */
 //int      *start;		/* start of edge list for each vertex */
@@ -34,3 +34,5 @@ int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, floa
 //double 	coarsening_ratio; /* min vtx reduction at each coarsen stage */
 //double 	cut_to_hop_cost;	/* relative cut/hop importance */
 //int 		debug_print;	/* debug text for PartClusManager */
+
+int*      clustering_wrap();

@@ -43,11 +43,12 @@
 #include <iostream>
 #include "ABKCommon/abkcommon.h"
 #include "partRegistry.h"
+#include "newcasecmp.h"
 
 using std::ostream;
 
 #define SEARCH_FOR(NAME) \
-        if (!strcasecmp(partName, #NAME)) _type = NAME;
+        if (!newstrcasecmp(partName, #NAME)) _type = NAME;
 
 char PartitionerType::strbuf[32];
 
@@ -68,10 +69,10 @@ PartitionerType::PartitionerType(int argc, const char* argv[])
 
         if (partName.found()) {
                 SEARCH_FOR(FM)
-                else if (!strcasecmp(partName, "FMwCLR")) _type = FM;
-                else if (!strcasecmp(partName, "FMwCutLineRef")) _type = FM;
-                else if (!strcasecmp(partName, "FMDD")) _type = FM;
-                else if (!strcasecmp(partName, "FMHybrid")) _type = FM;
+                else if (!newstrcasecmp(partName, "FMwCLR")) _type = FM;
+                else if (!newstrcasecmp(partName, "FMwCutLineRef")) _type = FM;
+                else if (!newstrcasecmp(partName, "FMDD")) _type = FM;
+                else if (!newstrcasecmp(partName, "FMHybrid")) _type = FM;
                 else SEARCH_FOR(SA) else SEARCH_FOR(RandomGreedy) else SEARCH_FOR(HMetis) else SEARCH_FOR(Greedy)  // FM with
                                                                                                                    // maxHillHeightFactor=1
                     else SEARCH_FOR(AGreed) else abkfatal3(0, " -part followed by an unkown partitioner name \"", partName, "\" in command line\n");

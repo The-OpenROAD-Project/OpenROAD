@@ -41,6 +41,7 @@
 #include "abkcommon.h"
 #include "verbosity.h"
 #include "uofm_alloc.h"
+#include "newcasecmp.h"
 #include <iostream>
 #include <cstdarg>
 
@@ -73,7 +74,7 @@ ostream& operator<<(ostream& os, const Verbosity& verbsty) {
 }
 
 void Verbosity::_ctructFromString(const char* levels) {
-        if (levels == NULL || !strcmp(levels, "0") || !strcasecmp(levels, "silent")) {
+        if (levels == NULL || !strcmp(levels, "0") || !newstrcasecmp(levels, "silent")) {
                 _levels.erase(_levels.begin() + 3, _levels.end());
                 return;
         }

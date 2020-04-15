@@ -44,6 +44,7 @@
 #include <Geoms/plGeom.h>
 #include <Placement/placement.h>
 #include <iostream>
+#include "newcasecmp.h"
 
 using std::istream;
 using std::ostream;
@@ -186,9 +187,9 @@ Placement::Placement(istream& in) {
         int lineNo = 1;
         char word1[100], word2[100], word3[100];
         in >> eathash(lineNo) >> word1 >> word2 >> word3;
-        abkfatal(strcasecmp(word1, "Total") == 0, "Placement files should start with \'Total points :\'\n");
-        abkfatal(strcasecmp(word2, "points") == 0, "Placements files should start with \'Total points :\'\n");
-        abkfatal(strcasecmp(word3, ":") == 0, "Placements files should start with \'Total points :\'\n");
+        abkfatal(newstrcasecmp(word1, "Total") == 0, "Placement files should start with \'Total points :\'\n");
+        abkfatal(newstrcasecmp(word2, "points") == 0, "Placements files should start with \'Total points :\'\n");
+        abkfatal(newstrcasecmp(word3, ":") == 0, "Placements files should start with \'Total points :\'\n");
         in >> my_isnumber(lineNo) >> nPts >> skiptoeol;
 
         abkfatal(nPts > 0, "Empty placement");
