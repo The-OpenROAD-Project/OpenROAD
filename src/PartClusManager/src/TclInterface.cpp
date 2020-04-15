@@ -204,10 +204,12 @@ unsigned run_partitioning() {
 }
 
 
-void evaluate_partitioning() {
+unsigned evaluate_partitioning() {
         ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
         PartClusManagerKernel* kernel = openroad->getPartClusManager();
         kernel->evaluatePartitioning();
+        unsigned id = kernel->getCurrentBestId();
+        return id;
 }
 
 void write_partitioning_to_db(unsigned id) {

@@ -107,7 +107,7 @@ private:
         unsigned                _weightModel            = 1;
         unsigned                _maxEdgeWeight          = 100; 
         unsigned                _maxVertexWeight        = 100; 
-        unsigned                _balanceConstraint      = 0; 
+        unsigned                _balanceConstraint      = 2; 
         unsigned                _refinement             = 0;
         int                     _existingId             = -1;
         std::vector<int>        _archTopology;
@@ -171,23 +171,25 @@ protected:
 
         PartOptions _options;
 	unsigned _dbId;
+        unsigned _bestId;
 	Graph _graph;
+        Graph _hypergraph;
         std::vector<PartSolutions> _results;
 
 public:
         PartClusManagerKernel() = default;
         void runPartitioning();
         void evaluatePartitioning();
+        unsigned getCurrentBestId() { return _bestId; }
+        unsigned setCurrentBestId(unsigned id) { _bestId = id; }
         void runChaco();
-        void runChaco(const Graph& graph, const PartOptions& options);
         void runGpMetis();
-        void runGpMetis(const Graph& graph, const PartOptions& options);
         void runMlPart();
-        void runMlPart(const Graph& graph, const PartOptions& options);
         PartOptions& getOptions() { return _options; }
         unsigned getCurrentId() { return (_results.size() - 1); }
 	void setDbId(unsigned id) {_dbId = id;}
 	void graph();
+        void hypergraph();
         unsigned generatePartitionId();
         void computePartitionResult(unsigned partitionId, std::string function);
         bool comparePartitionings(const PartSolutions oldPartition, const PartSolutions newPartition, std::string function);

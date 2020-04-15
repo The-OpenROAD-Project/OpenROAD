@@ -58,6 +58,7 @@ int       give_up;		/* has coarsening bogged down? */
     extern int LIMIT_KL_EWGTS;	/* limit edges weights in KL? */
     extern int COARSE_KLV;	/* apply klv as a smoother? */
     extern int COARSE_BPM;	/* apply bipartite matching/flow as a smoother? */
+	extern struct coarlist CLUSTERING_RESULTS;
     extern double KL_IMBALANCE;	/* fractional imbalance allowed in KL */
     struct connect_data *cdata;	/* data structure for enforcing connectivity */
     struct vtx_data **cgraph;	/* array of vtx data for coarsened graph */
@@ -384,7 +385,24 @@ int       give_up;		/* has coarsening bogged down? */
     if (cterm_wgts[1] != NULL)
 	sfree((char *) cterm_wgts[1]);
     free_graph(cgraph);
-    sfree((char *) v2cv);
+    
+	static struct coarlist *clusresults = &CLUSTERING_RESULTS;
+
+	struct coarlist currentstruct;
+	currentstruct.vec = (int *) malloc((unsigned) (nvtxs + 1) * sizeof(int));
+
+	for (int i = 0; i < (nvtxs + 1); i++) {
+			int* currentpointer = v2cv + i;
+			int* to_update = currentstruct.vec + i;
+			*to_update = *currentpointer;
+			/*printf("Index %d set to cluster %d \n", i, *currentpointer);*/
+	}
+
+	if (clusresults->vec != 0) {
+		free(clusresults->vec);
+	}
+	*clusresults = currentstruct;
+	sfree((char *) v2cv);
 
     /* Smooth using KL or BPM every nstep steps. */
     if (!(step % nstep) && !flattened) {

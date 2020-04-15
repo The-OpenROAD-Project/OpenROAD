@@ -3,6 +3,7 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 #include "params.h"
+#include "structs.h"
 
 #define  TRUE  1
 #define  FALSE 0
@@ -124,3 +125,5 @@ int       DEBUG_TRACE = 0;	/* Trace main execution path (0..2) */
 int       DEBUG_MACH_PARAMS = 0;/* Print computed machine params? (0..1) */
 
 int		  DEBUG_PARTCLUSMANAGER = 0; /* Print output when using PartClusManager? (0..1) */
+
+struct coarlist  CLUSTERING_RESULTS = {0};

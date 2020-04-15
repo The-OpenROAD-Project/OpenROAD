@@ -1,4 +1,5 @@
 #include "params.h"
+#include "structs.h"
 
 int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, float *ewgts, float *x, float *y, float *z,
 		              char *outassignname, char *outfilename,
@@ -38,4 +39,12 @@ int       interface_wrap(int nvtxs, int *start, int *adjacency, int *vwgts, floa
 		              architecture, ndims_tot, mesh_dims, goal,
 		              global_method, local_method, rqi_flag, vmax, ndims,
 		              eigtol, seed);
+}
+
+int*      clustering_wrap()
+{
+	extern struct coarlist CLUSTERING_RESULTS;
+	static struct coarlist *clusresults = &CLUSTERING_RESULTS;
+
+	return clusresults->vec;
 }

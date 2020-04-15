@@ -240,9 +240,9 @@ proc partition_netlist { args } {
         PartClusManager::set_existing_id $keys(-partition_id)
   }
 
-  set bestId [PartClusManager::run_partitioning]
+  set currentId [PartClusManager::run_partitioning]
   
-  return $bestId
+  return $currentId
 }
 
 #--------------------------------------------------------------------
@@ -276,7 +276,9 @@ proc evaluate_partitioning { args } {
         PartClusManager::set_evaluation_function $keys(-evaluation_function)
   }
 
-  PartClusManager::evaluate_partitioning
+  set bestId [PartClusManager::evaluate_partitioning]
+  
+  return $bestId
 }
 
 #--------------------------------------------------------------------
