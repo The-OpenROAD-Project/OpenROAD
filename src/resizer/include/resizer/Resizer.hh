@@ -191,7 +191,7 @@ protected:
   Pin *singleOutputPin(const Instance *inst);
   double area(dbMaster *master);
   double area(Cell *cell);
-  double dbuToMeters(uint dist) const;
+  double dbuToMeters(int dist) const;
 
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
