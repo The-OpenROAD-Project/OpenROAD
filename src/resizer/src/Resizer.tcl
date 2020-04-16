@@ -40,14 +40,15 @@ proc set_wire_rc { args } {
     if { $layer == "NULL" } {
       sta_error "layer $layer_name not found."
     }
-    set layer_width [ord::dbu_to_microns [$layer getWidth]]
-    set res_ohm_per_micron [expr [$layer getResistance] / $layer_width]
-    set cap_pf_per_micron [expr [ord::dbu_to_microns 1] * $layer_width \
-			     * [$layer getCapacitance] \
+    set layer_width_dbu [$layer getWidth]
+    set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
+    set res_ohm_per_micron [expr [$layer getResistance] / $layer_width_micron]
+    set cap_pf_per_dbu [expr $layer_width_dbu * [$layer getCapacitance] \
 			     + [$layer getEdgeCapacitance] * 2]
-    # ohms/sq
+    set cap_pf_per_micron [expr [ord::dbu_to_microns 1] * $cap_pf_per_dbu]
+    # ohms/meter
     set wire_res [expr $res_ohm_per_micron * 1e+6]
-    # F/m^2
+    # farads/meter
     set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
   } else {
     ord::ensure_units_initialized
