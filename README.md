@@ -20,8 +20,12 @@ Libraries
   * tcl 8.6
   * zlib
   * eigen
+  * lemon
   * CImg (optional for replace)
   * spdlog (optional for OpenPhySyn)
+
+
+See `Dockerfile` for an example of how to install these packages. 
 
 ```
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
