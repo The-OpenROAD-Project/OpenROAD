@@ -44,7 +44,7 @@ public:
   virtual LibertyLibrary *readLiberty(const char *filename,
 				      Corner *corner,
 				      const MinMaxAll *min_max,
-				      bool infer_latches);
+				      bool infer_latches) override;
 
   Slack netSlack(const dbNet *net,
 		 const MinMax *min_max);
@@ -56,8 +56,8 @@ public:
   virtual void postReadDb(odb::dbDatabase* db) override;
 
 protected:
-  virtual void makeNetwork();
-  virtual void makeSdcNetwork();
+  virtual void makeNetwork() override;
+  virtual void makeSdcNetwork() override;
 
   dbDatabase *db_;
   dbNetwork *db_network_;
