@@ -15,11 +15,11 @@ set buffer_cell [get_lib_cell liberty1/snl_bufx2]
 # use 10x wire cap to tickle buffer insertion
 set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-3
 
-report_check_types -max_transition -all_violators
+report_check_types -max_slew -violators
 
 repair_max_slew -buffer_cell $buffer_cell
 
-report_check_types -max_transition -all_violators
+report_check_types -max_slew -violators
 report_checks -fields {input_pin transition_time capacitance}
 
 set def_file [make_result_file repair_max_slew1.def]
