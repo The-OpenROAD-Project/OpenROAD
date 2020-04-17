@@ -690,6 +690,12 @@ dbNetwork::visitConnectedPins(const Net *net,
   Network::visitConnectedPins(net, visitor, visited_nets);
 }
 
+Net *
+dbNetwork::highestConnectedNet(Net *net) const
+{
+  return net;
+}
+
 ////////////////////////////////////////////////////////////////
 
 Pin *

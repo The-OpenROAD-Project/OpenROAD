@@ -272,6 +272,7 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
     Pin *pin = port_iter->next();
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
+	&& net
 	&& !isClock(net))
       bufferInput(pin, buffer_cell);
   }
@@ -432,8 +433,9 @@ Resizer::resizeToTargetSlew(Instance *inst)
     // Only resize single output gates for now.
     if (output) {
       Net *out_net = network->net(output);
-      // Hands off the clock nets.
-      if (!isClock(out_net)) {
+      if (out_net
+	  // Hands off the clock nets.
+	  && !isClock(out_net)) {
 	// Includes net parasitic capacitance.
 	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
 	LibertyCell *best_cell = nullptr;
@@ -760,16 +762,6 @@ Resizer::findClkNets()
 bool
 Resizer::isClock(Net *net)
 {
-  dbNet* db_net = db_network_->staToDb(net);
-  int connections = db_net ? db_net->getITermCount() : 0;
-  if (connections > 1000) {
-    // Lying but this is only used to skip nets which is
-    // what we want to do.  Hack for clocks nets which
-    // aren't recognized for some reason.
-    printf("Skipping net %s - too many connections %d\n",
-           db_net->getName().c_str(), connections);
-    return true;
-  }
   return clk_nets_.hasKey(net);
 }
 
@@ -782,7 +774,9 @@ Resizer::makeNetParasitics()
   while (net_iter->hasNext()) {
     Net *net = net_iter->next();
     // Hands off the clock nets.
-    if (!isClock(net))
+    if (!isClock(net)
+	&& !network_->isPower(net)
+	&& !network_->isGround(net))
       makeNetParasitics(net);
   }
   delete net_iter;
@@ -1064,7 +1058,8 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
   int max_cap_violation_count = 0;
   int max_slew_violation_count = 0;
 
-  sta_->findDelays();
+  if (repair_max_slew)
+    sta_->findDelays();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
