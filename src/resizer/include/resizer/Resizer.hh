@@ -71,11 +71,12 @@ public:
   // resizerPreamble() required.
   void resizeToTargetSlew(Instance *inst);
 
-  // Insert buffers to fix max cap/slew violations.
+  // Insert buffers to fix max cap violations.
   // resizerPreamble() required.
-  void repairMaxCapSlew(bool repair_max_cap,
-			bool repair_max_slew,
-			LibertyCell *buffer_cell);
+  void repairMaxCap(LibertyCell *buffer_cell);
+  // Insert buffers to fix max slew violations.
+  // resizerPreamble() required.
+  void repairMaxSlew(LibertyCell *buffer_cell);
   void repairMaxFanout(int max_fanout,
 		       LibertyCell *buffer_cell);
   // Rebuffer net (for testing).

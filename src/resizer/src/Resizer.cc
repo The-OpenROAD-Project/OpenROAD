@@ -1049,45 +1049,25 @@ Resizer::deleteRebufferOptions()
 
 // Assumes resizePreamble has been called.
 void
-Resizer::repairMaxCapSlew(bool repair_max_cap,
-			  bool repair_max_slew,
-			  LibertyCell *buffer_cell)
+Resizer::repairMaxCap(LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
   int repaired_net_count = 0;
-  int max_cap_violation_count = 0;
-  int max_slew_violation_count = 0;
+  int violation_count = 0;
 
-  if (repair_max_slew)
-    sta_->findDelays();
+  sta_->findDelays();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
+    Pin *drvr_pin = vertex->pin();
     // Hands off the clock tree.
     Net *net = network_->net(vertex->pin());
     if (net && !isClock(net)) {
       bool violation = false;
       float limit_ratio;
-      NetPinIterator *pin_iter = network_->pinIterator(net);
-      while (pin_iter->hasNext()) {
-	Pin *pin = pin_iter->next();
-	if (repair_max_cap) {
-	  checkMaxCapViolation(pin, violation, limit_ratio);
-	  if (violation) {
-	    max_cap_violation_count++;
-	    break;
-	  }
-	}
-	if (repair_max_slew) {
-	  checkMaxSlewViolation(pin, violation, limit_ratio);
-	  if (violation) {
-	    max_slew_violation_count++;
-	    break;
-	  }
-	}
-      }
-      delete pin_iter;
+      checkMaxCapViolation(drvr_pin, violation, limit_ratio);
       if (violation) {
+	violation_count++;
 	repaired_net_count++;
 	Pin *drvr_pin = vertex->pin();
 	int buffer_count = ceil(limit_ratio);
@@ -1104,10 +1084,8 @@ Resizer::repairMaxCapSlew(bool repair_max_cap,
     }
   }
   
-  if (max_cap_violation_count > 0)
-    printf("Found %d max capacitance violations.\n", max_cap_violation_count);
-  if (max_slew_violation_count > 0)
-    printf("Found %d max slew violations.\n", max_slew_violation_count);
+  if (violation_count > 0)
+    printf("Found %d max capacitance violations.\n", violation_count);
   if (inserted_buffer_count_ > 0) {
     printf("Inserted %d buffers in %d nets.\n",
 	   inserted_buffer_count_,
@@ -1133,6 +1111,59 @@ Resizer::checkMaxCapViolation(const Pin *pin,
       violation = true;
       limit_ratio = load_cap / cap_limit;
     }
+  }
+}
+
+void
+Resizer::repairMaxSlew(LibertyCell *buffer_cell)
+{
+  inserted_buffer_count_ = 0;
+  int repaired_net_count = 0;
+  int violation_count = 0;
+
+  sta_->findDelays();
+  // Rebuffer in reverse level order.
+  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
+    Vertex *vertex = level_drvr_verticies_[i];
+    // Hands off the clock tree.
+    Net *net = network_->net(vertex->pin());
+    if (net && !isClock(net)) {
+      bool violation = false;
+      float limit_ratio;
+      NetPinIterator *pin_iter = network_->pinIterator(net);
+      while (pin_iter->hasNext()) {
+	Pin *pin = pin_iter->next();
+	checkMaxSlewViolation(pin, violation, limit_ratio);
+	if (violation) {
+	  violation_count++;
+	  break;
+	}
+      }
+      delete pin_iter;
+      if (violation) {
+	repaired_net_count++;
+	Pin *drvr_pin = vertex->pin();
+	int buffer_count = ceil(limit_ratio);
+	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
+	if (buffer_fanout > 1)
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell);
+	else
+	  rebuffer(drvr_pin, buffer_cell);
+	if (overMaxArea()) {
+	  warn("max utilization reached.");
+	  break;
+	}
+      }
+    }
+  }
+  
+  if (violation_count > 0)
+    printf("Found %d max slew violations.\n", violation_count);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repaired_net_count);
+    level_drvr_verticies_valid_ = false;
   }
 }
 
