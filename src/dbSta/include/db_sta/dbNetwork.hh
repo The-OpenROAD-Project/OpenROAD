@@ -111,6 +111,7 @@ public:
   virtual bool isGround(const Net *net) const;
   virtual NetPinIterator *pinIterator(const Net *net) const;
   virtual NetTermIterator *termIterator(const Net *net) const;
+  virtual Net *highestConnectedNet(Net *net) const;
 
   virtual ConstantPinIterator *constantPinIterator();
 

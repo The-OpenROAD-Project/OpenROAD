@@ -139,8 +139,11 @@ proc resize { args } {
   if { $resize } {
     resize_to_target_slew
   }
-  if { $repair_max_cap || $repair_max_slew } {
-    repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
+  if { $repair_max_cap } {
+    repair_max_cap $buffer_cell
+  }
+  if { $repair_max_slew } {
+    repair_max_slew $buffer_cell
   }
 }
 
@@ -212,30 +215,34 @@ define_cmd_args "repair_max_cap" {-buffer_cell buffer_cell\
 				    [-max_utilization util]}
 
 proc repair_max_cap { args } {
-  repair_max_cap_slew "repair_max_cap" $args 1 0
-}
-
-define_cmd_args "repair_max_slew" {-buffer_cell buffer_cell\
-				    [-max_utilization util]}
-
-proc repair_max_slew { args } {
-  repair_max_cap_slew "repair_max_slew" $args 0 1
-}
-
-
-proc repair_max_cap_slew { cmd cmd_args repair_max_cap repair_max_slew } {
-  parse_key_args "repair_max_slew" cmd_args \
+  parse_key_args "repair_max_cap" args \
     keys {-buffer_cell -max_utilization} \
     flags {}
 
   set buffer_cell [parse_buffer_cell keys 1]
   set_max_utilization [parse_max_util keys]
 
-  check_argc_eq0 $cmd $cmd_args
+  check_argc_eq0 "repair_max_cap" $args
 
-  # init target slews
   resizer_preamble [get_libs *]
-  repair_max_slew_cap $repair_max_cap $repair_max_slew $buffer_cell
+  repair_max_cap_cmd $buffer_cell
+}
+
+define_cmd_args "repair_max_slew" {-buffer_cell buffer_cell\
+				     [-max_utilization util]}
+
+proc repair_max_slew { args } {
+  parse_key_args "repair_max_slew" args \
+    keys {-buffer_cell -max_utilization} \
+    flags {}
+
+  set buffer_cell [parse_buffer_cell keys 1]
+  set_max_utilization [parse_max_util keys]
+
+  check_argc_eq0 "repair_max_slew" $args
+
+  resizer_preamble [get_libs *]
+  repair_max_slew_cmd $buffer_cell
 }
 
 define_cmd_args "repair_max_fanout" {-max_fanout fanout\

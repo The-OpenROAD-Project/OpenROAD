@@ -203,13 +203,19 @@ resize_to_target_slew()
 }
 
 void
-repair_max_slew_cap(bool repair_max_cap,
-		    bool repair_max_slew,
-		    LibertyCell *buffer_cell)
+repair_max_cap_cmd(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairMaxCapSlew(repair_max_cap, repair_max_slew, buffer_cell);
+  resizer->repairMaxCap(buffer_cell);
+}
+
+void
+repair_max_slew_cmd(LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairMaxSlew(buffer_cell);
 }
 
 void
