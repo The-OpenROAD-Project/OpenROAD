@@ -950,9 +950,9 @@ NETS 385 ;
     - _256_ ( _532_ ZN ) ( _533_ B ) + USE SIGNAL ;
     - _257_ ( _535_ A2 ) ( _534_ ZN ) + USE SIGNAL ;
     - _258_ ( _536_ A ) ( _535_ ZN ) + USE SIGNAL ;
-    - _259_ ( _540_ B1 ) ( _537_ ZN ) + USE SIGNAL ;
+    - _259_ ( _540_ B2 ) ( _537_ ZN ) + USE SIGNAL ;
     - _260_ ( _538_ ZN ) ( _539_ A ) + USE SIGNAL ;
-    - _261_ ( _540_ B2 ) ( _539_ ZN ) + USE SIGNAL ;
+    - _261_ ( _540_ B1 ) ( _539_ ZN ) + USE SIGNAL ;
     - _262_ ( _540_ ZN ) ( _541_ A ) + USE SIGNAL ;
     - _263_ ( _542_ Z ) ( _545_ B ) + USE SIGNAL ;
     - _264_ ( _543_ ZN ) ( _544_ A ) ( _565_ S ) ( _567_ S ) ( _569_ S ) ( _571_ S ) ( _573_ S )
