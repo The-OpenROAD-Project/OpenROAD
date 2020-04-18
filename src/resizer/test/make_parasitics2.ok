@@ -20,22 +20,22 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ r2/CP (snl_ffqx1)
-   0.29    0.29 v r2/Q (snl_ffqx1)
-   0.22    0.51 v u1/Z (snl_bufx1)
-   0.22    0.73 v u2/Z (snl_and02x1)
-   0.01    0.73 v r3/D (snl_ffqx1)
-           0.73   data arrival time
+   0.24    0.24 v r2/Q (snl_ffqx1)
+   0.15    0.39 v u1/Z (snl_bufx1)
+   0.14    0.52 v u2/Z (snl_and02x1)
+   0.00    0.53 v r3/D (snl_ffqx1)
+           0.53   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
    0.00   10.00   clock reconvergence pessimism
           10.00 ^ r3/CP (snl_ffqx1)
-  -0.12    9.88   library setup time
-           9.88   data required time
+  -0.10    9.90   library setup time
+           9.90   data required time
 ---------------------------------------------------------
-           9.88   data required time
-          -0.73   data arrival time
+           9.90   data required time
+          -0.53   data arrival time
 ---------------------------------------------------------
-           9.14   slack (MET)
+           9.37   slack (MET)
 
 

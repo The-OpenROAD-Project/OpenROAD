@@ -515,9 +515,9 @@ Resizer::area(dbMaster *master)
 
 // DBUs are nanometers.
 double
-Resizer::dbuToMeters(uint dist) const
+Resizer::dbuToMeters(int dbu) const
 {
-  return dist * 1E-9;
+  return static_cast<double>(dbu) * 1e-6 / db_->getTech()->getLefUnits();
 }
 
 void
