@@ -735,7 +735,8 @@ proc tapcell { args } {
                 }
 
                 set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
-                set x [expr { int($x_tmp) }]
+                set row_orig_fix [expr { $llx % $site_x }]
+                set x [expr { int($x_tmp + $row_orig_fix) }]
                 set x_end [expr $x + $site_x]
 
                 if {($x != $min_x) && ($x_end != $max_x)} {
