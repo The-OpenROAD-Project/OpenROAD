@@ -380,6 +380,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
       input_voltage : default_VDD_VSS_input ; 
 
     }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
   }
   cell(PADCELL_SIG_V) { 
     area : 4200 ; 
@@ -592,6 +618,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
       input_voltage : default_VDD_VSS_input ; 
 
     }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
   }
   cell(PADCELL_VDD_H) { 
     area : 4200 ; 
@@ -617,6 +669,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
     pg_pin(VSS) { 
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
     }
   }
   cell(PADCELL_VSS_H) { 
@@ -644,6 +722,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
     }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
   }
   cell(PADCELL_VDDIO_H) { 
     area : 4200 ; 
@@ -669,6 +773,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
     pg_pin(VSS) { 
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
     }
   }
   cell(PADCELL_VSSIO_H) { 
@@ -696,6 +826,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
     }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
   }
   cell(PADCELL_VDD_V) { 
     area : 4200 ; 
@@ -721,6 +877,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
     pg_pin(VSS) { 
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
     }
   }
   cell(PADCELL_VSS_V) { 
@@ -748,6 +930,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
     }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
   }
   cell(PADCELL_VDDIO_V) { 
     area : 4200 ; 
@@ -774,6 +982,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
     }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
   }
   cell(PADCELL_VSSIO_V) { 
     area : 4200 ; 
@@ -799,6 +1033,32 @@ library(dummy_pads_ssa_sigcmax_0p72v_1p08v_125c) {
     pg_pin(VSS) { 
       pg_type : primary_ground ; 
       voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.00742903 ; 
+      rise_capacitance : 0.00734819 ; 
+      rise_capacitance_range(0.00641756, 0.00801857);
+      fall_capacitance : 0.00750987 ; 
+      fall_capacitance_range(0.0062899, 0.0080439);
+      input_voltage : default_VDD_VSS_input ; 
+
     }
   }
 }
