@@ -46,6 +46,7 @@ using std::min;
 using std::to_string;
 
 using ord::error;
+using ord::warn;
 
 using odb::dbLib;
 using odb::dbMaster;
@@ -125,7 +126,13 @@ void Opendp::placeRowFillers(const Grid* grid, int row)
       int gap = k - j;
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq& fillers = gapFillers(gap);
-      k                    = j;
+      if (fillers.empty()) {
+        int x = core_.xMin() + k * site_width_;
+        int y = core_.yMin() + row * row_height_;
+        warn("No filler for row %d gap %d %d:%d (%d, %d)", row, gap, j, k - 1,
+             x, y);
+      }
+      k = j;
       for (dbMaster* master : fillers) {
         string inst_name = "FILLER_" + to_string(row) + "_" + to_string(k);
         // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
@@ -168,7 +175,7 @@ dbMasterSeq& Opendp::gapFillers(int gap)
         }
       }
     }
-    error("could not fill gap of size %d", gap);
+    // error("could not fill gap of size %d", gap);
     return fillers;
   } else {
     return fillers;
