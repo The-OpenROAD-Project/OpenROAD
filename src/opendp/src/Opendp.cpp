@@ -424,14 +424,14 @@ bool Opendp::isPaddedType(const Cell* cell) const
     case dbMasterType::CORE_TIEHIGH:
     case dbMasterType::CORE_TIELOW:
     case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
       return true;
     case dbMasterType::CORE_SPACER:
     case dbMasterType::BLOCK:
     case dbMasterType::BLOCK_BLACKBOX:
     case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
     case dbMasterType::ENDCAP_TOPLEFT:
     case dbMasterType::ENDCAP_TOPRIGHT:
     case dbMasterType::ENDCAP_BOTTOMLEFT:
