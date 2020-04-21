@@ -48,16 +48,15 @@ testdir=$2
 
 $binary -no_init < run.tcl > test.log 2>&1
 
-obs_report0=$(grep -e '---- #Endcaps inserted:' ./test.log)
-obs_report1=$(grep -e '---- #Tapcells inserted:' ./test.log)
+report=$(grep -e '---- #Tapcells inserted:' ./test.log)
 
 mkdir -p ../../results/test_cells_inserted/
 cp test.log ../../results/test_cells_inserted/tapcell.log
 
-if grep -q -e "$obs_report0" golden.cells && grep -q -e "$obs_report1" golden.cells;
+if grep -q -e "$report" golden.cells;
 then
 	exit $GREEN
 else
-        echo "     - [ERROR] Test failed. Check $testdir/src/check_cells_inserted/test.log and Check $testdir/src/check_cells_inserted/golden.cells"
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_rows_origin/test.log and Check $testdir/src/check_rows_origin/golden.cells"
 	exit $RED
 fi
