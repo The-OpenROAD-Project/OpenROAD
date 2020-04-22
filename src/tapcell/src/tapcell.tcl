@@ -557,6 +557,8 @@ proc tapcell { args } {
             puts "ERROR: Master $endcap_master not found"
         }
 
+        set row_name [$row getName]
+
         set ori [$row getOrient]
 
         set top_bottom [tapcell::top_or_bottom $row $min_y $max_y]
@@ -610,7 +612,7 @@ proc tapcell { args } {
 	set row_width [expr $urx - $llx]
 	
 	if {$master_x > $row_width} {
-	    puts "WARNING: No enough space to place endcap in current row. Skipping..."
+	    puts "WARNING: No enough space to place endcap in row $row_name. Skipping..."
             continue
 	}
 
@@ -663,7 +665,7 @@ proc tapcell { args } {
         }
 
         if {$llx == $loc_2_x && $lly == $loc_2_y} {
-            puts "WARNING: current row have enough space only for one endcap"
+            puts "WARNING: row $row_name have enough space for only one endcap"
 	    continue
         }
 
@@ -901,6 +903,14 @@ proc tapcell { args } {
                 set row_urx [[$row getBBox] xMax]
                 set row_ury [[$row getBBox] yMax]
 
+		if {$blockage_llx < $row_llx} {
+                    set blockage_llx $row_llx
+                }
+
+                if {$blockage_urx > $row_urx} {
+                    set blockage_urx $row_urx
+                }
+
                 if {($row_lly >= $blockage_ury)} {
                     # If row is at top of macro
                     if {[string match "MX" $ori]} {
@@ -921,36 +931,50 @@ proc tapcell { args } {
                     set x_tmp [expr {$row_llx + ($row1_num_sites * $site_x) - [$incnr_master getWidth]}]
                     #set x_tmp [expr {round (1.0*$x_start/$site_x)*$site_x}]
                     set x_start [expr { int($x_tmp) }]
-                    
+
                     set x_end [expr $blockage_urx]
                     set x_tmp [expr {ceil (1.0*$x_end/$site_x)*$site_x}]
                     set x_end [expr { int($x_tmp) }]
 
                     set inst1_name "PHY_${cnt}"
-                    set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
-                    $inst1 setOrient $ori
-                    $inst1 setLocation $x_start $row_lly
-                    $inst1 setPlacementStatus LOCKED
-
-                    incr cnt
-                    incr blkgs_cnt
-
-                    if {(($x_end + $endcapwidth) < $corebox_urx)} {
-                        set inst2_name "PHY_${cnt}"
-                        set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
-                        $inst2 setOrient $ori
-                        $inst2 setLocation $x_end $row_lly
-                        $inst2 setPlacementStatus LOCKED
-
+                    if {$x_start < $row_llx} {
+                        set x_start $row_llx
+                    } else {
+                        set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
+                        $inst1 setOrient $ori
+                        $inst1 setLocation $x_start $row_lly
+                        $inst1 setPlacementStatus LOCKED
+                    
                         incr cnt
                         incr blkgs_cnt
+                    }
+
+                    if {(($x_end + $endcapwidth) < $corebox_urx)} {
+                        if {($x_end + $endcapwidth) <= $row_urx } {
+                            set inst2_name "PHY_${cnt}"
+                            set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
+                            $inst2 setOrient $ori
+                            $inst2 setLocation $x_end $row_lly
+                            $inst2 setPlacementStatus LOCKED
+
+                            incr cnt
+                            incr blkgs_cnt
+                        } else {
+                            set x_end [expr $row_urx - $endcapwidth]
+                        }
                     } else {
                         set x_end [expr $corebox_urx - $endcapwidth]
                     }
 
                     #Insert remaining cells
+                    set x_tb2 $x_start
                     for {set x [expr $x_start+$endcapwidth]} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
                         set inst3_name "PHY_${cnt}"
+                        set tie_diff [expr $x_end-($x+$tbtiewidth)]
+                        set sites_gap [expr $tie_diff/$site_x]
+                        if {$sites_gap <= 1} {
+                            continue
+                        }
                         set inst3 [odb::dbInst_create $block $tbtie_master $inst3_name]
                         $inst3 setOrient $ori
                         $inst3 setLocation $x $row_lly
@@ -958,6 +982,7 @@ proc tapcell { args } {
 
                         incr cnt
                         incr blkgs_cnt
+                        set x_tb2 [expr $x+$tbtiewidth]
                     }
 
                     set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
@@ -975,11 +1000,11 @@ proc tapcell { args } {
                         set x_end $x_tb3
                     }
 
-                    for {set x $x} {$x < $x_end} {set x [expr $x+(2*$site_x)]} {
+                    for {} {$x_tb2 < $x_end} {set x_tb2 [expr $x_tb2+(2*$site_x)]} {
                         set inst5_name "PHY_${cnt}"
                         set inst5 [odb::dbInst_create $block $tb2_master $inst5_name]
                         $inst5 setOrient $ori
-                        $inst5 setLocation $x $row_lly
+                        $inst5 setLocation $x_tb2 $row_lly
                         $inst5 setPlacementStatus LOCKED
 
                         incr cnt
@@ -1011,13 +1036,17 @@ proc tapcell { args } {
                     set x_end [expr { int($x_tmp) }]
 
                     set inst1_name "PHY_${cnt}"
-                    set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
-                    $inst1 setOrient $ori
-                    $inst1 setLocation $x_start $row_lly
-                    $inst1 setPlacementStatus LOCKED
+                    if {$x_start < $row_llx} {
+                        set x_start $row_llx
+                    } else {
+                        set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
+                        $inst1 setOrient $ori
+                        $inst1 setLocation $x_start $row_lly
+                        $inst1 setPlacementStatus LOCKED
 
-                    incr cnt
-                    incr blkgs_cnt
+                        incr cnt
+                        incr blkgs_cnt
+                    }
 
                     if {(($x_end + $endcapwidth) < $corebox_urx)} {
                         set inst2_name "PHY_${cnt}"
@@ -1031,10 +1060,16 @@ proc tapcell { args } {
                     } else {
                         set x_end [expr $corebox_urx - $endcapwidth]
                     }
-                    
+ 
                     #Insert remaining cells
+                    set x_tb2 $x_start
                     for {set x [expr $x_start+$endcapwidth]} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
                         set inst3_name "PHY_${cnt}"
+                        set tie_diff [expr $x_end-($x+$tbtiewidth)]
+                        set sites_gap [expr $tie_diff/$site_x]
+                        if {$sites_gap <= 1} {
+                            continue
+                        }
                         set inst3 [odb::dbInst_create $block $tbtie_master $inst3_name]
                         $inst3 setOrient $ori
                         $inst3 setLocation $x $row_lly
@@ -1042,10 +1077,11 @@ proc tapcell { args } {
 
                         incr cnt
                         incr blkgs_cnt
+                        set x_tb2 [expr $x+$tbtiewidth]
                     }
 
                     set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
-
+		    
                     if {[expr $numcpp % 2] == 1} {
                         set x_tb3 [expr $x_end-(3*$site_x)]
                         set inst4_name "PHY_${cnt}"
@@ -1058,12 +1094,12 @@ proc tapcell { args } {
                         incr blkgs_cnt
                         set x_end $x_tb3
                     }
-
-                    for {} {$x < $x_end} {set x [expr $x+(2*$site_x)]} {
+                    
+                    for {} {$x_tb2 < $x_end} {set x_tb2 [expr $x_tb2+(2*$site_x)]} {
                         set inst5_name "PHY_${cnt}"
                         set inst5 [odb::dbInst_create $block $tb2_master $inst5_name]
                         $inst5 setOrient $ori
-                        $inst5 setLocation $x $row_lly
+                        $inst5 setLocation $x_tb2 $row_lly
                         $inst5 setPlacementStatus LOCKED
 
                         incr cnt
