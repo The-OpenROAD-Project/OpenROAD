@@ -5,6 +5,6 @@ Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate.lef
 Inserted 3 tie LOGIC1_X1 instances for 1 nets.
 t1 10
-t11 10
-t12 10
-t13 5
+t1_1 10
+t1_2 10
+t1_3 5
