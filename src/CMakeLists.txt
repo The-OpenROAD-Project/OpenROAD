@@ -64,6 +64,18 @@ add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
 # Do not use REQUIRED because it also requires TK.
 find_package(TCL)
 
+# check for tclReadline
+set(TCL_READLINE_POSSIBLE_NAMES tclreadline-2.1.0
+    tclreadline-2.3.2 tclreadline-2.3.6 tclreadline-2.3.7 tclreadline-2.3.8
+    )
+find_library(TCL_READLINE_LIBRARY
+  NAMES tclreadline ${TCL_READLINE_POSSIBLE_NAMES}
+  PATHS ${TCL_LIB_PATHS}
+  )
+if (TCL_READLINE_LIBRARY)
+  message(STATUS "TCL readline library: ${TCL_READLINE_LIBRARY}")
+endif()
+
 find_package(SWIG REQUIRED 3.0)
 include(UseSWIG)
 set(OPENDB_SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")

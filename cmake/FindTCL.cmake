@@ -35,13 +35,10 @@ if (NOT TCL_LIB_PATHS)
   if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(TCL_LIB_PATHS /usr/local/lib)
     set(TCL_NO_DEFAULT_PATH TRUE)
+  elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(TCL_LIB_PATHS /usr/lib /usr/local/lib)
+    set(TCL_NO_DEFAULT_PATH FALSE)
   endif()
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(TCL_LIB_PATHS /usr/lib
-    /usr/lib64
-    /usr/local/lib
-    )
-  set(TCL_NO_DEFAULT_PATH FALSE)
 endif()
 
 if (NOT TCL_LIBRARY)
@@ -77,16 +74,4 @@ message(STATUS "TCL header: ${TCL_HEADER}")
 
 if (TCL_HEADER)
   get_filename_component(TCL_INCLUDE_PATH "${TCL_HEADER}" PATH)
-endif()
-
-# check for tclReadline
-set(TCL_READLINE_POSSIBLE_NAMES tclreadline-2.1.0
-    tclreadline-2.3.2 tclreadline-2.3.6 tclreadline-2.3.7 tclreadline-2.3.8
-    )
-find_library(TCL_READLINE_LIBRARY
-  NAMES tclreadline ${TCL_READLINE_POSSIBLE_NAMES}
-  PATHS ${TCL_LIB_PATHS}
-  )
-if (TCL_READLINE_LIBRARY)
-  message(STATUS "TCL readline library: ${TCL_READLINE_LIBRARY}")
 endif()
