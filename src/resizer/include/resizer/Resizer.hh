@@ -182,7 +182,8 @@ protected:
 		    float load_cap);
   string makeUniqueNetName();
   string makeUniqueBufferName();
-  string makeUniqueInstName(const char *base_name);
+  string makeUniqueInstName(const char *base_name,
+			    bool underscore);
   bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);

@@ -1866,7 +1866,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 	PinSeq &loads = grouped_loads[i + 1];
 	Point center = findCenter(loads);
 
-	string clone_name = makeUniqueInstName(inst_name);
+	string clone_name = makeUniqueInstName(inst_name, true);
 	Instance *clone = sta_->makeInstance(clone_name.c_str(),
 					     tie_cell, top_inst);
 	setLocation(clone, center);
@@ -2185,15 +2185,17 @@ Resizer::makeUniqueNetName()
 string
 Resizer::makeUniqueBufferName()
 {
-  return makeUniqueInstName("buffer");
+  return makeUniqueInstName("buffer", false);
 }
 
 string
-Resizer::makeUniqueInstName(const char *base_name)
+Resizer::makeUniqueInstName(const char *base_name,
+			    bool underscore)
 {
   string inst_name;
   do 
-    stringPrint(inst_name, "%s%d", base_name, unique_inst_index_++);
+    stringPrint(inst_name, underscore ? "%s_%d" : "%s%d",
+		base_name, unique_inst_index_++);
   while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }
