@@ -607,6 +607,13 @@ proc tapcell { args } {
         set urx [[$row getBBox] xMax]
         set ury [[$row getBBox] yMax]
 
+	set row_width [expr $urx - $llx]
+	
+	if {$master_x > $row_width} {
+	    puts "WARNING: No enough space to place endcap in current row. Skipping..."
+            continue
+	}
+
         set loc_2_x [expr $urx - $master_x]
         set loc_2_y [expr $ury - $master_y]
 
@@ -653,6 +660,11 @@ proc tapcell { args } {
                     set master [$db findMaster $cnrcap_nwout_master]
                 }
             }
+        }
+
+        if {$llx == $loc_2_x && $lly == $loc_2_y} {
+            puts "WARNING: current row have enough space only for one endcap"
+	    continue
         }
 
         set inst2_name "PHY_${cnt}"
@@ -811,8 +823,14 @@ proc tapcell { args } {
             if {$topbottom_chk != 0} {
                 set x_start [expr $llx+$endcapwidth]
                 set x_end [expr $urx-$endcapwidth]
+                set x_tb2 $x_start
                 for {set x $x_start} {$x+$tbtiewidth < $x_end} {set x [expr $x+$tbtiewidth]} {
                     set inst_name "PHY_${cnt}"
+                    set tie_diff [expr $x_end-($x+$tbtiewidth)]
+                    set sites_gap [expr $tie_diff/$site_x]
+                    if {$sites_gap <= 1} {
+                        continue
+                    }
                     set new_inst [odb::dbInst_create $block $master $inst_name]
                     $new_inst setOrient $ori
                     $new_inst setLocation $x $lly
@@ -820,28 +838,30 @@ proc tapcell { args } {
 
                     incr cnt
                     incr topbottom_cnt
+                    set x_tb2 [expr $x+$tbtiewidth]
                 }
 
                 set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
-
                 if {[expr $numcpp % 2] == 1} {
                     set inst_name "PHY_${cnt}"
                     set x_tb3 [expr $x_end-(3*$site_x)]
-                    set new_inst [odb::dbInst_create $block $tb3_master $inst_name]
-                    $new_inst setOrient $ori
-                    $new_inst setLocation $x_tb3 $lly
-                    $new_inst setPlacementStatus LOCKED
+                    if {$x_tb3 >= $llx && $x_tb3+(3*$site_x) <= $urx} {
+                        set new_inst [odb::dbInst_create $block $tb3_master $inst_name]
+                        $new_inst setOrient $ori
+                        $new_inst setLocation $x_tb3 $lly
+                        $new_inst setPlacementStatus LOCKED
 
-                    incr cnt
-                    incr topbottom_cnt
-                    set x_end $x_tb3
+                        incr cnt
+                        incr topbottom_cnt
+                        set x_end $x_tb3
+                    }
                 }
 
-                for {} {$x < $x_end} {set x [expr $x+(2*$site_x)]} {
+                for {} {$x_tb2 < $x_end} {set x_tb2 [expr $x_tb2+(2*$site_x)]} {
                     set inst_name "PHY_${cnt}"
                     set new_inst [odb::dbInst_create $block $tb2_master $inst_name]
                     $new_inst setOrient $ori
-                    $new_inst setLocation $x $lly
+                    $new_inst setLocation $x_tb2 $lly
                     $new_inst setPlacementStatus LOCKED
 
                     incr cnt
