@@ -30,6 +30,7 @@ namespace eval ICeWall {
 # 13 "Expected instance $name for signal $name not found"
 # 14 "Net ${signal}_$section already exists, so cannot be used in the pad ring"
 # 15 "Cannot find breaker cell $inst_name"
+# 17 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
 #
 
   proc set_message {level message} {
@@ -516,18 +517,24 @@ namespace eval ICeWall {
       set cell_type [dict get $library types $type]
       set inst_name [get_inst_name $padcell]
       set inst [$block findInst $inst_name]
-      
+
       foreach pin [dict get $library connect_by_abutment] {
         set pin_name $pin
         if {[lsearch $breakers $type] > -1 && [dict exists $library cells $cell_type breaks $pin_name]} {
           # Breaker cells have a left / right version of the pin_name in the library metadata
           set pin_name [lindex [dict get $library cells $cell_type breaks $pin_name] $idx]
         }
+        if {[dict exists $library cells $cell_type connect $pin]} {
+          set pin_name [dict get $library cells $cell_type connect $pin]
+        }
         set iterm [$inst findITerm $pin_name]
-        if {$iterm != "NULL" && [set net [$iterm getNet]] != "NULL"} {
+        if {$iterm == "NULL"} {
+          critical 17 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
+        } 
+        if {[set net [$iterm getNet]] != "NULL"} {
           dict set abutment_nets $pin $net
         } else {
-          err 16 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
+          err 16 "Cannot find net for pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
         }
       }      
     }
@@ -589,7 +596,7 @@ namespace eval ICeWall {
         set name [get_inst_name $padcell]
         set type [get_pad_type $padcell]
         set cell [get_cell $type $side_name]
-        
+
         if {[set inst [$block findInst $name]] == "NULL"} {
           # err 13 "Expected instance $name for signal $name not found"
           continue
@@ -661,6 +668,12 @@ namespace eval ICeWall {
 
           set term [$block findBTerm [get_pin_name $padcell]]
           if {$term != "NULL"} {
+            set net [$term getNet]
+            foreach iterm [$net getITerms] {
+              $iterm setSpecial
+            }
+            $net setSpecial
+
             set pin [odb::dbBPin_create $term]
             set layer [$tech findLayer [dict get $footprint pin_layer]]
             set x [dict get $footprint padcells $side_name $padcell bondpad scaled_centre x]
@@ -770,16 +783,26 @@ namespace eval ICeWall {
               dict set segment $signal cur_index $cur_index
               set pad_segment($signal,$cur_index) {}
             } else {
-              lappend pad_segment($signal,[dict get $segment $signal cur_index]) $name
+              set cell [dict get $library types $type]
+              set pin_name $signal
+              if {[dict exists $library cells $cell connect $signal]} {
+                set pin_name [dict get $library cells $cell connect $signal]
+              }
+              lappend pad_segment($signal,[dict get $segment $signal cur_index]) [list inst_name $name pin_name $pin_name]
             }
           }
         } else {
           foreach signal [dict get $library connect_by_abutment] {
-            lappend pad_segment($signal,[dict get $segment $signal cur_index]) $name
+            set cell [dict get $library types $type]
+            set pin_name $signal
+            if {[dict exists $library cells $cell connect $signal]} {
+              set pin_name [dict get $library cells $cell connect $signal]
+            }
+            lappend pad_segment($signal,[dict get $segment $signal cur_index]) [list inst_name $name pin_name $pin_name]
           }
         }
       }
-      
+# debug [array get pad_segment]      
       foreach item [array names pad_segment] {
         regexp {([^,]*),(.*)} $item - signal idx
         dict set segment cells $signal $idx $pad_segment($item)
@@ -803,24 +826,25 @@ namespace eval ICeWall {
             set net [odb::dbNet_create $block "${signal}_$section"]
           }
           $net setSpecial
-          foreach inst_name [dict get $sections $section] {
-            # debug "signal: $signal, section: $section, inst: $inst_name"
+          foreach inst_pin_name [dict get $sections $section] {
+            set inst_name [dict get $inst_pin_name inst_name]
+            set pin_name [dict get $inst_pin_name pin_name]
+
             if {[set inst [$block findInst $inst_name]] == "NULL"} {
-              # debug "Cannot find instance $inst_name"
               continue
             }
             
-            set mterm [[$inst getMaster] findMTerm $signal]
+            set mterm [[$inst getMaster] findMTerm $pin_name]
             if {$mterm != "NULL"} {
               set iterm [odb::dbITerm_connect $inst $net $mterm]
               $iterm setSpecial
             } else {
-              # debug "No term $signal found on $inst_name"
+              err 72 "No term $signal found on $inst_name"
             }
           }
         }
       }
-      
+
       dict for {signal breakers} [dict get $segment breaker] {
         foreach section [dict keys $breakers] {
           set inst_name [dict keys [dict get $breakers $section]]
@@ -901,14 +925,11 @@ namespace eval ICeWall {
     if {$signal_assignment_file != ""} {
       assign_signals $signal_assignment_file
     }
-    
+
     normalize_locations
     order_padcells
-    
     connect_by_abutment
-        
     fill_between_padcells
-
     global_assignments  
 
     # Place miscellaneous other cells
@@ -1114,7 +1135,7 @@ namespace eval ICeWall {
     variable block
 
     set type fill
-
+    
     if {$side == "top" || $side == "bottom"} {
       set fill_start $xmin
       set fill_end $xmax
