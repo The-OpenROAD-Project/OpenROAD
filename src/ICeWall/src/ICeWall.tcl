@@ -528,13 +528,13 @@ namespace eval ICeWall {
           set pin_name [dict get $library cells $cell_type connect $pin]
         }
         set iterm [$inst findITerm $pin_name]
-        if {$iterm != "NULL" && [set net [$iterm getNet]] != "NULL"} {
+        if {$iterm == "NULL"} {
           critical 17 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
         } 
         if {[set net [$iterm getNet]] != "NULL"} {
           dict set abutment_nets $pin $net
         } else {
-          err 16 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
+          err 16 "Cannot find net for pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
         }
       }      
     }
