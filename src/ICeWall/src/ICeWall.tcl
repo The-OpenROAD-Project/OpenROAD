@@ -528,7 +528,7 @@ namespace eval ICeWall {
           set pin_name [dict get $library cells $cell_type connect $pin]
         }
         set iterm [$inst findITerm $pin_name]
-        if {$iterm == "NULL"} {
+        if {$iterm != "NULL" && [set net [$iterm getNet]] != "NULL"} {
           critical 17 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
         } 
         if {[set net [$iterm getNet]] != "NULL"} {
