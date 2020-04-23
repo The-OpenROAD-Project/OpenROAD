@@ -831,7 +831,6 @@ namespace eval ICeWall {
             set pin_name [dict get $inst_pin_name pin_name]
 
             if {[set inst [$block findInst $inst_name]] == "NULL"} {
-              critical 98 "Cannot find instance $inst_name"
               continue
             }
             
