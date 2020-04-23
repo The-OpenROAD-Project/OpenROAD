@@ -524,7 +524,7 @@ namespace eval ICeWall {
           set pin_name [lindex [dict get $library cells $cell_type breaks $pin_name] $idx]
         }
         set iterm [$inst findITerm $pin_name]
-        if {[set net [$iterm getNet]] != "NULL"} {
+        if {$iterm != "NULL" && [set net [$iterm getNet]] != "NULL"} {
           dict set abutment_nets $pin $net
         } else {
           err 16 "Cannot find pin $pin_name (abutment signal=$pin_name) on $inst_name ([[$inst getMaster] getName])"
