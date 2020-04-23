@@ -17,6 +17,7 @@
 #include "resizer/Resizer.hh"
 
 #include "sta/Debug.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/PortDirection.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Units.hh"
@@ -435,7 +436,9 @@ Resizer::resizeToTargetSlew(Instance *inst)
       Net *out_net = network->net(output);
       if (out_net
 	  // Hands off the clock nets.
-	  && !isClock(out_net)) {
+	  && !isClock(out_net)
+	  // Exclude tie hi/low cells.
+	  && !isFuncOneZero(output)) {
 	// Includes net parasitic capacitance.
 	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
 	LibertyCell *best_cell = nullptr;
@@ -1062,7 +1065,10 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
     Pin *drvr_pin = vertex->pin();
     // Hands off the clock tree.
     Net *net = network_->net(vertex->pin());
-    if (net && !isClock(net)) {
+    if (net &&
+	!isClock(net)
+	// Exclude tie hi/low cells.
+	&& !isFuncOneZero(drvr_pin)) {
       bool violation = false;
       float limit_ratio;
       checkMaxCapViolation(drvr_pin, violation, limit_ratio);
@@ -1125,9 +1131,13 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
-    // Hands off the clock tree.
+    const Pin *drvr_pin = vertex->pin();
     Net *net = network_->net(vertex->pin());
-    if (net && !isClock(net)) {
+    if (net
+	// Hands off the clock tree.
+	&& !isClock(net)
+	// Exclude tie hi/low cells.
+	&& !isFuncOneZero(drvr_pin)) {
       bool violation = false;
       float limit_ratio;
       NetPinIterator *pin_iter = network_->pinIterator(net);
@@ -1595,7 +1605,9 @@ Resizer::repairMaxFanout(int max_fanout,
     Pin *drvr_pin = vertex->pin();
     // Hands off the clock tree.
     if (!network_->isTopLevelPort(drvr_pin)
-	&& !search_->isClock(vertex)) {
+	&& !search_->isClock(vertex)
+	// Exclude tie hi/low cells.
+	&& !isFuncOneZero(drvr_pin)) {
       int fanout = this->fanout(drvr_pin);
       if (fanout > max_fanout) {
 	max_fanout_violation_count++;
@@ -2365,6 +2377,18 @@ Resizer::findLoads(Pin *drvr_pin,
   PinSet visited_drvrs;
   FindNetDrvrLoads visitor(drvr_pin, visited_drvrs, loads, drvrs, network_);
   network_->visitConnectedPins(drvr_pin, visitor);
+}
+
+bool
+Resizer::isFuncOneZero(const Pin *drvr_pin)
+{
+  LibertyPort *port = network_->libertyPort(drvr_pin);
+  if (port) {
+    FuncExpr *func = port->function();
+    return func && (func->op() == FuncExpr::op_zero
+		    || func->op() == FuncExpr::op_one);
+  }
+  return false;
 }
 
 }
