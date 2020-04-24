@@ -1932,10 +1932,12 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
 {
   init();
   sta_->findRequireds();
+  Search *search = sta_->search();
   VertexSet hold_failures;
   // Find endpoints with hold violation.
   for (Vertex *end : *sta_->search()->endpoints()) {
-    if (sta_->vertexSlack(end, MinMax::min()) < 0.0)
+    if (!search->isClock(end)
+	&& sta_->vertexSlack(end, MinMax::min()) < 0.0)
       hold_failures.insert(end);
   }
   if (debug_->check("repair_hold", 2)) {
@@ -2054,10 +2056,12 @@ Resizer::findFaninWeights(VertexSet &ends,
 
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
-    if (!search->isEndpoint(vertex)
-	&& vertex->isDriver(db_network_))
-      weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
-    iter.enqueueAdjacentVertices(vertex);
+    if (!search->isClock(vertex)) {
+      if (!search->isEndpoint(vertex)
+	  && vertex->isDriver(db_network_))
+	weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
+      iter.enqueueAdjacentVertices(vertex);
+    }
   }
 }
 
