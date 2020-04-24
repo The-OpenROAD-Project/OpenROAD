@@ -614,7 +614,7 @@ namespace eval ICeWall {
 
         switch $side_name \
           "bottom" {
-            debug "cell_width: $cell_width cell_height: $cell_height"
+            # debug "cell_width: $cell_width cell_height: $cell_height"
             fill_box $fill_start $y $x [expr $y + $cell_height] $side_name [get_abutment_nets $padcell]
             set fill_start [expr $x + $cell_width]
           } \
