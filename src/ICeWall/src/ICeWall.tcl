@@ -597,6 +597,9 @@ namespace eval ICeWall {
         set type [get_pad_type $padcell]
         set cell [get_cell $type $side_name]
 
+        set cell_height [expr max([$cell getHeight],[$cell getWidth])]
+        set cell_width  [expr min([$cell getHeight],[$cell getWidth])]
+
         if {[set inst [$block findInst $name]] == "NULL"} {
           # err 13 "Expected instance $name for signal $name not found"
           continue
@@ -611,22 +614,23 @@ namespace eval ICeWall {
 
         switch $side_name \
           "bottom" {
-            fill_box $fill_start $y $x [expr $y + [$cell getHeight]] $side_name [get_abutment_nets $padcell]
-            set fill_start [expr $x + [$cell getWidth]]
+            debug "cell_width: $cell_width cell_height: $cell_height"
+            fill_box $fill_start $y $x [expr $y + $cell_height] $side_name [get_abutment_nets $padcell]
+            set fill_start [expr $x + $cell_width]
           } \
           "right"  {
-            fill_box [expr $x - [$cell getHeight]] $fill_start $x $y $side_name [get_abutment_nets $padcell]
-            set fill_start [expr $y + [$cell getWidth]]
+            fill_box [expr $x - $cell_height] $fill_start $x $y $side_name [get_abutment_nets $padcell]
+            set fill_start [expr $y + $cell_width]
           } \
           "top" {
-            fill_box $x [expr $y - [$cell getHeight]] $fill_start $y $side_name [get_abutment_nets $padcell]
+            fill_box $x [expr $y - $cell_height] $fill_start $y $side_name [get_abutment_nets $padcell]
             # debug "added_cell: [$inst getName] ($x $y) [$cell getName] [$cell getWidth] x [$cell getHeight]"
-            set fill_start [expr $x - [$cell getWidth]]
+            set fill_start [expr $x - $cell_width]
             # debug "$side_name: fill_start = $fill_start"
           } \
           "left" {
-            fill_box $x $y [expr $x + [$cell getHeight]] $fill_start $side_name [get_abutment_nets $padcell]
-            set fill_start [expr $y - [$cell getWidth]]
+            fill_box $x $y [expr $x + $cell_height] $fill_start $side_name [get_abutment_nets $padcell]
+            set fill_start [expr $y - $cell_width]
           }
 
 
