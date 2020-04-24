@@ -486,6 +486,10 @@ proc tapcell { args } {
         incr rows_count
     }
 
+    set end_master [$db findMaster $endcap_master]
+    set end_width [$end_master getWidth]
+    set min_row_width [expr 2*$end_width]
+
     foreach blockage $blockages {
         set rows [$block getRows]
         incr block_count
@@ -511,7 +515,10 @@ proc tapcell { args } {
                 set row1_end_x [expr [[$blockage getBBox] xMin] - $halo_x]
                 set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
 
-                if {$row1_num_sites > 0} {
+                set curr_min_row_width [expr $min_row_width + 2*$site_width]
+                set row1_width [expr $row1_num_sites*$site_width]
+
+                if {$row1_num_sites > 0 && $row1_width >= $curr_min_row_width} {
                     odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
                 }
 
@@ -524,7 +531,9 @@ proc tapcell { args } {
                 set row2_end_x [[$row getBBox] xMax]
                 set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
 
-                if {$row2_num_sites > 0} {
+                set row2_width [expr $row2_num_sites*$site_width]
+
+                if {$row2_num_sites > 0 && $row2_width >= $curr_min_row_width} {
                     odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
                 }
 
