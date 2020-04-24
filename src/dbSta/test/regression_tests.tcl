@@ -1,6 +1,7 @@
 record_tests {
   network_edit1
   sdc_names1
+  sdc_names2
   sdc_get1
   sta1
   sta2

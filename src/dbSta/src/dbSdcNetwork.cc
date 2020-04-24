@@ -24,6 +24,9 @@ namespace sta {
 static const char *
 escapeDividers(const char *token,
 	       const Network *network);
+static const char *
+escapeBrackets(const char *token,
+	       const Network *network);
 
 dbSdcNetwork::dbSdcNetwork(Network *network) :
   SdcNetwork(network)
@@ -37,6 +40,8 @@ dbSdcNetwork::findInstance(const char *path_name) const
   Instance *inst = network_->findInstance(path_name);
   if (inst == nullptr)
     inst = network_->findInstance(escapeDividers(path_name, this));
+  if (inst == nullptr)
+    inst = network_->findInstance(escapeBrackets(path_name, this));
   return inst;
 }
 
@@ -216,6 +221,13 @@ escapeDividers(const char *token,
 {
   return escapeChars(token, network->pathDivider(), '\0',
 		     network->pathEscape());
+}
+
+static const char *
+escapeBrackets(const char *token,
+	       const Network *network)
+{
+  return escapeChars(token, '[', ']', network->pathEscape());
 }
 
 } // namespace
