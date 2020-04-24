@@ -61,6 +61,7 @@
 # Error
 # 35 "Illegal via does not meet minimum cut rule"
 # 36 "Attempt to add illegal via at : ([expr 1.0 * [lindex $via_location 0] / $def_units] [expr 1.0 * [lindex $via_location 1] / $def_units]), via will not be added"
+# 37 "Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])"
 #
 # Critical
 # 19 "Cannot find layer $layer_name in loaded technology"
@@ -2213,13 +2214,13 @@ proc import_def_components {macros} {
 
 variable global_connections {
   VDD {
-    {inst_name .* pin_name VDD}
-    {inst_name .* pin_name VDDPE}
-    {inst_name .* pin_name VDDCE}
+    {inst_name .* pin_name ^VDD$}
+    {inst_name .* pin_name ^VDDPE$}
+    {inst_name .* pin_name ^VDDCE$}
   }
   VSS {
-    {inst_name .* pin_name VSS}
-    {inst_name .* pin_name VSSE}
+    {inst_name .* pin_name ^VSS$}
+    {inst_name .* pin_name ^VSSE$}
   }
 }
 
@@ -2276,6 +2277,7 @@ proc export_opendb_specialnet {net_name signal_type} {
   }
   $net setSpecial
   $net setSigType $signal_type
+  # debug "net $net_name. signaltype, $signal_type, global_connections: $global_connections"
 
   foreach inst [$block getInsts] {
     set master [$inst getMaster]
@@ -2489,10 +2491,12 @@ proc get_memory_instance_pg_pins {} {
     # debug "cell name - [$master getName]"
 
     foreach term_name [concat [get_macro_power_pins $inst_name] [get_macro_ground_pins $inst_name]] {
-      set inst_term [$inst findITerm $term_name]
-      if {$inst_term == "NULL"} {continue}
-      
-      set mterm [$inst_term getMTerm]
+      set master [$inst getMaster]
+      set mterm [$master findMTerm $term_name]
+      if {$mterm == "NULL"} {
+        err 37 "Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])"
+        continue
+      }
       set type [$mterm getSigType]
       foreach mPin [$mterm getMPins] {
         foreach geom [$mPin getGeometry] {
@@ -2509,7 +2513,7 @@ proc get_memory_instance_pg_pins {} {
           } else {
             set layer_name ${layer}_PIN_ver
           }
-
+          # debug "Adding pin for [$inst getName]:[$mterm getName] to layer $layer_name ($box)"
           add_stripe $layer_name $type [odb::newSetFromRect {*}$box]
         }
       }
