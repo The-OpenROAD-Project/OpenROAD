@@ -896,9 +896,9 @@ proc tapcell { args } {
         set blkgs_cnt 0      
 
         foreach blockage $blockages {
-            set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
+            set blockage_llx_ [expr [[$blockage getBBox] xMin] - $halo_x]
             set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
-            set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
+            set blockage_urx_ [expr [[$blockage getBBox] xMax] + $halo_x]
             set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
 
             set rows_top_bottom [tapcell::get_rows_top_bottom_macro $blockage $rows $halo_x $halo_y]
@@ -912,12 +912,16 @@ proc tapcell { args } {
                 set row_urx [[$row getBBox] xMax]
                 set row_ury [[$row getBBox] yMax]
 
-		if {$blockage_llx < $row_llx} {
+		if {$blockage_llx_ < $row_llx} {
                     set blockage_llx $row_llx
+                } else {
+                    set blockage_llx $blockage_llx_
                 }
 
-                if {$blockage_urx > $row_urx} {
+                if {$blockage_urx_ > $row_urx} {
                     set blockage_urx $row_urx
+                } else {
+                    set blockage_urx $blockage_urx_
                 }
 
                 if {($row_lly >= $blockage_ury)} {
