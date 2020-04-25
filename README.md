@@ -570,11 +570,13 @@ The `optimize_fanout` command can be run after the logical synthesis to perform 
 #### PDN analysis
 
 PDNSim IR analysis.
+PDN checker searches for floating PDN stripes
 Report worst IR drop given a placed and PDN synthesized design
 
 ```
-check_power_grid -vsrc <voltage_source_location_file>
+check_power_grid -vsrc <voltage_source_location_file> -net <VDD/VSS>
 analyze_power_grid -vsrc <voltage_source_location_file>
+write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp>
 ```
 
 Options description:
