@@ -567,11 +567,11 @@ optimize_fanout
 The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
 
 
-#### PDN analysis: PDNSim
+#### PDN analysis
 
-PDN checker searches for floating PDN stripes.
+PDNSim PDN checker searches for floating PDN stripes.
 
-Reports worst IR drop given a placed and PDN synthesized design.
+PDNSim reports worst IR drop given a placed and PDN synthesized design.
 
 ```
 check_power_grid -net <VDD/VSS>
