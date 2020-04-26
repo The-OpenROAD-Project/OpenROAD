@@ -11,7 +11,7 @@ set_load .2 u1z
 set_load .2 r1q
 
 report_checks
-resize -resize
+resize
 report_checks
 
 set def_file [make_result_file resize2.def]
