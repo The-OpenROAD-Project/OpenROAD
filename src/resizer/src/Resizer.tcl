@@ -91,7 +91,7 @@ proc resize { args } {
 
   set dont_use {}
   if { [info exists keys(-dont_use)] } {
-    set dont_use [get_lib_cells -quiet $keys(-dont_use)]
+    set dont_use [get_lib_cells_arg "-dont_use" $keys(-dont_use) sta_warn]
   }
   set_dont_use $dont_use
 
