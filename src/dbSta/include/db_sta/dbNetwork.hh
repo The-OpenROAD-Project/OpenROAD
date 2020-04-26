@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef STA_DB_NETWORK_H
-#define STA_DB_NETWORK_H
+#pragma once
 
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
@@ -201,4 +200,4 @@ protected:
 };
 
 } // namespace
-#endif
+
