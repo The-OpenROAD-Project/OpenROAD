@@ -13,7 +13,7 @@ set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-2
 
 report_design_area
 
-resize -resize
+resize
 report_design_area
 
 repair_max_cap -buffer_cell $buffer_cell

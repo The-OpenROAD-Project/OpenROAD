@@ -71,51 +71,20 @@ proc set_wire_rc { args } {
   set_wire_rc_cmd $wire_res $wire_cap $corner
 }
 
-define_cmd_args "resize" {[-buffer_inputs]\
-			    [-buffer_outputs]\
-			    [-resize]\
-			    [-repair_max_cap]\
-			    [-repair_max_slew]\
-			    [-resize_libraries resize_libs]\
-			    [-buffer_cell buffer_cell]\
+define_cmd_args "resize" {[-libraries resize_libs]\
 			    [-dont_use lib_cells]\
 			    [-max_utilization util]}
 
 proc resize { args } {
   parse_key_args "resize" args \
-    keys {-buffer_cell -resize_libraries -dont_use -max_utilization} \
-    flags {-buffer_inputs -buffer_outputs -resize -repair_max_cap -repair_max_slew}
+    keys {-libraries -dont_use} \
+    flags {-resize}
 
-  set buffer_inputs [info exists flags(-buffer_inputs)]
-  if { $buffer_inputs } {
-    ord::warn "resize -buffer_inputs is deprecated. Use the buffer_ports command."
+  if { [info exists flags(-resize)] } {
+    ord::warn "resize -resize flag no long required."
   }
-  set buffer_outputs [info exists flags(-buffer_outputs)]
-  if { $buffer_outputs } {
-    ord::warn "resize -buffer_outputs is deprecated. Use the buffer_ports command."
-  }
-  set resize [info exists flags(-resize)]
-  set repair_max_cap [info exists flags(-repair_max_cap)]
-  if { $repair_max_cap } {
-    ord::warn "resize -repair_max_cap is deprecated. Use the repair_max_cap command."
-  }
-  set repair_max_slew [info exists flags(-repair_max_slew)]
-  if { $repair_max_slew } {
-    ord::warn "resize -repair_max_slew is deprecated. Use the repair_max_slew command."
-  }
-  # With no options you get the whole salmai.
-  if { !($buffer_inputs || $buffer_outputs || $resize \
-	   || $repair_max_cap || $repair_max_slew) } {
-    set buffer_inputs 1
-    set buffer_outputs 1
-    set resize 1
-    set repair_max_cap 1
-    set repair_max_slew 1
-  }
-  set buffer_cell [parse_buffer_cell keys [expr $buffer_inputs || $buffer_outputs \
-					     || $repair_max_cap || $repair_max_slew]]
-  if { [info exists keys(-resize_libraries)] } {
-    set resize_libs [get_liberty_error "-resize_libraries" $keys(-resize_libraries)]
+  if { [info exists keys(-libraries)] } {
+    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
   } else {
     set resize_libs [get_libs *]
   }
@@ -125,27 +94,11 @@ proc resize { args } {
     set dont_use [get_lib_cells -quiet $keys(-dont_use)]
   }
   set_dont_use $dont_use
-  set_max_utilization [parse_max_util keys]
 
   check_argc_eq0 "resize" $args
 
   resizer_preamble $resize_libs
-
-  if { $buffer_inputs } {
-    buffer_inputs $buffer_cell
-  }
-  if { $buffer_outputs } {
-    buffer_outputs $buffer_cell
-  }
-  if { $resize } {
-    resize_to_target_slew
-  }
-  if { $repair_max_cap } {
-    repair_max_cap $buffer_cell
-  }
-  if { $repair_max_slew } {
-    repair_max_slew $buffer_cell
-  }
+  resize_to_target_slew
 }
 
 proc parse_max_util { keys_var } {
