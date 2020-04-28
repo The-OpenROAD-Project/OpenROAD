@@ -77,12 +77,8 @@ define_cmd_args "resize" {[-libraries resize_libs]\
 
 proc resize { args } {
   parse_key_args "resize" args \
-    keys {-libraries -dont_use} \
-    flags {-resize}
+    keys {-libraries -dont_use} flags {}
 
-  if { [info exists flags(-resize)] } {
-    ord::warn "resize -resize flag no long required."
-  }
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
   } else {
