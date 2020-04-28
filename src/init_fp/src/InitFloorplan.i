@@ -65,18 +65,22 @@ init_floorplan_core(double die_lx,
 
 void
 init_floorplan_util(double util,
-		    double aspect_ratio,
-		    double core_space,
-		    const char *site_name,
-		    const char *tracks_file)
-
+                    double aspect_ratio,
+                    double core_space_bottom,
+                    double core_space_top,
+                    double core_space_left,
+                    double core_space_right,
+                    const char *site_name,
+                    const char *tracks_file)
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
   sta::Report *report = sta->report();
-  ord::initFloorplan(util, aspect_ratio, core_space,
-		     site_name, tracks_file,
-		     db, report);
+  ord::initFloorplan(util, aspect_ratio,
+                     core_space_bottom, core_space_top,
+                     core_space_left, core_space_right,
+                     site_name, tracks_file,
+                     db, report);
 }
 
 void

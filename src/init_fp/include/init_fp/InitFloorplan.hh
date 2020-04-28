@@ -31,14 +31,6 @@ using odb::dbDatabase;
 using sta::Report;
 
 void
-initFloorplan(double util,
-	      double aspect_ratio,
-	      double core_space,
-	      const char *site_name,
-	      const char *tracks_file,
-	      dbDatabase *db,
-	      Report *report);
-void
 initFloorplan(double die_lx,
 	      double die_ly,
 	      double die_ux,
@@ -47,6 +39,18 @@ initFloorplan(double die_lx,
 	      double core_ly,
 	      double core_ux,
 	      double core_uy,
+	      const char *site_name,
+	      const char *tracks_file,
+	      dbDatabase *db,
+	      Report *report);
+
+void
+initFloorplan(double util,
+	      double aspect_ratio,
+	      double core_space_bottom,
+	      double core_space_top,
+	      double core_space_left,
+	      double core_space_right,
 	      const char *site_name,
 	      const char *tracks_file,
 	      dbDatabase *db,
