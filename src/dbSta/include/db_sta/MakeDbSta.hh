@@ -11,8 +11,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef MAKE_DBSTA_H
-#define MAKE_DBSTA_H
+#pragma once
 
 namespace odb {
 class dbDatabase;
@@ -34,4 +33,3 @@ void
 initDbSta(OpenRoad *openroad);
 
 } // namespace
-#endif

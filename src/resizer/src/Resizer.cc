@@ -2182,6 +2182,7 @@ Resizer::findFloatingNets()
       floating_nets->push_back(net);
   }
   delete net_iter;
+  sort(floating_nets, sta::NetPathNameLess(network_));
   return floating_nets;
 }
 

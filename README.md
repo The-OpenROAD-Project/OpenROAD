@@ -259,9 +259,9 @@ that have been read. Some designs have multiple libraries with
 different transistor thresholds (Vt) and are used to trade off power
 and speed. Chosing a low Vt library uses more power but results in a
 faster design after the resizing step. Use the `-dont_use` option to
-specify a list of patterns of cells to not use. For example, `*/DLY*`
-says do not use cells with names that begin with `DLY` in all
-libraries.
+specify a list of patterns of cells to not use or the value returned
+by `get_lib_cells`. For example, `DLY*` says do not use cells with
+names that begin with `DLY` in all libraries.
 
 ```
 repair_max_cap -buffer_cell buffer_cell
@@ -569,12 +569,14 @@ The `optimize_fanout` command can be run after the logical synthesis to perform 
 
 #### PDN analysis
 
-PDNSim IR analysis.
-Report worst IR drop given a placed and PDN synthesized design
+PDNSim PDN checker searches for floating PDN stripes.
+
+PDNSim reports worst IR drop given a placed and PDN synthesized design.
 
 ```
-check_power_grid -vsrc <voltage_source_location_file>
+check_power_grid -net <VDD/VSS>
 analyze_power_grid -vsrc <voltage_source_location_file>
+write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp>
 ```
 
 Options description:

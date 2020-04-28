@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef DB_STA_H
-#define DB_STA_H
+#pragma once
 
 #include "opendb/db.h"
 #include "sta/Sta.hh"
@@ -67,4 +66,3 @@ dbSta *
 makeBlockSta(dbBlock *block);
 
 } // namespace
-#endif

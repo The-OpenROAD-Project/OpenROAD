@@ -1,0 +1,16 @@
+Notice 0: Reading LEF file:  liberty1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  liberty1.lef
+Notice 0: 
+Reading DEF file: sdc_names2.def
+Notice 0: Design: top
+Notice 0:     Created 2 pins.
+Notice 0:     Created 1 components and 4 component-terminals.
+Notice 0:     Created 2 nets and 2 connections.
+Notice 0: Finished DEF file: sdc_names2.def
+foo[0].bar[2].baz
+foo[0].bar[2].baz/A
+A -> Z combinational
+  ^ -> ^ 0.09:0.09
+  v -> v 0.09:0.09

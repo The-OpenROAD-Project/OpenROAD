@@ -17,6 +17,9 @@ Notice 0: Finished DEF file: soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot
 [INFO] [PDNG-0016]   config: soc_bsg_black_parrot_nangate45/PDN.cfg
 [INFO] [PDNG-0008] Design Name is soc_bsg_black_parrot
 [INFO] [PDNG-0009] Reading technology data
+[ERROR] [PDNG-0037] Cannot find pin VDDPE on instance u_marker0 (MARKER)
+[ERROR] [PDNG-0037] Cannot find pin VDDCE on instance u_marker0 (MARKER)
+[ERROR] [PDNG-0037] Cannot find pin VSSE on instance u_marker0 (MARKER)
 [INFO] [PDNG-0011] ****** INFO ******
 Type: stdcell, grid
     Core Rings
