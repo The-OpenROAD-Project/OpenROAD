@@ -1607,11 +1607,14 @@ Resizer::repairMaxFanout(int max_fanout,
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
     Pin *drvr_pin = vertex->pin();
+    Net *net = network_->net(drvr_pin);
     // Hands off the clock tree.
     if (!network_->isTopLevelPort(drvr_pin)
 	&& !search_->isClock(vertex)
 	// Exclude tie hi/low cells.
-	&& !isFuncOneZero(drvr_pin)) {
+	&& !isFuncOneZero(drvr_pin)
+	&& net
+	&& !isSpecial(net)) {
       int fanout = this->fanout(drvr_pin);
       if (fanout > max_fanout) {
 	max_fanout_violation_count++;
