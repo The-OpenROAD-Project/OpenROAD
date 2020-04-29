@@ -442,7 +442,9 @@ Resizer::resizeToTargetSlew(Instance *inst)
 	  // Hands off the clock nets.
 	  && !isClock(out_net)
 	  // Exclude tie hi/low cells.
-	  && !isFuncOneZero(output)) {
+	  && !isFuncOneZero(output)
+	  // Hands off special nets.
+	  && !isSpecial(out_net)) {
 	// Includes net parasitic capacitance.
 	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
 	LibertyCell *best_cell = nullptr;
@@ -1068,11 +1070,13 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
     Vertex *vertex = level_drvr_verticies_[i];
     Pin *drvr_pin = vertex->pin();
     // Hands off the clock tree.
-    Net *net = network_->net(vertex->pin());
-    if (net &&
-	!isClock(net)
+    Net *net = network_->net(drvr_pin);
+    if (net
+	&& !isClock(net)
 	// Exclude tie hi/low cells.
-	&& !isFuncOneZero(drvr_pin)) {
+	&& !isFuncOneZero(drvr_pin)
+	// Hands off special nets.
+	&& !isSpecial(net)) {
       bool violation = false;
       float limit_ratio;
       checkMaxCapViolation(drvr_pin, violation, limit_ratio);
@@ -1141,7 +1145,9 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 	// Hands off the clock tree.
 	&& !isClock(net)
 	// Exclude tie hi/low cells.
-	&& !isFuncOneZero(drvr_pin)) {
+	&& !isFuncOneZero(drvr_pin)
+	// Hands off special nets.
+	&& !isSpecial(net)) {
       bool violation = false;
       float limit_ratio;
       NetPinIterator *pin_iter = network_->pinIterator(net);
@@ -2007,11 +2013,17 @@ Resizer::repairHoldPass(VertexSet &ends,
 		  delayAsString(weight_map[vertex], this),
 		  delayAsString(slackGap(vertex), this));
       Pin *drvr_pin = vertex->pin();
-      repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
-      repair_count++;
-      if (overMaxArea()) {
-	warn("max utilization reached.");
-	break;
+      Net *net = network_->isTopLevelPort(drvr_pin)
+	? network_->net(network_->term(drvr_pin))
+	: network_->net(drvr_pin);
+      // Hands off special nets.
+      if (!isSpecial(net)) {
+	repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
+	repair_count++;
+	if (overMaxArea()) {
+	  warn("max utilization reached.");
+	  break;
+	}
       }
     }
   }
