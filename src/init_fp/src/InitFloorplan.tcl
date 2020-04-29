@@ -15,8 +15,7 @@
 
 sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-aspect_ratio ratio]\
-					       [-core_space space]\
-					       [-core_space {bottom top left right}]\
+					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
 					       [-site site_name]\
