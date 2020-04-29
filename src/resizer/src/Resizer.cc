@@ -274,7 +274,8 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
 	&& net
-	&& !isClock(net))
+	&& !isClock(net)
+	&& !isSpecial(net))
       bufferInput(pin, buffer_cell);
   }
   delete port_iter;
@@ -345,7 +346,10 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
   InstancePinIterator *port_iter(network_->pinIterator(network_->topInstance()));
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
-    if (network_->direction(pin)->isOutput())
+    Net *net = network_->net(network_->term(pin));
+    if (network_->direction(pin)->isOutput()
+	&& net
+	&& !isSpecial(net))
       bufferOutput(pin, buffer_cell);
   }
   delete port_iter;
@@ -2394,6 +2398,13 @@ Resizer::isFuncOneZero(const Pin *drvr_pin)
 		    || func->op() == FuncExpr::op_one);
   }
   return false;
+}
+
+bool
+Resizer::isSpecial(Net *net)
+{
+  dbNet *db_net = db_network_->staToDb(net);
+  return db_net->isSpecial();
 }
 
 }

@@ -9,6 +9,7 @@ record_tests {
   buffer_ports2
   buffer_ports3
   buffer_ports5
+  buffer_ports6
   resize1
   resize2
   resize4

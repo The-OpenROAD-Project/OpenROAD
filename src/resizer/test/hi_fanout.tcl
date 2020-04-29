@@ -1,6 +1,6 @@
 # write_hi_fanout verilog/def
 
-set header {VERSION 5.5 ; 
+set header {VERSION 5.8 ; 
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
