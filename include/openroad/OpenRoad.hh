@@ -116,7 +116,8 @@ public:
 	       bool make_library);
 
   void readDef(const char *filename,
-               bool order_wires);
+               bool order_wires,
+               bool continue_on_errors);
   void writeDef(const char *filename,
 		// major.minor (avoid including defout.h)
 		string version);

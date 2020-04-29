@@ -175,10 +175,10 @@ read_lef_cmd(const char *filename,
 }
 
 void
-read_def_cmd(const char *filename, bool order_wires)
+read_def_cmd(const char *filename, bool order_wires, bool continue_on_errors)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDef(filename, order_wires);
+  ord->readDef(filename, order_wires, continue_on_errors);
 }
 
 void
