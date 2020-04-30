@@ -21,6 +21,7 @@ global_placement
 
 set buffer_cell BUF_X4
 set_wire_rc -layer metal2
+buffer_ports -buffer_cell $buffer_cell
 resize -resize
 repair_max_cap -buffer_cell $buffer_cell
 repair_max_slew -buffer_cell $buffer_cell

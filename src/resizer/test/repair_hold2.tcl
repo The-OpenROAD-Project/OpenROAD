@@ -1,3 +1,4 @@
+# repair_hold_violations
 source helpers.tcl
 read_liberty nlc18.lib
 read_lef nlc18.lef
@@ -12,7 +13,7 @@ set_propagated_clock clk
 set_wire_rc -layer metal1
 
 report_checks -path_delay min
-repair_hold_violations -buffer_cell [get_lib_cell nlc18/snl_bufx2]
+repair_hold_violations -buffer_cell snl_bufx2
 report_checks -path_delay min
 
 set def_file [make_result_file repair_hold2.def]
