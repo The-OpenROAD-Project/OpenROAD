@@ -156,14 +156,17 @@ write_db reg1.db
 
 ```
 initialize_floorplan
-  [-site site_name]          LEF site name for ROWS
-  [-tracks tracks_file]      routing track specification
-  -die_area "lx ly ux uy"    die area in microns
-  [-core_area "lx ly ux uy"] core area in microns
+  [-site site_name]               LEF site name for ROWS
+  [-tracks tracks_file]           routing track specification
+  -die_area "lx ly ux uy"         die area in microns
+  [-core_area "lx ly ux uy"]      core area in microns
 or
-  -utilization util          utilization (0-100 percent)
-  [-aspect_ratio ratio]      height / width, default 1.0
-  [-core_space space]        space around core, default 0.0 (microns)
+  -utilization util               utilization (0-100 percent)
+  [-aspect_ratio ratio]           height / width, default 1.0
+  [-core_space space
+    or "bottom top left right"]   space around core. Should either be one value
+                                  for all margins or 4 values for each margin.
+                                  default 0.0 (microns)
 ```
 
 The die area and core size used to write ROWs can be specified
@@ -177,8 +180,11 @@ If no -tracks file is used the routing layers from the LEF are used.
  core_area = design_area / (utilization / 100)
  core_width = sqrt(core_area / aspect_ratio)
  core_height = core_width * aspect_ratio
- core = ( core_space, core_space ) ( core_space + core_width, core_space + core_height )
- die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
+ core = ( core_space_left, core_space_bottom ) 
+        ( core_space_left + core_width, core_space_bottom + core_height )
+ die =  ( 0, 0 ) 
+        ( core_width + core_space_left + core_space_right, 
+          core_height + core_space_bottom + core_space_top )
 ```
 
 Place pins around core boundary.
