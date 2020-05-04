@@ -90,12 +90,16 @@ class InitFloorplan
 public:
   InitFloorplan() {}
   void initFloorplan(double util,
-		     double aspect_ratio,
-		     double core_space,
-		     const char *site_name,
-		     const char *tracks_file,
-		     dbDatabase *db,
-		     Report *report);
+         double aspect_ratio,
+         double core_space_bottom,
+         double core_space_top,
+         double core_space_left,
+         double core_space_right,
+         const char *site_name,
+         const char *tracks_file,
+         dbDatabase *db,
+         Report *report);
+
   void initFloorplan(double die_lx,
 		     double die_ly,
 		     double die_ux,
@@ -108,6 +112,7 @@ public:
 		     const char *tracks_file,
 		     dbDatabase *db,
 		     Report *report);
+
   void autoPlacePins(const char *pin_layer_name,
 		     dbDatabase *db,
 		     Report *report);
@@ -148,16 +153,21 @@ protected:
 void
 initFloorplan(double util,
 	      double aspect_ratio,
-	      double core_space,
+	      double core_space_bottom,
+	      double core_space_top,
+	      double core_space_left,
+	      double core_space_right,
 	      const char *site_name,
 	      const char *tracks_file,
 	      dbDatabase *db,
 	      Report *report)
 {
   InitFloorplan init_fp;
-  init_fp.initFloorplan(util, aspect_ratio, core_space,
-			site_name, tracks_file,
-			db, report);
+  init_fp.initFloorplan(util, aspect_ratio,
+                        core_space_bottom, core_space_top,
+                        core_space_left, core_space_right,
+                        site_name, tracks_file,
+                        db, report);
 }
 
 void
@@ -184,7 +194,10 @@ initFloorplan(double die_lx,
 void
 InitFloorplan::initFloorplan(double util,
 			     double aspect_ratio,
-			     double core_space,
+			     double core_space_bottom,
+			     double core_space_top,
+			     double core_space_left,
+			     double core_space_right,
 			     const char *site_name,
 			     const char *tracks_file,
 			     dbDatabase *db,
@@ -202,14 +215,14 @@ InitFloorplan::initFloorplan(double util,
       double core_width = std::sqrt(core_area / aspect_ratio);
       double core_height = core_width * aspect_ratio;
 
-      double core_lx = core_space;
-      double core_ly = core_space;
+      double core_lx = core_space_left;
+      double core_ly = core_space_bottom;
       double core_ux = core_lx + core_width;
       double core_uy = core_ly + core_height;
       double die_lx = 0.0;
       double die_ly = 0.0;
-      double die_ux = core_width + core_space * 2.0;
-      double die_uy = core_height + core_space * 2.0;
+      double die_ux = core_width + core_space_left + core_space_right ;
+      double die_uy = core_height + core_space_top + core_space_bottom;
       initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		    core_lx, core_ly, core_ux, core_uy,
 		    site_name, tracks_file);

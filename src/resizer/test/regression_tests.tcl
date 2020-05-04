@@ -9,6 +9,7 @@ record_tests {
   buffer_ports2
   buffer_ports3
   buffer_ports5
+  buffer_ports6
   resize1
   resize2
   resize4
@@ -16,6 +17,7 @@ record_tests {
   repair_max_cap1
   repair_max_cap2
   repair_max_fanout1
+  repair_max_fanout2
   repair_max_slew1
   repair_max_slew2
   repair_hold1

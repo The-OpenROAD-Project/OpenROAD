@@ -197,12 +197,15 @@ OpenRoad::readLef(const char *filename,
 }
 
 void
-OpenRoad::readDef(const char *filename, bool order_wires)
+OpenRoad::readDef(const char *filename, bool order_wires, bool continue_on_errors)
 {
   odb::defin def_reader(db_);
   std::vector<odb::dbLib *> search_libs;
   for (odb::dbLib *lib : db_->getLibs())
     search_libs.push_back(lib);
+  if (continue_on_errors) {
+    def_reader.continueOnErrors();
+  }
   dbChip* chip = def_reader.createChip(search_libs, filename);
   if (chip == nullptr) { // parser failed
     return;

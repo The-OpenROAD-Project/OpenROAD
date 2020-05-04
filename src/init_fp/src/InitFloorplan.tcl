@@ -15,7 +15,7 @@
 
 sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-aspect_ratio ratio]\
-					       [-core_space space]\
+					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
 					       [-site site_name]\
@@ -51,9 +51,26 @@ proc initialize_floorplan { args } {
     set util [expr $util / 100.0]
     if [info exists keys(-core_space)] {
       set core_sp $keys(-core_space)
-      sta::check_positive_float "-core_space" $core_sp
+      if { [llength $core_sp] == 1} {
+        sta::check_positive_float "-core_space" $core_sp
+        set core_sp_bottom $core_sp
+        set core_sp_top $core_sp
+        set core_sp_left $core_sp
+        set core_sp_right $core_sp
+      } elseif { [llength $core_sp] == 4} {
+        lassign $core_sp core_sp_bottom core_sp_top core_sp_left core_sp_right
+        sta::check_positive_float "-core_space" $core_sp_bottom
+        sta::check_positive_float "-core_space" $core_sp_top
+        sta::check_positive_float "-core_space" $core_sp_left
+        sta::check_positive_float "-core_space" $core_sp_right
+      } else {
+        ord::error "-core_space is either a list of 4 margins or one value for all margins."
+      }
     } else {
-      set core_sp 0.0
+      set core_sp_bottom 0.0
+      set core_sp_top 0.0
+      set core_sp_left 0.0
+      set core_sp_right 0.0
     }
     if [info exists keys(-aspect_ratio)] {
       set aspect_ratio $keys(-aspect_ratio)
@@ -64,8 +81,12 @@ proc initialize_floorplan { args } {
     } else {
       set aspect_ratio 1.0
     }
-    ord::init_floorplan_util $util $aspect_ratio [sta::distance_ui_sta $core_sp] \
-      $site_name $tracks_file
+    ord::init_floorplan_util $util $aspect_ratio \
+  [sta::distance_ui_sta $core_sp_bottom] \
+  [sta::distance_ui_sta $core_sp_top] \
+  [sta::distance_ui_sta $core_sp_left] \
+  [sta::distance_ui_sta $core_sp_right] \
+    $site_name $tracks_file
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {

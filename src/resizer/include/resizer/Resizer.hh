@@ -249,6 +249,7 @@ protected:
   void reportGroupedLoads(GroupedPins &grouped_loads);
   Point findCenter(PinSeq &pins);
   bool isFuncOneZero(const Pin *drvr_pin);
+  bool isSpecial(Net *net);
 
   float wire_res_;
   float wire_cap_;

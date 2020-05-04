@@ -47,10 +47,10 @@ proc read_lef { args } {
   ord::read_lef_cmd $filename $lib_name $make_tech $make_lib
 }
 
-sta::define_cmd_args "read_def" {[-order_wires] filename}
+sta::define_cmd_args "read_def" {[-order_wires] [-continue_on_errors] filename}
 
 proc read_def { args } {
-  sta::parse_key_args "read_def" args keys {} flags {-order_wires}
+  sta::parse_key_args "read_def" args keys {} flags {-order_wires -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename $args]
   if { ![file exists $filename] } {
@@ -63,7 +63,8 @@ proc read_def { args } {
     sta::sta_error "no technology has been read."
   }
   set order_wires [info exists flags(-order_wires)]
-  ord::read_def_cmd $filename $order_wires
+  set continue_on_errors [info exists flags(-continue_on_errors)]
+  ord::read_def_cmd $filename $order_wires $continue_on_errors
 }
 
 sta::define_cmd_args "write_def" {[-version version] filename}
