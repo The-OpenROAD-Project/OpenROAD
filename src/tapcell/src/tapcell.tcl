@@ -477,6 +477,10 @@ proc tapcell { args } {
     foreach blockage [$block getInsts] {
         set inst_master [$blockage getMaster]
         if { [string match [$inst_master getType] "BLOCK"] } {
+            if { [string match [$blockage getPlacementStatus] "NONE"] } {
+                puts "\[ERROR\] Macro [$blockage getName] is not placed"
+                exit 1
+            }
             lappend blockages $blockage
         }
     }
@@ -543,9 +547,9 @@ proc tapcell { args } {
         }
     }
 
-    puts "---- Macro blocks found: $block_count"
-    puts "---- #Original rows: $rows_count"
-    puts "---- #Cut rows: $cut_rows_count"
+    puts "\[INFO\] Macro blocks found: $block_count"
+    puts "\[INFO\] #Original rows: $rows_count"
+    puts "\[INFO\] #Cut rows: $cut_rows_count"
 
     #Step 2: Insert Endcap at the left and right end of each row
     puts "Step 2: Insert endcaps..."
@@ -563,7 +567,7 @@ proc tapcell { args } {
         set endcapwidth [expr $endcap_cpp*$site_x]
 
         if { ![string match [$master getConstName] $endcap_master] } {
-            puts "ERROR: Master $endcap_master not found"
+            puts "\[ERROR\] Master $endcap_master not found"
         }
 
         set row_name [$row getName]
@@ -578,14 +582,14 @@ proc tapcell { args } {
                     set master [$db findMaster $cnrcap_nwin_master]
 
                     if { ![string match [$master getConstName] $cnrcap_nwin_master] } {
-                        puts "ERROR: Master $cnrcap_nwin_master not found"
+                        puts "\[ERROR\] Master $cnrcap_nwin_master not found"
                         exit 1
                     }
                 } else {
                     set master [$db findMaster $cnrcap_nwout_master]
                     
                     if { ![string match [$master getConstName] $cnrcap_nwout_master] } {
-                        puts "ERROR: Master $cnrcap_nwout_master not found"
+                        puts "\[ERROR\] Master $cnrcap_nwout_master not found"
                         exit 1
                     }
                 }
@@ -594,14 +598,14 @@ proc tapcell { args } {
                     set master [$db findMaster $cnrcap_nwin_master]
 
                     if { ![string match [$master getConstName] $cnrcap_nwin_master] } {
-                        puts "ERROR: Master $cnrcap_nwin_master not found"
+                        puts "\[ERROR\] Master $cnrcap_nwin_master not found"
                         exit 1
                     }
                 } else {
                     set master [$db findMaster $cnrcap_nwout_master]
 
                     if { ![string match [$master getConstName] $cnrcap_nwout_master] } {
-                        puts "ERROR: Master $cnrcap_nwout_master not found"
+                        puts "\[ERROR\] Master $cnrcap_nwout_master not found"
                         exit 1
                     }
                 }
@@ -621,7 +625,7 @@ proc tapcell { args } {
 	set row_width [expr $urx - $llx]
 	
 	if {$master_x > $row_width} {
-	    puts "WARNING: No enough space to place endcap in row $row_name. Skipping..."
+	    puts "\[WARNING\] No enough space to place endcap in row $row_name. Skipping..."
             continue
 	}
 
@@ -696,7 +700,7 @@ proc tapcell { args } {
         incr endcap_count
     }
 
-    puts "---- #Endcaps inserted: $endcap_count"
+    puts "\[INFO\]#Endcaps inserted: $endcap_count"
 
     #Step 3: Insert tap
     puts "Step 3: Insert tapcells..."
@@ -780,7 +784,7 @@ proc tapcell { args } {
         }
     }
 
-    puts "---- #Tapcells inserted: $tapcell_count"
+    puts "\[INFO\] #Tapcells inserted: $tapcell_count"
 
     if {$add_boundary_cell == true} {
         #Step 4: Insert top/bottom
@@ -881,7 +885,7 @@ proc tapcell { args } {
             }
         }
 
-        puts "---- Top/bottom cells inserted: $topbottom_cnt"
+        puts "\[INFO\] Top/bottom cells inserted: $topbottom_cnt"
 
         #Step 4-2: insert incnr/topbottom for blkgs
         puts "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
@@ -1121,7 +1125,7 @@ proc tapcell { args } {
                 }
             }
         }
-        puts "---- Cells inserted near blkgs: $blkgs_cnt"
+        puts "\[INFO\] Cells inserted near blkgs: $blkgs_cnt"
     }
 
     puts "Running tapcell... Done!"
