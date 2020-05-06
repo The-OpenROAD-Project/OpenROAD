@@ -13,7 +13,7 @@ Notice 0: Finished DEF file: ./results/hi_fanout.def
 Found 1 max fanout violations.
 Inserted 4 buffers.
 r1/Q fanout 4
-buffer1/Z fanout 10
-buffer2/Z fanout 10
-buffer3/Z fanout 10
-buffer4/Z fanout 5
+max_fanout1/Z fanout 10
+max_fanout2/Z fanout 10
+max_fanout3/Z fanout 10
+max_fanout4/Z fanout 5
