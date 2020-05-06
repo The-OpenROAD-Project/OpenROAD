@@ -479,7 +479,7 @@ proc tapcell { args } {
         if { [string match [$inst_master getType] "BLOCK"] } {
             if { [string match [$blockage getPlacementStatus] "NONE"] } {
                 puts "\[ERROR\] Macro [$blockage getName] is not placed"
-                exit 1
+                continue
             }
             lappend blockages $blockage
         }
