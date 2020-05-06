@@ -12,7 +12,7 @@ create_clock -period 10 clk1
 
 repair_max_fanout -max_fanout 10 -buffer_cell liberty1/snl_bufx1
 
-foreach drvr {r1/Q buffer1/Z buffer2/Z buffer3/Z buffer4/Z} {
+foreach drvr {r1/Q max_fanout1/Z max_fanout2/Z max_fanout3/Z max_fanout4/Z} {
   set fanout [expr [llength [get_pins -of [get_net -of [get_pin $drvr]]]] - 1]
   puts "$drvr fanout $fanout"
   #set dist [sta::max_load_manhatten_distance [get_pin $drvr]]

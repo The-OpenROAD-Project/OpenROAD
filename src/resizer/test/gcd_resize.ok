@@ -11,9 +11,10 @@ Notice 0:     Created 571 components and 2554 component-terminals.
 Notice 0:     Created 5 special nets and 1142 connections.
 Notice 0:     Created 528 nets and 1412 connections.
 Notice 0: Finished DEF file: gcd_placed.def
+worst slack 9.39
 Inserted 35 input buffers.
 Inserted 18 output buffers.
-Resized 93 instances.
+Resized 77 instances.
 Inserted 0 hold buffers.
 Warning: found 16 floatiing nets.
  _424_
@@ -32,4 +33,5 @@ Warning: found 16 floatiing nets.
  _437_
  _438_
  _439_
-Design area 720 u^2 11% utilization.
+Design area 738 u^2 12% utilization.
+worst slack 9.35

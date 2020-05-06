@@ -7,29 +7,37 @@ link_design gcd
 read_sdc gcd.sdc
 
 initialize_floorplan -site FreePDK45_38x28_10R_NP_162NW_34O \
-  -utilization 30 -tracks nangate45.tracks
+  -die_area {0 0 100.13 100.8} \
+  -core_area {10.07 11.2 90.25 91} \
+  -tracks nangate45.tracks
 
 io_placer -random -hor_layer 3 -ver_layer 2
 
-source nangate45.tapcell
+tapcell -endcap_cpp "2" -distance 120 \
+  -tapcell_master "FILLCELL_X1" \
+  -endcap_master "FILLCELL_X1"
+
 pdngen -verbose gcd_pdn.cfg
 
-# Pre-sizing wireload timing
+# pre-sizing wireload timing
 report_checks
 
 global_placement
 
+# resize
 set buffer_cell BUF_X4
 set_wire_rc -layer metal2
 buffer_ports -buffer_cell $buffer_cell
-resize -resize
 repair_max_cap -buffer_cell $buffer_cell
 repair_max_slew -buffer_cell $buffer_cell
 repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell
+resize -dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
+repair_tie_fanout -max_fanout 100 NangateOpenCellLibrary/LOGIC0_X1/Z
+repair_tie_fanout -max_fanout 100 NangateOpenCellLibrary/LOGIC1_X1/Z
 repair_hold_violations -buffer_cell $buffer_cell
 
-report_floating_nets -verbose
-report_design_area
+# missing vsrc file
+#analyze_power_grid
 
 clock_tree_synthesis -lut_file nangate45.lut \
   -sol_list nangate45.sol_list \
@@ -40,9 +48,6 @@ set_placement_padding -global -right 8
 detailed_placement
 check_placement
 
-filler_placement FILL*
-
-# seg faults unreliably
 fastroute -output_file [make_result_file gcd.route_guide] \
           -max_routing_layer 10 \
           -unidirectional_routing true \
@@ -50,7 +55,24 @@ fastroute -output_file [make_result_file gcd.route_guide] \
           -layers_adjustments {{2 0.5} {3 0.5}} \
           -overflow_iterations 200
 
-report_checks
+# detailed route goes here
+
+filler_placement FILL*
+
+# CTS changed the network behind the STA's back.
+sta::network_changed
+# inlieu of rc extraction
+#set_wire_rc -layer metal2
+
+# final report
+report_checks -path_delay min_max
+report_wns
+report_tns
+report_check_types -max_slew -violators
+report_power
+
+report_floating_nets -verbose
+report_design_area
 
 set def_file [make_result_file gcd.def]
 write_def $def_file

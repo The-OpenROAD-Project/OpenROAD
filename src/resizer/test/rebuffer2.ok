@@ -49,8 +49,8 @@ Path Type: max
            0.00    0.00   clock network delay (ideal)
            0.00    0.00 ^ r1/CP (snl_ffqx1)
    0.01    0.25    0.25 v r1/Q (snl_ffqx1)
-           0.00    0.25 v buffer1/A (snl_bufx2)
-   2.61    2.32    2.57 v buffer1/Z (snl_bufx2)
+           0.00    0.25 v rebuffer1/A (snl_bufx2)
+   2.61    2.32    2.57 v rebuffer1/Z (snl_bufx2)
            0.04    2.62 v r3/D (snl_ffqx1)
                    2.62   data arrival time
 

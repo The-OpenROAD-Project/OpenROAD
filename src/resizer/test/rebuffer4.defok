@@ -11,7 +11,7 @@ COMPONENTS 6 ;
     - r3 snl_ffqx1 + PLACED ( 30000 30000 ) N ;
     - u1 snl_bufx1 + PLACED ( 40000 10000 ) N ;
     - u2 snl_and02x1 + PLACED ( 10000 40000 ) N ;
-    - buffer1 snl_bufx2 + PLACED ( 40000 10000 ) N ;
+    - rebuffer1 snl_bufx2 + PLACED ( 40000 10000 ) N ;
 END COMPONENTS
 PINS 3 ;
     - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
@@ -28,8 +28,8 @@ NETS 8 ;
     - out ( PIN out ) ( r3 Q ) + USE SIGNAL ;
     - r1q ( r1 Q ) ( u2 A ) + USE SIGNAL ;
     - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
-    - u1z ( buffer1 A ) ( u1 Z ) + USE SIGNAL ;
+    - u1z ( rebuffer1 A ) ( u1 Z ) + USE SIGNAL ;
     - u2z ( u2 Z ) ( r3 D ) + USE SIGNAL ;
-    - net1 ( u2 B ) ( buffer1 Z ) + USE SIGNAL ;
+    - net1 ( u2 B ) ( rebuffer1 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

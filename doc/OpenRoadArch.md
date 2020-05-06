@@ -82,6 +82,11 @@ fine for internals, but not for user visible commands. Commands have
 an implicit argument of the current OpenROAD class object. Functions
 to get individual tools from the OpenROAD object can be defined.
 
+The use of submodules for new code integrated into OpenROAD is
+strongly discouraged. Submodules make changes to the underlying
+infrastructure (OpenDB, OpenSTA etc) difficult to propagate across the
+dependent submodule repositories. Submodules: just say no.
+
 ### Initialization (c++ tools only)
 
 The OpenRoad class only has pointers to each tools with functions to

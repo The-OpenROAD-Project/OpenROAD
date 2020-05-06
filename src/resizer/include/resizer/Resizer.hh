@@ -181,7 +181,7 @@ protected:
 		    RiseFall *rf,
 		    float load_cap);
   string makeUniqueNetName();
-  string makeUniqueBufferName();
+  string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
 			    bool underscore);
   bool dontUse(LibertyCell *cell);
@@ -228,7 +228,8 @@ protected:
   void bufferLoads(Pin *drvr_pin,
 		   int buffer_count,
 		   int max_fanout,
-		   LibertyCell *buffer_cell);
+		   LibertyCell *buffer_cell,
+		   const char *reason);
   void findLoads(Pin *drvr_pin,
 		 PinSeq &loads);
   void groupLoadsCluster(Pin *drvr_pin,
