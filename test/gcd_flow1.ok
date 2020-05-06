@@ -3,10 +3,10 @@ Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  NangateOpenCellLibrary.lef
-Info: Added 34 rows of 252 sites.
+Info: Added 57 rows of 422 sites.
 WARNING: force pin spread option has no effect when using random pin placement
  > Running IO placement
- * Num of slots          594
+ * Num of slots          2494
  * Num of I/O            54
  * Num of I/O w/sink     54
  * Num of I/O w/o sink   0
@@ -21,13 +21,13 @@ RandomMode Even
  > IO placement done.
 Running tapcell...
 Step 1: Cut rows...
----- Macro blocks found: 0
----- #Original rows: 34
----- #Cut rows: 0
+[INFO] Macro blocks found: 0
+[INFO] #Original rows: 57
+[INFO] #Cut rows: 0
 Step 2: Insert endcaps...
----- #Endcaps inserted: 68
+[INFO]#Endcaps inserted: 114
 Step 3: Insert tapcells...
----- #Tapcells inserted: 0
+[INFO] #Tapcells inserted: 0
 Running tapcell... Done!
 [INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
 [INFO] [PDNG-0016]   config: gcd_pdn.cfg
@@ -103,99 +103,81 @@ Path Type: max
 
 [INFO] DBU = 2000
 [INFO] SiteSize = (380, 2800)
-[INFO] CoreAreaLxLy = (0, 0)
-[INFO] CoreAreaUxUy = (95760, 95200)
-[INFO] NumInstances = 523
+[INFO] CoreAreaLxLy = (20140, 22400)
+[INFO] CoreAreaUxUy = (180500, 182000)
+[INFO] NumInstances = 569
 [INFO] NumPlaceInstances = 455
-[INFO] NumFixedInstances = 68
+[INFO] NumFixedInstances = 114
 [INFO] NumDummyInstances = 0
 [INFO] NumNets = 526
 [INFO] NumPins = 1446
-[INFO] DieAreaLxLy = (0, -170)
-[INFO] DieAreaUxUy = (180120, 179200)
-[INFO] CoreAreaLxLy = (0, 0)
-[INFO] CoreAreaUxUy = (95760, 95200)
-[INFO] CoreArea = 9116352000
-[INFO] NonPlaceInstsArea = 72352000
+[INFO] DieAreaLxLy = (0, 0)
+[INFO] DieAreaUxUy = (200260, 201600)
+[INFO] CoreAreaLxLy = (20140, 22400)
+[INFO] CoreAreaUxUy = (180500, 182000)
+[INFO] CoreArea = 25593456000
+[INFO] NonPlaceInstsArea = 121296000
 [INFO] PlaceInstsArea = 2756824000
-[INFO] Util(%) = 30.482355
+[INFO] Util(%) = 10.822890
 [INFO] StdInstsArea = 2756824000
 [INFO] MacroInstsArea = 0
-[InitialPlace]  Iter: 1 CG Error: 1.13943e-07 HPWL: 8218120
-[InitialPlace]  Iter: 2 CG Error: 1.07708e-07 HPWL: 7129399
-[InitialPlace]  Iter: 3 CG Error: 1.11903e-07 HPWL: 7118175
-[InitialPlace]  Iter: 4 CG Error: 9.11571e-08 HPWL: 7139226
-[InitialPlace]  Iter: 5 CG Error: 8.87101e-08 HPWL: 7128908
-[INFO] FillerInit: NumGCells = 1093
+[InitialPlace]  Iter: 1 CG Error: 5.64372e-08 HPWL: 13903360
+[InitialPlace]  Iter: 2 CG Error: 5.23469e-08 HPWL: 11393402
+[InitialPlace]  Iter: 3 CG Error: 7.76085e-08 HPWL: 11379483
+[InitialPlace]  Iter: 4 CG Error: 9.44918e-08 HPWL: 11398696
+[InitialPlace]  Iter: 5 CG Error: 1.16677e-07 HPWL: 11388797
+[INFO] FillerInit: NumGCells = 3149
 [INFO] FillerInit: NumGNets = 526
 [INFO] FillerInit: NumGPins = 1446
 [INFO] TargetDensity = 0.700000
 [INFO] AveragePlaceInstArea = 6058953
 [INFO] IdealBinArea = 8655647
-[INFO] IdealBinCnt = 1053
-[INFO] TotalBinArea = 9116352000
+[INFO] IdealBinCnt = 2956
+[INFO] TotalBinArea = 25593456000
 [INFO] BinCnt = (32, 32)
-[INFO] BinSize = (2993, 2975)
+[INFO] BinSize = (5012, 4988)
 [INFO] NumBins = 1024
-[NesterovSolve] Iter: 1 overflow: 0.905263 HPWL: 4415854
-[NesterovSolve] Iter: 10 overflow: 0.757159 HPWL: 5626735
-[NesterovSolve] Iter: 20 overflow: 0.746429 HPWL: 5661381
-[NesterovSolve] Iter: 30 overflow: 0.750138 HPWL: 5640293
-[NesterovSolve] Iter: 40 overflow: 0.749434 HPWL: 5646102
-[NesterovSolve] Iter: 50 overflow: 0.74909 HPWL: 5648295
-[NesterovSolve] Iter: 60 overflow: 0.749389 HPWL: 5646109
-[NesterovSolve] Iter: 70 overflow: 0.749364 HPWL: 5646288
-[NesterovSolve] Iter: 80 overflow: 0.749236 HPWL: 5647416
-[NesterovSolve] Iter: 90 overflow: 0.749099 HPWL: 5648092
-[NesterovSolve] Iter: 100 overflow: 0.748793 HPWL: 5649870
-[NesterovSolve] Iter: 110 overflow: 0.748359 HPWL: 5653061
-[NesterovSolve] Iter: 120 overflow: 0.7477 HPWL: 5658133
-[NesterovSolve] Iter: 130 overflow: 0.746522 HPWL: 5666458
-[NesterovSolve] Iter: 140 overflow: 0.744786 HPWL: 5679441
-[NesterovSolve] Iter: 150 overflow: 0.74224 HPWL: 5699951
-[NesterovSolve] Iter: 160 overflow: 0.737662 HPWL: 5726080
-[NesterovSolve] Iter: 170 overflow: 0.731475 HPWL: 5757223
-[NesterovSolve] Iter: 180 overflow: 0.720995 HPWL: 5800907
-[NesterovSolve] Iter: 190 overflow: 0.708836 HPWL: 5866161
-[NesterovSolve] Iter: 200 overflow: 0.685491 HPWL: 5945950
-[NesterovSolve] Iter: 210 overflow: 0.660194 HPWL: 6022613
-[NesterovSolve] Iter: 220 overflow: 0.623704 HPWL: 6120392
-[NesterovSolve] Iter: 230 overflow: 0.583535 HPWL: 6188068
-[NesterovSolve] Iter: 240 overflow: 0.53541 HPWL: 6248455
-[NesterovSolve] Iter: 250 overflow: 0.483661 HPWL: 6269485
-[NesterovSolve] Iter: 260 overflow: 0.436336 HPWL: 6325263
-[NesterovSolve] Iter: 270 overflow: 0.392952 HPWL: 6363771
-[NesterovSolve] Iter: 280 overflow: 0.34836 HPWL: 6423840
-[NesterovSolve] Iter: 290 overflow: 0.317654 HPWL: 6471639
-[NesterovSolve] Iter: 300 overflow: 0.287655 HPWL: 6502232
-[NesterovSolve] Iter: 310 overflow: 0.256774 HPWL: 6541575
-[NesterovSolve] Iter: 320 overflow: 0.23505 HPWL: 6576567
-[NesterovSolve] Iter: 330 overflow: 0.211846 HPWL: 6614339
-[NesterovSolve] Iter: 340 overflow: 0.185822 HPWL: 6643544
-[NesterovSolve] Iter: 350 overflow: 0.161859 HPWL: 6669050
-[NesterovSolve] Iter: 360 overflow: 0.13975 HPWL: 6693953
-[NesterovSolve] Iter: 370 overflow: 0.121988 HPWL: 6717428
-[NesterovSolve] Finished with Overflow: 0.0980882
-Resized 197 instances.
+[NesterovSolve] Iter: 1 overflow: 0.883089 HPWL: 8703903
+[NesterovSolve] Iter: 10 overflow: 0.597961 HPWL: 11195302
+[NesterovSolve] Iter: 20 overflow: 0.579419 HPWL: 11043108
+[NesterovSolve] Iter: 30 overflow: 0.583265 HPWL: 11045302
+[NesterovSolve] Iter: 40 overflow: 0.582688 HPWL: 11049959
+[NesterovSolve] Iter: 50 overflow: 0.58185 HPWL: 11047474
+[NesterovSolve] Iter: 60 overflow: 0.581729 HPWL: 11048225
+[NesterovSolve] Iter: 70 overflow: 0.58167 HPWL: 11046560
+[NesterovSolve] Iter: 80 overflow: 0.581662 HPWL: 11045051
+[NesterovSolve] Iter: 90 overflow: 0.582171 HPWL: 11049951
+[NesterovSolve] Iter: 100 overflow: 0.582134 HPWL: 11050512
+[NesterovSolve] Iter: 110 overflow: 0.581554 HPWL: 11049216
+[NesterovSolve] Iter: 120 overflow: 0.580819 HPWL: 11048560
+[NesterovSolve] Iter: 130 overflow: 0.5799 HPWL: 11050261
+[NesterovSolve] Iter: 140 overflow: 0.578877 HPWL: 11056721
+[NesterovSolve] Iter: 150 overflow: 0.577165 HPWL: 11064967
+[NesterovSolve] Iter: 160 overflow: 0.574309 HPWL: 11068704
+[NesterovSolve] Iter: 170 overflow: 0.570233 HPWL: 11056840
+[NesterovSolve] Iter: 180 overflow: 0.563972 HPWL: 11031665
+[NesterovSolve] Iter: 190 overflow: 0.553044 HPWL: 11022464
+[NesterovSolve] Iter: 200 overflow: 0.536222 HPWL: 10978428
+[NesterovSolve] Iter: 210 overflow: 0.516566 HPWL: 10889335
+[NesterovSolve] Iter: 220 overflow: 0.491973 HPWL: 10804327
+[NesterovSolve] Iter: 230 overflow: 0.465864 HPWL: 10638559
+[NesterovSolve] Iter: 240 overflow: 0.432329 HPWL: 10690148
+[NesterovSolve] Iter: 250 overflow: 0.392579 HPWL: 10654603
+[NesterovSolve] Iter: 260 overflow: 0.341988 HPWL: 10639965
+[NesterovSolve] Iter: 270 overflow: 0.307809 HPWL: 10640793
+[NesterovSolve] Iter: 280 overflow: 0.270617 HPWL: 10649459
+[NesterovSolve] Iter: 290 overflow: 0.237542 HPWL: 10674439
+[NesterovSolve] Iter: 300 overflow: 0.214077 HPWL: 10723002
+[NesterovSolve] Iter: 310 overflow: 0.190957 HPWL: 10759241
+[NesterovSolve] Iter: 320 overflow: 0.165744 HPWL: 10786028
+[NesterovSolve] Iter: 330 overflow: 0.136463 HPWL: 10816491
+[NesterovSolve] Iter: 340 overflow: 0.119174 HPWL: 10853096
+[NesterovSolve] Iter: 350 overflow: 0.102502 HPWL: 10875546
+[NesterovSolve] Finished with Overflow: 0.0975161
+Inserted 35 input buffers.
+Inserted 18 output buffers.
+Resized 126 instances.
 Inserted 0 hold buffers.
-Warning: found 16 floatiing nets.
- _422_
- _423_
- _424_
- _425_
- _426_
- _427_
- _428_
- _429_
- _430_
- _431_
- _432_
- _433_
- _434_
- _435_
- _436_
- _437_
-Design area 2593 u^2 28% utilization.
  *****************
  * TritonCTS 2.0 *
  *****************
@@ -236,21 +218,21 @@ clk
  Generating H-Tree topology for net clk...
     Tot. number of sinks: 35
  Wire segment unit: 20000 dbu (10 um)
- Original sink region: [(8588, 19957), (79419, 81024)]
- Normalized sink region: [(0.4294, 0.99785), (3.97095, 4.0512)]
-    Width:  3.54155
-    Height: 3.05335
+ Original sink region: [(52792, 73834), (122706, 134961)]
+ Normalized sink region: [(2.6396, 3.6917), (6.1353, 6.74805)]
+    Width:  3.4957
+    Height: 3.05635
  [WARNING] Creating fake entries in the LUT.
  Level 1
     Direction: Horizontal
     # sinks per sub-region: 18
-    Sub-region size: 1.77077 X 3.05335
+    Sub-region size: 1.74785 X 3.05635
     Segment length (rounded): 1
     Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: 1
  Level 2
     Direction: Vertical
     # sinks per sub-region: 9
-    Sub-region size: 1.77077 X 1.52668
+    Sub-region size: 1.74785 X 1.52818
     Segment length (rounded): 1
     Key: 5039 outSlew: 12 load: 1 length: 1 isBuffered: 1
  Stop criterion found. Max number of sinks is (15)
@@ -260,7 +242,7 @@ clk
  ****************
  * Post CTS opt *
  ****************
- Avg. source sink dist: 19940 dbu.
+ Avg. source sink dist: 20221.7 dbu.
  Num outlier sinks: 0
  ********************
  * Write data to DB *
@@ -271,29 +253,138 @@ clk
  ... End of TritonCTS execution.
 Design Stats
 --------------------------------
-total instances           530
+total instances           629
 multi row instances         0
-fixed instances            68
-nets                      535
-design area            2279.1 u^2
-fixed area               18.1 u^2
-movable area            636.8 u^2
-utilization                28 %
-utilization padded         77 %
-rows                       34
+fixed instances           114
+nets                      588
+design area            6398.4 u^2
+fixed area               30.3 u^2
+movable area            709.2 u^2
+utilization                11 %
+utilization padded         29 %
+rows                       57
 row height                1.4 u
 
 Placement Analysis
 --------------------------------
-total displacement     3053.9 u
-average displacement      5.8 u
-max displacement         26.8 u
-original HPWL          3730.2 u
-legalized HPWL         8164.7 u
-delta HPWL                119 %
+total displacement     3268.5 u
+average displacement      5.2 u
+max displacement         26.6 u
+original HPWL          6011.8 u
+legalized HPWL        10206.1 u
+delta HPWL                 70 %
 
-Placed 866 filler instances.
-Startpoint: _867_ (rising edge-triggered flip-flop clocked by core_clock)
+Adjust layer 2 in 50.0%
+Adjust layer 3 in 50.0%
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 2
+[PARAMS] Max routing layer: 10
+[PARAMS] Global adjustment: 0.15
+[PARAMS] Unidirectional routing: 1
+[PARAMS] Clock net routing: 0
+[PARAMS] Grid origin: (-1, -1)
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 3291
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+Checking pin placement...
+Checking pin placement... Done!
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 8852 obstacles in layer 1
+[INFO] Processing 3 obstacles in layer 4
+[INFO] Processing 4 obstacles in layer 7
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+Computing user defined layers adjustments... Done!
+[INFO] Elapsed time: 0.065497
+Running FastRoute...
+
+Running extra iterations to remove overflow...
+Update congestion history type 1
+[INFO] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2 
+[INFO] log_coef 0.766449, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 2, enlarge 23, costheight 14, threshold 6 via cost 2 
+[INFO] log_coef 0.953011, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 4974
+[Overflow Report] Total Capacity: 61152
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 4974
+[INFO] Final number of vias : 3482
+[INFO] Final usage 3D       : 15420
+Getting results...
+Getting results... Done!
+
+Running FastRoute... Done!
+[INFO] Total wirelength: 20890.800781 um
+[INFO] Elapsed time: 0.105689
+Writing guides...
+[INFO] Num routed nets: 570
+Writing guides... Done!
+Placed 1493 filler instances.
+Startpoint: _860_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _859_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.10    0.10   clock network delay (propagated)
+   0.00    0.10 ^ _860_/CK (DFF_X1)
+   0.07    0.17 ^ _860_/QN (DFF_X1)
+   0.02    0.20 ^ _756_/Z (BUF_X1)
+   0.01    0.21 v _451_/ZN (INV_X1)
+   0.02    0.23 ^ _452_/ZN (NAND3_X1)
+   0.01    0.24 v _455_/ZN (NAND2_X1)
+   0.02    0.26 v _758_/Z (BUF_X1)
+   0.00    0.26 v _859_/D (DFF_X1)
+           0.26   data arrival time
+
+   0.00    0.00   clock core_clock (rise edge)
+   0.10    0.10   clock network delay (propagated)
+   0.00    0.10   clock reconvergence pessimism
+           0.10 ^ _859_/CK (DFF_X1)
+   0.01    0.11   library hold time
+           0.11   data required time
+---------------------------------------------------------
+           0.11   data required time
+          -0.26   data arrival time
+---------------------------------------------------------
+           0.15   slack (MET)
+
+
+Startpoint: _883_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _876_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -301,38 +392,69 @@ Path Type: max
   Delay    Time   Description
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
-   0.00    0.00   clock network delay (propagated)
-   0.00    0.00 ^ _867_/CK (DFF_X1)
-   0.08    0.08 ^ _867_/Q (DFF_X1)
-   0.04    0.13 ^ _741_/Z (CLKBUF_X1)
-   0.05    0.17 ^ _471_/ZN (XNOR2_X1)
-   0.05    0.23 ^ _472_/ZN (AND2_X1)
-   0.02    0.25 v _479_/ZN (NAND3_X1)
-   0.07    0.31 v _485_/ZN (OR3_X1)
-   0.02    0.33 ^ _500_/ZN (NAND3_X1)
-   0.01    0.35 v _516_/ZN (NAND2_X1)
-   0.04    0.39 v _530_/ZN (AND4_X1)
-   0.05    0.43 ^ _543_/ZN (AOI21_X1)
-   0.04    0.47 v _544_/ZN (NAND2_X1)
-   0.06    0.52 v _545_/ZN (OR2_X2)
-   0.04    0.56 v _546_/Z (BUF_X2)
-   0.03    0.60 ^ _680_/ZN (OAI21_X1)
-   0.02    0.62 v _681_/ZN (OAI21_X1)
-   0.02    0.64 ^ _682_/ZN (OAI21_X1)
-   0.03    0.67 ^ _810_/Z (CLKBUF_X1)
-   0.00    0.67 ^ _876_/D (DFF_X1)
-           0.67   data arrival time
+   0.10    0.10   clock network delay (propagated)
+   0.00    0.10 ^ _883_/CK (DFF_X1)
+   0.10    0.20 ^ _883_/Q (DFF_X1)
+   0.05    0.24 ^ _742_/Z (BUF_X1)
+   0.05    0.29 ^ _471_/ZN (XNOR2_X1)
+   0.06    0.35 ^ _472_/ZN (AND2_X1)
+   0.04    0.40 ^ _538_/ZN (AND2_X1)
+   0.01    0.41 v _611_/ZN (NAND2_X1)
+   0.03    0.44 ^ _614_/ZN (NAND2_X1)
+   0.04    0.47 ^ _647_/ZN (AND2_X1)
+   0.01    0.48 v _648_/ZN (INV_X1)
+   0.03    0.52 v _651_/ZN (AND3_X1)
+   0.07    0.59 v _665_/ZN (OR3_X1)
+   0.04    0.63 ^ _669_/ZN (AOI21_X1)
+   0.01    0.64 v _676_/ZN (NOR2_X1)
+   0.04    0.68 v _677_/ZN (XNOR2_X1)
+   0.03    0.71 v _678_/ZN (AND2_X1)
+   0.03    0.74 ^ _681_/ZN (OAI21_X1)
+   0.02    0.76 v _682_/ZN (OAI21_X1)
+   0.03    0.78 v _810_/Z (BUF_X1)
+   0.00    0.78 v _876_/D (DFF_X1)
+           0.78   data arrival time
 
   10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (propagated)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ _876_/CK (DFF_X1)
-  -0.03    9.97   library setup time
-           9.97   data required time
+   0.10   10.10   clock network delay (propagated)
+   0.00   10.10   clock reconvergence pessimism
+          10.10 ^ _876_/CK (DFF_X1)
+  -0.03   10.07   library setup time
+          10.07   data required time
 ---------------------------------------------------------
-           9.97   data required time
-          -0.67   data arrival time
+          10.07   data required time
+          -0.78   data arrival time
 ---------------------------------------------------------
-           9.30   slack (MET)
+           9.29   slack (MET)
 
 
+wns 0.00
+tns 0.00
+Group                  Internal  Switching    Leakage      Total
+                          Power      Power      Power      Power
+----------------------------------------------------------------
+Sequential             0.00e+00   0.00e+00   2.77e-06   2.77e-06   8.7%
+Combinational          7.70e-06   7.49e-06   1.40e-05   2.92e-05  91.3%
+Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+----------------------------------------------------------------
+Total                  7.70e-06   7.49e-06   1.67e-05   3.19e-05 100.0%
+                          24.1%      23.5%      52.4%
+Warning: found 16 floatiing nets.
+ _422_
+ _423_
+ _424_
+ _425_
+ _426_
+ _427_
+ _428_
+ _429_
+ _430_
+ _431_
+ _432_
+ _433_
+ _434_
+ _435_
+ _436_
+ _437_
+Design area 733 u^2 11% utilization.
