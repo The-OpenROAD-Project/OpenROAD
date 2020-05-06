@@ -293,7 +293,7 @@ Resizer::bufferInput(Pin *top_pin,
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   string buffer_out_net_name = makeUniqueNetName();
-  string buffer_name = makeUniqueBufferName();
+  string buffer_name = makeUniqueInstName("input");
   Instance *parent = db_network_->topInstance();
   Net *buffer_out = db_network_->makeNet(buffer_out_net_name.c_str(), parent);
   Instance *buffer = db_network_->makeInstance(buffer_cell,
@@ -368,7 +368,7 @@ Resizer::bufferOutput(Pin *top_pin,
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   string buffer_in_net_name = makeUniqueNetName();
-  string buffer_name = makeUniqueBufferName();
+  string buffer_name = makeUniqueInstName("output");
   Instance *parent = network->topInstance();
   Net *buffer_in = network->makeNet(buffer_in_net_name.c_str(), parent);
   Instance *buffer = network->makeInstance(buffer_cell,
@@ -1087,7 +1087,7 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
 	int buffer_count = ceil(limit_ratio);
 	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
 	if (buffer_fanout > 1)
-	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell);
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_cap");
 	else
 	  rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
@@ -1166,7 +1166,7 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 	int buffer_count = ceil(limit_ratio);
 	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
 	if (buffer_fanout > 1)
-	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell);
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
 	else
 	  rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
@@ -1548,7 +1548,7 @@ Resizer::rebufferTopDown(RebufferOption *choice,
   case RebufferOptionType::buffer: {
     Instance *parent = db_network_->topInstance();
     string net2_name = makeUniqueNetName();
-    string buffer_name = makeUniqueBufferName();
+    string buffer_name = makeUniqueInstName("rebuffer");
     Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
     Instance *buffer = db_network_->makeInstance(buffer_cell,
 						 buffer_name.c_str(),
@@ -1625,7 +1625,7 @@ Resizer::repairMaxFanout(int max_fanout,
       if (fanout > max_fanout) {
 	max_fanout_violation_count++;
 	int buffer_count = ceil(fanout / static_cast<double>(max_fanout));
-	bufferLoads(drvr_pin, buffer_count, max_fanout, buffer_cell);
+	bufferLoads(drvr_pin, buffer_count, max_fanout, buffer_cell, "max_fanout");
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
@@ -1644,7 +1644,8 @@ void
 Resizer::bufferLoads(Pin *drvr_pin,
 		     int buffer_count,
 		     int max_fanout,
-		     LibertyCell *buffer_cell)
+		     LibertyCell *buffer_cell,
+		     const char *reason)
 {
   debugPrint1(debug_, "buffer_loads", 2, "driver %s\n",
 	      sdc_network_->pathName(drvr_pin));
@@ -1663,7 +1664,7 @@ Resizer::bufferLoads(Pin *drvr_pin,
 
       string load_net_name = makeUniqueNetName();
       Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
-      string inst_name = makeUniqueBufferName();
+      string inst_name = makeUniqueInstName(reason);
       Instance *buffer = db_network_->makeInstance(buffer_cell,
 						   inst_name.c_str(),
 						   top_inst);
@@ -2036,7 +2037,7 @@ Resizer::repairHoldBuffer(Pin *drvr_pin,
 {
   Instance *parent = db_network_->topInstance();
   string net2_name = makeUniqueNetName();
-  string buffer_name = makeUniqueBufferName();
+  string buffer_name = makeUniqueInstName("hold");
   Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
   Instance *buffer = db_network_->makeInstance(buffer_cell,
 					       buffer_name.c_str(),
@@ -2219,9 +2220,9 @@ Resizer::makeUniqueNetName()
 }
 
 string
-Resizer::makeUniqueBufferName()
+Resizer::makeUniqueInstName(const char *base_name)
 {
-  return makeUniqueInstName("buffer", false);
+  return makeUniqueInstName(base_name, false);
 }
 
 string

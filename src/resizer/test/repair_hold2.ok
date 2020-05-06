@@ -41,9 +41,9 @@ Path Type: min
    0.00    0.00   clock network delay (propagated)
    0.00    0.00 ^ input external delay
    0.00    0.00 ^ in2 (in)
-   0.13    0.13 ^ buffer6/Z (snl_bufx2)
-   0.14    0.28 ^ buffer1/Z (snl_bufx2)
-   0.15    0.42 ^ buffer5/Z (snl_bufx2)
+   0.13    0.13 ^ hold6/Z (snl_bufx2)
+   0.14    0.28 ^ hold1/Z (snl_bufx2)
+   0.15    0.42 ^ hold5/Z (snl_bufx2)
    0.00    0.42 ^ r2/D (snl_ffqx4)
            0.42   data arrival time
 

@@ -42,7 +42,7 @@ Path Type: min
    0.13    0.13   clock network delay (propagated)
    0.00    0.13 ^ r1/CP (snl_ffqx4)
    0.26    0.39 v r1/Q (snl_ffqx4)
-   0.16    0.56 v buffer1/Z (snl_bufx2)
+   0.16    0.56 v hold1/Z (snl_bufx2)
    0.12    0.68 v u2/Z (snl_and02x1)
    0.00    0.68 v r3/D (snl_ffqx4)
            0.68   data arrival time

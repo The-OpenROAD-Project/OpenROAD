@@ -11,9 +11,9 @@ COMPONENTS 8 ;
     - r3 snl_ffqx1 ;
     - u1 snl_bufx1 ;
     - u2 snl_and02x1 ;
-    - buffer1 snl_bufx2 + PLACED ( 0 0 ) N ;
-    - buffer2 snl_bufx2 + PLACED ( 333 1000 ) N ;
-    - buffer3 snl_bufx2 + PLACED ( 1000 335 ) N ;
+    - input1 snl_bufx2 + PLACED ( 0 0 ) N ;
+    - input2 snl_bufx2 + PLACED ( 333 1000 ) N ;
+    - output3 snl_bufx2 + PLACED ( 1000 335 ) N ;
 END COMPONENTS
 PINS 6 ;
     - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER M1 ( 0 0 ) ( 0 0 ) ;
@@ -28,18 +28,18 @@ SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER ;
 END SPECIALNETS
 NETS 13 ;
-    - in1 ( PIN in1 ) ( buffer1 A ) + USE SIGNAL ;
-    - in2 ( PIN in2 ) ( buffer2 A ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( input1 A ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( input2 A ) + USE SIGNAL ;
     - clk1 ( PIN clk1 ) ( r1 CP ) + USE SIGNAL ;
     - clk2 ( PIN clk2 ) ( r2 CP ) + USE SIGNAL ;
     - clk3 ( PIN clk3 ) ( r3 CP ) + USE SIGNAL ;
-    - out ( PIN out ) ( buffer3 Z ) + USE SIGNAL ;
+    - out ( PIN out ) ( output3 Z ) + USE SIGNAL ;
     - r1q ( r1 Q ) ( u2 A ) + USE SIGNAL ;
     - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
     - u1z ( u1 Z ) ( u2 B ) + USE SIGNAL ;
     - u2z ( u2 Z ) ( r3 D ) + USE SIGNAL ;
-    - net1 ( buffer1 Z ) ( r1 D ) + USE SIGNAL ;
-    - net2 ( buffer2 Z ) ( r2 D ) + USE SIGNAL ;
-    - net3 ( buffer3 A ) ( r3 Q ) + USE SIGNAL ;
+    - net1 ( input1 Z ) ( r1 D ) + USE SIGNAL ;
+    - net2 ( input2 Z ) ( r2 D ) + USE SIGNAL ;
+    - net3 ( output3 A ) ( r3 Q ) + USE SIGNAL ;
 END NETS
 END DESIGN
