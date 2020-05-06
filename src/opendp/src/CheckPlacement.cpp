@@ -135,19 +135,7 @@ void Opendp::reportOverlapFailure(const Cell* cell, const Grid* grid) const
 
 bool Opendp::isPlaced(const Cell* cell)
 {
-  switch (cell->db_inst_->getPlacementStatus()) {
-    case dbPlacementStatus::PLACED:
-    case dbPlacementStatus::FIRM:
-    case dbPlacementStatus::LOCKED:
-    case dbPlacementStatus::COVER:
-      return true;
-    case dbPlacementStatus::NONE:
-    case dbPlacementStatus::UNPLACED:
-    case dbPlacementStatus::SUGGESTED:
-      return false;
-  }
-  // gcc warning
-  return false;
+  return cell->db_inst_->isPlaced();
 }
 
 bool Opendp::checkPowerLine(const Cell& cell) const

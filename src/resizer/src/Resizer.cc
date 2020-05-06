@@ -2373,10 +2373,7 @@ pinIsPlaced(Pin *pin,
   }
   if (bterm)
     status = bterm->getFirstPinPlacementStatus();
-  return status == dbPlacementStatus::PLACED
-    || status == dbPlacementStatus::LOCKED
-    || status == dbPlacementStatus::FIRM
-    || status == dbPlacementStatus::COVER;
+  return status.isPlaced();
 }
 
 int

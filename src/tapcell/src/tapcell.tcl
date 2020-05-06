@@ -474,14 +474,13 @@ proc tapcell { args } {
 
     set blockages {}
 
-    foreach blockage [$block getInsts] {
-        set inst_master [$blockage getMaster]
-        if { [string match [$inst_master getType] "BLOCK"] } {
-            if { [string match [$blockage getPlacementStatus] "NONE"] } {
-                puts "\[ERROR\] Macro [$blockage getName] is not placed"
+    foreach inst [$block getInsts] {
+        if { [$inst isBlock] } {
+            if { ![$inst isPlaced] } {
+                puts "\[ERROR\] Macro [$inst getName] is not placed"
                 continue
             }
-            lappend blockages $blockage
+            lappend blockages $inst
         }
     }
 

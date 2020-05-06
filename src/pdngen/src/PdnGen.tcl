@@ -2226,7 +2226,7 @@ proc import_macro_boundaries {} {
   set macros {}
   foreach lib $libs {
     foreach cell [$lib getMasters] {
-      if {[$cell getType] != "BLOCK"} {continue}
+      if {![$cell isBlock]} {continue}
 
       dict set macros [$cell getName] [list \
         width  [$cell getWidth] \
@@ -2626,7 +2626,7 @@ proc get_memory_instance_pg_pins {} {
     set inst_name [$inst getName]
     set master [$inst getMaster]
 
-    if {[$master getType] != "BLOCK"} {continue}
+    if {![$master isBlock]} {continue}
 
     # If there are no shapes left after 'and'ing the boundard with the cell, then
     # the cell lies outside the area where we are adding a power grid.

@@ -96,10 +96,7 @@ int64_t Cell::area() const
 
 bool Opendp::isFixed(const Cell* cell) const
 {
-  return cell == &dummy_cell_
-         || cell->db_inst_->getPlacementStatus() == dbPlacementStatus::FIRM
-         || cell->db_inst_->getPlacementStatus() == dbPlacementStatus::LOCKED
-         || cell->db_inst_->getPlacementStatus() == dbPlacementStatus::COVER;
+  return cell == &dummy_cell_ || cell->db_inst_->isFixed();
 }
 
 bool Opendp::isMultiRow(const Cell* cell) const
