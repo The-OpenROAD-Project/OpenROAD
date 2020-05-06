@@ -611,26 +611,28 @@ namespace eval ICeWall {
         $inst setOrigin $x $y
         $inst setOrient [get_orient $padcell]
         $inst setPlacementStatus "FIRM"
+        set bbox [$inst getBBox]
 
         switch $side_name \
           "bottom" {
             # debug "cell_width: $cell_width cell_height: $cell_height"
-            fill_box $fill_start $y $x [expr $y + $cell_height] $side_name [get_abutment_nets $padcell]
-            set fill_start [expr $x + $cell_width]
+            fill_box $fill_start [$bbox yMin] [$bbox xMin] [$bbox yMax] $side_name [get_abutment_nets $padcell]
+            set fill_start [$bbox xMax]
           } \
           "right"  {
-            fill_box [expr $x - $cell_height] $fill_start $x $y $side_name [get_abutment_nets $padcell]
-            set fill_start [expr $y + $cell_width]
+            # debug "fill after [$inst getName]"
+            fill_box [$bbox xMin] $fill_start [$bbox xMax] [$bbox yMin] $side_name [get_abutment_nets $padcell]
+            set fill_start [$bbox yMax]
           } \
           "top" {
-            fill_box $x [expr $y - $cell_height] $fill_start $y $side_name [get_abutment_nets $padcell]
+            fill_box [$bbox xMax] [$bbox yMin] $fill_start [$bbox yMax] $side_name [get_abutment_nets $padcell]
             # debug "added_cell: [$inst getName] ($x $y) [$cell getName] [$cell getWidth] x [$cell getHeight]"
-            set fill_start [expr $x - $cell_width]
+            set fill_start [$bbox xMin]
             # debug "$side_name: fill_start = $fill_start"
           } \
           "left" {
-            fill_box $x $y [expr $x + $cell_height] $fill_start $side_name [get_abutment_nets $padcell]
-            set fill_start [expr $y - $cell_width]
+            fill_box [$bbox xMin] [$bbox yMax] [$bbox xMax] $fill_start $side_name [get_abutment_nets $padcell]
+            set fill_start [$bbox yMin]
           }
 
 
@@ -642,16 +644,16 @@ namespace eval ICeWall {
       # debug "$side_name: fill_end   = $fill_end"
       switch $side_name \
         "bottom" {
-          fill_box $fill_start $y $fill_end [expr $y + [$cell getHeight]] $side_name [get_abutment_nets $padcell 1]
+          fill_box $fill_start [$bbox yMin] $fill_end [$bbox yMax] $side_name [get_abutment_nets $padcell 1]
         } \
         "right"  {
-          fill_box [expr $x - [$cell getHeight]] $fill_start $x $fill_end $side_name [get_abutment_nets $padcell 1]
+          fill_box [$bbox xMin] $fill_start [$bbox xMax] $fill_end $side_name [get_abutment_nets $padcell 1]
         } \
         "top" {
-          fill_box $fill_end [expr $y - [$cell getHeight]] $fill_start $y $side_name [get_abutment_nets $padcell 1]
+          fill_box $fill_end [$bbox yMin] $fill_start [$bbox yMax] $side_name [get_abutment_nets $padcell 1]
         } \
         "left" {
-          fill_box $x $fill_end [expr $x + [$cell getHeight]] $fill_start $side_name [get_abutment_nets $padcell 1]
+          fill_box [$bbox xMin] $fill_end [$bbox xMax] $fill_start $side_name [get_abutment_nets $padcell 1]
         }
 
       foreach padcell [dict get $footprint padcells order $side_name] {
@@ -1202,7 +1204,7 @@ namespace eval ICeWall {
           set y      [expr $fill_start + $spacer_width]
           set fill_start $y
         }
-
+      # debug "inst [$inst getName], x: $x, y: $y"
       $inst setOrigin $x $y
       $inst setOrient $orient
       $inst setPlacementStatus "FIRM"
