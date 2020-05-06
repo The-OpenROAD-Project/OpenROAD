@@ -1636,8 +1636,10 @@ Resizer::repairMaxFanout(int max_fanout,
 
   if (max_fanout_violation_count > 0)
     printf("Found %d max fanout violations.\n", max_fanout_violation_count);
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
     printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
 void
