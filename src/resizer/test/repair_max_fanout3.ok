@@ -1,0 +1,33 @@
+Notice 0: Reading LEF file:  liberty1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 7 library cells
+Notice 0: Finished LEF file:  liberty1.lef
+Notice 0: 
+Reading DEF file: ./results/hi_fanout.def
+Notice 0: Design: hi_fanout
+Notice 0:     Created 1 pins.
+Notice 0:     Created 36 components and 180 component-terminals.
+Notice 0:     Created 2 special nets and 72 connections.
+Notice 0:     Created 2 nets and 72 connections.
+Notice 0: Finished DEF file: ./results/hi_fanout.def
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+r1/Q                                    1.50    0.87    0.63 (MET)
+
+Found 1 max fanout violations.
+Inserted 2 buffers.
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+max_fanout1/Z                           1.50    0.56    0.94 (MET)
+
+Resized 1 instances.
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+max_fanout1/Z                           1.50    0.31    1.19 (MET)
+
