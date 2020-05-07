@@ -65,7 +65,7 @@ proc clock_tree_synthesis { args } {
   #Clock Tree Synthesis TCL -> Required commands:
   #                               -lut_file , -sol_list , -root-buf, -wire_unit
   #                                               or
-  #                               -buf_list , -sqr_cap , -sqr_res
+  #                               -buf_list
   #                         -> Other commands can be used as extra parameters or in conjunction with each other:
   #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
 
@@ -151,10 +151,6 @@ proc clock_tree_synthesis { args } {
       $cts set_cap_per_sqr $sqr_cap
       set sqr_res $keys(-sqr_res)
       $cts set_res_per_sqr $sqr_res
-    } else {
-      #User must enter capacitance and resistance per square (um²) when creating a new characterization.
-      puts "Missing argument -sqr_cap and/or -sqr_res"
-      exit
     }
   }
 

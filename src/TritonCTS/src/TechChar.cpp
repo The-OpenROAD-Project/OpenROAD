@@ -543,8 +543,33 @@ void TechChar::initCharacterization() {
         float dbUnitsPerMicron = static_cast<float> (block->getDbUnitsPerMicron());
 
         //Change resPerSqr and capPerSqr to DBU units.
-        double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0,-12))/dbUnitsPerMicron;
-        double newResPerSqr = (_options->getResPerSqr())/dbUnitsPerMicron;
+        double newCapPerSqr = 0;
+        double newResPerSqr = 0;
+        if (_options->getCapPerSqr() == 0.0 || _options->getResPerSqr() == 0.0) {
+                odb::dbTech* tech = _db->getTech();
+                odb::dbTechLayer* techLayer = tech->findRoutingLayer(3);
+                if (techLayer == nullptr){
+                        techLayer = tech->findRoutingLayer(0);
+                        if (techLayer == nullptr){
+                                std::cout << "No routing layers found! Check your technology files.\n";
+                                std::exit(1);
+                        }
+                }
+                
+                float layerWidth = (float) techLayer->getWidth() / 
+                                block->getDbUnitsPerMicron();
+                float resOhmPerMicron =  techLayer->getResistance() / layerWidth;
+                
+                newResPerSqr = resOhmPerMicron/dbUnitsPerMicron; // dbu
+                newCapPerSqr = (1E-12 * techLayer->getCapacitance())/dbUnitsPerMicron; // dbu
+                if (newResPerSqr == 0 | newCapPerSqr == 0) {
+                        std::cout << "No parasitics found! Check your technology files.\n";
+                        std::exit(1);
+                }
+        } else {
+                newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0,-12))/dbUnitsPerMicron;
+                newResPerSqr = (_options->getResPerSqr())/dbUnitsPerMicron;
+        }
         _options->setCapPerSqr(newCapPerSqr); // picofarad/micron to farad/DBU
         _options->setResPerSqr(newResPerSqr); // ohm/micron to ohm/DBU
 
@@ -628,12 +653,17 @@ void TechChar::initCharacterization() {
                 bool maxCapExist = false;
                 staLib->defaultMaxSlew(maxSlew, maxSlewExist);
                 staLib->defaultMaxCapacitance(maxCap, maxCapExist);
-                if ( !maxSlewExist || !maxCapExist ){
-                        std::cout << "Liberty Library does not have Max Slew or Max Cap values.\n";
-                        std::exit(1);
+                if ( !maxSlewExist || !maxCapExist ){ // If they do not exist in the liberty library -> use 20x the interval
+                        _charMaxSlew = _charSlewInter * 20;
+                        _charMaxCap = _charCapInter * 20;
                 } else {
-                        _charMaxSlew = maxSlew;
-                        _charMaxCap = maxCap;
+                        if ( (maxSlew < (3 * _charSlewInter)) || (maxCap < (3 * _charCapInter)) ){ // If they exist -> make sure they are atleast 3x higher than the interval
+                                _charMaxSlew = _charSlewInter * 20;
+                                _charMaxCap = _charCapInter * 20;
+                        } else {
+                                _charMaxSlew = maxSlew;
+                                _charMaxCap = maxCap;
+                        }
                 }
         } else {
                 _charMaxSlew = _options->getMaxCharSlew();

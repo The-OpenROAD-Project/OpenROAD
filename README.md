@@ -413,8 +413,8 @@ The first is if the user does not have a characterization file. Thus, the wire s
 
 ```
 clock_tree_synthesis -buf_list <list_of_buffers> \
-                     -sqr_cap <cap_per_sqr> \
-                     -sqr_res <res_per_sqr> \
+                     [-sqr_cap <cap_per_sqr>] \
+                     [-sqr_res <res_per_sqr>] \
                      [-root_buf <root_buf>] \
                      [-max_slew <max_slew>] \
                      [-max_cap <max_cap>] \
@@ -427,8 +427,10 @@ clock_tree_synthesis -buf_list <list_of_buffers> \
 ```
 
 - ```buf_list``` (mandatory) are the master cells (buffers) that will be considered when making the wire segments.
-- ``sqr_cap`` (mandatory) is the capacitance (in picofarad) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
-- ``sqr_res`` (mandatory) is the resistance (in ohm) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
+- ``sqr_cap`` (optional) is the capacitance (in picofarad) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
+If this parameter is omitted, the code tries to get the parasitic values from the DB.
+- ``sqr_res`` (optional) is the resistance (in ohm) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
+If this parameter is omitted, the code tries to get the parasitic values from the DB.
 - ``root_buffer`` (optional) is the master cell of the buffer that serves as root for the clock tree. 
 If this parameter is omitted, the first master cell from ```buf_list``` is taken.
 - ``max_slew`` (optional) is the max slew value (in seconds) that the characterization will test. 
