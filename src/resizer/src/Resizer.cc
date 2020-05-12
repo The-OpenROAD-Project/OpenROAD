@@ -40,6 +40,7 @@
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
 #include "resizer/SteinerTree.hh"
+#include "opendb/dbTransform.h"
 
 // Outstanding issues
 //  Instance levelization and resizing to target slew only support single output gates
@@ -62,6 +63,10 @@ using ord::closestPtInRect;
 using odb::dbInst;
 using odb::dbPlacementStatus;
 using odb::Rect;
+using odb::dbOrientType;
+using odb::dbTransform;
+using odb::dbMPin;
+using odb::dbBox;
 
 extern "C" {
 extern int Resizer_Init(Tcl_Interp *interp);
@@ -69,6 +74,7 @@ extern int Resizer_Init(Tcl_Interp *interp);
 
 extern const char *resizer_tcl_inits[];
 
+// Referenced by MakeSteinerTree also.
 bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
@@ -2340,6 +2346,49 @@ Resizer::findDesignArea()
   return design_area;
 }
 
+// Non-warning version of dbITerm::getAvgXY
+static bool
+getAvgXY(dbITerm *iterm,
+	 int* x, int* y)
+{
+  dbMTerm* mterm = iterm->getMTerm();
+  int      nn    = 0;
+  double   xx    = 0.0;
+  double   yy    = 0.0;
+  int      px;
+  int      py;
+  dbInst*  inst = iterm->getInst();
+  inst->getOrigin(px, py);
+  Point        origin = Point(px, py);
+  dbOrientType orient = inst->getOrient();
+  dbTransform  transform(orient, origin);
+
+  dbSet<dbMPin>           mpins = mterm->getMPins();
+  dbSet<dbMPin>::iterator mpin_itr;
+  for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
+    dbMPin*                mpin  = *mpin_itr;
+    dbSet<dbBox>           boxes = mpin->getGeometry();
+    dbSet<dbBox>::iterator box_itr;
+    for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
+      dbBox* box = *box_itr;
+      Rect   rect;
+      box->getBox(rect);
+      transform.apply(rect);
+      xx += rect.xMin() + rect.xMax();
+      yy += rect.yMin() + rect.yMax();
+      nn += 2;
+    }
+  }
+  if (nn == 0) {
+    return false;
+  }
+  xx /= nn;
+  yy /= nn;
+  *x = int(xx);
+  *y = int(yy);
+  return true;
+}
+
 Point
 pinLocation(Pin *pin,
 	    const dbNetwork *network)
@@ -2348,10 +2397,15 @@ pinLocation(Pin *pin,
   dbBTerm *bterm;
   network->staToDb(pin, iterm, bterm);
   if (iterm) {
-    dbInst *inst = iterm->getInst();
     int x, y;
-    inst->getOrigin(x, y);
-    return Point(x, y);
+    if (getAvgXY(iterm, &x, &y))
+      return Point(x, y);
+    else {
+      dbInst *inst = iterm->getInst();
+      int x, y;
+      inst->getOrigin(x, y);
+      return Point(x, y);
+    }
   }
   if (bterm) {
     int x, y;
@@ -2359,7 +2413,7 @@ pinLocation(Pin *pin,
       return Point(x, y);
   }
   return Point(0, 0);
-}  
+}
 
 bool
 pinIsPlaced(Pin *pin,
