@@ -1088,8 +1088,6 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
 	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
 	if (buffer_fanout > 1)
 	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_cap");
-	else
-	  rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
@@ -1167,8 +1165,6 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
 	if (buffer_fanout > 1)
 	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
-	else
-	  rebuffer(drvr_pin, buffer_cell);
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
@@ -1200,18 +1196,20 @@ Resizer::checkMaxSlewViolation(const Pin *pin,
   float limit;
   bool exists;
   slewLimit(pin, MinMax::max(), limit, exists);
-  for (RiseFall *rf : RiseFall::range()) {
-    Slew slew;
-    slew  = graph_->slew(vertex, rf, dcalc_ap_->index());
-    if (slew > limit) {
-      violation = true;
-      limit_ratio = max(limit_ratio, slew / limit);
-    }
-    if (bidirect_drvr_vertex) {
-      slew  = graph_->slew(bidirect_drvr_vertex, rf, dcalc_ap_->index());
+  if (exists) {
+    for (RiseFall *rf : RiseFall::range()) {
+      Slew slew;
+      slew  = graph_->slew(vertex, rf, dcalc_ap_->index());
       if (slew > limit) {
 	violation = true;
 	limit_ratio = max(limit_ratio, slew / limit);
+      }
+      if (bidirect_drvr_vertex) {
+	slew  = graph_->slew(bidirect_drvr_vertex, rf, dcalc_ap_->index());
+	if (slew > limit) {
+	  violation = true;
+	  limit_ratio = max(limit_ratio, slew / limit);
+	}
       }
     }
   }
