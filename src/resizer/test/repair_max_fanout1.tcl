@@ -1,24 +1,19 @@
 # repair_max_fanout for hi fanout def
 source "helpers.tcl"
 source "hi_fanout.tcl"
+source "report_max_fanout.tcl"
 
-set def_filename [file join $result_dir "hi_fanout.def"]
+set def_filename [file join $result_dir "repair_max_fanout1.def"]
 write_hi_fanout_def $def_filename 35
 
-read_liberty liberty1.lib
-read_lef liberty1.lef
+read_liberty Nangate_typ.lib
+read_lef Nangate.lef
 read_def $def_filename
 create_clock -period 10 clk1
 
-repair_max_fanout -max_fanout 10 -buffer_cell liberty1/snl_bufx1
-
-foreach drvr {r1/Q max_fanout1/Z max_fanout2/Z max_fanout3/Z max_fanout4/Z} {
-  set fanout [expr [llength [get_pins -of [get_net -of [get_pin $drvr]]]] - 1]
-  puts "$drvr fanout $fanout"
-  #set dist [sta::max_load_manhatten_distance [get_pin $drvr]]
-  #puts "$drvr fanout $fanout dist [format %.0f [expr $dist * 1e6]]"
-  #report_object_names [get_pins -of [get_net $ent]]
-}
+report_max_fanout 1
+repair_max_fanout -max_fanout 10 -buffer_cell BUF_X1
+report_max_fanout 5
 
 # set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
 # write_def $repaired_filename

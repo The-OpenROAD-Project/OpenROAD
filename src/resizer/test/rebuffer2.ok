@@ -1,12 +1,13 @@
-Notice 0: Reading LEF file:  liberty1.lef
-Notice 0:     Created 2 technology layers
-Notice 0:     Created 7 library cells
-Notice 0: Finished LEF file:  liberty1.lef
+Notice 0: Reading LEF file:  Nangate.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate.lef
 Notice 0: 
 Reading DEF file: rebuffer2.def
 Notice 0: Design: reg1
 Notice 0:     Created 1 pins.
-Notice 0:     Created 5 components and 25 component-terminals.
+Notice 0:     Created 5 components and 30 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 2 nets and 10 connections.
 Notice 0: Finished DEF file: rebuffer2.def
@@ -19,22 +20,22 @@ Path Type: max
 ----------------------------------------------------------------
            0.00    0.00   clock clk (rise edge)
            0.00    0.00   clock network delay (ideal)
-           0.00    0.00 ^ r1/CP (snl_ffqx1)
-   5.21   15.07   15.07 v r1/Q (snl_ffqx1)
-           0.04   15.12 v r3/D (snl_ffqx1)
-                  15.12   data arrival time
+           0.00    0.00 ^ r1/CK (DFF_X1)
+5204.56   12.50   12.50 ^ r1/Q (DFF_X1)
+           0.04   12.55 ^ r3/D (DFF_X1)
+                  12.55   data arrival time
 
            1.00    1.00   clock clk (rise edge)
            0.00    1.00   clock network delay (ideal)
            0.00    1.00   clock reconvergence pessimism
-                   1.00 ^ r3/CP (snl_ffqx1)
-          -6.02   -5.02   library setup time
-                  -5.02   data required time
+                   1.00 ^ r3/CK (DFF_X1)
+          -1.22   -0.22   library setup time
+                  -0.22   data required time
 ----------------------------------------------------------------
-                  -5.02   data required time
-                 -15.12   data arrival time
+                  -0.22   data required time
+                 -12.55   data arrival time
 ----------------------------------------------------------------
-                 -20.14   slack (VIOLATED)
+                 -12.77   slack (VIOLATED)
 
 
 Inserted 2 buffers.
@@ -47,24 +48,24 @@ Path Type: max
 ----------------------------------------------------------------
            0.00    0.00   clock clk (rise edge)
            0.00    0.00   clock network delay (ideal)
-           0.00    0.00 ^ r1/CP (snl_ffqx1)
-   0.01    0.25    0.25 v r1/Q (snl_ffqx1)
-           0.00    0.25 v rebuffer1/A (snl_bufx2)
-   2.61    2.32    2.57 v rebuffer1/Z (snl_bufx2)
-           0.04    2.62 v r3/D (snl_ffqx1)
-                   2.62   data arrival time
+           0.00    0.00 ^ r1/CK (DFF_X1)
+   3.56    0.09    0.09 ^ r1/Q (DFF_X1)
+           0.00    0.09 ^ rebuffer1/A (BUF_X2)
+2602.28    3.12    3.21 ^ rebuffer1/Z (BUF_X2)
+           0.04    3.25 ^ r3/D (DFF_X1)
+                   3.25   data arrival time
 
            1.00    1.00   clock clk (rise edge)
            0.00    1.00   clock network delay (ideal)
            0.00    1.00   clock reconvergence pessimism
-                   1.00 ^ r3/CP (snl_ffqx1)
-          -1.09   -0.09   library setup time
-                  -0.09   data required time
+                   1.00 ^ r3/CK (DFF_X1)
+          -0.33    0.67   library setup time
+                   0.67   data required time
 ----------------------------------------------------------------
-                  -0.09   data required time
-                  -2.62   data arrival time
+                   0.67   data required time
+                  -3.25   data arrival time
 ----------------------------------------------------------------
-                  -2.71   slack (VIOLATED)
+                  -2.59   slack (VIOLATED)
 
 
 No differences found.

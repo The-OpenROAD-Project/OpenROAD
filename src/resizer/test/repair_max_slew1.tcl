@@ -1,27 +1,15 @@
-# repair_max_slew reg3
+# repair_max_slew hi fanout register array
 source "helpers.tcl"
-read_liberty liberty1.lib
-read_lef liberty1.lef
-read_def reg3.def
-create_clock clk -period 1
-set_input_delay -clock clk 0 in1
-# driving cell so input net has non-zero slew
-set_driving_cell -lib_cell snl_bufx1 [get_ports in1]
-# sdc slew constraint applies to input ports
-set_max_transition 1.0 [get_ports *]
+source "hi_fanout.tcl"
 
-set buffer_cell [get_lib_cell liberty1/snl_bufx2]
-# kohm/micron, pf/micron
-# use 10x wire cap to tickle buffer insertion
-set_wire_rc -resistance 1.7e-4 -capacitance 1.3e-3
+read_liberty Nangate_typ.lib
+read_lef Nangate.lef
+set def_file [file join $result_dir "repair_max_cap1.def"]
+write_hi_fanout_def $def_file 80
+read_def $def_file
+create_clock -period 1 clk1
 
 report_check_types -max_slew -violators
-
-repair_max_slew -buffer_cell $buffer_cell
-
+repair_max_slew -buffer_cell BUF_X2
 report_check_types -max_slew -violators
-report_checks -fields {input_pin transition_time capacitance}
 
-set def_file [make_result_file repair_max_slew1.def]
-write_def $def_file
-diff_files $def_file repair_max_slew1.defok

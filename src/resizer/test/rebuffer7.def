@@ -13,16 +13,16 @@ UNITS DISTANCE MICRONS 1000 ;
 
 DIEAREA ( 0 0 ) ( 1000 1000 ) ;
 
-COMPONENTS 5 ;
-- r1 snl_ffqx1 + PLACED   ( 100000 100000 ) N ;
-- r2 snl_ffqx1 + PLACED   ( 100000 200000 ) N ;
+COMPONENTS 2 ;
+- r1 DFF_X1 + PLACED   ( 100000 100000 ) N ;
+- r2 DFF_X1 + PLACED   ( 100000 200000 ) N ;
 END COMPONENTS
 
-PINS 1 ;
+PINS 2 ;
 - clk + NET clk + DIRECTION INPUT + USE CLOCK 
-  + LAYER M1 ( 0 0 ) ( 0 100 ) + FIXED ( 100000 100000 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 0 100 ) + FIXED ( 100000 100000 ) N ;
 - out + NET out + DIRECTION OUTPUT + USE SIGNAL
-  + LAYER M1 ( 0 0 ) ( 0 100 ) + FIXED ( 100000 600000 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 0 100 ) + FIXED ( 100000 600000 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -33,7 +33,7 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 
 NETS 2 ;
-- clk ( PIN clk ) ( r1 CP ) ( r2 CP ) ;
+- clk ( PIN clk ) ( r1 CK ) ( r2 CK ) ;
 - out ( r1 Q ) ( r2 D ) ( PIN out ) ;
 END NETS
 

@@ -1,0 +1,30 @@
+Notice 0: Reading LEF file:  Nangate.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate.lef
+Notice 0: 
+Reading DEF file: ./results/buffer_ports4.def
+Notice 0: Design: hi_fanout
+Notice 0: error: undefined layer (M1) referenced
+Notice 0: error: undefined layer (M1) referenced
+Notice 0:     Created 2 pins.
+Notice 0:     Created 300 components and 2400 component-terminals.
+Notice 0:     Created 2 special nets and 600 connections.
+Notice 0:     Created 2 nets and 600 connections.
+Notice 0: Finished DEF file: ./results/buffer_ports4.def
+Inserted 1 input buffers.
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+r265/RN                                 0.20    0.83   -0.63 (VIOLATED)
+
+Found 1 max slew violations.
+Inserted 4 buffers in 1 nets.
+max_transition
+
+Pin                                    Limit   Trans   Slack
+------------------------------------------------------------
+r0/RN                                   0.20    0.23   -0.03 (VIOLATED)
+
