@@ -23,4 +23,4 @@ report_checks -fields {input_pin transition_time capacitance}
 
 set def_file [make_result_file repair_max_slew1.def]
 write_def $def_file
-diff_files $def_file repair_max_slew1.defok
+diff_files repair_max_slew1.defok $def_file

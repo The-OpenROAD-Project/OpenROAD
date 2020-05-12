@@ -11,7 +11,7 @@ COMPONENTS 6 ;
     - r3 DFF_X1 + PLACED ( 30000 30000 ) N ;
     - u1 BUF_X1 + PLACED ( 40000 10000 ) N ;
     - u2 AND2_X1 + PLACED ( 10000 40000 ) N ;
-    - rebuffer1 BUF_X2 + PLACED ( 40000 10000 ) N ;
+    - rebuffer1 BUF_X2 + PLACED ( 40000 10071 ) N ;
 END COMPONENTS
 PINS 3 ;
     - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;

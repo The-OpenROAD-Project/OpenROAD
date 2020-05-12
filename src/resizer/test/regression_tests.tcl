@@ -13,8 +13,7 @@ record_tests {
   buffer_ports6
   resize1
   resize2
-  resize4
-  resize6
+  resize3
   repair_max_cap1
   repair_max_cap2
   repair_max_fanout1

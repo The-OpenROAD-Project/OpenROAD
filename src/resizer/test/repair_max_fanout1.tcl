@@ -17,4 +17,4 @@ report_max_fanout 5
 
 # set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
 # write_def $repaired_filename
-# diff_file $repaired_filename repair_max_fanout1.defok
+# diff_file repair_max_fanout1.defok $repaired_filename

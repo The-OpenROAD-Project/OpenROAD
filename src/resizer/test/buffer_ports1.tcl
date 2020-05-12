@@ -10,4 +10,4 @@ buffer_ports -inputs -outputs -buffer_cell $buffer_cell
 
 set def_file [make_result_file buffer_ports1.def]
 write_def $def_file
-diff_files $def_file buffer_ports1.defok
+diff_files buffer_ports1.defok $def_file

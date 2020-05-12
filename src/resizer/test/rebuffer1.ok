@@ -22,9 +22,9 @@ Path Type: max
            0.00    0.00   clock clk (rise edge)
            0.00    0.00   clock network delay (ideal)
            0.00    0.00 ^ r1/CK (DFF_X1)
-  56.56    0.21    0.21 ^ r1/Q (DFF_X1)
-           0.00    0.21 ^ r5/D (DFF_X1)
-                   0.21   data arrival time
+  56.84    0.21    0.21 ^ r1/Q (DFF_X1)
+           0.00    0.22 ^ r5/D (DFF_X1)
+                   0.22   data arrival time
 
            1.00    1.00   clock clk (rise edge)
            0.00    1.00   clock network delay (ideal)
@@ -34,9 +34,9 @@ Path Type: max
                    0.95   data required time
 ----------------------------------------------------------------
                    0.95   data required time
-                  -0.21   data arrival time
+                  -0.22   data arrival time
 ----------------------------------------------------------------
-                   0.74   slack (MET)
+                   0.73   slack (MET)
 
 
 Inserted 1 buffers.
@@ -50,9 +50,9 @@ Path Type: max
            0.00    0.00   clock clk (rise edge)
            0.00    0.00   clock network delay (ideal)
            0.00    0.00 ^ r1/CK (DFF_X1)
-   1.78    0.09    0.09 ^ r1/Q (DFF_X1)
+   1.88    0.09    0.09 ^ r1/Q (DFF_X1)
            0.00    0.09 ^ rebuffer1/A (BUF_X2)
-  56.56    0.08    0.17 ^ rebuffer1/Z (BUF_X2)
+  56.83    0.09    0.17 ^ rebuffer1/Z (BUF_X2)
            0.00    0.17 ^ r5/D (DFF_X1)
                    0.17   data arrival time
 

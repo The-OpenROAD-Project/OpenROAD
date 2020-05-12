@@ -13,4 +13,4 @@ sta::rebuffer_net [get_net u1z] $buffer_cell
 
 set def_file [make_result_file rebuffer4.def]
 write_def $def_file
-diff_files $def_file rebuffer4.defok
+diff_files rebuffer4.defok $def_file

@@ -1,16 +1,17 @@
-Notice 0: Reading LEF file:  nlc18.lef
-Notice 0:     Created 2 technology layers
-Notice 0:     Created 1008 library cells
-Notice 0: Finished LEF file:  nlc18.lef
+Notice 0: Reading LEF file:  Nangate.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate.lef
 Notice 0: 
-Reading DEF file: reg1.def
+Reading DEF file: reg2.def
 Notice 0: Design: top
 Notice 0:     Created 6 pins.
-Notice 0:     Created 5 components and 24 component-terminals.
+Notice 0:     Created 5 components and 27 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 10 nets and 14 connections.
-Notice 0: Finished DEF file: reg1.def
-Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Notice 0: Finished DEF file: reg2.def
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
@@ -19,27 +20,28 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ r1/CP (snl_ffqx1)
-   0.90    0.90 v r1/Q (snl_ffqx1)
-   0.29    1.20 v u2/Z (snl_and02x1)
-   0.00    1.20 v r3/D (snl_ffqx1)
-           1.20   data arrival time
+   0.00    0.00 ^ r2/CK (DFF_X1)
+   0.13    0.13 ^ r2/Q (DFF_X1)
+   0.08    0.21 ^ u1/Z (BUF_X1)
+   0.09    0.30 ^ u2/ZN (AND2_X1)
+   0.00    0.30 ^ r3/D (DFF_X1)
+           0.30   data arrival time
 
    1.00    1.00   clock clk (rise edge)
    0.00    1.00   clock network delay (ideal)
    0.00    1.00   clock reconvergence pessimism
-           1.00 ^ r3/CP (snl_ffqx1)
-  -0.12    0.88   library setup time
-           0.88   data required time
+           1.00 ^ r3/CK (DFF_X1)
+  -0.04    0.96   library setup time
+           0.96   data required time
 ---------------------------------------------------------
-           0.88   data required time
-          -1.20   data arrival time
+           0.96   data required time
+          -0.30   data arrival time
 ---------------------------------------------------------
-          -0.32   slack (VIOLATED)
+           0.66   slack (MET)
 
 
-Resized 3 instances.
-Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Resized 2 instances.
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
@@ -48,23 +50,24 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ r1/CP (snl_ffqx4)
-   0.55    0.55 ^ r1/Q (snl_ffqx4)
-   0.21    0.76 ^ u2/Z (snl_and02x1)
-   0.00    0.76 ^ r3/D (snl_ffqx1)
-           0.76   data arrival time
+   0.00    0.00 ^ r2/CK (DFF_X1)
+   0.13    0.13 ^ r2/Q (DFF_X1)
+   0.05    0.18 ^ u1/Z (BUF_X2)
+   0.06    0.24 ^ u2/ZN (AND2_X2)
+   0.00    0.24 ^ r3/D (DFF_X1)
+           0.24   data arrival time
 
    1.00    1.00   clock clk (rise edge)
    0.00    1.00   clock network delay (ideal)
    0.00    1.00   clock reconvergence pessimism
-           1.00 ^ r3/CP (snl_ffqx1)
-  -0.11    0.89   library setup time
-           0.89   data required time
+           1.00 ^ r3/CK (DFF_X1)
+  -0.04    0.96   library setup time
+           0.96   data required time
 ---------------------------------------------------------
-           0.89   data required time
-          -0.76   data arrival time
+           0.96   data required time
+          -0.24   data arrival time
 ---------------------------------------------------------
-           0.13   slack (MET)
+           0.72   slack (MET)
 
 
 No differences found.

@@ -20,4 +20,4 @@ report_checks -fields {input_pin capacitance}
 
 set def_file [make_result_file rebuffer1.def]
 write_def $def_file
-diff_files $def_file rebuffer1.defok
+diff_files rebuffer1.defok $def_file

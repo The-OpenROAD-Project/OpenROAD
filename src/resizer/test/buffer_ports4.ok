@@ -18,7 +18,7 @@ max_transition
 
 Pin                                    Limit   Trans   Slack
 ------------------------------------------------------------
-r265/RN                                 0.20    0.83   -0.63 (VIOLATED)
+r269/RN                                 0.20    0.79   -0.59 (VIOLATED)
 
 Found 1 max slew violations.
 Inserted 4 buffers in 1 nets.
