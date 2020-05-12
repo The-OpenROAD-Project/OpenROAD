@@ -1085,12 +1085,12 @@ OpenStaHandler::largestLibraryCell(LibraryCell* cell)
     return largest;
 }
 double
-OpenStaHandler::dbuToMeters(uint dist) const
+OpenStaHandler::dbuToMeters(int dist) const
 {
     return dist * 1E-9;
 }
 double
-OpenStaHandler::dbuToMicrons(uint dist) const
+OpenStaHandler::dbuToMicrons(int dist) const
 {
     return (1.0 * dist) / db_->getTech()->getLefUnits();
 }
