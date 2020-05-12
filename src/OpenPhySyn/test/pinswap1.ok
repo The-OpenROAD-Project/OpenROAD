@@ -81,12 +81,12 @@ Path Type: max
    0.05743    0.44171 v _524_/ZN (OR3_X4)
    0.02604    0.46774 ^ _528_/ZN (AOI21_X4)
    0.00938    0.47713 v _535_/ZN (NOR2_X2)
-   0.03349    0.51062 v _536_/ZN (XNOR2_X1)
-   0.02844    0.53905 v _537_/ZN (AND2_X2)
-   0.03140    0.57046 ^ _540_/ZN (OAI21_X1)
-   0.02023    0.59069 v _541_/ZN (OAI21_X1)
-   0.00001    0.59069 v _594_/D (DFF_X1)
-              0.59069   data arrival time
+   0.03409    0.51121 v _536_/ZN (XNOR2_X1)
+   0.02864    0.53985 v _537_/ZN (AND2_X2)
+   0.03140    0.57125 ^ _540_/ZN (OAI21_X1)
+   0.02023    0.59148 v _541_/ZN (OAI21_X1)
+   0.00001    0.59149 v _594_/D (DFF_X1)
+              0.59149   data arrival time
 
   10.00000   10.00000   clock core_clock (rise edge)
    0.00000   10.00000   clock network delay (ideal)
@@ -96,9 +96,9 @@ Path Type: max
               9.95949   data required time
 ---------------------------------------------------------------
               9.95949   data required time
-             -0.59069   data arrival time
+             -0.59149   data arrival time
 ---------------------------------------------------------------
-              9.36880   slack (MET)
+              9.36800   slack (MET)
 
 
 No differences found.
