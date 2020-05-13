@@ -1,12 +1,13 @@
-Notice 0: Reading LEF file:  liberty1.lef
-Notice 0:     Created 2 technology layers
-Notice 0:     Created 7 library cells
-Notice 0: Finished LEF file:  liberty1.lef
+Notice 0: Reading LEF file:  Nangate.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate.lef
 Notice 0: 
 Reading DEF file: reg3.def
 Notice 0: Design: reg1
 Notice 0:     Created 3 pins.
-Notice 0:     Created 5 components and 24 component-terminals.
+Notice 0:     Created 5 components and 27 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 7 nets and 14 connections.
 Notice 0: Finished DEF file: reg3.def

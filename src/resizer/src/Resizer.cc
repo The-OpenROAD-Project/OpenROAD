@@ -1093,7 +1093,8 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
 	int buffer_count = ceil(limit_ratio);
 	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
 	if (buffer_fanout > 1)
-	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_cap");
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout,
+		      buffer_cell, "max_cap");
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
@@ -1165,12 +1166,13 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
       }
       delete pin_iter;
       if (violation) {
-	repaired_net_count++;
 	Pin *drvr_pin = vertex->pin();
 	int buffer_count = ceil(limit_ratio);
 	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
-	if (buffer_fanout > 1)
+	if (buffer_fanout > 1) {
 	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
+	  repaired_net_count++;
+	}
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
@@ -1231,51 +1233,56 @@ Resizer::slewLimit(const Pin *pin,
 {
   exists = false;
   Cell *top_cell = network_->cell(network_->topInstance());
-  float top_limit;
-  bool top_limit_exists;
+  float limit1;
+  bool exists1;
   sdc_->slewLimit(top_cell, min_max,
-		  top_limit, top_limit_exists);
+		  limit1, exists1);
 
   // Default to top ("design") limit.
-  exists = top_limit_exists;
-  limit = top_limit;
+  exists = exists1;
+  limit = limit1;
   if (network_->isTopLevelPort(pin)) {
     Port *port = network_->port(pin);
-    float port_limit;
-    bool port_limit_exists;
-    sdc_->slewLimit(port, min_max, port_limit, port_limit_exists);
+    sdc_->slewLimit(port, min_max, limit1, exists1);
     // Use the tightest limit.
-    if (port_limit_exists
+    if (exists1
 	&& (!exists
-	    || min_max->compare(limit, port_limit))) {
-      limit = port_limit;
+	    || min_max->compare(limit, limit1))) {
+      limit = limit1;
       exists = true;
     }
   }
   else {
-    float pin_limit;
-    bool pin_limit_exists;
     sdc_->slewLimit(pin, min_max,
-		    pin_limit, pin_limit_exists);
+		    limit1, exists1);
     // Use the tightest limit.
-    if (pin_limit_exists
+    if (exists1
 	&& (!exists
-	    || min_max->compare(limit, pin_limit))) {
-      limit = pin_limit;
+	    || min_max->compare(limit, limit1))) {
+      limit = limit1;
       exists = true;
     }
 
-    float port_limit;
-    bool port_limit_exists;
     LibertyPort *port = network_->libertyPort(pin);
     if (port) {
-      port->slewLimit(min_max, port_limit, port_limit_exists);
+      port->slewLimit(min_max, limit1, exists1);
       // Use the tightest limit.
-      if (port_limit_exists
-	  && (!exists
-	      || min_max->compare(limit, port_limit))) {
-	limit = port_limit;
-	exists = true;
+      if (exists1) {
+	if (!exists
+	    || min_max->compare(limit, limit1)) {
+	  limit = limit1;
+	  exists = true;
+	}
+      }
+      else if (port->direction()->isAnyOutput()
+	       && min_max == MinMax::max()) {
+	port->libertyLibrary()->defaultMaxSlew(limit1, exists1);
+	if (exists1
+	    && (!exists
+		|| min_max->compare(limit, limit1))) {
+	  limit = limit1;
+	  exists = true;
+	}
       }
     }
   }
@@ -2345,49 +2352,6 @@ Resizer::findDesignArea()
   return design_area;
 }
 
-// Non-warning version of dbITerm::getAvgXY
-static bool
-getAvgXY(dbITerm *iterm,
-	 int* x, int* y)
-{
-  dbMTerm* mterm = iterm->getMTerm();
-  int      nn    = 0;
-  double   xx    = 0.0;
-  double   yy    = 0.0;
-  int      px;
-  int      py;
-  dbInst*  inst = iterm->getInst();
-  inst->getOrigin(px, py);
-  Point        origin = Point(px, py);
-  dbOrientType orient = inst->getOrient();
-  dbTransform  transform(orient, origin);
-
-  dbSet<dbMPin>           mpins = mterm->getMPins();
-  dbSet<dbMPin>::iterator mpin_itr;
-  for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-    dbMPin*                mpin  = *mpin_itr;
-    dbSet<dbBox>           boxes = mpin->getGeometry();
-    dbSet<dbBox>::iterator box_itr;
-    for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
-      dbBox* box = *box_itr;
-      Rect   rect;
-      box->getBox(rect);
-      transform.apply(rect);
-      xx += rect.xMin() + rect.xMax();
-      yy += rect.yMin() + rect.yMax();
-      nn += 2;
-    }
-  }
-  if (nn == 0) {
-    return false;
-  }
-  xx /= nn;
-  yy /= nn;
-  *x = int(xx);
-  *y = int(yy);
-  return true;
-}
-
 Point
 pinLocation(Pin *pin,
 	    const dbNetwork *network)
@@ -2397,7 +2361,7 @@ pinLocation(Pin *pin,
   network->staToDb(pin, iterm, bterm);
   if (iterm) {
     int x, y;
-    if (getAvgXY(iterm, &x, &y))
+    if (iterm->getAvgXY(&x, &y))
       return Point(x, y);
     else {
       dbInst *inst = iterm->getInst();

@@ -1,7 +1,6 @@
 # write_hi_fanout verilog/def
 
 set header {VERSION 5.8 ; 
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 
@@ -15,7 +14,7 @@ DIEAREA ( 0 0 ) ( 2000 2000 ) ;
 set middle {
 PINS 1 ;
 - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -33,12 +32,12 @@ proc write_hi_fanout_def { filename fanout } {
   set stream [open $filename "w"]
   puts $stream $header
   puts $stream "COMPONENTS [expr $fanout + 1] ;"
-  puts $stream "- r1 snl_ffqx1 + PLACED   ( 1000 1000 ) N ;"
+  puts $stream "- r1 DFF_X1 + PLACED   ( 1000 1000 ) N ;"
   set space 5000
   set i 0
   while {$i < $fanout} {
     set r [expr $i + 2]
-    puts $stream "- r$r snl_ffqx1 + PLACED   ( [expr ($r % 10) * $space] [expr ($r / 10) *$space] ) N ;"
+    puts $stream "- r$r DFF_X1 + PLACED   ( [expr ($r % 10) * $space] [expr ($r / 10) *$space] ) N ;"
     incr i
   }
   puts $stream "END COMPONENTS"
@@ -50,7 +49,7 @@ proc write_hi_fanout_def { filename fanout } {
   set i 0
   while {$i < [expr $fanout + 1]} {
     set r [expr $i + 1]
-    puts -nonewline $stream " ( r$r CP )"
+    puts -nonewline $stream " ( r$r CK )"
     if { [expr $i % 10] == 0 } {
       puts $stream ""
     }

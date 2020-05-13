@@ -1,8 +1,7 @@
 # buffer_ports -input hi fanout reset net (no req time) -> max slew violation
 source "helpers.tcl"
 
-set header {VERSION 5.5 ; 
-NAMESCASESENSITIVE ON ;
+set header {VERSION 5.8 ; 
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 
@@ -16,9 +15,9 @@ DIEAREA ( 0 0 ) ( 2000 2000 ) ;
 set middle {
 PINS 2 ;
 - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
 - reset + NET reset + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M1 ( 0 0 ) ( 100 100 ) + FIXED ( 1100 1100 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1100 1100 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -38,7 +37,7 @@ proc write_hi_fanout_def { filename fanout } {
   set space 5000
   set i 0
   while {$i < $fanout} {
-    puts $stream "- r$i snl_ffq2x1 + PLACED   ( [expr ($i % 10) * $space] [expr ($i / 10) *$space] ) N ;"
+    puts $stream "- r$i DFFRS_X2 + PLACED   ( [expr ($i % 10) * $space] [expr ($i / 10) *$space] ) N ;"
     incr i
   }
   puts $stream "END COMPONENTS"
@@ -49,7 +48,7 @@ proc write_hi_fanout_def { filename fanout } {
   puts $stream "- clk1 ( PIN clk1 )"
   set i 0
   while {$i < $fanout} {
-    puts -nonewline $stream " ( r$i CP )"
+    puts -nonewline $stream " ( r$i CK )"
     if { [expr $i % 10] == 0 } {
       puts $stream ""
     }
@@ -74,21 +73,23 @@ proc write_hi_fanout_def { filename fanout } {
   close $stream
 }
 
-set def_filename [file join $result_dir "hi_fanout.def"]
-write_hi_fanout_def $def_filename 300
+set def_filename [file join $result_dir "buffer_ports4.def"]
+write_hi_fanout_def $def_filename 250
 
-read_liberty liberty1.lib
-read_lef liberty1.lef
+read_liberty Nangate_typ.lib
+read_lef Nangate.lef
 read_def $def_filename
 create_clock -period 1 clk1
 
-set buffer_cell [get_lib_cell liberty1/snl_bufx2]
+set buffer_cell [get_lib_cell BUF_X2]
 buffer_ports -inputs -buffer_cell $buffer_cell
 
-set_wire_rc -layer M2
-# note only output pins have liberty slew limits
-set_max_transition 0.2 [get_pins r*/RN]
-report_check_types -max_transition
+report_check_types -max_slew
 
 repair_max_slew -buffer_cell $buffer_cell
-report_check_types -max_transition
+
+report_check_types -max_slew
+
+resize
+
+report_check_types -max_slew

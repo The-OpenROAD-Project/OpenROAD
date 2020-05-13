@@ -1,16 +1,15 @@
 # -buffer_cell arg checks
-source "helpers.tcl"
-read_liberty liberty1.lib
-read_lef liberty1.lef
-read_def reg1.def
+read_liberty Nangate_typ.lib
+read_lef Nangate.lef
+read_def reg2.def
 
 catch { buffer_ports -buffer_cell xxx/yyy } result
 puts $result
-catch { buffer_ports -buffer_cell liberty1/yyy } result
+catch { buffer_ports -buffer_cell Nangate_typ/yyy } result
 puts $result
 catch { buffer_ports -buffer_cell [get_lib_cell xxx/yyy] } result
 puts $result
-catch { buffer_ports -buffer_cell liberty1/snl_nor02x1 } result
+catch { buffer_ports -buffer_cell Nangate_typ/NOR2_X1 } result
 puts $result
-buffer_ports -buffer_cell liberty1/snl_bufx2
-buffer_ports -buffer_cell [get_lib_cell liberty1/snl_bufx2]
+buffer_ports -buffer_cell Nangate_typ/BUF_X2
+buffer_ports -buffer_cell [get_lib_cell Nangate_typ/BUF_X2]
