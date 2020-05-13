@@ -1166,12 +1166,13 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
       }
       delete pin_iter;
       if (violation) {
-	repaired_net_count++;
 	Pin *drvr_pin = vertex->pin();
 	int buffer_count = ceil(limit_ratio);
 	int buffer_fanout = fanout(drvr_pin) / buffer_count;
-	if (buffer_fanout > 1)
+	if (buffer_fanout > 1) {
 	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
+	  repaired_net_count++;
+	}
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
@@ -1232,51 +1233,56 @@ Resizer::slewLimit(const Pin *pin,
 {
   exists = false;
   Cell *top_cell = network_->cell(network_->topInstance());
-  float top_limit;
-  bool top_limit_exists;
+  float limit1;
+  bool exists1;
   sdc_->slewLimit(top_cell, min_max,
-		  top_limit, top_limit_exists);
+		  limit1, exists1);
 
   // Default to top ("design") limit.
-  exists = top_limit_exists;
-  limit = top_limit;
+  exists = exists1;
+  limit = limit1;
   if (network_->isTopLevelPort(pin)) {
     Port *port = network_->port(pin);
-    float port_limit;
-    bool port_limit_exists;
-    sdc_->slewLimit(port, min_max, port_limit, port_limit_exists);
+    sdc_->slewLimit(port, min_max, limit1, exists1);
     // Use the tightest limit.
-    if (port_limit_exists
+    if (exists1
 	&& (!exists
-	    || min_max->compare(limit, port_limit))) {
-      limit = port_limit;
+	    || min_max->compare(limit, limit1))) {
+      limit = limit1;
       exists = true;
     }
   }
   else {
-    float pin_limit;
-    bool pin_limit_exists;
     sdc_->slewLimit(pin, min_max,
-		    pin_limit, pin_limit_exists);
+		    limit1, exists1);
     // Use the tightest limit.
-    if (pin_limit_exists
+    if (exists1
 	&& (!exists
-	    || min_max->compare(limit, pin_limit))) {
-      limit = pin_limit;
+	    || min_max->compare(limit, limit1))) {
+      limit = limit1;
       exists = true;
     }
 
-    float port_limit;
-    bool port_limit_exists;
     LibertyPort *port = network_->libertyPort(pin);
     if (port) {
-      port->slewLimit(min_max, port_limit, port_limit_exists);
+      port->slewLimit(min_max, limit1, exists1);
       // Use the tightest limit.
-      if (port_limit_exists
-	  && (!exists
-	      || min_max->compare(limit, port_limit))) {
-	limit = port_limit;
-	exists = true;
+      if (exists1) {
+	if (!exists
+	    || min_max->compare(limit, limit1)) {
+	  limit = limit1;
+	  exists = true;
+	}
+      }
+      else if (port->direction()->isAnyOutput()
+	       && min_max == MinMax::max()) {
+	port->libertyLibrary()->defaultMaxSlew(limit1, exists1);
+	if (exists1
+	    && (!exists
+		|| min_max->compare(limit, limit1))) {
+	  limit = limit1;
+	  exists = true;
+	}
       }
     }
   }

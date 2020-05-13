@@ -15,9 +15,9 @@ DIEAREA ( 0 0 ) ( 2000 2000 ) ;
 set middle {
 PINS 2 ;
 - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;
 - reset + NET reset + DIRECTION INPUT + USE SIGNAL 
-  + LAYER M1 ( 0 0 ) ( 100 100 ) + FIXED ( 1100 1100 ) N ;
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 1100 1100 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -85,9 +85,12 @@ set buffer_cell [get_lib_cell BUF_X2]
 buffer_ports -inputs -buffer_cell $buffer_cell
 
 set_wire_rc -layer metal2
-# note only output pins have liberty slew limits
-set_max_transition 0.2 [get_pins r*/RN]
 report_check_types -max_slew
 
 repair_max_slew -buffer_cell $buffer_cell
+
+report_check_types -max_slew
+
+resize
+
 report_check_types -max_slew
