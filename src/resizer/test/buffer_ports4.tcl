@@ -84,7 +84,6 @@ create_clock -period 1 clk1
 set buffer_cell [get_lib_cell BUF_X2]
 buffer_ports -inputs -buffer_cell $buffer_cell
 
-set_wire_rc -layer metal2
 report_check_types -max_slew
 
 repair_max_slew -buffer_cell $buffer_cell
