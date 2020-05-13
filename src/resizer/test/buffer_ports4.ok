@@ -7,26 +7,26 @@ Notice 0:
 Reading DEF file: ./results/buffer_ports4.def
 Notice 0: Design: hi_fanout
 Notice 0:     Created 2 pins.
-Notice 0:     Created 300 components and 2400 component-terminals.
-Notice 0:     Created 2 special nets and 600 connections.
-Notice 0:     Created 2 nets and 600 connections.
+Notice 0:     Created 250 components and 2000 component-terminals.
+Notice 0:     Created 2 special nets and 500 connections.
+Notice 0:     Created 2 nets and 500 connections.
 Notice 0: Finished DEF file: ./results/buffer_ports4.def
 Inserted 1 input buffers.
 max_transition
 
 Pin                                    Limit   Trans   Slack
 ------------------------------------------------------------
-input1/Z                                0.20    0.69   -0.49 (VIOLATED)
+input1/Z                                0.20    0.58   -0.38 (VIOLATED)
 
 Found 1 max slew violations.
-Inserted 4 buffers in 1 nets.
+Inserted 3 buffers in 1 nets.
 max_transition
 
 Pin                                    Limit   Trans   Slack
 ------------------------------------------------------------
-max_slew2/Z                             0.20    0.23   -0.03 (VIOLATED)
+max_slew2/Z                             0.20    0.26   -0.06 (VIOLATED)
 
-Resized 5 instances.
+Resized 4 instances.
 max_transition
 
 Pin                                    Limit   Trans   Slack

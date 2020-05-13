@@ -74,7 +74,7 @@ proc write_hi_fanout_def { filename fanout } {
 }
 
 set def_filename [file join $result_dir "buffer_ports4.def"]
-write_hi_fanout_def $def_filename 300
+write_hi_fanout_def $def_filename 250
 
 read_liberty Nangate_typ.lib
 read_lef Nangate.lef
