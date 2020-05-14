@@ -153,7 +153,10 @@ public:
   // Return true if illegal.
   bool checkPlacement(bool verbose);
   void fillerPlacement(const StringSeq *filler_master_names);
-  void reportLegalizationStats(int64_t hpwl_before) const;
+  void reportLegalizationStats(int64_t hpwl_before,
+			       int64_t avg_displacement,
+			       int64_t sum_displacement,
+			       int64_t max_displacement) const;
   void reportDesignStats() const;
   int64_t hpwl() const;
   void displacementStats(  // Return values.

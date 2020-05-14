@@ -185,8 +185,11 @@ Opendp::detailedPlacement(int max_displacment)
   reportDesignStats();
   int64_t hpwl_before = hpwl();
   detailedPlacement();
+  int64_t avg_displacement, sum_displacement, max_displacement;
+  displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
   updateDbInstLocations();
-  reportLegalizationStats(hpwl_before);
+  reportLegalizationStats(hpwl_before, avg_displacement,
+			  sum_displacement, max_displacement);
 }
 
 void
@@ -266,11 +269,11 @@ Opendp::reportDesignStats() const
 }
 
 void
-Opendp::reportLegalizationStats(int64_t hpwl_before) const
+Opendp::reportLegalizationStats(int64_t hpwl_before,
+				int64_t avg_displacement,
+				int64_t sum_displacement,
+				int64_t max_displacement) const
 {
-  int64_t avg_displacement, sum_displacement, max_displacement;
-  displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
-
   printf("Placement Analysis\n");
   printf("--------------------------------\n");
   printf("total displacement   %8.1f u\n", dbuToMicrons(sum_displacement));
