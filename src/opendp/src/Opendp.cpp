@@ -290,10 +290,10 @@ Opendp::reportLegalizationStats(int64_t hpwl_before,
 ////////////////////////////////////////////////////////////////
 
 void
-Opendp::displacementStats(  // Return values.
-    int64_t *avg_displacement,
-    int64_t *sum_displacement,
-    int64_t *max_displacement) const
+Opendp::displacementStats(// Return values.
+			  int64_t *avg_displacement,
+			  int64_t *sum_displacement,
+			  int64_t *max_displacement) const
 {
   *avg_displacement = 0;
   *sum_displacement = 0;
@@ -309,6 +309,7 @@ Opendp::displacementStats(  // Return values.
   *avg_displacement = *sum_displacement / cells_.size();
 }
 
+// Note that this does NOT use cell/core coordinates.
 int64_t
 Opendp::hpwl() const
 {
@@ -318,33 +319,21 @@ Opendp::hpwl() const
     box.mergeInit();
 
     for (dbITerm *iterm : net->getITerms()) {
-      dbInst *inst = iterm->getInst();
-      const Cell *cell = nullptr;
-      if (inst->getMaster()->isCoreAutoPlaceable()) {
-        auto iter = db_inst_map_.find(inst);
-        assert(iter != db_inst_map_.end());
-        cell = iter->second;
-      }
       int x, y;
-      initialLocation(inst, &x, &y);
-      // Use inst center if no mpins.
-      Rect iterm_rect(x, y, x, y);
-      dbMTerm *mterm = iterm->getMTerm();
-      auto mpins = mterm->getMPins();
-      if (!mpins.empty()) {
-        // Pick a pin, any pin.
-        dbMPin *pin = *mpins.begin();
-        auto geom = pin->getGeometry();
-        if (!geom.empty()) {
-          dbBox *pin_box = *geom.begin();
-          Rect pin_rect;
-          pin_box->getBox(pin_rect);
-          int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
-          int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
-          iterm_rect = Rect(x + center_x, y + center_y, x + center_x, y + center_y);
-        }
+      if (iterm->getAvgXY(&x, &y)) {
+	Rect iterm_rect(x, y, x, y);
+	box.merge(iterm_rect);
       }
-      box.merge(iterm_rect);
+      else {
+	// This clause is sort of worthless because getAvgXY prints
+	// a warning when it fails.
+	dbInst *inst = iterm->getInst();
+	dbBox *bbox = inst->getBBox();
+	int center_x = (bbox->xMin() + bbox->xMax()) / 2;
+	int center_y = (bbox->yMin() + bbox->yMax()) / 2;
+	Rect inst_center(center_x, center_y, center_x, center_y);
+	box.merge(inst_center);
+      }
     }
 
     for (dbBTerm *bterm : net->getBTerms()) {
@@ -356,13 +345,7 @@ Opendp::hpwl() const
           pin_box->getBox(pin_rect);
           int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
           int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
-          int core_center_x = center_x - core_.xMin();
-          int core_center_y = center_y - core_.yMin();
-          Rect pin_center(
-              core_center_x,
-              core_center_y,
-              core_center_x,
-              core_center_y);
+          Rect pin_center(center_x, center_y, center_x, center_y);
           box.merge(pin_center);
         }
       }

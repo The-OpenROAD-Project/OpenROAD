@@ -30,8 +30,8 @@ Placement Analysis
 total displacement       28.0 u
 average displacement     28.0 u
 max displacement         28.0 u
-original HPWL             1.8 u
-legalized HPWL           57.8 u
-delta HPWL               3159 %
+original HPWL             2.3 u
+legalized HPWL           58.5 u
+delta HPWL               2483 %
 
 No differences found.
