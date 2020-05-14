@@ -13,7 +13,8 @@ set_load 50 u1z
 set_load 50 u2z
 
 report_checks
-resize -dont_use {*/*8 */*16}
+set_dont_use {*/*8 */*16}
+resize
 report_checks
 
 set def_file [make_result_file resize3.def]
