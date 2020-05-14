@@ -163,7 +163,7 @@ set_max_utilization(double max_utilization)
 }
 
 void
-set_dont_use(LibertyCellSeq *dont_use)
+set_dont_use_cmd(LibertyCellSeq *dont_use)
 {
   ensureLinked();
   Resizer *resizer = getResizer();

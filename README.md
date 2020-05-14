@@ -243,6 +243,14 @@ the first liberty file or with the SDC set_wire_load command is used
 to make parasitics.
 
 ```
+set_dont_use lib_cells
+```
+
+The `set_dont_use` command removes library cells from consideration by the
+resizer. `lib_cells` is a list of cells returned by `get_lib_cells` or
+a list of cell names (wildcards allowed).
+
+```
 buffer_ports [-inputs]
 	     [-outputs]
 	     -buffer_cell buffer_cell
@@ -321,21 +329,24 @@ Use the `-verbose` flag to see the net names.
 A typical resizer command file is shown below.
 
 ```
-read_lef nlc18.lef
-read_liberty nlc18.lib
-read_def mea.def
-read_sdc mea.sdc
+# resizer/test/gcd_resize.tcl
+read_liberty Nangate_typ.lib
+read_lef Nangate.lef
+read_def gcd_placed.def
+read_sdc gcd.sdc
+
 set_wire_rc -layer metal2
-set buffer_cell [get_lib_cell nlc18_worst/snl_bufx4]
-set max_util 90
+
+set buffer_cell BUF_X4
+set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
 buffer_ports -buffer_cell $buffer_cell
-resize -resize
-repair_max_cap -buffer_cell $buffer_cell -max_utilization $max_util
-repair_max_slew -buffer_cell $buffer_cell -max_utilization $max_util
-# repair tie hi/low before max fanout so they don't get buffered
-repair_tie_fanout -max_fanout 100 Nangate/LOGIC1_X1/Z
-repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell -max_utilization $max_util
-repair_hold_violations -buffer_cell $buffer_cell -max_utilization $max_util
+repair_max_cap -buffer_cell $buffer_cell
+repair_max_slew -buffer_cell $buffer_cell
+repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell
+resize
+repair_tie_fanout -max_fanout 100 LOGIC0_X1/Z
+repair_tie_fanout -max_fanout 100 LOGIC1_X1/Z
+repair_hold_violations -buffer_cell $buffer_cell
 ```
 
 Note that OpenSTA commands can be used to report timing metrics before

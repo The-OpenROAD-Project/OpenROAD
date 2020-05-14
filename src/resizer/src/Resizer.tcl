@@ -16,9 +16,6 @@
 
 namespace eval sta {
 
-# Defined by SWIG interface Resizer.i.
-define_cmd_args "set_dont_use" {cell dont_use}
-
 define_cmd_args "set_wire_rc" {[-layer layer_name]\
 				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
@@ -71,8 +68,14 @@ proc set_wire_rc { args } {
   set_wire_rc_cmd $wire_res $wire_cap $corner
 }
 
+define_cmd_args "set_dont_use" {lib_cells}
+
+proc set_dont_use { args } {
+  check_argc_eq1 "set_dont_use" $args
+  set_dont_use_cmd [get_lib_cells_arg "-dont_use" [lindex $args 0] sta_warn]
+}
+
 define_cmd_args "resize" {[-libraries resize_libs]\
-			    [-dont_use lib_cells]\
 			    [-max_utilization util]}
 
 proc resize { args } {
@@ -85,11 +88,11 @@ proc resize { args } {
     set resize_libs [get_libs *]
   }
 
-  set dont_use {}
   if { [info exists keys(-dont_use)] } {
+    sta::sta_warn "resize -dont_use is deprecated. Use the set_dont_use commands instead."
     set dont_use [get_lib_cells_arg "-dont_use" $keys(-dont_use) sta_warn]
+    set_dont_use $dont_use
   }
-  set_dont_use $dont_use
 
   check_argc_eq0 "resize" $args
 
