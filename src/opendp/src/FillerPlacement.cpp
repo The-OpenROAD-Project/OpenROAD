@@ -51,7 +51,8 @@ using odb::dbLib;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
-void Opendp::fillerPlacement(const StringSeq* filler_master_names)
+void
+Opendp::fillerPlacement(const StringSeq* filler_master_names)
 {
   if (cells_.empty()) {
     importDb();
@@ -60,14 +61,15 @@ void Opendp::fillerPlacement(const StringSeq* filler_master_names)
   findFillerMasters(filler_master_names);
   gap_fillers_.clear();
   filler_count_ = 0;
-  Grid* grid    = makeCellGrid();
+  Grid* grid = makeCellGrid();
   for (int row = 0; row < row_count_; row++) {
     placeRowFillers(grid, row);
   }
   cout << "Placed " << to_string(filler_count_) << " filler instances." << endl;
 }
 
-void Opendp::findFillerMasters(const StringSeq* filler_master_names)
+void
+Opendp::findFillerMasters(const StringSeq* filler_master_names)
 {
   filler_masters_.clear();
   for (const string& master_name : *filler_master_names) {
@@ -86,7 +88,8 @@ void Opendp::findFillerMasters(const StringSeq* filler_master_names)
             });
 }
 
-Grid* Opendp::makeCellGrid()
+Grid*
+Opendp::makeCellGrid()
 {
   Grid* grid = makeGrid();
 
@@ -100,8 +103,8 @@ Grid* Opendp::makeCellGrid()
     // Don't barf if cell is outside the core.
     grid_x = max(0, grid_x);
     grid_y = max(0, grid_y);
-    x_ur   = min(x_ur, row_site_count_);
-    y_ur   = min(y_ur, row_count_);
+    x_ur = min(x_ur, row_site_count_);
+    y_ur = min(y_ur, row_count_);
 
     for (int j = grid_y; j < y_ur; j++) {
       for (int k = grid_x; k < x_ur; k++) {
@@ -112,10 +115,11 @@ Grid* Opendp::makeCellGrid()
   return grid;
 }
 
-void Opendp::placeRowFillers(const Grid* grid, int row)
+void
+Opendp::placeRowFillers(const Grid* grid, int row)
 {
   dbOrientType orient = rowOrient(row);
-  int          j      = 0;
+  int j = 0;
   while (j < row_site_count_) {
     if (grid[row][j].cell == nullptr) {
       int k = j;
@@ -125,14 +129,14 @@ void Opendp::placeRowFillers(const Grid* grid, int row)
       int gap = k - j;
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq& fillers = gapFillers(gap);
-      k                    = j;
+      k = j;
       for (dbMaster* master : fillers) {
         string inst_name = "FILLER_" + to_string(row) + "_" + to_string(k);
         // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
         // site_width_);
         dbInst* inst = dbInst::create(block_, master, inst_name.c_str());
-        int     x    = core_.xMin() + k * site_width_;
-        int     y    = core_.yMin() + row * row_height_;
+        int x = core_.xMin() + k * site_width_;
+        int y = core_.yMin() + row * row_height_;
         inst->setOrient(orient);
         inst->setLocation(x, y);
         inst->setPlacementStatus(dbPlacementStatus::PLACED);
@@ -140,27 +144,28 @@ void Opendp::placeRowFillers(const Grid* grid, int row)
         k += master->getWidth() / site_width_;
       }
       j += gap;
-    } else {
+    }
+    else {
       j++;
     }
   }
 }
 
 // return list of masters to fill gap (in site width units)
-dbMasterSeq& Opendp::gapFillers(int gap)
+dbMasterSeq&
+Opendp::gapFillers(int gap)
 {
   if (gap_fillers_.size() < gap + 1) {
     gap_fillers_.resize(gap + 1);
   }
   dbMasterSeq& fillers = gap_fillers_[gap];
   if (fillers.empty()) {
-    int       width           = 0;
+    int width = 0;
     dbMaster* smallest_filler = filler_masters_[filler_masters_.size() - 1];
-    bool      have_filler1    = smallest_filler->getWidth() == site_width_;
+    bool have_filler1 = smallest_filler->getWidth() == site_width_;
     for (dbMaster* filler_master : filler_masters_) {
       int filler_width = filler_master->getWidth() / site_width_;
-      while ((width + filler_width) <= gap
-             && (have_filler1 || (width + filler_width) != gap - 1)) {
+      while ((width + filler_width) <= gap && (have_filler1 || (width + filler_width) != gap - 1)) {
         fillers.push_back(filler_master);
         width += filler_width;
         if (width == gap) {

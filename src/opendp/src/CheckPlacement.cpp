@@ -53,7 +53,8 @@ using odb::dbPlacementStatus;
 
 using ord::warn;
 
-bool Opendp::checkPlacement(bool verbose)
+bool
+Opendp::checkPlacement(bool verbose)
 {
   importDb();
 
@@ -97,24 +98,24 @@ bool Opendp::checkPlacement(bool verbose)
 
   deleteGrid(grid);
 
-  return !power_line_failures.empty() || !placed_failures.empty()
-         || !in_core_failures.empty() || !overlap_failures.empty()
-         || !site_failures.empty();
+  return !power_line_failures.empty() || !placed_failures.empty() || !in_core_failures.empty() || !overlap_failures.empty() || !site_failures.empty();
 }
 
-void Opendp::reportFailures(const vector<Cell*>& failures,
-                            const char*          msg,
-                            bool                 verbose) const
+void
+Opendp::reportFailures(const vector<Cell*>& failures,
+                       const char* msg,
+                       bool verbose) const
 {
   reportFailures(failures, msg, verbose, [](Cell* cell) -> void {
     printf(" %s\n", cell->name());
   });
 }
 
-void Opendp::reportFailures(
-    const vector<Cell*>&                   failures,
-    const char*                            msg,
-    bool                                   verbose,
+void
+Opendp::reportFailures(
+    const vector<Cell*>& failures,
+    const char* msg,
+    bool verbose,
     const std::function<void(Cell* cell)>& report_failure) const
 {
   if (!failures.empty()) {
@@ -127,40 +128,40 @@ void Opendp::reportFailures(
   }
 }
 
-void Opendp::reportOverlapFailure(const Cell* cell, const Grid* grid) const
+void
+Opendp::reportOverlapFailure(const Cell* cell, const Grid* grid) const
 {
   const Cell* overlap = checkOverlap(*cell, grid);
   printf(" %s overlaps %s\n", cell->name(), overlap->name());
 }
 
-bool Opendp::isPlaced(const Cell* cell)
+bool
+Opendp::isPlaced(const Cell* cell)
 {
   return cell->db_inst_->isPlaced();
 }
 
-bool Opendp::checkPowerLine(const Cell& cell) const
+bool
+Opendp::checkPowerLine(const Cell& cell) const
 {
-  int          height    = gridHeight(&cell);
-  dbOrientType orient    = cell.db_inst_->getOrient();
-  int          grid_y    = gridY(&cell);
-  Power        top_power = topPower(&cell);
+  int height = gridHeight(&cell);
+  dbOrientType orient = cell.db_inst_->getOrient();
+  int grid_y = gridY(&cell);
+  Power top_power = topPower(&cell);
   return !(height == 1 || height == 3)
-         // Everything below here is probably wrong but never exercised.
-         && ((height % 2 == 0
-              // Even height
-              && top_power == rowTopPower(grid_y))
-             || (height % 2 == 1
-                 // Odd height
-                 && ((top_power == rowTopPower(grid_y)
-                      && orient != dbOrientType::R0)
-                     || (top_power != rowTopPower(grid_y)
-                         && orient != dbOrientType::MX))));
+      // Everything below here is probably wrong but never exercised.
+      && ((height % 2 == 0
+           // Even height
+           && top_power == rowTopPower(grid_y)) ||
+          (height % 2 == 1
+           // Odd height
+           && ((top_power == rowTopPower(grid_y) && orient != dbOrientType::R0) || (top_power != rowTopPower(grid_y) && orient != dbOrientType::MX))));
 }
 
-bool Opendp::checkInCore(const Cell& cell) const
+bool
+Opendp::checkInCore(const Cell& cell) const
 {
-  return gridX(&cell) < 0 || gridY(&cell) < 0
-         || gridEndX(&cell) > row_site_count_ || gridEndY(&cell) > row_count_;
+  return gridX(&cell) < 0 || gridY(&cell) < 0 || gridEndX(&cell) > row_site_count_ || gridEndY(&cell) > row_count_;
 }
 
 // COVER *, RING, PAD * - ignored
@@ -186,26 +187,28 @@ bool Opendp::checkInCore(const Cell& cell) const
 
 // Return the cell this cell overlaps.
 
-const Cell* Opendp::checkOverlap(const Cell& cell, const Grid* grid) const
+const Cell*
+Opendp::checkOverlap(const Cell& cell, const Grid* grid) const
 {
   int x_ll = gridPaddedX(&cell);
   int x_ur = gridPaddedEndX(&cell);
   int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
-  x_ll     = max(0, x_ll);
-  y_ll     = max(0, y_ll);
-  x_ur     = min(x_ur, row_site_count_);
-  y_ur     = min(y_ur, row_count_);
+  x_ll = max(0, x_ll);
+  y_ll = max(0, y_ll);
+  x_ur = min(x_ur, row_site_count_);
+  y_ur = min(y_ur, row_count_);
 
   for (int j = y_ll; j < y_ur; j++) {
     for (int k = x_ll; k < x_ur; k++) {
-      Pixel&      pixel      = grid[j][k];
+      Pixel& pixel = grid[j][k];
       const Cell* pixel_cell = pixel.cell;
       if (pixel_cell != nullptr) {
         if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
           return pixel_cell;
         }
-      } else {
+      }
+      else {
         pixel.cell = &cell;
       }
     }
@@ -213,7 +216,8 @@ const Cell* Opendp::checkOverlap(const Cell& cell, const Grid* grid) const
   return nullptr;
 }
 
-bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
+bool
+Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 {
   // BLOCK/BLOCK overlaps allowed
   if (isBlock(cell1) && isBlock(cell2)) {
@@ -221,14 +225,15 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   }
 
   bool padded = havePadding() && isOverlapPadded(cell1, cell2);
-  int  x_ll1, x_ur1, y_ll1, y_ur1;
-  int  x_ll2, x_ur2, y_ll2, y_ur2;
+  int x_ll1, x_ur1, y_ll1, y_ur1;
+  int x_ll2, x_ur2, y_ll2, y_ur2;
   if (padded) {
     initialPaddedLocation(cell1, &x_ll1, &y_ll1);
     initialPaddedLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + paddedWidth(cell1);
     x_ur2 = x_ll2 + paddedWidth(cell2);
-  } else {
+  }
+  else {
     initialLocation(cell1, &x_ll1, &y_ll1);
     initialLocation(cell2, &x_ll2, &y_ll2);
     x_ur1 = x_ll1 + cell1->width_;
@@ -239,13 +244,14 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   return x_ll1 < x_ur2 && x_ur1 > x_ll2 && y_ll1 < y_ur2 && y_ur1 > y_ll2;
 }
 
-bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
+bool
+Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
 {
-  return isCrWtBlClass(cell1) && isCrWtBlClass(cell2)
-         && !(isWtClass(cell1) && isWtClass(cell2));
+  return isCrWtBlClass(cell1) && isCrWtBlClass(cell2) && !(isWtClass(cell1) && isWtClass(cell2));
 }
 
-bool Opendp::isCrWtBlClass(const Cell* cell) const
+bool
+Opendp::isCrWtBlClass(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
@@ -286,7 +292,8 @@ bool Opendp::isCrWtBlClass(const Cell* cell) const
   return false;
 }
 
-bool Opendp::isWtClass(const Cell* cell) const
+bool
+Opendp::isWtClass(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   return type == dbMasterType::CORE_WELLTAP;

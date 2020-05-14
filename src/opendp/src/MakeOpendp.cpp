@@ -36,9 +36,9 @@
 
 #include <tcl.h>
 
-#include "sta/StaMain.hh"
-#include "openroad/OpenRoad.hh"
 #include "opendp/Opendp.h"
+#include "openroad/OpenRoad.hh"
+#include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -46,22 +46,26 @@ extern const char* opendp_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Opendp_Init(Tcl_Interp* interp);
+extern int
+Opendp_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-opendp::Opendp* makeOpendp()
+opendp::Opendp*
+makeOpendp()
 {
   return new opendp::Opendp;
 }
 
-void deleteOpendp(opendp::Opendp* opendp)
+void
+deleteOpendp(opendp::Opendp* opendp)
 {
   delete opendp;
 }
 
-void initOpendp(OpenRoad* openroad)
+void
+initOpendp(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
