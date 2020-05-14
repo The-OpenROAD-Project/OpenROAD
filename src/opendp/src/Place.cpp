@@ -58,7 +58,7 @@ using ord::closestPtInRect;
 using ord::warn;
 
 static bool
-cellAreaLess(const Cell* cell1, const Cell* cell2);
+cellAreaLess(const Cell *cell1, const Cell *cell2);
 
 void
 Opendp::detailedPlacement()
@@ -80,7 +80,7 @@ Opendp::placeGroups()
 
   // naive placement method ( multi -> single )
   placeGroups2();
-  for (Group& group : groups_) {
+  for (Group &group : groups_) {
     // magic number alert
     for (int pass = 0; pass < 3; pass++) {
       int refine_count = groupRefine(&group);
@@ -96,12 +96,12 @@ Opendp::placeGroups()
 void
 Opendp::prePlace()
 {
-  for (Cell& cell : cells_) {
+  for (Cell &cell : cells_) {
     bool in_group = false;
-    Rect* target;
+    Rect *target;
     if (!cell.inGroup() && !cell.is_placed_) {
-      for (Group& group : groups_) {
-        for (Rect& rect : group.regions) {
+      for (Group &group : groups_) {
+        for (Rect &rect : group.regions) {
           if (check_overlap(&cell, &rect)) {
             in_group = true;
             target = &rect;
@@ -121,13 +121,13 @@ Opendp::prePlace()
 void
 Opendp::prePlaceGroups()
 {
-  for (Group& group : groups_) {
-    for (Cell* cell : group.cells_) {
+  for (Group &group : groups_) {
+    for (Cell *cell : group.cells_) {
       if (!(isFixed(cell) || cell->is_placed_)) {
         int dist = numeric_limits<int>::max();
         bool in_group = false;
-        Rect* target = nullptr;
-        for (Rect& rect : group.regions) {
+        Rect *target = nullptr;
+        for (Rect &rect : group.regions) {
           if (check_inside(cell, &rect)) {
             in_group = true;
           }
@@ -151,10 +151,10 @@ Opendp::prePlaceGroups()
 void
 Opendp::place()
 {
-  vector<Cell*> sorted_cells;
+  vector<Cell *> sorted_cells;
   sorted_cells.reserve(cells_.size());
 
-  for (Cell& cell : cells_) {
+  for (Cell &cell : cells_) {
     if (!(isFixed(&cell) || cell.inGroup() || cell.is_placed_)) {
       sorted_cells.push_back(&cell);
     }
@@ -163,7 +163,7 @@ Opendp::place()
 
   // Place multi-row instances first.
   if (multi_row_inst_count_ > 0) {
-    for (Cell* cell : sorted_cells) {
+    for (Cell *cell : sorted_cells) {
       if (isMultiRow(cell) && cellFitsInCore(cell)) {
         if (!map_move(cell)) {
           shift_move(cell);
@@ -171,7 +171,7 @@ Opendp::place()
       }
     }
   }
-  for (Cell* cell : sorted_cells) {
+  for (Cell *cell : sorted_cells) {
     if (cellFitsInCore(cell)) {
       if (!isMultiRow(cell)) {
         if (!map_move(cell)) {
@@ -188,13 +188,13 @@ Opendp::place()
 }
 
 bool
-Opendp::cellFitsInCore(Cell* cell)
+Opendp::cellFitsInCore(Cell *cell)
 {
   return gridPaddedWidth(cell) <= row_site_count_ && gridHeight(cell) <= row_count_;
 }
 
 static bool
-cellAreaLess(const Cell* cell1, const Cell* cell2)
+cellAreaLess(const Cell *cell1, const Cell *cell2)
 {
   int area1 = cell1->area();
   int area2 = cell2->area();
@@ -210,19 +210,19 @@ cellAreaLess(const Cell* cell1, const Cell* cell2)
 void
 Opendp::placeGroups2()
 {
-  for (Group& group : groups_) {
+  for (Group &group : groups_) {
     bool single_pass = true;
     bool multi_pass = true;
-    vector<Cell*> group_cells;
+    vector<Cell *> group_cells;
     group_cells.reserve(cells_.size());
-    for (Cell* cell : group.cells_) {
+    for (Cell *cell : group.cells_) {
       if (!isFixed(cell) && !cell->is_placed_) {
         group_cells.push_back(cell);
       }
     }
     sort(group_cells.begin(), group_cells.end(), cellAreaLess);
     // Place multi-row cells on each group region.
-    for (Cell* cell : group_cells) {
+    for (Cell *cell : group_cells) {
       if (!isFixed(cell) && !cell->is_placed_) {
         assert(cell->inGroup());
         if (isMultiRow(cell)) {
@@ -235,7 +235,7 @@ Opendp::placeGroups2()
     }
     if (multi_pass) {
       // Place single-row cells in each group region.
-      for (Cell* cell : group_cells) {
+      for (Cell *cell : group_cells) {
         if (!isFixed(cell) && !cell->is_placed_) {
           assert(cell->inGroup());
           if (!isMultiRow(cell)) {
@@ -250,7 +250,7 @@ Opendp::placeGroups2()
 
     if (!single_pass || !multi_pass) {
       // Erase group cells
-      for (Cell* cell : group.cells_) {
+      for (Cell *cell : group.cells_) {
         erase_pixel(cell);
       }
 
@@ -268,16 +268,16 @@ Opendp::placeGroups2()
 
 // place toward group edges
 void
-Opendp::brickPlace1(const Group* group)
+Opendp::brickPlace1(const Group *group)
 {
-  const Rect* boundary = &group->boundary;
-  vector<Cell*> sort_by_dist(group->cells_);
+  const Rect *boundary = &group->boundary;
+  vector<Cell *> sort_by_dist(group->cells_);
 
-  sort(sort_by_dist.begin(), sort_by_dist.end(), [&](Cell* cell1, Cell* cell2) {
+  sort(sort_by_dist.begin(), sort_by_dist.end(), [&](Cell *cell1, Cell *cell2) {
     return rectDist(cell1, boundary) < rectDist(cell2, boundary);
   });
 
-  for (Cell* cell : sort_by_dist) {
+  for (Cell *cell : sort_by_dist) {
     int x, y;
     rectDist(cell, boundary, &x, &y);
 
@@ -290,15 +290,15 @@ Opendp::brickPlace1(const Group* group)
 
 // place toward region edges
 void
-Opendp::brickPlace2(const Group* group)
+Opendp::brickPlace2(const Group *group)
 {
-  vector<Cell*> sort_by_dist(group->cells_);
+  vector<Cell *> sort_by_dist(group->cells_);
 
-  sort(sort_by_dist.begin(), sort_by_dist.end(), [&](Cell* cell1, Cell* cell2) {
+  sort(sort_by_dist.begin(), sort_by_dist.end(), [&](Cell *cell1, Cell *cell2) {
     return rectDist(cell1, cell1->region_) < rectDist(cell2, cell2->region_);
   });
 
-  for (Cell* cell : sort_by_dist) {
+  for (Cell *cell : sort_by_dist) {
     if (!cell->hold_) {
       int x, y;
       rectDist(cell, cell->region_, &x, &y);
@@ -311,17 +311,17 @@ Opendp::brickPlace2(const Group* group)
 }
 
 int
-Opendp::groupRefine(const Group* group)
+Opendp::groupRefine(const Group *group)
 {
-  vector<Cell*> sort_by_disp(group->cells_);
+  vector<Cell *> sort_by_disp(group->cells_);
 
-  sort(sort_by_disp.begin(), sort_by_disp.end(), [&](Cell* cell1, Cell* cell2) {
+  sort(sort_by_disp.begin(), sort_by_disp.end(), [&](Cell *cell1, Cell *cell2) {
     return (disp(cell1) > disp(cell2));
   });
 
   int count = 0;
   for (int i = 0; i < sort_by_disp.size() * group_refine_percent_; i++) {
-    Cell* cell = sort_by_disp[i];
+    Cell *cell = sort_by_disp[i];
     if (!cell->hold_) {
       if (refine_move(cell)) {
         count++;
@@ -333,15 +333,15 @@ Opendp::groupRefine(const Group* group)
 
 // This is NOT annealing. It is random swapping. -cherry
 int
-Opendp::anneal(Group* group)
+Opendp::anneal(Group *group)
 {
   srand(rand_seed_);
   int count = 0;
 
   // magic number alert
   for (int i = 0; i < 100 * group->cells_.size(); i++) {
-    Cell* cell1 = group->cells_[rand() % group->cells_.size()];
-    Cell* cell2 = group->cells_[rand() % group->cells_.size()];
+    Cell *cell1 = group->cells_[rand() % group->cells_.size()];
+    Cell *cell2 = group->cells_[rand() % group->cells_.size()];
     if (swap_cell(cell1, cell2)) {
       count++;
     }
@@ -357,8 +357,8 @@ Opendp::anneal()
   int count = 0;
   // magic number alert
   for (int i = 0; i < 100 * cells_.size(); i++) {
-    Cell* cell1 = &cells_[rand() % cells_.size()];
-    Cell* cell2 = &cells_[rand() % cells_.size()];
+    Cell *cell1 = &cells_[rand() % cells_.size()];
+    Cell *cell2 = &cells_[rand() % cells_.size()];
     if (swap_cell(cell1, cell2)) {
       count++;
     }
@@ -369,21 +369,21 @@ Opendp::anneal()
 int
 Opendp::refine()
 {
-  vector<Cell*> sorted;
+  vector<Cell *> sorted;
   sorted.reserve(cells_.size());
 
-  for (Cell& cell : cells_) {
+  for (Cell &cell : cells_) {
     if (!(isFixed(&cell) || cell.hold_ || cell.inGroup())) {
       sorted.push_back(&cell);
     }
   }
-  sort(sorted.begin(), sorted.end(), [&](Cell* cell1, Cell* cell2) {
+  sort(sorted.begin(), sorted.end(), [&](Cell *cell1, Cell *cell2) {
     return disp(cell1) > disp(cell2);
   });
 
   int count = 0;
   for (int i = 0; i < sorted.size() * refine_percent_; i++) {
-    Cell* cell = sorted[i];
+    Cell *cell = sorted[i];
     if (!cell->hold_) {
       if (refine_move(cell)) {
         count++;
@@ -396,7 +396,7 @@ Opendp::refine()
 ////////////////////////////////////////////////////////////////
 
 bool
-Opendp::map_move(Cell* cell)
+Opendp::map_move(Cell *cell)
 {
   int init_x, init_y;
   initialPaddedLocation(cell, &init_x, &init_y);
@@ -404,11 +404,11 @@ Opendp::map_move(Cell* cell)
 }
 
 bool
-Opendp::map_move(Cell* cell, int x, int y)
+Opendp::map_move(Cell *cell, int x, int y)
 {
-  Pixel* pixel = diamondSearch(cell, x, y);
+  Pixel *pixel = diamondSearch(cell, x, y);
   if (pixel != nullptr) {
-    Pixel* near_pixel = diamondSearch(
+    Pixel *near_pixel = diamondSearch(
         cell,
         pixel->grid_x_ * site_width_,
         pixel->grid_y_ * row_height_);
@@ -424,7 +424,7 @@ Opendp::map_move(Cell* cell, int x, int y)
 }
 
 bool
-Opendp::shift_move(Cell* cell)
+Opendp::shift_move(Cell *cell)
 {
   int x, y;
   initialLocation(cell, &x, &y);
@@ -438,10 +438,10 @@ Opendp::shift_move(Cell* cell)
       min(static_cast<int>(core_.dx()),
           x + paddedWidth(cell) * boundary_margin),
       min(static_cast<int>(core_.dy()), y + cell->height_ * boundary_margin));
-  const set<Cell*> overlap_region_cells = gridCellsInBoundary(&rect);
+  const set<Cell *> overlap_region_cells = gridCellsInBoundary(&rect);
 
   // erase region cells
-  for (Cell* around_cell : overlap_region_cells) {
+  for (Cell *around_cell : overlap_region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
       erase_pixel(around_cell);
     }
@@ -454,7 +454,7 @@ Opendp::shift_move(Cell* cell)
   }
 
   // re-place erased cells
-  for (Cell* around_cell : overlap_region_cells) {
+  for (Cell *around_cell : overlap_region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
       int x, y;
       initialPaddedLocation(around_cell, &x, &y);
@@ -468,7 +468,7 @@ Opendp::shift_move(Cell* cell)
 }
 
 bool
-Opendp::swap_cell(Cell* cell1, Cell* cell2)
+Opendp::swap_cell(Cell *cell1, Cell *cell2)
 {
   if (cell1 != cell2 && !cell1->hold_ && !cell2->hold_ && cell1->width_ == cell2->width_ && cell1->height_ == cell2->height_ && !isFixed(cell1) && !isFixed(cell2)) {
     int dist_change = distChange(cell1, cell2->x_, cell2->y_) + distChange(cell2, cell1->x_, cell1->y_);
@@ -490,11 +490,11 @@ Opendp::swap_cell(Cell* cell1, Cell* cell2)
 }
 
 bool
-Opendp::refine_move(Cell* cell)
+Opendp::refine_move(Cell *cell)
 {
   int init_x, init_y;
   initialLocation(cell, &init_x, &init_y);
-  Pixel* pixel = diamondSearch(cell, init_x, init_y);
+  Pixel *pixel = diamondSearch(cell, init_x, init_y);
   if (pixel != nullptr) {
     double dist = abs(init_x - pixel->grid_x_ * site_width_) + abs(init_y - pixel->grid_y_ * row_height_);
     if (max_displacement_constraint_ != 0 && (dist / row_height_ > max_displacement_constraint_)) {
@@ -517,7 +517,7 @@ Opendp::refine_move(Cell* cell)
 }
 
 int
-Opendp::distChange(const Cell* cell, int x, int y) const
+Opendp::distChange(const Cell *cell, int x, int y) const
 {
   int init_x, init_y;
   initialLocation(cell, &init_x, &init_y);
@@ -528,14 +528,14 @@ Opendp::distChange(const Cell* cell, int x, int y) const
 
 ////////////////////////////////////////////////////////////////
 
-Pixel*
-Opendp::diamondSearch(const Cell* cell, int x, int y) const
+Pixel *
+Opendp::diamondSearch(const Cell *cell, int x, int y) const
 {
   int grid_x = gridX(x);
   int grid_y = gridY(y);
 
   // Restrict check to group region.
-  Group* group = cell->group_;
+  Group *group = cell->group_;
   if (group != nullptr) {
     Rect grid_boundary(divCeil(group->boundary.xMin(), site_width_),
                        divCeil(group->boundary.yMin(), row_height_),
@@ -585,7 +585,7 @@ Opendp::diamondSearch(const Cell* cell, int x, int y) const
       // magic number alert
       * ((design_util_ > 0.6 || fixed_inst_count_ > 0) ? 2 : .5);
   for (int i = 1; i < diamond_height; i++) {
-    Pixel* pixel = nullptr;
+    Pixel *pixel = nullptr;
     int best_dist = 0;
     // right side
     for (int j = 1; j < i * 2; j++) {
@@ -601,7 +601,7 @@ Opendp::diamondSearch(const Cell* cell, int x, int y) const
               min(y_end, max(y_start, grid_y + y_offset)),
               &avail_x,
               &avail_y)) {
-        Pixel* avail = &grid_[avail_y][avail_x];
+        Pixel *avail = &grid_[avail_y][avail_x];
         int avail_dist = abs(x - avail->grid_x_ * site_width_) + abs(y - avail->grid_y_ * row_height_);
         if (pixel == nullptr || avail_dist < best_dist) {
           pixel = avail;
@@ -624,7 +624,7 @@ Opendp::diamondSearch(const Cell* cell, int x, int y) const
               min(y_end, max(y_start, grid_y + y_offset)),
               &avail_x,
               &avail_y)) {
-        Pixel* avail = &grid_[avail_y][avail_x];
+        Pixel *avail = &grid_[avail_y][avail_x];
         int avail_dist = abs(x - avail->grid_x_ * site_width_) + abs(y - avail->grid_y_ * row_height_);
         if (pixel == nullptr || avail_dist < best_dist) {
           pixel = avail;
@@ -641,12 +641,12 @@ Opendp::diamondSearch(const Cell* cell, int x, int y) const
 
 bool
 Opendp::binSearch(int grid_x,
-                  const Cell* cell,
+                  const Cell *cell,
                   int x,
                   int y,
                   // Return values
-                  int* avail_x,
-                  int* avail_y) const
+                  int *avail_x,
+                  int *avail_y) const
 {
   int x_end = x + gridPaddedWidth(cell);
   int height = gridHeight(cell);
@@ -677,7 +677,7 @@ Opendp::binSearch(int grid_x,
       else {
         for (int k = y; k < y_end; k++) {
           for (int l = x + i; l < x_end + i; l++) {
-            Pixel& pixel = grid_[k][l];
+            Pixel &pixel = grid_[k][l];
             if (pixel.cell != nullptr || !pixel.is_valid
                 // check group regions
                 || (cell->inGroup() && pixel.group_ != cell->group_) || (!cell->inGroup() && pixel.group_ != nullptr)) {
@@ -707,7 +707,7 @@ Opendp::binSearch(int grid_x,
       else {
         for (int k = y; k < y_end; k++) {
           for (int l = x + i; l < x_end + i; l++) {
-            Pixel& pixel = grid_[k][l];
+            Pixel &pixel = grid_[k][l];
             if (pixel.cell != nullptr || !pixel.is_valid) {
               available = false;
               break;

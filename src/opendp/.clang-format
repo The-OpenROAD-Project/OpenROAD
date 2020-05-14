@@ -24,4 +24,6 @@ ColumnLimit: 0
 # fails
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 2
+DerivePointerAlignment: false
 IncludeBlocks: Preserve
+PointerAlignment: Right

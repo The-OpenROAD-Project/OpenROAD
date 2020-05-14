@@ -100,20 +100,20 @@ void
 Opendp::makeMacros()
 {
   macro_top_power_ = undefined;
-  vector<dbMaster*> masters;
+  vector<dbMaster *> masters;
   block_->getMasters(masters);
   for (auto master : masters) {
-    struct Macro& macro = db_master_map_[master];
+    struct Macro &macro = db_master_map_[master];
     defineTopPower(&macro, master);
   }
 }
 
 void
-Opendp::defineTopPower(Macro* macro, dbMaster* master)
+Opendp::defineTopPower(Macro *macro, dbMaster *master)
 {
-  dbMTerm* power = nullptr;
-  dbMTerm* gnd = nullptr;
-  for (dbMTerm* mterm : master->getMTerms()) {
+  dbMTerm *power = nullptr;
+  dbMTerm *gnd = nullptr;
+  for (dbMTerm *mterm : master->getMTerms()) {
     dbSigType sig_type = mterm->getSigType();
     if (sig_type == dbSigType::POWER) {
       power = mterm;
@@ -138,11 +138,11 @@ Opendp::defineTopPower(Macro* macro, dbMaster* master)
 }
 
 int
-Opendp::find_ymax(dbMTerm* mterm) const
+Opendp::find_ymax(dbMTerm *mterm) const
 {
   int ymax = 0;
-  for (dbMPin* mpin : mterm->getMPins()) {
-    for (dbBox* box : mpin->getGeometry()) {
+  for (dbMPin *mpin : mterm->getMPins()) {
+    for (dbBox *box : mpin->getGeometry()) {
       ymax = max(ymax, box->yMax());
     }
   }
@@ -155,9 +155,9 @@ Opendp::examineRows()
   auto rows = block_->getRows();
   if (!rows.empty()) {
     int bottom_row_y = numeric_limits<int>::max();
-    dbRow* bottom_row = nullptr;
-    for (dbRow* db_row : rows) {
-      dbSite* site = db_row->getSite();
+    dbRow *bottom_row = nullptr;
+    for (dbRow *db_row : rows) {
+      dbSite *site = db_row->getSite();
       row_height_ = site->getHeight();
       site_width_ = site->getWidth();
 
@@ -186,10 +186,10 @@ Opendp::makeCells()
   auto db_insts = block_->getInsts();
   cells_.reserve(db_insts.size());
   for (auto db_inst : db_insts) {
-    dbMaster* master = db_inst->getMaster();
+    dbMaster *master = db_inst->getMaster();
     if (master->isCoreAutoPlaceable()) {
       cells_.push_back(Cell());
-      Cell& cell = cells_.back();
+      Cell &cell = cells_.back();
       cell.db_inst_ = db_inst;
       db_inst_map_[db_inst] = &cell;
 
@@ -209,7 +209,7 @@ Opendp::makeCells()
       cell.orient_ = db_inst->getOrient();
       cell.is_placed_ = isFixed(&cell);
 
-      Macro& macro = db_master_map_[master];
+      Macro &macro = db_master_map_[master];
       if (macro.is_multi_row_) {
         multi_row_inst_count_++;
       }
@@ -248,15 +248,15 @@ Opendp::makeGroups()
   auto db_regions = block_->getRegions();
   groups_.reserve(block_->getRegions().size());
   for (auto db_region : db_regions) {
-    dbRegion* parent = db_region->getParent();
+    dbRegion *parent = db_region->getParent();
     if (parent != nullptr) {
       groups_.emplace_back(Group());
-      struct Group& group = groups_.back();
+      struct Group &group = groups_.back();
       string group_name = db_region->getName();
       group.name = group_name;
       group.boundary.mergeInit();
       auto boundaries = db_region->getParent()->getBoundaries();
-      for (dbBox* boundary : boundaries) {
+      for (dbBox *boundary : boundaries) {
         Rect box;
         boundary->getBox(box);
         box = box.intersect(core_);
@@ -268,7 +268,7 @@ Opendp::makeGroups()
       }
 
       for (auto db_inst : db_region->getRegionInsts()) {
-        Cell* cell = db_inst_map_[db_inst];
+        Cell *cell = db_inst_map_[db_inst];
         group.cells_.push_back(cell);
         cell->group_ = &group;
       }
@@ -282,12 +282,12 @@ Opendp::findRowPower()
   initial_power_ = Power::undefined;
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
-  for (dbNet* net : block_->getNets()) {
+  for (dbNet *net : block_->getNets()) {
     if (net->isSpecial()) {
-      const char* net_name = net->getConstName();
+      const char *net_name = net->getConstName();
       if (strcasecmp(net_name, power_net_name_) == 0) {
-        for (dbSWire* swire : net->getSWires()) {
-          for (dbSBox* sbox : swire->getWires()) {
+        for (dbSWire *swire : net->getSWires()) {
+          for (dbSBox *sbox : swire->getWires()) {
             min_vdd_y = min(min_vdd_y, sbox->yMin());
             found_vdd = true;
           }

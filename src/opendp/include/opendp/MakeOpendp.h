@@ -42,11 +42,11 @@ namespace ord {
 
 class OpenRoad;
 
-opendp::Opendp*
+opendp::Opendp *
 makeOpendp();
 void
-initOpendp(OpenRoad* openroad);
+initOpendp(OpenRoad *openroad);
 void
-deleteOpendp(opendp::Opendp* opendp);
+deleteOpendp(opendp::Opendp *opendp);
 
 }  // namespace ord

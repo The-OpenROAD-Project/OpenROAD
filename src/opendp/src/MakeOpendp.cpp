@@ -42,32 +42,32 @@
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* opendp_tcl_inits[];
+extern const char *opendp_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
 extern int
-Opendp_Init(Tcl_Interp* interp);
+Opendp_Init(Tcl_Interp *interp);
 }
 
 namespace ord {
 
-opendp::Opendp*
+opendp::Opendp *
 makeOpendp()
 {
   return new opendp::Opendp;
 }
 
 void
-deleteOpendp(opendp::Opendp* opendp)
+deleteOpendp(opendp::Opendp *opendp)
 {
   delete opendp;
 }
 
 void
-initOpendp(OpenRoad* openroad)
+initOpendp(OpenRoad *openroad)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  Tcl_Interp *tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Opendp_Init(tcl_interp);
   // Eval encoded sta TCL sources.
