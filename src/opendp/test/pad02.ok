@@ -31,8 +31,8 @@ Placement Analysis
 total displacement        0.0 u
 average displacement      0.0 u
 max displacement          0.0 u
-original HPWL             1.8 u
-legalized HPWL            1.8 u
+original HPWL             2.3 u
+legalized HPWL            2.3 u
 delta HPWL                  0 %
 
 Warning: Placed in core check failed (1).
