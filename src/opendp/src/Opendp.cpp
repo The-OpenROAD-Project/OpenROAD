@@ -597,7 +597,7 @@ int Opendp::gridEndX(const Cell* cell) const
 
 int Opendp::gridEndY(const Cell* cell) const
 {
-  return divCeil(cell->y_ + row_height_, row_height_);
+  return divCeil(cell->y_ + cell->height_, row_height_);
 }
 
 int Opendp::coreGridMaxX() const

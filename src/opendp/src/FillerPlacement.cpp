@@ -169,10 +169,8 @@ dbMasterSeq& Opendp::gapFillers(int gap)
       }
     }
     error("could not fill gap of size %d", gap);
-    return fillers;
-  } else {
-    return fillers;
   }
+  return fillers;
 }
 
 }  // namespace opendp
