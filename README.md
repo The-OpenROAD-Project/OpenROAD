@@ -243,6 +243,14 @@ the first liberty file or with the SDC set_wire_load command is used
 to make parasitics.
 
 ```
+set_dont_use lib_cells
+```
+
+The `set_dont_use` command removes library cells from consideration by the
+resizer. `lib_cells` is a list of cells returned by `get_lib_cells` or
+a list of cell names (wildcards allowed).
+
+```
 buffer_ports [-inputs]
 	     [-outputs]
 	     -buffer_cell buffer_cell
