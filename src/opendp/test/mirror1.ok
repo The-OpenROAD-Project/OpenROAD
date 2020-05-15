@@ -1,0 +1,39 @@
+Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: 
+Reading DEF file: gcd_replace.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 549 components and 2166 component-terminals.
+Notice 0:     Created 364 nets and 1068 connections.
+Notice 0: Finished DEF file: gcd_replace.def
+Warning: could not find power special net
+Design Stats
+--------------------------------
+total instances           549
+multi row instances         0
+fixed instances           255
+nets                      364
+design area           14266.9 u^2
+fixed area               67.8 u^2
+movable area            569.8 u^2
+utilization                 4 %
+utilization padded          5 %
+rows                       85
+row height                1.4 u
+
+Placement Analysis
+--------------------------------
+total displacement     1348.2 u
+average displacement      2.5 u
+max displacement         16.3 u
+original HPWL          6950.7 u
+legalized HPWL         8770.7 u
+delta HPWL                 26 %
+
+HPWL before            8770.7 u
+HPWL after             8682.9 u
+HPWL delta                 -1 %
