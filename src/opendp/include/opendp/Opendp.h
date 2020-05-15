@@ -46,6 +46,7 @@
 #include <utility> // pair
 
 #include "opendb/db.h"
+#include "opendb/dbTypes.h"
 
 // Remove leading underscore to enable debug printing.
 #define _ODP_DEBUG
@@ -348,6 +349,7 @@ private:
   void mirrorCandidates(vector<dbInst*> &mirror_candidates);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
+  bool isSupply(dbNet *net) const;
 
   dbDatabase *db_;
   dbBlock *block_;

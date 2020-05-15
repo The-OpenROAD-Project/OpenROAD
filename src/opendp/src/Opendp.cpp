@@ -67,6 +67,7 @@ using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbPlacementStatus;
 using odb::Rect;
+using odb::dbSigType;
 
 Cell::Cell() :
   db_inst_(nullptr),
@@ -302,7 +303,9 @@ Opendp::reportLegalizationStats(int64_t hpwl_before,
   printf("original HPWL        %8.1f u\n", dbuToMicrons(hpwl_before));
   double hpwl_legal = hpwl();
   printf("legalized HPWL       %8.1f u\n", dbuToMicrons(hpwl_legal));
-  double hpwl_delta = (hpwl_legal - hpwl_before) / hpwl_before * 100;
+  double hpwl_delta = (hpwl_before == 0.0)
+    ? 0.0
+    : (hpwl_legal - hpwl_before) / hpwl_before * 100;
   printf("delta HPWL           %8.0f %%\n", hpwl_delta);
   printf("\n");
 }
@@ -342,13 +345,21 @@ Opendp::hpwl() const
 int64_t
 Opendp::hpwl(dbNet *net) const
 {
-  if (net->isSpecial())
+  if (isSupply(net))
     return 0;
   else {
     Rect bbox;
     getBox(net, bbox);
     return bbox.dx() + bbox.dy();
   }
+}
+
+bool
+Opendp::isSupply(dbNet *net) const
+{
+  dbSigType sig_type = net->getSigType();
+  return sig_type == dbSigType::POWER
+    || sig_type == dbSigType::GROUND;
 }
 
 void

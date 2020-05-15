@@ -90,7 +90,7 @@ Opendp::findNetBoxes(NetBoxes &net_boxes)
   auto nets = block_->getNets();
   net_boxes.reserve(nets.size());
   for (dbNet *net : nets) {
-    if (!net->isSpecial()) {
+    if (!isSupply(net)) {
       NetBox net_box(net);
       getBox(net, net_box.box);
       net_boxes.push_back(net_box);
