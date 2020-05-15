@@ -63,6 +63,7 @@ add_library(opendp
   src/Place.cpp
   src/Utility.cpp
   src/FillerPlacement.cpp
+  src/OptMirror.cpp
 
   ${OPENDP_WRAP}
   ${OPENDP_TCL_INIT}

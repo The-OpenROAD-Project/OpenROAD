@@ -333,47 +333,51 @@ Opendp::displacementStats(// Return values.
 int64_t
 Opendp::hpwl() const
 {
-  int64_t hpwl = 0;
-  for (dbNet *net : block_->getNets()) {
-    Rect box;
-    box.mergeInit();
+  int64_t hpwl_sum = 0;
+  for (dbNet *net : block_->getNets())
+    hpwl_sum += hpwl(net);
+  return hpwl_sum;
+}
 
-    for (dbITerm *iterm : net->getITerms()) {
-      int x, y;
-      if (iterm->getAvgXY(&x, &y)) {
-	Rect iterm_rect(x, y, x, y);
-	box.merge(iterm_rect);
-      }
-      else {
-	// This clause is sort of worthless because getAvgXY prints
-	// a warning when it fails.
-	dbInst *inst = iterm->getInst();
-	dbBox *bbox = inst->getBBox();
-	int center_x = (bbox->xMin() + bbox->xMax()) / 2;
-	int center_y = (bbox->yMin() + bbox->yMax()) / 2;
-	Rect inst_center(center_x, center_y, center_x, center_y);
-	box.merge(inst_center);
-      }
-    }
+int64_t
+Opendp::hpwl(dbNet *net) const
+{
+  Rect box;
+  box.mergeInit();
 
-    for (dbBTerm *bterm : net->getBTerms()) {
-      for (dbBPin *bpin : bterm->getBPins()) {
-        dbPlacementStatus status = bpin->getPlacementStatus();
-        if (status.isPlaced()) {
-          dbBox *pin_box = bpin->getBox();
-          Rect pin_rect;
-          pin_box->getBox(pin_rect);
-          int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
-          int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
-          Rect pin_center(center_x, center_y, center_x, center_y);
-          box.merge(pin_center);
-        }
-      }
+  for (dbITerm *iterm : net->getITerms()) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      Rect iterm_rect(x, y, x, y);
+      box.merge(iterm_rect);
     }
-    int perimeter = box.dx() + box.dy();
-    hpwl += perimeter;
+    else {
+      // This clause is sort of worthless because getAvgXY prints
+      // a warning when it fails.
+      dbInst *inst = iterm->getInst();
+      dbBox *bbox = inst->getBBox();
+      int center_x = (bbox->xMin() + bbox->xMax()) / 2;
+      int center_y = (bbox->yMin() + bbox->yMax()) / 2;
+      Rect inst_center(center_x, center_y, center_x, center_y);
+      box.merge(inst_center);
+    }
   }
-  return hpwl;
+
+  for (dbBTerm *bterm : net->getBTerms()) {
+    for (dbBPin *bpin : bterm->getBPins()) {
+      dbPlacementStatus status = bpin->getPlacementStatus();
+      if (status.isPlaced()) {
+	dbBox *pin_box = bpin->getBox();
+	Rect pin_rect;
+	pin_box->getBox(pin_rect);
+	int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
+	int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
+	Rect pin_center(center_x, center_y, center_x, center_y);
+	box.merge(pin_center);
+      }
+    }
+  }
+  return box.dx() + box.dy();
 }
 
 ////////////////////////////////////////////////////////////////

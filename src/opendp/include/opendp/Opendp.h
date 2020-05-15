@@ -61,6 +61,7 @@ using std::pair;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
+using odb::dbNet;
 using odb::dbLib;
 using odb::dbMaster;
 using odb::dbMasterType;
@@ -172,12 +173,14 @@ public:
 			       int64_t max_displacement) const;
   void reportDesignStats() const;
   int64_t hpwl() const;
+  int64_t hpwl(dbNet *net) const;
   void displacementStats(// Return values.
 			 int64_t *avg_displacement,
 			 int64_t *sum_displacement,
 			 int64_t *max_displacement) const;
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
+  void optimizeMirroring();
   void reportGrid();
 
 private:
