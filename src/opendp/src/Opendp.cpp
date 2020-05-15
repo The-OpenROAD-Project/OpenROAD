@@ -175,12 +175,14 @@ Opendp::setPadding(dbInst *inst,
 		   int left,
 		   int right)
 {
+  inst_padding_map_[inst] = std::make_pair(left, right);
 }
 
 bool
 Opendp::havePadding() const
 {
-  return pad_left_ > 0 || pad_right_ > 0;
+  return pad_left_ > 0 || pad_right_ > 0
+    || !inst_padding_map_.empty();
 }
 
 void
@@ -240,7 +242,8 @@ Opendp::findDesignStats()
     }
   }
 
-  design_area_ = row_count_ * static_cast<int64_t>(row_site_count_) * site_width_ * row_height_;
+  design_area_ = row_count_ * static_cast<int64_t>(row_site_count_)
+    * site_width_ * row_height_;
 
   design_util_ = static_cast<double>(movable_area_) / (design_area_ - fixed_area_);
 
@@ -410,9 +413,7 @@ Opendp::initialPaddedLocation(const Cell *cell,
                               int *y) const
 {
   initialLocation(cell, x, y);
-  if (isPadded(cell)) {
-    *x -= pad_left_ * site_width_;
-  }
+  *x -= padLeft(cell) * site_width_;
 }
 
 int
@@ -528,18 +529,37 @@ Opendp::gridEndY() const
 }
 
 int
-Opendp::paddedWidth(const Cell *cell) const
+Opendp::padLeft(const Cell *cell) const
 {
-  if (isPadded(cell)) {
-    return cell->width_ + (pad_left_ + pad_right_) * site_width_;
+  if (isPaddedType(cell)) {
+    auto itr = inst_padding_map_.find(cell->db_inst_);
+    if (itr != inst_padding_map_.end())
+      return itr->second.first;
+    else
+      return pad_left_;
   }
-  return cell->width_;
+  else
+    return 0;
 }
 
-bool
-Opendp::isPadded(const Cell *cell) const
+int
+Opendp::padRight(const Cell *cell) const
 {
-  return isPaddedType(cell) && (pad_left_ > 0 || pad_right_ > 0);
+  if (isPaddedType(cell)) {
+    auto itr = inst_padding_map_.find(cell->db_inst_);
+    if (itr != inst_padding_map_.end())
+      return itr->second.second;
+    else
+      return pad_right_;
+  }
+  else
+    return 0;
+}
+
+int
+Opendp::paddedWidth(const Cell *cell) const
+{
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
 }
 
 int
@@ -595,10 +615,7 @@ Opendp::gridX(const Cell *cell) const
 int
 Opendp::gridPaddedX(const Cell *cell) const
 {
-  if (isPadded(cell)) {
-    return gridX(cell->x_ - pad_left_ * site_width_);
-  }
-  return gridX(cell->x_);
+  return gridX(cell->x_ - padLeft(cell) * site_width_);
 }
 
 int
@@ -610,16 +627,15 @@ Opendp::gridY(const Cell *cell) const
 void
 Opendp::setGridPaddedLoc(Cell *cell, int x, int y) const
 {
-  cell->x_ = (x + (isPadded(cell) ? pad_left_ : 0)) * site_width_;
+  cell->x_ = (x + padLeft(cell)) * site_width_;
   cell->y_ = y * row_height_;
 }
 
 int
 Opendp::gridPaddedEndX(const Cell *cell) const
 {
-  return divCeil(
-      cell->x_ + cell->width_ + (isPadded(cell) ? pad_right_ * site_width_ : 0),
-      site_width_);
+  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
+		 site_width_);
 }
 
 int

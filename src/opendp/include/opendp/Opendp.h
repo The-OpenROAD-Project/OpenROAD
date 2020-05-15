@@ -43,6 +43,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <utility> // pair
 
 #include "opendb/db.h"
 
@@ -55,6 +56,7 @@ using std::map;
 using std::set;
 using std::string;
 using std::vector;
+using std::pair;
 
 using odb::dbBlock;
 using odb::dbDatabase;
@@ -78,6 +80,7 @@ using StringSeq = vector<string>;
 using dbMasterSeq = vector<dbMaster *>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
+typedef map<dbInst*, pair<int, int>> InstPaddingMap;
 
 enum Power {
   undefined,
@@ -295,12 +298,13 @@ private:
   void initialPaddedLocation(const Cell *cell,
                              // Return values.
                              int *x,
-                             int *xoy) const;
+                             int *y) const;
   bool isStdCell(const Cell *cell) const;
   static bool isBlock(const Cell *cell);
   int paddedWidth(const Cell *cell) const;
   bool isPaddedType(const Cell *cell) const;
-  bool isPadded(const Cell *cell) const;
+  int padLeft(const Cell *cell) const;
+  int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
   int coreGridMaxX() const;
   int coreGridMaxY() const;
@@ -315,6 +319,7 @@ private:
   dbBlock *block_;
   int pad_left_;
   int pad_right_;
+  InstPaddingMap inst_padding_map_;
   const char *power_net_name_;
   const char *ground_net_name_;
 

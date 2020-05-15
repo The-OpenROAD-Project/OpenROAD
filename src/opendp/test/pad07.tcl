@@ -6,6 +6,6 @@ set_placement_padding -left 5 _277_
 detailed_placement
 check_placement
 
-set def_file [make_result_file pad0.7def]
+set def_file [make_result_file pad07.def]
 write_def $def_file
-diff_file pad01.defok $def_file
+diff_file pad07.defok $def_file
