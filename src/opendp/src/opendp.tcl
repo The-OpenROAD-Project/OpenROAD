@@ -137,7 +137,7 @@ sta::define_cmd_args "optimize_mirroring" {}
 
 proc optimize_mirroring { args } {
   sta::check_argc_eq0 "optimize_mirroring" $args
-  optimize_mirroring_cmd
+  opendp::optimize_mirroring_cmd
 }
 
 namespace eval opendp {

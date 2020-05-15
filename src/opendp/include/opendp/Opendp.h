@@ -135,6 +135,18 @@ struct Pixel
   bool is_valid;  // false for dummy cells
 };
 
+class NetBox
+{
+public:
+  NetBox(dbNet *n);
+  int64_t hpwl();
+
+  dbNet *net;
+  Rect box;
+};
+
+typedef vector<NetBox> NetBoxes;
+
 ////////////////////////////////////////////////////////////////
 
 typedef set<dbMaster *> dbMasterSet;
@@ -323,7 +335,19 @@ private:
   dbMasterSeq &gapFillers(int gap);
   Grid *makeCellGrid();
   void placeRowFillers(const Grid *grid, int row);
+
   void reportGrid(const Grid *grid) const;
+
+  // Optimizing mirroring
+  void getBox(dbNet *net,
+	      // Return value.
+	      Rect &net_box) const;
+  void findNetBoxes(NetBoxes &net_boxes);
+  void findMirrorCandidates(NetBoxes &net_boxes,
+			    vector<dbInst*> &mirror_candidates);
+  void mirrorCandidates(vector<dbInst*> &mirror_candidates);
+  // Sum of ITerm hpwl's.
+  int64_t hpwl(dbInst *inst);
 
   dbDatabase *db_;
   dbBlock *block_;

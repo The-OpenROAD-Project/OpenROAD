@@ -342,24 +342,37 @@ Opendp::hpwl() const
 int64_t
 Opendp::hpwl(dbNet *net) const
 {
-  Rect box;
-  box.mergeInit();
+  if (net->isSpecial())
+    return 0;
+  else {
+    Rect bbox;
+    getBox(net, bbox);
+    return bbox.dx() + bbox.dy();
+  }
+}
+
+void
+Opendp::getBox(dbNet *net,
+	       // Return value.
+	       Rect &net_box) const
+{
+  net_box.mergeInit();
 
   for (dbITerm *iterm : net->getITerms()) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
       Rect iterm_rect(x, y, x, y);
-      box.merge(iterm_rect);
+      net_box.merge(iterm_rect);
     }
     else {
       // This clause is sort of worthless because getAvgXY prints
       // a warning when it fails.
       dbInst *inst = iterm->getInst();
-      dbBox *bbox = inst->getBBox();
-      int center_x = (bbox->xMin() + bbox->xMax()) / 2;
-      int center_y = (bbox->yMin() + bbox->yMax()) / 2;
+      dbBox *inst_box = inst->getBBox();
+      int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
+      int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
       Rect inst_center(center_x, center_y, center_x, center_y);
-      box.merge(inst_center);
+      net_box.merge(inst_center);
     }
   }
 
@@ -368,16 +381,15 @@ Opendp::hpwl(dbNet *net) const
       dbPlacementStatus status = bpin->getPlacementStatus();
       if (status.isPlaced()) {
 	dbBox *pin_box = bpin->getBox();
-	Rect pin_rect;
-	pin_box->getBox(pin_rect);
-	int center_x = (pin_rect.xMin() + pin_rect.xMax()) / 2;
-	int center_y = (pin_rect.yMin() + pin_rect.yMax()) / 2;
+	Rect pin_bbox;
+	pin_box->getBox(pin_bbox);
+	int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
+	int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
 	Rect pin_center(center_x, center_y, center_x, center_y);
-	box.merge(pin_center);
+	net_box.merge(pin_center);
       }
     }
   }
-  return box.dx() + box.dy();
 }
 
 ////////////////////////////////////////////////////////////////

@@ -35,14 +35,145 @@
 
 #include "opendp/Opendp.h"
 
+#include <unordered_set>
+#include "opendb/dbTypes.h"
+
 namespace opendp {
 
-using std::max;
-using std::min;
+using std::sort;
+using std::unordered_set;
+
+using odb::dbITerm;
+using odb::dbOrientType;
+
+static dbOrientType
+orientMirrorY(dbOrientType orient);
+
+NetBox::NetBox(dbNet *n) :
+  net(n)
+{
+}
+
+int64_t
+NetBox::hpwl()
+{
+  return box.xMax() - box.xMin() + box.yMax() - box.yMin();
+}
+
+////////////////////////////////////////////////////////////////
 
 void
 Opendp::optimizeMirroring()
 {
+  NetBoxes net_boxes;
+  findNetBoxes(net_boxes);
+  // Sort net boxes by net hpwl.
+  sort(net_boxes.begin(), net_boxes.end(),
+       [] (NetBox &net_box1, NetBox &net_box2) -> bool {
+	 return net_box1.hpwl() > net_box2.hpwl();
+       });
+
+  vector<dbInst*> mirror_candidates;
+  findMirrorCandidates(net_boxes, mirror_candidates);
+  int64_t hpwl_before = hpwl();
+  mirrorCandidates(mirror_candidates);
+  double hpwl_after = hpwl();
+  printf("HPWL before          %8.1f u\n", dbuToMicrons(hpwl_before));
+  printf("HPWL after           %8.1f u\n", dbuToMicrons(hpwl_after));
+  double hpwl_delta = (hpwl_after - hpwl_before) / hpwl_before * 100;
+  printf("HPWL delta           %8.0f %%\n", hpwl_delta);
+}
+
+void
+Opendp::findNetBoxes(NetBoxes &net_boxes)
+{
+  auto nets = block_->getNets();
+  net_boxes.reserve(nets.size());
+  for (dbNet *net : nets) {
+    if (!net->isSpecial()) {
+      NetBox net_box(net);
+      getBox(net, net_box.box);
+      net_boxes.push_back(net_box);
+    }
+  }
+}
+
+void
+Opendp::findMirrorCandidates(NetBoxes &net_boxes,
+			     vector<dbInst*> &mirror_candidates)
+{
+  unordered_set<dbInst*> existing;
+  // Find inst terms on the boundary of the net boxes.
+  for (NetBox &net_box : net_boxes) {
+    dbNet *net = net_box.net;
+    Rect &box = net_box.box;
+    for (dbITerm *iterm : net->getITerms()) {
+      int x, y;
+      if (iterm->getAvgXY(&x, &y)) {
+	if (x == box.xMin() || x == box.xMax()
+	    || y == box.yMin() || y == box.yMax()) {
+	  dbInst *inst = iterm->getInst();
+	  if (existing.find(inst) == existing.end()) {
+	    mirror_candidates.push_back(inst);
+	    existing.insert(inst);
+	  }
+	}
+      }
+    }
+  }
+}
+
+void
+Opendp::mirrorCandidates(vector<dbInst*> &mirror_candidates)
+{
+  for (dbInst *inst : mirror_candidates) {
+    // Use hpwl of all nets connected to the instance terms
+    // before/after to determine incremental change to total hpwl.
+    int64_t hpwl_before = hpwl(inst);
+    dbOrientType orient = inst->getOrient();
+    dbOrientType orient_my = orientMirrorY(orient);
+    inst->setLocationOrient(orient_my);
+    int64_t hpwl_after = hpwl(inst);
+    if (hpwl_after > hpwl_before)
+      // Undo mirroring if hpwl is worse.
+      inst->setLocationOrient(orient);
+  }
+}
+
+// apply mirror about Y axis to orient
+static dbOrientType
+orientMirrorY(dbOrientType orient)
+{
+  switch (orient) {
+  case dbOrientType::R0:
+    return dbOrientType::MY;
+  case dbOrientType::MX:
+    return dbOrientType::R180;
+  case dbOrientType::MY:
+    return dbOrientType::R0;
+  case dbOrientType::R180:
+    return dbOrientType::MX;
+  case dbOrientType::R90:
+    return dbOrientType::MXR90;
+  case dbOrientType::MXR90:
+    return dbOrientType::R90;
+  case dbOrientType::R270:
+    return dbOrientType::MYR90;
+  case dbOrientType::MYR90:
+    return dbOrientType::R270;
+  }
+}
+
+int64_t
+Opendp::hpwl(dbInst *inst)
+{
+  int64_t inst_hpwl = 0;
+  for (dbITerm *iterm : inst->getITerms()) {
+    dbNet *net = iterm->getNet();
+    if (net)
+      inst_hpwl += hpwl(net);
+  }
+  return inst_hpwl;
 }
 
 }  // namespace opendp
