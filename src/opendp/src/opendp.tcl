@@ -54,7 +54,7 @@ proc detailed_placement { args } {
   }
 }
 
-sta::define_cmd_args "set_placement_padding" { [-global]\
+sta::define_cmd_args "set_placement_padding" { -global|-instances insts\
 						 [-right site_count]\
 						 [-left site_count] \
 						 [instances]\
@@ -62,7 +62,7 @@ sta::define_cmd_args "set_placement_padding" { [-global]\
 
 proc set_placement_padding { args } {
   sta::parse_key_args "set_placement_padding" args \
-    keys {-right -left} flags {-global}
+    keys {-instances -right -left} flags {-global}
 
   set left 0
   if { [info exists keys(-left)] } {
@@ -74,15 +74,13 @@ proc set_placement_padding { args } {
     set right $keys(-right)
     sta::check_positive_integer "-right" $right
   }
-  set global [info exists flags(-global)]
 
-  if { $global } {
-    sta::check_argc_eq0 "set_placement_padding" $args
+  sta::check_argc_eq0 "set_placement_padding" $args
+  if { [info exists flags(-global)] } {
     opendp::set_padding_global $left $right
-  } else {
-    sta::check_argc_eq1 "set_placement_padding" $args
+  } elseif { [info exists keys(-instances)] } {
     # sta::get_instances_error supports sdc get_cells
-    set insts [sta::get_instances_error instances [lindex $args 0]]
+    set insts [sta::get_instances_error "-instances" $keys(-instances)]
     foreach inst $insts {
       set db_inst [sta::inst_sta_to_db $inst]
       opendp::set_padding_inst $db_inst $left $right

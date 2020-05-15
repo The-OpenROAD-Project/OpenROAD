@@ -2,7 +2,7 @@
 source helpers.tcl
 read_lef Nangate45.lef
 read_def simple01.def
-set_placement_padding -left 5 _277_
+set_placement_padding -left 5 -instances _277_
 detailed_placement
 check_placement
 
