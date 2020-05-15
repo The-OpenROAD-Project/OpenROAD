@@ -163,10 +163,18 @@ Opendp::setGroundNetName(const char *ground_name)
 }
 
 void
-Opendp::setPaddingGlobal(int left, int right)
+Opendp::setPaddingGlobal(int left,
+			 int right)
 {
   pad_left_ = left;
   pad_right_ = right;
+}
+
+void
+Opendp::setPadding(dbInst *inst,
+		   int left,
+		   int right)
+{
 }
 
 bool

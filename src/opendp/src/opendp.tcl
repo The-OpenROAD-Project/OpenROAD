@@ -57,6 +57,7 @@ proc detailed_placement { args } {
 sta::define_cmd_args "set_placement_padding" { [-global]\
 						 [-right site_count]\
 						 [-left site_count] \
+						 [instances]\
 					       }
 
 proc set_placement_padding { args } {
@@ -74,11 +75,18 @@ proc set_placement_padding { args } {
     sta::check_positive_integer "-right" $right
   }
   set global [info exists flags(-global)]
-  sta::check_argc_eq0 "set_placement_padding" $args
+
   if { $global } {
+    sta::check_argc_eq0 "set_placement_padding" $args
     opendp::set_padding_global $left $right
   } else {
-    ord::error "only set_placement_padding -global supported."
+    sta::check_argc_eq1 "set_placement_padding" $args
+    # sta::get_instances_error supports sdc get_cells
+    set insts [sta::get_instances_error instances [lindex $args 0]]
+    foreach inst $insts {
+      set db_inst [sta::inst_sta_to_db $inst]
+      opendp::set_padding_inst $db_inst $left $right
+    }
   }
 }
 

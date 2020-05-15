@@ -150,6 +150,9 @@ public:
   // max_displacment is in rows, 0 for unconstrained
   void detailedPlacement(int max_displacment);
   void setPaddingGlobal(int left, int right);
+  void setPadding(dbInst *inst,
+		  int left,
+		  int right);
   // Return true if illegal.
   bool checkPlacement(bool verbose);
   void fillerPlacement(const StringSeq *filler_master_names);
@@ -159,10 +162,10 @@ public:
 			       int64_t max_displacement) const;
   void reportDesignStats() const;
   int64_t hpwl() const;
-  void displacementStats(  // Return values.
-      int64_t *avg_displacement,
-      int64_t *sum_displacement,
-      int64_t *max_displacement) const;
+  void displacementStats(// Return values.
+			 int64_t *avg_displacement,
+			 int64_t *sum_displacement,
+			 int64_t *max_displacement) const;
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
   void reportGrid();
