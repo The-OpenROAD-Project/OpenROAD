@@ -43,6 +43,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <utility> // pair
 
 #include "opendb/db.h"
 
@@ -55,6 +56,7 @@ using std::map;
 using std::set;
 using std::string;
 using std::vector;
+using std::pair;
 
 using odb::dbBlock;
 using odb::dbDatabase;
@@ -78,6 +80,7 @@ using StringSeq = vector<string>;
 using dbMasterSeq = vector<dbMaster *>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
+typedef map<dbInst*, pair<int, int>> InstPaddingMap;
 
 enum Power {
   undefined,
@@ -150,6 +153,9 @@ public:
   // max_displacment is in rows, 0 for unconstrained
   void detailedPlacement(int max_displacment);
   void setPaddingGlobal(int left, int right);
+  void setPadding(dbInst *inst,
+		  int left,
+		  int right);
   // Return true if illegal.
   bool checkPlacement(bool verbose);
   void fillerPlacement(const StringSeq *filler_master_names);
@@ -159,10 +165,10 @@ public:
 			       int64_t max_displacement) const;
   void reportDesignStats() const;
   int64_t hpwl() const;
-  void displacementStats(  // Return values.
-      int64_t *avg_displacement,
-      int64_t *sum_displacement,
-      int64_t *max_displacement) const;
+  void displacementStats(// Return values.
+			 int64_t *avg_displacement,
+			 int64_t *sum_displacement,
+			 int64_t *max_displacement) const;
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
   void reportGrid();
@@ -292,12 +298,13 @@ private:
   void initialPaddedLocation(const Cell *cell,
                              // Return values.
                              int *x,
-                             int *xoy) const;
+                             int *y) const;
   bool isStdCell(const Cell *cell) const;
   static bool isBlock(const Cell *cell);
   int paddedWidth(const Cell *cell) const;
   bool isPaddedType(const Cell *cell) const;
-  bool isPadded(const Cell *cell) const;
+  int padLeft(const Cell *cell) const;
+  int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
   int coreGridMaxX() const;
   int coreGridMaxY() const;
@@ -312,6 +319,7 @@ private:
   dbBlock *block_;
   int pad_left_;
   int pad_right_;
+  InstPaddingMap inst_padding_map_;
   const char *power_net_name_;
   const char *ground_net_name_;
 

@@ -25,6 +25,8 @@ record_tests {
   pad03
   pad04
   pad05
+  pad06
+  pad07
   simple01
   simple02
   simple03

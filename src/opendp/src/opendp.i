@@ -36,9 +36,11 @@
  
 %{
 #include "openroad/OpenRoad.hh"
+#include "db_sta/dbNetwork.hh"
 #include "opendp/Opendp.h"
 
 using opendp::StringSeq;
+using sta::Instance;
 
 StringSeq *
 tclListSeqString(Tcl_Obj *const source,
@@ -130,6 +132,15 @@ set_padding_global(int left,
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPaddingGlobal(left, right);
+}
+
+void
+set_padding_inst(odb::dbInst *inst,
+		 int left,
+		 int right)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPadding(inst, left, right);
 }
 
 void

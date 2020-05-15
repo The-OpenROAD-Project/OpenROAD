@@ -432,16 +432,21 @@ The `detailed_placement` command does detailed placement of instances
 to legal locations after global placement.
 
 ```
-set_placement_padding -global [-left pad_left] [-right pad_right]
+set_placement_padding [-global] [-left pad_left] [-right pad_right] [instances]
 detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters
 set_power_net [-power power_name] [-ground ground_net]
 ```
 
-The `set_placement_padding` command sets left and right padding in multiples of
-the row site width. Use the `set_padding` command before legalizing
-placement to leave room for routing.
+The `set_placement_padding` command sets left and right padding in
+multiples of the row site width. Use the `set_placement_padding`
+command before legalizing placement to leave room for routing. Use the
+`-global` flag for padding that applies to all instances. Use the
+`instances` argument for instances specific padding.  The instances
+can be a list of instance name, or instance object returned by the SDC
+`get_cells` command. To specify padding for all instances of a common
+master, use the `-filter "ref_name == <name>" option to `get_cells`.
 
 The `set_power_net` command is used to set the power and ground
 special net names. The defaults are `VDD` and `VSS`.
