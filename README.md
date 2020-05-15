@@ -432,7 +432,8 @@ The `detailed_placement` command does detailed placement of instances
 to legal locations after global placement.
 
 ```
-set_placement_padding -global|-instances insts [-left pad_left] [-right pad_right]
+set_placement_padding -global|-instances insts|-masters masters
+                      [-left pad_left] [-right pad_right]
 detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters

@@ -155,6 +155,7 @@ public:
 	       dbBTerm *&bterm) const;
   dbBTerm *staToDb(const Term *term) const;
   dbMaster *staToDb(const Cell *cell) const;
+  dbMaster *staToDb(const LibertyCell *cell) const;
   dbMTerm *staToDb(const Port *port) const;
   void staToDb(PortDirection *dir,
 	       // Return values.

@@ -33,11 +33,19 @@ make_block_sta(odb::dbBlock *block)
 }
 
 odb::dbInst *
-inst_sta_to_db(Instance *inst)
+sta_to_db_inst(Instance *inst)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   return db_network->staToDb(inst);
+}
+
+odb::dbMaster *
+sta_to_db_master(LibertyCell *cell)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->staToDb(cell);
 }
 
 %} // inline
