@@ -247,7 +247,9 @@ Opendp::overlap(const Cell *cell1, const Cell *cell2) const
 bool
 Opendp::isOverlapPadded(const Cell *cell1, const Cell *cell2) const
 {
-  return isCrWtBlClass(cell1) && isCrWtBlClass(cell2) && !(isWtClass(cell1) && isWtClass(cell2));
+  return isCrWtBlClass(cell1)
+    && isCrWtBlClass(cell2)
+    && !(isWtClass(cell1) && isWtClass(cell2));
 }
 
 bool

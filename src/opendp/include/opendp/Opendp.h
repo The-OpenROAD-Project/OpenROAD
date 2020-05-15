@@ -80,7 +80,9 @@ using StringSeq = vector<string>;
 using dbMasterSeq = vector<dbMaster *>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
+
 typedef map<dbInst*, pair<int, int>> InstPaddingMap;
+typedef map<dbMaster*, pair<int, int>> MasterPaddingMap;
 
 enum Power {
   undefined,
@@ -153,9 +155,14 @@ public:
   // max_displacment is in rows, 0 for unconstrained
   void detailedPlacement(int max_displacment);
   void setPaddingGlobal(int left, int right);
+  void setPadding(dbMaster *inst,
+		  int left,
+		  int right);
   void setPadding(dbInst *inst,
 		  int left,
 		  int right);
+  int padRight(dbInst *inst) const;
+  int padLeft(dbInst *inst) const;
   // Return true if illegal.
   bool checkPlacement(bool verbose);
   void fillerPlacement(const StringSeq *filler_master_names);
@@ -302,7 +309,7 @@ private:
   bool isStdCell(const Cell *cell) const;
   static bool isBlock(const Cell *cell);
   int paddedWidth(const Cell *cell) const;
-  bool isPaddedType(const Cell *cell) const;
+  bool isPaddedType(dbInst *inst) const;
   int padLeft(const Cell *cell) const;
   int padRight(const Cell *cell) const;
   int disp(const Cell *cell) const;
@@ -320,6 +327,7 @@ private:
   int pad_left_;
   int pad_right_;
   InstPaddingMap inst_padding_map_;
+  MasterPaddingMap master_padding_map_;
   const char *power_net_name_;
   const char *ground_net_name_;
 

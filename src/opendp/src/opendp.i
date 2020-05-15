@@ -135,6 +135,15 @@ set_padding_global(int left,
 }
 
 void
+set_padding_master(odb::dbMaster *master,
+		   int left,
+		   int right)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPadding(master, left, right);
+}
+
+void
 set_padding_inst(odb::dbInst *inst,
 		 int left,
 		 int right)

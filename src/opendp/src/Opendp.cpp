@@ -178,10 +178,19 @@ Opendp::setPadding(dbInst *inst,
   inst_padding_map_[inst] = std::make_pair(left, right);
 }
 
+void
+Opendp::setPadding(dbMaster *master,
+		   int left,
+		   int right)
+{
+  master_padding_map_[master] = std::make_pair(left, right);
+}
+
 bool
 Opendp::havePadding() const
 {
   return pad_left_ > 0 || pad_right_ > 0
+    || !master_padding_map_.empty()
     || !inst_padding_map_.empty();
 }
 
@@ -425,9 +434,9 @@ Opendp::disp(const Cell *cell) const
 }
 
 bool
-Opendp::isPaddedType(const Cell *cell) const
+Opendp::isPaddedType(dbInst *inst) const
 {
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  dbMasterType type = inst->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
     case dbMasterType::CORE:
@@ -531,10 +540,19 @@ Opendp::gridEndY() const
 int
 Opendp::padLeft(const Cell *cell) const
 {
-  if (isPaddedType(cell)) {
-    auto itr = inst_padding_map_.find(cell->db_inst_);
-    if (itr != inst_padding_map_.end())
-      return itr->second.first;
+  return padLeft(cell->db_inst_);
+}
+
+int
+Opendp::padLeft(dbInst *inst) const
+{
+  if (isPaddedType(inst)) {
+    auto itr1 = inst_padding_map_.find(inst);
+    if (itr1 != inst_padding_map_.end())
+      return itr1->second.first;
+    auto itr2 = master_padding_map_.find(inst->getMaster());
+    if (itr2 != master_padding_map_.end())
+      return itr2->second.first;
     else
       return pad_left_;
   }
@@ -545,10 +563,19 @@ Opendp::padLeft(const Cell *cell) const
 int
 Opendp::padRight(const Cell *cell) const
 {
-  if (isPaddedType(cell)) {
-    auto itr = inst_padding_map_.find(cell->db_inst_);
-    if (itr != inst_padding_map_.end())
-      return itr->second.second;
+  return padRight(cell->db_inst_);
+}
+
+int
+Opendp::padRight(dbInst *inst) const
+{
+  if (isPaddedType(inst)) {
+    auto itr1 = inst_padding_map_.find(inst);
+    if (itr1 != inst_padding_map_.end())
+      return itr1->second.second;
+    auto itr2 = master_padding_map_.find(inst->getMaster());
+    if (itr2 != master_padding_map_.end())
+      return itr2->second.second;
     else
       return pad_right_;
   }

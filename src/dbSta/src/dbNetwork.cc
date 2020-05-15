@@ -1115,6 +1115,13 @@ dbNetwork::staToDb(const Cell *cell) const
   return reinterpret_cast<dbMaster*>(ccell->extCell());
 }
 
+dbMaster *
+dbNetwork::staToDb(const LibertyCell *cell) const
+{
+  const ConcreteCell *ccell = cell;
+  return reinterpret_cast<dbMaster*>(ccell->extCell());
+}
+
 dbMTerm *
 dbNetwork::staToDb(const Port *port) const
 {
