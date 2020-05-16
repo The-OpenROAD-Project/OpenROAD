@@ -173,6 +173,13 @@ set_ground_net_name(const char *ground_name)
   opendp->setGroundNetName(ground_name);
 }
 
+void
+optimize_mirroring_cmd()
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->optimizeMirroring();
+}
+
 // Debugging command for small test cases.
 void
 report_placement_grid()

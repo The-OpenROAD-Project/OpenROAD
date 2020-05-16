@@ -133,6 +133,13 @@ proc check_placement { args } {
   opendp::check_placement_cmd $verbose
 }
 
+sta::define_cmd_args "optimize_mirroring" {}
+
+proc optimize_mirroring { args } {
+  sta::check_argc_eq0 "optimize_mirroring" $args
+  opendp::optimize_mirroring_cmd
+}
+
 namespace eval opendp {
 
 # expand master name regexps

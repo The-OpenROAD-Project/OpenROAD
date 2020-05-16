@@ -46,6 +46,7 @@
 #include <utility> // pair
 
 #include "opendb/db.h"
+#include "opendb/dbTypes.h"
 
 // Remove leading underscore to enable debug printing.
 #define _ODP_DEBUG
@@ -61,6 +62,7 @@ using std::pair;
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
+using odb::dbNet;
 using odb::dbLib;
 using odb::dbMaster;
 using odb::dbMasterType;
@@ -134,6 +136,18 @@ struct Pixel
   bool is_valid;  // false for dummy cells
 };
 
+class NetBox
+{
+public:
+  NetBox(dbNet *n);
+  int64_t hpwl();
+
+  dbNet *net;
+  Rect box;
+};
+
+typedef vector<NetBox> NetBoxes;
+
 ////////////////////////////////////////////////////////////////
 
 typedef set<dbMaster *> dbMasterSet;
@@ -172,12 +186,14 @@ public:
 			       int64_t max_displacement) const;
   void reportDesignStats() const;
   int64_t hpwl() const;
+  int64_t hpwl(dbNet *net) const;
   void displacementStats(// Return values.
 			 int64_t *avg_displacement,
 			 int64_t *sum_displacement,
 			 int64_t *max_displacement) const;
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
+  void optimizeMirroring();
   void reportGrid();
 
 private:
@@ -320,7 +336,20 @@ private:
   dbMasterSeq &gapFillers(int gap);
   Grid *makeCellGrid();
   void placeRowFillers(const Grid *grid, int row);
+
   void reportGrid(const Grid *grid) const;
+
+  // Optimizing mirroring
+  void getBox(dbNet *net,
+	      // Return value.
+	      Rect &net_box) const;
+  void findNetBoxes(NetBoxes &net_boxes);
+  void findMirrorCandidates(NetBoxes &net_boxes,
+			    vector<dbInst*> &mirror_candidates);
+  void mirrorCandidates(vector<dbInst*> &mirror_candidates);
+  // Sum of ITerm hpwl's.
+  int64_t hpwl(dbInst *inst);
+  bool isSupply(dbNet *net) const;
 
   dbDatabase *db_;
   dbBlock *block_;
