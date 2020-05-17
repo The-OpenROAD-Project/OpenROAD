@@ -36,6 +36,7 @@
 #include "opendp/Opendp.h"
 
 #include <unordered_set>
+#include <cstdlib>
 #include "opendb/dbTypes.h"
 
 namespace opendp {
@@ -162,6 +163,9 @@ orientMirrorY(dbOrientType orient)
   case dbOrientType::MYR90:
     return dbOrientType::R270;
   }
+  // make lame gcc happy
+  std::abort();
+  return dbOrientType::R0;
 }
 
 int64_t
