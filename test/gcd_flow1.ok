@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  NangateOpenCellLibrary.lef
+Notice 0: Reading LEF file:  Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  NangateOpenCellLibrary.lef
+Notice 0: Finished LEF file:  Nangate45.lef
 Info: Added 57 rows of 422 sites.
 WARNING: force pin spread option has no effect when using random pin placement
  > Running IO placement
@@ -139,6 +139,7 @@ Path Type: max
 [INFO] NumBins = 1024
 [NesterovSolve] Iter: 1 overflow: 0.883089 HPWL: 8703903
 [NesterovSolve] Iter: 10 overflow: 0.597961 HPWL: 11195302
+[NesterovSolve] Snapshot saved at iter = 9
 [NesterovSolve] Iter: 20 overflow: 0.579419 HPWL: 11043108
 [NesterovSolve] Iter: 30 overflow: 0.583265 HPWL: 11045302
 [NesterovSolve] Iter: 40 overflow: 0.582688 HPWL: 11049959
@@ -168,16 +169,132 @@ Path Type: max
 [NesterovSolve] Iter: 280 overflow: 0.270617 HPWL: 10649459
 [NesterovSolve] Iter: 290 overflow: 0.237542 HPWL: 10674439
 [NesterovSolve] Iter: 300 overflow: 0.214077 HPWL: 10723002
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 1
+[PARAMS] Max routing layer: 10
+[PARAMS] Global adjustment: 0
+[PARAMS] Unidirectional routing: 0
+[PARAMS] Clock net routing: 0
+[PARAMS] Grid origin: (-1, -1)
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 3022
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Searching for transition layers...
+[INFO] Found 0 transition layers
+Searching for transition layers... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+Checking pin placement...
+Checking pin placement... Done!
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 8425 obstacles in layer 1
+[INFO] Processing 3 obstacles in layer 4
+[INFO] Processing 4 obstacles in layer 7
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+Computing user defined layers adjustments... Done!
+[INFO] Elapsed time: 0.058811
+Running FastRoute...
+
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 2729
+[Overflow Report] Total Capacity: 136244
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 2729
+[INFO] Final number of vias : 1937
+[INFO] Final usage 3D       : 8540
+Getting results...
+Getting results... Done!
+
+Running FastRoute... Done!
+[INFO] Total wirelength: 11461.799805 um
+[INFO] Elapsed time: 4.462201
+V cap 0: 0
+V cap 1: 1100
+V cap 2: 0
+V cap 3: 700
+V cap 4: 0
+V cap 5: 700
+V cap 6: 0
+V cap 7: 200
+V cap 8: 0
+V cap 9: 100
+H cap 0: 1500
+H cap 1: 0
+H cap 2: 1500
+H cap 3: 0
+H cap 4: 700
+H cap 5: 0
+H cap 6: 200
+H cap 7: 0
+H cap 8: 100
+H cap 9: 0
+[INFO] route parsing is done
+[INFO] est parsing is done
+[INFO] TileLxLy = (0, 0)
+[INFO] TileSize = (4200, 4200)
+[INFO] TileCnt = (47, 48)
+[INFO] numRoutingLayers = 10
+[INFO] NumTiles = 2256
+[INFO] NumHTracks = 40
+[INFO] NumVTracks = 28
+[INFO] PitchH = 113
+[INFO] PitchV = 162
+[INFO] Congestion Map building is done
+[INFO] TotalRouteOverflowH = 0
+[INFO] TotalRouteOverflowV = 0
+[INFO] OverflowTileCnt = 0
+[INFO] TotalRouteOverflowH2 = 0
+[INFO] TotalRouteOverflowV2 = 0.272727
+[INFO] OverflowTileCnt2 = 3
+[INFO] 0.5%RC = 0.764714
+[INFO] 1.0%RC = 0.687744
+[INFO] 2.0%RC = 0.675865
+[INFO] 5.0%RC = 0.671174
+[INFO] 0.5rcK = 1
+[INFO] 1.0rcK = 1
+[INFO] 2.0rcK = 0
+[INFO] 5.0rcK = 0
+[INFO] FinalRC = 0.726229
 [NesterovSolve] Iter: 310 overflow: 0.190957 HPWL: 10759241
 [NesterovSolve] Iter: 320 overflow: 0.165744 HPWL: 10786028
 [NesterovSolve] Iter: 330 overflow: 0.136463 HPWL: 10816491
 [NesterovSolve] Iter: 340 overflow: 0.119174 HPWL: 10853096
 [NesterovSolve] Iter: 350 overflow: 0.102502 HPWL: 10875546
-[NesterovSolve] Finished with Overflow: 0.0975161
+[NesterovSolve] Finished with Overflow: 0.097516
+Resized 91 instances.
 Inserted 35 input buffers.
 Inserted 18 output buffers.
-Resized 126 instances.
 Inserted 0 hold buffers.
+Resized 35 instances.
  *****************
  * TritonCTS 2.0 *
  *****************
@@ -219,20 +336,20 @@ clk
     Tot. number of sinks: 35
  Wire segment unit: 20000 dbu (10 um)
  Original sink region: [(52792, 73834), (122706, 134961)]
- Normalized sink region: [(2.6396, 3.6917), (6.1353, 6.74805)]
-    Width:  3.4957
-    Height: 3.05635
+ Normalized sink region: [(2.639600, 3.691700), (6.135300, 6.748050)]
+    Width:  3.495700
+    Height: 3.056350
  [WARNING] Creating fake entries in the LUT.
  Level 1
     Direction: Horizontal
     # sinks per sub-region: 18
-    Sub-region size: 1.74785 X 3.05635
+    Sub-region size: 1.747850 X 3.056350
     Segment length (rounded): 1
     Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: 1
  Level 2
     Direction: Vertical
     # sinks per sub-region: 9
-    Sub-region size: 1.74785 X 1.52818
+    Sub-region size: 1.747850 X 1.528175
     Segment length (rounded): 1
     Key: 5039 outSlew: 12 load: 1 length: 1 isBuffered: 1
  Stop criterion found. Max number of sinks is (15)
@@ -242,7 +359,7 @@ clk
  ****************
  * Post CTS opt *
  ****************
- Avg. source sink dist: 20221.7 dbu.
+ Avg. source sink dist: 20221.685714 dbu.
  Num outlier sinks: 0
  ********************
  * Write data to DB *
@@ -270,12 +387,13 @@ Placement Analysis
 total displacement     3268.5 u
 average displacement      5.2 u
 max displacement         26.6 u
-original HPWL          6011.8 u
-legalized HPWL        10206.1 u
-delta HPWL                 70 %
+original HPWL          5688.2 u
+legalized HPWL         9883.7 u
+delta HPWL                 74 %
 
-Adjust layer 2 in 50.0%
-Adjust layer 3 in 50.0%
+HPWL before            9883.7 u
+HPWL after             9736.2 u
+HPWL delta                 -1 %
 
  *****************
  *   FastRoute   *
@@ -283,7 +401,7 @@ Adjust layer 3 in 50.0%
 
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 10
-[PARAMS] Global adjustment: 0.15
+[PARAMS] Global adjustment: 0.150000
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Clock net routing: 0
 [PARAMS] Grid origin: (-1, -1)
@@ -292,6 +410,9 @@ Initializing grid...
 [INFO] #DB Obstacles: 3291
 [INFO] #DB Macros: 0
 Initializing grid... Done!
+Searching for transition layers...
+[INFO] Found 0 transition layers
+Searching for transition layers... Done!
 Initializing routing layers...
 Initializing routing layers... Done!
 Initializing routing tracks...
@@ -316,21 +437,23 @@ Computing obstacles adjustments... Done!
 Computing user defined adjustments...
 Computing user defined adjustments... Done!
 Computing user defined layers adjustments...
+[INFO] Reducing resources of layer 2 in 50.000000%
+[INFO] Reducing resources of layer 3 in 50.000000%
 Computing user defined layers adjustments... Done!
-[INFO] Elapsed time: 0.065497
+[INFO] Elapsed time: 0.066326
 Running FastRoute...
 
 Running extra iterations to remove overflow...
 Update congestion history type 1
 [INFO] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2 
-[INFO] log_coef 0.766449, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
+[INFO] log_coef 1.181232, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
 Update congestion history type 1
-[INFO] iteration 2, enlarge 23, costheight 14, threshold 6 via cost 2 
-[INFO] log_coef 0.953011, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
+[INFO] iteration 2, enlarge 23, costheight 19, threshold 6 via cost 0 
+[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 4974
+[Overflow Report] Total Usage   : 4860
 [Overflow Report] Total Capacity: 61152
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -339,15 +462,15 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 4974
-[INFO] Final number of vias : 3482
-[INFO] Final usage 3D       : 15420
+[INFO] Final usage          : 4860
+[INFO] Final number of vias : 3387
+[INFO] Final usage 3D       : 15021
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 20890.800781 um
-[INFO] Elapsed time: 0.105689
+[INFO] Total wirelength: 20412.000000 um
+[INFO] Elapsed time: 0.098173
 Writing guides...
 [INFO] Num routed nets: 570
 Writing guides... Done!
@@ -433,13 +556,13 @@ tns 0.00
 Group                  Internal  Switching    Leakage      Total
                           Power      Power      Power      Power
 ----------------------------------------------------------------
-Sequential             0.00e+00   0.00e+00   2.77e-06   2.77e-06   8.7%
-Combinational          7.70e-06   7.49e-06   1.40e-05   2.92e-05  91.3%
+Sequential             0.00e+00   0.00e+00   2.77e-06   2.77e-06   9.4%
+Combinational          5.33e-06   7.49e-06   1.40e-05   2.68e-05  90.6%
 Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 ----------------------------------------------------------------
-Total                  7.70e-06   7.49e-06   1.67e-05   3.19e-05 100.0%
-                          24.1%      23.5%      52.4%
+Total                  5.33e-06   7.49e-06   1.67e-05   2.96e-05 100.0%
+                          18.0%      25.3%      56.6%
 Warning: found 16 floatiing nets.
  _422_
  _423_
