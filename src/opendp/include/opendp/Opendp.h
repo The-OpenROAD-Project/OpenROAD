@@ -175,6 +175,10 @@ public:
   void setPadding(dbInst *inst,
 		  int left,
 		  int right);
+  // Global padding.
+  int padGlobalLeft() const { return pad_left_; }
+  int padGlobalRight() const { return pad_right_; }
+  // Find instance/master/global padding value for an instance.
   int padRight(dbInst *inst) const;
   int padLeft(dbInst *inst) const;
   // Return true if illegal.
