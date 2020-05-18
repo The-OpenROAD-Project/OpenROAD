@@ -180,12 +180,4 @@ optimize_mirroring_cmd()
   opendp->optimizeMirroring();
 }
 
-// Debugging command for small test cases.
-void
-report_placement_grid()
-{
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->reportGrid();
-}
-
 %} // inline
