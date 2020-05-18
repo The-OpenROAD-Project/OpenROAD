@@ -1,0 +1,5 @@
+[ERROR] Missing mandatory argument -tool
+[ERROR] Invalid tool. Use one of the following: chaco gpmetis mlpart
+[ERROR] Missing mandatory argument "-num_partitions [2, 32768]"
+[ERROR] Argument -num_partitions should be an integer in the range [2, 32768]
+[ERROR] Argument -num_partitions should be an integer in the range [2, 32768]

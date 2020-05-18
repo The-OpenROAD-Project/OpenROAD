@@ -1,0 +1,33 @@
+OpenROAD 1.1.0 8a4d641ccc
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+Notice 0: Reading LEF file:  merged.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  merged.lef
+Notice 0: 
+Reading DEF file: aes.def
+Notice 0: Design: aes_cipher_top
+Notice 0:     Created 388 pins.
+Notice 0:     Created 19005 components and 100029 component-terminals.
+Notice 0:     Created 18831 nets and 62019 connections.
+Notice 0: Finished DEF file: aes.def
+Called once..
+Running MLPart...
+Partitioned graph for seed 71876166 in 289 ms.
+Partitioned graph for seed 708592740 in 294 ms.
+MLPart run completed. Partition ID = 0. Total runs = 2.
+
+Partitioning Results for ID = 0 and Tool = mlpart.
+Best results used seed 71876166.
+Number of Hyperedge Cuts = 291.
+Number of Terminals = 617.
+Cluster Size SD = 598.371.
+Cluster Area SD = 13890.4.
+Total Hop Weigth = 29100.
+Total Runtime = 289.
+

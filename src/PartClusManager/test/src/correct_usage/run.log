@@ -1,0 +1,11 @@
+OpenROAD 1.1.0 8a4d641ccc
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+[ERROR] Missing mandatory argument -tool
+[ERROR] Invalid tool. Use one of the following: chaco gpmetis mlpart
+[ERROR] Missing mandatory argument "-num_partitions [2, 32768]"
+[ERROR] Argument -num_partitions should be an integer in the range [2, 32768]
+[ERROR] Argument -num_partitions should be an integer in the range [2, 32768]

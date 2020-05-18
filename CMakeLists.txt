@@ -36,7 +36,7 @@ cmake_policy(SET CMP0077 NEW)
 endif()
 
 project(OpenROAD VERSION 1.1.0
-  LANGUAGES CXX
+  LANGUAGES CXX C
 )
 
 option(BUILD_OPENPHYSYN "Build OpenPhySyn" ON)

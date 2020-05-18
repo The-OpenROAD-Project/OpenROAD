@@ -43,6 +43,7 @@
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "pdnsim/MakePDNSim.hh"
+#include "PartClusManager/src/MakePartclusmanager.h"
 #ifdef BUILD_OPENPHYSYN
   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #endif
@@ -135,6 +136,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
+  partClusManager_ = makePartClusManager();
 #ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif
@@ -159,6 +161,8 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTritonMp(this);
   initOpenRCX(this);
   initPDNSim(this);
+  initPartClusManager(this);
+  
 #ifdef BUILD_OPENPHYSYN
     initPsn(this);
 #endif

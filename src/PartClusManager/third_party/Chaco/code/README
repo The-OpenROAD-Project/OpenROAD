@@ -1,0 +1,15 @@
+This directory contains all the necessary source code files
+for Chaco.  Simply type "make", and the code will be compiled
+and the executable image placed in "../exec/chaco".  
+
+The default values for the user accessible parameters discussed 
+in the user's guide "doc/User_guide.ps" can be modified by 
+editing the file "main/user_params.c".  You must recompile for 
+these changes to take affect. 
+
+You can also change the code parameters at run time (i.e. without 
+recompiling) by including a file "User_Params" in whichever 
+directory you are running the code from (so in the file 
+"exec/User_Params" in our orignal set-up). Parameter changes 
+can be specified in a natural way in this file using the rules 
+described in the user's guide.

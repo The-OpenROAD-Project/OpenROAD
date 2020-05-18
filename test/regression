@@ -45,6 +45,7 @@ define_tool_script "FastRoute" "src/FastRoute/test/regression"
 define_tool_script "TapCell" "src/tapcell/test/regression"
 define_tool_script "OpenPhySyn" "src/OpenPhySyn/test/regression"
 define_tool_script "PDNSim" "src/PDNSim/test/regression"
+define_tool_script "PartClusManager" "src/PartClusManager/test/regression"
 
 proc run_tool_tests { tool } {
   global argv tool_scripts
