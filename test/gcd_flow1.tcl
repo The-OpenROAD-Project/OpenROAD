@@ -1,7 +1,7 @@
 # gcd flow pipe cleaner
 source "helpers.tcl"
-read_lef NangateOpenCellLibrary.lef
-read_liberty NangateOpenCellLibrary_typical.lib
+read_lef Nangate45.lef
+read_liberty Nangate45_typ.lib
 read_verilog gcd_nangate45.v
 link_design gcd
 read_sdc gcd.sdc
@@ -27,14 +27,16 @@ global_placement
 # resize
 set buffer_cell BUF_X4
 set_wire_rc -layer metal2
+set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
+resize
 buffer_ports -buffer_cell $buffer_cell
 repair_max_cap -buffer_cell $buffer_cell
 repair_max_slew -buffer_cell $buffer_cell
 repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell
-resize -dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
 repair_tie_fanout -max_fanout 100 NangateOpenCellLibrary/LOGIC0_X1/Z
 repair_tie_fanout -max_fanout 100 NangateOpenCellLibrary/LOGIC1_X1/Z
 repair_hold_violations -buffer_cell $buffer_cell
+resize
 
 # missing vsrc file
 #analyze_power_grid
@@ -46,6 +48,7 @@ clock_tree_synthesis -lut_file nangate45.lut \
 
 set_placement_padding -global -right 8
 detailed_placement
+optimize_mirroring
 check_placement
 
 fastroute -output_file [make_result_file gcd.route_guide] \
