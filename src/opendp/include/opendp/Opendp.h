@@ -346,7 +346,7 @@ private:
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
 			    vector<dbInst*> &mirror_candidates);
-  void mirrorCandidates(vector<dbInst*> &mirror_candidates);
+  int mirrorCandidates(vector<dbInst*> &mirror_candidates);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
   bool isSupply(dbNet *net) const;
