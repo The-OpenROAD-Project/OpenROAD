@@ -22,7 +22,7 @@ git submodule update --init --recursive
 
 # Swap to current commit of OpenROAD
 cd tools/OpenROAD
-if ! git ls-remote local > /dev/null; then
+if ! git ls-remote local > /dev/null 2>&1; then
     git remote add local ../../..
 fi
 git fetch
