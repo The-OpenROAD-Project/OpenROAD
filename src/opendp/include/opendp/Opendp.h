@@ -269,7 +269,8 @@ private:
   // checkPlacement
   static bool isPlaced(const Cell *cell);
   bool checkPowerLine(const Cell &cell) const;
-  bool checkInCore(const Cell &cell) const;
+  bool checkInRows(const Cell &cell,
+		   const Grid *grid) const;
   const Cell *checkOverlap(const Cell &cell, const Grid *grid) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
   bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
