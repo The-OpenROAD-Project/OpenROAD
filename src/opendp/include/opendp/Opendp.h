@@ -341,8 +341,6 @@ private:
   Grid *makeCellGrid();
   void placeRowFillers(const Grid *grid, int row);
 
-  void reportGrid(const Grid *grid) const;
-
   // Optimizing mirroring
   void getBox(dbNet *net,
 	      // Return value.
