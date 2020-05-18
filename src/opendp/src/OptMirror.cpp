@@ -36,6 +36,7 @@
 #include "opendp/Opendp.h"
 
 #include <unordered_set>
+#include <cstdlib>
 #include "opendb/dbTypes.h"
 
 namespace opendp {
@@ -75,13 +76,18 @@ Opendp::optimizeMirroring()
 
   vector<dbInst*> mirror_candidates;
   findMirrorCandidates(net_boxes, mirror_candidates);
+
   int64_t hpwl_before = hpwl();
-  mirrorCandidates(mirror_candidates);
-  double hpwl_after = hpwl();
-  printf("HPWL before          %8.1f u\n", dbuToMicrons(hpwl_before));
-  printf("HPWL after           %8.1f u\n", dbuToMicrons(hpwl_after));
-  double hpwl_delta = (hpwl_after - hpwl_before) / hpwl_before * 100;
-  printf("HPWL delta           %8.0f %%\n", hpwl_delta);
+  int mirror_count = mirrorCandidates(mirror_candidates);
+
+  if (mirror_count > 0) {
+    printf("Mirrored %d instances\n", mirror_count);
+    double hpwl_after = hpwl();
+    printf("HPWL before          %8.1f u\n", dbuToMicrons(hpwl_before));
+    printf("HPWL after           %8.1f u\n", dbuToMicrons(hpwl_after));
+    double hpwl_delta = (hpwl_after - hpwl_before) / hpwl_before * 100;
+    printf("HPWL delta           %8.0f %%\n", hpwl_delta);
+  }
 }
 
 void
@@ -123,9 +129,10 @@ Opendp::findMirrorCandidates(NetBoxes &net_boxes,
   }
 }
 
-void
+int
 Opendp::mirrorCandidates(vector<dbInst*> &mirror_candidates)
 {
+  int mirror_count = 0;
   for (dbInst *inst : mirror_candidates) {
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
@@ -137,7 +144,10 @@ Opendp::mirrorCandidates(vector<dbInst*> &mirror_candidates)
     if (hpwl_after > hpwl_before)
       // Undo mirroring if hpwl is worse.
       inst->setLocationOrient(orient);
+    else
+      mirror_count++;
   }
+  return mirror_count;
 }
 
 // apply mirror about Y axis to orient
@@ -162,6 +172,9 @@ orientMirrorY(dbOrientType orient)
   case dbOrientType::MYR90:
     return dbOrientType::R270;
   }
+  // make lame gcc happy
+  std::abort();
+  return dbOrientType::R0;
 }
 
 int64_t
