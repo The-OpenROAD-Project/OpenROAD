@@ -6,7 +6,6 @@ record_tests {
   check5
   check6
   check7
-  cut_rows1
   fence01
   fence02
   fence03
@@ -18,6 +17,7 @@ record_tests {
   fragmented_row01
   fragmented_row02
   fragmented_row03
+  fragmented_row04
   mirror1
   multi_height01
   multi_height02
