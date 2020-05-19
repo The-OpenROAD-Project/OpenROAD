@@ -770,6 +770,14 @@ proc tapcell { args } {
                         puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
                         continue
                     }
+
+                    set min_dist [expr 2 * $site_x]
+                    set max_tap_urx [expr $end_llx - $min_dist]
+
+                    if { $tap_urx > $max_tap_urx} {
+                        set violated_len [expr $tap_urx - $max_tap_urx]
+                        set x [expr $x - $violated_len]
+                    }
                     set inst [odb::dbInst_create $block $master $inst_name]
                     $inst setOrient $ori
 
