@@ -80,6 +80,7 @@
 # 30 "Layer specified for std. cell rails '$layer' not in list of layers."
 # 31 "No matching grid specification found for $instance"
 # 33 "Unknown direction for layer $layer_name"
+# 41 "Need to define pwr_pads and gnd_pads in config file to use pad_offset option"
 #
 # 9999 - Unexpected error
 #
@@ -1841,13 +1842,13 @@ proc generate_via_stacks {l1 l2 tag constraints} {
       if {[get_dir $layer1] == "hor"} {
         if {$height < [get_grid_wire_width $layer1]} {
           # If the intersection doesnt cover the whole width of the bottom level wire, then ignore
-          warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
+          # warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
           continue
         }
       } else {
         if {$width < [get_grid_wire_width $layer1]} {
           # If the intersection doesnt cover the whole width of the bottom level wire, then ignore
-          warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
+          # warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
           continue
         }
       }
@@ -1855,13 +1856,13 @@ proc generate_via_stacks {l1 l2 tag constraints} {
     if {[get_dir $layer2] == "hor"} {
       if {$height < [get_grid_wire_width $layer2]} {
         # If the intersection doesnt cover the whole width of the top level wire, then ignore
-        warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
+        # warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
         continue
       }
     } else {
       if {$width < [get_grid_wire_width $layer2]} {
         # If the intersection doesnt cover the whole width of the top level wire, then ignore
-        warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
+        # warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
         continue
       }
     }
@@ -1983,24 +1984,29 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
 proc adjust_area_for_core_rings {layer area} {
   variable grid_data
 
-  set core_offset [dict get $grid_data core_ring $layer core_offset]
-  set width [dict get $grid_data core_ring $layer width]
-  set spacing [dict get $grid_data core_ring $layer spacing]
+  if {[dict exists $grid_data core_ring $layer pad_offset]} {
+    set pad_area [find_pad_offset_area]
+    set width [dict get $grid_data core_ring $layer width]
+    set offset [expr [dict get $grid_data core_ring $layer pad_offset]]
+    set spacing [dict get $grid_data core_ring $layer spacing]
+    set xMin [expr [lindex $pad_area 0] + $offset]
+    set yMin [expr [lindex $pad_area 1] + $offset]
+    set xMax [expr [lindex $pad_area 2] - $offset]
+    set yMax [expr [lindex $pad_area 3] - $offset]
+  } elseif {[dict exists $grid_data core_ring $layer core_offset]} {
+    set offset [dict get $grid_data core_ring $layer core_offset] 
+    set width [dict get $grid_data core_ring $layer width]
+    set spacing [dict get $grid_data core_ring $layer spacing]
+    set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2]
+    set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2]
+    set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2]
+    set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2]
+  }
 
   if {[get_dir $layer] == "hor"} {
-    set extended_area [list \
-      [expr [lindex $area 0] - $core_offset - $width - $spacing - $width / 2] \
-      [lindex $area 1] \
-      [expr [lindex $area 2] + $core_offset + $width + $spacing + $width / 2] \
-      [lindex $area 3] \
-    ]
+    set extended_area [list $xMin [lindex $area 1] $xMax [lindex $area 3]]
   } else {
-    set extended_area [list \
-      [lindex $area 0] \
-      [expr [lindex $area 1] - $core_offset - $width - $spacing - $width / 2] \
-      [lindex $area 2] \
-      [expr [lindex $area 3] + $core_offset + $width + $spacing + $width / 2] \
-    ]
+    set extended_area [list [lindex $area 0] $yMin [lindex $area 2] $yMax]
   }
   return $extended_area
 }
@@ -2084,61 +2090,172 @@ proc generate_grid_vias {tag net_name} {
 proc get_core_ring_centre {type side layer_info} {
   variable grid_data
 
-  set area [find_core_area]
-  set xMin [lindex $area 0]
-  set yMin [lindex $area 1]
-  set xMax [lindex $area 2]
-  set yMax [lindex $area 3]
-  set core_offset [dict get $layer_info core_offset]
   set spacing [dict get $layer_info spacing]
   set width [dict get $layer_info width]
 
-  # debug "area        $area"
-  # debug "core_offset $core_offset"
-  # debug "spacing     $spacing"
-  # debug "width       $width"
-  switch $type {
-    "POWER" {
-      switch $side {
-        "t" {return [expr $yMax + $core_offset]}
-        "b" {return [expr $yMin - $core_offset]} 
-        "l" {return [expr $xMin - $core_offset]} 
-        "r" {return [expr $xMax + $core_offset]}
+  if {[dict exists $layer_info pad_offset]} {
+    set area [find_pad_offset_area]
+    set xMin [lindex $area 0]
+    set yMin [lindex $area 1]
+    set xMax [lindex $area 2]
+    set yMax [lindex $area 3]
+    set offset [expr [dict get $layer_info pad_offset] + $width / 2]
+    # debug "area        $area"
+    # debug "pad_offset  $offset"
+    # debug "spacing     $spacing"
+    # debug "width       $width"
+    switch $type {
+      "GROUND" {
+        switch $side {
+          "t" {return [expr $yMax - $offset]}
+          "b" {return [expr $yMin + $offset]} 
+          "l" {return [expr $xMin + $offset]} 
+          "r" {return [expr $xMax - $offset]}
+        }
+      }
+      "POWER" {
+        switch $side {
+          "t" {return [expr $yMax - $offset - $spacing - $width]}
+          "b" {return [expr $yMin + $offset + $spacing + $width]} 
+          "l" {return [expr $xMin + $offset + $spacing + $width]} 
+          "r" {return [expr $xMax - $offset - $spacing - $width]}
+        }
       }
     }
-    "GROUND" {
-      switch $side {
-        "t" {return [expr $yMax + $core_offset + $spacing + $width]}
-        "b" {return [expr $yMin - $core_offset - $spacing - $width]} 
-        "l" {return [expr $xMin - $core_offset - $spacing - $width]} 
-        "r" {return [expr $xMax + $core_offset + $spacing + $width]}
-      }
-    }
-  }
-}
-
-proc generate_core_rings {} {
-  variable grid_data
-  
-  dict for {layer layer_info} [dict get $grid_data core_ring] {
+  } elseif {[dict exists $layer_info core_offset]} {
     set area [find_core_area]
     set xMin [lindex $area 0]
     set yMin [lindex $area 1]
     set xMax [lindex $area 2]
     set yMax [lindex $area 3]
-    set core_offset [dict get $layer_info core_offset]
-    set spacing [dict get $layer_info spacing]
-    set width [dict get $layer_info width]
-    
-    set inner_lx [expr $xMin - $core_offset]
-    set inner_ly [expr $yMin - $core_offset]
-    set inner_ux [expr $xMax + $core_offset]
-    set inner_uy [expr $yMax + $core_offset]
 
-    set outer_lx [expr $xMin - $core_offset - $spacing - $width]
-    set outer_ly [expr $yMin - $core_offset - $spacing - $width]
-    set outer_ux [expr $xMax + $core_offset + $spacing + $width]
-    set outer_uy [expr $yMax + $core_offset + $spacing + $width]
+    set offset [dict get $layer_info core_offset]
+    # debug "area        $area"
+    # debug "core_offset $offset"
+    # debug "spacing     $spacing"
+    # debug "width       $width"
+    switch $type {
+      "POWER" {
+        switch $side {
+          "t" {return [expr $yMax + $offset]}
+          "b" {return [expr $yMin - $offset]} 
+          "l" {return [expr $xMin - $offset]} 
+          "r" {return [expr $xMax + $offset]}
+        }
+      }
+      "GROUND" {
+        switch $side {
+          "t" {return [expr $yMax + $offset + $spacing + $width]}
+          "b" {return [expr $yMin - $offset - $spacing - $width]} 
+          "l" {return [expr $xMin - $offset - $spacing - $width]} 
+          "r" {return [expr $xMax + $offset + $spacing + $width]}
+        }
+      }
+    }
+  }
+}
+
+proc find_pad_offset_area {} {
+  variable block
+  variable grid_data
+  variable design_data
+
+  if {!([dict exists $grid_data pwr_pads] && [dict exists $grid_data gnd_pads])} {
+    critical 41 "Need to define pwr_pads and gnd_pads in config file to use pad_offset option"
+  }
+
+  set pad_names {}
+  dict for {pin_name pads} [dict get $grid_data pwr_pads] {
+    set pad_names [concat $pad_names $pads]
+  }
+  dict for {pin_name pads} [dict get $grid_data gnd_pads] {
+    set pad_names [concat $pad_names $pads]
+  }
+  set pad_names [lsort -unique $pad_names]
+  set die_area [dict get $design_data config die_area]
+  set xMin [lindex $die_area 0]
+  set yMin [lindex $die_area 1]
+  set xMax [lindex $die_area 2]
+  set yMax [lindex $die_area 3]
+
+  foreach inst [$block getInsts] {
+    if {[lsearch $pad_names [[$inst getMaster] getName]] > -1} {
+      set quadrant [get_quadrant {*}[$inst getOrigin]]
+      switch $quadrant {
+        "b" {
+          if {$yMin < [set y [[$inst getBBox] yMax]]} {
+            set yMin $y
+          }
+        }
+        "r" {
+          if {$xMax > [set x [[$inst getBBox] xMin]]} {
+            set xMax $x
+          }
+        }
+        "t" {
+          if {$yMax > [set y [[$inst getBBox] yMin]]} {
+            set yMax $y
+          }
+        }
+        "l" {
+          if {$xMin < [set x [[$inst getBBox] xMax]]} {
+            set xMin $x
+          }
+        }
+      }
+    }
+  }
+  return [list $xMin $yMin $xMax $yMax]
+}
+
+proc generate_core_rings {core_ring_data} {
+  variable grid_data
+  
+  dict for {layer layer_info} $core_ring_data {
+    if {[dict exists $layer_info pad_offset]} {
+      set area [find_pad_offset_area]
+      set offset [expr [dict get $layer_info pad_offset] + [dict get $layer_info width] / 2]
+
+      set xMin [lindex $area 0]
+      set yMin [lindex $area 1]
+      set xMax [lindex $area 2]
+      set yMax [lindex $area 3]
+
+      set spacing [dict get $layer_info spacing]
+      set width [dict get $layer_info width]
+    
+      set outer_lx [expr $xMin + $offset]
+      set outer_ly [expr $yMin + $offset]
+      set outer_ux [expr $xMax - $offset]
+      set outer_uy [expr $yMax - $offset]
+  
+      set inner_lx [expr $xMin + $offset + $spacing + $width]
+      set inner_ly [expr $yMin + $offset + $spacing + $width]
+      set inner_ux [expr $xMax - $offset - $spacing - $width]
+      set inner_uy [expr $yMax - $offset - $spacing - $width]
+    } elseif {[dict exists $layer_info core_offset]} {
+      set area [find_core_area]
+      set offset [dict get $layer_info core_offset]
+
+      set xMin [lindex $area 0]
+      set yMin [lindex $area 1]
+      set xMax [lindex $area 2]
+      set yMax [lindex $area 3]
+
+      set spacing [dict get $layer_info spacing]
+      set width [dict get $layer_info width]
+    
+      set inner_lx [expr $xMin - $offset]
+      set inner_ly [expr $yMin - $offset]
+      set inner_ux [expr $xMax + $offset]
+      set inner_uy [expr $yMax + $offset]
+
+      set outer_lx [expr $xMin - $offset - $spacing - $width]
+      set outer_ly [expr $yMin - $offset - $spacing - $width]
+      set outer_ux [expr $xMax + $offset + $spacing + $width]
+      set outer_uy [expr $yMax + $offset + $spacing + $width]
+    }
+
 
     if {[get_dir $layer] == "hor"} {
       add_stripe $layer POWER \
@@ -2862,7 +2979,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
 proc convert_layer_spec_to_def_units {data} {
   variable def_units
   
-  foreach key {width pitch spacing offset core_offset} {
+  foreach key {width pitch spacing offset pad_offset core_offset} {
     if {[dict exists $data $key]} {
       dict set data $key [expr round([dict get $data $key] * $def_units)]
     }
@@ -3455,7 +3572,7 @@ proc add_grid {} {
   variable grid_data
   
   if {[dict exists $grid_data core_ring]} {
-    generate_core_rings
+    generate_core_rings [dict get $grid_data core_ring]
     if {[dict exists $grid_data gnd_pads]} {
       dict for {pin_name cells} [dict get $grid_data gnd_pads] {
         connect_pads_to_core_ring "GROUND" $pin_name $cells
@@ -3677,7 +3794,7 @@ proc report_layer_details {layer} {
   variable def_units
   
   set str " - "
-  foreach element {width pitch spacing offset core_offset} {
+  foreach element {width pitch spacing offset pad_offset core_offset} {
     if {[dict exists $layer $element]} {
       set str [format "$str $element: %.3f " [expr 1.0 * [dict get $layer $element] / $def_units]]
     }
