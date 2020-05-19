@@ -121,9 +121,12 @@ Opendp::placeRowFillers(const Grid *grid, int row)
   dbOrientType orient = rowOrient(row);
   int j = 0;
   while (j < row_site_count_) {
-    if (grid[row][j].cell == nullptr) {
+    if (grid[row][j].cell == nullptr
+        && grid[row][j].is_valid) {
       int k = j;
-      while (grid[row][k].cell == nullptr && k < row_site_count_) {
+      while (grid[row][k].cell == nullptr
+	     && grid[row][k].is_valid
+	     && k < row_site_count_) {
         k++;
       }
       int gap = k - j;

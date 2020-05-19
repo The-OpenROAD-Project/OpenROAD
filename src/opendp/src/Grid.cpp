@@ -54,25 +54,6 @@ Opendp::initGrid()
 {
   // Make pixel grid
   grid_ = makeGrid();
-
-  // Fragmented Row Handling
-  for (auto db_row : block_->getRows()) {
-    int orig_x, orig_y;
-    db_row->getOrigin(orig_x, orig_y);
-
-    int x_start = (orig_x - core_.xMin()) / site_width_;
-    int y_start = (orig_y - core_.yMin()) / row_height_;
-
-    int x_end = x_start + db_row->getSiteCount();
-    int y_end = y_start + 1;
-
-    for (int i = x_start; i < x_end; i++) {
-      for (int j = y_start; j < y_end; j++) {
-        grid_[j][i].is_valid = true;
-      }
-    }
-  }
-
   // fixed cell marking
   fixed_cell_assign();
   // group mapping & x_axis dummycell insertion
@@ -98,6 +79,26 @@ Opendp::makeGrid()
       pixel.is_valid = false;
     }
   }
+
+  
+  // Fragmented row support; mark valid sites.
+  for (auto db_row : block_->getRows()) {
+    int orig_x, orig_y;
+    db_row->getOrigin(orig_x, orig_y);
+
+    int x_start = (orig_x - core_.xMin()) / site_width_;
+    int y_start = (orig_y - core_.yMin()) / row_height_;
+
+    int x_end = x_start + db_row->getSiteCount();
+    int y_end = y_start + 1;
+
+    for (int i = x_start; i < x_end; i++) {
+      for (int j = y_start; j < y_end; j++) {
+        grid[j][i].is_valid = true;
+      }
+    }
+  }
+
   return grid;
 }
 
