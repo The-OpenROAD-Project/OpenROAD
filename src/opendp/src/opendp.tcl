@@ -79,10 +79,9 @@ proc set_placement_padding { args } {
   if { [info exists flags(-global)] } {
     opendp::set_padding_global $left $right
   } elseif { [info exists keys(-masters)] } {
-    set cells [sta::get_lib_cells_arg "-masters" $keys(-masters) sta::warn]
-    foreach cell $cells {
-      set db_master [sta::sta_to_db_master $cell]
-      opendp::set_padding_master $db_master $left $right
+    set masters [opendp::get_masters_arg "-masters" $keys(-masters)]
+    foreach master $masters {
+      opendp::set_padding_master $master $left $right
     }
   } elseif { [info exists keys(-instances)] } {
     # sta::get_instances_error supports sdc get_cells
@@ -116,9 +115,14 @@ sta::define_cmd_args "filler_placement" { filler_masters }
 
 proc filler_placement { args } {
   sta::check_argc_eq1 "filler_placement" $args
-  set fillers [opendp::get_masters_arg [lindex $args 0]]
+  set fillers [opendp::get_masters_arg "filler_masters" [lindex $args 0]]
   if { [llength $fillers] > 0 } {
-    opendp::filler_placement_cmd $fillers
+    # pass master names for now
+    set filler_names {}
+    foreach filler $fillers {
+      lappend filler_names [$filler getConstName]
+    }
+    opendp::filler_placement_cmd $filler_names
   }
 }
 
@@ -142,26 +146,36 @@ proc optimize_mirroring { args } {
 
 namespace eval opendp {
 
-# expand master name regexps
-proc get_masters_arg { master_names } {
-  set db [ord::get_db]
-  set names {}
-  foreach name $master_names {
-    set matched 0
-    foreach lib [$db getLibs] {
-      foreach master [$lib getMasters] {
-	set master_name [$master getConstName]
-	if { [regexp $name $master_name] } {
-	  lappend names $master_name
-	  set matched 1
+proc get_masters_arg { arg_name arg } {
+  set matched 0
+  set masters {}
+  # Look for liberty cells via get_lib_cells.
+  set cells [sta::get_lib_cells_arg $arg_name $arg sta::warn]
+  if { $cells != {} } {
+    foreach cell $cells {
+      set db_master [sta::sta_to_db_master $cell]
+      lappend masters $db_master
+      set matched 1
+    }
+  } else {
+    # Expand master name regexps
+    set db [ord::get_db]
+    foreach name $arg {
+      foreach lib [$db getLibs] {
+	foreach master [$lib getMasters] {
+	  set master_name [$master getConstName]
+	  if { [regexp $name $master_name] } {
+	    lappend masters $master
+	    set matched 1
+	  }
 	}
       }
     }
-    if { !$matched } {
-      puts "Warning: $name did not match any masters."
-    }
   }
-  return $names
+  if { !$matched } {
+    puts "Warning: $name did not match any masters."
+  }
+  return $masters
 }
 
 proc get_inst_bbox { inst_name } {

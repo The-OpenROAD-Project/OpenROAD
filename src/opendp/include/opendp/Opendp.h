@@ -175,6 +175,10 @@ public:
   void setPadding(dbInst *inst,
 		  int left,
 		  int right);
+  // Global padding.
+  int padGlobalLeft() const { return pad_left_; }
+  int padGlobalRight() const { return pad_right_; }
+  // Find instance/master/global padding value for an instance.
   int padRight(dbInst *inst) const;
   int padLeft(dbInst *inst) const;
   // Return true if illegal.
@@ -265,7 +269,8 @@ private:
   // checkPlacement
   static bool isPlaced(const Cell *cell);
   bool checkPowerLine(const Cell &cell) const;
-  bool checkInCore(const Cell &cell) const;
+  bool checkInRows(const Cell &cell,
+		   const Grid *grid) const;
   const Cell *checkOverlap(const Cell &cell, const Grid *grid) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
   bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
@@ -337,8 +342,6 @@ private:
   Grid *makeCellGrid();
   void placeRowFillers(const Grid *grid, int row);
 
-  void reportGrid(const Grid *grid) const;
-
   // Optimizing mirroring
   void getBox(dbNet *net,
 	      // Return value.
@@ -346,7 +349,7 @@ private:
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
 			    vector<dbInst*> &mirror_candidates);
-  void mirrorCandidates(vector<dbInst*> &mirror_candidates);
+  int mirrorCandidates(vector<dbInst*> &mirror_candidates);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);
   bool isSupply(dbNet *net) const;

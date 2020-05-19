@@ -59,7 +59,7 @@ Opendp::checkPlacement(bool verbose)
   importDb();
 
   vector<Cell *> placed_failures;
-  vector<Cell *> in_core_failures;
+  vector<Cell *> in_rows_failures;
   vector<Cell *> overlap_failures;
   vector<Cell *> site_failures;
   vector<Cell *> power_line_failures;
@@ -80,8 +80,8 @@ Opendp::checkPlacement(bool verbose)
     if (!isPlaced(&cell)) {
       placed_failures.push_back(&cell);
     }
-    if (checkInCore(cell)) {
-      in_core_failures.push_back(&cell);
+    if (!checkInRows(cell, grid)) {
+      in_rows_failures.push_back(&cell);
     }
     if (checkOverlap(cell, grid) != nullptr) {
       overlap_failures.push_back(&cell);
@@ -89,7 +89,7 @@ Opendp::checkPlacement(bool verbose)
   }
 
   reportFailures(placed_failures, "Placed", verbose);
-  reportFailures(in_core_failures, "Placed in core", verbose);
+  reportFailures(in_rows_failures, "Placed in rows", verbose);
   reportFailures(overlap_failures, "Overlap", verbose, [&](Cell *cell) -> void {
     reportOverlapFailure(cell, grid);
   });
@@ -98,7 +98,11 @@ Opendp::checkPlacement(bool verbose)
 
   deleteGrid(grid);
 
-  return !power_line_failures.empty() || !placed_failures.empty() || !in_core_failures.empty() || !overlap_failures.empty() || !site_failures.empty();
+  return !power_line_failures.empty()
+    || !placed_failures.empty()
+    || !in_rows_failures.empty()
+    || !overlap_failures.empty()
+    || !site_failures.empty();
 }
 
 void
@@ -159,9 +163,26 @@ Opendp::checkPowerLine(const Cell &cell) const
 }
 
 bool
-Opendp::checkInCore(const Cell &cell) const
+Opendp::checkInRows(const Cell &cell,
+		    const Grid *grid) const
 {
-  return gridX(&cell) < 0 || gridY(&cell) < 0 || gridEndX(&cell) > row_site_count_ || gridEndY(&cell) > row_count_;
+  int x_ll = gridX(&cell);
+  int x_ur = gridEndX(&cell);
+  int y_ll = gridY(&cell);
+  int y_ur = gridEndY(&cell);
+  if (!(x_ll >= 0
+	&& x_ur <= row_site_count_
+	&& y_ll >= 0
+	&& y_ur <= row_count_))
+    return false;
+  for (int j = y_ll; j < y_ur; j++) {
+    for (int k = x_ll; k < x_ur; k++) {
+      Pixel &pixel = grid[j][k];
+      if (!pixel.is_valid)
+	return false;
+    }
+  }
+  return true;
 }
 
 // COVER *, RING, PAD * - ignored

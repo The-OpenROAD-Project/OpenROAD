@@ -6,6 +6,7 @@ record_tests {
   check5
   check6
   check7
+  cut_rows1
   fence01
   fence02
   fence03
@@ -13,6 +14,7 @@ record_tests {
   fillers2
   fillers3
   fillers4
+  fillers5
   fragmented_row01
   fragmented_row02
   fragmented_row03
