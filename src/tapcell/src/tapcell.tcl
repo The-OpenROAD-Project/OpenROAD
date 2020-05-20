@@ -923,7 +923,7 @@ proc tapcell { args } {
                 set row_urx [[$row getBBox] xMax]
                 set row_ury [[$row getBBox] yMax]
 
-		if {$blockage_llx_ < $row_llx} {
+		        if {$blockage_llx_ < $row_llx} {
                     set blockage_llx $row_llx
                 } else {
                     set blockage_llx $blockage_llx_
@@ -937,7 +937,7 @@ proc tapcell { args } {
 
                 if {($row_lly >= $blockage_ury)} {
                     # If row is at top of macro
-                    if {[string match "MX" $ori]} {
+                    if {[string match "R0" $ori]} {
                         set incnr_master [$db findMaster $incnrcap_nwin_master]
                         set tb2_master [$db findMaster $tap_nwin2_master]
                         set tb3_master [$db findMaster $tap_nwin3_master]
@@ -948,6 +948,8 @@ proc tapcell { args } {
                         set tb3_master [$db findMaster $tap_nwout3_master]
                         set tbtie_master [$db findMaster $tap_nwouttie_master]
                     }
+
+                    set cell_orient $ori
 
                     # Insert incnr cells
                     set row1_num_sites [expr {($blockage_llx - $row_llx)/$site_x}]
@@ -964,8 +966,14 @@ proc tapcell { args } {
                     if {$x_start < $row_llx} {
                         set x_start $row_llx
                     } else {
+                        # Insert cell at northwest corner
                         set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
-                        $inst1 setOrient $ori
+                        if {[string match "R0" $ori]} {
+                            set cell_orient "MY"
+                        } else {
+                            set cell_orient "R180"
+                        }
+                        $inst1 setOrient $cell_orient
                         $inst1 setLocation $x_start $row_lly
                         $inst1 setPlacementStatus LOCKED
                     
@@ -975,6 +983,7 @@ proc tapcell { args } {
 
                     if {(($x_end + $endcapwidth) < $corebox_urx)} {
                         if {($x_end + $endcapwidth) <= $row_urx } {
+                            # Insert cell at northeast corner
                             set inst2_name "PHY_${cnt}"
                             set inst2 [odb::dbInst_create $block $incnr_master $inst2_name]
                             $inst2 setOrient $ori
@@ -1048,6 +1057,8 @@ proc tapcell { args } {
                         set tbtie_master [$db findMaster $tap_nwouttie_master]
                     }
 
+                    set cell_orient $ori
+
                     # Insert incnr cells
                     set row1_num_sites [expr {($blockage_llx - $row_llx)/$site_x}]
                     
@@ -1063,8 +1074,14 @@ proc tapcell { args } {
                     if {$x_start < $row_llx} {
                         set x_start $row_llx
                     } else {
+                        # Insert cell at southwest corner
                         set inst1 [odb::dbInst_create $block $incnr_master $inst1_name]
-                        $inst1 setOrient $ori
+                        if {[string match "R0" $ori]} {
+                            set cell_orient "MY"
+                        } else {
+                            set cell_orient "R180"
+                        }
+                        $inst1 setOrient $cell_orient
                         $inst1 setLocation $x_start $row_lly
                         $inst1 setPlacementStatus LOCKED
 
