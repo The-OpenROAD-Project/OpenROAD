@@ -46,19 +46,47 @@ clock_tree_synthesis -lut_file nangate45.lut \
   -root_buf BUF_X4 \
   -wire_unit 20
 
+set cts_def [make_result_file gcd_cts.def]
+write_def $cts_def
+
 set_placement_padding -global -right 8
 detailed_placement
 optimize_mirroring
 check_placement
 
-fastroute -output_file [make_result_file gcd.route_guide] \
+set route_guide [make_result_file gcd.route_guide]
+fastroute -output_file  $route_guide\
           -max_routing_layer 10 \
           -unidirectional_routing true \
           -capacity_adjustment 0.15 \
           -layers_adjustments {{2 0.5} {3 0.5}} \
           -overflow_iterations 200
 
-# detailed route goes here
+if {0} {
+set routed_def [make_result_file gcd_route.def]
+
+# Aren't parameter files just wonderful?
+set tr_params [make_result_file tr.params]
+set tr_param_stream [open $tr_params "w"]
+puts $tr_param_stream "lef:nangate45_merged_spacing.lef"
+puts $tr_param_stream "def:$cts_def"
+puts $tr_param_stream "guide:$route_guide"
+puts $tr_param_stream "output:$routed_def"
+puts $tr_param_stream "outputTA:[make_result_file "gcd_route_TA.def"]"
+puts $tr_param_stream "outputguide:[make_result_file "gcd_output_guide.mod"]"
+puts $tr_param_stream "outputDRC:[make_result_file "gcd_route_drc.rpt"]"
+puts $tr_param_stream "outputMaze:[make_result_file "gcd_maze.log"]"
+puts $tr_param_stream "threads:1"
+puts $tr_param_stream "cpxthreads:1"
+puts $tr_param_stream "verbose:1"
+puts $tr_param_stream "gap:0"
+puts $tr_param_stream "timeout:2400"
+close $tr_param_stream
+
+exec TritonRoute $tr_params
+
+read_def $routed_def
+}
 
 filler_placement FILL*
 
@@ -79,3 +107,5 @@ report_design_area
 
 set def_file [make_result_file gcd.def]
 write_def $def_file
+}
+

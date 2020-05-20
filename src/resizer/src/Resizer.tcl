@@ -86,6 +86,9 @@ proc resize { args } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
   } else {
     set resize_libs [get_libs *]
+    if { $resize_libs == {} } {
+      sta_error "No liberty libraries found."
+    }
   }
 
   if { [info exists keys(-dont_use)] } {
