@@ -820,7 +820,8 @@ proc tapcell { args } {
             set tb3_master NULL
 
             if {$topbottom_chk == 1} {
-                if {[string match "MX" $ori]} {
+                # top
+                if {[string match "R0" $ori]} {
                     set master [$db findMaster $tap_nwintie_master]
                     set tb2_master [$db findMaster $tap_nwin2_master]
                     set tb3_master [$db findMaster $tap_nwin3_master]
@@ -830,7 +831,8 @@ proc tapcell { args } {
                     set tb3_master [$db findMaster $tap_nwout3_master]
                 }
             } elseif {$topbottom_chk == -1} {
-                if {[string match "R0" $ori]} {
+                # bottom
+                if {[string match "MX" $ori]} {
                     set master [$db findMaster $tap_nwintie_master]
                     set tb2_master [$db findMaster $tap_nwin2_master]
                     set tb3_master [$db findMaster $tap_nwin3_master]
