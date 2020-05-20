@@ -774,9 +774,9 @@ proc tapcell { args } {
                     set min_dist [expr 2 * $site_x]
                     set max_tap_urx [expr $end_llx - $min_dist]
 
-                    if { $tap_urx > $max_tap_urx} {
-                        set violated_len [expr $tap_urx - $max_tap_urx]
-                        set x [expr $x - $violated_len]
+                    while { $tap_urx > $max_tap_urx } {
+                        set tap_urx [expr $tap_urx - $site_x]
+                        set x [expr $x - $site_x]
                     }
                     set inst [odb::dbInst_create $block $master $inst_name]
                     $inst setOrient $ori
