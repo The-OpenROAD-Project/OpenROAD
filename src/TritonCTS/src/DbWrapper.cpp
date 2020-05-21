@@ -74,6 +74,8 @@ void DbWrapper::initDB() {
 
 void DbWrapper::initAllClocks() {
         std::cout << " Initializing clock nets\n";
+
+        clearNumClocks();
         
         std::vector<std::string> clockNetNames;
         parseClockNames(clockNetNames);
@@ -93,6 +95,7 @@ void DbWrapper::initAllClocks() {
                 std::cout << " Net \"" << name << "\" found\n";
                 initClock(net);
         }
+        std::cout << " TritonCTS found " << getNumClocks() << " clock nets." << std::endl;
 }       
 
 void DbWrapper::initClock(odb::dbNet* net) {
@@ -114,7 +117,7 @@ void DbWrapper::initClock(odb::dbNet* net) {
         }
 
         // Initialize clock net
-        std::cout << net->getConstName() << std::endl;
+        std::cout << " Initializing clock net for : \"" << net->getConstName() << "\"" << std::endl;
         
         Clock clockNet(net->getConstName(), 
                        driver,
@@ -144,6 +147,10 @@ void DbWrapper::initClock(odb::dbNet* net) {
                 return;
         
         }
+
+        std::cout << " Clock net \"" << net->getConstName() << "\" has " << clockNet.getNumSinks() << " sinks" << std::endl;
+
+        incrementNumClocks();
 
         _kernel->addBuilder(new HTreeBuilder(*_options, clockNet));
 }
