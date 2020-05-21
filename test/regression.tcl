@@ -224,12 +224,31 @@ proc run_test { test } {
 	  incr errors(no_ok)
 	}
       } else {
-	puts " pass"
+	if { [find_log_pass_fail $log_file] } {
+	  puts " *FAIL*$error_msg"
+	  append_failure $test
+	  incr errors(fail)
+	} else {
+	  puts " pass$error_msg"
+	}
       }
     }
   } else {
     puts "$test *NO CMD FILE*"
     incr errors(no_cmd)
+  }
+}
+
+proc find_log_pass_fail { log_file } {
+  set stream [open $log_file r]
+  while { [gets $stream line] >= 0 } {
+    set last_line $line
+  }
+  close $stream
+  if { [lindex $last_line 0] == "pass" } {
+    return 0
+  } else {
+    return 1
   }
 }
 

@@ -94,13 +94,9 @@ report_floating_nets -verbose
 report_design_area
 
 if { ![info exists drv_count] } {
-  puts "FAILED: drv count not found."
-  set exit_code 1
+  puts "fail: drv count not found."
 } elseif { $drv_count > $max_drv_count } {
-  puts "FAILED:  max drv count exceeded $drv_count > $max_drv_count."
-  set exit_code 1
+  puts "fail:  max drv count exceeded $drv_count > $max_drv_count."
 } else {
-  puts "PASSED"
-  set exit_code 0
+  puts "pass"
 }
-#exit $exit_code

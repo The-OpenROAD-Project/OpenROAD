@@ -75,10 +75,10 @@ proc run_tool_tests { tool } {
 set tool_errors 0
 
 if { $argv == {} } {
-  run_openroad_tests
   dict for {tool script} $tool_scripts {
     run_tool_tests $tool
   }
+  run_openroad_tests
 } else {
   foreach tool $argv {
     if { [string equal -nocase $tool "openroad"] } {
