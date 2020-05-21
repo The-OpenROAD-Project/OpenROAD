@@ -345,20 +345,7 @@ Rect
 getCore(dbBlock *block)
 {
   odb::Rect core;
-  auto rows = block->getRows();
-  if (rows.size() > 0) {
-    core.mergeInit();
-    for(auto db_row : block->getRows()) {
-      int orig_x, orig_y;
-      db_row->getOrigin(orig_x, orig_y);
-      odb::Rect row_bbox;
-      db_row->getBBox(row_bbox);
-      core.merge(row_bbox);
-    }
-  }
-  else
-    // Default to die area if there aren't any rows.
-    block->getDieArea(core);
+  block->getCoreArea(core);
   return core;
 }
 
