@@ -1,5 +1,5 @@
 # init_floorplan
-source "helpers.tcl"
+source "../../../test/helpers.tcl"
 read_lef liberty1.lef
 read_def reg1.def
 read_liberty liberty1.lib

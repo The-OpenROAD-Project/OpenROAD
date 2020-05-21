@@ -15,4 +15,4 @@ No. Instances: 17821
 Invoking constant_propagation transform 
 Finished constant_propagation transform ( 96 ) 
 No. Instances: 17773
-Differences found at line 1.
+No differences found.

@@ -29,7 +29,7 @@ source [file join $test_dir "regression_tests.tcl"]
 
 proc define_tool_script { tool script } {
   global tool_scripts
-  dict set tool_scripts $tool $script
+  dict set tool_scripts [string tolower $tool] $script
 }
 
 define_tool_script "init_fp" "src/init_fp/test/regression"
@@ -46,11 +46,6 @@ define_tool_script "FastRoute" "src/FastRoute/test/regression"
 define_tool_script "TapCell" "src/tapcell/test/regression"
 define_tool_script "OpenPhySyn" "src/OpenPhySyn/test/regression"
 define_tool_script "PDNSim" "src/PDNSim/test/regression"
-
-proc run_tool_tests { tool } {
-  global argv tool_scripts
-  return [expr { $argv == {} || [lsearch -nocase $argv $tool] != -1 }]
-}
 
 proc run_openroad_tests { } {
   global tool_errors
@@ -81,10 +76,11 @@ if { $argv == {} } {
   }
   run_openroad_tests
 } else {
-  foreach tool $argv {
+  foreach arg $argv {
+    set tool [string tolower $arg]
     if { [string equal -nocase $tool "openroad"] } {
       run_openroad_tests
-    } elseif { [lsearch [group_tests "all"] $tool] != -1 } {
+    } elseif { [lsearch -nocase [group_tests "all"] $tool] != -1 } {
       incr tool_errors [regression_body $tool]
     } elseif { [dict exists $tool_scripts $tool] } {
       run_tool_tests $tool
