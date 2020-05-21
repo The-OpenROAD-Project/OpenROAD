@@ -1,7 +1,7 @@
 # no fillers in cut rows
 source helpers.tcl
 read_lef Nangate45.lef
-read_def cut_rows1.def
+read_def fragmented_row04.def
 detailed_placement
 check_placement
 filler_placement FILL*
