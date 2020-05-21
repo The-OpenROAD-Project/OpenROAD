@@ -44,15 +44,22 @@
 #define CHARACTERIZATION_H
 
 #include "CtsOptions.h"
+#include "openroad/OpenRoad.hh"
+#include "db_sta/dbNetwork.hh"
+#include "sta/Corner.hh"
 
 #include <iostream>
 #include <vector>
+#include <set>
 #include <unordered_map>
 #include <functional>
 #include <bitset>
 #include <cassert> 
 #include <string>
 #include <deque>
+#include <bitset>
+#include <algorithm>
+#include <chrono>
 
 namespace TritonCTS {
 
@@ -117,13 +124,55 @@ public:
         typedef uint32_t Key;
         static const unsigned NUM_BITS_PER_FIELD = 10;
         static const unsigned MAX_NORMALIZED_VAL = 1023;
-        static const unsigned LENGTH_UNIT_MICRON = 10;
+        unsigned LENGTH_UNIT_MICRON = 10;
+
+        //SolutionData represents the various different structures of the characterization segment. Ports, insts, nets...
+        struct SolutionData {
+                std::vector<odb::dbNet*> netVector;
+                std::vector<unsigned int> nodesWithoutBufVector;
+                odb::dbBPin* inPort;
+                odb::dbBPin* outPort;
+                std::vector<odb::dbInst*> instVector;
+                std::vector<std::string> topologyDescriptor;
+                bool isPureWire = true;
+        } ;
+
+        //ResultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        struct ResultData {
+                float load;
+                float inSlew;
+                float wirelength;
+                float pinSlew;
+                float pinArrival;
+                float totalcap;
+                float totalPower;
+                bool isPureWire;
+                std::vector<std::string> topology;
+        } ;
+
+        //ResultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        struct CharKey {
+                float load;
+                float wirelength;
+                float pinSlew;
+                float totalcap;
+
+                bool operator<(const CharKey &o)  const {
+                        return load < o.load || 
+                               (load == o.load && wirelength < o.wirelength) ||
+                               (load == o.load && wirelength == o.wirelength && pinSlew < o.pinSlew) ||
+                               (load == o.load && wirelength == o.wirelength && pinSlew == o.pinSlew && totalcap < o.totalcap);
+                }
+        } ;
 
 public:
         TechChar(CtsOptions& options) : _options(&options) {}
-        
+
+        void create();
+        void compileLut(std::vector<ResultData> lutSols);
         void parse(const std::string& lutFile, const std::string solListFile);
         void write(const std::string& file) const;
+        void writeSol(const std::string& file) const;
         
         void report() const;
         void reportSegment(unsigned key) const;
@@ -152,6 +201,7 @@ public:
         unsigned getMaxSlew() const { return _maxSlew; }
         void setActualMinInputCap(unsigned cap) { _actualMinInputCap = cap; }
         unsigned getActualMinInputCap() const { return _actualMinInputCap; }
+        void setLenghthUnit(unsigned length) {LENGTH_UNIT_MICRON = length; }
         unsigned getLengthUnit() const { return _lengthUnit; }
        
         void createFakeEntries(unsigned length, unsigned fakeLength);
@@ -188,6 +238,47 @@ protected:
 
         std::deque<WireSegment> _wireSegments;
         std::unordered_map<Key, std::deque<unsigned>> _keyToWireSegments;
+
+        //Characterization attributes
+
+        void initCharacterization();
+        std::vector<SolutionData> createPatterns(unsigned setupWirelength);
+        void createStaInstance();
+        void setParasitics(std::vector<SolutionData> topologiesVector, 
+                                            unsigned setupWirelength);
+        void setSdc(std::vector<SolutionData> topologiesVector, 
+                    unsigned setupWirelength);
+        ResultData computeTopologyResults(SolutionData currentSolution, 
+                                          sta::Vertex* outPinVert, 
+                                          float currentLoad, 
+                                          unsigned setupWirelength);
+        SolutionData updateBufferTopologies(SolutionData currentSolution);
+        std::vector<ResultData> characterizationPostProcess();
+        unsigned normalizeCharResults(float value, float iter, 
+                                      unsigned* min, unsigned* max);
+
+        sta::dbSta*                     _openSta                = nullptr;
+        odb::dbDatabase*                _db                     = nullptr;
+        sta::dbSta*                     _openStaChar            = nullptr; 
+        sta::dbNetwork*                 _dbNetworkChar          = nullptr;  
+        sta::PathAnalysisPt*            _charPathAnalysis       = nullptr;  
+        sta::Corner*                    _charCorner             = nullptr;  
+        odb::dbBlock*                   _charBlock              = nullptr;
+        odb::dbMaster*                  _charBuf                = nullptr;
+        std::string                     _charBufIn              = "";
+        std::string                     _charBufOut             = "";
+        double                          _resPerDBU              = 0.0001; //Default values, not used
+        double                          _capPerDBU              = 5.0e-20; //Default values, not used
+        float                           _charMaxSlew            = 0.0;
+        float                           _charMaxCap             = 0.0;
+        float                           _charSlewInter          = 5.0e-12; //Hard-coded interval
+        float                           _charCapInter           = 5.0e-15;
+        std::set<std::string>           _masterNames;
+        std::vector<float>              _wirelengthsToTest;
+        std::vector<float>              _loadsToTest;  
+        std::vector<float>              _slewsToTest;  
+
+        std::map<CharKey, std::vector<ResultData>> _solutionMap;
 
         CtsOptions* _options;
 };

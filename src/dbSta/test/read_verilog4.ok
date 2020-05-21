@@ -1,0 +1,6 @@
+Notice 0: Reading LEF file:  liberty1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  liberty1.lef
+Warning: read_verilog4.v, line 6 module xxx not found.  Creating black box for r1.
+No differences found.

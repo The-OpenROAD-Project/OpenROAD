@@ -1,20 +1,24 @@
+# repair_hold_violations
 source helpers.tcl
-read_liberty nlc18.lib
-read_lef nlc18.lef
-read_verilog repair_hold1.v
-link_design top
+read_liberty Nangate_typ.lib
+read_lef Nangate.lef
+read_def repair_hold1.def
 
 create_clock -period 2 clk
 set_input_delay -clock clk 0 {in1 in2}
-set_output_delay -clock clk -1.0 out
+set_output_delay -clock clk -0.1 out
 set_propagated_clock clk
 
 set_wire_rc -layer metal1
 
-report_checks -path_delay min
-repair_hold_violations -buffer_cell [get_lib_cell nlc18/snl_bufx2]
-report_checks -path_delay min
+report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
+  -endpoint_count 5
+
+repair_hold_violations -buffer_cell BUF_X2
+
+report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
+  -endpoint_count 5
 
 set def_file [make_result_file repair_hold2.def]
 write_def $def_file
-diff_files $def_file repair_hold2.defok
+diff_files repair_hold2.defok $def_file

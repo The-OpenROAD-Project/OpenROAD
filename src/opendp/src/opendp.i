@@ -36,23 +36,148 @@
  
 %{
 #include "openroad/OpenRoad.hh"
+#include "db_sta/dbNetwork.hh"
 #include "opendp/Opendp.h"
+
+using opendp::StringSeq;
+using sta::Instance;
+
+StringSeq *
+tclListSeqString(Tcl_Obj *const source,
+		 Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK) {
+    StringSeq *seq = new StringSeq;
+    for (int i = 0; i < argc; i++) {
+      int length;
+      const char *str = Tcl_GetStringFromObj(argv[i], &length);
+      seq->push_back(str);
+    }
+    return seq;
+  }
+  else
+    return nullptr;
+}
+
+// Failed attempt to pass in dbMaster set.
+#if 0
+// copied from opensta/tcl/StaTcl.i
+template <class TYPE>
+std::set<TYPE> *
+tclListSet(Tcl_Obj *const source,
+	   swig_type_info *swig_type,
+	   Tcl_Interp *interp)
+{
+  int argc;
+  Tcl_Obj **argv;
+
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    std::set<TYPE> *set = new std::set<TYPE>;
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      set->insert(reinterpret_cast<TYPE>(obj));
+    }
+    return set;
+  }
+  else
+    return nullptr;
+}
+  
+opendp::dbMasterSet *
+tclListSetdbMaster(Tcl_Obj *const source,
+		   Tcl_Interp *interp)
+{
+  return tclListSet<odb::dbMaster*>(source, SWIGTYPE_p_dbMaster, interp);
+}
+
+%typemap(in) dbMasterSet * {
+  $1 = tclListSeqLibertyLibrary($input, interp);
+}
+#endif
+
 %}
+
+%typemap(in) StringSeq* {
+  $1 = tclListSeqString($input, interp);
+}
+
+%include "../../Exception.i"
 
 %inline %{
 
-bool
-read_constraints(std::string constraint_file)
+void
+detailed_placement_cmd(int max_displacment)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  return opendp->readConstraints(constraint_file);
+  opendp->detailedPlacement(max_displacment);
+}
+
+bool
+check_placement_cmd(bool verbose)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  return opendp->checkPlacement(verbose);
+}
+
+
+void
+set_padding_global(int left,
+		   int right)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPaddingGlobal(left, right);
 }
 
 void
-legalize_placement(bool verbose)
+set_padding_master(odb::dbMaster *master,
+		   int left,
+		   int right)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->legalizePlacement(verbose);
+  opendp->setPadding(master, left, right);
+}
+
+void
+set_padding_inst(odb::dbInst *inst,
+		 int left,
+		 int right)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPadding(inst, left, right);
+}
+
+void
+filler_placement_cmd(StringSeq *fillers)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->fillerPlacement(fillers);
+}
+
+void
+set_power_net_name(const char *power_name)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setPowerNetName(power_name);
+}
+
+void
+set_ground_net_name(const char *ground_name)
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setGroundNetName(ground_name);
+}
+
+void
+optimize_mirroring_cmd()
+{
+  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->optimizeMirroring();
 }
 
 %} // inline

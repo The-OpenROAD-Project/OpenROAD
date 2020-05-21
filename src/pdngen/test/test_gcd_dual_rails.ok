@@ -1,0 +1,44 @@
+Notice 0: Reading LEF file:  nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: gcd_dual_rails/floorplan.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 482 components and 2074 component-terminals.
+Notice 0:     Created 385 nets and 1110 connections.
+Notice 0: Finished DEF file: gcd_dual_rails/floorplan.def
+[INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
+[INFO] [PDNG-0016]   config: gcd_dual_rails/PDN.cfg
+[INFO] [PDNG-0008] Design Name is gcd
+[INFO] [PDNG-0009] Reading technology data
+[INFO] [PDNG-0011] ****** INFO ******
+Type: stdcell, grid
+    Stdcell Rails
+      Layer: metal1 -  width: 0.170  pitch: 2.400  offset: 0.000 
+      Layer: metal2 -  width: 0.170  pitch: 2.400  offset: 0.000 
+    Straps
+      Layer: metal4 -  width: 0.480  pitch: 56.000  offset: 2.000 
+      Layer: metal7 -  width: 1.400  pitch: 40.000  offset: 2.000 
+    Connect: 
+      {metal1 metal2 constraints {cut_pitch 0.16}} 
+      {metal2 metal4} 
+      {metal4 metal7}
+    
+Type: macro, macro_1
+    Macro orientation: R0 R180 MX MY
+    Straps
+      Layer: metal5 -  width: 0.930  pitch: 40.000  offset: 2.000 
+      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {metal4_PIN_ver metal5} {metal5 metal6} {metal6 metal7}
+Type: macro, macro_2
+    Macro orientation: R90 R270 MXR90 MYR90
+    Straps
+      Layer: metal6 -  width: 0.930  pitch: 40.000  offset: 2.000 
+    Connect: {metal4_PIN_hor metal6} {metal6 metal7}
+[INFO] [PDNG-0012] **** END INFO ****
+[INFO] [PDNG-0013] Inserting stdcell grid - grid
+[INFO] [PDNG-0015] Writing to database
+No differences found.

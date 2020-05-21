@@ -28,14 +28,14 @@ TRACKS Y 2540 DO 92 STEP 3200 LAYER metal9 ;
 TRACKS X 4670 DO 92 STEP 3200 LAYER metal10 ;
 TRACKS Y 2540 DO 92 STEP 3200 LAYER metal10 ;
 COMPONENTS 1 ;
-    - _277_ BUF_X4 + PLACED ( 28000 28000 ) N ;
+    - _277_ BUF_X4 + PLACED ( 31230 28000 ) N ;
 END COMPONENTS
 PINS 2 ;
     - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
     - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
 END PINS
 NETS 2 ;
-    - input ( PIN input ) ( _277_ Z ) + USE SIGNAL ;
-    - out ( PIN out ) ( _277_ A ) + USE SIGNAL ;
+    - input ( PIN input ) ( _277_ A ) + USE SIGNAL ;
+    - out ( PIN out ) ( _277_ Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

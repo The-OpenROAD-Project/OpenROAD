@@ -1,0 +1,27 @@
+VERSION 5.8 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN top ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
+
+
+COMPONENTS 5 ;
+- foo\[0\].bar\[2\].baz snl_bufx1 ;
+END COMPONENTS
+
+PINS 6 ;
+- in1 + NET in1 + DIRECTION INPUT ;
+- out1 + NET out1 + DIRECTION OUTPUT ;
+END PINS
+
+NETS 2 ;
+- in1 ( PIN in1 ) ( foo\[0\].bar\[2\].baz A ) ;
+- out1 ( PIN out1 ) ( foo\[0\].bar\[2\].baz Z ) ;
+END NETS
+
+END DESIGN

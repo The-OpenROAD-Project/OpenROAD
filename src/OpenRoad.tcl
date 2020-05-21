@@ -29,7 +29,7 @@ proc read_lef { args } {
   sta::parse_key_args "read_lef" args keys {} flags {-tech -library}
   sta::check_argc_eq1 "read_lef" $args
 
-  set filename $args
+  set filename [file nativename $args]
   if { ![file exists $filename] } {
     sta::sta_error "$filename does not exist."
   }
@@ -47,12 +47,12 @@ proc read_lef { args } {
   ord::read_lef_cmd $filename $lib_name $make_tech $make_lib
 }
 
-sta::define_cmd_args "read_def" {[-order_wires] filename}
+sta::define_cmd_args "read_def" {[-order_wires] [-continue_on_errors] filename}
 
 proc read_def { args } {
-  sta::parse_key_args "read_def" args keys {} flags {-order_wires}
+  sta::parse_key_args "read_def" args keys {} flags {-order_wires -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
-  set filename $args
+  set filename [file nativename $args]
   if { ![file exists $filename] } {
     sta::sta_error "$filename does not exist."
   }
@@ -63,7 +63,8 @@ proc read_def { args } {
     sta::sta_error "no technology has been read."
   }
   set order_wires [info exists flags(-order_wires)]
-  ord::read_def_cmd $filename $order_wires
+  set continue_on_errors [info exists flags(-continue_on_errors)]
+  ord::read_def_cmd $filename $order_wires $continue_on_errors
 }
 
 sta::define_cmd_args "write_def" {[-version version] filename}
@@ -84,7 +85,7 @@ proc write_def { args } {
   }
 
   sta::check_argc_eq1 "write_def" $args
-  set filename $args
+  set filename [file nativename $args]
   ord::write_def_cmd $filename $version
 }
 
@@ -92,7 +93,7 @@ sta::define_cmd_args "read_db" {filename}
 
 proc read_db { args } {
   sta::check_argc_eq1 "read_db" $args
-  set filename $args
+  set filename [file nativename $args]
   if { ![file exists $filename] } {
     sta::sta_error "$filename does not exist."
   }
@@ -110,7 +111,41 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
-# Defined by OpenRoad.i
-sta::define_cmd_args "def_diff" {def_filename}
-namespace eval ord { namespace export def_diff }
-namespace import ord::def_diff
+################################################################
+
+namespace eval ord {
+
+trace variable ::file_continue_on_error "w" \
+  ord::trace_file_continue_on_error
+
+# Sync with sta::sta_continue_on_error used by 'source' proc defined by OpenSTA.
+proc trace_file_continue_on_error { name1 name2 op } {
+  set ::sta_continue_on_error $::file_continue_on_error
+}
+
+proc error { what } {
+  ::error "Error: $what"
+}
+
+proc warn { what } {
+  puts "Warning: $what"
+}
+
+proc ensure_units_initialized { } {
+  if { ![units_initialized] } {
+    sta::sta_error "Command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+  }
+}
+
+# namespace ord
+}
+
+# redefine sta::sta_error to call ord::error
+namespace eval sta {
+
+proc sta_error { msg } {
+  ord::error $msg
+}
+
+# namespace sta
+}

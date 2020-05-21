@@ -32,8 +32,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef MAKE_OPENDP
-#define MAKE_OPENDP
+#pragma once
 
 namespace opendp {
 class Opendp;
@@ -43,10 +42,11 @@ namespace ord {
 
 class OpenRoad;
 
-opendp::Opendp* makeOpendp();
-void initOpendp(OpenRoad* openroad);
-void deleteOpendp(opendp::Opendp* opendp);
+opendp::Opendp *
+makeOpendp();
+void
+initOpendp(OpenRoad *openroad);
+void
+deleteOpendp(opendp::Opendp *opendp);
 
 }  // namespace ord
-
-#endif

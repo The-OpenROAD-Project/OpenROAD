@@ -1,0 +1,131 @@
+Notice 0: Reading LEF file:  example1.lef
+Notice 0:     Created 2 technology layers
+Notice 0:     Created 6 library cells
+Notice 0: Finished LEF file:  example1.lef
+Notice 0: 
+Reading DEF file: example1.def
+Notice 0: Design: top
+Notice 0:     Created 6 pins.
+Notice 0:     Created 5 components and 24 component-terminals.
+Notice 0:     Created 2 special nets and 10 connections.
+Notice 0:     Created 10 nets and 14 connections.
+Notice 0: Finished DEF file: example1.def
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk1)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk1)
+Path Group: clk1
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk1 (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ r2/CK (DFF_X1)
+   0.08    0.08 v r2/Q (DFF_X1)
+   0.02    0.10 v u1/Z (BUF_X1)
+   0.03    0.13 v u2/ZN (AND2_X1)
+   0.00    0.13 v r3/D (DFF_X1)
+           0.13   data arrival time
+
+  10.00   10.00   clock clk1 (rise edge)
+   0.00   10.00   clock network delay (ideal)
+   0.00   10.00   clock reconvergence pessimism
+          10.00 ^ r3/CK (DFF_X1)
+  -0.04    9.96   library setup time
+           9.96   data required time
+---------------------------------------------------------
+           9.96   data required time
+          -0.13   data arrival time
+---------------------------------------------------------
+           9.83   slack (MET)
+
+
+ r 0.1796:0.1796 f 0.2264:0.2264
+A -> Z combinational
+  ^ -> ^ 0.0139:0.0139
+  v -> v 0.0192:0.0192
+Z -> b2/A wire
+  ^ -> ^ 0.1388:0.1388
+  v -> v 0.1388:0.1388
+Library: example1
+Cell: BUF_X1
+Arc sense: positive_unate
+Arc type: combinational
+A ^ -> Z ^
+Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1340
+P = 1.0000 V = 1.1000 T = 25.0000
+------- input_net_transition = 0.0000
+|       total_output_net_capacitance = 0.1340
+|        0.3656     1.8954
+v      --------------------
+0.0012 | 0.0151     0.0193
+0.0047 | 0.0166     0.0208
+Table value = 0.0139
+PVT scale factor = 1.0000
+Delay = 0.0139
+
+------- input_net_transition = 0.0000
+|       total_output_net_capacitance = 0.1340
+|        0.3656     1.8954
+v      --------------------
+0.0012 | 0.0043     0.0075
+0.0047 | 0.0043     0.0075
+Table value = 0.0038
+PVT scale factor = 1.0000
+Slew = 0.0038
+
+.............................................
+
+A v -> Z v
+Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1356
+P = 1.0000 V = 1.1000 T = 25.0000
+------- input_net_transition = 0.0000
+|       total_output_net_capacitance = 0.1356
+|        0.3656     1.8954
+v      --------------------
+0.0012 | 0.0202     0.0236
+0.0047 | 0.0217     0.0251
+Table value = 0.0192
+PVT scale factor = 1.0000
+Delay = 0.0192
+
+------- input_net_transition = 0.0000
+|       total_output_net_capacitance = 0.1356
+|        0.3656     1.8954
+v      --------------------
+0.0012 | 0.0043     0.0059
+0.0047 | 0.0043     0.0059
+Table value = 0.0040
+PVT scale factor = 1.0000
+Slew = 0.0040
+
+.............................................
+
+Startpoint: r2 (rising edge-triggered flip-flop clocked by clk1)
+Endpoint: r3 (rising edge-triggered flip-flop clocked by clk1)
+Path Group: clk1
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock clk1 (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ r2/CK (DFF_X1)
+   0.0779    0.0779 v r2/Q (DFF_X1)
+   0.0242    0.1020 v u1/Z (BUF_X1)
+   0.0281    0.1301 v u2/ZN (AND2_X1)
+   0.0000    0.1301 v r3/D (DFF_X1)
+             0.1301   data arrival time
+
+  10.0000   10.0000   clock clk1 (rise edge)
+   0.0000   10.0000   clock network delay (ideal)
+   0.0000   10.0000   clock reconvergence pessimism
+            10.0000 ^ r3/CK (DFF_X1)
+  -0.0390    9.9610   library setup time
+             9.9610   data required time
+-------------------------------------------------------------
+             9.9610   data required time
+            -0.1301   data arrival time
+-------------------------------------------------------------
+             9.8308   slack (MET)
+
+

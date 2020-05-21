@@ -66,6 +66,8 @@ public:
 
 private:
         void printHeader() const;
+        void setupCharacterization();
+        void createCharacterization();
         void importCharacterization();
         void checkCharacterization();
         void findClockRoots();
@@ -85,12 +87,21 @@ private:
 
 // TCL commands
 public:
+        void set_only_characterization(bool enable);
         void set_lut_file(const char* file);
         void set_sol_list_file(const char* file);
         void export_characterization(const char* file);
         void set_root_buffer(const char* buffer);
+        void set_buffer_list(const char* buffers);
         void set_clock_nets(const char* names);
         void set_wire_segment_distance_unit(unsigned unit);
+        void set_max_char_slew(double slew);
+        void set_max_char_cap(double cap);
+        void set_out_path(const char* path);
+        void set_cap_per_sqr(double cap);
+        void set_res_per_sqr(double res);
+        void set_slew_inter(double cap);
+        void set_cap_inter(double cap);
         void run_triton_cts();
         void report_characterization();
         void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 

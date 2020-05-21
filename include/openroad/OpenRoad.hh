@@ -11,10 +11,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef OPENROAD_H
-#define OPENROAD_H
+#pragma once
 
 #include <string>
+#include <set>
+#include "Version.hh"
 
 extern "C" {
 struct Tcl_Interp;
@@ -22,6 +23,11 @@ struct Tcl_Interp;
 
 namespace odb {
 class dbDatabase;
+class dbBlock;
+class dbTech;
+class dbLib;
+class Point;
+class Rect;
 }
 
 namespace sta {
@@ -30,12 +36,6 @@ class dbNetwork;
 class Resizer;
 }
 
-namespace pdngen {
-class PdnGen;
-}
-namespace ICeWall {
-class ICeWall;
-}
 namespace ioPlacer {
 class IOPlacementKernel;
 }
@@ -56,10 +56,6 @@ namespace opendp {
 class Opendp;
 }
 
-namespace psn {
-class Psn;
-}
-
 namespace MacroPlace {
 class TritonMacroPlace;
 }
@@ -72,6 +68,14 @@ namespace OpenRCX {
 class Ext;
 }
 
+namespace psn {
+class Psn;
+}
+
+namespace pdnsim {
+class PDNSim;
+}
+
 namespace ord {
 
 using std::string;
@@ -81,16 +85,14 @@ class dbVerilogNetwork;
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
-public:
   OpenRoad();
   ~OpenRoad();
+public:
   // Singleton accessor used by tcl command interpreter.
-  static OpenRoad *openRoad() { return openroad_; }
+  static OpenRoad *openRoad();
   void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
-  pdngen::PdnGen *getPdnGen(){ return pdngen_; }
-  ICeWall::ICeWall *getICeWall(){ return ICeWall_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -102,6 +104,12 @@ public:
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
+  pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
+  FastRoute::FastRouteKernel* getFastRoute() { return fastRoute_; }
+  // Return the bounding box of the db rows.
+  odb::Rect getCore();
+  // Return true if the command units have been initialized.
+  bool unitsInitialized();
 
   void readLef(const char *filename,
 	       const char *lib_name,
@@ -109,7 +117,8 @@ public:
 	       bool make_library);
 
   void readDef(const char *filename,
-               bool order_wires);
+               bool order_wires,
+               bool continue_on_errors);
   void writeDef(const char *filename,
 		// major.minor (avoid including defout.h)
 		string version);
@@ -123,6 +132,25 @@ public:
   void readDb(const char *filename);
   void writeDb(const char *filename);
 
+  // Observer interface
+  class Observer
+  {
+  public:
+    virtual ~Observer();
+
+    // Either pointer could be null
+    virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) = 0;
+    virtual void postReadDef(odb::dbBlock* block) = 0;
+    virtual void postReadDb(odb::dbDatabase* db) = 0;
+
+  private:
+    OpenRoad* owner_ = nullptr;
+    friend class OpenRoad;
+  };
+
+  void addObserver(Observer *observer);
+  void removeObserver(Observer *observer);
+
 private:
   Tcl_Interp *tcl_interp_;
   odb::dbDatabase *db_;
@@ -132,18 +160,29 @@ private:
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::Opendp *opendp_;
   MacroPlace::TritonMacroPlace *tritonMp_;
-  pdngen::PdnGen *pdngen_;
-  ICeWall::ICeWall *ICeWall_;
   FastRoute::FastRouteKernel *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+#ifdef BUILD_OPENPHYSYN
+  psn::Psn *psn_;
+#endif
   replace::Replace *replace_;
+  pdnsim::PDNSim *pdnsim_; 
+
+  std::set<Observer *> observers_;
 
   // Singleton used by tcl command interpreter.
   static OpenRoad *openroad_;
 };
 
-} // namespace
+// Return the bounding box of the db rows.
+odb::Rect
+getCore(odb::dbBlock *block);
 
-#endif
+// Return the point inside rect that is closest to pt.
+odb::Point
+closestPtInRect(odb::Rect rect,
+		odb::Point pt);
+
+} // namespace

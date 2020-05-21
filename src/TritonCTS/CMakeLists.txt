@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 #include(${PROJECT_SOURCE_DIR}/cmake/FindTCL.cmake)
 find_package(SWIG REQUIRED)
+find_package(LEMON REQUIRED)
 
 set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TritonCTSKernelTclWrap.cpp)
 add_custom_command(OUTPUT ${TRITONCTS_WRAP}
@@ -28,30 +29,20 @@ add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
 
-set(LEMON_HOME ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/lemon)
-add_subdirectory(${LEMON_HOME})
-include_directories(${LEMON_HOME})
 
 include_directories(${TRITONCTS_HOME}/src
                     PRIVATE
                     ${OPENDB_HOME}/include
                     ${OPENDB_HOME}/include/opendb
                     ${OPENROAD_HOME}/include
-                    ${OPENSTA_HOME}/graph
-                    ${OPENSTA_HOME}/liberty
-                    ${OPENSTA_HOME}/network
-                    ${OPENSTA_HOME}/parasitics
-                    ${OPENSTA_HOME}/sdc
-                    ${OPENSTA_HOME}/search
-                    ${OPENSTA_HOME}/util
-                    ${OPENSTA_HOME}/verilog
-                    ${OPENSTA_HOME}/app
+                    ${DBSTA_HOME}/include
+                    ${OPENSTA_HOME}/include
 		    ${TCL_INCLUDE_PATH}
+                    ${LEMON_INCLUDE_DIRS}
                    ) 
 
 target_link_libraries(${BIN_NAME} INTERFACE
                       ${TCL_LIB}
                       lefin
                       opendb
-                      lemon
                      )

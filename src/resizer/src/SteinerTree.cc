@@ -14,19 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <fstream>
-#include <string>
-#include "Machine.hh"
-#include "Report.hh"
-#include "Error.hh"
-#include "Debug.hh"
-#include "NetworkCmp.hh"
 #include "resizer/SteinerTree.hh"
 
+#include <fstream>
+#include <string>
+
+#include "sta/Report.hh"
+#include "sta/Error.hh"
+#include "sta/Debug.hh"
+#include "sta/NetworkCmp.hh"
 #include "opendb/dbShape.h"
 
 namespace sta {
 
+using std::abs;
 using std::string;
 using odb::dbShape;
 using odb::dbPlacementStatus;
@@ -39,7 +40,7 @@ connectedPins(const Net *net,
 bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
-adsPoint
+Point
 pinLocation(Pin *pin,
 	    const dbNetwork *network);
 
@@ -70,7 +71,7 @@ makeSteinerTree(const Net *net,
     FLUTE_DTYPE *y = new FLUTE_DTYPE[pin_count];
     for (int i = 0; i < pin_count; i++) {
       Pin *pin = pins[i];
-      adsPoint loc = pinLocation(pin, network);
+      Point loc = pinLocation(pin, network);
       x[i] = loc.x();
       y[i] = loc.y();
       debugPrint3(debug, "steiner", 3, "%s (%d %d)\n",
@@ -125,17 +126,17 @@ SteinerTree::setTree(Flute::Tree tree,
   // to find the mapping back to the original pins. The complication is
   // that multiple pins can occupy the same location.
   steiner_pt_pin_map_.resize(pin_count);
-  UnorderedMap<adsPoint, PinSeq, adsPointHash, adsPointEqual> loc_pins_map;
+  UnorderedMap<Point, PinSeq, PointHash, PointEqual> loc_pins_map;
   // Find all of the pins at a location.
   for (int i = 0; i < pin_count; i++) {
     Pin *pin = pins_[i];
-    adsPoint loc = pinLocation(pin, network);
+    Point loc = pinLocation(pin, network);
     loc_pin_map_[loc] = pin;
     loc_pins_map[loc].push_back(pin);
   }
   for (int i = 0; i < pin_count; i++) {
     Flute::Branch &branch_pt = tree_.branch[i];
-    PinSeq &loc_pins = loc_pins_map[adsPoint(branch_pt.x, branch_pt.y)];
+    PinSeq &loc_pins = loc_pins_map[Point(branch_pt.x, branch_pt.y)];
     Pin *pin = loc_pins.back();
     loc_pins.pop_back();
     steiner_pt_pin_map_[i] = pin;
@@ -171,10 +172,10 @@ SteinerTree::branchCount() const
 void
 SteinerTree::branch(int index,
 		    // Return values.
-		    adsPoint &pt1,
+		    Point &pt1,
 		    Pin *&pin1,
 		    int &steiner_pt1,
-		    adsPoint &pt2,
+		    Point &pt2,
 		    Pin *&pin2,
 		    int &steiner_pt2,
 		    int &wire_length)
@@ -182,7 +183,7 @@ SteinerTree::branch(int index,
   Flute::Branch &branch_pt1 = tree_.branch[index];
   int index2 = branch_pt1.n;
   Flute::Branch &branch_pt2 = tree_.branch[index2];
-  pt1 = adsPoint(branch_pt1.x, branch_pt1.y);
+  pt1 = Point(branch_pt1.x, branch_pt1.y);
   if (index < pinCount()) {
     pin1 = pin(index);
     steiner_pt1 = 0;
@@ -192,7 +193,7 @@ SteinerTree::branch(int index,
     steiner_pt1 = index;
   }
 
-  pt2 = adsPoint(branch_pt2.x, branch_pt2.y);
+  pt2 = Point(branch_pt2.x, branch_pt2.y);
   if (index2 < pinCount()) {
     pin2 = pin(index2);
     steiner_pt2 = 0;
@@ -237,7 +238,7 @@ Pin *
 SteinerTree::steinerPtAlias(SteinerPt pt)
 {
   Flute::Branch &branch_pt = tree_.branch[pt];
-  return loc_pin_map_[adsPoint(branch_pt.x, branch_pt.y)];
+  return loc_pin_map_[Point(branch_pt.x, branch_pt.y)];
 }
 
 const char *
@@ -294,12 +295,12 @@ SteinerTree::isLoad(SteinerPt pt,
   return pin && network->isLoad(pin);
 }
 
-adsPoint
+Point
 SteinerTree::location(SteinerPt pt) const
 {
   checkSteinerPt(pt);
   Flute::Branch &branch_pt = tree_.branch[pt];
-  return adsPoint(branch_pt.x, branch_pt.y);
+  return Point(branch_pt.x, branch_pt.y);
 }
 
 void

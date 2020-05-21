@@ -1,8 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu Woo(mwoo@eng.ucsd.edu)
+// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
+// Woo(mwoo@eng.ucsd.edu)
 //          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
 // Rewrite by James Cherry, Parallax Software, Inc.
-
+//
 // BSD 3-Clause License
 //
 // Copyright (c) 2019, James Cherry, Parallax Software, Inc.
@@ -36,435 +37,714 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "opendp/Opendp.h"
 #include <cfloat>
+#include <cmath>
 #include <fstream>
-#include <ostream>
 #include <iomanip>
 #include <limits>
-#include <cmath>
-#include "opendp/Opendp.h"
+#include <map>
+#include <ostream>
+#include "openroad/Error.hh"
+#include "openroad/OpenRoad.hh"  // closestPtInRect
 
 namespace opendp {
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::fixed;
 using std::ifstream;
-using std::make_pair;
 using std::ofstream;
-using std::pair;
-using std::setprecision;
-using std::string;
-using std::to_string;
-using std::vector;
 using std::round;
+using std::string;
 
-using odb::adsRect;
+using ord::error;
+
 using odb::dbBox;
+using odb::dbBPin;
+using odb::dbBTerm;
 using odb::dbITerm;
 using odb::dbMasterType;
 using odb::dbMPin;
 using odb::dbMTerm;
+using odb::dbNet;
 using odb::dbPlacementStatus;
+using odb::Rect;
+using odb::dbSigType;
 
-void density_bin::print() {
-  cout << "|=== BEGIN DENSITY_BIN ===|" << endl;
-  cout << " area :        " << area << endl;
-  cout << " m_util :      " << m_util << endl;
-  cout << " f_util :      " << f_util << endl;
-  cout << " free_space :  " << free_space << endl;
-  cout << " overflow :    " << overflow << endl;
-  cout << " density limit:" << density_limit << endl;
-  cout << "|===  END  DENSITY_BIN ===|" << endl;
+Cell::Cell() :
+  db_inst_(nullptr),
+  x_(0),
+  y_(0),
+  width_(0),
+  height_(0),
+  is_placed_(false),
+  hold_(false),
+  group_(nullptr),
+  region_(nullptr)
+{
 }
 
-Macro::Macro()
-    : isMulti(false),
-      edgetypeLeft(0),
-      edgetypeRight(0),
-      top_power(power::undefined) {}
-
-void Macro::print() {
-  cout << "|=== BEGIN MACRO ===|" << endl;
-  cout << "name:                " << db_master->getConstName() << endl;
-  cout << "|=== BEGIN MACRO ===|" << endl;
+const char *
+Cell::name() const
+{
+  return db_inst_->getConstName();
 }
 
-Cell::Cell()
-    : cell_macro(nullptr),
-      x_coord(0),
-      y_coord(0),
-      init_x_coord(0),
-      init_y_coord(0),
-      x_pos(INT_MAX),
-      y_pos(INT_MAX),
-      width(0.0),
-      height(0.0),
-      is_placed(false),
-      hold(false),
-      region(nullptr),
-      cell_group(nullptr),
-      dense_factor(0.0),
-      dense_factor_count(0) {}
-
-const char *Cell::name() {
-  return db_inst->getConstName();
-}
-
-void Cell::print() {
-  cout << "|=== BEGIN CELL ===|" << endl;
-  cout << "name:               " << db_inst->getConstName() << endl;
-  cout << "type:               " << cell_macro->db_master->getConstName()
-       << endl;
-  cout << "(init_x,  init_y):  " << init_x_coord << ", " << init_y_coord
-       << endl;
-  cout << "(x_coord,y_coord):  " << x_coord << ", " << y_coord << endl;
-  cout << "[width,height]:      " << width << ", " << height << endl;
-  cout << "|===  END  CELL ===|" << endl;
-}
-
-int Cell::disp() {
-  return abs(init_x_coord - x_coord) +
-         abs(init_y_coord - y_coord);
+int64_t
+Cell::area() const
+{
+  dbMaster *master = db_inst_->getMaster();
+  return master->getWidth() * master->getHeight();
 }
 
 ////////////////////////////////////////////////////////////////
 
-bool Opendp::isFixed(Cell *cell) {
-  return cell == &dummy_cell_ ||
-         cell->db_inst->getPlacementStatus() == dbPlacementStatus::FIRM ||
-         cell->db_inst->getPlacementStatus() == dbPlacementStatus::LOCKED ||
-         cell->db_inst->getPlacementStatus() == dbPlacementStatus::COVER;
+bool
+Opendp::isFixed(const Cell *cell) const
+{
+  return cell == &dummy_cell_ || cell->db_inst_->isFixed();
 }
 
-Pixel::Pixel()
-    : util(0.0),
-      x_pos(0.0),
-      y_pos(0.0),
-      pixel_group(nullptr),
-      linked_cell(NULL),
-      is_valid(true) {}
+bool
+Opendp::isMultiRow(const Cell *cell) const
+{
+  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
+  assert(iter != db_master_map_.end());
+  return iter->second.is_multi_row_;
+}
 
-Row::Row()
-    : origX(0),
-      origY(0),
-      orient(dbOrientType::R0) {}
-
-void Row::print() {
-  cout << "|=== BEGIN ROW ===|" << endl;
-  cout << "(origX,origY):     " << origX << ", " << origY << endl;
-  cout << "orientation:       " << orient << endl;
-  cout << "|===  END  ROW ===|" << endl;
+Power
+Opendp::topPower(const Cell *cell) const
+{
+  auto iter = db_master_map_.find(cell->db_inst_->getMaster());
+  assert(iter != db_master_map_.end());
+  return iter->second.top_power_;
 }
 
 ////////////////////////////////////////////////////////////////
 
-Group::Group() : name(""), util(0.0){}
-
-sub_region::sub_region() : x_pos(0), y_pos(0), width(0), height(0) {}
-
-Opendp::Opendp()
-    : initial_power_(power::undefined),
-      diamond_search_height_(400),
-      max_displacement_constraint_(0),
-      site_width_(0),
-      max_cell_height_(1) {
+Group::Group() :
+  util(0.0)
+{
 }
 
-Opendp::~Opendp() {}
-
-void Opendp::init(dbDatabase *db) { db_ = db; }
-
-void Opendp::clear() {
-  macros_.clear();
-  rows_.clear();
-  cells_.clear();
+Opendp::Opendp() :
+  pad_right_(0),
+  pad_left_(0),
+  power_net_name_("VDD"),
+  ground_net_name_("VSS"),
+  grid_(nullptr)
+{
+  dummy_cell_.is_placed_ = true;
+  // magic number alert
+  diamond_search_height_ = 100;
+  diamond_search_width_ = diamond_search_height_ * 5;
+  max_displacement_constraint_ = 0;
 }
 
-bool Opendp::legalizePlacement(bool verbose) {
-  dbToOpendp();
-  initAfterImport();
-  reportDesignStats();
-  simplePlacement(verbose);
-  updateDbInstLocations();
-  bool legal = checkLegality(verbose);
-  reportLegalizationStats();
-  return legal;
+Opendp::~Opendp()
+{
+  deleteGrid(grid_);
 }
 
-void Opendp::initAfterImport() {
+void
+Opendp::init(dbDatabase *db)
+{
+  db_ = db;
+}
+
+void
+Opendp::setPowerNetName(const char *power_name)
+{
+  power_net_name_ = power_name;
+}
+
+void
+Opendp::setGroundNetName(const char *ground_name)
+{
+  ground_net_name_ = ground_name;
+}
+
+void
+Opendp::setPaddingGlobal(int left,
+			 int right)
+{
+  pad_left_ = left;
+  pad_right_ = right;
+}
+
+void
+Opendp::setPadding(dbInst *inst,
+		   int left,
+		   int right)
+{
+  inst_padding_map_[inst] = std::make_pair(left, right);
+}
+
+void
+Opendp::setPadding(dbMaster *master,
+		   int left,
+		   int right)
+{
+  master_padding_map_[master] = std::make_pair(left, right);
+}
+
+bool
+Opendp::havePadding() const
+{
+  return pad_left_ > 0 || pad_right_ > 0
+    || !master_padding_map_.empty()
+    || !inst_padding_map_.empty();
+}
+
+void
+Opendp::detailedPlacement(int max_displacment)
+{
+  importDb();
+  reportImportWarnings();
   findDesignStats();
-  power_mapping();
+  max_displacement_constraint_ = max_displacment;
+  reportDesignStats();
+  int64_t hpwl_before = hpwl();
+  detailedPlacement();
+  int64_t avg_displacement, sum_displacement, max_displacement;
+  displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
+  updateDbInstLocations();
+  reportLegalizationStats(hpwl_before, avg_displacement,
+			  sum_displacement, max_displacement);
+}
 
-  // dummy cell generation
-  dummy_cell_.is_placed = true;
-
-  // calc row / site offset
-  int row_offset = rows_[0].origY;
-  int site_offset = rows_[0].origX;
-
-  // construct pixel grid
-  int row_num = gridHeight();
-  int col = gridWidth();
-  grid_ = new Pixel *[row_num];
-  for(int i = 0; i < row_num; i++) {
-    grid_[i] = new Pixel[col];
-  }
-
-  for(int i = 0; i < row_num; i++) {
-    for(int j = 0; j < col; j++) {
-      grid_[i][j].y_pos = i;
-      grid_[i][j].x_pos = j;
-      grid_[i][j].linked_cell = NULL;
-      grid_[i][j].is_valid = false;
+void
+Opendp::updateDbInstLocations()
+{
+  for (Cell &cell : cells_) {
+    if (!isFixed(&cell) && isStdCell(&cell)) {
+      dbInst *db_inst_ = cell.db_inst_;
+      db_inst_->setOrient(cell.orient_);
+      db_inst_->setLocation(core_.xMin() + cell.x_, core_.yMin() + cell.y_);
     }
   }
+}
 
-  // Fragmented Row Handling
-  for(auto db_row : block_->getRows()) {
-    int orig_x, orig_y;
-    db_row->getOrigin(orig_x, orig_y);
+void
+Opendp::findDesignStats()
+{
+  fixed_inst_count_ = 0;
+  fixed_area_ = 0;
+  fixed_padded_area_ = 0;
+  movable_area_ = 0;
+  movable_padded_area_ = 0;
+  max_cell_height_ = 0;
 
-    int x_start = (orig_x - core_.xMin()) / site_width_;
-    int y_start = (orig_y - core_.yMin()) / row_height_;
-
-    int x_end = x_start + db_row->getSiteCount();
-    int y_end = y_start + 1;
-
-    for(int i = x_start; i < x_end; i++) {
-      for(int j = y_start; j < y_end; j++) {
-        grid_[j][i].is_valid = true;
+  for (Cell &cell : cells_) {
+    int64_t cell_area = cell.area();
+    int64_t cell_padded_area = paddedArea(&cell);
+    if (isFixed(&cell)) {
+      fixed_area_ += cell_area;
+      fixed_padded_area_ += cell_padded_area;
+      fixed_inst_count_++;
+    }
+    else {
+      movable_area_ += cell_area;
+      movable_padded_area_ += cell_padded_area;
+      int cell_height = gridNearestHeight(&cell);
+      if (cell_height > max_cell_height_) {
+        max_cell_height_ = cell_height;
       }
     }
   }
 
-  // fixed cell marking
-  fixed_cell_assign();
-  // group id mapping & x_axis dummycell insertion
-  group_pixel_assign2();
-  // y axis dummycell insertion
-  group_pixel_assign();
-}
+  design_area_ = row_count_ * static_cast<int64_t>(row_site_count_)
+    * site_width_ * row_height_;
 
-void Opendp::updateDbInstLocations() {
-  for (Cell &cell : cells_) {
-    int x = cell.x_coord + core_.xMin();
-    int y = cell.y_coord + core_.yMin();
-    dbInst *db_inst = cell.db_inst;
-    db_inst->setLocation(x, y);
-    // Orientation is already set.
+  design_util_ = static_cast<double>(movable_area_) / (design_area_ - fixed_area_);
+
+  design_padded_util_ = static_cast<double>(movable_padded_area_) / (design_area_ - fixed_padded_area_);
+
+  if (design_util_ > 1.0) {
+    error("utilization exceeds 100%.");
   }
 }
 
-void Opendp::findDesignStats() {
-  fixed_inst_count_ = 0;
-  multi_height_inst_count_ = 0;
-  movable_area_ = fixed_area_ = 0;
+void
+Opendp::reportDesignStats() const
+{
+  printf("Design Stats\n");
+  printf("--------------------------------\n");
+  printf("total instances      %8d\n", block_->getInsts().size());
+  printf("multi row instances  %8d\n", multi_row_inst_count_);
+  printf("fixed instances      %8d\n", fixed_inst_count_);
+  printf("nets                 %8d\n", block_->getNets().size());
+  printf("design area          %8.1f u^2\n", dbuAreaToMicrons(design_area_));
+  printf("fixed area           %8.1f u^2\n", dbuAreaToMicrons(fixed_area_));
+  printf("movable area         %8.1f u^2\n", dbuAreaToMicrons(movable_area_));
+  printf("utilization          %8.0f %%\n", design_util_ * 100);
+  printf("utilization padded   %8.0f %%\n", design_padded_util_ * 100);
+  printf("rows                 %8d\n", row_count_);
+  printf("row height           %8.1f u\n", dbuToMicrons(row_height_));
+  if (max_cell_height_ > 1) {
+    printf("max height           %8d rows\n", max_cell_height_);
+  }
+  if (groups_.size() > 0) {
+    printf("group count          %8lu\n", groups_.size());
+  }
+  printf("\n");
+}
 
-  for(Cell &cell : cells_) {
-    int cell_area = cell.width * cell.height;
-    if(isFixed(&cell)) {
-      fixed_area_ += cell_area;
-      fixed_inst_count_++;
+void
+Opendp::reportLegalizationStats(int64_t hpwl_before,
+				int64_t avg_displacement,
+				int64_t sum_displacement,
+				int64_t max_displacement) const
+{
+  printf("Placement Analysis\n");
+  printf("--------------------------------\n");
+  printf("total displacement   %8.1f u\n", dbuToMicrons(sum_displacement));
+  printf("average displacement %8.1f u\n", dbuToMicrons(avg_displacement));
+  printf("max displacement     %8.1f u\n", dbuToMicrons(max_displacement));
+  printf("original HPWL        %8.1f u\n", dbuToMicrons(hpwl_before));
+  double hpwl_legal = hpwl();
+  printf("legalized HPWL       %8.1f u\n", dbuToMicrons(hpwl_legal));
+  double hpwl_delta = (hpwl_before == 0.0)
+    ? 0.0
+    : (hpwl_legal - hpwl_before) / hpwl_before * 100;
+  printf("delta HPWL           %8.0f %%\n", hpwl_delta);
+  printf("\n");
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+Opendp::displacementStats(// Return values.
+			  int64_t *avg_displacement,
+			  int64_t *sum_displacement,
+			  int64_t *max_displacement) const
+{
+  *avg_displacement = 0;
+  *sum_displacement = 0;
+  *max_displacement = 0;
+
+  for (const Cell &cell : cells_) {
+    int displacement = disp(&cell);
+    *sum_displacement += displacement;
+    if (displacement > *max_displacement) {
+      *max_displacement = displacement;
     }
-    else
-      movable_area_ += cell_area;
-    Macro *macro = cell.cell_macro;
-    if(macro->isMulti)
-      multi_height_inst_count_++;
   }
+  *avg_displacement = *sum_displacement / cells_.size();
+}
 
-  design_area_ = 0;
-  for(Row &row : rows_)
-    design_area_ += static_cast< int64_t >(site_width_) * row_site_count_ * row_height_;
+// Note that this does NOT use cell/core coordinates.
+int64_t
+Opendp::hpwl() const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet *net : block_->getNets())
+    hpwl_sum += hpwl(net);
+  return hpwl_sum;
+}
 
-  for(Cell &cell : cells_) {
-    Macro *macro = cell.cell_macro;
-    dbMaster *master = macro->db_master;
-    if(!isFixed(&cell) && macro->isMulti &&
-       master->getType() == dbMasterType::CORE) {
-      int cell_height = gridNearestHeight(&cell);
-      if(max_cell_height_ < cell_height) max_cell_height_ = cell_height;
-    }
-  }
-
-  design_util_ =
-      static_cast< double >(movable_area_) / (design_area_ - fixed_area_);
-
-  // design_utilization error handling.
-  if(design_util_ >= 1.001) {
-    cout << "Error: utilization exceeds 100%. (" << fixed << setprecision(2)
-         << design_util_ * 100.00 << "%)" << endl;
-    exit(1);
+int64_t
+Opendp::hpwl(dbNet *net) const
+{
+  if (isSupply(net))
+    return 0;
+  else {
+    Rect bbox;
+    getBox(net, bbox);
+    return bbox.dx() + bbox.dy();
   }
 }
 
-void Opendp::reportDesignStats() {
-  cout.precision(3);
-  cout << "-------------------- Design Stats ------------------------------" << endl;
-  cout << "core area                  : (" << core_.xMin() << ", " << core_.yMin()
-       << ") (" << core_.xMax() << ", " << core_.yMax() << ")" << endl;
-  cout << "total cells                : " << block_->getInsts().size() << endl;
-  cout << "multi cells                : " << multi_height_inst_count_ << endl;
-  cout << "fixed cells                : " << fixed_inst_count_ << endl;
-  cout << "nets                       : " << block_->getNets().size() << endl;
-
-  cout << "design area                : " << static_cast< double >(design_area_) << endl;
-  cout << "total fixed area           : " << static_cast< double >(fixed_area_) << endl;
-  cout << "total movable area         : " << static_cast< double >(movable_area_) << endl;
-  cout << "design utilization         : " << design_util_ * 100.00 << endl;
-  cout << "rows                       : " << rows_.size() << endl;
-  cout << "row height                 : " << row_height_ << endl;
-  if(max_cell_height_ > 1)
-    cout << "max multi_cell height      : " << max_cell_height_ << endl;
-  if(groups_.size() > 0)
-  cout << "group count                : " << groups_.size() << endl;
-  cout << "----------------------------------------------------------------" << endl;
+bool
+Opendp::isSupply(dbNet *net) const
+{
+  dbSigType sig_type = net->getSigType();
+  return sig_type == dbSigType::POWER
+    || sig_type == dbSigType::GROUND;
 }
 
-void Opendp::reportLegalizationStats() {
-  int avg_displacement, sum_displacement, max_displacement;
-  displacementStats(avg_displacement, sum_displacement, max_displacement);
+void
+Opendp::getBox(dbNet *net,
+	       // Return value.
+	       Rect &net_box) const
+{
+  net_box.mergeInit();
 
-  cout << "-------------------- Placement Analysis ------------------------" << endl;
-  cout.precision(3);
-  cout << "total displacement         : " << sum_displacement << endl;
-  cout << "average displacement       : " << avg_displacement << endl;
-  cout << "max displacement           : " << max_displacement << endl;
-  double hpwl_orig = hpwl(true);
-  cout << "original HPWL              : " << hpwl_orig << endl;
-  double hpwl_legal = hpwl(false);
-  cout << "legalized HPWL             : " << hpwl_legal << endl;
-  double hpwl_delta = (hpwl_legal - hpwl_orig) / hpwl_orig * 100;
-  cout.precision(0);
-  cout << std::fixed;
-  cout << "delta HPWL                 : " << hpwl_delta << "%" << endl;
-  cout << "----------------------------------------------------------------" << endl;
-}
-
-bool Opendp::readConstraints(const string input) {
-  //    cout << " .constraints file : " << input << endl;
-  ifstream dot_constraints(input.c_str());
-  if(!dot_constraints.good()) {
-    cerr << "readConstraints:: cannot open '" << input << "' for reading"
-         << endl;
-    return true;
-  }
-
-  string context;
-
-  while(!dot_constraints.eof()) {
-    dot_constraints >> context;
-    if(dot_constraints.eof()) break;
-    if(strncmp(context.c_str(), "maximum_movement", 16) == 0) {
-      string temp = context.substr(0, context.find_last_of("rows"));
-      string max_move = temp.substr(temp.find_last_of("=") + 1);
-      diamond_search_height_ = atoi(max_move.c_str()) * 20;
-      max_displacement_constraint_ = atoi(max_move.c_str());
+  for (dbITerm *iterm : net->getITerms()) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      Rect iterm_rect(x, y, x, y);
+      net_box.merge(iterm_rect);
     }
     else {
-      cerr << "readConstraints:: unsupported keyword " << endl;
-      return true;
+      // This clause is sort of worthless because getAvgXY prints
+      // a warning when it fails.
+      dbInst *inst = iterm->getInst();
+      dbBox *inst_box = inst->getBBox();
+      int center_x = (inst_box->xMin() + inst_box->xMax()) / 2;
+      int center_y = (inst_box->yMin() + inst_box->yMax()) / 2;
+      Rect inst_center(center_x, center_y, center_x, center_y);
+      net_box.merge(inst_center);
     }
   }
 
-  if(max_displacement_constraint_ == 0)
-    max_displacement_constraint_ = rows_.size();
+  for (dbBTerm *bterm : net->getBTerms()) {
+    for (dbBPin *bpin : bterm->getBPins()) {
+      dbPlacementStatus status = bpin->getPlacementStatus();
+      if (status.isPlaced()) {
+	dbBox *pin_box = bpin->getBox();
+	Rect pin_bbox;
+	pin_box->getBox(pin_bbox);
+	int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
+	int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
+	Rect pin_center(center_x, center_y, center_x, center_y);
+	net_box.merge(pin_center);
+      }
+    }
+  }
+}
 
-  dot_constraints.close();
+////////////////////////////////////////////////////////////////
+
+Power
+Opendp::rowTopPower(int row) const
+{
+  return ((row0_top_power_is_vdd_ ? row : row + 1) % 2 == 0) ? VDD : VSS;
+}
+
+dbOrientType
+Opendp::rowOrient(int row) const
+{
+  // Row orient flips R0 -> MX -> R0 -> MX ...
+  return ((row0_orient_is_r0_ ? row : row + 1) % 2 == 0) ? dbOrientType::R0
+                                                         : dbOrientType::MX;
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+Opendp::initialLocation(const Cell *cell,
+                        // Return values.
+                        int *x,
+                        int *y) const
+{
+  initialLocation(cell->db_inst_, x, y);
+}
+
+void
+Opendp::initialLocation(const dbInst *inst,
+                        // Return values.
+                        int *x,
+                        int *y) const
+{
+  int loc_x, loc_y;
+  inst->getLocation(loc_x, loc_y);
+  *x = loc_x - core_.xMin();
+  *y = loc_y - core_.yMin();
+}
+
+void
+Opendp::initialPaddedLocation(const Cell *cell,
+                              // Return values.
+                              int *x,
+                              int *y) const
+{
+  initialLocation(cell, x, y);
+  *x -= padLeft(cell) * site_width_;
+}
+
+int
+Opendp::disp(const Cell *cell) const
+{
+  int init_x, init_y;
+  initialLocation(cell, &init_x, &init_y);
+  return abs(init_x - cell->x_) + abs(init_y - cell->y_);
+}
+
+bool
+Opendp::isPaddedType(dbInst *inst) const
+{
+  dbMasterType type = inst->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_WELLTAP:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+      return true;
+    case dbMasterType::CORE_SPACER:
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+      // These classes are completely ignored by the placer.
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+    case dbMasterType::NONE:
+      return false;
+  }
+  // gcc warniing
   return false;
 }
 
-int Opendp::gridWidth() {
-  return core_.dx() / site_width_;
+bool
+Opendp::isStdCell(const Cell *cell) const
+{
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+    case dbMasterType::CORE:
+    case dbMasterType::CORE_ANTENNACELL:
+    case dbMasterType::CORE_FEEDTHRU:
+    case dbMasterType::CORE_TIEHIGH:
+    case dbMasterType::CORE_TIELOW:
+    case dbMasterType::CORE_SPACER:
+    case dbMasterType::CORE_WELLTAP:
+      return true;
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
+    case dbMasterType::ENDCAP:
+    case dbMasterType::ENDCAP_PRE:
+    case dbMasterType::ENDCAP_POST:
+    case dbMasterType::ENDCAP_TOPLEFT:
+    case dbMasterType::ENDCAP_TOPRIGHT:
+    case dbMasterType::ENDCAP_BOTTOMLEFT:
+    case dbMasterType::ENDCAP_BOTTOMRIGHT:
+      // These classes are completely ignored by the placer.
+    case dbMasterType::COVER:
+    case dbMasterType::COVER_BUMP:
+    case dbMasterType::RING:
+    case dbMasterType::PAD:
+    case dbMasterType::PAD_AREAIO:
+    case dbMasterType::PAD_INPUT:
+    case dbMasterType::PAD_OUTPUT:
+    case dbMasterType::PAD_INOUT:
+    case dbMasterType::PAD_POWER:
+    case dbMasterType::PAD_SPACER:
+    case dbMasterType::NONE:
+      return false;
+  }
+  // gcc warniing
+  return false;
 }
 
-int Opendp::gridHeight() {
-  return core_.dy() / row_height_;
+/* static */
+bool
+Opendp::isBlock(const Cell *cell)
+{
+  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  return type == dbMasterType::BLOCK;
 }
 
-int Opendp::gridWidth(Cell *cell) {
-  return ceil(cell->width / static_cast<double>(site_width_));
+int
+Opendp::gridEndX() const
+{
+  return divCeil(core_.dx(), site_width_);
 }
 
-int Opendp::gridHeight(Cell *cell) {
-  return ceil(cell->height / static_cast<double>(row_height_));
+int
+Opendp::gridEndY() const
+{
+  return divCeil(core_.dy(), row_height_);
 }
 
-// Callers should probably be using gridWidth.
-int Opendp::gridNearestWidth(Cell *cell) {
-  return divRound(cell->width, site_width_);
+int
+Opendp::padLeft(const Cell *cell) const
+{
+  return padLeft(cell->db_inst_);
+}
+
+int
+Opendp::padLeft(dbInst *inst) const
+{
+  if (isPaddedType(inst)) {
+    auto itr1 = inst_padding_map_.find(inst);
+    if (itr1 != inst_padding_map_.end())
+      return itr1->second.first;
+    auto itr2 = master_padding_map_.find(inst->getMaster());
+    if (itr2 != master_padding_map_.end())
+      return itr2->second.first;
+    else
+      return pad_left_;
+  }
+  else
+    return 0;
+}
+
+int
+Opendp::padRight(const Cell *cell) const
+{
+  return padRight(cell->db_inst_);
+}
+
+int
+Opendp::padRight(dbInst *inst) const
+{
+  if (isPaddedType(inst)) {
+    auto itr1 = inst_padding_map_.find(inst);
+    if (itr1 != inst_padding_map_.end())
+      return itr1->second.second;
+    auto itr2 = master_padding_map_.find(inst->getMaster());
+    if (itr2 != master_padding_map_.end())
+      return itr2->second.second;
+    else
+      return pad_right_;
+  }
+  else
+    return 0;
+}
+
+int
+Opendp::paddedWidth(const Cell *cell) const
+{
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
+}
+
+int
+Opendp::gridPaddedWidth(const Cell *cell) const
+{
+  return divCeil(paddedWidth(cell), site_width_);
+}
+
+int
+Opendp::gridHeight(const Cell *cell) const
+{
+  return divCeil(cell->height_, row_height_);
+}
+
+int64_t
+Opendp::paddedArea(const Cell *cell) const
+{
+  return paddedWidth(cell) * cell->height_;
+}
+
+// Callers should probably be using gridPaddedWidth.
+int
+Opendp::gridNearestWidth(const Cell *cell) const
+{
+  return divRound(paddedWidth(cell), site_width_);
 }
 
 // Callers should probably be using gridHeight.
-int Opendp::gridNearestHeight(Cell *cell) {
-  return divRound(cell->height, row_height_);
+int
+Opendp::gridNearestHeight(const Cell *cell) const
+{
+  return divRound(cell->height_, row_height_);
 }
 
-int Opendp::gridX(int x) {
+int
+Opendp::gridX(int x) const
+{
   return x / site_width_;
 }
 
-int Opendp::gridY(int y) {
+int
+Opendp::gridY(int y) const
+{
   return y / row_height_;
 }
 
-int Opendp::gridNearestX(int x) {
-  return divRound(x, site_width_);
+int
+Opendp::gridX(const Cell *cell) const
+{
+  return gridX(cell->x_);
 }
 
-int Opendp::gridNearestY(int y) {
-  return divRound(y, row_height_);
+int
+Opendp::gridPaddedX(const Cell *cell) const
+{
+  return gridX(cell->x_ - padLeft(cell) * site_width_);
 }
 
-int Opendp::gridX(Cell *cell) {
-  return cell->x_coord / site_width_;
+int
+Opendp::gridY(const Cell *cell) const
+{
+  return gridY(cell->y_);
 }
 
-int Opendp::gridY(Cell *cell) {
-  return cell->y_coord / row_height_;
+void
+Opendp::setGridPaddedLoc(Cell *cell, int x, int y) const
+{
+  cell->x_ = (x + padLeft(cell)) * site_width_;
+  cell->y_ = y * row_height_;
 }
 
-// Callers should probably be using gridX.
-int Opendp::gridNearestX(Cell *cell) {
-  return gridNearestX(cell->x_coord);
+int
+Opendp::gridPaddedEndX(const Cell *cell) const
+{
+  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
+		 site_width_);
 }
 
-// Callers should probably be using gridY.
-int Opendp::gridNearestY(Cell *cell) {
-  return gridNearestY(cell->y_coord);
+int
+Opendp::gridEndX(const Cell *cell) const
+{
+  return divCeil(cell->x_ + cell->width_, site_width_);
 }
 
-int Opendp::coreGridWidth() {
-  return divRound(core_.dx(), site_width_);
+int
+Opendp::gridEndY(const Cell *cell) const
+{
+  return divCeil(cell->y_ + cell->height_, row_height_);
 }
 
-int Opendp::coreGridHeight() {
-  return divRound(core_.dy(),row_height_);
-}
-
-int Opendp::coreGridMaxX() {
+int
+Opendp::coreGridMaxX() const
+{
   return divRound(core_.xMax(), site_width_);
 }
 
-int Opendp::coreGridMaxY() {
+int
+Opendp::coreGridMaxY() const
+{
   return divRound(core_.yMax(), row_height_);
 }
 
-double Opendp::dbuToMicrons(int64_t dbu) {
-  return static_cast< double >(dbu) / db_->getTech()->getDbUnitsPerMicron();
+double
+Opendp::dbuToMicrons(int64_t dbu) const
+{
+  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
 }
 
-int divRound(int dividend, int divisor) {
+double
+Opendp::dbuAreaToMicrons(int64_t dbu_area) const
+{
+  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  return dbu_area / (dbu_micron * dbu_micron);
+}
+
+int
+divRound(int dividend, int divisor)
+{
   return round(static_cast<double>(dividend) / divisor);
 }
 
-int divCeil(int dividend, int divisor) {
+int
+divCeil(int dividend, int divisor)
+{
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-int divFloor(int dividend, int divisor) {
+int
+divFloor(int dividend, int divisor)
+{
   return dividend / divisor;
 }
 

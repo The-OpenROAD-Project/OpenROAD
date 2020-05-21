@@ -35,12 +35,10 @@ if (NOT TCL_LIB_PATHS)
   if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(TCL_LIB_PATHS /usr/local/lib)
     set(TCL_NO_DEFAULT_PATH TRUE)
+  elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(TCL_LIB_PATHS /usr/lib /usr/local/lib)
+    set(TCL_NO_DEFAULT_PATH FALSE)
   endif()
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(TCL_LIB_PATHS /usr/lib
-    /usr/local/lib
-    )
-  set(TCL_NO_DEFAULT_PATH FALSE)
 endif()
 
 if (NOT TCL_LIBRARY)

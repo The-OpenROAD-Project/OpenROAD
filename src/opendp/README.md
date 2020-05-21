@@ -1,22 +1,11 @@
 # OpenDP
 *OpenDP: Open Source Detailed Placement Engine*
 
-| <img src="/doc/image/OpenDP_sample.jpg" width=900px> | 
+| <img src="OpenDP.jpg" width=900px> | 
 |:--:| 
-| *Visualized detailed placement result using aes_cipher_top design with innovus initial placement; OpenDP_sample.jpg* |
+| *Visualized detailed placement result using aes_cipher_top design with innovus initial placement; doc/OpenDP.jpg* |
 
-### Verified/supported Technologies
-* TSMC 65 (GP/LP)
-* ST FDSOI 28
-* TSMC 16 (9T)
-
-Legalize a design that has been globally placed.
-This version of OpenDP is a component of the OpenROAD application and
-cannot be compiled as a standalone executable.
-
-```
-legalize_placement [-constraints constraints_file]
-```
+See OpenROAD/doc/README.md for command documentation.
 
 ### License
 * BSD-3-clause License [[Link]](LICENSE)
@@ -29,4 +18,4 @@ legalize_placement [-constraints constraints_file]
 ### Features
 - Fence region and multi-height cells. (ICCAD 2017 Contest benchmarks)
 - Fragmented ROWs.
-- Macro orientations.
+- Macro blocks.

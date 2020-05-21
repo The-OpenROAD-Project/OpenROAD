@@ -46,6 +46,9 @@
 #include "Util.h"
 
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 namespace TritonCTS {
 
@@ -63,6 +66,8 @@ public:
         std::string getClockNets() const { return _clockNets; }
         void setRootBuffer(const std::string& buffer) { _rootBuffer = buffer; }
         std::string getRootBuffer() const { return  _rootBuffer; }
+        void setBufferList(std::vector<std::string> buffers) { _bufferList = buffers; }
+        std::vector<std::string> getBufferList() const { return  _bufferList; }
         void setDbUnits(DBU units) { _dbUnits = units; }
         DBU getDbUnits() const { return _dbUnits; }
         void setWireSegmentUnit(unsigned wireSegmentUnit) { _wireSegmentUnit = wireSegmentUnit; }
@@ -71,10 +76,32 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
+        void setOnlyCharacterization(bool enable) { _onlyCharacterization = enable; } 
+        bool getOnlyCharacterization() const { return _onlyCharacterization; }
         void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
         unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
         unsigned getMaxSlew() const { return _maxSlew; }
+        void setMaxCharSlew(double slew) { _maxCharSlew = slew; }
+        double getMaxCharSlew() const { return _maxCharSlew; }
+        void setMaxCharCap(double cap) { _maxCharCap = cap; }
+        double getMaxCharCap() const { return _maxCharCap; }
+        void setCharLoadIterations(unsigned loadIterations) { _charLoadIterations = loadIterations; }
+        unsigned getCharLoadIterations() const { return _charLoadIterations; }
+        void setCharSlewIterations(unsigned slewIterations) { _charSlewIterations = slewIterations; }
+        unsigned getCharSlewIterations() const { return _charSlewIterations; }
+        void setCharWirelengthIterations(unsigned wirelengthIterations) { _charWirelengthIterations = wirelengthIterations; }
+        unsigned getCharWirelengthIterations() const { return _charWirelengthIterations; }
+        void setOutputPath(const std::string& path) { _outputPath = path; }
+        std::string getOutputPath() const { return _outputPath; } 
+        void setCapPerSqr(double cap) { _capPerSqr = cap; }
+        double getCapPerSqr() const { return _capPerSqr; }
+        void setResPerSqr(double res) { _resPerSqr = res; }
+        double getResPerSqr() const { return _resPerSqr; }
+        void setCapInter(double cap) { _capInter = cap; }
+        double getCapInter() const { return _capInter; }
+        void setSlewInter(double slew) { _slewInter = slew; }
+        double getSlewInter() const { return _slewInter; }
         void setClockTreeMaxDepth(unsigned depth) { _clockTreeMaxDepth = depth; }
         unsigned getClockTreeMaxDepth() const { return _clockTreeMaxDepth; }
         void setEnableFakeLutEntries(bool enable) { _enableFakeLutEntries = enable; }
@@ -89,23 +116,36 @@ public:
         double getBufDistRatio() { return _bufDistRatio; }
                 
 private:
-        std::string _blockName               = "";
-        std::string _lutFile                 = "";
-        std::string _solListFile             = "";
-        std::string _clockNets               = "";
-        std::string _rootBuffer              = "";
-        DBU         _dbUnits                 = -1;
-        unsigned    _wireSegmentUnit         = 0;
-        unsigned    _dbId                    = 0;
-        bool        _plotSolution            = false;
-        unsigned    _numMaxLeafSinks         = 15;
-        unsigned    _maxSlew                 = 4;
-        unsigned    _clockTreeMaxDepth       = 100;
-        bool        _enableFakeLutEntries    = true;
-        bool        _forceBuffersOnLeafLevel = true;
-        bool        _writeOnlyClockNets      = false;
-        bool        _runPostCtsOpt           = true;
-        double      _bufDistRatio            = 0.1;
+        std::string _blockName                  = "";
+        std::string _lutFile                    = "";
+        std::string _solListFile                = "";
+        std::string _outputPath                 = "";
+        std::string _clockNets                  = "";
+        std::string _rootBuffer                 = "";
+        DBU         _dbUnits                    = -1;
+        unsigned    _wireSegmentUnit            = 0;
+        unsigned    _dbId                       = 0;
+        bool        _plotSolution               = false;
+        bool        _onlyCharacterization       = false;
+        unsigned    _numMaxLeafSinks            = 15;
+        unsigned    _maxSlew                    = 4;
+        double      _maxCharSlew                = 0;
+        double      _maxCharCap                 = 0;
+        double      _capPerSqr                  = 0;
+        double      _resPerSqr                  = 0;
+        double      _capInter                   = 0;
+        double      _slewInter                  = 0;
+        unsigned    _charWirelengthIterations   = 4;
+        unsigned    _charLoadIterations         = 34;
+        unsigned    _charSlewIterations         = 12;
+        unsigned    _clockTreeMaxDepth          = 100;
+        bool        _enableFakeLutEntries       = true;
+        bool        _forceBuffersOnLeafLevel    = true;
+        bool        _writeOnlyClockNets         = false;
+        bool        _runPostCtsOpt              = true;
+        double      _bufDistRatio               = 0.1;
+        
+        std::vector<std::string> _bufferList;
 };
 
 }

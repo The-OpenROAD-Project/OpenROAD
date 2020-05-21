@@ -14,21 +14,37 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 cmake_minimum_required (VERSION 3.9)
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 # Use standard target names
 cmake_policy(SET CMP0078 NEW)
 endif()
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
 endif()
 
-project(OpenROAD VERSION 1.1.0)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
+# Allows <PackageName>_ROOT to be used
+cmake_policy(SET CMP0074 NEW)
+endif()
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+# option() behavior
+cmake_policy(SET CMP0077 NEW)
+endif()
+
+project(OpenROAD VERSION 1.1.0
+  LANGUAGES CXX
+)
+
+option(BUILD_OPENPHYSYN "Build OpenPhySyn" ON)
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)

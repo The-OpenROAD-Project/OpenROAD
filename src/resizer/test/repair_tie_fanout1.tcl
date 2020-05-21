@@ -24,4 +24,4 @@ foreach tie_inst $tie_insts {
 
 # set repaired_filename [file join $result_dir "repair_tie_fanout1.def"]
 # write_def $repaired_filename
-# diff_file $repaired_filename repair_tie_fanout1.defok
+# diff_file repair_tie_fanout1.defok $repaired_filename
