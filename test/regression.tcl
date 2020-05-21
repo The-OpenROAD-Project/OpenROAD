@@ -81,11 +81,6 @@ proc setup {} {
   set errors(error) 0
   set errors(memory) 0
   set errors(leak) 0
-  set errors(race) 0
-  set errors(slow) 0
-  set errors(fast) 0
-  set errors(big) 0
-  set errors(small) 0
   set errors(fail) 0
   set errors(no_cmd) 0
   set errors(no_ok) 0
@@ -167,7 +162,7 @@ proc run_tests {} {
 }
 
 proc run_test { test } {
-  global result_dir diff_file errors diff_options
+  global result_dir diff_file errors diff_options compare_logfile
   
   set cmd_file [test_cmd_file $test]
   if [file exists $cmd_file] {
@@ -202,51 +197,34 @@ proc run_test { test } {
 	append error_msg " *MEMORY*"
 	append_failure $test
 	incr errors(memory)
-      } 
+      }
       if { [lsearch $test_errors "LEAK"] != -1 } {
 	append error_msg " *LEAK*"
 	append_failure $test
 	incr errors(leak)
       }
-      if { [lsearch $test_errors "RACE"] != -1 } {
-	append error_msg " *RACE*"
-	append_failure $test
-	incr errors(race)
-      }
-      if { [lsearch $test_errors "SLOW"] != -1 } {
-	append error_msg " *SLOW*"
-	incr errors(slow)
-      }
-      if { [lsearch $test_errors "FAST"] != -1 } {
-	append error_msg " *FAST*"
-	incr errors(fast)
-      }
-      if { [lsearch $test_errors "BIG"] != -1 } {
-	append error_msg " *BIG*"
-	incr errors(big)
-      }
-      if { [lsearch $test_errors "SMALL"] != -1 } {
-	append error_msg " *SMALL*"
-	incr errors(small)
-      }
-      
-      if [file exists $ok_file] {
-	# Filter dos '/r's from log file.
-	set tmp_file [file join $result_dir $test.tmp]
-	exec tr -d "\r" < $log_file > $tmp_file
-	file rename -force $tmp_file $log_file
-	if [catch [concat exec diff $diff_options $ok_file $log_file \
-		     >> $diff_file]] {
-	  puts " *FAIL*$error_msg"
-	  append_failure $test
-	  incr errors(fail)
+
+      if { $compare_logfile($test) } {
+	if { [file exists $ok_file] } {
+	  # Filter dos '/r's from log file.
+	  set tmp_file [file join $result_dir $test.tmp]
+	  exec tr -d "\r" < $log_file > $tmp_file
+	  file rename -force $tmp_file $log_file
+	  if [catch [concat exec diff $diff_options $ok_file $log_file \
+		       >> $diff_file]] {
+	    puts " *FAIL*$error_msg"
+	    append_failure $test
+	    incr errors(fail)
+	  } else {
+	    puts " pass$error_msg"
+	  }
 	} else {
-	  puts " pass$error_msg"
+	  puts " *NO OK FILE*$error_msg"
+	  append_failure $test
+	  incr errors(no_ok)
 	}
       } else {
-	puts " *NO OK FILE*$error_msg"
-	append_failure $test
-	incr errors(no_ok)
+	puts " pass"
       }
     }
   } else {
@@ -315,7 +293,7 @@ proc run_test_valgrind { test cmd_file log_file } {
   puts $vg_stream "source [file tail $cmd_file]"
   puts $vg_stream "sta::delete_all_memory"
   close $vg_stream
-
+  
   set cmd [concat exec valgrind $valgrind_options \
 	     $app_path $app_options $vg_cmd_file >& $log_file]
   set error_msg ""
@@ -421,9 +399,6 @@ proc show_summary {} {
     if { $errors(memory) != 0 } {
       puts "Memory corruption in $errors(memory)/$test_count"
     }
-    if { $errors(race) != 0 } {
-      puts "Race errors in $errors(race)/$test_count"
-    }
     if { $errors(no_ok) != 0 } {
       puts "No ok file for $errors(no_ok)/$test_count"
     }
@@ -447,8 +422,7 @@ proc found_errors {} {
   
   return [expr $errors(error) != 0 || $errors(fail) != 0 \
 	    || $errors(no_cmd) != 0 || $errors(no_ok) != 0 \
-	    || $errors(memory) != 0 || $errors(leak) != 0 \
-	    || $errors(race) != 0]
+	    || $errors(memory) != 0 || $errors(leak) != 0 ]
 }
 
 ################################################################

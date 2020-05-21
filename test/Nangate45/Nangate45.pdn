@@ -14,4 +14,4 @@ set ::power_nets "VDD"
 set ::ground_nets "VSS"
 
 ##===> Power grid strategy
-source nangate45_grid_strategy-M1-M4-M7.cfg
+source "Nangate45/Nangate45_grid_strategy-M1-M4-M7.cfg"

@@ -47,20 +47,29 @@ proc cleanse_logfile { test log_file } {
 
 # Record tests in the /test directory.
 proc record_tests { tests } {
+  record_tests1 $tests 1
+}
+
+proc record_flow_tests { tests } {
+  record_tests1 $tests 0
+}
+
+proc record_tests1 { tests cmp_logfile } {
   global test_dir
   foreach test $tests {
     # Prune commented tests from the list.
     if { [string index $test 0] != "#" } {
-      record_test $test $test_dir
+      record_test $test $test_dir $cmp_logfile
     }
   }
 }
 
 # Record a test in the regression suite.
-proc record_test { test cmd_dir } {
-  global cmd_dirs test_groups
+proc record_test { test cmd_dir cmp_logfile } {
+  global cmd_dirs test_groups compare_logfile
   set cmd_dirs($test) $cmd_dir
   lappend test_groups(all) $test
+  set compare_logfile($test) $cmp_logfile
   return $test
 }
 

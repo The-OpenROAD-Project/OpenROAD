@@ -18,7 +18,7 @@ exec tclsh $0 ${1+"$@"}
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Usage: regression [openroad | openroad_test | tool]...
-# where tool is name of an openroad tool.
+# where tool is name of an openroad tool (see define_tool_scripts below).
 
 # Directory containing tests.
 set test_dir [file dirname [file normalize [info script]]]
@@ -59,7 +59,6 @@ proc run_openroad_tests { } {
   incr tool_errors [regression_body {}]
 }
 
-
 proc run_tool_tests { tool } {
   global tool_errors openroad_dir tool_scripts
 
@@ -70,6 +69,8 @@ proc run_tool_tests { tool } {
     incr tool_errors
   }
 }
+
+################################################################
 
 set tool_errors 0
 
