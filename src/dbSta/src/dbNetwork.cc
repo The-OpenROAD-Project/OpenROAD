@@ -198,7 +198,7 @@ private:
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance *inst,
-						     const dbNetwork *network) :
+					     const dbNetwork *network) :
   network_(network)
 {
   top_ = (inst == network->topInstance());
@@ -266,9 +266,9 @@ public:
 
 private:
   const dbNetwork *network_;
-  dbSet<dbITerm>::iterator _iitr;
-  dbSet<dbITerm>::iterator _iitr_end;
-  void *_term;
+  dbSet<dbITerm>::iterator iitr_;
+  dbSet<dbITerm>::iterator iitr__end;
+  dbITerm *term_;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net *net,
@@ -276,26 +276,26 @@ DbNetPinIterator::DbNetPinIterator(const Net *net,
   network_(network)
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
-  _iitr = dnet->getITerms().begin();
-  _iitr_end = dnet->getITerms().end();
-  _term = NULL;
+  iitr_ = dnet->getITerms().begin();
+  iitr__end = dnet->getITerms().end();
+  term_ = nullptr;
 }
 
 bool 
 DbNetPinIterator::hasNext()
 {
-  if (_iitr != _iitr_end) {
-    dbITerm *iterm = *_iitr;
+  if (iitr_ != iitr__end) {
+    dbITerm *iterm = *iitr_;
     while (iterm->getSigType() == dbSigType::POWER
           || iterm->getSigType() == dbSigType::GROUND) {
-      ++_iitr;
-      if (_iitr == _iitr_end) break;
-      iterm = *_iitr;
+      ++iitr_;
+      if (iitr_ == iitr__end) break;
+      iterm = *iitr_;
     }
   }
-  if (_iitr != _iitr_end) {
-    _term = (void*)(*_iitr);
-    ++_iitr;
+  if (iitr_ != iitr__end) {
+    term_ = *iitr_;
+    ++iitr_;
     return true;
   }
   else
@@ -305,7 +305,7 @@ DbNetPinIterator::hasNext()
 Pin *
 DbNetPinIterator::next()
 {
-  return (Pin*)_term;
+  return (Pin*)term_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -314,7 +314,7 @@ class DbNetTermIterator : public NetTermIterator
 {
 public:
   DbNetTermIterator(const Net *net,
-			const dbNetwork *network);
+		    const dbNetwork *network);
   bool hasNext();
   Term *next();
 
@@ -325,7 +325,7 @@ private:
 };
 
 DbNetTermIterator::DbNetTermIterator(const Net *net,
-					     const dbNetwork *network) :
+				     const dbNetwork *network) :
   network_(network)
 {
   dbNet *dnet = network_->staToDb(net);
@@ -481,7 +481,7 @@ dbNetwork::findPin(const Instance *instance,
 
 Net *
 dbNetwork::findNet(const Instance *instance, 
-		       const char *net_name) const
+		   const char *net_name) const
 {
   if (instance == top_instance_) {
     dbNet *dnet = block_->findNet(net_name);
@@ -684,8 +684,8 @@ dbNetwork::termIterator(const Net *net) const
 // override ConcreteNetwork::visitConnectedPins
 void
 dbNetwork::visitConnectedPins(const Net *net,
-				    PinVisitor &visitor,
-				    ConstNetSet &visited_nets) const
+			      PinVisitor &visitor,
+			      ConstNetSet &visited_nets) const
 {
   Network::visitConnectedPins(net, visitor, visited_nets);
 }
@@ -737,7 +737,8 @@ DbConstantPinIterator::hasNext()
 }
 
 void
-DbConstantPinIterator::next(Pin *&pin, LogicValue &value)
+DbConstantPinIterator::next(Pin *&pin,
+			    LogicValue &value)
 {
   value = LogicValue::zero;
   pin = nullptr;
@@ -759,8 +760,8 @@ dbNetwork::isLinked() const
 
 bool
 dbNetwork::linkNetwork(const char *,
-			   bool ,
-			   Report *)
+		       bool ,
+		       Report *)
 {
   // Not called.
   return true;
