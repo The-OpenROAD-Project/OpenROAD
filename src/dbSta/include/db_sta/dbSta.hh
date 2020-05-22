@@ -54,6 +54,9 @@ public:
   virtual void postReadDef(odb::dbBlock* block) override;
   virtual void postReadDb(odb::dbDatabase* db) override;
 
+  // Find clock nets connected by combinational gates from the clock roots. 
+  void findClkNets(std::set<dbNet*> &clk_nets);
+
 protected:
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;

@@ -53,7 +53,7 @@ add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
   )
 
 add_custom_command(OUTPUT ${DBSTA_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME} -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENSTA_HOME} -I${OPENDB_HOME}/src/swig/tcl -o ${DBSTA_WRAP} ${DBSTA_HOME}/src/dbSta.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${DBSTA_WRAP}
   WORKING_DIRECTORY ${OPENROAD_HOME}/src/dbSta
   DEPENDS ${DBSTA_SWIG_FILES}

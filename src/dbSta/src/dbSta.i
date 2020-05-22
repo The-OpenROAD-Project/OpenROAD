@@ -32,6 +32,18 @@ make_block_sta(odb::dbBlock *block)
   return sta::makeBlockSta(block);
 }
 
+// For debugging because I can't get a dbNet vector thru swig.
+void
+report_clk_nets()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  std::set<dbNet*> clk_nets;
+  sta->findClkNets(clk_nets);
+  for (dbNet *net : clk_nets)
+    printf("%s\n", net->getConstName());
+}
+
 odb::dbInst *
 sta_to_db_inst(Instance *inst)
 {

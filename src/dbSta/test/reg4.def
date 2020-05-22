@@ -2,7 +2,7 @@
 # reg1.v with bus ports
 ###############################################################################
 
-VERSION 5.5 ; 
+VERSION 5.8 ; 
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
@@ -11,7 +11,7 @@ DESIGN reg1 ;
 
 UNITS DISTANCE MICRONS 1000 ;
 
-DIEAREA ( -1000 -1000 ) ( 1000 1000 ) ;
+DIEAREA ( 0 0 ) ( 1000 1000 ) ;
 
 
 COMPONENTS 5 ;
