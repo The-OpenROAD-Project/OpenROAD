@@ -194,7 +194,7 @@ private:
   dbSet<dbITerm>::iterator iitr_end_;
   dbSet<dbBTerm>::iterator bitr_;
   dbSet<dbBTerm>::iterator bitr_end_;
-  Pin *pin_;
+  Pin *next_;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance *inst,
@@ -222,36 +222,30 @@ DbInstancePinIterator::hasNext()
       return false;
     else {
       dbBTerm *bterm = *bitr_;
+      next_ = network_->dbToSta(bterm);
       bitr_++;
-      pin_ = network_->dbToSta(bterm);
       return true;
     }
   }
-  if (iitr_ == iitr_end_)
-    return false;
   else {
-    dbITerm *iterm = *iitr_;
-    while (iterm->getSigType() == dbSigType::POWER
-	   || iterm->getSigType() == dbSigType::GROUND) {
+    while (iitr_ != iitr_end_) {
+      dbITerm *iterm = *iitr_;
+      if (!(iterm->getSigType() == dbSigType::POWER
+	    || iterm->getSigType() == dbSigType::GROUND)) {
+	next_ = network_->dbToSta(*iitr_);
+	++iitr_;
+	return true;
+      }
       iitr_++;
-      if (iitr_ == iitr_end_)
-	return false;
-      iterm = *iitr_;
     }
-    if (iitr_ == iitr_end_)
-      return false;
-    else {
-      pin_ = network_->dbToSta(iterm);
-      iitr_++;
-      return true;
-    }
+    return false;
   }
 }
 
 Pin *
 DbInstancePinIterator::next()
 {
-  return pin_;
+  return next_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -267,8 +261,8 @@ public:
 private:
   const dbNetwork *network_;
   dbSet<dbITerm>::iterator iitr_;
-  dbSet<dbITerm>::iterator iitr__end;
-  dbITerm *term_;
+  dbSet<dbITerm>::iterator iitr_end_;
+  Pin *next_;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net *net,
@@ -277,35 +271,30 @@ DbNetPinIterator::DbNetPinIterator(const Net *net,
 {
   dbNet *dnet = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
   iitr_ = dnet->getITerms().begin();
-  iitr__end = dnet->getITerms().end();
-  term_ = nullptr;
+  iitr_end_ = dnet->getITerms().end();
+  next_ = nullptr;
 }
 
 bool 
 DbNetPinIterator::hasNext()
 {
-  if (iitr_ != iitr__end) {
+  while (iitr_ != iitr_end_) {
     dbITerm *iterm = *iitr_;
-    while (iterm->getSigType() == dbSigType::POWER
-          || iterm->getSigType() == dbSigType::GROUND) {
+    if (!(iterm->getSigType() == dbSigType::POWER
+	  || iterm->getSigType() == dbSigType::GROUND)) {
+      next_ = reinterpret_cast<Pin*>(*iitr_);
       ++iitr_;
-      if (iitr_ == iitr__end) break;
-      iterm = *iitr_;
+      return true;
     }
+    iitr_++;
   }
-  if (iitr_ != iitr__end) {
-    term_ = *iitr_;
-    ++iitr_;
-    return true;
-  }
-  else
-    return false;
+  return false;
 }
 
 Pin *
 DbNetPinIterator::next()
 {
-  return (Pin*)term_;
+  return next_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -467,7 +456,7 @@ dbNetwork::findPin(const Instance *instance,
   else {
     dbInst *dinst = staToDb(instance);
     dbITerm *iterm = dinst->findITerm(port_name);
-    return reinterpret_cast<Pin*>(iterm);
+    return dbToSta(iterm);
   }
 }
 
@@ -1089,18 +1078,24 @@ dbNetwork::staToDb(const Pin *pin,
 		   dbITerm *&iterm,
 		   dbBTerm *&bterm) const
 {
-  dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
-  dbObjectType type = obj->getObjectType();
-  if (type == dbITermObj) {
-    iterm = static_cast<dbITerm*>(obj);
+  if (pin) {
+    dbObject *obj = reinterpret_cast<dbObject*>(const_cast<Pin*>(pin));
+    dbObjectType type = obj->getObjectType();
+    if (type == dbITermObj) {
+      iterm = static_cast<dbITerm*>(obj);
+      bterm = nullptr;
+    }
+    else if (type == dbBTermObj) {
+      iterm = nullptr;
+      bterm = static_cast<dbBTerm*>(obj);
+    }
+    else
+      internalError("pin is not ITerm or BTerm");
+  }
+  else {
+    iterm = nullptr;
     bterm = nullptr;
   }
-  else if (type == dbBTermObj) {
-    iterm = nullptr;
-    bterm = static_cast<dbBTerm*>(obj);
-  }
-  else
-    internalError("pin is not ITerm or BTerm");
 }
 
 dbBTerm *
