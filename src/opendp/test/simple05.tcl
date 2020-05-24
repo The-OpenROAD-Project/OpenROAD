@@ -1,6 +1,6 @@
 # ???
-source helpers.tcl
-read_lef Nangate45.lef
+source "helpers.tcl"
+read_lef Nangate45/Nangate45.lef
 read_def simple05.def
 detailed_placement
 check_placement

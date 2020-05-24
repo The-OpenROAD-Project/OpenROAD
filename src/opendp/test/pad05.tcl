@@ -1,6 +1,6 @@
 # std cell abutting on the right set_placement_padding -right
-source helpers.tcl
-read_lef Nangate45.lef
+source "helpers.tcl"
+read_lef Nangate45/Nangate45.lef
 read_lef extra.lef
 read_def check6.def
 set_placement_padding -global -right 1

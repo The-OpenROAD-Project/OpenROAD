@@ -51,9 +51,9 @@ Path Type: max
            0.00    0.00 ^ r1/CK (DFF_X1)
   11.63    0.11    0.11 ^ r1/Q (DFF_X1)
            0.00    0.11 ^ rebuffer1/A (BUF_X2)
-  38.57    0.07    0.18 ^ rebuffer1/Z (BUF_X2)
+  38.24    0.07    0.18 ^ rebuffer1/Z (BUF_X2)
            0.00    0.18 ^ rebuffer2/A (BUF_X2)
-2619.00    3.15    3.32 ^ rebuffer2/Z (BUF_X2)
+2618.67    3.15    3.32 ^ rebuffer2/Z (BUF_X2)
            0.04    3.37 ^ r3/D (DFF_X1)
                    3.37   data arrival time
 

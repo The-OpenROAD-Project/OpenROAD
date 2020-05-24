@@ -1,6 +1,6 @@
 # 1 inst in core off grid
-source helpers.tcl
-read_lef Nangate45.lef
+source "helpers.tcl"
+read_lef Nangate45/Nangate45.lef
 read_def simple02.def
 detailed_placement
 check_placement

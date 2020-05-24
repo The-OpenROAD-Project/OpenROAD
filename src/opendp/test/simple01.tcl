@@ -1,6 +1,6 @@
 # 1 inst lower left of core
-source helpers.tcl
-read_lef Nangate45.lef
+source "helpers.tcl"
+read_lef Nangate45/Nangate45.lef
 read_def simple01.def
 detailed_placement
 check_placement
