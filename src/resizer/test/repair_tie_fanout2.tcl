@@ -2,16 +2,15 @@
 source helpers.tcl
 source tie_fanout.tcl
 
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 
 set def_filename [file join $result_dir "tie_hi2.def"]
-write_tie_hi_fanout_def $def_filename \
-  Nangate_typ/LOGIC1_X1/Z Nangate_typ/BUF_X1/A 35
+write_tie_hi_fanout_def $def_filename LOGIC1_X1/Z BUF_X1/A 35
 
 read_def $def_filename
 
-repair_tie_fanout -max_fanout 10 Nangate_typ/LOGIC1_X1/Z
+repair_tie_fanout -max_fanout 10 LOGIC1_X1/Z
 
 set tie_insts [get_cells -filter "ref_name == LOGIC1_X1"]
 foreach tie_inst $tie_insts {

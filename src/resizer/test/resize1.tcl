@@ -1,6 +1,6 @@
 # resize to target_slew
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def reg2.def
 
 create_clock -name clk -period 10 {clk1 clk2 clk3}

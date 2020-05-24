@@ -1,12 +1,12 @@
 # repair tie fanout non-liberty pin on net
 source helpers.tcl
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_lef repair_tie_fanout3.lef
 read_verilog repair_tie_fanout3.v
 link_design top
 
-repair_tie_fanout -max_fanout 10 Nangate_typ/LOGIC1_X1/Z
+repair_tie_fanout -max_fanout 10 LOGIC1_X1/Z
 
 set tie_insts [get_cells -filter "ref_name == LOGIC1_X1"]
 foreach tie_inst $tie_insts {

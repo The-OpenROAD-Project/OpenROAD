@@ -76,8 +76,8 @@ proc write_hi_fanout_def { filename fanout } {
 set def_filename [file join $result_dir "buffer_ports4.def"]
 write_hi_fanout_def $def_filename 250
 
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def $def_filename
 create_clock -period 1 clk1
 
