@@ -77,15 +77,32 @@ if { $argv == {} } {
   run_openroad_tests
 } else {
   foreach arg $argv {
-    set tool [string tolower $arg]
-    if { [string equal -nocase $tool "openroad"] } {
+    set arg [string tolower $arg]
+    set matched 0
+    if { [string equal -nocase $arg "openroad"] } {
       run_openroad_tests
-    } elseif { [lsearch -nocase [group_tests "all"] $tool] != -1 } {
-      incr tool_errors [regression_body $tool]
-    } elseif { [dict exists $tool_scripts $tool] } {
-      run_tool_tests $tool
-    } else {
-      puts "$tool is not an openroad test or tool name."
+      set matched 1
+    }
+
+    set ord_tests {}
+    foreach test [group_tests "all"] {
+      if { [string match $arg $test] } {
+	lappend ord_tests $test
+	set matched 1
+      }
+    }
+    if { $ord_tests != {} } {
+      incr tool_errors [regression_body $ord_tests]
+    }
+
+    dict for {tool script} $tool_scripts {
+      if { [string match $arg $tool] } {
+	run_tool_tests $tool
+	set matched 1
+      }
+    }
+    if { !$matched } {
+      puts "$arg is not an openroad test or tool name."
     }
   }
 }
