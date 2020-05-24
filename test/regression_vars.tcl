@@ -52,6 +52,7 @@ proc record_tests { tests } {
 
 proc record_flow_tests { tests } {
   record_tests1 $tests 0
+  define_test_group "flow" $tests
 }
 
 proc record_tests1 { tests cmp_logfile } {
@@ -75,14 +76,18 @@ proc record_test { test cmd_dir cmp_logfile } {
 
 ################################################################
 
-proc define_test_group { name tests } {
+proc define_test_group { group tests } {
   global test_groups
-  set test_groups($name) $tests
+  set test_groups($group) $tests
 }
 
-proc group_tests { name } {
+proc group_tests { group } {
   global test_groups
-  return $test_groups($name)
+  if { [info exists test_groups($group)] } {
+    return $test_groups($group)
+  } else {
+    return {}
+  }
 }
 
 # Clear the test lists.

@@ -27,14 +27,14 @@ row height                1.4 u
 
 Placement Analysis
 --------------------------------
-total displacement     1348.2 u
-average displacement      2.5 u
+total displacement     1311.7 u
+average displacement      2.4 u
 max displacement         16.3 u
-original HPWL          6950.7 u
-legalized HPWL         8770.7 u
-delta HPWL                 26 %
+original HPWL          6950.8 u
+legalized HPWL         8793.8 u
+delta HPWL                 27 %
 
-Mirrored 159 instances
-HPWL before            8770.7 u
-HPWL after             8682.9 u
+Mirrored 152 instances
+HPWL before            8793.8 u
+HPWL after             8707.9 u
 HPWL delta                 -1 %

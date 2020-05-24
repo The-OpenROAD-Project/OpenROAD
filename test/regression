@@ -17,7 +17,7 @@ exec tclsh $0 ${1+"$@"}
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Usage: regression [openroad | openroad_test | tool]...
+# Usage: regression [openroad | openroad_test | flow | tool]...
 # where tool is name of an openroad tool (see define_tool_scripts below).
 
 # Directory containing tests.
@@ -52,7 +52,8 @@ proc run_openroad_tests { } {
 
   puts "------------------------------------------------------"
   puts "OpenROAD"
-  incr tool_errors [regression_body {}]
+  # Skip flow tests until triton route is installed on CI machines
+  incr tool_errors [regression_body "non_flow"]
 }
 
 proc run_tool_tests { tool } {
@@ -79,11 +80,22 @@ if { $argv == {} } {
   foreach arg $argv {
     set arg [string tolower $arg]
     set matched 0
+    # openroad
     if { [string equal -nocase $arg "openroad"] } {
       run_openroad_tests
       set matched 1
     }
 
+    # flow
+    if { [string equal -nocase $arg "flow"] } {
+      set flow_tests [group_tests "flow"]
+      if { $flow_tests != {} } {
+	incr tool_errors [regression_body $flow_tests]
+      }
+      set matched 1
+    }
+
+    # <openroad_test>
     set ord_tests {}
     foreach test [group_tests "all"] {
       if { [string match $arg $test] } {
@@ -95,12 +107,14 @@ if { $argv == {} } {
       incr tool_errors [regression_body $ord_tests]
     }
 
+    # <tool>
     dict for {tool script} $tool_scripts {
       if { [string match $arg $tool] } {
 	run_tool_tests $tool
 	set matched 1
       }
     }
+
     if { !$matched } {
       puts "$arg is not an openroad test or tool name."
     }
