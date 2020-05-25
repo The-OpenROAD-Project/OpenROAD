@@ -1,12 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-
+// James Cherry, Parallax Software, Inc.
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2020, James Cherry, Parallax Software, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -68,24 +65,21 @@ Opendp::checkPlacement(bool verbose)
   for (Cell &cell : cells_) {
     if (isStdCell(&cell)) {
       // Site check
-      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
+      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0)
         site_failures.push_back(&cell);
-      }
       if (checkPowerLine(cell)) {
         checkPowerLine(cell);
         power_line_failures.push_back(&cell);
       }
+      if (!checkInRows(cell, grid))
+	in_rows_failures.push_back(&cell);
     }
     // Placed check
-    if (!isPlaced(&cell)) {
+    if (!isPlaced(&cell))
       placed_failures.push_back(&cell);
-    }
-    if (!checkInRows(cell, grid)) {
-      in_rows_failures.push_back(&cell);
-    }
-    if (checkOverlap(cell, grid) != nullptr) {
+    // Overlap check
+    if (checkOverlap(cell, grid) != nullptr)
       overlap_failures.push_back(&cell);
-    }
   }
 
   reportFailures(placed_failures, "Placed", verbose);
