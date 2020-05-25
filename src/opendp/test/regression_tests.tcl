@@ -6,6 +6,8 @@ record_tests {
   check5
   check6
   check7
+  check8
+  check9
   fence01
   fence02
   fence03
