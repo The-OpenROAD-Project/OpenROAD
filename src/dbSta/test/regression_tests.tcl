@@ -9,6 +9,7 @@ record_tests {
   sta4
   sta5
   block_sta1
+  find_clks1
 
   read_verilog1
   read_verilog2
