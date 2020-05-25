@@ -214,9 +214,10 @@ void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
                         ++numShapes;                 
                 }
         }
-
-        x /= numShapes;
-        y /= numShapes;
+       if (numShapes > 0){
+                x /= numShapes;
+                y /= numShapes;
+       }
 };  
 
 void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
