@@ -43,6 +43,7 @@
 #include "DbWrapper.h"
 #include "TritonCTSKernel.h"
 #include "HTreeBuilder.h"
+#include "db_sta/dbSta.hh"
 
 // DB includes
 #include "db.h"
@@ -76,25 +77,47 @@ void DbWrapper::initAllClocks() {
         std::cout << " Initializing clock nets\n";
 
         clearNumClocks();
-        
+
+        std::cout << " Looking for clock nets in the design\n";
+
+        //Uses dbSta to find all clock nets in the design.
+        ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
+
+        std::set<odb::dbNet*> clockNets;
+
+        openRoad->getSta()->findClkNets(clockNets);
+
+        //Checks the user input in case there are other nets that need to be added to the set.
         std::vector<std::string> clockNetNames;
         parseClockNames(clockNetNames);
 
-        std::cout << " Looking for clock nets in the design\n";
         for (const std::string& name: clockNetNames) {
                 odb::dbNet* net = _block->findNet(name.c_str());
+                //Since a set is unique, only the nets not found by dbSta are added.
+                clockNets.insert(net);
+        }
+
+        for (odb::dbNet* net : clockNets){
                 if (!net) {
-                        odb::dbITerm* iterm = _block->findITerm(name.c_str());
+                        odb::dbITerm* iterm = _block->findITerm(net->getName().c_str());
                         net = iterm->getNet();
                 }
                 if (!net) {
-                        std::cout << " [WARNING] Net \"" << name << "\" not in design. Skipping...\n";
+                        std::cout << " [WARNING] Net \"" << net->getName() << "\" not in design. Skipping...\n";
                         continue;
                 } 
                 
-                std::cout << " Net \"" << name << "\" found\n";
+                std::cout << " Net \"" << net->getName() << "\" found\n";
+                //Initializes the net in TritonCTS. If the number of sinks is less than 2, the net is discarded.
                 initClock(net);
         }
+
+        if (getNumClocks() <= 0) {
+                std::cout << "\n";
+                std::cout << " [ERROR] No clock nets have been found.\n";
+                std::exit(1);
+        }
+
         std::cout << " TritonCTS found " << getNumClocks() << " clock nets." << std::endl;
 }       
 
@@ -128,7 +151,7 @@ void DbWrapper::initClock(odb::dbNet* net) {
         for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
                 odb::dbITerm* iterm = *itr;
 
-                if (iterm->getIoType() != odb::dbIoType::INPUT) {
+                if (!(iterm->isInputSignal())) {
                         continue;
                 }
 
@@ -164,7 +187,7 @@ void DbWrapper::parseClockNames(std::vector<std::string>& clockNetNames) const {
         } 
         
         unsigned numClocks = clockNetNames.size();
-        std::cout << " Number of user-input clocks: " << numClocks;
+        std::cout << " Number of user-input clocks: " << numClocks << ".\n";
 
         if (numClocks > 0) {
                 std::cout << " (";
@@ -172,11 +195,6 @@ void DbWrapper::parseClockNames(std::vector<std::string>& clockNetNames) const {
                         std::cout << " \"" << name << "\"";
                 }
                 std::cout << " )\n";
-        } else {
-                std::cout << "\n";
-                std::cout << " [ERROR] No clock nets have been found.\n";
-                std::exit(1);
-
         } 
 }
 

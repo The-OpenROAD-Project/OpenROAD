@@ -138,9 +138,7 @@ void TritonCTSKernel::findClockRoots() {
         }
 
         std::cout << " User did not specify clock roots.\n";
-        std::cout << " Using OpenSTA to find clock roots.\n";
         _staEngine.init();
-        _staEngine.findClockRoots();
 }
 
 void TritonCTSKernel::populateTritonCts() {
