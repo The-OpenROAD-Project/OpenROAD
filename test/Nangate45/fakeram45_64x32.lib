@@ -29,7 +29,7 @@ library(fakeram45_64x32) {
     default_input_pin_cap : 0.0;
     default_output_pin_cap : 0.0;
     default_input_pin_cap : 0.0;
-    default_max_transition : 0.0;
+    default_max_transition : 0.2;
 
     default_operating_conditions : tt_1.0_25.0;
     default_leakage_power_density : 0.0;
@@ -103,11 +103,11 @@ cell(fakeram45_64x32) {
         internal_power(){
             rise_power(fakeram45_64x32_energy_template_clkslew) {
                 index_1 ("0.009, 0.453");
-                values ("39351.015, 39351.015")
+                values (".04, .04")
             }
             fall_power(fakeram45_64x32_energy_template_clkslew) {
                 index_1 ("0.009, 0.453");
-                values ("39351.015, 39351.015")
+                values (".04, .04")
             }
         }
     }
@@ -139,13 +139,13 @@ cell(fakeram45_64x32) {
                   "0.174, 0.174" \
                 )
             }
-            rise_transition(fakeram45_64x32_mem_out_slew_template) {
-                index_1 ("0.000, 0.002");
-                values ("0.05, 1.00")
+            rise_transition(fakeram45_1024x32_mem_out_slew_template) {
+                index_1 ("0.00, 0.2");
+                values ("0.01, 0.2")
             }
-            fall_transition(fakeram45_64x32_mem_out_slew_template) {
-                index_1 ("0.000, 0.002");
-                values ("0.05, 1.00")
+            fall_transition(fakeram45_1024x32_mem_out_slew_template) {
+                index_1 ("0.00, 0.2");
+                values ("0.01, 0.2")
             }
         }
     }
