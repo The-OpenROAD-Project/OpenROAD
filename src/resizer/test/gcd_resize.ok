@@ -17,22 +17,5 @@ Inserted 35 input buffers.
 Inserted 18 output buffers.
 Inserted 0 hold buffers.
 Resized 35 instances.
-Warning: found 16 floatiing nets.
- _424_
- _425_
- _426_
- _427_
- _428_
- _429_
- _430_
- _431_
- _432_
- _433_
- _434_
- _435_
- _436_
- _437_
- _438_
- _439_
 Design area 738 u^2 12% utilization.
 worst slack 9.35

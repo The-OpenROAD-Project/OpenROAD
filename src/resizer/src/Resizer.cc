@@ -2202,16 +2202,12 @@ Resizer::findFloatingNets()
   NetIterator *net_iter = network_->netIterator(network_->topInstance());
   while (net_iter->hasNext()) {
     Net *net = net_iter->next();
-    NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-    int pin_count = 0;
-    while (pin_iter->hasNext()) {
-      pin_iter->next();
-      pin_count++;
-      if (pin_count > 1)
-	break;
-    }
-    delete pin_iter;
-    if (pin_count == 1)
+    PinSeq loads;
+    PinSeq drvrs;
+    PinSet visited_drvrs;
+    FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
+    network_->visitConnectedPins(net, visitor);
+    if (drvrs.size() == 0 && loads.size() > 0)
       floating_nets->push_back(net);
   }
   delete net_iter;

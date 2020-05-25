@@ -13,15 +13,16 @@ minimizes the overhead of invoking each tool in the flow.
 
 ### Tool File Organization
 
-Every tool follows the following file structure.
+Every tool follows the following file structure, grouping sources,
+tests and headers together.
 
 ```
-CMakelists.txt - add_subdirectory's src/CMakelists.txt
-src/ - sources and private headers
-src/CMakelists.txt
-include/<toolname>/ - exported headers
-test/
-test/regression
+src/CMakelists.txt - add_subdirectory's src/CMakelists.txt
+src/tool/src/ - sources and private headers
+src/tool/src/CMakelists.txt
+src/tool/include/tool/ - exported headers
+src/tool/test/
+src/tool/test/regression
 ```
 
 OpenROAD repository
@@ -37,27 +38,36 @@ include/openroad/Error.hh - Error reporting API
 
 ```
 
-Submodule repos in /src (note these are NOT in src/module)
+Some tools such as OpenDB are submodules, which are simply
+subdirectories in /src that are pointers to the git submodule.
+They are intentionally not segregated into a separate /module.
 
-```
-OpenDB
-OpenSTA
-replace
-ioPlacer
-FastRoute
-TritonMacroPlace
-OpenRCX
-flute3
-eigen
-```
+The use of submodules for new code integrated into OpenROAD is
+strongly discouraged. Submodules make changes to the underlying
+infrastructure (OpenDB, OpenSTA etc) difficult to propagate across the
+dependent submodule repositories. Submodules: just say no.
 
-Submodules that are shared by multiple tools are owned by OpenROAD
-so that there are not redundant source trees and compiles.
+Where external/third party code that a tool depends on should be
+placed depends on the nature of the dependency.
 
-Each tool submodule cmake file builds a library that is linked by the
-OpenROAD application. The tools should not define a `main()` function.
-If the tool is tcl only and has no c++ code it does not need to have
-a cmake file.
+* Libraries - code packaged as a linkable library.
+Examples are tcl, boost, zlib, eigen, lemon, spdlog.
+
+These should be installed in the build environment and linked by
+OpenRoad. Document these dependencies in the top level README.md
+file. The Dockerfile should be updated to illustrate where to find the
+library and how to install it.  Adding libraries to the build
+enviroment requires coodination with the sys admins for the continuous
+integration hosts to make sure the environments include the
+dependency. Advanced notification should also be given to the
+development team so their private build environments can be updated.
+
+* 
+
+Each tool cmake file builds a library that is linked by the OpenROAD
+application. The tools should not define a `main()` function.  If the
+tool is tcl only and has no c++ code it does not need to have a cmake
+file.
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files.  These functions are all provided by the OpenROAD
@@ -81,11 +91,6 @@ be based to the commands. Defining Tcl commands for a tool class is
 fine for internals, but not for user visible commands. Commands have
 an implicit argument of the current OpenROAD class object. Functions
 to get individual tools from the OpenROAD object can be defined.
-
-The use of submodules for new code integrated into OpenROAD is
-strongly discouraged. Submodules make changes to the underlying
-infrastructure (OpenDB, OpenSTA etc) difficult to propagate across the
-dependent submodule repositories. Submodules: just say no.
 
 ### Initialization (c++ tools only)
 
@@ -271,20 +276,21 @@ Detailed documentation should be the tool/README.md file.
 
 ### Tool Flow
 
-1. Verilog to DB (dbSTA)
-2. Init Floorplan (OpenROAD)
-3. I/O placement (ioPlacer)
-4. PDN generation (pdngen
-5. Tapcell and Welltie insertion (tapcell with LEF/DEF)
-6. I/O placement (ioPlacer)
-7. Global placement (RePlAce)
-8. Gate Resizing and buffering (Resizer)
-9. Detailed placement (OpenDP)
-10. Clock Tree Synthesis (TritonCTS)
-11. Repair Hold Violations (Resizer)
-12. Global route (FastRoute)
-13. Detailed route (TritonRoute)n
-14. Final timing/power report (OpenSTA)
+* Verilog to DB (dbSTA)
+* Init Floorplan (OpenROAD)
+* I/O placement (ioPlacer)
+* PDN generation (pdngen)
+* Tapcell and Welltie insertion (tapcell)
+* I/O placement (ioPlacer)
+* Macro placement (TritonMacroPlace)
+* Global placement (RePlAce)
+* Gate Resizing and buffering (Resizer)
+* Detailed placement (OpenDP)
+* Clock Tree Synthesis (TritonCTS)
+* Repair Hold Violations (Resizer)
+* Global route (FastRoute)
+* Detailed route (TritonRoute)
+* Final timing/power report (OpenSTA)
 
 ### Tool Checklist
 
