@@ -1,6 +1,6 @@
 # rows with middle cut out and 1 inst placed in cutout
-source helpers.tcl
-read_lef Nangate45.lef
+source "helpers.tcl"
+read_lef Nangate45/Nangate45.lef
 read_def fragmented_row04.def
 check_placement
 detailed_placement

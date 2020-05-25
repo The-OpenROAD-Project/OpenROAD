@@ -1,7 +1,7 @@
 # repair_max_slew reg3
 source "helpers.tcl"
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def reg3.def
 create_clock clk -period 1
 set_input_delay -clock clk 0 in1

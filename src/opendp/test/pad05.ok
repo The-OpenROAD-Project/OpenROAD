@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: Reading LEF file:  extra.lef
 Notice 0:     Created 4 library cells
 Notice 0: Finished LEF file:  extra.lef

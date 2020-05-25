@@ -1,13 +1,13 @@
 # init_floorplan -tracks
 source "helpers.tcl"
-read_lef liberty1.lef
+read_lef Nangate45/Nangate45.lef
+read_liberty Nangate45/Nangate45_typ.lib
 read_def reg1.def
-read_liberty liberty1.lib
 initialize_floorplan -die_area "0 0 1000 1000" \
   -core_area "100 100 900 900" \
-  -site site1 \
+  -site FreePDK45_38x28_10R_NP_162NW_34O \
   -tracks init_floorplan2.tracks
-auto_place_pins M1
+auto_place_pins metal1
 
 set def_file [make_result_file init_floorplan2.def]
 write_def $def_file

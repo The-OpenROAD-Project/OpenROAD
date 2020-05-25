@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  Nangate.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate.lef
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: reg2.def
 Notice 0: Design: top
@@ -13,5 +13,5 @@ Notice 0:     Created 10 nets and 14 connections.
 Notice 0: Finished DEF file: reg2.def
 Instance r1
  Cell: DFF_X1
- Library: Nangate
+ Library: Nangate45
  Path cells: DFF_X1

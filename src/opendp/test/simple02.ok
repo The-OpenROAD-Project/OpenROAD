@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: simple02.def
 Notice 0: Design: single_cell
@@ -32,6 +32,6 @@ average displacement      0.0 u
 max displacement          0.0 u
 original HPWL             8.9 u
 legalized HPWL            9.1 u
-delta HPWL                  3 %
+delta HPWL                  2 %
 
 No differences found.

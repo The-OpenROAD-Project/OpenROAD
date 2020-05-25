@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: aes_cipher_top_replace.def
 Notice 0: Design: aes_cipher_top
@@ -30,8 +30,8 @@ Placement Analysis
 total displacement    21325.9 u
 average displacement      1.0 u
 max displacement          4.8 u
-original HPWL        363779.0 u
-legalized HPWL       371977.8 u
+original HPWL        363775.2 u
+legalized HPWL       371971.7 u
 delta HPWL                  2 %
 
 No differences found.

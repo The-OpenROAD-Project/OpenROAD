@@ -1,7 +1,7 @@
 # rebuffer 2 pin steiner with root branch other pt equal root
 source "helpers.tcl"
-read_lef Nangate.lef
-read_liberty Nangate_typ.lib
+read_lef Nangate45/Nangate45.lef
+read_liberty Nangate45/Nangate45_typ.lib
 read_def reg3.def
 create_clock clk -period 1
 

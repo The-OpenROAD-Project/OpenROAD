@@ -1,7 +1,7 @@
 # repair_hold_violations
 source helpers.tcl
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def repair_hold1.def
 
 create_clock -period 2 clk

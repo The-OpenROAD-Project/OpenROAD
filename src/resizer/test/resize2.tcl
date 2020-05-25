@@ -1,7 +1,7 @@
 # resize reg1 (no placement)
 source helpers.tcl
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def reg2.def
 
 create_clock -name clk -period 1 {clk1 clk2 clk3}

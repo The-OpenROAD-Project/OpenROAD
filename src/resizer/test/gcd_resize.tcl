@@ -1,6 +1,6 @@
 # gcd full meal deal
-read_liberty Nangate_typ.lib
-read_lef Nangate.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def gcd_placed.def
 read_sdc gcd.sdc
 

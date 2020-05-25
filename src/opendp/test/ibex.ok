@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: ibex_core_replace.def
 Notice 0: Design: ibex_core
@@ -30,8 +30,8 @@ Placement Analysis
 total displacement    29151.9 u
 average displacement      0.9 u
 max displacement          4.4 u
-original HPWL        636823.7 u
-legalized HPWL       653031.2 u
+original HPWL        636814.0 u
+legalized HPWL       653028.7 u
 delta HPWL                  3 %
 
 No differences found.

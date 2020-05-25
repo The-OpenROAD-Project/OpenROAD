@@ -329,7 +329,10 @@ Opendp::displacementStats(// Return values.
       *max_displacement = displacement;
     }
   }
-  *avg_displacement = *sum_displacement / cells_.size();
+  if (cells_.size())
+    *avg_displacement = *sum_displacement / cells_.size();
+  else
+    *avg_displacement = 0.0;
 }
 
 // Note that this does NOT use cell/core coordinates.

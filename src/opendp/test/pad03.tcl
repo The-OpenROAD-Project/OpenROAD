@@ -1,6 +1,6 @@
 # set_padding -global -right
-source helpers.tcl
-read_lef Nangate45.lef
+source "helpers.tcl"
+read_lef Nangate45/Nangate45.lef
 read_def simple03.def
 set_placement_padding -global -right 5
 

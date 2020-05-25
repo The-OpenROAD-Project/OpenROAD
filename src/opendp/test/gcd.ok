@@ -1,8 +1,8 @@
-Notice 0: Reading LEF file:  Nangate45.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  Nangate45.lef
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: gcd_replace.def
 Notice 0: Design: gcd
@@ -30,8 +30,8 @@ Placement Analysis
 total displacement      678.8 u
 average displacement      1.2 u
 max displacement         13.9 u
-original HPWL          6950.7 u
-legalized HPWL         7750.2 u
+original HPWL          6950.8 u
+legalized HPWL         7750.4 u
 delta HPWL                 12 %
 
 No differences found.
