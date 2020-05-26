@@ -166,6 +166,22 @@ Regression scripts should add output files or directories to
 `.gitignore` so that running does note leave the source repository
 "dirty".
 
+The Nangate45 open source library data used by many tests is in
+`test/Nangate45`. Use the following command to add a link in the tool
+command
+
+```
+cd tool/test
+ln -s ../../../test/Nangate45
+```
+
+After the link is installed, the test script can read the liberty file
+with the command shown below.
+
+```
+read_liberty Nangate45/Nangate45_typ.lib
+```
+
 ### Builds
 
 Checking out the OpenROAD repo with --recursive installs all of the
