@@ -78,9 +78,6 @@ void TritonCTSKernel::setupCharacterization() {
                 //LUT files exists. Import the characterization results.
                 importCharacterization();
         }
-        if (_options.getOnlyCharacterization() == true){
-                std::exit(1);
-        }
 }
 
 void TritonCTSKernel::importCharacterization() {
@@ -124,6 +121,11 @@ void TritonCTSKernel::checkCharacterization() {
 
         std::cout << "    The chacterization used " << visitedMasters.size() << " buffer(s) types."
                   << " All of them are in the loaded DB.\n";
+        
+        
+        if (_options.getOnlyCharacterization() == true){
+                std::exit(1);
+        }
 }
 
 void TritonCTSKernel::findClockRoots() {
@@ -138,9 +140,7 @@ void TritonCTSKernel::findClockRoots() {
         }
 
         std::cout << " User did not specify clock roots.\n";
-        std::cout << " Using OpenSTA to find clock roots.\n";
         _staEngine.init();
-        _staEngine.findClockRoots();
 }
 
 void TritonCTSKernel::populateTritonCts() {

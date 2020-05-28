@@ -1,0 +1,460 @@
+library(fakeram45_1024x32) {
+    technology (cmos);
+    delay_model : table_lookup;
+    revision : 1.0;
+    date : "2019-11-07 17:33:40Z";
+    comment : "SRAM";
+    time_unit : "1ns";
+    voltage_unit : "1V";
+    current_unit : "1mA";
+    leakage_power_unit : "1mW";
+    nom_process : 1;
+    nom_temperature : 25.000;
+    nom_voltage : 1.1;
+    capacitive_load_unit (1,pf);
+
+    pulling_resistance_unit : "1kohm";
+
+    operating_conditions(tt_1.0_25.0) {
+        process : 1;
+        temperature : 25.000;
+        voltage : 1.1;
+        tree_type : balanced_tree;
+    }
+
+    /* default attributes */
+    default_cell_leakage_power : 0;
+    default_fanout_load : 1;
+    default_inout_pin_cap : 0.0;
+    default_input_pin_cap : 0.0;
+    default_output_pin_cap : 0.0;
+    default_input_pin_cap : 0.0;
+    default_max_transition : 0.0;
+
+    default_operating_conditions : tt_1.0_25.0;
+    default_leakage_power_density : 0.0;
+
+    /* additional header data */
+    slew_derate_from_library : 1.000;
+    slew_lower_threshold_pct_fall : 10.000;
+    slew_upper_threshold_pct_fall : 90.000;
+    slew_lower_threshold_pct_rise : 10.000;
+    slew_upper_threshold_pct_rise : 90.000;
+    input_threshold_pct_fall : 50.000;
+    input_threshold_pct_rise : 50.000;
+    output_threshold_pct_fall : 50.000;
+    output_threshold_pct_rise : 50.000;
+
+
+    lu_table_template(fakeram45_1024x32_mem_out_delay_template) {
+        variable_1 : input_net_transition;
+        variable_2 : total_output_net_capacitance;
+            index_1 ("1000, 1001");
+            index_2 ("1000, 1001");
+    }
+    lu_table_template(fakeram45_1024x32_mem_out_slew_template) {
+        variable_1 : total_output_net_capacitance;
+            index_1 ("1000, 1001");
+    }
+    lu_table_template(fakeram45_1024x32_constraint_template) {
+        variable_1 : related_pin_transition;
+        variable_2 : constrained_pin_transition;
+            index_1 ("1000, 1001");
+            index_2 ("1000, 1001");
+    }
+    power_lut_template(fakeram45_1024x32_energy_template_clkslew) {
+        variable_1 : input_transition_time;
+            index_1 ("1000, 1001");
+    }
+    power_lut_template(fakeram45_1024x32_energy_template_sigslew) {
+        variable_1 : input_transition_time;
+            index_1 ("1000, 1001");
+    }
+    library_features(report_delay_calculation);
+    type (fakeram45_1024x32_DATA) {
+        base_type : array ;
+        data_type : bit ;
+        bit_width : 32;
+        bit_from : 31;
+        bit_to : 0 ;
+        downto : true ;
+    }
+    type (fakeram45_1024x32_ADDRESS) {
+        base_type : array ;
+        data_type : bit ;
+        bit_width : 10;
+        bit_from : 9;
+        bit_to : 0 ;
+        downto : true ;
+    }
+cell(fakeram45_1024x32) {
+    area : 13277.124;
+    interface_timing : true;
+    memory() {
+        type : ram;
+        address_width : 10;
+        word_width : 32;
+    }
+    pin(clk)   {
+        direction : input;
+        capacitance : 0.000;
+        clock : true;
+        min_period           : 0.210 ;
+        internal_power(){
+            rise_power(fakeram45_1024x32_energy_template_clkslew) {
+                index_1 ("0.009, 0.453");
+                values ("39351.015, 39351.015")
+            }
+            fall_power(fakeram45_1024x32_energy_template_clkslew) {
+                index_1 ("0.009, 0.453");
+                values ("39351.015, 39351.015")
+            }
+        }
+    }
+
+    bus(rd_out)   {
+        bus_type : fakeram45_1024x32_DATA;
+        direction : output;
+        max_capacitance : 0.002;
+        memory_read() {
+            address : addr_in;
+        }
+        timing() {
+            related_pin : "clk" ;
+            timing_type : rising_edge;
+            timing_sense : non_unate;
+            cell_rise(fakeram45_1024x32_mem_out_delay_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.000, 0.002");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            cell_fall(fakeram45_1024x32_mem_out_delay_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.000, 0.002");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            rise_transition(fakeram45_1024x32_mem_out_slew_template) {
+                index_1 ("0.000, 0.002");
+                values ("0.05, 1.00")
+            }
+            fall_transition(fakeram45_1024x32_mem_out_slew_template) {
+                index_1 ("0.000, 0.002");
+                values ("0.05, 1.00")
+            }
+        }
+    }
+    pin(we_in){
+        direction : input;
+        capacitance : 0.000;
+        timing() {
+            related_pin : clk;
+            timing_type : setup_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+        } 
+        timing() {
+            related_pin : clk;
+            timing_type : hold_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                    "0.000, 0.000", \
+                    "0.000, 0.000" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                    "0.000, 0.000", \
+                    "0.000, 0.000" \
+                )
+            }
+        }
+        internal_power(){
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+    }
+    pin(ce_in){
+        direction : input;
+        capacitance : 0.000;
+        timing() {
+            related_pin : clk;
+            timing_type : setup_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+        } 
+        timing() {
+            related_pin : clk;
+            timing_type : hold_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                    "0.000, 0.000", \
+                    "0.000, 0.000" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                    "0.000, 0.000", \
+                    "0.000, 0.000" \
+                )
+            }
+        }
+        internal_power(){
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+    }
+    bus(addr_in)   {
+        bus_type : fakeram45_1024x32_ADDRESS;
+        direction : input;
+        capacitance : 0.000;
+        timing() {
+            related_pin : clk;
+            timing_type : setup_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+        } 
+        timing() {
+            related_pin : clk;
+            timing_type : hold_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                    "0.000, 0.000", \
+                    "0.000, 0.000" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                    "0.000, 0.000", \
+                    "0.000, 0.000" \
+                )
+            }
+        }
+        internal_power(){
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+    }
+    bus(wd_in)   {
+        bus_type : fakeram45_1024x32_DATA;
+        memory_write() {
+            address : addr_in;
+            clocked_on : "clk";
+        }
+        direction : input;
+        capacitance : 0.000;
+        timing() {
+            related_pin     : clk;
+            timing_type     : setup_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+        } 
+        timing() {
+            related_pin     : clk;
+            timing_type     : hold_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.000, 0.000", \
+                  "0.000, 0.000" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.000, 0.000", \
+                  "0.000, 0.000" \
+                )
+            }
+        }
+        internal_power(){
+            when : "(! (we_in) )";
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+        internal_power(){
+            when : "(we_in)";
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+    }
+    bus(w_mask_in)   {
+        bus_type : fakeram45_1024x32_DATA;
+        memory_write() {
+            address : addr_in;
+            clocked_on : "clk";
+        }
+        direction : input;
+        capacitance : 0.000;
+        timing() {
+            related_pin     : clk;
+            timing_type     : setup_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.269, 0.269", \
+                  "0.269, 0.269" \
+                )
+            }
+        } 
+        timing() {
+            related_pin     : clk;
+            timing_type     : hold_rising ;
+            rise_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.000, 0.000", \
+                  "0.000, 0.000" \
+                )
+            }
+            fall_constraint(fakeram45_1024x32_constraint_template) {
+                index_1 ("0.009, 0.453");
+                index_2 ("0.009, 0.453");
+                values ( \
+                  "0.000, 0.000", \
+                  "0.000, 0.000" \
+                )
+            }
+        }
+        internal_power(){
+            when : "(! (we_in) )";
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+        internal_power(){
+            when : "(we_in)";
+            rise_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+            fall_power(fakeram45_1024x32_energy_template_sigslew) {
+                index_1 ("0.009, 0.453");
+                values ("0.000, 0.000")
+            }
+        }
+    }
+    cell_leakage_power : 2.496;
+}
+
+}

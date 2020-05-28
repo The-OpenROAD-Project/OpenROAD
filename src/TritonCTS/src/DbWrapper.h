@@ -72,12 +72,18 @@ public:
         void populateTritonCTS();
         void writeClockNetsToDb(const Clock& clockNet);
 
+        void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
+        void clearNumClocks() { _numberOfClocks = 0; }
+        unsigned getNumClocks() const { return _numberOfClocks; }
+
 private:
-        odb::dbDatabase*  _db      = nullptr;
-        odb::dbChip*      _chip    = nullptr;
-        odb::dbBlock*     _block   = nullptr;
-        CtsOptions*       _options = nullptr;
-        TritonCTSKernel*  _kernel  = nullptr;         
+        sta::dbSta*       _openSta              = nullptr;
+        odb::dbDatabase*  _db                   = nullptr;
+        odb::dbChip*      _chip                 = nullptr;
+        odb::dbBlock*     _block                = nullptr;
+        CtsOptions*       _options              = nullptr;
+        TritonCTSKernel*  _kernel               = nullptr;  
+        unsigned          _numberOfClocks       = 0;       
 
         void parseClockNames(std::vector<std::string>& clockNetNames) const;
 
