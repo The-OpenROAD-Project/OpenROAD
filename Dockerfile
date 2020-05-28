@@ -28,9 +28,6 @@ RUN wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
     yum install -y epel-release-latest-7.noarch.rpm && rm -rf epel-release-latest-7.noarch.rpm  \
     && yum clean -y all
 
-# Install git from epel
-RUN yum -y remove git && yum install -y git2u
-
 # Install SWIG
 RUN yum remove -y swig \
     && wget https://github.com/swig/swig/archive/rel-4.0.1.tar.gz \
