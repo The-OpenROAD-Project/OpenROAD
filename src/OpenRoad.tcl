@@ -35,11 +35,8 @@
 
 proc show_openroad_splash {} {
   puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
-License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
-
-This is free software, and you are free to change and redistribute it
-under certain conditions; type `show_copying' for details. 
-This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'."
+This program is licensed under the BSD-3 license. See the LICENSE file for details. 
+Components of the program may be licensed under more restrictive licenses which must be honored."
 }
 
 # -library is the default
