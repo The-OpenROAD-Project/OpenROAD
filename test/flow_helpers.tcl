@@ -1,3 +1,13 @@
+proc read_libraries {} {
+  global tech_lef std_cell_lef extra_lef liberty_file extra_liberty
+
+  read_lef $tech_lef
+  read_lef $std_cell_lef
+  foreach file $extra_lef { read_lef $file }
+  read_liberty $liberty_file
+  foreach file $extra_liberty { read_liberty $file }
+}
+
 proc have_macros {} {
   set db [::ord::get_db]
   set block [[$db getChip] getBlock]
@@ -42,6 +52,3 @@ proc make_tr_params { tr_lef cts_def route_guide routed_def } {
   close $stream
   return $tr_params
 }
-
-
-

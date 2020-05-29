@@ -373,6 +373,7 @@ dbNetwork::setBlock(dbBlock *block)
 void
 dbNetwork::clear()
 {
+  ConcreteNetwork::clear();
   db_ = nullptr;
 }
 
@@ -763,20 +764,19 @@ dbNetwork::readLefAfter(dbLib *lib)
 }
 
 void
-dbNetwork::readDefAfter()
+dbNetwork::readDefAfter(dbBlock* block)
 {
-  dbChip *chip = db_->getChip();
-  if (chip) {
-    block_ = chip->getBlock();
-    makeTopCell();
-  }
+  db_ = block->getDataBase();
+  block_ = block;
+  makeTopCell();
 }
 
 // Make ConcreteLibrary/Cell/Port objects for the
 // db library/master/MTerm objects.
 void
-dbNetwork::readDbAfter()
+dbNetwork::readDbAfter(odb::dbDatabase *db)
 {
+  db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();

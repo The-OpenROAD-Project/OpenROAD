@@ -137,6 +137,12 @@ proc ensure_units_initialized { } {
   }
 }
 
+proc clear {} {
+  [get_db] clear
+  sta::clear_network
+  sta::clear_sta
+}
+
 # namespace ord
 }
 

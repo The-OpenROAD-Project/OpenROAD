@@ -28,6 +28,8 @@ using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbNet;
 using odb::dbBlock;
+using odb::dbTech;
+using odb::dbLib;
 
 class dbSta : public Sta, public ord::OpenRoad::Observer
 {

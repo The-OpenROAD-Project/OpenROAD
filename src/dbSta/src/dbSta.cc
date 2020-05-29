@@ -116,21 +116,22 @@ dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)
+void dbSta::postReadLef(dbTech* tech,
+			dbLib* library)
 {
   if (library) {
     db_network_->readLefAfter(library);
   }
 }
 
-void dbSta::postReadDef(odb::dbBlock* block)
+void dbSta::postReadDef(dbBlock* block)
 {
-  db_network_->readDefAfter();
+  db_network_->readDefAfter(block);
 }
 
-void dbSta::postReadDb(odb::dbDatabase* db)
+void dbSta::postReadDb(dbDatabase* db)
 {
-  db_network_->readDbAfter();
+  db_network_->readDbAfter(db);
 }
 
 // Wrapper to sync db/liberty libraries.
