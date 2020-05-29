@@ -31,7 +31,9 @@ do
 	fi
 	
 	cd $unit_test_path 
+	ln -s $testdir/../../../test/Nangate45
 	$test_script $binary
+	unlink Nangate45
 	test_return_code=$?
 	cd $test_root
 

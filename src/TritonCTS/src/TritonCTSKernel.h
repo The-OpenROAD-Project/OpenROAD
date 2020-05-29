@@ -93,7 +93,7 @@ public:
         void export_characterization(const char* file);
         void set_root_buffer(const char* buffer);
         void set_buffer_list(const char* buffers);
-        void set_clock_nets(const char* names);
+        int set_clock_nets(const char* names);
         void set_wire_segment_distance_unit(unsigned unit);
         void set_max_char_slew(double slew);
         void set_max_char_cap(double cap);

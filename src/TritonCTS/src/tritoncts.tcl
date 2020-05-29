@@ -113,7 +113,11 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-clk_nets)] } {
     set clk_nets $keys(-clk_nets)
-    $cts set_clock_nets $clk_nets
+    set fail [$cts set_clock_nets $clk_nets]
+    if {$fail} {
+      puts "Error when finding -clk_nets in DB!"
+      exit
+    }
   }
 
   if { [info exists keys(-slew_inter)] } {
