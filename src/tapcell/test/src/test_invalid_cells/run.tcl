@@ -1,7 +1,5 @@
-#!/usr/bin/env bash
-
 ################################################################################
-## Authors: Mateus Fogaca, Eder Matheus Monteiro
+## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
 ##          (Advisor: Ricardo Reis)
 ##
 ## BSD 3-Clause License
@@ -36,27 +34,11 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-GREEN=0
-RED=2
+read_lef "input.lef"
+read_def "input.def"
 
-if [ "$#" -ne 2 ]; then
-	exit 2
-fi
+tapcell -endcap_cpp "1" -distance "25" -tapcell_master "FILLCELL_X1x" -endcap_master "FILLCELL_X1x"
 
-binary=$1
-testdir=$2
+write_def "tap.def"
 
-$binary -no_init < run.tcl > test.log 2>&1
-
-report=$(grep -e '---- #Tapcells inserted:' ./test.log)
-
-mkdir -p ../../results/test_rows_origin/
-cp test.log ../../results/test_rows_origin/tapcell.log
-
-if grep -q -e "$report" golden.cells;
-then
-	exit $GREEN
-else
-        echo "     - [ERROR] Test failed. Check $testdir/src/check_rows_origin/test.log and Check $testdir/src/check_rows_origin/golden.cells"
-	exit $RED
-fi
+exit
