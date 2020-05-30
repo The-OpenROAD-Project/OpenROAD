@@ -44,6 +44,7 @@
 #define PARAMETERSFORCTS_H
 
 #include "Util.h"
+#include "db.h"
 
 #include <string>
 #include <iostream>
@@ -114,6 +115,8 @@ public:
         bool runPostCtsOpt() { return _runPostCtsOpt; }
         void setBufDistRatio(double ratio) { _bufDistRatio = ratio; }
         double getBufDistRatio() { return _bufDistRatio; }
+        void setClockNetsObjs(std::vector<odb::dbNet*> nets) { _clockNetsObjs = nets; }
+        std::vector<odb::dbNet*> getClockNetsObjs() const { return  _clockNetsObjs; }
                 
 private:
         std::string _blockName                  = "";
@@ -146,6 +149,7 @@ private:
         double      _bufDistRatio               = 0.1;
         
         std::vector<std::string> _bufferList;
+        std::vector<odb::dbNet*> _clockNetsObjs;
 };
 
 }

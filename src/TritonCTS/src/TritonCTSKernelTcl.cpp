@@ -42,6 +42,9 @@
 
 #include "TritonCTSKernel.h"
 
+// DB includes
+#include "db.h"
+
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -61,8 +64,45 @@ void TritonCTSKernel::set_sol_list_file(const char* file) {
         _options.setSolListFile(file);
 }
 
-void TritonCTSKernel::set_clock_nets(const char* names) {
+int TritonCTSKernel::set_clock_nets(const char* names) {
+        odb::dbDatabase* db    = odb::dbDatabase::getDatabase(_options.getDbId());
+        odb::dbChip* chip  = db->getChip();
+        odb::dbBlock* block = chip->getBlock();
+
         _options.setClockNets(names);
+        std::stringstream ss(names);
+        std::istream_iterator<std::string> begin(ss);
+        std::istream_iterator<std::string> end;
+        std::vector<std::string> nets(begin, end);
+
+        std::vector<odb::dbNet*> netObjects;
+
+        for (std::string name : nets){
+                odb::dbNet* net = block->findNet(name.c_str());
+                bool netFound = false;
+                if (net != nullptr) {
+                        //Since a set is unique, only the nets not found by dbSta are added.
+                        netObjects.push_back(net);
+                        netFound = true;
+                } else {
+                        //User input was a pin, transform it into an iterm if possible
+                        odb::dbITerm* iterm = block->findITerm(name.c_str());
+                        if (iterm != nullptr) {
+                                net = iterm->getNet();
+                                 if (net != nullptr) {
+                                        //Since a set is unique, only the nets not found by dbSta are added.
+                                        netObjects.push_back(net);
+                                        netFound = true;
+                                }
+                        }
+                        
+                }
+                if (!netFound) {
+                        return 1;
+                }
+        }
+        _options.setClockNetsObjs(netObjects);
+        return 0;
 }
 
 void TritonCTSKernel::set_max_char_cap(double cap) {
