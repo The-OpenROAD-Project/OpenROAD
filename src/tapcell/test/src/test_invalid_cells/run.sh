@@ -46,17 +46,22 @@ fi
 binary=$1
 testdir=$2
 
+ln -s ../test_rows_origin/input.* .
+
 $binary -no_init < run.tcl > test.log 2>&1
 
-report=$(grep -e '---- #Tapcells inserted:' ./test.log)
+rm ./input.lef
+rm ./input.def
 
-mkdir -p ../../results/test_rows_origin/
-cp test.log ../../results/test_rows_origin/tapcell.log
+grep -q "Master FILLCELL_X1x not found" ./test.log
+status=$?
 
-if grep -q -e "$report" golden.cells;
-then
+mkdir -p ../../results/test_invalid_cells/
+cp test.log ../../results/test_invalid_cells/tapcell.log
+
+if [ $status -eq 0 ]; then
 	exit $GREEN
 else
-        echo "     - [ERROR] Test failed. Check $testdir/src/check_rows_origin/test.log and Check $testdir/src/check_rows_origin/golden.cells"
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_invalid_cells/test.log"
 	exit $RED
 fi
