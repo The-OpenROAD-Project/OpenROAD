@@ -159,4 +159,6 @@ proc clock_tree_synthesis { args } {
   }
 
   $cts run_triton_cts
+  # CTS changed the network behind the STA's back.
+  sta::network_changed
 }

@@ -1,10 +1,6 @@
 source "flow_helpers.tcl"
 
-read_lef $tech_lef
-read_lef $std_cell_lef
-foreach file $extra_lef { read_lef $file }
-read_liberty $liberty_file
-foreach file $extra_liberty { read_liberty $file }
+read_libraries
 read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
@@ -47,8 +43,6 @@ clock_tree_synthesis -lut_file $cts_lut_file \
   -sol_list $cts_sol_file \
   -root_buf $cts_buffer \
   -wire_unit 20
-# CTS changed the network behind the STA's back.
-sta::network_changed
 
 set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
@@ -78,8 +72,13 @@ catch "exec TritonRoute $tr_params" tr_log
 puts $tr_log
 regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
 
-# Need a way to clear db to read def
-#read_def $routed_def
+################################################################
+
+# Reinitialize libraries db with routed def.
+ord::clear
+read_libraries
+read_def $routed_def
+read_sdc $sdc_file
 
 # final report
 # inlieu of rc extraction
@@ -98,5 +97,5 @@ if { ![info exists drv_count] } {
 } elseif { $drv_count > $max_drv_count } {
   puts "fail:  max drv count exceeded $drv_count > $max_drv_count."
 } else {
-  puts "pass"
+  puts "pass:  drv count $drv_count <= $drv_count."
 }
