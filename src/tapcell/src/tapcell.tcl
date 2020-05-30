@@ -581,15 +581,13 @@ proc tapcell { args } {
                     set master [$db findMaster $cnrcap_nwin_master]
 
                     if { ![string match [$master getConstName] $cnrcap_nwin_master] } {
-                        puts "\[ERROR\] Master $cnrcap_nwin_master not found"
-                        exit 1
+                        ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
                     }
                 } else {
                     set master [$db findMaster $cnrcap_nwout_master]
                     
                     if { ![string match [$master getConstName] $cnrcap_nwout_master] } {
-                        puts "\[ERROR\] Master $cnrcap_nwout_master not found"
-                        exit 1
+                        ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
                     }
                 }
             } elseif {$top_bottom == -1} {
@@ -597,15 +595,13 @@ proc tapcell { args } {
                     set master [$db findMaster $cnrcap_nwin_master]
 
                     if { ![string match [$master getConstName] $cnrcap_nwin_master] } {
-                        puts "\[ERROR\] Master $cnrcap_nwin_master not found"
-                        exit 1
+                        ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
                     }
                 } else {
                     set master [$db findMaster $cnrcap_nwout_master]
 
                     if { ![string match [$master getConstName] $cnrcap_nwout_master] } {
-                        puts "\[ERROR\] Master $cnrcap_nwout_master not found"
-                        exit 1
+                        ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
                     }
                 }
             } else {
