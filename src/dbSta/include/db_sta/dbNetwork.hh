@@ -48,8 +48,8 @@ public:
   virtual void clear();
 
   void readLefAfter(dbLib *lib);
-  void readDefAfter();
-  void readDbAfter();
+  void readDefAfter(dbBlock* block);
+  void readDbAfter(dbDatabase* db);
   void readLibertyAfter(LibertyLibrary *lib);
 
   virtual bool linkNetwork(const char *top_cell_name,
