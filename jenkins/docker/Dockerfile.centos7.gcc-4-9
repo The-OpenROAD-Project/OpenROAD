@@ -3,7 +3,7 @@ LABEL maintainer="Abdelrahman Hosny <abdelrahman_hosny@brown.edu>"
 
 # Install dev and runtime dependencies
 RUN yum group install -y "Development Tools" \
-    && yum install -y https://centos7.iuscommunity.org/ius-release.rpm \
+    && yum install -y https://repo.ius.io/ius-release-el7.rpm \
     && yum install -y wget git centos-release-scl devtoolset-8 \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
     python36u python36u-libs python36u-devel python36u-pip && \
