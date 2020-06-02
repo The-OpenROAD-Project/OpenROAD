@@ -49,12 +49,12 @@ proc set_wire_rc { args } {
   if { [info exists keys(-layer)] } {
     if { [info exists keys(-resistance)] \
 	   || [info exists keys(-capacitance)] } {
-      sta_error "Use -layer or -resistance/-capacitance but not both."
+      ord::error "Use -layer or -resistance/-capacitance but not both."
     }
     set layer_name $keys(-layer)
     set layer [[[ord::get_db] getTech] findLayer $layer_name]
     if { $layer == "NULL" } {
-      sta_error "layer $layer_name not found."
+      ord::error "layer $layer_name not found."
     }
     set layer_width_dbu [$layer getWidth]
     set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
@@ -106,7 +106,7 @@ proc resize { args } {
   } else {
     set resize_libs [get_libs *]
     if { $resize_libs == {} } {
-      sta_error "No liberty libraries found."
+      ord::error "No liberty libraries found."
     }
   }
 
@@ -128,7 +128,7 @@ proc parse_max_util { keys_var } {
   if { [info exists keys(-max_utilization)] } {
     set max_util $keys(-max_utilization)
     if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      sta_error "-max_utilization must be between 0 and 100%."
+      ord::error "-max_utilization must be between 0 and 100%."
     }
     set max_util [expr $max_util / 100.0]
   }
@@ -145,15 +145,15 @@ proc parse_buffer_cell { keys_var required } {
       set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
       if { $buffer_cell != "NULL" } {
 	if { ![get_property $buffer_cell is_buffer] } {
-	  sta_error "[get_name $buffer_cell] is not a buffer."
+	  ord::error "[get_name $buffer_cell] is not a buffer."
 	}
       }
     }
   } elseif { $required } {
-    sta_error "-buffer_cell required for buffer insertion."
+    ord::error "-buffer_cell required for buffer insertion."
   }
   if { $buffer_cell == "NULL" && $required } {
-    sta_error "-buffer_cell required for buffer insertion."    
+    ord::error "-buffer_cell required for buffer insertion."    
   }
   return $buffer_cell
 }
@@ -233,7 +233,7 @@ proc repair_max_fanout { args } {
     set max_fanout $keys(-max_fanout)
     check_positive_integer "-max_fanout" $max_fanout
   } else {
-    sta_error "no -max_fanout specified."
+    ord::error "no -max_fanout specified."
   }
 
   set buffer_cell [parse_buffer_cell keys 1]
@@ -295,7 +295,7 @@ proc repair_tie_fanout { args } {
     set max_fanout $keys(-max_fanout)
     check_positive_integer "-max_fanout" $max_fanout
   } else {
-    sta_error("-max_fanout requried.")
+    ord::error "-max_fanout requried."
   }
   set verbose [info exists flags(-verbose)]
   
