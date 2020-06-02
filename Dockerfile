@@ -66,7 +66,7 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && cmake -B build . \
     && cmake --build build -j $(nproc) --target install
 
-RUN useradd -ms /bin/bash openroad
+RUN useradd -ms /bin/bash -K UID_MIN=1002 openroad
 
 FROM base-dependencies AS builder
 
