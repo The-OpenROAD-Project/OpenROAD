@@ -68,8 +68,6 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
 
 RUN useradd -ms /bin/bash openroad
 
-RUN mkdir /OpenROAD && chmod a+w /OpenROAD
-
 FROM base-dependencies AS builder
 
 COPY . /OpenROAD
