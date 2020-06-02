@@ -1,8 +1,12 @@
-############################################################################
+#!/usr/bin/env bash
+
+################################################################################
+## Authors: Mateus Fogaca, Eder Matheus Monteiro
+##          (Advisor: Ricardo Reis)
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2019, Federal University of Rio Grande do Sul (UFRGS)
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -13,7 +17,7 @@
 ##
 ## * Redistributions in binary form must reproduce the above copyright notice,
 ##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
+##   and#or other materials provided with the distribution.
 ##
 ## * Neither the name of the copyright holder nor the names of its
 ##   contributors may be used to endorse or promote products derived from
@@ -30,42 +34,34 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-##
-############################################################################
+################################################################################
 
-set(RESIZER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/Resizer_wrap.cc)
-set(RESIZER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/ResizerTclInitVar.cc)
+GREEN=0
+RED=2
 
-add_custom_command(OUTPUT ${RESIZER_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix sta -I${OPENROAD_HOME}/include -o ${RESIZER_WRAP} ${RESIZER_HOME}/src/Resizer.i
-  COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${RESIZER_WRAP}
-  WORKING_DIRECTORY ${RESIZER_HOME}/src
-  DEPENDS
-  ${RESIZER_HOME}/src/Resizer.i
-  ${RESIZER_HOME}/include/resizer/Resizer.hh
-  )
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
-add_custom_command(OUTPUT ${RESIZER_TCL_INIT}
-  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${RESIZER_TCL_INIT} resizer_tcl_inits Resizer.tcl
-  WORKING_DIRECTORY ${RESIZER_HOME}/src
-  DEPENDS Resizer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
-  )
+binary=$1
+testdir=$2
 
-add_library(resizer
-  MakeResizer.cc
-  Resizer.cc
-  SteinerTree.cc
-  ${RESIZER_WRAP}
-  ${RESIZER_TCL_INIT}
-  )
+ln -s ../test_rows_origin/input.* .
 
-target_include_directories(resizer
-  PUBLIC ${RESIZER_HOME}/include
-  PRIVATE
-  ${OPENROAD_HOME}/include
-  ${DBSTA_HOME}/include
-  ${OPENSTA_HOME}/include
-  ${OPENDB_HOME}/include
-  ${OPENROAD_HOME}/src/flute3
-  ${TCL_INCLUDE_PATH}
-  )
+$binary -no_init < run.tcl > test.log 2>&1
+
+rm ./input.lef
+rm ./input.def
+
+grep -q "Master FILLCELL_X1x not found" ./test.log
+status=$?
+
+mkdir -p ../../results/test_invalid_cells/
+cp test.log ../../results/test_invalid_cells/tapcell.log
+
+if [ $status -eq 0 ]; then
+	exit $GREEN
+else
+        echo "     - [ERROR] Test failed. Check $testdir/src/check_invalid_cells/test.log"
+	exit $RED
+fi

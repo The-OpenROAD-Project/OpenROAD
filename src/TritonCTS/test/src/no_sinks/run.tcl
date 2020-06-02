@@ -7,5 +7,6 @@ read_sdc "aes.sdc"
 clock_tree_synthesis -lut_file "lut.txt" \
                      -sol_list "sol_list.txt" \
                      -root_buf CLKBUF_X3 \
-                     -wire_unit 20 
+                     -wire_unit 20 \
+                     -clk_nets "clk" 
 

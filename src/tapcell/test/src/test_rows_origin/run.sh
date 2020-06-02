@@ -50,8 +50,8 @@ $binary -no_init < run.tcl > test.log 2>&1
 
 report=$(grep -e '---- #Tapcells inserted:' ./test.log)
 
-mkdir -p ../../results/test_cells_inserted/
-cp test.log ../../results/test_cells_inserted/tapcell.log
+mkdir -p ../../results/test_rows_origin/
+cp test.log ../../results/test_rows_origin/tapcell.log
 
 if grep -q -e "$report" golden.cells;
 then

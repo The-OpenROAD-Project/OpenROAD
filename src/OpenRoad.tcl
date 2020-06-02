@@ -1,25 +1,42 @@
-# Copyright (c) 2019, Parallax Software, Inc.
-# 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+############################################################################
+##
+## BSD 3-Clause License
+##
+## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+##
+############################################################################
 
 proc show_openroad_splash {} {
   puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
-License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
-
-This is free software, and you are free to change and redistribute it
-under certain conditions; type `show_copying' for details. 
-This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'."
+This program is licensed under the BSD-3 license. See the LICENSE file for details. 
+Components of the program may be licensed under more restrictive licenses which must be honored."
 }
 
 # -library is the default
@@ -135,6 +152,12 @@ proc ensure_units_initialized { } {
   if { ![units_initialized] } {
     sta::sta_error "Command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
   }
+}
+
+proc clear {} {
+  [get_db] clear
+  sta::clear_network
+  sta::clear_sta
 }
 
 # namespace ord

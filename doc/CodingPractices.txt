@@ -174,6 +174,15 @@ Same here:
 
 
 ....
+Don't use logical operators to test for null pointers.
+
+if (!net) {
+
+should be
+
+if (net != nullptr) {
+
+....
 
 Don't use malloc.
 Use new.
