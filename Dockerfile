@@ -28,10 +28,8 @@ RUN wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
     yum install -y epel-release-latest-7.noarch.rpm && rm -rf epel-release-latest-7.noarch.rpm  \
     && yum clean -y all
 
-# Install git from epel
-#RUN yum -y remove git && yum install -y git2u
-RUN yum -y remove git && yum install -y git
-
+# Install any git version > 2.6.5
+RUN yum remove -y git* && yum install -y git224
 
 # Install SWIG
 RUN yum remove -y swig \
@@ -66,7 +64,7 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && cmake -B build . \
     && cmake --build build -j $(nproc) --target install
 
-RUN useradd -ms /bin/bash -K UID_MIN=1002 openroad
+RUN useradd -ms /bin/bash openroad
 
 FROM base-dependencies AS builder
 
