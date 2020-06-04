@@ -20,6 +20,7 @@ record_tests {
   repair_max_fanout2
   repair_max_fanout3
   repair_max_slew1
+  repair_max_slew2
   repair_hold1
   repair_hold2
   report_floating_nets1
