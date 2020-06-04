@@ -139,11 +139,11 @@ cell(fakeram45_64x32) {
                   "0.174, 0.174" \
                 )
             }
-            rise_transition(fakeram45_1024x32_mem_out_slew_template) {
+            rise_transition(fakeram45_64x32_mem_out_slew_template) {
                 index_1 ("0.00, 0.2");
                 values ("0.01, 0.2")
             }
-            fall_transition(fakeram45_1024x32_mem_out_slew_template) {
+            fall_transition(fakeram45_64x32_mem_out_slew_template) {
                 index_1 ("0.00, 0.2");
                 values ("0.01, 0.2")
             }
