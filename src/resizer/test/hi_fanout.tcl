@@ -1,4 +1,4 @@
-# write_hi_fanout verilog/def
+# write_hi_fanout def
 
 set header {VERSION 5.8 ; 
 DIVIDERCHAR "/" ;

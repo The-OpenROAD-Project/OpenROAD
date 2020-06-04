@@ -25,15 +25,17 @@ proc make_tr_lef {} {
   global design tech_lef std_cell_lef extra_lef
   set merged_lef [make_result_file ${design}_merged.lef]
   set lef_files "$tech_lef $std_cell_lef $extra_lef"
-  catch [concat exec mergeLef.py --inputLef $lef_files --outputLef $merged_lef]
+  catch [concat exec ./mergeLef.py --inputLef $lef_files --outputLef $merged_lef]
   set tr_lef [make_result_file ${design}_tr.lef]
-  exec modifyLefSpacing.py -i $merged_lef -o $tr_lef
+  exec ./modifyLefSpacing.py -i $merged_lef -o $tr_lef
   return $tr_lef
 }
 
 # This is why parameter files suck.
 proc make_tr_params { tr_lef cts_def route_guide routed_def } {
   global design
+  # linux/mac compatible virtual processor count
+  set nproc [exec getconf _NPROCESSORS_ONLN]
   set tr_params [make_result_file ${design}_tr.params]
   set stream [open $tr_params "w"]
   puts $stream "lef:$tr_lef"
@@ -44,8 +46,8 @@ proc make_tr_params { tr_lef cts_def route_guide routed_def } {
   puts $stream "outputguide:[make_result_file "${design}_output_guide.mod"]"
   puts $stream "outputDRC:[make_result_file "${design}_route_drc.rpt"]"
   puts $stream "outputMaze:[make_result_file "${design}_maze.log"]"
-  puts $stream "threads:1"
-  puts $stream "cpxthreads:1"
+  puts $stream "threads:$nproc"
+  puts $stream "cpxthreads:$nproc"
   puts $stream "verbose:1"
   puts $stream "gap:0"
   puts $stream "timeout:2400"

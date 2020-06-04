@@ -14,4 +14,4 @@ set init_floorplan_cmd "initialize_floorplan -site $site \
     -tracks $tracks_file"
 set max_drv_count 25
 
-source "flow.tcl"
+source -echo "flow.tcl"

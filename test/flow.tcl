@@ -74,7 +74,7 @@ regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
 
 ################################################################
 
-# Reinitialize libraries db with routed def.
+# Reinitialize libraries and db with routed def.
 ord::clear
 read_libraries
 read_def $routed_def
@@ -93,9 +93,9 @@ report_floating_nets -verbose
 report_design_area
 
 if { ![info exists drv_count] } {
-  puts "fail: drv count not found."
+  puts "fail drv count not found."
 } elseif { $drv_count > $max_drv_count } {
-  puts "fail:  max drv count exceeded $drv_count > $max_drv_count."
+  puts "fail max drv count exceeded $drv_count > $max_drv_count."
 } else {
-  puts "pass:  drv count $drv_count <= $drv_count."
+  puts "pass drv count $drv_count <= $max_drv_count."
 }
