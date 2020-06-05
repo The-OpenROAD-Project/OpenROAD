@@ -173,7 +173,7 @@ proc report_cts { args } {
   set cts [get_triton_cts]
 
   if { [info exists keys(-out_file)] } {
-	  set outFile $keys(-lut_file)
+	  set outFile $keys(-out_file)
     $cts set_metric_output $outFile 
   } 
 
