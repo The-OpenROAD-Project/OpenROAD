@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <string>
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
 #include "opendb/geom.h"
@@ -118,6 +119,8 @@ public:
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
+  void dumpSVG(const Network *network,
+               const std::string& fileName = "steiner.svg");
   static SteinerPt null_pt;
 
 protected:
