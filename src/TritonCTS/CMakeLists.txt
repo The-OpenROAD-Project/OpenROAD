@@ -17,6 +17,7 @@ add_custom_command(OUTPUT ${TRITONCTS_WRAP}
         DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernelTcl.i
         ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernel.h
+        ${OPENROAD_HOME}/src/Exception.i
 )
 
 set(TRITONCTS_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonCtsTclInitVar.cc)

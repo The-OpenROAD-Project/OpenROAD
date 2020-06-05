@@ -41,6 +41,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include "TechChar.h"
+#include "openroad/Error.hh"
 
 #include "sta/Sdc.hh"
 #include "sta/Liberty.hh"
@@ -58,6 +59,8 @@
 #include <algorithm>
 
 namespace TritonCTS {
+
+using ord::error;
 
 void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols) {
         std::cout << " Compiling LUT\n";
@@ -128,26 +131,26 @@ void TechChar::parseLut(const std::string& file) {
         std::ifstream lutFile(file.c_str());
         
         if (!lutFile.is_open()) {
-                std::cout << "    [ERROR] Could not find LUT file. Exiting...\n";
-                std::exit(1);
+                std::string errorMsg = "Could not find LUT file.\n";
+                error(errorMsg.c_str());
         }
 
         // First line of the LUT is a header with normalization values
         if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance 
                       >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-                std::cout << "    [ERROR] Problem reading the LUT file\n";     
-                std::exit(1);            
+                std::string errorMsg = "Problem reading the LUT file.\n";
+                error(errorMsg.c_str());
         }
         
         if (_options->getWireSegmentUnit() == 0){
                 unsigned presetWireUnit = 0;
                 if (!(lutFile >> presetWireUnit)) {
-                        std::cout << "    [ERROR] Problem reading the LUT file\n"; 
-                        std::exit(1);            
+                        std::string errorMsg = "Problem reading the LUT file.\n";
+                        error(errorMsg.c_str());
                 }
                 if (presetWireUnit == 0) {
-                        std::cout << "    [ERROR] Problem reading the LUT file\n";
-                        std::exit(1);   
+                        std::string errorMsg = "Problem reading the LUT file.\n";
+                        error(errorMsg.c_str());
                 }
                 _options->setWireSegmentUnit(presetWireUnit);
                 setLenghthUnit(static_cast<unsigned> (presetWireUnit)/2);
@@ -237,11 +240,11 @@ void TechChar::checkCharacterizationBounds() const {
         if (_minSegmentLength > MAX_NORMALIZED_VAL || _maxSegmentLength > MAX_NORMALIZED_VAL ||
             _minCapacitance > MAX_NORMALIZED_VAL || _maxCapacitance > MAX_NORMALIZED_VAL ||
             _minSlew > MAX_NORMALIZED_VAL || _maxSlew > MAX_NORMALIZED_VAL) {
-               std::cout << "    [ERROR] Normalized values in the LUT should be in the range ";
-               std::cout << "[1, " << MAX_NORMALIZED_VAL << "]\n";
-               std::cout << "    Check the table above to see the normalization ranges and check ";
-               std::cout << "your characterization configuration.\n";
-               std::exit(1);
+               std::string errorMsg = "Normalized values in the LUT should be in the range [1, " +
+                                      std::to_string(MAX_NORMALIZED_VAL) + "\n Check the table " +
+                                      "above to see the normalization ranges and check " +
+                                      "your characterization configuration.\n";
+               error(errorMsg.c_str());
         } 
 }
 
@@ -284,10 +287,9 @@ void TechChar::parseSolList(const std::string& file) {
                 
                 // Sanity check
                 if (_wireSegments[solIdx].getNumBuffers() != numBuffers) {
-                        std::cout << "    [ERROR] Number of buffers does not match on solution " 
-                                  << solIdx << "\n";
-                        std::cout << numBuffers << "\n";
-                        std::exit(1);
+                        std::string errorMsg = "Number of buffers does not match on solution.\n" +
+                                                std::to_string(solIdx) + " " + std::to_string(numBuffers) + ".\n";
+                        error(errorMsg.c_str());
                 }
                ++solIdx; 
         }
@@ -520,29 +522,29 @@ void TechChar::initCharacterization() {
         ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
         _dbNetworkChar = openRoad->getDbNetwork();
         if (_dbNetworkChar == nullptr){
-                std::cout << "Network not found! Check your lef/def/verilog file.\n";
-                std::exit(1);
+                std::string errorMsg = "Network not found! Check your lef/def/verilog file.\n";
+                error(errorMsg.c_str());
         }
         _db = odb::dbDatabase::getDatabase(_options->getDbId());
         if (_db == nullptr){
-                std::cout << "Database not found! Check your lef/def/verilog file.\n";
-                std::exit(1);
+                std::string errorMsg = "Database not found! Check your lef/def/verilog file.\n";
+                error(errorMsg.c_str());
         }
         odb::dbChip* chip  = _db->getChip();
         if (chip == nullptr){
-                std::cout << "Chip not found! Check your lef/def/verilog file.\n";
-                std::exit(1);
+                std::string errorMsg = "Chip not found! Check your lef/def/verilog file.\n";
+                error(errorMsg.c_str());
         }
         odb::dbBlock* block = chip->getBlock();
         if (block == nullptr){
-                std::cout << "Block not found! Check your lef/def/verilog file.\n";
-                std::exit(1);
+                std::string errorMsg = "Block not found! Check your lef/def/verilog file.\n";
+                error(errorMsg.c_str());
         }
         _openSta = openRoad->getSta();
         sta::Network* networkChar = _openSta->network();
         if (networkChar == nullptr){
-                std::cout << "Network not found! Check your lef/def/verilog file.\n";
-                std::exit(1);
+                std::string errorMsg = "Network not found! Check your lef/def/verilog file.\n";
+                error(errorMsg.c_str());
         }
         float dbUnitsPerMicron = static_cast<float> (block->getDbUnitsPerMicron());
 
@@ -563,15 +565,15 @@ void TechChar::initCharacterization() {
         //Gets the buffer masters and its in/out pins.
         std::vector<std::string> masterVector = _options->getBufferList();
         if (masterVector.size() < 1){
-                std::cout << "Buffer not found! Check your -buf_list input.\n";
-                std::exit(1);
+                std::string errorMsg = "Buffer not found! Check your -buf_list input.\n";
+                error(errorMsg.c_str());
         }
         odb::dbMaster* testBuf = nullptr;
         for (std::string masterString : masterVector) {
                 testBuf = _db->findMaster(masterString.c_str());
                 if (testBuf == NULL){
-                        std::cout << "Buffer not found! Check your -buf_list input.\n";
-                        std::exit(1);
+                        std::string errorMsg = "Buffer not found! Check your -buf_list input.\n";
+                        error(errorMsg.c_str());
                 }
                 _masterNames.insert(masterString);
         }
@@ -616,8 +618,8 @@ void TechChar::initCharacterization() {
         }
 
         if (_wirelengthsToTest.size() < 1) {
-                std::cout << "Error generating the wirelenghts to test. Check your -wire_unit parameter or technology files.\n";
-                std::exit(1);
+                std::string errorMsg = "Error generating the wirelenghts to test. Check your -wire_unit parameter or technology files.\n";
+                error(errorMsg.c_str());
         }
 
         setLenghthUnit(static_cast<unsigned> ( ((_charBuf->getHeight() * 10)/2) / dbUnitsPerMicron));
@@ -633,8 +635,8 @@ void TechChar::initCharacterization() {
                 staLib->defaultMaxSlew(maxSlew, maxSlewExist);
                 staLib->defaultMaxCapacitance(maxCap, maxCapExist);
                 if ( !maxSlewExist || !maxCapExist ){
-                        std::cout << "Liberty Library does not have Max Slew or Max Cap values.\n";
-                        std::exit(1);
+                        std::string errorMsg = "Liberty Library does not have Max Slew or Max Cap values.\n";
+                        error(errorMsg.c_str());
                 } else {
                         _charMaxSlew = maxSlew;
                         _charMaxCap = maxCap;
@@ -659,8 +661,8 @@ void TechChar::initCharacterization() {
         }
 
         if ((_loadsToTest.size() < 1) || (_slewsToTest.size() < 1)) {
-                std::cout << "Error generating the wirelenghts to test. Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter or technology files.\n";
-                std::exit(1);
+                std::string errorMsg = "Error generating the wirelenghts to test. Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter or technology files.\n";
+                error(errorMsg.c_str());
         }
 }
 

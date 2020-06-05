@@ -117,6 +117,16 @@ public:
         double getBufDistRatio() { return _bufDistRatio; }
         void setClockNetsObjs(std::vector<odb::dbNet*> nets) { _clockNetsObjs = nets; }
         std::vector<odb::dbNet*> getClockNetsObjs() const { return  _clockNetsObjs; }
+        void setMetricsFile(const std::string& metricFile) { _metricFile = metricFile; }
+        std::string getMetricsFile() const { return _metricFile; } 
+        void setNumClockRoots(unsigned roots) { _clockRoots = roots; }
+        unsigned getNumClockRoots() const { return _clockRoots; }
+        void setNumClockSubnets(unsigned nets) { _clockSubnets = nets; }
+        unsigned getNumClockSubnets() const { return _clockSubnets; }
+        void setNumBuffersInserted(unsigned buffers) { _buffersInserted = buffers; }
+        unsigned getNumBuffersInserted() const { return _buffersInserted; }
+        void setNumSinks(unsigned sinks) { _sinks = sinks; }
+        unsigned getNumSinks() const { return _sinks; }
                 
 private:
         std::string _blockName                  = "";
@@ -125,6 +135,7 @@ private:
         std::string _outputPath                 = "";
         std::string _clockNets                  = "";
         std::string _rootBuffer                 = "";
+        std::string _metricFile                 = "";
         DBU         _dbUnits                    = -1;
         unsigned    _wireSegmentUnit            = 0;
         unsigned    _dbId                       = 0;
@@ -147,6 +158,11 @@ private:
         bool        _writeOnlyClockNets         = false;
         bool        _runPostCtsOpt              = true;
         double      _bufDistRatio               = 0.1;
+
+        unsigned    _clockRoots                 = 0;
+        unsigned    _clockSubnets               = 0;
+        unsigned    _buffersInserted            = 0;
+        unsigned    _sinks                      = 0;
         
         std::vector<std::string> _bufferList;
         std::vector<odb::dbNet*> _clockNetsObjs;

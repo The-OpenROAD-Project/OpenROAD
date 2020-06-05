@@ -514,6 +514,7 @@ clock_tree_synthesis -lut_file <lut_file> \
                      [-wire_unit <wire_unit>] \
                      [-clk_nets <list_of_clk_nets>] 
 ```
+
 - ```lut_file``` (mandatory) is the file containing delay, power and other metrics for each segment.
 - ``sol_list`` (mandatory) is the file containing the information on the topology of each segment (wirelengths and buffer masters).
 - ``sqr_res`` (mandatory) is the resistance (in ohm) per database units to be used in the wire segments. 
@@ -523,6 +524,29 @@ If this parameter is omitted, you can use the ```buf_list``` argument, using the
 If this parameter is omitted, the code gets the value from the header of the ```lut_file```. For the old technology characterization, described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md), this argument is mandatory, and omitting it raises an error.
 - ``clk_nets`` (optional) is a string containing the names of the clock roots. 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
+
+Another command available from TritonCTS is ``report_cts``. It is used to extract metrics after a successful ``clock_tree_synthesis`` run. These are: Number of Clock Roots, Number of Buffers Inserted, Number of Clock Subnets, and Number of Sinks.
+
+```
+read_lef "mylef.lef"
+read_liberty "myliberty.lib"
+read_def "mydef.def"
+read_verilog "myverilog.v"
+read_sdc "mysdc.sdc"
+
+report_checks
+
+clock_tree_synthesis -lut_file "lut.txt" \
+                     -sol_list "sol_list.txt" \
+                     -root_buf "BUF_X4" \
+                     -wire_unit 20 
+
+report_cts [-out_file "file.txt"]
+```
+
+- ```out_file``` (optional) is the file containing the TritonCTS reports.
+If this parameter is omitted, the metrics are shown on the standard output.
+
 
 #### Global Routing
 

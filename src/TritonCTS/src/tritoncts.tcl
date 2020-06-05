@@ -51,14 +51,14 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-out_path path] \
                                              [-sqr_cap capvalue] \
                                              [-sqr_res resvalue] \
-                                             [-only_characterization enable] \
                                              [-slew_inter slewvalue] \
                                              [-cap_inter capvalue] \
+                                             [-characterization_only] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -only_characterization -slew_inter -cap_inter} flags {}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -cap_inter} flags {-characterization_only}
 
   set cts [get_triton_cts]
 
@@ -70,10 +70,7 @@ proc clock_tree_synthesis { args } {
   #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
 
 
-  if { [info exists keys(-only_characterization)] } {
-	  set enable $keys(-only_characterization)
-    $cts set_only_characterization $enable 
-  } 
+  $cts set_only_characterization [info exists flags(-characterization_only)]
 
   if { [info exists keys(-lut_file)] } {
 	  set lut $keys(-lut_file)
@@ -158,7 +155,27 @@ proc clock_tree_synthesis { args } {
     }
   }
 
-  $cts run_triton_cts
+  if {[catch {$cts run_triton_cts} error_msg options]} {
+    puts $error_msg
+  }
+
   # CTS changed the network behind the STA's back.
   sta::network_changed
+}
+
+sta::define_cmd_args "report_cts" {[-out_file file] \
+                                  } 
+
+proc report_cts { args } {
+  sta::parse_key_args "report_cts" args \
+    keys {-out_file} flags {}
+
+  set cts [get_triton_cts]
+
+  if { [info exists keys(-out_file)] } {
+	  set outFile $keys(-lut_file)
+    $cts set_metric_output $outFile 
+  } 
+
+  $cts report_cts_metrics
 }

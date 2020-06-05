@@ -26,7 +26,7 @@ clock_tree_synthesis -buf_list "BUF_X1 BUF_X2" \
                      -wire_unit 20 \
                      -clk_nets "clk" \
                      -out_path "/home/myfolder/" \
-                     -only_characterization 0
+                     -characterization_only 1
 
 write_def "final.def"
 ```
@@ -49,7 +49,7 @@ If this parameter is omitted, the code gets the value from ten times the height 
 - ``clk_nets`` (optional) is a string containing the names of the clock roots. 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``out_path`` (optional) is the output path (full) that the lut.txt and sol_list.txt files will be saved. This is used to load an existing characterization, without creating one from scratch.
-- ``only_characterization`` (optional), if true, makes so that the code exits after running the characterization.
+- ``characterization_only`` (optional), if true, makes so that the code exits after running and checking the characterization.
 
 Instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
 
@@ -80,6 +80,30 @@ If this parameter is omitted, you can use the ```buf_list``` argument, using the
 If this parameter is omitted, the code gets the value from the header of the ```lut_file```. For the old technology characterization, described [here](https://github.com/The-OpenROAD-Project/TritonCTS/blob/master/doc/Technology_characterization.md), this argument is mandatory, and omitting it raises an error.
 - ``clk_nets`` (optional) is a string containing the names of the clock roots. 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
+
+Another command available from TritonCTS is ``report_cts``. It is used to extract metrics after a successful ``clock_tree_synthesis`` run. These are: Number of Clock Roots, Number of Buffers Inserted, Number of Clock Subnets, and Number of Sinks.
+The following tcl snippet shows how to call ``report_cts``.
+
+```
+read_lef "mylef.lef"
+read_liberty "myliberty.lib"
+read_def "mydef.def"
+read_verilog "myverilog.v"
+read_sdc "mysdc.sdc"
+
+report_checks
+
+clock_tree_synthesis -lut_file "lut.txt" \
+                     -sol_list "sol_list.txt" \
+                     -root_buf "BUF_X4" \
+                     -wire_unit 20 
+
+report_cts -out_file "file.txt"
+```
+
+Argument description:
+- ```out_file``` (optional) is the file containing the TritonCTS reports.
+If this parameter is omitted, the metrics are shown on the standard output.
 
 ### Third party packages
 [LEMON](https://lemon.cs.elte.hu/trac/lemon) - **L**ibrary for **E**fficient **M**odeling and **O**ptimization in **N**etworks

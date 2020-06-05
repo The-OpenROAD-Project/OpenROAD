@@ -42,6 +42,7 @@
 
 #include "TritonCTSKernel.h"
 #include "PostCtsOpt.h"
+#include "openroad/Error.hh"
 
 #include <fstream>
 #include <unordered_set>
@@ -50,12 +51,15 @@
 
 namespace TritonCTS {
 
+using ord::error;
+
 void TritonCTSKernel::runTritonCts() {
         printHeader();
         setupCharacterization();
         findClockRoots();
         populateTritonCts();
         checkCharacterization();
+        if (_options.getOnlyCharacterization() == true){return;}
         buildClockTrees();
         runPostCtsOpt();
         writeDataToDb();
@@ -112,20 +116,15 @@ void TritonCTSKernel::checkCharacterization() {
                         if (_dbWrapper.masterExists(master)) {
                                 visitedMasters.insert(master);
                         } else {
-                                std::cout << "    [ERROR] Buffer " << master 
-                                          << " is not in the loaded DB.\n";
-                                std::exit(1);
+                                std::string errorMsg = "Buffer " + master + 
+                                                       " is not in the loaded DB.\n";
+                                error(errorMsg.c_str());
                         }           
                 }
         });
 
         std::cout << "    The chacterization used " << visitedMasters.size() << " buffer(s) types."
                   << " All of them are in the loaded DB.\n";
-        
-        
-        if (_options.getOnlyCharacterization() == true){
-                std::exit(1);
-        }
 }
 
 void TritonCTSKernel::findClockRoots() {
@@ -151,8 +150,8 @@ void TritonCTSKernel::populateTritonCts() {
         _dbWrapper.populateTritonCTS();
 
         if (_builders.size() < 1) {
-                std::cout << "    [ERROR] No valid clock nets in the design. Exiting...\n";
-                std::exit(0);
+                std::string errorMsg = "No valid clock nets in the design.\n";
+                error(errorMsg.c_str());
         }
 }
 
@@ -200,6 +199,32 @@ void TritonCTSKernel::forEachBuilder(const std::function<void(const TreeBuilder*
 
 void TritonCTSKernel::printFooter() const {
         std::cout << " ... End of TritonCTS execution.\n";
+}
+
+void TritonCTSKernel::reportCtsMetrics() {
+        std::string filename = _options.getMetricsFile();
+
+        if (filename != ""){
+
+                std::ofstream file(filename.c_str());
+
+                if(!file.is_open()) {
+                        std::cout << "Could not open output metric file.\n";
+                        return;
+                }
+
+                file << "[TritonCTS Metrics] Total number of Clock Roots: " << _options.getNumClockRoots() << ".\n";
+                file << "[TritonCTS Metrics] Total number of Buffers Inserted: " << _options.getNumBuffersInserted() << ".\n";
+                file << "[TritonCTS Metrics] Total number of Clock Subnets: " << _options.getNumClockSubnets() << ".\n";
+                file << "[TritonCTS Metrics] Total number of Sinks: " << _options.getNumSinks() << ".\n";
+                
+                file.close();
+        } else {
+                std::cout << "[TritonCTS Metrics] Total number of Clock Roots: " << _options.getNumClockRoots() << ".\n";
+                std::cout << "[TritonCTS Metrics] Total number of Buffers Inserted: " << _options.getNumBuffersInserted() << ".\n";
+                std::cout << "[TritonCTS Metrics] Total number of Clock Subnets: " << _options.getNumClockSubnets() << ".\n";
+                std::cout << "[TritonCTS Metrics] Total number of Sinks: " << _options.getNumSinks() << ".\n";
+        }
 }
 
 }
