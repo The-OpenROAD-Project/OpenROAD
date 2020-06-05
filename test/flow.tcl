@@ -68,6 +68,11 @@ set routed_def [make_result_file ${design}_route.def]
 
 set tr_lef [make_tr_lef]
 set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
+
+if { [catch "exec which TritonRoute"] } {
+  error "TritonRoute not found."
+}
+# TritonRoute returns error even when successful.
 catch "exec TritonRoute $tr_params" tr_log
 puts $tr_log
 regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
