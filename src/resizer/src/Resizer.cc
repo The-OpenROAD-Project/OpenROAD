@@ -1783,13 +1783,13 @@ Resizer::groupLoadsSteiner(Pin *drvr_pin,
 			   // Return value.
 			   GroupedPins &grouped_loads)
 {
-  SteinerTree *tree = makeSteinerTree(network_->net(drvr_pin),
-				      true, db_network_);
   Net* net = sdc_network_->net(drvr_pin);
-  if (tree) {
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  if (tree
+      && debug_->check("write_steiner_svg", 1))
     tree->dumpSVG(sdc_network_,
-                  std::string(sdc_network_->name(net)) + ".svg");
-  }
+                  std::string(sdc_network_->pathName(net)) + ".svg");
+
   grouped_loads.resize(group_count);
   if (tree && tree->isPlaced(db_network_)) {
     SteinerPt drvr_pt = tree->drvrPt(db_network_);
