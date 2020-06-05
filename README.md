@@ -226,21 +226,27 @@ set_wire_rc [-layer layer_name]
 	    [-capacitance cap]
 	    [-corner corner_name]
 ```
+
 The `set_wire_rc` command sets the resistance and capacitance used to
 estimate delay of routing wires.  Use `-layer` or `-resistance` and
 `-capacitance`.  If `-layer` is used, the LEF technology resistance
-and area/edge capacitance values for the layer are used.  The units
-for `-resistance` and `-capacitance` are from the first liberty file
-read, resistance_unit/distance_unit and liberty
-capacitance_unit/distance_unit. RC parasitics are added based on
-placed component pin locations. If there are no component locations no
-parasitics are added. The resistance and capacitance are per distance
-unit of a routing wire. Use the `set_units` command to check units or
-`set_cmd_units` to change units. They should represent "average"
-routing layer resistance and capacitance. If the set_wire_rc command
-is not called before resizing, the default_wireload model specified in
-the first liberty file or with the SDC set_wire_load command is used
-to make parasitics.
+and area/edge capacitance values for the layer are used for a minimum
+width wire on the layer.  The resistance and capacitance values per
+length of wire, not per square or per square micron.  The units for
+`-resistance` and `-capacitance` are from the first liberty file read,
+resistance_unit/distance_unit (typically kohms/micron) and liberty
+capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
+no distance units are not specied in the liberty file microns are
+used.
+
+RC parasitics are added based on placed component pin locations. If
+there are no component locations no parasitics are added. The
+resistance and capacitance are per distance unit of a routing
+wire. Use the `set_units` command to check units or `set_cmd_units` to
+change units. They should represent "average" routing layer resistance
+and capacitance. If the set_wire_rc command is not called before
+resizing, the default_wireload model specified in the first liberty
+file or with the SDC set_wire_load command is used to make parasitics.
 
 ```
 set_dont_use lib_cells
