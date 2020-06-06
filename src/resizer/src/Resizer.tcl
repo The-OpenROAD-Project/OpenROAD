@@ -66,6 +66,12 @@ proc set_wire_rc { args } {
     set wire_res [expr $res_ohm_per_micron * 1e+6]
     # farads/meter
     set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
+    if { $wire_res == 0.0 } {
+      ord::warn "layer resistance is 0.0"
+    }
+    if { $wire_cap == 0.0 } {
+      ord::warn "layer capacitance is 0.0"
+    }
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
