@@ -11,9 +11,9 @@ Notice 0:     Created 81 components and 486 component-terminals.
 Notice 0:     Created 2 special nets and 162 connections.
 Notice 0:     Created 2 nets and 162 connections.
 Notice 0: Finished DEF file: ./results/repair_max_slew1.def
-max_transition
+max slew
 
-Pin                                    Limit   Trans   Slack
+Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 r1/Q                                    0.20    0.36   -0.16 (VIOLATED)
 
