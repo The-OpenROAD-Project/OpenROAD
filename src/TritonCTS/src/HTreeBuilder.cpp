@@ -488,8 +488,7 @@ void HTreeBuilder::createClockSubNets() {
                 const std::vector<Point<double>>& sinkLocs = leafTopology.getBranchSinksLocations(idx);
                 for (const Point<double>& loc : sinkLocs) {
                         if (mapLocationToSink.find(loc) == mapLocationToSink.end()) {
-                                std::string errorMsg = "Sink not found!\n";
-                                error(errorMsg.c_str());
+                                error("Sink not found.\n");
                         }
                         
                         subNet->addInst(*mapLocationToSink[loc]);

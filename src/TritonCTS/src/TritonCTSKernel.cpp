@@ -82,6 +82,11 @@ void TritonCTSKernel::setupCharacterization() {
                 //LUT files exists. Import the characterization results.
                 importCharacterization();
         }
+        //Also resets metrics everytime the setup is done
+        _options.setNumSinks(0);
+        _options.setNumBuffersInserted(0);
+        _options.setNumClockRoots(0);
+        _options.setNumClockSubnets(0);
 }
 
 void TritonCTSKernel::importCharacterization() {
@@ -116,9 +121,7 @@ void TritonCTSKernel::checkCharacterization() {
                         if (_dbWrapper.masterExists(master)) {
                                 visitedMasters.insert(master);
                         } else {
-                                std::string errorMsg = "Buffer " + master + 
-                                                       " is not in the loaded DB.\n";
-                                error(errorMsg.c_str());
+                                error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
                         }           
                 }
         });
@@ -150,8 +153,7 @@ void TritonCTSKernel::populateTritonCts() {
         _dbWrapper.populateTritonCTS();
 
         if (_builders.size() < 1) {
-                std::string errorMsg = "No valid clock nets in the design.\n";
-                error(errorMsg.c_str());
+                error("No valid clock nets in the design.\n");
         }
 }
 

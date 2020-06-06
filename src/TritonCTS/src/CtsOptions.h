@@ -120,13 +120,13 @@ public:
         void setMetricsFile(const std::string& metricFile) { _metricFile = metricFile; }
         std::string getMetricsFile() const { return _metricFile; } 
         void setNumClockRoots(unsigned roots) { _clockRoots = roots; }
-        unsigned getNumClockRoots() const { return _clockRoots; }
-        void setNumClockSubnets(unsigned nets) { _clockSubnets = nets; }
-        unsigned getNumClockSubnets() const { return _clockSubnets; }
-        void setNumBuffersInserted(unsigned buffers) { _buffersInserted = buffers; }
-        unsigned getNumBuffersInserted() const { return _buffersInserted; }
-        void setNumSinks(unsigned sinks) { _sinks = sinks; }
-        unsigned getNumSinks() const { return _sinks; }
+        long int getNumClockRoots() const { return _clockRoots; }
+        void setNumClockSubnets(long int nets) { _clockSubnets = nets; }
+        long int getNumClockSubnets() const { return _clockSubnets; }
+        void setNumBuffersInserted(long int buffers) { _buffersInserted = buffers; }
+        long int getNumBuffersInserted() const { return _buffersInserted; }
+        void setNumSinks(long int sinks) { _sinks = sinks; }
+        long int getNumSinks() const { return _sinks; }
                 
 private:
         std::string _blockName                  = "";
@@ -158,12 +158,10 @@ private:
         bool        _writeOnlyClockNets         = false;
         bool        _runPostCtsOpt              = true;
         double      _bufDistRatio               = 0.1;
-
-        unsigned    _clockRoots                 = 0;
-        unsigned    _clockSubnets               = 0;
-        unsigned    _buffersInserted            = 0;
-        unsigned    _sinks                      = 0;
-        
+        long int    _clockRoots                 = 0;
+        long int    _clockSubnets               = 0;
+        long int    _buffersInserted            = 0;
+        long int    _sinks                      = 0;
         std::vector<std::string> _bufferList;
         std::vector<odb::dbNet*> _clockNetsObjs;
 };

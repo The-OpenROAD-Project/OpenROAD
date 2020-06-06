@@ -110,9 +110,8 @@ void DbWrapper::initAllClocks() {
                 }
         }
 
-        if (getNumClocks() <= 0) {
-                std::string errorMsg = "No clock nets have been found.\n";
-                error(errorMsg.c_str());
+        if (getNumClocks() == 0) {
+                error("No clock nets have been found.\n");
         }
 
         std::cout << " TritonCTS found " << getNumClocks() << " clock nets." << std::endl;
@@ -168,7 +167,7 @@ void DbWrapper::initClock(odb::dbNet* net) {
 
         std::cout << " Clock net \"" << net->getConstName() << "\" has " << clockNet.getNumSinks() << " sinks" << std::endl;
 
-        unsigned currentTotalSinks = _options->getNumSinks() + clockNet.getNumSinks();
+        long int currentTotalSinks = _options->getNumSinks() + clockNet.getNumSinks();
         _options->setNumSinks(currentTotalSinks);
 
         incrementNumClocks();
@@ -265,7 +264,7 @@ void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
         }
 
         std::cout << "    Created " << numClkNets << " clock nets.\n";
-        unsigned currentTotalNets = _options->getNumClockSubnets() + numClkNets;
+        long int currentTotalNets = _options->getNumClockSubnets() + numClkNets;
         _options->setNumClockSubnets(currentTotalNets);
 }
 
@@ -292,7 +291,7 @@ void DbWrapper::createClockBuffers(const Clock& clockNet) {
                 ++numBuffers;
         });
         std::cout << "    Created " << numBuffers << " clock buffers.\n";
-        unsigned currentTotalBuffers = _options->getNumBuffersInserted() + numBuffers;
+        long int currentTotalBuffers = _options->getNumBuffersInserted() + numBuffers;
         _options->setNumBuffersInserted(currentTotalBuffers);
 }
 
