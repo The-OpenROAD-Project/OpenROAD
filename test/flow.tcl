@@ -68,7 +68,6 @@ set routed_def [make_result_file ${design}_route.def]
 
 set tr_lef [make_tr_lef]
 set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
-
 if { [catch "exec which TritonRoute"] } {
   error "TritonRoute not found."
 }

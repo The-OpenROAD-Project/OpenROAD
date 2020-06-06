@@ -14,6 +14,6 @@ set init_floorplan_cmd "initialize_floorplan -site $site \
     -die_area {0 0 924.92 799.4} \
     -core_area {10.07 9.8 914.85 789.6} \
     -tracks $tracks_file"
-set max_drv_count 55
+set max_drv_count 60
 
 source -echo "flow.tcl"
