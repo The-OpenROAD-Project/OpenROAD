@@ -113,7 +113,7 @@ public:
   // Caller owns return value.
   NetSeq *findFloatingNets();
   void repairTieFanout(LibertyPort *tie_port,
-		       int max_fanout,
+		       int separation,
 		       bool verbose);
   void makeNetParasitics();
   void makeNetParasitics(const Net *net);

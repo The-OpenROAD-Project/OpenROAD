@@ -1898,68 +1898,62 @@ Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
 // tie hi/low instances.
 void
 Resizer::repairTieFanout(LibertyPort *tie_port,
-			 int max_fanout,
+			 int separation,
 			 bool verbose)
 {
   Instance *top_inst = network_->topInstance();
   LibertyCell *tie_cell = tie_port->libertyCell();
   InstanceSeq insts;
   findCellInstances(tie_cell, insts);
-  int hi_fanout_count = 0;
-  int inserted_clone_count = 0;
+  int tie_count = 0;
   Instance *parent = db_network_->topInstance();
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
-    int fanout = this->fanout(drvr_pin);
-    if (fanout > max_fanout) {
-      int drvr_count = ceil(fanout / static_cast<double>(max_fanout));
-      int clone_count = drvr_count - 1;
-      GroupedPins grouped_loads;
-      groupLoadsSteiner(drvr_pin, drvr_count, max_fanout, grouped_loads);
+    const char *inst_name = network_->name(inst);
+    Net *net = network_->net(drvr_pin);
+    NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+    while (pin_iter->hasNext()) {
+      Pin *load = pin_iter->next();
+      if (load != drvr_pin) {
+	// Make tie inst.
+	Instance *load_inst = network_->instance(load);
+	Point load_loc = pinLocation(load, db_network_);
+	string tie_name = makeUniqueInstName(inst_name, true);
+	Instance *tie = sta_->makeInstance(tie_name.c_str(),
+					   tie_cell, top_inst);
+	Point tie_loc(load_loc.getX() + separation, load_loc.getY());
+	setLocation(tie, load_loc);
 
-      const char *inst_name = network_->name(inst);
-      Net *net = network_->net(drvr_pin);
-
-      // Place the original tie instance in the center of it's loads.
-      PinSeq &loads = grouped_loads[0];
-      Point center = findCenter(loads);
-      setLocation(inst, center);
-
-      for (int i = 0; i < clone_count; i++) {
-	PinSeq &loads = grouped_loads[i + 1];
-	Point center = findCenter(loads);
-
-	string clone_name = makeUniqueInstName(inst_name, true);
-	Instance *clone = sta_->makeInstance(clone_name.c_str(),
-					     tie_cell, top_inst);
-	setLocation(clone, center);
-	design_area_ += area(db_network_->cell(tie_cell));
-	inserted_clone_count++;
-
+	
+	// Make tie output net.
 	string load_net_name = makeUniqueNetName();
 	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
-	sta_->connectPin(clone, tie_port, load_net);
+	// Connect tie inst output.
+	sta_->connectPin(tie, tie_port, load_net);
 
-	for (Pin *load : loads) {
-	  Instance *load_inst = network_->instance(load);
-	  Port *load_port = network_->port(load);
-	  sta_->disconnectPin(load);
-	  sta_->connectPin(load_inst, load_port, load_net);
-	}
+	// Connect load to tie output net.
+	sta_->disconnectPin(load);
+	Port *load_port = network_->port(load);
+	sta_->connectPin(load_inst, load_port, load_net);
+
+	design_area_ += area(db_network_->cell(tie_cell));
+	tie_count++;
       }
-      if (verbose)
-	printf("High fanout tie net %s inserted %d cells for %d loads.\n",
-	       network_->pathName(net),
-	       clone_count,
-	       fanout);
-      hi_fanout_count++;
     }
+    delete pin_iter;
+
+    // Delete inst output net.
+    Pin *tie_pin = network_->findPin(inst, tie_port);
+    Net *tie_net = network_->net(tie_pin);
+    sta_->deleteNet(tie_net);
+    // Delete the tie instance.
+    sta_->deleteInstance(inst);
   }
-  if (inserted_clone_count > 0)
-    printf("Inserted %d tie %s instances for %d nets.\n",
-	  inserted_clone_count,
-	  tie_cell->name(),
-	  hi_fanout_count);
+
+  if (tie_count > 0)
+    printf("Inserted %d tie %s instances.\n",
+	   tie_count,
+	   tie_cell->name());
 }
 
 void
