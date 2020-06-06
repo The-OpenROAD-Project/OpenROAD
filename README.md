@@ -488,7 +488,7 @@ clock_tree_synthesis -buf_list <list_of_buffers> \
 - ``-buf_list`` are the master cells (buffers) that will be considered when making the wire segments.
 - ``-sqr_cap`` is the capacitance (in picofarad) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
 - ``-sqr_res`` is the resistance (in ohm) per micrometer (thus, the same unit that is used in the LEF syntax) to be used in the wire segments. 
-- ``root_buffer`` is the master cell of the buffer that serves as root for the clock tree. 
+- ``-root_buffer`` is the master cell of the buffer that serves as root for the clock tree. 
 If this parameter is omitted, the first master cell from ``-buf_list`` is taken.
 - ``-max_slew`` is the max slew value (in seconds) that the characterization will test. 
 If this parameter is omitted, the code tries to obtain the value from the liberty file.
