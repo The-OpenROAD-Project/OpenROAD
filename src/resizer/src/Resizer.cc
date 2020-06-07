@@ -1930,10 +1930,18 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 	Point tie_loc = tieLocation(load, separation_dbu);
 	setLocation(tie, tie_loc);
 
-	
 	// Make tie output net.
 	string load_net_name = makeUniqueNetName();
 	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
+
+	printf("load %s\n", network_->pathName(load));
+	PinSet *drvrs = network_->drivers(drvr_pin);
+	if (drvrs) {
+	  for (auto drvr : *drvrs) {
+	    printf(" drvr %s\n", network_->pathName(drvr));
+	  }
+	}
+
 	// Connect tie inst output.
 	sta_->connectPin(tie, tie_port, load_net);
 
@@ -1956,10 +1964,12 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
     sta_->deleteInstance(inst);
   }
 
-  if (tie_count > 0)
+  if (tie_count > 0) {
     printf("Inserted %d tie %s instances.\n",
 	   tie_count,
 	   tie_cell->name());
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
 void
