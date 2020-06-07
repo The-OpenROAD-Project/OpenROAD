@@ -113,7 +113,7 @@ public:
   // Caller owns return value.
   NetSeq *findFloatingNets();
   void repairTieFanout(LibertyPort *tie_port,
-		       int max_fanout,
+		       double separation, // meters
 		       bool verbose);
   void makeNetParasitics();
   void makeNetParasitics(const Net *net);
@@ -213,6 +213,7 @@ protected:
   double area(dbMaster *master);
   double area(Cell *cell);
   double dbuToMeters(int dist) const;
+  int metersToDbu(double dist) const;
 
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
@@ -270,6 +271,8 @@ protected:
   Point findCenter(PinSeq &pins);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool isSpecial(Net *net);
+  Point tieLocation(Pin *load,
+		    int separation);
 
   float wire_res_;
   float wire_cap_;
@@ -282,6 +285,7 @@ protected:
   dbDatabase *db_;
   dbBlock *block_;
   Rect core_;
+  bool core_exists_;
   double design_area_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;

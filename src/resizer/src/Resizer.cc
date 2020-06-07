@@ -203,7 +203,11 @@ Resizer::ensureBlock()
   // block_ indicates core_, design_area_
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
-    core_ = ord::getCore(block_);
+    block_->getCoreArea(core_);
+    core_exists_ = !(core_.xMin() == 0
+		     && core_.xMax() == 0
+		     && core_.yMin() == 0
+		     && core_.yMax() == 0);
     design_area_ = findDesignArea();
   }
 }
@@ -350,17 +354,12 @@ Resizer::setLocation(Instance *inst,
 {
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  Point inside = closestPtInRect(core_, pt);
-  dinst->setLocation(inside.getX(), inside.getY());
-}
-
-Point
-Resizer::location(Instance *inst)
-{
-  dbInst *dinst = db_network_->staToDb(inst);
-  int x, y;
-  dinst->getOrigin(x, y);
-  return Point(x, y);
+  if (core_exists_) {
+    Point inside = closestPtInRect(core_, pt);
+    dinst->setLocation(inside.getX(), inside.getY());
+  }
+  else
+    dinst->setLocation(pt.getX(), pt.getY());
 }
 
 void
@@ -547,11 +546,18 @@ Resizer::area(dbMaster *master)
   return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
 }
 
-// DBUs are nanometers.
 double
-Resizer::dbuToMeters(int dbu) const
+Resizer::dbuToMeters(int dist) const
 {
-  return static_cast<double>(dbu) * 1e-6 / db_->getTech()->getLefUnits();
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist / (dbu * 1e+6);
+}
+
+int
+Resizer::metersToDbu(double dist) const
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist * dbu * 1e+6;
 }
 
 void
@@ -1898,68 +1904,64 @@ Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
 // tie hi/low instances.
 void
 Resizer::repairTieFanout(LibertyPort *tie_port,
-			 int max_fanout,
+			 double separation, // meters
 			 bool verbose)
 {
   Instance *top_inst = network_->topInstance();
   LibertyCell *tie_cell = tie_port->libertyCell();
   InstanceSeq insts;
   findCellInstances(tie_cell, insts);
-  int hi_fanout_count = 0;
-  int inserted_clone_count = 0;
+  int tie_count = 0;
   Instance *parent = db_network_->topInstance();
+  int separation_dbu = metersToDbu(separation);
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
-    int fanout = this->fanout(drvr_pin);
-    if (fanout > max_fanout) {
-      int drvr_count = ceil(fanout / static_cast<double>(max_fanout));
-      int clone_count = drvr_count - 1;
-      GroupedPins grouped_loads;
-      groupLoadsSteiner(drvr_pin, drvr_count, max_fanout, grouped_loads);
+    const char *inst_name = network_->name(inst);
+    Net *net = network_->net(drvr_pin);
+    NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+    while (pin_iter->hasNext()) {
+      Pin *load = pin_iter->next();
+      if (load != drvr_pin) {
+	// Make tie inst.
+	Instance *load_inst = network_->instance(load);
+	string tie_name = makeUniqueInstName(inst_name, true);
+	Instance *tie = sta_->makeInstance(tie_name.c_str(),
+					   tie_cell, top_inst);
+	Point tie_loc = tieLocation(load, separation_dbu);
+	setLocation(tie, tie_loc);
 
-      const char *inst_name = network_->name(inst);
-      Net *net = network_->net(drvr_pin);
-
-      // Place the original tie instance in the center of it's loads.
-      PinSeq &loads = grouped_loads[0];
-      Point center = findCenter(loads);
-      setLocation(inst, center);
-
-      for (int i = 0; i < clone_count; i++) {
-	PinSeq &loads = grouped_loads[i + 1];
-	Point center = findCenter(loads);
-
-	string clone_name = makeUniqueInstName(inst_name, true);
-	Instance *clone = sta_->makeInstance(clone_name.c_str(),
-					     tie_cell, top_inst);
-	setLocation(clone, center);
-	design_area_ += area(db_network_->cell(tie_cell));
-	inserted_clone_count++;
-
+	// Make tie output net.
 	string load_net_name = makeUniqueNetName();
 	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
-	sta_->connectPin(clone, tie_port, load_net);
 
-	for (Pin *load : loads) {
-	  Instance *load_inst = network_->instance(load);
-	  Port *load_port = network_->port(load);
-	  sta_->disconnectPin(load);
-	  sta_->connectPin(load_inst, load_port, load_net);
-	}
+	// Connect tie inst output.
+	sta_->connectPin(tie, tie_port, load_net);
+
+	// Connect load to tie output net.
+	sta_->disconnectPin(load);
+	Port *load_port = network_->port(load);
+	sta_->connectPin(load_inst, load_port, load_net);
+
+	design_area_ += area(db_network_->cell(tie_cell));
+	tie_count++;
       }
-      if (verbose)
-	printf("High fanout tie net %s inserted %d cells for %d loads.\n",
-	       network_->pathName(net),
-	       clone_count,
-	       fanout);
-      hi_fanout_count++;
     }
+    delete pin_iter;
+
+    // Delete inst output net.
+    Pin *tie_pin = network_->findPin(inst, tie_port);
+    Net *tie_net = network_->net(tie_pin);
+    sta_->deleteNet(tie_net);
+    // Delete the tie instance.
+    sta_->deleteInstance(inst);
   }
-  if (inserted_clone_count > 0)
-    printf("Inserted %d tie %s instances for %d nets.\n",
-	  inserted_clone_count,
-	  tie_cell->name(),
-	  hi_fanout_count);
+
+  if (tie_count > 0) {
+    printf("Inserted %d tie %s instances.\n",
+	   tie_count,
+	   tie_cell->name());
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
 void
@@ -1974,6 +1976,22 @@ Resizer::findCellInstances(LibertyCell *cell,
       insts.push_back(inst);
   }
   delete inst_iter;
+}
+
+Point
+Resizer::tieLocation(Pin *load,
+		     int separation)
+{
+  dbInst *db_inst = db_network_->staToDb(network_->instance(load));
+  dbBox *bbox = db_inst->getBBox();
+  int inst_center_x = (bbox->xMin() + bbox->xMax()) / 2;
+  Point load_loc = pinLocation(load, db_network_);
+  int load_x = load_loc.getX();
+  // Place tie inst left or right of load based on load pin location.
+  if (load_x < inst_center_x)
+    return Point(bbox->xMin() - separation, bbox->yMin());
+  else
+    return Point(bbox->xMax() + separation, bbox->yMin());
 }
 
 ////////////////////////////////////////////////////////////////

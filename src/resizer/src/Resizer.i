@@ -318,12 +318,12 @@ find_floating_nets()
 
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
-		      int max_fanout,
+		      double separation, // meters
 		      bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTieFanout(tie_port, max_fanout, verbose);
+  resizer->repairTieFanout(tie_port, separation, verbose);
 }
 
 // In meters

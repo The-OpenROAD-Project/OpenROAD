@@ -40,20 +40,14 @@ END DESIGN"
   close $stream
 }
 
-proc write_tie_hi_fanout_verilog { filename tie_port load_port fanout } {
-  set stream [open $filename "w"]
-  puts $stream "module top ();"
-  set tie_port1 [get_lib_pin $tie_port]
-  set tie_cell_name [get_property [get_property $tie_port1 lib_cell] name]
-  set tie_port_name [get_property $tie_port1 name]
-  puts $stream " $tie_cell_name t1 (.${tie_port_name}(n1));"
-  set load_port1 [get_lib_pin $load_port]
-  set load_cell_name [get_property [get_property $load_port1 lib_cell] name]
-  set load_port_name [get_property $load_port1 name]
-  for {set i 0} {$i < $fanout} {incr i} {
-    set inst_name "u$i"
-    puts $stream " $load_cell_name $inst_name (.${load_port_name}(n1));"
+proc check_ties { tie_cell_name } {
+  set tie_insts [get_cells -filter "ref_name == $tie_cell_name"]
+  foreach tie_inst $tie_insts {
+    set tie_pin [get_pins -of $tie_inst -filter "direction == output"]
+    set net [get_nets -of $tie_inst]
+    set pins [get_pins -of $net]
+    if { [llength $pins] != 2 } {
+      puts "Warning: tie inst [get_full_name $tie_inst] has [llength $pins] connections."
+    }
   }
-  puts $stream "endmodule"
-  close $stream
 }

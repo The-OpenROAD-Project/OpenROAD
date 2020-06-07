@@ -1041,6 +1041,10 @@ dbNetwork::makeNet(const char *name,
 void
 dbNetwork::deleteNet(Net *net)
 {
+  PinSet *drvrs = net_drvr_pin_map_.findKey(net);
+  delete drvrs;
+  net_drvr_pin_map_.erase(net);
+
   dbNet *dnet = staToDb(net);
   dbNet::destroy(dnet);
 }
