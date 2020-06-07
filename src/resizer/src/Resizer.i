@@ -318,7 +318,7 @@ find_floating_nets()
 
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
-		      int separation,
+		      double separation, // meters
 		      bool verbose)
 {
   ensureLinked();

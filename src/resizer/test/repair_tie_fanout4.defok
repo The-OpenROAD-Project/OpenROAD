@@ -11,10 +11,10 @@ COMPONENTS 10 ;
     - u3 BUF_X1 + PLACED ( 40000 10000 ) N ;
     - u4 BUF_X1 + PLACED ( 0 20000 ) N ;
     - t1_1 LOGIC1_X1 + PLACED ( 0 0 ) N ;
-    - t1_2 LOGIC1_X1 + PLACED ( 0 0 ) N ;
-    - t1_3 LOGIC1_X1 + PLACED ( 0 0 ) N ;
-    - t1_4 LOGIC1_X1 + PLACED ( 0 0 ) N ;
-    - t1_5 LOGIC1_X1 + PLACED ( 0 0 ) N ;
+    - t1_2 LOGIC1_X1 + PLACED ( 40000 0 ) N ;
+    - t1_3 LOGIC1_X1 + PLACED ( 0 10000 ) N ;
+    - t1_4 LOGIC1_X1 + PLACED ( 40000 10000 ) N ;
+    - t1_5 LOGIC1_X1 + PLACED ( 0 20000 ) N ;
 END COMPONENTS
 NETS 5 ;
     - net1 ( u0 A ) ( t1_1 Z ) + USE SIGNAL ;

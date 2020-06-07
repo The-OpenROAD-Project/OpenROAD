@@ -304,8 +304,9 @@ proc repair_tie_fanout { args } {
 
   set separation 0
   if { [info exists keys(-separation)] } {
-    set separation [sta::distance_ui_sta $keys(-separation)]
-    check_positive_integer "-separation" $separation
+    set separation $keys(-separation)
+    check_positive_float "-separation" $separation
+    set separation [sta::distance_ui_sta $separation]
   }
   set verbose [info exists flags(-verbose)]
   

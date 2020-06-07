@@ -203,7 +203,11 @@ Resizer::ensureBlock()
   // block_ indicates core_, design_area_
   if (block_ == nullptr) {
     block_ = db_->getChip()->getBlock();
-    core_ = ord::getCore(block_);
+    block_->getCoreArea(core_);
+    core_exists_ = !(core_.xMin() == 0
+		     && core_.xMax() == 0
+		     && core_.yMin() == 0
+		     && core_.yMax() == 0);
     design_area_ = findDesignArea();
   }
 }
@@ -350,17 +354,12 @@ Resizer::setLocation(Instance *inst,
 {
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  Point inside = closestPtInRect(core_, pt);
-  dinst->setLocation(inside.getX(), inside.getY());
-}
-
-Point
-Resizer::location(Instance *inst)
-{
-  dbInst *dinst = db_network_->staToDb(inst);
-  int x, y;
-  dinst->getOrigin(x, y);
-  return Point(x, y);
+  if (core_exists_) {
+    Point inside = closestPtInRect(core_, pt);
+    dinst->setLocation(inside.getX(), inside.getY());
+  }
+  else
+    dinst->setLocation(pt.getX(), pt.getY());
 }
 
 void
@@ -547,11 +546,18 @@ Resizer::area(dbMaster *master)
   return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
 }
 
-// DBUs are nanometers.
 double
-Resizer::dbuToMeters(int dbu) const
+Resizer::dbuToMeters(int dist) const
 {
-  return static_cast<double>(dbu) * 1e-6 / db_->getTech()->getLefUnits();
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist / (dbu * 1e+6);
+}
+
+int
+Resizer::metersToDbu(double dist) const
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist * dbu * 1e+6;
 }
 
 void
@@ -1898,7 +1904,7 @@ Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
 // tie hi/low instances.
 void
 Resizer::repairTieFanout(LibertyPort *tie_port,
-			 int separation,
+			 double separation, // meters
 			 bool verbose)
 {
   Instance *top_inst = network_->topInstance();
@@ -1907,6 +1913,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   findCellInstances(tie_cell, insts);
   int tie_count = 0;
   Instance *parent = db_network_->topInstance();
+  int separation_dbu = metersToDbu(separation);
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
     const char *inst_name = network_->name(inst);
@@ -1917,12 +1924,11 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
       if (load != drvr_pin) {
 	// Make tie inst.
 	Instance *load_inst = network_->instance(load);
-	Point load_loc = pinLocation(load, db_network_);
 	string tie_name = makeUniqueInstName(inst_name, true);
 	Instance *tie = sta_->makeInstance(tie_name.c_str(),
 					   tie_cell, top_inst);
-	Point tie_loc(load_loc.getX() + separation, load_loc.getY());
-	setLocation(tie, load_loc);
+	Point tie_loc = tieLocation(load, separation_dbu);
+	setLocation(tie, tie_loc);
 
 	
 	// Make tie output net.
@@ -1968,6 +1974,22 @@ Resizer::findCellInstances(LibertyCell *cell,
       insts.push_back(inst);
   }
   delete inst_iter;
+}
+
+Point
+Resizer::tieLocation(Pin *load,
+		     int separation)
+{
+  dbInst *db_inst = db_network_->staToDb(network_->instance(load));
+  dbBox *bbox = db_inst->getBBox();
+  int inst_center_x = (bbox->xMin() + bbox->xMax()) / 2;
+  Point load_loc = pinLocation(load, db_network_);
+  int load_x = load_loc.getX();
+  // Place tie inst left or right of load based on load pin location.
+  if (load_x < inst_center_x)
+    return Point(bbox->xMin() - separation, bbox->yMin());
+  else
+    return Point(bbox->xMax() + separation, bbox->yMin());
 }
 
 ////////////////////////////////////////////////////////////////
