@@ -10,4 +10,3 @@ Notice 0:     Created 5 components and 19 component-terminals.
 Notice 0:     Created 1 nets and 5 connections.
 Notice 0: Finished DEF file: repair_tie_fanout2.def
 Inserted 4 tie LOGIC1_X1 instances.
-No differences found.
