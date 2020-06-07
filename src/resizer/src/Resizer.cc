@@ -1934,14 +1934,6 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 	string load_net_name = makeUniqueNetName();
 	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
 
-	printf("load %s\n", network_->pathName(load));
-	PinSet *drvrs = network_->drivers(drvr_pin);
-	if (drvrs) {
-	  for (auto drvr : *drvrs) {
-	    printf(" drvr %s\n", network_->pathName(drvr));
-	  }
-	}
-
 	// Connect tie inst output.
 	sta_->connectPin(tie, tie_port, load_net);
 
