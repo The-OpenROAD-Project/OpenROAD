@@ -178,4 +178,6 @@ Path Type: min
            0.07   slack (MET)
 
 
-No differences found.
+Differences found at line 21.
+    - hold1 BUF_X2 + PLACED ( 0 0 ) N ;
+    - hold1 BUF_X2 + PLACED ( 3335 895 ) N ;
