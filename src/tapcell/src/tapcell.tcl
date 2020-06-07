@@ -799,7 +799,10 @@ proc tapcell { args } {
                     continue
                 }
 
-                set real_x [tapcell::get_correct_llx $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
+                set new_x [tapcell::get_correct_llx $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
+                set real_x [expr {ceil (1.0*$new_x/$site_x)*$site_x}]
+                set real_x [expr { int($real_x) }]
+
 
                 set inst [odb::dbInst_create $block $master $inst_name]
                 $inst setOrient $ori
