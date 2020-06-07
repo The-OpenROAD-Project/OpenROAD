@@ -358,6 +358,32 @@ namespace eval tapcell {
 
         return false
     }
+
+    proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width} {
+        set row_blockages ""
+        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
+        set min_width [expr 2*$site_width]
+
+        if {([llength $row_blockages] > 0)} {
+            foreach row_blockage $row_blockages {
+                set blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
+                set blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
+
+                set min_x [expr {$blockage_urx + $endcapwidth + $min_width}]
+                set max_x [expr {$blockage_llx - $endcapwidth - $min_width - $master_width}]
+
+                if {$x > $blockage_llx && $x < $min_x} {
+                    return $min_x
+                }
+
+                if {$x < $blockage_urx && $x > $max_x} {
+                    return $max_x
+                }
+            }
+        }
+
+        return $x
+    }
 }
 
 # Main function. It will run tapcell given the correct parameters
@@ -773,17 +799,12 @@ proc tapcell { args } {
                     continue
                 }
 
-                set min_dist [expr 2 * $site_x]
-                set max_tap_urx [expr $end_llx - $min_dist]
+                set real_x [tapcell::get_correct_llx $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
 
-                while { $tap_urx > $max_tap_urx } {
-                    set tap_urx [expr $tap_urx - $site_x]
-                    set x [expr $x - $site_x]
-                }
                 set inst [odb::dbInst_create $block $master $inst_name]
                 $inst setOrient $ori
 
-                $inst setLocation $x $lly
+                $inst setLocation $real_x $lly
                 $inst setPlacementStatus LOCKED
 
                 incr cnt
