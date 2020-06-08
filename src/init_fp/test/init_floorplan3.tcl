@@ -2,7 +2,8 @@
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
-read_def reg1.def
+read_verilog reg1.v
+link_design top
 initialize_floorplan -utilization 30 \
   -aspect_ratio 0.5 \
   -core_space 2 \
