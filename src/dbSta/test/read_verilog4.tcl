@@ -1,6 +1,7 @@
 # read_verilog link error
 source "helpers.tcl"
 read_lef liberty1.lef
+read_liberty liberty1.lib
 read_verilog read_verilog4.v
 link_design top
 

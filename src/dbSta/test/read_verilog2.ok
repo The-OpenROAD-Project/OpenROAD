@@ -25,7 +25,7 @@ Driver pins
  b1/u2/Z output (snl_bufx1)
 
 Load pins
- b2/u1/A input (snl_bufx1)
+ b2/u1/A input (snl_bufx1) 0.00
 
 Hierarchical pins
 Net b1/u1out
@@ -40,7 +40,7 @@ Driver pins
  b1/u1/Z output (snl_bufx1)
 
 Load pins
- b1/r1/D input (snl_ffqx1)
+ b1/r1/D input (snl_ffqx1) 0.00
 
 Hierarchical pins
 Net b1/r1q
@@ -55,7 +55,7 @@ Driver pins
  b1/r1/Q output (snl_ffqx1)
 
 Load pins
- b1/u2/A input (snl_bufx1)
+ b1/u2/A input (snl_bufx1) 0.00
 
 Hierarchical pins
 Net b2/r1q
@@ -70,7 +70,7 @@ Driver pins
  b2/r1/Q output (snl_ffqx1)
 
 Load pins
- b2/u2/A input (snl_bufx1)
+ b2/u2/A input (snl_bufx1) 0.00
 
 Hierarchical pins
 No differences found.
