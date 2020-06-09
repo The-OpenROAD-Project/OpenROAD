@@ -11,7 +11,8 @@ write_tie_hi_fanout_def $def_filename LOGIC1_X1/Z BUF_X1/A 5
 read_def $def_filename
 
 # repair_max_fanout should NOT repair the tie hi/low nets.
-repair_max_fanout -max_fanout 10 -buffer_cell BUF_X1
+set_max_fanout 100 [current_design]
+repair_max_fanout -buffer_cell BUF_X1
 repair_tie_fanout LOGIC1_X1/Z
 
 source "tie_fanout.tcl"

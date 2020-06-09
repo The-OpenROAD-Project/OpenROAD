@@ -96,8 +96,7 @@ public:
   // Insert buffers to fix max slew violations.
   // resizerPreamble() required.
   void repairMaxSlew(LibertyCell *buffer_cell);
-  void repairMaxFanout(int max_fanout,
-		       LibertyCell *buffer_cell);
+  void repairMaxFanout(LibertyCell *buffer_cell);
   // Rebuffer net (for testing).
   // Assumes buffer_cell->isBuffer() is true.
   // resizerPreamble() required.
@@ -159,20 +158,6 @@ protected:
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
-  void checkMaxCapViolation(const Pin *pin,
-			    // Return values
-			    bool &violation,
-			    float &limit_ratio);
-  void checkMaxSlewViolation(const Pin *pin,
-			     // Return values
-			     bool &violation,
-			     float &limit_ratio);
-  void slewLimit(const Pin *pin,
-		 const MinMax *min_max,
-		 // Return values.
-		 float &limit,
-		 bool &exists) const;
-			
   RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
 				     SteinerPt k,
 				     SteinerPt prev,
