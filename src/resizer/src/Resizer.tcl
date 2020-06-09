@@ -97,7 +97,7 @@ define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
   check_argc_eq1 "set_dont_use" $args
-  set_dont_use_cmd [get_lib_cells_arg "-dont_use" [lindex $args 0] sta_warn]
+  set_dont_use_cmd [get_lib_cells_arg "-dont_use" [lindex $args 0] ord::warn]
 }
 
 define_cmd_args "resize" {[-libraries resize_libs]\
@@ -117,8 +117,8 @@ proc resize { args } {
   }
 
   if { [info exists keys(-dont_use)] } {
-    sta::sta_warn "resize -dont_use is deprecated. Use the set_dont_use commands instead."
-    set dont_use [get_lib_cells_arg "-dont_use" $keys(-dont_use) sta_warn]
+    ord::warn "resize -dont_use is deprecated. Use the set_dont_use commands instead."
+    set dont_use [get_lib_cells_arg "-dont_use" $keys(-dont_use) ord::warn]
     set_dont_use $dont_use
   }
 
@@ -226,8 +226,7 @@ proc repair_max_slew { args } {
   repair_max_slew_cmd $buffer_cell
 }
 
-define_cmd_args "repair_max_fanout" {-max_fanout fanout\
-				       -buffer_cell buffer_cell\
+define_cmd_args "repair_max_fanout" {-buffer_cell buffer_cell\
 				       [-max_utilization util]}
 
 proc repair_max_fanout { args } {
@@ -236,10 +235,10 @@ proc repair_max_fanout { args } {
     flags {}
 
   if { [info exists keys(-max_fanout)] } {
+    ord::warn "-max_fanout is deprecated. Use set_max_fanout fanout [current_design]."
     set max_fanout $keys(-max_fanout)
     check_positive_integer "-max_fanout" $max_fanout
-  } else {
-    ord::error "no -max_fanout specified."
+    set_max_fanout $max_fanout [current_design]
   }
 
   set buffer_cell [parse_buffer_cell keys 1]
@@ -247,7 +246,7 @@ proc repair_max_fanout { args } {
 
   check_argc_eq0 "repair_max_fanout" $args
 
-  repair_max_fanout_cmd $max_fanout $buffer_cell
+  repair_max_fanout_cmd $buffer_cell
 }
 
 define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\

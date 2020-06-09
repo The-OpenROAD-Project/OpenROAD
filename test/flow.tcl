@@ -33,7 +33,7 @@ resize
 buffer_ports -buffer_cell $resize_buffer_cell
 repair_max_cap -buffer_cell $resize_buffer_cell
 repair_max_slew -buffer_cell $resize_buffer_cell
-repair_max_fanout -max_fanout $max_fanout -buffer_cell $resize_buffer_cell
+repair_max_fanout -buffer_cell $resize_buffer_cell
 repair_tie_fanout $tielo_port
 repair_tie_fanout $tiehi_port
 repair_hold_violations -buffer_cell $resize_buffer_cell

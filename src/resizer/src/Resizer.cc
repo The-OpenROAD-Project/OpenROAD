@@ -1108,10 +1108,13 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
 	&& !isFuncOneZero(drvr_pin)
 	// Hands off special nets.
 	&& !isSpecial(net)) {
-      bool violation = false;
-      float limit_ratio;
-      checkMaxCapViolation(drvr_pin, violation, limit_ratio);
-      if (violation) {
+      const Corner *ignore_corner;
+      const RiseFall *ignore_rf;
+      float cap, limit, slack;
+      sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(), 
+			     ignore_corner, ignore_rf, cap, limit, slack);
+      if (slack < 0.0) {
+	float limit_ratio = cap / limit;
 	violation_count++;
 	repaired_net_count++;
 	Pin *drvr_pin = vertex->pin();
@@ -1139,26 +1142,6 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
 }
 
 void
-Resizer::checkMaxCapViolation(const Pin *pin,
-			      // Return values
-			      bool &violation,
-			      float &limit_ratio)
-{
-  LibertyPort *port = network_->libertyPort(pin);
-  violation = false;
-  if (port) {
-    float load_cap = graph_delay_calc_->loadCap(pin, dcalc_ap_);
-    float cap_limit;
-    bool exists;
-    port->capacitanceLimit(MinMax::max(), cap_limit, exists);
-    if (exists && load_cap > cap_limit) {
-      violation = true;
-      limit_ratio = load_cap / cap_limit;
-    }
-  }
-}
-
-void
 Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
@@ -1178,13 +1161,22 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 	&& !isFuncOneZero(drvr_pin)
 	// Hands off special nets.
 	&& !isSpecial(net)) {
+      // Max slew can be specified for input and output pin in liberty
+      // so all the pins have to be checked.
       bool violation = false;
       float limit_ratio;
       NetPinIterator *pin_iter = network_->pinIterator(net);
       while (pin_iter->hasNext()) {
 	Pin *pin = pin_iter->next();
-	checkMaxSlewViolation(pin, violation, limit_ratio);
-	if (violation) {
+	const Corner *ignore_corner;
+	const RiseFall *ignore_rf;
+	Slew slew;
+	float limit, slack;
+	sta_->checkSlew(pin, corner_, MinMax::max(), false,
+			ignore_corner, ignore_rf, slew, limit, slack);
+	if (slack < 0.0) {
+	  violation = true;
+	  limit_ratio = slew / limit;
 	  violation_count++;
 	  break;
 	}
@@ -1213,103 +1205,6 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 	   inserted_buffer_count_,
 	   repaired_net_count);
     level_drvr_verticies_valid_ = false;
-  }
-}
-
-void
-Resizer::checkMaxSlewViolation(const Pin *pin,
-			       // Return values
-			       bool &violation,
-			       float &limit_ratio)
-{
-  Vertex *vertex, *bidirect_drvr_vertex;
-  graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
-  violation = false;
-  limit_ratio = 0.0;
-  float limit;
-  bool exists;
-  slewLimit(pin, MinMax::max(), limit, exists);
-  if (exists) {
-    for (RiseFall *rf : RiseFall::range()) {
-      Slew slew;
-      slew  = graph_->slew(vertex, rf, dcalc_ap_->index());
-      if (slew > limit) {
-	violation = true;
-	limit_ratio = max(limit_ratio, slew / limit);
-      }
-      if (bidirect_drvr_vertex) {
-	slew  = graph_->slew(bidirect_drvr_vertex, rf, dcalc_ap_->index());
-	if (slew > limit) {
-	  violation = true;
-	  limit_ratio = max(limit_ratio, slew / limit);
-	}
-      }
-    }
-  }
-}
-
-void
-Resizer::slewLimit(const Pin *pin,
-		   const MinMax *min_max,
-		   // Return values.
-		   float &limit,
-		   bool &exists) const
-			
-{
-  exists = false;
-  Cell *top_cell = network_->cell(network_->topInstance());
-  float limit1;
-  bool exists1;
-  sdc_->slewLimit(top_cell, min_max,
-		  limit1, exists1);
-
-  // Default to top ("design") limit.
-  exists = exists1;
-  limit = limit1;
-  if (network_->isTopLevelPort(pin)) {
-    Port *port = network_->port(pin);
-    sdc_->slewLimit(port, min_max, limit1, exists1);
-    // Use the tightest limit.
-    if (exists1
-	&& (!exists
-	    || min_max->compare(limit, limit1))) {
-      limit = limit1;
-      exists = true;
-    }
-  }
-  else {
-    sdc_->slewLimit(pin, min_max,
-		    limit1, exists1);
-    // Use the tightest limit.
-    if (exists1
-	&& (!exists
-	    || min_max->compare(limit, limit1))) {
-      limit = limit1;
-      exists = true;
-    }
-
-    LibertyPort *port = network_->libertyPort(pin);
-    if (port) {
-      port->slewLimit(min_max, limit1, exists1);
-      // Use the tightest limit.
-      if (exists1) {
-	if (!exists
-	    || min_max->compare(limit, limit1)) {
-	  limit = limit1;
-	  exists = true;
-	}
-      }
-      else if (port->direction()->isAnyOutput()
-	       && min_max == MinMax::max()) {
-	port->libertyLibrary()->defaultMaxSlew(limit1, exists1);
-	if (exists1
-	    && (!exists
-		|| min_max->compare(limit, limit1))) {
-	  limit = limit1;
-	  exists = true;
-	}
-      }
-    }
   }
 }
 
@@ -1638,8 +1533,7 @@ Resizer::rebufferTopDown(RebufferOption *choice,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairMaxFanout(int max_fanout,
-			 LibertyCell *buffer_cell)
+Resizer::repairMaxFanout(LibertyCell *buffer_cell)
 {
   int max_fanout_violation_count = 0;
   inserted_buffer_count_ = 0;
@@ -1657,11 +1551,15 @@ Resizer::repairMaxFanout(int max_fanout,
 	&& !isFuncOneZero(drvr_pin)
 	&& net
 	&& !isSpecial(net)) {
-      int fanout = this->fanout(drvr_pin);
-      if (fanout > max_fanout) {
+      float fanout, max_fanout, slack;
+      sta_->checkFanout(drvr_pin, MinMax::max(),
+			fanout, max_fanout, slack);
+      if (slack < 0.0) {
 	max_fanout_violation_count++;
-	int buffer_count = ceil(fanout / static_cast<double>(max_fanout));
-	bufferLoads(drvr_pin, buffer_count, max_fanout, buffer_cell, "max_fanout");
+	int buffer_count = ceil(fanout / max_fanout);
+	bufferLoads(drvr_pin, buffer_count,
+		    static_cast<int>(max_fanout),
+		    buffer_cell, "max_fanout");
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
 	  break;
