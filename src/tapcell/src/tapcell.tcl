@@ -363,6 +363,9 @@ namespace eval tapcell {
         set row_blockages ""
         set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
         set min_width [expr 2*$site_width]
+        set urx [[$row getBBox] xMax]
+        set end_llx [expr $urx - $endcapwidth] 
+        set tap_urx [expr $x + $master_width]
 
         if {([llength $row_blockages] > 0)} {
             foreach row_blockage $row_blockages {
@@ -373,13 +376,20 @@ namespace eval tapcell {
                 set max_x [expr {$blockage_llx - $endcapwidth - $min_width - $master_width}]
 
                 if {$x > $blockage_llx && $x < $min_x} {
-                    return $min_x
+                    set end_llx [expr $blockage_llx + $endcapwidth]
                 }
 
                 if {$x < $blockage_urx && $x > $max_x} {
-                    return $max_x
+                    set end_llx [expr $blockage_llx - $endcapwidth]
                 }
             }
+        }
+
+        set max_tap_urx [expr $end_llx - $min_width]
+
+        while { $tap_urx > $max_tap_urx } {
+            set tap_urx [expr $tap_urx - $site_width]
+            set x [expr $x - $site_width]
         }
 
         return $x
