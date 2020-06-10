@@ -4,7 +4,7 @@ read_lef Nangate45/Nangate45.lef
 read_def gcd_placed.def
 read_sdc gcd.sdc
 
-set_wire_rc -layer metal2
+set_wire_rc -layer metal3
 
 report_worst_slack
 

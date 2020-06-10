@@ -72,6 +72,11 @@ public:
   float wireResistance() { return wire_res_; }
   // farads/meter
   float wireCapacitance() { return wire_cap_; }
+  void estimateWireParasitics();
+  void estimateWireParasitic(const Net *net);
+  void estimateWireParasitic(const dbNet *net);
+  // Max distance from driver pin to load in meters.
+  double maxLoadManhattenDistance(Pin *drvr_pin);
 
   // Core area (meters).
   double coreArea() const;
@@ -114,11 +119,6 @@ public:
   void repairTieFanout(LibertyPort *tie_port,
 		       double separation, // meters
 		       bool verbose);
-  void makeNetParasitics();
-  void makeNetParasitics(const Net *net);
-  void makeNetParasitics(const dbNet *net);
-  // Max distance from driver pin to load in meters.
-  double maxLoadManhattenDistance(Pin *drvr_pin);
 
 protected:
   void init();
@@ -278,6 +278,7 @@ protected:
   const ParasiticAnalysisPt *parasitics_ap_;
   NetSet clk_nets_;
   bool clk_nets__valid_;
+  bool have_estimated_parasitics_;
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
