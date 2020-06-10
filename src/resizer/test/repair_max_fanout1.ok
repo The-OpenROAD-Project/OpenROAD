@@ -14,8 +14,8 @@ Notice 0: Finished DEF file: ./results/repair_max_fanout1.def
  r1/Q 35
 Found 1 max fanout violations.
 Inserted 4 buffers.
- max_fanout1/Z 10
- max_fanout2/Z 10
- max_fanout3/Z 10
- max_fanout4/Z 5
+ max_fanout1/Z 9
+ max_fanout2/Z 9
+ max_fanout3/Z 9
+ max_fanout4/Z 8
  r1/Q 4
