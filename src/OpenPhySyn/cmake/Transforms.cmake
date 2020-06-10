@@ -35,11 +35,7 @@ file(MAKE_DIRECTORY ${TRANSFORMS_BUILD_DIR})
 
 
 set(PSN_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE FILEPATH "The path to OpenPhySyn includes")
-set(PSN_TRANSFORM_INSTALL_PATH "$ENV{HOME}/.OpenPhySyn/transforms" CACHE FILEPATH "Default path for transforms installation")
 
-if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
-add_subdirectory(src/StandardTransforms/HelloTransform)
-endif()
 
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 add_subdirectory(src/StandardTransforms/BufferFanoutTransform)
@@ -59,4 +55,8 @@ endif()
 
 if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
 add_subdirectory(src/StandardTransforms/TimingBufferTransform)
+endif()
+
+if (${OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED})
+add_subdirectory(src/StandardTransforms/RepairTimingTransform)
 endif()

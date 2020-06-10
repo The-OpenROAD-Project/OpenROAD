@@ -7,11 +7,12 @@ option(OPENPHYSYN_LTO_ENABLED "Enable link time optimization" ON)
 option(OPENPHYSYN_UNIT_TESTS_ENABLED "Include tests in the library. Setting this to OFF will remove all doctest related code.
                         Tests in tests/*.cpp will still be enabled." OFF)
 option(OPENPHYSYN_STANDARD_TRANSFORMS_ENABLED "Build OpenPhySyn Standard Transforms" ON)
-option(OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED "Build demo hello transform" OFF)
 option(OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED "Build Buffer Fan-Out transform" ON)
 option(OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED "Build Gate Clone transform" ON)
 option(OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED "Build Pin Swap transform" ON)
 option(OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED "Build Constant Propagation transform" ON)
+option(OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED "Build Timing Buffer transform" ON)
+option(OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED "Build Repair Timing transform" ON)
 
 set(LIBRARY_NAME ${PROJECT_NAME})  # Default name for the library built from src/*.cpp (change if you wish)
 # string(TOLOWER ${PROJECT_NAME} LIBRARY_NAME)
@@ -52,9 +53,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 
-if(${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
-  set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} hello_transform")
-endif()
 if(${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
   set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} buffer_fanout")
 endif()
@@ -70,7 +68,9 @@ endif()
 if(${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
   set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} timing_buffer")
 endif()
-string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
+if(${OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED})
+  set(OPENPHYSYN_LINKED_TRANSFORMS "${OPENPHYSYN_LINKED_TRANSFORMS} repair_timing")
+endif()
 
 string(STRIP ${OPENPHYSYN_LINKED_TRANSFORMS} OPENPHYSYN_LINKED_TRANSFORMS)
 
@@ -122,11 +122,14 @@ set(PSN_SOURCES
     ${PSN_HOME}/src/Psn.cpp
     ${PSN_HOME}/src/Exports.cpp
     ${PSN_HOME}/src/SteinerTree.cpp
+    ${PSN_HOME}/src/BufferTree.cpp
+    ${PSN_HOME}/src/LibraryMapping.cpp
     ${PSN_HOME}/src/PsnLogger.cpp
     ${PSN_HOME}/src/DatabaseHandler.cpp
     ${PSN_HOME}/src/PsnTransform.cpp
     ${PSN_HOME}/src/TransformHandler.cpp
     ${PSN_HOME}/src/TransformInfo.cpp
+    ${PSN_HOME}/src/ClusteringUtils.cpp
     ${PSN_HOME}/src/FileUtils.cpp
     ${PSN_HOME}/src/FilesystemLegacyHelpers.cpp
     ${PSN_HOME}/src/StringUtils.cpp
@@ -140,9 +143,6 @@ set(PSN_SOURCES
 
 
 
-if (${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
-add_definitions(-DOPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED)
-endif()
 
 if (${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
 add_definitions(-DOPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED)
@@ -161,6 +161,9 @@ add_definitions(-DOPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED)
 endif()
 if (${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
 add_definitions(-DOPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED)
+endif()
+if (${OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED})
+add_definitions(-DOPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED)
 endif()
 
 
@@ -201,13 +204,12 @@ dl
 OpenSTA
 )
 
-if(${OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED})
-  set(PUBLIC_LIBRARIES
-    ${PUBLIC_LIBRARIES}
-    hello_transform
-  )
-  endif()
-  if(${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
+set(PRIVATE_LIBRARIES
+resizer
+opendp
+)
+
+if(${OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED})
   set(PUBLIC_LIBRARIES
     ${PUBLIC_LIBRARIES}
     buffer_fanout
@@ -218,13 +220,13 @@ if(${OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED})
     ${PUBLIC_LIBRARIES}
     gate_clone
   )
-  endif()
+endif()
 if(${OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED})
   set(PUBLIC_LIBRARIES
     ${PUBLIC_LIBRARIES}
     pin_swap
   )
-  endif()
+endif()
 if(${OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED})
   set(PUBLIC_LIBRARIES
     ${PUBLIC_LIBRARIES}
@@ -235,6 +237,12 @@ if(${OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED})
   set(PUBLIC_LIBRARIES
     ${PUBLIC_LIBRARIES}
     timing_buffer
+  )
+endif()
+if(${OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED})
+  set(PUBLIC_LIBRARIES
+    ${PUBLIC_LIBRARIES}
+    repair_timing
   )
 endif()
 
@@ -256,7 +264,7 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES COMPILE_FLAGS ${OPENPHYSYN_CMAK
 
 
 target_include_directories(${LIBRARY_NAME} PUBLIC ${PUBLIC_INCLUDE_DIRS} PRIVATE ${PRIVATE_INCLUDE_DIRS})
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES})
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${PUBLIC_LIBRARIES} PRIVATE ${PRIVATE_LIBRARIES})
 
 
 

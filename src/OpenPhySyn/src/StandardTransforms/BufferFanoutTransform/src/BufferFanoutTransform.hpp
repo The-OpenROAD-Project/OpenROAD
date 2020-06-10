@@ -29,8 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
-#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
-
 #include "OpenPhySyn/PsnTransform.hpp"
 
 namespace psn
@@ -55,4 +53,3 @@ DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
                  "Usage: transform buffer_fanout "
                  "<max_fanout> <buffer_cell>")
 } // namespace psn
-#endif

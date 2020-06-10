@@ -1,4 +1,4 @@
-project(ConstantPropagation VERSION 1.0.0 LANGUAGES CXX)
+project(OpenPhySynConstantPropagationTransform VERSION 1.0.0 LANGUAGES CXX)
 
 set(TRANSFORM_NAME constant_propagation)
 
@@ -9,7 +9,7 @@ target_compile_definitions(${TRANSFORM_NAME} INTERFACE OPENPHYSYN_TRANSFORM_BUIL
 
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
-${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
+${OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY}
 OpenSTA
 )
 

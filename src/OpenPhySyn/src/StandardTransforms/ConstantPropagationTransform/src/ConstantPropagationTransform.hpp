@@ -30,8 +30,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
-
 #include <cassert>
 #include <cmath>
 #include <memory>
@@ -82,5 +80,3 @@ DEFINE_TRANSFORM(
     "[max-depth] [tie-hi cell] [tie-lo]"
     "cell] [inverter_cell]")
 } // namespace psn
-
-#endif

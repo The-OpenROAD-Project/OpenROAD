@@ -22,7 +22,6 @@ Libraries
   * eigen
   * lemon
   * CImg (optional for replace)
-  * spdlog (optional for OpenPhySyn)
 
 
 See `Dockerfile` for an example of how to install these packages. 
@@ -569,14 +568,8 @@ Options description:
 
 #### Logical and Physical Optimizations
 
-OpenPhySyn Perform additional timing and area optimization.
+OpenPhySyn performs additional timing and area optimization.
 
-```
-set_psn_wire_rc [-layer layer_name]
-            [-resistance res_per_micron ]
-      [-capacitance cap_per_micron]
-```
-The `set_psn_wire_rc` command sets the average wire resistance/capacitance per micron; you can use -layer <layer_name> only to extract the value from the LEF technology. It should be invoked before physical optimization commands.
 
 ```
 optimize_logic
@@ -585,14 +578,61 @@ optimize_logic
 ```
 The `optimize_logic` command should be run after the logic synthesis on hierarical designs to perform logic optimization; currently, it performs constant propagation to reduce the design area. You can optionally specify the name of tie-hi/tie-lo liberty cell names to use for the optimization.
 
+
 ```
-optimize_design
-        [-no_gate_clone]
-        [-no_pin_swap]
-        [-clone_max_cap_factor factor]
-        [-clone_non_largest_cells]
+repair_timing
+        [-fast]
+        [-capacitance_violations]
+        [-transition_violations]
+        [-negative_slack_violations]
+        [-iterations iteration_count]
+        [-buffers buffer_cells]
+        [-inverters inverter cells]
+        [-min_gain gain]
+        [-auto_buffer_library <single|small|medium|large|all>]
+        [-no_minimize_buffer_library]
+        [-auto_buffer_library_inverters_enabled]
+        [-buffer_disabled]
+        [-minimum_cost_buffer_enabled]
+        [-upsize_enabled]
+        [-downsize_enabled]
+        [-pin_swap_enabled]
+        [-legalize_eventually]
+        [-legalize_each_iteration]
+        [-post_place|-post_route] "
+        [-legalization_frequency <num_edits>]
 ```
-The `optimize_design` command can be used for additional timing optimization, it should be run after the global placmenet. Currently it peforms gate cloning and comuttaitve pin swapping to enhance the timing.
+The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
+
+`repair_timing` options:
+-   `[-fast]`: Trade-off runtime versus optimization quality by aggressive pruning.
+-   `[-capacitance_violations]`: Repair capacitance violations.
+-   `[-transition_violations]`: Repair transition violations.
+-   `[-negative_slack_violations]`: Repair paths with negative slacks.
+-   `[-iterations]`: Maximum number of iterations.
+-   `[-buffers buffer_cells]`: Manually specify buffer cells to use.
+-   `[-inverters inverter cells]`: Manually specify inverter cells to use.
+-   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-auto_buffer_library <single|small|medium|large|all>]`: Auto-select buffer library.
+-   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
+-   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
+-   `[-buffer_disabled]`: Disable all buffering.
+-   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
+-   `[-upsize_enabled]`: Enable repair by upsizing.
+-   `[-pin_swap_enabled]`: Enable pin-swapping.
+-   `[-legalize_eventually]`: Legalize at the end of the optimization.
+-   `[-legalize_each_iteration]`: Legalize after each iteration.
+-   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
+-   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
+
+
+```
+pin_swap
+       -path_count count
+       [-power]
+```
+The `pin_swap` command performs additional timing optimization by commutative pin swapping.
+
 
 ```
 optimize_fanout
@@ -600,6 +640,17 @@ optimize_fanout
         -max_fanout max_fanout
 ```
 The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
+
+
+```
+cluster_buffers
+  [-cluster_threshold diameter]
+  [-cluster_size single|small|medium|large|all]
+```
+The `cluster_buffers` command can be used to automatically select representative set of buffers through k-center clustering.
+
+
+
 
 
 #### PDN analysis

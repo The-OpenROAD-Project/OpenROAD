@@ -29,9 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Temproary fix for OpenSTA import ordering
-#define THROW_DCL throw()
-
 #include "Psn.hpp"
 #include <tcl.h>
 #include "Config.hpp"
@@ -44,12 +41,17 @@
 #include "TransformHandler.hpp"
 #include "db_sta/dbSta.hh"
 
+#include "opendp/Opendp.h"
+#include "openroad/OpenRoad.hh"
+#include "resizer/Resizer.hh"
+
 #ifdef OPENPHYSYN_AUTO_LINK
 #include "StandardTransforms/BufferFanoutTransform/src/BufferFanoutTransform.hpp"
 #include "StandardTransforms/ConstantPropagationTransform/src/ConstantPropagationTransform.hpp"
 #include "StandardTransforms/GateCloningTransform/src/GateCloningTransform.hpp"
-#include "StandardTransforms/HelloTransform/src/HelloTransform.hpp"
 #include "StandardTransforms/PinSwapTransform/src/PinSwapTransform.hpp"
+#include "StandardTransforms/RepairTimingTransform/src/RepairTimingTransform.hpp"
+#include "StandardTransforms/TimingBufferTransform/src/TimingBufferTransform.hpp"
 #endif
 
 extern "C"
@@ -87,6 +89,9 @@ Psn::initialize(DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
     }
 
     is_initialized_ = true;
+    setupLegalizer();
+    setupWireParasitics();
+    setupMaxArea();
 }
 
 Psn::~Psn()
@@ -109,6 +114,12 @@ LibraryTechnology*
 Psn::tech() const
 {
     return db_->getTech();
+}
+
+bool
+Psn::hasLiberty() const
+{
+    return handler()->hasLiberty();
 }
 
 DatabaseHandler*
@@ -139,10 +150,6 @@ Psn::loadTransforms()
     int                                load_count = 0;
 
 #ifdef OPENPHYSYN_AUTO_LINK
-#ifdef OPENPHYSYN_TRANSFORM_HELLO_TRANSFORM_ENABLED
-    handlers.push_back(TransformHandler("hello_transform",
-                                        std::make_shared<HelloTransform>()));
-#endif
 #ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
     handlers.push_back(TransformHandler(
         "buffer_fanout", std::make_shared<BufferFanoutTransform>()));
@@ -159,6 +166,14 @@ Psn::loadTransforms()
     handlers.push_back(
         TransformHandler("constant_propagation",
                          std::make_shared<ConstantPropagationTransform>()));
+#endif
+#ifdef OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED
+    handlers.push_back(TransformHandler(
+        "timing_buffer", std::make_shared<TimingBufferTransform>()));
+#endif
+#ifdef OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED
+    handlers.push_back(TransformHandler(
+        "repair_timing", std::make_shared<RepairTimingTransform>()));
 #endif
 
 #else
@@ -430,43 +445,32 @@ Psn::printCommands(bool raw_str)
     }
     PSN_LOG_RAW("");
     std::string commands_str;
-    commands_str +=
-        "print_version                         Print version\n"
-        "version                               Print version\n"
-        "help                                  Print help\n"
-        "print_usage                           Print help\n"
-        "print_license                         Print license information\n"
-        "print_transforms                      List loaded transforms\n"
-        "import_lef <file path>                Load LEF file\n"
-        "import_def <file path>                Load DEF file\n"
-        "import_lib <file path>                Load a liberty file\n"
-        "import_liberty <file path>            Load a liberty file\n"
-        "export_def <output file>              Write DEF file\n"
-        "set_wire_rc <res> <cap>               Set resistance & capacitance "
-        "per micron\n"
-        "set_max_area <area>                   Set maximum design area\n"
-        "optimize_design [<options>]           Perform timing optimization on "
-        "the design\n"
-        "optimize_fanout <options>             Buffer high-fanout nets\n"
-        "optimize_power [<options>]            Perform power optimization on "
-        "the design\n"
-        "transform <transform name> <args>     Run transform on the loaded "
-        "design\n"
-        "has_transform <transform name>        Checks if a specific transform "
-        "is loaded\n"
-        "design_area                           Returns total design cell area\n"
-        "link <design name>                    Link design top module\n"
-        "link_design <design name>             Link design top module\n"
-        "sta <OpenSTA commands>                Run OpenSTA commands\n"
-        "make_steiner_tree <net>               Construct steiner tree for the "
-        "provided net\n"
-        "set_log <log level>                   Set log level [trace, debug, "
-        "info, "
-        "warn, error, critical, off]\n"
-        "set_log_level <log level>             Set log level [trace, debug, "
-        "info, warn, error, critical, off]\n"
-        "set_log_pattern <pattern>             Set log printing pattern, refer "
-        "to spdlog logger for pattern formats";
+    "design_area			Report design total cell area\n"
+    "has_transform			Check if the specified transform is "
+    "loaded\n"
+    "optimize_fanout			Perform maximum-fanout based "
+    "buffering\n"
+    "optimize_logic			Perform logic optimization\n"
+    "optimize_power			Perform power optimization\n"
+    "pin_swap			Perform timing optimization by "
+    "commutative pin swapping\n"
+    "print_transforms		Print loaded transforms\n"
+    "print_usage			Print usage instructions\n"
+    "print_version			Print tool version\n"
+    "propagate_constants		Perform logic optimization by constant "
+    "propgation\n"
+    "timing_buffer			Repair violations through buffer tree "
+    "insertion\n"
+    "repair_timing			Repair design timing and electrical "
+    "violations "
+    "through resizing, buffer insertion, and pin-swapping\n"
+    "set_log				Alias for "
+    "set_log_level\n"
+    "set_log_level			Set log level [trace, debug, info, "
+    "warn, error, critical, off]\n"
+    "transform			Run loaded transform\n"
+    "version				Alias for "
+    "print_version\n";
     PSN_LOG_RAW(commands_str);
 }
 void
@@ -498,8 +502,8 @@ Psn::printTransforms(bool raw_str)
         {
             PSN_LOG_INFO(transform_str);
         }
-        PSN_LOG_RAW("");
     }
+    PSN_LOG_RAW("");
 
 } // namespace psn
 
@@ -597,41 +601,56 @@ Psn::sourceTclScript(const char* script_path)
     return 1;
 }
 void
-Psn::setWireRC(float res_per_micon, float cap_per_micron)
+Psn::setupLegalizer()
 {
-    if (!database() || database()->getChip() == nullptr)
-    {
-        PSN_LOG_ERROR("Could not find any loaded design.");
-        return;
-    }
-    handler()->setWireRC(res_per_micon, cap_per_micron);
+    psn_instance_->handler()->setLegalizer([=](int max_displacment) -> bool {
+        auto openroad = ord::OpenRoad::openRoad();
+        auto opendp   = openroad->getOpendp();
+        opendp->detailedPlacement(max_displacment);
+        return true;
+    });
+    /*
+    Should link to the Resizer here when the method is exported
+    psn_instance_->handler()->setDontUseCallback(
+        [=](LibraryCell* cell) -> bool {
+            auto openroad = ord::OpenRoad::openRoad();
+            auto resizer = openroad->getResizer();
+            return resizer->dontUse(cell);
+        });
+    */
 }
-
-int
-Psn::setWireRC(const char* layer_name)
+void
+Psn::setupWireParasitics()
 {
-    auto tech = db_->getTech();
-
-    if (!tech)
-    {
-        PSN_LOG_ERROR("Could not find any loaded technology file.");
-        return -1;
-    }
-
-    auto layer = tech->findLayer(layer_name);
-    if (!layer)
-    {
-        PSN_LOG_ERROR("Could not find layer with the name", layer_name);
-        return -1;
-    }
-    auto  width         = handler()->dbuToMicrons(layer->getWidth());
-    float res_per_micon = (layer->getResistance() / width) * 1E6;
-    float cap_per_micron =
-        (handler()->dbuToMicrons(1) * width * layer->getCapacitance() +
-         layer->getEdgeCapacitance() * 2.0) *
-        1E-12 * 1E6;
-    setWireRC(res_per_micon, cap_per_micron);
-    return 1;
+    psn_instance_->handler()->setWireRC(
+        [=]() -> float {
+            auto openroad = ord::OpenRoad::openRoad();
+            auto resizer  = openroad->getResizer();
+            return resizer->wireResistance();
+        },
+        [=]() -> float {
+            auto openroad = ord::OpenRoad::openRoad();
+            auto resizer  = openroad->getResizer();
+            return resizer->wireCapacitance();
+        });
+    psn_instance_->handler()->setComputeParasiticsCallback([=](Net* net) {
+        auto openroad = ord::OpenRoad::openRoad();
+        auto resizer  = openroad->getResizer();
+        resizer->makeNetParasitics(net);
+    });
+}
+void
+Psn::setupMaxArea()
+{
+    /*
+    Should link to the Resizer here when the method is exported
+    psn_instance_->handler()->setMaximumArea(
+        [=]() -> float {
+            auto openroad = ord::OpenRoad::openRoad();
+            auto resizer = openroad->getResizer();
+            return resizer->maximumArea();
+        });
+    */
 }
 
 // Private methods:

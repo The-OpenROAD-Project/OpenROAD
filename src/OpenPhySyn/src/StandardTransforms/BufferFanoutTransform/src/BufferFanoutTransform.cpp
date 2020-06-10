@@ -29,8 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
-
 #include "BufferFanoutTransform.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
 #include "OpenPhySyn/Psn.hpp"
@@ -367,4 +365,3 @@ DEFINE_TRANSFORM_VIRTUALS(BufferFanoutTransform, "buffer_fanout", "1.0.0",
                           "Usage: transform buffer_fanout "
                           "<max_fanout> <buffer_cell>")
 } // namespace psn
-#endif

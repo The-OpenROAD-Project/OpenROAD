@@ -33,13 +33,14 @@
 #include "OpenPhySyn/PathPoint.hpp"
 #include "OpenPhySyn/Types.hpp"
 
+#include <bitset>
 #include <functional>
 #include <memory>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
 namespace sta
 {
 class TimingArc;
@@ -61,12 +62,27 @@ namespace psn
 {
 class Psn;
 class SteinerTree;
-typedef int SteinerPoint;
+class LibraryCellMapping;
+typedef int                               SteinerPoint;
+typedef std::function<bool(int)>          Legalizer;
+typedef std::function<float()>            ParasticsCallback;
+typedef std::function<bool(LibraryCell*)> DontUseCallback;
+typedef std::function<void(Net*)>         ComputeParasiticsCallback;
+typedef std::function<float()>            MaxAreaCallback;
 
-class OpenStaHandler
+enum ElectircalViolation
 {
+    None,
+    Capacitance,
+    Transition,
+    CapacitanceAndTransition
+};
+
+class DatabaseHandler
+{
+
 public:
-    OpenStaHandler(Psn* psn_inst, DatabaseSta* sta);
+    DatabaseHandler(Psn* psn_inst, DatabaseSta* sta);
 
     virtual std::vector<InstanceTerm*>
     inputPins(Instance* inst, bool include_top_level = false) const;
@@ -76,9 +92,10 @@ public:
     filterPins(std::vector<InstanceTerm*>& terms, PinDirection* direction,
                bool include_top_level = false) const;
     virtual std::vector<InstanceTerm*>
-                                       fanoutPins(Net* net, bool include_top_level = false) const;
-    virtual std::vector<Instance*>     fanoutInstances(Net* net) const;
-    virtual std::vector<InstanceTerm*> levelDriverPins() const;
+                                   fanoutPins(Net* net, bool include_top_level = false) const;
+    virtual std::vector<Instance*> fanoutInstances(Net* net) const;
+    virtual std::vector<InstanceTerm*>
+                                       levelDriverPins(bool reverse = false) const;
     virtual std::vector<Instance*>     driverInstances() const;
     virtual InstanceTerm*              faninPin(Net* net) const;
     virtual InstanceTerm*              faninPin(InstanceTerm* term) const;
@@ -115,8 +132,10 @@ public:
     virtual BlockTerm*                 port(const char* name) const;
     virtual float                      pinCapacitance(InstanceTerm* term) const;
     virtual float                      pinCapacitance(LibraryTerm* term) const;
-    virtual float                      pinSlewLimit(InstanceTerm* term,
-                                                    bool*         exists = nullptr) const;
+    virtual void  ripupBuffers(std::unordered_set<Instance*> buffers);
+    virtual void  ripupBuffer(Instance* buffer);
+    virtual float pinSlewLimit(InstanceTerm* term,
+                               bool*         exists = nullptr) const;
     virtual float pinAverageRise(LibraryTerm* from, LibraryTerm* to) const;
     virtual float pinAverageFall(LibraryTerm* from, LibraryTerm* to) const;
     virtual float pinAverageRiseTransition(LibraryTerm* from,
@@ -124,11 +143,14 @@ public:
     virtual float pinAverageFallTransition(LibraryTerm* from,
                                            LibraryTerm* to) const;
     virtual float loadCapacitance(InstanceTerm* term) const;
-    virtual float maxLoad(LibraryCell* cell);
+    std::vector<std::vector<PathPoint>> getNegativeSlackPaths() const;
+    virtual float                       maxLoad(LibraryCell* cell);
+    virtual float capacitanceLimit(InstanceTerm* term) const;
     virtual float targetLoad(LibraryCell* cell);
     virtual float coreArea() const;
     virtual bool  maximumUtilizationViolation() const;
     virtual void  setMaximumArea(float area);
+    virtual void  setMaximumArea(MaxAreaCallback maximum_area_callback);
     virtual float maximumArea() const;
     virtual bool  hasMaximumArea() const;
     virtual float gateDelay(Instance* inst, InstanceTerm* to, float in_slew = 0,
@@ -160,6 +182,8 @@ public:
                                     const char*  pin_name) const;
     virtual LibraryTerm* bufferInputPin(LibraryCell* buffer_cell) const;
     virtual LibraryTerm* bufferOutputPin(LibraryCell* buffer_cell) const;
+    virtual std::unordered_set<InstanceTerm*>
+                                      commutativePins(InstanceTerm* term);
     virtual std::vector<LibraryTerm*> libraryPins(Instance* inst) const;
     virtual std::vector<LibraryTerm*> libraryPins(LibraryCell* cell) const;
     virtual std::vector<LibraryTerm*> libraryInputPins(LibraryCell* cell) const;
@@ -169,6 +193,35 @@ public:
     virtual std::vector<LibraryCell*> tieloCells() const;
     virtual std::vector<LibraryCell*> inverterCells() const;
     virtual std::vector<LibraryCell*> bufferCells() const;
+    virtual std::vector<LibraryCell*> nandCells(int in_size = 0);
+    virtual std::vector<LibraryCell*> andCells(int in_size = 0);
+    virtual std::vector<LibraryCell*> orCells(int in_size = 0);
+    virtual std::vector<LibraryCell*> norCells(int in_size = 0);
+    virtual std::vector<LibraryCell*> xorCells(int in_size = 0);
+    virtual std::vector<LibraryCell*> xnorCells(int in_size = 0);
+    virtual int                       isAND(LibraryCell* cell);
+    virtual int                       isNAND(LibraryCell* cell);
+    virtual int                       isOR(LibraryCell* cell);
+    virtual int                       isNOR(LibraryCell* cell);
+    virtual int                       isXOR(LibraryCell* cell);
+    virtual int                       isXNOR(LibraryCell* cell);
+    virtual bool                      isXORXNOR(LibraryCell* cell);
+    virtual bool                      isANDOR(LibraryCell* cell);
+    virtual bool                      isNANDNOR(LibraryCell* cell);
+    virtual bool                      isAnyANDOR(LibraryCell* cell);
+    virtual LibraryCell*              closestDriver(LibraryCell*              cell,
+                                                    std::vector<LibraryCell*> candidates,
+                                                    float                     scale = 1.0);
+    virtual LibraryCell*              halfDrivingPowerCell(Instance* inst);
+    virtual LibraryCell*              halfDrivingPowerCell(LibraryCell* cell);
+
+    virtual std::vector<LibraryCell*> cellSuperset(LibraryCell* cell,
+                                                   int          in_size = 0);
+
+    virtual std::vector<LibraryCell*> inverseCells(LibraryCell* cell);
+    virtual std::vector<LibraryCell*> invertedEquivalent(LibraryCell* cell);
+    LibraryCell*                      minimumDrivingInverter(LibraryCell* cell,
+                                                             float        extra_cap = 0.0);
     virtual std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>
                                       bufferClusters(float cluster_threshold, bool find_superior = true,
                                                      bool include_inverting = true);
@@ -192,16 +245,34 @@ public:
     virtual bool                      isTriState(LibraryTerm* term) const;
     virtual bool                      isCombinational(Instance* inst) const;
     virtual bool                      isCombinational(LibraryCell* cell) const;
+    virtual bool                      isSpecial(Net* net) const;
+    virtual bool                      isTieHi(Instance* inst) const;
+    virtual bool                      isTieHi(LibraryCell* cell) const;
+    virtual bool                      isTieLo(Instance* inst) const;
+    virtual bool                      isTieLo(LibraryCell* cell) const;
+    virtual bool                      isTieHiLo(Instance* inst) const;
+    virtual bool                      isTieHiLo(LibraryCell* cell) const;
+    virtual bool                      isTieCell(Instance* inst) const;
+    virtual bool                      isTieCell(LibraryCell* cell) const;
     virtual bool isSingleOutputCombinational(Instance* inst) const;
     virtual bool isSingleOutputCombinational(LibraryCell* cell) const;
     virtual void replaceInstance(Instance* inst, LibraryCell* cell);
-    virtual bool violatesMaximumCapacitance(InstanceTerm* term,
-                                            float         load_cap) const;
-    virtual bool violatesMaximumCapacitance(InstanceTerm* term) const;
-    virtual bool violatesMaximumTransition(InstanceTerm* term) const;
-    virtual std::vector<InstanceTerm*> maximumTransitionViolations() const;
-    virtual std::vector<InstanceTerm*> maximumCapacitanceViolations() const;
-    virtual bool                       isLoad(InstanceTerm* term) const;
+    virtual bool violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
+                                            float limit_scale_factor) const;
+    virtual bool
+    violatesMaximumCapacitance(InstanceTerm* term,
+                               float         limit_scale_factor = 1.0) const;
+    virtual bool
+    violatesMaximumTransition(InstanceTerm* term,
+                              float         limit_scale_factor = 1.0) const;
+    virtual ElectircalViolation
+    hasElectricalViolation(InstanceTerm* term,
+                           float         limit_scale_factor = 1.0) const;
+    virtual std::vector<InstanceTerm*>
+    maximumTransitionViolations(float limit_scale_factor = 1.0) const;
+    virtual std::vector<InstanceTerm*>
+                      maximumCapacitanceViolations(float limit_scale_factor = 1.0) const;
+    virtual bool      isLoad(InstanceTerm* term) const;
     virtual Instance* createInstance(const char* inst_name, LibraryCell* cell);
     virtual void      createClock(const char*             clock_name,
                                   std::vector<BlockTerm*> ports, float period);
@@ -227,24 +298,49 @@ public:
                                                bool include_top_level = false) const;
     virtual std::vector<PathPoint> criticalPath(int path_count = 1) const;
     virtual std::vector<std::vector<PathPoint>>
+    criticalPaths(int path_count = 1) const;
+    virtual std::vector<std::vector<PathPoint>>
                                    bestPath(int path_count = 1) const;
-    virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term) const;
+    virtual std::vector<PathPoint> worstSlackPath(InstanceTerm* term,
+                                                  bool trim = false) const;
+    virtual InstanceTerm*          worstSlackPin() const;
     virtual std::vector<PathPoint> worstArrivalPath(InstanceTerm* term) const;
     virtual std::vector<PathPoint> bestSlackPath(InstanceTerm* term) const;
     virtual std::vector<PathPoint> bestArrivalPath(InstanceTerm* term) const;
-    virtual float slack(InstanceTerm* term, bool is_rise, bool worst) const;
-    virtual float slack(InstanceTerm* term, bool worst = true) const;
+    virtual float pinSlack(InstanceTerm* term, bool is_rise, bool worst) const;
+    virtual float pinSlack(InstanceTerm* term, bool worst = true) const;
+    virtual float slack(InstanceTerm* term);
+    virtual float worstSlack() const;
+    virtual float worstSlack(InstanceTerm* term) const;
     virtual float arrival(InstanceTerm* term, int ap_index,
                           bool is_rise = true) const;
     virtual float slew(InstanceTerm* term) const;
     virtual float slew(InstanceTerm* term, bool is_rise) const;
     virtual float slew(LibraryTerm* term, float cap, float* tr_slew = nullptr);
-    virtual float required(InstanceTerm* term, bool worst = true) const;
+    virtual float required(InstanceTerm* term) const;
+    virtual float required(InstanceTerm* term, bool is_rise,
+                           PathAnalysisPoint* path_ap) const;
     virtual bool isCommutative(InstanceTerm* first, InstanceTerm* second) const;
+    virtual bool isCommutative(LibraryTerm* first, LibraryTerm* second) const;
+    virtual bool isBuffer(LibraryCell* cell) const;
+    virtual bool isInverter(LibraryCell* cell) const;
     virtual bool dontUse(LibraryCell* cell) const;
     virtual bool dontTouch(Instance* cell) const;
+    virtual bool dontSize(Instance* cell) const;
     virtual void resetDelays();
     virtual void resetDelays(InstanceTerm* term);
+    virtual void buildLibraryMappings(int                        max_length,
+                                      std::vector<LibraryCell*>& buffer_lib,
+                                      std::vector<LibraryCell*>& inverter_lib);
+    virtual void buildLibraryMappings(int max_length);
+    virtual void resetLibraryMapping();
+    virtual std::shared_ptr<LibraryCellMapping>
+    getLibraryCellMapping(LibraryCell* cell);
+    virtual std::shared_ptr<LibraryCellMapping>
+    getLibraryCellMapping(Instance* inst);
+    virtual std::unordered_set<LibraryCell*>
+                                   truthTableToCells(std::string table_id);
+    virtual std::string            cellToTruthTable(LibraryCell* cell);
     virtual std::vector<Net*>      nets() const;
     virtual std::vector<Instance*> instances() const;
     virtual Block*                 top() const;
@@ -268,32 +364,37 @@ public:
                 std::unordered_map<LibraryTerm*, int>& inputs) const;
     virtual int evaluateFunctionExpression(
         LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const;
-    virtual void        setWireRC(float res_per_micon, float cap_per_micron);
+    virtual void setWireRC(float res_per_micron, float cap_per_micron,
+                           bool reset_delays = true);
+    virtual void setWireRC(ParasticsCallback res_per_micron,
+                           ParasticsCallback cap_per_micron);
+    virtual void setDontUseCallback(DontUseCallback dont_use_callback);
+    virtual void setComputeParasiticsCallback(
+        ComputeParasiticsCallback compute_parasitics_callback);
+
     virtual bool        hasWireRC();
     virtual HandlerType handlerType() const;
     virtual void        calculateParasitics();
     virtual void        calculateParasitics(Net* net);
-    virtual void        resetCache(); // Reset equivalent cells and target loads
-    virtual void        setLegalizer(std::function<bool(float)> legalizer);
-    virtual bool        legalize(float max_displacement = 0.0);
+    virtual void        resetCache();
+    virtual void        setLegalizer(Legalizer legalizer);
+    virtual bool        legalize(int max_displacement = 0);
     virtual float bufferFixedInputSlew(LibraryCell* buffer_cell, float cap);
+
+    DatabaseStaNetwork* network() const;
+    DatabaseSta*        sta() const;
+    virtual ~DatabaseHandler();
 
     virtual int evaluateFunctionExpression(
         sta::FuncExpr*                         func,
         std::unordered_map<LibraryTerm*, int>& inputs) const;
-
-    DatabaseStaNetwork* network() const;
-    DatabaseSta*        sta() const;
-    virtual ~OpenStaHandler();
+    Vertex* vertex(InstanceTerm* term) const;
 
 private:
-    void makeEquivalentCells();
-    void computeBuffersDelayPenalty(bool include_inverting = true);
+    std::vector<Liberty*> allLibs() const;
 
-    std::vector<Liberty*>      allLibs() const;
-    DatabaseSta*               sta_;
-    Database*                  db_;
-    std::function<bool(float)> legalizer_;
+    DatabaseSta* sta_;
+    Database*    db_;
 
     const sta::MinMax*        min_max_;
     bool                      has_buffer_inverter_seq_;
@@ -307,22 +408,49 @@ private:
     float                     maximum_area_;
     bool                      maximum_area_valid_;
 
+    std::unordered_set<LibraryCell*> nand_cells_;
+    std::unordered_set<LibraryCell*> and_cells_;
+    std::unordered_set<LibraryCell*> nor_cells_;
+    std::unordered_set<LibraryCell*> or_cells_;
+    std::unordered_set<LibraryCell*> xor_cells_;
+    std::unordered_set<LibraryCell*> xnor_cells_;
+
     std::unordered_set<LibraryCell*> dont_use_;
 
     std::unordered_map<LibraryCell*, float> buffer_penalty_map_;
     std::unordered_map<LibraryCell*, float> inverting_buffer_penalty_map_;
     std::unordered_set<LibraryCell*>        non_inverting_buffer_;
     std::unordered_set<LibraryCell*>        inverting_buffer_;
+    std::unordered_map<LibraryTerm*, std::unordered_set<LibraryTerm*>>
+        commutative_pins_cache_;
 
     std::unordered_map<float, float>
         penalty_cache_; // TODO Convert into indexing table
 
+    std::unordered_map<std::string, std::shared_ptr<LibraryCellMapping>>
+                                                  library_cell_mappings_;
+    std::unordered_map<LibraryCell*, std::string> truth_tables_;
+    std::unordered_map<std::string, std::unordered_set<LibraryCell*>>
+        function_to_cell_; // Mapping from truth table to cells
+
+    bool has_library_cell_mappings_;
+
+    void populatePrimitiveCellCache();
+
+    int computeTruthTable(LibraryCell* cell);
+
     std::unordered_map<LibraryCell*, float> target_load_map_;
 
-    void findTargetLoads();
+    // Vertex* vertex(InstanceTerm* term) const;
 
-    sta::Vertex* vertex(InstanceTerm* term) const;
+    void computeBuffersDelayPenalty(bool include_inverting = true);
 
+    /* The following code is borrowed from James Cherry's Resizer Code */
+    const sta::Corner*              corner_;
+    const sta::DcalcAnalysisPt*     dcalc_ap_;
+    const sta::Pvt*                 pvt_;
+    const sta::ParasiticAnalysisPt* parasitics_ap_;
+    float                           target_slews_[2];
     float pinTableAverage(LibraryTerm* from, LibraryTerm* to,
                           bool is_delay = true, bool is_rise = true) const;
     float pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
@@ -334,13 +462,8 @@ private:
                                                    bool          enumed = false) const;
     std::vector<PathPoint>              expandPath(sta::Path* path,
                                                    bool       enumed = false) const;
-
-    /* The following code is borrowed from James Cherry's Resizer Code */
-    const sta::Corner*              corner_;
-    const sta::DcalcAnalysisPt*     dcalc_ap_;
-    const sta::Pvt*                 pvt_;
-    const sta::ParasiticAnalysisPt* parasitics_ap_;
-    float                           target_slews_[2];
+    void                                findTargetLoads();
+    void                                makeEquivalentCells();
 
     void  findTargetLoads(std::vector<Liberty*>* resize_libs);
     void  findTargetLoads(Liberty* library, float slews[]);
@@ -350,14 +473,19 @@ private:
     float targetSlew(const sta::RiseFall* rf);
     void  findBufferTargetSlews(std::vector<Liberty*>* resize_libs);
     void  findBufferTargetSlews(Liberty* library, float slews[], int counts[]);
+    void  slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
+                    bool& exists) const;
     sta::ParasiticNode* findParasiticNode(std::unique_ptr<SteinerTree>& tree,
                                           sta::Parasitic*     parasitic,
                                           const Net*          net,
                                           const InstanceTerm* pin,
                                           SteinerPoint        pt);
-    void slewLimit(InstanceTerm* pin, sta::MinMax* min_max, float& limit,
-                   bool& exists) const;
+    Legalizer           legalizer_;
+    ParasticsCallback   res_per_micron_callback_;
+    ParasticsCallback   cap_per_micron_callback_;
+    DontUseCallback     dont_use_callback_;
+    ComputeParasiticsCallback compute_parasitics_callback_;
+    MaxAreaCallback           maximum_area_callback_;
 };
 
-typedef OpenStaHandler DatabaseHandler;
-}; // namespace psn
+} // namespace psn

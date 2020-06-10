@@ -46,18 +46,7 @@ design_area()
 {
     return Psn::instance().handler()->area();
 }
-int
-set_wire_res_cap(float res_per_micon, float cap_per_micron)
-{
-    Psn::instance().setWireRC(res_per_micon, cap_per_micron);
 
-    return 1;
-}
-int
-set_wire_res_cap(const char* layer_name)
-{
-    return Psn::instance().setWireRC(layer_name);
-}
 int
 set_max_area(float area)
 {
@@ -108,6 +97,18 @@ Database&
 get_database()
 {
     return *(Psn::instance().database());
+}
+
+bool
+has_liberty()
+{
+    return Psn::instance().hasLiberty();
+}
+
+void
+set_dont_use(std::vector<std::string> cell_names)
+{
+    Psn::instance().handler()->setDontUse(cell_names);
 }
 
 int

@@ -9,7 +9,7 @@ target_compile_definitions(${TRANSFORM_NAME} INTERFACE OPENPHYSYN_TRANSFORM_BUIL
 
 target_link_libraries(${TRANSFORM_NAME}
 PUBLIC
-${OPENPHYSYB_TRANSFORMS_LINKING_LIBRARY}
+${OPENPHYSYN_TRANSFORMS_LINKING_LIBRARY}
 OpenSTA
 )
 
@@ -19,7 +19,7 @@ set_target_properties(${TRANSFORM_NAME}
     LIBRARY_OUTPUT_DIRECTORY "${TRANSFORMS_BUILD_DIR}"
 )
 endif()
-
 target_compile_features(${TRANSFORM_NAME} PRIVATE cxx_range_for cxx_auto_type)
 target_compile_options(${TRANSFORM_NAME} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
 set_property(TARGET ${TRANSFORM_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+
