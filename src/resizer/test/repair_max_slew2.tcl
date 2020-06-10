@@ -1,4 +1,4 @@
-# repair_max_slew load slew liimit
+# repair_max_slew liberty pin max_transition
 source "helpers.tcl"
 source "hi_fanout.tcl"
 

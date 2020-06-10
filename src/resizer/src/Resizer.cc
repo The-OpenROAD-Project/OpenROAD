@@ -120,6 +120,7 @@ Resizer::Resizer() :
   pvt_(nullptr),
   parasitics_ap_(nullptr),
   clk_nets__valid_(false),
+  have_estimated_parasitics_(false),
   target_load_map_(nullptr),
   level_drvr_verticies_valid_(false),
   tgt_slews_{0.0, 0.0},
@@ -232,6 +233,7 @@ Resizer::setWireRC(float wire_res,
 		   float wire_cap,
 		   Corner *corner)
 {
+  initCorner(corner);
   // Abbreviated copyState
   graph_delay_calc_ = sta_->graphDelayCalc();
   search_ = sta_->search();
@@ -244,10 +246,6 @@ Resizer::setWireRC(float wire_res,
 
   wire_res_ = wire_res;
   wire_cap_ = wire_cap;
-
-  initCorner(corner);
-  ensureClkNets();
-  makeNetParasitics();
 }
 
 void
@@ -811,28 +809,33 @@ Resizer::isClock(Net *net)
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::makeNetParasitics()
+Resizer::estimateWireParasitics()
 {
-  NetIterator *net_iter = network_->netIterator(network_->topInstance());
-  while (net_iter->hasNext()) {
-    Net *net = net_iter->next();
-    // Hands off the clock nets.
-    if (!isClock(net)
-	&& !network_->isPower(net)
-	&& !network_->isGround(net))
-      makeNetParasitics(net);
+  if (wire_cap_ > 0.0) {
+    ensureClkNets();
+
+    NetIterator *net_iter = network_->netIterator(network_->topInstance());
+    while (net_iter->hasNext()) {
+      Net *net = net_iter->next();
+      // Hands off the clock nets.
+      if (!isClock(net)
+	  && !network_->isPower(net)
+	  && !network_->isGround(net))
+	estimateWireParasitic(net);
+    }
+    delete net_iter;
+    have_estimated_parasitics_ = true;
   }
-  delete net_iter;
 }
 
 void
-Resizer::makeNetParasitics(const dbNet *net)
+Resizer::estimateWireParasitic(const dbNet *net)
 {
-  makeNetParasitics(db_network_->dbToSta(net));
+  estimateWireParasitic(db_network_->dbToSta(net));
 }
  
 void
-Resizer::makeNetParasitics(const Net *net)
+Resizer::estimateWireParasitic(const Net *net)
 {
   SteinerTree *tree = makeSteinerTree(net, false, db_network_);
   if (tree && tree->isPlaced(db_network_)) {
@@ -1292,8 +1295,12 @@ Resizer::bufferLoads(Pin *drvr_pin,
 	sta_->disconnectPin(load);
 	sta_->connectPin(load_inst, load_port, load_net);
       }
+      if (have_estimated_parasitics_)
+	estimateWireParasitic(load_net);
     }
   }
+  if (have_estimated_parasitics_)
+    estimateWireParasitic(net);
 }
 
 // K means clustering algorithm.
@@ -2098,8 +2105,10 @@ Resizer::rebufferTopDown(RebufferOption *choice,
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
     rebufferTopDown(choice->ref(), net2, level + 1, buffer_cell);
-    makeNetParasitics(net);
-    makeNetParasitics(net2);
+    if (have_estimated_parasitics_) {
+      estimateWireParasitic(net);
+      estimateWireParasitic(net2);
+    }
     break;
   }
   case RebufferOptionType::wire:
