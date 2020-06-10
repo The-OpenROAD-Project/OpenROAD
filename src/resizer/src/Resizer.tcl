@@ -91,6 +91,7 @@ proc set_wire_rc { args } {
   check_argc_eq0 "set_wire_rc" $args
 
   set_wire_rc_cmd $wire_res $wire_cap $corner
+  estimate_wire_parasitics
 }
 
 define_cmd_args "set_dont_use" {lib_cells}

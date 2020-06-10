@@ -174,6 +174,14 @@ wire_capacitanceb()
 }
 
 void
+estimate_wire_parasitics()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->estimateWireParasitics();
+}
+
+void
 set_max_utilization(double max_utilization)
 {
   ensureLinked();
