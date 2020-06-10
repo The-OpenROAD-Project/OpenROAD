@@ -636,7 +636,7 @@ Psn::setupWireParasitics()
     psn_instance_->handler()->setComputeParasiticsCallback([=](Net* net) {
         auto openroad = ord::OpenRoad::openRoad();
         auto resizer  = openroad->getResizer();
-        resizer->makeNetParasitics(net);
+        resizer->estimateWireParasitic(net);
     });
 }
 void
