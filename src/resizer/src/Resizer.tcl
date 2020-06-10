@@ -58,14 +58,17 @@ proc set_wire_rc { args } {
     }
     set layer_width_dbu [$layer getWidth]
     set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
-    set res_ohm_per_micron [expr [$layer getResistance] / $layer_width_micron]
-    set cap_pf_per_dbu [expr $layer_width_dbu * [$layer getCapacitance] \
-			     + [$layer getEdgeCapacitance] * 2]
-    set cap_pf_per_micron [expr [ord::dbu_to_microns 1] * $cap_pf_per_dbu]
+    set res_ohm_per_sq [$layer getResistance]
+    set res_ohm_per_micron [expr $res_ohm_per_sq / $layer_width_micron]
+    set cap_area_pf_per_sq_micron [$layer getCapacitance]
+    set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
+    set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
+			     + $cap_edge_pf_per_micron * 2]
     # ohms/meter
     set wire_res [expr $res_ohm_per_micron * 1e+6]
     # farads/meter
     set wire_cap [expr $cap_pf_per_micron * 1e-12 * 1e+6]
+    
     if { $wire_res == 0.0 } {
       ord::warn "layer resistance is 0.0"
     }
@@ -79,17 +82,17 @@ proc set_wire_rc { args } {
       check_positive_float "-resistance" $res
       set wire_res [expr [resistance_ui_sta $res] / [distance_ui_sta 1.0]]
     }
-
+    
     if { [info exists keys(-capacitance)] } {
       set cap $keys(-capacitance)
       check_positive_float "-capacitance" $cap
       set wire_cap [expr [capacitance_ui_sta $cap] / [distance_ui_sta 1.0]]
     }
   }
-
+  
   set corner [parse_corner keys]
   check_argc_eq0 "set_wire_rc" $args
-
+  
   set_wire_rc_cmd $wire_res $wire_cap $corner
   estimate_wire_parasitics
 }
@@ -107,7 +110,7 @@ define_cmd_args "resize" {[-libraries resize_libs]\
 proc resize { args } {
   parse_key_args "resize" args \
     keys {-libraries -dont_use} flags {}
-
+  
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
   } else {
@@ -116,15 +119,15 @@ proc resize { args } {
       ord::error "No liberty libraries found."
     }
   }
-
+  
   if { [info exists keys(-dont_use)] } {
     ord::warn "resize -dont_use is deprecated. Use the set_dont_use commands instead."
     set dont_use [get_lib_cells_arg "-dont_use" $keys(-dont_use) ord::warn]
     set_dont_use $dont_use
   }
-
+  
   check_argc_eq0 "resize" $args
-
+  
   resizer_preamble $resize_libs
   resize_to_target_slew
 }
@@ -173,7 +176,7 @@ proc buffer_ports { args } {
   parse_key_args "buffer_ports" args \
     keys {-buffer_cell -max_utilization} \
     flags {-inputs -outputs}
-
+  
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
   if { !$buffer_inputs && !$buffer_outputs } {
@@ -181,9 +184,9 @@ proc buffer_ports { args } {
     set buffer_outputs 1
   }
   set buffer_cell [parse_buffer_cell keys 1]
-
+  
   check_argc_eq0 "buffer_ports" $args
-
+  
   set_max_utilization [parse_max_util keys]
   if { $buffer_inputs } {
     buffer_inputs $buffer_cell
@@ -200,12 +203,12 @@ proc repair_max_cap { args } {
   parse_key_args "repair_max_cap" args \
     keys {-buffer_cell -max_utilization} \
     flags {}
-
+  
   set buffer_cell [parse_buffer_cell keys 1]
   set_max_utilization [parse_max_util keys]
-
+  
   check_argc_eq0 "repair_max_cap" $args
-
+  
   resizer_preamble [get_libs *]
   repair_max_cap_cmd $buffer_cell
 }
@@ -217,12 +220,12 @@ proc repair_max_slew { args } {
   parse_key_args "repair_max_slew" args \
     keys {-buffer_cell -max_utilization} \
     flags {}
-
+  
   set buffer_cell [parse_buffer_cell keys 1]
   set_max_utilization [parse_max_util keys]
-
+  
   check_argc_eq0 "repair_max_slew" $args
-
+  
   resizer_preamble [get_libs *]
   repair_max_slew_cmd $buffer_cell
 }
@@ -234,19 +237,19 @@ proc repair_max_fanout { args } {
   parse_key_args "repair_max_fanout" args \
     keys {-max_fanout -buffer_cell -max_utilization} \
     flags {}
-
+  
   if { [info exists keys(-max_fanout)] } {
     ord::warn "-max_fanout is deprecated. Use set_max_fanout fanout [current_design]."
     set max_fanout $keys(-max_fanout)
     check_positive_integer "-max_fanout" $max_fanout
     set_max_fanout $max_fanout [current_design]
   }
-
+  
   set buffer_cell [parse_buffer_cell keys 1]
   set_max_utilization [parse_max_util keys]
-
+  
   check_argc_eq0 "repair_max_fanout" $args
-
+  
   repair_max_fanout_cmd $buffer_cell
 }
 
@@ -257,12 +260,12 @@ proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
     keys {-buffer_cell -max_utilization} \
     flags {}
-
+  
   set buffer_cell [parse_buffer_cell keys 1]
   set_max_utilization [parse_max_util keys]
-
+  
   check_argc_eq0 "repair_hold_violations" $args
-
+  
   repair_hold_violations_cmd $buffer_cell
 }
 
@@ -278,7 +281,7 @@ define_cmd_args "report_floating_nets" {[-verbose]}
 
 proc report_floating_nets { args } {
   parse_key_args "report_floating_nets" args keys {} flags {-verbose}
-
+  
   set verbose [info exists flags(-verbose)]
   set floating_nets [find_floating_nets]
   set floating_net_count [llength $floating_nets]
@@ -297,11 +300,11 @@ define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
 proc repair_tie_fanout { args } {
   parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
     flags {-verbose}
-
+  
   if { [info exists keys(-max_fanout)] } {
     ord::warn "-max_fanout is deprecated."
   }
-
+  
   set separation 0
   if { [info exists keys(-separation)] } {
     set separation $keys(-separation)
@@ -318,6 +321,41 @@ proc repair_tie_fanout { args } {
   if { $lib_port != "NULL" } {
     repair_tie_fanout_cmd $lib_port $separation $verbose
   }
+}
+
+################################################################
+
+proc report_long_wires { count } {
+  set nets [lsort -command dist_greater -decreasing [get_nets *]]
+  set count 10
+  puts "Net  length delay"
+  for { set i 0 } { $i < $count } { incr i } {
+    set net [lindex $nets $i]
+    set dist [sta::max_load_manhatten_distance $net]
+    if { $dist > 0 } {
+      set delay [estimate_wire_delay $dist]
+    
+      puts "[get_full_name $net] [sta::format_distance $dist 0] [sta::format_time $delay 3]"
+    }
+  }
+}
+
+proc dist_greater { net1 net2 } {
+  set dist1 [sta::max_load_manhatten_distance $net1]
+  set dist2 [sta::max_load_manhatten_distance $net2]
+  if { $dist1 > $dist2 } {
+    return 1
+  } elseif { $dist1 < $dist2 } {
+    return -1
+  } else {
+    return 0
+  }
+}
+
+# wire_length in meters
+proc estimate_wire_delay { wire_length } {
+  return [expr [sta::wire_resistance] * $wire_length \
+	    * [sta::wire_capacitance] * $wire_length * 0.5]
 }
 
 # sta namespace end

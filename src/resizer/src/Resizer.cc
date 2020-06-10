@@ -1460,10 +1460,26 @@ Resizer::findCenter(PinSeq &pins)
 }
 
 double
+Resizer::maxLoadManhattenDistance(Net *net)
+{
+  NetPinIterator *pin_iter = network_->pinIterator(net);
+  double max_dist = -INF;
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (network_->isDriver(pin)) {
+      double dist = maxLoadManhattenDistance(pin);
+      max_dist = max(max_dist, dist);
+    }
+  }
+  return max_dist;
+}
+
+double
 Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
 {
+  Net *net = network_->net(drvr_pin);
   Point drvr_loc = pinLocation(drvr_pin, db_network_);
-  NetPinIterator *pin_iter = network_->pinIterator(network_->net(drvr_pin));
+  NetPinIterator *pin_iter = network_->pinIterator(net);
   int64_t max_dist = 0;
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
