@@ -8,3 +8,4 @@ set_input_delay -clock clk 0 in1
 
 set_wire_rc -layer metal2
 report_checks
+

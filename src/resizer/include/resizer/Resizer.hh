@@ -77,6 +77,7 @@ public:
   void estimateWireParasitic(const dbNet *net);
   // Max distance from driver pin to load in meters.
   double maxLoadManhattenDistance(Pin *drvr_pin);
+  double maxLoadManhattenDistance(Net *net);
 
   // Core area (meters).
   double coreArea() const;
