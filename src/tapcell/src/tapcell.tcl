@@ -359,13 +359,17 @@ namespace eval tapcell {
         return false
     }
 
-    proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width} {
+    proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width add_boundary_cell} {
         set row_blockages ""
         set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
         set min_width [expr 2*$site_width]
         set urx [[$row getBBox] xMax]
         set end_llx [expr $urx - $endcapwidth] 
         set tap_urx [expr $x + $master_width]
+
+        if {$add_boundary_cell == false} {
+            return $x
+        }
 
         if {([llength $row_blockages] > 0)} {
             foreach row_blockage $row_blockages {
@@ -809,7 +813,7 @@ proc tapcell { args } {
                     continue
                 }
 
-                set new_x [tapcell::get_correct_llx $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
+                set new_x [tapcell::get_correct_llx $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
                 set real_x [expr {ceil (1.0*$new_x/$site_x)*$site_x}]
                 set real_x [expr { int($real_x) }]
 
