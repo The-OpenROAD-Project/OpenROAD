@@ -734,7 +734,7 @@ proc tapcell { args } {
         incr endcap_count
     }
 
-    puts "\[INFO\]#Endcaps inserted: $endcap_count"
+    puts "\[INFO\] #Endcaps inserted: $endcap_count"
 
     #Step 3: Insert tap
     puts "Step 3: Insert tapcells..."
@@ -775,7 +775,7 @@ proc tapcell { args } {
             set pitch [expr $dist*$lef_units]
             set offset [expr $dist*$lef_units]
         } else {
-            set pitch [expr $dist*2*$lef_units]
+            set pitch [expr $dist*$lef_units]
         }
 
         set endcapwidth [expr $endcap_cpp*$site_x]
