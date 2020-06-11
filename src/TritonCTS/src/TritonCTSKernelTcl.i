@@ -62,5 +62,7 @@ TritonCTSKernel* get_triton_cts() {
 
 %} //inline
 
+%include "../../Exception.i"
+
 %include "TritonCTSKernel.h"
 using namespace TritonCTS;

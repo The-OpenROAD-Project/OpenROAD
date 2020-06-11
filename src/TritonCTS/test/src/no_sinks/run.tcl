@@ -10,3 +10,4 @@ clock_tree_synthesis -lut_file "lut.txt" \
                      -wire_unit 20 \
                      -clk_nets "clk" 
 
+exit
