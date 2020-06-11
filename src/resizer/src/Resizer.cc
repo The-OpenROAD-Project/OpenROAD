@@ -1503,6 +1503,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
 			 double separation, // meters
 			 bool verbose)
 {
+  ensureBlock();
   Instance *top_inst = network_->topInstance();
   LibertyCell *tie_cell = tie_port->libertyCell();
   InstanceSeq insts;
@@ -1580,14 +1581,35 @@ Resizer::tieLocation(Pin *load,
 {
   dbInst *db_inst = db_network_->staToDb(network_->instance(load));
   dbBox *bbox = db_inst->getBBox();
-  int inst_center_x = (bbox->xMin() + bbox->xMax()) / 2;
   Point load_loc = pinLocation(load, db_network_);
   int load_x = load_loc.getX();
-  // Place tie inst left or right of load based on load pin location.
-  if (load_x < inst_center_x)
-    return Point(bbox->xMin() - separation, bbox->yMin());
-  else
-    return Point(bbox->xMax() + separation, bbox->yMin());
+  int load_y = load_loc.getY();
+  int left_dist = abs(load_x - bbox->xMin());
+  int right_dist = abs(load_x - bbox->xMax());
+  int bot_dist = abs(load_y - bbox->yMin());
+  int top_dist = abs(load_y - bbox->yMax());
+  if (left_dist < right_dist
+      && left_dist < bot_dist
+      && left_dist < top_dist)
+    // left
+    return Point(load_x - separation, load_y);
+  if (right_dist < left_dist
+      && right_dist < bot_dist
+      && right_dist < top_dist)
+    // right
+    return Point(load_x + separation, load_y);
+  if (bot_dist < left_dist
+      && bot_dist < right_dist
+      && bot_dist < top_dist)
+    // bot
+    return Point(load_x, load_y - separation);
+  if (top_dist < left_dist
+      && top_dist < right_dist
+      && top_dist < bot_dist)
+    // top
+    return Point(load_x, load_y + separation);
+  // tie
+  return Point(load_x, load_y);
 }
 
 ////////////////////////////////////////////////////////////////
