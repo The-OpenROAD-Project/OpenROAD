@@ -342,4 +342,12 @@ max_load_manhatten_distance(Pin *drvr_pin)
   return resizer->maxLoadManhattenDistance(drvr_pin);
 }
 
+double
+max_load_manhatten_distance(Net *net)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->maxLoadManhattenDistance(net);
+}
+
 %} // inline

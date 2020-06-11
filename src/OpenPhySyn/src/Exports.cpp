@@ -32,6 +32,8 @@
 #include "Exports.hpp"
 #include <memory>
 #include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "PsnLogger.hpp"
 
 namespace psn
 {
@@ -97,6 +99,36 @@ Database&
 get_database()
 {
     return *(Psn::instance().database());
+}
+std::vector<std::string>
+transition_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
+std::vector<std::string>
+capacitance_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
 }
 
 bool

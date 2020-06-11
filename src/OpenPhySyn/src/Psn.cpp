@@ -122,6 +122,12 @@ Psn::hasLiberty() const
     return handler()->hasLiberty();
 }
 
+bool
+Psn::hasDesign() const
+{
+    return (database() && database()->getChip() != nullptr);
+}
+
 DatabaseHandler*
 Psn::handler() const
 {

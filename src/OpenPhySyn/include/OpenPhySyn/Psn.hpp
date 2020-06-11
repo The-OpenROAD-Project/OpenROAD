@@ -78,6 +78,7 @@ public:
     virtual LibraryTechnology* tech() const;
 
     virtual bool hasLiberty() const;
+    virtual bool hasDesign() const;
 
     static void setupLegalizer();
     static void setupWireParasitics();
