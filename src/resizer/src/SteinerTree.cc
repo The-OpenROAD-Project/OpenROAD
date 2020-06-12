@@ -60,7 +60,7 @@ bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
 Point
-pinLocation(Pin *pin,
+pinLocation(const Pin *pin,
 	    const dbNetwork *network);
 
 ////////////////////////////////////////////////////////////////

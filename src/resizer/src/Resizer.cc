@@ -35,6 +35,7 @@
 
 #include "resizer/Resizer.hh"
 
+#include "sta/Report.hh"
 #include "sta/Debug.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/PortDirection.hh"
@@ -98,7 +99,7 @@ bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
 Point
-pinLocation(Pin *pin,
+pinLocation(const Pin *pin,
 	    const dbNetwork *network);
 
 typedef array<Delay, RiseFall::index_count> Delays;
@@ -472,38 +473,40 @@ Resizer::resizeToTargetSlew(Instance *inst)
 	  && !isSpecial(out_net)) {
 	// Includes net parasitic capacitance.
 	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
-	LibertyCell *best_cell = nullptr;
-	float best_ratio = 0.0;
-	LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-	if (equiv_cells) {
-	  for (LibertyCell *target_cell : *equiv_cells) {
-	    if (!dontUse(target_cell)) {
-	      float target_load = (*target_load_map_)[target_cell];
-	      float ratio = target_load / load_cap;
-	      if (ratio > 1.0)
-		ratio = 1.0 / ratio;
-	      if (ratio > best_ratio) {
-		best_ratio = ratio;
-		best_cell = target_cell;
+	if (load_cap > 0.0) {
+	  LibertyCell *best_cell = nullptr;
+	  float best_ratio = 0.0;
+	  LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+	  if (equiv_cells) {
+	    for (LibertyCell *target_cell : *equiv_cells) {
+	      if (!dontUse(target_cell)) {
+		float target_load = (*target_load_map_)[target_cell];
+		float ratio = target_load / load_cap;
+		if (ratio > 1.0)
+		  ratio = 1.0 / ratio;
+		if (ratio > best_ratio) {
+		  best_ratio = ratio;
+		  best_cell = target_cell;
+		}
 	      }
 	    }
-	  }
-	  if (best_cell && best_cell != cell) {
-	    debugPrint3(debug_, "resizer", 2, "%s %s -> %s\n",
-			sdc_network_->pathName(inst),
-			cell->name(),
-			best_cell->name());
-	    const char *best_cell_name = best_cell->name();
-	    dbMaster *best_master = db_->findMaster(best_cell_name);
-	    // Replace LEF with LEF so ports stay aligned in instance.
-	    if (best_master) {
-	      dbInst *dinst = db_network_->staToDb(inst);
-	      dbMaster *master = dinst->getMaster();
-	      design_area_ -= area(master);
-	      Cell *best_cell1 = db_network_->dbToSta(best_master);
-	      sta_->replaceCell(inst, best_cell1);
-	      resize_count_++;
-	      design_area_ += area(best_master);
+	    if (best_cell && best_cell != cell) {
+	      debugPrint3(debug_, "resizer", 2, "%s %s -> %s\n",
+			  sdc_network_->pathName(inst),
+			  cell->name(),
+			  best_cell->name());
+	      const char *best_cell_name = best_cell->name();
+	      dbMaster *best_master = db_->findMaster(best_cell_name);
+	      // Replace LEF with LEF so ports stay aligned in instance.
+	      if (best_master) {
+		dbInst *dinst = db_network_->staToDb(inst);
+		dbMaster *master = dinst->getMaster();
+		design_area_ -= area(master);
+		Cell *best_cell1 = db_network_->dbToSta(best_master);
+		sta_->replaceCell(inst, best_cell1);
+		resize_count_++;
+		design_area_ += area(best_master);
+	      }
 	    }
 	  }
 	}
@@ -1459,8 +1462,46 @@ Resizer::findCenter(PinSeq &pins)
   return Point(sum.x() / pins.size(), sum.y() / pins.size());
 }
 
+void
+Resizer::reportLongWires(int count,
+			 int digits)
+{
+  NetSeq nets;
+  NetIterator *net_iter = network_->netIterator(network_->topInstance());
+  while (net_iter->hasNext()) {
+    Net *net = net_iter->next();
+    // Hands off the clock nets.
+    if (!isClock(net)
+	&& !network_->isPower(net)
+	&& !network_->isGround(net)) {
+      PinSet *drvrs = network_->drivers(net);
+      if (drvrs->size() > 0)
+	nets.push_back(net);
+    }
+  }
+  delete net_iter;
+
+  sort(nets, [this](const Net *net1,
+		const Net *net2) {
+	       return maxLoadManhattenDistance(net1) > maxLoadManhattenDistance(net2) ;
+	     });
+  report_->print("Net length delay\n");
+  for (int i = 0; i < count && i < nets.size(); i++) {
+    Net *net = nets[i];
+    float wire_length = maxLoadManhattenDistance(net);
+    float delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
+    PinSet *drvrs = network_->drivers(net);
+    Pin *drvr_pin = *drvrs->begin();
+    report_->print("%s %s %s\n",
+		   sdc_network_->pathName(drvr_pin),
+		   units_->distanceUnit()->asString(wire_length, digits),
+		   units_->timeUnit()->asString(delay, digits));
+  }
+}
+
+
 double
-Resizer::maxLoadManhattenDistance(Net *net)
+Resizer::maxLoadManhattenDistance(const Net *net)
 {
   NetPinIterator *pin_iter = network_->pinIterator(net);
   double max_dist = -INF;
@@ -1475,7 +1516,7 @@ Resizer::maxLoadManhattenDistance(Net *net)
 }
 
 double
-Resizer::maxLoadManhattenDistance(Pin *drvr_pin)
+Resizer::maxLoadManhattenDistance(const Pin *drvr_pin)
 {
   Net *net = network_->net(drvr_pin);
   Point drvr_loc = pinLocation(drvr_pin, db_network_);
@@ -1907,8 +1948,8 @@ Resizer::rebuffer(const Pin *drvr_pin,
       int i = 1;
       for (RebufferOption *p : Z) {
 	// Find required for drvr_pin into option.
-	Delays  gate_delays{gateDelay(drvr_port, RiseFall::rise(), p->cap()),
-			    gateDelay(drvr_port, RiseFall::fall(), p->cap())};
+	ArcDelay gate_delays[RiseFall::index_count];
+	gateDelays(drvr_port, p->cap(), gate_delays);
 	Slacks slacks{p->required(RiseFall::rise()) - gate_delays[RiseFall::riseIndex()],
 		      p->required(RiseFall::fall()) - gate_delays[RiseFall::fallIndex()]};
 	RiseFall *rf = (slacks[RiseFall::riseIndex()] < slacks[RiseFall::fallIndex()])
@@ -2280,21 +2321,26 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  return gateDelay(output, rf, load_cap);
+  ArcDelay gate_delays[RiseFall::index_count];
+  gateDelays(output, load_cap, gate_delays);
+  return gate_delays[rf->index()];
 }
 
-float
-Resizer::gateDelay(LibertyPort *out_port,
-		   RiseFall *rf,
-		   float load_cap)
+// Rise/fall delays across all timing arcs into drvr_port.
+// Uses target slew for input slew.
+void
+Resizer::gateDelays(LibertyPort *drvr_port,
+		    float load_cap,
+		    // Return values.
+		    ArcDelay delays[RiseFall::index_count])
 {
-  LibertyCell *cell = out_port->libertyCell();
-  // Max rise/fall delays.
-  ArcDelay max_delays[RiseFall::index_count] = {-INF, -INF};
+  delays[RiseFall::riseIndex()] = -INF;
+  delays[RiseFall::fallIndex()] = -INF;
+  LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellTimingArcSetIterator set_iter(cell);
   while (set_iter.hasNext()) {
     TimingArcSet *arc_set = set_iter.next();
-    if (arc_set->to() == out_port) {
+    if (arc_set->to() == drvr_port) {
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
 	TimingArc *arc = arc_iter.next();
@@ -2307,11 +2353,134 @@ Resizer::gateDelay(LibertyPort *out_port,
 				   nullptr, 0.0, pvt_, dcalc_ap_,
 				   gate_delay,
 				   drvr_slew);
-	max_delays[out_rf_index] = max(max_delays[out_rf_index], gate_delay);
+	delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
       }
     }
   }
-  return max_delays[rf->index()];
+}
+
+// Find the max wire length that has less gate and wire delay
+// than a wire 1/2 as long with a buffer in the middle.
+float
+Resizer::findMaxWireLength(LibertyCell *buffer_cell)
+{
+  LibertyPort *load_port, *drvr_port;
+  buffer_cell->bufferPorts(load_port, drvr_port);
+  float drvr_r = max(drvr_port->driveResistance(RiseFall::rise(), MinMax::max()),
+		     drvr_port->driveResistance(RiseFall::fall(), MinMax::max()));
+  float wire_length1 = 0.0;
+  // remove *2 in first step below.
+  float wire_length2 = drvr_r / wire_res_;
+  float diff2;
+  do {
+    diff2 = splitWireDelayDiff(wire_length2, buffer_cell);
+    if (diff2 < 0.0)
+      wire_length2 *= 2;
+    else
+      break;
+  } while (true);
+  // wire_length1 lower bound
+  // wire_length2 upper bound
+  float tol = .01; // 1%
+  float diff1 = splitWireDelayDiff(wire_length1, buffer_cell);
+  while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
+    float wire_length3 = (wire_length1 + wire_length2) / 2.0;
+    float diff3 = splitWireDelayDiff(wire_length3, buffer_cell);
+    if (diff3 < 0.0) {
+      wire_length1 = wire_length3;
+      diff1 = diff3;
+    }
+    else {
+      wire_length2 = wire_length3;
+      diff2 = diff3;
+    }
+  }
+  return wire_length1;
+}
+
+float
+Resizer::splitWireDelayDiff(float wire_length,
+			    LibertyCell *buffer_cell)
+{
+  float delay1 = bufferWireDelay(buffer_cell, wire_length);
+  float delay2 = bufferWireDelay(buffer_cell, wire_length / 2) * 2;
+  return delay1 - delay2;
+}
+
+// Buffer delay plus wire delay.
+// Uses target slew for input slew.
+float
+Resizer::bufferWireDelay(LibertyCell *buffer_cell,
+			 float wire_length) // meters
+{
+  LibertyPort *load_port, *drvr_port;
+  buffer_cell->bufferPorts(load_port, drvr_port);
+  Instance *top_inst = network_->topInstance();
+  // Tmp net for parasitics to live on.
+  Net *net = sta_->makeNet("wire", top_inst);
+  Instance *drvr = sta_->makeInstance("drvr", buffer_cell, top_inst);
+  Instance *load = sta_->makeInstance("load", buffer_cell, top_inst);
+  sta_->connectPin(drvr, drvr_port, net);
+  sta_->connectPin(drvr, load_port, net);
+  Pin *drvr_pin = network_->findPin(drvr, drvr_port);
+  Pin *load_pin = network_->findPin(load, load_port);
+
+  Parasitic *parasitic = makeWireParasitic(net, drvr_pin, load_pin, wire_length);
+  // Let delay calc reduce parasitic network as it sees fit.
+  Parasitic *drvr_parasitic = arc_delay_calc_->findParasitic(drvr_pin, RiseFall::rise(),
+							     dcalc_ap_);
+
+  // Max rise/fall delays.
+  ArcDelay max_delay = -INF;
+  LibertyCellTimingArcSetIterator set_iter(buffer_cell);
+  while (set_iter.hasNext()) {
+    TimingArcSet *arc_set = set_iter.next();
+    if (arc_set->to() == drvr_port) {
+      TimingArcSetArcIterator arc_iter(arc_set);
+      while (arc_iter.hasNext()) {
+	TimingArc *arc = arc_iter.next();
+	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
+	int out_rf_index = arc->toTrans()->asRiseFall()->index();
+	float in_slew = tgt_slews_[in_rf->index()];
+	ArcDelay gate_delay;
+	Slew drvr_slew;
+	arc_delay_calc_->gateDelay(buffer_cell, arc, in_slew, 0.0,
+				   drvr_parasitic, 0.0, pvt_, dcalc_ap_,
+				   gate_delay,
+				   drvr_slew);
+	ArcDelay wire_delay;
+	Slew load_slew;
+	arc_delay_calc_->loadDelay(load_pin, wire_delay, load_slew);
+	max_delay = max(max_delay, gate_delay + wire_delay);
+      }
+    }
+  }
+  // Cleanup the turds.
+  arc_delay_calc_->finishDrvrPin();
+  parasitics_->deleteParasiticNetwork(net, dcalc_ap_->parasiticAnalysisPt());
+  sta_->deleteInstance(drvr);
+  sta_->deleteInstance(load);
+  sta_->deleteNet(net);
+
+  return max_delay;
+}
+
+Parasitic *
+Resizer::makeWireParasitic(Net *net,
+			   Pin *drvr_pin,
+			   Pin *load_pin,
+			   float wire_length) // meters
+{
+  Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
+							   parasitics_ap_);
+  ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, drvr_pin);
+  ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, load_pin);
+  float wire_cap = wire_length * wire_cap_;
+  float wire_res = wire_length * wire_res_;
+  parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap_);
+  parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap_);
+  parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap_);
+  return parasitic;
 }
 
 double
@@ -2333,7 +2502,7 @@ Resizer::findDesignArea()
 }
 
 Point
-pinLocation(Pin *pin,
+pinLocation(const Pin *pin,
 	    const dbNetwork *network)
 {
   dbITerm *iterm;

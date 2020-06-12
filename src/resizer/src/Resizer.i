@@ -333,15 +333,35 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
   resizer->repairTieFanout(tie_port, separation, verbose);
 }
 
-// In meters
-double
-max_load_manhatten_distance(Pin *drvr_pin)
+void
+report_long_wires_cmd(int count,
+		      int digits)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->maxLoadManhattenDistance(drvr_pin);
+  return resizer->reportLongWires(count, digits);
 }
 
+////////////////////////////////////////////////////////////////
+
+float
+buffer_wire_delay(LibertyCell *buffer_cell,
+		  float wire_length) // meters
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->bufferWireDelay(buffer_cell, wire_length);
+}
+
+float
+find_max_wire_length(LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxWireLength(buffer_cell);
+}
+
+// In meters
 double
 max_load_manhatten_distance(Net *net)
 {
