@@ -1466,39 +1466,37 @@ void
 Resizer::reportLongWires(int count,
 			 int digits)
 {
-  NetSeq nets;
-  NetIterator *net_iter = network_->netIterator(network_->topInstance());
-  while (net_iter->hasNext()) {
-    Net *net = net_iter->next();
-    // Hands off the clock nets.
-    if (!isClock(net)
-	&& !network_->isPower(net)
-	&& !network_->isGround(net)) {
-      PinSet *drvrs = network_->drivers(net);
-      if (drvrs->size() > 0)
-	nets.push_back(net);
+  VertexSeq drvrs;
+  VertexIterator vertex_iter(graph_);
+  while (vertex_iter.hasNext()) {
+    Vertex *vertex = vertex_iter.next();
+    if (vertex->isDriver(network_)) {
+      Pin *pin = vertex->pin();
+      Net *net = network_->net(pin);
+      // Hands off the clock nets.
+      if (!isClock(net)
+	  && !vertex->isConstant())
+	drvrs.push_back(vertex);
     }
   }
-  delete net_iter;
 
-  sort(nets, [this](const Net *net1,
-		const Net *net2) {
-	       return maxLoadManhattenDistance(net1) > maxLoadManhattenDistance(net2) ;
-	     });
-  report_->print("Net length delay\n");
-  for (int i = 0; i < count && i < nets.size(); i++) {
-    Net *net = nets[i];
-    float wire_length = maxLoadManhattenDistance(net);
+  sort(drvrs, [this](Vertex *drvr1,
+		     Vertex *drvr2) {
+		return maxLoadManhattenDistance(drvr1)
+		  > maxLoadManhattenDistance(drvr2);
+	      });
+  report_->print("Driver    length delay\n");
+  for (int i = 0; i < count && i < drvrs.size(); i++) {
+    Vertex *drvr = drvrs[i];
+    Pin *drvr_pin = drvr->pin();
+    float wire_length = maxLoadManhattenDistance(drvr);
     float delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
-    PinSet *drvrs = network_->drivers(net);
-    Pin *drvr_pin = *drvrs->begin();
     report_->print("%s %s %s\n",
 		   sdc_network_->pathName(drvr_pin),
 		   units_->distanceUnit()->asString(wire_length, digits),
 		   units_->timeUnit()->asString(delay, digits));
   }
 }
-
 
 double
 Resizer::maxLoadManhattenDistance(const Net *net)
@@ -1508,30 +1506,30 @@ Resizer::maxLoadManhattenDistance(const Net *net)
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     if (network_->isDriver(pin)) {
-      double dist = maxLoadManhattenDistance(pin);
-      max_dist = max(max_dist, dist);
+      Vertex *drvr = graph_->pinDrvrVertex(pin);
+      if (drvr) {
+	double dist = maxLoadManhattenDistance(drvr);
+	max_dist = max(max_dist, dist);
+      }
     }
   }
   return max_dist;
 }
 
 double
-Resizer::maxLoadManhattenDistance(const Pin *drvr_pin)
+Resizer::maxLoadManhattenDistance(Vertex *drvr)
 {
-  Net *net = network_->net(drvr_pin);
-  Point drvr_loc = pinLocation(drvr_pin, db_network_);
-  NetPinIterator *pin_iter = network_->pinIterator(net);
   int64_t max_dist = 0;
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (network_->isLoad(pin)) {
-      Point loc = pinLocation(pin, db_network_);
-      int64_t dist = Point::manhattanDistance(loc, drvr_loc);
-      if (dist > max_dist)
-	max_dist = dist;
-    }
+  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+  VertexOutEdgeIterator edge_iter(drvr, graph_);
+  while (edge_iter.hasNext()) {
+    Edge *edge = edge_iter.next();
+    Vertex *load = edge->to(graph_);
+    Point load_loc = pinLocation(load->pin(), db_network_);
+    int64_t dist = Point::manhattanDistance(load_loc, drvr_loc);
+    if (dist > max_dist)
+      max_dist = dist;
   }
-  delete pin_iter;
   return dbuToMeters(max_dist);
 }
 

@@ -75,8 +75,8 @@ public:
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const dbNet *net);
-  // Max distance from driver pin to load in meters.
-  double maxLoadManhattenDistance(const Pin *drvr_pin);
+  // Max distance from driver to load (in meters).
+  double maxLoadManhattenDistance(Vertex *drvr);
   double maxLoadManhattenDistance(const Net *net);
   void reportLongWires(int count,
 		       int digits);
