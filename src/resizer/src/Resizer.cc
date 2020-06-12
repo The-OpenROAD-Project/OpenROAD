@@ -1466,6 +1466,7 @@ void
 Resizer::reportLongWires(int count,
 			 int digits)
 {
+  graph_ = sta_->ensureGraph();
   VertexSeq drvrs;
   VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
