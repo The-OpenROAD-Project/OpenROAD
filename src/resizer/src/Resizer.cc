@@ -221,6 +221,7 @@ void
 Resizer::init()
 {
   ensureBlock();
+  // Abbreviated copyState
   db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
@@ -1104,6 +1105,7 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
   int repaired_net_count = 0;
   int violation_count = 0;
 
+  sta_->checkCapacitanceLimitPreamble();
   sta_->findDelays();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
@@ -1157,6 +1159,7 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
   int violation_count = 0;
 
   sta_->findDelays();
+  sta_->checkSlewLimitPreamble();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
@@ -1221,6 +1224,7 @@ Resizer::repairMaxFanout(LibertyCell *buffer_cell)
   inserted_buffer_count_ = 0;
 
   init();
+  sta_->checkFanoutLimitPreamble();
   // Rebuffer in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *vertex = level_drvr_verticies_[i];
