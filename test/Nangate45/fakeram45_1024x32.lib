@@ -115,7 +115,7 @@ cell(fakeram45_1024x32) {
     bus(rd_out)   {
         bus_type : fakeram45_1024x32_DATA;
         direction : output;
-        max_capacitance : 0.002;
+        max_capacitance : 0.060;
         memory_read() {
             address : addr_in;
         }
