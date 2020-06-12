@@ -775,11 +775,11 @@ proc tapcell { args } {
             set pitch [expr $dist*$lef_units]
             set offset [expr $dist*$lef_units]
         } elseif {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y] && \
-                  $add_boundary_cell == false} {
+                  $add_boundary_cell == true} {
             set pitch [expr $dist*$lef_units]
             set offset [expr $dist*$lef_units]
         } else {
-            set pitch [expr $dist*$lef_units]
+            set pitch [expr {$dist*2*$lef_units}]
         }
 
         set endcapwidth [expr $endcap_cpp*$site_x]
