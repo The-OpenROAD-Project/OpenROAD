@@ -1559,6 +1559,10 @@ DatabaseHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
     for (auto& out : output_pins)
     {
         sta::FuncExpr* func = out->function();
+        if (!func)
+        {
+            return false;
+        }
         if (func->hasPort(first) && func->hasPort(second))
         {
             std::unordered_map<LibraryTerm*, int> sim_vals;
