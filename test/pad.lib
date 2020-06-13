@@ -19,15 +19,6 @@ library (pad) {
   slew_upper_threshold_pct_fall : 80;
   slew_upper_threshold_pct_rise : 80;
 
-  type (bus_pad) {
-    base_type : array;
-    data_type : bit;
-    bit_width : 2;
-    bit_from  : 1;
-    bit_to    : 0;
-    downto    : true;
-  }
-
   cell (PAD) {
     area : 4000;
     dont_touch : true;
@@ -97,7 +88,6 @@ library (pad) {
       direction : output;
       function : "(PAD & RXEN)";
       output_voltage : default_VDDC_VSSC_output;
-      power_down_function : "(!VDDC) + (VSSC)";
       related_ground_pin : VSSC;
       related_power_pin : VDDC;
       max_capacitance : 500;

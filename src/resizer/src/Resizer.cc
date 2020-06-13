@@ -842,7 +842,11 @@ void
 Resizer::estimateWireParasitic(const Net *net)
 {
   SteinerTree *tree = makeSteinerTree(net, false, db_network_);
-  if (tree && tree->isPlaced(db_network_)) {
+  if (tree
+      // Do not add parasitics on input ports.
+      // When the input drives a pad instance with huge input
+      // cap the elmore delay is gigantic.
+      && !hasInputPort(tree)) {
     debugPrint1(debug_, "resizer_parasitics", 1, "net %s\n",
 		sdc_network_->pathName(net));
     Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
@@ -899,6 +903,17 @@ Resizer::findParasiticNode(SteinerTree *tree,
     return parasitics_->ensureParasiticNode(parasitic, pin);
   else 
     return parasitics_->ensureParasiticNode(parasitic, net, steiner_pt);
+}
+
+bool
+Resizer::hasInputPort(SteinerTree *tree)
+{
+  for (Pin *pin : tree->pins()) {
+    if (network_->isTopLevelPort(pin)
+	&& network_->direction(pin)->isAnyInput())
+      return true;
+  }
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1384,7 +1399,7 @@ Resizer::groupLoadsSteiner(Pin *drvr_pin,
                   std::string(sdc_network_->pathName(net)) + ".svg");
 
   grouped_loads.resize(group_count);
-  if (tree && tree->isPlaced(db_network_)) {
+  if (tree) {
     SteinerPt drvr_pt = tree->drvrPt(db_network_);
     int group_index = 0;
     groupLoadsSteiner(tree, drvr_pt, group_size, group_index, grouped_loads);

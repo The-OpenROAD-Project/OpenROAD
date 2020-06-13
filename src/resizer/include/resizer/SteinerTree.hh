@@ -53,7 +53,7 @@ class SteinerTree;
 typedef int SteinerPt;
 typedef Vector<SteinerPt> SteinerPtSeq;
 
-// Returns nullptr if net has less than 2 pins.
+// Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
 makeSteinerTree(const Net *net,
 		bool find_left_rights,
@@ -89,8 +89,6 @@ public:
   SteinerTree();
   ~SteinerTree();
   PinSeq &pins() { return pins_; }
-  void setTree(Flute::Tree tree,
-	       const dbNetwork *network);
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
   void branch(int index,
@@ -107,7 +105,6 @@ public:
   Pin *steinerPtAlias(SteinerPt pt);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt(const Network *network) const;
-  bool isPlaced(const dbNetwork *network) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
@@ -121,6 +118,10 @@ public:
   void findLeftRights(const Network *network);
   void dumpSVG(const Network *network,
                const std::string& fileName = "steiner.svg");
+
+  void setTree(Flute::Tree tree,
+	       const dbNetwork *network);
+  void setHasInputPort(bool input_port);
   static SteinerPt null_pt;
 
 protected:

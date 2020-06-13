@@ -271,6 +271,7 @@ protected:
   bool isSpecial(Net *net);
   Point tieLocation(Pin *load,
 		    int separation);
+  bool hasInputPort(SteinerTree *tree);
 
   float wire_res_;
   float wire_cap_;
