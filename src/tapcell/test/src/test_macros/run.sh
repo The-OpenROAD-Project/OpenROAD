@@ -48,7 +48,7 @@ testdir=$2
 
 $binary -no_init < run.tcl > test.log 2>&1
 
-obs_report=$(grep -e '---- Macro blocks found:' ./test.log)
+obs_report=$(grep -e '[INFO] Macro blocks found:' ./test.log)
 
 mkdir -p ../../results/test_macros/
 cp test.log ../../results/test_macros/tapcell.log
