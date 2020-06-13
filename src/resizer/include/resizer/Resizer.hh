@@ -80,6 +80,8 @@ public:
   double maxLoadManhattenDistance(const Net *net);
   void reportLongWires(int count,
 		       int digits);
+  void writeNetSVG(Net *net,
+		   const char *filename);
 
   // Core area (meters).
   double coreArea() const;

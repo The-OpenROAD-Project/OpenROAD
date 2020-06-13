@@ -116,13 +116,12 @@ public:
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
-  void dumpSVG(const Network *network,
-               const std::string& fileName = "steiner.svg");
-
   void setTree(Flute::Tree tree,
 	       const dbNetwork *network);
   void setHasInputPort(bool input_port);
   static SteinerPt null_pt;
+  void writeSVG(const Network *network,
+		const char *filename);
 
 protected:
   void findLeftRights(SteinerPt from,

@@ -414,7 +414,8 @@ SteinerTree::right(SteinerPt pt)
 }
 
 void
-SteinerTree::dumpSVG(const Network *network, const std::string& fileName)
+SteinerTree::writeSVG(const Network *network,
+		      const char *filename)
 {
   // compute bbox of pins
   odb::Rect bbox;
@@ -428,40 +429,41 @@ SteinerTree::dumpSVG(const Network *network, const std::string& fileName)
   const int sz = std::max(std::max(bbox.dx(), bbox.dy()) / 400, 1u);
   const int hsz = sz / 2;
 
-  FILE* f = fopen(fileName.c_str(), "w");
-  fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-          "viewBox=\"%d %d %d %d\">\n",
-          bbox.xMin(), bbox.yMin(),
-          bbox.dx(), bbox.dy());
+  FILE* stream = fopen(filename, "w");
+  if (stream) {
+    fprintf(stream, "<svg xmlns=\"http://www.w3.org/2000/svg\" "
+	    "viewBox=\"%d %d %d %d\">\n",
+	    bbox.xMin(), bbox.yMin(),
+	    bbox.dx(), bbox.dy());
 
-  // Draw the pins
-  for (auto& loc_pin : loc_pin_map_) {
-    Point pt = loc_pin.first;
+    // Draw the pins
+    for (auto& loc_pin : loc_pin_map_) {
+      Point pt = loc_pin.first;
 
-    fprintf(f, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" "
-            "style=\"fill: %s\"/>\n",
-            (pt.getX() - hsz), (pt.getY() - hsz), sz, sz,
-            network->isLoad(loc_pin.second) ? "green" : "red");
+      fprintf(stream, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" "
+	      "style=\"fill: %s\"/>\n",
+	      (pt.getX() - hsz), (pt.getY() - hsz), sz, sz,
+	      network->isLoad(loc_pin.second) ? "green" : "red");
+    }
+
+    // Draw the edges
+    for (int i = 0 ; i < branchCount(); ++i) {
+      Point pt1, pt2;
+      Pin *pin1, *pin2;
+      int steiner_pt1, steiner_pt2;
+      int wire_length;
+      branch(i, pt1, pin1, steiner_pt1, pt2, pin2, steiner_pt2, wire_length);
+
+      fprintf(stream, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
+	      "style=\"stroke: black; stroke-width: %d\"/>\n",
+	      pt1.getX(), pt1.getY(), pt2.getX(), pt2.getY(), hsz/2);
+    }
+
+    fprintf(stream, "</svg>\n");
+    fclose(stream);
   }
-
-  // Draw the edges
-  for (int i = 0 ; i < branchCount(); ++i) {
-    Point pt1;
-    Pin *pin1;
-    int steiner_pt1;
-    Point pt2;
-    Pin *pin2;
-    int steiner_pt2;
-    int wire_length;
-    branch(i, pt1, pin1, steiner_pt1, pt2, pin2, steiner_pt2, wire_length);
-
-    fprintf(f, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-            "style=\"stroke: black; stroke-width: %d\"/>\n",
-            pt1.getX(), pt1.getY(), pt2.getX(), pt2.getY(), hsz/2);
-  }
-
-  fprintf(f, "</svg>\n");
-  fclose(f);
+  else
+    printf("Error: could not open %s\n", filename);
 }
 
 }

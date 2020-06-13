@@ -918,6 +918,17 @@ Resizer::hasInputPort(SteinerTree *tree)
 
 ////////////////////////////////////////////////////////////////
 
+void
+Resizer::writeNetSVG(Net *net,
+		     const char *filename)
+{
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  if (tree)
+    tree->writeSVG(sdc_network_, filename);
+}
+
+////////////////////////////////////////////////////////////////
+
 class RebufferOption
 {
 public:
@@ -1393,11 +1404,6 @@ Resizer::groupLoadsSteiner(Pin *drvr_pin,
 {
   Net* net = sdc_network_->net(drvr_pin);
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
-  if (tree
-      && debug_->check("write_steiner_svg", 1))
-    tree->dumpSVG(sdc_network_,
-                  std::string(sdc_network_->pathName(net)) + ".svg");
-
   grouped_loads.resize(group_count);
   if (tree) {
     SteinerPt drvr_pt = tree->drvrPt(db_network_);
