@@ -60,7 +60,7 @@ bool
 pinIsPlaced(Pin *pin,
 	    const dbNetwork *network);
 Point
-pinLocation(Pin *pin,
+pinLocation(const Pin *pin,
 	    const dbNetwork *network);
 
 ////////////////////////////////////////////////////////////////
@@ -85,6 +85,7 @@ makeSteinerTree(const Net *net,
   // Pay the price to stabilize the results.
   sort(pins, PinPathNameLess(network));
   int pin_count = pins.size();
+  bool is_placed = true;
   if (pin_count >= 2) {
     FLUTE_DTYPE *x = new FLUTE_DTYPE[pin_count];
     FLUTE_DTYPE *y = new FLUTE_DTYPE[pin_count];
@@ -96,29 +97,29 @@ makeSteinerTree(const Net *net,
       debugPrint3(debug, "steiner", 3, "%s (%d %d)\n",
 		  sdc_network->pathName(pin),
 		  loc.x(), loc.y());
+      is_placed &= pinIsPlaced(pin, network);
     }
-
-    int flute_accuracy = 3;
-    Flute::Tree ftree = Flute::flute(pin_count, x, y, flute_accuracy);
-    tree->setTree(ftree, network);
-    if (debug->check("steiner", 3)) {
-      Flute::printtree(ftree);
-      report->print("pin map\n");
-      for (int i = 0; i < pin_count; i++)
-	report->print(" %d -> %s\n",i,network->pathName(tree->pin(i)));
+    if (is_placed) {
+      int flute_accuracy = 3;
+      Flute::Tree ftree = Flute::flute(pin_count, x, y, flute_accuracy);
+      tree->setTree(ftree, network);
+      if (debug->check("steiner", 3)) {
+	Flute::printtree(ftree);
+	report->print("pin map\n");
+	for (int i = 0; i < pin_count; i++)
+	  report->print(" %d -> %s\n",i,network->pathName(tree->pin(i)));
+      }
+      if (find_left_rights)
+	tree->findLeftRights(network);
+      if (debug->check("steiner", 2))
+	tree->report(network);
+      delete [] x;
+      delete [] y;
+      return tree;
     }
-    if (find_left_rights)
-      tree->findLeftRights(network);
-    if (debug->check("steiner", 2))
-      tree->report(network);
-    delete [] x;
-    delete [] y;
-    return tree;
   }
-  else {
-    delete tree;
-    return nullptr;
-  }
+  delete tree;
+  return nullptr;
 }
 
 static void
@@ -170,16 +171,6 @@ SteinerTree::SteinerTree() :
 SteinerTree::~SteinerTree()
 {
   Flute::free_tree(tree_);
-}
-
-bool
-SteinerTree::isPlaced(const dbNetwork *network) const
-{
-  for (auto pin : pins_) {
-    if (pinIsPlaced(pin, network))
-      return true;
-  }
-  return false;
 }
 
 int

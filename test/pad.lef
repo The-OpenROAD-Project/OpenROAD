@@ -16,10 +16,18 @@ MACRO PAD
   PIN PAD
     DIRECTION INOUT ;
     USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
   END PAD
   PIN Y
     DIRECTION OUTPUT ;
     USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
   END Y
   PIN TRIEN
     DIRECTION INPUT ;

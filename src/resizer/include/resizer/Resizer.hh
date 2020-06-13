@@ -75,9 +75,11 @@ public:
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const dbNet *net);
-  // Max distance from driver pin to load in meters.
-  double maxLoadManhattenDistance(Pin *drvr_pin);
-  double maxLoadManhattenDistance(Net *net);
+  // Max distance from driver to load (in meters).
+  double maxLoadManhattenDistance(Vertex *drvr);
+  double maxLoadManhattenDistance(const Net *net);
+  void reportLongWires(int count,
+		       int digits);
 
   // Core area (meters).
   double coreArea() const;
@@ -120,6 +122,9 @@ public:
   void repairTieFanout(LibertyPort *tie_port,
 		       double separation, // meters
 		       bool verbose);
+  float bufferWireDelay(LibertyCell *buffer_cell,
+			float wire_length); // meters
+  float findMaxWireLength(LibertyCell *buffer_cell);
 
 protected:
   void init();
@@ -179,12 +184,17 @@ protected:
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
   Requireds pinRequireds(const Pin *pin);
-  float gateDelay(LibertyPort *out_port,
-		  RiseFall *rf,
-		  float load_cap);
+  void gateDelays(LibertyPort *drvr_port,
+		  float load_cap,
+		  // Return values.
+		  ArcDelay delays[RiseFall::index_count]);
   float bufferDelay(LibertyCell *buffer_cell,
 		    RiseFall *rf,
 		    float load_cap);
+  Parasitic *makeWireParasitic(Net *net,
+			       Pin *drvr_pin,
+			       Pin *load_pin,
+			       float wire_length); // meters
   string makeUniqueNetName();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
@@ -200,6 +210,8 @@ protected:
   double area(Cell *cell);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+  float splitWireDelayDiff(float wire_length,
+			   LibertyCell *buffer_cell);
 
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
@@ -259,6 +271,7 @@ protected:
   bool isSpecial(Net *net);
   Point tieLocation(Pin *load,
 		    int separation);
+  bool hasInputPort(SteinerTree *tree);
 
   float wire_res_;
   float wire_cap_;

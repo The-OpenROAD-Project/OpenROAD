@@ -323,39 +323,22 @@ proc repair_tie_fanout { args } {
   }
 }
 
-################################################################
+# defined by swig
+define_cmd_args "report_long_wires" {count}
 
-proc report_long_wires { count } {
-  set nets [lsort -command dist_greater -decreasing [get_nets *]]
-  set count 10
-  puts "Net  length delay"
-  for { set i 0 } { $i < $count } { incr i } {
-    set net [lindex $nets $i]
-    set dist [sta::max_load_manhatten_distance $net]
-    if { $dist > 0 } {
-      set delay [estimate_wire_delay $dist]
-    
-      puts "[get_full_name $net] [sta::format_distance $dist 0] [sta::format_time $delay 3]"
-    }
+proc_redirect report_long_wires {
+  global sta_report_default_digits
+
+  parse_key_args "report_long_wires" args keys {-digits} flags {}
+  
+  set digits $sta_report_default_digits
+  if { [info exists keys(-digits)] } {
+    set digits $keys(-digits)
   }
-}
 
-proc dist_greater { net1 net2 } {
-  set dist1 [sta::max_load_manhatten_distance $net1]
-  set dist2 [sta::max_load_manhatten_distance $net2]
-  if { $dist1 > $dist2 } {
-    return 1
-  } elseif { $dist1 < $dist2 } {
-    return -1
-  } else {
-    return 0
-  }
-}
-
-# wire_length in meters
-proc estimate_wire_delay { wire_length } {
-  return [expr [sta::wire_resistance] * $wire_length \
-	    * [sta::wire_capacitance] * $wire_length * 0.5]
+  sta::check_argc_eq1 "report_long_wires" $args
+  set count [lindex $args 0]
+  report_long_wires_cmd $count $digits
 }
 
 # sta namespace end
