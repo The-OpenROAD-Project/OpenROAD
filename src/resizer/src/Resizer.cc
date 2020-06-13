@@ -1849,8 +1849,8 @@ Resizer::repairHoldResize(Pin *drvr_pin,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairLongWires(float max_length,
-			 LibertyCell *buffer_cell) // meters
+Resizer::repairLongWires(float max_length, // meters
+			 LibertyCell *buffer_cell)
 {
   graph_ = sta_->ensureGraph();
   // Disable incremental timing.
@@ -1863,29 +1863,36 @@ Resizer::repairLongWires(float max_length,
   int repair_count = 0;
   int max_length_dbu = metersToDbu(max_length);
   for (Vertex *drvr : drvrs) {
-    Point drvr_loc = pinLocation(drvr->pin(), db_network_);
-    VertexOutEdgeIterator edge_iter(drvr, graph_);
-    while (edge_iter.hasNext()) {
-      Edge *edge = edge_iter.next();
-      Vertex *load = edge->to(graph_);
-      Point load_loc = pinLocation(load->pin(), db_network_);
-      float length = Point::manhattanDistance(load_loc, drvr_loc);
-      if (length > max_length_dbu) {
-	inserted_buffer_count_ += repairLongWire(drvr, load, max_length_dbu,
-						 buffer_cell);
-	repair_count++;
+    if (!drvr->isDisabledConstraint()) {
+      Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+      VertexOutEdgeIterator edge_iter(drvr, graph_);
+      while (edge_iter.hasNext()) {
+	Edge *edge = edge_iter.next();
+	Vertex *load = edge->to(graph_);
+	Pin *drvr_pin = drvr->pin();
+	Pin *load_pin = load->pin();
+	if (!(edge->isDisabledConstraint()
+	      || load->isDisabledConstraint()
+	      || network_->isTopLevelPort(drvr_pin)
+	      || network_->isTopLevelPort(load_pin))) {
+	  Point load_loc = pinLocation(load->pin(), db_network_);
+	  float length = Point::manhattanDistance(load_loc, drvr_loc);
+	  if (length > max_length_dbu) {
+	    repairLongWire(drvr, load, max_length_dbu, buffer_cell);
+	    repair_count++;
+	  }
+	  else
+	    // Drivers are sorted so we are done.
+	    break;
+	}
       }
-      else
-	// Drivers are sorted so we are done.
-	break;
     }
   }
-  printf("Inserted %d buffers in %d long wires.\n",
-	 inserted_buffer_count_,
-	 repair_count);
+  printf("Repaired %d long wires.\n", repair_count);
+  printf("Inserted %d buffers.\n", inserted_buffer_count_);
 }
 
-int
+void
 Resizer::repairLongWire(Vertex *drvr,
 			Vertex *load,
 			int max_length_dbu,
@@ -1901,59 +1908,55 @@ Resizer::repairLongWire(Vertex *drvr,
     LibertyPort *buffer_input_port, *buffer_output_port;
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
-    if (!network_->isTopLevelPort(drvr_pin)
-	&& !network_->isTopLevelPort(load_pin)) {
-      debugPrint3(debug_, "repair_wire", 1, "%s -> %s %s\n",
-		  sdc_network_->pathName(drvr_pin),
-		  sdc_network_->pathName(load_pin),
-		  units_->distanceUnit()->asString(dbuToMeters(length)));
+    debugPrint3(debug_, "repair_wire", 1, "%s -> %s %s\n",
+		sdc_network_->pathName(drvr_pin),
+		sdc_network_->pathName(load_pin),
+		units_->distanceUnit()->asString(dbuToMeters(length), 0));
 
-      Net *net = network_->net(drvr_pin);
-      Instance *parent = db_network_->topInstance();
-      int spacing = length / (buffer_count + 1);
-      int drvr_x = drvr_loc.getX();
-      int drvr_y = drvr_loc.getY();
-      double dx = load_loc.getX() - drvr_x;
-      double dy = load_loc.getY() - drvr_y;
-      int space_x = spacing * dx / length;
-      int space_y = spacing * dy / length;
-      Net *prev_net = net;
-      for (int i = 0; i < buffer_count; i++) {
-	string buffer_name = makeUniqueInstName("wire");
-	string buffer_out_name = makeUniqueNetName();
-	Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
-	Instance *buffer = db_network_->makeInstance(buffer_cell,
-						     buffer_name.c_str(),
-						     parent);
-	Point buffer_loc(drvr_x + (i + 1) * space_x,
-			 drvr_y + (i + 1) * space_y);
-	setLocation(buffer, buffer_loc);
-	design_area_ += area(db_network_->cell(buffer_cell));
-	inserted_buffer_count_++;
+    Net *net = network_->net(drvr_pin);
+    Instance *parent = db_network_->topInstance();
+    int spacing = length / (buffer_count + 1);
+    int drvr_x = drvr_loc.getX();
+    int drvr_y = drvr_loc.getY();
+    double dx = load_loc.getX() - drvr_x;
+    double dy = load_loc.getY() - drvr_y;
+    int space_x = spacing * dx / length;
+    int space_y = spacing * dy / length;
+    Net *prev_net = net;
+    for (int i = 0; i < buffer_count; i++) {
+      string buffer_name = makeUniqueInstName("wire");
+      string buffer_out_name = makeUniqueNetName();
+      Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+      Instance *buffer = db_network_->makeInstance(buffer_cell,
+						   buffer_name.c_str(),
+						   parent);
+      Point buffer_loc(drvr_x + (i + 1) * space_x,
+		       drvr_y + (i + 1) * space_y);
+      setLocation(buffer, buffer_loc);
+      design_area_ += area(db_network_->cell(buffer_cell));
+      inserted_buffer_count_++;
 
-	sta_->connectPin(buffer, buffer_input_port, prev_net);
-	sta_->connectPin(buffer, buffer_output_port, buffer_out);
+      sta_->connectPin(buffer, buffer_input_port, prev_net);
+      sta_->connectPin(buffer, buffer_output_port, buffer_out);
 
-	Instance *load_inst = db_network_->instance(load_pin);
-	Port *load_port = db_network_->port(load_pin);
-	sta_->disconnectPin(load_pin);
-	sta_->connectPin(load_inst, load_port, buffer_out);
+      Instance *load_inst = db_network_->instance(load_pin);
+      Port *load_port = db_network_->port(load_pin);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load_inst, load_port, buffer_out);
 
-	debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
-		    buffer_name.c_str(),
-		    units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getX()), 0),
-		    units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getY()), 0));
-	if (have_estimated_parasitics_)
-	  estimateWireParasitic(prev_net);
-	prev_net = buffer_out;
-      }
-      if (have_estimated_parasitics_) {
+      debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
+		  buffer_name.c_str(),
+		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getX()), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getY()), 0));
+      if (have_estimated_parasitics_)
 	estimateWireParasitic(prev_net);
-	estimateWireParasitic(net);
-      }
+      prev_net = buffer_out;
+    }
+    if (have_estimated_parasitics_) {
+      estimateWireParasitic(prev_net);
+      estimateWireParasitic(net);
     }
   }
-  return buffer_count;
 }
 
 void

@@ -284,10 +284,10 @@ protected:
   Point tieLocation(Pin *load,
 		    int separation);
   bool hasInputPort(SteinerTree *tree);
-  int repairLongWire(Vertex *drvr,
-		     Vertex *load,
-		     int max_length_dbu,
-		     LibertyCell *buffer_cell);
+  void repairLongWire(Vertex *drvr,
+		      Vertex *load,
+		      int max_length_dbu,
+		      LibertyCell *buffer_cell);
 
   float wire_res_;
   float wire_cap_;
