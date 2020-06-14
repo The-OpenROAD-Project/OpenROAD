@@ -48,7 +48,7 @@ testdir=$2
 
 $binary -no_init < run.tcl > test.log 2>&1
 
-report=$(grep -e '---- #Tapcells inserted:' ./test.log)
+report=$(grep -e '[INFO] #Tapcells inserted:' ./test.log)
 
 mkdir -p ../../results/test_rows_origin/
 cp test.log ../../results/test_rows_origin/tapcell.log
