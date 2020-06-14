@@ -354,9 +354,11 @@ proc report_floating_nets { args } {
 define_cmd_args "report_long_wires" {count}
 
 proc_redirect report_long_wires {
+  global sta_report_default_digits
+
   parse_key_args "report_long_wires" args keys {-digits} flags {}
   
-  set digits 0
+  set digits $sta_report_default_digits
   if { [info exists keys(-digits)] } {
     set digits $keys(-digits)
   }

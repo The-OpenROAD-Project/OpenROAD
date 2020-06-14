@@ -1974,7 +1974,7 @@ Resizer::reportLongWires(int count,
     float delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
     report_->print("%s %s %s\n",
 		   sdc_network_->pathName(drvr_pin),
-		   units_->distanceUnit()->asString(wire_length, digits),
+		   units_->distanceUnit()->asString(wire_length, 0),
 		   units_->timeUnit()->asString(delay, digits));
   }
 }

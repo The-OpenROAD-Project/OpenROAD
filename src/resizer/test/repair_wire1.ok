@@ -33,17 +33,17 @@ Path Type: max
 
 
 Driver    length delay
-u3/Z 1501.10 0.21
-u2/Z 1499.76 0.21
+u3/Z 1501 0.21
+u2/Z 1500 0.21
 max wire length 754
 max slew wire length 1124
 Repaired 1 long wires.
 Inserted 1 buffers.
 Driver    length delay
-u3/Z 1501.10 0.21
-u2/Z 750.52 0.05
-wire1/Z 750.13 0.05
-in1 0.66 0.00
+u3/Z 1501 0.21
+u2/Z 751 0.05
+wire1/Z 750 0.05
+in1 1 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
