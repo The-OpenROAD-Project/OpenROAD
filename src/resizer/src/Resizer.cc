@@ -1123,6 +1123,8 @@ Resizer::deleteRebufferOptions()
 
 ////////////////////////////////////////////////////////////////
 
+bool use_rebuffer = false;
+
 // Assumes resizePreamble has been called.
 void
 Resizer::repairMaxCap(LibertyCell *buffer_cell)
@@ -1151,17 +1153,21 @@ Resizer::repairMaxCap(LibertyCell *buffer_cell)
       sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(), 
 			     ignore_corner, ignore_rf, cap, limit, slack);
       if (slack < 0.0 && limit > 0.0) {
-	float limit_ratio = cap / limit;
 	violation_count++;
 	repaired_net_count++;
 	Pin *drvr_pin = vertex->pin();
-	int buffer_count = ceil(limit_ratio);
-	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
-	bufferLoads(drvr_pin, buffer_count, buffer_fanout,
-		    buffer_cell, "max_cap");
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
+	if (use_rebuffer)
+	  rebuffer(drvr_pin, buffer_cell);
+	else {
+	  float limit_ratio = cap / limit;
+	  int buffer_count = ceil(limit_ratio);
+	  int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout,
+		      buffer_cell, "max_cap");
+	  if (overMaxArea()) {
+	    warn("max utilization reached.");
+	    break;
+	  }
 	}
       }
     }
@@ -1221,13 +1227,17 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
       delete pin_iter;
       if (violation) {
 	Pin *drvr_pin = vertex->pin();
-	int buffer_count = ceil(limit_ratio);
-	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
-	bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
-	repaired_net_count++;
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
+	if (use_rebuffer)
+	  rebuffer(drvr_pin, buffer_cell);
+	else {
+	  int buffer_count = ceil(limit_ratio);
+	  int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
+	  repaired_net_count++;
+	  if (overMaxArea()) {
+	    warn("max utilization reached.");
+	    break;
+	  }
 	}
       }
     }
@@ -1268,13 +1278,17 @@ Resizer::repairMaxFanout(LibertyCell *buffer_cell)
 			fanout, max_fanout, slack);
       if (slack < 0.0) {
 	max_fanout_violation_count++;
-	int buffer_count = ceil(fanout / max_fanout);
-	int buffer_fanout = ceil(fanout / static_cast<double>(buffer_count));
-	bufferLoads(drvr_pin, buffer_count, buffer_fanout,
-		    buffer_cell, "max_fanout");
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
+	if (use_rebuffer)
+	  rebuffer(drvr_pin, buffer_cell);
+	else {
+	  int buffer_count = ceil(fanout / max_fanout);
+	  int buffer_fanout = ceil(fanout / static_cast<double>(buffer_count));
+	  bufferLoads(drvr_pin, buffer_count, buffer_fanout,
+		      buffer_cell, "max_fanout");
+	  if (overMaxArea()) {
+	    warn("max utilization reached.");
+	    break;
+	  }
 	}
       }
     }
