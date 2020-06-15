@@ -257,11 +257,11 @@ repair_max_fanout_cmd(LibertyCell *buffer_cell)
 }
 
 void
-resize_instance_to_target_slew(Instance *inst)
+resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(inst);
+  resizer->resizeToTargetSlew(drvr_pin);
 }
 
 // for testing

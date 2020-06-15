@@ -89,9 +89,9 @@ public:
   // Resize all instances in the network.
   // resizerPreamble() required.
   void resizeToTargetSlew();
-  // Resize inst to target slew (for testing).
+  // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
-  void resizeToTargetSlew(Instance *inst);
+  void resizeToTargetSlew(const Pin *drvr_pin);
 
   // Insert buffers to fix max cap violations.
   // resizerPreamble() required.
@@ -227,7 +227,6 @@ protected:
   Point location(Instance *inst);
   void setLocation(Instance *inst,
 		   Point pt);
-  Pin *singleOutputPin(const Instance *inst);
   double area(dbMaster *master);
   double area(Cell *cell);
   double dbuToMeters(int dist) const;
@@ -297,6 +296,7 @@ protected:
   Point tieLocation(Pin *load,
 		    int separation);
   bool hasInputPort(SteinerTree *tree);
+  bool hasFanout(Vertex *drvr);
 
   float wire_res_;
   float wire_cap_;

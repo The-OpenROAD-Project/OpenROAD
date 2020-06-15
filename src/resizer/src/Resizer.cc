@@ -63,7 +63,6 @@
 #include "opendb/dbTransform.h"
 
 // Outstanding issues
-//  Instance levelization and resizing to target slew only support single output gates
 //  multi-corner support?
 //  option to place buffers between driver and load on long wires
 //   to fix max slew/cap violations
@@ -429,16 +428,32 @@ Resizer::resizeToTargetSlew()
   resize_count_ = 0;
   // Resize in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *vertex = level_drvr_verticies_[i];
-    Pin *drvr_pin = vertex->pin();
-    Instance *inst = network_->instance(drvr_pin);
-    resizeToTargetSlew(inst);
-    if (overMaxArea()) {
-      warn("Max utilization reached.");
-      break;
+    Vertex *drvr = level_drvr_verticies_[i];
+      Pin *drvr_pin = drvr->pin();
+      Net *net = network_->net(drvr_pin);
+      Instance *inst = network_->instance(drvr_pin);
+      if (net
+	  && !drvr->isConstant()
+	  && hasFanout(drvr)
+	  // Hands off the clock nets.
+	  && !isClock(net)
+	  // Hands off special nets.
+	  && !isSpecial(net)) {
+      resizeToTargetSlew(drvr_pin);
+      if (overMaxArea()) {
+	warn("Max utilization reached.");
+	break;
+      }
     }
   }
   printf("Resized %d instances.\n", resize_count_);
+}
+
+bool
+Resizer::hasFanout(Vertex *drvr)
+{
+  VertexOutEdgeIterator edge_iter(drvr, graph_);
+  return edge_iter.hasNext();
 }
 
 void
@@ -456,84 +471,52 @@ Resizer::makeEquivCells(LibertyLibrarySeq *resize_libs)
 }
 
 void
-Resizer::resizeToTargetSlew(Instance *inst)
+Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 {
   NetworkEdit *network = networkEdit();
+  Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
   if (cell) {
-    Pin *output = singleOutputPin(inst);
-    // Only resize single output gates for now.
-    if (output) {
-      Net *out_net = network->net(output);
-      if (out_net
-	  // Hands off the clock nets.
-	  && !isClock(out_net)
-	  // Exclude tie hi/low cells.
-	  && !isFuncOneZero(output)
-	  // Hands off special nets.
-	  && !isSpecial(out_net)) {
-	// Includes net parasitic capacitance.
-	float load_cap = graph_delay_calc_->loadCap(output, dcalc_ap_);
-	if (load_cap > 0.0) {
-	  LibertyCell *best_cell = nullptr;
-	  float best_ratio = 0.0;
-	  LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-	  if (equiv_cells) {
-	    for (LibertyCell *target_cell : *equiv_cells) {
-	      if (!dontUse(target_cell)) {
-		float target_load = (*target_load_map_)[target_cell];
-		float ratio = target_load / load_cap;
-		if (ratio > 1.0)
-		  ratio = 1.0 / ratio;
-		if (ratio > best_ratio) {
-		  best_ratio = ratio;
-		  best_cell = target_cell;
-		}
-	      }
+    // Includes net parasitic capacitance.
+    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+    if (load_cap > 0.0) {
+      LibertyCell *best_cell = nullptr;
+      float best_ratio = 0.0;
+      LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+      if (equiv_cells) {
+	for (LibertyCell *target_cell : *equiv_cells) {
+	  if (!dontUse(target_cell)) {
+	    float target_load = (*target_load_map_)[target_cell];
+	    float ratio = target_load / load_cap;
+	    if (ratio > 1.0)
+	      ratio = 1.0 / ratio;
+	    if (ratio > best_ratio) {
+	      best_ratio = ratio;
+	      best_cell = target_cell;
 	    }
-	    if (best_cell && best_cell != cell) {
-	      debugPrint3(debug_, "resizer", 2, "%s %s -> %s\n",
-			  sdc_network_->pathName(inst),
-			  cell->name(),
-			  best_cell->name());
-	      const char *best_cell_name = best_cell->name();
-	      dbMaster *best_master = db_->findMaster(best_cell_name);
-	      // Replace LEF with LEF so ports stay aligned in instance.
-	      if (best_master) {
-		dbInst *dinst = db_network_->staToDb(inst);
-		dbMaster *master = dinst->getMaster();
-		design_area_ -= area(master);
-		Cell *best_cell1 = db_network_->dbToSta(best_master);
-		sta_->replaceCell(inst, best_cell1);
-		resize_count_++;
-		design_area_ += area(best_master);
-	      }
-	    }
+	  }
+	}
+	if (best_cell && best_cell != cell) {
+	  debugPrint3(debug_, "resizer", 2, "%s %s -> %s\n",
+		      sdc_network_->pathName(inst),
+		      cell->name(),
+		      best_cell->name());
+	  const char *best_cell_name = best_cell->name();
+	  dbMaster *best_master = db_->findMaster(best_cell_name);
+	  // Replace LEF with LEF so ports stay aligned in instance.
+	  if (best_master) {
+	    dbInst *dinst = db_network_->staToDb(inst);
+	    dbMaster *master = dinst->getMaster();
+	    design_area_ -= area(master);
+	    Cell *best_cell1 = db_network_->dbToSta(best_master);
+	    sta_->replaceCell(inst, best_cell1);
+	    resize_count_++;
+	    design_area_ += area(best_master);
 	  }
 	}
       }
     }
   }
-}
-
-Pin *
-Resizer::singleOutputPin(const Instance *inst)
-{
-  Pin *output = nullptr;
-  InstancePinIterator *pin_iter = network_->pinIterator(inst);
-  while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
-    if (network_->direction(pin)->isOutput()) {
-      if (output) {
-	// Already found one.
-	delete pin_iter;
-	return nullptr;
-      }
-      output = pin;
-    }
-  }
-  delete pin_iter;
-  return output;
 }
 
 double
