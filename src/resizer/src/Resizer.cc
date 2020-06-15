@@ -1268,7 +1268,7 @@ Resizer::repairMaxFanout(LibertyCell *buffer_cell)
     Net *net = network_->net(drvr_pin);
     // Hands off the clock tree.
     if (!network_->isTopLevelPort(drvr_pin)
-	&& !search_->isClock(vertex)
+	&& !isClock(net)
 	// Exclude tie hi/low cells.
 	&& !isFuncOneZero(drvr_pin)
 	&& net
@@ -1877,28 +1877,26 @@ Resizer::repairLongWires(float max_length, // meters
   int repair_count = 0;
   int max_length_dbu = metersToDbu(max_length);
   for (Vertex *drvr : drvrs) {
-    if (!drvr->isDisabledConstraint()) {
-      Point drvr_loc = pinLocation(drvr->pin(), db_network_);
-      VertexOutEdgeIterator edge_iter(drvr, graph_);
-      while (edge_iter.hasNext()) {
-	Edge *edge = edge_iter.next();
-	Vertex *load = edge->to(graph_);
-	Pin *drvr_pin = drvr->pin();
-	Pin *load_pin = load->pin();
-	if (!(edge->isDisabledConstraint()
-	      || load->isDisabledConstraint()
-	      || network_->isTopLevelPort(drvr_pin)
-	      || network_->isTopLevelPort(load_pin))) {
-	  Point load_loc = pinLocation(load->pin(), db_network_);
-	  float length = Point::manhattanDistance(load_loc, drvr_loc);
-	  if (length > max_length_dbu) {
-	    repairLongWire(drvr, load, max_length_dbu, buffer_cell);
-	    repair_count++;
-	  }
-	  else
-	    // Drivers are sorted so we are done.
-	    break;
+    Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+    VertexOutEdgeIterator edge_iter(drvr, graph_);
+    while (edge_iter.hasNext()) {
+      Edge *edge = edge_iter.next();
+      Vertex *load = edge->to(graph_);
+      Pin *drvr_pin = drvr->pin();
+      Pin *load_pin = load->pin();
+      if (!(edge->isDisabledConstraint()
+	    || load->isDisabledConstraint()
+	    || network_->isTopLevelPort(drvr_pin)
+	    || network_->isTopLevelPort(load_pin))) {
+	Point load_loc = pinLocation(load->pin(), db_network_);
+	float length = Point::manhattanDistance(load_loc, drvr_loc);
+	if (length > max_length_dbu) {
+	  repairLongWire(drvr, load, max_length_dbu, buffer_cell);
+	  repair_count++;
 	}
+	else
+	  // Drivers are sorted so we are done.
+	  break;
       }
     }
   }
@@ -1938,7 +1936,7 @@ Resizer::repairLongWire(Vertex *drvr,
     int space_y = spacing * dy / length;
     Net *prev_net = net;
     for (int i = 0; i < buffer_count; i++) {
-      string buffer_name = makeUniqueInstName("wire");
+      string buffer_name = makeUniqueInstName("repeater");
       string buffer_out_name = makeUniqueNetName();
       Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
       Instance *buffer = db_network_->makeInstance(buffer_cell,
@@ -2006,7 +2004,8 @@ Resizer::findLongWires(VertexSeq &drvrs)
       Net *net = network_->net(pin);
       // Hands off the clock nets.
       if (!isClock(net)
-	  && !vertex->isConstant())
+	  && !vertex->isConstant()
+	  && !vertex->isDisabledConstraint())
 	drvrs.push_back(vertex);
     }
   }
