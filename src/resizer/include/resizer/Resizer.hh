@@ -89,8 +89,12 @@ public:
   double coreArea() const;
   // 0.0 - 1.0 (100%) of core size.
   double utilization();
+  // Maximum utilizable area (core area * utilization)
+  double maxArea() const;
 
-  void setDontUse(LibertyCellSeq *dont_use);
+  void setDontUse(LibertyCellSeq *dont_use);  
+  bool dontUse(LibertyCell *cell);
+
   void setMaxUtilization(double max_utilization);
   void resizePreamble(LibertyLibrarySeq *resize_libs);
   void bufferInputs(LibertyCell *buffer_cell);
@@ -121,6 +125,8 @@ public:
 			    LibertyCell *buffer_cell);
   // Area of the design in meter^2.
   double designArea();
+  // Invalidate incremental designArea
+  void designAreaInvalid();
   // Caller owns return value.
   NetSeq *findFloatingNets();
   void repairTieFanout(LibertyPort *tie_port,
@@ -217,7 +223,6 @@ protected:
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
 			    bool underscore);
-  bool dontUse(LibertyCell *cell);
   bool overMaxArea();
   bool hasTopLevelOutputPort(Net *net);
   Point location(Instance *inst);
@@ -307,6 +312,7 @@ protected:
   Rect core_;
   bool core_exists_;
   double design_area_;
+  double design_area_valid_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;

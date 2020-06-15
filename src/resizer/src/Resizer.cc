@@ -128,7 +128,8 @@ Resizer::Resizer() :
   unique_net_index_(1),
   unique_inst_index_(1),
   resize_count_(0),
-  design_area_(0.0)
+  design_area_(0.0),
+  design_area_valid_(false)
 {
 }
 
@@ -165,6 +166,10 @@ Resizer::utilization()
     return design_area_ / core_area;
   else
     return 1.0;
+}
+double Resizer::maxArea() const
+{
+  return max_area_;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2774,7 +2779,15 @@ double
 Resizer::designArea()
 {
   ensureBlock();
+  if (!design_area_valid_) {
+    design_area_ = findDesignArea();
+  }
   return design_area_;
+}
+
+void
+Resizer::designAreaInvalid() {
+  design_area_valid_ = false;
 }
 
 double
@@ -2785,6 +2798,7 @@ Resizer::findDesignArea()
     dbMaster *master = inst->getMaster();
     design_area += area(master);
   }
+  design_area_valid_ = true;
   return design_area;
 }
 
