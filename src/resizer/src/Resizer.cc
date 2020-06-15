@@ -1938,7 +1938,7 @@ Resizer::repairLongWire(Vertex *drvr,
     int space_y = spacing * dy / length;
     Net *prev_net = net;
     for (int i = 0; i < buffer_count; i++) {
-      string buffer_name = makeUniqueInstName("wire");
+      string buffer_name = makeUniqueInstName("repeater");
       string buffer_out_name = makeUniqueNetName();
       Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
       Instance *buffer = db_network_->makeInstance(buffer_cell,
