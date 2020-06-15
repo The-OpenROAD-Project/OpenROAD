@@ -153,6 +153,7 @@ SteinerTree::setTree(Flute::Tree tree,
     Point loc = pinLocation(pin, network);
     loc_pin_map_[loc] = pin;
     loc_pins_map[loc].push_back(pin);
+    pin_steiner_pt_map_[pin] = i;
   }
   for (int i = 0; i < pin_count; i++) {
     Flute::Branch &branch_pt = tree_.branch[i];
@@ -255,7 +256,7 @@ const char *
 SteinerTree::name(SteinerPt pt,
 		  const Network *network)
 {
-  if (pt == SteinerTree::null_pt)
+  if (pt == null_pt)
     return "NULL";
   else {
     checkSteinerPt(pt);
@@ -278,6 +279,18 @@ SteinerTree::pin(SteinerPt pt) const
 }
 
 SteinerPt
+SteinerTree::steinerPt(Pin *pin) const
+{
+  SteinerPt pt;
+  bool exists;
+  pin_steiner_pt_map_.findKey(pin, pt, exists);
+  if (exists)
+    return pt;
+  else
+    return null_pt;
+}
+
+SteinerPt
 SteinerTree::drvrPt(const Network *network) const
 {
   int pin_count = pinCount();
@@ -286,7 +299,7 @@ SteinerTree::drvrPt(const Network *network) const
     if (network->isDriver(pin))
       return i;
   }
-  return SteinerTree::null_pt;
+  return null_pt;
 }
 
 void
@@ -318,25 +331,25 @@ SteinerTree::findLeftRights(const Network *network)
 {
   Debug *debug = network->debug();
   int branch_count = branchCount();
-  left_.resize(branch_count, SteinerTree::null_pt);
-  right_.resize(branch_count, SteinerTree::null_pt);
-  SteinerPtSeq adj1(branch_count, SteinerTree::null_pt);
-  SteinerPtSeq adj2(branch_count, SteinerTree::null_pt);
-  SteinerPtSeq adj3(branch_count, SteinerTree::null_pt);
+  left_.resize(branch_count, null_pt);
+  right_.resize(branch_count, null_pt);
+  SteinerPtSeq adj1(branch_count, null_pt);
+  SteinerPtSeq adj2(branch_count, null_pt);
+  SteinerPtSeq adj3(branch_count, null_pt);
   for (int i = 0; i < branch_count; i++) {
     Flute::Branch &branch_pt = tree_.branch[i];
     SteinerPt j = branch_pt.n;
     if (j != i) {
-      if (adj1[i] == SteinerTree::null_pt)
+      if (adj1[i] == null_pt)
 	adj1[i] = j;
-      else if (adj2[i] == SteinerTree::null_pt)
+      else if (adj2[i] == null_pt)
 	adj2[i] = j;
       else
 	adj3[i] = j;
 
-      if (adj1[j] == SteinerTree::null_pt)
+      if (adj1[j] == null_pt)
 	adj1[j] = i;
-      else if (adj2[j] == SteinerTree::null_pt)
+      else if (adj2[j] == null_pt)
 	adj2[j] = i;
       else
 	adj3[j] = i;
@@ -346,11 +359,11 @@ SteinerTree::findLeftRights(const Network *network)
     printf("adjacent\n");
     for (int i = 0; i < branch_count; i++) {
       printf("%d:", i);
-      if (adj1[i] != SteinerTree::null_pt)
+      if (adj1[i] != null_pt)
 	printf(" %d", adj1[i]);
-      if (adj2[i] != SteinerTree::null_pt)
+      if (adj2[i] != null_pt)
 	printf(" %d", adj2[i]);
-      if (adj3[i] != SteinerTree::null_pt)
+      if (adj3[i] != null_pt)
 	printf(" %d", adj3[i]);
       printf("\n");
     }
@@ -387,14 +400,14 @@ SteinerTree::findLeftRights(SteinerPt from,
 			    SteinerPtSeq &adj2,
 			    SteinerPtSeq &adj3)
 {
-  if (adj != from && adj != SteinerTree::null_pt) {
+  if (adj != from && adj != null_pt) {
     if (adj == to)
       internalError("steiner left/right failed");
-    if (left_[to] == SteinerTree::null_pt) {
+    if (left_[to] == null_pt) {
       left_[to] = adj;
       findLeftRights(to, adj, adj1, adj2, adj3);
     }
-    else if (right_[to] == SteinerTree::null_pt) {
+    else if (right_[to] == null_pt) {
       right_[to] = adj;
       findLeftRights(to, adj, adj1, adj2, adj3);
     }
@@ -414,7 +427,8 @@ SteinerTree::right(SteinerPt pt)
 }
 
 void
-SteinerTree::dumpSVG(const Network *network, const std::string& fileName)
+SteinerTree::writeSVG(const Network *network,
+		      const char *filename)
 {
   // compute bbox of pins
   odb::Rect bbox;
@@ -428,40 +442,41 @@ SteinerTree::dumpSVG(const Network *network, const std::string& fileName)
   const int sz = std::max(std::max(bbox.dx(), bbox.dy()) / 400, 1u);
   const int hsz = sz / 2;
 
-  FILE* f = fopen(fileName.c_str(), "w");
-  fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-          "viewBox=\"%d %d %d %d\">\n",
-          bbox.xMin(), bbox.yMin(),
-          bbox.dx(), bbox.dy());
+  FILE* stream = fopen(filename, "w");
+  if (stream) {
+    fprintf(stream, "<svg xmlns=\"http://www.w3.org/2000/svg\" "
+	    "viewBox=\"%d %d %d %d\">\n",
+	    bbox.xMin(), bbox.yMin(),
+	    bbox.dx(), bbox.dy());
 
-  // Draw the pins
-  for (auto& loc_pin : loc_pin_map_) {
-    Point pt = loc_pin.first;
+    // Draw the pins
+    for (auto& loc_pin : loc_pin_map_) {
+      Point pt = loc_pin.first;
 
-    fprintf(f, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" "
-            "style=\"fill: %s\"/>\n",
-            (pt.getX() - hsz), (pt.getY() - hsz), sz, sz,
-            network->isLoad(loc_pin.second) ? "green" : "red");
+      fprintf(stream, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" "
+	      "style=\"fill: %s\"/>\n",
+	      (pt.getX() - hsz), (pt.getY() - hsz), sz, sz,
+	      network->isLoad(loc_pin.second) ? "green" : "red");
+    }
+
+    // Draw the edges
+    for (int i = 0 ; i < branchCount(); ++i) {
+      Point pt1, pt2;
+      Pin *pin1, *pin2;
+      int steiner_pt1, steiner_pt2;
+      int wire_length;
+      branch(i, pt1, pin1, steiner_pt1, pt2, pin2, steiner_pt2, wire_length);
+
+      fprintf(stream, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
+	      "style=\"stroke: black; stroke-width: %d\"/>\n",
+	      pt1.getX(), pt1.getY(), pt2.getX(), pt2.getY(), hsz/2);
+    }
+
+    fprintf(stream, "</svg>\n");
+    fclose(stream);
   }
-
-  // Draw the edges
-  for (int i = 0 ; i < branchCount(); ++i) {
-    Point pt1;
-    Pin *pin1;
-    int steiner_pt1;
-    Point pt2;
-    Pin *pin2;
-    int steiner_pt2;
-    int wire_length;
-    branch(i, pt1, pin1, steiner_pt1, pt2, pin2, steiner_pt2, wire_length);
-
-    fprintf(f, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
-            "style=\"stroke: black; stroke-width: %d\"/>\n",
-            pt1.getX(), pt1.getY(), pt2.getX(), pt2.getY(), hsz/2);
-  }
-
-  fprintf(f, "</svg>\n");
-  fclose(f);
+  else
+    printf("Error: could not open %s\n", filename);
 }
 
 }

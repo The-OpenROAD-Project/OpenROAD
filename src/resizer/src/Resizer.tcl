@@ -253,6 +253,61 @@ proc repair_max_fanout { args } {
   repair_max_fanout_cmd $buffer_cell
 }
 
+define_cmd_args "repair_long_wires" {[-max_length max_length|-max_slew max_slew]\
+				       -buffer_cell buffer_cell}
+
+
+proc repair_long_wires { args } {
+  parse_key_args "repair_long_wires" args \
+    keys {-max_length -max_slew -buffer_cell} \
+    flags {}
+  
+  if { [info exists keys(-max_length)] } {
+    set max_length $keys(-max_length)
+    check_positive_float "-max_length" $max_length
+    set max_length [sta::distance_ui_sta $max_length]
+  }
+  
+  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-max_slew)] } {
+    set max_slew $keys(-max_slew)
+    check_positive_float "-max_slew" $max_slew
+    set max_length [find_max_slew_wire_length $max_slew $buffer_cell]
+    puts "Using wire length [sta::format_distance $max_length 0]."
+  }
+
+  check_argc_eq0 "repair_long_wires" $args
+  repair_long_wires_cmd $max_length $buffer_cell
+}
+
+define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
+
+proc repair_tie_fanout { args } {
+  parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
+    flags {-verbose}
+  
+  if { [info exists keys(-max_fanout)] } {
+    ord::warn "-max_fanout is deprecated."
+  }
+  
+  set separation 0
+  if { [info exists keys(-separation)] } {
+    set separation $keys(-separation)
+    check_positive_float "-separation" $separation
+    set separation [sta::distance_ui_sta $separation]
+  }
+  set verbose [info exists flags(-verbose)]
+  
+  check_argc_eq1 "repair_tie_fanout" $args
+  set lib_port [lindex $args 0]
+  if { ![is_object $lib_port] } {
+    set lib_port [get_lib_pins [lindex $args 0]]
+  }
+  if { $lib_port != "NULL" } {
+    repair_tie_fanout_cmd $lib_port $separation $verbose
+  }
+}
+
 define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
 					    [-max_utilization util]}
 
@@ -292,34 +347,6 @@ proc report_floating_nets { args } {
 	puts " [get_full_name $net]"
       }
     }
-  }
-}
-
-define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
-
-proc repair_tie_fanout { args } {
-  parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
-    flags {-verbose}
-  
-  if { [info exists keys(-max_fanout)] } {
-    ord::warn "-max_fanout is deprecated."
-  }
-  
-  set separation 0
-  if { [info exists keys(-separation)] } {
-    set separation $keys(-separation)
-    check_positive_float "-separation" $separation
-    set separation [sta::distance_ui_sta $separation]
-  }
-  set verbose [info exists flags(-verbose)]
-  
-  check_argc_eq1 "repair_tie_fanout" $args
-  set lib_port [lindex $args 0]
-  if { ![is_object $lib_port] } {
-    set lib_port [get_lib_pins [lindex $args 0]]
-  }
-  if { $lib_port != "NULL" } {
-    repair_tie_fanout_cmd $lib_port $separation $verbose
   }
 }
 

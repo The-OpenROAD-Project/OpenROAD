@@ -78,8 +78,12 @@ public:
   // Max distance from driver to load (in meters).
   double maxLoadManhattenDistance(Vertex *drvr);
   double maxLoadManhattenDistance(const Net *net);
+  void repairLongWires(float max_length, // meters
+		       LibertyCell *buffer_cell);
   void reportLongWires(int count,
 		       int digits);
+  void writeNetSVG(Net *net,
+		   const char *filename);
 
   // Core area (meters).
   double coreArea() const;
@@ -122,9 +126,13 @@ public:
   void repairTieFanout(LibertyPort *tie_port,
 		       double separation, // meters
 		       bool verbose);
-  float bufferWireDelay(LibertyCell *buffer_cell,
-			float wire_length); // meters
+  void bufferWireDelay(LibertyCell *buffer_cell,
+		       float wire_length, // meters
+		       Delay &delay,
+		       Slew &slew);
   float findMaxWireLength(LibertyCell *buffer_cell);
+  float findMaxSlewWireLength(float max_slew,
+			      LibertyCell *buffer_cell);
 
 protected:
   void init();
@@ -160,6 +168,16 @@ protected:
 				   const Net *net,
 				   const Pin *pin,
 				   int steiner_pt);
+  void findLongWires(VertexSeq &drvrs);
+  void findLongWiresSteiner(VertexSeq &drvrs);
+  int findMaxSteinerDist(Vertex *drvr);
+  int findMaxSteinerDist(SteinerTree *tree,
+			 SteinerPt pt,
+			 int dist_from_drvr);
+  void repairLongWire(Vertex *drvr,
+		      Vertex *load,
+		      int max_length_dbu,
+		      LibertyCell *buffer_cell);
 
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
@@ -212,6 +230,9 @@ protected:
   int metersToDbu(double dist) const;
   float splitWireDelayDiff(float wire_length,
 			   LibertyCell *buffer_cell);
+  float maxSlewWireDiff(float wire_length,
+			float max_slew,
+			LibertyCell *buffer_cell);
 
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,

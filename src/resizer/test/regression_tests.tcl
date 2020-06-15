@@ -31,5 +31,6 @@ record_tests {
   gcd_resize
 }
 # injured reserve
+#  repair_wire1
 #  repair_max_slew3
 
