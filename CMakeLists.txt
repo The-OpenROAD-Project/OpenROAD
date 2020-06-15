@@ -35,7 +35,7 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 cmake_policy(SET CMP0077 NEW)
 endif()
 
-project(OpenROAD VERSION 1.1.0
+project(OpenROAD VERSION 0.9.0
   LANGUAGES CXX
 )
 
