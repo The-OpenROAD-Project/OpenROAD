@@ -110,6 +110,7 @@ public:
   const char *name(SteinerPt pt,
 		   const Network *network);
   Pin *pin(SteinerPt pt) const;
+  SteinerPt steinerPt(Pin *pin) const;
   bool isLoad(SteinerPt pt,
 	      const Network *network);
   Point location(SteinerPt pt) const;
@@ -119,9 +120,9 @@ public:
   void setTree(Flute::Tree tree,
 	       const dbNetwork *network);
   void setHasInputPort(bool input_port);
-  static SteinerPt null_pt;
   void writeSVG(const Network *network,
 		const char *filename);
+  static SteinerPt null_pt;
 
 protected:
   void findLeftRights(SteinerPt from,
@@ -141,6 +142,8 @@ protected:
   PinSeq pins_;
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;
+  // pin -> steiner pt index
+  UnorderedMap<Pin*, int> pin_steiner_pt_map_;
   // location -> pin (any pin if there are multiple at the location).
   UnorderedMap<Point, Pin*, PointHash, PointEqual> loc_pin_map_;
   SteinerPtSeq left_;

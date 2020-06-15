@@ -169,6 +169,15 @@ protected:
 				   const Pin *pin,
 				   int steiner_pt);
   void findLongWires(VertexSeq &drvrs);
+  void findLongWiresSteiner(VertexSeq &drvrs);
+  int findMaxSteinerDist(Vertex *drvr);
+  int findMaxSteinerDist(SteinerTree *tree,
+			 SteinerPt pt,
+			 int dist_from_drvr);
+  void repairLongWire(Vertex *drvr,
+		      Vertex *load,
+		      int max_length_dbu,
+		      LibertyCell *buffer_cell);
 
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
@@ -284,10 +293,6 @@ protected:
   Point tieLocation(Pin *load,
 		    int separation);
   bool hasInputPort(SteinerTree *tree);
-  void repairLongWire(Vertex *drvr,
-		      Vertex *load,
-		      int max_length_dbu,
-		      LibertyCell *buffer_cell);
 
   float wire_res_;
   float wire_cap_;

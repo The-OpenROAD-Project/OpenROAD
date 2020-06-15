@@ -1971,10 +1971,12 @@ Resizer::reportLongWires(int count,
     Vertex *drvr = drvrs[i];
     Pin *drvr_pin = drvr->pin();
     float wire_length = maxLoadManhattenDistance(drvr);
+    float steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
     float delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
-    report_->print("%s %s %s\n",
+    report_->print("%s manhtn %s steiner %s %s\n",
 		   sdc_network_->pathName(drvr_pin),
 		   units_->distanceUnit()->asString(wire_length, 0),
+		   units_->distanceUnit()->asString(steiner_length, 0),
 		   units_->timeUnit()->asString(delay, digits));
   }
 }
@@ -1999,6 +2001,75 @@ Resizer::findLongWires(VertexSeq &drvrs)
 		return maxLoadManhattenDistance(drvr1)
 		  > maxLoadManhattenDistance(drvr2);
 	      });
+}
+
+typedef std::pair<Vertex*, int> DrvrDist;
+
+void
+Resizer::findLongWiresSteiner(VertexSeq &drvrs)
+{
+  Vector<DrvrDist> drvr_dists;
+  VertexIterator vertex_iter(graph_);
+  while (vertex_iter.hasNext()) {
+    Vertex *vertex = vertex_iter.next();
+    if (vertex->isDriver(network_)) {
+      Pin *pin = vertex->pin();
+      Net *net = network_->net(pin);
+      // Hands off the clock nets.
+      if (!isClock(net)
+	  && !vertex->isConstant())
+	drvr_dists.push_back(DrvrDist(vertex, findMaxSteinerDist(vertex)));
+    }
+  }
+  sort(drvr_dists, [this](const DrvrDist &drvr_dist1,
+			 const DrvrDist &drvr_dist2) {
+		    return drvr_dist1.second > drvr_dist2.second;
+		  });
+  drvrs.reserve(drvr_dists.size());
+  for (DrvrDist &drvr_dist : drvr_dists)
+    drvrs.push_back(drvr_dist.first);
+}
+
+// Find the maximum distance along steiner tree branches from
+// the driver to loads in dbu.
+int
+Resizer::findMaxSteinerDist(Vertex *drvr)
+{
+  Pin *pin = drvr->pin();
+  Net *net = network_->net(pin);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  if (tree) {
+    SteinerPt drvr_pt = tree->drvrPt(db_network_);
+    return findMaxSteinerDist(tree, drvr_pt, 0);
+  }
+  return 0;
+}
+
+// DFS of steiner tree.
+int
+Resizer::findMaxSteinerDist(SteinerTree *tree,
+			    SteinerPt pt,
+			    int dist_from_drvr)
+{
+  Pin *pin = tree->pin(pt);
+  if (pin && db_network_->isLoad(pin))
+    return dist_from_drvr;
+  else {
+    Point loc = tree->location(pt);
+    SteinerPt left = tree->left(pt);
+    int left_max = 0;
+    if (left != SteinerTree::null_pt) {
+      int left_dist = Point::manhattanDistance(loc, tree->location(left));
+      left_max = findMaxSteinerDist(tree, left, dist_from_drvr + left_dist);
+    }
+    SteinerPt right = tree->right(pt);
+    int right_max = 0;
+    if (right != SteinerTree::null_pt) {
+      int right_dist = Point::manhattanDistance(loc, tree->location(right));
+      right_max = findMaxSteinerDist(tree, right, dist_from_drvr + right_dist);
+    }
+    return max(left_max, right_max);
+  }
 }
 
 double
