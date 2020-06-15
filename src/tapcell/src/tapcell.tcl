@@ -349,8 +349,8 @@ namespace eval tapcell {
             foreach row_blockage $row_blockages {
                 set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
                 set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
-                if {($x + $master_width) >= ($row_blockage_llx - $endcapwidth) && \
-                     $x <= ($row_blockage_urx + $endcapwidth)} {
+                if {($x + $master_width) > ($row_blockage_llx - $endcapwidth) && \
+                     $x < ($row_blockage_urx + $endcapwidth)} {
                     return true
                 }
             }
