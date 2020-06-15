@@ -1837,14 +1837,14 @@ Resizer::repairHoldResize(Pin *drvr_pin,
   // Equiv cells are sorted by drive strength.
   // If inst_cell is the first equiv it is already the lowest drive option.
   if (found_cell && i > 0) {
-    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
-    float drive_res = cellDriveResistance(inst_cell);
-    float rc_delay0 = drive_res * load_cap;
+    double load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+    double drive_res = cellDriveResistance(inst_cell);
+    double rc_delay0 = drive_res * load_cap;
     // Downsize until RC delay > hold violation.
     for (int k = i - 1; k >= 0; k--) {
       LibertyCell *equiv = (*equiv_cells)[k];
-      float drive_res = cellDriveResistance(equiv);
-      float rc_delay = drive_res * load_cap;
+      double drive_res = cellDriveResistance(equiv);
+      double rc_delay = drive_res * load_cap;
       if (rc_delay - rc_delay0 > -hold_slack
 	  // Last chance baby.
 	  || k == 0) {
@@ -1889,7 +1889,7 @@ Resizer::repairLongWires(float max_length, // meters
 	    || network_->isTopLevelPort(drvr_pin)
 	    || network_->isTopLevelPort(load_pin))) {
 	Point load_loc = pinLocation(load->pin(), db_network_);
-	float length = Point::manhattanDistance(load_loc, drvr_loc);
+	int length = Point::manhattanDistance(load_loc, drvr_loc);
 	if (length > max_length_dbu) {
 	  repairLongWire(drvr, load, max_length_dbu, buffer_cell);
 	  repair_count++;
@@ -1982,9 +1982,9 @@ Resizer::reportLongWires(int count,
   for (int i = 0; i < count && i < drvrs.size(); i++) {
     Vertex *drvr = drvrs[i];
     Pin *drvr_pin = drvr->pin();
-    float wire_length = maxLoadManhattenDistance(drvr);
-    float steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
-    float delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
+    double wire_length = maxLoadManhattenDistance(drvr);
+    double steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
+    double delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
     report_->print("%s manhtn %s steiner %s %s\n",
 		   sdc_network_->pathName(drvr_pin),
 		   units_->distanceUnit()->asString(wire_length, 0),
