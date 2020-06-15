@@ -369,7 +369,7 @@ buffer_wire_delay(LibertyCell *buffer_cell,
   return delay;
 }
 
-float
+double
 find_max_wire_length(LibertyCell *buffer_cell)
 {
   ensureLinked();
@@ -377,7 +377,7 @@ find_max_wire_length(LibertyCell *buffer_cell)
   return resizer->findMaxWireLength(buffer_cell);
 }
 
-float
+double
 find_max_slew_wire_length(float max_slew,
 			  LibertyCell *buffer_cell)
 {

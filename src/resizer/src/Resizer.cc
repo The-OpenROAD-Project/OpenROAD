@@ -1863,7 +1863,7 @@ Resizer::repairHoldResize(Pin *drvr_pin,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairLongWires(float max_length, // meters
+Resizer::repairLongWires(double max_length, // meters
 			 LibertyCell *buffer_cell)
 {
   graph_ = sta_->ensureGraph();
@@ -1876,6 +1876,7 @@ Resizer::repairLongWires(float max_length, // meters
   findLongWires(drvrs);
   int repair_count = 0;
   int max_length_dbu = metersToDbu(max_length);
+  bool drvr_has_long_wire = false; 
   for (Vertex *drvr : drvrs) {
     Point drvr_loc = pinLocation(drvr->pin(), db_network_);
     VertexOutEdgeIterator edge_iter(drvr, graph_);
@@ -1884,21 +1885,22 @@ Resizer::repairLongWires(float max_length, // meters
       Vertex *load = edge->to(graph_);
       Pin *drvr_pin = drvr->pin();
       Pin *load_pin = load->pin();
-      if (!(edge->isDisabledConstraint()
-	    || load->isDisabledConstraint()
-	    || network_->isTopLevelPort(drvr_pin)
-	    || network_->isTopLevelPort(load_pin))) {
-	Point load_loc = pinLocation(load->pin(), db_network_);
-	int length = Point::manhattanDistance(load_loc, drvr_loc);
-	if (length > max_length_dbu) {
+      Point load_loc = pinLocation(load->pin(), db_network_);
+      int length_dbu = Point::manhattanDistance(load_loc, drvr_loc);
+      if (length_dbu > max_length_dbu) {
+        drvr_has_long_wire = true;
+	if (!(edge->isDisabledConstraint()
+	      || load->isDisabledConstraint()
+	      || network_->isTopLevelPort(drvr_pin)
+	      || network_->isTopLevelPort(load_pin))) {
 	  repairLongWire(drvr, load, max_length_dbu, buffer_cell);
 	  repair_count++;
 	}
-	else
-	  // Drivers are sorted so we are done.
-	  break;
       }
     }
+    if (!drvr_has_long_wire)
+      // Drivers are sorted so we are done.
+      break;
   }
   printf("Repaired %d long wires.\n", repair_count);
   printf("Inserted %d buffers.\n", inserted_buffer_count_);
@@ -1960,12 +1962,15 @@ Resizer::repairLongWire(Vertex *drvr,
 		  buffer_name.c_str(),
 		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getX()), 0),
 		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getY()), 0));
-      if (have_estimated_parasitics_)
+      if (have_estimated_parasitics_
+	  // Wait to the end to do the driver net so it isn't N^2 in fanout.
+	  && prev_net != net)
 	estimateWireParasitic(prev_net);
       prev_net = buffer_out;
     }
     if (have_estimated_parasitics_) {
-      estimateWireParasitic(prev_net);
+      if (prev_net != net)
+	estimateWireParasitic(prev_net);
       estimateWireParasitic(net);
     }
   }
@@ -1982,20 +1987,25 @@ Resizer::reportLongWires(int count,
   for (int i = 0; i < count && i < drvrs.size(); i++) {
     Vertex *drvr = drvrs[i];
     Pin *drvr_pin = drvr->pin();
-    double wire_length = maxLoadManhattenDistance(drvr);
-    double steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
-    double delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
-    report_->print("%s manhtn %s steiner %s %s\n",
-		   sdc_network_->pathName(drvr_pin),
-		   units_->distanceUnit()->asString(wire_length, 0),
-		   units_->distanceUnit()->asString(steiner_length, 0),
-		   units_->timeUnit()->asString(delay, digits));
+    if (!network_->isTopLevelPort(drvr_pin)) {
+      double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
+      double steiner_length = dbuToMeters(findMaxSteinerDist(drvr));
+      double delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
+      report_->print("%s manhtn %s steiner %s %s\n",
+		     sdc_network_->pathName(drvr_pin),
+		     units_->distanceUnit()->asString(wire_length, 0),
+		     units_->distanceUnit()->asString(steiner_length, 0),
+		     units_->timeUnit()->asString(delay, digits));
+    }
   }
 }
+
+typedef std::pair<Vertex*, int> DrvrDist;
 
 void
 Resizer::findLongWires(VertexSeq &drvrs)
 {
+  Vector<DrvrDist> drvr_dists;
   VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     Vertex *vertex = vertex_iter.next();
@@ -2006,17 +2016,17 @@ Resizer::findLongWires(VertexSeq &drvrs)
       if (!isClock(net)
 	  && !vertex->isConstant()
 	  && !vertex->isDisabledConstraint())
-	drvrs.push_back(vertex);
+	drvr_dists.push_back(DrvrDist(vertex, maxLoadManhattenDistance(vertex)));
     }
   }
-  sort(drvrs, [this](Vertex *drvr1,
-		     Vertex *drvr2) {
-		return maxLoadManhattenDistance(drvr1)
-		  > maxLoadManhattenDistance(drvr2);
-	      });
+  sort(drvr_dists, [this](const DrvrDist &drvr_dist1,
+			 const DrvrDist &drvr_dist2) {
+		    return drvr_dist1.second > drvr_dist2.second;
+		  });
+  drvrs.reserve(drvr_dists.size());
+  for (DrvrDist &drvr_dist : drvr_dists)
+    drvrs.push_back(drvr_dist.first);
 }
-
-typedef std::pair<Vertex*, int> DrvrDist;
 
 void
 Resizer::findLongWiresSteiner(VertexSeq &drvrs)
@@ -2053,7 +2063,9 @@ Resizer::findMaxSteinerDist(Vertex *drvr)
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree) {
     SteinerPt drvr_pt = tree->drvrPt(db_network_);
-    return findMaxSteinerDist(tree, drvr_pt, 0);
+    int dist = findMaxSteinerDist(tree, drvr_pt, 0);
+    delete tree;
+    return dist;
   }
   return 0;
 }
@@ -2089,35 +2101,34 @@ double
 Resizer::maxLoadManhattenDistance(const Net *net)
 {
   NetPinIterator *pin_iter = network_->pinIterator(net);
-  double max_dist = -INF;
+  int max_dist = 0;
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     if (network_->isDriver(pin)) {
       Vertex *drvr = graph_->pinDrvrVertex(pin);
       if (drvr) {
-	double dist = maxLoadManhattenDistance(drvr);
+	int dist = maxLoadManhattenDistance(drvr);
 	max_dist = max(max_dist, dist);
       }
     }
   }
-  return max_dist;
+  return dbuToMeters(max_dist);
 }
 
-double
+int
 Resizer::maxLoadManhattenDistance(Vertex *drvr)
 {
-  int64_t max_dist = 0;
+  int max_dist = 0;
   Point drvr_loc = pinLocation(drvr->pin(), db_network_);
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   while (edge_iter.hasNext()) {
     Edge *edge = edge_iter.next();
     Vertex *load = edge->to(graph_);
     Point load_loc = pinLocation(load->pin(), db_network_);
-    int64_t dist = Point::manhattanDistance(drvr_loc, load_loc);
-    if (dist > max_dist)
-      max_dist = dist;
+    int dist = Point::manhattanDistance(drvr_loc, load_loc);
+    max_dist = max(max_dist, dist);
   }
-  return dbuToMeters(max_dist);
+  return max_dist;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2587,23 +2598,21 @@ Resizer::gateDelays(LibertyPort *drvr_port,
 
 ////////////////////////////////////////////////////////////////
 
-// Find the max wire length before it is faster to split the wire
-// in half with a buffer.
-float
+double
 Resizer::findMaxWireLength(LibertyCell *buffer_cell)
 {
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
-  float drvr_r = max(drvr_port->driveResistance(RiseFall::rise(), MinMax::max()),
+  double drvr_r = max(drvr_port->driveResistance(RiseFall::rise(), MinMax::max()),
 		     drvr_port->driveResistance(RiseFall::fall(), MinMax::max()));
   // wire_length1 lower bound
   // wire_length2 upper bound
-  float wire_length1 = 0.0;
+  double wire_length1 = 0.0;
   // Initial guess with wire resistance same as driver resistance.
-  float wire_length2 = drvr_r / wire_res_;
-  float tol = .01; // 1%
-  float diff1 = splitWireDelayDiff(wire_length1, buffer_cell);
-  float diff2 = splitWireDelayDiff(wire_length2, buffer_cell);
+  double wire_length2 = drvr_r / wire_res_;
+  double tol = .01; // 1%
+  double diff1 = splitWireDelayDiff(wire_length1, buffer_cell);
+  double diff2 = splitWireDelayDiff(wire_length2, buffer_cell);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
     if (diff2 < 0.0) {
@@ -2613,8 +2622,8 @@ Resizer::findMaxWireLength(LibertyCell *buffer_cell)
       diff2 = splitWireDelayDiff(wire_length2, buffer_cell);
     }
     else {
-      float wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      float diff3 = splitWireDelayDiff(wire_length3, buffer_cell);
+      double wire_length3 = (wire_length1 + wire_length2) / 2.0;
+      double diff3 = splitWireDelayDiff(wire_length3, buffer_cell);
       if (diff3 < 0.0) {
 	wire_length1 = wire_length3;
 	diff1 = diff3;
@@ -2629,8 +2638,8 @@ Resizer::findMaxWireLength(LibertyCell *buffer_cell)
 }
 
 // objective function
-float
-Resizer::splitWireDelayDiff(float wire_length,
+double
+Resizer::splitWireDelayDiff(double wire_length,
 			    LibertyCell *buffer_cell)
 {
   Delay delay1, delay2;
@@ -2644,7 +2653,7 @@ Resizer::splitWireDelayDiff(float wire_length,
 // Uses target slew for input slew.
 void
 Resizer::bufferWireDelay(LibertyCell *buffer_cell,
-			 float wire_length, // meters
+			 double wire_length, // meters
 			 // Return values.
 			 Delay &delay,
 			 Slew &slew)
@@ -2678,7 +2687,7 @@ Resizer::bufferWireDelay(LibertyCell *buffer_cell,
 	TimingArc *arc = arc_iter.next();
 	RiseFall *in_rf = arc->fromTrans()->asRiseFall();
 	int out_rf_index = arc->toTrans()->asRiseFall()->index();
-	float in_slew = tgt_slews_[in_rf->index()];
+	double in_slew = tgt_slews_[in_rf->index()];
 	ArcDelay gate_delay;
 	Slew drvr_slew;
 	arc_delay_calc_->gateDelay(buffer_cell, arc, in_slew, 0.0,
@@ -2705,14 +2714,14 @@ Parasitic *
 Resizer::makeWireParasitic(Net *net,
 			   Pin *drvr_pin,
 			   Pin *load_pin,
-			   float wire_length) // meters
+			   double wire_length) // meters
 {
   Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
 							   parasitics_ap_);
   ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, drvr_pin);
   ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, load_pin);
-  float wire_cap = wire_length * wire_cap_;
-  float wire_res = wire_length * wire_res_;
+  double wire_cap = wire_length * wire_cap_;
+  double wire_res = wire_length * wire_res_;
   parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap_);
   parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap_);
   parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap_);
@@ -2721,17 +2730,17 @@ Resizer::makeWireParasitic(Net *net,
 
 ////////////////////////////////////////////////////////////////
 
-float
-Resizer::findMaxSlewWireLength(float max_slew,
+double
+Resizer::findMaxSlewWireLength(double max_slew,
 			       LibertyCell *buffer_cell)
 {
   // wire_length1 lower bound
   // wire_length2 upper bound
-  float wire_length1 = 0.0;
-  float wire_length2 = std::sqrt(max_slew / (wire_res_ * wire_cap_));
-  float tol = .01; // 1%
-  float diff1 = maxSlewWireDiff(wire_length1, max_slew, buffer_cell);
-  float diff2 = maxSlewWireDiff(wire_length2, max_slew, buffer_cell);
+  double wire_length1 = 0.0;
+  double wire_length2 = std::sqrt(max_slew / (wire_res_ * wire_cap_));
+  double tol = .01; // 1%
+  double diff1 = maxSlewWireDiff(wire_length1, max_slew, buffer_cell);
+  double diff2 = maxSlewWireDiff(wire_length2, max_slew, buffer_cell);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
     if (diff2 < 0.0) {
@@ -2741,8 +2750,8 @@ Resizer::findMaxSlewWireLength(float max_slew,
       diff2 = maxSlewWireDiff(wire_length2, max_slew, buffer_cell);
     }
     else {
-      float wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      float diff3 = maxSlewWireDiff(wire_length3, max_slew, buffer_cell);
+      double wire_length3 = (wire_length1 + wire_length2) / 2.0;
+      double diff3 = maxSlewWireDiff(wire_length3, max_slew, buffer_cell);
       if (diff3 < 0.0) {
 	wire_length1 = wire_length3;
 	diff1 = diff3;
@@ -2757,9 +2766,9 @@ Resizer::findMaxSlewWireLength(float max_slew,
 }
 
 // objective function
-float
-Resizer::maxSlewWireDiff(float wire_length,
-			 float max_slew,
+double
+Resizer::maxSlewWireDiff(double wire_length,
+			 double max_slew,
 			 LibertyCell *buffer_cell)
 {
   Delay delay;
