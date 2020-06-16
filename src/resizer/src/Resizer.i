@@ -257,11 +257,11 @@ repair_max_fanout_cmd(LibertyCell *buffer_cell)
 }
 
 void
-resize_instance_to_target_slew(Instance *inst)
+resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(inst);
+  resizer->resizeToTargetSlew(drvr_pin);
 }
 
 // for testing
@@ -369,7 +369,7 @@ buffer_wire_delay(LibertyCell *buffer_cell,
   return delay;
 }
 
-float
+double
 find_max_wire_length(LibertyCell *buffer_cell)
 {
   ensureLinked();
@@ -377,7 +377,7 @@ find_max_wire_length(LibertyCell *buffer_cell)
   return resizer->findMaxWireLength(buffer_cell);
 }
 
-float
+double
 find_max_slew_wire_length(float max_slew,
 			  LibertyCell *buffer_cell)
 {

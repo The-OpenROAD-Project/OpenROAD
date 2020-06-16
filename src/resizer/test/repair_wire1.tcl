@@ -46,4 +46,3 @@ repair_long_wires -max_length 1000 -buffer_cell $buffer_cell
 
 report_long_wires 4
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
-

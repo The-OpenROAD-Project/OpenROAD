@@ -12,6 +12,6 @@ Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 10 nets and 14 connections.
 Notice 0: Finished DEF file: reg2.def
 Instance r1
- Cell: DFF_X1
+ Cell: DFF_X2
  Library: Nangate45
- Path cells: DFF_X1
+ Path cells: DFF_X2
