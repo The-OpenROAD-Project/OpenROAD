@@ -621,6 +621,7 @@ repair_timing
         [-upsize_enabled]
         [-downsize_enabled]
         [-pin_swap_enabled]
+        [-pess-pessimism_factor factor]
         [-legalize_eventually]
         [-legalize_each_iteration]
         [-post_place|-post_route] "
