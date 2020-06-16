@@ -869,6 +869,11 @@ Resizer::estimateWireParasitic(const Net *net)
 	}
       }
     }
+    ReduceParasiticsTo reduce_to = ReduceParasiticsTo::pi_elmore;
+    const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
+    parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
+			  corner_, MinMax::max(), parasitics_ap_);
+    parasitics_->deleteParasiticNetwork(net, parasitics_ap_);
   }
   delete tree;
 }
