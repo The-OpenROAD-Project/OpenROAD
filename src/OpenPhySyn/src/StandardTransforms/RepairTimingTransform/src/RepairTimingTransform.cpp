@@ -1122,6 +1122,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-post_place",              // Post placement phase mode
          "-post_route", // Post routing phase mode (not currently supported)
          "-legalization_frequency", // Legalize after how many edit
+         "-pessimism_factor",       // Cap/slew limit scaling factor
          "-fast"}); // Trade-off runtime versus optimization quality by
                     // aggressive pruning
 
@@ -1402,6 +1403,6 @@ DEFINE_TRANSFORM_VIRTUALS(
     "[-buffer_disabled] [-minimum_cost_buffer_enabled] [-upsize_enabled] "
     "[-downsize_enabled] [-pin_swap_enabled] [-legalize_eventually] "
     "[-legalize_each_iteration] [-post_place|-post_route] "
-    "[-legalization_frequency <num_edits>] [-fast]")
+    "[-legalization_frequency <num_edits>] [-fast] [-pessimism_factor factor]")
 
 } // namespace psn

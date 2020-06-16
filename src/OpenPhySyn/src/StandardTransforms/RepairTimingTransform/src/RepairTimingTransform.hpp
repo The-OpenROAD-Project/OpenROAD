@@ -123,5 +123,5 @@ DEFINE_TRANSFORM(
     "[-buffer_disabled] [-minimum_cost_buffer_enabled] [-upsize_enabled] "
     "[-downsize_enabled] [-pin_swap_enabled] [-legalize_eventually] "
     "[-legalize_each_iteration] [-post_place|-post_route] "
-    "[-legalization_frequency <num_edits>] [-fast]")
+    "[-legalization_frequency <num_edits>] [-fast] [-pessimism_factor factor]")
 } // namespace psn
