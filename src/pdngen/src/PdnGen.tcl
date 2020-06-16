@@ -2047,13 +2047,35 @@ proc cut_blocked_areas {tag} {
   variable stripe_locs
   variable grid_data
   
-  if {![dict exists  $grid_data straps]} {return}
+  set straps_layers ""
+  set rails_layers ""
+  set all_used_layers {}
 
-  foreach layer_name [dict keys [dict get $grid_data straps]] {
+  if {[dict exists  $grid_data straps]} {
+      set straps_layers [dict keys [dict get $grid_data straps]]
+  }
+
+  if {[dict exists  $grid_data rails]} {
+      set rails_layers [dict keys [dict get $grid_data rails]]
+  }
+
+
+  foreach layer_name $straps_layers {
+    dict set all_used_layers $layer_name ""
+  }
+
+  foreach layer_name $rails_layers {
+    dict set all_used_layers $layer_name ""
+  }
+
+  # debug $all_used_layers
+
+
+  foreach layer_name [dict keys $all_used_layers] {
     set width [get_grid_wire_width $layer_name]
 
     set blockages [get_blockages]
-    if {[dict exists $blockages $layer_name]} {
+    if {[dict exists $blockages $layer_name] && [info exists stripe_locs($layer_name,$tag)]} {
       set stripe_locs($layer_name,$tag) [::odb::subtractSet $stripe_locs($layer_name,$tag) [dict get $blockages $layer_name]]
 
       # Trim any shapes that are less than the width of the wire
