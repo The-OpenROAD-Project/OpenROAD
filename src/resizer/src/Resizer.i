@@ -42,6 +42,7 @@
 #include "sta/Error.hh"
 #include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
+#include "sta/Delay.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -79,6 +80,8 @@ using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
 using sta::LibertyPort;
+using sta::Delay;
+using sta::Slew;
 
 %}
 
@@ -333,21 +336,72 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
   resizer->repairTieFanout(tie_port, separation, verbose);
 }
 
-// In meters
-double
-max_load_manhatten_distance(Pin *drvr_pin)
+void
+repair_long_wires_cmd(float max_length,
+		      LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->maxLoadManhattenDistance(drvr_pin);
+  return resizer->repairLongWires(max_length, buffer_cell);
 }
 
+void
+report_long_wires_cmd(int count,
+		      int digits)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->reportLongWires(count, digits);
+}
+
+////////////////////////////////////////////////////////////////
+
+float
+buffer_wire_delay(LibertyCell *buffer_cell,
+		  float wire_length) // meters
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  Delay delay;
+  Slew slew;
+  resizer->bufferWireDelay(buffer_cell, wire_length,
+			   delay, slew);
+  return delay;
+}
+
+float
+find_max_wire_length(LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxWireLength(buffer_cell);
+}
+
+float
+find_max_slew_wire_length(float max_slew,
+			  LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxSlewWireLength(max_slew, buffer_cell);
+}
+
+// In meters
 double
 max_load_manhatten_distance(Net *net)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->maxLoadManhattenDistance(net);
+}
+
+void
+write_net_svg(Net *net,
+	      const char *filename)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->writeNetSVG(net, filename);
 }
 
 %} // inline

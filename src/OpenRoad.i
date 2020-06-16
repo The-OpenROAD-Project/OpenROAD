@@ -296,6 +296,12 @@ dbu_to_microns(int dbu)
   return static_cast<double>(dbu) / getDb()->getTech()->getLefUnits();
 }
 
+int
+microns_to_dbu(double microns)
+{
+  return microns * getDb()->getTech()->getLefUnits();
+}
+
 // Common check for placement tools.
 bool
 db_has_rows()

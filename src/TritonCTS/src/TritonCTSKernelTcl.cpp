@@ -165,4 +165,12 @@ void TritonCTSKernel::set_cap_inter(double cap){
         _options.setCapInter(cap);
 }
 
+void TritonCTSKernel::set_metric_output(const char* file){
+        _options.setMetricsFile(file);
+}
+
+void TritonCTSKernel::report_cts_metrics(){
+        reportCtsMetrics();
+};
+
 }

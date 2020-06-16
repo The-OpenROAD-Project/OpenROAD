@@ -40,3 +40,30 @@ Path Type: max
            9.43   slack (MET)
 
 
+Startpoint: in1 (input port clocked by clk)
+Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock clk (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 v input external delay
+   0.0000    0.0000 v in1 (in)
+   0.0000    0.0000 v r1/D (DFF_X1)
+             0.0000   data arrival time
+
+  10.0000   10.0000   clock clk (rise edge)
+   0.0000   10.0000   clock network delay (ideal)
+   0.0000   10.0000   clock reconvergence pessimism
+            10.0000 ^ r1/CK (DFF_X1)
+  -0.0367    9.9633   library setup time
+             9.9633   data required time
+-------------------------------------------------------------
+             9.9633   data required time
+            -0.0000   data arrival time
+-------------------------------------------------------------
+             9.9632   slack (MET)
+
+
