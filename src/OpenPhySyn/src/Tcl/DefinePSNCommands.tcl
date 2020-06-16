@@ -180,7 +180,7 @@ namespace eval psn {
 				 [-minimize_buffer_library] [-fast]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
-				 [-legalization_frequency count] [-min_gain gain] [-enable_driver_resize] \
+				 [-legalization_frequency count] [-min_gain gain] [-enable_driver_resize]\
     }
 
     proc timing_buffer { args } {
@@ -316,7 +316,7 @@ namespace eval psn {
         [-buffer_disabled] [-minimum_cost_buffer_enabled] [-upsize_enabled]\
         [-downsize_enabled] [-pin_swap_enabled] [-legalize_eventually]\
         [-legalize_each_iteration] [-post_place] [-post_route]\
-        [-legalization_frequency num_edits] [-fast]\
+        [-legalization_frequency num_edits] [-fast] [-pessimism_factor pessimism_factor]\
     }
 
     proc repair_timing { args } {
