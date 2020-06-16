@@ -260,14 +260,12 @@ public:
     virtual bool violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
                                             float limit_scale_factor) const;
     virtual bool
-    violatesMaximumCapacitance(InstanceTerm* term,
-                               float         limit_scale_factor = 1.0) const;
-    virtual bool
-    violatesMaximumTransition(InstanceTerm* term,
-                              float         limit_scale_factor = 1.0) const;
+                 violatesMaximumCapacitance(InstanceTerm* term,
+                                            float         limit_scale_factor = 1.0) const;
+    virtual bool violatesMaximumTransition(InstanceTerm* term,
+                                           float limit_scale_factor = 1.0);
     virtual ElectircalViolation
-    hasElectricalViolation(InstanceTerm* term,
-                           float         limit_scale_factor = 1.0) const;
+    hasElectricalViolation(InstanceTerm* term, float limit_scale_factor = 1.0);
     virtual std::vector<InstanceTerm*>
     maximumTransitionViolations(float limit_scale_factor = 1.0) const;
     virtual std::vector<InstanceTerm*>

@@ -220,6 +220,7 @@ public:
         legalize_eventually              = false;
         legalize_each_iteration          = false;
         current_iteration                = 0;
+        pessimism_factor                 = 1.0;
     }
     float initial_area;             // Area before the optimization
     int   max_iterations;           // Maximum number of optimization iterations
@@ -262,7 +263,9 @@ public:
     size_t
         best_solution_threshold_range; // Number of lower cost solutions to test
     float
-        minimum_upstream_resistance; // Minimum upstream resistance for pruning
+          minimum_upstream_resistance; // Minimum upstream resistance for pruning
+    float pessimism_factor; // Scaling factor for transition and capacitance
+                            // violations
 };
 
 // Represents a set of non-dominatd candidate buffer trees.

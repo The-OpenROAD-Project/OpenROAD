@@ -2841,34 +2841,36 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
 }
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
-                                            float) const
+                                            float limit_scale_factor) const
 {
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
-    float                cap, limit, diff;
+    float                cap, limit, ignore;
 
     sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
-                           limit, diff);
-
+                           limit, ignore);
+    float diff = (limit_scale_factor * limit) - cap;
     return diff < 0.0 && limit > 0.0;
 }
 
 bool
-DatabaseHandler::violatesMaximumTransition(InstanceTerm* term, float) const
+DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
+                                           float         limit_scale_factor)
 {
+    // Assumes  sta_->checkSlewLimitPreamble() is called
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
-    float                slew, limit, diff;
+    float                slew, limit, ignore;
 
     sta_->checkSlew(term, nullptr, sta::MinMax::max(), false, corner, rf, slew,
-                    limit, diff);
-
+                    limit, ignore);
+    float diff = (limit_scale_factor * limit) - slew;
     return diff < 0.0 && limit > 0.0;
 }
 
 ElectircalViolation
 DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
-                                        float         limit_scale_factor) const
+                                        float         limit_scale_factor)
 {
     auto pin_net   = net(pin);
     auto net_pins  = pins(pin_net);

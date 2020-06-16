@@ -620,6 +620,7 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
 -   `[-upsize_enabled]`: Enable repair by upsizing.
 -   `[-pin_swap_enabled]`: Enable pin-swapping.
+-   `[-pessimism_factor factor]`: Scaling factor for transition and capacitance violation limits.
 -   `[-legalize_eventually]`: Legalize at the end of the optimization.
 -   `[-legalize_each_iteration]`: Legalize after each iteration.
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
