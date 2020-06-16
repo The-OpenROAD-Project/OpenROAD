@@ -115,6 +115,7 @@ Resizer::Resizer() :
   sta_(nullptr),
   db_network_(nullptr),
   db_(nullptr),
+  core_exists_(false),
   min_max_(nullptr),
   dcalc_ap_(nullptr),
   pvt_(nullptr),
@@ -1849,7 +1850,7 @@ void
 Resizer::repairLongWires(double max_length, // meters
 			 LibertyCell *buffer_cell)
 {
-  graph_ = sta_->ensureGraph();
+  init();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
