@@ -349,8 +349,8 @@ namespace eval tapcell {
             foreach row_blockage $row_blockages {
                 set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
                 set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
-                if {($x + $master_width) >= ($row_blockage_llx - $endcapwidth) && \
-                     $x <= ($row_blockage_urx + $endcapwidth)} {
+                if {($x + $master_width) > ($row_blockage_llx - $endcapwidth) && \
+                     $x < ($row_blockage_urx + $endcapwidth)} {
                     return true
                 }
             }
@@ -366,34 +366,47 @@ namespace eval tapcell {
         set urx [[$row getBBox] xMax]
         set end_llx [expr $urx - $endcapwidth] 
         set tap_urx [expr $x + $master_width]
+        set increase -1
 
-        if {$add_boundary_cell == false} {
+        if { $add_boundary_cell == false } {
             return $x
         }
 
-        if {([llength $row_blockages] > 0)} {
+        if { ([llength $row_blockages] > 0) } {
             foreach row_blockage $row_blockages {
                 set blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
                 set blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
 
+                set dist_llx [expr {$blockage_llx - $tap_urx}]
+                set dist_urx [expr {$x - $blockage_urx}]
+
+                if {$dist_llx == 0 || $dist_urx == 0} {
+                    continue
+                }
+
                 set min_x [expr {$blockage_urx + $endcapwidth + $min_width}]
                 set max_x [expr {$blockage_llx - $endcapwidth - $min_width - $master_width}]
 
-                if {$x > $blockage_llx && $x < $min_x} {
-                    set end_llx [expr $blockage_llx + $endcapwidth]
+                if { $x > $blockage_llx && $x < $min_x } {
+                    set increase 1
+                    set end_llx $min_x
                 }
 
-                if {$x < $blockage_urx && $x > $max_x} {
-                    set end_llx [expr $blockage_llx - $endcapwidth]
+                if { $x < $blockage_urx && $x > $max_x } {
+                    set increase 0
+                    set end_llx $max_x
                 }
             }
         }
 
-        set max_tap_urx [expr $end_llx - $min_width]
-
-        while { $tap_urx > $max_tap_urx } {
-            set tap_urx [expr $tap_urx - $site_width]
-            set x [expr $x - $site_width]
+        if { $increase == 1 } {
+            while { $x < $end_llx } {
+                set x [expr $x + $site_width]
+            }
+        } elseif { $increase == 0 } {
+            while { $x > $end_llx } {
+                set x [expr $x - $site_width]
+            }
         }
 
         return $x
@@ -762,70 +775,83 @@ proc tapcell { args } {
 
         set ori [$row getOrient]
 
+        set offsets ""
+        set pitch -1
+
         if {[tapcell::even $row]} {
             set offset [expr $dist*$lef_units]
+            lappend offsets $offset
         } else {
             set offset [expr $dist*2*$lef_units]
+            lappend offsets $offset
         }
 
         if {[tapcell::top_or_bottom $row $min_y $max_y]} {
             if {$no_cell_at_top_bottom == true} {
                 continue
             }
+            set offsets ""
             set pitch [expr $dist*$lef_units]
             set offset [expr $dist*$lef_units]
+            lappend offsets $offset
         } elseif {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y] && \
                   $add_boundary_cell == true} {
-            set pitch [expr $dist*$lef_units]
+            set offsets ""
+            set pitch [expr $dist*2*$lef_units]
             set offset [expr $dist*$lef_units]
+            set offset2 [expr $dist*2*$lef_units]
+            lappend offsets $offset
+            lappend offsets $offset2
         } else {
             set pitch [expr {$dist*2*$lef_units}]
         }
 
         set endcapwidth [expr $endcap_cpp*$site_x]
-        for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
-            set master [$db findMaster $tapcell_master]
-            if { $master == "NULL" } {
-                ord::error "\[ERROR\] Master $tapcell_master not found"
-            }
-
-            set inst_name "PHY_${cnt}"
-    	    set tap_width [$master getWidth]
-            set tap_urx [expr $x + $tap_width]
-            set end_llx [expr $urx - $endcap_width]
-
-            if {$add_boundary_cell == true} {
-                set blocked_region false
-                set blocked_region [tapcell::in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-                if {$blocked_region == true} {
-                    continue
-                }
-            }
-
-            set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
-            set row_orig_fix [expr { $llx % $site_x }]
-            set x [expr { int($x_tmp + $row_orig_fix) }]
-            set x_end [expr $x + $site_x]
-
-            if {($x != $min_x) && ($x_end != $max_x)} {
-                if { $tap_urx > $end_llx } {
-                    puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
-                    continue
+        foreach offset $offsets {
+            for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
+                set master [$db findMaster $tapcell_master]
+                if { $master == "NULL" } {
+                    ord::error "\[ERROR\] Master $tapcell_master not found"
                 }
 
-                set new_x [tapcell::get_correct_llx $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
-                set real_x [expr {ceil (1.0*$new_x/$site_x)*$site_x}]
-                set real_x [expr { int($real_x) }]
+                set inst_name "PHY_${cnt}"
+        	    set tap_width [$master getWidth]
+                set tap_urx [expr $x + $tap_width]
+                set end_llx [expr $urx - $endcap_width]
+
+                set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
+                set row_orig_fix [expr { $llx % $site_x }]
+                set x [expr { int($x_tmp + $row_orig_fix) }]
+                set x_end [expr $x + $site_x]
+
+                if {$add_boundary_cell == true} {
+                    set blocked_region false
+                    set blocked_region [tapcell::in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+                    if {$blocked_region == true} {
+                        continue
+                    }
+                }
+
+                if {($x != $min_x) && ($x_end != $max_x)} {
+                    if { $tap_urx > $end_llx } {
+                        puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
+                        continue
+                    }
+
+                    set new_x [expr {ceil (1.0*$x/$site_x)*$site_x}]
+                    set new_x [expr { int($new_x) }]
+                    set real_x [tapcell::get_correct_llx $new_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
 
 
-                set inst [odb::dbInst_create $block $master $inst_name]
-                $inst setOrient $ori
+                    set inst [odb::dbInst_create $block $master $inst_name]
+                    $inst setOrient $ori
 
-                $inst setLocation $real_x $lly
-                $inst setPlacementStatus LOCKED
+                    $inst setLocation $real_x $lly
+                    $inst setPlacementStatus LOCKED
 
-                incr cnt
-                incr tapcell_count
+                    incr cnt
+                    incr tapcell_count
+                }
             }
         }
     }

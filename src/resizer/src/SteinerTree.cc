@@ -230,8 +230,8 @@ SteinerTree::report(const Network *network)
     int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
     report->print(" %s (%d %d) - %s wire_length = %d",
 		  name(i, network),
-		  static_cast<int>(pt1.x),
-		  static_cast<int>(pt1.y),
+		  pt1.x,
+		  pt1.y,
 		  name(j, network),
 		  wire_length);
     if (left_.size()) {
