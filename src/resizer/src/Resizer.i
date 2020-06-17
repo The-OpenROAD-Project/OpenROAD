@@ -43,6 +43,7 @@
 #include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -384,6 +385,21 @@ find_max_slew_wire_length(float max_slew,
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findMaxSlewWireLength(max_slew, buffer_cell);
+}
+
+double
+default_max_slew()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  sta::Network *network = resizer->network();
+  sta::LibertyLibrary *lib = network->defaultLibertyLibrary();
+  float max_slew = 0.0;
+  if (lib) {
+    bool exists;
+    lib->defaultMaxSlew(max_slew, exists);
+  }
+  return max_slew;
 }
 
 // In meters

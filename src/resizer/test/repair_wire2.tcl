@@ -1,5 +1,4 @@
-# repair_long_wires 2 loads
-source "helpers.tcl"
+# repair_long_wires -max_length 2 loads
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_wire2.def

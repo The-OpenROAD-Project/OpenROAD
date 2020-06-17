@@ -30,6 +30,7 @@ record_tests {
   repair_tie_fanout4
   repair_wire1
   repair_wire2
+  repair_wire3
   gcd_resize
 }
 # injured reserve
