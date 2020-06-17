@@ -125,8 +125,8 @@ public:
 			    LibertyCell *buffer_cell);
   // Area of the design in meter^2.
   double designArea();
-  // Invalidate incremental designArea
-  void designAreaInvalid();
+  // Increment design_area
+  void designAreaIncr(float delta);
   // Caller owns return value.
   NetSeq *findFloatingNets();
   void repairTieFanout(LibertyPort *tie_port,
@@ -312,7 +312,6 @@ protected:
   Rect core_;
   bool core_exists_;
   double design_area_;
-  double design_area_valid_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;
