@@ -1308,6 +1308,7 @@ Resizer::bufferLoads(Pin *drvr_pin,
   Instance *top_inst = db_network_->topInstance();
   LibertyPort *buffer_in, *buffer_out;
   buffer_cell->bufferPorts(buffer_in, buffer_out);
+  Point drvr_loc = pinLocation(drvr_pin, db_network_);
   for (int i = 0; i < buffer_count; i++) {
     PinSeq &loads = grouped_loads[i];
     if (loads.size()) {
@@ -1318,7 +1319,8 @@ Resizer::bufferLoads(Pin *drvr_pin,
       Instance *buffer = db_network_->makeInstance(buffer_cell,
 						   inst_name.c_str(),
 						   top_inst);
-      setLocation(buffer, center);
+      setLocation(buffer, Point((drvr_loc.getX() + center.getX()) / 2,
+				(drvr_loc.getX() + center.getY()) / 2));
       inserted_buffer_count_++;
       design_area_ += area(db_network_->cell(buffer_cell));
 
