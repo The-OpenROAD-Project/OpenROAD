@@ -33,16 +33,16 @@ Path Type: max
 
 
 Driver    length delay
-u3/Z manhtn 1501 steiner 1501 0.21
 u2/Z manhtn 1500 steiner 1500 0.21
+u3/Z manhtn 1 steiner 1 0.00
 max wire length 754
 max slew wire length 1124
 Repaired 1 long wires.
 Inserted 1 buffers.
 Driver    length delay
-u3/Z manhtn 1501 steiner 1501 0.21
 u2/Z manhtn 751 steiner 751 0.05
 repeater1/Z manhtn 750 steiner 750 0.05
+u3/Z manhtn 1 steiner 1 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)

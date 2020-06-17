@@ -153,7 +153,6 @@ SteinerTree::setTree(Flute::Tree tree,
     Point loc = pinLocation(pin, network);
     loc_pin_map_[loc] = pin;
     loc_pins_map[loc].push_back(pin);
-    pin_steiner_pt_map_[pin] = i;
   }
   for (int i = 0; i < pin_count; i++) {
     Flute::Branch &branch_pt = tree_.branch[i];
@@ -161,6 +160,7 @@ SteinerTree::setTree(Flute::Tree tree,
     Pin *pin = loc_pins.back();
     loc_pins.pop_back();
     steiner_pt_pin_map_[i] = pin;
+    pin_steiner_pt_map_[pin] = i;
   }
 }
 

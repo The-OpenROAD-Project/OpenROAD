@@ -2049,16 +2049,24 @@ Resizer::findLongWiresSteiner(VertexSeq &drvrs)
 int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
-  Pin *pin = drvr->pin();
-  Net *net = network_->net(pin);
+  Pin *drvr_pin = drvr->pin();
+  Net *net = network_->net(drvr_pin);
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(db_network_);
-    int dist = findMaxSteinerDist(tree, drvr_pt, 0);
+    int dist = findMaxSteinerDist(drvr, tree);
     delete tree;
     return dist;
   }
   return 0;
+}
+
+int
+Resizer::findMaxSteinerDist(Vertex *drvr,
+			    SteinerTree *tree)
+{
+  Pin *drvr_pin = drvr->pin();
+  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+  return findMaxSteinerDist(tree, drvr_pt, 0);
 }
 
 // DFS of steiner tree.

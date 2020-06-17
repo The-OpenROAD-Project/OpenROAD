@@ -173,6 +173,8 @@ protected:
   void findLongWires(VertexSeq &drvrs);
   void findLongWiresSteiner(VertexSeq &drvrs);
   int findMaxSteinerDist(Vertex *drvr);
+  int findMaxSteinerDist(Vertex *drvr,
+			 SteinerTree *tree);
   int findMaxSteinerDist(SteinerTree *tree,
 			 SteinerPt pt,
 			 int dist_from_drvr);
