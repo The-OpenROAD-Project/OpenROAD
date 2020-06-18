@@ -43,6 +43,7 @@
 #include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -53,6 +54,10 @@ ensureLinked();
 }
 
 namespace sta {
+
+Point
+pinLocation(const Pin *pin,
+	    const dbNetwork *network);
 
 // Defined in StaTcl.i
 LibertyLibrarySeq *
@@ -257,11 +262,11 @@ repair_max_fanout_cmd(LibertyCell *buffer_cell)
 }
 
 void
-resize_instance_to_target_slew(Instance *inst)
+resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(inst);
+  resizer->resizeToTargetSlew(drvr_pin);
 }
 
 // for testing
@@ -369,7 +374,7 @@ buffer_wire_delay(LibertyCell *buffer_cell,
   return delay;
 }
 
-float
+double
 find_max_wire_length(LibertyCell *buffer_cell)
 {
   ensureLinked();
@@ -377,13 +382,28 @@ find_max_wire_length(LibertyCell *buffer_cell)
   return resizer->findMaxWireLength(buffer_cell);
 }
 
-float
+double
 find_max_slew_wire_length(float max_slew,
 			  LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findMaxSlewWireLength(max_slew, buffer_cell);
+}
+
+double
+default_max_slew()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  sta::Network *network = resizer->network();
+  sta::LibertyLibrary *lib = network->defaultLibertyLibrary();
+  float max_slew = 0.0;
+  if (lib) {
+    bool exists;
+    lib->defaultMaxSlew(max_slew, exists);
+  }
+  return max_slew;
 }
 
 // In meters
@@ -402,6 +422,16 @@ write_net_svg(Net *net,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->writeNetSVG(net, filename);
+}
+
+const char *
+pin_location(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
+  // return x/y as tcl list
+  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
 }
 
 %} // inline

@@ -23,17 +23,17 @@ Pin-swapping: enabled
 Mode: Timing-Driven 
 Iteration 1 
 Found 1 negative slack paths 
-Buffers: 12 
+Buffers: 13 
 Resize up: 2 
-Resize down: 4 
+Resize down: 2 
 Pin Swap: 8 
 Buffered nets: 11 
 Transition violations: 7 
 Capacitance violations: 23 
 Initial area: 597124 
-New area: 597287 
-Finished repair_timing transform ( 26 ) 
-Added/updated 26 cells
+New area: 597377 
+Finished repair_timing transform ( 25 ) 
+Added/updated 25 cells
 wns 0.000
 tns 0.000
 No differences found.

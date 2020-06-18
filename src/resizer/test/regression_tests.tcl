@@ -28,9 +28,11 @@ record_tests {
   repair_tie_fanout2
   repair_tie_fanout3
   repair_tie_fanout4
+  repair_wire1
+  repair_wire2
+  repair_wire3
   gcd_resize
 }
 # injured reserve
-#  repair_wire1
 #  repair_max_slew3
 

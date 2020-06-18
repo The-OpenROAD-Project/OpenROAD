@@ -1,0 +1,27 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: repair_wire2.def
+Notice 0: Design: long_wire
+Notice 0:     Created 3 pins.
+Notice 0:     Created 4 components and 16 component-terminals.
+Notice 0:     Created 2 special nets and 8 connections.
+Notice 0:     Created 5 nets and 8 connections.
+Notice 0: Finished DEF file: repair_wire2.def
+Driver    length delay
+u2/Z manhtn 3000 steiner 3000 0.84
+u3/Z manhtn 1 steiner 1 0.00
+u4/Z manhtn 1 steiner 1 0.00
+Using max slew 0.199.
+Using max wire length 1120.
+Repaired 1 long wires.
+Inserted 2 buffers.
+Driver    length delay
+u2/Z manhtn 1121 steiner 1121 0.12
+repeater1/Z manhtn 1120 steiner 1120 0.12
+repeater2/Z manhtn 759 steiner 759 0.05
+u3/Z manhtn 1 steiner 1 0.00
+u4/Z manhtn 1 steiner 1 0.00
