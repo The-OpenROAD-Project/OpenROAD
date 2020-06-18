@@ -97,15 +97,11 @@ DEFINE_TRANSFORM(
     "violations",
     "Usage: transform timing_buffer [-capacitance_violations] "
     "[-transition_violations] [-negative_slack_violations] "
-    "[-auto_buffer_library "
-    "<single|small|medium|large|all>] [-minimize_buffer_library] "
-    "[-use_inverting_buffer_library] [-buffers "
-    "<buffer library>] [-inverters "
-    "<inverters library>] [-repair_by_resynthesis] [-iterations "
-    "<# "
-    "iterations=1>] [-post_place|-post_route] "
-    "[-legalization_frequency <numBuffer>]"
-    "[-min_gain "
-    "<gain=0ps>] [-enable_gate_resize] [-area_penalty <penalty=0ps/um>]")
+    "[-auto_buffer_library <single|small|medium|large|all>] "
+    "[-minimize_buffer_library] [-use_inverting_buffer_library] [-buffers "
+    "buffer_cells] [-inverters invereter_cells] [-repair_by_resynthesis] "
+    "[-iterations num_iterations=1>] [-post_place|-post_route] "
+    "[-legalization_frequency num_edits][-min_gain gain=0] "
+    "[-enable_gate_resize] [-area_penalty penalty]")
 
 } // namespace psn

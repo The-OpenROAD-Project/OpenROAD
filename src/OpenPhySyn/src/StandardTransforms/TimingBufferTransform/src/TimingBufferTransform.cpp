@@ -721,8 +721,9 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-min_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
          "-timerless", "-repair_by_resynthesis", "-post_global_place",
-         "-post_place", "-post_route", "-legalization_frequency", "-fast"});
-
+         "-post_place", "-post_route", "-legalization_frequency",
+         "-high_effort"});
+    bool high_effort;
     if (args.size() < 2)
     {
         PSN_LOG_ERROR(help());
@@ -746,7 +747,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 if (args[i] == "-buffers")
                 {
                     PSN_LOG_ERROR(help());
-
                     return -1;
                 }
                 else if (keywords.count(args[i]))
@@ -756,7 +756,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 else if (args[i][0] == '-')
                 {
                     PSN_LOG_ERROR(help());
-
                     return -1;
                 }
                 else
@@ -775,7 +774,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 if (args[i] == "-inverters")
                 {
                     PSN_LOG_ERROR(help());
-
                     return -1;
                 }
                 else if (keywords.count(args[i]))
@@ -785,7 +783,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 else if (args[i][0] == '-')
                 {
                     PSN_LOG_ERROR(help());
-
                     return -1;
                 }
                 else
@@ -803,35 +800,33 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             if (i >= args.size())
             {
                 PSN_LOG_ERROR(help());
-
                 return -1;
             }
             else
             {
                 if (args[i] == "single")
                 {
-                    options->cluster_threshold = 1.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_SINGLE;
                 }
                 else if (args[i] == "small")
                 {
-                    options->cluster_threshold = 3.0 / 4.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_SMALL;
                 }
                 else if (args[i] == "medium")
                 {
-                    options->cluster_threshold = 1.0 / 4.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_MEDIUM;
                 }
                 else if (args[i] == "large")
                 {
-                    options->cluster_threshold = 1.0 / 12.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_LARGE;
                 }
                 else if (args[i] == "all")
                 {
-                    options->cluster_threshold = 0.0;
+                    options->cluster_threshold = PSN_CLUSTER_SIZE_ALL;
                 }
                 else
                 {
                     PSN_LOG_ERROR(help());
-
                     return -1;
                 }
             }
@@ -842,7 +837,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
             {
                 PSN_LOG_ERROR(help());
-
                 return -1;
             }
             else
@@ -856,7 +850,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
             {
                 PSN_LOG_ERROR(help());
-
                 return -1;
             }
             else
@@ -870,7 +863,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
             {
                 PSN_LOG_ERROR(help());
-
                 return -1;
             }
             else
@@ -884,7 +876,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
             {
                 PSN_LOG_ERROR(help());
-
                 return -1;
             }
             else
@@ -924,9 +915,9 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             options->repair_by_resynthesis = true;
         }
-        else if (args[i] == "-fast")
+        else if (args[i] == "-high_effort")
         {
-            options->minimum_upstream_resistance = 600;
+            high_effort = true;
         }
         else if (args[i] == "-post_place")
         {
@@ -935,23 +926,24 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-post_route")
         {
             PSN_LOG_ERROR("Post routing timing repair is not supported");
-
             options->phase = DesignPhase::PostRoute;
             return -1;
         }
         else
         {
             PSN_LOG_ERROR(help());
-
             return -1;
         }
     }
-    if (options->legalization_frequency &&
-        (options->phase == DesignPhase::PostPlace))
+    if (high_effort)
     {
-        PSN_LOG_WARN(
-            "Incremental legalization enabled in global placement phase");
+        options->minimum_upstream_resistance = 120;
     }
+    else
+    {
+        options->minimum_upstream_resistance = 600;
+    }
+
     if (options->timerless)
     {
         if (options->repair_capacitance_violations ||
@@ -959,7 +951,6 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         {
             PSN_LOG_ERROR("Timerless mode cannot be used to repair maximum "
                           "capacitance violations or negative slack");
-
             return -1;
         }
         options->repair_transition_violations  = true;
@@ -974,11 +965,15 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
         options->repair_capacitance_violations = true;
         options->repair_negative_slack         = true;
     }
+    if (!options->cluster_buffers && !buffer_lib_names.size())
+    {
+        options->cluster_buffers   = true;
+        options->cluster_threshold = PSN_CLUSTER_SIZE_SMALL;
+    }
     if (options->timerless &&
         (options->cluster_inverters || inverter_lib_names.size()))
     {
         PSN_LOG_ERROR("Cannot use inverting buffer library in timerless mode");
-
         return -1;
     }
     PSN_LOG_DEBUG("repair_timing", StringUtils::join(args, " "));
@@ -992,15 +987,12 @@ DEFINE_TRANSFORM_VIRTUALS(
     "Performs several variations of buffering and resizing to fix timing "
     "violations",
     "Usage: transform timing_buffer [-capacitance_violations] "
-    "[-transition_violations] [-auto_buffer_library "
-    "<single|small|medium|large|all>] [-minimize_buffer_library] "
-    "[-use_inverting_buffer_library] [-buffers "
-    "<buffer library>] [-inverters "
-    "<inverters library>] [-repair_by_resynthesis] [-iterations "
-    "<# "
-    "iterations=1>] [-post_place|-post_route] "
-    "[-legalization_frequency <numBuffer>]"
-    "[-min_gain "
-    "<gain=0ps>] [-enable_gate_resize] [-area_penalty <penalty=0ps/um>]")
+    "[-transition_violations] [-negative_slack_violations] "
+    "[-auto_buffer_library <single|small|medium|large|all>] "
+    "[-minimize_buffer_library] [-use_inverting_buffer_library] [-buffers "
+    "buffer_cells] [-inverters invereter_cells] [-repair_by_resynthesis] "
+    "[-iterations num_iterations=1>] [-post_place|-post_route] "
+    "[-legalization_frequency num_edits][-min_gain gain=0] "
+    "[-enable_gate_resize] [-area_penalty penalty]")
 
 } // namespace psn

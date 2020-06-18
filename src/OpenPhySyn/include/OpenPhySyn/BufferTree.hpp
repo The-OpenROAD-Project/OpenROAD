@@ -63,7 +63,14 @@ enum DesignPhase
     PostRoute
 };
 
-// Represent a single candidate buffer tree.
+// Buffer cluster size thresholds
+#define PSN_CLUSTER_SIZE_SINGLE 1.0
+#define PSN_CLUSTER_SIZE_SMALL 3.0 / 4.0
+#define PSN_CLUSTER_SIZE_MEDIUM 1.0 / 4.0
+#define PSN_CLUSTER_SIZE_LARGE 1.0 / 2.0
+#define PSN_CLUSTER_SIZE_ALL 0.0
+
+// Represents a single candidate buffer tree.
 class BufferTree
 {
     float capacitance_;      // Tree total capacitance
@@ -206,10 +213,10 @@ public:
         ripup_existing_buffer_max_levels = 0;
         legalization_frequency           = 0;
         repair_by_buffer                 = true;
-        repair_by_upsize                 = false;
+        repair_by_resize                 = true;
+        repair_by_pinswap                = true;
         repair_by_downsize               = false;
         repair_by_resynthesis            = false;
-        repair_by_pinswap                = false;
         repair_by_move                   = false;
         minimum_cost                     = false;
         phase                            = DesignPhase::PostPlace;
@@ -249,7 +256,7 @@ public:
     IntervalMap<int, LibraryCell*>   buffer_lib_lookup;
     IntervalMap<int, LibraryCell*>   inverter_lib_lookup;
     bool                             repair_by_buffer; // Use buffer for repair
-    bool        repair_by_upsize;      // Use driver upsizing for optimization
+    bool        repair_by_resize;      // Use driver upsizing for optimization
     bool        repair_by_downsize;    // Use driver downsizing for optimization
     bool        repair_by_resynthesis; // Use resynthesis for optimization
     bool        repair_by_pinswap;     // Repair by commutative pin-swap

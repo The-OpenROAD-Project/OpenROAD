@@ -605,52 +605,51 @@ The `optimize_logic` command should be run after the logic synthesis on hieraric
 
 ```
 repair_timing
-        [-fast]
         [-capacitance_violations]
         [-transition_violations]
         [-negative_slack_violations]
         [-iterations iteration_count]
         [-buffers buffer_cells]
         [-inverters inverter cells]
-        [-min_gain gain]
         [-auto_buffer_library <single|small|medium|large|all>]
         [-no_minimize_buffer_library]
         [-auto_buffer_library_inverters_enabled]
         [-buffer_disabled]
+        [-resize_disabled]
+        [-pin_swap_disabled]
+        [-pessimism_factor factor]
         [-minimum_cost_buffer_enabled]
-        [-upsize_enabled]
-        [-downsize_enabled]
-        [-pin_swap_enabled]
-        [-pess-pessimism_factor factor]
+        [-legalization_frequency num_edits]
+        [-legalize_each_iteration iterations]
         [-legalize_eventually]
-        [-legalize_each_iteration]
-        [-post_place|-post_route] "
-        [-legalization_frequency <num_edits>]
+        [-post_place]
+        [-post_route]
+        [-min_gain gain]
+        [-high_effort]
 ```
 The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
 
 `repair_timing` options:
--   `[-fast]`: Trade-off runtime versus optimization quality by aggressive pruning.
 -   `[-capacitance_violations]`: Repair capacitance violations.
 -   `[-transition_violations]`: Repair transition violations.
 -   `[-negative_slack_violations]`: Repair paths with negative slacks.
--   `[-iterations]`: Maximum number of iterations.
+-   `[-iterations iterations]`: Maximum number of iterations.
 -   `[-buffers buffer_cells]`: Manually specify buffer cells to use.
 -   `[-inverters inverter cells]`: Manually specify inverter cells to use.
--   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-auto_buffer_library <single|small|medium|large|all>]`: Auto-select buffer library.
 -   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
 -   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
 -   `[-buffer_disabled]`: Disable all buffering.
+-   `[-resize_disabled]`: Disable driver sizing.
+-   `[-pin_swap_disabled]`: Disable pin-swapping.
+-   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
--   `[-upsize_enabled]`: Enable repair by upsizing.
--   `[-pin_swap_enabled]`: Enable pin-swapping.
--   `[-pessimism_factor factor]`: Scaling factor for transition and capacitance violation limits.
+-   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
 -   `[-legalize_eventually]`: Legalize at the end of the optimization.
 -   `[-legalize_each_iteration]`: Legalize after each iteration.
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
--   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
-
+-   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
 
 ```
 pin_swap

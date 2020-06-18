@@ -175,18 +175,19 @@ namespace eval psn {
     }
 
     define_cmd_args "timing_buffer" {[-capacitance_violations] [-transition_violations] [-negative_slack]\
-				 [-timerless] [-repair_by_upsize] \
+				 [-timerless] [-repair_by_resize] \
 				 [-auto_buffer_library single|small|medium|large|all]\
-				 [-minimize_buffer_library] [-fast]\
+				 [-minimize_buffer_library] [-high_effort]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
 				 [-legalization_frequency count] [-min_gain gain] [-enable_driver_resize]\
     }
 
+    
     proc timing_buffer { args } {
         sta::parse_key_args "timing_buffer" args \
         keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
-        flags {-negative_slack -timerless -capacitance_violations -transition_violations -repair_by_upsize -fast -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -capacitance_violations] -transition_violations}
+        flags {-negative_slack_violations -timerless -capacitance_violations -transition_violations -repair_by_resize -high_effort -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -capacitance_violations] -transition_violations}
         
         set buffer_lib_flag ""
         set auto_buf_flag ""
@@ -194,7 +195,7 @@ namespace eval psn {
 
         set has_max_cap [info exists flags(-capacitance_violations)]
         set has_max_transition [info exists flags(-transition_violations)]
-        set has_max_ns [info exists flags(-negative_slack)]
+        set has_max_ns [info exists flags(-negative_slack_violations)]
 
         set repair_target_flag ""
 
@@ -205,10 +206,10 @@ namespace eval psn {
             set repair_target_flag "$repair_target_flag -transition_violations"
         }
         if {$has_max_ns} {
-            set repair_target_flag "$repair_target_flag -negative_slack"
+            set repair_target_flag "$repair_target_flag -negative_slack_violations"
         }
-        if {[info exists flags(-repair_by_upsize)]} {
-            set repair_target_flag "$repair_target_flag -repair_by_upsize"
+        if {[info exists flags(-repair_by_resize)]} {
+            set repair_target_flag "$repair_target_flag -repair_by_resize"
         }
 
         if {[info exists flags(-repair_by_resynthesis)]} {
@@ -223,8 +224,8 @@ namespace eval psn {
         }
 
         set fast_mode_flag ""
-        if {[info exists flags(-fast)]} {
-            set fast_mode_flag "-fast"
+        if {[info exists flags(-high_effort)]} {
+            set fast_mode_flag "-high_effort"
         }
         
 
@@ -313,10 +314,10 @@ namespace eval psn {
         [-negative_slack_violations] [-iterations iteration_count] [-buffers buffer_cells]\
         [-inverters inverter cells] [-min_gain gain] [-auto_buffer_library size]\
         [-no_minimize_buffer_library] [-auto_buffer_library_inverters_enabled]\
-        [-buffer_disabled] [-minimum_cost_buffer_enabled] [-upsize_enabled]\
-        [-downsize_enabled] [-pin_swap_enabled] [-legalize_eventually]\
+        [-buffer_disabled] [-minimum_cost_buffer_enabled] [-resize_disabled]\
+        [-downsize_enabled] [-pin_swap_disabled] [-legalize_eventually]\
         [-legalize_each_iteration] [-post_place] [-post_route]\
-        [-legalization_frequency num_edits] [-fast] [-pessimism_factor pessimism_factor]\
+        [-legalization_frequency num_edits] [-high_effort] [-pessimism_factor factor] [-upstream_resistance res]\
     }
 
     proc repair_timing { args } {

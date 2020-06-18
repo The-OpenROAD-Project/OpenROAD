@@ -204,6 +204,14 @@ dl
 OpenSTA
 )
 
+# Sometimes linking issues occur when linking OpenSTA with CUDD
+if (CUDD_LIB)
+set(PUBLIC_LIBRARIES
+${PUBLIC_LIBRARIES}
+${CUDD_LIB}
+)
+endif()
+
 set(PRIVATE_LIBRARIES
 resizer
 opendp
