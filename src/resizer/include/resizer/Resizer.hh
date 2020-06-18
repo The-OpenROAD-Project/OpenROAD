@@ -135,6 +135,7 @@ public:
   double maxLoadManhattenDistance(const Net *net);
   void writeNetSVG(Net *net,
 		   const char *filename);
+  dbNetwork *getDbNetwork() { return db_network_; }
 
 protected:
   void init();
@@ -178,10 +179,13 @@ protected:
   int findMaxSteinerDist(SteinerTree *tree,
 			 SteinerPt pt,
 			 int dist_from_drvr);
-  void repairLongWire(Vertex *drvr,
-		      Vertex *load,
-		      int max_length_dbu,
-		      LibertyCell *buffer_cell);
+  void repairSteinerWires(SteinerTree *tree,
+			  SteinerPt pt,
+			  SteinerPt prev_pt,
+			  Net *drvr_net,
+			  int dist_from_drvr,
+			  int max_length,
+			  LibertyCell *buffer_cell);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 

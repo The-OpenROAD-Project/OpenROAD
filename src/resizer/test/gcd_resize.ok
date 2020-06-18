@@ -82,14 +82,14 @@ _443_/ZN                               10.47    3.23    7.24 (MET)
 
 worst slack 9.32
 Driver    length delay
+_759_/Z manhtn 81 steiner 81 0.00
+_850_/Z manhtn 81 steiner 81 0.00
+_786_/Z manhtn 80 steiner 80 0.00
 _813_/Z manhtn 78 steiner 78 0.00
+_847_/Z manhtn 78 steiner 78 0.00
 _839_/Z manhtn 76 steiner 76 0.00
 _551_/Z manhtn 71 steiner 71 0.00
-_461_/Z manhtn 64 steiner 109 0.00
-_847_/Z manhtn 62 steiner 62 0.00
-_851_/Z manhtn 60 steiner 60 0.00
-_771_/Z manhtn 58 steiner 58 0.00
-_725_/Z manhtn 57 steiner 57 0.00
-_849_/Z manhtn 55 steiner 55 0.00
-_859_/Z manhtn 52 steiner 52 0.00
+_851_/Z manhtn 70 steiner 70 0.00
+_725_/Z manhtn 67 steiner 67 0.00
+input34/Z manhtn 67 steiner 67 0.00
 Design area 738 u^2 12% utilization.

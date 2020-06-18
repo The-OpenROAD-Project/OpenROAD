@@ -55,6 +55,10 @@ ensureLinked();
 
 namespace sta {
 
+Point
+pinLocation(const Pin *pin,
+	    const dbNetwork *network);
+
 // Defined in StaTcl.i
 LibertyLibrarySeq *
 tclListSeqLibertyLibrary(Tcl_Obj *const source,
@@ -418,6 +422,16 @@ write_net_svg(Net *net,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->writeNetSVG(net, filename);
+}
+
+const char *
+pin_location(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
+  // return x/y as tcl list
+  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
 }
 
 %} // inline

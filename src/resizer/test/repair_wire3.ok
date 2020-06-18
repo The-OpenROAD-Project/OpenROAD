@@ -17,12 +17,11 @@ u3/Z manhtn 1 steiner 1 0.00
 u4/Z manhtn 1 steiner 1 0.00
 Using max slew 0.199.
 Using max wire length 1120.
-Repaired 2 long wires.
-Inserted 3 buffers.
+Repaired 1 long wires.
+Inserted 2 buffers.
 Driver    length delay
-u2/Z manhtn 1001 steiner 1001 0.09
-repeater2/Z manhtn 1000 steiner 1000 0.09
-repeater1/Z manhtn 999 steiner 999 0.09
-repeater3/Z manhtn 750 steiner 750 0.05
+u2/Z manhtn 1121 steiner 1121 0.12
+repeater1/Z manhtn 1120 steiner 1120 0.12
+repeater2/Z manhtn 759 steiner 759 0.05
 u3/Z manhtn 1 steiner 1 0.00
 u4/Z manhtn 1 steiner 1 0.00
