@@ -357,12 +357,7 @@ Resizer::setLocation(Instance *inst,
 {
   dbInst *dinst = db_network_->staToDb(inst);
   dinst->setPlacementStatus(dbPlacementStatus::PLACED);
-  if (core_exists_) {
-    Point inside = closestPtInRect(core_, pt);
-    dinst->setLocation(inside.getX(), inside.getY());
-  }
-  else
-    dinst->setLocation(pt.getX(), pt.getY());
+  dinst->setLocation(pt.getX(), pt.getY());
 }
 
 void
@@ -1308,6 +1303,7 @@ Resizer::bufferLoads(Pin *drvr_pin,
   Instance *top_inst = db_network_->topInstance();
   LibertyPort *buffer_in, *buffer_out;
   buffer_cell->bufferPorts(buffer_in, buffer_out);
+  Point drvr_loc = pinLocation(drvr_pin, db_network_);
   for (int i = 0; i < buffer_count; i++) {
     PinSeq &loads = grouped_loads[i];
     if (loads.size()) {
@@ -1318,7 +1314,8 @@ Resizer::bufferLoads(Pin *drvr_pin,
       Instance *buffer = db_network_->makeInstance(buffer_cell,
 						   inst_name.c_str(),
 						   top_inst);
-      setLocation(buffer, center);
+      setLocation(buffer, Point((drvr_loc.getX() + center.getX()) / 2,
+				(drvr_loc.getX() + center.getY()) / 2));
       inserted_buffer_count_++;
       design_area_ += area(db_network_->cell(buffer_cell));
 
@@ -1867,103 +1864,112 @@ Resizer::repairLongWires(double max_length, // meters
   int max_length_dbu = metersToDbu(max_length);
   bool drvr_has_long_wire = false; 
   for (Vertex *drvr : drvrs) {
-    Point drvr_loc = pinLocation(drvr->pin(), db_network_);
-    VertexOutEdgeIterator edge_iter(drvr, graph_);
-    while (edge_iter.hasNext()) {
-      Edge *edge = edge_iter.next();
-      Vertex *load = edge->to(graph_);
-      Pin *drvr_pin = drvr->pin();
-      Pin *load_pin = load->pin();
-      Point load_loc = pinLocation(load->pin(), db_network_);
-      int length_dbu = Point::manhattanDistance(load_loc, drvr_loc);
-      if (length_dbu > max_length_dbu) {
-        drvr_has_long_wire = true;
-	if (!(edge->isDisabledConstraint()
-	      || load->isDisabledConstraint()
-	      || network_->isTopLevelPort(drvr_pin)
-	      || network_->isTopLevelPort(load_pin))) {
-	  repairLongWire(drvr, load, max_length_dbu, buffer_cell);
+    Pin *drvr_pin = drvr->pin();
+    if (!network_->isTopLevelPort(drvr_pin)) {
+      Net *net = network_->net(drvr_pin);
+      SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+      if (tree) {
+	int max_length = findMaxSteinerDist(drvr, tree);
+	if (max_length > max_length_dbu) {
+	  debugPrint2(debug_, "repair_wire", 1, "%s %s\n",
+		      sdc_network_->pathName(drvr_pin),
+		      units_->distanceUnit()->asString(dbuToMeters(max_length), 0));
+	  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+	  repairSteinerWires(tree, drvr_pt, SteinerTree::null_pt, net,
+			     0, max_length_dbu, buffer_cell);
 	  repair_count++;
 	}
+	else
+	  // Drivers are sorted so we are done.
+	  break;
       }
     }
-    if (!drvr_has_long_wire)
-      // Drivers are sorted so we are done.
-      break;
   }
   printf("Repaired %d long wires.\n", repair_count);
   printf("Inserted %d buffers.\n", inserted_buffer_count_);
 }
 
 void
-Resizer::repairLongWire(Vertex *drvr,
-			Vertex *load,
-			int max_length_dbu,
-			LibertyCell *buffer_cell)
+Resizer::repairSteinerWires(SteinerTree *tree,
+			    SteinerPt pt,
+			    SteinerPt prev_pt,
+			    Net *drvr_net,
+			    int dist_from_drvr,
+			    int max_length,
+			    LibertyCell *buffer_cell)
 {
-  Pin *drvr_pin = drvr->pin();
-  Pin *load_pin = load->pin();
-  Point drvr_loc = pinLocation(drvr_pin, db_network_);
-  Point load_loc = pinLocation(load_pin, db_network_);
-  int64_t length = Point::manhattanDistance(drvr_loc, load_loc);
-  int buffer_count = length / max_length_dbu;
-  if (buffer_count > 0) {
-    LibertyPort *buffer_input_port, *buffer_output_port;
-    buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  Point pt_loc = tree->location(pt);
+  Net *buffer_out = nullptr;
+  if (prev_pt != SteinerTree::null_pt) {
+    Point prev_loc = tree->location(prev_pt);
+    int length = Point::manhattanDistance(prev_loc, pt_loc);
+    // Check for needing a driver between the previous steiner point
+    // and this one.
+    if ((dist_from_drvr + length) > max_length) {
+      double buf_dist = max_length - dist_from_drvr;
+      double dx = pt_loc.getX() - prev_loc.getX();
+      double dy = pt_loc.getY() - prev_loc.getY();
+      double d = buf_dist / length;
+      Point buffer_loc(prev_loc.getX() + d * dx,
+		       prev_loc.getY() + d * dy);
+      LibertyPort *buffer_input_port, *buffer_output_port;
+      buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+      Instance *parent = db_network_->topInstance();
 
-    debugPrint3(debug_, "repair_wire", 1, "%s -> %s %s\n",
-		sdc_network_->pathName(drvr_pin),
-		sdc_network_->pathName(load_pin),
-		units_->distanceUnit()->asString(dbuToMeters(length), 0));
-
-    Net *net = network_->net(drvr_pin);
-    Instance *parent = db_network_->topInstance();
-    int spacing = length / (buffer_count + 1);
-    int drvr_x = drvr_loc.getX();
-    int drvr_y = drvr_loc.getY();
-    double dx = load_loc.getX() - drvr_x;
-    double dy = load_loc.getY() - drvr_y;
-    int space_x = spacing * dx / length;
-    int space_y = spacing * dy / length;
-    Net *prev_net = net;
-    for (int i = 0; i < buffer_count; i++) {
       string buffer_name = makeUniqueInstName("repeater");
       string buffer_out_name = makeUniqueNetName();
-      Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+      buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
       Instance *buffer = db_network_->makeInstance(buffer_cell,
 						   buffer_name.c_str(),
 						   parent);
-      Point buffer_loc(drvr_x + (i + 1) * space_x,
-		       drvr_y + (i + 1) * space_y);
       setLocation(buffer, buffer_loc);
       design_area_ += area(db_network_->cell(buffer_cell));
       inserted_buffer_count_++;
-
-      sta_->connectPin(buffer, buffer_input_port, prev_net);
-      sta_->connectPin(buffer, buffer_output_port, buffer_out);
-
-      Instance *load_inst = db_network_->instance(load_pin);
-      Port *load_port = db_network_->port(load_pin);
-      sta_->disconnectPin(load_pin);
-      sta_->connectPin(load_inst, load_port, buffer_out);
-
       debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
 		  buffer_name.c_str(),
 		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getX()), 0),
 		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getY()), 0));
-      if (have_estimated_parasitics_
-	  // Wait to the end to do the driver net so it isn't N^2 in fanout.
-	  && prev_net != net)
-	estimateWireParasitic(prev_net);
-      prev_net = buffer_out;
+
+      sta_->connectPin(buffer, buffer_input_port, drvr_net);
+      sta_->connectPin(buffer, buffer_output_port, buffer_out);
+
+      dist_from_drvr = length - buf_dist;
+      drvr_net = buffer_out;
     }
-    if (have_estimated_parasitics_) {
-      if (prev_net != net)
-	estimateWireParasitic(prev_net);
-      estimateWireParasitic(net);
+    else
+      dist_from_drvr += length;
+  }
+
+  Pin *load_pin = tree->pin(pt);
+  if (load_pin) {
+    Net *load_net = network_->net(load_pin);
+    if (load_net != drvr_net) {
+      Instance *load_inst = db_network_->instance(load_pin);
+      Port *load_port = db_network_->port(load_pin);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load_inst, load_port, drvr_net);
     }
   }
+
+  SteinerPt left = tree->left(pt);
+  if (left != SteinerTree::null_pt)
+    repairSteinerWires(tree, left, pt, drvr_net, dist_from_drvr,
+		       max_length, buffer_cell);
+  SteinerPt right = tree->right(pt);
+  if (right != SteinerTree::null_pt)
+    repairSteinerWires(tree, right, pt, drvr_net, dist_from_drvr,
+		       max_length, buffer_cell);
+
+  if (have_estimated_parasitics_) {
+      // Wait until down stream buffers are inserted to rebuild parasitics.
+    if (buffer_out)
+      estimateWireParasitic(buffer_out);
+    if (prev_pt == SteinerTree::null_pt)
+      estimateWireParasitic(drvr_net);
+  }
 }
+
+////////////////////////////////////////////////////////////////
 
 void
 Resizer::reportLongWires(int count,
@@ -2034,29 +2040,37 @@ Resizer::findLongWiresSteiner(VertexSeq &drvrs)
     }
   }
   sort(drvr_dists, [this](const DrvrDist &drvr_dist1,
-			 const DrvrDist &drvr_dist2) {
-		    return drvr_dist1.second > drvr_dist2.second;
-		  });
+			  const DrvrDist &drvr_dist2) {
+		     return drvr_dist1.second > drvr_dist2.second;
+		   });
   drvrs.reserve(drvr_dists.size());
   for (DrvrDist &drvr_dist : drvr_dists)
     drvrs.push_back(drvr_dist.first);
 }
 
 // Find the maximum distance along steiner tree branches from
-// the driver to loads in dbu.
+// the driver to loads (in dbu).
 int
 Resizer::findMaxSteinerDist(Vertex *drvr)
 {
-  Pin *pin = drvr->pin();
-  Net *net = network_->net(pin);
+  Pin *drvr_pin = drvr->pin();
+  Net *net = network_->net(drvr_pin);
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(db_network_);
-    int dist = findMaxSteinerDist(tree, drvr_pt, 0);
+    int dist = findMaxSteinerDist(drvr, tree);
     delete tree;
     return dist;
   }
   return 0;
+}
+
+int
+Resizer::findMaxSteinerDist(Vertex *drvr,
+			    SteinerTree *tree)
+{
+  Pin *drvr_pin = drvr->pin();
+  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+  return findMaxSteinerDist(tree, drvr_pt, 0);
 }
 
 // DFS of steiner tree.

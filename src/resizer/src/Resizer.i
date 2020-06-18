@@ -43,6 +43,7 @@
 #include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -53,6 +54,10 @@ ensureLinked();
 }
 
 namespace sta {
+
+Point
+pinLocation(const Pin *pin,
+	    const dbNetwork *network);
 
 // Defined in StaTcl.i
 LibertyLibrarySeq *
@@ -386,6 +391,21 @@ find_max_slew_wire_length(float max_slew,
   return resizer->findMaxSlewWireLength(max_slew, buffer_cell);
 }
 
+double
+default_max_slew()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  sta::Network *network = resizer->network();
+  sta::LibertyLibrary *lib = network->defaultLibertyLibrary();
+  float max_slew = 0.0;
+  if (lib) {
+    bool exists;
+    lib->defaultMaxSlew(max_slew, exists);
+  }
+  return max_slew;
+}
+
 // In meters
 double
 max_load_manhatten_distance(Net *net)
@@ -402,6 +422,16 @@ write_net_svg(Net *net,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->writeNetSVG(net, filename);
+}
+
+const char *
+pin_location(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
+  // return x/y as tcl list
+  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
 }
 
 %} // inline

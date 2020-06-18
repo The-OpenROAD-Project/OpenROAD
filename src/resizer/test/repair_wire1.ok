@@ -33,16 +33,16 @@ Path Type: max
 
 
 Driver    length delay
-u3/Z manhtn 1501 steiner 1501 0.21
 u2/Z manhtn 1500 steiner 1500 0.21
+u3/Z manhtn 1 steiner 1 0.00
 max wire length 754
 max slew wire length 1124
 Repaired 1 long wires.
 Inserted 1 buffers.
 Driver    length delay
-u3/Z manhtn 1501 steiner 1501 0.21
-u2/Z manhtn 751 steiner 751 0.05
-repeater1/Z manhtn 750 steiner 750 0.05
+u2/Z manhtn 1001 steiner 1001 0.09
+repeater1/Z manhtn 500 steiner 500 0.02
+u3/Z manhtn 1 steiner 1 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
@@ -55,13 +55,13 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  40.194    0.094    0.092    0.109 ^ u2/Z (BUF_X1)
-            0.117    0.054    0.163 ^ repeater1/A (BUF_X1)
-  40.174    0.093    0.106    0.269 ^ repeater1/Z (BUF_X1)
-            0.117    0.054    0.323 ^ u3/A (BUF_X1)
-   0.000    0.008    0.028    0.351 ^ u3/Z (BUF_X1)
-            0.008    0.000    0.351 ^ out1 (out)
-                              0.351   data arrival time
+  53.262    0.117    0.111    0.127 ^ u2/Z (BUF_X1)
+            0.170    0.094    0.222 ^ repeater1/A (BUF_X1)
+  27.103    0.066    0.087    0.309 ^ repeater1/Z (BUF_X1)
+            0.073    0.024    0.333 ^ u3/A (BUF_X1)
+   0.000    0.006    0.027    0.360 ^ u3/Z (BUF_X1)
+            0.006    0.000    0.360 ^ out1 (out)
+                              0.360   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
