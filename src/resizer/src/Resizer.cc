@@ -1869,11 +1869,14 @@ Resizer::repairLongWires(double max_length, // meters
       Net *net = network_->net(drvr_pin);
       SteinerTree *tree = makeSteinerTree(net, true, db_network_);
       if (tree) {
-	int max_length = findMaxSteinerDist(drvr, tree);
-	if (max_length > max_length_dbu) {
-	  debugPrint2(debug_, "repair_wire", 1, "%s %s\n",
+	int wire_length = findMaxSteinerDist(drvr, tree);
+	if (wire_length > max_length_dbu) {
+	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
 		      sdc_network_->pathName(drvr_pin),
-		      units_->distanceUnit()->asString(dbuToMeters(max_length), 0));
+		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
+		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
+		      units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
 	  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
 	  repairSteinerWires(tree, drvr_pt, SteinerTree::null_pt, net,
 			     0, max_length_dbu, buffer_cell);
@@ -1885,8 +1888,12 @@ Resizer::repairLongWires(double max_length, // meters
       }
     }
   }
-  printf("Repaired %d long wires.\n", repair_count);
-  printf("Inserted %d buffers.\n", inserted_buffer_count_);
+  if (repair_count > 0)
+    printf("Repaired %d long wires.\n", repair_count);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
 void
@@ -1903,15 +1910,22 @@ Resizer::repairSteinerWires(SteinerTree *tree,
   if (prev_pt != SteinerTree::null_pt) {
     Point prev_loc = tree->location(prev_pt);
     int length = Point::manhattanDistance(prev_loc, pt_loc);
+    dist_from_drvr += length;
+    int pt_x = pt_loc.getX();
+    int pt_y = pt_loc.getY();
+    int prev_x = prev_loc.getX();
+    int prev_y = prev_loc.getY();
     // Check for needing a driver between the previous steiner point
     // and this one.
-    if ((dist_from_drvr + length) > max_length) {
-      double buf_dist = max_length - dist_from_drvr;
-      double dx = pt_loc.getX() - prev_loc.getX();
-      double dy = pt_loc.getY() - prev_loc.getY();
+    while (length > 0
+	   && dist_from_drvr > max_length) {
+      // distance from prev_pt to repeater
+      double buf_dist = max_length - dist_from_drvr + length;
+      double dx = pt_x - prev_x;
+      double dy = pt_y - prev_y;
       double d = buf_dist / length;
-      Point buffer_loc(prev_loc.getX() + d * dx,
-		       prev_loc.getY() + d * dy);
+      int buf_x = prev_x + d * dx;
+      int buf_y = prev_y + d * dy;
       LibertyPort *buffer_input_port, *buffer_output_port;
       buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
       Instance *parent = db_network_->topInstance();
@@ -1922,22 +1936,26 @@ Resizer::repairSteinerWires(SteinerTree *tree,
       Instance *buffer = db_network_->makeInstance(buffer_cell,
 						   buffer_name.c_str(),
 						   parent);
-      setLocation(buffer, buffer_loc);
+      setLocation(buffer, Point(buf_x, buf_y));
       design_area_ += area(db_network_->cell(buffer_cell));
       inserted_buffer_count_++;
-      debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
-		  buffer_name.c_str(),
-		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getX()), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(buffer_loc.getY()), 0));
 
       sta_->connectPin(buffer, buffer_input_port, drvr_net);
       sta_->connectPin(buffer, buffer_output_port, buffer_out);
 
+      // Update for the next round.
       dist_from_drvr = length - buf_dist;
+      length -= buf_dist;
       drvr_net = buffer_out;
+      prev_x = buf_x;
+      prev_y = buf_y;
+
+      debugPrint4(debug_, "repair_wire", 2, " %s (%s %s) drvr_dist=%s\n",
+		  buffer_name.c_str(),
+		  units_->distanceUnit()->asString(dbuToMeters(buf_x), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(buf_y), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(dist_from_drvr), 0));
     }
-    else
-      dist_from_drvr += length;
   }
 
   Pin *load_pin = tree->pin(pt);
