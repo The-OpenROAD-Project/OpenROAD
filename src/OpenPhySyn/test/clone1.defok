@@ -239,7 +239,7 @@ TRACKS X 190 DO 201 STEP 3200 LAYER metal9 ;
 TRACKS Y 140 DO 201 STEP 3200 LAYER metal9 ;
 TRACKS X 190 DO 201 STEP 3200 LAYER metal10 ;
 TRACKS Y 140 DO 201 STEP 3200 LAYER metal10 ;
-COMPONENTS 18923 ;
+COMPONENTS 18922 ;
     - PHY_1 FILLCELL_X1 + SOURCE DIST + FIXED ( 80180 22400 ) FS ;
     - PHY_10 FILLCELL_X1 + SOURCE DIST + FIXED ( 440420 30800 ) N ;
     - PHY_100 FILLCELL_X1 + SOURCE DIST + FIXED ( 440420 131600 ) N ;
@@ -19158,7 +19158,6 @@ COMPONENTS 18923 ;
     - buffer99 BUF_X4 + PLACED ( 401470 641200 ) N ;
     - psn_inst_clone_1 NOR2_X1 + PLACED ( 381688 473283 ) N ;
     - psn_inst_clone_5 NOR2_X1 + PLACED ( 411031 524423 ) N ;
-    - psn_inst_clone_7 NOR3_X1 + PLACED ( 33599 568117 ) N ;
     - psn_inst_clone_8 NOR3_X1 + PLACED ( 40053 568117 ) N ;
     - psn_inst_clone_12 NOR2_X1 + PLACED ( 249765 525037 ) N ;
     - psn_inst_clone_17 BUF_X1 + PLACED ( 322295 399472 ) N ;
@@ -19554,7 +19553,7 @@ PINS 388 ;
     - text_out[1] + NET text_out[1] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 70 440300 ) N + LAYER metal4 ( -70 -70 ) ( 70 70 ) ;
     - text_out[0] + NET text_out[0] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 640230 216300 ) N + LAYER metal4 ( -70 -70 ) ( 70 70 ) ;
 END PINS
-NETS 18749 ;
+NETS 18748 ;
     - clk ( PIN clk ) ( _34598_ CK ) ( _34599_ CK ) ( _34600_ CK ) ( _34601_ CK ) ( _34602_ CK ) ( _34603_ CK )
       ( _34604_ CK ) ( _34605_ CK ) ( _34606_ CK ) ( _34607_ CK ) ( _34608_ CK ) ( _34609_ CK ) ( _34610_ CK ) ( _34611_ CK )
       ( _34612_ CK ) ( _34613_ CK ) ( _34614_ CK ) ( _34615_ CK ) ( _34616_ CK ) ( _34617_ CK ) ( _34618_ CK ) ( _34619_ CK )
@@ -36398,8 +36397,8 @@ NETS 18749 ;
       ( _26328_ A2 ) + USE SIGNAL ;
     - _14790_ ( _24511_ ZN ) ( _24530_ A ) + USE SIGNAL ;
     - _14791_ ( _24512_ ZN ) ( _24524_ A ) ( _24772_ B ) ( _24779_ B1 ) ( _24781_ A ) ( _26573_ B1 ) ( _26574_ A ) + USE SIGNAL ;
-    - _14792_ ( psn_inst_clone_8 A1 ) ( psn_inst_clone_7 A1 ) ( _24513_ ZN ) ( _24514_ A1 ) ( _24569_ A1 ) ( _24572_ A ) ( _24592_ A2 )
-      ( _24637_ A1 ) ( _24646_ A2 ) ( _24718_ A2 ) ( _25532_ A4 ) ( _25839_ C2 ) ( _25869_ A3 ) + USE SIGNAL ;
+    - _14792_ ( psn_inst_clone_8 A1 ) ( _24513_ ZN ) ( _24514_ A1 ) ( _24569_ A1 ) ( _24572_ A ) ( _24592_ A2 ) ( _24637_ A1 )
+      ( _24646_ A2 ) ( _24718_ A2 ) ( _25532_ A4 ) ( _25839_ C2 ) ( _25869_ A3 ) + USE SIGNAL ;
     - _14793_ ( _24514_ ZN ) ( _24515_ A ) ( _24633_ A ) + USE SIGNAL ;
     - _14794_ ( _24515_ ZN ) ( _24519_ A1 ) ( _26185_ C1 ) ( _26305_ C1 ) ( _26564_ B2 ) + USE SIGNAL ;
     - _14795_ ( _24516_ ZN ) ( _24517_ A1 ) ( _24543_ A2 ) ( _24560_ A ) ( _24564_ A2 ) ( _24587_ A2 ) ( _24594_ A ) + USE SIGNAL ;
@@ -36473,7 +36472,7 @@ NETS 18749 ;
     - _14845_ ( _24566_ ZN ) ( _24567_ A ) ( _24680_ A ) ( _24717_ B2 ) ( _24753_ A1 ) ( _25845_ C2 ) ( _25847_ B2 ) + USE SIGNAL ;
     - _14846_ ( _24567_ ZN ) ( _24568_ B2 ) ( _25832_ B2 ) ( _25837_ C1 ) ( _26223_ B1 ) + USE SIGNAL ;
     - _14847_ ( _24568_ ZN ) ( _24575_ A2 ) + USE SIGNAL ;
-    - _14848_ ( _24569_ ZN ) ( _24687_ A3 ) ( _24773_ B2 ) ( _26204_ B2 ) + USE SIGNAL ;
+    - _14848_ ( _24570_ A2 ) ( _24569_ ZN ) ( _24687_ A3 ) ( _24773_ B2 ) ( _26204_ B2 ) + USE SIGNAL ;
     - _14849_ ( _24570_ ZN ) ( _24575_ A3 ) ( _24705_ A4 ) + USE SIGNAL ;
     - _14850_ ( _24571_ ZN ) ( _24574_ A2 ) ( _24602_ A1 ) ( _24752_ B1 ) ( _25859_ A1 ) ( _26535_ A2 ) ( _26559_ A1 ) + USE SIGNAL ;
     - _14851_ ( _24572_ ZN ) ( _24573_ A ) ( _24588_ A2 ) ( _25167_ A1 ) + USE SIGNAL ;
@@ -38395,10 +38394,10 @@ NETS 18749 ;
     - _16605_ ( _24484_ A2 ) ( _24494_ A ) ( _24513_ A2 ) ( _24516_ A2 ) ( _24539_ C2 ) ( _24550_ A2 ) ( _24553_ C2 )
       ( _24566_ A2 ) ( _24576_ A2 ) ( _24582_ A2 ) ( _24586_ C2 ) ( _24738_ C2 ) ( _24763_ B1 ) ( _25555_ C2 ) ( _25838_ C2 )
       ( _26222_ C2 ) ( _26554_ A3 ) ( _34248_ Z ) + USE SIGNAL ;
-    - _16606_ ( psn_inst_clone_8 A3 ) ( psn_inst_clone_7 A3 ) ( _24486_ A ) ( _24490_ A2 ) ( _24497_ A2 ) ( _24526_ A2 ) ( _24569_ A3 )
-      ( _24609_ A2 ) ( _26220_ C1 ) ( _34250_ Z ) + USE SIGNAL ;
-    - _16607_ ( psn_inst_clone_8 A2 ) ( psn_inst_clone_7 A2 ) ( _24487_ A2 ) ( _24490_ A1 ) ( _24497_ A1 ) ( _24502_ A ) ( _24525_ A )
-      ( _24569_ A2 ) ( _25535_ B ) ( _26220_ B ) ( _26533_ B ) ( _34249_ Z ) + USE SIGNAL ;
+    - _16606_ ( psn_inst_clone_8 A3 ) ( _24486_ A ) ( _24490_ A2 ) ( _24497_ A2 ) ( _24526_ A2 ) ( _24569_ A3 ) ( _24609_ A2 )
+      ( _26220_ C1 ) ( _34250_ Z ) + USE SIGNAL ;
+    - _16607_ ( psn_inst_clone_8 A2 ) ( _24487_ A2 ) ( _24490_ A1 ) ( _24497_ A1 ) ( _24502_ A ) ( _24525_ A ) ( _24569_ A2 )
+      ( _25535_ B ) ( _26220_ B ) ( _26533_ B ) ( _34249_ Z ) + USE SIGNAL ;
     - _16608_ ( _24478_ A ) ( _24532_ A2 ) ( _24544_ A2 ) ( _34252_ Z ) + USE SIGNAL ;
     - _16609_ ( _24479_ A2 ) ( _24505_ A2 ) ( _24532_ A1 ) ( _24544_ A1 ) ( _34251_ Z ) + USE SIGNAL ;
     - _16610_ ( _24480_ A2 ) ( _24557_ A2 ) ( _24621_ A ) ( _34254_ Z ) + USE SIGNAL ;
@@ -40280,7 +40279,6 @@ NETS 18749 ;
     - u0.w\[2\]\[9\] ( _33656_ A ) ( _35105_ Q ) + USE SIGNAL ;
     - psn_net_1 ( psn_inst_clone_1 ZN ) ( _33280_ A ) + USE SIGNAL ;
     - psn_net_5 ( psn_inst_clone_5 ZN ) ( _32030_ A2 ) + USE SIGNAL ;
-    - psn_net_7 ( psn_inst_clone_7 ZN ) ( _24570_ A2 ) + USE SIGNAL ;
     - psn_net_8 ( psn_inst_clone_8 ZN ) ( _25521_ A1 ) + USE SIGNAL ;
     - psn_net_12 ( psn_inst_clone_12 ZN ) ( _20065_ A1 ) + USE SIGNAL ;
     - psn_net_17 ( psn_inst_clone_17 Z ) ( _20405_ A ) + USE SIGNAL ;
