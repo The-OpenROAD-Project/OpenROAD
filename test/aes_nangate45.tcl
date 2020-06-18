@@ -5,7 +5,7 @@ source "Nangate45/Nangate45.vars"
 set synth_verilog "aes_nangate45.v"
 set design "aes"
 set top_module "aes_cipher_top"
-set sdc_file "aes.sdc"
+set sdc_file "aes_nangate45.sdc"
 # These values must be multiples of placement site
 # x=0.19 y=1.4
 set init_floorplan_cmd "initialize_floorplan -site $site \

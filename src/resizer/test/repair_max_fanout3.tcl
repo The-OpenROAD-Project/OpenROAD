@@ -12,7 +12,8 @@ read_def $def_filename
 create_clock -period 10 clk1
 
 report_max_fanout 1
-repair_max_fanout -max_fanout 30 -buffer_cell BUF_X1
+set_max_fanout 30 [current_design]
+repair_max_fanout -buffer_cell BUF_X1
 report_max_fanout 3
 
 resize

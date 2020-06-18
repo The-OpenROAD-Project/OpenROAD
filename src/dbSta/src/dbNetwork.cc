@@ -867,9 +867,14 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 	    ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
 	    while (port_iter->hasNext()) {
 	      ConcretePort *cport = port_iter->next();
-	      LibertyPort *lport = lcell->findLibertyPort(cport->name());
+	      const char *port_name = cport->name();
+	      LibertyPort *lport = lcell->findLibertyPort(port_name);
 	      if (lport)
 		cport->setLibertyPort(lport);
+	      else if (!cport->direction()->isPowerGround())
+		report_->warn("Liberty cell %s pin %s missing from LEF macro\n",
+			      lcell->name(),
+			      port_name);
 	    }
 	    delete port_iter;
 	  }
@@ -1041,6 +1046,10 @@ dbNetwork::makeNet(const char *name,
 void
 dbNetwork::deleteNet(Net *net)
 {
+  PinSet *drvrs = net_drvr_pin_map_.findKey(net);
+  delete drvrs;
+  net_drvr_pin_map_.erase(net);
+
   dbNet *dnet = staToDb(net);
   dbNet::destroy(dnet);
 }

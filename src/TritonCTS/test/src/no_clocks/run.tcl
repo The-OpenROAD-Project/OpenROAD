@@ -9,3 +9,4 @@ clock_tree_synthesis -lut_file "lut.txt" \
                      -root_buf CLKBUF_X3 \
                      -wire_unit 20 
 
+exit

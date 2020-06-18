@@ -42,6 +42,8 @@
 #include "sta/Error.hh"
 #include "sta/Liberty.hh"
 #include "resizer/Resizer.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -52,6 +54,10 @@ ensureLinked();
 }
 
 namespace sta {
+
+Point
+pinLocation(const Pin *pin,
+	    const dbNetwork *network);
 
 // Defined in StaTcl.i
 LibertyLibrarySeq *
@@ -79,6 +85,8 @@ using sta::tclListSeqLibertyLibrary;
 using sta::tclListSeqLibertyCell;
 using sta::NetSeq;
 using sta::LibertyPort;
+using sta::Delay;
+using sta::Slew;
 
 %}
 
@@ -174,6 +182,14 @@ wire_capacitanceb()
 }
 
 void
+estimate_wire_parasitics()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->estimateWireParasitics();
+}
+
+void
 set_max_utilization(double max_utilization)
 {
   ensureLinked();
@@ -238,20 +254,19 @@ repair_max_slew_cmd(LibertyCell *buffer_cell)
 }
 
 void
-repair_max_fanout_cmd(int max_fanout,
-		      LibertyCell *buffer_cell)
+repair_max_fanout_cmd(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairMaxFanout(max_fanout, buffer_cell);
+  resizer->repairMaxFanout(buffer_cell);
 }
 
 void
-resize_instance_to_target_slew(Instance *inst)
+resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->resizeToTargetSlew(inst);
+  resizer->resizeToTargetSlew(drvr_pin);
 }
 
 // for testing
@@ -318,21 +333,105 @@ find_floating_nets()
 
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
-		      int max_fanout,
+		      double separation, // meters
 		      bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTieFanout(tie_port, max_fanout, verbose);
+  resizer->repairTieFanout(tie_port, separation, verbose);
+}
+
+void
+repair_long_wires_cmd(float max_length,
+		      LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairLongWires(max_length, buffer_cell);
+}
+
+void
+report_long_wires_cmd(int count,
+		      int digits)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->reportLongWires(count, digits);
+}
+
+////////////////////////////////////////////////////////////////
+
+float
+buffer_wire_delay(LibertyCell *buffer_cell,
+		  float wire_length) // meters
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  Delay delay;
+  Slew slew;
+  resizer->bufferWireDelay(buffer_cell, wire_length,
+			   delay, slew);
+  return delay;
+}
+
+double
+find_max_wire_length(LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxWireLength(buffer_cell);
+}
+
+double
+find_max_slew_wire_length(float max_slew,
+			  LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxSlewWireLength(max_slew, buffer_cell);
+}
+
+double
+default_max_slew()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  sta::Network *network = resizer->network();
+  sta::LibertyLibrary *lib = network->defaultLibertyLibrary();
+  float max_slew = 0.0;
+  if (lib) {
+    bool exists;
+    lib->defaultMaxSlew(max_slew, exists);
+  }
+  return max_slew;
 }
 
 // In meters
 double
-max_load_manhatten_distance(Pin *drvr_pin)
+max_load_manhatten_distance(Net *net)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->maxLoadManhattenDistance(drvr_pin);
+  return resizer->maxLoadManhattenDistance(net);
+}
+
+void
+write_net_svg(Net *net,
+	      const char *filename)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->writeNetSVG(net, filename);
+}
+
+const char *
+pin_location(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
+  // return x/y as tcl list
+  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
 }
 
 %} // inline

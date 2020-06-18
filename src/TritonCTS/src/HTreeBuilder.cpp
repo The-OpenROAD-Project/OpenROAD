@@ -42,6 +42,7 @@
 
 #include "HTreeBuilder.h"
 #include "third_party/CKMeans/clustering.h"
+#include "openroad/Error.hh"
 
 #include <iostream>
 #include <iomanip>
@@ -49,6 +50,8 @@
 #include <map>
 
 namespace TritonCTS {
+
+using ord::error;
 
 void HTreeBuilder::initSinkRegion() {
         unsigned wireSegmentUnitInMicron = _techChar->getLengthUnit(); 
@@ -485,8 +488,7 @@ void HTreeBuilder::createClockSubNets() {
                 const std::vector<Point<double>>& sinkLocs = leafTopology.getBranchSinksLocations(idx);
                 for (const Point<double>& loc : sinkLocs) {
                         if (mapLocationToSink.find(loc) == mapLocationToSink.end()) {
-                                std::cout << "Sink not found!\n";
-                                std::exit(1);
+                                error("Sink not found.\n");
                         }
                         
                         subNet->addInst(*mapLocationToSink[loc]);
@@ -642,8 +644,6 @@ void SegmentBuilder::buildHorizontalConnection() {
 }
 
 void SegmentBuilder::buildLShapeConnection() {
-        //std::cout << "L shape connection. Exiting...\n";
-        //std::exit(1);
         double lengthX = std::abs(_root.getX() - _target.getX());
         double lengthY = std::abs(_root.getY() - _target.getY());
         bool isLowToHiX = _root.getX() < _target.getX();

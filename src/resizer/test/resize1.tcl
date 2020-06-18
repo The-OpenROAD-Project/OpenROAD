@@ -9,10 +9,10 @@ set_input_delay -clock clk 0 {in1 in2}
 sta::resizer_preamble [get_libs *]
 if {0} {
 set_load 30 u1z
-sta::resize_instance_to_target_slew [get_cell u1]
+sta::resize_driver_to_target_slew [get_pin u1/Z]
 report_instance u1
 }
 
 set_load 30 r1q
-sta::resize_instance_to_target_slew [get_cell r1]
+sta::resize_driver_to_target_slew [get_pin r1/Q]
 report_instance r1

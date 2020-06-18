@@ -5,7 +5,7 @@ source "Nangate45/Nangate45.vars"
 set synth_verilog "tinyRocket_nangate45.v"
 set design "tinyRocket"
 set top_module "RocketTile"
-set sdc_file "tinyRocket.sdc"
+set sdc_file "tinyRocket_nangate45.sdc"
 set extra_lef [glob Nangate45/fakeram45*.lef]
 set extra_liberty [glob Nangate45/fakeram45*.lib]
 # These values must be multiples of placement site

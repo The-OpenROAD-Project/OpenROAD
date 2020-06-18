@@ -341,6 +341,9 @@ private:
   dbMasterSeq &gapFillers(int gap);
   Grid *makeCellGrid();
   void placeRowFillers(const Grid *grid, int row);
+  const char *gridInstName(const Grid *grid,
+			   int row,
+			   int col);
 
   // Optimizing mirroring
   void getBox(dbNet *net,

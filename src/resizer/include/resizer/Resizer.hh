@@ -72,7 +72,10 @@ public:
   float wireResistance() { return wire_res_; }
   // farads/meter
   float wireCapacitance() { return wire_cap_; }
-
+  void estimateWireParasitics();
+  void estimateWireParasitic(const Net *net);
+  void estimateWireParasitic(const dbNet *net);
+  
   // Core area (meters).
   double coreArea() const;
   // 0.0 - 1.0 (100%) of core size.
@@ -86,9 +89,9 @@ public:
   // Resize all instances in the network.
   // resizerPreamble() required.
   void resizeToTargetSlew();
-  // Resize inst to target slew (for testing).
+  // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
-  void resizeToTargetSlew(Instance *inst);
+  void resizeToTargetSlew(const Pin *drvr_pin);
 
   // Insert buffers to fix max cap violations.
   // resizerPreamble() required.
@@ -96,8 +99,7 @@ public:
   // Insert buffers to fix max slew violations.
   // resizerPreamble() required.
   void repairMaxSlew(LibertyCell *buffer_cell);
-  void repairMaxFanout(int max_fanout,
-		       LibertyCell *buffer_cell);
+  void repairMaxFanout(LibertyCell *buffer_cell);
   // Rebuffer net (for testing).
   // Assumes buffer_cell->isBuffer() is true.
   // resizerPreamble() required.
@@ -113,13 +115,27 @@ public:
   // Caller owns return value.
   NetSeq *findFloatingNets();
   void repairTieFanout(LibertyPort *tie_port,
-		       int max_fanout,
+		       double separation, // meters
 		       bool verbose);
-  void makeNetParasitics();
-  void makeNetParasitics(const Net *net);
-  void makeNetParasitics(const dbNet *net);
-  // Max distance from driver pin to load in meters.
-  double maxLoadManhattenDistance(Pin *drvr_pin);
+  void bufferWireDelay(LibertyCell *buffer_cell,
+		       double wire_length, // meters
+		       Delay &delay,
+		       Slew &slew);
+  void repairLongWires(double max_length, // meters
+		       LibertyCell *buffer_cell);
+  void reportLongWires(int count,
+		       int digits);
+  // Find the max wire length before it is faster to split the wire
+  // in half with a buffer (in meters).
+  double findMaxWireLength(LibertyCell *buffer_cell);
+  // Find the max wire length with load slew < max_slew (in meters).
+  double findMaxSlewWireLength(double max_slew,
+			       LibertyCell *buffer_cell);
+  // Longest driver to load wire (in meters).
+  double maxLoadManhattenDistance(const Net *net);
+  void writeNetSVG(Net *net,
+		   const char *filename);
+  dbNetwork *getDbNetwork() { return db_network_; }
 
 protected:
   void init();
@@ -155,24 +171,27 @@ protected:
 				   const Net *net,
 				   const Pin *pin,
 				   int steiner_pt);
+  void findLongWires(VertexSeq &drvrs);
+  void findLongWiresSteiner(VertexSeq &drvrs);
+  int findMaxSteinerDist(Vertex *drvr);
+  int findMaxSteinerDist(Vertex *drvr,
+			 SteinerTree *tree);
+  int findMaxSteinerDist(SteinerTree *tree,
+			 SteinerPt pt,
+			 int dist_from_drvr);
+  void repairSteinerWires(SteinerTree *tree,
+			  SteinerPt pt,
+			  SteinerPt prev_pt,
+			  Net *drvr_net,
+			  int dist_from_drvr,
+			  int max_length,
+			  LibertyCell *buffer_cell);
+  // Max distance from driver to load (in dbu).
+  int maxLoadManhattenDistance(Vertex *drvr);
 
   // Assumes buffer_cell->isBuffer() is true.
   void rebuffer(const Pin *drvr_pin,
 		LibertyCell *buffer_cell);
-  void checkMaxCapViolation(const Pin *pin,
-			    // Return values
-			    bool &violation,
-			    float &limit_ratio);
-  void checkMaxSlewViolation(const Pin *pin,
-			     // Return values
-			     bool &violation,
-			     float &limit_ratio);
-  void slewLimit(const Pin *pin,
-		 const MinMax *min_max,
-		 // Return values.
-		 float &limit,
-		 bool &exists) const;
-			
   RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
 				     SteinerPt k,
 				     SteinerPt prev,
@@ -193,12 +212,17 @@ protected:
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
   Requireds pinRequireds(const Pin *pin);
-  float gateDelay(LibertyPort *out_port,
-		  RiseFall *rf,
-		  float load_cap);
+  void gateDelays(LibertyPort *drvr_port,
+		  float load_cap,
+		  // Return values.
+		  ArcDelay delays[RiseFall::index_count]);
   float bufferDelay(LibertyCell *buffer_cell,
 		    RiseFall *rf,
 		    float load_cap);
+  Parasitic *makeWireParasitic(Net *net,
+			       Pin *drvr_pin,
+			       Pin *load_pin,
+			       double wire_length); // meters
   string makeUniqueNetName();
   string makeUniqueInstName(const char *base_name);
   string makeUniqueInstName(const char *base_name,
@@ -209,10 +233,15 @@ protected:
   Point location(Instance *inst);
   void setLocation(Instance *inst,
 		   Point pt);
-  Pin *singleOutputPin(const Instance *inst);
   double area(dbMaster *master);
   double area(Cell *cell);
   double dbuToMeters(int dist) const;
+  int metersToDbu(double dist) const;
+  double splitWireDelayDiff(double wire_length,
+			    LibertyCell *buffer_cell);
+  double maxSlewWireDiff(double wire_length,
+			 double max_slew,
+			 LibertyCell *buffer_cell);
 
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
@@ -270,6 +299,10 @@ protected:
   Point findCenter(PinSeq &pins);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool isSpecial(Net *net);
+  Point tieLocation(Pin *load,
+		    int separation);
+  bool hasInputPort(SteinerTree *tree);
+  bool hasFanout(Vertex *drvr);
 
   float wire_res_;
   float wire_cap_;
@@ -282,6 +315,7 @@ protected:
   dbDatabase *db_;
   dbBlock *block_;
   Rect core_;
+  bool core_exists_;
   double design_area_;
   const MinMax *min_max_;
   const DcalcAnalysisPt *dcalc_ap_;
@@ -289,6 +323,7 @@ protected:
   const ParasiticAnalysisPt *parasitics_ap_;
   NetSet clk_nets_;
   bool clk_nets__valid_;
+  bool have_estimated_parasitics_;
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;

@@ -1,17 +1,16 @@
 # repair tie fanout non-liberty pin on net
-source helpers.tcl
+source "helpers.tcl"
+source "tie_fanout.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
+# intentionally skip read_liberty pad.lib
 read_lef Nangate45/Nangate45.lef
-read_lef repair_tie_fanout3.lef
-read_verilog repair_tie_fanout3.v
-link_design top
+read_lef pad.lef
+read_def repair_tie_fanout3.def
 
-repair_tie_fanout -max_fanout 10 LOGIC1_X1/Z
+repair_tie_fanout LOGIC1_X1/Z
+check_ties LOGIC1_X1
+report_ties LOGIC1_X1
 
-set tie_insts [get_cells -filter "ref_name == LOGIC1_X1"]
-foreach tie_inst $tie_insts {
-  set tie_pin [get_pins -of $tie_inst -filter "direction == output"]
-  set net [get_nets -of $tie_inst]
-  set fanout [llength [get_pins -of $net -filter "direction == input"]]
-  puts "[get_full_name $tie_inst] $fanout"
-}
+set repaired_filename [file join $result_dir "repair_tie_fanout3.def"]
+write_def $repaired_filename
+#diff_file repair_tie_fanout3.defok $repaired_filename

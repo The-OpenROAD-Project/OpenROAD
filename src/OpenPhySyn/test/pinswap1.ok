@@ -35,12 +35,12 @@ Path Type: max
    0.05743    0.44449 v _524_/ZN (OR3_X4)
    0.02604    0.47053 ^ _528_/ZN (AOI21_X4)
    0.00938    0.47991 v _535_/ZN (NOR2_X2)
-   0.03762    0.51753 v _536_/ZN (XNOR2_X1)
-   0.02728    0.54481 v _537_/ZN (AND2_X2)
-   0.02656    0.57137 ^ _540_/ZN (OAI21_X1)
-   0.02023    0.59160 v _541_/ZN (OAI21_X1)
-   0.00001    0.59161 v _594_/D (DFF_X1)
-              0.59161   data arrival time
+   0.03800    0.51791 v _536_/ZN (XNOR2_X1)
+   0.02741    0.54532 v _537_/ZN (AND2_X2)
+   0.02656    0.57188 ^ _540_/ZN (OAI21_X1)
+   0.02023    0.59211 v _541_/ZN (OAI21_X1)
+   0.00001    0.59212 v _594_/D (DFF_X1)
+              0.59212   data arrival time
 
   10.00000   10.00000   clock core_clock (rise edge)
    0.00000   10.00000   clock network delay (ideal)
@@ -50,13 +50,13 @@ Path Type: max
               9.95949   data required time
 ---------------------------------------------------------------
               9.95949   data required time
-             -0.59161   data arrival time
+             -0.59212   data arrival time
 ---------------------------------------------------------------
-              9.36789   slack (MET)
+              9.36737   slack (MET)
 
 
 Invoking pin_swap transform 
-Finished pin_swap transform ( 4 ) 
+Finished pin_swap transform ( 3 ) 
 Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
@@ -81,12 +81,12 @@ Path Type: max
    0.05743    0.44171 v _524_/ZN (OR3_X4)
    0.02604    0.46774 ^ _528_/ZN (AOI21_X4)
    0.00938    0.47713 v _535_/ZN (NOR2_X2)
-   0.03409    0.51121 v _536_/ZN (XNOR2_X1)
-   0.02864    0.53985 v _537_/ZN (AND2_X2)
-   0.03140    0.57125 ^ _540_/ZN (OAI21_X1)
-   0.02023    0.59148 v _541_/ZN (OAI21_X1)
-   0.00001    0.59149 v _594_/D (DFF_X1)
-              0.59149   data arrival time
+   0.03800    0.51513 v _536_/ZN (XNOR2_X1)
+   0.02752    0.54265 v _537_/ZN (AND2_X2)
+   0.03140    0.57405 ^ _540_/ZN (OAI21_X1)
+   0.02023    0.59428 v _541_/ZN (OAI21_X1)
+   0.00001    0.59429 v _594_/D (DFF_X1)
+              0.59429   data arrival time
 
   10.00000   10.00000   clock core_clock (rise edge)
    0.00000   10.00000   clock network delay (ideal)
@@ -96,9 +96,11 @@ Path Type: max
               9.95949   data required time
 ---------------------------------------------------------------
               9.95949   data required time
-             -0.59149   data arrival time
+             -0.59429   data arrival time
 ---------------------------------------------------------------
-              9.36800   slack (MET)
+              9.36521   slack (MET)
 
 
-No differences found.
+Differences found at line 666.
+    - resp_msg[15] ( PIN resp_msg[15] ) ( _537_ A1 ) ( _536_ ZN ) + USE SIGNAL ;
+    - resp_msg[15] ( PIN resp_msg[15] ) ( _537_ A2 ) ( _536_ ZN ) + USE SIGNAL ;

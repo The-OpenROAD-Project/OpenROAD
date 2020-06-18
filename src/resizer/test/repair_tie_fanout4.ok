@@ -6,7 +6,17 @@ Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: ./results/tie_hi2.def
 Notice 0: Design: top
-Notice 0:     Created 36 components and 143 component-terminals.
-Notice 0:     Created 1 nets and 36 connections.
+Notice 0:     Created 11 components and 43 component-terminals.
+Notice 0:     Created 1 nets and 11 connections.
 Notice 0: Finished DEF file: ./results/tie_hi2.def
-Inserted 3 tie LOGIC1_X1 instances for 1 nets.
+Inserted 10 tie LOGIC1_X1 instances.
+t1_1 10.1 10.6
+t1_2 20.1 10.6
+t1_3 30.1 10.6
+t1_4 10.1 20.6
+t1_5 20.1 20.6
+t1_6 30.1 20.6
+t1_7 10.1 30.6
+t1_8 20.1 30.6
+t1_9 30.1 30.6
+t1_10 10.1 40.6

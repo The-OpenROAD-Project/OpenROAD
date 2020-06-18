@@ -2606,16 +2606,6 @@ OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
     }
     else
     {
-        float pin_limit;
-        bool  pin_limit_exists;
-        sta_->sdc()->slewLimit(pin, min_max, pin_limit, pin_limit_exists);
-        // Use the tightest limit.
-        if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
-        {
-            limit  = pin_limit;
-            exists = true;
-        }
-
         float port_limit;
         bool  port_limit_exists;
         auto  port = network()->libertyPort(pin);

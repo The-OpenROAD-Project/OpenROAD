@@ -12,7 +12,8 @@ read_def $def_filename
 create_clock -period 10 clk1
 
 report_max_fanout 1
-repair_max_fanout -max_fanout 10 -buffer_cell BUF_X1
+set_max_fanout 10 [current_design]
+repair_max_fanout -buffer_cell BUF_X1
 report_max_fanout 5
 
 # set repaired_filename [file join $result_dir "repair_max_fanout1.def"]
