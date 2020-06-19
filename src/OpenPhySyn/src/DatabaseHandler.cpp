@@ -90,6 +90,7 @@ DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
     dont_use_callback_           = nullptr;
     compute_parasitics_callback_ = nullptr;
     maximum_area_callback_       = nullptr;
+    update_design_area_callback_ = nullptr;
     resetDelays();
 }
 
@@ -3659,9 +3660,35 @@ DatabaseHandler::setMaximumArea(MaxAreaCallback maximum_area_callback)
     maximum_area_callback_ = maximum_area_callback;
     maximum_area_valid_    = true;
 }
+void
+DatabaseHandler::setUpdateDesignArea(
+    UpdateDesignAreaCallback update_design_area_callback)
+{
+    update_design_area_callback_ = update_design_area_callback;
+}
+void
+DatabaseHandler::notifyDesignAreaChanged(float new_area)
+{
+    if (update_design_area_callback_ != nullptr)
+    {
+        update_design_area_callback_(new_area);
+    }
+}
+void
+DatabaseHandler::notifyDesignAreaChanged()
+{
+    if (update_design_area_callback_ != nullptr)
+    {
+        update_design_area_callback_(area());
+    }
+}
 bool
 DatabaseHandler::hasMaximumArea() const
 {
+    if (maximum_area_callback_ != nullptr)
+    {
+        return maximum_area_callback_();
+    }
     return maximum_area_valid_;
 }
 float

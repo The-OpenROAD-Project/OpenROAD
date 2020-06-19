@@ -689,6 +689,7 @@ TimingBufferTransform::timingBuffer(
                      "nets");
     }
     PSN_LOG_INFO("Buffered", net_count_, "nets");
+    psn_inst->handler()->notifyDesignAreaChanged();
 
     return buffer_count_ + resize_count_;
 }

@@ -1066,6 +1066,7 @@ RepairTimingTransform::repairTiming(
     PSN_LOG_INFO("Initial area:", (int)(options->initial_area * 10E12));
 
     PSN_LOG_INFO("New area:", (int)(current_area_ * 10E12));
+    psn_inst->handler()->notifyDesignAreaChanged(current_area_);
 
     return getEditCount();
 }

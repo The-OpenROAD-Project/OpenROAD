@@ -80,9 +80,7 @@ public:
     virtual bool hasLiberty() const;
     virtual bool hasDesign() const;
 
-    static void setupLegalizer();
-    static void setupWireParasitics();
-    static void setupMaxArea();
+    static void setupCallbacks();
 
     virtual void clearDatabase();
 

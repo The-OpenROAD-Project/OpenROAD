@@ -89,9 +89,7 @@ Psn::initialize(DatabaseSta* sta, bool load_transforms, Tcl_Interp* interp,
     }
 
     is_initialized_ = true;
-    setupLegalizer();
-    setupWireParasitics();
-    setupMaxArea();
+    setupCallbacks();
 }
 
 Psn::~Psn()
@@ -589,27 +587,25 @@ Psn::sourceTclScript(const char* script_path)
     return 1;
 }
 void
-Psn::setupLegalizer()
+Psn::setupCallbacks()
 {
+    // Legalizer
     psn_instance_->handler()->setLegalizer([=](int max_displacment) -> bool {
         auto openroad = ord::OpenRoad::openRoad();
         auto opendp   = openroad->getOpendp();
         opendp->detailedPlacement(max_displacment);
         return true;
     });
-    /*
-    Should link to the Resizer here when the method is exported
+
+    // Dont use cells
     psn_instance_->handler()->setDontUseCallback(
         [=](LibraryCell* cell) -> bool {
             auto openroad = ord::OpenRoad::openRoad();
-            auto resizer = openroad->getResizer();
+            auto resizer  = openroad->getResizer();
             return resizer->dontUse(cell);
         });
-    */
-}
-void
-Psn::setupWireParasitics()
-{
+
+    // Wire parasitics
     psn_instance_->handler()->setWireRC(
         [=]() -> float {
             auto openroad = ord::OpenRoad::openRoad();
@@ -626,19 +622,19 @@ Psn::setupWireParasitics()
         auto resizer  = openroad->getResizer();
         resizer->estimateWireParasitic(net);
     });
-}
-void
-Psn::setupMaxArea()
-{
-    /*
-    Should link to the Resizer here when the method is exported
-    psn_instance_->handler()->setMaximumArea(
-        [=]() -> float {
-            auto openroad = ord::OpenRoad::openRoad();
-            auto resizer = openroad->getResizer();
-            return resizer->maximumArea();
-        });
-    */
+    // Max area and design arae
+    psn_instance_->handler()->setMaximumArea([=]() -> float {
+        auto openroad = ord::OpenRoad::openRoad();
+        auto resizer  = openroad->getResizer();
+        return resizer->maxArea();
+    });
+    psn_instance_->handler()->setUpdateDesignArea([=](float new_area) {
+        auto  openroad             = ord::OpenRoad::openRoad();
+        auto  resizer              = openroad->getResizer();
+        float current_resizer_area = resizer->designArea();
+        float delta                = new_area - current_resizer_area;
+        return resizer->designAreaIncr(delta);
+    });
 }
 
 // Private methods:

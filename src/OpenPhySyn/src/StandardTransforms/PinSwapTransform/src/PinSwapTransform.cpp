@@ -104,6 +104,7 @@ PinSwapTransform::powerPinSwap(psn::Psn* psn_inst, int path_count)
             }
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
 
     return swap_count_;
 }
@@ -196,6 +197,7 @@ PinSwapTransform::timingPinSwap(psn::Psn* psn_inst, int path_count)
             }
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
     return swap_count_;
 }
 

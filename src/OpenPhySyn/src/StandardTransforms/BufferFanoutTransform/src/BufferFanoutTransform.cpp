@@ -100,13 +100,11 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     {
         InstanceTerm* source_pin   = handler.faninPin(net);
         bool          is_top_level = false;
-#ifdef USE_OPENSTA_DB_HANDLER
         if (!source_pin)
         {
             source_pin   = handler.port(handler.name(net).c_str());
             is_top_level = true;
         }
-#endif
         if (source_pin && !clock_pins.count(source_pin))
         {
             PSN_LOG_DEBUG("Buffering:", handler.name(net));
@@ -275,6 +273,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             }
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
     PSN_LOG_INFO("Added", create_buffer_count, "buffers");
 
     return create_buffer_count;
