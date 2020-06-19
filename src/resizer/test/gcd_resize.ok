@@ -17,7 +17,7 @@ Inserted 35 input buffers.
 Inserted 18 output buffers.
 Repaired 3 long wires.
 Inserted 3 buffers.
-Resized 53 instances.
+Resized 56 instances.
 Inserted 0 hold buffers.
 Startpoint: _886_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _880_ (rising edge-triggered flip-flop clocked by core_clock)
@@ -92,4 +92,4 @@ _551_/Z manhtn 71 steiner 71 0.00
 _851_/Z manhtn 70 steiner 70 0.00
 _725_/Z manhtn 67 steiner 67 0.00
 input34/Z manhtn 67 steiner 67 0.00
-Design area 738 u^2 12% utilization.
+Design area 735 u^2 11% utilization.
