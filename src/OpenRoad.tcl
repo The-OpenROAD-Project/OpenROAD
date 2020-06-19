@@ -128,60 +128,71 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
-sta::define_cmd_args "set_layer_rc" { [-layer] layer_id \
-                                      [-via] layer_id \
+# Units are from OpenSTA (ie Liberty file or set_units)
+sta::define_cmd_args "set_layer_rc" { [-layer] layer_name \
+                                      [-via] layer_name \
                                       [-capacitance] value \
                                       [-resistance] value }
 proc set_layer_rc {args} {
   sta::parse_key_args "set_layer_rc" args keys {-layer -via -capacitance -resistance} flags {}
 
   if { ![info exists keys(-layer)] && ![info exists keys(-via)] } {
-    sta::sta_error "layer or via must be specified."
+    ord::error "layer or via must be specified."
+  }
+
+  if { [info exists keys(-layer)] && [info exists keys(-via)] } {
+    ord::error "Exactly one of layer or via must be specified."
   }
 
   set db [ord::get_db]
   set tech [$db getTech]
 
   if { [info exists keys(-layer)] } {
-    set techLayer [$tech findRoutingLayer $keys(-layer)]
+    set techLayer [$tech findLayer $keys(-layer)]
   } else {
-    set techLayer [$tech findRoutingLayer $keys(-via)]
+    set techLayer [$tech findLayer $keys(-via)]
   }
 
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    sta:sta_error "please load the design before trying to use this command"
+    ord::error "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
 
   if { $techLayer == "NULL" } {
-    sta::sta_error "layer not found."
+    ord::error "layer not found."
   }
 
   if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-    sta::sta_error "use -capacitance <value> or -resistance <value>."
+    ord::error "use -capacitance <value> or -resistance <value>."
   }
 
   if { [info exists keys(-via)] } {
     set viaTechLayer [$techLayer getUpperLayer]
 
     if { [info exists keys(-capacitance)] } {
-      $viaTechLayer setCapacitance [expr $keys(-capacitance) * 1E-3]
+      set wire_cap [capacitance_ui_sta $keys(-capacitance)]
+      $viaTechLayer setCapacitance $wire_cap
     }
 
     if { [info exists keys(-resistance)] } {
-      $viaTechLayer setResistance $keys(-resistance)
+      set wire_res [resistance_ui_sta $keys(-resistance)]
+      $viaTechLayer setResistance $wire_res
     }
 
     return
   }
 
   if { [info exists keys(-capacitance)] } {
-    # The DB stores capacitance for each square unit,
-    # not unit capacitance. "1.0" is just for casting integer to float
+    # Zero the edge cap and just use the user given value
+    $techLayer setEdgeCapacitance 0
+    # The DB stores capacitance per square micron of area, not per
+    # micron of length. "1.0" is just for casting integer to float
     set dbu [expr 1.0 * [$block getDbUnitsPerMicron]]
     set wire_width [expr 1.0 * [$techLayer getWidth] / $dbu]
-    set cap_per_square [expr (1e-3 * $keys(-capacitance) - 2 * [$techLayer getEdgeCapacitance]) * $dbu / $wire_width]
+    set wire_cap [expr [sta::capacitance_ui_sta $keys(-capacitance)] / [sta::distance_ui_sta 1.0]]
+    # ui_sta converts to F/m so multiple by 1E6 to get pF/um
+    set cap_per_square [expr 1E6 * $wire_cap / $wire_width]
 
     $techLayer setCapacitance $cap_per_square
   }
@@ -190,7 +201,9 @@ proc set_layer_rc {args} {
     # The DB stores resistance for a square of wire,
     # not unit resistance. "1.0" is just for casting integer to float
     set wire_width [expr 1.0 * [$techLayer getWidth] / [$block getDbUnitsPerMicron]]
-    set res_per_square [expr $wire_width * $keys(-resistance)]
+    set wire_res [expr [sta::resistance_ui_sta $keys(-resistance)] / [sta::distance_ui_sta 1.0]]
+    # ui_sta converts to ohm/m so multiple by 1E-6 to get ohm/um
+    set res_per_square [expr 1e-6 * $wire_width * $wire_res]
 
     $techLayer setResistance $res_per_square
   }

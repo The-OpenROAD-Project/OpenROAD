@@ -166,6 +166,10 @@ Resizer::utilization()
   else
     return 1.0;
 }
+double Resizer::maxArea() const
+{
+  return max_area_;
+}
 
 ////////////////////////////////////////////////////////////////
 
@@ -2805,6 +2809,11 @@ Resizer::designArea()
 {
   ensureBlock();
   return design_area_;
+}
+
+void
+Resizer::designAreaIncr(float delta) {
+  design_area_ += delta;
 }
 
 double
