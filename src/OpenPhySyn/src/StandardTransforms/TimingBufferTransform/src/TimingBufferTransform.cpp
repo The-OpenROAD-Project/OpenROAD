@@ -665,9 +665,10 @@ TimingBufferTransform::timingBuffer(
             break;
         }
     }
-    PSN_LOG_INFO("Initial area:", (int)(options->initial_area * 10E12));
+    PSN_LOG_INFO("Initial area:",
+                 handler.unitScaledArea(options->initial_area));
 
-    PSN_LOG_INFO("New area:", (int)(current_area_ * 10E12));
+    PSN_LOG_INFO("New area:", handler.unitScaledArea(current_area_));
 
     if (options->repair_capacitance_violations)
     {

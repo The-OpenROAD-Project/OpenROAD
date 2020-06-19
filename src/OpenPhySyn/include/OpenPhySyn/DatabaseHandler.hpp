@@ -153,6 +153,7 @@ public:
     virtual void  setMaximumArea(float area);
     virtual void  setMaximumArea(MaxAreaCallback maximum_area_callback);
     virtual float maximumArea() const;
+    virtual std::string unitScaledArea(float ar) const;
     virtual void
                   setUpdateDesignArea(UpdateDesignAreaCallback update_design_area_callback);
     virtual void  notifyDesignAreaChanged(float new_area);

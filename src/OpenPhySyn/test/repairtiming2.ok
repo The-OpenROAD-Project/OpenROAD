@@ -67,8 +67,8 @@ Pin Swap: 0
 Buffered nets: 23 
 Transition violations: 7 
 Capacitance violations: 23 
-Initial area: 597124 
-New area: 597279 
+Initial area: 59712 
+New area: 59728 
 Finished repair_timing transform ( 23 ) 
 Added/updated 23 cells
 No differences found.

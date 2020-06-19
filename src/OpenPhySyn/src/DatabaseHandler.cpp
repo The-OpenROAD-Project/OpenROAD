@@ -64,6 +64,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
+#include "sta/Units.hh"
 
 namespace psn
 {
@@ -1746,25 +1747,48 @@ DatabaseHandler::area(Instance* inst) const
 {
     odb::dbInst*   dinst  = network()->staToDb(inst);
     odb::dbMaster* master = dinst->getMaster();
-    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+    if (master->isCoreAutoPlaceable())
+    {
+        return dbuToMeters(master->getWidth()) *
+               dbuToMeters(master->getHeight());
+    }
+    return 0.0;
 }
 float
 DatabaseHandler::area(LibraryCell* cell) const
 {
     odb::dbMaster* master = db_->findMaster(name(cell).c_str());
-    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+    if (master->isCoreAutoPlaceable())
+    {
+        return dbuToMeters(master->getWidth()) *
+               dbuToMeters(master->getHeight());
+    }
+    return 0.0;
 }
 
 float
 DatabaseHandler::area() const
 {
     float total_area = 0.0;
-    for (auto inst : instances())
+    for (auto inst : top()->getInsts())
     {
-        total_area += area(inst);
+        auto master = inst->getMaster();
+        if (master->isCoreAutoPlaceable())
+        {
+            total_area += dbuToMeters(master->getWidth()) *
+                          dbuToMeters(master->getHeight());
+        }
     }
     return total_area;
 }
+
+std::string
+DatabaseHandler::unitScaledArea(float ar) const
+{
+    auto unit = network()->units()->distanceUnit();
+    return std::string(unit->asString(ar / unit->scale(), 0));
+}
+
 float
 DatabaseHandler::power(std::vector<Instance*>& insts)
 {
@@ -1863,7 +1887,8 @@ DatabaseHandler::largestLibraryCell(LibraryCell* cell)
 double
 DatabaseHandler::dbuToMeters(int dist) const
 {
-    return static_cast<double>(dist) * 1e-6 / db_->getTech()->getLefUnits();
+    return static_cast<double>(dist) /
+           (db_->getTech()->getDbUnitsPerMicron() * 1e+6);
 }
 double
 DatabaseHandler::dbuToMicrons(int dist) const
@@ -3425,7 +3450,6 @@ DatabaseHandler::buildLibraryMappings(int                        max_length,
                         auto node_table_id = chain[m];
                         auto node_random_cell =
                             *(function_to_cell_[node_table_id].begin());
-                        // PSN_LOG_INFO("CHN NEXT", // name(node_random_cell));
 
                         auto node_input_pins =
                             libraryInputPins(node_random_cell);
