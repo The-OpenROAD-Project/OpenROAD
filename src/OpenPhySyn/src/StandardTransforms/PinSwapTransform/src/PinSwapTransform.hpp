@@ -51,12 +51,11 @@ public:
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
 
-    OPENPHYSYN_TRANSFORM
+    OPENPHYSYN_DEFINE_TRANSFORM(
+        "pin_swap", "1.1",
+        "Performs timing-driven/power-driven commutative pin swapping "
+        "optimization",
+        "Usage: transform pin_swap <max_num_optimize_paths> [-power]")
 };
-
-DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.1",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap <max_num_optimize_paths> [-power]")
 
 } // namespace psn

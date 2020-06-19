@@ -1396,18 +1396,5 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return repairTiming(psn_inst, options, buffer_lib_names,
                         inverter_lib_names);
 }
-DEFINE_TRANSFORM_VIRTUALS(
-    RepairTimingTransform, "repair_timing", "1.0",
-    "Repair design timing and electrical violations",
-    "Usage: transform repair_timing [-capacitance_violations] "
-    "[-transition_violations] [-negative_slack_violations] [-iterations "
-    "num_iterations] [-buffers buffer_cells] [-inverters inverter cells] "
-    "[-min_gain gain=0.0] [-auto_buffer_library "
-    "<single|small|medium|large|all>] [-no_minimize_buffer_library] "
-    "[-auto_buffer_library_inverters_enabled]  [-buffer_disabled] "
-    "[-minimum_cost_buffer_enabled] [-resize_disabled] [-pin_swap_disabled] "
-    "[-downsize_enabled] [-legalize_eventually] [-legalize_each_iteration] "
-    "[-post_place|-post_route] [-legalization_frequency <num_edits>] "
-    "[-high_effort] [-pessimism_factor factor]")
 
 } // namespace psn

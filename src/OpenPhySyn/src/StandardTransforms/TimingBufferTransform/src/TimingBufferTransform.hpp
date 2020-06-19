@@ -88,20 +88,18 @@ public:
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
 
-    OPENPHYSYN_TRANSFORM
+    OPENPHYSYN_DEFINE_TRANSFORM(
+        "timing_buffer", "1.5",
+        "Performs several variations of buffering and resizing to fix timing "
+        "violations",
+        "Usage: transform timing_buffer [-capacitance_violations] "
+        "[-transition_violations] [-negative_slack_violations] "
+        "[-auto_buffer_library <single|small|medium|large|all>] "
+        "[-minimize_buffer_library] [-use_inverting_buffer_library] [-buffers "
+        "buffer_cells] [-inverters invereter_cells] [-repair_by_resynthesis] "
+        "[-iterations num_iterations=1>] [-post_place|-post_route] "
+        "[-legalization_frequency num_edits][-min_gain gain=0] "
+        "[-enable_gate_resize] [-area_penalty penalty]")
 };
-
-DEFINE_TRANSFORM(
-    TimingBufferTransform, "timing_buffer", "1.5",
-    "Performs several variations of buffering and resizing to fix timing "
-    "violations",
-    "Usage: transform timing_buffer [-capacitance_violations] "
-    "[-transition_violations] [-negative_slack_violations] "
-    "[-auto_buffer_library <single|small|medium|large|all>] "
-    "[-minimize_buffer_library] [-use_inverting_buffer_library] [-buffers "
-    "buffer_cells] [-inverters invereter_cells] [-repair_by_resynthesis] "
-    "[-iterations num_iterations=1>] [-post_place|-post_route] "
-    "[-legalization_frequency num_edits][-min_gain gain=0] "
-    "[-enable_gate_resize] [-area_penalty penalty]")
 
 } // namespace psn

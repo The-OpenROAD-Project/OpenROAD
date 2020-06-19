@@ -243,10 +243,4 @@ PinSwapTransform::run(Psn* psn_inst, std::vector<std::string> args)
         return timingPinSwap(psn_inst, max_opt_paths);
     }
 }
-
-DEFINE_TRANSFORM_VIRTUALS(
-    PinSwapTransform, "pin_swap", "1.1",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap <max_num_optimize_paths> [-optimize_power]")
-
 } // namespace psn

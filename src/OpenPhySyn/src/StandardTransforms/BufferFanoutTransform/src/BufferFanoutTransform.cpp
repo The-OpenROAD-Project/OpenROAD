@@ -360,8 +360,4 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
-DEFINE_TRANSFORM_VIRTUALS(BufferFanoutTransform, "buffer_fanout", "1.0.0",
-                          "Inserts buffers based on max fan-out",
-                          "Usage: transform buffer_fanout "
-                          "<max_fanout> <buffer_cell>")
 } // namespace psn

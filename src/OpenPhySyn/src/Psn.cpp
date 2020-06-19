@@ -152,46 +152,21 @@ Psn::instancePtr()
 int
 Psn::loadTransforms()
 {
-    std::vector<psn::TransformHandler> handlers;
-    int                                load_count = 0;
+    int load_count = 0;
 
-#ifdef OPENPHYSYN_AUTO_LINK
-#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
-    handlers.push_back(TransformHandler(
-        "buffer_fanout", std::make_shared<BufferFanoutTransform>()));
-#endif
-#ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
-    handlers.push_back(TransformHandler(
-        "gate_clone", std::make_shared<GateCloningTransform>()));
-#endif
-#ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
-    handlers.push_back(
-        TransformHandler("pin_swap", std::make_shared<PinSwapTransform>()));
-#endif
-#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
-    handlers.push_back(
-        TransformHandler("constant_propagation",
-                         std::make_shared<ConstantPropagationTransform>()));
-#endif
-#ifdef OPENPHYSYN_TRANSFORM_TIMING_BUFFER_ENABLED
-    handlers.push_back(TransformHandler(
-        "timing_buffer", std::make_shared<TimingBufferTransform>()));
-#endif
-#ifdef OPENPHYSYN_TRANSFORM_REPAIR_TIMING_ENABLED
-    handlers.push_back(TransformHandler(
-        "repair_timing", std::make_shared<RepairTimingTransform>()));
-#endif
+    OPENPHYSYN_LOAD_TRANSFORMS(transforms_, transforms_info_, load_count);
 
-#else
+#ifdef OPENPHYSYN_ENABLE_DYNAMIC_TRANSFORM_LIBRARY
     std::string transforms_paths(
         FileUtils::joinPath(FileUtils::homePath(), ".OpenPhySyn/transforms") +
-        ":" + FileUtils::joinPath(exec_path_, "./transforms") + ":" +
-        FileUtils::joinPath(exec_path_, "../transforms"));
+        ":" + FileUtils::joinPath(exec_path_, "transforms") + ":" +
+        std::string(PSN_TRANSFORM_INSTALL_FULL_PATH));
     const char* env_path = std::getenv("PSN_TRANSFORM_PATH");
 
     if (env_path)
     {
-        transforms_paths = std::string(env_path);
+        transforms_paths =
+            transforms_paths + std::string(":") + std::string(env_path);
     }
 
     std::vector<std::string> transforms_dirs =
@@ -199,24 +174,28 @@ Psn::loadTransforms()
 
     for (auto& transform_parent_path : transforms_dirs)
     {
-        if (transform_parent_path.length() &&
-            FileUtils::isDirectory(transform_parent_path))
+        if (!transform_parent_path.length())
         {
-
-            std::vector<std::string> transforms_paths =
-                FileUtils::readDirectory(transform_parent_path);
-            for (auto& path : transforms_paths)
-            {
-                PSN_LOG_DEBUG("Loading transform", path);
-                handlers.push_back(TransformHandler(path));
-            }
-
-            PSN_LOG_DEBUG("Found", transforms_paths.size(), "transforms under",
-                          transform_parent_path);
+            continue;
         }
+        if (!FileUtils::isDirectory(transform_parent_path))
+        {
+            continue;
+        }
+        PSN_LOG_DEBUG("Searching for transforms at {}", transform_parent_path);
+        std::vector<std::string> transforms_paths =
+            FileUtils::readDirectory(transform_parent_path, true);
+        for (auto& path : transforms_paths)
+        {
+            PSN_LOG_DEBUG("Loading transform {}", path);
+            handlers_.push_back(psn::TransformHandler(path));
+        }
+
+        PSN_LOG_DEBUG("Found {} transforms under {}.", transforms_paths.size(),
+                      transform_parent_path);
     }
-#endif
-    for (auto tr : handlers)
+
+    for (auto tr : handlers_)
     {
         std::string tr_name(tr.name());
         if (!transforms_.count(tr_name))
@@ -229,10 +208,13 @@ Psn::loadTransforms()
         }
         else
         {
-            PSN_LOG_WARN("Transform", tr_name,
-                         "was already loaded, discarding subsequent loads");
+            PSN_LOG_DEBUG(
+                "Transform {} was already loaded, discarding subsequent loads",
+                tr_name);
         }
     }
+#endif
+    PSN_LOG_DEBUG("Loaded {} transforms.", load_count);
     return load_count;
 }
 
