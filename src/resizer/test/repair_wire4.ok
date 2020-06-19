@@ -17,7 +17,7 @@ Driver    length delay
 u2/Z manhtn 1500 steiner 1500 0.00
 u3/Z manhtn 1 steiner 1 0.00
 Using max slew 0.199.
-Warning: max wire length is zero.
-Warning: max wire length is zero.
+Warning: max wire length is 0. Skipping wire repair
+Warning: max wire length is 0. Skipping wire repair
 Repaired 1 long wires.
 Inserted 2 buffers.

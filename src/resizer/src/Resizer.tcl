@@ -274,18 +274,14 @@ proc repair_long_wires { args } {
     check_positive_float "-max_slew" $max_slew
     set max_slew [sta::time_ui_sta $max_slew]
     set max_length [find_max_slew_wire_length $max_slew $buffer_cell]
-    if { $max_length == 0.0 } {
-      ord::warn "max wire length is zero."
-    } else {
+    if { $max_length != 0.0 } {
       puts "Using max wire length [sta::format_distance $max_length 0]."
     }
   } else {
     set max_slew [default_max_slew]
     set max_length [find_max_slew_wire_length $max_slew $buffer_cell]
     puts "Using max slew [sta::format_time $max_slew 3]."
-    if { $max_length == 0.0 } {
-      ord::warn "max wire length is zero."
-    } else {
+    if { $max_length != 0.0 } {
       puts "Using max wire length [sta::format_distance $max_length 0]."
     }
   }
@@ -293,6 +289,8 @@ proc repair_long_wires { args } {
   check_argc_eq0 "repair_long_wires" $args
   if { $max_length > 0.0 } {
     repair_long_wires_cmd $max_length $buffer_cell
+  } else {
+    ord::warn "max wire length is 0. Skipping wire repair"
   }
 }
 
