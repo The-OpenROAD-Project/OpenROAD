@@ -166,7 +166,9 @@ Resizer::utilization()
   else
     return 1.0;
 }
-double Resizer::maxArea() const
+
+double
+Resizer::maxArea() const
 {
   return max_area_;
 }
@@ -1983,9 +1985,10 @@ Resizer::repairSteinerWires(SteinerTree *tree,
 		       max_length, buffer_cell);
 
   if (have_estimated_parasitics_) {
-      // Wait until down stream buffers are inserted to rebuild parasitics.
+    // Wait until down stream buffers are inserted to rebuild parasitics.
     if (buffer_out)
       estimateWireParasitic(buffer_out);
+    // Estimate parasitics at original driver net (tree root).
     if (prev_pt == SteinerTree::null_pt)
       estimateWireParasitic(drvr_net);
   }
