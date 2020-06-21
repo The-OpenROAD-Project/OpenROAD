@@ -29,15 +29,15 @@ global_placement -disable_routability_driven -density $place_density \
 # resize
 set_wire_rc -layer $wire_rc_layer
 set_dont_use $dont_use
-resize
+
 buffer_ports -buffer_cell $resize_buffer_cell
-repair_max_cap -buffer_cell $resize_buffer_cell
-repair_max_slew -buffer_cell $resize_buffer_cell
+repair_long_wires -buffer_cell $resize_buffer_cell
 repair_max_fanout -buffer_cell $resize_buffer_cell
+resize
+
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
 repair_hold_violations -buffer_cell $resize_buffer_cell
-resize
 
 clock_tree_synthesis -lut_file $cts_lut_file \
   -sol_list $cts_sol_file \
