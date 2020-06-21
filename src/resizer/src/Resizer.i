@@ -269,19 +269,6 @@ resize_driver_to_target_slew(const Pin *drvr_pin)
   resizer->resizeToTargetSlew(drvr_pin);
 }
 
-// for testing
-void
-rebuffer_net(Net *net,
-	     LibertyCell *buffer_cell)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  LibertyLibrarySeq *resize_libs = new LibertyLibrarySeq;
-  resize_libs->push_back(buffer_cell->libertyLibrary());
-  resizer->resizePreamble(resize_libs);
-  resizer->rebuffer(net, buffer_cell);
-}
-
 double
 resize_target_slew(const RiseFall *rf)
 {

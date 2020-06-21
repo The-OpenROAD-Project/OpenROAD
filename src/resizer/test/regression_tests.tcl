@@ -1,10 +1,6 @@
 record_tests {
   make_parasitics1
   make_parasitics2
-  rebuffer1
-  rebuffer2
-  rebuffer4
-  rebuffer7
   buffer_ports1
   buffer_ports2
   buffer_ports3
