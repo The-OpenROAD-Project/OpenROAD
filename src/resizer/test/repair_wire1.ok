@@ -11,6 +11,8 @@ Notice 0:     Created 3 components and 12 component-terminals.
 Notice 0:     Created 2 special nets and 6 connections.
 Notice 0:     Created 4 nets and 6 connections.
 Notice 0: Finished DEF file: repair_wire1.def
+Max slew 0.199ns
+Max wire length 1120u
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
@@ -38,9 +40,9 @@ u3/Z manhtn 1 steiner 1 0.00
 Repaired 1 long wires.
 Inserted 2 buffers.
 Driver    length delay
-u2/Z manhtn 601 steiner 601 0.03
 repeater1/Z manhtn 600 steiner 600 0.03
-repeater2/Z manhtn 300 steiner 300 0.01
+repeater2/Z manhtn 600 steiner 600 0.03
+u2/Z manhtn 300 steiner 300 0.01
 u3/Z manhtn 1 steiner 1 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -54,15 +56,15 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  32.363    0.077    0.081    0.097 ^ u2/Z (BUF_X1)
-            0.090    0.035    0.132 ^ repeater1/A (BUF_X1)
-   1.284    0.009    0.032    0.164 ^ repeater1/Z (BUF_X1)
-            0.009    0.000    0.164 ^ repeater2/A (BUF_X1)
-  16.652    0.042    0.054    0.219 ^ repeater2/Z (BUF_X1)
-            0.043    0.009    0.228 ^ u3/A (BUF_X1)
-   0.000    0.005    0.025    0.253 ^ u3/Z (BUF_X1)
-            0.005    0.000    0.253 ^ out1 (out)
-                              0.253   data arrival time
+  16.676    0.042    0.053    0.070 ^ u2/Z (BUF_X1)
+            0.043    0.009    0.079 ^ repeater2/A (BUF_X1)
+  32.316    0.077    0.090    0.169 ^ repeater2/Z (BUF_X1)
+            0.090    0.035    0.204 ^ repeater1/A (BUF_X1)
+  32.341    0.077    0.094    0.297 ^ repeater1/Z (BUF_X1)
+            0.090    0.035    0.332 ^ u3/A (BUF_X1)
+   0.000    0.007    0.028    0.360 ^ u3/Z (BUF_X1)
+            0.007    0.000    0.360 ^ out1 (out)
+                              0.360   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

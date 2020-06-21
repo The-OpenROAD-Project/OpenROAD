@@ -10,16 +10,15 @@ set_load 20 _241_
 
 report_worst_slack
 
-set buffer_cell BUF_X4
+set buffer_cell BUF_X1
 set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
 
-resize
 buffer_ports -buffer_cell $buffer_cell
-repair_max_cap -buffer_cell $buffer_cell
-repair_max_slew -buffer_cell $buffer_cell
+
+repair_long_wires -buffer_cell $buffer_cell
+
 set_max_fanout 100 [current_design]
 repair_max_fanout -buffer_cell $buffer_cell
-repair_long_wires -max_length 80 -buffer_cell $buffer_cell
 resize
 
 repair_tie_fanout LOGIC0_X1/Z

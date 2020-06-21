@@ -20,8 +20,8 @@ Using max wire length 1120.
 Repaired 1 long wires.
 Inserted 2 buffers.
 Driver    length delay
-u2/Z manhtn 1121 steiner 1121 0.12
 repeater1/Z manhtn 1120 steiner 1120 0.12
-repeater2/Z manhtn 759 steiner 759 0.05
+repeater2/Z manhtn 1119 steiner 1119 0.12
+u2/Z manhtn 760 steiner 760 0.05
 u3/Z manhtn 1 steiner 1 0.00
 u4/Z manhtn 1 steiner 1 0.00

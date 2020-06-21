@@ -1,4 +1,11 @@
-# repair_long_wires -max_length 2 loads
+# repair_long_wires -max_length 2 loads in L shape wire
+#
+#                    u4-out2
+#                    |
+#                    |1500u
+#                    |
+# in1--u1--u2--------u3-out1
+#             1500u
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_wire2.def

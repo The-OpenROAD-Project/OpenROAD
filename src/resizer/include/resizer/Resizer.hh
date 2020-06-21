@@ -185,13 +185,27 @@ protected:
   int findMaxSteinerDist(SteinerTree *tree,
 			 SteinerPt pt,
 			 int dist_from_drvr);
-  void repairSteinerWires(SteinerTree *tree,
-			  SteinerPt pt,
-			  SteinerPt prev_pt,
-			  Net *drvr_net,
-			  int dist_from_drvr,
-			  int max_length,
-			  LibertyCell *buffer_cell);
+  void repairNetWires(SteinerTree *tree,
+		      SteinerPt pt,
+		      SteinerPt prev_pt,
+		      Net *net,
+		      int max_length,
+		      LibertyCell *buffer_cell,
+		      // Return values.
+		      int &wire_length,
+		      float &pin_cap,
+		      float &fanout,
+		      PinSeq &load_pins);
+  Pin *makeRepeater(SteinerTree *tree,
+		    SteinerPt pt,
+		    Net *in_net,
+		    PinSeq &load_pins,
+		    LibertyCell *buffer_cell);
+  Pin *makeRepeater(int x,
+		    int y,
+		    Net *in_net,
+		    PinSeq &load_pins,
+		    LibertyCell *buffer_cell);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
@@ -215,6 +229,7 @@ protected:
 		   int level,
 		   LibertyCell *buffer_cell);
   float portCapacitance(const LibertyPort *port);
+  float portFanoutLoad(LibertyPort *port);
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
   Requireds pinRequireds(const Pin *pin);
