@@ -1042,51 +1042,6 @@ Resizer::repairMaxSlew(LibertyCell *buffer_cell)
 }
 
 void
-Resizer::repairMaxFanout(LibertyCell *buffer_cell)
-{
-  int max_fanout_violation_count = 0;
-  inserted_buffer_count_ = 0;
-
-  init();
-  sta_->checkFanoutLimitPreamble();
-  // Rebuffer in reverse level order.
-  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *vertex = level_drvr_verticies_[i];
-    Pin *drvr_pin = vertex->pin();
-    Net *net = network_->net(drvr_pin);
-    // Hands off the clock tree.
-    if (!network_->isTopLevelPort(drvr_pin)
-	&& !isClock(net)
-	// Exclude tie hi/low cells.
-	&& !isFuncOneZero(drvr_pin)
-	&& net
-	&& !isSpecial(net)) {
-      float fanout, max_fanout, slack;
-      sta_->checkFanout(drvr_pin, MinMax::max(),
-			fanout, max_fanout, slack);
-      if (slack < 0.0) {
-	max_fanout_violation_count++;
-	int buffer_count = ceil(fanout / max_fanout);
-	int buffer_fanout = ceil(fanout / static_cast<double>(buffer_count));
-	bufferLoads(drvr_pin, buffer_count, buffer_fanout,
-		    buffer_cell, "max_fanout");
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
-	}
-      }
-    }
-  }
-
-  if (max_fanout_violation_count > 0)
-    printf("Found %d max fanout violations.\n", max_fanout_violation_count);
-  if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
-    level_drvr_verticies_valid_ = false;
-  }
-}
-
-void
 Resizer::bufferLoads(Pin *drvr_pin,
 		     int buffer_count,
 		     int max_fanout,

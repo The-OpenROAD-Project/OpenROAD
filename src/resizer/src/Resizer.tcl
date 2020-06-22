@@ -230,27 +230,12 @@ proc repair_max_slew { args } {
   repair_max_slew_cmd $buffer_cell
 }
 
+# compatibility
 define_cmd_args "repair_max_fanout" {-buffer_cell buffer_cell\
 				       [-max_utilization util]}
 
 proc repair_max_fanout { args } {
-  parse_key_args "repair_max_fanout" args \
-    keys {-max_fanout -buffer_cell -max_utilization} \
-    flags {}
-  
-  if { [info exists keys(-max_fanout)] } {
-    ord::warn "-max_fanout is deprecated. Use set_max_fanout fanout [current_design]."
-    set max_fanout $keys(-max_fanout)
-    check_positive_integer "-max_fanout" $max_fanout
-    set_max_fanout $max_fanout [current_design]
-  }
-  
-  set buffer_cell [parse_buffer_cell keys 1]
-  set_max_utilization [parse_max_util keys]
-  
-  check_argc_eq0 "repair_max_fanout" $args
-  
-  repair_max_fanout_cmd $buffer_cell
+  eval [concat repair_design $args]
 }
 
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\

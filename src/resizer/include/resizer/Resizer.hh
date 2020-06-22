@@ -99,7 +99,6 @@ public:
   // Insert buffers to fix max slew violations.
   // resizerPreamble() required.
   void repairMaxSlew(LibertyCell *buffer_cell);
-  void repairMaxFanout(LibertyCell *buffer_cell);
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
   void repairHoldViolations(LibertyCell *buffer_cell);

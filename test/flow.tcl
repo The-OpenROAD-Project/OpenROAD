@@ -31,8 +31,7 @@ set_wire_rc -layer $wire_rc_layer
 set_dont_use $dont_use
 
 buffer_ports -buffer_cell $resize_buffer_cell
-repair_long_wires -buffer_cell $resize_buffer_cell
-repair_max_fanout -buffer_cell $resize_buffer_cell
+repair_design -buffer_cell $resize_buffer_cell
 resize
 
 repair_tie_fanout -separation $tie_separation $tielo_port

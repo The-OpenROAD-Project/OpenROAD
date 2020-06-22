@@ -12,9 +12,8 @@ record_tests {
   resize3
   repair_max_cap1
   repair_max_cap2
-  repair_max_fanout1
-  repair_max_fanout2
-  repair_max_fanout3
+  repair_fanout1
+  repair_fanout2
   repair_max_slew1
   repair_max_slew2
   repair_hold1
