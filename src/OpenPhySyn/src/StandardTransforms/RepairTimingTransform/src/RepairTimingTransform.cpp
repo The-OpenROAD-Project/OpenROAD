@@ -247,14 +247,14 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
             {
                 vio_check_func = [&](InstanceTerm* pin) -> bool {
                     return handler.violatesMaximumTransition(
-                        pin, options->pessimism_factor);
+                        pin, options->transition_pessimism_factor);
                 };
             }
             if (is_cap_repair)
             {
                 vio_check_func = [&](InstanceTerm* pin) -> bool {
                     return handler.violatesMaximumCapacitance(
-                        pin, options->pessimism_factor);
+                        pin, options->capacitance_pessimism_factor);
                 };
             }
             if (is_slack_repair)
@@ -362,9 +362,11 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                             handler.sta()->vertexRequired(handler.vertex(pin),
                                                           sta::MinMax::min());
                             handler.sta()->findDelays(handler.vertex(pin));
-                            is_fixed = !handler.hasElectricalViolation(
-                                           pin, options->pessimism_factor) &&
-                                       !vio_check_func(pin);
+                            is_fixed =
+                                !handler.hasElectricalViolation(
+                                    pin, options->capacitance_pessimism_factor,
+                                    options->transition_pessimism_factor) &&
+                                !vio_check_func(pin);
                             replaced_driver = driver_size;
                             attmepts++;
                             // Only try three upsizes
@@ -421,7 +423,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                     if (options->minimum_cost)
                     {
                         if (handler.hasElectricalViolation(
-                                pin, options->pessimism_factor) &&
+                                pin, options->capacitance_pessimism_factor,
+                                options->transition_pessimism_factor) &&
                             max_req_tree && max_req_tree != buff_tree)
                         {
                             handler.ripupBuffers(added_buffers);
@@ -549,8 +552,9 @@ RepairTimingTransform::fixCapacitanceViolations(
         if (pin_net && !clock_nets.count(pin_net) &&
             !handler.isSpecial(pin_net))
         {
-            auto vio =
-                handler.hasElectricalViolation(pin, options->pessimism_factor);
+            auto vio = handler.hasElectricalViolation(
+                pin, options->capacitance_pessimism_factor,
+                options->transition_pessimism_factor);
             if (vio == ElectircalViolation::Capacitance ||
                 vio == ElectircalViolation::CapacitanceAndTransition)
             {
@@ -599,8 +603,9 @@ RepairTimingTransform::fixTransitionViolations(
             !handler.isSpecial(pin_net))
         {
             auto net_pins = handler.pins(pin_net);
-            auto vio =
-                handler.hasElectricalViolation(pin, options->pessimism_factor);
+            auto vio      = handler.hasElectricalViolation(
+                pin, options->capacitance_pessimism_factor,
+                options->transition_pessimism_factor);
             if (vio == ElectircalViolation::Transition ||
                 vio == ElectircalViolation::CapacitanceAndTransition)
             {
@@ -631,7 +636,7 @@ RepairTimingTransform::fixTransitionViolations(
 }
 int
 RepairTimingTransform::fixNegativeSlack(
-    Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+    Psn* psn_inst, std::unordered_set<InstanceTerm*>& filter_pins,
     std::unique_ptr<OptimizationOptions>& options)
 {
     PSN_LOG_DEBUG("Fixing negative slack violations");
@@ -763,8 +768,10 @@ RepairTimingTransform::resizeDown(Psn* psn_inst, InstanceTerm* pin,
     handler.sta()->ensureLevelized();
     handler.sta()->vertexRequired(handler.vertex(pin), sta::MinMax::min());
     handler.sta()->findDelays(handler.vertex(pin));
-    bool fix = handler.hasElectricalViolation(pin, options->pessimism_factor) !=
-               ElectircalViolation::None;
+    bool fix =
+        handler.hasElectricalViolation(
+            pin, options->capacitance_pessimism_factor,
+            options->transition_pessimism_factor) != ElectircalViolation::None;
     auto  wp  = handler.worstSlackPath(pin);
     float wns = handler.worstSlack();
     if (!fix && wp.size() && handler.worstSlack(wp[wp.size() - 1].pin()) > 0.0)
@@ -806,7 +813,8 @@ RepairTimingTransform::resizeDown(Psn* psn_inst, InstanceTerm* pin,
 
                         if (!wp.size() ||
                             handler.hasElectricalViolation(
-                                pin, options->pessimism_factor) !=
+                                pin, options->capacitance_pessimism_factor,
+                                options->transition_pessimism_factor) !=
                                 ElectircalViolation::None ||
                             handler.worstSlack(wp[wp.size() - 1].pin()) < 0.0 ||
                             new_wns < wns)
@@ -845,11 +853,24 @@ int
 RepairTimingTransform::repairTiming(
     Psn* psn_inst, std::unique_ptr<OptimizationOptions>& options,
     std::unordered_set<std::string> buffer_lib_names,
-    std::unordered_set<std::string> inverter_lib_names)
+    std::unordered_set<std::string> inverter_lib_names,
+    std::unordered_set<std::string> pin_names)
 {
     DatabaseHandler& handler = *(psn_inst->handler());
 
     auto start = std::chrono::high_resolution_clock::now();
+
+    std::unordered_set<InstanceTerm*> pins;
+    for (auto& pin_name : pin_names)
+    {
+        auto pin = handler.pin(pin_name.c_str());
+        if (!pin)
+        {
+            PSN_LOG_ERROR("Pin {} not found in the design");
+            return -1;
+        }
+        pins.insert(pin);
+    }
 
     if (options->cluster_buffers) // Cluster the buffer library to auto-select
                                   // the buffer cells
@@ -944,7 +965,7 @@ RepairTimingTransform::repairTiming(
         PSN_LOG_INFO("Iteration", i + 1);
 
         options->current_iteration = i;
-        auto driver_pins           = handler.levelDriverPins(true);
+        auto driver_pins           = handler.levelDriverPins(true, pins);
         bool hasVio                = false;
         int  pre_fix_count         = 0;
 
@@ -963,7 +984,7 @@ RepairTimingTransform::repairTiming(
                 handler.setWireRC(handler.resistancePerMicron(),
                                   handler.capacitancePerMicron(), false);
             }
-            driver_pins = handler.levelDriverPins(true);
+            driver_pins = handler.levelDriverPins(true, pins);
         }
 
         if (options->repair_capacitance_violations)
@@ -982,14 +1003,14 @@ RepairTimingTransform::repairTiming(
                 handler.setWireRC(handler.resistancePerMicron(),
                                   handler.capacitancePerMicron(), false);
             }
-            driver_pins = handler.levelDriverPins(true);
+            driver_pins = handler.levelDriverPins(true, pins);
         }
 
         if (options->repair_negative_slack)
         {
             pre_fix_count = getEditCount();
             // Run negative slack pass
-            fixNegativeSlack(psn_inst, driver_pins, options);
+            fixNegativeSlack(psn_inst, pins, options);
             if (pre_fix_count != getEditCount())
             {
                 hasVio = true;
@@ -1000,7 +1021,7 @@ RepairTimingTransform::repairTiming(
                 handler.setWireRC(handler.resistancePerMicron(),
                                   handler.capacitancePerMicron(), false);
             }
-            driver_pins = handler.levelDriverPins(true);
+            driver_pins = handler.levelDriverPins(true, pins);
         }
         handler.setWireRC(handler.resistancePerMicron(),
                           handler.capacitancePerMicron(), false);
@@ -1025,7 +1046,7 @@ RepairTimingTransform::repairTiming(
     if (options->repair_by_downsize)
     {
         // Run final downsizing phase for any extra area recovery
-        auto driver_pins = handler.levelDriverPins(true);
+        auto driver_pins = handler.levelDriverPins(true, pins);
         resizeDown(psn_inst, driver_pins, options);
         if (options->legalization_frequency > 0)
         {
@@ -1119,8 +1140,9 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-legalize_each_iteration", // Legalize after each iteration
          "-post_place",              // Post placement phase mode
          "-post_route", // Post routing phase mode (not currently supported)
-         "-legalization_frequency", // Legalize after how many edit
-         "-pessimism_factor",       // Cap/slew limit scaling factor
+         "-legalization_frequency",       // Legalize after how many edit
+         "-capacitance_pessimism_factor", // Cap limit scaling factor
+         "-transition_pessimism_factor",  // Transition limit scaling factor
          "-high_effort", // Trade-off runtime versus optimization quality by
                          // weaker pruning
          "-upstream_resistance"}); // Override default minimum upstream
@@ -1262,7 +1284,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 options->min_gain = atof(args[i].c_str());
             }
         }
-        else if (args[i] == "-pessimism_factor")
+        else if (args[i] == "-capacitance_pessimism_factor")
         {
             i++;
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
@@ -1272,7 +1294,20 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
             else
             {
-                options->pessimism_factor = atof(args[i].c_str());
+                options->capacitance_pessimism_factor = atof(args[i].c_str());
+            }
+        }
+        else if (args[i] == "-transition_pessimism_factor")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                options->transition_pessimism_factor = atof(args[i].c_str());
             }
         }
         else if (args[i] == "-capacitance_violations")

@@ -96,7 +96,9 @@ public:
                                    fanoutPins(Net* net, bool include_top_level = false) const;
     virtual std::vector<Instance*> fanoutInstances(Net* net) const;
     virtual std::vector<InstanceTerm*>
-                                       levelDriverPins(bool reverse = false) const;
+                                       levelDriverPins(bool                              reverse = false,
+                                                       std::unordered_set<InstanceTerm*> filter_pins =
+                                                           std::unordered_set<InstanceTerm*>()) const;
     virtual std::vector<Instance*>     driverInstances() const;
     virtual InstanceTerm*              faninPin(Net* net) const;
     virtual InstanceTerm*              faninPin(InstanceTerm* term) const;
@@ -131,6 +133,7 @@ public:
     virtual Instance*                  instance(InstanceTerm* term) const;
     virtual Instance*                  instance(const char* name) const;
     virtual BlockTerm*                 port(const char* name) const;
+    virtual InstanceTerm*              pin(const char* name) const;
     virtual float                      pinCapacitance(InstanceTerm* term) const;
     virtual float                      pinCapacitance(LibraryTerm* term) const;
     virtual void  ripupBuffers(std::unordered_set<Instance*> buffers);
@@ -146,13 +149,13 @@ public:
     virtual float loadCapacitance(InstanceTerm* term) const;
     std::vector<std::vector<PathPoint>> getNegativeSlackPaths() const;
     virtual float                       maxLoad(LibraryCell* cell);
-    virtual float capacitanceLimit(InstanceTerm* term) const;
-    virtual float targetLoad(LibraryCell* cell);
-    virtual float coreArea() const;
-    virtual bool  maximumUtilizationViolation() const;
-    virtual void  setMaximumArea(float area);
-    virtual void  setMaximumArea(MaxAreaCallback maximum_area_callback);
-    virtual float maximumArea() const;
+    virtual float       capacitanceLimit(InstanceTerm* term) const;
+    virtual float       targetLoad(LibraryCell* cell);
+    virtual float       coreArea() const;
+    virtual bool        maximumUtilizationViolation() const;
+    virtual void        setMaximumArea(float area);
+    virtual void        setMaximumArea(MaxAreaCallback maximum_area_callback);
+    virtual float       maximumArea() const;
     virtual std::string unitScaledArea(float ar) const;
     virtual void
                   setUpdateDesignArea(UpdateDesignAreaCallback update_design_area_callback);
@@ -271,7 +274,8 @@ public:
     virtual bool violatesMaximumTransition(InstanceTerm* term,
                                            float limit_scale_factor = 1.0);
     virtual ElectircalViolation
-    hasElectricalViolation(InstanceTerm* term, float limit_scale_factor = 1.0);
+    hasElectricalViolation(InstanceTerm* term, float cap_scale_factor = 1.0,
+                           float trans_scale_factor = 1.0);
     virtual std::vector<InstanceTerm*>
     maximumTransitionViolations(float limit_scale_factor = 1.0) const;
     virtual std::vector<InstanceTerm*>

@@ -617,7 +617,8 @@ repair_timing
         [-buffer_disabled]
         [-resize_disabled]
         [-pin_swap_disabled]
-        [-pessimism_factor factor]
+        [-capacitance_pessimism_factor factor]
+        [-transition_pessimism_factor factor]
         [-minimum_cost_buffer_enabled]
         [-legalization_frequency num_edits]
         [-legalize_each_iteration iterations]
@@ -626,6 +627,7 @@ repair_timing
         [-post_route]
         [-min_gain gain]
         [-high_effort]
+        [-pins pin_names]
 ```
 The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
 
@@ -642,7 +644,8 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-buffer_disabled]`: Disable all buffering.
 -   `[-resize_disabled]`: Disable driver sizing.
 -   `[-pin_swap_disabled]`: Disable pin-swapping.
--   `[-pessimism_factor factor]` Scaling factor for transition and capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
+-   `[-transition_pessimism_factor factor]` Scaling factor for transition violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
+-   `[-capacitance_pessimism_factor factor]` Scaling factor for capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
 -   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
 -   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
 -   `[-legalize_eventually]`: Legalize at the end of the optimization.
@@ -650,6 +653,7 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
 -   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
+-   `[-pins pin_names]`: Manually select the pins to optimize.
 
 ```
 pin_swap

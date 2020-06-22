@@ -336,7 +336,8 @@ DatabaseHandler::inverterCells() const
             auto output_pins = libraryOutputPins(cell);
             auto input_pins  = libraryInputPins(cell);
 
-            if (isSingleOutputCombinational(cell) && input_pins.size() == 1)
+            if (!dontUse(cell) && isSingleOutputCombinational(cell) &&
+                input_pins.size() == 1)
             {
                 auto           output_pin  = output_pins[0];
                 sta::FuncExpr* output_func = output_pin->function();
@@ -375,7 +376,13 @@ DatabaseHandler::bufferCells() const
     for (auto& lib : all_libs)
     {
         auto buff_libs = lib->buffers();
-        cells.insert(cells.end(), buff_libs->begin(), buff_libs->end());
+        for (auto& cell : *buff_libs)
+        {
+            if (!dontUse(cell))
+            {
+                cells.push_back(cell);
+            }
+        }
     }
     return cells;
 }
@@ -1603,7 +1610,8 @@ DatabaseHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
     return true;
 }
 std::vector<InstanceTerm*>
-DatabaseHandler::levelDriverPins(bool reverse) const
+DatabaseHandler::levelDriverPins(
+    bool reverse, std::unordered_set<InstanceTerm*> filter_pins) const
 {
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -1629,7 +1637,11 @@ DatabaseHandler::levelDriverPins(bool reverse) const
         });
     for (auto& v : vertices)
     {
-        terms.push_back(v->pin());
+        auto pn = v->pin();
+        if (!filter_pins.size() || filter_pins.count(pn))
+        {
+            terms.push_back(v->pin());
+        }
     }
     if (reverse)
     {
@@ -1742,6 +1754,7 @@ DatabaseHandler::setLocation(Instance* inst, Point pt)
     dinst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     dinst->setLocation(pt.getX(), pt.getY());
 }
+
 float
 DatabaseHandler::area(Instance* inst) const
 {
@@ -1788,7 +1801,6 @@ DatabaseHandler::unitScaledArea(float ar) const
     auto unit = network()->units()->distanceUnit();
     return std::string(unit->asString(ar / unit->scale(), 0));
 }
-
 float
 DatabaseHandler::power(std::vector<Instance*>& insts)
 {
@@ -1888,7 +1900,7 @@ double
 DatabaseHandler::dbuToMeters(int dist) const
 {
     return static_cast<double>(dist) /
-           (db_->getTech()->getDbUnitsPerMicron() * 1e+6);
+           (db_->getTech()->getDbUnitsPerMicron() * 1E6);
 }
 double
 DatabaseHandler::dbuToMicrons(int dist) const
@@ -1962,13 +1974,11 @@ DatabaseHandler::ripupBuffer(Instance* buffer)
         if (!source_net)
         {
             PSN_LOG_ERROR("Cannot find buffer driving net");
-
             return;
         }
         if (!sink_net)
         {
             PSN_LOG_ERROR("Cannot find buffer driven net");
-
             return;
         }
         auto driven_pins = fanoutPins(sink_net, true);
@@ -2187,6 +2197,12 @@ BlockTerm*
 DatabaseHandler::port(const char* name) const
 {
     return network()->findPin(network()->topInstance(), name);
+}
+
+InstanceTerm*
+DatabaseHandler::pin(const char* name) const
+{
+    return network()->findPin(name);
 }
 
 Instance*
@@ -2473,7 +2489,7 @@ DatabaseHandler::setDontUse(std::vector<std::string>& cell_names)
         auto cell = libraryCell(name.c_str());
         if (!cell)
         {
-            PSN_LOG_WARN("Cannot find cell with the name", name);
+            PSN_LOG_WARN("Cannot find cell with the name {}", name);
         }
         else
         {
@@ -2883,7 +2899,6 @@ bool
 DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
                                            float         limit_scale_factor)
 {
-    // Assumes  sta_->checkSlewLimitPreamble() is called
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
     float                slew, limit, ignore;
@@ -2896,7 +2911,8 @@ DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
 
 ElectircalViolation
 DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
-                                        float         limit_scale_factor)
+                                        float         cap_scale_factor,
+                                        float         trans_sacle_factor)
 {
     auto pin_net   = net(pin);
     auto net_pins  = pins(pin_net);
@@ -2904,7 +2920,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
     bool vio_cap   = false;
     for (auto connected_pin : net_pins)
     {
-        if (violatesMaximumTransition(connected_pin, limit_scale_factor))
+        if (violatesMaximumTransition(connected_pin, trans_sacle_factor))
         {
             vio_trans = true;
             if (vio_cap)
@@ -2912,7 +2928,7 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
                 break;
             }
         }
-        else if (violatesMaximumCapacitance(connected_pin, limit_scale_factor))
+        else if (violatesMaximumCapacitance(connected_pin, cap_scale_factor))
         {
             vio_cap = true;
             if (vio_trans)
@@ -2942,7 +2958,6 @@ DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
 std::vector<InstanceTerm*>
 DatabaseHandler::maximumTransitionViolations(float limit_scale_factor) const
 {
-    sta_->findDelays();
     auto vio_pins = sta_->pinSlewLimitViolations(corner_, sta::MinMax::max());
     return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
@@ -2997,10 +3012,11 @@ DatabaseHandler::allLibs() const
 void
 DatabaseHandler::resetCache()
 {
-    has_equiv_cells_         = false;
-    has_buffer_inverter_seq_ = false;
-    has_target_loads_        = false;
-    maximum_area_valid_      = false;
+    has_equiv_cells_           = false;
+    has_buffer_inverter_seq_   = false;
+    has_target_loads_          = false;
+    has_library_cell_mappings_ = false;
+    maximum_area_valid_        = false;
     target_load_map_.clear();
     resetLibraryMapping();
 }
@@ -3715,6 +3731,7 @@ DatabaseHandler::hasMaximumArea() const
     }
     return maximum_area_valid_;
 }
+
 float
 DatabaseHandler::maximumArea() const
 {
