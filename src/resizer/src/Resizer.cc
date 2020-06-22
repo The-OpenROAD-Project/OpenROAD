@@ -1677,7 +1677,7 @@ Resizer::repairNet(SteinerTree *tree,
     load_pins.push_back(load_pin);
 
   Net *buffer_out = nullptr;
-  // Steiner pt pin is the driver if prev_pt is null.
+  // Steiner pt pin is the net driver if prev_pt is null.
   if (prev_pt != SteinerTree::null_pt) {
     Pin *load_pin = tree->pin(pt);
     if (load_pin) {
@@ -1689,6 +1689,7 @@ Resizer::repairNet(SteinerTree *tree,
       load_pins.push_back(load_pin);
     }
 
+    // Back up from pt to prev_pt adding repeaters every max_length.
     if (max_length > 0) {
       Point pt_loc = tree->location(pt);
       Point prev_loc = tree->location(prev_pt);
@@ -1698,8 +1699,6 @@ Resizer::repairNet(SteinerTree *tree,
       int pt_y = pt_loc.getY();
       int prev_x = prev_loc.getX();
       int prev_y = prev_loc.getY();
-      // Back up from this steiner point to the previous one
-      // adding buffers every max_length.
       while (wire_length > max_length) {
 	// Distance from pt to repeater backward toward prev_pt.
 	double buf_dist = length - (wire_length - max_length);
@@ -1719,11 +1718,9 @@ Resizer::repairNet(SteinerTree *tree,
       }
     }
   }
-
-  if (have_estimated_parasitics_
-      // Estimate parasitics at original driver net (tree root).
-      && prev_pt == SteinerTree::null_pt)
-      estimateWireParasitic(net);
+  else if (have_estimated_parasitics_)
+    // Estimate parasitics at original driver net (tree root).
+    estimateWireParasitic(net);
 }
 
 void
@@ -1751,43 +1748,47 @@ Resizer::makeRepeater(int x,
 		      float &fanout,
 		      PinSeq &load_pins)
 {
-  LibertyPort *buffer_input_port, *buffer_output_port;
-  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  Point buf_loc(x, y);
+  if (!core_exists_
+      || core_.overlaps(buf_loc)) {
+    LibertyPort *buffer_input_port, *buffer_output_port;
+    buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
-  string buffer_name = makeUniqueInstName("repeater");
-  debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
-	      buffer_name.c_str(),
-	      units_->distanceUnit()->asString(dbuToMeters(x), 0),
-	      units_->distanceUnit()->asString(dbuToMeters(y), 0));
+    string buffer_name = makeUniqueInstName("repeater");
+    debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
+		buffer_name.c_str(),
+		units_->distanceUnit()->asString(dbuToMeters(x), 0),
+		units_->distanceUnit()->asString(dbuToMeters(y), 0));
 
-  string buffer_out_name = makeUniqueNetName();
-  Instance *parent = db_network_->topInstance();
-  Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-					       buffer_name.c_str(),
-					       parent);
-  setLocation(buffer, Point(x, y));
-  design_area_ += area(db_network_->cell(buffer_cell));
-  inserted_buffer_count_++;
+    string buffer_out_name = makeUniqueNetName();
+    Instance *parent = db_network_->topInstance();
+    Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+    Instance *buffer = db_network_->makeInstance(buffer_cell,
+						 buffer_name.c_str(),
+						 parent);
+    setLocation(buffer, buf_loc);
+    design_area_ += area(db_network_->cell(buffer_cell));
+    inserted_buffer_count_++;
 
-  sta_->connectPin(buffer, buffer_input_port, in_net);
-  sta_->connectPin(buffer, buffer_output_port, buffer_out);
+    sta_->connectPin(buffer, buffer_input_port, in_net);
+    sta_->connectPin(buffer, buffer_output_port, buffer_out);
 
-  for (Pin *load_pin : load_pins) {
-    LibertyPort *load_port = network_->libertyPort(load_pin);
-    Instance *load = network_->instance(load_pin);
-    sta_->disconnectPin(load_pin);
-    sta_->connectPin(load, load_port, buffer_out);
+    for (Pin *load_pin : load_pins) {
+      LibertyPort *load_port = network_->libertyPort(load_pin);
+      Instance *load = network_->instance(load_pin);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load, load_port, buffer_out);
+    }
+    if (have_estimated_parasitics_)
+      estimateWireParasitic(buffer_out);
+
+    Pin *buf_in_pin = network_->findPin(buffer, buffer_input_port);
+    load_pins.clear();
+    load_pins.push_back(buf_in_pin);
+    wire_length = 0;
+    pin_cap = portCapacitance(buffer_input_port);
+    fanout = portFanoutLoad(buffer_input_port);
   }
-  if (have_estimated_parasitics_)
-    estimateWireParasitic(buffer_out);
-
-  Pin *buf_in_pin = network_->findPin(buffer, buffer_input_port);
-  load_pins.clear();
-  load_pins.push_back(buf_in_pin);
-  wire_length = 0;
-  pin_cap = portCapacitance(buffer_input_port);
-  fanout = portFanoutLoad(buffer_input_port);
 }
 
 ////////////////////////////////////////////////////////////////
