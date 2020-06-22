@@ -1873,24 +1873,26 @@ Resizer::repairLongWires(double max_length, // meters
     Pin *drvr_pin = drvr->pin();
     if (!network_->isTopLevelPort(drvr_pin)) {
       Net *net = network_->net(drvr_pin);
-      SteinerTree *tree = makeSteinerTree(net, true, db_network_);
-      if (tree) {
-	int wire_length = findMaxSteinerDist(drvr, tree);
-	if (wire_length > max_length_dbu) {
-	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
-	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
-		      sdc_network_->pathName(drvr_pin),
-		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
-		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
-		      units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
-	  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
-	  repairSteinerWires(tree, drvr_pt, SteinerTree::null_pt, net,
-			     0, max_length_dbu, buffer_cell);
-	  repair_count++;
+      if (net) {
+	SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+	if (tree) {
+	  int wire_length = findMaxSteinerDist(drvr, tree);
+	  if (wire_length > max_length_dbu) {
+	    Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+	    debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
+			sdc_network_->pathName(drvr_pin),
+			units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
+			units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
+			units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
+	    SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+	    repairSteinerWires(tree, drvr_pt, SteinerTree::null_pt, net,
+			       0, max_length_dbu, buffer_cell);
+	    repair_count++;
+	  }
+	  else
+	    // Drivers are sorted so we are done.
+	    break;
 	}
-	else
-	  // Drivers are sorted so we are done.
-	  break;
       }
     }
   }
@@ -1913,84 +1915,91 @@ Resizer::repairSteinerWires(SteinerTree *tree,
 {
   Point pt_loc = tree->location(pt);
   Net *buffer_out = nullptr;
-  if (prev_pt != SteinerTree::null_pt) {
-    Point prev_loc = tree->location(prev_pt);
-    int length = Point::manhattanDistance(prev_loc, pt_loc);
-    dist_from_drvr += length;
-    int pt_x = pt_loc.getX();
-    int pt_y = pt_loc.getY();
-    int prev_x = prev_loc.getX();
-    int prev_y = prev_loc.getY();
-    // Check for needing a driver between the previous steiner point
-    // and this one.
-    while (length > 0
-	   && dist_from_drvr > max_length) {
-      // distance from prev_pt to repeater
-      double buf_dist = max_length - dist_from_drvr + length;
-      double dx = pt_x - prev_x;
-      double dy = pt_y - prev_y;
-      double d = buf_dist / length;
-      int buf_x = prev_x + d * dx;
-      int buf_y = prev_y + d * dy;
-      LibertyPort *buffer_input_port, *buffer_output_port;
-      buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-      Instance *parent = db_network_->topInstance();
+  // Check steiner pt is inside the core.
+  if (!core_exists_
+      || core_.overlaps(pt_loc)) {
+    if (prev_pt != SteinerTree::null_pt) {
+      Point prev_loc = tree->location(prev_pt);
+      // Check prev pt is inside the core.
+      if (!core_exists_
+	  || core_.overlaps(prev_loc)) {
+	int length = Point::manhattanDistance(prev_loc, pt_loc);
+	dist_from_drvr += length;
+	int pt_x = pt_loc.getX();
+	int pt_y = pt_loc.getY();
+	int prev_x = prev_loc.getX();
+	int prev_y = prev_loc.getY();
+	// Check for needing a driver between the previous steiner point
+	// and this one.
+	while (length > 0
+	       && dist_from_drvr > max_length) {
+	  // distance from prev_pt to repeater
+	  double buf_dist = max_length - dist_from_drvr + length;
+	  double dx = pt_x - prev_x;
+	  double dy = pt_y - prev_y;
+	  double d = buf_dist / length;
+	  int buf_x = prev_x + d * dx;
+	  int buf_y = prev_y + d * dy;
+	  LibertyPort *buffer_input_port, *buffer_output_port;
+	  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+	  Instance *parent = db_network_->topInstance();
 
-      string buffer_name = makeUniqueInstName("repeater");
-      string buffer_out_name = makeUniqueNetName();
-      buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
-      Instance *buffer = db_network_->makeInstance(buffer_cell,
-						   buffer_name.c_str(),
-						   parent);
-      setLocation(buffer, Point(buf_x, buf_y));
-      design_area_ += area(db_network_->cell(buffer_cell));
-      inserted_buffer_count_++;
+	  string buffer_name = makeUniqueInstName("repeater");
+	  string buffer_out_name = makeUniqueNetName();
+	  buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+	  Instance *buffer = db_network_->makeInstance(buffer_cell,
+						       buffer_name.c_str(),
+						       parent);
+	  setLocation(buffer, Point(buf_x, buf_y));
+	  design_area_ += area(db_network_->cell(buffer_cell));
+	  inserted_buffer_count_++;
 
-      sta_->connectPin(buffer, buffer_input_port, drvr_net);
-      sta_->connectPin(buffer, buffer_output_port, buffer_out);
+	  sta_->connectPin(buffer, buffer_input_port, drvr_net);
+	  sta_->connectPin(buffer, buffer_output_port, buffer_out);
 
-      // Update for the next round.
-      dist_from_drvr = length - buf_dist;
-      length -= buf_dist;
-      drvr_net = buffer_out;
-      prev_x = buf_x;
-      prev_y = buf_y;
+	  // Update for the next round.
+	  dist_from_drvr = length - buf_dist;
+	  length -= buf_dist;
+	  drvr_net = buffer_out;
+	  prev_x = buf_x;
+	  prev_y = buf_y;
 
-      debugPrint4(debug_, "repair_wire", 2, " %s (%s %s) drvr_dist=%s\n",
-		  buffer_name.c_str(),
-		  units_->distanceUnit()->asString(dbuToMeters(buf_x), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(buf_y), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(dist_from_drvr), 0));
+	  debugPrint4(debug_, "repair_wire", 2, " %s (%s %s) drvr_dist=%s\n",
+		      buffer_name.c_str(),
+		      units_->distanceUnit()->asString(dbuToMeters(buf_x), 0),
+		      units_->distanceUnit()->asString(dbuToMeters(buf_y), 0),
+		      units_->distanceUnit()->asString(dbuToMeters(dist_from_drvr), 0));
+	}
+      }
     }
-  }
-
-  Pin *load_pin = tree->pin(pt);
-  if (load_pin) {
-    Net *load_net = network_->net(load_pin);
-    if (load_net != drvr_net) {
-      Instance *load_inst = db_network_->instance(load_pin);
-      Port *load_port = db_network_->port(load_pin);
-      sta_->disconnectPin(load_pin);
-      sta_->connectPin(load_inst, load_port, drvr_net);
+    Pin *load_pin = tree->pin(pt);
+    if (load_pin) {
+      Net *load_net = network_->net(load_pin);
+      if (load_net != drvr_net) {
+	Instance *load_inst = db_network_->instance(load_pin);
+	Port *load_port = db_network_->port(load_pin);
+	sta_->disconnectPin(load_pin);
+	sta_->connectPin(load_inst, load_port, drvr_net);
+      }
     }
-  }
 
-  SteinerPt left = tree->left(pt);
-  if (left != SteinerTree::null_pt)
-    repairSteinerWires(tree, left, pt, drvr_net, dist_from_drvr,
-		       max_length, buffer_cell);
-  SteinerPt right = tree->right(pt);
-  if (right != SteinerTree::null_pt)
-    repairSteinerWires(tree, right, pt, drvr_net, dist_from_drvr,
-		       max_length, buffer_cell);
+    SteinerPt left = tree->left(pt);
+    if (left != SteinerTree::null_pt)
+      repairSteinerWires(tree, left, pt, drvr_net, dist_from_drvr,
+			 max_length, buffer_cell);
+    SteinerPt right = tree->right(pt);
+    if (right != SteinerTree::null_pt)
+      repairSteinerWires(tree, right, pt, drvr_net, dist_from_drvr,
+			 max_length, buffer_cell);
 
-  if (have_estimated_parasitics_) {
-    // Wait until down stream buffers are inserted to rebuild parasitics.
-    if (buffer_out)
-      estimateWireParasitic(buffer_out);
-    // Estimate parasitics at original driver net (tree root).
-    if (prev_pt == SteinerTree::null_pt)
-      estimateWireParasitic(drvr_net);
+    if (have_estimated_parasitics_) {
+      // Wait until down stream buffers are inserted to rebuild parasitics.
+      if (buffer_out)
+	estimateWireParasitic(buffer_out);
+      // Estimate parasitics at original driver net (tree root).
+      if (prev_pt == SteinerTree::null_pt)
+	estimateWireParasitic(drvr_net);
+    }
   }
 }
 
