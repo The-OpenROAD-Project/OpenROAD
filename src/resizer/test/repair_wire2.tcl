@@ -24,7 +24,7 @@ report_long_wires 4
 
 set buffer_cell [get_lib_cell BUF_X1]
 
-repair_long_wires -max_length 1000 -buffer_cell $buffer_cell
+repair_design -max_wire_length 1000 -buffer_cell $buffer_cell
 
 report_long_wires 6
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1

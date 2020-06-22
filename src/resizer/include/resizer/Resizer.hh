@@ -118,8 +118,8 @@ public:
 		       double wire_length, // meters
 		       Delay &delay,
 		       Slew &slew);
-  void repairLongWires(double max_length, // meters
-		       LibertyCell *buffer_cell);
+  void repairDesign(double max_wire_length, // zero for none (meters)
+		    LibertyCell *buffer_cell);
   void reportLongWires(int count,
 		       int digits);
   // Find the max wire length before it is faster to split the wire
@@ -181,6 +181,7 @@ protected:
 		 SteinerPt prev_pt,
 		 Net *net,
 		 int max_length,
+		 float max_fanout,
 		 LibertyCell *buffer_cell,
 		 // Return values.
 		 int &wire_length,
@@ -227,7 +228,7 @@ protected:
   string makeUniqueInstName(const char *base_name,
 			    bool underscore);
   bool overMaxArea();
-  bool hasTopLevelOutputPort(Net *net);
+  bool hasTopLevelPort(const Net *net);
   Point location(Instance *inst);
   void setLocation(Instance *inst,
 		   Point pt);
@@ -284,7 +285,6 @@ protected:
   bool isSpecial(Net *net);
   Point tieLocation(Pin *load,
 		    int separation);
-  bool hasInputPort(SteinerTree *tree);
   bool hasFanout(Vertex *drvr);
 
   float wire_res_;

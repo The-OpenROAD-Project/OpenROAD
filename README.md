@@ -267,18 +267,14 @@ driver and the output port. If  The default behavior is
 `-inputs` and `-outputs` if neither is specified.
 
 ```
-repair_long_wires -max_length max_length|-max_slew max_slew
-                  -buffer_cell buffer_cell
+repair_design [-max_wire_length max_length]
+              -buffer_cell buffer_cell
 ```
 
-The `repair_long_wires` inserts buffers on long wires to reduce RC delay
-in the wire. Use `-max_length` to specify the maximum lenth of wires.
-Alternatively, use `-max_slew` to specify a maximum slew at the load end
-of a wire. The resistance/capacitance values in `set_wire_rc` are used
-to find the wire delays.
-
-If the wire resistance in the design technology is large it best to break
-up long wires before applying other optimizations.
+The `repair_design` inserts buffers on long wires to reduce RC delay
+in the wire. Use `-max_wire_length` to specify the maximum lenth of
+wires.  The resistance/capacitance values in `set_wire_rc` are used to
+find the wire delays.
 
 ```
 resize [-libraries resize_libraries]

@@ -826,57 +826,58 @@ Resizer::estimateWireParasitic(const dbNet *net)
 void
 Resizer::estimateWireParasitic(const Net *net)
 {
-  SteinerTree *tree = makeSteinerTree(net, false, db_network_);
-  if (tree
-      // Do not add parasitics on input ports.
-      // When the input drives a pad instance with huge input
-      // cap the elmore delay is gigantic.
-      && !hasInputPort(tree)) {
-    debugPrint1(debug_, "resizer_parasitics", 1, "net %s\n",
-		sdc_network_->pathName(net));
-    Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
-							     parasitics_ap_);
-    int branch_count = tree->branchCount();
-    for (int i = 0; i < branch_count; i++) {
-      Point pt1, pt2;
-      Pin *pin1, *pin2;
-      int steiner_pt1, steiner_pt2;
-      int wire_length_dbu;
-      tree->branch(i,
-		   pt1, pin1, steiner_pt1,
-		   pt2, pin2, steiner_pt2,
-		   wire_length_dbu);
-      ParasiticNode *n1 = findParasiticNode(tree, parasitic, net, pin1, steiner_pt1);
-      ParasiticNode *n2 = findParasiticNode(tree, parasitic, net, pin2, steiner_pt2);
-      if (n1 != n2) {
-	if (wire_length_dbu == 0)
-	  // Use a small resistor to keep the connectivity intact.
-	  parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
-	else {
-	  float wire_length = dbuToMeters(wire_length_dbu);
-	  float wire_cap = wire_length * wire_cap_;
-	  float wire_res = wire_length * wire_res_;
-	  // Make pi model for the wire.
-	  debugPrint5(debug_, "resizer_parasitics", 2,
-		      " pi %s c2=%s rpi=%s c1=%s %s\n",
-		      parasitics_->name(n1),
-		      units_->capacitanceUnit()->asString(wire_cap / 2.0),
-		      units_->resistanceUnit()->asString(wire_res),
-		      units_->capacitanceUnit()->asString(wire_cap / 2.0),
-		      parasitics_->name(n2));
-	  parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap_);
-	  parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap_);
-	  parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap_);
+  // Do not add parasitics on ports.
+  // When the input drives a pad instance with huge input
+  // cap the elmore delay is gigantic.
+  if (!hasTopLevelPort(net)) {
+    SteinerTree *tree = makeSteinerTree(net, false, db_network_);
+    if (tree) {
+      debugPrint1(debug_, "resizer_parasitics", 1, "net %s\n",
+		  sdc_network_->pathName(net));
+      Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
+							       parasitics_ap_);
+      int branch_count = tree->branchCount();
+      for (int i = 0; i < branch_count; i++) {
+	Point pt1, pt2;
+	Pin *pin1, *pin2;
+	int steiner_pt1, steiner_pt2;
+	int wire_length_dbu;
+	tree->branch(i,
+		     pt1, pin1, steiner_pt1,
+		     pt2, pin2, steiner_pt2,
+		     wire_length_dbu);
+	ParasiticNode *n1 = findParasiticNode(tree, parasitic, net, pin1, steiner_pt1);
+	ParasiticNode *n2 = findParasiticNode(tree, parasitic, net, pin2, steiner_pt2);
+	if (n1 != n2) {
+	  if (wire_length_dbu == 0)
+	    // Use a small resistor to keep the connectivity intact.
+	    parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
+	  else {
+	    float wire_length = dbuToMeters(wire_length_dbu);
+	    float wire_cap = wire_length * wire_cap_;
+	    float wire_res = wire_length * wire_res_;
+	    // Make pi model for the wire.
+	    debugPrint5(debug_, "resizer_parasitics", 2,
+			" pi %s c2=%s rpi=%s c1=%s %s\n",
+			parasitics_->name(n1),
+			units_->capacitanceUnit()->asString(wire_cap / 2.0),
+			units_->resistanceUnit()->asString(wire_res),
+			units_->capacitanceUnit()->asString(wire_cap / 2.0),
+			parasitics_->name(n2));
+	    parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap_);
+	    parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap_);
+	    parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap_);
+	  }
 	}
       }
+      ReduceParasiticsTo reduce_to = ReduceParasiticsTo::pi_elmore;
+      const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
+      parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
+			    corner_, MinMax::max(), parasitics_ap_);
+      parasitics_->deleteParasiticNetwork(net, parasitics_ap_);
+      delete tree;
     }
-    ReduceParasiticsTo reduce_to = ReduceParasiticsTo::pi_elmore;
-    const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
-    parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
-			  corner_, MinMax::max(), parasitics_ap_);
-    parasitics_->deleteParasiticNetwork(net, parasitics_ap_);
   }
-  delete tree;
 }
 
 ParasiticNode *
@@ -896,11 +897,12 @@ Resizer::findParasiticNode(SteinerTree *tree,
 }
 
 bool
-Resizer::hasInputPort(SteinerTree *tree)
+Resizer::hasTopLevelPort(const Net *net)
 {
-  for (Pin *pin : tree->pins()) {
-    if (network_->isTopLevelPort(pin)
-	&& network_->direction(pin)->isAnyInput())
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    if (network_->isTopLevelPort(pin))
       return true;
   }
   return false;
@@ -1588,27 +1590,38 @@ Resizer::repairHoldResize(Pin *drvr_pin,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairLongWires(double max_length, // meters
-			 LibertyCell *buffer_cell)
+Resizer::repairDesign(double max_wire_length, // meters
+		      LibertyCell *buffer_cell)
 {
   init();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
+  sta_->checkFanoutLimitPreamble();
 
   inserted_buffer_count_ = 0;
   VertexSeq drvrs;
   findLongWires(drvrs);
   int repair_count = 0;
-  int max_length_dbu = metersToDbu(max_length);
+  int max_length = metersToDbu(max_wire_length);
   for (Vertex *drvr : drvrs) {
     Pin *drvr_pin = drvr->pin();
-    if (!network_->isTopLevelPort(drvr_pin)) {
-      Net *net = network_->net(drvr_pin);
+    Net *net = network_->net(drvr_pin);
+    if (net
+	&& !isClock(net)
+	// Exclude tie hi/low cells.
+	&& !isFuncOneZero(drvr_pin)
+	&& !hasTopLevelPort(net)
+	&& !isSpecial(net)) {
       SteinerTree *tree = makeSteinerTree(net, true, db_network_);
       if (tree) {
+	float fanout, max_fanout, fanout_slack;
+	sta_->checkFanout(drvr_pin, MinMax::max(),
+			  fanout, max_fanout, fanout_slack);
+
 	int wire_length = findMaxSteinerDist(drvr, tree);
-	if (wire_length > max_length_dbu) {
+	if (max_length
+	    && wire_length > max_length) {
 	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
 	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
 		      sdc_network_->pathName(drvr_pin),
@@ -1620,7 +1633,7 @@ Resizer::repairLongWires(double max_length, // meters
 	  float ignore2, ignore3;
 	  PinSeq ignore4;
 	  repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
-		    max_length_dbu, buffer_cell,
+		    max_length, max_fanout, buffer_cell,
 		    ignore1, ignore2, ignore3, ignore4);
 	  repair_count++;
 	}
@@ -1643,7 +1656,8 @@ Resizer::repairNet(SteinerTree *tree,
 		   SteinerPt pt,
 		   SteinerPt prev_pt,
 		   Net *net,
-		   int max_length,
+		   int max_length, // dbu
+		   float max_fanout,
 		   LibertyCell *buffer_cell,
 		   // Return values.
 		   // Remaining parasiics after repeater insertion.
@@ -1658,7 +1672,7 @@ Resizer::repairNet(SteinerTree *tree,
   float fanout_left = 0.0;
   PinSeq loads_left;
   if (left != SteinerTree::null_pt)
-    repairNet(tree, left, pt, net, max_length, buffer_cell,
+    repairNet(tree, left, pt, net, max_length, max_fanout, buffer_cell,
 	      wire_length_left, pin_cap_left, fanout_left, loads_left);
 
   SteinerPt right = tree->right(pt);
@@ -1667,14 +1681,15 @@ Resizer::repairNet(SteinerTree *tree,
   float fanout_right = 0.0;
   PinSeq loads_right;
   if (right != SteinerTree::null_pt)
-    repairNet(tree, right, pt, net, max_length, buffer_cell,
+    repairNet(tree, right, pt, net, max_length, max_fanout, buffer_cell,
 	      wire_length_right, pin_cap_right, fanout_right, loads_right);
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
   // Add a buffer to left or right branch to stay under the max length.
-  if ((wire_length_left + wire_length_right) > max_length) {
+  if (max_length > 0
+      && (wire_length_left + wire_length_right) > max_length) {
     if (wire_length_left > wire_length_right)
       makeRepeater(tree, left, net, buffer_cell,
 		   wire_length_left, pin_cap_left, fanout_left, loads_left);

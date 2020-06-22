@@ -14,8 +14,6 @@ Notice 0: Finished DEF file: gcd_placed.def
 worst slack 9.33
 Inserted 35 input buffers.
 Inserted 18 output buffers.
-Using max slew 0.199.
-Using max wire length 1120.
 Resized 49 instances.
 Inserted 0 hold buffers.
 Startpoint: _886_ (rising edge-triggered flip-flop clocked by core_clock)

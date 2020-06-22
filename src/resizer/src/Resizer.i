@@ -329,12 +329,12 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
-repair_long_wires_cmd(float max_length,
-		      LibertyCell *buffer_cell)
+repair_design_cmd(float max_length,
+		  LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairLongWires(max_length, buffer_cell);
+  return resizer->repairDesign(max_length, buffer_cell);
 }
 
 void
