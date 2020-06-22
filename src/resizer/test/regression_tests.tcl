@@ -1,10 +1,6 @@
 record_tests {
   make_parasitics1
   make_parasitics2
-  rebuffer1
-  rebuffer2
-  rebuffer4
-  rebuffer7
   buffer_ports1
   buffer_ports2
   buffer_ports3
@@ -16,9 +12,8 @@ record_tests {
   resize3
   repair_max_cap1
   repair_max_cap2
-  repair_max_fanout1
-  repair_max_fanout2
-  repair_max_fanout3
+  repair_fanout1
+  repair_fanout2
   repair_max_slew1
   repair_max_slew2
   repair_hold1
@@ -31,7 +26,6 @@ record_tests {
   repair_wire1
   repair_wire2
   repair_wire3
-  repair_wire4
   repair_wire5
   gcd_resize
 }

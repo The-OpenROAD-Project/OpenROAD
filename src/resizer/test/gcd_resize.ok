@@ -14,9 +14,7 @@ Notice 0: Finished DEF file: gcd_placed.def
 worst slack 9.33
 Inserted 35 input buffers.
 Inserted 18 output buffers.
-Repaired 3 long wires.
-Inserted 1 buffers.
-Resized 103 instances.
+Resized 49 instances.
 Inserted 0 hold buffers.
 Startpoint: _886_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _880_ (rising edge-triggered flip-flop clocked by core_clock)
