@@ -1602,7 +1602,8 @@ Resizer::repairDesign(double max_wire_length, // meters
   inserted_buffer_count_ = 0;
   VertexSeq drvrs;
   findLongWires(drvrs);
-  int repair_count = 0;
+  int length_violations = 0;
+  int fanout_violations = 0;
   int max_length = metersToDbu(max_wire_length);
   for (Vertex *drvr : drvrs) {
     Pin *drvr_pin = drvr->pin();
@@ -1615,13 +1616,21 @@ Resizer::repairDesign(double max_wire_length, // meters
 	&& !isSpecial(net)) {
       SteinerTree *tree = makeSteinerTree(net, true, db_network_);
       if (tree) {
+	bool repair = false;
 	float fanout, max_fanout, fanout_slack;
 	sta_->checkFanout(drvr_pin, MinMax::max(),
 			  fanout, max_fanout, fanout_slack);
-
+	if (fanout_slack < 0.0) {
+	  fanout_violations++;
+	  repair = true;
+	}
 	int wire_length = findMaxSteinerDist(drvr, tree);
 	if (max_length
 	    && wire_length > max_length) {
+	  length_violations++;
+	  repair = true;
+	}
+	if (repair) {
 	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
 	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
 		      sdc_network_->pathName(drvr_pin),
@@ -1635,16 +1644,14 @@ Resizer::repairDesign(double max_wire_length, // meters
 	  repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
 		    max_length, max_fanout, buffer_cell,
 		    ignore1, ignore2, ignore3, ignore4);
-	  repair_count++;
 	}
-	else
-	  // Drivers are sorted so we are done.
-	  break;
       }
     }
   }
-  if (repair_count > 0)
-    printf("Repaired %d long wires.\n", repair_count);
+  if (fanout_violations > 0)
+    printf("Found %d fanout violations.\n", fanout_violations);
+  if (length_violations > 0)
+    printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
     printf("Inserted %d buffers.\n", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
@@ -1689,8 +1696,17 @@ Resizer::repairNet(SteinerTree *tree,
 
   // Add a buffer to left or right branch to stay under the max length.
   if (max_length > 0
-      && (wire_length_left + wire_length_right) > max_length) {
+       && (wire_length_left + wire_length_right) > max_length) {
     if (wire_length_left > wire_length_right)
+      makeRepeater(tree, left, net, buffer_cell,
+		   wire_length_left, pin_cap_left, fanout_left, loads_left);
+    else
+      makeRepeater(tree, right, net, buffer_cell,
+		   wire_length_right, pin_cap_right, fanout_right, loads_right);
+  }
+  if (max_fanout > 0
+       && (fanout_left + fanout_right) > max_fanout) {
+    if (fanout_left > fanout_right)
       makeRepeater(tree, left, net, buffer_cell,
 		   wire_length_left, pin_cap_left, fanout_left, loads_left);
     else
@@ -1718,32 +1734,34 @@ Resizer::repairNet(SteinerTree *tree,
       load_pins.push_back(load_pin);
     }
 
-    Point pt_loc = tree->location(pt);
-    Point prev_loc = tree->location(prev_pt);
-    int length = Point::manhattanDistance(prev_loc, pt_loc);
-    wire_length += length;
-    int pt_x = pt_loc.getX();
-    int pt_y = pt_loc.getY();
-    int prev_x = prev_loc.getX();
-    int prev_y = prev_loc.getY();
-    // Back up from this steiner point to the previous one
-    // adding buffers every max_length.
-    while (wire_length > max_length) {
-      // Distance from pt to repeater backward toward prev_pt.
-      double buf_dist = length - (wire_length - max_length);
-      double dx = prev_x - pt_x;
-      double dy = prev_y - pt_y;
-      double d = buf_dist / length;
-      int buf_x = pt_x + d * dx;
-      int buf_y = pt_y + d * dy;
+    if (max_length > 0) {
+      Point pt_loc = tree->location(pt);
+      Point prev_loc = tree->location(prev_pt);
+      int length = Point::manhattanDistance(prev_loc, pt_loc);
+      wire_length += length;
+      int pt_x = pt_loc.getX();
+      int pt_y = pt_loc.getY();
+      int prev_x = prev_loc.getX();
+      int prev_y = prev_loc.getY();
+      // Back up from this steiner point to the previous one
+      // adding buffers every max_length.
+      while (wire_length > max_length) {
+	// Distance from pt to repeater backward toward prev_pt.
+	double buf_dist = length - (wire_length - max_length);
+	double dx = prev_x - pt_x;
+	double dy = prev_y - pt_y;
+	double d = buf_dist / length;
+	int buf_x = pt_x + d * dx;
+	int buf_y = pt_y + d * dy;
 
-      makeRepeater(buf_x, buf_y, net, buffer_cell,
-		   wire_length, pin_cap, fanout, load_pins);
-      // Update for the next round.
-      length -= buf_dist;
-      wire_length = length;
-      pt_x = buf_x;
-      pt_y = buf_y;
+	makeRepeater(buf_x, buf_y, net, buffer_cell,
+		     wire_length, pin_cap, fanout, load_pins);
+	// Update for the next round.
+	length -= buf_dist;
+	wire_length = length;
+	pt_x = buf_x;
+	pt_y = buf_y;
+      }
     }
   }
 

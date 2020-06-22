@@ -16,5 +16,5 @@ Warning: layer capacitance is 0.0
 Driver    length delay
 u2/Z manhtn 1500 steiner 1500 0.00
 u3/Z manhtn 1 steiner 1 0.00
-Repaired 1 long wires.
+Found 1 long wires.
 Inserted 2 buffers.

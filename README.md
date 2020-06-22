@@ -276,6 +276,11 @@ in the wire. Use `-max_wire_length` to specify the maximum lenth of
 wires.  The resistance/capacitance values in `set_wire_rc` are used to
 find the wire delays.
 
+Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
+```
+set_max_fanout <fanout> [current_design]
+```
+
 ```
 resize [-libraries resize_libraries]
        [-dont_use cells]

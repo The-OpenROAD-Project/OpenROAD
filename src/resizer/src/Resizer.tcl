@@ -262,6 +262,7 @@ proc repair_design { args } {
     flags {}
   
   set buffer_cell [parse_buffer_cell keys 1]
+  set max_wire_length 0
   if { [info exists keys(-max_wire_length)] } {
     set max_wire_length $keys(-max_wire_length)
     check_positive_float "-max_wire_length" $max_wire_length

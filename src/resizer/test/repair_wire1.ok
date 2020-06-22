@@ -37,7 +37,7 @@ Path Type: max
 Driver    length delay
 u2/Z manhtn 1500 steiner 1500 0.21
 u3/Z manhtn 1 steiner 1 0.00
-Repaired 1 long wires.
+Found 1 long wires.
 Inserted 2 buffers.
 Driver    length delay
 repeater1/Z manhtn 600 steiner 600 0.03
