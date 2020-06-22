@@ -266,21 +266,32 @@ proc repair_long_wires { args } {
     set max_length $keys(-max_length)
     check_positive_float "-max_length" $max_length
     set max_length [sta::distance_ui_sta $max_length]
+    if { $max_length == 0.0 } {
+      ord::warn "max wire length is zero."
+    }
   } elseif { [info exists keys(-max_slew)] } {
     set max_slew $keys(-max_slew)
     check_positive_float "-max_slew" $max_slew
     set max_slew [sta::time_ui_sta $max_slew]
     set max_length [find_max_slew_wire_length $max_slew $buffer_cell]
-    puts "Using max wire length [sta::format_distance $max_length 0]."
+    if { $max_length != 0.0 } {
+      puts "Using max wire length [sta::format_distance $max_length 0]."
+    }
   } else {
     set max_slew [default_max_slew]
     set max_length [find_max_slew_wire_length $max_slew $buffer_cell]
     puts "Using max slew [sta::format_time $max_slew 3]."
-    puts "Using max wire length [sta::format_distance $max_length 0]."
+    if { $max_length != 0.0 } {
+      puts "Using max wire length [sta::format_distance $max_length 0]."
+    }
   }
   
   check_argc_eq0 "repair_long_wires" $args
-  repair_long_wires_cmd $max_length $buffer_cell
+  if { $max_length > 0.0 } {
+    repair_long_wires_cmd $max_length $buffer_cell
+  } else {
+    ord::warn "max wire length is 0. Skipping wire repair"
+  }
 }
 
 define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
