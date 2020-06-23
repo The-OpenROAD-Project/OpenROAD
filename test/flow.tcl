@@ -28,6 +28,7 @@ global_placement -disable_routability_driven -density $place_density \
 
 # resize
 set_wire_rc -layer $wire_rc_layer
+estimate_parasitics -placement
 set_dont_use $dont_use
 
 buffer_ports -buffer_cell $resize_buffer_cell

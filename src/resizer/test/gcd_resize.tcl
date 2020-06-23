@@ -5,6 +5,7 @@ read_def gcd_placed.def
 read_sdc gcd.sdc
 
 set_wire_rc -layer metal3
+estimate_parasitics -placement
 # flute results are not stable on nets with fanout > 9
 set_load 20 _241_
 
