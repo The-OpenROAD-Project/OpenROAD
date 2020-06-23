@@ -22,4 +22,3 @@ report_checks -path_delay min -format full_clock -endpoint_count 2 \
 set def_file [make_result_file repair_hold1.def]
 write_def $def_file
 diff_files repair_hold1.defok $def_file
-
