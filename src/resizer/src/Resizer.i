@@ -174,7 +174,7 @@ wire_resistance()
 
 // farads/meter
 double
-wire_capacitanceb()
+wire_capacitance()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -182,7 +182,7 @@ wire_capacitanceb()
 }
 
 void
-estimate_wire_parasitics()
+estimate_parasitics_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -254,32 +254,11 @@ repair_max_slew_cmd(LibertyCell *buffer_cell)
 }
 
 void
-repair_max_fanout_cmd(LibertyCell *buffer_cell)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairMaxFanout(buffer_cell);
-}
-
-void
 resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizeToTargetSlew(drvr_pin);
-}
-
-// for testing
-void
-rebuffer_net(Net *net,
-	     LibertyCell *buffer_cell)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  LibertyLibrarySeq *resize_libs = new LibertyLibrarySeq;
-  resize_libs->push_back(buffer_cell->libertyLibrary());
-  resizer->resizePreamble(resize_libs);
-  resizer->rebuffer(net, buffer_cell);
 }
 
 double
@@ -342,12 +321,12 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
-repair_long_wires_cmd(float max_length,
-		      LibertyCell *buffer_cell)
+repair_design_cmd(float max_length,
+		  LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairLongWires(max_length, buffer_cell);
+  return resizer->repairDesign(max_length, buffer_cell);
 }
 
 void

@@ -45,11 +45,7 @@ using std::array;
 
 using odb::Rect;
 
-class RebufferOption;
-
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
-typedef Vector<RebufferOption*> RebufferOptionSeq;
-enum class RebufferOptionType { sink, junction, wire, buffer };
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
@@ -103,12 +99,6 @@ public:
   // Insert buffers to fix max slew violations.
   // resizerPreamble() required.
   void repairMaxSlew(LibertyCell *buffer_cell);
-  void repairMaxFanout(LibertyCell *buffer_cell);
-  // Rebuffer net (for testing).
-  // Assumes buffer_cell->isBuffer() is true.
-  // resizerPreamble() required.
-  void rebuffer(Net *net,
-		LibertyCell *buffer_cell);
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
   void repairHoldViolations(LibertyCell *buffer_cell);
@@ -127,8 +117,8 @@ public:
 		       double wire_length, // meters
 		       Delay &delay,
 		       Slew &slew);
-  void repairLongWires(double max_length, // meters
-		       LibertyCell *buffer_cell);
+  void repairDesign(double max_wire_length, // zero for none (meters)
+		    LibertyCell *buffer_cell);
   void reportLongWires(int count,
 		       int digits);
   // Find the max wire length before it is faster to split the wire
@@ -185,36 +175,39 @@ protected:
   int findMaxSteinerDist(SteinerTree *tree,
 			 SteinerPt pt,
 			 int dist_from_drvr);
-  void repairSteinerWires(SteinerTree *tree,
-			  SteinerPt pt,
-			  SteinerPt prev_pt,
-			  Net *drvr_net,
-			  int dist_from_drvr,
-			  int max_length,
-			  LibertyCell *buffer_cell);
+  void repairNet(SteinerTree *tree,
+		 SteinerPt pt,
+		 SteinerPt prev_pt,
+		 Net *net,
+		 int max_length,
+		 float max_fanout,
+		 LibertyCell *buffer_cell,
+		 // Return values.
+		 int &wire_length,
+		 float &pin_cap,
+		 float &fanout,
+		 PinSeq &load_pins);
+  void makeRepeater(SteinerTree *tree,
+		    SteinerPt pt,
+		    Net *in_net,
+		    LibertyCell *buffer_cell,
+		    int &wire_length,
+		    float &pin_cap,
+		    float &fanout,
+		    PinSeq &load_pins);
+  void makeRepeater(int x,
+		    int y,
+		    Net *in_net,
+		    LibertyCell *buffer_cell,
+		    int &wire_length,
+		    float &pin_cap,
+		    float &fanout,
+		    PinSeq &load_pins);
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex *drvr);
 
-  // Assumes buffer_cell->isBuffer() is true.
-  void rebuffer(const Pin *drvr_pin,
-		LibertyCell *buffer_cell);
-  RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
-				     SteinerPt k,
-				     SteinerPt prev,
-				     int level,
-				     LibertyCell *buffer_cell);
-  void rebufferTopDown(RebufferOption *choice,
-		       Net *net,
-		       int level,
-		       LibertyCell *buffer_cell);
-  RebufferOptionSeq
-  addWireAndBuffer(RebufferOptionSeq Z,
-		   SteinerTree *tree,
-		   SteinerPt k,
-		   SteinerPt prev,
-		   int level,
-		   LibertyCell *buffer_cell);
   float portCapacitance(const LibertyPort *port);
+  float portFanoutLoad(LibertyPort *port);
   float pinCapacitance(const Pin *pin);
   float bufferInputCapacitance(LibertyCell *buffer_cell);
   Requireds pinRequireds(const Pin *pin);
@@ -234,7 +227,7 @@ protected:
   string makeUniqueInstName(const char *base_name,
 			    bool underscore);
   bool overMaxArea();
-  bool hasTopLevelOutputPort(Net *net);
+  bool hasTopLevelPort(const Net *net);
   Point location(Instance *inst);
   void setLocation(Instance *inst,
 		   Point pt);
@@ -247,16 +240,6 @@ protected:
   double maxSlewWireDiff(double wire_length,
 			 double max_slew,
 			 LibertyCell *buffer_cell);
-
-  // RebufferOption factory.
-  RebufferOption *makeRebufferOption(RebufferOptionType type,
-				     float cap,
-				     Requireds requireds,
-				     Pin *load_pin,
-				     Point location,
-				     RebufferOption *ref,
-				     RebufferOption *ref2);
-  void deleteRebufferOptions();
 
   void findFaninWeights(VertexSet &ends,
 			// Return value.
@@ -285,11 +268,6 @@ protected:
 		   const char *reason);
   void findLoads(Pin *drvr_pin,
 		 PinSeq &loads);
-  void groupLoadsCluster(Pin *drvr_pin,
-			 int group_count,
-			 int group_size,
-			 // Return value.
-			 GroupedPins &grouped_loads);
   void groupLoadsSteiner(Pin *drvr_pin,
 			 int group_count,
 			 int group_size,
@@ -306,7 +284,6 @@ protected:
   bool isSpecial(Net *net);
   Point tieLocation(Pin *load,
 		    int separation);
-  bool hasInputPort(SteinerTree *tree);
   bool hasFanout(Vertex *drvr);
 
   float wire_res_;
@@ -337,9 +314,6 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
-  int rebuffer_net_count_;
-  RebufferOptionSeq rebuffer_options_;
-  friend class RebufferOption;
 };
 
 } // namespace
