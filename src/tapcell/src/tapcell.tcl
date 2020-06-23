@@ -411,6 +411,31 @@ namespace eval tapcell {
 
         return $x
     }
+
+    proc get_new_x {x row blockages halo_x halo_y master_width endcapwidth site_width} {
+        set row_blockages ""
+        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
+
+        set blocked_region false
+        set new_x $x
+
+        if {([llength $row_blockages] > 0)} {
+            foreach row_blockage $row_blockages {
+                set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
+                set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
+                # if tapcell is only partially blocked at the right side of the blocked region
+                if { ($x + $master_width) > ($row_blockage_urx + $endcapwidth) && \
+                      $x < ($row_blockage_urx + $endcapwidth) } {
+                    # move this tapcell to avoid the blocked region
+                    set tmp_x [expr {ceil ((1.0*$row_blockage_urx + $endcapwidth)/$site_width)*$site_width}]
+                    set tmp_x [expr { int($tmp_x) }]
+                    set new_x $tmp_x 
+                }
+            }
+        }
+
+        return $new_x
+    }
 }
 
 # Main function. It will run tapcell given the correct parameters
@@ -823,12 +848,18 @@ proc tapcell { args } {
                 set row_orig_fix [expr { $llx % $site_x }]
                 set x [expr { int($x_tmp + $row_orig_fix) }]
                 set x_end [expr $x + $site_x]
+                set x_tmp $x
 
                 if {$add_boundary_cell == true} {
                     set blocked_region false
                     set blocked_region [tapcell::in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
                     if {$blocked_region == true} {
-                        continue
+                        set new_x [tapcell::get_new_x $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
+                        if { $x != $new_x} {
+                            set x_tmp $new_x
+                        } else {
+                            continue
+                        }
                     }
                 }
 
@@ -838,10 +869,9 @@ proc tapcell { args } {
                         continue
                     }
 
-                    set new_x [expr {ceil (1.0*$x/$site_x)*$site_x}]
+                    set new_x [expr {ceil (1.0*$x_tmp/$site_x)*$site_x}]
                     set new_x [expr { int($new_x) }]
                     set real_x [tapcell::get_correct_llx $new_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
-
 
                     set inst [odb::dbInst_create $block $master $inst_name]
                     $inst setOrient $ori
