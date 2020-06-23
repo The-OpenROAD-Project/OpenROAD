@@ -316,8 +316,9 @@ namespace eval psn {
         [-no_minimize_buffer_library] [-auto_buffer_library_inverters_enabled]\
         [-buffer_disabled] [-minimum_cost_buffer_enabled] [-resize_disabled]\
         [-downsize_enabled] [-pin_swap_disabled] [-legalize_eventually]\
-        [-legalize_each_iteration] [-post_place] [-post_route] [-no_resize_for_negative_slack]\
-        [-legalization_frequency num_edits] [-high_effort] [-pessimism_factor factor] [-upstream_resistance res]\
+        [-legalize_each_iteration] [-post_place] [-post_route] [-pins pin_names] [-no_resize_for_negative_slack]\
+        [-legalization_frequency num_edits] [-high_effort] [-capacitance_pessimism_factor factor]\
+        [-transition_pessimism_factor factor] [-upstream_resistance res]\
     }
 
     proc repair_timing { args } {

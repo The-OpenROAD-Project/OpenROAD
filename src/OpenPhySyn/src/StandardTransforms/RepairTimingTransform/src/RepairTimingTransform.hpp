@@ -47,7 +47,6 @@ class OptimizationOptions;
 
 class RepairTimingTransform : public PsnTransform
 {
-
 private:
     int buffer_count_;           // Number of inserted buffers
     int resize_up_count_;        // Number of upsized cells
@@ -77,6 +76,8 @@ private:
                      std::unordered_set<std::string>       buffer_lib_names =
                          std::unordered_set<std::string>(),
                      std::unordered_set<std::string> inverter_lib_names =
+                         std::unordered_set<std::string>(),
+                     std::unordered_set<std::string> pin_names =
                          std::unordered_set<std::string>());
 
     // Repair paths with maximum capacitance violations
@@ -90,7 +91,8 @@ private:
                                 std::unique_ptr<OptimizationOptions>& options);
 
     // Repair paths with negative slack
-    int fixNegativeSlack(Psn* psn_inst, std::vector<InstanceTerm*>& driver_pins,
+    int fixNegativeSlack(Psn*                                  psn_inst,
+                         std::unordered_set<InstanceTerm*>&    filter_pins,
                          std::unique_ptr<OptimizationOptions>& options);
 
     // Final downsizing phases for any extra area recovery
@@ -106,9 +108,8 @@ public:
 
     // Run the transform and capture user configurations
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-
     OPENPHYSYN_DEFINE_TRANSFORM(
-        "repair_timing", "1.0",
+        "repair_timing", "1.1",
         "Repair design timing and electrical violations",
         "Usage: transform repair_timing [-capacitance_violations] "
         "[-transition_violations] [-negative_slack_violations] [-iterations "
@@ -120,7 +121,8 @@ public:
         "[-pin_swap_disabled] "
         "[-downsize_enabled] [-legalize_eventually] [-legalize_each_iteration] "
         "[-post_place|-post_route] [-legalization_frequency <num_edits>] "
-        "[-high_effort] [-pessimism_factor factor] [-upstream_resistance res]")
+        "[-high_effort] [-capacitance_pessimism_factor factor] "
+        "[-transition_pessimism_factor factor] [-pins <pin names>]")
 };
 
 } // namespace psn
