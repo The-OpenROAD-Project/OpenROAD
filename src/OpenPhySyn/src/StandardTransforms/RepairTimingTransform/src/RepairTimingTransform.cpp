@@ -73,9 +73,6 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
     if (handler.isTopLevel(pin))
     {
         PSN_LOG_DEBUG("Top-level");
-
-        PSN_LOG_WARN("Top-level");
-
         return std::unordered_set<Instance*>();
     }
     auto pin_net = handler.net(pin);
