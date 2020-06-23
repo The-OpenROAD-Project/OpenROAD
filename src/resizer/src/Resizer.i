@@ -174,7 +174,7 @@ wire_resistance()
 
 // farads/meter
 double
-wire_capacitanceb()
+wire_capacitance()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -182,7 +182,7 @@ wire_capacitanceb()
 }
 
 void
-estimate_wire_parasitics()
+estimate_parasitics_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();

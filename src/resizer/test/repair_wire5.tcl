@@ -8,7 +8,8 @@ read_lef pad.lef
 read_def repair_wire5.def
 
 set_wire_rc -layer metal3
-repair_long_wires -max_length 600 -buffer_cell BUF_X1
+estimate_parasitics -placement
+repair_design -max_wire_length 600 -buffer_cell BUF_X1
 
 # Make sure instances are inside the core.
 set core [ord::get_db_core]

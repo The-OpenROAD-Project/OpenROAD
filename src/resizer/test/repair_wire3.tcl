@@ -5,6 +5,7 @@ read_def repair_wire1.def
 
 set_layer_rc -layer metal3 -resistance 0.0 -capacitance 0.0
 set_wire_rc -layer metal3
+estimate_parasitics -placement
 
 report_long_wires 2
 

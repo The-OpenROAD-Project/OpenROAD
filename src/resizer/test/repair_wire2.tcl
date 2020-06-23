@@ -11,6 +11,7 @@ read_lef Nangate45/Nangate45.lef
 read_def repair_wire2.def
 
 set_wire_rc -layer metal3
+estimate_parasitics -placement
 # zero estimated parasitics to output ports
 sta::set_pi_model u3/Z 0 0 0
 sta::set_elmore u3/Z out1 0

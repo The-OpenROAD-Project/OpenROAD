@@ -13,6 +13,7 @@ set_max_transition 1.0 [get_ports *]
 # kohm/micron, pf/micron
 # use 10x wire cap to tickle buffer insertion
 set_wire_rc -resistance 1.7e-4 -capacitance 1.3
+estimate_parasitics -placement
 
 report_check_types -max_slew -violators
 

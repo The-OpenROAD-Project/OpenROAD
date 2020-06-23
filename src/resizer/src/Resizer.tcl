@@ -94,7 +94,17 @@ proc set_wire_rc { args } {
   check_argc_eq0 "set_wire_rc" $args
   
   set_wire_rc_cmd $wire_res $wire_cap $corner
-  estimate_wire_parasitics
+  estimate_parasitics_cmd
+}
+
+define_cmd_args "estimate_parasitics" { -placement }
+
+proc estimate_parasitics { args } {
+  parse_key_args "estimate_parasitics" args \
+    keys {} flags {-placement}
+
+  check_argc_eq0 "estimate_parasitics" $args
+  estimate_parasitics_cmd
 }
 
 define_cmd_args "set_dont_use" {lib_cells}
@@ -109,7 +119,7 @@ define_cmd_args "resize" {[-libraries resize_libs]\
 
 proc resize { args } {
   parse_key_args "resize" args \
-    keys {-libraries -dont_use} flags {}
+    keys {-libraries} flags {}
   
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
@@ -118,12 +128,6 @@ proc resize { args } {
     if { $resize_libs == {} } {
       ord::error "No liberty libraries found."
     }
-  }
-  
-  if { [info exists keys(-dont_use)] } {
-    ord::warn "resize -dont_use is deprecated. Use the set_dont_use commands instead."
-    set dont_use [get_lib_cells_arg "-dont_use" $keys(-dont_use) ord::warn]
-    set_dont_use $dont_use
   }
   
   check_argc_eq0 "resize" $args
