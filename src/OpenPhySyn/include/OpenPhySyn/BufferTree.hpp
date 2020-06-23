@@ -218,6 +218,7 @@ public:
         repair_by_downsize               = false;
         repair_by_resynthesis            = false;
         repair_by_move                   = false;
+        resize_for_negative_slack        = true;
         minimum_cost                     = false;
         phase                            = DesignPhase::PostPlace;
         use_best_solution_threshold      = true;
@@ -256,17 +257,19 @@ public:
     IntervalMap<int, LibraryCell*>   buffer_lib_lookup;
     IntervalMap<int, LibraryCell*>   inverter_lib_lookup;
     bool                             repair_by_buffer; // Use buffer for repair
-    bool        repair_by_resize;      // Use driver upsizing for optimization
-    bool        repair_by_downsize;    // Use driver downsizing for optimization
-    bool        repair_by_resynthesis; // Use resynthesis for optimization
-    bool        repair_by_pinswap;     // Repair by commutative pin-swap
-    bool        repair_by_move;        // Repair by cell movement
-    bool        minimum_cost;          // Use minimum-cost buffering
-    DesignPhase phase;                 // Design optimizatin phase
-    bool use_best_solution_threshold;  // Use lower cost solution for minimal
-                                       // degradation
-    float best_solution_threshold;     // Specify use_best_solution_threshold
-                                       // threshold
+    bool repair_by_resize;            // Use driver upsizing for optimization
+    bool repair_by_downsize;          // Use driver downsizing for optimization
+    bool repair_by_resynthesis;       // Use resynthesis for optimization
+    bool repair_by_pinswap;           // Repair by commutative pin-swap
+    bool repair_by_move;              // Repair by cell movement
+    bool resize_for_negative_slack;   // Enable resizing when solving negative
+                                      // slack violations
+    bool        minimum_cost;         // Use minimum-cost buffering
+    DesignPhase phase;                // Design optimizatin phase
+    bool use_best_solution_threshold; // Use lower cost solution for minimal
+                                      // degradation
+    float best_solution_threshold;    // Specify use_best_solution_threshold
+                                      // threshold
     size_t
         best_solution_threshold_range; // Number of lower cost solutions to test
     float

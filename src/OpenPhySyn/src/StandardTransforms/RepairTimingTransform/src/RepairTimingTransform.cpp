@@ -343,7 +343,8 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
                 }
                 // Try to resize before inserting the buffers
                 // 4. Upsize till no violations
-                if (!is_fixed && options->repair_by_resize)
+                if (!is_fixed && options->repair_by_resize &&
+                    (!is_slack_repair || options->resize_for_negative_slack))
                 {
                     auto driver_types = handler.equivalentCells(
                         handler.libraryCell(driver_cell));
@@ -1112,9 +1113,11 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                                          // buffer selection
          "-buffer_disabled",             // Disable all buffering
          "-minimum_cost_buffer_enabled", // Enable minimum cost buffering
-         "-resize_enabled",              // Enable repair by upsizing
+         "-resize_disabled",             // Disable repair by resizing
          "-downsize_enabled",            // Enable repair by downsizing
-         "-pin_swap_enabled",            // Enable pin-swapping
+         "-pin_swap_disabled",           // Enable pin-swapping
+         "-no_resize_for_negative_slack", // Disable resizing when solving
+                                          // negative slack violation
          "-legalize_eventually",     // Legalize at the end of the optimization
          "-legalize_each_iteration", // Legalize after each iteration
          "-post_place",              // Post placement phase mode
@@ -1337,6 +1340,10 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
         else if (args[i] == "-downsize_enabled")
         {
             options->repair_by_downsize = true;
+        }
+        else if (args[i] == "-no_resize_for_negative_slack")
+        {
+            options->resize_for_negative_slack = false;
         }
         else if (args[i] == "-legalize_eventually")
         {

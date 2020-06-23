@@ -649,6 +649,7 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-legalize_each_iteration]`: Legalize after each iteration.
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
 -   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-no_resize_for_negative_slack]`: Disable resizing when solving negative slack violations (enhances runtime).
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
 
 ```
