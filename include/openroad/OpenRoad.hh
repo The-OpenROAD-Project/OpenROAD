@@ -98,6 +98,11 @@ namespace pdnsim {
 class PDNSim;
 }
 
+namespace antennachecker {
+class AntennaChecker;
+}
+
+
 namespace ord {
 
 using std::string;
@@ -128,6 +133,7 @@ public:
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   FastRoute::FastRouteKernel* getFastRoute() { return fastRoute_; }
+  antennachecker::AntennaChecker *getAntennaChecker(){ return antennachecker_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -186,6 +192,7 @@ private:
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  antennachecker::AntennaChecker *antennachecker_;
 #ifdef BUILD_OPENPHYSYN
   psn::Psn *psn_;
 #endif
