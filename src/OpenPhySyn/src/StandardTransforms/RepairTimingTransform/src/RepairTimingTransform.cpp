@@ -655,9 +655,9 @@ RepairTimingTransform::fixNegativeSlack(
 
     // NOTE: This can be done in parallel..
     int unfixed_paths = 0;
-    for (size_t i = 0; i < negative_slack_paths.size() &&
-                       (!options->max_negative_slack_paths ||
-                        i < options->max_negative_slack_paths);
+    for (int i = 0; (size_t)i < negative_slack_paths.size() &&
+                    (!options->max_negative_slack_paths ||
+                     i < options->max_negative_slack_paths);
          i++)
     {
         int   fixed_pin_count = 0;
@@ -675,7 +675,8 @@ RepairTimingTransform::fixNegativeSlack(
             if (worst_slack < 0.0)
             {
                 auto pin = pt.pin();
-                if (!buffered_pins.count(pin))
+                if ((!filter_pins.size() || filter_pins.count(pin)) &&
+                    !buffered_pins.count(pin))
                 {
                     if (handler.isAnyOutput(pin) &&
                         (!options->max_negative_slack_path_depth ||
@@ -1124,6 +1125,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     std::unordered_set<std::string> buffer_lib_names;
     std::unordered_set<std::string> inverter_lib_names;
+    std::unordered_set<std::string> pin_names;
     std::unordered_set<std::string> keywords(
         {"-capacitance_violations",    // Repair capacitance violations
          "-transition_violations",     // Repair transition violations
@@ -1220,6 +1222,33 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 else
                 {
                     inverter_lib_names.insert(args[i]);
+                }
+                i++;
+            }
+            i--;
+        }
+        else if (args[i] == "-pins")
+        {
+            i++;
+            while (i < args.size())
+            {
+                if (args[i] == "-pins")
+                {
+                    PSN_LOG_ERROR(help());
+                    return -1;
+                }
+                else if (keywords.count(args[i]))
+                {
+                    break;
+                }
+                else if (args[i][0] == '-')
+                {
+                    PSN_LOG_ERROR(help());
+                    return -1;
+                }
+                else
+                {
+                    pin_names.insert(args[i]);
                 }
                 i++;
             }
@@ -1473,8 +1502,8 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     PSN_LOG_DEBUG("repair_timing", StringUtils::join(args, " "));
 
-    return repairTiming(psn_inst, options, buffer_lib_names,
-                        inverter_lib_names);
+    return repairTiming(psn_inst, options, buffer_lib_names, inverter_lib_names,
+                        pin_names);
 }
 
 } // namespace psn
