@@ -338,7 +338,9 @@ Resizer::bufferInput(Pin *top_pin,
 					       buffer_name.c_str(),
 					       parent);
   if (buffer) {
-    setLocation(buffer, pinLocation(top_pin, db_network_));
+    Point pin_loc = pinLocation(top_pin, db_network_);
+    Point buf_loc = closestPtInRect(core_, pin_loc);
+    setLocation(buffer, buf_loc);
     design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
