@@ -198,7 +198,9 @@ public:
     OptimizationOptions() : buffer_lib_lookup(0), inverter_lib_lookup(0)
     {
         max_iterations                   = 1;
-        min_gain                         = 0;
+        minimum_gain                     = 0;
+        max_negative_slack_paths         = 0;
+        max_negative_slack_path_depth    = 0;
         area_penalty                     = 0.0;
         cluster_buffers                  = false;
         cluster_inverters                = false;
@@ -234,7 +236,11 @@ public:
     float initial_area;             // Area before the optimization
     int   max_iterations;           // Maximum number of optimization iterations
     int   current_iteration;        // Current optimization iteration
-    float min_gain;                 // Minimum slack gain to accept a solution
+    int   max_negative_slack_paths; // Maximum number of negative slack paths to
+                                    // check (0 for no limit)
+    int max_negative_slack_path_depth; // Maximum vertices in the negative slack
+                                       // path to check (0 for no limit)
+    float minimum_gain;             // Minimum slack gain to accept a solution
     float area_penalty;             // Area penalty for driver sizing
     bool  cluster_buffers;          // Auto-select buffer library
     bool  cluster_inverters;        // Include inverters in the buffer library

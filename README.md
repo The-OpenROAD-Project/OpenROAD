@@ -643,8 +643,10 @@ repair_timing
         [-legalize_eventually]
         [-post_place]
         [-post_route]
-        [-min_gain gain]
+        [-minimum_gain gain]
         [-high_effort]
+        [-maximum_negative_slack_paths count]
+        [-maximum_negative_slack_path_depth count]
         [-pins pin_names]
 ```
 The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
@@ -669,9 +671,11 @@ The `repair_timing` command repairs negative slack, maximum capacitance and tran
 -   `[-legalize_eventually]`: Legalize at the end of the optimization.
 -   `[-legalize_each_iteration]`: Legalize after each iteration.
 -   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
--   `[-min_gain <unit_time>]`: Minimum slack gain to accept an optimization.
--   `[-no_resize_for_negative_slack]`: Disable resizing when solving negative slack violations (enhances runtime).
+-   `[-minimum_gain <unit_time>]`: Minimum slack gain to accept an optimization.
 -   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
+-   `[-no_resize_for_negative_slack]`: Disable resizing when solving negative slack violations (enhances runtime).
+-   `[-maximum_negative_slack_paths count]`: Maximum number of negative slack paths to try to optimize.
+-   `[-maximum_negative_slack_path_depth count]`: Maximum depth per negative slack path to try to optimize.
 -   `[-pins pin_names]`: Manually select the pins to optimize.
 
 ```

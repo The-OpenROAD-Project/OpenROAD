@@ -45,7 +45,7 @@ public:
     std::string bufferNetName(std::vector<int> indices);
     std::vector<int> nextBuffer(std::vector<int> current_buffer,
                                 int              max_fanout);
-    OPENPHYSYN_DEFINE_TRANSFORM("buffer_fanout", "1.0.0",
+    OPENPHYSYN_DEFINE_TRANSFORM("buffer_fanout", "1.1",
                                 "Inserts buffers based on max fan-out",
                                 "Usage: transform buffer_fanout "
                                 "<max_fanout> <buffer_cell>")

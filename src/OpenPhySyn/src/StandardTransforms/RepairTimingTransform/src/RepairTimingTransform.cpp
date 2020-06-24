@@ -262,7 +262,7 @@ RepairTimingTransform::repairPin(Psn* psn_inst, InstanceTerm* pin,
             }
 
             if (buff_tree->cost() <= std::numeric_limits<float>::epsilon() ||
-                std::fabs(gain - options->min_gain) >=
+                std::fabs(gain - options->minimum_gain) >=
                     -std::numeric_limits<float>::epsilon())
             {
                 bool is_fixed = false;
@@ -655,9 +655,13 @@ RepairTimingTransform::fixNegativeSlack(
 
     // NOTE: This can be done in parallel..
     int unfixed_paths = 0;
-    for (size_t i = 0; i < negative_slack_paths.size(); i++)
+    for (size_t i = 0; i < negative_slack_paths.size() &&
+                       (!options->max_negative_slack_paths ||
+                        i < options->max_negative_slack_paths);
+         i++)
     {
-        auto& pth = negative_slack_paths[i];
+        int   fixed_pin_count = 0;
+        auto& pth             = negative_slack_paths[i];
         std::reverse(pth.begin(), pth.end());
         auto end_pin = pth[0].pin();
         // Refresh path
@@ -673,8 +677,12 @@ RepairTimingTransform::fixNegativeSlack(
                 auto pin = pt.pin();
                 if (!buffered_pins.count(pin))
                 {
-                    if (handler.isAnyOutput(pin))
+                    if (handler.isAnyOutput(pin) &&
+                        (!options->max_negative_slack_path_depth ||
+                         fixed_pin_count <
+                             options->max_negative_slack_path_depth))
                     {
+                        fixed_pin_count++;
                         repairPin(psn_inst, pin, RepairTarget::RepairSlack,
                                   options);
                         if (options->legalization_frequency >
@@ -1123,7 +1131,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-iterations",                // Maximum number of iterations
          "-buffers",                   // Manually specify buffer cells to use
          "-inverters",                 // Manually specify inverter cells to use
-         "-min_gain",            // Minimum slack gain to accept an optimization
+         "-minimum_gain",        // Minimum slack gain to accept an optimization
          "-auto_buffer_library", // Auto-select buffer library
          "-auto_buffer_library_inverters_enabled", // Include inverters in the
                                                    // selected buffer library
@@ -1136,6 +1144,11 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
          "-pin_swap_disabled",           // Enable pin-swapping
          "-no_resize_for_negative_slack", // Disable resizing when solving
                                           // negative slack violation
+         "-maximum_negative_slack_paths", // Maximum number of negative slack
+                                          // paths to check (0 for no limit)
+         "-maximum_negative_slack_path_depth", // Maximum vertices in the
+                                               // negative slack path to check
+                                               // (0 for no limit)
          "-legalize_eventually",     // Legalize at the end of the optimization
          "-legalize_each_iteration", // Legalize after each iteration
          "-post_place",              // Post placement phase mode
@@ -1271,7 +1284,7 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 options->max_iterations = atoi(args[i].c_str());
             }
         }
-        else if (args[i] == "-min_gain")
+        else if (args[i] == "-maximum_negative_slack_paths")
         {
             i++;
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
@@ -1281,7 +1294,33 @@ RepairTimingTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
             else
             {
-                options->min_gain = atof(args[i].c_str());
+                options->max_negative_slack_paths = atoi(args[i].c_str());
+            }
+        }
+        else if (args[i] == "-maximum_negative_slack_path_depth")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                options->max_negative_slack_path_depth = atoi(args[i].c_str());
+            }
+        }
+        else if (args[i] == "-minimum_gain")
+        {
+            i++;
+            if (i >= args.size() || !StringUtils::isNumber(args[i]))
+            {
+                PSN_LOG_ERROR(help());
+                return -1;
+            }
+            else
+            {
+                options->minimum_gain = atof(args[i].c_str());
             }
         }
         else if (args[i] == "-capacitance_pessimism_factor")

@@ -720,7 +720,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
     std::unordered_set<std::string> inverter_lib_names;
     std::unordered_set<std::string> keywords(
         {"-buffers", "-inverters", "-enable_driver_resize", "-iterations",
-         "-min_gain", "-area_penalty", "-auto_buffer_library",
+         "-minimum_gain", "-area_penalty", "-auto_buffer_library",
          "-minimize_buffer_library", "-use_inverting_buffer_library",
          "-timerless", "-repair_by_resynthesis", "-post_global_place",
          "-post_place", "-post_route", "-legalization_frequency",
@@ -846,7 +846,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
                 options->max_iterations = atoi(args[i].c_str());
             }
         }
-        else if (args[i] == "-min_gain")
+        else if (args[i] == "-minimum_gain")
         {
             i++;
             if (i >= args.size() || !StringUtils::isNumber(args[i]))
@@ -856,7 +856,7 @@ TimingBufferTransform::run(Psn* psn_inst, std::vector<std::string> args)
             }
             else
             {
-                options->min_gain = atof(args[i].c_str());
+                options->minimum_gain = atof(args[i].c_str());
             }
         }
         else if (args[i] == "-legalization_frequency")

@@ -180,13 +180,13 @@ namespace eval psn {
 				 [-minimize_buffer_library] [-high_effort]\
 				 [-use_inverting_buffer_library] [-buffers buffers]\
 				 [-inverters inverters ] [-iterations iterations] [-area_penalty area_penalty]\
-				 [-legalization_frequency count] [-min_gain gain] [-enable_driver_resize]\
+				 [-legalization_frequency count] [-minimum_gain gain] [-enable_driver_resize]\
     }
 
     
     proc timing_buffer { args } {
         sta::parse_key_args "timing_buffer" args \
-        keys {-auto_buffer_library -buffers -inverters -iterations -min_gain -area_penalty -legalization_frequency}\
+        keys {-auto_buffer_library -buffers -inverters -iterations -minimum_gain -area_penalty -legalization_frequency}\
         flags {-negative_slack_violations -timerless -capacitance_violations -transition_violations -repair_by_resize -high_effort -repair_by_resynthesis -enable_driver_resize -minimize_buffer_library -use_inverting_buffer_library -capacitance_violations] -transition_violations}
         
         set buffer_lib_flag ""
@@ -279,9 +279,9 @@ namespace eval psn {
             }
             set use_inv_buf_lib_flag  "-use_inverting_buffer_library"
         }
-        set min_gain_flag ""
-        if {[info exists keys(-min_gain)]} {
-            set min_gain_flag  "-min_gain $keys(-min_gain)"
+        set minimum_gain_flag ""
+        if {[info exists keys(-minimum_gain)]} {
+            set minimum_gain_flag  "-minimum_gain $keys(-minimum_gain)"
         }
         set legalization_freq_flag ""
         if {[info exists keys(-legalization_frequency)]} {
@@ -299,7 +299,7 @@ namespace eval psn {
         if {[info exists keys(-iterations)]} {
             set iterations "$keys(-iterations)"
         }
-        set bufargs "$repair_target_flag $fast_mode_flag $mode_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $legalization_freq_flag $buffer_lib_flag $inverters_flag $min_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
+        set bufargs "$repair_target_flag $fast_mode_flag $mode_flag $auto_buf_flag $minimuze_buf_lib_flag $use_inv_buf_lib_flag $legalization_freq_flag $buffer_lib_flag $inverters_flag $minimum_gain_flag $resize_flag $area_penalty_flag -iterations $iterations"
         set affected [transform timing_buffer {*}$bufargs]
         if {$affected < 0} {
             puts "Timing buffer failed"
@@ -312,13 +312,13 @@ namespace eval psn {
     define_cmd_args "repair_timing" {[-capacitance_violations]\
         [-transition_violations]\
         [-negative_slack_violations] [-iterations iteration_count] [-buffers buffer_cells]\
-        [-inverters inverter cells] [-min_gain gain] [-auto_buffer_library size]\
+        [-inverters inverter cells] [-minimum_gain gain] [-auto_buffer_library size]\
         [-no_minimize_buffer_library] [-auto_buffer_library_inverters_enabled]\
         [-buffer_disabled] [-minimum_cost_buffer_enabled] [-resize_disabled]\
         [-downsize_enabled] [-pin_swap_disabled] [-legalize_eventually]\
         [-legalize_each_iteration] [-post_place] [-post_route] [-pins pin_names] [-no_resize_for_negative_slack]\
-        [-legalization_frequency num_edits] [-high_effort] [-capacitance_pessimism_factor factor]\
-        [-transition_pessimism_factor factor] [-upstream_resistance res]\
+        [-legalization_frequency num_edits] [-high_effort] [-capacitance_pessimism_factor factor] [-transition_pessimism_factor factor]\
+        [-upstream_resistance res] [-maximum_negative_slack_paths count] [-maximum_negative_slack_path_depth count]\
     }
 
     proc repair_timing { args } {

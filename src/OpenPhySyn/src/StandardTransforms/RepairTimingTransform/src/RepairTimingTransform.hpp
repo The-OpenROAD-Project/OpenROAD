@@ -109,12 +109,12 @@ public:
     // Run the transform and capture user configurations
     int run(Psn* psn_inst, std::vector<std::string> args) override;
     OPENPHYSYN_DEFINE_TRANSFORM(
-        "repair_timing", "1.1",
+        "repair_timing", "1.2",
         "Repair design timing and electrical violations",
         "Usage: transform repair_timing [-capacitance_violations] "
         "[-transition_violations] [-negative_slack_violations] [-iterations "
         "num_iterations] [-buffers buffer_cells] [-inverters inverter cells] "
-        "[-min_gain gain=0.0] [-auto_buffer_library "
+        "[-minimum_gain gain=0.0] [-auto_buffer_library "
         "<single|small|medium|large|all>] [-no_minimize_buffer_library] "
         "[-auto_buffer_library_inverters_enabled]  [-buffer_disabled] "
         "[-minimum_cost_buffer_enabled] [-resize_disabled] "
@@ -122,7 +122,9 @@ public:
         "[-downsize_enabled] [-legalize_eventually] [-legalize_each_iteration] "
         "[-post_place|-post_route] [-legalization_frequency <num_edits>] "
         "[-high_effort] [-capacitance_pessimism_factor factor] "
-        "[-transition_pessimism_factor factor] [-pins <pin names>]")
+        "[-transition_pessimism_factor factor] [-pins <pin names>] "
+        "[-maximum_negative_slack_paths count] "
+        "[-maximum_negative_slack_path_depth count]")
 };
 
 } // namespace psn
