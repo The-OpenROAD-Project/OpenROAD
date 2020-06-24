@@ -4198,46 +4198,9 @@ DatabaseHandler::calculateParasitics(Net* net)
     if (compute_parasitics_callback_ != nullptr)
     {
         compute_parasitics_callback_(net);
-        return;
-    }
-    auto tree = SteinerTree::create(net, psn_);
-    if (tree && tree->isPlaced())
-    {
-        sta::Parasitic* parasitic = sta_->parasitics()->makeParasiticNetwork(
-            net, false, parasitics_ap_);
-        int branch_count = tree->branchCount();
-        for (int i = 0; i < branch_count; i++)
-        {
-            auto                branch = tree->branch(i);
-            sta::ParasiticNode* n1 =
-                findParasiticNode(tree, parasitic, net, branch.firstPin(),
-                                  branch.firstSteinerPoint());
-            sta::ParasiticNode* n2 =
-                findParasiticNode(tree, parasitic, net, branch.secondPin(),
-                                  branch.secondSteinerPoint());
-            if (n1 != n2)
-            {
-                if (branch.wireLength() == 0)
-                {
-                    sta_->parasitics()->makeResistor(nullptr, n1, n2, 1.0e-3,
-                                                     parasitics_ap_);
-                }
-                else
-                {
-                    float wire_length = dbuToMeters(branch.wireLength());
-                    float wire_cap    = wire_length * cap_per_micron_;
-                    float wire_res    = wire_length * res_per_micron_;
-                    sta_->parasitics()->incrCap(n1, wire_cap / 2.0,
-                                                parasitics_ap_);
-                    sta_->parasitics()->makeResistor(nullptr, n1, n2, wire_res,
-                                                     parasitics_ap_);
-                    sta_->parasitics()->incrCap(n2, wire_cap / 2.0,
-                                                parasitics_ap_);
-                }
-            }
-        }
     }
 }
+
 sta::ParasiticNode*
 DatabaseHandler::findParasiticNode(std::unique_ptr<SteinerTree>& tree,
                                    sta::Parasitic* parasitic, const Net* net,
