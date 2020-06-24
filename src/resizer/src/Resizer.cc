@@ -806,9 +806,8 @@ Resizer::estimateWireParasitics()
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
       Net *net = net_iter->next();
-      // Hands off the clock nets.
-      if (!isClock(net)
-	  && !network_->isPower(net)
+      // Estimate parastices for clocks also for when they are propagated.
+      if (!network_->isPower(net)
 	  && !network_->isGround(net))
 	estimateWireParasitic(net);
     }
@@ -906,17 +905,6 @@ Resizer::hasTopLevelPort(const Net *net)
       return true;
   }
   return false;
-}
-
-////////////////////////////////////////////////////////////////
-
-void
-Resizer::writeNetSVG(Net *net,
-		     const char *filename)
-{
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
-  if (tree)
-    tree->writeSVG(sdc_network_, filename);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2414,6 +2402,15 @@ Resizer::isSpecial(Net *net)
 {
   dbNet *db_net = db_network_->staToDb(net);
   return db_net->isSpecial();
+}
+
+void
+Resizer::writeNetSVG(Net *net,
+		     const char *filename)
+{
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  if (tree)
+    tree->writeSVG(sdc_network_, filename);
 }
 
 }
