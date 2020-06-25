@@ -229,9 +229,7 @@ void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
         odb::dbBTerm* clockBTerm = topClockNet->get1stBTerm();
         if (clockBTerm != nullptr){
                 sta::ClockSet* clocksFound = _openSta->sdc()->findLeafPinClocks(dbNetwork->dbToSta(clockBTerm));
-                sta::ClockSet::Iterator clkIter(clocksFound);
-                while (clkIter.hasNext()) {
-                        sta::Clock* currentClk = clkIter.next();
+                for (sta::Clock* currentClk : *clocksFound){
                         std::cout << " User-defined clock name: " << currentClk->name() << ".\n";
                         break;
                 }
