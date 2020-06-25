@@ -1216,6 +1216,8 @@ proc via_generate_array_rule {rule_name rows columns} {
       cutsize [dict get $via_info cut size] \
       layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
+      lower_rect [list [expr -1 * $lower_width / 2] [expr -1 * $lower_height / 2] [expr $lower_width / 2] [expr $lower_height / 2]] \
+      upper_rect [list [expr -1 * $upper_width / 2] [expr -1 * $upper_height / 2] [expr $upper_width / 2] [expr $upper_height / 2]] \
       origin_x 0 \
       origin_y 0 \
     ]
@@ -2977,7 +2979,9 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   foreach pg_net [concat [dict get $design_data power_nets] [dict get $design_data ground_nets]] {
     set net [$block findNet $pg_net]
     if {$net != "NULL"} {
-      odb::dbNet_destroy $net
+      foreach swire [$net getSWires] {
+        odb::dbSWire_destroy $swire
+      }
     }
   }
 
