@@ -1,0 +1,18 @@
+VERSION 5.7 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN test_no_clk ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 2000 2000 ) ;
+
+COMPONENTS 2 ;
+- inv1 INV_X1 + PLACED ( 0 0 ) N ;
+- inv2 INV_X1 + PLACED ( 0 2000 ) N ;
+END COMPONENTS
+
+NETS 1 ;
+- a ( inv1 ZN ) ( inv2 A ) ;
+END NETS
+
+END DESIGN
+
