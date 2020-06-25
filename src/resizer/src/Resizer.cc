@@ -338,7 +338,9 @@ Resizer::bufferInput(Pin *top_pin,
 					       buffer_name.c_str(),
 					       parent);
   if (buffer) {
-    setLocation(buffer, pinLocation(top_pin, db_network_));
+    Point pin_loc = pinLocation(top_pin, db_network_);
+    Point buf_loc = closestPtInRect(core_, pin_loc);
+    setLocation(buffer, buf_loc);
     design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
@@ -1174,7 +1176,7 @@ Resizer::findCenter(PinSeq &pins)
 ////////////////////////////////////////////////////////////////
 
 // Repair tie hi/low net driver fanout by duplicating the
-// tie hi/low instances.
+// tie hi/low instances for every pin connected to tie hi/low instances.
 void
 Resizer::repairTieFanout(LibertyPort *tie_port,
 			 double separation, // meters
@@ -1192,51 +1194,42 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
     Pin *drvr_pin = network_->findPin(inst, tie_port);
     const char *inst_name = network_->name(inst);
     Net *net = network_->net(drvr_pin);
-    bool moved_all_pins = true;
     NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
     while (pin_iter->hasNext()) {
       Pin *load = pin_iter->next();
       if (load != drvr_pin) {
 	// Make tie inst.
 	Point tie_loc = tieLocation(load, separation_dbu);
-	// Don't make tie instances for pins outside the core.
-	if (!core_exists_
-	    || core_.overlaps(tie_loc)) {
-	  Instance *load_inst = network_->instance(load);
-	  string tie_name = makeUniqueInstName(inst_name, true);
-	  Instance *tie = sta_->makeInstance(tie_name.c_str(),
-					     tie_cell, top_inst);
-	  setLocation(tie, tie_loc);
+	Instance *load_inst = network_->instance(load);
+	string tie_name = makeUniqueInstName(inst_name, true);
+	Instance *tie = sta_->makeInstance(tie_name.c_str(),
+					   tie_cell, top_inst);
+	setLocation(tie, tie_loc);
 
-	  // Make tie output net.
-	  string load_net_name = makeUniqueNetName();
-	  Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
+	// Make tie output net.
+	string load_net_name = makeUniqueNetName();
+	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
 
-	  // Connect tie inst output.
-	  sta_->connectPin(tie, tie_port, load_net);
+	// Connect tie inst output.
+	sta_->connectPin(tie, tie_port, load_net);
 
-	  // Connect load to tie output net.
-	  sta_->disconnectPin(load);
-	  Port *load_port = network_->port(load);
-	  sta_->connectPin(load_inst, load_port, load_net);
+	// Connect load to tie output net.
+	sta_->disconnectPin(load);
+	Port *load_port = network_->port(load);
+	sta_->connectPin(load_inst, load_port, load_net);
 
-	  design_area_ += area(db_network_->cell(tie_cell));
-	  tie_count++;
-	}
-	else
-	  moved_all_pins = false;
+	design_area_ += area(db_network_->cell(tie_cell));
+	tie_count++;
       }
     }
     delete pin_iter;
 
-    if (moved_all_pins) {
-      // Delete inst output net.
-      Pin *tie_pin = network_->findPin(inst, tie_port);
-      Net *tie_net = network_->net(tie_pin);
-      sta_->deleteNet(tie_net);
-      // Delete the tie instance.
-      sta_->deleteInstance(inst);
-    }
+    // Delete inst output net.
+    Pin *tie_pin = network_->findPin(inst, tie_port);
+    Net *tie_net = network_->net(tie_pin);
+    sta_->deleteNet(tie_net);
+    // Delete the tie instance.
+    sta_->deleteInstance(inst);
   }
 
   if (tie_count > 0) {
@@ -1274,28 +1267,32 @@ Resizer::tieLocation(Pin *load,
   int right_dist = abs(load_x - bbox->xMax());
   int bot_dist = abs(load_y - bbox->yMin());
   int top_dist = abs(load_y - bbox->yMax());
+  int tie_x = load_x;
+  int tie_y = load_y;
   if (left_dist < right_dist
       && left_dist < bot_dist
       && left_dist < top_dist)
     // left
-    return Point(load_x - separation, load_y);
+    tie_x -= separation;
   if (right_dist < left_dist
       && right_dist < bot_dist
       && right_dist < top_dist)
     // right
-    return Point(load_x + separation, load_y);
+    tie_x += separation;
   if (bot_dist < left_dist
       && bot_dist < right_dist
       && bot_dist < top_dist)
     // bot
-    return Point(load_x, load_y - separation);
+    tie_y -= separation;
   if (top_dist < left_dist
       && top_dist < right_dist
       && top_dist < bot_dist)
     // top
-    return Point(load_x, load_y + separation);
-  // tie
-  return Point(load_x, load_y);
+    tie_y += separation;
+  if (core_exists_)
+    return closestPtInRect(core_, tie_x, tie_y);
+  else
+    return Point(tie_x, tie_y);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1541,6 +1538,7 @@ Resizer::repairHoldResize(Pin *drvr_pin,
 
 ////////////////////////////////////////////////////////////////
 
+// Repair long wires, max fanout violations.
 void
 Resizer::repairDesign(double max_wire_length, // meters
 		      LibertyCell *buffer_cell)
