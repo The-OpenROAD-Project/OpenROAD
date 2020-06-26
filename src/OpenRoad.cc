@@ -158,7 +158,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
-  antennachecker_ = makeAntennaChecker();
+  antennaChecker_ = makeAntennaChecker();
 #ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif

@@ -4,18 +4,26 @@ Check antenna violations based on an input LEF and DEF file, a report
 will be generated to indicate violated nets. 4 APIs are provided as an interface with FastRoute to preemptively fix antenna violation as well as used for the diode insertion flow:
 
 ## Antenna check Commands
- - `check_antenna`: check antenna violations on all nets and generate a report 
 
-## Antenna fix Commands (not fully tested)
-### Tcl APIs
- - `checkViolation`: check if an input net is violated
-It is used in the diodes insertion tcl as: [antennachecker::checkViolation $net]
+---
 
- - `getViolationITerm`: return an ITerm on an input violated net
+ - `load_antenna_rules`: import antenna rules to ARC, must be called before other commands
+ - `check_antennas`: check antenna violations on all nets and generate a reportt
 
-### C++ APIs
- - `PAR_max_wire_length(dbNet * net, int routing_level)`;
-     This function returns the max wirelength allowed for a given net, in a
-     specific layer.
+## Antenna fix Commands
 
- 
+---
+
+### Tcl commands
+
+ - `check_net_violation`: check if an input net is violated, return 1 if the net is violated
+   - -net_name: set the net name for checking
+ - `get_met_avail_length`: print the available metal length that can be added to a net, while keeping other layers unchange and PAR values meet the ratio
+   - -net_name: set the net name for calculation
+   - -routing_level: set the layer whose rest metal length will be returned
+
+### C++ commands
+
+ - `PAR_max_wire_length(dbNet * net, int routing_level)`
+   This function returns the max wire length allowed to add for a given net, in a
+   specific layer.

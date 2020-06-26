@@ -1,22 +1,23 @@
+
 // BSD 3-Clause License
-//
+// 
 // Copyright (c) 2020, MICL, DD-Lab, University of Michigan
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//
+// 
 // * Redistributions of source code must retain the above copyright notice, this
 //   list of conditions and the following disclaimer.
-//
+// 
 // * Redistributions in binary form must reproduce the above copyright notice,
 //   this list of conditions and the following disclaimer in the documentation
 //   and/or other materials provided with the distribution.
-//
+// 
 // * Neither the name of the copyright holder nor the names of its
 //   contributors may be used to endorse or promote products derived from
 //   this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,6 +34,7 @@
 #include <map>
 #include "opendb/db.h"
 #include "opendb/dbWireGraph.h"
+
 
 struct PARinfo
 {
@@ -98,7 +100,7 @@ struct ANTENNAmodel
 
 };
 
-namespace antennachecker {
+namespace antenna_checker  {
 
 using odb::dbNet;
 using odb::dbWire;
@@ -108,8 +110,11 @@ using odb::dbWireGraph;
 using odb::dbTechLayer;
 using odb::dbITerm;
 
+typedef std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>> wireroots_info_vec;
+
 class AntennaChecker
 {
+
 public:
     AntennaChecker();
     ~AntennaChecker();
@@ -119,11 +124,13 @@ public:
     void set_verbose( bool verbose );
     void set_net_name( std::string net_name );
     void set_route_level( int route_level );
-    
-    double defdist( int value );
-    double defdist( uint value );
 
-    std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>> find_segment_root(std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>> node_info, int wire_level );
+    dbNet* get_net( std::string net_name );
+    
+    template <class valueType>
+    double defdist( valueType value );
+
+    wireroots_info_vec find_segment_root(std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>> node_info, int wire_level );
     dbWireGraph::Node * find_segment_start( dbWireGraph::Node * node );
     bool if_segment_root( dbWireGraph::Node * node, int wire_level );
     
@@ -148,7 +155,7 @@ public:
     void build_VIA_PAR_table( std::vector<PARinfo> &VIA_PARtable, std::vector<std::pair<dbWireGraph::Node *,std::vector<dbWireGraph::Node*>>> wireroots_info );
     void build_VIA_CAR_table( std::vector<ARinfo> &VIA_CARtable, std::vector<PARinfo> PARtable, std::vector<PARinfo> VIA_PARtable, std::vector<dbWireGraph::Node *> gate_iterms );
 
-    std::vector<std::pair<dbWireGraph::Node *, std::vector<dbWireGraph::Node*>>> get_wireroots(dbWireGraph graph);
+    std::vector<wireroots_info_vec> get_wireroots(dbWireGraph graph);
 
     bool check_wire_PAR( ARinfo AntennaRatio );
     bool check_wire_CAR( ARinfo AntennaRatio );
@@ -157,9 +164,9 @@ public:
 
     std::vector<int> GetAntennaRatio();
 
-    void check_antenna();
+    void load_antenna_rules();
+    void check_antennas();
     
-    //Eder API
     void find_wireroot_iterms( dbWireGraph::Node * node, int wire_level, std::vector<dbITerm *>& gates );
     std::vector<std::pair<double, std::vector<dbITerm *>>> PAR_max_wire_length( dbNet * net, int route_level );
     void check_par_max_length();
@@ -168,11 +175,13 @@ public:
 
 private:
     odb::dbDatabase *db_;
-    FILE * _out;
+    FILE* _out;
     bool verbose_;
     std::string net_name_;
     int route_level_;
     std::map<odb::dbTechLayer*, ANTENNAmodel> layer_info;
+
+
 };
 
 }

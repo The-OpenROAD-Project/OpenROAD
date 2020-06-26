@@ -28,10 +28,11 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef MAKE_ANTENNACHECKER_H
 #define MAKE_ANTENNACHECKER_H
 
-namespace antennachecker {
+namespace antenna_checker {
 class AntennaChecker;
 }
 
@@ -39,11 +40,11 @@ namespace ord {
 
 class OpenRoad;
 
-antennachecker::AntennaChecker *
+antenna_checker::AntennaChecker *
 makeAntennaChecker();
 
 void
-deleteAntennaChecker(antennachecker::AntennaChecker *antennachecker);
+deleteAntennaChecker(antenna_checker::AntennaChecker *antennachecker);
 
 void
 initAntennaChecker(OpenRoad *openroad);

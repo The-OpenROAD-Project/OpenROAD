@@ -31,53 +31,60 @@
 
 
 
-sta::define_cmd_args "check_antenna" { [-verbose] }
-sta::define_cmd_args "check_par_max_length" { [-net_name netname]\
+sta::define_cmd_args "check_antennas" { [-verbose] }
+sta::define_cmd_args "get_met_rest_length" { [-net_name netname]\
                                               [-route_level rt_lv] }
+sta::define_cmd_args "check_net_violation" { [-net_name netname] }
 
-# Put helper functions in a separate namespace so they are not visible
-# too users in the global namespace.
-namespace eval antennachecker {
-
-proc antennachecker_helper { } {
-  puts "This is an Antenna Checker for OpenRoad. Version: 05/04/2020"
-  puts "checking work flow"
-  # antennachecker::
+proc load_antenna_rules { } {
+  antenna_checker::load_antenna_rules
 }
 
-}
 
-proc check_antenna { args } {
-  sta::parse_key_args "check_antenna" args \
+proc check_antennas { args } {
+  sta::parse_key_args "check_antennas" args \
   keys {} \
   flags {-verbose}
 
-  antennachecker::antennachecker_set_verbose [info exists flags(-verbose)]
-  antennachecker::antennachecker_helper
-  antennachecker::check_antenna
+  antenna_checker::antennachecker_set_verbose [info exists flags(-verbose)]
+  antenna_checker::check_antennas
 }
 
-proc check_par_max_length { args } {
-  sta::parse_key_args "check_par_max_length" args \
+proc get_met_avail_length { args } {
+  sta::parse_key_args "get_met_rest_length" args \
     keys {-net_name -route_level} \
     flags {}
 
   if { [info exists keys(-net_name)] } {
     set netname $keys(-net_name)
-    antennachecker::antennachecker_set_net_name $netname
+    antenna_checker::antennachecker_set_net_name $netname
 
     if { [info exists keys(-route_level)] } {
       set rt_lv $keys(-route_level)
       sta::check_positive_integer "-route_level" $rt_lv
-      antennachecker::antennachecker_set_route_level $rt_lv
+      antenna_checker::antennachecker_set_route_level $rt_lv
     } else {
-      sta::sta_error "no -route_level specified."
+      ord::error "no -route_level specified."
     }
   } else {
-    sta::sta_error "no -net_name specified."
+    ord::error "no -net_name specified."
   }
-  antennachecker::antennachecker_helper
-  antennachecker::check_par_max_length
+  antenna_checker::get_met_avail_length
 }
 
+proc check_net_violation { args } {
+  sta::parse_key_args "check_net_violation" args \
+  keys {-net_name} \
+  flags {}
 
+  if { [info exists keys(-net_name)] } {
+    set netname $keys(-net_name)
+    set res [antenna_checker::check_net_violation $netname]
+    
+    return $res
+  } else {
+    ord::error "no -net_name specified."
+  }  
+  
+  return 0
+}

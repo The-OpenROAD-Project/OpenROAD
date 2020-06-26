@@ -33,17 +33,27 @@
 #include "openroad/OpenRoad.hh"
 #include "antennachecker/AntennaChecker.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
+#include "sta/StaMain.hh"
+
+namespace sta {
+// Tcl files encoded into strings.
+extern const char *antennachecker_tcl_inits[];
+}
+
+extern "C" {
+extern int Antennachecker_Init(Tcl_Interp *interp);
+}
 
 namespace ord {
 
-antennachecker::AntennaChecker *
+antenna_checker::AntennaChecker *
 makeAntennaChecker()
 {
-  return new antennachecker::AntennaChecker;
+  return new antenna_checker::AntennaChecker;
 }
 
 void
-deleteAntennaChecker(antennachecker::AntennaChecker *antennachecker)
+deleteAntennaChecker(antenna_checker::AntennaChecker *antennachecker)
 {
   delete antennachecker;
 }
@@ -51,6 +61,11 @@ deleteAntennaChecker(antennachecker::AntennaChecker *antennachecker)
 void
 initAntennaChecker(OpenRoad *openroad)
 {
+  Tcl_Interp *tcl_interp = openroad->tclInterp();
+
+  Antennachecker_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::antennachecker_tcl_inits);
+  
   openroad->getAntennaChecker()->init(openroad->tclInterp(),
 			    openroad->getDb());
 }
