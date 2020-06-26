@@ -120,7 +120,7 @@ Resizer::Resizer() :
   dcalc_ap_(nullptr),
   pvt_(nullptr),
   parasitics_ap_(nullptr),
-  clk_nets__valid_(false),
+  clk_nets_valid_(false),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
   level_drvr_verticies_valid_(false),
@@ -760,9 +760,9 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
 void
 Resizer::ensureClkNets()
 {
-  if (!clk_nets__valid_) {
+  if (!clk_nets_valid_) {
     findClkNets();
-    clk_nets__valid_ = true;
+    clk_nets_valid_ = true;
   }
 }
 
@@ -786,7 +786,8 @@ Resizer::findClkNets()
     Vertex *vertex = bfs.next();
     const Pin *pin = vertex->pin();
     Net *net = network_->net(pin);
-    clk_nets_.insert(net);
+    if (net)
+      clk_nets_.insert(net);
     bfs.enqueueAdjacentVertices(vertex);
   }
 }
@@ -1600,6 +1601,62 @@ Resizer::repairDesign(double max_wire_length, // meters
   }
   if (fanout_violations > 0)
     printf("Found %d fanout violations.\n", fanout_violations);
+  if (length_violations > 0)
+    printf("Found %d long wires.\n", length_violations);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    level_drvr_verticies_valid_ = false;
+  }
+}
+
+// repairDesign but restricted to clock network and
+// no max_fanout/max_cap checks.
+void
+Resizer::repairClkNets(double max_wire_length, // meters
+		       LibertyCell *buffer_cell)
+{
+  init();
+  // Disable incremental timing.
+  graph_delay_calc_->delaysInvalid();
+  search_->arrivalsInvalid();
+  sta_->checkFanoutLimitPreamble();
+
+  inserted_buffer_count_ = 0;
+  int length_violations = 0;
+  int max_length = metersToDbu(max_wire_length);
+  for (Net *net : clk_nets_) {
+    PinSet *drivers = network_->drivers(net);
+    if (drivers) {
+      PinSet::Iterator drvr_iter(drivers);
+      Pin *drvr_pin = drvr_iter.next();
+      Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
+      SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+      if (tree) {
+	bool repair = false;
+	int wire_length = findMaxSteinerDist(drvr, tree);
+	if (max_length
+	    && wire_length > max_length) {
+	  length_violations++;
+	  repair = true;
+	}
+	if (repair) {
+	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
+		      sdc_network_->pathName(drvr_pin),
+		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
+		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
+		      units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
+	  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+	  int ignore1;
+	  float ignore2, ignore3;
+	  PinSeq ignore4;
+	  repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
+		    max_length, INF, buffer_cell,
+		    ignore1, ignore2, ignore3, ignore4);
+	}
+      }
+    }
+  }
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {

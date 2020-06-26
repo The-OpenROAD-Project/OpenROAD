@@ -117,8 +117,13 @@ public:
 		       double wire_length, // meters
 		       Delay &delay,
 		       Slew &slew);
+  // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // zero for none (meters)
 		    LibertyCell *buffer_cell);
+  // repairDesign but restricted to clock network and
+  // no max_fanout/max_cap checks.
+  void repairClkNets(double max_wire_length, // meters
+		     LibertyCell *buffer_cell);
   void reportLongWires(int count,
 		       int digits);
   // Find the max wire length before it is faster to split the wire
@@ -304,7 +309,7 @@ protected:
   const Pvt *pvt_;
   const ParasiticAnalysisPt *parasitics_ap_;
   NetSet clk_nets_;
-  bool clk_nets__valid_;
+  bool clk_nets_valid_;
   bool have_estimated_parasitics_;
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
