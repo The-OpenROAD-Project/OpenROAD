@@ -1428,8 +1428,8 @@ AntennaChecker::GetAntennaRatio()
 void
 AntennaChecker::check_antennas()
 {
-    clock_t start, end;
-    start = clock();
+    //clock_t start, end;
+    //start = clock();
     std::string bname = db_->getChip()->getBlock()->getName();
     printf( "Checking antenna...\n" );
     printf( "Design name: %s\n", bname.c_str());
@@ -1439,8 +1439,8 @@ AntennaChecker::check_antennas()
     else
         printf( "Design error!\n" );
     printf("Gotta verbose %s\n", verbose_ ? "true" : "false");
-    end = clock();
-    std::cout << "Runtime: " << ( double )( end - start ) / CLOCKS_PER_SEC << std::endl;   
+    //end = clock();
+    //std::cout << "Runtime: " << ( double )( end - start ) / CLOCKS_PER_SEC << std::endl;   
 }
 
 

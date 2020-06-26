@@ -476,7 +476,6 @@ Number of pins violated: 2
 Number of nets violated: 1
 Total number of nets: 319
 Gotta verbose false
-Runtime: 0.08
 Net name: net52, Routing Level: 1, Max Length for PAR: -0.085000
 Net name: net52, Routing Level: 1, Max Length for PAR: -0.085000
 this net has violation: 1
