@@ -124,6 +124,10 @@ public:
   // no max_fanout/max_cap checks.
   void repairClkNets(double max_wire_length, // meters
 		     LibertyCell *buffer_cell);
+  // for debugging
+  void repairNet(Net *net,
+		 double max_wire_length, // meters
+		 LibertyCell *buffer_cell);
   void reportLongWires(int count,
 		       int digits);
   // Find the max wire length before it is faster to split the wire
@@ -180,6 +184,13 @@ protected:
   int findMaxSteinerDist(SteinerTree *tree,
 			 SteinerPt pt,
 			 int dist_from_drvr);
+  void repairNet(Net *net,
+		 Vertex *drvr,
+		 double max_length, // dbu
+		 bool check_fanout,
+		 LibertyCell *buffer_cell,
+		 int &length_violations,
+		 int &fanout_violations);
   void repairNet(SteinerTree *tree,
 		 SteinerPt pt,
 		 SteinerPt prev_pt,

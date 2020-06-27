@@ -339,6 +339,16 @@ repair_clk_nets_cmd(float max_length,
 }
 
 void
+repair_net_cmd(Net *net,
+	       float max_length,
+	       LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairNet(net, max_length, buffer_cell); 
+}
+
+void
 report_long_wires_cmd(int count,
 		      int digits)
 {
