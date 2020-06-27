@@ -262,6 +262,26 @@ proc repair_design { args } {
   repair_design_cmd $max_wire_length $buffer_cell
 }
 
+define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]\
+				       -buffer_cell buffer_cell}
+
+proc repair_clock_nets { args } {
+  parse_key_args "repair_clock_nets" args \
+    keys {-max_wire_length -buffer_cell} \
+    flags {}
+  
+  set buffer_cell [parse_buffer_cell keys 1]
+  set max_wire_length 0
+  if { [info exists keys(-max_wire_length)] } {
+    set max_wire_length $keys(-max_wire_length)
+    check_positive_float "-max_wire_length" $max_wire_length
+    set max_wire_length [sta::distance_ui_sta $max_wire_length]
+  }
+  
+  check_argc_eq0 "repair_clock_nets" $args
+  repair_clk_nets_cmd $max_wire_length $buffer_cell
+}
+
 # compatibility
 define_cmd_args "repair_long_wires" {[-max_length max_length]\
 				       -buffer_cell buffer_cell}

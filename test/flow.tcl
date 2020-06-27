@@ -39,14 +39,17 @@ repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
 repair_hold_violations -buffer_cell $resize_buffer_cell
 
+set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
+detailed_placement
+optimize_mirroring
+check_placement -verbose
+
 clock_tree_synthesis -lut_file $cts_lut_file \
   -sol_list $cts_sol_file \
   -root_buf $cts_buffer \
   -wire_unit 20
 
-set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
-optimize_mirroring
 filler_placement $filler_cells
 check_placement
 
