@@ -43,6 +43,7 @@ using odb::dbObjectType;
 using odb::dbITermObj;
 using odb::dbBTermObj;
 using odb::dbIntProperty;
+using odb::dbPlacementStatus;
 
 // TODO: move to StringUtil
 char *
@@ -627,6 +628,47 @@ dbNetwork::setVertexId(Pin *pin,
     return iterm->staSetVertexId(id);
   else if (bterm)
     return bterm->staSetVertexId(id);
+}
+
+Point
+dbNetwork::location(const Pin *pin) const
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y))
+      return Point(x, y);
+    else {
+      dbInst *inst = iterm->getInst();
+      int x, y;
+      inst->getOrigin(x, y);
+      return Point(x, y);
+    }
+  }
+  if (bterm) {
+    int x, y;
+    if (bterm->getFirstPinLocation(x, y))
+      return Point(x, y);
+  }
+  return Point(0, 0);
+}
+
+bool
+dbNetwork::isPlaced(const Pin *pin) const
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    status = inst->getPlacementStatus();
+  }
+  if (bterm)
+    status = bterm->getFirstPinPlacementStatus();
+  return status.isPlaced();
 }
 
 ////////////////////////////////////////////////////////////////

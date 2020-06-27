@@ -93,14 +93,6 @@ extern int Resizer_Init(Tcl_Interp *interp);
 
 extern const char *resizer_tcl_inits[];
 
-// Referenced by MakeSteinerTree also.
-bool
-pinIsPlaced(Pin *pin,
-	    const dbNetwork *network);
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network);
-
 typedef array<Delay, RiseFall::index_count> Delays;
 typedef array<Slack, RiseFall::index_count> Slacks;
 
@@ -338,7 +330,7 @@ Resizer::bufferInput(Pin *top_pin,
 					       buffer_name.c_str(),
 					       parent);
   if (buffer) {
-    Point pin_loc = pinLocation(top_pin, db_network_);
+    Point pin_loc = db_network_->location(top_pin);
     Point buf_loc = closestPtInRect(core_, pin_loc);
     setLocation(buffer, buf_loc);
     design_area_ += area(db_network_->cell(buffer_cell));
@@ -405,7 +397,7 @@ Resizer::bufferOutput(Pin *top_pin,
 					   buffer_name.c_str(),
 					   parent);
   if (buffer) {
-    setLocation(buffer, pinLocation(top_pin, db_network_));
+    setLocation(buffer, db_network_->location(top_pin));
     design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
@@ -1049,7 +1041,7 @@ Resizer::bufferLoads(Pin *drvr_pin,
   Instance *top_inst = db_network_->topInstance();
   LibertyPort *buffer_in, *buffer_out;
   buffer_cell->bufferPorts(buffer_in, buffer_out);
-  Point drvr_loc = pinLocation(drvr_pin, db_network_);
+  Point drvr_loc = db_network_->location(drvr_pin);
   for (int i = 0; i < buffer_count; i++) {
     PinSeq &loads = grouped_loads[i];
     if (loads.size()) {
@@ -1146,8 +1138,8 @@ Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
       double max_dist = 0.0;
       double sum_dist = 0.0;
       for (Pin *load : loads) {
-	uint64_t dist2 = Point::squaredDistance(pinLocation(load, db_network_),
-						   center);
+	uint64_t dist2 = Point::squaredDistance(db_network_->location(load),
+						center);
 	double dist = std::sqrt(dist2);
 	printf(" %.2e %s\n", dbuToMeters(dist), db_network_->pathName(load));
 	sum_dist += dist;
@@ -1167,7 +1159,7 @@ Resizer::findCenter(PinSeq &pins)
 {
   Point sum(0, 0);
   for (Pin *pin : pins) {
-    Point loc = pinLocation(pin, db_network_);
+    Point loc = db_network_->location(pin);
     sum.x() += loc.x();
     sum.y() += loc.y();
   }
@@ -1261,7 +1253,7 @@ Resizer::tieLocation(Pin *load,
 {
   dbInst *db_inst = db_network_->staToDb(network_->instance(load));
   dbBox *bbox = db_inst->getBBox();
-  Point load_loc = pinLocation(load, db_network_);
+  Point load_loc = db_network_->location(load);
   int load_x = load_loc.getX();
   int load_y = load_loc.getY();
   int left_dist = abs(load_x - bbox->xMin());
@@ -1417,7 +1409,7 @@ Resizer::repairHoldBuffer(Pin *drvr_pin,
   sta_->connectPin(drvr, drvr_port, net2);
   sta_->connectPin(buffer, input, net2);
   sta_->connectPin(buffer, output, net);
-  setLocation(buffer, pinLocation(drvr_pin, db_network_));
+  setLocation(buffer, db_network_->location(drvr_pin));
 }
 
 void
@@ -1675,7 +1667,7 @@ Resizer::repairNet(Net *net,
       repair = true;
     }
     if (repair) {
-      Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+      Point drvr_loc = db_network_->location(drvr->pin());
       debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
 		  sdc_network_->pathName(drvr_pin),
 		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
@@ -2023,12 +2015,12 @@ int
 Resizer::maxLoadManhattenDistance(Vertex *drvr)
 {
   int max_dist = 0;
-  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+  Point drvr_loc = db_network_->location(drvr->pin());
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   while (edge_iter.hasNext()) {
     Edge *edge = edge_iter.next();
     Vertex *load = edge->to(graph_);
-    Point load_loc = pinLocation(load->pin(), db_network_);
+    Point load_loc = db_network_->location(load->pin());
     int dist = Point::manhattanDistance(drvr_loc, load_loc);
     max_dist = max(max_dist, dist);
   }
@@ -2398,49 +2390,6 @@ Resizer::findDesignArea()
     design_area += area(master);
   }
   return design_area;
-}
-
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network)
-{
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  network->staToDb(pin, iterm, bterm);
-  if (iterm) {
-    int x, y;
-    if (iterm->getAvgXY(&x, &y))
-      return Point(x, y);
-    else {
-      dbInst *inst = iterm->getInst();
-      int x, y;
-      inst->getOrigin(x, y);
-      return Point(x, y);
-    }
-  }
-  if (bterm) {
-    int x, y;
-    if (bterm->getFirstPinLocation(x, y))
-      return Point(x, y);
-  }
-  return Point(0, 0);
-}
-
-bool
-pinIsPlaced(Pin *pin,
-	    const dbNetwork *network)
-{
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  network->staToDb(pin, iterm, bterm);
-  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
-  if (iterm) {
-    dbInst *inst = iterm->getInst();
-    status = inst->getPlacementStatus();
-  }
-  if (bterm)
-    status = bterm->getFirstPinPlacementStatus();
-  return status.isPlaced();
 }
 
 int

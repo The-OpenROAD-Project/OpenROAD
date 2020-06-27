@@ -55,10 +55,6 @@ ensureLinked();
 
 namespace sta {
 
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network);
-
 // Defined in StaTcl.i
 LibertyLibrarySeq *
 tclListSeqLibertyLibrary(Tcl_Obj *const source,
@@ -72,7 +68,6 @@ tclListSeqLibertyCell(Tcl_Obj *const source,
 using ord::getResizer;
 using ord::ensureLinked;
 
-using sta::Resizer;
 using sta::Corner;
 using sta::LibertyCellSeq;
 using sta::LibertyLibrarySeq;
@@ -87,6 +82,9 @@ using sta::NetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
+
+using sta::Resizer;
+using sta::dbNetwork;
 
 %}
 
@@ -427,9 +425,12 @@ pin_location(Pin *pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
+  dbNetwork *network = resizer->getDbNetwork();
+  odb::Point loc = network->location(pin);
+  double x = resizer->dbuToMeters(loc.getX());
+  double y = resizer->dbuToMeters(loc.getY());
   // return x/y as tcl list
-  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
+  return sta::stringPrintTmp("%f %f", x, y);
 }
 
 %} // inline

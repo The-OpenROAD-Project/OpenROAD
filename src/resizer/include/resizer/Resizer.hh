@@ -141,6 +141,8 @@ public:
   void writeNetSVG(Net *net,
 		   const char *filename);
   dbNetwork *getDbNetwork() { return db_network_; }
+  double dbuToMeters(int dist) const;
+  int metersToDbu(double dist) const;
 
 protected:
   void init();
@@ -249,8 +251,6 @@ protected:
 		   Point pt);
   double area(dbMaster *master);
   double area(Cell *cell);
-  double dbuToMeters(int dist) const;
-  int metersToDbu(double dist) const;
   double splitWireDelayDiff(double wire_length,
 			    LibertyCell *buffer_cell);
   double maxSlewWireDiff(double wire_length,
