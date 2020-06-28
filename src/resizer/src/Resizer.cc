@@ -1737,10 +1737,10 @@ Resizer::repairNet(SteinerTree *tree,
   if (max_length > 0
        && (wire_length_left + wire_length_right) > max_length) {
     if (wire_length_left > wire_length_right)
-      makeRepeater(tree, left, net, buffer_cell, level,
+      makeRepeater(tree, pt, net, buffer_cell, level,
 		   wire_length_left, pin_cap_left, fanout_left, loads_left);
     else
-      makeRepeater(tree, right, net, buffer_cell, level,
+      makeRepeater(tree, pt, net, buffer_cell, level,
 		   wire_length_right, pin_cap_right, fanout_right, loads_right);
   }
   if (max_fanout > 0

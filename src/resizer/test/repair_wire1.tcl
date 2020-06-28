@@ -1,4 +1,4 @@
-# repair_long_wires 1 wire
+# repair_design 1 wire
 # in1--u1--u2--------u3-out1
 #             1500u
 read_liberty Nangate45/Nangate45_typ.lib
@@ -20,9 +20,8 @@ sta::set_elmore u3/Z out1 0
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
 report_long_wires 2
 
-set buffer_cell [get_lib_cell BUF_X1]
 # wire length = 1500u -> 2 buffers required
-repair_design -max_wire_length 600 -buffer_cell $buffer_cell
+repair_design -max_wire_length 600 -buffer_cell BUF_X1
 
 report_long_wires 4
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
