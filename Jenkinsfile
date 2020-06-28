@@ -8,7 +8,7 @@ pipeline {
     }
     stage('Test') {
       steps {
-        //sh './jenkins/test.sh'
+        sh './jenkins/test.sh'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'out', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: ''])
       }
     }
