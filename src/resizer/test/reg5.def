@@ -1,18 +1,12 @@
-###############################################################################
-# reg1 with clock pins tied together and placement
-###############################################################################
+# reg1 liberty1, 1 clock pin, placed
 
 VERSION 5.8 ; 
 NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-
 DESIGN reg1 ;
-
 UNITS DISTANCE MICRONS 100 ;
-
 DIEAREA ( 0 0 ) ( 10000 10000 ) ;
-
 
 COMPONENTS 5 ;
 - r1 snl_ffqx1 + PLACED   ( 1000 2000 ) N ;
