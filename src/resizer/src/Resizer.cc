@@ -1668,7 +1668,7 @@ Resizer::repairNet(Net *net,
     }
     if (repair) {
       Point drvr_loc = db_network_->location(drvr->pin());
-      debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
+      debugPrint4(debug_, "repair_wire", 1, "driver %s (%s %s) l=%s\n",
 		  sdc_network_->pathName(drvr_pin),
 		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
 		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
@@ -1678,7 +1678,7 @@ Resizer::repairNet(Net *net,
       float ignore2, ignore3;
       PinSeq ignore4;
       repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
-		max_length, max_fanout, buffer_cell,
+		max_length, max_fanout, buffer_cell, 0,
 		ignore1, ignore2, ignore3, ignore4);
     }
   }
@@ -1692,6 +1692,7 @@ Resizer::repairNet(SteinerTree *tree,
 		   int max_length, // dbu
 		   float max_fanout,
 		   LibertyCell *buffer_cell,
+		   int level,
 		   // Return values.
 		   // Remaining parasiics after repeater insertion.
 		   int &wire_length,
@@ -1699,23 +1700,35 @@ Resizer::repairNet(SteinerTree *tree,
 		   float &fanout,
 		   PinSeq &load_pins)
 {
+  Point pt_loc = tree->location(pt);
+  int pt_x = pt_loc.getX();
+  int pt_y = pt_loc.getY();
+  debugPrint4(debug_, "repair_wire", 1, "%*spt (%s %s)\n",
+	      level, "",
+	      units_->distanceUnit()->asString(dbuToMeters(pt_x), 0),
+	      units_->distanceUnit()->asString(dbuToMeters(pt_y), 0));
   SteinerPt left = tree->left(pt);
   int wire_length_left = 0;
   float pin_cap_left = 0.0;
   float fanout_left = 0.0;
   PinSeq loads_left;
   if (left != SteinerTree::null_pt)
-    repairNet(tree, left, pt, net, max_length, max_fanout, buffer_cell,
+    repairNet(tree, left, pt, net, max_length, max_fanout,
+	      buffer_cell, level + 1,
 	      wire_length_left, pin_cap_left, fanout_left, loads_left);
-
   SteinerPt right = tree->right(pt);
   int wire_length_right = 0;
   float pin_cap_right = 0.0;
   float fanout_right = 0.0;
   PinSeq loads_right;
   if (right != SteinerTree::null_pt)
-    repairNet(tree, right, pt, net, max_length, max_fanout, buffer_cell,
+    repairNet(tree, right, pt, net, max_length, max_fanout,
+	      buffer_cell, level + 1,
 	      wire_length_right, pin_cap_right, fanout_right, loads_right);
+  debugPrint4(debug_, "repair_wire", 1, "%*sleft=%s right=%s\n",
+	      level, "",
+	      units_->distanceUnit()->asString(dbuToMeters(wire_length_left), 0),
+	      units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 0));
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
@@ -1724,19 +1737,19 @@ Resizer::repairNet(SteinerTree *tree,
   if (max_length > 0
        && (wire_length_left + wire_length_right) > max_length) {
     if (wire_length_left > wire_length_right)
-      makeRepeater(tree, left, net, buffer_cell,
+      makeRepeater(tree, left, net, buffer_cell, level,
 		   wire_length_left, pin_cap_left, fanout_left, loads_left);
     else
-      makeRepeater(tree, right, net, buffer_cell,
+      makeRepeater(tree, right, net, buffer_cell, level,
 		   wire_length_right, pin_cap_right, fanout_right, loads_right);
   }
   if (max_fanout > 0
        && (fanout_left + fanout_right) > max_fanout) {
     if (fanout_left > fanout_right)
-      makeRepeater(tree, left, net, buffer_cell,
+      makeRepeater(tree, left, net, buffer_cell, level,
 		   wire_length_left, pin_cap_left, fanout_left, loads_left);
     else
-      makeRepeater(tree, right, net, buffer_cell,
+      makeRepeater(tree, right, net, buffer_cell, level,
 		   wire_length_right, pin_cap_right, fanout_right, loads_right);
   }
   wire_length = wire_length_left + wire_length_right;
@@ -1752,6 +1765,12 @@ Resizer::repairNet(SteinerTree *tree,
   if (prev_pt != SteinerTree::null_pt) {
     Pin *load_pin = tree->pin(pt);
     if (load_pin) {
+      Point load_loc = db_network_->location(load_pin);
+      debugPrint5(debug_, "repair_wire", 1, "%*sload %s (%s %s)\n",
+		  level, "",
+		  sdc_network_->pathName(load_pin),
+		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 0));
       LibertyPort *load_port = network_->libertyPort(load_pin);
       if (load_port) {
 	pin_cap += portCapacitance(load_port);
@@ -1762,14 +1781,15 @@ Resizer::repairNet(SteinerTree *tree,
 
     // Back up from pt to prev_pt adding repeaters every max_length.
     if (max_length > 0) {
-      Point pt_loc = tree->location(pt);
       Point prev_loc = tree->location(prev_pt);
       int length = Point::manhattanDistance(prev_loc, pt_loc);
       wire_length += length;
-      int pt_x = pt_loc.getX();
-      int pt_y = pt_loc.getY();
       int prev_x = prev_loc.getX();
       int prev_y = prev_loc.getY();
+      debugPrint4(debug_, "repair_wire", 1, "%*swl=%s l=%s\n",
+		  level, "",
+		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(length), 0));
       while (wire_length > max_length) {
 	// Distance from pt to repeater backward toward prev_pt.
 	double buf_dist = length - (wire_length - max_length);
@@ -1778,14 +1798,17 @@ Resizer::repairNet(SteinerTree *tree,
 	double d = buf_dist / length;
 	int buf_x = pt_x + d * dx;
 	int buf_y = pt_y + d * dy;
-
-	makeRepeater(buf_x, buf_y, net, buffer_cell,
+	makeRepeater(buf_x, buf_y, net, buffer_cell, level,
 		     wire_length, pin_cap, fanout, load_pins);
 	// Update for the next round.
 	length -= buf_dist;
 	wire_length = length;
 	pt_x = buf_x;
 	pt_y = buf_y;
+	debugPrint4(debug_, "repair_wire", 1, "%*swl=%s l=%s\n",
+		    level, "",
+		    units_->distanceUnit()->asString(dbuToMeters(wire_length), 0),
+		    units_->distanceUnit()->asString(dbuToMeters(length), 0));
       }
     }
   }
@@ -1799,13 +1822,14 @@ Resizer::makeRepeater(SteinerTree *tree,
 		      SteinerPt pt,
 		      Net *in_net,
 		      LibertyCell *buffer_cell,
+		      int level,
 		      int &wire_length,
 		      float &pin_cap,
 		      float &fanout,
 		      PinSeq &load_pins)
 {
   Point pt_loc = tree->location(pt);
-  makeRepeater(pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell,
+  makeRepeater(pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell, level,
 	       wire_length, pin_cap, fanout, load_pins);
 }
 
@@ -1814,6 +1838,7 @@ Resizer::makeRepeater(int x,
 		      int y,
 		      Net *in_net,
 		      LibertyCell *buffer_cell,
+		      int level,
 		      int &wire_length,
 		      float &pin_cap,
 		      float &fanout,
@@ -1826,7 +1851,8 @@ Resizer::makeRepeater(int x,
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
     string buffer_name = makeUniqueInstName("repeater");
-    debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
+    debugPrint5(debug_, "repair_wire", 2, "%*s%s (%s %s)\n",
+		level, "",
 		buffer_name.c_str(),
 		units_->distanceUnit()->asString(dbuToMeters(x), 0),
 		units_->distanceUnit()->asString(dbuToMeters(y), 0));

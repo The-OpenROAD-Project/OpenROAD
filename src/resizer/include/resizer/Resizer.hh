@@ -200,6 +200,7 @@ protected:
 		 int max_length,
 		 float max_fanout,
 		 LibertyCell *buffer_cell,
+		 int level,
 		 // Return values.
 		 int &wire_length,
 		 float &pin_cap,
@@ -209,6 +210,7 @@ protected:
 		    SteinerPt pt,
 		    Net *in_net,
 		    LibertyCell *buffer_cell,
+		    int level,
 		    int &wire_length,
 		    float &pin_cap,
 		    float &fanout,
@@ -217,6 +219,7 @@ protected:
 		    int y,
 		    Net *in_net,
 		    LibertyCell *buffer_cell,
+		    int level,
 		    int &wire_length,
 		    float &pin_cap,
 		    float &fanout,
