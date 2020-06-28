@@ -35,6 +35,7 @@ using odb::dbMTerm;
 using odb::dbSigType;
 using odb::dbIoType;
 using odb::dbSet;
+using odb::Point;
 
 // This adapter implements the network api for OpenDB.
 // ConcreteNetwork is used for library/cell/port functions only.
@@ -90,6 +91,8 @@ public:
   virtual VertexId vertexId(const Pin *pin) const;
   virtual void setVertexId(Pin *pin,
 			   VertexId id);
+  Point location(const Pin *pin) const;
+  bool isPlaced(const Pin *pin) const;
 
   ////////////////////////////////////////////////////////////////
   // Terminal functions

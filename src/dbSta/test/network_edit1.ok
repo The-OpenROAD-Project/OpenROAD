@@ -28,4 +28,5 @@ Net in1
 Driver pins
 
 Load pins
- r1/D input (DFF_X1)
+Warning 0: Can not find physical location of iterm r1/D
+ r1/D input (DFF_X1) (0, 0)
