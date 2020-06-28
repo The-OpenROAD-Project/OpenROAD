@@ -274,8 +274,6 @@ protected:
   void repairHoldBuffer(Pin *drvr_pin,
 			Slack hold_slack,
 			LibertyCell *buffer_cell);
-  void repairHoldResize(Pin *drvr_pin,
-			Slack hold_slack);
   void findCellInstances(LibertyCell *cell,
 			 // Return value.
 			 InstanceSeq &insts);
