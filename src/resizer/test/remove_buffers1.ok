@@ -11,5 +11,41 @@ Notice 0:     Created 4 components and 16 component-terminals.
 Notice 0:     Created 2 special nets and 8 connections.
 Notice 0:     Created 5 nets and 8 connections.
 Notice 0: Finished DEF file: remove_buffers1.def
+Startpoint: in1 (input port)
+Endpoint: out1 (output port)
+Path Group: (none)
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.02    0.02 v b1/Z (BUF_X1)
+   0.02    0.05 v b2/Z (BUF_X2)
+   0.02    0.07 v b3/Z (BUF_X4)
+   0.02    0.09 v b4/Z (BUF_X8)
+   0.00    0.09 v out1 (out)
+           0.09   data arrival time
+---------------------------------------------------------
+(Path is unconstrained)
+
+
 Removed 2 buffers.
+Startpoint: in1 (input port)
+Endpoint: out1 (output port)
+Path Group: (none)
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.03    0.03 v b1/Z (BUF_X1)
+   0.02    0.05 v b4/Z (BUF_X8)
+   0.00    0.05 v out1 (out)
+           0.05   data arrival time
+---------------------------------------------------------
+(Path is unconstrained)
+
+
 No differences found.

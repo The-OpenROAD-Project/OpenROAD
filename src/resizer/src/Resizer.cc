@@ -213,16 +213,15 @@ Resizer::ensureBlock()
 		     && core_.yMax() == 0);
     design_area_ = findDesignArea();
   }
-
-  // Abbreviated copyState
-  db_network_ = sta_->getDbNetwork();
-  sta_->ensureLevelized();
-  graph_ = sta_->graph();
 }
 
 void
 Resizer::init()
 {
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
   ensureBlock();
   ensureLevelDrvrVerticies();
   ensureClkNets();
@@ -233,6 +232,11 @@ void
 Resizer::removeBuffers()
 {
   ensureBlock();
+  db_network_ = sta_->getDbNetwork();
+  // Disable incremental timing.
+  graph_delay_calc_->delaysInvalid();
+  search_->arrivalsInvalid();
+
   int remove_count = 0;
   for (dbInst *inst : block_->getInsts()) {
     LibertyCell *lib_cell = db_network_->libertyCell(inst);
@@ -249,14 +253,16 @@ Resizer::removeBuffers()
 	NetPinIterator *pin_iter = db_network_->pinIterator(output_net);
 	while (pin_iter->hasNext()) {
 	  Pin *pin = pin_iter->next();
-	  Instance *pin_inst = db_network_->instance(pin);
-	  Port *pin_port = db_network_->port(pin);
-	  db_network_->disconnectPin(pin);
-	  db_network_->connect(pin_inst, pin_port, input_net);
+	  if (pin != output_pin) {
+	    Instance *pin_inst = db_network_->instance(pin);
+	    Port *pin_port = db_network_->port(pin);
+	    sta_->disconnectPin(pin);
+	    sta_->connectPin(pin_inst, pin_port, input_net);
+	  }
 	}
 	delete pin_iter;
-	db_network_->deleteNet(output_net);
-	db_network_->deleteInstance(buffer);
+	sta_->deleteNet(output_net);
+	sta_->deleteInstance(buffer);
 	remove_count++;
       }
     }
