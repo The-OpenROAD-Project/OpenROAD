@@ -35,6 +35,13 @@
 
 namespace eval sta {
 
+define_cmd_args "remove_buffers" {}
+
+proc remove_buffers { args } {
+  check_argc_eq0 "remove_buffers" $args
+  remove_buffers_cmd
+}
+
 define_cmd_args "set_wire_rc" {[-layer layer_name]\
 				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
@@ -378,7 +385,7 @@ proc_redirect report_long_wires {
   report_long_wires_cmd $count $digits
 }
 
-# Override OpenSTA function.
+# Used by report_net. Override default function.
 proc pin_location_str { pin } {
   lassign [pin_location $pin] x y
   return " ([format_distance $x 0], [format_distance $y 0])"

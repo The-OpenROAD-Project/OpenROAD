@@ -59,6 +59,8 @@ public:
 	    dbDatabase *db,
 	    dbSta *sta);
 
+  // Remove all buffers from the netlist.
+  void removeBuffers();
   // Set the resistance and capacitance used for parasitics.
   // Make net wire parasitics based on DEF locations.
   void setWireRC(float wire_res, // ohms/meter
