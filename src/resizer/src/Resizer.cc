@@ -240,7 +240,7 @@ Resizer::removeBuffers()
   int remove_count = 0;
   for (dbInst *inst : block_->getInsts()) {
     LibertyCell *lib_cell = db_network_->libertyCell(inst);
-    if (lib_cell->isBuffer()) {
+    if (lib_cell && lib_cell->isBuffer()) {
       LibertyPort *input_port, *output_port;
       lib_cell->bufferPorts(input_port, output_port);
       Instance *buffer = db_network_->dbToSta(inst);
