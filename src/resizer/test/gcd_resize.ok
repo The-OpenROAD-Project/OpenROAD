@@ -15,7 +15,7 @@ worst slack 9.33
 Inserted 35 input buffers.
 Inserted 18 output buffers.
 Resized 49 instances.
-Inserted 0 hold buffers.
+No hold violations found.
 Startpoint: _886_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _880_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock

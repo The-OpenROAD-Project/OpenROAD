@@ -271,9 +271,9 @@ protected:
   void sortFaninsByWeight(VertexWeightMap &weight_map,
 			  // Return value.
 			  VertexSeq &fanins);
-  void repairHoldBuffer(Pin *drvr_pin,
-			Slack hold_slack,
-			LibertyCell *buffer_cell);
+  void makeHoldDelay(Pin *drvr_pin,
+		     Slack hold_slack,
+		     LibertyCell *buffer_cell);
   void findCellInstances(LibertyCell *cell,
 			 // Return value.
 			 InstanceSeq &insts);
