@@ -143,12 +143,12 @@ using sta::dbNetwork;
 
 %inline %{
 
-double
-utilization()
+void
+remove_buffers_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->utilization();
+  resizer->removeBuffers();
 }
 
 void
@@ -431,6 +431,14 @@ pin_location(Pin *pin)
   double y = resizer->dbuToMeters(loc.getY());
   // return x/y as tcl list
   return sta::stringPrintTmp("%f %f", x, y);
+}
+
+double
+utilization()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->utilization();
 }
 
 %} // inline

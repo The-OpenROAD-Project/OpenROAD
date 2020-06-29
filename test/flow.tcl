@@ -20,6 +20,9 @@ eval $tapcell_cmd
 
 pdngen -verbose $pdn_cfg
 
+# remove buffers inserted by synthesis 
+remove_buffers
+
 # pre-placement/sizing wireload timing
 report_checks
 

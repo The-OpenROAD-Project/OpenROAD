@@ -1278,4 +1278,12 @@ dbNetwork::dbToSta(dbSigType sig_type,
   }
 }
 
+////////////////////////////////////////////////////////////////
+
+LibertyCell *
+dbNetwork::libertyCell(dbInst *inst)
+{
+  return libertyCell(dbToSta(inst));
+}
+
 } // namespace
