@@ -309,9 +309,10 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
       bufferInput(pin, buffer_cell);
   }
   delete port_iter;
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d input buffers.\n", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
-  printf("Inserted %d input buffers.\n", inserted_buffer_count_);
+  }
 }
    
 void
@@ -375,9 +376,10 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
       bufferOutput(pin, buffer_cell);
   }
   delete port_iter;
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d output buffers.\n", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
-  printf("Inserted %d output buffers.\n", inserted_buffer_count_);
+  }
 }
 
 void
@@ -1303,14 +1305,19 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
 	&& sta_->vertexSlack(end, MinMax::min()) < 0.0)
       hold_failures.insert(end);
   }
+  if (hold_failures.size() > 0)
+    printf("Found %lu endpoints with hold violations.\n",
+	   hold_failures.size());
+  else
+    printf("No hold violations found.\n");
   if (debug_->check("repair_hold", 2)) {
-    printf("Failing endpoints %lu\n", hold_failures.size());
-    for (Vertex *failing_end : hold_failures)
-      printf(" %s\n", failing_end->name(sdc_network_));
+    for (Vertex *end : hold_failures)
+      printf(" %s\n", end->name(sdc_network_));
   }
   repairHoldViolations(hold_failures, buffer_cell);
 }
 
+// For testing/debug.
 void
 Resizer::repairHoldViolations(Pin *end_pin,
 			      LibertyCell *buffer_cell)
@@ -1336,12 +1343,18 @@ Resizer::repairHoldViolations(VertexSet &ends,
   int pass = 1;
   while (worst_slack < 0.0
 	 && pass < 10) {
+    debugPrint2(debug_, "repair_hold", 1, "pass %d worst_slack=%s\n",
+		pass,
+		units_->timeUnit()->asString(worst_slack, 3));
     repairHoldPass(ends, buffer_cell);
     sta_->findRequireds();
     sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
     pass++;
   }
-  printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
 void
@@ -1358,17 +1371,18 @@ Resizer::repairHoldPass(VertexSet &ends,
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
-      debugPrint3(debug_, "repair_hold", 2, " %s w=%s gap=%s\n",
+      debugPrint4(debug_, "repair_hold", 2, " %s w=%s gap=%s #%d\n",
 		  vertex->name(sdc_network_),
 		  delayAsString(weight_map[vertex], this),
-		  delayAsString(slackGap(vertex), this));
+		  delayAsString(slackGap(vertex), this),
+		  i);
       Pin *drvr_pin = vertex->pin();
       Net *net = network_->isTopLevelPort(drvr_pin)
 	? network_->net(network_->term(drvr_pin))
 	: network_->net(drvr_pin);
       // Hands off special nets.
       if (!isSpecial(net)) {
-	repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
+	makeHoldDelay(drvr_pin, hold_slack, buffer_cell);
 	repair_count++;
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
@@ -1380,9 +1394,9 @@ Resizer::repairHoldPass(VertexSet &ends,
 }
 
 void
-Resizer::repairHoldBuffer(Pin *drvr_pin,
-			  Slack hold_slack,
-			  LibertyCell *buffer_cell)
+Resizer::makeHoldDelay(Pin *drvr_pin,
+		       Slack hold_slack,
+		       LibertyCell *buffer_cell)
 {
   Instance *parent = db_network_->topInstance();
   string net2_name = makeUniqueNetName();
@@ -1410,6 +1424,10 @@ Resizer::repairHoldBuffer(Pin *drvr_pin,
   sta_->connectPin(buffer, input, net2);
   sta_->connectPin(buffer, output, net);
   setLocation(buffer, db_network_->location(drvr_pin));
+  if (have_estimated_parasitics_) {
+    estimateWireParasitic(net);
+    estimateWireParasitic(net2);
+  }
 }
 
 void
@@ -1483,50 +1501,6 @@ cellDriveResistance(const LibertyCell *cell)
       return port->driveResistance();
   }
   return 0.0;
-}
-
-// This does not work well because downsizing the gate can lower the
-// path delay by reducing the load capacitance on an earlier stage.
-void
-Resizer::repairHoldResize(Pin *drvr_pin,
-			  Slack hold_slack)
-{
-  Instance *inst = network_->instance(drvr_pin);
-  LibertyCell *inst_cell = network_->libertyCell(inst);
-  LibertyCellSeq *equiv_cells = sta_->equivCells(inst_cell);
-  bool found_cell = false;
-  int i;
-  for (i = 0; i < equiv_cells->size(); i++) {
-    LibertyCell *equiv = (*equiv_cells)[i];
-    if (equiv == inst_cell) {
-      found_cell = true;
-      break;
-    }
-  }
-  // Equiv cells are sorted by drive strength.
-  // If inst_cell is the first equiv it is already the lowest drive option.
-  if (found_cell && i > 0) {
-    double load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
-    double drive_res = cellDriveResistance(inst_cell);
-    double rc_delay0 = drive_res * load_cap;
-    // Downsize until RC delay > hold violation.
-    for (int k = i - 1; k >= 0; k--) {
-      LibertyCell *equiv = (*equiv_cells)[k];
-      double drive_res = cellDriveResistance(equiv);
-      double rc_delay = drive_res * load_cap;
-      if (rc_delay - rc_delay0 > -hold_slack
-	  // Last chance baby.
-	  || k == 0) {
-	debugPrint4(debug_, "resizer", 3, "%s %s -> %s +%s\n",
-		    sdc_network_->pathName(inst),
-		    inst_cell->name(),
-		    equiv->name(),
-		    delayAsString(rc_delay - rc_delay0, this));
-	sta_->replaceCell(inst, equiv);
-	break;
-      }
-    }
-  }
 }
 
 ////////////////////////////////////////////////////////////////

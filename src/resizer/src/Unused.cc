@@ -731,3 +731,49 @@ Resizer::repairMaxFanout(LibertyCell *buffer_cell)
     level_drvr_verticies_valid_ = false;
   }
 }
+
+////////////////////////////////////////////////////////////////
+
+// This does not work well because downsizing the gate can lower the
+// path delay by reducing the load capacitance on an earlier stage.
+void
+Resizer::repairHoldResize(Pin *drvr_pin,
+			  Slack hold_slack)
+{
+  Instance *inst = network_->instance(drvr_pin);
+  LibertyCell *inst_cell = network_->libertyCell(inst);
+  LibertyCellSeq *equiv_cells = sta_->equivCells(inst_cell);
+  bool found_cell = false;
+  int i;
+  for (i = 0; i < equiv_cells->size(); i++) {
+    LibertyCell *equiv = (*equiv_cells)[i];
+    if (equiv == inst_cell) {
+      found_cell = true;
+      break;
+    }
+  }
+  // Equiv cells are sorted by drive strength.
+  // If inst_cell is the first equiv it is already the lowest drive option.
+  if (found_cell && i > 0) {
+    double load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+    double drive_res = cellDriveResistance(inst_cell);
+    double rc_delay0 = drive_res * load_cap;
+    // Downsize until RC delay > hold violation.
+    for (int k = i - 1; k >= 0; k--) {
+      LibertyCell *equiv = (*equiv_cells)[k];
+      double drive_res = cellDriveResistance(equiv);
+      double rc_delay = drive_res * load_cap;
+      if (rc_delay - rc_delay0 > -hold_slack
+	  // Last chance baby.
+	  || k == 0) {
+	debugPrint4(debug_, "resizer", 3, "%s %s -> %s +%s\n",
+		    sdc_network_->pathName(inst),
+		    inst_cell->name(),
+		    equiv->name(),
+		    delayAsString(rc_delay - rc_delay0, this));
+	sta_->replaceCell(inst, equiv);
+	break;
+      }
+    }
+  }
+}

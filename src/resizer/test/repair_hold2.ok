@@ -153,6 +153,7 @@ Path Type: min
            0.05   slack (MET)
 
 
+Found 3 endpoints with hold violations.
 Inserted 9 hold buffers.
 Startpoint: in2 (input port clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -237,9 +238,9 @@ Path Type: min
    0.09    0.11 ^ r1/Q (DFF_X1)
    0.02    0.13 ^ hold2/Z (BUF_X2)
    0.03    0.16 ^ u2/ZN (AND2_X1)
-   0.02    0.18 ^ hold3/Z (BUF_X2)
-   0.00    0.18 ^ r3/D (DFF_X1)
-           0.18   data arrival time
+   0.02    0.17 ^ hold3/Z (BUF_X2)
+   0.00    0.17 ^ r3/D (DFF_X1)
+           0.17   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
@@ -258,9 +259,9 @@ Path Type: min
            0.16   data required time
 ---------------------------------------------------------
            0.16   data required time
-          -0.18   data arrival time
+          -0.17   data arrival time
 ---------------------------------------------------------
-           0.02   slack (MET)
+           0.01   slack (MET)
 
 
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -281,9 +282,9 @@ Path Type: min
    0.09    0.17 ^ r2/Q (DFF_X1)
    0.02    0.19 ^ u1/Z (BUF_X1)
    0.03    0.22 ^ u2/ZN (AND2_X1)
-   0.02    0.24 ^ hold3/Z (BUF_X2)
-   0.00    0.24 ^ r3/D (DFF_X1)
-           0.24   data arrival time
+   0.02    0.23 ^ hold3/Z (BUF_X2)
+   0.00    0.23 ^ r3/D (DFF_X1)
+           0.23   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
@@ -302,9 +303,9 @@ Path Type: min
            0.16   data required time
 ---------------------------------------------------------
            0.16   data required time
-          -0.24   data arrival time
+          -0.23   data arrival time
 ---------------------------------------------------------
-           0.08   slack (MET)
+           0.07   slack (MET)
 
 
 No differences found.
