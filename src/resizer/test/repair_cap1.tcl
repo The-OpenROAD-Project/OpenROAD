@@ -9,7 +9,9 @@ write_hi_fanout_def $def_file 60
 read_def $def_file
 create_clock -period 1 clk1
 
-set_wire_rc -layer metal3
+# flute gives platform unstable results so disable resistance for now
+#set_wire_rc -layer metal3
+set_wire_rc -resistance 0 -capacitance .05
 estimate_parasitics -placement
 report_check_types -max_capacitance
 repair_design -buffer_cell BUF_X2
