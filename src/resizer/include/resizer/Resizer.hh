@@ -190,17 +190,22 @@ protected:
 			 int dist_from_drvr);
   void repairNet(Net *net,
 		 Vertex *drvr,
-		 double max_length, // dbu
+		 bool check_slew,
+		 bool check_cap,
 		 bool check_fanout,
+		 int max_length, // dbu
 		 LibertyCell *buffer_cell,
-		 int &length_violations,
-		 int &fanout_violations);
+		 int &slew_violations,
+		 int &cap_violations,
+		 int &fanout_violations,
+		 int &length_violations);
   void repairNet(SteinerTree *tree,
 		 SteinerPt pt,
 		 SteinerPt prev_pt,
 		 Net *net,
-		 int max_length,
+		 float max_cap,
 		 float max_fanout,
+		 int max_length,
 		 LibertyCell *buffer_cell,
 		 int level,
 		 // Return values.

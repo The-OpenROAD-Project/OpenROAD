@@ -4,24 +4,25 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
-Reading DEF file: ./results/repair_max_cap2.def
+Reading DEF file: ./results/repair_cap1.def
 Notice 0: Design: hi_fanout
 Notice 0:     Created 1 pins.
-Notice 0:     Created 41 components and 246 component-terminals.
-Notice 0:     Created 2 special nets and 82 connections.
-Notice 0:     Created 2 nets and 82 connections.
-Notice 0: Finished DEF file: ./results/repair_max_cap2.def
+Notice 0:     Created 61 components and 366 component-terminals.
+Notice 0:     Created 2 special nets and 122 connections.
+Notice 0:     Created 2 nets and 122 connections.
+Notice 0: Finished DEF file: ./results/repair_cap1.def
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-r1/Q                                   60.73   76.13  -15.40 (VIOLATED)
+r1/Q                                   60.73   84.82  -24.09 (VIOLATED)
 
-Found 1 max capacitance violations.
-Inserted 2 buffers in 1 nets.
+Found 1 slew violations.
+Found 1 capacitance violations.
+Inserted 1 buffers.
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-r1/Q                                   60.73    4.26   56.47 (MET)
+r1/Q                                   60.73   28.36   32.37 (MET)
 

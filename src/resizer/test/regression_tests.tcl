@@ -13,8 +13,8 @@ record_tests {
   resize3
   remove_buffers1
   repair_clk_nets1
-  repair_max_cap1
-  repair_max_cap2
+  repair_cap1
+  repair_cap2
   repair_fanout1
   repair_fanout2
   repair_max_slew1
