@@ -242,11 +242,12 @@ proc run_test { test } {
 proc find_log_pass_fail { log_file } {
   if { [file exists $log_file] } {
     set stream [open $log_file r]
+    set last_line ""
     while { [gets $stream line] >= 0 } {
       set last_line $line
     }
     close $stream
-    if { [lindex $last_line 0] == "pass" } {
+    if { [string match "pass *" $last_line] } {
       return 0
     }
   }

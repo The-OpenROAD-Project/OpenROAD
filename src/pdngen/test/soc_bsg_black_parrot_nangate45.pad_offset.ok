@@ -9,7 +9,7 @@ Notice 0: Finished LEF file:  soc_bsg_black_parrot_nangate45/dummy_pads.lef
 Notice 0: 
 Reading DEF file: soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.init.def
 Notice 0: Design: soc_bsg_black_parrot
-Notice 0:     Created 135 pins.
+Notice 0:     Created 141 pins.
 Notice 0:     Created 1514 components and 3116 component-terminals.
 Notice 0:     Created 350 nets and 390 connections.
 Notice 0: Finished DEF file: soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.init.def

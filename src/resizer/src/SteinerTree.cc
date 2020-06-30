@@ -56,12 +56,6 @@ connectedPins(const Net *net,
 	      Network *network,
 	      // Return value.
 	      PinSeq &pins);
-bool
-pinIsPlaced(Pin *pin,
-	    const dbNetwork *network);
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network);
 
 ////////////////////////////////////////////////////////////////
 
@@ -91,13 +85,13 @@ makeSteinerTree(const Net *net,
     FLUTE_DTYPE *y = new FLUTE_DTYPE[pin_count];
     for (int i = 0; i < pin_count; i++) {
       Pin *pin = pins[i];
-      Point loc = pinLocation(pin, network);
+      Point loc = network->location(pin);
       x[i] = loc.x();
       y[i] = loc.y();
       debugPrint3(debug, "steiner", 3, "%s (%d %d)\n",
 		  sdc_network->pathName(pin),
 		  loc.x(), loc.y());
-      is_placed &= pinIsPlaced(pin, network);
+      is_placed &= network->isPlaced(pin);
     }
     if (is_placed) {
       int flute_accuracy = 3;
@@ -150,10 +144,9 @@ SteinerTree::setTree(Flute::Tree tree,
   // Find all of the pins at a location.
   for (int i = 0; i < pin_count; i++) {
     Pin *pin = pins_[i];
-    Point loc = pinLocation(pin, network);
+    Point loc = network->location(pin);
     loc_pin_map_[loc] = pin;
     loc_pins_map[loc].push_back(pin);
-    pin_steiner_pt_map_[pin] = i;
   }
   for (int i = 0; i < pin_count; i++) {
     Flute::Branch &branch_pt = tree_.branch[i];
@@ -161,6 +154,7 @@ SteinerTree::setTree(Flute::Tree tree,
     Pin *pin = loc_pins.back();
     loc_pins.pop_back();
     steiner_pt_pin_map_[i] = pin;
+    pin_steiner_pt_map_[pin] = i;
   }
 }
 

@@ -10,6 +10,7 @@ set_output_delay -clock clk -0.1 out
 set_propagated_clock clk
 
 set_wire_rc -layer metal1
+estimate_parasitics -placement
 
 report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
   -endpoint_count 5

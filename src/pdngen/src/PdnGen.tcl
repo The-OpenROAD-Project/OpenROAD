@@ -1216,6 +1216,8 @@ proc via_generate_array_rule {rule_name rows columns} {
       cutsize [dict get $via_info cut size] \
       layers [list [dict get $via_info lower layer] [dict get $via_info cut layer] [dict get $via_info upper layer]] \
       cutspacing [list $xcut_spacing $ycut_spacing] \
+      lower_rect [list [expr -1 * $lower_width / 2] [expr -1 * $lower_height / 2] [expr $lower_width / 2] [expr $lower_height / 2]] \
+      upper_rect [list [expr -1 * $upper_width / 2] [expr -1 * $upper_height / 2] [expr $upper_width / 2] [expr $upper_height / 2]] \
       origin_x 0 \
       origin_y 0 \
     ]
@@ -1984,6 +1986,25 @@ proc generate_upper_metal_mesh_stripes {tag layer layer_info area} {
 proc adjust_area_for_core_rings {layer area} {
   variable grid_data
 
+  # When core_rings overlap with the stdcell area, we need to block out the area
+  # where the core rings have been placed.
+  if {[dict exists $grid_data core_ring_area $layer]} {
+    set core_ring_area [dict get $grid_data core_ring_area $layer]
+    # debug "Core ring area"
+    # foreach rect [odb::getRectangles $core_ring_area] {
+    #   debug "  [$rect ll] [$rect ur]"
+    # }
+    set grid_area [odb::newSetFromRect {*}$area]
+    set grid_area [odb::subtractSet $grid_area $core_ring_area]
+    # debug "Reduced area rectangles: "
+    # foreach rect [odb::getRectangles $grid_area] {
+    #   debug "  [$rect ll] [$rect ur]"
+    # }
+    set bbox [lindex [odb::getRectangles $grid_area] 0]
+    set area [list {*}[$bbox ll] {*}[$bbox ur]]
+  }
+
+  # Calculate how far to extend the grid to meet with the core rings
   if {[dict exists $grid_data core_ring $layer pad_offset]} {
     set pad_area [find_pad_offset_area]
     set width [dict get $grid_data core_ring $layer width]
@@ -2258,14 +2279,14 @@ proc generate_core_rings {core_ring_data} {
 
 
     if {[get_dir $layer] == "hor"} {
-      add_stripe $layer POWER \
+      set lower_power \
         [odb::newSetFromRect \
           [expr $inner_lx - $width / 2] \
           [expr $inner_ly - $width / 2] \
           [expr $inner_ux + $width / 2] \
           [expr $inner_ly + $width / 2] \
         ]
-      add_stripe $layer POWER \
+      set upper_power \
         [odb::newSetFromRect \
           [expr $inner_lx - $width / 2] \
           [expr $inner_uy - $width / 2] \
@@ -2273,30 +2294,42 @@ proc generate_core_rings {core_ring_data} {
           [expr $inner_uy + $width / 2] \
         ]
 
-      add_stripe $layer GROUND \
+      set lower_ground \
         [odb::newSetFromRect \
           [expr $outer_lx - $width / 2] \
           [expr $outer_ly - $width / 2] \
           [expr $outer_ux + $width / 2] \
           [expr $outer_ly + $width / 2] \
         ]
-
-      add_stripe $layer GROUND \
+      set upper_ground \
         [odb::newSetFromRect \
           [expr $outer_lx - $width / 2] \
           [expr $outer_uy - $width / 2] \
           [expr $outer_ux + $width / 2] \
           [expr $outer_uy + $width / 2] \
         ]
+
+      add_stripe $layer POWER $upper_power
+      add_stripe $layer POWER $lower_power
+      add_stripe $layer GROUND $upper_ground
+      add_stripe $layer GROUND $lower_ground
+
+      set core_rings [odb::orSets [list \
+        [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $outer_ly - $width / 2] [expr $outer_ux + $width / 2] [expr $inner_ly + $width / 2]] \
+        [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $inner_uy - $width / 2] [expr $outer_ux + $width / 2] [expr $outer_uy + $width / 2]] \
+      ]]
+      set core_ring_area [odb::bloatSet $core_rings $spacing]
+      dict set grid_data core_ring_area $layer $core_ring_area
+
     } else {
-      add_stripe $layer POWER \
+      set lhs_power \
         [odb::newSetFromRect \
           [expr $inner_lx - $width / 2] \
           [expr $inner_ly - $width / 2] \
           [expr $inner_lx + $width / 2] \
           [expr $inner_uy + $width / 2] \
         ]
-      add_stripe $layer POWER \
+      set rhs_power \
         [odb::newSetFromRect \
           [expr $inner_ux - $width / 2] \
           [expr $inner_ly - $width / 2] \
@@ -2304,21 +2337,33 @@ proc generate_core_rings {core_ring_data} {
           [expr $inner_uy + $width / 2] \
         ]
 
-      add_stripe $layer GROUND \
+      set lhs_ground \
         [odb::newSetFromRect \
           [expr $outer_lx - $width / 2] \
           [expr $outer_ly - $width / 2] \
           [expr $outer_lx + $width / 2] \
           [expr $outer_uy + $width / 2] \
         ]
-
-      add_stripe $layer GROUND \
+      set rhs_ground \
         [odb::newSetFromRect \
           [expr $outer_ux - $width / 2] \
           [expr $outer_ly - $width / 2] \
           [expr $outer_ux + $width / 2] \
           [expr $outer_uy + $width / 2] \
         ]
+
+      add_stripe $layer POWER $lhs_power
+      add_stripe $layer POWER $rhs_power
+      add_stripe $layer GROUND $lhs_ground
+      add_stripe $layer GROUND $rhs_ground
+
+      set core_rings [odb::orSets [list \
+        [odb::newSetFromRect [expr $outer_lx - $width / 2] [expr $outer_ly - $width / 2] [expr $inner_lx + $width / 2] [expr $outer_uy + $width / 2]] \
+        [odb::newSetFromRect [expr $inner_ux - $width / 2] [expr $outer_ly - $width / 2] [expr $outer_ux + $width / 2] [expr $outer_uy + $width / 2]] \
+      ]]
+      set core_ring_area [odb::bloatSet $core_rings $spacing]
+      dict set grid_data core_ring_area $layer $core_ring_area
+
     }
   }
 }
@@ -2934,7 +2979,9 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   foreach pg_net [concat [dict get $design_data power_nets] [dict get $design_data ground_nets]] {
     set net [$block findNet $pg_net]
     if {$net != "NULL"} {
-      odb::dbNet_destroy $net
+      foreach swire [$net getSWires] {
+        odb::dbSWire_destroy $swire
+      }
     }
   }
 

@@ -239,7 +239,11 @@ capacitance_unit/distance_unit (typically pf/micron or ff/micron).  If
 no distance units are not specied in the liberty file microns are
 used.
 
-RC parasitics are added based on placed component pin locations. If
+```
+estimate_parasitics -placement
+```
+
+Estimate RC parasitics based on placed component pin locations. If
 there are no component locations no parasitics are added. The
 resistance and capacitance are per distance unit of a routing
 wire. Use the `set_units` command to check units or `set_cmd_units` to
@@ -252,9 +256,11 @@ file or with the SDC set_wire_load command is used to make parasitics.
 set_dont_use lib_cells
 ```
 
-The `set_dont_use` command removes library cells from consideration by the
-resizer. `lib_cells` is a list of cells returned by `get_lib_cells` or
-a list of cell names (wildcards allowed).
+The `set_dont_use` command removes library cells from consideration by
+the resizer. `lib_cells` is a list of cells returned by
+`get_lib_cells` or a list of cell names (wildcards allowed). For
+example, `DLY*` says do not use cells with names that begin with `DLY`
+in all libraries.
 
 ```
 buffer_ports [-inputs]
@@ -267,8 +273,22 @@ driver and the output port. If  The default behavior is
 `-inputs` and `-outputs` if neither is specified.
 
 ```
+repair_design [-max_wire_length max_length]
+              -buffer_cell buffer_cell
+```
+
+The `repair_design` inserts buffers on long wires to reduce RC delay
+in the wire. Use `-max_wire_length` to specify the maximum lenth of
+wires.  The resistance/capacitance values in `set_wire_rc` are used to
+find the wire delays.
+
+Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
+```
+set_max_fanout <fanout> [current_design]
+```
+
+```
 resize [-libraries resize_libraries]
-       [-dont_use cells]
        [-max_utilization util]
 ```
 The `resize` command resizes gates to normalize slews.
@@ -278,10 +298,7 @@ resizing. `resize_libraries` defaults to all of the liberty libraries
 that have been read. Some designs have multiple libraries with
 different transistor thresholds (Vt) and are used to trade off power
 and speed. Chosing a low Vt library uses more power but results in a
-faster design after the resizing step. Use the `-dont_use` option to
-specify a list of patterns of cells to not use or the value returned
-by `get_lib_cells`. For example, `DLY*` says do not use cells with
-names that begin with `DLY` in all libraries.
+faster design after the resizing step.
 
 ```
 repair_max_cap -buffer_cell buffer_cell
@@ -346,6 +363,7 @@ set_wire_rc -layer metal2
 
 set buffer_cell BUF_X4
 set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
+repair_long_wires -max_slew .2
 resize
 buffer_ports -buffer_cell $buffer_cell
 repair_max_cap -buffer_cell $buffer_cell

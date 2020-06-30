@@ -48,6 +48,10 @@ MACRO PAD
   PIN DATA
     DIRECTION INPUT ;
     USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
   END DATA
   PIN NDIN
     DIRECTION INPUT ;

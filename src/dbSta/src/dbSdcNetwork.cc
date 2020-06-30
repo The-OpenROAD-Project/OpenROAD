@@ -150,6 +150,8 @@ dbSdcNetwork::findPinsMatching(const Instance *instance,
       for (auto inst : insts)
 	findMatchingPins(inst, &port_pattern, pins);
     }
+    stringDelete(inst_path);
+    stringDelete(port_name);
   }
 }
 
