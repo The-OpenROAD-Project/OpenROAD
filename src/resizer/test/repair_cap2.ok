@@ -11,17 +11,7 @@ Notice 0:     Created 61 components and 366 component-terminals.
 Notice 0:     Created 2 special nets and 122 connections.
 Notice 0:     Created 2 nets and 122 connections.
 Notice 0: Finished DEF file: ./results/repair_cap2.def
-max capacitance
-
-Pin                                    Limit     Cap   Slack
-------------------------------------------------------------
-r1/Q                                   60.73   84.11  -23.38 (VIOLATED)
-
+cap limit violation
+Found 1 slew violations.
 Found 1 capacitance violations.
 Inserted 1 buffers in 1 nets.
-max capacitance
-
-Pin                                    Limit     Cap   Slack
-------------------------------------------------------------
-r1/Q                                   60.73   28.15   32.58 (MET)
-
