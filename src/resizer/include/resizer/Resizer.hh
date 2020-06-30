@@ -95,9 +95,6 @@ public:
   // resizerPreamble() required.
   void resizeToTargetSlew(const Pin *drvr_pin);
 
-  // Insert buffers to fix max cap violations.
-  // resizerPreamble() required.
-  void repairMaxCap(LibertyCell *buffer_cell);
   // Insert buffers to fix max slew violations.
   // resizerPreamble() required.
   void repairMaxSlew(LibertyCell *buffer_cell);

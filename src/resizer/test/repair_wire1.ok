@@ -37,6 +37,7 @@ Path Type: max
 Driver    length delay
 u2/Z manhtn 1500 steiner 1500 0.21
 u3/Z manhtn 1 steiner 1 0.00
+Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers.
 Driver    length delay

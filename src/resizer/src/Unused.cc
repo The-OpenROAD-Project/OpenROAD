@@ -777,3 +777,59 @@ Resizer::repairHoldResize(Pin *drvr_pin,
     }
   }
 }
+
+////////////////////////////////////////////////////////////////
+
+// Assumes resizePreamble has been called.
+void
+Resizer::repairMaxCap(LibertyCell *buffer_cell)
+{
+  inserted_buffer_count_ = 0;
+  int repaired_net_count = 0;
+  int violation_count = 0;
+
+  sta_->checkCapacitanceLimitPreamble();
+  sta_->findDelays();
+  // Rebuffer in reverse level order.
+  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
+    Vertex *vertex = level_drvr_verticies_[i];
+    Pin *drvr_pin = vertex->pin();
+    // Hands off the clock tree.
+    Net *net = network_->net(drvr_pin);
+    if (net
+	&& !isClock(net)
+	// Exclude tie hi/low cells.
+	&& !isFuncOneZero(drvr_pin)
+	// Hands off special nets.
+	&& !isSpecial(net)) {
+      const Corner *ignore_corner;
+      const RiseFall *ignore_rf;
+      float cap, limit, slack;
+      sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(), 
+			     ignore_corner, ignore_rf, cap, limit, slack);
+      if (slack < 0.0 && limit > 0.0) {
+	violation_count++;
+	repaired_net_count++;
+	Pin *drvr_pin = vertex->pin();
+	float limit_ratio = cap / limit;
+	int buffer_count = ceil(limit_ratio);
+	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
+	bufferLoads(drvr_pin, buffer_count, buffer_fanout,
+		    buffer_cell, "max_cap");
+	if (overMaxArea()) {
+	  warn("max utilization reached.");
+	  break;
+	}
+      }
+    }
+  }
+  
+  if (violation_count > 0)
+    printf("Found %d max capacitance violations.\n", violation_count);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repaired_net_count);
+    level_drvr_verticies_valid_ = false;
+  }
+}

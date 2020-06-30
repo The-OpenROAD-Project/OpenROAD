@@ -57,6 +57,8 @@ Driver    length delay
 u2/Z manhtn 3000 steiner 3000 0.84
 u3/Z manhtn 1 steiner 1 0.00
 u4/Z manhtn 1 steiner 1 0.00
+Found 1 slew violations.
+Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers.
 Driver    length delay
