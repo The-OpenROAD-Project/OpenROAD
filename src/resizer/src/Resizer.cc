@@ -1888,6 +1888,12 @@ Resizer::makeRepeater(int x,
 
     for (Pin *load_pin : load_pins) {
       LibertyPort *load_port = network_->libertyPort(load_pin);
+      if (!load_port) {
+        Instance* inst = network_->instance(load_pin);
+        Cell *cell = network_->cell(inst);
+        ord::error("Port %s of cell %s not found in Liberty",
+                   network_->portName(load_pin), network_->name(cell));
+      }
       Instance *load = network_->instance(load_pin);
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load, load_port, buffer_out);
