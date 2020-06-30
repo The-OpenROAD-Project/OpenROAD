@@ -615,7 +615,12 @@ void TechChar::initCharacterization() {
         float maxCap = 0.0;
         if ( _options->getMaxCharSlew() == 0 || _options->getMaxCharCap() == 0 ){
                 sta::Cell* masterCell = _dbNetworkChar->dbToSta(_charBuf);
-                sta::LibertyLibrary* staLib = networkChar->libertyLibrary(masterCell);
+                sta::LibertyCell* libertyCell = networkChar->libertyCell(masterCell);
+                if (!libertyCell) {
+                        error("No Liberty cell found for %s.\n", bufMasterName.c_str());
+                }
+
+                sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
                 bool maxSlewExist = false;
                 bool maxCapExist = false;
                 staLib->defaultMaxSlew(maxSlew, maxSlewExist);
