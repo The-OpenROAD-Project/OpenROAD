@@ -1510,6 +1510,7 @@ Resizer::repairDesign(double max_wire_length, // meters
   inserted_buffer_count_ = 0;
   VertexSeq drvrs;
   findLongWires(drvrs);
+  int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
   int fanout_violations = 0;
@@ -1525,7 +1526,7 @@ Resizer::repairDesign(double max_wire_length, // meters
 	&& !hasTopLevelPort(net)
 	&& !isSpecial(net)) {
       repairNet(net, drvr, true, true, true, max_length, buffer_cell,
-		slew_violations, cap_violations,
+		repair_count, slew_violations, cap_violations,
 		fanout_violations, length_violations);
     }
   }
@@ -1538,7 +1539,9 @@ Resizer::repairDesign(double max_wire_length, // meters
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -1555,6 +1558,7 @@ Resizer::repairClkNets(double max_wire_length, // meters
   search_->arrivalsInvalid();
 
   inserted_buffer_count_ = 0;
+  int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
   int fanout_violations = 0;
@@ -1567,14 +1571,16 @@ Resizer::repairClkNets(double max_wire_length, // meters
       Pin *drvr_pin = drvr_iter.next();
       Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
       repairNet(net, drvr, false, false, false, max_length, buffer_cell,
-		slew_violations, cap_violations,
+		repair_count, slew_violations, cap_violations,
 		fanout_violations, length_violations);
     }
   }
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -1594,6 +1600,7 @@ Resizer::repairNet(Net *net,
   sta_->checkFanoutLimitPreamble();
 
   inserted_buffer_count_ = 0;
+  int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
   int fanout_violations = 0;
@@ -1605,7 +1612,7 @@ Resizer::repairNet(Net *net,
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
     repairNet(net, drvr, true, true, true, max_length, buffer_cell,
-	      slew_violations, cap_violations,
+	      repair_count, slew_violations, cap_violations,
 	      fanout_violations, length_violations);
   }
   if (slew_violations > 0)
@@ -1617,7 +1624,9 @@ Resizer::repairNet(Net *net,
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -1630,6 +1639,7 @@ Resizer::repairNet(Net *net,
 		   bool check_fanout,
 		   int max_length, // dbu
 		   LibertyCell *buffer_cell,
+		   int &repair_count,
 		   int &slew_violations,
 		   int &cap_violations,
 		   int &fanout_violations,
@@ -1693,6 +1703,7 @@ Resizer::repairNet(Net *net,
       repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
 		max_cap, max_fanout, max_length, buffer_cell, 0,
 		ignore1, ignore2, ignore3, ignore4);
+      repair_count++;
     }
   }
 }

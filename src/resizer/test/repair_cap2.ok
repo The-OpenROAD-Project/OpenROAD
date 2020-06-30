@@ -19,7 +19,7 @@ r1/Q                                   60.73   84.82  -24.09 (VIOLATED)
 
 Found 1 slew violations.
 Found 1 capacitance violations.
-Inserted 1 buffers.
+Inserted 1 buffers in 1 nets.
 max capacitance
 
 Pin                                    Limit     Cap   Slack

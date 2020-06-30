@@ -192,6 +192,7 @@ protected:
 		 bool check_fanout,
 		 int max_length, // dbu
 		 LibertyCell *buffer_cell,
+		 int &repair_count,
 		 int &slew_violations,
 		 int &cap_violations,
 		 int &fanout_violations,
