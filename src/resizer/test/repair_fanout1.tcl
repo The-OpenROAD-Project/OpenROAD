@@ -1,4 +1,4 @@
-# repair_design max_fanout for hi fanout def
+# repair_design max_fanout
 source "helpers.tcl"
 source "hi_fanout.tcl"
 

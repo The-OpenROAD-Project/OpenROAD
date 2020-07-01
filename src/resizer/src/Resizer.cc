@@ -1872,6 +1872,8 @@ Resizer::repairNet(SteinerTree *tree,
 	pin_cap += portCapacitance(load_port);
 	fanout += portFanoutLoad(load_port);
       }
+      else
+	fanout += 1;
       load_pins.push_back(load_pin);
     }
 
@@ -1967,7 +1969,7 @@ Resizer::makeRepeater(int x,
     sta_->connectPin(buffer, buffer_output_port, buffer_out);
 
     for (Pin *load_pin : load_pins) {
-      LibertyPort *load_port = network_->libertyPort(load_pin);
+      Port *load_port = network_->port(load_pin);
       Instance *load = network_->instance(load_pin);
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load, load_port, buffer_out);
