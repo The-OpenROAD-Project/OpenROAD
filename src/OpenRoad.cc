@@ -65,6 +65,7 @@
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "pdnsim/MakePDNSim.hh"
+#include "antennachecker/MakeAntennaChecker.hh"
 #ifdef BUILD_OPENPHYSYN
   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #endif
@@ -157,6 +158,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   extractor_ = makeOpenRCX();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
+  antennaChecker_ = makeAntennaChecker();
 #ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif
@@ -181,6 +183,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTritonMp(this);
   initOpenRCX(this);
   initPDNSim(this);
+  initAntennaChecker(this);
 #ifdef BUILD_OPENPHYSYN
     initPsn(this);
 #endif
