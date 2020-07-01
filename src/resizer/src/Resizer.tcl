@@ -207,23 +207,6 @@ proc buffer_ports { args } {
   }
 }
 
-define_cmd_args "repair_max_slew" {-buffer_cell buffer_cell\
-				     [-max_utilization util]}
-
-proc repair_max_slew { args } {
-  parse_key_args "repair_max_slew" args \
-    keys {-buffer_cell -max_utilization} \
-    flags {}
-  
-  set buffer_cell [parse_buffer_cell keys 1]
-  set_max_utilization [parse_max_util keys]
-  
-  check_argc_eq0 "repair_max_slew" $args
-  
-  resizer_preamble [get_libs *]
-  repair_max_slew_cmd $buffer_cell
-}
-
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
 				   -buffer_cell buffer_cell}
 

@@ -236,14 +236,6 @@ resize_to_target_slew()
 }
 
 void
-repair_max_slew_cmd(LibertyCell *buffer_cell)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairMaxSlew(buffer_cell);
-}
-
-void
 resize_driver_to_target_slew(const Pin *drvr_pin)
 {
   ensureLinked();

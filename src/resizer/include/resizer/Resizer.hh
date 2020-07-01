@@ -95,9 +95,6 @@ public:
   // resizerPreamble() required.
   void resizeToTargetSlew(const Pin *drvr_pin);
 
-  // Insert buffers to fix max slew violations.
-  // resizerPreamble() required.
-  void repairMaxSlew(LibertyCell *buffer_cell);
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
   void repairHoldViolations(LibertyCell *buffer_cell);
@@ -289,25 +286,8 @@ protected:
 			 // Return value.
 			 InstanceSeq &insts);
   int fanout(Pin *drvr_pin);
-  void bufferLoads(Pin *drvr_pin,
-		   int buffer_count,
-		   int max_fanout,
-		   LibertyCell *buffer_cell,
-		   const char *reason);
   void findLoads(Pin *drvr_pin,
 		 PinSeq &loads);
-  void groupLoadsSteiner(Pin *drvr_pin,
-			 int group_count,
-			 int group_size,
-			 // Return value.
-			 GroupedPins &grouped_loads);
-  void groupLoadsSteiner(SteinerTree *tree,
-			 SteinerPt pt,
-			 int group_size,
-			 int &group_index,
-			 GroupedPins &grouped_loads);
-  void reportGroupedLoads(GroupedPins &grouped_loads);
-  Point findCenter(PinSeq &pins);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool isSpecial(Net *net);
   Point tieLocation(Pin *load,
