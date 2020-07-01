@@ -65,9 +65,7 @@ initAntennaChecker(OpenRoad *openroad)
 
   Antennachecker_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::antennachecker_tcl_inits);
-  
-  openroad->getAntennaChecker()->init(openroad->tclInterp(),
-			    openroad->getDb());
+  openroad->getAntennaChecker()->setDb(openroad->getDb());
 }
 
 }

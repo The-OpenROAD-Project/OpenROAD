@@ -79,35 +79,6 @@ AntennaChecker::~AntennaChecker()
 {
 }
 
-void
-AntennaChecker::init(Tcl_Interp *tcl_interp,
-       odb::dbDatabase *db)
-{
-    db_ = db;
-
-    //Antennachecker_Init(tcl_interp);
-    sta::evalTclInit(tcl_interp, sta::antennachecker_tcl_inits);
-
-}
-
-void 
-AntennaChecker::set_verbose( bool verbose )
-{
-    verbose_ = verbose;
-}
-
-void
-AntennaChecker::set_net_name( std::string net_name )
-{
-    net_name_ = net_name;
-}
-
-void
-AntennaChecker::set_route_level( int route_level )
-{
-    route_level_ = route_level;
-}
-
 template <class valueType>
 double
 AntennaChecker::defdist( valueType value ) 

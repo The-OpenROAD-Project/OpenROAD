@@ -118,12 +118,11 @@ class AntennaChecker
 public:
     AntennaChecker();
     ~AntennaChecker();
-    void init(Tcl_Interp *tcl_interp,
-	    odb::dbDatabase *db);
-
-    void set_verbose( bool verbose );
-    void set_net_name( std::string net_name );
-    void set_route_level( int route_level );
+    
+    void setDb( odb::dbDatabase *db ) { db_ = db; }
+    void set_verbose( bool verbose ) { verbose_ = verbose; }
+    void set_net_name( std::string net_name ) { net_name_ = net_name; }
+    void set_route_level( int route_level ) { route_level_ = route_level; }
 
     dbNet* get_net( std::string net_name );
     
