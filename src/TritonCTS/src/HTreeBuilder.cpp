@@ -515,7 +515,9 @@ void HTreeBuilder::createSingleBufferClockNet() {
 }
 
 void HTreeBuilder::plotSolution() {
-        std::ofstream file("plot.py");
+        static int cnt = 0;
+        auto name = std::string("plot") + std::to_string(cnt++) + ".py";
+        std::ofstream file(name);
         file << "import numpy as np\n"; 
         file << "import matplotlib.pyplot as plt\n";
         file << "import matplotlib.path as mpath\n";
@@ -525,7 +527,7 @@ void HTreeBuilder::plotSolution() {
 
         _clock.forEachSink( [&] (const ClockInst& sink) {
                 file << "plt.scatter(" << (double) sink.getX() / _wireSegmentUnit << ", " 
-                     << (double) sink.getY() / _wireSegmentUnit << ")\n"; 
+                     << (double) sink.getY() / _wireSegmentUnit << ", s=1)\n"; 
         });
 
         LevelTopology &topLevelTopology = _topologyForEachLevel.front();

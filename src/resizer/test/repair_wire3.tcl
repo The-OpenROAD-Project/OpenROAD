@@ -1,4 +1,4 @@
-# repair_long_wires missing wire rc
+# repair_design missing wire rc
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def repair_wire1.def
@@ -9,5 +9,4 @@ estimate_parasitics -placement
 
 report_long_wires 2
 
-set buffer_cell [get_lib_cell BUF_X1]
-repair_design -max_wire_length 600 -buffer_cell $buffer_cell
+repair_design -max_wire_length 600 -buffer_cell BUF_X1

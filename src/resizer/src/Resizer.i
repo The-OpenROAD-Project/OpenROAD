@@ -55,10 +55,6 @@ ensureLinked();
 
 namespace sta {
 
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network);
-
 // Defined in StaTcl.i
 LibertyLibrarySeq *
 tclListSeqLibertyLibrary(Tcl_Obj *const source,
@@ -72,7 +68,6 @@ tclListSeqLibertyCell(Tcl_Obj *const source,
 using ord::getResizer;
 using ord::ensureLinked;
 
-using sta::Resizer;
 using sta::Corner;
 using sta::LibertyCellSeq;
 using sta::LibertyLibrarySeq;
@@ -87,6 +82,9 @@ using sta::NetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
+
+using sta::Resizer;
+using sta::dbNetwork;
 
 %}
 
@@ -145,12 +143,12 @@ using sta::Slew;
 
 %inline %{
 
-double
-utilization()
+void
+remove_buffers_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->utilization();
+  resizer->removeBuffers();
 }
 
 void
@@ -330,6 +328,25 @@ repair_design_cmd(float max_length,
 }
 
 void
+repair_clk_nets_cmd(float max_length,
+		    LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairClkNets(max_length, buffer_cell);
+}
+
+void
+repair_net_cmd(Net *net,
+	       float max_length,
+	       LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairNet(net, max_length, buffer_cell); 
+}
+
+void
 report_long_wires_cmd(int count,
 		      int digits)
 {
@@ -408,9 +425,20 @@ pin_location(Pin *pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
+  dbNetwork *network = resizer->getDbNetwork();
+  odb::Point loc = network->location(pin);
+  double x = resizer->dbuToMeters(loc.getX());
+  double y = resizer->dbuToMeters(loc.getY());
   // return x/y as tcl list
-  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
+  return sta::stringPrintTmp("%f %f", x, y);
+}
+
+double
+utilization()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->utilization();
 }
 
 %} // inline

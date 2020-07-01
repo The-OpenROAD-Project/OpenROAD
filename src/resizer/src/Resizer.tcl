@@ -35,6 +35,13 @@
 
 namespace eval sta {
 
+define_cmd_args "remove_buffers" {}
+
+proc remove_buffers { args } {
+  check_argc_eq0 "remove_buffers" $args
+  remove_buffers_cmd
+}
+
 define_cmd_args "set_wire_rc" {[-layer layer_name]\
 				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
@@ -262,6 +269,26 @@ proc repair_design { args } {
   repair_design_cmd $max_wire_length $buffer_cell
 }
 
+define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]\
+				       -buffer_cell buffer_cell}
+
+proc repair_clock_nets { args } {
+  parse_key_args "repair_clock_nets" args \
+    keys {-max_wire_length -buffer_cell} \
+    flags {}
+  
+  set buffer_cell [parse_buffer_cell keys 1]
+  set max_wire_length 0
+  if { [info exists keys(-max_wire_length)] } {
+    set max_wire_length $keys(-max_wire_length)
+    check_positive_float "-max_wire_length" $max_wire_length
+    set max_wire_length [sta::distance_ui_sta $max_wire_length]
+  }
+  
+  check_argc_eq0 "repair_clock_nets" $args
+  repair_clk_nets_cmd $max_wire_length $buffer_cell
+}
+
 # compatibility
 define_cmd_args "repair_long_wires" {[-max_length max_length]\
 				       -buffer_cell buffer_cell}
@@ -356,6 +383,12 @@ proc_redirect report_long_wires {
   sta::check_argc_eq1 "report_long_wires" $args
   set count [lindex $args 0]
   report_long_wires_cmd $count $digits
+}
+
+# Used by report_net. Override default function.
+proc pin_location_str { pin } {
+  lassign [pin_location $pin] x y
+  return " ([format_distance $x 0], [format_distance $y 0])"
 }
 
 # sta namespace end

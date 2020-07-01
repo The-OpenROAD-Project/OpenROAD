@@ -213,5 +213,9 @@ getCore(odb::dbBlock *block);
 odb::Point
 closestPtInRect(odb::Rect rect,
 		odb::Point pt);
+odb::Point
+closestPtInRect(odb::Rect rect,
+		int x,
+		int y);
 
 } // namespace

@@ -384,4 +384,13 @@ closestPtInRect(Rect rect,
                min(max(pt.getY(), rect.yMin()), rect.yMax()));
 }
 
+Point
+closestPtInRect(Rect rect,
+		int x,
+		int y)
+{
+  return Point(min(max(x, rect.xMin()), rect.xMax()),
+               min(max(y, rect.yMin()), rect.yMax()));
+}
+
 } // namespace

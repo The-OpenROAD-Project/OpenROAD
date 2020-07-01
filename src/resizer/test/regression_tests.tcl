@@ -11,6 +11,8 @@ record_tests {
   resize1
   resize2
   resize3
+  remove_buffers1
+  repair_clk_nets1
   repair_max_cap1
   repair_max_cap2
   repair_fanout1
@@ -20,13 +22,15 @@ record_tests {
   repair_hold1
   repair_hold2
   report_floating_nets1
-  repair_tie_fanout1
-  repair_tie_fanout2
-  repair_tie_fanout3
-  repair_tie_fanout4
+  repair_tie1
+  repair_tie2
+  repair_tie3
+  repair_tie4
+  repair_tie5
   repair_wire1
   repair_wire2
   repair_wire3
+  repair_wire4
   repair_wire5
   gcd_resize
 }

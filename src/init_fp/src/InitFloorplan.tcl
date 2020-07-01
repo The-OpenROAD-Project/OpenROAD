@@ -102,11 +102,11 @@ proc initialize_floorplan { args } {
       set aspect_ratio 1.0
     }
     ord::init_floorplan_util $util $aspect_ratio \
-  [sta::distance_ui_sta $core_sp_bottom] \
-  [sta::distance_ui_sta $core_sp_top] \
-  [sta::distance_ui_sta $core_sp_left] \
-  [sta::distance_ui_sta $core_sp_right] \
-    $site_name $tracks_file
+      [sta::distance_ui_sta $core_sp_bottom] \
+      [sta::distance_ui_sta $core_sp_top] \
+      [sta::distance_ui_sta $core_sp_left] \
+      [sta::distance_ui_sta $core_sp_right] \
+      $site_name $tracks_file
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
