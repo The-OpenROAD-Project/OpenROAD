@@ -18,18 +18,13 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 input1/Z                                0.20    0.78   -0.58 (VIOLATED)
 
-Found 1 max slew violations.
-Inserted 4 buffers in 1 nets.
+Found 1 slew violations.
+Found 1 capacitance violations.
+Inserted 1 buffers in 1 nets.
+Resized 2 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-max_slew2/Z                             0.20    0.19    0.00 (MET)
-
-Resized 5 instances.
-max slew
-
-Pin                                    Limit    Slew   Slack
-------------------------------------------------------------
-max_slew2/Z                             0.20    0.03    0.17 (MET)
+repeater2/Z                             0.20    0.05    0.14 (MET)
 

@@ -1,0 +1,22 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: ./results/repair_slew1.def
+Notice 0: Design: hi_fanout
+Notice 0:     Created 1 pins.
+Notice 0:     Created 81 components and 486 component-terminals.
+Notice 0:     Created 2 special nets and 162 connections.
+Notice 0:     Created 2 nets and 162 connections.
+Notice 0: Finished DEF file: ./results/repair_slew1.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+r1/Q                                    0.20    0.36   -0.16 (VIOLATED)
+
+Found 1 slew violations.
+Found 1 capacitance violations.
+Inserted 1 buffers in 1 nets.

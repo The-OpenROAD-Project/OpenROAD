@@ -1,4 +1,4 @@
-# repair_max_fanout hands off special nets
+# repair_design max_fanout hands off special nets
 source helpers.tcl
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

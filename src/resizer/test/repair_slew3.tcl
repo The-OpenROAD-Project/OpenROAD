@@ -1,4 +1,4 @@
-# repair_max_slew reg3
+# repair_design max_slew reg3
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -17,11 +17,11 @@ estimate_parasitics -placement
 
 report_check_types -max_slew -violators
 
-repair_max_slew -buffer_cell BUF_X2
+repair_design -buffer_cell BUF_X2
 
 report_check_types -max_slew -violators
 report_checks -fields {input_pin transition_time capacitance}
 
-set def_file [make_result_file repair_max_slew1.def]
+set def_file [make_result_file repair_slew3.def]
 write_def $def_file
-diff_files repair_max_slew1.defok $def_file
+diff_files repair_slew3.defok $def_file

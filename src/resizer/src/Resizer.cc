@@ -1649,27 +1649,32 @@ Resizer::repairNet(Net *net,
   if (tree) {
     Pin *drvr_pin = drvr->pin();
     bool repair = false;
-    float max_slew = INF;
     float max_cap = INF;
     float max_fanout = INF;
     if (check_slew) {
-      float slew, slew_slack;
+      float slew, slew_slack, max_slew;
       const Corner *corner1;
       const RiseFall *tr;
       sta_->checkSlew(drvr_pin, corner_, MinMax::max(), false,
 		      corner1, tr, slew, max_slew, slew_slack);
       if (slew_slack < 0.0) {
 	slew_violations++;
-	repair = true;
+	LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+	if (drvr_port) {
+	  // Find max load cap that corresponds to max_slew.
+	  max_cap = findSlewLoadCap(drvr_port, max_slew);
+	  repair = true;
+	}
       }
     }
     if (check_cap) {
-      float cap, cap_slack;
+      float cap, max_cap1, cap_slack;
       const Corner *corner1;
       const RiseFall *tr;
       sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(),
-			     corner1, tr, cap, max_cap, cap_slack);
+			     corner1, tr, cap, max_cap1, cap_slack);
       if (cap_slack < 0.0) {
+	max_cap = min(max_cap, max_cap1);
 	cap_violations++;
 	repair = true;
       }
@@ -1706,6 +1711,55 @@ Resizer::repairNet(Net *net,
       repair_count++;
     }
   }
+}
+
+// Find the output port load capacitance that results in slew.
+double
+Resizer::findSlewLoadCap(LibertyPort *drvr_port,
+			 double slew)
+{
+  // cap1 lower bound
+  // cap2 upper bound
+  double cap1 = 0.0;
+  double cap2 = slew / drvr_port->driveResistance() * 2;
+  double tol = .01; // 1%
+  double diff1 = gateSlewDiff(drvr_port, cap1, slew);
+  double diff2 = gateSlewDiff(drvr_port, cap2, slew);
+  // binary search for diff = 0.
+  while (abs(cap1 - cap2) > max(cap1, cap2) * tol) {
+    if (diff2 < 0.0) {
+      cap1 = cap2;
+      diff1 = diff2;
+      cap2 *= 2;
+      diff2 = gateSlewDiff(drvr_port, cap2, slew);
+    }
+    else {
+      double cap3 = (cap1 + cap2) / 2.0;
+      double diff3 = gateSlewDiff(drvr_port, cap3, slew);
+      if (diff3 < 0.0) {
+	cap1 = cap3;
+	diff1 = diff3;
+      }
+      else {
+	cap2 = cap3;
+	diff2 = diff3;
+      }
+    }
+  }
+  return cap1;
+}
+
+// objective function
+double
+Resizer::gateSlewDiff(LibertyPort *drvr_port,
+		      double load_cap,
+		      double slew)
+{
+  ArcDelay delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  gateDelays(drvr_port, load_cap, delays, slews);
+  Slew gate_slew = max(slews[RiseFall::riseIndex()], slews[RiseFall::fallIndex()]);
+  return gate_slew - slew;
 }
 
 void
@@ -2215,7 +2269,8 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
-  gateDelays(output, load_cap, gate_delays);
+  Slew slews[RiseFall::index_count];
+  gateDelays(output, load_cap, gate_delays, slews);
   return gate_delays[rf->index()];
 }
 
@@ -2225,10 +2280,13 @@ void
 Resizer::gateDelays(LibertyPort *drvr_port,
 		    float load_cap,
 		    // Return values.
-		    ArcDelay delays[RiseFall::index_count])
+		    ArcDelay delays[RiseFall::index_count],
+		    Slew slews[RiseFall::index_count])
 {
-  delays[RiseFall::riseIndex()] = -INF;
-  delays[RiseFall::fallIndex()] = -INF;
+  for (auto rf_index : RiseFall::rangeIndex()) {
+    delays[rf_index] = -INF;
+    slews[rf_index] = -INF;
+  }
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellTimingArcSetIterator set_iter(cell);
   while (set_iter.hasNext()) {
@@ -2247,6 +2305,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
 				   gate_delay,
 				   drvr_slew);
 	delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
+	slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
       }
     }
   }

@@ -17,8 +17,8 @@ record_tests {
   repair_cap2
   repair_fanout1
   repair_fanout2
-  repair_max_slew1
-  repair_max_slew2
+  repair_slew1
+  repair_slew2
   repair_hold1
   repair_hold2
   report_floating_nets1
@@ -35,5 +35,5 @@ record_tests {
   gcd_resize
 }
 # injured reserve
-#  repair_max_slew3
+#  repair_slew3
 
