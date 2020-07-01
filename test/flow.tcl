@@ -7,6 +7,9 @@ read_sdc $sdc_file
 
 eval $init_floorplan_cmd
 
+# remove buffers inserted by synthesis 
+remove_buffers
+
 io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_layer
 
 if { [have_macros] } {
@@ -19,9 +22,6 @@ if { [have_macros] } {
 eval $tapcell_cmd
 
 pdngen -verbose $pdn_cfg
-
-# remove buffers inserted by synthesis 
-remove_buffers
 
 # pre-placement/sizing wireload timing
 report_checks
