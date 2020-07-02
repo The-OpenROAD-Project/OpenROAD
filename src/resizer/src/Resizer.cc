@@ -1114,22 +1114,23 @@ Resizer::repairHoldViolations(VertexSet &ends,
 			      LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
-  Slack worst_slack, prev_slack;
+  Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
-  prev_slack = worst_slack * 2;
+  debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
+	      units_->timeUnit()->asString(worst_slack, 3));
+  int repair_count = 1;
 
   int pass = 1;
   while (worst_slack < 0.0
 	 // Make sure we are making progress.
-	 && abs(worst_slack - prev_slack) > abs(prev_slack) * .001) {
-    debugPrint2(debug_, "repair_hold", 1, "pass %d worst_slack=%s\n",
-		pass,
-		units_->timeUnit()->asString(worst_slack, 3));
-    repairHoldPass(ends, buffer_cell);
+	 && repair_count > 0) {
+    debugPrint1(debug_, "repair_hold", 1, "pass %d\n", pass);
+    repair_count = repairHoldPass(ends, buffer_cell);
     sta_->findRequireds();
-    prev_slack = worst_slack;
     sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
+    debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
+		units_->timeUnit()->asString(worst_slack, 3));
     pass++;
   }
   if (inserted_buffer_count_ > 0) {
@@ -1138,7 +1139,7 @@ Resizer::repairHoldViolations(VertexSet &ends,
   }
 }
 
-void
+int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
@@ -1172,6 +1173,7 @@ Resizer::repairHoldPass(VertexSet &ends,
       }
     }
   }
+  return repair_count;
 }
 
 void
