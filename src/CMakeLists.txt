@@ -30,7 +30,6 @@ set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
-set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antennachecker)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -221,7 +220,6 @@ add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
-add_subdirectory(antennachecker)
 
 if(BUILD_OPENPHYSYN)
   add_subdirectory(OpenPhySyn)
@@ -257,7 +255,6 @@ target_include_directories(openroad
   ${TAPCELL_HOME}/include
   ${OPENRCX_HOME}/include
   ${PDNSIM_HOME}/include
-  ${ANTENNACHECKER_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
   )
@@ -288,7 +285,6 @@ target_link_libraries(openroad
   defout
   lefin
   lefout
-  antennachecker
   zutil
   ${TCL_LIBRARY}
 )
