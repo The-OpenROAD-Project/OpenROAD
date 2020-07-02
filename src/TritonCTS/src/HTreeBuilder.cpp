@@ -117,6 +117,8 @@ void HTreeBuilder::run() {
                 createSingleBufferClockNet();
                 return;
         }
+
+        _clock.setMaxLevel(_topologyForEachLevel.size());
         
         if (_options->getPlotSolution()) {
                 plotSolution();
