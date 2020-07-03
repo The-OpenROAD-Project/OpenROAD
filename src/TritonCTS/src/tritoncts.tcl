@@ -78,6 +78,7 @@ proc clock_tree_synthesis { args } {
     }
 	  set lut $keys(-lut_file)
     $cts set_lut_file $lut 
+    $cts set_auto_lut 0
   } 
  
   if { [info exists keys(-sol_list)] } {
@@ -86,6 +87,7 @@ proc clock_tree_synthesis { args } {
     }
 	  set sol_list $keys(-sol_list)
     $cts set_sol_list_file $sol_list
+    $cts set_auto_lut 0
   } 
 
   if { [info exists keys(-buf_list)] } {

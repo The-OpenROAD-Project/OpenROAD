@@ -73,10 +73,8 @@ void TritonCTSKernel::printHeader() const {
 }
 
 void TritonCTSKernel::setupCharacterization() {
-        std::ifstream lutFile(_options.getLutFile().c_str());
-        std::ifstream solFile(_options.getSolListFile().c_str());
-        if (!lutFile.is_open() || !solFile.is_open()) {
-                //LUT files doesn't exist. So a new characteriztion is created.
+        if (_options.runAutoLut()) {
+                //A new characteriztion is created.
                 createCharacterization();
         } else {
                 //LUT files exists. Import the characterization results.

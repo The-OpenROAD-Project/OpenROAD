@@ -56,6 +56,10 @@ void TritonCTSKernel::set_only_characterization(bool enable) {
         _options.setOnlyCharacterization(enable);
 }
 
+void TritonCTSKernel::set_auto_lut(bool enable) {
+        _options.setAutoLut(enable);
+}
+
 void TritonCTSKernel::set_lut_file(const char* file) {
         _options.setLutFile(file);
 }

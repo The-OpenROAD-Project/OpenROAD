@@ -89,6 +89,7 @@ private:
 // TCL commands
 public:
         void set_only_characterization(bool enable);
+        void set_auto_lut(bool enable);
         void set_lut_file(const char* file);
         void set_sol_list_file(const char* file);
         void export_characterization(const char* file);
