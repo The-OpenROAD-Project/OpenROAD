@@ -1031,37 +1031,39 @@ Point
 Resizer::tieLocation(Pin *load,
 		     int separation)
 {
-  dbInst *db_inst = db_network_->staToDb(network_->instance(load));
-  dbBox *bbox = db_inst->getBBox();
   Point load_loc = db_network_->location(load);
   int load_x = load_loc.getX();
   int load_y = load_loc.getY();
-  int left_dist = abs(load_x - bbox->xMin());
-  int right_dist = abs(load_x - bbox->xMax());
-  int bot_dist = abs(load_y - bbox->yMin());
-  int top_dist = abs(load_y - bbox->yMax());
   int tie_x = load_x;
   int tie_y = load_y;
-  if (left_dist < right_dist
-      && left_dist < bot_dist
-      && left_dist < top_dist)
-    // left
-    tie_x -= separation;
-  if (right_dist < left_dist
-      && right_dist < bot_dist
-      && right_dist < top_dist)
-    // right
-    tie_x += separation;
-  if (bot_dist < left_dist
-      && bot_dist < right_dist
-      && bot_dist < top_dist)
-    // bot
-    tie_y -= separation;
-  if (top_dist < left_dist
-      && top_dist < right_dist
-      && top_dist < bot_dist)
-    // top
-    tie_y += separation;
+  if (!network_->isTopLevelPort(load)) {
+    dbInst *db_inst = db_network_->staToDb(network_->instance(load));
+    dbBox *bbox = db_inst->getBBox();
+    int left_dist = abs(load_x - bbox->xMin());
+    int right_dist = abs(load_x - bbox->xMax());
+    int bot_dist = abs(load_y - bbox->yMin());
+    int top_dist = abs(load_y - bbox->yMax());
+    if (left_dist < right_dist
+	&& left_dist < bot_dist
+	&& left_dist < top_dist)
+      // left
+      tie_x -= separation;
+    if (right_dist < left_dist
+	&& right_dist < bot_dist
+	&& right_dist < top_dist)
+      // right
+      tie_x += separation;
+    if (bot_dist < left_dist
+	&& bot_dist < right_dist
+	&& bot_dist < top_dist)
+      // bot
+      tie_y -= separation;
+    if (top_dist < left_dist
+	&& top_dist < right_dist
+	&& top_dist < bot_dist)
+      // top
+      tie_y += separation;
+  }
   if (core_exists_)
     return closestPtInRect(core_, tie_x, tie_y);
   else
@@ -1114,22 +1116,23 @@ Resizer::repairHoldViolations(VertexSet &ends,
 			      LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
-  Slack worst_slack, prev_slack;
+  Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
-  prev_slack = worst_slack * 2;
+  debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
+	      units_->timeUnit()->asString(worst_slack, 3));
+  int repair_count = 1;
 
   int pass = 1;
   while (worst_slack < 0.0
 	 // Make sure we are making progress.
-	 && abs(worst_slack - prev_slack) > abs(prev_slack) * .001) {
-    debugPrint2(debug_, "repair_hold", 1, "pass %d worst_slack=%s\n",
-		pass,
-		units_->timeUnit()->asString(worst_slack, 3));
-    repairHoldPass(ends, buffer_cell);
+	 && repair_count > 0) {
+    debugPrint1(debug_, "repair_hold", 1, "pass %d\n", pass);
+    repair_count = repairHoldPass(ends, buffer_cell);
     sta_->findRequireds();
-    prev_slack = worst_slack;
     sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
+    debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
+		units_->timeUnit()->asString(worst_slack, 3));
     pass++;
   }
   if (inserted_buffer_count_ > 0) {
@@ -1138,7 +1141,7 @@ Resizer::repairHoldViolations(VertexSet &ends,
   }
 }
 
-void
+int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
@@ -1172,6 +1175,7 @@ Resizer::repairHoldPass(VertexSet &ends,
       }
     }
   }
+  return repair_count;
 }
 
 void

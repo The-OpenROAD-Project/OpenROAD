@@ -1,0 +1,15 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: repair_tie6.def
+Notice 0: Design: top
+Notice 0:     Created 1 pins.
+Notice 0:     Created 2 components and 7 component-terminals.
+Notice 0:     Created 1 nets and 2 connections.
+Notice 0: Finished DEF file: repair_tie6.def
+Inserted 2 tie LOGIC1_X1 instances.
+t1_1 10.1 10.6
+t1_2 1.1 1.1

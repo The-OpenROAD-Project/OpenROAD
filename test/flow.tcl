@@ -34,7 +34,6 @@ set_wire_rc -layer $wire_rc_layer
 estimate_parasitics -placement
 set_dont_use $dont_use
 
-buffer_ports -buffer_cell $resize_buffer_cell
 repair_design -max_wire_length $max_wire_length \
   -buffer_cell $resize_buffer_cell
 resize
