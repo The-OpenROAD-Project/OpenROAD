@@ -15,7 +15,8 @@ proc check_ties { tie_cell_name } {
     set tie_pin [get_pins -of $tie_inst -filter "direction == output"]
     set net [get_nets -of $tie_inst]
     set pins [get_pins -of $net]
-    if { [llength $pins] != 2 } {
+    set ports [get_ports -of $net]
+    if { [expr [llength $pins] + [llength $ports]] != 2 } {
       puts "Warning: tie inst [get_full_name $tie_inst] has [llength $pins] connections."
     }
   }

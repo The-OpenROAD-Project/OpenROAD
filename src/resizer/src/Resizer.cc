@@ -1031,37 +1031,39 @@ Point
 Resizer::tieLocation(Pin *load,
 		     int separation)
 {
-  dbInst *db_inst = db_network_->staToDb(network_->instance(load));
-  dbBox *bbox = db_inst->getBBox();
   Point load_loc = db_network_->location(load);
   int load_x = load_loc.getX();
   int load_y = load_loc.getY();
-  int left_dist = abs(load_x - bbox->xMin());
-  int right_dist = abs(load_x - bbox->xMax());
-  int bot_dist = abs(load_y - bbox->yMin());
-  int top_dist = abs(load_y - bbox->yMax());
   int tie_x = load_x;
   int tie_y = load_y;
-  if (left_dist < right_dist
-      && left_dist < bot_dist
-      && left_dist < top_dist)
-    // left
-    tie_x -= separation;
-  if (right_dist < left_dist
-      && right_dist < bot_dist
-      && right_dist < top_dist)
-    // right
-    tie_x += separation;
-  if (bot_dist < left_dist
-      && bot_dist < right_dist
-      && bot_dist < top_dist)
-    // bot
-    tie_y -= separation;
-  if (top_dist < left_dist
-      && top_dist < right_dist
-      && top_dist < bot_dist)
-    // top
-    tie_y += separation;
+  if (!network_->isTopLevelPort(load)) {
+    dbInst *db_inst = db_network_->staToDb(network_->instance(load));
+    dbBox *bbox = db_inst->getBBox();
+    int left_dist = abs(load_x - bbox->xMin());
+    int right_dist = abs(load_x - bbox->xMax());
+    int bot_dist = abs(load_y - bbox->yMin());
+    int top_dist = abs(load_y - bbox->yMax());
+    if (left_dist < right_dist
+	&& left_dist < bot_dist
+	&& left_dist < top_dist)
+      // left
+      tie_x -= separation;
+    if (right_dist < left_dist
+	&& right_dist < bot_dist
+	&& right_dist < top_dist)
+      // right
+      tie_x += separation;
+    if (bot_dist < left_dist
+	&& bot_dist < right_dist
+	&& bot_dist < top_dist)
+      // bot
+      tie_y -= separation;
+    if (top_dist < left_dist
+	&& top_dist < right_dist
+	&& top_dist < bot_dist)
+      // top
+      tie_y += separation;
+  }
   if (core_exists_)
     return closestPtInRect(core_, tie_x, tie_y);
   else
