@@ -30,8 +30,8 @@ Type: stdcell, grid
     Straps
       Layer: metal4 -  width: 0.480  pitch: 56.000  offset: 2.000 
       Layer: metal7 -  width: 1.400  pitch: 40.000  offset: 2.000 
-      Layer: metal8 -  width: 1.400  pitch: 6.000  offset: 2.000 
-      Layer: metal9 -  width: 1.400  pitch: 6.000  offset: 2.000 
+      Layer: metal8 -  width: 1.400  pitch: 40.000  offset: 2.000 
+      Layer: metal9 -  width: 1.400  pitch: 40.000  offset: 2.000 
     Connect: {metal1 metal4} {metal4 metal7} {metal7 metal8} {metal8 metal9}
 Type: macro, macro_1
     Macro orientation: R0 R180 MX MY
