@@ -16,6 +16,7 @@ record_tests {
   fillers3
   fillers4
   fillers5
+  fillers6
   fragmented_row01
   fragmented_row02
   fragmented_row03

@@ -51,14 +51,14 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-out_path path] \
                                              [-sqr_cap capvalue] \
                                              [-sqr_res resvalue] \
-                                             [-only_characterization enable] \
                                              [-slew_inter slewvalue] \
                                              [-cap_inter capvalue] \
+                                             [-characterization_only] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -only_characterization -slew_inter -cap_inter} flags {}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -cap_inter} flags {-characterization_only}
 
   set cts [get_triton_cts]
 
@@ -70,10 +70,7 @@ proc clock_tree_synthesis { args } {
   #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
 
 
-  if { [info exists keys(-only_characterization)] } {
-	  set enable $keys(-only_characterization)
-    $cts set_only_characterization $enable 
-  } 
+  $cts set_only_characterization [info exists flags(-characterization_only)]
 
   if { [info exists keys(-lut_file)] } {
 	  set lut $keys(-lut_file)
@@ -91,8 +88,7 @@ proc clock_tree_synthesis { args } {
   } else {
     if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
       #User must either input a lut file or the buffer list.
-      puts "Missing argument -buf_list or -lut_file / -sol_list"
-      exit
+      ord::error "Missing argument -buf_list or -lut_file / -sol_list"
     }
   }
 
@@ -115,8 +111,7 @@ proc clock_tree_synthesis { args } {
     set clk_nets $keys(-clk_nets)
     set fail [$cts set_clock_nets $clk_nets]
     if {$fail} {
-      puts "Error when finding -clk_nets in DB!"
-      exit
+      ord::error "Error when finding -clk_nets in DB!"
     }
   }
 
@@ -139,8 +134,7 @@ proc clock_tree_synthesis { args } {
       $cts set_root_buffer [lindex $buf_list 0]
     } else {
       #User must enter at least one of -root_buf or -buf_list.
-      puts "Missing argument -root_buf"
-      exit
+      ord::error "Missing argument -root_buf"
     }
   }
 
@@ -157,12 +151,31 @@ proc clock_tree_synthesis { args } {
       $cts set_res_per_sqr $sqr_res
     } else {
       #User must enter capacitance and resistance per square (um²) when creating a new characterization.
-      puts "Missing argument -sqr_cap and/or -sqr_res"
-      exit
+      ord::error "Missing argument -sqr_cap and/or -sqr_res"
     }
   }
 
-  $cts run_triton_cts
+  if {[catch {$cts run_triton_cts} error_msg options]} {
+    puts $error_msg
+  }
+
   # CTS changed the network behind the STA's back.
   sta::network_changed
+}
+
+sta::define_cmd_args "report_cts" {[-out_file file] \
+                                  } 
+
+proc report_cts { args } {
+  sta::parse_key_args "report_cts" args \
+    keys {-out_file} flags {}
+
+  set cts [get_triton_cts]
+
+  if { [info exists keys(-out_file)] } {
+	  set outFile $keys(-out_file)
+    $cts set_metric_output $outFile 
+  } 
+
+  $cts report_cts_metrics
 }

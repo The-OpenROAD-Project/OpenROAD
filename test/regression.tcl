@@ -240,16 +240,18 @@ proc run_test { test } {
 }
 
 proc find_log_pass_fail { log_file } {
-  set stream [open $log_file r]
-  while { [gets $stream line] >= 0 } {
-    set last_line $line
+  if { [file exists $log_file] } {
+    set stream [open $log_file r]
+    set last_line ""
+    while { [gets $stream line] >= 0 } {
+      set last_line $line
+    }
+    close $stream
+    if { [string match "pass *" $last_line] } {
+      return 0
+    }
   }
-  close $stream
-  if { [lindex $last_line 0] == "pass" } {
-    return 0
-  } else {
-    return 1
-  }
+  return 1
 }
 
 proc append_failure { test } {

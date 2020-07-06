@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <string>
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
 #include "opendb/geom.h"
@@ -52,7 +53,7 @@ class SteinerTree;
 typedef int SteinerPt;
 typedef Vector<SteinerPt> SteinerPtSeq;
 
-// Returns nullptr if net has less than 2 pins.
+// Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
 makeSteinerTree(const Net *net,
 		bool find_left_rights,
@@ -88,8 +89,6 @@ public:
   SteinerTree();
   ~SteinerTree();
   PinSeq &pins() { return pins_; }
-  void setTree(Flute::Tree tree,
-	       const dbNetwork *network);
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
   void branch(int index,
@@ -106,18 +105,23 @@ public:
   Pin *steinerPtAlias(SteinerPt pt);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt(const Network *network) const;
-  bool isPlaced(const dbNetwork *network) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
 		   const Network *network);
   Pin *pin(SteinerPt pt) const;
+  SteinerPt steinerPt(Pin *pin) const;
   bool isLoad(SteinerPt pt,
 	      const Network *network);
   Point location(SteinerPt pt) const;
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
+  void setTree(Flute::Tree tree,
+	       const dbNetwork *network);
+  void setHasInputPort(bool input_port);
+  void writeSVG(const Network *network,
+		const char *filename);
   static SteinerPt null_pt;
 
 protected:
@@ -138,6 +142,8 @@ protected:
   PinSeq pins_;
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;
+  // pin -> steiner pt index
+  UnorderedMap<Pin*, int> pin_steiner_pt_map_;
   // location -> pin (any pin if there are multiple at the location).
   UnorderedMap<Point, Pin*, PointHash, PointEqual> loc_pin_map_;
   SteinerPtSeq left_;

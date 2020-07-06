@@ -43,6 +43,7 @@ using odb::dbObjectType;
 using odb::dbITermObj;
 using odb::dbBTermObj;
 using odb::dbIntProperty;
+using odb::dbPlacementStatus;
 
 // TODO: move to StringUtil
 char *
@@ -629,6 +630,47 @@ dbNetwork::setVertexId(Pin *pin,
     return bterm->staSetVertexId(id);
 }
 
+Point
+dbNetwork::location(const Pin *pin) const
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y))
+      return Point(x, y);
+    else {
+      dbInst *inst = iterm->getInst();
+      int x, y;
+      inst->getOrigin(x, y);
+      return Point(x, y);
+    }
+  }
+  if (bterm) {
+    int x, y;
+    if (bterm->getFirstPinLocation(x, y))
+      return Point(x, y);
+  }
+  return Point(0, 0);
+}
+
+bool
+dbNetwork::isPlaced(const Pin *pin) const
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    status = inst->getPlacementStatus();
+  }
+  if (bterm)
+    status = bterm->getFirstPinPlacementStatus();
+  return status.isPlaced();
+}
+
 ////////////////////////////////////////////////////////////////
 
 const char *
@@ -867,9 +909,14 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 	    ConcreteCellPortBitIterator *port_iter = ccell->portBitIterator();
 	    while (port_iter->hasNext()) {
 	      ConcretePort *cport = port_iter->next();
-	      LibertyPort *lport = lcell->findLibertyPort(cport->name());
+	      const char *port_name = cport->name();
+	      LibertyPort *lport = lcell->findLibertyPort(port_name);
 	      if (lport)
 		cport->setLibertyPort(lport);
+	      else if (!cport->direction()->isPowerGround())
+		report_->warn("Liberty cell %s pin %s missing from LEF macro\n",
+			      lcell->name(),
+			      port_name);
 	    }
 	    delete port_iter;
 	  }
@@ -1041,6 +1088,10 @@ dbNetwork::makeNet(const char *name,
 void
 dbNetwork::deleteNet(Net *net)
 {
+  PinSet *drvrs = net_drvr_pin_map_.findKey(net);
+  delete drvrs;
+  net_drvr_pin_map_.erase(net);
+
   dbNet *dnet = staToDb(net);
   dbNet::destroy(dnet);
 }
@@ -1225,6 +1276,14 @@ dbNetwork::dbToSta(dbSigType sig_type,
     internalError("unknown master term type");
     return PortDirection::bidirect();
   }
+}
+
+////////////////////////////////////////////////////////////////
+
+LibertyCell *
+dbNetwork::libertyCell(dbInst *inst)
+{
+  return libertyCell(dbToSta(inst));
 }
 
 } // namespace

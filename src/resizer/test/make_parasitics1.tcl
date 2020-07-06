@@ -1,4 +1,4 @@
-# set_wire_rc
+# estimate_parasitics
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def reg3.def
@@ -20,5 +20,12 @@ set wire_cap [expr $m1_area_cap * $lambda * 4 + $m1_edge_cap * 2]
 # kohm/micron of wire length
 set wire_res [expr $m1_res_sq / ($lambda * 4)]
 set_wire_rc -resistance $wire_res -capacitance $wire_cap
+estimate_parasitics -placement
 
 report_checks
+
+# Make sure there are no parasitics on input ports.
+# When the input drives a pad instance with huge input
+# cap the elmore delay is gigantic.
+set sta_report_default_digits 4
+report_checks -to r1/D

@@ -86,10 +86,8 @@ buffer_ports -inputs -buffer_cell $buffer_cell
 
 report_check_types -max_slew
 
-repair_max_slew -buffer_cell $buffer_cell
-
-report_check_types -max_slew
-
+repair_design -buffer_cell $buffer_cell
 resize
 
 report_check_types -max_slew
+

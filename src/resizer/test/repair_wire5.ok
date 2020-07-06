@@ -1,0 +1,22 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: Reading LEF file:  Nangate45/fakeram45_64x32.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  Nangate45/fakeram45_64x32.lef
+Notice 0: Reading LEF file:  pad.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  pad.lef
+Notice 0: 
+Reading DEF file: repair_wire5.def
+Notice 0: Design: RocketTile
+Notice 0:     Created 1 pins.
+Notice 0:     Created 2 components and 10 component-terminals.
+Notice 0:     Created 2 special nets and 2 connections.
+Notice 0:     Created 2 nets and 3 connections.
+Notice 0: Finished DEF file: repair_wire5.def
+Found 1 capacitance violations.
+Found 1 long wires.
+pad1 outside of core

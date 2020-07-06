@@ -6,10 +6,10 @@ Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
 Reading DEF file: reg3.def
 Notice 0: Design: reg1
-Notice 0:     Created 3 pins.
+Notice 0:     Created 4 pins.
 Notice 0:     Created 5 components and 27 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
-Notice 0:     Created 7 nets and 14 connections.
+Notice 0:     Created 8 nets and 14 connections.
 Notice 0: Finished DEF file: reg3.def
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
@@ -21,11 +21,11 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ r2/CK (DFF_X1)
-   0.08    0.08 v r2/Q (DFF_X1)
-   0.03    0.11 v u1/Z (BUF_X1)
-   0.03    0.14 v u2/ZN (AND2_X1)
-   0.00    0.14 v r3/D (DFF_X1)
-           0.14   data arrival time
+   0.10    0.10 ^ r2/Q (DFF_X1)
+   0.09    0.20 ^ u1/Z (BUF_X1)
+   0.12    0.31 ^ u2/ZN (AND2_X1)
+   0.01    0.32 ^ r3/D (DFF_X1)
+           0.32   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
@@ -35,8 +35,8 @@ Path Type: max
            9.96   data required time
 ---------------------------------------------------------
            9.96   data required time
-          -0.14   data arrival time
+          -0.32   data arrival time
 ---------------------------------------------------------
-           9.82   slack (MET)
+           9.63   slack (MET)
 
 

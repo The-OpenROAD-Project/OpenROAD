@@ -44,6 +44,7 @@
 #include "TritonCTSKernel.h"
 #include "HTreeBuilder.h"
 #include "db_sta/dbSta.hh"
+#include "openroad/Error.hh"
 
 // DB includes
 #include "db.h"
@@ -54,6 +55,8 @@
 #include <sstream>
 
 namespace TritonCTS {
+
+using ord::error;
 
 DbWrapper::DbWrapper(CtsOptions& options,
                      TritonCTSKernel& kernel) {
@@ -107,13 +110,12 @@ void DbWrapper::initAllClocks() {
                 }
         }
 
-        if (getNumClocks() <= 0) {
-                std::cout << "\n";
-                std::cout << " [ERROR] No clock nets have been found.\n";
-                std::exit(1);
+        if (getNumClocks() == 0) {
+                error("No clock nets have been found.\n");
         }
 
         std::cout << " TritonCTS found " << getNumClocks() << " clock nets." << std::endl;
+        _options->setNumClockRoots(getNumClocks());
 }       
 
 void DbWrapper::initClock(odb::dbNet* net) {
@@ -164,6 +166,9 @@ void DbWrapper::initClock(odb::dbNet* net) {
         }
 
         std::cout << " Clock net \"" << net->getConstName() << "\" has " << clockNet.getNumSinks() << " sinks" << std::endl;
+
+        long int currentTotalSinks = _options->getNumSinks() + clockNet.getNumSinks();
+        _options->setNumSinks(currentTotalSinks);
 
         incrementNumClocks();
 
@@ -259,6 +264,8 @@ void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
         }
 
         std::cout << "    Created " << numClkNets << " clock nets.\n";
+        long int currentTotalNets = _options->getNumClockSubnets() + numClkNets;
+        _options->setNumClockSubnets(currentTotalNets);
 }
 
 void DbWrapper::disconnectAllSinksFromNet(std::string netName) {
@@ -284,6 +291,8 @@ void DbWrapper::createClockBuffers(const Clock& clockNet) {
                 ++numBuffers;
         });
         std::cout << "    Created " << numBuffers << " clock buffers.\n";
+        long int currentTotalBuffers = _options->getNumBuffersInserted() + numBuffers;
+        _options->setNumBuffersInserted(currentTotalBuffers);
 }
 
 odb::dbITerm* DbWrapper::getFirstInput(odb::dbInst* inst) const {

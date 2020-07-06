@@ -42,6 +42,7 @@
 
 #include "HTreeBuilder.h"
 #include "third_party/CKMeans/clustering.h"
+#include "openroad/Error.hh"
 
 #include <iostream>
 #include <iomanip>
@@ -49,6 +50,8 @@
 #include <map>
 
 namespace TritonCTS {
+
+using ord::error;
 
 void HTreeBuilder::initSinkRegion() {
         unsigned wireSegmentUnitInMicron = _techChar->getLengthUnit(); 
@@ -485,8 +488,7 @@ void HTreeBuilder::createClockSubNets() {
                 const std::vector<Point<double>>& sinkLocs = leafTopology.getBranchSinksLocations(idx);
                 for (const Point<double>& loc : sinkLocs) {
                         if (mapLocationToSink.find(loc) == mapLocationToSink.end()) {
-                                std::cout << "Sink not found!\n";
-                                std::exit(1);
+                                error("Sink not found.\n");
                         }
                         
                         subNet->addInst(*mapLocationToSink[loc]);
@@ -513,7 +515,9 @@ void HTreeBuilder::createSingleBufferClockNet() {
 }
 
 void HTreeBuilder::plotSolution() {
-        std::ofstream file("plot.py");
+        static int cnt = 0;
+        auto name = std::string("plot") + std::to_string(cnt++) + ".py";
+        std::ofstream file(name);
         file << "import numpy as np\n"; 
         file << "import matplotlib.pyplot as plt\n";
         file << "import matplotlib.path as mpath\n";
@@ -523,7 +527,7 @@ void HTreeBuilder::plotSolution() {
 
         _clock.forEachSink( [&] (const ClockInst& sink) {
                 file << "plt.scatter(" << (double) sink.getX() / _wireSegmentUnit << ", " 
-                     << (double) sink.getY() / _wireSegmentUnit << ")\n"; 
+                     << (double) sink.getY() / _wireSegmentUnit << ", s=1)\n"; 
         });
 
         LevelTopology &topLevelTopology = _topologyForEachLevel.front();
@@ -642,8 +646,6 @@ void SegmentBuilder::buildHorizontalConnection() {
 }
 
 void SegmentBuilder::buildLShapeConnection() {
-        //std::cout << "L shape connection. Exiting...\n";
-        //std::exit(1);
         double lengthX = std::abs(_root.getX() - _target.getX());
         double lengthY = std::abs(_root.getY() - _target.getY());
         bool isLowToHiX = _root.getX() < _target.getX();

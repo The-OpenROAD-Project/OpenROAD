@@ -46,6 +46,7 @@ define_tool_script "FastRoute" "src/FastRoute/test/regression"
 define_tool_script "TapCell" "src/tapcell/test/regression"
 define_tool_script "OpenPhySyn" "src/OpenPhySyn/test/regression"
 define_tool_script "PDNSim" "src/PDNSim/test/regression"
+define_tool_script "antenna_checker" "src/antennachecker/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
@@ -67,6 +68,17 @@ proc run_tool_tests { tool } {
   }
 }
 
+proc run_flow_tests { } {
+  global tool_errors
+
+  puts "------------------------------------------------------"
+  puts "Flow"
+  set flow_tests [group_tests "flow"]
+  if { $flow_tests != {} } {
+    incr tool_errors [regression_body $flow_tests]
+  }
+}
+
 ################################################################
 
 set tool_errors 0
@@ -76,6 +88,7 @@ if { $argv == {} } {
     run_tool_tests $tool
   }
   run_openroad_tests
+  #
 } else {
   foreach arg $argv {
     set arg [string tolower $arg]
@@ -88,17 +101,14 @@ if { $argv == {} } {
 
     # flow
     if { [string equal -nocase $arg "flow"] } {
-      set flow_tests [group_tests "flow"]
-      if { $flow_tests != {} } {
-	incr tool_errors [regression_body $flow_tests]
-      }
+      run_flow_tests
       set matched 1
     }
 
     # <openroad_test>
     set ord_tests {}
     foreach test [group_tests "all"] {
-      if { [string match $arg $test] } {
+      if { [string match -nocase $arg $test] } {
 	lappend ord_tests $test
 	set matched 1
       }
@@ -109,7 +119,7 @@ if { $argv == {} } {
 
     # <tool>
     dict for {tool script} $tool_scripts {
-      if { [string match $arg $tool] } {
+      if { [string match -nocase $arg $tool] } {
 	run_tool_tests $tool
 	set matched 1
       }

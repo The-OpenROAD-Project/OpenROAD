@@ -9,6 +9,7 @@ set_input_delay -clock clk 0 {in1 in2}
 set_propagated_clock clk
 
 set_wire_rc -layer metal1
+estimate_parasitics -placement
 
 report_checks -path_delay min -format full_clock -endpoint_count 2 \
   -unique_paths_to_endpoint -to r3/D
@@ -21,4 +22,3 @@ report_checks -path_delay min -format full_clock -endpoint_count 2 \
 set def_file [make_result_file repair_hold1.def]
 write_def $def_file
 diff_files repair_hold1.defok $def_file
-

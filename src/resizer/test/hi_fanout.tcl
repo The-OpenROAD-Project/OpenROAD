@@ -1,4 +1,4 @@
-# write_hi_fanout verilog/def
+# write_hi_fanout def
 
 set header {VERSION 5.8 ; 
 DIVIDERCHAR "/" ;
@@ -8,7 +8,7 @@ DESIGN hi_fanout ;
 
 UNITS DISTANCE MICRONS 1000 ;
 
-DIEAREA ( 0 0 ) ( 2000 2000 ) ;
+DIEAREA ( 0 0 ) ( 200000 200000 ) ;
 }
 
 set middle {

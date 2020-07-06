@@ -110,15 +110,15 @@ class InitFloorplan
 public:
   InitFloorplan() {}
   void initFloorplan(double util,
-         double aspect_ratio,
-         double core_space_bottom,
-         double core_space_top,
-         double core_space_left,
-         double core_space_right,
-         const char *site_name,
-         const char *tracks_file,
-         dbDatabase *db,
-         Report *report);
+		     double aspect_ratio,
+		     double core_space_bottom,
+		     double core_space_top,
+		     double core_space_left,
+		     double core_space_right,
+		     const char *site_name,
+		     const char *tracks_file,
+		     dbDatabase *db,
+		     Report *report);
 
   void initFloorplan(double die_lx,
 		     double die_ly,
@@ -162,7 +162,7 @@ protected:
   void autoPlacePins(dbTechLayer *pin_layer,
 		     Rect &core);
   int metersToMfgGrid(double dist) const;
-  double dbuToMeters(uint dist) const;
+  double dbuToMeters(int dist) const;
 
   dbDatabase *db_;
   Report *report_;
@@ -611,7 +611,7 @@ InitFloorplan::metersToMfgGrid(double dist) const
 }
 
 double
-InitFloorplan::dbuToMeters(uint dist) const
+InitFloorplan::dbuToMeters(int dist) const
 {
   dbTech *tech = db_->getTech();
   int dbu = tech->getDbUnitsPerMicron();

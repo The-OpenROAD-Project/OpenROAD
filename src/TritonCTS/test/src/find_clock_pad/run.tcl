@@ -17,5 +17,6 @@ clock_tree_synthesis -buf_list "BUF_X1" \
                      -max_cap 30.0e-15 \
                      -sqr_cap 7.7161e-5 \
                      -sqr_res 3.8e-1 \
-                     -only_characterization 1
+                     -characterization_only
 
+exit
