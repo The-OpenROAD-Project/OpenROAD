@@ -1819,7 +1819,7 @@ proc generate_via_stacks {l1 l2 tag constraints} {
     warning 3 "No shapes on layer $l2 for $tag"
     return {}
   }
-  set intersection [odb::andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)]
+  set intersection [odb::andSet [odb::andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)] [odb::newSetFromRect {*}$area]]
 
   foreach shape [::odb::getPolygons $intersection] {
     set points [::odb::getPoints $shape]
@@ -1989,7 +1989,7 @@ proc adjust_area_for_core_rings {layer area} {
   # When core_rings overlap with the stdcell area, we need to block out the area
   # where the core rings have been placed.
   if {[dict exists $grid_data core_ring_area $layer]} {
-    set core_ring_area [dict get $grid_data core_ring_area $layer]
+    set core_ring_area [dict get $grid_data core_ring_area combined]
     # debug "Core ring area"
     # foreach rect [odb::getRectangles $core_ring_area] {
     #   debug "  [$rect ll] [$rect ur]"
@@ -2090,6 +2090,7 @@ proc generate_grid_vias {tag net_name} {
   variable grid_data
 
   #Via stacks
+  # debug "grid_data $grid_data"
   if {[dict exists $grid_data connect]} {
     # debug "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
     foreach connection [dict get $grid_data connect] {
@@ -2366,6 +2367,11 @@ proc generate_core_rings {core_ring_data} {
 
     }
   }
+  set ring_areas {}
+  foreach layer [dict keys [dict get $grid_data core_ring_area]] {
+    lappend ring_areas [dict get $grid_data core_ring_area $layer]
+  }
+  dict set grid_data core_ring_area combined [odb::orSets $ring_areas]
 }
 
 proc get_macro_boundaries {} {
@@ -2808,6 +2814,7 @@ proc get_memory_instance_pg_pins {} {
         err 37 "Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])"
         continue
       }
+
       set type [$mterm getSigType]
       foreach mPin [$mterm getMPins] {
         foreach geom [$mPin getGeometry] {
@@ -4384,13 +4391,16 @@ proc add_macro_based_grids {} {
       set grid_data [get_instance_specification $instance]
       # debug "area=[dict get $grid_data area]"
       add_grid 
-    }
   
-    foreach pwr_net [dict get $design_data power_nets] {
-      generate_grid_vias "POWER" $pwr_net
-    }
-    foreach gnd_net [dict get $design_data ground_nets] {
-      generate_grid_vias "GROUND" $gnd_net
+      # debug "Generate vias for [dict get $design_data power_nets] [dict get $design_data ground_nets]"
+      foreach pwr_net [dict get $design_data power_nets] {
+        # debug "Generate vias for $pwr_net"
+        generate_grid_vias "POWER" $pwr_net
+      }
+      foreach gnd_net [dict get $design_data ground_nets] {
+        # debug "Generate vias for $gnd_net"
+        generate_grid_vias "GROUND" $gnd_net
+      }
     }
   }
 }
