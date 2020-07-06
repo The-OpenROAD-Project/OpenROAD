@@ -330,11 +330,5 @@ proc_redirect report_long_wires {
   report_long_wires_cmd $count $digits
 }
 
-# Used by report_net. Override default function.
-proc pin_location_str { pin } {
-  lassign [pin_location $pin] x y
-  return " ([format_distance $x 0], [format_distance $y 0])"
-}
-
 # sta namespace end
 }
