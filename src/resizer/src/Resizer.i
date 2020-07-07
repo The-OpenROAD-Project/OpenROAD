@@ -404,19 +404,6 @@ write_net_svg(Net *net,
   resizer->writeNetSVG(net, filename);
 }
 
-const char *
-pin_location(Pin *pin)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  dbNetwork *network = resizer->getDbNetwork();
-  odb::Point loc = network->location(pin);
-  double x = resizer->dbuToMeters(loc.getX());
-  double y = resizer->dbuToMeters(loc.getY());
-  // return x/y as tcl list
-  return sta::stringPrintTmp("%f %f", x, y);
-}
-
 double
 utilization()
 {

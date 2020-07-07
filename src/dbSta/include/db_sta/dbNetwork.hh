@@ -59,7 +59,12 @@ public:
 		dbMaster *master);
   void makeTopCell();
 
-  Point location(const Pin *pin) const;
+  virtual void location(const Pin *pin,
+			// Return values.
+			double &x,
+			double &y,
+			bool &exists) const;
+  virtual Point location(const Pin *pin) const;
   bool isPlaced(const Pin *pin) const;
 
   LibertyCell *libertyCell(dbInst *inst);
@@ -183,6 +188,8 @@ public:
   virtual void mergeInto(Net *net,
 			 Net *into_net);
   virtual Net *mergedInto(Net *net);
+  double dbuToMeters(int dist) const;
+  int metersToDbu(double dist) const;
 
   using Network::netIterator;
   using Network::findPin;

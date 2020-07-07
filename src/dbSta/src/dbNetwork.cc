@@ -387,6 +387,20 @@ dbNetwork::topInstance() const
     return nullptr;
 }
 
+double
+dbNetwork::dbuToMeters(int dist) const
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist / (dbu * 1e+6);
+}
+
+int
+dbNetwork::metersToDbu(double dist) const
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist * dbu * 1e+6;
+}
+
 ////////////////////////////////////////////////////////////////
 
 const char *
@@ -628,6 +642,26 @@ dbNetwork::setVertexId(Pin *pin,
     return iterm->staSetVertexId(id);
   else if (bterm)
     return bterm->staSetVertexId(id);
+}
+
+void
+dbNetwork::location(const Pin *pin,
+		    // Return values.
+		    double &x,
+		    double &y,
+		    bool &exists) const
+{
+  if (isPlaced(pin)) {
+    Point pt = location(pin);
+    x = dbuToMeters(pt.getX());
+    y = dbuToMeters(pt.getY());
+    exists = true;
+  }
+  else {
+    x = 0;
+    y = 0;
+    exists = false;
+  }
 }
 
 Point
