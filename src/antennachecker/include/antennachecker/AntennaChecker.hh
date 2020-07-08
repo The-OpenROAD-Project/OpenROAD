@@ -156,8 +156,8 @@ public:
 
     std::vector<wireroots_info_vec> get_wireroots(dbWireGraph graph);
 
-    bool check_wire_PAR( ARinfo AntennaRatio );
-    bool check_wire_CAR( ARinfo AntennaRatio );
+    std::pair<bool, bool> check_wire_PAR( ARinfo AntennaRatio );
+    std::pair<bool, bool> check_wire_CAR( ARinfo AntennaRatio, bool par_checked );
     bool check_VIA_PAR( ARinfo AntennaRatio );
     bool check_VIA_CAR( ARinfo AntennaRatio );
 
