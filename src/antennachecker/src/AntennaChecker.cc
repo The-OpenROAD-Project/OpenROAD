@@ -694,7 +694,8 @@ AntennaChecker::get_pwl_factor(dbTechLayerAntennaRule::pwl_pair pwl_info, double
         {
             double pwl_info_indice;
             double pwl_info_ratio;
-            for ( indice_itr = pwl_info.indices.begin(), ratio_itr = pwl_info.ratios.begin();
+	    double slope_factor;
+	    for ( indice_itr = pwl_info.indices.begin(), ratio_itr = pwl_info.ratios.begin();
                   indice_itr != pwl_info.indices.end() && ratio_itr != pwl_info.ratios.end();
                   indice_itr++, ratio_itr++)
             {
@@ -704,9 +705,11 @@ AntennaChecker::get_pwl_factor(dbTechLayerAntennaRule::pwl_pair pwl_info, double
                     pwl_info_ratio = (*ratio_itr);
                 }
 
+		slope_factor = ((*ratio_itr) - pwl_info_ratio) / ((*indice_itr) - pwl_info_indice);
+
                 if ( ref_val >= pwl_info_indice && ref_val < (*indice_itr) )
                 {
-                    return ((*ratio_itr) - pwl_info_ratio) / ((*indice_itr) - pwl_info_indice) * (ref_val - pwl_info_indice) + pwl_info_ratio;
+                    return slope_factor * (ref_val - pwl_info_indice) + pwl_info_ratio;
                 }
                 else
                 {
@@ -714,6 +717,7 @@ AntennaChecker::get_pwl_factor(dbTechLayerAntennaRule::pwl_pair pwl_info, double
                     pwl_info_ratio = (*ratio_itr);
                 }
             }
+	    return slope_factor * (ref_val - pwl_info_indice) + pwl_info_ratio;
         }
     }
     else
@@ -765,6 +769,11 @@ AntennaChecker::calculate_PAR_table( std::vector<PARinfo>& PARtable )
             it->diff_PAR_value = ( metal_factor * it->wire_area * diff_metal_reduce_factor ) / it->iterm_areas[0];
             it->diff_PSR_value = ( side_metal_factor * it->side_wire_area * diff_metal_reduce_factor ) / ( it->iterm_areas[0] );
         }
+
+
+	//int x, y;
+	//wireroot->xy(x, y);
+	//fprintf(_out, "Wireroot - (%d, %d) - %s - wire area - %f - side wire area - %f - iterm areas - %f, %f - par - %f - psr - %f\n", x, y, tech_layer->getConstName(), it->wire_area, it->side_wire_area, it->iterm_areas[0], it->iterm_areas[1], it->PAR_value, it->PSR_value); 
     }
 }
 
@@ -912,6 +921,10 @@ AntennaChecker::build_VIA_PAR_table( std::vector<PARinfo> &VIA_PARtable, std::ve
             }
             PARinfo new_par = { *root_itr, iv.size(), 0.0, 0.0, {0.0, 0.0}, par, 0.0, diff_par, 0.0 };
             VIA_PARtable.push_back( new_par );
+
+            //int x, y;
+            //wireroot->xy(x, y);
+            //fprintf(_out, "VIA - (%d, %d) - via area - %f - iterm areas - (%f, %f) - par -%f - diff par - %f\n", x, y, via_area, iterm_areas[0], iterm_areas[1], par, diff_par);
         }
     }
 }
@@ -996,7 +1009,7 @@ AntennaChecker::build_VIA_CAR_table( std::vector<ARinfo> &VIA_CARtable, std::vec
 }
 
 
-bool
+std::pair<bool,bool>
 AntennaChecker::check_wire_PAR( ARinfo AntennaRatio )
 {
     dbTechLayer * layer = AntennaRatio.WirerootNode->layer();
@@ -1005,7 +1018,8 @@ AntennaChecker::check_wire_PAR( ARinfo AntennaRatio )
     double diff_par = AntennaRatio.diff_PAR_value;
     double diff_psr = AntennaRatio.diff_PSR_value;
     double diff_area = AntennaRatio.diff_area;
-
+    
+    bool checked = 0;
     bool if_violated = 0;
     
     if ( layer->hasDefaultAntennaRule() )
@@ -1033,6 +1047,7 @@ AntennaChecker::check_wire_PAR( ARinfo AntennaRatio )
                 fprintf( _out, "  Ratio:    0.00       (Area)\n" );
             else
             {
+		checked = 1;
                 if ( diff_par > diffPAR_PWL_ratio )
                 {
                     fprintf( _out, "*" );
@@ -1065,6 +1080,7 @@ AntennaChecker::check_wire_PAR( ARinfo AntennaRatio )
                 fprintf( _out, "  Ratio:    0.00       (S.Area)\n" );
             else
             {
+		checked = 1;
                 if ( diff_psr > diffPSR_PWL_ratio )
                 {
                     fprintf( _out, "*" );
@@ -1075,12 +1091,12 @@ AntennaChecker::check_wire_PAR( ARinfo AntennaRatio )
 	}
     }
 
-    return if_violated;
+    return {if_violated, checked};
 }
 
 
-bool
-AntennaChecker::check_wire_CAR( ARinfo AntennaRatio )
+std::pair<bool,bool>
+AntennaChecker::check_wire_CAR( ARinfo AntennaRatio, bool par_checked )
 {
     dbTechLayer * layer = AntennaRatio.WirerootNode->layer();
     double car = AntennaRatio.CAR_value;
@@ -1089,11 +1105,12 @@ AntennaChecker::check_wire_CAR( ARinfo AntennaRatio )
     double diff_csr = AntennaRatio.diff_CSR_value;
     double diff_area = AntennaRatio.diff_area;
 
+    bool checked = 0;
     bool if_violated = 0;
     if ( layer->hasDefaultAntennaRule() )
     {
         dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
-        double CAR_ratio = antenna_rule->getCAR();
+        double CAR_ratio = par_checked ? 0.0 : antenna_rule->getCAR();
         if ( CAR_ratio != 0 )
         {
             fprintf( _out, "  CAR: %7.2f", car );
@@ -1108,12 +1125,13 @@ AntennaChecker::check_wire_CAR( ARinfo AntennaRatio )
         {
             dbTechLayerAntennaRule::pwl_pair diffCAR = antenna_rule->getDiffCAR();
              
-	    double diffCAR_PWL_ratio = get_pwl_factor(diffCAR, diff_area, 0);
+	    double diffCAR_PWL_ratio = par_checked ? 0.0 : get_pwl_factor(diffCAR, diff_area, 0);
             fprintf( _out, "  CAR: %7.2f", car );
             if (diffCAR_PWL_ratio == 0)
                 fprintf( _out, "  Ratio:    0.00       (C.Area)\n" );
             else
             {
+		checked = 1;
                 if ( car > diffCAR_PWL_ratio )
                 {
                     fprintf( _out, "*" );
@@ -1124,7 +1142,7 @@ AntennaChecker::check_wire_CAR( ARinfo AntennaRatio )
 	}
 
 
-	double CSR_ratio = antenna_rule->getCSR();	 
+	double CSR_ratio = par_checked ? 0.0 : antenna_rule->getCSR();	 
         if ( CSR_ratio != 0 )
         {
             fprintf( _out, "  CAR: %7.2f", csr );
@@ -1139,13 +1157,13 @@ AntennaChecker::check_wire_CAR( ARinfo AntennaRatio )
         {
             dbTechLayerAntennaRule::pwl_pair diffCSR = antenna_rule->getDiffCSR();
 
-
-            double diffCSR_PWL_ratio = get_pwl_factor(diffCSR, diff_area, 0.0);
+            double diffCSR_PWL_ratio = par_checked ? 0.0 : get_pwl_factor(diffCSR, diff_area, 0.0);
             fprintf( _out, "  CAR: %7.2f", diff_csr );
             if (diffCSR_PWL_ratio == 0)
                 fprintf( _out, "  Ratio:    0.00       (C.S.Area)\n" );
             else
             {
+		checked = 1;
                 if ( diff_csr > diffCSR_PWL_ratio )
                 {
                     fprintf( _out, "*" );
@@ -1156,7 +1174,7 @@ AntennaChecker::check_wire_CAR( ARinfo AntennaRatio )
 
         }
     }
-    return if_violated;
+    return {if_violated, checked};
 }
 
 bool
@@ -1192,7 +1210,7 @@ AntennaChecker::check_VIA_PAR( ARinfo AntennaRatio )
                 fprintf( _out, "  Ratio:    0.00       (Area)\n" );
             else
             {
-                if ( par > diffPAR_PWL_ratio )
+                if ( diff_par > diffPAR_PWL_ratio )
                 {
                     fprintf( _out, "*" );
                     if_violated = 1;
@@ -1360,9 +1378,9 @@ AntennaChecker::GetAntennaRatio()
                     if( ar.GateNode == gate )
                     {
                         fprintf( _out, "[1]  %s:\n", ar.WirerootNode->layer()->getConstName());
-                        bool wire_PAR_violation = check_wire_PAR( ar );
-                        bool wire_CAR_violation = check_wire_CAR( ar );
-                        if ( wire_PAR_violation || wire_CAR_violation )
+                        auto wire_PAR_violation = check_wire_PAR( ar );
+                        auto wire_CAR_violation = check_wire_CAR( ar, wire_PAR_violation.second );
+                        if ( wire_PAR_violation.first || wire_CAR_violation.first )
                             if_violated_wire = 1;
 
                         fprintf( _out, "\n");
