@@ -1109,13 +1109,16 @@ Resizer::repairHoldViolations(VertexSet &ends,
   int repair_count = 1;
   int pass = 1;
   Slack worst_slack = findHoldViolations(ends);
+  float buffer_delay = bufferDelay(buffer_cell);
   while (!ends.empty()
 	 // Make sure we are making progress.
 	 && repair_count > 0) {
-    repair_count = repairHoldPass(ends, buffer_cell);
-    debugPrint4(debug_, "repair_hold", 1, "pass %d worst slack %s ends %lu inserted %d\n",
+    int min_buffer_count = max(static_cast<int>(abs(worst_slack / buffer_delay)), 10);
+    repair_count = repairHoldPass(ends, min_buffer_count, buffer_cell);
+    debugPrint5(debug_, "repair_hold", 1, "pass %d worst slack %s (%d buffers) ends %lu inserted %d\n",
 		pass,
 		units_->timeUnit()->asString(worst_slack, 3),
+		min_buffer_count,
 		ends.size(),
 		repair_count);
     sta_->findRequireds();
@@ -1130,6 +1133,7 @@ Resizer::repairHoldViolations(VertexSet &ends,
 
 int
 Resizer::repairHoldPass(VertexSet &ends,
+			int min_buffer_count,
 			LibertyCell *buffer_cell)
 {
   VertexWeightMap weight_map;
@@ -1138,8 +1142,7 @@ Resizer::repairHoldPass(VertexSet &ends,
   sortFaninsByWeight(weight_map, fanins);
   
   int repair_count = 0;
-  int max_repair_count = max(10, static_cast<int>(ends.size() * .1));
-  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {
+  for(int i = 0; i < fanins.size() && repair_count < min_buffer_count ; i++) {
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
@@ -2083,6 +2086,20 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   Slew slews[RiseFall::index_count];
   gateDelays(output, load_cap, gate_delays, slews);
   return gate_delays[rf->index()];
+}
+
+// Self delay; buffer -> buffer
+float
+Resizer::bufferDelay(LibertyCell *buffer_cell)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  ArcDelay gate_delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  float load_cap = input->capacitance();
+  gateDelays(output, load_cap, gate_delays, slews);
+  return max(gate_delays[RiseFall::riseIndex()],
+	     gate_delays[RiseFall::fallIndex()]);
 }
 
 // Rise/fall delays across all timing arcs into drvr_port.

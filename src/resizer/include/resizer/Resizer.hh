@@ -252,6 +252,7 @@ protected:
   float bufferDelay(LibertyCell *buffer_cell,
 		    RiseFall *rf,
 		    float load_cap);
+  float bufferDelay(LibertyCell *buffer_cell);
   Parasitic *makeWireParasitic(Net *net,
 			       Pin *drvr_pin,
 			       Pin *load_pin,
@@ -281,6 +282,7 @@ protected:
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,
+		     int min_buffer_count,
 		     LibertyCell *buffer_cell);
   void sortFaninsByWeight(VertexWeightMap &weight_map,
 			  // Return value.
