@@ -38,6 +38,8 @@
 
 #include "Util.h"
 
+#include "db.h"
+
 #include <deque>
 #include <functional>
 #include <cassert>
@@ -94,7 +96,7 @@ public:
                 
                 void setLeafLevel(bool isLeaf) { _leafLevel = isLeaf; }
                 bool isLeafLevel() const { return _leafLevel; }
-                
+
                 void addInst(ClockInst& inst) { 
                         _instances.push_back(&inst);
                         _mapInstToIdx[&inst] = _instances.size() - 1;
@@ -182,6 +184,14 @@ public:
                 }
         }
 
+        
+        void setMaxLevel(unsigned level) { _numLevels = level; }
+        unsigned getMaxLevel() const { return _numLevels; }
+
+        void setNetObj(odb::dbNet* net) { _netObj = net; }
+        odb::dbNet* getNetObj() { return _netObj; }
+                
+
 private:
         std::string _netName;
         std::string _clockPin;
@@ -191,6 +201,10 @@ private:
         std::deque<ClockInst> _sinks;
         std::deque<ClockInst> _clockBuffers;
         std::deque<SubNet>    _subNets;
+
+        odb::dbNet* _netObj;
+
+        unsigned _numLevels = 0;
 
 };
 

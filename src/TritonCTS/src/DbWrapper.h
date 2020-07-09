@@ -64,7 +64,7 @@ public:
         bool masterExists(const std::string& master) const;
 
         void populateTritonCTS();
-        void writeClockNetsToDb(const Clock& clockNet);
+        void writeClockNetsToDb(Clock& clockNet);
 
         void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
         void clearNumClocks() { _numberOfClocks = 0; }
@@ -85,7 +85,8 @@ private:
         void initAllClocks();
         void initClock(odb::dbNet* net);
         
-        void disconnectAllSinksFromNet(std::string netName);
+        void disconnectAllSinksFromNet(odb::dbNet* net);
+        void disconnectAllPinsFromNet(odb::dbNet* net);
         void createClockBuffers(const Clock& clk);
         void removeNonClockNets();
         void computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const;

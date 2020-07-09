@@ -71,6 +71,8 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
+        void setAutoLut(bool enable) { _autoLutEnable = enable; } 
+        bool runAutoLut() const { return _autoLutEnable; }
         void setOnlyCharacterization(bool enable) { _onlyCharacterization = enable; } 
         bool getOnlyCharacterization() const { return _onlyCharacterization; }
         void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
@@ -135,6 +137,7 @@ private:
         unsigned    _dbId                       = 0;
         bool        _plotSolution               = false;
         bool        _onlyCharacterization       = false;
+        bool        _autoLutEnable              = true;
         unsigned    _numMaxLeafSinks            = 15;
         unsigned    _maxSlew                    = 4;
         double      _maxCharSlew                = 0;

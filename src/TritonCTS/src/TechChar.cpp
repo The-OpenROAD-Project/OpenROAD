@@ -260,6 +260,10 @@ void TechChar::parseSolList(const std::string& file) {
         std::cout << " Reading solution list file \"" << file << "\"\n";
         std::ifstream solFile(file.c_str());
 
+        if (!solFile.is_open()) {
+                error("Could not find sol_list file.\n");
+        }
+
         unsigned solIdx = 0;
         std::string line;
         

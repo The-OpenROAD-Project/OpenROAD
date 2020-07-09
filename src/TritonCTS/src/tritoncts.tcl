@@ -67,13 +67,21 @@ proc clock_tree_synthesis { args } {
   $cts set_only_characterization [info exists flags(-characterization_only)]
 
   if { [info exists keys(-lut_file)] } {
+    if { ![info exists keys(-sol_list)] } {
+      ord::error "Missing argument -sol_list"
+    }
 	  set lut $keys(-lut_file)
     $cts set_lut_file $lut 
+    $cts set_auto_lut 0
   } 
  
   if { [info exists keys(-sol_list)] } {
+    if { ![info exists keys(-lut_file)] } {
+      ord::error "Missing argument -lut_file"
+    }
 	  set sol_list $keys(-sol_list)
     $cts set_sol_list_file $sol_list
+    $cts set_auto_lut 0
   } 
 
   if { [info exists keys(-buf_list)] } {
