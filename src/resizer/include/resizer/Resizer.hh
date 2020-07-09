@@ -272,6 +272,7 @@ protected:
 			// Return value.
 			VertexWeightMap &weight_map);
   float slackGap(Vertex *vertex);
+  void findHoldViolations(VertexSet &ends);
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,

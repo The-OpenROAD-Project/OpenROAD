@@ -1078,23 +1078,16 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
-  VertexSet hold_failures;
+  VertexSet hold_failures = *sta_->search()->endpoints();
   // Find endpoints with hold violation.
-  for (Vertex *end : *sta_->search()->endpoints()) {
-    if (!search->isClock(end)
-	&& sta_->vertexSlack(end, MinMax::min()) < 0.0)
-      hold_failures.insert(end);
-  }
-  if (hold_failures.size() > 0)
+  findHoldViolations(hold_failures);
+  if (hold_failures.size() > 0) {
     printf("Found %lu endpoints with hold violations.\n",
 	   hold_failures.size());
+    repairHoldViolations(hold_failures, buffer_cell);
+  }
   else
     printf("No hold violations found.\n");
-  if (debug_->check("repair_hold", 2)) {
-    for (Vertex *end : hold_failures)
-      printf(" %s\n", end->name(sdc_network_));
-  }
-  repairHoldViolations(hold_failures, buffer_cell);
 }
 
 // For testing/debug.
@@ -1116,23 +1109,14 @@ Resizer::repairHoldViolations(VertexSet &ends,
 			      LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
-  Slack worst_slack;
-  Vertex *worst_vertex;
-  sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
-  debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
-	      units_->timeUnit()->asString(worst_slack, 3));
   int repair_count = 1;
-
   int pass = 1;
-  while (worst_slack < 0.0
+  while (!ends.empty()
 	 // Make sure we are making progress.
 	 && repair_count > 0) {
     debugPrint1(debug_, "repair_hold", 1, "pass %d\n", pass);
     repair_count = repairHoldPass(ends, buffer_cell);
     sta_->findRequireds();
-    sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
-    debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
-		units_->timeUnit()->asString(worst_slack, 3));
     pass++;
   }
   if (inserted_buffer_count_ > 0) {
@@ -1145,13 +1129,15 @@ int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
+  findHoldViolations(ends);
   VertexWeightMap weight_map;
   findFaninWeights(ends, weight_map);
   VertexSeq fanins;
   sortFaninsByWeight(weight_map, fanins);
   
   int repair_count = 0;
-  for(int i = 0; i < fanins.size() && repair_count < 10 ; i++) {
+  int max_repair_count = max(10, static_cast<int>(ends.size() * .1));                  
+  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {         
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
@@ -1179,46 +1165,34 @@ Resizer::repairHoldPass(VertexSet &ends,
 }
 
 void
-Resizer::makeHoldDelay(Pin *drvr_pin,
-		       Slack hold_slack,
-		       LibertyCell *buffer_cell)
+Resizer::findHoldViolations(VertexSet &ends)
 {
-  Instance *parent = db_network_->topInstance();
-  string net2_name = makeUniqueNetName();
-  string buffer_name = makeUniqueInstName("hold");
-  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-					       buffer_name.c_str(),
-					       parent);
-  inserted_buffer_count_++;
-  design_area_ += area(db_network_->cell(buffer_cell));
-
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
-	      sdc_network_->pathName(drvr_pin),
-	      buffer_name.c_str(),
-	      net2_name.c_str())
-  Instance *drvr = db_network_->instance(drvr_pin);
-  Port *drvr_port = db_network_->port(drvr_pin);
-  Net *net = network_->isTopLevelPort(drvr_pin)
-    ? db_network_->net(db_network_->term(drvr_pin))
-    : db_network_->net(drvr_pin);
-  sta_->disconnectPin(drvr_pin);
-  sta_->connectPin(drvr, drvr_port, net2);
-  sta_->connectPin(buffer, input, net2);
-  sta_->connectPin(buffer, output, net);
-  setLocation(buffer, db_network_->location(drvr_pin));
-  if (have_estimated_parasitics_) {
-    estimateWireParasitic(net);
-    estimateWireParasitic(net2);
+  Search *search = sta_->search();
+  Slack worst_slack = INF;
+  // Cannot use range iteration because we are removing elements from ends.
+  auto end_iter = ends.begin();
+  while (end_iter != ends.end()) {
+    Vertex *end = *end_iter;
+    Slack slack = sta_->vertexSlack(end, MinMax::min());
+    if (!search->isClock(end)
+	&& fuzzyLess(slack, 0.0)) {
+      debugPrint1(debug_, "repair_hold", 1,
+		  " %s\n", end->name(sdc_network_));
+      if (slack < worst_slack)
+	worst_slack = slack;
+      end_iter++;
+    }
+    else
+      end_iter = ends.erase(end_iter);
   }
+  debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
+	      units_->timeUnit()->asString(worst_slack, 3));
 }
 
 void
 Resizer::findFaninWeights(VertexSet &ends,
-			  // Return value.
-			  VertexWeightMap &weight_map)
+			// Return value.
+			VertexWeightMap &weight_map)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
@@ -1260,6 +1234,43 @@ Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
 		 }
 		 else
 		   return w1 < w2;});
+}
+
+void
+Resizer::makeHoldDelay(Pin *drvr_pin,
+		       Slack hold_slack,
+		       LibertyCell *buffer_cell)
+{
+  Instance *parent = db_network_->topInstance();
+  string net2_name = makeUniqueNetName();
+  string buffer_name = makeUniqueInstName("hold");
+  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+  Instance *buffer = db_network_->makeInstance(buffer_cell,
+					       buffer_name.c_str(),
+					       parent);
+  inserted_buffer_count_++;
+  design_area_ += area(db_network_->cell(buffer_cell));
+
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
+	      sdc_network_->pathName(drvr_pin),
+	      buffer_name.c_str(),
+	      net2_name.c_str())
+  Instance *drvr = db_network_->instance(drvr_pin);
+  Port *drvr_port = db_network_->port(drvr_pin);
+  Net *net = network_->isTopLevelPort(drvr_pin)
+    ? db_network_->net(db_network_->term(drvr_pin))
+    : db_network_->net(drvr_pin);
+  sta_->disconnectPin(drvr_pin);
+  sta_->connectPin(drvr, drvr_port, net2);
+  sta_->connectPin(buffer, input, net2);
+  sta_->connectPin(buffer, output, net);
+  setLocation(buffer, db_network_->location(drvr_pin));
+  if (have_estimated_parasitics_) {
+    estimateWireParasitic(net);
+    estimateWireParasitic(net2);
+  }
 }
 
 // Gap between min setup and hold slacks.
