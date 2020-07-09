@@ -91,7 +91,7 @@ public:
     	return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
 	}
 
-	void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&) const;
+  void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&, const vector<pair<float, float>>&, int) const;
 };
 
 }

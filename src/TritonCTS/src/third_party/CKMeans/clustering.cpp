@@ -261,9 +261,10 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
         // always use mode 1
         unsigned update_mode = 1;
 
-        if (verbose > 1) 
+        if (verbose > 1)
         	cout << "move .." << endl;
         float delta = 0;
+        // const vector<pair<float, float>> pre_means(means);
         if (update_mode == 0) {
             // LP-based tray movement
             // delta = LPMove(means, CAP, IDX);
@@ -284,8 +285,8 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
 					means[i] = make_pair(sum_x/clusters[i].size(), sum_y/clusters[i].size());
 					delta += abs(pre_x - means[i].first) + abs(pre_y - means[i].second);
 				} else {
-					cout << "WARNING: Empty cluster [" << i << "] " << 
-						"in a level with " << clusters.size() << " clusters.\n"; 
+					cout << "WARNING: Empty cluster [" << i << "] " <<
+						"in a level with " << clusters.size() << " clusters.\n";
 				}
             }
         }
@@ -299,7 +300,7 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
 //            	}
 //            	cout << endl;
 //        	}
-			//plotClusters(clusters, means);
+//              plotClusters(clusters, means, pre_means, iter);
 //        }
 		
 		this->clusters = clusters;
@@ -355,14 +356,14 @@ float clustering::calcSilh(const vector<pair<float, float>>& means, unsigned CAP
         }
         float temp = max(out_d, in_d);
         if (temp == 0) {
-            if (out_d == 0) 
+            if (out_d == 0)
                 f->silhs[IDX] = -1;
-            if (in_d == 0) 
+            if (in_d == 0)
                 f->silhs[IDX] =  1;
         } else  {
             f->silhs[IDX] = (out_d - in_d) / temp;
         }
-        sum_silh += f->silhs[IDX]; 
+        sum_silh += f->silhs[IDX];
     }
     return sum_silh / flops.size();
 }
@@ -370,7 +371,7 @@ float clustering::calcSilh(const vector<pair<float, float>>& means, unsigned CAP
 /*** Min-Cost Flow ********************************************************/
 void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned CAP, unsigned IDX, float DIST) {
 	int remaining = flops.size() % means.size();
-    
+
 	ListDigraph g;
     // collection of nodes in the flow
     vector<ListDigraph::Node> f_nodes, c_nodes;
@@ -472,12 +473,12 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
 		}
     }
 
-    for (unsigned i = 0; i < f_nodes.size(); ++i) 
+    for (unsigned i = 0; i < f_nodes.size(); ++i)
         node_map[f_nodes[i]] = make_pair(i, make_pair(-1,-1));
-//    for (unsigned i = 0; i < s_nodes.size(); ++i) 
-//        for (unsigned j = 0; j < CAP; ++j) 
+//    for (unsigned i = 0; i < s_nodes.size(); ++i)
+//        for (unsigned j = 0; j < CAP; ++j)
 //            node_map[s_nodes[i][j]] = make_pair(-1, make_pair(i,j));
-    for (unsigned i = 0; i < c_nodes.size(); ++i) 
+    for (unsigned i = 0; i < c_nodes.size(); ++i)
         node_map[c_nodes[i]] = make_pair(-1, make_pair(i,0));
     node_map[s] = make_pair(-2, make_pair(-2, -2));
     node_map[t] = make_pair(-2, make_pair(-2, -2));
@@ -500,7 +501,7 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
 
     for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
         if (f_sol[it] != 0) {
-            if (node_map[g.source(it)].second.first == -1 
+            if (node_map[g.source(it)].second.first == -1
             && node_map[g.target(it)].first == -1) {
                 if (verbose > 1) {
                 cout << "Flow from: flop_" << node_map[g.source(it)].first;
@@ -512,14 +513,17 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
             }
         }
     }
-    if (verbose > 1) 
+    if (verbose > 1)
     cout << endl;
 }
 
-void clustering::plotClusters(const vector<vector<flop*>>& clusters, const vector<pair<float, float>>& means) const {
+void clustering::plotClusters(const vector<vector<flop*>>& clusters,
+                              const vector<pair<float, float>>& means,
+                              const vector<pair<float, float>>& pre_means,
+                              int iter) const {
 	ofstream fout;
     stringstream  sol_ss;
-    sol_ss << plotFile;
+    sol_ss << plotFile <<  "__" << iter << ".py";
     fout.open(sol_ss.str());
     fout << "#! /home/kshan/anaconda2/bin/python" << endl << endl;
     fout << "import numpy as np" << endl;
@@ -530,34 +534,41 @@ void clustering::plotClusters(const vector<vector<flop*>>& clusters, const vecto
     fout << "from matplotlib.collections import PatchCollection" << endl;
 
     fout << endl;
-    //fout << "fig, ax = plt.subplots()" << endl;
+    fout << "fig, ax = plt.subplots()" << endl;
     fout << "patches = []" << endl;
 
-	//std::array<char, 6> colors = {'b', 'r', 'g', 'm', 'c', 'y'};
-	//for (size_t i = 0; i < clusters.size(); i++) {
-	//	//std::cout << "clusters " << i << "\n";
-	//	for (size_t j = 0; j < clusters[i].size(); j++) {
-	//		fout << "plt.scatter(" << clusters[i][j]->x << ", " 
-	//			<< clusters[i][j]->y << ", color=\'" << colors[i % colors.size()] << "\')\n";
-	//		
-	//		if (clusters[i][j]->x < means[i].first) {
-	//			fout << "plt.plot([" << clusters[i][j]->x << ", "  << means[i].first << 
-	//				"], [" << clusters[i][j]->y << ", " << means[i].second << 
-	//				"], color = '" << colors[i % colors.size()] << "')\n";
-	//		} else {
-	//			fout << "plt.plot([" << means[i].first << ", "  << clusters[i][j]->x  << 
-	//				"], [" << means[i].second << ", " <<  clusters[i][j]->y<< 
-	//				"], color = '" << colors[i % colors.size()] << "')\n";
-	//		}
-	//	}
-	//}
+	std::array<char, 6> colors = {'b', 'r', 'g', 'm', 'c', 'y'};
+	for (size_t i = 0; i < clusters.size(); i++) {
+		std::cout << "clusters " << i << "\n";
+		for (size_t j = 0; j < clusters[i].size(); j++) {
+			fout << "plt.scatter(" << clusters[i][j]->x << ", "
+				<< clusters[i][j]->y << ", color=\'" << colors[i % colors.size()] << "\')\n";
+
+			if (clusters[i][j]->x < means[i].first) {
+				fout << "plt.plot([" << clusters[i][j]->x << ", "  << means[i].first <<
+					"], [" << clusters[i][j]->y << ", " << means[i].second <<
+					"], color = '" << colors[i % colors.size()] << "')\n";
+			} else {
+				fout << "plt.plot([" << means[i].first << ", "  << clusters[i][j]->x  <<
+					"], [" << means[i].second << ", " <<  clusters[i][j]->y<<
+					"], color = '" << colors[i % colors.size()] << "')\n";
+			}
+		}
+	}
 
 	for (size_t i = 0; i < means.size(); i++) {
-		fout << "plt.scatter(" << means[i].first << ", " 
+		fout << "plt.scatter(" << means[i].first << ", "
 			<< means[i].second << ", color=\'k\')\n"; 	
 	}
 
-	fout << "plt.show()"; 
+	for (size_t i = 0; i < pre_means.size(); i++) {
+		fout << "plt.scatter(" << pre_means[i].first << ", "
+			<< pre_means[i].second << ", color=\'g\')\n";
+	}
+
+        fout << "plt.scatter(" << branchingPoint.first << ", "
+             << branchingPoint.second << ", color=\'y\')\n";
+	fout << "plt.show()";
 	fout.close();
 };
 
@@ -568,7 +579,7 @@ void clustering::getClusters(vector<vector<unsigned>>& newClusters) {
                 newClusters[i].resize(clusters[i].size());
 	        for(unsigned j = 0; j < clusters[i].size(); ++j) {
 			newClusters[i][j] = clusters[i][j]->sinkIdx;
-		} 
+		}
 	}
 }
 

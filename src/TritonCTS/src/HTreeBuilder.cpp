@@ -363,7 +363,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(LevelTopology& topology,
         CKMeans::clustering clusteringEngine(sinks, rootLocation.getX(), rootLocation.getY());
         clusteringEngine.setPlotFileName("plot_" + std::to_string(level) + "_" + 
                                          std::to_string(branchPtIdx1) + "_" + 
-                                         std::to_string(branchPtIdx2) + ".py");
+                                         std::to_string(branchPtIdx2));
         
         Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
         Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
