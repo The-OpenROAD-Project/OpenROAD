@@ -809,15 +809,12 @@ Resizer::findClkNets()
 {
   ClkArrivalSearchPred srch_pred(this);
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
-  PinSet clk_pins;
-  search_->findClkVertexPins(clk_pins);
-  for (Pin *pin : clk_pins) {
-    Vertex *vertex, *bidirect_drvr_vertex;
-    graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
-    bfs.enqueue(vertex);
-    if (bidirect_drvr_vertex)
-      bfs.enqueue(bidirect_drvr_vertex);
-  }  
+  for (Clock *clk : sdc_->clks()) {
+    for (Pin *pin : clk->leafPins()) {
+      Vertex *vertex = graph_->pinDrvrVertex(pin);
+      bfs.enqueue(vertex);
+    }
+  }
   while (bfs.hasNext()) {
     Vertex *vertex = bfs.next();
     const Pin *pin = vertex->pin();
@@ -1111,12 +1108,18 @@ Resizer::repairHoldViolations(VertexSet &ends,
   inserted_buffer_count_ = 0;
   int repair_count = 1;
   int pass = 1;
+  Slack worst_slack = findHoldViolations(ends);
   while (!ends.empty()
 	 // Make sure we are making progress.
 	 && repair_count > 0) {
-    debugPrint1(debug_, "repair_hold", 1, "pass %d\n", pass);
     repair_count = repairHoldPass(ends, buffer_cell);
+    debugPrint4(debug_, "repair_hold", 1, "pass %d worst slack %s ends %lu inserted %d\n",
+		pass,
+		units_->timeUnit()->asString(worst_slack, 3),
+		ends.size(),
+		repair_count);
     sta_->findRequireds();
+    worst_slack = findHoldViolations(ends);
     pass++;
   }
   if (inserted_buffer_count_ > 0) {
@@ -1129,15 +1132,14 @@ int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
-  findHoldViolations(ends);
   VertexWeightMap weight_map;
   findFaninWeights(ends, weight_map);
   VertexSeq fanins;
   sortFaninsByWeight(weight_map, fanins);
   
   int repair_count = 0;
-  int max_repair_count = max(10, static_cast<int>(ends.size() * .1));                  
-  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {         
+  int max_repair_count = max(10, static_cast<int>(ends.size() * .1));
+  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
@@ -1164,7 +1166,7 @@ Resizer::repairHoldPass(VertexSet &ends,
   return repair_count;
 }
 
-void
+Slack
 Resizer::findHoldViolations(VertexSet &ends)
 {
   Search *search = sta_->search();
@@ -1176,8 +1178,8 @@ Resizer::findHoldViolations(VertexSet &ends)
     Slack slack = sta_->vertexSlack(end, MinMax::min());
     if (!search->isClock(end)
 	&& fuzzyLess(slack, 0.0)) {
-      debugPrint1(debug_, "repair_hold", 1,
-		  " %s\n", end->name(sdc_network_));
+      debugPrint1(debug_, "repair_hold", 3, " %s\n",
+		  end->name(sdc_network_));
       if (slack < worst_slack)
 	worst_slack = slack;
       end_iter++;
@@ -1185,8 +1187,7 @@ Resizer::findHoldViolations(VertexSet &ends)
     else
       end_iter = ends.erase(end_iter);
   }
-  debugPrint1(debug_, "repair_hold", 1, "worst_slack=%s\n",
-	      units_->timeUnit()->asString(worst_slack, 3));
+  return worst_slack;
 }
 
 void
@@ -2369,6 +2370,64 @@ Resizer::writeNetSVG(Net *net,
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree)
     tree->writeSVG(sdc_network_, filename);
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::repairClkInverters()
+{
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
+  ensureBlock();
+  InstanceSeq clk_inverters;
+  findClkInverters(clk_inverters);
+  for (Instance *inv : clk_inverters)
+    cloneClkInverter(inv);
+}
+
+void
+Resizer::findClkInverters(// Return values
+			  InstanceSeq &clk_inverters)
+{
+  ClkArrivalSearchPred srch_pred(this);
+  BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
+  for (Clock *clk : sdc_->clks()) {
+    for (Pin *pin : clk->leafPins()) {
+      Vertex *vertex = graph_->pinDrvrVertex(pin);
+      bfs.enqueue(vertex);
+    }
+  }
+  while (bfs.hasNext()) {
+    Vertex *vertex = bfs.next();
+    const Pin *pin = vertex->pin();
+    Instance *inst = network_->instance(pin);
+    LibertyCell *lib_cell = network_->libertyCell(inst);
+    if (vertex->isDriver(network_)
+	&& lib_cell
+	&& lib_cell->isInverter()) {
+      clk_inverters.push_back(inst);
+      debugPrint1(debug_, "repair_clk_inverters", 2, "inverter %s\n",
+		  network_->pathName(inst));
+    }
+    if (!vertex->isRegClk())
+      bfs.enqueueAdjacentVertices(vertex);
+  }
+}
+
+void
+Resizer::cloneClkInverter(Instance *inv)
+{
+  LibertyCell *inv_cell = network_->libertyCell(inv);
+  LibertyPort *input_port, *output_port;
+  inv_cell->bufferPorts(input_port, output_port);
+  Pin *in_pin = network_->findPin(inv, input_port);
+  Pin *out_pin = network_->findPin(inv, output_port);
+  Net *in_net = network_->net(in_pin);
+  // Net *out_net = network_->net(out_pin);
+  
 }
 
 }
