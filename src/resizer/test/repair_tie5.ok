@@ -13,9 +13,9 @@ Notice 0:     Created 5 components and 23 component-terminals.
 Notice 0:     Created 1 nets and 5 connections.
 Notice 0: Finished DEF file: repair_tie5.def
 Inserted 4 tie LOGIC1_X1 instances.
-t1_1 2.1 0.8
-t1_2 4.1 0.8
-t1_3 15.0 4.2
-t1_4 45.0 4.2
+2.1 0.8
+4.1 0.8
+15.0 4.2
+45.0 4.2
 pad1 outside of core
 pad2 outside of core

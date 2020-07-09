@@ -11,5 +11,5 @@ Notice 0:     Created 2 components and 7 component-terminals.
 Notice 0:     Created 1 nets and 2 connections.
 Notice 0: Finished DEF file: repair_tie6.def
 Inserted 2 tie LOGIC1_X1 instances.
-t1_1 1.1 1.1
-t1_2 10.1 10.6
+1.1 1.1
+10.1 10.6
