@@ -31,7 +31,7 @@ END SPECIALNETS
 NETS 10 ;
 - in1 ( PIN in1 ) ( r1 D ) ( r2 D ) + USE SIGNAL ;
 - clk1 ( PIN clk1 ) ( r1 CK ) ( c1 A ) + USE SIGNAL ;
-- clk2 ( c1 Z ) ( r2 CK ) ( r3 CK ) + USE SIGNAL ;
+- clk2 ( c1 ZN ) ( r2 CK ) ( r3 CK ) + USE SIGNAL ;
 - r1q ( r1 Q ) ( u2 A1 ) + USE SIGNAL ;
 - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
 - u1z ( u2 A2 ) ( u1 Z ) + USE SIGNAL ;

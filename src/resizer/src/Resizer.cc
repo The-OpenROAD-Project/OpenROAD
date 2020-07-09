@@ -2421,13 +2421,48 @@ void
 Resizer::cloneClkInverter(Instance *inv)
 {
   LibertyCell *inv_cell = network_->libertyCell(inv);
-  LibertyPort *input_port, *output_port;
-  inv_cell->bufferPorts(input_port, output_port);
-  Pin *in_pin = network_->findPin(inv, input_port);
-  Pin *out_pin = network_->findPin(inv, output_port);
+  LibertyPort *in_port, *out_port;
+  inv_cell->bufferPorts(in_port, out_port);
+  Pin *in_pin = network_->findPin(inv, in_port);
+  Pin *out_pin = network_->findPin(inv, out_port);
   Net *in_net = network_->net(in_pin);
-  // Net *out_net = network_->net(out_pin);
-  
+  Net *out_net = network_->isTopLevelPort(out_pin)
+    ? network_->net(network_->term(out_pin))
+    : network_->net(out_pin);
+  if (out_net) {
+    const char *inv_name = network_->name(inv);
+    Instance *top_inst = network_->topInstance();
+    NetConnectedPinIterator *load_iter = network_->pinIterator(out_net);
+    while (load_iter->hasNext()) {
+      Pin *load_pin = load_iter->next();
+      if (load_pin != out_pin) {
+	string clone_name = makeUniqueInstName(inv_name, true);
+	Instance *clone = sta_->makeInstance(clone_name.c_str(),
+					     inv_cell, top_inst);
+	Point clone_loc = db_network_->location(load_pin);
+	setLocation(clone, clone_loc);
+
+	string clone_out_net_name = makeUniqueNetName();
+	Net *clone_out_net = db_network_->makeNet(clone_out_net_name.c_str(), top_inst);
+
+	Instance *load = network_->instance(load_pin);
+	sta_->connectPin(clone, in_port, in_net);
+	sta_->connectPin(clone, out_port, clone_out_net);
+
+	// Connect load to clone
+	sta_->disconnectPin(load_pin);
+	Port *load_port = network_->port(load_pin);
+	sta_->connectPin(load, load_port, clone_out_net);
+      }
+    }
+    delete load_iter;
+
+    // Delete inv
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteNet(out_net);
+    sta_->deleteInstance(inv);
+  }
 }
 
-}
+} // namespace sta

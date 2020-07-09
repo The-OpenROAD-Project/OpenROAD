@@ -13,6 +13,7 @@ record_tests {
   resize3
   remove_buffers1
   repair_clk_nets1
+  repair_clk_inverters1
   repair_cap1
   repair_cap2
   repair_fanout1
