@@ -52,3 +52,4 @@ Driver pins
 
 Load pins
  r3/CK input (DFF_X1) r 0.95 f 0.86 (302, 301)
+CLOCK

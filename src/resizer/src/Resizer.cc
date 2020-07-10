@@ -2446,6 +2446,7 @@ Resizer::cloneClkInverter(Instance *inv)
   Pin *in_pin = network_->findPin(inv, in_port);
   Pin *out_pin = network_->findPin(inv, out_port);
   Net *in_net = network_->net(in_pin);
+  dbNet *in_net_db = db_network_->staToDb(in_net);
   Net *out_net = network_->isTopLevelPort(out_pin)
     ? network_->net(network_->term(out_pin))
     : network_->net(out_pin);
@@ -2464,6 +2465,8 @@ Resizer::cloneClkInverter(Instance *inv)
 
 	string clone_out_net_name = makeUniqueNetName();
 	Net *clone_out_net = db_network_->makeNet(clone_out_net_name.c_str(), top_inst);
+	dbNet *clone_out_net_db = db_network_->staToDb(clone_out_net);
+	clone_out_net_db->setSigType(in_net_db->getSigType());
 
 	Instance *load = network_->instance(load_pin);
 	sta_->connectPin(clone, in_port, in_net);
