@@ -120,6 +120,11 @@ public:
   // no max_fanout/max_cap checks.
   void repairClkNets(double max_wire_length, // meters
 		     LibertyCell *buffer_cell);
+  // Clone inverters next to the registers they drive to remove them
+  // from the clock network.
+  // yosys is too stupid to use the inverted clock registers
+  // and TritonCTS is too stupid to balance clock networks with inverters.
+  void repairClkInverters();
   // for debugging
   void repairNet(Net *net,
 		 double max_wire_length, // meters
@@ -247,6 +252,7 @@ protected:
   float bufferDelay(LibertyCell *buffer_cell,
 		    RiseFall *rf,
 		    float load_cap);
+  float bufferDelay(LibertyCell *buffer_cell);
   Parasitic *makeWireParasitic(Net *net,
 			       Pin *drvr_pin,
 			       Pin *load_pin,
@@ -272,6 +278,7 @@ protected:
 			// Return value.
 			VertexWeightMap &weight_map);
   float slackGap(Vertex *vertex);
+  Slack findHoldViolations(VertexSet &ends);
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,
@@ -293,6 +300,9 @@ protected:
   Point tieLocation(Pin *load,
 		    int separation);
   bool hasFanout(Vertex *drvr);
+  void findClkInverters(// Return values
+			InstanceSeq &clk_inverters);
+  void cloneClkInverter(Instance *inv);
 
   float wire_res_;
   float wire_cap_;

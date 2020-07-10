@@ -247,6 +247,13 @@ proc repair_clock_nets { args } {
   repair_clk_nets_cmd $max_wire_length $buffer_cell
 }
 
+define_cmd_args "repair_clock_inverters" {-buffer_cell buffer_cell}
+
+proc repair_clock_inverters { args } {
+  check_argc_eq0 "repair_clock_inverters" $args
+  repair_clk_inverters_cmd
+}
+
 define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
 
 proc repair_tie_fanout { args } {

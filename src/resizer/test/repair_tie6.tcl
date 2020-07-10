@@ -1,4 +1,4 @@
-# repair_tie_fanout tie hi output port
+# repair_tie_fanout output port
 source "helpers.tcl"
 source "resizer_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

@@ -10,8 +10,14 @@ estimate_parasitics -placement
 sta::set_pi_model u3/Z 0 0 0
 sta::set_elmore u3/Z out1 0
 
+foreach net_name {in1 n2 n2} {
+  [sta::sta_to_db_net [get_net $net_name]] setSigType CLOCK
+}
+
 # wire length = 1500u -> 2 buffers required
 repair_clock_nets -max_wire_length 600 -buffer_cell BUF_X1
+
+puts [[sta::sta_to_db_net [get_net net2]] getSigType]
 
 report_long_wires 4
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1

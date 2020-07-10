@@ -321,6 +321,14 @@ repair_clk_nets_cmd(float max_length,
 }
 
 void
+repair_clk_inverters_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairClkInverters();
+}
+
+void
 repair_net_cmd(Net *net,
 	       float max_length,
 	       LibertyCell *buffer_cell)
