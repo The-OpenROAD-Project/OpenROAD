@@ -1770,6 +1770,9 @@ Resizer::makeRepeater(int x,
     string buffer_out_name = makeUniqueNetName();
     Instance *parent = db_network_->topInstance();
     Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+    dbNet *buffer_out_db = db_network_->staToDb(buffer_out);
+    dbNet *in_net_db = db_network_->staToDb(in_net);
+    buffer_out_db->setSigType(in_net_db->getSigType());
     Instance *buffer = db_network_->makeInstance(buffer_cell,
 						 buffer_name.c_str(),
 						 parent);
