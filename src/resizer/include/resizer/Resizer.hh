@@ -282,7 +282,6 @@ protected:
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,
-		     int min_buffer_count,
 		     LibertyCell *buffer_cell);
   void sortFaninsByWeight(VertexWeightMap &weight_map,
 			  // Return value.

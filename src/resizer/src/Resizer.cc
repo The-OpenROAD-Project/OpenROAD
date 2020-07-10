@@ -1113,12 +1113,10 @@ Resizer::repairHoldViolations(VertexSet &ends,
   while (!ends.empty()
 	 // Make sure we are making progress.
 	 && repair_count > 0) {
-    int min_buffer_count = max(static_cast<int>(abs(worst_slack / buffer_delay)), 10);
-    repair_count = repairHoldPass(ends, min_buffer_count, buffer_cell);
-    debugPrint5(debug_, "repair_hold", 1, "pass %d worst slack %s (%d buffers) ends %lu inserted %d\n",
+    repair_count = repairHoldPass(ends, buffer_cell);
+    debugPrint4(debug_, "repair_hold", 1, "pass %d worst slack %s ends %lu inserted %d\n",
 		pass,
 		units_->timeUnit()->asString(worst_slack, 3),
-		min_buffer_count,
 		ends.size(),
 		repair_count);
     sta_->findRequireds();
@@ -1133,7 +1131,6 @@ Resizer::repairHoldViolations(VertexSet &ends,
 
 int
 Resizer::repairHoldPass(VertexSet &ends,
-			int min_buffer_count,
 			LibertyCell *buffer_cell)
 {
   VertexWeightMap weight_map;
@@ -1142,7 +1139,8 @@ Resizer::repairHoldPass(VertexSet &ends,
   sortFaninsByWeight(weight_map, fanins);
   
   int repair_count = 0;
-  for(int i = 0; i < fanins.size() && repair_count < min_buffer_count ; i++) {
+  int max_repair_count = max(static_cast<int>(ends.size() * .2), 10);
+  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
