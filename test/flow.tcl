@@ -47,6 +47,8 @@ detailed_placement
 optimize_mirroring
 check_placement -verbose
 
+repair_clock_inverters
+
 clock_tree_synthesis -lut_file $cts_lut_file \
   -sol_list $cts_sol_file \
   -root_buf $cts_buffer \
