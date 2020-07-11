@@ -2,6 +2,6 @@
 set -x
 set -e
 mkdir -p OpenROAD/build
-cd /OpenROAD
+cd OpenROAD
 cmake -B build
 time cmake --build build -j 8
