@@ -17,6 +17,7 @@ pipeline {
         stage('gcd_nangate45') {
           steps {
 	    test/regression gcd_nangate45
+	  }
         }
       }
     }
