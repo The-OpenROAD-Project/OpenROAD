@@ -8,7 +8,7 @@ pipeline {
     }
     stage('Unit tests') {
       steps {
-        test/regression
+        sh './test/regression'
       }
     }
     stage('Flow tests') {
@@ -16,7 +16,7 @@ pipeline {
       parallel {
         stage('gcd_nangate45') {
           steps {
-	    test/regression gcd_nangate45
+	    sh './test/regression gcd_nangate45'
 	  }
         }
       }
