@@ -235,10 +235,14 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
 
         // create subNets
         unsigned numClkNets = 0; 
+        const Clock::SubNet* rootSubNet = nullptr;
         clockNet.forEachSubNet( [&] (const Clock::SubNet& subNet) {
                         bool outputPinFound = true;
                         bool inputPinFound = true;
                         //std::cout << "    SubNet: " << subNet.getName() << "\n";
+                        if (("clknet_0_" + clockNet.getName()) == subNet.getName()){
+                                rootSubNet = &subNet;
+                        }
                         odb::dbNet* clkSubNet = odb::dbNet::create(_block, subNet.getName().c_str());
                         ++numClkNets;
                         clkSubNet->setSigType(odb::dbSigType::CLOCK);
@@ -294,12 +298,60 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                 removeNonClockNets();
         }
 
+        int minPath = std::numeric_limits<int>::max();
+        int maxPath = std::numeric_limits<int>::min();
+        rootSubNet->forEachSink( [&] (ClockInst *inst) {
+                if (inst->isClockBuffer()){
+                        std::pair<int,int> resultsForBranch = branchBufferCount(inst, 1, clockNet);
+                        if (resultsForBranch.first < minPath){
+                                minPath = resultsForBranch.first;
+                        }
+                        if (resultsForBranch.second > maxPath){
+                                maxPath = resultsForBranch.second;
+                        }
+                }
+        });
+
+        std::cout << " Minimum number of buffers in the clock path: " << minPath << ".\n";
+        std::cout << " Maximum number of buffers in the clock path: " << maxPath << ".\n";
+
         std::cout << "    Created " << numClkNets << " clock nets.\n";
         long int currentTotalNets = _options->getNumClockSubnets() + numClkNets;
         _options->setNumClockSubnets(currentTotalNets);
         
         std::cout << fanoutDistString << std::endl;
         std::cout << "    Max level of the clock tree: " << clockNet.getMaxLevel() << ".\n";
+}
+
+std::pair<int,int> DbWrapper::branchBufferCount(ClockInst *inst, int bufCounter, Clock& clockNet){
+        odb::dbInst* sink = _block->findInst(inst->getName().c_str());
+        odb::dbITerm* outITerm = sink->getFirstOutput();
+        int minPath = std::numeric_limits<int>::max();
+        int maxPath = std::numeric_limits<int>::min();
+        for (odb::dbITerm* sinkITerms : outITerm->getNet()->getITerms()){
+                if (sinkITerms != outITerm){
+                        ClockInst* clockInst = clockNet.findClockByName(sinkITerms->getInst()->getName());
+                        if (clockInst == nullptr){
+                                int newResult = bufCounter + 1;
+                                if (newResult > maxPath){
+                                        maxPath = newResult;
+                                }
+                                if (newResult < minPath){
+                                        minPath = newResult;
+                                }
+                        } else {
+                                std::pair<int,int> newResults = branchBufferCount(clockInst, bufCounter + 1, clockNet);
+                                if (newResults.first < minPath){
+                                        minPath = newResults.first;
+                                }
+                                if (newResults.second > maxPath){
+                                        maxPath = newResults.second;
+                                }
+                        }
+                }
+        }
+        std::pair<int,int> currentResults (minPath,maxPath);
+        return currentResults;
 }
 
 void DbWrapper::disconnectAllSinksFromNet(odb::dbNet* net) {

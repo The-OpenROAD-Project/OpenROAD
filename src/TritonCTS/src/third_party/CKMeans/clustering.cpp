@@ -84,7 +84,7 @@ clustering::~clustering() {
 }
 
 /*** Capacitated K means **************************************************/
-void clustering::iterKmeans(unsigned ITER, unsigned N, unsigned CAP, unsigned IDX, vector<pair<float, float>>& _means, unsigned MAX) {
+void clustering::iterKmeans(unsigned ITER, unsigned N, unsigned CAP, unsigned IDX, vector<pair<float, float>>& _means, unsigned MAX, unsigned power) {
 
     vector<pair<float, float>> sol;
     sol.resize(flops.size());
@@ -106,7 +106,7 @@ void clustering::iterKmeans(unsigned ITER, unsigned N, unsigned CAP, unsigned ID
         //if (TEST_ITER == 1) 
 	//		cout << "Iteration " << i << endl;
         vector<pair<float,float>> means = _means;
-        float silh = Kmeans(N, CAP, IDX, means, MAX);
+        float silh = Kmeans(N, CAP, IDX, means, MAX, power);
         if (silh > max_silh) {
             max_silh = silh;
             for (unsigned j = 0; j < flops.size(); ++j)
@@ -202,7 +202,7 @@ void clustering::fixSegment(const pair<float, float>& fixedPoint, pair<float, fl
 	movablePoint.second = fixedPoint.second - dy;
 }
 
-float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<float, float>>& means, unsigned MAX) {
+float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<float, float>>& means, unsigned MAX, unsigned power) {
 	vector<vector<flop*>> clusters;    
 
 	for (unsigned i = 0; i < flops.size(); ++i) {
@@ -244,11 +244,11 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
 		
 		// flop to slot matching based on min-cost flow
         if (iter == 1) 
-            minCostFlow(means, CAP, IDX, 5200);
+            minCostFlow(means, CAP, IDX, 5200, power);
         else if (iter == 2) 
-            minCostFlow(means, CAP, IDX, 5200);
+            minCostFlow(means, CAP, IDX, 5200, power);
         else if (iter > 2) 
-            minCostFlow(means, CAP, IDX, 5200);
+            minCostFlow(means, CAP, IDX, 5200, power);
 
         // collect results
         clusters.clear();
@@ -369,7 +369,7 @@ float clustering::calcSilh(const vector<pair<float, float>>& means, unsigned CAP
 }
 
 /*** Min-Cost Flow ********************************************************/
-void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned CAP, unsigned IDX, float DIST) {
+void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned CAP, unsigned IDX, float DIST, unsigned power) {
 	int remaining = flops.size() % means.size();
 
 	ListDigraph g;
@@ -424,6 +424,7 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
 //                }
                 //float d = calcDist(slot_loc, flops[i]);
 				float d = calcDist(make_pair(_x, _y), flops[i]);
+                d = std::pow(d, power);
                 if (d > DIST)
                     continue;
                 ListDigraph::Arc e = g.addArc(f_nodes[i], c_nodes[j]);

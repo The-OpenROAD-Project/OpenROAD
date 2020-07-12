@@ -146,11 +146,14 @@ class HTreeBuilder : public TreeBuilder {
                 unsigned getOutputSlew() const { return _outputSlew; }
                 void setOutputCap(unsigned cap) { _outputCap = cap; }
                 unsigned getOutputCap() const { return _outputCap; }
+                void setRemainingLength(unsigned length) { _remainingLength = length; }
+                unsigned getRemainingLength() const { return _remainingLength; }
 
         private:
                 double                         _length;
                 unsigned                       _outputSlew;
                 unsigned                       _outputCap;
+                unsigned                       _remainingLength;
                 std::vector<unsigned>          _wireSegments;
                 std::vector<Point<double>>     _branchPointLoc;
                 std::vector<unsigned>          _parents;
@@ -178,6 +181,15 @@ private:
                                         unsigned tolerance,
                                         unsigned &outputSlew,
                                         unsigned &outputCap) const;
+        unsigned computeMinDelaySegment(unsigned length, 
+                                        unsigned inputSlew,
+                                        unsigned inputCap,
+                                        unsigned slewThreshold,
+                                        unsigned tolerance,
+                                        unsigned &outputSlew,
+                                        unsigned &outputCap,
+                                        bool forceBuffer, 
+                                        int currentLength ) const;
         void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();

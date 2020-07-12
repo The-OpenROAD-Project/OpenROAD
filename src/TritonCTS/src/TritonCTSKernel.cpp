@@ -53,9 +53,9 @@ void TritonCTSKernel::runTritonCts() {
         findClockRoots();
         populateTritonCts();
         checkCharacterization();
-        if (_options.getOnlyCharacterization() == true){return;}
+        if (_options.getOnlyCharacterization()){return;}
         buildClockTrees();
-        runPostCtsOpt();
+        if (_options.runPostCtsOpt()){runPostCtsOpt();}
         writeDataToDb();
         printFooter();
 }
