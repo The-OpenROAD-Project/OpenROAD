@@ -255,7 +255,13 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
         clusters.resize(N);
         for (unsigned i = 0; i < flops.size(); ++i) {
             flop * f = flops[i];
-            clusters[f->match_idx[IDX].first].push_back(f);
+            int position = 0;
+            if (f->match_idx[IDX].first < 0){
+                position = 0;
+            } else {
+                position = f->match_idx[IDX].first;
+            }
+            clusters[position].push_back(f);
         }
 
         // always use mode 1
