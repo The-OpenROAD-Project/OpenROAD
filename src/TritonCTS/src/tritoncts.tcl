@@ -48,11 +48,18 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-slew_inter slewvalue] \
                                              [-cap_inter capvalue] \
                                              [-characterization_only] \
+                                             [-post_cts_disable] \
+                                             [-distance_between_buffers] \
+                                             [-branching_point_buffers_distance] \
+                                             [-clustering_exponent] \
+                                             [-clustering_unbalance_ratio] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -cap_inter} flags {-characterization_only}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter \
+    -cap_inter -distance_between_buffers -branching_point_buffers_distance -clustering_exponent -clustering_unbalance_ratio} \
+    flags {-characterization_only -post_cts_disable}
 
   set cts [get_triton_cts]
 
@@ -65,6 +72,28 @@ proc clock_tree_synthesis { args } {
 
 
   $cts set_only_characterization [info exists flags(-characterization_only)]
+
+  $cts set_disable_post_cts [info exists flags(-post_cts_disable)]
+
+  if { [info exists keys(-distance_between_buffers)] } {
+    set distance $keys(-distance_between_buffers)
+    $cts set_distance_between_buffers $distance
+  } 
+
+  if { [info exists keys(-branching_point_buffers_distance)] } {
+    set distance $keys(-branching_point_buffers_distance)
+    $cts set_branching_point_buffers_distance $distance
+  } 
+
+  if { [info exists keys(-clustering_exponent)] } {
+    set exponent $keys(-clustering_exponent)
+    $cts set_clustering_exponent $exponent
+  } 
+
+  if { [info exists keys(-clustering_unbalance_ratio)] } {
+    set unbalance $keys(-clustering_unbalance_ratio)
+    $cts set_clustering_unbalance_ratio $unbalance
+  } 
 
   if { [info exists keys(-lut_file)] } {
     if { ![info exists keys(-sol_list)] } {

@@ -171,4 +171,25 @@ void TritonCTSKernel::report_cts_metrics(){
         reportCtsMetrics();
 };
 
+void TritonCTSKernel::set_distance_between_buffers(double distance) {
+        _options.setSimpleSegmentsEnabled(true);
+        _options.setBufferDistance(distance);
+}
+
+void TritonCTSKernel::set_branching_point_buffers_distance(double distance) {
+        _options.setVertexBuffersEnabled(true);
+        _options.setVertexBufferDistance(distance);
+}
+
+void TritonCTSKernel::set_disable_post_cts(bool disable) {
+        _options.setRunPostCtsOpt(!(disable));
+}
+
+void TritonCTSKernel::set_clustering_exponent(unsigned power){
+        _options.setClusteringPower(power);
+}
+void TritonCTSKernel::set_clustering_unbalance_ratio(double ratio){
+        _options.setClusteringCapacity(ratio);
+}
+
 }

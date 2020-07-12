@@ -26,7 +26,12 @@ clock_tree_synthesis -buf_list <list_of_buffers> \
                      [-wire_unit <wire_unit>] \
                      [-clk_nets <list_of_clk_nets>] \
                      [-out_path <lut_path>] \
-                     [-characterization_only]
+                     [-characterization_only] \
+                     [-post_cts_disable] \
+                     [-distance_between_buffers] \
+                     [-branching_point_buffers_distance] \
+                     [-clustering_exponent] \
+                     [-clustering_unbalance_ratio] 
 
 write_def "final.def"
 ```
@@ -50,6 +55,11 @@ If this parameter is omitted, the code gets the value from ten times the height 
 If this parameter is omitted, TritonCTS looks for the clock roots automatically.
 - ``-out_path`` is the output path (full) that the lut.txt and sol_list.txt files will be saved. This is used to load an existing characterization, without creating one from scratch.
 - ``-characterization_only`` is a flag that, when specified, makes so that only the library characterization step is run and no clock tree is inserted in the design.
+- ``-post_cts_disable`` is a flag that, when specified, disables the post-processing operation for outlier sinks (buffer insertion on 10% of the way between source and sink). 
+- ``-distance_between_buffers`` is the distance (in micron) between buffers that TritonCTS should use when creating the tree. When using this parameter, the clock tree algorithm is simplified, and only uses a fraction of the segments from the LUT.
+- ``-branching_point_buffers_distance`` is the distance (in micron) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the ``-distance_between_buffers`` value to be set.
+- ``-clustering_exponent`` is a value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. If this parameter is omitted, the code gets the default value (4).
+- ``-clustering_unbalance_ratio`` is a value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have extacly half of all sinks for a specific region (half for each branch). If this parameter is omitted, the code gets the default value (0.6).
 
 Instead of creating a characterization, you can use the following tcl snippet to call TritonCTS and load the characterization file..
 

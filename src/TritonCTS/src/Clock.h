@@ -144,7 +144,16 @@ public:
                                   const std::string& master,
                                   DBU x, DBU y ) {
                 _clockBuffers.emplace_back(name + "_" + getName(), master, CLOCK_BUFFER, x, y);
+                _mapNameToInst[name + "_" + getName()] = &_clockBuffers.back();
                 return _clockBuffers.back();
+        }
+
+        ClockInst* findClockByName(std::string name){
+                if (_mapNameToInst.find(name) == _mapNameToInst.end()){
+                        return nullptr;
+                } else {
+                        return _mapNameToInst.at(name);
+                }
         }
 
         SubNet& addSubNet(const std::string& name) {
@@ -201,6 +210,7 @@ private:
         std::deque<ClockInst> _sinks;
         std::deque<ClockInst> _clockBuffers;
         std::deque<SubNet>    _subNets;
+        std::unordered_map<std::string,ClockInst*> _mapNameToInst;
 
         odb::dbNet* _netObj;
 

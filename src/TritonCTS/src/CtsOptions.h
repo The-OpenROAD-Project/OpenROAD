@@ -123,7 +123,19 @@ public:
         long int getNumBuffersInserted() const { return _buffersInserted; }
         void setNumSinks(long int sinks) { _sinks = sinks; }
         long int getNumSinks() const { return _sinks; }
-                
+        unsigned getClusteringPower()  const { return _clusteringPower; }
+        void setClusteringPower(unsigned power) { _clusteringPower = power; }
+        double getClusteringCapacity()  const { return _clusteringCapacity; }
+        void setClusteringCapacity(double capacity) { _clusteringCapacity = capacity; }
+        double getBufferDistance()  const { return _bufDistance; }
+        void setBufferDistance(double distance) { _bufDistance = distance; }
+        double getVertexBufferDistance()  const { return _vertexBufDistance; }
+        void setVertexBufferDistance(double distance) { _vertexBufDistance = distance; }
+        bool isVertexBuffersEnabled()  const { return _vertexBuffersEnable; }
+        void setVertexBuffersEnabled(bool enable) { _vertexBuffersEnable = enable; }
+        bool isSimpleSegmentEnabled()  const { return _simpleSegmentsEnable; }
+        void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
+
 private:
         std::string _blockName                  = "";
         std::string _lutFile                    = "";
@@ -138,6 +150,12 @@ private:
         bool        _plotSolution               = false;
         bool        _onlyCharacterization       = false;
         bool        _autoLutEnable              = true;
+        bool        _simpleSegmentsEnable       = false;
+        bool        _vertexBuffersEnable        = false;
+        double      _vertexBufDistance          = 240;
+        double      _bufDistance                = 100;
+        double      _clusteringCapacity         = 0.6;
+        unsigned    _clusteringPower            = 4;
         unsigned    _numMaxLeafSinks            = 15;
         unsigned    _maxSlew                    = 4;
         double      _maxCharSlew                = 0;

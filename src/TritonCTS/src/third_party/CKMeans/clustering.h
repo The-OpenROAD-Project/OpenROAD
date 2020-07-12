@@ -74,10 +74,10 @@ class clustering {
 public:
 	clustering(const vector<std::pair<float, float>>&, float, float);
 	~clustering();
-	float Kmeans(unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned);
-	void iterKmeans(unsigned, unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned MAX = 15);
+	float Kmeans(unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned, unsigned);
+	void iterKmeans(unsigned, unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned MAX = 15, unsigned power = 4);
 	float calcSilh(const vector<pair<float,float>>&, unsigned, unsigned);
-	void minCostFlow (const vector<pair<float, float>>&, unsigned, unsigned, float); 
+	void minCostFlow (const vector<pair<float, float>>&, unsigned, unsigned, float, unsigned); 
 	void setPlotFileName(const std::string fileName) { plotFile = fileName; }
 	void getClusters(vector<vector<unsigned>>&);
 	void fixSegmentLengths(vector<pair<float, float>>&);
