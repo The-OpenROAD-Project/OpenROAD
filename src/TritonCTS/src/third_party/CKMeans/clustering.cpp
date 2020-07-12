@@ -256,9 +256,7 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
         for (unsigned i = 0; i < flops.size(); ++i) {
             flop * f = flops[i];
             int position = 0;
-            if (f->match_idx[IDX].first < 0){
-                position = 0;
-            } else {
+            if (f->match_idx[IDX].first >= 0 && f->match_idx[IDX].first < N){
                 position = f->match_idx[IDX].first;
             }
             clusters[position].push_back(f);
@@ -430,12 +428,16 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
 //                }
                 //float d = calcDist(slot_loc, flops[i]);
 				float d = calcDist(make_pair(_x, _y), flops[i]);
-                d = std::pow(d, power);
-                if (d > DIST)
+                if (d > DIST){
                     continue;
+                }
+                d = std::pow(d, power);
+                if (d >= std::numeric_limits<int>::max()){
+                    continue;
+                }
                 ListDigraph::Arc e = g.addArc(f_nodes[i], c_nodes[j]);
                 d_edges.push_back(e);
-                costs.push_back(int(d*100));
+                costs.push_back(d);
             //}
         }
     }

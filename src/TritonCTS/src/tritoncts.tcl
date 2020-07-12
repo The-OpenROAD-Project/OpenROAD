@@ -52,7 +52,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-distance_between_buffers] \
                                              [-branching_point_buffers_distance] \
                                              [-clustering_exponent] \
-                                             [-clustering_unbalance_ratio]
+                                             [-clustering_unbalance_ratio] \
                                             } 
 
 proc clock_tree_synthesis { args } {
