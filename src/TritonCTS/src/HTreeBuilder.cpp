@@ -168,8 +168,8 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
         
         std::cout << "    Segment length (rounded): " << segmentLength << "\n";
 
-        int vertexBufferLength = _options->getVertexBufferDistance() / (_wireSegmentUnit * 2);
-        int remainingLength = _options->getBufferDistance() / (_wireSegmentUnit * 2);
+        int vertexBufferLength = _options->getVertexBufferDistance() / (_techChar->getLengthUnit() * 2);
+        int remainingLength = _options->getBufferDistance() / (_techChar->getLengthUnit() * 2);
         unsigned inputCap = _minInputCap, inputSlew = 1;
         if (level > 1) {
                 const LevelTopology &previousLevel = _topologyForEachLevel[level-2];
@@ -198,12 +198,12 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                                         remainingLength = 0;
                                         key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
                                                                 SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
-                                        remainingLength = remainingLength + _options->getBufferDistance() / (_wireSegmentUnit * 2);
+                                        remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit() * 2);
                                 }
                                 if (remainingLength <= 0){
                                         key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
                                                                 SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
-                                        remainingLength = remainingLength + _options->getBufferDistance() / (_wireSegmentUnit * 2);
+                                        remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit() * 2);
                                 } else {
                                         key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
                                                                 SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, false, remainingLength);
