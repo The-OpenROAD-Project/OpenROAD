@@ -449,7 +449,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(LevelTopology& topology,
         //means.emplace_back(rootLocation.getX(), rootLocation.getY());
         means.emplace_back(branchPt2.getX(), branchPt2.getY());
         
-        clusteringEngine.iterKmeans(1, means.size(), (unsigned) std::ceil((double) sinks.size() * _options->getClusteringCapacity()) , 0, means, 5, 3);
+        clusteringEngine.iterKmeans(1, means.size(), (unsigned) std::ceil((double) sinks.size() * _options->getClusteringCapacity()) , 0, means, 5, _options->getClusteringPower());
         branchPt1 = Point<double>(means[0].first, means[0].second);
         branchPt2 = Point<double>(means[1].first, means[1].second);
         
