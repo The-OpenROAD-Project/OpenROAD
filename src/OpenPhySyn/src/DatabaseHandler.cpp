@@ -67,6 +67,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
+#include "sta/Fuzzy.hh"
 
 namespace psn
 {
@@ -702,7 +703,7 @@ OpenStaHandler::required(InstanceTerm* term, bool worst) const
     auto vert = network()->graph()->pinLoadVertex(term);
     auto req  = sta_->vertexRequired(vert, min_max_);
     //  worst ? sta::MinMax::min() : sta::MinMax::max());
-    if (sta::fuzzyInf(req))
+    if (sta::delayInf(req))
     {
         return 0;
     }

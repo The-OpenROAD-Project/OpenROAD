@@ -40,6 +40,7 @@
 #include <map>
 #include <list>
 #include <stack>
+#include <array>
 #include <limits.h>
 #include <sys/timeb.h>
 #include <time.h>
