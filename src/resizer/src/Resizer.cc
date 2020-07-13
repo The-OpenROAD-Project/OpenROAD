@@ -57,6 +57,7 @@
 #include "sta/Bfs.hh"
 #include "sta/Search.hh"
 #include "sta/StaMain.hh"
+#include "sta/Fuzzy.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
 #include "resizer/SteinerTree.hh"
