@@ -123,6 +123,8 @@ public:
         long int getNumBuffersInserted() const { return _buffersInserted; }
         void setNumSinks(long int sinks) { _sinks = sinks; }
         long int getNumSinks() const { return _sinks; }
+        void setTreeBuffer(const std::string& buffer) { _treeBuffer = buffer; }
+        std::string getTreeBuffer() const { return  _treeBuffer; }
         unsigned getClusteringPower()  const { return _clusteringPower; }
         void setClusteringPower(unsigned power) { _clusteringPower = power; }
         double getClusteringCapacity()  const { return _clusteringCapacity; }
@@ -143,6 +145,7 @@ private:
         std::string _outputPath                 = "";
         std::string _clockNets                  = "";
         std::string _rootBuffer                 = "";
+        std::string _treeBuffer                 = "";
         std::string _metricFile                 = "";
         DBU         _dbUnits                    = -1;
         unsigned    _wireSegmentUnit            = 0;

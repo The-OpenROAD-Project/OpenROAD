@@ -501,7 +501,11 @@ void HTreeBuilder::createClockSubNets() {
                                        rootClockSubNet,
                                        *_techChar,
                                        _wireSegmentUnit);
-                builder.build();
+                if (_options->getTreeBuffer() != ""){
+                        builder.build(_options->getTreeBuffer());
+                } else {
+                        builder.build();
+                }
                 if (_topologyForEachLevel.size() == 1) {
                         builder.forceBufferInSegment(_options->getRootBuffer());
                         
@@ -528,7 +532,11 @@ void HTreeBuilder::createClockSubNets() {
                                                *parentTopology.getBranchDrivingSubNet(parentIdx),
                                                *_techChar,
                                                _wireSegmentUnit);
-                        builder.build();
+                        if (_options->getTreeBuffer() != ""){
+                                builder.build(_options->getTreeBuffer());
+                        } else {
+                                builder.build();
+                        }
                         if (levelIdx == _topologyForEachLevel.size() - 1) {
                                 builder.forceBufferInSegment(_options->getRootBuffer());
                         }
@@ -645,17 +653,17 @@ void HTreeBuilder::plotSolution() {
         file.close();
 }
 
-void SegmentBuilder::build() {
+void SegmentBuilder::build(std::string forceBuffer) {
         if (_root.getX() == _target.getX()) {
-                buildVerticalConnection();
+                buildVerticalConnection(forceBuffer);
         } else if (_root.getY() == _target.getY()) { 
-                buildHorizontalConnection();
+                buildHorizontalConnection(forceBuffer);
         } else {
-                buildLShapeConnection();
+                buildLShapeConnection(forceBuffer);
         }
 }
 
-void SegmentBuilder::buildVerticalConnection() {
+void SegmentBuilder::buildVerticalConnection(std::string forceBuffer) {
         double length = std::abs(_root.getY() - _target.getY());
         bool isLowToHi = _root.getY() < _target.getY();
         
@@ -672,18 +680,24 @@ void SegmentBuilder::buildVerticalConnection() {
                         double y = (isLowToHi) ? (_root.getY() + currLength) : (_root.getY() - currLength);
                         //std::cout << "B " << Point<double>(x, y) << " " 
                         //          << wireSegment.getBufferMaster(buffer) << "\n";
-                        
-                        _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
-                                                     wireSegment.getBufferMaster(buffer),
-                                                     x * _techCharDistUnit,
-                                                     y * _techCharDistUnit);
+                        if (forceBuffer != ""){
+                                _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+                                                        forceBuffer,
+                                                        x * _techCharDistUnit,
+                                                        y * _techCharDistUnit);
+                        } else{
+                                _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+                                                        wireSegment.getBufferMaster(buffer),
+                                                        x * _techCharDistUnit,
+                                                        y * _techCharDistUnit);
+                        }
                         ++_numBuffers;
                 }
         }
         //std::cout << "currLength: " << currLength << " length: " << length << "\n";
 }
 
-void SegmentBuilder::buildHorizontalConnection() {
+void SegmentBuilder::buildHorizontalConnection(std::string forceBuffer) {
         double length = std::abs(_root.getX() - _target.getX());
         bool isLowToHi = _root.getX() < _target.getX();
         
@@ -700,18 +714,24 @@ void SegmentBuilder::buildHorizontalConnection() {
                         double x = (isLowToHi) ? (_root.getX() + currLength) : (_root.getX() - currLength);
                         //std::cout << "B " << Point<double>(x, y) << " " 
                         //          << wireSegment.getBufferMaster(buffer) << "\n";
-
-                        _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
-                                                  wireSegment.getBufferMaster(buffer),
-                                                  x * _techCharDistUnit,
-                                                  y * _techCharDistUnit);
+                        if (forceBuffer != ""){
+                                 _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+                                                        forceBuffer,
+                                                        x * _techCharDistUnit,
+                                                        y * _techCharDistUnit);
+                        } else{
+                                _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+                                                        wireSegment.getBufferMaster(buffer),
+                                                        x * _techCharDistUnit,
+                                                        y * _techCharDistUnit);
+                        }
                         ++_numBuffers;
                 }
         }
         //std::cout << "currLength: " << currLength << " length: " << length << "\n";
 }
 
-void SegmentBuilder::buildLShapeConnection() {
+void SegmentBuilder::buildLShapeConnection(std::string forceBuffer) {
         double lengthX = std::abs(_root.getX() - _target.getX());
         double lengthY = std::abs(_root.getY() - _target.getY());
         bool isLowToHiX = _root.getX() < _target.getX();
@@ -738,15 +758,25 @@ void SegmentBuilder::buildLShapeConnection() {
                                 y = (isLowToHiY) ? (_root.getY() + (currLength - lengthX)) : 
                                                    (_root.getY() - (currLength - lengthX));
                         }
-
-                        ClockInst& newBuffer = 
-                                _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
-                                                          wireSegment.getBufferMaster(buffer),
-                                                          x * _techCharDistUnit,
-                                                          y * _techCharDistUnit);
-                        _drivingSubNet->addInst(newBuffer);
-                        _drivingSubNet = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
-                        _drivingSubNet->addInst(newBuffer);
+                        if (forceBuffer != ""){
+                                ClockInst& newBuffer = 
+                                        _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+                                                                forceBuffer,
+                                                                x * _techCharDistUnit,
+                                                                y * _techCharDistUnit);
+                                _drivingSubNet->addInst(newBuffer);
+                                _drivingSubNet = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
+                                _drivingSubNet->addInst(newBuffer);
+                        } else{
+                                ClockInst& newBuffer = 
+                                        _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
+                                                                wireSegment.getBufferMaster(buffer),
+                                                                x * _techCharDistUnit,
+                                                                y * _techCharDistUnit);
+                                _drivingSubNet->addInst(newBuffer);
+                                _drivingSubNet = &_clock->addSubNet(_netPrefix + std::to_string(_numBuffers));
+                                _drivingSubNet->addInst(newBuffer);
+                        }
                         
                         //std::cout << "      x: " << x << " y: " << y << "\n";
                         ++_numBuffers;

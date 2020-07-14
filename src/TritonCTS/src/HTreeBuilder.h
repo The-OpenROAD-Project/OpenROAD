@@ -67,7 +67,7 @@ public:
                        _techChar(&techChar),
                        _techCharDistUnit(techCharDistUnit) {}
 
-        void build();
+        void build(std::string forceBuffer = "");
         void forceBufferInSegment(std::string master);
         Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
@@ -84,9 +84,9 @@ protected:
         bool                  _forceBuffer;
         unsigned              _numBuffers = 0;
 
-        void buildVerticalConnection();
-        void buildHorizontalConnection();
-        void buildLShapeConnection();
+        void buildVerticalConnection(std::string forceBuffer = "");
+        void buildHorizontalConnection(std::string forceBuffer = "");
+        void buildLShapeConnection(std::string forceBuffer = "");
 };
 
 //-----------------------------------------------------------------------------
