@@ -8,7 +8,8 @@ will be generated to indicate violated nets. 4 APIs are provided as an interface
 ---
 
  - `load_antenna_rules`: import antenna rules to ARC, must be called before other commands
- - `check_antennas`: check antenna violations on all nets and generate a reportt
+ - `check_antennas`: check antenna violations on all nets and generate a report
+   - -path: specify the path to save the report
 
 ## Antenna fix Commands
 
@@ -21,6 +22,7 @@ will be generated to indicate violated nets. 4 APIs are provided as an interface
  - `get_met_avail_length`: print the available metal length that can be added to a net, while keeping other layers unchange and PAR values meet the ratio
    - -net_name: set the net name for calculation
    - -routing_level: set the layer whose rest metal length will be returned
+ - `find_max_wire_length`: print the longest wire in the design
 
 ### C++ commands
 

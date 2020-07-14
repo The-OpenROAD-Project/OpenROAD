@@ -1557,12 +1557,9 @@ Notice 0: Finished DEF file: sw130_random.def
 Notice 0: 
 disconnected net 55  net50
 Notice 0: Split top of 1 T shapes.
-Checking antenna...
-Design name: gcd
-Number of pins violated: 2
+Number of pins violated: 1
 Number of nets violated: 1
 Total number of nets: 56
-Gotta verbose false
 Net name: net51, Routing Level: 1, Max Length for PAR: -0.085000
 Net name: net51, Routing Level: 1, Max Length for PAR: -0.085000
 this net has violation: 1

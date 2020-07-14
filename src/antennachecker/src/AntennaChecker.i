@@ -66,9 +66,9 @@ antennachecker_set_route_level(int rt_lv)
 }
 
 void
-check_antennas()
+check_antennas(char* path)
 {
-  getAntennaChecker()->check_antennas();
+  getAntennaChecker()->check_antennas(std::string(path));
 }
 
 void
@@ -94,5 +94,12 @@ check_net_violation(char* netname)
   else
     return 0;       
 }
+
+void
+find_max_wire_length()
+{
+    getAntennaChecker()->find_max_wire_length();
+}
+
 
 %} // inline
