@@ -1,6 +1,6 @@
-cd /OpenROAD	cd /OpenROAD
-cmake -B build	cmake -B build
-time cmake --build build -j 8	time cmake --build build -j 8
+cd /OpenROAD
+cmake -B build
+time cmake --build build -j 8
 
 # Capture the commit we are testing for use in flow testing	
 commit=`git rev-parse --verify HEAD`	
