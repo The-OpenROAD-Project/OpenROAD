@@ -1749,23 +1749,34 @@ proc get_grid_wire_width {layer_name} {
   variable default_grid_data
   variable design_data
 
-  if {[dict exists $grid_data rails $layer_name width]} {
-    set width [dict get $grid_data rails $layer_name width]
-  } elseif {[dict exists $grid_data straps $layer_name width]} {
-    set width [dict get $grid_data straps $layer_name width]
-  } elseif {[dict exists $grid_data straps $layer_name] && [dict exists $grid_data template names]} {
-    set template_name [lindex [dict get $grid_data template names] 0]
-    set width [dict get $grid_data straps $layer_name $template_name width]
-  } elseif {[dict exists $default_grid_data straps $layer_name width]} {
-    set width [dict get $default_grid_data straps $layer_name width]
-  } elseif {[dict exists $default_grid_data straps $layer_name] && [dict exists $default_grid_data template names]} {
-    set template_name [lindex [dict get $default_grid_data template names] 0]
-    set width [dict get $default_grid_data straps $layer_name $template_name width]
-  } else {
-    critical 44 "No width information found for $layer_name"
+  if {[info exists grid_data]} {
+    if {[dict exists $grid_data rails $layer_name width]} {
+      set width [dict get $grid_data rails $layer_name width]
+      return $width
+    } elseif {[dict exists $grid_data straps $layer_name width]} {
+      set width [dict get $grid_data straps $layer_name width]
+      return $width
+    } elseif {[dict exists $grid_data straps $layer_name] && [dict exists $grid_data template names]} {
+      set template_name [lindex [dict get $grid_data template names] 0]
+      set width [dict get $grid_data straps $layer_name $template_name width]
+      return $width
+    }
+  } 
+
+  if {[info exists default_grid_data]} {
+    if {[dict exists $default_grid_data rails $layer_name width]} {
+      set width [dict get $default_grid_data rails $layer_name width]
+      return $width
+    } elseif {[dict exists $default_grid_data straps $layer_name width]} {
+      set width [dict get $default_grid_data straps $layer_name width]
+      return $width
+    } elseif {[dict exists $default_grid_data straps $layer_name] && [dict exists $default_grid_data template names]} {
+      set template_name [lindex [dict get $default_grid_data template names] 0]
+      set width [dict get $default_grid_data straps $layer_name $template_name width]
+      return $width
+    }
   }
-  
-  return $width 
+  critical 44 "No width information found for $layer_name"
 }
 
 proc get_grid_wire_pitch {layer_name} {
@@ -1819,7 +1830,7 @@ proc generate_via_stacks {l1 l2 tag constraints} {
     warning 3 "No shapes on layer $l2 for $tag"
     return {}
   }
-  set intersection [odb::andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)]
+  set intersection [odb::andSet [odb::andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)] [odb::newSetFromRect {*}$area]]
 
   foreach shape [::odb::getPolygons $intersection] {
     set points [::odb::getPoints $shape]
@@ -1989,7 +2000,7 @@ proc adjust_area_for_core_rings {layer area} {
   # When core_rings overlap with the stdcell area, we need to block out the area
   # where the core rings have been placed.
   if {[dict exists $grid_data core_ring_area $layer]} {
-    set core_ring_area [dict get $grid_data core_ring_area $layer]
+    set core_ring_area [dict get $grid_data core_ring_area combined]
     # debug "Core ring area"
     # foreach rect [odb::getRectangles $core_ring_area] {
     #   debug "  [$rect ll] [$rect ur]"
@@ -2090,6 +2101,7 @@ proc generate_grid_vias {tag net_name} {
   variable grid_data
 
   #Via stacks
+  # debug "grid_data $grid_data"
   if {[dict exists $grid_data connect]} {
     # debug "Adding vias for $net_name ([llength [dict get $grid_data connect]] connections)..."
     foreach connection [dict get $grid_data connect] {
@@ -2366,6 +2378,11 @@ proc generate_core_rings {core_ring_data} {
 
     }
   }
+  set ring_areas {}
+  foreach layer [dict keys [dict get $grid_data core_ring_area]] {
+    lappend ring_areas [dict get $grid_data core_ring_area $layer]
+  }
+  dict set grid_data core_ring_area combined [odb::orSets $ring_areas]
 }
 
 proc get_macro_boundaries {} {
@@ -2377,6 +2394,29 @@ proc get_macro_boundaries {} {
   }
   
   return $boundaries
+}
+
+proc get_stdcell_specification {} {
+  variable design_data
+
+  if {[dict exists $design_data grid stdcell]} {
+    set grid_name [lindex [dict keys [dict get $design_data grid stdcell]] 0]
+    return [dict get $design_data grid stdcell $grid_name] 
+  } else {
+    if {![dict exists $design_data grid stdcell]} {
+      critical 17 "No stdcell grid specification found - no rails can be inserted"
+    }
+  }
+
+  return {}
+}
+
+proc get_rail_width {} {
+  set max_width 0
+  foreach layer [get_rails_layers] {
+    set max_width [expr max($max_width,[get_grid_wire_width $layer])]
+  }
+  return $max_width
 }
 
 proc import_macro_boundaries {} {
@@ -2422,9 +2462,9 @@ proc import_macro_boundaries {} {
 
     set halo [dict get $instances $instance halo]
     set llx [expr round($llx - [lindex $halo 0])]
-    set lly [expr round($lly - [lindex $halo 1])]
+    set lly [expr round($lly - ([lindex $halo 1] - [get_rail_width] / 2.0))]
     set urx [expr round($urx + [lindex $halo 2])]
-    set ury [expr round($ury + [lindex $halo 3])]
+    set ury [expr round($ury + ([lindex $halo 3] - [get_rail_width] / 2.0))]
 
     dict set instances $instance halo_boundary [list $llx $lly $urx $ury]
   }
@@ -2808,6 +2848,7 @@ proc get_memory_instance_pg_pins {} {
         err 37 "Cannot find pin $term_name on instance [$inst getName] ([[$inst getMaster] getName])"
         continue
       }
+
       set type [$mterm getSigType]
       foreach mPin [$mterm getMPins] {
         foreach geom [$mPin getGeometry] {
@@ -2985,9 +3026,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     }
   }
 
-  if {[dict exists $design_data grid stdcell]} {
-    set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
-  }
+  set default_grid_data [get_stdcell_specification]
   
   # debug "Set the core area"
   # Set the core area
@@ -4384,13 +4423,16 @@ proc add_macro_based_grids {} {
       set grid_data [get_instance_specification $instance]
       # debug "area=[dict get $grid_data area]"
       add_grid 
-    }
   
-    foreach pwr_net [dict get $design_data power_nets] {
-      generate_grid_vias "POWER" $pwr_net
-    }
-    foreach gnd_net [dict get $design_data ground_nets] {
-      generate_grid_vias "GROUND" $gnd_net
+      # debug "Generate vias for [dict get $design_data power_nets] [dict get $design_data ground_nets]"
+      foreach pwr_net [dict get $design_data power_nets] {
+        # debug "Generate vias for $pwr_net"
+        generate_grid_vias "POWER" $pwr_net
+      }
+      foreach gnd_net [dict get $design_data ground_nets] {
+        # debug "Generate vias for $gnd_net"
+        generate_grid_vias "GROUND" $gnd_net
+      }
     }
   }
 }
@@ -4404,21 +4446,13 @@ proc plan_grid {} {
   
   ################################## Main Code #################################
 
-  if {![dict exists $design_data grid stdcell]} {
-    warning 17 "No stdcell grid specification found - no rails inserted"
-  }
-
   if {![dict exists $design_data grid macro]} {
     warning 18 "No macro grid specifications found - no straps added"
   }
 
   information 11 "****** INFO ******"
 
-  if {[dict exists $design_data grid stdcell]} {
-    dict for {name specification} [dict get $design_data grid stdcell] {
-      print_strategy stdcell $specification
-    }
-  }
+  print_strategy stdcell [get_stdcell_specification]
 
   if {[dict exists $design_data grid macro]} {
     dict for {name specification} [dict get $design_data grid macro] {

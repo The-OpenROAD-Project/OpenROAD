@@ -416,6 +416,7 @@ GateCloningTransform::run(Psn* psn_inst, std::vector<std::string> args)
     psn_inst->handler()->sta()->search()->endpointsInvalid();
     psn_inst->handler()->sta()->ensureLevelized();
     psn_inst->handler()->sta()->findRequireds();
+    psn_inst->handler()->sta()->checkCapacitanceLimitPreamble();
     psn_inst->handler()->sta()->checkSlewLimitPreamble();
 
     int rc = gateClone(psn_inst, cap_factor, clone_largest_only);

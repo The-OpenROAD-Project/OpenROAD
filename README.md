@@ -276,10 +276,11 @@ repair_design [-max_wire_length max_length]
               -buffer_cell buffer_cell
 ```
 
-The `repair_design` inserts buffers on long wires to reduce RC delay
-in the wire. Use `-max_wire_length` to specify the maximum lenth of
-wires.  The resistance/capacitance values in `set_wire_rc` are used to
-find the wire delays.
+The `repair_design` inserts buffers on nets to repair max slew, max
+capacitance, max fanout violations, and on long wires to reduce RC
+delay in the wire. Use `-max_wire_length` to specify the maximum lenth
+of wires.  The resistance/capacitance values in `set_wire_rc` are used
+to find the wire delays.
 
 Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
 ```
@@ -298,25 +299,6 @@ that have been read. Some designs have multiple libraries with
 different transistor thresholds (Vt) and are used to trade off power
 and speed. Chosing a low Vt library uses more power but results in a
 faster design after the resizing step.
-
-```
-repair_max_cap -buffer_cell buffer_cell
-               [-max_utilization util]
-repair_max_slew -buffer_cell buffer_cell
-                [-max_utilization util]
-```
-The `repair_max_cap` and `repair_max_slew` commands repair nets with
-maximum capacitance or slew violations by inserting buffers in the
-net.
-
-```
-repair_max_fanout -max_fanout fanout
-                  -buffer_cell buffer_cell
-                  [-max_utilization util]
-```
-The `repair_max_fanout` command repairs nets with a fanout greater
-than `fanout` by inserting buffers between the driver and the loads.
-Buffers are located at the center of each group of loads.
 
 ```
 repair_tie_fanout [-separation dist]
@@ -362,14 +344,12 @@ set_wire_rc -layer metal2
 
 set buffer_cell BUF_X4
 set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
-repair_long_wires -max_slew .2
-resize
+
 buffer_ports -buffer_cell $buffer_cell
-repair_max_cap -buffer_cell $buffer_cell
-repair_max_slew -buffer_cell $buffer_cell
-repair_max_fanout -max_fanout 100 -buffer_cell $buffer_cell
-repair_tie_fanout -max_fanout 100 LOGIC0_X1/Z
-repair_tie_fanout -max_fanout 100 LOGIC1_X1/Z
+repair_design -max_wire_length 100 -buffer_cell $buffer_cell
+resize
+repair_tie_fanout LOGIC0_X1/Z
+repair_tie_fanout LOGIC1_X1/Z
 repair_hold_violations -buffer_cell $buffer_cell
 resize
 ```

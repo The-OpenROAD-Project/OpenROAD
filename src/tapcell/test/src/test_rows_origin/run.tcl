@@ -1,10 +1,8 @@
-################################################################################
-## Authors: Vitor Bandeira, Eder Matheus Monteiro e Isadora Oliveira
-##          (Advisor: Ricardo Reis)
+###############################################################################
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, Federal University of Rio Grande do Sul (UFRGS)
+## Copyright (c) 2019, University of California, San Diego.
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -32,7 +30,9 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-################################################################################
+##
+###############################################################################
+
 
 read_lef "input.lef"
 read_def "input.def"

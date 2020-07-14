@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #include "HTreeBuilder.h"
 #include "third_party/CKMeans/clustering.h"
@@ -60,6 +54,17 @@ void HTreeBuilder::initSinkRegion() {
 
         std::cout << " Wire segment unit: " << _wireSegmentUnit << " dbu ("
                   << wireSegmentUnitInMicron << " um)\n";
+
+        if (_options->isSimpleSegmentEnabled()){
+                int remainingLength = _options->getBufferDistance() / (wireSegmentUnitInMicron * 2);
+                std::cout << " Distance between buffers: " << remainingLength << " units ("
+                          << _options->getBufferDistance() << " um)\n";
+                if (_options->isVertexBuffersEnabled()){
+                        int vertexBufferLength = _options->getVertexBufferDistance() / (wireSegmentUnitInMicron * 2);
+                        std::cout << " Branch Length for Vertex Buffer: " << vertexBufferLength << " units ("
+                          << _options->getVertexBufferDistance() << " um)\n";
+                }
+        }
 
         Box<DBU> sinkRegionDbu = _clock.computeSinkRegion();
         std::cout << " Original sink region: " << sinkRegionDbu << "\n";
@@ -83,7 +88,6 @@ void HTreeBuilder::run() {
         
         for (unsigned level = 1; level <= _clockTreeMaxDepth; ++level) {
                 bool stopCriterionFound = false;
-
                 unsigned numSinksPerSubRegion = computeNumberOfSinksPerSubRegion(level);
                 double regionWidth = 0.0, regionHeight = 0.0;
                 computeSubRegionSize(level, regionWidth, regionHeight);
@@ -117,6 +121,8 @@ void HTreeBuilder::run() {
                 createSingleBufferClockNet();
                 return;
         }
+
+        _clock.setMaxLevel(_topologyForEachLevel.size());
         
         if (_options->getPlotSolution()) {
                 plotSolution();
@@ -162,11 +168,14 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
         
         std::cout << "    Segment length (rounded): " << segmentLength << "\n";
 
+        int vertexBufferLength = _options->getVertexBufferDistance() / (_techChar->getLengthUnit() * 2);
+        int remainingLength = _options->getBufferDistance() / (_techChar->getLengthUnit() * 2);
         unsigned inputCap = _minInputCap, inputSlew = 1;
         if (level > 1) {
                 const LevelTopology &previousLevel = _topologyForEachLevel[level-2];
                 inputCap  = previousLevel.getOutputCap();
                 inputSlew = previousLevel.getOutputSlew();
+                remainingLength = previousLevel.getRemainingLength();
         }
 
         const unsigned SLEW_THRESHOLD = _options->getMaxSlew();
@@ -182,14 +191,34 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
                 currLength += numWires * charSegLength;
                 for (unsigned wireCount = 0; wireCount < numWires; ++wireCount) {
                         unsigned outCap = 0, outSlew = 0;
-                        unsigned key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                        unsigned key = 0;
+                        if (_options->isSimpleSegmentEnabled()){
+                                remainingLength = remainingLength - (charSegLength/2);
+                                if (segmentLength >= vertexBufferLength && (wireCount + 1 >= numWires) && _options->isVertexBuffersEnabled()){
+                                        remainingLength = 0;
+                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
+                                        remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit() * 2);
+                                }
+                                if (remainingLength <= 0){
+                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
+                                        remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit() * 2);
+                                } else {
+                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, false, remainingLength);
+                                }
+                        } else {
+                                key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
                                                               SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap);
+                        }
                         
                         _techChar->reportSegment(key);
 
                         inputCap = std::max(outCap, _minInputCap);
                         inputSlew = outSlew;
                         topology.addWireSegment(key); 
+                        topology.setRemainingLength(remainingLength);
                 }
 
                 if (currLength == segmentLength) {
@@ -295,6 +324,42 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSle
         return minKey;
 }
 
+unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSlew, unsigned inputCap, unsigned slewThreshold, 
+                                              unsigned tolerance, unsigned &outputSlew, unsigned &outputCap, bool forceBuffer, int currentLength) const {
+        unsigned minKey      = std::numeric_limits<unsigned>::max();
+        unsigned minDelay    = std::numeric_limits<unsigned>::max();
+        unsigned minBufKey   = std::numeric_limits<unsigned>::max();
+        unsigned minBufDelay = std::numeric_limits<unsigned>::max();
+      
+        for (unsigned load = 1; load <= _techChar->getMaxCapacitance(); ++load) {
+                for (unsigned outSlew = 1; outSlew <= _techChar->getMaxSlew(); ++outSlew) {
+                        _techChar->forEachWireSegment(length, load, outSlew,
+                                [&] (unsigned key, const WireSegment& seg) {    
+                                        //Same as the other functions, however, forces a segment to have a buffer in a specific location.
+                                        unsigned normalLength = length/2;
+                                        if (!seg.isBuffered() && seg.getDelay() < minDelay){
+                                                minDelay = seg.getDelay();
+                                                minKey = key;
+                                        }
+                                        if (seg.isBuffered() && seg.getDelay() < minBufDelay && seg.getNumBuffers() == 1) {
+                                                //If buffer is in the range of 10% of the expected location, save its key.
+                                                if (seg.getBufferLocation(0) > ((((double) normalLength + (double) currentLength)/ (double) normalLength) * 0.9) 
+                                                        && seg.getBufferLocation(0) < ((((double) normalLength + (double) currentLength)/ (double) normalLength) * 1.1)){
+                                                        minBufDelay = seg.getDelay();
+                                                        minBufKey = key;
+                                                }
+                                        }
+                                });                
+                }
+        }
+
+        if (forceBuffer && minBufKey != std::numeric_limits<unsigned>::max()){
+                return minBufKey;
+        } else {
+                return minKey;
+        }
+}
+
 void HTreeBuilder::computeBranchingPoints(unsigned level, LevelTopology& topology) {
         if (level == 1) {
                 Point<double> clockRoot(_sinkRegion.computeCenter());
@@ -369,7 +434,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(LevelTopology& topology,
         CKMeans::clustering clusteringEngine(sinks, rootLocation.getX(), rootLocation.getY());
         clusteringEngine.setPlotFileName("plot_" + std::to_string(level) + "_" + 
                                          std::to_string(branchPtIdx1) + "_" + 
-                                         std::to_string(branchPtIdx2) + ".py");
+                                         std::to_string(branchPtIdx2));
         
         Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
         Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
@@ -384,7 +449,8 @@ void HTreeBuilder::refineBranchingPointsWithClustering(LevelTopology& topology,
         //means.emplace_back(rootLocation.getX(), rootLocation.getY());
         means.emplace_back(branchPt2.getX(), branchPt2.getY());
         
-        clusteringEngine.iterKmeans(1, means.size(), sinks.size()/means.size(), 0, means, 5);
+        const unsigned cap = (unsigned) (sinks.size() * _options->getClusteringCapacity());
+        clusteringEngine.iterKmeans(1, means.size(), cap, 0, means, 5, _options->getClusteringPower());
         branchPt1 = Point<double>(means[0].first, means[0].second);
         branchPt2 = Point<double>(means[1].first, means[1].second);
         

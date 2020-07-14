@@ -43,6 +43,7 @@ using odb::dbObjectType;
 using odb::dbITermObj;
 using odb::dbBTermObj;
 using odb::dbIntProperty;
+using odb::dbPlacementStatus;
 
 // TODO: move to StringUtil
 char *
@@ -386,6 +387,20 @@ dbNetwork::topInstance() const
     return nullptr;
 }
 
+double
+dbNetwork::dbuToMeters(int dist) const
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist / (dbu * 1e+6);
+}
+
+int
+dbNetwork::metersToDbu(double dist) const
+{
+  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  return dist * dbu * 1e+6;
+}
+
 ////////////////////////////////////////////////////////////////
 
 const char *
@@ -627,6 +642,67 @@ dbNetwork::setVertexId(Pin *pin,
     return iterm->staSetVertexId(id);
   else if (bterm)
     return bterm->staSetVertexId(id);
+}
+
+void
+dbNetwork::location(const Pin *pin,
+		    // Return values.
+		    double &x,
+		    double &y,
+		    bool &exists) const
+{
+  if (isPlaced(pin)) {
+    Point pt = location(pin);
+    x = dbuToMeters(pt.getX());
+    y = dbuToMeters(pt.getY());
+    exists = true;
+  }
+  else {
+    x = 0;
+    y = 0;
+    exists = false;
+  }
+}
+
+Point
+dbNetwork::location(const Pin *pin) const
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  if (iterm) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y))
+      return Point(x, y);
+    else {
+      dbInst *inst = iterm->getInst();
+      int x, y;
+      inst->getOrigin(x, y);
+      return Point(x, y);
+    }
+  }
+  if (bterm) {
+    int x, y;
+    if (bterm->getFirstPinLocation(x, y))
+      return Point(x, y);
+  }
+  return Point(0, 0);
+}
+
+bool
+dbNetwork::isPlaced(const Pin *pin) const
+{
+  dbITerm *iterm;
+  dbBTerm *bterm;
+  staToDb(pin, iterm, bterm);
+  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
+  if (iterm) {
+    dbInst *inst = iterm->getInst();
+    status = inst->getPlacementStatus();
+  }
+  if (bterm)
+    status = bterm->getFirstPinPlacementStatus();
+  return status.isPlaced();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1234,6 +1310,14 @@ dbNetwork::dbToSta(dbSigType sig_type,
     internalError("unknown master term type");
     return PortDirection::bidirect();
   }
+}
+
+////////////////////////////////////////////////////////////////
+
+LibertyCell *
+dbNetwork::libertyCell(dbInst *inst)
+{
+  return libertyCell(dbToSta(inst));
 }
 
 } // namespace

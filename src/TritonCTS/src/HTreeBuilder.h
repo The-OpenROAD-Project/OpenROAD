@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef HTREEBUILDER_H
 #define HTREEBUILDER_H
@@ -152,11 +146,14 @@ class HTreeBuilder : public TreeBuilder {
                 unsigned getOutputSlew() const { return _outputSlew; }
                 void setOutputCap(unsigned cap) { _outputCap = cap; }
                 unsigned getOutputCap() const { return _outputCap; }
+                void setRemainingLength(unsigned length) { _remainingLength = length; }
+                unsigned getRemainingLength() const { return _remainingLength; }
 
         private:
                 double                         _length;
                 unsigned                       _outputSlew;
                 unsigned                       _outputCap;
+                unsigned                       _remainingLength;
                 std::vector<unsigned>          _wireSegments;
                 std::vector<Point<double>>     _branchPointLoc;
                 std::vector<unsigned>          _parents;
@@ -184,6 +181,15 @@ private:
                                         unsigned tolerance,
                                         unsigned &outputSlew,
                                         unsigned &outputCap) const;
+        unsigned computeMinDelaySegment(unsigned length, 
+                                        unsigned inputSlew,
+                                        unsigned inputCap,
+                                        unsigned slewThreshold,
+                                        unsigned tolerance,
+                                        unsigned &outputSlew,
+                                        unsigned &outputCap,
+                                        bool forceBuffer, 
+                                        int currentLength ) const;
         void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();

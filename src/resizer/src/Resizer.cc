@@ -57,6 +57,7 @@
 #include "sta/Bfs.hh"
 #include "sta/Search.hh"
 #include "sta/StaMain.hh"
+#include "sta/Fuzzy.hh"
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
 #include "resizer/SteinerTree.hh"
@@ -92,14 +93,6 @@ extern int Resizer_Init(Tcl_Interp *interp);
 }
 
 extern const char *resizer_tcl_inits[];
-
-// Referenced by MakeSteinerTree also.
-bool
-pinIsPlaced(Pin *pin,
-	    const dbNetwork *network);
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network);
 
 typedef array<Delay, RiseFall::index_count> Delays;
 typedef array<Slack, RiseFall::index_count> Slacks;
@@ -226,14 +219,56 @@ Resizer::ensureBlock()
 void
 Resizer::init()
 {
-  ensureBlock();
   // Abbreviated copyState
   db_network_ = sta_->getDbNetwork();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
+  ensureBlock();
   ensureLevelDrvrVerticies();
   ensureClkNets();
   ensureCorner();
+}
+
+void
+Resizer::removeBuffers()
+{
+  ensureBlock();
+  db_network_ = sta_->getDbNetwork();
+  // Disable incremental timing.
+  graph_delay_calc_->delaysInvalid();
+  search_->arrivalsInvalid();
+
+  int remove_count = 0;
+  for (dbInst *inst : block_->getInsts()) {
+    LibertyCell *lib_cell = db_network_->libertyCell(inst);
+    if (lib_cell && lib_cell->isBuffer()) {
+      LibertyPort *input_port, *output_port;
+      lib_cell->bufferPorts(input_port, output_port);
+      Instance *buffer = db_network_->dbToSta(inst);
+      Pin *input_pin = db_network_->findPin(buffer, input_port);
+      Pin *output_pin = db_network_->findPin(buffer, output_port);
+      Net *input_net = db_network_->net(input_pin);
+      Net *output_net = db_network_->net(output_pin);
+      if (!hasTopLevelPort(input_net)
+	  && !hasTopLevelPort(output_net)) {
+	NetPinIterator *pin_iter = db_network_->pinIterator(output_net);
+	while (pin_iter->hasNext()) {
+	  Pin *pin = pin_iter->next();
+	  if (pin != output_pin) {
+	    Instance *pin_inst = db_network_->instance(pin);
+	    Port *pin_port = db_network_->port(pin);
+	    sta_->disconnectPin(pin);
+	    sta_->connectPin(pin_inst, pin_port, input_net);
+	  }
+	}
+	delete pin_iter;
+	sta_->deleteNet(output_net);
+	sta_->deleteInstance(buffer);
+	remove_count++;
+      }
+    }
+  }
+  printf("Removed %d buffers.\n", remove_count);
 }
 
 void
@@ -317,9 +352,10 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
       bufferInput(pin, buffer_cell);
   }
   delete port_iter;
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d input buffers.\n", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
-  printf("Inserted %d input buffers.\n", inserted_buffer_count_);
+  }
 }
    
 void
@@ -338,7 +374,7 @@ Resizer::bufferInput(Pin *top_pin,
 					       buffer_name.c_str(),
 					       parent);
   if (buffer) {
-    Point pin_loc = pinLocation(top_pin, db_network_);
+    Point pin_loc = db_network_->location(top_pin);
     Point buf_loc = closestPtInRect(core_, pin_loc);
     setLocation(buffer, buf_loc);
     design_area_ += area(db_network_->cell(buffer_cell));
@@ -383,9 +419,10 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
       bufferOutput(pin, buffer_cell);
   }
   delete port_iter;
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d output buffers.\n", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
-  printf("Inserted %d output buffers.\n", inserted_buffer_count_);
+  }
 }
 
 void
@@ -405,7 +442,7 @@ Resizer::bufferOutput(Pin *top_pin,
 					   buffer_name.c_str(),
 					   parent);
   if (buffer) {
-    setLocation(buffer, pinLocation(top_pin, db_network_));
+    setLocation(buffer, db_network_->location(top_pin));
     design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
@@ -773,15 +810,12 @@ Resizer::findClkNets()
 {
   ClkArrivalSearchPred srch_pred(this);
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
-  PinSet clk_pins;
-  search_->findClkVertexPins(clk_pins);
-  for (Pin *pin : clk_pins) {
-    Vertex *vertex, *bidirect_drvr_vertex;
-    graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
-    bfs.enqueue(vertex);
-    if (bidirect_drvr_vertex)
-      bfs.enqueue(bidirect_drvr_vertex);
-  }  
+  for (Clock *clk : sdc_->clks()) {
+    for (Pin *pin : clk->leafPins()) {
+      Vertex *vertex = graph_->pinDrvrVertex(pin);
+      bfs.enqueue(vertex);
+    }
+  }
   while (bfs.hasNext()) {
     Vertex *vertex = bfs.next();
     const Pin *pin = vertex->pin();
@@ -912,270 +946,6 @@ Resizer::hasTopLevelPort(const Net *net)
 
 ////////////////////////////////////////////////////////////////
 
-// Assumes resizePreamble has been called.
-void
-Resizer::repairMaxCap(LibertyCell *buffer_cell)
-{
-  inserted_buffer_count_ = 0;
-  int repaired_net_count = 0;
-  int violation_count = 0;
-
-  sta_->checkCapacitanceLimitPreamble();
-  sta_->findDelays();
-  // Rebuffer in reverse level order.
-  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *vertex = level_drvr_verticies_[i];
-    Pin *drvr_pin = vertex->pin();
-    // Hands off the clock tree.
-    Net *net = network_->net(drvr_pin);
-    if (net
-	&& !isClock(net)
-	// Exclude tie hi/low cells.
-	&& !isFuncOneZero(drvr_pin)
-	// Hands off special nets.
-	&& !isSpecial(net)) {
-      const Corner *ignore_corner;
-      const RiseFall *ignore_rf;
-      float cap, limit, slack;
-      sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(), 
-			     ignore_corner, ignore_rf, cap, limit, slack);
-      if (slack < 0.0 && limit > 0.0) {
-	violation_count++;
-	repaired_net_count++;
-	Pin *drvr_pin = vertex->pin();
-	float limit_ratio = cap / limit;
-	int buffer_count = ceil(limit_ratio);
-	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
-	bufferLoads(drvr_pin, buffer_count, buffer_fanout,
-		    buffer_cell, "max_cap");
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
-	}
-      }
-    }
-  }
-  
-  if (violation_count > 0)
-    printf("Found %d max capacitance violations.\n", violation_count);
-  if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers in %d nets.\n",
-	   inserted_buffer_count_,
-	   repaired_net_count);
-    level_drvr_verticies_valid_ = false;
-  }
-}
-
-void
-Resizer::repairMaxSlew(LibertyCell *buffer_cell)
-{
-  inserted_buffer_count_ = 0;
-  int repaired_net_count = 0;
-  int violation_count = 0;
-
-  sta_->findDelays();
-  sta_->checkSlewLimitPreamble();
-  // Rebuffer in reverse level order.
-  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
-    Vertex *vertex = level_drvr_verticies_[i];
-    const Pin *drvr_pin = vertex->pin();
-    Net *net = network_->net(vertex->pin());
-    if (net
-	// Hands off the clock tree.
-	&& !isClock(net)
-	// Exclude tie hi/low cells.
-	&& !isFuncOneZero(drvr_pin)
-	// Hands off special nets.
-	&& !isSpecial(net)) {
-      // Max slew can be specified for input and output pin in liberty
-      // so all the pins have to be checked.
-      bool violation = false;
-      float limit_ratio;
-      NetPinIterator *pin_iter = network_->pinIterator(net);
-      while (pin_iter->hasNext()) {
-	Pin *pin = pin_iter->next();
-	const Corner *ignore_corner;
-	const RiseFall *ignore_rf;
-	Slew slew;
-	float limit, slack;
-	sta_->checkSlew(pin, corner_, MinMax::max(), false,
-			ignore_corner, ignore_rf, slew, limit, slack);
-	if (slack < 0.0 && limit > 0.0) {
-	  violation = true;
-	  limit_ratio = slew / limit;
-	  violation_count++;
-	  break;
-	}
-      }
-      delete pin_iter;
-      if (violation) {
-	Pin *drvr_pin = vertex->pin();
-	int buffer_count = ceil(limit_ratio);
-	int buffer_fanout = ceil(fanout(drvr_pin) / static_cast<double>(buffer_count));
-	bufferLoads(drvr_pin, buffer_count, buffer_fanout, buffer_cell, "max_slew");
-	repaired_net_count++;
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
-	}
-      }
-    }
-  }
-  
-  if (violation_count > 0)
-    printf("Found %d max slew violations.\n", violation_count);
-  if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers in %d nets.\n",
-	   inserted_buffer_count_,
-	   repaired_net_count);
-    level_drvr_verticies_valid_ = false;
-  }
-}
-
-void
-Resizer::bufferLoads(Pin *drvr_pin,
-		     int buffer_count,
-		     int max_fanout,
-		     LibertyCell *buffer_cell,
-		     const char *reason)
-{
-  debugPrint1(debug_, "buffer_loads", 2, "driver %s\n",
-	      sdc_network_->pathName(drvr_pin));
-  GroupedPins grouped_loads;
-  groupLoadsSteiner(drvr_pin, buffer_count, max_fanout, grouped_loads);
-  //reportGroupedLoads(grouped_loads);
-  Vector<Instance*> buffers(buffer_count);
-  Net *net = network_->net(drvr_pin);
-  Instance *top_inst = db_network_->topInstance();
-  LibertyPort *buffer_in, *buffer_out;
-  buffer_cell->bufferPorts(buffer_in, buffer_out);
-  Point drvr_loc = pinLocation(drvr_pin, db_network_);
-  for (int i = 0; i < buffer_count; i++) {
-    PinSeq &loads = grouped_loads[i];
-    if (loads.size()) {
-      Point center = findCenter(loads);
-      string load_net_name = makeUniqueNetName();
-      Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
-      string inst_name = makeUniqueInstName(reason);
-      Instance *buffer = db_network_->makeInstance(buffer_cell,
-						   inst_name.c_str(),
-						   top_inst);
-      setLocation(buffer, Point((drvr_loc.getX() + center.getX()) / 2,
-				(drvr_loc.getX() + center.getY()) / 2));
-      inserted_buffer_count_++;
-      design_area_ += area(db_network_->cell(buffer_cell));
-
-      sta_->connectPin(buffer, buffer_in, net);
-      sta_->connectPin(buffer, buffer_out, load_net);
-
-      for (Pin *load : loads) {
-	Instance *load_inst = network_->instance(load);
-	Port *load_port = network_->port(load);
-	sta_->disconnectPin(load);
-	sta_->connectPin(load_inst, load_port, load_net);
-      }
-      if (have_estimated_parasitics_)
-	estimateWireParasitic(load_net);
-    }
-  }
-  if (have_estimated_parasitics_)
-    estimateWireParasitic(net);
-}
-
-void
-Resizer::groupLoadsSteiner(Pin *drvr_pin,
-			   int group_count,
-			   int group_size,
-			   // Return value.
-			   GroupedPins &grouped_loads)
-{
-  Net* net = sdc_network_->net(drvr_pin);
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
-  grouped_loads.resize(group_count);
-  if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(db_network_);
-    int group_index = 0;
-    groupLoadsSteiner(tree, drvr_pt, group_size, group_index, grouped_loads);
-  }
-  else {
-    PinSeq loads;
-    findLoads(drvr_pin, loads);
-    int group_index = 0;
-    for (Pin *load : loads) {
-      Vector<Pin*> &loads = grouped_loads[group_index];
-      loads.push_back(load);
-      if (loads.size() == group_size)
-	group_index++;
-    }
-  }
-}
-
-// DFS of steiner tree collecting leaf pins into groups.
-void
-Resizer::groupLoadsSteiner(SteinerTree *tree,
-			   SteinerPt pt,
-			   int group_size,
-			   int &group_index,
-			   GroupedPins &grouped_loads)
-{
-  Pin *pin = tree->pin(pt);
-  if (pin && db_network_->isLoad(pin)) {
-    Vector<Pin*> &loads = grouped_loads[group_index];
-    loads.push_back(pin);
-    if (loads.size() == group_size)
-      group_index++;
-  }
-  else {
-    SteinerPt left = tree->left(pt);
-    if (left != SteinerTree::null_pt)
-      groupLoadsSteiner(tree, left, group_size, group_index, grouped_loads);
-    SteinerPt right = tree->right(pt);
-    if (right != SteinerTree::null_pt)
-      groupLoadsSteiner(tree, right, group_size, group_index, grouped_loads);
-  }
-}
-
-void
-Resizer::reportGroupedLoads(GroupedPins &grouped_loads)
-{
-  int i = 0;
-  for (Vector<Pin*> &loads : grouped_loads) {
-    if (!loads.empty()) {
-      printf("Group %d %lu members\n", i, loads.size());
-      Point center = findCenter(loads);
-      double max_dist = 0.0;
-      double sum_dist = 0.0;
-      for (Pin *load : loads) {
-	uint64_t dist2 = Point::squaredDistance(pinLocation(load, db_network_),
-						   center);
-	double dist = std::sqrt(dist2);
-	printf(" %.2e %s\n", dbuToMeters(dist), db_network_->pathName(load));
-	sum_dist += dist;
-	if (dist > max_dist)
-	  max_dist = dist;
-      }
-      double avg_dist = std::sqrt(sum_dist / loads.size());
-      printf(" avg dist %.2e\n", dbuToMeters(avg_dist));
-      printf(" max dist %.2e\n", dbuToMeters(max_dist));
-      i++;
-    }
-  }
-}
-
-Point
-Resizer::findCenter(PinSeq &pins)
-{
-  Point sum(0, 0);
-  for (Pin *pin : pins) {
-    Point loc = pinLocation(pin, db_network_);
-    sum.x() += loc.x();
-    sum.y() += loc.y();
-  }
-  return Point(sum.x() / pins.size(), sum.y() / pins.size());
-}
-
-////////////////////////////////////////////////////////////////
-
 // Repair tie hi/low net driver fanout by duplicating the
 // tie hi/low instances for every pin connected to tie hi/low instances.
 void
@@ -1259,37 +1029,39 @@ Point
 Resizer::tieLocation(Pin *load,
 		     int separation)
 {
-  dbInst *db_inst = db_network_->staToDb(network_->instance(load));
-  dbBox *bbox = db_inst->getBBox();
-  Point load_loc = pinLocation(load, db_network_);
+  Point load_loc = db_network_->location(load);
   int load_x = load_loc.getX();
   int load_y = load_loc.getY();
-  int left_dist = abs(load_x - bbox->xMin());
-  int right_dist = abs(load_x - bbox->xMax());
-  int bot_dist = abs(load_y - bbox->yMin());
-  int top_dist = abs(load_y - bbox->yMax());
   int tie_x = load_x;
   int tie_y = load_y;
-  if (left_dist < right_dist
-      && left_dist < bot_dist
-      && left_dist < top_dist)
-    // left
-    tie_x -= separation;
-  if (right_dist < left_dist
-      && right_dist < bot_dist
-      && right_dist < top_dist)
-    // right
-    tie_x += separation;
-  if (bot_dist < left_dist
-      && bot_dist < right_dist
-      && bot_dist < top_dist)
-    // bot
-    tie_y -= separation;
-  if (top_dist < left_dist
-      && top_dist < right_dist
-      && top_dist < bot_dist)
-    // top
-    tie_y += separation;
+  if (!network_->isTopLevelPort(load)) {
+    dbInst *db_inst = db_network_->staToDb(network_->instance(load));
+    dbBox *bbox = db_inst->getBBox();
+    int left_dist = abs(load_x - bbox->xMin());
+    int right_dist = abs(load_x - bbox->xMax());
+    int bot_dist = abs(load_y - bbox->yMin());
+    int top_dist = abs(load_y - bbox->yMax());
+    if (left_dist < right_dist
+	&& left_dist < bot_dist
+	&& left_dist < top_dist)
+      // left
+      tie_x -= separation;
+    if (right_dist < left_dist
+	&& right_dist < bot_dist
+	&& right_dist < top_dist)
+      // right
+      tie_x += separation;
+    if (bot_dist < left_dist
+	&& bot_dist < right_dist
+	&& bot_dist < top_dist)
+      // bot
+      tie_y -= separation;
+    if (top_dist < left_dist
+	&& top_dist < right_dist
+	&& top_dist < bot_dist)
+      // top
+      tie_y += separation;
+  }
   if (core_exists_)
     return closestPtInRect(core_, tie_x, tie_y);
   else
@@ -1304,21 +1076,19 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
-  VertexSet hold_failures;
+  VertexSet hold_failures = *sta_->search()->endpoints();
   // Find endpoints with hold violation.
-  for (Vertex *end : *sta_->search()->endpoints()) {
-    if (!search->isClock(end)
-	&& sta_->vertexSlack(end, MinMax::min()) < 0.0)
-      hold_failures.insert(end);
+  findHoldViolations(hold_failures);
+  if (hold_failures.size() > 0) {
+    printf("Found %lu endpoints with hold violations.\n",
+	   hold_failures.size());
+    repairHoldViolations(hold_failures, buffer_cell);
   }
-  if (debug_->check("repair_hold", 2)) {
-    printf("Failing endpoints %lu\n", hold_failures.size());
-    for (Vertex *failing_end : hold_failures)
-      printf(" %s\n", failing_end->name(sdc_network_));
-  }
-  repairHoldViolations(hold_failures, buffer_cell);
+  else
+    printf("No hold violations found.\n");
 }
 
+// For testing/debug.
 void
 Resizer::repairHoldViolations(Pin *end_pin,
 			      LibertyCell *buffer_cell)
@@ -1337,22 +1107,30 @@ Resizer::repairHoldViolations(VertexSet &ends,
 			      LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
-  Slack worst_slack;
-  Vertex *worst_vertex;
-  sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
-
+  int repair_count = 1;
   int pass = 1;
-  while (worst_slack < 0.0
-	 && pass < 10) {
-    repairHoldPass(ends, buffer_cell);
+  Slack worst_slack = findHoldViolations(ends);
+  float buffer_delay = bufferDelay(buffer_cell);
+  while (!ends.empty()
+	 // Make sure we are making progress.
+	 && repair_count > 0) {
+    repair_count = repairHoldPass(ends, buffer_cell);
+    debugPrint4(debug_, "repair_hold", 1, "pass %d worst slack %s ends %lu inserted %d\n",
+		pass,
+		units_->timeUnit()->asString(worst_slack, 3),
+		ends.size(),
+		repair_count);
     sta_->findRequireds();
-    sta_->worstSlack(MinMax::min(), worst_slack, worst_vertex);
+    worst_slack = findHoldViolations(ends);
     pass++;
   }
-  printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+    level_drvr_verticies_valid_ = false;
+  }
 }
 
-void
+int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
@@ -1362,21 +1140,23 @@ Resizer::repairHoldPass(VertexSet &ends,
   sortFaninsByWeight(weight_map, fanins);
   
   int repair_count = 0;
-  for(int i = 0; i < fanins.size() && repair_count < 10 ; i++) {
+  int max_repair_count = max(static_cast<int>(ends.size() * .2), 10);
+  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {
     Vertex *vertex = fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
-      debugPrint3(debug_, "repair_hold", 2, " %s w=%s gap=%s\n",
+      debugPrint4(debug_, "repair_hold", 2, " %s w=%s gap=%s #%d\n",
 		  vertex->name(sdc_network_),
 		  delayAsString(weight_map[vertex], this),
-		  delayAsString(slackGap(vertex), this));
+		  delayAsString(slackGap(vertex), this),
+		  i);
       Pin *drvr_pin = vertex->pin();
       Net *net = network_->isTopLevelPort(drvr_pin)
 	? network_->net(network_->term(drvr_pin))
 	: network_->net(drvr_pin);
       // Hands off special nets.
       if (!isSpecial(net)) {
-	repairHoldBuffer(drvr_pin, hold_slack, buffer_cell);
+	makeHoldDelay(drvr_pin, hold_slack, buffer_cell);
 	repair_count++;
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
@@ -1385,45 +1165,37 @@ Resizer::repairHoldPass(VertexSet &ends,
       }
     }
   }
+  return repair_count;
 }
 
-void
-Resizer::repairHoldBuffer(Pin *drvr_pin,
-			  Slack hold_slack,
-			  LibertyCell *buffer_cell)
+Slack
+Resizer::findHoldViolations(VertexSet &ends)
 {
-  Instance *parent = db_network_->topInstance();
-  string net2_name = makeUniqueNetName();
-  string buffer_name = makeUniqueInstName("hold");
-  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-					       buffer_name.c_str(),
-					       parent);
-  inserted_buffer_count_++;
-  design_area_ += area(db_network_->cell(buffer_cell));
-
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
-	      sdc_network_->pathName(drvr_pin),
-	      buffer_name.c_str(),
-	      net2_name.c_str())
-  Instance *drvr = db_network_->instance(drvr_pin);
-  Port *drvr_port = db_network_->port(drvr_pin);
-  Net *net = network_->isTopLevelPort(drvr_pin)
-    ? db_network_->net(db_network_->term(drvr_pin))
-    : db_network_->net(drvr_pin);
-  sta_->disconnectPin(drvr_pin);
-  sta_->connectPin(drvr, drvr_port, net2);
-  sta_->connectPin(buffer, input, net2);
-  sta_->connectPin(buffer, output, net);
-  setLocation(buffer, pinLocation(drvr_pin, db_network_));
+  Search *search = sta_->search();
+  Slack worst_slack = INF;
+  // Cannot use range iteration because we are removing elements from ends.
+  auto end_iter = ends.begin();
+  while (end_iter != ends.end()) {
+    Vertex *end = *end_iter;
+    Slack slack = sta_->vertexSlack(end, MinMax::min());
+    if (!search->isClock(end)
+	&& fuzzyLess(slack, 0.0)) {
+      debugPrint1(debug_, "repair_hold", 3, " %s\n",
+		  end->name(sdc_network_));
+      if (slack < worst_slack)
+	worst_slack = slack;
+      end_iter++;
+    }
+    else
+      end_iter = ends.erase(end_iter);
+  }
+  return worst_slack;
 }
 
 void
 Resizer::findFaninWeights(VertexSet &ends,
-			  // Return value.
-			  VertexWeightMap &weight_map)
+			// Return value.
+			VertexWeightMap &weight_map)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
@@ -1467,6 +1239,43 @@ Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
 		   return w1 < w2;});
 }
 
+void
+Resizer::makeHoldDelay(Pin *drvr_pin,
+		       Slack hold_slack,
+		       LibertyCell *buffer_cell)
+{
+  Instance *parent = db_network_->topInstance();
+  string net2_name = makeUniqueNetName();
+  string buffer_name = makeUniqueInstName("hold");
+  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+  Instance *buffer = db_network_->makeInstance(buffer_cell,
+					       buffer_name.c_str(),
+					       parent);
+  inserted_buffer_count_++;
+  design_area_ += area(db_network_->cell(buffer_cell));
+
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
+	      sdc_network_->pathName(drvr_pin),
+	      buffer_name.c_str(),
+	      net2_name.c_str())
+  Instance *drvr = db_network_->instance(drvr_pin);
+  Port *drvr_port = db_network_->port(drvr_pin);
+  Net *net = network_->isTopLevelPort(drvr_pin)
+    ? db_network_->net(db_network_->term(drvr_pin))
+    : db_network_->net(drvr_pin);
+  sta_->disconnectPin(drvr_pin);
+  sta_->connectPin(drvr, drvr_port, net2);
+  sta_->connectPin(buffer, input, net2);
+  sta_->connectPin(buffer, output, net);
+  setLocation(buffer, db_network_->location(drvr_pin));
+  if (have_estimated_parasitics_) {
+    estimateWireParasitic(net);
+    estimateWireParasitic(net2);
+  }
+}
+
 // Gap between min setup and hold slacks.
 // This says how much head room there is for adding delay to fix a old violation
 // before violating a setup check.
@@ -1493,53 +1302,10 @@ cellDriveResistance(const LibertyCell *cell)
   return 0.0;
 }
 
-// This does not work well because downsizing the gate can lower the
-// path delay by reducing the load capacitance on an earlier stage.
-void
-Resizer::repairHoldResize(Pin *drvr_pin,
-			  Slack hold_slack)
-{
-  Instance *inst = network_->instance(drvr_pin);
-  LibertyCell *inst_cell = network_->libertyCell(inst);
-  LibertyCellSeq *equiv_cells = sta_->equivCells(inst_cell);
-  bool found_cell = false;
-  int i;
-  for (i = 0; i < equiv_cells->size(); i++) {
-    LibertyCell *equiv = (*equiv_cells)[i];
-    if (equiv == inst_cell) {
-      found_cell = true;
-      break;
-    }
-  }
-  // Equiv cells are sorted by drive strength.
-  // If inst_cell is the first equiv it is already the lowest drive option.
-  if (found_cell && i > 0) {
-    double load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
-    double drive_res = cellDriveResistance(inst_cell);
-    double rc_delay0 = drive_res * load_cap;
-    // Downsize until RC delay > hold violation.
-    for (int k = i - 1; k >= 0; k--) {
-      LibertyCell *equiv = (*equiv_cells)[k];
-      double drive_res = cellDriveResistance(equiv);
-      double rc_delay = drive_res * load_cap;
-      if (rc_delay - rc_delay0 > -hold_slack
-	  // Last chance baby.
-	  || k == 0) {
-	debugPrint4(debug_, "resizer", 3, "%s %s -> %s +%s\n",
-		    sdc_network_->pathName(inst),
-		    inst_cell->name(),
-		    equiv->name(),
-		    delayAsString(rc_delay - rc_delay0, this));
-	sta_->replaceCell(inst, equiv);
-	break;
-      }
-    }
-  }
-}
-
 ////////////////////////////////////////////////////////////////
 
-// Repair long wires, max fanout violations.
+// Repair long wires, max slew, max capacitance, max fanout violations
+// The whole enchilada.
 void
 Resizer::repairDesign(double max_wire_length, // meters
 		      LibertyCell *buffer_cell)
@@ -1548,13 +1314,18 @@ Resizer::repairDesign(double max_wire_length, // meters
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
+  sta_->checkSlewLimitPreamble();
+  sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
 
   inserted_buffer_count_ = 0;
   VertexSeq drvrs;
   findLongWires(drvrs);
-  int length_violations = 0;
+  int repair_count = 0;
+  int slew_violations = 0;
+  int cap_violations = 0;
   int fanout_violations = 0;
+  int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
   for (Vertex *drvr : drvrs) {
     Pin *drvr_pin = drvr->pin();
@@ -1565,46 +1336,23 @@ Resizer::repairDesign(double max_wire_length, // meters
 	&& !isFuncOneZero(drvr_pin)
 	&& !hasTopLevelPort(net)
 	&& !isSpecial(net)) {
-      SteinerTree *tree = makeSteinerTree(net, true, db_network_);
-      if (tree) {
-	bool repair = false;
-	float fanout, max_fanout, fanout_slack;
-	sta_->checkFanout(drvr_pin, MinMax::max(),
-			  fanout, max_fanout, fanout_slack);
-	if (fanout_slack < 0.0) {
-	  fanout_violations++;
-	  repair = true;
-	}
-	int wire_length = findMaxSteinerDist(drvr, tree);
-	if (max_length
-	    && wire_length > max_length) {
-	  length_violations++;
-	  repair = true;
-	}
-	if (repair) {
-	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
-	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
-		      sdc_network_->pathName(drvr_pin),
-		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
-		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
-		      units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
-	  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
-	  int ignore1;
-	  float ignore2, ignore3;
-	  PinSeq ignore4;
-	  repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
-		    max_length, max_fanout, buffer_cell,
-		    ignore1, ignore2, ignore3, ignore4);
-	}
-      }
+      repairNet(net, drvr, true, true, true, max_length, buffer_cell,
+		repair_count, slew_violations, cap_violations,
+		fanout_violations, length_violations);
     }
   }
+  if (slew_violations > 0)
+    printf("Found %d slew violations.\n", slew_violations);
   if (fanout_violations > 0)
     printf("Found %d fanout violations.\n", fanout_violations);
+  if (cap_violations > 0)
+    printf("Found %d capacitance violations.\n", cap_violations);
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -1619,9 +1367,12 @@ Resizer::repairClkNets(double max_wire_length, // meters
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
-  sta_->checkFanoutLimitPreamble();
 
   inserted_buffer_count_ = 0;
+  int repair_count = 0;
+  int slew_violations = 0;
+  int cap_violations = 0;
+  int fanout_violations = 0;
   int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
   for (Net *net : clk_nets_) {
@@ -1630,39 +1381,196 @@ Resizer::repairClkNets(double max_wire_length, // meters
       PinSet::Iterator drvr_iter(drivers);
       Pin *drvr_pin = drvr_iter.next();
       Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-      SteinerTree *tree = makeSteinerTree(net, true, db_network_);
-      if (tree) {
-	bool repair = false;
-	int wire_length = findMaxSteinerDist(drvr, tree);
-	if (max_length
-	    && wire_length > max_length) {
-	  length_violations++;
-	  repair = true;
-	}
-	if (repair) {
-	  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
-	  debugPrint4(debug_, "repair_wire", 1, "%s (%s %s) l=%s\n",
-		      sdc_network_->pathName(drvr_pin),
-		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
-		      units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
-		      units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
-	  SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
-	  int ignore1;
-	  float ignore2, ignore3;
-	  PinSeq ignore4;
-	  repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
-		    max_length, INF, buffer_cell,
-		    ignore1, ignore2, ignore3, ignore4);
-	}
-      }
+      repairNet(net, drvr, false, false, false, max_length, buffer_cell,
+		repair_count, slew_violations, cap_violations,
+		fanout_violations, length_violations);
     }
   }
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
+}
+
+// for debugging
+void
+Resizer::repairNet(Net *net,
+		   double max_wire_length, // meters
+		   LibertyCell *buffer_cell)
+{
+  init();
+  // Disable incremental timing.
+  graph_delay_calc_->delaysInvalid();
+  search_->arrivalsInvalid();
+  sta_->checkSlewLimitPreamble();
+  sta_->checkCapacitanceLimitPreamble();
+  sta_->checkFanoutLimitPreamble();
+
+  inserted_buffer_count_ = 0;
+  int repair_count = 0;
+  int slew_violations = 0;
+  int cap_violations = 0;
+  int fanout_violations = 0;
+  int length_violations = 0;
+  int max_length = metersToDbu(max_wire_length);
+  PinSet *drivers = network_->drivers(net);
+  if (drivers) {
+    PinSet::Iterator drvr_iter(drivers);
+    Pin *drvr_pin = drvr_iter.next();
+    Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
+    repairNet(net, drvr, true, true, true, max_length, buffer_cell,
+	      repair_count, slew_violations, cap_violations,
+	      fanout_violations, length_violations);
+  }
+  if (slew_violations > 0)
+    printf("Found %d slew violations.\n", slew_violations);
+  if (fanout_violations > 0)
+    printf("Found %d fanout violations.\n", fanout_violations);
+  if (cap_violations > 0)
+    printf("Found %d capacitance violations.\n", cap_violations);
+  if (length_violations > 0)
+    printf("Found %d long wires.\n", length_violations);
+  if (inserted_buffer_count_ > 0) {
+    printf("Inserted %d buffers in %d nets.\n",
+	   inserted_buffer_count_,
+	   repair_count);
+    level_drvr_verticies_valid_ = false;
+  }
+}
+
+void
+Resizer::repairNet(Net *net,
+		   Vertex *drvr,
+		   bool check_slew,
+		   bool check_cap,
+		   bool check_fanout,
+		   int max_length, // dbu
+		   LibertyCell *buffer_cell,
+		   int &repair_count,
+		   int &slew_violations,
+		   int &cap_violations,
+		   int &fanout_violations,
+		   int &length_violations)
+{
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  if (tree) {
+    Pin *drvr_pin = drvr->pin();
+    bool repair = false;
+    float max_cap = INF;
+    float max_fanout = INF;
+    if (check_slew) {
+      float slew, slew_slack, max_slew;
+      const Corner *corner1;
+      const RiseFall *tr;
+      sta_->checkSlew(drvr_pin, corner_, MinMax::max(), false,
+		      corner1, tr, slew, max_slew, slew_slack);
+      if (slew_slack < 0.0) {
+	slew_violations++;
+	LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+	if (drvr_port) {
+	  // Find max load cap that corresponds to max_slew.
+	  max_cap = findSlewLoadCap(drvr_port, max_slew);
+	  repair = true;
+	}
+      }
+    }
+    if (check_cap) {
+      float cap, max_cap1, cap_slack;
+      const Corner *corner1;
+      const RiseFall *tr;
+      sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(),
+			     corner1, tr, cap, max_cap1, cap_slack);
+      if (cap_slack < 0.0) {
+	max_cap = min(max_cap, max_cap1);
+	cap_violations++;
+	repair = true;
+      }
+    }
+    if (check_fanout) {
+      float fanout, fanout_slack;
+      sta_->checkFanout(drvr_pin, MinMax::max(),
+			fanout, max_fanout, fanout_slack);
+      if (fanout_slack < 0.0) {
+	fanout_violations++;
+	repair = true;
+      }
+    }
+    int wire_length = findMaxSteinerDist(drvr, tree);
+    if (max_length
+	&& wire_length > max_length) {
+      length_violations++;
+      repair = true;
+    }
+    if (repair) {
+      Point drvr_loc = db_network_->location(drvr->pin());
+      debugPrint4(debug_, "repair_net", 1, "driver %s (%s %s) l=%s\n",
+		  sdc_network_->pathName(drvr_pin),
+		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
+      SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
+      int ignore1;
+      float ignore2, ignore3;
+      PinSeq ignore4;
+      repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
+		max_cap, max_fanout, max_length, buffer_cell, 0,
+		ignore1, ignore2, ignore3, ignore4);
+      repair_count++;
+    }
+  }
+}
+
+// Find the output port load capacitance that results in slew.
+double
+Resizer::findSlewLoadCap(LibertyPort *drvr_port,
+			 double slew)
+{
+  // cap1 lower bound
+  // cap2 upper bound
+  double cap1 = 0.0;
+  double cap2 = slew / drvr_port->driveResistance() * 2;
+  double tol = .01; // 1%
+  double diff1 = gateSlewDiff(drvr_port, cap1, slew);
+  double diff2 = gateSlewDiff(drvr_port, cap2, slew);
+  // binary search for diff = 0.
+  while (abs(cap1 - cap2) > max(cap1, cap2) * tol) {
+    if (diff2 < 0.0) {
+      cap1 = cap2;
+      diff1 = diff2;
+      cap2 *= 2;
+      diff2 = gateSlewDiff(drvr_port, cap2, slew);
+    }
+    else {
+      double cap3 = (cap1 + cap2) / 2.0;
+      double diff3 = gateSlewDiff(drvr_port, cap3, slew);
+      if (diff3 < 0.0) {
+	cap1 = cap3;
+	diff1 = diff3;
+      }
+      else {
+	cap2 = cap3;
+	diff2 = diff3;
+      }
+    }
+  }
+  return cap1;
+}
+
+// objective function
+double
+Resizer::gateSlewDiff(LibertyPort *drvr_port,
+		      double load_cap,
+		      double slew)
+{
+  ArcDelay delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  gateDelays(drvr_port, load_cap, delays, slews);
+  Slew gate_slew = max(slews[RiseFall::riseIndex()], slews[RiseFall::fallIndex()]);
+  return gate_slew - slew;
 }
 
 void
@@ -1670,59 +1578,90 @@ Resizer::repairNet(SteinerTree *tree,
 		   SteinerPt pt,
 		   SteinerPt prev_pt,
 		   Net *net,
-		   int max_length, // dbu
+		   float max_cap,
 		   float max_fanout,
+		   int max_length, // dbu
 		   LibertyCell *buffer_cell,
+		   int level,
 		   // Return values.
 		   // Remaining parasiics after repeater insertion.
-		   int &wire_length,
+		   int &wire_length, // dbu
 		   float &pin_cap,
 		   float &fanout,
 		   PinSeq &load_pins)
 {
+  Point pt_loc = tree->location(pt);
+  int pt_x = pt_loc.getX();
+  int pt_y = pt_loc.getY();
+  debugPrint4(debug_, "repair_net", 1, "%*spt (%s %s)\n",
+	      level, "",
+	      units_->distanceUnit()->asString(dbuToMeters(pt_x), 0),
+	      units_->distanceUnit()->asString(dbuToMeters(pt_y), 0));
   SteinerPt left = tree->left(pt);
   int wire_length_left = 0;
   float pin_cap_left = 0.0;
   float fanout_left = 0.0;
   PinSeq loads_left;
   if (left != SteinerTree::null_pt)
-    repairNet(tree, left, pt, net, max_length, max_fanout, buffer_cell,
+    repairNet(tree, left, pt, net, max_cap, max_fanout, max_length,
+	      buffer_cell, level + 1,
 	      wire_length_left, pin_cap_left, fanout_left, loads_left);
-
   SteinerPt right = tree->right(pt);
   int wire_length_right = 0;
   float pin_cap_right = 0.0;
   float fanout_right = 0.0;
   PinSeq loads_right;
   if (right != SteinerTree::null_pt)
-    repairNet(tree, right, pt, net, max_length, max_fanout, buffer_cell,
+    repairNet(tree, right, pt, net, max_cap, max_fanout, max_length,
+	      buffer_cell, level + 1,
 	      wire_length_right, pin_cap_right, fanout_right, loads_right);
+  debugPrint6(debug_, "repair_net", 1, "%*sleft=%s %s right=%s %s\n",
+	      level, "",
+	      units_->distanceUnit()->asString(dbuToMeters(wire_length_left), 0),
+	      units_->capacitanceUnit()->asString(pin_cap_left, 2),
+	      units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 0),
+	      units_->capacitanceUnit()->asString(pin_cap_right, 2));
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
+  bool repeater_left = false;
+  bool repeater_right = false;
   // Add a buffer to left or right branch to stay under the max length.
+  double cap_left = pin_cap_left + dbuToMeters(wire_length_left) * wire_cap_;
+  double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_cap_;
+  if ((cap_left + cap_right) > max_cap) {
+    if (cap_left > cap_right)
+      repeater_left = true;
+    else
+      repeater_right = true;
+  }
   if (max_length > 0
        && (wire_length_left + wire_length_right) > max_length) {
     if (wire_length_left > wire_length_right)
-      makeRepeater(tree, left, net, buffer_cell,
-		   wire_length_left, pin_cap_left, fanout_left, loads_left);
+      repeater_left = true;
     else
-      makeRepeater(tree, right, net, buffer_cell,
-		   wire_length_right, pin_cap_right, fanout_right, loads_right);
+      repeater_right = true;
   }
   if (max_fanout > 0
        && (fanout_left + fanout_right) > max_fanout) {
     if (fanout_left > fanout_right)
-      makeRepeater(tree, left, net, buffer_cell,
-		   wire_length_left, pin_cap_left, fanout_left, loads_left);
+      repeater_left = true;
     else
-      makeRepeater(tree, right, net, buffer_cell,
-		   wire_length_right, pin_cap_right, fanout_right, loads_right);
+      repeater_right = true;
   }
+
+  if (repeater_left)
+    makeRepeater(tree, pt, net, buffer_cell, level,
+		 wire_length_left, pin_cap_left, fanout_left, loads_left);
+  if (repeater_right)
+    makeRepeater(tree, pt, net, buffer_cell, level,
+		 wire_length_right, pin_cap_right, fanout_right, loads_right);
+
   wire_length = wire_length_left + wire_length_right;
   pin_cap = pin_cap_left + pin_cap_right;
   fanout = fanout_left + fanout_right;
+
   // Union left/right load pins.
   load_pins = loads_left;
   for (Pin *load_pin : loads_right)
@@ -1733,24 +1672,33 @@ Resizer::repairNet(SteinerTree *tree,
   if (prev_pt != SteinerTree::null_pt) {
     Pin *load_pin = tree->pin(pt);
     if (load_pin) {
+      Point load_loc = db_network_->location(load_pin);
+      debugPrint5(debug_, "repair_net", 1, "%*sload %s (%s %s)\n",
+		  level, "",
+		  sdc_network_->pathName(load_pin),
+		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 0));
       LibertyPort *load_port = network_->libertyPort(load_pin);
       if (load_port) {
 	pin_cap += portCapacitance(load_port);
 	fanout += portFanoutLoad(load_port);
       }
+      else
+	fanout += 1;
       load_pins.push_back(load_pin);
     }
 
     // Back up from pt to prev_pt adding repeaters every max_length.
     if (max_length > 0) {
-      Point pt_loc = tree->location(pt);
       Point prev_loc = tree->location(prev_pt);
       int length = Point::manhattanDistance(prev_loc, pt_loc);
       wire_length += length;
-      int pt_x = pt_loc.getX();
-      int pt_y = pt_loc.getY();
       int prev_x = prev_loc.getX();
       int prev_y = prev_loc.getY();
+      debugPrint4(debug_, "repair_net", 1, "%*swl=%s l=%s\n",
+		  level, "",
+		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 0),
+		  units_->distanceUnit()->asString(dbuToMeters(length), 0));
       while (wire_length > max_length) {
 	// Distance from pt to repeater backward toward prev_pt.
 	double buf_dist = length - (wire_length - max_length);
@@ -1759,14 +1707,17 @@ Resizer::repairNet(SteinerTree *tree,
 	double d = buf_dist / length;
 	int buf_x = pt_x + d * dx;
 	int buf_y = pt_y + d * dy;
-
-	makeRepeater(buf_x, buf_y, net, buffer_cell,
+	makeRepeater(buf_x, buf_y, net, buffer_cell, level,
 		     wire_length, pin_cap, fanout, load_pins);
 	// Update for the next round.
 	length -= buf_dist;
 	wire_length = length;
 	pt_x = buf_x;
 	pt_y = buf_y;
+	debugPrint4(debug_, "repair_net", 1, "%*swl=%s l=%s\n",
+		    level, "",
+		    units_->distanceUnit()->asString(dbuToMeters(wire_length), 0),
+		    units_->distanceUnit()->asString(dbuToMeters(length), 0));
       }
     }
   }
@@ -1780,13 +1731,14 @@ Resizer::makeRepeater(SteinerTree *tree,
 		      SteinerPt pt,
 		      Net *in_net,
 		      LibertyCell *buffer_cell,
+		      int level,
 		      int &wire_length,
 		      float &pin_cap,
 		      float &fanout,
 		      PinSeq &load_pins)
 {
   Point pt_loc = tree->location(pt);
-  makeRepeater(pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell,
+  makeRepeater(pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell, level,
 	       wire_length, pin_cap, fanout, load_pins);
 }
 
@@ -1795,6 +1747,7 @@ Resizer::makeRepeater(int x,
 		      int y,
 		      Net *in_net,
 		      LibertyCell *buffer_cell,
+		      int level,
 		      int &wire_length,
 		      float &pin_cap,
 		      float &fanout,
@@ -1807,7 +1760,8 @@ Resizer::makeRepeater(int x,
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
     string buffer_name = makeUniqueInstName("repeater");
-    debugPrint3(debug_, "repair_wire", 2, " %s (%s %s)\n",
+    debugPrint5(debug_, "repair_net", 2, "%*s%s (%s %s)\n",
+		level, "",
 		buffer_name.c_str(),
 		units_->distanceUnit()->asString(dbuToMeters(x), 0),
 		units_->distanceUnit()->asString(dbuToMeters(y), 0));
@@ -1815,6 +1769,9 @@ Resizer::makeRepeater(int x,
     string buffer_out_name = makeUniqueNetName();
     Instance *parent = db_network_->topInstance();
     Net *buffer_out = db_network_->makeNet(buffer_out_name.c_str(), parent);
+    dbNet *buffer_out_db = db_network_->staToDb(buffer_out);
+    dbNet *in_net_db = db_network_->staToDb(in_net);
+    buffer_out_db->setSigType(in_net_db->getSigType());
     Instance *buffer = db_network_->makeInstance(buffer_cell,
 						 buffer_name.c_str(),
 						 parent);
@@ -1826,7 +1783,7 @@ Resizer::makeRepeater(int x,
     sta_->connectPin(buffer, buffer_output_port, buffer_out);
 
     for (Pin *load_pin : load_pins) {
-      LibertyPort *load_port = network_->libertyPort(load_pin);
+      Port *load_port = network_->port(load_pin);
       Instance *load = network_->instance(load_pin);
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load, load_port, buffer_out);
@@ -1996,12 +1953,12 @@ int
 Resizer::maxLoadManhattenDistance(Vertex *drvr)
 {
   int max_dist = 0;
-  Point drvr_loc = pinLocation(drvr->pin(), db_network_);
+  Point drvr_loc = db_network_->location(drvr->pin());
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   while (edge_iter.hasNext()) {
     Edge *edge = edge_iter.next();
     Vertex *load = edge->to(graph_);
-    Point load_loc = pinLocation(load->pin(), db_network_);
+    Point load_loc = db_network_->location(load->pin());
     int dist = Point::manhattanDistance(drvr_loc, load_loc);
     max_dist = max(max_dist, dist);
   }
@@ -2128,8 +2085,23 @@ Resizer::bufferDelay(LibertyCell *buffer_cell,
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   ArcDelay gate_delays[RiseFall::index_count];
-  gateDelays(output, load_cap, gate_delays);
+  Slew slews[RiseFall::index_count];
+  gateDelays(output, load_cap, gate_delays, slews);
   return gate_delays[rf->index()];
+}
+
+// Self delay; buffer -> buffer
+float
+Resizer::bufferDelay(LibertyCell *buffer_cell)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  ArcDelay gate_delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  float load_cap = input->capacitance();
+  gateDelays(output, load_cap, gate_delays, slews);
+  return max(gate_delays[RiseFall::riseIndex()],
+	     gate_delays[RiseFall::fallIndex()]);
 }
 
 // Rise/fall delays across all timing arcs into drvr_port.
@@ -2138,10 +2110,13 @@ void
 Resizer::gateDelays(LibertyPort *drvr_port,
 		    float load_cap,
 		    // Return values.
-		    ArcDelay delays[RiseFall::index_count])
+		    ArcDelay delays[RiseFall::index_count],
+		    Slew slews[RiseFall::index_count])
 {
-  delays[RiseFall::riseIndex()] = -INF;
-  delays[RiseFall::fallIndex()] = -INF;
+  for (auto rf_index : RiseFall::rangeIndex()) {
+    delays[rf_index] = -INF;
+    slews[rf_index] = -INF;
+  }
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellTimingArcSetIterator set_iter(cell);
   while (set_iter.hasNext()) {
@@ -2160,6 +2135,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
 				   gate_delay,
 				   drvr_slew);
 	delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
+	slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
       }
     }
   }
@@ -2373,49 +2349,6 @@ Resizer::findDesignArea()
   return design_area;
 }
 
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network)
-{
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  network->staToDb(pin, iterm, bterm);
-  if (iterm) {
-    int x, y;
-    if (iterm->getAvgXY(&x, &y))
-      return Point(x, y);
-    else {
-      dbInst *inst = iterm->getInst();
-      int x, y;
-      inst->getOrigin(x, y);
-      return Point(x, y);
-    }
-  }
-  if (bterm) {
-    int x, y;
-    if (bterm->getFirstPinLocation(x, y))
-      return Point(x, y);
-  }
-  return Point(0, 0);
-}
-
-bool
-pinIsPlaced(Pin *pin,
-	    const dbNetwork *network)
-{
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  network->staToDb(pin, iterm, bterm);
-  dbPlacementStatus status = dbPlacementStatus::UNPLACED;
-  if (iterm) {
-    dbInst *inst = iterm->getInst();
-    status = inst->getPlacementStatus();
-  }
-  if (bterm)
-    status = bterm->getFirstPinPlacementStatus();
-  return status.isPlaced();
-}
-
 int
 Resizer::fanout(Pin *drvr_pin)
 {
@@ -2428,16 +2361,6 @@ Resizer::fanout(Pin *drvr_pin)
   }
   delete pin_iter;
   return fanout;
-}
-
-void
-Resizer::findLoads(Pin *drvr_pin,
-		   PinSeq &loads)
-{
-  PinSeq drvrs;
-  PinSet visited_drvrs;
-  FindNetDrvrLoads visitor(drvr_pin, visited_drvrs, loads, drvrs, network_);
-  network_->visitConnectedPins(drvr_pin, visitor);
 }
 
 bool
@@ -2468,4 +2391,100 @@ Resizer::writeNetSVG(Net *net,
     tree->writeSVG(sdc_network_, filename);
 }
 
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::repairClkInverters()
+{
+  // Abbreviated copyState
+  db_network_ = sta_->getDbNetwork();
+  sta_->ensureLevelized();
+  graph_ = sta_->graph();
+  ensureBlock();
+  InstanceSeq clk_inverters;
+  findClkInverters(clk_inverters);
+  for (Instance *inv : clk_inverters)
+    cloneClkInverter(inv);
 }
+
+void
+Resizer::findClkInverters(// Return values
+			  InstanceSeq &clk_inverters)
+{
+  ClkArrivalSearchPred srch_pred(this);
+  BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
+  for (Clock *clk : sdc_->clks()) {
+    for (Pin *pin : clk->leafPins()) {
+      Vertex *vertex = graph_->pinDrvrVertex(pin);
+      bfs.enqueue(vertex);
+    }
+  }
+  while (bfs.hasNext()) {
+    Vertex *vertex = bfs.next();
+    const Pin *pin = vertex->pin();
+    Instance *inst = network_->instance(pin);
+    LibertyCell *lib_cell = network_->libertyCell(inst);
+    if (vertex->isDriver(network_)
+	&& lib_cell
+	&& lib_cell->isInverter()) {
+      clk_inverters.push_back(inst);
+      debugPrint1(debug_, "repair_clk_inverters", 2, "inverter %s\n",
+		  network_->pathName(inst));
+    }
+    if (!vertex->isRegClk())
+      bfs.enqueueAdjacentVertices(vertex);
+  }
+}
+
+void
+Resizer::cloneClkInverter(Instance *inv)
+{
+  LibertyCell *inv_cell = network_->libertyCell(inv);
+  LibertyPort *in_port, *out_port;
+  inv_cell->bufferPorts(in_port, out_port);
+  Pin *in_pin = network_->findPin(inv, in_port);
+  Pin *out_pin = network_->findPin(inv, out_port);
+  Net *in_net = network_->net(in_pin);
+  dbNet *in_net_db = db_network_->staToDb(in_net);
+  Net *out_net = network_->isTopLevelPort(out_pin)
+    ? network_->net(network_->term(out_pin))
+    : network_->net(out_pin);
+  if (out_net) {
+    const char *inv_name = network_->name(inv);
+    Instance *top_inst = network_->topInstance();
+    NetConnectedPinIterator *load_iter = network_->pinIterator(out_net);
+    while (load_iter->hasNext()) {
+      Pin *load_pin = load_iter->next();
+      if (load_pin != out_pin) {
+	string clone_name = makeUniqueInstName(inv_name, true);
+	Instance *clone = sta_->makeInstance(clone_name.c_str(),
+					     inv_cell, top_inst);
+	Point clone_loc = db_network_->location(load_pin);
+	setLocation(clone, clone_loc);
+
+	string clone_out_net_name = makeUniqueNetName();
+	Net *clone_out_net = db_network_->makeNet(clone_out_net_name.c_str(), top_inst);
+	dbNet *clone_out_net_db = db_network_->staToDb(clone_out_net);
+	clone_out_net_db->setSigType(in_net_db->getSigType());
+
+	Instance *load = network_->instance(load_pin);
+	sta_->connectPin(clone, in_port, in_net);
+	sta_->connectPin(clone, out_port, clone_out_net);
+
+	// Connect load to clone
+	sta_->disconnectPin(load_pin);
+	Port *load_port = network_->port(load_pin);
+	sta_->connectPin(load, load_port, clone_out_net);
+      }
+    }
+    delete load_iter;
+
+    // Delete inv
+    sta_->disconnectPin(in_pin);
+    sta_->disconnectPin(out_pin);
+    sta_->deleteNet(out_net);
+    sta_->deleteInstance(inv);
+  }
+}
+
+} // namespace sta

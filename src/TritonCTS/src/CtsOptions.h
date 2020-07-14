@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef PARAMETERSFORCTS_H
 #define PARAMETERSFORCTS_H
@@ -77,6 +71,8 @@ public:
         unsigned getDbId() const { return _dbId; }
         void setPlotSolution(bool plot) { _plotSolution = plot; } 
         bool getPlotSolution() const { return _plotSolution; }
+        void setAutoLut(bool enable) { _autoLutEnable = enable; } 
+        bool runAutoLut() const { return _autoLutEnable; }
         void setOnlyCharacterization(bool enable) { _onlyCharacterization = enable; } 
         bool getOnlyCharacterization() const { return _onlyCharacterization; }
         void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
@@ -127,7 +123,19 @@ public:
         long int getNumBuffersInserted() const { return _buffersInserted; }
         void setNumSinks(long int sinks) { _sinks = sinks; }
         long int getNumSinks() const { return _sinks; }
-                
+        unsigned getClusteringPower()  const { return _clusteringPower; }
+        void setClusteringPower(unsigned power) { _clusteringPower = power; }
+        double getClusteringCapacity()  const { return _clusteringCapacity; }
+        void setClusteringCapacity(double capacity) { _clusteringCapacity = capacity; }
+        double getBufferDistance()  const { return _bufDistance; }
+        void setBufferDistance(double distance) { _bufDistance = distance; }
+        double getVertexBufferDistance()  const { return _vertexBufDistance; }
+        void setVertexBufferDistance(double distance) { _vertexBufDistance = distance; }
+        bool isVertexBuffersEnabled()  const { return _vertexBuffersEnable; }
+        void setVertexBuffersEnabled(bool enable) { _vertexBuffersEnable = enable; }
+        bool isSimpleSegmentEnabled()  const { return _simpleSegmentsEnable; }
+        void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
+
 private:
         std::string _blockName                  = "";
         std::string _lutFile                    = "";
@@ -141,6 +149,13 @@ private:
         unsigned    _dbId                       = 0;
         bool        _plotSolution               = false;
         bool        _onlyCharacterization       = false;
+        bool        _autoLutEnable              = true;
+        bool        _simpleSegmentsEnable       = false;
+        bool        _vertexBuffersEnable        = false;
+        double      _vertexBufDistance          = 240;
+        double      _bufDistance                = 100;
+        double      _clusteringCapacity         = 0.6;
+        unsigned    _clusteringPower            = 4;
         unsigned    _numMaxLeafSinks            = 15;
         unsigned    _maxSlew                    = 4;
         double      _maxCharSlew                = 0;

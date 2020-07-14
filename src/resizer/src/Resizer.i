@@ -55,10 +55,6 @@ ensureLinked();
 
 namespace sta {
 
-Point
-pinLocation(const Pin *pin,
-	    const dbNetwork *network);
-
 // Defined in StaTcl.i
 LibertyLibrarySeq *
 tclListSeqLibertyLibrary(Tcl_Obj *const source,
@@ -72,7 +68,6 @@ tclListSeqLibertyCell(Tcl_Obj *const source,
 using ord::getResizer;
 using ord::ensureLinked;
 
-using sta::Resizer;
 using sta::Corner;
 using sta::LibertyCellSeq;
 using sta::LibertyLibrarySeq;
@@ -87,6 +82,9 @@ using sta::NetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
+
+using sta::Resizer;
+using sta::dbNetwork;
 
 %}
 
@@ -145,12 +143,12 @@ using sta::Slew;
 
 %inline %{
 
-double
-utilization()
+void
+remove_buffers_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->utilization();
+  resizer->removeBuffers();
 }
 
 void
@@ -235,22 +233,6 @@ resize_to_target_slew()
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizeToTargetSlew();
-}
-
-void
-repair_max_cap_cmd(LibertyCell *buffer_cell)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairMaxCap(buffer_cell);
-}
-
-void
-repair_max_slew_cmd(LibertyCell *buffer_cell)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairMaxSlew(buffer_cell);
 }
 
 void
@@ -339,6 +321,24 @@ repair_clk_nets_cmd(float max_length,
 }
 
 void
+repair_clk_inverters_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairClkInverters();
+}
+
+void
+repair_net_cmd(Net *net,
+	       float max_length,
+	       LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairNet(net, max_length, buffer_cell); 
+}
+
+void
 report_long_wires_cmd(int count,
 		      int digits)
 {
@@ -412,14 +412,12 @@ write_net_svg(Net *net,
   resizer->writeNetSVG(net, filename);
 }
 
-const char *
-pin_location(Pin *pin)
+double
+utilization()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  odb::Point loc = sta::pinLocation(pin, resizer->getDbNetwork());
-  // return x/y as tcl list
-  return sta::stringPrintTmp("%d %d", loc.getX(), loc.getY());
+  return resizer->utilization();
 }
 
 %} // inline

@@ -75,6 +75,14 @@ sta_to_db_pin(Pin *pin)
   return iterm;
 }
 
+odb::dbNet *
+sta_to_db_net(Net *net)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->staToDb(net);
+}
+
 odb::dbMaster *
 sta_to_db_master(LibertyCell *cell)
 {

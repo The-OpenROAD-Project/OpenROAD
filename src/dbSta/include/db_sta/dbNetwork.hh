@@ -35,6 +35,7 @@ using odb::dbMTerm;
 using odb::dbSigType;
 using odb::dbIoType;
 using odb::dbSet;
+using odb::Point;
 
 // This adapter implements the network api for OpenDB.
 // ConcreteNetwork is used for library/cell/port functions only.
@@ -52,6 +53,54 @@ public:
   void readDbAfter(dbDatabase* db);
   void readLibertyAfter(LibertyLibrary *lib);
 
+  dbBlock *block() const { return block_; }
+  void makeLibrary(dbLib *lib);
+  void makeCell(Library *library,
+		dbMaster *master);
+  void makeTopCell();
+
+  virtual void location(const Pin *pin,
+			// Return values.
+			double &x,
+			double &y,
+			bool &exists) const;
+  virtual Point location(const Pin *pin) const;
+  bool isPlaced(const Pin *pin) const;
+
+  LibertyCell *libertyCell(dbInst *inst);
+
+  dbInst *staToDb(const Instance *instance) const;
+  dbNet *staToDb(const Net *net) const;
+  void staToDb(const Pin *pin,
+	       // Return values.
+	       dbITerm *&iterm,
+	       dbBTerm *&bterm) const;
+  dbBTerm *staToDb(const Term *term) const;
+  dbMaster *staToDb(const Cell *cell) const;
+  dbMaster *staToDb(const LibertyCell *cell) const;
+  dbMTerm *staToDb(const Port *port) const;
+  void staToDb(PortDirection *dir,
+	       // Return values.
+	       dbSigType &sig_type,
+	       dbIoType &io_type) const;
+
+  Pin *dbToSta(dbBTerm *bterm) const;
+  Term *dbToStaTerm(dbBTerm *bterm) const;
+  Pin *dbToSta(dbITerm *iterm) const;
+  Instance *dbToSta(dbInst *inst) const;
+  Net *dbToSta(dbNet *net) const;
+  const Net *dbToSta(const dbNet *net) const;
+  Cell *dbToSta(dbMaster *master) const;
+  Port *dbToSta(dbMTerm *mterm) const;
+  PortDirection *dbToSta(dbSigType sig_type,
+			 dbIoType io_type) const;
+
+  ////////////////////////////////////////////////////////////////
+  //
+  // Implement network API
+  //
+  ////////////////////////////////////////////////////////////////
+  
   virtual bool linkNetwork(const char *top_cell_name,
 			   bool make_black_boxes,
 			   Report *report);
@@ -139,39 +188,8 @@ public:
   virtual void mergeInto(Net *net,
 			 Net *into_net);
   virtual Net *mergedInto(Net *net);
-
-  ////////////////////////////////////////////////////////////////
-  dbBlock *block() const { return block_; }
-  void makeLibrary(dbLib *lib);
-  void makeCell(Library *library,
-		dbMaster *master);
-  void makeTopCell();
-
-  dbInst *staToDb(const Instance *instance) const;
-  dbNet *staToDb(const Net *net) const;
-  void staToDb(const Pin *pin,
-	       // Return values.
-	       dbITerm *&iterm,
-	       dbBTerm *&bterm) const;
-  dbBTerm *staToDb(const Term *term) const;
-  dbMaster *staToDb(const Cell *cell) const;
-  dbMaster *staToDb(const LibertyCell *cell) const;
-  dbMTerm *staToDb(const Port *port) const;
-  void staToDb(PortDirection *dir,
-	       // Return values.
-	       dbSigType &sig_type,
-	       dbIoType &io_type) const;
-
-  Pin *dbToSta(dbBTerm *bterm) const;
-  Term *dbToStaTerm(dbBTerm *bterm) const;
-  Pin *dbToSta(dbITerm *iterm) const;
-  Instance *dbToSta(dbInst *inst) const;
-  Net *dbToSta(dbNet *net) const;
-  const Net *dbToSta(const dbNet *net) const;
-  Cell *dbToSta(dbMaster *master) const;
-  Port *dbToSta(dbMTerm *mterm) const;
-  PortDirection *dbToSta(dbSigType sig_type,
-			 dbIoType io_type) const;
+  double dbuToMeters(int dist) const;
+  int metersToDbu(double dist) const;
 
   using Network::netIterator;
   using Network::findPin;

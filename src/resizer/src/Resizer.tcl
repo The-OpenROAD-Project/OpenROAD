@@ -35,6 +35,13 @@
 
 namespace eval sta {
 
+define_cmd_args "remove_buffers" {}
+
+proc remove_buffers { args } {
+  check_argc_eq0 "remove_buffers" $args
+  remove_buffers_cmd
+}
+
 define_cmd_args "set_wire_rc" {[-layer layer_name]\
 				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
@@ -200,48 +207,6 @@ proc buffer_ports { args } {
   }
 }
 
-define_cmd_args "repair_max_cap" {-buffer_cell buffer_cell\
-				    [-max_utilization util]}
-
-proc repair_max_cap { args } {
-  parse_key_args "repair_max_cap" args \
-    keys {-buffer_cell -max_utilization} \
-    flags {}
-  
-  set buffer_cell [parse_buffer_cell keys 1]
-  set_max_utilization [parse_max_util keys]
-  
-  check_argc_eq0 "repair_max_cap" $args
-  
-  resizer_preamble [get_libs *]
-  repair_max_cap_cmd $buffer_cell
-}
-
-define_cmd_args "repair_max_slew" {-buffer_cell buffer_cell\
-				     [-max_utilization util]}
-
-proc repair_max_slew { args } {
-  parse_key_args "repair_max_slew" args \
-    keys {-buffer_cell -max_utilization} \
-    flags {}
-  
-  set buffer_cell [parse_buffer_cell keys 1]
-  set_max_utilization [parse_max_util keys]
-  
-  check_argc_eq0 "repair_max_slew" $args
-  
-  resizer_preamble [get_libs *]
-  repair_max_slew_cmd $buffer_cell
-}
-
-# compatibility
-define_cmd_args "repair_max_fanout" {-buffer_cell buffer_cell\
-				       [-max_utilization util]}
-
-proc repair_max_fanout { args } {
-  eval [concat repair_design $args]
-}
-
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
 				   -buffer_cell buffer_cell}
 
@@ -282,13 +247,11 @@ proc repair_clock_nets { args } {
   repair_clk_nets_cmd $max_wire_length $buffer_cell
 }
 
-# compatibility
-define_cmd_args "repair_long_wires" {[-max_length max_length]\
-				       -buffer_cell buffer_cell}
+define_cmd_args "repair_clock_inverters" {-buffer_cell buffer_cell}
 
-proc repair_long_wires { args } {
-  set args [regsub \\-max_length $args -max_wire_length]
-  eval [concat repair_design $args]
+proc repair_clock_inverters { args } {
+  check_argc_eq0 "repair_clock_inverters" $args
+  repair_clk_inverters_cmd
 }
 
 define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
@@ -296,10 +259,6 @@ define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
 proc repair_tie_fanout { args } {
   parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
     flags {-verbose}
-  
-  if { [info exists keys(-max_fanout)] } {
-    ord::warn "-max_fanout is deprecated."
-  }
   
   set separation 0
   if { [info exists keys(-separation)] } {

@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,21 +21,27 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #include "DbWrapper.h"
 #include "TritonCTSKernel.h"
 #include "HTreeBuilder.h"
 #include "db_sta/dbSta.hh"
 #include "openroad/Error.hh"
+#include "sta/Sdc.hh"
+#include "sta/Clock.hh"
+#include "sta/Set.hh"
 
 // DB includes
 #include "db.h"
@@ -172,6 +169,8 @@ void DbWrapper::initClock(odb::dbNet* net) {
 
         incrementNumClocks();
 
+        clockNet.setNetObj(net);
+
         _kernel->addBuilder(new HTreeBuilder(*_options, clockNet));
 }
 
@@ -217,25 +216,33 @@ void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
        }
 };  
 
-void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
+void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
         std::cout << " Writing clock net \"" << clockNet.getName() << "\" to DB\n";
+        odb::dbNet* topClockNet = clockNet.getNetObj();
                 
-        disconnectAllSinksFromNet(clockNet.getName());
+        disconnectAllSinksFromNet(topClockNet);
         
         createClockBuffers(clockNet);   
         
         // connect top buffer on the clock pin
-        odb::dbNet* topClockNet = _block->findNet(clockNet.getName().c_str());
         std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
         odb::dbInst* topClockInst = _block->findInst(topClockInstName.c_str());
         odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst); 
         odb::dbITerm::connect(topClockInstInputPin, topClockNet); 
         topClockNet->setSigType(odb::dbSigType::CLOCK);
 
+        std::map<int,uint> fanoutcount;
+
         // create subNets
         unsigned numClkNets = 0; 
+        const Clock::SubNet* rootSubNet = nullptr;
         clockNet.forEachSubNet( [&] (const Clock::SubNet& subNet) {
+                        bool outputPinFound = true;
+                        bool inputPinFound = true;
                         //std::cout << "    SubNet: " << subNet.getName() << "\n";
+                        if (("clknet_0_" + clockNet.getName()) == subNet.getName()){
+                                rootSubNet = &subNet;
+                        }
                         odb::dbNet* clkSubNet = odb::dbNet::create(_block, subNet.getName().c_str());
                         ++numClkNets;
                         clkSubNet->setSigType(odb::dbSigType::CLOCK);
@@ -244,7 +251,16 @@ void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
                        
                         odb::dbInst* driver = _block->findInst(subNet.getDriver()->getName().c_str());
                         odb::dbITerm* outputPin = driver->getFirstOutput();
+                        if (outputPin == nullptr) {
+                                outputPinFound = false;
+                        }
                         odb::dbITerm::connect(outputPin, clkSubNet); 
+
+                        if ( fanoutcount.find(subNet.getNumSinks()) == fanoutcount.end() ) {
+                                fanoutcount[subNet.getNumSinks()] = 0;
+                        }
+
+                        fanoutcount[subNet.getNumSinks()] = fanoutcount[subNet.getNumSinks()] + 1;
 
                         subNet.forEachSink( [&] (ClockInst *inst) {
                                 //std::cout << "      " << inst->getName() << "\n";
@@ -255,21 +271,90 @@ void DbWrapper::writeClockNetsToDb(const Clock& clockNet) {
                                 } else {
                                         inputPin = _block->findITerm(inst->getName().c_str());
                                 }
+                                if (inputPin == nullptr) {
+                                        inputPinFound = false;
+                                }
                                 odb::dbITerm::connect(inputPin, clkSubNet); 
                         });
+
+                        if (inputPinFound == false || outputPinFound == false){
+                                std::cout << subNet.getName() << " not fully connected. Removing it.\n";
+                                disconnectAllPinsFromNet(clkSubNet);
+                                odb::dbNet::destroy(clkSubNet);
+                                --numClkNets;
+                        }
                 });       
+        
+        std::string fanoutDistString = "    Fanout distribution for the current clock = ";
+        std::string currentFanout = "";
+        for (auto const& x : fanoutcount){
+                currentFanout = currentFanout + std::to_string(x.first) + ':' + std::to_string(x.second) + ", ";
+                
+        }
+
+        fanoutDistString = fanoutDistString + currentFanout.substr(0,currentFanout.size() - 2) + ".";
         
         if (_options->writeOnlyClockNets()) {
                 removeNonClockNets();
         }
 
+        int minPath = std::numeric_limits<int>::max();
+        int maxPath = std::numeric_limits<int>::min();
+        rootSubNet->forEachSink( [&] (ClockInst *inst) {
+                if (inst->isClockBuffer()){
+                        std::pair<int,int> resultsForBranch = branchBufferCount(inst, 1, clockNet);
+                        if (resultsForBranch.first < minPath){
+                                minPath = resultsForBranch.first;
+                        }
+                        if (resultsForBranch.second > maxPath){
+                                maxPath = resultsForBranch.second;
+                        }
+                }
+        });
+
+        std::cout << " Minimum number of buffers in the clock path: " << minPath << ".\n";
+        std::cout << " Maximum number of buffers in the clock path: " << maxPath << ".\n";
+
         std::cout << "    Created " << numClkNets << " clock nets.\n";
         long int currentTotalNets = _options->getNumClockSubnets() + numClkNets;
         _options->setNumClockSubnets(currentTotalNets);
+        
+        std::cout << fanoutDistString << std::endl;
+        std::cout << "    Max level of the clock tree: " << clockNet.getMaxLevel() << ".\n";
 }
 
-void DbWrapper::disconnectAllSinksFromNet(std::string netName) {
-        odb::dbNet* net = _block->findNet(netName.c_str());
+std::pair<int,int> DbWrapper::branchBufferCount(ClockInst *inst, int bufCounter, Clock& clockNet){
+        odb::dbInst* sink = _block->findInst(inst->getName().c_str());
+        odb::dbITerm* outITerm = sink->getFirstOutput();
+        int minPath = std::numeric_limits<int>::max();
+        int maxPath = std::numeric_limits<int>::min();
+        for (odb::dbITerm* sinkITerms : outITerm->getNet()->getITerms()){
+                if (sinkITerms != outITerm){
+                        ClockInst* clockInst = clockNet.findClockByName(sinkITerms->getInst()->getName());
+                        if (clockInst == nullptr){
+                                int newResult = bufCounter + 1;
+                                if (newResult > maxPath){
+                                        maxPath = newResult;
+                                }
+                                if (newResult < minPath){
+                                        minPath = newResult;
+                                }
+                        } else {
+                                std::pair<int,int> newResults = branchBufferCount(clockInst, bufCounter + 1, clockNet);
+                                if (newResults.first < minPath){
+                                        minPath = newResults.first;
+                                }
+                                if (newResults.second > maxPath){
+                                        maxPath = newResults.second;
+                                }
+                        }
+                }
+        }
+        std::pair<int,int> currentResults (minPath,maxPath);
+        return currentResults;
+}
+
+void DbWrapper::disconnectAllSinksFromNet(odb::dbNet* net) {
         odb::dbSet<odb::dbITerm> iterms = net->getITerms(); 
         odb::dbSet<odb::dbITerm>::iterator itr;
         for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
@@ -277,6 +362,15 @@ void DbWrapper::disconnectAllSinksFromNet(std::string netName) {
                 if (iterm->getIoType() != odb::dbIoType::INPUT) {
                         continue;
                 }
+                odb::dbITerm::disconnect(iterm);
+        }
+}
+
+void DbWrapper::disconnectAllPinsFromNet(odb::dbNet* net) {
+        odb::dbSet<odb::dbITerm> iterms = net->getITerms(); 
+        odb::dbSet<odb::dbITerm>::iterator itr;
+        for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
+                odb::dbITerm* iterm = *itr;
                 odb::dbITerm::disconnect(iterm);
         }
 }

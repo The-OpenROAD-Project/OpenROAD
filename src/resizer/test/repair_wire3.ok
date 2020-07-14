@@ -17,4 +17,4 @@ Driver    length delay
 u2/Z manhtn 1500 steiner 1500 0.00
 u3/Z manhtn 1 steiner 1 0.00
 Found 1 long wires.
-Inserted 2 buffers.
+Inserted 2 buffers in 1 nets.

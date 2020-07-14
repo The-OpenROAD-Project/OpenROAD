@@ -47,6 +47,7 @@
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -1384,7 +1385,7 @@ DatabaseHandler::required(InstanceTerm* term) const
 {
     auto vert = network()->graph()->pinLoadVertex(term);
     auto req  = sta_->vertexRequired(vert, min_max_);
-    if (sta::fuzzyInf(req))
+    if (sta::delayInf(req))
     {
         return 0;
     }
@@ -1397,12 +1398,13 @@ DatabaseHandler::required(InstanceTerm* term, bool is_rise,
     auto vert = network()->graph()->pinLoadVertex(term);
     auto req  = sta_->vertexRequired(
         vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
-    if (sta::fuzzyInf(req))
+    if (sta::delayInf(req))
     {
         return 0;
     }
     return req;
 }
+
 std::vector<std::vector<PathPoint>>
 DatabaseHandler::getPaths(bool get_max, int path_count) const
 {
@@ -1525,7 +1527,7 @@ DatabaseHandler::expandPath(sta::Path* path, bool enumed) const
         auto arrival       = ref->arrival(sta_);
         auto path_ap       = ref->pathAnalysisPt(sta_);
         auto path_required = enumed ? 0 : ref->required(sta_);
-        if (!path_required || sta::fuzzyInf(path_required))
+        if (!path_required || sta::delayInf(path_required))
         {
             path_required = required(pin, is_rising, path_ap);
         }
@@ -2881,6 +2883,8 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
     float load_cap = loadCapacitance(term);
     return violatesMaximumCapacitance(term, load_cap, limit_scale_factor);
 }
+
+// Assumes sta checkCapacitanceLimitPreamble is called()
 bool
 DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
                                             float limit_scale_factor) const
@@ -2888,13 +2892,13 @@ DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
     const sta::Corner*   corner;
     const sta::RiseFall* rf;
     float                cap, limit, ignore;
-
     sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
                            limit, ignore);
     float diff = (limit_scale_factor * limit) - cap;
     return diff < 0.0 && limit > 0.0;
 }
 
+// Assumes sta checkSlewLimitPreamble is called()
 bool
 DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
                                            float         limit_scale_factor)

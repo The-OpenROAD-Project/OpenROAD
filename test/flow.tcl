@@ -7,6 +7,9 @@ read_sdc $sdc_file
 
 eval $init_floorplan_cmd
 
+# remove buffers inserted by synthesis 
+remove_buffers
+
 io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_layer
 
 if { [have_macros] } {
@@ -31,8 +34,8 @@ set_wire_rc -layer $wire_rc_layer
 estimate_parasitics -placement
 set_dont_use $dont_use
 
-buffer_ports -buffer_cell $resize_buffer_cell
-repair_design -buffer_cell $resize_buffer_cell
+repair_design -max_wire_length $max_wire_length \
+  -buffer_cell $resize_buffer_cell
 resize
 
 repair_tie_fanout -separation $tie_separation $tielo_port
@@ -44,10 +47,15 @@ detailed_placement
 optimize_mirroring
 check_placement -verbose
 
+repair_clock_inverters
+
 clock_tree_synthesis -lut_file $cts_lut_file \
   -sol_list $cts_sol_file \
   -root_buf $cts_buffer \
   -wire_unit 20
+
+repair_clock_nets -max_wire_length $max_wire_length \
+  -buffer_cell $resize_buffer_cell
 
 detailed_placement
 filler_placement $filler_cells
