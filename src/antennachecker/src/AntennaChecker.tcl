@@ -31,7 +31,7 @@
 
 
 
-sta::define_cmd_args "check_antennas" { [-verbose] }
+sta::define_cmd_args "check_antennas" { [-path path] }
 sta::define_cmd_args "get_met_rest_length" { [-net_name netname]\
                                               [-route_level rt_lv] }
 sta::define_cmd_args "check_net_violation" { [-net_name netname] }
@@ -43,11 +43,12 @@ proc load_antenna_rules { } {
 
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
-  keys {} \
-  flags {-verbose}
+  keys {-path} \
+  flags {}
 
   antenna_checker::antennachecker_set_verbose [info exists flags(-verbose)]
-  antenna_checker::check_antennas
+  antenna_checker::load_antenna_rules
+  antenna_checker::check_antennas $keys(-path)
 }
 
 proc get_met_avail_length { args } {

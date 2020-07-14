@@ -161,17 +161,18 @@ public:
     bool check_VIA_PAR( ARinfo AntennaRatio );
     bool check_VIA_CAR( ARinfo AntennaRatio );
 
-    std::vector<int> GetAntennaRatio();
+    std::vector<int> GetAntennaRatio(std::string path);
 
     void load_antenna_rules();
-    void check_antennas();
+    void check_antennas(std::string path);
     
     void find_wireroot_iterms( dbWireGraph::Node * node, int wire_level, std::vector<dbITerm *>& gates );
     std::vector<std::pair<double, std::vector<dbITerm *>>> PAR_max_wire_length( dbNet * net, int route_level );
     void check_par_max_length();
     std::vector<std::pair<int, std::vector<dbITerm *>>> get_net_antenna_violations( dbNet * net );
     std::vector<std::pair<double, std::vector<dbITerm *>>> get_violated_wire_length( dbNet * net, int routing_level );
-
+	
+    void find_max_wire_length();
 private:
     odb::dbDatabase *db_;
     FILE* _out;
