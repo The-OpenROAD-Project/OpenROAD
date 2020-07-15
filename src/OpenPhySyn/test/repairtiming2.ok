@@ -1,0 +1,74 @@
+1
+Notice 0: Reading LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: repairtiming1.def
+Notice 0: Design: ibex_core
+Notice 0:     Created 231 pins.
+Notice 0:     Created 39201 components and 204570 component-terminals.
+Notice 0:     Created 2 special nets and 78402 connections.
+Notice 0:     Created 41414 nets and 126168 connections.
+Notice 0: Finished DEF file: repairtiming1.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+_59840_/Z                               0.20    0.55   -0.35 (VIOLATED)
+_59821_/Z                               0.20    0.54   -0.34 (VIOLATED)
+_59776_/Z                               0.20    0.45   -0.25 (VIOLATED)
+_65895_/Z                               0.20    0.39   -0.20 (VIOLATED)
+_61075_/Z                               0.20    0.37   -0.17 (VIOLATED)
+_59774_/Z                               0.20    0.34   -0.14 (VIOLATED)
+_61077_/Z                               0.20    0.22   -0.02 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+_59840_/Z                              60.65  218.77 -158.11 (VIOLATED)
+_59821_/Z                              60.65  213.82 -153.16 (VIOLATED)
+_59776_/Z                              60.65  183.45 -122.80 (VIOLATED)
+_65895_/Z                              60.65  162.18 -101.52 (VIOLATED)
+_61075_/Z                              60.65  153.93  -93.28 (VIOLATED)
+_59774_/Z                              60.65  138.30  -77.65 (VIOLATED)
+_61077_/Z                              60.65   89.99  -29.34 (VIOLATED)
+_59771_/Z                              60.65   77.11  -16.46 (VIOLATED)
+_59825_/Z                              60.65   74.51  -13.85 (VIOLATED)
+_59823_/Z                              60.65   74.20  -13.55 (VIOLATED)
+_66267_/Z                              60.65   73.99  -13.33 (VIOLATED)
+_65509_/Z                              60.65   69.46   -8.80 (VIOLATED)
+_59770_/Z                              60.65   68.82   -8.17 (VIOLATED)
+_59773_/Z                              60.65   65.62   -4.97 (VIOLATED)
+_43726_/ZN                             10.47   14.20   -3.73 (VIOLATED)
+_45548_/ZN                             10.47   14.04   -3.57 (VIOLATED)
+_43644_/ZN                             10.47   14.01   -3.54 (VIOLATED)
+_66274_/Z                              60.65   64.09   -3.44 (VIOLATED)
+_44290_/ZN                             10.47   13.83   -3.36 (VIOLATED)
+_44918_/ZN                             10.47   13.76   -3.29 (VIOLATED)
+_44998_/ZN                             10.47   13.66   -3.19 (VIOLATED)
+_38841_/ZN                             10.47   11.65   -1.18 (VIOLATED)
+_56471_/ZN                             10.47   11.38   -0.91 (VIOLATED)
+
+Invoking repair_timing transform 
+Buffer library: BUF_X16, BUF_X32, BUF_X4 
+Inverter library: None 
+Buffering: enabled 
+Driver sizing: enabled 
+Pin-swapping: disabled 
+Mode: Timing-Driven 
+Iteration 1 
+Buffers: 0 
+Resize up: 23 
+Resize down: 0 
+Pin Swap: 0 
+Buffered nets: 23 
+Transition violations: 7 
+Capacitance violations: 23 
+Initial area: 59712 
+New area: 59728 
+Finished repair_timing transform ( 23 ) 
+Added/updated 23 cells
+No differences found.

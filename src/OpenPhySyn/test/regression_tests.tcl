@@ -4,7 +4,9 @@ record_tests {
   constprop2
   constprop3
   clone1
-  clone2
   fanout1
   fanout2
+  repairtiming1
+  repairtiming2
+  repairtiming3
 }

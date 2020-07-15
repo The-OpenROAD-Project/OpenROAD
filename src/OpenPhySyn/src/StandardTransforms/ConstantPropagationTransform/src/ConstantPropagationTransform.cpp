@@ -28,8 +28,6 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifdef OPENPHYSYN_TRANSFORM_CONSTANT_PROPAGATION_ENABLED
-
 #include "ConstantPropagationTransform.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
 #include "OpenPhySyn/Psn.hpp"
@@ -618,6 +616,8 @@ ConstantPropagationTransform::propagateConstants(
         }
     }
 
+    psn_inst->handler()->notifyDesignAreaChanged();
+
     return prop_count_;
 }
 bool
@@ -675,13 +675,4 @@ ConstantPropagationTransform::run(Psn* psn_inst, std::vector<std::string> args)
     return propagateConstants(psn_inst, tiehi_cell_name, tielo_cell_name,
                               inverter_cell_name, max_depth, invereter_replace);
 }
-
-DEFINE_TRANSFORM_VIRTUALS(
-    ConstantPropagationTransform, "constant_propagation", "1.0.0",
-    "Performs design optimization through constant propagation",
-    "Usage: transform constant_propagation [enable-inverter-replacement] "
-    "[max-depth] [tie-hi cell] [tie-lo]"
-    "cell] [inverter_cell]")
-
 } // namespace psn
-#endif

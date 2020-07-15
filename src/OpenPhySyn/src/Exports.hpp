@@ -37,22 +37,26 @@
 
 namespace psn
 {
-void  version();
-void  print_version();
-void  help();
-void  print_usage();
-void  print_transforms();
-void  print_license();
-float design_area();
-bool  has_transform(const char* transform_name);
-int   set_wire_res_cap(float res_per_micon, float cap_per_micron);
-int   set_wire_res_cap(const char* layer_name);
-int   set_max_area(float area);
-int   set_log(const char* level);
-int   set_log_level(const char* level);
-int   set_log_pattern(const char* pattern);
-int   transform_internal(std::string              transform_name,
-                         std::vector<std::string> args);
+void                     version();
+void                     print_version();
+void                     help();
+void                     print_usage();
+void                     print_transforms();
+void                     print_license();
+float                    design_area();
+bool                     has_liberty();
+bool                     has_transform(const char* transform_name);
+void                     set_dont_use(std::vector<std::string> cell_names);
+int                      set_max_area(float area);
+std::vector<std::string> transition_violations();
+
+std::vector<std::string> capacitance_violations();
+
+int set_log(const char* level);
+int set_log_level(const char* level);
+int set_log_pattern(const char* pattern);
+int transform_internal(std::string              transform_name,
+                       std::vector<std::string> args);
 
 DatabaseHandler& get_handler();
 DatabaseHandler& get_database_handler();

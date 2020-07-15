@@ -1,0 +1,46 @@
+1
+Notice 0: Reading LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: repairtiming1.def
+Notice 0: Design: ibex_core
+Notice 0:     Created 231 pins.
+Notice 0:     Created 39201 components and 204570 component-terminals.
+Notice 0:     Created 2 special nets and 78402 connections.
+Notice 0:     Created 41414 nets and 126168 connections.
+Notice 0: Finished DEF file: repairtiming1.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+_59840_/Z                               0.20    0.53   -0.33 (VIOLATED)
+_59821_/Z                               0.20    0.52   -0.32 (VIOLATED)
+_59776_/Z                               0.20    0.44   -0.24 (VIOLATED)
+_65895_/Z                               0.20    0.39   -0.19 (VIOLATED)
+_61075_/Z                               0.20    0.37   -0.17 (VIOLATED)
+_59774_/Z                               0.20    0.33   -0.13 (VIOLATED)
+_61077_/Z                               0.20    0.22   -0.02 (VIOLATED)
+
+Invoking repair_timing transform 
+Buffer library: BUF_X16, BUF_X32, BUF_X4 
+Inverter library: None 
+Buffering: enabled 
+Driver sizing: disabled 
+Pin-swapping: enabled 
+Mode: Timing-Driven 
+Iteration 1 
+Buffers: 115 
+Resize up: 0 
+Resize down: 0 
+Pin Swap: 0 
+Buffered nets: 7 
+Transition violations: 7 
+Capacitance violations: 23 
+Initial area: 59712 
+New area: 59950 
+Finished repair_timing transform ( 115 ) 
+Added/updated 115 cells
+No differences found.

@@ -29,8 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
-#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
-
 #include "OpenPhySyn/PsnTransform.hpp"
 
 namespace psn
@@ -47,12 +45,10 @@ public:
     std::string bufferNetName(std::vector<int> indices);
     std::vector<int> nextBuffer(std::vector<int> current_buffer,
                                 int              max_fanout);
-    OPENPHYSYN_TRANSFORM
+    OPENPHYSYN_DEFINE_TRANSFORM("buffer_fanout", "1.1",
+                                "Inserts buffers based on max fan-out",
+                                "Usage: transform buffer_fanout "
+                                "<max_fanout> <buffer_cell>")
 };
 
-DEFINE_TRANSFORM(BufferFanoutTransform, "buffer_fanout", "1.0.0",
-                 "Inserts buffers based on max fan-out",
-                 "Usage: transform buffer_fanout "
-                 "<max_fanout> <buffer_cell>")
 } // namespace psn
-#endif
