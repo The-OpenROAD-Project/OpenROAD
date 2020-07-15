@@ -324,9 +324,10 @@ OpenRoad::linkDesign(const char *design_name)
 
 void
 OpenRoad::writeVerilog(const char *filename,
-		       bool sort)
+		       bool sort,
+		       std::vector<sta::LibertyCell*> *remove_cells)
 {
-  sta::writeVerilog(filename, sort, sta_->network());
+  sta::writeVerilog(filename, sort, remove_cells, sta_->network());
 }
 
 bool

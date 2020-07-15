@@ -170,6 +170,10 @@ using odb::dbTech;
 
 %include "Exception.i"
 
+%typemap(in) LibertyCellSeq* {
+  $1 = tclListSeqLibertyCell($input, interp);
+}
+
 %inline %{
 
 const char *
@@ -245,10 +249,11 @@ ensure_linked()
 
 void
 write_verilog_cmd(const char *filename,
-		  bool sort)
+		  bool sort,
+		  sta::LibertyCellSeq *remove_cells)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeVerilog(filename, sort);
+  ord->writeVerilog(filename, sort, remove_cells);
 }
 
 ////////////////////////////////////////////////////////////////
