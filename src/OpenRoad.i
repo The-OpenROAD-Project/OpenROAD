@@ -45,6 +45,7 @@
 #include "sta/Network.hh"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbReadVerilog.hh"
 #include "openroad/Version.hh"
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
@@ -148,7 +149,18 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-} // namespace
+} // namespace ord
+
+namespace sta {
+std::vector<LibertyCell*> *
+tclListSeqLibertyCell(Tcl_Obj *const source,
+		      Tcl_Interp *interp);
+} // namespace sta
+
+
+using std::vector;
+
+using sta::LibertyCell;
 
 using ord::OpenRoad;
 using ord::getOpenRoad;
@@ -160,6 +172,7 @@ using odb::dbBlock;
 using odb::dbTechLayer;
 using odb::dbTrackGrid;
 using odb::dbTech;
+
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -170,8 +183,8 @@ using odb::dbTech;
 
 %include "Exception.i"
 
-%typemap(in) LibertyCellSeq* {
-  $1 = tclListSeqLibertyCell($input, interp);
+%typemap(in) vector<LibertyCell*> * {
+  $1 = sta::tclListSeqLibertyCell($input, interp);
 }
 
 %inline %{
@@ -250,7 +263,7 @@ ensure_linked()
 void
 write_verilog_cmd(const char *filename,
 		  bool sort,
-		  sta::LibertyCellSeq *remove_cells)
+		  vector<LibertyCell*> *remove_cells)
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeVerilog(filename, sort, remove_cells);

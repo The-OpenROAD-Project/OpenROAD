@@ -27,25 +27,29 @@ proc link_design { {top_cell_name ""} } {
 
   if { $top_cell_name == "" } {
     if { $current_design_name == "" } {
-      sta::sta_error "missing top_cell_name argument and no current_design."
+      ord::error "missing top_cell_name argument and no current_design."
       return 0
     } else {
       set top_cell_name $current_design_name
     }
   }
   if { ![ord::db_has_tech] } {
-    sta::sta_error "no technology has been read."
+    ord::error "no technology has been read."
   }
   ord::link_design_db_cmd $top_cell_name
 }
 
-sta::define_cmd_args "write_verilog" {[-sort] filename}
+sta::define_cmd_args "write_verilog" {[-sort] [-remove_cells cells] filename}
 
 proc write_verilog { args } {
-  sta::parse_key_args "write_verilog" args keys {} flags {-sort}
+  sta::parse_key_args "write_verilog" args keys {-remove_cells} flags {-sort}
 
+  set remove_cells {}
+  if { [info exists keys(-remove_cells)] } {
+    set remove_cells [sta::parse_libcell_arg $keys(-remove_cells)]
+  }
   set sort [info exists flags(-sort)]
   sta::check_argc_eq1 "write_verilog" $args
-  set filename [file nativename $args]
-  ord::write_verilog_cmd $filename $sort
+  set filename $args
+  ord::write_verilog_cmd $filename $sort $remove_cells
 }
