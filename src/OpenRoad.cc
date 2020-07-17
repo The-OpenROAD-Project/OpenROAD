@@ -238,8 +238,10 @@ OpenRoad::readDef(const char *filename,
     dbBlock* block = chip->getBlock();
     if (order_wires) {
       odb::orderWires(block,
-		      nullptr /* net_name_or_id*/,
-		      false /* force */);
+                      nullptr /* net_name_or_id*/,
+                      false /* force */,
+                      false /* verbose */,
+                      true /* quiet */);
     }
 
     for (Observer* observer : observers_) {
