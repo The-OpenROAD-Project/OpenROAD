@@ -273,7 +273,7 @@ proc repair_tie_fanout { args } {
   if { ![is_object $lib_port] } {
     set lib_port [get_lib_pins [lindex $args 0]]
   }
-  if { $lib_port != "NULL" } {
+  if { $lib_port != "" } {
     repair_tie_fanout_cmd $lib_port $separation $verbose
   }
 }

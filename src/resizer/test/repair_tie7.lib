@@ -1,0 +1,199 @@
+/* 
+* ******************************************************************************
+* *                                                                            *
+* *                   Copyright (C) 2004-2011, Nangate Inc.                    *
+* *                           All rights reserved.                             *
+* *                                                                            *
+* * Nangate and the Nangate logo are trademarks of Nangate Inc.                *
+* *                                                                            *
+* * All trademarks, logos, software marks, and trade names (collectively the   *
+* * "Marks") in this program are proprietary to Nangate or other respective    *
+* * owners that have granted Nangate the right and license to use such Marks.  *
+* * You are not permitted to use the Marks without the prior written consent   *
+* * of Nangate or such third party that may own the Marks.                     *
+* *                                                                            *
+* * This file has been provided pursuant to a License Agreement containing     *
+* * restrictions on its use. This file contains valuable trade secrets and     *
+* * proprietary information of Nangate Inc., and is protected by U.S. and      *
+* * international laws and/or treaties.                                        *
+* *                                                                            *
+* * The copyright notice(s) in this file does not indicate actual or intended  *
+* * publication of this file.                                                  *
+* *                                                                            *
+* *   NGLibraryCharacterizer, v2011.01-HR04-2011-01-19 - build 201102050200    *
+* *                                                                            *
+* ******************************************************************************
+*
+* Spice engine            : Nanspice v2011.01-HR04-2011-01-19-1102050200
+* Liberty export type     : conditional
+*
+* Characterization Corner : typical
+* Process                 : TypTyp
+* Temperature             : 25C
+* Voltage                 : 1.1V
+*
+****************************************************************************/
+
+library (tie7) {
+
+  /* Documentation Attributes */
+  date                    		: "Thu 10 Feb 2011, 18:11:20";
+  revision                		: "revision 1.0";
+  comment                 		: "Copyright (c) 2004-2011 Nangate Inc. All Rights Reserved.";
+
+  /* General Attributes */
+  technology              		  (cmos);
+  delay_model             		: table_lookup;
+  in_place_swap_mode      		: match_footprint;
+  library_features        		  (report_delay_calculation,report_power_calculation);
+
+  /* Units Attributes */
+  time_unit               		: "1ns";
+  leakage_power_unit      		: "1nW";
+  voltage_unit            		: "1V";
+  current_unit            		: "1mA";
+  pulling_resistance_unit 		: "1kohm";
+  capacitive_load_unit    		  (1,ff);
+
+  /* Operation Conditions */
+  nom_process             		: 1.00;
+  nom_temperature         		: 25.00;
+  nom_voltage             		: 1.10;
+
+  voltage_map (VDD,1.10);
+  voltage_map (VSS,0.00);
+
+  define(process_corner, operating_conditions, string);
+  operating_conditions (typical) {
+    process_corner	: "TypTyp";
+    process       	: 1.00;
+    voltage       	: 1.10;
+    temperature   	: 25.00;
+    tree_type     	: balanced_tree;
+  }
+  default_operating_conditions : typical;
+
+  /* Threshold Definitions */
+  slew_lower_threshold_pct_fall 	: 30.00 ;
+  slew_lower_threshold_pct_rise 	: 30.00 ;
+  slew_upper_threshold_pct_fall 	: 70.00 ;
+  slew_upper_threshold_pct_rise 	: 70.00 ;
+  slew_derate_from_library      	: 1.00 ;
+  input_threshold_pct_fall      	: 50.00 ;
+  input_threshold_pct_rise      	: 50.00 ;
+  output_threshold_pct_fall     	: 50.00 ;
+  output_threshold_pct_rise     	: 50.00 ;
+  default_leakage_power_density 	: 0.00 ;
+  default_cell_leakage_power    	: 0.00 ;
+
+  /* Default Pin Attributes */
+  default_inout_pin_cap       		: 1.000000;
+  default_input_pin_cap       		: 1.000000;
+  default_output_pin_cap      		: 0.000000;
+  default_fanout_load         		: 1.000000;
+  default_max_transition      		: 0.198535;
+
+  define(drive_strength, cell, float);
+
+  power_lut_template (Hidden_power_7) {
+	variable_1 : input_transition_time;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  lu_table_template (Hold_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  power_lut_template (Power_7_7) {
+	variable_1 : input_transition_time;
+	variable_2 : total_output_net_capacitance;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+	index_2 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  lu_table_template (Pulse_width_3) {
+	variable_1 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Recovery_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Removal_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Setup_3_3) {
+	variable_1 : constrained_pin_transition;
+	variable_2 : related_pin_transition;
+	index_1 ("0.0010,0.0020,0.0030");
+	index_2 ("0.0010,0.0020,0.0030");
+  }
+
+
+  lu_table_template (Timing_7_7) {
+	variable_1 : input_net_transition;
+	variable_2 : total_output_net_capacitance;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+	index_2 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  lu_table_template (Tristate_disable_7) {
+	variable_1 : input_net_transition;
+	index_1 ("0.0010,0.0020,0.0030,0.0040,0.0050,0.0060,0.0070");
+  }
+
+
+  cell (TIE_X1) {
+
+	drive_strength     	: 1;
+
+	area               	: 0.532000;
+	dont_touch		: true;
+	dont_use		: true;
+
+	pg_pin(VDD) {
+		voltage_name : VDD;
+		pg_type      : primary_power;
+	}
+	pg_pin(VSS) {
+		voltage_name : VSS;
+		pg_type      : primary_ground;
+	}
+
+
+	pin (Z0) {
+
+		direction		: output;
+		related_power_pin	: "VDD";
+		related_ground_pin	: "VSS";
+		function		: "0";
+	}
+	pin (Z1) {
+
+		direction		: output;
+		related_power_pin	: "VDD";
+		related_ground_pin	: "VSS";
+		function		: "1";
+	}
+
+  }
+
+}

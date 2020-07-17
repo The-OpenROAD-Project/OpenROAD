@@ -1,0 +1,61 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO TIE_X1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN LOGIC0_X1 0 0 ;
+  SIZE 0.38 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN Z0
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.06 0.15 0.13 0.84 ;
+    END
+  END Z0
+  PIN Z1
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.06 0.15 0.13 0.84 ;
+    END
+  END Z1
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 0.38 1.485 ;
+        RECT 0.245 1.115 0.315 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 0.38 0.085 ;
+        RECT 0.24 -0.085 0.31 0.285 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 0.06 0.975 0.18 1.25 ;
+  END
+END TIE_X1
+
+END LIBRARY
+#
+# End of file
+#

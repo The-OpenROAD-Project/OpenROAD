@@ -963,44 +963,48 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   int separation_dbu = metersToDbu(separation);
   for (Instance *inst : insts) {
     Pin *drvr_pin = network_->findPin(inst, tie_port);
-    const char *inst_name = network_->name(inst);
-    Net *net = network_->net(drvr_pin);
-    NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-    while (pin_iter->hasNext()) {
-      Pin *load = pin_iter->next();
-      if (load != drvr_pin) {
-	// Make tie inst.
-	Point tie_loc = tieLocation(load, separation_dbu);
-	Instance *load_inst = network_->instance(load);
-	string tie_name = makeUniqueInstName(inst_name, true);
-	Instance *tie = sta_->makeInstance(tie_name.c_str(),
-					   tie_cell, top_inst);
-	setLocation(tie, tie_loc);
+    if (drvr_pin) {
+      const char *inst_name = network_->name(inst);
+      Net *net = network_->net(drvr_pin);
+      if (net) {
+	NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
+	while (pin_iter->hasNext()) {
+	  Pin *load = pin_iter->next();
+	  if (load != drvr_pin) {
+	    // Make tie inst.
+	    Point tie_loc = tieLocation(load, separation_dbu);
+	    Instance *load_inst = network_->instance(load);
+	    string tie_name = makeUniqueInstName(inst_name, true);
+	    Instance *tie = sta_->makeInstance(tie_name.c_str(),
+					       tie_cell, top_inst);
+	    setLocation(tie, tie_loc);
 
-	// Make tie output net.
-	string load_net_name = makeUniqueNetName();
-	Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
+	    // Make tie output net.
+	    string load_net_name = makeUniqueNetName();
+	    Net *load_net = db_network_->makeNet(load_net_name.c_str(), top_inst);
 
-	// Connect tie inst output.
-	sta_->connectPin(tie, tie_port, load_net);
+	    // Connect tie inst output.
+	    sta_->connectPin(tie, tie_port, load_net);
 
-	// Connect load to tie output net.
-	sta_->disconnectPin(load);
-	Port *load_port = network_->port(load);
-	sta_->connectPin(load_inst, load_port, load_net);
+	    // Connect load to tie output net.
+	    sta_->disconnectPin(load);
+	    Port *load_port = network_->port(load);
+	    sta_->connectPin(load_inst, load_port, load_net);
 
-	design_area_ += area(db_network_->cell(tie_cell));
-	tie_count++;
+	    design_area_ += area(db_network_->cell(tie_cell));
+	    tie_count++;
+	  }
+	}
+	delete pin_iter;
+
+	// Delete inst output net.
+	Pin *tie_pin = network_->findPin(inst, tie_port);
+	Net *tie_net = network_->net(tie_pin);
+	sta_->deleteNet(tie_net);
+	// Delete the tie instance.
+	sta_->deleteInstance(inst);
       }
     }
-    delete pin_iter;
-
-    // Delete inst output net.
-    Pin *tie_pin = network_->findPin(inst, tie_port);
-    Net *tie_net = network_->net(tie_pin);
-    sta_->deleteNet(tie_net);
-    // Delete the tie instance.
-    sta_->deleteInstance(inst);
   }
 
   if (tie_count > 0) {
