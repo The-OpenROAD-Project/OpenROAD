@@ -29,34 +29,33 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
-
-#ifdef OPENPHYSYN_TRANSFORM_PIN_SWAP_ENABLED
-
 #include <cstring>
 #include <memory>
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/Psn.hpp"
 #include "OpenPhySyn/PsnTransform.hpp"
+#include "OpenPhySyn/SteinerTree.hpp"
+#include "OpenPhySyn/Types.hpp"
 
 namespace psn
 {
 class PinSwapTransform : public PsnTransform
 {
 private:
-    bool isNumber(const std::string& s);
-    int  swap_count_;
+    int swap_count_;
 
 public:
     PinSwapTransform();
-    int timingPinSwap(Psn* psn_inst);
+    int timingPinSwap(Psn* psn_inst, int path_count);
     int powerPinSwap(Psn* psn_inst, int path_count);
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-    OPENPHYSYN_TRANSFORM
+
+    OPENPHYSYN_DEFINE_TRANSFORM(
+        "pin_swap", "1.1",
+        "Performs timing-driven/power-driven commutative pin swapping "
+        "optimization",
+        "Usage: transform pin_swap <max_num_optimize_paths> [-power]")
 };
 
-DEFINE_TRANSFORM(
-    PinSwapTransform, "pin_swap", "1.0.0",
-    "Performs timing-driven/power-driven commutative pin swapping optimization",
-    "Usage: transform pin_swap [optimize_power] [max_num_optimize_power_paths]")
 } // namespace psn
-#endif

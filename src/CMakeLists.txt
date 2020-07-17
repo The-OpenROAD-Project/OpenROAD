@@ -77,6 +77,11 @@ if (TCL_READLINE_LIBRARY)
   message(STATUS "TCL readline library: ${TCL_READLINE_LIBRARY}")
 endif()
 
+find_path(TCL_READLINE_H tclreadline.h)
+if (TCL_READLINE_H)
+  message(STATUS "TCL readline header: ${TCL_READLINE_H}")
+endif()
+
 find_package(SWIG REQUIRED 3.0)
 include(UseSWIG)
 set(OPENDB_SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")
@@ -298,9 +303,13 @@ if (BUILD_OPENPHYSYN)
 endif()
 
 # tclReadline
-if (TCL_READLINE_LIBRARY)
-  add_definitions(-DENABLE_READLINE)
+if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
+  target_compile_definitions(openroad PRIVATE ENABLE_READLINE)
   target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
+  target_include_directories(openroad PRIVATE ${TCL_READLINE_H})
+  message(STATUS "TCL readline enabled")
+else()
+  message(STATUS "TCL readline disabled")
 endif()
 
 if (ZLIB_FOUND)

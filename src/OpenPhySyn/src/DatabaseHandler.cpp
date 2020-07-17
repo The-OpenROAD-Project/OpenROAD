@@ -28,32 +28,30 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-// Temproary fix for OpenSTA import ordering
-#define THROW_DCL throw()
-
 #include "OpenPhySyn/DatabaseHandler.hpp"
-
-#include "sta/Graph.hh"
-#include "sta/Parasitics.hh"
-
 #include <algorithm>
+#include <cmath>
 #include <set>
+#include "OpenPhySyn/ClusteringUtils.hpp"
+#include "OpenPhySyn/LibraryMapping.hpp"
 #include "OpenPhySyn/PsnGlobal.hpp"
 #include "OpenPhySyn/PsnLogger.hpp"
 #include "OpenPhySyn/SteinerTree.hpp"
+#include "OpenPhySyn/Types.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "opendb/db.h"
-#include "opendb/dbTypes.h"
+#include "opendb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
@@ -67,11 +65,11 @@
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
-#include "sta/Fuzzy.hh"
+#include "sta/Units.hh"
 
 namespace psn
 {
-OpenStaHandler::OpenStaHandler(Psn* psn_inst, DatabaseSta* sta)
+DatabaseHandler::DatabaseHandler(Psn* psn_inst, DatabaseSta* sta)
     : sta_(sta),
       db_(sta->db()),
       has_equiv_cells_(false),
@@ -79,19 +77,27 @@ OpenStaHandler::OpenStaHandler(Psn* psn_inst, DatabaseSta* sta)
       has_target_loads_(false),
       psn_(psn_inst),
       has_wire_rc_(false),
-      maximum_area_valid_(false)
+      maximum_area_valid_(false),
+      has_library_cell_mappings_(false)
 {
     // Use default corner for now
-    corner_        = sta_->findCorner("default");
-    min_max_       = sta::MinMax::max();
-    dcalc_ap_      = corner_->findDcalcAnalysisPt(min_max_);
-    pvt_           = dcalc_ap_->operatingConditions();
-    parasitics_ap_ = corner_->findParasiticAnalysisPt(min_max_);
+    corner_                      = sta_->findCorner("default");
+    min_max_                     = sta::MinMax::max();
+    dcalc_ap_                    = corner_->findDcalcAnalysisPt(min_max_);
+    pvt_                         = dcalc_ap_->operatingConditions();
+    parasitics_ap_               = corner_->findParasiticAnalysisPt(min_max_);
+    legalizer_                   = nullptr;
+    res_per_micron_callback_     = nullptr;
+    cap_per_micron_callback_     = nullptr;
+    dont_use_callback_           = nullptr;
+    compute_parasitics_callback_ = nullptr;
+    maximum_area_callback_       = nullptr;
+    update_design_area_callback_ = nullptr;
     resetDelays();
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::pins(Net* net) const
+DatabaseHandler::pins(Net* net) const
 {
     std::vector<InstanceTerm*> terms;
     auto                       pin_iter = network()->pinIterator(net);
@@ -103,7 +109,7 @@ OpenStaHandler::pins(Net* net) const
     return terms;
 }
 std::vector<InstanceTerm*>
-OpenStaHandler::pins(Instance* inst) const
+DatabaseHandler::pins(Instance* inst) const
 {
     std::vector<InstanceTerm*> terms;
     auto                       pin_iter = network()->pinIterator(inst);
@@ -115,22 +121,22 @@ OpenStaHandler::pins(Instance* inst) const
     return terms;
 }
 Net*
-OpenStaHandler::net(InstanceTerm* term) const
+DatabaseHandler::net(InstanceTerm* term) const
 {
     return network()->net(term);
 }
 Term*
-OpenStaHandler::term(InstanceTerm* term) const
+DatabaseHandler::term(InstanceTerm* term) const
 {
     return network()->term(term);
 }
 Net*
-OpenStaHandler::net(Term* term) const
+DatabaseHandler::net(Term* term) const
 {
     return network()->net(term);
 }
 std::vector<InstanceTerm*>
-OpenStaHandler::connectedPins(Net* net) const
+DatabaseHandler::connectedPins(Net* net) const
 {
     std::vector<InstanceTerm*> terms;
     auto                       pin_iter = network()->connectedPinIterator(net);
@@ -143,9 +149,9 @@ OpenStaHandler::connectedPins(Net* net) const
     return terms;
 }
 Net*
-OpenStaHandler::bufferNet(Net* b_net, LibraryCell* buffer,
-                          std::string buffer_name, std::string net_name,
-                          Point location)
+DatabaseHandler::bufferNet(Net* b_net, LibraryCell* buffer,
+                           std::string buffer_name, std::string net_name,
+                           Point location)
 {
     auto buf_inst      = createInstance(buffer_name.c_str(), buffer);
     auto buf_net       = createNet(net_name.c_str());
@@ -170,10 +176,10 @@ OpenStaHandler::bufferNet(Net* b_net, LibraryCell* buffer,
     return buf_net;
 }
 std::set<InstanceTerm*>
-OpenStaHandler::clockPins() const
+DatabaseHandler::clockPins() const
 {
     std::set<InstanceTerm*> clock_pins;
-    auto                    clk_iter = new sta::ClockIterator(network()->sdc());
+    auto                    clk_iter = new sta::ClockIterator(sta_->sdc());
     while (clk_iter->hasNext())
     {
         auto clk  = clk_iter->next();
@@ -188,21 +194,21 @@ OpenStaHandler::clockPins() const
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::inputPins(Instance* inst, bool include_top_level) const
+DatabaseHandler::inputPins(Instance* inst, bool include_top_level) const
 {
     auto inst_pins = pins(inst);
     return filterPins(inst_pins, PinDirection::input(), include_top_level);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::outputPins(Instance* inst, bool include_top_level) const
+DatabaseHandler::outputPins(Instance* inst, bool include_top_level) const
 {
     auto inst_pins = pins(inst);
     return filterPins(inst_pins, PinDirection::output(), include_top_level);
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::fanoutPins(Net* pin_net, bool include_top_level) const
+DatabaseHandler::fanoutPins(Net* pin_net, bool include_top_level) const
 {
     auto inst_pins = pins(pin_net);
 
@@ -230,8 +236,69 @@ OpenStaHandler::fanoutPins(Net* pin_net, bool include_top_level) const
     return filtered_inst_pins;
 }
 
+bool
+DatabaseHandler::isTieHi(Instance* inst) const
+{
+    return isTieHi(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieHi(LibraryCell* cell) const
+{
+    if (isSingleOutputCombinational(cell))
+    {
+        auto           output_pins = libraryOutputPins(cell);
+        auto           output_pin  = output_pins[0];
+        sta::FuncExpr* output_func = output_pin->function();
+        if (output_func && output_func->op() == sta::FuncExpr::op_one)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool
+DatabaseHandler::isTieLo(Instance* inst) const
+{
+    return isTieHiLo(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieLo(LibraryCell* cell) const
+{
+    if (isSingleOutputCombinational(cell))
+    {
+        auto           output_pins = libraryOutputPins(cell);
+        auto           output_pin  = output_pins[0];
+        sta::FuncExpr* output_func = output_pin->function();
+        if (output_func && output_func->op() == sta::FuncExpr::op_zero)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool
+DatabaseHandler::isTieHiLo(Instance* inst) const
+{
+    return isTieHiLo(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieHiLo(LibraryCell* cell) const
+{
+    return isTieHi(cell) || isTieLo(cell);
+}
+bool
+DatabaseHandler::isTieCell(Instance* inst) const
+{
+    return isTieCell(libraryCell(inst));
+}
+bool
+DatabaseHandler::isTieCell(LibraryCell* cell) const
+{
+    return isTieCell(cell);
+}
+
 std::vector<LibraryCell*>
-OpenStaHandler::tiehiCells() const
+DatabaseHandler::tiehiCells() const
 {
     std::vector<LibraryCell*> cells;
     auto                      all_libs = allLibs();
@@ -257,7 +324,7 @@ OpenStaHandler::tiehiCells() const
     return cells;
 }
 std::vector<LibraryCell*>
-OpenStaHandler::inverterCells() const
+DatabaseHandler::inverterCells() const
 {
     std::vector<LibraryCell*> cells;
     auto                      all_libs = allLibs();
@@ -270,7 +337,8 @@ OpenStaHandler::inverterCells() const
             auto output_pins = libraryOutputPins(cell);
             auto input_pins  = libraryInputPins(cell);
 
-            if (isSingleOutputCombinational(cell) && input_pins.size() == 1)
+            if (!dontUse(cell) && isSingleOutputCombinational(cell) &&
+                input_pins.size() == 1)
             {
                 auto           output_pin  = output_pins[0];
                 sta::FuncExpr* output_func = output_pin->function();
@@ -284,7 +352,7 @@ OpenStaHandler::inverterCells() const
     return cells;
 }
 LibraryCell*
-OpenStaHandler::smallestInverterCell() const
+DatabaseHandler::smallestInverterCell() const
 {
     auto inverter_cells = inverterCells();
     if (inverter_cells.size())
@@ -302,18 +370,573 @@ OpenStaHandler::smallestInverterCell() const
     return nullptr;
 }
 std::vector<LibraryCell*>
-OpenStaHandler::bufferCells() const
+DatabaseHandler::bufferCells() const
 {
     std::vector<LibraryCell*> cells;
     auto                      all_libs = allLibs();
     for (auto& lib : all_libs)
     {
         auto buff_libs = lib->buffers();
-        cells.insert(cells.end(), buff_libs->begin(), buff_libs->end());
+        for (auto& cell : *buff_libs)
+        {
+            if (!dontUse(cell))
+            {
+                cells.push_back(cell);
+            }
+        }
     }
     return cells;
 }
 
+void
+DatabaseHandler::populatePrimitiveCellCache()
+{
+
+    std::unordered_map<int, std::string> and_truth;
+    std::unordered_map<int, std::string> nand_truth;
+    std::unordered_map<int, std::string> or_truth;
+    std::unordered_map<int, std::string> nor_truth;
+    std::unordered_map<int, std::string> xor_truth;
+    std::unordered_map<int, std::string> xnor_truth;
+
+    for (int i = 2; i <= 16; i++)
+    {
+        std::string and_fn;
+        std::string nand_fn;
+        std::string or_fn;
+        std::string nor_fn;
+        std::string xor_fn;
+        std::string xnor_fn;
+        for (int j = 0; j < std::pow(2, i); j++)
+        {
+            std::bitset<64> inp(j);
+            bool            and_result = inp.test(0);
+            bool            or_result  = inp.test(0);
+            bool            xor_result = inp.test(0);
+            for (int m = 1; m < i; m++)
+            {
+                and_result &= inp.test(m);
+                or_result |= inp.test(m);
+                xor_result ^= inp.test(m);
+            }
+            bool nor_result  = !or_result;
+            bool nand_result = !and_result;
+            bool xnor_result = !xor_result;
+            and_fn           = std::to_string((int)and_result) + and_fn;
+            or_fn            = std::to_string((int)or_result) + or_fn;
+            nand_fn          = std::to_string((int)nand_result) + nand_fn;
+            nor_fn           = std::to_string((int)nor_result) + nor_fn;
+            xor_fn           = std::to_string((int)xor_result) + xor_fn;
+            xnor_fn          = std::to_string((int)xnor_result) + xnor_fn;
+        }
+        for (int j = and_fn.size(); j < 64; j++)
+        {
+            and_fn  = "0" + and_fn;
+            or_fn   = "0" + or_fn;
+            nand_fn = "0" + nand_fn;
+            nor_fn  = "0" + nor_fn;
+            xor_fn  = "0" + xor_fn;
+            xnor_fn = "0" + xnor_fn;
+        }
+        and_truth[i]  = and_fn;
+        nand_truth[i] = nand_fn;
+        or_truth[i]   = or_fn;
+        nor_truth[i]  = nor_fn;
+        xor_truth[i]  = xor_fn;
+        xnor_truth[i] = xnor_fn;
+    }
+
+    for (auto& lib : allLibs())
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto lib_cell = cell_iter.next();
+            if (nand_cells_.count(lib_cell->libertyCell()) ||
+                and_cells_.count(lib_cell->libertyCell()) ||
+                nor_cells_.count(lib_cell->libertyCell()) ||
+                or_cells_.count(lib_cell->libertyCell()) ||
+                xor_cells_.count(lib_cell->libertyCell()))
+            {
+                continue;
+            }
+
+            auto input_pins = libraryInputPins(lib_cell);
+            if (isSingleOutputCombinational(lib_cell) && input_pins.size() < 32)
+            {
+                auto           output_pins = libraryOutputPins(lib_cell);
+                auto           input_pins  = libraryInputPins(lib_cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func)
+                {
+                    auto table = std::bitset<64>(computeTruthTable(lib_cell));
+                    if (input_pins.size() >= 2 && input_pins.size() <= 16)
+                    {
+                        if (nand_truth[input_pins.size()] == table.to_string())
+                        {
+                            nand_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                nand_cells_.insert(eq);
+                            }
+                        }
+                        else if (and_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            and_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                and_cells_.insert(eq);
+                            }
+                        }
+                        else if (or_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            or_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                or_cells_.insert(eq);
+                            }
+                        }
+                        else if (nor_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            nor_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                nor_cells_.insert(eq);
+                            }
+                        }
+                        else if (xor_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            xor_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                xor_cells_.insert(eq);
+                            }
+                        }
+                        else if (xnor_truth[input_pins.size()] ==
+                                 table.to_string())
+                        {
+                            xnor_cells_.insert(lib_cell);
+                            auto equiv_cells = equivalentCells(lib_cell);
+                            for (auto& eq : equiv_cells)
+                            {
+                                xnor_cells_.insert(eq);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+std::vector<LibraryCell*>
+DatabaseHandler::nandCells(int in_size)
+{
+    if (!nand_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(nand_cells_.begin(),
+                                         nand_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : nand_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+DatabaseHandler::andCells(int in_size)
+{
+    if (!and_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(and_cells_.begin(), and_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : and_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+DatabaseHandler::orCells(int in_size)
+{
+    if (!or_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(or_cells_.begin(), or_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : or_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+DatabaseHandler::norCells(int in_size)
+{
+    if (!nor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(nor_cells_.begin(), nor_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : nor_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+DatabaseHandler::xorCells(int in_size)
+{
+    if (!xor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(xor_cells_.begin(), xor_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : xor_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+std::vector<LibraryCell*>
+DatabaseHandler::xnorCells(int in_size)
+{
+    if (!xnor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (!in_size)
+    {
+        return std::vector<LibraryCell*>(xnor_cells_.begin(),
+                                         xnor_cells_.end());
+    }
+    else
+    {
+        std::vector<LibraryCell*> cells;
+        for (auto& cell : xnor_cells_)
+        {
+            if (libraryInputPins(cell).size() == in_size)
+            {
+                cells.push_back(cell);
+            }
+        }
+        return cells;
+    }
+}
+int
+DatabaseHandler::isAND(LibraryCell* cell)
+{
+    if (!and_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (and_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+DatabaseHandler::isNAND(LibraryCell* cell)
+{
+    if (!nand_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (nand_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+DatabaseHandler::isOR(LibraryCell* cell)
+{
+    if (!or_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (or_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+DatabaseHandler::isNOR(LibraryCell* cell)
+{
+    if (!nor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (nor_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+DatabaseHandler::isXOR(LibraryCell* cell)
+{
+    if (!xor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (xor_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+int
+DatabaseHandler::isXNOR(LibraryCell* cell)
+{
+    if (!xnor_cells_.size())
+    {
+        populatePrimitiveCellCache();
+    }
+    if (xnor_cells_.count(cell))
+    {
+        return libraryInputPins(cell).size();
+    }
+    return 0;
+}
+bool
+DatabaseHandler::isXORXNOR(LibraryCell* cell)
+{
+    return isXOR(cell) || isXNOR(cell);
+}
+bool
+DatabaseHandler::isANDOR(LibraryCell* cell)
+{
+    return isAND(cell) || isOR(cell);
+}
+bool
+DatabaseHandler::isNANDNOR(LibraryCell* cell)
+{
+    return isNAND(cell) || isNOR(cell);
+}
+bool
+DatabaseHandler::isAnyANDOR(LibraryCell* cell)
+{
+    return isANDOR(cell) || isNANDNOR(cell);
+}
+
+LibraryCell*
+DatabaseHandler::closestDriver(LibraryCell*              cell,
+                               std::vector<LibraryCell*> candidates,
+                               float                     scale)
+{
+    if (!candidates.size() || !isSingleOutputCombinational(cell))
+    {
+        return nullptr;
+    }
+    auto         output_pin    = libraryOutputPins(cell)[0];
+    auto         current_limit = scale * maxLoad(output_pin);
+    LibraryCell* closest       = nullptr;
+    auto         diff          = sta::INF;
+    for (auto& cand : candidates)
+    {
+        auto limit = maxLoad(libraryOutputPins(cand)[0]);
+        if (limit == current_limit)
+        {
+            return cand;
+        }
+
+        auto new_diff = std::fabs(limit - current_limit);
+        if (new_diff < diff)
+        {
+            diff    = new_diff;
+            closest = cand;
+        }
+    }
+    return closest;
+}
+LibraryCell*
+DatabaseHandler::halfDrivingPowerCell(Instance* inst)
+{
+    return halfDrivingPowerCell(libraryCell(inst));
+}
+LibraryCell*
+DatabaseHandler::halfDrivingPowerCell(LibraryCell* cell)
+{
+    return closestDriver(cell, equivalentCells(cell), 0.5);
+}
+std::vector<LibraryCell*>
+DatabaseHandler::inverseCells(LibraryCell* cell)
+{
+    if (isAND(cell))
+    {
+        return nandCells(libraryInputPins(cell).size());
+    }
+    else if (isOR(cell))
+    {
+        return norCells(libraryInputPins(cell).size());
+    }
+    else if (isNOR(cell))
+    {
+        return orCells(libraryInputPins(cell).size());
+    }
+    else if (isNAND(cell))
+    {
+        return andCells(libraryInputPins(cell).size());
+    }
+    else if (isBuffer(cell))
+    {
+        return inverterCells();
+    }
+    else if (isInverter(cell))
+    {
+        return bufferCells();
+    }
+    return std::vector<LibraryCell*>();
+}
+std::vector<LibraryCell*>
+DatabaseHandler::cellSuperset(LibraryCell* cell, int in_size)
+{
+    if (isAND(cell))
+    {
+        return andCells(in_size);
+    }
+    else if (isOR(cell))
+    {
+        return orCells(in_size);
+    }
+    else if (isNOR(cell))
+    {
+        return norCells(in_size);
+    }
+    else if (isNAND(cell))
+    {
+        return nandCells(in_size);
+    }
+    else if (isBuffer(cell))
+    {
+        return bufferCells();
+    }
+    else if (isInverter(cell))
+    {
+        return inverterCells();
+    }
+    return std::vector<LibraryCell*>();
+}
+std::vector<LibraryCell*>
+DatabaseHandler::invertedEquivalent(LibraryCell* cell)
+{
+    if (isAND(cell))
+    {
+        return norCells(libraryInputPins(cell).size());
+    }
+    else if (isOR(cell))
+    {
+        return nandCells(libraryInputPins(cell).size());
+    }
+    else if (isNOR(cell))
+    {
+        return andCells(libraryInputPins(cell).size());
+    }
+    else if (isNAND(cell))
+    {
+        return norCells(libraryInputPins(cell).size());
+    }
+    return std::vector<LibraryCell*>();
+}
+
+LibraryCell*
+DatabaseHandler::minimumDrivingInverter(LibraryCell* cell, float extra_cap)
+{
+    auto invs = inverterCells();
+    std::sort(invs.begin(), invs.end(),
+              [&](LibraryCell* b1, LibraryCell* b2) -> bool {
+                  return area(b1) < area(b2);
+              });
+    LibraryCell* smallest = nullptr;
+    for (auto& inv : invs)
+    {
+        bool can_drive = true;
+        auto out_pin   = bufferOutputPin(inv);
+        auto limit     = maxLoad(out_pin);
+        if (out_pin)
+        {
+            for (auto& in_pin : libraryInputPins(cell))
+            {
+                if (portCapacitance(in_pin) + extra_cap > limit)
+                {
+                    can_drive = false;
+                    break;
+                }
+            }
+            if (can_drive)
+            {
+                smallest = inv;
+                break;
+            }
+        }
+    }
+    return smallest;
+}
 // cluster_threshold:
 // 1   : Single buffer cell
 // 3/4 : Small set
@@ -321,8 +944,8 @@ OpenStaHandler::bufferCells() const
 // 1/12: Large set
 // 0   : All buffer cells
 std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>
-OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
-                               bool include_inverting)
+DatabaseHandler::bufferClusters(float cluster_threshold, bool find_superior,
+                                bool include_inverting)
 {
     std::vector<LibraryCell*>        buffer_cells, inverter_cells;
     std::unordered_set<LibraryCell*> superior_buffer_cells,
@@ -520,13 +1143,45 @@ OpenStaHandler::bufferClusters(float cluster_threshold, bool find_superior,
     auto inv_vector = std::vector<LibraryCell*>(superior_inverter_cells.begin(),
                                                 superior_inverter_cells.end());
 
-    // TO-DO: Add K-Center clustering here
-
+    auto buffer_cluster = KCenterClustering::cluster<LibraryCell*>(
+        buff_vector, buff_distances, cluster_threshold, 0);
+    auto inverter_cluster = KCenterClustering::cluster<LibraryCell*>(
+        inv_vector, inv_distances, cluster_threshold, 0);
     return std::pair<std::vector<LibraryCell*>, std::vector<LibraryCell*>>(
-        std::vector<LibraryCell*>(), std::vector<LibraryCell*>());
+        buffer_cluster, inverter_cluster);
+}
+std::unordered_set<InstanceTerm*>
+DatabaseHandler::commutativePins(InstanceTerm* term)
+{
+    std::unordered_set<LibraryTerm*> comm_lib_pins;
+    LibraryTerm*                     lib_pin = libraryPin(term);
+    if (!commutative_pins_cache_.count(lib_pin))
+    {
+        comm_lib_pins.insert(lib_pin);
+        for (auto inp : libraryInputPins(lib_pin->libertyCell()))
+        {
+            if (inp != lib_pin && isCommutative(lib_pin, inp))
+            {
+                comm_lib_pins.insert(inp);
+            }
+        }
+        commutative_pins_cache_[lib_pin] = comm_lib_pins;
+    }
+    comm_lib_pins = commutative_pins_cache_[lib_pin];
+    std::unordered_set<InstanceTerm*> comm;
+
+    for (auto& pn : inputPins(instance(term)))
+    {
+        if (pn != term && comm_lib_pins.count(libraryPin(pn)))
+        {
+            comm.insert(pn);
+        }
+    }
+
+    return comm;
 }
 std::vector<LibraryCell*>
-OpenStaHandler::equivalentCells(LibraryCell* cell)
+DatabaseHandler::equivalentCells(LibraryCell* cell)
 {
     if (!libraryInputPins(cell).size())
     {
@@ -553,7 +1208,7 @@ OpenStaHandler::equivalentCells(LibraryCell* cell)
 }
 
 LibraryCell*
-OpenStaHandler::smallestBufferCell() const
+DatabaseHandler::smallestBufferCell() const
 {
     auto buff_cells = bufferCells();
     if (buff_cells.size())
@@ -572,7 +1227,7 @@ OpenStaHandler::smallestBufferCell() const
 }
 
 std::vector<LibraryCell*>
-OpenStaHandler::tieloCells() const
+DatabaseHandler::tieloCells() const
 {
     std::vector<LibraryCell*> cells;
     auto                      all_libs = allLibs();
@@ -599,12 +1254,12 @@ OpenStaHandler::tieloCells() const
 }
 
 std::vector<std::vector<PathPoint>>
-OpenStaHandler::bestPath(int path_count) const
+DatabaseHandler::bestPath(int path_count) const
 {
     return getPaths(false, path_count);
 }
 std::vector<PathPoint>
-OpenStaHandler::criticalPath(int path_count) const
+DatabaseHandler::criticalPath(int path_count) const
 {
     auto paths = getPaths(true, path_count);
     if (paths.size())
@@ -613,15 +1268,38 @@ OpenStaHandler::criticalPath(int path_count) const
     }
     return std::vector<PathPoint>();
 }
-std::vector<PathPoint>
-OpenStaHandler::worstSlackPath(InstanceTerm* term) const
+std::vector<std::vector<PathPoint>>
+DatabaseHandler::criticalPaths(int path_count) const
 {
-    sta::PathRef path;
-    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::min(), path);
-    return expandPath(&path);
+    auto paths = getPaths(true, path_count);
+    if (path_count < paths.size())
+    {
+        paths.resize(path_count + 1);
+    }
+    return paths;
 }
 std::vector<PathPoint>
-OpenStaHandler::worstArrivalPath(InstanceTerm* term) const
+DatabaseHandler::worstSlackPath(InstanceTerm* term, bool trim) const
+{
+    sta::PathRef path;
+    // sta_->search()->endpointsInvalid();
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
+    auto expanded = expandPath(&path);
+    if (trim && !path.isNull())
+    {
+        for (int i = expanded.size() - 1; i >= 0; i--)
+        {
+            if (expanded[i].pin() == term)
+            {
+                expanded.resize(i + 1);
+                break;
+            }
+        }
+    }
+    return expanded;
+}
+std::vector<PathPoint>
+DatabaseHandler::worstArrivalPath(InstanceTerm* term) const
 {
     sta::PathRef path;
     sta_->vertexWorstArrivalPath(vertex(term), sta::MinMax::max(), path);
@@ -629,39 +1307,44 @@ OpenStaHandler::worstArrivalPath(InstanceTerm* term) const
 }
 
 std::vector<PathPoint>
-OpenStaHandler::bestSlackPath(InstanceTerm* term) const
+DatabaseHandler::bestSlackPath(InstanceTerm* term) const
 {
     sta::PathRef path;
-    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::max(), path);
+    sta_->vertexWorstSlackPath(vertex(term), sta::MinMax::min(), path);
     return expandPath(&path);
 }
 std::vector<PathPoint>
-OpenStaHandler::bestArrivalPath(InstanceTerm* term) const
+DatabaseHandler::bestArrivalPath(InstanceTerm* term) const
 {
     sta::PathRef path;
     sta_->vertexWorstArrivalPath(vertex(term), sta::MinMax::min(), path);
     return expandPath(&path);
 }
 float
-OpenStaHandler::slack(InstanceTerm* term, bool is_rise, bool worst) const
+DatabaseHandler::pinSlack(InstanceTerm* term, bool is_rise, bool worst) const
 {
     return sta_->pinSlack(
         term, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
         worst ? sta::MinMax::min() : sta::MinMax::max());
 }
 float
-OpenStaHandler::slack(InstanceTerm* term, bool worst) const
+DatabaseHandler::pinSlack(InstanceTerm* term, bool worst) const
 {
     return sta_->pinSlack(term,
                           worst ? sta::MinMax::min() : sta::MinMax::max());
 }
 float
-OpenStaHandler::slew(InstanceTerm* term) const
+DatabaseHandler::slack(InstanceTerm* term)
+{
+    return gateDelay(term, loadCapacitance(term)) - required(term);
+}
+float
+DatabaseHandler::slew(InstanceTerm* term) const
 {
     return std::max(slew(term, true), slew(term, false));
 }
 float
-OpenStaHandler::slew(InstanceTerm* term, bool is_rise) const
+DatabaseHandler::slew(InstanceTerm* term, bool is_rise) const
 {
     if (network()->direction(term)->isInput())
     {
@@ -690,7 +1373,7 @@ OpenStaHandler::slew(InstanceTerm* term, bool is_rise) const
         sta::MinMax::max());
 }
 float
-OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
+DatabaseHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
 {
 
     return sta_->vertexArrival(
@@ -698,19 +1381,32 @@ OpenStaHandler::arrival(InstanceTerm* term, int ap_index, bool is_rise) const
         sta_->corners()->findPathAnalysisPt(ap_index));
 }
 float
-OpenStaHandler::required(InstanceTerm* term, bool worst) const
+DatabaseHandler::required(InstanceTerm* term) const
 {
     auto vert = network()->graph()->pinLoadVertex(term);
     auto req  = sta_->vertexRequired(vert, min_max_);
-    //  worst ? sta::MinMax::min() : sta::MinMax::max());
     if (sta::delayInf(req))
     {
         return 0;
     }
     return req;
 }
+float
+DatabaseHandler::required(InstanceTerm* term, bool is_rise,
+                          PathAnalysisPoint* path_ap) const
+{
+    auto vert = network()->graph()->pinLoadVertex(term);
+    auto req  = sta_->vertexRequired(
+        vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), path_ap);
+    if (sta::delayInf(req))
+    {
+        return 0;
+    }
+    return req;
+}
+
 std::vector<std::vector<PathPoint>>
-OpenStaHandler::getPaths(bool get_max, int path_count) const
+DatabaseHandler::getPaths(bool get_max, int path_count) const
 {
     sta_->ensureGraph();
     sta_->searchPreamble();
@@ -731,7 +1427,8 @@ OpenStaHandler::getPaths(bool get_max, int path_count) const
             true, true);
 
     std::vector<std::vector<PathPoint>> result;
-    bool                                first_path = true;
+
+    bool first_path = true;
     for (auto& path_end : *path_ends)
     {
         result.push_back(expandPath(path_end, !first_path));
@@ -740,16 +1437,86 @@ OpenStaHandler::getPaths(bool get_max, int path_count) const
     delete path_ends;
     return result;
 }
+InstanceTerm*
+DatabaseHandler::worstSlackPin() const
+{
+    float   ws;
+    Vertex* vert;
+    sta_->findRequireds();
+
+    sta_->worstSlack(min_max_, ws, vert);
+    return vert->pin();
+}
+
+float
+DatabaseHandler::worstSlack(InstanceTerm* term) const
+{
+    float ws;
+    // sta_->findRequireds();
+    auto vert = vertex(term);
+    sta_->vertexRequired(vert, sta::MinMax::min());
+    sta::PathRef ref;
+
+    sta_->vertexWorstSlackPath(vert, sta::MinMax::max(), ref);
+    if (!ref.tag(sta_))
+    {
+        return sta::INF;
+    }
+    return ref.slack(sta_);
+}
+float
+DatabaseHandler::worstSlack() const
+{
+    float   ws;
+    Vertex* vert;
+    sta_->findRequireds();
+
+    sta_->worstSlack(min_max_, ws, vert);
+    return ws;
+}
+std::vector<std::vector<PathPoint>>
+DatabaseHandler::getNegativeSlackPaths() const
+{
+    std::vector<std::vector<PathPoint>> result;
+    sta_->ensureLevelized();
+    sta_->search()->findAllArrivals();
+    sta_->findRequireds();
+
+    for (auto& vert : *sta_->search()->endpoints())
+    {
+        sta::PathRef ref;
+        sta_->vertexWorstSlackPath(vert, sta::MinMax::max(), ref);
+        if (ref.tag(sta_))
+        {
+            auto vertSlack = ref.slack(sta_);
+            if (vertSlack < 0.0)
+            {
+                result.push_back(expandPath(&ref));
+            }
+        }
+    }
+    std::sort(result.begin(), result.end(),
+              [&](const std::vector<PathPoint>& p1,
+                  const std::vector<PathPoint>& p2) -> bool {
+                  return p1[p1.size() - 1].slack() < p2[p2.size() - 1].slack();
+              });
+    // Remove clock pin
+    for (auto& pth : result)
+    {
+        pth.erase(pth.begin());
+    }
+
+    return result;
+}
 std::vector<PathPoint>
-OpenStaHandler::expandPath(sta::PathEnd* path_end, bool enumed) const
+DatabaseHandler::expandPath(sta::PathEnd* path_end, bool enumed) const
 {
     return expandPath(path_end->path(), enumed);
 }
 
 std::vector<PathPoint>
-OpenStaHandler::expandPath(sta::Path* path, bool enumed) const
+DatabaseHandler::expandPath(sta::Path* path, bool enumed) const
 {
-
     std::vector<PathPoint> points;
     sta::PathExpanded      expanded(path, sta_);
     for (size_t i = 1; i < expanded.size(); i++)
@@ -758,49 +1525,56 @@ OpenStaHandler::expandPath(sta::Path* path, bool enumed) const
         auto pin           = ref->vertex(sta_)->pin();
         auto is_rising     = ref->transition(sta_) == sta::RiseFall::rise();
         auto arrival       = ref->arrival(sta_);
-        auto required      = enumed ? 0 : ref->required(sta_);
-        auto path_ap_index = ref->pathAnalysisPtIndex(sta_);
-        auto slack         = enumed ? 0 : ref->slack(sta_);
+        auto path_ap       = ref->pathAnalysisPt(sta_);
+        auto path_required = enumed ? 0 : ref->required(sta_);
+        if (!path_required || sta::delayInf(path_required))
+        {
+            path_required = required(pin, is_rising, path_ap);
+        }
+        auto slack = enumed ? path_required - arrival : ref->slack(sta_);
         points.push_back(
-            PathPoint(pin, is_rising, arrival, required, slack, path_ap_index));
+            PathPoint(pin, is_rising, arrival, path_required, slack, path_ap));
     }
     return points;
 }
 
 bool
-OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
+DatabaseHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
 {
-    auto inst = instance(first);
-    if (inst != instance(second))
-    {
-        return false;
-    }
+    return isCommutative(libraryPin(first), libraryPin(second));
+}
+bool
+DatabaseHandler::isCommutative(LibraryTerm* first, LibraryTerm* second) const
+{
+
     if (first == second)
     {
         return true;
     }
-    auto cell_lib = libraryCell(inst);
+    auto cell_lib = first->libertyCell();
     if (cell_lib->isClockGate() || cell_lib->isPad() || cell_lib->isMacro() ||
         cell_lib->hasSequentials())
     {
         return false;
     }
-    auto                      first_lib   = libraryPin(first);
-    auto                      second_lib  = libraryPin(second);
-    auto                      output_pins = outputPins(inst, false);
-    auto                      input_pins  = inputPins(inst, false);
+    auto                      output_pins = libraryOutputPins(cell_lib);
+    auto                      input_pins  = libraryInputPins(cell_lib);
     std::vector<LibraryTerm*> remaining_pins;
     for (auto& pin : input_pins)
     {
         if (pin != first && pin != second)
         {
-            remaining_pins.push_back(libraryPin(pin));
+            remaining_pins.push_back(pin);
         }
     }
     for (auto& out : output_pins)
     {
-        sta::FuncExpr* func = libraryPin(out)->function();
-        if (func->hasPort(first_lib) && func->hasPort(second_lib))
+        sta::FuncExpr* func = out->function();
+        if (!func)
+        {
+            return false;
+        }
+        if (func->hasPort(first) && func->hasPort(second))
         {
             std::unordered_map<LibraryTerm*, int> sim_vals;
             for (int i = 0; i < 2; i++)
@@ -810,9 +1584,9 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
 
                     for (int m = 0; m < std::pow(2, remaining_pins.size()); m++)
                     {
-                        sim_vals[first_lib]  = i;
-                        sim_vals[second_lib] = j;
-                        int temp             = m;
+                        sim_vals[first]  = i;
+                        sim_vals[second] = j;
+                        int temp         = m;
                         for (auto& rp : remaining_pins)
                         {
                             sim_vals[rp] = temp & 1;
@@ -821,8 +1595,8 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
                         int first_result =
                             evaluateFunctionExpression(out, sim_vals);
 
-                        sim_vals[first_lib]  = j;
-                        sim_vals[second_lib] = i;
+                        sim_vals[first]  = j;
+                        sim_vals[second] = i;
                         int second_result =
                             evaluateFunctionExpression(out, sim_vals);
                         if (first_result != second_result ||
@@ -838,7 +1612,8 @@ OpenStaHandler::isCommutative(InstanceTerm* first, InstanceTerm* second) const
     return true;
 }
 std::vector<InstanceTerm*>
-OpenStaHandler::levelDriverPins() const
+DatabaseHandler::levelDriverPins(
+    bool reverse, std::unordered_set<InstanceTerm*> filter_pins) const
 {
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -846,17 +1621,17 @@ OpenStaHandler::levelDriverPins() const
     auto handler_network = network();
 
     std::vector<InstanceTerm*> terms;
-    std::vector<sta::Vertex*>  vertices;
+    std::vector<Vertex*>       vertices;
     sta::VertexIterator        itr(handler_network->graph());
     while (itr.hasNext())
     {
-        sta::Vertex* vtx = itr.next();
+        Vertex* vtx = itr.next();
         if (vtx->isDriver(handler_network))
             vertices.push_back(vtx);
     }
     std::sort(
         vertices.begin(), vertices.end(),
-        [=](const sta::Vertex* v1, const sta::Vertex* v2) -> bool {
+        [=](const Vertex* v1, const Vertex* v2) -> bool {
             return (v1->level() < v2->level()) ||
                    (v1->level() == v2->level() &&
                     sta::stringLess(handler_network->pathName(v1->pin()),
@@ -864,18 +1639,26 @@ OpenStaHandler::levelDriverPins() const
         });
     for (auto& v : vertices)
     {
-        terms.push_back(v->pin());
+        auto pn = v->pin();
+        if (!filter_pins.size() || filter_pins.count(pn))
+        {
+            terms.push_back(v->pin());
+        }
+    }
+    if (reverse)
+    {
+        std::reverse(terms.begin(), terms.end());
     }
     return terms;
 }
 
 InstanceTerm*
-OpenStaHandler::faninPin(InstanceTerm* term) const
+DatabaseHandler::faninPin(InstanceTerm* term) const
 {
     return faninPin(net(term));
 }
 InstanceTerm*
-OpenStaHandler::faninPin(Net* net) const
+DatabaseHandler::faninPin(Net* net) const
 {
     auto net_pins = pins(net);
     for (auto& pin : net_pins)
@@ -894,7 +1677,7 @@ OpenStaHandler::faninPin(Net* net) const
 }
 
 std::vector<Instance*>
-OpenStaHandler::fanoutInstances(Net* net) const
+DatabaseHandler::fanoutInstances(Net* net) const
 {
     std::vector<Instance*>     insts;
     std::vector<InstanceTerm*> net_pins = fanoutPins(net, false);
@@ -906,7 +1689,7 @@ OpenStaHandler::fanoutInstances(Net* net) const
 }
 
 std::vector<Instance*>
-OpenStaHandler::driverInstances() const
+DatabaseHandler::driverInstances() const
 {
     std::set<Instance*> insts_set;
     for (auto& net : nets())
@@ -925,13 +1708,13 @@ OpenStaHandler::driverInstances() const
 }
 
 unsigned int
-OpenStaHandler::fanoutCount(Net* net, bool include_top_level) const
+DatabaseHandler::fanoutCount(Net* net, bool include_top_level) const
 {
     return fanoutPins(net, include_top_level).size();
 }
 
 Point
-OpenStaHandler::location(InstanceTerm* term)
+DatabaseHandler::location(InstanceTerm* term)
 {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
@@ -939,8 +1722,15 @@ OpenStaHandler::location(InstanceTerm* term)
     if (iterm)
     {
         int x, y;
-        iterm->getInst()->getOrigin(x, y);
-        return Point(x, y);
+        if (iterm->getAvgXY(&x, &y))
+        {
+            return Point(x, y);
+        }
+        else
+        {
+            iterm->getInst()->getOrigin(x, y);
+            return Point(x, y);
+        }
     }
     if (bterm)
     {
@@ -952,7 +1742,7 @@ OpenStaHandler::location(InstanceTerm* term)
 }
 
 Point
-OpenStaHandler::location(Instance* inst)
+DatabaseHandler::location(Instance* inst)
 {
     odb::dbInst* dinst = network()->staToDb(inst);
     int          x, y;
@@ -960,38 +1750,61 @@ OpenStaHandler::location(Instance* inst)
     return Point(x, y);
 }
 void
-OpenStaHandler::setLocation(Instance* inst, Point pt)
+DatabaseHandler::setLocation(Instance* inst, Point pt)
 {
     odb::dbInst* dinst = network()->staToDb(inst);
     dinst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     dinst->setLocation(pt.getX(), pt.getY());
 }
+
 float
-OpenStaHandler::area(Instance* inst) const
+DatabaseHandler::area(Instance* inst) const
 {
     odb::dbInst*   dinst  = network()->staToDb(inst);
     odb::dbMaster* master = dinst->getMaster();
-    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+    if (master->isCoreAutoPlaceable())
+    {
+        return dbuToMeters(master->getWidth()) *
+               dbuToMeters(master->getHeight());
+    }
+    return 0.0;
 }
 float
-OpenStaHandler::area(LibraryCell* cell) const
+DatabaseHandler::area(LibraryCell* cell) const
 {
     odb::dbMaster* master = db_->findMaster(name(cell).c_str());
-    return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
+    if (master->isCoreAutoPlaceable())
+    {
+        return dbuToMeters(master->getWidth()) *
+               dbuToMeters(master->getHeight());
+    }
+    return 0.0;
 }
 
 float
-OpenStaHandler::area() const
+DatabaseHandler::area() const
 {
     float total_area = 0.0;
-    for (auto inst : instances())
+    for (auto inst : top()->getInsts())
     {
-        total_area += area(inst);
+        auto master = inst->getMaster();
+        if (master->isCoreAutoPlaceable())
+        {
+            total_area += dbuToMeters(master->getWidth()) *
+                          dbuToMeters(master->getHeight());
+        }
     }
     return total_area;
 }
+
+std::string
+DatabaseHandler::unitScaledArea(float ar) const
+{
+    auto unit = network()->units()->distanceUnit();
+    return std::string(unit->asString(ar / unit->scale(), 0));
+}
 float
-OpenStaHandler::power(std::vector<Instance*>& insts)
+DatabaseHandler::power(std::vector<Instance*>& insts)
 {
     float            total_pwr = 0.0;
     sta::PowerResult total;
@@ -1004,30 +1817,30 @@ OpenStaHandler::power(std::vector<Instance*>& insts)
 }
 
 float
-OpenStaHandler::power()
+DatabaseHandler::power()
 {
     sta::PowerResult total, sequential, combinational, macro, pad;
     sta_->power(corner_, total, sequential, combinational, macro, pad);
     return total.total();
 }
 LibraryTerm*
-OpenStaHandler::libraryPin(InstanceTerm* term) const
+DatabaseHandler::libraryPin(InstanceTerm* term) const
 {
     return network()->libertyPort(term);
 }
 
 Port*
-OpenStaHandler::topPort(InstanceTerm* term) const
+DatabaseHandler::topPort(InstanceTerm* term) const
 {
     return network()->port(term);
 }
 bool
-OpenStaHandler::isClocked(InstanceTerm* term) const
+DatabaseHandler::isClocked(InstanceTerm* term) const
 {
     return sta_->search()->isClock(vertex(term));
 }
 bool
-OpenStaHandler::isPrimary(Net* net) const
+DatabaseHandler::isPrimary(Net* net) const
 {
     for (auto& pin : pins(net))
     {
@@ -1040,7 +1853,7 @@ OpenStaHandler::isPrimary(Net* net) const
 }
 
 LibraryCell*
-OpenStaHandler::libraryCell(InstanceTerm* term) const
+DatabaseHandler::libraryCell(InstanceTerm* term) const
 {
     auto inst = network()->instance(term);
     if (inst)
@@ -1051,18 +1864,18 @@ OpenStaHandler::libraryCell(InstanceTerm* term) const
 }
 
 LibraryCell*
-OpenStaHandler::libraryCell(Instance* inst) const
+DatabaseHandler::libraryCell(Instance* inst) const
 {
     return network()->libertyCell(inst);
 }
 
 LibraryCell*
-OpenStaHandler::libraryCell(const char* name) const
+DatabaseHandler::libraryCell(const char* name) const
 {
     return network()->findLibertyCell(name);
 }
 LibraryCell*
-OpenStaHandler::largestLibraryCell(LibraryCell* cell)
+DatabaseHandler::largestLibraryCell(LibraryCell* cell)
 {
     if (!has_equiv_cells_)
     {
@@ -1086,17 +1899,18 @@ OpenStaHandler::largestLibraryCell(LibraryCell* cell)
     return largest;
 }
 double
-OpenStaHandler::dbuToMeters(int dist) const
+DatabaseHandler::dbuToMeters(int dist) const
 {
-    return dist * 1E-9;
+    return static_cast<double>(dist) /
+           (db_->getTech()->getDbUnitsPerMicron() * 1E6);
 }
 double
-OpenStaHandler::dbuToMicrons(int dist) const
+DatabaseHandler::dbuToMicrons(int dist) const
 {
     return (1.0 * dist) / db_->getTech()->getLefUnits();
 }
 bool
-OpenStaHandler::isPlaced(InstanceTerm* term) const
+DatabaseHandler::isPlaced(InstanceTerm* term) const
 {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
@@ -1115,7 +1929,7 @@ OpenStaHandler::isPlaced(InstanceTerm* term) const
            status == odb::dbPlacementStatus::COVER;
 }
 bool
-OpenStaHandler::isPlaced(Instance* inst) const
+DatabaseHandler::isPlaced(Instance* inst) const
 {
     odb::dbInst*           dinst  = network()->staToDb(inst);
     odb::dbPlacementStatus status = dinst->getPlacementStatus();
@@ -1125,13 +1939,13 @@ OpenStaHandler::isPlaced(Instance* inst) const
            status == odb::dbPlacementStatus::COVER;
 }
 bool
-OpenStaHandler::isDriver(InstanceTerm* term) const
+DatabaseHandler::isDriver(InstanceTerm* term) const
 {
     return network()->isDriver(term);
 }
 
 float
-OpenStaHandler::pinCapacitance(InstanceTerm* term) const
+DatabaseHandler::pinCapacitance(InstanceTerm* term) const
 {
     auto port = network()->libertyPort(term);
     if (port)
@@ -1140,15 +1954,67 @@ OpenStaHandler::pinCapacitance(InstanceTerm* term) const
     }
     return 0.0;
 }
+void
+DatabaseHandler::ripupBuffers(std::unordered_set<Instance*> buffers)
+{
+    for (auto& cell : buffers)
+    {
+        ripupBuffer(cell);
+    }
+}
+void
+DatabaseHandler::ripupBuffer(Instance* buffer)
+{
+    auto input_pins  = inputPins(buffer);
+    auto output_pins = outputPins(buffer);
+    if (input_pins.size() == 1 && output_pins.size() == 1)
+    {
+        auto output_pin = output_pins[0];
+        auto input_pin  = input_pins[0];
+        auto source_net = net(input_pin);
+        auto sink_net   = net(output_pin);
+        if (!source_net)
+        {
+            PSN_LOG_ERROR("Cannot find buffer driving net");
+            return;
+        }
+        if (!sink_net)
+        {
+            PSN_LOG_ERROR("Cannot find buffer driven net");
+            return;
+        }
+        auto driven_pins = fanoutPins(sink_net, true);
+        disconnectAll(sink_net);
+        for (auto& p : driven_pins)
+        {
+            if (p != output_pin)
+            {
+                connect(source_net, p);
+            }
+        }
+        disconnect(input_pin);
+        del(buffer);
+        del(sink_net);
+        if (hasWireRC())
+        {
+            calculateParasitics(source_net);
+        }
+    }
+    else
+    {
+        PSN_LOG_ERROR("ripupBuffer() requires buffer cells");
+    }
+}
+
 float
-OpenStaHandler::pinCapacitance(LibraryTerm* term) const
+DatabaseHandler::pinCapacitance(LibraryTerm* term) const
 {
     float cap1 = term->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
     float cap2 = term->capacitance(sta::RiseFall::fall(), sta::MinMax::max());
     return std::max(cap1, cap2);
 }
 float
-OpenStaHandler::pinSlewLimit(InstanceTerm* term, bool* exists) const
+DatabaseHandler::pinSlewLimit(InstanceTerm* term, bool* exists) const
 {
     float limit;
     bool  limit_exists;
@@ -1160,31 +2026,31 @@ OpenStaHandler::pinSlewLimit(InstanceTerm* term, bool* exists) const
     return limit;
 }
 float
-OpenStaHandler::pinAverageRise(LibraryTerm* from, LibraryTerm* to) const
+DatabaseHandler::pinAverageRise(LibraryTerm* from, LibraryTerm* to) const
 {
     return pinTableAverage(from, to, true, true);
 }
 float
-OpenStaHandler::pinAverageFall(LibraryTerm* from, LibraryTerm* to) const
+DatabaseHandler::pinAverageFall(LibraryTerm* from, LibraryTerm* to) const
 {
     return pinTableAverage(from, to, true, false);
 }
 float
-OpenStaHandler::pinAverageRiseTransition(LibraryTerm* from,
-                                         LibraryTerm* to) const
+DatabaseHandler::pinAverageRiseTransition(LibraryTerm* from,
+                                          LibraryTerm* to) const
 {
     return pinTableAverage(from, to, false, true);
 }
 float
-OpenStaHandler::pinAverageFallTransition(LibraryTerm* from,
-                                         LibraryTerm* to) const
+DatabaseHandler::pinAverageFallTransition(LibraryTerm* from,
+                                          LibraryTerm* to) const
 {
     return pinTableAverage(from, to, false, false);
 }
 
 float
-OpenStaHandler::pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
-                               float cap, bool is_delay, bool is_rise) const
+DatabaseHandler::pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
+                                float cap, bool is_delay, bool is_rise) const
 {
     auto                  lib_cell        = from->libertyCell();
     sta::TimingArcSetSeq* timing_arc_sets = lib_cell->timingArcSets(from, to);
@@ -1222,7 +2088,7 @@ OpenStaHandler::pinTableLookup(LibraryTerm* from, LibraryTerm* to, float slew,
 
 // This function assumes the input slew to be the target input slew
 float
-OpenStaHandler::slew(LibraryTerm* term, float load_cap, float* tr_slew)
+DatabaseHandler::slew(LibraryTerm* term, float load_cap, float* tr_slew)
 {
     if (!has_target_loads_)
     {
@@ -1257,7 +2123,7 @@ OpenStaHandler::slew(LibraryTerm* term, float load_cap, float* tr_slew)
     return max_slew;
 }
 float
-OpenStaHandler::bufferFixedInputSlew(LibraryCell* buffer_cell, float cap)
+DatabaseHandler::bufferFixedInputSlew(LibraryCell* buffer_cell, float cap)
 {
     auto output_pin      = bufferOutputPin(buffer_cell);
     auto min_buff_cap    = bufferInputCapacitance(smallestBufferCell());
@@ -1268,8 +2134,8 @@ OpenStaHandler::bufferFixedInputSlew(LibraryCell* buffer_cell, float cap)
 }
 
 float
-OpenStaHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
-                                bool is_delay, bool is_rise) const
+DatabaseHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
+                                 bool is_delay, bool is_rise) const
 {
     auto                  lib_cell        = from->libertyCell();
     sta::TimingArcSetSeq* timing_arc_sets = lib_cell->timingArcSets(from, to);
@@ -1320,34 +2186,40 @@ OpenStaHandler::pinTableAverage(LibraryTerm* from, LibraryTerm* to,
 }
 
 float
-OpenStaHandler::loadCapacitance(InstanceTerm* term) const
+DatabaseHandler::loadCapacitance(InstanceTerm* term) const
 {
     return network()->graphDelayCalc()->loadCap(term, dcalc_ap_);
 }
 Instance*
-OpenStaHandler::instance(const char* name) const
+DatabaseHandler::instance(const char* name) const
 {
     return network()->findInstance(name);
 }
 BlockTerm*
-OpenStaHandler::port(const char* name) const
+DatabaseHandler::port(const char* name) const
 {
     return network()->findPin(network()->topInstance(), name);
 }
 
+InstanceTerm*
+DatabaseHandler::pin(const char* name) const
+{
+    return network()->findPin(name);
+}
+
 Instance*
-OpenStaHandler::instance(InstanceTerm* term) const
+DatabaseHandler::instance(InstanceTerm* term) const
 {
     return network()->instance(term);
 }
 Net*
-OpenStaHandler::net(const char* name) const
+DatabaseHandler::net(const char* name) const
 {
     return network()->findNet(name);
 }
 
 LibraryTerm*
-OpenStaHandler::libraryPin(const char* cell_name, const char* pin_name) const
+DatabaseHandler::libraryPin(const char* cell_name, const char* pin_name) const
 {
     LibraryCell* cell = libraryCell(cell_name);
     if (!cell)
@@ -1357,18 +2229,18 @@ OpenStaHandler::libraryPin(const char* cell_name, const char* pin_name) const
     return libraryPin(cell, pin_name);
 }
 LibraryTerm*
-OpenStaHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
+DatabaseHandler::libraryPin(LibraryCell* cell, const char* pin_name) const
 {
     return cell->findLibertyPort(pin_name);
 }
 
 std::vector<LibraryTerm*>
-OpenStaHandler::libraryPins(Instance* inst) const
+DatabaseHandler::libraryPins(Instance* inst) const
 {
     return libraryPins(libraryCell(inst));
 }
 std::vector<LibraryTerm*>
-OpenStaHandler::libraryPins(LibraryCell* cell) const
+DatabaseHandler::libraryPins(LibraryCell* cell) const
 {
     std::vector<LibraryTerm*>    pins;
     sta::LibertyCellPortIterator itr(cell);
@@ -1380,7 +2252,7 @@ OpenStaHandler::libraryPins(LibraryCell* cell) const
     return pins;
 }
 std::vector<LibraryTerm*>
-OpenStaHandler::libraryInputPins(LibraryCell* cell) const
+DatabaseHandler::libraryInputPins(LibraryCell* cell) const
 {
     auto pins = libraryPins(cell);
     for (auto it = pins.begin(); it != pins.end(); it++)
@@ -1394,7 +2266,7 @@ OpenStaHandler::libraryInputPins(LibraryCell* cell) const
     return pins;
 }
 std::vector<LibraryTerm*>
-OpenStaHandler::libraryOutputPins(LibraryCell* cell) const
+DatabaseHandler::libraryOutputPins(LibraryCell* cell) const
 {
     auto pins = libraryPins(cell);
     for (auto it = pins.begin(); it != pins.end(); it++)
@@ -1409,9 +2281,9 @@ OpenStaHandler::libraryOutputPins(LibraryCell* cell) const
 }
 
 std::vector<InstanceTerm*>
-OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
-                           PinDirection*               direction,
-                           bool                        include_top_level) const
+DatabaseHandler::filterPins(std::vector<InstanceTerm*>& terms,
+                            PinDirection*               direction,
+                            bool                        include_top_level) const
 {
     std::vector<InstanceTerm*> inst_terms;
 
@@ -1433,12 +2305,12 @@ OpenStaHandler::filterPins(std::vector<InstanceTerm*>& terms,
 }
 
 void
-OpenStaHandler::setLegalizer(std::function<bool(float)> legalizer)
+DatabaseHandler::setLegalizer(Legalizer legalizer)
 {
     legalizer_ = legalizer;
 }
 bool
-OpenStaHandler::legalize(float max_displacement)
+DatabaseHandler::legalize(int max_displacement)
 {
     if (legalizer_)
     {
@@ -1447,22 +2319,22 @@ OpenStaHandler::legalize(float max_displacement)
     return false;
 }
 bool
-OpenStaHandler::isTopLevel(InstanceTerm* term) const
+DatabaseHandler::isTopLevel(InstanceTerm* term) const
 {
     return network()->isTopLevelPort(term);
 }
 void
-OpenStaHandler::del(Net* net) const
+DatabaseHandler::del(Net* net) const
 {
     sta_->deleteNet(net);
 }
 void
-OpenStaHandler::del(Instance* inst) const
+DatabaseHandler::del(Instance* inst) const
 {
     sta_->deleteInstance(inst);
 }
 int
-OpenStaHandler::disconnectAll(Net* net) const
+DatabaseHandler::disconnectAll(Net* net) const
 {
     int count = 0;
     for (auto& pin : pins(net))
@@ -1475,7 +2347,7 @@ OpenStaHandler::disconnectAll(Net* net) const
 }
 
 void
-OpenStaHandler::connect(Net* net, InstanceTerm* term) const
+DatabaseHandler::connect(Net* net, InstanceTerm* term) const
 {
     auto inst      = network()->instance(term);
     auto term_port = network()->port(term);
@@ -1483,13 +2355,13 @@ OpenStaHandler::connect(Net* net, InstanceTerm* term) const
 }
 
 void
-OpenStaHandler::disconnect(InstanceTerm* term) const
+DatabaseHandler::disconnect(InstanceTerm* term) const
 {
     sta_->disconnectPin(term);
 }
 
 void
-OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
+DatabaseHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
 {
     auto first_net  = net(first);
     auto second_net = net(second);
@@ -1506,14 +2378,14 @@ OpenStaHandler::swapPins(InstanceTerm* first, InstanceTerm* second)
     resetDelays(second);
 }
 Instance*
-OpenStaHandler::createInstance(const char* inst_name, LibraryCell* cell)
+DatabaseHandler::createInstance(const char* inst_name, LibraryCell* cell)
 {
-    return network()->makeInstance(cell, inst_name, network()->topInstance());
+    return sta_->makeInstance(inst_name, cell, network()->topInstance());
 }
 
 void
-OpenStaHandler::createClock(const char*             clock_name,
-                            std::vector<BlockTerm*> ports, float period)
+DatabaseHandler::createClock(const char*             clock_name,
+                             std::vector<BlockTerm*> ports, float period)
 {
     sta::PinSet* pin_set = new sta::PinSet;
     for (auto& p : ports)
@@ -1529,8 +2401,8 @@ OpenStaHandler::createClock(const char*             clock_name,
                     const_cast<char*>(comment));
 }
 void
-OpenStaHandler::createClock(const char*              clock_name,
-                            std::vector<std::string> port_names, float period)
+DatabaseHandler::createClock(const char*              clock_name,
+                             std::vector<std::string> port_names, float period)
 {
     std::vector<BlockTerm*> ports;
     for (auto& p : port_names)
@@ -1541,60 +2413,69 @@ OpenStaHandler::createClock(const char*              clock_name,
 }
 
 Net*
-OpenStaHandler::createNet(const char* net_name)
+DatabaseHandler::createNet(const char* net_name)
 {
-    auto net = network()->makeNet(net_name, network()->topInstance());
-    if (net && hasWireRC())
-    {
-        calculateParasitics(net);
-    }
+    auto net = sta_->makeNet(net_name, network()->topInstance());
     return net;
 }
 float
-OpenStaHandler::resistance(LibraryTerm* term) const
+DatabaseHandler::resistance(LibraryTerm* term) const
 {
     return term->driveResistance();
 }
 float
-OpenStaHandler::resistancePerMicron() const
+DatabaseHandler::resistancePerMicron() const
 {
     if (!has_wire_rc_)
     {
         PSN_LOG_WARN("Wire RC is not set or invalid");
     }
+    if (res_per_micron_callback_)
+    {
+        return res_per_micron_callback_();
+    }
     return res_per_micron_;
 }
 float
-OpenStaHandler::capacitancePerMicron() const
+DatabaseHandler::capacitancePerMicron() const
 {
     if (!has_wire_rc_)
     {
         PSN_LOG_WARN("Wire RC is not set or invalid");
+    }
+    if (cap_per_micron_callback_)
+    {
+        return cap_per_micron_callback_();
     }
     return cap_per_micron_;
 }
 
 void
-OpenStaHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
+DatabaseHandler::connect(Net* net, Instance* inst, LibraryTerm* port) const
 {
     sta_->connectPin(inst, port, net);
 }
 void
-OpenStaHandler::connect(Net* net, Instance* inst, Port* port) const
+DatabaseHandler::connect(Net* net, Instance* inst, Port* port) const
 {
     sta_->connectPin(inst, port, net);
 }
 
 std::vector<Net*>
-OpenStaHandler::nets() const
+DatabaseHandler::nets() const
 {
-    sta::NetSeq       all_nets;
-    sta::PatternMatch pattern("*");
-    network()->findNetsMatching(network()->topInstance(), &pattern, &all_nets);
-    return static_cast<std::vector<Net*>>(all_nets);
+    std::vector<Net*> all_nets;
+    sta::NetIterator* net_iter =
+        network()->netIterator(network()->topInstance());
+    while (net_iter->hasNext())
+    {
+        all_nets.push_back(net_iter->next());
+    }
+    delete net_iter;
+    return all_nets;
 }
 std::vector<Instance*>
-OpenStaHandler::instances() const
+DatabaseHandler::instances() const
 {
     sta::InstanceSeq  all_insts;
     sta::PatternMatch pattern("*");
@@ -1603,14 +2484,14 @@ OpenStaHandler::instances() const
     return static_cast<std::vector<Instance*>>(all_insts);
 }
 void
-OpenStaHandler::setDontUse(std::vector<std::string>& cell_names)
+DatabaseHandler::setDontUse(std::vector<std::string>& cell_names)
 {
     for (auto& name : cell_names)
     {
         auto cell = libraryCell(name.c_str());
         if (!cell)
         {
-            PSN_LOG_WARN("Cannot find cell with the name", name);
+            PSN_LOG_WARN("Cannot find cell with the name {}", name);
         }
         else
         {
@@ -1620,68 +2501,69 @@ OpenStaHandler::setDontUse(std::vector<std::string>& cell_names)
 }
 
 std::string
-OpenStaHandler::topName() const
+DatabaseHandler::topName() const
 {
     return std::string(network()->name(network()->topInstance()));
 }
 std::string
-OpenStaHandler::generateNetName(int& start_index)
+DatabaseHandler::generateNetName(int& start_index)
 {
     std::string name;
     do
-        name = std::string("net_") + std::to_string(start_index++);
+        name = std::string("psn_net_") + std::to_string(start_index++);
     while (net(name.c_str()));
     return name;
 }
 std::string
-OpenStaHandler::generateInstanceName(const std::string& prefix,
-                                     int&               start_index)
+DatabaseHandler::generateInstanceName(const std::string& prefix,
+                                      int&               start_index)
 {
     std::string name;
     do
-        name = prefix + std::to_string(start_index++);
+        name =
+            std::string("psn_inst_") + prefix + std::to_string(start_index++);
     while (instance(name.c_str()));
     return name;
 }
 
 std::string
-OpenStaHandler::name(Block* object) const
+DatabaseHandler::name(Block* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHandler::name(Net* object) const
+DatabaseHandler::name(Net* object) const
 {
     return std::string(network()->name(object));
 }
 std::string
-OpenStaHandler::name(Instance* object) const
+DatabaseHandler::name(Instance* object) const
 {
     return std::string(network()->name(object));
 }
 std::string
-OpenStaHandler::name(BlockTerm* object) const
+DatabaseHandler::name(BlockTerm* object) const
 {
     return std::string(network()->name(object));
 }
 std::string
-OpenStaHandler::name(Library* object) const
+DatabaseHandler::name(Library* object) const
 {
     return std::string(object->getConstName());
 }
 std::string
-OpenStaHandler::name(LibraryCell* object) const
+DatabaseHandler::name(LibraryCell* object) const
 {
     return std::string(network()->name(network()->cell(object)));
 }
 std::string
-OpenStaHandler::name(LibraryTerm* object) const
+DatabaseHandler::name(LibraryTerm* object) const
 {
     return object->name();
 }
 
 Library*
-OpenStaHandler::library() const
+DatabaseHandler::library() const
 {
     auto libs = db_->getLibs();
 
@@ -1694,7 +2576,7 @@ OpenStaHandler::library() const
 }
 
 LibraryTechnology*
-OpenStaHandler::technology() const
+DatabaseHandler::technology() const
 {
     Library* lib = library();
     if (!lib)
@@ -1706,14 +2588,14 @@ OpenStaHandler::technology() const
 }
 
 bool
-OpenStaHandler::hasLiberty() const
+DatabaseHandler::hasLiberty() const
 {
     sta::LibertyLibraryIterator* iter = network()->libertyLibraryIterator();
     return iter->hasNext();
 }
 
 Block*
-OpenStaHandler::top() const
+DatabaseHandler::top() const
 {
     Chip* chip = db_->getChip();
     if (!chip)
@@ -1725,27 +2607,27 @@ OpenStaHandler::top() const
     return block;
 }
 
-OpenStaHandler::~OpenStaHandler()
+DatabaseHandler::~DatabaseHandler()
 {
 }
 void
-OpenStaHandler::clear()
+DatabaseHandler::clear()
 {
     sta_->clear();
     db_->clear();
 }
 DatabaseStaNetwork*
-OpenStaHandler::network() const
+DatabaseHandler::network() const
 {
     return sta_->getDbNetwork();
 }
 DatabaseSta*
-OpenStaHandler::sta() const
+DatabaseHandler::sta() const
 {
     return sta_;
 }
 float
-OpenStaHandler::maxLoad(LibraryCell* cell)
+DatabaseHandler::maxLoad(LibraryCell* cell)
 {
     sta::LibertyCellPortIterator itr(cell);
     while (itr.hasNext())
@@ -1765,7 +2647,7 @@ OpenStaHandler::maxLoad(LibraryCell* cell)
     return 0;
 }
 float
-OpenStaHandler::maxLoad(LibraryTerm* term)
+DatabaseHandler::maxLoad(LibraryTerm* term)
 {
     float limit;
     bool  exists;
@@ -1777,37 +2659,37 @@ OpenStaHandler::maxLoad(LibraryTerm* term)
     return 0;
 }
 bool
-OpenStaHandler::isInput(InstanceTerm* term) const
+DatabaseHandler::isInput(InstanceTerm* term) const
 {
     return network()->direction(term)->isInput();
 }
 bool
-OpenStaHandler::isOutput(InstanceTerm* term) const
+DatabaseHandler::isOutput(InstanceTerm* term) const
 {
     return network()->direction(term)->isOutput();
 }
 bool
-OpenStaHandler::isAnyInput(InstanceTerm* term) const
+DatabaseHandler::isAnyInput(InstanceTerm* term) const
 {
     return network()->direction(term)->isAnyInput();
 }
 bool
-OpenStaHandler::isAnyOutput(InstanceTerm* term) const
+DatabaseHandler::isAnyOutput(InstanceTerm* term) const
 {
     return network()->direction(term)->isAnyOutput();
 }
 bool
-OpenStaHandler::isBiDirect(InstanceTerm* term) const
+DatabaseHandler::isBiDirect(InstanceTerm* term) const
 {
     return network()->direction(term)->isBidirect();
 }
 bool
-OpenStaHandler::isTriState(InstanceTerm* term) const
+DatabaseHandler::isTriState(InstanceTerm* term) const
 {
     return network()->direction(term)->isTristate();
 }
 bool
-OpenStaHandler::isSingleOutputCombinational(Instance* inst) const
+DatabaseHandler::isSingleOutputCombinational(Instance* inst) const
 {
     if (inst == network()->topInstance())
     {
@@ -1815,22 +2697,64 @@ OpenStaHandler::isSingleOutputCombinational(Instance* inst) const
     }
     return isSingleOutputCombinational(libraryCell(inst));
 }
-void
-OpenStaHandler::replaceInstance(Instance* inst, LibraryCell* cell)
+bool
+DatabaseHandler::isBuffer(LibraryCell* cell) const
 {
-    auto current_name = name(cell);
-    auto db_lib_cell  = db_->findMaster(current_name.c_str());
-    if (db_lib_cell)
+    return cell->isBuffer();
+}
+bool
+DatabaseHandler::isInverter(LibraryCell* cell) const
+{
+    auto out_pins = libraryOutputPins(cell);
+    return isSingleOutputCombinational(cell) && out_pins[0]->function() &&
+           out_pins[0]->function()->op() == sta::FuncExpr::op_not &&
+           libraryInputPins(cell).size() == 1;
+}
+void
+DatabaseHandler::replaceInstance(Instance* inst, LibraryCell* cell)
+{
+    bool both_inv  = isInverter(libraryCell(inst)) && isInverter(cell);
+    bool both_buff = isBuffer(libraryCell(inst)) && isBuffer(cell);
+
+    if (!both_inv && !both_buff && isSingleOutputCombinational(inst) &&
+        isSingleOutputCombinational(cell) && inputPins(inst).size() == 1 &&
+        libraryInputPins(cell).size() == 1)
     {
-        auto db_inst     = network()->staToDb(inst);
-        auto db_inst_lib = db_inst->getMaster();
-        auto sta_cell    = network()->dbToSta(db_lib_cell);
-        sta_->replaceCell(inst, sta_cell);
+        // Manually replace inverters/buffers
+        auto in_pin     = inputPins(inst)[0];
+        auto out_pin    = outputPins(inst)[0];
+        auto input_net  = net(in_pin);
+        auto output_net = net(out_pin);
+        disconnect(in_pin);
+        disconnect(out_pin);
+        auto current_loc  = location(inst);
+        auto current_name = name(inst);
+        auto db_inst      = network()->staToDb(inst);
+        auto current_rot  = db_inst->getOrient();
+        del(inst);
+        auto new_inst    = createInstance(current_name.c_str(), cell);
+        auto new_db_inst = network()->staToDb(new_inst);
+        new_db_inst->setOrient(current_rot);
+        setLocation(new_inst, current_loc);
+        connect(input_net, inputPins(new_inst)[0]);
+        connect(output_net, outputPins(new_inst)[0]);
+    }
+    else
+    {
+        auto current_name = name(cell);
+        auto db_lib_cell  = db_->findMaster(current_name.c_str());
+        if (db_lib_cell)
+        {
+            auto db_inst     = network()->staToDb(inst);
+            auto db_inst_lib = db_inst->getMaster();
+            auto sta_cell    = network()->dbToSta(db_lib_cell);
+            sta_->replaceCell(inst, sta_cell);
+        }
     }
 }
 
 bool
-OpenStaHandler::isSingleOutputCombinational(LibraryCell* cell) const
+DatabaseHandler::isSingleOutputCombinational(LibraryCell* cell) const
 {
     if (!cell)
     {
@@ -1841,7 +2765,7 @@ OpenStaHandler::isSingleOutputCombinational(LibraryCell* cell) const
     return (output_pins.size() == 1 && isCombinational(cell));
 }
 bool
-OpenStaHandler::isCombinational(Instance* inst) const
+DatabaseHandler::isCombinational(Instance* inst) const
 {
     if (inst == network()->topInstance())
     {
@@ -1850,7 +2774,7 @@ OpenStaHandler::isCombinational(Instance* inst) const
     return isCombinational(libraryCell(inst));
 }
 bool
-OpenStaHandler::isCombinational(LibraryCell* cell) const
+DatabaseHandler::isCombinational(LibraryCell* cell) const
 {
     if (!cell)
     {
@@ -1860,179 +2784,203 @@ OpenStaHandler::isCombinational(LibraryCell* cell) const
             !cell->hasSequentials());
 }
 
-void
-OpenStaHandler::setWireRC(float res_per_micon, float cap_per_micron)
+bool
+DatabaseHandler::isSpecial(Net* net) const
 {
-    sta_->ensureGraph();
-    sta_->ensureLevelized();
-    sta_->graphDelayCalc()->delaysInvalid();
-    sta_->search()->arrivalsInvalid();
+    odb::dbNet* db_net = network()->staToDb(net);
+    return db_net && db_net->isSpecial();
+}
 
-    res_per_micron_ = res_per_micon;
+void
+DatabaseHandler::setWireRC(float res_per_micron, float cap_per_micron,
+                           bool reset_delays)
+{
+    if (reset_delays)
+    {
+        sta_->ensureGraph();
+        sta_->ensureLevelized();
+        sta_->graphDelayCalc()->delaysInvalid();
+        sta_->search()->arrivalsInvalid();
+    }
+    res_per_micron_ = res_per_micron;
     cap_per_micron_ = cap_per_micron;
     has_wire_rc_    = true;
     calculateParasitics();
     sta_->findDelays();
 }
+void
+DatabaseHandler::setWireRC(ParasticsCallback res_per_micron,
+                           ParasticsCallback cap_per_micron)
+{
+    has_wire_rc_             = true;
+    res_per_micron_callback_ = res_per_micron;
+    cap_per_micron_callback_ = cap_per_micron;
+}
+
+void
+DatabaseHandler::setDontUseCallback(DontUseCallback dont_use_callback)
+{
+    dont_use_callback_ = dont_use_callback;
+}
+void
+DatabaseHandler::setComputeParasiticsCallback(
+    ComputeParasiticsCallback compute_parasitics_callback)
+{
+    compute_parasitics_callback_ = compute_parasitics_callback;
+}
 
 bool
-OpenStaHandler::hasWireRC()
+DatabaseHandler::hasWireRC()
 {
     return has_wire_rc_;
 }
 
 bool
-OpenStaHandler::isInput(LibraryTerm* term) const
+DatabaseHandler::isInput(LibraryTerm* term) const
 {
     return term->direction()->isInput();
 }
 bool
-OpenStaHandler::isOutput(LibraryTerm* term) const
+DatabaseHandler::isOutput(LibraryTerm* term) const
 {
     return term->direction()->isOutput();
 }
 bool
-OpenStaHandler::isAnyInput(LibraryTerm* term) const
+DatabaseHandler::isAnyInput(LibraryTerm* term) const
 {
     return term->direction()->isAnyInput();
 }
 bool
-OpenStaHandler::isAnyOutput(LibraryTerm* term) const
+DatabaseHandler::isAnyOutput(LibraryTerm* term) const
 {
     return term->direction()->isAnyOutput();
 }
 bool
-OpenStaHandler::isBiDirect(LibraryTerm* term) const
+DatabaseHandler::isBiDirect(LibraryTerm* term) const
 {
     return term->direction()->isBidirect();
 }
 bool
-OpenStaHandler::isTriState(LibraryTerm* term) const
+DatabaseHandler::isTriState(LibraryTerm* term) const
 {
     return term->direction()->isTristate();
 }
+float
+DatabaseHandler::capacitanceLimit(InstanceTerm* term) const
+{
+    const sta::Corner*   corner;
+    const sta::RiseFall* rf;
+    float                cap, limit, diff;
+    sta_->checkCapacitance(term, nullptr, min_max_, corner, rf, cap, limit,
+                           diff);
+    return limit;
+}
+
 bool
-OpenStaHandler::violatesMaximumCapacitance(InstanceTerm* term) const
+DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term,
+                                            float limit_scale_factor) const
 {
     float load_cap = loadCapacitance(term);
-    return violatesMaximumCapacitance(term, load_cap);
-}
-bool
-OpenStaHandler::violatesMaximumCapacitance(InstanceTerm* term,
-                                           float         load_cap) const
-{
-    LibraryTerm* port = network()->libertyPort(term);
-    if (port)
-    {
-        float cap_limit;
-        bool  exists;
-        port->capacitanceLimit(sta::MinMax::max(), cap_limit, exists);
-        return exists && load_cap > cap_limit;
-    }
-    return false;
+    return violatesMaximumCapacitance(term, load_cap, limit_scale_factor);
 }
 
+// Assumes sta checkCapacitanceLimitPreamble is called()
 bool
-OpenStaHandler::violatesMaximumTransition(InstanceTerm* term) const
+DatabaseHandler::violatesMaximumCapacitance(InstanceTerm* term, float load_cap,
+                                            float limit_scale_factor) const
 {
-    sta::Vertex *vert, *bi;
-    sta_->graph()->pinVertices(term, vert, bi);
-    float limit;
-    bool  exists;
-    slewLimit(term, sta::MinMax::max(), limit, exists);
-    bool vio = false;
-    for (auto rf : sta::RiseFall::range())
-    {
-        auto pin_slew = sta_->graph()->slew(vert, rf, dcalc_ap_->index());
-        if (pin_slew > limit)
-        {
-            return true;
-        }
+    const sta::Corner*   corner;
+    const sta::RiseFall* rf;
+    float                cap, limit, ignore;
+    sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf, cap,
+                           limit, ignore);
+    float diff = (limit_scale_factor * limit) - cap;
+    return diff < 0.0 && limit > 0.0;
+}
 
-        if (bi)
+// Assumes sta checkSlewLimitPreamble is called()
+bool
+DatabaseHandler::violatesMaximumTransition(InstanceTerm* term,
+                                           float         limit_scale_factor)
+{
+    const sta::Corner*   corner;
+    const sta::RiseFall* rf;
+    float                slew, limit, ignore;
+
+    sta_->checkSlew(term, nullptr, sta::MinMax::max(), false, corner, rf, slew,
+                    limit, ignore);
+    float diff = (limit_scale_factor * limit) - slew;
+    return diff < 0.0 && limit > 0.0;
+}
+
+ElectircalViolation
+DatabaseHandler::hasElectricalViolation(InstanceTerm* pin,
+                                        float         cap_scale_factor,
+                                        float         trans_sacle_factor)
+{
+    auto pin_net   = net(pin);
+    auto net_pins  = pins(pin_net);
+    bool vio_trans = false;
+    bool vio_cap   = false;
+    for (auto connected_pin : net_pins)
+    {
+        if (violatesMaximumTransition(connected_pin, trans_sacle_factor))
         {
-            pin_slew = sta_->graph()->slew(bi, rf, dcalc_ap_->index());
-            if (pin_slew > limit)
+            vio_trans = true;
+            if (vio_cap)
             {
-                return true;
+                break;
+            }
+        }
+        else if (violatesMaximumCapacitance(connected_pin, cap_scale_factor))
+        {
+            vio_cap = true;
+            if (vio_trans)
+            {
+                break;
             }
         }
     }
-    return vio;
-}
-
-std::vector<InstanceTerm*>
-OpenStaHandler::maximumTransitionViolations() const
-{
-    if (sta_->sdc()->haveClkSlewLimits())
+    if (vio_cap && vio_trans)
     {
-        sta_->updateTiming(false);
+        return ElectircalViolation::CapacitanceAndTransition;
+    }
+    else if (vio_trans)
+    {
+        return ElectircalViolation::Transition;
+    }
+    else if (vio_cap)
+    {
+        return ElectircalViolation::Capacitance;
     }
     else
     {
-        sta_->findDelays();
+        return ElectircalViolation::None;
     }
-    std::unordered_set<InstanceTerm*> vio_pins;
-    auto                              clock_nets = clockNets();
-    for (auto& pin : levelDriverPins())
-    {
-        auto pin_net = net(pin);
-        if (pin_net && !clock_nets.count(pin_net))
-        {
+}
 
-            auto net_pins = pins(pin_net);
-            for (auto connected_pin : net_pins)
-            {
-                if (violatesMaximumTransition(connected_pin))
-                {
-                    vio_pins.insert(pin);
-                    break;
-                }
-            }
-        }
-    }
-    return std::vector<InstanceTerm*>(vio_pins.begin(), vio_pins.end());
+std::vector<InstanceTerm*>
+DatabaseHandler::maximumTransitionViolations(float limit_scale_factor) const
+{
+    auto vio_pins = sta_->pinSlewLimitViolations(corner_, sta::MinMax::max());
+    return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 std::vector<InstanceTerm*>
-OpenStaHandler::maximumCapacitanceViolations() const
+DatabaseHandler::maximumCapacitanceViolations(float limit_scale_factor) const
 {
-    if (sta_->sdc()->haveClkSlewLimits())
-    {
-        sta_->updateTiming(false);
-    }
-    else
-    {
-        sta_->findDelays();
-    }
-    std::unordered_set<InstanceTerm*> vio_pins;
-    auto                              clock_nets = clockNets();
-    for (auto& pin : levelDriverPins())
-    {
-        auto pin_net = net(pin);
-        if (pin_net && !clock_nets.count(pin_net))
-        {
-
-            auto net_pins = pins(pin_net);
-            for (auto connected_pin : net_pins)
-            {
-                if (violatesMaximumCapacitance(connected_pin))
-                {
-                    vio_pins.insert(pin);
-                    break;
-                }
-            }
-        }
-    }
-    return std::vector<InstanceTerm*>(vio_pins.begin(), vio_pins.end());
+    sta_->findDelays();
+    auto vio_pins =
+        sta_->pinCapacitanceLimitViolations(corner_, sta::MinMax::max());
+    return std::vector<InstanceTerm*>(vio_pins->begin(), vio_pins->end());
 }
 
 bool
-OpenStaHandler::isLoad(InstanceTerm* term) const
+DatabaseHandler::isLoad(InstanceTerm* term) const
 {
     return network()->isLoad(term);
 }
 void
-OpenStaHandler::makeEquivalentCells()
+DatabaseHandler::makeEquivalentCells()
 {
     sta::LibertyLibrarySeq       map_libs;
     sta::LibertyLibraryIterator* lib_iter = network()->libertyLibraryIterator();
@@ -2053,7 +3001,7 @@ OpenStaHandler::makeEquivalentCells()
 }
 
 std::vector<Liberty*>
-OpenStaHandler::allLibs() const
+DatabaseHandler::allLibs() const
 {
     std::vector<Liberty*>        seq;
     sta::LibertyLibraryIterator* iter = network()->libertyLibraryIterator();
@@ -2066,44 +3014,46 @@ OpenStaHandler::allLibs() const
     return seq;
 }
 void
-OpenStaHandler::resetCache()
+DatabaseHandler::resetCache()
 {
-    has_equiv_cells_         = false;
-    has_buffer_inverter_seq_ = false;
-    has_target_loads_        = false;
-    maximum_area_valid_      = false;
+    has_equiv_cells_           = false;
+    has_buffer_inverter_seq_   = false;
+    has_target_loads_          = false;
+    has_library_cell_mappings_ = false;
+    maximum_area_valid_        = false;
     target_load_map_.clear();
+    resetLibraryMapping();
 }
 void
-OpenStaHandler::findTargetLoads()
+DatabaseHandler::findTargetLoads()
 {
     auto all_libs = allLibs();
     findTargetLoads(&all_libs);
     has_target_loads_ = true;
 }
 
-sta::Vertex*
-OpenStaHandler::vertex(InstanceTerm* term) const
+Vertex*
+DatabaseHandler::vertex(InstanceTerm* term) const
 {
-    sta::Vertex *vertex, *bidirect_drvr_vertex;
+    Vertex *vertex, *bidirect_drvr_vertex;
     sta_->graph()->pinVertices(term, vertex, bidirect_drvr_vertex);
     return vertex;
 }
 
 int
-OpenStaHandler::evaluateFunctionExpression(
+DatabaseHandler::evaluateFunctionExpression(
     InstanceTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
 {
     return evaluateFunctionExpression(libraryPin(term), inputs);
 }
 int
-OpenStaHandler::evaluateFunctionExpression(
+DatabaseHandler::evaluateFunctionExpression(
     LibraryTerm* term, std::unordered_map<LibraryTerm*, int>& inputs) const
 {
     return evaluateFunctionExpression(term->function(), inputs);
 }
 int
-OpenStaHandler::evaluateFunctionExpression(
+DatabaseHandler::evaluateFunctionExpression(
     sta::FuncExpr* func, std::unordered_map<LibraryTerm*, int>& inputs) const
 {
     int left;
@@ -2172,7 +3122,7 @@ OpenStaHandler::evaluateFunctionExpression(
 }
 
 float
-OpenStaHandler::bufferChainDelayPenalty(float load_cap)
+DatabaseHandler::bufferChainDelayPenalty(float load_cap)
 {
     if (!has_buffer_inverter_seq_)
     {
@@ -2219,7 +3169,7 @@ OpenStaHandler::bufferChainDelayPenalty(float load_cap)
 }
 
 void
-OpenStaHandler::computeBuffersDelayPenalty(bool include_inverting)
+DatabaseHandler::computeBuffersDelayPenalty(bool include_inverting)
 {
     // TODO Support include buffer slews
     auto all_libs = allLibs();
@@ -2310,7 +3260,7 @@ OpenStaHandler::computeBuffersDelayPenalty(bool include_inverting)
     }
 }
 InstanceTerm*
-OpenStaHandler::largestLoadCapacitancePin(Instance* cell)
+DatabaseHandler::largestLoadCapacitancePin(Instance* cell)
 {
     float         max_cap = -sta::INF;
     InstanceTerm* max_pin = nullptr;
@@ -2326,7 +3276,7 @@ OpenStaHandler::largestLoadCapacitancePin(Instance* cell)
     return max_pin;
 }
 LibraryTerm*
-OpenStaHandler::largestInputCapacitanceLibraryPin(Instance* cell)
+DatabaseHandler::largestInputCapacitanceLibraryPin(Instance* cell)
 {
     float        max_cap = -sta::INF;
     LibraryTerm* max_pin = nullptr;
@@ -2342,12 +3292,12 @@ OpenStaHandler::largestInputCapacitanceLibraryPin(Instance* cell)
     return max_pin;
 }
 float
-OpenStaHandler::largestInputCapacitance(Instance* cell)
+DatabaseHandler::largestInputCapacitance(Instance* cell)
 {
     return largestInputCapacitance(libraryCell(cell));
 }
 float
-OpenStaHandler::largestInputCapacitance(LibraryCell* cell)
+DatabaseHandler::largestInputCapacitance(LibraryCell* cell)
 {
     float max_cap    = -sta::INF;
     auto  input_pins = libraryInputPins(cell);
@@ -2366,12 +3316,346 @@ OpenStaHandler::largestInputCapacitance(LibraryCell* cell)
     return max_cap;
 }
 
+std::shared_ptr<LibraryCellMapping>
+DatabaseHandler::getLibraryCellMapping(LibraryCell* cell)
+{
+    if (!cell || !truth_tables_.count(cell) ||
+        !library_cell_mappings_.count(truth_tables_[cell]))
+    {
+        return nullptr;
+    }
+    auto mapping = library_cell_mappings_[truth_tables_[cell]];
+    return mapping;
+}
+std::shared_ptr<LibraryCellMapping>
+DatabaseHandler::getLibraryCellMapping(Instance* inst)
+{
+    return getLibraryCellMapping(libraryCell(inst));
+}
+std::unordered_set<LibraryCell*>
+DatabaseHandler::truthTableToCells(std::string table_id)
+{
+    if (!function_to_cell_.count(table_id))
+    {
+        return std::unordered_set<LibraryCell*>();
+    }
+    return function_to_cell_[table_id];
+}
+
+std::string
+DatabaseHandler::cellToTruthTable(LibraryCell* cell)
+{
+    if (!cell || !truth_tables_.count(cell) ||
+        !library_cell_mappings_.count(truth_tables_[cell]))
+    {
+        return "";
+    }
+    return truth_tables_[cell];
+}
+void
+DatabaseHandler::buildLibraryMappings(int max_length)
+{
+    auto buffer_lib   = bufferCells();
+    auto inverter_lib = inverterCells();
+    buildLibraryMappings(max_length, buffer_lib, inverter_lib);
+}
+void
+DatabaseHandler::buildLibraryMappings(int                        max_length,
+                                      std::vector<LibraryCell*>& buffer_lib,
+                                      std::vector<LibraryCell*>& inverter_lib)
+{
+    resetLibraryMapping();
+    std::unordered_map<LibraryCell*, std::bitset<64>> truth_tables_sim;
+
+    std::unordered_map<sta::FuncExpr*, std::bitset<64>> function_cache;
+
+    std::vector<LibraryCell*> all_cells;
+    std::unordered_set<std::string>
+         all_tables; // Table represented as <input size>_<simulation values>
+    auto all_libs = allLibs();
+    std::unordered_map<int,
+                       std::vector<std::vector<std::string>>>
+                                          chain_length_map; // Key is the chain length
+    std::vector<std::vector<std::string>> all_chains;
+    std::unordered_map<std::vector<std::string>*, int>
+        chain_max_length; // Max length for a given chain before it outputs
+                          // constants.
+
+    // Calculate truth tables
+    for (auto& lib : all_libs)
+    {
+        sta::LibertyCellIterator cell_iter(lib);
+        while (cell_iter.hasNext())
+        {
+            auto lib_cell   = cell_iter.next();
+            auto input_pins = libraryInputPins(lib_cell);
+            if (!dontUse(lib_cell) && isSingleOutputCombinational(lib_cell) &&
+                input_pins.size() < 32)
+            {
+                auto           output_pins = libraryOutputPins(lib_cell);
+                auto           output_pin  = output_pins[0];
+                sta::FuncExpr* output_func = output_pin->function();
+                if (output_func)
+                {
+                    std::bitset<64> table = 0;
+                    if (function_cache.count(output_func))
+                    {
+                        table = function_cache[output_func];
+                    }
+                    else
+                    {
+                        table = std::bitset<64>(computeTruthTable(lib_cell));
+                        function_cache[output_func] = table;
+                    }
+                    all_cells.push_back(lib_cell);
+                    std::string table_id = std::to_string(input_pins.size()) +
+                                           "_" + table.to_string();
+                    truth_tables_sim[lib_cell] = table;
+                    truth_tables_[lib_cell]    = table_id;
+                    function_to_cell_[table_id].insert(lib_cell);
+                    if (!all_tables.count(table_id))
+                    {
+                        chain_length_map[1].push_back(std::vector<std::string>(
+                            {table_id})); // Base chain, consisting of
+                                          // the
+                        // single cell.
+
+                        all_tables.insert(table_id);
+                    }
+                }
+                else
+                {
+                    truth_tables_[lib_cell] = "";
+                }
+            }
+            else
+            {
+                truth_tables_[lib_cell] = "";
+            }
+        }
+    }
+
+    for (int chain_length = 2; chain_length <= max_length;
+         chain_length++) // Chains of length 1 are already added above
+    {
+        for (auto& chain : chain_length_map[chain_length - 1])
+        {
+            if (!chain_max_length.count(&chain) ||
+                chain_max_length[&chain] >= chain_length)
+            {
+                auto starting_table_id = chain[0];
+                auto random_cell =
+                    *(function_to_cell_[starting_table_id].begin());
+                auto starting_input_pins  = libraryInputPins(random_cell);
+                auto starting_output_pins = libraryOutputPins(random_cell);
+                int  table                = 0;
+                sta::FuncExpr* starting_output_func =
+                    starting_output_pins[0]->function();
+                int prev_output;
+                for (int i = 0; i < std::pow(2, starting_input_pins.size());
+                     ++i)
+                {
+                    std::unordered_map<LibraryTerm*, int> sim_vals;
+                    std::bitset<64>                       input_bits(i);
+                    for (size_t j = 0; j < starting_input_pins.size(); j++)
+                    {
+                        sim_vals[starting_input_pins[j]] =
+                            input_bits.test(starting_input_pins.size() - j - 1);
+                    }
+                    prev_output = evaluateFunctionExpression(
+                        starting_output_func, sim_vals);
+                    for (size_t m = 1; m < chain.size(); m++)
+                    {
+                        sim_vals.clear();
+                        auto node_table_id = chain[m];
+                        auto node_random_cell =
+                            *(function_to_cell_[node_table_id].begin());
+
+                        auto node_input_pins =
+                            libraryInputPins(node_random_cell);
+                        auto node_output_pins =
+                            libraryOutputPins(node_random_cell);
+                        sta::FuncExpr* node_output_func =
+                            node_output_pins[0]->function();
+                        for (auto& in_pin : node_input_pins)
+                        {
+                            sim_vals[in_pin] = prev_output;
+                        }
+                        prev_output = evaluateFunctionExpression(
+                            node_output_func, sim_vals);
+                    }
+                    table |= prev_output << i;
+                }
+                if (table && ~table) // Not a constant
+                {
+                    for (auto& new_table : all_tables)
+                    {
+                        // Only accept buffer/inverter for now
+                        if (new_table.substr(0, 2) == "1_")
+                        {
+                            std::bitset<64> table_bits(table);
+
+                            auto new_table_random_cell =
+                                *(function_to_cell_[new_table].begin());
+                            auto new_table_input_pins =
+                                libraryInputPins(new_table_random_cell);
+                            auto new_table_output_pins =
+                                libraryOutputPins(new_table_random_cell);
+                            int            table = 0;
+                            sta::FuncExpr* new_table_output_func =
+                                new_table_output_pins[0]->function();
+                            std::unordered_map<LibraryTerm*, int> sim_vals;
+
+                            int new_chain_table = 0;
+                            for (int i = 0;
+                                 i < std::pow(2, starting_input_pins.size());
+                                 ++i)
+                            {
+                                for (auto& in_pin : new_table_input_pins)
+                                {
+                                    sim_vals[in_pin] = table_bits.test(i);
+                                }
+                                new_chain_table |=
+                                    evaluateFunctionExpression(
+                                        new_table_output_func, sim_vals)
+                                    << i;
+                            }
+                            if (new_chain_table &&
+                                ~new_chain_table) // Not a constant
+                            {
+                                auto new_chain = chain;
+                                new_chain.push_back(new_table);
+                                chain_length_map[chain_length].push_back(
+                                    new_chain);
+
+                                std::string chain_id =
+                                    std::to_string(starting_input_pins.size()) +
+                                    "_" +
+                                    std::bitset<64>(new_chain_table)
+                                        .to_string();
+                                if (function_to_cell_.count(
+                                        chain_id)) // We found an equivalent
+                                                   // cell to this chain
+                                {
+                                    if (!library_cell_mappings_.count(chain_id))
+                                    {
+                                        library_cell_mappings_[chain_id] =
+                                            std::make_shared<LibraryCellMapping>(
+                                                chain_id);
+                                    }
+                                    auto& mapping =
+                                        library_cell_mappings_[chain_id];
+                                    if (!mapping->mappings()->count(
+                                            new_chain[0]))
+                                    {
+                                        auto root_cell = std::make_shared<
+                                            LibraryCellMappingNode>(
+                                            name(*(
+                                                function_to_cell_[new_chain[0]]
+                                                    .begin())),
+                                            new_chain[0], nullptr,
+                                            new_chain[0] == chain_id, false,
+                                            isBuffer(*(
+                                                function_to_cell_[new_chain[0]]
+                                                    .begin())),
+                                            isInverter(*(
+                                                function_to_cell_[new_chain[0]]
+                                                    .begin())),
+                                            0);
+                                        root_cell->setSelf(root_cell);
+                                        mapping->mappings()->insert(
+                                            {new_chain[0], root_cell});
+                                    }
+                                    auto it =
+                                        mapping->mappings()->at(new_chain[0]);
+                                    for (size_t i = 1; i < new_chain.size();
+                                         i++)
+                                    {
+                                        if (!it->children().count(new_chain[i]))
+                                        {
+                                            auto new_node = std::make_shared<
+                                                LibraryCellMappingNode>(
+                                                name(*(function_to_cell_
+                                                           [new_chain[i]]
+                                                               .begin())),
+                                                new_chain[i], it.get(), false,
+                                                false,
+                                                isBuffer(*(function_to_cell_
+                                                               [new_chain[i]]
+                                                                   .begin())),
+                                                isInverter(*(function_to_cell_
+                                                                 [new_chain[i]]
+                                                                     .begin())),
+                                                it->level() + 1);
+                                            it->children()[new_chain[i]] =
+                                                new_node;
+                                            new_node->setSelf(new_node);
+                                        }
+                                        if (new_chain[i] == new_chain[i - 1])
+                                        {
+                                            it->setRecurring(true);
+                                        }
+                                        it = it->children()[new_chain[i]];
+                                        if (i == new_chain.size() - 1)
+                                        {
+                                            it->setTerminal(true);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                chain_max_length[&chain] = chain_length;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    chain_max_length[&chain] = chain_length - 1;
+                }
+            }
+        }
+    }
+
+    has_library_cell_mappings_ = true;
+}
+int
+DatabaseHandler::computeTruthTable(LibraryCell* lib_cell)
+{
+    int            table       = 0;
+    auto           output_pins = libraryOutputPins(lib_cell);
+    auto           input_pins  = libraryInputPins(lib_cell);
+    auto           output_pin  = output_pins[0];
+    sta::FuncExpr* output_func = output_pin->function();
+    for (int i = 0; i < std::pow(2, input_pins.size()); ++i)
+    {
+        std::unordered_map<LibraryTerm*, int> sim_vals;
+        std::bitset<64>                       input_bits(i);
+        for (size_t j = 0; j < input_pins.size(); j++)
+        {
+            sim_vals[input_pins[j]] =
+                input_bits.test(input_pins.size() - j - 1);
+        }
+        table |= evaluateFunctionExpression(output_func, sim_vals) << i;
+    }
+    return table;
+}
+void
+DatabaseHandler::resetLibraryMapping()
+{
+    has_library_cell_mappings_ = false;
+    library_cell_mappings_.clear();
+    function_to_cell_.clear();
+    truth_tables_.clear();
+}
+
 /* The following is borrowed from James Cherry's Resizer Code */
 
 // Find a target slew for the libraries and then
 // a target load for each cell that gives the target slew.
 void
-OpenStaHandler::findTargetLoads(std::vector<Liberty*>* resize_libs)
+DatabaseHandler::findTargetLoads(std::vector<Liberty*>* resize_libs)
 {
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews(resize_libs);
@@ -2380,7 +3664,7 @@ OpenStaHandler::findTargetLoads(std::vector<Liberty*>* resize_libs)
 }
 
 float
-OpenStaHandler::targetLoad(LibraryCell* cell)
+DatabaseHandler::targetLoad(LibraryCell* cell)
 {
     if (!has_target_loads_)
     {
@@ -2394,7 +3678,7 @@ OpenStaHandler::targetLoad(LibraryCell* cell)
 }
 
 float
-OpenStaHandler::coreArea() const
+DatabaseHandler::coreArea() const
 {
     auto block = top();
     Rect core;
@@ -2403,43 +3687,81 @@ OpenStaHandler::coreArea() const
 }
 
 bool
-OpenStaHandler::maximumUtilizationViolation() const
+DatabaseHandler::maximumUtilizationViolation() const
 {
     return sta::fuzzyGreaterEqual(area(), maximumArea());
 }
 void
-OpenStaHandler::setMaximumArea(float area)
+DatabaseHandler::setMaximumArea(float area)
 {
     maximum_area_       = area;
     maximum_area_valid_ = true;
 }
-bool
-OpenStaHandler::hasMaximumArea() const
+
+void
+DatabaseHandler::setMaximumArea(MaxAreaCallback maximum_area_callback)
 {
+    maximum_area_callback_ = maximum_area_callback;
+    maximum_area_valid_    = true;
+}
+void
+DatabaseHandler::setUpdateDesignArea(
+    UpdateDesignAreaCallback update_design_area_callback)
+{
+    update_design_area_callback_ = update_design_area_callback;
+}
+void
+DatabaseHandler::notifyDesignAreaChanged(float new_area)
+{
+    if (update_design_area_callback_ != nullptr)
+    {
+        update_design_area_callback_(new_area);
+    }
+}
+void
+DatabaseHandler::notifyDesignAreaChanged()
+{
+    if (update_design_area_callback_ != nullptr)
+    {
+        update_design_area_callback_(area());
+    }
+}
+bool
+DatabaseHandler::hasMaximumArea() const
+{
+    if (maximum_area_callback_ != nullptr)
+    {
+        return maximum_area_callback_();
+    }
     return maximum_area_valid_;
 }
+
 float
-OpenStaHandler::maximumArea() const
+DatabaseHandler::maximumArea() const
 {
     if (!maximum_area_valid_)
     {
         PSN_LOG_WARN("Maximum area is not set or invalid");
     }
+    if (maximum_area_callback_)
+    {
+        return maximum_area_callback_();
+    }
     return maximum_area_;
 }
 
 float
-OpenStaHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
-                          LibraryTerm* from, float* drvr_slew, int rise_fall)
+DatabaseHandler::gateDelay(Instance* inst, InstanceTerm* to, float in_slew,
+                           LibraryTerm* from, float* drvr_slew, int rise_fall)
 {
     return gateDelay(libraryCell(inst), to, in_slew, from, drvr_slew,
                      rise_fall);
 }
 
 float
-OpenStaHandler::gateDelay(LibraryCell* lib_cell, InstanceTerm* to,
-                          float in_slew, LibraryTerm* from, float* drvr_slew,
-                          int rise_fall)
+DatabaseHandler::gateDelay(LibraryCell* lib_cell, InstanceTerm* to,
+                           float in_slew, LibraryTerm* from, float* drvr_slew,
+                           int rise_fall)
 {
     sta::ArcDelay                        max = -sta::INF;
     sta::LibertyCellTimingArcSetIterator itr(lib_cell);
@@ -2466,6 +3788,8 @@ OpenStaHandler::gateDelay(LibraryCell* lib_cell, InstanceTerm* to,
                         sta::ArcDelay gate_delay;
                         sta::Slew     tmp_slew;
                         sta::Slew*    slew = drvr_slew ? drvr_slew : &tmp_slew;
+                        in_slew =
+                            target_slews_[arc->toTrans()->asRiseFall()->index()];
                         sta_->arcDelayCalc()->gateDelay(
                             lib_cell, arc, in_slew, load_cap, nullptr, 0.0,
                             pvt_, dcalc_ap_, gate_delay, *slew);
@@ -2478,7 +3802,7 @@ OpenStaHandler::gateDelay(LibraryCell* lib_cell, InstanceTerm* to,
     return max;
 }
 void
-OpenStaHandler::findTargetLoads(Liberty* library, sta::Slew slews[])
+DatabaseHandler::findTargetLoads(Liberty* library, sta::Slew slews[])
 {
     sta::LibertyCellIterator cell_iter(library);
     while (cell_iter.hasNext())
@@ -2489,7 +3813,7 @@ OpenStaHandler::findTargetLoads(Liberty* library, sta::Slew slews[])
 }
 
 void
-OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::Slew slews[])
+DatabaseHandler::findTargetLoad(LibraryCell* cell, sta::Slew slews[])
 {
     sta::LibertyCellTimingArcSetIterator arc_set_iter(cell);
     float                                target_load_sum = 0.0;
@@ -2522,8 +3846,8 @@ OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::Slew slews[])
 // Find the load capacitance that will cause the output slew
 // to be equal to out_slew.
 float
-OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
-                               sta::Slew in_slew, sta::Slew out_slew)
+DatabaseHandler::findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
+                                sta::Slew in_slew, sta::Slew out_slew)
 {
     sta::GateTimingModel* model =
         dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -2551,7 +3875,7 @@ OpenStaHandler::findTargetLoad(LibraryCell* cell, sta::TimingArc* arc,
     return 0.0;
 }
 std::set<Net*>
-OpenStaHandler::clockNets() const
+DatabaseHandler::clockNets() const
 {
     std::set<Net*>            nets;
     sta::ClkArrivalSearchPred srch_pred(sta_);
@@ -2560,7 +3884,7 @@ OpenStaHandler::clockNets() const
     sta_->search()->findClkVertexPins(clk_pins);
     for (auto pin : clk_pins)
     {
-        sta::Vertex *vert, *bi_vert;
+        Vertex *vert, *bi_vert;
         network()->graph()->pinVertices(pin, vert, bi_vert);
         bfs.enqueue(vert);
         if (bi_vert)
@@ -2577,61 +3901,71 @@ OpenStaHandler::clockNets() const
     return nets;
 }
 void
-OpenStaHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
-                          // Return values.
-                          float& limit, bool& exists) const
+DatabaseHandler::slewLimit(InstanceTerm* pin, sta::MinMax* min_max,
+                           // Return values.
+                           float& limit, bool& exists) const
 
 {
-    exists         = false;
-    auto  top_cell = network()->cell(network()->topInstance());
-    float top_limit;
-    bool  top_limit_exists;
-    sta_->sdc()->slewLimit(top_cell, min_max, top_limit, top_limit_exists);
+    exists = false;
+    float pin_limit;
+    bool  pin_limit_exists;
+    sta_->sdc()->slewLimit(network()->cell(network()->topInstance()), min_max,
+                           pin_limit, pin_limit_exists);
 
-    // Default to top ("design") limit.
-    exists = top_limit_exists;
-    limit  = top_limit;
+    exists = pin_limit_exists;
+    limit  = pin_limit;
     if (network()->isTopLevelPort(pin))
     {
-        auto  port = network()->port(pin);
-        float port_limit;
-        bool  port_limit_exists;
-        sta_->sdc()->slewLimit(port, min_max, port_limit, port_limit_exists);
-        // Use the tightest limit.
-        if (port_limit_exists &&
-            (!exists || min_max->compare(limit, port_limit)))
+        Port* port = network()->port(pin);
+        sta_->sdc()->slewLimit(port, min_max, pin_limit, pin_limit_exists);
+        if (pin_limit_exists && (!exists || min_max->compare(limit, pin_limit)))
         {
-            limit  = port_limit;
+            limit  = pin_limit;
             exists = true;
         }
     }
     else
     {
-        float port_limit;
-        bool  port_limit_exists;
-        auto  port = network()->libertyPort(pin);
+        auto port = network()->libertyPort(pin);
+
         if (port)
         {
-            port->slewLimit(min_max, port_limit, port_limit_exists);
-            // Use the tightest limit.
-            if (port_limit_exists &&
-                (!exists || min_max->compare(limit, port_limit)))
+
+            port->slewLimit(min_max, pin_limit, pin_limit_exists);
+            if (pin_limit_exists)
             {
-                limit  = port_limit;
-                exists = true;
+                if (!exists || min_max->compare(limit, pin_limit))
+                {
+                    limit  = pin_limit;
+                    exists = true;
+                }
+            }
+            else if (port->direction()->isAnyOutput() &&
+                     min_max == sta::MinMax::max())
+            {
+                port->libertyLibrary()->defaultMaxSlew(pin_limit,
+                                                       pin_limit_exists);
+
+                if (pin_limit_exists &&
+                    (!exists || min_max->compare(limit, pin_limit)))
+                {
+                    limit  = pin_limit;
+                    exists = true;
+                }
             }
         }
     }
 }
 
 float
-OpenStaHandler::gateDelay(InstanceTerm* pin, float load_cap, float* tr_slew)
+DatabaseHandler::gateDelay(InstanceTerm* pin, float load_cap, float* tr_slew)
 {
     return gateDelay(libraryPin(pin), load_cap, tr_slew);
 }
 
 float
-OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap, float* tr_slew)
+DatabaseHandler::gateDelay(LibraryTerm* out_port, float load_cap,
+                           float* tr_slew)
 {
     if (!has_target_loads_)
     {
@@ -2666,7 +4000,7 @@ OpenStaHandler::gateDelay(LibraryTerm* out_port, float load_cap, float* tr_slew)
 }
 
 float
-OpenStaHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
+DatabaseHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
 {
     psn::LibraryTerm *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -2674,7 +4008,7 @@ OpenStaHandler::bufferDelay(psn::LibraryCell* buffer_cell, float load_cap)
 }
 
 float
-OpenStaHandler::portCapacitance(const LibraryTerm* port, bool isMax) const
+DatabaseHandler::portCapacitance(const LibraryTerm* port, bool isMax) const
 {
     float cap1 = port->capacitance(
         sta::RiseFall::rise(), isMax ? sta::MinMax::max() : sta::MinMax::min());
@@ -2684,14 +4018,14 @@ OpenStaHandler::portCapacitance(const LibraryTerm* port, bool isMax) const
 }
 
 LibraryTerm*
-OpenStaHandler::bufferInputPin(LibraryCell* buffer_cell) const
+DatabaseHandler::bufferInputPin(LibraryCell* buffer_cell) const
 {
     LibraryTerm *input, *output;
     buffer_cell->bufferPorts(input, output);
     return input;
 }
 LibraryTerm*
-OpenStaHandler::bufferOutputPin(LibraryCell* buffer_cell) const
+DatabaseHandler::bufferOutputPin(LibraryCell* buffer_cell) const
 {
     LibraryTerm *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -2699,21 +4033,21 @@ OpenStaHandler::bufferOutputPin(LibraryCell* buffer_cell) const
 }
 
 float
-OpenStaHandler::inverterInputCapacitance(LibraryCell* inv_cell)
+DatabaseHandler::inverterInputCapacitance(LibraryCell* inv_cell)
 {
     LibraryTerm *input, *output;
     inv_cell->bufferPorts(input, output);
     return portCapacitance(input);
 }
 float
-OpenStaHandler::bufferInputCapacitance(LibraryCell* buffer_cell) const
+DatabaseHandler::bufferInputCapacitance(LibraryCell* buffer_cell) const
 {
     LibraryTerm *input, *output;
     buffer_cell->bufferPorts(input, output);
     return portCapacitance(input);
 }
 float
-OpenStaHandler::bufferOutputCapacitance(LibraryCell* buffer_cell)
+DatabaseHandler::bufferOutputCapacitance(LibraryCell* buffer_cell)
 {
     LibraryTerm *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -2722,14 +4056,14 @@ OpenStaHandler::bufferOutputCapacitance(LibraryCell* buffer_cell)
 ////////////////////////////////////////////////////////////////
 
 sta::Slew
-OpenStaHandler::targetSlew(const sta::RiseFall* rf)
+DatabaseHandler::targetSlew(const sta::RiseFall* rf)
 {
     return target_slews_[rf->index()];
 }
 
 // Find target slew across all buffers in the libraries.
 void
-OpenStaHandler::findBufferTargetSlews(std::vector<Liberty*>* resize_libs)
+DatabaseHandler::findBufferTargetSlews(std::vector<Liberty*>* resize_libs)
 {
     target_slews_[sta::RiseFall::riseIndex()] = 0.0;
     target_slews_[sta::RiseFall::fallIndex()] = 0.0;
@@ -2755,17 +4089,25 @@ OpenStaHandler::findBufferTargetSlews(std::vector<Liberty*>* resize_libs)
     }
 }
 bool
-OpenStaHandler::dontUse(LibraryCell* cell) const
+DatabaseHandler::dontUse(LibraryCell* cell) const
 {
-    return cell->dontUse() || dont_use_.count(cell);
+    return cell->dontUse() || dont_use_.count(cell) ||
+           (dont_use_callback_ != nullptr && dont_use_callback_(cell));
 }
 bool
-OpenStaHandler::dontTouch(Instance*) const
+DatabaseHandler::dontTouch(Instance* inst) const
 {
-    return false;
+    odb::dbInst* db_inst = network()->staToDb(inst);
+    return db_inst && db_inst->isDoNotTouch();
+}
+bool
+DatabaseHandler::dontSize(Instance* inst) const
+{
+    odb::dbInst* db_inst = network()->staToDb(inst);
+    return db_inst && db_inst->isDoNotSize();
 }
 void
-OpenStaHandler::resetDelays()
+DatabaseHandler::resetDelays()
 {
     sta_->graphDelayCalc()->delaysInvalid();
     sta_->search()->arrivalsInvalid();
@@ -2777,15 +4119,15 @@ OpenStaHandler::resetDelays()
     }
 }
 void
-OpenStaHandler::resetDelays(InstanceTerm* term)
+DatabaseHandler::resetDelays(InstanceTerm* term)
 {
     sta_->delaysInvalidFrom(term);
     sta_->delaysInvalidFromFanin(term);
 }
 void
-OpenStaHandler::findBufferTargetSlews(Liberty* library,
-                                      // Return values.
-                                      sta::Slew slews[], int counts[])
+DatabaseHandler::findBufferTargetSlews(Liberty* library,
+                                       // Return values.
+                                       sta::Slew slews[], int counts[])
 {
     for (auto buffer : *library->buffers())
     {
@@ -2823,20 +4165,20 @@ OpenStaHandler::findBufferTargetSlews(Liberty* library,
     }
 }
 void
-OpenStaHandler::calculateParasitics()
+DatabaseHandler::calculateParasitics()
 {
     for (auto& net : nets())
     {
-        if (!isClock(net))
+        if (!isClock(net) && !network()->isPower(net) &&
+            !network()->isGround(net))
         {
             calculateParasitics(net);
         }
     }
 }
 bool
-OpenStaHandler::isClock(Net* net) const
+DatabaseHandler::isClock(Net* net) const
 {
-
     auto net_pin = faninPin(net);
     if (net_pin)
     {
@@ -2855,50 +4197,18 @@ OpenStaHandler::isClock(Net* net) const
 }
 
 void
-OpenStaHandler::calculateParasitics(Net* net)
+DatabaseHandler::calculateParasitics(Net* net)
 {
-    auto tree = SteinerTree::create(net, psn_);
-    if (tree && tree->isPlaced())
+    if (compute_parasitics_callback_ != nullptr)
     {
-        sta::Parasitic* parasitic = sta_->parasitics()->makeParasiticNetwork(
-            net, false, parasitics_ap_);
-        int branch_count = tree->branchCount();
-        for (int i = 0; i < branch_count; i++)
-        {
-            auto                branch = tree->branch(i);
-            sta::ParasiticNode* n1 =
-                findParasiticNode(tree, parasitic, net, branch.firstPin(),
-                                  branch.firstSteinerPoint());
-            sta::ParasiticNode* n2 =
-                findParasiticNode(tree, parasitic, net, branch.secondPin(),
-                                  branch.secondSteinerPoint());
-            if (n1 != n2)
-            {
-                if (branch.wireLength() == 0)
-                {
-                    sta_->parasitics()->makeResistor(nullptr, n1, n2, 1.0e-3,
-                                                     parasitics_ap_);
-                }
-                else
-                {
-                    float wire_length = dbuToMeters(branch.wireLength());
-                    float wire_cap    = wire_length * cap_per_micron_;
-                    float wire_res    = wire_length * res_per_micron_;
-                    sta_->parasitics()->incrCap(n1, wire_cap / 2.0,
-                                                parasitics_ap_);
-                    sta_->parasitics()->makeResistor(nullptr, n1, n2, wire_res,
-                                                     parasitics_ap_);
-                    sta_->parasitics()->incrCap(n2, wire_cap / 2.0,
-                                                parasitics_ap_);
-                }
-            }
-        }
+        compute_parasitics_callback_(net);
     }
 }
+
 sta::ParasiticNode*
-OpenStaHandler::findParasiticNode(std::unique_ptr<SteinerTree>& tree,
-                                  sta::Parasitic* parasitic, const Net* net,
-                                  const InstanceTerm* pin, SteinerPoint pt)
+DatabaseHandler::findParasiticNode(std::unique_ptr<SteinerTree>& tree,
+                                   sta::Parasitic* parasitic, const Net* net,
+                                   const InstanceTerm* pin, SteinerPoint pt)
 {
     if (pin == nullptr)
     {
@@ -2914,7 +4224,7 @@ OpenStaHandler::findParasiticNode(std::unique_ptr<SteinerTree>& tree,
     }
 }
 HandlerType
-OpenStaHandler::handlerType() const
+DatabaseHandler::handlerType() const
 {
     return HandlerType::OPENSTA;
 }

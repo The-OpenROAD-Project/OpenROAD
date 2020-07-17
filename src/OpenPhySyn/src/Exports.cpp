@@ -32,6 +32,8 @@
 #include "Exports.hpp"
 #include <memory>
 #include "OpenPhySyn/Psn.hpp"
+#include "OpenPhySyn/PsnGlobal.hpp"
+#include "PsnLogger.hpp"
 
 namespace psn
 {
@@ -46,18 +48,7 @@ design_area()
 {
     return Psn::instance().handler()->area();
 }
-int
-set_wire_res_cap(float res_per_micon, float cap_per_micron)
-{
-    Psn::instance().setWireRC(res_per_micon, cap_per_micron);
 
-    return 1;
-}
-int
-set_wire_res_cap(const char* layer_name)
-{
-    return Psn::instance().setWireRC(layer_name);
-}
 int
 set_max_area(float area)
 {
@@ -108,6 +99,48 @@ Database&
 get_database()
 {
     return *(Psn::instance().database());
+}
+std::vector<std::string>
+transition_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumTransitionViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
+std::vector<std::string>
+capacitance_violations()
+{
+    std::vector<std::string> names;
+    if (!Psn::instance().hasDesign())
+    {
+        PSN_LOG_ERROR("Could not find any loaded design.");
+        return names;
+    }
+    for (auto& pin : Psn::instance().handler()->maximumCapacitanceViolations())
+    {
+        names.push_back(Psn::instance().handler()->name(pin));
+    }
+    return names;
+}
+
+bool
+has_liberty()
+{
+    return Psn::instance().hasLiberty();
+}
+
+void
+set_dont_use(std::vector<std::string> cell_names)
+{
+    Psn::instance().handler()->setDontUse(cell_names);
 }
 
 int

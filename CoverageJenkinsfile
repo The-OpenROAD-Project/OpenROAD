@@ -1,0 +1,16 @@
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        sh './jenkins/coverage/build.sh'
+      }
+    }
+    stage('Test') {
+      steps {
+        sh './jenkins/coverage/test.sh'
+        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'out', reportFiles: 'index.html', reportName: 'Code Coverage', reportTitles: ''])
+      }
+    }
+  }
+}

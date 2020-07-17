@@ -29,8 +29,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifdef OPENPHYSYN_TRANSFORM_BUFFER_FANOUT_ENABLED
-
 #include "BufferFanoutTransform.hpp"
 #include "OpenPhySyn/DatabaseHandler.hpp"
 #include "OpenPhySyn/Psn.hpp"
@@ -40,6 +38,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <unordered_map>
 
 namespace psn
 {
@@ -51,6 +50,10 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
 
     DatabaseHandler& handler = *(psn_inst->handler());
     LibraryCell*     cell    = handler.libraryCell(buffer_cell.c_str());
+    std::unordered_map<std::string, Instance*> name_to_buffer;
+    std::unordered_map<std::string, Net*>      name_to_net;
+    int                                        buff_index = 0;
+    int                                        net_index  = 0;
     if (!cell)
     {
         PSN_LOG_ERROR("Buffer", buffer_cell, "not found!");
@@ -102,13 +105,11 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
     {
         InstanceTerm* source_pin   = handler.faninPin(net);
         bool          is_top_level = false;
-#ifdef USE_OPENSTA_DB_HANDLER
         if (!source_pin)
         {
             source_pin   = handler.port(handler.name(net).c_str());
             is_top_level = true;
         }
-#endif
         if (source_pin && !clock_pins.count(source_pin))
         {
             PSN_LOG_DEBUG("Buffering:", handler.name(net));
@@ -147,16 +148,23 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                             std::vector<int> parent_buf(current_buffer.begin(),
                                                         current_buffer.end() -
                                                             i);
-                            if (handler.instance(
-                                    bufferName(parent_buf).c_str()) == nullptr)
+                            if (name_to_buffer[bufferName(parent_buf)] ==
+                                nullptr)
                             {
-                                auto      buf_name = bufferName(parent_buf);
-                                auto      net_name = bufferNetName(parent_buf);
+                                auto buf_name = bufferName(parent_buf);
+                                auto net_name = bufferNetName(parent_buf);
+
                                 Instance* new_buffer = handler.createInstance(
-                                    buf_name.c_str(), cell);
+                                    handler
+                                        .generateInstanceName("psn_fo_buff_",
+                                                              buff_index)
+                                        .c_str(),
+                                    cell);
+                                name_to_buffer[buf_name] = new_buffer;
                                 create_buffer_count++;
-                                Net* new_net =
-                                    handler.createNet(net_name.c_str());
+                                Net* new_net = handler.createNet(
+                                    handler.generateNetName(net_index).c_str());
+                                name_to_net[net_name] = new_net;
                                 if (!new_buffer)
                                 {
                                     PSN_LOG_CRITICAL(
@@ -191,8 +199,8 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                                             bufferNetName(std::vector<int>(
                                                 parent_buf.begin(),
                                                 parent_buf.end() - 1));
-                                        auto parent_net = handler.net(
-                                            parent_buf_net_name.c_str());
+                                        auto parent_net =
+                                            name_to_net[parent_buf_net_name];
                                         if (!parent_net)
                                         {
                                             PSN_LOG_CRITICAL(
@@ -217,10 +225,16 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                     auto buf_name = bufferName(current_buffer);
                     auto net_name = bufferNetName(current_buffer);
 
-                    Instance* new_buffer =
-                        handler.createInstance(buf_name.c_str(), cell);
+                    Instance* new_buffer = handler.createInstance(
+                        handler.generateInstanceName("psn_fo_buff_", buff_index)
+                            .c_str(),
+                        cell);
+                    name_to_buffer[buf_name] = new_buffer;
                     create_buffer_count++;
-                    Net* new_net = handler.createNet(net_name.c_str());
+                    Net* new_net = handler.createNet(
+                        handler.generateNetName(net_index).c_str());
+                    name_to_net[net_name] = new_net;
+
                     if (!new_buffer)
                     {
                         PSN_LOG_CRITICAL(
@@ -257,7 +271,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
                                 std::vector<int>(current_buffer.begin(),
                                                  current_buffer.end() - 1));
                             auto current_net =
-                                handler.net(current_buf_net_name.c_str());
+                                name_to_net[current_buf_net_name];
                             if (current_net)
                             {
                                 handler.connect(current_net, new_buffer,
@@ -277,6 +291,7 @@ BufferFanoutTransform::buffer(Psn* psn_inst, int max_fanout,
             }
         }
     }
+    psn_inst->handler()->notifyDesignAreaChanged();
     PSN_LOG_INFO("Added", create_buffer_count, "buffers");
 
     return create_buffer_count;
@@ -309,13 +324,13 @@ BufferFanoutTransform::nextBuffer(std::vector<int> current_buffer,
 std::string
 BufferFanoutTransform::bufferName(int index)
 {
-    return std::string("buf_" + std::to_string(index) + "_");
+    return std::string("psn_fo_buf_" + std::to_string(index) + "_");
 }
 
 std::string
 BufferFanoutTransform::bufferNetName(int index)
 {
-    return std::string("bufnet_" + std::to_string(index) + "_");
+    return std::string("psn_fo_bufnet_" + std::to_string(index) + "_");
 }
 std::string
 BufferFanoutTransform::bufferName(std::vector<int> indices)
@@ -329,7 +344,7 @@ BufferFanoutTransform::bufferName(std::vector<int> indices)
             name += "_";
         }
     }
-    return std::string("buf_" + name);
+    return std::string("psn_fo_buf_" + name);
 }
 
 std::string
@@ -344,7 +359,7 @@ BufferFanoutTransform::bufferNetName(std::vector<int> indices)
             name += "_";
         }
     }
-    return std::string("bufnet_" + name);
+    return std::string("psn_fo_bufnet_" + name);
 }
 
 int
@@ -362,9 +377,4 @@ BufferFanoutTransform::run(Psn* psn_inst, std::vector<std::string> args)
 
     return -1;
 }
-DEFINE_TRANSFORM_VIRTUALS(BufferFanoutTransform, "buffer_fanout", "1.0.0",
-                          "Inserts buffers based on max fan-out",
-                          "Usage: transform buffer_fanout "
-                          "<max_fanout> <buffer_cell>")
 } // namespace psn
-#endif

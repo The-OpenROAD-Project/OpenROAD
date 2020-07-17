@@ -13,6 +13,6 @@ Notice 0:     Created 24 nets and 45 connections.
 Notice 0: Finished DEF file: fanout1.def
 Invoking buffer_fanout transform 
 High fanout nets [ 6 ]:  
-Added 6 buffers 
-Finished buffer_fanout transform ( 6 ) 
+Added 18 buffers 
+Finished buffer_fanout transform ( 18 ) 
 No differences found.

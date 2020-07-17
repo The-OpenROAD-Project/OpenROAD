@@ -1749,23 +1749,34 @@ proc get_grid_wire_width {layer_name} {
   variable default_grid_data
   variable design_data
 
-  if {[dict exists $grid_data rails $layer_name width]} {
-    set width [dict get $grid_data rails $layer_name width]
-  } elseif {[dict exists $grid_data straps $layer_name width]} {
-    set width [dict get $grid_data straps $layer_name width]
-  } elseif {[dict exists $grid_data straps $layer_name] && [dict exists $grid_data template names]} {
-    set template_name [lindex [dict get $grid_data template names] 0]
-    set width [dict get $grid_data straps $layer_name $template_name width]
-  } elseif {[dict exists $default_grid_data straps $layer_name width]} {
-    set width [dict get $default_grid_data straps $layer_name width]
-  } elseif {[dict exists $default_grid_data straps $layer_name] && [dict exists $default_grid_data template names]} {
-    set template_name [lindex [dict get $default_grid_data template names] 0]
-    set width [dict get $default_grid_data straps $layer_name $template_name width]
-  } else {
-    critical 44 "No width information found for $layer_name"
+  if {[info exists grid_data]} {
+    if {[dict exists $grid_data rails $layer_name width]} {
+      set width [dict get $grid_data rails $layer_name width]
+      return $width
+    } elseif {[dict exists $grid_data straps $layer_name width]} {
+      set width [dict get $grid_data straps $layer_name width]
+      return $width
+    } elseif {[dict exists $grid_data straps $layer_name] && [dict exists $grid_data template names]} {
+      set template_name [lindex [dict get $grid_data template names] 0]
+      set width [dict get $grid_data straps $layer_name $template_name width]
+      return $width
+    }
+  } 
+
+  if {[info exists default_grid_data]} {
+    if {[dict exists $default_grid_data rails $layer_name width]} {
+      set width [dict get $default_grid_data rails $layer_name width]
+      return $width
+    } elseif {[dict exists $default_grid_data straps $layer_name width]} {
+      set width [dict get $default_grid_data straps $layer_name width]
+      return $width
+    } elseif {[dict exists $default_grid_data straps $layer_name] && [dict exists $default_grid_data template names]} {
+      set template_name [lindex [dict get $default_grid_data template names] 0]
+      set width [dict get $default_grid_data straps $layer_name $template_name width]
+      return $width
+    }
   }
-  
-  return $width 
+  critical 44 "No width information found for $layer_name"
 }
 
 proc get_grid_wire_pitch {layer_name} {
@@ -2385,6 +2396,29 @@ proc get_macro_boundaries {} {
   return $boundaries
 }
 
+proc get_stdcell_specification {} {
+  variable design_data
+
+  if {[dict exists $design_data grid stdcell]} {
+    set grid_name [lindex [dict keys [dict get $design_data grid stdcell]] 0]
+    return [dict get $design_data grid stdcell $grid_name] 
+  } else {
+    if {![dict exists $design_data grid stdcell]} {
+      critical 17 "No stdcell grid specification found - no rails can be inserted"
+    }
+  }
+
+  return {}
+}
+
+proc get_rail_width {} {
+  set max_width 0
+  foreach layer [get_rails_layers] {
+    set max_width [expr max($max_width,[get_grid_wire_width $layer])]
+  }
+  return $max_width
+}
+
 proc import_macro_boundaries {} {
   variable libs
   variable macros
@@ -2428,9 +2462,9 @@ proc import_macro_boundaries {} {
 
     set halo [dict get $instances $instance halo]
     set llx [expr round($llx - [lindex $halo 0])]
-    set lly [expr round($lly - [lindex $halo 1])]
+    set lly [expr round($lly - ([lindex $halo 1] - [get_rail_width] / 2.0))]
     set urx [expr round($urx + [lindex $halo 2])]
-    set ury [expr round($ury + [lindex $halo 3])]
+    set ury [expr round($ury + ([lindex $halo 3] - [get_rail_width] / 2.0))]
 
     dict set instances $instance halo_boundary [list $llx $lly $urx $ury]
   }
@@ -2992,9 +3026,7 @@ proc init {{PDN_cfg "PDN.cfg"}} {
     }
   }
 
-  if {[dict exists $design_data grid stdcell]} {
-    set default_grid_data [dict get $design_data grid stdcell [lindex [dict keys [dict get $design_data grid stdcell]] 0]]
-  }
+  set default_grid_data [get_stdcell_specification]
   
   # debug "Set the core area"
   # Set the core area
@@ -4414,21 +4446,13 @@ proc plan_grid {} {
   
   ################################## Main Code #################################
 
-  if {![dict exists $design_data grid stdcell]} {
-    warning 17 "No stdcell grid specification found - no rails inserted"
-  }
-
   if {![dict exists $design_data grid macro]} {
     warning 18 "No macro grid specifications found - no straps added"
   }
 
   information 11 "****** INFO ******"
 
-  if {[dict exists $design_data grid stdcell]} {
-    dict for {name specification} [dict get $design_data grid stdcell] {
-      print_strategy stdcell $specification
-    }
-  }
+  print_strategy stdcell [get_stdcell_specification]
 
   if {[dict exists $design_data grid macro]} {
     dict for {name specification} [dict get $design_data grid macro] {
