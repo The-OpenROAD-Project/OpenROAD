@@ -40,13 +40,14 @@ resize
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
-repair_hold_violations -buffer_cell $resize_buffer_cell
 
 set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
 optimize_mirroring
 check_placement -verbose
 
+# Clone clock tree inverters next to register loads
+# so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
 
 clock_tree_synthesis -lut_file $cts_lut_file \
@@ -54,8 +55,17 @@ clock_tree_synthesis -lut_file $cts_lut_file \
   -root_buf $cts_buffer \
   -wire_unit 20
 
+# CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets -max_wire_length $max_wire_length \
   -buffer_cell $resize_buffer_cell
+
+# Get gates close to final positions so parasitics estimate is close.
+detailed_placement
+
+# CTS trashes the timing state and detailed placement moves instances
+# so update parastic estimates.
+estimate_parasitics -placement
+repair_hold_violations -buffer_cell $resize_buffer_cell
 
 detailed_placement
 filler_placement $filler_cells
@@ -106,6 +116,9 @@ report_power
 
 report_floating_nets -verbose
 report_design_area
+
+set verilog_file [make_result_file ${design}.v]
+write_verilog -remove_cells $filler_cells $verilog_file
 
 if { ![info exists drv_count] } {
   puts "fail drv count not found."

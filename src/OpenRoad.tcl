@@ -128,13 +128,15 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
-# Units are from OpenSTA (ie Liberty file or set_units)
-sta::define_cmd_args "set_layer_rc" { [-layer] layer_name \
-                                      [-via] layer_name \
-                                      [-capacitance] value \
-                                      [-resistance] value }
+# Units are from OpenSTA (ie Liberty file or set_cmd_units).
+sta::define_cmd_args "set_layer_rc" { [-layer layer] \
+					[-via via_layer] \
+					[-capacitance cap] \
+					[-resistance res] }
 proc set_layer_rc {args} {
-  sta::parse_key_args "set_layer_rc" args keys {-layer -via -capacitance -resistance} flags {}
+  sta::parse_key_args "set_layer_rc" args \
+    keys {-layer -via -capacitance -resistance}\
+    flags {}
 
   if { ![info exists keys(-layer)] && ![info exists keys(-via)] } {
     ord::error "layer or via must be specified."
