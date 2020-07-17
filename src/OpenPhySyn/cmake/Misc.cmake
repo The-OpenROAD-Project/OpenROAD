@@ -38,13 +38,7 @@ MACRO(SUBDIRLIST result curdir)
   ENDFOREACH()
   SET(${result} ${dirlist})
 ENDMACRO()
-# Have CMake parse the config file, generating the config header, with
-# correct definitions. Here only used to make version number available to
-# the source code. Include "config.h" (no .in suffix) in the source.
-configure_file (
-  "${PROJECT_SOURCE_DIR}/cmake/Config.hpp.in"
-  "${PROJECT_BINARY_DIR}/Config.hpp"
-)
+
 # add the binary tree to the search path for include files
 # so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")

@@ -41,57 +41,40 @@ class Psn;
 class PsnTransform
 {
 public:
-#ifdef OPENPHYSYN_AUTO_LINK
-    virtual std::shared_ptr<psn::PsnTransform> load()        = 0;
-    virtual const char*                        name()        = 0;
-    virtual const char*                        version()     = 0;
-    virtual const char*                        help()        = 0;
-    virtual const char*                        description() = 0;
-#endif
     PsnTransform();
     virtual ~PsnTransform();
-    virtual int run(Psn* psn_, std::vector<std::string> args) = 0;
+    virtual int         run(Psn* psn_, std::vector<std::string> args) = 0;
+    virtual const char* name()                                        = 0;
+    virtual const char* version()                                     = 0;
+    virtual const char* help()                                        = 0;
+    virtual const char* description()                                 = 0;
 };
+} // namespace psn
 
-#ifdef OPENPHYSYN_AUTO_LINK
-#define DEFINE_TRANSFORM_VIRTUALS(classType, transformName, transformVersion,  \
-                                  transformDescription, transformHelp)         \
-    std::shared_ptr<psn::PsnTransform> classType::load()                       \
-    {                                                                          \
-        return std::shared_ptr<classType>(this);                               \
-    };                                                                         \
+#define OPENPHYSYN_DEFINE_TRANSFORM(transformName, transformVersion,           \
+                                    transformDescription, transformHelp)       \
                                                                                \
-    const char* classType::name()                                              \
+    const char* name() override                                                \
     {                                                                          \
         return transformName;                                                  \
-    };                                                                         \
+    }                                                                          \
                                                                                \
-    const char* classType::version()                                           \
+    const char* version() override                                             \
     {                                                                          \
         return transformVersion;                                               \
-    };                                                                         \
-    const char* classType::help()                                              \
+    }                                                                          \
+    const char* help() override                                                \
     {                                                                          \
         return transformHelp;                                                  \
-    };                                                                         \
-    const char* classType::description()                                       \
+    }                                                                          \
+    const char* description() override                                         \
     {                                                                          \
         return transformDescription;                                           \
-    };
-#define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
-                         transformDescription, transformHelp)
-#define OPENPHYSYN_TRANSFORM                                                   \
-public:                                                                        \
-    const char*                        help() override;                        \
-    const char*                        version() override;                     \
-    const char*                        name() override;                        \
-    const char*                        description() override;                 \
-    std::shared_ptr<psn::PsnTransform> load() override;
-#else
-#define DEFINE_TRANSFORM_VIRTUALS(classType, transformName, transformVersion,  \
-                                  transformDescription, transformHelp)
-#define DEFINE_TRANSFORM(classType, transformName, transformVersion,           \
-                         transformDescription, transformHelp)                  \
+    }
+
+#define OPENPHYSYN_DEFINE_DYNAMIC_TRANSFORM(                                   \
+    classType, transformName, transformVersion, transformDescription,          \
+    transformHelp)                                                             \
     extern "C"                                                                 \
     {                                                                          \
         std::shared_ptr<psn::PsnTransform>                                     \
@@ -122,7 +105,3 @@ public:                                                                        \
             return transformDescription;                                       \
         }                                                                      \
     }
-#define OPENPHYSYN_TRANSFORM
-#endif
-
-} // namespace psn

@@ -66,6 +66,11 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
 
 RUN useradd -ms /bin/bash openroad
 
+# Coverage
+FROM base-dependencies AS coverage
+
+RUN yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
+
 FROM base-dependencies AS builder
 
 COPY . /OpenROAD

@@ -29,17 +29,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 #include "OpenPhySyn/PathPoint.hpp"
-
+#include "sta/PathAnalysisPt.hh"
 namespace psn
 {
 PathPoint::PathPoint(InstanceTerm* path_pin, bool is_rise, float path_arrival,
-                     float path_required, float path_slack, int ap_index)
+                     float path_required, float path_slack,
+                     PathAnalysisPoint* pt)
     : pin_(path_pin),
       is_rise_(is_rise),
       arrival_(path_arrival),
       required_(path_required),
       slack_(path_slack),
-      path_ap_index_(ap_index)
+      path_ap_(pt)
 {
 }
 InstanceTerm*
@@ -70,7 +71,16 @@ PathPoint::slack() const
 int
 PathPoint::analysisPointIndex() const
 {
-    return path_ap_index_;
+    if (!path_ap_)
+    {
+        return -1;
+    }
+    return path_ap_->index();
+}
+PathAnalysisPoint*
+PathPoint::analysisPoint() const
+{
+    return path_ap_;
 }
 
 } // namespace psn

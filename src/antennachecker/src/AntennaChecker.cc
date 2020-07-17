@@ -293,6 +293,7 @@ AntennaChecker::find_wire_below_iterms( dbWireGraph::Node * node, double iterm_a
 std::pair<double, double>
 AntennaChecker::calculate_wire_area( dbWireGraph::Node * node, int wire_level, std::set<dbWireGraph::Node*>& nv, std::set<dbWireGraph::Node*>& level_nodes )
 {
+
     double wire_area = 0;
     double side_wire_area = 0;
 
@@ -361,7 +362,7 @@ AntennaChecker::calculate_wire_area( dbWireGraph::Node * node, int wire_level, s
             }
         }
 
-        if (edge->type() == dbWireGraph::Edge::Type::SEGMENT)
+        if (edge->type() == dbWireGraph::Edge::Type::SEGMENT || edge->type() == dbWireGraph::Edge::Type::SHORT)
         {
 
             if (edge_io_type.compare("IN") == 0)
@@ -749,8 +750,9 @@ AntennaChecker::calculate_PAR_table( std::vector<PARinfo>& PARtable )
 	if (tech_layer->hasDefaultAntennaRule())
         {   
 	    dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule(); 
-  	    diff_metal_reduce_factor = get_pwl_factor(antenna_rule->getAreaDiffReduce(), it->iterm_areas[1], 1.0);    
+  	    diff_metal_reduce_factor = get_pwl_factor(antenna_rule->getAreaDiffReduce(), it->iterm_areas[1], 1.0);
     	}
+
         
         if ( it->iterm_areas[0] == 0 )
             continue;
@@ -798,7 +800,6 @@ AntennaChecker::build_wire_CAR_table( std::vector<ARinfo> &CARtable, std::vector
             double diff_par = ar_itr->diff_PAR_value;
             double diff_psr = ar_itr->diff_PSR_value;
             double diff_area = ar_itr->iterm_areas[1];
-            long unsigned int num_iterms = ar_itr->num_iterms;
             double car = 0.0;
             double csr = 0.0;
             double diff_car = 0.0;
@@ -1270,11 +1271,11 @@ AntennaChecker::check_VIA_CAR( ARinfo AntennaRatio )
 
 
 std::vector<int>
-AntennaChecker::GetAntennaRatio()
+AntennaChecker::GetAntennaRatio(std::string path)
 {
     std::string bname = db_->getChip()->getBlock()->getName();
 
-    std::string output_file_name = bname + ".ac.rpt";
+    std::string output_file_name = path + "/antenna.rpt";
     _out = fopen( output_file_name.c_str(), "w" );
 
     if ( _out == nullptr )
@@ -1306,8 +1307,6 @@ AntennaChecker::GetAntennaRatio()
             graph.decode( wire );
             dbWireGraph::node_iterator node_itr;
             dbWireGraph::edge_iterator edge_itr;
-
-            // print_graph_info(graph);
 
             std::vector<std::pair<dbWireGraph::Node *, std::vector<dbWireGraph::Node*>>> wireroots_info;
             std::vector<dbWireGraph::Node *> gate_iterms;
@@ -1362,6 +1361,8 @@ AntennaChecker::GetAntennaRatio()
 
             bool if_violated_wire = 0;
             bool if_violated_VIA = 0;
+            
+            std::set<dbWireGraph::Node *> violated_iterms;
 
             std::vector<dbWireGraph::Node *>::iterator gate_itr;
             for( gate_itr = gate_iterms.begin(); gate_itr != gate_iterms.end(); ++gate_itr )
@@ -1369,7 +1370,7 @@ AntennaChecker::GetAntennaRatio()
                 dbWireGraph::Node * gate = *gate_itr;
                 dbTechLayer * layer = gate->layer();
                 
-    	    dbITerm * iterm = dbITerm::getITerm( db_->getChip()->getBlock(), gate->object()->getId() );
+    	        dbITerm * iterm = dbITerm::getITerm( db_->getChip()->getBlock(), gate->object()->getId() );
                 dbMTerm * mterm = iterm->getMTerm();
                 fprintf(_out, "  %s  (%s)  %s\n", iterm->getInst()->getConstName(), mterm->getMaster()->getConstName(), mterm->getConstName());
 
@@ -1381,8 +1382,11 @@ AntennaChecker::GetAntennaRatio()
                         auto wire_PAR_violation = check_wire_PAR( ar );
                         auto wire_CAR_violation = check_wire_CAR( ar, wire_PAR_violation.second );
                         if ( wire_PAR_violation.first || wire_CAR_violation.first )
+                        {
                             if_violated_wire = 1;
-
+                            if (violated_iterms.find(gate) == violated_iterms.end())
+                                violated_iterms.insert(gate);
+                        }
                         fprintf( _out, "\n");
                     }
                 }
@@ -1396,7 +1400,11 @@ AntennaChecker::GetAntennaRatio()
                         bool VIA_PAR_violation = check_VIA_PAR( via_ar );
                         bool VIA_CAR_violation = check_VIA_CAR( via_ar );
                         if ( VIA_PAR_violation || VIA_CAR_violation )
+                        {
                             if_violated_VIA = 1;
+                            if (violated_iterms.find(gate) == violated_iterms.end())
+                                violated_iterms.insert(gate);
+                        } 
                         fprintf( _out, "\n");
                     }
                 }
@@ -1405,7 +1413,7 @@ AntennaChecker::GetAntennaRatio()
             if( if_violated_wire || if_violated_VIA )
             {
                 num_violated_net++;
-                num_violated_pins += gate_iterms.size();
+                num_violated_pins += violated_iterms.size();
             }
         }
     }    
@@ -1415,21 +1423,16 @@ AntennaChecker::GetAntennaRatio()
 
 
 void
-AntennaChecker::check_antennas()
+AntennaChecker::check_antennas(std::string path)
 {
-    //clock_t start, end;
-    //start = clock();
     std::string bname = db_->getChip()->getBlock()->getName();
-    printf( "Checking antenna...\n" );
-    printf( "Design name: %s\n", bname.c_str());
-    std::vector<int> nets_info = GetAntennaRatio();
+    std::vector<int> nets_info = GetAntennaRatio(path);
     if ( nets_info[2] != 0 )
-        printf( "Number of pins violated: %d\nNumber of nets violated: %d\nTotal number of nets: %d\n", nets_info[0], nets_info[1], nets_info[2] );
+        std::cout   << "Number of pins violated: " << nets_info[0] << "\n"
+                    << "Number of nets violated: " << nets_info[1] << "\n"
+                    << "Total number of nets: " << nets_info[2] << std::endl;
     else
         printf( "Design error!\n" );
-    printf("Gotta verbose %s\n", verbose_ ? "true" : "false");
-    //end = clock();
-    //std::cout << "Runtime: " << ( double )( end - start ) / CLOCKS_PER_SEC << std::endl;   
 }
 
 
@@ -1765,6 +1768,48 @@ AntennaChecker::get_violated_wire_length( dbNet * net, int routing_level )
         }
     }
     return violated_wires;
+}
+
+void
+AntennaChecker::find_max_wire_length()
+{
+    dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
+    std::string max_wire_name = "";
+    double max_wire_length = 0.0;
+
+    dbSet<dbNet>::iterator net_itr;
+    for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr)
+    {
+	dbNet * net = *net_itr;
+        dbWire * wire = net->getWire();
+        if ( !net->isSpecial() && wire != nullptr )
+        {
+            dbWireGraph graph;
+            graph.decode( wire );
+
+            double wire_length = 0;
+            dbWireGraph::edge_iterator edge_itr;
+            for ( edge_itr = graph.begin_edges(); edge_itr != graph.end_edges(); ++edge_itr )
+            {
+                dbWireGraph::Edge * edge = *edge_itr;
+                int x1, y1, x2, y2;
+                edge->source()->xy( x1, y1 );
+                edge->target()->xy( x2, y2 );
+                if (edge->type() == dbWireGraph::Edge::Type::SEGMENT || edge->type() == dbWireGraph::Edge::Type::SHORT)
+                    wire_length += defdist( ( abs(x2 - x1) + abs(y2 - y1) ) );
+            }
+
+            if (wire_length > max_wire_length)
+            {
+                max_wire_length = wire_length;
+                max_wire_name = std::string(net->getConstName());
+            }
+        }
+
+    }
+
+    std::cout   << "wire name: "    << max_wire_name    << "\n"
+                << "wire length: "  << max_wire_length  << std::endl;
 }
 
 }

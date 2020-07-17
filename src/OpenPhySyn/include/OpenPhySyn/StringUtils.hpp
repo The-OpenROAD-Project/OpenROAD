@@ -58,28 +58,39 @@ public:
         tokens.push_back(str);
         return tokens;
     }
-    static bool
-    isNumber(const char* s)
+    static std::string
+    join(std::vector<std::string>& parts, const std::string& delimiter)
     {
-        std::string        str(s);
-        std::istringstream iss(str);
+        std::string joined;
+        for (size_t i = 0; i < parts.size(); i++)
+        {
+            joined += parts[i];
+            if (i != parts.size() - 1)
+            {
+                joined += delimiter;
+            }
+        }
+        return joined;
+    }
+    static bool
+    isNumber(const std::string& s)
+    {
+        std::istringstream iss(s);
         float              f;
         iss >> std::noskipws >> f;
         return iss.eof() && !iss.fail();
     }
     static bool
-    isTruthy(const char* s)
+    isTruthy(std::string s)
     {
-        std::string str(s);
-        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-        return (str == "true" || str == "1" || str == "yes" || str == "y");
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        return (s == "true" || s == "1" || s == "yes" || s == "y");
     }
     static bool
-    isFalsy(const char* s)
+    isFalsy(std::string s)
     {
-        std::string str(s);
-        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-        return (str == "false" || str == "0" || str == "no" || str == "n");
+        std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+        return (s == "false" || s == "0" || s == "no" || s == "n");
     }
 };
 } // namespace psn

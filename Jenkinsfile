@@ -3,51 +3,31 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh './jenkins/build.sh'
+        sh './jenkins/install.sh'
       }
     }
-    stage('Test') {
-      steps {
-        sh './jenkins/test.sh'
-      }
-    }
-    stage('Build-Flow') {
-      environment {
-        OPENROAD_FLOW_NO_GIT_INIT = 1
-      }
-      steps {
-        sh 'cd flow && ./build_openroad.sh'
-      }
-    }
-    stage('Test-Flow') {
+    stage('Tests') {
       failFast true
       parallel {
-        stage('nangate45_gcd') {
+        stage('gcd_nangate45') {
           steps {
-            catchError {
-              sh label: 'nangate45_gcd', script: '''
-              cd flow && docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow bash -c "source setup_env.sh && cd flow && test/test_helper.sh gcd nangate45"'''
-            }
-            echo currentBuild.result
-          }
+	    sh './test/regression gcd_nangate45'
+	  }
         }
-        stage('nangate45_aes') {
-          steps {
-            catchError {
-              sh label: 'nangate45_aes', script: '''
-              cd flow && docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow bash -c "source setup_env.sh && cd flow && test/test_helper.sh aes nangate45"'''
-            }
-            echo currentBuild.result
-          }
+        stage('Unit tests') {
+	  steps {
+            sh './test/regression'
+	  }
         }
-        stage('nangate45_tinyRocket') {
+        stage('aes_nangate45') {
           steps {
-            catchError {
-              sh label: 'nangate45_tinyRocket', script: '''
-              cd flow && docker run -u $(id -u ${USER}):$(id -g ${USER}) openroad/flow bash -c "source setup_env.sh && cd flow && test/test_helper.sh tinyRocket nangate45"'''
-            }
-            echo currentBuild.result
-          }
+	    sh './test/regression aes_nangate45'
+	  }
+        }
+        stage('tinyRocket_nangate45') {
+          steps {
+	    sh './test/regression tinyRocket_nangate45'
+	  }
         }
       }
     }
