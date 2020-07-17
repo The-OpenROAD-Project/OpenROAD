@@ -12,12 +12,15 @@ proc check_in_core {} {
 proc check_ties { tie_cell_name } {
   set tie_insts [get_cells -filter "ref_name == $tie_cell_name"]
   foreach tie_inst $tie_insts {
-    set tie_pin [get_pins -of $tie_inst -filter "direction == output"]
-    set net [get_nets -of $tie_inst]
-    set pins [get_pins -of $net]
-    set ports [get_ports -of $net]
-    if { [expr [llength $pins] + [llength $ports]] != 2 } {
-      puts "Warning: tie inst [get_full_name $tie_inst] has [llength $pins] connections."
+    foreach tie_pin [get_pins -of $tie_inst -filter "direction == output"] {
+      set net [get_nets -of $tie_pin]
+      if { $net != "NULL" } {
+	set pins [get_pins -of $net]
+	set ports [get_ports -of $net]
+	if { [expr [llength $pins] + [llength $ports]] != 2 } {
+	  puts "Warning: tie inst [get_full_name $tie_inst] has [llength $pins] connections."
+	}
+      }
     }
   }
 }
