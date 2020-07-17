@@ -6,7 +6,4 @@ record_tests {
   clone1
   fanout1
   fanout2
-  repairtiming1
-  repairtiming2
-  repairtiming3
 }
