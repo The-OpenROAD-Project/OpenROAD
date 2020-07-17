@@ -53,7 +53,7 @@ _38841_/ZN                             10.47   11.65   -1.18 (VIOLATED)
 _56471_/ZN                             10.47   11.38   -0.91 (VIOLATED)
 
 Invoking repair_timing transform 
-Buffer library: BUF_X16, BUF_X32, BUF_X4 
+Buffer library: BUF_X16, BUF_X4, BUF_X32 
 Inverter library: None 
 Buffering: enabled 
 Driver sizing: enabled 

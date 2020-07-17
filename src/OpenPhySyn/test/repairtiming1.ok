@@ -25,7 +25,7 @@ _59774_/Z                               0.20    0.33   -0.13 (VIOLATED)
 _61077_/Z                               0.20    0.22   -0.02 (VIOLATED)
 
 Invoking repair_timing transform 
-Buffer library: BUF_X16, BUF_X32, BUF_X4 
+Buffer library: BUF_X16, BUF_X4, BUF_X32 
 Inverter library: None 
 Buffering: enabled 
 Driver sizing: disabled 
