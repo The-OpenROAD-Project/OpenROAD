@@ -103,6 +103,8 @@ Resizer::Resizer() :
   StaState(),
   wire_res_(0.0),
   wire_cap_(0.0),
+  wire_clk_res_(0.0),
+  wire_clk_cap_(0.0),
   corner_(nullptr),
   max_area_(0.0),
   sta_(nullptr),
@@ -276,6 +278,24 @@ Resizer::setWireRC(float wire_res,
 		   float wire_cap,
 		   Corner *corner)
 {
+  setWireCorner(corner);
+  wire_res_ = wire_res;
+  wire_cap_ = wire_cap;
+}
+
+void
+Resizer::setWireClkRC(float wire_res,
+		      float wire_cap,
+		      Corner *corner)
+{
+  setWireCorner(corner);
+  wire_clk_res_ = wire_res;
+  wire_clk_cap_ = wire_cap;
+}
+
+void
+Resizer::setWireCorner(Corner *corner)
+{
   initCorner(corner);
   // Abbreviated copyState
   graph_delay_calc_ = sta_->graphDelayCalc();
@@ -286,9 +306,6 @@ Resizer::setWireRC(float wire_res,
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
-
-  wire_res_ = wire_res;
-  wire_cap_ = wire_cap;
 }
 
 void
@@ -827,9 +844,9 @@ Resizer::findClkNets()
 }
 
 bool
-Resizer::isClock(Net *net)
+Resizer::isClock(const Net *net)
 {
-  return clk_nets_.hasKey(net);
+  return clk_nets_.hasKey(const_cast<Net*>(net));
 }
 
 ////////////////////////////////////////////////////////////////
@@ -890,8 +907,9 @@ Resizer::estimateWireParasitic(const Net *net)
 	    parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
 	  else {
 	    float wire_length = dbuToMeters(wire_length_dbu);
-	    float wire_cap = wire_length * wire_cap_;
-	    float wire_res = wire_length * wire_res_;
+	    bool is_clk = isClock(net);
+	    float wire_cap = wire_length * (is_clk ? wire_clk_cap_ : wire_cap_);
+	    float wire_res = wire_length * (is_clk ? wire_clk_res_ : wire_res_);
 	    // Make pi model for the wire.
 	    debugPrint5(debug_, "resizer_parasitics", 2,
 			" pi %s c2=%s rpi=%s c1=%s %s\n",

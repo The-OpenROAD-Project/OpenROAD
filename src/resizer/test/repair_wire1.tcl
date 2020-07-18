@@ -14,8 +14,7 @@ set max_length [sta::find_max_slew_wire_length $max_slew [get_lib_cell BUF_X1]]
 puts "Max wire length [sta::format_distance $max_length 0]u"
 
 # zero estimated parasitics to output port
-sta::set_pi_model u3/Z 0 0 0
-sta::set_elmore u3/Z out1 0
+set_load 0 [get_net out1]
 
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
 report_long_wires 2
