@@ -6,9 +6,7 @@ create_clock in1 -period 10
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-# zero estimated parasitics to output port
-sta::set_pi_model u3/Z 0 0 0
-sta::set_elmore u3/Z out1 0
+set_load 0 [get_net out1]
 
 foreach net_name {in1 n2 n2} {
   [sta::sta_to_db_net [get_net $net_name]] setSigType CLOCK

@@ -220,14 +220,18 @@ The resizer commands stop when the design area is `-max_utilization
 util` percent of the core area. `util` is between 0 and 100.
 
 ```
-set_wire_rc [-layer layer_name]
+set_wire_rc [-clock] [-data]
+	    [-layer layer_name]
             [-resistance res ]
 	    [-capacitance cap]
 	    [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
-estimate delay of routing wires.  Use `-layer` or `-resistance` and
+estimate delay of routing wires.  Separate values can be specified for
+clock and data nets with the `-data` and `-clock` flags. Without
+either `-data` or `-clock` the resistance and capacitance for clocks
+and data nets are set.  Use `-layer` or `-resistance` and
 `-capacitance`.  If `-layer` is used, the LEF technology resistance
 and area/edge capacitance values for the layer are used for a minimum
 width wire on the layer.  The resistance and capacitance values per

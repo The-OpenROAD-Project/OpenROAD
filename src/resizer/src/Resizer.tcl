@@ -42,13 +42,15 @@ proc remove_buffers { args } {
   remove_buffers_cmd
 }
 
-define_cmd_args "set_wire_rc" {[-layer layer_name]\
+define_cmd_args "set_wire_rc" {[-clock] [-data]\
+				 [-layer layer_name]\
 				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
 
 proc set_wire_rc { args } {
    parse_key_args "set_wire_rc" args \
-    keys {-layer -resistance -capacitance -corner} flags {}
+     keys {-layer -resistance -capacitance -corner} \
+     flags {-clock -data}
 
   set wire_res 0.0
   set wire_cap 0.0
@@ -100,7 +102,23 @@ proc set_wire_rc { args } {
   set corner [parse_corner keys]
   check_argc_eq0 "set_wire_rc" $args
   
-  set_wire_rc_cmd $wire_res $wire_cap $corner
+  if { [info exists flags(-clock)] && [info exists flags(-clock)] \
+	 || ![info exists flags(-clock)] && ![info exists flags(-clock)] } {
+    set data 1
+    set clk 1
+  } elseif { [info exists flags(-clock)] && ![info exists flags(-clock)] } {
+    set data 0
+    set clk 1
+  } elseif { ![info exists flags(-clock)] && [info exists flags(-clock)] } {
+    set data 1
+    set clk 0
+  }
+  if { $data } {
+    set_wire_rc_cmd $wire_res $wire_cap $corner
+  }
+  if { $clk } {
+    set_wire_clk_rc_cmd $wire_res $wire_cap $corner
+  }
   estimate_parasitics_cmd
 }
 

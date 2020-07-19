@@ -161,6 +161,16 @@ set_wire_rc_cmd(float res,
   resizer->setWireRC(res, cap, corner);
 }
 
+void
+set_wire_clk_rc_cmd(float res,
+		    float cap,
+		    Corner *corner)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setWireClkRC(res, cap, corner);
+}
+
 // ohms/meter
 double
 wire_resistance()
@@ -170,6 +180,14 @@ wire_resistance()
   return resizer->wireResistance();
 }
 
+double
+wire_clk_resistance()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->wireClkResistance();
+}
+
 // farads/meter
 double
 wire_capacitance()
@@ -177,6 +195,14 @@ wire_capacitance()
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->wireCapacitance();
+}
+
+double
+wire_clk_capacitance()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->wireClkCapacitance();
 }
 
 void

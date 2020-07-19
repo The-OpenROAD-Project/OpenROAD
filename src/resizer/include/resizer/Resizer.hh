@@ -62,14 +62,19 @@ public:
   // Remove all buffers from the netlist.
   void removeBuffers();
   // Set the resistance and capacitance used for parasitics.
-  // Make net wire parasitics based on DEF locations.
   void setWireRC(float wire_res, // ohms/meter
 		 float wire_cap, // farads/meter
 		 Corner *corner);
+  // Set the resistance and capacitance used for parasitics on clock nets.
+  void setWireClkRC(float wire_res, // ohms/meter
+		    float wire_cap, // farads/meter
+		    Corner *corner);
   // ohms/meter
   float wireResistance() { return wire_res_; }
+  float wireClkResistance() { return wire_clk_res_; }
   // farads/meter
   float wireCapacitance() { return wire_cap_; }
+  float wireClkCapacitance() { return wire_clk_cap_; }
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const dbNet *net);
@@ -153,7 +158,7 @@ protected:
   void initCorner(Corner *corner);
   void ensureClkNets();
   void findClkNets();
-  bool isClock(Net *net);
+  bool isClock(const Net *net);
   void ensureLevelDrvrVerticies();
   void bufferInput(Pin *top_pin,
 		   LibertyCell *buffer_cell);
@@ -303,9 +308,12 @@ protected:
   void findClkInverters(// Return values
 			InstanceSeq &clk_inverters);
   void cloneClkInverter(Instance *inv);
+  void setWireCorner(Corner *corner);
 
   float wire_res_;
   float wire_cap_;
+  float wire_clk_res_;
+  float wire_clk_cap_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;
