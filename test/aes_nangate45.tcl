@@ -1,10 +1,10 @@
 # aes flow pipe cleaner
 source "helpers.tcl"
-source "sky130/sky130.vars"
+source "nangate45/nangate45.vars"
 
 set design "aes"
 set top_module "aes_cipher_top"
-set synth_verilog "aes_sky130.v"
+set synth_verilog "aes_nangate45.v"
 set sdc_file "aes_nangate45.sdc"
 set die_area {0 0 1020 920.8}
 set core_area {10 12 1010 911.2}
