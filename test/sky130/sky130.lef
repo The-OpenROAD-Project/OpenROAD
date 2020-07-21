@@ -14,13 +14,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-VERSION 5.5 ;
+VERSION 5.7 ;
 NAMESCASESENSITIVE ON ;
 BUSBITCHARS "[]" ;
 DIVIDERCHAR "/" ;
 MACRO sky130_fd_sc_hs__a2111o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -163,7 +162,6 @@ END sky130_fd_sc_hs__a2111o_1
 
 MACRO sky130_fd_sc_hs__a2111o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -303,7 +301,6 @@ MACRO sky130_fd_sc_hs__a2111o_2
 END sky130_fd_sc_hs__a2111o_2
 MACRO sky130_fd_sc_hs__a2111o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -485,7 +482,6 @@ MACRO sky130_fd_sc_hs__a2111o_4
 END sky130_fd_sc_hs__a2111o_4
 MACRO sky130_fd_sc_hs__a2111oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -611,7 +607,6 @@ MACRO sky130_fd_sc_hs__a2111oi_1
 END sky130_fd_sc_hs__a2111oi_1
 MACRO sky130_fd_sc_hs__a2111oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -767,7 +762,6 @@ MACRO sky130_fd_sc_hs__a2111oi_2
 END sky130_fd_sc_hs__a2111oi_2
 MACRO sky130_fd_sc_hs__a2111oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -961,7 +955,6 @@ MACRO sky130_fd_sc_hs__a2111oi_4
 END sky130_fd_sc_hs__a2111oi_4
 MACRO sky130_fd_sc_hs__a211o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1086,7 +1079,6 @@ MACRO sky130_fd_sc_hs__a211o_1
 END sky130_fd_sc_hs__a211o_1
 MACRO sky130_fd_sc_hs__a211o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1215,7 +1207,6 @@ MACRO sky130_fd_sc_hs__a211o_2
 END sky130_fd_sc_hs__a211o_2
 MACRO sky130_fd_sc_hs__a211o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1384,7 +1375,6 @@ MACRO sky130_fd_sc_hs__a211o_4
 END sky130_fd_sc_hs__a211o_4
 MACRO sky130_fd_sc_hs__a211oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1499,7 +1489,6 @@ MACRO sky130_fd_sc_hs__a211oi_1
 END sky130_fd_sc_hs__a211oi_1
 MACRO sky130_fd_sc_hs__a211oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1640,7 +1629,6 @@ MACRO sky130_fd_sc_hs__a211oi_2
 END sky130_fd_sc_hs__a211oi_2
 MACRO sky130_fd_sc_hs__a211oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1805,7 +1793,6 @@ MACRO sky130_fd_sc_hs__a211oi_4
 END sky130_fd_sc_hs__a211oi_4
 MACRO sky130_fd_sc_hs__a21bo_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -1929,7 +1916,6 @@ MACRO sky130_fd_sc_hs__a21bo_1
 END sky130_fd_sc_hs__a21bo_1
 MACRO sky130_fd_sc_hs__a21bo_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2059,7 +2045,6 @@ MACRO sky130_fd_sc_hs__a21bo_2
 END sky130_fd_sc_hs__a21bo_2
 MACRO sky130_fd_sc_hs__a21bo_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2207,7 +2192,6 @@ MACRO sky130_fd_sc_hs__a21bo_4
 END sky130_fd_sc_hs__a21bo_4
 MACRO sky130_fd_sc_hs__a21boi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2323,7 +2307,6 @@ MACRO sky130_fd_sc_hs__a21boi_1
 END sky130_fd_sc_hs__a21boi_1
 MACRO sky130_fd_sc_hs__a21boi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2455,7 +2438,6 @@ MACRO sky130_fd_sc_hs__a21boi_2
 END sky130_fd_sc_hs__a21boi_2
 MACRO sky130_fd_sc_hs__a21boi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2614,7 +2596,6 @@ MACRO sky130_fd_sc_hs__a21boi_4
 END sky130_fd_sc_hs__a21boi_4
 MACRO sky130_fd_sc_hs__a21o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2730,7 +2711,6 @@ MACRO sky130_fd_sc_hs__a21o_1
 END sky130_fd_sc_hs__a21o_1
 MACRO sky130_fd_sc_hs__a21o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2844,7 +2824,6 @@ MACRO sky130_fd_sc_hs__a21o_2
 END sky130_fd_sc_hs__a21o_2
 MACRO sky130_fd_sc_hs__a21o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -2986,7 +2965,6 @@ MACRO sky130_fd_sc_hs__a21o_4
 END sky130_fd_sc_hs__a21o_4
 MACRO sky130_fd_sc_hs__a21oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3088,7 +3066,6 @@ MACRO sky130_fd_sc_hs__a21oi_1
 END sky130_fd_sc_hs__a21oi_1
 MACRO sky130_fd_sc_hs__a21oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3207,7 +3184,6 @@ MACRO sky130_fd_sc_hs__a21oi_2
 END sky130_fd_sc_hs__a21oi_2
 MACRO sky130_fd_sc_hs__a21oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3349,7 +3325,6 @@ MACRO sky130_fd_sc_hs__a21oi_4
 END sky130_fd_sc_hs__a21oi_4
 MACRO sky130_fd_sc_hs__a221o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3489,7 +3464,6 @@ MACRO sky130_fd_sc_hs__a221o_1
 END sky130_fd_sc_hs__a221o_1
 MACRO sky130_fd_sc_hs__a221o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3636,7 +3610,6 @@ MACRO sky130_fd_sc_hs__a221o_2
 END sky130_fd_sc_hs__a221o_2
 MACRO sky130_fd_sc_hs__a221o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3842,7 +3815,6 @@ MACRO sky130_fd_sc_hs__a221o_4
 END sky130_fd_sc_hs__a221o_4
 MACRO sky130_fd_sc_hs__a221oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -3972,7 +3944,6 @@ MACRO sky130_fd_sc_hs__a221oi_1
 END sky130_fd_sc_hs__a221oi_1
 MACRO sky130_fd_sc_hs__a221oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -4133,7 +4104,6 @@ MACRO sky130_fd_sc_hs__a221oi_2
 END sky130_fd_sc_hs__a221oi_2
 MACRO sky130_fd_sc_hs__a221oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.56000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -4333,7 +4303,6 @@ MACRO sky130_fd_sc_hs__a221oi_4
 END sky130_fd_sc_hs__a221oi_4
 MACRO sky130_fd_sc_hs__a222o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -4484,7 +4453,6 @@ MACRO sky130_fd_sc_hs__a222o_1
 END sky130_fd_sc_hs__a222o_1
 MACRO sky130_fd_sc_hs__a222o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -4645,7 +4613,6 @@ MACRO sky130_fd_sc_hs__a222o_2
 END sky130_fd_sc_hs__a222o_2
 MACRO sky130_fd_sc_hs__a222oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -4789,7 +4756,6 @@ MACRO sky130_fd_sc_hs__a222oi_1
 END sky130_fd_sc_hs__a222oi_1
 MACRO sky130_fd_sc_hs__a222oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -4982,7 +4948,6 @@ MACRO sky130_fd_sc_hs__a222oi_2
 END sky130_fd_sc_hs__a222oi_2
 MACRO sky130_fd_sc_hs__a22o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5104,7 +5069,6 @@ MACRO sky130_fd_sc_hs__a22o_1
 END sky130_fd_sc_hs__a22o_1
 MACRO sky130_fd_sc_hs__a22o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5234,7 +5198,6 @@ MACRO sky130_fd_sc_hs__a22o_2
 END sky130_fd_sc_hs__a22o_2
 MACRO sky130_fd_sc_hs__a22o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5402,7 +5365,6 @@ MACRO sky130_fd_sc_hs__a22o_4
 END sky130_fd_sc_hs__a22o_4
 MACRO sky130_fd_sc_hs__a22oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5517,7 +5479,6 @@ MACRO sky130_fd_sc_hs__a22oi_1
 END sky130_fd_sc_hs__a22oi_1
 MACRO sky130_fd_sc_hs__a22oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5665,7 +5626,6 @@ MACRO sky130_fd_sc_hs__a22oi_2
 END sky130_fd_sc_hs__a22oi_2
 MACRO sky130_fd_sc_hs__a22oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5836,7 +5796,6 @@ MACRO sky130_fd_sc_hs__a22oi_4
 END sky130_fd_sc_hs__a22oi_4
 MACRO sky130_fd_sc_hs__a2bb2o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -5973,7 +5932,6 @@ MACRO sky130_fd_sc_hs__a2bb2o_1
 END sky130_fd_sc_hs__a2bb2o_1
 MACRO sky130_fd_sc_hs__a2bb2o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6109,7 +6067,6 @@ MACRO sky130_fd_sc_hs__a2bb2o_2
 END sky130_fd_sc_hs__a2bb2o_2
 MACRO sky130_fd_sc_hs__a2bb2o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6273,7 +6230,6 @@ MACRO sky130_fd_sc_hs__a2bb2o_4
 END sky130_fd_sc_hs__a2bb2o_4
 MACRO sky130_fd_sc_hs__a2bb2oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6403,7 +6359,6 @@ MACRO sky130_fd_sc_hs__a2bb2oi_1
 END sky130_fd_sc_hs__a2bb2oi_1
 MACRO sky130_fd_sc_hs__a2bb2oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6545,7 +6500,6 @@ MACRO sky130_fd_sc_hs__a2bb2oi_2
 END sky130_fd_sc_hs__a2bb2oi_2
 MACRO sky130_fd_sc_hs__a2bb2oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6716,7 +6670,6 @@ MACRO sky130_fd_sc_hs__a2bb2oi_4
 END sky130_fd_sc_hs__a2bb2oi_4
 MACRO sky130_fd_sc_hs__a311o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6857,7 +6810,6 @@ MACRO sky130_fd_sc_hs__a311o_1
 END sky130_fd_sc_hs__a311o_1
 MACRO sky130_fd_sc_hs__a311o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -6995,7 +6947,6 @@ MACRO sky130_fd_sc_hs__a311o_2
 END sky130_fd_sc_hs__a311o_2
 MACRO sky130_fd_sc_hs__a311o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -7189,7 +7140,6 @@ MACRO sky130_fd_sc_hs__a311o_4
 END sky130_fd_sc_hs__a311o_4
 MACRO sky130_fd_sc_hs__a311oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -7315,7 +7265,6 @@ MACRO sky130_fd_sc_hs__a311oi_1
 END sky130_fd_sc_hs__a311oi_1
 MACRO sky130_fd_sc_hs__a311oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -7473,7 +7422,6 @@ MACRO sky130_fd_sc_hs__a311oi_2
 END sky130_fd_sc_hs__a311oi_2
 MACRO sky130_fd_sc_hs__a311oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -7669,7 +7617,6 @@ MACRO sky130_fd_sc_hs__a311oi_4
 END sky130_fd_sc_hs__a311oi_4
 MACRO sky130_fd_sc_hs__a31o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -7789,7 +7736,6 @@ MACRO sky130_fd_sc_hs__a31o_1
 END sky130_fd_sc_hs__a31o_1
 MACRO sky130_fd_sc_hs__a31o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -7914,7 +7860,6 @@ MACRO sky130_fd_sc_hs__a31o_2
 END sky130_fd_sc_hs__a31o_2
 MACRO sky130_fd_sc_hs__a31o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8077,7 +8022,6 @@ MACRO sky130_fd_sc_hs__a31o_4
 END sky130_fd_sc_hs__a31o_4
 MACRO sky130_fd_sc_hs__a31oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8191,7 +8135,6 @@ MACRO sky130_fd_sc_hs__a31oi_1
 END sky130_fd_sc_hs__a31oi_1
 MACRO sky130_fd_sc_hs__a31oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8329,7 +8272,6 @@ MACRO sky130_fd_sc_hs__a31oi_2
 END sky130_fd_sc_hs__a31oi_2
 MACRO sky130_fd_sc_hs__a31oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8501,7 +8443,6 @@ MACRO sky130_fd_sc_hs__a31oi_4
 END sky130_fd_sc_hs__a31oi_4
 MACRO sky130_fd_sc_hs__a32o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8635,7 +8576,6 @@ MACRO sky130_fd_sc_hs__a32o_1
 END sky130_fd_sc_hs__a32o_1
 MACRO sky130_fd_sc_hs__a32o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8775,7 +8715,6 @@ MACRO sky130_fd_sc_hs__a32o_2
 END sky130_fd_sc_hs__a32o_2
 MACRO sky130_fd_sc_hs__a32o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -8967,7 +8906,6 @@ MACRO sky130_fd_sc_hs__a32o_4
 END sky130_fd_sc_hs__a32o_4
 MACRO sky130_fd_sc_hs__a32oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -9096,7 +9034,6 @@ MACRO sky130_fd_sc_hs__a32oi_1
 END sky130_fd_sc_hs__a32oi_1
 MACRO sky130_fd_sc_hs__a32oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -9262,7 +9199,6 @@ MACRO sky130_fd_sc_hs__a32oi_2
 END sky130_fd_sc_hs__a32oi_2
 MACRO sky130_fd_sc_hs__a32oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.56000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -9457,7 +9393,6 @@ MACRO sky130_fd_sc_hs__a32oi_4
 END sky130_fd_sc_hs__a32oi_4
 MACRO sky130_fd_sc_hs__a41o_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -9593,7 +9528,6 @@ MACRO sky130_fd_sc_hs__a41o_1
 END sky130_fd_sc_hs__a41o_1
 MACRO sky130_fd_sc_hs__a41o_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -9735,7 +9669,6 @@ MACRO sky130_fd_sc_hs__a41o_2
 END sky130_fd_sc_hs__a41o_2
 MACRO sky130_fd_sc_hs__a41o_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -9917,7 +9850,6 @@ MACRO sky130_fd_sc_hs__a41o_4
 END sky130_fd_sc_hs__a41o_4
 MACRO sky130_fd_sc_hs__a41oi_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10044,7 +9976,6 @@ MACRO sky130_fd_sc_hs__a41oi_1
 END sky130_fd_sc_hs__a41oi_1
 MACRO sky130_fd_sc_hs__a41oi_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10206,7 +10137,6 @@ MACRO sky130_fd_sc_hs__a41oi_2
 END sky130_fd_sc_hs__a41oi_2
 MACRO sky130_fd_sc_hs__a41oi_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10400,7 +10330,6 @@ MACRO sky130_fd_sc_hs__a41oi_4
 END sky130_fd_sc_hs__a41oi_4
 MACRO sky130_fd_sc_hs__and2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10493,7 +10422,6 @@ MACRO sky130_fd_sc_hs__and2_1
 END sky130_fd_sc_hs__and2_1
 MACRO sky130_fd_sc_hs__and2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10593,7 +10521,6 @@ MACRO sky130_fd_sc_hs__and2_2
 END sky130_fd_sc_hs__and2_2
 MACRO sky130_fd_sc_hs__and2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10711,7 +10638,6 @@ MACRO sky130_fd_sc_hs__and2_4
 END sky130_fd_sc_hs__and2_4
 MACRO sky130_fd_sc_hs__and2b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10814,7 +10740,6 @@ MACRO sky130_fd_sc_hs__and2b_1
 END sky130_fd_sc_hs__and2b_1
 MACRO sky130_fd_sc_hs__and2b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -10923,7 +10848,6 @@ MACRO sky130_fd_sc_hs__and2b_2
 END sky130_fd_sc_hs__and2b_2
 MACRO sky130_fd_sc_hs__and2b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11049,7 +10973,6 @@ MACRO sky130_fd_sc_hs__and2b_4
 END sky130_fd_sc_hs__and2b_4
 MACRO sky130_fd_sc_hs__and3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11156,7 +11079,6 @@ MACRO sky130_fd_sc_hs__and3_1
 END sky130_fd_sc_hs__and3_1
 MACRO sky130_fd_sc_hs__and3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11268,7 +11190,6 @@ MACRO sky130_fd_sc_hs__and3_2
 END sky130_fd_sc_hs__and3_2
 MACRO sky130_fd_sc_hs__and3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11406,7 +11327,6 @@ MACRO sky130_fd_sc_hs__and3_4
 END sky130_fd_sc_hs__and3_4
 MACRO sky130_fd_sc_hs__and3b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11524,7 +11444,6 @@ MACRO sky130_fd_sc_hs__and3b_1
 END sky130_fd_sc_hs__and3b_1
 MACRO sky130_fd_sc_hs__and3b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11647,7 +11566,6 @@ MACRO sky130_fd_sc_hs__and3b_2
 END sky130_fd_sc_hs__and3b_2
 MACRO sky130_fd_sc_hs__and3b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11799,7 +11717,6 @@ MACRO sky130_fd_sc_hs__and3b_4
 END sky130_fd_sc_hs__and3b_4
 MACRO sky130_fd_sc_hs__and4_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -11919,7 +11836,6 @@ MACRO sky130_fd_sc_hs__and4_1
 END sky130_fd_sc_hs__and4_1
 MACRO sky130_fd_sc_hs__and4_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12043,7 +11959,6 @@ MACRO sky130_fd_sc_hs__and4_2
 END sky130_fd_sc_hs__and4_2
 MACRO sky130_fd_sc_hs__and4_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12206,7 +12121,6 @@ MACRO sky130_fd_sc_hs__and4_4
 END sky130_fd_sc_hs__and4_4
 MACRO sky130_fd_sc_hs__and4b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12338,7 +12252,6 @@ MACRO sky130_fd_sc_hs__and4b_1
 END sky130_fd_sc_hs__and4b_1
 MACRO sky130_fd_sc_hs__and4b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12469,7 +12382,6 @@ MACRO sky130_fd_sc_hs__and4b_2
 END sky130_fd_sc_hs__and4b_2
 MACRO sky130_fd_sc_hs__and4b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12636,7 +12548,6 @@ MACRO sky130_fd_sc_hs__and4b_4
 END sky130_fd_sc_hs__and4b_4
 MACRO sky130_fd_sc_hs__and4bb_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12778,7 +12689,6 @@ MACRO sky130_fd_sc_hs__and4bb_1
 END sky130_fd_sc_hs__and4bb_1
 MACRO sky130_fd_sc_hs__and4bb_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -12923,7 +12833,6 @@ MACRO sky130_fd_sc_hs__and4bb_2
 END sky130_fd_sc_hs__and4bb_2
 MACRO sky130_fd_sc_hs__and4bb_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13112,7 +13021,6 @@ MACRO sky130_fd_sc_hs__and4bb_4
 END sky130_fd_sc_hs__and4bb_4
 MACRO sky130_fd_sc_hs__buf_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13195,7 +13103,6 @@ MACRO sky130_fd_sc_hs__buf_1
 END sky130_fd_sc_hs__buf_1
 MACRO sky130_fd_sc_hs__buf_16
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.56000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13381,7 +13288,6 @@ MACRO sky130_fd_sc_hs__buf_16
 END sky130_fd_sc_hs__buf_16
 MACRO sky130_fd_sc_hs__buf_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13469,7 +13375,6 @@ MACRO sky130_fd_sc_hs__buf_2
 END sky130_fd_sc_hs__buf_2
 MACRO sky130_fd_sc_hs__buf_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13568,7 +13473,6 @@ MACRO sky130_fd_sc_hs__buf_4
 END sky130_fd_sc_hs__buf_4
 MACRO sky130_fd_sc_hs__buf_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13687,7 +13591,6 @@ MACRO sky130_fd_sc_hs__buf_8
 END sky130_fd_sc_hs__buf_8
 MACRO sky130_fd_sc_hs__bufbuf_16
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.96000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -13908,7 +13811,6 @@ MACRO sky130_fd_sc_hs__bufbuf_16
 END sky130_fd_sc_hs__bufbuf_16
 MACRO sky130_fd_sc_hs__bufbuf_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14046,7 +13948,6 @@ MACRO sky130_fd_sc_hs__bufbuf_8
 END sky130_fd_sc_hs__bufbuf_8
 MACRO sky130_fd_sc_hs__bufinv_16
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE 12 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14254,7 +14155,6 @@ MACRO sky130_fd_sc_hs__bufinv_16
 END sky130_fd_sc_hs__bufinv_16
 MACRO sky130_fd_sc_hs__bufinv_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14381,7 +14281,6 @@ MACRO sky130_fd_sc_hs__bufinv_8
 END sky130_fd_sc_hs__bufinv_8
 MACRO sky130_fd_sc_hs__clkbuf_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14463,7 +14362,6 @@ MACRO sky130_fd_sc_hs__clkbuf_1
 END sky130_fd_sc_hs__clkbuf_1
 MACRO sky130_fd_sc_hs__clkbuf_16
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14647,7 +14545,6 @@ MACRO sky130_fd_sc_hs__clkbuf_16
 END sky130_fd_sc_hs__clkbuf_16
 MACRO sky130_fd_sc_hs__clkbuf_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14731,7 +14628,6 @@ MACRO sky130_fd_sc_hs__clkbuf_2
 END sky130_fd_sc_hs__clkbuf_2
 MACRO sky130_fd_sc_hs__clkbuf_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14824,7 +14720,6 @@ MACRO sky130_fd_sc_hs__clkbuf_4
 END sky130_fd_sc_hs__clkbuf_4
 MACRO sky130_fd_sc_hs__clkbuf_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -14940,7 +14835,6 @@ MACRO sky130_fd_sc_hs__clkbuf_8
 END sky130_fd_sc_hs__clkbuf_8
 MACRO sky130_fd_sc_hs__clkdlyinv3sd1_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15031,7 +14925,6 @@ MACRO sky130_fd_sc_hs__clkdlyinv3sd1_1
 END sky130_fd_sc_hs__clkdlyinv3sd1_1
 MACRO sky130_fd_sc_hs__clkdlyinv3sd2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15122,7 +15015,6 @@ MACRO sky130_fd_sc_hs__clkdlyinv3sd2_1
 END sky130_fd_sc_hs__clkdlyinv3sd2_1
 MACRO sky130_fd_sc_hs__clkdlyinv3sd3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15213,7 +15105,6 @@ MACRO sky130_fd_sc_hs__clkdlyinv3sd3_1
 END sky130_fd_sc_hs__clkdlyinv3sd3_1
 MACRO sky130_fd_sc_hs__clkdlyinv5sd1_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15325,7 +15216,6 @@ MACRO sky130_fd_sc_hs__clkdlyinv5sd1_1
 END sky130_fd_sc_hs__clkdlyinv5sd1_1
 MACRO sky130_fd_sc_hs__clkdlyinv5sd2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15437,7 +15327,6 @@ MACRO sky130_fd_sc_hs__clkdlyinv5sd2_1
 END sky130_fd_sc_hs__clkdlyinv5sd2_1
 MACRO sky130_fd_sc_hs__clkdlyinv5sd3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15549,7 +15438,6 @@ MACRO sky130_fd_sc_hs__clkdlyinv5sd3_1
 END sky130_fd_sc_hs__clkdlyinv5sd3_1
 MACRO sky130_fd_sc_hs__clkinv_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.440000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15627,7 +15515,6 @@ MACRO sky130_fd_sc_hs__clkinv_1
 END sky130_fd_sc_hs__clkinv_1
 MACRO sky130_fd_sc_hs__clkinv_16
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.52000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15825,7 +15712,6 @@ MACRO sky130_fd_sc_hs__clkinv_16
 END sky130_fd_sc_hs__clkinv_16
 MACRO sky130_fd_sc_hs__clkinv_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15906,7 +15792,6 @@ MACRO sky130_fd_sc_hs__clkinv_2
 END sky130_fd_sc_hs__clkinv_2
 MACRO sky130_fd_sc_hs__clkinv_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -15999,7 +15884,6 @@ MACRO sky130_fd_sc_hs__clkinv_4
 END sky130_fd_sc_hs__clkinv_4
 MACRO sky130_fd_sc_hs__clkinv_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -16114,7 +15998,6 @@ MACRO sky130_fd_sc_hs__clkinv_8
 END sky130_fd_sc_hs__clkinv_8
 MACRO sky130_fd_sc_hs__conb_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.440000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -16190,7 +16073,6 @@ MACRO sky130_fd_sc_hs__decap_4
 # cherry - to prevent padding violations
   CLASS CORE SPACER ;
 #  CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -16250,7 +16132,6 @@ MACRO sky130_fd_sc_hs__decap_4
 END sky130_fd_sc_hs__decap_4
 MACRO sky130_fd_sc_hs__decap_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -16320,7 +16201,6 @@ MACRO sky130_fd_sc_hs__decap_8
 END sky130_fd_sc_hs__decap_8
 MACRO sky130_fd_sc_hs__dfbbn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.44000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -16594,7 +16474,6 @@ MACRO sky130_fd_sc_hs__dfbbn_1
 END sky130_fd_sc_hs__dfbbn_1
 MACRO sky130_fd_sc_hs__dfbbn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.40000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -16886,7 +16765,6 @@ MACRO sky130_fd_sc_hs__dfbbn_2
 END sky130_fd_sc_hs__dfbbn_2
 MACRO sky130_fd_sc_hs__dfbbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.96000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -17143,7 +17021,6 @@ MACRO sky130_fd_sc_hs__dfbbp_1
 END sky130_fd_sc_hs__dfbbp_1
 MACRO sky130_fd_sc_hs__dfrbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.52000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -17391,7 +17268,6 @@ MACRO sky130_fd_sc_hs__dfrbp_1
 END sky130_fd_sc_hs__dfrbp_1
 MACRO sky130_fd_sc_hs__dfrbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.92000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -17647,7 +17523,6 @@ MACRO sky130_fd_sc_hs__dfrbp_2
 END sky130_fd_sc_hs__dfrbp_2
 MACRO sky130_fd_sc_hs__dfrtn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -17865,7 +17740,6 @@ MACRO sky130_fd_sc_hs__dfrtn_1
 END sky130_fd_sc_hs__dfrtn_1
 MACRO sky130_fd_sc_hs__dfrtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -18112,7 +17986,6 @@ MACRO sky130_fd_sc_hs__dfrtp_1
 END sky130_fd_sc_hs__dfrtp_1
 MACRO sky130_fd_sc_hs__dfrtp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.52000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -18364,7 +18237,6 @@ MACRO sky130_fd_sc_hs__dfrtp_2
 END sky130_fd_sc_hs__dfrtp_2
 MACRO sky130_fd_sc_hs__dfrtp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.44000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -18616,7 +18488,6 @@ MACRO sky130_fd_sc_hs__dfrtp_4
 END sky130_fd_sc_hs__dfrtp_4
 MACRO sky130_fd_sc_hs__dfsbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE 12 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -18854,7 +18725,6 @@ MACRO sky130_fd_sc_hs__dfsbp_1
 END sky130_fd_sc_hs__dfsbp_1
 MACRO sky130_fd_sc_hs__dfsbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.96000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -19099,7 +18969,6 @@ MACRO sky130_fd_sc_hs__dfsbp_2
 END sky130_fd_sc_hs__dfsbp_2
 MACRO sky130_fd_sc_hs__dfstp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -19321,7 +19190,6 @@ MACRO sky130_fd_sc_hs__dfstp_1
 END sky130_fd_sc_hs__dfstp_1
 MACRO sky130_fd_sc_hs__dfstp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE 12 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -19546,7 +19414,6 @@ MACRO sky130_fd_sc_hs__dfstp_2
 END sky130_fd_sc_hs__dfstp_2
 MACRO sky130_fd_sc_hs__dfstp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.96000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -19783,7 +19650,6 @@ MACRO sky130_fd_sc_hs__dfstp_4
 END sky130_fd_sc_hs__dfstp_4
 MACRO sky130_fd_sc_hs__dfxbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -19987,7 +19853,6 @@ MACRO sky130_fd_sc_hs__dfxbp_1
 END sky130_fd_sc_hs__dfxbp_1
 MACRO sky130_fd_sc_hs__dfxbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -20192,7 +20057,6 @@ MACRO sky130_fd_sc_hs__dfxbp_2
 END sky130_fd_sc_hs__dfxbp_2
 MACRO sky130_fd_sc_hs__dfxtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -20375,7 +20239,6 @@ MACRO sky130_fd_sc_hs__dfxtp_1
 END sky130_fd_sc_hs__dfxtp_1
 MACRO sky130_fd_sc_hs__dfxtp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -20571,7 +20434,6 @@ MACRO sky130_fd_sc_hs__dfxtp_2
 END sky130_fd_sc_hs__dfxtp_2
 MACRO sky130_fd_sc_hs__dfxtp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -20778,7 +20640,6 @@ MACRO sky130_fd_sc_hs__dfxtp_4
 END sky130_fd_sc_hs__dfxtp_4
 MACRO sky130_fd_sc_hs__dlclkp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -20925,7 +20786,6 @@ MACRO sky130_fd_sc_hs__dlclkp_1
 END sky130_fd_sc_hs__dlclkp_1
 MACRO sky130_fd_sc_hs__dlclkp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -21076,7 +20936,6 @@ MACRO sky130_fd_sc_hs__dlclkp_2
 END sky130_fd_sc_hs__dlclkp_2
 MACRO sky130_fd_sc_hs__dlclkp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -21242,7 +21101,6 @@ MACRO sky130_fd_sc_hs__dlclkp_4
 END sky130_fd_sc_hs__dlclkp_4
 MACRO sky130_fd_sc_hs__dlrbn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -21431,7 +21289,6 @@ MACRO sky130_fd_sc_hs__dlrbn_1
 END sky130_fd_sc_hs__dlrbn_1
 MACRO sky130_fd_sc_hs__dlrbn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -21629,7 +21486,6 @@ MACRO sky130_fd_sc_hs__dlrbn_2
 END sky130_fd_sc_hs__dlrbn_2
 MACRO sky130_fd_sc_hs__dlrbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -21813,7 +21669,6 @@ MACRO sky130_fd_sc_hs__dlrbp_1
 END sky130_fd_sc_hs__dlrbp_1
 MACRO sky130_fd_sc_hs__dlrbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -22003,7 +21858,6 @@ MACRO sky130_fd_sc_hs__dlrbp_2
 END sky130_fd_sc_hs__dlrbp_2
 MACRO sky130_fd_sc_hs__dlrtn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -22160,7 +22014,6 @@ MACRO sky130_fd_sc_hs__dlrtn_1
 END sky130_fd_sc_hs__dlrtn_1
 MACRO sky130_fd_sc_hs__dlrtn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -22322,7 +22175,6 @@ MACRO sky130_fd_sc_hs__dlrtn_2
 END sky130_fd_sc_hs__dlrtn_2
 MACRO sky130_fd_sc_hs__dlrtn_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -22506,7 +22358,6 @@ MACRO sky130_fd_sc_hs__dlrtn_4
 END sky130_fd_sc_hs__dlrtn_4
 MACRO sky130_fd_sc_hs__dlrtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -22666,7 +22517,6 @@ MACRO sky130_fd_sc_hs__dlrtp_1
 END sky130_fd_sc_hs__dlrtp_1
 MACRO sky130_fd_sc_hs__dlrtp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -22836,7 +22686,6 @@ MACRO sky130_fd_sc_hs__dlrtp_2
 END sky130_fd_sc_hs__dlrtp_2
 MACRO sky130_fd_sc_hs__dlrtp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -23024,7 +22873,6 @@ MACRO sky130_fd_sc_hs__dlrtp_4
 END sky130_fd_sc_hs__dlrtp_4
 MACRO sky130_fd_sc_hs__dlxbn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -23188,7 +23036,6 @@ MACRO sky130_fd_sc_hs__dlxbn_1
 END sky130_fd_sc_hs__dlxbn_1
 MACRO sky130_fd_sc_hs__dlxbn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -23366,7 +23213,6 @@ MACRO sky130_fd_sc_hs__dlxbn_2
 END sky130_fd_sc_hs__dlxbn_2
 MACRO sky130_fd_sc_hs__dlxbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -23533,7 +23379,6 @@ MACRO sky130_fd_sc_hs__dlxbp_1
 END sky130_fd_sc_hs__dlxbp_1
 MACRO sky130_fd_sc_hs__dlxtn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -23682,7 +23527,6 @@ MACRO sky130_fd_sc_hs__dlxtn_1
 END sky130_fd_sc_hs__dlxtn_1
 MACRO sky130_fd_sc_hs__dlxtn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -23840,7 +23684,6 @@ MACRO sky130_fd_sc_hs__dlxtn_2
 END sky130_fd_sc_hs__dlxtn_2
 MACRO sky130_fd_sc_hs__dlxtn_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24008,7 +23851,6 @@ MACRO sky130_fd_sc_hs__dlxtn_4
 END sky130_fd_sc_hs__dlxtn_4
 MACRO sky130_fd_sc_hs__dlxtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24177,7 +24019,6 @@ MACRO sky130_fd_sc_hs__dlxtp_1
 END sky130_fd_sc_hs__dlxtp_1
 MACRO sky130_fd_sc_hs__dlygate4sd1_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24280,7 +24121,6 @@ MACRO sky130_fd_sc_hs__dlygate4sd1_1
 END sky130_fd_sc_hs__dlygate4sd1_1
 MACRO sky130_fd_sc_hs__dlygate4sd2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24383,7 +24223,6 @@ MACRO sky130_fd_sc_hs__dlygate4sd2_1
 END sky130_fd_sc_hs__dlygate4sd2_1
 MACRO sky130_fd_sc_hs__dlygate4sd3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24486,7 +24325,6 @@ MACRO sky130_fd_sc_hs__dlygate4sd3_1
 END sky130_fd_sc_hs__dlygate4sd3_1
 MACRO sky130_fd_sc_hs__dlymetal6s2s_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24620,7 +24458,6 @@ MACRO sky130_fd_sc_hs__dlymetal6s2s_1
 END sky130_fd_sc_hs__dlymetal6s2s_1
 MACRO sky130_fd_sc_hs__dlymetal6s4s_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24754,7 +24591,6 @@ MACRO sky130_fd_sc_hs__dlymetal6s4s_1
 END sky130_fd_sc_hs__dlymetal6s4s_1
 MACRO sky130_fd_sc_hs__dlymetal6s6s_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -24888,7 +24724,6 @@ MACRO sky130_fd_sc_hs__dlymetal6s6s_1
 END sky130_fd_sc_hs__dlymetal6s6s_1
 MACRO sky130_fd_sc_hs__ebufn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -25001,7 +24836,6 @@ MACRO sky130_fd_sc_hs__ebufn_1
 END sky130_fd_sc_hs__ebufn_1
 MACRO sky130_fd_sc_hs__ebufn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -25121,7 +24955,6 @@ MACRO sky130_fd_sc_hs__ebufn_2
 END sky130_fd_sc_hs__ebufn_2
 MACRO sky130_fd_sc_hs__ebufn_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -25262,7 +25095,6 @@ MACRO sky130_fd_sc_hs__ebufn_4
 END sky130_fd_sc_hs__ebufn_4
 MACRO sky130_fd_sc_hs__ebufn_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.56000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -25441,7 +25273,6 @@ MACRO sky130_fd_sc_hs__ebufn_8
 END sky130_fd_sc_hs__ebufn_8
 MACRO sky130_fd_sc_hs__edfxbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.40000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -25702,7 +25533,6 @@ MACRO sky130_fd_sc_hs__edfxbp_1
 END sky130_fd_sc_hs__edfxbp_1
 MACRO sky130_fd_sc_hs__edfxtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.96000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -25941,7 +25771,6 @@ MACRO sky130_fd_sc_hs__edfxtp_1
 END sky130_fd_sc_hs__edfxtp_1
 MACRO sky130_fd_sc_hs__einvn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26034,7 +25863,6 @@ MACRO sky130_fd_sc_hs__einvn_1
 END sky130_fd_sc_hs__einvn_1
 MACRO sky130_fd_sc_hs__einvn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26141,7 +25969,6 @@ MACRO sky130_fd_sc_hs__einvn_2
 END sky130_fd_sc_hs__einvn_2
 MACRO sky130_fd_sc_hs__einvn_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26266,7 +26093,6 @@ MACRO sky130_fd_sc_hs__einvn_4
 END sky130_fd_sc_hs__einvn_4
 MACRO sky130_fd_sc_hs__einvn_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26428,7 +26254,6 @@ MACRO sky130_fd_sc_hs__einvn_8
 END sky130_fd_sc_hs__einvn_8
 MACRO sky130_fd_sc_hs__einvp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26521,7 +26346,6 @@ MACRO sky130_fd_sc_hs__einvp_1
 END sky130_fd_sc_hs__einvp_1
 MACRO sky130_fd_sc_hs__einvp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26625,7 +26449,6 @@ MACRO sky130_fd_sc_hs__einvp_2
 END sky130_fd_sc_hs__einvp_2
 MACRO sky130_fd_sc_hs__einvp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26754,7 +26577,6 @@ MACRO sky130_fd_sc_hs__einvp_4
 END sky130_fd_sc_hs__einvp_4
 MACRO sky130_fd_sc_hs__einvp_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -26916,7 +26738,6 @@ MACRO sky130_fd_sc_hs__einvp_8
 END sky130_fd_sc_hs__einvp_8
 MACRO sky130_fd_sc_hs__fa_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -27117,7 +26938,6 @@ MACRO sky130_fd_sc_hs__fa_1
 END sky130_fd_sc_hs__fa_1
 MACRO sky130_fd_sc_hs__fa_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -27327,7 +27147,6 @@ MACRO sky130_fd_sc_hs__fa_2
 END sky130_fd_sc_hs__fa_2
 MACRO sky130_fd_sc_hs__fa_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -27560,7 +27379,6 @@ MACRO sky130_fd_sc_hs__fa_4
 END sky130_fd_sc_hs__fa_4
 MACRO sky130_fd_sc_hs__fah_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.92000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -27854,7 +27672,6 @@ MACRO sky130_fd_sc_hs__fah_1
 END sky130_fd_sc_hs__fah_1
 MACRO sky130_fd_sc_hs__fah_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.40000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -28135,7 +27952,6 @@ MACRO sky130_fd_sc_hs__fah_2
 END sky130_fd_sc_hs__fah_2
 MACRO sky130_fd_sc_hs__fah_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  15.36000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -28431,7 +28247,6 @@ MACRO sky130_fd_sc_hs__fah_4
 END sky130_fd_sc_hs__fah_4
 MACRO sky130_fd_sc_hs__fahcin_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.96000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -28687,7 +28502,6 @@ MACRO sky130_fd_sc_hs__fahcin_1
 END sky130_fd_sc_hs__fahcin_1
 MACRO sky130_fd_sc_hs__fahcon_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.52000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -28940,7 +28754,6 @@ MACRO sky130_fd_sc_hs__fahcon_1
 END sky130_fd_sc_hs__fahcon_1
 MACRO sky130_fd_sc_hs__fill_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -28988,7 +28801,6 @@ MACRO sky130_fd_sc_hs__fill_1
 END sky130_fd_sc_hs__fill_1
 MACRO sky130_fd_sc_hs__fill_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.960000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29038,7 +28850,6 @@ MACRO sky130_fd_sc_hs__fill_2
 END sky130_fd_sc_hs__fill_2
 MACRO sky130_fd_sc_hs__fill_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29092,7 +28903,6 @@ MACRO sky130_fd_sc_hs__fill_4
 END sky130_fd_sc_hs__fill_4
 MACRO sky130_fd_sc_hs__fill_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29154,7 +28964,6 @@ MACRO sky130_fd_sc_hs__fill_8
 END sky130_fd_sc_hs__fill_8
 MACRO sky130_fd_sc_hs__ha_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29286,7 +29095,6 @@ MACRO sky130_fd_sc_hs__ha_1
 END sky130_fd_sc_hs__ha_1
 MACRO sky130_fd_sc_hs__ha_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29430,7 +29238,6 @@ MACRO sky130_fd_sc_hs__ha_2
 END sky130_fd_sc_hs__ha_2
 MACRO sky130_fd_sc_hs__ha_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29625,7 +29432,6 @@ MACRO sky130_fd_sc_hs__ha_4
 END sky130_fd_sc_hs__ha_4
 MACRO sky130_fd_sc_hs__inv_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.440000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29697,7 +29503,6 @@ MACRO sky130_fd_sc_hs__inv_1
 END sky130_fd_sc_hs__inv_1
 MACRO sky130_fd_sc_hs__inv_16
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29853,7 +29658,6 @@ MACRO sky130_fd_sc_hs__inv_16
 END sky130_fd_sc_hs__inv_16
 MACRO sky130_fd_sc_hs__inv_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.440000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -29928,7 +29732,6 @@ MACRO sky130_fd_sc_hs__inv_2
 END sky130_fd_sc_hs__inv_2
 MACRO sky130_fd_sc_hs__inv_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30014,7 +29817,6 @@ MACRO sky130_fd_sc_hs__inv_4
 END sky130_fd_sc_hs__inv_4
 MACRO sky130_fd_sc_hs__inv_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30119,7 +29921,6 @@ MACRO sky130_fd_sc_hs__inv_8
 END sky130_fd_sc_hs__inv_8
 MACRO sky130_fd_sc_hs__maj3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30236,7 +30037,6 @@ MACRO sky130_fd_sc_hs__maj3_1
 END sky130_fd_sc_hs__maj3_1
 MACRO sky130_fd_sc_hs__maj3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30360,7 +30160,6 @@ MACRO sky130_fd_sc_hs__maj3_2
 END sky130_fd_sc_hs__maj3_2
 MACRO sky130_fd_sc_hs__maj3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30539,7 +30338,6 @@ MACRO sky130_fd_sc_hs__maj3_4
 END sky130_fd_sc_hs__maj3_4
 MACRO sky130_fd_sc_hs__mux2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30668,7 +30466,6 @@ MACRO sky130_fd_sc_hs__mux2_1
 END sky130_fd_sc_hs__mux2_1
 MACRO sky130_fd_sc_hs__mux2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30806,7 +30603,6 @@ MACRO sky130_fd_sc_hs__mux2_2
 END sky130_fd_sc_hs__mux2_2
 MACRO sky130_fd_sc_hs__mux2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -30984,7 +30780,6 @@ MACRO sky130_fd_sc_hs__mux2_4
 END sky130_fd_sc_hs__mux2_4
 MACRO sky130_fd_sc_hs__mux2i_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -31105,7 +30900,6 @@ MACRO sky130_fd_sc_hs__mux2i_1
 END sky130_fd_sc_hs__mux2i_1
 MACRO sky130_fd_sc_hs__mux2i_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -31252,7 +31046,6 @@ MACRO sky130_fd_sc_hs__mux2i_2
 END sky130_fd_sc_hs__mux2i_2
 MACRO sky130_fd_sc_hs__mux2i_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -31434,7 +31227,6 @@ MACRO sky130_fd_sc_hs__mux2i_4
 END sky130_fd_sc_hs__mux2i_4
 MACRO sky130_fd_sc_hs__mux4_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -31648,7 +31440,6 @@ MACRO sky130_fd_sc_hs__mux4_1
 END sky130_fd_sc_hs__mux4_1
 MACRO sky130_fd_sc_hs__mux4_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.56000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -31873,7 +31664,6 @@ MACRO sky130_fd_sc_hs__mux4_2
 END sky130_fd_sc_hs__mux4_2
 MACRO sky130_fd_sc_hs__mux4_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  16.80000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32186,7 +31976,6 @@ MACRO sky130_fd_sc_hs__mux4_4
 END sky130_fd_sc_hs__mux4_4
 MACRO sky130_fd_sc_hs__nand2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.440000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32271,7 +32060,6 @@ MACRO sky130_fd_sc_hs__nand2_1
 END sky130_fd_sc_hs__nand2_1
 MACRO sky130_fd_sc_hs__nand2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32368,7 +32156,6 @@ MACRO sky130_fd_sc_hs__nand2_2
 END sky130_fd_sc_hs__nand2_2
 MACRO sky130_fd_sc_hs__nand2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32478,7 +32265,6 @@ MACRO sky130_fd_sc_hs__nand2_4
 END sky130_fd_sc_hs__nand2_4
 MACRO sky130_fd_sc_hs__nand2_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32614,7 +32400,6 @@ MACRO sky130_fd_sc_hs__nand2_8
 END sky130_fd_sc_hs__nand2_8
 MACRO sky130_fd_sc_hs__nand2b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32710,7 +32495,6 @@ MACRO sky130_fd_sc_hs__nand2b_1
 END sky130_fd_sc_hs__nand2b_1
 MACRO sky130_fd_sc_hs__nand2b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32820,7 +32604,6 @@ MACRO sky130_fd_sc_hs__nand2b_2
 END sky130_fd_sc_hs__nand2b_2
 MACRO sky130_fd_sc_hs__nand2b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -32947,7 +32730,6 @@ MACRO sky130_fd_sc_hs__nand2b_4
 END sky130_fd_sc_hs__nand2b_4
 MACRO sky130_fd_sc_hs__nand3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33047,7 +32829,6 @@ MACRO sky130_fd_sc_hs__nand3_1
 END sky130_fd_sc_hs__nand3_1
 MACRO sky130_fd_sc_hs__nand3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33169,7 +32950,6 @@ MACRO sky130_fd_sc_hs__nand3_2
 END sky130_fd_sc_hs__nand3_2
 MACRO sky130_fd_sc_hs__nand3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33306,7 +33086,6 @@ MACRO sky130_fd_sc_hs__nand3_4
 END sky130_fd_sc_hs__nand3_4
 MACRO sky130_fd_sc_hs__nand3b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33415,7 +33194,6 @@ MACRO sky130_fd_sc_hs__nand3b_1
 END sky130_fd_sc_hs__nand3b_1
 MACRO sky130_fd_sc_hs__nand3b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33540,7 +33318,6 @@ MACRO sky130_fd_sc_hs__nand3b_2
 END sky130_fd_sc_hs__nand3b_2
 MACRO sky130_fd_sc_hs__nand3b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33689,7 +33466,6 @@ MACRO sky130_fd_sc_hs__nand3b_4
 END sky130_fd_sc_hs__nand3b_4
 MACRO sky130_fd_sc_hs__nand4_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33803,7 +33579,6 @@ MACRO sky130_fd_sc_hs__nand4_1
 END sky130_fd_sc_hs__nand4_1
 MACRO sky130_fd_sc_hs__nand4_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -33940,7 +33715,6 @@ MACRO sky130_fd_sc_hs__nand4_2
 END sky130_fd_sc_hs__nand4_2
 MACRO sky130_fd_sc_hs__nand4_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -34097,7 +33871,6 @@ MACRO sky130_fd_sc_hs__nand4_4
 END sky130_fd_sc_hs__nand4_4
 MACRO sky130_fd_sc_hs__nand4b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -34218,7 +33991,6 @@ MACRO sky130_fd_sc_hs__nand4b_1
 END sky130_fd_sc_hs__nand4b_1
 MACRO sky130_fd_sc_hs__nand4b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -34366,7 +34138,6 @@ MACRO sky130_fd_sc_hs__nand4b_2
 END sky130_fd_sc_hs__nand4b_2
 MACRO sky130_fd_sc_hs__nand4b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -34538,7 +34309,6 @@ MACRO sky130_fd_sc_hs__nand4b_4
 END sky130_fd_sc_hs__nand4b_4
 MACRO sky130_fd_sc_hs__nand4bb_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -34674,7 +34444,6 @@ MACRO sky130_fd_sc_hs__nand4bb_1
 END sky130_fd_sc_hs__nand4bb_1
 MACRO sky130_fd_sc_hs__nand4bb_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -34838,7 +34607,6 @@ MACRO sky130_fd_sc_hs__nand4bb_2
 END sky130_fd_sc_hs__nand4bb_2
 MACRO sky130_fd_sc_hs__nand4bb_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35042,7 +34810,6 @@ MACRO sky130_fd_sc_hs__nand4bb_4
 END sky130_fd_sc_hs__nand4bb_4
 MACRO sky130_fd_sc_hs__nor2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.440000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35127,7 +34894,6 @@ MACRO sky130_fd_sc_hs__nor2_1
 END sky130_fd_sc_hs__nor2_1
 MACRO sky130_fd_sc_hs__nor2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35221,7 +34987,6 @@ MACRO sky130_fd_sc_hs__nor2_2
 END sky130_fd_sc_hs__nor2_2
 MACRO sky130_fd_sc_hs__nor2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35333,7 +35098,6 @@ MACRO sky130_fd_sc_hs__nor2_4
 END sky130_fd_sc_hs__nor2_4
 MACRO sky130_fd_sc_hs__nor2_8
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35474,7 +35238,6 @@ MACRO sky130_fd_sc_hs__nor2_8
 END sky130_fd_sc_hs__nor2_8
 MACRO sky130_fd_sc_hs__nor2b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35569,7 +35332,6 @@ MACRO sky130_fd_sc_hs__nor2b_1
 END sky130_fd_sc_hs__nor2b_1
 MACRO sky130_fd_sc_hs__nor2b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35676,7 +35438,6 @@ MACRO sky130_fd_sc_hs__nor2b_2
 END sky130_fd_sc_hs__nor2b_2
 MACRO sky130_fd_sc_hs__nor2b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35806,7 +35567,6 @@ MACRO sky130_fd_sc_hs__nor2b_4
 END sky130_fd_sc_hs__nor2b_4
 MACRO sky130_fd_sc_hs__nor3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -35906,7 +35666,6 @@ MACRO sky130_fd_sc_hs__nor3_1
 END sky130_fd_sc_hs__nor3_1
 MACRO sky130_fd_sc_hs__nor3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36021,7 +35780,6 @@ MACRO sky130_fd_sc_hs__nor3_2
 END sky130_fd_sc_hs__nor3_2
 MACRO sky130_fd_sc_hs__nor3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36167,7 +35925,6 @@ MACRO sky130_fd_sc_hs__nor3_4
 END sky130_fd_sc_hs__nor3_4
 MACRO sky130_fd_sc_hs__nor3b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36275,7 +36032,6 @@ MACRO sky130_fd_sc_hs__nor3b_1
 END sky130_fd_sc_hs__nor3b_1
 MACRO sky130_fd_sc_hs__nor3b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36402,7 +36158,6 @@ MACRO sky130_fd_sc_hs__nor3b_2
 END sky130_fd_sc_hs__nor3b_2
 MACRO sky130_fd_sc_hs__nor3b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36562,7 +36317,6 @@ MACRO sky130_fd_sc_hs__nor3b_4
 END sky130_fd_sc_hs__nor3b_4
 MACRO sky130_fd_sc_hs__nor4_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36673,7 +36427,6 @@ MACRO sky130_fd_sc_hs__nor4_1
 END sky130_fd_sc_hs__nor4_1
 MACRO sky130_fd_sc_hs__nor4_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36811,7 +36564,6 @@ MACRO sky130_fd_sc_hs__nor4_2
 END sky130_fd_sc_hs__nor4_2
 MACRO sky130_fd_sc_hs__nor4_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -36976,7 +36728,6 @@ MACRO sky130_fd_sc_hs__nor4_4
 END sky130_fd_sc_hs__nor4_4
 MACRO sky130_fd_sc_hs__nor4b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -37096,7 +36847,6 @@ MACRO sky130_fd_sc_hs__nor4b_1
 END sky130_fd_sc_hs__nor4b_1
 MACRO sky130_fd_sc_hs__nor4b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -37244,7 +36994,6 @@ MACRO sky130_fd_sc_hs__nor4b_2
 END sky130_fd_sc_hs__nor4b_2
 MACRO sky130_fd_sc_hs__nor4b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -37434,7 +37183,6 @@ MACRO sky130_fd_sc_hs__nor4b_4
 END sky130_fd_sc_hs__nor4b_4
 MACRO sky130_fd_sc_hs__nor4bb_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -37568,7 +37316,6 @@ MACRO sky130_fd_sc_hs__nor4bb_1
 END sky130_fd_sc_hs__nor4bb_1
 MACRO sky130_fd_sc_hs__nor4bb_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -37738,7 +37485,6 @@ MACRO sky130_fd_sc_hs__nor4bb_2
 END sky130_fd_sc_hs__nor4bb_2
 MACRO sky130_fd_sc_hs__nor4bb_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -37951,7 +37697,6 @@ MACRO sky130_fd_sc_hs__nor4bb_4
 END sky130_fd_sc_hs__nor4bb_4
 MACRO sky130_fd_sc_hs__o2111a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -38086,7 +37831,6 @@ MACRO sky130_fd_sc_hs__o2111a_1
 END sky130_fd_sc_hs__o2111a_1
 MACRO sky130_fd_sc_hs__o2111a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -38227,7 +37971,6 @@ MACRO sky130_fd_sc_hs__o2111a_2
 END sky130_fd_sc_hs__o2111a_2
 MACRO sky130_fd_sc_hs__o2111a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -38411,7 +38154,6 @@ MACRO sky130_fd_sc_hs__o2111a_4
 END sky130_fd_sc_hs__o2111a_4
 MACRO sky130_fd_sc_hs__o2111ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -38536,7 +38278,6 @@ MACRO sky130_fd_sc_hs__o2111ai_1
 END sky130_fd_sc_hs__o2111ai_1
 MACRO sky130_fd_sc_hs__o2111ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -38697,7 +38438,6 @@ MACRO sky130_fd_sc_hs__o2111ai_2
 END sky130_fd_sc_hs__o2111ai_2
 MACRO sky130_fd_sc_hs__o2111ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -38884,7 +38624,6 @@ MACRO sky130_fd_sc_hs__o2111ai_4
 END sky130_fd_sc_hs__o2111ai_4
 MACRO sky130_fd_sc_hs__o211a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39013,7 +38752,6 @@ MACRO sky130_fd_sc_hs__o211a_1
 END sky130_fd_sc_hs__o211a_1
 MACRO sky130_fd_sc_hs__o211a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39141,7 +38879,6 @@ MACRO sky130_fd_sc_hs__o211a_2
 END sky130_fd_sc_hs__o211a_2
 MACRO sky130_fd_sc_hs__o211a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39299,7 +39036,6 @@ MACRO sky130_fd_sc_hs__o211a_4
 END sky130_fd_sc_hs__o211a_4
 MACRO sky130_fd_sc_hs__o211ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39415,7 +39151,6 @@ MACRO sky130_fd_sc_hs__o211ai_1
 END sky130_fd_sc_hs__o211ai_1
 MACRO sky130_fd_sc_hs__o211ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39554,7 +39289,6 @@ MACRO sky130_fd_sc_hs__o211ai_2
 END sky130_fd_sc_hs__o211ai_2
 MACRO sky130_fd_sc_hs__o211ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39719,7 +39453,6 @@ MACRO sky130_fd_sc_hs__o211ai_4
 END sky130_fd_sc_hs__o211ai_4
 MACRO sky130_fd_sc_hs__o21a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39827,7 +39560,6 @@ MACRO sky130_fd_sc_hs__o21a_1
 END sky130_fd_sc_hs__o21a_1
 MACRO sky130_fd_sc_hs__o21a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -39942,7 +39674,6 @@ MACRO sky130_fd_sc_hs__o21a_2
 END sky130_fd_sc_hs__o21a_2
 MACRO sky130_fd_sc_hs__o21a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40083,7 +39814,6 @@ MACRO sky130_fd_sc_hs__o21a_4
 END sky130_fd_sc_hs__o21a_4
 MACRO sky130_fd_sc_hs__o21ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40185,7 +39915,6 @@ MACRO sky130_fd_sc_hs__o21ai_1
 END sky130_fd_sc_hs__o21ai_1
 MACRO sky130_fd_sc_hs__o21ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40302,7 +40031,6 @@ MACRO sky130_fd_sc_hs__o21ai_2
 END sky130_fd_sc_hs__o21ai_2
 MACRO sky130_fd_sc_hs__o21ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40447,7 +40175,6 @@ MACRO sky130_fd_sc_hs__o21ai_4
 END sky130_fd_sc_hs__o21ai_4
 MACRO sky130_fd_sc_hs__o21ba_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40566,7 +40293,6 @@ MACRO sky130_fd_sc_hs__o21ba_1
 END sky130_fd_sc_hs__o21ba_1
 MACRO sky130_fd_sc_hs__o21ba_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40690,7 +40416,6 @@ MACRO sky130_fd_sc_hs__o21ba_2
 END sky130_fd_sc_hs__o21ba_2
 MACRO sky130_fd_sc_hs__o21ba_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40840,7 +40565,6 @@ MACRO sky130_fd_sc_hs__o21ba_4
 END sky130_fd_sc_hs__o21ba_4
 MACRO sky130_fd_sc_hs__o21bai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -40952,7 +40676,6 @@ MACRO sky130_fd_sc_hs__o21bai_1
 END sky130_fd_sc_hs__o21bai_1
 MACRO sky130_fd_sc_hs__o21bai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41081,7 +40804,6 @@ MACRO sky130_fd_sc_hs__o21bai_2
 END sky130_fd_sc_hs__o21bai_2
 MACRO sky130_fd_sc_hs__o21bai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41239,7 +40961,6 @@ MACRO sky130_fd_sc_hs__o21bai_4
 END sky130_fd_sc_hs__o21bai_4
 MACRO sky130_fd_sc_hs__o221a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41378,7 +41099,6 @@ MACRO sky130_fd_sc_hs__o221a_1
 END sky130_fd_sc_hs__o221a_1
 MACRO sky130_fd_sc_hs__o221a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41520,7 +41240,6 @@ MACRO sky130_fd_sc_hs__o221a_2
 END sky130_fd_sc_hs__o221a_2
 MACRO sky130_fd_sc_hs__o221a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41702,7 +41421,6 @@ MACRO sky130_fd_sc_hs__o221a_4
 END sky130_fd_sc_hs__o221a_4
 MACRO sky130_fd_sc_hs__o221ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41836,7 +41554,6 @@ MACRO sky130_fd_sc_hs__o221ai_1
 END sky130_fd_sc_hs__o221ai_1
 MACRO sky130_fd_sc_hs__o221ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -41993,7 +41710,6 @@ MACRO sky130_fd_sc_hs__o221ai_2
 END sky130_fd_sc_hs__o221ai_2
 MACRO sky130_fd_sc_hs__o221ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -42196,7 +41912,6 @@ MACRO sky130_fd_sc_hs__o221ai_4
 END sky130_fd_sc_hs__o221ai_4
 MACRO sky130_fd_sc_hs__o22a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -42320,7 +42035,6 @@ MACRO sky130_fd_sc_hs__o22a_1
 END sky130_fd_sc_hs__o22a_1
 MACRO sky130_fd_sc_hs__o22a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -42448,7 +42162,6 @@ MACRO sky130_fd_sc_hs__o22a_2
 END sky130_fd_sc_hs__o22a_2
 MACRO sky130_fd_sc_hs__o22a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -42608,7 +42321,6 @@ MACRO sky130_fd_sc_hs__o22a_4
 END sky130_fd_sc_hs__o22a_4
 MACRO sky130_fd_sc_hs__o22ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -42721,7 +42433,6 @@ MACRO sky130_fd_sc_hs__o22ai_1
 END sky130_fd_sc_hs__o22ai_1
 MACRO sky130_fd_sc_hs__o22ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -42866,7 +42577,6 @@ MACRO sky130_fd_sc_hs__o22ai_2
 END sky130_fd_sc_hs__o22ai_2
 MACRO sky130_fd_sc_hs__o22ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43045,7 +42755,6 @@ MACRO sky130_fd_sc_hs__o22ai_4
 END sky130_fd_sc_hs__o22ai_4
 MACRO sky130_fd_sc_hs__o2bb2a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43178,7 +42887,6 @@ MACRO sky130_fd_sc_hs__o2bb2a_1
 END sky130_fd_sc_hs__o2bb2a_1
 MACRO sky130_fd_sc_hs__o2bb2a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43314,7 +43022,6 @@ MACRO sky130_fd_sc_hs__o2bb2a_2
 END sky130_fd_sc_hs__o2bb2a_2
 MACRO sky130_fd_sc_hs__o2bb2a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43482,7 +43189,6 @@ MACRO sky130_fd_sc_hs__o2bb2a_4
 END sky130_fd_sc_hs__o2bb2a_4
 MACRO sky130_fd_sc_hs__o2bb2ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43604,7 +43310,6 @@ MACRO sky130_fd_sc_hs__o2bb2ai_1
 END sky130_fd_sc_hs__o2bb2ai_1
 MACRO sky130_fd_sc_hs__o2bb2ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43765,7 +43470,6 @@ MACRO sky130_fd_sc_hs__o2bb2ai_2
 END sky130_fd_sc_hs__o2bb2ai_2
 MACRO sky130_fd_sc_hs__o2bb2ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -43958,7 +43662,6 @@ MACRO sky130_fd_sc_hs__o2bb2ai_4
 END sky130_fd_sc_hs__o2bb2ai_4
 MACRO sky130_fd_sc_hs__o311a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -44097,7 +43800,6 @@ MACRO sky130_fd_sc_hs__o311a_1
 END sky130_fd_sc_hs__o311a_1
 MACRO sky130_fd_sc_hs__o311a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -44237,7 +43939,6 @@ MACRO sky130_fd_sc_hs__o311a_2
 END sky130_fd_sc_hs__o311a_2
 MACRO sky130_fd_sc_hs__o311a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -44438,7 +44139,6 @@ MACRO sky130_fd_sc_hs__o311a_4
 END sky130_fd_sc_hs__o311a_4
 MACRO sky130_fd_sc_hs__o311ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -44564,7 +44264,6 @@ MACRO sky130_fd_sc_hs__o311ai_1
 END sky130_fd_sc_hs__o311ai_1
 MACRO sky130_fd_sc_hs__o311ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -44718,7 +44417,6 @@ MACRO sky130_fd_sc_hs__o311ai_2
 END sky130_fd_sc_hs__o311ai_2
 MACRO sky130_fd_sc_hs__o311ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -44919,7 +44617,6 @@ MACRO sky130_fd_sc_hs__o311ai_4
 END sky130_fd_sc_hs__o311ai_4
 MACRO sky130_fd_sc_hs__o31a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45039,7 +44736,6 @@ MACRO sky130_fd_sc_hs__o31a_1
 END sky130_fd_sc_hs__o31a_1
 MACRO sky130_fd_sc_hs__o31a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45167,7 +44863,6 @@ MACRO sky130_fd_sc_hs__o31a_2
 END sky130_fd_sc_hs__o31a_2
 MACRO sky130_fd_sc_hs__o31a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45324,7 +45019,6 @@ MACRO sky130_fd_sc_hs__o31a_4
 END sky130_fd_sc_hs__o31a_4
 MACRO sky130_fd_sc_hs__o31ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45438,7 +45132,6 @@ MACRO sky130_fd_sc_hs__o31ai_1
 END sky130_fd_sc_hs__o31ai_1
 MACRO sky130_fd_sc_hs__o31ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45580,7 +45273,6 @@ MACRO sky130_fd_sc_hs__o31ai_2
 END sky130_fd_sc_hs__o31ai_2
 MACRO sky130_fd_sc_hs__o31ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45755,7 +45447,6 @@ MACRO sky130_fd_sc_hs__o31ai_4
 END sky130_fd_sc_hs__o31ai_4
 MACRO sky130_fd_sc_hs__o32a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -45890,7 +45581,6 @@ MACRO sky130_fd_sc_hs__o32a_1
 END sky130_fd_sc_hs__o32a_1
 MACRO sky130_fd_sc_hs__o32a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46031,7 +45721,6 @@ MACRO sky130_fd_sc_hs__o32a_2
 END sky130_fd_sc_hs__o32a_2
 MACRO sky130_fd_sc_hs__o32a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46224,7 +45913,6 @@ MACRO sky130_fd_sc_hs__o32a_4
 END sky130_fd_sc_hs__o32a_4
 MACRO sky130_fd_sc_hs__o32ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46349,7 +46037,6 @@ MACRO sky130_fd_sc_hs__o32ai_1
 END sky130_fd_sc_hs__o32ai_1
 MACRO sky130_fd_sc_hs__o32ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46510,7 +46197,6 @@ MACRO sky130_fd_sc_hs__o32ai_2
 END sky130_fd_sc_hs__o32ai_2
 MACRO sky130_fd_sc_hs__o32ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46710,7 +46396,6 @@ MACRO sky130_fd_sc_hs__o32ai_4
 END sky130_fd_sc_hs__o32ai_4
 MACRO sky130_fd_sc_hs__o41a_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46846,7 +46531,6 @@ MACRO sky130_fd_sc_hs__o41a_1
 END sky130_fd_sc_hs__o41a_1
 MACRO sky130_fd_sc_hs__o41a_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -46988,7 +46672,6 @@ MACRO sky130_fd_sc_hs__o41a_2
 END sky130_fd_sc_hs__o41a_2
 MACRO sky130_fd_sc_hs__o41a_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47173,7 +46856,6 @@ MACRO sky130_fd_sc_hs__o41a_4
 END sky130_fd_sc_hs__o41a_4
 MACRO sky130_fd_sc_hs__o41ai_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47304,7 +46986,6 @@ MACRO sky130_fd_sc_hs__o41ai_1
 END sky130_fd_sc_hs__o41ai_1
 MACRO sky130_fd_sc_hs__o41ai_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.240000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47465,7 +47146,6 @@ MACRO sky130_fd_sc_hs__o41ai_2
 END sky130_fd_sc_hs__o41ai_2
 MACRO sky130_fd_sc_hs__o41ai_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47664,7 +47344,6 @@ MACRO sky130_fd_sc_hs__o41ai_4
 END sky130_fd_sc_hs__o41ai_4
 MACRO sky130_fd_sc_hs__or2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47760,7 +47439,6 @@ MACRO sky130_fd_sc_hs__or2_1
 END sky130_fd_sc_hs__or2_1
 MACRO sky130_fd_sc_hs__or2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.400000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47857,7 +47535,6 @@ MACRO sky130_fd_sc_hs__or2_2
 END sky130_fd_sc_hs__or2_2
 MACRO sky130_fd_sc_hs__or2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -47974,7 +47651,6 @@ MACRO sky130_fd_sc_hs__or2_4
 END sky130_fd_sc_hs__or2_4
 MACRO sky130_fd_sc_hs__or2b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48080,7 +47756,6 @@ MACRO sky130_fd_sc_hs__or2b_1
 END sky130_fd_sc_hs__or2b_1
 MACRO sky130_fd_sc_hs__or2b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48188,7 +47863,6 @@ MACRO sky130_fd_sc_hs__or2b_2
 END sky130_fd_sc_hs__or2b_2
 MACRO sky130_fd_sc_hs__or2b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48320,7 +47994,6 @@ MACRO sky130_fd_sc_hs__or2b_4
 END sky130_fd_sc_hs__or2b_4
 MACRO sky130_fd_sc_hs__or3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  2.880000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48427,7 +48100,6 @@ MACRO sky130_fd_sc_hs__or3_1
 END sky130_fd_sc_hs__or3_1
 MACRO sky130_fd_sc_hs__or3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48542,7 +48214,6 @@ MACRO sky130_fd_sc_hs__or3_2
 END sky130_fd_sc_hs__or3_2
 MACRO sky130_fd_sc_hs__or3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48677,7 +48348,6 @@ MACRO sky130_fd_sc_hs__or3_4
 END sky130_fd_sc_hs__or3_4
 MACRO sky130_fd_sc_hs__or3b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48793,7 +48463,6 @@ MACRO sky130_fd_sc_hs__or3b_1
 END sky130_fd_sc_hs__or3b_1
 MACRO sky130_fd_sc_hs__or3b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -48915,7 +48584,6 @@ MACRO sky130_fd_sc_hs__or3b_2
 END sky130_fd_sc_hs__or3b_2
 MACRO sky130_fd_sc_hs__or3b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.760000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49058,7 +48726,6 @@ MACRO sky130_fd_sc_hs__or3b_4
 END sky130_fd_sc_hs__or3b_4
 MACRO sky130_fd_sc_hs__or4_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49177,7 +48844,6 @@ MACRO sky130_fd_sc_hs__or4_1
 END sky130_fd_sc_hs__or4_1
 MACRO sky130_fd_sc_hs__or4_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49304,7 +48970,6 @@ MACRO sky130_fd_sc_hs__or4_2
 END sky130_fd_sc_hs__or4_2
 MACRO sky130_fd_sc_hs__or4_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  6.720000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49468,7 +49133,6 @@ MACRO sky130_fd_sc_hs__or4_4
 END sky130_fd_sc_hs__or4_4
 MACRO sky130_fd_sc_hs__or4b_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49601,7 +49265,6 @@ MACRO sky130_fd_sc_hs__or4b_1
 END sky130_fd_sc_hs__or4b_1
 MACRO sky130_fd_sc_hs__or4b_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.320000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49737,7 +49400,6 @@ MACRO sky130_fd_sc_hs__or4b_2
 END sky130_fd_sc_hs__or4b_2
 MACRO sky130_fd_sc_hs__or4b_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.200000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -49913,7 +49575,6 @@ MACRO sky130_fd_sc_hs__or4b_4
 END sky130_fd_sc_hs__or4b_4
 MACRO sky130_fd_sc_hs__or4bb_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -50055,7 +49716,6 @@ MACRO sky130_fd_sc_hs__or4bb_1
 END sky130_fd_sc_hs__or4bb_1
 MACRO sky130_fd_sc_hs__or4bb_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -50199,7 +49859,6 @@ MACRO sky130_fd_sc_hs__or4bb_2
 END sky130_fd_sc_hs__or4bb_2
 MACRO sky130_fd_sc_hs__or4bb_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -50381,7 +50040,6 @@ MACRO sky130_fd_sc_hs__or4bb_4
 END sky130_fd_sc_hs__or4bb_4
 MACRO sky130_fd_sc_hs__sdfbbn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  16.80000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -50724,7 +50382,6 @@ MACRO sky130_fd_sc_hs__sdfbbn_1
 END sky130_fd_sc_hs__sdfbbn_1
 MACRO sky130_fd_sc_hs__sdfbbn_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  18.24000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -51079,7 +50736,6 @@ MACRO sky130_fd_sc_hs__sdfbbn_2
 END sky130_fd_sc_hs__sdfbbn_2
 MACRO sky130_fd_sc_hs__sdfbbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  15.84000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -51392,7 +51048,6 @@ MACRO sky130_fd_sc_hs__sdfbbp_1
 END sky130_fd_sc_hs__sdfbbp_1
 MACRO sky130_fd_sc_hs__sdfrbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.92000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -51687,7 +51342,6 @@ MACRO sky130_fd_sc_hs__sdfrbp_1
 END sky130_fd_sc_hs__sdfrbp_1
 MACRO sky130_fd_sc_hs__sdfrbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.88000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -51972,7 +51626,6 @@ MACRO sky130_fd_sc_hs__sdfrbp_2
 END sky130_fd_sc_hs__sdfrbp_2
 MACRO sky130_fd_sc_hs__sdfrtn_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.92000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -52240,7 +51893,6 @@ MACRO sky130_fd_sc_hs__sdfrtn_1
 END sky130_fd_sc_hs__sdfrtn_1
 MACRO sky130_fd_sc_hs__sdfrtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.44000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -52520,7 +52172,6 @@ MACRO sky130_fd_sc_hs__sdfrtp_1
 END sky130_fd_sc_hs__sdfrtp_1
 MACRO sky130_fd_sc_hs__sdfrtp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.40000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -52827,7 +52478,6 @@ MACRO sky130_fd_sc_hs__sdfrtp_2
 END sky130_fd_sc_hs__sdfrtp_2
 MACRO sky130_fd_sc_hs__sdfrtp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.88000 BY  3.330000 ;
   SYMMETRY X Y R90 ;
@@ -53111,7 +52761,6 @@ MACRO sky130_fd_sc_hs__sdfrtp_4
 END sky130_fd_sc_hs__sdfrtp_4
 MACRO sky130_fd_sc_hs__sdfsbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.40000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -53393,7 +53042,6 @@ MACRO sky130_fd_sc_hs__sdfsbp_1
 END sky130_fd_sc_hs__sdfsbp_1
 MACRO sky130_fd_sc_hs__sdfsbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  17.76000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -53702,7 +53350,6 @@ MACRO sky130_fd_sc_hs__sdfsbp_2
 END sky130_fd_sc_hs__sdfsbp_2
 MACRO sky130_fd_sc_hs__sdfstp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.92000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -53976,7 +53623,6 @@ MACRO sky130_fd_sc_hs__sdfstp_1
 END sky130_fd_sc_hs__sdfstp_1
 MACRO sky130_fd_sc_hs__sdfstp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  14.88000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -54259,7 +53905,6 @@ MACRO sky130_fd_sc_hs__sdfstp_2
 END sky130_fd_sc_hs__sdfstp_2
 MACRO sky130_fd_sc_hs__sdfstp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  15.84000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -54553,7 +54198,6 @@ MACRO sky130_fd_sc_hs__sdfstp_4
 END sky130_fd_sc_hs__sdfstp_4
 MACRO sky130_fd_sc_hs__sdfxbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.48000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -54799,7 +54443,6 @@ MACRO sky130_fd_sc_hs__sdfxbp_1
 END sky130_fd_sc_hs__sdfxbp_1
 MACRO sky130_fd_sc_hs__sdfxbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  13.44000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -55057,7 +54700,6 @@ MACRO sky130_fd_sc_hs__sdfxbp_2
 END sky130_fd_sc_hs__sdfxbp_2
 MACRO sky130_fd_sc_hs__sdfxtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  11.04000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -55283,7 +54925,6 @@ MACRO sky130_fd_sc_hs__sdfxtp_1
 END sky130_fd_sc_hs__sdfxtp_1
 MACRO sky130_fd_sc_hs__sdfxtp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE 12 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -55512,7 +55153,6 @@ MACRO sky130_fd_sc_hs__sdfxtp_2
 END sky130_fd_sc_hs__sdfxtp_2
 MACRO sky130_fd_sc_hs__sdfxtp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  12.48000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -55748,7 +55388,6 @@ MACRO sky130_fd_sc_hs__sdfxtp_4
 END sky130_fd_sc_hs__sdfxtp_4
 MACRO sky130_fd_sc_hs__sdlclkp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  7.680000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -55921,7 +55560,6 @@ MACRO sky130_fd_sc_hs__sdlclkp_1
 END sky130_fd_sc_hs__sdlclkp_1
 MACRO sky130_fd_sc_hs__sdlclkp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -56099,7 +55737,6 @@ MACRO sky130_fd_sc_hs__sdlclkp_2
 END sky130_fd_sc_hs__sdlclkp_2
 MACRO sky130_fd_sc_hs__sdlclkp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -56288,7 +55925,6 @@ MACRO sky130_fd_sc_hs__sdlclkp_4
 END sky130_fd_sc_hs__sdlclkp_4
 MACRO sky130_fd_sc_hs__sedfxbp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  16.32000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -56593,7 +56229,6 @@ MACRO sky130_fd_sc_hs__sedfxbp_1
 END sky130_fd_sc_hs__sedfxbp_1
 MACRO sky130_fd_sc_hs__sedfxbp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  17.28000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -56908,7 +56543,6 @@ MACRO sky130_fd_sc_hs__sedfxbp_2
 END sky130_fd_sc_hs__sedfxbp_2
 MACRO sky130_fd_sc_hs__sedfxtp_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  15.36000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57196,7 +56830,6 @@ MACRO sky130_fd_sc_hs__sedfxtp_1
 END sky130_fd_sc_hs__sedfxtp_1
 MACRO sky130_fd_sc_hs__sedfxtp_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  16.32000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57491,7 +57124,6 @@ MACRO sky130_fd_sc_hs__sedfxtp_2
 END sky130_fd_sc_hs__sedfxtp_2
 MACRO sky130_fd_sc_hs__sedfxtp_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  16.80000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57791,10 +57423,8 @@ MACRO sky130_fd_sc_hs__sedfxtp_4
 END sky130_fd_sc_hs__sedfxtp_4
 MACRO sky130_fd_sc_hs__tap_1
 # cherry - to prevent padding violations
-# should be WELLTAP but that is not supported in LEF 5.5
-  CLASS CORE SPACER ;
+  CLASS CORE WELLTAP ;
 #  CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57842,7 +57472,6 @@ MACRO sky130_fd_sc_hs__tap_1
 END sky130_fd_sc_hs__tap_1
 MACRO sky130_fd_sc_hs__tap_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.960000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57892,7 +57521,6 @@ MACRO sky130_fd_sc_hs__tap_2
 END sky130_fd_sc_hs__tap_2
 MACRO sky130_fd_sc_hs__tapmet1_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.960000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57946,7 +57574,6 @@ MACRO sky130_fd_sc_hs__tapmet1_2
 END sky130_fd_sc_hs__tapmet1_2
 MACRO sky130_fd_sc_hs__tapvgnd_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -57993,7 +57620,6 @@ MACRO sky130_fd_sc_hs__tapvgnd_1
 END sky130_fd_sc_hs__tapvgnd_1
 MACRO sky130_fd_sc_hs__tapvgnd2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58040,7 +57666,6 @@ MACRO sky130_fd_sc_hs__tapvgnd2_1
 END sky130_fd_sc_hs__tapvgnd2_1
 MACRO sky130_fd_sc_hs__tapvpwrvgnd_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58074,7 +57699,6 @@ MACRO sky130_fd_sc_hs__tapvpwrvgnd_1
 END sky130_fd_sc_hs__tapvpwrvgnd_1
 MACRO sky130_fd_sc_hs__xnor2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.360000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58187,7 +57811,6 @@ MACRO sky130_fd_sc_hs__xnor2_1
 END sky130_fd_sc_hs__xnor2_1
 MACRO sky130_fd_sc_hs__xnor2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  5.280000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58332,7 +57955,6 @@ MACRO sky130_fd_sc_hs__xnor2_2
 END sky130_fd_sc_hs__xnor2_2
 MACRO sky130_fd_sc_hs__xnor2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58507,7 +58129,6 @@ MACRO sky130_fd_sc_hs__xnor2_4
 END sky130_fd_sc_hs__xnor2_4
 MACRO sky130_fd_sc_hs__xnor3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.160000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58711,7 +58332,6 @@ MACRO sky130_fd_sc_hs__xnor3_1
 END sky130_fd_sc_hs__xnor3_1
 MACRO sky130_fd_sc_hs__xnor3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -58918,7 +58538,6 @@ MACRO sky130_fd_sc_hs__xnor3_2
 END sky130_fd_sc_hs__xnor3_2
 MACRO sky130_fd_sc_hs__xnor3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.08000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -59143,7 +58762,6 @@ MACRO sky130_fd_sc_hs__xnor3_4
 END sky130_fd_sc_hs__xnor3_4
 MACRO sky130_fd_sc_hs__xor2_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -59251,7 +58869,6 @@ MACRO sky130_fd_sc_hs__xor2_1
 END sky130_fd_sc_hs__xor2_1
 MACRO sky130_fd_sc_hs__xor2_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  4.800000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -59378,7 +58995,6 @@ MACRO sky130_fd_sc_hs__xor2_2
 END sky130_fd_sc_hs__xor2_2
 MACRO sky130_fd_sc_hs__xor2_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  8.640000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -59554,7 +59170,6 @@ MACRO sky130_fd_sc_hs__xor2_4
 END sky130_fd_sc_hs__xor2_4
 MACRO sky130_fd_sc_hs__xor3_1
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.120000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -59752,7 +59367,6 @@ MACRO sky130_fd_sc_hs__xor3_1
 END sky130_fd_sc_hs__xor3_1
 MACRO sky130_fd_sc_hs__xor3_2
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  9.600000 BY  3.330000 ;
   SYMMETRY X Y ;
@@ -59959,7 +59573,6 @@ MACRO sky130_fd_sc_hs__xor3_2
 END sky130_fd_sc_hs__xor3_2
 MACRO sky130_fd_sc_hs__xor3_4
   CLASS CORE ;
-  SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  10.56000 BY  3.330000 ;
   SYMMETRY X Y ;
