@@ -71,21 +71,22 @@ detailed_placement
 filler_placement $filler_cells
 check_placement
 
-set cts_def [make_result_file ${design}_cts.def]
+set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
 
 # missing vsrc file
 #analyze_power_grid
 
-set route_guide [make_result_file ${design}.route_guide]
+set route_guide [make_result_file ${design}_${platform}.route_guide]
 fastroute -output_file $route_guide\
-          -max_routing_layer 10 \
-          -unidirectional_routing true \
-          -capacity_adjustment 0.15 \
-          -layers_adjustments {{2 0.5} {3 0.5}} \
-          -overflow_iterations 100
+  -max_routing_layer $max_routing_layer \
+  -unidirectional_routing true \
+  -layers_adjustments $layers_adjustments \
+  -layers_pitches $layers_pitches \
+  -overflow_iterations 100 \
+  -verbose 2
 
-set routed_def [make_result_file ${design}_route.def]
+set routed_def [make_result_file ${design}_${platform}_route.def]
 
 set tr_lef [make_tr_lef]
 set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
@@ -117,7 +118,7 @@ report_power
 report_floating_nets -verbose
 report_design_area
 
-set verilog_file [make_result_file ${design}.v]
+set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
 if { ![info exists drv_count] } {

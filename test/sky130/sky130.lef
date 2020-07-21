@@ -16187,7 +16187,9 @@ MACRO sky130_fd_sc_hs__conb_1
   END
 END sky130_fd_sc_hs__conb_1
 MACRO sky130_fd_sc_hs__decap_4
-  CLASS CORE ;
+# cherry - to prevent padding violations
+  CLASS CORE SPACER ;
+#  CLASS CORE ;
   SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
@@ -57788,7 +57790,10 @@ MACRO sky130_fd_sc_hs__sedfxtp_4
   END
 END sky130_fd_sc_hs__sedfxtp_4
 MACRO sky130_fd_sc_hs__tap_1
-  CLASS CORE ;
+# cherry - to prevent padding violations
+# should be WELLTAP but that is not supported in LEF 5.5
+  CLASS CORE SPACER ;
+#  CLASS CORE ;
   SOURCE USER ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
