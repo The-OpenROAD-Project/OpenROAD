@@ -5,7 +5,10 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-eval $init_floorplan_cmd
+initialize_floorplan -site $site \
+  -die_area $die_area \
+  -core_area $core_area \
+  -tracks $tracks_file
 
 # remove buffers inserted by synthesis 
 remove_buffers
@@ -41,6 +44,7 @@ resize
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
 
+write_def [make_result_file ${design}_${platform}_resize.def]
 set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
 optimize_mirroring
