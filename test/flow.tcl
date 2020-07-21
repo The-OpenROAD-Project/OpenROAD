@@ -5,7 +5,10 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-eval $init_floorplan_cmd
+initialize_floorplan -site $site \
+  -die_area $die_area \
+  -core_area $core_area \
+  -tracks $tracks_file
 
 # remove buffers inserted by synthesis 
 remove_buffers
