@@ -44,7 +44,6 @@ resize
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
 
-write_def [make_result_file ${design}_${platform}_resize.def]
 set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
 optimize_mirroring
