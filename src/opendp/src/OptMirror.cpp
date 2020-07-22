@@ -84,7 +84,9 @@ Opendp::optimizeMirroring()
     double hpwl_after = hpwl();
     printf("HPWL before          %8.1f u\n", dbuToMicrons(hpwl_before));
     printf("HPWL after           %8.1f u\n", dbuToMicrons(hpwl_after));
-    double hpwl_delta = (hpwl_after - hpwl_before) / hpwl_before * 100;
+    double hpwl_delta = (hpwl_before != 0.0)
+      ? (hpwl_after - hpwl_before) / hpwl_before * 100
+      : 0.0;
     printf("HPWL delta           %8.0f %%\n", hpwl_delta);
   }
 }
@@ -114,14 +116,18 @@ Opendp::findMirrorCandidates(NetBoxes &net_boxes,
     dbNet *net = net_box.net;
     Rect &box = net_box.box;
     for (dbITerm *iterm : net->getITerms()) {
-      int x, y;
-      if (iterm->getAvgXY(&x, &y)) {
-	if (x == box.xMin() || x == box.xMax()
-	    || y == box.yMin() || y == box.yMax()) {
-	  dbInst *inst = iterm->getInst();
-	  if (existing.find(inst) == existing.end()) {
-	    mirror_candidates.push_back(inst);
-	    existing.insert(inst);
+      dbInst *inst = iterm->getInst();
+      if (inst->isCore()) {
+	int x, y;
+	if (iterm->getAvgXY(&x, &y)) {
+	  if (x == box.xMin() || x == box.xMax()
+	      || y == box.yMin() || y == box.yMax()) {
+	    dbInst *inst = iterm->getInst();
+	    if (existing.find(inst) == existing.end()) {
+	      mirror_candidates.push_back(inst);
+	      existing.insert(inst);
+	      //printf("candidate %s\n", inst->getConstName());
+	    }
 	  }
 	}
       }
@@ -144,8 +150,10 @@ Opendp::mirrorCandidates(vector<dbInst*> &mirror_candidates)
     if (hpwl_after > hpwl_before)
       // Undo mirroring if hpwl is worse.
       inst->setLocationOrient(orient);
-    else
+    else {
+      //printf("mirror %s\n", inst->getConstName());
       mirror_count++;
+    }
   }
   return mirror_count;
 }
