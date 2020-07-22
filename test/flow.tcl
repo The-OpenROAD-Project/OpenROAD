@@ -70,7 +70,7 @@ detailed_placement
 # CTS trashes the timing state and detailed placement moves instances
 # so update parastic estimates.
 estimate_parasitics -placement
-repair_hold_violations -buffer_cell $resize_buffer_cell
+repair_hold_violations -buffer_cell $hold_buffer_cell
 
 detailed_placement
 filler_placement $filler_cells
