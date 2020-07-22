@@ -29,7 +29,9 @@ pdngen -verbose $pdn_cfg
 # pre-placement/sizing wireload timing
 report_checks
 
-global_placement -disable_routability_driven -density $place_density \
+global_placement -disable_routability_driven \
+  -density $global_place_density \
+  -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
 # resize
