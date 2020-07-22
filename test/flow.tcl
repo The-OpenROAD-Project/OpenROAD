@@ -17,7 +17,7 @@ io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_laye
 
 if { [have_macros] } {
   # tdms_place (but replace isn't timing driven)
-  global_placement -disable_routability_driven -density $place_density
+  global_placement -disable_routability_driven -density $global_place_density
 
   macro_placement -global_config $ip_global_cfg
 }
