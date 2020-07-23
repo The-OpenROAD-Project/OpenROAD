@@ -117,7 +117,8 @@ Opendp::findMirrorCandidates(NetBoxes &net_boxes,
     Rect &box = net_box.box;
     for (dbITerm *iterm : net->getITerms()) {
       dbInst *inst = iterm->getInst();
-      if (inst->isCore()) {
+      if (inst->isCore()
+	  && !inst->isFixed()) {
 	int x, y;
 	if (iterm->getAvgXY(&x, &y)) {
 	  if (x == box.xMin() || x == box.xMax()
