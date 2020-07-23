@@ -234,33 +234,34 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
         std::map<int,uint> fanoutcount;
 
         // create subNets
-        unsigned numClkNets = 0; 
+        _numClkNets = 0; 
         const Clock::SubNet* rootSubNet = nullptr;
         clockNet.forEachSubNet( [&] (const Clock::SubNet& subNet) {
                         bool outputPinFound = true;
                         bool inputPinFound = true;
+                        bool leafLevelNet = false;
                         //std::cout << "    SubNet: " << subNet.getName() << "\n";
                         if (("clknet_0_" + clockNet.getName()) == subNet.getName()){
                                 rootSubNet = &subNet;
                         }
                         odb::dbNet* clkSubNet = odb::dbNet::create(_block, subNet.getName().c_str());
-                        ++numClkNets;
+                        ++_numClkNets;
                         clkSubNet->setSigType(odb::dbSigType::CLOCK);
                         
                         //std::cout << "      Driver: " << subNet.getDriver()->getName() << "\n";
                        
                         odb::dbInst* driver = _block->findInst(subNet.getDriver()->getName().c_str());
+                        odb::dbITerm* driverInputPin = getFirstInput(driver);
+                        odb::dbNet* inputNet = driverInputPin->getNet();
                         odb::dbITerm* outputPin = driver->getFirstOutput();
                         if (outputPin == nullptr) {
                                 outputPinFound = false;
                         }
                         odb::dbITerm::connect(outputPin, clkSubNet); 
 
-                        if ( fanoutcount.find(subNet.getNumSinks()) == fanoutcount.end() ) {
-                                fanoutcount[subNet.getNumSinks()] = 0;
+                        if (subNet.getNumSinks() == 0){
+                                inputPinFound = false;
                         }
-
-                        fanoutcount[subNet.getNumSinks()] = fanoutcount[subNet.getNumSinks()] + 1;
 
                         subNet.forEachSink( [&] (ClockInst *inst) {
                                 //std::cout << "      " << inst->getName() << "\n";
@@ -270,18 +271,33 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                                         inputPin = getFirstInput(sink);
                                 } else {
                                         inputPin = _block->findITerm(inst->getName().c_str());
+                                        leafLevelNet = true;
                                 }
                                 if (inputPin == nullptr) {
                                         inputPinFound = false;
+                                } else {
+                                        if (!inputPin->getInst()->isPlaced()){
+                                                inputPinFound = false;
+                                        }
                                 }
                                 odb::dbITerm::connect(inputPin, clkSubNet); 
                         });
 
+                        if (leafLevelNet){
+                                //Report fanout values only for sink nets
+                                if ( fanoutcount.find(subNet.getNumSinks()) == fanoutcount.end() ) {
+                                        fanoutcount[subNet.getNumSinks()] = 0;
+                                }
+                                fanoutcount[subNet.getNumSinks()] = fanoutcount[subNet.getNumSinks()] + 1;
+                        }
+
                         if (inputPinFound == false || outputPinFound == false){
-                                std::cout << subNet.getName() << " not fully connected. Removing it.\n";
+                                // Net not fully connected. Removing it.
                                 disconnectAllPinsFromNet(clkSubNet);
                                 odb::dbNet::destroy(clkSubNet);
-                                --numClkNets;
+                                --_numClkNets;
+                                odb::dbInst::destroy(driver);
+                                checkUpstreamConnections(inputNet);
                         }
                 });       
         
@@ -315,8 +331,8 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
         std::cout << " Minimum number of buffers in the clock path: " << minPath << ".\n";
         std::cout << " Maximum number of buffers in the clock path: " << maxPath << ".\n";
 
-        std::cout << "    Created " << numClkNets << " clock nets.\n";
-        long int currentTotalNets = _options->getNumClockSubnets() + numClkNets;
+        std::cout << "    Created " << _numClkNets << " clock nets.\n";
+        long int currentTotalNets = _options->getNumClockSubnets() + _numClkNets;
         _options->setNumClockSubnets(currentTotalNets);
         
         std::cout << fanoutDistString << std::endl;
@@ -373,6 +389,28 @@ void DbWrapper::disconnectAllPinsFromNet(odb::dbNet* net) {
                 odb::dbITerm* iterm = *itr;
                 odb::dbITerm::disconnect(iterm);
         }
+}
+
+void DbWrapper::checkUpstreamConnections(odb::dbNet* net) {
+        odb::dbNet* currentNet = net;
+        while (currentNet->getITermCount() <= 1){
+                //Net is incomplete, only 1 pin.
+                odb::dbITerm* firstITerm = currentNet->get1stITerm();
+                if (firstITerm == nullptr) {
+                        disconnectAllPinsFromNet(currentNet);
+                        odb::dbNet::destroy(currentNet);
+                        break;
+                } else {
+                        odb::dbInst* bufferInst = firstITerm->getInst();
+                        odb::dbITerm* driverInputPin = getFirstInput(bufferInst);
+                        disconnectAllPinsFromNet(currentNet);
+                        odb::dbNet::destroy(currentNet);
+                        currentNet = driverInputPin->getNet();
+                        --_numClkNets;
+                        odb::dbInst::destroy(bufferInst);
+                }
+        }
+
 }
 
 void DbWrapper::createClockBuffers(const Clock& clockNet) {

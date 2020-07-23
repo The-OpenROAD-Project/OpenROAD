@@ -158,6 +158,9 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-root_buf)] } {
     set root_buf $keys(-root_buf)
+    if { [llength $root_buf] > 1} {
+      set root_buf [lindex $root_buf 0]
+    }
     $cts set_root_buffer $root_buf
   } else {
     if { [info exists keys(-buf_list)] } {
