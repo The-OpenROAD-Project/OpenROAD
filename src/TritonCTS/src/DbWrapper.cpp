@@ -235,6 +235,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
 
         // create subNets
         _numClkNets = 0; 
+        _numFixedNets = 0;
         const Clock::SubNet* rootSubNet = nullptr;
         clockNet.forEachSubNet( [&] (const Clock::SubNet& subNet) {
                         bool outputPinFound = true;
@@ -294,6 +295,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                                 // Net not fully connected. Removing it.
                                 disconnectAllPinsFromNet(clkSubNet);
                                 odb::dbNet::destroy(clkSubNet);
+                                _numFixedNets++;
                                 --_numClkNets;
                                 odb::dbInst::destroy(driver);
                                 checkUpstreamConnections(inputNet);
@@ -327,8 +329,12 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                 }
         });
 
-        std::cout << " Minimum number of buffers in the clock path: " << minPath << ".\n";
-        std::cout << " Maximum number of buffers in the clock path: " << maxPath << ".\n";
+        std::cout << "    Minimum number of buffers in the clock path: " << minPath << ".\n";
+        std::cout << "    Maximum number of buffers in the clock path: " << maxPath << ".\n";
+
+        if (_numFixedNets > 0){
+                std::cout << "    " << _numFixedNets << " clock nets were removed/fixed.\n";
+        }
 
         std::cout << "    Created " << _numClkNets << " clock nets.\n";
         long int currentTotalNets = _options->getNumClockSubnets() + _numClkNets;
@@ -405,6 +411,7 @@ void DbWrapper::checkUpstreamConnections(odb::dbNet* net) {
                         disconnectAllPinsFromNet(currentNet);
                         odb::dbNet::destroy(currentNet);
                         currentNet = driverInputPin->getNet();
+                        ++_numFixedNets;
                         --_numClkNets;
                         odb::dbInst::destroy(bufferInst);
                 }

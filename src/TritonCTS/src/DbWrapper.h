@@ -79,6 +79,7 @@ private:
         TritonCTSKernel*  _kernel               = nullptr;  
         unsigned          _numberOfClocks       = 0;       
         unsigned          _numClkNets           = 0;   
+        unsigned          _numFixedNets         = 0;
 
         void parseClockNames(std::vector<std::string>& clockNetNames) const;
 
