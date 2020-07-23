@@ -17,7 +17,7 @@ io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_laye
 
 if { [have_macros] } {
   # tdms_place (but replace isn't timing driven)
-  global_placement -disable_routability_driven -density $place_density
+  global_placement -disable_routability_driven -density $global_place_density
 
   macro_placement -global_config $ip_global_cfg
 }
@@ -29,7 +29,9 @@ pdngen -verbose $pdn_cfg
 # pre-placement/sizing wireload timing
 report_checks
 
-global_placement -disable_routability_driven -density $place_density \
+global_placement -disable_routability_driven \
+  -density $global_place_density \
+  -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
 # resize
@@ -68,7 +70,8 @@ detailed_placement
 # CTS trashes the timing state and detailed placement moves instances
 # so update parastic estimates.
 estimate_parasitics -placement
-repair_hold_violations -buffer_cell $resize_buffer_cell
+set_propagated_clock [all_clocks]
+repair_hold_violations -buffer_cell $hold_buffer_cell
 
 detailed_placement
 filler_placement $filler_cells

@@ -84,14 +84,14 @@ openroad
   cmd_file           source cmd_file
 ```
 
-OpenROAD sources the TCL command file `~/.openroad` unless the command
+OpenROAD sources the Tcl command file `~/.openroad` unless the command
 line option `-no_init` is specified.
 
-OpenROAD then sources the command file cmd_file. Unless the `-exit`
-command line flag is specified it enters and interactive TCL command
-interpreter.
+OpenROAD then sources the command file cmd_file if it is specified on
+the command line. Unless the `-exit` command line flag is specified it
+enters and interactive Tcl command interpreter.
 
-OpenROAD is run using TCL scripts. The following commands are used to read
+OpenROAD is run using Tcl scripts. The following commands are used to read
 and write design data.
 
 ```
@@ -150,6 +150,24 @@ link_design top
 # Write the db for future runs.
 write_db reg1.db
 ```
+
+#### Example Scripts
+
+Example scripts demonstrating how to run OpenROAD on sample designs
+can be found in /test. Flow tests taking sample designs from synthesis
+verilog to routed design in the open source technologies Nangate45 and
+Sky130 are shown below.
+
+```
+gcd_nangate45.tcl
+aes_nangate45.tcl
+tinyRocket_nangate45.tcl
+gcd_sky130.tcl
+aes_sky130.tcl
+ibex_sky130.tcl
+```
+
+Each of these designs use the common script `flow.tcl`.
 
 #### Initialize Floorplan
 
