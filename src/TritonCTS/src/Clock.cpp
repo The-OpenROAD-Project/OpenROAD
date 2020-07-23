@@ -109,4 +109,10 @@ void Clock::forEachClockBuffer(const std::function<void(const ClockInst&)>& func
         }
 }
 
+void Clock::forEachClockBuffer(const std::function<void(ClockInst&)>& func) {
+        for (ClockInst& clockBuffer: _clockBuffers) {
+                func(clockBuffer);
+        }
+}
+
 }

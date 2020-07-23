@@ -152,7 +152,7 @@ void DbWrapper::initClock(odb::dbNet* net) {
                                    std::string(mterm->getConstName());
                 DBU x, y;
                 computeITermPosition(iterm, x, y);
-                clockNet.addSink(name, x, y);
+                clockNet.addSink(name, x, y, iterm);
         }
         
         if (clockNet.getNumSinks() < 2) {
@@ -239,7 +239,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
         clockNet.forEachSubNet( [&] (const Clock::SubNet& subNet) {
                         bool outputPinFound = true;
                         bool inputPinFound = true;
-                        bool leafLevelNet = false;
+                        bool leafLevelNet = subNet.isLeafLevel();
                         //std::cout << "    SubNet: " << subNet.getName() << "\n";
                         if (("clknet_0_" + clockNet.getName()) == subNet.getName()){
                                 rootSubNet = &subNet;
@@ -250,7 +250,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                         
                         //std::cout << "      Driver: " << subNet.getDriver()->getName() << "\n";
                        
-                        odb::dbInst* driver = _block->findInst(subNet.getDriver()->getName().c_str());
+                        odb::dbInst* driver = subNet.getDriver()->getDbInst();
                         odb::dbITerm* driverInputPin = getFirstInput(driver);
                         odb::dbNet* inputNet = driverInputPin->getNet();
                         odb::dbITerm* outputPin = driver->getFirstOutput();
@@ -267,11 +267,10 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                                 //std::cout << "      " << inst->getName() << "\n";
                                 odb::dbITerm* inputPin = nullptr;
                                 if (inst->isClockBuffer()) { 
-                                        odb::dbInst* sink = _block->findInst(inst->getName().c_str());
+                                        odb::dbInst* sink = inst->getDbInst();
                                         inputPin = getFirstInput(sink);
                                 } else {
-                                        inputPin = _block->findITerm(inst->getName().c_str());
-                                        leafLevelNet = true;
+                                        inputPin = inst->getDbInputPin();
                                 }
                                 if (inputPin == nullptr) {
                                         inputPinFound = false;
@@ -340,7 +339,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
 }
 
 std::pair<int,int> DbWrapper::branchBufferCount(ClockInst *inst, int bufCounter, Clock& clockNet){
-        odb::dbInst* sink = _block->findInst(inst->getName().c_str());
+        odb::dbInst* sink = inst->getDbInst();
         odb::dbITerm* outITerm = sink->getFirstOutput();
         int minPath = std::numeric_limits<int>::max();
         int maxPath = std::numeric_limits<int>::min();
@@ -413,11 +412,13 @@ void DbWrapper::checkUpstreamConnections(odb::dbNet* net) {
 
 }
 
-void DbWrapper::createClockBuffers(const Clock& clockNet) {
+void DbWrapper::createClockBuffers(Clock& clockNet) {
         unsigned numBuffers = 0;
-        clockNet.forEachClockBuffer([&] (const ClockInst& inst) {
+        clockNet.forEachClockBuffer([&] (ClockInst& inst) {
                 odb::dbMaster* master = _db->findMaster(inst.getMaster().c_str());
                 odb::dbInst* newInst = odb::dbInst::create(_block, master, inst.getName().c_str());
+                inst.setInstObj(newInst);
+                inst.setInputPinObj(getFirstInput(newInst));
                 newInst->setLocation(inst.getX(), inst.getY());        
                 newInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
                 ++numBuffers;

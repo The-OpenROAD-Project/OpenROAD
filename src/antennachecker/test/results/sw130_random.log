@@ -1554,8 +1554,6 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 6 components and 48 component-terminals.
 Notice 0:     Created 2 nets and 6 connections.
 Notice 0: Finished DEF file: sw130_random.def
-Notice 0: 
-disconnected net 55  net50
 Notice 0: Split top of 1 T shapes.
 Number of pins violated: 1
 Number of nets violated: 1
