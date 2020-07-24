@@ -188,7 +188,7 @@ Checking out the OpenROAD repo with --recursive installs all of the
 OpenRoad tools and their submodules.
 
 ```
-git clone --recusive https://github.com/The-OpenROAD-Project/OpenROAD.git
+git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
 mkdir build
 cd build
