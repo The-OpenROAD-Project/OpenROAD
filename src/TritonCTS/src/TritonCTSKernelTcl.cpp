@@ -50,6 +50,14 @@ void TritonCTSKernel::set_only_characterization(bool enable) {
         _options.setOnlyCharacterization(enable);
 }
 
+void TritonCTSKernel::set_simple_cts(bool enable) {
+        _options.setSimpleCts(enable);
+}
+
+void TritonCTSKernel::set_sink_clustering(bool enable) {
+        _options.setSinkClustering(enable);
+}
+
 void TritonCTSKernel::set_auto_lut(bool enable) {
         _options.setAutoLut(enable);
 }
@@ -188,8 +196,29 @@ void TritonCTSKernel::set_disable_post_cts(bool disable) {
 void TritonCTSKernel::set_clustering_exponent(unsigned power){
         _options.setClusteringPower(power);
 }
+
 void TritonCTSKernel::set_clustering_unbalance_ratio(double ratio){
         _options.setClusteringCapacity(ratio);
+}
+
+void TritonCTSKernel::set_geo_matching_threshold(unsigned threshold) {
+	_options.setGeoMatchingThreshold(threshold);
+}
+
+void TritonCTSKernel::set_sink_clustering_size(unsigned size){
+        _options.setSizeSinkClustering(size);
+}
+
+void TritonCTSKernel::set_clustering_diameter(double distance){
+        _options.setMaxDiameter(distance);
+}
+
+void TritonCTSKernel::set_num_static_layers(unsigned num){
+        _options.setNumStaticLayers(num);
+}
+
+void TritonCTSKernel::set_sink_buffer(const char* buffer) {
+        _options.setSinkBuffer(buffer);
 }
 
 }

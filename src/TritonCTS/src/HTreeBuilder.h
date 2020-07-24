@@ -197,7 +197,7 @@ private:
         void computeBranchSinks(LevelTopology& topology, unsigned branchIdx,
                                 std::vector<std::pair<float,float>>& sinkLocations) const;
         
-        bool isVertical(unsigned level) const { return level % 2 == 0; }
+        bool isVertical(unsigned level) const { return level % 2 == (_sinkRegion.getHeight() >= _sinkRegion.getWidth()); }
         bool isHorizontal(unsigned level) const { return !isVertical(level); }
 
         unsigned computeGridSizeX(unsigned level) const { return std::pow(2, (level + 1) / 2); }
@@ -209,8 +209,20 @@ private:
                                                  unsigned branchPtIdx1,
                                                  unsigned branchPtIdx2, 
                                                  const Point<double>& rootLocation,
-                                                 const std::vector<std::pair<float, float>>& topLevelSinks );
-        
+                                                 const std::vector<std::pair<float, float>>& sinks);
+        void preClusteringOpt(const std::vector<std::pair<float, float>>& sinks,
+                              std::vector<std::pair<float, float>>& points,
+                              std::vector<unsigned>& mapSinkToPoint);
+        void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
+                                    float maxDiameter, unsigned clusterSize);
+        void assignSinksToBranches(LevelTopology& topology,
+                                   unsigned branchPtIdx1,
+                                   unsigned branchPtIdx2,
+                                   const std::vector<std::pair<float, float>>& sinks,
+                                   const std::vector<std::pair<float, float>>& points,
+                                   const std::vector<unsigned>& mapSinkToPoint,
+                                   const std::vector<std::vector<unsigned>>& clusters);        
+
         bool isSubRegionTooSmall(double width, double height) const {
                 if (width < _minLengthSinkRegion || height < _minLengthSinkRegion ) {
                         return true;
@@ -228,6 +240,8 @@ private:
 protected:
         Box<double>                _sinkRegion;
         std::vector<LevelTopology> _topologyForEachLevel;
+        std::map<Point<double>, ClockInst*> _mapLocationToSink;
+        std::vector<std::pair<float, float>> _topLevelSinksClustered;
         
         DBU      _wireSegmentUnit     = -1;
         unsigned _minInputCap         =  1;

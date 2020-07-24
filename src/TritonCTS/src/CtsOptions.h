@@ -75,6 +75,10 @@ public:
         bool runAutoLut() const { return _autoLutEnable; }
         void setOnlyCharacterization(bool enable) { _onlyCharacterization = enable; } 
         bool getOnlyCharacterization() const { return _onlyCharacterization; }
+        void setSimpleCts(bool enable) { _simpleCts = enable; } 
+        bool getSimpleCts() const { return _simpleCts; }
+        void setSinkClustering(bool enable) { _sinkClusteringEnable = enable; } 
+        bool getSinkClustering() const { return _sinkClusteringEnable; }
         void setNumMaxLeafSinks(unsigned numSinks) { _numMaxLeafSinks = numSinks; }
         unsigned getNumMaxLeafSinks() const { return _numMaxLeafSinks; }        
         void setMaxSlew(unsigned slew) { _maxSlew = slew; }
@@ -135,7 +139,16 @@ public:
         void setVertexBuffersEnabled(bool enable) { _vertexBuffersEnable = enable; }
         bool isSimpleSegmentEnabled()  const { return _simpleSegmentsEnable; }
         void setSimpleSegmentsEnabled(bool enable) { _simpleSegmentsEnable = enable; }
-
+        void setGeoMatchingThreshold(unsigned threshold) { _geoMatchingThreshold = threshold; }
+        unsigned getGeoMatchingThreshold() { return _geoMatchingThreshold; }
+        double getMaxDiameter()  const { return _maxDiameter; }
+        void setMaxDiameter(double distance) { _maxDiameter = distance; }
+        unsigned getSizeSinkClustering()  const { return _sinkClustersSize; }
+        void setSizeSinkClustering(unsigned size) { _sinkClustersSize = size; }
+        unsigned getNumStaticLayers()  const { return _numStaticLayers; }
+        void setNumStaticLayers(unsigned num) { _numStaticLayers = num; }
+        void setSinkBuffer(const std::string& buffer) { _sinkBuffer = buffer; }
+        std::string getSinkBuffer() const { return  _sinkBuffer; }
 private:
         std::string _blockName                  = "";
         std::string _lutFile                    = "";
@@ -143,12 +156,15 @@ private:
         std::string _outputPath                 = "";
         std::string _clockNets                  = "";
         std::string _rootBuffer                 = "";
+        std::string _sinkBuffer                 = "";
         std::string _metricFile                 = "";
         DBU         _dbUnits                    = -1;
         unsigned    _wireSegmentUnit            = 0;
         unsigned    _dbId                       = 0;
         bool        _plotSolution               = false;
         bool        _onlyCharacterization       = false;
+        bool        _simpleCts                  = false;
+        bool        _sinkClusteringEnable       = false;
         bool        _autoLutEnable              = true;
         bool        _simpleSegmentsEnable       = false;
         bool        _vertexBuffersEnable        = false;
@@ -177,6 +193,10 @@ private:
         long int    _clockSubnets               = 0;
         long int    _buffersInserted            = 0;
         long int    _sinks                      = 0;
+        unsigned    _geoMatchingThreshold       = 100000;
+        double      _maxDiameter                = 50;
+        unsigned    _sinkClustersSize           = 20;
+        unsigned    _numStaticLayers            = 0;
         std::vector<std::string> _bufferList;
         std::vector<odb::dbNet*> _clockNetsObjs;
 };
