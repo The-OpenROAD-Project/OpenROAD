@@ -6,8 +6,8 @@ set design "aes"
 set top_module "aes_cipher_top"
 set synth_verilog "aes_sky130.v"
 set sdc_file "aes_sky130.sdc"
-set die_area {0 0 620.15 620.6}
-set core_area {10.07 11.2 610.27 610.8}
+set die_area {0 0 2000 2000}
+set core_area {30 30 1770 1770}
 set max_drv_count 1
 
 source -echo "flow.tcl"

@@ -34,6 +34,10 @@ global_placement -disable_routability_driven \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
+# easier to see placement pre-filler
+set global_place_def [make_result_file ${design}_${platform}_global_place.def]
+write_def $global_place_def
+
 # resize
 set_wire_rc -layer $wire_rc_layer
 estimate_parasitics -placement
