@@ -1531,9 +1531,9 @@ Resizer::repairNet(Net *net,
       Point drvr_loc = db_network_->location(drvr->pin());
       debugPrint4(debug_, "repair_net", 1, "driver %s (%s %s) l=%s\n",
 		  sdc_network_->pathName(drvr_pin),
-		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 0));
+		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getX()), 1),
+		  units_->distanceUnit()->asString(dbuToMeters(drvr_loc.getY()), 1),
+		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1));
       SteinerPt drvr_pt = tree->steinerPt(drvr_pin);
       int ignore1;
       float ignore2, ignore3;
@@ -1615,10 +1615,10 @@ Resizer::repairNet(SteinerTree *tree,
   Point pt_loc = tree->location(pt);
   int pt_x = pt_loc.getX();
   int pt_y = pt_loc.getY();
-  debugPrint4(debug_, "repair_net", 1, "%*spt (%s %s)\n",
+  debugPrint4(debug_, "repair_net", 2, "%*spt (%s %s)\n",
 	      level, "",
-	      units_->distanceUnit()->asString(dbuToMeters(pt_x), 0),
-	      units_->distanceUnit()->asString(dbuToMeters(pt_y), 0));
+	      units_->distanceUnit()->asString(dbuToMeters(pt_x), 1),
+	      units_->distanceUnit()->asString(dbuToMeters(pt_y), 1));
   SteinerPt left = tree->left(pt);
   int wire_length_left = 0;
   float pin_cap_left = 0.0;
@@ -1637,21 +1637,25 @@ Resizer::repairNet(SteinerTree *tree,
     repairNet(tree, right, pt, net, max_cap, max_fanout, max_length,
 	      buffer_cell, level + 1,
 	      wire_length_right, pin_cap_right, fanout_right, loads_right);
-  debugPrint6(debug_, "repair_net", 1, "%*sleft=%s %s right=%s %s\n",
+  debugPrint6(debug_, "repair_net", 3, "%*sleft l=%s cap=%s, right l=%s cap=%s\n",
 	      level, "",
-	      units_->distanceUnit()->asString(dbuToMeters(wire_length_left), 0),
+	      units_->distanceUnit()->asString(dbuToMeters(wire_length_left), 1),
 	      units_->capacitanceUnit()->asString(pin_cap_left, 2),
-	      units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 0),
+	      units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 1),
 	      units_->capacitanceUnit()->asString(pin_cap_right, 2));
 
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
+  // Add a buffer to left or right branch to stay under the max cap/length/fanout.
   bool repeater_left = false;
   bool repeater_right = false;
-  // Add a buffer to left or right branch to stay under the max length.
   double cap_left = pin_cap_left + dbuToMeters(wire_length_left) * wire_cap_;
   double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_cap_;
+  debugPrint4(debug_, "repair_net", 3, "%*scap_left=%s, right_cap=%s\n",
+	      level, "",
+	      units_->capacitanceUnit()->asString(pin_cap_left, 2),
+	      units_->capacitanceUnit()->asString(pin_cap_right, 2));
   if ((cap_left + cap_right) > max_cap) {
     if (cap_left > cap_right)
       repeater_left = true;
@@ -1695,11 +1699,11 @@ Resizer::repairNet(SteinerTree *tree,
     Pin *load_pin = tree->pin(pt);
     if (load_pin) {
       Point load_loc = db_network_->location(load_pin);
-      debugPrint5(debug_, "repair_net", 1, "%*sload %s (%s %s)\n",
+      debugPrint5(debug_, "repair_net", 2, "%*sload %s (%s %s)\n",
 		  level, "",
 		  sdc_network_->pathName(load_pin),
-		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 0));
+		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 1),
+		  units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 1));
       LibertyPort *load_port = network_->libertyPort(load_pin);
       if (load_port) {
 	pin_cap += portCapacitance(load_port);
@@ -1710,17 +1714,17 @@ Resizer::repairNet(SteinerTree *tree,
       load_pins.push_back(load_pin);
     }
 
+    Point prev_loc = tree->location(prev_pt);
+    int length = Point::manhattanDistance(prev_loc, pt_loc);
+    wire_length += length;
     // Back up from pt to prev_pt adding repeaters every max_length.
     if (max_length > 0) {
-      Point prev_loc = tree->location(prev_pt);
-      int length = Point::manhattanDistance(prev_loc, pt_loc);
-      wire_length += length;
       int prev_x = prev_loc.getX();
       int prev_y = prev_loc.getY();
-      debugPrint4(debug_, "repair_net", 1, "%*swl=%s l=%s\n",
+      debugPrint4(debug_, "repair_net", 3, "%*swl=%s l=%s\n",
 		  level, "",
-		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 0),
-		  units_->distanceUnit()->asString(dbuToMeters(length), 0));
+		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
+		  units_->distanceUnit()->asString(dbuToMeters(length), 1));
       while (wire_length > max_length) {
 	// Distance from pt to repeater backward toward prev_pt.
 	double buf_dist = length - (wire_length - max_length);
@@ -1736,10 +1740,10 @@ Resizer::repairNet(SteinerTree *tree,
 	wire_length = length;
 	pt_x = buf_x;
 	pt_y = buf_y;
-	debugPrint4(debug_, "repair_net", 1, "%*swl=%s l=%s\n",
+	debugPrint4(debug_, "repair_net", 3, "%*swl=%s l=%s\n",
 		    level, "",
-		    units_->distanceUnit()->asString(dbuToMeters(wire_length), 0),
-		    units_->distanceUnit()->asString(dbuToMeters(length), 0));
+		    units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
+		    units_->distanceUnit()->asString(dbuToMeters(length), 1));
       }
     }
   }
@@ -1785,8 +1789,8 @@ Resizer::makeRepeater(int x,
     debugPrint5(debug_, "repair_net", 2, "%*s%s (%s %s)\n",
 		level, "",
 		buffer_name.c_str(),
-		units_->distanceUnit()->asString(dbuToMeters(x), 0),
-		units_->distanceUnit()->asString(dbuToMeters(y), 0));
+		units_->distanceUnit()->asString(dbuToMeters(x), 1),
+		units_->distanceUnit()->asString(dbuToMeters(y), 1));
 
     string buffer_out_name = makeUniqueNetName();
     Instance *parent = db_network_->topInstance();
@@ -1841,8 +1845,8 @@ Resizer::reportLongWires(int count,
       double delay = wire_length * wire_res_ * wire_length * wire_cap_ * 0.5;
       report_->print("%s manhtn %s steiner %s %s\n",
 		     sdc_network_->pathName(drvr_pin),
-		     units_->distanceUnit()->asString(wire_length, 0),
-		     units_->distanceUnit()->asString(steiner_length, 0),
+		     units_->distanceUnit()->asString(wire_length, 1),
+		     units_->distanceUnit()->asString(steiner_length, 1),
 		     units_->timeUnit()->asString(delay, digits));
     }
   }
