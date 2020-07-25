@@ -11,41 +11,6 @@ Notice 0:     Created 31 components and 186 component-terminals.
 Notice 0:     Created 2 special nets and 62 connections.
 Notice 0:     Created 2 nets and 62 connections.
 Notice 0: Finished DEF file: ./results/repair_slew1.def
-max slew
-
-Pin                                    Limit    Slew   Slack
-------------------------------------------------------------
-r28/D                                   0.05    0.10   -0.05 (VIOLATED)
-r29/D                                   0.05    0.10   -0.05 (VIOLATED)
-r19/D                                   0.05    0.10   -0.05 (VIOLATED)
-r5/D                                    0.05    0.10   -0.05 (VIOLATED)
-r6/D                                    0.05    0.10   -0.05 (VIOLATED)
-r9/D                                    0.05    0.10   -0.05 (VIOLATED)
-r15/D                                   0.05    0.10   -0.05 (VIOLATED)
-r8/D                                    0.05    0.10   -0.05 (VIOLATED)
-r16/D                                   0.05    0.10   -0.05 (VIOLATED)
-r18/D                                   0.05    0.10   -0.05 (VIOLATED)
-r7/D                                    0.05    0.10   -0.05 (VIOLATED)
-r17/D                                   0.05    0.10   -0.05 (VIOLATED)
-r27/D                                   0.05    0.10   -0.05 (VIOLATED)
-r26/D                                   0.05    0.10   -0.05 (VIOLATED)
-r25/D                                   0.05    0.10   -0.05 (VIOLATED)
-r3/D                                    0.05    0.10   -0.05 (VIOLATED)
-r13/D                                   0.05    0.10   -0.05 (VIOLATED)
-r4/D                                    0.05    0.10   -0.05 (VIOLATED)
-r14/D                                   0.05    0.10   -0.05 (VIOLATED)
-r24/D                                   0.05    0.10   -0.05 (VIOLATED)
-r23/D                                   0.05    0.10   -0.05 (VIOLATED)
-r22/D                                   0.05    0.10   -0.05 (VIOLATED)
-r2/D                                    0.05    0.10   -0.05 (VIOLATED)
-r12/D                                   0.05    0.10   -0.05 (VIOLATED)
-r11/D                                   0.05    0.10   -0.05 (VIOLATED)
-r31/D                                   0.05    0.10   -0.05 (VIOLATED)
-r30/D                                   0.05    0.10   -0.05 (VIOLATED)
-r20/D                                   0.05    0.10   -0.05 (VIOLATED)
-r21/D                                   0.05    0.10   -0.05 (VIOLATED)
-r10/D                                   0.05    0.10   -0.05 (VIOLATED)
-r1/Q                                    0.05    0.10   -0.05 (VIOLATED)
-
+Found 31 slew violations
 Found 1 slew violations.
 Inserted 2 buffers in 1 nets.
