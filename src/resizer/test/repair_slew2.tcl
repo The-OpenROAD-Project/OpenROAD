@@ -10,6 +10,9 @@ write_hi_fanout_def $def_file 20
 read_def $def_file
 create_clock -period 1 clk1
 
+set_wire_rc -layer metal3
+estimate_parasitics -placement
+
 report_check_types -max_slew -violators
 repair_design -buffer_cell BUF_X2
 report_check_types -max_slew -violators
