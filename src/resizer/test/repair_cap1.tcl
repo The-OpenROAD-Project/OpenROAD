@@ -14,10 +14,10 @@ estimate_parasitics -placement
 
 # flute results are unstable across platforms so just check
 # that the violation goes away
-with_output_to_variable before { report_check_types -max_capacitance }
-if { [string first "VIOLATED" $before] != -1 } { puts "cap limit violation" }
+with_output_to_variable violations { report_check_types -max_cap -violators }
+puts "Found [regexp -all VIOLATED $violations] violations"
 
 repair_design -buffer_cell BUF_X2
 
-with_output_to_variable after { report_check_types -max_capacitance }
-if { [string first "VIOLATED" $after] != -1 } { puts "cap limit violation" }
+with_output_to_variable violations { report_check_types -max_cap -violators }
+puts "Found [regexp -all VIOLATED $violations] violations"

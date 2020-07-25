@@ -18,6 +18,11 @@ set_max_transition .05 [current_design]
 with_output_to_variable violations {
   report_check_types -max_slew -max_cap -max_fanout -violators
 }
-puts "Found [regexp -all VIOLATED $violations] slew violations"
+puts "Found [regexp -all VIOLATED $violations] violations"
+
 repair_design -buffer_cell BUF_X2
-report_check_types -max_slew -max_cap -max_fanout -violators
+
+with_output_to_variable violations {
+  report_check_types -max_slew -max_cap -max_fanout -violators
+}
+puts "Found [regexp -all VIOLATED $violations] violations"

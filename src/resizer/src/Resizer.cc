@@ -1312,18 +1312,6 @@ Resizer::slackGap(Vertex *vertex)
 	     - slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
 }
 
-static float
-cellDriveResistance(const LibertyCell *cell)
-{
-  LibertyCellPortBitIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    LibertyPort *port = port_iter.next();
-    if (port->direction()->isOutput())
-      return port->driveResistance();
-  }
-  return 0.0;
-}
-
 ////////////////////////////////////////////////////////////////
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -1496,6 +1484,14 @@ Resizer::repairNet(Net *net,
 	if (drvr_port) {
 	  // Find max load cap that corresponds to max_slew.
 	  max_cap = findSlewLoadCap(drvr_port, max_slew);
+	  // Find max wire length that corresponds to max_slew.
+	  LibertyPort *buffer_input_port, *buffer_output_port;
+	  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+	  double max_length1 = findMaxSlewWireLength(drvr_port, buffer_input_port, max_slew);
+	  int max_length1_dbu = metersToDbu(max_length1);
+	  if (max_length == 0
+	      || max_length1_dbu < max_length)
+	    max_length = max_length1_dbu;
 	  repair = true;
 	}
       }
@@ -1643,10 +1639,6 @@ Resizer::repairNet(SteinerTree *tree,
 	      units_->capacitanceUnit()->asString(pin_cap_left, 2),
 	      units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 1),
 	      units_->capacitanceUnit()->asString(pin_cap_right, 2));
-
-  LibertyPort *buffer_input_port, *buffer_output_port;
-  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-
   // Add a buffer to left or right branch to stay under the max cap/length/fanout.
   bool repeater_left = false;
   bool repeater_right = false;
@@ -2176,27 +2168,33 @@ Resizer::findMaxWireLength(LibertyCell *buffer_cell)
 {
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
-  double drvr_r = max(drvr_port->driveResistance(RiseFall::rise(), MinMax::max()),
-		      drvr_port->driveResistance(RiseFall::fall(), MinMax::max()));
+  return findMaxWireLength(drvr_port);
+}
+
+double
+Resizer::findMaxWireLength(LibertyPort *drvr_port)
+{
+  LibertyCell *cell = drvr_port->libertyCell();
+  double drvr_r = drvr_port->driveResistance();
   // wire_length1 lower bound
   // wire_length2 upper bound
   double wire_length1 = 0.0;
   // Initial guess with wire resistance same as driver resistance.
   double wire_length2 = drvr_r / wire_res_;
   double tol = .01; // 1%
-  double diff1 = splitWireDelayDiff(wire_length1, buffer_cell);
-  double diff2 = splitWireDelayDiff(wire_length2, buffer_cell);
+  double diff1 = splitWireDelayDiff(wire_length1, cell);
+  double diff2 = splitWireDelayDiff(wire_length2, cell);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
     if (diff2 < 0.0) {
       wire_length1 = wire_length2;
       diff1 = diff2;
       wire_length2 *= 2;
-      diff2 = splitWireDelayDiff(wire_length2, buffer_cell);
+      diff2 = splitWireDelayDiff(wire_length2, cell);
     }
     else {
       double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff3 = splitWireDelayDiff(wire_length3, buffer_cell);
+      double diff3 = splitWireDelayDiff(wire_length3, cell);
       if (diff3 < 0.0) {
 	wire_length1 = wire_length3;
 	diff1 = diff3;
@@ -2222,8 +2220,6 @@ Resizer::splitWireDelayDiff(double wire_length,
   return delay1 - delay2 * 2;
 }
 
-// Buffer delay plus wire delay.
-// Uses target slew for input slew.
 void
 Resizer::bufferWireDelay(LibertyCell *buffer_cell,
 			 double wire_length, // meters
@@ -2233,13 +2229,29 @@ Resizer::bufferWireDelay(LibertyCell *buffer_cell,
 {
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
+  return cellWireDelay(drvr_port, load_port, wire_length, delay, slew);
+}
+
+// Cell delay plus wire delay.
+// Uses target slew for input slew.
+// drvr_port and load_port do not have to be the same liberty cell.
+void
+Resizer::cellWireDelay(LibertyPort *drvr_port,
+		       LibertyPort *load_port,
+		       double wire_length, // meters
+		       // Return values.
+		       Delay &delay,
+		       Slew &slew)
+{
   Instance *top_inst = network_->topInstance();
   // Tmp net for parasitics to live on.
   Net *net = sta_->makeNet("wire", top_inst);
-  Instance *drvr = sta_->makeInstance("drvr", buffer_cell, top_inst);
-  Instance *load = sta_->makeInstance("load", buffer_cell, top_inst);
+  LibertyCell *drvr_cell = drvr_port->libertyCell();
+  LibertyCell *load_cell = load_port->libertyCell();
+  Instance *drvr = sta_->makeInstance("drvr", drvr_cell, top_inst);
+  Instance *load = sta_->makeInstance("load", load_cell, top_inst);
   sta_->connectPin(drvr, drvr_port, net);
-  sta_->connectPin(drvr, load_port, net);
+  sta_->connectPin(load, load_port, net);
   Pin *drvr_pin = network_->findPin(drvr, drvr_port);
   Pin *load_pin = network_->findPin(load, load_port);
 
@@ -2251,7 +2263,7 @@ Resizer::bufferWireDelay(LibertyCell *buffer_cell,
   // Max rise/fall delays.
   delay = -INF;
   slew = -INF;
-  LibertyCellTimingArcSetIterator set_iter(buffer_cell);
+  LibertyCellTimingArcSetIterator set_iter(drvr_cell);
   while (set_iter.hasNext()) {
     TimingArcSet *arc_set = set_iter.next();
     if (arc_set->to() == drvr_port) {
@@ -2263,7 +2275,7 @@ Resizer::bufferWireDelay(LibertyCell *buffer_cell,
 	double in_slew = tgt_slews_[in_rf->index()];
 	ArcDelay gate_delay;
 	Slew drvr_slew;
-	arc_delay_calc_->gateDelay(buffer_cell, arc, in_slew, 0.0,
+	arc_delay_calc_->gateDelay(drvr_cell, arc, in_slew, 0.0,
 				   drvr_parasitic, 0.0, pvt_, dcalc_ap_,
 				   gate_delay,
 				   drvr_slew);
@@ -2304,27 +2316,28 @@ Resizer::makeWireParasitic(Net *net,
 ////////////////////////////////////////////////////////////////
 
 double
-Resizer::findMaxSlewWireLength(double max_slew,
-			       LibertyCell *buffer_cell)
+Resizer::findMaxSlewWireLength(LibertyPort *drvr_port,
+			       LibertyPort *load_port,
+			       double max_slew)
 {
   // wire_length1 lower bound
   // wire_length2 upper bound
   double wire_length1 = 0.0;
   double wire_length2 = std::sqrt(max_slew / (wire_res_ * wire_cap_));
   double tol = .01; // 1%
-  double diff1 = maxSlewWireDiff(wire_length1, max_slew, buffer_cell);
-  double diff2 = maxSlewWireDiff(wire_length2, max_slew, buffer_cell);
+  double diff1 = maxSlewWireDiff(drvr_port, load_port, wire_length1, max_slew);
+  double diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
   // binary search for diff = 0.
   while (abs(wire_length1 - wire_length2) > max(wire_length1, wire_length2) * tol) {
     if (diff2 < 0.0) {
       wire_length1 = wire_length2;
       diff1 = diff2;
       wire_length2 *= 2;
-      diff2 = maxSlewWireDiff(wire_length2, max_slew, buffer_cell);
+      diff2 = maxSlewWireDiff(drvr_port, load_port, wire_length2, max_slew);
     }
     else {
       double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff3 = maxSlewWireDiff(wire_length3, max_slew, buffer_cell);
+      double diff3 = maxSlewWireDiff(drvr_port, load_port, wire_length3, max_slew);
       if (diff3 < 0.0) {
 	wire_length1 = wire_length3;
 	diff1 = diff3;
@@ -2340,13 +2353,14 @@ Resizer::findMaxSlewWireLength(double max_slew,
 
 // objective function
 double
-Resizer::maxSlewWireDiff(double wire_length,
-			 double max_slew,
-			 LibertyCell *buffer_cell)
+Resizer::maxSlewWireDiff(LibertyPort *drvr_port,
+			 LibertyPort *load_port,
+			 double wire_length,
+			 double max_slew)
 {
   Delay delay;
   Slew slew;
-  bufferWireDelay(buffer_cell, wire_length, delay, slew);
+  cellWireDelay(drvr_port, load_port, wire_length, delay, slew);
   return slew - max_slew;
 }
 
