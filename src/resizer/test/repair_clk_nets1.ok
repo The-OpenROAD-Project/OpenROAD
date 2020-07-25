@@ -15,8 +15,8 @@ Found 1 long wires.
 Inserted 2 buffers in 1 nets.
 CLOCK
 Driver    length delay
-repeater1/Z manhtn 600 steiner 600 0.03
-repeater2/Z manhtn 600 steiner 600 0.03
+repeater1/Z manhtn 600.2 steiner 600.2 0.03
+repeater2/Z manhtn 599.8 steiner 599.8 0.03
 Startpoint: in1 (clock source 'in1')
 Endpoint: out1 (output port)
 Path Group: (none)

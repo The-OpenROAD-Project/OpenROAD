@@ -54,19 +54,19 @@ Path Type: max
 
 
 Driver    length delay
-u2/Z manhtn 3000 steiner 3000 0.84
-u3/Z manhtn 1 steiner 1 0.00
-u4/Z manhtn 1 steiner 1 0.00
+u2/Z manhtn 2999.6 steiner 2999.6 0.84
+u3/Z manhtn 1.1 steiner 1.1 0.00
+u4/Z manhtn 1.1 steiner 1.1 0.00
 Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.
 Driver    length delay
-u2/Z manhtn 1000 steiner 1000 0.09
-repeater1/Z manhtn 1000 steiner 1000 0.09
-repeater2/Z manhtn 999 steiner 999 0.09
-u3/Z manhtn 1 steiner 1 0.00
-u4/Z manhtn 1 steiner 1 0.00
+u2/Z manhtn 1000.4 steiner 1000.4 0.09
+repeater1/Z manhtn 999.8 steiner 999.8 0.09
+repeater2/Z manhtn 999.5 steiner 999.5 0.09
+u3/Z manhtn 1.1 steiner 1.1 0.00
+u4/Z manhtn 1.1 steiner 1.1 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
