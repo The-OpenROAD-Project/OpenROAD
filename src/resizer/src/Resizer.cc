@@ -2251,7 +2251,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   Instance *drvr = sta_->makeInstance("drvr", drvr_cell, top_inst);
   Instance *load = sta_->makeInstance("load", load_cell, top_inst);
   sta_->connectPin(drvr, drvr_port, net);
-  sta_->connectPin(drvr, load_port, net);
+  sta_->connectPin(load, load_port, net);
   Pin *drvr_pin = network_->findPin(drvr, drvr_port);
   Pin *load_pin = network_->findPin(load, load_port);
 
