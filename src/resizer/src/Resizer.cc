@@ -1654,8 +1654,8 @@ Resizer::repairNet(SteinerTree *tree,
   double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_cap_;
   debugPrint4(debug_, "repair_net", 3, "%*scap_left=%s, right_cap=%s\n",
 	      level, "",
-	      units_->capacitanceUnit()->asString(pin_cap_left, 2),
-	      units_->capacitanceUnit()->asString(pin_cap_right, 2));
+	      units_->capacitanceUnit()->asString(cap_left, 2),
+	      units_->capacitanceUnit()->asString(cap_right, 2));
   if ((cap_left + cap_right) > max_cap) {
     if (cap_left > cap_right)
       repeater_left = true;

@@ -15,6 +15,5 @@ estimate_parasitics -placement
 # set max slew low enough there are no max cap violations
 set_max_transition .05 [current_design]
 report_check_types -max_slew -max_cap -max_fanout -violators
-report_check_types -max_slew -max_cap -max_fanout
 repair_design -buffer_cell BUF_X2
 report_check_types -max_slew -max_cap -max_fanout -violators
