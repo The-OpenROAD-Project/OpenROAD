@@ -87,12 +87,13 @@ int
 check_net_violation(char* netname)
 { 
   odb::dbNet* net = getAntennaChecker()->get_net( std::string(netname));
-  std::vector<std::pair<int, std::vector<odb::dbITerm *>>> vios;
-  vios = getAntennaChecker()->get_net_antenna_violations(net);
+  auto vios = getAntennaChecker()->get_net_antenna_violations(net);
   if (vios.size() !=0)
     return 1;
   else
     return 0;       
+
+
 }
 
 void

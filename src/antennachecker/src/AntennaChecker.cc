@@ -631,10 +631,12 @@ AntennaChecker::build_wire_PAR_table( std::vector<PARinfo>& PARtable, std::vecto
 
         find_wire_below_iterms( wireroot, iterm_areas, wireroot->layer()->getRoutingLevel(), iv, nv );
 
-        PARinfo new_par = { *root_itr, iv.size(), wire_area, side_wire_area, {iterm_areas[0], iterm_areas[1]}, 0.0, 0.0, 0.0, 0.0 };
+        PARinfo new_par = { *root_itr, iv, wire_area, side_wire_area, {iterm_areas[0], iterm_areas[1]}, 0.0, 0.0, 0.0, 0.0 };
         PARtable.push_back( new_par );
     }
-    calculate_PAR_table(PARtable);
+    
+    for ( PARinfo& par_info: PARtable)
+        calculate_PAR_info(par_info);
 }
 
 
@@ -729,57 +731,51 @@ AntennaChecker::get_pwl_factor(dbTechLayerAntennaRule::pwl_pair pwl_info, double
 }
 
 void
-AntennaChecker::calculate_PAR_table( std::vector<PARinfo>& PARtable )
+AntennaChecker::calculate_PAR_info( PARinfo& it )
 {
-    for ( std::vector<PARinfo>::iterator it = PARtable.begin(); it!=PARtable.end(); it++)
+    dbWireGraph::Node* wireroot = it.WirerootNode.first;
+    odb::dbTechLayer* tech_layer = wireroot->layer();
+    ANTENNAmodel am = layer_info[tech_layer];
+    
+    double metal_factor = am.metal_factor;
+    double diff_metal_factor = am.diff_metal_factor;
+    double side_metal_factor = am.side_metal_factor;
+    double diff_side_metal_factor = am.diff_side_metal_factor;
+    
+    double minus_diff_factor = am.minus_diff_factor;
+    double plus_diff_factor = am.plus_diff_factor;
+    
+    double diff_metal_reduce_factor = am.diff_metal_reduce_factor;
+    
+    if (tech_layer->hasDefaultAntennaRule())
+    {   
+        dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule(); 
+        diff_metal_reduce_factor = get_pwl_factor(antenna_rule->getAreaDiffReduce(), it.iterm_areas[1], 1.0);
+    }
+    
+    
+    if ( it.iterm_areas[0] == 0 )
+        return;
+    
+    if ( it.iterm_areas[1] != 0 )
     {
-        dbWireGraph::Node* wireroot = it->WirerootNode.first;
-        odb::dbTechLayer* tech_layer = wireroot->layer();
-        ANTENNAmodel am = layer_info[tech_layer];
-
-        double metal_factor = am.metal_factor;
-        double diff_metal_factor = am.diff_metal_factor;
-        double side_metal_factor = am.side_metal_factor;
-        double diff_side_metal_factor = am.diff_side_metal_factor;
-
-        double minus_diff_factor = am.minus_diff_factor;
-        double plus_diff_factor = am.plus_diff_factor;
-
-        double diff_metal_reduce_factor = am.diff_metal_reduce_factor;
-
-	if (tech_layer->hasDefaultAntennaRule())
-        {   
-	    dbTechLayerAntennaRule* antenna_rule = tech_layer->getDefaultAntennaRule(); 
-  	    diff_metal_reduce_factor = get_pwl_factor(antenna_rule->getAreaDiffReduce(), it->iterm_areas[1], 1.0);
-    	}
-
-        
-        if ( it->iterm_areas[0] == 0 )
-            continue;
-
-        if ( it->iterm_areas[1] != 0 )
-        {
-            it->PAR_value = ( diff_metal_factor * it->wire_area ) / it->iterm_areas[0];
-            it->PSR_value = ( diff_side_metal_factor * it->side_wire_area ) / it->iterm_areas[0];
-            it->diff_PAR_value = ( diff_metal_factor * it->wire_area * diff_metal_reduce_factor - minus_diff_factor * it->iterm_areas[1] ) / ( it->iterm_areas[0] + plus_diff_factor * it->iterm_areas[1] );
-            it->diff_PSR_value = ( diff_side_metal_factor * it->side_wire_area * diff_metal_reduce_factor - minus_diff_factor * it->iterm_areas[1] ) / ( it->iterm_areas[0] + plus_diff_factor * it->iterm_areas[1] );
-        }
-        else
-        {
-            it->PAR_value = ( metal_factor * it->wire_area ) / it->iterm_areas[0];
-            it->PSR_value = ( side_metal_factor * it->side_wire_area ) / it->iterm_areas[0];
-            it->diff_PAR_value = ( metal_factor * it->wire_area * diff_metal_reduce_factor ) / it->iterm_areas[0];
-            it->diff_PSR_value = ( side_metal_factor * it->side_wire_area * diff_metal_reduce_factor ) / ( it->iterm_areas[0] );
-        }
-
+        it.PAR_value = ( diff_metal_factor * it.wire_area ) / it.iterm_areas[0];
+        it.PSR_value = ( diff_side_metal_factor * it.side_wire_area ) / it.iterm_areas[0];
+        it.diff_PAR_value = ( diff_metal_factor * it.wire_area * diff_metal_reduce_factor - minus_diff_factor * it.iterm_areas[1] ) / ( it.iterm_areas[0] + plus_diff_factor * it.iterm_areas[1] );
+        it.diff_PSR_value = ( diff_side_metal_factor * it.side_wire_area * diff_metal_reduce_factor - minus_diff_factor * it.iterm_areas[1] ) / ( it.iterm_areas[0] + plus_diff_factor * it.iterm_areas[1] );
+    }
+    else
+    {
+        it.PAR_value = ( metal_factor * it.wire_area ) / it.iterm_areas[0];
+        it.PSR_value = ( side_metal_factor * it.side_wire_area ) / it.iterm_areas[0];
+        it.diff_PAR_value = ( metal_factor * it.wire_area * diff_metal_reduce_factor ) / it.iterm_areas[0];
+        it.diff_PSR_value = ( side_metal_factor * it.side_wire_area * diff_metal_reduce_factor ) / ( it.iterm_areas[0] );
+    }
 
 	//int x, y;
 	//wireroot->xy(x, y);
-	//fprintf(_out, "Wireroot - (%d, %d) - %s - wire area - %f - side wire area - %f - iterm areas - %f, %f - par - %f - psr - %f\n", x, y, tech_layer->getConstName(), it->wire_area, it->side_wire_area, it->iterm_areas[0], it->iterm_areas[1], it->PAR_value, it->PSR_value); 
-    }
+	//fprintf(_out, "Wireroot - (%d, %d) - %s - wire area - %f - side wire area - %f - iterm areas - %f, %f - par - %f - psr - %f\n", x, y, tech_layer->getConstName(), it.wire_area, it.side_wire_area, it.iterm_areas[0], it.iterm_areas[1], it.PAR_value, it.PSR_value); 
 }
-
-
 
 
 void
@@ -920,7 +916,7 @@ AntennaChecker::build_VIA_PAR_table( std::vector<PARinfo> &VIA_PARtable, std::ve
                 par = ( cut_factor * via_area ) / iterm_areas[0];
                 diff_par = ( cut_factor * via_area * diff_metal_reduce_factor - minus_diff_factor * iterm_areas[1] ) / ( iterm_areas[0] + plus_diff_factor * iterm_areas[1] );
             }
-            PARinfo new_par = { *root_itr, iv.size(), 0.0, 0.0, {0.0, 0.0}, par, 0.0, diff_par, 0.0 };
+            PARinfo new_par = { *root_itr, iv, 0.0, 0.0, {0.0, 0.0}, par, 0.0, diff_par, 0.0 };
             VIA_PARtable.push_back( new_par );
 
             //int x, y;
@@ -1347,9 +1343,12 @@ AntennaChecker::GetAntennaRatio(std::string path)
                 }
             }
 
+            if (gate_iterms.size() == 0)
+                fprintf( _out, "  No sinks on this net\n" );       
+
             std::vector<PARinfo> PARtable;
             build_wire_PAR_table( PARtable, wireroots_info );
-
+            
             std::vector<PARinfo> VIA_PARtable;
             build_VIA_PAR_table( VIA_PARtable, wireroots_info );
             
@@ -1587,15 +1586,73 @@ AntennaChecker::get_wireroots(dbWireGraph graph)
                 wireroots_info.push_back( wireroot_info );
         }
     }
-
     return wireroots_info;
 }
 
 
-std::vector<std::pair<int, std::vector<dbITerm *>>>
-AntennaChecker::get_net_antenna_violations( dbNet * net )
+bool
+AntennaChecker::check_violation(PARinfo par_info, dbTechLayer* layer)
 {
-    std::vector<std::pair<int, std::vector<dbITerm *>>> antenna_violations;
+    double par          = par_info.PAR_value;
+    double psr          = par_info.PSR_value;
+    double diff_par     = par_info.diff_PAR_value;
+    double diff_psr     = par_info.diff_PSR_value;
+    double diff_area    = par_info.iterm_areas[1];
+    
+    bool wire_PAR_violation = 0;
+    if ( layer->hasDefaultAntennaRule() )
+    {
+        dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
+        double PAR_ratio = antenna_rule->getPAR();
+        if ( PAR_ratio != 0 )
+        {
+            if ( par > PAR_ratio )
+                wire_PAR_violation = 1; 
+        }
+        else
+        {
+            dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
+            double diffPAR_ratio = get_pwl_factor(diffPAR, diff_area, 0.0);
+            if (diffPAR_ratio != 0 && diff_par > diffPAR_ratio)
+        	wire_PAR_violation = 1;
+        }
+    
+        double PSR_ratio = antenna_rule->getPSR();
+        if ( PSR_ratio != 0 )
+        {
+            if ( psr > PSR_ratio )
+                wire_PAR_violation = 1;
+        }
+        else
+        {
+            dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
+            double diffPSR_ratio = get_pwl_factor(diffPSR, diff_area, 0.0);
+            if ( diffPSR_ratio != 0 && diff_psr > diffPSR_ratio )
+                    wire_PAR_violation = 1;
+        }
+    
+    }
+
+    return wire_PAR_violation;
+}
+
+
+std::vector<VINFO>
+AntennaChecker::get_net_antenna_violations( dbNet * net, std::string antenna_cell_name, std::string cell_pin )
+{
+    double max_diff_area = 0;
+    if ( !antenna_cell_name.empty()) {
+        odb::dbMaster* antenna_cell = db_->findMaster(antenna_cell_name.c_str());
+        dbMTerm* mterm = antenna_cell->findMTerm(cell_pin.c_str());
+        std::vector<std::pair<double, dbTechLayer*>> diff_area;
+        mterm->getDiffArea( diff_area );
+        
+        std::vector<std::pair<double, dbTechLayer*>>::iterator diff_area_iter;
+        for ( diff_area_iter = diff_area.begin(); diff_area_iter != diff_area.end();  diff_area_iter++ )
+            max_diff_area = std::max(max_diff_area, (*diff_area_iter).first);
+    }
+
+    std::vector<VINFO> antenna_violations;
     if ( net->isSpecial() )
         return antenna_violations;
     dbWire * wire = net->getWire();
@@ -1614,58 +1671,40 @@ AntennaChecker::get_net_antenna_violations( dbNet * net )
         for( par_itr = PARtable.begin(); par_itr != PARtable.end(); ++par_itr )
         {
 	    dbTechLayer * layer = (*par_itr).WirerootNode.first->layer();
-            double par = (*par_itr).PAR_value;
-            double psr = (*par_itr).PSR_value;
-  	    double diff_par = (*par_itr).diff_PAR_value;
-            double diff_psr = (*par_itr).diff_PSR_value;
- 	    double diff_area = (*par_itr).iterm_areas[1];
-	    
-            bool wire_PAR_violation = 0;
-            if ( layer->hasDefaultAntennaRule() )
-            {
-                dbTechLayerAntennaRule* antenna_rule = layer->getDefaultAntennaRule();
-		double PAR_ratio = antenna_rule->getPAR();
-                if ( PAR_ratio != 0 )
-                {
-                    if ( par > PAR_ratio )
-                        wire_PAR_violation = 1;
-                }
-                else
-                {
-                    dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
-                    double diffPAR_ratio = get_pwl_factor(diffPAR, diff_area, 0.0);
-		    if (diffPAR_ratio != 0 && diff_par > diffPAR_ratio)
-			wire_PAR_violation = 1;
-                }
-
-        	double PSR_ratio = antenna_rule->getPSR();
-        	if ( PSR_ratio != 0 )
-        	{
-        	    if ( psr > PSR_ratio )
-        	        wire_PAR_violation = 1;
-        	}
-        	else
-        	{
-        	    dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
-        	    double diffPSR_ratio = get_pwl_factor(diffPSR, diff_area, 0.0);
-        	    if ( diffPSR_ratio != 0 && diff_psr > diffPSR_ratio )
-        	            wire_PAR_violation = 1;
-        	}
-
-	    }
-
+            bool wire_PAR_violation = check_violation(*par_itr, layer);
+            
             if ( wire_PAR_violation )
             {
+                
                 std::vector<dbITerm *> gates;
                 find_wireroot_iterms( (*par_itr).WirerootNode.first, layer->getRoutingLevel(), gates );
-                std::pair<int, std::vector<dbITerm *>> antenna_violation = std::make_pair( layer->getRoutingLevel(), gates );
+                int required_cell_nums = 0;
+                if ( !antenna_cell_name.empty() )
+                {                
+                    while (wire_PAR_violation && required_cell_nums < 10)
+                    {
+                        (*par_itr).iterm_areas[1] += max_diff_area*((*par_itr).iterms.size());
+                        required_cell_nums++;
+                        calculate_PAR_info(*par_itr);
+                        wire_PAR_violation = check_violation(*par_itr, layer);
+                    }
+                    
+                    //std::cout << "Insts: ";
+                    //for (dbITerm* iterm: gates)
+                    //{
+                    //    dbInst* inst = iterm->getInst();
+                    //    dbMTerm* mterm = iterm->getMTerm();
+                    //    std::cout << inst->getName() << "-" << mterm->getName()<< " ";
+                    //} 
+                    //std::cout << "\n  Requires " << required_cell_nums << " diodes to remove antenna violation"<<std::endl;
+                }
+                VINFO antenna_violation = { layer->getRoutingLevel(), gates, required_cell_nums };
                 antenna_violations.push_back( antenna_violation );
             }
         }
     }
     return antenna_violations;
 }
-
 
 
 
