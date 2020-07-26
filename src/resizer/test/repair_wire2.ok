@@ -60,11 +60,12 @@ u4/Z manhtn 1.1 steiner 1.1 0.00
 Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.
-Inserted 2 buffers in 1 nets.
+Inserted 3 buffers in 1 nets.
 Driver    length delay
-u2/Z manhtn 1000.4 steiner 1000.4 0.09
-repeater1/Z manhtn 999.8 steiner 999.8 0.09
-repeater2/Z manhtn 999.5 steiner 999.5 0.09
+repeater3/Z manhtn 949.8 steiner 949.8 0.08
+repeater1/Z manhtn 949.8 steiner 949.8 0.08
+repeater2/Z manhtn 949.5 steiner 949.5 0.08
+u2/Z manhtn 150.4 steiner 150.4 0.00
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 Startpoint: in1 (input port)
@@ -79,13 +80,15 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  53.252    0.117    0.111    0.127 ^ u2/Z (BUF_X1)
-            0.169    0.094    0.222 ^ repeater2/A (BUF_X1)
-  54.220    0.128    0.112    0.334 ^ repeater2/Z (BUF_X1)
-            0.162    0.077    0.411 ^ u3/A (BUF_X1)
-   0.000    0.009    0.027    0.438 ^ u3/Z (BUF_X1)
-            0.009    0.000    0.438 ^ out1 (out)
-                              0.438   data arrival time
+   8.834    0.023    0.037    0.053 ^ u2/Z (BUF_X1)
+            0.023    0.003    0.056 ^ repeater3/A (BUF_X1)
+  50.606    0.113    0.113    0.169 ^ repeater3/Z (BUF_X1)
+            0.158    0.085    0.254 ^ repeater2/A (BUF_X1)
+  51.607    0.124    0.110    0.364 ^ repeater2/Z (BUF_X1)
+            0.147    0.062    0.426 ^ u3/A (BUF_X1)
+   0.000    0.009    0.027    0.453 ^ u3/Z (BUF_X1)
+            0.009    0.000    0.453 ^ out1 (out)
+                              0.453   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
@@ -102,15 +105,17 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  53.252    0.117    0.111    0.127 ^ u2/Z (BUF_X1)
-            0.169    0.094    0.222 ^ repeater2/A (BUF_X1)
-  54.220    0.128    0.112    0.334 ^ repeater2/Z (BUF_X1)
-            0.181    0.102    0.435 ^ repeater1/A (BUF_X1)
-  53.218    0.117    0.126    0.561 ^ repeater1/Z (BUF_X1)
-            0.169    0.094    0.655 ^ u4/A (BUF_X1)
-   0.000    0.009    0.027    0.682 ^ u4/Z (BUF_X1)
-            0.009    0.000    0.682 ^ out2 (out)
-                              0.682   data arrival time
+   8.834    0.023    0.037    0.053 ^ u2/Z (BUF_X1)
+            0.023    0.003    0.056 ^ repeater3/A (BUF_X1)
+  50.606    0.113    0.113    0.169 ^ repeater3/Z (BUF_X1)
+            0.158    0.085    0.254 ^ repeater2/A (BUF_X1)
+  51.607    0.124    0.110    0.364 ^ repeater2/Z (BUF_X1)
+            0.169    0.092    0.456 ^ repeater1/A (BUF_X1)
+  50.605    0.113    0.122    0.579 ^ repeater1/Z (BUF_X1)
+            0.158    0.085    0.664 ^ u4/A (BUF_X1)
+   0.000    0.009    0.027    0.691 ^ u4/Z (BUF_X1)
+            0.009    0.000    0.691 ^ out2 (out)
+                              0.691   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
