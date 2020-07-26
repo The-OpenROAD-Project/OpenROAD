@@ -1469,9 +1469,12 @@ Resizer::repairNet(Net *net,
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree) {
     Pin *drvr_pin = drvr->pin();
-    bool repair = false;
     float max_cap = INF;
     float max_fanout = INF;
+    bool repair_slew = false;
+    bool repair_cap = false;
+    bool repair_fanout = false;
+    bool repair_wire = false;
     if (check_slew) {
       float slew, slew_slack, max_slew;
       const Corner *corner1;
@@ -1492,7 +1495,7 @@ Resizer::repairNet(Net *net,
 	  if (max_length == 0
 	      || max_length1_dbu < max_length)
 	    max_length = max_length1_dbu;
-	  repair = true;
+	  repair_slew = true;
 	}
       }
     }
@@ -1505,7 +1508,7 @@ Resizer::repairNet(Net *net,
       if (cap_slack < 0.0) {
 	max_cap = min(max_cap, max_cap1);
 	cap_violations++;
-	repair = true;
+	repair_cap = true;
       }
     }
     if (check_fanout) {
@@ -1514,16 +1517,19 @@ Resizer::repairNet(Net *net,
 			fanout, max_fanout, fanout_slack);
       if (fanout_slack < 0.0) {
 	fanout_violations++;
-	repair = true;
+	repair_fanout = true;
       }
     }
     int wire_length = findMaxSteinerDist(drvr, tree);
     if (max_length
 	&& wire_length > max_length) {
       length_violations++;
-      repair = true;
+      repair_wire = true;
     }
-    if (repair) {
+    if (repair_slew
+	|| repair_cap
+	|| repair_fanout
+	|| repair_wire) {
       Point drvr_loc = db_network_->location(drvr->pin());
       debugPrint4(debug_, "repair_net", 1, "driver %s (%s %s) l=%s\n",
 		  sdc_network_->pathName(drvr_pin),
@@ -1648,21 +1654,24 @@ Resizer::repairNet(SteinerTree *tree,
 	      level, "",
 	      units_->capacitanceUnit()->asString(cap_left, 2),
 	      units_->capacitanceUnit()->asString(cap_right, 2));
-  if ((cap_left + cap_right) > max_cap) {
+  bool cap_violation = (cap_left + cap_right) > max_cap;
+  if (cap_violation) {
     if (cap_left > cap_right)
       repeater_left = true;
     else
       repeater_right = true;
   }
-  if (max_length > 0
-       && (wire_length_left + wire_length_right) > max_length) {
+  bool length_violation = max_length > 0
+    && (wire_length_left + wire_length_right) > max_length;
+  if (length_violation) {
     if (wire_length_left > wire_length_right)
       repeater_left = true;
     else
       repeater_right = true;
   }
-  if (max_fanout > 0
-       && (fanout_left + fanout_right) > max_fanout) {
+  bool fanout_violation = max_fanout > 0
+    && (fanout_left + fanout_right) > max_fanout;
+  if (fanout_violation) {
     if (fanout_left > fanout_right)
       repeater_left = true;
     else
