@@ -118,6 +118,12 @@ public:
 		       double wire_length, // meters
 		       Delay &delay,
 		       Slew &slew);
+  void cellWireDelay(LibertyPort *drvr_port,
+		     LibertyPort *load_port,
+		     double wire_length, // meters
+		     // Return values.
+		     Delay &delay,
+		     Slew &slew);
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // zero for none (meters)
 		    LibertyCell *buffer_cell);
@@ -139,9 +145,11 @@ public:
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
   double findMaxWireLength(LibertyCell *buffer_cell);
+  double findMaxWireLength(LibertyPort *drvr_port);
   // Find the max wire length with load slew < max_slew (in meters).
-  double findMaxSlewWireLength(double max_slew,
-			       LibertyCell *buffer_cell);
+  double findMaxSlewWireLength(LibertyPort *drvr_port,
+			       LibertyPort *load_port,
+			       double max_slew);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
   void writeNetSVG(Net *net,
@@ -275,9 +283,10 @@ protected:
   double area(Cell *cell);
   double splitWireDelayDiff(double wire_length,
 			    LibertyCell *buffer_cell);
-  double maxSlewWireDiff(double wire_length,
-			 double max_slew,
-			 LibertyCell *buffer_cell);
+  double maxSlewWireDiff(LibertyPort *drvr_port,
+			 LibertyPort *load_port,
+			 double wire_length,
+			 double max_slew);
 
   void findFaninWeights(VertexSet &ends,
 			// Return value.

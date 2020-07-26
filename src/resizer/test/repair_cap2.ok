@@ -11,7 +11,8 @@ Notice 0:     Created 61 components and 366 component-terminals.
 Notice 0:     Created 2 special nets and 122 connections.
 Notice 0:     Created 2 nets and 122 connections.
 Notice 0: Finished DEF file: ./results/repair_cap2.def
-cap limit violation
+Found 1 violations
 Found 1 slew violations.
 Found 1 capacitance violations.
 Inserted 1 buffers in 1 nets.
+Found 0 violations
