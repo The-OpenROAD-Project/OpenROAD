@@ -717,6 +717,7 @@ Resizer::findTargetLoad(LibertyCell *cell,
     float cap_tol = cap_init * .001; // .1%
     float load_cap = cap_init;
     float cap_step = cap_init;
+    Slew prev_slew = 0.0;
     while (cap_step > cap_tol) {
       ArcDelay arc_delay;
       Slew arc_slew;
@@ -727,6 +728,10 @@ Resizer::findTargetLoad(LibertyCell *cell,
 	cap_step /= 2.0;
       }
       load_cap += cap_step;
+      if (arc_slew == prev_slew)
+	// we are stuck
+	break;
+      prev_slew = arc_slew;
     }
     return load_cap;
   }
@@ -1394,6 +1399,7 @@ Resizer::repairClkNets(double max_wire_length, // meters
       repairNet(net, drvr, false, false, false, max_length, buffer_cell,
 		repair_count, slew_violations, cap_violations,
 		fanout_violations, length_violations);
+      resizeToTargetSlew(drvr_pin);
     }
   }
   if (length_violations > 0)
@@ -1421,6 +1427,7 @@ Resizer::repairNet(Net *net,
   sta_->checkFanoutLimitPreamble();
 
   inserted_buffer_count_ = 0;
+  resize_count_ = 0;
   int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
@@ -1450,6 +1457,7 @@ Resizer::repairNet(Net *net,
 	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
+  printf("Resized %d instances.\n", resize_count_);
 }
 
 void
@@ -1727,8 +1735,12 @@ Resizer::repairNet(SteinerTree *tree,
 		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
 		  units_->distanceUnit()->asString(dbuToMeters(length), 1));
       while (wire_length > max_length) {
+        // Make the wire a bit shorter than the max length to allow for
+	// offset from instance origin to pin and detailed placement movement.
+	double length_margin = .05;
 	// Distance from pt to repeater backward toward prev_pt.
-	double buf_dist = length - (wire_length - max_length);
+        double buf_dist = length
+          - (wire_length - max_length * (1.0 - length_margin));
 	double dx = prev_x - pt_x;
 	double dy = prev_y - pt_y;
 	double d = buf_dist / length;
