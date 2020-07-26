@@ -39,4 +39,4 @@ will be generated to indicate violated nets. 4 APIs are provided as an interface
    - std::string antenna_cell_name: name of the antenna cell in the library, default is an empty string
    - std::string cell_pin: the pin name of the antenna cell that will be connected to nets, default is an empty string
 
-   This function checks if the target net has antenna violations. The return value contains the violated ITerms at each layer of the net, the required antenna cells will also be calculated if arguments **antenna_cell_name** and **cell_pin** are given.
+   This function checks if the target net has antenna violations. The return value contains the violated ITerms at each layer of the net, the required antenna cells will be calculated if arguments **antenna_cell_name** and **cell_pin** are given.
