@@ -45,7 +45,6 @@ set_dont_use $dont_use
 
 repair_design -max_wire_length $max_wire_length \
   -buffer_cell $resize_buffer_cell
-resize
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port

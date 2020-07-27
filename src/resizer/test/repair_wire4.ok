@@ -20,9 +20,9 @@ Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 3 buffers in 1 nets.
 Driver    length delay
-repeater1/Z manhtn 856.2 steiner 856.2 0.07
-repeater2/Z manhtn 854.8 steiner 854.8 0.07
-u2/Z manhtn 645.7 steiner 645.7 0.04
-repeater3/Z manhtn 645.5 steiner 645.5 0.04
+repeater1/Z manhtn 856.5 steiner 856.5 0.07
+repeater2/Z manhtn 855.2 steiner 855.2 0.07
+u2/Z manhtn 646.1 steiner 646.1 0.04
+repeater3/Z manhtn 645.9 steiner 645.9 0.04
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00

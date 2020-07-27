@@ -1,0 +1,55 @@
+VERSION 5.8 ; 
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN long_wire ;
+
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 4000000 4000000 ) ;
+
+COMPONENTS 5 ;
+- u1 NAND3_X1 + PLACED   ( 0 0 ) N ;
+- u2 BUF_X8 + PLACED   ( 1200000 0 ) N ;
+- u3 BUF_X8 + PLACED   ( 1200000 0 ) N ;
+- u4 BUF_X8 + PLACED   ( 1200000 0 ) N ;
+- u5 BUF_X8 + PLACED   ( 1200000 0 ) N ;
+END COMPONENTS
+
+PINS 7 ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 0 ) N ;
+- in2 + NET in2 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 0 ) N ;
+- in3 + NET in3 + DIRECTION INPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 0 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 1000000 0 ) N ;
+- out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 1000000 0 ) N ;
+- out3 + NET out3 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 1000000 0 ) N ;
+- out4 + NET out4 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 1000000 0 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 8 ;
+- in1 ( PIN in1 ) ( u1 A1 ) ;
+- in2 ( PIN in2 ) ( u1 A2 ) ;
+- in3 ( PIN in3 ) ( u1 A3 ) ;
+- n1 ( u1 ZN ) ( u2 A ) ( u3 A ) ( u4 A ) ( u5 A ) ;
+- out1 ( PIN out1 ) ( u2 Z ) ;
+- out2 ( PIN out2 ) ( u3 Z ) ;
+- out3 ( PIN out3 ) ( u4 Z ) ;
+- out4 ( PIN out4 ) ( u5 Z ) ;
+END NETS
+
+END DESIGN

@@ -62,9 +62,9 @@ Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 3 buffers in 1 nets.
 Driver    length delay
-repeater3/Z manhtn 949.8 steiner 949.8 0.08
-repeater1/Z manhtn 949.8 steiner 949.8 0.08
-repeater2/Z manhtn 949.5 steiner 949.5 0.08
+repeater1/Z manhtn 950.9 steiner 950.9 0.08
+repeater3/Z manhtn 948.6 steiner 948.6 0.08
+repeater2/Z manhtn 948.3 steiner 948.3 0.08
 u2/Z manhtn 150.4 steiner 150.4 0.00
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
@@ -78,17 +78,17 @@ Path Type: max
                      0.000    0.000 ^ input external delay
    1.284    0.000    0.000    0.000 ^ in1 (in)
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
-            0.006    0.000    0.016 ^ u2/A (BUF_X1)
-   8.834    0.023    0.037    0.053 ^ u2/Z (BUF_X1)
-            0.023    0.003    0.056 ^ repeater3/A (BUF_X1)
-  50.606    0.113    0.113    0.169 ^ repeater3/Z (BUF_X1)
-            0.158    0.085    0.254 ^ repeater2/A (BUF_X1)
-  51.607    0.124    0.110    0.364 ^ repeater2/Z (BUF_X1)
-            0.147    0.062    0.426 ^ u3/A (BUF_X1)
-   0.000    0.009    0.027    0.453 ^ u3/Z (BUF_X1)
-            0.009    0.000    0.453 ^ out1 (out)
-                              0.453   data arrival time
+   1.716    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
+            0.007    0.000    0.018 ^ u2/A (CLKBUF_X2)
+  14.444    0.020    0.037    0.056 ^ u2/Z (CLKBUF_X2)
+            0.021    0.005    0.061 ^ repeater3/A (BUF_X8)
+  56.216    0.019    0.038    0.099 ^ repeater3/Z (BUF_X8)
+            0.019    0.107    0.206 ^ repeater2/A (BUF_X8)
+  57.217    0.019    0.038    0.244 ^ repeater2/Z (BUF_X8)
+            0.019    0.067    0.311 ^ u3/A (BUF_X1)
+   0.000    0.004    0.021    0.332 ^ u3/Z (BUF_X1)
+            0.004    0.000    0.332 ^ out1 (out)
+                              0.332   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
@@ -103,19 +103,19 @@ Path Type: max
                      0.000    0.000 ^ input external delay
    1.284    0.000    0.000    0.000 ^ in1 (in)
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
-            0.006    0.000    0.016 ^ u2/A (BUF_X1)
-   8.834    0.023    0.037    0.053 ^ u2/Z (BUF_X1)
-            0.023    0.003    0.056 ^ repeater3/A (BUF_X1)
-  50.606    0.113    0.113    0.169 ^ repeater3/Z (BUF_X1)
-            0.158    0.085    0.254 ^ repeater2/A (BUF_X1)
-  51.607    0.124    0.110    0.364 ^ repeater2/Z (BUF_X1)
-            0.169    0.092    0.456 ^ repeater1/A (BUF_X1)
-  50.605    0.113    0.122    0.579 ^ repeater1/Z (BUF_X1)
-            0.158    0.085    0.664 ^ u4/A (BUF_X1)
-   0.000    0.009    0.027    0.691 ^ u4/Z (BUF_X1)
-            0.009    0.000    0.691 ^ out2 (out)
-                              0.691   data arrival time
+   1.716    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
+            0.007    0.000    0.018 ^ u2/A (CLKBUF_X2)
+  14.444    0.020    0.037    0.056 ^ u2/Z (CLKBUF_X2)
+            0.021    0.005    0.061 ^ repeater3/A (BUF_X8)
+  56.216    0.019    0.038    0.099 ^ repeater3/Z (BUF_X8)
+            0.019    0.107    0.206 ^ repeater2/A (BUF_X8)
+  57.217    0.019    0.038    0.244 ^ repeater2/Z (BUF_X8)
+            0.019    0.108    0.352 ^ repeater1/A (BUF_X8)
+  50.605    0.011    0.029    0.381 ^ repeater1/Z (BUF_X8)
+            0.081    0.066    0.448 ^ u4/A (BUF_X1)
+   0.000    0.007    0.027    0.475 ^ u4/Z (BUF_X1)
+            0.007    0.000    0.475 ^ out2 (out)
+                              0.475   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

@@ -1399,7 +1399,6 @@ Resizer::repairClkNets(double max_wire_length, // meters
       repairNet(net, drvr, false, false, false, max_length, buffer_cell,
 		repair_count, slew_violations, cap_violations,
 		fanout_violations, length_violations);
-      resizeToTargetSlew(drvr_pin);
     }
   }
   if (length_violations > 0)
@@ -1477,36 +1476,12 @@ Resizer::repairNet(Net *net,
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree) {
     Pin *drvr_pin = drvr->pin();
-    float max_cap = INF;
+    double max_cap = INF;
     float max_fanout = INF;
     bool repair_slew = false;
     bool repair_cap = false;
     bool repair_fanout = false;
     bool repair_wire = false;
-    if (check_slew) {
-      float slew, slew_slack, max_slew;
-      const Corner *corner1;
-      const RiseFall *tr;
-      sta_->checkSlew(drvr_pin, corner_, MinMax::max(), false,
-		      corner1, tr, slew, max_slew, slew_slack);
-      if (slew_slack < 0.0) {
-	slew_violations++;
-	LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-	if (drvr_port) {
-	  // Find max load cap that corresponds to max_slew.
-	  max_cap = findSlewLoadCap(drvr_port, max_slew);
-	  // Find max wire length that corresponds to max_slew.
-	  LibertyPort *buffer_input_port, *buffer_output_port;
-	  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-	  double max_length1 = findMaxSlewWireLength(drvr_port, buffer_input_port, max_slew);
-	  int max_length1_dbu = metersToDbu(max_length1);
-	  if (max_length == 0
-	      || max_length1_dbu < max_length)
-	    max_length = max_length1_dbu;
-	  repair_slew = true;
-	}
-      }
-    }
     if (check_cap) {
       float cap, max_cap1, cap_slack;
       const Corner *corner1;
@@ -1514,7 +1489,7 @@ Resizer::repairNet(Net *net,
       sta_->checkCapacitance(drvr_pin, corner_, MinMax::max(),
 			     corner1, tr, cap, max_cap1, cap_slack);
       if (cap_slack < 0.0) {
-	max_cap = min(max_cap, max_cap1);
+	max_cap = max_cap1;
 	cap_violations++;
 	repair_cap = true;
       }
@@ -1534,6 +1509,35 @@ Resizer::repairNet(Net *net,
       length_violations++;
       repair_wire = true;
     }
+    if (check_slew) {
+      float slew, slew_slack, max_slew;
+      const Corner *corner1;
+      const RiseFall *tr;
+      sta_->checkSlew(drvr_pin, corner_, MinMax::max(), false,
+		      corner1, tr, slew, max_slew, slew_slack);
+      if (slew_slack < 0.0) {
+	slew_violations++;
+	LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+	if (drvr_port) {
+	  // Find max load cap that corresponds to max_slew.
+	  double max_cap1 = findSlewLoadCap(drvr_port, max_slew);
+	  max_cap = min(max_cap, max_cap1);
+	  debugPrint1(debug_, "repair_net", 2, "slew max_cap=%s\n",
+		      units_->capacitanceUnit()->asString(max_cap1, 3));
+	  // Find max wire length that corresponds to max_slew.
+	  LibertyPort *buffer_input_port, *buffer_output_port;
+	  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+	  double max_length1 = findMaxSlewWireLength(drvr_port, buffer_input_port, max_slew);
+	  int max_length1_dbu = metersToDbu(max_length1);
+	  debugPrint1(debug_, "repair_net", 2, "slew max_length=%s\n",
+		      units_->distanceUnit()->asString(max_length1, 1));
+	  if (max_length == 0
+	      || max_length1_dbu < max_length)
+	    max_length = max_length1_dbu;
+	  repair_slew = true;
+	}
+      }
+    }
     if (repair_slew
 	|| repair_cap
 	|| repair_fanout
@@ -1551,6 +1555,7 @@ Resizer::repairNet(Net *net,
       repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
 		max_cap, max_fanout, max_length, buffer_cell, 0,
 		ignore1, ignore2, ignore3, ignore4);
+      resizeToTargetSlew(drvr_pin);
       repair_count++;
     }
   }
@@ -1664,6 +1669,7 @@ Resizer::repairNet(SteinerTree *tree,
 	      units_->capacitanceUnit()->asString(cap_right, 2));
   bool cap_violation = (cap_left + cap_right) > max_cap;
   if (cap_violation) {
+    debugPrint2(debug_, "repair_net", 3, "%*scap violation\n", level, "");
     if (cap_left > cap_right)
       repeater_left = true;
     else
@@ -1672,6 +1678,7 @@ Resizer::repairNet(SteinerTree *tree,
   bool length_violation = max_length > 0
     && (wire_length_left + wire_length_right) > max_length;
   if (length_violation) {
+    debugPrint2(debug_, "repair_net", 3, "%*slength violation\n", level, "");
     if (wire_length_left > wire_length_right)
       repeater_left = true;
     else
@@ -1680,6 +1687,7 @@ Resizer::repairNet(SteinerTree *tree,
   bool fanout_violation = max_fanout > 0
     && (fanout_left + fanout_right) > max_fanout;
   if (fanout_violation) {
+    debugPrint2(debug_, "repair_net", 3, "%*sfanout violation\n", level, "");
     if (fanout_left > fanout_right)
       repeater_left = true;
     else
@@ -1829,6 +1837,12 @@ Resizer::makeRepeater(int x,
     }
     if (have_estimated_parasitics_)
       estimateWireParasitic(buffer_out);
+
+    // Resize repeater as we back up by levels.
+    Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
+    resizeToTargetSlew(drvr_pin);
+    buffer_cell = network_->libertyCell(buffer);
+    buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
     Pin *buf_in_pin = network_->findPin(buffer, buffer_input_port);
     load_pins.clear();

@@ -41,9 +41,9 @@ Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.
 Driver    length delay
-repeater1/Z manhtn 570.2 steiner 570.2 0.03
-repeater2/Z manhtn 569.8 steiner 569.8 0.03
-u2/Z manhtn 360.5 steiner 360.5 0.01
+repeater1/Z manhtn 569.8 steiner 569.8 0.03
+repeater2/Z manhtn 569.3 steiner 569.3 0.03
+u2/Z manhtn 360.4 steiner 360.4 0.01
 u3/Z manhtn 1.1 steiner 1.1 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -55,17 +55,17 @@ Path Type: max
                      0.000    0.000 ^ input external delay
    1.284    0.000    0.000    0.000 ^ in1 (in)
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
-            0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  19.810    0.049    0.059    0.075 ^ u2/Z (BUF_X1)
-            0.052    0.013    0.089 ^ repeater2/A (BUF_X1)
-  30.748    0.074    0.088    0.177 ^ repeater2/Z (BUF_X1)
-            0.084    0.032    0.208 ^ repeater1/A (BUF_X1)
-  30.774    0.074    0.091    0.299 ^ repeater1/Z (BUF_X1)
-            0.084    0.032    0.331 ^ u3/A (BUF_X1)
-   0.000    0.007    0.027    0.358 ^ u3/Z (BUF_X1)
-            0.007    0.000    0.358 ^ out1 (out)
-                              0.358   data arrival time
+   2.089    0.008    0.019    0.019 ^ u1/Z (BUF_X1)
+            0.008    0.000    0.019 ^ u2/A (BUF_X2)
+  22.237    0.027    0.037    0.057 ^ u2/Z (BUF_X2)
+            0.034    0.016    0.073 ^ repeater2/A (BUF_X4)
+  33.175    0.016    0.035    0.107 ^ repeater2/Z (BUF_X4)
+            0.043    0.032    0.140 ^ repeater1/A (BUF_X4)
+  30.774    0.016    0.036    0.176 ^ repeater1/Z (BUF_X4)
+            0.038    0.028    0.204 ^ u3/A (BUF_X1)
+   0.000    0.005    0.024    0.228 ^ u3/Z (BUF_X1)
+            0.005    0.000    0.228 ^ out1 (out)
+                              0.228   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
