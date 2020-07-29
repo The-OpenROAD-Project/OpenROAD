@@ -107,9 +107,9 @@ Opendp::deleteGrid(Grid *grid)
 {
   if (grid != nullptr) {
     for (int i = 0; i < row_count_; i++) {
-      delete[] grid[i];
+      delete [] grid[i];
     }
-    delete grid;
+    delete [] grid;
   }
 }
 
