@@ -89,11 +89,11 @@ check_net_violation(char* netname)
   odb::dbNet* net = getAntennaChecker()->get_net( std::string(netname));
   auto vios = getAntennaChecker()->get_net_antenna_violations(net);
   if (vios.size() !=0)
+  {
+    vios = getAntennaChecker()->get_net_antenna_violations(net, "sky130_fd_sc_hs__diode_2", "DIODE");
     return 1;
-  else
+  } else
     return 0;       
-
-
 }
 
 void
