@@ -1523,16 +1523,6 @@ Resizer::repairNet(Net *net,
 	  max_cap = min(max_cap, max_cap1);
 	  debugPrint1(debug_, "repair_net", 2, "slew max_cap=%s\n",
 		      units_->capacitanceUnit()->asString(max_cap1, 3));
-	  // Find max wire length that corresponds to max_slew.
-	  LibertyPort *buffer_input_port, *buffer_output_port;
-	  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-	  double max_length1 = findMaxSlewWireLength(drvr_port, buffer_input_port, max_slew);
-	  int max_length1_dbu = metersToDbu(max_length1);
-	  debugPrint1(debug_, "repair_net", 2, "slew max_length=%s\n",
-		      units_->distanceUnit()->asString(max_length1, 1));
-	  if (max_length == 0
-	      || max_length1_dbu < max_length)
-	    max_length = max_length1_dbu;
 	  repair_slew = true;
 	}
       }
@@ -1760,37 +1750,43 @@ Resizer::repairNet(SteinerTree *tree,
     int length = Point::manhattanDistance(prev_loc, pt_loc);
     wire_length += length;
     // Back up from pt to prev_pt adding repeaters every max_length.
-    if (max_length > 0) {
-      int prev_x = prev_loc.getX();
-      int prev_y = prev_loc.getY();
+    int prev_x = prev_loc.getX();
+    int prev_y = prev_loc.getY();
+    debugPrint4(debug_, "repair_net", 3, "%*swl=%s l=%s\n",
+		level, "",
+		units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
+		units_->distanceUnit()->asString(dbuToMeters(length), 1));
+    while ((max_length > 0 && wire_length > max_length)
+	   || (wire_cap_ > 0.0 && pin_cap + dbuToMeters(wire_length) * wire_cap_ > max_cap)) {
+      // Make the wire a bit shorter than necessary to allow for
+      // offset from instance origin to pin and detailed placement movement.
+      double length_margin = .05;
+      // Distance from pt to repeater backward toward prev_pt.
+      double buf_dist;
+      if (max_length > 0)
+	buf_dist = length - (wire_length - max_length * (1.0 - length_margin));
+      else if (wire_cap_ > 0.0 && pin_cap + dbuToMeters(wire_length) * wire_cap_ > max_cap) {
+	int cap_length = metersToDbu((max_cap - pin_cap) / wire_cap_);
+	buf_dist = length - (wire_length - cap_length * (1.0 - length_margin));
+      }
+      else
+	internalError("how did I get here?");
+      double dx = prev_x - pt_x;
+      double dy = prev_y - pt_y;
+      double d = buf_dist / length;
+      int buf_x = pt_x + d * dx;
+      int buf_y = pt_y + d * dy;
+      makeRepeater(buf_x, buf_y, net, buffer_cell, level,
+		   wire_length, pin_cap, fanout, load_pins);
+      // Update for the next round.
+      length -= buf_dist;
+      wire_length = length;
+      pt_x = buf_x;
+      pt_y = buf_y;
       debugPrint4(debug_, "repair_net", 3, "%*swl=%s l=%s\n",
 		  level, "",
 		  units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
 		  units_->distanceUnit()->asString(dbuToMeters(length), 1));
-      while (wire_length > max_length) {
-        // Make the wire a bit shorter than the max length to allow for
-	// offset from instance origin to pin and detailed placement movement.
-	double length_margin = .05;
-	// Distance from pt to repeater backward toward prev_pt.
-        double buf_dist = length
-          - (wire_length - max_length * (1.0 - length_margin));
-	double dx = prev_x - pt_x;
-	double dy = prev_y - pt_y;
-	double d = buf_dist / length;
-	int buf_x = pt_x + d * dx;
-	int buf_y = pt_y + d * dy;
-	makeRepeater(buf_x, buf_y, net, buffer_cell, level,
-		     wire_length, pin_cap, fanout, load_pins);
-	// Update for the next round.
-	length -= buf_dist;
-	wire_length = length;
-	pt_x = buf_x;
-	pt_y = buf_y;
-	debugPrint4(debug_, "repair_net", 3, "%*swl=%s l=%s\n",
-		    level, "",
-		    units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
-		    units_->distanceUnit()->asString(dbuToMeters(length), 1));
-      }
     }
   }
   else if (have_estimated_parasitics_)
