@@ -21,6 +21,7 @@ record_tests {
   repair_slew1
   repair_slew2
   repair_slew3
+  repair_slew4
   repair_hold1
   repair_hold2
   report_floating_nets1

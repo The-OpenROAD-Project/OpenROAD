@@ -226,11 +226,12 @@ proc buffer_ports { args } {
 }
 
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-				   -buffer_cell buffer_cell}
+				   -buffer_cell buffer_cell\
+				   [-libraries resize_libs]}
 
 proc repair_design { args } {
   parse_key_args "repair_design" args \
-    keys {-max_wire_length -buffer_cell} \
+    keys {-max_wire_length -buffer_cell -libraries} \
     flags {}
   
   set buffer_cell [parse_buffer_cell keys 1]
@@ -241,7 +242,17 @@ proc repair_design { args } {
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
   }
   
+  if { [info exists keys(-libraries)] } {
+    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
+  } else {
+    set resize_libs [get_libs *]
+    if { $resize_libs == {} } {
+      ord::error "No liberty libraries found."
+    }
+  }
+
   check_argc_eq0 "repair_design" $args
+  resizer_preamble $resize_libs
   repair_design_cmd $max_wire_length $buffer_cell
 }
 
