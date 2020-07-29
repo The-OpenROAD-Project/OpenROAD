@@ -1,25 +1,25 @@
+Warning: repair_slew4.lib, line 1 library NangateOpenCellLibrary already exists.
 Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: Reading LEF file:  repair_slew4.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  repair_slew4.lef
 Notice 0: 
 Reading DEF file: repair_slew4.def
 Notice 0: Design: long_wire
-Notice 0:     Created 7 pins.
-Notice 0:     Created 5 components and 22 component-terminals.
+Notice 0:     Created 2 pins.
+Notice 0:     Created 5 components and 20 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
-Notice 0:     Created 8 nets and 12 connections.
+Notice 0:     Created 3 nets and 7 connections.
 Notice 0: Finished DEF file: repair_slew4.def
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/A                                    0.10    0.19   -0.09 (VIOLATED)
-u3/A                                    0.10    0.19   -0.09 (VIOLATED)
-u4/A                                    0.10    0.19   -0.09 (VIOLATED)
-u5/A                                    0.10    0.19   -0.09 (VIOLATED)
-u1/ZN                                   0.10    0.16   -0.06 (VIOLATED)
+u5/A                                    0.07    0.19   -0.12 (VIOLATED)
 
 Found 1 slew violations.
 Inserted 1 buffers in 1 nets.

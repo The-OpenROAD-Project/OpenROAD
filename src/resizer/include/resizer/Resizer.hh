@@ -212,6 +212,11 @@ protected:
 		 int &cap_violations,
 		 int &fanout_violations,
 		 int &length_violations);
+  void checkSlew(const Pin *drvr_pin,
+		 // Return values.
+		 Slew &slew,
+		 float &limit,
+		 float &slack);
   void repairNet(SteinerTree *tree,
 		 SteinerPt pt,
 		 SteinerPt prev_pt,

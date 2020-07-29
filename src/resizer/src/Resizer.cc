@@ -1476,6 +1476,8 @@ Resizer::repairNet(Net *net,
   SteinerTree *tree = makeSteinerTree(net, true, db_network_);
   if (tree) {
     Pin *drvr_pin = drvr->pin();
+    debugPrint1(debug_, "repair_net", 1, "repair net %s\n",
+		sdc_network_->pathName(drvr_pin));
     double max_cap = INF;
     float max_fanout = INF;
     bool repair_slew = false;
@@ -1511,10 +1513,7 @@ Resizer::repairNet(Net *net,
     }
     if (check_slew) {
       float slew, slew_slack, max_slew;
-      const Corner *corner1;
-      const RiseFall *tr;
-      sta_->checkSlew(drvr_pin, corner_, MinMax::max(), false,
-		      corner1, tr, slew, max_slew, slew_slack);
+      checkSlew(drvr_pin, slew, max_slew, slew_slack);
       if (slew_slack < 0.0) {
 	slew_violations++;
 	LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
@@ -1559,6 +1558,32 @@ Resizer::repairNet(Net *net,
       repair_count++;
     }
   }
+}
+
+void
+Resizer::checkSlew(const Pin *drvr_pin,
+	       // Return values.
+	       Slew &slew,
+	       float &limit,
+	       float &slack)
+{
+  slack = INF;
+  PinConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    const Corner *corner1;
+    const RiseFall *tr;
+    Slew slew1;
+    float limit1, slack1;
+    sta_->checkSlew(pin, corner_, MinMax::max(), false,
+		    corner1, tr, slew1, limit1, slack1);
+    if (slack1 < slack) {
+      slew = slew1;
+      limit = limit1;
+      slack = slack1;
+    }
+  }
+  delete pin_iter;
 }
 
 // Find the output port load capacitance that results in slew.
