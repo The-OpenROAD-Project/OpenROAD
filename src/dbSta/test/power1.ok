@@ -1,0 +1,10 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+   Internal  Switching    Leakage      Total
+      Power      Power      Power      Power
+--------------------------------------------
+   4.56e-07   7.43e-09   7.91e-08   5.42e-07 r1
+1.00000e+07 0.500 propagated
