@@ -11,6 +11,7 @@ record_tests {
   block_sta1
   find_clks1
   report_json1
+  power1
 
   read_verilog1
   read_verilog2
