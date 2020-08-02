@@ -149,6 +149,13 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
+FastRoute::FastRouteKernel*
+getFastRoute()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getFastRoute();
+}
+
 } // namespace ord
 
 namespace sta {
