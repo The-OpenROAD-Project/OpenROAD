@@ -59,4 +59,5 @@ target_include_directories(antennachecker
   ${OPENDB_HOME}/include
   ${OPENSTA_HOME}/include
   ${OPENSTA_HOME}/app
+  ${TCL_INCLUDE_PATH}
   )
