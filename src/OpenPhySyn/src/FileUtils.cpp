@@ -30,7 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __has_include
-#if __cplusplus > 201402L
+//#if __cplusplus > 201402L fails on Ubuntu 18.04 gcc7.5.0 -cherry
+#if 0
 #include <filesystem>
 namespace fs = std::filesystem;
 #else
