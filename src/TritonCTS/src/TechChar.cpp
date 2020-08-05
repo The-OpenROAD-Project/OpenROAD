@@ -42,7 +42,6 @@
 #include "sta/PathAnalysisPt.hh"
 #include "sta/Units.hh"
 #include "sta/Search.hh"
-#include "sta/Power.hh"
 #include "sta/Graph.hh"
 #include "db_sta/dbSta.hh"
 

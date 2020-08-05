@@ -57,7 +57,6 @@
 #include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
-#include "sta/Power.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/TableModel.hh"
