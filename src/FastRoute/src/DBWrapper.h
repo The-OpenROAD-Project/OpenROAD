@@ -124,6 +124,7 @@ class DBWrapper
                    int siteWidth,
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
+  void createMapForDbNets();
 
   int selectedMetal = 3;
   ord::OpenRoad* _openroad;
@@ -133,7 +134,7 @@ class DBWrapper
   Grid* _grid;
   bool _verbose = false;
 
-  std::map<std::string, odb::dbNet*> dbNets;
+  std::map<std::string, odb::dbNet*> _dbNets;
   std::map<std::string, std::vector<VINFO>>
     _antennaViolations;
   std::vector<odb::dbNet*> _dirtyNets;

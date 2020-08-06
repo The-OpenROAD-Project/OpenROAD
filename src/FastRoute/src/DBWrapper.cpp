@@ -390,6 +390,8 @@ void DBWrapper::initNetlist(bool reroute)
     error("odb::dbBlock not found\n");
   }
 
+  createMapForDbNets();
+
   std::vector<odb::dbNet*> nets;
 
   for (odb::dbNet* net : block->getNets()) {
@@ -1111,7 +1113,7 @@ void DBWrapper::commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
 
   for (FastRoute::NET netRoute : routing) {
     std::string netName = netRoute.name;
-    odb::dbWire* wire = odb::dbWire::create(dbNets[netName]);
+    odb::dbWire* wire = odb::dbWire::create(_dbNets[netName]);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
     odb::dbWireType wireType = odb::dbWireType::ROUTED;
@@ -1168,24 +1170,10 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
 
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxRoutingLayer);
 
-  odb::dbSet<odb::dbNet> nets = block->getNets();
-
-  for (odb::dbNet* currNet : nets) {
-    std::string netName = currNet->getConstName();
-
-    if (currNet->getSigType().getValue() == odb::dbSigType::POWER
-        || currNet->getSigType().getValue() == odb::dbSigType::GROUND
-        || currNet->isSpecial() || currNet->getSWires().size() > 0) {
-      continue;
-    }
-
-    dbNets[netName] = currNet;
-  }
-
   for (FastRoute::NET netRoute : *routing) {
     std::string netName = netRoute.name;
 
-    odb::dbWire* wire = odb::dbWire::create(dbNets[netName]);
+    odb::dbWire* wire = odb::dbWire::create(_dbNets[netName]);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
     odb::dbWireType wireType = odb::dbWireType::ROUTED;
@@ -1218,13 +1206,13 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
     }
     wireEncoder.end();
 
-    odb::orderWires(dbNets[netName], false, false);
+    odb::orderWires(_dbNets[netName], false, false);
 
     std::vector<VINFO> netViol
-        = arc->get_net_antenna_violations(dbNets[netName]);
+        = arc->get_net_antenna_violations(_dbNets[netName]);
     if (netViol.size() > 0) {
-      _antennaViolations[dbNets[netName]->getConstName()] = netViol;
-      _dirtyNets.push_back(dbNets[netName]);
+      _antennaViolations[_dbNets[netName]->getConstName()] = netViol;
+      _dirtyNets.push_back(_dbNets[netName]);
     }
     if (wire != nullptr) {
       odb::dbWire::destroy(wire);
@@ -1337,6 +1325,19 @@ void DBWrapper::getFixedInstances(r_tree& fixedInsts)
   }
 }
 
+void DBWrapper::createMapForDbNets() {
+  odb::dbBlock* block = _chip->getBlock();
+  for (odb::dbNet* currNet : block->getNets()) {
+    std::string netName = currNet->getConstName();
+
+    if (currNet->getSigType().getValue() != odb::dbSigType::POWER
+        && currNet->getSigType().getValue() != odb::dbSigType::GROUND
+        && !(currNet->isSpecial()) && currNet->getSWires().size() == 0) {
+      _dbNets[netName] = currNet;
+    }
+  }
+}
+
 void DBWrapper::fixAntennas(std::string antennaCellName,
                             std::string antennaPinName)
 {
@@ -1362,7 +1363,7 @@ void DBWrapper::fixAntennas(std::string antennaCellName,
   }
 
   for (auto const& violation : _antennaViolations) {
-    odb::dbNet* net = dbNets[violation.first];
+    odb::dbNet* net = _dbNets[violation.first];
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
         odb::dbInst* sinkInst = sinkITerm->getInst();
