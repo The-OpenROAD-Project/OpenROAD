@@ -1,0 +1,19 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: find_clks2.def
+Notice 0: Design: reg1
+Notice 0:     Created 5 pins.
+Notice 0:     Created 8 components and 39 component-terminals.
+Notice 0:     Created 2 special nets and 16 connections.
+Notice 0:     Created 12 nets and 20 connections.
+Notice 0: Finished DEF file: find_clks2.def
+clk1
+clk1b
+clk2
+clk2b
+clk3
+clk3b

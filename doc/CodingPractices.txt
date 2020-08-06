@@ -74,6 +74,11 @@ Just use thingy.
 
 Do not use global varaibles.
 All state should be inside of classes.
+Global variables make multi-threading next to impossible and
+preclude having multiple copies of a tool running in the same
+process.
+The only global variable in OpenRoad should be the singleton that
+tcl commands reference.
 
 extern std::string DEF_FILE;
 extern std::string GUIDE_FILE;
