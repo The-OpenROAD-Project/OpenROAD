@@ -376,6 +376,10 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
     connectPadPins(newRoute);
     mergeResults(newRoute);
   }
+
+  for (FastRoute::NET& netRoute : *_result) {
+    mergeSegments(netRoute);
+  }
 }
 
 void FastRouteKernel::runClockNetsRouteFlow()
