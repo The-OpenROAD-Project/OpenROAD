@@ -55,7 +55,7 @@ public:
 
 
 class clustering {
-	vector<flop*> flops;
+	vector<flop> flops;
 	vector<vector<flop*>> clusters;
 	
 	//map<unsigned, vector<pair<float, float>>> shifts;  // relative x- and y-shifts of slots w.r.t tray 

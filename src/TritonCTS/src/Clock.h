@@ -60,17 +60,23 @@ public:
         ClockInst(const std::string& name,
                   const std::string& master,
                   InstType type,
-                  DBU x, DBU y) : 
+                  DBU x, DBU y, odb::dbITerm* pinObj = nullptr) : 
                   _name(name), 
                   _master(master),
                   _type(type),
-                  _location(x, y) {}
+                  _location(x, y), 
+                  _inputPinObj(pinObj) {}
 
         std::string getName() const { return _name; }
         std::string getMaster() const { return _master; }
         DBU getX() const { return _location.getX(); }
         DBU getY() const { return _location.getY(); }
         Point<DBU> getLocation() const { return _location; }
+
+        void setInstObj(odb::dbInst* inst) { _instObj = inst; }
+        odb::dbInst* getDbInst() const { return _instObj; }
+        void setInputPinObj(odb::dbITerm* pin) { _inputPinObj = pin; }
+        odb::dbITerm* getDbInputPin() const { return _inputPinObj; }
 
         bool isClockBuffer() const { return _type == CLOCK_BUFFER; }
 
@@ -79,6 +85,8 @@ protected:
         std::string _master;
         InstType    _type;
         Point<DBU>  _location;
+        odb::dbInst* _instObj = nullptr;
+        odb::dbITerm* _inputPinObj = nullptr;
 };
 
 //-----------------------------------------------------------------------------
@@ -165,10 +173,15 @@ public:
                 _sinks.emplace_back(name, "", CLOCK_SINK, x, y);
         }
 
+        void addSink(const std::string& name, DBU x, DBU y, odb::dbITerm* pinObj) {
+                _sinks.emplace_back(name, "", CLOCK_SINK, x, y, pinObj);
+        }
+
         std::string getName() const { return _netName; }
         unsigned getNumSinks() const { return _sinks.size(); }
 
         Box<DBU> computeSinkRegion();
+        Box<double> computeSinkRegionClustered(std::vector<std::pair<float, float>> sinks);
         Box<double> computeNormalizedSinkRegion(double factor);
         
         void report() const;
@@ -176,6 +189,7 @@ public:
         void forEachSink(const std::function<void(const ClockInst&)>& func) const;
         void forEachSink(const std::function<void(ClockInst&)>& func);
         void forEachClockBuffer(const std::function<void(const ClockInst&)>& func) const;
+        void forEachClockBuffer(const std::function<void(ClockInst&)>& func);
         void forEachSubNet(const std::function<void(const SubNet&)>& func) const {
                 for (const SubNet& subNet: _subNets) {
                         func(subNet);

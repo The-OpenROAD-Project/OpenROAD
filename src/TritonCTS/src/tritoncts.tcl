@@ -48,18 +48,24 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-slew_inter slewvalue] \
                                              [-cap_inter capvalue] \
                                              [-characterization_only] \
+                                             [-tree_buf buf] \
                                              [-post_cts_disable] \
                                              [-distance_between_buffers] \
                                              [-branching_point_buffers_distance] \
                                              [-clustering_exponent] \
                                              [-clustering_unbalance_ratio] \
+                                             [-sink_clustering_size] \
+                                             [-sink_clustering_max_diameter] \
+                                             [-sink_clustering_enable] \
+                                             [-num_static_layers] \
+                                             [-sink_clustering_buffer] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter \
-    -cap_inter -distance_between_buffers -branching_point_buffers_distance -clustering_exponent -clustering_unbalance_ratio} \
-    flags {-characterization_only -post_cts_disable}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -sink_clustering_size -num_static_layers -sink_clustering_buffer\
+    -cap_inter -distance_between_buffers -branching_point_buffers_distance -clustering_exponent -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf} \
+    flags {-characterization_only -post_cts_disable -sink_clustering_enable}
 
   set cts [get_triton_cts]
 
@@ -74,6 +80,23 @@ proc clock_tree_synthesis { args } {
   $cts set_only_characterization [info exists flags(-characterization_only)]
 
   $cts set_disable_post_cts [info exists flags(-post_cts_disable)]
+
+  $cts set_sink_clustering [info exists flags(-sink_clustering_enable)]
+
+  if { [info exists keys(-sink_clustering_size)] } {
+    set size $keys(-sink_clustering_size)
+    $cts set_sink_clustering_size $size
+  } 
+
+  if { [info exists keys(-sink_clustering_max_diameter)] } {
+    set distance $keys(-sink_clustering_max_diameter)
+    $cts set_clustering_diameter $distance
+  } 
+
+  if { [info exists keys(-num_static_layers)] } {
+    set num $keys(-num_static_layers)
+    $cts set_num_static_layers $num
+  } 
 
   if { [info exists keys(-distance_between_buffers)] } {
     set distance $keys(-distance_between_buffers)
@@ -156,17 +179,36 @@ proc clock_tree_synthesis { args } {
     $cts set_cap_inter $cap 
   } 
 
+  if { [info exists keys(-tree_buf)] } {
+	  set buf $keys(-tree_buf)
+    $cts set_tree_buf $buf 
+  } 
+
   if { [info exists keys(-root_buf)] } {
     set root_buf $keys(-root_buf)
+    if { [llength $root_buf] > 1} {
+      set root_buf [lindex $root_buf 0]
+    }
     $cts set_root_buffer $root_buf
   } else {
     if { [info exists keys(-buf_list)] } {
       #If using -buf_list, the first buffer can become the root buffer.
-      $cts set_root_buffer [lindex $buf_list 0]
+      set root_buf [lindex $buf_list 0]
+      $cts set_root_buffer $root_buf
     } else {
       #User must enter at least one of -root_buf or -buf_list.
       ord::error "Missing argument -root_buf"
     }
+  }
+
+  if { [info exists keys(-sink_clustering_buffer)] } {
+    set sink_buf $keys(-sink_clustering_buffer)
+    if { [llength $sink_buf] > 1} {
+      set sink_buf [lindex $sink_buf 0]
+    }
+    $cts set_sink_buffer $sink_buf
+  } else {
+    $cts set_sink_buffer $root_buf
   }
 
   if { [info exists keys(-out_path)] && (![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]) } {
