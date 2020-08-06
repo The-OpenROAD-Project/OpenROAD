@@ -1,0 +1,15 @@
+.git
+.dockerignore
+Dockerfile
+
+# from .gitignore 
+build
+FRlefdef
+FlexRoute*
+flexroute*
+TritonRoute*
+*.dat
+*.log
+*.param
+support/ispd18/*
+.gdb_history

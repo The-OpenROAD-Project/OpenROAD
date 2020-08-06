@@ -1,0 +1,12 @@
+build
+*.dat
+*.log
+*.param
+.gdb_history
+nbproject/
+test/src/test_*/*.log
+test/src/test_*/*.guide
+test/src/test_*/*.txt
+test/results
+*~
+TAGS
