@@ -90,7 +90,7 @@ class DBWrapper
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
   void commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
                                 int maxRoutingLayer);
-  int checkAntennaViolations(std::vector<FastRoute::NET> routing,
+  int checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
                              int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();

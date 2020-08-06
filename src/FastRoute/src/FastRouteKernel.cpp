@@ -327,23 +327,25 @@ void FastRouteKernel::runFastRoute()
 void FastRouteKernel::runAntennaAvoidanceFlow()
 {
   std::cout << "Running antenna avoidance flow...\n";
-  std::vector<FastRoute::NET> globalRoute;
-  std::vector<FastRoute::NET> newRoute;
-  std::vector<FastRoute::NET> originalRoute;
+  std::vector<FastRoute::NET> *globalRoute = new std::vector<FastRoute::NET>;
+  std::vector<FastRoute::NET> *newRoute = new std::vector<FastRoute::NET>;
+  std::vector<FastRoute::NET> *originalRoute = new std::vector<FastRoute::NET>;
 
-  _fastRoute->run(globalRoute);
+  _fastRoute->run(*globalRoute);
+  addRemainingGuides(globalRoute);
+  connectPadPins(globalRoute);
 
-  addRemainingGuides(&globalRoute);
-  originalRoute = globalRoute;
-
-  connectPadPins(&globalRoute);
+  for (FastRoute::NET route : *globalRoute) {
+    originalRoute->push_back(route);
+  }
 
   getPreviousCapacities(_minRoutingLayer);
   addLocalConnections(globalRoute);
 
   resetResources();
 
-  for (FastRoute::NET gr : originalRoute) {
+  // Adding routes of first run here to avoid loss data in resetResources
+  for (FastRoute::NET gr : *originalRoute) {
     _result->push_back(gr);
   }
 
@@ -362,8 +364,8 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
     restorePreviousCapacities(_minRoutingLayer);
 
     _fastRoute->initAuxVar();
-    _fastRoute->run(newRoute);
-    addRemainingGuides(&newRoute);
+    _fastRoute->run(*newRoute);
+    addRemainingGuides(newRoute);
     mergeResults(newRoute);
   }
 }
@@ -2542,7 +2544,7 @@ bool FastRouteKernel::checkSteinerTree(SteinerTree sTree)
 }
 
 void FastRouteKernel::addLocalConnections(
-    std::vector<FastRoute::NET>& globalRoute)
+    std::vector<FastRoute::NET>* globalRoute)
 {
   Net* net;
   int topLayer;
@@ -2552,7 +2554,7 @@ void FastRouteKernel::addLocalConnections(
   FastRoute::ROUTE horSegment;
   FastRoute::ROUTE verSegment;
 
-  for (FastRoute::NET& netRoute : globalRoute) {
+  for (FastRoute::NET& netRoute : *globalRoute) {
     net = _netlist->getNetByIdx(netRoute.idx);
 
     for (Pin pin : net->getPins()) {
@@ -2581,9 +2583,9 @@ void FastRouteKernel::addLocalConnections(
   }
 }
 
-void FastRouteKernel::mergeResults(std::vector<FastRoute::NET> newRoute)
+void FastRouteKernel::mergeResults(const std::vector<FastRoute::NET>* newRoute)
 {
-  for (FastRoute::NET netRoute : newRoute) {
+  for (FastRoute::NET netRoute : *newRoute) {
     for (int i = 0; i < _result->size(); i++) {
       if (netRoute.name == _result->at(i).name) {
         _result->at(i) = netRoute;

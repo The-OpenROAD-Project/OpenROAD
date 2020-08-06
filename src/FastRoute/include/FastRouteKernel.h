@@ -214,8 +214,8 @@ class FastRouteKernel
   SteinerTree createSteinerTree(std::vector<ROUTE>& route,
                                 const std::vector<Pin>& pins);
   bool checkSteinerTree(SteinerTree sTree);
-  void addLocalConnections(std::vector<FastRoute::NET>& globalRoute);
-  void mergeResults(std::vector<FastRoute::NET> newRoute);
+  void addLocalConnections(std::vector<FastRoute::NET>* globalRoute);
+  void mergeResults(const std::vector<FastRoute::NET>* newRoute);
   void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
