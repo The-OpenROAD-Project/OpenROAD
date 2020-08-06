@@ -377,6 +377,7 @@ void DBWrapper::computeSpacingsAndMinWidth(int maxLayer)
 
 void DBWrapper::initNetlist(bool reroute)
 {
+  initClockNets();
   Box dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
               _grid->getUpperRightX(),
@@ -423,6 +424,22 @@ void DBWrapper::initNetlist(bool reroute)
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
     }
+  }
+}
+
+void DBWrapper::initClockNets()
+{
+  std::set<odb::dbNet*> _clockNets;
+
+  
+  sta::dbSta* openSta = _openroad->getSta();
+
+  openSta->findClkNets(_clockNets);
+
+  std::cout << "[INFO] Found " << _clockNets.size() << " clock nets\n";
+
+  for (odb::dbNet* net : _clockNets) {
+    net->setSigType(odb::dbSigType::CLOCK);
   }
 }
 

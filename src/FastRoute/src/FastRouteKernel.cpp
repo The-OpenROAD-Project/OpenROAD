@@ -80,8 +80,7 @@ void FastRouteKernel::init()
   _maxRoutingLayer = -1;
   _unidirectionalRoute = 0;
   _fixLayer = 0;
-  _clockNetRouting = false;
-  _overflowIterations = 500;
+  _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
   _estimateRC = false;
@@ -291,6 +290,7 @@ void FastRouteKernel::runFastRoute()
   } else {
     _fastRoute->run(*_result);
     addRemainingGuides(_result);
+    connectPadPins(_result);
   }
   std::cout << "Running FastRoute... Done!\n";
 
@@ -370,10 +370,11 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
 
 void FastRouteKernel::runClockNetsRouteFlow()
 {
-  std::vector<FastRoute::NET> clockNetsRoute;
+  std::vector<FastRoute::NET> *clockNetsRoute = new std::vector<FastRoute::NET>;
   _fastRoute->setVerbose(0);
-  _fastRoute->run(clockNetsRoute);
-  addRemainingGuides(&clockNetsRoute);
+  _fastRoute->run(*clockNetsRoute);
+  addRemainingGuides(clockNetsRoute);
+  connectPadPins(clockNetsRoute);
 
   getPreviousCapacities(_minLayerForClock);
 
@@ -387,9 +388,14 @@ void FastRouteKernel::runClockNetsRouteFlow()
   _fastRoute->initAuxVar();
   _fastRoute->run(*_result);
   addRemainingGuides(_result);
+  connectPadPins(_result);
 
   _result->insert(
-      _result->begin(), clockNetsRoute.begin(), clockNetsRoute.end());
+      _result->begin(), clockNetsRoute->begin(), clockNetsRoute->end());
+
+  for (FastRoute::NET& netRoute : *_result) {
+    mergeSegments(netRoute);
+  }
 }
 
 void FastRouteKernel::estimateRC()
@@ -587,7 +593,8 @@ void FastRouteKernel::initializeNets(bool reroute)
 
   for (const Net& net : _netlist->getNets()) {
     if (net.getNumPins() > 1
-        && !(_clockNetRouting && net.getSignalType() != odb::dbSigType::CLOCK)
+        && !(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
+        && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
       validNets++;
     }
@@ -608,7 +615,8 @@ void FastRouteKernel::initializeNets(bool reroute)
         maxDegree = pin_count;
       }
 
-      if (!_clockNetRouting || net.getSignalType() == odb::dbSigType::CLOCK) {
+      if (!(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
+          && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)) {
         if (pin_count >= std::numeric_limits<short>::max()) {
           std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
                     << " due to large number of pins\n";
@@ -1381,8 +1389,6 @@ void FastRouteKernel::writeGuides()
   }
   RoutingLayer phLayerF;
 
-  connectPadPins(_result);
-
   int offsetX = _gridOrigin->getX();
   int offsetY = _gridOrigin->getY();
 
@@ -1662,7 +1668,9 @@ void FastRouteKernel::addRemainingGuides(
 
   // Add local guides for nets with no routing.
   for (Net& net : _netlist->getNets()) {
-    if (net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
+    if (!(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
+        && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)
+        && net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
       int net_idx = _netlist->getNetIdx(&net);
       std::vector<FastRoute::PIN>& pins = net_pins[net_idx];
 
@@ -2298,8 +2306,6 @@ void FastRouteKernel::fixLongSegments()
 {
   int fixedSegs = 0;
   int possibleViols = 0;
-
-  connectPadPins(_result);
 
   for (FastRoute::NET& netRoute : *_result) {
     bool possibleViolation = false;

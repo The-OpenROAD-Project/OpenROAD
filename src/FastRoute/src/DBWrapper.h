@@ -81,7 +81,6 @@ class DBWrapper
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
   void addNet(odb::dbNet* net, Box dieArea, bool isClock);
-  void initClockNets();
   void initObstacles();
   int computeMaxRoutingLayer();
   void getLayerRC(unsigned layerId, float& r, float& c);
@@ -108,6 +107,7 @@ class DBWrapper
 
   void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
+  void initClockNets();
   void insertDiode(odb::dbNet* net,
                    std::string antennaCellName,
                    std::string antennaPinName,

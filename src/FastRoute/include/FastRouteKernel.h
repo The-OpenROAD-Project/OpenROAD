@@ -242,7 +242,6 @@ class FastRouteKernel
   int _maxRoutingLayer;
   bool _unidirectionalRoute;
   int _fixLayer;
-  bool _clockNetRouting;
   const int _selectedMetal = 3;
   const float transitionLayerAdjust = 0.6;
   const int _gcellsOffset = 2;
