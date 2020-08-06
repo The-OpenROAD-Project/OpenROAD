@@ -99,7 +99,7 @@ void FastRouteKernel::makeComponents()
   // Allocate memory for objects
   _netlist = new Netlist;
   _grid = new Grid;
-  _dbWrapper = new DBWrapper(_openroad->getDb(), _netlist, _grid);
+  _dbWrapper = new DBWrapper(_openroad, _netlist, _grid);
   _fastRoute = new FT;
   _gridOrigin = new Coordinate(-1, -1);
   _routingLayers = new std::vector<RoutingLayer>;

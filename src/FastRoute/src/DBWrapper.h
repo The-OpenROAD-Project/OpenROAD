@@ -70,7 +70,7 @@ namespace FastRoute {
 class DBWrapper
 {
  public:
-  DBWrapper(odb::dbDatabase* db, Netlist* netlist, Grid* grid);
+  DBWrapper(ord::OpenRoad* openroad, Netlist* netlist, Grid* grid);
 
   void initGrid(int maxLayer);
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
@@ -118,15 +118,13 @@ class DBWrapper
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
 
-  std::set<odb::dbNet*> _clockNets;
   int selectedMetal = 3;
+  ord::OpenRoad* _openroad;
   odb::dbDatabase* _db;
   odb::dbChip* _chip;
   Netlist* _netlist;
   Grid* _grid;
   bool _verbose = false;
-  antenna_checker::AntennaChecker* _arc = nullptr;
-  opendp::Opendp* _opendp = nullptr;
 
   std::map<std::string, odb::dbNet*> dbNets;
   std::map<std::string, std::vector<VINFO>>
