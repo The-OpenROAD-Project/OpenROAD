@@ -401,7 +401,7 @@ void DBWrapper::initNetlist(bool reroute)
   }
 
   if (reroute) {
-    nets = dirtyNets;
+    nets = _dirtyNets;
   }
 
   // Sort nets so guide file net order is consistent.
@@ -1223,17 +1223,17 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
     std::vector<VINFO> netViol
         = arc->get_net_antenna_violations(dbNets[netName]);
     if (netViol.size() > 0) {
-      antennaViolations[dbNets[netName]->getConstName()] = netViol;
-      dirtyNets.push_back(dbNets[netName]);
+      _antennaViolations[dbNets[netName]->getConstName()] = netViol;
+      _dirtyNets.push_back(dbNets[netName]);
     }
     if (wire != nullptr) {
       odb::dbWire::destroy(wire);
     }
   }
 
-  std::cout << "[INFO] #Antenna violations: " << antennaViolations.size()
+  std::cout << "[INFO] #Antenna violations: " << _antennaViolations.size()
             << "\n";
-  return antennaViolations.size();
+  return _antennaViolations.size();
 }
 
 void DBWrapper::insertDiode(odb::dbNet* net,
@@ -1361,7 +1361,7 @@ void DBWrapper::fixAntennas(std::string antennaCellName,
     }
   }
 
-  for (auto const& violation : antennaViolations) {
+  for (auto const& violation : _antennaViolations) {
     odb::dbNet* net = dbNets[violation.first];
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
