@@ -20,6 +20,7 @@
 
 #include "sta/StaMain.hh"
 #include "sta/Graph.hh"
+#include "sta/Clock.hh"
 #include "sta/Search.hh"
 #include "sta/Bfs.hh"
 #include "db_sta/dbNetwork.hh"
@@ -157,7 +158,8 @@ dbSta::netSlack(const dbNet *db_net,
 }
 
 void
-dbSta::findClkNets(std::set<dbNet*> &clk_nets)
+dbSta::findClkNets(// Return value.
+		   std::set<dbNet*> &clk_nets)
 {
   ensureGraph();
   ensureLevelized();
@@ -166,6 +168,33 @@ dbSta::findClkNets(std::set<dbNet*> &clk_nets)
   PinSet clk_pins;
   search_->findClkVertexPins(clk_pins);
   for (Pin *pin : clk_pins) {
+    Vertex *vertex, *bidirect_drvr_vertex;
+    graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
+    bfs.enqueue(vertex);
+    if (bidirect_drvr_vertex)
+      bfs.enqueue(bidirect_drvr_vertex);
+  }  
+  while (bfs.hasNext()) {
+    Vertex *vertex = bfs.next();
+    const Pin *pin = vertex->pin();
+    if (!network_->isTopLevelPort(pin)) {
+      Net *net = network_->net(pin);
+      clk_nets.insert(db_network_->staToDb(net));
+    }
+    bfs.enqueueAdjacentVertices(vertex);
+  }
+}
+
+void
+dbSta::findClkNets(const Clock *clk,
+		   // Return value.
+		   std::set<dbNet*> &clk_nets)
+{
+  ensureGraph();
+  ensureLevelized();
+  ClkArrivalSearchPred srch_pred(this);
+  BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
+  for (Pin *pin : clk->leafPins()) {
     Vertex *vertex, *bidirect_drvr_vertex;
     graph_->pinVertices(pin, vertex, bidirect_drvr_vertex);
     bfs.enqueue(vertex);
