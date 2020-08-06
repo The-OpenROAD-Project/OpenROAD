@@ -80,7 +80,7 @@ class DBWrapper
   void computeCapacities(int maxLayer, std::map<int, float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
-  void addNet(odb::dbNet* net, Box dieArea, bool isClock);
+  void addNets(std::vector<odb::dbNet*> nets);
   void initObstacles();
   int computeMaxRoutingLayer();
   void getLayerRC(unsigned layerId, float& r, float& c);

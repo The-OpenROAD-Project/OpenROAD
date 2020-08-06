@@ -378,11 +378,6 @@ void DBWrapper::computeSpacingsAndMinWidth(int maxLayer)
 void DBWrapper::initNetlist(bool reroute)
 {
   initClockNets();
-  Box dieArea(_grid->getLowerLeftX(),
-              _grid->getLowerLeftY(),
-              _grid->getUpperRightX(),
-              _grid->getUpperRightY(),
-              -1);
 
   odb::dbBlock* block = _chip->getBlock();
   odb::dbTech* tech = _db->getTech();
@@ -392,20 +387,35 @@ void DBWrapper::initNetlist(bool reroute)
 
   createMapForDbNets();
 
-  std::vector<odb::dbNet*> nets;
-
-  for (odb::dbNet* net : block->getNets()) {
-    nets.push_back(net);
-  }
-
-  if (nets.size() == 0) {
-    error("Design without nets");
-  }
-
   if (reroute) {
-    nets = _dirtyNets;
-  }
+    if (_dirtyNets.size() == 0) {
+      error("Not found any dirty net to reroute");
+    }
 
+    addNets(_dirtyNets);
+  } else {
+    std::vector<odb::dbNet*> nets;
+
+    for (odb::dbNet* net : block->getNets()) {
+      nets.push_back(net);
+    }
+
+    if (nets.size() == 0) {
+      error("Design without nets");
+    }
+
+    addNets(nets);
+  }
+}
+
+void DBWrapper::addNets(std::vector<odb::dbNet*> nets)
+{
+  Box dieArea(_grid->getLowerLeftX(),
+              _grid->getLowerLeftY(),
+              _grid->getUpperRightX(),
+              _grid->getUpperRightY(),
+              -1);
+              
   // Sort nets so guide file net order is consistent.
   std::vector<odb::dbNet*> sorted_nets;
   for (odb::dbNet* net : nets)
