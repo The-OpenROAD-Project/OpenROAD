@@ -54,6 +54,6 @@ if grep -q -e "#Modified segments: 62" ./test.log;
 then
 	exit $GREEN
 else
-        echo "     - [ERROR] Test failed. Check $testdir/src/test_antenna/test.log and Check $testdir/src/test_antenna/golden.wl"
+        echo "     - [ERROR] Test failed. Check $testdir/src/test_antenna/test.log"
 	exit $RED
 fi
