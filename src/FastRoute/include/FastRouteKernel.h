@@ -45,7 +45,7 @@
 #include <utility>
 #include <vector>
 
-#include "FastRoute.h"
+#include "opendb/db.h"
 
 namespace ord {
 class OpenRoad;
@@ -164,6 +164,16 @@ class FastRouteKernel
   ROUTE_ getRoute();
   std::vector<EST_> getEst();
 
+protected:
+  // Net functions
+  int getNetCount() const;
+  int getNetIdx(Net* net);
+  Net* getNetByIdx(int idx);
+	void reserveNets(size_t net_count);
+  Net* addNet(odb::dbNet* net);
+  int getMaxNetDegree();
+  friend class DBWrapper;
+
  private:
   void makeComponents();
   void deleteComponents();
@@ -222,17 +232,17 @@ class FastRouteKernel
   void getPreviousCapacities(int previousMinLayer);
   void restorePreviousCapacities(int previousMinLayer);
 
-  Netlist* _netlist = nullptr;
-  Grid* _grid = nullptr;
-  std::vector<RoutingLayer>* _routingLayers = nullptr;
-  std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
-
   ord::OpenRoad* _openroad;
   // Objects variables
   DBWrapper* _dbWrapper = nullptr;
   FT* _fastRoute = nullptr;
   Coordinate* _gridOrigin = nullptr;
   std::vector<FastRoute::NET>* _result;
+
+  std::vector<Net> *_nets;
+  Grid* _grid = nullptr;
+  std::vector<RoutingLayer>* _routingLayers = nullptr;
+  std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
 
   // Flow variables
   std::string _outfile;
@@ -255,6 +265,7 @@ class FastRouteKernel
   std::vector<int> _hCapacities;
   unsigned _seed;
 
+  std::vector<Pin> getAllPorts();
   // Layer adjustment variables
   std::vector<int> _layersToAdjust;
   std::vector<float> _layersReductionPercentage;
