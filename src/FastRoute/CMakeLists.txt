@@ -84,7 +84,6 @@ set(SRC_FILES
   src/Grid.cpp
   src/MakeFastRoute.cpp
   src/Net.cpp
-  src/Netlist.cpp
   src/Pin.cpp
   src/RcTreeBuilder.cpp
   src/SteinerTree.cpp

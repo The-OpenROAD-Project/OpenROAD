@@ -36,7 +36,7 @@
 #include "MakeFastRoute.h"
 
 #include "FastRouteKernel.h"
-#include "opendb/db.h"
+#include "FastRoute.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -53,7 +53,7 @@ namespace ord {
 
 FastRoute::FastRouteKernel* makeFastRoute()
 {
-  return new FastRoute::FastRouteKernel;
+  return new FastRoute::FastRouteKernel();
 }
 
 void deleteFastRoute(FastRoute::FastRouteKernel* fastroute)

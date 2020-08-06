@@ -47,14 +47,16 @@
 #include "Box.h"
 #include "Coordinate.h"
 #include "Pin.h"
+#include "Net.h"
+#include "FastRouteKernel.h"
 #include "openroad/Error.hh"
 
 namespace FastRoute {
 
 using ord::error;
 
-DBWrapper::DBWrapper(odb::dbDatabase* db, Netlist* netlist, Grid* grid)
-    : _db(db), _netlist(netlist), _grid(grid)
+DBWrapper::DBWrapper(odb::dbDatabase* db, FastRouteKernel *fr, Grid* grid)
+    : _db(db), _fr(fr), _grid(grid)
 {
 }
 
@@ -412,14 +414,13 @@ void DBWrapper::initNetlist(bool reroute)
             [](odb::dbNet* net1, odb::dbNet* net2) {
               return strcmp(net1->getConstName(), net2->getConstName()) < 0;
             });
-  // Prevent _netlist->_nets from growing because pointers to nets become
-  // invalid.
-  _netlist->reserveNets(nets.size());
+  // Prevent _fr->_nets from growing because pointers to nets become invalid.
+  _fr->reserveNets(nets.size());
   for (odb::dbNet* db_net : sorted_nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().size() == 0) {
-      Net* net = _netlist->addNet(db_net);
+      Net* net = _fr->addNet(db_net);
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
     }
