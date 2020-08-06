@@ -373,6 +373,7 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
     _fastRoute->initAuxVar();
     _fastRoute->run(*newRoute);
     addRemainingGuides(newRoute);
+    connectPadPins(newRoute);
     mergeResults(newRoute);
   }
 }
@@ -410,7 +411,6 @@ void FastRouteKernel::runClockNetsRouteFlow()
 void FastRouteKernel::estimateRC()
 {
   runFastRoute();
-  addRemainingGuides(_result);
 
   sta::dbSta* dbSta = _openroad->getSta();
   sta::Parasitics* parasitics = dbSta->parasitics();
