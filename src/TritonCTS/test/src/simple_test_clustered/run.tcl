@@ -1,7 +1,6 @@
-read_lef "merged.lef"
-read_liberty "merged.lib"
+read_lef Nangate45/Nangate45.lef
+read_liberty Nangate45/Nangate45_typ.lib
 read_def "aes.def"
-read_verilog "aes.v"
 read_sdc "aes.sdc"
 
 clock_tree_synthesis -lut_file "lut.txt" \
