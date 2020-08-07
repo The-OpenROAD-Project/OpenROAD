@@ -359,9 +359,9 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
 
   if (violationsCnt > 0) {
     _dbWrapper->setDirtyNets(dirtyNets);
+    _dbWrapper->setAntennaViolations(antennaViolations);
     _dbWrapper->fixAntennas(_diodeCellName, _diodePinName);
     _dbWrapper->legalizePlacedCells();
-    _dbWrapper->setAntennaViolations(antennaViolations);
     _reroute = true;
     startFastRoute();
     _fastRoute->setVerbose(0);
