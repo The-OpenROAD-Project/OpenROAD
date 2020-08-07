@@ -1351,6 +1351,8 @@ void DBWrapper::createMapForDbNets() {
 void DBWrapper::fixAntennas(std::string antennaCellName,
                             std::string antennaPinName)
 {
+  _chip = _db->getChip();
+
   odb::dbBlock* block = _chip->getBlock();
   int siteWidth = -1;
   int cnt = 0;
