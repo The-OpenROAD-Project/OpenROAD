@@ -51,7 +51,6 @@
 #include "DBWrapper.h"
 #include "FastRoute.h"
 #include "Grid.h"
-#include "Netlist.h"
 #include "RcTreeBuilder.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
@@ -96,9 +95,9 @@ void FastRouteKernel::init()
 void FastRouteKernel::makeComponents()
 {
   // Allocate memory for objects
-  _netlist = new Netlist;
+  _nets = new std::vector<Net>;
   _grid = new Grid;
-  _dbWrapper = new DBWrapper(_openroad, _netlist, _grid);
+  _dbWrapper = new DBWrapper(_openroad, this, _grid);
   _fastRoute = new FT;
   _gridOrigin = new Coordinate(-1, -1);
   _routingLayers = new std::vector<RoutingLayer>;
@@ -108,13 +107,13 @@ void FastRouteKernel::makeComponents()
 
 void FastRouteKernel::deleteComponents()
 {
-  delete _netlist;
   delete _grid;
   delete _dbWrapper;
   delete _fastRoute;
   delete _gridOrigin;
   delete _routingLayers;
   delete _allRoutingTracks;
+  delete _nets;
 }
 
 void FastRouteKernel::resetResources()
@@ -423,7 +422,7 @@ void FastRouteKernel::estimateRC()
   RcTreeBuilder builder(_openroad, _dbWrapper);
   for (FastRoute::NET& netRoute : *_result) {
     SteinerTree sTree;
-    Net* net = _netlist->getNetByIdx(netRoute.idx);
+    Net* net = getNetByIdx(netRoute.idx);
     const std::vector<Pin>& pins = net->getPins();
     std::vector<ROUTE>& route = netRoute.route;
     sTree = createSteinerTree(route, pins);
@@ -604,7 +603,7 @@ void FastRouteKernel::initializeNets(bool reroute)
   int minDegree = std::numeric_limits<int>::max();
   int maxDegree = std::numeric_limits<int>::min();
 
-  for (const Net& net : _netlist->getNets()) {
+  for (const Net& net : *_nets) {
     if (net.getNumPins() > 1
         && !(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
         && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)
@@ -614,10 +613,10 @@ void FastRouteKernel::initializeNets(bool reroute)
   }
 
   _fastRoute->setNumberNets(validNets);
-  _fastRoute->setMaxNetDegree(_netlist->getMaxNetDegree());
+  _fastRoute->setMaxNetDegree(getMaxNetDegree());
 
   int idx = 0;
-  for (Net& net : _netlist->getNets()) {
+  for (Net& net : *_nets) {
     int pin_count = net.getNumPins();
     if (pin_count > 1) {
       if (pin_count < minDegree) {
@@ -1508,7 +1507,7 @@ void FastRouteKernel::printGrid()
             << "/" << _grid->isPerfectRegularY() << " ********\n";
   std::cout << "******** Num layers: " << _grid->getNumLayers()
             << " ********\n";
-  std::cout << "******** Num nets: " << _netlist->getNetCount()
+  std::cout << "******** Num nets: " << getNetCount()
             << " ********\n";
   std::cout << "******** Tile size: " << _grid->getPitchesInTile() << "\n";
 }
@@ -1556,7 +1555,7 @@ void FastRouteKernel::addRemainingGuides(
   std::unordered_set<Net*> routed_nets;
 
   for (FastRoute::NET& netRoute : *globalRoute) {
-    Net* net = _netlist->getNetByIdx(netRoute.idx);
+    Net* net = getNetByIdx(netRoute.idx);
     routed_nets.insert(net);
     // Skip nets with 1 pin or less
     if (net->getNumPins() > 1) {
@@ -1680,11 +1679,11 @@ void FastRouteKernel::addRemainingGuides(
   }
 
   // Add local guides for nets with no routing.
-  for (Net& net : _netlist->getNets()) {
+  for (Net& net : *_nets) {
     if (!(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
         && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)
         && net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
-      int net_idx = _netlist->getNetIdx(&net);
+      int net_idx = getNetIdx(&net);
       std::vector<FastRoute::PIN>& pins = net_pins[net_idx];
 
       FastRoute::NET localNet;
@@ -1708,7 +1707,7 @@ void FastRouteKernel::addRemainingGuides(
 void FastRouteKernel::connectPadPins(std::vector<FastRoute::NET>* globalRoute)
 {
   for (FastRoute::NET& netRoute : *globalRoute) {
-    Net* net = _netlist->getNetByIdx(netRoute.idx);
+    Net* net = getNetByIdx(netRoute.idx);
     if (_padPinsConnections.find(net) != _padPinsConnections.end()
         || net->getNumPins() > 1) {
       for (FastRoute::ROUTE route : _padPinsConnections[net]) {
@@ -1796,7 +1795,7 @@ void FastRouteKernel::checkPinPlacement()
   bool invalid = false;
   std::map<int, std::vector<Coordinate>> mapLayerToPositions;
 
-  for (Pin port : _netlist->getAllPorts()) {
+  for (Pin port : getAllPorts()) {
     if (port.getNumLayers() == 0) {
       error("Pin %s does not have layer assignment\n", port.getName().c_str());
     }
@@ -1974,7 +1973,7 @@ void FastRouteKernel::checkSinksAndSource()
 {
   bool invalid = false;
 
-  for (Net& net : _netlist->getNets()) {
+  for (Net& net : *_nets) {
     if (net.getNumPins() > 1) {
       int sourceCnt = 0;
       int sinkCnt = 0;
@@ -2334,7 +2333,7 @@ void FastRouteKernel::fixLongSegments()
 
     if (possibleViolation) {
       SteinerTree sTree;
-      Net* net = _netlist->getNetByIdx(netRoute.idx);
+      Net* net = getNetByIdx(netRoute.idx);
       const std::vector<Pin>& pins = net->getPins();
       std::vector<ROUTE>& route = netRoute.route;
       sTree = createSteinerTree(route, pins);
@@ -2557,7 +2556,6 @@ bool FastRouteKernel::checkSteinerTree(SteinerTree sTree)
 void FastRouteKernel::addLocalConnections(
     std::vector<FastRoute::NET>* globalRoute)
 {
-  Net* net;
   int topLayer;
   std::vector<Box> pinBoxes;
   Coordinate pinPosition;
@@ -2566,7 +2564,7 @@ void FastRouteKernel::addLocalConnections(
   FastRoute::ROUTE verSegment;
 
   for (FastRoute::NET& netRoute : *globalRoute) {
-    net = _netlist->getNetByIdx(netRoute.idx);
+      Net* net = getNetByIdx(netRoute.idx);
 
     for (Pin pin : net->getPins()) {
       topLayer = pin.getTopLayer();
@@ -2772,6 +2770,53 @@ const char* nodeTypeString(NodeType type)
   }
   // Suppress gcc warning.
   return "illegal";
+}
+
+////////////////////////////////////////////////////////////////
+
+int FastRouteKernel::getNetCount() const {
+  return _nets->size();
+}
+
+Net* FastRouteKernel::addNet(odb::dbNet* db_net) {
+  _nets->push_back(Net(db_net));
+  Net* net = &_nets->back();
+  return net;
+}
+  
+void FastRouteKernel::reserveNets(size_t net_count) {
+  _nets->reserve(net_count);
+}
+
+int FastRouteKernel::getNetIdx(Net* net) {
+  return net - &(*_nets)[0];
+}
+
+Net* FastRouteKernel::getNetByIdx(int idx) {
+  return &(*_nets)[idx];
+}
+
+int FastRouteKernel::getMaxNetDegree() {
+  int maxDegree = -1;
+  for (Net &net : *_nets) {
+    int netDegree = net.getNumPins();
+    if (netDegree > maxDegree) {
+      maxDegree = netDegree;
+    }
+  }
+  return maxDegree;
+}
+
+std::vector<Pin> FastRouteKernel::getAllPorts() {
+  std::vector<Pin> ports; 
+  for (Net &net : *_nets) {
+    for (Pin pin : net.getPins()) {
+      if (pin.isPort()) {
+        ports.push_back(pin);
+      }
+    }
+  }
+  return ports;
 }
 
 }  // namespace FastRoute

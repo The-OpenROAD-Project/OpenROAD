@@ -42,7 +42,6 @@
 
 #include "FastRoute.h"
 #include "Grid.h"
-#include "Netlist.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
 #include "antennachecker/AntennaChecker.hh"
@@ -67,10 +66,12 @@ namespace bgi = boost::geometry::index;
 
 namespace FastRoute {
 
+class FastRouteKernel;
+
 class DBWrapper
 {
  public:
-  DBWrapper(ord::OpenRoad* openroad, Netlist* netlist, Grid* grid);
+  DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid);
 
   void initGrid(int maxLayer);
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
@@ -130,7 +131,7 @@ class DBWrapper
   ord::OpenRoad* _openroad;
   odb::dbDatabase* _db;
   odb::dbChip* _chip;
-  Netlist* _netlist;
+  FastRouteKernel *_fr;
   Grid* _grid;
   bool _verbose = false;
 

@@ -47,14 +47,16 @@
 #include "Box.h"
 #include "Coordinate.h"
 #include "Pin.h"
+#include "Net.h"
+#include "FastRouteKernel.h"
 #include "openroad/Error.hh"
 
 namespace FastRoute {
 
 using ord::error;
 
-DBWrapper::DBWrapper(ord::OpenRoad* openroad, Netlist* netlist, Grid* grid)
-    : _openroad(openroad), _netlist(netlist), _grid(grid), _db(openroad->getDb())
+DBWrapper::DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid)
+    : _openroad(openroad), _fr(fr), _grid(grid), _db(openroad->getDb())
 {
 }
 
@@ -426,14 +428,13 @@ void DBWrapper::addNets(std::vector<odb::dbNet*> nets)
             [](odb::dbNet* net1, odb::dbNet* net2) {
               return strcmp(net1->getConstName(), net2->getConstName()) < 0;
             });
-  // Prevent _netlist->_nets from growing because pointers to nets become
-  // invalid.
-  _netlist->reserveNets(nets.size());
+  // Prevent _fr->_nets from growing because pointers to nets become invalid.
+  _fr->reserveNets(nets.size());
   for (odb::dbNet* db_net : sorted_nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().size() == 0) {
-      Net* net = _netlist->addNet(db_net);
+      Net* net = _fr->addNet(db_net);
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
     }
