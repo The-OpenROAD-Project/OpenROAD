@@ -385,7 +385,8 @@ void DBWrapper::initNetlist(bool reroute)
     error("odb::dbBlock not found\n");
   }
 
-  createMapForDbNets();
+  if (_dbNets.empty())
+    createMapForDbNets();
 
   if (reroute) {
     if (_dirtyNets.size() == 0) {
@@ -1352,6 +1353,9 @@ void DBWrapper::fixAntennas(std::string antennaCellName,
                             std::string antennaPinName)
 {
   _chip = _db->getChip();
+
+  if (_dbNets.empty())
+    createMapForDbNets();
 
   odb::dbBlock* block = _chip->getBlock();
   int siteWidth = -1;
