@@ -31,6 +31,7 @@ set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
 set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antennachecker)
+set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -231,6 +232,7 @@ add_subdirectory(antennachecker)
 if(BUILD_OPENPHYSYN)
   add_subdirectory(OpenPhySyn)
 endif()
+add_subdirectory(gui)
 
 ################################################################
 
@@ -283,6 +285,7 @@ target_link_libraries(openroad
   TritonCTS
   FastRoute
   tapcell
+  gui
   TritonMacroPlace
   ParquetFP
   ABKCommon

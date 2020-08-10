@@ -221,4 +221,6 @@ closestPtInRect(odb::Rect rect,
 		int x,
 		int y);
 
-} // namespace
+int
+tclAppInit(Tcl_Interp *interp);
+} // namespace ord

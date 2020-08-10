@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,16 +29,26 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <tcl.h>
+#include <QColor>
 
-namespace ord {
+namespace odb {
+class dbTechLayer;
+}
 
-// Call this inside of Tcl_Main.
-void
-initOpenRoad(Tcl_Interp *interp);
-} // namespace
+namespace gui {
+
+// This interface class provides access to the display options to
+// clients who are drawing.
+class Options
+{
+ public:
+  virtual ~Options() {}
+  virtual QColor color(const odb::dbTechLayer* layer) = 0;
+  virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
+  virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
+};
+
+}  // namespace gui

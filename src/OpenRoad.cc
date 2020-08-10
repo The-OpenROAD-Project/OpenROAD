@@ -347,6 +347,7 @@ OpenRoad::getCore()
 
 void OpenRoad::addObserver(Observer *observer)
 {
+  assert(observer->owner_ == nullptr);
   observer->owner_ = this;
   observers_.insert(observer);
 }

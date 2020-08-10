@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2020, Liberty Software LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,16 +29,25 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 #include <tcl.h>
 
-namespace ord {
+namespace gui {
 
-// Call this inside of Tcl_Main.
-void
-initOpenRoad(Tcl_Interp *interp);
-} // namespace
+class Painter
+{
+ public:
+  virtual ~Painter() {}
+
+  virtual void setPen()   = 0;
+  virtual void setBrush() = 0;
+
+  virtual void drawRect() = 0;
+  virtual void drawLine() = 0;
+};
+
+int start_gui(int argc, char* argv[]);
+
+}  // namespace gui
