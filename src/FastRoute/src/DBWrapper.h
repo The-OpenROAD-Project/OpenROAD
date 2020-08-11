@@ -95,7 +95,6 @@ class DBWrapper
                              int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();
-  void setDB(unsigned idx) { _db = odb::dbDatabase::getDatabase(idx); }
   void setSelectedMetal(int metal) { selectedMetal = metal; }
   std::vector<odb::dbNet*> getDirtyNets() { return _dirtyNets; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }

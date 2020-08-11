@@ -109,14 +109,14 @@ void DBWrapper::initGrid(int maxLayer)
   odb::Rect rect;
   _block->getDieArea(rect);
 
-  long lowerLeftX = rect.xMin();
-  long lowerLeftY = rect.yMin();
+  int lowerLeftX = rect.xMin();
+  int lowerLeftY = rect.yMin();
 
-  long upperRightX = rect.xMax();
-  long upperRightY = rect.yMax();
+  int upperRightX = rect.xMax();
+  int upperRightY = rect.yMax();
 
-  long tileWidth = _grid->getPitchesInTile() * trackSpacing;
-  long tileHeight = _grid->getPitchesInTile() * trackSpacing;
+  int tileWidth = _grid->getPitchesInTile() * trackSpacing;
+  int tileHeight = _grid->getPitchesInTile() * trackSpacing;
 
   int xGrids = std::floor((float) upperRightX / tileWidth);
   int yGrids = std::floor((float) upperRightY / tileHeight);
