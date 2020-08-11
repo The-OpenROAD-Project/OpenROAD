@@ -91,6 +91,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QMenu* fileMenu_;
   QMenu* viewMenu_;
+  QMenu* windowsMenu_;
 
   QToolBar* viewToolBar_;
 

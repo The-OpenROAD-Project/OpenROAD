@@ -103,6 +103,10 @@ void MainWindow::createMenus()
 
   viewMenu_ = menuBar()->addMenu("&View");
   viewMenu_->addAction(fit_);
+
+  windowsMenu_ = menuBar()->addMenu("&Windows");
+  windowsMenu_->addAction(controls_->toggleViewAction());
+  windowsMenu_->addAction(script_->toggleViewAction());
 }
 
 void MainWindow::createToolbars()
