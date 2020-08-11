@@ -1,0 +1,97 @@
+Notice 0: Reading LEF file:  ./nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ./nangate45.lef
+Notice 0: 
+Reading DEF file: ./simple04.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 294 components and 1656 component-terminals.
+Notice 0:     Created 364 nets and 1068 connections.
+Notice 0: Finished DEF file: ./simple04.def
+[INFO] DBU = 2000
+[INFO] SiteSize = (380, 2800)
+[INFO] CoreAreaLxLy = (0, 0)
+[INFO] CoreAreaUxUy = (61940, 61600)
+[WARN] resp_msg[9] toplevel port is not placed!
+       Replace will regard resp_msg[9] is placed in (0, 0) (REPL-1)
+[WARN] resp_msg[8] toplevel port is not placed!
+       Replace will regard resp_msg[8] is placed in (0, 0) (REPL-1)
+[WARN] resp_msg[7] toplevel port is not placed!
+       Replace will regard resp_msg[7] is placed in (0, 0) (REPL-1)
+[WARN] resp_msg[6] toplevel port is not placed!
+       Replace will regard resp_msg[6] is placed in (0, 0) (REPL-1)
+[WARN] resp_msg[5] toplevel port is not placed!
+       Replace will regard resp_msg[5] is placed in (0, 0) (REPL-1)
+[INFO] NumInstances = 294
+[INFO] NumPlaceInstances = 294
+[INFO] NumFixedInstances = 0
+[INFO] NumDummyInstances = 0
+[INFO] NumNets = 364
+[INFO] NumPins = 1122
+[INFO] DieAreaLxLy = (0, 0)
+[INFO] DieAreaUxUy = (61940, 61600)
+[INFO] CoreAreaLxLy = (0, 0)
+[INFO] CoreAreaUxUy = (61940, 61600)
+[INFO] CoreArea = 3815504000
+[INFO] NonPlaceInstsArea = 0
+[INFO] PlaceInstsArea = 2279088000
+[INFO] Util(%) = 59.732300
+[INFO] StdInstsArea = 2279088000
+[INFO] MacroInstsArea = 0
+[InitialPlace]  Iter: 1 CG Error: 9.6834e-08 HPWL: 5418000
+[InitialPlace]  Iter: 2 CG Error: 1.15553e-07 HPWL: 4852409
+[InitialPlace]  Iter: 3 CG Error: 1.06839e-07 HPWL: 4839378
+[InitialPlace]  Iter: 4 CG Error: 8.82917e-08 HPWL: 4844093
+[InitialPlace]  Iter: 5 CG Error: 3.49763e-08 HPWL: 4852555
+[INFO] FillerInit: NumGCells = 348
+[INFO] FillerInit: NumGNets = 364
+[INFO] FillerInit: NumGPins = 1122
+[INFO] TargetDensity = 0.700000
+[INFO] AveragePlaceInstArea = 7752000
+[INFO] IdealBinArea = 11074286
+[INFO] IdealBinCnt = 344
+[INFO] TotalBinArea = 3815504000
+[INFO] BinCnt = (16, 16)
+[INFO] BinSize = (3872, 3850)
+[INFO] NumBins = 256
+[NesterovSolve] Iter: 1 overflow: 0.849671 HPWL: 3734692
+[NesterovSolve] Iter: 10 overflow: 0.741449 HPWL: 4278906
+[NesterovSolve] Iter: 20 overflow: 0.741335 HPWL: 4272495
+[NesterovSolve] Iter: 30 overflow: 0.742592 HPWL: 4272446
+[NesterovSolve] Iter: 40 overflow: 0.742084 HPWL: 4273082
+[NesterovSolve] Iter: 50 overflow: 0.742117 HPWL: 4272573
+[NesterovSolve] Iter: 60 overflow: 0.742085 HPWL: 4272951
+[NesterovSolve] Iter: 70 overflow: 0.742051 HPWL: 4273176
+[NesterovSolve] Iter: 80 overflow: 0.741915 HPWL: 4273497
+[NesterovSolve] Iter: 90 overflow: 0.741753 HPWL: 4273983
+[NesterovSolve] Iter: 100 overflow: 0.741476 HPWL: 4274850
+[NesterovSolve] Iter: 110 overflow: 0.741026 HPWL: 4276333
+[NesterovSolve] Iter: 120 overflow: 0.740385 HPWL: 4278619
+[NesterovSolve] Iter: 130 overflow: 0.73935 HPWL: 4282387
+[NesterovSolve] Iter: 140 overflow: 0.737555 HPWL: 4288450
+[NesterovSolve] Iter: 150 overflow: 0.734026 HPWL: 4297694
+[NesterovSolve] Iter: 160 overflow: 0.728552 HPWL: 4311229
+[NesterovSolve] Iter: 170 overflow: 0.719472 HPWL: 4331706
+[NesterovSolve] Iter: 180 overflow: 0.707167 HPWL: 4361799
+[NesterovSolve] Iter: 190 overflow: 0.693105 HPWL: 4407565
+[NesterovSolve] Iter: 200 overflow: 0.673497 HPWL: 4462789
+[NesterovSolve] Iter: 210 overflow: 0.64598 HPWL: 4529188
+[NesterovSolve] Iter: 220 overflow: 0.608028 HPWL: 4598277
+[NesterovSolve] Iter: 230 overflow: 0.56541 HPWL: 4656437
+[NesterovSolve] Iter: 240 overflow: 0.518779 HPWL: 4708793
+[NesterovSolve] Iter: 250 overflow: 0.467818 HPWL: 4737759
+[NesterovSolve] Iter: 260 overflow: 0.41294 HPWL: 4741313
+[NesterovSolve] Iter: 270 overflow: 0.366775 HPWL: 4749865
+[NesterovSolve] Iter: 280 overflow: 0.324008 HPWL: 4762541
+[NesterovSolve] Iter: 290 overflow: 0.283727 HPWL: 4776830
+[NesterovSolve] Iter: 300 overflow: 0.254996 HPWL: 4822078
+[NesterovSolve] Iter: 310 overflow: 0.226571 HPWL: 4859660
+[NesterovSolve] Iter: 320 overflow: 0.18943 HPWL: 4896729
+[NesterovSolve] Iter: 330 overflow: 0.15966 HPWL: 4927083
+[NesterovSolve] Iter: 340 overflow: 0.142445 HPWL: 4958922
+[NesterovSolve] Iter: 350 overflow: 0.119088 HPWL: 4986492
+[NesterovSolve] Iter: 360 overflow: 0.102524 HPWL: 5007503
+[NesterovSolve] Finished with Overflow: 0.0984983
+No differences found.
