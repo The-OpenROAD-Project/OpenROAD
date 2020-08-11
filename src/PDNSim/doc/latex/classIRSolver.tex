@@ -1,0 +1,155 @@
+\hypertarget{classIRSolver}{}\section{I\+R\+Solver Class Reference}
+\label{classIRSolver}\index{I\+R\+Solver@{I\+R\+Solver}}
+
+
+Class for IR solver.  
+
+
+
+
+{\ttfamily \#include $<$ir\+\_\+solver.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classIRSolver_ade5e2e1c97895d8e9c37141f62eccbd9}{I\+R\+Solver} (odb\+::db\+Database $\ast$t\+\_\+db, std\+::string verilog\+\_\+stor, std\+::string top\+\_\+module, std\+::string sdc\+\_\+file, std\+::vector$<$ std\+::string $>$ lib\+\_\+stor, std\+::string vsrc\+\_\+loc)
+\begin{DoxyCompactList}\small\item\em Constructor for \hyperlink{classIRSolver}{I\+R\+Solver} class. \end{DoxyCompactList}\item 
+\hyperlink{classIRSolver_a3f8f596fc1314294c91650c9aea1b276}{$\sim$\+I\+R\+Solver} ()
+\begin{DoxyCompactList}\small\item\em \hyperlink{classIRSolver}{I\+R\+Solver} destructor. \end{DoxyCompactList}\item 
+\hyperlink{classGMat}{G\+Mat} $\ast$ \hyperlink{classIRSolver_a72b07b8b929136c0cac95077dce87990}{Get\+G\+Mat} ()
+\begin{DoxyCompactList}\small\item\em Returns the created G matrix for the design. \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \hyperlink{classIRSolver_a15a1b2f7bbbd71cd568e532bf03ce1b0}{GetJ} ()
+\begin{DoxyCompactList}\small\item\em Returns current map represented as a 1D vector. \end{DoxyCompactList}\item 
+void \hyperlink{classIRSolver_ad0c6ef5800e5892f441e11b57d19dcaf}{Solve\+IR} ()
+\begin{DoxyCompactList}\small\item\em Function to solve for IR drop. \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::pair$<$ std\+::string, double $>$ $>$ \hyperlink{classIRSolver_addd237968206ba6e1c875180eddd562f}{Get\+Power} ()
+\begin{DoxyCompactList}\small\item\em Function to get the power value from Open\+S\+TA. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+double \hyperlink{classIRSolver_aa994255bf8405bc13d0a887797b8bc42}{wc\+\_\+voltage}
+\begin{DoxyCompactList}\small\item\em Worst case voltage at the lowest layer nodes. \end{DoxyCompactList}\item 
+double \hyperlink{classIRSolver_acc781b74c7a8a7af351f55d06d00a922}{vdd}
+\begin{DoxyCompactList}\small\item\em Voltage supply. \end{DoxyCompactList}\item 
+double \hyperlink{classIRSolver_aa0336f80d573aecc0e6269d7f91441cc}{avg\+\_\+voltage}
+\begin{DoxyCompactList}\small\item\em Average voltage at lowest layer nodes. \end{DoxyCompactList}\item 
+std\+::vector$<$ double $>$ \hyperlink{classIRSolver_a06dc6ff621f8d90cea84fe74e1d9ffda}{wc\+\_\+volt\+\_\+layer}
+\begin{DoxyCompactList}\small\item\em Vector of worstcase voltages in the lowest layers. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Class for IR solver. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classIRSolver_ade5e2e1c97895d8e9c37141f62eccbd9}\label{classIRSolver_ade5e2e1c97895d8e9c37141f62eccbd9}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!I\+R\+Solver@{I\+R\+Solver}}
+\index{I\+R\+Solver@{I\+R\+Solver}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{I\+R\+Solver()}{IRSolver()}}
+{\footnotesize\ttfamily I\+R\+Solver\+::\+I\+R\+Solver (\begin{DoxyParamCaption}\item[{odb\+::db\+Database $\ast$}]{t\+\_\+db,  }\item[{std\+::string}]{verilog\+\_\+stor,  }\item[{std\+::string}]{top\+\_\+module,  }\item[{std\+::string}]{sdc\+\_\+file,  }\item[{std\+::vector$<$ std\+::string $>$}]{lib\+\_\+stor,  }\item[{std\+::string}]{vsrc\+\_\+loc }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructor for \hyperlink{classIRSolver}{I\+R\+Solver} class. 
+
+\mbox{\Hypertarget{classIRSolver_a3f8f596fc1314294c91650c9aea1b276}\label{classIRSolver_a3f8f596fc1314294c91650c9aea1b276}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!````~I\+R\+Solver@{$\sim$\+I\+R\+Solver}}
+\index{````~I\+R\+Solver@{$\sim$\+I\+R\+Solver}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{$\sim$\+I\+R\+Solver()}{~IRSolver()}}
+{\footnotesize\ttfamily I\+R\+Solver\+::$\sim$\+I\+R\+Solver (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\hyperlink{classIRSolver}{I\+R\+Solver} destructor. 
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classIRSolver_a72b07b8b929136c0cac95077dce87990}\label{classIRSolver_a72b07b8b929136c0cac95077dce87990}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!Get\+G\+Mat@{Get\+G\+Mat}}
+\index{Get\+G\+Mat@{Get\+G\+Mat}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{Get\+G\+Mat()}{GetGMat()}}
+{\footnotesize\ttfamily \hyperlink{classGMat}{G\+Mat} $\ast$ I\+R\+Solver\+::\+Get\+G\+Mat (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns the created G matrix for the design. 
+
+\mbox{\Hypertarget{classIRSolver_a15a1b2f7bbbd71cd568e532bf03ce1b0}\label{classIRSolver_a15a1b2f7bbbd71cd568e532bf03ce1b0}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!GetJ@{GetJ}}
+\index{GetJ@{GetJ}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{Get\+J()}{GetJ()}}
+{\footnotesize\ttfamily vector$<$ double $>$ I\+R\+Solver\+::\+GetJ (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Returns current map represented as a 1D vector. 
+
+\mbox{\Hypertarget{classIRSolver_addd237968206ba6e1c875180eddd562f}\label{classIRSolver_addd237968206ba6e1c875180eddd562f}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!Get\+Power@{Get\+Power}}
+\index{Get\+Power@{Get\+Power}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{Get\+Power()}{GetPower()}}
+{\footnotesize\ttfamily vector$<$ pair$<$ string, double $>$ $>$ I\+R\+Solver\+::\+Get\+Power (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to get the power value from Open\+S\+TA. 
+
+\mbox{\Hypertarget{classIRSolver_ad0c6ef5800e5892f441e11b57d19dcaf}\label{classIRSolver_ad0c6ef5800e5892f441e11b57d19dcaf}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!Solve\+IR@{Solve\+IR}}
+\index{Solve\+IR@{Solve\+IR}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{Solve\+I\+R()}{SolveIR()}}
+{\footnotesize\ttfamily void I\+R\+Solver\+::\+Solve\+IR (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to solve for IR drop. 
+
+Function to solve for voltage using Super\+LU. 
+
+\subsection{Field Documentation}
+\mbox{\Hypertarget{classIRSolver_aa0336f80d573aecc0e6269d7f91441cc}\label{classIRSolver_aa0336f80d573aecc0e6269d7f91441cc}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!avg\+\_\+voltage@{avg\+\_\+voltage}}
+\index{avg\+\_\+voltage@{avg\+\_\+voltage}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{avg\+\_\+voltage}{avg\_voltage}}
+{\footnotesize\ttfamily double I\+R\+Solver\+::avg\+\_\+voltage}
+
+
+
+Average voltage at lowest layer nodes. 
+
+\mbox{\Hypertarget{classIRSolver_acc781b74c7a8a7af351f55d06d00a922}\label{classIRSolver_acc781b74c7a8a7af351f55d06d00a922}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!vdd@{vdd}}
+\index{vdd@{vdd}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{vdd}{vdd}}
+{\footnotesize\ttfamily double I\+R\+Solver\+::vdd}
+
+
+
+Voltage supply. 
+
+\mbox{\Hypertarget{classIRSolver_a06dc6ff621f8d90cea84fe74e1d9ffda}\label{classIRSolver_a06dc6ff621f8d90cea84fe74e1d9ffda}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!wc\+\_\+volt\+\_\+layer@{wc\+\_\+volt\+\_\+layer}}
+\index{wc\+\_\+volt\+\_\+layer@{wc\+\_\+volt\+\_\+layer}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{wc\+\_\+volt\+\_\+layer}{wc\_volt\_layer}}
+{\footnotesize\ttfamily std\+::vector$<$double$>$ I\+R\+Solver\+::wc\+\_\+volt\+\_\+layer}
+
+
+
+Vector of worstcase voltages in the lowest layers. 
+
+\mbox{\Hypertarget{classIRSolver_aa994255bf8405bc13d0a887797b8bc42}\label{classIRSolver_aa994255bf8405bc13d0a887797b8bc42}} 
+\index{I\+R\+Solver@{I\+R\+Solver}!wc\+\_\+voltage@{wc\+\_\+voltage}}
+\index{wc\+\_\+voltage@{wc\+\_\+voltage}!I\+R\+Solver@{I\+R\+Solver}}
+\subsubsection{\texorpdfstring{wc\+\_\+voltage}{wc\_voltage}}
+{\footnotesize\ttfamily double I\+R\+Solver\+::wc\+\_\+voltage}
+
+
+
+Worst case voltage at the lowest layer nodes. 
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\hyperlink{ir__solver_8h}{ir\+\_\+solver.\+h}\item 
+src/\hyperlink{ir__solver_8cpp}{ir\+\_\+solver.\+cpp}\end{DoxyCompactItemize}

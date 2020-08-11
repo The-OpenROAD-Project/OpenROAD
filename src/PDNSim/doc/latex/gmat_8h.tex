@@ -1,0 +1,42 @@
+\hypertarget{gmat_8h}{}\section{src/gmat.h File Reference}
+\label{gmat_8h}\index{src/gmat.\+h@{src/gmat.\+h}}
+{\ttfamily \#include \char`\"{}node.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}db.\+h\char`\"{}}\newline
+Include dependency graph for gmat.\+h\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=180pt]{gmat_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{gmat_8h__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+class \hyperlink{classGMat}{G\+Mat}
+\begin{DoxyCompactList}\small\item\em G matrix class. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef std\+::map$<$ int, std\+::map$<$ int, \hyperlink{classNode}{Node} $\ast$ $>$ $>$ \hyperlink{gmat_8h_a25a6eb13135bc88c32c443ba735c8a14}{Node\+Map}
+\begin{DoxyCompactList}\small\item\em Global variable which holds the G matrix. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Typedef Documentation}
+\mbox{\Hypertarget{gmat_8h_a25a6eb13135bc88c32c443ba735c8a14}\label{gmat_8h_a25a6eb13135bc88c32c443ba735c8a14}} 
+\index{gmat.\+h@{gmat.\+h}!Node\+Map@{Node\+Map}}
+\index{Node\+Map@{Node\+Map}!gmat.\+h@{gmat.\+h}}
+\subsubsection{\texorpdfstring{Node\+Map}{NodeMap}}
+{\footnotesize\ttfamily typedef std\+::map$<$int, std\+::map$<$int, \hyperlink{classNode}{Node}$\ast$$>$ $>$ \hyperlink{gmat_8h_a25a6eb13135bc88c32c443ba735c8a14}{Node\+Map}}
+
+
+
+Global variable which holds the G matrix. 
+
+Three dimensions with layer number,x location, and y location. Holds a pointer to the node of the power grid. 

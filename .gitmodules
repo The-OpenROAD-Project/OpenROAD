@@ -11,16 +11,9 @@
 	path = src/replace
 	url = https://github.com/The-OpenROAD-Project/RePlAce.git
 	branch = replace
-[submodule "src/ioPlacer"]
-	path = src/ioPlacer
-	url = https://github.com/The-OpenROAD-Project/ioPlacer.git
 [submodule "src/TritonMacroPlace"]
 	path = src/TritonMacroPlace
 	url = https://github.com/The-OpenROAD-Project/TritonMacroPlace.git
 [submodule "src/OpenRCX"]
 	path = src/OpenRCX
 	url = https://github.com/The-OpenROAD-Project/OpenRCX.git
-[submodule "src/PDNSim"]
-	path = src/PDNSim
-	url = https://github.com/The-OpenROAD-Project/PDNSim.git
-	branch = openroad

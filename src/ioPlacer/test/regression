@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+test_script=./run.sh
+testdir=$(cd "$(dirname "$0")" && pwd -P)
+binary=$testdir/../../../build/src/openroad
+failed=0
+passed=0
+
+if [ ! -e $binary ] ; 
+then
+	echo "    - Binary not found. Exiting...\n" 
+	exit 1
+fi
+
+for unit_test_path in ${testdir}/src/* ; 
+do
+	test_name=$(basename $unit_test_path)
+	echo -ne "$test_name"
+
+	if [ ! -e $unit_test_path/$test_script ] ; 
+	then
+		echo "    - Script \"run.sh\" not found. Skipping..." 
+		continue
+	fi
+	
+	cd $unit_test_path 
+	$test_script $binary
+	test_return_code=$?
+	cd $test_root
+
+	if [ $test_return_code == 0 ];
+	then
+		echo " pass"
+		passed=$(( $passed+1 ))
+	elif [ $test_return_code == 1 ];
+	then
+		echo "     - Test return YELLOW (passed)"
+	else
+		echo " fail"
+		failed=1
+	fi
+done
+
+echo "------------------------------------------------------"
+echo "Passed $passed"
+echo "See $testdir/results for log files"
+echo "------------------------------------------------------"
+
+if [ $failed -gt 0 ]
+then
+	exit 1
+fi
