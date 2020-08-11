@@ -33,46 +33,46 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef __HUNGARIANMATCHING_H_
 #define __HUNGARIANMATCHING_H_
 
-#include "Hungarian.h"
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <limits>
 #include <list>
 #include <utility>
-#include <iostream>
-#include <cmath>
-#include <limits>
-#include <algorithm>
 
 #include "Coordinate.h"
-#include "Netlist.h"
+#include "Hungarian.h"
 #include "IOPlacementKernel.h"
+#include "Netlist.h"
 #include "Slots.h"
 
 namespace ioPlacer {
 
-class HungarianMatching {
-       private:
-        std::vector<std::vector<DBU>> _hungarianMatrix;
-	std::vector<int> _assignment;
-	HungarianAlgorithm _hungarianSolver;
-        Netlist& _netlist;
-        slotVector_t& _slots;
-        unsigned _beginSlot;
-        unsigned _endSlot;
-        unsigned _numSlots;
-        unsigned _numIOPins;
-        unsigned _nonBlockedSlots;
+class HungarianMatching
+{
+ private:
+  std::vector<std::vector<DBU>> _hungarianMatrix;
+  std::vector<int> _assignment;
+  HungarianAlgorithm _hungarianSolver;
+  Netlist& _netlist;
+  slotVector_t& _slots;
+  unsigned _beginSlot;
+  unsigned _endSlot;
+  unsigned _numSlots;
+  unsigned _numIOPins;
+  unsigned _nonBlockedSlots;
 
-        void createMatrix();
+  void createMatrix();
 
-       public:
-        HungarianMatching(Section_t&, slotVector_t&);
-        virtual ~HungarianMatching() = default;
-        void run();
-        void getFinalAssignment(std::vector<IOPin>&);
+ public:
+  HungarianMatching(Section_t&, slotVector_t&);
+  virtual ~HungarianMatching() = default;
+  void run();
+  void getFinalAssignment(std::vector<IOPin>&);
 };
 
-}
+}  // namespace ioPlacer
 #endif /* __HUNGARIANMATCHING_H_ */

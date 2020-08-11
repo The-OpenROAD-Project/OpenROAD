@@ -33,36 +33,38 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "MakeIoplacer.h"
-#include "openroad/OpenRoad.hh"
-#include "Parameters.h"
+
 #include "IOPlacementKernel.h"
+#include "Parameters.h"
 #include "db.h"
+#include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
-  //Tcl files encoded into strings.
-  extern const char *ioplacer_tcl_inits[];
-}
+// Tcl files encoded into strings.
+extern const char* ioplacer_tcl_inits[];
+}  // namespace sta
 
 extern "C" {
-   extern int Ioplacer_Init(Tcl_Interp *interp);
+extern int Ioplacer_Init(Tcl_Interp* interp);
 }
 
 namespace ioPlacer {
 extern IOPlacementKernel* ioPlacerKernel;
-extern Parameters*        parmsToIOPlacer; 
-}
+extern Parameters* parmsToIOPlacer;
+}  // namespace ioPlacer
 
 namespace ord {
 
-ioPlacer::IOPlacementKernel* makeIoplacer() {
+ioPlacer::IOPlacementKernel* makeIoplacer()
+{
   return ioPlacer::ioPlacerKernel;
 }
 
-void initIoplacer(OpenRoad * openroad) {
-  Tcl_Interp *tcl_interp = openroad->tclInterp();
+void initIoplacer(OpenRoad* openroad)
+{
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Ioplacer_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::ioplacer_tcl_inits);
@@ -71,9 +73,10 @@ void initIoplacer(OpenRoad * openroad) {
   ioPlacer::parmsToIOPlacer->setDbId(dbId);
 }
 
-void deleteIoplacer(void *ioplacer) {
+void deleteIoplacer(void* ioplacer)
+{
   delete ioPlacer::ioPlacerKernel;
   delete ioPlacer::parmsToIOPlacer;
 }
 
-}
+}  // namespace ord

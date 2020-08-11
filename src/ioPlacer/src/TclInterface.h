@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef _TCL_INTERFACE_
 #define _TCL_INTERFACE_
 
@@ -45,46 +44,49 @@ void import_def(const char* file);
 void export_def(const char* file);
 
 // Parms interface
-void   set_hor_metal_layer(int layer);
-int    get_hor_metal_layer();
-void   set_ver_metal_layer(int layer);
-int    get_ver_metal_layer();
-void   set_num_slots(int numSlots);
-int    get_num_slots();
-void   set_random_mode(int mode);
-int    get_random_mode();
-void   set_slots_factor(float factor);
-float  get_slots_factor();
-void   set_force_spread(bool force);
-bool   get_force_spread();
-void   set_usage(float usage);
-float  get_usage();
-void   set_usage_factor(float factor);
-float  get_usage_factor();
-void   set_blockages_file(const char* file);
-const  char* get_blockages_file();
-void add_blocked_area(long long int llx, long long int lly, long long int urx, long long int ury);
-void   set_hor_length_extend(float length);
-void   set_hor_length(float length);
-float  get_hor_length();
-void   set_ver_length_extend(float length);
-void   set_ver_length(float length);
-float  get_ver_length();
-void   set_report_hpwl(bool report);
-bool   get_report_hpwl();
-void   set_interactive_mode(bool enable);
-bool   is_interactive_mode();
-void   print_all_parms();
-void   set_num_threads(int numThreads);
-int    get_num_threads();
-void   set_rand_seed(double seed);
+void set_hor_metal_layer(int layer);
+int get_hor_metal_layer();
+void set_ver_metal_layer(int layer);
+int get_ver_metal_layer();
+void set_num_slots(int numSlots);
+int get_num_slots();
+void set_random_mode(int mode);
+int get_random_mode();
+void set_slots_factor(float factor);
+float get_slots_factor();
+void set_force_spread(bool force);
+bool get_force_spread();
+void set_usage(float usage);
+float get_usage();
+void set_usage_factor(float factor);
+float get_usage_factor();
+void set_blockages_file(const char* file);
+const char* get_blockages_file();
+void add_blocked_area(long long int llx,
+                      long long int lly,
+                      long long int urx,
+                      long long int ury);
+void set_hor_length_extend(float length);
+void set_hor_length(float length);
+float get_hor_length();
+void set_ver_length_extend(float length);
+void set_ver_length(float length);
+float get_ver_length();
+void set_report_hpwl(bool report);
+bool get_report_hpwl();
+void set_interactive_mode(bool enable);
+bool is_interactive_mode();
+void print_all_parms();
+void set_num_threads(int numThreads);
+int get_num_threads();
+void set_rand_seed(double seed);
 double get_rand_seed();
-void   set_hor_thick_multiplier(float length);
-void   set_ver_thick_multiplier(float length);
-float  get_ver_thick_multiplier();
-float  get_hor_thick_multiplier();
-float  get_hor_length_extend();
-float  get_ver_length_extend();
+void set_hor_thick_multiplier(float length);
+void set_ver_thick_multiplier(float length);
+float get_ver_thick_multiplier();
+float get_hor_thick_multiplier();
+float get_hor_length_extend();
+float get_ver_length_extend();
 void set_boundaries_offset(int offset);
 void set_min_distance(int minDist);
 
@@ -92,8 +94,7 @@ void set_min_distance(int minDist);
 void run_io_placement();
 
 // Reports
-int  compute_io_nets_hpwl();
+int compute_io_nets_hpwl();
 
-}
+}  // namespace ioPlacer
 #endif
-

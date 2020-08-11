@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef __CORE_H_
 #define __CORE_H_
 
@@ -41,66 +40,75 @@
 
 namespace ioPlacer {
 
-class Core {
-       private:
-        Coordinate _lowerBound;
-        Coordinate _upperBound;
-        unsigned _minDstPinsX;
-        unsigned _minDstPinsY;
-        unsigned _initTracksX;
-        unsigned _initTracksY;
-        unsigned _numTracksX;
-        unsigned _numTracksY;
-        unsigned _minAreaX;
-        unsigned _minAreaY;
-        unsigned _minWidthX;
-        unsigned _minWidthY;
-        DBU _databaseUnit;
+class Core
+{
+ private:
+  Coordinate _lowerBound;
+  Coordinate _upperBound;
+  unsigned _minDstPinsX;
+  unsigned _minDstPinsY;
+  unsigned _initTracksX;
+  unsigned _initTracksY;
+  unsigned _numTracksX;
+  unsigned _numTracksY;
+  unsigned _minAreaX;
+  unsigned _minAreaY;
+  unsigned _minWidthX;
+  unsigned _minWidthY;
+  DBU _databaseUnit;
 
-       public:
-        Core()
-            : _lowerBound(Coordinate(0, 0)),
-              _upperBound(Coordinate(0, 0)),
-              _minDstPinsX(20),
-              _minDstPinsY(20){};
-        Core(const Coordinate& lowerBound, const Coordinate& upperBound,
-             const DBU& minDstPinsX, const DBU& minDstPinsY,
-             const DBU& initTracksX, const DBU& initTracksY,
-             const DBU& numTracksX, const DBU& numTracksY,
-             const DBU& minAreaX, const DBU& minAreaY,
-             const DBU& minWidthX, const DBU& minWidthY,
-             const DBU& databaseUnit)
-            : _lowerBound(lowerBound),
-              _upperBound(upperBound),
-              _minDstPinsX(minDstPinsX),
-              _minDstPinsY(minDstPinsY),
-              _initTracksX(initTracksX),
-              _initTracksY(initTracksY),
-              _numTracksX(numTracksX),
-              _numTracksY(numTracksY),
-              _minAreaX(minAreaX),
-              _minAreaY(minAreaY),
-              _minWidthX(minWidthX),
-              _minWidthY(minWidthY),
-              _databaseUnit(databaseUnit){}
+ public:
+  Core()
+      : _lowerBound(Coordinate(0, 0)),
+        _upperBound(Coordinate(0, 0)),
+        _minDstPinsX(20),
+        _minDstPinsY(20){};
+  Core(const Coordinate& lowerBound,
+       const Coordinate& upperBound,
+       const DBU& minDstPinsX,
+       const DBU& minDstPinsY,
+       const DBU& initTracksX,
+       const DBU& initTracksY,
+       const DBU& numTracksX,
+       const DBU& numTracksY,
+       const DBU& minAreaX,
+       const DBU& minAreaY,
+       const DBU& minWidthX,
+       const DBU& minWidthY,
+       const DBU& databaseUnit)
+      : _lowerBound(lowerBound),
+        _upperBound(upperBound),
+        _minDstPinsX(minDstPinsX),
+        _minDstPinsY(minDstPinsY),
+        _initTracksX(initTracksX),
+        _initTracksY(initTracksY),
+        _numTracksX(numTracksX),
+        _numTracksY(numTracksY),
+        _minAreaX(minAreaX),
+        _minAreaY(minAreaY),
+        _minWidthX(minWidthX),
+        _minWidthY(minWidthY),
+        _databaseUnit(databaseUnit)
+  {
+  }
 
-        Coordinate getLowerBound() const { return _lowerBound; }
-        Coordinate getUpperBound() const { return _upperBound; }
-        unsigned getMinDstPinsX() const { return _minDstPinsX; }
-        unsigned getMinDstPinsY() const { return _minDstPinsY; }
-        unsigned getInitTracksX() const { return _initTracksX; }
-        unsigned getInitTracksY() const { return _initTracksY; }
-        unsigned getNumTracksX() const { return _numTracksX; }
-        unsigned getNumTracksY() const { return _numTracksY; }
-        unsigned getMinAreaX() const { return _minAreaX; }
-        unsigned getMinAreaY() const { return _minAreaY; }
-        unsigned getMinWidthX() const { return _minWidthX; }
-        unsigned getMinWidthY() const { return _minWidthY; }
-        DBU getDatabaseUnit() const { return _databaseUnit; }
+  Coordinate getLowerBound() const { return _lowerBound; }
+  Coordinate getUpperBound() const { return _upperBound; }
+  unsigned getMinDstPinsX() const { return _minDstPinsX; }
+  unsigned getMinDstPinsY() const { return _minDstPinsY; }
+  unsigned getInitTracksX() const { return _initTracksX; }
+  unsigned getInitTracksY() const { return _initTracksY; }
+  unsigned getNumTracksX() const { return _numTracksX; }
+  unsigned getNumTracksY() const { return _numTracksY; }
+  unsigned getMinAreaX() const { return _minAreaX; }
+  unsigned getMinAreaY() const { return _minAreaY; }
+  unsigned getMinWidthX() const { return _minWidthX; }
+  unsigned getMinWidthY() const { return _minWidthY; }
+  DBU getDatabaseUnit() const { return _databaseUnit; }
 
-        DBU getPerimeter();
+  DBU getPerimeter();
 };
 
-}
+}  // namespace ioPlacer
 
 #endif /* __CORE_H_ */

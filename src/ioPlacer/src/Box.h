@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef __BOX_H_
 #define __BOX_H_
 
@@ -41,24 +40,27 @@
 
 namespace ioPlacer {
 
-class Box {
-       private:
-        Coordinate _lowerBound;
-        Coordinate _upperBound;
+class Box
+{
+ private:
+  Coordinate _lowerBound;
+  Coordinate _upperBound;
 
-       public:
-        Box() : _lowerBound(Coordinate(0, 0)), _upperBound(Coordinate(0, 0)){};
+ public:
+  Box() : _lowerBound(Coordinate(0, 0)), _upperBound(Coordinate(0, 0)){};
 
-        Box(const Coordinate& lowerBound, const Coordinate& upperBound)
-            : _lowerBound(lowerBound), _upperBound(upperBound) {}
+  Box(const Coordinate& lowerBound, const Coordinate& upperBound)
+      : _lowerBound(lowerBound), _upperBound(upperBound)
+  {
+  }
 
-        Coordinate getLowerBound() const { return _lowerBound; }
-        Coordinate getUpperBound() const { return _upperBound; }
+  Coordinate getLowerBound() const { return _lowerBound; }
+  Coordinate getUpperBound() const { return _upperBound; }
 
-        DBU getHalfPerimeter();
-        Coordinate getMiddle();
+  DBU getHalfPerimeter();
+  Coordinate getMiddle();
 };
 
-}
+}  // namespace ioPlacer
 
 #endif /* __BOX_H_ */

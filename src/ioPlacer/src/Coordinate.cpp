@@ -33,17 +33,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "Coordinate.h"
 
 #include <cmath>
 
-#include "Coordinate.h"
-
 namespace ioPlacer {
 
-DBU Coordinate::dst(Coordinate a) {
-        DBU ax = a.getX();
-        DBU ay = a.getY();
-        return std::sqrt(std::pow(_x - ax, 2) + std::pow(_y - ay, 2));
+DBU Coordinate::dst(Coordinate a)
+{
+  DBU ax = a.getX();
+  DBU ay = a.getY();
+  return std::sqrt(std::pow(_x - ax, 2) + std::pow(_y - ay, 2));
 }
 
-}
+}  // namespace ioPlacer

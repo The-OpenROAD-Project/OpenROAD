@@ -33,30 +33,31 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "Box.h"
 
 namespace ioPlacer {
 
-Coordinate Box::getMiddle() {
-        DBU lowerX = _lowerBound.getX();
-        DBU lowerY = _lowerBound.getY();
-        DBU upperX = _upperBound.getX();
-        DBU upperY = _upperBound.getY();
+Coordinate Box::getMiddle()
+{
+  DBU lowerX = _lowerBound.getX();
+  DBU lowerY = _lowerBound.getY();
+  DBU upperX = _upperBound.getX();
+  DBU upperY = _upperBound.getY();
 
-        return Coordinate((upperX - lowerX) / 2.0, (upperY - lowerY) / 2.0);
+  return Coordinate((upperX - lowerX) / 2.0, (upperY - lowerY) / 2.0);
 }
 
-DBU Box::getHalfPerimeter() {
-        DBU lowerX = _lowerBound.getX();
-        DBU lowerY = _lowerBound.getY();
-        DBU upperX = _upperBound.getX();
-        DBU upperY = _upperBound.getY();
+DBU Box::getHalfPerimeter()
+{
+  DBU lowerX = _lowerBound.getX();
+  DBU lowerY = _lowerBound.getY();
+  DBU upperX = _upperBound.getX();
+  DBU upperY = _upperBound.getY();
 
-        DBU x = upperX - lowerX;
-        DBU y = upperY - lowerY;
+  DBU x = upperX - lowerX;
+  DBU y = upperY - lowerY;
 
-        return (x + y);
+  return (x + y);
 }
 
-}
+}  // namespace ioPlacer
