@@ -84,7 +84,7 @@ class LayoutViewer : public QWidget
   void zoomOut();
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
-  void fit(); // fit the whole design in the window
+  void fit();  // fit the whole design in the window
   void redraw();
 
  private:
@@ -107,6 +107,10 @@ class LayoutViewer : public QWidget
   void   addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   void   updateRubberBandRegion();
+  void   drawTracks(odb::dbTechLayer* layer,
+                    odb::dbBlock*     block,
+                    QPainter*         painter,
+                    const odb::Rect&  bounds);
 
   odb::Rect screenToDBU(const QRect& rect);
   QRectF    DBUToScreen(const odb::Rect& dbu_rect);

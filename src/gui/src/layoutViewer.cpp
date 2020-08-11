@@ -306,6 +306,47 @@ const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster*    master,
   return nullptr;
 }
 
+void LayoutViewer::drawTracks(dbTechLayer* layer,
+                              dbBlock*     block,
+                              QPainter*    painter,
+                              const Rect&  bounds)
+{
+  if (options_->arePrefTracksVisible() || options_->areNonPrefTracksVisible()) {
+    dbTrackGrid* grid = block->findTrackGrid(layer);
+    if (grid) {
+      bool isHorizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+      std::vector<int> grids;
+      if (!isHorizontal && options_->arePrefTracksVisible()
+          || isHorizontal && options_->areNonPrefTracksVisible()) {
+        grid->getGridX(grids);
+        for (int x : grids) {
+          if (x < bounds.xMin()) {
+            continue;
+          }
+          if (x > bounds.xMax()) {
+            break;
+          }
+          painter->drawLine(x, bounds.yMin(), x, bounds.yMax());
+        }
+      }
+
+      if (isHorizontal && options_->arePrefTracksVisible()
+          || !isHorizontal && options_->areNonPrefTracksVisible()) {
+        grid->getGridY(grids);
+        for (int y : grids) {
+          if (y < bounds.yMin()) {
+            continue;
+          }
+          if (y > bounds.yMax()) {
+            break;
+          }
+          painter->drawLine(bounds.xMin(), y, bounds.xMax(), y);
+        }
+      }
+    }
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter*   painter,
@@ -426,6 +467,8 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       int         h  = ur.y() - ll.y();
       painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
     }
+
+    drawTracks(layer, block, painter, bounds);
   }
 }
 
@@ -481,7 +524,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.drawRect(event->rect());
 
   // Coordinate system setup (see file level comments)
-  painter.save();  
+  painter.save();
   painter.translate(0, height());
   painter.scale(pixelsPerDBU_, -pixelsPerDBU_);
 

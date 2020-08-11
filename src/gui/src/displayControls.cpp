@@ -48,7 +48,9 @@ DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
       view_(new QTreeView(parent)),
       model_(new QStandardItemModel(0, 4, parent)),
-      tech_inited_(false)
+      tech_inited_(false),
+      tracks_visible_pref_(false),
+      tracks_visible_non_pref_(false)
 {
   setObjectName("layers");  // for settings
   model_->setHorizontalHeaderLabels({"", "", "V", "S"});
@@ -63,20 +65,26 @@ DisplayControls::DisplayControls(QWidget* parent)
   layers_ = makeItem(
       "Layers",
       model_,
-      [this](bool visible) {
-        toggleAllChildren(visible, layer_visible_, layers_, Visible);
-      },
+      Qt::Checked,
+      [this](bool visible) { toggleAllChildren(visible, layers_, Visible); },
       [this](bool selectable) {
-        toggleAllChildren(selectable, layer_selectable_, layers_, Selectable);
+        toggleAllChildren(selectable, layers_, Selectable);
       });
   view_->expand(layers_->index());
-  // routing_ = makeItem(
-  //     "Routing", model_, [](bool) {}, [](bool) {});
 
-  // routing_wire_ = makeItem(
-  //     "Wire", routing_, [](bool) {}, [](bool) {});
-  // routing_via_ = makeItem(
-  //     "Via", routing_, [](bool) {}, [](bool) {});
+  // Track patterns
+  tracks_ = makeItem("Tracks", model_, Qt::Unchecked, [this](bool visible) {
+    toggleAllChildren(visible, tracks_, Visible);
+  });
+
+  tracks_pref_ = makeItem("Pref", tracks_, Qt::Unchecked, [this](bool visible) {
+    tracks_visible_pref_ = visible;
+  });
+
+  tracks_non_pref_
+      = makeItem("Non Pref", tracks_, Qt::Unchecked, [this](bool visible) {
+          tracks_visible_non_pref_ = visible;
+        });
 
   setWidget(view_);
   connect(model_,
@@ -85,15 +93,10 @@ DisplayControls::DisplayControls(QWidget* parent)
           SLOT(itemChanged(QStandardItem*)));
 }
 
-void DisplayControls::toggleAllChildren(
-    bool                                     checked,
-    std::map<const odb::dbTechLayer*, bool>& container,
-    QStandardItem*                           parent,
-    Column                                   column)
+void DisplayControls::toggleAllChildren(bool           checked,
+                                        QStandardItem* parent,
+                                        Column         column)
 {
-  for (auto& [layer, v] : container) {
-    container[layer] = checked;
-  }
   Qt::CheckState state = checked ? Qt::Checked : Qt::Unchecked;
   for (int row = 0; row < parent->rowCount(); ++row) {
     auto child = parent->child(row, column);
@@ -130,6 +133,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
       makeItem(
           QString::fromStdString(layer->getName()),
           layers_,
+          Qt::Checked,
           [this, layer](bool visible) { layer_visible_[layer] = visible; },
           [this, layer](bool select) { layer_selectable_[layer] = select; },
           color(layer));
@@ -141,6 +145,7 @@ template <typename T>
 QStandardItem* DisplayControls::makeItem(
     const QString&                   text,
     T*                               parent,
+    Qt::CheckState                   checked,
     const std::function<void(bool)>& visibility_action,
     const std::function<void(bool)>& select_action,
     const QColor&                    color)
@@ -153,13 +158,16 @@ QStandardItem* DisplayControls::makeItem(
 
   QStandardItem* visibilityItem = new QStandardItem("");
   visibilityItem->setCheckable(true);
-  visibilityItem->setCheckState(Qt::Checked);
+  visibilityItem->setCheckState(checked);
   visibilityItem->setData(QVariant::fromValue(Callback({visibility_action})));
 
-  QStandardItem* selectItem = new QStandardItem("");
-  selectItem->setCheckable(true);
-  selectItem->setCheckState(Qt::Checked);
-  selectItem->setData(QVariant::fromValue(Callback({select_action})));
+  QStandardItem* selectItem = nullptr;
+  if (select_action) {
+    selectItem = new QStandardItem("");
+    selectItem->setCheckable(true);
+    selectItem->setCheckState(checked);
+    selectItem->setData(QVariant::fromValue(Callback({select_action})));
+  }
 
   parent->appendRow({nameItem, colorItem, visibilityItem, selectItem});
   return nameItem;
@@ -182,6 +190,16 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 {
   return layer_selectable_.at(layer);
+}
+
+bool DisplayControls::arePrefTracksVisible()
+{
+  return tracks_visible_pref_;
+}
+
+bool DisplayControls::areNonPrefTracksVisible()
+{
+  return tracks_visible_non_pref_;
 }
 
 void DisplayControls::techInit()
