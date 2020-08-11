@@ -1157,7 +1157,6 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
     error("odb::dbBlock not found\n");
   }
 
-  _arc->setDb(_db);
   _arc->load_antenna_rules();
 
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxRoutingLayer);
@@ -1361,7 +1360,6 @@ void DBWrapper::fixAntennas(std::string antennaCellName,
 
 void DBWrapper::legalizePlacedCells()
 {
-  _opendp->init(_db);
   _opendp->detailedPlacement(0);
   _opendp->checkPlacement(false);
 }
