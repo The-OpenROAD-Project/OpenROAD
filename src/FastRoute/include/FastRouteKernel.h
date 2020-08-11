@@ -210,6 +210,7 @@ protected:
   void mergeSegments(FastRoute::NET& net);
   bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
   ROUTE createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
+  bool checkSignalType(const Net &net);
 
   // check functions
   void checkPinPlacement();

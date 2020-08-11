@@ -605,8 +605,7 @@ void FastRouteKernel::initializeNets(bool reroute)
 
   for (const Net& net : *_nets) {
     if (net.getNumPins() > 1
-        && !(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
-        && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)
+        && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
       validNets++;
     }
@@ -627,8 +626,7 @@ void FastRouteKernel::initializeNets(bool reroute)
         maxDegree = pin_count;
       }
 
-      if (!(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
-          && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)) {
+      if (checkSignalType(net)) {
         if (pin_count >= std::numeric_limits<short>::max()) {
           std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
                     << " due to large number of pins\n";
@@ -1680,8 +1678,7 @@ void FastRouteKernel::addRemainingGuides(
 
   // Add local guides for nets with no routing.
   for (Net& net : *_nets) {
-    if (!(_onlyClockNets && net.getSignalType() != odb::dbSigType::CLOCK)
-        && !(_onlySignalNets && net.getSignalType() == odb::dbSigType::CLOCK)
+    if (checkSignalType(net)
         && net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
       int net_idx = getNetIdx(&net);
       std::vector<FastRoute::PIN>& pins = net_pins[net_idx];
@@ -2754,6 +2751,13 @@ FastRoute::ROUTE FastRouteKernel::createFakePin(Pin pin,
   }
 
   return pinConnection;
+}
+
+bool FastRouteKernel::checkSignalType(const Net &net) {
+  bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
+  return ((!_onlyClockNets && !_onlySignalNets) ||
+          (_onlyClockNets && isClock) ||
+          (_onlySignalNets && !isClock));
 }
 
 const char* nodeTypeString(NodeType type)
