@@ -1,0 +1,54 @@
+\hypertarget{classPowerInst}{}\section{Power\+Inst Class Reference}
+\label{classPowerInst}\index{Power\+Inst@{Power\+Inst}}
+
+
+Calculates the power per instance using Open\+S\+TA.  
+
+
+
+
+{\ttfamily \#include $<$get\+\_\+power.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ std\+::pair$<$ std\+::string, double $>$ $>$ \hyperlink{classPowerInst_aa07965840fe0c88b8ee80a8d4a1ff0e8}{execute\+Power\+Per\+Inst} (std\+::string top\+Cell\+Name, std\+::string verilog\+Name, std\+::vector$<$ std\+::string $>$ lib\+Name, std\+::string sdc\+Name)
+\begin{DoxyCompactList}\small\item\em Function for power per instance calculation. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Calculates the power per instance using Open\+S\+TA. 
+
+Uses Open\+S\+TA to report total power per instance and use it for IR drop estimation. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classPowerInst_aa07965840fe0c88b8ee80a8d4a1ff0e8}\label{classPowerInst_aa07965840fe0c88b8ee80a8d4a1ff0e8}} 
+\index{Power\+Inst@{Power\+Inst}!execute\+Power\+Per\+Inst@{execute\+Power\+Per\+Inst}}
+\index{execute\+Power\+Per\+Inst@{execute\+Power\+Per\+Inst}!Power\+Inst@{Power\+Inst}}
+\subsubsection{\texorpdfstring{execute\+Power\+Per\+Inst()}{executePowerPerInst()}}
+{\footnotesize\ttfamily std\+::vector$<$ pair$<$ string, double $>$ $>$ Power\+Inst\+::execute\+Power\+Per\+Inst (\begin{DoxyParamCaption}\item[{std\+::string}]{top\+Cell\+Name,  }\item[{std\+::string}]{verilog\+Name,  }\item[{std\+::vector$<$ std\+::string $>$}]{lib\+Name,  }\item[{std\+::string}]{sdc\+Name }\end{DoxyParamCaption})}
+
+
+
+Function for power per instance calculation. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em top\+Cell\+Name} & Verilog top module name for Open\+S\+TA \\
+\hline
+{\em verilog\+Name} & Verilog name for Open\+S\+TA \\
+\hline
+{\em lib\+Name} & Timing libraries for Open\+S\+TA \\
+\hline
+{\em sdc\+Name} & Constraints for Open\+S\+TA \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A vector of pairs which has instance name and its corresponding total power 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\hyperlink{get__power_8h}{get\+\_\+power.\+h}\item 
+src/\hyperlink{get__power_8cpp}{get\+\_\+power.\+cpp}\end{DoxyCompactItemize}

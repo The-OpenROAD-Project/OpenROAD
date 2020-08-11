@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['_5f_5firsolver_5fpower_5f_5f',['__IRSOLVER_Power__',['../get__power_8h.html#a58c98f6e8fc5d32aa3723dda4522fa00',1,'get_power.h']]],
+  ['_5fwrap_5fdelete_5fpdnsim',['_wrap_delete_PDNSim',['../pdnsim__wrap_8cpp.html#a27e8d8fa131a71f0cd4c04bcf106cd6f',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fnew_5fpdnsim',['_wrap_new_PDNSim',['../pdnsim__wrap_8cpp.html#acc2adcf58e4b02ba70385734da097d24',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fanalyze_5fpower_5fgrid',['_wrap_PDNSim_analyze_power_grid',['../pdnsim__wrap_8cpp.html#ad61027f3e0f373e4030a1ddf8da0c584',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fdb_5fget',['_wrap_PDNSim_db_get',['../pdnsim__wrap_8cpp.html#a71f4ed63a65777d6183be565f32c194a',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fdb_5fset',['_wrap_PDNSim_db_set',['../pdnsim__wrap_8cpp.html#af5cfb4708a87b313d89488c14776ed54',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fhelp',['_wrap_PDNSim_help',['../pdnsim__wrap_8cpp.html#ae4958e58694977d79177310eea646670',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fimport_5fdb',['_wrap_PDNSim_import_db',['../pdnsim__wrap_8cpp.html#a44cebf34501e700f784f3eeb310f43a5',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fimport_5fdef',['_wrap_PDNSim_import_def',['../pdnsim__wrap_8cpp.html#ac12a1185c76546bfa0ca846ad816966a',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fimport_5flef',['_wrap_PDNSim_import_lef',['../pdnsim__wrap_8cpp.html#ac2c742c3c36fc264d40c0796b07d2cb9',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fimport_5flib',['_wrap_PDNSim_import_lib',['../pdnsim__wrap_8cpp.html#a658d32b7ffbbe135c17af73f19b56a27',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fimport_5fsdc',['_wrap_PDNSim_import_sdc',['../pdnsim__wrap_8cpp.html#a1a10813fb5cf941e3bb28bac043327ce',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fimport_5fverilog',['_wrap_PDNSim_import_verilog',['../pdnsim__wrap_8cpp.html#abb0d72080abb649116c8732286d5cb0d',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5flib_5fstor_5fget',['_wrap_PDNSim_lib_stor_get',['../pdnsim__wrap_8cpp.html#a29d1794fde766d194d56815b85ac49f6',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5flib_5fstor_5fset',['_wrap_PDNSim_lib_stor_set',['../pdnsim__wrap_8cpp.html#a811e85ff86a2a7350117dfa14fdcc91a',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fread_5fvoltage_5fsrc',['_wrap_PDNSim_read_voltage_src',['../pdnsim__wrap_8cpp.html#af1e1e3ae14296e90a361b5184ecfd31f',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fsdc_5ffile_5fget',['_wrap_PDNSim_sdc_file_get',['../pdnsim__wrap_8cpp.html#aba5404af2c4f82f05897181b7e4aa528',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fsdc_5ffile_5fset',['_wrap_PDNSim_sdc_file_set',['../pdnsim__wrap_8cpp.html#a5afeff694374241d716d84b9b91fd8ce',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fset_5ftop_5fmodule',['_wrap_PDNSim_set_top_module',['../pdnsim__wrap_8cpp.html#ae9ec84e81e3da51728ed5f61af729ae1',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5ftop_5fcell_5fname_5fget',['_wrap_PDNSim_top_cell_name_get',['../pdnsim__wrap_8cpp.html#a81044a871e82a7592e1dfd10b7fb8a9f',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5ftop_5fcell_5fname_5fset',['_wrap_PDNSim_top_cell_name_set',['../pdnsim__wrap_8cpp.html#a18426a8c319b1270db8896674e00d814',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fverilog_5fstor_5fget',['_wrap_PDNSim_verilog_stor_get',['../pdnsim__wrap_8cpp.html#a8afc36cbdd403f069601422806bd4241',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fverilog_5fstor_5fset',['_wrap_PDNSim_verilog_stor_set',['../pdnsim__wrap_8cpp.html#a8e2d758ce00bdd4302fd60d90db59f0e',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fvsrc_5floc_5fget',['_wrap_PDNSim_vsrc_loc_get',['../pdnsim__wrap_8cpp.html#a3cf4aca0a5e23cc698668bd840e107ae',1,'pdnsim_wrap.cpp']]],
+  ['_5fwrap_5fpdnsim_5fvsrc_5floc_5fset',['_wrap_PDNSim_vsrc_loc_set',['../pdnsim__wrap_8cpp.html#aa98e0bc884fc14dd8ab72d8eca44f596',1,'pdnsim_wrap.cpp']]]
+];
