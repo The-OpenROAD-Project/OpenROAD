@@ -139,6 +139,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           color(layer));
     }
   }
+  emit changed();
 }
 
 template <typename T>

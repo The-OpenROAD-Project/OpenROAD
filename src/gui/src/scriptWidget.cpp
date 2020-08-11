@@ -33,6 +33,7 @@
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QVBoxLayout>
+#include <QTimer>
 
 #include "openroad/OpenRoad.hh"
 #include "scriptWidget.h"
@@ -56,7 +57,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QWidget* container = new QWidget;
   container->setLayout(layout);
 
-  setupTcl();
+  QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
   connect(input_, SIGNAL(returnPressed()), this, SLOT(executeCommand()));
 

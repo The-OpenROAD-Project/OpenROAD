@@ -85,7 +85,6 @@ class LayoutViewer : public QWidget
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
-  void redraw();
 
  private:
   struct Boxes

@@ -78,6 +78,9 @@ LayoutViewer::LayoutViewer(Options* options, QWidget* parent)
 
 void LayoutViewer::setDb(dbDatabase* db)
 {
+  if (db_ != db) {
+    update();
+  }
   db_ = db;
 }
 
@@ -552,11 +555,6 @@ void LayoutViewer::fit()
       = std::min(viewport.width() / (double) bbox->getWidth(0),
                  viewport.height() / (double) bbox->getLength(0));
   setPixelsPerDBU(pixelsPerDBU);
-}
-
-void LayoutViewer::redraw()
-{
-  this->update();
 }
 
 void LayoutViewer::designLoaded(dbBlock* block)
