@@ -99,9 +99,9 @@ class DBWrapper
   void setSelectedMetal(int metal) { selectedMetal = metal; }
   std::vector<odb::dbNet*> getDirtyNets() { return _dirtyNets; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
-  std::map<std::string, std::vector<VINFO>> getAntennaViolations()
+  std::map<odb::dbNet*, std::vector<VINFO>> getAntennaViolations()
                                             { return _antennaViolations; }
-  void setAntennaViolations(std::map<std::string, std::vector<VINFO>>
+  void setAntennaViolations(std::map<odb::dbNet*, std::vector<VINFO>>
                             antennaViolations)
                            { _antennaViolations = antennaViolations; }
 
@@ -125,7 +125,6 @@ class DBWrapper
                    int siteWidth,
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
-  void createMapForDbNets();
 
   sta::dbSta* _openSta;
   antenna_checker::AntennaChecker* _arc;
@@ -139,8 +138,7 @@ class DBWrapper
   Grid* _grid;
   bool _verbose = false;
 
-  std::map<std::string, odb::dbNet*> _dbNets;
-  std::map<std::string, std::vector<VINFO>>
+  std::map<odb::dbNet*, std::vector<VINFO>>
     _antennaViolations;
   std::vector<odb::dbNet*> _dirtyNets;
 };

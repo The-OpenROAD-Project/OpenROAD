@@ -346,7 +346,7 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
 
   // Save dirtyNets and antennaViolations before reset resources
   std::vector<odb::dbNet*> dirtyNets = _dbWrapper->getDirtyNets();
-  std::map<std::string, std::vector<VINFO>> antennaViolations =
+  std::map<odb::dbNet*, std::vector<VINFO>> antennaViolations =
                                             _dbWrapper->getAntennaViolations();
 
   resetResources();
