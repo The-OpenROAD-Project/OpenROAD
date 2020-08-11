@@ -384,10 +384,14 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       continue;
     }
 
-    // Draw the instances
+    // Draw the instances' shapes
     for (auto inst : insts) {
-      dbMaster*    master = inst->getMaster();
-      const Boxes* boxes  = boxesByLayer(master, layer);
+      dbMaster* master = inst->getMaster();
+      if (master->getHeight() < 5 * pixel) {
+        continue;
+      }
+
+      const Boxes* boxes = boxesByLayer(master, layer);
 
       if (boxes == nullptr) {
         continue;  // no shapes on this layer
@@ -401,33 +405,18 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       painter->setTransform(xfm);
 
       // Only draw the pins/obs if they are big enough to be useful
-      if (master->getHeight() >= 5 * pixel) {
-        painter->setPen(Qt::NoPen);
-        QColor color = getColor(layer);
-        painter->setBrush(color);
+      painter->setPen(Qt::NoPen);
+      QColor color = getColor(layer);
+      painter->setBrush(color);
 
-        painter->setBrush(color.lighter());
-        for (auto& box : boxes->obs) {
-          painter->drawRect(box);
-        }
-
-        painter->setBrush(color);
-        for (auto& box : boxes->mterms) {
-          painter->drawRect(box);
-        }
+      painter->setBrush(color.lighter());
+      for (auto& box : boxes->obs) {
+        painter->drawRect(box);
       }
 
-      // draw bbox
-      painter->setPen(QPen(Qt::gray, 0));
-      painter->setBrush(QBrush());
-      int master_w = master->getWidth();
-      int master_h = master->getHeight();
-      painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
-
-      // Draw an orientation tag in corner if useful in size
-      if (master->getHeight() >= 5 * pixel) {
-        qreal tag_size = 0.1 * std::min(master_w, master_h);
-        painter->drawLine(QPointF(tag_size / 2, 0.0), QPointF(0.0, tag_size));
+      painter->setBrush(color);
+      for (auto& box : boxes->mterms) {
+        painter->drawRect(box);
       }
 
 #if 0
@@ -472,6 +461,32 @@ void LayoutViewer::drawBlock(QPainter*   painter,
     }
 
     drawTracks(layer, block, painter, bounds);
+  }
+
+  // Draw the instances bounds
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // setup the instance's transform
+    QTransform  xfm = painter->transform();
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // draw bbox
+    painter->setPen(QPen(Qt::gray, 0));
+    painter->setBrush(QBrush());
+    int master_w = master->getWidth();
+    int master_h = master->getHeight();
+    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
+
+    // Draw an orientation tag in corner if useful in size
+    if (master->getHeight() >= 5 * pixel) {
+      qreal tag_size = 0.1 * master_h;
+      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
+                        QPointF(0.0, tag_size));
+    }
+    painter->setTransform(initial_xfm);
   }
 }
 
