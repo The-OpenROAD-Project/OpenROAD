@@ -1559,7 +1559,7 @@ void FastRouteKernel::addRemainingGuides(
     if (net->getNumPins() > 1) {
       std::vector<FastRoute::PIN>& pins = net_pins[netRoute.idx];
       // Try to add local guides for net with no output of FR core
-      if (netRoute.route.size() == 0) {
+      if (netRoute.route.empty()) {
         int lastLayer = -1;
         for (uint p = 0; p < pins.size(); p++) {
           if (p > 0) {

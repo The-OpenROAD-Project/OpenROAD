@@ -384,7 +384,7 @@ void DBWrapper::initNetlist(bool reroute)
   }
 
   if (reroute) {
-    if (_dirtyNets.size() == 0) {
+    if (_dirtyNets.empty()) {
       error("Not found any dirty net to reroute");
     }
 
@@ -396,7 +396,7 @@ void DBWrapper::initNetlist(bool reroute)
       nets.push_back(net);
     }
 
-    if (nets.size() == 0) {
+    if (nets.empty()) {
       error("Design without nets");
     }
 
@@ -426,7 +426,7 @@ void DBWrapper::addNets(std::vector<odb::dbNet*> nets)
   for (odb::dbNet* db_net : sorted_nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
-        && !db_net->isSpecial() && db_net->getSWires().size() == 0) {
+        && !db_net->isSpecial() && db_net->getSWires().empty()) {
       Net* net = _fr->addNet(db_net);
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
@@ -863,7 +863,7 @@ void DBWrapper::initObstacles()
   // Get nets obstructions (routing wires and pdn wires)
   odb::dbSet<odb::dbNet> nets = _block->getNets();
 
-  if (nets.size() == 0) {
+  if (nets.empty()) {
     error("Design without nets\n");
   }
 
@@ -994,7 +994,7 @@ std::set<int> DBWrapper::findTransitionLayers(int maxRoutingLayer)
   odb::dbTech* tech = _db->getTech();
   odb::dbSet<odb::dbTechVia> vias = tech->getVias();
 
-  if (vias.size() == 0) {
+  if (vias.empty()) {
     error("Tech without vias\n");
   }
 
@@ -1012,7 +1012,7 @@ std::set<int> DBWrapper::findTransitionLayers(int maxRoutingLayer)
     }
   }
 
-  if (defaultVias.size() == 0) {
+  if (defaultVias.empty()) {
     std::cout << "[WARNING]No OR_DEFAULT vias defined\n";
     for (odb::dbTechVia* currVia : vias) {
       defaultVias.push_back(currVia);
@@ -1078,7 +1078,7 @@ std::map<int, odb::dbTechVia*> DBWrapper::getDefaultVias(int maxRoutingLayer)
     }
   }
 
-  if (defaultVias.size() == 0) {
+  if (defaultVias.empty()) {
     std::cout << "[WARNING]No OR_DEFAULT vias defined\n";
     for (int i = 1; i <= maxRoutingLayer; i++) {
       for (odb::dbTechVia* currVia : vias) {
@@ -1269,7 +1269,7 @@ void DBWrapper::insertDiode(odb::dbNet* net,
             point(instBox->xMax() + (2 * siteWidth) - 1, instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
-    if (overlapInsts.size() == 0) {
+    if (overlapInsts.empty()) {
       legallyPlaced = true;
     }
     overlapInsts.clear();
@@ -1324,17 +1324,15 @@ void DBWrapper::fixAntennas(std::string antennaCellName,
   getFixedInstances(fixedInsts);
 
   auto rows = _block->getRows();
-  if (!rows.empty()) {
-    for (odb::dbRow* db_row : rows) {
-      odb::dbSite* site = db_row->getSite();
-      int site_width = site->getWidth();
-      if (siteWidth == -1) {
-        siteWidth = site_width;
-      }
+  for (odb::dbRow* db_row : rows) {
+    odb::dbSite* site = db_row->getSite();
+    int site_width = site->getWidth();
+    if (siteWidth == -1) {
+      siteWidth = site_width;
+    }
 
-      if (siteWidth != site_width) {
-        std::cout << "[WARNING] Design has rows with different site width\n";
-      }
+    if (siteWidth != site_width) {
+      std::cout << "[WARNING] Design has rows with different site width\n";
     }
   }
 
