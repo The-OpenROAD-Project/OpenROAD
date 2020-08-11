@@ -213,4 +213,3 @@ dbSta::findClkNets(const Clock *clk,
 }
 
 } // namespace sta
-

@@ -164,9 +164,6 @@ protected:
   double findDesignArea();
   void ensureCorner();
   void initCorner(Corner *corner);
-  void ensureClkNets();
-  void findClkNets();
-  bool isClock(const Net *net);
   void ensureLevelDrvrVerticies();
   void bufferInput(Pin *top_pin,
 		   LibertyCell *buffer_cell);
@@ -343,8 +340,6 @@ protected:
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;
   const ParasiticAnalysisPt *parasitics_ap_;
-  NetSet clk_nets_;
-  bool clk_nets_valid_;
   bool have_estimated_parasitics_;
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
