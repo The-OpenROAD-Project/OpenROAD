@@ -58,6 +58,9 @@ using ord::error;
 DBWrapper::DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid)
     : _openroad(openroad), _fr(fr), _grid(grid), _db(openroad->getDb())
 {
+  _openSta = _openroad->getSta();
+  _arc = _openroad->getAntennaChecker();
+  _opendp = _openroad->getOpendp();
 }
 
 void DBWrapper::initGrid(int maxLayer)
@@ -445,10 +448,7 @@ void DBWrapper::initClockNets()
 {
   std::set<odb::dbNet*> _clockNets;
 
-  
-  sta::dbSta* openSta = _openroad->getSta();
-
-  openSta->findClkNets(_clockNets);
+  _openSta->findClkNets(_clockNets);
 
   std::cout << "[INFO] Found " << _clockNets.size() << " clock nets\n";
 
@@ -1176,9 +1176,8 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
     error("odb::dbBlock not found\n");
   }
 
-  antenna_checker::AntennaChecker* arc = _openroad->getAntennaChecker();
-  arc->setDb(_db);
-  arc->load_antenna_rules();
+  _arc->setDb(_db);
+  _arc->load_antenna_rules();
 
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxRoutingLayer);
 
@@ -1221,7 +1220,7 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
     odb::orderWires(_dbNets[netName], false, false);
 
     std::vector<VINFO> netViol
-        = arc->get_net_antenna_violations(_dbNets[netName]);
+        = _arc->get_net_antenna_violations(_dbNets[netName]);
     if (netViol.size() > 0) {
       _antennaViolations[_dbNets[netName]->getConstName()] = netViol;
       _dirtyNets.push_back(_dbNets[netName]);
@@ -1401,10 +1400,9 @@ void DBWrapper::fixAntennas(std::string antennaCellName,
 
 void DBWrapper::legalizePlacedCells()
 {
-  opendp::Opendp* opendp = _openroad->getOpendp();
-  opendp->init(_db);
-  opendp->detailedPlacement(0);
-  opendp->checkPlacement(false);
+  _opendp->init(_db);
+  _opendp->detailedPlacement(0);
+  _opendp->checkPlacement(false);
 }
 
 }  // namespace FastRoute

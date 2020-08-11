@@ -127,6 +127,10 @@ class DBWrapper
   void getFixedInstances(r_tree& fixedInsts);
   void createMapForDbNets();
 
+  sta::dbSta* _openSta;
+  antenna_checker::AntennaChecker* _arc;
+  opendp::Opendp* _opendp;
+
   int selectedMetal = 3;
   ord::OpenRoad* _openroad;
   odb::dbDatabase* _db;
