@@ -134,7 +134,7 @@ class DBWrapper
   int selectedMetal = 3;
   ord::OpenRoad* _openroad;
   odb::dbDatabase* _db;
-  odb::dbChip* _chip;
+  odb::dbBlock* _block;
   FastRouteKernel *_fr;
   Grid* _grid;
   bool _verbose = false;
