@@ -3,8 +3,6 @@ find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Boost)
-
 add_library(gui
   src/layoutViewer.cpp
   src/mainWindow.cpp
