@@ -710,7 +710,7 @@ void DBWrapper::initObstacles()
     error("odb::dbBlock not found\n");
   }
 
-  std::map<std::string, uint> layerExtensions;
+  std::map<int, uint> layerExtensions;
 
   for (odb::dbTechLayer* obstructLayer : tech->getLayers()) {
     if (obstructLayer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
@@ -756,7 +756,7 @@ void DBWrapper::initObstacles()
 
     // Save the extension to use when defining Macros
 
-    layerExtensions[obstructLayer->getName()] = macroExtension;
+    layerExtensions[obstructLayer->getRoutingLevel()] = macroExtension;
   }
 
   int obstructionsCnt = 0;
@@ -809,7 +809,7 @@ void DBWrapper::initObstacles()
       uint macroExtension = 0;
 
       if (isMacro) {
-        macroExtension = layerExtensions[currBox->getTechLayer()->getName()];
+        macroExtension = layerExtensions[currBox->getTechLayer()->getRoutingLevel()];
       }
 
       Coordinate lowerBound = Coordinate(rect.xMin() - macroExtension,
