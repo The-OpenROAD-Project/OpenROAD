@@ -21,6 +21,7 @@ Libraries
   * zlib
   * eigen
   * lemon
+  * qt5
   * CImg (optional for replace)
 
 
