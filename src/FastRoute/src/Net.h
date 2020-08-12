@@ -48,6 +48,7 @@ class Net
  public:
   Net() = default;
   Net(odb::dbNet* net);
+  odb::dbNet* getDbNet() { return _net; }
   const std::string getName() const;
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;

@@ -70,7 +70,7 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
-  connect(controls_, SIGNAL(changed()), viewer_, SLOT(redraw()));
+  connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");

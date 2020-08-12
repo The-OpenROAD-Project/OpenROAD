@@ -210,6 +210,7 @@ protected:
   void mergeSegments(FastRoute::NET& net);
   bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
   ROUTE createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
+  bool checkSignalType(const Net &net);
 
   // check functions
   void checkPinPlacement();
@@ -224,8 +225,8 @@ protected:
   SteinerTree createSteinerTree(std::vector<ROUTE>& route,
                                 const std::vector<Pin>& pins);
   bool checkSteinerTree(SteinerTree sTree);
-  void addLocalConnections(std::vector<FastRoute::NET>& globalRoute);
-  void mergeResults(std::vector<FastRoute::NET> newRoute);
+  void addLocalConnections(std::vector<FastRoute::NET>* globalRoute);
+  void mergeResults(const std::vector<FastRoute::NET>* newRoute);
   void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
@@ -252,7 +253,6 @@ protected:
   int _maxRoutingLayer;
   bool _unidirectionalRoute;
   int _fixLayer;
-  bool _clockNetRouting;
   const int _selectedMetal = 3;
   const float transitionLayerAdjust = 0.6;
   const int _gcellsOffset = 2;

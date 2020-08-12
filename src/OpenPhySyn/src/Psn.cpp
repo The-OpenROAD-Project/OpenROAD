@@ -430,7 +430,7 @@ Psn::printCommands(bool raw_str)
         PSN_LOG_INFO("Available commands: ");
     }
     PSN_LOG_RAW("");
-    std::string commands_str;
+    std::string commands_str =
     "design_area			Report design total cell area\n"
     "has_transform			Check if the specified transform is "
     "loaded\n"

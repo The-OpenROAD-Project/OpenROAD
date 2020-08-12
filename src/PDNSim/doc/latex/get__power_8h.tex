@@ -1,0 +1,113 @@
+\hypertarget{get__power_8h}{}\section{src/get\+\_\+power.h File Reference}
+\label{get__power_8h}\index{src/get\+\_\+power.\+h@{src/get\+\_\+power.\+h}}
+{\ttfamily \#include $<$fstream$>$}\newline
+{\ttfamily \#include $<$tcl.\+h$>$}\newline
+{\ttfamily \#include $<$limits$>$}\newline
+{\ttfamily \#include \char`\"{}Machine.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Liberty.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}String\+Util.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Vector.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Sta.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Sdc.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Sta\+Main.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Stats.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Report.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Pattern\+Match.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Port\+Direction.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Func\+Expr.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Units.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Min\+Max.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Transition.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Timing\+Role.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Timing\+Arc.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Internal\+Power.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Leakage\+Power.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Equiv\+Cells.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Network.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Clock.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Port\+Delay.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Exception\+Path.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Graph.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Graph\+Delay\+Calc.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Parasitics.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Wireload.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Delay\+Calc.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Dcalc\+Analysis\+Pt.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Corner.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Tag.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Path\+Vertex.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Path\+Ref.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Path\+End.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Path\+Group.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Power.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Check\+Timing.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Check\+Min\+Pulse\+Widths.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Levelize.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Bfs.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Search.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Search\+Pred.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Path\+Analysis\+Pt.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Disallow\+Copy\+Assign.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Debug.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Error.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Verilog\+Namespace.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Verilog\+Reader.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Check\+Min\+Periods.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Check\+Max\+Skews.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Path\+Expanded.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Latches.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Report\+Path.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Visit\+Path\+Group\+Vertices.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Worst\+Slack.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Parasitics\+Class.\+hh\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}Parse\+Bus.\+hh\char`\"{}}\newline
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=284pt]{get__power_8h__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+class \hyperlink{classPowerInst}{Power\+Inst}
+\begin{DoxyCompactList}\small\item\em Calculates the power per instance using Open\+S\+TA. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacesta}{sta}
+\end{DoxyCompactItemize}
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{get__power_8h_a58c98f6e8fc5d32aa3723dda4522fa00}{\+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+}~0
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{get__power_8h_a469736659db25c005ebaa45f3b0e1244}{Sta\+\_\+\+Init} (Tcl\+\_\+\+Interp $\ast$interp)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+const char $\ast$ \hyperlink{namespacesta_a25423e815a38020350ff9ec056668087}{sta\+::tcl\+\_\+inits} \mbox{[}$\,$\mbox{]}
+\end{DoxyCompactItemize}
+
+
+\subsection{Macro Definition Documentation}
+\mbox{\Hypertarget{get__power_8h_a58c98f6e8fc5d32aa3723dda4522fa00}\label{get__power_8h_a58c98f6e8fc5d32aa3723dda4522fa00}} 
+\index{get\+\_\+power.\+h@{get\+\_\+power.\+h}!\+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+@{\+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+@{\+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+}!get\+\_\+power.\+h@{get\+\_\+power.\+h}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+}{\_\_IRSOLVER\_Power\_\_}}
+{\footnotesize\ttfamily \#define \+\_\+\+\_\+\+I\+R\+S\+O\+L\+V\+E\+R\+\_\+\+Power\+\_\+\+\_\+~0}
+
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{get__power_8h_a469736659db25c005ebaa45f3b0e1244}\label{get__power_8h_a469736659db25c005ebaa45f3b0e1244}} 
+\index{get\+\_\+power.\+h@{get\+\_\+power.\+h}!Sta\+\_\+\+Init@{Sta\+\_\+\+Init}}
+\index{Sta\+\_\+\+Init@{Sta\+\_\+\+Init}!get\+\_\+power.\+h@{get\+\_\+power.\+h}}
+\subsubsection{\texorpdfstring{Sta\+\_\+\+Init()}{Sta\_Init()}}
+{\footnotesize\ttfamily int Sta\+\_\+\+Init (\begin{DoxyParamCaption}\item[{Tcl\+\_\+\+Interp $\ast$}]{interp }\end{DoxyParamCaption})}
+

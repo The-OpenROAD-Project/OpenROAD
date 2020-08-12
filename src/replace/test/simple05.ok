@@ -1,0 +1,52 @@
+Notice 0: Reading LEF file:  ./nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ./nangate45.lef
+Notice 0: 
+Reading DEF file: ./simple05.def
+Notice 0: Design: single_cell
+Notice 0:     Created 2 pins.
+Notice 0:     Created 1 components and 4 component-terminals.
+Notice 0:     Created 2 special nets and 2 connections.
+Notice 0:     Created 2 nets and 2 connections.
+Notice 0: Finished DEF file: ./simple05.def
+[INFO] DBU = 2000
+[INFO] SiteSize = (380, 2800)
+[INFO] CoreAreaLxLy = (3800, 2800)
+[INFO] CoreAreaUxUy = (15960, 14000)
+[INFO] NumInstances = 1
+[INFO] NumPlaceInstances = 1
+[INFO] NumFixedInstances = 0
+[INFO] NumDummyInstances = 0
+[INFO] NumNets = 2
+[INFO] NumPins = 4
+[INFO] DieAreaLxLy = (0, 0)
+[INFO] DieAreaUxUy = (20000, 20000)
+[INFO] CoreAreaLxLy = (3800, 2800)
+[INFO] CoreAreaUxUy = (15960, 14000)
+[INFO] CoreArea = 136192000
+[INFO] NonPlaceInstsArea = 0
+[INFO] PlaceInstsArea = 7448000
+[INFO] Util(%) = 5.468750
+[INFO] StdInstsArea = 7448000
+[INFO] MacroInstsArea = 0
+[INFO] FillerInit: NumGCells = 12
+[INFO] FillerInit: NumGNets = 2
+[INFO] FillerInit: NumGPins = 4
+[INFO] TargetDensity = 0.700000
+[INFO] AveragePlaceInstArea = 7448000
+[INFO] IdealBinArea = 10640000
+[INFO] IdealBinCnt = 12
+[INFO] TotalBinArea = 136192000
+[INFO] BinCnt = (2, 2)
+[INFO] BinSize = (6080, 5600)
+[INFO] NumBins = 4
+[NesterovSolve] Iter: 1 overflow: 0 HPWL: 28871
+[NesterovSolve] Iter: 10 overflow: 0 HPWL: 28871
+[NesterovSolve] Iter: 20 overflow: 0 HPWL: 28871
+[NesterovSolve] Iter: 30 overflow: 0 HPWL: 28871
+[NesterovSolve] Iter: 40 overflow: 0 HPWL: 28871
+[NesterovSolve] Iter: 50 overflow: 0 HPWL: 28871
+[NesterovSolve] Finished with Overflow: 0
+No differences found.

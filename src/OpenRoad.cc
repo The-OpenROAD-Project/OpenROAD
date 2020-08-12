@@ -100,8 +100,27 @@ using sta::Resizer;
 OpenRoad *OpenRoad::openroad_ = nullptr;
 
 OpenRoad::OpenRoad()
+  : tcl_interp_(nullptr),
+    db_(nullptr),
+    verilog_network_(nullptr),
+    sta_(nullptr),
+    resizer_(nullptr),
+    ioPlacer_(nullptr),
+    opendp_(nullptr),
+    tritonMp_(nullptr),
+    fastRoute_(nullptr),
+    tritonCts_(nullptr),
+    tapcell_(nullptr),
+    extractor_(nullptr),
+    antennaChecker_(nullptr),
+#ifdef BUILD_OPENPHYSYN
+    psn_(nullptr),
+#endif
+    replace_(nullptr),
+    pdnsim_(nullptr) 
 {
   openroad_ = this;
+  db_ = dbDatabase::create();
 }
 
 OpenRoad::~OpenRoad()
@@ -145,7 +164,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
-  db_ = dbDatabase::create();
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();

@@ -1,0 +1,331 @@
+\hypertarget{classGMat}{}\section{G\+Mat Class Reference}
+\label{classGMat}\index{G\+Mat@{G\+Mat}}
+
+
+G matrix class.  
+
+
+
+
+{\ttfamily \#include $<$gmat.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classGMat_ad89367522ad38208488689b4146b6bbc}{G\+Mat} (int t\+\_\+num\+\_\+layers, int t\+\_\+num\+C4)
+\begin{DoxyCompactList}\small\item\em Constructor for creating the G matrix. \end{DoxyCompactList}\item 
+\hyperlink{classGMat_aeb2bc57952d6046f91afac0bcb3a7243}{$\sim$\+G\+Mat} ()
+\begin{DoxyCompactList}\small\item\em Destructor of the G matrix. \end{DoxyCompactList}\item 
+\hyperlink{classNode}{Node} $\ast$ \hyperlink{classGMat_a48cc4288be2ae357591bab12339e0114}{Get\+Node} (\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} t\+\_\+node)
+\begin{DoxyCompactList}\small\item\em Function to return a pointer to the node with a index. \end{DoxyCompactList}\item 
+\hyperlink{classNode}{Node} $\ast$ \hyperlink{classGMat_a54844be32da6280169a0f8ee08283d5a}{Get\+Node} (int t\+\_\+x, int t\+\_\+y, int t\+\_\+l)
+\begin{DoxyCompactList}\small\item\em Function to return a pointer to the node with the x, y, and layer number. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_a96d512b19a257d2361eac59dacee218d}{Set\+Node} (\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} t\+\_\+node\+\_\+loc, \hyperlink{classNode}{Node} $\ast$t\+\_\+node)
+\begin{DoxyCompactList}\small\item\em Function to set attributes of the node with index and node pointer. \end{DoxyCompactList}\item 
+\hyperlink{classNode}{Node} $\ast$ \hyperlink{classGMat_a6edc525006b72ebcd8b9cfbbec60e9ae}{Set\+Node} (int t\+\_\+x, int t\+\_\+y, int t\+\_\+layer, \hyperlink{node_8h_acf0ff4a0bb7e0c9b5900382cbd2aa614}{B\+Box} t\+\_\+b\+Box)
+\begin{DoxyCompactList}\small\item\em Function to create a node. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_aab1c09d83c7ad0b0b16d1c8059f1220b}{Insert\+Node} (\hyperlink{classNode}{Node} $\ast$t\+\_\+node)
+\begin{DoxyCompactList}\small\item\em Function to insert a node into the matrix. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_a890e83e8d1d373e3858bd213b76c2da9}{Print} ()
+\begin{DoxyCompactList}\small\item\em Function that prints the G matrix for debug purposes. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_a1981ec0047b10ef19b2e4734921a5452}{Set\+Conductance} (\hyperlink{classNode}{Node} $\ast$t\+\_\+node1, \hyperlink{classNode}{Node} $\ast$t\+\_\+node2, double t\+\_\+cond)
+\begin{DoxyCompactList}\small\item\em Function to add the conductance value between two nodes. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_ab3e602af5a1537611ec1a8bfd798b688}{Initialize\+Gmat\+Dok} ()
+\begin{DoxyCompactList}\small\item\em Function to initialize the sparse dok matrix. \end{DoxyCompactList}\item 
+\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} \hyperlink{classGMat_aa0f8d64bc65172c457d7d1d4a2156b79}{Get\+Num\+Nodes} ()
+\begin{DoxyCompactList}\small\item\em Function that returns the number of nodes in the G matrix. \end{DoxyCompactList}\item 
+\hyperlink{structCscMatrix}{Csc\+Matrix} $\ast$ \hyperlink{classGMat_a907a945858399a70cc5b77952b81d25a}{Get\+G\+Mat} ()
+\begin{DoxyCompactList}\small\item\em Function to return a pointer to the G matrix. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_a0d8697945b060deaaf4bbd3a444aab6f}{Generate\+Stripe\+Conductance} (int t\+\_\+l, odb\+::db\+Tech\+Layer\+Dir\+::\+Value layer\+\_\+dir, int t\+\_\+x\+\_\+min, int t\+\_\+x\+\_\+max, int t\+\_\+y\+\_\+min, int t\+\_\+y\+\_\+max, double t\+\_\+rho)
+\begin{DoxyCompactList}\small\item\em Function to get the conductance of the strip of the power grid. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_a21ee1650f436e769255235d3b2fe8aa8}{Add\+C4\+Bump} (int t\+\_\+loc, int t\+\_\+\+C4\+Num)
+\begin{DoxyCompactList}\small\item\em Function to add the voltage source based on C4 bump location. \end{DoxyCompactList}\item 
+void \hyperlink{classGMat_acc6b68783732ff34b6dd4098cb738836}{Generate\+C\+S\+C\+Matrix} ()
+\begin{DoxyCompactList}\small\item\em Function which generates the compressed sparse column matrix. \end{DoxyCompactList}\item 
+std\+::vector$<$ \hyperlink{classNode}{Node} $\ast$ $>$ \hyperlink{classGMat_a9bc88ff1d3a55795024e814de8c69617}{Get\+All\+Nodes} ()
+\begin{DoxyCompactList}\small\item\em Function to return a vector which contains a pointer to all the nodes. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+G matrix class. 
+
+Class to store the G matrix. Contains the member functions for all node related operations. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classGMat_ad89367522ad38208488689b4146b6bbc}\label{classGMat_ad89367522ad38208488689b4146b6bbc}} 
+\index{G\+Mat@{G\+Mat}!G\+Mat@{G\+Mat}}
+\index{G\+Mat@{G\+Mat}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{G\+Mat()}{GMat()}}
+{\footnotesize\ttfamily G\+Mat\+::\+G\+Mat (\begin{DoxyParamCaption}\item[{int}]{t\+\_\+num\+\_\+layers,  }\item[{int}]{t\+\_\+num\+C4 }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Constructor for creating the G matrix. 
+
+\mbox{\Hypertarget{classGMat_aeb2bc57952d6046f91afac0bcb3a7243}\label{classGMat_aeb2bc57952d6046f91afac0bcb3a7243}} 
+\index{G\+Mat@{G\+Mat}!````~G\+Mat@{$\sim$\+G\+Mat}}
+\index{````~G\+Mat@{$\sim$\+G\+Mat}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{$\sim$\+G\+Mat()}{~GMat()}}
+{\footnotesize\ttfamily G\+Mat\+::$\sim$\+G\+Mat (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Destructor of the G matrix. 
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classGMat_a21ee1650f436e769255235d3b2fe8aa8}\label{classGMat_a21ee1650f436e769255235d3b2fe8aa8}} 
+\index{G\+Mat@{G\+Mat}!Add\+C4\+Bump@{Add\+C4\+Bump}}
+\index{Add\+C4\+Bump@{Add\+C4\+Bump}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Add\+C4\+Bump()}{AddC4Bump()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Add\+C4\+Bump (\begin{DoxyParamCaption}\item[{int}]{t\+\_\+loc,  }\item[{int}]{t\+\_\+\+C4\+Num }\end{DoxyParamCaption})}
+
+
+
+Function to add the voltage source based on C4 bump location. 
+
+Function which add the values in the G matrix for the.
+
+Directly updates the G matrix 
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+loc} & Location of the C4 bump \\
+\hline
+{\em t\+\_\+\+C4\+Num} & C4 bump number \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_acc6b68783732ff34b6dd4098cb738836}\label{classGMat_acc6b68783732ff34b6dd4098cb738836}} 
+\index{G\+Mat@{G\+Mat}!Generate\+C\+S\+C\+Matrix@{Generate\+C\+S\+C\+Matrix}}
+\index{Generate\+C\+S\+C\+Matrix@{Generate\+C\+S\+C\+Matrix}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Generate\+C\+S\+C\+Matrix()}{GenerateCSCMatrix()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Generate\+C\+S\+C\+Matrix (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function which generates the compressed sparse column matrix. 
+
+Function which converts the D\+OK matrix into C\+SC format in a sparse method. \mbox{\Hypertarget{classGMat_a0d8697945b060deaaf4bbd3a444aab6f}\label{classGMat_a0d8697945b060deaaf4bbd3a444aab6f}} 
+\index{G\+Mat@{G\+Mat}!Generate\+Stripe\+Conductance@{Generate\+Stripe\+Conductance}}
+\index{Generate\+Stripe\+Conductance@{Generate\+Stripe\+Conductance}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Generate\+Stripe\+Conductance()}{GenerateStripeConductance()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Generate\+Stripe\+Conductance (\begin{DoxyParamCaption}\item[{int}]{t\+\_\+l,  }\item[{odb\+::db\+Tech\+Layer\+Dir\+::\+Value}]{layer\+\_\+dir,  }\item[{int}]{t\+\_\+x\+\_\+min,  }\item[{int}]{t\+\_\+x\+\_\+max,  }\item[{int}]{t\+\_\+y\+\_\+min,  }\item[{int}]{t\+\_\+y\+\_\+max,  }\item[{double}]{t\+\_\+rho }\end{DoxyParamCaption})}
+
+
+
+Function to get the conductance of the strip of the power grid. 
+
+Function that gets the value of the conductance of the stripe and.
+
+Directly updates the G matrix 
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+l} & Layer number \\
+\hline
+{\em layer\+\_\+dir} & Direction of the layer \\
+\hline
+{\em t\+\_\+x\+\_\+min} & Lower left x location \\
+\hline
+{\em t\+\_\+x\+\_\+max} & Upper right x location \\
+\hline
+{\em t\+\_\+y\+\_\+min} & Lower left y location \\
+\hline
+{\em t\+\_\+y\+\_\+max} & Upper right y location \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_a9bc88ff1d3a55795024e814de8c69617}\label{classGMat_a9bc88ff1d3a55795024e814de8c69617}} 
+\index{G\+Mat@{G\+Mat}!Get\+All\+Nodes@{Get\+All\+Nodes}}
+\index{Get\+All\+Nodes@{Get\+All\+Nodes}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Get\+All\+Nodes()}{GetAllNodes()}}
+{\footnotesize\ttfamily std\+::vector$<$ \hyperlink{classNode}{Node} $\ast$ $>$ G\+Mat\+::\+Get\+All\+Nodes (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to return a vector which contains a pointer to all the nodes. 
+
+Function to return a vector which contains pointers to all nodes. \mbox{\Hypertarget{classGMat_a907a945858399a70cc5b77952b81d25a}\label{classGMat_a907a945858399a70cc5b77952b81d25a}} 
+\index{G\+Mat@{G\+Mat}!Get\+G\+Mat@{Get\+G\+Mat}}
+\index{Get\+G\+Mat@{Get\+G\+Mat}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Get\+G\+Mat()}{GetGMat()}}
+{\footnotesize\ttfamily \hyperlink{structCscMatrix}{Csc\+Matrix} $\ast$ G\+Mat\+::\+Get\+G\+Mat (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to return a pointer to the G matrix. 
+
+Function to return a pointer to the G matrix in C\+SC format. \mbox{\Hypertarget{classGMat_a48cc4288be2ae357591bab12339e0114}\label{classGMat_a48cc4288be2ae357591bab12339e0114}} 
+\index{G\+Mat@{G\+Mat}!Get\+Node@{Get\+Node}}
+\index{Get\+Node@{Get\+Node}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Get\+Node()}{GetNode()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \hyperlink{classNode}{Node} $\ast$ G\+Mat\+::\+Get\+Node (\begin{DoxyParamCaption}\item[{\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx}}]{t\+\_\+node }\end{DoxyParamCaption})}
+
+
+
+Function to return a pointer to the node with a index. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+node} & \hyperlink{classNode}{Node} index number \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the node in the matrix 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_a54844be32da6280169a0f8ee08283d5a}\label{classGMat_a54844be32da6280169a0f8ee08283d5a}} 
+\index{G\+Mat@{G\+Mat}!Get\+Node@{Get\+Node}}
+\index{Get\+Node@{Get\+Node}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Get\+Node()}{GetNode()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \hyperlink{classNode}{Node} $\ast$ G\+Mat\+::\+Get\+Node (\begin{DoxyParamCaption}\item[{int}]{t\+\_\+x,  }\item[{int}]{t\+\_\+y,  }\item[{int}]{t\+\_\+l }\end{DoxyParamCaption})}
+
+
+
+Function to return a pointer to the node with the x, y, and layer number. 
+
+Function to return a pointer to the node with a index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+x} & x location coordinate \\
+\hline
+{\em t\+\_\+y} & y location coordinate \\
+\hline
+{\em t\+\_\+l} & layer number \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the node in the matrix 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_aa0f8d64bc65172c457d7d1d4a2156b79}\label{classGMat_aa0f8d64bc65172c457d7d1d4a2156b79}} 
+\index{G\+Mat@{G\+Mat}!Get\+Num\+Nodes@{Get\+Num\+Nodes}}
+\index{Get\+Num\+Nodes@{Get\+Num\+Nodes}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Get\+Num\+Nodes()}{GetNumNodes()}}
+{\footnotesize\ttfamily \hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} G\+Mat\+::\+Get\+Num\+Nodes (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function that returns the number of nodes in the G matrix. 
+
+\mbox{\Hypertarget{classGMat_ab3e602af5a1537611ec1a8bfd798b688}\label{classGMat_ab3e602af5a1537611ec1a8bfd798b688}} 
+\index{G\+Mat@{G\+Mat}!Initialize\+Gmat\+Dok@{Initialize\+Gmat\+Dok}}
+\index{Initialize\+Gmat\+Dok@{Initialize\+Gmat\+Dok}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Initialize\+Gmat\+Dok()}{InitializeGmatDok()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Initialize\+Gmat\+Dok (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to initialize the sparse dok matrix. 
+
+Function to initialize the Dictionary of keys (D\+OK) matrix.
+
+Based on the size of the G matrix initialize the number of rows and columns \mbox{\Hypertarget{classGMat_aab1c09d83c7ad0b0b16d1c8059f1220b}\label{classGMat_aab1c09d83c7ad0b0b16d1c8059f1220b}} 
+\index{G\+Mat@{G\+Mat}!Insert\+Node@{Insert\+Node}}
+\index{Insert\+Node@{Insert\+Node}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Insert\+Node()}{InsertNode()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Insert\+Node (\begin{DoxyParamCaption}\item[{\hyperlink{classNode}{Node} $\ast$}]{t\+\_\+node }\end{DoxyParamCaption})}
+
+
+
+Function to insert a node into the matrix. 
+
+Function to add a node to the matrix.
+
+Directly updates the G node vector 
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+node} & Location to insert the node \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_a890e83e8d1d373e3858bd213b76c2da9}\label{classGMat_a890e83e8d1d373e3858bd213b76c2da9}} 
+\index{G\+Mat@{G\+Mat}!Print@{Print}}
+\index{Print@{Print}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Print()}{Print()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Print (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function that prints the G matrix for debug purposes. 
+
+Function to print the G matrix. \mbox{\Hypertarget{classGMat_a1981ec0047b10ef19b2e4734921a5452}\label{classGMat_a1981ec0047b10ef19b2e4734921a5452}} 
+\index{G\+Mat@{G\+Mat}!Set\+Conductance@{Set\+Conductance}}
+\index{Set\+Conductance@{Set\+Conductance}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Set\+Conductance()}{SetConductance()}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Set\+Conductance (\begin{DoxyParamCaption}\item[{\hyperlink{classNode}{Node} $\ast$}]{t\+\_\+node1,  }\item[{\hyperlink{classNode}{Node} $\ast$}]{t\+\_\+node2,  }\item[{double}]{t\+\_\+cond }\end{DoxyParamCaption})}
+
+
+
+Function to add the conductance value between two nodes. 
+
+Function to set conductance values in the G matrix.
+
+Directly updates the G matrix 
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+node1} & \hyperlink{classNode}{Node} pointer 1 \\
+\hline
+{\em t\+\_\+node2} & \hyperlink{classNode}{Node} pointer 2 \\
+\hline
+{\em t\+\_\+cond} & conductance value to be added between node 1 and 2 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_a96d512b19a257d2361eac59dacee218d}\label{classGMat_a96d512b19a257d2361eac59dacee218d}} 
+\index{G\+Mat@{G\+Mat}!Set\+Node@{Set\+Node}}
+\index{Set\+Node@{Set\+Node}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Set\+Node()}{SetNode()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void G\+Mat\+::\+Set\+Node (\begin{DoxyParamCaption}\item[{\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx}}]{t\+\_\+node\+\_\+loc,  }\item[{\hyperlink{classNode}{Node} $\ast$}]{t\+\_\+node }\end{DoxyParamCaption})}
+
+
+
+Function to set attributes of the node with index and node pointer. 
+
+Function to add a node to the matrix.
+
+Directly updates the G matrix 
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+node} & \hyperlink{classNode}{Node} index \\
+\hline
+{\em t\+\_\+node} & \hyperlink{classNode}{Node} pointer \\
+\hline
+{\em t\+\_\+l} & layer number \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGMat_a6edc525006b72ebcd8b9cfbbec60e9ae}\label{classGMat_a6edc525006b72ebcd8b9cfbbec60e9ae}} 
+\index{G\+Mat@{G\+Mat}!Set\+Node@{Set\+Node}}
+\index{Set\+Node@{Set\+Node}!G\+Mat@{G\+Mat}}
+\subsubsection{\texorpdfstring{Set\+Node()}{SetNode()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \hyperlink{classNode}{Node} $\ast$ G\+Mat\+::\+Set\+Node (\begin{DoxyParamCaption}\item[{int}]{t\+\_\+x,  }\item[{int}]{t\+\_\+y,  }\item[{int}]{t\+\_\+layer,  }\item[{\hyperlink{node_8h_acf0ff4a0bb7e0c9b5900382cbd2aa614}{B\+Box}}]{t\+\_\+b\+Box }\end{DoxyParamCaption})}
+
+
+
+Function to create a node. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em t\+\_\+x} & \hyperlink{classNode}{Node} index \\
+\hline
+{\em t\+\_\+y} & \hyperlink{classNode}{Node} pointer \\
+\hline
+{\em t\+\_\+l} & layer number \\
+\hline
+{\em t\+\_\+b\+Box} & layer number \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the created node 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\hyperlink{gmat_8h}{gmat.\+h}\item 
+src/\hyperlink{gmat_8cpp}{gmat.\+cpp}\end{DoxyCompactItemize}

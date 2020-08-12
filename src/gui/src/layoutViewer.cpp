@@ -78,6 +78,9 @@ LayoutViewer::LayoutViewer(Options* options, QWidget* parent)
 
 void LayoutViewer::setDb(dbDatabase* db)
 {
+  if (db_ != db) {
+    update();
+  }
   db_ = db;
 }
 
@@ -306,6 +309,47 @@ const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster*    master,
   return nullptr;
 }
 
+void LayoutViewer::drawTracks(dbTechLayer* layer,
+                              dbBlock*     block,
+                              QPainter*    painter,
+                              const Rect&  bounds)
+{
+  if (options_->arePrefTracksVisible() || options_->areNonPrefTracksVisible()) {
+    dbTrackGrid* grid = block->findTrackGrid(layer);
+    if (grid) {
+      bool isHorizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+      std::vector<int> grids;
+      if ((!isHorizontal && options_->arePrefTracksVisible())
+          || (isHorizontal && options_->areNonPrefTracksVisible())) {
+        grid->getGridX(grids);
+        for (int x : grids) {
+          if (x < bounds.xMin()) {
+            continue;
+          }
+          if (x > bounds.xMax()) {
+            break;
+          }
+          painter->drawLine(x, bounds.yMin(), x, bounds.yMax());
+        }
+      }
+
+      if ((isHorizontal && options_->arePrefTracksVisible())
+          || (!isHorizontal && options_->areNonPrefTracksVisible())) {
+        grid->getGridY(grids);
+        for (int y : grids) {
+          if (y < bounds.yMin()) {
+            continue;
+          }
+          if (y > bounds.yMax()) {
+            break;
+          }
+          painter->drawLine(bounds.xMin(), y, bounds.xMax(), y);
+        }
+      }
+    }
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter*   painter,
@@ -340,10 +384,14 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       continue;
     }
 
-    // Draw the instances
+    // Draw the instances' shapes
     for (auto inst : insts) {
-      dbMaster*    master = inst->getMaster();
-      const Boxes* boxes  = boxesByLayer(master, layer);
+      dbMaster* master = inst->getMaster();
+      if (master->getHeight() < 5 * pixel) {
+        continue;
+      }
+
+      const Boxes* boxes = boxesByLayer(master, layer);
 
       if (boxes == nullptr) {
         continue;  // no shapes on this layer
@@ -357,33 +405,18 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       painter->setTransform(xfm);
 
       // Only draw the pins/obs if they are big enough to be useful
-      if (master->getHeight() >= 5 * pixel) {
-        painter->setPen(Qt::NoPen);
-        QColor color = getColor(layer);
-        painter->setBrush(color);
+      painter->setPen(Qt::NoPen);
+      QColor color = getColor(layer);
+      painter->setBrush(color);
 
-        painter->setBrush(color.lighter());
-        for (auto& box : boxes->obs) {
-          painter->drawRect(box);
-        }
-
-        painter->setBrush(color);
-        for (auto& box : boxes->mterms) {
-          painter->drawRect(box);
-        }
+      painter->setBrush(color.lighter());
+      for (auto& box : boxes->obs) {
+        painter->drawRect(box);
       }
 
-      // draw bbox
-      painter->setPen(QPen(Qt::gray, 0));
-      painter->setBrush(QBrush());
-      int master_w = master->getWidth();
-      int master_h = master->getHeight();
-      painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
-
-      // Draw an orientation tag in corner if useful in size
-      if (master->getHeight() >= 5 * pixel) {
-        qreal tag_size = 0.1 * std::min(master_w, master_h);
-        painter->drawLine(QPointF(tag_size / 2, 0.0), QPointF(0.0, tag_size));
+      painter->setBrush(color);
+      for (auto& box : boxes->mterms) {
+        painter->drawRect(box);
       }
 
 #if 0
@@ -426,6 +459,34 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       int         h  = ur.y() - ll.y();
       painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
     }
+
+    drawTracks(layer, block, painter, bounds);
+  }
+
+  // Draw the instances bounds
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // setup the instance's transform
+    QTransform  xfm = painter->transform();
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // draw bbox
+    painter->setPen(QPen(Qt::gray, 0));
+    painter->setBrush(QBrush());
+    int master_w = master->getWidth();
+    int master_h = master->getHeight();
+    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
+
+    // Draw an orientation tag in corner if useful in size
+    if (master->getHeight() >= 5 * pixel) {
+      qreal tag_size = 0.1 * master_h;
+      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
+                        QPointF(0.0, tag_size));
+    }
+    painter->setTransform(initial_xfm);
   }
 }
 
@@ -481,7 +542,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
   painter.drawRect(event->rect());
 
   // Coordinate system setup (see file level comments)
-  painter.save();  
+  painter.save();
   painter.translate(0, height());
   painter.scale(pixelsPerDBU_, -pixelsPerDBU_);
 
@@ -509,11 +570,6 @@ void LayoutViewer::fit()
       = std::min(viewport.width() / (double) bbox->getWidth(0),
                  viewport.height() / (double) bbox->getLength(0));
   setPixelsPerDBU(pixelsPerDBU);
-}
-
-void LayoutViewer::redraw()
-{
-  this->update();
 }
 
 void LayoutViewer::designLoaded(dbBlock* block)
