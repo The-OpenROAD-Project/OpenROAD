@@ -68,23 +68,16 @@ void DBWrapper::initGrid(int maxLayer)
   _block = _db->getChip()->getBlock();
 
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   odb::dbTechLayer* selectedLayer = tech->findRoutingLayer(selectedMetal);
 
-  if (!selectedLayer) {
+  if (selectedLayer == nullptr) {
     error("Layer %d not found\n", selectedMetal);
   }
 
   odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(selectedLayer);
 
-  if (!selectedTrack) {
+  if (selectedTrack == nullptr) {
     error("Track for layer %d not found\n", selectedMetal);
   }
 
@@ -161,10 +154,6 @@ void DBWrapper::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
 {
   odb::dbTech* tech = _db->getTech();
 
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
   for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(l);
     int index = l;
@@ -190,13 +179,6 @@ void DBWrapper::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
                                   std::map<int, float> layerPitches)
 {
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     if (layer > maxLayer && maxLayer > -1) {
@@ -205,13 +187,13 @@ void DBWrapper::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
 
     odb::dbTechLayer* techayer = tech->findRoutingLayer(layer);
 
-    if (!techayer) {
+    if (techayer == nullptr) {
       error("Layer %d not found\n", selectedMetal);
     }
 
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techayer);
 
-    if (!selectedTrack) {
+    if (selectedTrack == nullptr) {
       error("Track for layer %d not found\n", selectedMetal);
     }
 
@@ -247,7 +229,7 @@ void DBWrapper::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
       numTracks = numTracksX;
       orientation = RoutingLayer::VERTICAL;
     } else {
-      error("Layer %d does not have valid direction! Exiting...\n",
+      error("Layer %d does not have valid direction\n",
             selectedMetal);
     }
 
@@ -269,14 +251,6 @@ void DBWrapper::computeCapacities(int maxLayer,
 
   odb::dbTech* tech = _db->getTech();
 
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
-
   for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
     if (l > maxLayer && maxLayer > -1) {
       break;
@@ -286,7 +260,7 @@ void DBWrapper::computeCapacities(int maxLayer,
 
     odb::dbTrackGrid* track = _block->findTrackGrid(techLayer);
 
-    if (!track) {
+    if (track == nullptr) {
       error("Track for layer %d not found\n", l);
     }
 
@@ -335,14 +309,6 @@ void DBWrapper::computeSpacingsAndMinWidth(int maxLayer)
 
   odb::dbTech* tech = _db->getTech();
 
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
-
   for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
     if (l > maxLayer && maxLayer > -1) {
       break;
@@ -352,7 +318,7 @@ void DBWrapper::computeSpacingsAndMinWidth(int maxLayer)
 
     odb::dbTrackGrid* track = _block->findTrackGrid(techLayer);
 
-    if (!track) {
+    if (track == nullptr) {
       error("Track for layer %d not found\n", l);
     }
 
@@ -379,9 +345,6 @@ void DBWrapper::initNetlist(bool reroute)
   initClockNets();
 
   odb::dbTech* tech = _db->getTech();
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   if (reroute) {
     if (_dirtyNets.empty()) {
@@ -702,13 +665,6 @@ void DBWrapper::initObstacles()
 
   // Get routing obstructions
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   std::map<int, uint> layerExtensions;
 
@@ -936,23 +892,16 @@ int DBWrapper::computeMaxRoutingLayer()
   int maxRoutingLayer = -1;
 
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
-    if (!techLayer) {
+    if (techLayer == nullptr) {
       std::cout << "[ERROR] Layer" << selectedMetal
-                << " not found! Exiting...\n";
+                << " not found\n";
       std::exit(1);
     }
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
-    if (!selectedTrack) {
+    if (selectedTrack == nullptr) {
       break;
     }
     maxRoutingLayer = layer;
@@ -1097,13 +1046,6 @@ void DBWrapper::commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
                                          int maxRoutingLayer)
 {
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxRoutingLayer);
 
@@ -1149,13 +1091,6 @@ int DBWrapper::checkAntennaViolations(const std::vector<FastRoute::NET>* routing
 {
   _block = _db->getChip()->getBlock();
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   _arc->load_antenna_rules();
 
@@ -1292,13 +1227,6 @@ void DBWrapper::insertDiode(odb::dbNet* net,
 void DBWrapper::getFixedInstances(r_tree& fixedInsts)
 {
   odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("obd::dbTech not initialized\n");
-  }
-
-  if (!_block) {
-    error("odb::dbBlock not found\n");
-  }
 
   int fixedInstId = 0;
   for (odb::dbInst* inst : _block->getInsts()) {

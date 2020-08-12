@@ -265,6 +265,14 @@ proc fastroute { args } {
     FastRoute::set_min_layer_for_clock $min_clock_layer
   }
 
+  if { ![ord::db_has_tech] } {
+    ord::error "missing dbTech"
+  }
+
+  if { [ord::get_db_block] == "NULL" } {
+    ord::error "missing dbBlock"
+  }
+
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
