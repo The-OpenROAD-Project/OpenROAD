@@ -1,0 +1,39 @@
+UCSC blocks 1.0
+# Created
+# User
+# Platform
+
+NumSoftRectangularBlocks : 0
+NumHardRectilinearBlocks : 25
+NumTerminals : 4
+
+u_ddata_bank0 hardrectilinear 4 (582.047, 639.264) (582.047, 738) (646.487, 738) (646.487, 639.264) 
+u_ddata_bank1 hardrectilinear 4 (499.007, 639.264) (499.007, 738) (563.447, 738) (563.447, 639.264) 
+u_ddata_bank2 hardrectilinear 4 (665.087, 639.264) (665.087, 738) (729.527, 738) (729.527, 639.264) 
+u_ddata_bank3 hardrectilinear 4 (755.592, 639.264) (755.592, 738) (820.032, 738) (820.032, 639.264) 
+u_ddata_bank4 hardrectilinear 4 (665.087, 538.512) (665.087, 637.248) (729.527, 637.248) (729.527, 538.512) 
+u_ddata_bank5 hardrectilinear 4 (755.592, 538.512) (755.592, 637.248) (820.032, 637.248) (820.032, 538.512) 
+u_ddata_bank6 hardrectilinear 4 (665.087, 437.76) (665.087, 536.496) (729.527, 536.496) (729.527, 437.76) 
+u_ddata_bank7 hardrectilinear 4 (755.592, 437.76) (755.592, 536.496) (820.032, 536.496) (820.032, 437.76) 
+u_ddirty_ram hardrectilinear 4 (354.962, 709.056) (354.962, 738) (394.652, 738) (394.652, 709.056) 
+u_dtag_bank0 hardrectilinear 4 (455.342, 688.896) (455.342, 738) (481.802, 738) (481.802, 688.896) 
+u_dtag_bank1 hardrectilinear 4 (455.342, 637.776) (455.342, 686.88) (481.802, 686.88) (481.802, 637.776) 
+u_dtag_bank2 hardrectilinear 4 (411.677, 688.896) (411.677, 738) (438.137, 738) (438.137, 688.896) 
+u_dtag_bank3 hardrectilinear 4 (411.677, 637.776) (411.677, 686.88) (438.137, 686.88) (438.137, 637.776) 
+u_tlb_bank1 hardrectilinear 4 (270.528, 319.968) (270.528, 459.024) (299.868, 459.024) (299.868, 319.968) 
+u_tlb_bank0 hardrectilinear 4 (270.528, 461.04) (270.528, 600.096) (299.868, 600.096) (299.868, 461.04) 
+u_tlb_bank3 hardrectilinear 4 (225.649, 319.968) (225.649, 459.024) (254.989, 459.024) (254.989, 319.968) 
+u_tlb_bank2 hardrectilinear 4 (225.649, 461.04) (225.649, 600.096) (254.989, 600.096) (254.989, 461.04) 
+u_idata_bank0_h hardrectilinear 4 (0, 106.848) (0, 211.632) (110.52, 211.632) (110.52, 106.848) 
+u_idata_bank1_l1 hardrectilinear 4 (160.931, 0) (160.931, 104.784) (271.451, 104.784) (271.451, 0) 
+u_idata_bank1_h hardrectilinear 4 (0, 0) (0, 104.784) (110.52, 104.784) (110.52, 0) 
+u_idata_bank0_l hardrectilinear 4 (0, 213.168) (0, 317.952) (110.52, 317.952) (110.52, 213.168) 
+u_btac_stg1 hardrectilinear 4 (271.451, 0) (271.451, 80.592) (297.911, 80.592) (297.911, 0) 
+u_itag_ram0 hardrectilinear 4 (201.696, 268.848) (201.696, 317.952) (239.676, 317.952) (239.676, 268.848) 
+u_itag_ram1 hardrectilinear 4 (150.536, 268.848) (150.536, 317.952) (188.516, 317.952) (188.516, 268.848) 
+u_btac_stg0 hardrectilinear 4 (320.992, 0) (320.992, 70.512) (347.452, 70.512) (347.452, 0) 
+
+West terminal
+East terminal
+North terminal
+South terminal

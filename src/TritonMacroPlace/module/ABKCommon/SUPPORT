@@ -1,0 +1,38 @@
+
+  Authors: Saurabh N. Adya, Andrew E. Caldwell,
+           Andrew B. Kahng, Igor L. Markov, Jarrod A. Roy
+           and David A. Papa
+  Contact author:         imarkov@umich.edu
+  Original Affiliation:   UCLA, Computer Science Department,
+                          Los Angeles, CA 90095-1596 USA
+
+  The text of this advisory is to be used for information purposes only.
+
+  Developers and/or maintainers will attempt to provide installation
+  instructions, describe the general purpose of released source codes
+  and executables as well as provide relevant references (e.g., to
+  technical reports and conference papers). However, providing
+  comprehensive documentation may be impossible due to resource/funding
+  limitations.
+
+  Realizing this, developers will provide limited and selective support
+  for the released source code and executables by electronic or regular mail.
+  This advisory encourages all users to request additional documentation,
+  instructions and clarifications. Developers will attempt to answer such
+  requests as time allows, establish mailing lists for users and maintain
+  answers for Frequently Asked Questions (FAQ). Users are encouraged to read
+  such lists and other available documentation prior to requesting support.
+
+  Appendix:
+            The home page for this distribution is
+            http://vlsicad.eecs.umich.edu/BK/PDtools/ .
+            In particular, it lists various papers describing algorithms
+            implemented (more papers are available at
+                         http://vlsicad.eecs.umich.edu/BK/PDtools/#PUBS).
+
+            Please direct further inquiries to
+            abk@cs.ucsd.edu,imarkov@umich.edu
+            and mention this note ("documentation and support advisory")
+            in your correspondence.
+
+            
