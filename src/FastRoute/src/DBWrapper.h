@@ -71,7 +71,7 @@ class FastRouteKernel;
 class DBWrapper
 {
  public:
-  DBWrapper(odb::dbDatabase* db, FastRouteKernel *fr, Grid* grid);
+  DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid);
 
   void initGrid(int maxLayer);
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
@@ -81,8 +81,7 @@ class DBWrapper
   void computeCapacities(int maxLayer, std::map<int, float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
-  void addNet(odb::dbNet* net, Box dieArea, bool isClock);
-  void initClockNets();
+  void addNets(std::vector<odb::dbNet*> nets);
   void initObstacles();
   int computeMaxRoutingLayer();
   void getLayerRC(unsigned layerId, float& r, float& c);
@@ -92,12 +91,18 @@ class DBWrapper
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
   void commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
                                 int maxRoutingLayer);
-  int checkAntennaViolations(std::vector<FastRoute::NET> routing,
+  int checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
                              int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();
-  void setDB(unsigned idx) { _db = odb::dbDatabase::getDatabase(idx); }
   void setSelectedMetal(int metal) { selectedMetal = metal; }
+  std::vector<odb::dbNet*> getDirtyNets() { return _dirtyNets; }
+  void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
+  std::map<odb::dbNet*, std::vector<VINFO>> getAntennaViolations()
+                                            { return _antennaViolations; }
+  void setAntennaViolations(std::map<odb::dbNet*, std::vector<VINFO>>
+                            antennaViolations)
+                           { _antennaViolations = antennaViolations; }
 
  private:
   typedef int coord_type;
@@ -109,6 +114,7 @@ class DBWrapper
 
   void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
+  void initClockNets();
   void insertDiode(odb::dbNet* net,
                    std::string antennaCellName,
                    std::string antennaPinName,
@@ -119,20 +125,21 @@ class DBWrapper
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
 
-  std::set<odb::dbNet*> _clockNets;
+  sta::dbSta* _openSta;
+  antenna_checker::AntennaChecker* _arc;
+  opendp::Opendp* _opendp;
+
   int selectedMetal = 3;
+  ord::OpenRoad* _openroad;
   odb::dbDatabase* _db;
-  odb::dbChip* _chip;
+  odb::dbBlock* _block;
   FastRouteKernel *_fr;
   Grid* _grid;
   bool _verbose = false;
-  antenna_checker::AntennaChecker* _arc = nullptr;
-  opendp::Opendp* _opendp = nullptr;
 
-  std::map<std::string, odb::dbNet*> dbNets;
-  std::map<std::string, std::vector<VINFO>>
-      antennaViolations;
-  std::vector<odb::dbNet*> dirtyNets;
+  std::map<odb::dbNet*, std::vector<VINFO>>
+    _antennaViolations;
+  std::vector<odb::dbNet*> _dirtyNets;
 };
 
 std::string getITermName(odb::dbITerm* iterm);

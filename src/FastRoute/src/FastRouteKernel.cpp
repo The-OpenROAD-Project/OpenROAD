@@ -79,8 +79,7 @@ void FastRouteKernel::init()
   _maxRoutingLayer = -1;
   _unidirectionalRoute = 0;
   _fixLayer = 0;
-  _clockNetRouting = false;
-  _overflowIterations = 500;
+  _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
   _estimateRC = false;
@@ -98,7 +97,7 @@ void FastRouteKernel::makeComponents()
   // Allocate memory for objects
   _nets = new std::vector<Net>;
   _grid = new Grid;
-  _dbWrapper = new DBWrapper(_openroad->getDb(), this, _grid);
+  _dbWrapper = new DBWrapper(_openroad, this, _grid);
   _fastRoute = new FT;
   _gridOrigin = new Coordinate(-1, -1);
   _routingLayers = new std::vector<RoutingLayer>;
@@ -290,6 +289,7 @@ void FastRouteKernel::runFastRoute()
   } else {
     _fastRoute->run(*_result);
     addRemainingGuides(_result);
+    connectPadPins(_result);
   }
   std::cout << "Running FastRoute... Done!\n";
 
@@ -326,30 +326,39 @@ void FastRouteKernel::runFastRoute()
 void FastRouteKernel::runAntennaAvoidanceFlow()
 {
   std::cout << "Running antenna avoidance flow...\n";
-  std::vector<FastRoute::NET> globalRoute;
-  std::vector<FastRoute::NET> newRoute;
-  std::vector<FastRoute::NET> originalRoute;
+  std::vector<FastRoute::NET> *globalRoute = new std::vector<FastRoute::NET>;
+  std::vector<FastRoute::NET> *newRoute = new std::vector<FastRoute::NET>;
+  std::vector<FastRoute::NET> *originalRoute = new std::vector<FastRoute::NET>;
 
-  _fastRoute->run(globalRoute);
+  _fastRoute->run(*globalRoute);
+  addRemainingGuides(globalRoute);
+  connectPadPins(globalRoute);
 
-  addRemainingGuides(&globalRoute);
-  originalRoute = globalRoute;
-
-  connectPadPins(&globalRoute);
+  for (FastRoute::NET route : *globalRoute) {
+    originalRoute->push_back(route);
+  }
 
   getPreviousCapacities(_minRoutingLayer);
   addLocalConnections(globalRoute);
 
-  resetResources();
-
-  for (FastRoute::NET gr : originalRoute) {
-    _result->push_back(gr);
-  }
-
   int violationsCnt
       = _dbWrapper->checkAntennaViolations(globalRoute, _maxRoutingLayer);
 
+  // Save dirtyNets and antennaViolations before reset resources
+  std::vector<odb::dbNet*> dirtyNets = _dbWrapper->getDirtyNets();
+  std::map<odb::dbNet*, std::vector<VINFO>> antennaViolations =
+                                            _dbWrapper->getAntennaViolations();
+
+  resetResources();
+
+  // Adding routes of first run here to avoid loss data in resetResources
+  for (FastRoute::NET gr : *originalRoute) {
+    _result->push_back(gr);
+  }
+
   if (violationsCnt > 0) {
+    _dbWrapper->setDirtyNets(dirtyNets);
+    _dbWrapper->setAntennaViolations(antennaViolations);
     _dbWrapper->fixAntennas(_diodeCellName, _diodePinName);
     _dbWrapper->legalizePlacedCells();
     _reroute = true;
@@ -361,18 +370,24 @@ void FastRouteKernel::runAntennaAvoidanceFlow()
     restorePreviousCapacities(_minRoutingLayer);
 
     _fastRoute->initAuxVar();
-    _fastRoute->run(newRoute);
-    addRemainingGuides(&newRoute);
+    _fastRoute->run(*newRoute);
+    addRemainingGuides(newRoute);
+    connectPadPins(newRoute);
     mergeResults(newRoute);
+  }
+
+  for (FastRoute::NET& netRoute : *_result) {
+    mergeSegments(netRoute);
   }
 }
 
 void FastRouteKernel::runClockNetsRouteFlow()
 {
-  std::vector<FastRoute::NET> clockNetsRoute;
+  std::vector<FastRoute::NET> *clockNetsRoute = new std::vector<FastRoute::NET>;
   _fastRoute->setVerbose(0);
-  _fastRoute->run(clockNetsRoute);
-  addRemainingGuides(&clockNetsRoute);
+  _fastRoute->run(*clockNetsRoute);
+  addRemainingGuides(clockNetsRoute);
+  connectPadPins(clockNetsRoute);
 
   getPreviousCapacities(_minLayerForClock);
 
@@ -386,15 +401,19 @@ void FastRouteKernel::runClockNetsRouteFlow()
   _fastRoute->initAuxVar();
   _fastRoute->run(*_result);
   addRemainingGuides(_result);
+  connectPadPins(_result);
 
   _result->insert(
-      _result->begin(), clockNetsRoute.begin(), clockNetsRoute.end());
+      _result->begin(), clockNetsRoute->begin(), clockNetsRoute->end());
+
+  for (FastRoute::NET& netRoute : *_result) {
+    mergeSegments(netRoute);
+  }
 }
 
 void FastRouteKernel::estimateRC()
 {
   runFastRoute();
-  addRemainingGuides(_result);
 
   sta::dbSta* dbSta = _openroad->getSta();
   sta::Parasitics* parasitics = dbSta->parasitics();
@@ -575,9 +594,9 @@ void FastRouteKernel::initializeNets(bool reroute)
   checkPinPlacement();
   std::cout << "Checking pin placement... Done!\n";
 
-  std::cout << " > ----Checking sinks/source...\n";
+  std::cout << "Checking sinks/source...\n";
   checkSinksAndSource();
-  std::cout << " > ----Checking sinks/source... Done!\n";
+  std::cout << "Checking sinks/source... Done!\n";
 
   int validNets = 0;
 
@@ -586,7 +605,7 @@ void FastRouteKernel::initializeNets(bool reroute)
 
   for (const Net& net : *_nets) {
     if (net.getNumPins() > 1
-        && !(_clockNetRouting && net.getSignalType() != odb::dbSigType::CLOCK)
+        && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
       validNets++;
     }
@@ -607,7 +626,7 @@ void FastRouteKernel::initializeNets(bool reroute)
         maxDegree = pin_count;
       }
 
-      if (!_clockNetRouting || net.getSignalType() == odb::dbSigType::CLOCK) {
+      if (checkSignalType(net)) {
         if (pin_count >= std::numeric_limits<short>::max()) {
           std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
                     << " due to large number of pins\n";
@@ -1380,8 +1399,6 @@ void FastRouteKernel::writeGuides()
   }
   RoutingLayer phLayerF;
 
-  connectPadPins(_result);
-
   int offsetX = _gridOrigin->getX();
   int offsetY = _gridOrigin->getY();
 
@@ -1542,7 +1559,7 @@ void FastRouteKernel::addRemainingGuides(
     if (net->getNumPins() > 1) {
       std::vector<FastRoute::PIN>& pins = net_pins[netRoute.idx];
       // Try to add local guides for net with no output of FR core
-      if (netRoute.route.size() == 0) {
+      if (netRoute.route.empty()) {
         int lastLayer = -1;
         for (uint p = 0; p < pins.size(); p++) {
           if (p > 0) {
@@ -1661,7 +1678,8 @@ void FastRouteKernel::addRemainingGuides(
 
   // Add local guides for nets with no routing.
   for (Net& net : *_nets) {
-    if (net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
+    if (checkSignalType(net)
+        && net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
       int net_idx = getNetIdx(&net);
       std::vector<FastRoute::PIN>& pins = net_pins[net_idx];
 
@@ -2298,8 +2316,6 @@ void FastRouteKernel::fixLongSegments()
   int fixedSegs = 0;
   int possibleViols = 0;
 
-  connectPadPins(_result);
-
   for (FastRoute::NET& netRoute : *_result) {
     bool possibleViolation = false;
     for (ROUTE seg : netRoute.route) {
@@ -2535,7 +2551,7 @@ bool FastRouteKernel::checkSteinerTree(SteinerTree sTree)
 }
 
 void FastRouteKernel::addLocalConnections(
-    std::vector<FastRoute::NET>& globalRoute)
+    std::vector<FastRoute::NET>* globalRoute)
 {
   int topLayer;
   std::vector<Box> pinBoxes;
@@ -2544,7 +2560,7 @@ void FastRouteKernel::addLocalConnections(
   FastRoute::ROUTE horSegment;
   FastRoute::ROUTE verSegment;
 
-  for (FastRoute::NET& netRoute : globalRoute) {
+  for (FastRoute::NET& netRoute : *globalRoute) {
       Net* net = getNetByIdx(netRoute.idx);
 
     for (Pin pin : net->getPins()) {
@@ -2573,9 +2589,9 @@ void FastRouteKernel::addLocalConnections(
   }
 }
 
-void FastRouteKernel::mergeResults(std::vector<FastRoute::NET> newRoute)
+void FastRouteKernel::mergeResults(const std::vector<FastRoute::NET>* newRoute)
 {
-  for (FastRoute::NET netRoute : newRoute) {
+  for (FastRoute::NET netRoute : *newRoute) {
     for (int i = 0; i < _result->size(); i++) {
       if (netRoute.name == _result->at(i).name) {
         _result->at(i) = netRoute;
@@ -2735,6 +2751,13 @@ FastRoute::ROUTE FastRouteKernel::createFakePin(Pin pin,
   }
 
   return pinConnection;
+}
+
+bool FastRouteKernel::checkSignalType(const Net &net) {
+  bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
+  return ((!_onlyClockNets && !_onlySignalNets) ||
+          (_onlyClockNets && isClock) ||
+          (_onlySignalNets && !isClock));
 }
 
 const char* nodeTypeString(NodeType type)
