@@ -1,7 +1,10 @@
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def "aes.def"
-read_sdc "aes.sdc"
+
+current_design aes_cipher_top
+
+create_clock -name clk -period 5.0000 -waveform {0.0000 2.5000} [get_ports {clk}]
 
 clock_tree_synthesis -lut_file "lut.txt" \
                      -sol_list "sol_list.txt" \
