@@ -34,6 +34,7 @@
 // disabling the GUI.  It is not included when Qt5 is found.
 
 #include <cstdio>
+#include "gui/gui.h"
 
 namespace gui {
 
