@@ -47,14 +47,33 @@ testdir=$2
 
 $binary -no_init run.tcl > test.log 2>&1
 
-if [ $? -eq 0 ];
+gold_wl=$(grep -Eo "[0-9]+\.[0-9]+" golden.overflow)
+reported_wl=$(grep -Eo "[0-9]+\.[0-9]+" test.log | tail -2 | head -1)
+
+gold_wl=${gold_wl%.*}
+reported_wl=${reported_wl%.*}
+
+difference=0
+
+mkdir -p ../../results/overflow
+cp test.log ../../results/overflow/fastroute.log
+
+if [ $gold_wl -lt $reported_wl ];
 then
-    mkdir -p ../../results/test_multiple_calls
-    cp test.log ../../results/test_multiple_calls/test.log
+	gold_wl=$(( $gold_wl*100 ))
+	ratio=$(( $gold_wl/$reported_wl ))
+
+	difference=$(( 100-$ratio ))
+else
+	reported_wl=$(( $reported_wl*100 ))
+	ratio=$(( $reported_wl/$gold_wl ))
+	difference=$(( 100-$ratio ))
+fi
+
+if [ $difference -lt 5 ];
+then
 	exit $GREEN
 else
-    mkdir -p ../../results/test_multiple_calls
-    cp test.log ../../results/test_multiple_calls/test.log
     echo "     - [ERROR] Test failed. Wirelength difference of $difference%"
 	exit $RED
 fi

@@ -45,15 +45,17 @@ fi
 binary=$1
 testdir=$2
 
-$binary -no_init run.tcl > test.log 2>&1
+$binary -no_init -exit run.tcl > log.txt 2>&1
 
-mkdir -p ../../results/test_antenna
-cp test.log ../../results/test_antenna/test.log
+grep -q "missing track structure" log.txt
 
-if grep -q -e "#Modified segments: 62" ./test.log;
-then
-	exit $GREEN
+status=$?
+
+mkdir -p ../../results/no_tracks
+cp log.txt ../../results/no_tracks/fastroute.log
+
+if [ $status -eq 0 ]; then
+    exit $GREEN
 else
-        echo "     - [ERROR] Test failed. Check $testdir/src/test_antenna/test.log"
-	exit $RED
+    exit $RED
 fi

@@ -45,17 +45,15 @@ fi
 binary=$1
 testdir=$2
 
-$binary -no_init -exit run.tcl > log.txt 2>&1
- 
-grep -q "missing track structure" log.txt
+$binary -no_init run.tcl > test.log 2>&1
 
-status=$?
+mkdir -p ../../results/estimate_rc
+cp test.log ../../results/estimate_rc/test.log
 
-mkdir -p ../../results/test_no_tracks
-cp log.txt ../../results/test_no_tracks/fastroute.log
-
-if [ $status -eq 0 ]; then
-    exit $GREEN
+if grep -q -e "Total capacitance: 17.58" ./test.log;
+then
+	exit $GREEN
 else
-    exit $RED
+        echo "     - [ERROR] Test failed. Check $testdir/src/estimate_rc/test.log"
+	exit $RED
 fi

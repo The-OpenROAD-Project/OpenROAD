@@ -47,33 +47,13 @@ testdir=$2
 
 $binary -no_init run.tcl > test.log 2>&1
 
-gold_wl=$(grep -Eo "[0-9]+\.[0-9]+" golden.overflow)
-reported_wl=$(grep -Eo "[0-9]+\.[0-9]+" test.log | tail -2 | head -1)
+mkdir -p ../../results/long_wires
+cp test.log ../../results/long_wires/test.log
 
-gold_wl=${gold_wl%.*}
-reported_wl=${reported_wl%.*}
-
-difference=0
-
-mkdir -p ../../results/test_overflow
-cp test.log ../../results/test_overflow/fastroute.log
-
-if [ $gold_wl -lt $reported_wl ];
-then
-	gold_wl=$(( $gold_wl*100 ))
-	ratio=$(( $gold_wl/$reported_wl ))
-
-	difference=$(( 100-$ratio ))
-else
-	reported_wl=$(( $reported_wl*100 ))
-	ratio=$(( $reported_wl/$gold_wl ))
-	difference=$(( 100-$ratio ))
-fi
-
-if [ $difference -lt 5 ];
+if grep -q -e "#Modified segments: 62" ./test.log;
 then
 	exit $GREEN
 else
-    echo "     - [ERROR] Test failed. Wirelength difference of $difference%"
+        echo "     - [ERROR] Test failed. Check $testdir/src/long_wires/test.log"
 	exit $RED
 fi

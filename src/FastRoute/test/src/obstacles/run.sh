@@ -49,13 +49,13 @@ $binary -no_init run.tcl > test.log 2>&1
 
 obs_report=$(grep -e '----Processing' ./test.log)
 
-mkdir -p ../../results/test_obstacles
-cp test.log ../../results/test_obstacles/fastroute.log
+mkdir -p ../../results/obstacles
+cp test.log ../../results/obstacles/fastroute.log
 
 if grep -q -e "$obs_report" golden.obs;
 then
 	exit $GREEN
 else
-        echo "     - [ERROR] Test failed. Check $testdir/src/test_obstacles/test.log and Check $testdir/src/test_obstacles/golden.obs"
+        echo "     - [ERROR] Test failed. Check $testdir/src/obstacles/test.log and Check $testdir/src/obstacles/golden.obs"
 	exit $RED
 fi

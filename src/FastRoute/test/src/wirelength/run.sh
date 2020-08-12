@@ -45,19 +45,35 @@ fi
 binary=$1
 testdir=$2
 
-$binary -no_init run.tcl > log.txt 2>&1
+$binary -no_init run.tcl > test.log 2>&1
 
-diff golden.guide out.guide > guides_diff.log
-status=$?
+gold_wl=$(grep -Eo "[0-9]+\.[0-9]+" golden.wl)
+reported_wl=$(grep -Eo "[0-9]+\.[0-9]+" test.log | tail -2 | head -1)
 
-mkdir -p ../../results/test_guides
-cp log.txt ../../results/test_guides/fastroute.log
-cp guides_diff.log ../../results/test_guides/
+gold_wl=${gold_wl%.*}
+reported_wl=${reported_wl%.*}
 
-if [ $status -eq 0 ]
+difference=0
+
+if [ $gold_wl -lt $reported_wl ];
+then
+	gold_wl=$(( $gold_wl*100 ))
+	ratio=$(( $gold_wl/$reported_wl ))
+
+	difference=$(( 100-$ratio ))
+else
+	reported_wl=$(( $reported_wl*100 ))
+	ratio=$(( $reported_wl/$gold_wl ))
+	difference=$(( 100-$ratio ))
+fi
+
+mkdir -p ../../results/wirelength
+cp test.log ../../results/wirelength/fastroute.log
+
+if [ $difference -lt 5 ];
 then
 	exit $GREEN
 else
-        echo "     - [ERROR] Test failed. Check $testdir/src/test_guides/guides_diff.log"
+    echo "     - [ERROR] Test failed. Wirelength difference of $difference%"
 	exit $RED
 fi
