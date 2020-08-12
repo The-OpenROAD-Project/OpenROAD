@@ -4,14 +4,14 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  nangate45/NangateOpenCellLibrary.mod.lef
 Notice 0: 
-Reading DEF file: issue_416/floorplan.def
+Reading DEF file: extend_to_core_ring/floorplan.def
 Notice 0: Design: gcd
 Notice 0:     Created 54 pins.
 Notice 0:     Created 469 components and 2268 component-terminals.
 Notice 0:     Created 500 nets and 1330 connections.
-Notice 0: Finished DEF file: issue_416/floorplan.def
+Notice 0: Finished DEF file: extend_to_core_ring/floorplan.def
 [INFO] [PDNG-0016] Power Delivery Network Generator: Generating PDN
-[INFO] [PDNG-0016]   config: issue_416/pdn.cfg
+[INFO] [PDNG-0016]   config: extend_to_core_ring/pdn.cfg
 [INFO] [PDNG-0008] Design Name is gcd
 [INFO] [PDNG-0009] Reading technology data
 [WARN] [PDNG-0018] No macro grid specifications found - no straps added
