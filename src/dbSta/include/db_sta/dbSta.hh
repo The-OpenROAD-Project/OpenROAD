@@ -49,7 +49,6 @@ public:
 
   Slack netSlack(const dbNet *net,
 		 const MinMax *min_max);
-  using Sta::netSlack;
 
   // From ord::OpenRoad::Observer
   virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
@@ -62,6 +61,9 @@ public:
   void findClkNets(const Clock *clk,
 		   // Return value
 		   std::set<dbNet*> &clk_nets);
+
+  using Sta::netSlack;
+  using Sta::isClock;
 
 protected:
   virtual void makeNetwork() override;

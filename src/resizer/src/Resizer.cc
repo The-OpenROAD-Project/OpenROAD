@@ -115,7 +115,6 @@ Resizer::Resizer() :
   dcalc_ap_(nullptr),
   pvt_(nullptr),
   parasitics_ap_(nullptr),
-  clk_nets_valid_(false),
   have_estimated_parasitics_(false),
   target_load_map_(nullptr),
   level_drvr_verticies_valid_(false),
@@ -227,7 +226,7 @@ Resizer::init()
   graph_ = sta_->graph();
   ensureBlock();
   ensureLevelDrvrVerticies();
-  ensureClkNets();
+  sta_->ensureClkNetwork();
   ensureCorner();
 }
 
@@ -363,8 +362,7 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
     Pin *pin = port_iter->next();
     Net *net = network_->net(network_->term(pin));
     if (network_->direction(pin)->isInput()
-	&& net
-	&& !isClock(net)
+	&& !sta_->isClock(pin)
 	&& !isSpecial(net))
       bufferInput(pin, buffer_cell);
   }
@@ -494,7 +492,7 @@ Resizer::resizeToTargetSlew()
 	  && !drvr->isConstant()
 	  && hasFanout(drvr)
 	  // Hands off the clock nets.
-	  && !isClock(net)
+	  && !sta_->isClock(drvr_pin)
 	  // Hands off special nets.
 	  && !isSpecial(net)) {
       resizeToTargetSlew(drvr_pin);
@@ -817,50 +815,10 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::ensureClkNets()
-{
-  if (!clk_nets_valid_) {
-    findClkNets();
-    clk_nets_valid_ = true;
-  }
-}
-
-// Find clock nets.
-// This is not as reliable as Search::isClock but is much cheaper.
-void
-Resizer::findClkNets()
-{
-  ClkArrivalSearchPred srch_pred(this);
-  BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
-  for (Clock *clk : sdc_->clks()) {
-    for (Pin *pin : clk->leafPins()) {
-      Vertex *vertex = graph_->pinDrvrVertex(pin);
-      bfs.enqueue(vertex);
-    }
-  }
-  while (bfs.hasNext()) {
-    Vertex *vertex = bfs.next();
-    const Pin *pin = vertex->pin();
-    Net *net = network_->net(pin);
-    if (net)
-      clk_nets_.insert(net);
-    bfs.enqueueAdjacentVertices(vertex);
-  }
-}
-
-bool
-Resizer::isClock(const Net *net)
-{
-  return clk_nets_.hasKey(const_cast<Net*>(net));
-}
-
-////////////////////////////////////////////////////////////////
-
-void
 Resizer::estimateWireParasitics()
 {
   if (wire_cap_ > 0.0) {
-    ensureClkNets();
+    sta_->ensureClkNetwork();
 
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
@@ -894,6 +852,7 @@ Resizer::estimateWireParasitic(const Net *net)
 		  sdc_network_->pathName(net));
       Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
 							       parasitics_ap_);
+      bool is_clk = !sta_->isClock(net);
       int branch_count = tree->branchCount();
       for (int i = 0; i < branch_count; i++) {
 	Point pt1, pt2;
@@ -912,7 +871,6 @@ Resizer::estimateWireParasitic(const Net *net)
 	    parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
 	  else {
 	    float wire_length = dbuToMeters(wire_length_dbu);
-	    bool is_clk = isClock(net);
 	    float wire_cap = wire_length * (is_clk ? wire_clk_cap_ : wire_cap_);
 	    float wire_res = wire_length * (is_clk ? wire_clk_res_ : wire_res_);
 	    // Make pi model for the wire.
@@ -1205,7 +1163,7 @@ Resizer::findHoldViolations(VertexSet &ends)
   while (end_iter != ends.end()) {
     Vertex *end = *end_iter;
     Slack slack = sta_->vertexSlack(end, MinMax::min());
-    if (!search->isClock(end)
+    if (!sta_->isClock(end->pin())
 	&& fuzzyLess(slack, 0.0)) {
       debugPrint1(debug_, "repair_hold", 3, " %s\n",
 		  end->name(sdc_network_));
@@ -1232,7 +1190,7 @@ Resizer::findFaninWeights(VertexSet &ends,
 
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
-    if (!search->isClock(vertex)) {
+    if (!sta_->isClock(vertex->pin())) {
       if (!search->isEndpoint(vertex)
 	  && vertex->isDriver(db_network_))
 	weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
@@ -1346,7 +1304,7 @@ Resizer::repairDesign(double max_wire_length, // meters
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
     if (net
-	&& !isClock(net)
+	&& !sta_->isClock(drvr_pin)
 	// Exclude tie hi/low cells.
 	&& !isFuncOneZero(drvr_pin)
 	&& !hasTopLevelPort(net)
@@ -1390,15 +1348,17 @@ Resizer::repairClkNets(double max_wire_length, // meters
   int fanout_violations = 0;
   int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
-  for (Net *net : clk_nets_) {
-    PinSet *drivers = network_->drivers(net);
-    if (drivers) {
-      PinSet::Iterator drvr_iter(drivers);
-      Pin *drvr_pin = drvr_iter.next();
-      Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-      repairNet(net, drvr, false, false, false, max_length, buffer_cell,
-		repair_count, slew_violations, cap_violations,
-		fanout_violations, length_violations);
+  for (Clock *clk : sdc_->clks()) {
+    for (const Pin *clk_pin : *sta_->pins(clk)) {
+      if (network_->isDriver(clk_pin)) {
+	Net *net = network_->isTopLevelPort(clk_pin)
+	  ? network_->net(network_->term(clk_pin))
+	  : network_->net(clk_pin);
+	Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
+	repairNet(net, drvr, false, false, false, max_length, buffer_cell,
+		  repair_count, slew_violations, cap_violations,
+		  fanout_violations, length_violations);
+      }
     }
   }
   if (length_violations > 0)
@@ -1881,11 +1841,12 @@ Resizer::reportLongWires(int count,
 			 int digits)
 {
   graph_ = sta_->ensureGraph();
+  sta_->ensureClkNetwork();
   VertexSeq drvrs;
   findLongWires(drvrs);
   report_->print("Driver    length delay\n");
-  for (int i = 0; i < count && i < drvrs.size(); i++) {
-    Vertex *drvr = drvrs[i];
+  int i = 0;
+  for (Vertex *drvr : drvrs) {
     Pin *drvr_pin = drvr->pin();
     if (!network_->isTopLevelPort(drvr_pin)) {
       double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
@@ -1896,6 +1857,9 @@ Resizer::reportLongWires(int count,
 		     units_->distanceUnit()->asString(wire_length, 1),
 		     units_->distanceUnit()->asString(steiner_length, 1),
 		     units_->timeUnit()->asString(delay, digits));
+      if (i == count)
+	break;
+      i++;
     }
   }
 }
@@ -1913,7 +1877,7 @@ Resizer::findLongWires(VertexSeq &drvrs)
       Pin *pin = vertex->pin();
       Net *net = network_->net(pin);
       // Hands off the clock nets.
-      if (!isClock(net)
+      if (!sta_->isClock(pin)
 	  && !vertex->isConstant()
 	  && !vertex->isDisabledConstraint())
 	drvr_dists.push_back(DrvrDist(vertex, maxLoadManhattenDistance(vertex)));
@@ -1939,7 +1903,7 @@ Resizer::findLongWiresSteiner(VertexSeq &drvrs)
       Pin *pin = vertex->pin();
       Net *net = network_->net(pin);
       // Hands off the clock nets.
-      if (!isClock(net)
+      if (!sta_->isClock(pin)
 	  && !vertex->isConstant())
 	drvr_dists.push_back(DrvrDist(vertex, findMaxSteinerDist(vertex)));
     }
