@@ -1,0 +1,44 @@
+#!/bin/csh -f
+
+set DIFF=/usr/bin/diff
+set WC=/usr/bin/wc
+set RM=/bin/rm
+set PROG=./Parquet.exe
+
+echo "------------  Running test ami33..." > new.out
+echo "------------  Running test ami33..."
+$PROG -f TESTS/ami33 -s 0 >>new.out
+echo OK
+
+echo "------------  Running test ami49..." >> new.out
+echo "------------  Running test ami49..."
+$PROG -f TESTS/ami49 -s 0 >>new.out
+echo OK
+
+echo "------------  Running test apte..." >> new.out
+echo "------------  Running test apte..."
+$PROG -f TESTS/apte -s 0 >>new.out
+echo OK
+
+echo "------------  Running test xerox..." >> new.out
+echo "------------  Running test xerox..."
+$PROG -f TESTS/xerox -s 0 >>new.out
+echo OK
+
+echo "------------  Running test hp..." >> new.out
+echo "------------  Running test hp..."
+$PROG -f TESTS/hp -s 0 >>new.out
+echo OK
+
+egrep -i -v '(time|seconds)' new.out > new.out.notime
+egrep -i -v '(time|seconds)' expected.out > expected.out.notime
+
+$DIFF new.out.notime expected.out.notime > diffs.notime
+echo Differences from precomputed results
+echo "  lines:  words:  bytes:    error log:"
+$WC diffs.notime
+
+$RM -f new.out.notime expected.out.notime
+
+
+

@@ -1,0 +1,355 @@
+README for random-number generation classes in ABKCommon
+Contact: <oliver@math.ucla.edu>
+date: 25 May 2000
+
+  COPYRIGHT: ABKGroup and UC Regents, see file COPYRIGHT 
+
+OUTLINE:
+
+
+I. Classes available and user interface
+    A) RandomUnsigned
+    B) RandomDouble
+    C) RandomRawUnsigned
+    D) RandomRawDouble
+    E) RandomNormal
+
+II. What's changed since ABKCommon3.1
+    A) seeds.in and seeds.out
+    B) New constructors
+
+III.  Differences from other RNG schemes
+    A) New classes
+    B) Speed
+    C) Independent objects
+    D) Portability
+    E) Seeding
+    F) Algorithm
+    G) Algorithmic flexibility
+    H) Method of getting doubles
+    G) Reseeding
+
+IV. Future expansions and expandibility.
+    A) Doubles
+    B) New random engines
+            i) Public interface
+            ii) Protected interface
+            iii) Other considerations
+
+
+I. Classes available and user interface
+
+    The classes intended for end-user use are as follows:
+
+    RandomUnsigned
+    RandomDouble
+    RandomRawUnsigned
+    RandomRawDouble
+    RandomNormal
+
+    RandomUnsigned1279
+    RandomDouble1279
+    RandomRawUnsigned1279
+    RandomRawUnsigned1279
+    RandomNormal1279
+
+    The "1279" in the latter collection of classes refers to the fact
+    that they use the r1279 algorithm as their underlying random engine,
+    whereas the first group all use r250.  Their interfaces are identical,
+    so I will describe them only for the first group.
+
+    A) RandomUnsigned.
+
+        To provide maximum reproducibility (preferred), do something like
+
+            RandomUnsigned ru(0,19,"MyClass::myMethod(),ru");
+
+        where 0 is the lower limit (inclusive), 19 the upper limit (strict).
+        The string in quotes should, preferably, be unique to
+        this line of code, but may be omitted if you like.  However,
+        if you leave this value out, then your results may change
+        in unexplained ways when another piece of code is changed.
+
+        Now to get random values, just use the object in any context
+        where it will be cast to unsigned:
+
+            RandomUnsigned ru1(0,19,"ThisClass::thisMethod(),ru1);
+            unsigned u;
+            for (i=0;i<100;i++)
+                {
+                u = ru1;
+                runningTotal += u;
+                }
+
+        will sum the first 100 random values.
+
+        (In theory you could replace the two lines of the
+        loop by the single line
+                runningTotal += ru1;
+        but this can confuse some compilers.)
+
+    B) RandomDouble
+
+        Everything is exactly analogous to RandomUnsigned as above,
+        replacing "unsigned" by "double" in the first two parameters
+        to the constructor, and in that you cast to double to get
+        the random value.
+
+            RandomDouble rd(1.0,3.0,"someClass::someMethod(),rd");
+            RandomDouble rd(1.0,3.0);
+
+        The values of rd will be in the interval [1.0,3.0), uniformly
+        distributed.
+
+    C) RandomRawUnsigned
+
+        The "raw" classes don't accept ranges.  Their constructors
+        accept only the string identifier if you decide to use it.
+
+            RandomRawUnsigned rru("aClass::aMethod(),rru");
+            RandomRawUnsigned rru();
+
+        The values of rru will be 32-bit unsigned integers uniformly
+        distributed over the entire range.
+
+    D) RandomRawDouble
+
+        Same as above, except the values will be uniformly distributed
+        in [0.0,1.0).
+
+    E) RandomNormal
+
+        The constructor accepts three values (mean, standard deviation,
+        identifier)
+        or two (omitting the identifier):
+
+            RandomNormal rn(4.0,2.0,"rn");
+            RandomNormal rn(4.0,2.0);
+
+        The values of rn will be normally distributed (Gaussian, bell curve)
+        with mean 4.0 and standard deviation 2.0.
+
+II. What's changed since ABKCommon3.1
+
+    A) seeds.in and seeds.out
+
+        Any program in which you create an object of one
+        of these classes will create a file called "seeds.out".
+        Assuming you use no hardcoded seeds (they are no longer
+        recommended and I'm not even documenting them in this
+        file), the file will have the following format
+        after the program finishes:
+
+            0
+            nnnnnnnnn
+
+        where "nnnnnnnnn" is the "external seed" used by
+        RNG objects (ordinarily taken from the system clock)
+        and 0 indicates that the file is not in use.
+
+        To reproduce the same streams of random numbers
+        as in the previous run of the program, copy "seeds.out"
+        to "seeds.in" in the same directory.  "seeds.in" will
+        override the system clock and set the same "external seed".
+
+        *If* you have used unique "local identifiers" when creating
+        all your random objects (these are the strings passed
+        to the constructors as documented in section I), then
+        you can even change code, adding or removing random
+        objects, and the same "seeds.in" will still produce
+        the same stream of random numbers from a given random
+        object.
+
+
+    B) New constructors
+
+        Before seeds.in and seeds.out were devised, it was recommended
+        to pass explicit seeds to the random objects for reproducibility.
+        You can still do that, but it is no longer recommended.
+
+        The new constructors accept "local identifier" strings
+        as explained in section II.A.
+
+
+III. Differences from other RNG schemes.
+
+    A) Speed.
+
+        The Tausworthe-style random-number generators appear
+        to run about 3 times as fast on Solaris as the native
+        RNGs.
+
+    B) Independent objects:
+
+        Each RNG object has its own internal state; taking
+        a random number from one does not affect the stream
+        of random numbers to come from another.  Moreover
+        the limited testing that has been done on the question
+        has shown good statistical independence between
+        the streams of random numbers coming from two
+        different RNG objects.
+
+
+    C) Portability:
+
+        A given random object, given the same seed, will now produce
+        identical sequences under all our platforms.  Before the output
+        depended on the local implementation of rand().
+    
+    D) Seeding:
+
+        I have included a slightly elaborate method of initializing
+        the internal state, whereby the starting buffer (a large collection
+        of hardcoded noise) is "encrypted" using the seed as the key.
+        I believe this should prevent relationships among seeds from
+        showing up in the output.  I.e. if you initialize three RNG
+        objects with 0, 1 and 2 respectively, the sequences you get
+        from them should still be decently independent.
+
+    D) Algorithm:
+
+        The classes currently implemented are based on the r250 (or r1279)
+        Tausworthe shift-register algorithm.  The periods are enormously
+        longer than the 32-bit linear congruential RNGs we were using.
+        Short periods can be a problem even if you don't exhaust them,
+        because you have a significant chance that the sequences produced
+        by two different seeds will overlap in the global sequence of
+        the RNG, and therefore not be independent.
+
+        The only negative experience with r250() I've found
+        in the literature is written up in a paper by Ferrenberg, Landau
+        and Wong, Physical Review Letters, v. 69 no. 23 (7 Dec 92)
+        pp. 3382-3384.  The authors simulate internal energies and specific
+        heats for spin systems (in a ferromagnet? I wasn't sure) and find
+        errors in the fourth digit for internal energy and the third digit
+        for specific heat when using r250(). Their complaint goes away,
+        or almost, when they switch to r1279().
+
+        I should add to this:  I found a deviation from randomness
+        myself when attempting to simulate the skewness of a certain
+        nonparametric statistic.  What it came down to was that
+        if you take random numbers in blocks of a certain size (say 100-200),
+        then the number of large numbers in one block is correlated
+        with the *variance* of the number of large numbers in the
+        next block, in a way that is different from what happens
+        in a truly random sequence.  If you have an application
+        which takes random numbers in blocks of this size
+        and depends on the differences between one block and its
+        successor, it might be prudent to retry the experiments
+        using the r1279-based RNGs.  If there is a demand, I can
+        add RNGs of another type that will not be susceptible to
+        this problem (but will be slower).
+         
+     F) Algorithmic flexibility:
+
+        The classes above are all templated.  So for example RandomUnsigned
+        is a typedef of RandomUnsignedT<RandomKernel250>, and
+        RandomUnsigned1279 is a typedef of RandomUnsignedT<RandomKernel1279>.
+
+        This means that we can always drop in another random engine.
+        This could turn out to be important.  For example Ferrenberg
+        et al. above found that an ordinary linear congruential RNG
+        worked fine for them, so if there are any anomalous results
+        or anything that we need to measure to high precision in a
+        Monte Carlo fashion, we may want to verify r250(), r1279()
+        and a linear congruential RNG.
+
+
+IV. Future expansions and expandibility.
+
+    A) Doubles:
+
+        Igor and I have talked about the possibility of a
+        RandomDoubleFullAccuracy class which would attempt
+        to fill the entire mantissa of a double randomly.
+        It wouldn't be too hard, just a little slower, but
+        I won't add it unless there's a demand.
+
+    B) New random engines:
+
+        If you want to create a new random engine to use in
+        the templated classes, it must satisfy the following
+        requirements:
+
+            i) Derivation
+
+                The engine class should be derived from RandomRoot.
+                It should have a constructor that accepts a
+                "local identifier" as Tausworthe does.  In
+                that constructor, the state of the engine should
+                depend in some highly chaotic (but deterministic)
+                way on three things:  the values returned
+                from RandomRoot::getExternalSeed(),
+                RandomRoot::getCounter(), and RandomRoot::getLocIdent().
+
+            ii) Public interface:
+
+                unsigned getSeed(); // if you put the value returned by this
+                                    // method into a new object of this type via
+                                    // the ctor, it should return the identical
+                                    // seq of unsigneds or doubles via
+                                    // _getRawUnsigned() and _getRawDouble().
+
+            iii) Protected interface:
+
+            (let's say the class is called RK)
+
+                RK(unsigned seed);
+                RK();              // the ctor that doesn't specify the seed
+                                   // should look it up from the system clock.
+
+                unsigned _getRawUnsigned() ;  
+                                    // should return unsigned 32-bit values
+                                    // distributed uniformly from 0 to
+                                    // UNSIGNED_MAX.
+
+                double _getRawDouble() ;    
+                                    // should return double values
+                                    // distributed uniformly in
+                                    // [0.0,1.0)
+
+            iv) Other considerations:
+
+                a) Both existing engine classes, RandomKernel250 and
+                RandomKernel1279, are derived from Tausworthe.  This
+                is not necessary for future engine classes, and indeed
+                if your generator is *not* Tausworthe-style then please
+                *don't* derive it from Tausworthe as that would be confusing.
+
+                b) Currently no end-user class uses both _getRawUnsigned()
+                and _getRawDouble(), but I already have one in mind that
+                would.  Therefore the requirements on them are:
+
+                    o If a call to _getRawUnsigned() is followed by
+                      a call to _getRawDouble(), or vice versa, the
+                      values returned should be independently uniformly
+                      distributed in their respective ranges.
+
+                    o The value returned from _getRawUnsigned() or
+                      _getRawDouble() should depend only on the seed
+                      and the sequence of calls to _getRawUnsigned()
+                      and _getRawDouble() made theretofore.  That is,
+                      given
+
+                        RK rk1(3); rk1._getRawDouble();rk1._getRawUnsigned();
+                        unsigned n1 = rk1._getRawUnsigned();
+                        RK rk2(3); rk2._getRawDouble();rk2._getRawUnsigned();
+                        unsigned n2 = rk2._getRawUnsigned();
+
+                      we require n1==n2.  However, given
+
+                        RK rk1(3); rk1._getRawUnsigned();rk1._getRawDouble();
+                        unsigned n1 = rk1._getRawUnsigned();
+                        RK rk2(3); rk2._getRawDouble();rk2._getRawUnsigned();
+                        unsigned n2 = rk2._getRawUnsigned();
+
+                      now it is no longer required that n1==n2, because
+                      the histories of their RNGs are different.
+
+                      (Note that the code above will not literally compile,
+                      because _getRawDouble() and _getRawUnsigned() are
+                      protected.)
+
+
+
+
