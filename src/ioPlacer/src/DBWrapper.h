@@ -33,49 +33,51 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef DBWRAPPER_h
 #define DBWRAPPER_h
 
 #include <string>
+
+#include "Core.h"
 #include "Netlist.h"
 #include "Parameters.h"
-#include "Core.h"
 
 // Forward declaration protects IOPlacer code from any
 // header file from the DB. IOPlacer code keeps independent.
-namespace odb{
+namespace odb {
 class dbDatabase;
 class dbChip;
 class dbTechLayer;
-}
+}  // namespace odb
 
 namespace ioPlacer {
 
-class DBWrapper {
-public:
-        DBWrapper() = default;
-        DBWrapper(Netlist& netlist, Core& core, Parameters& parms);
+class DBWrapper
+{
+ public:
+  DBWrapper() = default;
+  DBWrapper(Netlist& netlist, Core& core, Parameters& parms);
 
-        void parseLEF(const std::string &filename);
-        void parseDEF(const std::string &filename);
-        
-        void populateIOPlacer();
-        void commitIOPlacementToDB(std::vector<IOPin>& assignment);
-        void writeDEF();
-private:
-        void initCore();
-        void initNetlist();
-        void initTracks();
+  void parseLEF(const std::string& filename);
+  void parseDEF(const std::string& filename);
 
-        odb::dbDatabase *_db;
-        odb::dbChip     *_chip;
-        Netlist         *_netlist = nullptr;
-        Core            *_core = nullptr;
-        Parameters      *_parms = nullptr;
-        bool            _verbose = false;
+  void populateIOPlacer();
+  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
+  void writeDEF();
+
+ private:
+  void initCore();
+  void initNetlist();
+  void initTracks();
+
+  odb::dbDatabase* _db;
+  odb::dbChip* _chip;
+  Netlist* _netlist = nullptr;
+  Core* _core = nullptr;
+  Parameters* _parms = nullptr;
+  bool _verbose = false;
 };
 
-}
+}  // namespace ioPlacer
 
 #endif

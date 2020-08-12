@@ -33,75 +33,84 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #ifndef __IOPLACEMENTKERNEL_H_
 #define __IOPLACEMENTKERNEL_H_
 
 #include "Core.h"
+#include "DBWrapper.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
 #include "Parameters.h"
 #include "Slots.h"
-#include "DBWrapper.h"
 
 namespace ioPlacer {
 
-enum RandomMode { None, Full, Even, Group };
-
-class IOPlacementKernel {
-       protected:
-        Netlist _netlist;
-        Core _core;
-        std::string _horizontalMetalLayer;
-        std::string _verticalMetalLayer;
-        std::vector<IOPin> _assignment;
-        bool _reportHPWL = false;
-
-        unsigned _slotsPerSection = 200;
-        float _slotsIncreaseFactor = 0.01f;
-
-        float _usagePerSection = .8f;
-        float _usageIncreaseFactor = 0.01f;
-
-        bool _forcePinSpread = true;
-        std::string _blockagesFile;
-        std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
-
-       private:
-        DBWrapper _dbWrapper;
-        Parameters* _parms;
-        Netlist _netlistIOPins;
-        slotVector_t _slots;
-        sectionVector_t _sections;
-        std::vector<IOPin> _zeroSinkIOs;
-        RandomMode _randomMode = RandomMode::Full;
-        bool _cellsPlaced = true;
-
-        void initNetlistAndCore();
-        void initIOLists();
-        void initParms();
-        void randomPlacement(const RandomMode);
-        void defineSlots();
-        void createSections();
-        void setupSections();
-        bool assignPinsSections();
-        DBU returnIONetsHPWL(Netlist&);
-
-        inline void updateOrientation(IOPin&);
-        inline void updatePinArea(IOPin&);
-        inline bool checkBlocked(DBU, DBU);
-
-       public:
-        IOPlacementKernel(Parameters&);
-        IOPlacementKernel() = default;
-        void run();
-        void writeDEF();
-        void printConfig();
-        void parseLef(const std::string& file) { _dbWrapper.parseLEF(file); }
-        void parseDef(const std::string& file) { _dbWrapper.parseDEF(file); }
-        DBU returnIONetsHPWL();
-        void addBlockedArea(long long int llx, long long int lly, long long int urx, long long int ury);
+enum RandomMode
+{
+  None,
+  Full,
+  Even,
+  Group
 };
 
-}
+class IOPlacementKernel
+{
+ protected:
+  Netlist _netlist;
+  Core _core;
+  std::string _horizontalMetalLayer;
+  std::string _verticalMetalLayer;
+  std::vector<IOPin> _assignment;
+  bool _reportHPWL = false;
+
+  unsigned _slotsPerSection = 200;
+  float _slotsIncreaseFactor = 0.01f;
+
+  float _usagePerSection = .8f;
+  float _usageIncreaseFactor = 0.01f;
+
+  bool _forcePinSpread = true;
+  std::string _blockagesFile;
+  std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
+
+ private:
+  DBWrapper _dbWrapper;
+  Parameters* _parms;
+  Netlist _netlistIOPins;
+  slotVector_t _slots;
+  sectionVector_t _sections;
+  std::vector<IOPin> _zeroSinkIOs;
+  RandomMode _randomMode = RandomMode::Full;
+  bool _cellsPlaced = true;
+
+  void initNetlistAndCore();
+  void initIOLists();
+  void initParms();
+  void randomPlacement(const RandomMode);
+  void defineSlots();
+  void createSections();
+  void setupSections();
+  bool assignPinsSections();
+  DBU returnIONetsHPWL(Netlist&);
+
+  inline void updateOrientation(IOPin&);
+  inline void updatePinArea(IOPin&);
+  inline bool checkBlocked(DBU, DBU);
+
+ public:
+  IOPlacementKernel(Parameters&);
+  IOPlacementKernel() = default;
+  void run();
+  void writeDEF();
+  void printConfig();
+  void parseLef(const std::string& file) { _dbWrapper.parseLEF(file); }
+  void parseDef(const std::string& file) { _dbWrapper.parseDEF(file); }
+  DBU returnIONetsHPWL();
+  void addBlockedArea(long long int llx,
+                      long long int lly,
+                      long long int urx,
+                      long long int ury);
+};
+
+}  // namespace ioPlacer
 #endif /* __IOPLACEMENTKERNEL_H_ */

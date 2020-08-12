@@ -33,21 +33,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "Core.h"
 
 namespace ioPlacer {
 
-DBU Core::getPerimeter() {
-        DBU lowerX = _lowerBound.getX();
-        DBU lowerY = _lowerBound.getY();
-        DBU upperX = _upperBound.getX();
-        DBU upperY = _upperBound.getY();
+DBU Core::getPerimeter()
+{
+  DBU lowerX = _lowerBound.getX();
+  DBU lowerY = _lowerBound.getY();
+  DBU upperX = _upperBound.getX();
+  DBU upperY = _upperBound.getY();
 
-        DBU x = upperX - lowerX;
-        DBU y = upperY - lowerY;
+  DBU x = upperX - lowerX;
+  DBU y = upperY - lowerY;
 
-        return (x + y) * 2;
+  return (x + y) * 2;
 }
 
-}
+}  // namespace ioPlacer

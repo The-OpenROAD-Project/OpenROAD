@@ -33,121 +33,136 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "Netlist.h"
 
 namespace ioPlacer {
 
-Netlist::Netlist() { _netPointer.push_back(0); }
-
-void Netlist::addIONet(const IOPin& ioPin,
-                       const std::vector<InstancePin>& instPins) {
-        _ioPins.push_back(ioPin);
-        _instPins.insert(_instPins.end(), instPins.begin(), instPins.end());
-        _netPointer.push_back(_instPins.size());
+Netlist::Netlist()
+{
+  _netPointer.push_back(0);
 }
 
-void Netlist::forEachIOPin(std::function<void(unsigned idx, IOPin&)> func) {
-        for (unsigned idx = 0; idx < _ioPins.size(); ++idx) {
-                func(idx, _ioPins[idx]);
-        }
+void Netlist::addIONet(const IOPin& ioPin,
+                       const std::vector<InstancePin>& instPins)
+{
+  _ioPins.push_back(ioPin);
+  _instPins.insert(_instPins.end(), instPins.begin(), instPins.end());
+  _netPointer.push_back(_instPins.size());
+}
+
+void Netlist::forEachIOPin(std::function<void(unsigned idx, IOPin&)> func)
+{
+  for (unsigned idx = 0; idx < _ioPins.size(); ++idx) {
+    func(idx, _ioPins[idx]);
+  }
 }
 
 void Netlist::forEachIOPin(
-    std::function<void(unsigned idx, const IOPin&)> func) const {
-        for (unsigned idx = 0; idx < _ioPins.size(); ++idx) {
-                func(idx, _ioPins[idx]);
-        }
+    std::function<void(unsigned idx, const IOPin&)> func) const
+{
+  for (unsigned idx = 0; idx < _ioPins.size(); ++idx) {
+    func(idx, _ioPins[idx]);
+  }
 }
 
 void Netlist::forEachSinkOfIO(unsigned idx,
-                              std::function<void(InstancePin&)> func) {
-        unsigned netStart = _netPointer[idx];
-        unsigned netEnd = _netPointer[idx + 1];
-        for (unsigned idx = netStart; idx < netEnd; ++idx) {
-                func(_instPins[idx]);
-        }
+                              std::function<void(InstancePin&)> func)
+{
+  unsigned netStart = _netPointer[idx];
+  unsigned netEnd = _netPointer[idx + 1];
+  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+    func(_instPins[idx]);
+  }
 }
 
 void Netlist::forEachSinkOfIO(
-    unsigned idx, std::function<void(const InstancePin&)> func) const {
-        unsigned netStart = _netPointer[idx];
-        unsigned netEnd = _netPointer[idx + 1];
-        for (unsigned idx = netStart; idx < netEnd; ++idx) {
-                func(_instPins[idx]);
-        }
+    unsigned idx,
+    std::function<void(const InstancePin&)> func) const
+{
+  unsigned netStart = _netPointer[idx];
+  unsigned netEnd = _netPointer[idx + 1];
+  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+    func(_instPins[idx]);
+  }
 }
 
-unsigned Netlist::numSinksOfIO(unsigned idx) {
-        unsigned netStart = _netPointer[idx];
-        unsigned netEnd = _netPointer[idx + 1];
-        return netEnd - netStart;
+unsigned Netlist::numSinksOfIO(unsigned idx)
+{
+  unsigned netStart = _netPointer[idx];
+  unsigned netEnd = _netPointer[idx + 1];
+  return netEnd - netStart;
 }
 
-int Netlist::numIOPins() { return _ioPins.size(); }
-
-Box Netlist::getBB(unsigned idx, Coordinate slotPos) {
-        unsigned netStart = _netPointer[idx];
-        unsigned netEnd = _netPointer[idx + 1];
-
-        DBU minX = slotPos.getX();
-        DBU minY = slotPos.getY();
-        DBU maxX = slotPos.getX();
-        DBU maxY = slotPos.getY();
-
-        for (unsigned idx = netStart; idx < netEnd; ++idx) {
-                Coordinate pos = _instPins[idx].getPos();
-                minX = std::min(minX, pos.getX());
-                maxX = std::max(maxX, pos.getX());
-                minY = std::min(minY, pos.getY());
-                maxY = std::max(maxY, pos.getY());
-        }
-
-        Coordinate upperBounds = Coordinate(maxX, maxY);
-        Coordinate lowerBounds = Coordinate(minX, minY);
-
-        Box netBBox(lowerBounds, upperBounds);
-        return netBBox;
+int Netlist::numIOPins()
+{
+  return _ioPins.size();
 }
 
-DBU Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos) {
-        unsigned netStart = _netPointer[idx];
-        unsigned netEnd = _netPointer[idx + 1];
+Box Netlist::getBB(unsigned idx, Coordinate slotPos)
+{
+  unsigned netStart = _netPointer[idx];
+  unsigned netEnd = _netPointer[idx + 1];
 
-        DBU minX = slotPos.getX();
-        DBU minY = slotPos.getY();
-        DBU maxX = slotPos.getX();
-        DBU maxY = slotPos.getY();
+  DBU minX = slotPos.getX();
+  DBU minY = slotPos.getY();
+  DBU maxX = slotPos.getX();
+  DBU maxY = slotPos.getY();
 
-        for (unsigned idx = netStart; idx < netEnd; ++idx) {
-                Coordinate pos = _instPins[idx].getPos();
-                minX = std::min(minX, pos.getX());
-                maxX = std::max(maxX, pos.getX());
-                minY = std::min(minY, pos.getY());
-                maxY = std::max(maxY, pos.getY());
-        }
+  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+    Coordinate pos = _instPins[idx].getPos();
+    minX = std::min(minX, pos.getX());
+    maxX = std::max(maxX, pos.getX());
+    minY = std::min(minY, pos.getY());
+    maxY = std::max(maxY, pos.getY());
+  }
 
-        Coordinate upperBounds = Coordinate(maxX, maxY);
-        Coordinate lowerBounds = Coordinate(minX, minY);
+  Coordinate upperBounds = Coordinate(maxX, maxY);
+  Coordinate lowerBounds = Coordinate(minX, minY);
 
-        Box netBBox(lowerBounds, upperBounds);
-
-        return netBBox.getHalfPerimeter();
+  Box netBBox(lowerBounds, upperBounds);
+  return netBBox;
 }
 
-DBU Netlist::computeDstIOtoPins(unsigned idx, Coordinate slotPos) {
-        unsigned netStart = _netPointer[idx];
-        unsigned netEnd = _netPointer[idx + 1];
+DBU Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos)
+{
+  unsigned netStart = _netPointer[idx];
+  unsigned netEnd = _netPointer[idx + 1];
 
-        DBU totalDistance = 0;
+  DBU minX = slotPos.getX();
+  DBU minY = slotPos.getY();
+  DBU maxX = slotPos.getX();
+  DBU maxY = slotPos.getY();
 
-        for (unsigned idx = netStart; idx < netEnd; ++idx) {
-                Coordinate pinPos = _instPins[idx].getPos();
-                totalDistance += std::abs(pinPos.getX() - slotPos.getX()) +
-                                 std::abs(pinPos.getY() - slotPos.getY());
-        }
+  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+    Coordinate pos = _instPins[idx].getPos();
+    minX = std::min(minX, pos.getX());
+    maxX = std::max(maxX, pos.getX());
+    minY = std::min(minY, pos.getY());
+    maxY = std::max(maxY, pos.getY());
+  }
 
-        return totalDistance;
+  Coordinate upperBounds = Coordinate(maxX, maxY);
+  Coordinate lowerBounds = Coordinate(minX, minY);
+
+  Box netBBox(lowerBounds, upperBounds);
+
+  return netBBox.getHalfPerimeter();
 }
 
+DBU Netlist::computeDstIOtoPins(unsigned idx, Coordinate slotPos)
+{
+  unsigned netStart = _netPointer[idx];
+  unsigned netEnd = _netPointer[idx + 1];
+
+  DBU totalDistance = 0;
+
+  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+    Coordinate pinPos = _instPins[idx].getPos();
+    totalDistance += std::abs(pinPos.getX() - slotPos.getX())
+                     + std::abs(pinPos.getY() - slotPos.getY());
+  }
+
+  return totalDistance;
 }
+
+}  // namespace ioPlacer

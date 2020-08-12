@@ -33,16 +33,16 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "Parameters.h"
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 namespace ioPlacer {
 
-void Parameters::printAll() const {
-        // clang-format off
+void Parameters::printAll() const
+{
+  // clang-format off
         std::cout << "\nOptions: \n";
         std::cout << std::setw(20) << std::left << "Input LEF file: ";
         std::cout << _inputLefFile << "\n";
@@ -74,7 +74,7 @@ void Parameters::printAll() const {
         std::cout << "Rand seed: " << _randSeed << "\n";
 
         std::cout << "\n";
-        // clang-format on
+  // clang-format on
 }
 
-}
+}  // namespace ioPlacer
