@@ -79,11 +79,11 @@ echo "Passed $passed"
 echo "See $testdir/results for log files"
 echo "------------------------------------------------------"
 
+sh $testdir/clean_all.sh $testdir
+
 if [ $failed -gt 0 ]
 then
 	exit 1
 fi
-
-sh $testdir/clean_all.sh $testdir
 
 exit 0
