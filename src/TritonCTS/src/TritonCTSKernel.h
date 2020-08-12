@@ -83,11 +83,14 @@ private:
 // TCL commands
 public:
         void set_only_characterization(bool enable);
+        void set_simple_cts(bool enable);
+        void set_sink_clustering(bool enable);
         void set_auto_lut(bool enable);
         void set_lut_file(const char* file);
         void set_sol_list_file(const char* file);
         void export_characterization(const char* file);
         void set_root_buffer(const char* buffer);
+        void set_sink_buffer(const char* buffer);
         void set_buffer_list(const char* buffers);
         int set_clock_nets(const char* names);
         void set_wire_segment_distance_unit(unsigned unit);
@@ -103,11 +106,15 @@ public:
         void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 
         void set_metric_output(const char* file);
         void report_cts_metrics();
+        void set_tree_buf(const char* buffer);
         void set_distance_between_buffers(double distance);
         void set_branching_point_buffers_distance(double distance);
         void set_disable_post_cts(bool disable);
         void set_clustering_exponent(unsigned power);
         void set_clustering_unbalance_ratio(double ratio);
+        void set_sink_clustering_size(unsigned size);
+        void set_clustering_diameter(double distance);
+        void set_num_static_layers(unsigned num);
 };
 
 }

@@ -86,6 +86,26 @@ Box<DBU> Clock::computeSinkRegion() {
         return Box<DBU>(xMin, yMin, xMax, yMax);
 }
 
+Box<double> Clock::computeSinkRegionClustered(std::vector<std::pair<float, float>> sinks) {
+        std::vector<double> allPositionsX;                
+        std::vector<double> allPositionsY;   
+        for (std::pair<float, float> sinkLocation : sinks){
+                allPositionsX.push_back(sinkLocation.first);
+                allPositionsY.push_back(sinkLocation.second);
+        }     
+
+        std::sort(allPositionsX.begin(), allPositionsX.end());
+        std::sort(allPositionsY.begin(), allPositionsY.end());
+
+        unsigned numSinks = allPositionsX.size();
+        double xMin = allPositionsX[0];
+        double xMax = allPositionsX[(allPositionsX.size() - 1)]; 
+        double yMin = allPositionsY[0];
+        double yMax = allPositionsY[(allPositionsY.size() - 1)]; 
+        
+        return Box<double>(xMin, yMin, xMax, yMax);
+}
+
 Box<double> Clock::computeNormalizedSinkRegion(double factor) {
         Box<DBU> sinkRegion = computeSinkRegion();
         return sinkRegion.normalize(factor);
@@ -105,6 +125,12 @@ void Clock::forEachSink(const std::function<void(ClockInst&)>& func) {
 
 void Clock::forEachClockBuffer(const std::function<void(const ClockInst&)>& func) const {
         for (const ClockInst& clockBuffer: _clockBuffers) {
+                func(clockBuffer);
+        }
+}
+
+void Clock::forEachClockBuffer(const std::function<void(ClockInst&)>& func) {
+        for (ClockInst& clockBuffer: _clockBuffers) {
                 func(clockBuffer);
         }
 }

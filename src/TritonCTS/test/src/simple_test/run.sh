@@ -11,7 +11,7 @@ binary=$1
 
 $binary -no_init < run.tcl > test.log 2>&1
 
-if grep -q "Clock topology of net \"clk\" done." test.log;
+if grep -q "Fanout distribution for the current clock = 7:1, 9:1." test.log;
 then
 	exit $GREEN
 else

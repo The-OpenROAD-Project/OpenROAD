@@ -1,8 +1,8 @@
-read_lef "merged.lef"
-read_liberty "merged.lib"
+read_lef Nangate45/Nangate45.lef
+read_liberty Nangate45/Nangate45_typ.lib
 read_def "no_sinks.def"
-read_verilog "no_sinks.v"
-read_sdc "no_sinks.sdc"
+
+create_clock -period 5 clk
 
 clock_tree_synthesis -lut_file "lut.txt" \
                      -sol_list "sol_list.txt" \

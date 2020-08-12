@@ -1,8 +1,8 @@
-read_lef "merged.lef"
-read_liberty "merged.lib"
-read_def "aes.def"
-read_verilog "aes.v"
-read_sdc "aes.sdc"
+read_lef Nangate45/Nangate45.lef
+read_liberty Nangate45/Nangate45_typ.lib
+read_def "16sinks.def"
+
+create_clock -period 5 clk
 
 clock_tree_synthesis -buf_list "BUF_X1" \
                      -characterization_only \
