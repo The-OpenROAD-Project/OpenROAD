@@ -185,13 +185,13 @@ void DBWrapper::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
       break;
     }
 
-    odb::dbTechLayer* techayer = tech->findRoutingLayer(layer);
+    odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
 
-    if (techayer == nullptr) {
+    if (techLayer == nullptr) {
       error("Layer %d not found\n", selectedMetal);
     }
 
-    odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techayer);
+    odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
 
     if (selectedTrack == nullptr) {
       error("Track for layer %d not found\n", selectedMetal);
@@ -206,7 +206,7 @@ void DBWrapper::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
     selectedTrack->getGridPatternX(0, initTrackX, numTracksX, trackStepX);
     selectedTrack->getGridPatternY(0, initTrackY, numTracksY, trackStepY);
 
-    if (techayer->getDirection().getValue()
+    if (techLayer->getDirection().getValue()
         == odb::dbTechLayerDir::HORIZONTAL) {
       trackPitch = trackStepY;
       if (layerPitches.find(layer) != layerPitches.end()) {
@@ -217,7 +217,7 @@ void DBWrapper::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
       location = initTrackY;
       numTracks = numTracksY;
       orientation = RoutingLayer::HORIZONTAL;
-    } else if (techayer->getDirection().getValue()
+    } else if (techLayer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
       trackPitch = trackStepX;
       if (layerPitches.find(layer) != layerPitches.end()) {
