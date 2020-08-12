@@ -319,8 +319,8 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
     if (grid) {
       bool isHorizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
       std::vector<int> grids;
-      if (!isHorizontal && options_->arePrefTracksVisible()
-          || isHorizontal && options_->areNonPrefTracksVisible()) {
+      if ((!isHorizontal && options_->arePrefTracksVisible())
+          || (isHorizontal && options_->areNonPrefTracksVisible())) {
         grid->getGridX(grids);
         for (int x : grids) {
           if (x < bounds.xMin()) {
@@ -333,8 +333,8 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
         }
       }
 
-      if (isHorizontal && options_->arePrefTracksVisible()
-          || !isHorizontal && options_->areNonPrefTracksVisible()) {
+      if ((isHorizontal && options_->arePrefTracksVisible())
+          || (!isHorizontal && options_->areNonPrefTracksVisible())) {
         grid->getGridY(grids);
         for (int y : grids) {
           if (y < bounds.yMin()) {
