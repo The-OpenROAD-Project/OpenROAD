@@ -1,10 +1,10 @@
-read_lef "input0.lef"
-read_lef "input1.lef"
-read_lef "input2.lef"
-read_lef "input3.lef"
-read_lef "input4.lef"
+read_lef "../../input/nangate45/input0.lef"
+read_lef "../../input/nangate45/input1.lef"
+read_lef "../../input/nangate45/input2.lef"
+read_lef "../../input/nangate45/input3.lef"
+read_lef "../../input/nangate45/input4.lef"
 
-read_def "input.def"
+read_def "../../input/nangate45/bp_fe_top.def"
 
 fastroute -max_routing_layer 10 \
 	  -unidirectional_routing \

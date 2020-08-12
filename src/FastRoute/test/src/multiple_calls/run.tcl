@@ -34,8 +34,8 @@
 ### POSSIBILITY OF SUCH DAMAGE.
 #################################################################################
 
-read_lef "input.lef"
-read_def "input.def"
+read_lef "../../input/nangate45/input0.lef"
+read_def "../../input/nangate45/gcd.def"
 
 FastRoute::set_output_file "out.guide"
 FastRoute::set_capacity_adjustment 0.0

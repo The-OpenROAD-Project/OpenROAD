@@ -34,8 +34,8 @@
 ### POSSIBILITY OF SUCH DAMAGE.
 #################################################################################
 
-read_lef "input.lef"
-read_def "input.def"
+read_lef "../../input/nangate45/input0.lef"
+read_def "../../input/nangate45/gcd.def"
 
 fastroute -verbose 1
 

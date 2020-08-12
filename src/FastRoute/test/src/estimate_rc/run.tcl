@@ -1,5 +1,5 @@
-read_lef "input.lef"
-read_def "input.def"
+read_lef "../../input/nangate45/input0.lef"
+read_def "../../input/nangate45/gcd.def"
 
 fastroute -output_file "route.guide" \
 	  -max_routing_layer 10 \
