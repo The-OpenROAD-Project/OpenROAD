@@ -97,7 +97,7 @@ LibraryCellMappingNode::LibraryCellMappingNode(
       parent_(parent_node),
       terminal_(is_terminal),
       recurring_(is_recurring),
-      is_buffer_(is_buffer_),
+      is_buffer_(is_buffer),
       is_inverter_(is_inverter),
       level_(node_level)
 {
