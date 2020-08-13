@@ -71,7 +71,7 @@ Note that all of the TCL commands are defined in the [replace.tcl](./src/replace
 
 
 ## Authors
-- Authors/maintainer since Jan. 2020: Mingyu Woo.
+- Authors/maintainer since Jan 2020: Mingyu Woo (Ph.D. Advisor: Andrew. B. Kahng)
 - Thanks for open-sourcing the previous project from Ilgweon Kang and Lutong Wang. (respective Ph.D. advisors: Chung-Kuan Cheng, Andrew. B. Kahng). Also thanks for open-sourcing the previous ePlace-MS/ePlace project from Dr. Jingwei Lu. 
 - Paper reference: 
   - C.-K. Cheng, A. B. Kahng, I. Kang and L. Wang, "RePlAce: Advancing Solution Quality and Routability Validation in Global Placement", IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 38(9) (2019), pp. 1717-1730.
