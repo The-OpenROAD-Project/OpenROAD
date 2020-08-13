@@ -144,24 +144,29 @@ void DbWrapper::initClock(odb::dbNet* net) {
         
         for (odb::dbITerm* iterm : net->getITerms()) {
                 
-                if (!(iterm->isInputSignal())) {
-                        continue;
-                }
-
                 odb::dbInst* inst = iterm->getInst();
-                odb::dbMTerm* mterm = iterm->getMTerm();
-                std::string name = std::string(inst->getConstName()) + "/" +  
-                                   std::string(mterm->getConstName());
-                DBU x, y;
-                computeITermPosition(iterm, x, y);
-                clockNet.addSink(name, x, y, iterm);
+                
+                if (iterm->isInputSignal() && inst->isPlaced()){
+
+                        odb::dbMTerm* mterm = iterm->getMTerm();
+                        std::string name = std::string(inst->getConstName()) + "/" +  
+                                                std::string(mterm->getConstName());
+                        DBU x, y;
+                        computeITermPosition(iterm, x, y);
+                        clockNet.addSink(name, x, y, iterm);
+                }
         }
         
         if (clockNet.getNumSinks() < 2) {
                 std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""  
                           << " has " << clockNet.getNumSinks()  << " sinks. Skipping...\n";
                 return;
-        
+        } else {
+                if (clockNet.getNumSinks() == 0){
+                        std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""  
+                                << " has 0 sinks. Disconnected net or unplaced sink instances. Skipping...\n";
+                        return;
+                }
         }
 
         std::cout << " Clock net \"" << net->getConstName() << "\" has " << clockNet.getNumSinks() << " sinks" << std::endl;
@@ -204,9 +209,7 @@ void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
         y = 0;
         unsigned numShapes = 0;
         for (itr.begin(term); itr.next(shape); ) {
-                if (shape.isVia()) {
-                        continue;
-                } else {
+                if (!shape.isVia()) {
                         x += shape.xMin() + (shape.xMax() - shape.xMin()) / 2;
                         y += shape.yMin() + (shape.yMax() - shape.yMin()) / 2;
                         ++numShapes;                 
@@ -293,7 +296,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                                 fanoutcount[subNet.getNumSinks()] = fanoutcount[subNet.getNumSinks()] + 1;
                         }
 
-                        if (inputPinFound == false || outputPinFound == false){
+                        if (!inputPinFound || !outputPinFound){
                                 // Net not fully connected. Removing it.
                                 disconnectAllPinsFromNet(clkSubNet);
                                 odb::dbNet::destroy(clkSubNet);
@@ -382,10 +385,9 @@ void DbWrapper::disconnectAllSinksFromNet(odb::dbNet* net) {
         odb::dbSet<odb::dbITerm>::iterator itr;
         for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
                 odb::dbITerm* iterm = *itr;
-                if (iterm->getIoType() != odb::dbIoType::INPUT) {
-                        continue;
+                if (iterm->getIoType() == odb::dbIoType::INPUT) {
+                        odb::dbITerm::disconnect(iterm);
                 }
-                odb::dbITerm::disconnect(iterm);
         }
 }
 

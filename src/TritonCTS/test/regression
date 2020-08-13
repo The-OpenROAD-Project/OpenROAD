@@ -19,6 +19,11 @@ then
 	exit 1
 fi
 
+if [ ! -d "${testdir}/results" ] ; 
+then
+	mkdir ${testdir}/results
+fi
+
 for unit_test_path in ${testdir}/src/* ; 
 do
 	test_name=$(basename $unit_test_path)
@@ -31,10 +36,12 @@ do
 	fi
 	
 	cd $unit_test_path 
+	ln -s $testdir/results
 	ln -s $testdir/../../../test/Nangate45
-	$test_script $binary
-	unlink Nangate45
+	$test_script $binary ${testdir}/results
 	test_return_code=$?
+	unlink Nangate45
+	unlink results
 	cd $test_root
 
 	if [ $test_return_code == 0 ];

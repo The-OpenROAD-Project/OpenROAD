@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef POSTCTSOPT_H
-#define POSTCTSOPT_H
+#pragma once
 
 #include "CtsOptions.h"
 #include "Clock.h"
@@ -71,5 +70,3 @@ protected:
 };
 
 }
-
-#endif

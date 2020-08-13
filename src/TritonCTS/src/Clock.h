@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef CLOCK_H
-#define CLOCK_H
+#pragma once
 
 #include "Util.h"
 
@@ -233,5 +232,3 @@ private:
 };
 
 }
-
-#endif 

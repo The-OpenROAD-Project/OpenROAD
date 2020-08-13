@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef HTREEBUILDER_H
-#define HTREEBUILDER_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "CtsOptions.h"
@@ -251,5 +250,3 @@ protected:
 }; 
 
 }
-
-#endif

@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef CTS_UTIL_H
-#define CTS_UTIL_H
+#pragma once
 
 #include <ostream> 
 
@@ -123,5 +122,3 @@ protected:
 };
 
 }
-
-#endif

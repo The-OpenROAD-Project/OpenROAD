@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef DBWRAPPER_H
-#define DBWRAPPER_H
+#pragma once
 
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
@@ -98,5 +97,3 @@ private:
 };  
 
 }
-
-#endif

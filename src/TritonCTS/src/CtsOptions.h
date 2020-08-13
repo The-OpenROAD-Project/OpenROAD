@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef PARAMETERSFORCTS_H
-#define PARAMETERSFORCTS_H
+#pragma once
 
 #include "Util.h"
 #include "db.h"
@@ -202,5 +201,3 @@ private:
 };
 
 }
-
-#endif

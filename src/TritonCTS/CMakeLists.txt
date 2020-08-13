@@ -26,8 +26,20 @@ add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
         WORKING_DIRECTORY ${TRITONCTS_HOME}/src
         DEPENDS ${TRITONCTS_HOME}/src/tritoncts.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
 )
+set(SRC_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Clock.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/DbWrapper.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/HTreeBuilder.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/MakeTritoncts.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/PostCtsOpt.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/SinkClustering.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/StaEngine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TechChar.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TritonCTSKernelTcl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/CKMeans/clustering.cpp
+)
 
-file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
 
 

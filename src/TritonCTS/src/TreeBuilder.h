@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef CLOCKTREEBUILDER_H
-#define CLOCKTREEBUILDER_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -67,4 +66,3 @@ protected:
 };
 
 }
-#endif

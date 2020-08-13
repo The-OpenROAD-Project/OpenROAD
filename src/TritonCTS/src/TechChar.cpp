@@ -83,24 +83,23 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols) {
                                                          (unsigned) (lutLine.pinSlew), lutLine.totalPower,
                                                          (unsigned) (lutLine.pinArrival), (unsigned) (lutLine.totalcap), (unsigned) (lutLine.inSlew));
                 
-                if (lutLine.isPureWire) {
-                        continue;         
-                }
-                //Goes through the topology of the wiresegment and defines the buffer locations and masters.
-                int maxIndex = 0;
-                if (lutLine.topology.size() % 2 == 0) {
-                        maxIndex = lutLine.topology.size();
-                } else {
-                        maxIndex = lutLine.topology.size() - 1;
-                }
-                for (int topologyIndex = 0 ; topologyIndex < maxIndex ; topologyIndex++) {
-                        std::string topologyS = lutLine.topology[topologyIndex];
-                        //Each buffered topology always has a wire segment followed by a buffer.
-                        if (_masterNames.find(topologyS) == _masterNames.end()){
-                                //Is a number (i.e. a wire segment).
-                                segment.addBuffer(std::stod(topologyS)); 
+                if (!(lutLine.isPureWire)) {
+                        //Goes through the topology of the wiresegment and defines the buffer locations and masters.
+                        int maxIndex = 0;
+                        if (lutLine.topology.size() % 2 == 0) {
+                                maxIndex = lutLine.topology.size();
                         } else {
-                                segment.addBufferMaster(topologyS);
+                                maxIndex = lutLine.topology.size() - 1;
+                        }
+                        for (int topologyIndex = 0 ; topologyIndex < maxIndex ; topologyIndex++) {
+                                std::string topologyS = lutLine.topology[topologyIndex];
+                                //Each buffered topology always has a wire segment followed by a buffer.
+                                if (_masterNames.find(topologyS) == _masterNames.end()){
+                                        //Is a number (i.e. a wire segment).
+                                        segment.addBuffer(std::stod(topologyS)); 
+                                } else {
+                                        segment.addBufferMaster(topologyS);
+                                }
                         }
                 }
         }
@@ -179,13 +178,11 @@ void TechChar::parseLut(const std::string& file) {
                 WireSegment& segment = createWireSegment(length, load, outputSlew, 
                                                          power, delay, inputCap, inputSlew);
                 
-                if (isPureWire) {
-                        continue;         
-                }
-                
-                double bufferLocation;
-                while (ss >> bufferLocation) {
-                        segment.addBuffer(bufferLocation); 
+                if (!(isPureWire)) { 
+                        double bufferLocation;
+                        while (ss >> bufferLocation) {
+                                segment.addBuffer(bufferLocation); 
+                        }
                 }
         }
 
@@ -298,8 +295,6 @@ void TechChar::forEachWireSegment(uint8_t length, uint8_t load, uint8_t outputSl
         unsigned key = computeKey(length, load, outputSlew);
         
         if (_keyToWireSegments.find(key) == _keyToWireSegments.end()) {
-               //std::cout << "    [WARNING] No wire with the following characterization: [" 
-               //          << (unsigned) length << ", " << (unsigned) load << ", " << (unsigned) outputSlew << "]\n";
                return; 
         }
 
@@ -556,7 +551,7 @@ void TechChar::initCharacterization() {
         odb::dbMaster* testBuf = nullptr;
         for (std::string masterString : masterVector) {
                 testBuf = _db->findMaster(masterString.c_str());
-                if (testBuf == NULL){
+                if (testBuf == nullptr){
                         error("Buffer not found. Check your -buf_list input.\n");
                 }
                 _masterNames.insert(masterString);
@@ -801,20 +796,18 @@ void TechChar::setParasitics(std::vector<TechChar::SolutionData> topologiesVecto
                                 }
                         } else { // Parasitics for a net that is between two buffers. Need to iterate over the net ITerms.
                                 for (odb::dbITerm* iterm : netITerms) {
-                                        if (iterm == nullptr) {
-                                                continue;
-                                        }
+                                        if (iterm != nullptr) {
+                                                if (iterm->getIoType() == odb::dbIoType::INPUT) {
+                                                        lastPin = _dbNetworkChar->dbToSta(iterm);
+                                                }
 
-                                        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-                                                lastPin = _dbNetworkChar->dbToSta(iterm);
-                                        }
+                                                if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+                                                        firstPin = _dbNetworkChar->dbToSta(iterm);
+                                                }
 
-                                        if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-                                                firstPin = _dbNetworkChar->dbToSta(iterm);
-                                        }
-
-                                        if (firstPin != nullptr && lastPin != nullptr) {
-                                                break;
+                                                if (firstPin != nullptr && lastPin != nullptr) {
+                                                        break;
+                                                }
                                         }
                                 }
                         }
@@ -845,11 +838,11 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
         characterizationClockWave->push_back(1);
         const std::string characterizationClockName = "characlock" + std::to_string(setupWirelength);
         _openStaChar->makeClock(characterizationClockName.c_str(),
-                        NULL,
+                        nullptr,
                         false,
                         1.0,
                         characterizationClockWave,
-                        NULL);
+                        nullptr);
         sta::Clock* characterizationClock = sdcChar->findClock(characterizationClockName.c_str());
         //For each topology...
         for (SolutionData currentSolution : topologiesVector){
@@ -863,7 +856,7 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
                                         sta::RiseFallBoth::riseFall(),
                                         characterizationClock,
                                         sta::RiseFall::rise(),
-                                        NULL,
+                                        nullptr,
                                         false,
                                         false,
                                         sta::MinMaxAll::max(),
@@ -873,7 +866,7 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
                                         sta::RiseFallBoth::riseFall(),
                                         characterizationClock,
                                         sta::RiseFall::rise(),
-                                        NULL,
+                                        nullptr,
                                         false,
                                         false,
                                         sta::MinMaxAll::max(),
@@ -889,7 +882,7 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData cur
         ResultData currentResults;
         //Computations for power, requires the PowerResults class from OpenSTA.
         float totalPower = 0;
-        if (currentSolution.isPureWire == false){
+        if (!currentSolution.isPureWire){
                 //If it isn't a pure wire solution, get the sum of the total power of each buffer.
                 for (odb::dbInst* bufferInst : currentSolution.instVector){
                         sta::Instance* bufferInstSta = _dbNetworkChar->dbToSta(bufferInst);  
@@ -902,7 +895,7 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData cur
         currentResults.totalPower = totalPower;
         //Computations for input capacitance.
         float incap = 0;
-        if (currentSolution.isPureWire == true){
+        if (currentSolution.isPureWire){
                 //For pure-wire, sum of the current load with the capacitance of the net.
                 incap = currentLoad + (setupWirelength * _capPerDBU);
         } else {
@@ -957,9 +950,7 @@ TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData c
                                 topologyIndex++){
                                 //Iterates through the topologyDescriptor to set the new information(string representing the current buffer).
                                 std::string topologyS = currentSolution.topologyDescriptor[topologyIndex];
-                                if (_masterNames.find(topologyS) == _masterNames.end()){
-                                        continue; //Is a number (i.e. a wire segment). Ignore and go to the next one.
-                                } else {
+                                if (!(_masterNames.find(topologyS) == _masterNames.end())){
                                         if (topologyCounter == currentindex){
                                                 std::set<std::string>::iterator firstMaster = _masterNames.begin();
                                                 currentSolution.topologyDescriptor[topologyIndex] = *firstMaster;
@@ -981,9 +972,7 @@ TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData c
                                 topologyIndex < currentSolution.topologyDescriptor.size(); 
                                 topologyIndex++){
                                 std::string topologyS = currentSolution.topologyDescriptor[topologyIndex];
-                                if (_masterNames.find(topologyS) == _masterNames.end()){
-                                        continue; //Is a number (i.e. a wire segment). Ignore and go to the next one.
-                                } else {
+                                if (!(_masterNames.find(topologyS) == _masterNames.end())){
                                         if (topologyCounter == currentindex){
                                                 currentSolution.topologyDescriptor[topologyIndex] = masterString;
                                                 break;         
@@ -1008,19 +997,6 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
         for (auto& keyResults : _solutionMap) {
                 CharKey currentKey = keyResults.first;
                 std::vector<ResultData> resultVector = keyResults.second;
-                /*if (resultVector.size() <= 3){
-                        for (ResultData selectedResults : resultVector){
-                                selectedSolutions.push_back(selectedResults);
-                        }
-                } else {
-                        int indexLimit = resultVector.size() - 1;
-                        selectedSolutions.push_back(
-                                        resultVector[ static_cast<unsigned> (std::floor(0.1 * static_cast<float> (indexLimit))) ]);
-                        selectedSolutions.push_back(
-                                        resultVector[ static_cast<unsigned> (std::floor(0.5 * static_cast<float> (indexLimit))) ]);
-                        selectedSolutions.push_back(
-                                        resultVector[ static_cast<unsigned> (std::floor(0.9 * static_cast<float> (indexLimit))) ]);
-                }*/
                 for (ResultData selectedResults : resultVector){
                         selectedSolutions.push_back(selectedResults);
                 }
@@ -1035,39 +1011,38 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
         unsigned maxResultSlew = 0;
         std::vector <ResultData> convertedSolutions;
         for (ResultData currentSolution : selectedSolutions){
-                if (currentSolution.pinSlew > _charMaxSlew) {
-                        continue;
-                } 
-                ResultData convertedResult;
-                //Processing and normalizing of output slew.
-                convertedResult.pinSlew = normalizeCharResults(currentSolution.pinSlew, _charSlewInter, &minResultSlew, &maxResultSlew);
-                //Processing and normalizing of input slew.
-                convertedResult.inSlew = normalizeCharResults(currentSolution.inSlew, _charSlewInter, &minResultSlew, &maxResultSlew);
-                //Processing and normalizing of input cap.
-                convertedResult.totalcap = normalizeCharResults(currentSolution.totalcap, _charCapInter, &minResultCapacitance, &maxResultCapacitance);
-                //Processing and normalizing of load.
-                convertedResult.load = normalizeCharResults(currentSolution.load, _charCapInter, &minResultCapacitance, &maxResultCapacitance);
-                //Processing and normalizing of the wirelength.
-                convertedResult.wirelength = normalizeCharResults(currentSolution.wirelength, _options->getWireSegmentUnit(), &minResultWirelength, &maxResultWirelength);
-                //Processing and normalizing of delay.
-                convertedResult.pinArrival = static_cast<unsigned> (std::ceil(currentSolution.pinArrival / (_charSlewInter/5)));
-                //Add missing information.
-                convertedResult.totalPower = currentSolution.totalPower;
-                convertedResult.isPureWire = currentSolution.isPureWire;
-                std::vector<std::string> topologyResult;
-                for (int topologyIndex = 0 ; topologyIndex < currentSolution.topology.size() ; topologyIndex ++) {
-                        std::string topologyS = currentSolution.topology[topologyIndex];
-                        //Normalizes the strings that represents the topology too.
-                        if (_masterNames.find(topologyS) == _masterNames.end()){
-                                //Is a number (i.e. a wire segment).
-                                topologyResult.push_back(std::to_string(std::stod(topologyS) / static_cast<float> (currentSolution.wirelength) ));
-                        } else {
-                                topologyResult.push_back(topologyS);
+                if (currentSolution.pinSlew <= _charMaxSlew) {
+                        ResultData convertedResult;
+                        //Processing and normalizing of output slew.
+                        convertedResult.pinSlew = normalizeCharResults(currentSolution.pinSlew, _charSlewInter, &minResultSlew, &maxResultSlew);
+                        //Processing and normalizing of input slew.
+                        convertedResult.inSlew = normalizeCharResults(currentSolution.inSlew, _charSlewInter, &minResultSlew, &maxResultSlew);
+                        //Processing and normalizing of input cap.
+                        convertedResult.totalcap = normalizeCharResults(currentSolution.totalcap, _charCapInter, &minResultCapacitance, &maxResultCapacitance);
+                        //Processing and normalizing of load.
+                        convertedResult.load = normalizeCharResults(currentSolution.load, _charCapInter, &minResultCapacitance, &maxResultCapacitance);
+                        //Processing and normalizing of the wirelength.
+                        convertedResult.wirelength = normalizeCharResults(currentSolution.wirelength, _options->getWireSegmentUnit(), &minResultWirelength, &maxResultWirelength);
+                        //Processing and normalizing of delay.
+                        convertedResult.pinArrival = static_cast<unsigned> (std::ceil(currentSolution.pinArrival / (_charSlewInter/5)));
+                        //Add missing information.
+                        convertedResult.totalPower = currentSolution.totalPower;
+                        convertedResult.isPureWire = currentSolution.isPureWire;
+                        std::vector<std::string> topologyResult;
+                        for (int topologyIndex = 0 ; topologyIndex < currentSolution.topology.size() ; topologyIndex ++) {
+                                std::string topologyS = currentSolution.topology[topologyIndex];
+                                //Normalizes the strings that represents the topology too.
+                                if (_masterNames.find(topologyS) == _masterNames.end()){
+                                        //Is a number (i.e. a wire segment).
+                                        topologyResult.push_back(std::to_string(std::stod(topologyS) / static_cast<float> (currentSolution.wirelength) ));
+                                } else {
+                                        topologyResult.push_back(topologyS);
+                                }
                         }
+                        convertedResult.topology = topologyResult;
+                        //Send the results to a vector. This will be used to create the wiresegments for CTS.
+                        convertedSolutions.push_back(convertedResult);
                 }
-                convertedResult.topology = topologyResult;
-                //Send the results to a vector. This will be used to create the wiresegments for CTS.
-                convertedSolutions.push_back(convertedResult);
         }
         //Sets the min and max values and returns the result vector.
         _minSlew = minResultSlew;
@@ -1184,7 +1159,7 @@ void TechChar::create() {
                                         }
                                 }
                                 //If the currentSolution is not a pure-wire, update the buffer topologies.
-                                if (currentSolution.isPureWire == false) {
+                                if (!currentSolution.isPureWire) {
                                         currentSolution = updateBufferTopologies(currentSolution);
                                 }                        
                                 //For pure-wire solution buffersUpdate == 1, so it only runs once.

@@ -50,8 +50,6 @@ using ord::error;
 
 void HTreeBuilder::preSinkClustering(std::vector<std::pair<float, float>>& sinks, float maxDiameter, unsigned clusterSize) {
         std::vector<std::pair<float, float>>& points = sinks;
-
-        //
         
         _clock.forEachSink( [&] (ClockInst& inst) {
                         Point<double> normLocation( (float) inst.getX() / _wireSegmentUnit,
@@ -287,47 +285,45 @@ void HTreeBuilder::computeLevelTopology(unsigned level, double width, double hei
         for (unsigned charSegLength = _techChar->getMaxSegmentLength(); charSegLength >= 1; --charSegLength) {
                 unsigned numWires = (segmentLength - currLength) / charSegLength;
                 
-                if (numWires < 1) {
-                        continue;
-                }
-
-                currLength += numWires * charSegLength;
-                for (unsigned wireCount = 0; wireCount < numWires; ++wireCount) {
-                        unsigned outCap = 0, outSlew = 0;
-                        unsigned key = 0;
-                        if (_options->isSimpleSegmentEnabled()){
-                                remainingLength = remainingLength - charSegLength;
-                                
-                                if (segmentLength >= vertexBufferLength && (wireCount + 1 >= numWires) && _options->isVertexBuffersEnabled()){
-                                        remainingLength = 0;
-                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
-                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
-                                        remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit());
-                                } else {
-                                        if (remainingLength <= 0){
+                if (numWires >= 1) {
+                        currLength += numWires * charSegLength;
+                        for (unsigned wireCount = 0; wireCount < numWires; ++wireCount) {
+                                unsigned outCap = 0, outSlew = 0;
+                                unsigned key = 0;
+                                if (_options->isSimpleSegmentEnabled()){
+                                        remainingLength = remainingLength - charSegLength;
+                                        
+                                        if (segmentLength >= vertexBufferLength && (wireCount + 1 >= numWires) && _options->isVertexBuffersEnabled()){
+                                                remainingLength = 0;
                                                 key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
                                                                         SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
                                                 remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit());
                                         } else {
-                                                key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
-                                                                        SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, false, remainingLength);
-                                        }    
+                                                if (remainingLength <= 0){
+                                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, true, remainingLength);
+                                                        remainingLength = remainingLength + _options->getBufferDistance() / (_techChar->getLengthUnit());
+                                                } else {
+                                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap, false, remainingLength);
+                                                }    
+                                        }
+                                } else {
+                                        key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
+                                                                SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap);
                                 }
-                        } else {
-                                key = computeMinDelaySegment(charSegLength, inputSlew, inputCap, 
-                                                              SLEW_THRESHOLD, INIT_TOLERANCE, outSlew, outCap);
+                                
+                                _techChar->reportSegment(key);
+
+                                inputCap = std::max(outCap, _minInputCap);
+                                inputSlew = outSlew;
+                                topology.addWireSegment(key); 
+                                topology.setRemainingLength(remainingLength);
                         }
-                        
-                        _techChar->reportSegment(key);
 
-                        inputCap = std::max(outCap, _minInputCap);
-                        inputSlew = outSlew;
-                        topology.addWireSegment(key); 
-                        topology.setRemainingLength(remainingLength);
-                }
-
-                if (currLength == segmentLength) {
-                        break;
+                        if (currLength == segmentLength) {
+                                break;
+                        }
                 }
         }
        
@@ -366,24 +362,12 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSle
         for (unsigned load = 1; load <= _techChar->getMaxCapacitance(); ++load) {
                 for (unsigned outSlew = 1; outSlew <= _techChar->getMaxSlew(); ++outSlew) {
                         _techChar->forEachWireSegment(length, load, outSlew,
-                                [&] (unsigned key, const WireSegment& seg) {
-                                        //if (seg.getInputCap() != inputCap || seg.getInputSlew() != inputSlew) {
-                                        //        return;
-                                        //}
-
-                                        //std::cout << "[" << length << ", " << load << ", " << outSlew << "] =  "
-                                        //          << (unsigned) seg.getLength() << ", " << (unsigned) seg.getLoad() << ", " << (unsigned) seg.getOutputSlew()
-                                        //          << ", " << key << ", " << _techChar->computeKey(length, load, outSlew) << "\n";                                       
+                                [&] (unsigned key, const WireSegment& seg) {                                    
                                         
                                         if ( std::abs( (int) seg.getInputCap() - (int) inputCap ) > tolerance || 
                                              std::abs( (int) seg.getInputSlew() - (int) inputSlew ) > tolerance ) {
                                                 return;
-                                        }
-
-                                        //std::cout << "[" << length << ", " << load << ", " << outSlew << "] =  "
-                                        //          << (unsigned) seg.getLength() << ", " << (unsigned) seg.getLoad() << ", " << (unsigned) seg.getOutputSlew()
-                                        //          << ", " << key << ", " << _techChar->computeKey(length, load, outSlew) << "\n";                                       
-                                        
+                                        }                                     
 
                                         if (seg.getDelay() < minDelay) {
                                                 minDelay = seg.getDelay();
@@ -406,18 +390,14 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length, unsigned inputSle
                         outputCap  = bestBufSegment.getLoad();      
                         return minBufKey;
                 } else if (tolerance < MAX_TOLERANCE) {
-                        //std::cout << "    Could not find a buffered segment for [" << length << ", " 
-                        //          << inputSlew << ", " << inputCap << "]... ";
-                        //std::cout << "Increasing tolerance\n";
+                        //Increasing tolerance
                         return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, 
                                                       tolerance + 1, outputSlew, outputCap );
                 }
         }
 
         if (minKey == std::numeric_limits<unsigned>::max()) {
-                //std::cout << "    Could not find segment for [" << length << ", " 
-                //          << inputSlew << ", " << inputCap << "]... ";
-                //std::cout << "Increasing tolerance\n";
+                //Increasing tolerance
                 return computeMinDelaySegment(length, inputSlew, inputCap, slewThreshold, 
                                               tolerance + 1, outputSlew, outputCap );
         }
@@ -566,10 +546,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(LevelTopology& topology,
         Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
         Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
         double targetDist = branchPt2.computeDist(rootLocation);
-        //std::cout << "      R: "  << rootLocation << "\n"; 
-        //std::cout << "      B1: " << branchPt1 << " B2: " << branchPt2 << "\n";
-        //std::cout << "      D1: " << branchPt1.computeDist(rootLocation) 
-        //          << " D2: " << branchPt2.computeDist(rootLocation) << "\n";
        
         std::vector<std::pair<float, float>> means;
         means.emplace_back(branchPt1.getX(), branchPt1.getY());
@@ -582,14 +558,9 @@ void HTreeBuilder::refineBranchingPointsWithClustering(LevelTopology& topology,
                 branchPt2 = Point<double>(means[1].first, means[1].second);
         }
         
-        //std::cout << "      B1: " << branchPt1 << " B2: " << branchPt2 << "\n";
-        //std::cout << "      D1: " << branchPt1.computeDist(rootLocation) 
-        //          << " D2: " << branchPt2.computeDist(rootLocation) << "\n";
-        
         std::vector<std::vector<unsigned>> clusters;
         clusteringEngine.getClusters(clusters);
         for (unsigned clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
-                //std::cout << "    Cluster size: " << clusters[clusterIdx].size() << "\n";
                 for (unsigned elementIdx = 0; elementIdx < clusters[clusterIdx].size(); ++elementIdx) {
                         unsigned sinkIdx = clusters[clusterIdx][elementIdx];
                         Point<double> sinkLoc(sinks[sinkIdx].first, sinks[sinkIdx].second);
@@ -799,8 +770,6 @@ void SegmentBuilder::buildVerticalConnection(std::string forceBuffer) {
                         double location = wireSegment.getBufferLocation(buffer) * wireSegLen;
                         currLength += location;
                         double y = (isLowToHi) ? (_root.getY() + currLength) : (_root.getY() - currLength);
-                        //std::cout << "B " << Point<double>(x, y) << " " 
-                        //          << wireSegment.getBufferMaster(buffer) << "\n";
                         if (forceBuffer != ""){
                                 _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
                                                         forceBuffer,
@@ -815,7 +784,6 @@ void SegmentBuilder::buildVerticalConnection(std::string forceBuffer) {
                         ++_numBuffers;
                 }
         }
-        //std::cout << "currLength: " << currLength << " length: " << length << "\n";
 }
 
 void SegmentBuilder::buildHorizontalConnection(std::string forceBuffer) {
@@ -833,8 +801,6 @@ void SegmentBuilder::buildHorizontalConnection(std::string forceBuffer) {
                         double location = wireSegment.getBufferLocation(buffer) * wireSegLen;
                         currLength += location;
                         double x = (isLowToHi) ? (_root.getX() + currLength) : (_root.getX() - currLength);
-                        //std::cout << "B " << Point<double>(x, y) << " " 
-                        //          << wireSegment.getBufferMaster(buffer) << "\n";
                         if (forceBuffer != ""){
                                  _clock->addClockBuffer(_instPrefix + std::to_string(_numBuffers),
                                                         forceBuffer,
@@ -849,7 +815,6 @@ void SegmentBuilder::buildHorizontalConnection(std::string forceBuffer) {
                         ++_numBuffers;
                 }
         }
-        //std::cout << "currLength: " << currLength << " length: " << length << "\n";
 }
 
 void SegmentBuilder::buildLShapeConnection(std::string forceBuffer) {
@@ -858,7 +823,6 @@ void SegmentBuilder::buildLShapeConnection(std::string forceBuffer) {
         bool isLowToHiX = _root.getX() < _target.getX();
         bool isLowToHiY = _root.getY() < _target.getY();
 
-        //std::cout << "      Root: " << _root << " target: " << _target << "\n";
         double currLength = 0.0;
         for (unsigned wire = 0; wire < _techCharWires.size(); ++wire) {
                 unsigned techCharWireIdx = _techCharWires[wire];
@@ -899,7 +863,6 @@ void SegmentBuilder::buildLShapeConnection(std::string forceBuffer) {
                                 _drivingSubNet->addInst(newBuffer);
                         }
                         
-                        //std::cout << "      x: " << x << " y: " << y << "\n";
                         ++_numBuffers;
                 }
         }

@@ -1,3 +1,38 @@
+/////////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2019, University of California, San Diego.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #include "SinkClustering.h"
 #include <tuple>
 #include <iostream>
@@ -175,60 +210,59 @@ void SinkClustering::findBestMatching(unsigned groupSize) {
         for (unsigned i = 0; i < _thetaIndexVector.size(); ++i) {
                 //The - groupSize is because each solution will start on a different index. There is groupSize solutions.
                 for (unsigned j = 0; j < groupSize; ++j){
-                        if ((i + j) >= _thetaIndexVector.size()){
-                                continue;
-                        }
-                        //Add vectors in case they are no allocated yet.
-                        if (solutions.size() < (j + 1)){
-                                std::vector<std::vector<unsigned>> clusterIndexes;
-                                solutions.push_back(clusterIndexes);
-                                std::vector<std::vector<Point<double>>> clusterPoints;
-                                solutionPoints.push_back(clusterPoints);
-                        }
-                        if (solutions[j].size() < (clusters[j] + 1)) {
-                                std::vector<unsigned> indexesVector;
-                                solutions[j].push_back(indexesVector);
-                                std::vector<Point<double>> pointsVector;
-                                solutionPoints[j].push_back(pointsVector);
-                        }
-                        //Get the current point
-                        unsigned idx = _thetaIndexVector[i + j].second;
-                        Point<double>& p = _points[idx];
-                        double distanceCost = 0;
-                        //Check the distance from the current point to others in the cluster, if there are any.
-                        for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]){
-                                double cost = p.computeDist(comparisonPoint);
-                                if (cost > distanceCost){
-                                        distanceCost = cost;
+                        if (!((i + j) >= _thetaIndexVector.size())){
+                                //Add vectors in case they are no allocated yet.
+                                if (solutions.size() < (j + 1)){
+                                        std::vector<std::vector<unsigned>> clusterIndexes;
+                                        solutions.push_back(clusterIndexes);
+                                        std::vector<std::vector<Point<double>>> clusterPoints;
+                                        solutionPoints.push_back(clusterPoints);
                                 }
-                        }
-                        //If the cluster size is higher than groupSize, or the distance is higher than _maxInternalDiameter -> start another cluster and save the cost of the current one.
-                        if (solutionPoints[j][clusters[j]].size() >= groupSize || distanceCost > _maxInternalDiameter){
-                                //The cost is computed as the highest cost found on the current cluster
-                                if (previousCosts[j] == 0){
-                                        previousCosts[j] = _maxInternalDiameter;
+                                if (solutions[j].size() < (clusters[j] + 1)) {
+                                        std::vector<unsigned> indexesVector;
+                                        solutions[j].push_back(indexesVector);
+                                        std::vector<Point<double>> pointsVector;
+                                        solutionPoints[j].push_back(pointsVector);
                                 }
-                                costs[j] += previousCosts[j];
-                                //A new cluster is defined
-                                clusters[j] = clusters[j] + 1;
-                                //The cost was already saved, so the same structure can be used for the next cluster.
-                                previousCosts[j] = 0;
-                        } else {
-                                //Node will be a part of the current cluster, thus, save the highest cost.
-                                if (distanceCost > previousCosts[j]){
-                                        previousCosts[j] = distanceCost;
+                                //Get the current point
+                                unsigned idx = _thetaIndexVector[i + j].second;
+                                Point<double>& p = _points[idx];
+                                double distanceCost = 0;
+                                //Check the distance from the current point to others in the cluster, if there are any.
+                                for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]){
+                                        double cost = p.computeDist(comparisonPoint);
+                                        if (cost > distanceCost){
+                                                distanceCost = cost;
+                                        }
                                 }
+                                //If the cluster size is higher than groupSize, or the distance is higher than _maxInternalDiameter -> start another cluster and save the cost of the current one.
+                                if (solutionPoints[j][clusters[j]].size() >= groupSize || distanceCost > _maxInternalDiameter){
+                                        //The cost is computed as the highest cost found on the current cluster
+                                        if (previousCosts[j] == 0){
+                                                previousCosts[j] = _maxInternalDiameter;
+                                        }
+                                        costs[j] += previousCosts[j];
+                                        //A new cluster is defined
+                                        clusters[j] = clusters[j] + 1;
+                                        //The cost was already saved, so the same structure can be used for the next cluster.
+                                        previousCosts[j] = 0;
+                                } else {
+                                        //Node will be a part of the current cluster, thus, save the highest cost.
+                                        if (distanceCost > previousCosts[j]){
+                                                previousCosts[j] = distanceCost;
+                                        }
+                                }
+                                //Add vectors in case they are no allocated yet. (Depends if a new cluster was defined above)
+                                if (solutions[j].size() < (clusters[j] + 1)) {
+                                        std::vector<unsigned> indexesVector;
+                                        solutions[j].push_back(indexesVector);
+                                        std::vector<Point<double>> pointsVector;
+                                        solutionPoints[j].push_back(pointsVector);
+                                }
+                                //Save the current Point in it's respective cluster. (Depends if a new cluster was defined above)
+                                solutionPoints[j][clusters[j]].push_back(p);   
+                                solutions[j][clusters[j]].push_back(idx);
                         }
-                        //Add vectors in case they are no allocated yet. (Depends if a new cluster was defined above)
-                        if (solutions[j].size() < (clusters[j] + 1)) {
-                                std::vector<unsigned> indexesVector;
-                                solutions[j].push_back(indexesVector);
-                                std::vector<Point<double>> pointsVector;
-                                solutionPoints[j].push_back(pointsVector);
-                        }
-                        //Save the current Point in it's respective cluster. (Depends if a new cluster was defined above)
-                        solutionPoints[j][clusters[j]].push_back(p);   
-                        solutions[j][clusters[j]].push_back(idx);
                 }
         }
 

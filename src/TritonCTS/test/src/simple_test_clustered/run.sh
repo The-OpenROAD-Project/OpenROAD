@@ -3,15 +3,15 @@
 GREEN=0
 RED=2
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -ne 2 ]; then
 	exit 2
 fi
 
 binary=$1
 
-$binary -no_init < run.tcl > test.log 2>&1
+$binary -no_init < run.tcl > ${2}/simple_test_clus.log 2>&1
 
-if grep -q "Fanout distribution for the current clock = 2:4, 3:3, 4:3, 5:2, 6:6, 7:2, 8:4, 9:3, 10:42, 12:1, 13:1." test.log;
+if grep -q "Fanout distribution for the current clock = 7:2, 8:2, 10:30." ${2}/simple_test_clus.log; 
 then
 	exit $GREEN
 else

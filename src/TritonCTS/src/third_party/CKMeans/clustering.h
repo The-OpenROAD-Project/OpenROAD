@@ -58,15 +58,10 @@ class clustering {
 	vector<flop> flops;
 	vector<vector<flop*>> clusters;
 	
-	//map<unsigned, vector<pair<float, float>>> shifts;  // relative x- and y-shifts of slots w.r.t tray 
 	int verbose = 1;
 	int TEST_LAYOUT = 1;
 	int TEST_ITER = 1;
 	std::string plotFile;
-	
-	//std::pair<float,float> branchPoint;
-	//float minDist;
-	//float maxDist;
 	
 	float segmentLength;
 	std::pair<float, float> branchingPoint;

@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef CHARACTERIZATION_H
-#define CHARACTERIZATION_H
+#pragma once
 
 #include "CtsOptions.h"
 #include "openroad/OpenRoad.hh"
@@ -278,5 +277,3 @@ protected:
 };
 
 }
-
-#endif

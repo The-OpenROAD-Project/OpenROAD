@@ -56,14 +56,7 @@
 #define CPLEX_CLUSTERING
 
 namespace CKMeans{
-using namespace std;
 using namespace lemon;
-
-int myrandom (int i) {
-    //srand(time(NULL));
-    return rand()%i;
-}
-
 
 clustering::clustering(const vector<std::pair<float, float>>& sinks, 
                        float xBranch, float yBranch) {
@@ -90,19 +83,9 @@ void clustering::iterKmeans(unsigned ITER, unsigned N, unsigned CAP, unsigned ID
 	unsigned midIdx = _means.size() / 2 - 1;
 	segmentLength = std::abs(_means[midIdx].first - _means[midIdx + 1].first) +
 					std::abs(_means[midIdx].second - _means[midIdx + 1].second);
-        //std::cout << " _means[midIdx].first " << _means[midIdx].first << " _means[midIdx + 1].first "  << _means[midIdx + 1].first << "\n";
-        //std::cout << " _means[midIdx].second " << _means[midIdx].second << " _means[midIdx + 1].second "  << _means[midIdx + 1].second << "\n";
-	//cout << "Segment length = " << segmentLength << "\n";
-	
-	//branchingPoint = make_pair(_means[midIdx].first + (_means[midIdx + 1].first - _means[midIdx].first)/2.0,
-							   //_means[midIdx].second + (_means[midIdx + 1].second - _means[midIdx].second)/2.0);
 	
     float max_silh = -1;
     for (unsigned i = 0; i < ITER; ++i) {
-        //if (verbose > 0)
-	//		cout << "Iteration " << i << " ";
-        //if (TEST_ITER == 1) 
-	//		cout << "Iteration " << i << endl;
         vector<pair<float,float>> means = _means;
         float silh = Kmeans(N, CAP, IDX, means, MAX, power);
         if (silh > max_silh) {
@@ -121,35 +104,14 @@ void clustering::iterKmeans(unsigned ITER, unsigned N, unsigned CAP, unsigned ID
     // print clustering solution
     if (TEST_LAYOUT == 1) {
         ofstream outFile;
-        //outFile.open("cluster.sol");
         for (unsigned i = 0; i < _means.size(); ++i) {
             outFile << "TRAY " << i << " " << _means[i].first << " " << _means[i].second << endl;
         }
         for (unsigned i = 0; i < flops.size(); ++i) {
             flop * f = &flops[i];
-            //outFile << "FLOP " << f->name << " " << flops[i]->match_idx[IDX].first << endl;
         }
         outFile.close();
     }
-
-    //if (CAP < 10) 
-    //    cout << "Best SILH  (" << CAP  << ") is " << max_silh << endl;
-    //else 
-    //    cout << "Best SILH (" << CAP  << ") is " << max_silh << endl;
-	
-//	cout << "Means position (" << _means.size() << "):\n";
-//	for (unsigned i = 0; i < _means.size(); ++i) {
-//		cout << _means[i].first << " " << _means[i].second << "\n";
-//	}
-	
-//	cout << "Segment length = " << segmentLength << "\n";
-//	cout << "Actual segment sizes before fix: ";
-//	for (unsigned i = 0; i < _means.size() - 1; ++i) {
-//		float currSegmentLength = std::abs(_means[i].first - _means[i + 1].first) +
-//								  std::abs(_means[i].second - _means[i + 1].second);
-//		cout << currSegmentLength << " "; 
-//	}
-//	cout << "\n";
 	
 	fixSegmentLengths(_means);
 	
@@ -186,15 +148,9 @@ void clustering::fixSegmentLengths(vector<pair<float, float>>& _means) {
 void clustering::fixSegment(const pair<float, float>& fixedPoint, pair<float, float>& movablePoint, float targetDist) {
 	float actualDist = calcDist(fixedPoint, movablePoint);
 	float ratio =  targetDist / actualDist;
-        //std::cout << "tDist: " << targetDist << "\n";
-	//ratio = std::min(1.75, std::max(0.25, (double)ratio));
 	
 	float dx = (fixedPoint.first - movablePoint.first) * ratio;
 	float dy = (fixedPoint.second - movablePoint.second) * ratio;
-
-	//cout << "Fixed = (" << fixedPoint.first << ", " << fixedPoint.second << ")\n";
-	//cout << "Movable = (" << movablePoint.first << ", " << movablePoint.second << ")\n";
-	//cout << "delta = (" << dx << ", " << dy << ")\n";
 	
 	movablePoint.first = fixedPoint.first - dx;
 	movablePoint.second = fixedPoint.second - dy;
@@ -223,17 +179,6 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
     unsigned iter = 1;
     while (!stop) {
 
-        //if (TEST_LAYOUT == 1 || verbose > 1)
-        //cout << "ITERATION " << iter << endl;
-
-        // report initial means
-        //if (TEST_LAYOUT == 1 || verbose > 1) {
-        //cout << "INIT Tray locations " << endl;
-        //for (unsigned i = 0; i < N; ++i)
-        //    cout << means[i].first << " " << means[i].second << endl;
-        // cout << endl;
-        //}
-
         if (verbose > 1) {
 			cout << "match .." << endl;
 		}
@@ -260,63 +205,27 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
             clusters[position].push_back(f);
         } 
 
-        // always use mode 1
-        unsigned update_mode = 1;
-
         if (verbose > 1)
         	cout << "move .." << endl;
         float delta = 0;
-        // const vector<pair<float, float>> pre_means(means);
-        if (update_mode == 0) {
-            // LP-based tray movement
-            // delta = LPMove(means, CAP, IDX);
-        } else if (update_mode == 1) {
-            // use weighted center
-            for (unsigned i = 0; i < N; ++i) {
-                float sum_x = 0, sum_y = 0;
-                for (unsigned j = 0; j < clusters[i].size(); ++j) {
-                    sum_x += clusters[i][j]->x;
-                    sum_y += clusters[i][j]->y;
-                }
-                float pre_x = means[i].first;
-                float pre_y = means[i].second;
-                //means[i] = make_pair(sum_x/clusters[i].size(), sum_y/clusters[i].size());
-                //delta += abs(pre_x - means[i].first) + abs(pre_y - means[i].second);
-				
-				if (clusters[i].size() > 0) {
-					means[i] = make_pair(sum_x/clusters[i].size(), sum_y/clusters[i].size());
-					delta += abs(pre_x - means[i].first) + abs(pre_y - means[i].second);
-				} else {
-					//cout << "WARNING: Empty cluster [" << i << "] " <<
-					//	"in a level with " << clusters.size() << " clusters.\n";
-				}
-            }
-        }
 
-        // report clustering solution
-//        if (TEST_LAYOUT == 1 || verbose > 1) {
-//        	for (unsigned i = 0; i < N; ++i) {
-//            	cout << "Cluster " << i << " (" << clusters[i].size() << ")" << endl;
-//            	for (unsigned j = 0; j < clusters[i].size(); ++j) {
-//                	cout << clusters[i][j]->x << " " << clusters[i][j]->y << endl;
-//            	}
-//            	cout << endl;
-//        	}
-//              plotClusters(clusters, means, pre_means, iter);
-//        }
+        // use weighted center
+        for (unsigned i = 0; i < N; ++i) {
+            float sum_x = 0, sum_y = 0;
+            for (unsigned j = 0; j < clusters[i].size(); ++j) {
+                sum_x += clusters[i][j]->x;
+                sum_y += clusters[i][j]->y;
+            }
+            float pre_x = means[i].first;
+            float pre_y = means[i].second;
+            
+            if (clusters[i].size() > 0) {
+                means[i] = make_pair(sum_x/clusters[i].size(), sum_y/clusters[i].size());
+                delta += abs(pre_x - means[i].first) + abs(pre_y - means[i].second);
+            } 
+        }
 		
 		this->clusters = clusters;
-		
-        // report final means
-		//cout << "Branching point\n";
-		//cout << branchPoint.first << " " << branchPoint.second << "\n";
-        //if (TEST_LAYOUT == 1 || verbose > 1) {
-        	//cout << "FINAL Tray locations " << endl;
-	        //for (unsigned i = 0; i < N; ++i) {
-    	    //    cout << means[i].first << " " << means[i].second << " (" << calcDist(means[i], branchPoint) << ")"  << endl;
- 	        //}
-    	    //cout << endl;
-        //}
 
         if (TEST_LAYOUT == 1 || TEST_ITER == 1) {
         	float silh = calcSilh(means, CAP, IDX);        	
@@ -329,8 +238,6 @@ float clustering::Kmeans (unsigned N, unsigned CAP, unsigned IDX, vector<pair<fl
     }
 
     float silh = calcSilh(means, CAP, IDX);
-    //if (verbose > 0)
-    //		cout << "SILH (" << CAP  << ") is " << silh << endl;
 
     return silh;
 }
@@ -376,7 +283,6 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
 	ListDigraph g;
     // collection of nodes in the flow
     vector<ListDigraph::Node> f_nodes, c_nodes;
-    //vector<vector<ListDigraph::Node>> s_nodes;
     // collection of edges in the flow
     vector<ListDigraph::Arc> i_edges, d_edges, /*g_edges,*/ o_edges;
 
@@ -390,15 +296,6 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
         ListDigraph::Node v = g.addNode();
         f_nodes.push_back(v);
     }
-    // nodes for slots
-//    for (unsigned i = 0; i < means.size(); ++i) {
-//        vector<ListDigraph::Node> dummy;
-//        for (unsigned j = 0; j < CAP; ++j) {
-//            ListDigraph::Node v = g.addNode();
-//            dummy.push_back(v);
-//        }
-//        s_nodes.push_back(dummy);
-//    }
     // nodes for clusters
     for (unsigned i = 0; i < means.size(); ++i) {
         ListDigraph::Node v = g.addNode();
@@ -415,36 +312,16 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
         for (unsigned j = 0; j < means.size(); ++j) {
             float _x = means[j].first;
             float _y = means[j].second;
-            //for (unsigned k = 0; k < CAP; ++k) {
-//                pair<float, float> slot_loc;
-//                if (TEST_LAYOUT == 1) {
-//                    //slot_loc = make_pair(_x, _y);
-//                    slot_loc = make_pair(_x, _y);
-//                } else {
-//                    slot_loc = make_pair(_x, _y);
-//                }
-                //float d = calcDist(slot_loc, flops[i]);
-				float d = calcDist(make_pair(_x, _y), &flops[i]);
-                if (d > DIST){
-                    continue;
-                }
+
+            float d = calcDist(make_pair(_x, _y), &flops[i]);
+            if (d <= DIST && std::pow(d, power) < std::numeric_limits<int>::max()){
                 d = std::pow(d, power);
-                if (d >= std::numeric_limits<int>::max()){
-                    continue;
-                }
                 ListDigraph::Arc e = g.addArc(f_nodes[i], c_nodes[j]);
                 d_edges.push_back(e);
                 costs.push_back(d);
-            //}
+            }
         }
     }
-    // edges between slots and clusters
-//    for (unsigned i = 0; i < means.size(); ++i) {
-//        for (unsigned j = 0; j < CAP; ++j) {
-//            ListDigraph::Arc e = g.addArc(c_nodes[i][j], c_nodes[i]);
-//            g_edges.push_back(e);
-//        }
-//    }
     // edges between clusters and sink
     for (unsigned i = 0; i < means.size(); ++i) {
         ListDigraph::Arc e = g.addArc(c_nodes[i], t);
@@ -465,12 +342,7 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
         f_cap[d_edges[i]]  = 1;
         f_cost[d_edges[i]] = costs[i];
     }
-//    for (unsigned i = 0; i < g_edges.size(); ++i) {
-//        f_cap[g_edges[i]]  = 1;
-//    }
-	
-	
-	//cout << "CAP" << CAP << " flops size: " << flops.size() << " remaining " << remaining << "\n";
+
     for (unsigned i = 0; i < o_edges.size(); ++i) {
 		if (i < remaining) {
 			f_cap[o_edges[i]]  = CAP + 1;
@@ -481,11 +353,10 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
 
     for (unsigned i = 0; i < f_nodes.size(); ++i)
         node_map[f_nodes[i]] = make_pair(i, make_pair(-1,-1));
-//    for (unsigned i = 0; i < s_nodes.size(); ++i)
-//        for (unsigned j = 0; j < CAP; ++j)
-//            node_map[s_nodes[i][j]] = make_pair(-1, make_pair(i,j));
+
     for (unsigned i = 0; i < c_nodes.size(); ++i)
         node_map[c_nodes[i]] = make_pair(-1, make_pair(i,0));
+
     node_map[s] = make_pair(-2, make_pair(-2, -2));
     node_map[t] = make_pair(-2, make_pair(-2, -2));
 
@@ -502,8 +373,6 @@ void clustering::minCostFlow (const vector<pair<float, float>>& means, unsigned 
     flow.stSupply(s, t, means.size()*CAP + remaining);
     flow.run();
     flow.flowMap(f_sol);
-    //if (verbose > 0)
-    //cout << "Total flow cost = " << flow.totalCost() << endl;
 
     for (ListDigraph::ArcIt it(g); it != INVALID; ++it) {
         if (f_sol[it] != 0) {

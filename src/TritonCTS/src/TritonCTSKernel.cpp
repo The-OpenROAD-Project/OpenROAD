@@ -106,15 +106,13 @@ void TritonCTSKernel::checkCharacterization() {
         _techChar.forEachWireSegment( [&] (unsigned idx, const WireSegment& wireSeg) {
                 for (unsigned buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
                         std::string master = wireSeg.getBufferMaster(buf);
-                        if (visitedMasters.count(master) != 0) {
-                                continue;
+                        if (visitedMasters.count(master) == 0) {
+                                if (_dbWrapper.masterExists(master)) {
+                                        visitedMasters.insert(master);
+                                } else {
+                                        error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
+                                }
                         }
-                        
-                        if (_dbWrapper.masterExists(master)) {
-                                visitedMasters.insert(master);
-                        } else {
-                                error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
-                        }           
                 }
         });
 
