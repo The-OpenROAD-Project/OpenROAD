@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 ###############################################################################
 ##
 ## BSD 3-Clause License
@@ -33,16 +35,29 @@
 ##
 ###############################################################################
 
-testsdir=$1
-srcdir="$testsdir/src"
+GREEN=0
+RED=2
 
-for subdir in $srcdir/*;
-do
-    rm -f ${subdir}/*.txt
-    rm -f ${subdir}/*.log
-    rm -f ${subdir}/out.guide
-    rm -f ${subdir}/out.def
-    rm -f ${subdir}/out2.guide
-    rm -f ${subdir}/route.guide 
-done
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
+binary=$1
+testdir=$2
+
+$binary -no_init run.tcl > log.txt 2>&1
+
+diff golden.guide out.guide > guides_diff.log
+status=$?
+
+mkdir -p ../../results/guides
+cp log.txt ../../results/guides/fastroute.log
+cp guides_diff.log ../../results/guides/
+
+if [ $status -eq 0 ]
+then
+	exit $GREEN
+else
+        echo "     - [ERROR] Test failed. Check $testdir/src/guides/guides_diff.log"
+	exit $RED
+fi

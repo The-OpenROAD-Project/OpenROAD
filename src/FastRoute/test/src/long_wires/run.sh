@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 ###############################################################################
 ##
 ## BSD 3-Clause License
@@ -33,16 +35,25 @@
 ##
 ###############################################################################
 
-testsdir=$1
-srcdir="$testsdir/src"
+GREEN=0
+RED=2
 
-for subdir in $srcdir/*;
-do
-    rm -f ${subdir}/*.txt
-    rm -f ${subdir}/*.log
-    rm -f ${subdir}/out.guide
-    rm -f ${subdir}/out.def
-    rm -f ${subdir}/out2.guide
-    rm -f ${subdir}/route.guide 
-done
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
+binary=$1
+testdir=$2
+
+$binary -no_init run.tcl > test.log 2>&1
+
+mkdir -p ../../results/long_wires
+cp test.log ../../results/long_wires/test.log
+
+if grep -q -e "#Modified segments: 62" ./test.log;
+then
+	exit $GREEN
+else
+        echo "     - [ERROR] Test failed. Check $testdir/src/long_wires/test.log"
+	exit $RED
+fi

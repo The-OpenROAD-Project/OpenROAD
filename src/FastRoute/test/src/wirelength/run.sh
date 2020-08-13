@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 ###############################################################################
 ##
 ## BSD 3-Clause License
@@ -33,16 +35,45 @@
 ##
 ###############################################################################
 
-testsdir=$1
-srcdir="$testsdir/src"
+GREEN=0
+RED=2
 
-for subdir in $srcdir/*;
-do
-    rm -f ${subdir}/*.txt
-    rm -f ${subdir}/*.log
-    rm -f ${subdir}/out.guide
-    rm -f ${subdir}/out.def
-    rm -f ${subdir}/out2.guide
-    rm -f ${subdir}/route.guide 
-done
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
+binary=$1
+testdir=$2
+
+$binary -no_init run.tcl > test.log 2>&1
+
+gold_wl=$(grep -Eo "[0-9]+\.[0-9]+" golden.wl)
+reported_wl=$(grep -Eo "[0-9]+\.[0-9]+" test.log | tail -2 | head -1)
+
+gold_wl=${gold_wl%.*}
+reported_wl=${reported_wl%.*}
+
+difference=0
+
+if [ $gold_wl -lt $reported_wl ];
+then
+	gold_wl=$(( $gold_wl*100 ))
+	ratio=$(( $gold_wl/$reported_wl ))
+
+	difference=$(( 100-$ratio ))
+else
+	reported_wl=$(( $reported_wl*100 ))
+	ratio=$(( $reported_wl/$gold_wl ))
+	difference=$(( 100-$ratio ))
+fi
+
+mkdir -p ../../results/wirelength
+cp test.log ../../results/wirelength/fastroute.log
+
+if [ $difference -lt 5 ];
+then
+	exit $GREEN
+else
+    echo "     - [ERROR] Test failed. Wirelength difference of $difference%"
+	exit $RED
+fi

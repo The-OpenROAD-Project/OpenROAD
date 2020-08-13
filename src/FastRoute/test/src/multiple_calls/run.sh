@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 ###############################################################################
 ##
 ## BSD 3-Clause License
@@ -33,16 +35,26 @@
 ##
 ###############################################################################
 
-testsdir=$1
-srcdir="$testsdir/src"
+GREEN=0
+RED=2
 
-for subdir in $srcdir/*;
-do
-    rm -f ${subdir}/*.txt
-    rm -f ${subdir}/*.log
-    rm -f ${subdir}/out.guide
-    rm -f ${subdir}/out.def
-    rm -f ${subdir}/out2.guide
-    rm -f ${subdir}/route.guide 
-done
+if [ "$#" -ne 2 ]; then
+	exit 2
+fi
 
+binary=$1
+testdir=$2
+
+$binary -no_init run.tcl > test.log 2>&1
+
+if [ $? -eq 0 ];
+then
+    mkdir -p ../../results/multiple_calls
+    cp test.log ../../results/multiple_calls/test.log
+	exit $GREEN
+else
+    mkdir -p ../../results/multiple_calls
+    cp test.log ../../results/multiple_calls/test.log
+    echo "     - [ERROR] Test failed. Wirelength difference of $difference%"
+	exit $RED
+fi
