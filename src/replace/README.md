@@ -11,7 +11,7 @@ RePlAce: Advancing Solution Quality and Routability Validation in Global Placeme
 - Supports Mixed-size placement mode.
 - Supports fast image drawing modes with CImg library.
 
-| <img src="/doc/image/adaptec2.inf.gif" width=350px> | <img src="/doc/image/coyote_movie.gif" width=400px> | 
+| <img src="./doc/image/adaptec2.inf.gif" width=350px> | <img src="./doc/image/coyote_movie.gif" width=400px> | 
 |:--:|:--:|
 | *Visualized examples from ISPD 2006 contest; adaptec2.inf* |*Real-world Design: Coyote (TSMC16 7.5T)* |
 
@@ -58,7 +58,7 @@ global_placement
 ### Other Options
 * __verbose_level__ : Set verbose level for RePlAce. Default: 1 [0-10, int]
 
-Note that all of the TCL commands are defined in the [replace.tcl](../src/replace.tcl) and [replace.i](../src/replace.i).
+Note that all of the TCL commands are defined in the [replace.tcl](./src/replace.tcl) and [replace.i](./src/replace.i).
 
 ## Verified/supported Technologies
 * ASAP 7
@@ -69,16 +69,17 @@ Note that all of the TCL commands are defined in the [replace.tcl](../src/replac
 * Fujitsu 55
 * TSMC 65
 
-## 3rd Party Module List
-* [CImg](https://github.com/dtschump/CImg)
-    
-## License
-* BSD-3-clause License [[Link]](LICENSE)
-* Code found under the Modules directory (e.g., submodules CImg source files) have individual copyright and license declarations at each folder.
-
 
 ## Authors
-- Paper reference: C.-K. Cheng, A. B. Kahng, I. Kang and L. Wang, "RePlAce: Advancing Solution Quality and Routability Validation in Global Placement", to appear in IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 2018.  (Digital Object Identifier: 10.1109/TCAD.2018.2859220)
-- Mingyu Woo rewrites the whole RePlAce with a clean C++11 structure.
-- The timing-Driven mode has been implemented by Mingyu Woo (only available in [standalone branch](https://github.com/The-OpenROAD-Project/RePlAce/tree/standalone).)
-- Timing-Driven and Routability-Driven mode are ongoing with the clean-code structure (in [openroad branch](https://github.com/The-OpenROAD-Project/RePlAce/tree/openroad).)
+- Authors/maintainer since Jan. 2020: Mingyu Woo.
+- Thanks for open-sourcing the previous project from Ilgweon Kang and Lutong Wang. (respective Ph.D. advisors: Chung-Kuan Cheng, Andrew. B. Kahng). Also thanks for open-sourcing the previous ePlace-MS/ePlace project from Dr. Jingwei Lu. 
+- Paper reference: 
+  - C.-K. Cheng, A. B. Kahng, I. Kang and L. Wang, "RePlAce: Advancing Solution Quality and Routability Validation in Global Placement", IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 38(9) (2019), pp. 1717-1730.
+  - J. Lu, P. Chen, C.-C. Chang, L. Sha, D. J.-H. Huang, C.-C. Teng and C.-K. Cheng, "ePlace: Electrostatics based Placement using Fast Fourier Transform and Nesterov's Method", ACM TODAES 20(2) (2015), article 17.
+  - J. Lu, H. Zhuang, P. Chen, H. Chang, C.-C. Chang, Y.-C. Wong, L. Sha, D. J.-H. Huang, Y. Luo, C.-C. Teng and C.-K. Cheng, "ePlace-MS: Electrostatics based Placement for Mixed-Size Circuits", IEEE TCAD 34(5) (2015), pp. 685-698.
+- The timing-driven mode has been implemented by Mingyu Woo (only available in [legacy repo in standalone branch](https://github.com/The-OpenROAD-Project/RePlAce/tree/standalone).)
+- The routability-driven mode has been implemented by Mingyu Woo.
+- The timing-driven mode implementation is ongoing with the clean-code structure. 
+
+## License
+* BSD-3-clause License [[Link]](./LICENSE)
