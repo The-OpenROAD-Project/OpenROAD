@@ -70,16 +70,19 @@ Note that all of the TCL commands are defined in the [replace.tcl](./src/replace
 * TSMC 65
 
 
-## Authors
+ ## Authors
 - Authors/maintainer since Jan 2020: Mingyu Woo (Ph.D. Advisor: Andrew. B. Kahng)
-- Thanks for open-sourcing the previous project from Ilgweon Kang and Lutong Wang. (respective Ph.D. advisors: Chung-Kuan Cheng, Andrew. B. Kahng). Also thanks for open-sourcing the previous ePlace-MS/ePlace project from Dr. Jingwei Lu. 
-- Paper reference: 
+- Original open-sourcing of RePlAce: August 2018, by Ilgweon Kang (Ph.D. Advisor: Chung-Kuan Cheng), Lutong Wang (Ph.D. Advisor: Andrew B. Kahng), and Mingyu Woo (Ph.D. Advisor: Andrew B. Kahng).  
+- Also thanks to Dr. Jingwei Lu for open-sourcing the previous ePlace-MS/ePlace project from Dr. Jingwei Lu. 
+
+- Paper reference:
   - C.-K. Cheng, A. B. Kahng, I. Kang and L. Wang, "RePlAce: Advancing Solution Quality and Routability Validation in Global Placement", IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 38(9) (2019), pp. 1717-1730.
   - J. Lu, P. Chen, C.-C. Chang, L. Sha, D. J.-H. Huang, C.-C. Teng and C.-K. Cheng, "ePlace: Electrostatics based Placement using Fast Fourier Transform and Nesterov's Method", ACM TODAES 20(2) (2015), article 17.
   - J. Lu, H. Zhuang, P. Chen, H. Chang, C.-C. Chang, Y.-C. Wong, L. Sha, D. J.-H. Huang, Y. Luo, C.-C. Teng and C.-K. Cheng, "ePlace-MS: Electrostatics based Placement for Mixed-Size Circuits", IEEE TCAD 34(5) (2015), pp. 685-698.
+
 - The timing-driven mode has been implemented by Mingyu Woo (only available in [legacy repo in standalone branch](https://github.com/The-OpenROAD-Project/RePlAce/tree/standalone).)
 - The routability-driven mode has been implemented by Mingyu Woo.
-- The timing-driven mode implementation is ongoing with the clean-code structure. 
+- Timing-driven mode re-implementation is ongoing with the current clean-code structure.   
 
 ## License
 * BSD-3-clause License [[Link]](./LICENSE)
