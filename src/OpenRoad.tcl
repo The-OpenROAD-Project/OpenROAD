@@ -36,7 +36,7 @@
 proc show_openroad_splash {} {
   puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
 This program is licensed under the BSD-3 license. See the LICENSE file for details. 
-Components of the program may be licensed under more restrictive licenses which must be honored."
+Components of this program may be licensed under more restrictive licenses which must be honored."
 }
 
 # -library is the default
@@ -48,10 +48,10 @@ proc read_lef { args } {
 
   set filename [file nativename $args]
   if { ![file exists $filename] } {
-    sta::sta_error "$filename does not exist."
+    ord::error "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    sta::sta_error "$filename is not readable."
+    ord::error "$filename is not readable."
   }
 
   set make_tech [info exists flags(-tech)]
@@ -71,13 +71,13 @@ proc read_def { args } {
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename $args]
   if { ![file exists $filename] } {
-    sta::sta_error "$filename does not exist."
+    ord::error "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    sta::sta_error "$filename is not readable."
+    ord::error "$filename is not readable."
   }
   if { ![ord::db_has_tech] } {
-    sta::sta_error "no technology has been read."
+    ord::error "no technology has been read."
   }
   set order_wires [info exists flags(-order_wires)]
   set continue_on_errors [info exists flags(-continue_on_errors)]
@@ -97,7 +97,7 @@ proc write_def { args } {
 	     || $version == "5.5" \
 	     || $version == "5.4" \
 	     || $version == "5.3") } {
-      sta::sta_error "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
+      ord::error "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
     }
   }
 
@@ -112,10 +112,10 @@ proc read_db { args } {
   sta::check_argc_eq1 "read_db" $args
   set filename [file nativename $args]
   if { ![file exists $filename] } {
-    sta::sta_error "$filename does not exist."
+    ord::error "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    sta::sta_error "$filename is not readable."
+    ord::error "$filename is not readable."
   }
   ord::read_db_cmd $filename
 }
@@ -124,17 +124,19 @@ sta::define_cmd_args "write_db" {filename}
 
 proc write_db { args } {
   sta::check_argc_eq1 "write_db" $args
-  set filename $args
+  set filename [file nativename $args]
   ord::write_db_cmd $filename
 }
 
-# Units are from OpenSTA (ie Liberty file or set_units)
-sta::define_cmd_args "set_layer_rc" { [-layer] layer_name \
-                                      [-via] layer_name \
-                                      [-capacitance] value \
-                                      [-resistance] value }
+# Units are from OpenSTA (ie Liberty file or set_cmd_units).
+sta::define_cmd_args "set_layer_rc" { [-layer layer] \
+					[-via via_layer] \
+					[-capacitance cap] \
+					[-resistance res] }
 proc set_layer_rc {args} {
-  sta::parse_key_args "set_layer_rc" args keys {-layer -via -capacitance -resistance} flags {}
+  sta::parse_key_args "set_layer_rc" args \
+    keys {-layer -via -capacitance -resistance}\
+    flags {}
 
   if { ![info exists keys(-layer)] && ![info exists keys(-via)] } {
     ord::error "layer or via must be specified."
@@ -231,14 +233,14 @@ proc warn { what } {
 
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
-    sta::sta_error "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+    ord::error "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
   }
 }
 
 proc clear {} {
-  [get_db] clear
   sta::clear_network
   sta::clear_sta
+  [get_db] clear
 }
 
 # namespace ord

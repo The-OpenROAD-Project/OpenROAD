@@ -31,6 +31,7 @@ set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
 set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antennachecker)
+set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
@@ -75,6 +76,11 @@ find_library(TCL_READLINE_LIBRARY
   )
 if (TCL_READLINE_LIBRARY)
   message(STATUS "TCL readline library: ${TCL_READLINE_LIBRARY}")
+endif()
+
+find_path(TCL_READLINE_H tclreadline.h)
+if (TCL_READLINE_H)
+  message(STATUS "TCL readline header: ${TCL_READLINE_H}")
 endif()
 
 find_package(SWIG REQUIRED 3.0)
@@ -226,6 +232,7 @@ add_subdirectory(antennachecker)
 if(BUILD_OPENPHYSYN)
   add_subdirectory(OpenPhySyn)
 endif()
+add_subdirectory(gui)
 
 ################################################################
 
@@ -278,6 +285,7 @@ target_link_libraries(openroad
   TritonCTS
   FastRoute
   tapcell
+  gui
   TritonMacroPlace
   ParquetFP
   ABKCommon
@@ -298,9 +306,13 @@ if (BUILD_OPENPHYSYN)
 endif()
 
 # tclReadline
-if (TCL_READLINE_LIBRARY)
-  add_definitions(-DENABLE_READLINE)
+if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
+  target_compile_definitions(openroad PRIVATE ENABLE_READLINE)
   target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
+  target_include_directories(openroad PRIVATE ${TCL_READLINE_H})
+  message(STATUS "TCL readline enabled")
+else()
+  message(STATUS "TCL readline disabled")
 endif()
 
 if (ZLIB_FOUND)

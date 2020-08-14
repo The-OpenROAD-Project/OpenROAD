@@ -74,6 +74,11 @@ Just use thingy.
 
 Do not use global varaibles.
 All state should be inside of classes.
+Global variables make multi-threading next to impossible and
+preclude having multiple copies of a tool running in the same
+process.
+The only global variable in OpenRoad should be the singleton that
+tcl commands reference.
 
 extern std::string DEF_FILE;
 extern std::string GUIDE_FILE;
@@ -368,25 +373,6 @@ namespace MacroPlace {
 Use nullptr instead of NULL.
 This is the C++ approved version of the ancient C #define.
 
-................................................................
-cmake
-
-Don't change compile flags in cmake files.
- set(CMAKE_CXX_FLAGS "-O3")
- set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
- set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
-....
-
-Don't put /'s in cmake directory names.
-Cmake knows they are directories.
- target_include_directories( ABKCommon
-   PUBLIC
-   ${ABKCOMMON_HOME}
-   src/
-   )
-
-
 ....
 Use range iteration.
 c++ iterators are ugly and verbose.
@@ -445,3 +431,35 @@ in student code:
 *.la
 *.a
 *.lib
+
+...
+
+Don't use end of line comments unless they are very short.
+Don't forced someone reading your code to use a super wide window.
+
+  for (int x = firstTile._x; x <= lastTile._x; x++) {  // Setting capacities of edges completely inside the adjust region according the percentage of reduction
+
+................................................................
+cmake
+
+Don't change compile flags in cmake files.
+ set(CMAKE_CXX_FLAGS "-O3")
+ set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
+ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+....
+
+Don't put /'s in cmake directory names.
+Cmake knows they are directories.
+ target_include_directories( ABKCommon
+   PUBLIC
+   ${ABKCOMMON_HOME}
+   src/
+   )
+
+Don't use glob. Explictly list the files in a group.
+ file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+ list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp)
+ list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h)
+ list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.cpp)
+

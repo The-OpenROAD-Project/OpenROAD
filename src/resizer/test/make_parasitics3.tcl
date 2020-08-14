@@ -7,7 +7,7 @@ create_clock -period 10 clk
 set_propagated_clock clk
 set_input_delay -clock clk 0 in1
 
-set_wire_rc -layer metal2
+set_wire_rc -clock -layer metal2
 estimate_parasitics -placement
 
 report_checks -format full_clock

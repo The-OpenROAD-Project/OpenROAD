@@ -12,17 +12,19 @@ Notice 0:     Created 2 special nets and 8 connections.
 Notice 0:     Created 5 nets and 8 connections.
 Notice 0: Finished DEF file: repair_wire4.def
 Driver    length delay
-u2/Z manhtn 1500 steiner 1500 0.21
-u3/Z manhtn 1 steiner 1 0.00
-u4/Z manhtn 1 steiner 1 0.00
+u2/Z manhtn 1500.4 steiner 1500.4 0.21
+u3/Z manhtn 1.1 steiner 1.1 0.00
+u4/Z manhtn 1.1 steiner 1.1 0.00
+u1/Z manhtn 0.4 steiner 0.4 0.00
 Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 3 buffers in 1 nets.
 Driver    length delay
-repeater1/Z manhtn 901 steiner 901 0.08
-repeater2/Z manhtn 900 steiner 900 0.08
-u2/Z manhtn 601 steiner 601 0.03
-repeater3/Z manhtn 601 steiner 601 0.03
-u3/Z manhtn 1 steiner 1 0.00
-u4/Z manhtn 1 steiner 1 0.00
+repeater1/Z manhtn 856.5 steiner 856.5 0.07
+repeater2/Z manhtn 855.2 steiner 855.2 0.07
+u2/Z manhtn 646.1 steiner 646.1 0.04
+repeater3/Z manhtn 645.9 steiner 645.9 0.04
+u3/Z manhtn 1.1 steiner 1.1 0.00
+u4/Z manhtn 1.1 steiner 1.1 0.00
+u1/Z manhtn 0.5 steiner 0.5 0.00

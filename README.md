@@ -21,8 +21,8 @@ Libraries
   * zlib
   * eigen
   * lemon
+  * qt5
   * CImg (optional for replace)
-  * spdlog (optional for OpenPhySyn)
 
 
 See `Dockerfile` for an example of how to install these packages. 
@@ -85,14 +85,14 @@ openroad
   cmd_file           source cmd_file
 ```
 
-OpenROAD sources the TCL command file `~/.openroad` unless the command
+OpenROAD sources the Tcl command file `~/.openroad` unless the command
 line option `-no_init` is specified.
 
-OpenROAD then sources the command file cmd_file. Unless the `-exit`
-command line flag is specified it enters and interactive TCL command
-interpreter.
+OpenROAD then sources the command file cmd_file if it is specified on
+the command line. Unless the `-exit` command line flag is specified it
+enters and interactive Tcl command interpreter.
 
-OpenROAD is run using TCL scripts. The following commands are used to read
+OpenROAD is run using Tcl scripts. The following commands are used to read
 and write design data.
 
 ```
@@ -151,6 +151,24 @@ link_design top
 # Write the db for future runs.
 write_db reg1.db
 ```
+
+#### Example Scripts
+
+Example scripts demonstrating how to run OpenROAD on sample designs
+can be found in /test. Flow tests taking sample designs from synthesis
+verilog to routed design in the open source technologies Nangate45 and
+Sky130 are shown below.
+
+```
+gcd_nangate45.tcl
+aes_nangate45.tcl
+tinyRocket_nangate45.tcl
+gcd_sky130.tcl
+aes_sky130.tcl
+ibex_sky130.tcl
+```
+
+Each of these designs use the common script `flow.tcl`.
 
 #### Initialize Floorplan
 
@@ -221,14 +239,18 @@ The resizer commands stop when the design area is `-max_utilization
 util` percent of the core area. `util` is between 0 and 100.
 
 ```
-set_wire_rc [-layer layer_name]
+set_wire_rc [-clock] [-data]
+	    [-layer layer_name]
             [-resistance res ]
 	    [-capacitance cap]
 	    [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
-estimate delay of routing wires.  Use `-layer` or `-resistance` and
+estimate delay of routing wires.  Separate values can be specified for
+clock and data nets with the `-data` and `-clock` flags. Without
+either `-data` or `-clock` the resistance and capacitance for clocks
+and data nets are set.  Use `-layer` or `-resistance` and
 `-capacitance`.  If `-layer` is used, the LEF technology resistance
 and area/edge capacitance values for the layer are used for a minimum
 width wire on the layer.  The resistance and capacitance values per
@@ -591,14 +613,8 @@ Options description:
 
 #### Logical and Physical Optimizations
 
-OpenPhySyn Perform additional timing and area optimization.
+OpenPhySyn performs additional timing and area optimization.
 
-```
-set_psn_wire_rc [-layer layer_name]
-            [-resistance res_per_micron ]
-      [-capacitance cap_per_micron]
-```
-The `set_psn_wire_rc` command sets the average wire resistance/capacitance per micron; you can use -layer <layer_name> only to extract the value from the LEF technology. It should be invoked before physical optimization commands.
 
 ```
 optimize_logic
@@ -607,14 +623,71 @@ optimize_logic
 ```
 The `optimize_logic` command should be run after the logic synthesis on hierarical designs to perform logic optimization; currently, it performs constant propagation to reduce the design area. You can optionally specify the name of tie-hi/tie-lo liberty cell names to use for the optimization.
 
+
 ```
-optimize_design
-        [-no_gate_clone]
-        [-no_pin_swap]
-        [-clone_max_cap_factor factor]
-        [-clone_non_largest_cells]
+repair_timing
+        [-capacitance_violations]
+        [-transition_violations]
+        [-negative_slack_violations]
+        [-iterations iteration_count]
+        [-buffers buffer_cells]
+        [-inverters inverter cells]
+        [-auto_buffer_library <single|small|medium|large|all>]
+        [-no_minimize_buffer_library]
+        [-auto_buffer_library_inverters_enabled]
+        [-buffer_disabled]
+        [-resize_disabled]
+        [-pin_swap_disabled]
+        [-capacitance_pessimism_factor factor]
+        [-transition_pessimism_factor factor]
+        [-minimum_cost_buffer_enabled]
+        [-legalization_frequency num_edits]
+        [-legalize_each_iteration iterations]
+        [-legalize_eventually]
+        [-post_place]
+        [-post_route]
+        [-minimum_gain gain]
+        [-high_effort]
+        [-maximum_negative_slack_paths count]
+        [-maximum_negative_slack_path_depth count]
+        [-pins pin_names]
 ```
-The `optimize_design` command can be used for additional timing optimization, it should be run after the global placmenet. Currently it peforms gate cloning and comuttaitve pin swapping to enhance the timing.
+The `repair_timing` command repairs negative slack, maximum capacitance and transition violations by buffer tree insertion, gate sizing, and pin-swapping.
+
+`repair_timing` options:
+-   `[-capacitance_violations]`: Repair capacitance violations.
+-   `[-transition_violations]`: Repair transition violations.
+-   `[-negative_slack_violations]`: Repair paths with negative slacks.
+-   `[-iterations iterations]`: Maximum number of iterations.
+-   `[-buffers buffer_cells]`: Manually specify buffer cells to use.
+-   `[-inverters inverter cells]`: Manually specify inverter cells to use.
+-   `[-auto_buffer_library <single|small|medium|large|all>]`: Auto-select buffer library.
+-   `[-no_minimize_buffer_library]`: Do not run initial pruning phase for buffer selection.
+-   `[-auto_buffer_library_inverters_enabled]`: Include inverters in the selected buffer library.
+-   `[-buffer_disabled]`: Disable all buffering.
+-   `[-resize_disabled]`: Disable driver sizing.
+-   `[-pin_swap_disabled]`: Disable pin-swapping.
+-   `[-transition_pessimism_factor factor]` Scaling factor for transition violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
+-   `[-capacitance_pessimism_factor factor]` Scaling factor for capacitance violation limits, default is 1.0, should be non-negative, < 1.0 is pessimistic, 1.0 is ideal, > 1.0 is optimistic (default is 1.0).
+-   `[-minimum_cost_buffer_enabled]`: Enable minimum cost buffering.
+-   `[-legalization_frequency <num_edits>]`: Legalize after how many edits.
+-   `[-legalize_eventually]`: Legalize at the end of the optimization.
+-   `[-legalize_each_iteration]`: Legalize after each iteration.
+-   `[-post_place|-post_route]`: Post-placement phase mode or post-routing phase mode (not currently supported).
+-   `[-minimum_gain <unit_time>]`: Minimum slack gain to accept an optimization.
+-   `[-high_effort]`: Trade-off runtime versus optimization quality by weaker pruning.
+-   `[-no_resize_for_negative_slack]`: Disable resizing when solving negative slack violations (enhances runtime).
+-   `[-maximum_negative_slack_paths count]`: Maximum number of negative slack paths to try to optimize.
+-   `[-maximum_negative_slack_path_depth count]`: Maximum depth per negative slack path to try to optimize.
+-   `[-pins pin_names]`: Manually select the pins to optimize.
+
+```
+pin_swap
+       -path_count count
+       [-power]
+```
+The `pin_swap` command performs additional timing optimization by commutative pin swapping.
+
 
 ```
 optimize_fanout
@@ -622,6 +695,17 @@ optimize_fanout
         -max_fanout max_fanout
 ```
 The `optimize_fanout` command can be run after the logical synthesis to perform basic buffering based on the number of fanout pins.
+
+
+```
+cluster_buffers
+  [-cluster_threshold diameter]
+  [-cluster_size single|small|medium|large|all]
+```
+The `cluster_buffers` command can be used to automatically select representative set of buffers through k-center clustering.
+
+
+
 
 
 #### PDN analysis

@@ -35,10 +35,11 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace ord {
 
 // Call this inside of Tcl_Main.
 void
 initOpenRoad(Tcl_Interp *interp);
 } // namespace
-

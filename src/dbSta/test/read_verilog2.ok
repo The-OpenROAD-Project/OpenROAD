@@ -22,12 +22,10 @@ Net b1out
  Number of pins: 2
 
 Driver pins
-Warning 0: Can not find physical location of iterm b1/u2/Z
- b1/u2/Z output (snl_bufx1) (0, 0)
+ b1/u2/Z output (snl_bufx1)
 
 Load pins
-Warning 0: Can not find physical location of iterm b2/u1/A
- b2/u1/A input (snl_bufx1) 0.00 (0, 0)
+ b2/u1/A input (snl_bufx1) 0.00
 
 Hierarchical pins
 Net b1/u1out
@@ -39,12 +37,10 @@ Net b1/u1out
  Number of pins: 2
 
 Driver pins
-Warning 0: Can not find physical location of iterm b1/u1/Z
- b1/u1/Z output (snl_bufx1) (0, 0)
+ b1/u1/Z output (snl_bufx1)
 
 Load pins
-Warning 0: Can not find physical location of iterm b1/r1/D
- b1/r1/D input (snl_ffqx1) 0.00 (0, 0)
+ b1/r1/D input (snl_ffqx1) 0.00
 
 Hierarchical pins
 Net b1/r1q
@@ -56,12 +52,10 @@ Net b1/r1q
  Number of pins: 2
 
 Driver pins
-Warning 0: Can not find physical location of iterm b1/r1/Q
- b1/r1/Q output (snl_ffqx1) (0, 0)
+ b1/r1/Q output (snl_ffqx1)
 
 Load pins
-Warning 0: Can not find physical location of iterm b1/u2/A
- b1/u2/A input (snl_bufx1) 0.00 (0, 0)
+ b1/u2/A input (snl_bufx1) 0.00
 
 Hierarchical pins
 Net b2/r1q
@@ -73,12 +67,10 @@ Net b2/r1q
  Number of pins: 2
 
 Driver pins
-Warning 0: Can not find physical location of iterm b2/r1/Q
- b2/r1/Q output (snl_ffqx1) (0, 0)
+ b2/r1/Q output (snl_ffqx1)
 
 Load pins
-Warning 0: Can not find physical location of iterm b2/u2/A
- b2/u2/A input (snl_bufx1) 0.00 (0, 0)
+ b2/u2/A input (snl_bufx1) 0.00
 
 Hierarchical pins
 No differences found.

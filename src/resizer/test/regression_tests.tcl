@@ -13,12 +13,15 @@ record_tests {
   resize3
   remove_buffers1
   repair_clk_nets1
+  repair_clk_inverters1
   repair_cap1
   repair_cap2
   repair_fanout1
   repair_fanout2
   repair_slew1
   repair_slew2
+  repair_slew3
+  repair_slew4
   repair_hold1
   repair_hold2
   report_floating_nets1
@@ -28,6 +31,7 @@ record_tests {
   repair_tie4
   repair_tie5
   repair_tie6
+  repair_tie7
   repair_wire1
   repair_wire2
   repair_wire3

@@ -18,7 +18,6 @@ buffer_ports -buffer_cell $buffer_cell
 
 set_max_fanout 100 [current_design]
 repair_design -max_wire_length 600 -buffer_cell $buffer_cell
-resize
 
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z

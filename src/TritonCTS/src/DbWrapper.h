@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef DBWRAPPER_H
 #define DBWRAPPER_H
@@ -70,7 +64,7 @@ public:
         bool masterExists(const std::string& master) const;
 
         void populateTritonCTS();
-        void writeClockNetsToDb(const Clock& clockNet);
+        void writeClockNetsToDb(Clock& clockNet);
 
         void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
         void clearNumClocks() { _numberOfClocks = 0; }
@@ -84,6 +78,8 @@ private:
         CtsOptions*       _options              = nullptr;
         TritonCTSKernel*  _kernel               = nullptr;  
         unsigned          _numberOfClocks       = 0;       
+        unsigned          _numClkNets           = 0;   
+        unsigned          _numFixedNets         = 0;
 
         void parseClockNames(std::vector<std::string>& clockNetNames) const;
 
@@ -91,10 +87,13 @@ private:
         void initAllClocks();
         void initClock(odb::dbNet* net);
         
-        void disconnectAllSinksFromNet(std::string netName);
-        void createClockBuffers(const Clock& clk);
+        void disconnectAllSinksFromNet(odb::dbNet* net);
+        void disconnectAllPinsFromNet(odb::dbNet* net);
+        void checkUpstreamConnections(odb::dbNet* net);
+        void createClockBuffers(Clock& clk);
         void removeNonClockNets();
         void computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const;
+        std::pair<int,int> branchBufferCount(ClockInst *inst, int bufCounter, Clock& clockNet);
         odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 };  
 

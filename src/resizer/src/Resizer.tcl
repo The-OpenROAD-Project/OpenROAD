@@ -42,13 +42,15 @@ proc remove_buffers { args } {
   remove_buffers_cmd
 }
 
-define_cmd_args "set_wire_rc" {[-layer layer_name]\
+define_cmd_args "set_wire_rc" {[-clock] [-data]\
+				 [-layer layer_name]\
 				 [-resistance res ][-capacitance cap]\
 				 [-corner corner_name]}
 
 proc set_wire_rc { args } {
    parse_key_args "set_wire_rc" args \
-    keys {-layer -resistance -capacitance -corner} flags {}
+     keys {-layer -resistance -capacitance -corner} \
+     flags {-clock -data}
 
   set wire_res 0.0
   set wire_cap 0.0
@@ -100,7 +102,23 @@ proc set_wire_rc { args } {
   set corner [parse_corner keys]
   check_argc_eq0 "set_wire_rc" $args
   
-  set_wire_rc_cmd $wire_res $wire_cap $corner
+  if { [info exists flags(-clock)] && [info exists flags(-clock)] \
+	 || ![info exists flags(-clock)] && ![info exists flags(-clock)] } {
+    set data 1
+    set clk 1
+  } elseif { [info exists flags(-clock)] && ![info exists flags(-clock)] } {
+    set data 0
+    set clk 1
+  } elseif { ![info exists flags(-clock)] && [info exists flags(-clock)] } {
+    set data 1
+    set clk 0
+  }
+  if { $data } {
+    set_wire_rc_cmd $wire_res $wire_cap $corner
+  }
+  if { $clk } {
+    set_wire_clk_rc_cmd $wire_res $wire_cap $corner
+  }
   estimate_parasitics_cmd
 }
 
@@ -208,11 +226,12 @@ proc buffer_ports { args } {
 }
 
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-				   -buffer_cell buffer_cell}
+				   -buffer_cell buffer_cell\
+				   [-libraries resize_libs]}
 
 proc repair_design { args } {
   parse_key_args "repair_design" args \
-    keys {-max_wire_length -buffer_cell} \
+    keys {-max_wire_length -buffer_cell -libraries} \
     flags {}
   
   set buffer_cell [parse_buffer_cell keys 1]
@@ -223,7 +242,17 @@ proc repair_design { args } {
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
   }
   
+  if { [info exists keys(-libraries)] } {
+    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
+  } else {
+    set resize_libs [get_libs *]
+    if { $resize_libs == {} } {
+      ord::error "No liberty libraries found."
+    }
+  }
+
   check_argc_eq0 "repair_design" $args
+  resizer_preamble $resize_libs
   repair_design_cmd $max_wire_length $buffer_cell
 }
 
@@ -247,6 +276,13 @@ proc repair_clock_nets { args } {
   repair_clk_nets_cmd $max_wire_length $buffer_cell
 }
 
+define_cmd_args "repair_clock_inverters" {-buffer_cell buffer_cell}
+
+proc repair_clock_inverters { args } {
+  check_argc_eq0 "repair_clock_inverters" $args
+  repair_clk_inverters_cmd
+}
+
 define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
 
 proc repair_tie_fanout { args } {
@@ -266,7 +302,7 @@ proc repair_tie_fanout { args } {
   if { ![is_object $lib_port] } {
     set lib_port [get_lib_pins [lindex $args 0]]
   }
-  if { $lib_port != "NULL" } {
+  if { $lib_port != "" } {
     repair_tie_fanout_cmd $lib_port $separation $verbose
   }
 }
@@ -328,12 +364,6 @@ proc_redirect report_long_wires {
   sta::check_argc_eq1 "report_long_wires" $args
   set count [lindex $args 0]
   report_long_wires_cmd $count $digits
-}
-
-# Used by report_net. Override default function.
-proc pin_location_str { pin } {
-  lassign [pin_location $pin] x y
-  return " ([format_distance $x 0], [format_distance $y 0])"
 }
 
 # sta namespace end

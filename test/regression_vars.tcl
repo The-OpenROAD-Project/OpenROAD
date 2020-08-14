@@ -46,8 +46,15 @@ proc cleanse_logfile { test log_file } {
 ################################################################
 
 # Record tests in the /test directory.
+# Compare results/<test>.log to <test>.ok for pass/fail.
 proc record_tests { tests } {
   record_tests1 $tests 1
+}
+
+# Record tests in the /test directory.
+# Last line of results/<test>.log should be pass/fail.
+proc record_pass_fail_tests { tests } {
+  record_tests1 $tests 0
 }
 
 proc record_flow_tests { tests } {

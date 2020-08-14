@@ -6,6 +6,7 @@ RUN yum group install -y "Development Tools" \
     && yum install -y https://repo.ius.io/ius-release-el7.rpm \
     && yum install -y centos-release-scl \
     && yum install -y wget devtoolset-8 \
+    && yum install -y qt5-qtbase-devel \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
     python36u python36u-libs python36u-devel python36u-pip && \
     yum clean -y all && \
@@ -65,6 +66,11 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && cmake --build build -j $(nproc) --target install
 
 RUN useradd -ms /bin/bash openroad
+
+# Coverage
+FROM base-dependencies AS coverage
+
+RUN yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
 
 FROM base-dependencies AS builder
 

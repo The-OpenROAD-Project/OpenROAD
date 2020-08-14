@@ -1,0 +1,237 @@
+\hypertarget{classNode}{}\section{Node Class Reference}
+\label{classNode}\index{Node@{Node}}
+
+
+\hyperlink{classNode}{Node} class which stores the properties of the node of the P\+DN.  
+
+
+
+
+{\ttfamily \#include $<$node.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classNode_ad7a34779cad45d997bfd6d3d8043c75f}{Node} ()
+\item 
+\hyperlink{classNode_aa0840c3cb5c7159be6d992adecd2097c}{$\sim$\+Node} ()
+\item 
+int \hyperlink{classNode_a5937a2591132f22361ce12edfe6af39f}{Get\+Layer\+Num} ()
+\begin{DoxyCompactList}\small\item\em Get the layer number of the node. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_a9ae3dca8ba172157836ca70eede370c5}{Set\+Layer\+Num} (int layer)
+\begin{DoxyCompactList}\small\item\em Set the layer number of the node. \end{DoxyCompactList}\item 
+\hyperlink{node_8h_a8457e7507941d06122aaf5c4ac260995}{Node\+Loc} \hyperlink{classNode_a02cc6f413616e5a1314ef708505ccdce}{Get\+Loc} ()
+\begin{DoxyCompactList}\small\item\em Get the location of the node. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_ab228394a1e206cf5d1bc995307f70f56}{Set\+Loc} (int x, int y)
+\begin{DoxyCompactList}\small\item\em Set the location of the node using x and y coordinates. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_aeaa0eb1b9fed6f5c92594282de4d4d7d}{Set\+Loc} (int x, int y, int l)
+\begin{DoxyCompactList}\small\item\em Set the location of the node using x,y and layer information. \end{DoxyCompactList}\item 
+\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} \hyperlink{classNode_ad65d1c171a8fd20ef1a55ed040f11b75}{Get\+G\+Loc} ()
+\begin{DoxyCompactList}\small\item\em Get location of the node in G matrix. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_a28572563d5947aa39b51b4c0f848e432}{Set\+G\+Loc} (\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} loc)
+\begin{DoxyCompactList}\small\item\em Get location of the node in G matrix. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_a297f77156d63d571f7014c78f79841af}{Print} ()
+\begin{DoxyCompactList}\small\item\em Function to print node details. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_ace2ee184ee4290c20cffc937435de6fc}{Set\+Bbox} (int dX, int dY)
+\begin{DoxyCompactList}\small\item\em Function to set the bounding box of the stripe. \end{DoxyCompactList}\item 
+\hyperlink{node_8h_acf0ff4a0bb7e0c9b5900382cbd2aa614}{B\+Box} \hyperlink{classNode_a4a5391ab70a61e5bf4d2daef056a434c}{Get\+Bbox} ()
+\begin{DoxyCompactList}\small\item\em Function to get the bounding box of the stripe. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_a58172b29bbb26738beb36ea9c4a2f448}{Update\+Max\+Bbox} (int dX, int dY)
+\begin{DoxyCompactList}\small\item\em Function to update the stripe. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_a359b49b9f2790426c97be364f76ce9a2}{Set\+Current} (double t\+\_\+current)
+\begin{DoxyCompactList}\small\item\em Function to set the current value at a particular node. \end{DoxyCompactList}\item 
+double \hyperlink{classNode_aa91dbf36b0f693850cf422bebb7632ee}{Get\+Current} ()
+\begin{DoxyCompactList}\small\item\em Function to get the value of current at a node. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_a252ea83ae41b143c652701749de63199}{Add\+Current\+Src} (double t\+\_\+current)
+\begin{DoxyCompactList}\small\item\em Function to add the current source. \end{DoxyCompactList}\item 
+void \hyperlink{classNode_af5846cceb0ea097fdfba48152402c152}{Set\+Voltage} (double t\+\_\+voltage)
+\begin{DoxyCompactList}\small\item\em Function to set the value of the voltage source. \end{DoxyCompactList}\item 
+double \hyperlink{classNode_ad924c345106b6e7b0847762290052fac}{Get\+Voltage} ()
+\begin{DoxyCompactList}\small\item\em Function to get the value of the voltage source. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\hyperlink{classNode}{Node} class which stores the properties of the node of the P\+DN. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classNode_ad7a34779cad45d997bfd6d3d8043c75f}\label{classNode_ad7a34779cad45d997bfd6d3d8043c75f}} 
+\index{Node@{Node}!Node@{Node}}
+\index{Node@{Node}!Node@{Node}}
+\subsubsection{\texorpdfstring{Node()}{Node()}}
+{\footnotesize\ttfamily Node\+::\+Node (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{classNode_aa0840c3cb5c7159be6d992adecd2097c}\label{classNode_aa0840c3cb5c7159be6d992adecd2097c}} 
+\index{Node@{Node}!````~Node@{$\sim$\+Node}}
+\index{````~Node@{$\sim$\+Node}!Node@{Node}}
+\subsubsection{\texorpdfstring{$\sim$\+Node()}{~Node()}}
+{\footnotesize\ttfamily Node\+::$\sim$\+Node (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classNode_a252ea83ae41b143c652701749de63199}\label{classNode_a252ea83ae41b143c652701749de63199}} 
+\index{Node@{Node}!Add\+Current\+Src@{Add\+Current\+Src}}
+\index{Add\+Current\+Src@{Add\+Current\+Src}!Node@{Node}}
+\subsubsection{\texorpdfstring{Add\+Current\+Src()}{AddCurrentSrc()}}
+{\footnotesize\ttfamily void Node\+::\+Add\+Current\+Src (\begin{DoxyParamCaption}\item[{double}]{t\+\_\+current }\end{DoxyParamCaption})}
+
+
+
+Function to add the current source. 
+
+\mbox{\Hypertarget{classNode_a4a5391ab70a61e5bf4d2daef056a434c}\label{classNode_a4a5391ab70a61e5bf4d2daef056a434c}} 
+\index{Node@{Node}!Get\+Bbox@{Get\+Bbox}}
+\index{Get\+Bbox@{Get\+Bbox}!Node@{Node}}
+\subsubsection{\texorpdfstring{Get\+Bbox()}{GetBbox()}}
+{\footnotesize\ttfamily \hyperlink{node_8h_acf0ff4a0bb7e0c9b5900382cbd2aa614}{B\+Box} Node\+::\+Get\+Bbox (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to get the bounding box of the stripe. 
+
+\mbox{\Hypertarget{classNode_aa91dbf36b0f693850cf422bebb7632ee}\label{classNode_aa91dbf36b0f693850cf422bebb7632ee}} 
+\index{Node@{Node}!Get\+Current@{Get\+Current}}
+\index{Get\+Current@{Get\+Current}!Node@{Node}}
+\subsubsection{\texorpdfstring{Get\+Current()}{GetCurrent()}}
+{\footnotesize\ttfamily double Node\+::\+Get\+Current (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to get the value of current at a node. 
+
+\mbox{\Hypertarget{classNode_ad65d1c171a8fd20ef1a55ed040f11b75}\label{classNode_ad65d1c171a8fd20ef1a55ed040f11b75}} 
+\index{Node@{Node}!Get\+G\+Loc@{Get\+G\+Loc}}
+\index{Get\+G\+Loc@{Get\+G\+Loc}!Node@{Node}}
+\subsubsection{\texorpdfstring{Get\+G\+Loc()}{GetGLoc()}}
+{\footnotesize\ttfamily \hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx} Node\+::\+Get\+G\+Loc (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get location of the node in G matrix. 
+
+\mbox{\Hypertarget{classNode_a5937a2591132f22361ce12edfe6af39f}\label{classNode_a5937a2591132f22361ce12edfe6af39f}} 
+\index{Node@{Node}!Get\+Layer\+Num@{Get\+Layer\+Num}}
+\index{Get\+Layer\+Num@{Get\+Layer\+Num}!Node@{Node}}
+\subsubsection{\texorpdfstring{Get\+Layer\+Num()}{GetLayerNum()}}
+{\footnotesize\ttfamily int Node\+::\+Get\+Layer\+Num (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the layer number of the node. 
+
+\mbox{\Hypertarget{classNode_a02cc6f413616e5a1314ef708505ccdce}\label{classNode_a02cc6f413616e5a1314ef708505ccdce}} 
+\index{Node@{Node}!Get\+Loc@{Get\+Loc}}
+\index{Get\+Loc@{Get\+Loc}!Node@{Node}}
+\subsubsection{\texorpdfstring{Get\+Loc()}{GetLoc()}}
+{\footnotesize\ttfamily \hyperlink{node_8h_a8457e7507941d06122aaf5c4ac260995}{Node\+Loc} Node\+::\+Get\+Loc (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the location of the node. 
+
+\mbox{\Hypertarget{classNode_ad924c345106b6e7b0847762290052fac}\label{classNode_ad924c345106b6e7b0847762290052fac}} 
+\index{Node@{Node}!Get\+Voltage@{Get\+Voltage}}
+\index{Get\+Voltage@{Get\+Voltage}!Node@{Node}}
+\subsubsection{\texorpdfstring{Get\+Voltage()}{GetVoltage()}}
+{\footnotesize\ttfamily double Node\+::\+Get\+Voltage (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to get the value of the voltage source. 
+
+\mbox{\Hypertarget{classNode_a297f77156d63d571f7014c78f79841af}\label{classNode_a297f77156d63d571f7014c78f79841af}} 
+\index{Node@{Node}!Print@{Print}}
+\index{Print@{Print}!Node@{Node}}
+\subsubsection{\texorpdfstring{Print()}{Print()}}
+{\footnotesize\ttfamily void Node\+::\+Print (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Function to print node details. 
+
+\mbox{\Hypertarget{classNode_ace2ee184ee4290c20cffc937435de6fc}\label{classNode_ace2ee184ee4290c20cffc937435de6fc}} 
+\index{Node@{Node}!Set\+Bbox@{Set\+Bbox}}
+\index{Set\+Bbox@{Set\+Bbox}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+Bbox()}{SetBbox()}}
+{\footnotesize\ttfamily void Node\+::\+Set\+Bbox (\begin{DoxyParamCaption}\item[{int}]{dX,  }\item[{int}]{dY }\end{DoxyParamCaption})}
+
+
+
+Function to set the bounding box of the stripe. 
+
+\mbox{\Hypertarget{classNode_a359b49b9f2790426c97be364f76ce9a2}\label{classNode_a359b49b9f2790426c97be364f76ce9a2}} 
+\index{Node@{Node}!Set\+Current@{Set\+Current}}
+\index{Set\+Current@{Set\+Current}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+Current()}{SetCurrent()}}
+{\footnotesize\ttfamily void Node\+::\+Set\+Current (\begin{DoxyParamCaption}\item[{double}]{t\+\_\+current }\end{DoxyParamCaption})}
+
+
+
+Function to set the current value at a particular node. 
+
+\mbox{\Hypertarget{classNode_a28572563d5947aa39b51b4c0f848e432}\label{classNode_a28572563d5947aa39b51b4c0f848e432}} 
+\index{Node@{Node}!Set\+G\+Loc@{Set\+G\+Loc}}
+\index{Set\+G\+Loc@{Set\+G\+Loc}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+G\+Loc()}{SetGLoc()}}
+{\footnotesize\ttfamily void Node\+::\+Set\+G\+Loc (\begin{DoxyParamCaption}\item[{\hyperlink{node_8h_a5b622fe4354316a2f349615d150ae998}{Node\+Idx}}]{loc }\end{DoxyParamCaption})}
+
+
+
+Get location of the node in G matrix. 
+
+Set location of the node in G matrix. \mbox{\Hypertarget{classNode_a9ae3dca8ba172157836ca70eede370c5}\label{classNode_a9ae3dca8ba172157836ca70eede370c5}} 
+\index{Node@{Node}!Set\+Layer\+Num@{Set\+Layer\+Num}}
+\index{Set\+Layer\+Num@{Set\+Layer\+Num}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+Layer\+Num()}{SetLayerNum()}}
+{\footnotesize\ttfamily void Node\+::\+Set\+Layer\+Num (\begin{DoxyParamCaption}\item[{int}]{layer }\end{DoxyParamCaption})}
+
+
+
+Set the layer number of the node. 
+
+\mbox{\Hypertarget{classNode_ab228394a1e206cf5d1bc995307f70f56}\label{classNode_ab228394a1e206cf5d1bc995307f70f56}} 
+\index{Node@{Node}!Set\+Loc@{Set\+Loc}}
+\index{Set\+Loc@{Set\+Loc}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+Loc()}{SetLoc()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void Node\+::\+Set\+Loc (\begin{DoxyParamCaption}\item[{int}]{x,  }\item[{int}]{y }\end{DoxyParamCaption})}
+
+
+
+Set the location of the node using x and y coordinates. 
+
+\mbox{\Hypertarget{classNode_aeaa0eb1b9fed6f5c92594282de4d4d7d}\label{classNode_aeaa0eb1b9fed6f5c92594282de4d4d7d}} 
+\index{Node@{Node}!Set\+Loc@{Set\+Loc}}
+\index{Set\+Loc@{Set\+Loc}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+Loc()}{SetLoc()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void Node\+::\+Set\+Loc (\begin{DoxyParamCaption}\item[{int}]{x,  }\item[{int}]{y,  }\item[{int}]{l }\end{DoxyParamCaption})}
+
+
+
+Set the location of the node using x,y and layer information. 
+
+\mbox{\Hypertarget{classNode_af5846cceb0ea097fdfba48152402c152}\label{classNode_af5846cceb0ea097fdfba48152402c152}} 
+\index{Node@{Node}!Set\+Voltage@{Set\+Voltage}}
+\index{Set\+Voltage@{Set\+Voltage}!Node@{Node}}
+\subsubsection{\texorpdfstring{Set\+Voltage()}{SetVoltage()}}
+{\footnotesize\ttfamily void Node\+::\+Set\+Voltage (\begin{DoxyParamCaption}\item[{double}]{t\+\_\+voltage }\end{DoxyParamCaption})}
+
+
+
+Function to set the value of the voltage source. 
+
+\mbox{\Hypertarget{classNode_a58172b29bbb26738beb36ea9c4a2f448}\label{classNode_a58172b29bbb26738beb36ea9c4a2f448}} 
+\index{Node@{Node}!Update\+Max\+Bbox@{Update\+Max\+Bbox}}
+\index{Update\+Max\+Bbox@{Update\+Max\+Bbox}!Node@{Node}}
+\subsubsection{\texorpdfstring{Update\+Max\+Bbox()}{UpdateMaxBbox()}}
+{\footnotesize\ttfamily void Node\+::\+Update\+Max\+Bbox (\begin{DoxyParamCaption}\item[{int}]{dX,  }\item[{int}]{dY }\end{DoxyParamCaption})}
+
+
+
+Function to update the stripe. 
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\hyperlink{node_8h}{node.\+h}\item 
+src/\hyperlink{node_8cpp}{node.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,62 @@
+ ######################################
+ # PDNSim: OpenROAD IR analysis tool #
+ #       University of Minnesota      #
+ # Author:                            #
+ #    Vidya Chhabria (UMN)            #
+ #    Sachin Sapatnekar (UMN)         #
+ ######################################
+
+
+Options: 
+Input LEF file:     ../test/nangate45/Nangate45.lef
+Input DEF file:     ../test/gcd/gcd.def
+Input Liberty file: ../test/nangate45/NangateOpenCellLibrary_typical.lib
+Input Verilog file: ../test/gcd/gcd.v
+Input SDC file:     ../test/gcd/gcd.sdc
+Verilog top module: gcd
+Voltage source file: ../test/gcd/Vsrc.loc
+Interactive mode:   0
+
+INFO: Reading Verilog file 
+INFO: Reading Verilog file ../test/gcd/gcd.v
+INFO: Top module set gcd
+INFO: Reading SDC file ../test/gcd/gcd.sdc
+INFO: Reading Voltage source file ../test/gcd/Vsrc.loc
+../test/gcd/Vsrc.loc
+Voltage file../test/gcd/Vsrc.loc
+
+
+INFO: Location of VDD and VSS sources 
+Location: 100000 106400 7 Voltage 1.1
+INFO: G matrix created 
+INFO: Number of nodes: 1877
+
+
+INFO: Executing STA for Power
+INFO: Execute STA
+INFO: Files for STA
+Verilog      : ../test/gcd/gcd.v
+topCellName  : gcd
+Liberty      : ../test/nangate45/NangateOpenCellLibrary_typical.lib
+SDCName      : ../test/gcd/gcd.sdc
+
+OpenSTA 2.0.17 77f22e482e Copyright (c) 2019, Parallax Software, Inc.
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+
+This is free software, and you are free to change and redistribute it
+under certain conditions; type `show_copying' for details. 
+This program comes with ABSOLUTELY NO WARRANTY; for details type `show_warranty'.
+INFO: Design in linked
+INFO: Created J vector
+
+
+INFO: Solving GV=J
+INFO: SuperLU begin solving
+INFO: SuperLU finished solving
+
+
+######################################
+Worstcase Voltage: 1.09797
+Average  IR drop : 0.00194254
+Worstcase IR drop: 0.00203349
+######################################

@@ -1,44 +1,38 @@
-#////////////////////////////////////////////////////////////////////////////////////
-#// Authors: Mateus Fogaca
-#//          (Ph.D. advisor: Ricardo Reis)
-#//          Jiajia Li
-#//          Andrew Kahng
-#// Based on:
-#//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-#//          Buffering for High-Performance and Low-Power Clock Distribution", 
-#//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-#//
-#//
-#// BSD 3-Clause License
-#//
-#// Copyright (c) 2018, The Regents of the University of California
-#// All rights reserved.
-#//
-#// Redistribution and use in source and binary forms, with or without
-#// modification, are permitted provided that the following conditions are met:
-#//
-#// * Redistributions of source code must retain the above copyright notice, this
-#//   list of conditions and the following disclaimer.
-#//
-#// * Redistributions in binary form must reproduce the above copyright notice,
-#//   this list of conditions and the following disclaimer in the documentation
-#//   and/or other materials provided with the distribution.
-#//
-#// * Neither the name of the copyright holder nor the names of its
-#//   contributors may be used to endorse or promote products derived from
-#//   this software without specific prior written permission.
-#//
-#// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-#// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-#// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-#// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-#// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-#// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-#// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-#// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-#// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#////////////////////////////////////////////////////////////////////////////////////
+###############################################################################
+##
+## BSD 3-Clause License
+##
+## Copyright (c) 2019, University of California, San Diego.
+## All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and#or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+##
+###############################################################################
+
 
 sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-sol_list slist] \
@@ -54,11 +48,24 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-slew_inter slewvalue] \
                                              [-cap_inter capvalue] \
                                              [-characterization_only] \
+                                             [-tree_buf buf] \
+                                             [-post_cts_disable] \
+                                             [-distance_between_buffers] \
+                                             [-branching_point_buffers_distance] \
+                                             [-clustering_exponent] \
+                                             [-clustering_unbalance_ratio] \
+                                             [-sink_clustering_size] \
+                                             [-sink_clustering_max_diameter] \
+                                             [-sink_clustering_enable] \
+                                             [-num_static_layers] \
+                                             [-sink_clustering_buffer] \
                                             } 
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -cap_inter} flags {-characterization_only}
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -sink_clustering_size -num_static_layers -sink_clustering_buffer\
+    -cap_inter -distance_between_buffers -branching_point_buffers_distance -clustering_exponent -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf} \
+    flags {-characterization_only -post_cts_disable -sink_clustering_enable}
 
   set cts [get_triton_cts]
 
@@ -72,14 +79,61 @@ proc clock_tree_synthesis { args } {
 
   $cts set_only_characterization [info exists flags(-characterization_only)]
 
+  $cts set_disable_post_cts [info exists flags(-post_cts_disable)]
+
+  $cts set_sink_clustering [info exists flags(-sink_clustering_enable)]
+
+  if { [info exists keys(-sink_clustering_size)] } {
+    set size $keys(-sink_clustering_size)
+    $cts set_sink_clustering_size $size
+  } 
+
+  if { [info exists keys(-sink_clustering_max_diameter)] } {
+    set distance $keys(-sink_clustering_max_diameter)
+    $cts set_clustering_diameter $distance
+  } 
+
+  if { [info exists keys(-num_static_layers)] } {
+    set num $keys(-num_static_layers)
+    $cts set_num_static_layers $num
+  } 
+
+  if { [info exists keys(-distance_between_buffers)] } {
+    set distance $keys(-distance_between_buffers)
+    $cts set_distance_between_buffers $distance
+  } 
+
+  if { [info exists keys(-branching_point_buffers_distance)] } {
+    set distance $keys(-branching_point_buffers_distance)
+    $cts set_branching_point_buffers_distance $distance
+  } 
+
+  if { [info exists keys(-clustering_exponent)] } {
+    set exponent $keys(-clustering_exponent)
+    $cts set_clustering_exponent $exponent
+  } 
+
+  if { [info exists keys(-clustering_unbalance_ratio)] } {
+    set unbalance $keys(-clustering_unbalance_ratio)
+    $cts set_clustering_unbalance_ratio $unbalance
+  } 
+
   if { [info exists keys(-lut_file)] } {
+    if { ![info exists keys(-sol_list)] } {
+      ord::error "Missing argument -sol_list"
+    }
 	  set lut $keys(-lut_file)
     $cts set_lut_file $lut 
+    $cts set_auto_lut 0
   } 
  
   if { [info exists keys(-sol_list)] } {
+    if { ![info exists keys(-lut_file)] } {
+      ord::error "Missing argument -lut_file"
+    }
 	  set sol_list $keys(-sol_list)
     $cts set_sol_list_file $sol_list
+    $cts set_auto_lut 0
   } 
 
   if { [info exists keys(-buf_list)] } {
@@ -125,17 +179,36 @@ proc clock_tree_synthesis { args } {
     $cts set_cap_inter $cap 
   } 
 
+  if { [info exists keys(-tree_buf)] } {
+	  set buf $keys(-tree_buf)
+    $cts set_tree_buf $buf 
+  } 
+
   if { [info exists keys(-root_buf)] } {
     set root_buf $keys(-root_buf)
+    if { [llength $root_buf] > 1} {
+      set root_buf [lindex $root_buf 0]
+    }
     $cts set_root_buffer $root_buf
   } else {
     if { [info exists keys(-buf_list)] } {
       #If using -buf_list, the first buffer can become the root buffer.
-      $cts set_root_buffer [lindex $buf_list 0]
+      set root_buf [lindex $buf_list 0]
+      $cts set_root_buffer $root_buf
     } else {
       #User must enter at least one of -root_buf or -buf_list.
       ord::error "Missing argument -root_buf"
     }
+  }
+
+  if { [info exists keys(-sink_clustering_buffer)] } {
+    set sink_buf $keys(-sink_clustering_buffer)
+    if { [llength $sink_buf] > 1} {
+      set sink_buf [lindex $sink_buf 0]
+    }
+    $cts set_sink_buffer $sink_buf
+  } else {
+    $cts set_sink_buffer $root_buf
   }
 
   if { [info exists keys(-out_path)] && (![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]) } {

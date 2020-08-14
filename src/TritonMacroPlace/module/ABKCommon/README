@@ -1,0 +1,218 @@
+
+  README for ABKCommon 1.8 by Igor Markov
+  Contact: <imarkov@math.ucla.edu>
+  date:    July 22, 1997
+
+  COPYRIGHT: ABKGroup and UC Regents, see file COPYRIGHT 
+
+  OS and compilers supported : CC 4.2+ for  Solaris 2.5+,
+                               MSVC++5.0 for Windows NT4.0
+                                   (probably for Windows '95 as well)
+     compilers not supported : MSVC++4.x, g++ 2.7.2, CC 4.1
+
+  Libraries/packages used: STL 2.01 or higher  (see STL note below)
+
+  Formal interface : abkcommon.h (other filed included)
+
+  Linking interface: one static (libcommon.a) or shared (libcommon.so) library
+
+  This package contains header files to be included by all projects in
+  ABKgroup
+
+  Test : produce executable solvTest with "make test", then use 
+         script "regression"; correct output contains
+
+ Differences from precomputed results
+        0       0       0 someofdiffs
+
+ Installation notes : customize Makefile to your filesystem,
+                      Type make. This will build the libraries. 
+                      The shared library can not be
+                      moved from its initial location.
+
+ Purify note :        you may want to put
+
+suppress umr ...; Timer*
+                      
+                     into your ~/.purify file because purify reports
+                     uninitialized memory reads in UNIX system calls.
+
+ STL note 1: you need an *adapted* version 2.01  970718) or higher. 
+            It is available (together with a testsuite) from
+            http://www.ipmce.su/people/fbp/stl/stlport.html. 
+            Extensive online documentation is available at
+            http://www.sgi.com/Technology/STL/
+            Links to tutorials can be found at
+            http://www.sgi.com/Technology/STL/other_resources.html
+
+ STL note 2: 
+
+	    If you use MS VC++, add the following 
+	    three lines to stlcomp.h right after the
+	    #ifndef __STLCOMP_H #define __STLCOMP_H pair:
+	  
+	    #pragma warning(disable:4227)
+	    #pragma warning(disable:4804)
+	    #pragma warning(disable:4786)
+
+
+  ABKCommon defines 
+
+    0. class Empty to be used as InfoClass parameter to templates.
+    1. min/max/abs from STL
+    2. bool/false//true from STL (ANSI compliant)
+    3a. Macro abkfatal(CONDITION,ERRMESAGE)
+            just like abkassert() 3c., but does not depend on  whether 
+            a symbol is defined. "unconditional assertion"
+            should be used in all noncritical places
+    3b. Macro abkwarn(CONDITION,ERRMESAGE)
+            just like abkguess() 3d, but does not depend whether
+            a symbol is defined. "unconditional warning"
+            should be used in all noncritical places
+    3c. Macro abkassert(CONDITION,ERRMESSAGE)
+            if ABKDEBUG is defined it checks the condition and
+            if it fails, prints the message. If NDEBUG is not
+            defined, it prints line number and filename, then stops.
+            If NDEBUG is defined, it continues (standard ssert.h behavior)
+
+            To have ABKDEBUG defined, your compiler should use -DDEBUG argument
+            Otherwise, there is 0 overhead to have abkassert()
+
+            When  debugging, you can put breakpoints in abkassert_stop_here(),
+                 but this should be redundant since abkassert() is always fatal.
+
+    3d. Macro abkguess(CONDITION,ERRMESSAGE)
+            Same as above, but does not stop the program.
+            Also,  abkguess_stop_here() is really meaningful.
+
+
+    4-5) InfoLines: TimeStamp, CmdLine, Platform, MemUsage, MemChange, User
+         (to be used, e.g., when writing commented info into files)
+
+      a) cout << TimeStamp() << endl;
+         Today it printed the line "Timestamp : Sun Jun 15 16:18:45 PDT 1997"
+
+      b) cout << CmdLine(argc,argv) << endl;
+         Prints the command line.
+
+      c) cout << MemUsage() << endl;
+         # Memory use : 2.01324 Mb (peak) 1.17635 (estimate)
+         (class MemUse converts to double)
+
+      d) cout << Platform();
+         # Platform : SunOS 5.5.1 sparc SUNW,Ultra-1 
+
+      e) cout << User() ;
+         # User : imarkov@nexus6 (uclacs)
+
+      d) MemChange memChange;
+         // some memory allocation
+         cout << "Additional memory requested : " << memChange << endl;
+         memChange.resetmark();
+         // more allocation 
+         cout << "More memory requested : " memCHange << endl;
+
+   6. Class Timer. Timer::stop() Timer::start() (also starts when instantiated).
+      cout << Timer;
+        double Timer::getUnixTime()  can be used for randomization
+
+      An optional parameter to the _ctor and Timer::start(double limitInSec=0)
+      sets the expiration time (in CPU seconds, not real seconds).
+          bool Timer::expired() 
+          bool Timer::realTimeExpired() 
+       can be used to check if the time is over. The choice of CPU time over
+      real time for expiration is explained by a much finer granularity of 
+      measurment. The author observed sensitivity of up to 0.001
+      CPU sec. on Sparc architecture (while real seconds were integers).
+
+   7. Class RNG (same as RandomNumberGenerator). See specs for random_gen1.0
+      Sample use :   RNG randng(3,10);     unsigned randomNumber=randng;
+                     RNG randng(3.1,10.2); double   randomNumber=randng;
+      Can be preseeded to become deterministic 
+                     RNG randng(3,10,seed);    // seed is unsigned
+      the seed (even if assign randomly) can be retrieved by  getSeed(); 
+      This allows to "reconstruct events"
+ 
+   8. Param classes  -- Command Line Parameter processors:
+
+      if ( NoParams(argc,argv) ) cout << " Empty command line " << endl;
+
+      BoolParam  cursed("c",argc,argv);   // catches -c, --c and +c in cmd line
+      abkfatal(!cursed, " This process is cursed: bailing out... ");
+
+      UnsignedParam  number("num",argc,argv); // catches -num, --num and +num
+      // always have to check if (number.found()) ... in some way, e.g.,
+      abkfatal(number.found()," Number parameter not found "); 
+      unsigned temp = num + 2; // for example
+
+      StringParam   filename("f",argc,argv);
+      if (filename.found()) cout << "File name : " << filename << endl;
+
+        The "key" (e.g. "f","c" or "num" above) must be an arbitrary ASCII
+        string targetting -key, +key and --key command line options. 
+        The value, if present, should follow -key. +key --key delimited by 
+        one or more spaces. Options w/o value are only recongnized by 
+        BoolParam (others report "not found")
+
+        Useful methods:
+
+         bool found() const    // always need to check before anything else
+         bool on()    const    // true if the key was invoked with +
+         // one implicit conversions for each class
+
+    Remark: using this class will lead to parsing whole command
+
+    9. istream manipulators:
+
+                     eathash, skiptoeol, 
+         assertions: needeol, noeol, isnumber, isword  
+                     needword(const char *) and needcaseword(const char *)
+
+      All except the last two are trivial and users are encouranged to
+      look at implementations in abkmanip.h
+
+       Examples:
+
+          double x,y,z;
+          cin >> eathash >> x >> noeol >> isnumber >> y >> noeol >> isnumber 
+              >> z >> needeol;
+
+          unsigned i,j;
+          cout << " Enter <number> 'and' <number> : " << flush;
+          cin >>  i >> needword("and") >> j >> needeol;
+
+
+      eathash gulps the rest of the line if the next non-blank char is #
+      If the first non-blank char in the next line is #, it continues.
+
+      skiptoeol eats everything until the line end included
+
+      noeol  will abkfatal is the next non-blank char is eol or eof
+      isnumber will abkfatal if the next non-blank char can not start a number
+
+      needeol will abkfatal if the next nonblank is not eol or eof
+
+      needword(const char *) takes a string, eats all blank characters,
+                  reads the first word and abkfatals if it does not compare
+                  to the argument.
+      needcaseword(const char *) same as above, but the comparison is 
+                  case insensitive
+
+  ----
+
+      All except eathash, skiptoeol, needword() and needcaseword() 
+              if the  manipulators don't abkfatal, 
+              they just eat some whitespace and do nothing else
+              (implementation: they 'reaturn' what they read)
+      needword() and needcaseword()
+              if they do not abkfatal(), the word is being 'eaten'.
+
+  10. ostream& operator<<(ostream& out, const vector<unsigned>& rhs)
+
+      outputs vectors nicely in columns
+
+  11. abk_dump_stack() prints stack on supported platforms.
+      const char* SgnPartOfFileName(const char * fileName) 
+          produces a "significant" part of a filename (cuts down long paths)
+
+  12. class Verbosity to regulate debug output from complicated classes

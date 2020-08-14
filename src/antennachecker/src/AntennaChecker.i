@@ -66,9 +66,9 @@ antennachecker_set_route_level(int rt_lv)
 }
 
 void
-check_antennas()
+check_antennas(char* path)
 {
-  getAntennaChecker()->check_antennas();
+  getAntennaChecker()->check_antennas(std::string(path));
 }
 
 void
@@ -87,12 +87,18 @@ int
 check_net_violation(char* netname)
 { 
   odb::dbNet* net = getAntennaChecker()->get_net( std::string(netname));
-  std::vector<std::pair<int, std::vector<odb::dbITerm *>>> vios;
-  vios = getAntennaChecker()->get_net_antenna_violations(net);
+  auto vios = getAntennaChecker()->get_net_antenna_violations(net);
   if (vios.size() !=0)
     return 1;
   else
     return 0;       
 }
+
+void
+find_max_wire_length()
+{
+    getAntennaChecker()->find_max_wire_length();
+}
+
 
 %} // inline

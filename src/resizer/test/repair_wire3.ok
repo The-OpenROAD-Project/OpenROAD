@@ -14,7 +14,8 @@ Notice 0: Finished DEF file: repair_wire1.def
 Warning: layer resistance is 0.0
 Warning: layer capacitance is 0.0
 Driver    length delay
-u2/Z manhtn 1500 steiner 1500 0.00
-u3/Z manhtn 1 steiner 1 0.00
+u2/Z manhtn 1499.8 steiner 1499.8 0.00
+u3/Z manhtn 1.1 steiner 1.1 0.00
+u1/Z manhtn 0.4 steiner 0.4 0.00
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.

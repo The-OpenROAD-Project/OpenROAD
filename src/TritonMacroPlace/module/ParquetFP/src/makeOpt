@@ -1,0 +1,3 @@
+#!/bin/sh
+make OPTFLAGS="-O5" RHKEY="-R" LIBBASE="/home/userd/code/lib/O5" $1 $2 $3 $4 $5
+

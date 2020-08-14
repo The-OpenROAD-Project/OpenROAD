@@ -161,6 +161,16 @@ set_wire_rc_cmd(float res,
   resizer->setWireRC(res, cap, corner);
 }
 
+void
+set_wire_clk_rc_cmd(float res,
+		    float cap,
+		    Corner *corner)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setWireClkRC(res, cap, corner);
+}
+
 // ohms/meter
 double
 wire_resistance()
@@ -170,6 +180,14 @@ wire_resistance()
   return resizer->wireResistance();
 }
 
+double
+wire_clk_resistance()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->wireClkResistance();
+}
+
 // farads/meter
 double
 wire_capacitance()
@@ -177,6 +195,14 @@ wire_capacitance()
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->wireCapacitance();
+}
+
+double
+wire_clk_capacitance()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->wireClkCapacitance();
 }
 
 void
@@ -321,6 +347,14 @@ repair_clk_nets_cmd(float max_length,
 }
 
 void
+repair_clk_inverters_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairClkInverters();
+}
+
+void
 repair_net_cmd(Net *net,
 	       float max_length,
 	       LibertyCell *buffer_cell)
@@ -363,12 +397,13 @@ find_max_wire_length(LibertyCell *buffer_cell)
 }
 
 double
-find_max_slew_wire_length(float max_slew,
-			  LibertyCell *buffer_cell)
+find_max_slew_wire_length(LibertyPort *drvr_port,
+			  LibertyPort *load_port,
+			  float max_slew)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findMaxSlewWireLength(max_slew, buffer_cell);
+  return resizer->findMaxSlewWireLength(drvr_port, load_port, max_slew);
 }
 
 double
@@ -402,19 +437,6 @@ write_net_svg(Net *net,
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->writeNetSVG(net, filename);
-}
-
-const char *
-pin_location(Pin *pin)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  dbNetwork *network = resizer->getDbNetwork();
-  odb::Point loc = network->location(pin);
-  double x = resizer->dbuToMeters(loc.getX());
-  double y = resizer->dbuToMeters(loc.getY());
-  // return x/y as tcl list
-  return sta::stringPrintTmp("%f %f", x, y);
 }
 
 double

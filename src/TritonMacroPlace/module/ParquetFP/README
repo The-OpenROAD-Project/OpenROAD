@@ -1,0 +1,31 @@
+FLOORPLANNER README
+
+Building
+
+make
+regression
+
+//check output file diffs.out for any differences
+
+Usage
+
+Parquet.exe -f (baseFileName)
+ 
+eg. Parquet.exe -f TESTS/ami33          //take randon seed
+    Parquet.exe -f TESTS/ami33 -s int   //take fixed seed
+
+eg. Parquet.exe -h                      //print commmand line parameters
+
+TestCase Files:
+1. Parquet.exe     --  run the floorplanner
+	               (all options available)
+
+//the following are test executables
+2. FPEvalTest1.exe --  take in a placement and generate data for it.
+		       take in a placement and generate a sequence pair
+3. FPEvalTest2.exe --  take in random placement or initial placement and 
+		       compact the solution
+4. FPEvalTest3.exe --  generate a quadratic minimum wirelength solution and
+		       generate a sequence pair from this minimum solution
+5. FPEvalTest4.exe --  Multilevel floorplanner(only 1 level of hierarchy)
+

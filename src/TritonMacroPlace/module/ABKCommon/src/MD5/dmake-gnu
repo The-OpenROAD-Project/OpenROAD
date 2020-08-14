@@ -1,0 +1,3 @@
+#!/bin/sh
+dmake MAKE="./dmake-gnu" DEPENDOPT="-MM" CC4LIBS="g++" OPTFLAGS="-g -m64 -DABKDEBUG"  CCFLAGS="-fPIC -Wall -pedantic -pipe" CC='g++ $(OPTFLAGS) $(CCFLAGS)' LD="g++ -shared -m64" LDFINAL="g++ -m64" SOLABEL="" SODIRKEY="-Wl,-rpath," QLIBS="" $1 $2 $3
+# SONAMEKEY="-Wl,-soname," 

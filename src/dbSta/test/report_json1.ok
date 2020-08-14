@@ -1,0 +1,58 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: reg6.def
+Notice 0: Design: reg1
+Notice 0:     Created 3 pins.
+Notice 0:     Created 8 components and 39 component-terminals.
+Notice 0:     Created 2 special nets and 16 connections.
+Notice 0:     Created 10 nets and 20 connections.
+Notice 0: Finished DEF file: reg6.def
+{ "path": [
+    {
+       "pin": "r2/Q",
+       "x": 0.000203135,
+       "y": 0.000100695,
+       "arrival": 8.441e-11,
+       "slew": 7.776e-12
+    },
+    {
+       "pin": "u1/A",
+       "x": 0.000400125,
+       "y": 0.000100612,
+       "arrival": 8.442e-11,
+       "slew": 7.776e-12
+    },
+    {
+       "pin": "u1/Z",
+       "x": 0.000400465,
+       "y": 0.000100715,
+       "arrival": 1.047e-10,
+       "slew": 6.102e-12
+    },
+    {
+       "pin": "u2/A2",
+       "x": 0.000100315,
+       "y": 0.000400613,
+       "arrival": 1.047e-10,
+       "slew": 6.102e-12
+    },
+    {
+       "pin": "u2/ZN",
+       "x": 0.000100655,
+       "y": 0.000400720,
+       "arrival": 1.342e-10,
+       "slew": 7.795e-12
+    },
+    {
+       "pin": "r3/D",
+       "x": 0.000300890,
+       "y": 0.000300615,
+       "arrival": 1.342e-10,
+       "slew": 7.795e-12
+    }
+  ]
+}

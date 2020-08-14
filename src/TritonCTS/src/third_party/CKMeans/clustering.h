@@ -1,9 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Jiajia Li
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #include <vector>
 #include <cmath>
@@ -53,7 +55,7 @@ public:
 
 
 class clustering {
-	vector<flop*> flops;
+	vector<flop> flops;
 	vector<vector<flop*>> clusters;
 	
 	//map<unsigned, vector<pair<float, float>>> shifts;  // relative x- and y-shifts of slots w.r.t tray 
@@ -72,10 +74,10 @@ class clustering {
 public:
 	clustering(const vector<std::pair<float, float>>&, float, float);
 	~clustering();
-	float Kmeans(unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned);
-	void iterKmeans(unsigned, unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned MAX = 15);
+	float Kmeans(unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned, unsigned);
+	void iterKmeans(unsigned, unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned MAX = 15, unsigned power = 4);
 	float calcSilh(const vector<pair<float,float>>&, unsigned, unsigned);
-	void minCostFlow (const vector<pair<float, float>>&, unsigned, unsigned, float); 
+	void minCostFlow (const vector<pair<float, float>>&, unsigned, unsigned, float, unsigned); 
 	void setPlotFileName(const std::string fileName) { plotFile = fileName; }
 	void getClusters(vector<vector<unsigned>>&);
 	void fixSegmentLengths(vector<pair<float, float>>&);
@@ -89,7 +91,7 @@ public:
     	return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
 	}
 
-	void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&) const;
+  void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&, const vector<pair<float, float>>&, int) const;
 };
 
 }

@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef HTREEBUILDER_H
 #define HTREEBUILDER_H
@@ -73,7 +67,7 @@ public:
                        _techChar(&techChar),
                        _techCharDistUnit(techCharDistUnit) {}
 
-        void build();
+        void build(std::string forceBuffer = "");
         void forceBufferInSegment(std::string master);
         Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
@@ -90,9 +84,9 @@ protected:
         bool                  _forceBuffer;
         unsigned              _numBuffers = 0;
 
-        void buildVerticalConnection();
-        void buildHorizontalConnection();
-        void buildLShapeConnection();
+        void buildVerticalConnection(std::string forceBuffer = "");
+        void buildHorizontalConnection(std::string forceBuffer = "");
+        void buildLShapeConnection(std::string forceBuffer = "");
 };
 
 //-----------------------------------------------------------------------------
@@ -152,11 +146,14 @@ class HTreeBuilder : public TreeBuilder {
                 unsigned getOutputSlew() const { return _outputSlew; }
                 void setOutputCap(unsigned cap) { _outputCap = cap; }
                 unsigned getOutputCap() const { return _outputCap; }
+                void setRemainingLength(unsigned length) { _remainingLength = length; }
+                unsigned getRemainingLength() const { return _remainingLength; }
 
         private:
                 double                         _length;
                 unsigned                       _outputSlew;
                 unsigned                       _outputCap;
+                unsigned                       _remainingLength;
                 std::vector<unsigned>          _wireSegments;
                 std::vector<Point<double>>     _branchPointLoc;
                 std::vector<unsigned>          _parents;
@@ -184,6 +181,15 @@ private:
                                         unsigned tolerance,
                                         unsigned &outputSlew,
                                         unsigned &outputCap) const;
+        unsigned computeMinDelaySegment(unsigned length, 
+                                        unsigned inputSlew,
+                                        unsigned inputCap,
+                                        unsigned slewThreshold,
+                                        unsigned tolerance,
+                                        unsigned &outputSlew,
+                                        unsigned &outputCap,
+                                        bool forceBuffer, 
+                                        int currentLength ) const;
         void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();
@@ -191,7 +197,7 @@ private:
         void computeBranchSinks(LevelTopology& topology, unsigned branchIdx,
                                 std::vector<std::pair<float,float>>& sinkLocations) const;
         
-        bool isVertical(unsigned level) const { return level % 2 == 0; }
+        bool isVertical(unsigned level) const { return level % 2 == (_sinkRegion.getHeight() >= _sinkRegion.getWidth()); }
         bool isHorizontal(unsigned level) const { return !isVertical(level); }
 
         unsigned computeGridSizeX(unsigned level) const { return std::pow(2, (level + 1) / 2); }
@@ -203,8 +209,20 @@ private:
                                                  unsigned branchPtIdx1,
                                                  unsigned branchPtIdx2, 
                                                  const Point<double>& rootLocation,
-                                                 const std::vector<std::pair<float, float>>& topLevelSinks );
-        
+                                                 const std::vector<std::pair<float, float>>& sinks);
+        void preClusteringOpt(const std::vector<std::pair<float, float>>& sinks,
+                              std::vector<std::pair<float, float>>& points,
+                              std::vector<unsigned>& mapSinkToPoint);
+        void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
+                                    float maxDiameter, unsigned clusterSize);
+        void assignSinksToBranches(LevelTopology& topology,
+                                   unsigned branchPtIdx1,
+                                   unsigned branchPtIdx2,
+                                   const std::vector<std::pair<float, float>>& sinks,
+                                   const std::vector<std::pair<float, float>>& points,
+                                   const std::vector<unsigned>& mapSinkToPoint,
+                                   const std::vector<std::vector<unsigned>>& clusters);        
+
         bool isSubRegionTooSmall(double width, double height) const {
                 if (width < _minLengthSinkRegion || height < _minLengthSinkRegion ) {
                         return true;
@@ -222,6 +240,8 @@ private:
 protected:
         Box<double>                _sinkRegion;
         std::vector<LevelTopology> _topologyForEachLevel;
+        std::map<Point<double>, ClockInst*> _mapLocationToSink;
+        std::vector<std::pair<float, float>> _topLevelSinksClustered;
         
         DBU      _wireSegmentUnit     = -1;
         unsigned _minInputCap         =  1;

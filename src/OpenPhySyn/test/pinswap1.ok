@@ -16,91 +16,89 @@ Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
-     Delay       Time   Description
----------------------------------------------------------------
-   0.00000    0.00000   clock core_clock (rise edge)
-   0.00000    0.00000   clock network delay (ideal)
-   0.00000    0.00000 ^ _596_/CK (DFF_X1)
-   0.16044    0.16044 ^ _596_/Q (DFF_X1)
-   0.05985    0.22028 ^ _399_/ZN (XNOR2_X2)
-   0.02098    0.24126 v _421_/ZN (AOI21_X4)
-   0.01332    0.25459 ^ _427_/ZN (INV_X4)
-   0.01458    0.26917 v _438_/ZN (NAND2_X2)
-   0.01980    0.28897 ^ _439_/ZN (NAND2_X4)
-   0.01324    0.30220 v _470_/ZN (NAND2_X2)
-   0.01861    0.32082 ^ _473_/ZN (NAND2_X2)
-   0.03150    0.35232 ^ _506_/ZN (AND2_X2)
-   0.00738    0.35971 v _507_/ZN (INV_X2)
-   0.02736    0.38706 v _510_/ZN (AND3_X4)
-   0.05743    0.44449 v _524_/ZN (OR3_X4)
-   0.02604    0.47053 ^ _528_/ZN (AOI21_X4)
-   0.00938    0.47991 v _535_/ZN (NOR2_X2)
-   0.03800    0.51791 v _536_/ZN (XNOR2_X1)
-   0.02741    0.54532 v _537_/ZN (AND2_X2)
-   0.02656    0.57188 ^ _540_/ZN (OAI21_X1)
-   0.02023    0.59211 v _541_/ZN (OAI21_X1)
-   0.00001    0.59212 v _594_/D (DFF_X1)
-              0.59212   data arrival time
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock core_clock (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ _596_/CK (DFF_X1)
+   0.160    0.160 ^ _596_/Q (DFF_X1)
+   0.060    0.220 ^ _399_/ZN (XNOR2_X2)
+   0.021    0.241 v _421_/ZN (AOI21_X4)
+   0.013    0.255 ^ _427_/ZN (INV_X4)
+   0.015    0.269 v _438_/ZN (NAND2_X2)
+   0.020    0.289 ^ _439_/ZN (NAND2_X4)
+   0.013    0.302 v _470_/ZN (NAND2_X2)
+   0.019    0.321 ^ _473_/ZN (NAND2_X2)
+   0.032    0.352 ^ _506_/ZN (AND2_X2)
+   0.007    0.360 v _507_/ZN (INV_X2)
+   0.027    0.387 v _510_/ZN (AND3_X4)
+   0.057    0.444 v _524_/ZN (OR3_X4)
+   0.026    0.471 ^ _528_/ZN (AOI21_X4)
+   0.009    0.480 v _535_/ZN (NOR2_X2)
+   0.038    0.518 v _536_/ZN (XNOR2_X1)
+   0.027    0.545 v _537_/ZN (AND2_X2)
+   0.027    0.572 ^ _540_/ZN (OAI21_X1)
+   0.020    0.592 v _541_/ZN (OAI21_X1)
+   0.000    0.592 v _594_/D (DFF_X1)
+            0.592   data arrival time
 
-  10.00000   10.00000   clock core_clock (rise edge)
-   0.00000   10.00000   clock network delay (ideal)
-   0.00000   10.00000   clock reconvergence pessimism
-             10.00000 ^ _594_/CK (DFF_X1)
-  -0.04051    9.95949   library setup time
-              9.95949   data required time
----------------------------------------------------------------
-              9.95949   data required time
-             -0.59212   data arrival time
----------------------------------------------------------------
-              9.36737   slack (MET)
+  10.000   10.000   clock core_clock (rise edge)
+   0.000   10.000   clock network delay (ideal)
+   0.000   10.000   clock reconvergence pessimism
+           10.000 ^ _594_/CK (DFF_X1)
+  -0.041    9.959   library setup time
+            9.959   data required time
+-----------------------------------------------------------
+            9.959   data required time
+           -0.592   data arrival time
+-----------------------------------------------------------
+            9.367   slack (MET)
 
 
 Invoking pin_swap transform 
-Finished pin_swap transform ( 3 ) 
+Finished pin_swap transform ( 8 ) 
 Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
-     Delay       Time   Description
----------------------------------------------------------------
-   0.00000    0.00000   clock core_clock (rise edge)
-   0.00000    0.00000   clock network delay (ideal)
-   0.00000    0.00000 ^ _596_/CK (DFF_X1)
-   0.15843    0.15843 ^ _596_/Q (DFF_X1)
-   0.06121    0.21963 ^ _399_/ZN (XNOR2_X2)
-   0.02102    0.24065 v _421_/ZN (AOI21_X4)
-   0.01334    0.25400 ^ _427_/ZN (INV_X4)
-   0.01467    0.26867 v _438_/ZN (NAND2_X2)
-   0.01740    0.28607 ^ _439_/ZN (NAND2_X4)
-   0.01332    0.29940 v _470_/ZN (NAND2_X2)
-   0.01864    0.31803 ^ _473_/ZN (NAND2_X2)
-   0.03150    0.34954 ^ _506_/ZN (AND2_X2)
-   0.00738    0.35692 v _507_/ZN (INV_X2)
-   0.02736    0.38428 v _510_/ZN (AND3_X4)
-   0.05743    0.44171 v _524_/ZN (OR3_X4)
-   0.02604    0.46774 ^ _528_/ZN (AOI21_X4)
-   0.00938    0.47713 v _535_/ZN (NOR2_X2)
-   0.03800    0.51513 v _536_/ZN (XNOR2_X1)
-   0.02752    0.54265 v _537_/ZN (AND2_X2)
-   0.03140    0.57405 ^ _540_/ZN (OAI21_X1)
-   0.02023    0.59428 v _541_/ZN (OAI21_X1)
-   0.00001    0.59429 v _594_/D (DFF_X1)
-              0.59429   data arrival time
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock core_clock (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ _596_/CK (DFF_X1)
+   0.158    0.158 ^ _596_/Q (DFF_X1)
+   0.062    0.220 ^ _399_/ZN (XNOR2_X2)
+   0.021    0.241 v _421_/ZN (AOI21_X4)
+   0.012    0.254 ^ _427_/ZN (INV_X4)
+   0.014    0.268 v _438_/ZN (NAND2_X2)
+   0.017    0.285 ^ _439_/ZN (NAND2_X4)
+   0.013    0.299 v _470_/ZN (NAND2_X2)
+   0.019    0.317 ^ _473_/ZN (NAND2_X2)
+   0.032    0.349 ^ _506_/ZN (AND2_X2)
+   0.007    0.356 v _507_/ZN (INV_X2)
+   0.027    0.384 v _510_/ZN (AND3_X4)
+   0.057    0.441 v _524_/ZN (OR3_X4)
+   0.026    0.467 ^ _528_/ZN (AOI21_X4)
+   0.009    0.477 v _535_/ZN (NOR2_X2)
+   0.038    0.515 v _536_/ZN (XNOR2_X1)
+   0.027    0.542 v _537_/ZN (AND2_X2)
+   0.027    0.569 ^ _540_/ZN (OAI21_X1)
+   0.020    0.589 v _541_/ZN (OAI21_X1)
+   0.000    0.589 v _594_/D (DFF_X1)
+            0.589   data arrival time
 
-  10.00000   10.00000   clock core_clock (rise edge)
-   0.00000   10.00000   clock network delay (ideal)
-   0.00000   10.00000   clock reconvergence pessimism
-             10.00000 ^ _594_/CK (DFF_X1)
-  -0.04051    9.95949   library setup time
-              9.95949   data required time
----------------------------------------------------------------
-              9.95949   data required time
-             -0.59429   data arrival time
----------------------------------------------------------------
-              9.36521   slack (MET)
+  10.000   10.000   clock core_clock (rise edge)
+   0.000   10.000   clock network delay (ideal)
+   0.000   10.000   clock reconvergence pessimism
+           10.000 ^ _594_/CK (DFF_X1)
+  -0.041    9.959   library setup time
+            9.959   data required time
+-----------------------------------------------------------
+            9.959   data required time
+           -0.589   data arrival time
+-----------------------------------------------------------
+            9.371   slack (MET)
 
 
-Differences found at line 666.
-    - resp_msg[15] ( PIN resp_msg[15] ) ( _537_ A1 ) ( _536_ ZN ) + USE SIGNAL ;
-    - resp_msg[15] ( PIN resp_msg[15] ) ( _537_ A2 ) ( _536_ ZN ) + USE SIGNAL ;
+No differences found.

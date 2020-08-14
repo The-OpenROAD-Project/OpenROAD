@@ -1,0 +1,5 @@
+#!/bin/sh
+# -Wall -pedantic are not used here because they complain about
+# [many] local variables that have been optimized out
+make  MAKE="./makeOpt-gnu" DEPENDOPT="-MM" CC4LIBS="g++" OPTFLAGS='-O3 -m64 -funroll-loops $(ABKSYMBOLS)' CCFLAGS="-fPIC -pipe" CC='g++ $(OPTFLAGS) $(CCFLAGS)' LD="g++ -shared -m64" LDFINAL="g++ -m64" SODIRKEY="-Wl,-rpath," SOLABEL="" QLIBS="" YACC_LIB="" $1 $2 $3 $4 $5
+#SODIRKEY="-Wl,-rpath," SOLABEL="" $1

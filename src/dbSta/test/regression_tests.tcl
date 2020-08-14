@@ -10,6 +10,9 @@ record_tests {
   sta5
   block_sta1
   find_clks1
+  find_clks2
+  report_json1
+  power1
 
   read_verilog1
   read_verilog2

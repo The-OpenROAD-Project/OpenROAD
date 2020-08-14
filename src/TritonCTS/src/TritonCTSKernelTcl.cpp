@@ -1,17 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaca
-//          (Ph.D. advisor: Ricardo Reis)
-//          Jiajia Li
-//          Andrew Kahng
-// Based on:
-//          K. Han, A. B. Kahng and J. Li, "Optimal Generalized H-Tree Topology and 
-//          Buffering for High-Performance and Low-Power Clock Distribution", 
-//          IEEE Trans. on CAD (2018), doi:10.1109/TCAD.2018.2889756.
-//
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2018, The Regents of the University of California
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,15 +21,18 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////////
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 
 #include "TritonCTSKernel.h"
 
@@ -54,6 +48,18 @@ namespace TritonCTS {
 
 void TritonCTSKernel::set_only_characterization(bool enable) {
         _options.setOnlyCharacterization(enable);
+}
+
+void TritonCTSKernel::set_simple_cts(bool enable) {
+        _options.setSimpleCts(enable);
+}
+
+void TritonCTSKernel::set_sink_clustering(bool enable) {
+        _options.setSinkClustering(enable);
+}
+
+void TritonCTSKernel::set_auto_lut(bool enable) {
+        _options.setAutoLut(enable);
 }
 
 void TritonCTSKernel::set_lut_file(const char* file) {
@@ -171,6 +177,48 @@ void TritonCTSKernel::set_metric_output(const char* file){
 
 void TritonCTSKernel::report_cts_metrics(){
         reportCtsMetrics();
-};
+}
+
+void TritonCTSKernel::set_tree_buf(const char* buffer) {
+        _options.setTreeBuffer(buffer);
+}
+
+void TritonCTSKernel::set_distance_between_buffers(double distance) {
+        _options.setSimpleSegmentsEnabled(true);
+        _options.setBufferDistance(distance);
+}
+
+void TritonCTSKernel::set_branching_point_buffers_distance(double distance) {
+        _options.setVertexBuffersEnabled(true);
+        _options.setVertexBufferDistance(distance);
+}
+
+void TritonCTSKernel::set_disable_post_cts(bool disable) {
+        _options.setRunPostCtsOpt(!(disable));
+}
+
+void TritonCTSKernel::set_clustering_exponent(unsigned power){
+        _options.setClusteringPower(power);
+}
+
+void TritonCTSKernel::set_clustering_unbalance_ratio(double ratio){
+        _options.setClusteringCapacity(ratio);
+}
+
+void TritonCTSKernel::set_sink_clustering_size(unsigned size){
+        _options.setSizeSinkClustering(size);
+}
+
+void TritonCTSKernel::set_clustering_diameter(double distance){
+        _options.setMaxDiameter(distance);
+}
+
+void TritonCTSKernel::set_num_static_layers(unsigned num){
+        _options.setNumStaticLayers(num);
+}
+
+void TritonCTSKernel::set_sink_buffer(const char* buffer) {
+        _options.setSinkBuffer(buffer);
+}
 
 }

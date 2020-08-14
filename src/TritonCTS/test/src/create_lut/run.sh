@@ -11,7 +11,7 @@ binary=$1
 
 $binary -no_init < run.tcl > test.log 2>&1
 
-if grep -q "Compiling LUT" test.log;
+if grep -q "The chacterization used 1 buffer(s) types. All of them are in the loaded DB." test.log;
 then
 	exit $GREEN
 else

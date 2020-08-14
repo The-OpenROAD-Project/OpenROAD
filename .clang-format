@@ -2,8 +2,6 @@
 Language:        Cpp
 BasedOnStyle:  Google
 
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: false

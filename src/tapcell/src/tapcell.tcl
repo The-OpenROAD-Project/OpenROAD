@@ -1,9 +1,8 @@
-################################################################################
-## Authors: Eder Matheus Monteiro (UFRGS) and Minsoo Kim (UCSD)
+###############################################################################
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2019, Federal University of Rio Grande do Sul (UFRGS)
+## Copyright (c) 2019, University of California, San Diego.
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -31,7 +30,9 @@
 ## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
-################################################################################
+##
+###############################################################################
+
 
 sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master] \
                                     [-endcap_master endcap_master] \
@@ -339,6 +340,39 @@ namespace eval tapcell {
         return $top_bottom_macros
     }
 
+    proc get_macros_overlapping_with_row {row macros halo_x halo_y} {
+        set row_llx [expr [[$row getBBox] xMin] - $halo_x]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [expr [[$row getBBox] xMax] + $halo_x]
+        set row_ury [[$row getBBox] yMax]
+
+        set overlap_macros ""
+
+        set row_height [expr $row_ury - $row_lly]
+
+        foreach macro $macros {
+            set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
+            set macro_lly [expr {[[$macro getBBox] yMin] - $halo_y - $row_height}]
+            set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
+            set macro_ury [expr {[[$macro getBBox] yMax] + $halo_y + $row_height}]
+
+            set min_x [expr max($macro_llx, $row_llx)]
+            set max_x [expr min($macro_urx, $row_urx)]
+            
+            set min_y [expr max($macro_lly, $row_lly)]
+            set max_y [expr min($macro_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            set dy [expr $min_y - $max_y]
+
+            if {[expr ($dx < 0) && ($dy < 0)]} {
+                lappend overlap_macros $macro
+            }
+        }
+
+        return $overlap_macros
+    }
+
     proc in_blocked_region {x row blockages halo_x halo_y master_width endcapwidth} {
         set row_blockages ""
         set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
@@ -361,7 +395,7 @@ namespace eval tapcell {
 
     proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width add_boundary_cell} {
         set row_blockages ""
-        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
+        set row_blockages [get_macros_overlapping_with_row $row $blockages $halo_x $halo_y]
         set min_width [expr 2*$site_width]
         set urx [[$row getBBox] xMax]
         set end_llx [expr $urx - $endcapwidth] 

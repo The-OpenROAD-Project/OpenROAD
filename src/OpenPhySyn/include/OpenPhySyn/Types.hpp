@@ -45,6 +45,10 @@ class LibertyLibrary;
 class PortDirection;
 class Term;
 class Port;
+class DatabaseSta;
+class DatabaseStaNetwork;
+class PathAnalysisPt;
+class Vertex;
 } // namespace sta
 namespace odb
 {
@@ -56,17 +60,21 @@ class dbTech;
 class Point;
 class Library;
 class Rect;
+class defin;
+class defout;
+class lefin;
 } // namespace odb
+
 namespace psn
 {
 class OpenDBHandler;
-class OpenStaHandler;
-
+class DatabaseHandler;
 enum HandlerType
 {
     OPENSTA,
     OPENDB
 };
+typedef int                 DefDbu;
 typedef int                 DefDbu;
 typedef odb::dbDatabase     Database;
 typedef odb::dbChip         Chip;
@@ -81,12 +89,19 @@ typedef odb::dbTech         LibraryTechnology;
 typedef sta::Net            Net;
 typedef sta::Port           Port;
 typedef sta::LibertyLibrary Liberty;
+typedef sta::Vertex         Vertex;
 
-typedef sta::PortDirection PinDirection;
-typedef sta::Term          Term;
-typedef odb::Point         Point;
-typedef odb::Rect          Rect;
-typedef OpenStaHandler     DatabaseHandler;
-typedef sta::dbSta         DatabaseSta;
-typedef sta::dbNetwork     DatabaseStaNetwork;
+typedef sta::PortDirection  PinDirection;
+typedef sta::Term           Term;
+typedef sta::PathAnalysisPt PathAnalysisPoint;
+typedef odb::Point          Point;
+typedef odb::Rect           Rect;
+typedef DatabaseHandler     DatabaseHandler;
+
+typedef odb::defin     DefParser;
+typedef odb::defout    DefOut;
+typedef odb::lefin     LefParser;
+typedef sta::dbSta     DatabaseSta;
+typedef sta::dbNetwork DatabaseStaNetwork;
+
 } // namespace psn

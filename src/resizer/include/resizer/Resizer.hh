@@ -62,14 +62,19 @@ public:
   // Remove all buffers from the netlist.
   void removeBuffers();
   // Set the resistance and capacitance used for parasitics.
-  // Make net wire parasitics based on DEF locations.
   void setWireRC(float wire_res, // ohms/meter
 		 float wire_cap, // farads/meter
 		 Corner *corner);
+  // Set the resistance and capacitance used for parasitics on clock nets.
+  void setWireClkRC(float wire_res, // ohms/meter
+		    float wire_cap, // farads/meter
+		    Corner *corner);
   // ohms/meter
   float wireResistance() { return wire_res_; }
+  float wireClkResistance() { return wire_clk_res_; }
   // farads/meter
   float wireCapacitance() { return wire_cap_; }
+  float wireClkCapacitance() { return wire_clk_cap_; }
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const dbNet *net);
@@ -113,6 +118,12 @@ public:
 		       double wire_length, // meters
 		       Delay &delay,
 		       Slew &slew);
+  void cellWireDelay(LibertyPort *drvr_port,
+		     LibertyPort *load_port,
+		     double wire_length, // meters
+		     // Return values.
+		     Delay &delay,
+		     Slew &slew);
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // zero for none (meters)
 		    LibertyCell *buffer_cell);
@@ -120,6 +131,11 @@ public:
   // no max_fanout/max_cap checks.
   void repairClkNets(double max_wire_length, // meters
 		     LibertyCell *buffer_cell);
+  // Clone inverters next to the registers they drive to remove them
+  // from the clock network.
+  // yosys is too stupid to use the inverted clock registers
+  // and TritonCTS is too stupid to balance clock networks with inverters.
+  void repairClkInverters();
   // for debugging
   void repairNet(Net *net,
 		 double max_wire_length, // meters
@@ -129,9 +145,11 @@ public:
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
   double findMaxWireLength(LibertyCell *buffer_cell);
+  double findMaxWireLength(LibertyPort *drvr_port);
   // Find the max wire length with load slew < max_slew (in meters).
-  double findMaxSlewWireLength(double max_slew,
-			       LibertyCell *buffer_cell);
+  double findMaxSlewWireLength(LibertyPort *drvr_port,
+			       LibertyPort *load_port,
+			       double max_slew);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
   void writeNetSVG(Net *net,
@@ -146,9 +164,6 @@ protected:
   double findDesignArea();
   void ensureCorner();
   void initCorner(Corner *corner);
-  void ensureClkNets();
-  void findClkNets();
-  bool isClock(Net *net);
   void ensureLevelDrvrVerticies();
   void bufferInput(Pin *top_pin,
 		   LibertyCell *buffer_cell);
@@ -194,6 +209,11 @@ protected:
 		 int &cap_violations,
 		 int &fanout_violations,
 		 int &length_violations);
+  void checkSlew(const Pin *drvr_pin,
+		 // Return values.
+		 Slew &slew,
+		 float &limit,
+		 float &slack);
   void repairNet(SteinerTree *tree,
 		 SteinerPt pt,
 		 SteinerPt prev_pt,
@@ -247,6 +267,7 @@ protected:
   float bufferDelay(LibertyCell *buffer_cell,
 		    RiseFall *rf,
 		    float load_cap);
+  float bufferDelay(LibertyCell *buffer_cell);
   Parasitic *makeWireParasitic(Net *net,
 			       Pin *drvr_pin,
 			       Pin *load_pin,
@@ -264,14 +285,16 @@ protected:
   double area(Cell *cell);
   double splitWireDelayDiff(double wire_length,
 			    LibertyCell *buffer_cell);
-  double maxSlewWireDiff(double wire_length,
-			 double max_slew,
-			 LibertyCell *buffer_cell);
+  double maxSlewWireDiff(LibertyPort *drvr_port,
+			 LibertyPort *load_port,
+			 double wire_length,
+			 double max_slew);
 
   void findFaninWeights(VertexSet &ends,
 			// Return value.
 			VertexWeightMap &weight_map);
   float slackGap(Vertex *vertex);
+  Slack findHoldViolations(VertexSet &ends);
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,
@@ -293,9 +316,15 @@ protected:
   Point tieLocation(Pin *load,
 		    int separation);
   bool hasFanout(Vertex *drvr);
+  void findClkInverters(// Return values
+			InstanceSeq &clk_inverters);
+  void cloneClkInverter(Instance *inv);
+  void setWireCorner(Corner *corner);
 
   float wire_res_;
   float wire_cap_;
+  float wire_clk_res_;
+  float wire_clk_cap_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;
@@ -311,8 +340,6 @@ protected:
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;
   const ParasiticAnalysisPt *parasitics_ap_;
-  NetSet clk_nets_;
-  bool clk_nets_valid_;
   bool have_estimated_parasitics_;
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;

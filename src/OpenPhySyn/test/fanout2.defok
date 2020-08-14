@@ -81,7 +81,7 @@ TRACKS X 190 DO 63 STEP 3200 LAYER metal9 ;
 TRACKS Y 140 DO 63 STEP 3200 LAYER metal9 ;
 TRACKS X 190 DO 63 STEP 3200 LAYER metal10 ;
 TRACKS Y 140 DO 63 STEP 3200 LAYER metal10 ;
-COMPONENTS 498 ;
+COMPONENTS 502 ;
     - _297_ INV_X1 ;
     - _298_ AND3_X1 ;
     - _299_ XOR2_X1 ;
@@ -564,22 +564,26 @@ COMPONENTS 498 ;
     - PSN_166 FILLCELL_X1 + SOURCE DIST + FIXED ( 180120 173600 ) S ;
     - PSN_167 FILLCELL_X1 + SOURCE DIST + FIXED ( 20140 176400 ) N ;
     - PSN_168 FILLCELL_X1 + SOURCE DIST + FIXED ( 180120 176400 ) FN ;
-    - buf_0 BUF_X4 ;
-    - buf_1 BUF_X4 ;
-    - buf_2_0 BUF_X4 ;
-    - buf_2_1 BUF_X4 ;
-    - buf_2_2_0 BUF_X4 ;
-    - buf_2_2_1 BUF_X4 ;
-    - buf_2_2_2_0 BUF_X4 ;
-    - buf_2_2_2_1 BUF_X4 ;
-    - buf_2_2_2_2_0 BUF_X4 ;
-    - buf_2_2_2_2_1 BUF_X4 ;
-    - buf_2_2_2_2_2_0 BUF_X4 ;
-    - buf_2_2_2_2_2_1 BUF_X4 ;
-    - buf_2_2_2_2_2_2_0 BUF_X4 ;
-    - buf_2_2_2_2_2_2_1 BUF_X4 ;
-    - buf_2_2_2_2_2_2_2_0 BUF_X4 ;
-    - buf_2_2_2_2_2_2_2_1 BUF_X4 ;
+    - psn_inst_psn_fo_buff_0 BUF_X4 ;
+    - psn_inst_psn_fo_buff_1 BUF_X4 ;
+    - psn_inst_psn_fo_buff_2 BUF_X4 ;
+    - psn_inst_psn_fo_buff_3 BUF_X4 ;
+    - psn_inst_psn_fo_buff_4 BUF_X4 ;
+    - psn_inst_psn_fo_buff_5 BUF_X4 ;
+    - psn_inst_psn_fo_buff_6 BUF_X4 ;
+    - psn_inst_psn_fo_buff_7 BUF_X4 ;
+    - psn_inst_psn_fo_buff_8 BUF_X4 ;
+    - psn_inst_psn_fo_buff_9 BUF_X4 ;
+    - psn_inst_psn_fo_buff_10 BUF_X4 ;
+    - psn_inst_psn_fo_buff_11 BUF_X4 ;
+    - psn_inst_psn_fo_buff_12 BUF_X4 ;
+    - psn_inst_psn_fo_buff_13 BUF_X4 ;
+    - psn_inst_psn_fo_buff_14 BUF_X4 ;
+    - psn_inst_psn_fo_buff_15 BUF_X4 ;
+    - psn_inst_psn_fo_buff_16 BUF_X4 ;
+    - psn_inst_psn_fo_buff_17 BUF_X4 ;
+    - psn_inst_psn_fo_buff_18 BUF_X4 ;
+    - psn_inst_psn_fo_buff_19 BUF_X4 ;
 END COMPONENTS
 PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 121150 201460 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
@@ -637,12 +641,8 @@ PINS 54 ;
     - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + FIXED ( 200120 178220 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
     - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 140 31500 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
 END PINS
-NETS 401 ;
-    - clk ( PIN clk ) ( _576_ CK ) ( _577_ CK ) ( _578_ CK ) ( _579_ CK ) ( _580_ CK ) ( _581_ CK )
-      ( _582_ CK ) ( _583_ CK ) ( _584_ CK ) ( _585_ CK ) ( _586_ CK ) ( _587_ CK ) ( _588_ CK ) ( _589_ CK )
-      ( _590_ CK ) ( _591_ CK ) ( _592_ CK ) ( _593_ CK ) ( _594_ CK ) ( _595_ CK ) ( _596_ CK ) ( _597_ CK )
-      ( _598_ CK ) ( _599_ CK ) ( _600_ CK ) ( _601_ CK ) ( _602_ CK ) ( _603_ CK ) ( _604_ CK ) ( _605_ CK )
-      ( _606_ CK ) ( _607_ CK ) ( _608_ CK ) ( _609_ CK ) ( _610_ CK ) + USE SIGNAL ;
+NETS 405 ;
+    - clk ( PIN clk ) ( psn_inst_psn_fo_buff_3 A ) ( psn_inst_psn_fo_buff_2 A ) ( psn_inst_psn_fo_buff_1 A ) ( psn_inst_psn_fo_buff_0 A ) + USE SIGNAL ;
     - req_msg[31] ( PIN req_msg[31] ) ( _538_ A ) + USE SIGNAL ;
     - req_msg[30] ( PIN req_msg[30] ) ( _531_ A ) + USE SIGNAL ;
     - req_msg[29] ( PIN req_msg[29] ) ( _521_ A ) + USE SIGNAL ;
@@ -675,7 +675,7 @@ NETS 401 ;
     - req_msg[2] ( PIN req_msg[2] ) ( _548_ B ) + USE SIGNAL ;
     - req_msg[1] ( PIN req_msg[1] ) ( _546_ B ) + USE SIGNAL ;
     - req_msg[0] ( PIN req_msg[0] ) ( _542_ B ) + USE SIGNAL ;
-    - req_rdy ( PIN req_rdy ) ( buf_1 A ) ( buf_0 A ) ( _576_ Q ) + USE SIGNAL ;
+    - req_rdy ( PIN req_rdy ) ( psn_inst_psn_fo_buff_5 A ) ( psn_inst_psn_fo_buff_4 A ) ( _576_ Q ) + USE SIGNAL ;
     - req_val ( PIN req_val ) ( _319_ A4 ) ( _323_ C2 ) + USE SIGNAL ;
     - reset ( PIN reset ) ( _309_ A ) ( _313_ A2 ) ( _323_ A ) ( _324_ A2 ) + USE SIGNAL ;
     - resp_msg[15] ( PIN resp_msg[15] ) ( _536_ ZN ) ( _537_ A1 ) + USE SIGNAL ;
@@ -769,13 +769,13 @@ NETS 401 ;
     - _069_ ( _315_ ZN ) ( _320_ A1 ) + USE SIGNAL ;
     - _070_ ( _316_ ZN ) ( _317_ A ) ( _404_ A2 ) ( _460_ B2 ) ( _469_ B2 ) ( _478_ B2 ) ( _487_ B2 )
       ( _513_ B2 ) ( _521_ B2 ) ( _531_ B2 ) + USE SIGNAL ;
-    - _071_ ( buf_2_1 A ) ( buf_2_0 A ) ( _317_ Z ) + USE SIGNAL ;
-    - _072_ ( buf_2_2_1 A ) ( buf_2_2_0 A ) ( _318_ Z ) + USE SIGNAL ;
+    - _071_ ( psn_inst_psn_fo_buff_7 A ) ( psn_inst_psn_fo_buff_6 A ) ( _317_ Z ) + USE SIGNAL ;
+    - _072_ ( psn_inst_psn_fo_buff_9 A ) ( psn_inst_psn_fo_buff_8 A ) ( _318_ Z ) + USE SIGNAL ;
     - _073_ ( _319_ ZN ) ( _320_ A2 ) + USE SIGNAL ;
     - _074_ ( _321_ ZN ) ( _322_ A1 ) + USE SIGNAL ;
     - _075_ ( _322_ ZN ) ( _324_ A1 ) + USE SIGNAL ;
     - _076_ ( _323_ ZN ) ( _324_ A3 ) + USE SIGNAL ;
-    - _077_ ( buf_2_2_2_1 A ) ( buf_2_2_2_0 A ) ( _325_ Z ) + USE SIGNAL ;
+    - _077_ ( psn_inst_psn_fo_buff_11 A ) ( psn_inst_psn_fo_buff_10 A ) ( _325_ Z ) + USE SIGNAL ;
     - _078_ ( _326_ ZN ) ( _406_ A ) + USE SIGNAL ;
     - _079_ ( _327_ ZN ) ( _328_ A1 ) ( _541_ B1 ) + USE SIGNAL ;
     - _080_ ( _328_ ZN ) ( _389_ A1 ) + USE SIGNAL ;
@@ -856,16 +856,16 @@ NETS 401 ;
     - _155_ ( _403_ ZN ) ( _404_ A1 ) ( _543_ A1 ) + USE SIGNAL ;
     - _156_ ( _404_ ZN ) ( _405_ A ) ( _476_ C1 ) ( _485_ C1 ) ( _494_ C1 ) ( _514_ C1 ) ( _522_ C2 )
       ( _532_ C2 ) + USE SIGNAL ;
-    - _157_ ( buf_2_2_2_2_1 A ) ( buf_2_2_2_2_0 A ) ( _405_ Z ) + USE SIGNAL ;
+    - _157_ ( psn_inst_psn_fo_buff_13 A ) ( psn_inst_psn_fo_buff_12 A ) ( _405_ Z ) + USE SIGNAL ;
     - _158_ ( _406_ ZN ) ( _410_ B ) + USE SIGNAL ;
     - _159_ ( _407_ ZN ) ( _408_ A ) + USE SIGNAL ;
     - _160_ ( _408_ Z ) ( _409_ A ) ( _459_ S ) ( _468_ S ) ( _477_ S ) ( _486_ S ) ( _495_ S )
       ( _515_ S ) ( _523_ S ) ( _533_ S ) + USE SIGNAL ;
-    - _161_ ( buf_2_2_2_2_2_1 A ) ( buf_2_2_2_2_2_0 A ) ( _409_ Z ) + USE SIGNAL ;
+    - _161_ ( psn_inst_psn_fo_buff_15 A ) ( psn_inst_psn_fo_buff_14 A ) ( _409_ Z ) + USE SIGNAL ;
     - _162_ ( _411_ ZN ) ( _418_ A ) + USE SIGNAL ;
     - _163_ ( _412_ ZN ) ( _413_ A2 ) + USE SIGNAL ;
     - _164_ ( _413_ ZN ) ( _414_ A ) ( _484_ A2 ) ( _493_ A1 ) ( _512_ A2 ) ( _520_ A2 ) ( _530_ A2 ) + USE SIGNAL ;
-    - _165_ ( buf_2_2_2_2_2_2_1 A ) ( buf_2_2_2_2_2_2_0 A ) ( _414_ Z ) + USE SIGNAL ;
+    - _165_ ( psn_inst_psn_fo_buff_17 A ) ( psn_inst_psn_fo_buff_16 A ) ( _414_ Z ) + USE SIGNAL ;
     - _166_ ( _415_ ZN ) ( _416_ B ) ( _421_ B2 ) + USE SIGNAL ;
     - _167_ ( _417_ ZN ) ( _418_ B ) + USE SIGNAL ;
     - _168_ ( _418_ ZN ) ( _419_ B ) + USE SIGNAL ;
@@ -966,7 +966,7 @@ NETS 401 ;
     - _263_ ( _542_ Z ) ( _545_ B ) + USE SIGNAL ;
     - _264_ ( _543_ ZN ) ( _544_ A ) ( _565_ S ) ( _567_ S ) ( _569_ S ) ( _571_ S ) ( _573_ S )
       ( _575_ S ) + USE SIGNAL ;
-    - _265_ ( buf_2_2_2_2_2_2_2_1 A ) ( buf_2_2_2_2_2_2_2_0 A ) ( _544_ Z ) + USE SIGNAL ;
+    - _265_ ( psn_inst_psn_fo_buff_19 A ) ( psn_inst_psn_fo_buff_18 A ) ( _544_ Z ) + USE SIGNAL ;
     - _266_ ( _546_ Z ) ( _547_ B ) + USE SIGNAL ;
     - _267_ ( _548_ Z ) ( _549_ B ) + USE SIGNAL ;
     - _268_ ( _550_ Z ) ( _551_ B ) + USE SIGNAL ;
@@ -1032,29 +1032,37 @@ NETS 401 ;
     - dpath.a_lt_b$in1[7] ( _300_ A1 ) ( _329_ B ) ( _350_ A ) ( _559_ A ) ( _602_ Q ) + USE SIGNAL ;
     - dpath.a_lt_b$in1[8] ( _305_ A4 ) ( _364_ B ) ( _377_ A3 ) ( _481_ A2 ) ( _561_ A ) ( _603_ Q ) + USE SIGNAL ;
     - dpath.a_lt_b$in1[9] ( _305_ A3 ) ( _363_ B ) ( _379_ A2 ) ( _488_ A2 ) ( _563_ A ) ( _604_ Q ) + USE SIGNAL ;
-    - bufnet_0 ( _572_ S ) ( _570_ S ) ( _568_ S ) ( _566_ S ) ( _564_ S ) ( _562_ S ) ( _560_ S )
-      ( _407_ A2 ) ( _318_ A ) ( buf_0 Z ) + USE SIGNAL ;
-    - bufnet_1 ( _574_ S ) ( buf_1 Z ) + USE SIGNAL ;
-    - bufnet_2_0 ( _496_ B2 ) ( _452_ B2 ) ( _444_ B2 ) ( _435_ B2 ) ( _426_ B2 ) ( _420_ B2 ) ( _411_ B2 )
-      ( _326_ B2 ) ( _319_ A2 ) ( buf_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_1 ( _538_ B2 ) ( buf_2_1 Z ) + USE SIGNAL ;
-    - bufnet_2_2_0 ( _556_ S ) ( _554_ S ) ( _552_ S ) ( _550_ S ) ( _548_ S ) ( _546_ S ) ( _542_ S )
-      ( _323_ C1 ) ( _319_ A3 ) ( buf_2_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_2_1 ( _558_ S ) ( buf_2_2_1 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_0 ( _496_ B1 ) ( _460_ B1 ) ( _452_ B1 ) ( _444_ B1 ) ( _435_ B1 ) ( _426_ B1 ) ( _420_ B1 )
-      ( _411_ B1 ) ( _326_ B1 ) ( buf_2_2_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_1 ( _538_ B1 ) ( buf_2_2_2_1 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_0 ( _497_ B1 ) ( _467_ C1 ) ( _458_ C1 ) ( _450_ C1 ) ( _442_ C1 ) ( _433_ C1 ) ( _424_ C1 )
-      ( _418_ C1 ) ( _406_ C1 ) ( buf_2_2_2_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_1 ( _539_ B1 ) ( buf_2_2_2_2_1 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_2_0 ( _540_ A ) ( _505_ B2 ) ( _504_ A ) ( _451_ S ) ( _443_ S ) ( _434_ S ) ( _425_ S )
-      ( _419_ S ) ( _410_ S ) ( buf_2_2_2_2_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_2_1 ( _541_ B2 ) ( buf_2_2_2_2_2_1 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_2_2_0 ( _503_ A2 ) ( _475_ A1 ) ( _466_ A1 ) ( _457_ A1 ) ( _449_ A1 ) ( _441_ A1 ) ( _432_ A1 )
-      ( _423_ A1 ) ( _417_ A1 ) ( buf_2_2_2_2_2_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_2_2_1 ( _537_ A2 ) ( buf_2_2_2_2_2_2_1 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_2_2_2_0 ( _561_ S ) ( _559_ S ) ( _557_ S ) ( _555_ S ) ( _553_ S ) ( _551_ S ) ( _549_ S )
-      ( _547_ S ) ( _545_ S ) ( buf_2_2_2_2_2_2_2_0 Z ) + USE SIGNAL ;
-    - bufnet_2_2_2_2_2_2_2_1 ( _563_ S ) ( buf_2_2_2_2_2_2_2_1 Z ) + USE SIGNAL ;
+    - psn_net_0 ( _584_ CK ) ( _583_ CK ) ( _582_ CK ) ( _581_ CK ) ( _580_ CK ) ( _579_ CK ) ( _578_ CK )
+      ( _577_ CK ) ( _576_ CK ) ( psn_inst_psn_fo_buff_0 Z ) + USE SIGNAL ;
+    - psn_net_1 ( _593_ CK ) ( _592_ CK ) ( _591_ CK ) ( _590_ CK ) ( _589_ CK ) ( _588_ CK ) ( _587_ CK )
+      ( _586_ CK ) ( _585_ CK ) ( psn_inst_psn_fo_buff_1 Z ) + USE SIGNAL ;
+    - psn_net_2 ( _602_ CK ) ( _601_ CK ) ( _600_ CK ) ( _599_ CK ) ( _598_ CK ) ( _597_ CK ) ( _596_ CK )
+      ( _595_ CK ) ( _594_ CK ) ( psn_inst_psn_fo_buff_2 Z ) + USE SIGNAL ;
+    - psn_net_3 ( _610_ CK ) ( _609_ CK ) ( _608_ CK ) ( _607_ CK ) ( _606_ CK ) ( _605_ CK ) ( _604_ CK )
+      ( _603_ CK ) ( psn_inst_psn_fo_buff_3 Z ) + USE SIGNAL ;
+    - psn_net_4 ( _572_ S ) ( _570_ S ) ( _568_ S ) ( _566_ S ) ( _564_ S ) ( _562_ S ) ( _560_ S )
+      ( _407_ A2 ) ( _318_ A ) ( psn_inst_psn_fo_buff_4 Z ) + USE SIGNAL ;
+    - psn_net_5 ( _574_ S ) ( psn_inst_psn_fo_buff_5 Z ) + USE SIGNAL ;
+    - psn_net_6 ( _496_ B2 ) ( _452_ B2 ) ( _444_ B2 ) ( _435_ B2 ) ( _426_ B2 ) ( _420_ B2 ) ( _411_ B2 )
+      ( _326_ B2 ) ( _319_ A2 ) ( psn_inst_psn_fo_buff_6 Z ) + USE SIGNAL ;
+    - psn_net_7 ( _538_ B2 ) ( psn_inst_psn_fo_buff_7 Z ) + USE SIGNAL ;
+    - psn_net_8 ( _556_ S ) ( _554_ S ) ( _552_ S ) ( _550_ S ) ( _548_ S ) ( _546_ S ) ( _542_ S )
+      ( _323_ C1 ) ( _319_ A3 ) ( psn_inst_psn_fo_buff_8 Z ) + USE SIGNAL ;
+    - psn_net_9 ( _558_ S ) ( psn_inst_psn_fo_buff_9 Z ) + USE SIGNAL ;
+    - psn_net_10 ( _496_ B1 ) ( _460_ B1 ) ( _452_ B1 ) ( _444_ B1 ) ( _435_ B1 ) ( _426_ B1 ) ( _420_ B1 )
+      ( _411_ B1 ) ( _326_ B1 ) ( psn_inst_psn_fo_buff_10 Z ) + USE SIGNAL ;
+    - psn_net_11 ( _538_ B1 ) ( psn_inst_psn_fo_buff_11 Z ) + USE SIGNAL ;
+    - psn_net_12 ( _497_ B1 ) ( _467_ C1 ) ( _458_ C1 ) ( _450_ C1 ) ( _442_ C1 ) ( _433_ C1 ) ( _424_ C1 )
+      ( _418_ C1 ) ( _406_ C1 ) ( psn_inst_psn_fo_buff_12 Z ) + USE SIGNAL ;
+    - psn_net_13 ( _539_ B1 ) ( psn_inst_psn_fo_buff_13 Z ) + USE SIGNAL ;
+    - psn_net_14 ( _540_ A ) ( _505_ B2 ) ( _504_ A ) ( _451_ S ) ( _443_ S ) ( _434_ S ) ( _425_ S )
+      ( _419_ S ) ( _410_ S ) ( psn_inst_psn_fo_buff_14 Z ) + USE SIGNAL ;
+    - psn_net_15 ( _541_ B2 ) ( psn_inst_psn_fo_buff_15 Z ) + USE SIGNAL ;
+    - psn_net_16 ( _503_ A2 ) ( _475_ A1 ) ( _466_ A1 ) ( _457_ A1 ) ( _449_ A1 ) ( _441_ A1 ) ( _432_ A1 )
+      ( _423_ A1 ) ( _417_ A1 ) ( psn_inst_psn_fo_buff_16 Z ) + USE SIGNAL ;
+    - psn_net_17 ( _537_ A2 ) ( psn_inst_psn_fo_buff_17 Z ) + USE SIGNAL ;
+    - psn_net_18 ( _561_ S ) ( _559_ S ) ( _557_ S ) ( _555_ S ) ( _553_ S ) ( _551_ S ) ( _549_ S )
+      ( _547_ S ) ( _545_ S ) ( psn_inst_psn_fo_buff_18 Z ) + USE SIGNAL ;
+    - psn_net_19 ( _563_ S ) ( psn_inst_psn_fo_buff_19 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

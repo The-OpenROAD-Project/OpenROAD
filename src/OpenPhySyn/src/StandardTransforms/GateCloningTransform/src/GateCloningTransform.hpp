@@ -29,15 +29,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
-
-#ifdef OPENPHYSYN_TRANSFORM_GATE_CLONE_ENABLED
-
+#include <cstring>
 #include <memory>
-#include "OpenPhySyn/PsnLogger.hpp"
+#include "OpenPhySyn/DatabaseHandler.hpp"
+#include "OpenPhySyn/Psn.hpp"
 #include "OpenPhySyn/PsnTransform.hpp"
 #include "OpenPhySyn/SteinerTree.hpp"
 #include "OpenPhySyn/Types.hpp"
+
 namespace psn
 {
 class GateCloningTransform : public PsnTransform
@@ -46,29 +45,27 @@ private:
     void cloneTree(Psn* psn_inst, Instance* inst, float cap_factor,
                    bool clone_largest_only);
     void topDownClone(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                      SteinerPoint k, float c_limit);
+                      SteinerPoint k, SteinerPoint prev, float c_limit,
+                      LibraryCell* driver_cell);
     void topDownConnect(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
                         SteinerPoint k, Net* net);
     void cloneInstance(Psn* psn_inst, std::unique_ptr<SteinerTree>& tree,
-                       SteinerPoint k);
-    std::string makeUniqueNetName(Psn* psn_inst);
-    std::string makeUniqueCloneName(Psn* psn_inst);
-
-    int net_index_;
-    int clone_index_;
-    int clone_count_;
+                       SteinerPoint k, SteinerPoint prev,
+                       LibraryCell* driver_cell);
+    int  net_index_;
+    int  clone_index_;
+    int  clone_count_;
 
 public:
     GateCloningTransform();
     int gateClone(Psn* psn_inst, float cap_factor, bool clone_largest_only);
 
     int run(Psn* psn_inst, std::vector<std::string> args) override;
-    OPENPHYSYN_TRANSFORM
+
+    OPENPHYSYN_DEFINE_TRANSFORM(
+        "gate_clone", "1.0", "Performs load-driven gate cloning",
+        "Usage: transform gate_clone "
+        "<float: max-cap-factor> <boolean: clone-gates-only>")
 };
 
-DEFINE_TRANSFORM(GateCloningTransform, "gate_clone", "1.0.0",
-                 "Performs load-driven gate cloning",
-                 "Usage: transform gate_clone "
-                 "<float: max-cap-factor> <boolean: clone-gates-only>")
 } // namespace psn
-#endif
