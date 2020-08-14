@@ -36,8 +36,11 @@
 #include "IOPlacementKernel.h"
 
 #include <random>
+#include "openroad/Error.hh"
 
 namespace ioPlacer {
+
+using ord::error;
 
 void IOPlacementKernel::initNetlistAndCore()
 {
@@ -192,8 +195,7 @@ void IOPlacementKernel::randomPlacement(const RandomMode mode)
       });
       break;
     default:
-      std::cout << "ERROR: Random mode not found\n";
-      exit(-1);
+      error("Random mode not found\n");
       break;
   }
 }
@@ -430,8 +432,7 @@ void IOPlacementKernel::createSections()
     }
     nSec.numSlots = endSlot - beginSlot - blockedSlots;
     if (nSec.numSlots < 0) {
-      std::cout << "ERROR: negative number of slots\n";
-      exit(-1);
+      error("Negative number of slots\n");
     }
     nSec.beginSlot = beginSlot;
     nSec.endSlot = endSlot;
@@ -502,12 +503,10 @@ void IOPlacementKernel::setupSections()
   bool allAssigned;
   unsigned i = 0;
   if (!(_slotsPerSection > 1)) {
-    std::cout << "_slotsPerSection must be grater than one\n";
-    exit(1);
+    error("_slotsPerSection must be grater than one\n");
   }
   if (!(_usagePerSection > 0.0f)) {
-    std::cout << "_usagePerSection must be grater than zero\n";
-    exit(1);
+    error("_usagePerSection must be grater than zero\n");
   }
   if (not _forcePinSpread && _usageIncreaseFactor == 0.0f
       && _slotsIncreaseFactor == 0.0f) {
@@ -692,12 +691,7 @@ void IOPlacementKernel::run()
   printConfig();
 
   if (int(_slots.size()) < _netlist.numIOPins()) {
-    std::cout << "ERROR: number of pins (";
-    std::cout << _netlist.numIOPins();
-    std::cout << ") exceed max possible (";
-    std::cout << _slots.size();
-    std::cout << ")\n";
-    exit(1);
+    error("Number of pins (%d) exceed max possible (%d)\n", _netlist.numIOPins(), _slots.size());
   }
 
   if (_reportHPWL) {
@@ -742,9 +736,7 @@ void IOPlacementKernel::run()
   }
 
   if (_assignment.size() != (unsigned) _netlist.numIOPins()) {
-    std::cout << "ERROR: assigned " << _assignment.size() << " pins out of "
-              << _netlist.numIOPins() << " I/O pins\n";
-    exit(1);
+    error("Assigned %d pins out of %d IO pins\n", _assignment.size(), _netlist.numIOPins());
   }
 
   if (_reportHPWL) {

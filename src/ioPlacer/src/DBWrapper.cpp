@@ -45,8 +45,11 @@
 #include "defin.h"
 #include "defout.h"
 #include "lefin.h"
+#include "openroad/Error.hh"
 
 namespace ioPlacer {
+
+using ord::error;
 
 DBWrapper::DBWrapper(Netlist& netlist, Core& core, Parameters& parms)
     : _netlist(&netlist), _core(&core), _parms(&parms)
@@ -86,16 +89,14 @@ void DBWrapper::initCore()
 {
   odb::dbTech* tech = _db->getTech();
   if (!tech) {
-    std::cout << "[ERROR] odb::dbTech not initialized! Exiting...\n";
-    std::exit(1);
+    error("odb::dbTech not initialized\n");
   }
 
   int databaseUnit = tech->getLefUnits();
 
   odb::dbBlock* block = _chip->getBlock();
   if (!block) {
-    std::cout << "[ERROR] odb::dbBlock not found! Exiting...\n";
-    std::exit(1);
+    error("odb::dbBlock not found\n");
   }
 
   odb::Rect rect;
@@ -109,22 +110,19 @@ void DBWrapper::initCore()
 
   odb::dbTechLayer* horLayer = tech->findRoutingLayer(horLayerIdx);
   if (!horLayer) {
-    std::cout << "[ERROR] Layer" << horLayerIdx << " not found! Exiting...\n";
-    std::exit(1);
+    error("Layer %d not found\n", horLayerIdx);
   }
 
   odb::dbTechLayer* verLayer = tech->findRoutingLayer(verLayerIdx);
   if (!horLayer) {
-    std::cout << "[ERROR] Layer" << verLayerIdx << " not found! Exiting...\n";
-    std::exit(1);
+    error("Layer %d not found\n", verLayerIdx);
   }
 
   odb::dbTrackGrid* horTrackGrid = block->findTrackGrid(horLayer);
   odb::dbTrackGrid* verTrackGrid = block->findTrackGrid(verLayer);
   if (!horTrackGrid || !verTrackGrid || horTrackGrid->getNumGridPatternsY() == 0
       || verTrackGrid->getNumGridPatternsX() == 0) {
-    std::cout << "[ERROR] No track grid! Exiting...\n";
-    std::exit(1);
+    error("No track grid\n");
   }
 
   int minSpacingX = 0;
@@ -182,15 +180,13 @@ void DBWrapper::initNetlist()
 {
   odb::dbBlock* block = _chip->getBlock();
   if (!block) {
-    std::cout << "[ERROR] odb::dbBlock not found! Exiting...\n";
-    std::exit(1);
+    error("odb::dbBlock not found\n");
   }
 
   odb::dbSet<odb::dbBTerm> bterms = block->getBTerms();
 
   if (bterms.size() == 0) {
-    std::cout << "[ERROR] Design without pins. Exiting...\n";
-    std::exit(1);
+    error("Design without pins\n");
   }
 
   odb::dbSet<odb::dbBTerm>::iterator btIter;
@@ -249,14 +245,12 @@ void DBWrapper::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
   odb::dbBlock* block = _chip->getBlock();
   if (!block) {
-    std::cout << "[ERROR] odb::dbBlock not found! Exiting...\n";
-    std::exit(1);
+    error("odb::dbBlock not found\n");
   }
 
   odb::dbTech* tech = _db->getTech();
   if (!tech) {
-    std::cout << "[ERROR] odb::dbTech not initialized! Exiting...\n";
-    std::exit(1);
+    error("odb::dbTech not initialized\n");
   }
 
   int horLayerIdx = _parms->getHorizontalMetalLayer();
@@ -264,14 +258,12 @@ void DBWrapper::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 
   odb::dbTechLayer* horLayer = tech->findRoutingLayer(horLayerIdx);
   if (!horLayer) {
-    std::cout << "[ERROR] Layer" << horLayerIdx << " not found! Exiting...\n";
-    std::exit(1);
+    error("Layer %d not found\n", horLayerIdx);
   }
 
   odb::dbTechLayer* verLayer = tech->findRoutingLayer(verLayerIdx);
   if (!horLayer) {
-    std::cout << "[ERROR] Layer" << verLayerIdx << " not found! Exiting...\n";
-    std::exit(1);
+    error("Layer %d not found\n", verLayerIdx);
   }
 
   for (IOPin& pin : assignment) {
