@@ -124,7 +124,7 @@ sta::define_cmd_args "write_db" {filename}
 
 proc write_db { args } {
   sta::check_argc_eq1 "write_db" $args
-  set filename $args
+  set filename [file nativename $args]
   ord::write_db_cmd $filename
 }
 
