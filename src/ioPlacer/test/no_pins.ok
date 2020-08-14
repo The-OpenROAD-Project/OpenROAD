@@ -11,4 +11,5 @@ Notice 0: Finished DEF file: no_pins.def
 Warning: using the default boundaries offset (5 microns)
 Warning: using the default min distance between IO pins (2 tracks)
  > Running IO placement
-Error: Design without pins. Exiting...
+Error: Design without pins
+
