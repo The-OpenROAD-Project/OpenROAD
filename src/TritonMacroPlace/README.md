@@ -20,6 +20,7 @@ macro_placement -global_config <global_config_file>
 ```
 * __global_config__ : Set global config file loction. [string]
 
+
 ### Global Config Example
 ```
 set ::HALO_WIDTH_V 1
@@ -33,10 +34,17 @@ set ::CHANNEL_WIDTH_H 0
 * __CHANNEL_WIDTH_H__ : Set macro's horizontal channel width. [float; unit: micron]
 
 
+## 3rd Party Module List
+* ParquetFP from UMPack
+* ABKCommon from UMPack
+
+
+## Authors
+* Mingyu Woo (Ph.D. Advisor: Andrew. B. Kahng)
+
+
 ## License
 * BSD-3-clause License [[Link]](LICENSE)
 * Code found under the Modules directory (e.g., submodules ParquetFP and ABKCommon source files) have individual copyright and license declarations at the top of each file.  
 
-## 3rd Party Module List
-* ParquetFP from UMPack
-* ABKCommon from UMPack
+
