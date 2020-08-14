@@ -3,7 +3,7 @@ Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Notice 0:
+Notice 0: 
 Reading DEF file: gcd.def
 Notice 0: Design: gcd
 Notice 0:     Created 54 pins.
@@ -61,7 +61,7 @@ Computing user defined layers adjustments... Done!
 Running FastRoute...
 
 
-Final usage/overflow report:
+Final usage/overflow report: 
 
 [Overflow Report] Total Usage   : 3332
 [Overflow Report] Total Capacity: 117668
