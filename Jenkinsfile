@@ -29,6 +29,21 @@ pipeline {
 	    sh './test/regression tinyRocket_nangate45'
 	  }
         }
+        stage('gcd_sky130') {
+          steps {
+	    sh './test/regression gcd_sky130'
+	  }
+        }
+        stage('aes_sky130') {
+          steps {
+	    sh './test/regression aes_sky130'
+	  }
+        }
+        stage('ibex_sky130') {
+          steps {
+	    sh './test/regression ibex_sky130'
+	  }
+        }
       }
     }
   }
