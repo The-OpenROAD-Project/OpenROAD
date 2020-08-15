@@ -73,34 +73,23 @@ void DBWrapper::parseDEF(const std::string& filename)
   for (itr = libs.begin(); itr != libs.end(); ++itr) {
     searchLibs.push_back(*itr);
   }
-
-  _chip = defReader.createChip(searchLibs, filename.c_str());
 }
 
 void DBWrapper::populateIOPlacer()
 {
   _db = odb::dbDatabase::getDatabase(_parms->getDbId());
-  _chip = _db->getChip();
+  _tech = _db->getTech();
+  _block = _db->getChip()->getBlock();
   initNetlist();
   initCore();
 }
 
 void DBWrapper::initCore()
 {
-  odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("odb::dbTech not initialized\n");
-  }
-
-  int databaseUnit = tech->getLefUnits();
-
-  odb::dbBlock* block = _chip->getBlock();
-  if (!block) {
-    error("odb::dbBlock not found\n");
-  }
+  int databaseUnit = _tech->getLefUnits();
 
   odb::Rect rect;
-  block->getDieArea(rect);
+  _block->getDieArea(rect);
 
   Coordinate lowerBound(rect.xMin(), rect.yMin());
   Coordinate upperBound(rect.xMax(), rect.yMax());
@@ -108,18 +97,18 @@ void DBWrapper::initCore()
   int horLayerIdx = _parms->getHorizontalMetalLayer();
   int verLayerIdx = _parms->getVerticalMetalLayer();
 
-  odb::dbTechLayer* horLayer = tech->findRoutingLayer(horLayerIdx);
+  odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
   if (!horLayer) {
     error("Layer %d not found\n", horLayerIdx);
   }
 
-  odb::dbTechLayer* verLayer = tech->findRoutingLayer(verLayerIdx);
+  odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
   if (!horLayer) {
     error("Layer %d not found\n", verLayerIdx);
   }
 
-  odb::dbTrackGrid* horTrackGrid = block->findTrackGrid(horLayer);
-  odb::dbTrackGrid* verTrackGrid = block->findTrackGrid(verLayer);
+  odb::dbTrackGrid* horTrackGrid = _block->findTrackGrid(horLayer);
+  odb::dbTrackGrid* verTrackGrid = _block->findTrackGrid(verLayer);
   if (!horTrackGrid || !verTrackGrid || horTrackGrid->getNumGridPatternsY() == 0
       || verTrackGrid->getNumGridPatternsX() == 0) {
     error("No track grid\n");
@@ -178,12 +167,7 @@ void DBWrapper::initCore()
 
 void DBWrapper::initNetlist()
 {
-  odb::dbBlock* block = _chip->getBlock();
-  if (!block) {
-    error("odb::dbBlock not found\n");
-  }
-
-  odb::dbSet<odb::dbBTerm> bterms = block->getBTerms();
+  odb::dbSet<odb::dbBTerm> bterms = _block->getBTerms();
 
   if (bterms.size() == 0) {
     error("Design without pins\n");
@@ -243,31 +227,21 @@ void DBWrapper::initNetlist()
 
 void DBWrapper::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
-  odb::dbBlock* block = _chip->getBlock();
-  if (!block) {
-    error("odb::dbBlock not found\n");
-  }
-
-  odb::dbTech* tech = _db->getTech();
-  if (!tech) {
-    error("odb::dbTech not initialized\n");
-  }
-
   int horLayerIdx = _parms->getHorizontalMetalLayer();
   int verLayerIdx = _parms->getVerticalMetalLayer();
 
-  odb::dbTechLayer* horLayer = tech->findRoutingLayer(horLayerIdx);
+  odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
   if (!horLayer) {
     error("Layer %d not found\n", horLayerIdx);
   }
 
-  odb::dbTechLayer* verLayer = tech->findRoutingLayer(verLayerIdx);
+  odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
   if (!horLayer) {
     error("Layer %d not found\n", verLayerIdx);
   }
 
   for (IOPin& pin : assignment) {
-    odb::dbBTerm* bterm = block->findBTerm(pin.getName().c_str());
+    odb::dbBTerm* bterm = _block->findBTerm(pin.getName().c_str());
     odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
     odb::dbSet<odb::dbBPin>::iterator bpinIter;
     std::vector<odb::dbBPin*> allBPins;
@@ -304,14 +278,12 @@ void DBWrapper::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 
 void DBWrapper::writeDEF()
 {
-  odb::dbBlock* block = _chip->getBlock();
-
   odb::defout writer;
 
   std::string defFileName = _parms->getOutputDefFile();
 
   writer.setVersion(odb::defout::DEF_5_6);
-  writer.writeBlock(block, defFileName.c_str());
+  writer.writeBlock(_block, defFileName.c_str());
 }
 
 }  // namespace ioPlacer

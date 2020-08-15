@@ -106,6 +106,14 @@ proc io_placer { args } {
     puts "Warning: using the default min distance between IO pins ($min_dist tracks)"
     ioPlacer::set_min_distance $min_dist
   }
+
+  if { ![ord::db_has_tech] } {
+    ord::error "missing dbTech"
+  }
+
+  if { [ord::get_db_block] == "NULL" } {
+    ord::error "missing dbBlock"
+  }
  
   if { [ord::db_layer_has_hor_tracks $hor_layer] && \
        [ord::db_layer_has_ver_tracks $ver_layer] } {
