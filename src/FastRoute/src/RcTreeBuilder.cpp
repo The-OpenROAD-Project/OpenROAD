@@ -57,21 +57,20 @@ RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad,
   _dbWrapper = dbWrapper;
   _grid = grid;
   _sta = openroad->getSta();
-  _corner = _sta->cmdCorner();
-  sta::MinMax* min_max = sta::MinMax::max();
-  _analysisPoint = _corner->findParasiticAnalysisPt(min_max);
   _parasitics = _sta->parasitics();
-  sta::Sdc* sdc = _sta->sdc();
-  _op_cond = sdc->operatingConditions(min_max);
+  _corner = _sta->cmdCorner();
+  _min_max = sta::MinMax::max();
+  _analysisPoint = _corner->findParasiticAnalysisPt(_min_max);
 
   _network = openroad->getDbNetwork();
-  _debug = true;
+  _debug = false;
 }
 
 void RcTreeBuilder::estimateParasitcs(Net* net,
 				      std::vector<ROUTE>& routes)
 {
-  printf("net %s\n", net->getDbNet()->getConstName());
+  if (_debug)
+    printf("net %s\n", net->getDbNet()->getConstName());
   _net = net;
   _sta_net = _network->dbToSta(_net->getDbNet());
   _node_id = 0;
@@ -105,16 +104,36 @@ bool operator<(const RoutePt &p1,
 void RcTreeBuilder::makeRoutePtMap()
 {
   for (Pin& pin : _net->getPins()) {
-    const Coordinate& pt = pin.getOnGridPosition();
+    const Coordinate& pt = pin.getPosition();
     int layer = pin.getTopLayer();
     RoutePt loc(pt.getX(), pt.getY(), layer);
     sta::Pin* sta_pin = staPin(pin);
-    //if (_debug)
-    //  printf("pin %s %lld %lld %d\n", _network->pathName(sta_pin),
-    // pt.getX(), pt.getY(), layer);
-    sta::ParasiticNode *node = _parasitics->ensureParasiticNode(_parasitic, sta_pin);
-    _node_map[loc] = node;
+    sta::ParasiticNode *pin_node = _parasitics->ensureParasiticNode(_parasitic, sta_pin);
+    _node_map[loc] = pin_node;
+    makeParasiticsToGrid(pin, pin_node);
   }
+}
+
+// Make parasitics for the wire from the pin to the grid location of the route.
+void RcTreeBuilder::makeParasiticsToGrid(Pin& pin,
+					 sta::ParasiticNode *pin_node)
+{
+  const Coordinate& grid_pt = pin.getOnGridPosition();
+  sta::ParasiticNode *grid_node =
+    _parasitics->ensureParasiticNode(_parasitic, _sta_net, _node_id++);
+  int layer = pin.getTopLayer();
+  RoutePt loc(grid_pt.getX(), grid_pt.getY(), layer);
+  _node_map[loc] = grid_node;
+
+  const Coordinate& pt = pin.getPosition();
+  int wire_length_dbu = abs(pt.getX() - grid_pt.getX())
+    + abs(pt.getY() - grid_pt.getY());
+  float res, cap;
+  layerRC(wire_length_dbu, layer, res, cap);
+
+  _parasitics->incrCap(pin_node, cap / 2.0, _analysisPoint);
+  _parasitics->makeResistor(nullptr, pin_node, grid_node, res, _analysisPoint);
+  _parasitics->incrCap(grid_node, cap / 2.0, _analysisPoint);
 }
 
 sta::Pin* RcTreeBuilder::staPin(Pin& pin)
@@ -143,13 +162,8 @@ void RcTreeBuilder::makeRouteParasitics(std::vector<ROUTE>& routes)
       _dbWrapper->getCutLayerRes(lower_layer, res);
       cap = 0.0;
     }
-    else if (route.initLayer == route.finalLayer) {
-      float r_per_meter, cap_per_meter;
-      _dbWrapper->getLayerRC(route.initLayer, r_per_meter, cap_per_meter);
-      float wire_length = _dbWrapper->dbuToMeters(wire_length_dbu);
-      res = r_per_meter * wire_length;
-      cap = cap_per_meter * wire_length;
-    }
+    else if (route.initLayer == route.finalLayer)
+      layerRC(wire_length_dbu, route.initLayer, res, cap);
     else
       ord::warn("non wire or via route found on net %s",
 		_net->getDbNet()->getConstName());
@@ -169,6 +183,19 @@ void RcTreeBuilder::makeRouteParasitics(std::vector<ROUTE>& routes)
   }
 }
 
+void RcTreeBuilder::layerRC(int wire_length_dbu,
+			    int layer,
+			    // Return values.
+			    float &res,
+			    float &cap)
+{
+  float r_per_meter, cap_per_meter;
+  _dbWrapper->getLayerRC(layer, r_per_meter, cap_per_meter);
+  float wire_length = _dbWrapper->dbuToMeters(wire_length_dbu);
+  res = r_per_meter * wire_length;
+  cap = cap_per_meter * wire_length;
+}
+
 sta::ParasiticNode *RcTreeBuilder::ensureParasiticNode(int x,
 						       int y,
 						       int layer)
@@ -179,16 +206,17 @@ sta::ParasiticNode *RcTreeBuilder::ensureParasiticNode(int x,
     node = _parasitics->ensureParasiticNode(_parasitic, _sta_net, _node_id++);
     _node_map[pin_loc] = node;
   }
-  //if (_debug)
-  //printf("lookup %s %d %d %d\n", _parasitics->name(node), x, y, layer);
   return node;
 }
 
 void RcTreeBuilder::reduceParasiticNetwork()
 {
+  sta::Sdc* sdc = _sta->sdc();
+  sta::OperatingConditions* op_cond = sdc->operatingConditions(_min_max);
+
   sta::ReduceParasiticsTo reduce_to = sta::ReduceParasiticsTo::pi_elmore;
-  _parasitics->reduceTo(_parasitic, _sta_net, reduce_to, _op_cond, _corner,
-                        sta::MinMax::max(), _analysisPoint);
+  _parasitics->reduceTo(_parasitic, _sta_net, reduce_to, op_cond, _corner,
+                        _min_max, _analysisPoint);
   _parasitics->deleteParasiticNetwork(_sta_net, _analysisPoint);
 }
 

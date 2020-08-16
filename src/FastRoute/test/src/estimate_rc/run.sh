@@ -50,7 +50,7 @@ $binary -no_init run.tcl > test.log 2>&1
 mkdir -p ../../results/estimate_rc
 cp test.log ../../results/estimate_rc/test.log
 
-if grep -q -e "Total capacitance: 17.58" ./test.log;
+if grep -q -e "Wire capacitance: r 17.63 f 17.63" ./test.log;
 then
 	exit $GREEN
 else

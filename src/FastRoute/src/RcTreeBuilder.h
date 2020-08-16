@@ -94,20 +94,30 @@ class RcTreeBuilder
   sta::ParasiticNode *ensureParasiticNode(int x,
 					  int y,
 					  int layer);
+  void makeParasiticsToGrid(Pin& pin,
+			    sta::ParasiticNode *pin_node);
+  void layerRC(int wire_length_dbu,
+	       int layer,
+	       // Return values.
+	       float &res,
+	       float &cap);
 
+  // Variables common to all nets.
   Grid* _grid;
   DBWrapper* _dbWrapper;
-  sta::Net* _sta_net;
-  sta::Parasitic* _parasitic;
-  sta::Parasitics* _parasitics;
-  sta::Corner* _corner;
-  sta::OperatingConditions* _op_cond;
-  sta::ParasiticAnalysisPt* _analysisPoint;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
+  sta::Parasitics* _parasitics;
+  sta::Corner* _corner;
+  sta::MinMax* _min_max;
+  sta::ParasiticAnalysisPt* _analysisPoint;
   bool _debug;
 
+  // Net variables 
   Net* _net;
+  sta::Net* _sta_net;
+  sta::Parasitic* _parasitic;
+  // Counter for internal parasitic node IDs.
   int _node_id;
   // x/y/layer -> parasitic node
   NodeRoutePtMap _node_map;
