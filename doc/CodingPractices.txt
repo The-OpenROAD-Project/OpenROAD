@@ -282,6 +282,7 @@ Don't call return at the end of a function that does not return a value.
 
 Don't use <>'s to include anything but system headers.
 Your project's headers should NEVER be in <>'s.
+These are all wrong:
  #include <opendb/db.h>
  #include <ABKCommon/uofm_alloc.h>
  #include <OpenSTA/liberty/Liberty.hh>
@@ -312,6 +313,37 @@ Types.hpp
 #include "db_sta/dbSta.hh"
 
 Note this example also incorrectly uses <>'s around openroad headers.
+
+....
+Header files should only include files to support the header.
+Include files necessary for code in the code file, not the header.
+
+In the example below NONE of the system files listed are necessary for
+the header file.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <limits.h>
+#include <iostream>
+#include <sstream>
+#include <cstdlib>
+#include <string>
+
+unsigned num_nets = 1000;
+unsigned num_terminals = 64;
+unsigned verbose = 0;
+float alpha1 = 1;
+float alpha2 = 0.45;
+float alpha3 = 0;
+float alpha4 = 0;
+float margin = 1.1;
+unsigned seed = 0;
+unsigned root_idx = 0;
+unsigned dist = 2;
+float beta = 1.4;
+bool runOneNet = false;
+unsigned net_num = 0;
 
 ....
 
