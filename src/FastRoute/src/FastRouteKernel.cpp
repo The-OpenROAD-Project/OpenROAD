@@ -2515,11 +2515,9 @@ bool FastRouteKernel::checkSteinerTree(SteinerTree sTree)
     // If the sink is not on layer 1 it may have
     // extra segments while fast route flails to get there.
     // So this error check is worthless. -cherry
-#if 0
-                if (segments.size() != 1) {
-                        return false;
-                }
-#endif
+    if (segments.size() != 1) {
+      return false;
+    }
     int cnt = 0;
     Segment seg = segments[0];
     while (seg.getParent() != -1) {

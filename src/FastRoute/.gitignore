@@ -3,9 +3,10 @@ build
 *.param
 .gdb_history
 nbproject/
-test/src/test_*/*.log
+test/src/*/*.log
 # painful because golden.guide is NOT ignored -cherry
 test/src/*/log.txt
+test/src/*/out.def
 test/src/*/out.guide
 test/src/*/out2.guide
 test/src/*/route.guide
