@@ -51,6 +51,7 @@
 #include "DBWrapper.h"
 #include "FastRoute.h"
 #include "Grid.h"
+#include "SteinerTree.h"
 #include "RcTreeBuilder.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
@@ -412,23 +413,16 @@ void FastRouteKernel::runClockNetsRouteFlow()
 
 void FastRouteKernel::estimateRC()
 {
+  // Remove any existing parasitics.
   sta::dbSta* dbSta = _openroad->getSta();
   sta::Parasitics* parasitics = dbSta->parasitics();
   parasitics->deleteParasitics();
 
-  RcTreeBuilder builder(_openroad, _dbWrapper);
+  RcTreeBuilder builder(_openroad, _dbWrapper, _grid);
   for (FastRoute::NET& netRoute : *_result) {
-    SteinerTree sTree;
     Net* net = getNetByIdx(netRoute.idx);
-    const std::vector<Pin>& pins = net->getPins();
     std::vector<ROUTE>& route = netRoute.route;
-    sTree = createSteinerTree(route, pins);
-    if (checkSteinerTree(sTree))
-      builder.run(net, &sTree, _grid);
-    else {
-      std::cout << " [ERROR] Error on Steiner tree of net " << netRoute.name
-                << "\n";
-    }
+    builder.estimateParasitcs(net, route);
   }
 }
 

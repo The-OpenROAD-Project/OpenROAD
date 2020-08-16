@@ -38,7 +38,6 @@
 #include "DBWrapper.h"
 #include "Grid.h"
 #include "Net.h"
-#include "SteinerTree.h"
 
 namespace sta {
 class Net;
@@ -57,38 +56,64 @@ class OpenRoad;
 
 namespace FastRoute {
 
+class RoutePt
+{
+public:
+  RoutePt() = default;
+  RoutePt(int x,
+	  int y,
+	  int layer);
+
+  friend bool operator<(const RoutePt &p1,
+			const RoutePt &p2);
+private:
+  int _x;
+  int _y;
+  int _layer;
+};
+
+bool operator<(const RoutePt &p1,
+	       const RoutePt &p2);
+
+typedef std::map<RoutePt, Pin*> PinRoutePtMap;
+typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
+
 class RcTreeBuilder
 {
  public:
-  RcTreeBuilder(ord::OpenRoad* openroad, DBWrapper* dbWrapper);
-  void run(Net* net, SteinerTree* steinerTree, Grid* grid);
-  void reportParasitics();
+  RcTreeBuilder(ord::OpenRoad* openroad,
+		DBWrapper* dbWrapper,
+		Grid* grid);
+  void estimateParasitcs(Net* net,
+			 std::vector<ROUTE>& routes);
 
  protected:
-  void initStaData();
-  void makeParasiticNetwork();
-  void createSteinerNodes();
-  void computeGlobalParasitics();
-  void computeLocalParasitics();
+  void makeRoutePtMap();
   void reduceParasiticNetwork();
-  int findNodeToConnect(const Pin& pin,
-                        const std::vector<unsigned>& pinNodes) const;
-  unsigned computeDist(const Node& n1, const Node& n2) const;
-  unsigned computeDist(const odb::Point& pt, const Node& n) const;
+  sta::Pin* staPin(Pin& pin);
+  void makeRouteParasitics(std::vector<ROUTE>& routes);
+  sta::ParasiticNode *ensureParasiticNode(int x,
+					  int y,
+					  int layer);
 
-  Net* _net = nullptr;
-  Grid* _grid = nullptr;
-  DBWrapper* _dbWrapper = nullptr;
-  sta::Net* _staNet = nullptr;
-  SteinerTree* _steinerTree = nullptr;
-  sta::Parasitic* _parasitic = nullptr;
-  sta::Parasitics* _parasitics = nullptr;
-  sta::Corner* _corner = nullptr;
-  sta::OperatingConditions* _op_cond = nullptr;
-  sta::ParasiticAnalysisPt* _analysisPoint = nullptr;
-  sta::dbNetwork* _network = nullptr;
-  sta::Units* _units = nullptr;
-  bool _debug = false;
+  Grid* _grid;
+  DBWrapper* _dbWrapper;
+  sta::Net* _sta_net;
+  sta::Parasitic* _parasitic;
+  sta::Parasitics* _parasitics;
+  sta::Corner* _corner;
+  sta::OperatingConditions* _op_cond;
+  sta::ParasiticAnalysisPt* _analysisPoint;
+  sta::dbSta* _sta;
+  sta::dbNetwork* _network;
+  bool _debug;
+
+  Net* _net;
+  int _node_id;
+  // x/y/layer -> pin
+  PinRoutePtMap _pin_map;
+  // x/y/layer -> parasitic node
+  NodeRoutePtMap _node_map;
 };
 
 }  // namespace FastRoute
