@@ -5,10 +5,10 @@ build
 nbproject/
 test/src/test_*/*.log
 # painful because golden.guide is NOT ignored -cherry
-test/src/test_*/log.txt
-test/src/test_*/out.guide
-test/src/test_*/out2.guide
-test/src/test_*/route.guide
+test/src/*/log.txt
+test/src/*/out.guide
+test/src/*/out2.guide
+test/src/*/route.guide
 test/results
 *~
 TAGS

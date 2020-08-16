@@ -82,7 +82,6 @@ void FastRouteKernel::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
-  _estimateRC = false;
   _seed = 0;
   _reportCongest = false;
 
@@ -413,8 +412,6 @@ void FastRouteKernel::runClockNetsRouteFlow()
 
 void FastRouteKernel::estimateRC()
 {
-  runFastRoute();
-
   sta::dbSta* dbSta = _openroad->getSta();
   sta::Parasitics* parasitics = dbSta->parasitics();
   parasitics->deleteParasitics();
@@ -677,7 +674,7 @@ void FastRouteKernel::initializeNets(bool reroute)
 
             // If pin is connected to PAD, create a "fake" location in routing
             // grid to avoid PAD obstacles
-            if ((pin.isConnectedToPad() || pin.isPort()) && !_estimateRC) {
+            if (pin.isConnectedToPad() || pin.isPort()) {
               FastRoute::ROUTE pinConnection
                   = createFakePin(pin, pinPosition, layer);
               _padPinsConnections[&net].push_back(pinConnection);
@@ -1352,11 +1349,6 @@ void FastRouteKernel::setPDRevForHighFanout(int pdRevForHighFanout)
 void FastRouteKernel::setAllowOverflow(bool allowOverflow)
 {
   _allowOverflow = allowOverflow;
-}
-
-void FastRouteKernel::setEstimateRC(bool estimateRC)
-{
-  _estimateRC = estimateRC;
 }
 
 void FastRouteKernel::setReportCongestion(char* congestFile)

@@ -122,14 +122,20 @@ proc set_wire_rc { args } {
   estimate_parasitics_cmd
 }
 
-define_cmd_args "estimate_parasitics" { -placement }
+define_cmd_args "estimate_parasitics" { -placement|-global_routing }
 
 proc estimate_parasitics { args } {
   parse_key_args "estimate_parasitics" args \
-    keys {} flags {-placement}
+    keys {} flags {-placement -global_routing}
 
   check_argc_eq0 "estimate_parasitics" $args
-  estimate_parasitics_cmd
+  if { [info exists flags(-placement)] } {
+    estimate_parasitics_cmd
+  } elseif { [info exists flags(-global_routing)] } {
+    FastRoute::estimate_rc_cmd
+  } else {
+    ord::error "missing -placement or -global_routing flag."
+  }
 }
 
 define_cmd_args "set_dont_use" {lib_cells}
