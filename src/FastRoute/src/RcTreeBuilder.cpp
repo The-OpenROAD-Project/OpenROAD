@@ -75,7 +75,6 @@ void RcTreeBuilder::estimateParasitcs(Net* net,
   _net = net;
   _sta_net = _network->dbToSta(_net->getDbNet());
   _node_id = 0;
-  _pin_map.clear();
   _node_map.clear();
 
   _parasitic = _parasitics->makeParasiticNetwork(_sta_net, false,
@@ -113,7 +112,6 @@ void RcTreeBuilder::makeRoutePtMap()
     //if (_debug)
     //  printf("pin %s %lld %lld %d\n", _network->pathName(sta_pin),
     // pt.getX(), pt.getY(), layer);
-    _pin_map[loc] = &pin;
     sta::ParasiticNode *node = _parasitics->ensureParasiticNode(_parasitic, sta_pin);
     _node_map[loc] = node;
   }

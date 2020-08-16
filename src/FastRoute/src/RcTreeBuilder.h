@@ -75,7 +75,6 @@ private:
 bool operator<(const RoutePt &p1,
 	       const RoutePt &p2);
 
-typedef std::map<RoutePt, Pin*> PinRoutePtMap;
 typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
 
 class RcTreeBuilder
@@ -110,8 +109,6 @@ class RcTreeBuilder
 
   Net* _net;
   int _node_id;
-  // x/y/layer -> pin
-  PinRoutePtMap _pin_map;
   // x/y/layer -> parasitic node
   NodeRoutePtMap _node_map;
 };
