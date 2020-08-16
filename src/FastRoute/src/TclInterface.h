@@ -69,7 +69,6 @@ void set_seed(unsigned seed);
 void set_layer_pitch(int layer, float pitch);
 void set_clock_nets_route_flow(bool clock_flow);
 void set_min_layer_for_clock(int minLayer);
-void set_estimate_rc();
 
 // Run
 void estimate_rc();

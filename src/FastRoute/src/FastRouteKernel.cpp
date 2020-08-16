@@ -51,6 +51,7 @@
 #include "DBWrapper.h"
 #include "FastRoute.h"
 #include "Grid.h"
+#include "SteinerTree.h"
 #include "RcTreeBuilder.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
@@ -82,7 +83,6 @@ void FastRouteKernel::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
-  _estimateRC = false;
   _seed = 0;
   _reportCongest = false;
 
@@ -413,25 +413,16 @@ void FastRouteKernel::runClockNetsRouteFlow()
 
 void FastRouteKernel::estimateRC()
 {
-  runFastRoute();
-
+  // Remove any existing parasitics.
   sta::dbSta* dbSta = _openroad->getSta();
   sta::Parasitics* parasitics = dbSta->parasitics();
   parasitics->deleteParasitics();
 
-  RcTreeBuilder builder(_openroad, _dbWrapper);
+  RcTreeBuilder builder(_openroad, _dbWrapper, _grid);
   for (FastRoute::NET& netRoute : *_result) {
-    SteinerTree sTree;
     Net* net = getNetByIdx(netRoute.idx);
-    const std::vector<Pin>& pins = net->getPins();
     std::vector<ROUTE>& route = netRoute.route;
-    sTree = createSteinerTree(route, pins);
-    if (checkSteinerTree(sTree))
-      builder.run(net, &sTree, _grid);
-    else {
-      std::cout << "[Warning] Malformed steiner tree on net "
-		<< netRoute.name << "\n";
-    }
+    builder.estimateParasitcs(net, route);
   }
 }
 
@@ -677,7 +668,6 @@ void FastRouteKernel::initializeNets(bool reroute)
 
             // If pin is connected to PAD, create a "fake" location in routing
             // grid to avoid PAD obstacles
-	    // if ((pin.isConnectedToPad() || pin.isPort()) && !_estimateRC) {
             if (pin.isConnectedToPad() || pin.isPort()) {
               FastRoute::ROUTE pinConnection
                   = createFakePin(pin, pinPosition, layer);
@@ -1353,11 +1343,6 @@ void FastRouteKernel::setPDRevForHighFanout(int pdRevForHighFanout)
 void FastRouteKernel::setAllowOverflow(bool allowOverflow)
 {
   _allowOverflow = allowOverflow;
-}
-
-void FastRouteKernel::setEstimateRC(bool estimateRC)
-{
-  _estimateRC = estimateRC;
 }
 
 void FastRouteKernel::setReportCongestion(char* congestFile)

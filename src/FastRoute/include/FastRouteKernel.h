@@ -144,7 +144,6 @@ class FastRouteKernel
   void setGridOrigin(long x, long y);
   void setPDRevForHighFanout(int pdRevForHighFanout);
   void setAllowOverflow(bool allowOverflow);
-  void setEstimateRC(bool estimateRC);
   void setReportCongestion(char* congestFile);
   void printGrid();
   void printHeader();
@@ -159,6 +158,7 @@ class FastRouteKernel
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
+  bool haveRoutes() const { return _result != nullptr; }
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -259,7 +259,6 @@ protected:
   int _overflowIterations;
   int _pdRevForHighFanout;
   bool _allowOverflow;
-  bool _estimateRC;
   bool _reportCongest;
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
