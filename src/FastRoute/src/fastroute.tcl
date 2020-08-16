@@ -280,7 +280,7 @@ proc fastroute { args } {
   }
 
   if {[info exists flags(-estimateRC)]} {
-    puts "-estimateRC is deprecated. Use 'estiimate_parasitics -global_route' after fastroute instead."
+    ord::warn "-estimateRC is deprecated. Use 'estiimate_parasitics -global_route' after fastroute instead."
     FastRoute::start_fastroute
     FastRoute::run_fastroute
     FastRoute::estimate_rc
