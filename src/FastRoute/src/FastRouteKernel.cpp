@@ -429,8 +429,8 @@ void FastRouteKernel::estimateRC()
     if (checkSteinerTree(sTree))
       builder.run(net, &sTree, _grid);
     else {
-      std::cout << " [ERROR] Error on Steiner tree of net " << netRoute.name
-                << "\n";
+      std::cout << "[Warning] Malformed steiner tree on net "
+		<< netRoute.name << "\n";
     }
   }
 }
@@ -677,7 +677,8 @@ void FastRouteKernel::initializeNets(bool reroute)
 
             // If pin is connected to PAD, create a "fake" location in routing
             // grid to avoid PAD obstacles
-            if ((pin.isConnectedToPad() || pin.isPort()) && !_estimateRC) {
+	    // if ((pin.isConnectedToPad() || pin.isPort()) && !_estimateRC) {
+            if (pin.isConnectedToPad() || pin.isPort()) {
               FastRoute::ROUTE pinConnection
                   = createFakePin(pin, pinPosition, layer);
               _padPinsConnections[&net].push_back(pinConnection);
@@ -2529,11 +2530,9 @@ bool FastRouteKernel::checkSteinerTree(SteinerTree sTree)
     // If the sink is not on layer 1 it may have
     // extra segments while fast route flails to get there.
     // So this error check is worthless. -cherry
-#if 0
-                if (segments.size() != 1) {
-                        return false;
-                }
-#endif
+    if (segments.size() != 1) {
+      return false;
+    }
     int cnt = 0;
     Segment seg = segments[0];
     while (seg.getParent() != -1) {
