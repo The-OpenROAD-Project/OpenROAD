@@ -109,10 +109,6 @@ void DBWrapper::initCore()
 
   odb::dbTrackGrid* horTrackGrid = _block->findTrackGrid(horLayer);
   odb::dbTrackGrid* verTrackGrid = _block->findTrackGrid(verLayer);
-  if (!horTrackGrid || !verTrackGrid || horTrackGrid->getNumGridPatternsY() == 0
-      || verTrackGrid->getNumGridPatternsX() == 0) {
-    error("No track grid\n");
-  }
 
   int minSpacingX = 0;
   int minSpacingY = 0;
@@ -231,14 +227,8 @@ void DBWrapper::commitIOPlacementToDB(std::vector<IOPin>& assignment)
   int verLayerIdx = _parms->getVerticalMetalLayer();
 
   odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
-  if (!horLayer) {
-    error("Layer %d not found\n", horLayerIdx);
-  }
 
   odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
-  if (!horLayer) {
-    error("Layer %d not found\n", verLayerIdx);
-  }
 
   for (IOPin& pin : assignment) {
     odb::dbBTerm* bterm = _block->findBTerm(pin.getName().c_str());

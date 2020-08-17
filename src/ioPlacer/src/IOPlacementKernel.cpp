@@ -690,10 +690,6 @@ void IOPlacementKernel::run()
 
   printConfig();
 
-  if (int(_slots.size()) < _netlist.numIOPins()) {
-    error("Number of pins (%d) exceed max possible (%d)\n", _netlist.numIOPins(), _slots.size());
-  }
-
   if (_reportHPWL) {
     initHPWL = returnIONetsHPWL(_netlist);
   }
