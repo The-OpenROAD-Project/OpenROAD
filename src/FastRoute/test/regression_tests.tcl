@@ -1,4 +1,6 @@
 record_tests {
+  clock_route
+  diode_insert
   est_rc
   est_rc2
   gcd
