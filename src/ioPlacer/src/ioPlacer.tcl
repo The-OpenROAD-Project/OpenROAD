@@ -117,8 +117,13 @@ proc io_placer { args } {
     ioPlacer::set_min_distance $min_dist
   }
 
+  if { ![ord::db_layer_has_hor_tracks $hor_layer] || \
+       ![ord::db_layer_has_ver_tracks $ver_layer] } {
+    ord::error "missing track structure"
+  }
+
   set bterms_cnt [llength [$dbBlock getBTerms]]
-  
+
   set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
   set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
   set num_tracks_x [llength [$ver_track_grid getGridX]]
@@ -130,10 +135,6 @@ proc io_placer { args } {
     ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
-  if { [ord::db_layer_has_hor_tracks $hor_layer] && \
-       [ord::db_layer_has_ver_tracks $ver_layer] } {
-    ioPlacer::run_io_placement 
-  } else {
-    ord::error "missing track structure"
-  }
+  
+  ioPlacer::run_io_placement 
 }
