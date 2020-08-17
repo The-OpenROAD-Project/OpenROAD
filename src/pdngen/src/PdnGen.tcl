@@ -1811,6 +1811,33 @@ proc generate_via_stacks {l1 l2 tag constraints} {
   variable grid_data
   
   set area [dict get $grid_data area]
+
+  # account for the core rings in the area used to detect intersections
+  # debug "Original area: $area"
+  if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $l1]} {
+    set area_l1 [adjust_area_for_core_rings $l1 $area]
+
+    set xMin [expr min([lindex $area_l1 0], [lindex $area 0])]
+    set yMin [expr min([lindex $area_l1 1], [lindex $area 1])]
+
+    set xMax [expr max([lindex $area_l1 2], [lindex $area 2])]
+    set yMax [expr max([lindex $area_l1 3], [lindex $area 3])]
+
+    set area [list $xMin $yMin $xMax $yMax]
+  }
+
+  if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $l2]} {
+    set area_l2 [adjust_area_for_core_rings $l2 $area]
+
+    set xMin [expr min([lindex $area_l2 0], [lindex $area 0])]
+    set yMin [expr min([lindex $area_l2 1], [lindex $area 1])]
+
+    set xMax [expr max([lindex $area_l2 2], [lindex $area 2])]
+    set yMax [expr max([lindex $area_l2 3], [lindex $area 3])]
+
+    set area [list $xMin $yMin $xMax $yMax]
+  }
+  # debug "Modifed area: $area"
   
   #this variable contains locations of intersecting points of two orthogonal metal layers, between which via needs to be inserted
   #for every intersection. Here l1 and l2 are layer names, and i1 and i2 and their indices, tag represents domain (power or ground)   
