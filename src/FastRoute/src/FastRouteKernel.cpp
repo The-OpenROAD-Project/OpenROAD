@@ -415,8 +415,7 @@ void FastRouteKernel::estimateRC()
 {
   // Remove any existing parasitics.
   sta::dbSta* dbSta = _openroad->getSta();
-  sta::Parasitics* parasitics = dbSta->parasitics();
-  parasitics->deleteParasitics();
+  dbSta->deleteParasitics();
 
   RcTreeBuilder builder(_openroad, _dbWrapper, _grid);
   for (FastRoute::NET& netRoute : *_result) {

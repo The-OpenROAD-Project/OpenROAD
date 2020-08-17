@@ -130,7 +130,11 @@ proc estimate_parasitics { args } {
 
   check_argc_eq0 "estimate_parasitics" $args
   if { [info exists flags(-placement)] } {
-    estimate_parasitics_cmd
+    if { [wire_capacitance] == 0.0 } {
+      ord::warn "wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+    } else {
+      estimate_parasitics_cmd
+    }
   } elseif { [info exists flags(-global_routing)] } {
     FastRoute::estimate_rc_cmd
   } else {
