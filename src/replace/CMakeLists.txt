@@ -2,7 +2,6 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -53,6 +52,7 @@ set (REPLACE_SRC
   src/plot.cpp
   src/logger.cpp
   src/routeBase.cpp
+  src/graphics.cpp
   )
 
 set (REPLACE_HEADER
@@ -95,11 +95,13 @@ target_include_directories( replace
   ${FASTROUTE_HOME}/third_party/fastroute/include
   ${TCL_INCLUDE_PATH}
   flute3
+  gui
 )
 
 target_link_libraries( replace
   PRIVATE
   Eigen3::Eigen
+  gui
 )
 
 # CIMG_USE case

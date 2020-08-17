@@ -228,5 +228,13 @@ set_replace_pad_right_cmd(int pad)
   replace->setPadRight(pad);
 }
 
+void
+set_replace_debug_cmd(int pause_iterations,
+                      bool draw_bins)
+{
+  Replace* replace = getReplace();
+  replace->setDebug(pause_iterations, draw_bins);
+}
+
 
 %} // inline

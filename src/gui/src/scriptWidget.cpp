@@ -30,13 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "scriptWidget.h"
+
+#include <unistd.h>
+
+#include <QCoreApplication>
+#include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLineEdit>
-#include <QVBoxLayout>
 #include <QTimer>
+#include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
-#include "scriptWidget.h"
 
 namespace gui {
 
@@ -44,15 +49,21 @@ ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
       input_(new QLineEdit),
       output_(new QTextEdit),
+      pauser_(new QPushButton("Idle")),
       historyPosition_(0)
 {
   setObjectName("scripting");  // for settings
 
   output_->setReadOnly(true);
+  pauser_->setEnabled(false);
+
+  QHBoxLayout* inner_layout = new QHBoxLayout;
+  inner_layout->addWidget(pauser_);
+  inner_layout->addWidget(input_, /* stretch */ 1);
 
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(output_, /* stretch */ 1);
-  layout->addWidget(input_);
+  layout->addLayout(inner_layout);
 
   QWidget* container = new QWidget;
   container->setLayout(layout);
@@ -60,6 +71,7 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QTimer::singleShot(200, this, &ScriptWidget::setupTcl);
 
   connect(input_, SIGNAL(returnPressed()), this, SLOT(executeCommand()));
+  connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
 
   setWidget(container);
 }
@@ -70,10 +82,10 @@ int channelClose(ClientData instanceData, Tcl_Interp* interp)
   return EINVAL;
 }
 
-int ScriptWidget::channelOutput(ClientData  instanceData,
+int ScriptWidget::channelOutput(ClientData instanceData,
                                 const char* buf,
-                                int         toWrite,
-                                int*        errorCodePtr)
+                                int toWrite,
+                                int* errorCodePtr)
 {
   // Buffer up the output
   ScriptWidget* widget = (ScriptWidget*) instanceData;
@@ -120,7 +132,12 @@ void ScriptWidget::setupTcl()
     Tcl_SetStdChannel(stdoutChannel, TCL_STDOUT);
   }
 
+  pauser_->setText("Running");
+  pauser_->setStyleSheet("background-color: red");
   ord::tclAppInit(interp_);
+  pauser_->setText("Idle");
+  pauser_->setStyleSheet("");
+
   // TODO: tclAppInit should return the status which we could
   // pass to updateOutput
   updateOutput(TCL_OK);
@@ -128,8 +145,12 @@ void ScriptWidget::setupTcl()
 
 void ScriptWidget::executeCommand()
 {
+  pauser_->setText("Running");
+  pauser_->setStyleSheet("background-color: red");
   QString command = input_->text();
   input_->clear();
+  // Make changes visible while command runs
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
@@ -150,6 +171,8 @@ void ScriptWidget::executeCommand()
     history_.append(command);
   }
   historyPosition_ = history_.size();
+  pauser_->setText("Idle");
+  pauser_->setStyleSheet("");
   emit commandExecuted();
 }
 
@@ -204,7 +227,7 @@ void ScriptWidget::keyPressEvent(QKeyEvent* e)
 void ScriptWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup("scripting");
-  history_         = settings->value("history").toStringList();
+  history_ = settings->value("history").toStringList();
   historyPosition_ = history_.size();
   settings->endGroup();
 }
@@ -214,6 +237,31 @@ void ScriptWidget::writeSettings(QSettings* settings)
   settings->beginGroup("scripting");
   settings->setValue("history", history_);
   settings->endGroup();
+}
+
+void ScriptWidget::pause()
+{
+  QString prior_text = pauser_->text();
+  bool prior_enable = pauser_->isEnabled();
+  QString prior_style = pauser_->styleSheet();
+  pauser_->setText("Continue");
+  pauser_->setStyleSheet("background-color: yellow");
+  pauser_->setEnabled(true);
+  paused_ = true;
+
+  // Keep processing events until the user continues
+  while (paused_) {
+    QCoreApplication::processEvents();
+  }
+
+  pauser_->setText(prior_text);
+  pauser_->setStyleSheet(prior_style);
+  pauser_->setEnabled(prior_enable);
+}
+
+void ScriptWidget::pauserClicked()
+{
+  paused_ = false;
 }
 
 }  // namespace gui

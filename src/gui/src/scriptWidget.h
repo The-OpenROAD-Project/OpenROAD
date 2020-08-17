@@ -33,8 +33,10 @@
 #pragma once
 
 #include <tcl.h>
+
 #include <QDockWidget>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QSettings>
 #include <QStringList>
 #include <QTextEdit>
@@ -71,21 +73,27 @@ class ScriptWidget : public QDockWidget
   // Triggered when the user hits return in the line edit
   void executeCommand();
 
- private:
-  void       keyPressEvent(QKeyEvent* e) override;
-  void       setupTcl();
-  void       updateOutput(int return_code);
-  static int channelOutput(ClientData  instanceData,
-                           const char* buf,
-                           int         toWrite,
-                           int*        errorCodePtr);
+  void pause();
 
-  QTextEdit*  output_;
-  QLineEdit*  input_;
+  void pauserClicked();
+
+ private:
+  void keyPressEvent(QKeyEvent* e) override;
+  void setupTcl();
+  void updateOutput(int return_code);
+  static int channelOutput(ClientData instanceData,
+                           const char* buf,
+                           int toWrite,
+                           int* errorCodePtr);
+
+  QTextEdit* output_;
+  QLineEdit* input_;
+  QPushButton* pauser_;
   Tcl_Interp* interp_;
   QStringList outputBuffer_;
   QStringList history_;
-  int         historyPosition_;
+  int historyPosition_;
+  bool paused_;
 
   static Tcl_ChannelType stdoutChannelType;
 };

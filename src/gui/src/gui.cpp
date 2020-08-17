@@ -30,17 +30,57 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "gui/gui.h"
+
 #include <QApplication>
 #include <stdexcept>
 
 #include "db.h"
 #include "defin.h"
-#include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
 
 namespace gui {
+
+// This provides the link for Gui::redraw to the widget
+static gui::MainWindow* mainWindow;
+
+Gui* Gui::singleton_ = nullptr;
+
+Gui* Gui::get()
+{
+  if (!singleton_) {
+    singleton_ = new Gui();
+  }
+
+  return singleton_;
+}
+
+void Gui::register_renderer(Renderer* renderer)
+{
+  renderers_.insert(renderer);
+}
+
+void Gui::unregister_renderer(Renderer* renderer)
+{
+  renderers_.erase(renderer);
+}
+
+void Gui::redraw()
+{
+  mainWindow->redraw();
+}
+
+void Gui::pause()
+{
+  mainWindow->pause();
+}
+
+Renderer::~Renderer()
+{
+  gui::Gui::get()->unregister_renderer(this);
+}
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
@@ -53,18 +93,19 @@ int start_gui(int argc, char* argv[])
   font.setPointSize(12);
   QApplication::setFont(font);
 
-  gui::MainWindow w;
-  auto*           open_road = ord::OpenRoad::openRoad();
-  w.setDb(open_road->getDb());
-  open_road->addObserver(&w);
-  w.show();
+  gui::MainWindow win;
+  mainWindow = &win;
+  auto* open_road = ord::OpenRoad::openRoad();
+  win.setDb(open_road->getDb());
+  open_road->addObserver(&win);
+  win.show();
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(&w, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(&win, SIGNAL(exit()), &app, SLOT(quit()));
 
   // Save the window's status into the settings when quitting.
-  QObject::connect(&app, SIGNAL(aboutToQuit()), &w, SLOT(saveSettings()));
- 
+  QObject::connect(&app, SIGNAL(aboutToQuit()), &win, SLOT(saveSettings()));
+
   return app.exec();
 }
 
