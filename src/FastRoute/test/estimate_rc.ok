@@ -10,6 +10,7 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 676 components and 2850 component-terminals.
 Notice 0:     Created 579 nets and 1498 connections.
 Notice 0: Finished DEF file: gcd.def
+Warning: -estimateRC is deprecated. Use 'estiimate_parasitics -global_route' after fastroute instead.
 
  *****************
  *   FastRoute   *
@@ -60,7 +61,7 @@ Running FastRoute...
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 3441
+[Overflow Report] Total Usage   : 3332
 [Overflow Report] Total Capacity: 117668
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -69,20 +70,20 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 3441
-[INFO] Final number of vias : 2593
-[INFO] Final usage 3D       : 11220
+[INFO] Final usage          : 3332
+[INFO] Final number of vias : 2598
+[INFO] Final usage 3D       : 11126
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
  > Fixing long segments...
 [WARNING] Max routing length not defined. Skipping...
-[INFO] Total wirelength: 10168.200195 um
+[INFO] Total wirelength: 10285.799805 um
 Net clk
  Pin capacitance: 0.00
- Wire capacitance: 17.58
- Total capacitance: 17.58
+ Wire capacitance: 17.51
+ Total capacitance: 17.51
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36
