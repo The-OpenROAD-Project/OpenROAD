@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "layoutViewer.h"
-
 #include <QApplication>
 #include <QPaintEvent>
 #include <QPainter>
@@ -43,6 +41,7 @@
 #include "db.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
+#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "search.h"
 
@@ -365,37 +364,88 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
                               QPainter* painter,
                               const Rect& bounds)
 {
-  if (options_->arePrefTracksVisible() || options_->areNonPrefTracksVisible()) {
-    dbTrackGrid* grid = block->findTrackGrid(layer);
-    if (grid) {
-      bool isHorizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
-      std::vector<int> grids;
-      if ((!isHorizontal && options_->arePrefTracksVisible())
-          || (isHorizontal && options_->areNonPrefTracksVisible())) {
-        grid->getGridX(grids);
-        for (int x : grids) {
-          if (x < bounds.xMin()) {
-            continue;
-          }
-          if (x > bounds.xMax()) {
-            break;
-          }
-          painter->drawLine(x, bounds.yMin(), x, bounds.yMax());
-        }
-      }
+  if (!options_->arePrefTracksVisible()
+      && !options_->areNonPrefTracksVisible()) {
+    return;
+  }
 
-      if ((isHorizontal && options_->arePrefTracksVisible())
-          || (!isHorizontal && options_->areNonPrefTracksVisible())) {
-        grid->getGridY(grids);
-        for (int y : grids) {
-          if (y < bounds.yMin()) {
-            continue;
-          }
-          if (y > bounds.yMax()) {
-            break;
-          }
-          painter->drawLine(bounds.xMin(), y, bounds.xMax(), y);
-        }
+  dbTrackGrid* grid = block->findTrackGrid(layer);
+  if (!grid) {
+    return;
+  }
+
+  bool isHorizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  std::vector<int> grids;
+  if ((!isHorizontal && options_->arePrefTracksVisible())
+      || (isHorizontal && options_->areNonPrefTracksVisible())) {
+    grid->getGridX(grids);
+    for (int x : grids) {
+      if (x < bounds.xMin()) {
+        continue;
+      }
+      if (x > bounds.xMax()) {
+        break;
+      }
+      painter->drawLine(x, bounds.yMin(), x, bounds.yMax());
+    }
+  }
+
+  if ((isHorizontal && options_->arePrefTracksVisible())
+      || (!isHorizontal && options_->areNonPrefTracksVisible())) {
+    grid->getGridY(grids);
+    for (int y : grids) {
+      if (y < bounds.yMin()) {
+        continue;
+      }
+      if (y > bounds.yMax()) {
+        break;
+      }
+      painter->drawLine(bounds.xMin(), y, bounds.xMax(), y);
+    }
+  }
+}
+
+void LayoutViewer::drawRows(dbBlock* block,
+                            QPainter* painter,
+                            const Rect& bounds)
+{
+  if (!options_->areRowsVisible()) {
+    return;
+  }
+  painter->setPen(Qt::white);
+  painter->setBrush(QColor(0, 0xff, 0, 0x70));
+  for (dbRow* row : block->getRows()) {
+    int x;
+    int y;
+    row->getOrigin(x, y);
+
+    dbSite* site = row->getSite();
+    int spacing = row->getSpacing();
+    int w = site->getWidth();
+    int h = site->getHeight();
+    switch (row->getOrient()) {
+      case dbOrientType::R0:
+      case dbOrientType::R180:
+      case dbOrientType::MY:
+      case dbOrientType::MX:
+        /* do nothing */
+        break;
+
+      case dbOrientType::R90:
+      case dbOrientType::R270:
+      case dbOrientType::MYR90:
+      case dbOrientType::MXR90:
+        std::swap(w, h);
+    }
+
+    dbRowDir dir = row->getDirection();
+    int count = row->getSiteCount();
+    for (int i = 0; i < count; ++i) {
+      painter->drawRect(QRect(QPoint(x, y), QPoint(x + w, y + h)));
+      if (dir == dbRowDir::HORIZONTAL) {
+        x += spacing;
+      } else {
+        y += spacing;
       }
     }
   }
@@ -546,6 +596,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     painter->setTransform(initial_xfm);
   }
 
+  drawRows(block, painter, bounds);
   for (auto* renderer : renderers) {
     renderer->drawObjects(gui_painter);
   }

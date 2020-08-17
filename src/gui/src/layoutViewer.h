@@ -116,6 +116,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                   QPainter* painter,
                   const odb::Rect& bounds);
 
+  void drawRows(odb::dbBlock* block,
+                QPainter* painter,
+                const odb::Rect& bounds);
+
   odb::Rect screenToDBU(const QRect& rect);
   QRectF DBUToScreen(const odb::Rect& dbu_rect);
 

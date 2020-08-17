@@ -51,7 +51,8 @@ DisplayControls::DisplayControls(QWidget* parent)
       model_(new QStandardItemModel(0, 4, parent)),
       tech_inited_(false),
       tracks_visible_pref_(false),
-      tracks_visible_non_pref_(false)
+      tracks_visible_non_pref_(false),
+      rows_visible_(false)
 {
   setObjectName("layers");  // for settings
   model_->setHorizontalHeaderLabels({"", "", "V", "S"});
@@ -72,6 +73,13 @@ DisplayControls::DisplayControls(QWidget* parent)
         toggleAllChildren(selectable, layers_, Selectable);
       });
   view_->expand(layers_->index());
+
+  // Rows
+  rows_
+      = makeItem("Rows", model_, Qt::Unchecked, [this](bool visible) {
+          rows_visible_ = visible;
+        });
+
 
   // Track patterns
   tracks_ = makeItem("Tracks", model_, Qt::Unchecked, [this](bool visible) {
@@ -192,6 +200,11 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 {
   return layer_selectable_.at(layer);
+}
+
+bool DisplayControls::areRowsVisible()
+{
+  return rows_visible_;
 }
 
 bool DisplayControls::arePrefTracksVisible()

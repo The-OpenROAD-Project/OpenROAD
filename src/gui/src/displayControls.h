@@ -75,6 +75,7 @@ class DisplayControls : public QDockWidget, public Options
   QColor color(const odb::dbTechLayer* layer) override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
+  bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 
@@ -122,6 +123,7 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* tracks_;
 
   // Object controls
+  QStandardItem* rows_;
   QStandardItem* tracks_pref_;
   QStandardItem* tracks_non_pref_;
 
@@ -129,6 +131,7 @@ class DisplayControls : public QDockWidget, public Options
   bool tech_inited_;
   bool tracks_visible_pref_;
   bool tracks_visible_non_pref_;
+  bool rows_visible_;
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, bool> layer_visible_;
   std::map<const odb::dbTechLayer*, bool> layer_selectable_;
