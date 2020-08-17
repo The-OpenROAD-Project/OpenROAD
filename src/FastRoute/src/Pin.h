@@ -63,7 +63,7 @@ class Pin
   {
     SINK,
     SOURCE,
-    OTHER
+    BIDIR
   };
 
   Pin() = default;

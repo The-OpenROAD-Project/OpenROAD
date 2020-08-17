@@ -1960,20 +1960,28 @@ void FastRouteKernel::checkSinksAndSource()
     if (net.getNumPins() > 1) {
       int sourceCnt = 0;
       int sinkCnt = 0;
+      int bidir = 0;
       for (Pin pin : net.getPins()) {
         if (pin.getType() == Pin::SOURCE) {
           sourceCnt++;
         } else if (pin.getType() == Pin::SINK) {
           sinkCnt++;
+        } else {
+          bidir++;
         }
       }
 
-      if ((net.getNumPins() != sinkCnt + sourceCnt) || sourceCnt != 1) {
+      // We need one source or at least one bidir to act as the source
+      bool ok = sourceCnt == 1 || (sourceCnt == 0 && bidir > 0);
+      if (!ok) {
         invalid = true;
         std::cout << "[ERROR] Net " << net.getName()
                   << " has invalid sinks/source distribution\n";
         std::cout << "    #Sinks: " << sinkCnt << "; #sources: " << sourceCnt
                   << "\n";
+      } else if (sourceCnt == 0 && bidir > 0) {
+        std::cout << "[WARNING] Net " << net.getName()
+                  << " has no source node so a bidir will be chosen as the source\n";
       }
     }
   }
@@ -2382,8 +2390,21 @@ SteinerTree FastRouteKernel::createSteinerTree(std::vector<ROUTE>& route,
 {
   SteinerTree sTree;
 
+  // Get the source pin: if a source pin exists use it, otherwise
+  // arbitrarily pick a bidir pin to be the source
+  const Pin* source_node = nullptr;
+  for (const Pin& pin : pins) {
+    if (pin.getType() == Pin::SOURCE) {
+      source_node = &pin;
+      break;
+    } else if (pin.getType() == Pin::BIDIR) {
+      source_node = &pin;
+    }
+  }
+  assert(source_node);
+
   // Add pin nodes
-  for (Pin pin : pins) {
+  for (const Pin& pin : pins) {
     Coordinate pinPosition;
     int topLayer = pin.getTopLayer();
     RoutingLayer layer = getRoutingLayerByIndex(topLayer);
@@ -2410,12 +2431,10 @@ SteinerTree FastRouteKernel::createSteinerTree(std::vector<ROUTE>& route,
 
     int node_layer = pin.getTopLayer();
     NodeType node_type;
-    if (pin.getType() == Pin::SINK) {
-      node_type = NodeType::SINK;
-    } else if (pin.getType() == Pin::SOURCE) {
+    if (&pin == source_node) {
       node_type = NodeType::SOURCE;
     } else {
-      ord::error("Pin is not assigned with type");
+      node_type = NodeType::SINK;
     }
     Node node(pinPosition, node_layer, node_type);
     sTree.addNode(node);
