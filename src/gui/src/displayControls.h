@@ -73,10 +73,10 @@ class DisplayControls : public QDockWidget, public Options
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
-  bool   isVisible(const odb::dbTechLayer* layer) override;
-  bool   isSelectable(const odb::dbTechLayer* layer) override;
-  bool   arePrefTracksVisible() override;
-  bool   areNonPrefTracksVisible() override;
+  bool isVisible(const odb::dbTechLayer* layer) override;
+  bool isSelectable(const odb::dbTechLayer* layer) override;
+  bool arePrefTracksVisible() override;
+  bool areNonPrefTracksVisible() override;
 
  signals:
   // The display options have changed and clients need to update
@@ -103,9 +103,9 @@ class DisplayControls : public QDockWidget, public Options
   void techInit();
 
   template <typename T>
-  QStandardItem* makeItem(const QString&                   text,
-                          T*                               parent,
-                          Qt::CheckState                   checked,
+  QStandardItem* makeItem(const QString& text,
+                          T* parent,
+                          Qt::CheckState checked,
                           const std::function<void(bool)>& visibility_action,
                           const std::function<void(bool)>& select_action
                           = std::function<void(bool)>(),
@@ -113,7 +113,7 @@ class DisplayControls : public QDockWidget, public Options
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
 
-  QTreeView*          view_;
+  QTreeView* view_;
   QStandardItemModel* model_;
 
   // Categories in the model
@@ -125,13 +125,13 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* tracks_pref_;
   QStandardItem* tracks_non_pref_;
 
-  odb::dbDatabase*                          db_;
-  bool                                      tech_inited_;
-  bool                                      tracks_visible_pref_;
-  bool                                      tracks_visible_non_pref_;
+  odb::dbDatabase* db_;
+  bool tech_inited_;
+  bool tracks_visible_pref_;
+  bool tracks_visible_non_pref_;
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
-  std::map<const odb::dbTechLayer*, bool>   layer_visible_;
-  std::map<const odb::dbTechLayer*, bool>   layer_selectable_;
+  std::map<const odb::dbTechLayer*, bool> layer_visible_;
+  std::map<const odb::dbTechLayer*, bool> layer_selectable_;
 };
 
 }  // namespace gui

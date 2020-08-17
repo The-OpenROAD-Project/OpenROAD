@@ -28,6 +28,7 @@ endif()
 target_include_directories(gui
   PUBLIC
     ${GUI_HOME}/include
+    ${OPENDB_HOME}/include
   PRIVATE
     ${OPENROAD_HOME}/include
     ${Boost_INCLUDE_DIRS}

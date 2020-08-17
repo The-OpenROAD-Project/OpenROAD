@@ -51,7 +51,6 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-grid_origin origin] \
                                            [-pdrev_for_high_fanout fanout] \
                                            [-allow_overflow] \
-                                           [-estimateRC] \
                                            [-seed seed] \
                                            [-report_congestion congest_file] \
                                            [-layers_pitches layers_pitches] \
@@ -281,13 +280,27 @@ proc fastroute { args } {
   }
 
   if {[info exists flags(-estimateRC)]} {
-    FastRoute::set_estimate_rc
-  }
-  FastRoute::start_fastroute
-  if {[info exists flags(-estimateRC)]} {
+    ord::warn "-estimateRC is deprecated. Use 'estiimate_parasitics -global_route' after fastroute instead."
+    FastRoute::start_fastroute
+    FastRoute::run_fastroute
     FastRoute::estimate_rc
   } else {
+    FastRoute::start_fastroute
     FastRoute::run_fastroute
     FastRoute::write_guides
   }
 }
+
+namespace eval FastRoute {
+
+proc estimate_rc_cmd {} {
+  if { [have_routes] } {
+    estimate_rc
+  } else {
+    ord::error "run fastroute before estimating parasitics for global routing."
+  }
+}
+
+# FastRoute namespace end
+}
+

@@ -72,21 +72,28 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // The user chose the exit action; notify the app
   void exit();
 
+  // Trigger a redraw (used by Renderers)
+  void redraw();
+
+  // Waits for the user to click continue before returning
+  // Draw events are processed while paused.
+  void pause();
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
-  
+
  private:
-  void         createMenus();
-  void         createActions();
-  void         createToolbars();
+  void createMenus();
+  void createActions();
+  void createToolbars();
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
-  LayoutViewer*    viewer_;  // owned by scroll_
-  LayoutScroll*    scroll_;
-  ScriptWidget*    script_;
+  LayoutViewer* viewer_;  // owned by scroll_
+  LayoutScroll* scroll_;
+  ScriptWidget* script_;
   odb::dbDatabase* db_;
 
   QMenu* fileMenu_;

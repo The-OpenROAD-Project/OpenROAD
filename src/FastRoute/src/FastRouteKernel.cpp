@@ -51,6 +51,7 @@
 #include "DBWrapper.h"
 #include "FastRoute.h"
 #include "Grid.h"
+#include "SteinerTree.h"
 #include "RcTreeBuilder.h"
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
@@ -82,7 +83,6 @@ void FastRouteKernel::init()
   _overflowIterations = 50;
   _pdRevForHighFanout = -1;
   _allowOverflow = false;
-  _estimateRC = false;
   _seed = 0;
   _reportCongest = false;
 
@@ -413,25 +413,16 @@ void FastRouteKernel::runClockNetsRouteFlow()
 
 void FastRouteKernel::estimateRC()
 {
-  runFastRoute();
-
+  // Remove any existing parasitics.
   sta::dbSta* dbSta = _openroad->getSta();
   sta::Parasitics* parasitics = dbSta->parasitics();
   parasitics->deleteParasitics();
 
-  RcTreeBuilder builder(_openroad, _dbWrapper);
+  RcTreeBuilder builder(_openroad, _dbWrapper, _grid);
   for (FastRoute::NET& netRoute : *_result) {
-    SteinerTree sTree;
     Net* net = getNetByIdx(netRoute.idx);
-    const std::vector<Pin>& pins = net->getPins();
     std::vector<ROUTE>& route = netRoute.route;
-    sTree = createSteinerTree(route, pins);
-    if (checkSteinerTree(sTree))
-      builder.run(net, &sTree, _grid);
-    else {
-      std::cout << " [ERROR] Error on Steiner tree of net " << netRoute.name
-                << "\n";
-    }
+    builder.estimateParasitcs(net, route);
   }
 }
 
@@ -677,7 +668,7 @@ void FastRouteKernel::initializeNets(bool reroute)
 
             // If pin is connected to PAD, create a "fake" location in routing
             // grid to avoid PAD obstacles
-            if ((pin.isConnectedToPad() || pin.isPort()) && !_estimateRC) {
+            if (pin.isConnectedToPad() || pin.isPort()) {
               FastRoute::ROUTE pinConnection
                   = createFakePin(pin, pinPosition, layer);
               _padPinsConnections[&net].push_back(pinConnection);
@@ -1352,11 +1343,6 @@ void FastRouteKernel::setPDRevForHighFanout(int pdRevForHighFanout)
 void FastRouteKernel::setAllowOverflow(bool allowOverflow)
 {
   _allowOverflow = allowOverflow;
-}
-
-void FastRouteKernel::setEstimateRC(bool estimateRC)
-{
-  _estimateRC = estimateRC;
 }
 
 void FastRouteKernel::setReportCongestion(char* congestFile)
@@ -2529,11 +2515,9 @@ bool FastRouteKernel::checkSteinerTree(SteinerTree sTree)
     // If the sink is not on layer 1 it may have
     // extra segments while fast route flails to get there.
     // So this error check is worthless. -cherry
-#if 0
-                if (segments.size() != 1) {
-                        return false;
-                }
-#endif
+    if (segments.size() != 1) {
+      return false;
+    }
     int cnt = 0;
     Segment seg = segments[0];
     while (seg.getParent() != -1) {

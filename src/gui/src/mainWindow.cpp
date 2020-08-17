@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "mainWindow.h"
+
 #include <QAction>
 #include <QDesktopWidget>
 #include <QMenuBar>
@@ -38,7 +40,6 @@
 
 #include "displayControls.h"
 #include "layoutViewer.h"
-#include "mainWindow.h"
 #include "scriptWidget.h"
 
 namespace gui {
@@ -66,10 +67,12 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this, SIGNAL(redraw()), viewer_, SLOT(repaint()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
 
   // Restore the settings (if none this is a no-op)

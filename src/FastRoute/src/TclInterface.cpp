@@ -194,11 +194,6 @@ void run_fastroute()
   getFastRoute()->runFastRoute();
 }
 
-void set_estimate_rc()
-{
-  getFastRoute()->setEstimateRC(true);
-}
-
 void estimate_rc()
 {
   getFastRoute()->estimateRC();

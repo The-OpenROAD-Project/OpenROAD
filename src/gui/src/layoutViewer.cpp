@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "layoutViewer.h"
+
 #include <QApplication>
 #include <QPaintEvent>
 #include <QPainter>
@@ -40,7 +42,7 @@
 
 #include "db.h"
 #include "dbTransform.h"
-#include "layoutViewer.h"
+#include "gui/gui.h"
 #include "mainWindow.h"
 #include "search.h"
 
@@ -60,6 +62,55 @@
 namespace gui {
 
 using namespace odb;
+
+// This class wraps the QPainter in the abstract Painter API for
+// Renderer instances to use.
+class GuiPainter : public Painter
+{
+ public:
+  GuiPainter(QPainter* painter, Options* options)
+      : painter_(painter), options_(options)
+  {
+  }
+
+  void setPen(odb::dbTechLayer* layer, bool cosmetic) override
+  {
+    QPen pen(options_->color(layer));
+    pen.setCosmetic(cosmetic);
+    painter_->setPen(pen);
+  }
+
+  void setPen(const Color& color, bool cosmetic) override
+  {
+    QPen pen(QColor(color.r, color.g, color.b, color.a));
+    pen.setCosmetic(cosmetic);
+    painter_->setPen(pen);
+  }
+
+  void setBrush(odb::dbTechLayer* layer) override
+  {
+    painter_->setBrush(options_->color(layer));
+  }
+
+  void setBrush(const Color& color) override
+  {
+    painter_->setBrush(QColor(color.r, color.g, color.b, color.a));
+  }
+
+  void drawRect(const odb::Rect& rect) override
+  {
+    painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
+                             QPoint(rect.xMax(), rect.yMax())));
+  }
+  void drawLine(const odb::Point& p1, const odb::Point& p2) override
+  {
+    painter_->drawLine(p1.x(), p1.y(), p2.x(), p2.y());
+  }
+
+ private:
+  QPainter* painter_;
+  Options* options_;
+};
 
 LayoutViewer::LayoutViewer(Options* options, QWidget* parent)
     : QWidget(parent),
@@ -101,14 +152,14 @@ dbBlock* LayoutViewer::getBlock()
 
 void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
 {
-  pixelsPerDBU_  = pixelsPerDBU;
+  pixelsPerDBU_ = pixelsPerDBU;
   dbBlock* block = getBlock();
   if (!block) {
     return;
   }
 
   dbBox* bbox = block->getBBox();
-  QSize  size(ceil(bbox->getWidth(0) * pixelsPerDBU),
+  QSize size(ceil(bbox->getWidth(0) * pixelsPerDBU),
              ceil(bbox->getLength(0) * pixelsPerDBU));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
@@ -127,7 +178,7 @@ void LayoutViewer::zoomOut()
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
-  QSize viewport     = scroller_->maximumViewportSize();
+  QSize viewport = scroller_->maximumViewportSize();
   qreal pixelsPerDBU = std::min(viewport.width() / (double) rect_dbu.dx(),
                                 viewport.height() / (double) rect_dbu.dy());
   setPixelsPerDBU(pixelsPerDBU);
@@ -145,7 +196,7 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 void LayoutViewer::updateRubberBandRegion()
 {
   QRect rect = rubber_band_.normalized();
-  int   unit = ceil(2 / pixelsPerDBU_);
+  int unit = ceil(2 / pixelsPerDBU_);
   update(rect.left(), rect.top() - unit / 2, rect.width(), unit);
   update(rect.left() - unit / 2, rect.top(), unit, rect.height());
   update(rect.left(), rect.bottom() - unit / 2, rect.width(), unit);
@@ -169,7 +220,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
   QPoint dbu
       = QPoint(pos.x() / pixelsPerDBU_, (height() - pos.y()) / pixelsPerDBU_);
   // QToolTip::showText(mapToGlobal(event->pos()),
-  //                                "hi", this);
+  //                    QString("(%1, %2)").arg(dbu.x()).arg(dbu.y()), this);
 
   if (rubber_band_showing_) {
     updateRubberBandRegion();
@@ -194,7 +245,7 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
     // Clip to the block bounds
     dbBlock* block = getBlock();
-    dbBox*   bbox  = block->getBBox();
+    dbBox* bbox = block->getBBox();
 
     rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox->xMin()));
     rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox->yMin()));
@@ -221,7 +272,7 @@ QColor LayoutViewer::getColor(dbTechLayer* layer)
   return options_->color(layer);
 }
 
-void LayoutViewer::addInstTransform(QTransform&        xfm,
+void LayoutViewer::addInstTransform(QTransform& xfm,
                                     const dbTransform& inst_xfm)
 {
   xfm.translate(inst_xfm.getOffset().getX(), inst_xfm.getOffset().getY());
@@ -263,8 +314,8 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 {
   // store obstructions
   for (dbBox* box : master->getObstructions()) {
-    dbTechLayer*    layer = box->getTechLayer();
-    dbTechLayerType type  = layer->getType();
+    dbTechLayer* layer = box->getTechLayer();
+    dbTechLayerType type = layer->getType();
     if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
       continue;
     }
@@ -276,8 +327,8 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
   for (dbMTerm* mterm : master->getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
       for (dbBox* box : mpin->getGeometry()) {
-        dbTechLayer*    layer = box->getTechLayer();
-        dbTechLayerType type  = layer->getType();
+        dbTechLayer* layer = box->getTechLayer();
+        dbTechLayerType type = layer->getType();
         if (type != dbTechLayerType::ROUTING && type != dbTechLayerType::CUT) {
           continue;
         }
@@ -291,7 +342,7 @@ void LayoutViewer::boxesByLayer(dbMaster* master, LayerBoxes& boxes)
 
 // Get the boxes for the given layer & master from the cache,
 // populating the cache if necessary
-const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster*    master,
+const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster* master,
                                                       dbTechLayer* layer)
 {
   auto it = cell_boxes_.find(master);
@@ -299,7 +350,7 @@ const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster*    master,
     LayerBoxes& boxes = cell_boxes_[master];
     boxesByLayer(master, boxes);
   }
-  it                = cell_boxes_.find(master);
+  it = cell_boxes_.find(master);
   LayerBoxes& boxes = it->second;
 
   auto layer_it = boxes.find(layer);
@@ -310,9 +361,9 @@ const LayoutViewer::Boxes* LayoutViewer::boxesByLayer(dbMaster*    master,
 }
 
 void LayoutViewer::drawTracks(dbTechLayer* layer,
-                              dbBlock*     block,
-                              QPainter*    painter,
-                              const Rect&  bounds)
+                              dbBlock* block,
+                              QPainter* painter,
+                              const Rect& bounds)
 {
   if (options_->arePrefTracksVisible() || options_->areNonPrefTracksVisible()) {
     dbTrackGrid* grid = block->findTrackGrid(layer);
@@ -352,14 +403,17 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
 
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
-void LayoutViewer::drawBlock(QPainter*   painter,
+void LayoutViewer::drawBlock(QPainter* painter,
                              const Rect& bounds,
-                             dbBlock*    block,
-                             int         depth)
+                             dbBlock* block,
+                             int depth)
 {
-  int        pixel = 1 / pixelsPerDBU_;  // 1 pixel in DBU
+  int pixel = 1 / pixelsPerDBU_;  // 1 pixel in DBU
   LayerBoxes boxes;
   QTransform initial_xfm = painter->transform();
+
+  auto& renderers = Gui::get()->renderers();
+  GuiPainter gui_painter(painter, options_);
 
   auto inst_range = search_.search_insts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
@@ -398,7 +452,7 @@ void LayoutViewer::drawBlock(QPainter*   painter,
       }
 
       // setup the instance's transform
-      QTransform  xfm = painter->transform();
+      QTransform xfm = painter->transform();
       dbTransform inst_xfm;
       inst->getTransform(inst_xfm);
       addInstTransform(xfm, inst_xfm);
@@ -455,19 +509,22 @@ void LayoutViewer::drawBlock(QPainter*   painter,
     for (auto& i : iter) {
       const auto& ll = i.first.min_corner();
       const auto& ur = i.first.max_corner();
-      int         w  = ur.x() - ll.x();
-      int         h  = ur.y() - ll.y();
+      int w = ur.x() - ll.x();
+      int h = ur.y() - ll.y();
       painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
     }
 
     drawTracks(layer, block, painter, bounds);
+    for (auto* renderer : renderers) {
+      renderer->drawLayer(layer, gui_painter);
+    }
   }
 
   // Draw the instances bounds
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     // setup the instance's transform
-    QTransform  xfm = painter->transform();
+    QTransform xfm = painter->transform();
     dbTransform inst_xfm;
     inst->getTransform(inst_xfm);
     addInstTransform(xfm, inst_xfm);
@@ -488,33 +545,37 @@ void LayoutViewer::drawBlock(QPainter*   painter,
     }
     painter->setTransform(initial_xfm);
   }
+
+  for (auto* renderer : renderers) {
+    renderer->drawObjects(gui_painter);
+  }
 }
 
 Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 {
-  int dbu_left   = (int) floor(screen_rect.left() / pixelsPerDBU_);
-  int dbu_right  = (int) ceil(screen_rect.right() / pixelsPerDBU_);
-  int dbu_top    = (int) floor(screen_rect.top() / pixelsPerDBU_);
+  int dbu_left = (int) floor(screen_rect.left() / pixelsPerDBU_);
+  int dbu_right = (int) ceil(screen_rect.right() / pixelsPerDBU_);
+  int dbu_top = (int) floor(screen_rect.top() / pixelsPerDBU_);
   int dbu_bottom = (int) ceil(screen_rect.bottom() / pixelsPerDBU_);
 
   // Flip the y-coordinate (see file level comments)
-  dbBlock* block      = getBlock();
-  int      dbu_height = block->getBBox()->getDY();
-  dbu_top             = dbu_height - dbu_top;
-  dbu_bottom          = dbu_height - dbu_bottom;
+  dbBlock* block = getBlock();
+  int dbu_height = block->getBBox()->getDY();
+  dbu_top = dbu_height - dbu_top;
+  dbu_bottom = dbu_height - dbu_bottom;
 
   return Rect(dbu_left, dbu_bottom, dbu_right, dbu_top);
 }
 
 QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
 {
-  dbBlock* block      = getBlock();
-  int      dbu_height = block->getBBox()->getDY();
+  dbBlock* block = getBlock();
+  int dbu_height = block->getBBox()->getDY();
 
   // Flip the y-coordinate (see file level comments)
-  qreal screen_left   = dbu_rect.xMin() * pixelsPerDBU_;
-  qreal screen_right  = dbu_rect.xMax() * pixelsPerDBU_;
-  qreal screen_top    = (dbu_height - dbu_rect.yMax()) * pixelsPerDBU_;
+  qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
+  qreal screen_right = dbu_rect.xMax() * pixelsPerDBU_;
+  qreal screen_top = (dbu_height - dbu_rect.yMax()) * pixelsPerDBU_;
   qreal screen_bottom = (dbu_height - dbu_rect.yMin()) * pixelsPerDBU_;
 
   return QRectF(QPointF(screen_left, screen_top),
@@ -574,6 +635,7 @@ void LayoutViewer::fit()
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
+  addOwner(block);  // register as a callback object
   fit();
 }
 
@@ -600,8 +662,8 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   }
   qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
 
-  int     scrollbar_x   = horizontalScrollBar()->value();
-  int     scrollbar_y   = verticalScrollBar()->value();
+  int scrollbar_x = horizontalScrollBar()->value();
+  int scrollbar_y = verticalScrollBar()->value();
   QPointF pos_in_widget = QPointF(event->pos()) - widget()->pos();
 
   if (event->delta() > 0) {
@@ -610,11 +672,23 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
     viewer_->zoomOut();
   }
 
-  qreal   new_pixelsPerDBU = viewer_->getPixelsPerDBU();
+  qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
   QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;
 
   horizontalScrollBar()->setValue(scrollbar_x + delta.x());
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
+}
+
+void LayoutViewer::inDbMoveInst(dbInst*)
+{
+  // This is not very smart - we just clear all the search structure
+  // rather than try to surgically update it.  We need a pre & post
+  // callback from OpenDB to do this right.
+  if (search_init_) {
+    search_.clear();
+    search_init_ = false;
+  }
+  update();
 }
 
 }  // namespace gui

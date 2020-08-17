@@ -38,12 +38,14 @@
 #include <map>
 #include <vector>
 
+#include "opendb/dbBlockCallBackObj.h"
 #include "options.h"
 #include "search.h"
 
 namespace odb {
 class dbBlock;
 class dbDatabase;
+class dbInst;
 class dbMaster;
 class dbTransform;
 class dbTechLayer;
@@ -61,16 +63,16 @@ class LayoutScroll;
 //
 // This object resizes with zooming but only the visible
 // portion of this widget is ever drawn.
-class LayoutViewer : public QWidget
+class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
 
  public:
   LayoutViewer(Options* options, QWidget* parent = nullptr);
 
-  void  setDb(odb::dbDatabase* db);
+  void setDb(odb::dbDatabase* db);
   qreal getPixelsPerDBU() { return pixelsPerDBU_; }
-  void  setScroller(LayoutScroll* scroller);
+  void setScroller(LayoutScroll* scroller);
 
   // From QWidget
   virtual void paintEvent(QPaintEvent* event) override;
@@ -78,6 +80,9 @@ class LayoutViewer : public QWidget
   virtual void mousePressEvent(QMouseEvent* event) override;
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
+
+  // From dbBlockCallBackObj
+  virtual void inDbMoveInst(odb::dbInst* inst) override;
 
  public slots:
   void zoomIn();
@@ -93,38 +98,38 @@ class LayoutViewer : public QWidget
     std::vector<QRect> mterms;
   };
   using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
-  using CellBoxes  = std::map<odb::dbMaster*, LayerBoxes>;
+  using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
 
-  void          boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
-  const Boxes*  boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
+  void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
+  const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   odb::dbBlock* getBlock();
-  void          setPixelsPerDBU(qreal pixelsPerDBU);
-  void          drawBlock(QPainter*        painter,
-                          const odb::Rect& bounds,
-                          odb::dbBlock*    block,
-                          int              depth);
-  void   addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
+  void setPixelsPerDBU(qreal pixelsPerDBU);
+  void drawBlock(QPainter* painter,
+                 const odb::Rect& bounds,
+                 odb::dbBlock* block,
+                 int depth);
+  void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
-  void   updateRubberBandRegion();
-  void   drawTracks(odb::dbTechLayer* layer,
-                    odb::dbBlock*     block,
-                    QPainter*         painter,
-                    const odb::Rect&  bounds);
+  void updateRubberBandRegion();
+  void drawTracks(odb::dbTechLayer* layer,
+                  odb::dbBlock* block,
+                  QPainter* painter,
+                  const odb::Rect& bounds);
 
   odb::Rect screenToDBU(const QRect& rect);
-  QRectF    DBUToScreen(const odb::Rect& dbu_rect);
+  QRectF DBUToScreen(const odb::Rect& dbu_rect);
 
   odb::dbDatabase* db_;
-  Options*         options_;
-  LayoutScroll*    scroller_;
-  qreal            pixelsPerDBU_;
-  int              min_depth_;
-  int              max_depth_;
-  Search           search_;
-  bool             search_init_;
-  CellBoxes        cell_boxes_;
-  QRect            rubber_band_;  // screen coordinates
-  bool             rubber_band_showing_;
+  Options* options_;
+  LayoutScroll* scroller_;
+  qreal pixelsPerDBU_;
+  int min_depth_;
+  int max_depth_;
+  Search search_;
+  bool search_init_;
+  CellBoxes cell_boxes_;
+  QRect rubber_band_;  // screen coordinates
+  bool rubber_band_showing_;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

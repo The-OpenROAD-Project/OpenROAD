@@ -30,10 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "search.h"
+
 #include <utility>
 
 #include "dbShape.h"
-#include "search.h"
 
 namespace gui {
 
@@ -62,7 +63,7 @@ void Search::addVia(odb::dbShape* shape, int shapeId, int x, int y)
     for (odb::dbBox* box : via->getBoxes()) {
       point_t ll(x + box->xMin(), y + box->yMin());
       point_t ur(x + box->xMax(), y + box->yMax());
-      box_t   bbox(ll, ur);
+      box_t bbox(ll, ur);
       shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
     }
   } else {
@@ -70,7 +71,7 @@ void Search::addVia(odb::dbShape* shape, int shapeId, int x, int y)
     for (odb::dbBox* box : via->getBoxes()) {
       point_t ll(x + box->xMin(), y + box->yMin());
       point_t ur(x + box->xMax(), y + box->yMax());
-      box_t   bbox(ll, ur);
+      box_t bbox(ll, ur);
       shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
     }
   }
@@ -81,13 +82,13 @@ void Search::addSNet(odb::dbNet* net)
   odb::dbSet<odb::dbSWire> swires = net->getSWires();
 
   for (auto itr = swires.begin(); itr != swires.end(); ++itr) {
-    odb::dbSWire*                     swire = *itr;
-    odb::dbSet<odb::dbSBox>           wires = swire->getWires();
+    odb::dbSWire* swire = *itr;
+    odb::dbSet<odb::dbSBox> wires = swire->getWires();
     odb::dbSet<odb::dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
-      odb::dbSBox* box     = *box_itr;
-      uint         shapeId = box->getId();
+      odb::dbSBox* box = *box_itr;
+      uint shapeId = box->getId();
       if (box->isVia()) {
         continue;
       }
@@ -107,7 +108,7 @@ void Search::addNet(odb::dbNet* net)
     return;
 
   odb::dbWireShapeItr itr;
-  odb::dbShape        s;
+  odb::dbShape s;
 
   for (itr.begin(wire); itr.next(s);) {
     int shapeId = itr.getShapeId();
@@ -123,10 +124,16 @@ void Search::addNet(odb::dbNet* net)
 void Search::addInst(odb::dbInst* inst)
 {
   odb::dbBox* bbox = inst->getBBox();
-  point_t     ll(bbox->xMin(), bbox->yMin());
-  point_t     ur(bbox->xMax(), bbox->yMax());
-  box_t       box(ll, ur);
+  point_t ll(bbox->xMin(), bbox->yMin());
+  point_t ur(bbox->xMax(), bbox->yMax());
+  box_t box(ll, ur);
   insts_.insert(std::make_pair(box, inst));
+}
+
+void Search::clear()
+{
+  insts_.clear();
+  shapes_.clear();
 }
 
 template <typename T>
@@ -136,11 +143,11 @@ class Search::MinSizePredicate
   MinSizePredicate(int min_size) : min_size_(min_size) {}
   bool operator()(const std::pair<box_t, T>& o) const
   {
-    const box_t&   box = o.first;
-    const point_t& ll  = box.min_corner();
-    const point_t& ur  = box.max_corner();
-    int            w   = ur.x() - ll.x();
-    int            h   = ur.y() - ll.y();
+    const box_t& box = o.first;
+    const point_t& ll = box.min_corner();
+    const point_t& ur = box.max_corner();
+    int w = ur.x() - ll.x();
+    int h = ur.y() - ll.y();
     return std::max(w, h) >= min_size_;
   }
 
@@ -155,10 +162,10 @@ class Search::MinHeightPredicate
   MinHeightPredicate(int min_height) : min_height_(min_height) {}
   bool operator()(const std::pair<box_t, T>& o) const
   {
-    const box_t&   box = o.first;
-    const point_t& ll  = box.min_corner();
-    const point_t& ur  = box.max_corner();
-    int            h   = ur.y() - ll.y();
+    const box_t& box = o.first;
+    const point_t& ll = box.min_corner();
+    const point_t& ur = box.max_corner();
+    int h = ur.y() - ll.y();
     return h >= min_height_;
   }
 
@@ -167,11 +174,11 @@ class Search::MinHeightPredicate
 };
 
 Search::ShapeRange Search::search_shapes(odb::dbTechLayer* layer,
-                                         int               xLo,
-                                         int               yLo,
-                                         int               xHi,
-                                         int               yHi,
-                                         int               minSize)
+                                         int xLo,
+                                         int yLo,
+                                         int xHi,
+                                         int yHi,
+                                         int minSize)
 {
   auto it = shapes_.find(layer);
   if (it == shapes_.end()) {

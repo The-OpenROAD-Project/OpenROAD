@@ -36,11 +36,28 @@
 
 %module fastroute
 %{
+#include "FastRouteKernel.h"
 #include "TclInterface.h"
+
+namespace ord {
+// Defined in OpenRoad.i
+FastRoute::FastRouteKernel* getFastRoute();
+}  // namespace ord
+
+using ord::getFastRoute;
 %}
 
 %include "../../Exception.i"
 
+%inline %{
+
+bool have_routes()
+{
+  return getFastRoute()->haveRoutes();
+}
+
+%} // inline
+  
 namespace FastRoute {
 
 extern void help();
@@ -87,8 +104,6 @@ extern void set_clock_nets_route_flow(bool clock_flow);
 
 extern void set_min_layer_for_clock(int minLayer);
 
-extern void set_estimate_rc();
-
 extern void estimate_rc();
 
 extern void enable_antenna_avoidance_flow(char * diodeCellName, char * diodePinName);
@@ -104,3 +119,4 @@ extern void write_guides();
 extern void report_congestion(char * congest_file);
 
 }
+

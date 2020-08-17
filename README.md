@@ -611,6 +611,13 @@ Options description:
 ###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
 
 
+To estimate RC parasitics based on global route results, use the `-global_routing`
+option of the `estimate_parasitics` command.
+
+```
+estimate_parasitics -global_routing
+```
+
 #### Logical and Physical Optimizations
 
 OpenPhySyn performs additional timing and area optimization.
