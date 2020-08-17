@@ -74,8 +74,8 @@ Opendp::importDb()
   core_ = ord::getCore(block_);
 
   importClear();
-  makeMacros();
   examineRows();
+  makeMacros();
   makeCells();
   makeGroups();
   findRowPower();
@@ -124,7 +124,10 @@ Opendp::defineTopPower(Macro *macro, dbMaster *master)
   }
 
   if (power != nullptr && gnd != nullptr) {
-    bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
+    int master_height = master->getHeight();
+    bool is_multi_row = master_height != row_height_ \
+                        && master_height % row_height_ == 0;
+
     macro->is_multi_row_ = is_multi_row;
 
     int power_y_max = find_ymax(power);
