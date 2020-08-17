@@ -1,5 +1,6 @@
 record_tests {
-  estimate_rc
+  est_rc
+  est_rc2
   gcd
   long_wires
   multiple_calls

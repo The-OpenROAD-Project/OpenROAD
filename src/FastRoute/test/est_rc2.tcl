@@ -12,3 +12,4 @@ estimate_parasitics -global_routing
 
 report_net -connections -verbose -digits 3 clk
 report_net -connections -verbose -digits 3 u2/ZN
+exit
