@@ -1,10 +1,10 @@
 record_tests {
   clock_route
   diode_insert
-  est_rc
+  est_rc1
   est_rc2
   gcd
-  long_wires
+  fix_long_wires1
   multiple_calls
   no_tracks
 }
