@@ -27,5 +27,3 @@ FastRoute::set_verbose 0
 FastRoute::start_fastroute
 FastRoute::run_fastroute
 FastRoute::write_guides
-
-exit

@@ -11,4 +11,3 @@ fastroute -output_file $guide_file \
 
 set_cmd_units -capacitance ff
 report_net -connections -verbose clk
-exit
