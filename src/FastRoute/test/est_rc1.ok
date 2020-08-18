@@ -1,0 +1,131 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: gcd.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 676 components and 2850 component-terminals.
+Notice 0:     Created 579 nets and 1498 connections.
+Notice 0: Finished DEF file: gcd.def
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 2
+[PARAMS] Max routing layer: 10
+[PARAMS] Global adjustment: 0
+[PARAMS] Unidirectional routing: 1
+[PARAMS] Max routing length: -1um
+[PARAMS] Grid origin: (-1, -1)
+
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 2874
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+[INFO] Found 0 clock nets
+Checking pin placement...
+Checking pin placement... Done!
+Checking sinks/source...
+Checking sinks/source... Done!
+[INFO] Minimum degree: 2
+[INFO] Maximum degree: 36
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 8469 obstacles in layer 1
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+Computing user defined layers adjustments... Done!
+Running FastRoute...
+
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 3332
+[Overflow Report] Total Capacity: 117668
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 3332
+[INFO] Final number of vias : 2598
+[INFO] Final usage 3D       : 11126
+Getting results...
+Getting results... Done!
+
+Running FastRoute... Done!
+ > Fixing long segments...
+[WARNING] Max routing length not defined. Skipping...
+[INFO] Total wirelength: 10285.799805 um
+Writing guides...
+[INFO] Num routed nets: 563
+Writing guides... Done!
+Net clk
+ Pin capacitance: r 33.238 f 29.975
+ Wire capacitance: r 17.515 f 17.515
+ Total capacitance: r 50.753 f 47.490
+ Number of drivers: 1
+ Number of loads: 35
+ Number of pins: 36
+
+Driver pins
+ clk input port (48, 101)
+
+Load pins
+ _858_/CK input (DFF_X1) r 0.950 f 0.856 (29, 54)
+ _859_/CK input (DFF_X1) r 0.950 f 0.856 (29, 60)
+ _860_/CK input (DFF_X1) r 0.950 f 0.856 (39, 57)
+ _861_/CK input (DFF_X1) r 0.950 f 0.856 (76, 66)
+ _862_/CK input (DFF_X1) r 0.950 f 0.856 (44, 66)
+ _863_/CK input (DFF_X1) r 0.950 f 0.856 (52, 75)
+ _864_/CK input (DFF_X1) r 0.950 f 0.856 (66, 74)
+ _865_/CK input (DFF_X1) r 0.950 f 0.856 (76, 38)
+ _866_/CK input (DFF_X1) r 0.950 f 0.856 (78, 60)
+ _867_/CK input (DFF_X1) r 0.950 f 0.856 (68, 36)
+ _868_/CK input (DFF_X1) r 0.950 f 0.856 (67, 62)
+ _869_/CK input (DFF_X1) r 0.950 f 0.856 (27, 47)
+ _870_/CK input (DFF_X1) r 0.950 f 0.856 (29, 37)
+ _871_/CK input (DFF_X1) r 0.950 f 0.856 (31, 33)
+ _872_/CK input (DFF_X1) r 0.950 f 0.856 (61, 33)
+ _873_/CK input (DFF_X1) r 0.950 f 0.856 (59, 23)
+ _874_/CK input (DFF_X1) r 0.950 f 0.856 (45, 16)
+ _875_/CK input (DFF_X1) r 0.950 f 0.856 (38, 19)
+ _876_/CK input (DFF_X1) r 0.950 f 0.856 (55, 46)
+ _877_/CK input (DFF_X1) r 0.950 f 0.856 (69, 66)
+ _878_/CK input (DFF_X1) r 0.950 f 0.856 (44, 62)
+ _879_/CK input (DFF_X1) r 0.950 f 0.856 (54, 72)
+ _880_/CK input (DFF_X1) r 0.950 f 0.856 (61, 69)
+ _881_/CK input (DFF_X1) r 0.950 f 0.856 (77, 43)
+ _882_/CK input (DFF_X1) r 0.950 f 0.856 (79, 54)
+ _883_/CK input (DFF_X1) r 0.950 f 0.856 (64, 43)
+ _884_/CK input (DFF_X1) r 0.950 f 0.856 (69, 58)
+ _885_/CK input (DFF_X1) r 0.950 f 0.856 (33, 50)
+ _886_/CK input (DFF_X1) r 0.950 f 0.856 (27, 43)
+ _887_/CK input (DFF_X1) r 0.950 f 0.856 (37, 30)
+ _888_/CK input (DFF_X1) r 0.950 f 0.856 (56, 36)
+ _889_/CK input (DFF_X1) r 0.950 f 0.856 (58, 27)
+ _890_/CK input (DFF_X1) r 0.950 f 0.856 (52, 16)
+ _891_/CK input (DFF_X1) r 0.950 f 0.856 (36, 26)
+ _892_/CK input (DFF_X1) r 0.950 f 0.856 (53, 38)

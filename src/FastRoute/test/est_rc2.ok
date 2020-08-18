@@ -1,0 +1,110 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: est_rc2.def
+Notice 0: Design: top
+Notice 0:     Created 4 pins.
+Notice 0:     Created 7 components and 35 component-terminals.
+Notice 0:     Created 10 nets and 18 connections.
+Notice 0: Finished DEF file: est_rc2.def
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 2
+[PARAMS] Max routing layer: 10
+[PARAMS] Global adjustment: 0
+[PARAMS] Unidirectional routing: 1
+[PARAMS] Max routing length: -1um
+[PARAMS] Grid origin: (-1, -1)
+
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 95
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+[INFO] Found 0 clock nets
+Checking pin placement...
+Checking pin placement... Done!
+Checking sinks/source...
+Checking sinks/source... Done!
+[INFO] Minimum degree: 2
+[INFO] Maximum degree: 3
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 177 obstacles in layer 1
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+Computing user defined layers adjustments... Done!
+Running FastRoute...
+
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 44
+[Overflow Report] Total Capacity: 9698
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 44
+[INFO] Final number of vias : 44
+[INFO] Final usage 3D       : 176
+Getting results...
+Getting results... Done!
+
+Running FastRoute... Done!
+ > Fixing long segments...
+[WARNING] Max routing length not defined. Skipping...
+[INFO] Total wirelength: 161.699997 um
+Writing guides...
+[INFO] Num routed nets: 10
+Writing guides... Done!
+Net clk
+ Pin capacitance: r 3.402 f 3.004
+ Wire capacitance: r 0.819 f 0.819
+ Total capacitance: r 4.221 f 3.823
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ clk input port (5, 0)
+
+Load pins
+ clkbuf_0_clk/A input (BUF_X4) r 3.402 f 3.004 (8, 11)
+Net u2z
+ Pin capacitance: r 1.140 f 1.062
+ Wire capacitance: 0.444
+ Total capacitance: r 1.585 f 1.507
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ u2/ZN output (AND2_X1) (8, 12)
+
+Load pins
+ r3/D input (DFF_X1) r 1.140 f 1.062 (10, 8)

@@ -1,0 +1,193 @@
+Notice 0: Reading LEF file:  sky130/sky130_tech.lef
+Notice 0:     Created 11 technology layers
+Notice 0:     Created 25 technology vias
+Notice 0: Finished LEF file:  sky130/sky130_tech.lef
+Notice 0: Reading LEF file:  sky130/sky130_std_cell.lef
+Notice 0:     Created 390 library cells
+Notice 0: Finished LEF file:  sky130/sky130_std_cell.lef
+Notice 0: 
+Reading DEF file: gcd_sky130.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 1271 components and 5147 component-terminals.
+Notice 0:     Created 2 special nets and 0 connections.
+Notice 0:     Created 322 nets and 971 connections.
+Notice 0: Finished DEF file: gcd_sky130.def
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 2
+[PARAMS] Max routing layer: 6
+[PARAMS] Global adjustment: 0
+[PARAMS] Unidirectional routing: 1
+[PARAMS] Max routing length: -1um
+[PARAMS] Grid origin: (-1, -1)
+
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 22597
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+[INFO] Found 1 clock nets
+Checking pin placement...
+Checking pin placement... Done!
+Checking sinks/source...
+Checking sinks/source... Done!
+[INFO] Minimum degree: 2
+[INFO] Maximum degree: 11
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 17704 obstacles in layer 1
+[INFO] Processing 2627 obstacles in layer 2
+[INFO] Processing 10 obstacles in layer 5
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+[INFO] Reducing resources of layer 2 by 80%
+[INFO] Reducing resources of layer 3 by 70%
+[INFO] Reducing resources of layer 4 by 50%
+[INFO] Reducing resources of layer 5 by 50%
+[INFO] Reducing resources of layer 6 by 50%
+Computing user defined layers adjustments... Done!
+Running FastRoute...
+
+Running extra iterations to remove overflow...
+Update congestion history type 1
+[INFO] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2 
+[INFO] log_coef 1.181232, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 2, enlarge 20, costheight 19, threshold 6 via cost 0 
+[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 3, enlarge 20, costheight 29, threshold 2 via cost 0 
+[INFO] log_coef 1.181232, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 4, enlarge 20, costheight 34, threshold 0 via cost 0 
+[INFO] log_coef 2.000000, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 1
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 164
+[Overflow Report] Total Capacity: 12760
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 164
+[INFO] Final number of vias : 196
+[INFO] Final usage 3D       : 752
+Getting results...
+Getting results... Done!
+
+Old total capacity: 11396
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 2
+[PARAMS] Max routing layer: 6
+[PARAMS] Global adjustment: 0
+[PARAMS] Unidirectional routing: 1
+[PARAMS] Max routing length: -1um
+[PARAMS] Grid origin: (-1, -1)
+
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 22597
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+[INFO] Found 1 clock nets
+Checking pin placement...
+Checking pin placement... Done!
+Checking sinks/source...
+Checking sinks/source... Done!
+[INFO] Minimum degree: 2
+[INFO] Maximum degree: 11
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 17704 obstacles in layer 1
+[INFO] Processing 2627 obstacles in layer 2
+[INFO] Processing 10 obstacles in layer 5
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+[INFO] Reducing resources of layer 2 by 80%
+[INFO] Reducing resources of layer 3 by 70%
+[INFO] Reducing resources of layer 4 by 50%
+[INFO] Reducing resources of layer 5 by 50%
+[INFO] Reducing resources of layer 6 by 50%
+Computing user defined layers adjustments... Done!
+New total capacity: 11396
+Running extra iterations to remove overflow...
+Update congestion history type 1
+[INFO] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2 
+[INFO] log_coef 1.181232, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 2, enlarge 20, costheight 19, threshold 6 via cost 0 
+[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 3, enlarge 20, costheight 24, threshold 2 via cost 0 
+[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
+Update congestion history type 1
+[INFO] iteration 4, enlarge 20, costheight 29, threshold 0 via cost 0 
+[INFO] log_coef 2.000000, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 2528
+[Overflow Report] Total Capacity: 21236
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 2528
+[INFO] Final number of vias : 2652
+[INFO] Final usage 3D       : 10484
+Getting results...
+Getting results... Done!
+
+Running FastRoute... Done!
+ > Fixing long segments...
+[WARNING] Max routing length not defined. Skipping...
+[INFO] Total wirelength: 27871.199219 um
+Writing guides...
+[INFO] Num routed nets: 322
+Writing guides... Done!
+No differences found.

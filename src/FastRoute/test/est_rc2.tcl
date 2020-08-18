@@ -7,7 +7,7 @@ set route_guide [make_result_file est_rc2.route_guide]
 
 fastroute -output_file $route_guide\
   -max_routing_layer 10 \
-  -unidirectional_routing true
+  -unidirectional_routing
 estimate_parasitics -global_routing
 
 report_net -connections -verbose -digits 3 clk
