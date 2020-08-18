@@ -1,12 +1,12 @@
 [submodule "module/OpenSTA"]
 	path = src/OpenSTA
-	url = https://github.com/The-OpenROAD-Project-private/OpenSTA.git
+	url = ../OpenSTA.git
 [submodule "module/OpenDB"]
 	path = src/OpenDB
-	url = https://github.com/The-OpenROAD-Project-private/OpenDB.git
+	url = ../OpenDB.git
 [submodule "flute3"]
 	path = src/flute3
-	url = https://github.com/The-OpenROAD-Project-private/flute3.git
+	url = ../flute3.git
 [submodule "src/OpenRCX"]
 	path = src/OpenRCX
-	url = https://github.com/The-OpenROAD-Project-private/OpenRCX.git
+	url = ../OpenRCX.git
