@@ -432,7 +432,7 @@ void DBWrapper::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
 
     Coordinate pinPos;
 
-    Pin::Type type(Pin::Type::OTHER);
+    Pin::Type type(Pin::Type::BIDIR);
     if (mTerm->getIoType() == odb::dbIoType::INPUT) {
       type = Pin::SINK;
     } else if (mTerm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -552,7 +552,7 @@ void DBWrapper::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
     pinName = bterm->getConstName();
     Coordinate pinPos;
 
-    Pin::Type type(Pin::Type::OTHER);
+    Pin::Type type(Pin::Type::BIDIR);
     if (bterm->getIoType() == odb::dbIoType::INPUT) {
       type = Pin::SOURCE;
     } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {

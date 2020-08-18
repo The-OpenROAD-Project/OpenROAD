@@ -39,6 +39,7 @@
 #include <vector>
 
 #include "opendb/dbBlockCallBackObj.h"
+#include "gui/gui.h"
 #include "options.h"
 #include "search.h"
 
@@ -84,6 +85,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // From dbBlockCallBackObj
   virtual void inDbMoveInst(odb::dbInst* inst) override;
 
+ signals:
+  void location(qreal x, qreal y);
+  void selected(const Selected& selected);
+
  public slots:
   void zoomIn();
   void zoomOut();
@@ -119,8 +124,10 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawRows(odb::dbBlock* block,
                 QPainter* painter,
                 const odb::Rect& bounds);
+  Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
+  odb::Point screenToDBU(const QPoint& point);
   QRectF DBUToScreen(const odb::Rect& dbu_rect);
 
   odb::dbDatabase* db_;

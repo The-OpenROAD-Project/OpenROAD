@@ -199,7 +199,11 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 {
-  return layer_selectable_.at(layer);
+  auto it = layer_selectable_.find(layer);
+  if (it != layer_selectable_.end()) {
+    return it->second;
+  }
+  return false;
 }
 
 bool DisplayControls::areRowsVisible()
@@ -272,6 +276,7 @@ void DisplayControls::techInit()
     color.setAlpha(180);
     layer_color_[layer] = color;
     layer_visible_[layer] = true;
+    layer_selectable_[layer] = true;
   }
 
   tech_inited_ = true;
