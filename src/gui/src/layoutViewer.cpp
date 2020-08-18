@@ -202,9 +202,50 @@ void LayoutViewer::updateRubberBandRegion()
   update(rect.right() - unit / 2, rect.top(), unit, rect.height());
 }
 
+Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
+{
+  // Look for the selected object in reverse layer order
+
+  dbTech* tech = getBlock()->getDataBase()->getTech();
+  // dbSet doesn't provide a reverse iterator so we have to copy it.
+  std::deque<dbTechLayer*> rev_layers;
+  for (auto layer : tech->getLayers()) {
+    rev_layers.push_front(layer);
+  }
+
+  for (auto layer : rev_layers) {
+    if (!options_->isVisible(layer) || !options_->isSelectable(layer)) {
+      continue;
+    }
+
+    auto shapes = search_.search_shapes(
+        layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+
+    // Just return the first one
+    if (shapes.begin() != shapes.end()) {
+      return Selected(shapes.begin()->second);
+    }
+  }
+
+  // Look for an instance since no shape was found
+  auto insts
+      = search_.search_insts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
+
+  // Just return the first one
+  if (insts.begin() != insts.end()) {
+    return Selected(insts.begin()->second);
+  }
+  return Selected();
+}
+
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
 {
-  if (event->button() == Qt::RightButton) {
+  if (event->button() == Qt::LeftButton) {
+    if (getBlock()) {
+      Point pt_dbu = screenToDBU(event->pos());
+      emit selected(selectAtPoint(pt_dbu));
+    }
+  } else if (event->button() == Qt::RightButton) {
     rubber_band_showing_ = true;
     rubber_band_.setTopLeft(event->pos());
     rubber_band_.setBottomRight(event->pos());

@@ -76,6 +76,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(location(qreal, qreal)),
           this,
           SLOT(setLocation(qreal, qreal)));
+  connect(viewer_,
+          SIGNAL(selected(const Selected&)),
+          this,
+          SLOT(setSelected(const Selected&)));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -138,6 +142,19 @@ void MainWindow::setDb(odb::dbDatabase* db)
 void MainWindow::setLocation(qreal x, qreal y)
 {
   location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
+}
+
+void MainWindow::setSelected(const Selected& selection)
+{
+  std::string text;
+  if (auto inst = std::get_if<odb::dbInst*>(&selection)) {
+    text = "Inst: " + (*inst)->getName();
+  } else if (auto net = std::get_if<odb::dbNet*>(&selection)) {
+    text = "Net: " + (*net)->getName();
+  } else {
+    text = "Unknown";
+  }
+  statusBar()->showMessage(QString::fromStdString(text));
 }
 
 void MainWindow::saveSettings()

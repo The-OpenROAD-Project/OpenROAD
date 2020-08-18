@@ -86,7 +86,7 @@ class Search
     iterator end_;
   };
   using InstRange = Range<odb::dbInst*>;
-  using ShapeRange = Range<int>;
+  using ShapeRange = Range<odb::dbNet*>;
 
   // Build the structure for the given block.
   void init(odb::dbBlock* block);
@@ -108,12 +108,12 @@ class Search
  private:
   void addSNet(odb::dbNet* net);
   void addNet(odb::dbNet* net);
-  void addVia(odb::dbShape* shape, int shapeId, int x, int y);
+  void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
   void addInst(odb::dbInst* inst);
 
   // The int stored in shapes is the "shapeId" from OpenDB.  Not
   // being used yet but will be good for selection later.
-  std::map<odb::dbTechLayer*, rtree<int>> shapes_;
+  std::map<odb::dbTechLayer*, rtree<odb::dbNet*>> shapes_;
   rtree<odb::dbInst*> insts_;
 };
 

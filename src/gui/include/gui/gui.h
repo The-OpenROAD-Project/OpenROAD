@@ -36,11 +36,18 @@
 
 #include <initializer_list>
 #include <set>
+#include <variant>
 #include <tuple>
 
 #include "opendb/db.h"
 
 namespace gui {
+
+// An object selected in the gui
+using Selected = std::variant<odb::dbInst*, odb::dbNet*>;
+
+// A collection of selected objects
+using SelectionSet = std::set<Selected>;
 
 // This is an API that the Renderer instances will use to do their
 // rendering.  This is subclassed in the gui module and hides Qt from

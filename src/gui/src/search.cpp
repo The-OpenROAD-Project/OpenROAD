@@ -30,11 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "search.h"
-
 #include <utility>
 
 #include "dbShape.h"
+#include "search.h"
 
 namespace gui {
 
@@ -56,7 +55,10 @@ void Search::init(odb::dbBlock* block)
   }
 }
 
-void Search::addVia(odb::dbShape* shape, int shapeId, int x, int y)
+void Search::addVia(odb::dbNet* net,
+                    odb::dbShape* shape,
+                    int x,
+                    int y)
 {
   if (shape->getType() == odb::dbShape::TECH_VIA) {
     odb::dbTechVia* via = shape->getTechVia();
@@ -64,7 +66,7 @@ void Search::addVia(odb::dbShape* shape, int shapeId, int x, int y)
       point_t ll(x + box->xMin(), y + box->yMin());
       point_t ur(x + box->xMax(), y + box->yMax());
       box_t bbox(ll, ur);
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
+      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   } else {
     odb::dbVia* via = shape->getVia();
@@ -72,7 +74,7 @@ void Search::addVia(odb::dbShape* shape, int shapeId, int x, int y)
       point_t ll(x + box->xMin(), y + box->yMin());
       point_t ur(x + box->xMax(), y + box->yMax());
       box_t bbox(ll, ur);
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
+      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   }
 }
@@ -88,14 +90,13 @@ void Search::addSNet(odb::dbNet* net)
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
       odb::dbSBox* box = *box_itr;
-      uint shapeId = box->getId();
       if (box->isVia()) {
         continue;
       }
 
       box_t bbox(point_t(box->xMin(), box->yMin()),
                  point_t(box->xMax(), box->yMax()));
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
+      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   }
 }
@@ -113,10 +114,10 @@ void Search::addNet(odb::dbNet* net)
   for (itr.begin(wire); itr.next(s);) {
     int shapeId = itr.getShapeId();
     if (s.isVia()) {
-      addVia(&s, shapeId, itr._prev_x, itr._prev_y);
+      addVia(net, &s, itr._prev_x, itr._prev_y);
     } else {
       box_t box(point_t(s.xMin(), s.yMin()), point_t(s.xMax(), s.yMax()));
-      shapes_[s.getTechLayer()].insert(std::make_pair(box, shapeId));
+      shapes_[s.getTechLayer()].insert(std::make_pair(box, net));
     }
   }
 }
@@ -190,7 +191,7 @@ Search::ShapeRange Search::search_shapes(odb::dbTechLayer* layer,
   if (minSize > 0) {
     return ShapeRange(
         rtree.qbegin(bgi::intersects(query)
-                     && bgi::satisfies(MinSizePredicate<int>(minSize))),
+                     && bgi::satisfies(MinSizePredicate<odb::dbNet*>(minSize))),
         rtree.qend());
   }
 
