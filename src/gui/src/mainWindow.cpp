@@ -151,6 +151,8 @@ void MainWindow::setSelected(const Selected& selection)
     text = "Inst: " + (*inst)->getName();
   } else if (auto net = std::get_if<odb::dbNet*>(&selection)) {
     text = "Net: " + (*net)->getName();
+  } else if (std::get_if<std::monostate>(&selection)) {
+    // text is already empty
   } else {
     text = "Unknown";
   }

@@ -43,8 +43,8 @@
 
 namespace gui {
 
-// An object selected in the gui
-using Selected = std::variant<odb::dbInst*, odb::dbNet*>;
+// An object selected in the gui.  Monostate is for a null value.
+using Selected = std::variant<std::monostate, odb::dbInst*, odb::dbNet*>;
 
 // A collection of selected objects
 using SelectionSet = std::set<Selected>;
