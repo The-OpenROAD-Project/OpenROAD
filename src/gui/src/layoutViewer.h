@@ -84,6 +84,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   // From dbBlockCallBackObj
   virtual void inDbMoveInst(odb::dbInst* inst) override;
 
+ signals:
+  void location(qreal x, qreal y);
+
  public slots:
   void zoomIn();
   void zoomOut();
@@ -121,6 +124,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                 const odb::Rect& bounds);
 
   odb::Rect screenToDBU(const QRect& rect);
+  odb::Point screenToDBU(const QPoint& point);
   QRectF DBUToScreen(const odb::Rect& dbu_rect);
 
   odb::dbDatabase* db_;

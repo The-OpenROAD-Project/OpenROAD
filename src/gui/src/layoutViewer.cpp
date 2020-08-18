@@ -215,11 +215,15 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
 
 void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 {
-  QPoint pos = event->pos();
-  QPoint dbu
-      = QPoint(pos.x() / pixelsPerDBU_, (height() - pos.y()) / pixelsPerDBU_);
-  // QToolTip::showText(mapToGlobal(event->pos()),
-  //                    QString("(%1, %2)").arg(dbu.x()).arg(dbu.y()), this);
+  dbBlock* block = getBlock();
+  if (!block) {
+    return;
+  }
+
+  // emit location in microns
+  Point pt_dbu = screenToDBU(event->pos());
+  qreal toMicrons = block->getDbUnitsPerMicron();
+  emit location(pt_dbu.x() / toMicrons, pt_dbu.y() / toMicrons);
 
   if (rubber_band_showing_) {
     updateRubberBandRegion();
@@ -600,6 +604,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   for (auto* renderer : renderers) {
     renderer->drawObjects(gui_painter);
   }
+}
+
+odb::Point LayoutViewer::screenToDBU(const QPoint& point)
+{
+  return Point(point.x() / pixelsPerDBU_,
+               (height() - point.y()) / pixelsPerDBU_);
 }
 
 Rect LayoutViewer::screenToDBU(const QRect& screen_rect)

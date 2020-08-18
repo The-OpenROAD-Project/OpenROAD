@@ -32,7 +32,10 @@
 
 #pragma once
 
+#include <QAction>
+#include <QLabel>
 #include <QMainWindow>
+#include <QToolBar>
 #include <memory>
 
 #include "openroad/OpenRoad.hh"
@@ -83,10 +86,14 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Save the current state into settings for the next session.
   void saveSettings();
 
+  // Set the location to display in the status bar
+  void setLocation(qreal x, qreal y);
+
  private:
   void createMenus();
   void createActions();
   void createToolbars();
+  void createStatusBar();
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
@@ -104,6 +111,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QAction* exit_;
   QAction* fit_;
+
+  QLabel* location_;
 };
 
 }  // namespace gui

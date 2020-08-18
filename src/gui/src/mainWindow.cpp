@@ -30,16 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "mainWindow.h"
-
-#include <QAction>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
-#include <QToolBar>
+#include <QStatusBar>
 
 #include "displayControls.h"
 #include "layoutViewer.h"
+#include "mainWindow.h"
 #include "scriptWidget.h"
 
 namespace gui {
@@ -74,6 +72,10 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(designLoaded(odb::dbBlock*)));
   connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
+  connect(viewer_,
+          SIGNAL(location(qreal, qreal)),
+          this,
+          SLOT(setLocation(qreal, qreal)));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -86,6 +88,13 @@ MainWindow::MainWindow(QWidget* parent)
   createActions();
   createMenus();
   createToolbars();
+  createStatusBar();
+}
+
+void MainWindow::createStatusBar()
+{
+  location_ = new QLabel();
+  statusBar()->addPermanentWidget(location_);
 }
 
 void MainWindow::createActions()
@@ -124,6 +133,11 @@ void MainWindow::setDb(odb::dbDatabase* db)
   db_ = db;
   controls_->setDb(db);
   viewer_->setDb(db);
+}
+
+void MainWindow::setLocation(qreal x, qreal y)
+{
+  location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
 }
 
 void MainWindow::saveSettings()
