@@ -1,13 +1,13 @@
 source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
+read_liberty Nangate45/Nangate45_typ.lib
 read_def "gcd.def"
 
 set guide_file [make_result_file gcd_route.guide]
 
 fastroute -output_file $guide_file \
       -max_routing_layer 10 \
-      -unidirectional_routing \
-      -estimateRC
+      -unidirectional_routing
+estimate_parasitics -global_routing
 
-set_cmd_units -capacitance ff
-report_net -connections -verbose clk
+report_net -connections -verbose -digits 3 clk
