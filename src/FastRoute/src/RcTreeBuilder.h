@@ -87,15 +87,17 @@ class RcTreeBuilder
 			 std::vector<ROUTE>& routes);
 
  protected:
-  void makeRoutePtMap();
-  void reduceParasiticNetwork();
+  void makePinRoutePts();
+  RoutePt routePt(Pin& pin);
   sta::Pin* staPin(Pin& pin);
   void makeRouteParasitics(std::vector<ROUTE>& routes);
   sta::ParasiticNode *ensureParasiticNode(int x,
 					  int y,
 					  int layer);
+  void makeParasiticsToGrid();
   void makeParasiticsToGrid(Pin& pin,
 			    sta::ParasiticNode *pin_node);
+  void reduceParasiticNetwork();
   void layerRC(int wire_length_dbu,
 	       int layer,
 	       // Return values.
