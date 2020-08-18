@@ -148,7 +148,8 @@ void MainWindow::setSelected(const Selected& selection)
 {
   std::string text;
   if (auto inst = std::get_if<odb::dbInst*>(&selection)) {
-    text = "Inst: " + (*inst)->getName();
+    text = "Inst: " + (*inst)->getName() + "{"
+      + (*inst)->getMaster()->getName() + "}";
   } else if (auto net = std::get_if<odb::dbNet*>(&selection)) {
     text = "Net: " + (*net)->getName();
   } else if (std::get_if<std::monostate>(&selection)) {
