@@ -584,7 +584,7 @@ void FT::addNet(char* name,
     MD = std::max(MD, pinInd);
     // std::cout << "Net name: " << nets[newnetID]->name << "; num pins: " <<
     // nets[newnetID]->nPins << "\n";
-    strcpy(nets[newnetID]->name, name);
+    nets[newnetID]->name = name;
     nets[newnetID]->idx = netIdx;
     nets[newnetID]->numPins = nPins;
     nets[newnetID]->deg     = pinInd;

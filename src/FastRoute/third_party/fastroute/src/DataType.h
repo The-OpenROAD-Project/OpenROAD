@@ -33,6 +33,8 @@
 #ifndef __DATATYPE_H__
 #define __DATATYPE_H__
 
+#include <string>
+
 #define MAXDEMAND 500   // MAX # Segments over an edge
 #define FILESTRLEN 100  // MAX length of file name
 #define BIG_INT 1e7     // big integer used as infinity
@@ -73,7 +75,7 @@ typedef struct
 
 typedef struct
 {
-  char  name[200];  // net name
+  std::string name;  // net name
   int   idx;
   short numPins;    // number of pins in the net
   short deg;  // net degree (number of MazePoints connecting by the net, pins in
