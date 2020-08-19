@@ -48,9 +48,6 @@ add_subdirectory(third_party/pdrev)
 set(CMAKE_CXX_STANDARD 11)
 set(Boost_USE_STATIC_LIBS ON)
 
-# Loads swig and generates the tcl wrapper file
-find_package(SWIG REQUIRED)
-
 set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
 

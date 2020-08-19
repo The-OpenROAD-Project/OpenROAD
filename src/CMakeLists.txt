@@ -323,6 +323,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(openroad -pthread)
 endif()
 
+# Optional CUDD library for OpenSTA
+if (CUDD_LIB)
+  target_link_libraries(openroad ${CUDD_LIB})
+endif()
+
 # Ancient versions of glibc found on CentOS required librt.
 # OSX has an empty version of librt that causes a link error,
 # so this is protected from linking there.
