@@ -77,7 +77,6 @@ set(SRC_FILES
   src/Net.cpp
   src/Pin.cpp
   src/RcTreeBuilder.cpp
-  src/SteinerTree.cpp
   )
 
 add_library(${LIB_NAME} 
