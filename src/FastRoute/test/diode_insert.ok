@@ -22,7 +22,6 @@ Notice 0: Finished DEF file: gcd_sky130.def
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Max routing length: -1um
 [PARAMS] Grid origin: (-1, -1)
 [PARAMS] Layers pitches: 
 Layer 2 pitch: 0.37
@@ -48,8 +47,6 @@ Initializing nets...
 [INFO] Found 0 clock nets
 Checking pin placement...
 Checking pin placement... Done!
-Checking sinks/source...
-Checking sinks/source... Done!
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 11
 Initializing nets... Done!
@@ -139,7 +136,6 @@ Warning: Overlap check failed (5).
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Max routing length: -1um
 [PARAMS] Grid origin: (-1, -1)
 [PARAMS] Layers pitches: 
 Layer 2 pitch: 0.37
@@ -165,8 +161,6 @@ Initializing nets...
 [INFO] Found 0 clock nets
 Checking pin placement...
 Checking pin placement... Done!
-Checking sinks/source...
-Checking sinks/source... Done!
 [INFO] Minimum degree: 3
 [INFO] Maximum degree: 3
 Initializing nets... Done!
@@ -209,8 +203,6 @@ Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
- > Fixing long segments...
-[WARNING] Max routing length not defined. Skipping...
 [INFO] Total wirelength: 27698.400391 um
 Writing guides...
 [INFO] Num routed nets: 322
