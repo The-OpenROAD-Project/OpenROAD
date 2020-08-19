@@ -33,106 +33,119 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "PostCtsOpt.h"
 
-#include <iostream> 
+#include <iostream>
 
 namespace TritonCTS {
 
-void PostCtsOpt::run() {
-        initSourceSinkDists();
-        fixSourceSinkDists();
+void PostCtsOpt::run()
+{
+  initSourceSinkDists();
+  fixSourceSinkDists();
 }
 
-void PostCtsOpt::initSourceSinkDists() {
-        _clock->forEachSubNet([&] (const Clock::SubNet& subNet) {
-                if (!subNet.isLeafLevel()) {
-                        return;
-                }
+void PostCtsOpt::initSourceSinkDists()
+{
+  _clock->forEachSubNet([&](const Clock::SubNet& subNet) {
+    if (!subNet.isLeafLevel()) {
+      return;
+    }
 
-                computeNetSourceSinkDists(subNet);
-        });
+    computeNetSourceSinkDists(subNet);
+  });
 
-        _avgSourceSinkDist /= _clock->getNumSinks();
-        std::cout << " Avg. source sink dist: " << _avgSourceSinkDist << " dbu.\n";
+  _avgSourceSinkDist /= _clock->getNumSinks();
+  std::cout << " Avg. source sink dist: " << _avgSourceSinkDist << " dbu.\n";
 }
 
-void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet) {
-        const ClockInst* driver = subNet.getDriver();
-        Point<DBU> driverLoc = driver->getLocation();
+void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
+{
+  const ClockInst* driver = subNet.getDriver();
+  Point<DBU> driverLoc = driver->getLocation();
 
-        subNet.forEachSink([&] (const ClockInst* sink) {
-                  Point<DBU> sinkLoc = sink->getLocation();
-                        std::string sinkName = sink->getName();
-                        DBU dist = driverLoc.computeDist(sinkLoc);
-                        _avgSourceSinkDist += dist;
-                        _sinkDistMap[sinkName] = dist;
-        });                           
+  subNet.forEachSink([&](const ClockInst* sink) {
+    Point<DBU> sinkLoc = sink->getLocation();
+    std::string sinkName = sink->getName();
+    DBU dist = driverLoc.computeDist(sinkLoc);
+    _avgSourceSinkDist += dist;
+    _sinkDistMap[sinkName] = dist;
+  });
 }
 
-void PostCtsOpt::fixSourceSinkDists() {
-        _clock->forEachSubNet([&] (Clock::SubNet& subNet) {
-                if (!subNet.isLeafLevel()) {
-                        return;
-                }
+void PostCtsOpt::fixSourceSinkDists()
+{
+  _clock->forEachSubNet([&](Clock::SubNet& subNet) {
+    if (!subNet.isLeafLevel()) {
+      return;
+    }
 
-                fixNetSourceSinkDists(subNet);
-        });
-        
-        std::cout << " Num outlier sinks: " << _numViolatingSinks << "\n";
+    fixNetSourceSinkDists(subNet);
+  });
+
+  std::cout << " Num outlier sinks: " << _numViolatingSinks << "\n";
 }
 
-void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet) {
-        ClockInst* driver = subNet.getDriver();
+void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)
+{
+  ClockInst* driver = subNet.getDriver();
 
-        subNet.forEachSink([&] (ClockInst* sink) {
-                std::string sinkName = sink->getName();
-                unsigned dist = _sinkDistMap[sinkName];        
-                if (dist > 5 * _avgSourceSinkDist) {
-                        createSubClockNet(subNet, driver, sink);
-                        ++_numViolatingSinks;
-                }
-        });
+  subNet.forEachSink([&](ClockInst* sink) {
+    std::string sinkName = sink->getName();
+    unsigned dist = _sinkDistMap[sinkName];
+    if (dist > 5 * _avgSourceSinkDist) {
+      createSubClockNet(subNet, driver, sink);
+      ++_numViolatingSinks;
+    }
+  });
 }
 
-void PostCtsOpt::createSubClockNet(Clock::SubNet& net, ClockInst* driver, ClockInst* sink) {
-        std::string master = _options->getRootBuffer();
-        
-        Point<DBU> bufLoc = computeBufferLocation(driver, sink);
+void PostCtsOpt::createSubClockNet(Clock::SubNet& net,
+                                   ClockInst* driver,
+                                   ClockInst* sink)
+{
+  std::string master = _options->getRootBuffer();
 
-        ClockInst& clkBuffer = _clock->addClockBuffer("clkbuf_opt_" + std::to_string(_numInsertedBuffers),
-                                                      master, bufLoc.getX(), bufLoc.getY());
+  Point<DBU> bufLoc = computeBufferLocation(driver, sink);
 
-        net.replaceSink(sink, &clkBuffer);
-        
-        Clock::SubNet& newSubNet = _clock->addSubNet("clknet_opt_" + std::to_string(_numInsertedBuffers));       
-        newSubNet.addInst(clkBuffer);
-        newSubNet.addInst(*sink);
+  ClockInst& clkBuffer = _clock->addClockBuffer(
+      "clkbuf_opt_" + std::to_string(_numInsertedBuffers),
+      master,
+      bufLoc.getX(),
+      bufLoc.getY());
 
-        ++_numInsertedBuffers;
+  net.replaceSink(sink, &clkBuffer);
+
+  Clock::SubNet& newSubNet
+      = _clock->addSubNet("clknet_opt_" + std::to_string(_numInsertedBuffers));
+  newSubNet.addInst(clkBuffer);
+  newSubNet.addInst(*sink);
+
+  ++_numInsertedBuffers;
 }
 
-Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver, ClockInst* sink) const {
-        Point<DBU> driverLoc = driver->getLocation();
-        Point<DBU> sinkLoc = sink->getLocation();       
-        unsigned xDist = driverLoc.computeDistX(sinkLoc); 
-        unsigned yDist = driverLoc.computeDistY(sinkLoc); 
-        
-        double xBufDistRatio = _bufDistRatio;
-        if (sinkLoc.getX() < driverLoc.getX()) {
-                xBufDistRatio = - _bufDistRatio;
-        }
-        
-        double yBufDistRatio = _bufDistRatio;
-        if (sinkLoc.getY() < driverLoc.getY()) {
-                yBufDistRatio = - _bufDistRatio;
-        }
-        
-        Point<DBU> bufLoc(driverLoc.getX() + xBufDistRatio * xDist, 
-                          driverLoc.getY() + yBufDistRatio * yDist);
+Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver,
+                                             ClockInst* sink) const
+{
+  Point<DBU> driverLoc = driver->getLocation();
+  Point<DBU> sinkLoc = sink->getLocation();
+  unsigned xDist = driverLoc.computeDistX(sinkLoc);
+  unsigned yDist = driverLoc.computeDistY(sinkLoc);
 
-        return bufLoc;
+  double xBufDistRatio = _bufDistRatio;
+  if (sinkLoc.getX() < driverLoc.getX()) {
+    xBufDistRatio = -_bufDistRatio;
+  }
+
+  double yBufDistRatio = _bufDistRatio;
+  if (sinkLoc.getY() < driverLoc.getY()) {
+    yBufDistRatio = -_bufDistRatio;
+  }
+
+  Point<DBU> bufLoc(driverLoc.getX() + xBufDistRatio * xDist,
+                    driverLoc.getY() + yBufDistRatio * yDist);
+
+  return bufLoc;
 }
 
-}
+}  // namespace TritonCTS

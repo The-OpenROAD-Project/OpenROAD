@@ -33,40 +33,43 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #pragma once
 
-#include "CtsOptions.h"
 #include "Clock.h"
+#include "CtsOptions.h"
 
 #include <unordered_map>
 
 namespace TritonCTS {
 
-class PostCtsOpt {
-public:
-        PostCtsOpt(Clock& clock, CtsOptions& options) : 
-                   _clock(&clock), _options(&options) {
-                _bufDistRatio = _options->getBufDistRatio();           
-        }      
+class PostCtsOpt
+{
+ public:
+  PostCtsOpt(Clock& clock, CtsOptions& options)
+      : _clock(&clock), _options(&options)
+  {
+    _bufDistRatio = _options->getBufDistRatio();
+  }
 
-        void run();
+  void run();
 
-protected:
-        void initSourceSinkDists();
-        void computeNetSourceSinkDists(const Clock::SubNet& subNet);
-        void fixSourceSinkDists();
-        void fixNetSourceSinkDists(Clock::SubNet& subNet);
-        void createSubClockNet(Clock::SubNet& net, ClockInst* driver, ClockInst* sink);
-        Point<DBU> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
+ protected:
+  void initSourceSinkDists();
+  void computeNetSourceSinkDists(const Clock::SubNet& subNet);
+  void fixSourceSinkDists();
+  void fixNetSourceSinkDists(Clock::SubNet& subNet);
+  void createSubClockNet(Clock::SubNet& net,
+                         ClockInst* driver,
+                         ClockInst* sink);
+  Point<DBU> computeBufferLocation(ClockInst* driver, ClockInst* sink) const;
 
-        Clock*      _clock;
-        CtsOptions* _options;
-        unsigned _numViolatingSinks  = 0;
-        unsigned _numInsertedBuffers = 0;
-        double   _avgSourceSinkDist  = 0.0;
-        double   _bufDistRatio       = 0.0;
-        std::unordered_map<std::string, DBU> _sinkDistMap;
+  Clock* _clock;
+  CtsOptions* _options;
+  unsigned _numViolatingSinks = 0;
+  unsigned _numInsertedBuffers = 0;
+  double _avgSourceSinkDist = 0.0;
+  double _bufDistRatio = 0.0;
+  std::unordered_map<std::string, DBU> _sinkDistMap;
 };
 
-}
+}  // namespace TritonCTS

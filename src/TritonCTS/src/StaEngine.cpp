@@ -33,40 +33,41 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #include "StaEngine.h"
 
+#include "db_sta/dbSta.hh"
+#include "openroad/OpenRoad.hh"
 #include "sta/Network.hh"
 #include "sta/Sdc.hh"
-#include "openroad/OpenRoad.hh"
-#include "db_sta/dbSta.hh"
 
 #include <tcl.h>
+#include <cassert>
 #include <iostream>
 #include <sstream>
-#include <cassert>
 
 namespace TritonCTS {
 
-void StaEngine::init() {
-        ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
-        _openSta = openRoad->getSta();
-        _sdc = _openSta->sdc();
-        _network = _openSta->network();
+void StaEngine::init()
+{
+  ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
+  _openSta = openRoad->getSta();
+  _sdc = _openSta->sdc();
+  _network = _openSta->network();
 }
 
-void StaEngine::findClockRoots() {
-        std::cout << " Looking for clock sources...\n";
+void StaEngine::findClockRoots()
+{
+  std::cout << " Looking for clock sources...\n";
 
-        std::string clockNames = "";
-        for (sta::Clock *clk : _sdc->clks()) {
-                for (sta::Pin *pin : clk->leafPins()) {
-                        clockNames += std::string(_network->name(pin)) + " ";
-                }
-        }         
+  std::string clockNames = "";
+  for (sta::Clock* clk : _sdc->clks()) {
+    for (sta::Pin* pin : clk->leafPins()) {
+      clockNames += std::string(_network->name(pin)) + " ";
+    }
+  }
 
-        std::cout << "    Clock names: " << clockNames << "\n";
-        _options->setClockNets(clockNames);
+  std::cout << "    Clock names: " << clockNames << "\n";
+  _options->setClockNets(clockNames);
 }
 
-}
+}  // namespace TritonCTS

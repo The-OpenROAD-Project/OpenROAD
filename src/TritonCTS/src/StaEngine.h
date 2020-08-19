@@ -33,7 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
 #pragma once
 
 #include "CtsOptions.h"
@@ -45,21 +44,23 @@ namespace sta {
 class Sta;
 class Sdc;
 class Network;
-}
+}  // namespace sta
 
 namespace TritonCTS {
 
-class StaEngine {
-public:
-        StaEngine(CtsOptions& options) : _options(&options) {};
-        
-        void init();
-        void findClockRoots();
-private:
-        sta::dbSta*   _openSta   = nullptr;
-        sta::Sdc*     _sdc       = nullptr;
-        sta::Network* _network   = nullptr;    
-        CtsOptions*   _options   = nullptr;
+class StaEngine
+{
+ public:
+  StaEngine(CtsOptions& options) : _options(&options){};
+
+  void init();
+  void findClockRoots();
+
+ private:
+  sta::dbSta* _openSta = nullptr;
+  sta::Sdc* _sdc = nullptr;
+  sta::Network* _network = nullptr;
+  CtsOptions* _options = nullptr;
 };
 
-}
+}  // namespace TritonCTS
