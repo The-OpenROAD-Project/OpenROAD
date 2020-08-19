@@ -68,7 +68,7 @@ proc fastroute { args } {
           -regions_adjustments -nets_alphas_priorities -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
           -max_routing_length -max_length_per_layer -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
-    flags {-unidirectional_routing -allow_overflow -estimateRC -clock_nets_route_flow -antenna_avoidance_flow} \
+    flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
   if { [info exists keys(-output_file)] } {
     set out_file $keys(-output_file)
@@ -80,6 +80,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-capacity_adjustment)] } {
     set cap_adjust $keys(-capacity_adjustment)
+    sta::check_positive_float "-capacity_adjustment" $cap_adjust
     FastRoute::set_capacity_adjustment $cap_adjust
   } else {
     FastRoute::set_capacity_adjustment 0.0
@@ -87,6 +88,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-min_routing_layer)] } {
     set min_layer $keys(-min_routing_layer)
+    sta::check_positive_integer "-min_routing_layer" $min_layer
     FastRoute::set_min_layer $min_layer
   } else {
     FastRoute::set_min_layer 1
@@ -95,6 +97,7 @@ proc fastroute { args } {
   set max_layer -1
   if { [info exists keys(-max_routing_layer)] } {
     set max_layer $keys(-max_routing_layer)
+    sta::check_positive_integer "-max_routing_layer" $max_layer
     FastRoute::set_max_layer $max_layer
   } else {
     FastRoute::set_max_layer -1
@@ -108,47 +111,46 @@ proc fastroute { args } {
   if { [info exists keys(-layers_adjustments)] } {
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
-      set layer [lindex $layer_adjustment 0]
-      set reductionPercentage [lindex $layer_adjustment 1]
-
-      FastRoute::add_layer_adjustment $layer $reductionPercentage
+      if { [llength $layer_adjustment] == 2 } {
+        lassign $layer_adjustment layer reductionPercentage
+        FastRoute::add_layer_adjustment $layer $reductionPercentage
+      } else {
+        ord::error "Wrong number of arguments for layer adjustments"
+      }
     }
   }
   
   if { [info exists keys(-regions_adjustments)] } {
     set regions_adjustments $keys(-regions_adjustments)
     foreach region_adjustment $regions_adjustments {
-      set minX [lindex $region_adjustment 0]
-      set minY [lindex $region_adjustment 1]
-      set maxX [lindex $region_adjustment 2]
-      set maxY [lindex $region_adjustment 3]
-      set layer [lindex $region_adjustment 4]
-      set reductionPercentage [lindex $region_adjustment 5]
-
-      puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer \
-        in [expr $reductionPercentage * 100]%"
-      FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
+      if { [llength $region_adjustment] == 2 } {
+        lassign $region_adjustment minX minY maxX maxY layer reductionPercentage
+        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer \
+          in [expr $reductionPercentage * 100]%"
+        FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
+      } else {
+        ord::error "Wrong number of arguments for region adjustments"
+      }
     }
   }
   
   if { [info exists keys(-nets_alphas_priorities)] } {
     set nets_alphas $keys(-nets_alphas_priorities)
     foreach net_alpha $nets_alphas {
-      set net_name [lindex $net_alpha 0]
-      set alpha [lindex $net_alpha 1]
-
-      FastRoute::set_alpha_for_net $net_name $alpha
+      if { [llength $net_alpha] == 2 } {
+        lassign $net_alpha net_name alpha
+        FastRoute::set_alpha_for_net $net_name $alpha
+      } else {
+        ord::error "Wrong number of arguments for nets priorities"
+      }
     }
   }
 
-  if { [info exists flags(-unidirectional_routing)] } {
-    FastRoute::set_unidirectional_routing 1
-  } else {
-    FastRoute::set_unidirectional_routing 0
-  }
+  FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
 
   if { [info exists keys(-alpha) ] } {
     set alpha $keys(-alpha)
+    sta::check_positive_float "-alpha" $alpha
     FastRoute::set_alpha $alpha
   } else {
     FastRoute::set_alpha 0.3
@@ -163,42 +165,46 @@ proc fastroute { args } {
   
   if { [info exists keys(-overflow_iterations) ] } {
     set iterations $keys(-overflow_iterations)
+    sta::check_positive_integer "-overflow_iterations" $iterations
     FastRoute::set_overflow_iterations $iterations
   } else {
     FastRoute::set_overflow_iterations 50
   }
 
   if { [info exists keys(-max_routing_length)] } {
-          set max_length $keys(-max_routing_length)
-          FastRoute::set_max_routing_length $max_length
+    set max_length $keys(-max_routing_length)
+    sta::check_positive_float "-max_routing_length" $max_length
+    FastRoute::set_max_routing_length $max_length
   }
 
   if { [info exists keys(-max_length_per_layer)] } {
     set max_length_per_layer $keys(-max_length_per_layer)
     foreach length_per_layer $max_length_per_layer {
-      set layer [lindex $length_per_layer 0]
-      set length [lindex $length_per_layer 1]
-
-      puts "Max length in layer $layer:  $length um"
-      FastRoute::add_layer_max_length $layer $length
+      if { [llength $length_per_layer] == 2 } {
+        lassign $length_per_layer layer length
+        puts "Max length in layer $layer:  $length um"
+        FastRoute::add_layer_max_length $layer $length
+      } else {
+        ord::error "Wrong number of arguments for max length per layer"
+      }
     }
   }
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)
-
-    set origin_x [lindex $origin 0]
-    set origin_y [lindex $origin 1]
-
-    FastRoute::set_grid_origin $origin_x $origin_y
+    if { [llength $origin] == 2 } {
+      lassign $origin origin_x origin_y
+      FastRoute::set_grid_origin $origin_x $origin_y
+    } else {
+      ord::error "Wrong number of arguments for origin"
+    }
   } else {
     FastRoute::set_grid_origin -1 -1
   }
 
   if { [info exists keys(-pdrev_for_high_fanout)] } {
-    set faonut $keys(-pdrev_for_high_fanout)
-
-    FastRoute::set_pdrev_for_high_fanout $faonut
+    set fanout $keys(-pdrev_for_high_fanout)
+    FastRoute::set_pdrev_for_high_fanout $fanout
   } else {
     FastRoute::set_pdrev_for_high_fanout -1
   }
@@ -210,11 +216,7 @@ proc fastroute { args } {
     FastRoute::set_seed 0
   }
 
-  if { [info exists flags(-allow_overflow)] } {
-    FastRoute::set_allow_overflow 1
-  } else {
-    FastRoute::set_allow_overflow 0
-  }
+  FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
 
   if { [info exists keys(-report_congestion)] } {
     set congest_file $keys(-report_congestion)
@@ -224,10 +226,12 @@ proc fastroute { args } {
   if { [info exists keys(-layers_pitches)] } {
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
-      set layer [lindex $layer_pitch 0]
-      set pitch [lindex $layer_pitch 1]
-
-      FastRoute::set_layer_pitch $layer $pitch
+      if { [llength $layer_pitch] == 2 } {
+        lassign $layer_pitch layer pitch
+        FastRoute::set_layer_pitch $layer $pitch
+      } else {
+        ord::error "Wrong number of arguments for layer pitches"
+      }
     }
   }
 
@@ -249,11 +253,7 @@ proc fastroute { args } {
     FastRoute::enable_antenna_avoidance_flow $diode_cell_name $diode_pin_name
   }
 
-  if { [info exists flags(-clock_nets_route_flow)] } {
-    FastRoute::set_clock_nets_route_flow 1
-  } else {
-    FastRoute::set_clock_nets_route_flow 0
-  }
+  FastRoute::set_clock_nets_route_flow [info exists flags(-clock_nets_route_flow)]
 
   set min_clock_layer 6
   if { [info exists keys(-min_layer_for_clock_net)] } {
@@ -279,16 +279,9 @@ proc fastroute { args } {
     }
   }
 
-  if {[info exists flags(-estimateRC)]} {
-    ord::warn "-estimateRC is deprecated. Use 'estiimate_parasitics -global_route' after fastroute instead."
-    FastRoute::start_fastroute
-    FastRoute::run_fastroute
-    FastRoute::estimate_rc
-  } else {
-    FastRoute::start_fastroute
-    FastRoute::run_fastroute
-    FastRoute::write_guides
-  }
+  FastRoute::start_fastroute
+  FastRoute::run_fastroute
+  FastRoute::write_guides
 }
 
 namespace eval FastRoute {
