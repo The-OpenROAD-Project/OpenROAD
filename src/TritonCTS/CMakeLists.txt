@@ -6,8 +6,6 @@ set(BIN_NAME "TritonCTS")
 
 set(CMAKE_CXX_STANDARD 11)
 
-#include(${PROJECT_SOURCE_DIR}/cmake/FindTCL.cmake)
-find_package(SWIG REQUIRED)
 find_package(LEMON REQUIRED)
 
 set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TritonCTSKernelTclWrap.cpp)

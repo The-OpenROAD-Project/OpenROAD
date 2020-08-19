@@ -6,21 +6,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
 set(ABKCOMMON_HOME ${MPLACE_HOME}/module/ABKCommon )
 set(PARQUET_HOME ${MPLACE_HOME}/module/ParquetFP )
 
 add_subdirectory(${ABKCOMMON_HOME})
 add_subdirectory(${PARQUET_HOME})
 
-set(ENV{TYPE_CALL} library)
-
-
-## configure settings
-find_package(TCL REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(SWIG REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 # for cimg

@@ -38,29 +38,12 @@ cmake_minimum_required(VERSION 3.1)
 project(ioPlacement)
 set(BIN_NAME "ioPlacer")
 
-# Print info on build
-if( CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]" )
-        # for debug type builds, turn on verbose makefiles
-        set(CMAKE_VERBOSE_MAKEFILE ON)
-
-        # Tell other CMake files that we're doing a debug build
-        set(DEBUG_BUILD 1)
-
-        # Tell C/C++ that we're doing a debug build
-        add_definitions(-DDEBUG)
-endif()
-
 add_subdirectory(${IOPLACER_HOME}/src/munkres)
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 set(CMAKE_CXX_STANDARD 11)
-
-find_package(ZLIB REQUIRED)
-
-# Loads swig and generates the tcl wrapper file
-find_package(SWIG REQUIRED)
 
 set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
 set(IOPLACER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/IoplacerTclInitVar.cc)
