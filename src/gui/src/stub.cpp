@@ -66,6 +66,10 @@ void gui::Gui::pause()
 {
 }
 
+Renderer::~Renderer()
+{
+}
+
 // using namespace odb;
 int start_gui(int argc, char* argv[])
 {
