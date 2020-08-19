@@ -620,7 +620,7 @@ void newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= 1;
           } else {
-            printf("MAZE RIPUP WRONG in newRipupNet for net %s\n", nets[netID]->name);
+            printf("MAZE RIPUP WRONG in newRipupNet for net %s\n", nets[netID]->name.c_str());
             exit(1);
           }
         }

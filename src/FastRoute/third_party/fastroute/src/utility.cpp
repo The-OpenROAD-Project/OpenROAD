@@ -1095,7 +1095,7 @@ void checkRoute3D()
         if (distance > 1 || distance < 0) {
           gridFlag = TRUE;
           printf("net %s edge[%d] maze route wrong, distance %d, i %d\n",
-                 nets[netID]->name,
+                 nets[netID]->name.c_str(),
                  edgeID,
                  distance,
                  i);
@@ -1136,7 +1136,7 @@ void write3D()
   }
 
   for (netID = 0; netID < numValidNets; netID++) {
-    fprintf(fp, "%s %d\n", nets[netID]->name, netID);
+    fprintf(fp, "%s %d\n", nets[netID]->name.c_str(), netID);
     treeedges = sttrees[netID].edges;
     deg       = sttrees[netID].deg;
 
@@ -1520,7 +1520,7 @@ Bool checkRoute2DTree(int netID)
             = ADIFF(gridsX[i + 1], gridsX[i]) + ADIFF(gridsY[i + 1], gridsY[i]);
         if (distance != 1) {
           printf("net %s edge[%d] maze route wrong, distance %d, i %d\n",
-                 nets[netID]->name,
+                 nets[netID]->name.c_str(),
                  edgeID,
                  distance,
                  i);
@@ -1554,7 +1554,7 @@ void writeRoute3D(char routingfile3D[])
   }
 
   for (netID = 0; netID < numValidNets; netID++) {
-    fprintf(fp, "%s %d\n", nets[netID]->name, netID);
+    fprintf(fp, "%s %d\n", nets[netID]->name.c_str(), netID);
     treeedges = sttrees[netID].edges;
     deg       = sttrees[netID].deg;
 
