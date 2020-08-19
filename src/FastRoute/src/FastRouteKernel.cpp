@@ -562,10 +562,6 @@ void FastRouteKernel::initializeNets(bool reroute)
   checkPinPlacement();
   std::cout << "Checking pin placement... Done!\n";
 
-  std::cout << "Checking sinks/source...\n";
-  checkSinksAndSource();
-  std::cout << "Checking sinks/source... Done!\n";
-
   int validNets = 0;
 
   int minDegree = std::numeric_limits<int>::max();
@@ -1917,45 +1913,6 @@ std::vector<FastRouteKernel::EST_> FastRouteKernel::getEst()
   }
 
   return netsEst;
-}
-
-void FastRouteKernel::checkSinksAndSource()
-{
-  bool invalid = false;
-
-  for (Net& net : *_nets) {
-    if (net.getNumPins() > 1) {
-      int sourceCnt = 0;
-      int sinkCnt = 0;
-      int bidir = 0;
-      for (Pin pin : net.getPins()) {
-        if (pin.getType() == Pin::SOURCE) {
-          sourceCnt++;
-        } else if (pin.getType() == Pin::SINK) {
-          sinkCnt++;
-        } else {
-          bidir++;
-        }
-      }
-
-      // We need one source or at least one bidir to act as the source
-      bool ok = sourceCnt == 1 || (sourceCnt == 0 && bidir > 0);
-      if (!ok) {
-        invalid = true;
-        std::cout << "[ERROR] Net " << net.getName()
-                  << " has invalid sinks/source distribution\n";
-        std::cout << "    #Sinks: " << sinkCnt << "; #sources: " << sourceCnt
-                  << "\n";
-      } else if (sourceCnt == 0 && bidir > 0) {
-        std::cout << "[WARNING] Net " << net.getName()
-                  << " has no source node so a bidir will be chosen as the source\n";
-      }
-    }
-  }
-
-  if (invalid) {
-    error("Invalid sources and sinks");
-  }
 }
 
 void FastRouteKernel::computeWirelength()

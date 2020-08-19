@@ -212,7 +212,6 @@ protected:
 
   // check functions
   void checkPinPlacement();
-  void checkSinksAndSource();
 
   // antenna functions
   void addLocalConnections(std::vector<FastRoute::NET>* globalRoute);
