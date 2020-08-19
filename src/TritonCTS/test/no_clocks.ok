@@ -22,9 +22,7 @@ Notice 0: Finished DEF file: no_clock.def
     TritonCTS forced slew degradation on these wires.
     Num wire segments: 4994
     Num keys in characterization LUT: 1677
-  Error: No clock nets have been found.
-
-  Actual min input cap: 8
+    Actual min input cap: 8
  Reading solution list file "sol_list.txt"
  **********************
  *  Find clock roots  *
@@ -35,3 +33,5 @@ Notice 0: Finished DEF file: no_clock.def
  ************************
  Initializing clock nets
  Looking for clock nets in the design
+Error: No clock nets have been found.
+
