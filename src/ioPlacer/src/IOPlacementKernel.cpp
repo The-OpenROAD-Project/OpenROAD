@@ -502,12 +502,6 @@ void IOPlacementKernel::setupSections()
 {
   bool allAssigned;
   unsigned i = 0;
-  if (!(_slotsPerSection > 1)) {
-    error("_slotsPerSection must be grater than one\n");
-  }
-  if (!(_usagePerSection > 0.0f)) {
-    error("_usagePerSection must be grater than zero\n");
-  }
   if (!_forcePinSpread && _usageIncreaseFactor == 0.0f
       && _slotsIncreaseFactor == 0.0f) {
     std::cout << "WARNING: if _forcePinSpread = false than either "
