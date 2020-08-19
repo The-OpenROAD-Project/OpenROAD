@@ -49,8 +49,6 @@
 
 namespace ioPlacer {
 
-using ord::error;
-
 DBWrapper::DBWrapper(Netlist& netlist, Core& core, Parameters& parms)
     : _netlist(&netlist), _core(&core), _parms(&parms)
 {
@@ -98,14 +96,7 @@ void DBWrapper::initCore()
   int verLayerIdx = _parms->getVerticalMetalLayer();
 
   odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
-  if (!horLayer) {
-    error("Layer %d not found\n", horLayerIdx);
-  }
-
   odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
-  if (!horLayer) {
-    error("Layer %d not found\n", verLayerIdx);
-  }
 
   odb::dbTrackGrid* horTrackGrid = _block->findTrackGrid(horLayer);
   odb::dbTrackGrid* verTrackGrid = _block->findTrackGrid(verLayer);
@@ -164,10 +155,6 @@ void DBWrapper::initCore()
 void DBWrapper::initNetlist()
 {
   odb::dbSet<odb::dbBTerm> bterms = _block->getBTerms();
-
-  if (bterms.size() == 0) {
-    error("Design without pins\n");
-  }
 
   odb::dbSet<odb::dbBTerm>::iterator btIter;
 

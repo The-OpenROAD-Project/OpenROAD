@@ -117,11 +117,6 @@ proc io_placer { args } {
     ioPlacer::set_min_distance $min_dist
   }
 
-  if { ![ord::db_layer_has_hor_tracks $hor_layer] || \
-       ![ord::db_layer_has_ver_tracks $ver_layer] } {
-    ord::error "missing track structure"
-  }
-
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
   if { $bterms_cnt == 0 } {
@@ -137,6 +132,11 @@ proc io_placer { args } {
 
   if { $ver_track_grid == "NULL" } {
     ord::error "Vertical routing layer ($ver_layer) not found"
+  }
+
+  if { ![ord::db_layer_has_hor_tracks $hor_layer] || \
+       ![ord::db_layer_has_ver_tracks $ver_layer] } {
+    ord::error "missing track structure"
   }
 
   set num_tracks_x [llength [$ver_track_grid getGridX]]
