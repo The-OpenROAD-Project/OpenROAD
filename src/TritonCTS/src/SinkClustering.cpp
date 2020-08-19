@@ -235,7 +235,9 @@ void SinkClustering::findBestMatching(unsigned groupSize) {
                                                 distanceCost = cost;
                                         }
                                 }
-                                //If the cluster size is higher than groupSize, or the distance is higher than _maxInternalDiameter -> start another cluster and save the cost of the current one.
+                                //If the cluster size is higher than groupSize, 
+                                //or the distance is higher than _maxInternalDiameter 
+                                //-> start another cluster and save the cost of the current one.
                                 if (solutionPoints[j][clusters[j]].size() >= groupSize || distanceCost > _maxInternalDiameter){
                                         //The cost is computed as the highest cost found on the current cluster
                                         if (previousCosts[j] == 0){
@@ -339,10 +341,10 @@ void SinkClustering::writePlotFile(unsigned groupSize) {
 
         unsigned clusterCounter = 0;
         for (std::vector<unsigned> clusters : _bestSolution) {
-                unsigned currentColor = clusterCounter % colors.size();
+                unsigned color = clusterCounter % colors.size();
                 for (unsigned idx : clusters){
-                        Point<double>& currentPoint = _points[idx];
-                        file << "plt.scatter(" << currentPoint.getX() << ", " << currentPoint.getY() << ", c=\"" << colors[currentColor] << "\")\n";
+                        Point<double>& point = _points[idx];
+                        file << "plt.scatter(" << point.getX() << ", " << point.getY() << ", c=\"" << colors[color] << "\")\n";
                 }
                 clusterCounter++;
         }

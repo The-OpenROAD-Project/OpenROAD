@@ -188,7 +188,7 @@ private:
                                         unsigned &outputSlew,
                                         unsigned &outputCap,
                                         bool forceBuffer, 
-                                        int currentLength ) const;
+                                        int expectedLength ) const;
         void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();

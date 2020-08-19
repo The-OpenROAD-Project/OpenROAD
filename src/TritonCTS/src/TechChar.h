@@ -130,7 +130,8 @@ public:
                 bool isPureWire = true;
         } ;
 
-        //ResultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        //ResultData represents the resulting metrics for a specific characterization segment. 
+        //The topology object helps on reconstructing that segment.
         struct ResultData {
                 float load;
                 float inSlew;
@@ -143,7 +144,8 @@ public:
                 std::vector<std::string> topology;
         } ;
 
-        //ResultData represents the resulting metrics for a specific characterization segment. The topology object helps on reconstructing that segment.
+        //ResultData represents the resulting metrics for a specific characterization segment. 
+        //The topology object helps on reconstructing that segment.
         struct CharKey {
                 float load;
                 float wirelength;
@@ -241,11 +243,11 @@ protected:
                                             unsigned setupWirelength);
         void setSdc(std::vector<SolutionData> topologiesVector, 
                     unsigned setupWirelength);
-        ResultData computeTopologyResults(SolutionData currentSolution, 
+        ResultData computeTopologyResults(SolutionData solution, 
                                           sta::Vertex* outPinVert, 
-                                          float currentLoad, 
+                                          float load, 
                                           unsigned setupWirelength);
-        SolutionData updateBufferTopologies(SolutionData currentSolution);
+        SolutionData updateBufferTopologies(SolutionData solution);
         std::vector<ResultData> characterizationPostProcess();
         unsigned normalizeCharResults(float value, float iter, 
                                       unsigned* min, unsigned* max);

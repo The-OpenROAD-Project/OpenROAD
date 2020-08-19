@@ -1,3 +1,4 @@
+source "helpers.tcl"
 set header {VERSION 5.8 ; 
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
@@ -57,7 +58,7 @@ proc write_high_sinks_def { filename sinks } {
   puts $stream "END DESIGN"
   close $stream
 }
-set def_filename [file join "results" "clustered_test.def"]
+set def_filename [file join $result_dir "clustered_test.def"]
 
 write_high_sinks_def $def_filename 300
 

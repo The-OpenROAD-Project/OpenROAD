@@ -70,7 +70,8 @@ public:
 	clustering(const vector<std::pair<float, float>>&, float, float);
 	~clustering();
 	float Kmeans(unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned, unsigned);
-	void iterKmeans(unsigned, unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned MAX = 15, unsigned power = 4);
+	void iterKmeans(unsigned, unsigned, unsigned, unsigned, 
+				    vector<pair<float, float>>&, unsigned MAX = 15, unsigned power = 4);
 	float calcSilh(const vector<pair<float,float>>&, unsigned, unsigned);
 	void minCostFlow (const vector<pair<float, float>>&, unsigned, unsigned, float, unsigned); 
 	void setPlotFileName(const std::string fileName) { plotFile = fileName; }
@@ -86,7 +87,8 @@ public:
     	return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
 	}
 
-  void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&, const vector<pair<float, float>>&, int) const;
+  void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&, 
+  				    const vector<pair<float, float>>&, int) const;
 };
 
 }

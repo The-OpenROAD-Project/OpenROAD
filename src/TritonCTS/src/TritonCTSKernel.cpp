@@ -104,7 +104,7 @@ void TritonCTSKernel::checkCharacterization() {
 
         std::unordered_set<std::string> visitedMasters;
         _techChar.forEachWireSegment( [&] (unsigned idx, const WireSegment& wireSeg) {
-                for (unsigned buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
+                for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
                         std::string master = wireSeg.getBufferMaster(buf);
                         if (visitedMasters.count(master) == 0) {
                                 if (_dbWrapper.masterExists(master)) {
