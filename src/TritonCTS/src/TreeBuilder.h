@@ -33,38 +33,36 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#pragma once
 
-#ifndef CLOCKTREEBUILDER_H
-#define CLOCKTREEBUILDER_H
-
-#include <vector>
+#include <deque>
+#include <functional>
 #include <string>
 #include <unordered_map>
-#include <functional>
-#include <deque>
+#include <vector>
 
 #include "Clock.h"
-#include "Util.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
+#include "Util.h"
 
 namespace TritonCTS {
 
-class TreeBuilder {
-public:
-        TreeBuilder(CtsOptions& options, Clock& clk) : 
-                    _options(&options), _clock(clk) {};
-        
-        virtual void run() = 0;
-        void setTechChar(TechChar& techChar) { _techChar = &techChar; }
-        const Clock& getClock() const { return _clock; }        
-        Clock& getClock() { return _clock; }        
+class TreeBuilder
+{
+ public:
+  TreeBuilder(CtsOptions& options, Clock& clk)
+      : _options(&options), _clock(clk){};
 
-protected:
-        CtsOptions* _options = nullptr;
-        Clock       _clock;
-        TechChar*   _techChar = nullptr;
+  virtual void run() = 0;
+  void setTechChar(TechChar& techChar) { _techChar = &techChar; }
+  const Clock& getClock() const { return _clock; }
+  Clock& getClock() { return _clock; }
+
+ protected:
+  CtsOptions* _options = nullptr;
+  Clock _clock;
+  TechChar* _techChar = nullptr;
 };
 
-}
-#endif
+}  // namespace TritonCTS

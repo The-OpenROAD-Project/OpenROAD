@@ -33,95 +33,109 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#pragma once
 
-#ifndef CTS_UTIL_H
-#define CTS_UTIL_H
-
-#include <ostream> 
+#include <ostream>
 
 namespace TritonCTS {
 
 typedef long long DBU;
 
-template<class T>
-class Point {
-public:
-        Point(T x, T y) : _x(x), _y(y) {}
+template <class T>
+class Point
+{
+ public:
+  Point(T x, T y) : _x(x), _y(y) {}
 
-        T getX() const { return _x; }
-        T getY() const { return _y; }
+  T getX() const { return _x; }
+  T getY() const { return _y; }
 
-        T computeDist(const Point<T>& other) const {
-                T dx = (getX() > other.getX()) ? (getX() - other.getX()) : (other.getX() - getX());
-                T dy = (getY() > other.getY()) ? (getY() - other.getY()) : (other.getY() - getY());
-                
-                return dx + dy; 
-        }
-       
-        T computeDistX(const Point<T>& other) const {
-                T dx = (getX() > other.getX()) ? (getX() - other.getX()) : (other.getX() - getX());
-                return dx; 
-        }
+  T computeDist(const Point<T>& other) const
+  {
+    T dx = (getX() > other.getX()) ? (getX() - other.getX())
+                                   : (other.getX() - getX());
+    T dy = (getY() > other.getY()) ? (getY() - other.getY())
+                                   : (other.getY() - getY());
 
-        T computeDistY(const Point<T>& other) const {
-                T dy = (getY() > other.getY()) ? (getY() - other.getY()) : (other.getY() - getY());
-                return dy;
-        }
+    return dx + dy;
+  }
 
-        bool operator < (const Point<T>& other) const {
-                if (getX() != other.getX()) {
-                        return getX() < other.getX();
-                } else { 
-                        return getY() < other.getY();
-                } 
-        }
+  T computeDistX(const Point<T>& other) const
+  {
+    T dx = (getX() > other.getX()) ? (getX() - other.getX())
+                                   : (other.getX() - getX());
+    return dx;
+  }
 
-        friend std::ostream& operator << (std::ostream& out, const Point<T>& point) {
-                out << "[(" << point.getX() << ", " << point.getY() << ")]";
-                return out;
-        }
+  T computeDistY(const Point<T>& other) const
+  {
+    T dy = (getY() > other.getY()) ? (getY() - other.getY())
+                                   : (other.getY() - getY());
+    return dy;
+  }
 
-private: 
-        T _x;
-        T _y;
+  bool operator<(const Point<T>& other) const
+  {
+    if (getX() != other.getX()) {
+      return getX() < other.getX();
+    } else {
+      return getY() < other.getY();
+    }
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const Point<T>& point)
+  {
+    out << "[(" << point.getX() << ", " << point.getY() << ")]";
+    return out;
+  }
+
+ private:
+  T _x;
+  T _y;
 };
 
 template <class T>
-class Box {        
-public:
-        T getMinX() const { return _xMin; }
-        T getMinY() const { return _yMin; }
-        T getMaxX() const { return _xMin + _width; }
-        T getMaxY() const { return _yMin + _height; }
-        T getWidth() const { return _width; }
-        T getHeight() const { return _height; }
+class Box
+{
+ public:
+  T getMinX() const { return _xMin; }
+  T getMinY() const { return _yMin; }
+  T getMaxX() const { return _xMin + _width; }
+  T getMaxY() const { return _yMin + _height; }
+  T getWidth() const { return _width; }
+  T getHeight() const { return _height; }
 
-        Point<T> computeCenter() const {
-                return Point<T>(_xMin + _width / 2, _yMin + _height / 2);
-        }
+  Point<T> computeCenter() const
+  {
+    return Point<T>(_xMin + _width / 2, _yMin + _height / 2);
+  }
 
-        Box<double> normalize(double factor) { 
-                return Box<double>( getMinX() * factor, getMinY() * factor,
-                                    getMaxX() * factor, getMaxY() * factor); 
-        } 
-        
-        Box() : _xMin(0), _yMin(0), _width(0), _height(0) {}
-        Box(T xMin, T yMin, T xMax, T yMax) : 
-                _xMin(xMin), _yMin(yMin), _width(xMax-xMin), _height(yMax-yMin) {}
+  Box<double> normalize(double factor)
+  {
+    return Box<double>(getMinX() * factor,
+                       getMinY() * factor,
+                       getMaxX() * factor,
+                       getMaxY() * factor);
+  }
 
-        friend std::ostream& operator << (std::ostream& out, const Box& box) {
-                out << "[(" << box.getMinX() << ", " << box.getMinY() << "), (" 
-                    << box.getMaxX() << ", " << box.getMaxY() << ")]";
-                return out;
-        }
-        
-protected:
-        T _xMin;
-        T _yMin;
-        T _width;
-        T _height;
+  Box() : _xMin(0), _yMin(0), _width(0), _height(0) {}
+  Box(T xMin, T yMin, T xMax, T yMax)
+      : _xMin(xMin), _yMin(yMin), _width(xMax - xMin), _height(yMax - yMin)
+  {
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const Box& box)
+  {
+    out << "[(" << box.getMinX() << ", " << box.getMinY() << "), ("
+        << box.getMaxX() << ", " << box.getMaxY() << ")]";
+    return out;
+  }
+
+ protected:
+  T _xMin;
+  T _yMin;
+  T _width;
+  T _height;
 };
 
-}
-
-#endif
+}  // namespace TritonCTS

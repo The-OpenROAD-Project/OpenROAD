@@ -1,0 +1,51 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: Reading LEF file:  pad.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  pad.lef
+Notice 0: 
+Reading DEF file: find_clock_pad.def
+Notice 0: Design: top
+Notice 0:     Created 3 pins.
+Notice 0:     Created 4 components and 22 component-terminals.
+Notice 0:     Created 2 special nets and 6 connections.
+Notice 0:     Created 6 nets and 10 connections.
+Notice 0: Finished DEF file: find_clock_pad.def
+ *****************
+ * TritonCTS 2.0 *
+ *****************
+ *****************************
+ *  Create characterization  *
+ *****************************
+Number of created patterns = 360.
+ Compiling LUT
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1           7           1           2
+    [WARNING] 48 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 78
+    Num keys in characterization LUT: 48
+    Actual min input cap: 1
+ **********************
+ *  Find clock roots  *
+ **********************
+ User did not specify clock roots.
+ ************************
+ *  Populate TritonCTS  *
+ ************************
+ Initializing clock nets
+ Looking for clock nets in the design
+ Net "clk1" found
+ Initializing clock net for : "clk1"
+    [WARNING] Net "clk1" has 0 sinks. Skipping...
+ Net "clk2" found
+ Initializing clock net for : "clk2"
+ Clock net "clk2" has 2 sinks
+ TritonCTS found 1 clock nets.
+ ****************************
+ *  Check characterization  *
+ ****************************
+    The chacterization used 1 buffer(s) types. All of them are in the loaded DB.

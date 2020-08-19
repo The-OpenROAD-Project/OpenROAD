@@ -33,9 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
-#ifndef MAKE_TRITONCTS
-#define MAKE_TRITONCTS
+#pragma once
 
 namespace TritonCTS {
 class TritonCTSKernel;
@@ -45,12 +43,10 @@ namespace ord {
 
 class OpenRoad;
 
-TritonCTS::TritonCTSKernel *makeTritonCts();
+TritonCTS::TritonCTSKernel* makeTritonCts();
 
-void initTritonCts(OpenRoad * openroad);
+void initTritonCts(OpenRoad* openroad);
 
-void deleteTritonCts(TritonCTS::TritonCTSKernel *tritoncts);
+void deleteTritonCts(TritonCTS::TritonCTSKernel* tritoncts);
 
-}
-
-#endif
+}  // namespace ord

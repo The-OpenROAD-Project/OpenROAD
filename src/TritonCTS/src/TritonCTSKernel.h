@@ -33,90 +33,90 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#pragma once
 
-#ifndef TRITONCTSKERNEL_H
-#define TRITONCTSKERNEL_H
-
-#include "DbWrapper.h"
 #include "CtsOptions.h"
+#include "DbWrapper.h"
+#include "StaEngine.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
-#include "StaEngine.h"
 
 #include <functional>
 
 namespace TritonCTS {
 
-class TritonCTSKernel {
-public:
-        TritonCTSKernel() : _dbWrapper(_options, *this),
-                            _techChar(_options),
-                            _staEngine(_options) {}
+class TritonCTSKernel
+{
+ public:
+  TritonCTSKernel()
+      : _dbWrapper(_options, *this), _techChar(_options), _staEngine(_options)
+  {
+  }
 
-        void runTritonCts();
-        void reportCtsMetrics();
-        CtsOptions& getParms() { return _options; }
-        void addBuilder(TreeBuilder* builder) { _builders.push_back(builder); }
-        void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+  void runTritonCts();
+  void reportCtsMetrics();
+  CtsOptions& getParms() { return _options; }
+  void addBuilder(TreeBuilder* builder) { _builders.push_back(builder); }
+  void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
 
-private:
-        void printHeader() const;
-        void setupCharacterization();
-        void createCharacterization();
-        void importCharacterization();
-        void checkCharacterization();
-        void findClockRoots();
-        void populateTritonCts();
-        void buildClockTrees();
-        void runPostCtsOpt();
-        void writeDataToDb();
-        void printFooter() const;
-        
-        CtsOptions _options;
-        DbWrapper  _dbWrapper;
-        TechChar   _techChar;
-        StaEngine  _staEngine;
-        std::vector<TreeBuilder*> _builders;
+ private:
+  void printHeader() const;
+  void setupCharacterization();
+  void createCharacterization();
+  void importCharacterization();
+  void checkCharacterization();
+  void findClockRoots();
+  void populateTritonCts();
+  void buildClockTrees();
+  void runPostCtsOpt();
+  void writeDataToDb();
+  void printFooter() const;
 
-//-----------------------------------------------------------------------------
+  CtsOptions _options;
+  DbWrapper _dbWrapper;
+  TechChar _techChar;
+  StaEngine _staEngine;
+  std::vector<TreeBuilder*> _builders;
 
-// TCL commands
-public:
-        void set_only_characterization(bool enable);
-        void set_simple_cts(bool enable);
-        void set_sink_clustering(bool enable);
-        void set_auto_lut(bool enable);
-        void set_lut_file(const char* file);
-        void set_sol_list_file(const char* file);
-        void export_characterization(const char* file);
-        void set_root_buffer(const char* buffer);
-        void set_sink_buffer(const char* buffer);
-        void set_buffer_list(const char* buffers);
-        int set_clock_nets(const char* names);
-        void set_wire_segment_distance_unit(unsigned unit);
-        void set_max_char_slew(double slew);
-        void set_max_char_cap(double cap);
-        void set_out_path(const char* path);
-        void set_cap_per_sqr(double cap);
-        void set_res_per_sqr(double res);
-        void set_slew_inter(double cap);
-        void set_cap_inter(double cap);
-        void run_triton_cts();
-        void report_characterization();
-        void report_wire_segments(unsigned length, unsigned load, unsigned outputSlew); 
-        void set_metric_output(const char* file);
-        void report_cts_metrics();
-        void set_tree_buf(const char* buffer);
-        void set_distance_between_buffers(double distance);
-        void set_branching_point_buffers_distance(double distance);
-        void set_disable_post_cts(bool disable);
-        void set_clustering_exponent(unsigned power);
-        void set_clustering_unbalance_ratio(double ratio);
-        void set_sink_clustering_size(unsigned size);
-        void set_clustering_diameter(double distance);
-        void set_num_static_layers(unsigned num);
+  //-----------------------------------------------------------------------------
+
+  // TCL commands
+ public:
+  void set_only_characterization(bool enable);
+  void set_simple_cts(bool enable);
+  void set_sink_clustering(bool enable);
+  void set_auto_lut(bool enable);
+  void set_lut_file(const char* file);
+  void set_sol_list_file(const char* file);
+  void export_characterization(const char* file);
+  void set_root_buffer(const char* buffer);
+  void set_sink_buffer(const char* buffer);
+  void set_buffer_list(const char* buffers);
+  int set_clock_nets(const char* names);
+  void set_wire_segment_distance_unit(unsigned unit);
+  void set_max_char_slew(double slew);
+  void set_max_char_cap(double cap);
+  void set_out_path(const char* path);
+  void set_cap_per_sqr(double cap);
+  void set_res_per_sqr(double res);
+  void set_slew_inter(double cap);
+  void set_cap_inter(double cap);
+  void run_triton_cts();
+  void report_characterization();
+  void report_wire_segments(unsigned length,
+                            unsigned load,
+                            unsigned outputSlew);
+  void set_metric_output(const char* file);
+  void report_cts_metrics();
+  void set_tree_buf(const char* buffer);
+  void set_distance_between_buffers(double distance);
+  void set_branching_point_buffers_distance(double distance);
+  void set_disable_post_cts(bool disable);
+  void set_clustering_exponent(unsigned power);
+  void set_clustering_unbalance_ratio(double ratio);
+  void set_sink_clustering_size(unsigned size);
+  void set_clustering_diameter(double distance);
+  void set_num_static_layers(unsigned num);
 };
 
-}
-
-#endif
+}  // namespace TritonCTS

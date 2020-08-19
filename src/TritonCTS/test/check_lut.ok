@@ -1,0 +1,82 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: 16sinks.def
+Notice 0: Design: test_16_sinks
+Notice 0:     Created 1 pins.
+Notice 0:     Created 16 components and 96 component-terminals.
+Notice 0:     Created 1 nets and 16 connections.
+Notice 0: Finished DEF file: 16sinks.def
+ *****************
+ * TritonCTS 2.0 *
+ *****************
+ *****************************
+ *  Import characterization  *
+ *****************************
+ Reading LUT file "lut.txt"
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1          52           1          24
+    [WARNING] 180 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 4994
+    Num keys in characterization LUT: 1677
+    Actual min input cap: 8
+ Reading solution list file "sol_list.txt"
+ **********************
+ *  Find clock roots  *
+ **********************
+ User did not specify clock roots.
+ ************************
+ *  Populate TritonCTS  *
+ ************************
+ Initializing clock nets
+ Looking for clock nets in the design
+ Net "clk" found
+ Initializing clock net for : "clk"
+ Clock net "clk" has 16 sinks
+ TritonCTS found 1 clock nets.
+ ****************************
+ *  Check characterization  *
+ ****************************
+    The chacterization used 1 buffer(s) types. All of them are in the loaded DB.
+ ***********************
+ *  Build clock trees  *
+ ***********************
+ Generating H-Tree topology for net clk...
+    Tot. number of sinks: 16
+    Number of static layers: 0
+ Wire segment unit: 20000 dbu (10 um)
+ Original sink region: [(3730, 1730), (22730, 20730)]
+ Normalized sink region: [(0.1865, 0.0865), (1.1365, 1.0365)]
+    Width:  0.95
+    Height: 0.95
+ [WARNING] Creating fake entries in the LUT.
+ Level 1
+    Direction: Horizontal
+    # sinks per sub-region: 8
+    Sub-region size: 0.475 X 0.95
+    Segment length (rounded): 1
+    Key: 5029 outSlew: 12 load: 1 length: 1 isBuffered: 1
+ Stop criterion found. Max number of sinks is (15)
+ Building clock sub nets...
+ Number of sinks covered: 16
+ Clock topology of net "clk" done.
+ ****************
+ * Post CTS opt *
+ ****************
+ Avg. source sink dist: 12375.4 dbu.
+ Num outlier sinks: 0
+ ********************
+ * Write data to DB *
+ ********************
+ Writing clock net "clk" to DB
+    Created 3 clock buffers.
+    Minimum number of buffers in the clock path: 2.
+    Maximum number of buffers in the clock path: 2.
+    Created 3 clock nets.
+    Fanout distribution for the current clock = 7:1, 9:1.
+    Max level of the clock tree: 1.
+ ... End of TritonCTS execution.

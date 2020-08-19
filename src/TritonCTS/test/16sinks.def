@@ -1,0 +1,41 @@
+VERSION 5.7 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN test_16_sinks ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 20000 20000 ) ;
+
+COMPONENTS 16 ;
+- ff1 DFF_X1 + PLACED ( 500 500 ) N ;
+- ff2 DFF_X1 + PLACED ( 2000 500 ) N ;
+- ff3 DFF_X1 + PLACED ( 8000 500 ) N ;
+- ff4 DFF_X1 + PLACED ( 12000 500 ) N ;
+- ff5 DFF_X1 + PLACED ( 18000 500 ) N ;
+- ff6 DFF_X1 + PLACED ( 19500 500 ) N ;
+- ff7 DFF_X1 + PLACED ( 500 19500 ) N ;
+- ff8 DFF_X1 + PLACED ( 2000 19500 ) N ;
+- ff9 DFF_X1 + PLACED ( 8000 19500 ) N ;
+- ff10 DFF_X1 + PLACED ( 12000 19500 ) N ;
+- ff11 DFF_X1 + PLACED ( 18000 19500 ) N ;
+- ff12 DFF_X1 + PLACED ( 19500 19500 ) N ;
+- ff13 DFF_X1 + PLACED ( 9000 9000 ) N ;
+- ff14 DFF_X1 + PLACED ( 11000 11000 ) N ;
+- ff15 DFF_X1 + PLACED ( 11000 9000 ) N ;
+- ff16 DFF_X1 + PLACED ( 9000 11000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL 
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 10000 20000 ) S ;
+END PINS
+
+NETS 1 ;
+- clk ( PIN clk ) ( ff1 CK ) ( ff2 CK )
+      ( ff3 CK ) ( ff4 CK ) ( ff5 CK )
+      ( ff6 CK ) ( ff7 CK ) ( ff8 CK )
+      ( ff9 CK ) ( ff10 CK ) ( ff11 CK )
+      ( ff12 CK ) ( ff13 CK ) ( ff14 CK )
+      ( ff15 CK ) ( ff16 CK ) ;
+END NETS
+
+END DESIGN
