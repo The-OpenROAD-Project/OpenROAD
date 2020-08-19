@@ -46,8 +46,6 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
-                                           [-max_routing_length max_length] \
-                                           [-max_length_per_layer max_length_per_layer] \
                                            [-grid_origin origin] \
                                            [-pdrev_for_high_fanout fanout] \
                                            [-allow_overflow] \
@@ -67,7 +65,7 @@ proc fastroute { args } {
           -tile_size -alpha -verbose -layers_adjustments \
           -regions_adjustments -nets_alphas_priorities -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
-          -max_routing_length -max_length_per_layer -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
+          -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
   if { [info exists keys(-output_file)] } {
@@ -169,25 +167,6 @@ proc fastroute { args } {
     FastRoute::set_overflow_iterations $iterations
   } else {
     FastRoute::set_overflow_iterations 50
-  }
-
-  if { [info exists keys(-max_routing_length)] } {
-    set max_length $keys(-max_routing_length)
-    sta::check_positive_float "-max_routing_length" $max_length
-    FastRoute::set_max_routing_length $max_length
-  }
-
-  if { [info exists keys(-max_length_per_layer)] } {
-    set max_length_per_layer $keys(-max_length_per_layer)
-    foreach length_per_layer $max_length_per_layer {
-      if { [llength $length_per_layer] == 2 } {
-        lassign $length_per_layer layer length
-        puts "Max length in layer $layer:  $length um"
-        FastRoute::add_layer_max_length $layer $length
-      } else {
-        ord::error "Wrong number of arguments for max length per layer"
-      }
-    }
   }
 
   if { [info exists keys(-grid_origin)] } {
