@@ -68,7 +68,7 @@ proc fastroute { args } {
           -regions_adjustments -nets_alphas_priorities -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
           -max_routing_length -max_length_per_layer -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
-    flags {-unidirectional_routing -allow_overflow -estimateRC -clock_nets_route_flow -antenna_avoidance_flow} \
+    flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
   if { [info exists keys(-output_file)] } {
     set out_file $keys(-output_file)
@@ -279,16 +279,9 @@ proc fastroute { args } {
     }
   }
 
-  if {[info exists flags(-estimateRC)]} {
-    ord::warn "-estimateRC is deprecated. Use 'estiimate_parasitics -global_route' after fastroute instead."
-    FastRoute::start_fastroute
-    FastRoute::run_fastroute
-    FastRoute::estimate_rc
-  } else {
-    FastRoute::start_fastroute
-    FastRoute::run_fastroute
-    FastRoute::write_guides
-  }
+  FastRoute::start_fastroute
+  FastRoute::run_fastroute
+  FastRoute::write_guides
 }
 
 namespace eval FastRoute {

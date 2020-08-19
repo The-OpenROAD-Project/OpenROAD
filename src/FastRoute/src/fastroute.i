@@ -238,7 +238,4 @@ report_congestion(char* congest_file)
   getFastRoute()->setReportCongestion(congest_file);
 }
 
-}
-
-
 %} // inline
