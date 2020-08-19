@@ -124,8 +124,21 @@ proc io_placer { args } {
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
+  if { $bterms_cnt == 0 } {
+    ord::error "Design without pins"
+  }
+
   set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
   set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+
+  if { $hor_track_grid == "NULL" } {
+    ord::error "Horizontal routing layer ($hor_layer) not found"
+  }
+
+  if { $ver_track_grid == "NULL" } {
+    ord::error "Vertical routing layer ($ver_layer) not found"
+  }
+
   set num_tracks_x [llength [$ver_track_grid getGridX]]
   set num_tracks_y [llength [$hor_track_grid getGridY]]
   
