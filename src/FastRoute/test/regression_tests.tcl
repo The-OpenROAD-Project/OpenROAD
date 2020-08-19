@@ -4,7 +4,6 @@ record_tests {
   est_rc1
   est_rc2
   gcd
-  fix_long_wires1
   multiple_calls
   no_tracks
 }
