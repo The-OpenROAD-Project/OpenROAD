@@ -38,6 +38,8 @@
 #include "TclInterface.h"
 %}
 
+%include "../../Exception.i"
+
 namespace ioPlacer {
 
 void import_lef(const char* file);

@@ -1,0 +1,10 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Info: Added 34 rows of 252 sites.
+#Macro blocks found: 0
+Warning: using the default boundaries offset (5 microns)
+Warning: using the default min distance between IO pins (2 tracks)
+Error: missing track structure

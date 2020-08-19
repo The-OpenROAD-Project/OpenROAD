@@ -43,11 +43,21 @@ sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \
                                  }
 
 proc io_placer { args } {
+  set dbTech [ord::get_db_tech]
+  if { $dbTech == "NULL" } {
+    ord::error "missing dbTech"
+  }
+
+  set dbBlock [ord::get_db_block]
+  if { $dbBlock == "NULL" } {
+    ord::error "missing dbBlock"
+  }
+
   set db [::ord::get_db]
-  set block [[$db getChip] getBlock]
+  
   set blockages {}
 
-  foreach inst [$block getInsts] {
+  foreach inst [$dbBlock getInsts] {
     if { [$inst isBlock] } {
       if { ![$inst isPlaced] } {
         puts "\[ERROR\] Macro [$inst getName] is not placed"
@@ -106,11 +116,38 @@ proc io_placer { args } {
     puts "Warning: using the default min distance between IO pins ($min_dist tracks)"
     ioPlacer::set_min_distance $min_dist
   }
- 
-  if { [ord::db_layer_has_hor_tracks $hor_layer] && \
-       [ord::db_layer_has_ver_tracks $ver_layer] } {
-    ioPlacer::run_io_placement 
-  } else {
+
+  set bterms_cnt [llength [$dbBlock getBTerms]]
+
+  if { $bterms_cnt == 0 } {
+    ord::error "Design without pins"
+  }
+
+  set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
+  set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+
+  if { $hor_track_grid == "NULL" } {
+    ord::error "Horizontal routing layer ($hor_layer) not found"
+  }
+
+  if { $ver_track_grid == "NULL" } {
+    ord::error "Vertical routing layer ($ver_layer) not found"
+  }
+
+  if { ![ord::db_layer_has_hor_tracks $hor_layer] || \
+       ![ord::db_layer_has_ver_tracks $ver_layer] } {
     ord::error "missing track structure"
   }
+
+  set num_tracks_x [llength [$ver_track_grid getGridX]]
+  set num_tracks_y [llength [$hor_track_grid getGridY]]
+  
+  set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
+
+  if { ($bterms_cnt > $num_slots) } {
+    ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
+  }
+ 
+  
+  ioPlacer::run_io_placement 
 }

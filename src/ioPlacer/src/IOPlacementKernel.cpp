@@ -36,8 +36,11 @@
 #include "IOPlacementKernel.h"
 
 #include <random>
+#include "openroad/Error.hh"
 
 namespace ioPlacer {
+
+using ord::error;
 
 void IOPlacementKernel::initNetlistAndCore()
 {
@@ -192,8 +195,7 @@ void IOPlacementKernel::randomPlacement(const RandomMode mode)
       });
       break;
     default:
-      std::cout << "ERROR: Random mode not found\n";
-      exit(-1);
+      error("Random mode not found\n");
       break;
   }
 }
@@ -430,8 +432,7 @@ void IOPlacementKernel::createSections()
     }
     nSec.numSlots = endSlot - beginSlot - blockedSlots;
     if (nSec.numSlots < 0) {
-      std::cout << "ERROR: negative number of slots\n";
-      exit(-1);
+      error("Negative number of slots\n");
     }
     nSec.beginSlot = beginSlot;
     nSec.endSlot = endSlot;
@@ -466,7 +467,7 @@ bool IOPlacementKernel::assignPinsSections()
         break;
       }
       // Try to add pin just to first
-      if (not _forcePinSpread)
+      if (!_forcePinSpread)
         break;
     }
     if (!pinAssigned) {
@@ -501,15 +502,7 @@ void IOPlacementKernel::setupSections()
 {
   bool allAssigned;
   unsigned i = 0;
-  if (!(_slotsPerSection > 1)) {
-    std::cout << "_slotsPerSection must be grater than one\n";
-    exit(1);
-  }
-  if (!(_usagePerSection > 0.0f)) {
-    std::cout << "_usagePerSection must be grater than zero\n";
-    exit(1);
-  }
-  if (not _forcePinSpread && _usageIncreaseFactor == 0.0f
+  if (!_forcePinSpread && _usageIncreaseFactor == 0.0f
       && _slotsIncreaseFactor == 0.0f) {
     std::cout << "WARNING: if _forcePinSpread = false than either "
                  "_usageIncreaseFactor or _slotsIncreaseFactor "
@@ -536,7 +529,7 @@ void IOPlacementKernel::setupSections()
                 << MAX_SLOTS_RECOMMENDED
                 << " this may negatively affect performance\n";
     }
-  } while (not allAssigned);
+  } while (!allAssigned);
 }
 
 inline void IOPlacementKernel::updateOrientation(IOPin& pin)
@@ -691,20 +684,11 @@ void IOPlacementKernel::run()
 
   printConfig();
 
-  if (int(_slots.size()) < _netlist.numIOPins()) {
-    std::cout << "ERROR: number of pins (";
-    std::cout << _netlist.numIOPins();
-    std::cout << ") exceed max possible (";
-    std::cout << _slots.size();
-    std::cout << ")\n";
-    exit(1);
-  }
-
   if (_reportHPWL) {
     initHPWL = returnIONetsHPWL(_netlist);
   }
 
-  if (not _cellsPlaced || (_randomMode > 0)) {
+  if (!_cellsPlaced || (_randomMode > 0)) {
     std::cout << "WARNING: running random pin placement\n";
     randomPlacement(_randomMode);
   } else {
@@ -727,7 +711,7 @@ void IOPlacementKernel::run()
 
     unsigned i = 0;
     while (_zeroSinkIOs.size() > 0 && i < _slots.size()) {
-      if (not _slots[i].used && not _slots[i].blocked) {
+      if (!_slots[i].used && !_slots[i].blocked) {
         _slots[i].used = true;
         _zeroSinkIOs[0].setPos(_slots[i].pos);
         _assignment.push_back(_zeroSinkIOs[0]);
@@ -742,9 +726,7 @@ void IOPlacementKernel::run()
   }
 
   if (_assignment.size() != (unsigned) _netlist.numIOPins()) {
-    std::cout << "ERROR: assigned " << _assignment.size() << " pins out of "
-              << _netlist.numIOPins() << " I/O pins\n";
-    exit(1);
+    error("Assigned %d pins out of %d IO pins\n", _assignment.size(), _netlist.numIOPins());
   }
 
   if (_reportHPWL) {
