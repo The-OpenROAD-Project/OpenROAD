@@ -112,7 +112,7 @@ proc fastroute { args } {
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
-        lassign $layers_adjustments layer reductionPercentage
+        lassign $layer_adjustment layer reductionPercentage
         FastRoute::add_layer_adjustment $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for layer adjustments"
@@ -173,7 +173,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-max_routing_length)] } {
     set max_length $keys(-max_routing_length)
-    sta::check_positive_integer "-max_routing_length" $max_length
+    sta::check_positive_float "-max_routing_length" $max_length
     FastRoute::set_max_routing_length $max_length
   }
 
