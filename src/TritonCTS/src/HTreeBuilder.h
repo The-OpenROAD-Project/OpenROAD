@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef HTREEBUILDER_H
-#define HTREEBUILDER_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "CtsOptions.h"
@@ -189,7 +188,7 @@ private:
                                         unsigned &outputSlew,
                                         unsigned &outputCap,
                                         bool forceBuffer, 
-                                        int currentLength ) const;
+                                        int expectedLength ) const;
         void reportWireSegment(unsigned key) const;
         void createClockSubNets();
         void createSingleBufferClockNet();
@@ -251,5 +250,3 @@ protected:
 }; 
 
 }
-
-#endif

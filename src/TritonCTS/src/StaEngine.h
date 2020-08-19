@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef STAENGINE_H
-#define STAENGINE_H
+#pragma once
 
 #include "CtsOptions.h"
 #include "openroad/OpenRoad.hh"
@@ -64,5 +63,3 @@ private:
 };
 
 }
-
-#endif

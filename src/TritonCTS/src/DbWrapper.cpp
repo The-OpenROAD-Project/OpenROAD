@@ -144,30 +144,35 @@ void DbWrapper::initClock(odb::dbNet* net) {
         
         for (odb::dbITerm* iterm : net->getITerms()) {
                 
-                if (!(iterm->isInputSignal())) {
-                        continue;
-                }
-
                 odb::dbInst* inst = iterm->getInst();
-                odb::dbMTerm* mterm = iterm->getMTerm();
-                std::string name = std::string(inst->getConstName()) + "/" +  
-                                   std::string(mterm->getConstName());
-                DBU x, y;
-                computeITermPosition(iterm, x, y);
-                clockNet.addSink(name, x, y, iterm);
+                
+                if (iterm->isInputSignal() && inst->isPlaced()){
+
+                        odb::dbMTerm* mterm = iterm->getMTerm();
+                        std::string name = std::string(inst->getConstName()) + "/" +  
+                                                std::string(mterm->getConstName());
+                        DBU x, y;
+                        computeITermPosition(iterm, x, y);
+                        clockNet.addSink(name, x, y, iterm);
+                }
         }
         
         if (clockNet.getNumSinks() < 2) {
                 std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""  
                           << " has " << clockNet.getNumSinks()  << " sinks. Skipping...\n";
                 return;
-        
+        } else {
+                if (clockNet.getNumSinks() == 0){
+                        std::cout << "    [WARNING] Net \"" << clockNet.getName() << "\""  
+                                << " has 0 sinks. Disconnected net or unplaced sink instances. Skipping...\n";
+                        return;
+                }
         }
 
         std::cout << " Clock net \"" << net->getConstName() << "\" has " << clockNet.getNumSinks() << " sinks" << std::endl;
 
-        long int currentTotalSinks = _options->getNumSinks() + clockNet.getNumSinks();
-        _options->setNumSinks(currentTotalSinks);
+        long int totalSinks = _options->getNumSinks() + clockNet.getNumSinks();
+        _options->setNumSinks(totalSinks);
 
         incrementNumClocks();
 
@@ -204,9 +209,7 @@ void DbWrapper::computeITermPosition(odb::dbITerm* term, DBU &x, DBU &y) const {
         y = 0;
         unsigned numShapes = 0;
         for (itr.begin(term); itr.next(shape); ) {
-                if (shape.isVia()) {
-                        continue;
-                } else {
+                if (!shape.isVia()) {
                         x += shape.xMin() + (shape.xMax() - shape.xMin()) / 2;
                         y += shape.yMin() + (shape.yMax() - shape.yMin()) / 2;
                         ++numShapes;                 
@@ -293,7 +296,7 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                                 fanoutcount[subNet.getNumSinks()] = fanoutcount[subNet.getNumSinks()] + 1;
                         }
 
-                        if (inputPinFound == false || outputPinFound == false){
+                        if (!inputPinFound || !outputPinFound){
                                 // Net not fully connected. Removing it.
                                 disconnectAllPinsFromNet(clkSubNet);
                                 odb::dbNet::destroy(clkSubNet);
@@ -305,13 +308,13 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
                 });       
         
         std::string fanoutDistString = "    Fanout distribution for the current clock = ";
-        std::string currentFanout = "";
+        std::string fanout = "";
         for (auto const& x : fanoutcount){
-                currentFanout = currentFanout + std::to_string(x.first) + ':' + std::to_string(x.second) + ", ";
+                fanout = fanout + std::to_string(x.first) + ':' + std::to_string(x.second) + ", ";
                 
         }
 
-        fanoutDistString = fanoutDistString + currentFanout.substr(0,currentFanout.size() - 2) + ".";
+        fanoutDistString = fanoutDistString + fanout.substr(0,fanout.size() - 2) + ".";
         
         if (_options->writeOnlyClockNets()) {
                 removeNonClockNets();
@@ -339,8 +342,8 @@ void DbWrapper::writeClockNetsToDb(Clock& clockNet) {
         }
 
         std::cout << "    Created " << _numClkNets << " clock nets.\n";
-        long int currentTotalNets = _options->getNumClockSubnets() + _numClkNets;
-        _options->setNumClockSubnets(currentTotalNets);
+        long int totalNets = _options->getNumClockSubnets() + _numClkNets;
+        _options->setNumClockSubnets(totalNets);
         
         std::cout << fanoutDistString << std::endl;
         std::cout << "    Max level of the clock tree: " << clockNet.getMaxLevel() << ".\n";
@@ -373,46 +376,40 @@ std::pair<int,int> DbWrapper::branchBufferCount(ClockInst *inst, int bufCounter,
                         }
                 }
         }
-        std::pair<int,int> currentResults (minPath,maxPath);
-        return currentResults;
+        std::pair<int,int> results (minPath,maxPath);
+        return results;
 }
 
 void DbWrapper::disconnectAllSinksFromNet(odb::dbNet* net) {
         odb::dbSet<odb::dbITerm> iterms = net->getITerms(); 
-        odb::dbSet<odb::dbITerm>::iterator itr;
-        for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
-                odb::dbITerm* iterm = *itr;
-                if (iterm->getIoType() != odb::dbIoType::INPUT) {
-                        continue;
+        for (odb::dbITerm* iterm : iterms){
+                if (iterm->getIoType() == odb::dbIoType::INPUT) {
+                        odb::dbITerm::disconnect(iterm);
                 }
-                odb::dbITerm::disconnect(iterm);
         }
 }
 
 void DbWrapper::disconnectAllPinsFromNet(odb::dbNet* net) {
         odb::dbSet<odb::dbITerm> iterms = net->getITerms(); 
-        odb::dbSet<odb::dbITerm>::iterator itr;
-        for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
-                odb::dbITerm* iterm = *itr;
+        for (odb::dbITerm* iterm : iterms){
                 odb::dbITerm::disconnect(iterm);
         }
 }
 
 void DbWrapper::checkUpstreamConnections(odb::dbNet* net) {
-        odb::dbNet* currentNet = net;
-        while (currentNet->getITermCount() <= 1){
+        while (net->getITermCount() <= 1){
                 //Net is incomplete, only 1 pin.
-                odb::dbITerm* firstITerm = currentNet->get1stITerm();
+                odb::dbITerm* firstITerm = net->get1stITerm();
                 if (firstITerm == nullptr) {
-                        disconnectAllPinsFromNet(currentNet);
-                        odb::dbNet::destroy(currentNet);
+                        disconnectAllPinsFromNet(net);
+                        odb::dbNet::destroy(net);
                         break;
                 } else {
                         odb::dbInst* bufferInst = firstITerm->getInst();
                         odb::dbITerm* driverInputPin = getFirstInput(bufferInst);
-                        disconnectAllPinsFromNet(currentNet);
-                        odb::dbNet::destroy(currentNet);
-                        currentNet = driverInputPin->getNet();
+                        disconnectAllPinsFromNet(net);
+                        odb::dbNet::destroy(net);
+                        net = driverInputPin->getNet();
                         ++_numFixedNets;
                         --_numClkNets;
                         odb::dbInst::destroy(bufferInst);
@@ -433,16 +430,13 @@ void DbWrapper::createClockBuffers(Clock& clockNet) {
                 ++numBuffers;
         });
         std::cout << "    Created " << numBuffers << " clock buffers.\n";
-        long int currentTotalBuffers = _options->getNumBuffersInserted() + numBuffers;
-        _options->setNumBuffersInserted(currentTotalBuffers);
+        long int totalBuffers = _options->getNumBuffersInserted() + numBuffers;
+        _options->setNumBuffersInserted(totalBuffers);
 }
 
 odb::dbITerm* DbWrapper::getFirstInput(odb::dbInst* inst) const {
         odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
-        odb::dbSet<odb::dbITerm>::iterator itr;
-        
-        for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
-                odb::dbITerm* iterm = *itr;
+        for (odb::dbITerm* iterm : iterms){
                 if (iterm->isInputSignal()) {
                         return iterm;
                 } 

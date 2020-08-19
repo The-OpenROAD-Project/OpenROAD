@@ -81,26 +81,26 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols) {
 
                 WireSegment& segment = createWireSegment((unsigned) (length), (unsigned) (lutLine.load), 
                                                          (unsigned) (lutLine.pinSlew), lutLine.totalPower,
-                                                         (unsigned) (lutLine.pinArrival), (unsigned) (lutLine.totalcap), (unsigned) (lutLine.inSlew));
+                                                         (unsigned) (lutLine.pinArrival), (unsigned) (lutLine.totalcap), 
+                                                         (unsigned) (lutLine.inSlew));
                 
-                if (lutLine.isPureWire) {
-                        continue;         
-                }
-                //Goes through the topology of the wiresegment and defines the buffer locations and masters.
-                int maxIndex = 0;
-                if (lutLine.topology.size() % 2 == 0) {
-                        maxIndex = lutLine.topology.size();
-                } else {
-                        maxIndex = lutLine.topology.size() - 1;
-                }
-                for (int topologyIndex = 0 ; topologyIndex < maxIndex ; topologyIndex++) {
-                        std::string topologyS = lutLine.topology[topologyIndex];
-                        //Each buffered topology always has a wire segment followed by a buffer.
-                        if (_masterNames.find(topologyS) == _masterNames.end()){
-                                //Is a number (i.e. a wire segment).
-                                segment.addBuffer(std::stod(topologyS)); 
+                if (!(lutLine.isPureWire)) {
+                        //Goes through the topology of the wiresegment and defines the buffer locations and masters.
+                        int maxIndex = 0;
+                        if (lutLine.topology.size() % 2 == 0) {
+                                maxIndex = lutLine.topology.size();
                         } else {
-                                segment.addBufferMaster(topologyS);
+                                maxIndex = lutLine.topology.size() - 1;
+                        }
+                        for (int topologyIndex = 0 ; topologyIndex < maxIndex ; topologyIndex++) {
+                                std::string topologyS = lutLine.topology[topologyIndex];
+                                //Each buffered topology always has a wire segment followed by a buffer.
+                                if (_masterNames.find(topologyS) == _masterNames.end()){
+                                        //Is a number (i.e. a wire segment).
+                                        segment.addBuffer(std::stod(topologyS)); 
+                                } else {
+                                        segment.addBufferMaster(topologyS);
+                                }
                         }
                 }
         }
@@ -179,13 +179,11 @@ void TechChar::parseLut(const std::string& file) {
                 WireSegment& segment = createWireSegment(length, load, outputSlew, 
                                                          power, delay, inputCap, inputSlew);
                 
-                if (isPureWire) {
-                        continue;         
-                }
-                
-                double bufferLocation;
-                while (ss >> bufferLocation) {
-                        segment.addBuffer(bufferLocation); 
+                if (!(isPureWire)) { 
+                        double bufferLocation;
+                        while (ss >> bufferLocation) {
+                                segment.addBuffer(bufferLocation); 
+                        }
                 }
         }
 
@@ -298,8 +296,6 @@ void TechChar::forEachWireSegment(uint8_t length, uint8_t load, uint8_t outputSl
         unsigned key = computeKey(length, load, outputSlew);
         
         if (_keyToWireSegments.find(key) == _keyToWireSegments.end()) {
-               //std::cout << "    [WARNING] No wire with the following characterization: [" 
-               //          << (unsigned) length << ", " << (unsigned) load << ", " << (unsigned) outputSlew << "]\n";
                return; 
         }
 
@@ -443,7 +439,8 @@ void TechChar::writeSol(const std::string& filename) const {
                         
                         if (segment.isBuffered()) {
                                 for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-                                        float wirelengthValue = segment.getBufferLocation(idx) * ((float) (segment.getLength()) * (float) (_options->getWireSegmentUnit()));
+                                        float wirelengthValue = segment.getBufferLocation(idx) * 
+                                                ((float) (segment.getLength()) * (float) (_options->getWireSegmentUnit()));
                                         file << (unsigned long) (wirelengthValue);
                                         file << "," << segment.getBufferMaster(idx);
                                         if (!(idx + 1 >= segment.getNumBuffers())) {
@@ -451,7 +448,8 @@ void TechChar::writeSol(const std::string& filename) const {
                                         }
                                 }
                         } else {
-                                float wirelengthValue = (float) (segment.getLength()) * (float) (_options->getWireSegmentUnit());
+                                float wirelengthValue = (float) (segment.getLength()) * 
+                                        (float) (_options->getWireSegmentUnit());
                                 file << (unsigned long) (wirelengthValue);
                         }
 
@@ -556,7 +554,7 @@ void TechChar::initCharacterization() {
         odb::dbMaster* testBuf = nullptr;
         for (std::string masterString : masterVector) {
                 testBuf = _db->findMaster(masterString.c_str());
-                if (testBuf == NULL){
+                if (testBuf == nullptr){
                         error("Buffer not found. Check your -buf_list input.\n");
                 }
                 _masterNames.insert(masterString);
@@ -591,8 +589,8 @@ void TechChar::initCharacterization() {
         } else {
                 //Updates the units to DBU.
                 int dbUnitsPerMicron = block->getDbUnitsPerMicron();
-                unsigned currentSegmentDistance = _options->getWireSegmentUnit();
-                _options->setWireSegmentUnit(currentSegmentDistance * dbUnitsPerMicron);
+                unsigned segmentDistance = _options->getWireSegmentUnit();
+                _options->setWireSegmentUnit(segmentDistance * dbUnitsPerMicron);
         }
         
         for (unsigned wirelengthInter = _options->getWireSegmentUnit(); 
@@ -636,19 +634,20 @@ void TechChar::initCharacterization() {
         //Creates the different slews and loads to test.
         unsigned slewIterations = _options->getCharSlewIterations();
         unsigned loadIterations = _options->getCharLoadIterations();
-        for (float currentSlewInter = _charSlewInter; 
-             (currentSlewInter <= _charMaxSlew) && (currentSlewInter <= slewIterations * _charSlewInter); 
-             currentSlewInter += _charSlewInter){
-                _slewsToTest.push_back(currentSlewInter);
+        for (float slewInter = _charSlewInter; 
+             (slewInter <= _charMaxSlew) && (slewInter <= slewIterations * _charSlewInter); 
+             slewInter += _charSlewInter){
+                _slewsToTest.push_back(slewInter);
         }
-        for (float currentCapInter = _charCapInter; 
-             ( (currentCapInter <= _charMaxCap) && (currentCapInter <= loadIterations * _charCapInter) ); 
-             currentCapInter += _charCapInter){
-                _loadsToTest.push_back(currentCapInter); 
+        for (float capInter = _charCapInter; 
+             ( (capInter <= _charMaxCap) && (capInter <= loadIterations * _charCapInter) ); 
+             capInter += _charCapInter){
+                _loadsToTest.push_back(capInter); 
         }
 
         if ((_loadsToTest.size() < 1) || (_slewsToTest.size() < 1)) {
-                error("Error generating the wirelengths to test. Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter or technology files.\n");
+                error("Error generating the wirelengths to test. "
+                      "Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter or technology files.\n");
         }
 }
 
@@ -658,8 +657,8 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(unsigned setupWirel
         const unsigned numberOfNodes = setupWirelength/_options->getWireSegmentUnit();
         unsigned numberOfTopologies = std::pow(2,numberOfNodes);
         std::vector<SolutionData> topologiesVector;
-        odb::dbNet* currentNet = nullptr;
-        odb::dbWire* currentWire = nullptr;
+        odb::dbNet* net = nullptr;
+        odb::dbWire* wire = nullptr;
 
         //For each possible topology...
         for (unsigned solutionCounterInt = 0; 
@@ -668,25 +667,25 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(unsigned setupWirel
                 //Creates a bitset that represents the buffer locations.
                 std::bitset<5> solutionCounter(solutionCounterInt);
                 unsigned short int wireCounter = 0;
-                SolutionData currentTopology;
+                SolutionData topology;
                 //Creates the starting net.
                 std::string netName = "net_" + std::to_string(setupWirelength) + 
                                         "_" + solutionCounter.to_string() + 
                                         "_" + std::to_string(wireCounter);
-                currentNet = odb::dbNet::create(_charBlock, netName.c_str());
-                currentWire = odb::dbWire::create(currentNet);
-                currentNet->setSigType(odb::dbSigType::SIGNAL);
+                net = odb::dbNet::create(_charBlock, netName.c_str());
+                wire = odb::dbWire::create(net);
+                net->setSigType(odb::dbSigType::SIGNAL);
                 //Creates the input port.
                 std::string inPortName = "in_" + std::to_string(setupWirelength) + 
                                                 solutionCounter.to_string();
-                odb::dbBTerm* inPort = odb::dbBTerm::create(currentNet, inPortName.c_str()); //sig type is signal by default
+                odb::dbBTerm* inPort = odb::dbBTerm::create(net, inPortName.c_str()); //sig type is signal by default
                 inPort->setIoType(odb::dbIoType::INPUT);
                 odb::dbBPin* inPortPin = odb::dbBPin::create(inPort);
                 //Updates the topology with the new port.
-                currentTopology.inPort = inPortPin;
+                topology.inPort = inPortPin;
                 //Iterating through possible buffers...
                 unsigned nodesWithoutBuf = 0;
-                bool isCurrentlyPureWire = true;
+                bool isPureWire = true;
                 for (unsigned nodeIndex = 0;
                 nodeIndex < numberOfNodes; nodeIndex++){
                         if (solutionCounter[nodeIndex] == 0)  {
@@ -702,45 +701,46 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(unsigned setupWirel
                                 odb::dbInst* bufInstance = odb::dbInst::create(_charBlock, _charBuf, bufName.c_str());
                                 odb::dbITerm* bufInstanceInPin = bufInstance->findITerm(_charBufIn.c_str());
                                 odb::dbITerm* bufInstanceOutPin = bufInstance->findITerm(_charBufOut.c_str());
-                                odb::dbITerm::connect(bufInstanceInPin, currentNet);
+                                odb::dbITerm::connect(bufInstanceInPin, net);
                                 //Updates the topology with the old net and number of nodes that didn't have buffers until now.
-                                currentTopology.netVector.push_back(currentNet);
-                                currentTopology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
+                                topology.netVector.push_back(net);
+                                topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
                                 //Creates a new net.
                                 wireCounter++;
                                 std::string netName = "net_" + std::to_string(setupWirelength) + 
                                                         solutionCounter.to_string() + "_" + 
                                                         std::to_string(wireCounter);
-                                currentNet = odb::dbNet::create(_charBlock, netName.c_str());
-                                currentWire = odb::dbWire::create(currentNet);
-                                odb::dbITerm::connect(bufInstanceOutPin, currentNet);
-                                currentNet->setSigType(odb::dbSigType::SIGNAL);
+                                net = odb::dbNet::create(_charBlock, netName.c_str());
+                                wire = odb::dbWire::create(net);
+                                odb::dbITerm::connect(bufInstanceOutPin, net);
+                                net->setSigType(odb::dbSigType::SIGNAL);
                                 //Updates the topology wih the new instance and the current topology (as a vector of strings).
-                                currentTopology.instVector.push_back(bufInstance);
-                                currentTopology.topologyDescriptor.push_back(std::to_string(nodesWithoutBuf*_options->getWireSegmentUnit()));
-                                currentTopology.topologyDescriptor.push_back(_charBuf->getName());
+                                topology.instVector.push_back(bufInstance);
+                                topology.topologyDescriptor.push_back(
+                                                        std::to_string(nodesWithoutBuf*_options->getWireSegmentUnit()));
+                                topology.topologyDescriptor.push_back(_charBuf->getName());
                                 nodesWithoutBuf = 0;
-                                isCurrentlyPureWire = false;
+                                isPureWire = false;
                         }
                 }
                 //Finishing up the topology with the output port.
                 std::string outPortName = "out_" + std::to_string(setupWirelength) + solutionCounter.to_string();
-                odb::dbBTerm* outPort = odb::dbBTerm::create(currentNet, outPortName.c_str()); //sig type is signal by default
+                odb::dbBTerm* outPort = odb::dbBTerm::create(net, outPortName.c_str()); //sig type is signal by default
                 outPort->setIoType(odb::dbIoType::OUTPUT);
                 odb::dbBPin* outPortPin = odb::dbBPin::create(outPort);
                 //Updates the topology with the output port, old new, possible instances and other attributes.
-                currentTopology.outPort = outPortPin;
-                if (isCurrentlyPureWire) {
-                        currentTopology.instVector.push_back(nullptr);
+                topology.outPort = outPortPin;
+                if (isPureWire) {
+                        topology.instVector.push_back(nullptr);
                 }
-                currentTopology.isPureWire = isCurrentlyPureWire;
-                currentTopology.netVector.push_back(currentNet);
-                currentTopology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
+                topology.isPureWire = isPureWire;
+                topology.netVector.push_back(net);
+                topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
                 if (nodesWithoutBuf != 0){
-                        currentTopology.topologyDescriptor.push_back(std::to_string(nodesWithoutBuf*_options->getWireSegmentUnit()));
+                        topology.topologyDescriptor.push_back(std::to_string(nodesWithoutBuf*_options->getWireSegmentUnit()));
                 }
                 //Go to the next topology.
-                topologiesVector.push_back(currentTopology);
+                topologiesVector.push_back(topology);
         }
         return topologiesVector;
 }
@@ -773,25 +773,27 @@ void TechChar::createStaInstance() {
 void TechChar::setParasitics(std::vector<TechChar::SolutionData> topologiesVector, 
                                               unsigned setupWirelength) {
         //For each topology...
-        for (SolutionData currentSolution : topologiesVector){
+        for (SolutionData solution : topologiesVector){
                 //For each net in the topolgy -> set the parasitics.
-                for (unsigned netIndex = 0 ; netIndex < currentSolution.netVector.size(); ++netIndex ){
+                for (unsigned netIndex = 0 ; netIndex < solution.netVector.size(); ++netIndex ){
                         //Gets the ITerms (instance pins) and BTerms (other high-level pins) from the current net.
-                        odb::dbNet* currentNet = currentSolution.netVector[netIndex];
-                        unsigned nodesWithoutBuf = currentSolution.nodesWithoutBufVector[netIndex];
-                        odb::dbBTerm* inBTerm = currentSolution.inPort->getBTerm();
-                        odb::dbBTerm* outBTerm = currentSolution.outPort->getBTerm();
-                        odb::dbSet<odb::dbBTerm> netBTerms = currentNet->getBTerms();
-                        odb::dbSet<odb::dbITerm> netITerms = currentNet->getITerms();
+                        odb::dbNet* net = solution.netVector[netIndex];
+                        unsigned nodesWithoutBuf = solution.nodesWithoutBufVector[netIndex];
+                        odb::dbBTerm* inBTerm = solution.inPort->getBTerm();
+                        odb::dbBTerm* outBTerm = solution.outPort->getBTerm();
+                        odb::dbSet<odb::dbBTerm> netBTerms = net->getBTerms();
+                        odb::dbSet<odb::dbITerm> netITerms = net->getITerms();
                         sta::Pin* firstPin = nullptr;
                         sta::Pin* lastPin = nullptr;
                         //Gets the sta::Pin from the beginning and end of the net.
-                        if (netBTerms.size() > 1) { // Parasitics for a purewire segment. First and last pin are already available.
+                        if (netBTerms.size() > 1) { // Parasitics for a purewire segment. 
+                                                    // First and last pin are already available.
                                 firstPin = _dbNetworkChar->dbToSta(inBTerm);
                                 lastPin = _dbNetworkChar->dbToSta(outBTerm);
-                        }  else if (netBTerms.size() == 1) { // Parasitics for the end/start of a net. One Port and one instance pin. 
-                                odb::dbBTerm* netBTerm = currentNet->get1stBTerm();
-                                odb::dbITerm* netITerm = currentNet->get1stITerm();
+                        }  else if (netBTerms.size() == 1) { // Parasitics for the end/start of a net. 
+                                                             // One Port and one instance pin. 
+                                odb::dbBTerm* netBTerm = net->get1stBTerm();
+                                odb::dbITerm* netITerm = net->get1stITerm();
                                 if (netBTerm == inBTerm) {     
                                         firstPin = _dbNetworkChar->dbToSta(netBTerm);
                                         lastPin = _dbNetworkChar->dbToSta(netITerm);
@@ -801,20 +803,18 @@ void TechChar::setParasitics(std::vector<TechChar::SolutionData> topologiesVecto
                                 }
                         } else { // Parasitics for a net that is between two buffers. Need to iterate over the net ITerms.
                                 for (odb::dbITerm* iterm : netITerms) {
-                                        if (iterm == nullptr) {
-                                                continue;
-                                        }
+                                        if (iterm != nullptr) {
+                                                if (iterm->getIoType() == odb::dbIoType::INPUT) {
+                                                        lastPin = _dbNetworkChar->dbToSta(iterm);
+                                                }
 
-                                        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-                                                lastPin = _dbNetworkChar->dbToSta(iterm);
-                                        }
+                                                if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+                                                        firstPin = _dbNetworkChar->dbToSta(iterm);
+                                                }
 
-                                        if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-                                                firstPin = _dbNetworkChar->dbToSta(iterm);
-                                        }
-
-                                        if (firstPin != nullptr && lastPin != nullptr) {
-                                                break;
+                                                if (firstPin != nullptr && lastPin != nullptr) {
+                                                        break;
+                                                }
                                         }
                                 }
                         }
@@ -845,17 +845,17 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
         characterizationClockWave->push_back(1);
         const std::string characterizationClockName = "characlock" + std::to_string(setupWirelength);
         _openStaChar->makeClock(characterizationClockName.c_str(),
-                        NULL,
+                        nullptr,
                         false,
                         1.0,
                         characterizationClockWave,
-                        NULL);
+                        nullptr);
         sta::Clock* characterizationClock = sdcChar->findClock(characterizationClockName.c_str());
         //For each topology...
-        for (SolutionData currentSolution : topologiesVector){
+        for (SolutionData solution : topologiesVector){
                 //Gets the input and output ports.
-                odb::dbBTerm* inBTerm = currentSolution.inPort->getBTerm();
-                odb::dbBTerm* outBTerm = currentSolution.outPort->getBTerm();
+                odb::dbBTerm* inBTerm = solution.inPort->getBTerm();
+                odb::dbBTerm* outBTerm = solution.outPort->getBTerm();
                 sta::Pin *inPin = _dbNetworkChar->dbToSta(inBTerm);
                 sta::Pin *outPin = _dbNetworkChar->dbToSta(outBTerm);
                 //Set the input delay and output delay on each one.
@@ -863,7 +863,7 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
                                         sta::RiseFallBoth::riseFall(),
                                         characterizationClock,
                                         sta::RiseFall::rise(),
-                                        NULL,
+                                        nullptr,
                                         false,
                                         false,
                                         sta::MinMaxAll::max(),
@@ -873,7 +873,7 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
                                         sta::RiseFallBoth::riseFall(),
                                         characterizationClock,
                                         sta::RiseFall::rise(),
-                                        NULL,
+                                        nullptr,
                                         false,
                                         false,
                                         sta::MinMaxAll::max(),
@@ -882,16 +882,16 @@ void TechChar::setSdc(std::vector<TechChar::SolutionData> topologiesVector,
         }
 }
 
-TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData currentSolution, 
+TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData solution, 
                                                       sta::Vertex* outPinVert, 
-                                                      float currentLoad, 
+                                                      float load, 
                                                       unsigned setupWirelength) {
-        ResultData currentResults;
+        ResultData results;
         //Computations for power, requires the PowerResults class from OpenSTA.
         float totalPower = 0;
-        if (currentSolution.isPureWire == false){
+        if (!solution.isPureWire){
                 //If it isn't a pure wire solution, get the sum of the total power of each buffer.
-                for (odb::dbInst* bufferInst : currentSolution.instVector){
+                for (odb::dbInst* bufferInst : solution.instVector){
                         sta::Instance* bufferInstSta = _dbNetworkChar->dbToSta(bufferInst);  
                         sta::PowerResult instResults; 
                         instResults.clear(); 
@@ -899,17 +899,18 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData cur
                         totalPower = totalPower + instResults.total();
                 }
         }
-        currentResults.totalPower = totalPower;
+        results.totalPower = totalPower;
         //Computations for input capacitance.
         float incap = 0;
-        if (currentSolution.isPureWire == true){
+        if (solution.isPureWire){
                 //For pure-wire, sum of the current load with the capacitance of the net.
-                incap = currentLoad + (setupWirelength * _capPerDBU);
+                incap = load + (setupWirelength * _capPerDBU);
         } else {
-                //For buffered solutions, add the cap of the input of the first buffer with the capacitance of the left-most net.
-                float length = std::stod(currentSolution.topologyDescriptor[0]);
+                //For buffered solutions, add the cap of the input of the first buffer 
+                //with the capacitance of the left-most net.
+                float length = std::stod(solution.topologyDescriptor[0]);
                 sta::LibertyCell* firstInstLiberty = _dbNetworkChar->libertyCell(
-                                                        _dbNetworkChar->dbToSta(currentSolution.instVector[0]));
+                                                        _dbNetworkChar->dbToSta(solution.instVector[0]));
                 sta::LibertyPort* firstPinLiberty = firstInstLiberty->findLibertyPort(_charBufIn.c_str());
                 float firstPinCapRise = firstPinLiberty->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
                 float firstPinCapFall = firstPinLiberty->capacitance(sta::RiseFall::fall(), sta::MinMax::max());
@@ -922,70 +923,68 @@ TechChar::ResultData TechChar::computeTopologyResults(TechChar::SolutionData cur
                 incap = firstPinCap + (length * _capPerDBU);
         }
         float totalcap = std::floor((incap + (_charCapInter/2))/_charCapInter) * _charCapInter;
-        currentResults.totalcap = totalcap;
+        results.totalcap = totalcap;
         //Computations for delay. 
         float pinArrival = _openStaChar->vertexArrival(outPinVert, sta::RiseFall::fall(), _charPathAnalysis);
-        currentResults.pinArrival = pinArrival;
+        results.pinArrival = pinArrival;
         //Computations for output slew.
         float pinRise = _openStaChar->vertexSlew(outPinVert, sta::RiseFall::rise(), sta::MinMax::max());
         float pinFall = _openStaChar->vertexSlew(outPinVert, sta::RiseFall::fall(), sta::MinMax::max());
         float pinSlew = std::floor((((pinRise + pinFall)/2) + (_charSlewInter/2))/_charSlewInter) * _charSlewInter;
-        currentResults.pinSlew = pinSlew;
+        results.pinSlew = pinSlew;
 
-        return currentResults;
+        return results;
 }
 
-TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData currentSolution) {
-        unsigned currentindex = 0;
+TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData solution) {
+        unsigned index = 0;
         //Change the buffer topology by increasing the size of the buffers.
         //After testing all the sizes for the current buffer, increment the size of the next one (works like a carry mechanism).
         //Ex for 4 different buffers: 103-> 110 -> 111 -> 112 -> 113 -> 120 ... 
         bool done = false;
         while (!done) {
                 //Gets the iterator to the beggining of the _masterNames set.
-                std::set<std::string>::iterator masterItr = _masterNames.find(currentSolution.instVector[currentindex]->getMaster()->getName());
+                std::set<std::string>::iterator masterItr = _masterNames.find(solution.instVector[index]->getMaster()->getName());
                 //Gets the iterator to the end of the _masterNames set.
                 std::set<std::string>::iterator masterFinalItr = _masterNames.end();
                 masterFinalItr--;
                 if (masterItr == masterFinalItr) {
-                        //If the iterator can't increment past the final iterator, change the current buf master to the _charBuf and try to go to next instance. 
-                        odb::dbInst* currentInst = currentSolution.instVector[currentindex];
-                        currentInst->swapMaster(_charBuf);
+                        //If the iterator can't increment past the final iterator...
+                        //change the current buf master to the _charBuf and try to go to next instance. 
+                        odb::dbInst* inst = solution.instVector[index];
+                        inst->swapMaster(_charBuf);
                         unsigned topologyCounter = 0;
                         for (unsigned topologyIndex = 0; 
-                                topologyIndex < currentSolution.topologyDescriptor.size(); 
+                                topologyIndex < solution.topologyDescriptor.size(); 
                                 topologyIndex++){
-                                //Iterates through the topologyDescriptor to set the new information(string representing the current buffer).
-                                std::string topologyS = currentSolution.topologyDescriptor[topologyIndex];
-                                if (_masterNames.find(topologyS) == _masterNames.end()){
-                                        continue; //Is a number (i.e. a wire segment). Ignore and go to the next one.
-                                } else {
-                                        if (topologyCounter == currentindex){
+                                //Iterates through the topologyDescriptor to set the new information
+                                //(string representing the current buffer)
+                                std::string topologyS = solution.topologyDescriptor[topologyIndex];
+                                if (!(_masterNames.find(topologyS) == _masterNames.end())){
+                                        if (topologyCounter == index){
                                                 std::set<std::string>::iterator firstMaster = _masterNames.begin();
-                                                currentSolution.topologyDescriptor[topologyIndex] = *firstMaster;
+                                                solution.topologyDescriptor[topologyIndex] = *firstMaster;
                                                 break;         
                                         }
                                         topologyCounter++;
                                 }
                         }
-                        currentindex++;
+                        index++;
                 } else {
                         //Increment the iterator and change the current buffer to the new size.
                         masterItr++;
                         std::string masterString = *masterItr;
                         odb::dbMaster* newBufMaster = _db->findMaster(masterString.c_str());
-                        odb::dbInst* currentInst = currentSolution.instVector[currentindex];
-                        currentInst->swapMaster(newBufMaster);
+                        odb::dbInst* inst = solution.instVector[index];
+                        inst->swapMaster(newBufMaster);
                         unsigned topologyCounter = 0;
                         for (unsigned topologyIndex = 0; 
-                                topologyIndex < currentSolution.topologyDescriptor.size(); 
+                                topologyIndex < solution.topologyDescriptor.size(); 
                                 topologyIndex++){
-                                std::string topologyS = currentSolution.topologyDescriptor[topologyIndex];
-                                if (_masterNames.find(topologyS) == _masterNames.end()){
-                                        continue; //Is a number (i.e. a wire segment). Ignore and go to the next one.
-                                } else {
-                                        if (topologyCounter == currentindex){
-                                                currentSolution.topologyDescriptor[topologyIndex] = masterString;
+                                std::string topologyS = solution.topologyDescriptor[topologyIndex];
+                                if (!(_masterNames.find(topologyS) == _masterNames.end())){
+                                        if (topologyCounter == index){
+                                                solution.topologyDescriptor[topologyIndex] = masterString;
                                                 break;         
                                         }
                                         topologyCounter++;
@@ -993,34 +992,21 @@ TechChar::SolutionData TechChar::updateBufferTopologies(TechChar::SolutionData c
                         }
                         done = true;
                 }
-                if (currentindex >= currentSolution.instVector.size()){
+                if (index >= solution.instVector.size()){
                         //If the next instance doesn't exist, all the topologies were tested -> exit the function.
                         done = true;
                 }
         }
-        return currentSolution;
+        return solution;
 }
 
 std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
         //Post-process of the characterization results.
         std::vector <ResultData> selectedSolutions;
-        //Select only a subset of the total results. If, for a combination of input cap, wirelength, load and output slew, more than 3 results exists -> select only 3 of them.
+        //Select only a subset of the total results. If, for a combination of input cap, wirelength, load and output slew, 
+        //more than 3 results exists -> select only 3 of them.
         for (auto& keyResults : _solutionMap) {
-                CharKey currentKey = keyResults.first;
                 std::vector<ResultData> resultVector = keyResults.second;
-                /*if (resultVector.size() <= 3){
-                        for (ResultData selectedResults : resultVector){
-                                selectedSolutions.push_back(selectedResults);
-                        }
-                } else {
-                        int indexLimit = resultVector.size() - 1;
-                        selectedSolutions.push_back(
-                                        resultVector[ static_cast<unsigned> (std::floor(0.1 * static_cast<float> (indexLimit))) ]);
-                        selectedSolutions.push_back(
-                                        resultVector[ static_cast<unsigned> (std::floor(0.5 * static_cast<float> (indexLimit))) ]);
-                        selectedSolutions.push_back(
-                                        resultVector[ static_cast<unsigned> (std::floor(0.9 * static_cast<float> (indexLimit))) ]);
-                }*/
                 for (ResultData selectedResults : resultVector){
                         selectedSolutions.push_back(selectedResults);
                 }
@@ -1034,40 +1020,45 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess() {
         unsigned minResultSlew = std::numeric_limits<unsigned>::max();
         unsigned maxResultSlew = 0;
         std::vector <ResultData> convertedSolutions;
-        for (ResultData currentSolution : selectedSolutions){
-                if (currentSolution.pinSlew > _charMaxSlew) {
-                        continue;
-                } 
-                ResultData convertedResult;
-                //Processing and normalizing of output slew.
-                convertedResult.pinSlew = normalizeCharResults(currentSolution.pinSlew, _charSlewInter, &minResultSlew, &maxResultSlew);
-                //Processing and normalizing of input slew.
-                convertedResult.inSlew = normalizeCharResults(currentSolution.inSlew, _charSlewInter, &minResultSlew, &maxResultSlew);
-                //Processing and normalizing of input cap.
-                convertedResult.totalcap = normalizeCharResults(currentSolution.totalcap, _charCapInter, &minResultCapacitance, &maxResultCapacitance);
-                //Processing and normalizing of load.
-                convertedResult.load = normalizeCharResults(currentSolution.load, _charCapInter, &minResultCapacitance, &maxResultCapacitance);
-                //Processing and normalizing of the wirelength.
-                convertedResult.wirelength = normalizeCharResults(currentSolution.wirelength, _options->getWireSegmentUnit(), &minResultWirelength, &maxResultWirelength);
-                //Processing and normalizing of delay.
-                convertedResult.pinArrival = static_cast<unsigned> (std::ceil(currentSolution.pinArrival / (_charSlewInter/5)));
-                //Add missing information.
-                convertedResult.totalPower = currentSolution.totalPower;
-                convertedResult.isPureWire = currentSolution.isPureWire;
-                std::vector<std::string> topologyResult;
-                for (int topologyIndex = 0 ; topologyIndex < currentSolution.topology.size() ; topologyIndex ++) {
-                        std::string topologyS = currentSolution.topology[topologyIndex];
-                        //Normalizes the strings that represents the topology too.
-                        if (_masterNames.find(topologyS) == _masterNames.end()){
-                                //Is a number (i.e. a wire segment).
-                                topologyResult.push_back(std::to_string(std::stod(topologyS) / static_cast<float> (currentSolution.wirelength) ));
-                        } else {
-                                topologyResult.push_back(topologyS);
+        for (ResultData solution : selectedSolutions){
+                if (solution.pinSlew <= _charMaxSlew) {
+                        ResultData convertedResult;
+                        //Processing and normalizing of output slew.
+                        convertedResult.pinSlew = normalizeCharResults(solution.pinSlew, _charSlewInter, 
+                                                                       &minResultSlew, &maxResultSlew);
+                        //Processing and normalizing of input slew.
+                        convertedResult.inSlew = normalizeCharResults(solution.inSlew, _charSlewInter, 
+                                                                      &minResultSlew, &maxResultSlew);
+                        //Processing and normalizing of input cap.
+                        convertedResult.totalcap = normalizeCharResults(solution.totalcap, _charCapInter, 
+                                                                        &minResultCapacitance, &maxResultCapacitance);
+                        //Processing and normalizing of load.
+                        convertedResult.load = normalizeCharResults(solution.load, _charCapInter, 
+                                                                    &minResultCapacitance, &maxResultCapacitance);
+                        //Processing and normalizing of the wirelength.
+                        convertedResult.wirelength = normalizeCharResults(solution.wirelength, _options->getWireSegmentUnit(), 
+                                                                          &minResultWirelength, &maxResultWirelength);
+                        //Processing and normalizing of delay.
+                        convertedResult.pinArrival = static_cast<unsigned> (std::ceil(solution.pinArrival / (_charSlewInter/5)));
+                        //Add missing information.
+                        convertedResult.totalPower = solution.totalPower;
+                        convertedResult.isPureWire = solution.isPureWire;
+                        std::vector<std::string> topologyResult;
+                        for (int topologyIndex = 0 ; topologyIndex < solution.topology.size() ; topologyIndex ++) {
+                                std::string topologyS = solution.topology[topologyIndex];
+                                //Normalizes the strings that represents the topology too.
+                                if (_masterNames.find(topologyS) == _masterNames.end()){
+                                        //Is a number (i.e. a wire segment).
+                                        topologyResult.push_back(std::to_string
+                                                (std::stod(topologyS) / static_cast<float> (solution.wirelength) ));
+                                } else {
+                                        topologyResult.push_back(topologyS);
+                                }
                         }
+                        convertedResult.topology = topologyResult;
+                        //Send the results to a vector. This will be used to create the wiresegments for CTS.
+                        convertedSolutions.push_back(convertedResult);
                 }
-                convertedResult.topology = topologyResult;
-                //Send the results to a vector. This will be used to create the wiresegments for CTS.
-                convertedSolutions.push_back(convertedResult);
         }
         //Sets the min and max values and returns the result vector.
         _minSlew = minResultSlew;
@@ -1103,11 +1094,11 @@ void TechChar::create() {
                 setParasitics(topologiesVector, setupWirelength);
                 setSdc(topologiesVector, setupWirelength);
                 //For each topology...
-                for (SolutionData currentSolution : topologiesVector){
+                for (SolutionData solution : topologiesVector){
                         //Gets the input and output port (as terms, pins and vertices).
-                        odb::dbBTerm* inBTerm = currentSolution.inPort->getBTerm();
-                        odb::dbBTerm* outBTerm = currentSolution.outPort->getBTerm();
-                        odb::dbNet* lastNet = currentSolution.netVector.back();
+                        odb::dbBTerm* inBTerm = solution.inPort->getBTerm();
+                        odb::dbBTerm* outBTerm = solution.outPort->getBTerm();
+                        odb::dbNet* lastNet = solution.netVector.back();
                         sta::Pin* inPin = _dbNetworkChar->dbToSta(inBTerm);
                         sta::Pin* outPin = _dbNetworkChar->dbToSta(outBTerm);
                         sta::Port* inPort = _dbNetworkChar->port(inPin);
@@ -1117,7 +1108,8 @@ void TechChar::create() {
 
                         //Gets the first pin of the last net. Needed to set a new parasitic (load) value.
                         sta::Pin* firstPinLastNet = nullptr;
-                        if (lastNet->getBTerms().size() > 1) { // Parasitics for purewire segment. First and last pin are already available.
+                        if (lastNet->getBTerms().size() > 1) { // Parasitics for purewire segment. 
+                                                               // First and last pin are already available.
                                 firstPinLastNet = inPin;
                         }  else { // Parasitics for the end/start of a net. One Port and one instance pin. 
                                 odb::dbITerm* netITerm = lastNet->get1stITerm();
@@ -1129,63 +1121,71 @@ void TechChar::create() {
                         float r1 = 0;
                         bool piExists = false;
                         //Gets the parasitics that are currently used for the last net.
-                        _openStaChar->findPiElmore(firstPinLastNet, sta::RiseFall::rise(), sta::MinMax::max(), c1, r1, c2, piExists);  
+                        _openStaChar->findPiElmore(firstPinLastNet, sta::RiseFall::rise(), sta::MinMax::max(), 
+                                                   c1, r1, c2, piExists);  
                         //For each possible buffer combination (different sizes).
-                        unsigned buffersUpdate = std::pow(_masterNames.size(), currentSolution.instVector.size());
+                        unsigned buffersUpdate = std::pow(_masterNames.size(), solution.instVector.size());
                         do {
                                 //For each possible load.
-                                for (float currentLoad : _loadsToTest){
-                                        //sta2->setPortExtPinCap(outPort, sta::RiseFallBoth::riseFall(), sta::MinMaxAll::all(), currentLoad );
+                                for (float load : _loadsToTest){
+                                        //sta2->setPortExtPinCap(outPort, sta::RiseFallBoth::riseFall(), 
+                                        //                       sta::MinMaxAll::all(), load );
 
                                         //Sets the new parasitic of the last net (load added to last pin).
-                                        _openStaChar->makePiElmore(firstPinLastNet, sta::RiseFall::rise(), sta::MinMaxAll::all(), 
-                                                                   c1, r1, c2 + currentLoad);
-                                        _openStaChar->makePiElmore(firstPinLastNet, sta::RiseFall::fall(), sta::MinMaxAll::all(), 
-                                                                   c1, r1, c2 + currentLoad);
-                                        _openStaChar->setElmore(firstPinLastNet, outPin, sta::RiseFall::rise(), sta::MinMaxAll::all(), 
-                                                                c1 + c2 + currentLoad);
-                                        _openStaChar->setElmore(firstPinLastNet, outPin, sta::RiseFall::fall(), sta::MinMaxAll::all(), 
-                                                                c1 + c2 + currentLoad);
+                                        _openStaChar->makePiElmore(firstPinLastNet, sta::RiseFall::rise(), 
+                                                                   sta::MinMaxAll::all(), c1, r1, c2 + load);
+                                        _openStaChar->makePiElmore(firstPinLastNet, sta::RiseFall::fall(), 
+                                                                   sta::MinMaxAll::all(), c1, r1, c2 + load);
+                                        _openStaChar->setElmore(firstPinLastNet, outPin, sta::RiseFall::rise(), 
+                                                                sta::MinMaxAll::all(), c1 + c2 + load);
+                                        _openStaChar->setElmore(firstPinLastNet, outPin, sta::RiseFall::fall(), 
+                                                                sta::MinMaxAll::all(), c1 + c2 + load);
                                         //For each possible input slew.
-                                        for (float currentInputSlew : _slewsToTest){
-                                                //sta2->setInputSlew(inPort, sta::RiseFallBoth::riseFall(), sta::MinMaxAll::all(), currentInputSlew);
-                                                //Sets the slew on the input vertex. Here the new pattern is created (combination of load, buffers and slew values).
+                                        for (float inputslew : _slewsToTest){
+                                                //sta2->setInputSlew(inPort, sta::RiseFallBoth::riseFall(), 
+                                                //                   sta::MinMaxAll::all(), inputslew);
+                                                
+                                                //Sets the slew on the input vertex. 
+                                                //Here the new pattern is created (combination of load, buffers and slew values).
                                                 _openStaChar->setAnnotatedSlew(inPinVert, _charCorner, 
                                                                        sta::MinMaxAll::all(), sta::RiseFallBoth::riseFall(), 
-                                                                       currentInputSlew);
+                                                                       inputslew);
                                                 //Updates timing for the new pattern. 
                                                 _openStaChar->updateTiming(true);
 
                                                 //Gets the results (delay, slew, power...) for the pattern.
-                                                ResultData currentResults = computeTopologyResults(currentSolution, outPinVert, currentLoad, setupWirelength);
+                                                ResultData results = computeTopologyResults(solution, outPinVert, 
+                                                                                            load, setupWirelength);
 
-                                                //Appends the results to a map, grouping each result by wirelength, load, output slew and input cap.
-                                                currentResults.wirelength = setupWirelength;
-                                                currentResults.load = currentLoad;
-                                                currentResults.inSlew = currentInputSlew;
-                                                currentResults.topology = currentSolution.topologyDescriptor;
-                                                currentResults.isPureWire = currentSolution.isPureWire;
+                                                //Appends the results to a map, grouping each result by 
+                                                // wirelength, load, output slew and input cap.
+                                                results.wirelength = setupWirelength;
+                                                results.load = load;
+                                                results.inSlew = inputslew;
+                                                results.topology = solution.topologyDescriptor;
+                                                results.isPureWire = solution.isPureWire;
                                                 CharKey solutionKey;
-                                                solutionKey.wirelength = currentResults.wirelength;
-                                                solutionKey.pinSlew = currentResults.pinSlew;
-                                                solutionKey.load = currentResults.load;
-                                                solutionKey.totalcap = currentResults.totalcap;
+                                                solutionKey.wirelength = results.wirelength;
+                                                solutionKey.pinSlew = results.pinSlew;
+                                                solutionKey.load = results.load;
+                                                solutionKey.totalcap = results.totalcap;
                                                 if (_solutionMap.find(solutionKey) != _solutionMap.end()){
-                                                        _solutionMap[solutionKey].push_back(currentResults);
+                                                        _solutionMap[solutionKey].push_back(results);
                                                 } else {
                                                         std::vector<ResultData> resultGroup;
-                                                        resultGroup.push_back(currentResults);
+                                                        resultGroup.push_back(results);
                                                         _solutionMap[solutionKey] = resultGroup;
                                                 }
                                                 topologiesCreated++;
                                                 if (topologiesCreated % 50000 == 0){
-                                                        std::cout << "Number of created patterns = " << topologiesCreated << ".\n";
+                                                        std::cout << "Number of created patterns = "
+                                                                  << topologiesCreated << ".\n";
                                                 }
                                         }
                                 }
-                                //If the currentSolution is not a pure-wire, update the buffer topologies.
-                                if (currentSolution.isPureWire == false) {
-                                        currentSolution = updateBufferTopologies(currentSolution);
+                                //If the solution is not a pure-wire, update the buffer topologies.
+                                if (!solution.isPureWire) {
+                                        solution = updateBufferTopologies(solution);
                                 }                        
                                 //For pure-wire solution buffersUpdate == 1, so it only runs once.
                                 buffersUpdate--;
@@ -1199,8 +1199,8 @@ void TechChar::create() {
         std::vector<ResultData> convertedSolutions = characterizationPostProcess();
         //Changes the segment units back to micron and creates the wire segments.
         float dbUnitsPerMicron = static_cast<float> (_charBlock->getDbUnitsPerMicron());
-        float currentSegmentDistance = static_cast<float> (_options->getWireSegmentUnit());
-        _options->setWireSegmentUnit(static_cast<unsigned> (currentSegmentDistance / dbUnitsPerMicron));
+        float segmentDistance = static_cast<float> (_options->getWireSegmentUnit());
+        _options->setWireSegmentUnit(static_cast<unsigned> (segmentDistance / dbUnitsPerMicron));
         compileLut(convertedSolutions);
         //Saves the characterization file if needed.
         if (_options->getOutputPath().length() > 0) {

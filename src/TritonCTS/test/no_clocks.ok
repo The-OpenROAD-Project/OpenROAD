@@ -1,0 +1,37 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: no_clock.def
+Notice 0: Design: test_no_clk
+Notice 0:     Created 2 components and 8 component-terminals.
+Notice 0:     Created 1 nets and 2 connections.
+Notice 0: Finished DEF file: no_clock.def
+ *****************
+ * TritonCTS 2.0 *
+ *****************
+ *****************************
+ *  Import characterization  *
+ *****************************
+ Reading LUT file "lut.txt"
+    Min. len    Max. len    Min. cap    Max. cap   Min. slew   Max. slew
+           2           8           1          52           1          24
+    [WARNING] 180 wires are pure wire and no slew degration.
+    TritonCTS forced slew degradation on these wires.
+    Num wire segments: 4994
+    Num keys in characterization LUT: 1677
+  Error: No clock nets have been found.
+
+  Actual min input cap: 8
+ Reading solution list file "sol_list.txt"
+ **********************
+ *  Find clock roots  *
+ **********************
+ User did not specify clock roots.
+ ************************
+ *  Populate TritonCTS  *
+ ************************
+ Initializing clock nets
+ Looking for clock nets in the design

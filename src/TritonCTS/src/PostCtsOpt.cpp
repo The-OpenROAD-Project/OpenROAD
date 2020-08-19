@@ -131,10 +131,6 @@ Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver, ClockInst* sink)
         
         Point<DBU> bufLoc(driverLoc.getX() + xBufDistRatio * xDist, 
                           driverLoc.getY() + yBufDistRatio * yDist);
-        
-        //std::cout << "DriverLoc: " << driverLoc << " SinkLoc: " << sinkLoc
-        //          << " Dist: [(" << xDist << ", " << yDist << ")] "
-        //          << " BufLoc: " << bufLoc << "\n";
 
         return bufLoc;
 }

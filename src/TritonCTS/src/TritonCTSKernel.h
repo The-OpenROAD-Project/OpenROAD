@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef TRITONCTSKERNEL_H
-#define TRITONCTSKERNEL_H
+#pragma once
 
 #include "DbWrapper.h"
 #include "CtsOptions.h"
@@ -118,5 +117,3 @@ public:
 };
 
 }
-
-#endif
