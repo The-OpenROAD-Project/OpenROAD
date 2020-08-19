@@ -467,7 +467,7 @@ bool IOPlacementKernel::assignPinsSections()
         break;
       }
       // Try to add pin just to first
-      if (not _forcePinSpread)
+      if (!_forcePinSpread)
         break;
     }
     if (!pinAssigned) {
@@ -508,7 +508,7 @@ void IOPlacementKernel::setupSections()
   if (!(_usagePerSection > 0.0f)) {
     error("_usagePerSection must be grater than zero\n");
   }
-  if (not _forcePinSpread && _usageIncreaseFactor == 0.0f
+  if (!_forcePinSpread && _usageIncreaseFactor == 0.0f
       && _slotsIncreaseFactor == 0.0f) {
     std::cout << "WARNING: if _forcePinSpread = false than either "
                  "_usageIncreaseFactor or _slotsIncreaseFactor "
@@ -535,7 +535,7 @@ void IOPlacementKernel::setupSections()
                 << MAX_SLOTS_RECOMMENDED
                 << " this may negatively affect performance\n";
     }
-  } while (not allAssigned);
+  } while (!allAssigned);
 }
 
 inline void IOPlacementKernel::updateOrientation(IOPin& pin)
@@ -694,7 +694,7 @@ void IOPlacementKernel::run()
     initHPWL = returnIONetsHPWL(_netlist);
   }
 
-  if (not _cellsPlaced || (_randomMode > 0)) {
+  if (!_cellsPlaced || (_randomMode > 0)) {
     std::cout << "WARNING: running random pin placement\n";
     randomPlacement(_randomMode);
   } else {
@@ -717,7 +717,7 @@ void IOPlacementKernel::run()
 
     unsigned i = 0;
     while (_zeroSinkIOs.size() > 0 && i < _slots.size()) {
-      if (not _slots[i].used && not _slots[i].blocked) {
+      if (!_slots[i].used && !_slots[i].blocked) {
         _slots[i].used = true;
         _zeroSinkIOs[0].setPos(_slots[i].pos);
         _assignment.push_back(_zeroSinkIOs[0]);
