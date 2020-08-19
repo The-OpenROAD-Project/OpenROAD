@@ -80,7 +80,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-capacity_adjustment)] } {
     set cap_adjust $keys(-capacity_adjustment)
-    sta::check_positive_float $cap_adjust
+    sta::check_positive_float "-capacity_adjustment" $cap_adjust
     FastRoute::set_capacity_adjustment $cap_adjust
   } else {
     FastRoute::set_capacity_adjustment 0.0
@@ -88,7 +88,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-min_routing_layer)] } {
     set min_layer $keys(-min_routing_layer)
-    sta::check_positive_integer $min_layer
+    sta::check_positive_integer "-min_routing_layer" $min_layer
     FastRoute::set_min_layer $min_layer
   } else {
     FastRoute::set_min_layer 1
@@ -97,7 +97,7 @@ proc fastroute { args } {
   set max_layer -1
   if { [info exists keys(-max_routing_layer)] } {
     set max_layer $keys(-max_routing_layer)
-    sta::check_positive_integer $max_layer
+    sta::check_positive_integer "-max_routing_layer" $max_layer
     FastRoute::set_max_layer $max_layer
   } else {
     FastRoute::set_max_layer -1
@@ -150,7 +150,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-alpha) ] } {
     set alpha $keys(-alpha)
-    sta::check_positive_float $alpha
+    sta::check_positive_float "-alpha" $alpha
     FastRoute::set_alpha $alpha
   } else {
     FastRoute::set_alpha 0.3
@@ -165,7 +165,7 @@ proc fastroute { args } {
   
   if { [info exists keys(-overflow_iterations) ] } {
     set iterations $keys(-overflow_iterations)
-    sta::check_positive_integer $iterations
+    sta::check_positive_integer "-overflow_iterations" $iterations
     FastRoute::set_overflow_iterations $iterations
   } else {
     FastRoute::set_overflow_iterations 50
@@ -173,7 +173,7 @@ proc fastroute { args } {
 
   if { [info exists keys(-max_routing_length)] } {
     set max_length $keys(-max_routing_length)
-    sta::check_positive_integer $max_length
+    sta::check_positive_integer "-max_routing_length" $max_length
     FastRoute::set_max_routing_length $max_length
   }
 
