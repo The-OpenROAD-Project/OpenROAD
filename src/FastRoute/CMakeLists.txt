@@ -42,15 +42,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(FastRoute)
 set(LIB_NAME "FastRoute")
 
-# Print info on build
-if( CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]" )
-        # Tell other CMake files that we're doing a debug build
-        set(DEBUG_BUILD 1)
-
-        # Tell C/C++ that we're doing a debug build
-        add_definitions(-DDEBUG)
-endif()
-
 add_subdirectory(third_party/fastroute)
 add_subdirectory(third_party/pdrev)
 
