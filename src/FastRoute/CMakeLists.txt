@@ -60,13 +60,16 @@ set(Boost_USE_STATIC_LIBS ON)
 # Loads swig and generates the tcl wrapper file
 find_package(SWIG REQUIRED)
 
-set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
+set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
 
 add_custom_command(OUTPUT ${FASTROUTE_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix FastRoute -tcl8 -c++ -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/TclInterface.i
+        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix FastRoute -tcl8 -c++ -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/fastroute.i
         WORKING_DIRECTORY ${FASTROUTE_HOME}/src
-        DEPENDS ${FASTROUTE_HOME}/src/TclInterface.i ${FASTROUTE_HOME}/src/TclInterface.h
+        DEPENDS
+        ${FASTROUTE_HOME}/src/fastroute.i
+        ${FASTROUTE_HOME}/include/FastRouteKernel.h
+        ${OPENROAD_HOME}/src/Exception.i
 )
 
 add_custom_command(OUTPUT ${FASTROUTE_TCL_INIT}
@@ -87,7 +90,6 @@ set(SRC_FILES
   src/Pin.cpp
   src/RcTreeBuilder.cpp
   src/SteinerTree.cpp
-  src/TclInterface.cpp
   )
 
 add_library(${LIB_NAME} 
