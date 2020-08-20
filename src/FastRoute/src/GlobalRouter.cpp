@@ -662,7 +662,7 @@ void GlobalRouter::initializeNets(bool reroute)
           // name is copied by FR
           char* net_name = const_cast<char*>(net.getConstName());
           bool isClock
-              = (net.getSignalType() == odb::dbSigType::CLOCK) ? true : false;
+              = (net.getSignalType() == odb::dbSigType::CLOCK);
           _fastRoute->addNet(
               net_name, idx, pins.size(), 1, grPins, netAlpha, isClock);
         }
