@@ -48,7 +48,7 @@
 #include "Coordinate.h"
 #include "Pin.h"
 #include "Net.h"
-#include "FastRouteKernel.h"
+#include "fastroute/FastRouteKernel.h"
 #include "openroad/Error.hh"
 
 namespace FastRoute {

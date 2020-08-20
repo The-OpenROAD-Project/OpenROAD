@@ -37,7 +37,7 @@
 %module fastroute
 
 %{
-#include "FastRouteKernel.h"
+#include "fastroute/FastRouteKernel.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ord {

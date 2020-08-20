@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "FastRouteKernel.h"
+#include "fastroute/FastRouteKernel.h"
 
 #include <chrono>
 #include <cmath>

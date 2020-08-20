@@ -60,7 +60,7 @@
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
-#include "FastRoute/src/MakeFastRoute.h"
+#include "fastroute/MakeFastRoute.h"
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"

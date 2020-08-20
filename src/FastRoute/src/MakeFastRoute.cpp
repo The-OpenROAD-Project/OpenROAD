@@ -33,9 +33,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "MakeFastRoute.h"
+#include "fastroute/MakeFastRoute.h"
 
-#include "FastRouteKernel.h"
+#include "fastroute/FastRouteKernel.h"
 #include "FastRoute.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"

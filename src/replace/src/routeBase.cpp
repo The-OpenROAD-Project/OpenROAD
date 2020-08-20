@@ -36,7 +36,7 @@
 #include "nesterovBase.h"
 
 #include "opendb/db.h"
-#include "FastRouteKernel.h"
+#include "fastroute/FastRouteKernel.h"
 
 #include <string>
 #include <iostream>

@@ -52,11 +52,11 @@ set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
 
 add_custom_command(OUTPUT ${FASTROUTE_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix FastRoute -tcl8 -c++ -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/fastroute.i
+        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix FastRoute -I${FASTROUTE_HOME}/include -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/fastroute.i
         WORKING_DIRECTORY ${FASTROUTE_HOME}/src
         DEPENDS
         ${FASTROUTE_HOME}/src/fastroute.i
-        ${FASTROUTE_HOME}/include/FastRouteKernel.h
+        ${FASTROUTE_HOME}/include/fastroute/FastRouteKernel.h
         ${OPENROAD_HOME}/src/Exception.i
 )
 
