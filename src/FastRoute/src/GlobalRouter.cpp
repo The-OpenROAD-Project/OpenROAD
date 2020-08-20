@@ -187,7 +187,7 @@ void GlobalRouter::startFastRoute()
   std::cout << "\n";
 
   std::cout << "Initializing grid...\n";
-  initGrid();
+  initCoreGrid();
   std::cout << "Initializing grid... Done!\n";
 
   std::cout << "Initializing routing layers...\n";
@@ -379,7 +379,7 @@ void GlobalRouter::enableAntennaAvoidance(char* diodeCellName,
   _diodePinName = pinName;
 }
 
-void GlobalRouter::initGrid()
+void GlobalRouter::initCoreGrid()
 {
   initGrid(_maxRoutingLayer);
 
@@ -2312,7 +2312,7 @@ void GlobalRouter::initGrid(int maxLayer)
   std::vector<int> genericVector(numLayers);
   std::map<int, std::vector<Box>> genericMap;
 
-  *_grid = Grid(lowerLeftX,
+  _grid->init(lowerLeftX,
                 lowerLeftY,
                 rect.xMax(),
                 rect.yMax(),
