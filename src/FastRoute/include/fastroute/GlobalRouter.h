@@ -208,7 +208,7 @@ protected:
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
   void computeWirelength();
-  std::vector<Pin> getAllPorts();
+  std::vector<Pin*> getAllPorts();
 
 
   // aux functions

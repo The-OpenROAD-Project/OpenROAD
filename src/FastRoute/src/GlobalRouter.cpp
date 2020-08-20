@@ -1733,23 +1733,23 @@ void GlobalRouter::checkPinPlacement()
   bool invalid = false;
   std::map<int, std::vector<Coordinate>> mapLayerToPositions;
 
-  for (Pin port : getAllPorts()) {
-    if (port.getNumLayers() == 0) {
-      error("Pin %s does not have layer assignment\n", port.getName().c_str());
+  for (Pin* port : getAllPorts()) {
+    if (port->getNumLayers() == 0) {
+      error("Pin %s does not have layer assignment\n", port->getName().c_str());
     }
-    DBU layer = port.getLayers()[0];  // port have only one layer
+    DBU layer = port->getLayers()[0];  // port have only one layer
 
     if (mapLayerToPositions[layer].empty()) {
-      mapLayerToPositions[layer].push_back(port.getPosition());
+      mapLayerToPositions[layer].push_back(port->getPosition());
     } else {
       for (Coordinate pos : mapLayerToPositions[layer]) {
-        if (pos == port.getPosition()) {
+        if (pos == port->getPosition()) {
           std::cout << "[WARNING] At least 2 pins in position (" << pos.getX()
                     << ", " << pos.getY() << "), layer " << layer + 1 << "\n";
           invalid = true;
         }
       }
-      mapLayerToPositions[layer].push_back(port.getPosition());
+      mapLayerToPositions[layer].push_back(port->getPosition());
     }
   }
 
@@ -2027,7 +2027,7 @@ void GlobalRouter::addLocalConnections(
   for (FastRoute::NET& netRoute : *globalRoute) {
       Net* net = getNetByIdx(netRoute.idx);
 
-    for (Pin pin : net->getPins()) {
+    for (Pin &pin : net->getPins()) {
       topLayer = pin.getTopLayer();
       pinBoxes = pin.getBoxes().at(topLayer);
       pinPosition = pin.getOnGridPosition();
@@ -2257,12 +2257,12 @@ int GlobalRouter::getMaxNetDegree() {
   return maxDegree;
 }
 
-std::vector<Pin> GlobalRouter::getAllPorts() {
-  std::vector<Pin> ports; 
+std::vector<Pin*> GlobalRouter::getAllPorts() {
+  std::vector<Pin*> ports; 
   for (Net &net : *_nets) {
-    for (Pin pin : net.getPins()) {
+    for (Pin &pin : net.getPins()) {
       if (pin.isPort()) {
-        ports.push_back(pin);
+        ports.push_back(&pin);
       }
     }
   }
