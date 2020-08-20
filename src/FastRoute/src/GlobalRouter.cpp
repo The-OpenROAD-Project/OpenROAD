@@ -1287,8 +1287,7 @@ void GlobalRouter::setAllowOverflow(bool allowOverflow)
 void GlobalRouter::setReportCongestion(char* congestFile)
 {
   _reportCongest = true;
-  std::string cgtFile(congestFile);
-  _congestFile = cgtFile;
+  _congestFile = congestFile;
 }
 
 void GlobalRouter::setClockNetsRouteFlow(bool clockFlow)
