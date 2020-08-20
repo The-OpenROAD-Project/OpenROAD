@@ -143,18 +143,6 @@ set_overflow_iterations(int iterations)
 }
 
 void
-set_max_routing_length(float maxLength)
-{
-  getFastRoute()->setMaxLength(maxLength);
-}
-
-void
-add_layer_max_length(int layer, float length)
-{
-  getFastRoute()->addLayerMaxLength(layer, length);
-}
-
-void
 set_grid_origin(long x, long y)
 {
   getFastRoute()->setGridOrigin(x, y);

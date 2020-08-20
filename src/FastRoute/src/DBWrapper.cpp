@@ -432,13 +432,6 @@ void DBWrapper::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
 
     Coordinate pinPos;
 
-    Pin::Type type(Pin::Type::BIDIR);
-    if (mTerm->getIoType() == odb::dbIoType::INPUT) {
-      type = Pin::SINK;
-    } else if (mTerm->getIoType() == odb::dbIoType::OUTPUT) {
-      type = Pin::SOURCE;
-    }
-
     odb::dbInst* inst = iterm->getInst();
     inst->getOrigin(pX, pY);
     odb::Point origin = odb::Point(pX, pY);
@@ -490,8 +483,7 @@ void DBWrapper::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
             pinLayers,
             Orientation::INVALID,
             pinBoxes,
-            (connectedToPad || connectedToMacro),
-            type);
+            (connectedToPad || connectedToMacro));
 
     if (connectedToPad || connectedToMacro) {
       Coordinate pinPosition = pin.getPosition();
@@ -552,13 +544,6 @@ void DBWrapper::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
     pinName = bterm->getConstName();
     Coordinate pinPos;
 
-    Pin::Type type(Pin::Type::BIDIR);
-    if (bterm->getIoType() == odb::dbIoType::INPUT) {
-      type = Pin::SOURCE;
-    } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-      type = Pin::SINK;
-    }
-
     for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
       Coordinate lowerBound;
       Coordinate upperBound;
@@ -595,8 +580,7 @@ void DBWrapper::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
             pinLayers,
             Orientation::INVALID,
             pinBoxes,
-            (connectedToPad || connectedToMacro),
-            type);
+            (connectedToPad || connectedToMacro));
 
     if (connectedToPad) {
       Coordinate pinPosition = pin.getPosition();

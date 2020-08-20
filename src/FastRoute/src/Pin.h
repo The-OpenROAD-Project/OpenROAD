@@ -59,28 +59,19 @@ enum Orientation
 class Pin
 {
  public:
-  enum Type
-  {
-    SINK,
-    SOURCE,
-    BIDIR
-  };
-
   Pin() = default;
   Pin(odb::dbITerm* iterm,
       const Coordinate& position,
       const std::vector<int>& layers,
       const Orientation orientation,
       const std::map<int, std::vector<Box>>& boxesPerLayer,
-      bool connectedToPad,
-      Type type);
+      bool connectedToPad);
   Pin(odb::dbBTerm* bterm,
       const Coordinate& position,
       const std::vector<int>& layers,
       const Orientation orientation,
       const std::map<int, std::vector<Box>>& boxesPerLayer,
-      bool connectedToPad,
-      Type type);
+      bool connectedToPad);
 
   odb::dbITerm* getITerm() const;
   odb::dbBTerm* getBTerm() const;
@@ -96,7 +87,6 @@ class Pin
     return _boxesPerLayer;
   }
   bool isPort() const { return _isPort; }
-  Type getType() const { return _type; }
   bool isConnectedToPad() const { return _connectedToPad; }
   const Coordinate& getOnGridPosition() const { return _onGridPosition; }
   void setOnGridPosition(Coordinate onGridPos) { _onGridPosition = onGridPos; }
@@ -113,7 +103,6 @@ class Pin
   Orientation _orientation;
   std::map<int, std::vector<Box>> _boxesPerLayer;
   bool _isPort;
-  Type _type;
   bool _connectedToPad;
 };
 

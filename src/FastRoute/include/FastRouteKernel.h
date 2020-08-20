@@ -147,8 +147,6 @@ class FastRouteKernel
   void setReportCongestion(char* congestFile);
   void printGrid();
   void printHeader();
-  void setMaxLength(float maxLength);
-  void addLayerMaxLength(int layer, float length);
   void setClockNetsRouteFlow(bool clockFlow);
   void setMinLayerForClock(int minLayer);
 
@@ -214,17 +212,8 @@ protected:
 
   // check functions
   void checkPinPlacement();
-  void checkSinksAndSource();
 
   // antenna functions
-  bool checkResource(ROUTE segment);
-  bool breakSegment(ROUTE segment,
-                    long maxLength,
-                    std::vector<ROUTE>& newSegments);
-  void fixLongSegments();
-  SteinerTree createSteinerTree(std::vector<ROUTE>& route,
-                                const std::vector<Pin>& pins);
-  bool checkSteinerTree(SteinerTree sTree);
   void addLocalConnections(std::vector<FastRoute::NET>* globalRoute);
   void mergeResults(const std::vector<FastRoute::NET>* newRoute);
   void runAntennaAvoidanceFlow();
@@ -291,10 +280,6 @@ protected:
   int _minLayerForClock;
 
   // Antenna variables
-  float _maxLengthMicrons = -1;
-  std::map<int, float> _layersMaxLengthMicrons;
-  long _maxLengthDBU = -1;
-  std::map<int, long> _layersMaxLengthDBU;
   bool _enableAntennaFlow = false;
   std::string _diodeCellName;
   std::string _diodePinName;
