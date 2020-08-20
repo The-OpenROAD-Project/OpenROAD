@@ -82,7 +82,17 @@ FT::FT()
   invalidNets = 0;
 }
 
-FT::~FT()
+FT::~FT() {
+  deleteComponents();
+}
+
+void FT::clear()
+{
+  deleteComponents();
+  allNets.clear();
+}
+
+void FT::deleteComponents()
 {
   for (int i = 0; i < (numNets - invalidNets); i++) {
     if (nets[i]->pinX)

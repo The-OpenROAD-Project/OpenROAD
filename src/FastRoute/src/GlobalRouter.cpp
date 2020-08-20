@@ -127,8 +127,7 @@ void GlobalRouter::clear()
 {
   // Clear classes
   _grid->clear();
-  delete _fastRoute;
-  _fastRoute = new FT;
+  _fastRoute->clear();
 
   // Clear vector
   _allRoutingTracks->clear();

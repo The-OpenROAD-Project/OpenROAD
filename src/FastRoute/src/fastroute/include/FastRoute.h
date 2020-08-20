@@ -68,6 +68,7 @@ class FT {
         FT();
         ~FT();
 
+        void deleteComponents();
         void clear();
 
         std::map<int, std::vector<PIN>> allNets;
