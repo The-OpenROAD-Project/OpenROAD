@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "AntennaAvoider.h"
+#include "AntennaRepair.h"
 
 #include <cmath>
 #include <cstring>
@@ -55,7 +55,7 @@ namespace FastRoute {
 
 using ord::error;
 
-AntennaAvoider::AntennaAvoider(GlobalRouter *fr,
+AntennaRepair::AntennaRepair(GlobalRouter *fr,
                  antenna_checker::AntennaChecker* arc,
                  opendp::Opendp* opendp, odb::dbDatabase* db)
 	: _fr(fr), _arc(arc), _opendp(opendp), _db(db)
@@ -63,7 +63,7 @@ AntennaAvoider::AntennaAvoider(GlobalRouter *fr,
 		_block = _db->getChip()->getBlock();
 	}
 
-int AntennaAvoider::checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
+int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
                                       int maxRoutingLayer)
 {
 	std::vector<odb::dbNet*> dirtyNets;
@@ -128,7 +128,7 @@ int AntennaAvoider::checkAntennaViolations(const std::vector<FastRoute::NET>* ro
   return _antennaViolations.size();
 }
 
-void AntennaAvoider::fixAntennas(std::string antennaCellName,
+void AntennaRepair::fixAntennas(std::string antennaCellName,
                             std::string antennaPinName)
 {
   int siteWidth = -1;
@@ -169,13 +169,13 @@ void AntennaAvoider::fixAntennas(std::string antennaCellName,
   }
 }
 
-void AntennaAvoider::legalizePlacedCells()
+void AntennaRepair::legalizePlacedCells()
 {
   _opendp->detailedPlacement(0);
   _opendp->checkPlacement(false);
 }
 
-void AntennaAvoider::insertDiode(odb::dbNet* net,
+void AntennaRepair::insertDiode(odb::dbNet* net,
                             std::string antennaCellName,
                             std::string antennaPinName,
                             odb::dbInst* sinkInst,
@@ -250,7 +250,7 @@ void AntennaAvoider::insertDiode(odb::dbNet* net,
   fixedInstId++;
 }
 
-void AntennaAvoider::getFixedInstances(r_tree& fixedInsts)
+void AntennaRepair::getFixedInstances(r_tree& fixedInsts)
 {
   odb::dbTech* tech = _db->getTech();
 

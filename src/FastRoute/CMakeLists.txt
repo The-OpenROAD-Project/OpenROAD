@@ -71,7 +71,6 @@ set(SRC_FILES
   src/AntennaRepair.cpp
   src/Box.cpp
   src/Coordinate.cpp
-  src/DBWrapper.cpp
   src/GlobalRouter.cpp
   src/Grid.cpp
   src/MakeFastRoute.cpp

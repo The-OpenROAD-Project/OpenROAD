@@ -35,9 +35,14 @@
 
 #pragma once
 
-#include "DBWrapper.h"
+#include "fastroute/GlobalRouter.h"
 #include "Grid.h"
 #include "Net.h"
+#include "FastRoute.h"
+
+#include "db_sta/dbSta.hh"
+#include "sta/Clock.hh"
+#include "sta/Set.hh"
 
 namespace sta {
 class Net;
@@ -81,7 +86,7 @@ class RcTreeBuilder
 {
  public:
   RcTreeBuilder(ord::OpenRoad* openroad,
-		DBWrapper* dbWrapper,
+		GlobalRouter* fr,
 		Grid* grid);
   void estimateParasitcs(Net* net,
 			 std::vector<ROUTE>& routes);
@@ -106,7 +111,7 @@ class RcTreeBuilder
 
   // Variables common to all nets.
   Grid* _grid;
-  DBWrapper* _dbWrapper;
+  GlobalRouter* _fr;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
   sta::Parasitics* _parasitics;

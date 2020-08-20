@@ -62,10 +62,10 @@ namespace FastRoute {
 
 class GlobalRouter;
 
-class AntennaAvoider
+class AntennaRepair
 {
  public:
- 	AntennaAvoider(GlobalRouter *fr,
+ 	AntennaRepair(GlobalRouter *fr,
  								 antenna_checker::AntennaChecker* arc,
  							   opendp::Opendp* opendp, odb::dbDatabase* db);
 

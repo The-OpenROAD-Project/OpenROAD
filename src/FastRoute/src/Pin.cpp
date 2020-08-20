@@ -34,8 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Pin.h"
-
-#include "DBWrapper.h"
+#include "fastroute/GlobalRouter.h"
 
 namespace FastRoute {
 

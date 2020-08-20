@@ -51,9 +51,22 @@ namespace ord {
 class OpenRoad;
 }
 
+namespace odb {
+class dbDatabase;
+class dbChip;
+class dbTech;
+class dbBlock;
+class dbDatabase;
+}  // namespace odb
+
+namespace sta {
+  class dbSta;
+}
+
 namespace FastRoute {
 
 class FT;
+class AntennaRepair;
 class Box;
 class Coordinate;
 class DBWrapper;
@@ -162,6 +175,11 @@ class GlobalRouter
   ROUTE_ getRoute();
   std::vector<EST_> getEst();
 
+  // estimate_rc functions
+  void getLayerRC(unsigned layerId, float& r, float& c);
+  void getCutLayerRes(unsigned belowLayerId, float& r);
+  float dbuToMeters(unsigned dbu);
+
 protected:
   // Net functions
   int getNetCount() const;
@@ -170,7 +188,7 @@ protected:
 	void reserveNets(size_t net_count);
   Net* addNet(odb::dbNet* net);
   int getMaxNetDegree();
-  friend class DBWrapper;
+  friend class AntennaRepair;
 
  private:
   void makeComponents();
@@ -192,6 +210,8 @@ protected:
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
   void computeWirelength();
+  std::vector<Pin> getAllPorts();
+
 
   // aux functions
   RoutingLayer getRoutingLayerByIndex(int index);
@@ -222,9 +242,30 @@ protected:
   void getPreviousCapacities(int previousMinLayer);
   void restorePreviousCapacities(int previousMinLayer);
 
+  // db functions
+  void initGrid(int maxLayer);
+  void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
+  void initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
+                         int maxLayer,
+                         std::map<int, float> layerPitches);
+  void computeCapacities(int maxLayer, std::map<int, float> layerPitches);
+  void computeSpacingsAndMinWidth(int maxLayer);
+  void initNetlist(bool reroute);
+  void addNets(std::vector<odb::dbNet*> nets);
+  void initObstacles();
+  int computeMaxRoutingLayer();
+  std::set<int> findTransitionLayers(int maxRoutingLayer);
+  std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
+  void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
+  void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
+  void initClockNets();
+  void commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
+                                int maxRoutingLayer);
+  void setSelectedMetal(int metal) { selectedMetal = metal; }
+  void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
+
   ord::OpenRoad* _openroad;
   // Objects variables
-  DBWrapper* _dbWrapper = nullptr;
   FT* _fastRoute = nullptr;
   Coordinate* _gridOrigin = nullptr;
   std::vector<FastRoute::NET>* _result;
@@ -253,7 +294,6 @@ protected:
   std::vector<int> _hCapacities;
   unsigned _seed;
 
-  std::vector<Pin> getAllPorts();
   // Layer adjustment variables
   std::vector<int> _layersToAdjust;
   std::vector<float> _layersReductionPercentage;
@@ -292,6 +332,16 @@ protected:
 
   // Variables for PADs obstacles handling
   std::map<Net*, std::vector<FastRoute::ROUTE>> _padPinsConnections;
+
+  // db variables
+  sta::dbSta* _openSta;
+  int selectedMetal = 3;
+  odb::dbDatabase* _db = nullptr;
+  odb::dbBlock* _block;
+
+  std::vector<odb::dbNet*> _dirtyNets;
 };
+
+std::string getITermName(odb::dbITerm* iterm);
 
 }  // namespace FastRoute
