@@ -36,73 +36,107 @@
 
 #ifndef __FASTROUTE_API__
 #define __FASTROUTE_API__
-#include <vector>
-#include <string>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace FastRoute {
 
-struct PIN {
-        long x;
-        long y;
-        int layer;
+struct PIN
+{
+  long x;
+  long y;
+  int layer;
 };
 
-struct ROUTE {
-        long initX;
-        long initY;
-        int initLayer;
-        long finalX;
-        long finalY;
-        int finalLayer;
+struct ROUTE
+{
+  long initX;
+  long initY;
+  int initLayer;
+  long finalX;
+  long finalY;
+  int finalLayer;
 };
 
-struct NET {
-        std::string name;
-        int idx;
-        std::vector<ROUTE> route;
+struct NET
+{
+  std::string name;
+  int idx;
+  std::vector<ROUTE> route;
 };
 
-class FT {
-       public:
-        FT();
-        ~FT();
+class FT
+{
+ public:
+  FT();
+  ~FT();
 
-        std::map<int, std::vector<PIN>> allNets;
-        int maxNetDegree;
+  std::map<int, std::vector<PIN>> allNets;
+  int maxNetDegree;
 
-        void setGridsAndLayers(int x, int y, int nLayers);
-        void addVCapacity(int verticalCapacity, int layer);
-        void addHCapacity(int horizontalCapacity, int layer);
-        void addMinWidth(int width, int layer);
-        void addMinSpacing(int spacing, int layer);
-        void addViaSpacing(int spacing, int layer);
-        void setNumberNets(int nNets);
-        void setLowerLeft(int x, int y);
-        void setTileSize(int width, int height);
-        void setLayerOrientation(int x);
-        void addNet(char *name, int netIdx, int nPIns, int minWIdth, PIN pins[], float alpha, bool isClock);
-        void initEdges();
-        void setNumAdjustments(int nAdjustements);
-        void addAdjustment(long x1, long y1, int l1, long x2, long y2, int l2, int reducedCap, bool isReduce = true);
-        void initAuxVar();
-        int run(std::vector<NET> &);
-        std::vector<NET> getResults();
-        void writeCongestionReport2D(std::string fileName);
-        void writeCongestionReport3D(std::string fileName);
+  void setGridsAndLayers(int x, int y, int nLayers);
+  void addVCapacity(int verticalCapacity, int layer);
+  void addHCapacity(int horizontalCapacity, int layer);
+  void addMinWidth(int width, int layer);
+  void addMinSpacing(int spacing, int layer);
+  void addViaSpacing(int spacing, int layer);
+  void setNumberNets(int nNets);
+  void setLowerLeft(int x, int y);
+  void setTileSize(int width, int height);
+  void setLayerOrientation(int x);
+  void addNet(char* name,
+              int netIdx,
+              int nPIns,
+              int minWIdth,
+              PIN pins[],
+              float alpha,
+              bool isClock);
+  void initEdges();
+  void setNumAdjustments(int nAdjustements);
+  void addAdjustment(long x1,
+                     long y1,
+                     int l1,
+                     long x2,
+                     long y2,
+                     int l2,
+                     int reducedCap,
+                     bool isReduce = true);
+  void initAuxVar();
+  int run(std::vector<NET>&);
+  std::vector<NET> getResults();
+  void writeCongestionReport2D(std::string fileName);
+  void writeCongestionReport3D(std::string fileName);
 
-        int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
-    	int getEdgeCurrentResource(long x1, long y1, int l1, long x2, long y2, int l2);
-        int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-        std::map<int, std::vector<PIN>> getNets();
-        void setEdgeUsage(long x1, long y1, int l1, long x2, long y2, int l2, int newUsage);
-        void setEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2, int newCap);
-        void setMaxNetDegree(int);
-        void setAlpha(float a);
-        void setVerbose(int v);
-        void setOverflowIterations(int iterations);
-        void setPDRevForHighFanout(int pdRevHihgFanout);
-        void setAllowOverflow(bool allow);
+  int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
+  int getEdgeCurrentResource(long x1,
+                             long y1,
+                             int l1,
+                             long x2,
+                             long y2,
+                             int l2);
+  int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
+  std::map<int, std::vector<PIN>> getNets();
+  void setEdgeUsage(long x1,
+                    long y1,
+                    int l1,
+                    long x2,
+                    long y2,
+                    int l2,
+                    int newUsage);
+  void setEdgeCapacity(long x1,
+                       long y1,
+                       int l1,
+                       long x2,
+                       long y2,
+                       int l2,
+                       int newCap);
+  void setMaxNetDegree(int);
+  void setAlpha(float a);
+  void setVerbose(int v);
+  void setOverflowIterations(int iterations);
+  void setPDRevForHighFanout(int pdRevHihgFanout);
+  void setAllowOverflow(bool allow);
 };
 }  // namespace FastRoute
 #endif /* __FASTROUTE_API__ */
