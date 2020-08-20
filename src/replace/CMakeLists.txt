@@ -92,7 +92,7 @@ target_include_directories( replace
   ${OPENDB_HOME}/include
   ${OPENROAD_HOME}/include
   ${FASTROUTE_HOME}/include
-  ${FASTROUTE_HOME}/third_party/fastroute/include
+  ${FASTROUTE_HOME}/src/fastroute/include
   ${TCL_INCLUDE_PATH}
   flute3
   gui
