@@ -37,12 +37,12 @@
 %module fastroute
 
 %{
-#include "fastroute/FastRouteKernel.h"
+#include "fastroute/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
-FastRoute::FastRouteKernel* getFastRoute();
+FastRoute::GlobalRouter* getFastRoute();
 }  // namespace ord
 
 using ord::getFastRoute;

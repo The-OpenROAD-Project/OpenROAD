@@ -149,7 +149,7 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-FastRoute::FastRouteKernel*
+FastRoute::GlobalRouter*
 getFastRoute()
 {
   OpenRoad *openroad = getOpenRoad();

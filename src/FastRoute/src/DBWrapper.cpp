@@ -48,14 +48,14 @@
 #include "Coordinate.h"
 #include "Pin.h"
 #include "Net.h"
-#include "fastroute/FastRouteKernel.h"
+#include "fastroute/GlobalRouter.h"
 #include "openroad/Error.hh"
 
 namespace FastRoute {
 
 using ord::error;
 
-DBWrapper::DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid)
+DBWrapper::DBWrapper(ord::OpenRoad* openroad, GlobalRouter *fr, Grid* grid)
     : _openroad(openroad), _fr(fr), _grid(grid), _db(openroad->getDb())
 {
   _openSta = _openroad->getSta();

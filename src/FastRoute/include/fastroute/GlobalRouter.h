@@ -68,7 +68,7 @@ struct NET;
 struct ROUTE;
 struct PIN;
 
-class FastRouteKernel
+class GlobalRouter
 {
  public:
   struct EST_
@@ -114,8 +114,8 @@ class FastRouteKernel
     std::vector<ADJUSTMENT_> adjustments;
   };
 
-  FastRouteKernel() = default;
-  ~FastRouteKernel();
+  GlobalRouter() = default;
+  ~GlobalRouter();
   void init(ord::OpenRoad* openroad);
   void init();
   void reset();

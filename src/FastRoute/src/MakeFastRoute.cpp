@@ -35,7 +35,7 @@
 
 #include "fastroute/MakeFastRoute.h"
 
-#include "fastroute/FastRouteKernel.h"
+#include "fastroute/GlobalRouter.h"
 #include "FastRoute.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -51,12 +51,12 @@ extern int Fastroute_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-FastRoute::FastRouteKernel* makeFastRoute()
+FastRoute::GlobalRouter* makeFastRoute()
 {
-  return new FastRoute::FastRouteKernel();
+  return new FastRoute::GlobalRouter();
 }
 
-void deleteFastRoute(FastRoute::FastRouteKernel* fastroute)
+void deleteFastRoute(FastRoute::GlobalRouter* fastroute)
 {
   delete fastroute;
 }

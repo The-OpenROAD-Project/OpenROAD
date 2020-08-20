@@ -56,7 +56,7 @@ add_custom_command(OUTPUT ${FASTROUTE_WRAP}
         WORKING_DIRECTORY ${FASTROUTE_HOME}/src
         DEPENDS
         ${FASTROUTE_HOME}/src/fastroute.i
-        ${FASTROUTE_HOME}/include/fastroute/FastRouteKernel.h
+        ${FASTROUTE_HOME}/include/fastroute/GlobalRouter.h
         ${OPENROAD_HOME}/src/Exception.i
 )
 
@@ -71,7 +71,7 @@ set(SRC_FILES
   src/Box.cpp
   src/Coordinate.cpp
   src/DBWrapper.cpp
-  src/FastRouteKernel.cpp
+  src/GlobalRouter.cpp
   src/Grid.cpp
   src/MakeFastRoute.cpp
   src/Net.cpp

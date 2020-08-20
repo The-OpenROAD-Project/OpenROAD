@@ -66,12 +66,12 @@ namespace bgi = boost::geometry::index;
 
 namespace FastRoute {
 
-class FastRouteKernel;
+class GlobalRouter;
 
 class DBWrapper
 {
  public:
-  DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid);
+  DBWrapper(ord::OpenRoad* openroad, GlobalRouter *fr, Grid* grid);
 
   void initGrid(int maxLayer);
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
@@ -133,7 +133,7 @@ class DBWrapper
   ord::OpenRoad* _openroad;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
-  FastRouteKernel *_fr;
+  GlobalRouter *_fr;
   Grid* _grid;
   bool _verbose = false;
 

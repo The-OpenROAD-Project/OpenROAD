@@ -36,7 +36,7 @@
 #include "nesterovBase.h"
 
 #include "opendb/db.h"
-#include "fastroute/FastRouteKernel.h"
+#include "fastroute/GlobalRouter.h"
 
 #include <string>
 #include <iostream>
@@ -49,7 +49,7 @@ using std::to_string;
 using std::pair;
 using std::make_pair;
 using std::sort;
-using FastRoute::FastRouteKernel;
+using FastRoute::GlobalRouter;
 
 namespace replace {
 
@@ -594,7 +594,7 @@ RouteBase::RouteBase()
 RouteBase::RouteBase(
     RouteBaseVars rbVars, 
     odb::dbDatabase* db, 
-    FastRoute::FastRouteKernel* fr, 
+    FastRoute::GlobalRouter* fr, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<Logger> log)
   : RouteBase() {
@@ -737,8 +737,8 @@ RouteBase::inflationIterCnt() const {
 // edgeCapacityStor_
 void 
 RouteBase::updateRoute() {
-  using FastRoute::FastRouteKernel;
-  FastRouteKernel::ROUTE_ route = fr_->getRoute();
+  using FastRoute::GlobalRouter;
+  GlobalRouter::ROUTE_ route = fr_->getRoute();
   
   tg_->setTileCnt(route.gridCountX, route.gridCountY);
   tg_->setNumRoutingLayers(route.numLayers);
@@ -771,8 +771,8 @@ RouteBase::updateRoute() {
 // Fill routingTracks_;
 void
 RouteBase::updateEst() {
-  using FastRoute::FastRouteKernel;
-  std::vector<FastRouteKernel::EST_> estStor 
+  using FastRoute::GlobalRouter;
+  std::vector<GlobalRouter::EST_> estStor 
     = fr_->getEst();
 
   for(auto& netEst : estStor) {
