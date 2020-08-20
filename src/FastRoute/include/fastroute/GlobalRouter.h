@@ -53,7 +53,6 @@ class OpenRoad;
 
 namespace odb {
 class dbDatabase;
-class dbChip;
 class dbTech;
 class dbBlock;
 class dbDatabase;
