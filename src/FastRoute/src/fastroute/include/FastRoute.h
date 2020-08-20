@@ -68,6 +68,8 @@ class FT {
         FT();
         ~FT();
 
+        void clear();
+
         std::map<int, std::vector<PIN>> allNets;
         int maxNetDegree;
 

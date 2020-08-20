@@ -209,9 +209,9 @@ enable_antenna_avoidance_flow(char* diodeCellName, char* diodePinName)
 }
 
 void
-reset_fastroute()
+clear_fastroute()
 {
-  getFastRoute()->reset();
+  getFastRoute()->clear();
 }
 
 void

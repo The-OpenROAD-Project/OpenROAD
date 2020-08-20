@@ -635,7 +635,7 @@ void
 RouteBase::resetRoutabilityResources() {
   inflatedAreaDelta_ = 0;
 
-  fr_->resetResources();
+  fr_->clear();
   tg_.reset();
   verticalCapacity_.clear();
   horizontalCapacity_.clear();

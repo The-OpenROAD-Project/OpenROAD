@@ -39,6 +39,15 @@
 
 namespace FastRoute {
 
+void Grid::clear()
+{
+  _spacings.clear();
+  _minWidths.clear();
+  _horizontalEdgesCapacities.clear();
+  _verticalEdgesCapacities.clear();
+  _obstacles.clear();
+}
+
 Coordinate Grid::getPositionOnGrid(const Coordinate& position)
 {
   DBU x = position.getX();

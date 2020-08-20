@@ -121,38 +121,23 @@ void GlobalRouter::deleteComponents()
   delete _openSta;
   delete _result;
   delete _routingLayers;
-  
-  delete _block;
-
 }
 
-void GlobalRouter::resetResources()
+void GlobalRouter::clear()
 {
-  deleteComponents();
+  // Clear classes
+  _grid->clear();
+  delete _fastRoute;
+  _fastRoute = new FT;
 
+  // Clear vector
+  _allRoutingTracks->clear();
+  _nets->clear();
+  _result->clear();
+  _routingLayers->clear();
   _vCapacities.clear();
   _hCapacities.clear();
 
-  makeComponents();
-}
-
-void GlobalRouter::reset()
-{
-  deleteComponents();
-
-  _vCapacities.clear();
-  _hCapacities.clear();
-  _layersToAdjust.clear();
-  _layersReductionPercentage.clear();
-  regionsMinX.clear();
-  regionsMinY.clear();
-  regionsMaxX.clear();
-  regionsMaxY.clear();
-  regionsLayer.clear();
-  regionsReductionPercentage.clear();
-  _netsAlpha.clear();
-
-  init();
 }
 
 GlobalRouter::~GlobalRouter()
@@ -337,9 +322,9 @@ void GlobalRouter::runAntennaAvoidanceFlow()
   int violationsCnt
       = antennaRepair->checkAntennaViolations(globalRoute, _maxRoutingLayer);
 
-  resetResources();
+  clear();
 
-  // Adding routes of first run here to avoid loss data in resetResources
+  // Adding routes of first run here to avoid loss data in clear()
   for (FastRoute::NET gr : *originalRoute) {
     _result->push_back(gr);
   }
@@ -377,7 +362,7 @@ void GlobalRouter::runClockNetsRouteFlow()
 
   getPreviousCapacities(_minLayerForClock);
 
-  resetResources();
+  clear();
   _onlyClockNets = false;
   _onlySignalNets = true;
 

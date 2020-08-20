@@ -131,8 +131,7 @@ class GlobalRouter
   ~GlobalRouter();
   void init(ord::OpenRoad* openroad);
   void init();
-  void reset();
-  void resetResources();
+  void clear();
 
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int minLayer);
