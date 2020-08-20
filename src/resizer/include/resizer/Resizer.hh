@@ -42,14 +42,13 @@
 namespace sta {
 
 using std::array;
-
 using odb::Rect;
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
-typedef array<Slew,  RiseFall::index_count> TgtSlews;
+typedef array<Slew, RiseFall::index_count> TgtSlews;
 
 class Resizer : public StaState
 {
