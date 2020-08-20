@@ -68,6 +68,7 @@ add_custom_command(OUTPUT ${FASTROUTE_TCL_INIT}
 
 
 set(SRC_FILES
+  src/AntennaRepair.cpp
   src/Box.cpp
   src/Coordinate.cpp
   src/DBWrapper.cpp
