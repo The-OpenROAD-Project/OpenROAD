@@ -2178,12 +2178,12 @@ FastRoute::ROUTE GlobalRouter::createFakePin(Pin pin,
     pinConnection.finalY = pinPosition.getY();
 
     DBU newXPosition;
-    if (pin.getOrientation() == Orientation::ORIENT_WEST) {
+    if (pin.getOrientation() == PinOrientation::west) {
       newXPosition
           = pinPosition.getX() + (_gcellsOffset * _grid->getTileWidth());
       pinConnection.initX = newXPosition;
       pinPosition.setX(newXPosition);
-    } else if (pin.getOrientation() == Orientation::ORIENT_EAST) {
+    } else if (pin.getOrientation() == PinOrientation::east) {
       newXPosition
           = pinPosition.getX() - (_gcellsOffset * _grid->getTileWidth());
       pinConnection.initX = newXPosition;
@@ -2198,12 +2198,12 @@ FastRoute::ROUTE GlobalRouter::createFakePin(Pin pin,
     pinConnection.finalY = pinPosition.getY();
 
     DBU newYPosition;
-    if (pin.getOrientation() == Orientation::ORIENT_SOUTH) {
+    if (pin.getOrientation() == PinOrientation::south) {
       newYPosition
           = pinPosition.getY() + (_gcellsOffset * _grid->getTileHeight());
       pinConnection.initY = newYPosition;
       pinPosition.setY(newYPosition);
-    } else if (pin.getOrientation() == Orientation::ORIENT_NORTH) {
+    } else if (pin.getOrientation() == PinOrientation::north) {
       newYPosition
           = pinPosition.getY() - (_gcellsOffset * _grid->getTileHeight());
       pinConnection.initY = newYPosition;
@@ -2689,7 +2689,7 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
     Pin pin(iterm,
             pinPos,
             pinLayers,
-            Orientation::INVALID,
+            PinOrientation::invalid,
             pinBoxes,
             (connectedToPad || connectedToMacro));
 
@@ -2701,17 +2701,17 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
           == odb::dbTechLayerDir::HORIZONTAL) {
         DBU instToPin = pinPosition.getX() - instMiddle.getX();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_EAST);
+          pin.setOrientation(PinOrientation::east);
         } else {
-          pin.setOrientation(Orientation::ORIENT_WEST);
+          pin.setOrientation(PinOrientation::west);
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
         DBU instToPin = pinPosition.getY() - instMiddle.getY();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_NORTH);
+          pin.setOrientation(PinOrientation::north);
         } else {
-          pin.setOrientation(Orientation::ORIENT_SOUTH);
+          pin.setOrientation(PinOrientation::south);
         }
       }
     }
@@ -2786,7 +2786,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
     Pin pin(bterm,
             pinPos,
             pinLayers,
-            Orientation::INVALID,
+            PinOrientation::invalid,
             pinBoxes,
             (connectedToPad || connectedToMacro));
 
@@ -2798,17 +2798,17 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
           == odb::dbTechLayerDir::HORIZONTAL) {
         DBU instToPin = pinPosition.getX() - instMiddle.getX();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_EAST);
+          pin.setOrientation(PinOrientation::east);
         } else {
-          pin.setOrientation(Orientation::ORIENT_WEST);
+          pin.setOrientation(PinOrientation::west);
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
         DBU instToPin = pinPosition.getY() - instMiddle.getY();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_NORTH);
+          pin.setOrientation(PinOrientation::north);
         } else {
-          pin.setOrientation(Orientation::ORIENT_SOUTH);
+          pin.setOrientation(PinOrientation::south);
         }
       }
     } else {
@@ -2819,17 +2819,17 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
           == odb::dbTechLayerDir::HORIZONTAL) {
         DBU instToDie = pinPosition.getX() - dieArea.getMiddle().getX();
         if (instToDie < 0) {
-          pin.setOrientation(Orientation::ORIENT_WEST);
+          pin.setOrientation(PinOrientation::west);
         } else {
-          pin.setOrientation(Orientation::ORIENT_EAST);
+          pin.setOrientation(PinOrientation::east);
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
         DBU instToDie = pinPosition.getY() - dieArea.getMiddle().getY();
         if (instToDie < 0) {
-          pin.setOrientation(Orientation::ORIENT_SOUTH);
+          pin.setOrientation(PinOrientation::south);
         } else {
-          pin.setOrientation(Orientation::ORIENT_NORTH);
+          pin.setOrientation(PinOrientation::north);
         }
       }
     }
