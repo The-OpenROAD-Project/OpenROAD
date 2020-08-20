@@ -65,7 +65,7 @@ class GlobalRouter;
 class AntennaRepair
 {
  public:
- 	AntennaRepair(GlobalRouter *fr,
+ 	AntennaRepair(GlobalRouter *grouter,
  								 antenna_checker::AntennaChecker* arc,
  							   opendp::Opendp* opendp, odb::dbDatabase* db);
 
@@ -97,7 +97,7 @@ class AntennaRepair
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
 
-  GlobalRouter *_fr;
+  GlobalRouter *_grouter;
   antenna_checker::AntennaChecker* _arc;
   opendp::Opendp* _opendp;
  	odb::dbDatabase* _db;

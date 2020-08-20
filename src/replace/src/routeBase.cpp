@@ -580,7 +580,7 @@ RouteBaseVars::reset() {
 RouteBase::RouteBase()
   : rbVars_(), 
   db_(nullptr), 
-  fr_(nullptr), 
+  grouter_(nullptr), 
   nb_(nullptr), 
   log_(nullptr),
   inflatedAreaDelta_(0), 
@@ -594,13 +594,13 @@ RouteBase::RouteBase()
 RouteBase::RouteBase(
     RouteBaseVars rbVars, 
     odb::dbDatabase* db, 
-    FastRoute::GlobalRouter* fr, 
+    FastRoute::GlobalRouter* grouter, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<Logger> log)
   : RouteBase() {
   rbVars_ = rbVars;
   db_ = db;
-  fr_ = fr; 
+  grouter_ = grouter; 
   nb_ = nb;
   log_ = log;
 
@@ -635,7 +635,7 @@ void
 RouteBase::resetRoutabilityResources() {
   inflatedAreaDelta_ = 0;
 
-  fr_->clear();
+  grouter_->clear();
   tg_.reset();
   verticalCapacity_.clear();
   horizontalCapacity_.clear();
@@ -670,11 +670,11 @@ RouteBase::getGlobalRouterResult() {
   nb_->updateDbGCells(); 
 
   // these two options must be on 
-  fr_->setAllowOverflow(true);
-  fr_->setOverflowIterations(0);
+  grouter_->setAllowOverflow(true);
+  grouter_->setOverflowIterations(0);
 
-  fr_->startFastRoute();
-  fr_->runFastRoute();
+  grouter_->startFastRoute();
+  grouter_->runFastRoute();
 
   // Note that *.route info is unique.
   // TODO: read *.route only once.
@@ -738,7 +738,7 @@ RouteBase::inflationIterCnt() const {
 void 
 RouteBase::updateRoute() {
   using FastRoute::GlobalRouter;
-  GlobalRouter::ROUTE_ route = fr_->getRoute();
+  GlobalRouter::ROUTE_ route = grouter_->getRoute();
   
   tg_->setTileCnt(route.gridCountX, route.gridCountY);
   tg_->setNumRoutingLayers(route.numLayers);
@@ -773,7 +773,7 @@ void
 RouteBase::updateEst() {
   using FastRoute::GlobalRouter;
   std::vector<GlobalRouter::EST_> estStor 
-    = fr_->getEst();
+    = grouter_->getEst();
 
   for(auto& netEst : estStor) {
     odb::dbNet* dbNet = 

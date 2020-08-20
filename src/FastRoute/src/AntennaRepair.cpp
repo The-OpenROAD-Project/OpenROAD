@@ -55,10 +55,10 @@ namespace FastRoute {
 
 using ord::error;
 
-AntennaRepair::AntennaRepair(GlobalRouter *fr,
+AntennaRepair::AntennaRepair(GlobalRouter *grouter,
                  antenna_checker::AntennaChecker* arc,
                  opendp::Opendp* opendp, odb::dbDatabase* db)
-	: _fr(fr), _arc(arc), _opendp(opendp), _db(db)
+	: _grouter(grouter), _arc(arc), _opendp(opendp), _db(db)
 	{
 		_block = _db->getChip()->getBlock();
 	}
@@ -71,10 +71,10 @@ int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* rou
 
   _arc->load_antenna_rules();
 
-  std::map<int, odb::dbTechVia*> defaultVias = _fr->getDefaultVias(maxRoutingLayer);
+  std::map<int, odb::dbTechVia*> defaultVias = _grouter->getDefaultVias(maxRoutingLayer);
 
   for (FastRoute::NET netRoute : *routing) {
-    odb::dbNet* net = _fr->getNetByIdx(netRoute.idx)->getDbNet();
+    odb::dbNet* net = _grouter->getNetByIdx(netRoute.idx)->getDbNet();
     odb::dbWire* wire = odb::dbWire::create(net);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
@@ -121,7 +121,7 @@ int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* rou
     }
   }
 
-  _fr->setDirtyNets(dirtyNets);
+  _grouter->setDirtyNets(dirtyNets);
 
   std::cout << "[INFO] #Antenna violations: " << _antennaViolations.size()
             << "\n";

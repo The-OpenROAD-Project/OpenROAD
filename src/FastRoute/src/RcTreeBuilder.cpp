@@ -51,10 +51,10 @@ using std::abs;
 using std::min;
 
 RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad,
-			     GlobalRouter* fr,
+			     GlobalRouter* grouter,
 			     Grid* grid)
 {
-  _fr = fr;
+  _grouter = grouter;
   _grid = grid;
   _sta = openroad->getSta();
   _parasitics = _sta->parasitics();
@@ -124,7 +124,7 @@ void RcTreeBuilder::makeRouteParasitics(std::vector<ROUTE>& routes)
     if (wire_length_dbu == 0) {
       // via
       int lower_layer = min(route.initLayer, route.finalLayer);
-      _fr->getCutLayerRes(lower_layer, res);
+      _grouter->getCutLayerRes(lower_layer, res);
       cap = 0.0;
     }
     else if (route.initLayer == route.finalLayer)
@@ -190,8 +190,8 @@ void RcTreeBuilder::layerRC(int wire_length_dbu,
 			    float &cap)
 {
   float r_per_meter, cap_per_meter;
-  _fr->getLayerRC(layer, r_per_meter, cap_per_meter);
-  float wire_length = _fr->dbuToMeters(wire_length_dbu);
+  _grouter->getLayerRC(layer, r_per_meter, cap_per_meter);
+  float wire_length = _grouter->dbuToMeters(wire_length_dbu);
   res = r_per_meter * wire_length;
   cap = cap_per_meter * wire_length;
 }
