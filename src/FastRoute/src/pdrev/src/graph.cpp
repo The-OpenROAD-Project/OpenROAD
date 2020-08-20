@@ -33,6 +33,9 @@
 
 #include "graph.h"
 
+#include <string.h>
+
+#include <cmath>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
