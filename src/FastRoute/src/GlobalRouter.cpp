@@ -35,7 +35,6 @@
 
 #include "fastroute/GlobalRouter.h"
 
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -146,8 +145,6 @@ GlobalRouter::~GlobalRouter()
 
 void GlobalRouter::startFastRoute()
 {
-  std::chrono::steady_clock::time_point begin
-      = std::chrono::steady_clock::now();
   printHeader();
   if (_unidirectionalRoute) {
     _minRoutingLayer = 2;
@@ -244,23 +241,10 @@ void GlobalRouter::startFastRoute()
     computeRegionAdjustments(
         lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
   }
-
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-  if (_verbose > 0)
-    std::cout << "[INFO] Elapsed time: "
-              << (std::chrono::duration_cast<std::chrono::microseconds>(end
-                                                                        - begin)
-                      .count())
-                     / 1000000.0
-              << "\n";
 }
 
 void GlobalRouter::runFastRoute()
 {
-  std::chrono::steady_clock::time_point begin
-      = std::chrono::steady_clock::now();
-
   std::cout << "Running FastRoute...\n\n";
   _fastRoute->initAuxVar();
   if (_enableAntennaFlow) {
@@ -283,16 +267,6 @@ void GlobalRouter::runFastRoute()
   if (_reportCongest) {
     _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
     _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");
-  }
-
-  if (_verbose > 0) {
-    std::chrono::steady_clock::time_point end
-        = std::chrono::steady_clock::now();
-    double elapsed
-        = (std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
-               .count())
-          / 1000000.0;
-    std::cout << "[INFO] Elapsed time: " << elapsed << "\n";
   }
 }
 
