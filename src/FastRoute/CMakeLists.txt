@@ -42,7 +42,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(FastRoute)
 set(LIB_NAME "FastRoute")
 
-add_subdirectory(third_party/fastroute)
+add_subdirectory(src/fastroute)
 add_subdirectory(src/pdrev)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -86,7 +86,7 @@ add_library(${LIB_NAME}
 
 target_include_directories(${LIB_NAME} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastroute/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/fastroute/include
         ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
         ${OPENDB_HOME}/include/
         ${OPENROAD_HOME}/include
