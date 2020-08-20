@@ -43,7 +43,7 @@ project(FastRoute)
 set(LIB_NAME "FastRoute")
 
 add_subdirectory(third_party/fastroute)
-add_subdirectory(third_party/pdrev)
+add_subdirectory(src/pdrev)
 
 set(CMAKE_CXX_STANDARD 11)
 set(Boost_USE_STATIC_LIBS ON)
@@ -88,7 +88,7 @@ add_library(${LIB_NAME}
 target_include_directories(${LIB_NAME} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastroute/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/pdrev/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
         ${OPENDB_HOME}/include/
         ${OPENROAD_HOME}/include
         ${DBSTA_HOME}/include
