@@ -55,7 +55,7 @@ int numLayers;
 int totalNumSeg;    // total # segments
 int totalOverflow;  // total # overflow
 int mazeThreshold;  // the wirelen threshold to do maze routing
-Net**                 nets;
+FrNet**                 nets;
 Edge *                h_edges, *v_edges;
 multi_array<float, 2> d1;
 multi_array<float, 2> d2;
