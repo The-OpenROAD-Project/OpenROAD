@@ -89,7 +89,7 @@ FT::~FT() {
 void FT::clear()
 {
   deleteComponents();
-  allNets.clear();
+  _net_pins_map.clear();
 }
 
 void FT::deleteComponents()
@@ -545,8 +545,7 @@ void FT::setLayerOrientation(int x)
   layerOrientation = x;
 }
 
-void FT::addNet(char* name,
-                int   netIdx,
+void FT::addNet(odb::dbNet* db_net,
                 int   nPins,
                 int   minWidth,
                 PIN   pins[],
@@ -560,7 +559,7 @@ void FT::addNet(char* name,
   int pinYarray[nPins];
   int pinLarray[nPins];
 
-  allNets[netIdx] = std::vector<PIN>(&pins[0], &pins[nPins]);
+  _net_pins_map[db_net] = std::vector<PIN>(&pins[0], &pins[nPins]);
 
   // TODO: check this, there was an if pinInd < 2000
   pinInd = 0;
@@ -594,8 +593,7 @@ void FT::addNet(char* name,
     MD = std::max(MD, pinInd);
     // std::cout << "Net name: " << nets[newnetID]->name << "; num pins: " <<
     // nets[newnetID]->nPins << "\n";
-    nets[newnetID]->name = name;
-    nets[newnetID]->idx = netIdx;
+    nets[newnetID]->db_net = db_net;
     nets[newnetID]->numPins = nPins;
     nets[newnetID]->deg     = pinInd;
     nets[newnetID]->pinX    = new short[pinInd];
@@ -616,11 +614,6 @@ void FT::addNet(char* name,
   } else {
     invalidNets++;
   }
-}
-
-std::map<int, std::vector<PIN>> FT::getNets()
-{
-  return allNets;
 }
 
 void FT::initEdges()
@@ -922,9 +915,7 @@ std::vector<NET> FT::getResults()
   std::vector<NET> netsOut;
   for (int netID = 0; netID < numValidNets; netID++) {
     NET         currentNet;
-    std::string netName(nets[netID]->name);
-    currentNet.name     = netName;
-    currentNet.idx      = nets[netID]->idx;
+    currentNet.db_net     = nets[netID]->db_net;
     TreeEdge* treeedges = sttrees[netID].edges;
     int       deg       = sttrees[netID].deg;
 
@@ -1520,6 +1511,17 @@ void FT::setPDRevForHighFanout(int pdRevHihgFanout)
 void FT::setAllowOverflow(bool allow)
 {
   allowOverflow = allow;
+}
+
+////////////////////////////////////////////////////////////////
+
+const char *
+getNetName(odb::dbNet* db_net);
+
+const char *
+netName(FrNet* net)
+{
+  return getNetName(net->db_net);
 }
 
 }  // namespace FastRoute

@@ -74,7 +74,7 @@ int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* rou
   std::map<int, odb::dbTechVia*> defaultVias = _grouter->getDefaultVias(maxRoutingLayer);
 
   for (FastRoute::NET netRoute : *routing) {
-    odb::dbNet* net = _grouter->getNetByIdx(netRoute.idx)->getDbNet();
+    odb::dbNet* net = netRoute.db_net;
     odb::dbWire* wire = odb::dbWire::create(net);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
