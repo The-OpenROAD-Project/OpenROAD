@@ -654,8 +654,10 @@ The `write_guides` generates the guide file from the routing results
 Example: `write_guides route.guide`
 
 **NOTE 1**: the first routing layer of the design have index equal to 1
+
 **NOTE 2**: commands `set_global_routing_layer_adjustment`, `set_global_routing_layer_pitch`, `set_pdrev_topology_priority` and `set_clock_route_flow` should be
 called before running `fastroute`. They are configuration commands
+
 **NOTE 3**: commands `repair_antenna` and `write_guides` should be called after running `fastroute`.
 
 To estimate RC parasitics based on global route results, use the `-global_routing`
