@@ -9,17 +9,17 @@ set_placement_padding -global -left 2 -right 2
 set guide_file [make_result_file diode_insert.guide]
 set def_file [make_result_file diode_insert.def]
 
-set_global_routing_layer_adjustment 2 0.0
-set_global_routing_layer_adjustment 3 0.15
-set_global_routing_layer_adjustment 4 0.15
-set_global_routing_layer_adjustment 5 0.15
-set_global_routing_layer_adjustment 6 0.15
+set_global_routing_layer_adjustment -layer 2 -adjustment 0.0
+set_global_routing_layer_adjustment -layer 3 -adjustment 0.15
+set_global_routing_layer_adjustment -layer 4 -adjustment 0.15
+set_global_routing_layer_adjustment -layer 5 -adjustment 0.15
+set_global_routing_layer_adjustment -layer 6 -adjustment 0.15
 
-set_global_routing_layer_pitch 2 0.37
-set_global_routing_layer_pitch 3 0.48
-set_global_routing_layer_pitch 4 0.74
-set_global_routing_layer_pitch 5 0.96
-set_global_routing_layer_pitch 6 3.33
+set_global_routing_layer_pitch -layer 2 -pitch 0.37
+set_global_routing_layer_pitch -layer 3 -pitch 0.48
+set_global_routing_layer_pitch -layer 4 -pitch 0.74
+set_global_routing_layer_pitch -layer 5 -pitch 0.96
+set_global_routing_layer_pitch -layer 6 -pitch 3.33
 
 fastroute -max_routing_layer 6 \
           -unidirectional_routing \
