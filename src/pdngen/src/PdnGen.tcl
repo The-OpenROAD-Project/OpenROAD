@@ -1760,6 +1760,9 @@ proc get_grid_wire_width {layer_name} {
       set template_name [lindex [dict get $grid_data template names] 0]
       set width [dict get $grid_data straps $layer_name $template_name width]
       return $width
+    } elseif {[dict exists $grid_data core_ring $layer_name width]} {
+      set width [dict get $grid_data core_ring $layer_name width]
+      return $width
     }
   } 
 
@@ -1811,6 +1814,15 @@ proc generate_via_stacks {l1 l2 tag constraints} {
   variable grid_data
   
   set area [dict get $grid_data area]
+  if {[dict exists $grid_data core_ring_area combined]} {
+    set grid_area [dict get $grid_data core_ring_area combined]
+    set factor [expr max([lindex $area 2] - [lindex $area 0], [lindex $area 3] - [lindex $area 1]) * 2]
+    set grid_area [odb::shrinkSet [odb::bloatSet $grid_area $factor] $factor]
+    # debug "Old area ($area)"
+    set bbox [lindex [odb::getRectangles $grid_area] 0]
+    set area [list {*}[$bbox ll] {*}[$bbox ur]]
+    # debug "Recalculated area to be ($area)"
+  }
   
   #this variable contains locations of intersecting points of two orthogonal metal layers, between which via needs to be inserted
   #for every intersection. Here l1 and l2 are layer names, and i1 and i2 and their indices, tag represents domain (power or ground)   
@@ -1831,6 +1843,8 @@ proc generate_via_stacks {l1 l2 tag constraints} {
     return {}
   }
   set intersection [odb::andSet [odb::andSet $stripe_locs($l1,$tag) $stripe_locs($l2,$tag)] [odb::newSetFromRect {*}$area]]
+
+  # debug "Detected [llength [::odb::getPolygons $intersection]] intersections of $l1 and $l2"
 
   foreach shape [::odb::getPolygons $intersection] {
     set points [::odb::getPoints $shape]
@@ -1855,13 +1869,13 @@ proc generate_via_stacks {l1 l2 tag constraints} {
       if {[get_dir $layer1] == "hor"} {
         if {$height < [get_grid_wire_width $layer1]} {
           # If the intersection doesnt cover the whole width of the bottom level wire, then ignore
-          # warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
+          warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
           continue
         }
       } else {
         if {$width < [get_grid_wire_width $layer1]} {
           # If the intersection doesnt cover the whole width of the bottom level wire, then ignore
-          # warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
+          warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer1 ([expr 1.0 * [get_grid_wire_width $layer1] / $def_units]) is not covered by the overlap"
           continue
         }
       }
@@ -1869,13 +1883,13 @@ proc generate_via_stacks {l1 l2 tag constraints} {
     if {[get_dir $layer2] == "hor"} {
       if {$height < [get_grid_wire_width $layer2]} {
         # If the intersection doesnt cover the whole width of the top level wire, then ignore
-        # warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
+        warning 40 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full height of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
         continue
       }
     } else {
       if {$width < [get_grid_wire_width $layer2]} {
         # If the intersection doesnt cover the whole width of the top level wire, then ignore
-        # warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
+        warning 41 "No via added at ([expr 1.0 * $xMin / $def_units] [expr 1.0 * $yMin / $def_units] [expr 1.0 * $xMax / $def_units] [expr 1.0 * $yMax / $def_units]) because the full width of $layer2 ([expr 1.0 * [get_grid_wire_width $layer2] / $def_units]) is not covered by the overlap"
         continue
       }
     }
@@ -1918,11 +1932,63 @@ proc merge_stripes {} {
   }
 }
 
+proc get_core_ring_vertical_layer_name {} {
+  variable grid_data
+
+  if {![dict exists $grid_data core_ring]} {
+    return ""
+  }
+
+  foreach layer_name [dict keys [dict get $grid_data core_ring]] {
+    if {[get_dir $layer_name] == "ver"} {
+      return $layer_name
+    }
+  }
+
+  return ""
+}
+
+proc is_extend_to_core_ring {layer_name} {
+  variable grid_data
+
+  if {![dict exists $grid_data rails $layer_name extend_to_core_ring]} {
+    return 0
+  }
+  if {![dict get $grid_data rails $layer_name extend_to_core_ring]} {
+    return 0
+  }
+  if {[get_core_ring_vertical_layer_name] == ""} {
+    return 0
+  }
+  return 1
+}
+
 # proc to generate follow pin layers or standard cell rails
 proc generate_lower_metal_followpin_rails {} {
   variable block
   variable grid_data
-  
+ 
+  set stdcell_area [get_extent [get_stdcell_area]]
+  set stdcell_min_x [lindex $stdcell_area 0]
+  set stdcell_max_x [lindex $stdcell_area 2]
+
+  if {[set ring_vertical_layer [get_core_ring_vertical_layer_name]] != ""} {
+    # debug "Ring vertical layer: $ring_vertical_layer"
+    # debug "Grid_data: $grid_data"
+    if {[dict exists $grid_data core_ring $ring_vertical_layer pad_offset]} {
+      set pad_area [find_pad_offset_area]
+      set offset [expr [dict get $grid_data core_ring $ring_vertical_layer pad_offset]]
+      set ring_adjustment [expr $stdcell_min_x - ([lindex $pad_area 0] + $offset)]
+    }
+    if {[dict exists $grid_data core_ring $ring_vertical_layer core_offset]} {
+      set ring_adjustment [expr \
+        [dict get $grid_data core_ring $ring_vertical_layer core_offset] + \
+        [dict get $grid_data core_ring $ring_vertical_layer spacing] + \
+        3 * [dict get $grid_data core_ring $ring_vertical_layer width] / 2 \
+      ]
+    }
+  }
+
   foreach row [$block getRows] {
     set orient [$row getOrient]
     set box [$row getBBox]
@@ -1939,10 +2005,24 @@ proc generate_lower_metal_followpin_rails {} {
         critical 25 "Unexpected row orientation $orient for row [$row getName]"
       }
     }
+
     foreach lay [get_rails_layers] {
+      set xMin [$box xMin]
+      set xMax [$box xMax]
+      if {[is_extend_to_core_ring $lay]} {
+        # debug "Extending to core_ring - adjustment $ring_adjustment ($xMin/$xMax) ($stdcell_min_x/$stdcell_max_x)"
+        if {$xMin == $stdcell_min_x} {
+          set xMin [expr $xMin - $ring_adjustment]
+        }
+        if {$xMax == $stdcell_max_x} {
+          set xMax [expr $xMax + $ring_adjustment]
+        }
+        # debug "Extended  to core_ring - adjustment $ring_adjustment ($xMin/$xMax)"
+      }
       set width [dict get $grid_data rails $lay width]
-      set vdd_box [::odb::newSetFromRect [$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]]
-      set vss_box [::odb::newSetFromRect [$box xMin] [expr $vss_y - $width / 2] [$box xMax] [expr $vss_y + $width / 2]]
+      # debug "VDD: $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]"
+      set vdd_box [::odb::newSetFromRect $xMin [expr $vdd_y - $width / 2] $xMax [expr $vdd_y + $width / 2]]
+      set vss_box [::odb::newSetFromRect $xMin [expr $vss_y - $width / 2] $xMax [expr $vss_y + $width / 2]]
       # debug "[$box xMin] [expr $vdd_y - $width / 2] [$box xMax] [expr $vdd_y + $width / 2]"
       add_stripe $lay "POWER" $vdd_box
       add_stripe $lay "GROUND" $vss_box
@@ -2000,19 +2080,10 @@ proc adjust_area_for_core_rings {layer area} {
   # When core_rings overlap with the stdcell area, we need to block out the area
   # where the core rings have been placed.
   if {[dict exists $grid_data core_ring_area $layer]} {
-    set core_ring_area [dict get $grid_data core_ring_area combined]
-    # debug "Core ring area"
-    # foreach rect [odb::getRectangles $core_ring_area] {
-    #   debug "  [$rect ll] [$rect ur]"
-    # }
+    set core_ring_area [dict get $grid_data core_ring_area $layer]
     set grid_area [odb::newSetFromRect {*}$area]
     set grid_area [odb::subtractSet $grid_area $core_ring_area]
-    # debug "Reduced area rectangles: "
-    # foreach rect [odb::getRectangles $grid_area] {
-    #   debug "  [$rect ll] [$rect ur]"
-    # }
-    set bbox [lindex [odb::getRectangles $grid_area] 0]
-    set area [list {*}[$bbox ll] {*}[$bbox ur]]
+    set area [get_extent $grid_area]
   }
 
   # Calculate how far to extend the grid to meet with the core rings
@@ -2029,10 +2100,16 @@ proc adjust_area_for_core_rings {layer area} {
     set offset [dict get $grid_data core_ring $layer core_offset] 
     set width [dict get $grid_data core_ring $layer width]
     set spacing [dict get $grid_data core_ring $layer spacing]
+    # debug "Area: $area"
+    # debug "Offset: $offset, Width $width, Spacing $spacing"
+
+    # The area figure includes a y offset for the width of the stdcell rail - so need to subtract it here
+    set rail_width [get_rails_max_width]
+
     set xMin [expr [lindex $area 0] - $offset - $width - $spacing - $width / 2]
-    set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2]
+    set yMin [expr [lindex $area 1] - $offset - $width - $spacing - $width / 2 + $rail_width / 2]
     set xMax [expr [lindex $area 2] + $offset + $width + $spacing + $width / 2]
-    set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2]
+    set yMax [expr [lindex $area 3] + $offset + $width + $spacing + $width / 2 - $rail_width / 2]
   }
 
   if {[get_dir $layer] == "hor"} {
@@ -2056,6 +2133,7 @@ proc generate_stripes {tag} {
     #Upper layer stripes
     if {[dict exists $grid_data straps $lay width]} {
       set area [dict get $grid_data area]
+      # debug "Area $area"
       if {[dict exists $grid_data core_ring] && [dict exists $grid_data core_ring $lay]} {
         set area [adjust_area_for_core_rings $lay $area]
       }
@@ -2267,7 +2345,7 @@ proc generate_core_rings {core_ring_data} {
       set inner_ux [expr $xMax - $offset - $spacing - $width]
       set inner_uy [expr $yMax - $offset - $spacing - $width]
     } elseif {[dict exists $layer_info core_offset]} {
-      set area [find_core_area]
+      set area [list {*}[[ord::get_db_core] ll] {*}[[ord::get_db_core] ur]]
       set offset [dict get $layer_info core_offset]
 
       set xMin [lindex $area 0]
@@ -3658,6 +3736,8 @@ proc add_grid {} {
   variable grid_data
   
   if {[dict exists $grid_data core_ring]} {
+    set area [dict get $grid_data area]
+    # debug "Area $area"
     generate_core_rings [dict get $grid_data core_ring]
     if {[dict exists $grid_data gnd_pads]} {
       dict for {pin_name cells} [dict get $grid_data gnd_pads] {
@@ -3681,10 +3761,13 @@ proc add_grid {} {
     apply_padcell_blockages
   }
  
+    set area [dict get $grid_data area]
+    # debug "Area $area"
   # debug "Adding stdcell rails"
   # debug "area: [dict get $grid_data area]"
   if {[dict exists $grid_data rails]} {
     set area [dict get $grid_data area]
+    # debug "Area $area"
     generate_lower_metal_followpin_rails
   }
 
