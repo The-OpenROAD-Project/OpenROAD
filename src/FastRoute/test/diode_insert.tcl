@@ -21,16 +21,16 @@ set_global_routing_layer_pitch 4 0.74
 set_global_routing_layer_pitch 5 0.96
 set_global_routing_layer_pitch 6 3.33
 
+fastroute -max_routing_layer 6 \
+          -unidirectional_routing \
+
 repair_antenna -diode_cell_name "sky130_fd_sc_hs__diode_2" \
                -diode_pin_name "DIODE"
-
-fastroute -output_file $guide_file \
-	  	  -max_routing_layer 6 \
-          -unidirectional_routing \
 
 set_placement_padding -global -left 0 -right 0
 check_placement
 
+write_guides $guide_file
 write_def $def_file
 
 diff_file diode_insert.guideok $guide_file
