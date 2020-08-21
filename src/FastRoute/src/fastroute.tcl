@@ -33,6 +33,87 @@
 ##
 ###############################################################################
 
+sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adjustment }
+
+proc set_global_routing_layer_adjustment { args } {
+  if { [llength $args] == 2 } {
+    lassign $args layer adjustment
+    sta::check_positive_integer "-layer" $layer
+    sta::check_positive_float "-adjustment" $adjustment
+    FastRoute::add_layer_adjustment $layer $adjustment
+  } else {
+    ord::error "Wrong number of arguments for layer adjustment"
+  }
+}
+
+sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
+
+proc set_pdrev_topology_priority { args } {
+  if { [llength $args] == 2 } {
+    lassign $args net alpha
+    sta::check_positive_float "-alpha" $alpha
+    FastRoute::set_alpha_for_net $net $alpha
+  } else {
+    ord::error "Wrong number of arguments for topology priority"
+  }
+}
+
+sta::define_cmd_args "set_global_routing_layer_pitch" { layer pitch }
+
+proc set_global_routing_layer_pitch { args } {
+  if { [llength $args] == 2 } {
+    lassign $args layer pitch
+    sta::check_positive_integer "-layer" $layer
+    sta::check_positive_float "-pitch" $pitch
+    FastRoute::set_layer_pitch $layer $pitch
+  } else {
+    ord::error "Wrong number of arguments for layer pitch"
+  }
+}
+
+sta::define_cmd_args "set_clock_route_flow" { min_layer max_layer }
+
+proc set_clock_route_flow { args } {
+  if { [llength $args] == 2 } {
+    lassign $args min_layer max_layer
+    
+    sta::check_positive_integer "min_layer" $min_layer
+    sta::check_positive_integer "max_layer" $max_layer
+
+    if { $min_layer < $max_layer } {
+      FastRoute::set_layer_range_for_clock $min_layer $max_layer
+    } else {
+      ord::error "Min routing layer is greater than max routing layer"
+    }
+  } else {
+    ord::error "Wrong number of arguments for clock route flow"
+  }
+}
+
+sta::define_cmd_args "repair_antenna" { [-diode_cell_name cell_name] \
+                                        [-diode_pin_name pin_name]
+}
+
+proc repair_antenna { args } {
+  sta::parse_key_args "fastroute" args \
+    keys {-diode_cell_name -diode_pin_name} \
+
+  set cell_name "INVALID"
+  if { [info exists keys(-diode_cell_name)] } {
+    set cell_name $keys(-diode_cell_name)
+  } else {
+    ord::error "Missing antenna cell name"
+  }
+
+  set pin_name "INVALID"
+  if { [info exists keys(-diode_pin_name)] } {
+    set pin_name $keys(-diode_pin_name)
+  } else {
+    ord::error "Missing antenna cell pin name"
+  }
+
+  FastRoute::repair_antenna $cell_name $pin_name
+}
 
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-capacity_adjustment cap_adjust] \
@@ -42,7 +123,6 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
                                            [-regions_adjustments regions_adjustments] \
-                                           [-nets_alphas_priorities nets_alphas] \
                                            [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
@@ -52,21 +132,15 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-seed seed] \
                                            [-report_congestion congest_file] \
                                            [-layers_pitches layers_pitches] \
-                                           [-antenna_avoidance_flow] \
-                                           [-antenna_cell_name antenna_cell_name] \
-                                           [-antenna_pin_name antenna_pin_name] \
-                                           [-clock_nets_route_flow] \
-                                           [-min_layer_for_clock_net min_clock_layer] \
 }
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
     keys {-output_file -capacity_adjustment -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
-          -regions_adjustments -nets_alphas_priorities -overflow_iterations \
-          -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
-          -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
-    flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
+          -regions_adjustments -overflow_iterations \
+          -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches} \
+    flags {-unidirectional_routing -allow_overflow} \
 
   if { [info exists keys(-output_file)] } {
     set out_file $keys(-output_file)
@@ -107,6 +181,8 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_adjustments)] } {
+    ord::warn "option -layers_adjustments is deprecated. use command \
+    set_global_routing_layer_adjustment <layer> <adjustment>"
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
@@ -128,18 +204,6 @@ proc fastroute { args } {
         FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for region adjustments"
-      }
-    }
-  }
-  
-  if { [info exists keys(-nets_alphas_priorities)] } {
-    set nets_alphas $keys(-nets_alphas_priorities)
-    foreach net_alpha $nets_alphas {
-      if { [llength $net_alpha] == 2 } {
-        lassign $net_alpha net_name alpha
-        FastRoute::set_alpha_for_net $net_name $alpha
-      } else {
-        ord::error "Wrong number of arguments for nets priorities"
       }
     }
   }
@@ -203,44 +267,19 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_pitches)] } {
+    ord::warn "option -layers_pitches is deprecated. use command \
+    set_global_routing_layer_pitch <layer> <adjustment>"
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
         lassign $layer_pitch layer pitch
+        sta::check_positive_integer "-layer" $layer
+        sta::check_positive_float "-pitch" $pitch
         FastRoute::set_layer_pitch $layer $pitch
       } else {
         ord::error "Wrong number of arguments for layer pitches"
       }
     }
-  }
-
-  if { [info exists flags(-antenna_avoidance_flow)] } {
-    set diode_cell_name "INVALID"
-    if { [info exists keys(-antenna_cell_name)] } {
-      set diode_cell_name $keys(-antenna_cell_name)
-    } else {
-      ord::error "Missing antenna cell name"
-    }
-
-    set diode_pin_name "INVALID"
-    if { [info exists keys(-antenna_pin_name)] } {
-      set diode_pin_name $keys(-antenna_pin_name)
-    } else {
-      ord::error "Missing antenna cell pin name"
-    }
-
-    FastRoute::enable_antenna_avoidance_flow $diode_cell_name $diode_pin_name
-  }
-
-  FastRoute::set_clock_nets_route_flow [info exists flags(-clock_nets_route_flow)]
-
-  set min_clock_layer 6
-  if { [info exists keys(-min_layer_for_clock_net)] } {
-    set min_clock_layer $keys(-min_layer_for_clock_net)
-    FastRoute::set_min_layer_for_clock $min_clock_layer
-  } elseif { [info exists flags(-clock_nets_route_flow)] } {
-    puts "\[WARNING\] Using the default min layer for clock nets routing (layer $min_clock_layer)"
-    FastRoute::set_min_layer_for_clock $min_clock_layer
   }
 
   if { ![ord::db_has_tech] } {

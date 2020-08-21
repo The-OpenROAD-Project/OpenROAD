@@ -173,15 +173,11 @@ set_layer_pitch(int layer, float pitch)
 }
 
 void
-set_clock_nets_route_flow(bool clock_flow)
+set_layer_range_for_clock(int minLayer, int maxLayer)
 {
-  getFastRoute()->setClockNetsRouteFlow(clock_flow);
-}
-
-void
-set_min_layer_for_clock(int minLayer)
-{
+  getFastRoute()->setClockNetsRouteFlow(1);
   getFastRoute()->setMinLayerForClock(minLayer);
+  getFastRoute()->setMaxLayerForClock(maxLayer);
 }
 
 void
@@ -203,7 +199,7 @@ estimate_rc()
 }
 
 void
-enable_antenna_avoidance_flow(char* diodeCellName, char* diodePinName)
+repair_antenna(char* diodeCellName, char* diodePinName)
 {
   getFastRoute()->enableAntennaAvoidance(diodeCellName, diodePinName);
 }
