@@ -162,7 +162,6 @@ class GlobalRouter
   void setMaxLayerForClock(int maxLayer);
 
   // flow functions
-  void enableAntennaAvoidance(char* diodeCellName, char* diodePinName);
   void writeGuides();
   void startFastRoute();
   void estimateRC();
@@ -178,6 +177,9 @@ class GlobalRouter
   void getCutLayerRes(unsigned belowLayerId, float& r);
   float dbuToMeters(unsigned dbu);
 
+  // repair antenna public functions
+  void repairAntenna(char* diodeCellName, char* diodePinName);
+
 protected:
   // Net functions
   int getNetCount() const;
@@ -189,6 +191,7 @@ protected:
  private:
   void makeComponents();
   void deleteComponents();
+  void clearFlow();
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
@@ -232,7 +235,6 @@ protected:
   // antenna functions
   void addLocalConnections(std::vector<FastRoute::NET>* globalRoute);
   void mergeResults(const std::vector<FastRoute::NET>* newRoute);
-  void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
   void getPreviousCapacities(int previousMinLayer);
@@ -318,7 +320,6 @@ protected:
   int _maxLayerForClock;
 
   // Antenna variables
-  bool _enableAntennaFlow = false;
   std::string _diodeCellName;
   std::string _diodePinName;
   int*** oldHUsages;
@@ -336,7 +337,6 @@ protected:
   sta::dbSta* _sta;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
-
   std::vector<odb::dbNet*> _dirtyNets;
 };
 

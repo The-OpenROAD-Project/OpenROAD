@@ -201,7 +201,7 @@ estimate_rc()
 void
 repair_antenna(char* diodeCellName, char* diodePinName)
 {
-  getFastRoute()->enableAntennaAvoidance(diodeCellName, diodePinName);
+  getFastRoute()->repairAntenna(diodeCellName, diodePinName);
 }
 
 void

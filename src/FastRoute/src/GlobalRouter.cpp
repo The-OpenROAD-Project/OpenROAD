@@ -124,19 +124,23 @@ void GlobalRouter::deleteComponents()
 
 void GlobalRouter::clear()
 {
+  _result->clear();
+  clearFlow();
+}
+
+void GlobalRouter::clearFlow()
+{
   // Clear classes
   _grid->clear();
   _fastRoute->clear();
 
-  // Clear vector
+  // Clear vectors
   _allRoutingTracks->clear();
   _nets->clear();
   _db_net_map.clear();
-  _result->clear();
   _routingLayers->clear();
   _vCapacities.clear();
   _hCapacities.clear();
-
 }
 
 GlobalRouter::~GlobalRouter()
@@ -250,9 +254,7 @@ void GlobalRouter::runFastRoute()
 {
   std::cout << "Running FastRoute...\n\n";
   _fastRoute->initAuxVar();
-  if (_enableAntennaFlow) {
-    runAntennaAvoidanceFlow();
-  } else if (_clockNetsRouteFlow) {
+  if (_clockNetsRouteFlow) {
     runClockNetsRouteFlow();
   } else {
     _fastRoute->run(*_result);
@@ -273,10 +275,9 @@ void GlobalRouter::runFastRoute()
   }
 }
 
-void GlobalRouter::runAntennaAvoidanceFlow()
+void GlobalRouter::repairAntenna(char* diodeCellName, char* diodePinName)
 {
   std::cout << "Running antenna avoidance flow...\n";
-  std::vector<FastRoute::NET> *globalRoute = new std::vector<FastRoute::NET>;
   std::vector<FastRoute::NET> *newRoute = new std::vector<FastRoute::NET>;
   std::vector<FastRoute::NET> *originalRoute = new std::vector<FastRoute::NET>;
 
@@ -284,29 +285,21 @@ void GlobalRouter::runAntennaAvoidanceFlow()
     new AntennaRepair(this, _openroad->getAntennaChecker(),
                        _openroad->getOpendp(), _db);
 
-  _fastRoute->run(*globalRoute);
-  addRemainingGuides(globalRoute);
-  connectPadPins(globalRoute);
-
-  for (FastRoute::NET route : *globalRoute) {
-    originalRoute->push_back(route);
-  }
+  // Copy first route result and make changes in this new vector
+  *originalRoute = *_result;
 
   getPreviousCapacities(_minRoutingLayer);
-  addLocalConnections(globalRoute);
+  addLocalConnections(originalRoute);
 
   int violationsCnt
-      = antennaRepair->checkAntennaViolations(globalRoute, _maxRoutingLayer);
+      = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer);
 
-  clear();
-
-  // Adding routes of first run here to avoid loss data in clear()
-  for (FastRoute::NET gr : *originalRoute) {
-    _result->push_back(gr);
-  }
+  clearFlow();
 
   if (violationsCnt > 0) {
-    antennaRepair->fixAntennas(_diodeCellName, _diodePinName);
+    std::string cellName = diodeCellName;
+    std::string pinName = diodePinName;
+    antennaRepair->fixAntennas(cellName, pinName);
     antennaRepair->legalizePlacedCells();
     _reroute = true;
     startFastRoute();
@@ -370,16 +363,6 @@ void GlobalRouter::estimateRC()
     std::vector<ROUTE>& route = netRoute.route;
     builder.estimateParasitcs(net, route);
   }
-}
-
-void GlobalRouter::enableAntennaAvoidance(char* diodeCellName,
-                                             char* diodePinName)
-{
-  _enableAntennaFlow = true;
-  std::string cellName(diodeCellName);
-  std::string pinName(diodePinName);
-  _diodeCellName = cellName;
-  _diodePinName = pinName;
 }
 
 void GlobalRouter::initCoreGrid()
