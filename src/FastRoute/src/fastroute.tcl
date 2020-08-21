@@ -117,6 +117,8 @@ proc set_global_routing_layer_pitch { args } {
 
 sta::define_cmd_args "set_clock_route_flow" { [-min_layer min_layer] \
                                               [-max_layer max_layer] \
+                                              [-pdrev_for_high_fanout fanout] \
+                                              [-alpha alpha] \
 }
 
 proc set_clock_route_flow { args } {
@@ -144,6 +146,21 @@ proc set_clock_route_flow { args } {
     FastRoute::set_layer_range_for_clock $min_layer $max_layer
   } else {
     ord::error "Min routing layer is greater than max routing layer"
+  }
+
+  if { [info exists keys(-pdrev_for_high_fanout)] } {
+    set fanout $keys(-pdrev_for_high_fanout)
+    FastRoute::set_pdrev_for_high_fanout $fanout
+  } else {
+    FastRoute::set_pdrev_for_high_fanout -1
+  }
+
+  if { [info exists keys(-alpha) ] } {
+    set alpha $keys(-alpha)
+    sta::check_positive_float "-alpha" $alpha
+    FastRoute::set_alpha $alpha
+  } else {
+    FastRoute::set_alpha 0.3
   }
 }
 
@@ -188,11 +205,9 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
                                            [-regions_adjustments regions_adjustments] \
-                                           [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
                                            [-grid_origin origin] \
-                                           [-pdrev_for_high_fanout fanout] \
                                            [-allow_overflow] \
                                            [-seed seed] \
                                            [-report_congestion congest_file] \
@@ -202,9 +217,9 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
     keys {-output_file -capacity_adjustment -min_routing_layer -max_routing_layer \
-          -tile_size -alpha -verbose -layers_adjustments \
+          -tile_size -verbose -layers_adjustments \
           -regions_adjustments -overflow_iterations \
-          -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches} \
+          -grid_origin -seed -report_congestion -layers_pitches} \
     flags {-unidirectional_routing -allow_overflow} \
 
   if { [info exists keys(-capacity_adjustment)] } {
@@ -267,14 +282,6 @@ proc fastroute { args } {
 
   FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
 
-  if { [info exists keys(-alpha) ] } {
-    set alpha $keys(-alpha)
-    sta::check_positive_float "-alpha" $alpha
-    FastRoute::set_alpha $alpha
-  } else {
-    FastRoute::set_alpha 0.3
-  }
-
   if { [info exists keys(-verbose) ] } {
     set verbose $keys(-verbose)
     FastRoute::set_verbose $verbose
@@ -300,13 +307,6 @@ proc fastroute { args } {
     }
   } else {
     FastRoute::set_grid_origin -1 -1
-  }
-
-  if { [info exists keys(-pdrev_for_high_fanout)] } {
-    set fanout $keys(-pdrev_for_high_fanout)
-    FastRoute::set_pdrev_for_high_fanout $fanout
-  } else {
-    FastRoute::set_pdrev_for_high_fanout -1
   }
 
   if { [info exists keys(-seed) ] } {
