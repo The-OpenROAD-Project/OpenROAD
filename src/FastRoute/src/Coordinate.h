@@ -37,7 +37,7 @@
 
 namespace FastRoute {
 
-typedef long long int DBU;
+typedef int DBU;
 
 class Coordinate
 {

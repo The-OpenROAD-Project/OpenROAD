@@ -47,13 +47,13 @@ namespace FastRoute {
 
 class Net;
 
-enum Orientation
+enum class PinOrientation
 {
-  ORIENT_NORTH,
-  ORIENT_SOUTH,
-  ORIENT_EAST,
-  ORIENT_WEST,
-  INVALID
+  north,
+  south,
+  east,
+  west,
+  invalid
 };
 
 class Pin
@@ -63,13 +63,13 @@ class Pin
   Pin(odb::dbITerm* iterm,
       const Coordinate& position,
       const std::vector<int>& layers,
-      const Orientation orientation,
+      const PinOrientation orientation,
       const std::map<int, std::vector<Box>>& boxesPerLayer,
       bool connectedToPad);
   Pin(odb::dbBTerm* bterm,
       const Coordinate& position,
       const std::vector<int>& layers,
-      const Orientation orientation,
+      const PinOrientation orientation,
       const std::map<int, std::vector<Box>>& boxesPerLayer,
       bool connectedToPad);
 
@@ -80,8 +80,8 @@ class Pin
   const std::vector<int>& getLayers() const { return _layers; }
   int getNumLayers() const { return _layers.size(); }
   int getTopLayer() const { return _layers.back(); }
-  Orientation getOrientation() const { return _orientation; }
-  void setOrientation(Orientation orientation) { _orientation = orientation; }
+  PinOrientation getOrientation() const { return _orientation; }
+  void setOrientation(PinOrientation orientation) { _orientation = orientation; }
   const std::map<int, std::vector<Box>>& getBoxes() const
   {
     return _boxesPerLayer;
@@ -100,7 +100,7 @@ class Pin
   Coordinate _position;
   Coordinate _onGridPosition;
   std::vector<int> _layers;
-  Orientation _orientation;
+  PinOrientation _orientation;
   std::map<int, std::vector<Box>> _boxesPerLayer;
   bool _isPort;
   bool _connectedToPad;

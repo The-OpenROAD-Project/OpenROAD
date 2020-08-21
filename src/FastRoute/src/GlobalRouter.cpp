@@ -35,7 +35,6 @@
 
 #include "fastroute/GlobalRouter.h"
 
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -147,8 +146,6 @@ GlobalRouter::~GlobalRouter()
 
 void GlobalRouter::startFastRoute()
 {
-  std::chrono::steady_clock::time_point begin
-      = std::chrono::steady_clock::now();
   printHeader();
   if (_unidirectionalRoute) {
     _minRoutingLayer = 2;
@@ -191,7 +188,7 @@ void GlobalRouter::startFastRoute()
   std::cout << "\n";
 
   std::cout << "Initializing grid...\n";
-  initGrid();
+  initCoreGrid();
   std::cout << "Initializing grid... Done!\n";
 
   std::cout << "Initializing routing layers...\n";
@@ -245,23 +242,10 @@ void GlobalRouter::startFastRoute()
     computeRegionAdjustments(
         lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
   }
-
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-  if (_verbose > 0)
-    std::cout << "[INFO] Elapsed time: "
-              << (std::chrono::duration_cast<std::chrono::microseconds>(end
-                                                                        - begin)
-                      .count())
-                     / 1000000.0
-              << "\n";
 }
 
 void GlobalRouter::runFastRoute()
 {
-  std::chrono::steady_clock::time_point begin
-      = std::chrono::steady_clock::now();
-
   std::cout << "Running FastRoute...\n\n";
   _fastRoute->initAuxVar();
   if (_enableAntennaFlow) {
@@ -284,16 +268,6 @@ void GlobalRouter::runFastRoute()
   if (_reportCongest) {
     _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
     _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");
-  }
-
-  if (_verbose > 0) {
-    std::chrono::steady_clock::time_point end
-        = std::chrono::steady_clock::now();
-    double elapsed
-        = (std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
-               .count())
-          / 1000000.0;
-    std::cout << "[INFO] Elapsed time: " << elapsed << "\n";
   }
 }
 
@@ -406,7 +380,7 @@ void GlobalRouter::enableAntennaAvoidance(char* diodeCellName,
   _diodePinName = pinName;
 }
 
-void GlobalRouter::initGrid()
+void GlobalRouter::initCoreGrid()
 {
   initGrid(_maxRoutingLayer);
 
@@ -1311,8 +1285,7 @@ void GlobalRouter::setAllowOverflow(bool allowOverflow)
 void GlobalRouter::setReportCongestion(char* congestFile)
 {
   _reportCongest = true;
-  std::string cgtFile(congestFile);
-  _congestFile = cgtFile;
+  _congestFile = congestFile;
 }
 
 void GlobalRouter::setClockNetsRouteFlow(bool clockFlow)
@@ -1731,23 +1704,23 @@ void GlobalRouter::checkPinPlacement()
   bool invalid = false;
   std::map<int, std::vector<Coordinate>> mapLayerToPositions;
 
-  for (Pin port : getAllPorts()) {
-    if (port.getNumLayers() == 0) {
-      error("Pin %s does not have layer assignment\n", port.getName().c_str());
+  for (Pin* port : getAllPorts()) {
+    if (port->getNumLayers() == 0) {
+      error("Pin %s does not have layer assignment\n", port->getName().c_str());
     }
-    DBU layer = port.getLayers()[0];  // port have only one layer
+    DBU layer = port->getLayers()[0];  // port have only one layer
 
     if (mapLayerToPositions[layer].empty()) {
-      mapLayerToPositions[layer].push_back(port.getPosition());
+      mapLayerToPositions[layer].push_back(port->getPosition());
     } else {
       for (Coordinate pos : mapLayerToPositions[layer]) {
-        if (pos == port.getPosition()) {
+        if (pos == port->getPosition()) {
           std::cout << "[WARNING] At least 2 pins in position (" << pos.getX()
                     << ", " << pos.getY() << "), layer " << layer + 1 << "\n";
           invalid = true;
         }
       }
-      mapLayerToPositions[layer].push_back(port.getPosition());
+      mapLayerToPositions[layer].push_back(port->getPosition());
     }
   }
 
@@ -2023,7 +1996,7 @@ void GlobalRouter::addLocalConnections(
   for (FastRoute::NET& netRoute : *globalRoute) {
     Net* net = getNet(netRoute);
 
-    for (Pin pin : net->getPins()) {
+    for (Pin &pin : net->getPins()) {
       topLayer = pin.getTopLayer();
       pinBoxes = pin.getBoxes().at(topLayer);
       pinPosition = pin.getOnGridPosition();
@@ -2174,12 +2147,12 @@ FastRoute::ROUTE GlobalRouter::createFakePin(Pin pin,
     pinConnection.finalY = pinPosition.getY();
 
     DBU newXPosition;
-    if (pin.getOrientation() == Orientation::ORIENT_WEST) {
+    if (pin.getOrientation() == PinOrientation::west) {
       newXPosition
           = pinPosition.getX() + (_gcellsOffset * _grid->getTileWidth());
       pinConnection.initX = newXPosition;
       pinPosition.setX(newXPosition);
-    } else if (pin.getOrientation() == Orientation::ORIENT_EAST) {
+    } else if (pin.getOrientation() == PinOrientation::east) {
       newXPosition
           = pinPosition.getX() - (_gcellsOffset * _grid->getTileWidth());
       pinConnection.initX = newXPosition;
@@ -2194,12 +2167,12 @@ FastRoute::ROUTE GlobalRouter::createFakePin(Pin pin,
     pinConnection.finalY = pinPosition.getY();
 
     DBU newYPosition;
-    if (pin.getOrientation() == Orientation::ORIENT_SOUTH) {
+    if (pin.getOrientation() == PinOrientation::south) {
       newYPosition
           = pinPosition.getY() + (_gcellsOffset * _grid->getTileHeight());
       pinConnection.initY = newYPosition;
       pinPosition.setY(newYPosition);
-    } else if (pin.getOrientation() == Orientation::ORIENT_NORTH) {
+    } else if (pin.getOrientation() == PinOrientation::north) {
       newYPosition
           = pinPosition.getY() - (_gcellsOffset * _grid->getTileHeight());
       pinConnection.initY = newYPosition;
@@ -2245,12 +2218,12 @@ int GlobalRouter::getMaxNetDegree() {
   return maxDegree;
 }
 
-std::vector<Pin> GlobalRouter::getAllPorts() {
-  std::vector<Pin> ports; 
+std::vector<Pin*> GlobalRouter::getAllPorts() {
+  std::vector<Pin*> ports; 
   for (Net &net : *_nets) {
-    for (Pin pin : net.getPins()) {
+    for (Pin &pin : net.getPins()) {
       if (pin.isPort()) {
-        ports.push_back(pin);
+        ports.push_back(&pin);
       }
     }
   }
@@ -2327,7 +2300,7 @@ void GlobalRouter::initGrid(int maxLayer)
   std::vector<int> genericVector(numLayers);
   std::map<int, std::vector<Box>> genericMap;
 
-  *_grid = Grid(lowerLeftX,
+  _grid->init(lowerLeftX,
                 lowerLeftY,
                 rect.xMax(),
                 rect.yMax(),
@@ -2688,7 +2661,7 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
     Pin pin(iterm,
             pinPos,
             pinLayers,
-            Orientation::INVALID,
+            PinOrientation::invalid,
             pinBoxes,
             (connectedToPad || connectedToMacro));
 
@@ -2700,17 +2673,17 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
           == odb::dbTechLayerDir::HORIZONTAL) {
         DBU instToPin = pinPosition.getX() - instMiddle.getX();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_EAST);
+          pin.setOrientation(PinOrientation::east);
         } else {
-          pin.setOrientation(Orientation::ORIENT_WEST);
+          pin.setOrientation(PinOrientation::west);
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
         DBU instToPin = pinPosition.getY() - instMiddle.getY();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_NORTH);
+          pin.setOrientation(PinOrientation::north);
         } else {
-          pin.setOrientation(Orientation::ORIENT_SOUTH);
+          pin.setOrientation(PinOrientation::south);
         }
       }
     }
@@ -2785,7 +2758,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
     Pin pin(bterm,
             pinPos,
             pinLayers,
-            Orientation::INVALID,
+            PinOrientation::invalid,
             pinBoxes,
             (connectedToPad || connectedToMacro));
 
@@ -2797,17 +2770,17 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
           == odb::dbTechLayerDir::HORIZONTAL) {
         DBU instToPin = pinPosition.getX() - instMiddle.getX();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_EAST);
+          pin.setOrientation(PinOrientation::east);
         } else {
-          pin.setOrientation(Orientation::ORIENT_WEST);
+          pin.setOrientation(PinOrientation::west);
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
         DBU instToPin = pinPosition.getY() - instMiddle.getY();
         if (instToPin < 0) {
-          pin.setOrientation(Orientation::ORIENT_NORTH);
+          pin.setOrientation(PinOrientation::north);
         } else {
-          pin.setOrientation(Orientation::ORIENT_SOUTH);
+          pin.setOrientation(PinOrientation::south);
         }
       }
     } else {
@@ -2818,17 +2791,17 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
           == odb::dbTechLayerDir::HORIZONTAL) {
         DBU instToDie = pinPosition.getX() - dieArea.getMiddle().getX();
         if (instToDie < 0) {
-          pin.setOrientation(Orientation::ORIENT_WEST);
+          pin.setOrientation(PinOrientation::west);
         } else {
-          pin.setOrientation(Orientation::ORIENT_EAST);
+          pin.setOrientation(PinOrientation::east);
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
         DBU instToDie = pinPosition.getY() - dieArea.getMiddle().getY();
         if (instToDie < 0) {
-          pin.setOrientation(Orientation::ORIENT_SOUTH);
+          pin.setOrientation(PinOrientation::south);
         } else {
-          pin.setOrientation(Orientation::ORIENT_NORTH);
+          pin.setOrientation(PinOrientation::north);
         }
       }
     }

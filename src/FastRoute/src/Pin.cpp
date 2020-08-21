@@ -41,7 +41,7 @@ namespace FastRoute {
 Pin::Pin(odb::dbITerm* iterm,
          const Coordinate& position,
          const std::vector<int>& layers,
-         const Orientation orientation,
+         const PinOrientation orientation,
          const std::map<int, std::vector<Box>>& boxesPerLayer,
          bool connectedToPad)
     : _iterm(iterm),
@@ -58,7 +58,7 @@ Pin::Pin(odb::dbITerm* iterm,
 Pin::Pin(odb::dbBTerm* bterm,
          const Coordinate& position,
          const std::vector<int>& layers,
-         const Orientation orientation,
+         const PinOrientation orientation,
          const std::map<int, std::vector<Box>>& boxesPerLayer,
          bool connectedToPad)
     : _bterm(bterm),
