@@ -115,6 +115,69 @@ proc set_global_routing_layer_pitch { args } {
   FastRoute::set_layer_pitch $layer $pitch
 }
 
+sta::define_cmd_args "set_global_routing_region_adjustment" { [-lower_x lower_x] \
+                                                              [-lower_y lower_y] \
+                                                              [-upper_x upper_x] \
+                                                              [-upper_y upper_y] \
+                                                              [-layer layer] \
+                                                              [-adjustment adj] \ 
+}
+
+proc set_global_routing_region_adjustment { args } {
+  sta::parse_key_args "set_clock_route_flow" args \
+    keys {-lower_x -lower_y -upper_x -upper_y -layer -adjustment} \
+
+  set lower_x -1
+  if { [info exists keys(-lower_x)] } {
+    set lower_x $keys(-lower_x)
+  } else {
+    ord::error "\[Global routing region adjustment\] Missing lower_x"
+  }
+
+  set lower_y -1
+  if { [info exists keys(-lower_y)] } {
+    set lower_y $keys(-lower_y)
+  } else {
+    ord::error "\[Global routing region adjustment\] Missing lower_y"
+  }
+  
+  set upper_x -1
+  if { [info exists keys(-upper_x)] } {
+    set upper_x $keys(-upper_x)
+  } else {
+    ord::error "\[Global routing region adjustment\] Missing upper_x"
+  }
+  
+  set upper_y -1
+  if { [info exists keys(-upper_y)] } {
+    set upper_y $keys(-upper_y)
+  } else {
+    ord::error "\[Global routing region adjustment\] Missing upper_y"
+  }
+  
+  set layer -1
+  if { [info exists keys(-layer)] } {
+    set layer $keys(-layer)
+  } else {
+    ord::error "\[Global routing region adjustment\] Missing layer"
+  }
+  
+  set adj -0.1
+  if { [info exists keys(-adjustment)] } {
+    set adj $keys(-adjustment)
+  } else {
+    ord::error "\[Global routing region adjustment\] Missing adjustment"
+  }
+  
+  sta::check_positive_integer "-lower_x" $lower_x
+  sta::check_positive_integer "-lower_y" $lower_y
+  sta::check_positive_integer "-upper_x" $upper_x
+  sta::check_positive_integer "-upper_y" $upper_y
+  sta::check_positive_integer "-layer" $layer
+  sta::check_positive_float "-adjustment" $adj
+  FastRoute::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adj
+}
+
 sta::define_cmd_args "set_clock_route_flow" { [-min_layer min_layer] \
                                               [-max_layer max_layer] \
                                               [-pdrev_for_high_fanout fanout] \
@@ -204,7 +267,6 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-unidirectional_routing] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
-                                           [-regions_adjustments regions_adjustments] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
                                            [-grid_origin origin] \
@@ -217,8 +279,7 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
     keys {-output_file -capacity_adjustment -min_routing_layer -max_routing_layer \
-          -tile_size -verbose -layers_adjustments \
-          -regions_adjustments -overflow_iterations \
+          -tile_size -verbose -layers_adjustments -overflow_iterations \
           -grid_origin -seed -report_congestion -layers_pitches} \
     flags {-unidirectional_routing -allow_overflow} \
 
@@ -262,20 +323,6 @@ proc fastroute { args } {
         FastRoute::add_layer_adjustment $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for layer adjustments"
-      }
-    }
-  }
-  
-  if { [info exists keys(-regions_adjustments)] } {
-    set regions_adjustments $keys(-regions_adjustments)
-    foreach region_adjustment $regions_adjustments {
-      if { [llength $region_adjustment] == 2 } {
-        lassign $region_adjustment minX minY maxX maxY layer reductionPercentage
-        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer \
-          in [expr $reductionPercentage * 100]%"
-        FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
-      } else {
-        ord::error "Wrong number of arguments for region adjustments"
       }
     }
   }
