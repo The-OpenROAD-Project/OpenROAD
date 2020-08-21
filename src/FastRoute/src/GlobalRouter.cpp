@@ -411,7 +411,8 @@ void GlobalRouter::setCapacities()
 {
   for (int l = 1; l <= _grid->getNumLayers(); l++) {
     if (l < _minRoutingLayer || l > _maxRoutingLayer
-        || (_onlyClockNets && l < _minLayerForClock)) {
+        || (_onlyClockNets &&
+           (l < _minLayerForClock || l > _maxLayerForClock))) {
       _fastRoute->addHCapacity(0, l);
       _fastRoute->addVCapacity(0, l);
 
@@ -1300,6 +1301,11 @@ void GlobalRouter::setClockNetsRouteFlow(bool clockFlow)
 void GlobalRouter::setMinLayerForClock(int minLayer)
 {
   _minLayerForClock = minLayer;
+}
+
+void GlobalRouter::setMaxLayerForClock(int maxLayer)
+{
+  _maxLayerForClock = maxLayer;
 }
 
 void GlobalRouter::writeGuides()

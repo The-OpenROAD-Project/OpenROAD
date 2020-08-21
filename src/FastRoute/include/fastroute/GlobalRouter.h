@@ -160,6 +160,7 @@ class GlobalRouter
   void printHeader();
   void setClockNetsRouteFlow(bool clockFlow);
   void setMinLayerForClock(int minLayer);
+  void setMaxLayerForClock(int maxLayer);
 
   // flow functions
   void enableAntennaAvoidance(char* diodeCellName, char* diodePinName);
@@ -316,6 +317,7 @@ protected:
   bool _onlyClockNets = false;
   bool _onlySignalNets = false;
   int _minLayerForClock;
+  int _maxLayerForClock;
 
   // Antenna variables
   bool _enableAntennaFlow = false;
