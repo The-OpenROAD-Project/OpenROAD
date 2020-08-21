@@ -305,9 +305,6 @@ proc fastroute { args } {
     write_guides <file_name>"
     set out_file $keys(-output_file)
     FastRoute::write_guides $out_file
-  } else {
-    puts "\[WARNING\] Default output guide name: out.guide"
-    FastRoute::write_guides "out.guide"
   }
 }
 
