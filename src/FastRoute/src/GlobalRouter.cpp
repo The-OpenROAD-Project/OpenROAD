@@ -362,11 +362,11 @@ void GlobalRouter::estimateRC()
   sta::dbSta* dbSta = _openroad->getSta();
   dbSta->deleteParasitics();
 
-  RcTreeBuilder builder(_openroad, this, _grid);
+  RcTreeBuilder builder(_openroad, this);
   for (FastRoute::NET& netRoute : *_result) {
     Net* net = getNet(netRoute);
     std::vector<ROUTE>& route = netRoute.route;
-    builder.estimateParasitcs(net, route);
+    builder.estimateParasitcs(net->getDbNet(), net->getPins(), route);
   }
 }
 

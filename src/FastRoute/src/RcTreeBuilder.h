@@ -86,13 +86,13 @@ class RcTreeBuilder
 {
  public:
   RcTreeBuilder(ord::OpenRoad* openroad,
-		GlobalRouter* grouter,
-		Grid* grid);
-  void estimateParasitcs(Net* net,
+		GlobalRouter* grouter);
+  void estimateParasitcs(odb::dbNet* net,
+			 std::vector<Pin>& pins,
 			 std::vector<ROUTE>& routes);
 
  protected:
-  void makePinRoutePts();
+  void makePinRoutePts(std::vector<Pin>& pins);
   RoutePt routePt(Pin& pin);
   sta::Pin* staPin(Pin& pin);
   void makeRouteParasitics(std::vector<ROUTE>& routes);
@@ -110,7 +110,6 @@ class RcTreeBuilder
 	       float &cap);
 
   // Variables common to all nets.
-  Grid* _grid;
   GlobalRouter* _grouter;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
