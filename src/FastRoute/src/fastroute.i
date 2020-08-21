@@ -59,12 +59,6 @@ have_routes()
 }
 
 void
-set_output_file(const char* file)
-{
-  getFastRoute()->setOutputFile(file);
-}
-
-void
 set_tile_size(int tileSize)
 {
   getFastRoute()->setPitchesInTile(tileSize);
@@ -201,7 +195,7 @@ estimate_rc()
 void
 repair_antenna(char* diodeCellName, char* diodePinName)
 {
-  getFastRoute()->repairAntenna(diodeCellName, diodePinName);
+  getFastRoute()->repairAntenna (diodeCellName, diodePinName);
 }
 
 void
@@ -211,9 +205,9 @@ clear_fastroute()
 }
 
 void
-write_guides()
+write_guides(char* fileName)
 {
-  getFastRoute()->writeGuides();
+  getFastRoute()->writeGuides(fileName);
 }
 
 void

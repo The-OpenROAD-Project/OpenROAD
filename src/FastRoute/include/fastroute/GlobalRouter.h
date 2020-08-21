@@ -162,7 +162,7 @@ class GlobalRouter
   void setMaxLayerForClock(int maxLayer);
 
   // flow functions
-  void writeGuides();
+  void writeGuides(char* fileName);
   void startFastRoute();
   void estimateRC();
   void runFastRoute();

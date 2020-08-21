@@ -277,7 +277,7 @@ void GlobalRouter::runFastRoute()
 
 void GlobalRouter::repairAntenna(char* diodeCellName, char* diodePinName)
 {
-  std::cout << "Running antenna avoidance flow...\n";
+  std::cout << "Repairing antennas...\n";
   std::vector<FastRoute::NET> *newRoute = new std::vector<FastRoute::NET>;
   std::vector<FastRoute::NET> *originalRoute = new std::vector<FastRoute::NET>;
 
@@ -1291,10 +1291,11 @@ void GlobalRouter::setMaxLayerForClock(int maxLayer)
   _maxLayerForClock = maxLayer;
 }
 
-void GlobalRouter::writeGuides()
+void GlobalRouter::writeGuides(char* fileName)
 {
   std::cout << "Writing guides...\n";
   std::ofstream guideFile;
+  _outfile = fileName;
   guideFile.open(_outfile);
   if (!guideFile.is_open()) {
     guideFile.close();

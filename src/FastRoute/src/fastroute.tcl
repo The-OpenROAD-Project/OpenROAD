@@ -115,6 +115,14 @@ proc repair_antenna { args } {
   FastRoute::repair_antenna $cell_name $pin_name
 }
 
+sta::define_cmd_args "write_guides" { file_name }
+
+
+proc write_guides { args } {
+  set file_name $args
+  FastRoute::write_guides $file_name
+}
+
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-capacity_adjustment cap_adjust] \
                                            [-min_routing_layer min_layer] \
@@ -141,14 +149,6 @@ proc fastroute { args } {
           -regions_adjustments -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches} \
     flags {-unidirectional_routing -allow_overflow} \
-
-  if { [info exists keys(-output_file)] } {
-    set out_file $keys(-output_file)
-    FastRoute::set_output_file $out_file
-  } else {
-    puts "\[WARNING\] Default output guide name: out.guide"
-    FastRoute::set_output_file "out.guide"
-  }
 
   if { [info exists keys(-capacity_adjustment)] } {
     set cap_adjust $keys(-capacity_adjustment)
@@ -299,7 +299,16 @@ proc fastroute { args } {
 
   FastRoute::start_fastroute
   FastRoute::run_fastroute
-  FastRoute::write_guides
+
+  if { [info exists keys(-output_file)] } {
+    ord::warn "option -output_file is deprecated. use command \
+    write_guides <file_name>"
+    set out_file $keys(-output_file)
+    FastRoute::write_guides $out_file
+  } else {
+    puts "\[WARNING\] Default output guide name: out.guide"
+    FastRoute::write_guides "out.guide"
+  }
 }
 
 namespace eval FastRoute {
