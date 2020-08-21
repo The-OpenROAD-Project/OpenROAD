@@ -69,7 +69,7 @@ extern int   numLayers;
 extern int   totalNumSeg;    // total # segments
 extern int   totalOverflow;  // total # overflow
 extern int   mazeThreshold;  // the wirelen threshold to do maze routing
-extern Net** nets;
+extern FrNet** nets;
 extern Edge *h_edges, *v_edges;
 
 extern multi_array<float, 2> d1;

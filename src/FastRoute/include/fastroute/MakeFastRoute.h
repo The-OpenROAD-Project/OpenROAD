@@ -36,17 +36,17 @@
 #pragma once
 
 namespace FastRoute {
-class FastRouteKernel;
+class GlobalRouter;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-FastRoute::FastRouteKernel* makeFastRoute();
+FastRoute::GlobalRouter* makeFastRoute();
 
 void initFastRoute(OpenRoad* openroad);
 
-void deleteFastRoute(FastRoute::FastRouteKernel* fastroute);
+void deleteFastRoute(FastRoute::GlobalRouter* fastroute);
 
 }  // namespace ord

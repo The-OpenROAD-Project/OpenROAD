@@ -42,7 +42,7 @@ namespace odb {
 }
 
 namespace FastRoute {
-  class FastRouteKernel;
+  class GlobalRouter;
 }
 
 namespace replace {
@@ -340,7 +340,7 @@ class RouteBase {
     RouteBase();
     RouteBase(RouteBaseVars rbVars,
         odb::dbDatabase* db,
-        FastRoute::FastRouteKernel* fr,
+        FastRoute::GlobalRouter* grouter,
         std::shared_ptr<NesterovBase> nb,
         std::shared_ptr<Logger> log);
     ~RouteBase();
@@ -370,7 +370,7 @@ class RouteBase {
   private:
     RouteBaseVars rbVars_;
     odb::dbDatabase* db_;
-    FastRoute::FastRouteKernel* fr_;
+    FastRoute::GlobalRouter* grouter_;
 
     std::shared_ptr<NesterovBase> nb_;
     std::shared_ptr<Logger> log_;

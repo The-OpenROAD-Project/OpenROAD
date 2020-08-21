@@ -37,12 +37,12 @@
 %module fastroute
 
 %{
-#include "FastRouteKernel.h"
+#include "fastroute/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
-FastRoute::FastRouteKernel* getFastRoute();
+FastRoute::GlobalRouter* getFastRoute();
 }  // namespace ord
 
 using ord::getFastRoute;
@@ -209,9 +209,9 @@ enable_antenna_avoidance_flow(char* diodeCellName, char* diodePinName)
 }
 
 void
-reset_fastroute()
+clear_fastroute()
 {
-  getFastRoute()->reset();
+  getFastRoute()->clear();
 }
 
 void

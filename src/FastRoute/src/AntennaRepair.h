@@ -41,17 +41,11 @@
 #include <string>
 
 #include "FastRoute.h"
-#include "Grid.h"
-#include "RoutingLayer.h"
-#include "RoutingTracks.h"
 #include "antennachecker/AntennaChecker.hh"
-#include "db_sta/dbSta.hh"
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "opendp/Opendp.h"
-#include "sta/Clock.hh"
-#include "sta/Set.hh"
 
 // Forward declaration protects FastRoute code from any
 // header file from the DB. FastRoute code keeps independent.
@@ -66,45 +60,26 @@ namespace bgi = boost::geometry::index;
 
 namespace FastRoute {
 
-class FastRouteKernel;
+class GlobalRouter;
 
-class DBWrapper
+class AntennaRepair
 {
  public:
-  DBWrapper(ord::OpenRoad* openroad, FastRouteKernel *fr, Grid* grid);
+ 	AntennaRepair(GlobalRouter *grouter,
+ 								 antenna_checker::AntennaChecker* arc,
+ 							   opendp::Opendp* opendp, odb::dbDatabase* db);
 
-  void initGrid(int maxLayer);
-  void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
-  void initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
-                         int maxLayer,
-                         std::map<int, float> layerPitches);
-  void computeCapacities(int maxLayer, std::map<int, float> layerPitches);
-  void computeSpacingsAndMinWidth(int maxLayer);
-  void initNetlist(bool reroute);
-  void addNets(std::vector<odb::dbNet*> nets);
-  void initObstacles();
-  int computeMaxRoutingLayer();
-  void getLayerRC(unsigned layerId, float& r, float& c);
-  void getCutLayerRes(unsigned belowLayerId, float& r);
-  float dbuToMeters(unsigned dbu);
-  std::set<int> findTransitionLayers(int maxRoutingLayer);
-  std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
-  void commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
-                                int maxRoutingLayer);
-  int checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
+	int checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
                              int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();
-  void setSelectedMetal(int metal) { selectedMetal = metal; }
-  std::vector<odb::dbNet*> getDirtyNets() { return _dirtyNets; }
-  void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
   std::map<odb::dbNet*, std::vector<VINFO>> getAntennaViolations()
                                             { return _antennaViolations; }
   void setAntennaViolations(std::map<odb::dbNet*, std::vector<VINFO>>
                             antennaViolations)
                            { _antennaViolations = antennaViolations; }
 
- private:
+  private:
   typedef int coord_type;
   typedef bg::cs::cartesian coord_sys_type;
   typedef bg::model::point<coord_type, 2, coord_sys_type> point;
@@ -112,9 +87,6 @@ class DBWrapper
   typedef std::pair<box, int> value;
   typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
 
-  void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
-  void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
-  void initClockNets();
   void insertDiode(odb::dbNet* net,
                    std::string antennaCellName,
                    std::string antennaPinName,
@@ -125,23 +97,13 @@ class DBWrapper
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
 
-  sta::dbSta* _openSta;
+  GlobalRouter *_grouter;
   antenna_checker::AntennaChecker* _arc;
   opendp::Opendp* _opendp;
-
-  int selectedMetal = 3;
-  ord::OpenRoad* _openroad;
-  odb::dbDatabase* _db;
-  odb::dbBlock* _block;
-  FastRouteKernel *_fr;
-  Grid* _grid;
-  bool _verbose = false;
-
+ 	odb::dbDatabase* _db;
+ 	odb::dbBlock* _block;
   std::map<odb::dbNet*, std::vector<VINFO>>
     _antennaViolations;
-  std::vector<odb::dbNet*> _dirtyNets;
 };
-
-std::string getITermName(odb::dbITerm* iterm);
 
 }  // namespace FastRoute

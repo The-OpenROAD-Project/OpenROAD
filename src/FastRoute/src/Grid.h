@@ -70,6 +70,7 @@ class Grid
 
  public:
   Grid() = default;
+  ~Grid() = default;
 
   Grid(const long lowerLeftX,
        const long lowerLeftY,
@@ -113,6 +114,8 @@ class Grid
     int _x;
     int _y;
   } TILE;
+
+  void clear();
 
   long getLowerLeftX() const { return _lowerLeftX; }
   long getLowerLeftY() const { return _lowerLeftY; }

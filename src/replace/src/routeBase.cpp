@@ -36,7 +36,7 @@
 #include "nesterovBase.h"
 
 #include "opendb/db.h"
-#include "FastRouteKernel.h"
+#include "fastroute/GlobalRouter.h"
 
 #include <string>
 #include <iostream>
@@ -49,7 +49,7 @@ using std::to_string;
 using std::pair;
 using std::make_pair;
 using std::sort;
-using FastRoute::FastRouteKernel;
+using FastRoute::GlobalRouter;
 
 namespace replace {
 
@@ -580,7 +580,7 @@ RouteBaseVars::reset() {
 RouteBase::RouteBase()
   : rbVars_(), 
   db_(nullptr), 
-  fr_(nullptr), 
+  grouter_(nullptr), 
   nb_(nullptr), 
   log_(nullptr),
   inflatedAreaDelta_(0), 
@@ -594,13 +594,13 @@ RouteBase::RouteBase()
 RouteBase::RouteBase(
     RouteBaseVars rbVars, 
     odb::dbDatabase* db, 
-    FastRoute::FastRouteKernel* fr, 
+    FastRoute::GlobalRouter* grouter, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<Logger> log)
   : RouteBase() {
   rbVars_ = rbVars;
   db_ = db;
-  fr_ = fr; 
+  grouter_ = grouter; 
   nb_ = nb;
   log_ = log;
 
@@ -635,7 +635,7 @@ void
 RouteBase::resetRoutabilityResources() {
   inflatedAreaDelta_ = 0;
 
-  fr_->resetResources();
+  grouter_->clear();
   tg_.reset();
   verticalCapacity_.clear();
   horizontalCapacity_.clear();
@@ -670,11 +670,11 @@ RouteBase::getGlobalRouterResult() {
   nb_->updateDbGCells(); 
 
   // these two options must be on 
-  fr_->setAllowOverflow(true);
-  fr_->setOverflowIterations(0);
+  grouter_->setAllowOverflow(true);
+  grouter_->setOverflowIterations(0);
 
-  fr_->startFastRoute();
-  fr_->runFastRoute();
+  grouter_->startFastRoute();
+  grouter_->runFastRoute();
 
   // Note that *.route info is unique.
   // TODO: read *.route only once.
@@ -737,8 +737,8 @@ RouteBase::inflationIterCnt() const {
 // edgeCapacityStor_
 void 
 RouteBase::updateRoute() {
-  using FastRoute::FastRouteKernel;
-  FastRouteKernel::ROUTE_ route = fr_->getRoute();
+  using FastRoute::GlobalRouter;
+  GlobalRouter::ROUTE_ route = grouter_->getRoute();
   
   tg_->setTileCnt(route.gridCountX, route.gridCountY);
   tg_->setNumRoutingLayers(route.numLayers);
@@ -771,9 +771,9 @@ RouteBase::updateRoute() {
 // Fill routingTracks_;
 void
 RouteBase::updateEst() {
-  using FastRoute::FastRouteKernel;
-  std::vector<FastRouteKernel::EST_> estStor 
-    = fr_->getEst();
+  using FastRoute::GlobalRouter;
+  std::vector<GlobalRouter::EST_> estStor 
+    = grouter_->getEst();
 
   for(auto& netEst : estStor) {
     odb::dbNet* dbNet = 

@@ -71,10 +71,10 @@ class FT
  public:
   FT();
   ~FT();
-
-  std::map<int, std::vector<PIN>> allNets;
-  int maxNetDegree;
-
+  
+  void deleteComponents();
+  void clear();
+  
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(int verticalCapacity, int layer);
   void addHCapacity(int horizontalCapacity, int layer);
@@ -137,6 +137,9 @@ class FT
   void setOverflowIterations(int iterations);
   void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
+  
+  std::map<int, std::vector<PIN>> allNets;
+  int maxNetDegree;
 };
 }  // namespace FastRoute
 #endif /* __FASTROUTE_API__ */

@@ -82,7 +82,17 @@ FT::FT()
   invalidNets = 0;
 }
 
-FT::~FT()
+FT::~FT() {
+  deleteComponents();
+}
+
+void FT::clear()
+{
+  deleteComponents();
+  allNets.clear();
+}
+
+void FT::deleteComponents()
 {
   for (int i = 0; i < (numNets - invalidNets); i++) {
     if (nets[i]->pinX)
@@ -512,9 +522,9 @@ void FT::addViaSpacing(int spacing, int layer)
 void FT::setNumberNets(int nNets)
 {
   numNets = nNets;
-  nets    = new Net*[numNets];
+  nets    = new FrNet*[numNets];
   for (int i = 0; i < numNets; i++)
-    nets[i] = new Net;
+    nets[i] = new FrNet;
   seglistIndex = new int[numNets + 1];
 }
 
