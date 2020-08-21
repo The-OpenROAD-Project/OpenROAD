@@ -33,65 +33,122 @@
 ##
 ###############################################################################
 
-sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adjustment }
+sta::define_cmd_args "set_global_routing_layer_adjustment" { [-layer layer] \
+                                                             [-adjustment adj] \
+}
 
 proc set_global_routing_layer_adjustment { args } {
-  if { [llength $args] == 2 } {
-    lassign $args layer adjustment
-    sta::check_positive_integer "-layer" $layer
-    sta::check_positive_float "-adjustment" $adjustment
-    FastRoute::add_layer_adjustment $layer $adjustment
+  sta::parse_key_args "set_global_routing_layer_adjustment" args \
+    keys {-layer -adjustment} \
+
+  set layer -1
+  if { [info exists keys(-layer)] } {
+    set layer $keys(-layer)
   } else {
-    ord::error "Wrong number of arguments for layer adjustment"
+    ord::error "\[Global routing layer adjustment\] Missing layer"
   }
+
+  set adj -0.1
+  if { [info exists keys(-adjustment)] } {
+    set adj $keys(-adjustment)
+  } else {
+    ord::error "\[Global routing layer adjustment\] Missing adjustment"
+  }
+
+  sta::check_positive_integer "-layer" $layer
+  sta::check_positive_float "-adjustment" $adj
+
+  FastRoute::add_layer_adjustment $layer $adj
 }
 
-sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
+sta::define_cmd_args "set_pdrev_topology_priority" { [-net net] \
+                                                     [-alpha alpha] \
+}
 
 proc set_pdrev_topology_priority { args } {
-  if { [llength $args] == 2 } {
-    lassign $args net alpha
-    sta::check_positive_float "-alpha" $alpha
-    FastRoute::set_alpha_for_net $net $alpha
+  sta::parse_key_args "set_pdrev_topology_priority" args \
+    keys {-net -alpha} \
+
+  set net "INVALID"
+  if { [info exists keys(-net)] } {
+    set net $keys(-net)
   } else {
-    ord::error "Wrong number of arguments for topology priority"
+    ord::error "\[PDRev topology priority\] Missing net name"
   }
+
+  set alpha -0.1
+  if { [info exists keys(-alpha)] } {
+    set alpha $keys(-alpha)
+  } else {
+    ord::error "\[PDRev topology priority\] Missing alpha"
+  }
+
+  sta::check_positive_float "-alpha" $alpha
+  FastRoute::set_alpha_for_net $net $alpha
 }
 
-sta::define_cmd_args "set_global_routing_layer_pitch" { layer pitch }
+sta::define_cmd_args "set_global_routing_layer_pitch" { [-layer layer] \
+                                                        [-pitch pitch] \
+}
 
 proc set_global_routing_layer_pitch { args } {
-  if { [llength $args] == 2 } {
-    lassign $args layer pitch
-    sta::check_positive_integer "-layer" $layer
-    sta::check_positive_float "-pitch" $pitch
-    FastRoute::set_layer_pitch $layer $pitch
+  sta::parse_key_args "set_global_routing_layer_pitch" args \
+    keys {-layer -pitch} \
+
+  set layer -1
+  if { [info exists keys(-layer)] } {
+    set layer $keys(-layer)
   } else {
-    ord::error "Wrong number of arguments for layer pitch"
+    ord::error "\[Global routing layer pitch\] Missing layer"
   }
+
+  set pitch -0.1
+  if { [info exists keys(-pitch)] } {
+    set pitch $keys(-pitch)
+  } else {
+    ord::error "\[Global routing layer pitch\] Missing pitch"
+  }
+
+  sta::check_positive_integer "-layer" $layer
+  sta::check_positive_float "-pitch" $pitch
+  
+  FastRoute::set_layer_pitch $layer $pitch
 }
 
-sta::define_cmd_args "set_clock_route_flow" { min_layer max_layer }
+sta::define_cmd_args "set_clock_route_flow" { [-min_layer min_layer] \
+                                              [-max_layer max_layer] \
+}
 
 proc set_clock_route_flow { args } {
-  if { [llength $args] == 2 } {
-    lassign $args min_layer max_layer
-    
-    sta::check_positive_integer "min_layer" $min_layer
-    sta::check_positive_integer "max_layer" $max_layer
+  sta::parse_key_args "set_clock_route_flow" args \
+    keys {-min_layer -max_layer} \
 
-    if { $min_layer < $max_layer } {
-      FastRoute::set_layer_range_for_clock $min_layer $max_layer
-    } else {
-      ord::error "Min routing layer is greater than max routing layer"
-    }
+  set min_layer -1
+  if { [info exists keys(-min_layer)] } {
+    set min_layer $keys(-min_layer)
   } else {
-    ord::error "Wrong number of arguments for clock route flow"
+    ord::error "\[Clock route flow\] Missing min_layer"
+  }
+
+  set max_layer -1
+  if { [info exists keys(-max_layer)] } {
+    set max_layer $keys(-max_layer)
+  } else {
+    ord::error "\[Clock route flow\] Missing max_layer"
+  }
+
+  sta::check_positive_integer "min_layer" $min_layer
+  sta::check_positive_integer "max_layer" $max_layer
+
+  if { $min_layer < $max_layer } {
+    FastRoute::set_layer_range_for_clock $min_layer $max_layer
+  } else {
+    ord::error "Min routing layer is greater than max routing layer"
   }
 }
 
 sta::define_cmd_args "repair_antenna" { [-diode_cell_name cell_name] \
-                                        [-diode_pin_name pin_name]
+                                        [-diode_pin_name pin_name] \
 }
 
 proc repair_antenna { args } {
