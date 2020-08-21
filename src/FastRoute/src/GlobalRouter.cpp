@@ -131,6 +131,7 @@ void GlobalRouter::clear()
   // Clear vector
   _allRoutingTracks->clear();
   _nets->clear();
+  _db_net_map.clear();
   _result->clear();
   _routingLayers->clear();
   _vCapacities.clear();
@@ -363,7 +364,7 @@ void GlobalRouter::estimateRC()
 
   RcTreeBuilder builder(_openroad, this, _grid);
   for (FastRoute::NET& netRoute : *_result) {
-    Net* net = getNetByIdx(netRoute.idx);
+    Net* net = getNet(netRoute);
     std::vector<ROUTE>& route = netRoute.route;
     builder.estimateParasitcs(net, route);
   }
@@ -633,12 +634,9 @@ void GlobalRouter::initializeNets(bool reroute)
             netAlpha = _netsAlpha[net.getName()];
           }
 
-          // name is copied by FR
-          char* net_name = const_cast<char*>(net.getConstName());
-          bool isClock
-              = (net.getSignalType() == odb::dbSigType::CLOCK);
-          _fastRoute->addNet(
-              net_name, idx, pins.size(), 1, grPins, netAlpha, isClock);
+          bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
+          _fastRoute->addNet(net.getDbNet(), pins.size(), 1,
+			     grPins, netAlpha, isClock);
         }
       }
     }
@@ -1321,7 +1319,7 @@ void GlobalRouter::writeGuides()
 
   for (FastRoute::NET& netRoute : *_result) {
     if (!netRoute.route.empty()) {
-      guideFile << netRoute.name << "\n";
+      guideFile << netRoute.db_net->getConstName() << "\n";
       guideFile << "(\n";
       std::vector<Box> guideBox;
       finalLayer = -1;
@@ -1342,7 +1340,7 @@ void GlobalRouter::writeGuides()
 	  if (route.initLayer < _minRoutingLayer && route.initX != route.finalX
 	      && route.initY != route.finalY) {
 	    error("Routing with guides in blocked metal for net %s\n",
-		  netRoute.name.c_str());
+		  netRoute.db_net->getConstName());
 	  }
 	  Box box;
 	  box = globalRoutingToBox(route);
@@ -1357,7 +1355,7 @@ void GlobalRouter::writeGuides()
 	} else {
 	  if (abs(route.finalLayer - route.initLayer) > 1) {
 	    error("Connection between non-adjacent layers in net %s\n",
-		  netRoute.name.c_str());
+		  netRoute.db_net->getConstName());
 	  } else {
 	    RoutingLayer phLayerI;
 	    if (route.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
@@ -1467,11 +1465,11 @@ void GlobalRouter::addRemainingGuides(
   std::unordered_set<Net*> routed_nets;
 
   for (FastRoute::NET& netRoute : *globalRoute) {
-    Net* net = getNetByIdx(netRoute.idx);
+    Net* net = getNet(netRoute);
     routed_nets.insert(net);
     // Skip nets with 1 pin or less
     if (net->getNumPins() > 1) {
-      std::vector<FastRoute::PIN>& pins = net_pins[netRoute.idx];
+      std::vector<FastRoute::PIN>& pins = net_pins[netRoute.db_net];
       // Try to add local guides for net with no output of FR core
       if (netRoute.route.empty()) {
         int lastLayer = -1;
@@ -1479,7 +1477,8 @@ void GlobalRouter::addRemainingGuides(
           if (p > 0) {
             // If the net is not local, FR core result is invalid
             if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
-              error("Net %s not properly covered\n", netRoute.name.c_str());
+              error("Net %s not properly covered\n",
+		    netRoute.db_net->getConstName());
             }
           }
 
@@ -1594,12 +1593,11 @@ void GlobalRouter::addRemainingGuides(
   for (Net& net : *_nets) {
     if (checkSignalType(net)
         && net.getNumPins() > 1 && routed_nets.find(&net) == routed_nets.end()) {
-      int net_idx = getNetIdx(&net);
-      std::vector<FastRoute::PIN>& pins = net_pins[net_idx];
+      odb::dbNet* db_net = net.getDbNet();
+      std::vector<FastRoute::PIN>& pins = net_pins[db_net];
 
       FastRoute::NET localNet;
-      localNet.idx = net_idx;
-      localNet.name = net.getConstName();
+      localNet.db_net = db_net;
       for (FastRoute::PIN pin : pins) {
         FastRoute::ROUTE route;
         route.initLayer = pin.layer;
@@ -1618,7 +1616,7 @@ void GlobalRouter::addRemainingGuides(
 void GlobalRouter::connectPadPins(std::vector<FastRoute::NET>* globalRoute)
 {
   for (FastRoute::NET& netRoute : *globalRoute) {
-    Net* net = getNetByIdx(netRoute.idx);
+    Net* net = getNet(netRoute);
     if (_padPinsConnections.find(net) != _padPinsConnections.end()
         || net->getNumPins() > 1) {
       for (FastRoute::ROUTE route : _padPinsConnections[net]) {
@@ -1857,12 +1855,10 @@ std::vector<GlobalRouter::EST_> GlobalRouter::getEst()
     }
 
     if (validTiles == 0) {
-      netEst.netName = netRoute.name;
-      netEst.netId = netRoute.idx;
+      netEst.netName = netRoute.db_net->getConstName();
       netEst.numSegments = validTiles;
     } else {
-      netEst.netName = netRoute.name;
-      netEst.netId = netRoute.idx;
+      netEst.netName = netRoute.db_net->getConstName();
       netEst.numSegments = netRoute.route.size();
       for (FastRoute::ROUTE route : netRoute.route) {
         netEst.initX.push_back(route.initX);
@@ -1998,7 +1994,7 @@ void GlobalRouter::addLocalConnections(
   FastRoute::ROUTE verSegment;
 
   for (FastRoute::NET& netRoute : *globalRoute) {
-      Net* net = getNetByIdx(netRoute.idx);
+    Net* net = getNet(netRoute);
 
     for (Pin &pin : net->getPins()) {
       topLayer = pin.getTopLayer();
@@ -2030,7 +2026,7 @@ void GlobalRouter::mergeResults(const std::vector<FastRoute::NET>* newRoute)
 {
   for (FastRoute::NET netRoute : *newRoute) {
     for (int i = 0; i < _result->size(); i++) {
-      if (netRoute.name == _result->at(i).name) {
+      if (netRoute.db_net == _result->at(i).db_net) {
         _result->at(i) = netRoute;
         break;
       }
@@ -2209,14 +2205,6 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net) {
   
 void GlobalRouter::reserveNets(size_t net_count) {
   _nets->reserve(net_count);
-}
-
-int GlobalRouter::getNetIdx(Net* net) {
-  return net - &(*_nets)[0];
-}
-
-Net* GlobalRouter::getNetByIdx(int idx) {
-  return &(*_nets)[idx];
 }
 
 int GlobalRouter::getMaxNetDegree() {
@@ -2572,10 +2560,21 @@ void GlobalRouter::addNets(std::vector<odb::dbNet*> nets)
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
       Net* net = addNet(db_net);
+      _db_net_map[db_net] = net;
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
     }
   }
+}
+
+Net* GlobalRouter::getNet(odb::dbNet* db_net)
+{
+  return _db_net_map[db_net];
+}
+
+Net* GlobalRouter::getNet(NET& net)
+{
+  return getNet(net.db_net);
 }
 
 void GlobalRouter::initClockNets()
@@ -3215,7 +3214,7 @@ void GlobalRouter::commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
   std::map<int, odb::dbTechVia*> defaultVias = getDefaultVias(maxRoutingLayer);
 
   for (FastRoute::NET netRoute : routing) {
-    odb::dbNet* net = getNetByIdx(netRoute.idx)->getDbNet();
+    odb::dbNet* net = netRoute.db_net;
     odb::dbWire* wire = odb::dbWire::create(net);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
@@ -3249,6 +3248,12 @@ void GlobalRouter::commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
     }
     wireEncoder.end();
   }
+}
+
+const char *
+getNetName(odb::dbNet* db_net)
+{
+  return db_net->getConstName();
 }
 
 }  // namespace FastRoute

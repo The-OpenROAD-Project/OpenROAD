@@ -34,11 +34,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __FASTROUTE_API__
-#define __FASTROUTE_API__
+#pragma once
+
 #include <map>
 #include <string>
 #include <vector>
+
+namespace odb {
+class dbNet;
+}
 
 namespace FastRoute {
 
@@ -61,10 +65,11 @@ struct ROUTE
 
 struct NET
 {
-  std::string name;
-  int idx;
+  odb::dbNet* db_net;
   std::vector<ROUTE> route;
 };
+
+typedef std::map<odb::dbNet*, std::vector<PIN>> NetPinsMap;
 
 class FT
 {
@@ -74,7 +79,6 @@ class FT
   
   void deleteComponents();
   void clear();
-  
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(int verticalCapacity, int layer);
   void addHCapacity(int horizontalCapacity, int layer);
@@ -85,8 +89,7 @@ class FT
   void setLowerLeft(int x, int y);
   void setTileSize(int width, int height);
   void setLayerOrientation(int x);
-  void addNet(char* name,
-              int netIdx,
+  void addNet(odb::dbNet* db_net,
               int nPIns,
               int minWIdth,
               PIN pins[],
@@ -116,7 +119,7 @@ class FT
                              long y2,
                              int l2);
   int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-  std::map<int, std::vector<PIN>> getNets();
+  NetPinsMap& getNets() { return _net_pins_map; }
   void setEdgeUsage(long x1,
                     long y1,
                     int l1,
@@ -138,8 +141,8 @@ class FT
   void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
   
-  std::map<int, std::vector<PIN>> allNets;
+  NetPinsMap _net_pins_map;
   int maxNetDegree;
 };
+
 }  // namespace FastRoute
-#endif /* __FASTROUTE_API__ */

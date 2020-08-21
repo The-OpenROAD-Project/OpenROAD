@@ -41,6 +41,11 @@
 
 #define TRUE 1
 #define FALSE 0
+
+namespace odb {
+class dbNet;
+}
+
 namespace FastRoute {
 typedef char Bool;
 
@@ -75,8 +80,7 @@ typedef struct
 
 typedef struct
 {
-  std::string name;  // net name
-  int   idx;
+  odb::dbNet* db_net;
   short numPins;    // number of pins in the net
   short deg;  // net degree (number of MazePoints connecting by the net, pins in
               // same MazePoints count only 1)
@@ -86,6 +90,9 @@ typedef struct
   float  alpha;  // alpha for pdrev when routing clock nets
   bool isClock;  // flag that indicates if net is a clock net
 } FrNet;           // A Net is a set of connected MazePoints
+
+const char *
+netName(FrNet* net);
 
 typedef struct
 {
