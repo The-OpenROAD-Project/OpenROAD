@@ -74,9 +74,6 @@ Getting results... Done!
 
 Running FastRoute... Done!
 [INFO] Total wirelength: 10285.799805 um
-Writing guides...
-[INFO] Num routed nets: 563
-Writing guides... Done!
 Net clk
  Pin capacitance: r 33.238 f 29.975
  Wire capacitance: r 17.515 f 17.515
