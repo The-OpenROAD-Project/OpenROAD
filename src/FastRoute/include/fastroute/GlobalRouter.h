@@ -259,7 +259,7 @@ protected:
   void initClockNets();
   void commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
                                 int maxRoutingLayer);
-  void setSelectedMetal(int metal) { selectedMetal = metal; }
+  void setSelectedMetal(int metal) { _layerForGCells = metal; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
 
   ord::OpenRoad* _openroad;
@@ -282,8 +282,6 @@ protected:
   int _maxRoutingLayer;
   bool _unidirectionalRoute;
   int _fixLayer;
-  const int _selectedMetal = 3;
-  const float transitionLayerAdjust = 0.6;
   const int _gcellsOffset = 2;
   int _overflowIterations;
   int _pdRevForHighFanout;
@@ -298,12 +296,12 @@ protected:
   std::vector<float> _layersReductionPercentage;
 
   // Region adjustment variables
-  std::vector<int> regionsMinX;
-  std::vector<int> regionsMinY;
-  std::vector<int> regionsMaxX;
-  std::vector<int> regionsMaxY;
-  std::vector<int> regionsLayer;
-  std::vector<float> regionsReductionPercentage;
+  std::vector<int> _regionsMinX;
+  std::vector<int> _regionsMinY;
+  std::vector<int> _regionsMaxX;
+  std::vector<int> _regionsMaxY;
+  std::vector<int> _regionsLayer;
+  std::vector<float> _regionsReductionPercentage;
 
   // Pitches variables
   std::map<int, float> _layerPitches;
@@ -334,9 +332,9 @@ protected:
   std::map<Net*, std::vector<FastRoute::ROUTE>> _padPinsConnections;
 
   // db variables
-  sta::dbSta* _openSta;
-  int selectedMetal = 3;
-  odb::dbDatabase* _db = nullptr;
+  int _layerForGCells = 3;
+  sta::dbSta* _sta;
+  odb::dbDatabase* _db;
   odb::dbBlock* _block;
 
   std::vector<odb::dbNet*> _dirtyNets;

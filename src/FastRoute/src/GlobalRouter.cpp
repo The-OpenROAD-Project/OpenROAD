@@ -104,7 +104,7 @@ void GlobalRouter::makeComponents()
   _grid = new Grid;
   _gridOrigin = new Coordinate(-1, -1);
   _nets = new std::vector<Net>;
-  _openSta = _openroad->getSta();
+  _sta = _openroad->getSta();
   _result = new std::vector<FastRoute::NET>;
   _routingLayers = new std::vector<RoutingLayer>;
 }
@@ -117,7 +117,7 @@ void GlobalRouter::deleteComponents()
   delete _grid;
   delete _gridOrigin;
   delete _nets;
-  delete _openSta;
+  delete _sta;
   delete _result;
   delete _routingLayers;
 }
@@ -158,7 +158,9 @@ void GlobalRouter::startFastRoute()
     _maxRoutingLayer = computeMaxRoutingLayer();
   }
 
-  if (_maxRoutingLayer < _selectedMetal) {
+  // GCells width and height are based on layer 3 pitch
+  _layerForGCells = 3;
+  if (_maxRoutingLayer < _layerForGCells) {
     setSelectedMetal(_maxRoutingLayer);
   }
 
@@ -231,16 +233,16 @@ void GlobalRouter::startFastRoute()
   computeUserLayerAdjustments();
   std::cout << "Computing user defined layers adjustments... Done!\n";
 
-  for (uint i = 0; i < regionsReductionPercentage.size(); i++) {
-    if (regionsLayer[i] < 1)
+  for (uint i = 0; i < _regionsReductionPercentage.size(); i++) {
+    if (_regionsLayer[i] < 1)
       break;
 
-    std::cout << "Adjusting specific region in layer " << regionsLayer[i]
+    std::cout << "Adjusting specific region in layer " << _regionsLayer[i]
               << "...\n";
-    Coordinate lowerLeft = Coordinate(regionsMinX[i], regionsMinY[i]);
-    Coordinate upperRight = Coordinate(regionsMaxX[i], regionsMaxY[i]);
+    Coordinate lowerLeft = Coordinate(_regionsMinX[i], _regionsMinY[i]);
+    Coordinate upperRight = Coordinate(_regionsMaxX[i], _regionsMaxY[i]);
     computeRegionAdjustments(
-        lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
+        lowerLeft, upperRight, _regionsLayer[i], _regionsReductionPercentage[i]);
   }
 }
 
@@ -1239,12 +1241,12 @@ void GlobalRouter::addRegionAdjustment(int minX,
                                           int layer,
                                           float reductionPercentage)
 {
-  regionsMinX.push_back(minX);
-  regionsMinY.push_back(minY);
-  regionsMaxX.push_back(maxX);
-  regionsMaxY.push_back(maxY);
-  regionsLayer.push_back(layer);
-  regionsReductionPercentage.push_back(reductionPercentage);
+  _regionsMinX.push_back(minX);
+  _regionsMinY.push_back(minY);
+  _regionsMaxX.push_back(maxX);
+  _regionsMaxY.push_back(maxY);
+  _regionsLayer.push_back(layer);
+  _regionsReductionPercentage.push_back(reductionPercentage);
 }
 
 void GlobalRouter::setLayerPitch(int layer, float pitch)
@@ -2244,16 +2246,16 @@ void GlobalRouter::initGrid(int maxLayer)
 
   odb::dbTech* tech = _db->getTech();
 
-  odb::dbTechLayer* selectedLayer = tech->findRoutingLayer(selectedMetal);
+  odb::dbTechLayer* selectedLayer = tech->findRoutingLayer(_layerForGCells);
 
   if (selectedLayer == nullptr) {
-    error("Layer %d not found\n", selectedMetal);
+    error("Layer %d not found\n", _layerForGCells);
   }
 
   odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(selectedLayer);
 
   if (selectedTrack == nullptr) {
-    error("Track for layer %d not found\n", selectedMetal);
+    error("Track for layer %d not found\n", _layerForGCells);
   }
 
   int trackStepX, trackStepY;
@@ -2271,7 +2273,7 @@ void GlobalRouter::initGrid(int maxLayer)
              == odb::dbTechLayerDir::VERTICAL) {
     trackSpacing = trackStepX;
   } else {
-    error("Layer %d does not have valid direction\n", selectedMetal);
+    error("Layer %d does not have valid direction\n", _layerForGCells);
   }
 
   odb::Rect rect;
@@ -2363,13 +2365,13 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
 
     if (techLayer == nullptr) {
-      error("Layer %d not found\n", selectedMetal);
+      error("Layer %d not found\n", _layerForGCells);
     }
 
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
 
     if (selectedTrack == nullptr) {
-      error("Track for layer %d not found\n", selectedMetal);
+      error("Track for layer %d not found\n", _layerForGCells);
     }
 
     int trackStepX, trackStepY;
@@ -2405,7 +2407,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
       orientation = RoutingLayer::VERTICAL;
     } else {
       error("Layer %d does not have valid direction\n",
-            selectedMetal);
+            _layerForGCells);
     }
 
     RoutingTracks routingTracks = RoutingTracks(
@@ -2587,7 +2589,7 @@ void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> _clockNets;
 
-  _openSta->findClkNets(_clockNets);
+  _sta->findClkNets(_clockNets);
 
   std::cout << "[INFO] Found " << _clockNets.size() << " clock nets\n";
 
@@ -3066,7 +3068,7 @@ int GlobalRouter::computeMaxRoutingLayer()
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
     if (techLayer == nullptr) {
-      std::cout << "[ERROR] Layer" << selectedMetal
+      std::cout << "[ERROR] Layer" << _layerForGCells
                 << " not found\n";
       std::exit(1);
     }
