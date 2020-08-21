@@ -86,7 +86,6 @@ class GlobalRouter
   struct EST_
   {
     std::string netName;
-    int netId;
     int numSegments;
     std::vector<long> initX;
     std::vector<long> initY;
@@ -182,9 +181,7 @@ class GlobalRouter
 protected:
   // Net functions
   int getNetCount() const;
-  int getNetIdx(Net* net);
-  Net* getNetByIdx(int idx);
-	void reserveNets(size_t net_count);
+  void reserveNets(size_t net_count);
   Net* addNet(odb::dbNet* net);
   int getMaxNetDegree();
   friend class AntennaRepair;
@@ -251,6 +248,8 @@ protected:
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
   void addNets(std::vector<odb::dbNet*> nets);
+  Net* getNet(odb::dbNet* db_net);
+  Net* getNet(NET& net);
   void initObstacles();
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
@@ -270,6 +269,7 @@ protected:
   std::vector<FastRoute::NET>* _result;
 
   std::vector<Net> *_nets;
+  std::map<odb::dbNet*, Net*> _db_net_map;
   Grid* _grid = nullptr;
   std::vector<RoutingLayer>* _routingLayers = nullptr;
   std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
@@ -343,5 +343,7 @@ protected:
 };
 
 std::string getITermName(odb::dbITerm* iterm);
+Net *
+getNet(NET* net);
 
 }  // namespace FastRoute
