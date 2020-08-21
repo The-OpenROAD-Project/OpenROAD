@@ -72,42 +72,17 @@ class Grid
   Grid() = default;
   ~Grid() = default;
 
-  Grid(const long lowerLeftX,
-       const long lowerLeftY,
-       const long upperRightX,
-       const long upperRightY,
-       const long tileWidth,
-       const long tileHeight,
-       const int xGrids,
-       const int yGrids,
-       const bool perfectRegularX,
-       const bool perfectRegularY,
-       const int numLayers,
-       const std::vector<int>& spacings,
-       const std::vector<int>& minWidths,
-       const std::vector<int>& horizontalCapacities,
-       const std::vector<int>& verticalCapacities,
-       const std::map<int, std::vector<Box>>& obstacles,
-       int databaseUnit)
-      : _lowerLeftX(lowerLeftX),
-        _lowerLeftY(lowerLeftY),
-        _upperRightX(upperRightX),
-        _upperRightY(upperRightY),
-        _tileWidth(tileWidth),
-        _tileHeight(tileHeight),
-        _xGrids(xGrids),
-        _yGrids(yGrids),
-        _perfectRegularX(perfectRegularX),
-        _perfectRegularY(perfectRegularY),
-        _numLayers(numLayers),
-        _spacings(spacings),
-        _minWidths(minWidths),
-        _horizontalEdgesCapacities(horizontalCapacities),
-        _verticalEdgesCapacities(verticalCapacities),
-        _obstacles(obstacles),
-        _databaseUnit(databaseUnit)
-  {
-  }
+  void init(const long lowerLeftX, const long lowerLeftY,
+            const long upperRightX, const long upperRightY,
+            const long tileWidth, const long tileHeight,
+            const int xGrids, const int yGrids,
+            const bool perfectRegularX, const bool perfectRegularY,
+            const int numLayers, const std::vector<int>& spacings,
+            const std::vector<int>& minWidths,
+            const std::vector<int>& horizontalCapacities,
+            const std::vector<int>& verticalCapacities,
+            const std::map<int, std::vector<Box>>& obstacles,
+            int databaseUnit);
 
   typedef struct
   {

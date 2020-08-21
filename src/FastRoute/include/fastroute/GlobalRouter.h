@@ -192,7 +192,7 @@ protected:
   void makeComponents();
   void deleteComponents();
   // main functions
-  void initGrid();
+  void initCoreGrid();
   void initRoutingLayers();
   void initRoutingTracks();
   void setCapacities();
@@ -208,7 +208,7 @@ protected:
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
   void computeWirelength();
-  std::vector<Pin> getAllPorts();
+  std::vector<Pin*> getAllPorts();
 
 
   // aux functions
