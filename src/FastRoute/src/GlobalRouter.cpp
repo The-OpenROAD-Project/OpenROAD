@@ -1596,7 +1596,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
         && net.getNumPins() > 1
 	&& (routes->find(db_net) == routes->end()
 	    || (*routes)[db_net].empty())) {
-      GRoute route;
+      GRoute &route = (*routes)[db_net];
       for (FastRoute::PIN &pin : net_pins[db_net]) {
         FastRoute::ROUTE segment;
         segment.initLayer = pin.layer;
@@ -1607,7 +1607,6 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
         segment.finalY = pin.y;
         route.push_back(segment);
       }
-      (*routes)[db_net] = route;
     }
   }
 }
