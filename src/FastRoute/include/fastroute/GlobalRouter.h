@@ -259,7 +259,6 @@ protected:
   void initClockNets();
   void setSelectedMetal(int metal) { selectedMetal = metal; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
-  void foo();
 
   ord::OpenRoad* _openroad;
   // Objects variables

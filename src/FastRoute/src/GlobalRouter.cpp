@@ -1308,9 +1308,18 @@ void GlobalRouter::writeGuides()
   std::cout << "[INFO] Num routed nets: " << _routes->size() << "\n";
   int finalLayer;
 
-  for (auto &net_route : *_routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute &route = net_route.second;
+  // Sort nets so guide file net order is consistent.
+  std::vector<odb::dbNet*> sorted_nets;
+  for (odb::dbNet* net : _block->getNets())
+    sorted_nets.push_back(net);
+  std::sort(sorted_nets.begin(),
+            sorted_nets.end(),
+            [](odb::dbNet* net1, odb::dbNet* net2) {
+              return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+            });
+
+  for (odb::dbNet* db_net : sorted_nets) {
+    GRoute &route = (*_routes)[db_net];
     if (!route.empty()) {
       guideFile << db_net->getConstName() << "\n";
       guideFile << "(\n";
@@ -2544,18 +2553,9 @@ void GlobalRouter::addNets(std::vector<odb::dbNet*> nets)
               _grid->getUpperRightY(),
               -1);
 
-  // Sort nets so guide file net order is consistent.
-  std::vector<odb::dbNet*> sorted_nets;
-  for (odb::dbNet* net : nets)
-    sorted_nets.push_back(net);
-  std::sort(sorted_nets.begin(),
-            sorted_nets.end(),
-            [](odb::dbNet* net1, odb::dbNet* net2) {
-              return strcmp(net1->getConstName(), net2->getConstName()) < 0;
-            });
   // Prevent _nets from growing because pointers to nets become invalid.
   reserveNets(nets.size());
-  for (odb::dbNet* db_net : sorted_nets) {
+  for (odb::dbNet* db_net : nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
