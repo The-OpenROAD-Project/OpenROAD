@@ -356,8 +356,10 @@ void GlobalRouter::estimateRC()
   for (auto &net_route : *_routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
-    Net* net = getNet(db_net);
-    builder.estimateParasitcs(db_net, net->getPins(), route);
+    if (!route.empty()) {
+      Net* net = getNet(db_net);
+      builder.estimateParasitcs(db_net, net->getPins(), route);
+    }
   }
 }
 
