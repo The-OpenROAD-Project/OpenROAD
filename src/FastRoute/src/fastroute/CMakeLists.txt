@@ -56,11 +56,16 @@ set(SRC_FILES
 
 add_LIBRARY(${LIB_NAME} STATIC ${SRC_FILES})
 
-target_include_directories(${LIB_NAME} PUBLIC
-                           ${CMAKE_CURRENT_SOURCE_DIR}/include
-                           flute
-			   ${Boost_INCLUDE_DIRS}
-                           ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev)
+target_include_directories(${LIB_NAME}
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE
+  flute
+  ${Boost_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev
+  ${CMAKE_CURRENT_SOURCE_DIR}/../pdrev
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+  )
 
 target_link_libraries(${LIB_NAME}
   pdrev

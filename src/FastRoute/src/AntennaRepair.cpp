@@ -63,8 +63,8 @@ AntennaRepair::AntennaRepair(GlobalRouter *grouter,
 		_block = _db->getChip()->getBlock();
 	}
 
-int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
-                                      int maxRoutingLayer)
+int AntennaRepair::checkAntennaViolations(NetRouteMap* routing,
+					  int maxRoutingLayer)
 {
 	std::vector<odb::dbNet*> dirtyNets;
   odb::dbTech* tech = _db->getTech();
@@ -73,14 +73,15 @@ int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* rou
 
   std::map<int, odb::dbTechVia*> defaultVias = _grouter->getDefaultVias(maxRoutingLayer);
 
-  for (FastRoute::NET netRoute : *routing) {
-    odb::dbNet* net = netRoute.db_net;
-    odb::dbWire* wire = odb::dbWire::create(net);
+  for (auto net_route : *routing) {
+    odb::dbNet* db_net = net_route.first;
+    GRoute &route = net_route.second;
+    odb::dbWire* wire = odb::dbWire::create(db_net);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
     odb::dbWireType wireType = odb::dbWireType::ROUTED;
 
-    for (FastRoute::ROUTE seg : netRoute.route) {
+    for (FastRoute::ROUTE &seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
         error("Global route segment not valid\n");
       }
@@ -108,13 +109,12 @@ int AntennaRepair::checkAntennaViolations(const std::vector<FastRoute::NET>* rou
     }
     wireEncoder.end();
 
-    odb::orderWires(net, false, false);
+    odb::orderWires(db_net, false, false);
 
-    std::vector<VINFO> netViol
-        = _arc->get_net_antenna_violations(net);
+    std::vector<VINFO> netViol = _arc->get_net_antenna_violations(db_net);
     if (netViol.size() > 0) {
-      _antennaViolations[net] = netViol;
-      dirtyNets.push_back(net);
+      _antennaViolations[db_net] = netViol;
+      dirtyNets.push_back(db_net);
     }
     if (wire != nullptr) {
       odb::dbWire::destroy(wire);

@@ -70,15 +70,15 @@ void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
 {
   if (_debug)
     printf("net %s\n", net->getConstName());
-  _sta_net = _network->dbToSta(_net->getDbNet());
+  _sta_net = _network->dbToSta(net);
   _node_id = 0;
   _node_map.clear();
 
   _parasitic = _parasitics->makeParasiticNetwork(_sta_net, false,
 						 _analysisPoint);
   makePinRoutePts(pins);
-  makeRouteParasitics(routes);
-  makeParasiticsToGrid();
+  makeRouteParasitics(net, routes);
+  makeParasiticsToGrid(pins);
   reduceParasiticNetwork();
 }
 
@@ -107,7 +107,8 @@ sta::Pin* RcTreeBuilder::staPin(Pin& pin)
     return _network->dbToSta(pin.getITerm());
 }
 
-void RcTreeBuilder::makeRouteParasitics(std::vector<ROUTE>& routes)
+void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
+					std::vector<ROUTE>& routes)
 {
   for (ROUTE& route : routes) {
     sta::ParasiticNode *n1 = ensureParasiticNode(route.initX,
@@ -129,7 +130,7 @@ void RcTreeBuilder::makeRouteParasitics(std::vector<ROUTE>& routes)
       layerRC(wire_length_dbu, route.initLayer, res, cap);
     else
       ord::warn("non wire or via route found on net %s",
-		_net->getDbNet()->getConstName());
+		net->getConstName());
 
     if (_debug) {
       sta::Units *units = _sta->units();
@@ -146,9 +147,9 @@ void RcTreeBuilder::makeRouteParasitics(std::vector<ROUTE>& routes)
   }
 }
 
-void RcTreeBuilder::makeParasiticsToGrid()
+void RcTreeBuilder::makeParasiticsToGrid(std::vector<Pin>& pins)
 {
-  for (Pin& pin : _net->getPins()) {
+  for (Pin& pin : pins) {
     RoutePt route_pt = routePt(pin);
     sta::ParasiticNode *pin_node = _node_map[route_pt];
     makeParasiticsToGrid(pin, pin_node);
