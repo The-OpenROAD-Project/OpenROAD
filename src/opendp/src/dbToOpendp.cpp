@@ -125,7 +125,7 @@ Opendp::defineTopPower(Macro *macro, dbMaster *master)
 
   if (power != nullptr && gnd != nullptr) {
     int master_height = master->getHeight();
-    bool is_multi_row = master_height != row_height_ \
+    bool is_multi_row = master_height != row_height_
                         && master_height % row_height_ == 0;
 
     macro->is_multi_row_ = is_multi_row;

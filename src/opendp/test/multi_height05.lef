@@ -35,32 +35,12 @@ SITE unithd
   SIZE 0.46 BY 2.72 ;
 END unithd
 
-MACRO sky130_fd_sc_hd__buf_1
+MACRO sky130_fd_sc_hd__buf_1_single
   CLASS CORE ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.380000 BY  2.720000 ;
   SYMMETRY X Y R90 ;
   SITE unithd ;
-  PIN A
-    ANTENNAGATEAREA  0.196500 ;
-    DIRECTION INPUT ;
-    USE SIGNAL ;
-    PORT
-      LAYER li1 ;
-        RECT 0.105000 0.985000 0.445000 1.355000 ;
-    END
-  END A
-  PIN X
-    ANTENNADIFFAREA  0.340600 ;
-    DIRECTION OUTPUT ;
-    USE SIGNAL ;
-    PORT
-      LAYER li1 ;
-        RECT 1.025000 1.560000 1.295000 2.465000 ;
-        RECT 1.035000 0.255000 1.295000 0.760000 ;
-        RECT 1.115000 0.760000 1.295000 1.560000 ;
-    END
-  END X
   PIN VGND
     DIRECTION INOUT ;
     SHAPE ABUTMENT ;
@@ -68,7 +48,6 @@ MACRO sky130_fd_sc_hd__buf_1
     PORT
       LAYER li1 ;
         RECT 0.000000 -0.085000 1.380000 0.085000 ;
-        RECT 0.525000  0.085000 0.855000 0.465000 ;
     END
     PORT
       LAYER met1 ;
@@ -82,7 +61,6 @@ MACRO sky130_fd_sc_hd__buf_1
     PORT
       LAYER li1 ;
         RECT 0.000000 2.635000 1.380000 2.805000 ;
-        RECT 0.525000 1.875000 0.855000 2.635000 ;
     END
     PORT
       LAYER met1 ;
@@ -90,14 +68,78 @@ MACRO sky130_fd_sc_hd__buf_1
     END
   END VPWR
   OBS
-    LAYER li1 ;
-      RECT 0.165000 1.535000 0.840000 1.705000 ;
-      RECT 0.165000 1.705000 0.345000 2.465000 ;
-      RECT 0.175000 0.255000 0.345000 0.635000 ;
-      RECT 0.175000 0.635000 0.840000 0.805000 ;
-      RECT 0.670000 0.805000 0.840000 1.060000 ;
-      RECT 0.670000 1.060000 0.945000 1.390000 ;
-      RECT 0.670000 1.390000 0.840000 1.535000 ;
   END
-END sky130_fd_sc_hd__buf_1
+END sky130_fd_sc_hd__buf_1_single
+
+MACRO sky130_fd_sc_hd__buf_1_double
+  CLASS CORE ;
+  ORIGIN  0.000000  0.000000 ;
+  SIZE  1.380000 BY  5.440 ;
+  SYMMETRY X Y R90 ;
+  SITE unithd ;
+  PIN VGND
+    DIRECTION INOUT ;
+    SHAPE ABUTMENT ;
+    USE GROUND ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 -0.085000 1.380000 0.085000 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 -0.240000 1.380000 0.240000 ;
+    END
+  END VGND
+  PIN VPWR
+    DIRECTION INOUT ;
+    SHAPE ABUTMENT ;
+    USE POWER ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 5.355 1.380000 5.525 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 5.200 1.380000 5.680 ;
+    END
+  END VPWR
+  OBS
+  END
+END sky130_fd_sc_hd__buf_1_double
+
+MACRO sky130_fd_sc_hd__buf_1_triple
+  CLASS CORE ;
+  ORIGIN  0.000000  0.000000 ;
+  SIZE  1.380000 BY  8.16 ;
+  SYMMETRY X Y R90 ;
+  SITE unithd ;
+  PIN VGND
+    DIRECTION INOUT ;
+    SHAPE ABUTMENT ;
+    USE GROUND ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 -0.085000 1.380000 0.085000 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 -0.240000 1.380000 0.240000 ;
+    END
+  END VGND
+  PIN VPWR
+    DIRECTION INOUT ;
+    SHAPE ABUTMENT ;
+    USE POWER ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 8.075 1.380000 8.245 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 7.92 1.380000 8.4 ;
+    END
+  END VPWR
+  OBS
+  END
+END sky130_fd_sc_hd__buf_1_triple
 END LIBRARY
