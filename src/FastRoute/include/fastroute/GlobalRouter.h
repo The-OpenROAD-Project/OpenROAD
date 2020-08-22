@@ -78,24 +78,11 @@ class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
 struct NET;
-struct ROUTE;
 struct PIN;
 
 class GlobalRouter
 {
  public:
-  struct EST_
-  {
-    std::string netName;
-    int numSegments;
-    std::vector<long> initX;
-    std::vector<long> initY;
-    std::vector<int> initLayer;
-    std::vector<long> finalX;
-    std::vector<long> finalY;
-    std::vector<int> finalLayer;
-  };
-
   struct ADJUSTMENT_
   {
     int firstX;
@@ -167,11 +154,11 @@ class GlobalRouter
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
+  NetRouteMap* getRoutes() { return _routes; }
   bool haveRoutes() const { return _routes != nullptr; }
 
   // congestion drive replace functions
   ROUTE_ getRoute();
-  std::vector<EST_> getEst();
 
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);

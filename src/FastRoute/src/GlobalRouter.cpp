@@ -1840,44 +1840,6 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
   return route;
 }
 
-std::vector<GlobalRouter::EST_> GlobalRouter::getEst()
-{
-  std::vector<EST_> netsEst;
-
-  for (auto &net_route : *_routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute &route = net_route.second;
-    EST_ netEst;
-    int validTiles = 0;
-    for (FastRoute::ROUTE segment : route) {
-      if (segment.initX != segment.finalX || segment.initY != segment.finalY
-          || segment.initLayer != segment.finalLayer) {
-        validTiles++;
-      }
-    }
-
-    if (validTiles == 0) {
-      netEst.netName = db_net->getConstName();
-      netEst.numSegments = validTiles;
-    } else {
-      netEst.netName = db_net->getConstName();
-      netEst.numSegments = route.size();
-      for (FastRoute::ROUTE segment : route) {
-        netEst.initX.push_back(segment.initX);
-        netEst.initY.push_back(segment.initY);
-        netEst.initLayer.push_back(segment.initLayer);
-        netEst.finalX.push_back(segment.finalX);
-        netEst.finalY.push_back(segment.finalY);
-        netEst.finalLayer.push_back(segment.finalLayer);
-      }
-
-      netsEst.push_back(netEst);
-    }
-  }
-
-  return netsEst;
-}
-
 void GlobalRouter::computeWirelength()
 {
   DBU totalWirelength = 0;

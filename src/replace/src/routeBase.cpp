@@ -771,28 +771,18 @@ RouteBase::updateRoute() {
 // Fill routingTracks_;
 void
 RouteBase::updateEst() {
-  using FastRoute::GlobalRouter;
-  std::vector<GlobalRouter::EST_> estStor 
-    = grouter_->getEst();
-
-  for(auto& netEst : estStor) {
-    odb::dbNet* dbNet = 
-        db_->getChip()->getBlock()->findNet(netEst.netName.c_str());
-    GNet* gNet = nb_->dbToNb(dbNet);
-      
-    for(int i=0; i<netEst.numSegments; i++) {
-      // only focus on the same layer!
-      if( netEst.initLayer[i] != netEst.finalLayer[i] ) {
-        continue;
+  for (auto &net_route : *grouter_->getRoutes()) {
+    odb::dbNet* db_net = net_route.first;
+    FastRoute::GRoute &route = net_route.second;
+    GNet* gNet = nb_->dbToNb(db_net);
+    for (FastRoute::GSegment &segment : route) {
+      if (segment.initLayer == segment.finalLayer) {
+	routingTracks_.push_back(RoutingTrack(segment.initX, segment.initY, 
+					      segment.finalX, segment.finalY,
+					      segment.initLayer,
+					      gNet));
       }
-
-      routingTracks_.push_back(
-          RoutingTrack(
-            netEst.initX[i], netEst.initY[i], 
-            netEst.finalX[i], netEst.finalY[i],
-            netEst.initLayer[i], 
-            gNet));
-    } 
+    }
   }
 }
 
