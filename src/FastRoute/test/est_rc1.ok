@@ -57,7 +57,7 @@ Running FastRoute...
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 3332
+[Overflow Report] Total Usage   : 3333
 [Overflow Report] Total Capacity: 117668
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -66,21 +66,21 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 3332
-[INFO] Final number of vias : 2598
-[INFO] Final usage 3D       : 11126
+[INFO] Final usage          : 3333
+[INFO] Final number of vias : 2597
+[INFO] Final usage 3D       : 11124
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 10285.799805 um
+[INFO] Total wirelength: 10292.099609 um
 Writing guides...
 [INFO] Num routed nets: 563
 Writing guides... Done!
 Net clk
  Pin capacitance: r 33.238 f 29.975
- Wire capacitance: r 17.515 f 17.515
- Total capacitance: r 50.753 f 47.490
+ Wire capacitance: r 17.626 f 17.626
+ Total capacitance: r 50.864 f 47.602
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

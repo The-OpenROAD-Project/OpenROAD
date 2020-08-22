@@ -40,9 +40,7 @@
 #include <string>
 #include <vector>
 
-namespace odb {
-class dbNet;
-}
+#include "fastroute/GRoute.h"
 
 namespace FastRoute {
 
@@ -51,22 +49,6 @@ struct PIN
   long x;
   long y;
   int layer;
-};
-
-struct ROUTE
-{
-  long initX;
-  long initY;
-  int initLayer;
-  long finalX;
-  long finalY;
-  int finalLayer;
-};
-
-struct NET
-{
-  odb::dbNet* db_net;
-  std::vector<ROUTE> route;
 };
 
 typedef std::map<odb::dbNet*, std::vector<PIN>> NetPinsMap;
@@ -106,8 +88,8 @@ class FT
                      int reducedCap,
                      bool isReduce = true);
   void initAuxVar();
-  int run(std::vector<NET>&);
-  std::vector<NET> getResults();
+  NetRouteMap* run();
+  NetRouteMap *getRoutes();
   void writeCongestionReport2D(std::string fileName);
   void writeCongestionReport3D(std::string fileName);
 

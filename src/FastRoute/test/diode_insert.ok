@@ -85,7 +85,7 @@ Notice 0: Split top of 1 T shapes.
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 2677
+[Overflow Report] Total Usage   : 2676
 [Overflow Report] Total Capacity: 41360
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -94,13 +94,13 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 2677
-[INFO] Final number of vias : 2679
-[INFO] Final usage 3D       : 10714
+[INFO] Final usage          : 2676
+[INFO] Final number of vias : 2683
+[INFO] Final usage 3D       : 10725
 Getting results...
 Getting results... Done!
 
-Old total capacity: 35243
+Old total capacity: 35244
 [WARNING]No OR_DEFAULT vias defined
 [INFO] #Antenna violations: 5
 Design Stats
@@ -183,12 +183,12 @@ Computing user defined layers adjustments...
 [INFO] Reducing resources of layer 6 by 15%
 Computing user defined layers adjustments... Done!
 [INFO] #Nets to reroute: 5
-New total capacity: 35243
+New total capacity: 35244
 
 Final usage/overflow report: 
 
 [Overflow Report] Total Usage   : 87
-[Overflow Report] Total Capacity: 38683
+[Overflow Report] Total Capacity: 38684
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -203,7 +203,7 @@ Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 27698.400391 um
+[INFO] Total wirelength: 27813.599609 um
 Writing guides...
 [INFO] Num routed nets: 322
 Writing guides... Done!

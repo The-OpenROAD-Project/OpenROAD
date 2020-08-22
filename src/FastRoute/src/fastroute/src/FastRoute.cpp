@@ -910,12 +910,13 @@ void FT::initAuxVar()
   sttreesBK = NULL;
 }
 
-std::vector<NET> FT::getResults()
+NetRouteMap* FT::getRoutes()
 {
-  std::vector<NET> netsOut;
+  NetRouteMap *net_routes = new NetRouteMap;
   for (int netID = 0; netID < numValidNets; netID++) {
-    NET         currentNet;
-    currentNet.db_net     = nets[netID]->db_net;
+    odb::dbNet *db_net = nets[netID]->db_net;
+    GRoute &route = (*net_routes)[db_net];
+
     TreeEdge* treeedges = sttrees[netID].edges;
     int       deg       = sttrees[netID].deg;
 
@@ -934,24 +935,23 @@ std::vector<NET> FT::getResults()
           int xreal = wTile * (gridsX[i] + 0.5) + xcorner;
           int yreal = hTile * (gridsY[i] + 0.5) + ycorner;
 
-          ROUTE routing;
-          routing.initX      = lastX;
-          routing.initY      = lastY;
-          routing.initLayer  = lastL + 1;
-          routing.finalX     = xreal;
-          routing.finalY     = yreal;
-          routing.finalLayer = gridsL[i] + 1;
+          ROUTE segment;
+          segment.initX      = lastX;
+          segment.initY      = lastY;
+          segment.initLayer  = lastL + 1;
+          segment.finalX     = xreal;
+          segment.finalY     = yreal;
+          segment.finalLayer = gridsL[i] + 1;
           lastX              = xreal;
           lastY              = yreal;
           lastL              = gridsL[i];
-          currentNet.route.push_back(routing);
+          route.push_back(segment);
         }
       }
     }
-    netsOut.push_back(currentNet);
   }
 
-  return netsOut;
+  return net_routes;
 }
 
 void FT::writeCongestionReport2D(std::string fileName)
@@ -1051,7 +1051,7 @@ void FT::writeCongestionReport3D(std::string fileName)
   congestFile.close();
 }
 
-int FT::run(std::vector<NET>& result)
+NetRouteMap* FT::run()
 {
   int tUsage;
   int cost_step;
@@ -1475,7 +1475,7 @@ int FT::run(std::vector<NET>& result)
   printf("[INFO] Final usage 3D       : %d\n", (finallength + 3 * numVia));
 
   std::cout << "Getting results...\n";
-  result = getResults();
+  NetRouteMap* routes = getRoutes();
   std::cout << "Getting results... Done!\n\n";
 
   delete[] netEO;
@@ -1485,7 +1485,7 @@ int FT::run(std::vector<NET>& result)
    * frees all memory after the application end (next line) we can omit
    * this function call for now.> */
   /* freeAllMemory(); */
-  return (0);
+  return routes;
 }
 
 void FT::setAlpha(float a)

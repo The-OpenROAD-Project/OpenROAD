@@ -65,12 +65,12 @@ class GlobalRouter;
 class AntennaRepair
 {
  public:
- 	AntennaRepair(GlobalRouter *grouter,
- 								 antenna_checker::AntennaChecker* arc,
- 							   opendp::Opendp* opendp, odb::dbDatabase* db);
+  AntennaRepair(GlobalRouter *grouter,
+		antenna_checker::AntennaChecker* arc,
+		opendp::Opendp* opendp, odb::dbDatabase* db);
 
-	int checkAntennaViolations(const std::vector<FastRoute::NET>* routing,
-                             int maxRoutingLayer);
+  int checkAntennaViolations(NetRouteMap* routing,
+			     int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();
   std::map<odb::dbNet*, std::vector<VINFO>> getAntennaViolations()
@@ -79,7 +79,7 @@ class AntennaRepair
                             antennaViolations)
                            { _antennaViolations = antennaViolations; }
 
-  private:
+private:
   typedef int coord_type;
   typedef bg::cs::cartesian coord_sys_type;
   typedef bg::model::point<coord_type, 2, coord_sys_type> point;
@@ -100,10 +100,9 @@ class AntennaRepair
   GlobalRouter *_grouter;
   antenna_checker::AntennaChecker* _arc;
   opendp::Opendp* _opendp;
- 	odb::dbDatabase* _db;
- 	odb::dbBlock* _block;
-  std::map<odb::dbNet*, std::vector<VINFO>>
-    _antennaViolations;
+  odb::dbDatabase* _db;
+  odb::dbBlock* _block;
+  std::map<odb::dbNet*, std::vector<VINFO>> _antennaViolations;
 };
 
 }  // namespace FastRoute

@@ -46,6 +46,7 @@
 #include <vector>
 
 #include "opendb/db.h"
+#include "GRoute.h"
 
 namespace ord {
 class OpenRoad;
@@ -166,7 +167,7 @@ class GlobalRouter
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
-  bool haveRoutes() const { return _result != nullptr; }
+  bool haveRoutes() const { return _routes != nullptr; }
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -211,8 +212,8 @@ protected:
   // aux functions
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addRemainingGuides(std::vector<FastRoute::NET>* globalRoute);
-  void connectPadPins(std::vector<FastRoute::NET>* globalRoute);
+  void addRemainingGuides(NetRouteMap *routes);
+  void connectPadPins(NetRouteMap *routes);
   void mergeBox(std::vector<Box>& guideBox);
   Box globalRoutingToBox(const FastRoute::ROUTE& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
@@ -220,7 +221,8 @@ protected:
                        const ROUTE& seg1,
                        ROUTE& newSeg,
                        const std::map<Point, int>& segsAtPoint);
-  void mergeSegments(FastRoute::NET& net);
+  void mergeSegments();
+  void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
   ROUTE createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
@@ -229,8 +231,8 @@ protected:
   void checkPinPlacement();
 
   // antenna functions
-  void addLocalConnections(std::vector<FastRoute::NET>* globalRoute);
-  void mergeResults(const std::vector<FastRoute::NET>* newRoute);
+  void addLocalConnections(NetRouteMap *routes);
+  void mergeResults(NetRouteMap *routes);
   void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
@@ -248,7 +250,6 @@ protected:
   void initNetlist(bool reroute);
   void addNets(std::vector<odb::dbNet*> nets);
   Net* getNet(odb::dbNet* db_net);
-  Net* getNet(NET& net);
   void initObstacles();
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
@@ -256,8 +257,6 @@ protected:
   void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
   void initClockNets();
-  void commitGlobalSegmentsToDB(std::vector<FastRoute::NET> routing,
-                                int maxRoutingLayer);
   void setSelectedMetal(int metal) { selectedMetal = metal; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
 
@@ -265,7 +264,7 @@ protected:
   // Objects variables
   FT* _fastRoute = nullptr;
   Coordinate* _gridOrigin = nullptr;
-  std::vector<FastRoute::NET>* _result;
+  NetRouteMap *_routes;
 
   std::vector<Net> *_nets;
   std::map<odb::dbNet*, Net*> _db_net_map;

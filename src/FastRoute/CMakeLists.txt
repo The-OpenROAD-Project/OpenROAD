@@ -40,13 +40,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(FastRoute)
-set(LIB_NAME "FastRoute")
 
 add_subdirectory(src/fastroute)
 add_subdirectory(src/pdrev)
 
 set(CMAKE_CXX_STANDARD 11)
-set(Boost_USE_STATIC_LIBS ON)
 
 set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
@@ -77,27 +75,30 @@ set(SRC_FILES
   src/Net.cpp
   src/Pin.cpp
   src/RcTreeBuilder.cpp
+  ${FASTROUTE_WRAP}
+  ${FASTROUTE_TCL_INIT}
   )
 
-add_library(${LIB_NAME} 
-        ${SRC_FILES}
-        ${FASTROUTE_WRAP}
-        ${FASTROUTE_TCL_INIT})
+add_library(FastRoute ${SRC_FILES})
 
-target_include_directories(${LIB_NAME} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/fastroute/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
-        ${OPENDB_HOME}/include/
-        ${OPENROAD_HOME}/include
-        ${DBSTA_HOME}/include
-        ${OPENSTA_HOME}/include
-        ${FASTROUTE_HOME}/src
-	${TCL_INCLUDE_PATH}
-        ${ANTENNACHECKER_HOME}/include
-        ${OPENDP_HOME}/include
-        )
+target_include_directories(FastRoute
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/fastroute/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
+  ${OPENDB_HOME}/include/
+  ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
+  ${OPENSTA_HOME}/include
+  ${FASTROUTE_HOME}/src
+  ${TCL_INCLUDE_PATH}
+  ${ANTENNACHECKER_HOME}/include
+  ${OPENDP_HOME}/include
+  ${Boost_INCLUDE_DIRS}
+  )
 
-target_link_libraries(${LIB_NAME}
-        FastRoute4.1
-        pdrev)
+target_link_libraries(FastRoute
+  FastRoute4.1
+  pdrev
+  )
