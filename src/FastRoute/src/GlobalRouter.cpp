@@ -557,7 +557,7 @@ void GlobalRouter::initializeNets(bool reroute)
           std::cout << "[WARNING] Net " << net.getName() << " has "
                     << net.getNumPins() << " pins\n";
         } else {
-          std::vector<FastRoute::PIN> pins;
+          std::vector<PIN> pins;
           for (Pin& pin : net.getPins()) {
             Coordinate pinPosition;
             int topLayer = pin.getTopLayer();
@@ -602,22 +602,21 @@ void GlobalRouter::initializeNets(bool reroute)
             // If pin is connected to PAD, create a "fake" location in routing
             // grid to avoid PAD obstacles
             if (pin.isConnectedToPad() || pin.isPort()) {
-              FastRoute::ROUTE pinConnection
-                  = createFakePin(pin, pinPosition, layer);
+              GSegment pinConnection = createFakePin(pin, pinPosition, layer);
               _padPinsConnections[&net].push_back(pinConnection);
             }
 
-            FastRoute::PIN grPin;
+            PIN grPin;
             grPin.x = pinPosition.getX();
             grPin.y = pinPosition.getY();
             grPin.layer = topLayer;
             pins.push_back(grPin);
           }
 
-          FastRoute::PIN grPins[pins.size()];
+          PIN grPins[pins.size()];
           int count = 0;
 
-          for (FastRoute::PIN pin : pins) {
+          for (PIN pin : pins) {
             grPins[count] = pin;
             count++;
           }
@@ -1327,7 +1326,7 @@ void GlobalRouter::writeGuides()
       guideFile << "(\n";
       std::vector<Box> guideBox;
       finalLayer = -1;
-      for (FastRoute::ROUTE segment : route) {
+      for (GSegment &segment : route) {
 	if (segment.initLayer != finalLayer && finalLayer != -1) {
 	  mergeBox(guideBox);
 	  for (Box guide : guideBox) {
@@ -1470,7 +1469,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
     Net* net = getNet(db_net);
     // Skip nets with 1 pin or less
     if (net->getNumPins() > 1) {
-      std::vector<FastRoute::PIN>& pins = net_pins[db_net];
+      std::vector<PIN>& pins = net_pins[db_net];
       // Try to add local guides for net with no output of FR core
       if (route.empty()) {
         int lastLayer = -1;
@@ -1488,7 +1487,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
         }
 
         for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-          FastRoute::ROUTE segment;
+          GSegment segment;
           segment.initLayer = l;
           segment.initX = pins[0].x;
           segment.initY = pins[0].y;
@@ -1499,11 +1498,11 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
         }
       } else {  // For nets with routing, add guides for pin acess at upper
                 // layers
-        for (FastRoute::PIN pin : pins) {
+        for (PIN pin : pins) {
           if (pin.layer > 1) {
             // for each pin placed at upper layers, get all segments that
             // potentially covers it
-            std::vector<FastRoute::ROUTE> coverSegs;
+            GRoute coverSegs;
 
             int wireViaLayer = std::numeric_limits<int>::max();
             for (uint i = 0; i < route.size(); i++) {
@@ -1521,7 +1520,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
             }
 
             bool bottomLayerPin = false;
-            for (FastRoute::PIN pin2 : pins) {
+            for (PIN pin2 : pins) {
               if (pin.x == pin2.x && pin.y == pin2.y
                   && pin.layer > pin2.layer) {
                 bottomLayerPin = true;
@@ -1548,7 +1547,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
             int closestLayer = -1;
             int minorDiff = std::numeric_limits<int>::max();
 
-            for (FastRoute::ROUTE &seg : coverSegs) {
+            for (GSegment &seg : coverSegs) {
               if (seg.initLayer != seg.finalLayer) {
                 error("Segment has invalid layer assignment\n");
               }
@@ -1562,7 +1561,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
 
             if (closestLayer > pin.layer) {
               for (int l = closestLayer; l > pin.layer; l--) {
-                FastRoute::ROUTE segment;
+                GSegment segment;
                 segment.initLayer = l;
                 segment.initX = pin.x;
                 segment.initY = pin.y;
@@ -1573,7 +1572,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
               }
             } else if (closestLayer < pin.layer) {
               for (int l = closestLayer; l < pin.layer; l++) {
-                FastRoute::ROUTE segment;
+                GSegment segment;
                 segment.initLayer = l;
                 segment.initX = pin.x;
                 segment.initY = pin.y;
@@ -1597,8 +1596,8 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
 	&& (routes->find(db_net) == routes->end()
 	    || (*routes)[db_net].empty())) {
       GRoute &route = (*routes)[db_net];
-      for (FastRoute::PIN &pin : net_pins[db_net]) {
-        FastRoute::ROUTE segment;
+      for (PIN &pin : net_pins[db_net]) {
+        GSegment segment;
         segment.initLayer = pin.layer;
         segment.initX = pin.x;
         segment.initY = pin.y;
@@ -1619,7 +1618,7 @@ void GlobalRouter::connectPadPins(NetRouteMap *routes)
     Net* net = getNet(db_net);
     if (_padPinsConnections.find(net) != _padPinsConnections.end()
         || net->getNumPins() > 1) {
-      for (FastRoute::ROUTE &segment : _padPinsConnections[net]) {
+      for (GSegment &segment : _padPinsConnections[net]) {
         route.push_back(segment);
       }
     }
@@ -1653,7 +1652,7 @@ void GlobalRouter::mergeBox(std::vector<Box>& guideBox)
   guideBox = finalBox;
 }
 
-Box GlobalRouter::globalRoutingToBox(const FastRoute::ROUTE& route)
+Box GlobalRouter::globalRoutingToBox(const GSegment& route)
 {
   Box dieBounds = Box(_grid->getLowerLeftX(),
                       _grid->getLowerLeftY(),
@@ -1845,7 +1844,7 @@ void GlobalRouter::computeWirelength()
   DBU totalWirelength = 0;
   for (auto &net_route : *_routes) {
     GRoute &route = net_route.second;
-    for (ROUTE segment : route) {
+    for (GSegment &segment : route) {
       DBU segmentWl = std::abs(segment.finalX - segment.initX)
                     + std::abs(segment.finalY - segment.initY);
       totalWirelength += segmentWl;
@@ -1875,15 +1874,15 @@ void GlobalRouter::mergeSegments(GRoute& route)
     // vector copy - bad bad -cherry
     GRoute segments = route;
     std::map<Point, int> segsAtPoint;
-    for (const ROUTE& seg : segments) {
+    for (const GSegment& seg : segments) {
       segsAtPoint[{seg.initX, seg.initY, seg.initLayer}] += 1;
       segsAtPoint[{seg.finalX, seg.finalY, seg.finalLayer}] += 1;
     }
 
     uint i = 0;
     while (i < segments.size() - 1) {
-      ROUTE segment0 = segments[i];
-      ROUTE segment1 = segments[i + 1];
+      GSegment &segment0 = segments[i];
+      GSegment &segment1 = segments[i + 1];
 
       // both segments are not vias
       if (segment0.initLayer == segment0.finalLayer
@@ -1891,7 +1890,7 @@ void GlobalRouter::mergeSegments(GRoute& route)
 	  // segments are on the same layer
 	  segment0.initLayer == segment1.initLayer) {
 	// if segment 0 connects to the end of segment 1
-	ROUTE newSeg = segments[i];
+	GSegment &newSeg = segments[i];
 	if (segmentsConnect(segment0, segment1, newSeg, segsAtPoint)) {
 	  segments[i] = newSeg;
 	  // N^2 again -cherry
@@ -1907,10 +1906,10 @@ void GlobalRouter::mergeSegments(GRoute& route)
   }
 }
 
-bool GlobalRouter::segmentsConnect(const ROUTE& seg0,
-                                      const ROUTE& seg1,
-                                      ROUTE& newSeg,
-                                      const std::map<Point, int>& segsAtPoint)
+bool GlobalRouter::segmentsConnect(const GSegment& seg0,
+				   const GSegment& seg1,
+				   GSegment& newSeg,
+				   const std::map<Point, int>& segsAtPoint)
 {
   long initX0 = std::min(seg0.initX, seg0.finalX);
   long initY0 = std::min(seg0.initY, seg0.finalY);
@@ -1963,8 +1962,8 @@ void GlobalRouter::addLocalConnections(NetRouteMap *routes)
   std::vector<Box> pinBoxes;
   Coordinate pinPosition;
   Coordinate realPinPosition;
-  FastRoute::ROUTE horSegment;
-  FastRoute::ROUTE verSegment;
+  GSegment horSegment;
+  GSegment verSegment;
 
   for (auto &net_route : *routes) {
     odb::dbNet* db_net = net_route.first;
@@ -2104,12 +2103,12 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
   return false;
 }
 
-FastRoute::ROUTE GlobalRouter::createFakePin(Pin pin,
-                                                Coordinate& pinPosition,
-                                                RoutingLayer layer)
+GSegment GlobalRouter::createFakePin(Pin pin,
+				     Coordinate& pinPosition,
+				     RoutingLayer layer)
 {
   int topLayer = layer.getIndex();
-  FastRoute::ROUTE pinConnection;
+  GSegment pinConnection;
   pinConnection.initLayer = topLayer;
   pinConnection.finalLayer = topLayer;
 
@@ -3170,10 +3169,11 @@ getNetName(odb::dbNet* db_net)
   return db_net->getConstName();
 }
 
+// Useful for debugging.
 void print(GRoute &route)
 {
-  for (FastRoute::ROUTE segment : route) {
-    printf("%6ld %6ld %2d -> %6ld %6ld %2d\n",
+  for (GSegment &segment : route) {
+    printf("%6d %6d %2d -> %6d %6d %2d\n",
 	   segment.initX,
 	   segment.initY,
 	   segment.initLayer,

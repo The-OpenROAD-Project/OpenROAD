@@ -202,16 +202,16 @@ protected:
   void addRemainingGuides(NetRouteMap *routes);
   void connectPadPins(NetRouteMap *routes);
   void mergeBox(std::vector<Box>& guideBox);
-  Box globalRoutingToBox(const FastRoute::ROUTE& route);
+  Box globalRoutingToBox(const FastRoute::GSegment& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
-  bool segmentsConnect(const ROUTE& seg0,
-                       const ROUTE& seg1,
-                       ROUTE& newSeg,
+  bool segmentsConnect(const GSegment& seg0,
+                       const GSegment& seg1,
+                       GSegment& newSeg,
                        const std::map<Point, int>& segsAtPoint);
   void mergeSegments();
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
-  ROUTE createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
+  GSegment createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
 
   // check functions
@@ -315,7 +315,7 @@ protected:
   int _numAdjusts = 0;
 
   // Variables for PADs obstacles handling
-  std::map<Net*, std::vector<FastRoute::ROUTE>> _padPinsConnections;
+  std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _openSta;

@@ -42,16 +42,13 @@ namespace FastRoute {
 
 struct GSegment
 {
-  long initX;
-  long initY;
+  int initX;
+  int initY;
   int initLayer;
-  long finalX;
-  long finalY;
+  int finalX;
+  int finalY;
   int finalLayer;
 };
-
-// temporary compatibility
-typedef struct GSegment ROUTE;
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;

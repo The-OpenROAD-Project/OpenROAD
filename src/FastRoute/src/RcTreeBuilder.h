@@ -89,14 +89,14 @@ class RcTreeBuilder
 		GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
 			 std::vector<Pin>& pins,
-			 std::vector<ROUTE>& routes);
+			 std::vector<GSegment>& routes);
 
  protected:
   void makePinRoutePts(std::vector<Pin>& pins);
   RoutePt routePt(Pin& pin);
   sta::Pin* staPin(Pin& pin);
   void makeRouteParasitics(odb::dbNet* net,
-			   std::vector<ROUTE>& routes);
+			   std::vector<GSegment>& routes);
   sta::ParasiticNode *ensureParasiticNode(int x,
 					  int y,
 					  int layer);

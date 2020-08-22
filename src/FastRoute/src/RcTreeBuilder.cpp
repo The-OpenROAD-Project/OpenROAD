@@ -66,7 +66,7 @@ RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad,
 
 void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
 				      std::vector<Pin>& pins,
-				      std::vector<ROUTE>& routes)
+				      std::vector<GSegment>& routes)
 {
   if (_debug)
     printf("net %s\n", net->getConstName());
@@ -108,9 +108,9 @@ sta::Pin* RcTreeBuilder::staPin(Pin& pin)
 }
 
 void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
-					std::vector<ROUTE>& routes)
+					std::vector<GSegment>& routes)
 {
-  for (ROUTE& route : routes) {
+  for (GSegment& route : routes) {
     sta::ParasiticNode *n1 = ensureParasiticNode(route.initX,
 						 route.initY,
 						 route.initLayer);
