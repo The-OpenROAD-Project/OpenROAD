@@ -172,13 +172,13 @@ Final usage/overflow report:
 [Overflow Report] Final Overflow: 0
 
 [INFO] Final usage          : 2528
-[INFO] Final number of vias : 2652
-[INFO] Final usage 3D       : 10484
+[INFO] Final number of vias : 2651
+[INFO] Final usage 3D       : 10481
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 27871.199219 um
+[INFO] Total wirelength: 27885.599609 um
 Writing guides...
 [INFO] Num routed nets: 322
 Writing guides... Done!
