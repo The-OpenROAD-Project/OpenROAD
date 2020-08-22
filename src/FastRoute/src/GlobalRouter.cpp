@@ -117,7 +117,6 @@ void GlobalRouter::deleteComponents()
   delete _gridOrigin;
   delete _nets;
   delete _openSta;
-  delete _routes;
   delete _routingLayers;
 }
 
@@ -131,8 +130,7 @@ void GlobalRouter::clear()
   _allRoutingTracks->clear();
   _nets->clear();
   _db_net_map.clear();
-  delete _routes;
-  _routes = nullptr;
+  _routes.clear();
   _routingLayers->clear();
   _vCapacities.clear();
   _hCapacities.clear();
@@ -276,12 +274,12 @@ void GlobalRouter::runAntennaAvoidanceFlow()
     new AntennaRepair(this, _openroad->getAntennaChecker(),
                        _openroad->getOpendp(), _db);
 
-  NetRouteMap *globalRoute = _fastRoute->run();
+  NetRouteMap globalRoute = _fastRoute->run();
   addRemainingGuides(globalRoute);
   connectPadPins(globalRoute);
 
   // Save routing.
-  NetRouteMap* originalRoute = new NetRouteMap(*globalRoute);
+  NetRouteMap originalRoute(globalRoute);
 
   getPreviousCapacities(_minRoutingLayer);
   addLocalConnections(globalRoute);
@@ -306,13 +304,13 @@ void GlobalRouter::runAntennaAvoidanceFlow()
     restorePreviousCapacities(_minRoutingLayer);
 
     _fastRoute->initAuxVar();
-    NetRouteMap* newRoute = _fastRoute->run();
+    NetRouteMap newRoute = _fastRoute->run();
     addRemainingGuides(newRoute);
     connectPadPins(newRoute);
     mergeResults(newRoute);
   }
 
-  for (auto &net_route : *_routes) {
+  for (auto &net_route : _routes) {
     GRoute &route = net_route.second;
     mergeSegments(route);
   }
@@ -321,7 +319,7 @@ void GlobalRouter::runAntennaAvoidanceFlow()
 void GlobalRouter::runClockNetsRouteFlow()
 {
   _fastRoute->setVerbose(0);
-  NetRouteMap* clockNetsRoute = _fastRoute->run();
+  NetRouteMap clockNetsRoute = _fastRoute->run();
   addRemainingGuides(clockNetsRoute);
   connectPadPins(clockNetsRoute);
 
@@ -338,10 +336,7 @@ void GlobalRouter::runClockNetsRouteFlow()
   _routes = _fastRoute->run();
   addRemainingGuides(_routes);
   connectPadPins(_routes);
-  for (auto &net_route : *_routes) {
-    GRoute &route = net_route.second;
-    mergeSegments(route);
-  }
+  mergeSegments();
 
   mergeResults(clockNetsRoute);
 }
@@ -353,7 +348,7 @@ void GlobalRouter::estimateRC()
   dbSta->deleteParasitics();
 
   RcTreeBuilder builder(_openroad, this);
-  for (auto &net_route : *_routes) {
+  for (auto &net_route : _routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     if (!route.empty()) {
@@ -1306,7 +1301,7 @@ void GlobalRouter::writeGuides()
   int offsetX = _gridOrigin->getX();
   int offsetY = _gridOrigin->getY();
 
-  std::cout << "[INFO] Num routed nets: " << _routes->size() << "\n";
+  std::cout << "[INFO] Num routed nets: " << _routes.size() << "\n";
   int finalLayer;
 
   // Sort nets so guide file net order is consistent.
@@ -1320,7 +1315,7 @@ void GlobalRouter::writeGuides()
             });
 
   for (odb::dbNet* db_net : sorted_nets) {
-    GRoute &route = (*_routes)[db_net];
+    GRoute &route = _routes[db_net];
     if (!route.empty()) {
       guideFile << db_net->getConstName() << "\n";
       guideFile << "(\n";
@@ -1460,10 +1455,10 @@ RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
   return selectedRoutingTracks;
 }
 
-void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
+void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
 {
   auto net_pins = _fastRoute->getNets();
-  for (auto &net_route : *routes) {
+  for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
@@ -1593,9 +1588,9 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
     odb::dbNet* db_net = net.getDbNet();
     if (checkSignalType(net)
         && net.getNumPins() > 1
-	&& (routes->find(db_net) == routes->end()
-	    || (*routes)[db_net].empty())) {
-      GRoute &route = (*routes)[db_net];
+	&& (routes.find(db_net) == routes.end()
+	    || routes[db_net].empty())) {
+      GRoute &route = routes[db_net];
       for (PIN &pin : net_pins[db_net]) {
         GSegment segment;
         segment.initLayer = pin.layer;
@@ -1610,9 +1605,9 @@ void GlobalRouter::addRemainingGuides(NetRouteMap *routes)
   }
 }
 
-void GlobalRouter::connectPadPins(NetRouteMap *routes)
+void GlobalRouter::connectPadPins(NetRouteMap& routes)
 {
-  for (auto &net_route : *routes) {
+  for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
@@ -1842,7 +1837,7 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
 void GlobalRouter::computeWirelength()
 {
   DBU totalWirelength = 0;
-  for (auto &net_route : *_routes) {
+  for (auto &net_route : _routes) {
     GRoute &route = net_route.second;
     for (GSegment &segment : route) {
       DBU segmentWl = std::abs(segment.finalX - segment.initX)
@@ -1860,7 +1855,7 @@ void GlobalRouter::computeWirelength()
 
 void GlobalRouter::mergeSegments()
 {
-  for (auto &net_route : *_routes) {
+  for (auto &net_route : _routes) {
     GRoute &route = net_route.second;
     mergeSegments(route);
   }
@@ -1956,7 +1951,7 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
   return false;
 }
 
-void GlobalRouter::addLocalConnections(NetRouteMap *routes)
+void GlobalRouter::addLocalConnections(NetRouteMap& routes)
 {
   int topLayer;
   std::vector<Box> pinBoxes;
@@ -1965,7 +1960,7 @@ void GlobalRouter::addLocalConnections(NetRouteMap *routes)
   GSegment horSegment;
   GSegment verSegment;
 
-  for (auto &net_route : *routes) {
+  for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
@@ -1996,17 +1991,17 @@ void GlobalRouter::addLocalConnections(NetRouteMap *routes)
   }
 }
 
-void GlobalRouter::mergeResults(NetRouteMap *routes)
+void GlobalRouter::mergeResults(NetRouteMap& routes)
 {
-  for (auto &net_route : *routes) {
+  for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
-    (*_routes)[db_net] = route;
+    _routes[db_net] = route;
   }
 }
 
 bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
-                                                 Coordinate& trackPosition)
+					      Coordinate& trackPosition)
 {
   DBU minX = std::numeric_limits<DBU>::max();
   DBU minY = std::numeric_limits<DBU>::max();

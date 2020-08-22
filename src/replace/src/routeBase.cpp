@@ -771,7 +771,7 @@ RouteBase::updateRoute() {
 // Fill routingTracks_;
 void
 RouteBase::updateEst() {
-  for (auto &net_route : *grouter_->getRoutes()) {
+  for (auto &net_route : grouter_->getRoutes()) {
     odb::dbNet* db_net = net_route.first;
     FastRoute::GRoute &route = net_route.second;
     GNet* gNet = nb_->dbToNb(db_net);

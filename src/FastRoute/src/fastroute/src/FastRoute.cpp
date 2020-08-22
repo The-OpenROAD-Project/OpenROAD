@@ -910,12 +910,12 @@ void FT::initAuxVar()
   sttreesBK = NULL;
 }
 
-NetRouteMap* FT::getRoutes()
+NetRouteMap FT::getRoutes()
 {
-  NetRouteMap *net_routes = new NetRouteMap;
+  NetRouteMap routes;
   for (int netID = 0; netID < numValidNets; netID++) {
     odb::dbNet *db_net = nets[netID]->db_net;
-    GRoute &route = (*net_routes)[db_net];
+    GRoute &route = routes[db_net];
 
     TreeEdge* treeedges = sttrees[netID].edges;
     int       deg       = sttrees[netID].deg;
@@ -951,7 +951,7 @@ NetRouteMap* FT::getRoutes()
     }
   }
 
-  return net_routes;
+  return routes;
 }
 
 void FT::writeCongestionReport2D(std::string fileName)
@@ -1051,7 +1051,7 @@ void FT::writeCongestionReport3D(std::string fileName)
   congestFile.close();
 }
 
-NetRouteMap* FT::run()
+NetRouteMap FT::run()
 {
   int tUsage;
   int cost_step;
@@ -1475,7 +1475,7 @@ NetRouteMap* FT::run()
   printf("[INFO] Final usage 3D       : %d\n", (finallength + 3 * numVia));
 
   std::cout << "Getting results...\n";
-  NetRouteMap* routes = getRoutes();
+  NetRouteMap routes = getRoutes();
   std::cout << "Getting results... Done!\n\n";
 
   delete[] netEO;

@@ -88,8 +88,7 @@ class FT
                      int reducedCap,
                      bool isReduce = true);
   void initAuxVar();
-  NetRouteMap* run();
-  NetRouteMap *getRoutes();
+  NetRouteMap run();
   void writeCongestionReport2D(std::string fileName);
   void writeCongestionReport3D(std::string fileName);
 
@@ -123,6 +122,9 @@ class FT
   void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
   
+private:
+  NetRouteMap getRoutes();
+
   NetPinsMap _net_pins_map;
   int maxNetDegree;
 };

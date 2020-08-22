@@ -154,8 +154,8 @@ class GlobalRouter
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
-  NetRouteMap* getRoutes() { return _routes; }
-  bool haveRoutes() const { return _routes != nullptr; }
+  NetRouteMap& getRoutes() { return _routes; }
+  bool haveRoutes() const { return !_routes.empty(); }
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -199,8 +199,8 @@ protected:
   // aux functions
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addRemainingGuides(NetRouteMap *routes);
-  void connectPadPins(NetRouteMap *routes);
+  void addRemainingGuides(NetRouteMap& routes);
+  void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<Box>& guideBox);
   Box globalRoutingToBox(const FastRoute::GSegment& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
@@ -218,8 +218,8 @@ protected:
   void checkPinPlacement();
 
   // antenna functions
-  void addLocalConnections(NetRouteMap *routes);
-  void mergeResults(NetRouteMap *routes);
+  void addLocalConnections(NetRouteMap& routes);
+  void mergeResults(NetRouteMap& routes);
   void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
@@ -251,7 +251,7 @@ protected:
   // Objects variables
   FT* _fastRoute = nullptr;
   Coordinate* _gridOrigin = nullptr;
-  NetRouteMap *_routes;
+  NetRouteMap _routes;
 
   std::vector<Net> *_nets;
   std::map<odb::dbNet*, Net*> _db_net_map;
