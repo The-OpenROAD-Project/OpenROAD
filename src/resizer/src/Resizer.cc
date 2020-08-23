@@ -819,7 +819,11 @@ Resizer::estimateWireParasitics()
 {
   if (wire_cap_ > 0.0) {
     sta_->ensureClkNetwork();
+
     sta_->deleteParasitics();
+    corner_ = sta_->cmdCorner();
+    sta_->corners()->makeParasiticAnalysisPtsSingle();
+    parasitics_ap_ = corner_->findParasiticAnalysisPt(MinMax::max());
 
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
