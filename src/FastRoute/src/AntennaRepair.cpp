@@ -63,17 +63,17 @@ AntennaRepair::AntennaRepair(GlobalRouter *grouter,
 		_block = _db->getChip()->getBlock();
 	}
 
-int AntennaRepair::checkAntennaViolations(NetRouteMap* routing,
+int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 					  int maxRoutingLayer)
 {
-	std::vector<odb::dbNet*> dirtyNets;
+  std::vector<odb::dbNet*> dirtyNets;
   odb::dbTech* tech = _db->getTech();
 
   _arc->load_antenna_rules();
 
   std::map<int, odb::dbTechVia*> defaultVias = _grouter->getDefaultVias(maxRoutingLayer);
 
-  for (auto net_route : *routing) {
+  for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     odb::dbWire* wire = odb::dbWire::create(db_net);
@@ -81,7 +81,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap* routing,
     wireEncoder.begin(wire);
     odb::dbWireType wireType = odb::dbWireType::ROUTED;
 
-    for (FastRoute::ROUTE &seg : route) {
+    for (FastRoute::GSegment &seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
         error("Global route segment not valid\n");
       }

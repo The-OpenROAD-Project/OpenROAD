@@ -69,7 +69,7 @@ class AntennaRepair
 		antenna_checker::AntennaChecker* arc,
 		opendp::Opendp* opendp, odb::dbDatabase* db);
 
-  int checkAntennaViolations(NetRouteMap* routing,
+  int checkAntennaViolations(NetRouteMap& routing,
 			     int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();

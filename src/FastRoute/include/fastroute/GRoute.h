@@ -40,18 +40,18 @@ class dbNet;
 
 namespace FastRoute {
 
-struct ROUTE
+struct GSegment
 {
-  long initX;
-  long initY;
+  int initX;
+  int initY;
   int initLayer;
-  long finalX;
-  long finalY;
+  int finalX;
+  int finalY;
   int finalLayer;
 };
 
 // class Route is defined in fastroute core.
-typedef std::vector<ROUTE> GRoute;
+typedef std::vector<GSegment> GRoute;
 typedef std::map<odb::dbNet*, GRoute> NetRouteMap;
 
 void print(GRoute &groute);

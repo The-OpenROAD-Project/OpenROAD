@@ -78,24 +78,11 @@ class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
 struct NET;
-struct ROUTE;
 struct PIN;
 
 class GlobalRouter
 {
  public:
-  struct EST_
-  {
-    std::string netName;
-    int numSegments;
-    std::vector<long> initX;
-    std::vector<long> initY;
-    std::vector<int> initLayer;
-    std::vector<long> finalX;
-    std::vector<long> finalY;
-    std::vector<int> finalLayer;
-  };
-
   struct ADJUSTMENT_
   {
     int firstX;
@@ -167,11 +154,11 @@ class GlobalRouter
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
-  bool haveRoutes() const { return _routes != nullptr; }
+  NetRouteMap& getRoutes() { return _routes; }
+  bool haveRoutes() const { return !_routes.empty(); }
 
   // congestion drive replace functions
   ROUTE_ getRoute();
-  std::vector<EST_> getEst();
 
   // estimate_rc functions
   void getLayerRC(unsigned layerId, float& r, float& c);
@@ -212,27 +199,27 @@ protected:
   // aux functions
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addRemainingGuides(NetRouteMap *routes);
-  void connectPadPins(NetRouteMap *routes);
+  void addRemainingGuides(NetRouteMap& routes);
+  void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<Box>& guideBox);
-  Box globalRoutingToBox(const FastRoute::ROUTE& route);
+  Box globalRoutingToBox(const FastRoute::GSegment& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
-  bool segmentsConnect(const ROUTE& seg0,
-                       const ROUTE& seg1,
-                       ROUTE& newSeg,
+  bool segmentsConnect(const GSegment& seg0,
+                       const GSegment& seg1,
+                       GSegment& newSeg,
                        const std::map<Point, int>& segsAtPoint);
   void mergeSegments();
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
-  ROUTE createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
+  GSegment createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
 
   // check functions
   void checkPinPlacement();
 
   // antenna functions
-  void addLocalConnections(NetRouteMap *routes);
-  void mergeResults(NetRouteMap *routes);
+  void addLocalConnections(NetRouteMap& routes);
+  void mergeResults(NetRouteMap& routes);
   void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
@@ -264,7 +251,7 @@ protected:
   // Objects variables
   FT* _fastRoute = nullptr;
   Coordinate* _gridOrigin = nullptr;
-  NetRouteMap *_routes;
+  NetRouteMap _routes;
 
   std::vector<Net> *_nets;
   std::map<odb::dbNet*, Net*> _db_net_map;
@@ -328,7 +315,7 @@ protected:
   int _numAdjusts = 0;
 
   // Variables for PADs obstacles handling
-  std::map<Net*, std::vector<FastRoute::ROUTE>> _padPinsConnections;
+  std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _openSta;
