@@ -99,7 +99,10 @@ proc set_wire_rc { args } {
     }
   }
   
-  set corner [parse_corner keys]
+  set corner [cmd_corner]
+  if { [info exists keys(-corner)] } {
+    ord::warn "-corner argument ignored."
+  }
   check_argc_eq0 "set_wire_rc" $args
   
   if { [info exists flags(-clock)] && [info exists flags(-clock)] \
