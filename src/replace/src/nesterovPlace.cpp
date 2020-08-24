@@ -115,6 +115,9 @@ NesterovPlace::NesterovPlace(
   rb_ = rb;
   log_ = log;
   init();
+  if (npVars.debug) {
+    graphics_ = make_unique<Graphics>(pb, nb, npVars_.debug_draw_bins);
+  }
 }
 
 NesterovPlace::~NesterovPlace() {
@@ -402,9 +405,8 @@ NesterovPlace::doNesterovPlace() {
      "./plot/arrow/arrow_0");
 #endif
 
-  if (npVars_.debug) {
-    Graphics g(pb_, nb_, npVars_.debug_draw_bins);
-    g.cellPlot(true);
+  if (graphics_) {
+    graphics_->cellPlot(true);
   }
 
   // backTracking variable.
@@ -547,10 +549,9 @@ NesterovPlace::doNesterovPlace() {
     // For JPEG Saving
     // debug
 
-    if (npVars_.debug) {
-      Graphics g(pb_, nb_, npVars_.debug_draw_bins);
+  if (graphics_) {
       bool pause = (i == 0 || (i+1) % npVars_.debug_pause_iterations == 0);
-      g.cellPlot(pause);
+      graphics_->cellPlot(pause);
     }
 
     if( i == 0 || (i+1) % 10 == 0 ) {
@@ -667,6 +668,11 @@ NesterovPlace::doNesterovPlace() {
 
   if( isDiverged_ ) { 
     log_->errorQuit(divergeMsg, divergeCode);
+  }
+
+  if (graphics_) {
+    graphics_->status("End placement");
+    graphics_->cellPlot(true);
   }
 }
 

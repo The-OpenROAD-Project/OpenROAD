@@ -204,8 +204,10 @@ void LayoutViewer::updateRubberBandRegion()
 
 Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 {
-  // Look for the selected object in reverse layer order
+  update();  // schedule an update for selection change
 
+  // Look for the selected object in reverse layer order
+  auto& renderers = Gui::get()->renderers();
   dbTech* tech = getBlock()->getDataBase()->getTech();
   // dbSet doesn't provide a reverse iterator so we have to copy it.
   std::deque<dbTechLayer*> rev_layers;
@@ -218,12 +220,27 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       continue;
     }
 
+    for (auto* renderer : renderers) {
+      Selected selected = renderer->select(layer, pt_dbu);
+      if (selected) {
+        return selected;
+      }
+    }
+
     auto shapes = search_.search_shapes(
         layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
     // Just return the first one
     if (shapes.begin() != shapes.end()) {
       return Selected(shapes.begin()->second);
+    }
+  }
+
+  // Check for objects not in a layer
+  for (auto* renderer : renderers) {
+    Selected selected = renderer->select(nullptr, pt_dbu);
+    if (selected) {
+      return selected;
     }
   }
 

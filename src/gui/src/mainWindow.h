@@ -92,6 +92,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Displays the selection in the status bar
   void setSelected(const Selected& selection);
 
+  // Show a message in the status bar
+  void status(const std::string& message);
+
  private:
   void createMenus();
   void createActions();

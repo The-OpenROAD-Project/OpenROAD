@@ -66,8 +66,17 @@ void gui::Gui::pause()
 {
 }
 
+void Gui::status(const std::string& /* message */)
+{
+}
+
 Renderer::~Renderer()
 {
+}
+
+OpenDbDescriptor* OpenDbDescriptor::get()
+{
+  return nullptr;
 }
 
 // using namespace odb;

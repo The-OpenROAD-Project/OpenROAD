@@ -11,7 +11,7 @@ namespace replace {
 Graphics::Graphics(std::shared_ptr<PlacerBase> pb,
                    std::shared_ptr<NesterovBase> nb,
                    bool draw_bins)
-    : pb_(pb), nb_(nb), draw_bins_(draw_bins)
+    : pb_(pb), nb_(nb), selected_(nullptr), draw_bins_(draw_bins)
 {
   gui::Gui::get()->register_renderer(this);
 }
@@ -42,7 +42,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
-  for (auto& gCell : nb_->gCells()) {
+  for (auto* gCell : nb_->gCells()) {
     const int gcx = gCell->dCx();
     const int gcy = gCell->dCy();
 
@@ -57,9 +57,32 @@ void Graphics::drawObjects(gui::Painter& painter)
     } else if (gCell->isFiller()) {
       color = gui::Painter::dark_magenta;
     }
+    if (gCell == selected_) {
+      color = gui::Painter::yellow;
+    }
+
     color.a = 180;
     painter.setBrush(color);
     painter.drawRect({xl, yl, xh, yh});
+  }
+
+  // Draw lines to neighbors
+  if (selected_) {
+    painter.setPen(gui::Painter::yellow, true);
+    for (GPin* pin : selected_->gPins()) {
+      GNet* net = pin->gNet();
+      if (!net) {
+        continue;
+      }
+      for (GPin* other_pin : net->gPins()) {
+        GCell* neighbor = other_pin->gCell();
+        if (neighbor == selected_) {
+          continue;
+        }
+        painter.drawLine(
+            pin->cx(), pin->cy(), other_pin->cx(), other_pin->cy());
+      }
+    }
   }
 
   // Draw force direction lines
@@ -87,7 +110,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       painter.drawLine(cx, cy, cx + dx, cy + dy);
     }
   }
-}  // namespace replace
+}
 
 void Graphics::cellPlot(bool pause)
 {
@@ -95,6 +118,40 @@ void Graphics::cellPlot(bool pause)
   if (pause) {
     gui::Gui::get()->pause();
   }
+}
+
+gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
+{
+  selected_ = nullptr;
+
+  if (layer) {
+    return gui::Selected();
+  }
+
+  for (GCell* cell : nb_->gCells()) {
+    const int gcx = cell->dCx();
+    const int gcy = cell->dCy();
+
+    int xl = gcx - cell->dx() / 2;
+    int yl = gcy - cell->dy() / 2;
+    int xh = gcx + cell->dx() / 2;
+    int yh = gcy + cell->dy() / 2;
+
+    if (point.x() < xl || point.y() < yl || point.x() > xh || point.y() > yh) {
+      continue;
+    }
+
+    selected_ = cell;
+    if (cell->isInstance()) {
+      return gui::Selected(cell->instance()->dbInst());
+    }
+  }
+  return gui::Selected();
+}
+
+void Graphics::status(const std::string& message)
+{
+  gui::Gui::get()->status(message);
 }
 
 }  // namespace replace

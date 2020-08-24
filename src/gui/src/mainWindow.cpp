@@ -146,18 +146,12 @@ void MainWindow::setLocation(qreal x, qreal y)
 
 void MainWindow::setSelected(const Selected& selection)
 {
-  std::string text;
-  if (auto inst = std::get_if<odb::dbInst*>(&selection)) {
-    text = "Inst: " + (*inst)->getName() + "{"
-      + (*inst)->getMaster()->getName() + "}";
-  } else if (auto net = std::get_if<odb::dbNet*>(&selection)) {
-    text = "Net: " + (*net)->getName();
-  } else if (std::get_if<std::monostate>(&selection)) {
-    // text is already empty
-  } else {
-    text = "Unknown";
-  }
-  statusBar()->showMessage(QString::fromStdString(text));
+  status(selection ? selection.getName() : "");
+}
+
+void MainWindow::status(const std::string& message)
+{
+  statusBar()->showMessage(QString::fromStdString(message));
 }
 
 void MainWindow::saveSettings()

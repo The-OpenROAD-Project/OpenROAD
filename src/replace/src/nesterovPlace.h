@@ -46,6 +46,7 @@ class Instance;
 class NesterovBase;
 class Logger;
 class RouteBase;
+class Graphics;
 
 class NesterovPlaceVars {
   public:
@@ -117,7 +118,8 @@ private:
   std::shared_ptr<Logger> log_;
   std::shared_ptr<RouteBase> rb_;
   NesterovPlaceVars npVars_;
-
+  std::unique_ptr<Graphics> graphics_;
+  
   // SLP is Step Length Prediction.
   //
   // y_st, y_dst, y_wdst, w_pdst

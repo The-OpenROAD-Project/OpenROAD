@@ -30,13 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "gui/gui.h"
-
 #include <QApplication>
 #include <stdexcept>
 
 #include "db.h"
 #include "defin.h"
+#include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
@@ -60,16 +59,23 @@ Gui* Gui::get()
 void Gui::register_renderer(Renderer* renderer)
 {
   renderers_.insert(renderer);
+  redraw();
 }
 
 void Gui::unregister_renderer(Renderer* renderer)
 {
   renderers_.erase(renderer);
+  redraw();
 }
 
 void Gui::redraw()
 {
   mainWindow->redraw();
+}
+
+void Gui::status(const std::string& message)
+{
+  mainWindow->status(message);
 }
 
 void Gui::pause()
@@ -80,6 +86,29 @@ void Gui::pause()
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregister_renderer(this);
+}
+
+OpenDbDescriptor* OpenDbDescriptor::singleton_ = nullptr;
+OpenDbDescriptor* OpenDbDescriptor::get()
+{
+  if (!singleton_) {
+    singleton_ = new OpenDbDescriptor();
+  }
+
+  return singleton_;
+}
+
+std::string OpenDbDescriptor::getName(void* object) const
+{
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  switch (db_obj->getObjectType()) {
+    case odb::dbNetObj:
+      return "Net: " + static_cast<odb::dbNet*>(db_obj)->getName();
+    case odb::dbInstObj:
+      return "Inst: " + static_cast<odb::dbInst*>(db_obj)->getName();
+    default:
+      return db_obj->getObjName();
+  }
 }
 
 // This is the main entry point to start the GUI.  It only

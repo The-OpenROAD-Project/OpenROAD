@@ -36,15 +36,66 @@
 
 #include <initializer_list>
 #include <set>
-#include <variant>
+#include <string>
 #include <tuple>
+#include <variant>
 
 #include "opendb/db.h"
 
 namespace gui {
 
-// An object selected in the gui.  Monostate is for a null value.
-using Selected = std::variant<std::monostate, odb::dbInst*, odb::dbNet*>;
+// This interface allows the GUI to interact with selected objects of
+// types it knows nothing about.  It can just ask the descriptor to
+// give it information about the foreign object (eg attributes like
+// name).
+class Descriptor
+{
+ public:
+  virtual std::string getName(void* object) const = 0;
+};
+
+// An implementation of the Descriptor interface for OpenDB
+// objects for client convenience.
+class OpenDbDescriptor : public Descriptor
+{
+ public:
+  std::string getName(void* object) const override;
+
+  static OpenDbDescriptor* get();
+
+ private:
+  OpenDbDescriptor() = default;
+  static OpenDbDescriptor* singleton_;
+};
+
+// An object selected in the gui.  The objects is stored as a
+// void* to allow any client objects to be stored.  The descriptor
+// is the API for the object as described above.  This doesn't
+// require the client object to use inheritance from an interface.
+class Selected
+{
+ public:
+  // Null case
+  Selected() : object(nullptr), descriptor(nullptr) {}
+
+  Selected(void* object, Descriptor* descriptor)
+      : object(object), descriptor(descriptor)
+  {
+  }
+
+  Selected(odb::dbObject* object)
+      : object(object), descriptor(OpenDbDescriptor::get())
+  {
+  }
+
+  std::string getName() const { return descriptor->getName(object); }
+
+  operator bool() const { return object != nullptr; }
+
+ private:
+  void* object;
+  Descriptor* descriptor;
+};
 
 // A collection of selected objects
 using SelectionSet = std::set<Selected>;
@@ -132,6 +183,15 @@ class Renderer
   // Draw on top of the layout in general after the layers
   // have been drawn.
   virtual void drawObjects(Painter& /* painter */) {}
+
+  // Handle user clicks.  Layer is a nullptr for the
+  // object not associated with a layer.
+  // Return true if an object was found; false otherwise.
+  virtual Selected select(odb::dbTechLayer* /* layer */,
+                          const odb::Point& /* point */)
+  {
+    return Selected();
+  }
 };
 
 // This is the API for the rest of the program to interact with the
@@ -153,11 +213,16 @@ class Gui
   // Draw events are processed while paused.
   void pause();
 
+  // Show a message in the status bar
+  void status(const std::string& message);
+
   const std::set<Renderer*>& renderers() { return renderers_; }
 
   static Gui* get();
 
  private:
+  Gui() = default;
+
   std::set<Renderer*> renderers_;
   static Gui* singleton_;
 };
