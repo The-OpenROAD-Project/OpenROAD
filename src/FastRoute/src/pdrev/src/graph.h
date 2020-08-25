@@ -35,6 +35,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <fstream>
 
 #include "edge.h"
 #include "node.h"
