@@ -577,38 +577,41 @@ If this parameter is omitted, the metrics are shown on the standard output.
 
 #### Global Routing
 
-FastRoute global route.
-Generate routing guides given a placed design.
+Global router options and commands are described below. 
 
 ```
-fastroute -output_file out_file
-          -capacity_adjustment <cap_adjust>
-          -min_routing_layer <min_layer>
-          -max_routing_layer <max_layer>
-          -pitches_in_tile <pitches>
-          -layers_adjustments <list_of_layers_to_adjust>
-          -regions_adjustments <list_of_regions_to_adjust>
-          -nets_alphas_priorities <list_of_alphas_per_net>
-          -verbose <verbose>
+fastroute -capacity_adjustment cap_adjust
+          -min_routing_layer min_layer
+          -max_routing_layer max_layer
+          -tile_size tile_size
+          -verbose verbose
+          -overflow_iterations iterations
+          -grid_origin {x y}
+          -report_congestion congest_file
           -unidirectional_routing
-          -clock_net_routing
+          -allow_overflow
+
 ```
 
 Options description:
 - **capacity_adjustment**: Set global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
-- **max_routing_layer**: Set maximum routing layer (e.g.: max_routing_layer *9*)
-- **pitches_in_tile**: Set the number of pitches inside a GCell
-- **layers_adjustments**: Set capacity adjustment to specific layers (e.g.: -layers_adjustments {{<layer> <reductionPercentage>} ...})
-- **regions_adjustments**: Set capacity adjustment to specific regions (e.g.: -regions_adjustments {{<minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>} ...})
-- **nets_alphas_priorities**: Set alphas for specific nets when using clock net routing (e.g.: -nets_alphas_priorities {{<net_name> <alpha>} ...})
-- **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose 1)
-- **unidirectional_routing**: Activate unidirectional routing *(flag)*
-- **clock_net_routing**: Activate clock net routing *(flag)*
+- **max_routing_layer**: Set maximum routing layer (e.g.: -max_routing_layer *9*)
+- **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
+- **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
+- **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
+- **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
+- **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
+- **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
+- **allow_overflow**: Allow global routing results with overflow
 
-###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
-###### NOTE 2: the first routing layer of the design have index equal to 1
-###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
+```
+set_global_routing_layer_adjustment -layer layer -adjustment adjustment
+```
+
+The `set_global_routing_layer_adjustment` command sets routing resources adjustments in a specific routing layer.
+You can call it multiple times for different layers.
+Example: `set_global_routing_layer_adjustment -layer 4 -adjustment 0.5` reduces the routing resources of routing layer 4 in 50%.
 
 
 To estimate RC parasitics based on global route results, use the `-global_routing`
