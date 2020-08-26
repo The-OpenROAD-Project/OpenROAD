@@ -33,6 +33,33 @@
 ##
 ###############################################################################
 
+sta::define_cmd_args "set_global_routing_layer_adjustment" { [-layer layer] \
+                                                             [-adjustment adj] \
+}
+
+proc set_global_routing_layer_adjustment { args } {
+  sta::parse_key_args "set_global_routing_layer_adjustment" args \
+    keys {-layer -adjustment} \
+
+  set layer -1
+  if { [info exists keys(-layer)] } {
+    set layer $keys(-layer)
+  } else {
+    ord::error "\[Global routing layer adjustment\] Missing layer"
+  }
+
+  set adj -0.1
+  if { [info exists keys(-adjustment)] } {
+    set adj $keys(-adjustment)
+  } else {
+    ord::error "\[Global routing layer adjustment\] Missing adjustment"
+  }
+
+  sta::check_positive_integer "-layer" $layer
+  sta::check_positive_float "-adjustment" $adj
+
+  FastRoute::add_layer_adjustment $layer $adj
+}
 
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-capacity_adjustment cap_adjust] \
@@ -107,6 +134,8 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_adjustments)] } {
+    ord::warn "option -layers_adjustments is deprecated. use command \
+    set_global_routing_layer_adjustment <layer> <adjustment>"
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
