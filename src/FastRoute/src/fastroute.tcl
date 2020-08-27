@@ -55,7 +55,6 @@ proc set_global_routing_layer_adjustment { args } {
 }
 
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
-                                           [-capacity_adjustment cap_adjust] \
                                            [-min_routing_layer min_layer] \
                                            [-max_routing_layer max_layer] \
                                            [-unidirectional_routing] \
@@ -81,7 +80,7 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
-    keys {-output_file -capacity_adjustment -min_routing_layer -max_routing_layer \
+    keys {-output_file -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
           -regions_adjustments -nets_alphas_priorities -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
@@ -94,12 +93,6 @@ proc fastroute { args } {
   } else {
     puts "\[WARNING\] Default output guide name: out.guide"
     FastRoute::set_output_file "out.guide"
-  }
-
-  if { [info exists keys(-capacity_adjustment)] } {
-    set cap_adjust $keys(-capacity_adjustment)
-    sta::check_positive_float "-capacity_adjustment" $cap_adjust
-    FastRoute::set_capacity_adjustment $cap_adjust
   }
 
   if { [info exists keys(-min_routing_layer)] } {
