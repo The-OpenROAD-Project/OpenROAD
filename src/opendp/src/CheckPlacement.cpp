@@ -152,7 +152,8 @@ Opendp::checkPowerLine(const Cell &cell) const
            && top_power == rowTopPower(grid_y)) ||
           (height % 2 == 1
            // Odd height
-           && ((top_power == rowTopPower(grid_y) && orient != dbOrientType::R0) || (top_power != rowTopPower(grid_y) && orient != dbOrientType::MX))));
+           && ((top_power == rowTopPower(grid_y) && orient != dbOrientType::R0)
+	       || (top_power != rowTopPower(grid_y) && orient != dbOrientType::MX))));
 }
 
 bool

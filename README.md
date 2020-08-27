@@ -465,7 +465,6 @@ set_placement_padding -global|-instances insts|-masters masters
 detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters
-set_power_net [-power power_name] [-ground ground_net]
 optimimize_mirroring
 ```
 

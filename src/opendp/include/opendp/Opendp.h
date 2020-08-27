@@ -46,10 +46,6 @@
 #include <utility> // pair
 
 #include "opendb/db.h"
-#include "opendb/dbTypes.h"
-
-// Remove leading underscore to enable debug printing.
-#define _ODP_DEBUG
 
 namespace opendp {
 
@@ -363,8 +359,6 @@ private:
   int pad_right_;
   InstPaddingMap inst_padding_map_;
   MasterPaddingMap master_padding_map_;
-  const char *power_net_name_;
-  const char *ground_net_name_;
 
   vector<Cell> cells_;
   vector<Group> groups_;
