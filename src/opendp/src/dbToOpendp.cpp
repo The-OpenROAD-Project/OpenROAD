@@ -283,15 +283,13 @@ Opendp::findRowPower()
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
   for (dbNet *net : block_->getNets()) {
-    if (net->isSpecial()) {
-      const char *net_name = net->getConstName();
-      if (strcasecmp(net_name, power_net_name_) == 0) {
-        for (dbSWire *swire : net->getSWires()) {
-          for (dbSBox *sbox : swire->getWires()) {
-            min_vdd_y = min(min_vdd_y, sbox->yMin());
-            found_vdd = true;
-          }
-        }
+    if (net->isSpecial()
+	&& net->getSigType() == dbSigType::POWER) {
+      for (dbSWire *swire : net->getSWires()) {
+	for (dbSBox *sbox : swire->getWires()) {
+	  min_vdd_y = min(min_vdd_y, sbox->yMin());
+	  found_vdd = true;
+	}
       }
     }
   }
