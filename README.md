@@ -606,12 +606,16 @@ Options description:
 - **allow_overflow**: Allow global routing results with overflow
 
 ```
-set_global_routing_layer_adjustment -layer layer -adjustment adjustment
+set_global_routing_layer_adjustment layer adjustment
 ```
 
-The `set_global_routing_layer_adjustment` command sets routing resources adjustments in a specific routing layer.
-You can call it multiple times for different layers.
-Example: `set_global_routing_layer_adjustment -layer 4 -adjustment 0.5` reduces the routing resources of routing layer 4 in 50%.
+The `set_global_routing_layer_adjustment` command sets routing resources adjustments in the routing layers of the design.
+You can set adjustment for a specific layer, e.g.: `set_global_routing_layer_adjustment 4 0.5` reduces the routing resources
+of routing layer 4 in 50%.
+You can set adjustment for all layers at once using `*`, e.g.: `set_global_routing_layer_adjustment * 0.3` reduces
+the routing resources of all routing layers in 30%.
+You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment 4-8 0.3` reduces
+the routing resources of routing layers  4, 5, 6 7 and 8 in 30%.
 
 
 To estimate RC parasitics based on global route results, use the `-global_routing`
