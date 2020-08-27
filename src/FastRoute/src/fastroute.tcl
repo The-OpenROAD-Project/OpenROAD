@@ -33,32 +33,25 @@
 ##
 ###############################################################################
 
-sta::define_cmd_args "set_global_routing_layer_adjustment" { [-layer layer] \
-                                                             [-adjustment adj] \
-}
+sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adj }
 
 proc set_global_routing_layer_adjustment { args } {
-  sta::parse_key_args "set_global_routing_layer_adjustment" args \
-    keys {-layer -adjustment} \
+  if {[llength $args] == 2} {
+    lassign $args layer adj
 
-  set layer -1
-  if { [info exists keys(-layer)] } {
-    set layer $keys(-layer)
+    if {$layer == {*}} {
+      sta::check_positive_float "-capacity_adjustment" $adj
+      FastRoute::set_capacity_adjustment $adj
+    } else {
+      sta::check_positive_integer "-layer" $layer
+      sta::check_positive_float "-adjustment" $adj
+
+      FastRoute::add_layer_adjustment $layer $adj
+    }
+
   } else {
-    ord::error "\[Global routing layer adjustment\] Missing layer"
+    ord::error "\[Global routing layer adjustment\] Wrong number of arguments"
   }
-
-  set adj -0.1
-  if { [info exists keys(-adjustment)] } {
-    set adj $keys(-adjustment)
-  } else {
-    ord::error "\[Global routing layer adjustment\] Missing adjustment"
-  }
-
-  sta::check_positive_integer "-layer" $layer
-  sta::check_positive_float "-adjustment" $adj
-
-  FastRoute::add_layer_adjustment $layer $adj
 }
 
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
@@ -107,8 +100,6 @@ proc fastroute { args } {
     set cap_adjust $keys(-capacity_adjustment)
     sta::check_positive_float "-capacity_adjustment" $cap_adjust
     FastRoute::set_capacity_adjustment $cap_adjust
-  } else {
-    FastRoute::set_capacity_adjustment 0.0
   }
 
   if { [info exists keys(-min_routing_layer)] } {

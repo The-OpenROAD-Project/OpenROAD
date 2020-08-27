@@ -891,45 +891,9 @@ void GlobalRouter::computeUserGlobalAdjustments()
   if (_adjustment == 0.0)
     return;
 
-  int xGrids = _grid->getXGrids();
-  int yGrids = _grid->getYGrids();
-
-  int numAdjustments = _grid->getNumLayers() * yGrids * xGrids;
-
-  numAdjustments *= 2;
-  _fastRoute->setNumAdjustments(numAdjustments);
-
-  for (int layer = 1; layer <= _grid->getNumLayers(); layer++) {
-    if (_hCapacities[layer - 1] != 0) {
-      int newCap = _grid->getHorizontalEdgesCapacities()[layer - 1]
-                   * (1 - _adjustment);
-      _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
-
-      for (int y = 1; y < yGrids; y++) {
-        for (int x = 1; x < xGrids; x++) {
-          int edgeCap = _fastRoute->getEdgeCapacity(
-              x - 1, y - 1, layer, x, y - 1, layer);
-          int newHCapacity = std::floor((float) edgeCap * (1 - _adjustment));
-          _fastRoute->addAdjustment(
-              x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
-        }
-      }
-    }
-
-    if (_vCapacities[layer - 1] != 0) {
-      int newCap
-          = _grid->getVerticalEdgesCapacities()[layer - 1] * (1 - _adjustment);
-      _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
-
-      for (int x = 1; x < xGrids; x++) {
-        for (int y = 1; y < yGrids; y++) {
-          int edgeCap = _fastRoute->getEdgeCapacity(
-              x - 1, y - 1, layer, x - 1, y, layer);
-          int newVCapacity = std::floor((float) edgeCap * (1 - _adjustment));
-          _fastRoute->addAdjustment(
-              x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
-        }
-      }
+  for (int l = _minRoutingLayer; l <= _maxRoutingLayer; l++) {
+    if (_layerAdjustments.find(l) == _layerAdjustments.end()) {
+      _layerAdjustments[l] = _adjustment;
     }
   }
 }
