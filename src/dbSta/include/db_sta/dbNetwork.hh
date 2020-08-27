@@ -79,6 +79,7 @@ public:
   dbMaster *staToDb(const Cell *cell) const;
   dbMaster *staToDb(const LibertyCell *cell) const;
   dbMTerm *staToDb(const Port *port) const;
+  dbMTerm *staToDb(const LibertyPort *port) const;
   void staToDb(PortDirection *dir,
 	       // Return values.
 	       dbSigType &sig_type,
