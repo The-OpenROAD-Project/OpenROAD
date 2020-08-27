@@ -1210,6 +1210,12 @@ dbNetwork::staToDb(const Port *port) const
   return reinterpret_cast<dbMTerm*>(cport->extPort());
 }
 
+dbMTerm *
+dbNetwork::staToDb(const LibertyPort *port) const
+{
+  return reinterpret_cast<dbMTerm*>(port->extPort());
+}
+
 void
 dbNetwork::staToDb(PortDirection *dir,
 		   // Return values.
