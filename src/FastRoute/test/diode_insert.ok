@@ -20,7 +20,7 @@ Notice 0: Finished DEF file: gcd_sky130.def
 
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0
+[PARAMS] Global adjustment: 0.15
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (-1, -1)
 [PARAMS] Layers pitches: 
@@ -134,7 +134,7 @@ Warning: Overlap check failed (5).
 
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0
+[PARAMS] Global adjustment: 0.15
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (-1, -1)
 [PARAMS] Layers pitches: 
