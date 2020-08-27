@@ -20,7 +20,7 @@ Notice 0: Finished DEF file: gcd_sky130.def
 
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0.5
+[PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (-1, -1)
 
@@ -103,7 +103,7 @@ Old total capacity: 11396
 
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0.5
+[PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (-1, -1)
 
