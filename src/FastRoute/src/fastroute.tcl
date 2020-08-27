@@ -42,11 +42,20 @@ proc set_global_routing_layer_adjustment { args } {
     if {$layer == {*}} {
       sta::check_positive_float "-capacity_adjustment" $adj
       FastRoute::set_capacity_adjustment $adj
-    } else {
+    } elseif {[string is integer $layer]} {
       sta::check_positive_integer "-layer" $layer
       sta::check_positive_float "-adjustment" $adj
 
       FastRoute::add_layer_adjustment $layer $adj
+    } else {
+      set layer_range [regexp -all -inline -- {[0-9]+} $layer]
+      lassign $layer_range first_layer last_layer
+      for {set l $first_layer} {$l <= $last_layer} {incr l} {
+        sta::check_positive_integer "-layer" $l
+        sta::check_positive_float "-adjustment" $adj
+
+        FastRoute::add_layer_adjustment $l $adj
+      }
     }
 
   } else {
