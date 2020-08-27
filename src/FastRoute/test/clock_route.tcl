@@ -10,11 +10,9 @@ set_propagated_clock [get_clocks {core_clock}]
 
 set guide_file [make_result_file clock_route.guide]
 
-set_global_routing_layer_adjustment -layer 2 -adjustment 0.8
-set_global_routing_layer_adjustment -layer 3 -adjustment 0.7
-set_global_routing_layer_adjustment -layer 4 -adjustment 0.5
-set_global_routing_layer_adjustment -layer 5 -adjustment 0.5
-set_global_routing_layer_adjustment -layer 6 -adjustment 0.5
+set_global_routing_layer_adjustment * 0.5
+set_global_routing_layer_adjustment 2 0.8
+set_global_routing_layer_adjustment 3 0.7
 
 fastroute -output_file $guide_file \
           -max_routing_layer 6 \
