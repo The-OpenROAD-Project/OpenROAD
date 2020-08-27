@@ -579,16 +579,15 @@ If this parameter is omitted, the metrics are shown on the standard output.
 Global router options and commands are described below. 
 
 ```
-fastroute -capacity_adjustment cap_adjust
-          -min_routing_layer min_layer
-          -max_routing_layer max_layer
-          -tile_size tile_size
-          -verbose verbose
-          -overflow_iterations iterations
-          -grid_origin {x y}
-          -report_congestion congest_file
-          -unidirectional_routing
-          -allow_overflow
+fastroute [-min_routing_layer min_layer] \
+          [-max_routing_layer max_layer] \
+          [-tile_size tile_size] \
+          [-verbose verbose] \
+          [-overflow_iterations iterations] \
+          [-grid_origin {x y}] \
+          [-report_congestion congest_file] \
+          [-unidirectional_routing] \
+          [-allow_overflow]
 
 ```
 
