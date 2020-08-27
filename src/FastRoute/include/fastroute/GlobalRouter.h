@@ -279,8 +279,7 @@ protected:
   unsigned _seed;
 
   // Layer adjustment variables
-  std::vector<int> _layersToAdjust;
-  std::vector<float> _layersReductionPercentage;
+  std::map<int, float> _layerAdjustments;
 
   // Region adjustment variables
   std::vector<int> regionsMinX;

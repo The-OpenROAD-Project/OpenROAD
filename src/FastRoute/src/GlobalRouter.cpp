@@ -939,14 +939,14 @@ void GlobalRouter::computeUserLayerAdjustments()
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
-  int numAdjustments = _layersToAdjust.size() * yGrids * xGrids;
+  int numAdjustments = _layerAdjustments.size() * yGrids * xGrids;
 
   numAdjustments *= 2;
   _fastRoute->setNumAdjustments(numAdjustments);
 
-  for (uint idx = 0; idx < _layersToAdjust.size(); idx++) {
-    int layer = _layersToAdjust[idx];
-    float adjustment = _layersReductionPercentage[idx];
+  for (auto const & layerAdj : _layerAdjustments) {
+    int layer = layerAdj.first;
+    float adjustment = layerAdj.second;
     std::cout << "[INFO] Reducing resources of layer " << layer << " by "
               << adjustment * 100 << "%\n";
     if (_hCapacities[layer - 1] != 0) {
@@ -1213,8 +1213,7 @@ void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
               << " for adjustment is greater than max routing layer "
               << _maxRoutingLayer << " and will be ignored" << std::endl;
   } else {
-    _layersToAdjust.push_back(layer);
-    _layersReductionPercentage.push_back(reductionPercentage);
+    _layerAdjustments[layer] = reductionPercentage;
   }
 }
 
