@@ -615,6 +615,12 @@ the routing resources of all routing layers in 30%.
 You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment 4-8 0.3` reduces
 the routing resources of routing layers  4, 5, 6 7 and 8 in 30%.
 
+```
+set_global_routing_layer_pitch layer pitch
+```
+The `set_global_routing_layer_pitch` command sets the pitch for routing tracks in a specific layer.
+You can call it multiple times for different layers.
+Example: `set_global_routing_layer_pitch 6 1.34`.
 
 To estimate RC parasitics based on global route results, use the `-global_routing`
 option of the `estimate_parasitics` command.
