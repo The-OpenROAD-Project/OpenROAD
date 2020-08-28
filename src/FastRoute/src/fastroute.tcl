@@ -40,26 +40,26 @@ proc set_global_routing_layer_adjustment { args } {
     lassign $args layer adj
 
     if {$layer == {*}} {
-      sta::check_positive_float "-capacity_adjustment" $adj
+      sta::check_positive_float "adjustment" $adj
       FastRoute::set_capacity_adjustment $adj
     } elseif {[string is integer $layer]} {
-      sta::check_positive_integer "-layer" $layer
-      sta::check_positive_float "-adjustment" $adj
+      sta::check_positive_integer "layer" $layer
+      sta::check_positive_float "adjustment" $adj
 
       FastRoute::add_layer_adjustment $layer $adj
     } else {
       set layer_range [regexp -all -inline -- {[0-9]+} $layer]
       lassign $layer_range first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
-        sta::check_positive_integer "-layer" $l
-        sta::check_positive_float "-adjustment" $adj
+        sta::check_positive_integer "layer" $l
+        sta::check_positive_float "adjustment" $adj
 
         FastRoute::add_layer_adjustment $l $adj
       }
     }
 
   } else {
-    ord::error "\[Global routing layer adjustment\] Wrong number of arguments"
+    ord::error "set_global_routing_layer_adjustment: Wrong number of arguments"
   }
 }
 
@@ -127,8 +127,8 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_adjustments)] } {
-    ord::warn "option -layers_adjustments is deprecated. use command \
-    set_global_routing_layer_adjustment <layer> <adjustment>"
+    ord::warn "option -layers_adjustments is deprecated. Use command \
+    set_global_routing_layer_adjustment layer adjustment"
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
