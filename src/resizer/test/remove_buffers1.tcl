@@ -9,6 +9,6 @@ report_checks -unconstrained
 remove_buffers
 report_checks -unconstrained
 
-set repaired_filename [file join $result_dir "remove_buffers1.def"]
+set repaired_filename [make_result_file "remove_buffers1.def"]
 write_def $repaired_filename
 diff_file remove_buffers1.defok $repaired_filename
