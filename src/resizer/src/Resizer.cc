@@ -1297,6 +1297,8 @@ Resizer::repairDesign(double max_wire_length, // meters
   sta_->checkFanoutLimitPreamble();
 
   inserted_buffer_count_ = 0;
+  resize_count_ = 0;
+
   VertexSeq drvrs;
   findLongWires(drvrs);
   int repair_count = 0;
@@ -1333,6 +1335,8 @@ Resizer::repairDesign(double max_wire_length, // meters
 	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
+  if (resize_count_ > 0)
+    printf("Resized %d instances.\n", resize_count_);
 }
 
 // repairDesign but restricted to clock network and
@@ -1517,10 +1521,10 @@ Resizer::repairNet(Net *net,
 
 void
 Resizer::checkSlew(const Pin *drvr_pin,
-	       // Return values.
-	       Slew &slew,
-	       float &limit,
-	       float &slack)
+		   // Return values.
+		   Slew &slew,
+		   float &limit,
+		   float &slack)
 {
   slack = INF;
   PinConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
@@ -1722,15 +1726,19 @@ Resizer::repairNet(SteinerTree *tree,
 		units_->distanceUnit()->asString(dbuToMeters(wire_length), 1),
 		units_->distanceUnit()->asString(dbuToMeters(length), 1));
     while ((max_length > 0 && wire_length > max_length)
-	   || (wire_cap_ > 0.0 && pin_cap + dbuToMeters(wire_length) * wire_cap_ > max_cap)) {
+	   || (wire_cap_ > 0.0
+	       && pin_cap < max_cap
+	       && (pin_cap + dbuToMeters(wire_length) * wire_cap_) > max_cap)) {
       // Make the wire a bit shorter than necessary to allow for
       // offset from instance origin to pin and detailed placement movement.
       double length_margin = .05;
       // Distance from pt to repeater backward toward prev_pt.
       double buf_dist;
-      if (max_length > 0)
+      if (max_length > 0 && wire_length > max_length) {
 	buf_dist = length - (wire_length - max_length * (1.0 - length_margin));
-      else if (wire_cap_ > 0.0 && pin_cap + dbuToMeters(wire_length) * wire_cap_ > max_cap) {
+      }
+      else if (wire_cap_ > 0.0
+	       && (pin_cap + dbuToMeters(wire_length) * wire_cap_) > max_cap) {
 	int cap_length = metersToDbu((max_cap - pin_cap) / wire_cap_);
 	buf_dist = length - (wire_length - cap_length * (1.0 - length_margin));
       }

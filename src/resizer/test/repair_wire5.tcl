@@ -10,5 +10,8 @@ read_def repair_wire5.def
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement
+report_check_types -max_slew -max_cap -max_fanout -violators
+
 repair_design -max_wire_length 600 -buffer_cell BUF_X1
+report_check_types -max_slew -max_cap -max_fanout -violators
 check_in_core
