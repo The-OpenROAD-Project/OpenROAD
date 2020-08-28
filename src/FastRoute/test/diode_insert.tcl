@@ -9,8 +9,7 @@ set_placement_padding -global -left 2 -right 2
 set guide_file [make_result_file diode_insert.guide]
 set def_file [make_result_file diode_insert.def]
 
-set_global_routing_layer_adjustment * 0.15
-set_global_routing_layer_adjustment 2 0.0
+set_global_routing_layer_adjustment 3-6 0.15
 
 fastroute -output_file $guide_file \
 	  	  -max_routing_layer 6 \

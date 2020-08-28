@@ -145,6 +145,7 @@ GlobalRouter::~GlobalRouter()
 void GlobalRouter::startFastRoute()
 {
   printHeader();
+  initAdjustments();
   if (_unidirectionalRoute) {
     _minRoutingLayer = 2;
     _fixLayer = 1;
@@ -892,8 +893,8 @@ void GlobalRouter::computeUserGlobalAdjustments()
     return;
 
   for (int l = _minRoutingLayer; l <= _maxRoutingLayer; l++) {
-    if (_layerAdjustments.find(l) == _layerAdjustments.end()) {
-      _layerAdjustments[l] = _adjustment;
+    if (_adjustments[l-1] == 0) {
+      _adjustments[l-1] = _adjustment;
     }
   }
 }
@@ -903,44 +904,40 @@ void GlobalRouter::computeUserLayerAdjustments()
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
-  int numAdjustments = _layerAdjustments.size() * yGrids * xGrids;
+  for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
+    float adjustment = _adjustments[layer - 1];
+    if (adjustment != 0) {
+      std::cout << "[INFO] Reducing resources of layer " << layer << " by "
+                << int(adjustment * 100) << "%\n";
+      if (_hCapacities[layer - 1] != 0) {
+        int newCap
+            = _grid->getHorizontalEdgesCapacities()[layer - 1] * (1 - adjustment);
+        _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
 
-  numAdjustments *= 2;
-  _fastRoute->setNumAdjustments(numAdjustments);
-
-  for (auto const & layerAdj : _layerAdjustments) {
-    int layer = layerAdj.first;
-    float adjustment = layerAdj.second;
-    std::cout << "[INFO] Reducing resources of layer " << layer << " by "
-              << int(adjustment * 100) << "%\n";
-    if (_hCapacities[layer - 1] != 0) {
-      int newCap
-          = _grid->getHorizontalEdgesCapacities()[layer - 1] * (1 - adjustment);
-      _grid->updateHorizontalEdgesCapacities(layer - 1, newCap);
-
-      for (int y = 1; y < yGrids; y++) {
-        for (int x = 1; x < xGrids; x++) {
-          int edgeCap = _fastRoute->getEdgeCapacity(
-              x - 1, y - 1, layer, x, y - 1, layer);
-          int newHCapacity = std::floor((float) edgeCap * (1 - adjustment));
-          _fastRoute->addAdjustment(
-              x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
+        for (int y = 1; y < yGrids; y++) {
+          for (int x = 1; x < xGrids; x++) {
+            int edgeCap = _fastRoute->getEdgeCapacity(
+                x - 1, y - 1, layer, x, y - 1, layer);
+            int newHCapacity = std::floor((float) edgeCap * (1 - adjustment));
+            _fastRoute->addAdjustment(
+                x - 1, y - 1, layer, x, y - 1, layer, newHCapacity);
+          }
         }
       }
-    }
 
-    if (_vCapacities[layer - 1] != 0) {
-      int newCap
-          = _grid->getVerticalEdgesCapacities()[layer - 1] * (1 - adjustment);
-      _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
+      if (_vCapacities[layer - 1] != 0) {
+        int newCap
+            = _grid->getVerticalEdgesCapacities()[layer - 1] * (1 - adjustment);
+        _grid->updateVerticalEdgesCapacities(layer - 1, newCap);
 
-      for (int x = 1; x < xGrids; x++) {
-        for (int y = 1; y < yGrids; y++) {
-          int edgeCap = _fastRoute->getEdgeCapacity(
-              x - 1, y - 1, layer, x - 1, y, layer);
-          int newVCapacity = std::floor((float) edgeCap * (1 - adjustment));
-          _fastRoute->addAdjustment(
-              x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
+        for (int x = 1; x < xGrids; x++) {
+          for (int y = 1; y < yGrids; y++) {
+            int edgeCap = _fastRoute->getEdgeCapacity(
+                x - 1, y - 1, layer, x - 1, y, layer);
+            int newVCapacity = std::floor((float) edgeCap * (1 - adjustment));
+            _fastRoute->addAdjustment(
+                x - 1, y - 1, layer, x - 1, y, layer, newVCapacity);
+          }
         }
       }
     }
@@ -1132,6 +1129,7 @@ void GlobalRouter::computeObstaclesAdjustments()
 
 void GlobalRouter::setAdjustment(const float adjustment)
 {
+  initAdjustments();
   _adjustment = adjustment;
 }
 
@@ -1172,12 +1170,13 @@ void GlobalRouter::setSeed(unsigned seed)
 
 void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
 {
+  initAdjustments();
   if (layer > _maxRoutingLayer && _maxRoutingLayer > 0) {
     std::cout << "[ERROR] Specified layer " << layer
               << " for adjustment is greater than max routing layer "
               << _maxRoutingLayer << " and will be ignored" << std::endl;
   } else {
-    _layerAdjustments[layer] = reductionPercentage;
+    _adjustments[layer-1] = reductionPercentage;
   }
 }
 
@@ -2120,6 +2119,12 @@ bool GlobalRouter::checkSignalType(const Net &net) {
   return ((!_onlyClockNets && !_onlySignalNets) ||
           (_onlyClockNets && isClock) ||
           (_onlySignalNets && !isClock));
+}
+
+void GlobalRouter::initAdjustments() {
+  if (_adjustments.empty()) {
+    _adjustments.resize(_db->getTech()->getRoutingLayerCount(), 0);
+  }
 }
 
 int GlobalRouter::getNetCount() const {
