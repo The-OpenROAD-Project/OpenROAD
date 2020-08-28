@@ -912,7 +912,7 @@ void GlobalRouter::computeUserLayerAdjustments()
     int layer = layerAdj.first;
     float adjustment = layerAdj.second;
     std::cout << "[INFO] Reducing resources of layer " << layer << " by "
-              << adjustment * 100 << "%\n";
+              << int(adjustment * 100) << "%\n";
     if (_hCapacities[layer - 1] != 0) {
       int newCap
           = _grid->getHorizontalEdgesCapacities()[layer - 1] * (1 - adjustment);

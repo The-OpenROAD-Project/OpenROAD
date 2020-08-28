@@ -118,16 +118,16 @@ Computing obstacles adjustments... Done!
 Computing user defined adjustments...
 Computing user defined adjustments... Done!
 Computing user defined layers adjustments...
-[INFO] Reducing resources of layer 1 by 80.000000%
-[INFO] Reducing resources of layer 2 by 80.000000%
-[INFO] Reducing resources of layer 3 by 80.000000%
-[INFO] Reducing resources of layer 4 by 80.000000%
-[INFO] Reducing resources of layer 5 by 80.000000%
-[INFO] Reducing resources of layer 6 by 80.000000%
-[INFO] Reducing resources of layer 7 by 80.000000%
-[INFO] Reducing resources of layer 8 by 80.000000%
-[INFO] Reducing resources of layer 9 by 80.000000%
-[INFO] Reducing resources of layer 10 by 80.000000%
+[INFO] Reducing resources of layer 1 by 80%
+[INFO] Reducing resources of layer 2 by 80%
+[INFO] Reducing resources of layer 3 by 80%
+[INFO] Reducing resources of layer 4 by 80%
+[INFO] Reducing resources of layer 5 by 80%
+[INFO] Reducing resources of layer 6 by 80%
+[INFO] Reducing resources of layer 7 by 80%
+[INFO] Reducing resources of layer 8 by 80%
+[INFO] Reducing resources of layer 9 by 80%
+[INFO] Reducing resources of layer 10 by 80%
 Computing user defined layers adjustments... Done!
 Running FastRoute...
 
