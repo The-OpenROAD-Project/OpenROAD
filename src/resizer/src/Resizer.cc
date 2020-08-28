@@ -1517,10 +1517,10 @@ Resizer::repairNet(Net *net,
 
 void
 Resizer::checkSlew(const Pin *drvr_pin,
-	       // Return values.
-	       Slew &slew,
-	       float &limit,
-	       float &slack)
+		   // Return values.
+		   Slew &slew,
+		   float &limit,
+		   float &slack)
 {
   slack = INF;
   PinConnectedPinIterator *pin_iter = network_->connectedPinIterator(drvr_pin);
