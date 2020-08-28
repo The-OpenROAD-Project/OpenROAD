@@ -43,7 +43,7 @@ proc set_global_routing_layer_adjustment { args } {
       sta::check_positive_float "adjustment" $adj
       FastRoute::set_capacity_adjustment $adj
     } elseif {[string is integer $layer]} {
-      sta::check_positive_integer "layer" $layer
+      FastRoute::check_routing_layer $layer
       sta::check_positive_float "adjustment" $adj
 
       FastRoute::add_layer_adjustment $layer $adj
@@ -51,7 +51,7 @@ proc set_global_routing_layer_adjustment { args } {
       set layer_range [regexp -all -inline -- {[0-9]+} $layer]
       lassign $layer_range first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
-        sta::check_positive_integer "layer" $l
+        FastRoute::check_routing_layer $l
         sta::check_positive_float "adjustment" $adj
 
         FastRoute::add_layer_adjustment $l $adj
@@ -68,7 +68,7 @@ proc set_global_routing_layer_pitch { args } {
   if {[llength $args] == 2} {
     lassign $args layer pitch
 
-    sta::check_positive_integer "layer" $layer
+    FastRoute::check_routing_layer $layer
     sta::check_positive_float "pitch" $pitch
 
     FastRoute::set_layer_pitch $layer $pitch
@@ -308,6 +308,23 @@ proc estimate_rc_cmd {} {
     estimate_rc
   } else {
     ord::error "run fastroute before estimating parasitics for global routing."
+  }
+}
+
+proc check_routing_layer { layer } {
+  sta::check_positive_integer "layer" $layer
+
+  set tech [ord::get_db_tech]
+  if {$tech != "NULL"} {
+    set max_routing_layer [$tech getRoutingLayerCount]
+    if {$layer > $max_routing_layer} {
+      ord::error "check_routing_layer: layer $layer is greater than the max\
+                  routing layer ($max_routing_layer)"
+    }
+    if {$layer < 1} {
+      ord::error "check_routing_layer: layer $layer is lesser than the min\
+                  routing layer (1)"
+    }
   }
 }
 
