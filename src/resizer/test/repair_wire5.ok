@@ -17,7 +17,20 @@ Notice 0:     Created 2 components and 10 component-terminals.
 Notice 0:     Created 2 special nets and 2 connections.
 Notice 0:     Created 2 nets and 3 connections.
 Notice 0: Finished DEF file: repair_wire5.def
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+pad1/DATA                               0.20    0.40   -0.20 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u1/Z                                   60.65   72.60  -11.95 (VIOLATED)
+
 Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.
+Resized 1 instances.
 pad1 outside of core
