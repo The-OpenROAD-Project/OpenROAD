@@ -62,6 +62,7 @@ Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 3 buffers in 1 nets.
+Resized 4 instances.
 Driver    length delay
 repeater1/Z manhtn 950.9 steiner 950.9 0.08
 repeater3/Z manhtn 948.6 steiner 948.6 0.08

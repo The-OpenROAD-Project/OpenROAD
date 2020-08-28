@@ -21,6 +21,7 @@ input1/Z                                0.20    0.78   -0.58 (VIOLATED)
 Found 1 slew violations.
 Found 1 capacitance violations.
 Inserted 1 buffers in 1 nets.
+Resized 2 instances.
 Resized 0 instances.
 max slew
 
