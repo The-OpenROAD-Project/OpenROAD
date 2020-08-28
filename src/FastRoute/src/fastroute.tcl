@@ -33,9 +33,37 @@
 ##
 ###############################################################################
 
+sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adj }
+
+proc set_global_routing_layer_adjustment { args } {
+  if {[llength $args] == 2} {
+    lassign $args layer adj
+
+    if {$layer == {*}} {
+      sta::check_positive_float "adjustment" $adj
+      FastRoute::set_capacity_adjustment $adj
+    } elseif {[string is integer $layer]} {
+      sta::check_positive_integer "layer" $layer
+      sta::check_positive_float "adjustment" $adj
+
+      FastRoute::add_layer_adjustment $layer $adj
+    } else {
+      set layer_range [regexp -all -inline -- {[0-9]+} $layer]
+      lassign $layer_range first_layer last_layer
+      for {set l $first_layer} {$l <= $last_layer} {incr l} {
+        sta::check_positive_integer "layer" $l
+        sta::check_positive_float "adjustment" $adj
+
+        FastRoute::add_layer_adjustment $l $adj
+      }
+    }
+
+  } else {
+    ord::error "set_global_routing_layer_adjustment: Wrong number of arguments"
+  }
+}
 
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
-                                           [-capacity_adjustment cap_adjust] \
                                            [-min_routing_layer min_layer] \
                                            [-max_routing_layer max_layer] \
                                            [-unidirectional_routing] \
@@ -61,7 +89,7 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
-    keys {-output_file -capacity_adjustment -min_routing_layer -max_routing_layer \
+    keys {-output_file -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
           -regions_adjustments -nets_alphas_priorities -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
@@ -74,14 +102,6 @@ proc fastroute { args } {
   } else {
     puts "\[WARNING\] Default output guide name: out.guide"
     FastRoute::set_output_file "out.guide"
-  }
-
-  if { [info exists keys(-capacity_adjustment)] } {
-    set cap_adjust $keys(-capacity_adjustment)
-    sta::check_positive_float "-capacity_adjustment" $cap_adjust
-    FastRoute::set_capacity_adjustment $cap_adjust
-  } else {
-    FastRoute::set_capacity_adjustment 0.0
   }
 
   if { [info exists keys(-min_routing_layer)] } {
@@ -107,6 +127,8 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_adjustments)] } {
+    ord::warn "option -layers_adjustments is deprecated. Use command \
+    set_global_routing_layer_adjustment layer adjustment"
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {

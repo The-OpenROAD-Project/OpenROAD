@@ -62,7 +62,6 @@ Computing obstacles adjustments... Done!
 Computing user defined adjustments...
 Computing user defined adjustments... Done!
 Computing user defined layers adjustments...
-[INFO] Reducing resources of layer 2 by 0%
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
@@ -176,7 +175,6 @@ Computing obstacles adjustments... Done!
 Computing user defined adjustments...
 Computing user defined adjustments... Done!
 Computing user defined layers adjustments...
-[INFO] Reducing resources of layer 2 by 0%
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%

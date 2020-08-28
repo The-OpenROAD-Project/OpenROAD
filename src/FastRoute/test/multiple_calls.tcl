@@ -10,7 +10,8 @@ fastroute -output_file $guide_file1 \
 
 FastRoute::clear_fastroute
 
-fastroute -output_file $guide_file2 \
-          -capacity_adjustment 0.8 \
+set_global_routing_layer_adjustment * 0.8
+
+fastroute -output_file $guide_file2
 
 diff_file $guide_file1 $guide_file2

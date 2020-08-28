@@ -9,10 +9,11 @@ set_placement_padding -global -left 2 -right 2
 set guide_file [make_result_file diode_insert.guide]
 set def_file [make_result_file diode_insert.def]
 
+set_global_routing_layer_adjustment 3-6 0.15
+
 fastroute -output_file $guide_file \
 	  	  -max_routing_layer 6 \
           -unidirectional_routing \
-          -layers_adjustments {{2 0} {3 0.15} {4 0.15} {5 0.15} {6 0.15}} \
           -layers_pitches {{2 0.37} {3 0.48} {4 0.74} {5 0.96} {6 3.33}} \
           -antenna_avoidance_flow -antenna_cell_name "sky130_fd_sc_hs__diode_2" -antenna_pin_name "DIODE" \
 

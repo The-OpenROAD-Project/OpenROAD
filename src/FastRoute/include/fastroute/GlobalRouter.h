@@ -213,6 +213,7 @@ protected:
   bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
   GSegment createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
+  void initAdjustments();
 
   // check functions
   void checkPinPlacement();
@@ -279,8 +280,7 @@ protected:
   unsigned _seed;
 
   // Layer adjustment variables
-  std::vector<int> _layersToAdjust;
-  std::vector<float> _layersReductionPercentage;
+  std::vector<float> _adjustments;
 
   // Region adjustment variables
   std::vector<int> regionsMinX;
