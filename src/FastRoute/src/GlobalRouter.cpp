@@ -893,8 +893,8 @@ void GlobalRouter::computeUserGlobalAdjustments()
     return;
 
   for (int l = _minRoutingLayer; l <= _maxRoutingLayer; l++) {
-    if (_adjustments[l-1] == 0) {
-      _adjustments[l-1] = _adjustment;
+    if (_adjustments[l] == 0) {
+      _adjustments[l] = _adjustment;
     }
   }
 }
@@ -905,7 +905,7 @@ void GlobalRouter::computeUserLayerAdjustments()
   int yGrids = _grid->getYGrids();
 
   for (int layer = 1; layer <= _maxRoutingLayer; layer++) {
-    float adjustment = _adjustments[layer - 1];
+    float adjustment = _adjustments[layer];
     if (adjustment != 0) {
       std::cout << "[INFO] Reducing resources of layer " << layer << " by "
                 << int(adjustment * 100) << "%\n";
@@ -1176,7 +1176,7 @@ void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
               << " for adjustment is greater than max routing layer "
               << _maxRoutingLayer << " and will be ignored" << std::endl;
   } else {
-    _adjustments[layer-1] = reductionPercentage;
+    _adjustments[layer] = reductionPercentage;
   }
 }
 
@@ -2123,7 +2123,7 @@ bool GlobalRouter::checkSignalType(const Net &net) {
 
 void GlobalRouter::initAdjustments() {
   if (_adjustments.empty()) {
-    _adjustments.resize(_db->getTech()->getRoutingLayerCount(), 0);
+    _adjustments.resize(_db->getTech()->getRoutingLayerCount() + 1, 0);
   }
 }
 
