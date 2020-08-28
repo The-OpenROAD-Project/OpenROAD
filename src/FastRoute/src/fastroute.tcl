@@ -57,9 +57,23 @@ proc set_global_routing_layer_adjustment { args } {
         FastRoute::add_layer_adjustment $l $adj
       }
     }
-
   } else {
     ord::error "set_global_routing_layer_adjustment: Wrong number of arguments"
+  }
+}
+
+sta::define_cmd_args "set_global_routing_layer_pitch" { layer pitch }
+
+proc set_global_routing_layer_pitch { args } {
+  if {[llength $args] == 2} {
+    lassign $args layer pitch
+
+    sta::check_positive_integer "layer" $layer
+    sta::check_positive_float "pitch" $pitch
+
+    FastRoute::set_layer_pitch $layer $pitch
+  } else {
+    ord::error "set_global_routing_layer_pitch: Wrong number of arguments"
   }
 }
 
@@ -225,6 +239,8 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_pitches)] } {
+    ord::warn "option -layers_pitches is deprecated. use command \
+    set_global_routing_layer_pitch layer adjustment"
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
