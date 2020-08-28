@@ -178,11 +178,9 @@ void GlobalRouter::startFastRoute()
             << "\n";
   std::cout << "[PARAMS] Grid origin: (" << _gridOrigin->getX() << ", "
             << _gridOrigin->getY() << ")\n";
-  if (!_layerPitches.empty()) {
-    for (int l = 1; l <= _maxRoutingLayer; l++) {
-      if (_layerPitches[l] != 0) {
-        std::cout << "Layer " << l << " pitch: " << _layerPitches[l] << "\n";
-      }
+  for (int l = 1; l <= _maxRoutingLayer; l++) {
+    if (_layerPitches[l] != 0) {
+      std::cout << "Layer " << l << " pitch: " << _layerPitches[l] << "\n";
     }
   }
   std::cout << "\n";
