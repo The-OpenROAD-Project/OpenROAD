@@ -312,19 +312,19 @@ proc estimate_rc_cmd {} {
 }
 
 proc check_routing_layer { layer } {
+  if { ![ord::db_has_tech] } {
+    ord::error "no technology has been read."
+  }
   sta::check_positive_integer "layer" $layer
 
   set tech [ord::get_db_tech]
-  if {$tech != "NULL"} {
-    set max_routing_layer [$tech getRoutingLayerCount]
-    if {$layer > $max_routing_layer} {
-      ord::error "check_routing_layer: layer $layer is greater than the max\
-                  routing layer ($max_routing_layer)"
-    }
-    if {$layer < 1} {
-      ord::error "check_routing_layer: layer $layer is lesser than the min\
-                  routing layer (1)"
-    }
+  set max_routing_layer [$tech getRoutingLayerCount]
+  
+  if {$layer > $max_routing_layer} {
+    ord::error "check_routing_layer: layer $layer is greater than the max routing layer ($max_routing_layer)"
+  }
+  if {$layer < 1} {
+    ord::error "check_routing_layer: layer $layer is lesser than the min routing layer (1)"
   }
 }
 
