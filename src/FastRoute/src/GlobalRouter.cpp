@@ -146,6 +146,7 @@ void GlobalRouter::startFastRoute()
 {
   printHeader();
   initAdjustments();
+  initPitches();
   if (_unidirectionalRoute) {
     _minRoutingLayer = 2;
     _fixLayer = 1;
@@ -177,11 +178,9 @@ void GlobalRouter::startFastRoute()
             << "\n";
   std::cout << "[PARAMS] Grid origin: (" << _gridOrigin->getX() << ", "
             << _gridOrigin->getY() << ")\n";
-  if (!_layerPitches.empty()) {
-    std::cout << "[PARAMS] Layers pitches: \n";
-    std::map<int, float>::iterator it;
-    for (it = _layerPitches.begin(); it != _layerPitches.end(); it++) {
-      std::cout << "Layer " << it->first << " pitch: " << it->second << "\n";
+  for (int l = 1; l <= _maxRoutingLayer; l++) {
+    if (_layerPitches[l] != 0) {
+      std::cout << "Layer " << l << " pitch: " << _layerPitches[l] << "\n";
     }
   }
   std::cout << "\n";
@@ -1197,6 +1196,7 @@ void GlobalRouter::addRegionAdjustment(int minX,
 
 void GlobalRouter::setLayerPitch(int layer, float pitch)
 {
+  initPitches();
   _layerPitches[layer] = pitch;
 }
 
@@ -2127,6 +2127,12 @@ void GlobalRouter::initAdjustments() {
   }
 }
 
+void GlobalRouter::initPitches() {
+  if (_layerPitches.empty()) {
+    _layerPitches.resize(_db->getTech()->getRoutingLayerCount() + 1, 0);
+  }
+}
+
 int GlobalRouter::getNetCount() const {
   return _nets->size();
 }
@@ -2279,7 +2285,7 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
 
 void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
                                   int maxLayer,
-                                  std::map<int, float> layerPitches)
+                                  std::vector<float> layerPitches)
 {
   odb::dbTech* tech = _db->getTech();
 
@@ -2312,7 +2318,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
     if (techLayer->getDirection().getValue()
         == odb::dbTechLayerDir::HORIZONTAL) {
       trackPitch = trackStepY;
-      if (layerPitches.find(layer) != layerPitches.end()) {
+      if (layerPitches[layer] != 0) {
         line2ViaPitch = (int) (tech->getLefUnits() * layerPitches[layer]);
       } else {
         line2ViaPitch = -1;
@@ -2323,7 +2329,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
     } else if (techLayer->getDirection().getValue()
                == odb::dbTechLayerDir::VERTICAL) {
       trackPitch = trackStepX;
-      if (layerPitches.find(layer) != layerPitches.end()) {
+      if (layerPitches[layer] != 0) {
         line2ViaPitch = (int) (tech->getLefUnits() * layerPitches[layer]);
       } else {
         line2ViaPitch = -1;
@@ -2343,7 +2349,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
 }
 
 void GlobalRouter::computeCapacities(int maxLayer,
-                                  std::map<int, float> layerPitches)
+                                  std::vector<float> layerPitches)
 {
   int trackSpacing;
   int hCapacity, vCapacity;
@@ -2374,7 +2380,7 @@ void GlobalRouter::computeCapacities(int maxLayer,
         == odb::dbTechLayerDir::HORIZONTAL) {
       trackSpacing = trackStepY;
 
-      if (layerPitches.find(l) != layerPitches.end()) {
+      if (layerPitches[l] != 0) {
         int layerPitch = (int) (tech->getLefUnits() * layerPitches[l]);
         trackSpacing = std::max(layerPitch, trackStepY);
       }
@@ -2387,7 +2393,7 @@ void GlobalRouter::computeCapacities(int maxLayer,
                == odb::dbTechLayerDir::VERTICAL) {
       trackSpacing = trackStepX;
 
-      if (layerPitches.find(l) != layerPitches.end()) {
+      if (layerPitches[l] != 0) {
         int layerPitch = (int) (tech->getLefUnits() * layerPitches[l]);
         trackSpacing = std::max(layerPitch, trackStepX);
       }

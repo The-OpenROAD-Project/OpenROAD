@@ -214,6 +214,7 @@ protected:
   GSegment createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
   void initAdjustments();
+  void initPitches();
 
   // check functions
   void checkPinPlacement();
@@ -232,8 +233,8 @@ protected:
   void initRoutingLayers(std::vector<RoutingLayer>& routingLayers);
   void initRoutingTracks(std::vector<RoutingTracks>& allRoutingTracks,
                          int maxLayer,
-                         std::map<int, float> layerPitches);
-  void computeCapacities(int maxLayer, std::map<int, float> layerPitches);
+                         std::vector<float> layerPitches);
+  void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
   void addNets(std::vector<odb::dbNet*> nets);
@@ -291,7 +292,7 @@ protected:
   std::vector<float> regionsReductionPercentage;
 
   // Pitches variables
-  std::map<int, float> _layerPitches;
+  std::vector<float> _layerPitches;
 
   // Clock net routing variables
   bool _pdRev;
