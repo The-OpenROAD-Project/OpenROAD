@@ -9,8 +9,11 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def $def_filename
 create_clock -period 10 clk1
-
 set_max_fanout 10 [current_design]
+
+set_wire_rc -layer metal1
+estimate_parasitics -placement
+
 report_check_types -max_fanout
 repair_design -buffer_cell BUF_X1
 report_check_types -max_fanout
