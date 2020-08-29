@@ -485,16 +485,16 @@ Resizer::resizeToTargetSlew()
   // Resize in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *drvr = level_drvr_verticies_[i];
-      Pin *drvr_pin = drvr->pin();
-      Net *net = network_->net(drvr_pin);
-      Instance *inst = network_->instance(drvr_pin);
-      if (net
-	  && !drvr->isConstant()
-	  && hasFanout(drvr)
-	  // Hands off the clock nets.
-	  && !sta_->isClock(drvr_pin)
-	  // Hands off special nets.
-	  && !isSpecial(net)) {
+    Pin *drvr_pin = drvr->pin();
+    Net *net = network_->net(drvr_pin);
+    Instance *inst = network_->instance(drvr_pin);
+    if (net
+	&& !drvr->isConstant()
+	&& hasFanout(drvr)
+	// Hands off the clock nets.
+	&& !sta_->isClock(drvr_pin)
+	// Hands off special nets.
+	&& !isSpecial(net)) {
       resizeToTargetSlew(drvr_pin);
       if (overMaxArea()) {
 	warn("Max utilization reached.");
@@ -533,6 +533,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
   if (cell) {
+    ensureWireParasitic(drvr_pin);
     // Includes net parasitic capacitance.
     float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
     if (load_cap > 0.0) {
@@ -554,7 +555,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 	}
 	if (best_cell && best_cell != cell) {
 	  debugPrint3(debug_, "resizer", 2, "%s %s -> %s\n",
-		      sdc_network_->pathName(inst),
+		      sdc_network_->pathName(drvr_pin),
 		      cell->name(),
 		      best_cell->name());
 	  const char *best_cell_name = best_cell->name();
@@ -568,10 +569,38 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 	    sta_->replaceCell(inst, best_cell1);
 	    resize_count_++;
 	    design_area_ += area(best_master);
+
+	    // Delete estimated parasitics on all instance pins.
+	    // Input nets change pin cap, outputs change location (slightly).
+	    if (have_estimated_parasitics_) {
+	      InstancePinIterator *pin_iter = network_->pinIterator(inst);
+	      while (pin_iter->hasNext()) {
+		const Pin *pin = pin_iter->next();
+		const Net *net = network_->net(pin);
+		if (net) {
+		  debugPrint1(debug_, "resizer_parasitics", 1, "delete parasitic %s\n",
+			      network_->pathName(net));
+		  parasitics_->deleteParasitics(net, parasitics_ap_);
+		}
+	      }
+	      delete pin_iter;
+	    }
 	  }
 	}
       }
     }
+  }
+}
+
+void
+Resizer::ensureWireParasitic(const Pin *drvr_pin)
+{
+  if (have_estimated_parasitics_
+      && parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
+				   parasitics_ap_) == nullptr) {
+    const Net *net = network_->net(drvr_pin);
+    if (net)
+      estimateWireParasitic(net);
   }
 }
 
@@ -853,7 +882,7 @@ Resizer::estimateWireParasitic(const Net *net)
   if (!hasTopLevelPort(net)) {
     SteinerTree *tree = makeSteinerTree(net, false, db_network_);
     if (tree) {
-      debugPrint1(debug_, "resizer_parasitics", 1, "net %s\n",
+      debugPrint1(debug_, "resizer_parasitics", 1, "estimate wire %s\n",
 		  sdc_network_->pathName(net));
       Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
 							       parasitics_ap_);
@@ -928,6 +957,28 @@ Resizer::hasTopLevelPort(const Net *net)
       return true;
   }
   return false;
+}
+
+void
+Resizer::ensureParasitics()
+{
+  if (have_estimated_parasitics_) {
+    NetIterator *net_iter = network_->netIterator(network_->topInstance());
+    while (net_iter->hasNext()) {
+      Net *net = net_iter->next();
+      // Estimate parastices for clocks also for when they are propagated.
+      if (!network_->isPower(net)
+	  && !network_->isGround(net)) {
+	PinSet *drivers = network_->drivers(net);
+	if (drivers && !drivers->empty()) {
+	  PinSet::Iterator drvr_iter(drivers);
+	  Pin *drvr_pin = drvr_iter.next();
+	  ensureWireParasitic(drvr_pin);
+	}
+      }
+    }
+    delete net_iter;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1299,15 +1350,14 @@ Resizer::repairDesign(double max_wire_length, // meters
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
 
-  VertexSeq drvrs;
-  findLongWires(drvrs);
   int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
   int fanout_violations = 0;
   int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
-  for (Vertex *drvr : drvrs) {
+  for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
+    Vertex *drvr = level_drvr_verticies_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
     if (net
@@ -1337,6 +1387,7 @@ Resizer::repairDesign(double max_wire_length, // meters
   }
   if (resize_count_ > 0)
     printf("Resized %d instances.\n", resize_count_);
+  ensureParasitics();
 }
 
 // repairDesign but restricted to clock network and
@@ -1351,6 +1402,8 @@ Resizer::repairClkNets(double max_wire_length, // meters
   search_->arrivalsInvalid();
 
   inserted_buffer_count_ = 0;
+  resize_count_ = 0;
+
   int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;
@@ -1378,6 +1431,8 @@ Resizer::repairClkNets(double max_wire_length, // meters
 	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
+  if (resize_count_ > 0)
+    printf("Resized %d instances.\n", resize_count_);
 }
 
 // for debugging
@@ -1403,7 +1458,7 @@ Resizer::repairNet(Net *net,
   int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
   PinSet *drivers = network_->drivers(net);
-  if (drivers) {
+  if (drivers && !drivers->empty()) {
     PinSet::Iterator drvr_iter(drivers);
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
@@ -1447,6 +1502,8 @@ Resizer::repairNet(Net *net,
     Pin *drvr_pin = drvr->pin();
     debugPrint1(debug_, "repair_net", 1, "repair net %s\n",
 		sdc_network_->pathName(drvr_pin));
+    ensureWireParasitic(drvr_pin);
+
     double max_cap = INF;
     float max_fanout = INF;
     bool repair_slew = false;
@@ -1513,9 +1570,9 @@ Resizer::repairNet(Net *net,
       repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
 		max_cap, max_fanout, max_length, buffer_cell, 0,
 		ignore1, ignore2, ignore3, ignore4);
-      resizeToTargetSlew(drvr_pin);
       repair_count++;
     }
+    resizeToTargetSlew(drvr_pin);
   }
 }
 
@@ -1762,9 +1819,6 @@ Resizer::repairNet(SteinerTree *tree,
 		  units_->distanceUnit()->asString(dbuToMeters(length), 1));
     }
   }
-  else if (have_estimated_parasitics_)
-    // Estimate parasitics at original driver net (tree root).
-    estimateWireParasitic(net);
 }
 
 void
@@ -1829,8 +1883,11 @@ Resizer::makeRepeater(int x,
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load, load_port, buffer_out);
     }
-    if (have_estimated_parasitics_)
-      estimateWireParasitic(buffer_out);
+
+    // Delete estimated parasitics on upstream driver.
+    debugPrint1(debug_, "resizer_parasitics", 1, "delete parasitic %s\n",
+		network_->pathName(in_net));
+    parasitics_->deleteParasitics(in_net, parasitics_ap_);
 
     // Resize repeater as we back up by levels.
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
