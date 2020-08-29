@@ -320,7 +320,7 @@ protected:
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
   void ensureWireParasitic(const Pin *drvr_pin);
-  void ensureParasitics();
+  void ensureWireParasitics();
 
   float wire_res_;
   float wire_cap_;

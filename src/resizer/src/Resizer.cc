@@ -502,6 +502,7 @@ Resizer::resizeToTargetSlew()
       }
     }
   }
+  ensureWireParasitics();
   printf("Resized %d instances.\n", resize_count_);
 }
 
@@ -960,7 +961,7 @@ Resizer::hasTopLevelPort(const Net *net)
 }
 
 void
-Resizer::ensureParasitics()
+Resizer::ensureWireParasitics()
 {
   if (have_estimated_parasitics_) {
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
@@ -1371,6 +1372,8 @@ Resizer::repairDesign(double max_wire_length, // meters
 		fanout_violations, length_violations);
     }
   }
+  ensureWireParasitics();
+
   if (slew_violations > 0)
     printf("Found %d slew violations.\n", slew_violations);
   if (fanout_violations > 0)
@@ -1387,7 +1390,6 @@ Resizer::repairDesign(double max_wire_length, // meters
   }
   if (resize_count_ > 0)
     printf("Resized %d instances.\n", resize_count_);
-  ensureParasitics();
 }
 
 // repairDesign but restricted to clock network and
