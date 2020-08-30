@@ -146,7 +146,7 @@ void MainWindow::setLocation(qreal x, qreal y)
 
 void MainWindow::setSelected(const Selected& selection)
 {
-  status(selection ? selection.getName() : "");
+  status(selection ? selection.getName(): "");
 }
 
 void MainWindow::status(const std::string& message)

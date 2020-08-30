@@ -231,8 +231,10 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
         layer, pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
     // Just return the first one
-    if (shapes.begin() != shapes.end()) {
-      return Selected(shapes.begin()->second);
+    for (auto iter : shapes) {
+      if (options_->isNetVisible(iter.second)) {
+        return Selected(iter.second);
+      }
     }
   }
 
@@ -619,6 +621,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       5 * pixel);
 
     for (auto& i : iter) {
+      if (!options_->isNetVisible(i.second)) {
+        continue;
+      }
       const auto& ll = i.first.min_corner();
       const auto& ur = i.first.max_corner();
       int w = ur.x() - ll.x();
