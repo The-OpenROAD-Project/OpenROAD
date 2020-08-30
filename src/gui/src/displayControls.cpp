@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "displayControls.h"
-
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -39,6 +37,7 @@
 #include <QVBoxLayout>
 
 #include "db.h"
+#include "displayControls.h"
 #include "openroad/InitOpenRoad.hh"
 
 namespace gui {
@@ -52,7 +51,12 @@ DisplayControls::DisplayControls(QWidget* parent)
       tech_inited_(false),
       tracks_visible_pref_(false),
       tracks_visible_non_pref_(false),
-      rows_visible_(false)
+      rows_visible_(false),
+      nets_signal_visible_(true),
+      nets_special_visible_(true),
+      nets_power_visible_(true),
+      nets_ground_visible_(true),
+      nets_clock_visible_(true)
 {
   setObjectName("layers");  // for settings
   model_->setHorizontalHeaderLabels({"", "", "V", "S"});
@@ -74,12 +78,35 @@ DisplayControls::DisplayControls(QWidget* parent)
       });
   view_->expand(layers_->index());
 
-  // Rows
-  rows_
-      = makeItem("Rows", model_, Qt::Unchecked, [this](bool visible) {
-          rows_visible_ = visible;
-        });
+  // nets patterns
+  nets_ = makeItem("Nets", model_, Qt::Checked, [this](bool visible) {
+    toggleAllChildren(visible, nets_, Visible);
+  });
 
+  nets_signal_ = makeItem("Signal", nets_, Qt::Checked, [this](bool visible) {
+    nets_signal_visible_ = visible;
+  });
+
+  nets_special_ = makeItem("Special", nets_, Qt::Checked, [this](bool visible) {
+    nets_special_visible_ = visible;
+  });
+
+  nets_power_ = makeItem("Power", nets_, Qt::Checked, [this](bool visible) {
+    nets_power_visible_ = visible;
+  });
+
+  nets_ground_ = makeItem("Ground", nets_, Qt::Checked, [this](bool visible) {
+    nets_ground_visible_ = visible;
+  });
+
+  nets_clock_ = makeItem("Clock", nets_, Qt::Checked, [this](bool visible) {
+    nets_clock_visible_ = visible;
+  });
+
+  // Rows
+  rows_ = makeItem("Rows", model_, Qt::Unchecked, [this](bool visible) {
+    rows_visible_ = visible;
+  });
 
   // Track patterns
   tracks_ = makeItem("Tracks", model_, Qt::Unchecked, [this](bool visible) {
@@ -195,6 +222,22 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
     return it->second;
   }
   return false;
+}
+
+bool DisplayControls::isNetVisible(odb::dbNet* net)
+{
+  switch(net->getSigType()) {
+  case dbSigType::SIGNAL:
+    return nets_signal_visible_;
+  case dbSigType::POWER:
+    return nets_power_visible_;
+  case dbSigType::GROUND:
+    return nets_ground_visible_;
+  case dbSigType::CLOCK:
+    return nets_clock_visible_;
+  default:
+    return true;
+  }
 }
 
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
