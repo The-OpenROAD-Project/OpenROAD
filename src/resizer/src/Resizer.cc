@@ -742,7 +742,7 @@ Resizer::findTargetLoad(LibertyCell *cell,
   GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
   if (model) {
     float cap_init = 1.0e-12;  // 1pF
-    float cap_tol = cap_init * .001; // .1%
+    float cap_tol = 0.1e-15; // .1fF
     float load_cap = cap_init;
     float cap_step = cap_init;
     Slew prev_slew = 0.0;
@@ -1341,9 +1341,6 @@ Resizer::repairDesign(double max_wire_length, // meters
 		      LibertyCell *buffer_cell)
 {
   init();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
@@ -1357,10 +1354,19 @@ Resizer::repairDesign(double max_wire_length, // meters
   int fanout_violations = 0;
   int length_violations = 0;
   int max_length = metersToDbu(max_wire_length);
+  Level dcalc_valid_level = 0;
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *drvr = level_drvr_verticies_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
+
+#if 0
+    Level drvr_level = drvr->level();
+    if (drvr_level != dcalc_valid_level) {
+      graph_delay_calc_->findDelays(drvr_level);
+      dcalc_valid_level = drvr_level;
+    }
+#endif
     if (net
 	&& !sta_->isClock(drvr_pin)
 	// Exclude tie hi/low cells.
@@ -1399,9 +1405,6 @@ Resizer::repairClkNets(double max_wire_length, // meters
 		       LibertyCell *buffer_cell)
 {
   init();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
 
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -1444,9 +1447,7 @@ Resizer::repairNet(Net *net,
 		   LibertyCell *buffer_cell)
 {
   init();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
+
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();
