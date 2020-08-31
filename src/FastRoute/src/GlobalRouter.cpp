@@ -77,7 +77,6 @@ void GlobalRouter::init()
 {
   makeComponents();
   // Initialize variables
-  _outfile = "out.guide";
   _adjustment = 0.0;
   _minRoutingLayer = 1;
   _maxRoutingLayer = -1;
@@ -1152,11 +1151,6 @@ void GlobalRouter::setAlpha(const float alpha)
   _alpha = alpha;
 }
 
-void GlobalRouter::setOutputFile(const std::string& outfile)
-{
-  _outfile = outfile;
-}
-
 void GlobalRouter::setPitchesInTile(const int pitchesInTile)
 {
   _grid->setPitchesInTile(pitchesInTile);
@@ -1249,11 +1243,11 @@ void GlobalRouter::setMinLayerForClock(int minLayer)
   _minLayerForClock = minLayer;
 }
 
-void GlobalRouter::writeGuides()
+void GlobalRouter::writeGuides(const char* fileName))
 {
   std::cout << "Writing guides...\n";
   std::ofstream guideFile;
-  guideFile.open(_outfile);
+  guideFile.open(fileName);
   if (!guideFile.is_open()) {
     guideFile.close();
     error("Guides file could not be open\n");
