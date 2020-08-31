@@ -50,6 +50,10 @@ Gui* Gui::singleton_ = nullptr;
 
 Gui* Gui::get()
 {
+  if (mainWindow == nullptr) {
+    return nullptr;  // batch mode
+  }
+
   if (!singleton_) {
     singleton_ = new Gui();
   }

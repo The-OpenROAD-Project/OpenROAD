@@ -154,4 +154,10 @@ void Graphics::status(const std::string& message)
   gui::Gui::get()->status(message);
 }
 
+/* static */
+bool Graphics::guiActive()
+{
+  return gui::Gui::get() != nullptr;
+}
+
 }  // namespace replace

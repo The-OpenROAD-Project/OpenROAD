@@ -115,7 +115,7 @@ NesterovPlace::NesterovPlace(
   rb_ = rb;
   log_ = log;
   init();
-  if (npVars.debug) {
+  if (npVars.debug && Graphics::guiActive()) {
     graphics_ = make_unique<Graphics>(pb, nb, npVars_.debug_draw_bins);
   }
 }
