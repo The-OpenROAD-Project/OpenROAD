@@ -23,6 +23,7 @@ record_tests {
   repair_slew2
   repair_slew3
   repair_slew4
+  repair_slew5
   repair_hold1
   repair_hold2
   report_floating_nets1
