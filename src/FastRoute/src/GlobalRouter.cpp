@@ -1243,7 +1243,7 @@ void GlobalRouter::setMinLayerForClock(int minLayer)
   _minLayerForClock = minLayer;
 }
 
-void GlobalRouter::writeGuides(const char* fileName))
+void GlobalRouter::writeGuides(const char* fileName)
 {
   std::cout << "Writing guides...\n";
   std::ofstream guideFile;

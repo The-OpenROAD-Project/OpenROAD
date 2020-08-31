@@ -12,7 +12,8 @@ FastRoute::clear_fastroute
 
 set_global_routing_layer_adjustment * 0.8
 
-fastroute -capacity_adjustment 0.8
+set_global_routing_layer_adjustment * 0.8
+fastroute
 write_guides $guide_file2
 
 diff_file $guide_file1 $guide_file2
