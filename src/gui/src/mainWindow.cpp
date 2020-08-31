@@ -44,11 +44,11 @@ namespace gui {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
+      db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(new LayoutViewer(controls_)),
+      viewer_(new LayoutViewer(controls_, selected_)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this)),
-      db_(nullptr)
+      script_(new ScriptWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -80,7 +80,11 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selected(const Selected&)),
           this,
           SLOT(setSelected(const Selected&)));
-
+  connect(this,
+          SIGNAL(selectionChanged()),
+          viewer_,
+          SLOT(update()));
+  
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
@@ -146,7 +150,12 @@ void MainWindow::setLocation(qreal x, qreal y)
 
 void MainWindow::setSelected(const Selected& selection)
 {
+  selected_.clear();
+  if (selection) {
+    selected_.emplace(selection);
+  }
   status(selection ? selection.getName(): "");
+  emit selectionChanged();
 }
 
 void MainWindow::status(const std::string& message)

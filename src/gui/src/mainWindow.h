@@ -82,6 +82,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Draw events are processed while paused.
   void pause();
 
+  // The selected set of objects has changed
+  void selectionChanged();
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -101,13 +104,15 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void createToolbars();
   void createStatusBar();
 
+  odb::dbDatabase* db_;
+  SelectionSet selected_;
+
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
   LayoutViewer* viewer_;  // owned by scroll_
   LayoutScroll* scroll_;
   ScriptWidget* script_;
-  odb::dbDatabase* db_;
 
   QMenu* fileMenu_;
   QMenu* viewMenu_;

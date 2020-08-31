@@ -34,6 +34,7 @@
 #include <stdexcept>
 
 #include "db.h"
+#include "dbShape.h"
 #include "defin.h"
 #include "gui/gui.h"
 #include "lefin.h"
@@ -108,6 +109,55 @@ std::string OpenDbDescriptor::getName(void* object) const
       return "Inst: " + static_cast<odb::dbInst*>(db_obj)->getName();
     default:
       return db_obj->getObjName();
+  }
+}
+
+void OpenDbDescriptor::highlight(void* object, Painter& painter) const
+{
+  painter.setPen(Painter::highlight, true);
+  painter.setBrush(Painter::transparent);
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  switch (db_obj->getObjectType()) {
+    case odb::dbNetObj: {
+      auto net = static_cast<odb::dbNet*>(db_obj);
+
+      // Draw regular routing
+      odb::Rect rect;
+      odb::dbWire* wire = net->getWire();
+      if (wire) {
+        odb::dbWireShapeItr it;
+        it.begin(wire);
+        odb::dbShape shape;
+        while (it.next(shape)) {
+          shape.getBox(rect);
+          painter.drawRect(rect);
+        }
+      }
+
+      // Draw special (i.e. geometric) routing
+      for (auto swire : net->getSWires()) {
+        for (auto sbox : swire->getWires()) {
+          sbox->getBox(rect);
+          painter.drawRect(rect);
+        }
+      }
+      break;
+    }
+    case odb::dbInstObj: {
+      auto inst = static_cast<odb::dbInst*>(db_obj);
+      odb::dbPlacementStatus status = inst->getPlacementStatus();
+      if (status == odb::dbPlacementStatus::NONE
+          || status == odb::dbPlacementStatus::UNPLACED) {
+        return;
+      }
+      odb::dbBox* bbox = inst->getBBox();
+      odb::Rect rect;
+      bbox->getBox(rect);
+      painter.drawRect(rect);
+      break;
+    }
+    default:
+      throw std::runtime_error("Unsupported type for highlighting");
   }
 }
 

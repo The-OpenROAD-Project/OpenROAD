@@ -43,6 +43,7 @@
 #include "opendb/db.h"
 
 namespace gui {
+class Painter;
 
 // This interface allows the GUI to interact with selected objects of
 // types it knows nothing about.  It can just ask the descriptor to
@@ -52,6 +53,8 @@ class Descriptor
 {
  public:
   virtual std::string getName(void* object) const = 0;
+
+  virtual void highlight(void* object, Painter& painter) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -60,6 +63,8 @@ class OpenDbDescriptor : public Descriptor
 {
  public:
   std::string getName(void* object) const override;
+
+  void highlight(void* object, Painter& painter) const override;
 
   static OpenDbDescriptor* get();
 
@@ -89,6 +94,11 @@ class Selected
   }
 
   std::string getName() const { return descriptor->getName(object); }
+
+  void highlight(Painter& painter) const
+  {
+    return descriptor->highlight(object, painter);
+  }
 
   operator bool() const { return object != nullptr; }
 
@@ -138,6 +148,9 @@ class Painter
   static inline const Color dark_magenta{0x80, 0x00, 0x80, 0xff};
   static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
+
+  // The color to highlight in
+  static inline const Color highlight = yellow;
 
   virtual ~Painter() = default;
 

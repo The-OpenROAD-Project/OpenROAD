@@ -38,8 +38,8 @@
 #include <map>
 #include <vector>
 
-#include "opendb/dbBlockCallBackObj.h"
 #include "gui/gui.h"
+#include "opendb/dbBlockCallBackObj.h"
 #include "options.h"
 #include "search.h"
 
@@ -69,7 +69,9 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   Q_OBJECT
 
  public:
-  LayoutViewer(Options* options, QWidget* parent = nullptr);
+  LayoutViewer(Options* options,
+               const SelectionSet& selected,
+               QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
   qreal getPixelsPerDBU() { return pixelsPerDBU_; }
@@ -124,6 +126,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void drawRows(odb::dbBlock* block,
                 QPainter* painter,
                 const odb::Rect& bounds);
+  void drawSelected(Painter& painter);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
@@ -132,6 +135,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
 
   odb::dbDatabase* db_;
   Options* options_;
+  const SelectionSet& selected_;
   LayoutScroll* scroller_;
   qreal pixelsPerDBU_;
   int min_depth_;

@@ -111,10 +111,13 @@ class GuiPainter : public Painter
   Options* options_;
 };
 
-LayoutViewer::LayoutViewer(Options* options, QWidget* parent)
+LayoutViewer::LayoutViewer(Options* options,
+                           const SelectionSet& selected,
+                           QWidget* parent)
     : QWidget(parent),
       db_(nullptr),
       options_(options),
+      selected_(selected),
       scroller_(nullptr),
       pixelsPerDBU_(1.0),
       min_depth_(0),
@@ -204,8 +207,6 @@ void LayoutViewer::updateRubberBandRegion()
 
 Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 {
-  update();  // schedule an update for selection change
-
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
   dbTech* tech = getBlock()->getDataBase()->getTech();
@@ -515,6 +516,14 @@ void LayoutViewer::drawRows(dbBlock* block,
   }
 }
 
+void LayoutViewer::drawSelected(Painter& painter)
+{
+  for (auto& selected : selected_) {
+    selected.highlight(painter);
+  }
+}
+
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -667,6 +676,9 @@ void LayoutViewer::drawBlock(QPainter* painter,
   for (auto* renderer : renderers) {
     renderer->drawObjects(gui_painter);
   }
+
+  // Always last so on top
+  drawSelected(gui_painter);
 }
 
 odb::Point LayoutViewer::screenToDBU(const QPoint& point)
