@@ -622,6 +622,12 @@ The `set_global_routing_layer_pitch` command sets the pitch for routing tracks i
 You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch 6 1.34`.
 
+```
+write_guides file_name
+```
+The `write_guides` generates the guide file from the routing results.
+Example: `write_guides route.guide`.
+
 To estimate RC parasitics based on global route results, use the `-global_routing`
 option of the `estimate_parasitics` command.
 
