@@ -77,6 +77,13 @@ proc set_global_routing_layer_pitch { args } {
   }
 }
 
+sta::define_cmd_args "write_guides" { file_name }
+
+proc write_guides { args } {
+  set file_name $args
+  FastRoute::write_guides $file_name
+}
+
 sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-min_routing_layer min_layer] \
                                            [-max_routing_layer max_layer] \
@@ -109,14 +116,6 @@ proc fastroute { args } {
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
           -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
-
-  if { [info exists keys(-output_file)] } {
-    set out_file $keys(-output_file)
-    FastRoute::set_output_file $out_file
-  } else {
-    puts "\[WARNING\] Default output guide name: out.guide"
-    FastRoute::set_output_file "out.guide"
-  }
 
   if { [info exists keys(-min_routing_layer)] } {
     set min_layer $keys(-min_routing_layer)
@@ -298,7 +297,13 @@ proc fastroute { args } {
 
   FastRoute::start_fastroute
   FastRoute::run_fastroute
-  FastRoute::write_guides
+  
+  if { [info exists keys(-output_file)] } {
+    ord::warn "option -output_file is deprecated. use command \
+    write_guides <file_name>"
+    set out_file $keys(-output_file)
+    FastRoute::write_guides $out_file
+  }
 }
 
 namespace eval FastRoute {
