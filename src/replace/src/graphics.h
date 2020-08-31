@@ -29,6 +29,9 @@ class Graphics : public gui::Renderer
   virtual gui::Selected select(odb::dbTechLayer* layer,
                                const odb::Point& point) override;
 
+  // Is the GUI being displayed (true) or are we in batch mode (false)
+  static bool guiActive();
+
  private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;

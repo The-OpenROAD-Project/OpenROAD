@@ -231,6 +231,7 @@ class Gui
 
   const std::set<Renderer*>& renderers() { return renderers_; }
 
+  // Will return nullptr if openroad was invoked without -gui
   static Gui* get();
 
  private:
