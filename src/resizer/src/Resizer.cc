@@ -357,7 +357,7 @@ Resizer::bufferInputs(LibertyCell *buffer_cell)
 {
   init();
   inserted_buffer_count_ = 0;
-  InstancePinIterator *port_iter(network_->pinIterator(network_->topInstance()));
+  InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
     Net *net = network_->net(network_->term(pin));
@@ -395,7 +395,7 @@ Resizer::bufferInput(Pin *top_pin,
     design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
-    NetPinIterator *pin_iter(db_network_->pinIterator(input_net));
+    NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
     while (pin_iter->hasNext()) {
       Pin *pin = pin_iter->next();
       // Leave input port pin connected to input_net.
@@ -405,6 +405,7 @@ Resizer::bufferInput(Pin *top_pin,
 	sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
       }
     }
+    delete pin_iter;
     sta_->connectPin(buffer, input, input_net);
     sta_->connectPin(buffer, output, buffer_out);
   }
@@ -424,7 +425,7 @@ Resizer::bufferOutputs(LibertyCell *buffer_cell)
 {
   init();
   inserted_buffer_count_ = 0;
-  InstancePinIterator *port_iter(network_->pinIterator(network_->topInstance()));
+  InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
     Net *net = network_->net(network_->term(pin));
@@ -461,7 +462,7 @@ Resizer::bufferOutput(Pin *top_pin,
     design_area_ += area(db_network_->cell(buffer_cell));
     inserted_buffer_count_++;
 
-    NetPinIterator *pin_iter(network->pinIterator(output_net));
+    NetPinIterator *pin_iter = network->pinIterator(output_net);
     while (pin_iter->hasNext()) {
       Pin *pin = pin_iter->next();
       if (pin != top_pin) {
@@ -471,6 +472,7 @@ Resizer::bufferOutput(Pin *top_pin,
 	sta_->connectPin(network->instance(pin), pin_port, buffer_in);
       }
     }
+    delete pin_iter;
     sta_->connectPin(buffer, input, buffer_in);
     sta_->connectPin(buffer, output, output_net);
   }
@@ -951,13 +953,17 @@ Resizer::findParasiticNode(SteinerTree *tree,
 bool
 Resizer::hasTopLevelPort(const Net *net)
 {
+  bool has_top_level_port = false;
   NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin))
-      return true;
+    if (network_->isTopLevelPort(pin)) {
+      has_top_level_port = true;
+      break;
+    }
   }
-  return false;
+  delete pin_iter;
+  return has_top_level_port;
 }
 
 void
@@ -2057,6 +2063,7 @@ Resizer::maxLoadManhattenDistance(const Net *net)
       }
     }
   }
+  delete pin_iter;
   return dbuToMeters(max_dist);
 }
 
