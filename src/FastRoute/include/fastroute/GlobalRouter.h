@@ -124,7 +124,6 @@ class GlobalRouter
   void setMaxRoutingLayer(const int maxLayer);
   void setUnidirectionalRoute(const bool unidirRoute);
   void setAlpha(const float alpha);
-  void setOutputFile(const std::string& outfile);
   void setPitchesInTile(const int pitchesInTile);
   void setSeed(unsigned seed);
   unsigned getDbId();
@@ -150,7 +149,7 @@ class GlobalRouter
 
   // flow functions
   void enableAntennaAvoidance(char* diodeCellName, char* diodePinName);
-  void writeGuides();
+  void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
@@ -262,7 +261,6 @@ protected:
   std::vector<RoutingTracks>* _allRoutingTracks = nullptr;
 
   // Flow variables
-  std::string _outfile;
   std::string _congestFile;
   float _adjustment;
   int _minRoutingLayer;

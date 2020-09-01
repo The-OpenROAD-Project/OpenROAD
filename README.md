@@ -579,7 +579,8 @@ If this parameter is omitted, the metrics are shown on the standard output.
 Global router options and commands are described below. 
 
 ```
-fastroute [-min_routing_layer min_layer] \
+fastroute [-guide_file out_file] \
+          [-min_routing_layer min_layer] \
           [-max_routing_layer max_layer] \
           [-tile_size tile_size] \
           [-verbose verbose] \
@@ -592,7 +593,7 @@ fastroute [-min_routing_layer min_layer] \
 ```
 
 Options description:
-- **capacity_adjustment**: Set global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
+- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
 - **max_routing_layer**: Set maximum routing layer (e.g.: -max_routing_layer *9*)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
@@ -621,6 +622,12 @@ set_global_routing_layer_pitch layer pitch
 The `set_global_routing_layer_pitch` command sets the pitch for routing tracks in a specific layer.
 You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch 6 1.34`.
+
+```
+write_guides file_name
+```
+The `write_guides` generates the guide file from the routing results.
+Example: `write_guides route.guide`.
 
 To estimate RC parasitics based on global route results, use the `-global_routing`
 option of the `estimate_parasitics` command.
