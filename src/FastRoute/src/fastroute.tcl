@@ -85,6 +85,7 @@ proc write_guides { args } {
 }
 
 sta::define_cmd_args "fastroute" {[-guide_file out_file] \
+                                  [-output_file out_file] \
                                            [-min_routing_layer min_layer] \
                                            [-max_routing_layer max_layer] \
                                            [-unidirectional_routing] \
@@ -110,7 +111,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
-    keys {-guide_file -min_routing_layer -max_routing_layer \
+    keys {-guide_file -output_file -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
           -regions_adjustments -nets_alphas_priorities -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
@@ -236,7 +237,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_pitches)] } {
-    ord::warn "option -layers_pitches is deprecated. use command set_global_routing_layer_pitch layer adjustment"
+    ord::warn "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer adjustment"
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
@@ -295,6 +296,12 @@ proc fastroute { args } {
   FastRoute::start_fastroute
   FastRoute::run_fastroute
   
+  if { [info exists keys(-output_file)] } {
+    ord::warn "option -output_file is deprecated. Use option -guide_file"
+    set out_file $keys(-output_file)
+    FastRoute::write_guides $out_file
+  }
+
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
     FastRoute::write_guides $out_file
