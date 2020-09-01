@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "IOPlacementKernel.h"
+#include "ioplacer/IOPlacementKernel.h"
 
 #include <random>
 #include "openroad/Error.hh"
