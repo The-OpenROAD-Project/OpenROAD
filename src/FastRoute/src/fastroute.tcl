@@ -77,6 +77,32 @@ proc set_global_routing_layer_pitch { args } {
   }
 }
 
+sta::define_cmd_args "set_pdrev_topology_priority" { [-net net] \
+                                                     [-alpha alpha] \
+}
+
+proc set_pdrev_topology_priority { args } {
+  sta::parse_key_args "set_pdrev_topology_priority" args \
+    keys {-net -alpha} \
+
+  set net "INVALID"
+  if { [info exists keys(-net)] } {
+    set net $keys(-net)
+  } else {
+    ord::error "set_pdrev_topology_priority: Missing net name"
+  }
+
+  set alpha -0.1
+  if { [info exists keys(-alpha)] } {
+    set alpha $keys(-alpha)
+  } else {
+    ord::error "set_pdrev_topology_priority: Missing alpha"
+  }
+
+  sta::check_positive_float "-alpha" $alpha
+  FastRoute::set_alpha_for_net $net $alpha
+}
+
 sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
@@ -92,7 +118,6 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
                                            [-regions_adjustments regions_adjustments] \
-                                           [-nets_alphas_priorities nets_alphas] \
                                            [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
@@ -113,7 +138,7 @@ proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
     keys {-guide_file -output_file -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
-          -regions_adjustments -nets_alphas_priorities -overflow_iterations \
+          -regions_adjustments -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
           -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
@@ -162,18 +187,6 @@ proc fastroute { args } {
         FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for region adjustments"
-      }
-    }
-  }
-  
-  if { [info exists keys(-nets_alphas_priorities)] } {
-    set nets_alphas $keys(-nets_alphas_priorities)
-    foreach net_alpha $nets_alphas {
-      if { [llength $net_alpha] == 2 } {
-        lassign $net_alpha net_name alpha
-        FastRoute::set_alpha_for_net $net_name $alpha
-      } else {
-        ord::error "Wrong number of arguments for nets priorities"
       }
     }
   }
