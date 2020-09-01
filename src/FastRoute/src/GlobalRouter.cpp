@@ -1250,7 +1250,7 @@ void GlobalRouter::writeGuides(const char* fileName)
   guideFile.open(fileName);
   if (!guideFile.is_open()) {
     guideFile.close();
-    error("Guides file could not be open\n");
+    error("Guides file could not be opened\n");
   }
   RoutingLayer phLayerF;
 

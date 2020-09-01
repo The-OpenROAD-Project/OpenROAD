@@ -140,8 +140,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_adjustments)] } {
-    ord::warn "option -layers_adjustments is deprecated. Use command \
-    set_global_routing_layer_adjustment layer adjustment"
+    ord::warn "option -layers_adjustments is deprecated. Use command set_global_routing_layer_adjustment layer adjustment"
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
@@ -158,8 +157,7 @@ proc fastroute { args } {
     foreach region_adjustment $regions_adjustments {
       if { [llength $region_adjustment] == 2 } {
         lassign $region_adjustment minX minY maxX maxY layer reductionPercentage
-        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer \
-          in [expr $reductionPercentage * 100]%"
+        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer in [expr $reductionPercentage * 100]%"
         FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for region adjustments"
@@ -238,8 +236,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_pitches)] } {
-    ord::warn "option -layers_pitches is deprecated. use command \
-    set_global_routing_layer_pitch layer adjustment"
+    ord::warn "option -layers_pitches is deprecated. use command set_global_routing_layer_pitch layer adjustment"
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
@@ -299,8 +296,7 @@ proc fastroute { args } {
   FastRoute::run_fastroute
   
   if { [info exists keys(-output_file)] } {
-    ord::warn "option -output_file is deprecated. use command \
-    write_guides <file_name>"
+    ord::warn "option -output_file is deprecated. use command write_guides <file_name>"
     set out_file $keys(-output_file)
     FastRoute::write_guides $out_file
   }
