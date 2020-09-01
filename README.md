@@ -579,7 +579,8 @@ If this parameter is omitted, the metrics are shown on the standard output.
 Global router options and commands are described below. 
 
 ```
-fastroute [-min_routing_layer min_layer] \
+fastroute [-output_file out_file] \
+          [-min_routing_layer min_layer] \
           [-max_routing_layer max_layer] \
           [-tile_size tile_size] \
           [-verbose verbose] \
@@ -592,7 +593,7 @@ fastroute [-min_routing_layer min_layer] \
 ```
 
 Options description:
-- **capacity_adjustment**: Set global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
+- **output_file**: Set the output guides file name (e.g.: -output_file route.guide")
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
 - **max_routing_layer**: Set maximum routing layer (e.g.: -max_routing_layer *9*)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)

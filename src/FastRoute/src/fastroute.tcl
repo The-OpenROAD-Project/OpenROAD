@@ -296,7 +296,6 @@ proc fastroute { args } {
   FastRoute::run_fastroute
   
   if { [info exists keys(-output_file)] } {
-    ord::warn "option -output_file is deprecated. use command write_guides <file_name>"
     set out_file $keys(-output_file)
     FastRoute::write_guides $out_file
   }
