@@ -35,7 +35,7 @@
 
 %module ioplacer
 %{
-#include "ioplacer/TclInterface.h"
+#include "TclInterface.h"
 %}
 
 %include "../../Exception.i"
