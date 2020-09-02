@@ -77,30 +77,19 @@ proc set_global_routing_layer_pitch { args } {
   }
 }
 
-sta::define_cmd_args "set_pdrev_topology_priority" { [-net net] \
-                                                     [-alpha alpha] \
-}
+sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
 
 proc set_pdrev_topology_priority { args } {
-  sta::parse_key_args "set_pdrev_topology_priority" args \
-    keys {-net -alpha} \
+  if {[llength $args] == 2} {
+    lassign $args net alpha
+    
+    sta::check_positive_float "-alpha" $alpha
+    FastRoute::set_alpha_for_net $net $alpha
 
-  set net "INVALID"
-  if { [info exists keys(-net)] } {
-    set net $keys(-net)
+    puts "$net, $alpha"
   } else {
-    ord::error "set_pdrev_topology_priority: Missing net name"
+    ord::error "set_pdrev_topology_priority: Wrong number of arguments"
   }
-
-  set alpha -0.1
-  if { [info exists keys(-alpha)] } {
-    set alpha $keys(-alpha)
-  } else {
-    ord::error "set_pdrev_topology_priority: Missing alpha"
-  }
-
-  sta::check_positive_float "-alpha" $alpha
-  FastRoute::set_alpha_for_net $net $alpha
 }
 
 sta::define_cmd_args "write_guides" { file_name }
