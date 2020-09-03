@@ -77,14 +77,36 @@ proc set_global_routing_layer_pitch { args } {
   }
 }
 
-sta::define_cmd_args "fastroute" {[-output_file out_file] \
+sta::define_cmd_args "set_pdrev_topology_priority" { net alpha }
+
+proc set_pdrev_topology_priority { args } {
+  if {[llength $args] == 2} {
+    lassign $args net alpha
+    
+    sta::check_positive_float "-alpha" $alpha
+    FastRoute::set_alpha_for_net $net $alpha
+
+    puts "$net, $alpha"
+  } else {
+    ord::error "set_pdrev_topology_priority: Wrong number of arguments"
+  }
+}
+
+sta::define_cmd_args "write_guides" { file_name }
+
+proc write_guides { args } {
+  set file_name $args
+  FastRoute::write_guides $file_name
+}
+
+sta::define_cmd_args "fastroute" {[-guide_file out_file] \
+                                  [-output_file out_file] \
                                            [-min_routing_layer min_layer] \
                                            [-max_routing_layer max_layer] \
                                            [-unidirectional_routing] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
                                            [-regions_adjustments regions_adjustments] \
-                                           [-nets_alphas_priorities nets_alphas] \
                                            [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
@@ -103,20 +125,12 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
-    keys {-output_file -min_routing_layer -max_routing_layer \
+    keys {-guide_file -output_file -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
-          -regions_adjustments -nets_alphas_priorities -overflow_iterations \
+          -regions_adjustments -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
           -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
-
-  if { [info exists keys(-output_file)] } {
-    set out_file $keys(-output_file)
-    FastRoute::set_output_file $out_file
-  } else {
-    puts "\[WARNING\] Default output guide name: out.guide"
-    FastRoute::set_output_file "out.guide"
-  }
 
   if { [info exists keys(-min_routing_layer)] } {
     set min_layer $keys(-min_routing_layer)
@@ -141,8 +155,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_adjustments)] } {
-    ord::warn "option -layers_adjustments is deprecated. Use command \
-    set_global_routing_layer_adjustment layer adjustment"
+    ord::warn "option -layers_adjustments is deprecated. Use command set_global_routing_layer_adjustment layer adjustment"
     set layers_adjustments $keys(-layers_adjustments)
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
@@ -159,23 +172,10 @@ proc fastroute { args } {
     foreach region_adjustment $regions_adjustments {
       if { [llength $region_adjustment] == 2 } {
         lassign $region_adjustment minX minY maxX maxY layer reductionPercentage
-        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer \
-          in [expr $reductionPercentage * 100]%"
+        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer in [expr $reductionPercentage * 100]%"
         FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for region adjustments"
-      }
-    }
-  }
-  
-  if { [info exists keys(-nets_alphas_priorities)] } {
-    set nets_alphas $keys(-nets_alphas_priorities)
-    foreach net_alpha $nets_alphas {
-      if { [llength $net_alpha] == 2 } {
-        lassign $net_alpha net_name alpha
-        FastRoute::set_alpha_for_net $net_name $alpha
-      } else {
-        ord::error "Wrong number of arguments for nets priorities"
       }
     }
   }
@@ -239,8 +239,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_pitches)] } {
-    ord::warn "option -layers_pitches is deprecated. use command \
-    set_global_routing_layer_pitch layer adjustment"
+    ord::warn "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer adjustment"
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
@@ -298,7 +297,17 @@ proc fastroute { args } {
 
   FastRoute::start_fastroute
   FastRoute::run_fastroute
-  FastRoute::write_guides
+  
+  if { [info exists keys(-output_file)] } {
+    ord::warn "option -output_file is deprecated. Use option -guide_file"
+    set out_file $keys(-output_file)
+    FastRoute::write_guides $out_file
+  }
+
+  if { [info exists keys(-guide_file)] } {
+    set out_file $keys(-guide_file)
+    FastRoute::write_guides $out_file
+  }
 }
 
 namespace eval FastRoute {

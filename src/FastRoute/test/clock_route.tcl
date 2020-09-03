@@ -14,10 +14,11 @@ set_global_routing_layer_adjustment 2 0.8
 set_global_routing_layer_adjustment 3 0.7
 set_global_routing_layer_adjustment * 0.5
 
-fastroute -output_file $guide_file \
-          -max_routing_layer 6 \
+fastroute -max_routing_layer 6 \
           -unidirectional_routing \
           -clock_nets_route_flow \
-          -min_layer_for_clock_net 4 \
+          -min_layer_for_clock_net 4
+
+write_guides $guide_file
 
 diff_file clock_route.guideok $guide_file

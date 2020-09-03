@@ -579,7 +579,8 @@ If this parameter is omitted, the metrics are shown on the standard output.
 Global router options and commands are described below. 
 
 ```
-fastroute [-min_routing_layer min_layer] \
+fastroute [-guide_file out_file] \
+          [-min_routing_layer min_layer] \
           [-max_routing_layer max_layer] \
           [-tile_size tile_size] \
           [-verbose verbose] \
@@ -592,7 +593,7 @@ fastroute [-min_routing_layer min_layer] \
 ```
 
 Options description:
-- **capacity_adjustment**: Set global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
+- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
 - **max_routing_layer**: Set maximum routing layer (e.g.: -max_routing_layer *9*)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
@@ -621,6 +622,24 @@ set_global_routing_layer_pitch layer pitch
 The `set_global_routing_layer_pitch` command sets the pitch for routing tracks in a specific layer.
 You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch 6 1.34`.
+
+```
+set_pdrev_topology_priority -net netName -alpha alpha
+```
+FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
+priority of PDRev between wire length and skew, using the `alpha` parameter.
+The `set_pdrev_topology_priority` command sets the PDRev routing topology construction priority for specific nets.
+Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generates topologies with shorter wire length,
+and alpha close to 1.0 generates topologies with lower skew. For more information about PDRev, check the paper in
+`src/FastRoute/src/pdrev/papers/PDRev.pdf`
+You can call it multiple times for different nets.
+Example: `set_pdrev_topology_priority -net "clk" -alpha 0.3` sets an alpha value of 0.3 for net *clk*.
+
+```
+write_guides file_name
+```
+The `write_guides` generates the guide file from the routing results.
+Example: `write_guides route.guide`.
 
 To estimate RC parasitics based on global route results, use the `-global_routing`
 option of the `estimate_parasitics` command.
