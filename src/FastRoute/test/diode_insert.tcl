@@ -17,7 +17,7 @@ set_global_routing_layer_pitch 4 0.74
 set_global_routing_layer_pitch 5 0.96
 set_global_routing_layer_pitch 6 3.33
 
-fastroute -max_routing_layer 6 \
+fastroute -layers {2 6} \
           -unidirectional_routing \
           -antenna_avoidance_flow -antenna_cell_name "sky130_fd_sc_hs__diode_2" -antenna_pin_name "DIODE"
 
