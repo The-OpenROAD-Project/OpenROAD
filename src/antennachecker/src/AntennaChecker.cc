@@ -1427,12 +1427,12 @@ AntennaChecker::GetAntennaRatio(std::string path)
 void
 AntennaChecker::check_antenna_cell()
 {
-    dbSet<dbInst> insts = db_->getChip()->getBlock()->getInsts();
-    
-    dbSet<dbInst>::iterator inst_itr;
-    for( inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr )
+
+    std::vector<dbMaster*> masters;
+    db_->getChip()->getBlock()->getMasters(masters);
+
+    for(auto master: masters)
     {
-        dbMaster* master = (*inst_itr)->getMaster();
         dbMasterType type = master->getType(); 
         if (type == dbMasterType::CORE_ANTENNACELL)
         {
