@@ -587,13 +587,15 @@ fastroute [-guide_file out_file] \
           [-overflow_iterations iterations] \
           [-grid_origin {x y}] \
           [-report_congestion congest_file] \
+          [-clock_pdrev_fanout fanout] \
+          [-topology_priority priority] \
           [-unidirectional_routing] \
           [-allow_overflow]
 
 ```
 
 Options description:
-- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
+- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide)
 - **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
 - **max_routing_layer**: Set maximum routing layer (e.g.: -max_routing_layer *9*)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
@@ -601,6 +603,9 @@ Options description:
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
 - **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
+- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
+- **topology_priority**: Set the PDRev routing topology construction priority for clock nets.
+See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
 - **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow
 
