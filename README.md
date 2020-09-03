@@ -580,8 +580,7 @@ Global router options and commands are described below.
 
 ```
 fastroute [-guide_file out_file] \
-          [-min_routing_layer min_layer] \
-          [-max_routing_layer max_layer] \
+          [-layers {min max}]
           [-tile_size tile_size] \
           [-verbose verbose] \
           [-overflow_iterations iterations] \
@@ -595,9 +594,8 @@ fastroute [-guide_file out_file] \
 ```
 
 Options description:
-- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide)
-- **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
-- **max_routing_layer**: Set maximum routing layer (e.g.: -max_routing_layer *9*)
+- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
+- **layers**: Set the minimumand maximum routing layers (e.g.: -layers {2 10})
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
