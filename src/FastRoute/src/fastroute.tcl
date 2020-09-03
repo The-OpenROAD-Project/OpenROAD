@@ -85,8 +85,6 @@ proc set_pdrev_topology_priority { args } {
     
     sta::check_positive_float "-alpha" $alpha
     FastRoute::set_alpha_for_net $net $alpha
-
-    puts "$net, $alpha"
   } else {
     ord::error "set_pdrev_topology_priority: Wrong number of arguments"
   }
@@ -107,11 +105,9 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
                                            [-regions_adjustments regions_adjustments] \
-                                           [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
                                            [-grid_origin origin] \
-                                           [-pdrev_for_high_fanout fanout] \
                                            [-allow_overflow] \
                                            [-seed seed] \
                                            [-report_congestion congest_file] \
@@ -121,15 +117,18 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                            [-antenna_pin_name antenna_pin_name] \
                                            [-clock_nets_route_flow] \
                                            [-min_layer_for_clock_net min_clock_layer] \
+                                           [-clock_pdrev_fanout fanout] \
+                                           [-topology_priority priority] \
 }
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
     keys {-guide_file -output_file -min_routing_layer -max_routing_layer \
-          -tile_size -alpha -verbose -layers_adjustments \
+          -tile_size -verbose -layers_adjustments \
           -regions_adjustments -overflow_iterations \
-          -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
-          -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
+          -grid_origin -seed -report_congestion -layers_pitches \
+          -min_layer_for_clock_net -clock_pdrev_fanout -topology_priority \
+          -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
   if { [info exists keys(-min_routing_layer)] } {
@@ -182,10 +181,10 @@ proc fastroute { args } {
 
   FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
 
-  if { [info exists keys(-alpha) ] } {
-    set alpha $keys(-alpha)
-    sta::check_positive_float "-alpha" $alpha
-    FastRoute::set_alpha $alpha
+  if { [info exists keys(-topology_priority) ] } {
+    set priority $keys(-topology_priority)
+    sta::check_positive_float "-topology_priority" $priority
+    FastRoute::set_alpha $topology_priority
   } else {
     FastRoute::set_alpha 0.3
   }
@@ -217,8 +216,8 @@ proc fastroute { args } {
     FastRoute::set_grid_origin -1 -1
   }
 
-  if { [info exists keys(-pdrev_for_high_fanout)] } {
-    set fanout $keys(-pdrev_for_high_fanout)
+  if { [info exists keys(-clock_pdrev_fanout)] } {
+    set fanout $keys(-clock_pdrev_fanout)
     FastRoute::set_pdrev_for_high_fanout $fanout
   } else {
     FastRoute::set_pdrev_for_high_fanout -1
