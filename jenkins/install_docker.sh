@@ -1,12 +1,13 @@
-set -x	# jenkins does not source bashrc
+#!/bin/bash
+set -x  # jenkins does not source bashrc
 set -e
 mkdir -p /OpenROAD/build
 cd /OpenROAD
 cmake -B build
-time cmake --build build -j 8
+time cmake --build build -j "$(nproc)"
 
 # Capture the commit we are testing for use in flow testing
-commit=`git rev-parse --verify HEAD`
+commit=$(git rev-parse --verify HEAD)
 
 # Build a subdir 'flow' to run OpenROAD-flow tests in
 if [[ ! -d flow ]]; then
@@ -26,5 +27,5 @@ if ! git ls-remote local > /dev/null 2>&1; then
 fi
 git fetch
 git fetch local
-git checkout ${commit}
+git checkout "${commit}"
 git submodule update --init --recursive
