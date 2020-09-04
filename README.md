@@ -580,14 +580,14 @@ Global router options and commands are described below.
 
 ```
 fastroute [-guide_file out_file] \
-          [-layers {min max}]
+          [-layers min-max]
           [-tile_size tile_size] \
           [-verbose verbose] \
           [-overflow_iterations iterations] \
           [-grid_origin {x y}] \
           [-report_congestion congest_file] \
           [-clock_pdrev_fanout fanout] \
-          [-topology_priority priority] \
+          [-clock_topology_priority priority] \
           [-unidirectional_routing] \
           [-allow_overflow]
 
