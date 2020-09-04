@@ -602,7 +602,7 @@ Options description:
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
 - **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
-- **topology_priority**: Set the PDRev routing topology construction priority for clock nets.
+- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
 - **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow

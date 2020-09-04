@@ -119,7 +119,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                            [-clock_nets_route_flow] \
                                            [-min_layer_for_clock_net min_clock_layer] \
                                            [-clock_pdrev_fanout fanout] \
-                                           [-topology_priority priority] \
+                                           [-clock_topology_priority priority] \
 }
 
 proc fastroute { args } {
@@ -128,7 +128,7 @@ proc fastroute { args } {
           -tile_size -verbose -layers_adjustments \
           -regions_adjustments -overflow_iterations \
           -grid_origin -seed -report_congestion -layers_pitches \
-          -min_layer_for_clock_net -clock_pdrev_fanout -topology_priority \
+          -min_layer_for_clock_net -clock_pdrev_fanout -clock_topology_priority \
           -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
@@ -200,10 +200,10 @@ proc fastroute { args } {
 
   FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
 
-  if { [info exists keys(-topology_priority) ] } {
-    set priority $keys(-topology_priority)
-    sta::check_positive_float "-topology_priority" $priority
-    FastRoute::set_alpha $topology_priority
+  if { [info exists keys(-clock_topology_priority) ] } {
+    set priority $keys(-clock_topology_priority)
+    sta::check_positive_float "-clock_topology_priority" $priority
+    FastRoute::set_alpha $clock_topology_priority
   } else {
     FastRoute::set_alpha 0.3
   }
