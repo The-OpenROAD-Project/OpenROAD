@@ -152,7 +152,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers)] } {
-    set layers $keys(-layers)
+    set layers [regexp -all -inline -- {[0-9]+} $keys(-layers)]
     if {[llength $layers] == 2} {
       lassign $layers min_layer max_layer
       sta::check_positive_integer "-layers" $min_layer
