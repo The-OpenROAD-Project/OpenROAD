@@ -103,6 +103,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-output_file out_file] \
                                            [-min_routing_layer min_layer] \
                                            [-max_routing_layer max_layer] \
+                                           [-layers layers] \
                                            [-unidirectional_routing] \
                                            [-tile_size tile_size] \
                                            [-layers_adjustments layers_adjustments] \
@@ -125,7 +126,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
-    keys {-guide_file -output_file -min_routing_layer -max_routing_layer \
+    keys {-guide_file -output_file -layers -min_routing_layer -max_routing_layer \
           -tile_size -alpha -verbose -layers_adjustments \
           -regions_adjustments -overflow_iterations \
           -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
@@ -133,6 +134,7 @@ proc fastroute { args } {
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
   if { [info exists keys(-min_routing_layer)] } {
+    ord::warn "option -min_routing_layer is deprecated. Use option -layers {min max}"
     set min_layer $keys(-min_routing_layer)
     sta::check_positive_integer "-min_routing_layer" $min_layer
     FastRoute::set_min_layer $min_layer
@@ -142,10 +144,23 @@ proc fastroute { args } {
 
   set max_layer -1
   if { [info exists keys(-max_routing_layer)] } {
+    ord::warn "option -max_routing_layer is deprecated. Use option -layers {min max}"
     set max_layer $keys(-max_routing_layer)
     sta::check_positive_integer "-max_routing_layer" $max_layer
     FastRoute::set_max_layer $max_layer
   } else {
+    FastRoute::set_max_layer -1
+  }
+
+  if { [info exists keys(-layers)] } {
+    set layers $keys(-layers)
+    lassign $layers min_layer max_layer
+    sta::check_positive_integer "-layes" $min_layer
+    sta::check_positive_integer "-layes" $max_layer
+    FastRoute::set_min_layer $min_layer
+    FastRoute::set_max_layer $max_layer
+  } else {
+    FastRoute::set_min_layer 1
     FastRoute::set_max_layer -1
   }
 
