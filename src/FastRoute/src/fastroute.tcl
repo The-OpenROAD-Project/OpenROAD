@@ -48,7 +48,7 @@ proc set_global_routing_layer_adjustment { args } {
 
       FastRoute::add_layer_adjustment $layer $adj
     } else {
-      set layer_range [regexp -all -inline -- {[0-9]+} $layer]
+      set layer_range [FastRoute::parse_layer_range "set_global_routing_layer_adjustment" $layer]
       lassign $layer_range first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
         FastRoute::check_routing_layer $l
@@ -152,14 +152,16 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers)] } {
-    if [regexp -all {([0-9]+)-([0-9]+)} $keys(-layers) - min_layer max_layer] {
-      sta::check_positive_integer "-layers" $min_layer
-      sta::check_positive_integer "-layers" $max_layer
-      FastRoute::set_min_layer $min_layer
-      FastRoute::set_max_layer $max_layer
-    } else {
-      ord::error "Wrong input format for -layers"
-    }
+    set layer_range [FastRoute::parse_layer_range "-layers" $keys(-layers)]
+    lassign $layer_range min_layer max_layer
+    sta::check_positive_integer "-layers" $min_layer
+    sta::check_positive_integer "-layers" $max_layer
+
+    FastRoute::check_routing_layer $min_layer
+    FastRoute::check_routing_layer $max_layer
+
+    FastRoute::set_min_layer $min_layer
+    FastRoute::set_max_layer $max_layer
   } else {
     FastRoute::set_min_layer 1
     FastRoute::set_max_layer -1
@@ -350,6 +352,16 @@ proc check_routing_layer { layer } {
   }
   if {$layer < 1} {
     ord::error "check_routing_layer: layer $layer is lesser than the min routing layer (1)"
+  }
+}
+
+proc parse_layer_range { cmd layer_range } {
+  if [regexp -all {([0-9]+)-([0-9]+)} $layer_range - min_layer max_layer] {
+    set layers ""
+    lappend layers $min_layer $max_layer
+    return $layers
+  } else {
+    ord::error "Input format to define layer range for $cmd is min-max"
   }
 }
 
