@@ -173,6 +173,7 @@ public:
     std::vector<int> GetAntennaRatio(std::string path);
 
     void load_antenna_rules();
+    void check_antenna_cell();
     void check_antennas(std::string path);
 
     bool check_violation(PARinfo par_info, dbTechLayer* layer);
