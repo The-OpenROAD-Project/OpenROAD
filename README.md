@@ -595,7 +595,7 @@ fastroute [-guide_file out_file] \
 
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
-- **layers**: Set the minimumand maximum routing layers (e.g.: -layers {2 10})
+- **layers**: Set the minimum and maximum routing layers (e.g.: -layers 2-10)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
