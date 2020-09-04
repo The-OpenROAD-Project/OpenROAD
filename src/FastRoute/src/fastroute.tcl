@@ -152,15 +152,13 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers)] } {
-    set layers [regexp -all -inline -- {[0-9]+} $keys(-layers)]
-    if {[llength $layers] == 2} {
-      lassign $layers min_layer max_layer
+    if [regexp -all {([0-9]+)-([0-9]+)} $keys(-layers) - min_layer max_layer] {
       sta::check_positive_integer "-layers" $min_layer
       sta::check_positive_integer "-layers" $max_layer
       FastRoute::set_min_layer $min_layer
       FastRoute::set_max_layer $max_layer
     } else {
-      ord::error "Wrong number of arguments for -layers"
+      ord::error "Wrong input format for -layers"
     }
   } else {
     FastRoute::set_min_layer 1
