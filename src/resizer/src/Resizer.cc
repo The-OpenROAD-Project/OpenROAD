@@ -1158,7 +1158,6 @@ Resizer::repairHoldViolations(VertexSet &ends,
   int repair_count = 1;
   int pass = 1;
   Slack worst_slack = findHoldViolations(ends);
-  float buffer_delay = bufferDelay(buffer_cell);
   while (!ends.empty()
 	 // Make sure we are making progress.
 	 && repair_count > 0) {
@@ -1242,8 +1241,8 @@ Resizer::findHoldViolations(VertexSet &ends)
 
 void
 Resizer::findFaninWeights(VertexSet &ends,
-			// Return value.
-			VertexWeightMap &weight_map)
+			  // Return value.
+			  VertexWeightMap &weight_map)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
