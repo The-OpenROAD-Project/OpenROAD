@@ -580,12 +580,15 @@ Global router options and commands are described below.
 
 ```
 fastroute [-guide_file out_file] \
-          [-layers {min max}]
+          [-layers min-max]
           [-tile_size tile_size] \
           [-verbose verbose] \
           [-overflow_iterations iterations] \
           [-grid_origin {x y}] \
           [-report_congestion congest_file] \
+          [-clock_layers min-max] \
+          [-clock_pdrev_fanout fanout] \
+          [-clock_topology_priority priority] \
           [-unidirectional_routing] \
           [-allow_overflow]
 
@@ -593,12 +596,16 @@ fastroute [-guide_file out_file] \
 
 Options description:
 - **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
-- **-layers**: Set the minimumand maximum routing layers (e.g.: -layers {2 10})
+- **layers**: Set the minimum and maximum routing layers (e.g.: -layers 2-10)
 - **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
 - **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
 - **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
+- **clock_layers min-max**: Set the minimum and maximum routing layers for clock nets (e.g.: -clock_layers 4-9)
+- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
+- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
+See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
 - **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow
 

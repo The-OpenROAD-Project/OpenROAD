@@ -14,10 +14,10 @@ set_global_routing_layer_adjustment 2 0.8
 set_global_routing_layer_adjustment 3 0.7
 set_global_routing_layer_adjustment * 0.5
 
-fastroute -layers {2 6} \
+fastroute -layers 2-6 \
           -unidirectional_routing \
           -clock_nets_route_flow \
-          -min_layer_for_clock_net 4
+          -clock_layers 4-6
 
 write_guides $guide_file
 
