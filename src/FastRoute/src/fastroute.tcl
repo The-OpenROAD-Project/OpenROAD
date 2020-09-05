@@ -154,9 +154,6 @@ proc fastroute { args } {
   if { [info exists keys(-layers)] } {
     set layer_range [FastRoute::parse_layer_range "-layers" $keys(-layers)]
     lassign $layer_range min_layer max_layer
-    sta::check_positive_integer "-layers" $min_layer
-    sta::check_positive_integer "-layers" $max_layer
-
     FastRoute::check_routing_layer $min_layer
     FastRoute::check_routing_layer $max_layer
 
@@ -293,9 +290,6 @@ proc fastroute { args } {
   if { [info exists keys(-clock_layers)] } {
     set layer_range [FastRoute::parse_layer_range "-clock_layers" $keys(-clock_layers)]
     lassign $layer_range min_clock_layer max_clock_layer
-    sta::check_positive_integer "-clock_layers" $min_clock_layer
-    sta::check_positive_integer "-clock_layers" $max_clock_layer
-
     FastRoute::check_routing_layer $min_clock_layer
     FastRoute::check_routing_layer $max_clock_layer
 
@@ -364,8 +358,7 @@ proc check_routing_layer { layer } {
 
 proc parse_layer_range { cmd layer_range } {
   if [regexp -all {([0-9]+)-([0-9]+)} $layer_range - min_layer max_layer] {
-    set layers ""
-    lappend layers $min_layer $max_layer
+    set layers "$min_layer $max_layer"
     return $layers
   } else {
     ord::error "Input format to define layer range for $cmd is min-max"
