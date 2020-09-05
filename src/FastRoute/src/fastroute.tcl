@@ -99,27 +99,27 @@ proc write_guides { args } {
 
 sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-output_file out_file] \
-                                           [-min_routing_layer min_layer] \
-                                           [-max_routing_layer max_layer] \
-                                           [-layers layers] \
-                                           [-unidirectional_routing] \
-                                           [-tile_size tile_size] \
-                                           [-layers_adjustments layers_adjustments] \
-                                           [-regions_adjustments regions_adjustments] \
-                                           [-verbose verbose] \
-                                           [-overflow_iterations iterations] \
-                                           [-grid_origin origin] \
-                                           [-allow_overflow] \
-                                           [-seed seed] \
-                                           [-report_congestion congest_file] \
-                                           [-layers_pitches layers_pitches] \
-                                           [-antenna_avoidance_flow] \
-                                           [-antenna_cell_name antenna_cell_name] \
-                                           [-antenna_pin_name antenna_pin_name] \
-                                           [-clock_nets_route_flow] \
-                                           [-clock_layers layers] \
-                                           [-clock_pdrev_fanout fanout] \
-                                           [-clock_topology_priority priority] \
+                                  [-min_routing_layer min_layer] \
+                                  [-max_routing_layer max_layer] \
+                                  [-layers layers] \
+                                  [-unidirectional_routing] \
+                                  [-tile_size tile_size] \
+                                  [-layers_adjustments layers_adjustments] \
+                                  [-regions_adjustments regions_adjustments] \
+                                  [-verbose verbose] \
+                                  [-overflow_iterations iterations] \
+                                  [-grid_origin origin] \
+                                  [-allow_overflow] \
+                                  [-seed seed] \
+                                  [-report_congestion congest_file] \
+                                  [-layers_pitches layers_pitches] \
+                                  [-antenna_avoidance_flow] \
+                                  [-antenna_cell_name antenna_cell_name] \
+                                  [-antenna_pin_name antenna_pin_name] \
+                                  [-clock_nets_route_flow] \
+                                  [-clock_layers layers] \
+                                  [-clock_pdrev_fanout fanout] \
+                                  [-clock_topology_priority priority] \
 }
 
 proc fastroute { args } {
