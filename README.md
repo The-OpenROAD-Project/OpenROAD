@@ -586,6 +586,7 @@ fastroute [-guide_file out_file] \
           [-overflow_iterations iterations] \
           [-grid_origin {x y}] \
           [-report_congestion congest_file] \
+          [-clock_layers min-max] \
           [-clock_pdrev_fanout fanout] \
           [-clock_topology_priority priority] \
           [-unidirectional_routing] \
@@ -601,6 +602,7 @@ Options description:
 - **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
 - **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
 - **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
+- **clock_layers min-max**: Set the minimum and maximum routing layers for clock nets (e.g.: -clock_layers 4-9)
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
 - **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)

@@ -117,7 +117,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                            [-antenna_cell_name antenna_cell_name] \
                                            [-antenna_pin_name antenna_pin_name] \
                                            [-clock_nets_route_flow] \
-                                           [-min_layer_for_clock_net min_clock_layer] \
+                                           [-clock_layers layers] \
                                            [-clock_pdrev_fanout fanout] \
                                            [-clock_topology_priority priority] \
 }
@@ -128,7 +128,7 @@ proc fastroute { args } {
           -tile_size -verbose -layers_adjustments \
           -regions_adjustments -overflow_iterations \
           -grid_origin -seed -report_congestion -layers_pitches \
-          -min_layer_for_clock_net -clock_pdrev_fanout -clock_topology_priority \
+          -clock_layers -clock_pdrev_fanout -clock_topology_priority \
           -antenna_cell_name -antenna_pin_name} \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
@@ -290,11 +290,18 @@ proc fastroute { args } {
   FastRoute::set_clock_nets_route_flow [info exists flags(-clock_nets_route_flow)]
 
   set min_clock_layer 6
-  if { [info exists keys(-min_layer_for_clock_net)] } {
-    set min_clock_layer $keys(-min_layer_for_clock_net)
+  if { [info exists keys(-clock_layers)] } {
+    set layer_range [FastRoute::parse_layer_range "-clock_layers" $keys(-clock_layers)]
+    lassign $layer_range min_clock_layer max_clock_layer
+    sta::check_positive_integer "-clock_layers" $min_clock_layer
+    sta::check_positive_integer "-clock_layers" $max_clock_layer
+
+    FastRoute::check_routing_layer $min_clock_layer
+    FastRoute::check_routing_layer $max_clock_layer
+
     FastRoute::set_min_layer_for_clock $min_clock_layer
   } elseif { [info exists flags(-clock_nets_route_flow)] } {
-    puts "\[WARNING\] Using the default min layer for clock nets routing (layer $min_clock_layer)"
+    ord::warn "Using the default min layer for clock nets routing (layer $min_clock_layer)"
     FastRoute::set_min_layer_for_clock $min_clock_layer
   }
 
