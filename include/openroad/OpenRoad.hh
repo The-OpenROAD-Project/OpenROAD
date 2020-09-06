@@ -114,8 +114,6 @@ class dbVerilogNetwork;
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
-  OpenRoad();
-  ~OpenRoad();
 public:
   // Singleton accessor used by tcl command interpreter.
   static OpenRoad *openRoad();
@@ -182,7 +180,13 @@ public:
   void addObserver(Observer *observer);
   void removeObserver(Observer *observer);
 
+protected:
+  ~OpenRoad();
+  friend void deleteAllMemory();
+
 private:
+  OpenRoad();
+
   Tcl_Interp *tcl_interp_;
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
@@ -223,4 +227,8 @@ closestPtInRect(odb::Rect rect,
 
 int
 tclAppInit(Tcl_Interp *interp);
+
+void
+deleteAllMemory();
+
 } // namespace ord

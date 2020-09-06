@@ -136,6 +136,14 @@ OpenRoad::~OpenRoad()
   Flute::deleteLUT();
 }
 
+void
+deleteAllMemory()
+{
+  delete OpenRoad::openRoad();
+  sta::Sta::setSta(nullptr);
+  sta::deleteAllMemory();
+}
+
 sta::dbNetwork *
 OpenRoad::getDbNetwork()
 {
