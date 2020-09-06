@@ -127,12 +127,29 @@ OpenRoad::~OpenRoad()
 {
   deleteDbVerilogNetwork(verilog_network_);
   deleteDbSta(sta_);
+  deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
+  deleteFastRoute(fastRoute_);
+  deleteTritonCts(tritonCts_);
+  deleteTapcell(tapcell_);
+  deleteTritonMp(tritonMp_);
+  deleteOpenRCX(extractor_);
+  deleteReplace(replace_);
 #ifdef BUILD_OPENPHYSYN
   deletePsn(psn_);
 #endif
+  deleteAntennaChecker(antennaChecker_);
   odb::dbDatabase::destroy(db_);
+  Flute::deleteLUT();
+}
+
+void
+deleteAllMemory()
+{
+  delete OpenRoad::openRoad();
+  sta::Sta::setSta(nullptr);
+  sta::deleteAllMemory();
 }
 
 sta::dbNetwork *
