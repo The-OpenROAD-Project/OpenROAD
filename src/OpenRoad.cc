@@ -133,6 +133,7 @@ OpenRoad::~OpenRoad()
   deletePsn(psn_);
 #endif
   odb::dbDatabase::destroy(db_);
+  Flute::deleteLUT();
 }
 
 sta::dbNetwork *

@@ -1581,6 +1581,7 @@ Resizer::repairNet(Net *net,
       repair_count++;
     }
     resizeToTargetSlew(drvr_pin);
+    delete tree;
   }
 }
 
