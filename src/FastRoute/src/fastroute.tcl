@@ -418,6 +418,31 @@ proc parse_layer_range { cmd layer_range } {
   }
 }
 
+proc check_region { lower_x lower_y upper_x upper_y } {
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    ord::error "missing dbBlock"
+  }
+
+  set core_area [$block getDieArea]
+
+  if {$lower_x < [$core_area xMin] || $lower_x > [$core_area xMax]} {
+    ord::error "check_region: Lower left x is outside die area"
+  }
+
+  if {$lower_y < [$core_area yMin] || $lower_y > [$core_area yMax]} {
+    ord::error "check_region: Lower left y is outside die area"
+  }
+
+  if {$upper_x < [$core_area xMin] || $upper_x > [$core_area xMax]} {
+    ord::error "check_region: Upper right x is outside die area"
+  }
+
+  if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
+    ord::error "check_region: Upper right y is outside die area"
+  }
+}
+
 # FastRoute namespace end
 }
 
