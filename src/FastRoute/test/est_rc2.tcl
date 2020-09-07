@@ -3,7 +3,7 @@ read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def est_rc2.def
 
-fastroute -max_routing_layer 10 \
+fastroute -layers 2-10 \
   		  -unidirectional_routing
 estimate_parasitics -global_routing
 

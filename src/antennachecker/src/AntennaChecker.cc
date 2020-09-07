@@ -52,6 +52,8 @@ using odb::dbNet;
 using odb::dbITerm;
 using odb::dbMTerm;
 using odb::dbBTerm;
+using odb::dbMaster;
+using odb::dbMasterType;
 using odb::dbInst;
 using odb::dbWire;
 using odb::dbTechLayer;
@@ -1276,6 +1278,8 @@ AntennaChecker::GetAntennaRatio(std::string path)
         odb::notice(0,"Cannot open report file (%s) for writing\n", output_file_name.c_str() );
         return {0, 0, 0};
     }
+   
+    check_antenna_cell();
 
     dbSet<dbNet> nets = db_->getChip()->getBlock()->getNets();
     if ( nets.size() == 0 )
@@ -1417,6 +1421,45 @@ AntennaChecker::GetAntennaRatio(std::string path)
     }    
     fprintf(_out, "Number of pins violated: %d\nNumber of nets violated: %d\nTotal number of unspecial nets: %d\n", num_violated_pins, num_violated_net, num_total_net );
     return {num_violated_pins, num_violated_net, num_total_net };
+}
+
+
+void
+AntennaChecker::check_antenna_cell()
+{
+
+    std::vector<dbMaster*> masters;
+    db_->getChip()->getBlock()->getMasters(masters);
+
+    for(auto master: masters)
+    {
+        dbMasterType type = master->getType(); 
+        if (type == dbMasterType::CORE_ANTENNACELL)
+        {
+            dbSet<dbMTerm> mterms = master->getMTerms(); 
+
+            dbSet<dbMTerm>::iterator mterm_itr;
+            double max_diff_area = 0;
+            for( mterm_itr = mterms.begin(); mterm_itr != mterms.end(); ++mterm_itr)
+            {
+                std::vector<std::pair<double, dbTechLayer*>> diff_areas;
+                (*mterm_itr)->getDiffArea( diff_areas );
+                for (auto diff_area: diff_areas)
+                    max_diff_area = std::max(max_diff_area, diff_area.first);
+            }
+
+            if (max_diff_area != 0)
+                fprintf(_out, "Success - antenna cell with diffusion area %f is found\n", max_diff_area);
+            else
+                fprintf(_out, "Warning - antenna cell is found but the diffusion area is not specified\n");
+
+            return;
+                  
+        }
+    }
+
+    fprintf(_out, "Warning - class CORE ANTENNACELL is not found. This msg can be ignored if not in the antenna-avoid flow\n");
+    return;
 }
 
 

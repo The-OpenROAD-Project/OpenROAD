@@ -181,23 +181,21 @@ Opendp::checkInRows(const Cell &cell,
 
 // COVER *, RING, PAD * - ignored
 
-// There are 5 groups of CLASSes
+// CLASSes are grouped as follows
 // CR = {CORE, CORE FEEDTHRU, CORE TIEHIGH, CORE TIELOW, CORE ANTENNACELL}
 // WT = CORE WELLTAP
-// SP = CORE SPACER
-// EC = ENDCAP *
+// SP = CORE SPACER, ENDCAP *
 // BL = BLOCK *
 
-//    CR WT BL SP EC
-// CR  P  P  P  O  O
-// WT  P  O  P  O  O
-// BL  P  P  -  O  O
-// SP  O  O  O  O  O
-// EC  O  O  O  O  O
+//    CR WT BL SP
+// CR  P  P  P  O
+// WT  P  O  P  O
+// BL  P  P  -  O
+// SP  O  O  O  O
 //
 // P = no padded overlap
 // O = no overlap (padding ignored)
-//
+// - = no overlap check (overlap allowed)
 // The rules apply to both FIXED or PLACED instances
 
 // Return the cell this cell overlaps.

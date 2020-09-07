@@ -48,7 +48,7 @@ proc set_global_routing_layer_adjustment { args } {
 
       FastRoute::add_layer_adjustment $layer $adj
     } else {
-      set layer_range [regexp -all -inline -- {[0-9]+} $layer]
+      set layer_range [FastRoute::parse_layer_range "set_global_routing_layer_adjustment" $layer]
       lassign $layer_range first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
         FastRoute::check_routing_layer $l
@@ -85,8 +85,6 @@ proc set_pdrev_topology_priority { args } {
     
     sta::check_positive_float "-alpha" $alpha
     FastRoute::set_alpha_for_net $net $alpha
-
-    puts "$net, $alpha"
   } else {
     ord::error "set_pdrev_topology_priority: Wrong number of arguments"
   }
@@ -100,39 +98,42 @@ proc write_guides { args } {
 }
 
 sta::define_cmd_args "fastroute" {[-guide_file out_file] \
+                                  [-layers layers] \
+                                  [-unidirectional_routing] \
+                                  [-tile_size tile_size] \
+                                  [-verbose verbose] \
+                                  [-overflow_iterations iterations] \
+                                  [-grid_origin origin] \
+                                  [-allow_overflow] \
+                                  [-seed seed] \
+                                  [-report_congestion congest_file] \
+                                  [-clock_layers layers] \
+                                  [-clock_pdrev_fanout fanout] \
+                                  [-clock_topology_priority priority] \
+                                  [-clock_nets_route_flow] \
                                   [-output_file out_file] \
-                                           [-min_routing_layer min_layer] \
-                                           [-max_routing_layer max_layer] \
-                                           [-unidirectional_routing] \
-                                           [-tile_size tile_size] \
-                                           [-layers_adjustments layers_adjustments] \
-                                           [-regions_adjustments regions_adjustments] \
-                                           [-alpha alpha] \
-                                           [-verbose verbose] \
-                                           [-overflow_iterations iterations] \
-                                           [-grid_origin origin] \
-                                           [-pdrev_for_high_fanout fanout] \
-                                           [-allow_overflow] \
-                                           [-seed seed] \
-                                           [-report_congestion congest_file] \
-                                           [-layers_pitches layers_pitches] \
-                                           [-antenna_avoidance_flow] \
-                                           [-antenna_cell_name antenna_cell_name] \
-                                           [-antenna_pin_name antenna_pin_name] \
-                                           [-clock_nets_route_flow] \
-                                           [-min_layer_for_clock_net min_clock_layer] \
+                                  [-min_routing_layer min_layer] \
+                                  [-max_routing_layer max_layer] \
+                                  [-layers_adjustments layers_adjustments] \
+                                  [-regions_adjustments regions_adjustments] \
+                                  [-layers_pitches layers_pitches] \
+                                  [-antenna_avoidance_flow] \
+                                  [-antenna_cell_name antenna_cell_name] \
+                                  [-antenna_pin_name antenna_pin_name] \
 }
 
 proc fastroute { args } {
   sta::parse_key_args "fastroute" args \
-    keys {-guide_file -output_file -min_routing_layer -max_routing_layer \
-          -tile_size -alpha -verbose -layers_adjustments \
-          -regions_adjustments -overflow_iterations \
-          -grid_origin -pdrev_for_high_fanout -seed -report_congestion -layers_pitches \
-          -min_layer_for_clock_net -antenna_cell_name -antenna_pin_name} \
+    keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
+          -overflow_iterations -grid_origin -seed -report_congestion \
+          -clock_layers -clock_pdrev_fanout -clock_topology_priority \
+          -output_file -min_routing_layer -max_routing_layer -regions_adjustments \
+          -layers_pitches -antenna_cell_name -antenna_pin_name \
+         } \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
   if { [info exists keys(-min_routing_layer)] } {
+    ord::warn "option -min_routing_layer is deprecated. Use option -layers {min max}"
     set min_layer $keys(-min_routing_layer)
     sta::check_positive_integer "-min_routing_layer" $min_layer
     FastRoute::set_min_layer $min_layer
@@ -142,10 +143,24 @@ proc fastroute { args } {
 
   set max_layer -1
   if { [info exists keys(-max_routing_layer)] } {
+    ord::warn "option -max_routing_layer is deprecated. Use option -layers {min max}"
     set max_layer $keys(-max_routing_layer)
     sta::check_positive_integer "-max_routing_layer" $max_layer
     FastRoute::set_max_layer $max_layer
   } else {
+    FastRoute::set_max_layer -1
+  }
+
+  if { [info exists keys(-layers)] } {
+    set layer_range [FastRoute::parse_layer_range "-layers" $keys(-layers)]
+    lassign $layer_range min_layer max_layer
+    FastRoute::check_routing_layer $min_layer
+    FastRoute::check_routing_layer $max_layer
+
+    FastRoute::set_min_layer $min_layer
+    FastRoute::set_max_layer $max_layer
+  } else {
+    FastRoute::set_min_layer 1
     FastRoute::set_max_layer -1
   }
 
@@ -182,10 +197,10 @@ proc fastroute { args } {
 
   FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
 
-  if { [info exists keys(-alpha) ] } {
-    set alpha $keys(-alpha)
-    sta::check_positive_float "-alpha" $alpha
-    FastRoute::set_alpha $alpha
+  if { [info exists keys(-clock_topology_priority) ] } {
+    set priority $keys(-clock_topology_priority)
+    sta::check_positive_float "-clock_topology_priority" $priority
+    FastRoute::set_alpha $clock_topology_priority
   } else {
     FastRoute::set_alpha 0.3
   }
@@ -217,8 +232,8 @@ proc fastroute { args } {
     FastRoute::set_grid_origin -1 -1
   }
 
-  if { [info exists keys(-pdrev_for_high_fanout)] } {
-    set fanout $keys(-pdrev_for_high_fanout)
+  if { [info exists keys(-clock_pdrev_fanout)] } {
+    set fanout $keys(-clock_pdrev_fanout)
     FastRoute::set_pdrev_for_high_fanout $fanout
   } else {
     FastRoute::set_pdrev_for_high_fanout -1
@@ -272,11 +287,15 @@ proc fastroute { args } {
   FastRoute::set_clock_nets_route_flow [info exists flags(-clock_nets_route_flow)]
 
   set min_clock_layer 6
-  if { [info exists keys(-min_layer_for_clock_net)] } {
-    set min_clock_layer $keys(-min_layer_for_clock_net)
+  if { [info exists keys(-clock_layers)] } {
+    set layer_range [FastRoute::parse_layer_range "-clock_layers" $keys(-clock_layers)]
+    lassign $layer_range min_clock_layer max_clock_layer
+    FastRoute::check_routing_layer $min_clock_layer
+    FastRoute::check_routing_layer $max_clock_layer
+
     FastRoute::set_min_layer_for_clock $min_clock_layer
   } elseif { [info exists flags(-clock_nets_route_flow)] } {
-    puts "\[WARNING\] Using the default min layer for clock nets routing (layer $min_clock_layer)"
+    ord::warn "Using the default min layer for clock nets routing (layer $min_clock_layer)"
     FastRoute::set_min_layer_for_clock $min_clock_layer
   }
 
@@ -334,6 +353,15 @@ proc check_routing_layer { layer } {
   }
   if {$layer < 1} {
     ord::error "check_routing_layer: layer $layer is lesser than the min routing layer (1)"
+  }
+}
+
+proc parse_layer_range { cmd layer_range } {
+  if [regexp -all {([0-9]+)-([0-9]+)} $layer_range - min_layer max_layer] {
+    set layers "$min_layer $max_layer"
+    return $layers
+  } else {
+    ord::error "Input format to define layer range for $cmd is min-max"
   }
 }
 

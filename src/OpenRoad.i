@@ -400,4 +400,14 @@ units_initialized()
   return openroad->unitsInitialized();
 }
 
+namespace ord {
+
+void
+delete_all_memory()
+{
+  ord::deleteAllMemory();
+}
+
+}
+
 %} // inline
