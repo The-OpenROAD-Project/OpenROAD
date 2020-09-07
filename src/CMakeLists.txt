@@ -13,10 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  link_libraries(pthread m stdc++ stdc++fs)
-endif()
-
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(INIT_FP_HOME ${PROJECT_SOURCE_DIR}/src/init_fp)
