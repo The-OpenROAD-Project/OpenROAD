@@ -90,6 +90,59 @@ proc set_pdrev_topology_priority { args } {
   }
 }
 
+sta::define_cmd_args "set_global_routing_region_adjustment" { region \
+                                                              [-layer layer] \
+                                                              [-adjustment adjustment] \
+}
+
+proc set_global_routing_region_adjustment { args } {
+  sta::parse_key_args "set_global_routing_region_adjustment" args \
+                 keys {-layer -adjustment}
+
+  if { ![ord::db_has_tech] } {
+    ord::error "missing dbTech"
+  }
+  set tech [ord::get_db_tech]
+  set lef_units [$tech getLefUnits]
+
+  set layer -1
+  if { [info exists keys(-layer)] } {
+    set layer $keys(-layer)
+  } else {
+    ord::error "set_global_routing_region_adjustment: Missing layer"
+  }
+
+  set adjustment -0.1
+  if { [info exists keys(-adjustment)] } {
+    set adjustment $keys(-adjustment)
+  } else {
+    ord::error "set_global_routing_region_adjustment: Missing adjustment"
+  }
+
+  sta::check_argc_eq1 "set_global_routing_region_adjustment" $args
+  set region [lindex $args 0]
+  if {[llength $region] == 4} {
+    lassign $region lower_x lower_y upper_x upper_y
+    sta::check_positive_float "lower_left_x" $lower_x
+    sta::check_positive_float "lower_left_y" $lower_y
+    sta::check_positive_float "upper_right_x" $upper_x
+    sta::check_positive_float "upper_right_y" $upper_y
+    sta::check_positive_integer "-layer" $layer
+    sta::check_positive_float "-adjustment" $adjustment
+
+    set lower_x [expr { int($lower_x * $lef_units) }]
+    set lower_y [expr { int($lower_y * $lef_units) }]
+    set upper_x [expr { int($upper_x * $lef_units) }]
+    set upper_y [expr { int($upper_y * $lef_units) }]
+
+    FastRoute::check_region $lower_x $lower_y $upper_x $upper_y
+
+    FastRoute::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
+  } else {
+    ord::error "set_global_routing_region_adjustment: Wrong number of arguments to define a region"
+  }
+}
+
 sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
