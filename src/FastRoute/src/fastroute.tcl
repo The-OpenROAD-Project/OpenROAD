@@ -168,7 +168,6 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-min_routing_layer min_layer] \
                                   [-max_routing_layer max_layer] \
                                   [-layers_adjustments layers_adjustments] \
-                                  [-regions_adjustments regions_adjustments] \
                                   [-layers_pitches layers_pitches] \
                                   [-antenna_avoidance_flow] \
                                   [-antenna_cell_name antenna_cell_name] \
@@ -180,7 +179,7 @@ proc fastroute { args } {
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -output_file -min_routing_layer -max_routing_layer -regions_adjustments \
+          -output_file -min_routing_layer -max_routing_layer \
           -layers_pitches -antenna_cell_name -antenna_pin_name \
          } \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
@@ -231,19 +230,6 @@ proc fastroute { args } {
         FastRoute::add_layer_adjustment $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for layer adjustments"
-      }
-    }
-  }
-  
-  if { [info exists keys(-regions_adjustments)] } {
-    set regions_adjustments $keys(-regions_adjustments)
-    foreach region_adjustment $regions_adjustments {
-      if { [llength $region_adjustment] == 2 } {
-        lassign $region_adjustment minX minY maxX maxY layer reductionPercentage
-        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer in [expr $reductionPercentage * 100]%"
-        FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
-      } else {
-        ord::error "Wrong number of arguments for region adjustments"
       }
     }
   }
