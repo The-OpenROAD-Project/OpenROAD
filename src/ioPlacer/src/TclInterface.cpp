@@ -37,7 +37,7 @@
 
 #include <iostream>
 
-#include "IOPlacementKernel.h"
+#include "ioplacer/IOPlacementKernel.h"
 #include "Parameters.h"
 
 namespace ioPlacer {

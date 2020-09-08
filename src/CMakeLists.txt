@@ -262,6 +262,7 @@ target_include_directories(openroad
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
+  ${IOPLACER_HOME}/include
   ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
