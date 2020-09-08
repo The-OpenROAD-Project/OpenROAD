@@ -8,27 +8,27 @@ pipeline {
       parallel {
         stage('Build local') {
           steps {
-            sh './jenkins/install.sh'
+            sh './jenkins/build.sh'
           }
         }
         stage('Build docker ubuntu gcc') {
           steps {
-            sh './jenkins/build_docker.sh ubuntu gcc'
+            sh './jenkins/docker/build.sh ubuntu gcc'
           }
         }
         stage('Build docker ubuntu clang') {
           steps {
-            sh './jenkins/build_docker.sh ubuntu clang'
+            sh './jenkins/docker/build.sh ubuntu clang'
           }
         }
         stage('Build docker centos with gcc') {
           steps {
-            sh './jenkins/build_docker.sh centos gcc'
+            sh './jenkins/docker/build.sh centos gcc'
           }
         }
         stage('Build docker centos with clang') {
           steps {
-            sh './jenkins/build_docker.sh centos clang'
+            sh './jenkins/docker/build.sh centos clang'
           }
         }
       }
@@ -38,22 +38,22 @@ pipeline {
       parallel {
         stage('Unit tests docker ubuntu gcc') {
           steps {
-            sh './jenkins/test_docker.sh ubuntu gcc'
+            sh './jenkins/docker/test.sh ubuntu gcc'
           }
         }
         stage('Unit tests docker ubuntu clang') {
           steps {
-            sh './jenkins/test_docker.sh ubuntu clang'
+            sh './jenkins/docker/test.sh ubuntu clang'
           }
         }
         stage('Unit tests docker centos with gcc') {
           steps {
-            sh './jenkins/test_docker.sh centos gcc'
+            sh './jenkins/docker/test.sh centos gcc'
           }
         }
         stage('Unit tests docker centos with clang') {
           steps {
-            sh './jenkins/test_docker.sh centos clang'
+            sh './jenkins/docker/test.sh centos clang'
           }
         }
         stage('Unit tests') {
