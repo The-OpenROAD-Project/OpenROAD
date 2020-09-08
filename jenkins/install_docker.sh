@@ -4,7 +4,7 @@ set -e
 mkdir -p /OpenROAD/build
 cd /OpenROAD
 cmake -B build
-time cmake --build build -j "$(nproc)"
+time cmake --build build
 
 # Capture the commit we are testing for use in flow testing
 commit=$(git rev-parse --verify HEAD)

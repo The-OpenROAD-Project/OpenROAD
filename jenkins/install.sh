@@ -4,4 +4,4 @@ source ~/.bashrc
 mkdir build
 cd build
 cmake ..
-time make -j
+time make

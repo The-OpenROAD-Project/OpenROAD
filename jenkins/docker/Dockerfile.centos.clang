@@ -83,4 +83,4 @@ ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
     LD_LIBRARY_PATH=/opt/rh/llvm-toolset-7.0/root/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 # Build
-RUN cmake -B build . && cmake --build build -j $(nproc)
+RUN cmake -B build . && cmake --build build

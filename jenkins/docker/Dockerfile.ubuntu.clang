@@ -65,4 +65,4 @@ ENV CC=/usr/bin/clang-7 \
     CXX=/usr/bin/clang-7
 
 # Build
-RUN cmake -B build . && cmake --build build -j $(nproc)
+RUN cmake -B build . && cmake --build build
