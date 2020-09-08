@@ -54,7 +54,7 @@
 #include "flute3/flute.h"
 
 #include "init_fp//MakeInitFloorplan.hh"
-#include "ioPlacer/src/MakeIoplacer.h"
+#include "ioplacer/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
 #include "resizer/MakeResizer.hh"
 #include "opendp/MakeOpendp.h"

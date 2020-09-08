@@ -45,7 +45,7 @@
 
 #include "Coordinate.h"
 #include "Hungarian.h"
-#include "IOPlacementKernel.h"
+#include "ioplacer/IOPlacementKernel.h"
 #include "Netlist.h"
 #include "Slots.h"
 
