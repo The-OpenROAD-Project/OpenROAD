@@ -105,14 +105,12 @@ proc set_global_routing_region_adjustment { args } {
   set tech [ord::get_db_tech]
   set lef_units [$tech getLefUnits]
 
-  set layer -1
   if { [info exists keys(-layer)] } {
     set layer $keys(-layer)
   } else {
     ord::error "set_global_routing_region_adjustment: Missing layer"
   }
 
-  set adjustment -0.1
   if { [info exists keys(-adjustment)] } {
     set adjustment $keys(-adjustment)
   } else {
