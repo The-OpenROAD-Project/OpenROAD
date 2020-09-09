@@ -59,7 +59,7 @@ Running FastRoute...
 Final usage/overflow report: 
 
 [Overflow Report] Total Usage   : 46
-[Overflow Report] Total Capacity: 11431
+[Overflow Report] Total Capacity: 11765
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -68,13 +68,13 @@ Final usage/overflow report:
 [Overflow Report] Final Overflow: 0
 
 [INFO] Final usage          : 46
-[INFO] Final number of vias : 50
-[INFO] Final usage 3D       : 196
+[INFO] Final number of vias : 44
+[INFO] Final usage 3D       : 178
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 168.000000 um
+[INFO] Total wirelength: 165 um
 Writing guides...
 [INFO] Num routed nets: 10
 Writing guides... Done!

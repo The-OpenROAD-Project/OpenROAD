@@ -64,24 +64,11 @@ Computing user defined layers adjustments...
 Computing user defined layers adjustments... Done!
 Running FastRoute...
 
-Running extra iterations to remove overflow...
-Update congestion history type 1
-[INFO] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2 
-[INFO] log_coef 1.181232, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
-Update congestion history type 1
-[INFO] iteration 2, enlarge 20, costheight 19, threshold 6 via cost 0 
-[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
-Update congestion history type 1
-[INFO] iteration 3, enlarge 20, costheight 29, threshold 2 via cost 0 
-[INFO] log_coef 1.181232, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 1
-Update congestion history type 1
-[INFO] iteration 4, enlarge 20, costheight 34, threshold 0 via cost 0 
-[INFO] log_coef 2.000000, healingTrigger 2 cost_step 5 L 1 cost_type 1 updatetype 1
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 164
-[Overflow Report] Total Capacity: 12760
+[Overflow Report] Total Usage   : 158
+[Overflow Report] Total Capacity: 13960
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -89,13 +76,13 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 164
-[INFO] Final number of vias : 196
+[INFO] Final usage          : 158
+[INFO] Final number of vias : 198
 [INFO] Final usage 3D       : 752
 Getting results...
 Getting results... Done!
 
-Old total capacity: 11396
+Old total capacity: 12602
 
  *****************
  *   FastRoute   *
@@ -145,25 +132,12 @@ Computing user defined layers adjustments...
 [INFO] Reducing resources of layer 5 by 50%
 [INFO] Reducing resources of layer 6 by 50%
 Computing user defined layers adjustments... Done!
-New total capacity: 11396
-Running extra iterations to remove overflow...
-Update congestion history type 1
-[INFO] iteration 1, enlarge 20, costheight 9, threshold 10 via cost 2 
-[INFO] log_coef 1.181232, healingTrigger 0 cost_step 5 L 1 cost_type 1 updatetype 1
-Update congestion history type 1
-[INFO] iteration 2, enlarge 20, costheight 19, threshold 6 via cost 0 
-[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
-Update congestion history type 1
-[INFO] iteration 3, enlarge 20, costheight 24, threshold 2 via cost 0 
-[INFO] log_coef 1.181232, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
-Update congestion history type 1
-[INFO] iteration 4, enlarge 20, costheight 29, threshold 0 via cost 0 
-[INFO] log_coef 2.000000, healingTrigger 1 cost_step 5 L 1 cost_type 1 updatetype 1
+New total capacity: 12602
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 2528
-[Overflow Report] Total Capacity: 21236
+[Overflow Report] Total Usage   : 2515
+[Overflow Report] Total Capacity: 26997
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -171,14 +145,14 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 2528
-[INFO] Final number of vias : 2651
-[INFO] Final usage 3D       : 10481
+[INFO] Final usage          : 2515
+[INFO] Final number of vias : 1919
+[INFO] Final usage 3D       : 8272
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 27885.599609 um
+[INFO] Total wirelength: 27640 um
 Writing guides...
 [INFO] Num routed nets: 322
 Writing guides... Done!

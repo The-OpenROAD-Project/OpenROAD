@@ -73,7 +73,7 @@ Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 161.699997 um
+[INFO] Total wirelength: 161 um
 Net clk
  Pin capacitance: r 3.402 f 3.004
  Wire capacitance: r 0.819 f 0.819

@@ -57,8 +57,8 @@ Running FastRoute...
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 628
-[Overflow Report] Total Capacity: 138926
+[Overflow Report] Total Usage   : 629
+[Overflow Report] Total Capacity: 149734
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -66,14 +66,14 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 628
-[INFO] Final number of vias : 492
-[INFO] Final usage 3D       : 2104
+[INFO] Final usage          : 629
+[INFO] Final number of vias : 250
+[INFO] Final usage 3D       : 1379
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 2337.300049 um
+[INFO] Total wirelength: 2303 um
 Writing guides...
 [INFO] Num routed nets: 87
 Writing guides... Done!
@@ -134,8 +134,8 @@ Running FastRoute...
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 628
-[Overflow Report] Total Capacity: 21673
+[Overflow Report] Total Usage   : 626
+[Overflow Report] Total Capacity: 23161
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -143,17 +143,17 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 628
-[INFO] Final number of vias : 502
-[INFO] Final usage 3D       : 2134
+[INFO] Final usage          : 626
+[INFO] Final number of vias : 266
+[INFO] Final usage 3D       : 1424
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 2679.600098 um
+[INFO] Total wirelength: 2641 um
 Writing guides...
 [INFO] Num routed nets: 87
 Writing guides... Done!
 Differences found at line 3.
-54600 105000 58800 109200 metal1
-54599 104999 58799 109199 metal1
+54600 105000 63000 109200 metal1
+54599 104999 62999 109199 metal1
