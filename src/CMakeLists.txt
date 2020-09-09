@@ -200,6 +200,8 @@ else()
   set(ZLIB 0)
 endif()
 
+find_package(Threads)
+
 ################################################################
 
 # Disable OpenDB stand-alone executable builds.
@@ -299,6 +301,7 @@ target_link_libraries(openroad
   antennachecker
   zutil
   ${TCL_LIBRARY}
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 if (BUILD_OPENPHYSYN)
@@ -317,10 +320,6 @@ endif()
 
 if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
-endif()
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  target_link_libraries(openroad -pthread)
 endif()
 
 # Optional CUDD library for OpenSTA
