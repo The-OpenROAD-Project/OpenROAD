@@ -988,7 +988,7 @@ void GlobalRouter::computeRegionAdjustments(const Coordinate& lowerBound,
   if (direction == RoutingLayer::HORIZONTAL) {
     // Setting capacities of edges completely inside the adjust region according
     // the percentage of reduction
-    for (int x = firstTile._x; x <= lastTile._x; x++) {
+    for (int x = firstTile._x; x < lastTile._x; x++) {
       for (int y = firstTile._y; y <= lastTile._y; y++) {
         int edgeCap = _fastRoute->getEdgeCapacity(x, y, layer, x + 1, y, layer);
 
@@ -1014,7 +1014,7 @@ void GlobalRouter::computeRegionAdjustments(const Coordinate& lowerBound,
     for (int x = firstTile._x; x <= lastTile._x; x++) {
       // Setting capacities of edges completely inside the adjust region
       // according the percentage of reduction
-      for (int y = firstTile._y; y <= lastTile._y; y++) {
+      for (int y = firstTile._y; y < lastTile._y; y++) {
         int edgeCap = _fastRoute->getEdgeCapacity(x, y, layer, x, y + 1, layer);
 
         if (x == firstTile._x) {
@@ -1070,9 +1070,8 @@ void GlobalRouter::computeObstaclesAdjustments()
             obs, lastTileBox, trackSpace, false, direction);
 
         if (direction == RoutingLayer::HORIZONTAL) {
-          for (int x = firstTile._x - 1; x < lastTile._x; x++) {
-            // Setting capacities of completely blocked edges to zero
-            for (int y = firstTile._y - 1; y < lastTile._y; y++) {
+          for (int x = firstTile._x; x < lastTile._x; x++) {
+            for (int y = firstTile._y; y <= lastTile._y; y++) {
               if (y == firstTile._y) {
                 int edgeCap
                     = _fastRoute->getEdgeCapacity(x, y, layer, x + 1, y, layer);
@@ -1095,9 +1094,8 @@ void GlobalRouter::computeObstaclesAdjustments()
             }
           }
         } else {
-          for (int x = firstTile._x - 1; x < lastTile._x; x++) {
-            // Setting capacities of completely blocked edges to zero
-            for (int y = firstTile._y - 1; y < lastTile._y; y++) {
+          for (int x = firstTile._x; x <= lastTile._x; x++) {
+            for (int y = firstTile._y; y < lastTile._y; y++) {
               if (x == firstTile._x) {
                 int edgeCap
                     = _fastRoute->getEdgeCapacity(x, y, layer, x, y + 1, layer);
