@@ -1337,7 +1337,8 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
           headRoom = 0;
           origL    = gridsL[0];
 
-          while (gridsX[headRoom] == E1x && gridsY[headRoom] == E1y) {
+          while (gridsX[headRoom] == E1x && gridsY[headRoom] == E1y &&
+                 headRoom < gridsX.size()) {
             headRoom++;
           }
           if (headRoom > 0) {
@@ -1493,7 +1494,8 @@ void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub)
           origL    = gridsL[cnt_n1n2 - 1];
           tailRoom = cnt_n1n2 - 1;
 
-          while (gridsX[tailRoom] == E2x && gridsY[tailRoom] == E2y) {
+          while (gridsX[tailRoom] == E2x && gridsY[tailRoom] == E2y &&
+                 tailRoom > 0) {
             tailRoom--;
           }
           if (tailRoom < cnt_n1n2 - 1) {
