@@ -1804,7 +1804,7 @@ void GlobalRouter::computeWirelength()
     }
   }
   std::cout << std::fixed << "[INFO] Total wirelength: "
-            << (float) totalWirelength / _grid->getDatabaseUnit() << " um\n";
+            << (int) totalWirelength / _grid->getDatabaseUnit() << " um\n";
 }
 
 void GlobalRouter::mergeSegments()
