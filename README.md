@@ -641,6 +641,15 @@ You can call it multiple times for different nets.
 Example: `set_pdrev_topology_priority -net "clk" -alpha 0.3` sets an alpha value of 0.3 for net *clk*.
 
 ```
+set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
+                                     -layer layer -adjustment adjustment
+```
+The `set_global_routing_region_adjustment` command sets routing resources adjustments in a specific region of the design.
+The region is defined as a rectangle in a routing layer.
+Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
+                                               -layer 4 -adjustment 0.7`
+
+```
 write_guides file_name
 ```
 The `write_guides` generates the guide file from the routing results.

@@ -6,4 +6,5 @@ record_tests {
   gcd
   multiple_calls
   no_tracks
+  region_adjustment
 }
