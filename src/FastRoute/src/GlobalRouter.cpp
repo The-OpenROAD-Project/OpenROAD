@@ -183,49 +183,17 @@ void GlobalRouter::startFastRoute()
   }
   std::cout << "\n";
 
-  std::cout << "Initializing grid...\n";
   initCoreGrid();
-  std::cout << "Initializing grid... Done!\n";
-
-  std::cout << "Initializing routing layers...\n";
   initRoutingLayers();
-  std::cout << "Initializing routing layers... Done!\n";
-
-  std::cout << "Initializing routing tracks...\n";
   initRoutingTracks();
-  std::cout << "Initializing routing tracks... Done!\n";
-
-  std::cout << "Setting capacities...\n";
   setCapacities();
-  std::cout << "Setting capacities... Done!\n";
-
-  std::cout << "Setting spacings and widths...\n";
   setSpacingsAndMinWidths();
-  std::cout << "Setting spacings and widths... Done!\n";
-
-  std::cout << "Initializing nets...\n";
   initializeNets(_reroute);
-  std::cout << "Initializing nets... Done!\n";
-
-  std::cout << "Adjusting grid...\n";
   computeGridAdjustments();
-  std::cout << "Adjusting grid... Done!\n";
-
-  std::cout << "Computing track adjustments...\n";
   computeTrackAdjustments();
-  std::cout << "Computing track adjustments... Done!\n";
-
-  std::cout << "Computing obstacles adjustments...\n";
   computeObstaclesAdjustments();
-  std::cout << "Computing obstacles adjustments... Done!\n";
-
-  std::cout << "Computing user defined adjustments...\n";
   computeUserGlobalAdjustments();
-  std::cout << "Computing user defined adjustments... Done!\n";
-
-  std::cout << "Computing user defined layers adjustments...\n";
   computeUserLayerAdjustments();
-  std::cout << "Computing user defined layers adjustments... Done!\n";
 
   for (uint i = 0; i < regionsReductionPercentage.size(); i++) {
     if (regionsLayer[i] < 1)
