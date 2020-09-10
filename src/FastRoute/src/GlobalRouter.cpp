@@ -928,7 +928,7 @@ void GlobalRouter::computeRegionAdjustments(const Coordinate& lowerBound,
        && dieBox.getLowerBound().getY() > lowerBound.getY())
       || (dieBox.getUpperBound().getX() < upperBound.getX()
           && dieBox.getUpperBound().getY() < upperBound.getY())) {
-    error("Informed region is outside die area\n");
+    error("Informed region is outside die area");
   }
 
   RoutingLayer routingLayer = getRoutingLayerByIndex(layer);
@@ -1130,7 +1130,7 @@ void GlobalRouter::addLayerAdjustment(int layer, float reductionPercentage)
 {
   initAdjustments();
   if (layer > _maxRoutingLayer && _maxRoutingLayer > 0) {
-    std::cout << "[ERROR] Specified layer " << layer
+    std::cout << "[WARNING] Specified layer " << layer
               << " for adjustment is greater than max routing layer "
               << _maxRoutingLayer << " and will be ignored" << std::endl;
   } else {
@@ -1215,7 +1215,7 @@ void GlobalRouter::writeGuides(const char* fileName)
   guideFile.open(fileName);
   if (!guideFile.is_open()) {
     guideFile.close();
-    error("Guides file could not be opened\n");
+    error("Guides file could not be opened");
   }
   RoutingLayer phLayerF;
 
@@ -1258,7 +1258,7 @@ void GlobalRouter::writeGuides(const char* fileName)
 	if (segment.initLayer == segment.finalLayer) {
 	  if (segment.initLayer < _minRoutingLayer && segment.initX != segment.finalX
 	      && segment.initY != segment.finalY) {
-	    error("Routing with guides in blocked metal for net %s\n",
+	    error("Routing with guides in blocked metal for net %s",
 		  db_net->getConstName());
 	  }
 	  Box box = globalRoutingToBox(segment);
@@ -1272,7 +1272,7 @@ void GlobalRouter::writeGuides(const char* fileName)
 	  finalLayer = segment.finalLayer;
 	} else {
 	  if (abs(segment.finalLayer - segment.initLayer) > 1) {
-	    error("Connection between non-adjacent layers in net %s\n",
+	    error("Connection between non-adjacent layers in net %s",
 		  db_net->getConstName());
 	  } else {
 	    RoutingLayer phLayerI;
@@ -1384,7 +1384,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
           if (p > 0) {
             // If the net is not local, FR core result is invalid
             if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
-              error("Net %s not properly covered\n",
+              error("Net %s not properly covered",
 		    db_net->getConstName());
             }
           }
@@ -1456,7 +1456,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
 
             for (GSegment &seg : coverSegs) {
               if (seg.initLayer != seg.finalLayer) {
-                error("Segment has invalid layer assignment\n");
+                error("Segment has invalid layer assignment");
               }
 
               int diffLayers = std::abs(pin.layer - seg.initLayer);
@@ -1536,7 +1536,7 @@ void GlobalRouter::mergeBox(std::vector<Box>& guideBox)
 {
   std::vector<Box> finalBox;
   if (guideBox.size() < 1) {
-    error("Guides vector is empty\n");
+    error("Guides vector is empty");
   }
   finalBox.push_back(guideBox[0]);
   for (uint i = 1; i < guideBox.size(); i++) {
@@ -1612,7 +1612,7 @@ void GlobalRouter::checkPinPlacement()
 
   for (Pin* port : getAllPorts()) {
     if (port->getNumLayers() == 0) {
-      error("Pin %s does not have layer assignment\n", port->getName().c_str());
+      error("Pin %s does not have layer assignment", port->getName().c_str());
     }
     DBU layer = port->getLayers()[0];  // port have only one layer
 
@@ -1631,7 +1631,7 @@ void GlobalRouter::checkPinPlacement()
   }
 
   if (invalid) {
-    error("Invalid pin placement\n");
+    error("Invalid pin placement");
   }
 }
 
@@ -2131,13 +2131,13 @@ void GlobalRouter::initGrid(int maxLayer)
   odb::dbTechLayer* selectedLayer = tech->findRoutingLayer(selectedMetal);
 
   if (selectedLayer == nullptr) {
-    error("Layer %d not found\n", selectedMetal);
+    error("Layer %d not found", selectedMetal);
   }
 
   odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(selectedLayer);
 
   if (selectedTrack == nullptr) {
-    error("Track for layer %d not found\n", selectedMetal);
+    error("Track for layer %d not found", selectedMetal);
   }
 
   int trackStepX, trackStepY;
@@ -2155,7 +2155,7 @@ void GlobalRouter::initGrid(int maxLayer)
              == odb::dbTechLayerDir::VERTICAL) {
     trackSpacing = trackStepX;
   } else {
-    error("Layer %d does not have valid direction\n", selectedMetal);
+    error("Layer %d does not have valid direction", selectedMetal);
   }
 
   odb::Rect rect;
@@ -2225,7 +2225,7 @@ void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
                == odb::dbTechLayerDir::VERTICAL) {
       preferredDirection = RoutingLayer::VERTICAL;
     } else {
-      error("Layer %d does not have valid direction\n", l);
+      error("Layer %d does not have valid direction", l);
     }
 
     RoutingLayer routingLayer = RoutingLayer(index, name, preferredDirection);
@@ -2247,13 +2247,13 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
 
     if (techLayer == nullptr) {
-      error("Layer %d not found\n", selectedMetal);
+      error("Layer %d not found", selectedMetal);
     }
 
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
 
     if (selectedTrack == nullptr) {
-      error("Track for layer %d not found\n", selectedMetal);
+      error("Track for layer %d not found", selectedMetal);
     }
 
     int trackStepX, trackStepY;
@@ -2288,7 +2288,7 @@ void GlobalRouter::initRoutingTracks(std::vector<RoutingTracks>& allRoutingTrack
       numTracks = numTracksX;
       orientation = RoutingLayer::VERTICAL;
     } else {
-      error("Layer %d does not have valid direction\n",
+      error("Layer %d does not have valid direction",
             selectedMetal);
     }
 
@@ -2320,7 +2320,7 @@ void GlobalRouter::computeCapacities(int maxLayer,
     odb::dbTrackGrid* track = _block->findTrackGrid(techLayer);
 
     if (track == nullptr) {
-      error("Track for layer %d not found\n", l);
+      error("Track for layer %d not found", l);
     }
 
     track->getGridPatternX(0, initTrackX, numTracksX, trackStepX);
@@ -2353,7 +2353,7 @@ void GlobalRouter::computeCapacities(int maxLayer,
       _grid->addHorizontalCapacity(0, l - 1);
       _grid->addVerticalCapacity(vCapacity, l - 1);
     } else {
-      error("Layer %d does not have valid direction\n", l);
+      error("Layer %d does not have valid direction", l);
     }
   }
 }
@@ -2378,7 +2378,7 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
     odb::dbTrackGrid* track = _block->findTrackGrid(techLayer);
 
     if (track == nullptr) {
-      error("Track for layer %d not found\n", l);
+      error("Track for layer %d not found", l);
     }
 
     track->getGridPatternX(0, initTrackX, numTracksX, trackStepX);
@@ -2391,7 +2391,7 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
                == odb::dbTechLayerDir::VERTICAL) {
       minWidth = trackStepX;
     } else {
-      error("Layer %d does not have valid direction\n", l);
+      error("Layer %d does not have valid direction", l);
     }
 
     _grid->addSpacing(minSpacing, l - 1);
@@ -2860,7 +2860,7 @@ void GlobalRouter::initObstacles()
   odb::dbSet<odb::dbNet> nets = _block->getNets();
 
   if (nets.empty()) {
-    error("Design without nets\n");
+    error("Design without nets");
   }
 
   for (odb::dbNet* db_net : nets) {
@@ -2936,9 +2936,7 @@ int GlobalRouter::computeMaxRoutingLayer()
   for (int layer = 1; layer <= tech->getRoutingLayerCount(); layer++) {
     odb::dbTechLayer* techLayer = tech->findRoutingLayer(layer);
     if (techLayer == nullptr) {
-      std::cout << "[ERROR] Layer" << selectedMetal
-                << " not found\n";
-      std::exit(1);
+      error("Layer %d not found", selectedMetal);
     }
     odb::dbTrackGrid* selectedTrack = _block->findTrackGrid(techLayer);
     if (selectedTrack == nullptr) {
@@ -2984,7 +2982,7 @@ std::set<int> GlobalRouter::findTransitionLayers(int maxRoutingLayer)
   odb::dbSet<odb::dbTechVia> vias = tech->getVias();
 
   if (vias.empty()) {
-    error("Tech without vias\n");
+    error("Tech without vias");
   }
 
   std::vector<odb::dbTechVia*> defaultVias;
