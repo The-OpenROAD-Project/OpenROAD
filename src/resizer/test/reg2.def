@@ -1,6 +1,5 @@
 # reg1 using nangate45 library
 VERSION 5.8 ;
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN top ;

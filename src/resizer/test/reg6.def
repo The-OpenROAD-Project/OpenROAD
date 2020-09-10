@@ -1,6 +1,5 @@
 # reg1 1 clock with 3 clock buffers, placed
 VERSION 5.8 ; 
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN reg1 ;

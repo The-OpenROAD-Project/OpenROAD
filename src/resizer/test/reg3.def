@@ -1,6 +1,5 @@
 # reg1 1 clock pin, placed
 VERSION 5.8 ; 
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN reg1 ;
