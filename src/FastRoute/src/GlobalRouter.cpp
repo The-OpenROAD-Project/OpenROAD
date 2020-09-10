@@ -940,7 +940,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Point& lowerBound,
   // If preferred direction is horizontal, only first and the last line will
   // have specific adjustments
   if (direction == RoutingLayer::HORIZONTAL) {
-    // Setting capacities of edges completely inside the adjust region according
+    // Setting capacities of edges completely contains the adjust region according
     // the percentage of reduction
     for (int x = firstTile._x; x < lastTile._x; x++) {
       for (int y = firstTile._y; y <= lastTile._y; y++) {
@@ -966,7 +966,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Point& lowerBound,
     // If preferred direction is vertical, only first and last columns will have
     // specific adjustments
     for (int x = firstTile._x; x <= lastTile._x; x++) {
-      // Setting capacities of edges completely inside the adjust region
+      // Setting capacities of edges completely contains the adjust region
       // according the percentage of reduction
       for (int y = firstTile._y; y < lastTile._y; y++) {
         int edgeCap = _fastRoute->getEdgeCapacity(x, y, layer, x, y + 1, layer);
@@ -2507,7 +2507,9 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieAre
         lowerBound = odb::Point(rect.xMin(), rect.yMin());
         upperBound = odb::Point(rect.xMax(), rect.yMax());
         pinBox = odb::Rect(lowerBound, upperBound);
-        if (!dieArea.inside(pinBox)) {
+        std::cout << "Die box: (" << dieArea.xMin() << ", " << dieArea.yMin() << "); (" << dieArea.xMax() << ", " << dieArea.yMax() << ")\n";
+        std::cout << "Pin box: (" << pinBox.xMin() << ", " << pinBox.yMin() << "); (" << pinBox.xMax() << ", " << pinBox.yMax() << ")\n";
+        if (!dieArea.contains(pinBox)) {
           std::cout << "[WARNING] Pin " << getITermName(iterm)
                     << " is outside die area\n";
         }
@@ -2605,7 +2607,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieAre
       lowerBound = odb::Point(currBTermBox->xMin(), currBTermBox->yMin());
       upperBound = odb::Point(currBTermBox->xMax(), currBTermBox->yMax());
       pinBox = odb::Rect(lowerBound, upperBound);
-      if (!dieArea.inside(pinBox)) {
+      if (!dieArea.contains(pinBox)) {
         std::cout << "[WARNING] Pin " << pinName << " is outside die area\n";
       }
       pinBoxes[pinLayer].push_back(pinBox);
@@ -2754,7 +2756,7 @@ void GlobalRouter::initObstacles()
     odb::Point upperBound
         = odb::Point(obstructBox->xMax(), obstructBox->yMax());
     odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-    if (!dieArea.inside(obstacleBox)) {
+    if (!dieArea.contains(obstacleBox)) {
       std::cout << "[WARNING] Found obstacle outside die area\n";
     }
     _grid->addObstacle(layer, obstacleBox);
@@ -2800,7 +2802,7 @@ void GlobalRouter::initObstacles()
       odb::Point upperBound = odb::Point(rect.xMax() + macroExtension,
                                          rect.yMax() + macroExtension);
       odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-      if (!dieArea.inside(obstacleBox)) {
+      if (!dieArea.contains(obstacleBox)) {
         std::cout << "[WARNING] Found obstacle outside die area in instance "
                   << currInst->getConstName() << "\n";
       }
@@ -2830,7 +2832,7 @@ void GlobalRouter::initObstacles()
           lowerBound = odb::Point(rect.xMin(), rect.yMin());
           upperBound = odb::Point(rect.xMax(), rect.yMax());
           pinBox = odb::Rect(lowerBound, upperBound);
-          if (!dieArea.inside(pinBox)) {
+          if (!dieArea.contains(pinBox)) {
             std::cout << "[WARNING] Found pin outside die area in instance "
                       << currInst->getConstName() << "\n";
           }
@@ -2872,7 +2874,7 @@ void GlobalRouter::initObstacles()
             odb::Point upperBound
                 = odb::Point(wireRect.xMax(), wireRect.yMax());
             odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-            if (!dieArea.inside(obstacleBox)) {
+            if (!dieArea.contains(obstacleBox)) {
               std::cout << "[WARNING] Net " << db_net->getConstName()
                         << " has wires outside die area\n";
             }
@@ -2900,7 +2902,7 @@ void GlobalRouter::initObstacles()
             odb::Point upperBound
                 = odb::Point(wireRect.xMax(), wireRect.yMax());
             odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
-            if (!dieArea.inside(obstacleBox)) {
+            if (!dieArea.contains(obstacleBox)) {
               std::cout << "[WARNING] Net " << db_net->getConstName()
                         << " has wires outside die area\n";
             }
