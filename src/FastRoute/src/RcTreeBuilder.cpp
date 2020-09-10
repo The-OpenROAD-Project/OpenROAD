@@ -94,7 +94,7 @@ void RcTreeBuilder::makePinRoutePts(std::vector<Pin>& pins)
 
 RoutePt RcTreeBuilder::routePt(Pin& pin)
 {
-  const Coordinate& pt = pin.getPosition();
+  const odb::Point& pt = pin.getPosition();
   int layer = pin.getTopLayer();
   return RoutePt(pt.getX(), pt.getY(), layer);
 }
@@ -160,13 +160,13 @@ void RcTreeBuilder::makeParasiticsToGrid(std::vector<Pin>& pins)
 void RcTreeBuilder::makeParasiticsToGrid(Pin& pin,
 					 sta::ParasiticNode *pin_node)
 {
-  const Coordinate& grid_pt = pin.getOnGridPosition();
+  const odb::Point& grid_pt = pin.getOnGridPosition();
   int layer = pin.getTopLayer();
   RoutePt route_pt(grid_pt.getX(), grid_pt.getY(), layer);
   sta::ParasiticNode *grid_node = _node_map[route_pt];
 
   if (grid_node) {
-    const Coordinate& pt = pin.getPosition();
+    const odb::Point& pt = pin.getPosition();
     int wire_length_dbu = abs(pt.getX() - grid_pt.getX())
       + abs(pt.getY() - grid_pt.getY());
     float res, cap;
