@@ -79,12 +79,11 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 2676
-[Overflow Report] Total Capacity: 41360
+[Overflow Report] Total Usage   : 2677
+[Overflow Report] Total Capacity: 69927
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -92,24 +91,24 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 2676
-[INFO] Final number of vias : 2683
-[INFO] Final usage 3D       : 10725
+[INFO] Final usage          : 2677
+[INFO] Final number of vias : 1768
+[INFO] Final usage 3D       : 7981
 Getting results...
 Getting results... Done!
 
-Old total capacity: 35244
+Old total capacity: 63849
 [WARNING]No OR_DEFAULT vias defined
-[INFO] #Antenna violations: 5
+[INFO] #Antenna violations: 2
 Design Stats
 --------------------------------
-total instances          1276
+total instances          1273
 multi row instances         0
-fixed instances           995
+fixed instances           989
 nets                      324
 design area           78411.1 u^2
-fixed area             2479.1 u^2
-movable area           5562.4 u^2
+fixed area             2408.8 u^2
+movable area           5623.2 u^2
 utilization                 7 %
 utilization padded         11 %
 rows                       84
@@ -120,11 +119,11 @@ Placement Analysis
 total displacement        0.0 u
 average displacement      0.0 u
 max displacement          0.0 u
-original HPWL         16917.1 u
-legalized HPWL        16917.1 u
+original HPWL         16909.8 u
+legalized HPWL        16909.8 u
 delta HPWL                  0 %
 
-Warning: Overlap check failed (5).
+Warning: Overlap check failed (2).
 
  *****************
  *   FastRoute   *
@@ -143,8 +142,8 @@ Layer 6 pitch: 3.33
 
 Initializing grid...
 [INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 22627
-[INFO] #DB Macros: 5
+[INFO] #DB Obstacles: 22609
+[INFO] #DB Macros: 2
 Initializing grid... Done!
 Initializing routing layers...
 Initializing routing layers... Done!
@@ -166,8 +165,8 @@ Adjusting grid... Done!
 Computing track adjustments...
 Computing track adjustments... Done!
 Computing obstacles adjustments...
-[INFO] Processing 17719 obstacles in layer 1
-[INFO] Processing 2637 obstacles in layer 2
+[INFO] Processing 17710 obstacles in layer 1
+[INFO] Processing 2631 obstacles in layer 2
 [INFO] Processing 10 obstacles in layer 5
 Computing obstacles adjustments... Done!
 Computing user defined adjustments...
@@ -178,13 +177,13 @@ Computing user defined layers adjustments...
 [INFO] Reducing resources of layer 5 by 15%
 [INFO] Reducing resources of layer 6 by 15%
 Computing user defined layers adjustments... Done!
-[INFO] #Nets to reroute: 5
-New total capacity: 35244
+[INFO] #Nets to reroute: 2
+New total capacity: 63849
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 87
-[Overflow Report] Total Capacity: 38684
+[Overflow Report] Total Usage   : 53
+[Overflow Report] Total Capacity: 67250
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -192,14 +191,14 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 87
-[INFO] Final number of vias : 41
-[INFO] Final usage 3D       : 210
+[INFO] Final usage          : 53
+[INFO] Final number of vias : 14
+[INFO] Final usage 3D       : 95
 Getting results...
 Getting results... Done!
 
 Running FastRoute... Done!
-[INFO] Total wirelength: 27813.599609 um
+[INFO] Total wirelength: 27691 um
 Writing guides...
 [INFO] Num routed nets: 322
 Writing guides... Done!
