@@ -266,7 +266,7 @@ void GlobalRouter::runFastRoute()
 
 void GlobalRouter::repairAntennas(char* diodeCellName, char* diodePinName)
 {
-  std::cout << "Running antenna avoidance flow...\n";
+  std::cout << "Repairing antennas...\n";
 
   AntennaRepair* antennaRepair = 
     new AntennaRepair(this, _openroad->getAntennaChecker(),

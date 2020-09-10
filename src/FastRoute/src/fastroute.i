@@ -197,9 +197,9 @@ estimate_rc()
 }
 
 void
-enable_antenna_avoidance_flow(char* diodeCellName, char* diodePinName)
+repair_antennas(char* diodeCellName, char* diodePinName)
 {
-  getFastRoute()->enableAntennaAvoidance(diodeCellName, diodePinName);
+  getFastRoute()->repairAntennas(diodeCellName, diodePinName);
 }
 
 void

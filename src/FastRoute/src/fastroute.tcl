@@ -141,6 +141,17 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
+sta::define_cmd_args "repair_antennas" { diode_cell diode_pin }
+
+proc repair_antennas { args } {
+  if {[llength $args] == 2} {
+    lassign $args cell_name pin_name
+    FastRoute::repair_antennas $cell_name $pin_name
+  } else {
+    ord::error "repair_antennas: Wrong number of arguments"
+  }
+}
+
 sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
