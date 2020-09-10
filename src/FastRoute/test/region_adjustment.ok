@@ -10,51 +10,19 @@ Notice 0:     Created 4 pins.
 Notice 0:     Created 7 components and 35 component-terminals.
 Notice 0:     Created 10 nets and 18 connections.
 Notice 0: Finished DEF file: region_adjustment.def
-
- *****************
- *   FastRoute   *
- *****************
-
 [PARAMS] Min routing layer: 1
 [PARAMS] Max routing layer: 10
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 0
 [PARAMS] Grid origin: (-1, -1)
-
-Initializing grid...
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 95
 [INFO] #DB Macros: 0
-Initializing grid... Done!
-Initializing routing layers...
-Initializing routing layers... Done!
-Initializing routing tracks...
-Initializing routing tracks... Done!
-Setting capacities...
-Setting capacities... Done!
-Setting spacings and widths...
-Setting spacings and widths... Done!
-Initializing nets...
 [INFO] Found 0 clock nets
-Checking pin placement...
-Checking pin placement... Done!
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 3
-Initializing nets... Done!
-Adjusting grid...
-Adjusting grid... Done!
-Computing track adjustments...
-Computing track adjustments... Done!
-Computing obstacles adjustments...
 [INFO] Processing 177 obstacles in layer 1
-Computing obstacles adjustments... Done!
-Computing user defined adjustments...
-Computing user defined adjustments... Done!
-Computing user defined layers adjustments...
-Computing user defined layers adjustments... Done!
 Adjusting specific region in layer 2...
-Running FastRoute...
-
 
 Final usage/overflow report: 
 
@@ -70,12 +38,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 46
 [INFO] Final number of vias : 44
 [INFO] Final usage 3D       : 178
-Getting results...
-Getting results... Done!
-
-Running FastRoute... Done!
 [INFO] Total wirelength: 165 um
-Writing guides...
 [INFO] Num routed nets: 10
-Writing guides... Done!
 No differences found.
