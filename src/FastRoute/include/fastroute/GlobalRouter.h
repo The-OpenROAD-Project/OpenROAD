@@ -143,7 +143,6 @@ class GlobalRouter
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
   void printGrid();
-  void printHeader();
   void setClockNetsRouteFlow(bool clockFlow);
   void setMinLayerForClock(int minLayer);
 

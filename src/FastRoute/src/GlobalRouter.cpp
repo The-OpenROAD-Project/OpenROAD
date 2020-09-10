@@ -143,7 +143,6 @@ GlobalRouter::~GlobalRouter()
 
 void GlobalRouter::startFastRoute()
 {
-  printHeader();
   initAdjustments();
   initPitches();
   if (_unidirectionalRoute) {
@@ -1371,15 +1370,6 @@ void GlobalRouter::printGrid()
   std::cout << "******** Num nets: " << getNetCount()
             << " ********\n";
   std::cout << "******** Tile size: " << _grid->getPitchesInTile() << "\n";
-}
-
-void GlobalRouter::printHeader()
-{
-  std::cout << "\n";
-  std::cout << " *****************\n";
-  std::cout << " *   FastRoute   *\n";
-  std::cout << " *****************\n";
-  std::cout << "\n";
 }
 
 RoutingLayer GlobalRouter::getRoutingLayerByIndex(int index)
