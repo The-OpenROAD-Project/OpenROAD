@@ -112,7 +112,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     odb::orderWires(db_net, false, false);
 
     std::vector<VINFO> netViol = _arc->get_net_antenna_violations(db_net);
-    if (netViol.size() > 0) {
+    if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
       dirtyNets.push_back(db_net);
     }
