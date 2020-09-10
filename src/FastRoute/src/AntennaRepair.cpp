@@ -174,7 +174,7 @@ void AntennaRepair::legalizePlacedCells()
 }
 
 void AntennaRepair::insertDiode(odb::dbNet* net,
-                           odb::dbTerm* diodeMTerm,
+                            odb::dbMTerm* diodeMTerm,
                             odb::dbInst* sinkInst,
                             odb::dbITerm* sinkITerm,
                             std::string antennaInstName,
