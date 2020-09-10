@@ -39,6 +39,7 @@
 %{
 #include "fastroute/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"
+#include "sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -46,6 +47,7 @@ FastRoute::GlobalRouter* getFastRoute();
 }  // namespace ord
 
 using ord::getFastRoute;
+using sta::LibertyPort;
 %}
 
 %include "../../Exception.i"
@@ -197,9 +199,9 @@ estimate_rc()
 }
 
 void
-repair_antennas(char* diodeCellName, char* diodePinName)
+repair_antennas(LibertyPort* diodePort)
 {
-  getFastRoute()->repairAntennas(diodeCellName, diodePinName);
+  getFastRoute()->repairAntennas(diodePort);
 }
 
 void

@@ -54,6 +54,7 @@
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
 #include "db_sta/dbSta.hh"
+#include "db_sta/dbNetwork.hh"
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
@@ -264,7 +265,7 @@ void GlobalRouter::runFastRoute()
   }
 }
 
-void GlobalRouter::repairAntennas(char* diodeCellName, char* diodePinName)
+void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 {
   std::cout << "Repairing antennas...\n";
 
@@ -284,7 +285,12 @@ void GlobalRouter::repairAntennas(char* diodeCellName, char* diodePinName)
   clearFlow();
 
   if (violationsCnt > 0) {
-    antennaRepair->fixAntennas(diodeCellName, diodePinName);
+    odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
+    if (diodeMTerm == nullptr) {
+      error("conversion from liberty port to dbMTerm fail");
+    }
+    
+    antennaRepair->fixAntennas(diodeMTerm);
     antennaRepair->legalizePlacedCells();
     _reroute = true;
     startFastRoute();

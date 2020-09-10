@@ -141,14 +141,16 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { diode_cell diode_pin }
+sta::define_cmd_args "repair_antennas" { lib_port }
 
 proc repair_antennas { args } {
-  if {[llength $args] == 2} {
-    lassign $args cell_name pin_name
-    FastRoute::repair_antennas $cell_name $pin_name
-  } else {
-    ord::error "repair_antennas: Wrong number of arguments"
+  sta::check_argc_eq1 "repair_antennas" $args
+  set lib_port [lindex $args 0]
+  if { ![sta::is_object $lib_port] } {
+    set lib_port [sta::get_lib_pins [lindex $args 0]]
+  }
+  if { $lib_port != "" } {
+    FastRoute::repair_antennas $lib_port
   }
 }
 

@@ -35,17 +35,13 @@
 
 #pragma once
 
-#include <cmath>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <istream>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "opendb/db.h"
+#include "sta/Liberty.hh"
 #include "GRoute.h"
 
 namespace ord {
@@ -156,7 +152,7 @@ class GlobalRouter
   bool haveRoutes() const { return !_routes.empty(); }
 
   // repair antenna public functions
-  void repairAntennas(char* diodeCellName, char* diodePinName);
+  void repairAntennas(sta::LibertyPort* diodePort);
 
   // congestion drive replace functions
   ROUTE_ getRoute();
