@@ -181,7 +181,6 @@ void GlobalRouter::startFastRoute()
       std::cout << "Layer " << l << " pitch: " << _layerPitches[l] << "\n";
     }
   }
-  std::cout << "\n";
 
   initCoreGrid();
   initRoutingLayers();
@@ -210,7 +209,6 @@ void GlobalRouter::startFastRoute()
 
 void GlobalRouter::runFastRoute()
 {
-  std::cout << "Running FastRoute...\n\n";
   _fastRoute->initAuxVar();
   if (_enableAntennaFlow) {
     runAntennaAvoidanceFlow();
@@ -221,7 +219,6 @@ void GlobalRouter::runFastRoute()
     addRemainingGuides(_routes);
     connectPadPins(_routes);
   }
-  std::cout << "Running FastRoute... Done!\n";
 
   mergeSegments();
   computeWirelength();
@@ -432,8 +429,6 @@ void GlobalRouter::getPreviousCapacities(int previousMinLayer)
       }
     }
   }
-
-  std::cout << "Old total capacity: " << oldTotalCap << "\n";
 }
 
 void GlobalRouter::restorePreviousCapacities(int previousMinLayer)
@@ -462,8 +457,6 @@ void GlobalRouter::restorePreviousCapacities(int previousMinLayer)
       }
     }
   }
-
-  std::cout << "New total capacity: " << newTotalCap << "\n";
 }
 
 void GlobalRouter::setSpacingsAndMinWidths()
@@ -478,10 +471,7 @@ void GlobalRouter::setSpacingsAndMinWidths()
 void GlobalRouter::initializeNets(bool reroute)
 {
   initNetlist(reroute);
-
-  std::cout << "Checking pin placement...\n";
   checkPinPlacement();
-  std::cout << "Checking pin placement... Done!\n";
 
   int validNets = 0;
 
@@ -1210,7 +1200,6 @@ void GlobalRouter::setMinLayerForClock(int minLayer)
 
 void GlobalRouter::writeGuides(const char* fileName)
 {
-  std::cout << "Writing guides...\n";
   std::ofstream guideFile;
   guideFile.open(fileName);
   if (!guideFile.is_open()) {
@@ -1320,7 +1309,6 @@ void GlobalRouter::writeGuides(const char* fileName)
   }
 
   guideFile.close();
-  std::cout << "Writing guides... Done!\n";
 }
 
 void GlobalRouter::printGrid()
