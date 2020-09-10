@@ -81,8 +81,8 @@ void Grid::clear()
 
 Coordinate Grid::getPositionOnGrid(const Coordinate& position)
 {
-  DBU x = position.getX();
-  DBU y = position.getY();
+  int x = position.getX();
+  int y = position.getY();
 
   // Computing x and y center:
   int gCellId_X = floor((float) ((x - _lowerLeftX) / _tileWidth));
@@ -94,8 +94,8 @@ Coordinate Grid::getPositionOnGrid(const Coordinate& position)
   if (gCellId_Y >= _yGrids)
     gCellId_Y--;
 
-  DBU centerX = (gCellId_X * _tileWidth) + (_tileWidth / 2) + _lowerLeftX;
-  DBU centerY = (gCellId_Y * _tileHeight) + (_tileHeight / 2) + _lowerLeftY;
+  int centerX = (gCellId_X * _tileWidth) + (_tileWidth / 2) + _lowerLeftX;
+  int centerY = (gCellId_Y * _tileHeight) + (_tileHeight / 2) + _lowerLeftY;
 
   return Coordinate(centerX, centerY);
 }

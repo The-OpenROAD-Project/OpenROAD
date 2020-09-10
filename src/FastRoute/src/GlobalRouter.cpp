@@ -596,16 +596,16 @@ void GlobalRouter::computeGridAdjustments()
 {
   Coordinate upperDieBounds
       = Coordinate(_grid->getUpperRightX(), _grid->getUpperRightY());
-  DBU hSpace;
-  DBU vSpace;
+  int hSpace;
+  int vSpace;
 
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
   Coordinate upperGridBounds = Coordinate(xGrids * _grid->getTileWidth(),
                                           yGrids * _grid->getTileHeight());
-  DBU xExtra = upperDieBounds.getX() - upperGridBounds.getX();
-  DBU yExtra = upperDieBounds.getY() - upperGridBounds.getY();
+  int xExtra = upperDieBounds.getX() - upperGridBounds.getX();
+  int yExtra = upperDieBounds.getY() - upperGridBounds.getY();
 
   for (int layer = 1; layer <= _grid->getNumLayers(); layer++) {
     hSpace = 0;
@@ -665,10 +665,10 @@ void GlobalRouter::computeTrackAdjustments()
   Coordinate upperDieBounds
       = Coordinate(_grid->getUpperRightX(), _grid->getUpperRightY());
   for (RoutingLayer layer : *_routingLayers) {
-    DBU trackLocation;
+    int trackLocation;
     int numInitAdjustments = 0;
     int numFinalAdjustments = 0;
-    DBU trackSpace;
+    int trackSpace;
     int numTracks = 0;
 
     if (layer.getIndex() < _minRoutingLayer
@@ -684,16 +684,16 @@ void GlobalRouter::computeTrackAdjustments()
       numTracks = routingTracks.getNumTracks();
 
       if (numTracks > 0) {
-        DBU finalTrackLocation = trackLocation + (trackSpace * (numTracks - 1));
-        DBU remainingFinalSpace = upperDieBounds.getY() - finalTrackLocation;
-        DBU extraSpace = upperDieBounds.getY()
+        int finalTrackLocation = trackLocation + (trackSpace * (numTracks - 1));
+        int remainingFinalSpace = upperDieBounds.getY() - finalTrackLocation;
+        int extraSpace = upperDieBounds.getY()
                          - (_grid->getTileHeight() * _grid->getYGrids());
         if (_grid->isPerfectRegularY()) {
           numFinalAdjustments
               = std::ceil((float) remainingFinalSpace / _grid->getTileHeight());
         } else {
           if (remainingFinalSpace != 0) {
-            DBU finalSpace = remainingFinalSpace - extraSpace;
+            int finalSpace = remainingFinalSpace - extraSpace;
             if (finalSpace <= 0)
               numFinalAdjustments = 1;
             else
@@ -719,7 +719,7 @@ void GlobalRouter::computeTrackAdjustments()
           trackLocation -= _grid->getTileHeight();
         }
         if (trackLocation > 0) {
-          DBU remainingTile = _grid->getTileHeight() - trackLocation;
+          int remainingTile = _grid->getTileHeight() - trackLocation;
           int newCapacity = std::floor((float) remainingTile / trackSpace);
           for (int x = 1; x < _grid->getXGrids(); x++) {
             _fastRoute->addAdjustment(x - 1,
@@ -743,7 +743,7 @@ void GlobalRouter::computeTrackAdjustments()
           extraSpace = 0;
         }
         if (remainingFinalSpace > 0) {
-          DBU remainingTile
+          int remainingTile
               = (_grid->getTileHeight() + extraSpace) - remainingFinalSpace;
           int newCapacity = std::floor((float) remainingTile / trackSpace);
           for (int x = 1; x < _grid->getXGrids(); x++) {
@@ -765,16 +765,16 @@ void GlobalRouter::computeTrackAdjustments()
       numTracks = routingTracks.getNumTracks();
 
       if (numTracks > 0) {
-        DBU finalTrackLocation = trackLocation + (trackSpace * (numTracks - 1));
-        DBU remainingFinalSpace = upperDieBounds.getX() - finalTrackLocation;
-        DBU extraSpace = upperDieBounds.getX()
+        int finalTrackLocation = trackLocation + (trackSpace * (numTracks - 1));
+        int remainingFinalSpace = upperDieBounds.getX() - finalTrackLocation;
+        int extraSpace = upperDieBounds.getX()
                          - (_grid->getTileWidth() * _grid->getXGrids());
         if (_grid->isPerfectRegularX()) {
           numFinalAdjustments
               = std::ceil((float) remainingFinalSpace / _grid->getTileWidth());
         } else {
           if (remainingFinalSpace != 0) {
-            DBU finalSpace = remainingFinalSpace - extraSpace;
+            int finalSpace = remainingFinalSpace - extraSpace;
             if (finalSpace <= 0)
               numFinalAdjustments = 1;
             else
@@ -800,7 +800,7 @@ void GlobalRouter::computeTrackAdjustments()
           trackLocation -= _grid->getTileWidth();
         }
         if (trackLocation > 0) {
-          DBU remainingTile = _grid->getTileWidth() - trackLocation;
+          int remainingTile = _grid->getTileWidth() - trackLocation;
           int newCapacity = std::floor((float) remainingTile / trackSpace);
           for (int y = 1; y < _grid->getYGrids(); y++) {
             _fastRoute->addAdjustment(x,
@@ -824,7 +824,7 @@ void GlobalRouter::computeTrackAdjustments()
           extraSpace = 0;
         }
         if (remainingFinalSpace > 0) {
-          DBU remainingTile
+          int remainingTile
               = (_grid->getTileWidth() + extraSpace) - remainingFinalSpace;
           int newCapacity = std::floor((float) remainingTile / trackSpace);
           for (int y = 1; y < _grid->getYGrids(); y++) {
@@ -931,7 +931,7 @@ void GlobalRouter::computeRegionAdjustments(const Coordinate& lowerBound,
   Grid::TILE& lastTile = tilesToAdjust.second;
 
   RoutingTracks routingTracks = getRoutingTracksByIndex(layer);
-  DBU trackSpace = std::max(routingTracks.getTrackPitch(),
+  int trackSpace = std::max(routingTracks.getTrackPitch(),
                             routingTracks.getLine2ViaPitch());
 
   int firstTileReduce = _grid->computeTileReduce(
@@ -1531,13 +1531,13 @@ void GlobalRouter::mergeBox(std::vector<Box>& guideBox)
     Box box = guideBox[i];
     Box& lastBox = finalBox.back();
     if (lastBox.overlap(box)) {
-      DBU lowerX = std::min(lastBox.getLowerBound().getX(),
+      int lowerX = std::min(lastBox.getLowerBound().getX(),
                             box.getLowerBound().getX());
-      DBU lowerY = std::min(lastBox.getLowerBound().getY(),
+      int lowerY = std::min(lastBox.getLowerBound().getY(),
                             box.getLowerBound().getY());
-      DBU upperX = std::max(lastBox.getUpperBound().getX(),
+      int upperX = std::max(lastBox.getUpperBound().getX(),
                             box.getUpperBound().getX());
-      DBU upperY = std::max(lastBox.getUpperBound().getY(),
+      int upperY = std::max(lastBox.getUpperBound().getY(),
                             box.getUpperBound().getY());
       lastBox = Box(lowerX, lowerY, upperX, upperY, -1);
     } else
@@ -1573,11 +1573,11 @@ Box GlobalRouter::globalRoutingToBox(const GSegment& route)
     finalY = route.initY;
   }
 
-  DBU llX = initX - (_grid->getTileWidth() / 2);
-  DBU llY = initY - (_grid->getTileHeight() / 2);
+  int llX = initX - (_grid->getTileWidth() / 2);
+  int llY = initY - (_grid->getTileHeight() / 2);
 
-  DBU urX = finalX + (_grid->getTileWidth() / 2);
-  DBU urY = finalY + (_grid->getTileHeight() / 2);
+  int urX = finalX + (_grid->getTileWidth() / 2);
+  int urY = finalY + (_grid->getTileHeight() / 2);
 
   if ((dieBounds.getUpperBound().getX() - urX) / _grid->getTileWidth() < 1) {
     urX = dieBounds.getUpperBound().getX();
@@ -1602,7 +1602,7 @@ void GlobalRouter::checkPinPlacement()
     if (port->getNumLayers() == 0) {
       error("Pin %s does not have layer assignment", port->getName().c_str());
     }
-    DBU layer = port->getLayers()[0];  // port have only one layer
+    int layer = port->getLayers()[0];  // port have only one layer
 
     if (mapLayerToPositions[layer].empty()) {
       mapLayerToPositions[layer].push_back(port->getPosition());
@@ -1736,11 +1736,11 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
 
 void GlobalRouter::computeWirelength()
 {
-  DBU totalWirelength = 0;
+  int totalWirelength = 0;
   for (auto &net_route : _routes) {
     GRoute &route = net_route.second;
     for (GSegment &segment : route) {
-      DBU segmentWl = std::abs(segment.finalX - segment.initX)
+      int segmentWl = std::abs(segment.finalX - segment.initX)
                     + std::abs(segment.finalY - segment.initY);
       totalWirelength += segmentWl;
 
@@ -1903,12 +1903,12 @@ void GlobalRouter::mergeResults(NetRouteMap& routes)
 bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
 					      Coordinate& trackPosition)
 {
-  DBU minX = std::numeric_limits<DBU>::max();
-  DBU minY = std::numeric_limits<DBU>::max();
-  DBU maxX = std::numeric_limits<DBU>::min();
-  DBU maxY = std::numeric_limits<DBU>::min();
+  int minX = std::numeric_limits<int>::max();
+  int minY = std::numeric_limits<int>::max();
+  int maxX = std::numeric_limits<int>::min();
+  int maxY = std::numeric_limits<int>::min();
 
-  DBU min, max;
+  int min, max;
 
   int topLayer = pin.getTopLayer();
   std::vector<Box> pinBoxes = pin.getBoxes().at(topLayer);
@@ -1937,11 +1937,11 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
     max = maxY;
 
     if ((float) (max - min) / tracks.getTrackPitch() <= 3) {
-      DBU nearestTrack = std::floor((float) (max - tracks.getLocation())
+      int nearestTrack = std::floor((float) (max - tracks.getLocation())
                                     / tracks.getTrackPitch())
                              * tracks.getTrackPitch()
                          + tracks.getLocation();
-      DBU nearestTrack2 = std::floor((float) (max - tracks.getLocation())
+      int nearestTrack2 = std::floor((float) (max - tracks.getLocation())
                                          / tracks.getTrackPitch()
                                      - 1)
                               * tracks.getTrackPitch()
@@ -1968,11 +1968,11 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
 
     if ((float) (max - min) / tracks.getTrackPitch() <= 3) {
       // begging for subexpression factoring -cherry
-      DBU nearestTrack = std::floor((float) (max - tracks.getLocation())
+      int nearestTrack = std::floor((float) (max - tracks.getLocation())
                                     / tracks.getTrackPitch())
                              * tracks.getTrackPitch()
                          + tracks.getLocation();
-      DBU nearestTrack2 = std::floor((float) (max - tracks.getLocation())
+      int nearestTrack2 = std::floor((float) (max - tracks.getLocation())
                                          / tracks.getTrackPitch()
                                      - 1)
                               * tracks.getTrackPitch()
@@ -2012,7 +2012,7 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     pinConnection.initY = pinPosition.getY();
     pinConnection.finalY = pinPosition.getY();
 
-    DBU newXPosition;
+    int newXPosition;
     if (pin.getOrientation() == PinOrientation::west) {
       newXPosition
           = pinPosition.getX() + (_gcellsOffset * _grid->getTileWidth());
@@ -2032,7 +2032,7 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     pinConnection.finalX = pinPosition.getX();
     pinConnection.finalY = pinPosition.getY();
 
-    DBU newYPosition;
+    int newYPosition;
     if (pin.getOrientation() == PinOrientation::south) {
       newYPosition
           = pinPosition.getY() + (_gcellsOffset * _grid->getTileHeight());
@@ -2535,7 +2535,7 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
 
       if (techLayer->getDirection().getValue()
           == odb::dbTechLayerDir::HORIZONTAL) {
-        DBU instToPin = pinPosition.getX() - instMiddle.getX();
+        int instToPin = pinPosition.getX() - instMiddle.getX();
         if (instToPin < 0) {
           pin.setOrientation(PinOrientation::east);
         } else {
@@ -2543,7 +2543,7 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
-        DBU instToPin = pinPosition.getY() - instMiddle.getY();
+        int instToPin = pinPosition.getY() - instMiddle.getY();
         if (instToPin < 0) {
           pin.setOrientation(PinOrientation::north);
         } else {
@@ -2632,7 +2632,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
 
       if (techLayer->getDirection().getValue()
           == odb::dbTechLayerDir::HORIZONTAL) {
-        DBU instToPin = pinPosition.getX() - instMiddle.getX();
+        int instToPin = pinPosition.getX() - instMiddle.getX();
         if (instToPin < 0) {
           pin.setOrientation(PinOrientation::east);
         } else {
@@ -2640,7 +2640,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
-        DBU instToPin = pinPosition.getY() - instMiddle.getY();
+        int instToPin = pinPosition.getY() - instMiddle.getY();
         if (instToPin < 0) {
           pin.setOrientation(PinOrientation::north);
         } else {
@@ -2653,7 +2653,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
 
       if (techLayer->getDirection().getValue()
           == odb::dbTechLayerDir::HORIZONTAL) {
-        DBU instToDie = pinPosition.getX() - dieArea.getMiddle().getX();
+        int instToDie = pinPosition.getX() - dieArea.getMiddle().getX();
         if (instToDie < 0) {
           pin.setOrientation(PinOrientation::west);
         } else {
@@ -2661,7 +2661,7 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea)
         }
       } else if (techLayer->getDirection().getValue()
                  == odb::dbTechLayerDir::VERTICAL) {
-        DBU instToDie = pinPosition.getY() - dieArea.getMiddle().getY();
+        int instToDie = pinPosition.getY() - dieArea.getMiddle().getY();
         if (instToDie < 0) {
           pin.setOrientation(PinOrientation::south);
         } else {
