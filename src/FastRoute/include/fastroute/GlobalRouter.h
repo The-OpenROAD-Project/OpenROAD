@@ -148,13 +148,15 @@ class GlobalRouter
   void setMinLayerForClock(int minLayer);
 
   // flow functions
-  void enableAntennaAvoidance(char* diodeCellName, char* diodePinName);
   void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
+
+  // repair antenna public functions
+  void repairAntennas(char* diodeCellName, char* diodePinName);
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -175,6 +177,7 @@ protected:
  private:
   void makeComponents();
   void deleteComponents();
+  void clearFlow();
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
@@ -221,7 +224,6 @@ protected:
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
   void getPreviousCapacities(int previousMinLayer);
@@ -303,9 +305,6 @@ protected:
   int _minLayerForClock;
 
   // Antenna variables
-  bool _enableAntennaFlow = false;
-  std::string _diodeCellName;
-  std::string _diodePinName;
   int*** oldHUsages;
   int*** oldVUsages;
   int _reroute = false;
@@ -317,7 +316,7 @@ protected:
   std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
 
   // db variables
-  sta::dbSta* _openSta;
+  sta::dbSta* _sta;
   int selectedMetal = 3;
   odb::dbDatabase* _db = nullptr;
   odb::dbBlock* _block;
