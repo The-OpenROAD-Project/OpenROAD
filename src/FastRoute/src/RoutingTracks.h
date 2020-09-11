@@ -51,18 +51,18 @@ class RoutingTracks
 {
  private:
   int _layerIndex;
-  DBU _trackPitch;
-  DBU _line2ViaPitch;
-  DBU _location;
+  int _trackPitch;
+  int _line2ViaPitch;
+  int _location;
   int _numTracks;
   bool _orientation;
 
  public:
   RoutingTracks() = default;
   RoutingTracks(const int layerIndex,
-                const DBU trackPitch,
-                const DBU line2ViaPitch,
-                const DBU location,
+                const int trackPitch,
+                const int line2ViaPitch,
+                const int location,
                 const int numTracks,
                 const bool orientation)
       : _layerIndex(layerIndex),
@@ -75,9 +75,9 @@ class RoutingTracks
   }
 
   int getLayerIndex() const { return _layerIndex; }
-  DBU getTrackPitch() const { return _trackPitch; }
-  DBU getLine2ViaPitch() const { return _line2ViaPitch; }
-  DBU getLocation() const { return _location; }
+  int getTrackPitch() const { return _trackPitch; }
+  int getLine2ViaPitch() const { return _line2ViaPitch; }
+  int getLocation() const { return _location; }
   int getNumTracks() const { return _numTracks; }
   bool getOrientation() const { return _orientation; }
 };
