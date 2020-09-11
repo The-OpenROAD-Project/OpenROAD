@@ -42,11 +42,6 @@ public:
   virtual void makeComponents() override;
   dbNetwork *getDbNetwork() { return db_network_; }
 
-  virtual LibertyLibrary *readLiberty(const char *filename,
-				      Corner *corner,
-				      const MinMaxAll *min_max,
-				      bool infer_latches) override;
-
   Slack netSlack(const dbNet *net,
 		 const MinMax *min_max);
 

@@ -136,20 +136,6 @@ void dbSta::postReadDb(dbDatabase* db)
   db_network_->readDbAfter(db);
 }
 
-// Wrapper to sync db/liberty libraries.
-LibertyLibrary *
-dbSta::readLiberty(const char *filename,
-		   Corner *corner,
-		   const MinMaxAll *min_max,
-		   bool infer_latches)
-
-{
-  LibertyLibrary *lib = Sta::readLiberty(filename, corner, min_max,
-					 infer_latches);
-  db_network_->readLibertyAfter(lib);
-  return lib;
-}
-
 Slack
 dbSta::netSlack(const dbNet *db_net,
 		const MinMax *min_max)

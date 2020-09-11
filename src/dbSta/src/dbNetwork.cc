@@ -898,8 +898,10 @@ dbNetwork::makeCell(Library *library,
 
     if (lib_cell) {
       LibertyPort *lib_port = lib_cell->findLibertyPort(port_name);
-      if (lib_port)
+      if (lib_port) {
 	cport->setLibertyPort(lib_port);
+	lib_port->setExtPort(mterm);
+      }
       else if (!dir->isPowerGround())
 	report_->warn("LEF macro %s pin %s missing from liberty cell\n",
 		      cell_name,
@@ -945,8 +947,10 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 	      ConcretePort *cport = port_iter->next();
 	      const char *port_name = cport->name();
 	      LibertyPort *lport = lcell->findLibertyPort(port_name);
-	      if (lport)
+	      if (lport) {
 		cport->setLibertyPort(lport);
+		lport->setExtPort(cport->extPort());
+	      }
 	      else if (!cport->direction()->isPowerGround())
 		report_->warn("Liberty cell %s pin %s missing from LEF macro\n",
 			      lcell->name(),
