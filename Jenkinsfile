@@ -13,12 +13,12 @@ pipeline {
         }
         stage('Build docker centos7 clang7') {
           steps {
-            sh './jenkins/build_centos7_clang7.sh'
+            sh './jenkins/build_docker.sh centos7 clang7'
           }
         }
         stage('Build docker ubuntu18 gcc8') {
           steps {
-            sh './jenkins/build_docker.sh ubuntu gcc'
+            sh './jenkins/build_docker.sh ubuntu18 gcc8'
           }
         }
       }
