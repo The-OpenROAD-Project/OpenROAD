@@ -60,6 +60,8 @@ namespace bgi = boost::geometry::index;
 
 namespace FastRoute {
 
+typedef std::map<odb::dbNet*, std::vector<VINFO>> AntennaViolations;
+
 class GlobalRouter;
 
 class AntennaRepair
@@ -69,14 +71,11 @@ class AntennaRepair
 		antenna_checker::AntennaChecker* arc,
 		opendp::Opendp* opendp, odb::dbDatabase* db);
 
-  int checkAntennaViolations(NetRouteMap& routing,
-			     int maxRoutingLayer);
+  int checkAntennaViolations(NetRouteMap& routing, int maxRoutingLayer);
   void fixAntennas(std::string antennaCellName, std::string antennaPinName);
   void legalizePlacedCells();
-  std::map<odb::dbNet*, std::vector<VINFO>> getAntennaViolations()
-                                            { return _antennaViolations; }
-  void setAntennaViolations(std::map<odb::dbNet*, std::vector<VINFO>>
-                            antennaViolations)
+  AntennaViolations getAntennaViolations() { return _antennaViolations; }
+  void setAntennaViolations(AntennaViolations antennaViolations)
                            { _antennaViolations = antennaViolations; }
 
 private:
@@ -102,7 +101,7 @@ private:
   opendp::Opendp* _opendp;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
-  std::map<odb::dbNet*, std::vector<VINFO>> _antennaViolations;
+  AntennaViolations _antennaViolations;
 };
 
 }  // namespace FastRoute

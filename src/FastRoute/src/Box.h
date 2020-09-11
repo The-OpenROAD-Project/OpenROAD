@@ -62,10 +62,10 @@ class Box
   {
   }
 
-  Box(const DBU lowerX,
-      const DBU lowerY,
-      const DBU upperX,
-      const DBU upperY,
+  Box(const int lowerX,
+      const int lowerY,
+      const int upperX,
+      const int upperY,
       const int layer)
       : _lowerBound(Coordinate(lowerX, lowerY)),
         _upperBound(Coordinate(upperX, upperY)),
@@ -77,7 +77,7 @@ class Box
   Coordinate getUpperBound() const { return _upperBound; }
   int getLayer() const { return _layer; }
 
-  DBU getHalfPerimeter();
+  int getHalfPerimeter();
   Coordinate getMiddle();
 
   bool overlap(Box box);

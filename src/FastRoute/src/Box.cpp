@@ -39,33 +39,33 @@ namespace FastRoute {
 
 Coordinate Box::getMiddle()
 {
-  DBU lowerX = _lowerBound.getX();
-  DBU lowerY = _lowerBound.getY();
-  DBU upperX = _upperBound.getX();
-  DBU upperY = _upperBound.getY();
+  int lowerX = _lowerBound.getX();
+  int lowerY = _lowerBound.getY();
+  int upperX = _upperBound.getX();
+  int upperY = _upperBound.getY();
 
   return Coordinate((lowerX + (upperX - lowerX) / 2.0),
                     (lowerY + (upperY - lowerY) / 2.0));
 }
 
-DBU Box::getHalfPerimeter()
+int Box::getHalfPerimeter()
 {
-  DBU lowerX = _lowerBound.getX();
-  DBU lowerY = _lowerBound.getY();
-  DBU upperX = _upperBound.getX();
-  DBU upperY = _upperBound.getY();
+  int lowerX = _lowerBound.getX();
+  int lowerY = _lowerBound.getY();
+  int upperX = _upperBound.getX();
+  int upperY = _upperBound.getY();
 
-  DBU x = upperX - lowerX;
-  DBU y = upperY - lowerY;
+  int x = upperX - lowerX;
+  int y = upperY - lowerY;
 
   return (x + y);
 }
 
 bool Box::overlap(Box box)
 {
-  const DBU dx = std::max(_lowerBound.getX(), box.getLowerBound().getX())
+  const int dx = std::max(_lowerBound.getX(), box.getLowerBound().getX())
                  - std::min(_upperBound.getX(), box.getUpperBound().getX());
-  const DBU dy = std::max(_lowerBound.getY(), box.getLowerBound().getY())
+  const int dy = std::max(_lowerBound.getY(), box.getLowerBound().getY())
                  - std::min(_upperBound.getY(), box.getUpperBound().getY());
 
   return (dx < 0 && dy < 0);
