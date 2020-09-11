@@ -84,7 +84,5 @@ ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
     PATH=/opt/rh/llvm-toolset-7.0/root/usr/bin:/opt/rh/llvm-toolset-7.0/root/usr/sbin${PATH:+:${PATH}} \
     LD_LIBRARY_PATH=/opt/rh/llvm-toolset-7.0/root/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
-RUN scl enable llvm-toolset-7.0 bash 
-
 # Build
-RUN cmake -B build . && cmake --build build -j $(nproc)
+RUN scl enable llvm-toolset-7.0 bash && cmake -B build . && cmake --build build -j $(nproc)
