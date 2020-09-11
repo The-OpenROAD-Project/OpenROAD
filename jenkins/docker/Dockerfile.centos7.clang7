@@ -74,11 +74,11 @@ FROM base-dependencies AS builder
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-RUN scl enable llvm-toolset-7.0 bash
+#RUN scl enable llvm-toolset-7.0 bash
 
 # These are referenced by cmake
 ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
     CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++ \
 
 # Build
-RUN cmake -B build . && cmake --build build -j $(nproc)
+RUN cmake -B build . && cmake --build build
