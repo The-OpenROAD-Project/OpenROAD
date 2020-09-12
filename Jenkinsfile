@@ -30,6 +30,7 @@ pipeline {
             }
           }
         }
+/* disabled until osx clang build works
         stage('Docker centos clang') {
           stages{
             stage('Docker build centos clang') {
@@ -58,6 +59,7 @@ pipeline {
             }
           }
         }
+*/
         stage('Docker centos gcc') {
           stages{
             stage('Docker build centos gcc') {
