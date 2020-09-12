@@ -93,24 +93,6 @@ proc set_placement_padding { args } {
   }
 }
 
-sta::define_cmd_args "set_power_net" { [-power power_name]\
-					 [-ground ground_net] }
-
-proc set_power_net { args } {
-  sta::parse_key_args "set_power_net" args \
-    keys {-power -ground} flags {}
-
-  sta::check_argc_eq0 "set_power_net" $args
-  if { [info exists keys(-power)] } {
-    set power $keys(-power)
-    opendp::set_power_net_name $power
-  }
-  if { [info exists keys(-ground)] } {
-    set ground $keys(-ground)
-    opendp::set_ground_net_name $ground
-  }
-}
-
 sta::define_cmd_args "filler_placement" { filler_masters }
 
 proc filler_placement { args } {

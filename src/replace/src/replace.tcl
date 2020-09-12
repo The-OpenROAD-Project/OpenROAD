@@ -205,3 +205,24 @@ proc global_placement { args } {
     puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
   }
 }
+
+sta::define_cmd_args "global_placement_debug" {
+    [-pause iterations] \
+    [-draw_bins]
+}
+
+proc global_placement_debug { args } {
+  sta::parse_key_args "detailed_placement" args \
+      keys {-pause} \
+      flags {-draw_bins}
+
+  set pause 10
+  if { [info exists keys(-pause)] } {
+    set pause $keys(-pause)
+    sta::check_positive_integer "-pause" $pause
+  }
+
+  set draw_bins [info exists flags(-draw_bins)]
+
+  set_replace_debug_cmd $pause $draw_bins
+}

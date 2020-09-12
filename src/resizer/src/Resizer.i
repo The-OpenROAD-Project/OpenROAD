@@ -227,6 +227,7 @@ set_dont_use_cmd(LibertyCellSeq *dont_use)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(dont_use);
+  delete dont_use;
 }
 
 void
@@ -235,6 +236,7 @@ resizer_preamble(LibertyLibrarySeq *resize_libs)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizePreamble(resize_libs);
+  delete resize_libs;
 }
 
 void

@@ -30,11 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <QAction>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
-#include <QToolBar>
+#include <QStatusBar>
 
 #include "displayControls.h"
 #include "layoutViewer.h"
@@ -45,11 +44,11 @@ namespace gui {
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
+      db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(new LayoutViewer(controls_)),
+      viewer_(new LayoutViewer(controls_, selected_)),
       scroll_(new LayoutScroll(viewer_, this)),
-      script_(new ScriptWidget(this)),
-      db_(nullptr)
+      script_(new ScriptWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -66,12 +65,26 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this, SIGNAL(redraw()), viewer_, SLOT(repaint()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           controls_,
           SLOT(designLoaded(odb::dbBlock*)));
+  connect(this, SIGNAL(pause()), script_, SLOT(pause()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(update()));
-
+  connect(viewer_,
+          SIGNAL(location(qreal, qreal)),
+          this,
+          SLOT(setLocation(qreal, qreal)));
+  connect(viewer_,
+          SIGNAL(selected(const Selected&)),
+          this,
+          SLOT(setSelected(const Selected&)));
+  connect(this,
+          SIGNAL(selectionChanged()),
+          viewer_,
+          SLOT(update()));
+  
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
@@ -83,6 +96,13 @@ MainWindow::MainWindow(QWidget* parent)
   createActions();
   createMenus();
   createToolbars();
+  createStatusBar();
+}
+
+void MainWindow::createStatusBar()
+{
+  location_ = new QLabel();
+  statusBar()->addPermanentWidget(location_);
 }
 
 void MainWindow::createActions()
@@ -121,6 +141,26 @@ void MainWindow::setDb(odb::dbDatabase* db)
   db_ = db;
   controls_->setDb(db);
   viewer_->setDb(db);
+}
+
+void MainWindow::setLocation(qreal x, qreal y)
+{
+  location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
+}
+
+void MainWindow::setSelected(const Selected& selection)
+{
+  selected_.clear();
+  if (selection) {
+    selected_.emplace(selection);
+  }
+  status(selection ? selection.getName(): "");
+  emit selectionChanged();
+}
+
+void MainWindow::status(const std::string& message)
+{
+  statusBar()->showMessage(QString::fromStdString(message));
 }
 
 void MainWindow::saveSettings()

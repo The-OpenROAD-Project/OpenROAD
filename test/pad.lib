@@ -6,7 +6,7 @@ library (pad) {
   current_unit : "1mA";
   leakage_power_unit : "1mW";
   pulling_resistance_unit : "1kohm";
-  time_unit : "1ps";
+  time_unit : "1ns";
   voltage_unit : "1V";
 
   input_threshold_pct_rise : 50;

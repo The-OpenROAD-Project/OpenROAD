@@ -42,14 +42,13 @@
 namespace sta {
 
 using std::array;
-
 using odb::Rect;
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
-typedef array<Slew,  RiseFall::index_count> TgtSlews;
+typedef array<Slew, RiseFall::index_count> TgtSlews;
 
 class Resizer : public StaState
 {
@@ -320,6 +319,8 @@ protected:
 			InstanceSeq &clk_inverters);
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
+  void ensureWireParasitic(const Pin *drvr_pin);
+  void ensureWireParasitics();
 
   float wire_res_;
   float wire_cap_;

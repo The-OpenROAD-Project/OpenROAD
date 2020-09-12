@@ -38,6 +38,7 @@
 
 #include <string>
 
+#include "db.h"
 #include "Core.h"
 #include "Netlist.h"
 #include "Parameters.h"
@@ -71,7 +72,8 @@ class DBWrapper
   void initTracks();
 
   odb::dbDatabase* _db;
-  odb::dbChip* _chip;
+  odb::dbTech* _tech;
+  odb::dbBlock* _block;
   Netlist* _netlist = nullptr;
   Core* _core = nullptr;
   Parameters* _parms = nullptr;

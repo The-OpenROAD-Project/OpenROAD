@@ -41,6 +41,7 @@
 using namespace std;
 
 #include "plot.h"
+#include "graphics.h"
 
 namespace replace {
 
@@ -63,7 +64,10 @@ NesterovPlaceVars::NesterovPlaceVars()
   referenceHpwl(446000000),
   routabilityCheckOverflow(0.20),
   timingDrivenMode(true),
-  routabilityDrivenMode(true) {}
+  routabilityDrivenMode(true),
+  debug(false),
+  debug_pause_iterations(10)
+{}
 
 
 void
@@ -81,6 +85,8 @@ NesterovPlaceVars::reset() {
   routabilityCheckOverflow = 0.20;
   timingDrivenMode = true;
   routabilityDrivenMode = true;
+  debug = false;
+  debug_pause_iterations = 10;
 }
 
 NesterovPlace::NesterovPlace() 
@@ -109,6 +115,9 @@ NesterovPlace::NesterovPlace(
   rb_ = rb;
   log_ = log;
   init();
+  if (npVars.debug && Graphics::guiActive()) {
+    graphics_ = make_unique<Graphics>(pb, nb, npVars_.debug_draw_bins);
+  }
 }
 
 NesterovPlace::~NesterovPlace() {
@@ -396,6 +405,9 @@ NesterovPlace::doNesterovPlace() {
      "./plot/arrow/arrow_0");
 #endif
 
+  if (graphics_) {
+    graphics_->cellPlot(true);
+  }
 
   // backTracking variable.
   float curA = 1.0;
@@ -537,9 +549,15 @@ NesterovPlace::doNesterovPlace() {
     // For JPEG Saving
     // debug
 
+  if (graphics_) {
+      bool pause = (i == 0 || (i+1) % npVars_.debug_pause_iterations == 0);
+      graphics_->cellPlot(pause);
+    }
+
     if( i == 0 || (i+1) % 10 == 0 ) {
       cout << "[NesterovSolve] Iter: " << i+1 
         << " overflow: " << sumOverflow_ << " HPWL: " << prevHpwl_ << endl; 
+
 #ifdef ENABLE_CIMG_LIB
       pe.SaveCellPlotAsJPEG(string("Nesterov - Iter: " + std::to_string(i+1)), true,
           string("./plot/cell/cell_") +
@@ -650,6 +668,11 @@ NesterovPlace::doNesterovPlace() {
 
   if( isDiverged_ ) { 
     log_->errorQuit(divergeMsg, divergeCode);
+  }
+
+  if (graphics_) {
+    graphics_->status("End placement");
+    graphics_->cellPlot(true);
   }
 }
 

@@ -13,6 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  link_libraries(pthread m stdc++ stdc++fs)
+endif()
+
 set(OPENSTA_HOME ${PROJECT_SOURCE_DIR}/src/OpenSTA)
 set(OPENDB_HOME ${PROJECT_SOURCE_DIR}/src/OpenDB)
 set(INIT_FP_HOME ${PROJECT_SOURCE_DIR}/src/init_fp)
@@ -258,6 +262,7 @@ target_include_directories(openroad
   ${OPENDP_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
+  ${IOPLACER_HOME}/include
   ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
@@ -321,6 +326,11 @@ endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(openroad -pthread)
+endif()
+
+# Optional CUDD library for OpenSTA
+if (CUDD_LIB)
+  target_link_libraries(openroad ${CUDD_LIB})
 endif()
 
 # Ancient versions of glibc found on CentOS required librt.

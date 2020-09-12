@@ -34,26 +34,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Pin.h"
-
-#include "DBWrapper.h"
+#include "fastroute/GlobalRouter.h"
 
 namespace FastRoute {
 
 Pin::Pin(odb::dbITerm* iterm,
          const Coordinate& position,
          const std::vector<int>& layers,
-         const Orientation orientation,
+         const PinOrientation orientation,
          const std::map<int, std::vector<Box>>& boxesPerLayer,
-         bool connectedToPad,
-         Type type)
+         bool connectedToPad)
     : _iterm(iterm),
       _position(position),
       _layers(layers),
       _orientation(orientation),
       _boxesPerLayer(boxesPerLayer),
       _isPort(false),
-      _connectedToPad(connectedToPad),
-      _type(type)
+      _connectedToPad(connectedToPad)
 {
   std::sort(_layers.begin(), _layers.end());
 }
@@ -61,18 +58,16 @@ Pin::Pin(odb::dbITerm* iterm,
 Pin::Pin(odb::dbBTerm* bterm,
          const Coordinate& position,
          const std::vector<int>& layers,
-         const Orientation orientation,
+         const PinOrientation orientation,
          const std::map<int, std::vector<Box>>& boxesPerLayer,
-         bool connectedToPad,
-         Type type)
+         bool connectedToPad)
     : _bterm(bterm),
       _position(position),
       _layers(layers),
       _orientation(orientation),
       _boxesPerLayer(boxesPerLayer),
       _isPort(true),
-      _connectedToPad(connectedToPad),
-      _type(type)
+      _connectedToPad(connectedToPad)
 {
   std::sort(_layers.begin(), _layers.end());
 }

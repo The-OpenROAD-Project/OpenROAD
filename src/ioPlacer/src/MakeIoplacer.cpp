@@ -33,9 +33,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "MakeIoplacer.h"
+#include "ioplacer/MakeIoplacer.h"
 
-#include "IOPlacementKernel.h"
+#include "ioplacer/IOPlacementKernel.h"
 #include "Parameters.h"
 #include "db.h"
 #include "openroad/OpenRoad.hh"

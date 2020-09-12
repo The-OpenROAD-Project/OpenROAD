@@ -99,7 +99,10 @@ proc set_wire_rc { args } {
     }
   }
   
-  set corner [parse_corner keys]
+  set corner [cmd_corner]
+  if { [info exists keys(-corner)] } {
+    ord::warn "-corner argument ignored."
+  }
   check_argc_eq0 "set_wire_rc" $args
   
   if { [info exists flags(-clock)] && [info exists flags(-clock)] \
@@ -122,14 +125,24 @@ proc set_wire_rc { args } {
   estimate_parasitics_cmd
 }
 
-define_cmd_args "estimate_parasitics" { -placement }
+define_cmd_args "estimate_parasitics" { -placement|-global_routing }
 
 proc estimate_parasitics { args } {
   parse_key_args "estimate_parasitics" args \
-    keys {} flags {-placement}
+    keys {} flags {-placement -global_routing}
 
   check_argc_eq0 "estimate_parasitics" $args
-  estimate_parasitics_cmd
+  if { [info exists flags(-placement)] } {
+    if { [wire_capacitance] == 0.0 } {
+      ord::warn "wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+    } else {
+      estimate_parasitics_cmd
+    }
+  } elseif { [info exists flags(-global_routing)] } {
+    FastRoute::estimate_rc_cmd
+  } else {
+    ord::error "missing -placement or -global_routing flag."
+  }
 }
 
 define_cmd_args "set_dont_use" {lib_cells}

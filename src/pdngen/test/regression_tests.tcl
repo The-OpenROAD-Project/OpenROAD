@@ -6,4 +6,5 @@ record_tests {
   tinyRocket
   soc_bsg_black_parrot_nangate45
   soc_bsg_black_parrot_nangate45.pad_offset
+  extend_to_core_ring
 }

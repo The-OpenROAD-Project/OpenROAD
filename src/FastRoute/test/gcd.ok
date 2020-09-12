@@ -1,0 +1,80 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: gcd.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 676 components and 2850 component-terminals.
+Notice 0:     Created 579 nets and 1498 connections.
+Notice 0: Finished DEF file: gcd.def
+
+ *****************
+ *   FastRoute   *
+ *****************
+
+[PARAMS] Min routing layer: 1
+[PARAMS] Max routing layer: 10
+[PARAMS] Global adjustment: 0
+[PARAMS] Unidirectional routing: 0
+[PARAMS] Grid origin: (-1, -1)
+
+Initializing grid...
+[INFO] #DB Obstructions: 0
+[INFO] #DB Obstacles: 2874
+[INFO] #DB Macros: 0
+Initializing grid... Done!
+Initializing routing layers...
+Initializing routing layers... Done!
+Initializing routing tracks...
+Initializing routing tracks... Done!
+Setting capacities...
+Setting capacities... Done!
+Setting spacings and widths...
+Setting spacings and widths... Done!
+Initializing nets...
+[INFO] Found 0 clock nets
+Checking pin placement...
+Checking pin placement... Done!
+[INFO] Minimum degree: 2
+[INFO] Maximum degree: 36
+Initializing nets... Done!
+Adjusting grid...
+Adjusting grid... Done!
+Computing track adjustments...
+Computing track adjustments... Done!
+Computing obstacles adjustments...
+[INFO] Processing 8469 obstacles in layer 1
+Computing obstacles adjustments... Done!
+Computing user defined adjustments...
+Computing user defined adjustments... Done!
+Computing user defined layers adjustments...
+Computing user defined layers adjustments... Done!
+Running FastRoute...
+
+
+Final usage/overflow report: 
+
+[Overflow Report] Total Usage   : 3332
+[Overflow Report] Total Capacity: 149734
+[Overflow Report] Max H Overflow: 0
+[Overflow Report] Max V Overflow: 0
+[Overflow Report] Max Overflow  : 0
+[Overflow Report] H   Overflow  : 0
+[Overflow Report] V   Overflow  : 0
+[Overflow Report] Final Overflow: 0
+
+[INFO] Final usage          : 3332
+[INFO] Final number of vias : 1228
+[INFO] Final usage 3D       : 7016
+Getting results...
+Getting results... Done!
+
+Running FastRoute... Done!
+[INFO] Total wirelength: 10222 um
+Writing guides...
+[INFO] Num routed nets: 563
+Writing guides... Done!
+No differences found.

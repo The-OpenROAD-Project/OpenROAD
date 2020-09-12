@@ -46,6 +46,7 @@
 namespace odb {
 class dbDatabase;
 class dbBlock;
+class dbNet;
 }  // namespace odb
 
 namespace gui {
@@ -73,10 +74,12 @@ class DisplayControls : public QDockWidget, public Options
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
-  bool   isVisible(const odb::dbTechLayer* layer) override;
-  bool   isSelectable(const odb::dbTechLayer* layer) override;
-  bool   arePrefTracksVisible() override;
-  bool   areNonPrefTracksVisible() override;
+  bool isVisible(const odb::dbTechLayer* layer) override;
+  bool isSelectable(const odb::dbTechLayer* layer) override;
+  bool isNetVisible(odb::dbNet* net) override;
+  bool areRowsVisible() override;
+  bool arePrefTracksVisible() override;
+  bool areNonPrefTracksVisible() override;
 
  signals:
   // The display options have changed and clients need to update
@@ -103,9 +106,9 @@ class DisplayControls : public QDockWidget, public Options
   void techInit();
 
   template <typename T>
-  QStandardItem* makeItem(const QString&                   text,
-                          T*                               parent,
-                          Qt::CheckState                   checked,
+  QStandardItem* makeItem(const QString& text,
+                          T* parent,
+                          Qt::CheckState checked,
                           const std::function<void(bool)>& visibility_action,
                           const std::function<void(bool)>& select_action
                           = std::function<void(bool)>(),
@@ -113,25 +116,38 @@ class DisplayControls : public QDockWidget, public Options
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
 
-  QTreeView*          view_;
+  QTreeView* view_;
   QStandardItemModel* model_;
 
   // Categories in the model
   QStandardItem* layers_;
   QStandardItem* routing_;
   QStandardItem* tracks_;
+  QStandardItem* nets_;
 
   // Object controls
+  QStandardItem* rows_;
   QStandardItem* tracks_pref_;
   QStandardItem* tracks_non_pref_;
+  QStandardItem* nets_signal_;
+  QStandardItem* nets_special_;
+  QStandardItem* nets_power_;
+  QStandardItem* nets_ground_;
+  QStandardItem* nets_clock_;
 
-  odb::dbDatabase*                          db_;
-  bool                                      tech_inited_;
-  bool                                      tracks_visible_pref_;
-  bool                                      tracks_visible_non_pref_;
+  odb::dbDatabase* db_;
+  bool tech_inited_;
+  bool tracks_visible_pref_;
+  bool tracks_visible_non_pref_;
+  bool rows_visible_;
+  bool nets_signal_visible_;
+  bool nets_special_visible_;
+  bool nets_power_visible_;
+  bool nets_ground_visible_;
+  bool nets_clock_visible_;
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
-  std::map<const odb::dbTechLayer*, bool>   layer_visible_;
-  std::map<const odb::dbTechLayer*, bool>   layer_selectable_;
+  std::map<const odb::dbTechLayer*, bool> layer_visible_;
+  std::map<const odb::dbTechLayer*, bool> layer_selectable_;
 };
 
 }  // namespace gui

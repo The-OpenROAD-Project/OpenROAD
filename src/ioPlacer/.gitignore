@@ -1,5 +1,6 @@
 build
 tags
+test/results
 
 # General
 .DS_Store
@@ -39,5 +40,3 @@ Temporary Items
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
-# Downloaded files from unit tests
-test/src

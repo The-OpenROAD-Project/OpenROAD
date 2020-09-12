@@ -62,8 +62,6 @@ target_include_directories( ABKCommon
   src
   )
 
-# add_dependencies( cABKCommonzlib cABKCommon )
-
 ######################################################
 # install
 

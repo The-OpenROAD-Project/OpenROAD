@@ -1,5 +1,4 @@
 VERSION 5.8 ;
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN top ;
@@ -9,7 +8,7 @@ COMPONENTS 5 ;
     - r1 DFF_X2 ;
     - r2 DFF_X2 ;
     - r3 DFF_X1 ;
-    - u1 BUF_X2 ;
+    - u1 CLKBUF_X3 ;
     - u2 AND2_X2 ;
 END COMPONENTS
 PINS 6 ;

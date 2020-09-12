@@ -79,7 +79,10 @@ Replace::Replace()
   routabilityDrivenMode_(true),
   incrementalPlaceMode_(false),
   padLeft_(0), padRight_(0),
-  verbose_(0) {
+  verbose_(0),
+  debug_(false),
+  debug_pause_iterations_(10),
+  debug_draw_bins_(false) {
 };
 
 Replace::~Replace() {
@@ -134,6 +137,9 @@ void Replace::reset() {
 
   padLeft_ = padRight_ = 0;
   verbose_ = 0;
+  debug_ = false;
+  debug_pause_iterations_ = 10;
+  debug_draw_bins_ = false;
 }
 
 void Replace::setDb(odb::dbDatabase* db) {
@@ -142,7 +148,7 @@ void Replace::setDb(odb::dbDatabase* db) {
 void Replace::setSta(sta::dbSta* sta) {
   sta_ = sta;
 }
-void Replace::setFastRoute(FastRoute::FastRouteKernel* fr) {
+void Replace::setFastRoute(FastRoute::GlobalRouter* fr) {
   fr_ = fr;
 }
 void Replace::doInitialPlace() {
@@ -225,6 +231,9 @@ void Replace::doNesterovPlace() {
   npVars.maxNesterovIter = nesterovPlaceMaxIter_; 
   npVars.timingDrivenMode = timingDrivenMode_;
   npVars.routabilityDrivenMode = routabilityDrivenMode_;
+  npVars.debug = debug_;
+  npVars.debug_pause_iterations = debug_pause_iterations_;
+  npVars.debug_draw_bins = debug_draw_bins_;
 
   std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, log_));
   np_ = std::move(np);
@@ -316,6 +325,13 @@ Replace::setIncrementalPlaceMode(bool mode) {
 void
 Replace::setVerboseLevel(int verbose) {
   verbose_ = verbose;
+}
+
+void
+Replace::setDebug(int pause_iterations, bool draw_bins) {
+  debug_ = true;
+  debug_pause_iterations_ = pause_iterations;
+  debug_draw_bins_ = draw_bins;
 }
 
 void

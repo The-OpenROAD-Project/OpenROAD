@@ -50,7 +50,13 @@ DisplayControls::DisplayControls(QWidget* parent)
       model_(new QStandardItemModel(0, 4, parent)),
       tech_inited_(false),
       tracks_visible_pref_(false),
-      tracks_visible_non_pref_(false)
+      tracks_visible_non_pref_(false),
+      rows_visible_(false),
+      nets_signal_visible_(true),
+      nets_special_visible_(true),
+      nets_power_visible_(true),
+      nets_ground_visible_(true),
+      nets_clock_visible_(true)
 {
   setObjectName("layers");  // for settings
   model_->setHorizontalHeaderLabels({"", "", "V", "S"});
@@ -71,6 +77,36 @@ DisplayControls::DisplayControls(QWidget* parent)
         toggleAllChildren(selectable, layers_, Selectable);
       });
   view_->expand(layers_->index());
+
+  // nets patterns
+  nets_ = makeItem("Nets", model_, Qt::Checked, [this](bool visible) {
+    toggleAllChildren(visible, nets_, Visible);
+  });
+
+  nets_signal_ = makeItem("Signal", nets_, Qt::Checked, [this](bool visible) {
+    nets_signal_visible_ = visible;
+  });
+
+  nets_special_ = makeItem("Special", nets_, Qt::Checked, [this](bool visible) {
+    nets_special_visible_ = visible;
+  });
+
+  nets_power_ = makeItem("Power", nets_, Qt::Checked, [this](bool visible) {
+    nets_power_visible_ = visible;
+  });
+
+  nets_ground_ = makeItem("Ground", nets_, Qt::Checked, [this](bool visible) {
+    nets_ground_visible_ = visible;
+  });
+
+  nets_clock_ = makeItem("Clock", nets_, Qt::Checked, [this](bool visible) {
+    nets_clock_visible_ = visible;
+  });
+
+  // Rows
+  rows_ = makeItem("Rows", model_, Qt::Unchecked, [this](bool visible) {
+    rows_visible_ = visible;
+  });
 
   // Track patterns
   tracks_ = makeItem("Tracks", model_, Qt::Unchecked, [this](bool visible) {
@@ -93,9 +129,9 @@ DisplayControls::DisplayControls(QWidget* parent)
           SLOT(itemChanged(QStandardItem*)));
 }
 
-void DisplayControls::toggleAllChildren(bool           checked,
+void DisplayControls::toggleAllChildren(bool checked,
                                         QStandardItem* parent,
-                                        Column         column)
+                                        Column column)
 {
   Qt::CheckState state = checked ? Qt::Checked : Qt::Unchecked;
   for (int row = 0; row < parent->rowCount(); ++row) {
@@ -107,7 +143,7 @@ void DisplayControls::toggleAllChildren(bool           checked,
 
 void DisplayControls::itemChanged(QStandardItem* item)
 {
-  bool     checked  = item->checkState() == Qt::Checked;
+  bool checked = item->checkState() == Qt::Checked;
   Callback callback = item->data().value<Callback>();
   callback.action(checked);
   emit changed();
@@ -144,12 +180,12 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
 template <typename T>
 QStandardItem* DisplayControls::makeItem(
-    const QString&                   text,
-    T*                               parent,
-    Qt::CheckState                   checked,
+    const QString& text,
+    T* parent,
+    Qt::CheckState checked,
     const std::function<void(bool)>& visibility_action,
     const std::function<void(bool)>& select_action,
-    const QColor&                    color)
+    const QColor& color)
 {
   QStandardItem* nameItem = new QStandardItem(text);
 
@@ -188,9 +224,34 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
   return false;
 }
 
+bool DisplayControls::isNetVisible(odb::dbNet* net)
+{
+  switch(net->getSigType()) {
+  case dbSigType::SIGNAL:
+    return nets_signal_visible_;
+  case dbSigType::POWER:
+    return nets_power_visible_;
+  case dbSigType::GROUND:
+    return nets_ground_visible_;
+  case dbSigType::CLOCK:
+    return nets_clock_visible_;
+  default:
+    return true;
+  }
+}
+
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
 {
-  return layer_selectable_.at(layer);
+  auto it = layer_selectable_.find(layer);
+  if (it != layer_selectable_.end()) {
+    return it->second;
+  }
+  return false;
+}
+
+bool DisplayControls::areRowsVisible()
+{
+  return rows_visible_;
 }
 
 bool DisplayControls::arePrefTracksVisible()
@@ -216,7 +277,7 @@ void DisplayControls::techInit()
 
   // Default colors
   // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
-  const QColor colors[]  = {QColor(0, 0, 254),
+  const QColor colors[] = {QColor(0, 0, 254),
                            QColor(254, 0, 0),
                            QColor(9, 221, 0),
                            QColor(190, 244, 81),
@@ -230,14 +291,14 @@ void DisplayControls::techInit()
                            QColor(214, 120, 239),
                            QColor(192, 222, 164),
                            QColor(110, 68, 107)};
-  const int    numColors = sizeof(colors) / sizeof(QColor);
-  int          metal     = 0;
-  int          via       = 0;
+  const int numColors = sizeof(colors) / sizeof(QColor);
+  int metal = 0;
+  int via = 0;
 
   // Iterate through the layers and set default colors
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
-    QColor          color;
+    QColor color;
     if (type == dbTechLayerType::ROUTING) {
       if (metal < numColors) {
         color = colors[metal++];
@@ -256,8 +317,9 @@ void DisplayControls::techInit()
       continue;
     }
     color.setAlpha(180);
-    layer_color_[layer]   = color;
+    layer_color_[layer] = color;
     layer_visible_[layer] = true;
+    layer_selectable_[layer] = true;
   }
 
   tech_inited_ = true;

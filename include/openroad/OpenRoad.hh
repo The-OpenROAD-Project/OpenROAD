@@ -69,7 +69,7 @@ class TritonCTSKernel;
 }
 
 namespace FastRoute {
-class FastRouteKernel;
+class GlobalRouter;
 }
 
 namespace tapcell {
@@ -114,8 +114,6 @@ class dbVerilogNetwork;
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
-  OpenRoad();
-  ~OpenRoad();
 public:
   // Singleton accessor used by tcl command interpreter.
   static OpenRoad *openRoad();
@@ -134,7 +132,7 @@ public:
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
-  FastRoute::FastRouteKernel* getFastRoute() { return fastRoute_; }
+  FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -182,7 +180,13 @@ public:
   void addObserver(Observer *observer);
   void removeObserver(Observer *observer);
 
+protected:
+  ~OpenRoad();
+  friend void deleteAllMemory();
+
 private:
+  OpenRoad();
+
   Tcl_Interp *tcl_interp_;
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
@@ -191,7 +195,7 @@ private:
   ioPlacer::IOPlacementKernel *ioPlacer_;
   opendp::Opendp *opendp_;
   MacroPlace::TritonMacroPlace *tritonMp_;
-  FastRoute::FastRouteKernel *fastRoute_;
+  FastRoute::GlobalRouter *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
@@ -223,4 +227,8 @@ closestPtInRect(odb::Rect rect,
 
 int
 tclAppInit(Tcl_Interp *interp);
+
+void
+deleteAllMemory();
+
 } // namespace ord

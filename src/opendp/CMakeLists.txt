@@ -54,7 +54,7 @@ add_custom_command(OUTPUT ${OPENDP_TCL_INIT}
   DEPENDS ${OPENDP_HOME}/src/opendp.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
   )
 
-add_library(opendp
+set(OPENDP_SRC
   src/Opendp.cpp
   src/dbToOpendp.cpp
   src/MakeOpendp.cpp
@@ -69,6 +69,8 @@ add_library(opendp
   ${OPENDP_TCL_INIT}
 )
 
+add_library(opendp ${OPENDP_SRC})
+
 target_include_directories(opendp
   PUBLIC ${OPENDP_HOME}/include
   PRIVATE
@@ -79,3 +81,11 @@ target_include_directories(opendp
   ${DBSTA_HOME}/include
   ${TCL_INCLUDE_PATH}
  )
+
+################################################################
+
+add_custom_target(opendp_tags etags -o TAGS
+  ${OPENDP_SRC}
+  ${OPENDB_HOME}/include/opendb/*.h
+  WORKING_DIRECTORY ${OPENDP_HOME}
+  )

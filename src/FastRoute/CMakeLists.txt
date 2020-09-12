@@ -40,33 +40,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(FastRoute)
-set(LIB_NAME "FastRoute")
 
-# Print info on build
-if( CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]" )
-        # Tell other CMake files that we're doing a debug build
-        set(DEBUG_BUILD 1)
-
-        # Tell C/C++ that we're doing a debug build
-        add_definitions(-DDEBUG)
-endif()
-
-add_subdirectory(third_party/fastroute)
-add_subdirectory(third_party/pdrev)
+add_subdirectory(src/fastroute)
+add_subdirectory(src/pdrev)
 
 set(CMAKE_CXX_STANDARD 11)
-set(Boost_USE_STATIC_LIBS ON)
 
-# Loads swig and generates the tcl wrapper file
-find_package(SWIG REQUIRED)
-
-set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
+set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
 
 add_custom_command(OUTPUT ${FASTROUTE_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix FastRoute -tcl8 -c++ -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/TclInterface.i
+        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix FastRoute -I${FASTROUTE_HOME}/include -o ${FASTROUTE_WRAP} ${FASTROUTE_HOME}/src/fastroute.i
         WORKING_DIRECTORY ${FASTROUTE_HOME}/src
-        DEPENDS ${FASTROUTE_HOME}/src/TclInterface.i ${FASTROUTE_HOME}/src/TclInterface.h
+        DEPENDS
+        ${FASTROUTE_HOME}/src/fastroute.i
+        ${FASTROUTE_HOME}/include/fastroute/GlobalRouter.h
+        ${OPENROAD_HOME}/src/Exception.i
 )
 
 add_custom_command(OUTPUT ${FASTROUTE_TCL_INIT}
@@ -77,38 +66,39 @@ add_custom_command(OUTPUT ${FASTROUTE_TCL_INIT}
 
 
 set(SRC_FILES
+  src/AntennaRepair.cpp
   src/Box.cpp
   src/Coordinate.cpp
-  src/DBWrapper.cpp
-  src/FastRouteKernel.cpp
+  src/GlobalRouter.cpp
   src/Grid.cpp
   src/MakeFastRoute.cpp
   src/Net.cpp
   src/Pin.cpp
   src/RcTreeBuilder.cpp
-  src/SteinerTree.cpp
-  src/TclInterface.cpp
+  ${FASTROUTE_WRAP}
+  ${FASTROUTE_TCL_INIT}
   )
 
-add_library(${LIB_NAME} 
-        ${SRC_FILES}
-        ${FASTROUTE_WRAP}
-        ${FASTROUTE_TCL_INIT})
+add_library(FastRoute ${SRC_FILES})
 
-target_include_directories(${LIB_NAME} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastroute/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/pdrev/include
-        ${OPENDB_HOME}/include/
-        ${OPENROAD_HOME}/include
-        ${DBSTA_HOME}/include
-        ${OPENSTA_HOME}/include
-        ${FASTROUTE_HOME}/src
-	${TCL_INCLUDE_PATH}
-        ${ANTENNACHECKER_HOME}/include
-        ${OPENDP_HOME}/include
-        )
+target_include_directories(FastRoute
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/fastroute/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/pdrev/include
+  ${OPENDB_HOME}/include/
+  ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
+  ${OPENSTA_HOME}/include
+  ${FASTROUTE_HOME}/src
+  ${TCL_INCLUDE_PATH}
+  ${ANTENNACHECKER_HOME}/include
+  ${OPENDP_HOME}/include
+  ${Boost_INCLUDE_DIRS}
+  )
 
-target_link_libraries(${LIB_NAME}
-        FastRoute4.1
-        pdrev)
+target_link_libraries(FastRoute
+  FastRoute4.1
+  pdrev
+  )

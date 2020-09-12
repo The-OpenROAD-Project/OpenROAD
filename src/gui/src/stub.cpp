@@ -34,9 +34,50 @@
 // disabling the GUI.  It is not included when Qt5 is found.
 
 #include <cstdio>
+
 #include "gui/gui.h"
 
 namespace gui {
+
+Gui* Gui::singleton_ = nullptr;
+
+Gui* gui::Gui::get()
+{
+  if (!singleton_) {
+    singleton_ = new Gui();
+  }
+
+  return singleton_;
+}
+
+void gui::Gui::register_renderer(gui::Renderer*)
+{
+}
+
+void gui::Gui::unregister_renderer(gui::Renderer*)
+{
+}
+
+void gui::Gui::redraw()
+{
+}
+
+void gui::Gui::pause()
+{
+}
+
+void Gui::status(const std::string& /* message */)
+{
+}
+
+Renderer::~Renderer()
+{
+}
+
+OpenDbDescriptor* OpenDbDescriptor::get()
+{
+  return nullptr;
+}
 
 // using namespace odb;
 int start_gui(int argc, char* argv[])

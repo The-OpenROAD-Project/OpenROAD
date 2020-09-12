@@ -2,6 +2,7 @@ record_tests {
   make_parasitics1
   make_parasitics2
   make_parasitics3
+  make_parasitics4
   buffer_ports1
   buffer_ports2
   buffer_ports3
@@ -22,6 +23,7 @@ record_tests {
   repair_slew2
   repair_slew3
   repair_slew4
+  repair_slew5
   repair_hold1
   repair_hold2
   report_floating_nets1

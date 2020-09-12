@@ -33,223 +33,256 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#pragma once
 
-#ifndef HTREEBUILDER_H
-#define HTREEBUILDER_H
-
-#include "TreeBuilder.h"
 #include "CtsOptions.h"
+#include "TreeBuilder.h"
 #include "Util.h"
 
-#include <limits>
 #include <cmath>
+#include <limits>
 
 namespace TritonCTS {
 
-class SegmentBuilder {
-public:
-        SegmentBuilder(const std::string instPrefix,
-                       const std::string netPrefix,
-                       Point<double> root, 
-                       Point<double> target,
-                       const std::vector<unsigned>& techCharWires,
-                       Clock& clock,
-                       Clock::SubNet& drivingSubNet,
-                       TechChar& techChar,
-                       unsigned techCharDistUnit) :
-                       _instPrefix(instPrefix),
-                       _netPrefix(netPrefix),                       
-                       _root(root), 
-                       _target(target), 
-                       _techCharWires(techCharWires), 
-                       _clock(&clock),
-                       _drivingSubNet(&drivingSubNet),
-                       _techChar(&techChar),
-                       _techCharDistUnit(techCharDistUnit) {}
+class SegmentBuilder
+{
+ public:
+  SegmentBuilder(const std::string instPrefix,
+                 const std::string netPrefix,
+                 Point<double> root,
+                 Point<double> target,
+                 const std::vector<unsigned>& techCharWires,
+                 Clock& clock,
+                 Clock::SubNet& drivingSubNet,
+                 TechChar& techChar,
+                 unsigned techCharDistUnit)
+      : _instPrefix(instPrefix),
+        _netPrefix(netPrefix),
+        _root(root),
+        _target(target),
+        _techCharWires(techCharWires),
+        _clock(&clock),
+        _drivingSubNet(&drivingSubNet),
+        _techChar(&techChar),
+        _techCharDistUnit(techCharDistUnit)
+  {
+  }
 
-        void build(std::string forceBuffer = "");
-        void forceBufferInSegment(std::string master);
-        Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
+  void build(std::string forceBuffer = "");
+  void forceBufferInSegment(std::string master);
+  Clock::SubNet* getDrivingSubNet() const { return _drivingSubNet; }
 
-protected:
-        const std::string     _instPrefix;       
-        const std::string     _netPrefix;       
-        Point<double>         _root;
-        Point<double>         _target;
-        std::vector<unsigned> _techCharWires;
-        Clock*                _clock;
-        Clock::SubNet*        _drivingSubNet;
-        TechChar*             _techChar;
-        unsigned              _techCharDistUnit;
-        bool                  _forceBuffer;
-        unsigned              _numBuffers = 0;
+ protected:
+  const std::string _instPrefix;
+  const std::string _netPrefix;
+  Point<double> _root;
+  Point<double> _target;
+  std::vector<unsigned> _techCharWires;
+  Clock* _clock;
+  Clock::SubNet* _drivingSubNet;
+  TechChar* _techChar;
+  unsigned _techCharDistUnit;
+  bool _forceBuffer;
+  unsigned _numBuffers = 0;
 
-        void buildVerticalConnection(std::string forceBuffer = "");
-        void buildHorizontalConnection(std::string forceBuffer = "");
-        void buildLShapeConnection(std::string forceBuffer = "");
+  void buildVerticalConnection(std::string forceBuffer = "");
+  void buildHorizontalConnection(std::string forceBuffer = "");
+  void buildLShapeConnection(std::string forceBuffer = "");
 };
 
 //-----------------------------------------------------------------------------
 
-class HTreeBuilder : public TreeBuilder {
-        class LevelTopology {
-        public:
-                static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
-                
-                LevelTopology(double length) : _length(length), _outputSlew(0), _outputCap(0) {};
-               
-                void addWireSegment(unsigned idx) { _wireSegments.push_back(idx); }
-               
-                unsigned addBranchingPoint(const Point<double>& loc, unsigned parent) { 
-                        _branchPointLoc.push_back(loc);
-                        _parents.push_back(parent);
-                        _branchSinkLocs.resize(_branchPointLoc.size());
-                        _branchDrivingSubNet.resize(_branchPointLoc.size(), nullptr);
-                        return _branchPointLoc.size() - 1;
-                }
+class HTreeBuilder : public TreeBuilder
+{
+  class LevelTopology
+  {
+   public:
+    static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
 
-                void addSinkToBranch(unsigned branchIdx, const Point<double>& sinkLoc) {
-                        _branchSinkLocs[branchIdx].push_back(sinkLoc);                        
-                }
+    LevelTopology(double length)
+        : _length(length), _outputSlew(0), _outputCap(0){};
 
-                Point<double>& getBranchingPoint(unsigned idx) { 
-                        return _branchPointLoc[idx]; 
-                }
+    void addWireSegment(unsigned idx) { _wireSegments.push_back(idx); }
 
-                unsigned getBranchingPointParentIdx(unsigned idx) const {
-                        return _parents[idx];
-                }
+    unsigned addBranchingPoint(const Point<double>& loc, unsigned parent)
+    {
+      _branchPointLoc.push_back(loc);
+      _parents.push_back(parent);
+      _branchSinkLocs.resize(_branchPointLoc.size());
+      _branchDrivingSubNet.resize(_branchPointLoc.size(), nullptr);
+      return _branchPointLoc.size() - 1;
+    }
 
-                double getLength() const { return _length; } 
+    void addSinkToBranch(unsigned branchIdx, const Point<double>& sinkLoc)
+    {
+      _branchSinkLocs[branchIdx].push_back(sinkLoc);
+    }
 
-                void forEachBranchingPoint(std::function<void(unsigned, Point<double>)> func) const {
-                        for (unsigned idx = 0; idx < _branchPointLoc.size(); ++idx) {
-                                func(idx, _branchPointLoc[idx]);
-                        }
-                }
+    Point<double>& getBranchingPoint(unsigned idx)
+    {
+      return _branchPointLoc[idx];
+    }
 
-                Clock::SubNet* getBranchDrivingSubNet(unsigned idx) const { 
-                        return _branchDrivingSubNet[idx]; 
-                }
+    unsigned getBranchingPointParentIdx(unsigned idx) const
+    {
+      return _parents[idx];
+    }
 
-                void setBranchDrivingSubNet(unsigned idx, Clock::SubNet& subNet) {
-                        _branchDrivingSubNet[idx] = &subNet;
-                }
+    double getLength() const { return _length; }
 
-                const std::vector<unsigned>& getWireSegments() const { return _wireSegments; }
-                
-                const std::vector<Point<double>>& getBranchSinksLocations(unsigned branchIdx) const {
-                       return _branchSinkLocs[branchIdx];
-                }
+    void forEachBranchingPoint(
+        std::function<void(unsigned, Point<double>)> func) const
+    {
+      for (unsigned idx = 0; idx < _branchPointLoc.size(); ++idx) {
+        func(idx, _branchPointLoc[idx]);
+      }
+    }
 
-                void setOutputSlew(unsigned slew) { _outputSlew = slew; }
-                unsigned getOutputSlew() const { return _outputSlew; }
-                void setOutputCap(unsigned cap) { _outputCap = cap; }
-                unsigned getOutputCap() const { return _outputCap; }
-                void setRemainingLength(unsigned length) { _remainingLength = length; }
-                unsigned getRemainingLength() const { return _remainingLength; }
+    Clock::SubNet* getBranchDrivingSubNet(unsigned idx) const
+    {
+      return _branchDrivingSubNet[idx];
+    }
 
-        private:
-                double                         _length;
-                unsigned                       _outputSlew;
-                unsigned                       _outputCap;
-                unsigned                       _remainingLength;
-                std::vector<unsigned>          _wireSegments;
-                std::vector<Point<double>>     _branchPointLoc;
-                std::vector<unsigned>          _parents;
-                std::vector<Clock::SubNet*>    _branchDrivingSubNet;
-                std::vector<std::vector<Point<double>>> _branchSinkLocs;
-        };
+    void setBranchDrivingSubNet(unsigned idx, Clock::SubNet& subNet)
+    {
+      _branchDrivingSubNet[idx] = &subNet;
+    }
 
-public:
-        HTreeBuilder(CtsOptions& options, Clock& net) : 
-                     TreeBuilder(options, net) {};
-        
-        void run();
+    const std::vector<unsigned>& getWireSegments() const
+    {
+      return _wireSegments;
+    }
 
-        void plotSolution();
-private:
-        void initSinkRegion();
-        void computeLevelTopology(unsigned level, double width, double height);
-        unsigned computeNumberOfSinksPerSubRegion(unsigned level) const;
-        void computeSubRegionSize(unsigned level, double& width, double& height) const;
-        unsigned computeMinDelaySegment(unsigned length) const;
-        unsigned computeMinDelaySegment(unsigned length, 
-                                        unsigned inputSlew,
-                                        unsigned inputCap,
-                                        unsigned slewThreshold,
-                                        unsigned tolerance,
-                                        unsigned &outputSlew,
-                                        unsigned &outputCap) const;
-        unsigned computeMinDelaySegment(unsigned length, 
-                                        unsigned inputSlew,
-                                        unsigned inputCap,
-                                        unsigned slewThreshold,
-                                        unsigned tolerance,
-                                        unsigned &outputSlew,
-                                        unsigned &outputCap,
-                                        bool forceBuffer, 
-                                        int currentLength ) const;
-        void reportWireSegment(unsigned key) const;
-        void createClockSubNets();
-        void createSingleBufferClockNet();
-        void initTopLevelSinks(std::vector<std::pair<float,float>>& sinkLocations);
-        void computeBranchSinks(LevelTopology& topology, unsigned branchIdx,
-                                std::vector<std::pair<float,float>>& sinkLocations) const;
-        
-        bool isVertical(unsigned level) const { return level % 2 == (_sinkRegion.getHeight() >= _sinkRegion.getWidth()); }
-        bool isHorizontal(unsigned level) const { return !isVertical(level); }
+    const std::vector<Point<double>>& getBranchSinksLocations(
+        unsigned branchIdx) const
+    {
+      return _branchSinkLocs[branchIdx];
+    }
 
-        unsigned computeGridSizeX(unsigned level) const { return std::pow(2, (level + 1) / 2); }
-        unsigned computeGridSizeY(unsigned level) const { return std::pow(2, level / 2); }
-        
-        void computeBranchingPoints(unsigned level, LevelTopology& topology);
-        void refineBranchingPointsWithClustering(LevelTopology& topology,
-                                                 unsigned level,
-                                                 unsigned branchPtIdx1,
-                                                 unsigned branchPtIdx2, 
-                                                 const Point<double>& rootLocation,
-                                                 const std::vector<std::pair<float, float>>& sinks);
-        void preClusteringOpt(const std::vector<std::pair<float, float>>& sinks,
-                              std::vector<std::pair<float, float>>& points,
-                              std::vector<unsigned>& mapSinkToPoint);
-        void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
-                                    float maxDiameter, unsigned clusterSize);
-        void assignSinksToBranches(LevelTopology& topology,
-                                   unsigned branchPtIdx1,
-                                   unsigned branchPtIdx2,
-                                   const std::vector<std::pair<float, float>>& sinks,
-                                   const std::vector<std::pair<float, float>>& points,
-                                   const std::vector<unsigned>& mapSinkToPoint,
-                                   const std::vector<std::vector<unsigned>>& clusters);        
+    void setOutputSlew(unsigned slew) { _outputSlew = slew; }
+    unsigned getOutputSlew() const { return _outputSlew; }
+    void setOutputCap(unsigned cap) { _outputCap = cap; }
+    unsigned getOutputCap() const { return _outputCap; }
+    void setRemainingLength(unsigned length) { _remainingLength = length; }
+    unsigned getRemainingLength() const { return _remainingLength; }
 
-        bool isSubRegionTooSmall(double width, double height) const {
-                if (width < _minLengthSinkRegion || height < _minLengthSinkRegion ) {
-                        return true;
-                }
-                return false;       
-        }
+   private:
+    double _length;
+    unsigned _outputSlew;
+    unsigned _outputCap;
+    unsigned _remainingLength;
+    std::vector<unsigned> _wireSegments;
+    std::vector<Point<double>> _branchPointLoc;
+    std::vector<unsigned> _parents;
+    std::vector<Clock::SubNet*> _branchDrivingSubNet;
+    std::vector<std::vector<Point<double>>> _branchSinkLocs;
+  };
 
-        bool isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const {
-                if (numSinksPerSubRegion < _numMaxLeafSinks) {
-                        return true;
-                }
-                return false;
-        }
+ public:
+  HTreeBuilder(CtsOptions& options, Clock& net) : TreeBuilder(options, net){};
 
-protected:
-        Box<double>                _sinkRegion;
-        std::vector<LevelTopology> _topologyForEachLevel;
-        std::map<Point<double>, ClockInst*> _mapLocationToSink;
-        std::vector<std::pair<float, float>> _topLevelSinksClustered;
-        
-        DBU      _wireSegmentUnit     = -1;
-        unsigned _minInputCap         =  1;
-        unsigned _numMaxLeafSinks     =  0;
-        unsigned _minLengthSinkRegion =  0;
-        unsigned _clockTreeMaxDepth   =  0;
-}; 
+  void run();
 
-}
+  void plotSolution();
 
-#endif
+ private:
+  void initSinkRegion();
+  void computeLevelTopology(unsigned level, double width, double height);
+  unsigned computeNumberOfSinksPerSubRegion(unsigned level) const;
+  void computeSubRegionSize(unsigned level,
+                            double& width,
+                            double& height) const;
+  unsigned computeMinDelaySegment(unsigned length) const;
+  unsigned computeMinDelaySegment(unsigned length,
+                                  unsigned inputSlew,
+                                  unsigned inputCap,
+                                  unsigned slewThreshold,
+                                  unsigned tolerance,
+                                  unsigned& outputSlew,
+                                  unsigned& outputCap) const;
+  unsigned computeMinDelaySegment(unsigned length,
+                                  unsigned inputSlew,
+                                  unsigned inputCap,
+                                  unsigned slewThreshold,
+                                  unsigned tolerance,
+                                  unsigned& outputSlew,
+                                  unsigned& outputCap,
+                                  bool forceBuffer,
+                                  int expectedLength) const;
+  void reportWireSegment(unsigned key) const;
+  void createClockSubNets();
+  void createSingleBufferClockNet();
+  void initTopLevelSinks(std::vector<std::pair<float, float>>& sinkLocations);
+  void computeBranchSinks(
+      LevelTopology& topology,
+      unsigned branchIdx,
+      std::vector<std::pair<float, float>>& sinkLocations) const;
+
+  bool isVertical(unsigned level) const
+  {
+    return level % 2 == (_sinkRegion.getHeight() >= _sinkRegion.getWidth());
+  }
+  bool isHorizontal(unsigned level) const { return !isVertical(level); }
+
+  unsigned computeGridSizeX(unsigned level) const
+  {
+    return std::pow(2, (level + 1) / 2);
+  }
+  unsigned computeGridSizeY(unsigned level) const
+  {
+    return std::pow(2, level / 2);
+  }
+
+  void computeBranchingPoints(unsigned level, LevelTopology& topology);
+  void refineBranchingPointsWithClustering(
+      LevelTopology& topology,
+      unsigned level,
+      unsigned branchPtIdx1,
+      unsigned branchPtIdx2,
+      const Point<double>& rootLocation,
+      const std::vector<std::pair<float, float>>& sinks);
+  void preClusteringOpt(const std::vector<std::pair<float, float>>& sinks,
+                        std::vector<std::pair<float, float>>& points,
+                        std::vector<unsigned>& mapSinkToPoint);
+  void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
+                         float maxDiameter,
+                         unsigned clusterSize);
+  void assignSinksToBranches(
+      LevelTopology& topology,
+      unsigned branchPtIdx1,
+      unsigned branchPtIdx2,
+      const std::vector<std::pair<float, float>>& sinks,
+      const std::vector<std::pair<float, float>>& points,
+      const std::vector<unsigned>& mapSinkToPoint,
+      const std::vector<std::vector<unsigned>>& clusters);
+
+  bool isSubRegionTooSmall(double width, double height) const
+  {
+    if (width < _minLengthSinkRegion || height < _minLengthSinkRegion) {
+      return true;
+    }
+    return false;
+  }
+
+  bool isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
+  {
+    if (numSinksPerSubRegion < _numMaxLeafSinks) {
+      return true;
+    }
+    return false;
+  }
+
+ protected:
+  Box<double> _sinkRegion;
+  std::vector<LevelTopology> _topologyForEachLevel;
+  std::map<Point<double>, ClockInst*> _mapLocationToSink;
+  std::vector<std::pair<float, float>> _topLevelSinksClustered;
+
+  DBU _wireSegmentUnit = -1;
+  unsigned _minInputCap = 1;
+  unsigned _numMaxLeafSinks = 0;
+  unsigned _minLengthSinkRegion = 0;
+  unsigned _clockTreeMaxDepth = 0;
+};
+
+}  // namespace TritonCTS

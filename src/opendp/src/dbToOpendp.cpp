@@ -74,8 +74,8 @@ Opendp::importDb()
   core_ = ord::getCore(block_);
 
   importClear();
-  makeMacros();
   examineRows();
+  makeMacros();
   makeCells();
   makeGroups();
   findRowPower();
@@ -124,7 +124,10 @@ Opendp::defineTopPower(Macro *macro, dbMaster *master)
   }
 
   if (power != nullptr && gnd != nullptr) {
-    bool is_multi_row = power->getMPins().size() > 1 || gnd->getMPins().size() > 1;
+    int master_height = master->getHeight();
+    bool is_multi_row = master_height != row_height_
+                        && master_height % row_height_ == 0;
+
     macro->is_multi_row_ = is_multi_row;
 
     int power_y_max = find_ymax(power);
@@ -283,15 +286,13 @@ Opendp::findRowPower()
   int min_vdd_y = numeric_limits<int>::max();
   bool found_vdd = false;
   for (dbNet *net : block_->getNets()) {
-    if (net->isSpecial()) {
-      const char *net_name = net->getConstName();
-      if (strcasecmp(net_name, power_net_name_) == 0) {
-        for (dbSWire *swire : net->getSWires()) {
-          for (dbSBox *sbox : swire->getWires()) {
-            min_vdd_y = min(min_vdd_y, sbox->yMin());
-            found_vdd = true;
-          }
-        }
+    if (net->isSpecial()
+	&& net->getSigType() == dbSigType::POWER) {
+      for (dbSWire *swire : net->getSWires()) {
+	for (dbSBox *sbox : swire->getWires()) {
+	  min_vdd_y = min(min_vdd_y, sbox->yMin());
+	  found_vdd = true;
+	}
       }
     }
   }

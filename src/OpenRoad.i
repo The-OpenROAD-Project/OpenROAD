@@ -149,7 +149,7 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-FastRoute::FastRouteKernel*
+FastRoute::GlobalRouter*
 getFastRoute()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -398,6 +398,16 @@ units_initialized()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->unitsInitialized();
+}
+
+namespace ord {
+
+void
+delete_all_memory()
+{
+  ord::deleteAllMemory();
+}
+
 }
 
 %} // inline

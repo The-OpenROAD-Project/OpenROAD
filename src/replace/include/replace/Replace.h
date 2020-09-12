@@ -43,7 +43,7 @@ namespace sta {
   class dbSta;
 }
 namespace FastRoute{
-  class FastRouteKernel;
+  class GlobalRouter;
 }
 
 namespace replace {
@@ -68,7 +68,7 @@ class Replace
 
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
-    void setFastRoute(FastRoute::FastRouteKernel* fr);
+    void setFastRoute(FastRoute::GlobalRouter* fr);
 
     void doInitialPlace();
     void doNesterovPlace();
@@ -118,10 +118,11 @@ class Replace
 
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
+    void setDebug(int pause_iterations, bool draw_bins);
   private:
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
-    FastRoute::FastRouteKernel* fr_;
+    FastRoute::GlobalRouter* fr_;
 
     std::shared_ptr<PlacerBase> pb_;
     std::shared_ptr<NesterovBase> nb_;
@@ -170,6 +171,9 @@ class Replace
     int padRight_;
 
     int verbose_;
+    bool debug_;
+    int debug_pause_iterations_;
+    int debug_draw_bins_;
 };
 }
 

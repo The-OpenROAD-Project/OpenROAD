@@ -33,20 +33,63 @@
 ##
 ###############################################################################
 
+#Clock Tree Synthesis TCL -> Required commands:
+#                               clock_tree_synthesis -lut_file , -sol_list , -root-buf, -wire_unit
+#                                               or
+#                               configure_cts_characterization -sqr_cap , -sqr_res + clock_tree_synthesis -buf_list 
+
+sta::define_cmd_args "configure_cts_characterization" {[-max_cap cap] \
+                                                       [-max_slew slew] \
+                                                       [-sqr_cap capvalue] \
+                                                       [-sqr_res resvalue] \
+                                                       [-slew_inter slewvalue] \
+                                                       [-cap_inter capvalue] \
+                                                      } 
+
+proc configure_cts_characterization { args } {
+  sta::parse_key_args "configure_cts_characterization" args \
+    keys {-max_cap -max_slew -sqr_cap -sqr_res -slew_inter -cap_inter} flags {}
+
+  set cts [get_triton_cts]
+  
+  if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] } {
+    set sqr_cap $keys(-sqr_cap)
+    $cts set_cap_per_sqr $sqr_cap
+    set sqr_res $keys(-sqr_res)
+    $cts set_res_per_sqr $sqr_res
+  } else {
+    #User must enter capacitance and resistance per square (um²) when creating a new characterization.
+    ord::error "Missing argument -sqr_cap and/or -sqr_res"
+  }
+
+  if { [info exists keys(-max_cap)] } {
+    set max_cap_value $keys(-max_cap)
+    $cts set_max_char_cap $max_cap_value
+  } 
+
+  if { [info exists keys(-max_slew)] } {
+    set max_slew_value $keys(-max_slew)
+    $cts set_max_char_slew $max_slew_value
+  } 
+
+  if { [info exists keys(-slew_inter)] } {
+	  set slew $keys(-slew_inter)
+    $cts set_slew_inter $slew 
+  } 
+
+  if { [info exists keys(-cap_inter)] } {
+	  set cap $keys(-cap_inter)
+    $cts set_cap_inter $cap 
+  } 
+}
 
 sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
                                              [-sol_list slist] \
+                                             [-wire_unit unit]
                                              [-buf_list buflist] \
                                              [-root_buf buf] \
-                                             [-wire_unit unit] \
-                                             [-max_cap cap] \
-                                             [-max_slew slew] \
                                              [-clk_nets nets] \ 
                                              [-out_path path] \
-                                             [-sqr_cap capvalue] \
-                                             [-sqr_res resvalue] \
-                                             [-slew_inter slewvalue] \
-                                             [-cap_inter capvalue] \
                                              [-characterization_only] \
                                              [-tree_buf buf] \
                                              [-post_cts_disable] \
@@ -63,19 +106,12 @@ sta::define_cmd_args "clock_tree_synthesis" {[-lut_file lut] \
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -max_cap -max_slew -clk_nets -out_path -sqr_cap -sqr_res -slew_inter -sink_clustering_size -num_static_layers -sink_clustering_buffer\
-    -cap_inter -distance_between_buffers -branching_point_buffers_distance -clustering_exponent -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf} \
+    keys {-lut_file -sol_list -root_buf -buf_list -wire_unit -clk_nets -out_path -sink_clustering_size -num_static_layers\
+          -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
+          -clustering_unbalance_ratio -sink_clustering_max_diameter -tree_buf}\
     flags {-characterization_only -post_cts_disable -sink_clustering_enable}
 
   set cts [get_triton_cts]
-
-  #Clock Tree Synthesis TCL -> Required commands:
-  #                               -lut_file , -sol_list , -root-buf, -wire_unit
-  #                                               or
-  #                               -buf_list , -sqr_cap , -sqr_res
-  #                         -> Other commands can be used as extra parameters or in conjunction with each other:
-  #                               ex: clock_tree_synthesis -buf_list "BUFX1 BUFX2" -wire_unit 20 -sqr_cap 1 -sqr_res 2 -clk_nets clk1
-
 
   $cts set_only_characterization [info exists flags(-characterization_only)]
 
@@ -151,16 +187,6 @@ proc clock_tree_synthesis { args } {
     $cts set_wire_segment_distance_unit $wire_unit
   } 
 
-  if { [info exists keys(-max_cap)] } {
-    set max_cap_value $keys(-max_cap)
-    $cts set_max_char_cap $max_cap_value
-  } 
-
-  if { [info exists keys(-max_slew)] } {
-    set max_slew_value $keys(-max_slew)
-    $cts set_max_char_slew $max_slew_value
-  } 
-
   if { [info exists keys(-clk_nets)] } {
     set clk_nets $keys(-clk_nets)
     set fail [$cts set_clock_nets $clk_nets]
@@ -168,16 +194,6 @@ proc clock_tree_synthesis { args } {
       ord::error "Error when finding -clk_nets in DB!"
     }
   }
-
-  if { [info exists keys(-slew_inter)] } {
-	  set slew $keys(-slew_inter)
-    $cts set_slew_inter $slew 
-  } 
-
-  if { [info exists keys(-cap_inter)] } {
-	  set cap $keys(-cap_inter)
-    $cts set_cap_inter $cap 
-  } 
 
   if { [info exists keys(-tree_buf)] } {
 	  set buf $keys(-tree_buf)
@@ -216,21 +232,7 @@ proc clock_tree_synthesis { args } {
     $cts set_out_path $out_path
   }
 
-  if {![info exists keys(-lut_file)] || ![info exists keys(-sol_list)]} {
-    if { [info exists keys(-sqr_cap)] && [info exists keys(-sqr_res)] } {
-      set sqr_cap $keys(-sqr_cap)
-      $cts set_cap_per_sqr $sqr_cap
-      set sqr_res $keys(-sqr_res)
-      $cts set_res_per_sqr $sqr_res
-    } else {
-      #User must enter capacitance and resistance per square (um²) when creating a new characterization.
-      ord::error "Missing argument -sqr_cap and/or -sqr_res"
-    }
-  }
-
-  if {[catch {$cts run_triton_cts} error_msg options]} {
-    puts $error_msg
-  }
+  $cts run_triton_cts
 
   # CTS changed the network behind the STA's back.
   sta::network_changed

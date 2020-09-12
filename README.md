@@ -465,7 +465,6 @@ set_placement_padding -global|-instances insts|-masters masters
 detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters
-set_power_net [-power power_name] [-ground ground_net]
 optimimize_mirroring
 ```
 
@@ -577,39 +576,91 @@ If this parameter is omitted, the metrics are shown on the standard output.
 
 #### Global Routing
 
-FastRoute global route.
-Generate routing guides given a placed design.
+Global router options and commands are described below. 
 
 ```
-fastroute -output_file out_file
-          -capacity_adjustment <cap_adjust>
-          -min_routing_layer <min_layer>
-          -max_routing_layer <max_layer>
-          -pitches_in_tile <pitches>
-          -layers_adjustments <list_of_layers_to_adjust>
-          -regions_adjustments <list_of_regions_to_adjust>
-          -nets_alphas_priorities <list_of_alphas_per_net>
-          -verbose <verbose>
-          -unidirectional_routing
-          -clock_net_routing
+fastroute [-guide_file out_file] \
+          [-layers min-max]
+          [-tile_size tile_size] \
+          [-verbose verbose] \
+          [-overflow_iterations iterations] \
+          [-grid_origin {x y}] \
+          [-report_congestion congest_file] \
+          [-clock_layers min-max] \
+          [-clock_pdrev_fanout fanout] \
+          [-clock_topology_priority priority] \
+          [-unidirectional_routing] \
+          [-allow_overflow]
+
 ```
 
 Options description:
-- **capacity_adjustment**: Set global capacity adjustment (e.g.: -capacity_adjustment *0.3*)
-- **min_routing_layer**: Set minimum routing layer (e.g.: -min_routing_layer *2*)
-- **max_routing_layer**: Set maximum routing layer (e.g.: max_routing_layer *9*)
-- **pitches_in_tile**: Set the number of pitches inside a GCell
-- **layers_adjustments**: Set capacity adjustment to specific layers (e.g.: -layers_adjustments {{<layer> <reductionPercentage>} ...})
-- **regions_adjustments**: Set capacity adjustment to specific regions (e.g.: -regions_adjustments {{<minX> <minY> <maxX> <maxY> <layer> <reductionPercentage>} ...})
-- **nets_alphas_priorities**: Set alphas for specific nets when using clock net routing (e.g.: -nets_alphas_priorities {{<net_name> <alpha>} ...})
-- **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose 1)
-- **unidirectional_routing**: Activate unidirectional routing *(flag)*
-- **clock_net_routing**: Activate clock net routing *(flag)*
+- **guide_file**: Set the output guides file name (e.g.: -guide_file route.guide")
+- **layers**: Set the minimum and maximum routing layers (e.g.: -layers 2-10)
+- **tile_size**: Set the number of pitches inside a GCell (e.g.: -tile_size *20*)
+- **verbose**: Set verbose of report. 0 for less verbose, 1 for medium verbose, 2 for full verbose (e.g.: -verbose *1*)
+- **overflow_iterations**: Set the number of iterations to remove the overflow of the routing (e.g.: -overflow_iterations *50*)
+- **grid_origin**: Set the origin of the routing grid (e.g.: -grid_origin {1 1})
+- **report_congestion**: Create a text file with the congestion report of the GCells (e.g.: -report_congestion "congest")
+- **clock_layers min-max**: Set the minimum and maximum routing layers for clock nets (e.g.: -clock_layers 4-9)
+- **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
+- **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
+See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
+- **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
+- **allow_overflow**: Allow global routing results with overflow
 
-###### NOTE 1: if you use the flag *unidirectional_routing*, the minimum routing layer will be assigned as "2" automatically
-###### NOTE 2: the first routing layer of the design have index equal to 1
-###### NOTE 3: if you use the flag *clock_net_routing*, only guides for clock nets will be generated
+```
+set_global_routing_layer_adjustment layer adjustment
+```
 
+The `set_global_routing_layer_adjustment` command sets routing resources adjustments in the routing layers of the design.
+You can set adjustment for a specific layer, e.g.: `set_global_routing_layer_adjustment 4 0.5` reduces the routing resources
+of routing layer 4 in 50%.
+You can set adjustment for all layers at once using `*`, e.g.: `set_global_routing_layer_adjustment * 0.3` reduces
+the routing resources of all routing layers in 30%.
+You can set adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment 4-8 0.3` reduces
+the routing resources of routing layers  4, 5, 6 7 and 8 in 30%.
+
+```
+set_global_routing_layer_pitch layer pitch
+```
+The `set_global_routing_layer_pitch` command sets the pitch for routing tracks in a specific layer.
+You can call it multiple times for different layers.
+Example: `set_global_routing_layer_pitch 6 1.34`.
+
+```
+set_pdrev_topology_priority -net netName -alpha alpha
+```
+FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
+priority of PDRev between wire length and skew, using the `alpha` parameter.
+The `set_pdrev_topology_priority` command sets the PDRev routing topology construction priority for specific nets.
+Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generates topologies with shorter wire length,
+and alpha close to 1.0 generates topologies with lower skew. For more information about PDRev, check the paper in
+`src/FastRoute/src/pdrev/papers/PDRev.pdf`
+You can call it multiple times for different nets.
+Example: `set_pdrev_topology_priority -net "clk" -alpha 0.3` sets an alpha value of 0.3 for net *clk*.
+
+```
+set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}
+                                     -layer layer -adjustment adjustment
+```
+The `set_global_routing_region_adjustment` command sets routing resources adjustments in a specific region of the design.
+The region is defined as a rectangle in a routing layer.
+Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
+                                               -layer 4 -adjustment 0.7`
+
+```
+write_guides file_name
+```
+The `write_guides` generates the guide file from the routing results.
+Example: `write_guides route.guide`.
+
+To estimate RC parasitics based on global route results, use the `-global_routing`
+option of the `estimate_parasitics` command.
+
+```
+estimate_parasitics -global_routing
+```
 
 #### Logical and Physical Optimizations
 

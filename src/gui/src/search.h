@@ -39,7 +39,7 @@
 
 namespace gui {
 
-namespace bg  = boost::geometry;
+namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
 // This is a geometric search structure.  It wraps up Boost's
@@ -51,7 +51,7 @@ namespace bgi = boost::geometry::index;
 class Search
 {
   using point_t = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-  using box_t   = bg::model::box<point_t>;
+  using box_t = bg::model::box<point_t>;
 
   template <typename T>
   using value_t = std::pair<box_t, T>;
@@ -85,8 +85,8 @@ class Search
     iterator begin_;
     iterator end_;
   };
-  using InstRange  = Range<odb::dbInst*>;
-  using ShapeRange = Range<int>;
+  using InstRange = Range<odb::dbInst*>;
+  using ShapeRange = Range<odb::dbNet*>;
 
   // Build the structure for the given block.
   void init(odb::dbBlock* block);
@@ -94,25 +94,27 @@ class Search
   // Find all shapes in the given bounds on the given layer which
   // are at least minSize in either dimension.
   ShapeRange search_shapes(odb::dbTechLayer* layer,
-                           int               xLo,
-                           int               yLo,
-                           int               xHi,
-                           int               yHi,
-                           int               minSize = 0);
+                           int xLo,
+                           int yLo,
+                           int xHi,
+                           int yHi,
+                           int minSize = 0);
 
   // Find all instances in the given bounds with height of at least minHeight
   InstRange search_insts(int xLo, int yLo, int xHi, int yHi, int minHeight = 0);
 
+  void clear();
+
  private:
   void addSNet(odb::dbNet* net);
   void addNet(odb::dbNet* net);
-  void addVia(odb::dbShape* shape, int shapeId, int x, int y);
+  void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
   void addInst(odb::dbInst* inst);
 
   // The int stored in shapes is the "shapeId" from OpenDB.  Not
   // being used yet but will be good for selection later.
-  std::map<odb::dbTechLayer*, rtree<int>> shapes_;
-  rtree<odb::dbInst*>                     insts_;
+  std::map<odb::dbTechLayer*, rtree<odb::dbNet*>> shapes_;
+  rtree<odb::dbInst*> insts_;
 };
 
 }  // namespace gui

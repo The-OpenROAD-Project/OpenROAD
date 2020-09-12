@@ -55,23 +55,26 @@ void Search::init(odb::dbBlock* block)
   }
 }
 
-void Search::addVia(odb::dbShape* shape, int shapeId, int x, int y)
+void Search::addVia(odb::dbNet* net,
+                    odb::dbShape* shape,
+                    int x,
+                    int y)
 {
   if (shape->getType() == odb::dbShape::TECH_VIA) {
     odb::dbTechVia* via = shape->getTechVia();
     for (odb::dbBox* box : via->getBoxes()) {
       point_t ll(x + box->xMin(), y + box->yMin());
       point_t ur(x + box->xMax(), y + box->yMax());
-      box_t   bbox(ll, ur);
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
+      box_t bbox(ll, ur);
+      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
       point_t ll(x + box->xMin(), y + box->yMin());
       point_t ur(x + box->xMax(), y + box->yMax());
-      box_t   bbox(ll, ur);
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
+      box_t bbox(ll, ur);
+      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   }
 }
@@ -81,20 +84,19 @@ void Search::addSNet(odb::dbNet* net)
   odb::dbSet<odb::dbSWire> swires = net->getSWires();
 
   for (auto itr = swires.begin(); itr != swires.end(); ++itr) {
-    odb::dbSWire*                     swire = *itr;
-    odb::dbSet<odb::dbSBox>           wires = swire->getWires();
+    odb::dbSWire* swire = *itr;
+    odb::dbSet<odb::dbSBox> wires = swire->getWires();
     odb::dbSet<odb::dbSBox>::iterator box_itr;
 
     for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
-      odb::dbSBox* box     = *box_itr;
-      uint         shapeId = box->getId();
+      odb::dbSBox* box = *box_itr;
       if (box->isVia()) {
         continue;
       }
 
       box_t bbox(point_t(box->xMin(), box->yMin()),
                  point_t(box->xMax(), box->yMax()));
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, shapeId));
+      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   }
 }
@@ -107,15 +109,15 @@ void Search::addNet(odb::dbNet* net)
     return;
 
   odb::dbWireShapeItr itr;
-  odb::dbShape        s;
+  odb::dbShape s;
 
   for (itr.begin(wire); itr.next(s);) {
     int shapeId = itr.getShapeId();
     if (s.isVia()) {
-      addVia(&s, shapeId, itr._prev_x, itr._prev_y);
+      addVia(net, &s, itr._prev_x, itr._prev_y);
     } else {
       box_t box(point_t(s.xMin(), s.yMin()), point_t(s.xMax(), s.yMax()));
-      shapes_[s.getTechLayer()].insert(std::make_pair(box, shapeId));
+      shapes_[s.getTechLayer()].insert(std::make_pair(box, net));
     }
   }
 }
@@ -123,10 +125,16 @@ void Search::addNet(odb::dbNet* net)
 void Search::addInst(odb::dbInst* inst)
 {
   odb::dbBox* bbox = inst->getBBox();
-  point_t     ll(bbox->xMin(), bbox->yMin());
-  point_t     ur(bbox->xMax(), bbox->yMax());
-  box_t       box(ll, ur);
+  point_t ll(bbox->xMin(), bbox->yMin());
+  point_t ur(bbox->xMax(), bbox->yMax());
+  box_t box(ll, ur);
   insts_.insert(std::make_pair(box, inst));
+}
+
+void Search::clear()
+{
+  insts_.clear();
+  shapes_.clear();
 }
 
 template <typename T>
@@ -136,11 +144,11 @@ class Search::MinSizePredicate
   MinSizePredicate(int min_size) : min_size_(min_size) {}
   bool operator()(const std::pair<box_t, T>& o) const
   {
-    const box_t&   box = o.first;
-    const point_t& ll  = box.min_corner();
-    const point_t& ur  = box.max_corner();
-    int            w   = ur.x() - ll.x();
-    int            h   = ur.y() - ll.y();
+    const box_t& box = o.first;
+    const point_t& ll = box.min_corner();
+    const point_t& ur = box.max_corner();
+    int w = ur.x() - ll.x();
+    int h = ur.y() - ll.y();
     return std::max(w, h) >= min_size_;
   }
 
@@ -155,10 +163,10 @@ class Search::MinHeightPredicate
   MinHeightPredicate(int min_height) : min_height_(min_height) {}
   bool operator()(const std::pair<box_t, T>& o) const
   {
-    const box_t&   box = o.first;
-    const point_t& ll  = box.min_corner();
-    const point_t& ur  = box.max_corner();
-    int            h   = ur.y() - ll.y();
+    const box_t& box = o.first;
+    const point_t& ll = box.min_corner();
+    const point_t& ur = box.max_corner();
+    int h = ur.y() - ll.y();
     return h >= min_height_;
   }
 
@@ -167,11 +175,11 @@ class Search::MinHeightPredicate
 };
 
 Search::ShapeRange Search::search_shapes(odb::dbTechLayer* layer,
-                                         int               xLo,
-                                         int               yLo,
-                                         int               xHi,
-                                         int               yHi,
-                                         int               minSize)
+                                         int xLo,
+                                         int yLo,
+                                         int xHi,
+                                         int yHi,
+                                         int minSize)
 {
   auto it = shapes_.find(layer);
   if (it == shapes_.end()) {
@@ -183,7 +191,7 @@ Search::ShapeRange Search::search_shapes(odb::dbTechLayer* layer,
   if (minSize > 0) {
     return ShapeRange(
         rtree.qbegin(bgi::intersects(query)
-                     && bgi::satisfies(MinSizePredicate<int>(minSize))),
+                     && bgi::satisfies(MinSizePredicate<odb::dbNet*>(minSize))),
         rtree.qend());
   }
 

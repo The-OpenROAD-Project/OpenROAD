@@ -18,8 +18,8 @@ Pin                                   Limit Fanout  Slack
 r1/Q                                     10     35    -25 (VIOLATED)
 
 Found 1 fanout violations.
-Found 1 capacitance violations.
 Inserted 3 buffers in 1 nets.
+Resized 4 instances.
 max fanout
 
 Pin                                   Limit Fanout  Slack

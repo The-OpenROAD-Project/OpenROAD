@@ -41,6 +41,7 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.
+Resized 4 instances.
 Driver    length delay
 repeater1/Z manhtn 569.8 steiner 569.8 0.03
 repeater2/Z manhtn 569.3 steiner 569.3 0.03
@@ -55,19 +56,19 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.284    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   2.089    0.008    0.019    0.019 ^ u1/Z (BUF_X1)
-            0.008    0.000    0.019 ^ u2/A (BUF_X2)
-  22.237    0.027    0.037    0.057 ^ u2/Z (BUF_X2)
-            0.034    0.016    0.073 ^ repeater2/A (BUF_X4)
-  33.175    0.016    0.035    0.107 ^ repeater2/Z (BUF_X4)
-            0.043    0.032    0.140 ^ repeater1/A (BUF_X4)
-  30.774    0.016    0.036    0.176 ^ repeater1/Z (BUF_X4)
-            0.038    0.028    0.204 ^ u3/A (BUF_X1)
-   0.000    0.005    0.024    0.228 ^ u3/Z (BUF_X1)
-            0.005    0.000    0.228 ^ out1 (out)
-                              0.228   data arrival time
+   1.090    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (CLKBUF_X1)
+   1.444    0.008    0.025    0.025 ^ u1/Z (CLKBUF_X1)
+            0.008    0.000    0.025 ^ u2/A (CLKBUF_X3)
+  22.233    0.019    0.040    0.064 ^ u2/Z (CLKBUF_X3)
+            0.027    0.015    0.080 ^ repeater2/A (BUF_X4)
+  33.153    0.016    0.034    0.113 ^ repeater2/Z (BUF_X4)
+            0.043    0.032    0.145 ^ repeater1/A (BUF_X4)
+  30.752    0.016    0.036    0.181 ^ repeater1/Z (BUF_X4)
+            0.038    0.028    0.209 ^ u3/A (BUF_X1)
+   0.000    0.005    0.024    0.234 ^ u3/Z (BUF_X1)
+            0.005    0.000    0.234 ^ out1 (out)
+                              0.234   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

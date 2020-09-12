@@ -33,65 +33,83 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-
-#include <vector>
 #include <cmath>
+#include <string>
+#include <vector>
 
 namespace CKMeans {
-using namespace std;
 
-class flop {
-public:
-    // location
-    float x, y;
-    unsigned x_idx, y_idx;
-    vector<float> dists;
-    unsigned idx;
-    vector<pair<int, int>> match_idx;
-    vector<float> silhs;
-    unsigned sinkIdx;
-    flop(const float x, const float y, unsigned idx) : x(x), y(y), sinkIdx(idx) {};
+class flop
+{
+ public:
+  // location
+  float x, y;
+  unsigned x_idx, y_idx;
+  std::vector<float> dists;
+  unsigned idx;
+  std::vector<std::pair<int, int>> match_idx;
+  std::vector<float> silhs;
+  unsigned sinkIdx;
+  flop(const float x, const float y, unsigned idx) : x(x), y(y), sinkIdx(idx){};
 };
 
+class clustering
+{
+  std::vector<flop> flops;
+  std::vector<std::vector<flop*>> clusters;
 
-class clustering {
-	vector<flop> flops;
-	vector<vector<flop*>> clusters;
-	
-	//map<unsigned, vector<pair<float, float>>> shifts;  // relative x- and y-shifts of slots w.r.t tray 
-	int verbose = 1;
-	int TEST_LAYOUT = 1;
-	int TEST_ITER = 1;
-	std::string plotFile;
-	
-	//std::pair<float,float> branchPoint;
-	//float minDist;
-	//float maxDist;
-	
-	float segmentLength;
-	std::pair<float, float> branchingPoint;
-	
-public:
-	clustering(const vector<std::pair<float, float>>&, float, float);
-	~clustering();
-	float Kmeans(unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned, unsigned);
-	void iterKmeans(unsigned, unsigned, unsigned, unsigned, vector<pair<float, float>>&, unsigned MAX = 15, unsigned power = 4);
-	float calcSilh(const vector<pair<float,float>>&, unsigned, unsigned);
-	void minCostFlow (const vector<pair<float, float>>&, unsigned, unsigned, float, unsigned); 
-	void setPlotFileName(const std::string fileName) { plotFile = fileName; }
-	void getClusters(vector<vector<unsigned>>&);
-	void fixSegmentLengths(vector<pair<float, float>>&);
-	void fixSegment(const pair<float, float>& fixedPoint, pair<float, float>& movablePoint, float targetDist);
+  int verbose = 1;
+  int TEST_LAYOUT = 1;
+  int TEST_ITER = 1;
+  std::string plotFile;
 
-	inline float calcDist (const pair<float, float>& loc, flop * f) const {
-    	return (fabs(loc.first - f->x) + fabs(loc.second - f->y));
-	}
-	
-	inline float calcDist (const pair<float, float>& loc1, pair<float, float>& loc2) const {
-    	return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
-	}
+  float segmentLength;
+  std::pair<float, float> branchingPoint;
 
-  void plotClusters(const vector<vector<flop*>>&, const vector<pair<float, float>>&, const vector<pair<float, float>>&, int) const;
+ public:
+  clustering(const std::vector<std::pair<float, float>>&, float, float);
+  ~clustering();
+  float Kmeans(unsigned,
+               unsigned,
+               unsigned,
+               std::vector<std::pair<float, float>>&,
+               unsigned,
+               unsigned);
+  void iterKmeans(unsigned,
+                  unsigned,
+                  unsigned,
+                  unsigned,
+                  std::vector<std::pair<float, float>>&,
+                  unsigned MAX = 15,
+                  unsigned power = 4);
+  float calcSilh(const std::vector<std::pair<float, float>>&, unsigned, unsigned);
+  void minCostFlow(const std::vector<std::pair<float, float>>&,
+                   unsigned,
+                   unsigned,
+                   float,
+                   unsigned);
+  void setPlotFileName(const std::string fileName) { plotFile = fileName; }
+  void getClusters(std::vector<std::vector<unsigned>>&);
+  void fixSegmentLengths(std::vector<std::pair<float, float>>&);
+  void fixSegment(const std::pair<float, float>& fixedPoint,
+                  std::pair<float, float>& movablePoint,
+                  float targetDist);
+
+  inline float calcDist(const std::pair<float, float>& loc, flop* f) const
+  {
+    return (fabs(loc.first - f->x) + fabs(loc.second - f->y));
+  }
+
+  inline float calcDist(const std::pair<float, float>& loc1,
+                        std::pair<float, float>& loc2) const
+  {
+    return (fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second));
+  }
+
+  void plotClusters(const std::vector<std::vector<flop*>>&,
+                    const std::vector<std::pair<float, float>>&,
+                    const std::vector<std::pair<float, float>>&,
+                    int) const;
 };
 
-}
+}  // namespace CKMeans
