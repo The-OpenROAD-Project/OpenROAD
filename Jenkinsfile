@@ -30,34 +30,36 @@ pipeline {
             }
           }
         }
-        # stage('Docker centos clang') {
-        #   stages{
-        #     stage('Docker build centos clang') {
-        #       steps {
-        #         sh './jenkins/docker/build.sh centos clang'
-        #       }
-        #     }
-        #     stage('Docker test centos clang') {
-        #       steps {
-        #         sh './jenkins/docker/test.sh centos clang'
-        #       }
-        #     }
-        #   }
-        # }
-        # stage('Docker ubuntu clang') {
-        #   stages{
-        #     stage('Docker build ubuntu clang') {
-        #       steps {
-        #         sh './jenkins/docker/build.sh ubuntu clang'
-        #       }
-        #     }
-        #     stage('Docker test ubuntu clang') {
-        #       steps {
-        #         sh './jenkins/docker/test.sh ubuntu clang'
-        #       }
-        #     }
-        #   }
-        # }
+/* disabled until osx clang build works
+        stage('Docker centos clang') {
+          stages{
+            stage('Docker build centos clang') {
+              steps {
+                sh './jenkins/docker/build.sh centos clang'
+              }
+            }
+            stage('Docker test centos clang') {
+              steps {
+                sh './jenkins/docker/test.sh centos clang'
+              }
+            }
+          }
+        }
+        stage('Docker ubuntu clang') {
+          stages{
+            stage('Docker build ubuntu clang') {
+              steps {
+                sh './jenkins/docker/build.sh ubuntu clang'
+              }
+            }
+            stage('Docker test ubuntu clang') {
+              steps {
+                sh './jenkins/docker/test.sh ubuntu clang'
+              }
+            }
+          }
+        }
+*/
         stage('Docker centos gcc') {
           stages{
             stage('Docker build centos gcc') {
