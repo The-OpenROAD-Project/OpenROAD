@@ -13,11 +13,6 @@ Notice 0:     Created 1271 components and 5147 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 322 nets and 971 connections.
 Notice 0: Finished DEF file: gcd_sky130.def
-
- *****************
- *   FastRoute   *
- *****************
-
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0
@@ -28,46 +23,21 @@ Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
 Layer 5 pitch: 0.96
 Layer 6 pitch: 3.33
-
-Initializing grid...
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 22597
 [INFO] #DB Macros: 0
-Initializing grid... Done!
-Initializing routing layers...
-Initializing routing layers... Done!
-Initializing routing tracks...
-Initializing routing tracks... Done!
-Setting capacities...
-Setting capacities... Done!
-Setting spacings and widths...
-Setting spacings and widths... Done!
-Initializing nets...
 [INFO] Found 0 clock nets
-Checking pin placement...
-Checking pin placement... Done!
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 11
-Initializing nets... Done!
-Adjusting grid...
-Adjusting grid... Done!
-Computing track adjustments...
-Computing track adjustments... Done!
-Computing obstacles adjustments...
 [INFO] Processing 17704 obstacles in layer 1
 [INFO] Processing 2627 obstacles in layer 2
 [INFO] Processing 10 obstacles in layer 5
-Computing obstacles adjustments... Done!
-Computing user defined adjustments...
-Computing user defined adjustments... Done!
-Computing user defined layers adjustments...
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
 [INFO] Reducing resources of layer 6 by 15%
 Computing user defined layers adjustments... Done!
 Running FastRoute...
-
 
 Final usage/overflow report: 
 
@@ -100,6 +70,7 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Repairing antennas...
 Old total capacity: 63849
+
 [WARNING]No OR_DEFAULT vias defined
 [INFO] #Antenna violations: 2
 Design Stats
@@ -126,11 +97,6 @@ legalized HPWL        16909.8 u
 delta HPWL                  0 %
 
 Warning: Overlap check failed (2).
-
- *****************
- *   FastRoute   *
- *****************
-
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.000000
@@ -142,45 +108,20 @@ Layer 4 pitch: 0.740000
 Layer 5 pitch: 0.960000
 Layer 6 pitch: 3.330000
 
-Initializing grid...
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 22609
 [INFO] #DB Macros: 2
-Initializing grid... Done!
-Initializing routing layers...
-Initializing routing layers... Done!
-Initializing routing tracks...
-Initializing routing tracks... Done!
-Setting capacities...
-Setting capacities... Done!
-Setting spacings and widths...
-Setting spacings and widths... Done!
-Initializing nets...
 [INFO] Found 0 clock nets
-Checking pin placement...
-Checking pin placement... Done!
 [INFO] Minimum degree: 3
 [INFO] Maximum degree: 3
-Initializing nets... Done!
-Adjusting grid...
-Adjusting grid... Done!
-Computing track adjustments...
-Computing track adjustments... Done!
-Computing obstacles adjustments...
 [INFO] Processing 17710 obstacles in layer 1
 [INFO] Processing 2631 obstacles in layer 2
 [INFO] Processing 10 obstacles in layer 5
-Computing obstacles adjustments... Done!
-Computing user defined adjustments...
-Computing user defined adjustments... Done!
-Computing user defined layers adjustments...
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
 [INFO] Reducing resources of layer 6 by 15%
-Computing user defined layers adjustments... Done!
 [INFO] #Nets to reroute: 2
-New total capacity: 63849
 
 Final usage/overflow report: 
 
@@ -196,11 +137,7 @@ Final usage/overflow report:
 [INFO] Final usage          : 53
 [INFO] Final number of vias : 14
 [INFO] Final usage 3D       : 95
-Getting results...
-Getting results... Done!
-
-Writing guides...
+[INFO] Total wirelength: 27691 um
 [INFO] Num routed nets: 322
-Writing guides... Done!
 No differences found.
 No differences found.

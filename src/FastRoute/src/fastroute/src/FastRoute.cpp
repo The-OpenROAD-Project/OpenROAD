@@ -1474,9 +1474,7 @@ NetRouteMap FT::run()
   printf("[INFO] Final number of vias : %d\n", numVia);
   printf("[INFO] Final usage 3D       : %d\n", (finallength + 3 * numVia));
 
-  std::cout << "Getting results...\n";
   NetRouteMap routes = getRoutes();
-  std::cout << "Getting results... Done!\n\n";
 
   delete[] netEO;
   netEO = nullptr;
