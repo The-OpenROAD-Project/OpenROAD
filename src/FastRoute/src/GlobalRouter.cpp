@@ -2507,8 +2507,6 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieAre
         lowerBound = odb::Point(rect.xMin(), rect.yMin());
         upperBound = odb::Point(rect.xMax(), rect.yMax());
         pinBox = odb::Rect(lowerBound, upperBound);
-        std::cout << "Die box: (" << dieArea.xMin() << ", " << dieArea.yMin() << "); (" << dieArea.xMax() << ", " << dieArea.yMax() << ")\n";
-        std::cout << "Pin box: (" << pinBox.xMin() << ", " << pinBox.yMin() << "); (" << pinBox.xMax() << ", " << pinBox.yMax() << ")\n";
         if (!dieArea.contains(pinBox)) {
           std::cout << "[WARNING] Pin " << getITermName(iterm)
                     << " is outside die area\n";
