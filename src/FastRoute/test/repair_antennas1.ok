@@ -36,8 +36,6 @@ Layer 6 pitch: 3.33
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
 [INFO] Reducing resources of layer 6 by 15%
-Computing user defined layers adjustments... Done!
-Running FastRoute...
 
 Final usage/overflow report: 
 
@@ -53,10 +51,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 2677
 [INFO] Final number of vias : 1768
 [INFO] Final usage 3D       : 7981
-Getting results...
-Getting results... Done!
-
-Running FastRoute... Done!
 [INFO] Total wirelength: 27547 um
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
@@ -69,8 +63,6 @@ Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Repairing antennas...
-Old total capacity: 63849
-
 [WARNING]No OR_DEFAULT vias defined
 [INFO] #Antenna violations: 2
 Design Stats
@@ -107,7 +99,6 @@ Layer 3 pitch: 0.480000
 Layer 4 pitch: 0.740000
 Layer 5 pitch: 0.960000
 Layer 6 pitch: 3.330000
-
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 22609
 [INFO] #DB Macros: 2
@@ -137,7 +128,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 53
 [INFO] Final number of vias : 14
 [INFO] Final usage 3D       : 95
-[INFO] Total wirelength: 27691 um
 [INFO] Num routed nets: 322
 No differences found.
 No differences found.
