@@ -650,6 +650,13 @@ Example: `set_global_routing_region_adjustment {1.5 2 20 30.5}
                                                -layer 4 -adjustment 0.7`
 
 ```
+repair_antennas diodeCellName/diodePinName
+```
+The repair_antenna command evaluates the global routing results looking for antenna violations, and repairs the violations
+by inserting diodes. The input for this command is the diode cell and pin names.
+Example: `repair_antenna sky130_fd_sc_hs__diode_2/DIODE`
+
+```
 write_guides file_name
 ```
 The `write_guides` generates the guide file from the routing results.
