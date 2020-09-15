@@ -195,6 +195,114 @@ proc fastroute { args } {
          } \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
 
+  if { ![ord::db_has_tech] } {
+    ord::error "missing dbTech"
+  }
+
+  if { [ord::get_db_block] == "NULL" } {
+    ord::error "missing dbBlock"
+  }
+
+  if { [info exists keys(-verbose) ] } {
+    set verbose $keys(-verbose)
+    FastRoute::set_verbose $verbose
+  } else {
+    FastRoute::set_verbose 0
+  }
+
+  if { [info exists keys(-layers_pitches)] } {
+    ord::warn "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer adjustment"
+    set layers_pitches $keys(-layers_pitches)
+    foreach layer_pitch $layers_pitches {
+      if { [llength $layer_pitch] == 2 } {
+        lassign $layer_pitch layer pitch
+        FastRoute::set_layer_pitch $layer $pitch
+      } else {
+        ord::error "Wrong number of arguments for layer pitches"
+      }
+    }
+  }
+
+  if { [info exists keys(-layers_adjustments)] } {
+    ord::warn "option -layers_adjustments is deprecated. Use command set_global_routing_layer_adjustment layer adjustment"
+    set layers_adjustments $keys(-layers_adjustments)
+    foreach layer_adjustment $layers_adjustments {
+      if { [llength $layer_adjustment] == 2 } {
+        lassign $layer_adjustment layer reductionPercentage
+        FastRoute::add_layer_adjustment $layer $reductionPercentage
+      } else {
+        ord::error "Wrong number of arguments for layer adjustments"
+      }
+    }
+  }
+
+  FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
+
+  if { [info exists keys(-grid_origin)] } {
+    set origin $keys(-grid_origin)
+    if { [llength $origin] == 2 } {
+      lassign $origin origin_x origin_y
+      FastRoute::set_grid_origin $origin_x $origin_y
+    } else {
+      ord::error "Wrong number of arguments for origin"
+    }
+  } else {
+    FastRoute::set_grid_origin -1 -1
+  }
+
+  if { [info exists keys(-overflow_iterations) ] } {
+    set iterations $keys(-overflow_iterations)
+    sta::check_positive_integer "-overflow_iterations" $iterations
+    FastRoute::set_overflow_iterations $iterations
+  } else {
+    FastRoute::set_overflow_iterations 50
+  }
+
+  if { [info exists keys(-clock_topology_priority) ] } {
+    set priority $keys(-clock_topology_priority)
+    sta::check_positive_float "-clock_topology_priority" $priority
+    FastRoute::set_alpha $clock_topology_priority
+  } else {
+    FastRoute::set_alpha 0.3
+  }
+
+  if { [info exists keys(-clock_pdrev_fanout)] } {
+    set fanout $keys(-clock_pdrev_fanout)
+    FastRoute::set_pdrev_for_high_fanout $fanout
+  } else {
+    FastRoute::set_pdrev_for_high_fanout -1
+  }
+
+  if { [info exists keys(-tile_size)] } {
+    set tile_size $keys(-tile_size)
+    FastRoute::set_tile_size $tile_size
+  }
+
+  if { [info exists keys(-seed) ] } {
+    set seed $keys(-seed)
+    FastRoute::set_seed $seed
+  } else {
+    FastRoute::set_seed 0
+  }
+
+  FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
+
+  set min_clock_layer 6
+  if { [info exists keys(-clock_layers)] } {
+    set layer_range [FastRoute::parse_layer_range "-clock_layers" $keys(-clock_layers)]
+    lassign $layer_range min_clock_layer max_clock_layer
+    FastRoute::check_routing_layer $min_clock_layer
+    FastRoute::check_routing_layer $max_clock_layer
+
+    if { $min_clock_layer < $max_clock_layer } {
+      FastRoute::set_clock_layer_range $min_clock_layer $max_clock_layer
+      FastRoute::start_fastroute
+      FastRoute::route_clock_nets
+    } else {
+      ord::error "-clock_layers: Min routing layer is greater than max routing layer"
+    }
+  }
+
   if { [info exists keys(-min_routing_layer)] } {
     ord::warn "option -min_routing_layer is deprecated. Use option -layers {min max}"
     set min_layer $keys(-min_routing_layer)
@@ -227,141 +335,16 @@ proc fastroute { args } {
     FastRoute::set_max_layer -1
   }
 
-  if { [info exists keys(-tile_size)] } {
-    set tile_size $keys(-tile_size)
-    FastRoute::set_tile_size $tile_size
-  }
-
-  if { [info exists keys(-layers_adjustments)] } {
-    ord::warn "option -layers_adjustments is deprecated. Use command set_global_routing_layer_adjustment layer adjustment"
-    set layers_adjustments $keys(-layers_adjustments)
-    foreach layer_adjustment $layers_adjustments {
-      if { [llength $layer_adjustment] == 2 } {
-        lassign $layer_adjustment layer reductionPercentage
-        FastRoute::add_layer_adjustment $layer $reductionPercentage
-      } else {
-        ord::error "Wrong number of arguments for layer adjustments"
-      }
-    }
-  }
-
-  FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
-
-  if { [info exists keys(-clock_topology_priority) ] } {
-    set priority $keys(-clock_topology_priority)
-    sta::check_positive_float "-clock_topology_priority" $priority
-    FastRoute::set_alpha $clock_topology_priority
-  } else {
-    FastRoute::set_alpha 0.3
-  }
-
-  if { [info exists keys(-verbose) ] } {
-    set verbose $keys(-verbose)
-    FastRoute::set_verbose $verbose
-  } else {
-    FastRoute::set_verbose 0
-  }
-  
-  if { [info exists keys(-overflow_iterations) ] } {
-    set iterations $keys(-overflow_iterations)
-    sta::check_positive_integer "-overflow_iterations" $iterations
-    FastRoute::set_overflow_iterations $iterations
-  } else {
-    FastRoute::set_overflow_iterations 50
-  }
-
-  if { [info exists keys(-grid_origin)] } {
-    set origin $keys(-grid_origin)
-    if { [llength $origin] == 2 } {
-      lassign $origin origin_x origin_y
-      FastRoute::set_grid_origin $origin_x $origin_y
-    } else {
-      ord::error "Wrong number of arguments for origin"
-    }
-  } else {
-    FastRoute::set_grid_origin -1 -1
-  }
-
-  if { [info exists keys(-clock_pdrev_fanout)] } {
-    set fanout $keys(-clock_pdrev_fanout)
-    FastRoute::set_pdrev_for_high_fanout $fanout
-  } else {
-    FastRoute::set_pdrev_for_high_fanout -1
-  }
-
-  if { [info exists keys(-seed) ] } {
-    set seed $keys(-seed)
-    FastRoute::set_seed $seed
-  } else {
-    FastRoute::set_seed 0
-  }
-
-  FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
-
-  if { [info exists keys(-report_congestion)] } {
-    set congest_file $keys(-report_congestion)
-    FastRoute::report_congestion $congest_file
-  }
-
-  if { [info exists keys(-layers_pitches)] } {
-    ord::warn "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer adjustment"
-    set layers_pitches $keys(-layers_pitches)
-    foreach layer_pitch $layers_pitches {
-      if { [llength $layer_pitch] == 2 } {
-        lassign $layer_pitch layer pitch
-        FastRoute::set_layer_pitch $layer $pitch
-      } else {
-        ord::error "Wrong number of arguments for layer pitches"
-      }
-    }
-  }
-
-  if { [info exists flags(-antenna_avoidance_flow)] } {
-    set diode_cell_name "INVALID"
-    if { [info exists keys(-antenna_cell_name)] } {
-      set diode_cell_name $keys(-antenna_cell_name)
-    } else {
-      ord::error "Missing antenna cell name"
-    }
-
-    set diode_pin_name "INVALID"
-    if { [info exists keys(-antenna_pin_name)] } {
-      set diode_pin_name $keys(-antenna_pin_name)
-    } else {
-      ord::error "Missing antenna cell pin name"
-    }
-
-    FastRoute::enable_antenna_avoidance_flow $diode_cell_name $diode_pin_name
-  }
-
-  FastRoute::set_clock_nets_route_flow [info exists flags(-clock_nets_route_flow)]
-
-  set min_clock_layer 6
-  if { [info exists keys(-clock_layers)] } {
-    set layer_range [FastRoute::parse_layer_range "-clock_layers" $keys(-clock_layers)]
-    lassign $layer_range min_clock_layer max_clock_layer
-    FastRoute::check_routing_layer $min_clock_layer
-    FastRoute::check_routing_layer $max_clock_layer
-
-    FastRoute::set_min_layer_for_clock $min_clock_layer
-  } elseif { [info exists flags(-clock_nets_route_flow)] } {
-    ord::warn "Using the default min layer for clock nets routing (layer $min_clock_layer)"
-    FastRoute::set_min_layer_for_clock $min_clock_layer
-  }
-
-  if { ![ord::db_has_tech] } {
-    ord::error "missing dbTech"
-  }
-
-  if { [ord::get_db_block] == "NULL" } {
-    ord::error "missing dbBlock"
-  }
-
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
       ord::error "missing track structure"
     }
+  }
+
+  if { [info exists keys(-report_congestion)] } {
+    set congest_file $keys(-report_congestion)
+    FastRoute::report_congestion $congest_file
   }
 
   FastRoute::start_fastroute
