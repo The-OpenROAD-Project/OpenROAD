@@ -38,9 +38,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <algorithm>
 
-#include "Box.h"
-#include "Coordinate.h"
 #include "opendb/db.h"
 
 namespace FastRoute {
@@ -61,35 +60,35 @@ class Pin
  public:
   Pin() = default;
   Pin(odb::dbITerm* iterm,
-      const Coordinate& position,
+      const odb::Point& position,
       const std::vector<int>& layers,
       const PinOrientation orientation,
-      const std::map<int, std::vector<Box>>& boxesPerLayer,
+      const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
       bool connectedToPad);
   Pin(odb::dbBTerm* bterm,
-      const Coordinate& position,
+      const odb::Point& position,
       const std::vector<int>& layers,
       const PinOrientation orientation,
-      const std::map<int, std::vector<Box>>& boxesPerLayer,
+      const std::map<int, std::vector<odb::Rect>>& boxesPerLayer,
       bool connectedToPad);
 
   odb::dbITerm* getITerm() const;
   odb::dbBTerm* getBTerm() const;
   std::string getName() const;
-  const Coordinate& getPosition() const { return _position; }
+  const odb::Point& getPosition() const { return _position; }
   const std::vector<int>& getLayers() const { return _layers; }
   int getNumLayers() const { return _layers.size(); }
   int getTopLayer() const { return _layers.back(); }
   PinOrientation getOrientation() const { return _orientation; }
   void setOrientation(PinOrientation orientation) { _orientation = orientation; }
-  const std::map<int, std::vector<Box>>& getBoxes() const
+  const std::map<int, std::vector<odb::Rect>>& getBoxes() const
   {
     return _boxesPerLayer;
   }
   bool isPort() const { return _isPort; }
   bool isConnectedToPad() const { return _connectedToPad; }
-  const Coordinate& getOnGridPosition() const { return _onGridPosition; }
-  void setOnGridPosition(Coordinate onGridPos) { _onGridPosition = onGridPos; }
+  const odb::Point& getOnGridPosition() const { return _onGridPosition; }
+  void setOnGridPosition(odb::Point onGridPos) { _onGridPosition = onGridPos; }
 
  private:
   union
@@ -97,11 +96,11 @@ class Pin
     odb::dbITerm* _iterm;
     odb::dbBTerm* _bterm;
   };
-  Coordinate _position;
-  Coordinate _onGridPosition;
+  odb::Point _position;
+  odb::Point _onGridPosition;
   std::vector<int> _layers;
   PinOrientation _orientation;
-  std::map<int, std::vector<Box>> _boxesPerLayer;
+  std::map<int, std::vector<odb::Rect>> _boxesPerLayer;
   bool _isPort;
   bool _connectedToPad;
 };

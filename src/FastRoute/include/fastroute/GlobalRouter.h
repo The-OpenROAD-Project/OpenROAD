@@ -63,9 +63,6 @@ namespace FastRoute {
 
 class FT;
 class AntennaRepair;
-class Box;
-class Coordinate;
-class DBWrapper;
 class Grid;
 class Pin;
 class Net;
@@ -184,8 +181,8 @@ protected:
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
   void computeUserLayerAdjustments();
-  void computeRegionAdjustments(const Coordinate& lowerBound,
-                                const Coordinate& upperBound,
+  void computeRegionAdjustments(const odb::Point& lowerBound,
+                                const odb::Point& upperBound,
                                 int layer,
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
@@ -198,8 +195,8 @@ protected:
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addRemainingGuides(NetRouteMap& routes);
   void connectPadPins(NetRouteMap& routes);
-  void mergeBox(std::vector<Box>& guideBox);
-  Box globalRoutingToBox(const FastRoute::GSegment& route);
+  void mergeBox(std::vector<odb::Rect>& guideBox);
+  odb::Rect globalRoutingToBox(const FastRoute::GSegment& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
@@ -207,11 +204,12 @@ protected:
                        const std::map<Point, int>& segsAtPoint);
   void mergeSegments();
   void mergeSegments(GRoute& route);
-  bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
-  GSegment createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
+  bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
+  GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
+  odb::Point getRectMiddle(odb::Rect& rect);
 
   // check functions
   void checkPinPlacement();
@@ -239,8 +237,8 @@ protected:
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
-  void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
-  void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
+  void makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
+  void makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
   void initClockNets();
   void setSelectedMetal(int metal) { selectedMetal = metal; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
@@ -248,7 +246,7 @@ protected:
   ord::OpenRoad* _openroad;
   // Objects variables
   FT* _fastRoute = nullptr;
-  Coordinate* _gridOrigin = nullptr;
+  odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 
   std::vector<Net> *_nets;

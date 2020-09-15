@@ -48,7 +48,7 @@ void Grid::init(const long lowerLeftX, const long lowerLeftY,
             const std::vector<int>& minWidths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<Box>>& obstacles,
+            const std::map<int, std::vector<odb::Rect>>& obstacles,
             int databaseUnit)
   {
     _lowerLeftX = lowerLeftX;
@@ -79,10 +79,10 @@ void Grid::clear()
   _obstacles.clear();
 }
 
-Coordinate Grid::getPositionOnGrid(const Coordinate& position)
+odb::Point Grid::getPositionOnGrid(const odb::Point& position)
 {
-  int x = position.getX();
-  int y = position.getY();
+  int x = position.x();
+  int y = position.y();
 
   // Computing x and y center:
   int gCellId_X = floor((float) ((x - _lowerLeftX) / _tileWidth));
@@ -97,19 +97,19 @@ Coordinate Grid::getPositionOnGrid(const Coordinate& position)
   int centerX = (gCellId_X * _tileWidth) + (_tileWidth / 2) + _lowerLeftX;
   int centerY = (gCellId_Y * _tileHeight) + (_tileHeight / 2) + _lowerLeftY;
 
-  return Coordinate(centerX, centerY);
+  return odb::Point(centerX, centerY);
 }
 
-std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(const Box& obstacle,
-                                                        Box& firstTileBds,
-                                                        Box& lastTileBds)
+std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(const odb::Rect& obstacle,
+                                                        odb::Rect& firstTileBds,
+                                                        odb::Rect& lastTileBds)
 {
   std::pair<TILE, TILE> tiles;
   TILE firstTile;
   TILE lastTile;
 
-  Coordinate lower = obstacle.getLowerBound();  // lower bound of obstacle
-  Coordinate upper = obstacle.getUpperBound();  // upper bound of obstacle
+  odb::Point lower = obstacle.ll();  // lower bound of obstacle
+  odb::Point upper = obstacle.ur();  // upper bound of obstacle
 
   lower = getPositionOnGrid(lower);  // translate lower bound of obstacle to the
                                      // center of the tile where it is inside
@@ -117,73 +117,73 @@ std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(const Box& obstacle,
                                      // center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
-  firstTile._x = (lower.getX() - (getTileWidth() / 2)) / getTileWidth();
-  firstTile._y = (lower.getY() - (getTileHeight() / 2)) / getTileHeight();
+  firstTile._x = (lower.x() - (getTileWidth() / 2)) / getTileWidth();
+  firstTile._y = (lower.y() - (getTileHeight() / 2)) / getTileHeight();
 
   // Get x and y indices of last blocked tile
-  lastTile._x = (upper.getX() - (getTileWidth() / 2)) / getTileWidth();
-  lastTile._y = (upper.getY() - (getTileHeight() / 2)) / getTileHeight();
+  lastTile._x = (upper.x() - (getTileWidth() / 2)) / getTileWidth();
+  lastTile._y = (upper.y() - (getTileHeight() / 2)) / getTileHeight();
 
   tiles = std::make_pair(firstTile, lastTile);
 
-  Coordinate llFirstTile = Coordinate(lower.getX() - (getTileWidth() / 2),
-                                      lower.getY() - (getTileHeight() / 2));
-  Coordinate urFirstTile = Coordinate(lower.getX() + (getTileWidth() / 2),
-                                      lower.getY() + (getTileHeight() / 2));
+  odb::Point llFirstTile = odb::Point(lower.x() - (getTileWidth() / 2),
+                                      lower.y() - (getTileHeight() / 2));
+  odb::Point urFirstTile = odb::Point(lower.x() + (getTileWidth() / 2),
+                                      lower.y() + (getTileHeight() / 2));
 
-  Coordinate llLastTile = Coordinate(upper.getX() - (getTileWidth() / 2),
-                                     upper.getY() - (getTileHeight() / 2));
-  Coordinate urLastTile = Coordinate(upper.getX() + (getTileWidth() / 2),
-                                     upper.getY() + (getTileHeight() / 2));
+  odb::Point llLastTile = odb::Point(upper.x() - (getTileWidth() / 2),
+                                     upper.y() - (getTileHeight() / 2));
+  odb::Point urLastTile = odb::Point(upper.x() + (getTileWidth() / 2),
+                                     upper.y() + (getTileHeight() / 2));
 
-  if ((_upperRightX - urLastTile.getX()) / getTileWidth() < 1) {
+  if ((_upperRightX - urLastTile.x()) / getTileWidth() < 1) {
     urLastTile.setX(_upperRightX);
   }
-  if ((_upperRightY - urLastTile.getY()) / getTileHeight() < 1) {
+  if ((_upperRightY - urLastTile.y()) / getTileHeight() < 1) {
     urLastTile.setY(_upperRightY);
   }
 
-  firstTileBds = Box(llFirstTile, urFirstTile, -1);
-  lastTileBds = Box(llLastTile, urLastTile, -1);
+  firstTileBds = odb::Rect(llFirstTile, urFirstTile);
+  lastTileBds = odb::Rect(llLastTile, urLastTile);
 
   return tiles;
 }
 
-int Grid::computeTileReduce(const Box& obs,
-                            const Box& tile,
+int Grid::computeTileReduce(const odb::Rect& obs,
+                            const odb::Rect& tile,
                             int trackSpace,
                             bool first,
                             bool direction)
 {
   int reduce = -1;
   if (direction == RoutingLayer::VERTICAL) {
-    if (obs.getLowerBound().getX() >= tile.getLowerBound().getX()
-        && obs.getUpperBound().getX() <= tile.getUpperBound().getX()) {
+    if (obs.xMin() >= tile.xMin()
+        && obs.xMax() <= tile.xMax()) {
       reduce = ceil(
-          std::abs(obs.getUpperBound().getX() - obs.getLowerBound().getX())
+          std::abs(obs.xMax() - obs.xMin())
           / trackSpace);
     } else if (first) {
       reduce = ceil(
-          std::abs(tile.getUpperBound().getX() - obs.getLowerBound().getX())
+          std::abs(tile.xMax() - obs.xMin())
           / trackSpace);
     } else {
       reduce = ceil(
-          std::abs(obs.getUpperBound().getX() - tile.getLowerBound().getX())
+          std::abs(obs.xMax() - tile.xMin())
           / trackSpace);
     }
   } else {
-    if (obs.getLowerBound().getY() >= tile.getLowerBound().getY()
-        && obs.getUpperBound().getY() <= tile.getUpperBound().getY()) {
+    if (obs.yMin() >= tile.yMin()
+        && obs.yMax() <= tile.yMax()) {
       reduce = ceil(
-          std::abs(obs.getUpperBound().getY() - obs.getLowerBound().getY())
+          std::abs(obs.yMax() - obs.yMin())
           / trackSpace);
     } else if (first) {
       reduce = ceil(
-          std::abs(tile.getUpperBound().getY() - obs.getLowerBound().getY())
+          std::abs(tile.yMax() - obs.yMin())
           / trackSpace);
     } else {
       reduce = ceil(
-          std::abs(obs.getUpperBound().getY() - tile.getLowerBound().getY())
+          std::abs(obs.yMax() - tile.yMin())
           / trackSpace);
     }
   }
@@ -194,9 +194,9 @@ int Grid::computeTileReduce(const Box& obs,
   return reduce;
 }
 
-Coordinate Grid::getMiddle()
+odb::Point Grid::getMiddle()
 {
-  return Coordinate((_lowerLeftX + (_upperRightX - _lowerLeftX) / 2.0),
+  return odb::Point((_lowerLeftX + (_upperRightX - _lowerLeftX) / 2.0),
                     (_lowerLeftY + (_upperRightY - _lowerLeftY) / 2.0));
 }
 

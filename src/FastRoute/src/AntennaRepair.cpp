@@ -44,8 +44,6 @@
 #include <utility>
 #include <vector>
 
-#include "Box.h"
-#include "Coordinate.h"
 #include "Pin.h"
 #include "Net.h"
 #include "fastroute/GlobalRouter.h"
