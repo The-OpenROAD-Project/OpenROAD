@@ -36,17 +36,6 @@ Layer 6 pitch: 3.33
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
 [INFO] Reducing resources of layer 6 by 15%
-Running antenna avoidance flow...
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
-Notice 0: Split top of 1 T shapes.
 
 Final usage/overflow report: 
 
@@ -62,6 +51,18 @@ Final usage/overflow report:
 [INFO] Final usage          : 2677
 [INFO] Final number of vias : 1768
 [INFO] Final usage 3D       : 7981
+[INFO] Total wirelength: 27547 um
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Notice 0: Split top of 1 T shapes.
+Repairing antennas...
 [WARNING]No OR_DEFAULT vias defined
 [INFO] #Antenna violations: 2
 Design Stats
@@ -90,14 +91,14 @@ delta HPWL                  0 %
 Warning: Overlap check failed (2).
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0
+[PARAMS] Global adjustment: 0.000000
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (-1, -1)
-Layer 2 pitch: 0.37
-Layer 3 pitch: 0.48
-Layer 4 pitch: 0.74
-Layer 5 pitch: 0.96
-Layer 6 pitch: 3.33
+Layer 2 pitch: 0.370000
+Layer 3 pitch: 0.480000
+Layer 4 pitch: 0.740000
+Layer 5 pitch: 0.960000
+Layer 6 pitch: 3.330000
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 22609
 [INFO] #DB Macros: 2
@@ -127,7 +128,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 53
 [INFO] Final number of vias : 14
 [INFO] Final usage 3D       : 95
-[INFO] Total wirelength: 27691 um
 [INFO] Num routed nets: 322
 No differences found.
 No differences found.

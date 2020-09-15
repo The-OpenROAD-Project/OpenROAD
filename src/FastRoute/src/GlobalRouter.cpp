@@ -54,6 +54,7 @@
 #include "RoutingLayer.h"
 #include "RoutingTracks.h"
 #include "db_sta/dbSta.hh"
+#include "db_sta/dbNetwork.hh"
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
@@ -103,7 +104,7 @@ void GlobalRouter::makeComponents()
   _grid = new Grid;
   _gridOrigin = new Coordinate(-1, -1);
   _nets = new std::vector<Net>;
-  _openSta = _openroad->getSta();
+  _sta = _openroad->getSta();
   _routingLayers = new std::vector<RoutingLayer>;
 }
 
@@ -115,25 +116,26 @@ void GlobalRouter::deleteComponents()
   delete _grid;
   delete _gridOrigin;
   delete _nets;
-  delete _openSta;
+  delete _sta;
   delete _routingLayers;
 }
 
 void GlobalRouter::clear()
 {
-  // Clear classes
+  _routes.clear();
+  clearFlow();
+}
+
+void GlobalRouter::clearFlow()
+{
   _grid->clear();
   _fastRoute->clear();
-
-  // Clear vector
   _allRoutingTracks->clear();
   _nets->clear();
   _db_net_map.clear();
-  _routes.clear();
   _routingLayers->clear();
   _vCapacities.clear();
   _hCapacities.clear();
-
 }
 
 GlobalRouter::~GlobalRouter()
@@ -210,9 +212,7 @@ void GlobalRouter::startFastRoute()
 void GlobalRouter::runFastRoute()
 {
   _fastRoute->initAuxVar();
-  if (_enableAntennaFlow) {
-    runAntennaAvoidanceFlow();
-  } else if (_clockNetsRouteFlow) {
+  if (_clockNetsRouteFlow) {
     runClockNetsRouteFlow();
   } else {
     _routes = _fastRoute->run();
@@ -229,34 +229,32 @@ void GlobalRouter::runFastRoute()
   }
 }
 
-void GlobalRouter::runAntennaAvoidanceFlow()
+void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 {
-  std::cout << "Running antenna avoidance flow...\n";
+  std::cout << "Repairing antennas...\n";
 
   AntennaRepair* antennaRepair = 
     new AntennaRepair(this, _openroad->getAntennaChecker(),
                        _openroad->getOpendp(), _db);
 
-  NetRouteMap globalRoute = _fastRoute->run();
-  addRemainingGuides(globalRoute);
-  connectPadPins(globalRoute);
-
-  // Save routing.
-  NetRouteMap originalRoute(globalRoute);
+  // Copy first route result and make changes in this new vector
+  NetRouteMap originalRoute(_routes);
 
   getPreviousCapacities(_minRoutingLayer);
-  addLocalConnections(globalRoute);
+  addLocalConnections(originalRoute);
 
   int violationsCnt
-      = antennaRepair->checkAntennaViolations(globalRoute, _maxRoutingLayer);
+      = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer);
 
-  clear();
-
-  // Restore routing.
-  _routes = originalRoute;
+  clearFlow();
 
   if (violationsCnt > 0) {
-    antennaRepair->fixAntennas(_diodeCellName, _diodePinName);
+    odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
+    if (diodeMTerm == nullptr) {
+      error("conversion from liberty port to dbMTerm fail");
+    }
+    
+    antennaRepair->fixAntennas(diodeMTerm);
     antennaRepair->legalizePlacedCells();
     _reroute = true;
     startFastRoute();
@@ -270,12 +268,11 @@ void GlobalRouter::runAntennaAvoidanceFlow()
     NetRouteMap newRoute = _fastRoute->run();
     addRemainingGuides(newRoute);
     connectPadPins(newRoute);
+    for (auto &net_route : newRoute) {
+      GRoute &route = net_route.second;
+      mergeSegments(route);
+    }
     mergeResults(newRoute);
-  }
-
-  for (auto &net_route : _routes) {
-    GRoute &route = net_route.second;
-    mergeSegments(route);
   }
 }
 
@@ -319,16 +316,6 @@ void GlobalRouter::estimateRC()
       builder.estimateParasitcs(db_net, net->getPins(), route);
     }
   }
-}
-
-void GlobalRouter::enableAntennaAvoidance(char* diodeCellName,
-                                             char* diodePinName)
-{
-  _enableAntennaFlow = true;
-  std::string cellName(diodeCellName);
-  std::string pinName(diodePinName);
-  _diodeCellName = cellName;
-  _diodePinName = pinName;
 }
 
 void GlobalRouter::initCoreGrid()
@@ -2445,7 +2432,7 @@ void GlobalRouter::initClockNets()
 {
   std::set<odb::dbNet*> _clockNets;
 
-  _openSta->findClkNets(_clockNets);
+  _sta->findClkNets(_clockNets);
 
   std::cout << "[INFO] Found " << _clockNets.size() << " clock nets\n";
 
