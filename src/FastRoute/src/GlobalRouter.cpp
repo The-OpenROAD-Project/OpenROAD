@@ -205,18 +205,20 @@ void GlobalRouter::startFastRoute()
     computeRegionAdjustments(
         lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
   }
+
+  if (_onlySignalNets)
+  {
+    restorePreviousCapacities(_minLayerForClock, _maxRoutingLayer);
+  }
+
+  _fastRoute->initAuxVar();
 }
 
 void GlobalRouter::runFastRoute()
 {
-  _fastRoute->initAuxVar();
-  if (_clockNetsRouteFlow) {
-    runClockNetsRouteFlow();
-  } else {
-    _routes = _fastRoute->run();
-    addRemainingGuides(_routes);
-    connectPadPins(_routes);
-  }
+  _routes = _fastRoute->run();
+  addRemainingGuides(_routes);
+  connectPadPins(_routes);
 
   mergeSegments();
   computeWirelength();
@@ -238,7 +240,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   // Copy first route result and make changes in this new vector
   NetRouteMap originalRoute(_routes);
 
-  getPreviousCapacities(_minRoutingLayer);
+  getPreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
   addLocalConnections(originalRoute);
 
   int violationsCnt
@@ -260,9 +262,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     std::cout << "[INFO] #Nets to reroute: " << _fastRoute->getNets().size()
               << "\n";
 
-    restorePreviousCapacities(_minRoutingLayer);
+    restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
 
-    _fastRoute->initAuxVar();
     NetRouteMap newRoute = _fastRoute->run();
     addRemainingGuides(newRoute);
     connectPadPins(newRoute);
@@ -274,29 +275,23 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   }
 }
 
-void GlobalRouter::runClockNetsRouteFlow()
+void GlobalRouter::routeClockNets()
 {
-  _fastRoute->setVerbose(0);
-  NetRouteMap clockNetsRoute = _fastRoute->run();
-  addRemainingGuides(clockNetsRoute);
-  connectPadPins(clockNetsRoute);
+  std::cout << "Running clock nets...\n";
+  _routes = _fastRoute->run();
 
-  getPreviousCapacities(_minLayerForClock);
+  addRemainingGuides(_routes);
+  connectPadPins(_routes);
 
-  clear();
+  _minLayerForClock = _minRoutingLayer;
+  _maxLayerForClock = _maxRoutingLayer;
+
+  getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
+  clearFlow();
   _onlyClockNets = false;
   _onlySignalNets = true;
 
-  startFastRoute();
-  restorePreviousCapacities(_minLayerForClock);
-
-  _fastRoute->initAuxVar();
-  _routes = _fastRoute->run();
-  addRemainingGuides(_routes);
-  connectPadPins(_routes);
-  mergeSegments();
-
-  mergeResults(clockNetsRoute);
+  std::cout << "Running clock nets... Done\n";
 }
 
 void GlobalRouter::estimateRC()
@@ -372,7 +367,7 @@ void GlobalRouter::setCapacities()
   }
 }
 
-void GlobalRouter::getPreviousCapacities(int previousMinLayer)
+void GlobalRouter::getPreviousCapacities(int previousMinLayer, int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
@@ -395,7 +390,7 @@ void GlobalRouter::getPreviousCapacities(int previousMinLayer)
   }
 
   int oldTotalCap = 0;
-  for (int layer = previousMinLayer; layer <= _grid->getNumLayers(); layer++) {
+  for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = _fastRoute->getEdgeCurrentResource(
@@ -416,14 +411,14 @@ void GlobalRouter::getPreviousCapacities(int previousMinLayer)
   }
 }
 
-void GlobalRouter::restorePreviousCapacities(int previousMinLayer)
+void GlobalRouter::restorePreviousCapacities(int previousMinLayer, int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
   int newTotalCap = 0;
-  for (int layer = previousMinLayer; layer <= _grid->getNumLayers(); layer++) {
+  for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = oldHUsages[layer - 1][y - 1][x - 1];
@@ -598,8 +593,7 @@ void GlobalRouter::computeGridAdjustments()
     RoutingLayer routingLayer = getRoutingLayerByIndex(layer);
 
     if (layer < _minRoutingLayer
-        || (layer > _maxRoutingLayer && _maxRoutingLayer > 0)
-        || (_onlyClockNets && layer < _minLayerForClock))
+        || (layer > _maxRoutingLayer && _maxRoutingLayer > 0))
       continue;
 
     int newVCapacity = 0;
@@ -657,8 +651,7 @@ void GlobalRouter::computeTrackAdjustments()
     int numTracks = 0;
 
     if (layer.getIndex() < _minRoutingLayer
-        || (layer.getIndex() > _maxRoutingLayer && _maxRoutingLayer > 0)
-        || (_onlyClockNets && layer.getIndex() < _minLayerForClock))
+        || (layer.getIndex() > _maxRoutingLayer && _maxRoutingLayer > 0))
       continue;
 
     if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
@@ -1170,16 +1163,9 @@ void GlobalRouter::setReportCongestion(char* congestFile)
   _congestFile = congestFile;
 }
 
-void GlobalRouter::setClockNetsRouteFlow(bool clockFlow)
+void GlobalRouter::setOnlyClockNets(bool onlyClocks)
 {
-  _clockNetsRouteFlow = clockFlow;
-  _onlyClockNets = clockFlow;
-  _onlySignalNets = false;
-}
-
-void GlobalRouter::setMinLayerForClock(int minLayer)
-{
-  _minLayerForClock = minLayer;
+  _onlyClockNets = onlyClocks;
 }
 
 void GlobalRouter::writeGuides(const char* fileName)

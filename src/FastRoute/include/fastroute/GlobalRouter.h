@@ -136,8 +136,6 @@ class GlobalRouter
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
   void printGrid();
-  void setClockNetsRouteFlow(bool clockFlow);
-  void setMinLayerForClock(int minLayer);
 
   // flow functions
   void writeGuides(const char* fileName);
@@ -157,6 +155,10 @@ class GlobalRouter
   void getLayerRC(unsigned layerId, float& r, float& c);
   void getCutLayerRes(unsigned belowLayerId, float& r);
   float dbuToMeters(unsigned dbu);
+
+  // route clock nets public functions
+  void setOnlyClockNets(bool onlyClocks);
+  void routeClockNets();
 
 protected:
   // Net functions
@@ -219,8 +221,8 @@ protected:
   void mergeResults(NetRouteMap& routes);
   void runClockNetsRouteFlow();
   void restartFastRoute();
-  void getPreviousCapacities(int previousMinLayer);
-  void restorePreviousCapacities(int previousMinLayer);
+  void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
+  void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
 
   // db functions
   void initGrid(int maxLayer);
@@ -296,6 +298,7 @@ protected:
   bool _onlyClockNets = false;
   bool _onlySignalNets = false;
   int _minLayerForClock;
+  int _maxLayerForClock;
 
   // Antenna variables
   int*** oldHUsages;

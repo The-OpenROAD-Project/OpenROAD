@@ -109,12 +109,6 @@ set_unidirectional_routing(bool unidirRouting)
 }
 
 void
-set_clock_net_routing(bool clockNetRouting)
-{
-  getFastRoute()->setClockNetsRouteFlow(clockNetRouting);
-}
-
-void
 set_alpha(float alpha)
 {
   getFastRoute()->setAlpha(alpha);
@@ -169,15 +163,11 @@ set_layer_pitch(int layer, float pitch)
 }
 
 void
-set_clock_nets_route_flow(bool clock_flow)
+set_clock_layer_range(int minLayer, int maxLayer)
 {
-  getFastRoute()->setClockNetsRouteFlow(clock_flow);
-}
-
-void
-set_min_layer_for_clock(int minLayer)
-{
-  getFastRoute()->setMinLayerForClock(minLayer);
+  getFastRoute()->setOnlyClockNets(1);
+  getFastRoute()->setMinRoutingLayer(minLayer);
+  getFastRoute()->setMaxRoutingLayer(maxLayer);
 }
 
 void
@@ -196,6 +186,12 @@ void
 estimate_rc()
 {
   getFastRoute()->estimateRC();
+}
+
+void
+route_clock_nets()
+{
+  getFastRoute()->routeClockNets();
 }
 
 void
