@@ -216,7 +216,10 @@ void GlobalRouter::startFastRoute()
 
 void GlobalRouter::runFastRoute()
 {
-  _routes = _fastRoute->run();
+  // Store results in a temporary map, allowing to keep any previous
+  // routing result (e.g., after routeClockNets)
+  NetRouteMap result = _fastRoute->run();
+  _routes.insert(result.begin(), result.end());
   addRemainingGuides(_routes);
   connectPadPins(_routes);
 
