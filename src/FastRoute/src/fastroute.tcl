@@ -211,7 +211,7 @@ proc fastroute { args } {
   }
 
   if { [info exists keys(-layers_pitches)] } {
-    ord::warn "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer adjustment"
+    ord::warn "option -layers_pitches is deprecated. Use command set_global_routing_layer_pitch layer pitch"
     set layers_pitches $keys(-layers_pitches)
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
