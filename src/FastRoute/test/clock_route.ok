@@ -13,7 +13,7 @@ Notice 0:     Created 1271 components and 5147 component-terminals.
 Notice 0:     Created 2 special nets and 0 connections.
 Notice 0:     Created 322 nets and 971 connections.
 Notice 0: Finished DEF file: gcd_sky130.def
-[PARAMS] Min routing layer: 2
+[PARAMS] Min routing layer: 4
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.5
 [PARAMS] Unidirectional routing: 1
@@ -32,6 +32,7 @@ Notice 0: Finished DEF file: gcd_sky130.def
 [INFO] Reducing resources of layer 4 by 50%
 [INFO] Reducing resources of layer 5 by 50%
 [INFO] Reducing resources of layer 6 by 50%
+Routing clock nets...
 
 Final usage/overflow report: 
 
@@ -81,6 +82,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 2515
 [INFO] Final number of vias : 1919
 [INFO] Final usage 3D       : 8272
-[INFO] Total wirelength: 27640 um
+[INFO] Total wirelength: 27662 um
 [INFO] Num routed nets: 322
 No differences found.
