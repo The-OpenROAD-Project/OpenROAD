@@ -1,4 +1,6 @@
-find_package(Qt5 COMPONENTS Core Widgets)
+# If Qt is not installed there will not be cmake
+# support for the package so this needs to be "quiet".
+find_package(Qt5 QUIET COMPONENTS Core Widgets)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

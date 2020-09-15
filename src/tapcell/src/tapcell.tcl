@@ -53,7 +53,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master] \
                                     [-incnrcap_nwin_master incnrcap_nwin_master] \
                                     [-incnrcap_nwout_master incnrcap_nwout_master] \
                                     [-tbtie_cpp tbtie_cpp] \
-#the next flags enables gf14 flow
+#the next flags enables 14 flow
                                     [-no_cell_at_top_bottom] \
                                     [-add_boundary_cell] \
 }

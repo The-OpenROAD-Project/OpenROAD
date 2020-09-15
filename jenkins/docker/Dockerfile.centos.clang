@@ -66,8 +66,6 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && cmake -B build . \
     && cmake --build build -j $(nproc) --target install
 
-RUN useradd -ms /bin/bash openroad
-
 # Coverage
 FROM base-dependencies AS coverage
 
@@ -85,4 +83,4 @@ ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
     LD_LIBRARY_PATH=/opt/rh/llvm-toolset-7.0/root/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 # Build
-RUN cmake -B build . && cmake --build build -j $(nproc)
+RUN cmake -B build . && cmake --build build

@@ -1,5 +1,4 @@
 VERSION 5.8 ;
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN dynamic_node_top_wrap ;
