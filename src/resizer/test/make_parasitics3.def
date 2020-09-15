@@ -1,6 +1,5 @@
 # reg1 with clock buffers
 VERSION 5.8 ; 
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 

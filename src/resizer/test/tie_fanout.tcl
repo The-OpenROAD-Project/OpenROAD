@@ -17,7 +17,6 @@ proc write_tie_hi_fanout_def { filename tie_port load_port fanout } {
   set size [expr $x_origin + $spacing * ($rows + 1)]
 
   puts $stream {VERSION 5.8 ;
-NAMESCASESENSITIVE ON ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
 DESIGN top ;
