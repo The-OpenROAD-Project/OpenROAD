@@ -174,15 +174,11 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
-                                  [-clock_nets_route_flow] \
                                   [-output_file out_file] \
                                   [-min_routing_layer min_layer] \
                                   [-max_routing_layer max_layer] \
                                   [-layers_adjustments layers_adjustments] \
                                   [-layers_pitches layers_pitches] \
-                                  [-antenna_avoidance_flow] \
-                                  [-antenna_cell_name antenna_cell_name] \
-                                  [-antenna_pin_name antenna_pin_name] \
 }
 
 proc fastroute { args } {
@@ -190,10 +186,9 @@ proc fastroute { args } {
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -output_file -min_routing_layer -max_routing_layer \
-          -layers_pitches -antenna_cell_name -antenna_pin_name \
+          -output_file -min_routing_layer -max_routing_layer -layers_pitches \
          } \
-    flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
+    flags {-unidirectional_routing -allow_overflow} \
 
   if { ![ord::db_has_tech] } {
     ord::error "missing dbTech"
