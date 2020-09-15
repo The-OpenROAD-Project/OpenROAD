@@ -277,7 +277,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
 void GlobalRouter::routeClockNets()
 {
-  std::cout << "Running clock nets...\n";
+  std::cout << "Routing clock nets...\n";
   _routes = _fastRoute->run();
 
   addRemainingGuides(_routes);
@@ -290,8 +290,6 @@ void GlobalRouter::routeClockNets()
   clearFlow();
   _onlyClockNets = false;
   _onlySignalNets = true;
-
-  std::cout << "Running clock nets... Done\n";
 }
 
 void GlobalRouter::estimateRC()
