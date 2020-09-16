@@ -133,7 +133,6 @@ variable site_width
 variable site_name
 variable row_height
 variable metal_layers {}
-variable layers {}
 variable blockages {} 
 variable padcell_blockages {} 
 variable instances {}
@@ -2291,7 +2290,7 @@ proc find_pad_offset_area {} {
 
   foreach inst [$block getInsts] {
     if {[lsearch $pad_names [[$inst getMaster] getName]] > -1} {
-      set quadrant [get_quadrant {*}[$inst getOrigin]]
+      set quadrant [get_design_quadrant {*}[$inst getOrigin]]
       switch $quadrant {
         "b" {
           if {$yMin < [set y [[$inst getBBox] yMax]]} {
@@ -2685,21 +2684,12 @@ proc export_opendb_specialnet {net_name signal_type} {
     if {[array names stripe_locs "$lay,$signal_type"] == ""} {continue}
 
     set layer [find_layer $lay]
-    foreach shape [::odb::getPolygons $stripe_locs($lay,$signal_type)] {
-      set points [::odb::getPoints $shape]
-      if {[llength $points] != 4} {
-        variable def_units
-        warning 6 "Unexpected number of points in shape ($lay $signal_type [llength $points])"
-        set str "    "
-        foreach point $points {set str "$str ([expr 1.0 * [$point getX] / $def_units ] [expr 1.0 * [$point getY] / $def_units]) "}
-        warning 7 $str
-        continue
-      }
-      set xMin [expr min([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
-      set xMax [expr max([[lindex $points 0] getX], [[lindex $points 1] getX], [[lindex $points 2] getX], [[lindex $points 3] getX])]
-      set yMin [expr min([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
-      set yMax [expr max([[lindex $points 0] getY], [[lindex $points 1] getY], [[lindex $points 2] getY], [[lindex $points 3] getY])]
-
+    foreach rect [::odb::getRectangles $stripe_locs($lay,$signal_type)] {
+      set xMin [$rect xMin]
+      set xMax [$rect xMax]
+      set yMin [$rect yMin]
+      set yMax [$rect yMax]
+      
       set width [expr $xMax - $xMin]
       set height [expr $yMax - $yMin]
 
@@ -2973,6 +2963,24 @@ proc write_pdn_strategy {} {
   }
 }
 
+proc init_tech {} {
+  variable db
+  variable block
+  variable tech
+  variable libs
+  variable def_units
+
+  set db [ord::get_db]
+  set tech [$db getTech]
+  set libs [$db getLibs]
+  set block [[$db getChip] getBlock]
+  set def_units [$block getDefUnits]
+
+  init_metal_layers
+  init_via_tech
+ 
+}
+
 proc init {{PDN_cfg "PDN.cfg"}} {
   variable db
   variable block
@@ -2993,18 +3001,14 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   variable rails_start_with
   variable physical_viarules
   variable stdcell_area
-  
-#    set ::start_time [clock clicks -milliseconds]
-  set db [ord::get_db]
 
+#    set ::start_time [clock clicks -milliseconds]
+  init_tech 
+   
   if {![file_exists_non_empty $PDN_cfg]} {
     critical 28 "File $PDN_cfg does not exist, or exists but empty"
   }
 
-  set tech [$db getTech]
-  set libs [$db getLibs]
-  set block [[$db getChip] getBlock]
-  set def_units [$block getDefUnits]
   set design_name [$block getName]
 
   set design_data {}
@@ -3015,9 +3019,6 @@ proc init {{PDN_cfg "PDN.cfg"}} {
   source $PDN_cfg
   write_pdn_strategy 
   
-  init_metal_layers
-  init_via_tech
- 
   set die_area [$block getDieArea]
   information 8 "Design Name is $design_name"
   set def_output "${design_name}_pdn.def"
@@ -3204,15 +3205,12 @@ proc specify_grid {type specification} {
   dict set design_data grid $type $spec_name $spec
 }
 
-proc get_quadrant {x y} {
-  variable design_data
-  
-  set die_area [dict get $design_data config die_area]
-  set dw [expr [lindex $die_area 2] - [lindex $die_area 0]]
-  set dh [expr [lindex $die_area 3] - [lindex $die_area 1]]
-  
-  set test_x [expr $x - [lindex $die_area 0]]
-  set test_y [expr $y - [lindex $die_area 1]]
+proc get_quadrant {rect x y} {
+  set dw [expr [lindex $rect 2] - [lindex $rect 0]]
+  set dh [expr [lindex $rect 3] - [lindex $rect 1]]
+
+  set test_x [expr $x - [lindex $rect 0]]
+  set test_y [expr $y - [lindex $rect 1]]
   # debug "$dw * $test_y ([expr $dw * $test_y]) > expr $dh * $test_x ([expr $dh * $test_x])"
   if {$dw * $test_y > $dh * $test_x} {
     # Top or left
@@ -3233,6 +3231,13 @@ proc get_quadrant {x y} {
       return "b"
     }
   }
+}
+
+proc get_design_quadrant {x y} {
+  variable design_data
+  
+  set die_area [dict get $design_data config die_area]
+  return [get_quadrant $die_area $x $y]
 }
 
 proc get_core_facing_pins {instance pin_name side layer} {
@@ -3306,7 +3311,7 @@ proc connect_pads_to_core_ring {type pin_name pads} {
   # debug "start - pads $pads"
   dict for {inst_name instance} [import_def_components $pads] {
     # debug "inst $inst_name"
-    set side [get_quadrant [dict get $instance x] [dict get $instance y]]
+    set side [get_design_quadrant [dict get $instance x] [dict get $instance y]]
     # debug "inst [dict get $instance name] x [dict get $instance x] y [dict get $instance y] side $side"
     switch $side {
       "t" {
