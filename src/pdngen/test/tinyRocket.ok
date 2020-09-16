@@ -1,14 +1,14 @@
-Notice 0: Reading LEF file:  nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: Reading LEF file:  NangateOpenCellLibrary.mod.lef
 Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
-Notice 0: Finished LEF file:  nangate45/NangateOpenCellLibrary.mod.lef
-Notice 0: Reading LEF file:  tinyRocket/fakeram45_64x32.lef
+Notice 0: Finished LEF file:  NangateOpenCellLibrary.mod.lef
+Notice 0: Reading LEF file:  fakeram45_64x32.lef
 Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  tinyRocket/fakeram45_64x32.lef
-Notice 0: Reading LEF file:  tinyRocket/fakeram45_1024x32.lef
+Notice 0: Finished LEF file:  fakeram45_64x32.lef
+Notice 0: Reading LEF file:  fakeram45_1024x32.lef
 Notice 0:     Created 1 library cells
-Notice 0: Finished LEF file:  tinyRocket/fakeram45_1024x32.lef
+Notice 0: Finished LEF file:  fakeram45_1024x32.lef
 Notice 0: 
 Reading DEF file: tinyRocket/2_5_floorplan_tapcell.def
 Notice 0: Design: RocketTile
