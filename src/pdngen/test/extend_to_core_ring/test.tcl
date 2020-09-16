@@ -1,4 +1,4 @@
-read_lef nangate45/NangateOpenCellLibrary.mod.lef
+read_lef NangateOpenCellLibrary.mod.lef
 read_def $test_name/floorplan.def
 
 pdngen $test_name/pdn.cfg -verbose
