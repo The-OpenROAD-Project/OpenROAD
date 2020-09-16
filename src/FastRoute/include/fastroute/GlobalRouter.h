@@ -196,7 +196,7 @@ protected:
   void addRemainingGuides(NetRouteMap& routes);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
-  odb::Rect globalRoutingToBox(const FastRoute::GSegment& route);
+  odb::Rect globalRoutingToBox(const GSegment& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
@@ -306,7 +306,7 @@ protected:
   int _numAdjusts = 0;
 
   // Variables for PADs obstacles handling
-  std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
+  std::map<Net*, std::vector<GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _sta;
