@@ -1234,8 +1234,8 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    error("Routing with guides in blocked metal for net %s",
 		  db_net->getConstName());
 	  }
-	  odb::Rect box = globalRoutingToBox(segment);
-	  guideBox.push_back(box);
+
+	  guideBox.push_back(globalRoutingToBox(segment));
 	  if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
 	    phLayerF = getRoutingLayerByIndex(
 					      (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
@@ -1263,8 +1263,7 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    }
 	    finalLayer = segment.finalLayer;
 	    odb::Rect box;
-	    box = globalRoutingToBox(segment);
-	    guideBox.push_back(box);
+	    guideBox.push_back(globalRoutingToBox(segment));
 	    mergeBox(guideBox);
 	    for (odb::Rect guide : guideBox) {
 	      guideFile << guide.xMin() + offsetX << " "
@@ -1275,8 +1274,7 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    }
 	    guideBox.clear();
 
-	    box = globalRoutingToBox(segment);
-	    guideBox.push_back(box);
+	    guideBox.push_back(globalRoutingToBox(segment));
 	  }
 	}
       }
