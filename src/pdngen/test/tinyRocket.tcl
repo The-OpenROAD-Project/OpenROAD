@@ -1,8 +1,8 @@
 source "helpers.tcl"
 
-read_lef nangate45/NangateOpenCellLibrary.mod.lef
-read_lef tinyRocket/fakeram45_64x32.lef
-read_lef tinyRocket/fakeram45_1024x32.lef
+read_lef NangateOpenCellLibrary.mod.lef
+read_lef fakeram45_64x32.lef
+read_lef fakeram45_1024x32.lef
 
 read_def tinyRocket/2_5_floorplan_tapcell.def
 
