@@ -343,7 +343,7 @@ endif()
 
 # clang7 with docker fails to link filesystem support
 # This is not necessary (or desired) on AppleClang or non-docker compiles.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "CLANG"
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
     AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(openroad stdc++fs)
 endif()
