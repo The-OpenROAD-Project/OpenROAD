@@ -147,6 +147,8 @@ void GlobalRouter::startFastRoute()
   initPitches();
   if (_unidirectionalRoute) {
     _fixLayer = 1;
+    if (_minRoutingLayer < 2)
+      _minRoutingLayer = 2;
   } else {
     _fixLayer = 0;
   }
