@@ -46,6 +46,7 @@
 #include "opendb/dbShape.h"
 #include "opendb/wOrder.h"
 #include "opendp/Opendp.h"
+#include "sta/Liberty.hh"
 
 // Forward declaration protects FastRoute code from any
 // header file from the DB. FastRoute code keeps independent.
@@ -60,6 +61,8 @@ namespace bgi = boost::geometry::index;
 
 namespace FastRoute {
 
+typedef std::map<odb::dbNet*, std::vector<VINFO>> AntennaViolations;
+
 class GlobalRouter;
 
 class AntennaRepair
@@ -71,12 +74,10 @@ class AntennaRepair
 
   int checkAntennaViolations(NetRouteMap& routing,
 			     int maxRoutingLayer);
-  void fixAntennas(std::string antennaCellName, std::string antennaPinName);
+  void fixAntennas(odb::dbMTerm* diodeMTerm);
   void legalizePlacedCells();
-  std::map<odb::dbNet*, std::vector<VINFO>> getAntennaViolations()
-                                            { return _antennaViolations; }
-  void setAntennaViolations(std::map<odb::dbNet*, std::vector<VINFO>>
-                            antennaViolations)
+  AntennaViolations getAntennaViolations() { return _antennaViolations; }
+  void setAntennaViolations(AntennaViolations antennaViolations)
                            { _antennaViolations = antennaViolations; }
 
 private:
@@ -88,8 +89,7 @@ private:
   typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
 
   void insertDiode(odb::dbNet* net,
-                   std::string antennaCellName,
-                   std::string antennaPinName,
+                   odb::dbMTerm* diodeMTerm,
                    odb::dbInst* sinkInst,
                    odb::dbITerm* sinkITerm,
                    std::string antennaInstName,
@@ -102,7 +102,7 @@ private:
   opendp::Opendp* _opendp;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
-  std::map<odb::dbNet*, std::vector<VINFO>> _antennaViolations;
+  AntennaViolations _antennaViolations;
 };
 
 }  // namespace FastRoute

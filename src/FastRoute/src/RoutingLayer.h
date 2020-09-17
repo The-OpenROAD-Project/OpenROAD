@@ -41,8 +41,6 @@
 #include <string>
 #include <vector>
 
-#include "Box.h"
-#include "Coordinate.h"
 #include "Pin.h"
 
 namespace FastRoute {

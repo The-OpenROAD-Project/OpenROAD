@@ -10,50 +10,18 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 676 components and 2850 component-terminals.
 Notice 0:     Created 579 nets and 1498 connections.
 Notice 0: Finished DEF file: gcd.def
-
- *****************
- *   FastRoute   *
- *****************
-
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 10
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (-1, -1)
-
-Initializing grid...
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 2874
 [INFO] #DB Macros: 0
-Initializing grid... Done!
-Initializing routing layers...
-Initializing routing layers... Done!
-Initializing routing tracks...
-Initializing routing tracks... Done!
-Setting capacities...
-Setting capacities... Done!
-Setting spacings and widths...
-Setting spacings and widths... Done!
-Initializing nets...
 [INFO] Found 0 clock nets
-Checking pin placement...
-Checking pin placement... Done!
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 36
-Initializing nets... Done!
-Adjusting grid...
-Adjusting grid... Done!
-Computing track adjustments...
-Computing track adjustments... Done!
-Computing obstacles adjustments...
 [INFO] Processing 8469 obstacles in layer 1
-Computing obstacles adjustments... Done!
-Computing user defined adjustments...
-Computing user defined adjustments... Done!
-Computing user defined layers adjustments...
-Computing user defined layers adjustments... Done!
-Running FastRoute...
-
 
 Final usage/overflow report: 
 
@@ -69,11 +37,7 @@ Final usage/overflow report:
 [INFO] Final usage          : 3333
 [INFO] Final number of vias : 2597
 [INFO] Final usage 3D       : 11124
-Getting results...
-Getting results... Done!
-
-Running FastRoute... Done!
-[INFO] Total wirelength: 10292.099609 um
+[INFO] Total wirelength: 10292 um
 Net clk
  Pin capacitance: r 33.238 f 29.975
  Wire capacitance: r 17.626 f 17.626

@@ -40,9 +40,9 @@
 #include <map>
 #include <vector>
 
-#include "Box.h"
-#include "Coordinate.h"
 #include "RoutingLayer.h"
+
+#include "opendb/db.h"
 
 namespace FastRoute {
 
@@ -65,7 +65,7 @@ class Grid
   std::vector<int> _minWidths;
   std::vector<int> _horizontalEdgesCapacities;
   std::vector<int> _verticalEdgesCapacities;
-  std::map<int, std::vector<Box>> _obstacles;
+  std::map<int, std::vector<odb::Rect>> _obstacles;
   int _databaseUnit;
 
  public:
@@ -81,7 +81,7 @@ class Grid
             const std::vector<int>& minWidths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<Box>>& obstacles,
+            const std::map<int, std::vector<odb::Rect>>& obstacles,
             int databaseUnit);
 
   typedef struct
@@ -153,28 +153,28 @@ class Grid
     _verticalEdgesCapacities[layer] = reduction;
   };
 
-  const std::map<int, std::vector<Box>>& getAllObstacles() const
+  const std::map<int, std::vector<odb::Rect>>& getAllObstacles() const
   {
     return _obstacles;
   }
-  void addObstacle(int layer, Box obstacle)
+  void addObstacle(int layer, odb::Rect obstacle)
   {
     _obstacles[layer].push_back(obstacle);
   }
 
-  Coordinate getPositionOnGrid(const Coordinate& position);
+  odb::Point getPositionOnGrid(const odb::Point& position);
 
-  std::pair<TILE, TILE> getBlockedTiles(const Box& obstacle,
-                                        Box& firstTileBds,
-                                        Box& lastTileBds);
+  std::pair<TILE, TILE> getBlockedTiles(const odb::Rect& obstacle,
+                                        odb::Rect& firstTileBds,
+                                        odb::Rect& lastTileBds);
 
-  int computeTileReduce(const Box& obs,
-                        const Box& tile,
+  int computeTileReduce(const odb::Rect& obs,
+                        const odb::Rect& tile,
                         int trackSpace,
                         bool first,
                         bool direction);
 
-  Coordinate getMiddle();
+  odb::Point getMiddle();
 };
 
 }  // namespace FastRoute

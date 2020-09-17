@@ -44,8 +44,6 @@
 #include <utility>
 #include <vector>
 
-#include "Box.h"
-#include "Coordinate.h"
 #include "Pin.h"
 #include "Net.h"
 #include "fastroute/GlobalRouter.h"
@@ -112,7 +110,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     odb::orderWires(db_net, false, false);
 
     std::vector<VINFO> netViol = _arc->get_net_antenna_violations(db_net);
-    if (netViol.size() > 0) {
+    if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
       dirtyNets.push_back(db_net);
     }
@@ -128,8 +126,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
   return _antennaViolations.size();
 }
 
-void AntennaRepair::fixAntennas(std::string antennaCellName,
-                            std::string antennaPinName)
+void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
 {
   int siteWidth = -1;
   int cnt = 0;
@@ -156,8 +153,7 @@ void AntennaRepair::fixAntennas(std::string antennaCellName,
         odb::dbInst* sinkInst = sinkITerm->getInst();
         std::string antennaInstName = "ANTENNA_" + std::to_string(cnt);
         insertDiode(net,
-                    antennaCellName,
-                    antennaPinName,
+                    diodeMTerm,
                     sinkInst,
                     sinkITerm,
                     antennaInstName,
@@ -176,8 +172,7 @@ void AntennaRepair::legalizePlacedCells()
 }
 
 void AntennaRepair::insertDiode(odb::dbNet* net,
-                            std::string antennaCellName,
-                            std::string antennaPinName,
+                            odb::dbMTerm* diodeMTerm,
                             odb::dbInst* sinkInst,
                             odb::dbITerm* sinkITerm,
                             std::string antennaInstName,
@@ -192,8 +187,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   std::string netName = net->getConstName();
 
-  odb::dbMaster* antennaMaster = _db->findMaster(antennaCellName.c_str());
-  odb::dbSet<odb::dbMTerm> antennaMTerms = antennaMaster->getMTerms();
+  odb::dbMaster* antennaMaster = diodeMTerm->getMaster();
 
   int instLocX, instLocY, instWidth;
   odb::dbBox* sinkBBox = sinkInst->getBBox();
@@ -204,7 +198,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   odb::dbInst* antennaInst
       = odb::dbInst::create(_block, antennaMaster, antennaInstName.c_str());
-  odb::dbITerm* antennaITerm = antennaInst->findITerm(antennaPinName.c_str());
+  odb::dbITerm* antennaITerm = antennaInst->findITerm(diodeMTerm->getConstName());
   odb::dbBox* antennaBBox = antennaInst->getBBox();
   int antennaWidth = antennaBBox->xMax() - antennaBBox->xMin();
 

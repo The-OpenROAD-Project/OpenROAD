@@ -90,6 +90,70 @@ proc set_pdrev_topology_priority { args } {
   }
 }
 
+sta::define_cmd_args "set_global_routing_region_adjustment" { region \
+                                                              [-layer layer] \
+                                                              [-adjustment adjustment] \
+}
+
+proc set_global_routing_region_adjustment { args } {
+  sta::parse_key_args "set_global_routing_region_adjustment" args \
+                 keys {-layer -adjustment}
+
+  if { ![ord::db_has_tech] } {
+    ord::error "missing dbTech"
+  }
+  set tech [ord::get_db_tech]
+  set lef_units [$tech getLefUnits]
+
+  if { [info exists keys(-layer)] } {
+    set layer $keys(-layer)
+  } else {
+    ord::error "set_global_routing_region_adjustment: Missing layer"
+  }
+
+  if { [info exists keys(-adjustment)] } {
+    set adjustment $keys(-adjustment)
+  } else {
+    ord::error "set_global_routing_region_adjustment: Missing adjustment"
+  }
+
+  sta::check_argc_eq1 "set_global_routing_region_adjustment" $args
+  set region [lindex $args 0]
+  if {[llength $region] == 4} {
+    lassign $region lower_x lower_y upper_x upper_y
+    sta::check_positive_float "lower_left_x" $lower_x
+    sta::check_positive_float "lower_left_y" $lower_y
+    sta::check_positive_float "upper_right_x" $upper_x
+    sta::check_positive_float "upper_right_y" $upper_y
+    sta::check_positive_integer "-layer" $layer
+    sta::check_positive_float "-adjustment" $adjustment
+
+    set lower_x [expr { int($lower_x * $lef_units) }]
+    set lower_y [expr { int($lower_y * $lef_units) }]
+    set upper_x [expr { int($upper_x * $lef_units) }]
+    set upper_y [expr { int($upper_y * $lef_units) }]
+
+    FastRoute::check_region $lower_x $lower_y $upper_x $upper_y
+
+    FastRoute::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
+  } else {
+    ord::error "set_global_routing_region_adjustment: Wrong number of arguments to define a region"
+  }
+}
+
+sta::define_cmd_args "repair_antennas" { lib_port }
+
+proc repair_antennas { args } {
+  sta::check_argc_eq1 "repair_antennas" $args
+  set lib_port [lindex $args 0]
+  if { ![sta::is_object $lib_port] } {
+    set lib_port [sta::get_lib_pins [lindex $args 0]]
+  }
+  if { $lib_port != "" } {
+    FastRoute::repair_antennas $lib_port
+  }
+}
+
 sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
@@ -115,7 +179,6 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-min_routing_layer min_layer] \
                                   [-max_routing_layer max_layer] \
                                   [-layers_adjustments layers_adjustments] \
-                                  [-regions_adjustments regions_adjustments] \
                                   [-layers_pitches layers_pitches] \
                                   [-antenna_avoidance_flow] \
                                   [-antenna_cell_name antenna_cell_name] \
@@ -127,7 +190,7 @@ proc fastroute { args } {
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -output_file -min_routing_layer -max_routing_layer -regions_adjustments \
+          -output_file -min_routing_layer -max_routing_layer \
           -layers_pitches -antenna_cell_name -antenna_pin_name \
          } \
     flags {-unidirectional_routing -allow_overflow -clock_nets_route_flow -antenna_avoidance_flow} \
@@ -178,19 +241,6 @@ proc fastroute { args } {
         FastRoute::add_layer_adjustment $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for layer adjustments"
-      }
-    }
-  }
-  
-  if { [info exists keys(-regions_adjustments)] } {
-    set regions_adjustments $keys(-regions_adjustments)
-    foreach region_adjustment $regions_adjustments {
-      if { [llength $region_adjustment] == 2 } {
-        lassign $region_adjustment minX minY maxX maxY layer reductionPercentage
-        puts "Adjust region ($minX, $minY); ($maxX, $maxY) in layer $layer in [expr $reductionPercentage * 100]%"
-        FastRoute::add_region_adjustment $minX $minY $maxX $maxY $layer $reductionPercentage
-      } else {
-        ord::error "Wrong number of arguments for region adjustments"
       }
     }
   }
@@ -362,6 +412,31 @@ proc parse_layer_range { cmd layer_range } {
     return $layers
   } else {
     ord::error "Input format to define layer range for $cmd is min-max"
+  }
+}
+
+proc check_region { lower_x lower_y upper_x upper_y } {
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    ord::error "missing dbBlock"
+  }
+
+  set core_area [$block getDieArea]
+
+  if {$lower_x < [$core_area xMin] || $lower_x > [$core_area xMax]} {
+    ord::error "check_region: Lower left x is outside die area"
+  }
+
+  if {$lower_y < [$core_area yMin] || $lower_y > [$core_area yMax]} {
+    ord::error "check_region: Lower left y is outside die area"
+  }
+
+  if {$upper_x < [$core_area xMin] || $upper_x > [$core_area xMax]} {
+    ord::error "check_region: Upper right x is outside die area"
+  }
+
+  if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
+    ord::error "check_region: Upper right y is outside die area"
   }
 }
 

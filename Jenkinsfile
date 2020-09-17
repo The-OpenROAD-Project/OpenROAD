@@ -4,71 +4,72 @@ pipeline {
     COMMIT_AUTHOR_EMAIL= sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim()
   }
   stages {
-    stage('Builds') {
+    stage('Build and test') {
       parallel {
-        stage('Build centos7 gcc8') {
-          steps {
-            sh './jenkins/build_centos7_gcc8.sh'
+        stage('Local') {
+          stages {
+	    stage('Build centos7 gcc8') {
+              steps {
+                sh './jenkins/build.sh'
+              }
+            }
+            stage('Test centos7 gcc8') {
+              steps {
+                script {
+                  parallel (
+                      'Unit tests': { sh './test/regression' },
+                      'aes_nangate45': { sh './test/regression aes_nangate45' },
+                      'gcd_nangate45': { sh './test/regression gcd_nangate45' },
+                      'tinyRocket_nangate45': { sh './test/regression tinyRocket_nangate45' },
+                      'aes_sky130': { sh './test/regression aes_sky130' },
+                      'gcd_sky130': { sh './test/regression gcd_sky130' },
+                      'ibex_sky130': { sh './test/regression ibex_sky130' },
+                      )
+                }
+              }
+            }
           }
         }
-        stage('Build docker centos7 clang7') {
-          steps {
-            sh './jenkins/build_docker.sh centos7 clang7'
+        stage('Docker centos clang') {
+          stages{
+            stage('Build docker centos7 clang7') {
+              steps {
+                sh './jenkins/docker/build.sh centos7 clang7'
+              }
+            }
+            stage('Test docker centos7 clang7') {
+              steps {
+                sh './jenkins/docker/test.sh centos7 clang7'
+              }
+            }
           }
         }
-        stage('Build docker ubuntu18 gcc8') {
-          steps {
-            sh './jenkins/build_docker.sh ubuntu18 gcc8'
+        stage('Docker centos7 gcc8') {
+          stages{
+            stage('Build docker centos7 gcc8') {
+              steps {
+                sh './jenkins/docker/build.sh centos7 gcc8'
+              }
+            }
+            stage('Test docker centos7 gcc8') {
+              steps {
+                sh './jenkins/docker/test.sh centos7 gcc8'
+              }
+            }
           }
         }
-      }
-    }
-    stage('Tests') {
-      failFast true
-      parallel {
-        stage('Unit tests centos7 gcc8') {
-          steps {
-            sh './test/regression'
-          }
-        }
-        stage('Unit tests docker ubuntu18 gcc8') {
-          steps {
-            sh './jenkins/test_docker.sh ubuntu gcc'
-          }
-        }
-        stage('Unit tests docker centos7 clang7') {
-          steps {
-            sh './jenkins/test_docker.sh centos clang'
-          }
-        }
-	stage('gcd_nangate45') {
-          steps {
-            sh './test/regression gcd_nangate45'
-          }
-        }
-        stage('aes_nangate45') {
-          steps {
-            sh './test/regression aes_nangate45'
-          }
-        }
-        stage('tinyRocket_nangate45') {
-          steps {
-            sh './test/regression tinyRocket_nangate45'
-          }
-        }
-        stage('gcd_sky130') {
-          steps {
-            sh './test/regression gcd_sky130'
-          }
-        }
-        stage('aes_sky130') {
-          steps {
-            sh './test/regression aes_sky130'
-          }
-        }
-        stage('ibex_sky130') {
-          steps {
-            sh './test/regression ibex_sky130'
+        stage('Docker ubuntu18 gcc8') {
+          stages{
+            stage('Docker build ubuntu18 gcc8') {
+              steps {
+                sh './jenkins/docker/build.sh ubuntu18 gcc8'
+              }
+            }
+            stage('Test docker ubuntu18 gcc7=8') {
+              steps {
+                sh './jenkins/docker/test.sh ubuntu18 gcc8'
+              }
+            }
           }
         }
       }

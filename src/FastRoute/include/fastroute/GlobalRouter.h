@@ -35,17 +35,13 @@
 
 #pragma once
 
-#include <cmath>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <istream>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "opendb/db.h"
+#include "sta/Liberty.hh"
 #include "GRoute.h"
 
 namespace ord {
@@ -67,9 +63,6 @@ namespace FastRoute {
 
 class FT;
 class AntennaRepair;
-class Box;
-class Coordinate;
-class DBWrapper;
 class Grid;
 class Pin;
 class Net;
@@ -143,18 +136,19 @@ class GlobalRouter
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
   void printGrid();
-  void printHeader();
   void setClockNetsRouteFlow(bool clockFlow);
   void setMinLayerForClock(int minLayer);
 
   // flow functions
-  void enableAntennaAvoidance(char* diodeCellName, char* diodePinName);
   void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
   void runFastRoute();
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
+
+  // repair antenna public functions
+  void repairAntennas(sta::LibertyPort* diodePort);
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -175,6 +169,7 @@ protected:
  private:
   void makeComponents();
   void deleteComponents();
+  void clearFlow();
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
@@ -186,8 +181,8 @@ protected:
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
   void computeUserLayerAdjustments();
-  void computeRegionAdjustments(const Coordinate& lowerBound,
-                                const Coordinate& upperBound,
+  void computeRegionAdjustments(const odb::Point& lowerBound,
+                                const odb::Point& upperBound,
                                 int layer,
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
@@ -200,8 +195,8 @@ protected:
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addRemainingGuides(NetRouteMap& routes);
   void connectPadPins(NetRouteMap& routes);
-  void mergeBox(std::vector<Box>& guideBox);
-  Box globalRoutingToBox(const FastRoute::GSegment& route);
+  void mergeBox(std::vector<odb::Rect>& guideBox);
+  odb::Rect globalRoutingToBox(const FastRoute::GSegment& route);
   using Point = std::tuple<long, long, int>;  // x, y, layer
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
@@ -209,11 +204,12 @@ protected:
                        const std::map<Point, int>& segsAtPoint);
   void mergeSegments();
   void mergeSegments(GRoute& route);
-  bool pinOverlapsWithSingleTrack(const Pin& pin, Coordinate& trackPosition);
-  GSegment createFakePin(Pin pin, Coordinate& pinPosition, RoutingLayer layer);
+  bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
+  GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
+  odb::Point getRectMiddle(odb::Rect& rect);
 
   // check functions
   void checkPinPlacement();
@@ -221,7 +217,6 @@ protected:
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void runAntennaAvoidanceFlow();
   void runClockNetsRouteFlow();
   void restartFastRoute();
   void getPreviousCapacities(int previousMinLayer);
@@ -242,8 +237,8 @@ protected:
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
-  void makeItermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
-  void makeBtermPins(Net* net, odb::dbNet* db_net, Box& dieArea);
+  void makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
+  void makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
   void initClockNets();
   void setSelectedMetal(int metal) { selectedMetal = metal; }
   void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
@@ -251,7 +246,7 @@ protected:
   ord::OpenRoad* _openroad;
   // Objects variables
   FT* _fastRoute = nullptr;
-  Coordinate* _gridOrigin = nullptr;
+  odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 
   std::vector<Net> *_nets;
@@ -303,9 +298,6 @@ protected:
   int _minLayerForClock;
 
   // Antenna variables
-  bool _enableAntennaFlow = false;
-  std::string _diodeCellName;
-  std::string _diodePinName;
   int*** oldHUsages;
   int*** oldVUsages;
   int _reroute = false;
@@ -317,7 +309,7 @@ protected:
   std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
 
   // db variables
-  sta::dbSta* _openSta;
+  sta::dbSta* _sta;
   int selectedMetal = 3;
   odb::dbDatabase* _db = nullptr;
   odb::dbBlock* _block;
