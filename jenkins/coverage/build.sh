@@ -1,5 +1,5 @@
 #!/bin/bash
 set -x
 set -e
-docker build -t openroad/openroad --target coverage .
-docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/OpenROAD openroad/openroad bash -c "./OpenROAD/jenkins/coverage/install.sh"
+cmake -DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON -B build .
+time cmake --build build

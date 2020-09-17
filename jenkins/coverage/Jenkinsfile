@@ -6,9 +6,9 @@ pipeline {
         sh './jenkins/coverage/build.sh'
       }
     }
-    stage('Test') {
+    stage('Coverage') {
       steps {
-        sh './jenkins/coverage/test.sh'
+        sh './jenkins/coverage/coverage.sh'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'out', reportFiles: 'index.html', reportName: 'Code Coverage', reportTitles: ''])
       }
     }
