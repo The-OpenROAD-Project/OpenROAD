@@ -79,7 +79,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     wireEncoder.begin(wire);
     odb::dbWireType wireType = odb::dbWireType::ROUTED;
 
-    for (FastRoute::GSegment &seg : route) {
+    for (GSegment &seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
         error("Global route segment not valid\n");
       }
