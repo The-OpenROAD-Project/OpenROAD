@@ -6,14 +6,14 @@ pipeline {
   stages {
     stage('Build and test') {
       parallel {
-        stage('Local') {
+        stage('Local centos7 gcc8') {
           stages {
-            stage('Local build') {
+	    stage('Build') {
               steps {
                 sh './jenkins/build.sh'
               }
             }
-            stage('Local tests') {
+            stage('Test') {
               steps {
                 script {
                   parallel (
@@ -30,60 +30,30 @@ pipeline {
             }
           }
         }
-/* disabled until osx clang build works
-        stage('Docker centos clang') {
+        stage('Docker centos7 clang7') {
           stages{
-            stage('Docker build centos clang') {
+            stage('Build') {
               steps {
-                sh './jenkins/docker/build.sh centos clang'
+                sh './jenkins/docker/build.sh centos7 clang7'
               }
             }
-            stage('Docker test centos clang') {
+            stage('Test') {
               steps {
-                sh './jenkins/docker/test.sh centos clang'
+                sh './jenkins/docker/test.sh centos7 clang7'
               }
             }
           }
         }
-        stage('Docker ubuntu clang') {
+        stage('Docker ubuntu18 gcc8') {
           stages{
-            stage('Docker build ubuntu clang') {
+            stage('Build') {
               steps {
-                sh './jenkins/docker/build.sh ubuntu clang'
+                sh './jenkins/docker/build.sh ubuntu18 gcc8'
               }
             }
-            stage('Docker test ubuntu clang') {
+            stage('Test') {
               steps {
-                sh './jenkins/docker/test.sh ubuntu clang'
-              }
-            }
-          }
-        }
-*/
-        stage('Docker centos gcc') {
-          stages{
-            stage('Docker build centos gcc') {
-              steps {
-                sh './jenkins/docker/build.sh centos gcc'
-              }
-            }
-            stage('Docker test centos gcc') {
-              steps {
-                sh './jenkins/docker/test.sh centos gcc'
-              }
-            }
-          }
-        }
-        stage('Docker ubuntu gcc') {
-          stages{
-            stage('Docker build ubuntu gcc') {
-              steps {
-                sh './jenkins/docker/build.sh ubuntu gcc'
-              }
-            }
-            stage('Docker test ubuntu gcc') {
-              steps {
-                sh './jenkins/docker/test.sh ubuntu gcc'
+                sh './jenkins/docker/test.sh ubuntu18 gcc8'
               }
             }
           }
