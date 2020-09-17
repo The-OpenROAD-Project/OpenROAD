@@ -935,13 +935,7 @@ NetRouteMap FT::getRoutes()
           int xreal = wTile * (gridsX[i] + 0.5) + xcorner;
           int yreal = hTile * (gridsY[i] + 0.5) + ycorner;
 
-          GSegment segment;
-          segment.initX      = lastX;
-          segment.initY      = lastY;
-          segment.initLayer  = lastL + 1;
-          segment.finalX     = xreal;
-          segment.finalY     = yreal;
-          segment.finalLayer = gridsL[i] + 1;
+          GSegment segment = GSegment(lastX, lastY, lastL+1, xreal, yreal, gridsL[i]+1);
           lastX              = xreal;
           lastY              = yreal;
           lastL              = gridsL[i];

@@ -1352,13 +1352,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
   }
 
   for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-    GSegment segment;
-    segment.initLayer = l;
-    segment.initX = pins[0].x;
-    segment.initY = pins[0].y;
-    segment.finalLayer = l + 1;
-    segment.finalX = pins[0].x;
-    segment.finalY = pins[0].y;
+    GSegment segment = GSegment(pins[0].x, pins[0].y, l, pins[0].x, pins[0].y, l+1);
     route.push_back(segment);
   }
 }
@@ -1426,24 +1420,12 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
 
       if (closestLayer > pin.layer) {
         for (int l = closestLayer; l > pin.layer; l--) {
-          GSegment segment;
-          segment.initLayer = l;
-          segment.initX = pin.x;
-          segment.initY = pin.y;
-          segment.finalLayer = l - 1;
-          segment.finalX = pin.x;
-          segment.finalY = pin.y;
+          GSegment segment = GSegment(pin.x, pin.y, l, pin.x, pin.y, l-1);
           route.push_back(segment);
         }
       } else if (closestLayer < pin.layer) {
         for (int l = closestLayer; l < pin.layer; l++) {
-          GSegment segment;
-          segment.initLayer = l;
-          segment.initX = pin.x;
-          segment.initY = pin.y;
-          segment.finalLayer = l + 1;
-          segment.finalX = pin.x;
-          segment.finalY = pin.y;
+          GSegment segment = GSegment(pin.x, pin.y, l, pin.x, pin.y, l+1);
           route.push_back(segment);
         }
       }
@@ -1477,13 +1459,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
 	    || routes[db_net].empty())) {
       GRoute &route = routes[db_net];
       for (PIN &pin : net_pins[db_net]) {
-        GSegment segment;
-        segment.initLayer = pin.layer;
-        segment.initX = pin.x;
-        segment.initY = pin.y;
-        segment.finalLayer = pin.layer;
-        segment.finalX = pin.x;
-        segment.finalY = pin.y;
+        GSegment segment = GSegment(pin.x, pin.y, pin.layer, pin.x, pin.y, pin.layer);
         route.push_back(segment);
       }
     }
@@ -1859,21 +1835,12 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       topLayer = pin.getTopLayer();
       pinBoxes = pin.getBoxes().at(topLayer);
       pinPosition = pin.getOnGridPosition();
-
       realPinPosition = getRectMiddle(pinBoxes[0]);
-      horSegment.initX = realPinPosition.x();
-      horSegment.initY = realPinPosition.y();
-      horSegment.initLayer = topLayer;
-      horSegment.finalX = pinPosition.x();
-      horSegment.finalY = realPinPosition.y();
-      horSegment.finalLayer = topLayer;
-
-      verSegment.initX = pinPosition.x();
-      verSegment.initY = realPinPosition.y();
-      verSegment.initLayer = topLayer;
-      verSegment.finalX = pinPosition.x();
-      verSegment.finalY = pinPosition.y();
-      verSegment.finalLayer = topLayer;
+      
+      horSegment = GSegment(realPinPosition.x(), realPinPosition.y(), topLayer,
+                            pinPosition.x(), realPinPosition.y(), topLayer);
+      verSegment = GSegment(pinPosition.x(), realPinPosition.y(), topLayer,
+                            pinPosition.x(), pinPosition.y(), topLayer);
 
       route.push_back(horSegment);
       route.push_back(verSegment);
