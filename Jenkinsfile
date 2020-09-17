@@ -6,14 +6,14 @@ pipeline {
   stages {
     stage('Build and test') {
       parallel {
-        stage('Local') {
+        stage('Local centos7 gcc8') {
           stages {
-	    stage('Build centos7 gcc8') {
+	    stage('Build') {
               steps {
                 sh './jenkins/build.sh'
               }
             }
-            stage('Test centos7 gcc8') {
+            stage('Test') {
               steps {
                 script {
                   parallel (
@@ -30,42 +30,28 @@ pipeline {
             }
           }
         }
-        stage('Docker centos clang') {
+        stage('Docker centos7 clang7') {
           stages{
-            stage('Build docker centos7 clang7') {
+            stage('Build') {
               steps {
                 sh './jenkins/docker/build.sh centos7 clang7'
               }
             }
-            stage('Test docker centos7 clang7') {
+            stage('Test') {
               steps {
                 sh './jenkins/docker/test.sh centos7 clang7'
               }
             }
           }
         }
-        stage('Docker centos7 gcc8') {
-          stages{
-            stage('Build docker centos7 gcc8') {
-              steps {
-                sh './jenkins/docker/build.sh centos7 gcc8'
-              }
-            }
-            stage('Test docker centos7 gcc8') {
-              steps {
-                sh './jenkins/docker/test.sh centos7 gcc8'
-              }
-            }
-          }
-        }
         stage('Docker ubuntu18 gcc8') {
           stages{
-            stage('Docker build ubuntu18 gcc8') {
+            stage('Build') {
               steps {
                 sh './jenkins/docker/build.sh ubuntu18 gcc8'
               }
             }
-            stage('Test docker ubuntu18 gcc7=8') {
+            stage('Test') {
               steps {
                 sh './jenkins/docker/test.sh ubuntu18 gcc8'
               }
