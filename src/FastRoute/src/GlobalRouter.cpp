@@ -1749,10 +1749,12 @@ void GlobalRouter::mergeSegments(GRoute& route)
   if (!route.empty()) {
     // vector copy - bad bad -cherry
     GRoute segments = route;
-    std::map<Point, int> segsAtPoint;
+    std::map<RoutePt, int> segsAtPoint;
     for (const GSegment& seg : segments) {
-      segsAtPoint[{seg.initX, seg.initY, seg.initLayer}] += 1;
-      segsAtPoint[{seg.finalX, seg.finalY, seg.finalLayer}] += 1;
+      RoutePt pt0 = RoutePt(seg.initX, seg.initY, seg.initLayer);
+      RoutePt pt1 = RoutePt(seg.finalX, seg.finalY, seg.finalLayer);
+      segsAtPoint[pt0] += 1;
+      segsAtPoint[pt1] += 1;
     }
 
     uint i = 0;
@@ -1785,7 +1787,7 @@ void GlobalRouter::mergeSegments(GRoute& route)
 bool GlobalRouter::segmentsConnect(const GSegment& seg0,
 				   const GSegment& seg1,
 				   GSegment& newSeg,
-				   const std::map<Point, int>& segsAtPoint)
+				   const std::map<RoutePt, int>& segsAtPoint)
 {
   long initX0 = std::min(seg0.initX, seg0.finalX);
   long initY0 = std::min(seg0.initY, seg0.finalY);
@@ -1801,9 +1803,11 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
   if (initX0 == finalX0 && initX1 == finalX1 && initX0 == initX1) {
     bool merge = false;
     if (initY0 == finalY1) {
-      merge = segsAtPoint.at({initX0, initY0, seg0.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX0, initY0, seg0.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     } else if (finalY0 == initY1) {
-      merge = segsAtPoint.at({initX1, initY1, seg1.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX1, initY1, seg1.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     }
     if (merge) {
       newSeg.initX = std::min(initX0, initX1);
@@ -1816,9 +1820,11 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
   } else if (initY0 == finalY0 && initY1 == finalY1 && initY0 == initY1) {
     bool merge = false;
     if (initX0 == finalX1) {
-      merge = segsAtPoint.at({initX0, initY0, seg0.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX0, initY0, seg0.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     } else if (finalX0 == initX1) {
-      merge = segsAtPoint.at({initX1, initY1, seg1.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX1, initY1, seg1.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     }
     if (merge) {
       newSeg.initX = std::min(initX0, initX1);

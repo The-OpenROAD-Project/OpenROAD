@@ -70,6 +70,7 @@ class Netlist;
 class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
+class RoutePt;
 struct NET;
 struct PIN;
 
@@ -197,11 +198,10 @@ protected:
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
-  using Point = std::tuple<long, long, int>;  // x, y, layer
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
                        GSegment& newSeg,
-                       const std::map<Point, int>& segsAtPoint);
+                       const std::map<RoutePt, int>& segsAtPoint);
   void mergeSegments();
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
