@@ -210,6 +210,7 @@ protected:
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
+  void getRouting(NetRouteMap& routes);
 
   // check functions
   void checkPinPlacement();

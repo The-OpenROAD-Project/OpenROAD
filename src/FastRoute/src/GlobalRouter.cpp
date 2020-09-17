@@ -205,20 +205,18 @@ void GlobalRouter::startFastRoute()
     computeRegionAdjustments(
         lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
   }
+
+  _fastRoute->initAuxVar();
 }
 
 void GlobalRouter::runFastRoute()
 {
-  _fastRoute->initAuxVar();
   if (_clockNetsRouteFlow) {
     runClockNetsRouteFlow();
   } else {
-    _routes = _fastRoute->run();
-    addRemainingGuides(_routes);
-    connectPadPins(_routes);
+    getRouting(_routes);
   }
 
-  mergeSegments();
   computeWirelength();
 
   if (_reportCongest) {
@@ -262,14 +260,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     restorePreviousCapacities(_minRoutingLayer);
 
-    _fastRoute->initAuxVar();
-    NetRouteMap newRoute = _fastRoute->run();
-    addRemainingGuides(newRoute);
-    connectPadPins(newRoute);
-    for (auto &net_route : newRoute) {
-      GRoute &route = net_route.second;
-      mergeSegments(route);
-    }
+    NetRouteMap newRoute;
+    getRouting(newRoute);
     mergeResults(newRoute);
   }
 }
@@ -277,9 +269,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 void GlobalRouter::runClockNetsRouteFlow()
 {
   _fastRoute->setVerbose(0);
-  NetRouteMap clockNetsRoute = _fastRoute->run();
-  addRemainingGuides(clockNetsRoute);
-  connectPadPins(clockNetsRoute);
+  NetRouteMap clockNetsRoute;
+  getRouting(clockNetsRoute);
 
   getPreviousCapacities(_minLayerForClock);
 
@@ -290,13 +281,19 @@ void GlobalRouter::runClockNetsRouteFlow()
   startFastRoute();
   restorePreviousCapacities(_minLayerForClock);
 
-  _fastRoute->initAuxVar();
-  _routes = _fastRoute->run();
-  addRemainingGuides(_routes);
-  connectPadPins(_routes);
-  mergeSegments();
+  getRouting(_routes);
 
   mergeResults(clockNetsRoute);
+}
+
+void GlobalRouter::getRouting(NetRouteMap& routes) {
+  routes = _fastRoute->run();
+  addRemainingGuides(routes);
+  connectPadPins(routes);
+  for (auto &net_route : routes) {
+    GRoute &route = net_route.second;
+    mergeSegments(route);
+  }
 }
 
 void GlobalRouter::estimateRC()
