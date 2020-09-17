@@ -13,11 +13,7 @@ RUN yum group install -y "Development Tools" \
     yum clean -y all && \
     rm -rf /var/lib/apt/lists/*
 
-ENV CC=/opt/rh/devtoolset-8/root/usr/bin/gcc \
-    CPP=/opt/rh/devtoolset-8/root/usr/bin/cpp \
-    CXX=/opt/rh/devtoolset-8/root/usr/bin/g++ \
-    PATH=/opt/rh/devtoolset-8/root/usr/bin:$PATH \
-    LD_LIBRARY_PATH=/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib:/opt/rh/devtoolset-8/root/usr/lib64/dyninst:/opt/rh/devtoolset-8/root/usr/lib/dyninst:/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib:$LD_LIBRARY_PATH
+RUN scl enable devtoolset-8 bash
 
 # Install CMake
 RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
@@ -76,11 +72,11 @@ FROM base-dependencies AS builder
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
+# These are referenced by cmake
 ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
-    CPP=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang-cpp \
-    CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++ \
-    PATH=/opt/rh/llvm-toolset-7.0/root/usr/bin:/opt/rh/llvm-toolset-7.0/root/usr/sbin${PATH:+:${PATH}} \
-    LD_LIBRARY_PATH=/opt/rh/llvm-toolset-7.0/root/usr/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+    CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++
 
 # Build
-RUN cmake -B build . && cmake --build build
+RUN source scl_source enable llvm-toolset-7.0 && \
+    cmake -B build . && \
+    cmake --build build
