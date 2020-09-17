@@ -70,6 +70,7 @@ class Netlist;
 class RoutingTracks;
 class RoutingLayer;
 class SteinerTree;
+class RoutePt;
 struct NET;
 struct PIN;
 
@@ -193,15 +194,16 @@ protected:
   // aux functions
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
+  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
+  void addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route);
   void addRemainingGuides(NetRouteMap& routes);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
-  odb::Rect globalRoutingToBox(const FastRoute::GSegment& route);
-  using Point = std::tuple<long, long, int>;  // x, y, layer
+  odb::Rect globalRoutingToBox(const GSegment& route);
   bool segmentsConnect(const GSegment& seg0,
                        const GSegment& seg1,
                        GSegment& newSeg,
-                       const std::map<Point, int>& segsAtPoint);
+                       const std::map<RoutePt, int>& segsAtPoint);
   void mergeSegments();
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
@@ -210,6 +212,7 @@ protected:
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
+  void getRouting(NetRouteMap& routes);
 
   // check functions
   void checkPinPlacement();
@@ -306,7 +309,7 @@ protected:
   int _numAdjusts = 0;
 
   // Variables for PADs obstacles handling
-  std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
+  std::map<Net*, std::vector<GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _sta;
