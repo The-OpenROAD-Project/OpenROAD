@@ -523,14 +523,13 @@ void GlobalRouter::initializeNets(bool reroute)
             if (pinOverlapsWithSingleTrack(pin, trackPos)) {
               posOnGrid = _grid->getPositionOnGrid(trackPos);
 
-              if (!(posOnGrid == pinPosition)) {
-                if ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL
-                     && posOnGrid.y() != pinPosition.y())
-                    || (layer.getPreferredDirection() == RoutingLayer::VERTICAL
-                        && posOnGrid.x() != pinPosition.x())) {
+              if (!(posOnGrid == pinPosition) &&
+                  ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL &&
+                    posOnGrid.y() != pinPosition.y()) ||
+                   (layer.getPreferredDirection() == RoutingLayer::VERTICAL &&
+                    posOnGrid.x() != pinPosition.x()))) {
                   pinPosition = posOnGrid;
                 }
-              }
             }
 
             pin.setOnGridPosition(pinPosition);
@@ -1383,15 +1382,13 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
 
             int wireViaLayer = std::numeric_limits<int>::max();
             for (uint i = 0; i < route.size(); i++) {
-              if ((pin.x == route[i].initX && pin.y == route[i].initY)
-                  || (pin.x == route[i].finalX
-                      && pin.y == route[i].finalY)) {
-                if (!(route[i].initX == route[i].finalX
-                      && route[i].initY == route[i].finalY)) {
-                  coverSegs.push_back(route[i]);
-                  if (route[i].initLayer < wireViaLayer) {
-                    wireViaLayer = route[i].initLayer;
-                  }
+              if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
+                  (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+                  (!(route[i].initX == route[i].finalX &&
+                   route[i].initY == route[i].finalY))) {
+                coverSegs.push_back(route[i]);
+                if (route[i].initLayer < wireViaLayer) {
+                  wireViaLayer = route[i].initLayer;
                 }
               }
             }
@@ -1406,17 +1403,15 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
 
             if (!bottomLayerPin) {
               for (uint i = 0; i < route.size(); i++) {
-                if ((pin.x == route[i].initX && pin.y == route[i].initY)
-                    || (pin.x == route[i].finalX
-                        && pin.y == route[i].finalY)) {
+                if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
+                    (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+                    (route[i].initX == route[i].finalX &&
+                     route[i].initY == route[i].finalY &&
+                    (route[i].initLayer < wireViaLayer ||
+                     route[i].finalLayer < wireViaLayer))) {
                   // remove all vias to this pin that doesn't connects two wires
-                  if (route[i].initX == route[i].finalX
-                      && route[i].initY == route[i].finalY
-                      && (route[i].initLayer < wireViaLayer
-                          || route[i].finalLayer < wireViaLayer)) {
-                    route.erase(route.begin() + i);
-                    i = 0;
-                  }
+                  route.erase(route.begin() + i);
+                  i = 0;
                 }
               }
             }
