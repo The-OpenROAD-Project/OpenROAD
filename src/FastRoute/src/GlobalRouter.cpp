@@ -1333,131 +1333,142 @@ RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
   return selectedRoutingTracks;
 }
 
-void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
+void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
 {
   auto net_pins = _fastRoute->getNets();
+  std::vector<PIN>& pins = net_pins[db_net];
+  int lastLayer = -1;
+  for (uint p = 0; p < pins.size(); p++) {
+    if (p > 0) {
+      // If the net is not local, FR core result is invalid
+      if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
+        error("Net %s not properly covered",
+              db_net->getConstName());
+      }
+    }
+
+    if (pins[p].layer > lastLayer)
+      lastLayer = pins[p].layer;
+  }
+
+  for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
+    GSegment segment;
+    segment.initLayer = l;
+    segment.initX = pins[0].x;
+    segment.initY = pins[0].y;
+    segment.finalLayer = l + 1;
+    segment.finalX = pins[0].x;
+    segment.finalY = pins[0].y;
+    route.push_back(segment);
+  }
+}
+
+void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
+{
+  auto net_pins = _fastRoute->getNets();
+  std::vector<PIN>& pins = net_pins[db_net];
+  for (PIN pin : pins) {
+    if (pin.layer > 1) {
+      // for each pin placed at upper layers, get all segments that
+      // potentially covers it
+      GRoute coverSegs;
+
+      int wireViaLayer = std::numeric_limits<int>::max();
+      for (uint i = 0; i < route.size(); i++) {
+        if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
+            (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+            (!(route[i].initX == route[i].finalX &&
+             route[i].initY == route[i].finalY))) {
+          coverSegs.push_back(route[i]);
+          if (route[i].initLayer < wireViaLayer) {
+            wireViaLayer = route[i].initLayer;
+          }
+        }
+      }
+
+      bool bottomLayerPin = false;
+      for (PIN pin2 : pins) {
+        if (pin.x == pin2.x && pin.y == pin2.y
+            && pin.layer > pin2.layer) {
+          bottomLayerPin = true;
+        }
+      }
+
+      if (!bottomLayerPin) {
+        for (uint i = 0; i < route.size(); i++) {
+          if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
+              (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+              (route[i].initX == route[i].finalX &&
+               route[i].initY == route[i].finalY &&
+              (route[i].initLayer < wireViaLayer ||
+               route[i].finalLayer < wireViaLayer))) {
+            // remove all vias to this pin that doesn't connects two wires
+            route.erase(route.begin() + i);
+            i = 0;
+          }
+        }
+      }
+
+      int closestLayer = -1;
+      int minorDiff = std::numeric_limits<int>::max();
+
+      for (GSegment &seg : coverSegs) {
+        if (seg.initLayer != seg.finalLayer) {
+          error("Segment has invalid layer assignment");
+        }
+
+        int diffLayers = std::abs(pin.layer - seg.initLayer);
+        if (diffLayers < minorDiff && seg.initLayer > closestLayer) {
+          minorDiff = seg.initLayer;
+          closestLayer = seg.initLayer;
+        }
+      }
+
+      if (closestLayer > pin.layer) {
+        for (int l = closestLayer; l > pin.layer; l--) {
+          GSegment segment;
+          segment.initLayer = l;
+          segment.initX = pin.x;
+          segment.initY = pin.y;
+          segment.finalLayer = l - 1;
+          segment.finalX = pin.x;
+          segment.finalY = pin.y;
+          route.push_back(segment);
+        }
+      } else if (closestLayer < pin.layer) {
+        for (int l = closestLayer; l < pin.layer; l++) {
+          GSegment segment;
+          segment.initLayer = l;
+          segment.initX = pin.x;
+          segment.initY = pin.y;
+          segment.finalLayer = l + 1;
+          segment.finalX = pin.x;
+          segment.finalY = pin.y;
+          route.push_back(segment);
+        }
+      }
+    }
+  }
+}
+
+void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
+{
   for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
     // Skip nets with 1 pin or less
     if (net->getNumPins() > 1) {
-      std::vector<PIN>& pins = net_pins[db_net];
-      // Try to add local guides for net with no output of FR core
       if (route.empty()) {
-        int lastLayer = -1;
-        for (uint p = 0; p < pins.size(); p++) {
-          if (p > 0) {
-            // If the net is not local, FR core result is invalid
-            if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
-              error("Net %s not properly covered",
-		    db_net->getConstName());
-            }
-          }
-
-          if (pins[p].layer > lastLayer)
-            lastLayer = pins[p].layer;
-        }
-
-        for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-          GSegment segment;
-          segment.initLayer = l;
-          segment.initX = pins[0].x;
-          segment.initY = pins[0].y;
-          segment.finalLayer = l + 1;
-          segment.finalX = pins[0].x;
-          segment.finalY = pins[0].y;
-          route.push_back(segment);
-        }
-      } else {  // For nets with routing, add guides for pin acess at upper
-                // layers
-        for (PIN pin : pins) {
-          if (pin.layer > 1) {
-            // for each pin placed at upper layers, get all segments that
-            // potentially covers it
-            GRoute coverSegs;
-
-            int wireViaLayer = std::numeric_limits<int>::max();
-            for (uint i = 0; i < route.size(); i++) {
-              if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
-                  (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
-                  (!(route[i].initX == route[i].finalX &&
-                   route[i].initY == route[i].finalY))) {
-                coverSegs.push_back(route[i]);
-                if (route[i].initLayer < wireViaLayer) {
-                  wireViaLayer = route[i].initLayer;
-                }
-              }
-            }
-
-            bool bottomLayerPin = false;
-            for (PIN pin2 : pins) {
-              if (pin.x == pin2.x && pin.y == pin2.y
-                  && pin.layer > pin2.layer) {
-                bottomLayerPin = true;
-              }
-            }
-
-            if (!bottomLayerPin) {
-              for (uint i = 0; i < route.size(); i++) {
-                if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
-                    (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
-                    (route[i].initX == route[i].finalX &&
-                     route[i].initY == route[i].finalY &&
-                    (route[i].initLayer < wireViaLayer ||
-                     route[i].finalLayer < wireViaLayer))) {
-                  // remove all vias to this pin that doesn't connects two wires
-                  route.erase(route.begin() + i);
-                  i = 0;
-                }
-              }
-            }
-
-            int closestLayer = -1;
-            int minorDiff = std::numeric_limits<int>::max();
-
-            for (GSegment &seg : coverSegs) {
-              if (seg.initLayer != seg.finalLayer) {
-                error("Segment has invalid layer assignment");
-              }
-
-              int diffLayers = std::abs(pin.layer - seg.initLayer);
-              if (diffLayers < minorDiff && seg.initLayer > closestLayer) {
-                minorDiff = seg.initLayer;
-                closestLayer = seg.initLayer;
-              }
-            }
-
-            if (closestLayer > pin.layer) {
-              for (int l = closestLayer; l > pin.layer; l--) {
-                GSegment segment;
-                segment.initLayer = l;
-                segment.initX = pin.x;
-                segment.initY = pin.y;
-                segment.finalLayer = l - 1;
-                segment.finalX = pin.x;
-                segment.finalY = pin.y;
-                route.push_back(segment);
-              }
-            } else if (closestLayer < pin.layer) {
-              for (int l = closestLayer; l < pin.layer; l++) {
-                GSegment segment;
-                segment.initLayer = l;
-                segment.initX = pin.x;
-                segment.initY = pin.y;
-                segment.finalLayer = l + 1;
-                segment.finalX = pin.x;
-                segment.finalY = pin.y;
-                route.push_back(segment);
-              }
-            }
-          }
-        }
+        addGuidesForLocalNets(db_net, route);
+      } else {
+        addGuidesForPinAccess(db_net, route);
       }
     }
   }
 
   // Add local guides for nets with no routing.
+  auto net_pins = _fastRoute->getNets();
   for (Net& net : *_nets) {
     odb::dbNet* db_net = net.getDbNet();
     if (checkSignalType(net)

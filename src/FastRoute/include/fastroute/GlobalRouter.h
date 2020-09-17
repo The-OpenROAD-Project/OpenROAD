@@ -194,6 +194,8 @@ protected:
   // aux functions
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
+  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
+  void addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route);
   void addRemainingGuides(NetRouteMap& routes);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
