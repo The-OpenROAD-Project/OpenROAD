@@ -1,7 +1,7 @@
 source "helpers.tcl"
 
-read_lef nangate45/NangateOpenCellLibrary.mod.lef
-read_lef soc_bsg_black_parrot_nangate45/dummy_pads.lef
+read_lef NangateOpenCellLibrary.mod.lef
+read_lef dummy_pads.lef
 
 read_def soc_bsg_black_parrot_nangate45/soc_bsg_black_parrot.init.def
 

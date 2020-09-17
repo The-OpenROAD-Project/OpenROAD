@@ -83,7 +83,7 @@ if (TCL_READLINE_H)
   message(STATUS "TCL readline header: ${TCL_READLINE_H}")
 endif()
 
-find_package(SWIG REQUIRED 3.0)
+find_package(SWIG 3.0 REQUIRED)
 include(UseSWIG)
 set(OPENDB_SWIG_WARNINGS "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201")
 
