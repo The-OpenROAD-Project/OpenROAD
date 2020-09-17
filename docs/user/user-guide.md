@@ -1,18 +1,19 @@
 # User Guide
 
 OpenROAD is divided into a number of tools that are orchestrated together to achieve RTL-to-GDS.
-As of the current implementation, the flow is divided into three stages:
+As of the current implementation, the flow is divided into four stages:
 
 1. Logic Synthesis: is performed by [yosys](https://github.com/The-OpenROAD-Project/yosys).
 2. Floorplanning through Global Routing: are performed by [OpenROAD App](https://github.com/The-OpenROAD-Project/OpenROAD).
 3. Detailed Routing: is performed by [TritonRoute](https://github.com/The-OpenROAD-Project/TritonRoute).
+4. KLayout: GDS merge, DRC and LVS (public PDKs)
 
-To Run OpenROAD flow, we provide scripts to automate the RTL-to-GDS stages. 
+To Run OpenROAD flow, we provide scripts to automate the RTL-to-GDS stages.
 Alternatively, you can run the individual steps manually.
 
 ## [OPTION 1] RTL-to-GDS Flow
 
-**GitHub:** [https://github.com/The-OpenROAD-Project/OpenROAD-flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow)
+**GitHub:** [OpenROAD-flow-public](https://github.com/The-OpenROAD-Project/OpenROAD-flow-public)
 
 ### Code Organization
 
@@ -73,7 +74,7 @@ enabled. This step will create a runner image tagged as `openroad/flow`.
 2. Ensure your docker daemon is running and `docker` is in your PATH, then run
 the docker build.
 
-    ```    
+    ```
     ./build_openroad.sh
     ```
 
@@ -88,7 +89,7 @@ the docker build.
 1. Reference the Dockerfiles and READMEs for the separate tools on the build steps
 and dependencies.
 
-    ``` 
+    ```
     OpenROAD-flow/tools/OpenROAD/Dockerfile
     OpenROAD-flow/tools/yosys/Dockerfile
     OpenROAD-flow/tools/TritonRoute/Dockerfile
@@ -97,14 +98,14 @@ and dependencies.
 See the [KLayout](https://www.klayout.de/) instructions for installing KLayout from source.
 
 2. Run the build script
-    
+
     ```
     ./build_openroad.sh
     ```
 
 3. Update your shell environment
 
-    ```    
+    ```
     source setup_env.sh
     ```
 
@@ -112,7 +113,7 @@ See the [KLayout](https://www.klayout.de/) instructions for installing KLayout f
 
 ### Using the flow
 
-See the flow [README](https://github.com/The-OpenROAD-Project/OpenROAD-flow/blob/master/flow/README.md) for details about the flow and how to run designs through the flow.
+See the flow [README](https://github.com/The-OpenROAD-Project/OpenROAD-flow-public/blob/master/flow/README.md) for details about the flow and how to run designs through the flow.
 
 
 ## [OPTION 2] Individual Flow Steps
@@ -125,17 +126,17 @@ GitHub: [https://github.com/The-OpenROAD-Project/yosys](https://github.com/The-O
 
 **Requirements**
 
-- C++ compiler with C++11 support (up-to-date CLANG or GCC is recommended) 
+- C++ compiler with C++11 support (up-to-date CLANG or GCC is recommended)
 - GNU Flex, GNU Bison, and GNU Make.
-- TCL, readline and libffi. 
+- TCL, readline and libffi.
 
 On Ubuntu:
 
 ```
 $ sudo apt-get install build-essential clang bison flex \
-	libreadline-dev gawk tcl-dev libffi-dev git \
-	graphviz xdot pkg-config python3 libboost-system-dev \
-	libboost-python-dev libboost-filesystem-dev zlib1g-dev
+        libreadline-dev gawk tcl-dev libffi-dev git \
+        graphviz xdot pkg-config python3 libboost-system-dev \
+        libboost-python-dev libboost-filesystem-dev zlib1g-dev
 ```
 
 On Mac OS X Homebrew can be used to install dependencies (from within cloned yosys repository):
@@ -292,7 +293,7 @@ die = ( 0, 0 ) ( core_width + core_space * 2, core_height + core_space * 2 )
 
 Place pins around core boundary.
 
-```    
+```
 auto_place_pins pin_layer
 ```
 
@@ -513,7 +514,7 @@ tapcell -tapcell_master <tapcell_master>
         -add_boundary_cell
 ```
 
-You can find script examples for both 45nm/65nm and 14nm in `tapcell/etc/scripts`
+You can find script examples for supported technologies `tapcell/etc/scripts`
 
 ### Global Placement
 
@@ -535,13 +536,13 @@ global_placement -skip_initial_place
 ```
 #### Flow Control
 - __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
-- __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with pre-placed solutions. 
+- __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with pre-placed solutions.
 
 #### Tuning Parameters
 - __bin_grid_count__ : Set bin grid's counts. Default: Defined by internal algorithm. [64,128,256,512,..., int]
 - __density__ : Set target density. Default: 0.70 [0-1, float]
 - __init_density_penalty__ : Set initial density penalty. Default: 8e-5 [1e-6 - 1e6, float]
-- __init_wire_length__coef__ : Set initial wirelength coefficient. Default: 0.25 [unlimited, float] 
+- __init_wire_length__coef__ : Set initial wirelength coefficient. Default: 0.25 [unlimited, float]
 - __min_phi_coef__ : Set pcof_min(µ_k Lower Bound). Default: 0.95 [0.95-1.05, float]
 - __max_phi_coef__ : Set pcof_max(µ_k Upper Bound). Default: 1.05 [1.00-1.20, float]
 - __overflow__ : Set target overflow for termination condition. Default: 0.1 [0-1, float]
@@ -631,13 +632,13 @@ To install TritonRoute:
 
 ```
 $ git clone https://github.com/The-OpenROAD-Project/TritonRoute.git
-$ cd TritonRoute 
+$ cd TritonRoute
 $ mkdir build
 $ cd build
 $ cmake -DBOOST_ROOT=<BOOST_ROOT> ../
 $ make
 ```
-   
+
 **Run**
 
 ```

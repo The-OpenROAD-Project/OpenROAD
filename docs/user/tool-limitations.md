@@ -84,7 +84,7 @@
 ## Layout Finishing and Final Verifications
 
 - Parasitic extraction (SPEF from layout) is unlikely to comprehend coupling.
-- There is no “signoff-quality electrical/performance analysis” counterpart to “PrimeTime-SI” (timing, signal integrity) 
+- There is no “signoff-quality electrical/performance analysis” counterpart to “PrimeTime-SI” (timing, signal integrity)
   or “Voltus”/“RedHawk” (power integrity).
 - A golden PV tool will be the evaluator for DRC.
 - Generation of merged GDS currently requires a Magic 8.2 tech file. Details are

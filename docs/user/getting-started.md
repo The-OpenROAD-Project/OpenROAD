@@ -16,7 +16,7 @@ As of the current implementation, the flow is divided into three stages:
 2. Floorplanning through Global Routing: are performed by [OpenROAD App](https://github.com/The-OpenROAD-Project/OpenROAD).
 3. Detailed Routing: is performed by [TritonRoute](https://github.com/The-OpenROAD-Project/TritonRoute).
 
-In order to integrate the flow steps, 
+In order to integrate the flow steps,
 [OpenROAD-flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow) repository includes the necessary scripts to build and test the flow.
 
 **Prerequisites**

@@ -4,7 +4,7 @@ Thank you for taking the time to read this document and to contribute, the OpenR
 
 Possible ways to contribute
 
-*   Open Source PDK information 
+*   Open Source PDK information
 *   Open Source Designs
 *   Useful scripts
 *   Tool improvements
@@ -26,7 +26,7 @@ We follow the Google C++ style [guide](https://google.github.io/styleguide/cppgu
 
 Please pay attention to the test [directory ](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test)and be sure to add tests for any code changes that you make with open sourceable PDK and design information. We provide the nandgate45 PDK in the OpenROAD-flow repo to help with this. Pull requests with code changes are unlikely to be accepted without accompanying test cases. There are many [example](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/test/gcd_flow1.tcl) tests. Each repo has a test directory as well with tests you should run and add to if you modify something in one of the submodules.
 
-If you want to add a new tool please look in the [src/tool](https://github.com/The-OpenROAD-Project/OpenROAD/tree/add_tool/src/tool) directory of the add_tool branch for an example of how to add one. 
+If you want to add a new tool please look in the [src/tool](https://github.com/The-OpenROAD-Project/OpenROAD/tree/add_tool/src/tool) directory of the add_tool branch for an example of how to add one.
 
 For changes that claim to improve QoR or PPA, please run many tests and ensure that the improvement is not design specific. There are designs in the [OpenROAD-flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow/) repo which can be used unless the improvement is technology specific.
 
@@ -37,4 +37,3 @@ If you want to add TCL code to define a new tool command look at pdngen as an ex
 ## Questions
 
 You can file git issues to ask questions, file issues or you can contact us via email openroad at eng.ucsd.edu
-

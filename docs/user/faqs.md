@@ -2,7 +2,7 @@
 
 ## Where can I download OpenROAD tools?
 
-Currently, we don't provide pre-built binaries for the tools. 
+Currently, we don't provide pre-built binaries for the tools.
 You need to build the tools yourself on a supported platform.
 Please, refer to the [Getting Started](getting-started.md) section to build the tools.
 

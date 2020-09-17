@@ -1,6 +1,6 @@
 **<span style="text-decoration:underline;">Philosophy :</span>**
 
-As of 12/13/2019, besides Tapcell and Macroplace, we don't need any further integration into the top level app based on where we are today. We have done enough to prove that we can do the rest far before July and that we have a nicely architected app. We can use makefile targets and db file handoffs cleanly for non integrated steps in the flow. We can accept more integration changes but not by default. The integration causes churn as we have seen. We have to focus on making what we have work now. Once we have the 4 design columns green and openroad-flow set up with CI then we can accept more integration work but not until then. We need to converge the release. 
+As of 12/13/2019, besides Tapcell and Macroplace, we don't need any further integration into the top level app based on where we are today. We have done enough to prove that we can do the rest far before July and that we have a nicely architected app. We can use makefile targets and db file handoffs cleanly for non integrated steps in the flow. We can accept more integration changes but not by default. The integration causes churn as we have seen. We have to focus on making what we have work now. Once we have the 4 design columns green and openroad-flow set up with CI then we can accept more integration work but not until then. We need to converge the release.
 
 **<span style="text-decoration:underline;">Mechanics :</span>**
 

@@ -269,7 +269,7 @@ https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1
 * Tcl command(s) documented in top level README.md in flow order.
 * Command line tool documentation in tool README.
 * Conforms to Tcl command naming standards (no camel case).
-* Does not read configuration files. 
+* Does not read configuration files.
 * Use command arguments or support commands.
 * `.clang-format` at tool root directory to aid foreign programmers.
 * No jenkins/, Jenkinsfile, Dockerfile in tool directory.
