@@ -4,8 +4,8 @@
 
 Currently, we don't provide pre-built binaries for the tools. 
 You need to build the tools yourself on a supported platform.
-Please, refer to the [Getting Started](getting-started.html) section to build the tools.
+Please, refer to the [Getting Started](getting-started.md) section to build the tools.
 
 ## How can I contribute?
 
-Thank you for your willingness to contribute. Please, see the [Getting Involved](../contrib/getting-involved.html) guide.
+Thank you for your willingness to contribute. Please, see the [Getting Involved](../contrib/getting-involved.md) guide.

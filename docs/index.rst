@@ -61,7 +61,7 @@ We maintain the following channels for communication:
    contrib/developer-guide
    contrib/database-math
    user/faqs
-   
+
 
 .. _OpenDB: https://github.com/The-OpenROAD-Project/OpenDB
 .. _OpenSTA: https://github.com/The-OpenROAD-Project/OpenSTA
