@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-read_lef nangate45/NangateOpenCellLibrary.mod.lef
+read_lef NangateOpenCellLibrary.mod.lef
 read_def gcd/floorplan.def
 
 pdngen gcd/PDN.cfg -verbose

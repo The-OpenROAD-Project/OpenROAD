@@ -1,0 +1,1006 @@
+/* ---------------------------------------------------------------------------- 
+/* 
+/*     dummy_pads library LIB file 
+/* 
+/* ----------------------------------------------------------------------------*/
+
+library(dummy_pads_worst_case) { 
+  comment : "" ; 
+  date : "$Date: Sun Jul 17 17:23:21 2016 $" ; 
+  revision : "1.0" ; 
+  delay_model : table_lookup ; 
+  capacitive_load_unit(1,pf);
+  current_unit : "1mA" ; 
+  leakage_power_unit : "1nW" ; 
+  pulling_resistance_unit : "1kohm" ; 
+  time_unit : "1ns" ; 
+  voltage_unit : "1V" ; 
+  default_cell_leakage_power : 0 ; 
+  default_fanout_load : 1 ; 
+  default_inout_pin_cap : 0.01 ; 
+  default_input_pin_cap : 0.01 ; 
+  default_leakage_power_density : 0 ; 
+  default_max_capacitance : 1 ; 
+  default_max_transition : 3 ; 
+  default_output_pin_cap : 0 ; 
+  in_place_swap_mode : match_footprint ; 
+  input_threshold_pct_fall : 50 ; 
+  input_threshold_pct_rise : 50 ; 
+  library_features(report_delay_calculation, report_power_calculation);
+  nom_process : 1 ; 
+  nom_temperature : 125 ; 
+  nom_voltage : 0.72 ; 
+  output_threshold_pct_fall : 50 ; 
+  output_threshold_pct_rise : 50 ; 
+  slew_derate_from_library : 1 ; 
+  slew_lower_threshold_pct_fall : 20 ; 
+  slew_lower_threshold_pct_rise : 20 ; 
+  slew_upper_threshold_pct_fall : 80 ; 
+  slew_upper_threshold_pct_rise : 80 ; 
+  voltage_map(AVDD, 1.08);
+  voltage_map(AVDDC, 0.72);
+  voltage_map(AVSS, 0);
+  voltage_map(AVSSC, 0);
+  voltage_map(DVDD, 1.08);
+  voltage_map(DVDD1, 1.08);
+  voltage_map(DVDDBRK, 1.08);
+  voltage_map(DVSS, 0);
+  voltage_map(DVSS1, 0);
+  voltage_map(DVSSBRK, 0);
+  voltage_map(POWER,  1.08);
+  voltage_map(VDD, 0.72);
+  voltage_map(VDDBRK, 0.72);
+  voltage_map(VDDI, 1.08);
+  voltage_map(VDDIA, 1.08);
+  voltage_map(VDDIAC, 0.72);
+  voltage_map(VDDIC, 0.72);
+  voltage_map(VSS, 0);
+  voltage_map(VSSBRK, 0);
+
+  operating_conditions(worst_case) { 
+    process : 1 ; 
+    temperature : 125 ; 
+    voltage : 1 ; 
+  }
+
+  input_voltage(default_DVDD_DVSS_input) { 
+    vih : 1.08 ; 
+    vil : 0 ; 
+    vimax : 1.08 ; 
+    vimin : 0 ; 
+  }
+
+  output_voltage(default_DVDD_DVSS_output) { 
+    voh : 1.08 ; 
+    vol : 0 ; 
+    vomax : 1.08 ; 
+    vomin : 0 ; 
+  }
+
+  input_voltage(default_VDD_VSS_input) { 
+    vih : 0.72 ; 
+    vil : 0 ; 
+    vimax : 0.72 ; 
+    vimin : 0 ; 
+  }
+
+  output_voltage(default_VDD_VSS_output) { 
+    voh : 0.72 ; 
+    vol : 0 ; 
+    vomax : 0.72 ; 
+    vomin : 0 ; 
+  }
+
+  default_operating_conditions : worst_case ; 
+
+  lu_table_template(delay_template_7x7) { 
+    variable_1 : input_net_transition ; 
+    variable_2 : total_output_net_capacitance ; 
+    index_1("0.0005, 0.005, 0.0125, 0.05, 0.1, 0.25, 0.5, 1");
+    index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+  }
+
+  power_lut_template(passive_power_template_7x7) { 
+    variable_1 : input_transition_time ; 
+    index_1("0.0005, 0.005, 0.0125, 0.05, 0.1, 0.25, 0.5, 1");
+  }
+
+  power_lut_template(power_template_7x7) { 
+    variable_1 : input_transition_time ; 
+    variable_2 : total_output_net_capacitance ; 
+    index_1("0.0005, 0.005, 0.0125, 0.05, 0.1, 0.25, 0.5, 1");
+    index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+  }
+
+  cell(PADCELL_SIG_H) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+
+    pin(Y) { 
+      direction : output ; 
+      function : "PAD" ; 
+      min_capacitance : 0.0001 ; 
+      power_down_function : "(!VDD) + (VSS)" ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_capacitance : 1 ; 
+      output_voltage : default_VDD_VSS_output ; 
+
+      timing() { 
+        related_pin : "PAD" ; 
+        timing_sense : positive_unate ; 
+        timing_type : combinational ; 
+        when : "!OE" ; 
+
+        cell_rise(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.3, 0.3, 0.3, 0.4, 0.4, 0.5, 0.7, 1.0", \
+                 "0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.8, 1.1", \
+                 "0.8, 0.8, 0.8, 0.8, 0.9, 1.0, 1.1, 1.5", \
+                 "1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.7, 2.0", \
+                 "2.2, 2.2, 2.2, 2.2, 2.2, 2.3, 2.5, 2.8", \
+                 "3.2, 3.2, 3.2, 3.2, 3.2, 3.3, 3.5, 3.8", \
+                 "3.6, 3.6, 3.6, 3.6, 3.6, 3.7, 3.9, 4.2", \
+                 "4.5, 4.5, 4.5, 4.5, 4.6, 4.7, 4.8, 5.2");
+        }
+
+        rise_transition(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90");
+        }
+
+        cell_fall(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.3, 0.3, 0.3, 0.4, 0.4, 0.5, 0.7, 1.0", \
+                 "0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.8, 1.1", \
+                 "0.8, 0.8, 0.8, 0.8, 0.9, 1.0, 1.1, 1.5", \
+                 "1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.7, 2.0", \
+                 "2.2, 2.2, 2.2, 2.2, 2.2, 2.3, 2.5, 2.8", \
+                 "3.2, 3.2, 3.2, 3.2, 3.2, 3.3, 3.5, 3.8", \
+                 "3.6, 3.6, 3.6, 3.6, 3.6, 3.7, 3.9, 4.2", \
+                 "4.5, 4.5, 4.5, 4.5, 4.6, 4.7, 4.8, 5.2");
+        }
+
+        fall_transition(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90");
+        }
+      }
+    }
+
+    pin(PAD) { 
+      direction : inout ; 
+      drive_current : 0 ; 
+      function : "A" ; 
+      is_pad : true ; 
+      min_capacitance : 0.5 ; 
+      related_ground_pin : DVSS ; 
+      related_power_pin : DVDD ; 
+      max_capacitance : 102.574 ; 
+      capacitance : 2.57398 ; 
+      rise_capacitance : 2.56415 ; 
+      rise_capacitance_range(2.47204, 2.59043);
+      fall_capacitance : 2.5838 ; 
+      fall_capacitance_range(2.49516, 2.61301);
+      input_voltage : default_DVDD_DVSS_input ; 
+      output_voltage : default_DVDD_DVSS_output ; 
+
+      timing() { 
+        related_pin : "A" ; 
+        timing_sense : positive_unate ; 
+        timing_type : combinational ; 
+
+        cell_rise(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("3.3, 3.4, 3.7, 4.3, 5.0, 6.3, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.6", \
+                 "3.4, 3.5, 3.8, 4.4, 5.1, 6.5, 7.7, 8.6", \
+                 "3.5, 3.6, 3.9, 4.5, 5.2, 6.5, 7.8, 8.7");
+        }
+
+        rise_transition(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0");
+        }
+
+        cell_fall(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("3.3, 3.4, 3.7, 4.3, 5.0, 6.3, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.6", \
+                 "3.4, 3.5, 3.8, 4.4, 5.1, 6.5, 7.7, 8.6", \
+                 "3.5, 3.6, 3.9, 4.5, 5.2, 6.5, 7.8, 8.7");
+        }
+
+        fall_transition(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0");
+        }
+      }
+    }
+
+    pin(A) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(PU) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(OE) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_SIG_V) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+
+    pin(Y) { 
+      direction : output ; 
+      function : "PAD" ; 
+      min_capacitance : 0.0001 ; 
+      power_down_function : "(!VDD) + (VSS)" ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_capacitance : 1 ; 
+      output_voltage : default_VDD_VSS_output ; 
+
+      timing() { 
+        related_pin : "PAD" ; 
+        timing_sense : positive_unate ; 
+        timing_type : combinational ; 
+        when : "!OE" ; 
+
+        cell_rise(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.3, 0.3, 0.3, 0.4, 0.4, 0.5, 0.7, 1.0", \
+                 "0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.8, 1.1", \
+                 "0.8, 0.8, 0.8, 0.8, 0.9, 1.0, 1.1, 1.5", \
+                 "1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.7, 2.0", \
+                 "2.2, 2.2, 2.2, 2.2, 2.2, 2.3, 2.5, 2.8", \
+                 "3.2, 3.2, 3.2, 3.2, 3.2, 3.3, 3.5, 3.8", \
+                 "3.6, 3.6, 3.6, 3.6, 3.6, 3.7, 3.9, 4.2", \
+                 "4.5, 4.5, 4.5, 4.5, 4.6, 4.7, 4.8, 5.2");
+        }
+
+        rise_transition(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90");
+        }
+
+        cell_fall(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.3, 0.3, 0.3, 0.4, 0.4, 0.5, 0.7, 1.0", \
+                 "0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.8, 1.1", \
+                 "0.8, 0.8, 0.8, 0.8, 0.9, 1.0, 1.1, 1.5", \
+                 "1.4, 1.4, 1.4, 1.4, 1.4, 1.5, 1.7, 2.0", \
+                 "2.2, 2.2, 2.2, 2.2, 2.2, 2.3, 2.5, 2.8", \
+                 "3.2, 3.2, 3.2, 3.2, 3.2, 3.3, 3.5, 3.8", \
+                 "3.6, 3.6, 3.6, 3.6, 3.6, 3.7, 3.9, 4.2", \
+                 "4.5, 4.5, 4.5, 4.5, 4.6, 4.7, 4.8, 5.2");
+        }
+
+        fall_transition(delay_template_7x7) { 
+          index_1("0.3, 0.65, 1.9, 4.27, 7.97, 13.16, 15, 20");
+          index_2("0.0001, 0.001, 0.005, 0.02, 0.05, 0.2, 0.5, 1");
+          values("0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90", \
+                 "0.006, 0.007, 0.010, 0.02, 0.04, 0.18, 0.45, 0.90");
+        }
+      }
+    }
+
+    pin(PAD) { 
+      direction : inout ; 
+      drive_current : 0 ; 
+      function : "A" ; 
+      is_pad : true ; 
+      min_capacitance : 0.5 ; 
+      related_ground_pin : DVSS ; 
+      related_power_pin : DVDD ; 
+      max_capacitance : 102.574 ; 
+      capacitance : 2.57398 ; 
+      rise_capacitance : 2.56415 ; 
+      rise_capacitance_range(2.47204, 2.59043);
+      fall_capacitance : 2.5838 ; 
+      fall_capacitance_range(2.49516, 2.61301);
+      input_voltage : default_DVDD_DVSS_input ; 
+      output_voltage : default_DVDD_DVSS_output ; 
+
+      timing() { 
+        related_pin : "A" ; 
+        timing_sense : positive_unate ; 
+        timing_type : combinational ; 
+
+        cell_rise(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("3.3, 3.4, 3.7, 4.3, 5.0, 6.3, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.6", \
+                 "3.4, 3.5, 3.8, 4.4, 5.1, 6.5, 7.7, 8.6", \
+                 "3.5, 3.6, 3.9, 4.5, 5.2, 6.5, 7.8, 8.7");
+        }
+
+        rise_transition(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0");
+        }
+
+        cell_fall(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("3.3, 3.4, 3.7, 4.3, 5.0, 6.3, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.3, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.4, 3.7, 4.3, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.5", \
+                 "3.4, 3.5, 3.8, 4.4, 5.0, 6.4, 7.6, 8.6", \
+                 "3.4, 3.5, 3.8, 4.4, 5.1, 6.5, 7.7, 8.6", \
+                 "3.5, 3.6, 3.9, 4.5, 5.2, 6.5, 7.8, 8.7");
+        }
+
+        fall_transition(delay_template_7x7) { 
+          index_1("0.001, 0.005, 0.012, 0.05, 0.1, 0.25, 0.5, 1");
+          index_2("3.0, 4.0, 6.0, 12.0, 25.0, 50.0, 75.0, 100.0");
+          values("0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0", \
+                 "0.8, 0.9, 1.0, 1.5, 2.0, 3.3, 4.7, 6.0");
+        }
+      }
+    }
+
+    pin(A) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(PU) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(OE) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VDD_H) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VSS_H) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VDDIO_H) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VSSIO_H) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VDD_V) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VSS_V) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VDDIO_V) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+  }
+  cell(PADCELL_VSSIO_V) { 
+    area : 4200 ; 
+    dont_touch : true ; 
+    dont_use : true ; 
+    pad_cell : true ; 
+
+    pg_pin(DVDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "DVDD" ; 
+    }
+
+    pg_pin(DVSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "DVSS" ; 
+    }
+
+    pg_pin(VDD) { 
+      pg_type : primary_power ; 
+      voltage_name : "VDD" ; 
+    }
+
+    pg_pin(VSS) { 
+      pg_type : primary_ground ; 
+      voltage_name : "VSS" ; 
+    }
+    pin(RETN) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+      input_voltage : default_VDD_VSS_input ; 
+
+    }
+    pin(SNS) { 
+      direction : input ; 
+      related_ground_pin : VSS ; 
+      related_power_pin : VDD ; 
+      max_transition : 1 ; 
+      capacitance : 0.01 ; 
+      rise_capacitance : 0.01 ; 
+      rise_capacitance_range(0.01, 0.01);
+      fall_capacitance : 0.01 ; 
+      fall_capacitance_range(0.01, 0.01);
+
+    }
+  }
+}

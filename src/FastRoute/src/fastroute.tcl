@@ -222,9 +222,6 @@ proc fastroute { args } {
 
     FastRoute::set_min_layer $min_layer
     FastRoute::set_max_layer $max_layer
-  } else {
-    FastRoute::set_min_layer 1
-    FastRoute::set_max_layer -1
   }
 
   if { [info exists keys(-tile_size)] } {
