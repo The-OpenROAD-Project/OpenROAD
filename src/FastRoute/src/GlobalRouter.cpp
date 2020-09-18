@@ -219,8 +219,7 @@ void GlobalRouter::runFastRoute()
 {
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
-  NetRouteMap result;
-  getRouting(result);
+  NetRouteMap result = getRouting();
 
   _routes.insert(result.begin(), result.end());
 
@@ -267,8 +266,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
 
-    NetRouteMap newRoute;
-    getRouting(newRoute);
+    NetRouteMap newRoute = getRouting();
     mergeResults(newRoute);
   }
 }
@@ -276,7 +274,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 void GlobalRouter::routeClockNets()
 {
   std::cout << "Routing clock nets...\n";
-  getRouting(_routes);
+  _routes = getRouting();
 
   _minLayerForClock = _minRoutingLayer;
   _maxLayerForClock = _maxRoutingLayer;
@@ -287,14 +285,16 @@ void GlobalRouter::routeClockNets()
   _onlySignalNets = true;
 }
 
-void GlobalRouter::getRouting(NetRouteMap& routes) {
-  routes = _fastRoute->run();
+NetRouteMap GlobalRouter::getRouting() {
+  NetRouteMap routes = _fastRoute->run();
   addRemainingGuides(routes);
   connectPadPins(routes);
   for (auto &net_route : routes) {
     GRoute &route = net_route.second;
     mergeSegments(route);
   }
+
+  return routes;
 }
 
 void GlobalRouter::estimateRC()
