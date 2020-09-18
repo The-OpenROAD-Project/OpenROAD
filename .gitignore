@@ -21,3 +21,5 @@ include/openroad/Version.hh
 build
 test/results
 flow
+
+coverage-output

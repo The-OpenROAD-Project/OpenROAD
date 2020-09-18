@@ -9,7 +9,7 @@ pipeline {
     stage('Coverage') {
       steps {
         sh './jenkins/coverage/coverage.sh'
-        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'out', reportFiles: 'index.html', reportName: 'Code Coverage', reportTitles: ''])
+        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage-output', reportFiles: 'index.html', reportName: 'Code Coverage', reportTitles: ''])
       }
     }
   }
