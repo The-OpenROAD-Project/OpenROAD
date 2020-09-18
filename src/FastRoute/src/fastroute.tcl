@@ -258,6 +258,9 @@ proc fastroute { args } {
     sta::check_positive_float "-clock_topology_priority" $priority
     FastRoute::set_alpha $clock_topology_priority
   } else {
+    # Default alpha as 0.3 prioritize wire length, but keeps
+    # aware of skew in the topology construction (see PDRev paper
+    # for more reference)
     FastRoute::set_alpha 0.3
   }
 
