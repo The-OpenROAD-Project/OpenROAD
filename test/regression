@@ -84,11 +84,11 @@ proc run_flow_tests { } {
 set tool_errors 0
 
 if { $argv == {} } {
+  # Run all tool Unit tests
   dict for {tool script} $tool_scripts {
     run_tool_tests $tool
   }
   run_openroad_tests
-  #
 } else {
   foreach arg $argv {
     set arg [string tolower $arg]

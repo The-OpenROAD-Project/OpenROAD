@@ -48,6 +48,11 @@ struct GSegment
   int finalX;
   int finalY;
   int finalLayer;
+  GSegment() = default;
+  GSegment(int x0, int y0, int l0, int x1, int y1, int l1) :
+  	initX(x0), initY(y0), initLayer(l0),
+  	finalX(x1), finalY(y1), finalLayer(l1)
+  	{}
 };
 
 // class Route is defined in fastroute core.

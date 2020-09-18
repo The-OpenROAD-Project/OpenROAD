@@ -629,7 +629,7 @@ You can call it multiple times for different layers.
 Example: `set_global_routing_layer_pitch 6 1.34`.
 
 ```
-set_pdrev_topology_priority -net netName -alpha alpha
+set_pdrev_topology_priority netName alpha
 ```
 FastRoute has an alternative tool for the routing topology construction, called PDRev. You can define the topology construction
 priority of PDRev between wire length and skew, using the `alpha` parameter.
@@ -638,7 +638,7 @@ Alpha is a positive float between 0.0 and 1.0, where alpha close to 0.0 generate
 and alpha close to 1.0 generates topologies with lower skew. For more information about PDRev, check the paper in
 `src/FastRoute/src/pdrev/papers/PDRev.pdf`
 You can call it multiple times for different nets.
-Example: `set_pdrev_topology_priority -net "clk" -alpha 0.3` sets an alpha value of 0.3 for net *clk*.
+Example: `set_pdrev_topology_priority clk 0.3` sets an alpha value of 0.3 for net *clk*.
 
 ```
 set_global_routing_region_adjustment {lower_left_x lower_left_y upper_right_x upper_right_y}

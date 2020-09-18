@@ -44,6 +44,7 @@ option(BUILD_OPENPHYSYN "Build OpenPhySyn" ON)
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
+# Default c++ standard used unless otherwise specified in target_compile_features.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
@@ -51,6 +52,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(CODE_COVERAGE "CODE_COVERAGE" OFF)
 if(CODE_COVERAGE)
+  # Seriously bad form to change compile flags directly like this,
+  # but at least restricted to coverage option. -cherry
   message("*** Using code coverage ***")
   SET(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
   SET(GCC_COVERAGE_LINK_FLAGS    "-lgcov")

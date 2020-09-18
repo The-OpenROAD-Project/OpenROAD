@@ -200,6 +200,8 @@ else()
   set(ZLIB 0)
 endif()
 
+find_package(Threads)
+
 ################################################################
 
 # Disable OpenDB stand-alone executable builds.
@@ -246,6 +248,10 @@ target_compile_options(openroad
   $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
   $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -pedantic -Wcast-qual -Wredundant-decls -Wformat-security>
   )
+
+# Disable compiler specific extensions like gnu++11.
+set_target_properties(openroad PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_features(openroad PUBLIC cxx_std_17)
 
 target_include_directories(openroad
   PUBLIC ${OPENROAD_HOME}/include
@@ -300,6 +306,7 @@ target_link_libraries(openroad
   antennachecker
   zutil
   ${TCL_LIBRARY}
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 if (BUILD_OPENPHYSYN)
@@ -320,10 +327,6 @@ if (ZLIB_FOUND)
   target_link_libraries(openroad ${ZLIB_LIBRARIES})
 endif()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  target_link_libraries(openroad -pthread)
-endif()
-
 # Optional CUDD library for OpenSTA
 if (CUDD_LIB)
   target_link_libraries(openroad ${CUDD_LIB})
@@ -338,7 +341,12 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
   target_link_libraries(openroad ${LIBRT})
 endif()
 
-target_compile_options(openroad PUBLIC ${COMPILE_OPTIONS})
+# clang7 with docker fails to link filesystem support
+# This is not necessary (or desired) on AppleClang or non-docker compiles.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+    AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(openroad stdc++fs)
+endif()
 
 ################################################################
 # Install

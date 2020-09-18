@@ -146,8 +146,9 @@ void GlobalRouter::startFastRoute()
   initAdjustments();
   initPitches();
   if (_unidirectionalRoute) {
-    _minRoutingLayer = 2;
     _fixLayer = 1;
+    if (_minRoutingLayer < 2)
+      _minRoutingLayer = 2;
   } else {
     _fixLayer = 0;
   }
@@ -205,20 +206,23 @@ void GlobalRouter::startFastRoute()
     computeRegionAdjustments(
         lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
   }
+
+  if (_onlySignalNets)
+  {
+    restorePreviousCapacities(_minLayerForClock, _maxRoutingLayer);
+  }
+
+  _fastRoute->initAuxVar();
 }
 
 void GlobalRouter::runFastRoute()
 {
-  _fastRoute->initAuxVar();
-  if (_clockNetsRouteFlow) {
-    runClockNetsRouteFlow();
-  } else {
-    _routes = _fastRoute->run();
-    addRemainingGuides(_routes);
-    connectPadPins(_routes);
-  }
+  // Store results in a temporary map, allowing to keep any previous
+  // routing result (e.g., after routeClockNets)
+  NetRouteMap result = getRouting();
 
-  mergeSegments();
+  _routes.insert(result.begin(), result.end());
+
   computeWirelength();
 
   if (_reportCongest) {
@@ -238,7 +242,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   // Copy first route result and make changes in this new vector
   NetRouteMap originalRoute(_routes);
 
-  getPreviousCapacities(_minRoutingLayer);
+  getPreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
   addLocalConnections(originalRoute);
 
   int violationsCnt
@@ -260,43 +264,37 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     std::cout << "[INFO] #Nets to reroute: " << _fastRoute->getNets().size()
               << "\n";
 
-    restorePreviousCapacities(_minRoutingLayer);
+    restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
 
-    _fastRoute->initAuxVar();
-    NetRouteMap newRoute = _fastRoute->run();
-    addRemainingGuides(newRoute);
-    connectPadPins(newRoute);
-    for (auto &net_route : newRoute) {
-      GRoute &route = net_route.second;
-      mergeSegments(route);
-    }
+    NetRouteMap newRoute = getRouting();
     mergeResults(newRoute);
   }
 }
 
-void GlobalRouter::runClockNetsRouteFlow()
+void GlobalRouter::routeClockNets()
 {
-  _fastRoute->setVerbose(0);
-  NetRouteMap clockNetsRoute = _fastRoute->run();
-  addRemainingGuides(clockNetsRoute);
-  connectPadPins(clockNetsRoute);
+  std::cout << "Routing clock nets...\n";
+  _routes = getRouting();
 
-  getPreviousCapacities(_minLayerForClock);
+  _minLayerForClock = _minRoutingLayer;
+  _maxLayerForClock = _maxRoutingLayer;
 
-  clear();
+  getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
+  clearFlow();
   _onlyClockNets = false;
   _onlySignalNets = true;
+}
 
-  startFastRoute();
-  restorePreviousCapacities(_minLayerForClock);
+NetRouteMap GlobalRouter::getRouting() {
+  NetRouteMap routes = _fastRoute->run();
+  addRemainingGuides(routes);
+  connectPadPins(routes);
+  for (auto &net_route : routes) {
+    GRoute &route = net_route.second;
+    mergeSegments(route);
+  }
 
-  _fastRoute->initAuxVar();
-  _routes = _fastRoute->run();
-  addRemainingGuides(_routes);
-  connectPadPins(_routes);
-  mergeSegments();
-
-  mergeResults(clockNetsRoute);
+  return routes;
 }
 
 void GlobalRouter::estimateRC()
@@ -372,7 +370,7 @@ void GlobalRouter::setCapacities()
   }
 }
 
-void GlobalRouter::getPreviousCapacities(int previousMinLayer)
+void GlobalRouter::getPreviousCapacities(int previousMinLayer, int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
@@ -395,7 +393,7 @@ void GlobalRouter::getPreviousCapacities(int previousMinLayer)
   }
 
   int oldTotalCap = 0;
-  for (int layer = previousMinLayer; layer <= _grid->getNumLayers(); layer++) {
+  for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = _fastRoute->getEdgeCurrentResource(
@@ -416,14 +414,14 @@ void GlobalRouter::getPreviousCapacities(int previousMinLayer)
   }
 }
 
-void GlobalRouter::restorePreviousCapacities(int previousMinLayer)
+void GlobalRouter::restorePreviousCapacities(int previousMinLayer, int previousMaxLayer)
 {
   int oldCap;
   int xGrids = _grid->getXGrids();
   int yGrids = _grid->getYGrids();
 
   int newTotalCap = 0;
-  for (int layer = previousMinLayer; layer <= _grid->getNumLayers(); layer++) {
+  for (int layer = previousMinLayer; layer <= previousMaxLayer; layer++) {
     for (int y = 1; y < yGrids; y++) {
       for (int x = 1; x < xGrids; x++) {
         oldCap = oldHUsages[layer - 1][y - 1][x - 1];
@@ -523,14 +521,13 @@ void GlobalRouter::initializeNets(bool reroute)
             if (pinOverlapsWithSingleTrack(pin, trackPos)) {
               posOnGrid = _grid->getPositionOnGrid(trackPos);
 
-              if (!(posOnGrid == pinPosition)) {
-                if ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL
-                     && posOnGrid.y() != pinPosition.y())
-                    || (layer.getPreferredDirection() == RoutingLayer::VERTICAL
-                        && posOnGrid.x() != pinPosition.x())) {
+              if (!(posOnGrid == pinPosition) &&
+                  ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL &&
+                    posOnGrid.y() != pinPosition.y()) ||
+                   (layer.getPreferredDirection() == RoutingLayer::VERTICAL &&
+                    posOnGrid.x() != pinPosition.x()))) {
                   pinPosition = posOnGrid;
                 }
-              }
             }
 
             pin.setOnGridPosition(pinPosition);
@@ -598,8 +595,7 @@ void GlobalRouter::computeGridAdjustments()
     RoutingLayer routingLayer = getRoutingLayerByIndex(layer);
 
     if (layer < _minRoutingLayer
-        || (layer > _maxRoutingLayer && _maxRoutingLayer > 0)
-        || (_onlyClockNets && layer < _minLayerForClock))
+        || (layer > _maxRoutingLayer && _maxRoutingLayer > 0))
       continue;
 
     int newVCapacity = 0;
@@ -657,8 +653,7 @@ void GlobalRouter::computeTrackAdjustments()
     int numTracks = 0;
 
     if (layer.getIndex() < _minRoutingLayer
-        || (layer.getIndex() > _maxRoutingLayer && _maxRoutingLayer > 0)
-        || (_onlyClockNets && layer.getIndex() < _minLayerForClock))
+        || (layer.getIndex() > _maxRoutingLayer && _maxRoutingLayer > 0))
       continue;
 
     if (layer.getPreferredDirection() == RoutingLayer::HORIZONTAL) {
@@ -1170,16 +1165,9 @@ void GlobalRouter::setReportCongestion(char* congestFile)
   _congestFile = congestFile;
 }
 
-void GlobalRouter::setClockNetsRouteFlow(bool clockFlow)
+void GlobalRouter::setOnlyClockNets(bool onlyClocks)
 {
-  _clockNetsRouteFlow = clockFlow;
-  _onlyClockNets = clockFlow;
-  _onlySignalNets = false;
-}
-
-void GlobalRouter::setMinLayerForClock(int minLayer)
-{
-  _minLayerForClock = minLayer;
+  _onlyClockNets = onlyClocks;
 }
 
 void GlobalRouter::writeGuides(const char* fileName)
@@ -1234,8 +1222,8 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    error("Routing with guides in blocked metal for net %s",
 		  db_net->getConstName());
 	  }
-	  odb::Rect box = globalRoutingToBox(segment);
-	  guideBox.push_back(box);
+
+	  guideBox.push_back(globalRoutingToBox(segment));
 	  if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
 	    phLayerF = getRoutingLayerByIndex(
 					      (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
@@ -1263,8 +1251,7 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    }
 	    finalLayer = segment.finalLayer;
 	    odb::Rect box;
-	    box = globalRoutingToBox(segment);
-	    guideBox.push_back(box);
+	    guideBox.push_back(globalRoutingToBox(segment));
 	    mergeBox(guideBox);
 	    for (odb::Rect guide : guideBox) {
 	      guideFile << guide.xMin() + offsetX << " "
@@ -1275,8 +1262,7 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    }
 	    guideBox.clear();
 
-	    box = globalRoutingToBox(segment);
-	    guideBox.push_back(box);
+	    guideBox.push_back(globalRoutingToBox(segment));
 	  }
 	}
       }
@@ -1339,135 +1325,124 @@ RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
   return selectedRoutingTracks;
 }
 
-void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
+void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
 {
   auto net_pins = _fastRoute->getNets();
+  std::vector<PIN>& pins = net_pins[db_net];
+  int lastLayer = -1;
+  for (uint p = 0; p < pins.size(); p++) {
+    if (p > 0) {
+      // If the net is not local, FR core result is invalid
+      if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
+        error("Net %s not properly covered",
+              db_net->getConstName());
+      }
+    }
+
+    if (pins[p].layer > lastLayer)
+      lastLayer = pins[p].layer;
+  }
+
+  for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
+    GSegment segment = GSegment(pins[0].x, pins[0].y, l, pins[0].x, pins[0].y, l+1);
+    route.push_back(segment);
+  }
+}
+
+void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
+{
+  auto net_pins = _fastRoute->getNets();
+  std::vector<PIN>& pins = net_pins[db_net];
+  for (PIN pin : pins) {
+    if (pin.layer > 1) {
+      // for each pin placed at upper layers, get all segments that
+      // potentially covers it
+      GRoute coverSegs;
+
+      int wireViaLayer = std::numeric_limits<int>::max();
+      for (uint i = 0; i < route.size(); i++) {
+        if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
+            (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+            (!(route[i].initX == route[i].finalX &&
+             route[i].initY == route[i].finalY))) {
+          coverSegs.push_back(route[i]);
+          if (route[i].initLayer < wireViaLayer) {
+            wireViaLayer = route[i].initLayer;
+          }
+        }
+      }
+
+      bool bottomLayerPin = false;
+      for (PIN pin2 : pins) {
+        if (pin.x == pin2.x && pin.y == pin2.y
+            && pin.layer > pin2.layer) {
+          bottomLayerPin = true;
+        }
+      }
+
+      if (!bottomLayerPin) {
+        for (uint i = 0; i < route.size(); i++) {
+          if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
+              (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+              (route[i].initX == route[i].finalX &&
+               route[i].initY == route[i].finalY &&
+              (route[i].initLayer < wireViaLayer ||
+               route[i].finalLayer < wireViaLayer))) {
+            // remove all vias to this pin that doesn't connects two wires
+            route.erase(route.begin() + i);
+            i = 0;
+          }
+        }
+      }
+
+      int closestLayer = -1;
+      int minorDiff = std::numeric_limits<int>::max();
+
+      for (GSegment &seg : coverSegs) {
+        if (seg.initLayer != seg.finalLayer) {
+          error("Segment has invalid layer assignment");
+        }
+
+        int diffLayers = std::abs(pin.layer - seg.initLayer);
+        if (diffLayers < minorDiff && seg.initLayer > closestLayer) {
+          minorDiff = seg.initLayer;
+          closestLayer = seg.initLayer;
+        }
+      }
+
+      if (closestLayer > pin.layer) {
+        for (int l = closestLayer; l > pin.layer; l--) {
+          GSegment segment = GSegment(pin.x, pin.y, l, pin.x, pin.y, l-1);
+          route.push_back(segment);
+        }
+      } else if (closestLayer < pin.layer) {
+        for (int l = closestLayer; l < pin.layer; l++) {
+          GSegment segment = GSegment(pin.x, pin.y, l, pin.x, pin.y, l+1);
+          route.push_back(segment);
+        }
+      }
+    }
+  }
+}
+
+void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
+{
   for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
     // Skip nets with 1 pin or less
     if (net->getNumPins() > 1) {
-      std::vector<PIN>& pins = net_pins[db_net];
-      // Try to add local guides for net with no output of FR core
       if (route.empty()) {
-        int lastLayer = -1;
-        for (uint p = 0; p < pins.size(); p++) {
-          if (p > 0) {
-            // If the net is not local, FR core result is invalid
-            if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
-              error("Net %s not properly covered",
-		    db_net->getConstName());
-            }
-          }
-
-          if (pins[p].layer > lastLayer)
-            lastLayer = pins[p].layer;
-        }
-
-        for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-          GSegment segment;
-          segment.initLayer = l;
-          segment.initX = pins[0].x;
-          segment.initY = pins[0].y;
-          segment.finalLayer = l + 1;
-          segment.finalX = pins[0].x;
-          segment.finalY = pins[0].y;
-          route.push_back(segment);
-        }
-      } else {  // For nets with routing, add guides for pin acess at upper
-                // layers
-        for (PIN pin : pins) {
-          if (pin.layer > 1) {
-            // for each pin placed at upper layers, get all segments that
-            // potentially covers it
-            GRoute coverSegs;
-
-            int wireViaLayer = std::numeric_limits<int>::max();
-            for (uint i = 0; i < route.size(); i++) {
-              if ((pin.x == route[i].initX && pin.y == route[i].initY)
-                  || (pin.x == route[i].finalX
-                      && pin.y == route[i].finalY)) {
-                if (!(route[i].initX == route[i].finalX
-                      && route[i].initY == route[i].finalY)) {
-                  coverSegs.push_back(route[i]);
-                  if (route[i].initLayer < wireViaLayer) {
-                    wireViaLayer = route[i].initLayer;
-                  }
-                }
-              }
-            }
-
-            bool bottomLayerPin = false;
-            for (PIN pin2 : pins) {
-              if (pin.x == pin2.x && pin.y == pin2.y
-                  && pin.layer > pin2.layer) {
-                bottomLayerPin = true;
-              }
-            }
-
-            if (!bottomLayerPin) {
-              for (uint i = 0; i < route.size(); i++) {
-                if ((pin.x == route[i].initX && pin.y == route[i].initY)
-                    || (pin.x == route[i].finalX
-                        && pin.y == route[i].finalY)) {
-                  // remove all vias to this pin that doesn't connects two wires
-                  if (route[i].initX == route[i].finalX
-                      && route[i].initY == route[i].finalY
-                      && (route[i].initLayer < wireViaLayer
-                          || route[i].finalLayer < wireViaLayer)) {
-                    route.erase(route.begin() + i);
-                    i = 0;
-                  }
-                }
-              }
-            }
-
-            int closestLayer = -1;
-            int minorDiff = std::numeric_limits<int>::max();
-
-            for (GSegment &seg : coverSegs) {
-              if (seg.initLayer != seg.finalLayer) {
-                error("Segment has invalid layer assignment");
-              }
-
-              int diffLayers = std::abs(pin.layer - seg.initLayer);
-              if (diffLayers < minorDiff && seg.initLayer > closestLayer) {
-                minorDiff = seg.initLayer;
-                closestLayer = seg.initLayer;
-              }
-            }
-
-            if (closestLayer > pin.layer) {
-              for (int l = closestLayer; l > pin.layer; l--) {
-                GSegment segment;
-                segment.initLayer = l;
-                segment.initX = pin.x;
-                segment.initY = pin.y;
-                segment.finalLayer = l - 1;
-                segment.finalX = pin.x;
-                segment.finalY = pin.y;
-                route.push_back(segment);
-              }
-            } else if (closestLayer < pin.layer) {
-              for (int l = closestLayer; l < pin.layer; l++) {
-                GSegment segment;
-                segment.initLayer = l;
-                segment.initX = pin.x;
-                segment.initY = pin.y;
-                segment.finalLayer = l + 1;
-                segment.finalX = pin.x;
-                segment.finalY = pin.y;
-                route.push_back(segment);
-              }
-            }
-          }
-        }
+        addGuidesForLocalNets(db_net, route);
+      } else {
+        addGuidesForPinAccess(db_net, route);
       }
     }
   }
 
   // Add local guides for nets with no routing.
+  auto net_pins = _fastRoute->getNets();
   for (Net& net : *_nets) {
     odb::dbNet* db_net = net.getDbNet();
     if (checkSignalType(net)
@@ -1476,13 +1451,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
 	    || routes[db_net].empty())) {
       GRoute &route = routes[db_net];
       for (PIN &pin : net_pins[db_net]) {
-        GSegment segment;
-        segment.initLayer = pin.layer;
-        segment.initX = pin.x;
-        segment.initY = pin.y;
-        segment.finalLayer = pin.layer;
-        segment.finalX = pin.x;
-        segment.finalY = pin.y;
+        GSegment segment = GSegment(pin.x, pin.y, pin.layer, pin.x, pin.y, pin.layer);
         route.push_back(segment);
       }
     }
@@ -1751,10 +1720,12 @@ void GlobalRouter::mergeSegments(GRoute& route)
   if (!route.empty()) {
     // vector copy - bad bad -cherry
     GRoute segments = route;
-    std::map<Point, int> segsAtPoint;
+    std::map<RoutePt, int> segsAtPoint;
     for (const GSegment& seg : segments) {
-      segsAtPoint[{seg.initX, seg.initY, seg.initLayer}] += 1;
-      segsAtPoint[{seg.finalX, seg.finalY, seg.finalLayer}] += 1;
+      RoutePt pt0 = RoutePt(seg.initX, seg.initY, seg.initLayer);
+      RoutePt pt1 = RoutePt(seg.finalX, seg.finalY, seg.finalLayer);
+      segsAtPoint[pt0] += 1;
+      segsAtPoint[pt1] += 1;
     }
 
     uint i = 0;
@@ -1787,7 +1758,7 @@ void GlobalRouter::mergeSegments(GRoute& route)
 bool GlobalRouter::segmentsConnect(const GSegment& seg0,
 				   const GSegment& seg1,
 				   GSegment& newSeg,
-				   const std::map<Point, int>& segsAtPoint)
+				   const std::map<RoutePt, int>& segsAtPoint)
 {
   long initX0 = std::min(seg0.initX, seg0.finalX);
   long initY0 = std::min(seg0.initY, seg0.finalY);
@@ -1803,9 +1774,11 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
   if (initX0 == finalX0 && initX1 == finalX1 && initX0 == initX1) {
     bool merge = false;
     if (initY0 == finalY1) {
-      merge = segsAtPoint.at({initX0, initY0, seg0.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX0, initY0, seg0.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     } else if (finalY0 == initY1) {
-      merge = segsAtPoint.at({initX1, initY1, seg1.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX1, initY1, seg1.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     }
     if (merge) {
       newSeg.initX = std::min(initX0, initX1);
@@ -1818,9 +1791,11 @@ bool GlobalRouter::segmentsConnect(const GSegment& seg0,
   } else if (initY0 == finalY0 && initY1 == finalY1 && initY0 == initY1) {
     bool merge = false;
     if (initX0 == finalX1) {
-      merge = segsAtPoint.at({initX0, initY0, seg0.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX0, initY0, seg0.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     } else if (finalX0 == initX1) {
-      merge = segsAtPoint.at({initX1, initY1, seg1.initLayer}) == 2;
+      RoutePt pt = RoutePt(initX1, initY1, seg1.initLayer);
+      merge = segsAtPoint.at(pt) == 2;
     }
     if (merge) {
       newSeg.initX = std::min(initX0, initX1);
@@ -1852,21 +1827,12 @@ void GlobalRouter::addLocalConnections(NetRouteMap& routes)
       topLayer = pin.getTopLayer();
       pinBoxes = pin.getBoxes().at(topLayer);
       pinPosition = pin.getOnGridPosition();
-
       realPinPosition = getRectMiddle(pinBoxes[0]);
-      horSegment.initX = realPinPosition.x();
-      horSegment.initY = realPinPosition.y();
-      horSegment.initLayer = topLayer;
-      horSegment.finalX = pinPosition.x();
-      horSegment.finalY = realPinPosition.y();
-      horSegment.finalLayer = topLayer;
-
-      verSegment.initX = pinPosition.x();
-      verSegment.initY = realPinPosition.y();
-      verSegment.initLayer = topLayer;
-      verSegment.finalX = pinPosition.x();
-      verSegment.finalY = pinPosition.y();
-      verSegment.finalLayer = topLayer;
+      
+      horSegment = GSegment(realPinPosition.x(), realPinPosition.y(), topLayer,
+                            pinPosition.x(), realPinPosition.y(), topLayer);
+      verSegment = GSegment(pinPosition.x(), realPinPosition.y(), topLayer,
+                            pinPosition.x(), pinPosition.y(), topLayer);
 
       route.push_back(horSegment);
       route.push_back(verSegment);
