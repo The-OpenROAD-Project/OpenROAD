@@ -1469,7 +1469,6 @@ namespace eval ICeWall {
       }
       $term setSpecial
       $net setSpecial
-      set swire [odb::dbSWire_create $net "FIXED"]
 
       set pin [odb::dbBPin_create $term]
       set layer [$tech findLayer [get_footprint_pad_pin_layer]]
@@ -2515,7 +2514,6 @@ namespace eval ICeWall {
             set net [odb::dbNet_create $block "${signal}_$section"]
           }
           $net setSpecial
-          set swire [odb::dbSWire_create $net "FIXED"]
 
           foreach inst_pin_name [dict get $sections $section] {
             set inst_name [dict get $inst_pin_name inst_name]
