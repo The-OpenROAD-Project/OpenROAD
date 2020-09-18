@@ -3865,60 +3865,42 @@ SPECIALNETS 180 ;
     - p_sel_1_i ( PIN p_sel_1_i ) ( u_sel_1_i PAD ) + USE SIGNAL ;
     - p_sel_2_i ( PIN p_sel_2_i ) ( u_sel_2_i PAD ) + USE SIGNAL ;
     - SNS_17 ( u_ddr_dq_15_io SNS ) ( u_ddr_dqs_p_0_io SNS ) ( u_vddio_31 SNS ) ( u_vssio_31 SNS ) ( u_ddr_dqs_n_0_io SNS ) ( u_ddr_dm_0_o SNS ) ( u_pwrdet16 SNS )
-      ( u_vss_14 SNS ) ( u_vdd_14 SNS ) ( u_ddr_dq_0_io SNS ) ( u_ddr_dq_1_io SNS ) ( u_vddio_30 SNS ) ( u_vssio_30 SNS ) ( u_ddr_dq_2_io SNS ) ( u_ddr_dq_3_io SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_vss_14 SNS ) ( u_vdd_14 SNS ) ( u_ddr_dq_0_io SNS ) ( u_ddr_dq_1_io SNS ) ( u_vddio_30 SNS ) ( u_vssio_30 SNS ) ( u_ddr_dq_2_io SNS ) ( u_ddr_dq_3_io SNS ) + USE SIGNAL ;
     - SNS_0 ( u_vddio_33 SNS ) ( u_vssio_33 SNS ) ( u_vss_15 SNS ) ( u_vdd_15 SNS ) ( u_ddr_dq_8_io SNS ) ( u_ddr_dq_9_io SNS ) ( u_ddr_dq_10_io SNS )
-      ( u_pwrdet17 SNS ) ( u_ddr_dq_11_io SNS ) ( u_ddr_dq_12_io SNS ) ( u_vddio_32 SNS ) ( u_vssio_32 SNS ) ( u_ddr_dq_13_io SNS ) ( u_ddr_dq_14_io SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_pwrdet17 SNS ) ( u_ddr_dq_11_io SNS ) ( u_ddr_dq_12_io SNS ) ( u_vddio_32 SNS ) ( u_vssio_32 SNS ) ( u_ddr_dq_13_io SNS ) ( u_ddr_dq_14_io SNS ) + USE SIGNAL ;
     - SNS_1 ( u_ddr_addr_14_o SNS ) ( u_ddr_addr_15_o SNS ) ( u_vddio_1 SNS ) ( u_vssio_1 SNS ) ( u_ddr_ba_0_o SNS ) ( u_ddr_ba_1_o SNS ) ( u_pwrdet0 SNS )
-      ( u_ddr_ba_2_o SNS ) ( u_vss_0 SNS ) ( u_vdd_0 SNS ) ( u_ddr_dqs_p_1_io SNS ) ( u_vddio_0 SNS ) ( u_vssio_0 SNS ) ( u_ddr_dqs_n_1_io SNS ) ( u_ddr_dm_1_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_ba_2_o SNS ) ( u_vss_0 SNS ) ( u_vdd_0 SNS ) ( u_ddr_dqs_p_1_io SNS ) ( u_vddio_0 SNS ) ( u_vssio_0 SNS ) ( u_ddr_dqs_n_1_io SNS ) ( u_ddr_dm_1_o SNS ) + USE SIGNAL ;
     - SNS_2 ( u_ddr_addr_6_o SNS ) ( u_ddr_addr_7_o SNS ) ( u_vddio_3 SNS ) ( u_vssio_3 SNS ) ( u_ddr_addr_8_o SNS ) ( u_ddr_addr_9_o SNS ) ( u_pwrdet1 SNS )
-      ( u_vss_1 SNS ) ( u_vdd_1 SNS ) ( u_ddr_addr_10_o SNS ) ( u_ddr_addr_11_o SNS ) ( u_vddio_2 SNS ) ( u_vssio_2 SNS ) ( u_ddr_addr_12_o SNS ) ( u_ddr_addr_13_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_vss_1 SNS ) ( u_vdd_1 SNS ) ( u_ddr_addr_10_o SNS ) ( u_ddr_addr_11_o SNS ) ( u_vddio_2 SNS ) ( u_vssio_2 SNS ) ( u_ddr_addr_12_o SNS ) ( u_ddr_addr_13_o SNS ) + USE SIGNAL ;
     - SNS_3 ( u_ddr_reset_n_o SNS ) ( u_ddr_odt_o SNS ) ( u_vddio_5 SNS ) ( u_vssio_5 SNS ) ( u_ddr_addr_0_o SNS ) ( u_vss_2 SNS ) ( u_vdd_2 SNS )
-      ( u_ddr_addr_1_o SNS ) ( u_pwrdet2 SNS ) ( u_ddr_addr_2_o SNS ) ( u_ddr_addr_3_o SNS ) ( u_vddio_4 SNS ) ( u_vssio_4 SNS ) ( u_ddr_addr_4_o SNS ) ( u_ddr_addr_5_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_addr_1_o SNS ) ( u_pwrdet2 SNS ) ( u_ddr_addr_2_o SNS ) ( u_ddr_addr_3_o SNS ) ( u_vddio_4 SNS ) ( u_vssio_4 SNS ) ( u_ddr_addr_4_o SNS ) ( u_ddr_addr_5_o SNS ) + USE SIGNAL ;
     - SNS_4 ( u_ddr_dqs_n_2_io SNS ) ( u_ddr_ck_p_o SNS ) ( u_vss_3 SNS ) ( u_vdd_3 SNS ) ( u_vddio_7 SNS ) ( u_vssio_7 SNS ) ( u_ddr_ck_n_o SNS )
-      ( u_ddr_cke_o SNS ) ( u_pwrdet3 SNS ) ( u_ddr_cs_n_o SNS ) ( u_ddr_ras_n_o SNS ) ( u_vddio_6 SNS ) ( u_vssio_6 SNS ) ( u_ddr_cas_n_o SNS ) ( u_ddr_we_n_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_cke_o SNS ) ( u_pwrdet3 SNS ) ( u_ddr_cs_n_o SNS ) ( u_ddr_ras_n_o SNS ) ( u_vddio_6 SNS ) ( u_vssio_6 SNS ) ( u_ddr_cas_n_o SNS ) ( u_ddr_we_n_o SNS ) + USE SIGNAL ;
     - SNS_5 ( u_ddr_dq_18_io SNS ) ( u_ddr_dq_19_io SNS ) ( u_vddio_9 SNS ) ( u_vssio_9 SNS ) ( u_ddr_dq_20_io SNS ) ( u_vss_4 SNS ) ( u_vdd_4 SNS )
-      ( u_ddr_dq_21_io SNS ) ( u_pwrdet4 SNS ) ( u_ddr_dq_22_io SNS ) ( u_ddr_dq_23_io SNS ) ( u_vddio_8 SNS ) ( u_vssio_8 SNS ) ( u_ddr_dm_2_o SNS ) ( u_ddr_dqs_p_2_io SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_dq_21_io SNS ) ( u_pwrdet4 SNS ) ( u_ddr_dq_22_io SNS ) ( u_ddr_dq_23_io SNS ) ( u_vddio_8 SNS ) ( u_vssio_8 SNS ) ( u_ddr_dm_2_o SNS ) ( u_ddr_dqs_p_2_io SNS ) + USE SIGNAL ;
     - SNS_6 ( u_ddr_dq_26_io SNS ) ( u_vss_5 SNS ) ( u_vdd_5 SNS ) ( u_ddr_dq_27_io SNS ) ( u_vddio_11 SNS ) ( u_vssio_11 SNS ) ( u_ddr_dq_28_io SNS )
-      ( u_ddr_dq_29_io SNS ) ( u_pwrdet5 SNS ) ( u_ddr_dq_30_io SNS ) ( u_ddr_dq_31_io SNS ) ( u_vddio_10 SNS ) ( u_vssio_10 SNS ) ( u_ddr_dq_16_io SNS ) ( u_ddr_dq_17_io SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_dq_29_io SNS ) ( u_pwrdet5 SNS ) ( u_ddr_dq_30_io SNS ) ( u_ddr_dq_31_io SNS ) ( u_vddio_10 SNS ) ( u_vssio_10 SNS ) ( u_ddr_dq_16_io SNS ) ( u_ddr_dq_17_io SNS ) + USE SIGNAL ;
     - SNS_7 ( u_bsg_tag_en_i SNS ) ( u_bsg_tag_data_i SNS ) ( u_vddio_13 SNS ) ( u_vssio_13 SNS ) ( u_bsg_tag_clk_i SNS ) ( u_ddr_dm_3_o SNS ) ( u_pwrdet6 SNS )
-      ( u_ddr_dqs_p_3_io SNS ) ( u_ddr_dqs_n_3_io SNS ) ( u_vddio_12 SNS ) ( u_vssio_12 SNS ) ( u_ddr_dq_24_io SNS ) ( u_ddr_dq_25_io SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_dqs_p_3_io SNS ) ( u_ddr_dqs_n_3_io SNS ) ( u_vddio_12 SNS ) ( u_vssio_12 SNS ) ( u_ddr_dq_24_io SNS ) ( u_ddr_dq_25_io SNS ) + USE SIGNAL ;
     - SNS_8 ( u_ci_4_i SNS ) ( u_ci_clk_i SNS ) ( u_vddio_15 SNS ) ( u_vssio_15 SNS ) ( u_ci_tkn_o SNS ) ( u_ci_v_i SNS ) ( u_pwrdet7 SNS )
-      ( u_ci_5_i SNS ) ( u_ci_6_i SNS ) ( u_vddio_14 SNS ) ( u_vssio_14 SNS ) ( u_ci_7_i SNS ) ( u_vss_6 SNS ) ( u_vdd_6 SNS ) ( u_ci_8_i SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ci_5_i SNS ) ( u_ci_6_i SNS ) ( u_vddio_14 SNS ) ( u_vssio_14 SNS ) ( u_ci_7_i SNS ) ( u_vss_6 SNS ) ( u_vdd_6 SNS ) ( u_ci_8_i SNS ) + USE SIGNAL ;
     - SNS_10 ( u_ci2_0_o SNS ) ( u_ci2_1_o SNS ) ( u_vddio_19 SNS ) ( u_vssio_19 SNS ) ( u_ci2_2_o SNS ) ( u_ci2_3_o SNS ) ( u_pwrdet9 SNS )
-      ( u_ci2_4_o SNS ) ( u_ci2_clk_o SNS ) ( u_vddio_18 SNS ) ( u_vssio_18 SNS ) ( u_ci2_tkn_i SNS ) ( u_ci2_v_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ci2_4_o SNS ) ( u_ci2_clk_o SNS ) ( u_vddio_18 SNS ) ( u_vssio_18 SNS ) ( u_ci2_tkn_i SNS ) ( u_ci2_v_o SNS ) + USE SIGNAL ;
     - SNS_9 ( u_vss_8 SNS ) ( u_vdd_8 SNS ) ( u_ci2_5_o SNS ) ( u_ci2_6_o SNS ) ( u_vddio_17 SNS ) ( u_vssio_17 SNS ) ( u_ci2_7_o SNS )
       ( u_ci2_8_o SNS ) ( u_pwrdet8 SNS ) ( u_ci_0_i SNS ) ( u_vss_7 SNS ) ( u_vdd_7 SNS ) ( u_ci_1_i SNS ) ( u_vddio_16 SNS ) ( u_vssio_16 SNS )
-      ( u_ci_2_i SNS ) ( u_ci_3_i SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_ci_2_i SNS ) ( u_ci_3_i SNS ) + USE SIGNAL ;
     - SNS_11 ( u_sel_0_i SNS ) ( u_sel_1_i SNS ) ( u_vssio_20 SNS ) ( u_vddio_20 SNS ) ( u_pwrdet10 SNS ) ( u_sel_2_i SNS ) ( u_vss_9 SNS )
-      ( u_vdd_9 SNS ) ( u_core_async_reset_i SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_vdd_9 SNS ) ( u_core_async_reset_i SNS ) + USE SIGNAL ;
     - SNS_12 ( u_vddio_21 SNS ) ( u_clk_C_i SNS ) ( u_vssio_21 SNS ) ( u_clk_o SNS ) ( u_vdd_pll SNS ) ( u_clk_async_reset_i SNS ) ( u_vss_pll SNS )
-      ( u_pwrdet11 SNS ) ( u_misc_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_pwrdet11 SNS ) ( u_misc_o SNS ) + USE SIGNAL ;
     - SNS_13 ( u_co_tkn_o SNS ) ( u_co_v_i SNS ) ( u_vddio_23 SNS ) ( u_vssio_23 SNS ) ( u_co_5_i SNS ) ( u_co_6_i SNS ) ( u_pwrdet12 SNS )
-      ( u_co_7_i SNS ) ( u_co_8_i SNS ) ( u_vddio_22 SNS ) ( u_vssio_22 SNS ) ( u_vss_10 SNS ) ( u_vdd_10 SNS ) ( u_clk_A_i SNS ) ( u_clk_B_i SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_co_7_i SNS ) ( u_co_8_i SNS ) ( u_vddio_22 SNS ) ( u_vssio_22 SNS ) ( u_vss_10 SNS ) ( u_vdd_10 SNS ) ( u_clk_A_i SNS ) ( u_clk_B_i SNS ) + USE SIGNAL ;
     - SNS_14 ( u_co2_7_o SNS ) ( u_co2_8_o SNS ) ( u_vddio_25 SNS ) ( u_vssio_25 SNS ) ( u_co_0_i SNS ) ( u_co_1_i SNS ) ( u_pwrdet13 SNS )
-      ( u_co_2_i SNS ) ( u_vss_11 SNS ) ( u_vdd_11 SNS ) ( u_co_3_i SNS ) ( u_vddio_24 SNS ) ( u_vssio_24 SNS ) ( u_co_4_i SNS ) ( u_co_clk_i SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_co_2_i SNS ) ( u_vss_11 SNS ) ( u_vdd_11 SNS ) ( u_co_3_i SNS ) ( u_vddio_24 SNS ) ( u_vssio_24 SNS ) ( u_co_4_i SNS ) ( u_co_clk_i SNS ) + USE SIGNAL ;
     - SNS_15 ( u_co2_2_o SNS ) ( u_co2_3_o SNS ) ( u_vddio_27 SNS ) ( u_vssio_27 SNS ) ( u_co2_4_o SNS ) ( u_co2_clk_o SNS ) ( u_pwrdet14 SNS )
-      ( u_co2_tkn_i SNS ) ( u_co2_v_o SNS ) ( u_vddio_26 SNS ) ( u_vssio_26 SNS ) ( u_vss_12 SNS ) ( u_vdd_12 SNS ) ( u_co2_5_o SNS ) ( u_co2_6_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_co2_tkn_i SNS ) ( u_co2_v_o SNS ) ( u_vddio_26 SNS ) ( u_vssio_26 SNS ) ( u_vss_12 SNS ) ( u_vdd_12 SNS ) ( u_co2_5_o SNS ) ( u_co2_6_o SNS ) + USE SIGNAL ;
     - SNS_16 ( u_ddr_dq_4_io SNS ) ( u_ddr_dq_5_io SNS ) ( u_vddio_29 SNS ) ( u_vssio_29 SNS ) ( u_ddr_dq_6_io SNS ) ( u_ddr_dq_7_io SNS ) ( u_pwrdet15 SNS )
-      ( u_bsg_tag_data_o SNS ) ( u_vss_13 SNS ) ( u_vdd_13 SNS ) ( u_bsg_tag_clk_o SNS ) ( u_vddio_28 SNS ) ( u_vssio_28 SNS ) ( u_co2_0_o SNS ) ( u_co2_1_o SNS ) + USE SIGNAL
-      + FIXED ;
+      ( u_bsg_tag_data_o SNS ) ( u_vss_13 SNS ) ( u_vdd_13 SNS ) ( u_bsg_tag_clk_o SNS ) ( u_vddio_28 SNS ) ( u_vssio_28 SNS ) ( u_co2_0_o SNS ) ( u_co2_1_o SNS ) + USE SIGNAL ;
     - DVDD_0 ( PIN DVDD_0 ) ( u_vddio_33 DVDD ) ( u_vssio_33 DVDD ) ( u_vss_15 DVDD ) ( u_vdd_15 DVDD ) ( u_ddr_dq_8_io DVDD ) ( u_ddr_dq_9_io DVDD )
       ( u_ddr_dq_10_io DVDD ) ( u_pwrdet17 DVDD ) ( u_ddr_dq_11_io DVDD ) ( u_ddr_dq_12_io DVDD ) ( u_vddio_32 DVDD ) ( u_vssio_32 DVDD ) ( u_ddr_dq_13_io DVDD ) ( u_ddr_dq_14_io DVDD )
       ( u_ddr_dq_15_io DVDD ) ( u_ddr_dqs_p_0_io DVDD ) ( u_vddio_31 DVDD ) ( u_vssio_31 DVDD ) ( u_ddr_dqs_n_0_io DVDD ) ( u_ddr_dm_0_o DVDD ) ( u_pwrdet16 DVDD ) ( u_vss_14 DVDD )
@@ -3949,11 +3931,9 @@ SPECIALNETS 180 ;
       ( u_ddr_addr_4_o DVDD ) ( u_ddr_addr_5_o DVDD ) ( u_ddr_addr_6_o DVDD ) ( u_ddr_addr_7_o DVDD ) ( u_vddio_3 DVDD ) ( u_vssio_3 DVDD ) ( u_ddr_addr_8_o DVDD ) ( u_ddr_addr_9_o DVDD )
       ( u_pwrdet1 DVDD ) ( u_vss_1 DVDD ) ( u_vdd_1 DVDD ) ( u_ddr_addr_10_o DVDD ) ( u_ddr_addr_11_o DVDD ) ( u_vddio_2 DVDD ) ( u_vssio_2 DVDD ) ( u_ddr_addr_12_o DVDD )
       ( u_ddr_addr_13_o DVDD ) ( u_ddr_addr_14_o DVDD ) ( u_ddr_addr_15_o DVDD ) ( u_vddio_1 DVDD ) ( u_vssio_1 DVDD ) ( u_ddr_ba_0_o DVDD ) ( u_ddr_ba_1_o DVDD ) ( u_pwrdet0 DVDD )
-      ( u_ddr_ba_2_o DVDD ) ( u_vss_0 DVDD ) ( u_vdd_0 DVDD ) ( u_ddr_dqs_p_1_io DVDD ) ( u_vddio_0 DVDD ) ( u_vssio_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_ddr_dm_1_o DVDD ) + USE POWER
-      + FIXED ;
+      ( u_ddr_ba_2_o DVDD ) ( u_vss_0 DVDD ) ( u_vdd_0 DVDD ) ( u_ddr_dqs_p_1_io DVDD ) ( u_vddio_0 DVDD ) ( u_vssio_0 DVDD ) ( u_ddr_dqs_n_1_io DVDD ) ( u_ddr_dm_1_o DVDD ) + USE POWER ;
     - DVDD_1 ( PIN DVDD_1 ) ( u_vddio_21 DVDD ) ( u_clk_C_i DVDD ) ( u_vssio_21 DVDD ) ( u_clk_o DVDD ) ( u_vdd_pll DVDD ) ( u_clk_async_reset_i DVDD )
-      ( u_vss_pll DVDD ) ( u_pwrdet11 DVDD ) ( u_misc_o DVDD ) + USE POWER
-      + FIXED ;
+      ( u_vss_pll DVDD ) ( u_pwrdet11 DVDD ) ( u_misc_o DVDD ) + USE POWER ;
     - DVSS_0 ( PIN DVSS_0 ) ( u_vddio_33 DVSS ) ( u_vssio_33 DVSS ) ( u_vss_15 DVSS ) ( u_vdd_15 DVSS ) ( u_ddr_dq_8_io DVSS ) ( u_ddr_dq_9_io DVSS )
       ( u_ddr_dq_10_io DVSS ) ( u_pwrdet17 DVSS ) ( u_ddr_dq_11_io DVSS ) ( u_ddr_dq_12_io DVSS ) ( u_vddio_32 DVSS ) ( u_vssio_32 DVSS ) ( u_ddr_dq_13_io DVSS ) ( u_ddr_dq_14_io DVSS )
       ( u_ddr_dq_15_io DVSS ) ( u_ddr_dqs_p_0_io DVSS ) ( u_vddio_31 DVSS ) ( u_vssio_31 DVSS ) ( u_ddr_dqs_n_0_io DVSS ) ( u_ddr_dm_0_o DVSS ) ( u_pwrdet16 DVSS ) ( u_vss_14 DVSS )
@@ -3984,66 +3964,46 @@ SPECIALNETS 180 ;
       ( u_ddr_addr_4_o DVSS ) ( u_ddr_addr_5_o DVSS ) ( u_ddr_addr_6_o DVSS ) ( u_ddr_addr_7_o DVSS ) ( u_vddio_3 DVSS ) ( u_vssio_3 DVSS ) ( u_ddr_addr_8_o DVSS ) ( u_ddr_addr_9_o DVSS )
       ( u_pwrdet1 DVSS ) ( u_vss_1 DVSS ) ( u_vdd_1 DVSS ) ( u_ddr_addr_10_o DVSS ) ( u_ddr_addr_11_o DVSS ) ( u_vddio_2 DVSS ) ( u_vssio_2 DVSS ) ( u_ddr_addr_12_o DVSS )
       ( u_ddr_addr_13_o DVSS ) ( u_ddr_addr_14_o DVSS ) ( u_ddr_addr_15_o DVSS ) ( u_vddio_1 DVSS ) ( u_vssio_1 DVSS ) ( u_ddr_ba_0_o DVSS ) ( u_ddr_ba_1_o DVSS ) ( u_pwrdet0 DVSS )
-      ( u_ddr_ba_2_o DVSS ) ( u_vss_0 DVSS ) ( u_vdd_0 DVSS ) ( u_ddr_dqs_p_1_io DVSS ) ( u_vddio_0 DVSS ) ( u_vssio_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_ddr_dm_1_o DVSS ) + USE GROUND
-      + FIXED ;
+      ( u_ddr_ba_2_o DVSS ) ( u_vss_0 DVSS ) ( u_vdd_0 DVSS ) ( u_ddr_dqs_p_1_io DVSS ) ( u_vddio_0 DVSS ) ( u_vssio_0 DVSS ) ( u_ddr_dqs_n_1_io DVSS ) ( u_ddr_dm_1_o DVSS ) + USE GROUND ;
     - DVSS_1 ( PIN DVSS_1 ) ( u_vddio_21 DVSS ) ( u_clk_C_i DVSS ) ( u_vssio_21 DVSS ) ( u_clk_o DVSS ) ( u_vdd_pll DVSS ) ( u_clk_async_reset_i DVSS )
-      ( u_vss_pll DVSS ) ( u_pwrdet11 DVSS ) ( u_misc_o DVSS ) + USE GROUND
-      + FIXED ;
+      ( u_vss_pll DVSS ) ( u_pwrdet11 DVSS ) ( u_misc_o DVSS ) + USE GROUND ;
     - RETN_0 ( u_vddio_33 RETN ) ( u_vssio_33 RETN ) ( u_vss_15 RETN ) ( u_vdd_15 RETN ) ( u_ddr_dq_8_io RETN ) ( u_ddr_dq_9_io RETN ) ( u_ddr_dq_10_io RETN )
-      ( u_pwrdet17 RETN ) ( u_ddr_dq_11_io RETN ) ( u_ddr_dq_12_io RETN ) ( u_vddio_32 RETN ) ( u_vssio_32 RETN ) ( u_ddr_dq_13_io RETN ) ( u_ddr_dq_14_io RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_pwrdet17 RETN ) ( u_ddr_dq_11_io RETN ) ( u_ddr_dq_12_io RETN ) ( u_vddio_32 RETN ) ( u_vssio_32 RETN ) ( u_ddr_dq_13_io RETN ) ( u_ddr_dq_14_io RETN ) + USE SIGNAL ;
     - RETN_10 ( u_ci2_0_o RETN ) ( u_ci2_1_o RETN ) ( u_vddio_19 RETN ) ( u_vssio_19 RETN ) ( u_ci2_2_o RETN ) ( u_ci2_3_o RETN ) ( u_pwrdet9 RETN )
-      ( u_ci2_4_o RETN ) ( u_ci2_clk_o RETN ) ( u_vddio_18 RETN ) ( u_vssio_18 RETN ) ( u_ci2_tkn_i RETN ) ( u_ci2_v_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ci2_4_o RETN ) ( u_ci2_clk_o RETN ) ( u_vddio_18 RETN ) ( u_vssio_18 RETN ) ( u_ci2_tkn_i RETN ) ( u_ci2_v_o RETN ) + USE SIGNAL ;
     - RETN_1 ( u_ddr_addr_14_o RETN ) ( u_ddr_addr_15_o RETN ) ( u_vddio_1 RETN ) ( u_vssio_1 RETN ) ( u_ddr_ba_0_o RETN ) ( u_ddr_ba_1_o RETN ) ( u_pwrdet0 RETN )
-      ( u_ddr_ba_2_o RETN ) ( u_vss_0 RETN ) ( u_vdd_0 RETN ) ( u_ddr_dqs_p_1_io RETN ) ( u_vddio_0 RETN ) ( u_vssio_0 RETN ) ( u_ddr_dqs_n_1_io RETN ) ( u_ddr_dm_1_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_ba_2_o RETN ) ( u_vss_0 RETN ) ( u_vdd_0 RETN ) ( u_ddr_dqs_p_1_io RETN ) ( u_vddio_0 RETN ) ( u_vssio_0 RETN ) ( u_ddr_dqs_n_1_io RETN ) ( u_ddr_dm_1_o RETN ) + USE SIGNAL ;
     - RETN_11 ( u_sel_0_i RETN ) ( u_sel_1_i RETN ) ( u_vssio_20 RETN ) ( u_vddio_20 RETN ) ( u_pwrdet10 RETN ) ( u_sel_2_i RETN ) ( u_vss_9 RETN )
-      ( u_vdd_9 RETN ) ( u_core_async_reset_i RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_vdd_9 RETN ) ( u_core_async_reset_i RETN ) + USE SIGNAL ;
     - RETN_2 ( u_ddr_addr_6_o RETN ) ( u_ddr_addr_7_o RETN ) ( u_vddio_3 RETN ) ( u_vssio_3 RETN ) ( u_ddr_addr_8_o RETN ) ( u_ddr_addr_9_o RETN ) ( u_pwrdet1 RETN )
-      ( u_vss_1 RETN ) ( u_vdd_1 RETN ) ( u_ddr_addr_10_o RETN ) ( u_ddr_addr_11_o RETN ) ( u_vddio_2 RETN ) ( u_vssio_2 RETN ) ( u_ddr_addr_12_o RETN ) ( u_ddr_addr_13_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_vss_1 RETN ) ( u_vdd_1 RETN ) ( u_ddr_addr_10_o RETN ) ( u_ddr_addr_11_o RETN ) ( u_vddio_2 RETN ) ( u_vssio_2 RETN ) ( u_ddr_addr_12_o RETN ) ( u_ddr_addr_13_o RETN ) + USE SIGNAL ;
     - RETN_12 ( u_vddio_21 RETN ) ( u_clk_C_i RETN ) ( u_vssio_21 RETN ) ( u_clk_o RETN ) ( u_vdd_pll RETN ) ( u_clk_async_reset_i RETN ) ( u_vss_pll RETN )
-      ( u_pwrdet11 RETN ) ( u_misc_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_pwrdet11 RETN ) ( u_misc_o RETN ) + USE SIGNAL ;
     - RETN_3 ( u_ddr_reset_n_o RETN ) ( u_ddr_odt_o RETN ) ( u_vddio_5 RETN ) ( u_vssio_5 RETN ) ( u_ddr_addr_0_o RETN ) ( u_vss_2 RETN ) ( u_vdd_2 RETN )
-      ( u_ddr_addr_1_o RETN ) ( u_pwrdet2 RETN ) ( u_ddr_addr_2_o RETN ) ( u_ddr_addr_3_o RETN ) ( u_vddio_4 RETN ) ( u_vssio_4 RETN ) ( u_ddr_addr_4_o RETN ) ( u_ddr_addr_5_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_addr_1_o RETN ) ( u_pwrdet2 RETN ) ( u_ddr_addr_2_o RETN ) ( u_ddr_addr_3_o RETN ) ( u_vddio_4 RETN ) ( u_vssio_4 RETN ) ( u_ddr_addr_4_o RETN ) ( u_ddr_addr_5_o RETN ) + USE SIGNAL ;
     - RETN_13 ( u_co_tkn_o RETN ) ( u_co_v_i RETN ) ( u_vddio_23 RETN ) ( u_vssio_23 RETN ) ( u_co_5_i RETN ) ( u_co_6_i RETN ) ( u_pwrdet12 RETN )
-      ( u_co_7_i RETN ) ( u_co_8_i RETN ) ( u_vddio_22 RETN ) ( u_vssio_22 RETN ) ( u_vss_10 RETN ) ( u_vdd_10 RETN ) ( u_clk_A_i RETN ) ( u_clk_B_i RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_co_7_i RETN ) ( u_co_8_i RETN ) ( u_vddio_22 RETN ) ( u_vssio_22 RETN ) ( u_vss_10 RETN ) ( u_vdd_10 RETN ) ( u_clk_A_i RETN ) ( u_clk_B_i RETN ) + USE SIGNAL ;
     - RETN_4 ( u_ddr_dqs_n_2_io RETN ) ( u_ddr_ck_p_o RETN ) ( u_vss_3 RETN ) ( u_vdd_3 RETN ) ( u_vddio_7 RETN ) ( u_vssio_7 RETN ) ( u_ddr_ck_n_o RETN )
-      ( u_ddr_cke_o RETN ) ( u_pwrdet3 RETN ) ( u_ddr_cs_n_o RETN ) ( u_ddr_ras_n_o RETN ) ( u_vddio_6 RETN ) ( u_vssio_6 RETN ) ( u_ddr_cas_n_o RETN ) ( u_ddr_we_n_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_cke_o RETN ) ( u_pwrdet3 RETN ) ( u_ddr_cs_n_o RETN ) ( u_ddr_ras_n_o RETN ) ( u_vddio_6 RETN ) ( u_vssio_6 RETN ) ( u_ddr_cas_n_o RETN ) ( u_ddr_we_n_o RETN ) + USE SIGNAL ;
     - RETN_14 ( u_co2_7_o RETN ) ( u_co2_8_o RETN ) ( u_vddio_25 RETN ) ( u_vssio_25 RETN ) ( u_co_0_i RETN ) ( u_co_1_i RETN ) ( u_pwrdet13 RETN )
-      ( u_co_2_i RETN ) ( u_vss_11 RETN ) ( u_vdd_11 RETN ) ( u_co_3_i RETN ) ( u_vddio_24 RETN ) ( u_vssio_24 RETN ) ( u_co_4_i RETN ) ( u_co_clk_i RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_co_2_i RETN ) ( u_vss_11 RETN ) ( u_vdd_11 RETN ) ( u_co_3_i RETN ) ( u_vddio_24 RETN ) ( u_vssio_24 RETN ) ( u_co_4_i RETN ) ( u_co_clk_i RETN ) + USE SIGNAL ;
     - RETN_5 ( u_ddr_dq_18_io RETN ) ( u_ddr_dq_19_io RETN ) ( u_vddio_9 RETN ) ( u_vssio_9 RETN ) ( u_ddr_dq_20_io RETN ) ( u_vss_4 RETN ) ( u_vdd_4 RETN )
-      ( u_ddr_dq_21_io RETN ) ( u_pwrdet4 RETN ) ( u_ddr_dq_22_io RETN ) ( u_ddr_dq_23_io RETN ) ( u_vddio_8 RETN ) ( u_vssio_8 RETN ) ( u_ddr_dm_2_o RETN ) ( u_ddr_dqs_p_2_io RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_dq_21_io RETN ) ( u_pwrdet4 RETN ) ( u_ddr_dq_22_io RETN ) ( u_ddr_dq_23_io RETN ) ( u_vddio_8 RETN ) ( u_vssio_8 RETN ) ( u_ddr_dm_2_o RETN ) ( u_ddr_dqs_p_2_io RETN ) + USE SIGNAL ;
     - RETN_15 ( u_co2_2_o RETN ) ( u_co2_3_o RETN ) ( u_vddio_27 RETN ) ( u_vssio_27 RETN ) ( u_co2_4_o RETN ) ( u_co2_clk_o RETN ) ( u_pwrdet14 RETN )
-      ( u_co2_tkn_i RETN ) ( u_co2_v_o RETN ) ( u_vddio_26 RETN ) ( u_vssio_26 RETN ) ( u_vss_12 RETN ) ( u_vdd_12 RETN ) ( u_co2_5_o RETN ) ( u_co2_6_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_co2_tkn_i RETN ) ( u_co2_v_o RETN ) ( u_vddio_26 RETN ) ( u_vssio_26 RETN ) ( u_vss_12 RETN ) ( u_vdd_12 RETN ) ( u_co2_5_o RETN ) ( u_co2_6_o RETN ) + USE SIGNAL ;
     - RETN_6 ( u_ddr_dq_26_io RETN ) ( u_vss_5 RETN ) ( u_vdd_5 RETN ) ( u_ddr_dq_27_io RETN ) ( u_vddio_11 RETN ) ( u_vssio_11 RETN ) ( u_ddr_dq_28_io RETN )
-      ( u_ddr_dq_29_io RETN ) ( u_pwrdet5 RETN ) ( u_ddr_dq_30_io RETN ) ( u_ddr_dq_31_io RETN ) ( u_vddio_10 RETN ) ( u_vssio_10 RETN ) ( u_ddr_dq_16_io RETN ) ( u_ddr_dq_17_io RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_dq_29_io RETN ) ( u_pwrdet5 RETN ) ( u_ddr_dq_30_io RETN ) ( u_ddr_dq_31_io RETN ) ( u_vddio_10 RETN ) ( u_vssio_10 RETN ) ( u_ddr_dq_16_io RETN ) ( u_ddr_dq_17_io RETN ) + USE SIGNAL ;
     - RETN_16 ( u_ddr_dq_4_io RETN ) ( u_ddr_dq_5_io RETN ) ( u_vddio_29 RETN ) ( u_vssio_29 RETN ) ( u_ddr_dq_6_io RETN ) ( u_ddr_dq_7_io RETN ) ( u_pwrdet15 RETN )
-      ( u_bsg_tag_data_o RETN ) ( u_vss_13 RETN ) ( u_vdd_13 RETN ) ( u_bsg_tag_clk_o RETN ) ( u_vddio_28 RETN ) ( u_vssio_28 RETN ) ( u_co2_0_o RETN ) ( u_co2_1_o RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_bsg_tag_data_o RETN ) ( u_vss_13 RETN ) ( u_vdd_13 RETN ) ( u_bsg_tag_clk_o RETN ) ( u_vddio_28 RETN ) ( u_vssio_28 RETN ) ( u_co2_0_o RETN ) ( u_co2_1_o RETN ) + USE SIGNAL ;
     - RETN_7 ( u_bsg_tag_en_i RETN ) ( u_bsg_tag_data_i RETN ) ( u_vddio_13 RETN ) ( u_vssio_13 RETN ) ( u_bsg_tag_clk_i RETN ) ( u_ddr_dm_3_o RETN ) ( u_pwrdet6 RETN )
-      ( u_ddr_dqs_p_3_io RETN ) ( u_ddr_dqs_n_3_io RETN ) ( u_vddio_12 RETN ) ( u_vssio_12 RETN ) ( u_ddr_dq_24_io RETN ) ( u_ddr_dq_25_io RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ddr_dqs_p_3_io RETN ) ( u_ddr_dqs_n_3_io RETN ) ( u_vddio_12 RETN ) ( u_vssio_12 RETN ) ( u_ddr_dq_24_io RETN ) ( u_ddr_dq_25_io RETN ) + USE SIGNAL ;
     - RETN_17 ( u_ddr_dq_15_io RETN ) ( u_ddr_dqs_p_0_io RETN ) ( u_vddio_31 RETN ) ( u_vssio_31 RETN ) ( u_ddr_dqs_n_0_io RETN ) ( u_ddr_dm_0_o RETN ) ( u_pwrdet16 RETN )
-      ( u_vss_14 RETN ) ( u_vdd_14 RETN ) ( u_ddr_dq_0_io RETN ) ( u_ddr_dq_1_io RETN ) ( u_vddio_30 RETN ) ( u_vssio_30 RETN ) ( u_ddr_dq_2_io RETN ) ( u_ddr_dq_3_io RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_vss_14 RETN ) ( u_vdd_14 RETN ) ( u_ddr_dq_0_io RETN ) ( u_ddr_dq_1_io RETN ) ( u_vddio_30 RETN ) ( u_vssio_30 RETN ) ( u_ddr_dq_2_io RETN ) ( u_ddr_dq_3_io RETN ) + USE SIGNAL ;
     - RETN_8 ( u_ci_4_i RETN ) ( u_ci_clk_i RETN ) ( u_vddio_15 RETN ) ( u_vssio_15 RETN ) ( u_ci_tkn_o RETN ) ( u_ci_v_i RETN ) ( u_pwrdet7 RETN )
-      ( u_ci_5_i RETN ) ( u_ci_6_i RETN ) ( u_vddio_14 RETN ) ( u_vssio_14 RETN ) ( u_ci_7_i RETN ) ( u_vss_6 RETN ) ( u_vdd_6 RETN ) ( u_ci_8_i RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ci_5_i RETN ) ( u_ci_6_i RETN ) ( u_vddio_14 RETN ) ( u_vssio_14 RETN ) ( u_ci_7_i RETN ) ( u_vss_6 RETN ) ( u_vdd_6 RETN ) ( u_ci_8_i RETN ) + USE SIGNAL ;
     - RETN_9 ( u_vss_8 RETN ) ( u_vdd_8 RETN ) ( u_ci2_5_o RETN ) ( u_ci2_6_o RETN ) ( u_vddio_17 RETN ) ( u_vssio_17 RETN ) ( u_ci2_7_o RETN )
       ( u_ci2_8_o RETN ) ( u_pwrdet8 RETN ) ( u_ci_0_i RETN ) ( u_vss_7 RETN ) ( u_vdd_7 RETN ) ( u_ci_1_i RETN ) ( u_vddio_16 RETN ) ( u_vssio_16 RETN )
-      ( u_ci_2_i RETN ) ( u_ci_3_i RETN ) + USE SIGNAL
-      + FIXED ;
+      ( u_ci_2_i RETN ) ( u_ci_3_i RETN ) + USE SIGNAL ;
     - VSS ( PIN VSS ) ( * VSS ) + USE GROUND
       + ROUTED metal10 20000 + SHAPE STRIPE ( 3780000 3970000 ) ( 3780000 4120000 )
       NEW metal10 20000 + SHAPE STRIPE ( 3500000 3970000 ) ( 3500000 4120000 )

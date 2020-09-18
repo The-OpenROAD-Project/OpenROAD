@@ -1,4 +1,5 @@
 source "helpers.tcl"
+source ../src/ICeWall.tcl
 
 read_lef NangateOpenCellLibrary.mod.lef
 read_lef dummy_pads.lef
