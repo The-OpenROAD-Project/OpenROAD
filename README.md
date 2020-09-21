@@ -10,7 +10,7 @@ The OpenROAD build requires the following packages:
 
 Tools
   * cmake 3.14
-  * gcc 8.3.0 or clang
+  * gcc 8.3.0 or clang7
   * bison 3.0.5
   * flex 2.6.4
   * swig 4.0
