@@ -382,8 +382,8 @@ InitFloorplan::makeTracks(const char *tracks_file,
     int pitch = metersToMfgGrid(track.pitch());
     int offset = metersToMfgGrid(track.offset());
     char dir = track.dir();
-    const char *layer_name = track.layer().c_str();
-    dbTechLayer *layer = tech->findLayer(layer_name);
+    string layer_name = track.layer();
+    dbTechLayer *layer = tech->findLayer(layer_name.c_str());
     if (layer) {
       dbTrackGrid *grid = block_->findTrackGrid(layer);
       if (grid == nullptr)
