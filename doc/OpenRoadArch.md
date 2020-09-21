@@ -259,13 +259,19 @@ git push
 
 ### Example of Adding a Tool to OpenRoad
 
-The branch "add_tool" illustrates how to add a tool to OpenRoad.  Use
-`git checkout add_tool` to checkout the branch. To see the changes
-between OpenRoad with and without Tool use `git diff master`.
+The patch file "add_tool.patch" illustrates how to add a tool to
+OpenRoad.  Use
 
-This adds a directory OpenRoad/src/tool that illustrates a tool named "Tool"
-that uses the file structure described and defines a command to run the tool
-with keyword and flag arguments as illustrated below:
+```
+patch -p < doc/add_tool.patch`
+cd src/tool/test
+ln -s ../../../test/regression.tcl regression.tcl
+```
+
+to add the sample tool.  This adds a directory OpenRoad/src/tool that
+illustrates a tool named "Tool" that uses the file structure described
+and defines a command to run the tool with keyword and flag arguments
+as illustrated below:
 
 ```
 % toolize foo
