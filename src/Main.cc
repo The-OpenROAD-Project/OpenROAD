@@ -36,7 +36,11 @@
 #include <array>
 #include <stdio.h>
 #include <tcl.h>
+// We have had too many problems with this std::filesytem on various platforms
+// so it is disabled but kept for future reference
+#ifdef USE_STD_FILESYSTEM
 #include <filesystem>
+#endif
 #ifdef ENABLE_READLINE
   // If you get an error on this include be sure you have
   //   the package tcl-tclreadline-devel installed
@@ -143,11 +147,17 @@ tclAppInit(int argc,
   bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
   if (!findCmdLineFlag(argc, argv, "-no_init")) {
+#ifdef USE_STD_FILESYSTEM
     std::filesystem::path init(getenv("HOME"));
     init /= init_filename;
     if (std::filesystem::is_regular_file(init)) {
       sourceTclFile(init.c_str(), true, true, interp);
     }
+#else
+    char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename)
+;
+    sourceTclFile(init_path, true, true, interp);
+#endif
   }
 
   if (argc > 2 ||
