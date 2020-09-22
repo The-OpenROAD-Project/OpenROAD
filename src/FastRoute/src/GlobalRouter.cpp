@@ -248,9 +248,8 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   int violationsCnt
       = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer);
 
-  clearFlow();
-
   if (violationsCnt > 0) {
+    clearFlow();
     odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
     if (diodeMTerm == nullptr) {
       error("conversion from liberty port to dbMTerm fail");
