@@ -44,11 +44,12 @@ Exception::Exception(const char *fmt, ...) :
   va_list args;
   va_start(args, fmt);
   vasprintf(&what_, fmt, args);
+  va_end(args);
 }
 
 Exception::~Exception()
 {
-  delete [] what_;
+  free(what_);
 }
 
 void
@@ -58,6 +59,7 @@ error(const char *fmt, ...)
   va_start(args, fmt);
   char *what;
   vasprintf(&what, fmt, args);
+  va_end(args);
 
   // Exception should be caught by swig error handler.
   throw Exception(what);
@@ -71,6 +73,7 @@ warn(const char *fmt, ...)
   printf("Warning: ");
   vprintf(fmt, args);
   printf("\n");
+  va_end(args);
 }
 
 } // namespace
