@@ -1947,8 +1947,8 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
 }
 
 GSegment GlobalRouter::createFakePin(Pin pin,
-				     odb::Point& pinPosition,
-				     RoutingLayer layer)
+             odb::Point& pinPosition,
+             RoutingLayer layer)
 {
   int topLayer = layer.getIndex();
   GSegment pinConnection;
@@ -1964,13 +1964,17 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     if (pin.getOrientation() == PinOrientation::west) {
       newXPosition
           = pinPosition.x() + (_gcellsOffset * _grid->getTileWidth());
-      pinConnection.initX = newXPosition;
-      pinPosition.setX(newXPosition);
+      if (newXPosition <= _grid->getUpperRightX()) {
+        pinConnection.initX = newXPosition;
+        pinPosition.setX(newXPosition);
+      }
     } else if (pin.getOrientation() == PinOrientation::east) {
       newXPosition
           = pinPosition.x() - (_gcellsOffset * _grid->getTileWidth());
-      pinConnection.initX = newXPosition;
-      pinPosition.setX(newXPosition);
+      if (newXPosition >= _grid->getLowerLeftX()) {
+        pinConnection.initX = newXPosition;
+        pinPosition.setX(newXPosition);
+      }
     } else {
       std::cout << "[WARNING] Pin " << pin.getName()
                 << " has invalid orientation\n";
@@ -1984,13 +1988,17 @@ GSegment GlobalRouter::createFakePin(Pin pin,
     if (pin.getOrientation() == PinOrientation::south) {
       newYPosition
           = pinPosition.y() + (_gcellsOffset * _grid->getTileHeight());
-      pinConnection.initY = newYPosition;
-      pinPosition.setY(newYPosition);
+      if (newYPosition <= _grid->getUpperRightY()) {
+        pinConnection.initY = newYPosition;
+        pinPosition.setY(newYPosition);
+      }
     } else if (pin.getOrientation() == PinOrientation::north) {
       newYPosition
           = pinPosition.y() - (_gcellsOffset * _grid->getTileHeight());
-      pinConnection.initY = newYPosition;
-      pinPosition.setY(newYPosition);
+      if (newYPosition >= _grid->getLowerLeftY()) {
+        pinConnection.initY = newYPosition;
+        pinPosition.setY(newYPosition);
+      }
     } else {
       std::cout << "[WARNING] Pin " << pin.getName()
                 << " has invalid orientation\n";
