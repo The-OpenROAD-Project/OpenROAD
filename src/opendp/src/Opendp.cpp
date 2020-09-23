@@ -246,7 +246,7 @@ Opendp::findDesignStats()
   design_padded_util_ = static_cast<double>(movable_padded_area_) / (design_area_ - fixed_padded_area_);
 
   if (design_util_ > 1.0) {
-    error("utilization exceeds 100%.");
+    error("utilization exceeds 100%%.");
   }
 }
 
