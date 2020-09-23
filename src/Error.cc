@@ -38,20 +38,6 @@
 
 namespace ord {
 
-Exception::Exception(const char *fmt, ...) :
-  std::exception()
-{
-  va_list args;
-  va_start(args, fmt);
-  vasprintf(&what_, fmt, args);
-  va_end(args);
-}
-
-Exception::~Exception()
-{
-  free(what_);
-}
-
 void
 error(const char *fmt, ...)
 {
@@ -61,8 +47,11 @@ error(const char *fmt, ...)
   vasprintf(&what, fmt, args);
   va_end(args);
 
+  Exception e(what);
+  free(what); // e will have copied what so free it
+
   // Exception should be caught by swig error handler.
-  throw Exception(what);
+  throw e;
 }
 
 void

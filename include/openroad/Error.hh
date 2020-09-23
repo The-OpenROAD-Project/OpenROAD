@@ -40,18 +40,7 @@
 
 namespace ord {
 
-using std::string;
-
-class Exception : public std::exception
-{
-public:
-  Exception(const char *fmt, ...);
-  virtual ~Exception();
-  virtual const char *what() const noexcept { return what_; }
-
-private:
-  char *what_;
-};
+using Exception = std::runtime_error;
 
 void
 error(const char *fmt, ...);
