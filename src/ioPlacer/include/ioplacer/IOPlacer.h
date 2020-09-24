@@ -37,11 +37,16 @@
 #define __IOPLACEMENTKERNEL_H_
 
 #include "Core.h"
-#include "DBWrapper.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
 #include "Parameters.h"
 #include "Slots.h"
+
+namespace odb {
+class dbDatabase;
+class dbTech;
+class dbBlock;
+}
 
 namespace ioPlacer {
 
@@ -55,6 +60,17 @@ enum RandomMode
 
 class IOPlacer
 {
+ public:
+  IOPlacer(Parameters&);
+  IOPlacer() = default;
+  void run();
+  void printConfig();
+  DBU returnIONetsHPWL();
+  void addBlockedArea(long long int llx,
+                      long long int lly,
+                      long long int urx,
+                      long long int ury);
+
  protected:
   Netlist _netlist;
   Core _core;
@@ -74,15 +90,6 @@ class IOPlacer
   std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
 
  private:
-  DBWrapper _dbWrapper;
-  Parameters* _parms;
-  Netlist _netlistIOPins;
-  slotVector_t _slots;
-  sectionVector_t _sections;
-  std::vector<IOPin> _zeroSinkIOs;
-  RandomMode _randomMode = RandomMode::Full;
-  bool _cellsPlaced = true;
-
   void initNetlistAndCore();
   void initIOLists();
   void initParms();
@@ -97,19 +104,25 @@ class IOPlacer
   inline void updatePinArea(IOPin&);
   inline bool checkBlocked(DBU, DBU);
 
- public:
-  IOPlacer(Parameters&);
-  IOPlacer() = default;
-  void run();
-  void writeDEF();
-  void printConfig();
-  void parseLef(const std::string& file) { _dbWrapper.parseLEF(file); }
-  void parseDef(const std::string& file) { _dbWrapper.parseDEF(file); }
-  DBU returnIONetsHPWL();
-  void addBlockedArea(long long int llx,
-                      long long int lly,
-                      long long int urx,
-                      long long int ury);
+  // db functions
+  void populateIOPlacer();
+  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
+  void initCore();
+  void initNetlist();
+  void initTracks();
+
+  Parameters* _parms;
+  Netlist _netlistIOPins;
+  slotVector_t _slots;
+  sectionVector_t _sections;
+  std::vector<IOPin> _zeroSinkIOs;
+  RandomMode _randomMode = RandomMode::Full;
+  bool _cellsPlaced = true;
+  // db variables
+  odb::dbDatabase* _db;
+  odb::dbTech* _tech;
+  odb::dbBlock* _block;
+  bool _verbose = false;
 };
 
 }  // namespace ioPlacer

@@ -45,19 +45,6 @@ namespace ioPlacer {
 Parameters* parmsToIOPlacer = new Parameters();
 IOPlacer* ioPlacer = new IOPlacer(*parmsToIOPlacer);
 
-void import_lef(const char* file)
-{
-  std::cout << " > Importing LEF file \"" << file << "\"\n";
-  ioPlacer->parseLef(file);
-}
-
-void import_def(const char* file)
-{
-  std::cout << " > Importing DEF file \"" << file << "\"\n";
-  parmsToIOPlacer->setInputDefFile(file);
-  ioPlacer->parseDef(file);
-}
-
 void set_hor_metal_layer(int layer)
 {
   parmsToIOPlacer->setHorizontalMetalLayer(layer);
@@ -219,12 +206,6 @@ bool get_report_hpwl()
 int compute_io_nets_hpwl()
 {
   return ioPlacer->returnIONetsHPWL();
-}
-
-void export_def(const char* file)
-{
-  parmsToIOPlacer->setOutputDefFile(file);
-  ioPlacer->writeDEF();
 }
 
 void set_num_threads(int numThreads)

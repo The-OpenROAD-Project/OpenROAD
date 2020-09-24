@@ -64,7 +64,6 @@ set(SRC_FILES
   src/Box.cpp
   src/Coordinate.cpp
   src/Core.cpp
-  src/DBWrapper.cpp
   src/HungarianMatching.cpp
   src/IOPlacer.cpp
   src/MakeIoplacer.cpp
@@ -80,7 +79,8 @@ add_LIBRARY(${BIN_NAME} STATIC ${SRC_FILES} ${IOPLACER_WRAP} ${IOPLACER_TCL_INIT
 
 target_include_directories(${BIN_NAME}
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  ${OPENDB_HOME}/include/
   ${OPENSTA_HOME}/include
   ${OPENROAD_HOME}/include
   ${TCL_INCLUDE_PATH}

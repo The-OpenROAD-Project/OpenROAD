@@ -36,6 +36,7 @@
 #include "ioplacer/IOPlacer.h"
 
 #include <random>
+#include "opendb/db.h"
 #include "openroad/Error.hh"
 
 namespace ioPlacer {
@@ -44,12 +45,7 @@ using ord::error;
 
 void IOPlacer::initNetlistAndCore()
 {
-  // if (!_parms->isInteractiveMode()) {
-  //        _dbWrapper.parseLEF(_parms->getInputLefFile());
-  //        _dbWrapper.parseDEF(_parms->getInputDefFile());
-  //}
-
-  _dbWrapper.populateIOPlacer();
+  populateIOPlacer();
 
   if (_parms->getBlockagesFile().size() != 0) {
     _blockagesFile = _parms->getBlockagesFile();
@@ -86,11 +82,6 @@ void IOPlacer::initParms()
     std::cout << "WARNING: force pin spread option has no effect"
               << " when using random pin placement\n";
   }
-}
-
-IOPlacer::IOPlacer(Parameters& parms)
-    : _parms(&parms), _dbWrapper(_netlist, _core, parms)
-{
 }
 
 void IOPlacer::randomPlacement(const RandomMode mode)
@@ -739,13 +730,189 @@ void IOPlacer::run()
     std::cout << "***HPWL delta  ioPlacer: " << deltaHPWL << "\n";
   }
 
-  _dbWrapper.commitIOPlacementToDB(_assignment);
+  commitIOPlacementToDB(_assignment);
   std::cout << " > IO placement done.\n";
 }
 
-void IOPlacer::writeDEF()
+// db functions
+void IOPlacer::populateIOPlacer()
 {
-  _dbWrapper.writeDEF();
+  _db = odb::dbDatabase::getDatabase(_parms->getDbId());
+  _tech = _db->getTech();
+  _block = _db->getChip()->getBlock();
+  initNetlist();
+  initCore();
+}
+
+void IOPlacer::initCore()
+{
+  int databaseUnit = _tech->getLefUnits();
+
+  odb::Rect rect;
+  _block->getDieArea(rect);
+
+  Coordinate lowerBound(rect.xMin(), rect.yMin());
+  Coordinate upperBound(rect.xMax(), rect.yMax());
+
+  int horLayerIdx = _parms->getHorizontalMetalLayer();
+  int verLayerIdx = _parms->getVerticalMetalLayer();
+
+  odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
+  odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
+
+  odb::dbTrackGrid* horTrackGrid = _block->findTrackGrid(horLayer);
+  odb::dbTrackGrid* verTrackGrid = _block->findTrackGrid(verLayer);
+
+  int minSpacingX = 0;
+  int minSpacingY = 0;
+  int initTrackX = 0;
+  int initTrackY = 0;
+  int minAreaX = 0;
+  int minAreaY = 0;
+  int minWidthX = 0;
+  int minWidthY = 0;
+
+  int numTracksX = 0;
+  int numTracksY = 0;
+  verTrackGrid->getGridPatternX(0, initTrackX, numTracksX, minSpacingX);
+  horTrackGrid->getGridPatternY(0, initTrackY, numTracksY, minSpacingY);
+
+  minAreaX = verLayer->getArea() * databaseUnit * databaseUnit;
+  minWidthX = verLayer->getWidth();
+  minAreaY = horLayer->getArea() * databaseUnit * databaseUnit;
+  minWidthY = horLayer->getWidth();
+
+  _core = Core(lowerBound,
+                upperBound,
+                minSpacingX,
+                minSpacingY,
+                initTrackX,
+                initTrackY,
+                numTracksX,
+                numTracksY,
+                minAreaX,
+                minAreaY,
+                minWidthX,
+                minWidthY,
+                databaseUnit);
+  if (_verbose) {
+    std::cout << "lowerBound: " << lowerBound.getX() << " " << lowerBound.getY()
+              << "\n";
+    std::cout << "upperBound: " << upperBound.getX() << " " << upperBound.getY()
+              << "\n";
+    std::cout << "minSpacingX: " << minSpacingX << "\n";
+    std::cout << "minSpacingY: " << minSpacingY << "\n";
+    std::cout << "initTrackX: " << initTrackX << "\n";
+    std::cout << "initTrackY: " << initTrackY << "\n";
+    std::cout << "numTracksX: " << numTracksX << "\n";
+    std::cout << "numTracksY: " << numTracksY << "\n";
+    std::cout << "minAreaX: " << minAreaX << "\n";
+    std::cout << "minAreaY: " << minAreaY << "\n";
+    std::cout << "minWidthX: " << minWidthX << "\n";
+    std::cout << "minWidthY: " << minWidthY << "\n";
+    std::cout << "databaseUnit: " << databaseUnit << "\n";
+  }
+}
+
+void IOPlacer::initNetlist()
+{
+  odb::dbSet<odb::dbBTerm> bterms = _block->getBTerms();
+
+  odb::dbSet<odb::dbBTerm>::iterator btIter;
+
+  for (btIter = bterms.begin(); btIter != bterms.end(); ++btIter) {
+    odb::dbBTerm* curBTerm = *btIter;
+    odb::dbNet* net = curBTerm->getNet();
+    if (!net) {
+      std::cout << "[WARNING] Pin " << curBTerm->getConstName()
+                << " without net!\n";
+    }
+
+    Direction dir = DIR_INOUT;
+    switch (curBTerm->getIoType()) {
+      case odb::dbIoType::INPUT:
+        dir = DIR_IN;
+        break;
+      case odb::dbIoType::OUTPUT:
+        dir = DIR_OUT;
+        break;
+      default:
+        dir = DIR_INOUT;
+    }
+
+    int xPos = 0;
+    int yPos = 0;
+    curBTerm->getFirstPinLocation(xPos, yPos);
+
+    Coordinate bounds(0, 0);
+    IOPin ioPin(curBTerm->getConstName(),
+                Coordinate(xPos, yPos),
+                dir,
+                bounds,
+                bounds,
+                net->getConstName(),
+                "FIXED");
+
+    std::vector<InstancePin> instPins;
+    odb::dbSet<odb::dbITerm> iterms = net->getITerms();
+    odb::dbSet<odb::dbITerm>::iterator iIter;
+    for (iIter = iterms.begin(); iIter != iterms.end(); ++iIter) {
+      odb::dbITerm* curITerm = *iIter;
+      odb::dbInst* inst = curITerm->getInst();
+      int instX = 0, instY = 0;
+      inst->getLocation(instX, instY);
+
+      instPins.push_back(
+          InstancePin(inst->getConstName(), Coordinate(instX, instY)));
+    }
+
+    _netlist.addIONet(ioPin, instPins);
+  }
+}
+
+void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
+{
+  int horLayerIdx = _parms->getHorizontalMetalLayer();
+  int verLayerIdx = _parms->getVerticalMetalLayer();
+
+  odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
+
+  odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
+
+  for (IOPin& pin : assignment) {
+    odb::dbBTerm* bterm = _block->findBTerm(pin.getName().c_str());
+    odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
+    odb::dbSet<odb::dbBPin>::iterator bpinIter;
+    std::vector<odb::dbBPin*> allBPins;
+    for (bpinIter = bpins.begin(); bpinIter != bpins.end(); ++bpinIter) {
+      odb::dbBPin* curBPin = *bpinIter;
+      allBPins.push_back(curBPin);
+    }
+
+    for (odb::dbBPin* bpin : allBPins) {
+      odb::dbBPin::destroy(bpin);
+    }
+
+    Coordinate lowerBound = pin.getLowerBound();
+    Coordinate upperBound = pin.getUpperBound();
+
+    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+
+    int size = upperBound.getX() - lowerBound.getX();
+
+    int xMin = lowerBound.getX();
+    int yMin = lowerBound.getY();
+    int xMax = upperBound.getX();
+    int yMax = upperBound.getY();
+    odb::dbTechLayer* layer = verLayer;
+    if (pin.getOrientation() == Orientation::ORIENT_EAST
+        || pin.getOrientation() == Orientation::ORIENT_WEST) {
+      layer = horLayer;
+    }
+
+    odb::dbBox::create(bpin, layer, xMin, yMin, xMax, yMax);
+    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  };
 }
 
 }  // namespace ioPlacer

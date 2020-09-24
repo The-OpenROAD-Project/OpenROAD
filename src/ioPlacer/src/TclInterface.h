@@ -38,11 +38,6 @@
 
 namespace ioPlacer {
 
-// LEF/DEF interface
-void import_lef(const char* file);
-void import_def(const char* file);
-void export_def(const char* file);
-
 // Parms interface
 void set_hor_metal_layer(int layer);
 int get_hor_metal_layer();

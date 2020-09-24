@@ -42,8 +42,6 @@
 
 namespace ioPlacer {
 
-void import_lef(const char* file);
-void import_def(const char* file);
 extern void  set_hor_metal_layer(int layer);
 extern int   get_hor_metal_layer();
 extern void  set_ver_metal_layer(int layer);
@@ -82,7 +80,6 @@ extern bool  is_interactive_mode();
 extern void print_all_parms();
 extern void run_io_placement();
 extern int compute_io_nets_hpwl();
-extern void export_def(const char*);
 extern void  set_num_threads(int numThreads);
 extern int   get_num_threads();
 extern void   set_rand_seed(double seed);
