@@ -156,6 +156,13 @@ getFastRoute()
   return openroad->getFastRoute();
 }
 
+ioPlacer::IOPlacer*
+getIOPlacer()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getIOPlacer();
+}
+
 } // namespace ord
 
 namespace sta {

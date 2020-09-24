@@ -134,6 +134,7 @@ public:
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
+  ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
