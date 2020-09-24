@@ -161,10 +161,9 @@ get_blockages_file()
 }
 
 void
-add_blocked_area(int llx, int lly,
-                 int urx, int ury)
+exclude_interval(int edge, int begin, int end)
 {
-  getIOPlacer()->addBlockedArea(llx, lly, urx, ury);
+  getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
 void

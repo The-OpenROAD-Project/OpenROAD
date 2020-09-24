@@ -239,23 +239,19 @@ void IOPlacer::initIOLists()
   });
 }
 
-inline bool IOPlacer::checkBlocked(int currX, int currY)
+inline bool IOPlacer::checkBlocked(Edge edge, int pos)
 {
-  int blockedBeginX;
-  int blockedBeginY;
-  int blockedEndX;
-  int blockedEndY;
-  for (std::pair<Coordinate, Coordinate> blockage : _blockagesArea) {
-    blockedBeginX = std::get<0>(blockage).getX();
-    blockedBeginY = std::get<0>(blockage).getY();
-    blockedEndX = std::get<0>(blockage).getX();
-    blockedEndY = std::get<0>(blockage).getY();
-    if (currX >= blockedBeginX)
-      if (currY >= blockedBeginY)
-        if (currX <= blockedEndX)
-          if (currY <= blockedEndY)
-            return true;
+  for (Interval blockedInterval : _excludedIntervals) {
+    Edge edgeExcluded = std::get<0>(blockedInterval);
+    int begin = std::get<1>(blockedInterval);
+    int end = std::get<2>(blockedInterval);
+
+    if (edgeExcluded == edge &&
+        pos >= begin && pos <= end) {
+      return true;
+    }
   }
+
   return false;
 }
 
@@ -393,7 +389,7 @@ void IOPlacer::defineSlots()
   for (Coordinate pos : slotsEdge1) {
     currX = pos.getX();
     currY = pos.getY();
-    bool blocked = checkBlocked(currX, currY);
+    bool blocked = checkBlocked(Edge::Bottom, currX);
     _slots.push_back({blocked, false, Coordinate(currX, currY)});
     i++;
   }
@@ -401,7 +397,7 @@ void IOPlacer::defineSlots()
   for (Coordinate pos : slotsEdge2) {
     currX = pos.getX();
     currY = pos.getY();
-    bool blocked = checkBlocked(currX, currY);
+    bool blocked = checkBlocked(Edge::Right, currY);
     _slots.push_back({blocked, false, Coordinate(currX, currY)});
     i++;
   }
@@ -409,7 +405,7 @@ void IOPlacer::defineSlots()
   for (Coordinate pos : slotsEdge3) {
     currX = pos.getX();
     currY = pos.getY();
-    bool blocked = checkBlocked(currX, currY);
+    bool blocked = checkBlocked(Edge::Top, currX);
     _slots.push_back({blocked, false, Coordinate(currX, currY)});
     i++;
   }
@@ -417,7 +413,7 @@ void IOPlacer::defineSlots()
   for (Coordinate pos : slotsEdge4) {
     currX = pos.getX();
     currY = pos.getY();
-    bool blocked = checkBlocked(currX, currY);
+    bool blocked = checkBlocked(Edge::Left, currY);
     _slots.push_back({blocked, false, Coordinate(currX, currY)});
     i++;
   }
@@ -670,15 +666,12 @@ int IOPlacer::returnIONetsHPWL()
   return returnIONetsHPWL(_netlist);
 }
 
-void IOPlacer::addBlockedArea(int llx, int lly,
-                              int urx, int ury)
+void IOPlacer::excludeInterval(int edge, int begin, int end)
 {
-  Coordinate lowerLeft = Coordinate(llx, lly);
-  Coordinate upperRight = Coordinate(urx, ury);
-  std::pair<Coordinate, Coordinate> blkArea
-      = std::make_pair(lowerLeft, upperRight);
+  Interval excludedInterv
+      = std::make_tuple((Edge)edge, begin, end);
 
-  _blockagesArea.push_back(blkArea);
+  _excludedIntervals.push_back(excludedInterv);
 }
 
 void IOPlacer::run()

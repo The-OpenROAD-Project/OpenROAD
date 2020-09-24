@@ -62,6 +62,16 @@ enum RandomMode
   Group
 };
 
+enum Edge
+{
+  Top,
+  Bottom,
+  Left,
+  Right
+};
+
+typedef std::tuple<Edge, int, int> Interval;
+
 class IOPlacer
 {
  public:
@@ -72,8 +82,7 @@ class IOPlacer
   void printConfig();
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
-  void addBlockedArea(int llx, int lly,
-                      int urx, int ury);
+  void excludeInterval(int edge, int begin, int end);
 
  protected:
   Netlist _netlist;
@@ -91,7 +100,7 @@ class IOPlacer
 
   bool _forcePinSpread;
   std::string _blockagesFile;
-  std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
+  std::vector<Interval> _excludedIntervals;
 
  private:
   void makeComponents();
@@ -108,7 +117,7 @@ class IOPlacer
 
   inline void updateOrientation(IOPin&);
   inline void updatePinArea(IOPin&);
-  inline bool checkBlocked(int, int);
+  inline bool checkBlocked(Edge edge, int pos);
 
   // db functions
   void populateIOPlacer();

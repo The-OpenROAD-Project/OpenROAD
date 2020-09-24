@@ -40,6 +40,7 @@ sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \
                        	          [-random]                   \
                                   [-boundaries_offset offset] \
                                   [-min_distance min_dist]    \
+                                  [-exclude region]         \
                                  }
 
 proc io_placer { args } {
@@ -67,11 +68,11 @@ proc io_placer { args } {
     }
   }
 
-  set num_macroblocks [llength $blockages]
-  puts "#Macro blocks found: $num_macroblocks"
+  puts "#Macro blocks found: [llength $blockages]"
 
   sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} flags {-random}
+  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
+  flags {-random}
 
   if { [info exists flags(-random)] } {
     ioPlacer::set_random_mode 2
@@ -148,6 +149,51 @@ proc io_placer { args } {
     ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
+  if [info exists keys(-exclude)] {
+    set die_area [$dbBlock getDieArea]
+    set lef_units [$dbTech getLefUnits]
+    
+    set region $keys(-exclude)
+    if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+      set edge_idx [ioPlacer::parse_edge "-exclude" $edge]
+
+      if [regexp -all {([0-9]+[.]*[0-9]*)-([0-9]+[.]*[0-9]*)} $interval - begin end] {
+        set begin [expr { int($begin * $lef_units) }]
+        set end [expr { int($end * $lef_units) }]
+
+        ioPlacer::exclude_interval $edge_idx $begin $end
+      } elseif {$interval == {*}} {
+        if {$edge_idx <= 1} {
+          set begin [$die_area xMin]
+          set end [$die_area xMax]
+        } elseif {$edge_idx >= 2} {
+          set begin [$die_area yMin]
+          set end [$die_area yMax]
+        }
+
+        ioPlacer::exclude_interval $edge_idx $begin $end
+      }
+    }
+  }
   
   ioPlacer::run_io_placement 
+}
+
+namespace eval ioPlacer {
+
+proc parse_edge { cmd edge } {
+  if {$edge == "top"} {
+    return 0
+  } elseif {$edge == "bottom"} {
+    return 1
+  } elseif {$edge == "left"} {
+    return 2
+  } elseif {$edge == "right"} {
+    return 3
+  } else {
+    ord::error "$cmd: Invalid edge"
+  }
+}
+
+# ioPlacer namespace end
 }
