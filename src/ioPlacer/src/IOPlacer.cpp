@@ -43,6 +43,38 @@ namespace ioPlacer {
 
 using ord::error;
 
+void IOPlacer::init(ord::OpenRoad* openroad)
+{
+  _openroad = openroad;
+  makeComponents();
+
+  _reportHPWL = false;
+  _slotsPerSection = 200;
+  _slotsIncreaseFactor = 0.01f;
+  _usagePerSection = .8f;
+  _usageIncreaseFactor = 0.01f;
+  _forcePinSpread = true;
+}
+
+void IOPlacer::makeComponents()
+{
+  _parms = new Parameters;
+  _db = _openroad->getDb();
+}
+
+void IOPlacer::deleteComponents()
+{
+  delete _parms;
+  delete _db;
+  delete _tech;
+  delete _block;
+}
+
+IOPlacer::~IOPlacer()
+{
+  deleteComponents();
+}
+
 void IOPlacer::initNetlistAndCore()
 {
   populateIOPlacer();
@@ -737,7 +769,6 @@ void IOPlacer::run()
 // db functions
 void IOPlacer::populateIOPlacer()
 {
-  _db = odb::dbDatabase::getDatabase(_parms->getDbId());
   _tech = _db->getTech();
   _block = _db->getChip()->getBlock();
   initNetlist();

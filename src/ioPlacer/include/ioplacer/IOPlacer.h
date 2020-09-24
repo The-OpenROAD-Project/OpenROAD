@@ -42,6 +42,10 @@
 #include "Parameters.h"
 #include "Slots.h"
 
+namespace ord {
+class OpenRoad;
+}
+
 namespace odb {
 class dbDatabase;
 class dbTech;
@@ -61,8 +65,9 @@ enum RandomMode
 class IOPlacer
 {
  public:
-  IOPlacer(Parameters&);
   IOPlacer() = default;
+  ~IOPlacer();
+  void init(ord::OpenRoad* openroad);
   void run();
   void printConfig();
   DBU returnIONetsHPWL();
@@ -77,19 +82,21 @@ class IOPlacer
   std::string _horizontalMetalLayer;
   std::string _verticalMetalLayer;
   std::vector<IOPin> _assignment;
-  bool _reportHPWL = false;
+  bool _reportHPWL;
 
-  unsigned _slotsPerSection = 200;
-  float _slotsIncreaseFactor = 0.01f;
+  unsigned _slotsPerSection;
+  float _slotsIncreaseFactor;
 
-  float _usagePerSection = .8f;
-  float _usageIncreaseFactor = 0.01f;
+  float _usagePerSection;
+  float _usageIncreaseFactor;
 
-  bool _forcePinSpread = true;
+  bool _forcePinSpread;
   std::string _blockagesFile;
   std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
 
  private:
+  void makeComponents();
+  void deleteComponents();
   void initNetlistAndCore();
   void initIOLists();
   void initParms();
@@ -111,6 +118,7 @@ class IOPlacer
   void initNetlist();
   void initTracks();
 
+  ord::OpenRoad* _openroad;
   Parameters* _parms;
   Netlist _netlistIOPins;
   slotVector_t _slots;
