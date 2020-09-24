@@ -38,6 +38,7 @@
 #include <random>
 #include "opendb/db.h"
 #include "openroad/Error.hh"
+#include "openroad/OpenRoad.hh"
 
 namespace ioPlacer {
 

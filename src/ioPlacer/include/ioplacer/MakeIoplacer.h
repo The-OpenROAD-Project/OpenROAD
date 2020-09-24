@@ -48,7 +48,7 @@ ioPlacer::IOPlacer* makeIoplacer();
 
 void initIoplacer(OpenRoad* openroad);
 
-void deleteIoplacer(void* ioplacer);
+void deleteIoplacer(ioPlacer::IOPlacer* ioplacer);
 
 }  // namespace ord
 

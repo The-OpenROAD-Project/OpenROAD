@@ -37,7 +37,6 @@
 
 #include "ioplacer/IOPlacer.h"
 #include "Parameters.h"
-#include "db.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -50,16 +49,16 @@ extern "C" {
 extern int Ioplacer_Init(Tcl_Interp* interp);
 }
 
-namespace ioPlacer {
-extern IOPlacer* ioPlacer;
-extern Parameters* parmsToIOPlacer;
-}  // namespace ioPlacer
-
 namespace ord {
 
 ioPlacer::IOPlacer* makeIoplacer()
 {
-  return ioPlacer::ioPlacer;
+  return new ioPlacer::IOPlacer();
+}
+
+void deleteIoplacer(ioPlacer::IOPlacer* ioplacer)
+{
+  delete ioplacer;
 }
 
 void initIoplacer(OpenRoad* openroad)
@@ -69,14 +68,7 @@ void initIoplacer(OpenRoad* openroad)
   Ioplacer_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::ioplacer_tcl_inits);
 
-  unsigned dbId = openroad->getDb()->getId();
-  ioPlacer::parmsToIOPlacer->setDbId(dbId);
-}
-
-void deleteIoplacer(void* ioplacer)
-{
-  delete ioPlacer::ioPlacer;
-  delete ioPlacer::parmsToIOPlacer;
+  openroad->getIOPlacer()->init(openroad);
 }
 
 }  // namespace ord
