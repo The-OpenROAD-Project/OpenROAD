@@ -83,7 +83,7 @@ class IOPlacer
   std::vector<IOPin> _assignment;
   bool _reportHPWL;
 
-  unsigned _slotsPerSection;
+  int _slotsPerSection;
   float _slotsIncreaseFactor;
 
   float _usagePerSection;

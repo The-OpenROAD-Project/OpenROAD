@@ -59,11 +59,11 @@ class HungarianMatching
   HungarianAlgorithm _hungarianSolver;
   Netlist& _netlist;
   slotVector_t& _slots;
-  unsigned _beginSlot;
-  unsigned _endSlot;
-  unsigned _numSlots;
-  unsigned _numIOPins;
-  unsigned _nonBlockedSlots;
+  int _beginSlot;
+  int _endSlot;
+  int _numSlots;
+  int _numIOPins;
+  int _nonBlockedSlots;
 
   void createMatrix();
 

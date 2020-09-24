@@ -60,12 +60,12 @@ typedef struct _Section_t
 {
   Coordinate pos;
   Netlist net;
-  unsigned cost;
-  unsigned beginSlot;
-  unsigned endSlot;
+  int cost;
+  int beginSlot;
+  int endSlot;
   float maxSlots;
-  unsigned int curSlots;
-  unsigned int numSlots;
+  int curSlots;
+  int numSlots;
 } Section_t;
 
 typedef std::vector<Section_t> sectionVector_t;

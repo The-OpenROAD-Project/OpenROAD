@@ -121,16 +121,16 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 {
   const double seed = _parms->getRandSeed();
 
-  unsigned numIOs = _netlist.numIOPins();
-  unsigned numSlots = _slots.size();
+  int numIOs = _netlist.numIOPins();
+  int numSlots = _slots.size();
   double shift = numSlots / double(numIOs);
-  unsigned mid1 = numSlots * 1 / 8 - numIOs / 8;
-  unsigned mid2 = numSlots * 3 / 8 - numIOs / 8;
-  unsigned mid3 = numSlots * 5 / 8 - numIOs / 8;
-  unsigned mid4 = numSlots * 7 / 8 - numIOs / 8;
-  unsigned idx = 0;
-  unsigned slotsPerEdge = numIOs / 4;
-  unsigned lastSlots = (numIOs - slotsPerEdge * 3);
+  int mid1 = numSlots * 1 / 8 - numIOs / 8;
+  int mid2 = numSlots * 3 / 8 - numIOs / 8;
+  int mid3 = numSlots * 5 / 8 - numIOs / 8;
+  int mid4 = numSlots * 7 / 8 - numIOs / 8;
+  int idx = 0;
+  int slotsPerEdge = numIOs / 4;
+  int lastSlots = (numIOs - slotsPerEdge * 3);
   std::vector<int> vSlots(numSlots);
   std::vector<int> vIOs(numIOs);
 
@@ -160,8 +160,8 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       std::random_shuffle(vSlots.begin(), vSlots.end());
       // ---
 
-      _netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
-        unsigned b = vSlots[0];
+      _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
+        int b = vSlots[0];
         ioPin.setPos(_slots.at(b).pos);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
@@ -181,8 +181,8 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       std::random_shuffle(vIOs.begin(), vIOs.end());
       // ---
 
-      _netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
-        unsigned b = vIOs[0];
+      _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
+        int b = vIOs[0];
         ioPin.setPos(_slots.at(floor(b * shift)).pos);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
@@ -210,8 +210,8 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       std::random_shuffle(vIOs.begin(), vIOs.end());
       // ---
 
-      _netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
-        unsigned b = vIOs[0];
+      _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
+        int b = vIOs[0];
         ioPin.setPos(_slots.at(b).pos);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
@@ -226,7 +226,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
 void IOPlacer::initIOLists()
 {
-  _netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
+  _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
     std::vector<InstancePin> instPinsVector;
     if (_netlist.numSinksOfIO(idx) != 0) {
       _netlist.forEachSinkOfIO(idx, [&](InstancePin& instPin) {
@@ -427,21 +427,21 @@ void IOPlacer::createSections()
 {
   slotVector_t& slots = _slots;
   _sections.clear();
-  unsigned numSlots = slots.size();
-  unsigned beginSlot = 0;
-  unsigned endSlot = 0;
+  int numSlots = slots.size();
+  int beginSlot = 0;
+  int endSlot = 0;
   while (endSlot < numSlots) {
     int blockedSlots = 0;
     endSlot = beginSlot + _slotsPerSection - 1;
     if (endSlot > numSlots) {
       endSlot = numSlots;
     }
-    for (unsigned i = beginSlot; i < endSlot; ++i) {
+    for (int i = beginSlot; i < endSlot; ++i) {
       if (slots[i].blocked) {
         blockedSlots++;
       }
     }
-    unsigned midPoint = (endSlot - beginSlot) / 2;
+    int midPoint = (endSlot - beginSlot) / 2;
     Section_t nSec = {slots.at(beginSlot + midPoint).pos};
     if (_usagePerSection > 1.f) {
       std::cout << "WARNING: section usage exeeded max\n";
@@ -474,11 +474,11 @@ bool IOPlacer::assignPinsSections()
   sectionVector_t& sections = _sections;
   createSections();
   int totalPinsAssigned = 0;
-  net.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
+  net.forEachIOPin([&](int idx, IOPin& ioPin) {
     bool pinAssigned = false;
     std::vector<int> dst(sections.size());
     std::vector<InstancePin> instPinsVector;
-    for (unsigned i = 0; i < sections.size(); i++) {
+    for (int i = 0; i < sections.size(); i++) {
       dst[i] = net.computeIONetHPWL(idx, sections[i].pos);
     }
     net.forEachSinkOfIO(
@@ -526,7 +526,7 @@ void IOPlacer::printConfig()
 void IOPlacer::setupSections()
 {
   bool allAssigned;
-  unsigned i = 0;
+  int i = 0;
   if (!_forcePinSpread && _usageIncreaseFactor == 0.0f
       && _slotsIncreaseFactor == 0.0f) {
     std::cout << "WARNING: if _forcePinSpread = false than either "
@@ -655,9 +655,9 @@ inline void IOPlacer::updatePinArea(IOPin& pin)
 
 int IOPlacer::returnIONetsHPWL(Netlist& netlist)
 {
-  unsigned pinIndex = 0;
+  int pinIndex = 0;
   int hpwl = 0;
-  netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
+  netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
     hpwl += netlist.computeIONetHPWL(idx, ioPin.getPosition());
     pinIndex++;
   });
@@ -717,22 +717,22 @@ void IOPlacer::run()
   } else {
     setupSections();
 
-    for (unsigned idx = 0; idx < _sections.size(); idx++) {
+    for (int idx = 0; idx < _sections.size(); idx++) {
       if (_sections[idx].net.numIOPins() > 0) {
         HungarianMatching hg(_sections[idx], _slots);
         hgVec.push_back(hg);
       }
     }
 
-    for (unsigned idx = 0; idx < hgVec.size(); idx++) {
+    for (int idx = 0; idx < hgVec.size(); idx++) {
       hgVec[idx].run();
     }
 
-    for (unsigned idx = 0; idx < hgVec.size(); idx++) {
+    for (int idx = 0; idx < hgVec.size(); idx++) {
       hgVec[idx].getFinalAssignment(_assignment);
     }
 
-    unsigned i = 0;
+    int i = 0;
     while (_zeroSinkIOs.size() > 0 && i < _slots.size()) {
       if (!_slots[i].used && !_slots[i].blocked) {
         _slots[i].used = true;
@@ -743,17 +743,17 @@ void IOPlacer::run()
       i++;
     }
   }
-  for (unsigned i = 0; i < _assignment.size(); ++i) {
+  for (int i = 0; i < _assignment.size(); ++i) {
     updateOrientation(_assignment[i]);
     updatePinArea(_assignment[i]);
   }
 
-  if (_assignment.size() != (unsigned) _netlist.numIOPins()) {
+  if (_assignment.size() != (int) _netlist.numIOPins()) {
     error("Assigned %d pins out of %d IO pins\n", _assignment.size(), _netlist.numIOPins());
   }
 
   if (_reportHPWL) {
-    for (unsigned idx = 0; idx < _sections.size(); idx++) {
+    for (int idx = 0; idx < _sections.size(); idx++) {
       totalHPWL += returnIONetsHPWL(_sections[idx].net);
     }
     deltaHPWL = initHPWL - totalHPWL;

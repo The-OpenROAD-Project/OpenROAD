@@ -126,7 +126,7 @@ class Netlist
 {
  private:
   std::vector<InstancePin> _instPins;
-  std::vector<unsigned> _netPointer;
+  std::vector<int> _netPointer;
   std::vector<IOPin> _ioPins;
 
  public:
@@ -134,16 +134,16 @@ class Netlist
 
   void addIONet(const IOPin&, const std::vector<InstancePin>&);
 
-  void forEachIOPin(std::function<void(unsigned, IOPin&)>);
-  void forEachIOPin(std::function<void(unsigned, const IOPin&)>) const;
-  void forEachSinkOfIO(unsigned, std::function<void(InstancePin&)>);
-  void forEachSinkOfIO(unsigned, std::function<void(const InstancePin&)>) const;
-  unsigned numSinksOfIO(unsigned);
+  void forEachIOPin(std::function<void(int, IOPin&)>);
+  void forEachIOPin(std::function<void(int, const IOPin&)>) const;
+  void forEachSinkOfIO(int, std::function<void(InstancePin&)>);
+  void forEachSinkOfIO(int, std::function<void(const InstancePin&)>) const;
+  int numSinksOfIO(int);
   int numIOPins();
 
-  int computeIONetHPWL(unsigned, Coordinate);
-  int computeDstIOtoPins(unsigned, Coordinate);
-  Box getBB(unsigned, Coordinate);
+  int computeIONetHPWL(int, Coordinate);
+  int computeDstIOtoPins(int, Coordinate);
+  Box getBB(int, Coordinate);
 };
 
 }  // namespace ioPlacer
