@@ -37,15 +37,15 @@
 
 namespace ioPlacer {
 
-DBU Core::getPerimeter()
+int Core::getPerimeter()
 {
-  DBU lowerX = _lowerBound.getX();
-  DBU lowerY = _lowerBound.getY();
-  DBU upperX = _upperBound.getX();
-  DBU upperY = _upperBound.getY();
+  int lowerX = _lowerBound.getX();
+  int lowerY = _lowerBound.getY();
+  int upperX = _upperBound.getX();
+  int upperY = _upperBound.getY();
 
-  DBU x = upperX - lowerX;
-  DBU y = upperY - lowerY;
+  int x = upperX - lowerX;
+  int y = upperY - lowerY;
 
   return (x + y) * 2;
 }

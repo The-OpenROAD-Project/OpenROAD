@@ -68,7 +68,7 @@ class Parameters
   bool _interactiveMode = false;
   int _numThreads = -1;
   double _randSeed = 42.0;
-  unsigned _dbId;
+  int _dbId;
   int _boundariesOffset;
   int _minDist;
 
@@ -138,8 +138,8 @@ class Parameters
   void setMinDistance(int minDist) { _minDist = minDist; }
   int getMinDistance() const { return _minDist; }
 
-  void setDbId(unsigned idx) { _dbId = idx; }
-  unsigned getDbId() const { return _dbId; }
+  void setDbId(int idx) { _dbId = idx; }
+  int getDbId() const { return _dbId; }
 
   void printAll() const;
 };

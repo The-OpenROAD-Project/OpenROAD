@@ -50,46 +50,46 @@ void Netlist::addIONet(const IOPin& ioPin,
   _netPointer.push_back(_instPins.size());
 }
 
-void Netlist::forEachIOPin(std::function<void(unsigned idx, IOPin&)> func)
+void Netlist::forEachIOPin(std::function<void(int idx, IOPin&)> func)
 {
-  for (unsigned idx = 0; idx < _ioPins.size(); ++idx) {
+  for (int idx = 0; idx < _ioPins.size(); ++idx) {
     func(idx, _ioPins[idx]);
   }
 }
 
 void Netlist::forEachIOPin(
-    std::function<void(unsigned idx, const IOPin&)> func) const
+    std::function<void(int idx, const IOPin&)> func) const
 {
-  for (unsigned idx = 0; idx < _ioPins.size(); ++idx) {
+  for (int idx = 0; idx < _ioPins.size(); ++idx) {
     func(idx, _ioPins[idx]);
   }
 }
 
-void Netlist::forEachSinkOfIO(unsigned idx,
+void Netlist::forEachSinkOfIO(int idx,
                               std::function<void(InstancePin&)> func)
 {
-  unsigned netStart = _netPointer[idx];
-  unsigned netEnd = _netPointer[idx + 1];
-  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+  int netStart = _netPointer[idx];
+  int netEnd = _netPointer[idx + 1];
+  for (int idx = netStart; idx < netEnd; ++idx) {
     func(_instPins[idx]);
   }
 }
 
 void Netlist::forEachSinkOfIO(
-    unsigned idx,
+    int idx,
     std::function<void(const InstancePin&)> func) const
 {
-  unsigned netStart = _netPointer[idx];
-  unsigned netEnd = _netPointer[idx + 1];
-  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+  int netStart = _netPointer[idx];
+  int netEnd = _netPointer[idx + 1];
+  for (int idx = netStart; idx < netEnd; ++idx) {
     func(_instPins[idx]);
   }
 }
 
-unsigned Netlist::numSinksOfIO(unsigned idx)
+int Netlist::numSinksOfIO(int idx)
 {
-  unsigned netStart = _netPointer[idx];
-  unsigned netEnd = _netPointer[idx + 1];
+  int netStart = _netPointer[idx];
+  int netEnd = _netPointer[idx + 1];
   return netEnd - netStart;
 }
 
@@ -98,17 +98,17 @@ int Netlist::numIOPins()
   return _ioPins.size();
 }
 
-Box Netlist::getBB(unsigned idx, Coordinate slotPos)
+Box Netlist::getBB(int idx, Coordinate slotPos)
 {
-  unsigned netStart = _netPointer[idx];
-  unsigned netEnd = _netPointer[idx + 1];
+  int netStart = _netPointer[idx];
+  int netEnd = _netPointer[idx + 1];
 
-  DBU minX = slotPos.getX();
-  DBU minY = slotPos.getY();
-  DBU maxX = slotPos.getX();
-  DBU maxY = slotPos.getY();
+  int minX = slotPos.getX();
+  int minY = slotPos.getY();
+  int maxX = slotPos.getX();
+  int maxY = slotPos.getY();
 
-  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+  for (int idx = netStart; idx < netEnd; ++idx) {
     Coordinate pos = _instPins[idx].getPos();
     minX = std::min(minX, pos.getX());
     maxX = std::max(maxX, pos.getX());
@@ -123,17 +123,17 @@ Box Netlist::getBB(unsigned idx, Coordinate slotPos)
   return netBBox;
 }
 
-DBU Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos)
+int Netlist::computeIONetHPWL(int idx, Coordinate slotPos)
 {
-  unsigned netStart = _netPointer[idx];
-  unsigned netEnd = _netPointer[idx + 1];
+  int netStart = _netPointer[idx];
+  int netEnd = _netPointer[idx + 1];
 
-  DBU minX = slotPos.getX();
-  DBU minY = slotPos.getY();
-  DBU maxX = slotPos.getX();
-  DBU maxY = slotPos.getY();
+  int minX = slotPos.getX();
+  int minY = slotPos.getY();
+  int maxX = slotPos.getX();
+  int maxY = slotPos.getY();
 
-  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+  for (int idx = netStart; idx < netEnd; ++idx) {
     Coordinate pos = _instPins[idx].getPos();
     minX = std::min(minX, pos.getX());
     maxX = std::max(maxX, pos.getX());
@@ -149,14 +149,14 @@ DBU Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos)
   return netBBox.getHalfPerimeter();
 }
 
-DBU Netlist::computeDstIOtoPins(unsigned idx, Coordinate slotPos)
+int Netlist::computeDstIOtoPins(int idx, Coordinate slotPos)
 {
-  unsigned netStart = _netPointer[idx];
-  unsigned netEnd = _netPointer[idx + 1];
+  int netStart = _netPointer[idx];
+  int netEnd = _netPointer[idx + 1];
 
-  DBU totalDistance = 0;
+  int totalDistance = 0;
 
-  for (unsigned idx = netStart; idx < netEnd; ++idx) {
+  for (int idx = netStart; idx < netEnd; ++idx) {
     Coordinate pinPos = _instPins[idx].getPos();
     totalDistance += std::abs(pinPos.getX() - slotPos.getX())
                      + std::abs(pinPos.getY() - slotPos.getY());

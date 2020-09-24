@@ -61,7 +61,7 @@ class LibertyCell;
 }
 
 namespace ioPlacer {
-class IOPlacementKernel;
+class IOPlacer;
 }
 
 namespace TritonCTS {
@@ -134,6 +134,7 @@ public:
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
+  ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -192,7 +193,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
-  ioPlacer::IOPlacementKernel *ioPlacer_;
+  ioPlacer::IOPlacer *ioPlacer_;
   opendp::Opendp *opendp_;
   MacroPlace::TritonMacroPlace *tritonMp_;
   FastRoute::GlobalRouter *fastRoute_;

@@ -33,53 +33,104 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef DBWRAPPER_h
-#define DBWRAPPER_h
+#ifndef __IOPLACEMENTKERNEL_H_
+#define __IOPLACEMENTKERNEL_H_
 
-#include <string>
-
-#include "db.h"
 #include "Core.h"
+#include "HungarianMatching.h"
 #include "Netlist.h"
 #include "Parameters.h"
+#include "Slots.h"
 
-// Forward declaration protects IOPlacer code from any
-// header file from the DB. IOPlacer code keeps independent.
+namespace ord {
+class OpenRoad;
+}
+
 namespace odb {
 class dbDatabase;
-class dbChip;
-class dbTechLayer;
-}  // namespace odb
+class dbTech;
+class dbBlock;
+}
 
 namespace ioPlacer {
 
-class DBWrapper
+enum RandomMode
+{
+  None,
+  Full,
+  Even,
+  Group
+};
+
+class IOPlacer
 {
  public:
-  DBWrapper() = default;
-  DBWrapper(Netlist& netlist, Core& core, Parameters& parms);
+  IOPlacer() = default;
+  ~IOPlacer();
+  void init(ord::OpenRoad* openroad);
+  void run();
+  void printConfig();
+  Parameters* getParameters() { return _parms; }
+  int returnIONetsHPWL();
+  void addBlockedArea(int llx, int lly,
+                      int urx, int ury);
 
-  void parseLEF(const std::string& filename);
-  void parseDEF(const std::string& filename);
+ protected:
+  Netlist _netlist;
+  Core _core;
+  std::string _horizontalMetalLayer;
+  std::string _verticalMetalLayer;
+  std::vector<IOPin> _assignment;
+  bool _reportHPWL;
 
-  void populateIOPlacer();
-  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
-  void writeDEF();
+  int _slotsPerSection;
+  float _slotsIncreaseFactor;
+
+  float _usagePerSection;
+  float _usageIncreaseFactor;
+
+  bool _forcePinSpread;
+  std::string _blockagesFile;
+  std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
 
  private:
+  void makeComponents();
+  void deleteComponents();
+  void initNetlistAndCore();
+  void initIOLists();
+  void initParms();
+  void randomPlacement(const RandomMode);
+  void defineSlots();
+  void createSections();
+  void setupSections();
+  bool assignPinsSections();
+  int returnIONetsHPWL(Netlist&);
+
+  inline void updateOrientation(IOPin&);
+  inline void updatePinArea(IOPin&);
+  inline bool checkBlocked(int, int);
+
+  // db functions
+  void populateIOPlacer();
+  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void initCore();
   void initNetlist();
   void initTracks();
 
+  ord::OpenRoad* _openroad;
+  Parameters* _parms;
+  Netlist _netlistIOPins;
+  slotVector_t _slots;
+  sectionVector_t _sections;
+  std::vector<IOPin> _zeroSinkIOs;
+  RandomMode _randomMode = RandomMode::Full;
+  bool _cellsPlaced = true;
+  // db variables
   odb::dbDatabase* _db;
   odb::dbTech* _tech;
   odb::dbBlock* _block;
-  Netlist* _netlist = nullptr;
-  Core* _core = nullptr;
-  Parameters* _parms = nullptr;
   bool _verbose = false;
 };
 
 }  // namespace ioPlacer
-
-#endif
+#endif /* __IOPLACEMENTKERNEL_H_ */

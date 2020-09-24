@@ -45,7 +45,7 @@
 
 #include "Coordinate.h"
 #include "Hungarian.h"
-#include "ioplacer/IOPlacementKernel.h"
+#include "ioplacer/IOPlacer.h"
 #include "Netlist.h"
 #include "Slots.h"
 
@@ -54,16 +54,16 @@ namespace ioPlacer {
 class HungarianMatching
 {
  private:
-  std::vector<std::vector<DBU>> _hungarianMatrix;
+  std::vector<std::vector<int>> _hungarianMatrix;
   std::vector<int> _assignment;
   HungarianAlgorithm _hungarianSolver;
   Netlist& _netlist;
   slotVector_t& _slots;
-  unsigned _beginSlot;
-  unsigned _endSlot;
-  unsigned _numSlots;
-  unsigned _numIOPins;
-  unsigned _nonBlockedSlots;
+  int _beginSlot;
+  int _endSlot;
+  int _numSlots;
+  int _numIOPins;
+  int _nonBlockedSlots;
 
   void createMatrix();
 
