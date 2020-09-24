@@ -71,11 +71,9 @@ class IOPlacer
   void run();
   void printConfig();
   Parameters* getParameters() { return _parms; }
-  DBU returnIONetsHPWL();
-  void addBlockedArea(long long int llx,
-                      long long int lly,
-                      long long int urx,
-                      long long int ury);
+  int returnIONetsHPWL();
+  void addBlockedArea(int llx, int lly,
+                      int urx, int ury);
 
  protected:
   Netlist _netlist;
@@ -106,11 +104,11 @@ class IOPlacer
   void createSections();
   void setupSections();
   bool assignPinsSections();
-  DBU returnIONetsHPWL(Netlist&);
+  int returnIONetsHPWL(Netlist&);
 
   inline void updateOrientation(IOPin&);
   inline void updatePinArea(IOPin&);
-  inline bool checkBlocked(DBU, DBU);
+  inline bool checkBlocked(int, int);
 
   // db functions
   void populateIOPlacer();

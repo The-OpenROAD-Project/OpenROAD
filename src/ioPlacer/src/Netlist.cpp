@@ -103,10 +103,10 @@ Box Netlist::getBB(unsigned idx, Coordinate slotPos)
   unsigned netStart = _netPointer[idx];
   unsigned netEnd = _netPointer[idx + 1];
 
-  DBU minX = slotPos.getX();
-  DBU minY = slotPos.getY();
-  DBU maxX = slotPos.getX();
-  DBU maxY = slotPos.getY();
+  int minX = slotPos.getX();
+  int minY = slotPos.getY();
+  int maxX = slotPos.getX();
+  int maxY = slotPos.getY();
 
   for (unsigned idx = netStart; idx < netEnd; ++idx) {
     Coordinate pos = _instPins[idx].getPos();
@@ -123,15 +123,15 @@ Box Netlist::getBB(unsigned idx, Coordinate slotPos)
   return netBBox;
 }
 
-DBU Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos)
+int Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos)
 {
   unsigned netStart = _netPointer[idx];
   unsigned netEnd = _netPointer[idx + 1];
 
-  DBU minX = slotPos.getX();
-  DBU minY = slotPos.getY();
-  DBU maxX = slotPos.getX();
-  DBU maxY = slotPos.getY();
+  int minX = slotPos.getX();
+  int minY = slotPos.getY();
+  int maxX = slotPos.getX();
+  int maxY = slotPos.getY();
 
   for (unsigned idx = netStart; idx < netEnd; ++idx) {
     Coordinate pos = _instPins[idx].getPos();
@@ -149,12 +149,12 @@ DBU Netlist::computeIONetHPWL(unsigned idx, Coordinate slotPos)
   return netBBox.getHalfPerimeter();
 }
 
-DBU Netlist::computeDstIOtoPins(unsigned idx, Coordinate slotPos)
+int Netlist::computeDstIOtoPins(unsigned idx, Coordinate slotPos)
 {
   unsigned netStart = _netPointer[idx];
   unsigned netEnd = _netPointer[idx + 1];
 
-  DBU totalDistance = 0;
+  int totalDistance = 0;
 
   for (unsigned idx = netStart; idx < netEnd; ++idx) {
     Coordinate pinPos = _instPins[idx].getPos();

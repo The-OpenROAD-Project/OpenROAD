@@ -239,12 +239,12 @@ void IOPlacer::initIOLists()
   });
 }
 
-inline bool IOPlacer::checkBlocked(DBU currX, DBU currY)
+inline bool IOPlacer::checkBlocked(int currX, int currY)
 {
-  DBU blockedBeginX;
-  DBU blockedBeginY;
-  DBU blockedEndX;
-  DBU blockedEndY;
+  int blockedBeginX;
+  int blockedBeginY;
+  int blockedEndX;
+  int blockedEndY;
   for (std::pair<Coordinate, Coordinate> blockage : _blockagesArea) {
     blockedBeginX = std::get<0>(blockage).getX();
     blockedBeginY = std::get<0>(blockage).getY();
@@ -263,23 +263,24 @@ void IOPlacer::defineSlots()
 {
   Coordinate lb = _core.getLowerBound();
   Coordinate ub = _core.getUpperBound();
-  DBU lbX = lb.getX();
-  DBU lbY = lb.getY();
-  DBU ubX = ub.getX();
-  DBU ubY = ub.getY();
-  unsigned minDstPinsX = _core.getMinDstPinsX() * _parms->getMinDistance();
-  unsigned minDstPinsY = _core.getMinDstPinsY() * _parms->getMinDistance();
-  unsigned initTracksX = _core.getInitTracksX();
-  unsigned initTracksY = _core.getInitTracksY();
-  unsigned numTracksX = _core.getNumTracksX();
-  unsigned numTracksY = _core.getNumTracksY();
+  int lbX = lb.getX();
+  int lbY = lb.getY();
+  int ubX = ub.getX();
+  int ubY = ub.getY();
+
+  int minDstPinsX = _core.getMinDstPinsX() * _parms->getMinDistance();
+  int minDstPinsY = _core.getMinDstPinsY() * _parms->getMinDistance();
+  int initTracksX = _core.getInitTracksX();
+  int initTracksY = _core.getInitTracksY();
+  int numTracksX = _core.getNumTracksX();
+  int numTracksY = _core.getNumTracksY();
   int offset = _parms->getBoundariesOffset();
   offset *= _core.getDatabaseUnit();
 
   int num_tracks_offset
       = std::ceil(offset / (std::max(minDstPinsX, minDstPinsY)));
 
-  DBU totalNumSlots = 0;
+  int totalNumSlots = 0;
   totalNumSlots += (ubX - lbX) * 2 / minDstPinsX;
   totalNumSlots += (ubY - lbY) * 2 / minDstPinsY;
 
@@ -302,11 +303,11 @@ void IOPlacer::defineSlots()
    *******************************************/
 
   int start_idx, end_idx;
-  DBU currX, currY;
+  int currX, currY;
   float thicknessMultiplierV = _parms->getVerticalThicknessMultiplier();
   float thicknessMultiplierH = _parms->getHorizontalThicknessMultiplier();
-  DBU halfWidthX = DBU(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplierV;
-  DBU halfWidthY = DBU(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplierH;
+  int halfWidthX = int(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplierV;
+  int halfWidthY = int(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplierH;
 
   std::vector<Coordinate> slotsEdge1;
 
@@ -321,11 +322,11 @@ void IOPlacer::defineSlots()
 
   start_idx
       = std::max(0.0,
-                 ceil((lbX + halfWidthX - initTracksX) / (double) minDstPinsX))
+                 ceil((lbX + halfWidthX - initTracksX) / minDstPinsX))
         + num_tracks_offset;
   end_idx
-      = std::min(double(numTracksX - 1),
-                 floor((ubX - halfWidthX - initTracksX) / (double) minDstPinsX))
+      = std::min((numTracksX - 1),
+                 (int)floor((ubX - halfWidthX - initTracksX) / minDstPinsX))
         - num_tracks_offset;
   currX = initTracksX + start_idx * minDstPinsX;
   currY = lbY;
@@ -338,11 +339,11 @@ void IOPlacer::defineSlots()
   std::vector<Coordinate> slotsEdge2;
   start_idx
       = std::max(0.0,
-                 ceil((lbY + halfWidthY - initTracksY) / (double) minDstPinsY))
+                 ceil((lbY + halfWidthY - initTracksY) / minDstPinsY))
         + num_tracks_offset;
   end_idx
-      = std::min(double(numTracksY - 1),
-                 floor((ubY - halfWidthY - initTracksY) / (double) minDstPinsY))
+      = std::min((numTracksY - 1),
+                 (int)floor((ubY - halfWidthY - initTracksY) / minDstPinsY))
         - num_tracks_offset;
   currY = initTracksY + start_idx * minDstPinsY;
   currX = ubX;
@@ -355,11 +356,11 @@ void IOPlacer::defineSlots()
   std::vector<Coordinate> slotsEdge3;
   start_idx
       = std::max(0.0,
-                 ceil((lbX + halfWidthX - initTracksX) / (double) minDstPinsX))
+                 ceil((lbX + halfWidthX - initTracksX) / minDstPinsX))
         + num_tracks_offset;
   end_idx
-      = std::min(double(numTracksX - 1),
-                 floor((ubX - halfWidthX - initTracksX) / (double) minDstPinsX))
+      = std::min((numTracksX - 1),
+                 (int)floor((ubX - halfWidthX - initTracksX) / minDstPinsX))
         - num_tracks_offset;
   currX = initTracksX + start_idx * minDstPinsX;
   currY = ubY;
@@ -373,11 +374,11 @@ void IOPlacer::defineSlots()
   std::vector<Coordinate> slotsEdge4;
   start_idx
       = std::max(0.0,
-                 ceil((lbY + halfWidthY - initTracksY) / (double) minDstPinsY))
+                 ceil((lbY + halfWidthY - initTracksY) / minDstPinsY))
         + num_tracks_offset;
   end_idx
-      = std::min(double(numTracksY - 1),
-                 floor((ubY - halfWidthY - initTracksY) / (double) minDstPinsY))
+      = std::min((numTracksY - 1),
+                 (int)floor((ubY - halfWidthY - initTracksY) / minDstPinsY))
         - num_tracks_offset;
   currY = initTracksY + start_idx * minDstPinsY;
   currX = lbX;
@@ -475,7 +476,7 @@ bool IOPlacer::assignPinsSections()
   int totalPinsAssigned = 0;
   net.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
     bool pinAssigned = false;
-    std::vector<DBU> dst(sections.size());
+    std::vector<int> dst(sections.size());
     std::vector<InstancePin> instPinsVector;
     for (unsigned i = 0; i < sections.size(); i++) {
       dst[i] = net.computeIONetHPWL(idx, sections[i].pos);
@@ -558,12 +559,12 @@ void IOPlacer::setupSections()
 
 inline void IOPlacer::updateOrientation(IOPin& pin)
 {
-  const DBU x = pin.getX();
-  const DBU y = pin.getY();
-  DBU lowerXBound = _core.getLowerBound().getX();
-  DBU lowerYBound = _core.getLowerBound().getY();
-  DBU upperXBound = _core.getUpperBound().getX();
-  DBU upperYBound = _core.getUpperBound().getY();
+  const int x = pin.getX();
+  const int y = pin.getY();
+  int lowerXBound = _core.getLowerBound().getX();
+  int lowerYBound = _core.getLowerBound().getY();
+  int upperXBound = _core.getUpperBound().getX();
+  int upperYBound = _core.getUpperBound().getY();
 
   if (x == lowerXBound) {
     if (y == upperYBound) {
@@ -595,21 +596,21 @@ inline void IOPlacer::updateOrientation(IOPin& pin)
 
 inline void IOPlacer::updatePinArea(IOPin& pin)
 {
-  const DBU x = pin.getX();
-  const DBU y = pin.getY();
-  DBU lowerXBound = _core.getLowerBound().getX();
-  DBU lowerYBound = _core.getLowerBound().getY();
-  DBU upperXBound = _core.getUpperBound().getX();
-  DBU upperYBound = _core.getUpperBound().getY();
+  const int x = pin.getX();
+  const int y = pin.getY();
+  int lowerXBound = _core.getLowerBound().getX();
+  int lowerYBound = _core.getLowerBound().getY();
+  int upperXBound = _core.getUpperBound().getX();
+  int upperYBound = _core.getUpperBound().getY();
 
   if (pin.getOrientation() == Orientation::ORIENT_NORTH
       || pin.getOrientation() == Orientation::ORIENT_SOUTH) {
     float thicknessMultiplier = _parms->getVerticalThicknessMultiplier();
-    DBU halfWidth = DBU(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplier;
-    DBU height = DBU(std::max(2.0 * halfWidth,
+    int halfWidth = int(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplier;
+    int height = int(std::max(2.0 * halfWidth,
                               ceil(_core.getMinAreaX() / (2.0 * halfWidth))));
 
-    DBU ext = 0;
+    int ext = 0;
     if (_parms->getVerticalLength() != -1) {
       height = _parms->getVerticalLength() * _core.getDatabaseUnit();
     }
@@ -630,11 +631,11 @@ inline void IOPlacer::updatePinArea(IOPin& pin)
   if (pin.getOrientation() == Orientation::ORIENT_WEST
       || pin.getOrientation() == Orientation::ORIENT_EAST) {
     float thicknessMultiplier = _parms->getHorizontalThicknessMultiplier();
-    DBU halfWidth = DBU(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplier;
-    DBU height = DBU(std::max(2.0 * halfWidth,
+    int halfWidth = int(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplier;
+    int height = int(std::max(2.0 * halfWidth,
                               ceil(_core.getMinAreaY() / (2.0 * halfWidth))));
 
-    DBU ext = 0;
+    int ext = 0;
     if (_parms->getHorizontalLengthExtend() != -1) {
       ext = _parms->getHorizontalLengthExtend() * _core.getDatabaseUnit();
     }
@@ -652,10 +653,10 @@ inline void IOPlacer::updatePinArea(IOPin& pin)
   }
 }
 
-DBU IOPlacer::returnIONetsHPWL(Netlist& netlist)
+int IOPlacer::returnIONetsHPWL(Netlist& netlist)
 {
   unsigned pinIndex = 0;
-  DBU hpwl = 0;
+  int hpwl = 0;
   netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
     hpwl += netlist.computeIONetHPWL(idx, ioPin.getPosition());
     pinIndex++;
@@ -664,15 +665,13 @@ DBU IOPlacer::returnIONetsHPWL(Netlist& netlist)
   return hpwl;
 }
 
-DBU IOPlacer::returnIONetsHPWL()
+int IOPlacer::returnIONetsHPWL()
 {
   return returnIONetsHPWL(_netlist);
 }
 
-void IOPlacer::addBlockedArea(long long int llx,
-                                       long long int lly,
-                                       long long int urx,
-                                       long long int ury)
+void IOPlacer::addBlockedArea(int llx, int lly,
+                              int urx, int ury)
 {
   Coordinate lowerLeft = Coordinate(llx, lly);
   Coordinate upperRight = Coordinate(urx, ury);
@@ -699,9 +698,9 @@ void IOPlacer::run()
   initNetlistAndCore();
 
   std::vector<HungarianMatching> hgVec;
-  DBU initHPWL = 0;
-  DBU totalHPWL = 0;
-  DBU deltaHPWL = 0;
+  int initHPWL = 0;
+  int totalHPWL = 0;
+  int deltaHPWL = 0;
 
   initIOLists();
   defineSlots();

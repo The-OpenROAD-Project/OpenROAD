@@ -55,7 +55,7 @@ class Core
   unsigned _minAreaY;
   unsigned _minWidthX;
   unsigned _minWidthY;
-  DBU _databaseUnit;
+  int _databaseUnit;
 
  public:
   Core()
@@ -65,17 +65,17 @@ class Core
         _minDstPinsY(20){};
   Core(const Coordinate& lowerBound,
        const Coordinate& upperBound,
-       const DBU& minDstPinsX,
-       const DBU& minDstPinsY,
-       const DBU& initTracksX,
-       const DBU& initTracksY,
-       const DBU& numTracksX,
-       const DBU& numTracksY,
-       const DBU& minAreaX,
-       const DBU& minAreaY,
-       const DBU& minWidthX,
-       const DBU& minWidthY,
-       const DBU& databaseUnit)
+       const int& minDstPinsX,
+       const int& minDstPinsY,
+       const int& initTracksX,
+       const int& initTracksY,
+       const int& numTracksX,
+       const int& numTracksY,
+       const int& minAreaX,
+       const int& minAreaY,
+       const int& minWidthX,
+       const int& minWidthY,
+       const int& databaseUnit)
       : _lowerBound(lowerBound),
         _upperBound(upperBound),
         _minDstPinsX(minDstPinsX),
@@ -104,9 +104,9 @@ class Core
   unsigned getMinAreaY() const { return _minAreaY; }
   unsigned getMinWidthX() const { return _minWidthX; }
   unsigned getMinWidthY() const { return _minWidthY; }
-  DBU getDatabaseUnit() const { return _databaseUnit; }
+  int getDatabaseUnit() const { return _databaseUnit; }
 
-  DBU getPerimeter();
+  int getPerimeter();
 };
 
 }  // namespace ioPlacer

@@ -161,10 +161,8 @@ get_blockages_file()
 }
 
 void
-add_blocked_area(long long int llx,
-                      long long int lly,
-                      long long int urx,
-                      long long int ury)
+add_blocked_area(int llx, int lly,
+                 int urx, int ury)
 {
   getIOPlacer()->addBlockedArea(llx, lly, urx, ury);
 }

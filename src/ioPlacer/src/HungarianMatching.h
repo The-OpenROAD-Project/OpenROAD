@@ -54,7 +54,7 @@ namespace ioPlacer {
 class HungarianMatching
 {
  private:
-  std::vector<std::vector<DBU>> _hungarianMatrix;
+  std::vector<std::vector<int>> _hungarianMatrix;
   std::vector<int> _assignment;
   HungarianAlgorithm _hungarianSolver;
   Netlist& _netlist;

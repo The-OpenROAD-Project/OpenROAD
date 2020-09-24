@@ -74,8 +74,8 @@ class InstancePin
   }
   std::string getName() const { return _name; }
   Coordinate getPos() const { return _pos; }
-  DBU getX() const { return _pos.getX(); }
-  DBU getY() const { return _pos.getY(); }
+  int getX() const { return _pos.getX(); }
+  int getY() const { return _pos.getY(); }
 };
 
 class IOPin : public InstancePin
@@ -109,12 +109,12 @@ class IOPin : public InstancePin
   void setOrientation(const Orientation o) { _orientation = o; }
   Orientation getOrientation() const { return _orientation; }
   Coordinate getPosition() const { return _pos; }
-  void setX(const DBU x) { _pos.setX(x); }
-  void setY(const DBU y) { _pos.setY(y); }
+  void setX(const int x) { _pos.setX(x); }
+  void setY(const int y) { _pos.setY(y); }
   void setPos(const Coordinate pos) { _pos = pos; }
-  void setPos(const DBU x, const DBU y) { _pos.init(x, y); }
-  void setLowerBound(const DBU x, const DBU y) { _lowerBound.init(x, y); };
-  void setUpperBound(const DBU x, const DBU y) { _upperBound.init(x, y); };
+  void setPos(const int x, const int y) { _pos.init(x, y); }
+  void setLowerBound(const int x, const int y) { _lowerBound.init(x, y); };
+  void setUpperBound(const int x, const int y) { _upperBound.init(x, y); };
   Direction getDirection() const { return _direction; }
   Coordinate getLowerBound() const { return _lowerBound; };
   Coordinate getUpperBound() const { return _upperBound; };
@@ -141,8 +141,8 @@ class Netlist
   unsigned numSinksOfIO(unsigned);
   int numIOPins();
 
-  DBU computeIONetHPWL(unsigned, Coordinate);
-  DBU computeDstIOtoPins(unsigned, Coordinate);
+  int computeIONetHPWL(unsigned, Coordinate);
+  int computeDstIOtoPins(unsigned, Coordinate);
   Box getBB(unsigned, Coordinate);
 };
 

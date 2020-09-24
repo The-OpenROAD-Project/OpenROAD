@@ -36,26 +36,24 @@
 #ifndef __COORDINATE_H_
 #define __COORDINATE_H_
 
-typedef long long int DBU;
-
 namespace ioPlacer {
 
 class Coordinate
 {
-  DBU _x, _y;
+  int _x, _y;
 
  public:
-  Coordinate(const DBU x, const DBU y) : _x(x), _y(y) {}
-  void init(const DBU x, const DBU y)
+  Coordinate(const int x, const int y) : _x(x), _y(y) {}
+  void init(const int x, const int y)
   {
     _x = x;
     _y = y;
   }
-  void setX(const DBU x) { _x = x; }
-  void setY(const DBU y) { _y = y; }
-  DBU getX() const { return _x; }
-  DBU getY() const { return _y; }
-  DBU dst(Coordinate);
+  void setX(const int x) { _x = x; }
+  void setY(const int y) { _y = y; }
+  int getX() const { return _x; }
+  int getY() const { return _y; }
+  int dst(Coordinate);
 };
 
 }  // namespace ioPlacer
