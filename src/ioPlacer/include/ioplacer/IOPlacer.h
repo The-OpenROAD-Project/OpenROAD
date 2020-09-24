@@ -70,6 +70,7 @@ class IOPlacer
   void init(ord::OpenRoad* openroad);
   void run();
   void printConfig();
+  Parameters* getParameters() { return _parms; }
   DBU returnIONetsHPWL();
   void addBlockedArea(long long int llx,
                       long long int lly,

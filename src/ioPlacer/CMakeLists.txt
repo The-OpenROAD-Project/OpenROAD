@@ -49,9 +49,12 @@ set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
 set(IOPLACER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/IoplacerTclInitVar.cc)
 
 add_custom_command(OUTPUT ${IOPLACER_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -namespace -prefix ioPlacer -tcl8 -c++ -o ${IOPLACER_WRAP} ${IOPLACER_HOME}/src/TclInterface.i   
+        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ioPlacer -I${IOPLACER_HOME}/include -o ${IOPLACER_WRAP} ${IOPLACER_HOME}/src/ioplacer.i
         WORKING_DIRECTORY ${IOPLACER_HOME}/src
-        DEPENDS ${IOPLACER_HOME}/src/ioPlacer.tcl ${OPENSTA_HOME}/etc/TclEncode.tcl
+        DEPENDS
+        ${IOPLACER_HOME}/src/ioplacer.i
+        ${IOPLACER_HOME}/include/ioplacer/IOPlacer.h
+        ${OPENROAD_HOME}/src/Exception.i
 )
 
 add_custom_command(OUTPUT ${IOPLACER_TCL_INIT}
@@ -69,7 +72,6 @@ set(SRC_FILES
   src/MakeIoplacer.cpp
   src/Netlist.cpp
   src/Parameters.cpp
-  src/TclInterface.cpp
   ${IOPLACER_WRAP}
   ${IOPLACER_TCL_INIT}
   )
