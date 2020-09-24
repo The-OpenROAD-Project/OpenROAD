@@ -66,7 +66,7 @@ set(SRC_FILES
   src/Core.cpp
   src/DBWrapper.cpp
   src/HungarianMatching.cpp
-  src/IOPlacementKernel.cpp
+  src/IOPlacer.cpp
   src/MakeIoplacer.cpp
   src/Netlist.cpp
   src/Parameters.cpp

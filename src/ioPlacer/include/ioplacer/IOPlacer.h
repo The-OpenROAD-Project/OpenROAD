@@ -53,7 +53,7 @@ enum RandomMode
   Group
 };
 
-class IOPlacementKernel
+class IOPlacer
 {
  protected:
   Netlist _netlist;
@@ -98,8 +98,8 @@ class IOPlacementKernel
   inline bool checkBlocked(DBU, DBU);
 
  public:
-  IOPlacementKernel(Parameters&);
-  IOPlacementKernel() = default;
+  IOPlacer(Parameters&);
+  IOPlacer() = default;
   void run();
   void writeDEF();
   void printConfig();

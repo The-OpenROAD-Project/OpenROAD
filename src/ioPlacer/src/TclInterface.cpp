@@ -37,25 +37,25 @@
 
 #include <iostream>
 
-#include "ioplacer/IOPlacementKernel.h"
+#include "ioplacer/IOPlacer.h"
 #include "Parameters.h"
 
 namespace ioPlacer {
 
 Parameters* parmsToIOPlacer = new Parameters();
-IOPlacementKernel* ioPlacerKernel = new IOPlacementKernel(*parmsToIOPlacer);
+IOPlacer* ioPlacer = new IOPlacer(*parmsToIOPlacer);
 
 void import_lef(const char* file)
 {
   std::cout << " > Importing LEF file \"" << file << "\"\n";
-  ioPlacerKernel->parseLef(file);
+  ioPlacer->parseLef(file);
 }
 
 void import_def(const char* file)
 {
   std::cout << " > Importing DEF file \"" << file << "\"\n";
   parmsToIOPlacer->setInputDefFile(file);
-  ioPlacerKernel->parseDef(file);
+  ioPlacer->parseDef(file);
 }
 
 void set_hor_metal_layer(int layer)
@@ -153,7 +153,7 @@ void add_blocked_area(long long int llx,
                       long long int urx,
                       long long int ury)
 {
-  ioPlacerKernel->addBlockedArea(llx, lly, urx, ury);
+  ioPlacer->addBlockedArea(llx, lly, urx, ury);
 }
 
 void set_hor_length(float length)
@@ -203,7 +203,7 @@ void print_all_parms()
 
 void run_io_placement()
 {
-  ioPlacerKernel->run();
+  ioPlacer->run();
 }
 
 void set_report_hpwl(bool report)
@@ -218,13 +218,13 @@ bool get_report_hpwl()
 
 int compute_io_nets_hpwl()
 {
-  return ioPlacerKernel->returnIONetsHPWL();
+  return ioPlacer->returnIONetsHPWL();
 }
 
 void export_def(const char* file)
 {
   parmsToIOPlacer->setOutputDefFile(file);
-  ioPlacerKernel->writeDEF();
+  ioPlacer->writeDEF();
 }
 
 void set_num_threads(int numThreads)

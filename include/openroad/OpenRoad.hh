@@ -61,7 +61,7 @@ class LibertyCell;
 }
 
 namespace ioPlacer {
-class IOPlacementKernel;
+class IOPlacer;
 }
 
 namespace TritonCTS {
@@ -192,7 +192,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
-  ioPlacer::IOPlacementKernel *ioPlacer_;
+  ioPlacer::IOPlacer *ioPlacer_;
   opendp::Opendp *opendp_;
   MacroPlace::TritonMacroPlace *tritonMp_;
   FastRoute::GlobalRouter *fastRoute_;

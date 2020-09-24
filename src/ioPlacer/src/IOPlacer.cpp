@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ioplacer/IOPlacementKernel.h"
+#include "ioplacer/IOPlacer.h"
 
 #include <random>
 #include "openroad/Error.hh"
@@ -42,7 +42,7 @@ namespace ioPlacer {
 
 using ord::error;
 
-void IOPlacementKernel::initNetlistAndCore()
+void IOPlacer::initNetlistAndCore()
 {
   // if (!_parms->isInteractiveMode()) {
   //        _dbWrapper.parseLEF(_parms->getInputLefFile());
@@ -56,7 +56,7 @@ void IOPlacementKernel::initNetlistAndCore()
   }
 }
 
-void IOPlacementKernel::initParms()
+void IOPlacer::initParms()
 {
   if (_parms->getReportHPWL()) {
     _reportHPWL = true;
@@ -88,12 +88,12 @@ void IOPlacementKernel::initParms()
   }
 }
 
-IOPlacementKernel::IOPlacementKernel(Parameters& parms)
+IOPlacer::IOPlacer(Parameters& parms)
     : _parms(&parms), _dbWrapper(_netlist, _core, parms)
 {
 }
 
-void IOPlacementKernel::randomPlacement(const RandomMode mode)
+void IOPlacer::randomPlacement(const RandomMode mode)
 {
   const double seed = _parms->getRandSeed();
 
@@ -200,7 +200,7 @@ void IOPlacementKernel::randomPlacement(const RandomMode mode)
   }
 }
 
-void IOPlacementKernel::initIOLists()
+void IOPlacer::initIOLists()
 {
   _netlist.forEachIOPin([&](unsigned idx, IOPin& ioPin) {
     std::vector<InstancePin> instPinsVector;
@@ -215,7 +215,7 @@ void IOPlacementKernel::initIOLists()
   });
 }
 
-inline bool IOPlacementKernel::checkBlocked(DBU currX, DBU currY)
+inline bool IOPlacer::checkBlocked(DBU currX, DBU currY)
 {
   DBU blockedBeginX;
   DBU blockedBeginY;
@@ -235,7 +235,7 @@ inline bool IOPlacementKernel::checkBlocked(DBU currX, DBU currY)
   return false;
 }
 
-void IOPlacementKernel::defineSlots()
+void IOPlacer::defineSlots()
 {
   Coordinate lb = _core.getLowerBound();
   Coordinate ub = _core.getUpperBound();
@@ -398,7 +398,7 @@ void IOPlacementKernel::defineSlots()
   }
 }
 
-void IOPlacementKernel::createSections()
+void IOPlacer::createSections()
 {
   slotVector_t& slots = _slots;
   _sections.clear();
@@ -443,7 +443,7 @@ void IOPlacementKernel::createSections()
   }
 }
 
-bool IOPlacementKernel::assignPinsSections()
+bool IOPlacer::assignPinsSections()
 {
   Netlist& net = _netlistIOPins;
   sectionVector_t& sections = _sections;
@@ -484,7 +484,7 @@ bool IOPlacementKernel::assignPinsSections()
   }
 }
 
-void IOPlacementKernel::printConfig()
+void IOPlacer::printConfig()
 {
   std::cout << " * Num of slots          " << _slots.size() << "\n";
   std::cout << " * Num of I/O            " << _netlist.numIOPins() << "\n";
@@ -498,7 +498,7 @@ void IOPlacementKernel::printConfig()
   std::cout << " * Force Pin Spread      " << _forcePinSpread << "\n\n";
 }
 
-void IOPlacementKernel::setupSections()
+void IOPlacer::setupSections()
 {
   bool allAssigned;
   unsigned i = 0;
@@ -532,7 +532,7 @@ void IOPlacementKernel::setupSections()
   } while (!allAssigned);
 }
 
-inline void IOPlacementKernel::updateOrientation(IOPin& pin)
+inline void IOPlacer::updateOrientation(IOPin& pin)
 {
   const DBU x = pin.getX();
   const DBU y = pin.getY();
@@ -569,7 +569,7 @@ inline void IOPlacementKernel::updateOrientation(IOPin& pin)
   }
 }
 
-inline void IOPlacementKernel::updatePinArea(IOPin& pin)
+inline void IOPlacer::updatePinArea(IOPin& pin)
 {
   const DBU x = pin.getX();
   const DBU y = pin.getY();
@@ -628,7 +628,7 @@ inline void IOPlacementKernel::updatePinArea(IOPin& pin)
   }
 }
 
-DBU IOPlacementKernel::returnIONetsHPWL(Netlist& netlist)
+DBU IOPlacer::returnIONetsHPWL(Netlist& netlist)
 {
   unsigned pinIndex = 0;
   DBU hpwl = 0;
@@ -640,12 +640,12 @@ DBU IOPlacementKernel::returnIONetsHPWL(Netlist& netlist)
   return hpwl;
 }
 
-DBU IOPlacementKernel::returnIONetsHPWL()
+DBU IOPlacer::returnIONetsHPWL()
 {
   return returnIONetsHPWL(_netlist);
 }
 
-void IOPlacementKernel::addBlockedArea(long long int llx,
+void IOPlacer::addBlockedArea(long long int llx,
                                        long long int lly,
                                        long long int urx,
                                        long long int ury)
@@ -658,7 +658,7 @@ void IOPlacementKernel::addBlockedArea(long long int llx,
   _blockagesArea.push_back(blkArea);
 }
 
-void IOPlacementKernel::run()
+void IOPlacer::run()
 {
   initParms();
 
@@ -743,7 +743,7 @@ void IOPlacementKernel::run()
   std::cout << " > IO placement done.\n";
 }
 
-void IOPlacementKernel::writeDEF()
+void IOPlacer::writeDEF()
 {
   _dbWrapper.writeDEF();
 }

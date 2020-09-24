@@ -35,7 +35,7 @@
 
 #include "ioplacer/MakeIoplacer.h"
 
-#include "ioplacer/IOPlacementKernel.h"
+#include "ioplacer/IOPlacer.h"
 #include "Parameters.h"
 #include "db.h"
 #include "openroad/OpenRoad.hh"
@@ -51,15 +51,15 @@ extern int Ioplacer_Init(Tcl_Interp* interp);
 }
 
 namespace ioPlacer {
-extern IOPlacementKernel* ioPlacerKernel;
+extern IOPlacer* ioPlacer;
 extern Parameters* parmsToIOPlacer;
 }  // namespace ioPlacer
 
 namespace ord {
 
-ioPlacer::IOPlacementKernel* makeIoplacer()
+ioPlacer::IOPlacer* makeIoplacer()
 {
-  return ioPlacer::ioPlacerKernel;
+  return ioPlacer::ioPlacer;
 }
 
 void initIoplacer(OpenRoad* openroad)
@@ -75,7 +75,7 @@ void initIoplacer(OpenRoad* openroad)
 
 void deleteIoplacer(void* ioplacer)
 {
-  delete ioPlacer::ioPlacerKernel;
+  delete ioPlacer::ioPlacer;
   delete ioPlacer::parmsToIOPlacer;
 }
 
