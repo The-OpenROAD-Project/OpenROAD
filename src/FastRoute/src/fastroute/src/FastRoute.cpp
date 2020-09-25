@@ -94,20 +94,6 @@ void FT::clear()
 
 void FT::deleteComponents()
 {
-  for (int i = 0; i < (numNets - invalidNets); i++) {
-    if (nets[i]->pinX)
-      delete[] nets[i]->pinX;
-    nets[i]->pinX = nullptr;
-
-    if (nets[i]->pinY)
-      delete[] nets[i]->pinY;
-    nets[i]->pinY = nullptr;
-
-    if (nets[i]->pinL)
-      delete[] nets[i]->pinL;
-    nets[i]->pinL = nullptr;
-  }
-
   for (int i = 0; i < numNets; i++) {
     if (nets[i])
       delete nets[i];
@@ -596,16 +582,13 @@ void FT::addNet(odb::dbNet* db_net,
     nets[newnetID]->db_net = db_net;
     nets[newnetID]->numPins = nPins;
     nets[newnetID]->deg     = pinInd;
-    nets[newnetID]->pinX    = new short[pinInd];
-    nets[newnetID]->pinY    = new short[pinInd];
-    nets[newnetID]->pinL    = new short[pinInd];
     nets[newnetID]->alpha   = alpha;
     nets[newnetID]->isClock = isClock;
 
     for (int j = 0; j < pinInd; j++) {
-      nets[newnetID]->pinX[j] = pinXarray[j];
-      nets[newnetID]->pinY[j] = pinYarray[j];
-      nets[newnetID]->pinL[j] = pinLarray[j];
+      nets[newnetID]->pinX.push_back(pinXarray[j]);
+      nets[newnetID]->pinY.push_back(pinYarray[j]);
+      nets[newnetID]->pinL.push_back(pinLarray[j]);
     }
     seglistIndex[newnetID] = segcount;
     newnetID++;
