@@ -260,8 +260,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     _reroute = true;
     startFastRoute();
     _fastRoute->setVerbose(0);
-    std::cout << "[INFO] #Nets to reroute: " << _fastRoute->getNets().size()
-              << "\n";
+    std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
 
@@ -1326,42 +1325,45 @@ RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
 
 void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
 {
-  auto net_pins = _fastRoute->getNets();
-  std::vector<PIN>& pins = net_pins[db_net];
+  std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
   int lastLayer = -1;
   for (uint p = 0; p < pins.size(); p++) {
     if (p > 0) {
+      odb::Point pinPos0 = pins[p-1].getOnGridPosition();
+      odb::Point pinPos1 = pins[p].getOnGridPosition();
       // If the net is not local, FR core result is invalid
-      if (pins[p].x != pins[p - 1].x || pins[p].y != pins[p - 1].y) {
+      if (pinPos1.x() != pinPos0.x() || pinPos1.y() != pinPos0.y()) {
         error("Net %s not properly covered",
               db_net->getConstName());
       }
     }
 
-    if (pins[p].layer > lastLayer)
-      lastLayer = pins[p].layer;
+    if (pins[p].getTopLayer() > lastLayer)
+      lastLayer = pins[p].getTopLayer();
   }
 
   for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-    GSegment segment = GSegment(pins[0].x, pins[0].y, l, pins[0].x, pins[0].y, l+1);
+    odb::Point pinPos = pins[0].getOnGridPosition();
+    GSegment segment = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l+1);
     route.push_back(segment);
   }
 }
 
 void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
 {
-  auto net_pins = _fastRoute->getNets();
-  std::vector<PIN>& pins = net_pins[db_net];
-  for (PIN pin : pins) {
-    if (pin.layer > 1) {
+  std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
+  for (Pin pin : pins) {
+    if (pin.getTopLayer() > 1) {
       // for each pin placed at upper layers, get all segments that
       // potentially covers it
       GRoute coverSegs;
 
+      odb::Point pinPos = pin.getOnGridPosition();
+
       int wireViaLayer = std::numeric_limits<int>::max();
       for (uint i = 0; i < route.size(); i++) {
-        if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
-            (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+        if (((pinPos.x() == route[i].initX && pinPos.y() == route[i].initY) ||
+            (pinPos.x() == route[i].finalX && pinPos.y() == route[i].finalY)) &&
             (!(route[i].initX == route[i].finalX &&
              route[i].initY == route[i].finalY))) {
           coverSegs.push_back(route[i]);
@@ -1372,17 +1374,18 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
       }
 
       bool bottomLayerPin = false;
-      for (PIN pin2 : pins) {
-        if (pin.x == pin2.x && pin.y == pin2.y
-            && pin.layer > pin2.layer) {
+      for (Pin pin2 : pins) {
+        odb::Point pin2Pos = pin2.getOnGridPosition();
+        if (pinPos.x() == pin2Pos.x() && pinPos.y() == pin2Pos.y()
+            && pin.getTopLayer() > pin2.getTopLayer()) {
           bottomLayerPin = true;
         }
       }
 
       if (!bottomLayerPin) {
         for (uint i = 0; i < route.size(); i++) {
-          if (((pin.x == route[i].initX && pin.y == route[i].initY) ||
-              (pin.x == route[i].finalX && pin.y == route[i].finalY)) &&
+          if (((pinPos.x() == route[i].initX && pinPos.y() == route[i].initY) ||
+              (pinPos.x() == route[i].finalX && pinPos.y() == route[i].finalY)) &&
               (route[i].initX == route[i].finalX &&
                route[i].initY == route[i].finalY &&
               (route[i].initLayer < wireViaLayer ||
@@ -1402,21 +1405,21 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
           error("Segment has invalid layer assignment");
         }
 
-        int diffLayers = std::abs(pin.layer - seg.initLayer);
+        int diffLayers = std::abs(pin.getTopLayer() - seg.initLayer);
         if (diffLayers < minorDiff && seg.initLayer > closestLayer) {
           minorDiff = seg.initLayer;
           closestLayer = seg.initLayer;
         }
       }
 
-      if (closestLayer > pin.layer) {
-        for (int l = closestLayer; l > pin.layer; l--) {
-          GSegment segment = GSegment(pin.x, pin.y, l, pin.x, pin.y, l-1);
+      if (closestLayer > pin.getTopLayer()) {
+        for (int l = closestLayer; l > pin.getTopLayer(); l--) {
+          GSegment segment = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l-1);
           route.push_back(segment);
         }
-      } else if (closestLayer < pin.layer) {
-        for (int l = closestLayer; l < pin.layer; l++) {
-          GSegment segment = GSegment(pin.x, pin.y, l, pin.x, pin.y, l+1);
+      } else if (closestLayer < pin.getTopLayer()) {
+        for (int l = closestLayer; l < pin.getTopLayer(); l++) {
+          GSegment segment = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l+1);
           route.push_back(segment);
         }
       }
@@ -1441,16 +1444,17 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
   }
 
   // Add local guides for nets with no routing.
-  auto net_pins = _fastRoute->getNets();
   for (Net& net : *_nets) {
     odb::dbNet* db_net = net.getDbNet();
     if (checkSignalType(net)
         && net.getNumPins() > 1
-	&& (routes.find(db_net) == routes.end()
-	    || routes[db_net].empty())) {
+	      && (routes.find(db_net) == routes.end()
+	      || routes[db_net].empty())) {
       GRoute &route = routes[db_net];
-      for (PIN &pin : net_pins[db_net]) {
-        GSegment segment = GSegment(pin.x, pin.y, pin.layer, pin.x, pin.y, pin.layer);
+      std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
+      for (Pin &pin : pins) {
+        odb::Point pinPos = pin.getOnGridPosition();
+        GSegment segment = GSegment(pinPos.x(), pinPos.y(), pin.getTopLayer(), pinPos.x(), pinPos.y(), pin.getTopLayer());
         route.push_back(segment);
       }
     }

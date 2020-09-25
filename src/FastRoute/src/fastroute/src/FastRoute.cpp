@@ -542,8 +542,6 @@ void FastRouteCore::addNet(odb::dbNet* db_net,
   int pinYarray[nPins];
   int pinLarray[nPins];
 
-  _net_pins_map[db_net] = std::vector<PIN>(&pins[0], &pins[nPins]);
-
   pinInd = 0;
   for (int j = 0; j < nPins; j++) {
     long pinX_in = pins[j].x;

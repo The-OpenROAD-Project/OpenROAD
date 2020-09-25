@@ -100,7 +100,6 @@ class FastRouteCore
                              long y2,
                              int l2);
   int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-  NetPinsMap& getNets() { return _net_pins_map; }
   void setEdgeUsage(long x1,
                     long y1,
                     int l1,
