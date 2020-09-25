@@ -61,7 +61,7 @@ namespace sta {
 
 namespace FastRoute {
 
-class FT;
+class FastRouteCore;
 class AntennaRepair;
 class Grid;
 class Pin;
@@ -250,7 +250,7 @@ protected:
 
   ord::OpenRoad* _openroad;
   // Objects variables
-  FT* _fastRoute = nullptr;
+  FastRouteCore* _fastRoute = nullptr;
   odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 

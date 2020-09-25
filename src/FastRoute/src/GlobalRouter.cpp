@@ -98,7 +98,7 @@ void GlobalRouter::makeComponents()
   // Allocate memory for objects
   _allRoutingTracks = new std::vector<RoutingTracks>;
   _db = _openroad->getDb();
-  _fastRoute = new FT;
+  _fastRoute = new FastRouteCore;
   _grid = new Grid;
   _gridOrigin = new odb::Point(-1, -1);
   _nets = new std::vector<Net>;

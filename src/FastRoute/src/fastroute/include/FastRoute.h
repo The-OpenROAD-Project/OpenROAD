@@ -53,11 +53,11 @@ struct PIN
 
 typedef std::map<odb::dbNet*, std::vector<PIN>> NetPinsMap;
 
-class FT
+class FastRouteCore
 {
  public:
-  FT();
-  ~FT();
+  FastRouteCore();
+  ~FastRouteCore();
   
   void deleteComponents();
   void clear();
