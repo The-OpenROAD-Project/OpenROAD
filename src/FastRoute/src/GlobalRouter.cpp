@@ -1359,6 +1359,10 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
       GRoute coverSegs;
 
       odb::Point pinPos = pin.getOnGridPosition();
+      if (pin.isConnectedToPad() || pin.isPort()) {
+        RoutingLayer layer = getRoutingLayerByIndex(pin.getTopLayer());
+        createFakePin(pin, pinPos, layer);
+      }
 
       int wireViaLayer = std::numeric_limits<int>::max();
       for (uint i = 0; i < route.size(); i++) {
