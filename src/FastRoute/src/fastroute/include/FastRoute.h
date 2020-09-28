@@ -51,8 +51,6 @@ struct PIN
   int layer;
 };
 
-typedef std::map<odb::dbNet*, std::vector<PIN>> NetPinsMap;
-
 class FastRouteCore
 {
  public:
@@ -123,8 +121,6 @@ class FastRouteCore
   
 private:
   NetRouteMap getRoutes();
-
-  NetPinsMap _net_pins_map;
   int maxNetDegree;
 };
 

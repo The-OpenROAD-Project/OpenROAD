@@ -89,7 +89,6 @@ FastRouteCore::~FastRouteCore() {
 void FastRouteCore::clear()
 {
   deleteComponents();
-  _net_pins_map.clear();
 }
 
 void FastRouteCore::deleteComponents()
