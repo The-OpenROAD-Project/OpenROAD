@@ -72,7 +72,6 @@ class RoutingLayer;
 class SteinerTree;
 class RoutePt;
 struct NET;
-struct PIN;
 
 class GlobalRouter
 {
@@ -194,7 +193,7 @@ protected:
 
 
   // aux functions
-  void addPins(Net& net);
+  int findPins(Net& net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
