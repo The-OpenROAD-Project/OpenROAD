@@ -44,13 +44,6 @@
 
 namespace FastRoute {
 
-struct PIN
-{
-  long x;
-  long y;
-  int layer;
-};
-
 class FastRouteCore
 {
  public:
@@ -69,10 +62,10 @@ class FastRouteCore
   void setLowerLeft(int x, int y);
   void setTileSize(int width, int height);
   void setLayerOrientation(int x);
-  void addNet(odb::dbNet* db_net,
-              int nPIns,
-              int minWIdth,
-              PIN pins[],
+  void addPin(int netID, int x, int y, int layer);
+  int addNet(odb::dbNet* db_net,
+              int   nPins,
+              int validPins,
               float alpha,
               bool isClock);
   void initEdges();

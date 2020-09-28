@@ -530,64 +530,32 @@ void FastRouteCore::setLayerOrientation(int x)
   layerOrientation = x;
 }
 
-void FastRouteCore::addNet(odb::dbNet* db_net,
+void FastRouteCore::addPin(int netID, int x, int y, int layer) {
+  nets[netID]->pinX.push_back(x);
+  nets[netID]->pinY.push_back(y);
+  nets[netID]->pinL.push_back(layer);
+}
+
+int FastRouteCore::addNet(odb::dbNet* db_net,
                 int   nPins,
-                int   minWidth,
-                PIN   pins[],
+                int validPins,
                 float alpha,
                 bool isClock)
 {
-  int pinXarray[nPins];
-  int pinYarray[nPins];
-  int pinLarray[nPins];
+  int netID = newnetID;
+  pinInd = validPins;
+  MD = std::max(MD, pinInd);
+  nets[newnetID]->db_net  = db_net;
+  nets[newnetID]->numPins = nPins;
+  nets[newnetID]->deg     = pinInd;
+  nets[newnetID]->alpha   = alpha;
+  nets[newnetID]->isClock = isClock;
 
-  pinInd = 0;
-  for (int j = 0; j < nPins; j++) {
-    long pinX_in = pins[j].x;
-    long pinY_in = pins[j].y;
-    int  pinL    = pins[j].layer;
-    int  pinX    = (int) ((pinX_in - xcorner) / wTile);
-    int  pinY    = (int) ((pinY_in - ycorner) / hTile);
-    if (!(pinX < 0 || pinX >= xGrid || pinY < -1 || pinY >= yGrid
-          || pinL > numLayers || pinL <= 0)) {
-      bool remove = false;
-      for (int k = 0; k < pinInd; k++) {
-        if (pinX == pinXarray[k] && pinY == pinYarray[k]
-            && pinL == pinLarray[k]) {
-          remove = true;
-          break;
-        }
-      }
-      if (!remove)  // the pin is in different grid from other pins
-      {
-        pinXarray[pinInd] = pinX;
-        pinYarray[pinInd] = pinY;
-        pinLarray[pinInd] = pinL;
-        pinInd++;
-      }
-    }
-  }
-  if (pinInd > 1)  // valid net
-  {
-    MD = std::max(MD, pinInd);
-    nets[newnetID]->db_net  = db_net;
-    nets[newnetID]->numPins = nPins;
-    nets[newnetID]->deg     = pinInd;
-    nets[newnetID]->alpha   = alpha;
-    nets[newnetID]->isClock = isClock;
-
-    for (int j = 0; j < pinInd; j++) {
-      nets[newnetID]->pinX.push_back(pinXarray[j]);
-      nets[newnetID]->pinY.push_back(pinYarray[j]);
-      nets[newnetID]->pinL.push_back(pinLarray[j]);
-    }
-    seglistIndex[newnetID] = segcount;
-    newnetID++;
-    // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
-    segcount += 2 * pinInd - 3;
-  } else {
-    invalidNets++;
-  }
+  seglistIndex[newnetID] = segcount;
+  newnetID++;
+  // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
+  segcount += 2 * pinInd - 3;
+  return netID;
 }
 
 void FastRouteCore::initEdges()
