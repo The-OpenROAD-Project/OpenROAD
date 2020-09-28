@@ -194,6 +194,7 @@ protected:
 
 
   // aux functions
+  void addPins(Net& net);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);

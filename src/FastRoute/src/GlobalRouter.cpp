@@ -449,6 +449,81 @@ void GlobalRouter::setSpacingsAndMinWidths()
   }
 }
 
+void GlobalRouter::addPins(Net& net)
+{ 
+  std::vector<PIN> pins;
+  for (Pin& pin : net.getPins()) {
+    odb::Point pinPosition;
+    int topLayer = pin.getTopLayer();
+    RoutingLayer layer = getRoutingLayerByIndex(topLayer);
+
+    std::vector<odb::Rect> pinBoxes = pin.getBoxes().at(topLayer);
+    std::vector<odb::Point> pinPositionsOnGrid;
+    odb::Point posOnGrid;
+    odb::Point trackPos;
+
+    for (odb::Rect pinBox : pinBoxes) {
+      posOnGrid = _grid->getPositionOnGrid(getRectMiddle(pinBox));
+      pinPositionsOnGrid.push_back(posOnGrid);
+    }
+
+    int votes = -1;
+
+    for (odb::Point pos : pinPositionsOnGrid) {
+      int equals = std::count(
+          pinPositionsOnGrid.begin(), pinPositionsOnGrid.end(), pos);
+      if (equals > votes) {
+        pinPosition = pos;
+        votes = equals;
+      }
+    }
+
+    if (pinOverlapsWithSingleTrack(pin, trackPos)) {
+      posOnGrid = _grid->getPositionOnGrid(trackPos);
+
+      if (!(posOnGrid == pinPosition) &&
+          ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL &&
+            posOnGrid.y() != pinPosition.y()) ||
+           (layer.getPreferredDirection() == RoutingLayer::VERTICAL &&
+            posOnGrid.x() != pinPosition.x()))) {
+          pinPosition = posOnGrid;
+        }
+    }
+
+    pin.setOnGridPosition(pinPosition);
+
+    // If pin is connected to PAD, create a "fake" location in routing
+    // grid to avoid PAD obstacles
+    if (pin.isConnectedToPad() || pin.isPort()) {
+      GSegment pinConnection = createFakePin(pin, pinPosition, layer);
+      _padPinsConnections[&net].push_back(pinConnection);
+    }
+
+    PIN grPin;
+    grPin.x = pinPosition.x();
+    grPin.y = pinPosition.y();
+    grPin.layer = topLayer;
+    pins.push_back(grPin);
+  }
+
+  PIN grPins[pins.size()];
+  int count = 0;
+
+  for (PIN pin : pins) {
+    grPins[count] = pin;
+    count++;
+  }
+
+  float netAlpha = _alpha;
+  if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
+    netAlpha = _netsAlpha[net.getName()];
+  }
+
+  bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
+  _fastRoute->addNet(net.getDbNet(), pins.size(), 1,
+   grPins, netAlpha, isClock);
+}
+
 void GlobalRouter::initializeNets(bool reroute)
 {
   initNetlist(reroute);
@@ -489,77 +564,7 @@ void GlobalRouter::initializeNets(bool reroute)
           std::cout << "[WARNING] Net " << net.getName() << " has "
                     << net.getNumPins() << " pins\n";
         } else {
-          std::vector<PIN> pins;
-          for (Pin& pin : net.getPins()) {
-            odb::Point pinPosition;
-            int topLayer = pin.getTopLayer();
-            RoutingLayer layer = getRoutingLayerByIndex(topLayer);
-
-            std::vector<odb::Rect> pinBoxes = pin.getBoxes().at(topLayer);
-            std::vector<odb::Point> pinPositionsOnGrid;
-            odb::Point posOnGrid;
-            odb::Point trackPos;
-
-            for (odb::Rect pinBox : pinBoxes) {
-              posOnGrid = _grid->getPositionOnGrid(getRectMiddle(pinBox));
-              pinPositionsOnGrid.push_back(posOnGrid);
-            }
-
-            int votes = -1;
-
-            for (odb::Point pos : pinPositionsOnGrid) {
-              int equals = std::count(
-                  pinPositionsOnGrid.begin(), pinPositionsOnGrid.end(), pos);
-              if (equals > votes) {
-                pinPosition = pos;
-                votes = equals;
-              }
-            }
-
-            if (pinOverlapsWithSingleTrack(pin, trackPos)) {
-              posOnGrid = _grid->getPositionOnGrid(trackPos);
-
-              if (!(posOnGrid == pinPosition) &&
-                  ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL &&
-                    posOnGrid.y() != pinPosition.y()) ||
-                   (layer.getPreferredDirection() == RoutingLayer::VERTICAL &&
-                    posOnGrid.x() != pinPosition.x()))) {
-                  pinPosition = posOnGrid;
-                }
-            }
-
-            pin.setOnGridPosition(pinPosition);
-
-            // If pin is connected to PAD, create a "fake" location in routing
-            // grid to avoid PAD obstacles
-            if (pin.isConnectedToPad() || pin.isPort()) {
-              GSegment pinConnection = createFakePin(pin, pinPosition, layer);
-              _padPinsConnections[&net].push_back(pinConnection);
-            }
-
-            PIN grPin;
-            grPin.x = pinPosition.x();
-            grPin.y = pinPosition.y();
-            grPin.layer = topLayer;
-            pins.push_back(grPin);
-          }
-
-          PIN grPins[pins.size()];
-          int count = 0;
-
-          for (PIN pin : pins) {
-            grPins[count] = pin;
-            count++;
-          }
-
-          float netAlpha = _alpha;
-          if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
-            netAlpha = _netsAlpha[net.getName()];
-          }
-
-          bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
-          _fastRoute->addNet(net.getDbNet(), pins.size(), 1,
-			     grPins, netAlpha, isClock);
+          addPins(net);
         }
       }
     }
