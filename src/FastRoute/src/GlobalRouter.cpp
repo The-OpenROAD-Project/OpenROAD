@@ -219,7 +219,7 @@ void GlobalRouter::runFastRoute()
 {
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
-  NetRouteMap result = getRouting();
+  NetRouteMap result = findRouting();
 
   _routes.insert(result.begin(), result.end());
 
@@ -264,7 +264,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
 
-    NetRouteMap newRoute = getRouting();
+    NetRouteMap newRoute = findRouting();
     mergeResults(newRoute);
   }
 }
@@ -272,7 +272,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 void GlobalRouter::routeClockNets()
 {
   std::cout << "Routing clock nets...\n";
-  _routes = getRouting();
+  _routes = findRouting();
 
   _minLayerForClock = _minRoutingLayer;
   _maxLayerForClock = _maxRoutingLayer;
@@ -283,7 +283,7 @@ void GlobalRouter::routeClockNets()
   _onlySignalNets = true;
 }
 
-NetRouteMap GlobalRouter::getRouting() {
+NetRouteMap GlobalRouter::findRouting() {
   NetRouteMap routes = _fastRoute->run();
   addRemainingGuides(routes);
   connectPadPins(routes);
@@ -497,9 +497,9 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
       _padPinsConnections[&net].push_back(pinConnection);
     }
 
-    int  pinX    = (int) ((pinPosition.x() -
+    int  pinX = (int) ((pinPosition.x() -
                  _grid->getLowerLeftX()) / _grid->getTileWidth());
-    int  pinY    = (int) ((pinPosition.y() -
+    int  pinY = (int) ((pinPosition.y() -
                  _grid->getLowerLeftY()) / _grid->getTileHeight());
 
     if (!(pinX < 0 || pinX >= _grid->getXGrids() ||
