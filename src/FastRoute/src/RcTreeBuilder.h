@@ -68,6 +68,9 @@ public:
   RoutePt(int x,
 	  int y,
 	  int layer);
+  int x() { return _x; };
+  int y() { return _y; };
+  int layer() { return _layer; };
 
   friend bool operator<(const RoutePt &p1,
 			const RoutePt &p2);
