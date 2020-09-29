@@ -210,6 +210,7 @@ protected:
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
+  odb::Point findFakePinPosition(Pin &pin);
   bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
