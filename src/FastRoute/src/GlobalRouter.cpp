@@ -449,7 +449,7 @@ void GlobalRouter::setSpacingsAndMinWidths()
   }
 }
 
-int GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
+void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
 { 
   for (Pin& pin : net.getPins()) {
     odb::Point pinPosition;
@@ -497,35 +497,28 @@ int GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
       _padPinsConnections[&net].push_back(pinConnection);
     }
 
-    pinsOnGrid.push_back(RoutePt(pinPosition.x(), pinPosition.y(), topLayer));
-  }
-
-  int validPins = 0;
-  for (RoutePt pinPos : pinsOnGrid) {
-    int  pinX    = (int) ((pinPos.x() -
-                   _grid->getLowerLeftX()) / _grid->getTileWidth());
-    int  pinY    = (int) ((pinPos.y() -
-                   _grid->getLowerLeftY()) / _grid->getTileHeight());
+    int  pinX    = (int) ((pinPosition.x() -
+                 _grid->getLowerLeftX()) / _grid->getTileWidth());
+    int  pinY    = (int) ((pinPosition.y() -
+                 _grid->getLowerLeftY()) / _grid->getTileHeight());
 
     if (!(pinX < 0 || pinX >= _grid->getXGrids() ||
           pinY < -1 || pinY >= _grid->getYGrids() ||
-          pinPos.layer() > _grid->getNumLayers() || pinPos.layer() <= 0)) {
+          topLayer > _grid->getNumLayers() || topLayer <= 0)) {
       bool invalid = false;
-      for (int k = 0; k < validPins; k++) {
-        if (pinX == pinsOnGrid[k].x() && pinY == pinsOnGrid[k].y()
-            && pinPos.layer() == pinsOnGrid[k].layer()) {
+      for (RoutePt pinPos : pinsOnGrid) {
+        if (pinX == pinPos.x() && pinY == pinPos.y()
+            && topLayer == pinPos.layer()) {
           invalid = true;
           break;
         }
       }
 
       if (!invalid) {
-        validPins++;
+        pinsOnGrid.push_back(RoutePt(pinPosition.x(), pinPosition.y(), topLayer));
       }
     }
   }
-
-  return validPins;
 }
 
 void GlobalRouter::initializeNets(bool reroute)
@@ -569,16 +562,16 @@ void GlobalRouter::initializeNets(bool reroute)
                     << net.getNumPins() << " pins\n";
         } else {
           std::vector<RoutePt> pinsOnGrid;
-          int validPins = findPins(net, pinsOnGrid);
+          findPins(net, pinsOnGrid);
 
-          if (validPins > 1) {
+          if (pinsOnGrid.size() > 1) {
             float netAlpha = _alpha;
             if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
               netAlpha = _netsAlpha[net.getName()];
             }
             bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
 
-            int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), validPins, netAlpha, isClock);
+            int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), pinsOnGrid.size(), netAlpha, isClock);
             for (RoutePt pinPos : pinsOnGrid) {
               _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
             }
