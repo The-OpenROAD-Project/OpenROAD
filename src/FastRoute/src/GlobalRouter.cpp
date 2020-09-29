@@ -506,7 +506,7 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
           pinY < -1 || pinY >= _grid->getYGrids() ||
           topLayer > _grid->getNumLayers() || topLayer <= 0)) {
       bool invalid = false;
-      for (RoutePt pinPos : pinsOnGrid) {
+      for (RoutePt &pinPos : pinsOnGrid) {
         if (pinX == pinPos.x() && pinY == pinPos.y()
             && topLayer == pinPos.layer()) {
           invalid = true;
@@ -572,7 +572,7 @@ void GlobalRouter::initializeNets(bool reroute)
             bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
 
             int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), pinsOnGrid.size(), netAlpha, isClock);
-            for (RoutePt pinPos : pinsOnGrid) {
+            for (RoutePt &pinPos : pinsOnGrid) {
               _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
             }
           }
@@ -1220,7 +1220,7 @@ void GlobalRouter::writeGuides(const char* fileName)
       for (GSegment &segment : route) {
 	if (segment.initLayer != finalLayer && finalLayer != -1) {
 	  mergeBox(guideBox);
-	  for (odb::Rect guide : guideBox) {
+	  for (odb::Rect &guide : guideBox) {
 	    guideFile << guide.xMin() + offsetX << " "
 		      << guide.yMin() + offsetY << " "
 		      << guide.xMax() + offsetX << " "
@@ -1267,12 +1267,12 @@ void GlobalRouter::writeGuides(const char* fileName)
 	    odb::Rect box;
 	    guideBox.push_back(globalRoutingToBox(segment));
 	    mergeBox(guideBox);
-	    for (odb::Rect guide : guideBox) {
+	    for (odb::Rect &guide : guideBox) {
 	      guideFile << guide.xMin() + offsetX << " "
-			<< guide.yMin() + offsetY << " "
-			<< guide.xMax() + offsetX << " "
-			<< guide.yMax() + offsetY << " "
-			<< phLayerI.getName() << "\n";
+            			<< guide.yMin() + offsetY << " "
+            			<< guide.xMax() + offsetX << " "
+            			<< guide.yMax() + offsetY << " "
+            			<< phLayerI.getName() << "\n";
 	    }
 	    guideBox.clear();
 
@@ -1281,12 +1281,12 @@ void GlobalRouter::writeGuides(const char* fileName)
 	}
       }
       mergeBox(guideBox);
-      for (odb::Rect guide : guideBox) {
-	guideFile << guide.xMin() + offsetX << " "
-		  << guide.yMin() + offsetY << " "
-		  << guide.xMax() + offsetX << " "
-		  << guide.yMax() + offsetY << " "
-		  << phLayerF.getName() << "\n";
+      for (odb::Rect &guide : guideBox) {
+	      guideFile << guide.xMin() + offsetX << " "
+            		  << guide.yMin() + offsetY << " "
+            		  << guide.xMax() + offsetX << " "
+            		  << guide.yMax() + offsetY << " "
+            		  << phLayerF.getName() << "\n";
       }
       guideFile << ")\n";
     }
@@ -1368,7 +1368,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
 void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
 {
   std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
-  for (Pin pin : pins) {
+  for (Pin &pin : pins) {
     if (pin.getTopLayer() > 1) {
       // for each pin placed at upper layers, get all segments that
       // potentially covers it
@@ -1394,7 +1394,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
       }
 
       bool bottomLayerPin = false;
-      for (Pin pin2 : pins) {
+      for (Pin &pin2 : pins) {
         odb::Point pin2Pos = pin2.getOnGridPosition();
         if (pinPos.x() == pin2Pos.x() && pinPos.y() == pin2Pos.y()
             && pin.getTopLayer() > pin2.getTopLayer()) {
@@ -1582,7 +1582,7 @@ void GlobalRouter::checkPinPlacement()
     if (mapLayerToPositions[layer].empty()) {
       mapLayerToPositions[layer].push_back(port->getPosition());
     } else {
-      for (odb::Point pos : mapLayerToPositions[layer]) {
+      for (odb::Point &pos : mapLayerToPositions[layer]) {
         if (pos == port->getPosition()) {
           std::cout << "[WARNING] At least 2 pins in position (" << pos.x()
                     << ", " << pos.y() << "), layer " << layer + 1 << "\n";
