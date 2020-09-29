@@ -515,7 +515,7 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
       }
 
       if (!invalid) {
-        pinsOnGrid.push_back(RoutePt(pinPosition.x(), pinPosition.y(), topLayer));
+        pinsOnGrid.push_back(RoutePt(pinX, pinY, topLayer));
       }
     }
   }
