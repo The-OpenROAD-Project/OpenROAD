@@ -531,8 +531,10 @@ void FastRouteCore::setLayerOrientation(int x)
 }
 
 void FastRouteCore::addPin(int netID, int x, int y, int layer) {
-  nets[netID]->pinX.push_back(x);
-  nets[netID]->pinY.push_back(y);
+  int pinX = (int) ((x - xcorner) / wTile);
+  int pinY = (int) ((y - xcorner) / hTile);
+  nets[netID]->pinX.push_back(pinX);
+  nets[netID]->pinY.push_back(pinY);
   nets[netID]->pinL.push_back(layer);
 }
 

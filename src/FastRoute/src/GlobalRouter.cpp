@@ -479,7 +479,6 @@ int GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
 
     if (pinOverlapsWithSingleTrack(pin, trackPos)) {
       posOnGrid = _grid->getPositionOnGrid(trackPos);
-
       if (!(posOnGrid == pinPosition) &&
           ((layer.getPreferredDirection() == RoutingLayer::HORIZONTAL &&
             posOnGrid.y() != pinPosition.y()) ||
@@ -507,15 +506,14 @@ int GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
                    _grid->getLowerLeftX()) / _grid->getTileWidth());
     int  pinY    = (int) ((pinPos.y() -
                    _grid->getLowerLeftY()) / _grid->getTileHeight());
-    int  pinL    = pinPos.layer();
 
-    if (!(pinX < 0 || pinX >= _grid->getXGrids() || pinY < -1 ||
-          pinY >= _grid->getYGrids() || pinL > _grid->getNumLayers() ||
-          pinL <= 0)) {
+    if (!(pinX < 0 || pinX >= _grid->getXGrids() ||
+          pinY < -1 || pinY >= _grid->getYGrids() ||
+          pinPos.layer() > _grid->getNumLayers() || pinPos.layer() <= 0)) {
       bool invalid = false;
       for (int k = 0; k < validPins; k++) {
         if (pinX == pinsOnGrid[k].x() && pinY == pinsOnGrid[k].y()
-            && pinL == pinsOnGrid[k].layer()) {
+            && pinPos.layer() == pinsOnGrid[k].layer()) {
           invalid = true;
           break;
         }
