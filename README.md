@@ -68,8 +68,14 @@ make DESTDIR=<prefix_path> install
 There are a set of regression tests in `/test`.
 
 ```
+# run all tool unit tests
 test/regression
-src/resizer/test/regression
+# run all flow tests
+test/regression flow
+# run <tool> tests
+test/regression <tool>
+# run <tool> tool tests
+src/<tool>/test/regression
 
 ```
 

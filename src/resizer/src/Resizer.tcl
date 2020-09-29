@@ -1,9 +1,9 @@
 ############################################################################
 ##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2019, OpenROAD
 ## All rights reserved.
+##
+## BSD 3-Clause License
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -122,7 +122,6 @@ proc set_wire_rc { args } {
   if { $clk } {
     set_wire_clk_rc_cmd $wire_res $wire_cap $corner
   }
-  estimate_parasitics_cmd
 }
 
 define_cmd_args "estimate_parasitics" { -placement|-global_routing }
