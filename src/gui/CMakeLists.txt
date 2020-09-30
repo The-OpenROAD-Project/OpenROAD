@@ -8,6 +8,20 @@ if (Qt5_FOUND)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
 
+  set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
+
+  add_custom_command(OUTPUT ${GUI_WRAP}
+    COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix gui
+            -I${OPENROAD_HOME}/include -o ${GUI_WRAP} ${GUI_HOME}/src/gui.i
+    COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${GUI_WRAP}
+    WORKING_DIRECTORY ${GUI_HOME}/src
+    DEPENDS
+      ${GUI_HOME}/src/gui.i
+      ${GUI_HOME}/include/gui/gui.h
+  )
+
+  set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
+
   add_library(gui
     src/layoutViewer.cpp
     src/mainWindow.cpp
@@ -15,6 +29,7 @@ if (Qt5_FOUND)
     src/displayControls.cpp
     src/gui.cpp
     src/search.cpp 
+    ${GUI_WRAP}
   )
 
   target_link_libraries(gui
@@ -35,4 +50,3 @@ target_include_directories(gui
     ${OPENROAD_HOME}/include
     ${Boost_INCLUDE_DIRS}
 )
-

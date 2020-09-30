@@ -43,6 +43,20 @@
 
 namespace gui {
 
+static odb::dbBlock* getBlock(odb::dbDatabase* db)
+{
+  if (!db) {
+    return nullptr;
+  }
+
+  auto chip = db->getChip();
+  if (!chip) {
+    return nullptr;
+  }
+
+  return chip->getBlock();
+}
+
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* mainWindow;
 
@@ -86,6 +100,36 @@ void Gui::status(const std::string& message)
 void Gui::pause()
 {
   mainWindow->pause();
+}
+
+void Gui::addSelectedNet(const char* name)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto net = block->findNet(name);
+  if (!net) {
+    return;
+  }
+
+  mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
+}
+
+void Gui::addSelectedInst(const char* name)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto inst = block->findInst(name);
+  if (!inst) {
+    return;
+  }
+
+  mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
 }
 
 Renderer::~Renderer()
@@ -193,3 +237,17 @@ int start_gui(int argc, char* argv[])
 }
 
 }  // namespace gui
+
+namespace ord {
+
+extern "C" {
+extern int Gui_Init(Tcl_Interp* interp);
+}
+
+void initGui(OpenRoad* openroad)
+{
+  // Define swig TCL commands.
+  Gui_Init(openroad->tclInterp());
+}
+
+}  // namespace ord

@@ -60,6 +60,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
  public:
   MainWindow(QWidget* parent = nullptr);
 
+  odb::dbDatabase* getDb() const { return db_; }
   void setDb(odb::dbDatabase* db);
 
   // From ord::OpenRoad::Observer

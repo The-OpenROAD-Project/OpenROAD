@@ -225,6 +225,12 @@ class Gui
   void register_renderer(Renderer* renderer);
   void unregister_renderer(Renderer* renderer);
 
+  // Add a net to the selection set
+  void addSelectedNet(const char* name);
+
+  // Add an instance to the selection set
+  void addSelectedInst(const char* name);
+
   // Force an immediate redraw.
   void redraw();
 
