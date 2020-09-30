@@ -263,7 +263,11 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
       Point pt_dbu = screenToDBU(event->pos());
-      emit selected(selectAtPoint(pt_dbu));
+      if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
+        emit addSelected(selectAtPoint(pt_dbu));
+      } else {
+        emit selected(selectAtPoint(pt_dbu));
+      }
     }
   } else if (event->button() == Qt::RightButton) {
     rubber_band_showing_ = true;

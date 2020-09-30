@@ -102,6 +102,12 @@ class Selected
 
   operator bool() const { return object != nullptr; }
 
+  // For SelectionSet
+  friend bool operator<(const Selected& l, const Selected& r)
+  {
+    return l.object < r.object;
+  }
+
  private:
   void* object;
   Descriptor* descriptor;
