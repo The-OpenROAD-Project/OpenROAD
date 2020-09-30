@@ -166,6 +166,9 @@ class Painter
   // Set the brush to whatever the user has chosen for this layer
   virtual void setBrush(const Color& color) = 0;
 
+  // Draw a geom shape as a polygon with coordinates in DBU with the current pen/brush
+  virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
+
   // Draw a rect with coordinates in DBU with the current pen/brush
   virtual void drawRect(const odb::Rect& rect) = 0;
 
