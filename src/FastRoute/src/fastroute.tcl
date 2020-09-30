@@ -328,9 +328,6 @@ proc fastroute { args } {
 
     FastRoute::set_min_layer $min_layer
     FastRoute::set_max_layer $max_layer
-  } else {
-    FastRoute::set_min_layer 1
-    FastRoute::set_max_layer -1
   }
 
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {

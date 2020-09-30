@@ -69,7 +69,7 @@ int vCapacity;
 int hCapacity;
 int MD;
 
-FT::FT()
+FastRouteCore::FastRouteCore()
 {
   newnetID    = 0;
   segcount    = 0;
@@ -82,32 +82,17 @@ FT::FT()
   invalidNets = 0;
 }
 
-FT::~FT() {
+FastRouteCore::~FastRouteCore() {
   deleteComponents();
 }
 
-void FT::clear()
+void FastRouteCore::clear()
 {
   deleteComponents();
-  _net_pins_map.clear();
 }
 
-void FT::deleteComponents()
+void FastRouteCore::deleteComponents()
 {
-  for (int i = 0; i < (numNets - invalidNets); i++) {
-    if (nets[i]->pinX)
-      delete[] nets[i]->pinX;
-    nets[i]->pinX = nullptr;
-
-    if (nets[i]->pinY)
-      delete[] nets[i]->pinY;
-    nets[i]->pinY = nullptr;
-
-    if (nets[i]->pinL)
-      delete[] nets[i]->pinL;
-    nets[i]->pinL = nullptr;
-  }
-
   for (int i = 0; i < numNets; i++) {
     if (nets[i])
       delete nets[i];
@@ -406,7 +391,7 @@ void FT::deleteComponents()
   numNets   = 0;
 }
 
-void FT::setGridsAndLayers(int x, int y, int nLayers)
+void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 {
   xGrid     = x;
   yGrid     = y;
@@ -492,34 +477,34 @@ void FT::setGridsAndLayers(int x, int y, int nLayers)
   costTBtest  = new float[XRANGE];  // Top and bottom boundary cost
 }
 
-void FT::addVCapacity(int verticalCapacity, int layer)
+void FastRouteCore::addVCapacity(int verticalCapacity, int layer)
 {
   vCapacity3D[layer - 1] = verticalCapacity;
   vCapacity += vCapacity3D[layer - 1];
 }
 
-void FT::addHCapacity(int horizontalCapacity, int layer)
+void FastRouteCore::addHCapacity(int horizontalCapacity, int layer)
 {
   hCapacity3D[layer - 1] = horizontalCapacity;
   hCapacity += hCapacity3D[layer - 1];
 }
 
-void FT::addMinWidth(int width, int layer)
+void FastRouteCore::addMinWidth(int width, int layer)
 {
   MinWidth[layer - 1] = width;
 }
 
-void FT::addMinSpacing(int spacing, int layer)
+void FastRouteCore::addMinSpacing(int spacing, int layer)
 {
   MinSpacing[layer - 1] = spacing;
 }
 
-void FT::addViaSpacing(int spacing, int layer)
+void FastRouteCore::addViaSpacing(int spacing, int layer)
 {
   ViaSpacing[layer - 1] = spacing;
 }
 
-void FT::setNumberNets(int nNets)
+void FastRouteCore::setNumberNets(int nNets)
 {
   numNets = nNets;
   nets    = new FrNet*[numNets];
@@ -528,95 +513,52 @@ void FT::setNumberNets(int nNets)
   seglistIndex = new int[numNets + 1];
 }
 
-void FT::setLowerLeft(int x, int y)
+void FastRouteCore::setLowerLeft(int x, int y)
 {
   xcorner = x;
   ycorner = y;
 }
 
-void FT::setTileSize(int width, int height)
+void FastRouteCore::setTileSize(int width, int height)
 {
   wTile = width;
   hTile = height;
 }
 
-void FT::setLayerOrientation(int x)
+void FastRouteCore::setLayerOrientation(int x)
 {
   layerOrientation = x;
 }
 
-void FT::addNet(odb::dbNet* db_net,
+void FastRouteCore::addPin(int netID, int x, int y, int layer) {
+  nets[netID]->pinX.push_back(x);
+  nets[netID]->pinY.push_back(y);
+  nets[netID]->pinL.push_back(layer);
+}
+
+int FastRouteCore::addNet(odb::dbNet* db_net,
                 int   nPins,
-                int   minWidth,
-                PIN   pins[],
+                int validPins,
                 float alpha,
                 bool isClock)
 {
-  // std::cout << "Adding net " << name << "\n";
+  int netID = newnetID;
+  pinInd = validPins;
+  MD = std::max(MD, pinInd);
+  nets[newnetID]->db_net  = db_net;
+  nets[newnetID]->numPins = nPins;
+  nets[newnetID]->deg     = pinInd;
+  nets[newnetID]->alpha   = alpha;
+  nets[newnetID]->isClock = isClock;
 
-  // TODO: check this size
-  int pinXarray[nPins];
-  int pinYarray[nPins];
-  int pinLarray[nPins];
-
-  _net_pins_map[db_net] = std::vector<PIN>(&pins[0], &pins[nPins]);
-
-  // TODO: check this, there was an if pinInd < 2000
-  pinInd = 0;
-  for (int j = 0; j < nPins; j++) {
-    long pinX_in = pins[j].x;
-    long pinY_in = pins[j].y;
-    int  pinL    = pins[j].layer;
-    int  pinX    = (int) ((pinX_in - xcorner) / wTile);
-    int  pinY    = (int) ((pinY_in - ycorner) / hTile);
-    if (!(pinX < 0 || pinX >= xGrid || pinY < -1 || pinY >= yGrid
-          || pinL > numLayers || pinL <= 0)) {
-      bool remove = false;
-      for (int k = 0; k < pinInd; k++) {
-        if (pinX == pinXarray[k] && pinY == pinYarray[k]
-            && pinL == pinLarray[k]) {
-          remove = true;
-          break;
-        }
-      }
-      if (!remove)  // the pin is in different grid from other pins
-      {
-        pinXarray[pinInd] = pinX;
-        pinYarray[pinInd] = pinY;
-        pinLarray[pinInd] = pinL;
-        pinInd++;
-      }
-    }
-  }
-  if (pinInd > 1)  // valid net
-  {
-    MD = std::max(MD, pinInd);
-    // std::cout << "Net name: " << nets[newnetID]->name << "; num pins: " <<
-    // nets[newnetID]->nPins << "\n";
-    nets[newnetID]->db_net = db_net;
-    nets[newnetID]->numPins = nPins;
-    nets[newnetID]->deg     = pinInd;
-    nets[newnetID]->pinX    = new short[pinInd];
-    nets[newnetID]->pinY    = new short[pinInd];
-    nets[newnetID]->pinL    = new short[pinInd];
-    nets[newnetID]->alpha   = alpha;
-    nets[newnetID]->isClock = isClock;
-
-    for (int j = 0; j < pinInd; j++) {
-      nets[newnetID]->pinX[j] = pinXarray[j];
-      nets[newnetID]->pinY[j] = pinYarray[j];
-      nets[newnetID]->pinL[j] = pinLarray[j];
-    }
-    seglistIndex[newnetID] = segcount;
-    newnetID++;
-    // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
-    segcount += 2 * pinInd - 3;
-  } else {
-    invalidNets++;
-  }
+  seglistIndex[newnetID] = segcount;
+  newnetID++;
+  // at most (2*nPins-2) nodes -> (2*nPins-3) segs for a net
+  segcount += 2 * pinInd - 3;
+  return netID;
 }
 
-void FT::initEdges()
+void FastRouteCore::initEdges()
 {
   LB           = 0.9;
   UB           = 1.3;
@@ -687,12 +629,12 @@ void FT::initEdges()
   }
 }
 
-void FT::setNumAdjustments(int nAdjustments)
+void FastRouteCore::setNumAdjustments(int nAdjustments)
 {
   numAdjust = nAdjustments;
 }
 
-int FT::getEdgeCurrentResource(long x1, long y1, int l1, long x2, long y2, int l2) {
+int FastRouteCore::getEdgeCurrentResource(long x1, long y1, int l1, long x2, long y2, int l2) {
 	int grid, k;
 	int resource;
 
@@ -708,7 +650,7 @@ int FT::getEdgeCurrentResource(long x1, long y1, int l1, long x2, long y2, int l
 	return resource;
 }
 
-int FT::getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2) {
+int FastRouteCore::getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2) {
   int grid, k;
   int usage;
 
@@ -724,11 +666,11 @@ int FT::getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2) 
   return usage;
 }
 
-void FT::setMaxNetDegree(int deg) {
+void FastRouteCore::setMaxNetDegree(int deg) {
         maxNetDegree = deg;
 }
 
-void FT::addAdjustment(long x1,
+void FastRouteCore::addAdjustment(long x1,
                        long y1,
                        int  l1,
                        long x2,
@@ -799,7 +741,7 @@ void FT::addAdjustment(long x1,
   }
 }
 
-int FT::getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2)
+int FastRouteCore::getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2)
 {
   int cap;
 
@@ -818,7 +760,7 @@ int FT::getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2)
   return cap;
 }
 
-void FT::setEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2, int newCap) {
+void FastRouteCore::setEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2, int newCap) {
   const int k = l1 - 1;
   int grid;
   int reduce;
@@ -844,7 +786,7 @@ void FT::setEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2, int
   }
 }
 
-void FT::setEdgeUsage(long x1, long y1, int l1, long x2, long y2, int l2, int newUsage) {
+void FastRouteCore::setEdgeUsage(long x1, long y1, int l1, long x2, long y2, int l2, int newUsage) {
   const int k = l1 - 1;
   int grid;
   int reduce;
@@ -866,7 +808,7 @@ void FT::setEdgeUsage(long x1, long y1, int l1, long x2, long y2, int l2, int ne
   }
 }
 
-void FT::initAuxVar()
+void FastRouteCore::initAuxVar()
 {
   treeOrderCong = NULL;
   stopDEC       = FALSE;
@@ -910,7 +852,7 @@ void FT::initAuxVar()
   sttreesBK = NULL;
 }
 
-NetRouteMap FT::getRoutes()
+NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < numValidNets; netID++) {
@@ -948,7 +890,7 @@ NetRouteMap FT::getRoutes()
   return routes;
 }
 
-void FT::writeCongestionReport2D(std::string fileName)
+void FastRouteCore::writeCongestionReport2D(std::string fileName)
 {
   std::ofstream congestFile;
   congestFile.open(fileName);
@@ -995,7 +937,7 @@ void FT::writeCongestionReport2D(std::string fileName)
   congestFile.close();
 }
 
-void FT::writeCongestionReport3D(std::string fileName)
+void FastRouteCore::writeCongestionReport3D(std::string fileName)
 {
   std::ofstream congestFile;
   congestFile.open(fileName);
@@ -1045,7 +987,7 @@ void FT::writeCongestionReport3D(std::string fileName)
   congestFile.close();
 }
 
-NetRouteMap FT::run()
+NetRouteMap FastRouteCore::run()
 {
   int tUsage;
   int cost_step;
@@ -1480,27 +1422,27 @@ NetRouteMap FT::run()
   return routes;
 }
 
-void FT::setAlpha(float a)
+void FastRouteCore::setAlpha(float a)
 {
   alpha = a;
 }
 
-void FT::setVerbose(int v)
+void FastRouteCore::setVerbose(int v)
 {
   verbose = v;
 }
 
-void FT::setOverflowIterations(int iterations)
+void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflowIterations = iterations;
 }
 
-void FT::setPDRevForHighFanout(int pdRevHihgFanout)
+void FastRouteCore::setPDRevForHighFanout(int pdRevHihgFanout)
 {
   pdRevForHighFanout = pdRevHihgFanout;
 }
 
-void FT::setAllowOverflow(bool allow)
+void FastRouteCore::setAllowOverflow(bool allow)
 {
   allowOverflow = allow;
 }

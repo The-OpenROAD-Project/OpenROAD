@@ -1,7 +1,10 @@
-//////////////////////////////////////////////////////////////////////////////
+%module gui
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2020, Matt Liberty
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,73 +32,28 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-// This file is only used when we can't find Qt5 and are thus
-// disabling the GUI.  It is not included when Qt5 is found.
-
-#include <cstdio>
-
+%{
 #include "gui/gui.h"
+%}
 
-namespace gui {
+%inline %{
 
-Gui* Gui::singleton_ = nullptr;
-
-Gui* gui::Gui::get()
+void
+selection_add_net(const char* name)
 {
-  if (!singleton_) {
-    singleton_ = new Gui();
-  }
-
-  return singleton_;
+  auto gui = gui::Gui::get();
+  gui->addSelectedNet(name);
 }
 
-void gui::Gui::register_renderer(gui::Renderer*)
+void
+selection_add_inst(const char* name)
 {
+  auto gui = gui::Gui::get();
+  gui->addSelectedInst(name);
 }
 
-void gui::Gui::unregister_renderer(gui::Renderer*)
-{
-}
+%} // inline
 
-void gui::Gui::redraw()
-{
-}
-
-void gui::Gui::pause()
-{
-}
-
-void Gui::status(const std::string& /* message */)
-{
-}
-
-Renderer::~Renderer()
-{
-}
-
-OpenDbDescriptor* OpenDbDescriptor::get()
-{
-  return nullptr;
-}
-
-// using namespace odb;
-int start_gui(int argc, char* argv[])
-{
-  printf(
-      "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
-      "with Qt5 if you want the GUI.\n");
-
-  return 1;  // return unix err
-}
-
-}  // namespace gui
-
-namespace ord {
-
-class OpenRoad;
-void initGui(OpenRoad* openroad)
-{
-}
-
-}  // namespace ord

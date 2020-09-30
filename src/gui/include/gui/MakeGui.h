@@ -1,8 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,73 +30,17 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-// This file is only used when we can't find Qt5 and are thus
-// disabling the GUI.  It is not included when Qt5 is found.
-
-#include <cstdio>
-
-#include "gui/gui.h"
-
-namespace gui {
-
-Gui* Gui::singleton_ = nullptr;
-
-Gui* gui::Gui::get()
-{
-  if (!singleton_) {
-    singleton_ = new Gui();
-  }
-
-  return singleton_;
-}
-
-void gui::Gui::register_renderer(gui::Renderer*)
-{
-}
-
-void gui::Gui::unregister_renderer(gui::Renderer*)
-{
-}
-
-void gui::Gui::redraw()
-{
-}
-
-void gui::Gui::pause()
-{
-}
-
-void Gui::status(const std::string& /* message */)
-{
-}
-
-Renderer::~Renderer()
-{
-}
-
-OpenDbDescriptor* OpenDbDescriptor::get()
-{
-  return nullptr;
-}
-
-// using namespace odb;
-int start_gui(int argc, char* argv[])
-{
-  printf(
-      "[ERROR] This code was compiled with the GUI disabled.  Please recompile "
-      "with Qt5 if you want the GUI.\n");
-
-  return 1;  // return unix err
-}
-
-}  // namespace gui
+//
+///////////////////////////////////////////////////////////////////////////////
 
 namespace ord {
 
 class OpenRoad;
-void initGui(OpenRoad* openroad)
-{
-}
 
-}  // namespace ord
+// There is no make/delete GUI as it is created at startup and can't
+// be deleted.
+
+void
+initGui(OpenRoad *openroad);
+
+} // namespace
