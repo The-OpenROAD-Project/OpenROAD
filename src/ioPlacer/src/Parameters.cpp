@@ -44,12 +44,6 @@ void Parameters::printAll() const
 {
   // clang-format off
         std::cout << "\nOptions: \n";
-        std::cout << std::setw(20) << std::left << "Input LEF file: ";
-        std::cout << _inputLefFile << "\n";
-        std::cout << std::setw(20) << std::left << "Input DEF file: ";
-        std::cout << _inputDefFile << "\n";
-        std::cout << std::setw(20) << std::left << "Output DEF file: ";
-        std::cout << _outputDefFile << "\n";
         std::cout << std::setw(20) << std::left << "Horizontal metal layer: ";
         std::cout << "Metal" << _horizontalMetalLayer << "\n";
         std::cout << std::setw(20) << std::left << "Vertical metal layer: ";
@@ -61,7 +55,6 @@ void Parameters::printAll() const
         std::cout << "Percentage of usage for each section: " << _usage << "\n";
         std::cout << "Increase factor of usage for each section: " << _usageFactor << "\n";
         std::cout << "Force pin spread: " << _forceSpread << "\n";
-        std::cout << "Blockage area file: " << _blockagesFile << "\n";
         std::cout << "Random mode: " << _randomMode << "\n";
         std::cout << "Horizontal pin length: " << _horizontalLength << "\n";
         std::cout << "Vertical pin length: " << _verticalLength << "\n";
@@ -69,8 +62,6 @@ void Parameters::printAll() const
         std::cout << "Vertical pin length extend: " << _verticalLengthExtend << "\n";
         std::cout << "Horizontal pin thickness multiplier: " << _horizontalThicknessMultiplier << "\n";
         std::cout << "Vertical pin thickness multiplier: " << _verticalThicknessMultiplier << "\n";
-        std::cout << "Interactive mode: " << _interactiveMode << "\n";
-        std::cout << "Num threads: " << _numThreads << "\n";
         std::cout << "Rand seed: " << _randSeed << "\n";
 
         std::cout << "\n";
