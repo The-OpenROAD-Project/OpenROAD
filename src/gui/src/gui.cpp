@@ -117,6 +117,24 @@ void Gui::addSelectedNet(const char* name)
   mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
 }
 
+void Gui::addSelectedNets(const char* pattern)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
+  SelectionSet nets;
+  for (auto* net : block->getNets()) {
+    if (re.exactMatch(QString::fromStdString(net->getName()))) {
+      nets.emplace(net, OpenDbDescriptor::get());
+    }
+  }
+
+  mainWindow->addSelected(nets);
+}
+
 void Gui::addSelectedInst(const char* name)
 {
   auto block = getBlock(mainWindow->getDb());
@@ -130,6 +148,24 @@ void Gui::addSelectedInst(const char* name)
   }
 
   mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
+}
+
+void Gui::addSelectedInsts(const char* pattern)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
+  SelectionSet insts;
+  for (auto* inst : block->getInsts()) {
+    if (re.exactMatch(QString::fromStdString(inst->getName()))) {
+      insts.emplace(inst, OpenDbDescriptor::get());
+    }
+  }
+
+  mainWindow->addSelected(insts);
 }
 
 Renderer::~Renderer()
