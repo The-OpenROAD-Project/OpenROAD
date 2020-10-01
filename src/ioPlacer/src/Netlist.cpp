@@ -98,58 +98,56 @@ int Netlist::numIOPins()
   return _ioPins.size();
 }
 
-Box Netlist::getBB(int idx, Coordinate slotPos)
+odb::Rect Netlist::getBB(int idx, odb::Point slotPos)
 {
   int netStart = _netPointer[idx];
   int netEnd = _netPointer[idx + 1];
 
-  int minX = slotPos.getX();
-  int minY = slotPos.getY();
-  int maxX = slotPos.getX();
-  int maxY = slotPos.getY();
+  int minX = slotPos.x();
+  int minY = slotPos.y();
+  int maxX = slotPos.x();
+  int maxY = slotPos.y();
 
   for (int idx = netStart; idx < netEnd; ++idx) {
-    Coordinate pos = _instPins[idx].getPos();
-    minX = std::min(minX, pos.getX());
-    maxX = std::max(maxX, pos.getX());
-    minY = std::min(minY, pos.getY());
-    maxY = std::max(maxY, pos.getY());
+    odb::Point pos = _instPins[idx].getPos();
+    minX = std::min(minX, pos.x());
+    maxX = std::max(maxX, pos.x());
+    minY = std::min(minY, pos.y());
+    maxY = std::max(maxY, pos.y());
   }
 
-  Coordinate upperBounds = Coordinate(maxX, maxY);
-  Coordinate lowerBounds = Coordinate(minX, minY);
+  odb::Point upperBounds = odb::Point(maxX, maxY);
+  odb::Point lowerBounds = odb::Point(minX, minY);
 
-  Box netBBox(lowerBounds, upperBounds);
+  odb::Rect netBBox(lowerBounds, upperBounds);
   return netBBox;
 }
 
-int Netlist::computeIONetHPWL(int idx, Coordinate slotPos)
+int Netlist::computeIONetHPWL(int idx, odb::Point slotPos)
 {
   int netStart = _netPointer[idx];
   int netEnd = _netPointer[idx + 1];
 
-  int minX = slotPos.getX();
-  int minY = slotPos.getY();
-  int maxX = slotPos.getX();
-  int maxY = slotPos.getY();
+  int minX = slotPos.x();
+  int minY = slotPos.y();
+  int maxX = slotPos.x();
+  int maxY = slotPos.y();
 
   for (int idx = netStart; idx < netEnd; ++idx) {
-    Coordinate pos = _instPins[idx].getPos();
-    minX = std::min(minX, pos.getX());
-    maxX = std::max(maxX, pos.getX());
-    minY = std::min(minY, pos.getY());
-    maxY = std::max(maxY, pos.getY());
+    odb::Point pos = _instPins[idx].getPos();
+    minX = std::min(minX, pos.x());
+    maxX = std::max(maxX, pos.x());
+    minY = std::min(minY, pos.y());
+    maxY = std::max(maxY, pos.y());
   }
 
-  Coordinate upperBounds = Coordinate(maxX, maxY);
-  Coordinate lowerBounds = Coordinate(minX, minY);
+  int x = maxX - minX;
+  int y = maxY - minY;
 
-  Box netBBox(lowerBounds, upperBounds);
-
-  return netBBox.getHalfPerimeter();
+  return (x + y);
 }
 
-int Netlist::computeDstIOtoPins(int idx, Coordinate slotPos)
+int Netlist::computeDstIOtoPins(int idx, odb::Point slotPos)
 {
   int netStart = _netPointer[idx];
   int netEnd = _netPointer[idx + 1];
@@ -157,9 +155,9 @@ int Netlist::computeDstIOtoPins(int idx, Coordinate slotPos)
   int totalDistance = 0;
 
   for (int idx = netStart; idx < netEnd; ++idx) {
-    Coordinate pinPos = _instPins[idx].getPos();
-    totalDistance += std::abs(pinPos.getX() - slotPos.getX())
-                     + std::abs(pinPos.getY() - slotPos.getY());
+    odb::Point pinPos = _instPins[idx].getPos();
+    totalDistance += std::abs(pinPos.x() - slotPos.x())
+                     + std::abs(pinPos.y() - slotPos.y());
   }
 
   return totalDistance;

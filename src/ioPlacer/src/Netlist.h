@@ -42,8 +42,7 @@
 #include <string>
 #include <vector>
 
-#include "Box.h"
-#include "Coordinate.h"
+#include "opendb/db.h"
 
 namespace ioPlacer {
 
@@ -65,15 +64,15 @@ class InstancePin
 {
  protected:
   std::string _name;
-  Coordinate _pos;
+  odb::Point _pos;
 
  public:
-  InstancePin(const std::string& name, const Coordinate& pos)
+  InstancePin(const std::string& name, const odb::Point& pos)
       : _name(name), _pos(pos)
   {
   }
   std::string getName() const { return _name; }
-  Coordinate getPos() const { return _pos; }
+  odb::Point getPos() const { return _pos; }
   int getX() const { return _pos.getX(); }
   int getY() const { return _pos.getY(); }
 };
@@ -83,17 +82,17 @@ class IOPin : public InstancePin
  private:
   Orientation _orientation;
   Direction _direction;
-  Coordinate _lowerBound;
-  Coordinate _upperBound;
+  odb::Point _lowerBound;
+  odb::Point _upperBound;
   std::string _netName;
   std::string _locationType;
 
  public:
   IOPin(const std::string& name,
-        const Coordinate& pos,
+        const odb::Point& pos,
         Direction dir,
-        Coordinate lowerBound,
-        Coordinate upperBound,
+        odb::Point lowerBound,
+        odb::Point upperBound,
         std::string netName,
         std::string locationType)
       : InstancePin(name, pos),
@@ -108,16 +107,16 @@ class IOPin : public InstancePin
 
   void setOrientation(const Orientation o) { _orientation = o; }
   Orientation getOrientation() const { return _orientation; }
-  Coordinate getPosition() const { return _pos; }
+  odb::Point getPosition() const { return _pos; }
   void setX(const int x) { _pos.setX(x); }
   void setY(const int y) { _pos.setY(y); }
-  void setPos(const Coordinate pos) { _pos = pos; }
-  void setPos(const int x, const int y) { _pos.init(x, y); }
-  void setLowerBound(const int x, const int y) { _lowerBound.init(x, y); };
-  void setUpperBound(const int x, const int y) { _upperBound.init(x, y); };
+  void setPos(const odb::Point pos) { _pos = pos; }
+  void setPos(const int x, const int y) { _pos = odb::Point(x, y); }
+  void setLowerBound(const int x, const int y) { _lowerBound = odb::Point(x, y); };
+  void setUpperBound(const int x, const int y) { _upperBound = odb::Point(x, y); };
   Direction getDirection() const { return _direction; }
-  Coordinate getLowerBound() const { return _lowerBound; };
-  Coordinate getUpperBound() const { return _upperBound; };
+  odb::Point getLowerBound() const { return _lowerBound; };
+  odb::Point getUpperBound() const { return _upperBound; };
   std::string getNetName() const { return _netName; }
   std::string getLocationType() const { return _locationType; };
 };
@@ -141,9 +140,9 @@ class Netlist
   int numSinksOfIO(int);
   int numIOPins();
 
-  int computeIONetHPWL(int, Coordinate);
-  int computeDstIOtoPins(int, Coordinate);
-  Box getBB(int, Coordinate);
+  int computeIONetHPWL(int, odb::Point);
+  int computeDstIOtoPins(int, odb::Point);
+  odb::Rect getBB(int, odb::Point);
 };
 
 }  // namespace ioPlacer

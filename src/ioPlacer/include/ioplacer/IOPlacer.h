@@ -91,7 +91,7 @@ class IOPlacer
 
   bool _forcePinSpread;
   std::string _blockagesFile;
-  std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
+  std::vector<std::pair<odb::Point, odb::Point>> _blockagesArea;
 
  private:
   void makeComponents();

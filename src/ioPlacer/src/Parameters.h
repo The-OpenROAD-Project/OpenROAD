@@ -38,8 +38,6 @@
 
 #include <string>
 
-#include "Coordinate.h"
-
 namespace ioPlacer {
 
 class Parameters

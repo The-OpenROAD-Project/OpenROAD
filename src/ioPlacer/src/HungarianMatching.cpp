@@ -59,7 +59,7 @@ void HungarianMatching::createMatrix()
   int slotIndex = 0;
   for (int i = _beginSlot; i < _endSlot; ++i) {
     int pinIndex = 0;
-    Coordinate newPos = _slots[i].pos;
+    odb::Point newPos = _slots[i].pos;
     if (_slots[i].blocked) {
       continue;
     }
@@ -73,9 +73,9 @@ void HungarianMatching::createMatrix()
   }
 }
 
-inline bool samePos(Coordinate& a, Coordinate& b)
+inline bool samePos(odb::Point& a, odb::Point& b)
 {
-  return (a.getX() == b.getX() && a.getY() == b.getY());
+  return (a.x() == b.x() && a.y() == b.y());
 }
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
@@ -94,7 +94,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
       }
       ioPin.setPos(_slots[slotIndex].pos);
       assigment.push_back(ioPin);
-      Coordinate sPos = _slots[slotIndex].pos;
+      odb::Point sPos = _slots[slotIndex].pos;
       for (int i = 0; i < _slots.size(); i++) {
         if (samePos(_slots[i].pos, sPos)) {
           _slots[i].used = true;

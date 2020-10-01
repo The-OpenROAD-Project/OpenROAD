@@ -43,7 +43,6 @@
 #include <list>
 #include <utility>
 
-#include "Coordinate.h"
 #include "Hungarian.h"
 #include "ioplacer/IOPlacer.h"
 #include "Netlist.h"

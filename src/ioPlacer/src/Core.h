@@ -36,15 +36,15 @@
 #ifndef __CORE_H_
 #define __CORE_H_
 
-#include "Coordinate.h"
+#include "opendb/db.h"
 
 namespace ioPlacer {
 
 class Core
 {
  private:
-  Coordinate _lowerBound;
-  Coordinate _upperBound;
+  odb::Point _lowerBound;
+  odb::Point _upperBound;
   int _minDstPinsX;
   int _minDstPinsY;
   int _initTracksX;
@@ -59,12 +59,12 @@ class Core
 
  public:
   Core()
-      : _lowerBound(Coordinate(0, 0)),
-        _upperBound(Coordinate(0, 0)),
+      : _lowerBound(odb::Point(0, 0)),
+        _upperBound(odb::Point(0, 0)),
         _minDstPinsX(20),
         _minDstPinsY(20){};
-  Core(const Coordinate& lowerBound,
-       const Coordinate& upperBound,
+  Core(const odb::Point& lowerBound,
+       const odb::Point& upperBound,
        const int& minDstPinsX,
        const int& minDstPinsY,
        const int& initTracksX,
@@ -92,8 +92,8 @@ class Core
   {
   }
 
-  Coordinate getLowerBound() const { return _lowerBound; }
-  Coordinate getUpperBound() const { return _upperBound; }
+  odb::Point getLowerBound() const { return _lowerBound; }
+  odb::Point getUpperBound() const { return _upperBound; }
   int getMinDstPinsX() const { return _minDstPinsX; }
   int getMinDstPinsY() const { return _minDstPinsY; }
   int getInitTracksX() const { return _initTracksX; }
