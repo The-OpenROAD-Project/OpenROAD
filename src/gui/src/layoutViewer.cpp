@@ -553,6 +553,32 @@ void LayoutViewer::drawBlock(QPainter* painter,
     insts.push_back(inst);
   }
 
+  // Draw the instances bounds
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // setup the instance's transform
+    QTransform xfm = painter->transform();
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // draw bbox
+    painter->setPen(QPen(Qt::gray, 0));
+    painter->setBrush(QBrush());
+    int master_w = master->getWidth();
+    int master_h = master->getHeight();
+    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
+
+    // Draw an orientation tag in corner if useful in size
+    if (master->getHeight() >= 5 * pixel) {
+      qreal tag_size = 0.1 * master_h;
+      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
+                        QPointF(0.0, tag_size));
+    }
+    painter->setTransform(initial_xfm);
+  }
+
   dbTech* tech = block->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
     if (!options_->isVisible(layer)) {
@@ -648,32 +674,6 @@ void LayoutViewer::drawBlock(QPainter* painter,
     for (auto* renderer : renderers) {
       renderer->drawLayer(layer, gui_painter);
     }
-  }
-
-  // Draw the instances bounds
-  for (auto inst : insts) {
-    dbMaster* master = inst->getMaster();
-    // setup the instance's transform
-    QTransform xfm = painter->transform();
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-    addInstTransform(xfm, inst_xfm);
-    painter->setTransform(xfm);
-
-    // draw bbox
-    painter->setPen(QPen(Qt::gray, 0));
-    painter->setBrush(QBrush());
-    int master_w = master->getWidth();
-    int master_h = master->getHeight();
-    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
-
-    // Draw an orientation tag in corner if useful in size
-    if (master->getHeight() >= 5 * pixel) {
-      qreal tag_size = 0.1 * master_h;
-      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
-                        QPointF(0.0, tag_size));
-    }
-    painter->setTransform(initial_xfm);
   }
 
   drawRows(block, painter, bounds);
