@@ -64,8 +64,6 @@ add_custom_command(OUTPUT ${IOPLACER_TCL_INIT}
 )
 
 set(SRC_FILES
-  src/Box.cpp
-  src/Coordinate.cpp
   src/Core.cpp
   src/HungarianMatching.cpp
   src/IOPlacer.cpp
