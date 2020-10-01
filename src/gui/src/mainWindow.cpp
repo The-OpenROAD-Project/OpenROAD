@@ -161,6 +161,13 @@ void MainWindow::addSelected(const Selected& selection)
   emit selectionChanged();
 }
 
+void MainWindow::addSelected(const SelectionSet& selections)
+{
+  selected_.insert(selections.begin(), selections.end());
+  status(std::string("Added ") + std::to_string(selections.size()));
+  emit selectionChanged();
+}
+
 void MainWindow::setSelected(const Selected& selection)
 {
   selected_.clear();
