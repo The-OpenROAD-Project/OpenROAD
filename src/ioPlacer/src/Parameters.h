@@ -38,8 +38,6 @@
 
 #include <string>
 
-#include "Coordinate.h"
-
 namespace ioPlacer {
 
 class Parameters
@@ -47,9 +45,6 @@ class Parameters
  private:
   int _horizontalMetalLayer = 1;
   int _verticalMetalLayer = 2;
-  std::string _inputLefFile;
-  std::string _inputDefFile;
-  std::string _outputDefFile;
 
   bool _reportHPWL = false;
   bool _forceSpread = true;
@@ -58,28 +53,19 @@ class Parameters
   float _slotsFactor = -1;
   float _usage = -1;
   float _usageFactor = -1;
-  std::string _blockagesFile;
   float _horizontalThicknessMultiplier = 1;
   float _verticalThicknessMultiplier = 1;
   float _horizontalLengthExtend = -1;
   float _verticalLengthExtend = -1;
   float _horizontalLength = -1;
   float _verticalLength = -1;
-  bool _interactiveMode = false;
-  int _numThreads = -1;
   double _randSeed = 42.0;
-  int _dbId;
   int _boundariesOffset;
   int _minDist;
 
  public:
   Parameters() = default;
 
-  void setInputDefFile(const std::string& file) { _inputDefFile = file; }
-  std::string getInputDefFile() const { return _inputDefFile; }
-  std::string getInputLefFile() const { return _inputLefFile; }
-  void setOutputDefFile(const std::string& file) { _outputDefFile = file; }
-  std::string getOutputDefFile() const { return _outputDefFile; }
   void setHorizontalMetalLayer(int layer) { _horizontalMetalLayer = layer; }
   int getHorizontalMetalLayer() const { return _horizontalMetalLayer; }
   void setVerticalMetalLayer(int layer) { _verticalMetalLayer = layer; }
@@ -98,8 +84,6 @@ class Parameters
   float getUsageFactor() const { return _usageFactor; }
   void setForceSpread(bool forceSpread) { _forceSpread = forceSpread; }
   bool getForceSpread() const { return _forceSpread; }
-  void setBlockagesFile(const std::string& file) { _blockagesFile = file; }
-  std::string getBlockagesFile() const { return _blockagesFile; }
   void setHorizontalLengthExtend(float length)
   {
     _horizontalLengthExtend = length;
@@ -111,10 +95,6 @@ class Parameters
   float getHorizontalLength() const { return _horizontalLength; }
   void setVerticalLength(float length) { _verticalLength = length; }
   float getVerticalLength() const { return _verticalLength; }
-  void setInteractiveMode(bool enable) { _interactiveMode = enable; }
-  bool isInteractiveMode() const { return _interactiveMode; }
-  void setNumThreads(int numThreads) { _numThreads = numThreads; }
-  int getNumThreads() const { return _numThreads; }
   void setRandSeed(double seed) { _randSeed = seed; }
   double getRandSeed() const { return _randSeed; }
   void setHorizontalThicknessMultiplier(float length)
@@ -137,9 +117,6 @@ class Parameters
   int getBoundariesOffset() const { return _boundariesOffset; }
   void setMinDistance(int minDist) { _minDist = minDist; }
   int getMinDistance() const { return _minDist; }
-
-  void setDbId(int idx) { _dbId = idx; }
-  int getDbId() const { return _dbId; }
 
   void printAll() const;
 };
