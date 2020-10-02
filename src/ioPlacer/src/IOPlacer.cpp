@@ -134,7 +134,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
   _netlist.forEachSinkOfIO(
       idx, [&](InstancePin& instPin) { instPins.push_back(instPin); });
   if (_sections.size() < 1) {
-    Section_t s = {odb::Point(0, 0)};
+    Section_t s = {Point(0, 0)};
     _sections.push_back(s);
   }
 
@@ -241,7 +241,7 @@ inline bool IOPlacer::checkBlocked(int currX, int currY)
   int blockedBeginY;
   int blockedEndX;
   int blockedEndY;
-  for (std::pair<odb::Point, odb::Point> blockage : _blockagesArea) {
+  for (std::pair<Point, Point> blockage : _blockagesArea) {
     blockedBeginX = std::get<0>(blockage).x();
     blockedBeginY = std::get<0>(blockage).y();
     blockedEndX = std::get<0>(blockage).x();
@@ -257,8 +257,8 @@ inline bool IOPlacer::checkBlocked(int currX, int currY)
 
 void IOPlacer::defineSlots()
 {
-  odb::Point lb = _core.getLowerBound();
-  odb::Point ub = _core.getUpperBound();
+  Point lb = _core.getLowerBound();
+  Point ub = _core.getUpperBound();
   int lbX = lb.x();
   int lbY = lb.y();
   int ubX = ub.x();
@@ -305,7 +305,7 @@ void IOPlacer::defineSlots()
   int halfWidthX = int(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplierV;
   int halfWidthY = int(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplierH;
 
-  std::vector<odb::Point> slotsEdge1;
+  std::vector<Point> slotsEdge1;
 
   // For wider pins (when set_hor|ver_thick multiplier is used), a valid
   // slot is one that does not cause a part of the pin to lie outside
@@ -327,12 +327,12 @@ void IOPlacer::defineSlots()
   currX = initTracksX + start_idx * minDstPinsX;
   currY = lbY;
   for (int i = start_idx; i <= end_idx; ++i) {
-    odb::Point pos(currX, currY);
+    Point pos(currX, currY);
     slotsEdge1.push_back(pos);
     currX += minDstPinsX;
   }
 
-  std::vector<odb::Point> slotsEdge2;
+  std::vector<Point> slotsEdge2;
   start_idx
       = std::max(0.0,
                  ceil((lbY + halfWidthY - initTracksY) / minDstPinsY))
@@ -344,12 +344,12 @@ void IOPlacer::defineSlots()
   currY = initTracksY + start_idx * minDstPinsY;
   currX = ubX;
   for (int i = start_idx; i <= end_idx; ++i) {
-    odb::Point pos(currX, currY);
+    Point pos(currX, currY);
     slotsEdge2.push_back(pos);
     currY += minDstPinsY;
   }
 
-  std::vector<odb::Point> slotsEdge3;
+  std::vector<Point> slotsEdge3;
   start_idx
       = std::max(0.0,
                  ceil((lbX + halfWidthX - initTracksX) / minDstPinsX))
@@ -361,13 +361,13 @@ void IOPlacer::defineSlots()
   currX = initTracksX + start_idx * minDstPinsX;
   currY = ubY;
   for (int i = start_idx; i <= end_idx; ++i) {
-    odb::Point pos(currX, currY);
+    Point pos(currX, currY);
     slotsEdge3.push_back(pos);
     currX += minDstPinsX;
   }
   std::reverse(slotsEdge3.begin(), slotsEdge3.end());
 
-  std::vector<odb::Point> slotsEdge4;
+  std::vector<Point> slotsEdge4;
   start_idx
       = std::max(0.0,
                  ceil((lbY + halfWidthY - initTracksY) / minDstPinsY))
@@ -379,42 +379,42 @@ void IOPlacer::defineSlots()
   currY = initTracksY + start_idx * minDstPinsY;
   currX = lbX;
   for (int i = start_idx; i <= end_idx; ++i) {
-    odb::Point pos(currX, currY);
+    Point pos(currX, currY);
     slotsEdge4.push_back(pos);
     currY += minDstPinsY;
   }
   std::reverse(slotsEdge4.begin(), slotsEdge4.end());
 
   int i = 0;
-  for (odb::Point pos : slotsEdge1) {
+  for (Point pos : slotsEdge1) {
     currX = pos.x();
     currY = pos.y();
     bool blocked = checkBlocked(currX, currY);
-    _slots.push_back({blocked, false, odb::Point(currX, currY)});
+    _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 
-  for (odb::Point pos : slotsEdge2) {
+  for (Point pos : slotsEdge2) {
     currX = pos.x();
     currY = pos.y();
     bool blocked = checkBlocked(currX, currY);
-    _slots.push_back({blocked, false, odb::Point(currX, currY)});
+    _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 
-  for (odb::Point pos : slotsEdge3) {
+  for (Point pos : slotsEdge3) {
     currX = pos.x();
     currY = pos.y();
     bool blocked = checkBlocked(currX, currY);
-    _slots.push_back({blocked, false, odb::Point(currX, currY)});
+    _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 
-  for (odb::Point pos : slotsEdge4) {
+  for (Point pos : slotsEdge4) {
     currX = pos.x();
     currY = pos.y();
     bool blocked = checkBlocked(currX, currY);
-    _slots.push_back({blocked, false, odb::Point(currX, currY)});
+    _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 }
@@ -669,9 +669,9 @@ int IOPlacer::returnIONetsHPWL()
 void IOPlacer::addBlockedArea(int llx, int lly,
                               int urx, int ury)
 {
-  odb::Point lowerLeft = odb::Point(llx, lly);
-  odb::Point upperRight = odb::Point(urx, ury);
-  std::pair<odb::Point, odb::Point> blkArea
+  Point lowerLeft = Point(llx, lly);
+  Point upperRight = Point(urx, ury);
+  std::pair<Point, Point> blkArea
       = std::make_pair(lowerLeft, upperRight);
 
   _blockagesArea.push_back(blkArea);
@@ -767,11 +767,11 @@ void IOPlacer::initCore()
 {
   int databaseUnit = _tech->getLefUnits();
 
-  odb::Rect rect;
+  Rect rect;
   _block->getDieArea(rect);
 
-  odb::Point lowerBound(rect.xMin(), rect.yMin());
-  odb::Point upperBound(rect.xMax(), rect.yMax());
+  Point lowerBound(rect.xMin(), rect.yMin());
+  Point upperBound(rect.xMax(), rect.yMax());
 
   int horLayerIdx = _parms->getHorizontalMetalLayer();
   int verLayerIdx = _parms->getVerticalMetalLayer();
@@ -863,9 +863,9 @@ void IOPlacer::initNetlist()
     int yPos = 0;
     curBTerm->getFirstPinLocation(xPos, yPos);
 
-    odb::Point bounds(0, 0);
+    Point bounds(0, 0);
     IOPin ioPin(curBTerm->getConstName(),
-                odb::Point(xPos, yPos),
+                Point(xPos, yPos),
                 dir,
                 bounds,
                 bounds,
@@ -882,7 +882,7 @@ void IOPlacer::initNetlist()
       inst->getLocation(instX, instY);
 
       instPins.push_back(
-          InstancePin(inst->getConstName(), odb::Point(instX, instY)));
+          InstancePin(inst->getConstName(), Point(instX, instY)));
     }
 
     _netlist.addIONet(ioPin, instPins);
@@ -912,8 +912,8 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
       odb::dbBPin::destroy(bpin);
     }
 
-    odb::Point lowerBound = pin.getLowerBound();
-    odb::Point upperBound = pin.getUpperBound();
+    Point lowerBound = pin.getLowerBound();
+    Point upperBound = pin.getUpperBound();
 
     odb::dbBPin* bpin = odb::dbBPin::create(bterm);
 

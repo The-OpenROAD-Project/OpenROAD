@@ -50,6 +50,9 @@
 
 namespace ioPlacer {
 
+using odb::Point;
+using odb::Rect;
+
 class HungarianMatching
 {
  private:

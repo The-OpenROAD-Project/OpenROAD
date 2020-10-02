@@ -98,7 +98,7 @@ int Netlist::numIOPins()
   return _ioPins.size();
 }
 
-odb::Rect Netlist::getBB(int idx, odb::Point slotPos)
+Rect Netlist::getBB(int idx, Point slotPos)
 {
   int netStart = _netPointer[idx];
   int netEnd = _netPointer[idx + 1];
@@ -109,21 +109,21 @@ odb::Rect Netlist::getBB(int idx, odb::Point slotPos)
   int maxY = slotPos.y();
 
   for (int idx = netStart; idx < netEnd; ++idx) {
-    odb::Point pos = _instPins[idx].getPos();
+    Point pos = _instPins[idx].getPos();
     minX = std::min(minX, pos.x());
     maxX = std::max(maxX, pos.x());
     minY = std::min(minY, pos.y());
     maxY = std::max(maxY, pos.y());
   }
 
-  odb::Point upperBounds = odb::Point(maxX, maxY);
-  odb::Point lowerBounds = odb::Point(minX, minY);
+  Point upperBounds = Point(maxX, maxY);
+  Point lowerBounds = Point(minX, minY);
 
-  odb::Rect netBBox(lowerBounds, upperBounds);
+  Rect netBBox(lowerBounds, upperBounds);
   return netBBox;
 }
 
-int Netlist::computeIONetHPWL(int idx, odb::Point slotPos)
+int Netlist::computeIONetHPWL(int idx, Point slotPos)
 {
   int netStart = _netPointer[idx];
   int netEnd = _netPointer[idx + 1];
@@ -134,7 +134,7 @@ int Netlist::computeIONetHPWL(int idx, odb::Point slotPos)
   int maxY = slotPos.y();
 
   for (int idx = netStart; idx < netEnd; ++idx) {
-    odb::Point pos = _instPins[idx].getPos();
+    Point pos = _instPins[idx].getPos();
     minX = std::min(minX, pos.x());
     maxX = std::max(maxX, pos.x());
     minY = std::min(minY, pos.y());
@@ -147,7 +147,7 @@ int Netlist::computeIONetHPWL(int idx, odb::Point slotPos)
   return (x + y);
 }
 
-int Netlist::computeDstIOtoPins(int idx, odb::Point slotPos)
+int Netlist::computeDstIOtoPins(int idx, Point slotPos)
 {
   int netStart = _netPointer[idx];
   int netEnd = _netPointer[idx + 1];
@@ -155,7 +155,7 @@ int Netlist::computeDstIOtoPins(int idx, odb::Point slotPos)
   int totalDistance = 0;
 
   for (int idx = netStart; idx < netEnd; ++idx) {
-    odb::Point pinPos = _instPins[idx].getPos();
+    Point pinPos = _instPins[idx].getPos();
     totalDistance += std::abs(pinPos.x() - slotPos.x())
                      + std::abs(pinPos.y() - slotPos.y());
   }

@@ -46,6 +46,9 @@
 
 namespace ioPlacer {
 
+using odb::Point;
+using odb::Rect;
+
 enum Orientation
 {
   ORIENT_NORTH,
