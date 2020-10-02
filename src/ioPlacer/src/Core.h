@@ -36,7 +36,7 @@
 #ifndef __CORE_H_
 #define __CORE_H_
 
-#include "opendb/db.h"
+#include "opendb/geom.h"
 
 namespace ioPlacer {
 
