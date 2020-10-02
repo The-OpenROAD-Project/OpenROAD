@@ -49,10 +49,24 @@ selection_add_net(const char* name)
 }
 
 void
+selection_add_nets(const char* name)
+{
+  auto gui = gui::Gui::get();
+  gui->addSelectedNets(name);
+}
+
+void
 selection_add_inst(const char* name)
 {
   auto gui = gui::Gui::get();
   gui->addSelectedInst(name);
+}
+
+void
+selection_add_insts(const char* name)
+{
+  auto gui = gui::Gui::get();
+  gui->addSelectedInsts(name);
 }
 
 %} // inline

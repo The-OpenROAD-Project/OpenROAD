@@ -96,6 +96,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Add to the selection
   void addSelected(const Selected& selection);
 
+  // Add the selections to the current selections
+  void addSelected(const SelectionSet& selections);
+
   // Displays the selection in the status bar
   void setSelected(const Selected& selection);
 
