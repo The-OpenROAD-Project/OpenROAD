@@ -58,11 +58,7 @@ class Core
   int _databaseUnit;
 
  public:
-  Core()
-      : _lowerBound(odb::Point(0, 0)),
-        _upperBound(odb::Point(0, 0)),
-        _minDstPinsX(20),
-        _minDstPinsY(20){};
+  Core() = default;
   Core(const odb::Point& lowerBound,
        const odb::Point& upperBound,
        const int& minDstPinsX,
