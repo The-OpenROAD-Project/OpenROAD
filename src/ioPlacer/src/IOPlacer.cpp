@@ -257,8 +257,8 @@ inline bool IOPlacer::checkBlocked(int currX, int currY)
 
 void IOPlacer::defineSlots()
 {
-  Point lb = _core.getLowerBound();
-  Point ub = _core.getUpperBound();
+  Point lb = _core.getBoundary().ll();
+  Point ub = _core.getBoundary().ur();
   int lbX = lb.x();
   int lbY = lb.y();
   int ubX = ub.x();
@@ -557,10 +557,10 @@ inline void IOPlacer::updateOrientation(IOPin& pin)
 {
   const int x = pin.getX();
   const int y = pin.getY();
-  int lowerXBound = _core.getLowerBound().x();
-  int lowerYBound = _core.getLowerBound().y();
-  int upperXBound = _core.getUpperBound().x();
-  int upperYBound = _core.getUpperBound().y();
+  int lowerXBound = _core.getBoundary().ll().x();
+  int lowerYBound = _core.getBoundary().ll().y();
+  int upperXBound = _core.getBoundary().ur().x();
+  int upperYBound = _core.getBoundary().ur().y();
 
   if (x == lowerXBound) {
     if (y == upperYBound) {
@@ -594,10 +594,10 @@ inline void IOPlacer::updatePinArea(IOPin& pin)
 {
   const int x = pin.getX();
   const int y = pin.getY();
-  int lowerXBound = _core.getLowerBound().x();
-  int lowerYBound = _core.getLowerBound().y();
-  int upperXBound = _core.getUpperBound().x();
-  int upperYBound = _core.getUpperBound().y();
+  int lowerXBound = _core.getBoundary().ll().x();
+  int lowerYBound = _core.getBoundary().ll().y();
+  int upperXBound = _core.getBoundary().ur().x();
+  int upperYBound = _core.getBoundary().ur().y();
 
   if (pin.getOrientation() == Orientation::ORIENT_NORTH
       || pin.getOrientation() == Orientation::ORIENT_SOUTH) {
@@ -767,11 +767,8 @@ void IOPlacer::initCore()
 {
   int databaseUnit = _tech->getLefUnits();
 
-  Rect rect;
-  _block->getDieArea(rect);
-
-  Point lowerBound(rect.xMin(), rect.yMin());
-  Point upperBound(rect.xMax(), rect.yMax());
+  Rect boundary;
+  _block->getDieArea(boundary);
 
   int horLayerIdx = _parms->getHorizontalMetalLayer();
   int verLayerIdx = _parms->getVerticalMetalLayer();
@@ -801,8 +798,7 @@ void IOPlacer::initCore()
   minAreaY = horLayer->getArea() * databaseUnit * databaseUnit;
   minWidthY = horLayer->getWidth();
 
-  _core = Core(lowerBound,
-                upperBound,
+  _core = Core(boundary,
                 minSpacingX,
                 minSpacingY,
                 initTrackX,
@@ -815,9 +811,9 @@ void IOPlacer::initCore()
                 minWidthY,
                 databaseUnit);
   if (_verbose) {
-    std::cout << "lowerBound: " << lowerBound.x() << " " << lowerBound.y()
+    std::cout << "lowerBound: " << boundary.ll().x() << " " << boundary.ur().y()
               << "\n";
-    std::cout << "upperBound: " << upperBound.x() << " " << upperBound.y()
+    std::cout << "upperBound: " << boundary.ll().x() << " " << boundary.ur().y()
               << "\n";
     std::cout << "minSpacingX: " << minSpacingX << "\n";
     std::cout << "minSpacingY: " << minSpacingY << "\n";

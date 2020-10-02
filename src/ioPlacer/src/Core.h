@@ -41,12 +41,12 @@
 namespace ioPlacer {
 
 using odb::Point;
+using odb::Rect;
 
 class Core
 {
  private:
-  Point _lowerBound;
-  Point _upperBound;
+  Rect _boundary;
   int _minDstPinsX;
   int _minDstPinsY;
   int _initTracksX;
@@ -61,8 +61,7 @@ class Core
 
  public:
   Core() = default;
-  Core(const Point& lowerBound,
-       const Point& upperBound,
+  Core(const Rect& boundary,
        const int& minDstPinsX,
        const int& minDstPinsY,
        const int& initTracksX,
@@ -74,8 +73,7 @@ class Core
        const int& minWidthX,
        const int& minWidthY,
        const int& databaseUnit)
-      : _lowerBound(lowerBound),
-        _upperBound(upperBound),
+      : _boundary(boundary),
         _minDstPinsX(minDstPinsX),
         _minDstPinsY(minDstPinsY),
         _initTracksX(initTracksX),
@@ -90,8 +88,7 @@ class Core
   {
   }
 
-  Point getLowerBound() const { return _lowerBound; }
-  Point getUpperBound() const { return _upperBound; }
+  Rect getBoundary() const { return _boundary; }
   int getMinDstPinsX() const { return _minDstPinsX; }
   int getMinDstPinsY() const { return _minDstPinsY; }
   int getInitTracksX() const { return _initTracksX; }
