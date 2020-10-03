@@ -1365,13 +1365,6 @@ Resizer::repairDesign(double max_wire_length, // meters
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
 
-#if 0
-    Level drvr_level = drvr->level();
-    if (drvr_level != dcalc_valid_level) {
-      graph_delay_calc_->findDelays(drvr_level);
-      dcalc_valid_level = drvr_level;
-    }
-#endif
     if (net
 	&& !sta_->isClock(drvr_pin)
 	// Exclude tie hi/low cells.
@@ -1511,6 +1504,7 @@ Resizer::repairNet(Net *net,
     debugPrint1(debug_, "repair_net", 1, "repair net %s\n",
 		sdc_network_->pathName(drvr_pin));
     ensureWireParasitic(drvr_pin);
+    graph_delay_calc_->findDelays(drvr);
 
     double max_cap = INF;
     float max_fanout = INF;

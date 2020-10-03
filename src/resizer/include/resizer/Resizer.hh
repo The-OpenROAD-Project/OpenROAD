@@ -77,7 +77,8 @@ public:
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const dbNet *net);
-  
+  bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
+
   // Core area (meters).
   double coreArea() const;
   // 0.0 - 1.0 (100%) of core size.

@@ -81,13 +81,13 @@ read_lef Nangate45/Nangate45.lef
 read_def $def_filename
 create_clock -period 1 clk1
 
+estimate_parasitics -placement
+
 set buffer_cell [get_lib_cell BUF_X2]
 buffer_ports -inputs -buffer_cell $buffer_cell
 
 report_check_types -max_slew
 
 repair_design -buffer_cell $buffer_cell
-resize
 
 report_check_types -max_slew
-

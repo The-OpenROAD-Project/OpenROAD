@@ -169,6 +169,7 @@ proc resize { args } {
   
   check_argc_eq0 "resize" $args
   
+  check_parasitics
   resizer_preamble $resize_libs
   resize_to_target_slew
 }
@@ -264,6 +265,7 @@ proc repair_design { args } {
   }
 
   check_argc_eq0 "repair_design" $args
+  check_parasitics
   resizer_preamble $resize_libs
   repair_design_cmd $max_wire_length $buffer_cell
 }
@@ -285,6 +287,7 @@ proc repair_clock_nets { args } {
   }
   
   check_argc_eq0 "repair_clock_nets" $args
+  check_parasitics
   repair_clk_nets_cmd $max_wire_length $buffer_cell
 }
 
@@ -332,6 +335,7 @@ proc repair_hold_violations { args } {
   
   check_argc_eq0 "repair_hold_violations" $args
   
+  check_parasitics
   repair_hold_violations_cmd $buffer_cell
 }
 
@@ -376,6 +380,12 @@ proc_redirect report_long_wires {
   sta::check_argc_eq1 "report_long_wires" $args
   set count [lindex $args 0]
   report_long_wires_cmd $count $digits
+}
+
+proc check_parasitics { } {
+  if { ![have_estimated_parasitics] } {
+    ord::warn "no estimated parasitics. Using wire load models."
+  }
 }
 
 # sta namespace end
