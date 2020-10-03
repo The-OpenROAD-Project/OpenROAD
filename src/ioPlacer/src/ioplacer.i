@@ -58,22 +58,10 @@ set_hor_metal_layer(int layer)
   getIOPlacer()->getParameters()->setHorizontalMetalLayer(layer);
 }
 
-int
-get_hor_metal_layer()
-{
-  return getIOPlacer()->getParameters()->getHorizontalMetalLayer();
-}
-
 void
 set_ver_metal_layer(int layer)
 {
   getIOPlacer()->getParameters()->setVerticalMetalLayer(layer);
-}
-
-int
-get_ver_metal_layer()
-{
-  return getIOPlacer()->getParameters()->getVerticalMetalLayer();
 }
 
 void
@@ -82,22 +70,10 @@ set_num_slots(int numSlots)
   getIOPlacer()->getParameters()->setNumSlots(numSlots);
 }
 
-int
-get_num_slots()
-{
-  return getIOPlacer()->getParameters()->getNumSlots();
-}
-
 void
 set_random_mode(int mode)
 {
   getIOPlacer()->getParameters()->setRandomMode(mode);
-}
-
-int
-get_random_mode()
-{
-  return getIOPlacer()->getParameters()->getRandomMode();
 }
 
 void
@@ -106,22 +82,10 @@ set_slots_factor(float factor)
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
 }
 
-float
-get_slots_factor()
-{
-  return getIOPlacer()->getParameters()->getSlotsFactor();
-}
-
 void
 set_force_spread(bool force)
 {
   getIOPlacer()->getParameters()->setForceSpread(force);
-}
-
-bool
-get_force_spread()
-{
-  return getIOPlacer()->getParameters()->getForceSpread();
 }
 
 void
@@ -130,34 +94,10 @@ set_usage(float usage)
   getIOPlacer()->getParameters()->setUsage(usage);
 }
 
-float
-get_usage()
-{
-  return getIOPlacer()->getParameters()->getUsage();
-}
-
 void
 set_usage_factor(float usage)
 {
   getIOPlacer()->getParameters()->setUsageFactor(usage);
-}
-
-float
-get_usage_factor()
-{
-  return getIOPlacer()->getParameters()->getUsageFactor();
-}
-
-void
-set_blockages_file(const char* file)
-{
-  getIOPlacer()->getParameters()->setBlockagesFile(file);
-}
-
-const char*
-get_blockages_file()
-{
-  return getIOPlacer()->getParameters()->getBlockagesFile().c_str();
 }
 
 void
@@ -170,12 +110,6 @@ void
 set_hor_length(float length)
 {
   getIOPlacer()->getParameters()->setHorizontalLength(length);
-}
-
-float
-get_hor_length()
-{
-  return getIOPlacer()->getParameters()->getHorizontalLength();
 }
 
 void
@@ -196,24 +130,6 @@ set_ver_length(float length)
   getIOPlacer()->getParameters()->setVerticalLength(length);
 }
 
-float
-get_ver_length()
-{
-  return getIOPlacer()->getParameters()->getVerticalLength();
-}
-
-void
-set_interactive_mode(bool enable)
-{
-  getIOPlacer()->getParameters()->setInteractiveMode(enable);
-}
-
-bool
-is_interactive_mode()
-{
-  return getIOPlacer()->getParameters()->isInteractiveMode();
-}
-
 void
 print_all_parms()
 {
@@ -232,12 +148,6 @@ set_report_hpwl(bool report)
   getIOPlacer()->getParameters()->setReportHPWL(report);
 }
 
-bool
-get_report_hpwl()
-{
-  return getIOPlacer()->getParameters()->getReportHPWL();
-}
-
 int
 compute_io_nets_hpwl()
 {
@@ -245,28 +155,9 @@ compute_io_nets_hpwl()
 }
 
 void
-set_num_threads(int numThreads)
-{
-  ;
-  getIOPlacer()->getParameters()->setNumThreads(numThreads);
-}
-
-int
-get_num_threads()
-{
-  return getIOPlacer()->getParameters()->getNumThreads();
-}
-
-void
 set_rand_seed(double seed)
 {
   getIOPlacer()->getParameters()->setRandSeed(seed);
-}
-
-double
-get_rand_seed()
-{
-  return getIOPlacer()->getParameters()->getRandSeed();
 }
 
 void
@@ -279,30 +170,6 @@ void
 set_ver_thick_multiplier(float length)
 {
   getIOPlacer()->getParameters()->setVerticalThicknessMultiplier(length);
-}
-
-float
-get_ver_thick_multiplier()
-{
-  return getIOPlacer()->getParameters()->getVerticalThicknessMultiplier();
-}
-
-float
-get_hor_thick_multiplier()
-{
-  return getIOPlacer()->getParameters()->getHorizontalThicknessMultiplier();
-}
-
-float
-get_hor_length_extend()
-{
-  return getIOPlacer()->getParameters()->getHorizontalLengthExtend();
-}
-
-float
-get_ver_length_extend()
-{
-  return getIOPlacer()->getParameters()->getVerticalLengthExtend();
 }
 
 void

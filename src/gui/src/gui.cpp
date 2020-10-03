@@ -43,6 +43,20 @@
 
 namespace gui {
 
+static odb::dbBlock* getBlock(odb::dbDatabase* db)
+{
+  if (!db) {
+    return nullptr;
+  }
+
+  auto chip = db->getChip();
+  if (!chip) {
+    return nullptr;
+  }
+
+  return chip->getBlock();
+}
+
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* mainWindow;
 
@@ -86,6 +100,72 @@ void Gui::status(const std::string& message)
 void Gui::pause()
 {
   mainWindow->pause();
+}
+
+void Gui::addSelectedNet(const char* name)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto net = block->findNet(name);
+  if (!net) {
+    return;
+  }
+
+  mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
+}
+
+void Gui::addSelectedNets(const char* pattern)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
+  SelectionSet nets;
+  for (auto* net : block->getNets()) {
+    if (re.exactMatch(QString::fromStdString(net->getName()))) {
+      nets.emplace(net, OpenDbDescriptor::get());
+    }
+  }
+
+  mainWindow->addSelected(nets);
+}
+
+void Gui::addSelectedInst(const char* name)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  auto inst = block->findInst(name);
+  if (!inst) {
+    return;
+  }
+
+  mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
+}
+
+void Gui::addSelectedInsts(const char* pattern)
+{
+  auto block = getBlock(mainWindow->getDb());
+  if (!block) {
+    return;
+  }
+
+  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
+  SelectionSet insts;
+  for (auto* inst : block->getInsts()) {
+    if (re.exactMatch(QString::fromStdString(inst->getName()))) {
+      insts.emplace(inst, OpenDbDescriptor::get());
+    }
+  }
+
+  mainWindow->addSelected(insts);
 }
 
 Renderer::~Renderer()
@@ -193,3 +273,17 @@ int start_gui(int argc, char* argv[])
 }
 
 }  // namespace gui
+
+namespace ord {
+
+extern "C" {
+extern int Gui_Init(Tcl_Interp* interp);
+}
+
+void initGui(OpenRoad* openroad)
+{
+  // Define swig TCL commands.
+  Gui_Init(openroad->tclInterp());
+}
+
+}  // namespace ord

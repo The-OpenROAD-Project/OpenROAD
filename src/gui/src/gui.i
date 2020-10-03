@@ -1,8 +1,10 @@
+%module gui
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2020, Matt Liberty
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,17 +35,39 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Coordinate.h"
+%{
+#include "gui/gui.h"
+%}
 
-#include <cmath>
+%inline %{
 
-namespace ioPlacer {
-
-int Coordinate::dst(Coordinate a)
+void
+selection_add_net(const char* name)
 {
-  int ax = a.getX();
-  int ay = a.getY();
-  return std::sqrt(std::pow(_x - ax, 2) + std::pow(_y - ay, 2));
+  auto gui = gui::Gui::get();
+  gui->addSelectedNet(name);
 }
 
-}  // namespace ioPlacer
+void
+selection_add_nets(const char* name)
+{
+  auto gui = gui::Gui::get();
+  gui->addSelectedNets(name);
+}
+
+void
+selection_add_inst(const char* name)
+{
+  auto gui = gui::Gui::get();
+  gui->addSelectedInst(name);
+}
+
+void
+selection_add_insts(const char* name)
+{
+  auto gui = gui::Gui::get();
+  gui->addSelectedInsts(name);
+}
+
+%} // inline
+

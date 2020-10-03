@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, University of California, San Diego.
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,29 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __COORDINATE_H_
-#define __COORDINATE_H_
+namespace ord {
 
-namespace ioPlacer {
+class OpenRoad;
 
-class Coordinate
-{
-  int _x, _y;
+// There is no make/delete GUI as it is created at startup and can't
+// be deleted.
 
- public:
-  Coordinate(const int x, const int y) : _x(x), _y(y) {}
-  void init(const int x, const int y)
-  {
-    _x = x;
-    _y = y;
-  }
-  void setX(const int x) { _x = x; }
-  void setY(const int y) { _y = y; }
-  int getX() const { return _x; }
-  int getY() const { return _y; }
-  int dst(Coordinate);
-};
+void
+initGui(OpenRoad *openroad);
 
-}  // namespace ioPlacer
-
-#endif /* __COORDINATE_H_ */
+} // namespace

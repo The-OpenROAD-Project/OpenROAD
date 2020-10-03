@@ -13,8 +13,12 @@ initialize_floorplan -site $site \
 # remove buffers inserted by synthesis 
 remove_buffers
 
+################################################################
+# IO Placement
 io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_layer
 
+################################################################
+# Macro Placement
 if { [have_macros] } {
   # tdms_place (but replace isn't timing driven)
   global_placement -disable_routability_driven -density $global_place_density
@@ -22,6 +26,8 @@ if { [have_macros] } {
   macro_placement -global_config $ip_global_cfg
 }
 
+################################################################
+# Tapcell insertion
 eval $tapcell_cmd
 
 pdngen -verbose $pdn_cfg
@@ -29,6 +35,8 @@ pdngen -verbose $pdn_cfg
 # pre-placement/sizing wireload timing
 report_checks
 
+################################################################
+# Global placement
 global_placement -disable_routability_driven \
   -density $global_place_density \
   -init_density_penalty $global_place_density_penalty \
@@ -38,7 +46,9 @@ global_placement -disable_routability_driven \
 set global_place_def [make_result_file ${design}_${platform}_global_place.def]
 write_def $global_place_def
 
-# resize
+################################################################
+# Resize
+# estimate wire rc parasitics
 set_wire_rc -layer $wire_rc_layer
 estimate_parasitics -placement
 set_dont_use $dont_use
@@ -54,6 +64,8 @@ detailed_placement
 optimize_mirroring
 check_placement -verbose
 
+################################################################
+# Clock Tree Synthesis
 # Clone clock tree inverters next to register loads
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
@@ -86,15 +98,21 @@ write_def $cts_def
 # missing vsrc file
 #analyze_power_grid
 
+################################################################
+# Global routing
 set route_guide [make_result_file ${design}_${platform}.route_guide]
-fastroute -output_file $route_guide\
-  -max_routing_layer $max_routing_layer \
+foreach layer_adjustment $global_routing_layer_adjustments {
+  lassign $layer_adjustment layer adjustment
+  set_global_routing_layer_adjustment $layer $adjustment
+}
+fastroute -guide_file $route_guide\
+  -layers $global_routing_layers \
   -unidirectional_routing true \
-  -layers_adjustments $layers_adjustments \
-  -layers_pitches $layers_pitches \
   -overflow_iterations 100 \
   -verbose 2
 
+################################################################
+# Detailed routing
 set routed_def [make_result_file ${design}_${platform}_route.def]
 
 set tr_lef [make_tr_lef]
@@ -115,13 +133,15 @@ read_libraries
 read_def $routed_def
 read_sdc $sdc_file
 
-# final report
+################################################################
+# Final Report
 # inlieu of rc extraction
 set_wire_rc -layer $wire_rc_layer
-report_checks -path_delay min_max
+report_checks -path_delay min_max -fields {input_pin slew capacitance} \
+  -format full_clock_expanded
 report_wns
 report_tns
-report_check_types -max_slew -violators
+report_check_types -max_slew -max_capacitance -max_fanout -violators
 report_power
 
 report_floating_nets -verbose

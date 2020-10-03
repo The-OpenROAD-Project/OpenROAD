@@ -61,7 +61,7 @@ namespace sta {
 
 namespace FastRoute {
 
-class FT;
+class FastRouteCore;
 class AntennaRepair;
 class Grid;
 class Pin;
@@ -72,7 +72,6 @@ class RoutingLayer;
 class SteinerTree;
 class RoutePt;
 struct NET;
-struct PIN;
 
 class GlobalRouter
 {
@@ -194,6 +193,7 @@ protected:
 
 
   // aux functions
+  void findPins(Net& net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
@@ -210,11 +210,12 @@ protected:
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
+  odb::Point findFakePinPosition(Pin &pin);
   bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
-  NetRouteMap getRouting();
+  NetRouteMap findRouting();
 
   // check functions
   void checkPinPlacement();
@@ -250,7 +251,7 @@ protected:
 
   ord::OpenRoad* _openroad;
   // Objects variables
-  FT* _fastRoute = nullptr;
+  FastRouteCore* _fastRoute = nullptr;
   odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 

@@ -60,6 +60,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
  public:
   MainWindow(QWidget* parent = nullptr);
 
+  odb::dbDatabase* getDb() const { return db_; }
   void setDb(odb::dbDatabase* db);
 
   // From ord::OpenRoad::Observer
@@ -91,6 +92,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Set the location to display in the status bar
   void setLocation(qreal x, qreal y);
+
+  // Add to the selection
+  void addSelected(const Selected& selection);
+
+  // Add the selections to the current selections
+  void addSelected(const SelectionSet& selections);
 
   // Displays the selection in the status bar
   void setSelected(const Selected& selection);

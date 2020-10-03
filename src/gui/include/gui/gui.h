@@ -102,6 +102,12 @@ class Selected
 
   operator bool() const { return object != nullptr; }
 
+  // For SelectionSet
+  friend bool operator<(const Selected& l, const Selected& r)
+  {
+    return l.object < r.object;
+  }
+
  private:
   void* object;
   Descriptor* descriptor;
@@ -218,6 +224,18 @@ class Gui
   // unregistered.
   void register_renderer(Renderer* renderer);
   void unregister_renderer(Renderer* renderer);
+
+  // Add a net to the selection set
+  void addSelectedNet(const char* name);
+
+  // Add nets matching the pattern to the selection set
+  void addSelectedNets(const char* pattern);
+
+  // Add an instance to the selection set
+  void addSelectedInst(const char* name);
+
+  // Add instances matching the pattern to the selection set
+  void addSelectedInsts(const char* pattern);
 
   // Force an immediate redraw.
   void redraw();

@@ -39,13 +39,8 @@ namespace ioPlacer {
 
 int Core::getPerimeter()
 {
-  int lowerX = _lowerBound.getX();
-  int lowerY = _lowerBound.getY();
-  int upperX = _upperBound.getX();
-  int upperY = _upperBound.getY();
-
-  int x = upperX - lowerX;
-  int y = upperY - lowerY;
+  int x = _boundary.xMax() - _boundary.xMin();
+  int y = _boundary.yMax() - _boundary.yMin();
 
   return (x + y) * 2;
 }

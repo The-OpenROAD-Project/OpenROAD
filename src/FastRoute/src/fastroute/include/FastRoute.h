@@ -44,20 +44,11 @@
 
 namespace FastRoute {
 
-struct PIN
-{
-  long x;
-  long y;
-  int layer;
-};
-
-typedef std::map<odb::dbNet*, std::vector<PIN>> NetPinsMap;
-
-class FT
+class FastRouteCore
 {
  public:
-  FT();
-  ~FT();
+  FastRouteCore();
+  ~FastRouteCore();
   
   void deleteComponents();
   void clear();
@@ -71,10 +62,10 @@ class FT
   void setLowerLeft(int x, int y);
   void setTileSize(int width, int height);
   void setLayerOrientation(int x);
-  void addNet(odb::dbNet* db_net,
-              int nPIns,
-              int minWIdth,
-              PIN pins[],
+  void addPin(int netID, int x, int y, int layer);
+  int addNet(odb::dbNet* db_net,
+              int   nPins,
+              int validPins,
               float alpha,
               bool isClock);
   void initEdges();
@@ -100,7 +91,6 @@ class FT
                              long y2,
                              int l2);
   int getEdgeCurrentUsage(long x1, long y1, int l1, long x2, long y2, int l2);
-  NetPinsMap& getNets() { return _net_pins_map; }
   void setEdgeUsage(long x1,
                     long y1,
                     int l1,
@@ -124,8 +114,6 @@ class FT
   
 private:
   NetRouteMap getRoutes();
-
-  NetPinsMap _net_pins_map;
   int maxNetDegree;
 };
 

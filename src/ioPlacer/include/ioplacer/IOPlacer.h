@@ -54,6 +54,9 @@ class dbBlock;
 
 namespace ioPlacer {
 
+using odb::Point;
+using odb::Rect;
+
 enum RandomMode
 {
   None,

@@ -42,7 +42,6 @@
 #include <numeric>
 #include <vector>
 
-#include "Coordinate.h"
 #include "Netlist.h"
 
 namespace ioPlacer {
@@ -51,14 +50,14 @@ struct _Slot_t
 {
   bool blocked;
   bool used;
-  Coordinate pos;
+  odb::Point pos;
 } typedef Slot_t;
 
 typedef std::vector<Slot_t> slotVector_t;
 
 typedef struct _Section_t
 {
-  Coordinate pos;
+  odb::Point pos;
   Netlist net;
   int cost;
   int beginSlot;
