@@ -11,6 +11,7 @@ Notice 0:     Created 250 components and 2000 component-terminals.
 Notice 0:     Created 2 special nets and 500 connections.
 Notice 0:     Created 2 nets and 500 connections.
 Notice 0: Finished DEF file: ./results/buffer_ports4.def
+Warning: wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Inserted 1 input buffers.
 max slew
 
@@ -18,11 +19,11 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 input1/Z                                0.20    0.78   -0.58 (VIOLATED)
 
+Warning: no estimated parasitics. Using wire load models.
 Found 1 slew violations.
 Found 1 capacitance violations.
 Inserted 1 buffers in 1 nets.
 Resized 2 instances.
-Resized 0 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
