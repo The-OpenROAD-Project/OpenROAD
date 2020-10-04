@@ -33,7 +33,7 @@
 #include <utility>
 #include <tuple>  
 #include "dbShape.h"
-#include "search_gui.h"
+#include "search.h"
 
 namespace gui {
 
