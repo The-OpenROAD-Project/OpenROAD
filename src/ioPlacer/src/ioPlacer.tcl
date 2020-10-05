@@ -44,6 +44,10 @@ sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \
                                  }
 
 proc io_placer { args } {
+  sta::parse_key_args "io_placer" args \
+  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
+  flags {-random} 0
+
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
     ord::error "missing dbTech"
@@ -69,10 +73,6 @@ proc io_placer { args } {
   }
 
   puts "#Macro blocks found: [llength $blockages]"
-
-  sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
-  flags {-random}
 
   if { [info exists flags(-random)] } {
     ioPlacer::set_random_mode 2
@@ -149,29 +149,32 @@ proc io_placer { args } {
     ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
-  if [info exists keys(-exclude)] {
+  set arg_error 0
+  set regions [ioPlacer::parse_excludes_arg args arg_error]
+  if { $regions != {} } {
     set die_area [$dbBlock getDieArea]
     set lef_units [$dbTech getLefUnits]
     
-    set region $keys(-exclude)
-    if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
-      set edge_idx [ioPlacer::parse_edge "-exclude" $edge]
+    foreach region $regions {
+      if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+        set edge_idx [ioPlacer::parse_edge "-exclude" $edge]
 
-      if [regexp -all {([0-9]+[.]*[0-9]*)-([0-9]+[.]*[0-9]*)} $interval - begin end] {
-        set begin [expr { int($begin * $lef_units) }]
-        set end [expr { int($end * $lef_units) }]
+        if [regexp -all {([0-9]+[.]*[0-9]*)-([0-9]+[.]*[0-9]*)} $interval - begin end] {
+          set begin [expr { int($begin * $lef_units) }]
+          set end [expr { int($end * $lef_units) }]
 
-        ioPlacer::exclude_interval $edge_idx $begin $end
-      } elseif {$interval == {*}} {
-        if {$edge_idx <= 1} {
-          set begin [$die_area xMin]
-          set end [$die_area xMax]
-        } elseif {$edge_idx >= 2} {
-          set begin [$die_area yMin]
-          set end [$die_area yMax]
+          ioPlacer::exclude_interval $edge_idx $begin $end
+        } elseif {$interval == {*}} {
+          if {$edge_idx <= 1} {
+            set begin [$die_area xMin]
+            set end [$die_area xMax]
+          } elseif {$edge_idx >= 2} {
+            set begin [$die_area yMin]
+            set end [$die_area yMax]
+          }
+
+          ioPlacer::exclude_interval $edge_idx $begin $end
         }
-
-        ioPlacer::exclude_interval $edge_idx $begin $end
       }
     }
   }
@@ -192,6 +195,31 @@ proc parse_edge { cmd edge } {
     return 3
   } else {
     ord::error "$cmd: Invalid edge"
+  }
+}
+
+proc parse_excludes_arg { args_var arg_error_var } {
+  upvar 1 $args_var args
+  
+  set regions {}
+  while { $args != {} } {
+    set arg [lindex $args 0]
+    if { $arg == "-exclude" } {
+      lappend regions [lindex $args 1]
+      set args [lrange $args 1 end]
+    } else {
+      set args [lrange $args 1 end]
+    }
+  }
+
+  return $regions
+}
+
+proc exclude_intervals { cmd intervals } {
+  if { $intervals != {} } {
+    foreach interval $intervals {
+      ioPlacer::exclude_interval $interval
+    }
   }
 }
 
