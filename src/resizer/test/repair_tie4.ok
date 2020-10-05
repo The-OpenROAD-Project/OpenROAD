@@ -9,6 +9,7 @@ Notice 0: Design: top
 Notice 0:     Created 11 components and 43 component-terminals.
 Notice 0:     Created 1 nets and 11 connections.
 Notice 0: Finished DEF file: ./results/repair_tie4.def
+Warning: no estimated parasitics. Using wire load models.
 Inserted 10 tie LOGIC1_X1 instances.
 10.1 10.6
 10.1 20.6
