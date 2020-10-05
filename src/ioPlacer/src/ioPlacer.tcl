@@ -43,6 +43,9 @@ sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \
                                   [-exclude region]         \
                                  }
 
+sta::define_cmd_alias "place_ios" "io_placer"
+sta::define_cmd_alias "place_pins" "io_placer"
+
 proc io_placer { args } {
   sta::parse_key_args "io_placer" args \
   keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
@@ -152,26 +155,26 @@ proc io_placer { args } {
   set arg_error 0
   set regions [ioPlacer::parse_excludes_arg args arg_error]
   if { $regions != {} } {
-    set die_area [$dbBlock getDieArea]
     set lef_units [$dbTech getLefUnits]
     
     foreach region $regions {
       if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
         set edge_idx [ioPlacer::parse_edge "-exclude" $edge]
 
-        if [regexp -all {([0-9]+[.]*[0-9]*)-([0-9]+[.]*[0-9]*)} $interval - begin end] {
+        if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
+          if {$begin == {*}} {
+            set begin [ioPlacer::get_edge_extreme 1 $edge_idx]
+          }
+          if {$end == {*}} {
+            set end [ioPlacer::get_edge_extreme 0 $edge_idx]
+          }
           set begin [expr { int($begin * $lef_units) }]
           set end [expr { int($end * $lef_units) }]
 
           ioPlacer::exclude_interval $edge_idx $begin $end
         } elseif {$interval == {*}} {
-          if {$edge_idx <= 1} {
-            set begin [$die_area xMin]
-            set end [$die_area xMax]
-          } elseif {$edge_idx >= 2} {
-            set begin [$die_area yMin]
-            set end [$die_area yMax]
-          }
+          set begin [ioPlacer::get_edge_extreme 1 $edge_idx]
+          set end [ioPlacer::get_edge_extreme 0 $edge_idx]
 
           ioPlacer::exclude_interval $edge_idx $begin $end
         }
@@ -213,6 +216,24 @@ proc parse_excludes_arg { args_var arg_error_var } {
   }
 
   return $regions
+}
+
+proc get_edge_extreme { begin edge } {
+  set dbBlock [ord::get_db_block]
+  set die_area [$dbBlock getDieArea]
+  if {$begin} {
+    if {$edge <= 1} {
+      set extreme [$die_area xMin]
+    } elseif {$edge >= 2} {
+      set extreme [$die_area yMin]
+    }
+  } else {
+    if {$edge <= 1} {
+      set extreme [$die_area xMax]
+    } elseif {$edge >= 2} {
+      set extreme [$die_area yMax]
+    }
+  }
 }
 
 proc exclude_intervals { cmd intervals } {
