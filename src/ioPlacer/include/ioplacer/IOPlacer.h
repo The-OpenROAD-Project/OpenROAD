@@ -54,6 +54,9 @@ class dbBlock;
 
 namespace ioPlacer {
 
+using odb::Point;
+using odb::Rect;
+
 enum RandomMode
 {
   None,
@@ -91,7 +94,7 @@ class IOPlacer
 
   bool _forcePinSpread;
   std::string _blockagesFile;
-  std::vector<std::pair<Coordinate, Coordinate>> _blockagesArea;
+  std::vector<std::pair<Point, Point>> _blockagesArea;
 
  private:
   void makeComponents();
