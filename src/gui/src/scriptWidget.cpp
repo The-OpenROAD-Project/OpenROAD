@@ -150,14 +150,15 @@ void ScriptWidget::executeCommand()
   pauser_->setStyleSheet("background-color: red");
   QString command = input_->text();
   input_->clear();
-  // Make changes visible while command runs
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   // Show the command that we executed
   output_->setTextColor(Qt::black);
   output_->append("> " + command);
+
+  // Make changes visible while command runs
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+  int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   // Show its output
   updateOutput(return_code);
