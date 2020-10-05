@@ -38,7 +38,6 @@
 #include <string>
 #include <set>
 #include <vector>
-#include "Version.hh"
 
 extern "C" {
 struct Tcl_Interp;
