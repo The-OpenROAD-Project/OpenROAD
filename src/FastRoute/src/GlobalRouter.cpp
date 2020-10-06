@@ -209,7 +209,7 @@ void GlobalRouter::startFastRoute()
 
   if (_onlySignalNets)
   {
-    restorePreviousCapacities(_minLayerForClock, _maxRoutingLayer);
+    restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
   }
 
   _fastRoute->initAuxVar();
