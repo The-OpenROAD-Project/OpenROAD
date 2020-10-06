@@ -66,7 +66,9 @@ NesterovPlaceVars::NesterovPlaceVars()
   timingDrivenMode(true),
   routabilityDrivenMode(true),
   debug(false),
-  debug_pause_iterations(10)
+  debug_pause_iterations(10),
+  debug_update_iterations(10),
+  debug_draw_bins(true)
 {}
 
 
@@ -87,6 +89,8 @@ NesterovPlaceVars::reset() {
   routabilityDrivenMode = true;
   debug = false;
   debug_pause_iterations = 10;
+  debug_update_iterations = 10;
+  debug_draw_bins = true;
 }
 
 NesterovPlace::NesterovPlace() 
@@ -549,9 +553,12 @@ NesterovPlace::doNesterovPlace() {
     // For JPEG Saving
     // debug
 
-  if (graphics_) {
-      bool pause = (i == 0 || (i+1) % npVars_.debug_pause_iterations == 0);
-      graphics_->cellPlot(pause);
+    if (graphics_) {
+      bool update = (i == 0 || (i+1) % npVars_.debug_update_iterations == 0);
+      if (update) {
+        bool pause = (i == 0 || (i+1) % npVars_.debug_pause_iterations == 0);
+        graphics_->cellPlot(pause);
+      }
     }
 
     if( i == 0 || (i+1) % 10 == 0 ) {
