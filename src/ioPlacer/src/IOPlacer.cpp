@@ -238,12 +238,9 @@ void IOPlacer::initIOLists()
 inline bool IOPlacer::checkBlocked(Edge edge, int pos)
 {
   for (Interval blockedInterval : _excludedIntervals) {
-    Edge edgeExcluded = std::get<0>(blockedInterval);
-    int begin = std::get<1>(blockedInterval);
-    int end = std::get<2>(blockedInterval);
-
-    if (edgeExcluded == edge &&
-        pos >= begin && pos <= end) {
+    if (blockedInterval.getEdge() == edge &&
+        pos >= blockedInterval.getBegin() &&
+        pos <= blockedInterval.getEnd()) {
       return true;
     }
   }
@@ -665,7 +662,7 @@ int IOPlacer::returnIONetsHPWL()
 void IOPlacer::excludeInterval(Edge edge, int begin, int end)
 {
   Interval excludedInterv
-      = std::make_tuple((Edge)edge, begin, end);
+      = Interval(edge, begin, end);
 
   _excludedIntervals.push_back(excludedInterv);
 }

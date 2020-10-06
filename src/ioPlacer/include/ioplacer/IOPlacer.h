@@ -74,7 +74,19 @@ enum class Edge
   Invalid
 };
 
-typedef std::tuple<Edge, int, int> Interval;
+struct Interval
+{
+  Edge edge;
+  int begin;
+  int end;
+  Interval() = default;
+  Interval(Edge edg, int b, int e) :
+    edge(edg), begin(b), end(e)
+  {}
+  Edge getEdge() { return edge; }
+  int getBegin() { return begin; }
+  int getEnd() { return end; }
+};
 
 class IOPlacer
 {
