@@ -65,24 +65,45 @@ enum RandomMode
   Group
 };
 
+enum class Edge
+{
+  Top,
+  Bottom,
+  Left,
+  Right,
+  Invalid
+};
+
+struct Interval
+{
+  Edge edge;
+  int begin;
+  int end;
+  Interval() = default;
+  Interval(Edge edg, int b, int e) :
+    edge(edg), begin(b), end(e)
+  {}
+  Edge getEdge() { return edge; }
+  int getBegin() { return begin; }
+  int getEnd() { return end; }
+};
+
 class IOPlacer
 {
  public:
   IOPlacer() = default;
   ~IOPlacer();
   void init(ord::OpenRoad* openroad);
-  void run();
+  void run(int horLayer, int verLayer);
   void printConfig();
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
-  void addBlockedArea(int llx, int lly,
-                      int urx, int ury);
+  void excludeInterval(Edge edge, int begin, int end);
+  Edge getEdge(std::string edge);
 
  protected:
   Netlist _netlist;
   Core _core;
-  std::string _horizontalMetalLayer;
-  std::string _verticalMetalLayer;
   std::vector<IOPin> _assignment;
   bool _reportHPWL;
 
@@ -94,12 +115,12 @@ class IOPlacer
 
   bool _forcePinSpread;
   std::string _blockagesFile;
-  std::vector<std::pair<Point, Point>> _blockagesArea;
+  std::vector<Interval> _excludedIntervals;
 
  private:
   void makeComponents();
   void deleteComponents();
-  void initNetlistAndCore();
+  void initNetlistAndCore(int horLayerIdx, int verLayerIdx);
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
@@ -109,14 +130,15 @@ class IOPlacer
   bool assignPinsSections();
   int returnIONetsHPWL(Netlist&);
 
-  inline void updateOrientation(IOPin&);
-  inline void updatePinArea(IOPin&);
-  inline bool checkBlocked(int, int);
+  void updateOrientation(IOPin&);
+  void updatePinArea(IOPin&);
+  bool checkBlocked(Edge edge, int pos);
 
   // db functions
-  void populateIOPlacer();
-  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
-  void initCore();
+  void populateIOPlacer(int horLayerIdx, int verLayerIdx);
+  void commitIOPlacementToDB(std::vector<IOPin>& assignment, int horLayerIdx,
+                             int verLayerIdx);
+  void initCore(int horLayerIdx, int verLayerIdx);
   void initNetlist();
   void initTracks();
 

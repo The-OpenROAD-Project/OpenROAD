@@ -40,9 +40,17 @@ sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \
                        	          [-random]                   \
                                   [-boundaries_offset offset] \
                                   [-min_distance min_dist]    \
+                                  [-exclude region]         \
                                  }
 
+sta::define_cmd_alias "place_ios" "io_placer"
+sta::define_cmd_alias "place_pins" "io_placer"
+
 proc io_placer { args } {
+  sta::parse_key_args "io_placer" args \
+  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
+  flags {-random} 0
+
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
     ord::error "missing dbTech"
@@ -67,11 +75,7 @@ proc io_placer { args } {
     }
   }
 
-  set num_macroblocks [llength $blockages]
-  puts "#Macro blocks found: $num_macroblocks"
-
-  sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} flags {-random}
+  puts "#Macro blocks found: [llength $blockages]"
 
   if { [info exists flags(-random)] } {
     ioPlacer::set_random_mode 2
@@ -86,7 +90,6 @@ proc io_placer { args } {
   set hor_layer 3
   if [info exists keys(-hor_layer)] {
     set hor_layer $keys(-hor_layer)
-    ioPlacer::set_hor_metal_layer $hor_layer
   } else {
     puts "Warning: use -hor_layer to set the horizontal layer."
   }       
@@ -94,7 +97,6 @@ proc io_placer { args } {
   set ver_layer 2
   if [info exists keys(-ver_layer)] {
     set ver_layer $keys(-ver_layer)
-    ioPlacer::set_ver_metal_layer $ver_layer
   } else {
     puts "Warning: use -ver_layer to set the vertical layer."
   }
@@ -148,6 +150,95 @@ proc io_placer { args } {
     ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
+  set arg_error 0
+  set regions [ioPlacer::parse_excludes_arg args arg_error]
+  if { $regions != {} } {
+    set lef_units [$dbTech getLefUnits]
+    
+    foreach region $regions {
+      if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+        set edge_ [ioPlacer::parse_edge "-exclude" $edge]
+
+        if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
+          if {$begin == {*}} {
+            set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+          }
+          if {$end == {*}} {
+            set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+          }
+          set begin [expr { int($begin * $lef_units) }]
+          set end [expr { int($end * $lef_units) }]
+
+          ioPlacer::exclude_interval $edge_ $begin $end
+        } elseif {$interval == {*}} {
+          set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+          set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+
+          ioPlacer::exclude_interval $edge_ $begin $end
+        }
+      }
+    }
+  }
   
-  ioPlacer::run_io_placement 
+  ioPlacer::run_io_placement $hor_layer $ver_layer
+}
+
+namespace eval ioPlacer {
+
+proc parse_edge { cmd edge } {
+  if {$edge != "top" && $edge != "bottom" && \
+      $edge != "left" && $edge != "right"} {
+    ord::error "$cmd: Invalid edge"
+  }
+  return [ioPlacer::get_edge $edge]
+}
+
+proc parse_excludes_arg { args_var arg_error_var } {
+  upvar 1 $args_var args
+  
+  set regions {}
+  while { $args != {} } {
+    set arg [lindex $args 0]
+    if { $arg == "-exclude" } {
+      lappend regions [lindex $args 1]
+      set args [lrange $args 1 end]
+    } else {
+      set args [lrange $args 1 end]
+    }
+  }
+
+  return $regions
+}
+
+proc get_edge_extreme { cmd begin edge } {
+  set dbBlock [ord::get_db_block]
+  set die_area [$dbBlock getDieArea]
+  if {$begin} {
+    if {$edge == "top" || $edge == "bottom"} {
+      set extreme [$die_area xMin]
+    } elseif {$edge == "left" || $edge == "right"} {
+      set extreme [$die_area yMin]
+    } else {
+      ord::error "$cmd: Invalid edge"
+    }
+  } else {
+    if {$edge == "top" || $edge == "bottom"} {
+      set extreme [$die_area xMax]
+    } elseif {$edge == "left" || $edge == "right"} {
+      set extreme [$die_area yMax]
+    } else {
+      ord::error "$cmd: Invalid edge"
+    }
+  }
+}
+
+proc exclude_intervals { cmd intervals } {
+  if { $intervals != {} } {
+    foreach interval $intervals {
+      ioPlacer::exclude_interval $interval
+    }
+  }
+}
+
+# ioPlacer namespace end
 }

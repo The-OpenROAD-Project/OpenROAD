@@ -46,23 +46,12 @@ ioPlacer::IOPlacer* getIOPlacer();
 } // namespace ord
 
 using ord::getIOPlacer;
+using ioPlacer::Edge;
 %}
 
 %include "../../Exception.i"
 
 %inline %{
-
-void
-set_hor_metal_layer(int layer)
-{
-  getIOPlacer()->getParameters()->setHorizontalMetalLayer(layer);
-}
-
-void
-set_ver_metal_layer(int layer)
-{
-  getIOPlacer()->getParameters()->setVerticalMetalLayer(layer);
-}
 
 void
 set_num_slots(int numSlots)
@@ -100,11 +89,16 @@ set_usage_factor(float usage)
   getIOPlacer()->getParameters()->setUsageFactor(usage);
 }
 
-void
-add_blocked_area(int llx, int lly,
-                 int urx, int ury)
+Edge
+get_edge(const char* edge)
 {
-  getIOPlacer()->addBlockedArea(llx, lly, urx, ury);
+  return getIOPlacer()->getEdge(edge);
+}
+
+void
+exclude_interval(Edge edge, int begin, int end)
+{
+  getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
 void
@@ -132,15 +126,9 @@ set_ver_length(float length)
 }
 
 void
-print_all_parms()
+run_io_placement(int horLayer, int verLayer)
 {
-  getIOPlacer()->getParameters()->printAll();
-}
-
-void
-run_io_placement()
-{
-  getIOPlacer()->run();
+  getIOPlacer()->run(horLayer, verLayer);
 }
 
 void

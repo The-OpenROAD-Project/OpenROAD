@@ -43,9 +43,6 @@ namespace ioPlacer {
 class Parameters
 {
  private:
-  int _horizontalMetalLayer = 1;
-  int _verticalMetalLayer = 2;
-
   bool _reportHPWL = false;
   bool _forceSpread = true;
   int _numSlots = -1;
@@ -65,11 +62,6 @@ class Parameters
 
  public:
   Parameters() = default;
-
-  void setHorizontalMetalLayer(int layer) { _horizontalMetalLayer = layer; }
-  int getHorizontalMetalLayer() const { return _horizontalMetalLayer; }
-  void setVerticalMetalLayer(int layer) { _verticalMetalLayer = layer; }
-  int getVerticalMetalLayer() const { return _verticalMetalLayer; }
   void setReportHPWL(bool report) { _reportHPWL = report; }
   bool getReportHPWL() const { return _reportHPWL; }
   void setNumSlots(int numSlots) { _numSlots = numSlots; }
@@ -117,8 +109,6 @@ class Parameters
   int getBoundariesOffset() const { return _boundariesOffset; }
   void setMinDistance(int minDist) { _minDist = minDist; }
   int getMinDistance() const { return _minDist; }
-
-  void printAll() const;
 };
 
 }  // namespace ioPlacer

@@ -76,9 +76,9 @@ IOPlacer::~IOPlacer()
   deleteComponents();
 }
 
-void IOPlacer::initNetlistAndCore()
+void IOPlacer::initNetlistAndCore(int horLayerIdx, int verLayerIdx)
 {
-  populateIOPlacer();
+  populateIOPlacer(horLayerIdx, verLayerIdx);
 }
 
 void IOPlacer::initParms()
@@ -235,23 +235,16 @@ void IOPlacer::initIOLists()
   });
 }
 
-inline bool IOPlacer::checkBlocked(int currX, int currY)
+bool IOPlacer::checkBlocked(Edge edge, int pos)
 {
-  int blockedBeginX;
-  int blockedBeginY;
-  int blockedEndX;
-  int blockedEndY;
-  for (std::pair<Point, Point> blockage : _blockagesArea) {
-    blockedBeginX = std::get<0>(blockage).x();
-    blockedBeginY = std::get<0>(blockage).y();
-    blockedEndX = std::get<0>(blockage).x();
-    blockedEndY = std::get<0>(blockage).y();
-    if (currX >= blockedBeginX)
-      if (currY >= blockedBeginY)
-        if (currX <= blockedEndX)
-          if (currY <= blockedEndY)
-            return true;
+  for (Interval blockedInterval : _excludedIntervals) {
+    if (blockedInterval.getEdge() == edge &&
+        pos >= blockedInterval.getBegin() &&
+        pos <= blockedInterval.getEnd()) {
+      return true;
+    }
   }
+
   return false;
 }
 
@@ -387,33 +380,33 @@ void IOPlacer::defineSlots()
 
   int i = 0;
   for (Point pos : slotsEdge1) {
-    currX = pos.x();
-    currY = pos.y();
-    bool blocked = checkBlocked(currX, currY);
+    currX = pos.getX();
+    currY = pos.getY();
+    bool blocked = checkBlocked(Edge::Bottom, currX);
     _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 
   for (Point pos : slotsEdge2) {
-    currX = pos.x();
-    currY = pos.y();
-    bool blocked = checkBlocked(currX, currY);
+    currX = pos.getX();
+    currY = pos.getY();
+    bool blocked = checkBlocked(Edge::Right, currY);
     _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 
   for (Point pos : slotsEdge3) {
-    currX = pos.x();
-    currY = pos.y();
-    bool blocked = checkBlocked(currX, currY);
+    currX = pos.getX();
+    currY = pos.getY();
+    bool blocked = checkBlocked(Edge::Top, currX);
     _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
 
   for (Point pos : slotsEdge4) {
-    currX = pos.x();
-    currY = pos.y();
-    bool blocked = checkBlocked(currX, currY);
+    currX = pos.getX();
+    currY = pos.getY();
+    bool blocked = checkBlocked(Edge::Left, currY);
     _slots.push_back({blocked, false, Point(currX, currY)});
     i++;
   }
@@ -553,7 +546,7 @@ void IOPlacer::setupSections()
   } while (!allAssigned);
 }
 
-inline void IOPlacer::updateOrientation(IOPin& pin)
+void IOPlacer::updateOrientation(IOPin& pin)
 {
   const int x = pin.getX();
   const int y = pin.getY();
@@ -590,7 +583,7 @@ inline void IOPlacer::updateOrientation(IOPin& pin)
   }
 }
 
-inline void IOPlacer::updatePinArea(IOPin& pin)
+void IOPlacer::updatePinArea(IOPin& pin)
 {
   const int x = pin.getX();
   const int y = pin.getY();
@@ -666,24 +659,35 @@ int IOPlacer::returnIONetsHPWL()
   return returnIONetsHPWL(_netlist);
 }
 
-void IOPlacer::addBlockedArea(int llx, int lly,
-                              int urx, int ury)
+void IOPlacer::excludeInterval(Edge edge, int begin, int end)
 {
-  Point lowerLeft = Point(llx, lly);
-  Point upperRight = Point(urx, ury);
-  std::pair<Point, Point> blkArea
-      = std::make_pair(lowerLeft, upperRight);
+  Interval excludedInterv
+      = Interval(edge, begin, end);
 
-  _blockagesArea.push_back(blkArea);
+  _excludedIntervals.push_back(excludedInterv);
 }
 
-void IOPlacer::run()
+Edge IOPlacer::getEdge(std::string edge) {
+  if (edge == "top") {
+    return Edge::Top;
+  } else if (edge == "bottom") {
+    return Edge::Bottom;
+  } else if (edge == "left") {
+    return Edge::Left;
+  } else {
+    return Edge::Right;
+  }
+
+  return Edge::Invalid;
+}
+
+void IOPlacer::run(int horLayerIdx, int verLayerIdx)
 {
   initParms();
 
   std::cout << " > Running IO placement\n";
 
-  initNetlistAndCore();
+  initNetlistAndCore(horLayerIdx, verLayerIdx);
 
   std::vector<HungarianMatching> hgVec;
   int initHPWL = 0;
@@ -750,28 +754,25 @@ void IOPlacer::run()
     std::cout << "***HPWL delta  ioPlacer: " << deltaHPWL << "\n";
   }
 
-  commitIOPlacementToDB(_assignment);
+  commitIOPlacementToDB(_assignment, horLayerIdx, verLayerIdx);
   std::cout << " > IO placement done.\n";
 }
 
 // db functions
-void IOPlacer::populateIOPlacer()
+void IOPlacer::populateIOPlacer(int horLayerIdx, int verLayerIdx)
 {
   _tech = _db->getTech();
   _block = _db->getChip()->getBlock();
   initNetlist();
-  initCore();
+  initCore(horLayerIdx, verLayerIdx);
 }
 
-void IOPlacer::initCore()
+void IOPlacer::initCore(int horLayerIdx, int verLayerIdx)
 {
   int databaseUnit = _tech->getLefUnits();
 
   Rect boundary;
   _block->getDieArea(boundary);
-
-  int horLayerIdx = _parms->getHorizontalMetalLayer();
-  int verLayerIdx = _parms->getVerticalMetalLayer();
 
   odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
   odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
@@ -885,11 +886,10 @@ void IOPlacer::initNetlist()
   }
 }
 
-void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
+void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment, 
+                                     int horLayerIdx,
+                                     int verLayerIdx)
 {
-  int horLayerIdx = _parms->getHorizontalMetalLayer();
-  int verLayerIdx = _parms->getVerticalMetalLayer();
-
   odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
 
   odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
