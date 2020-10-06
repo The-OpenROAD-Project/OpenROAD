@@ -57,12 +57,13 @@ namespace ioPlacer {
 using odb::Point;
 using odb::Rect;
 
-enum RandomMode
+enum class RandomMode
 {
   None,
   Full,
   Even,
-  Group
+  Group,
+  Invalid
 };
 
 enum class Edge
@@ -94,7 +95,7 @@ class IOPlacer
   IOPlacer() = default;
   ~IOPlacer();
   void init(ord::OpenRoad* openroad);
-  void run(int horLayer, int verLayer);
+  void run(int horLayer, int verLayer, bool randomMode);
   void printConfig();
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();

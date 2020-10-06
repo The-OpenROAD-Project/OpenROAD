@@ -77,10 +77,6 @@ proc io_placer { args } {
 
   puts "#Macro blocks found: [llength $blockages]"
 
-  if { [info exists flags(-random)] } {
-    ioPlacer::set_random_mode 2
-  }
-
   set seed 42
   if [info exists keys(-random_seed)] {
     set seed $keys(-random_seed)
@@ -178,7 +174,7 @@ proc io_placer { args } {
     }
   }
   
-  ioPlacer::run_io_placement $hor_layer $ver_layer
+  ioPlacer::run_io_placement $hor_layer $ver_layer [info exists flags(-random)]
 }
 
 namespace eval ioPlacer {

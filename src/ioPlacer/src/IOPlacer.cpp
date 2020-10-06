@@ -105,9 +105,6 @@ void IOPlacer::initParms()
   if (_parms->getUsageFactor() > -1) {
     _usageIncreaseFactor = _parms->getUsageFactor();
   }
-  if (_parms->getRandomMode() > -1) {
-    _randomMode = (RandomMode) _parms->getRandomMode();
-  }
 }
 
 void IOPlacer::randomPlacement(const RandomMode mode)
@@ -677,7 +674,7 @@ Edge IOPlacer::getEdge(std::string edge) {
   return Edge::Invalid;
 }
 
-void IOPlacer::run(int horLayerIdx, int verLayerIdx)
+void IOPlacer::run(int horLayerIdx, int verLayerIdx, bool randomMode)
 {
   initParms();
 
@@ -699,9 +696,9 @@ void IOPlacer::run(int horLayerIdx, int verLayerIdx)
     initHPWL = returnIONetsHPWL(_netlist);
   }
 
-  if (!_cellsPlaced || (_randomMode > 0)) {
+  if (!_cellsPlaced || randomMode) {
     std::cout << "Random pin placement\n";
-    randomPlacement(_randomMode);
+    randomPlacement(RandomMode::Even);
   } else {
     setupSections();
 
