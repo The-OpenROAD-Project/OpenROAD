@@ -130,9 +130,9 @@ class IOPlacer
   bool assignPinsSections();
   int returnIONetsHPWL(Netlist&);
 
-  inline void updateOrientation(IOPin&);
-  inline void updatePinArea(IOPin&);
-  inline bool checkBlocked(Edge edge, int pos);
+  void updateOrientation(IOPin&);
+  void updatePinArea(IOPin&);
+  bool checkBlocked(Edge edge, int pos);
 
   // db functions
   void populateIOPlacer(int horLayerIdx, int verLayerIdx);

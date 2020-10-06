@@ -235,7 +235,7 @@ void IOPlacer::initIOLists()
   });
 }
 
-inline bool IOPlacer::checkBlocked(Edge edge, int pos)
+bool IOPlacer::checkBlocked(Edge edge, int pos)
 {
   for (Interval blockedInterval : _excludedIntervals) {
     if (blockedInterval.getEdge() == edge &&
@@ -546,7 +546,7 @@ void IOPlacer::setupSections()
   } while (!allAssigned);
 }
 
-inline void IOPlacer::updateOrientation(IOPin& pin)
+void IOPlacer::updateOrientation(IOPin& pin)
 {
   const int x = pin.getX();
   const int y = pin.getY();
@@ -583,7 +583,7 @@ inline void IOPlacer::updateOrientation(IOPin& pin)
   }
 }
 
-inline void IOPlacer::updatePinArea(IOPin& pin)
+void IOPlacer::updatePinArea(IOPin& pin)
 {
   const int x = pin.getX();
   const int y = pin.getY();
