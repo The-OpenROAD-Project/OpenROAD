@@ -1403,6 +1403,8 @@ Resizer::repairClkNets(double max_wire_length, // meters
 		       LibertyCell *buffer_cell)
 {
   init();
+  // Need slews to resize inserted buffers.
+  sta_->findDelays();
 
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
