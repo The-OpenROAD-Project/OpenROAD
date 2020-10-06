@@ -77,17 +77,14 @@ struct RegionAdjustment
 {
   odb::Rect region;
   int layer;
-  float adjsutment;
+  float adjustment;
+  
   RegionAdjustment(int minX, int minY, 
                    int maxX, int maxY,
-                   int l, float adjst) :
-    region(minX, minY, maxX, maxY),
-    layer(l),
-    adjsutment(adjst)
-    {}
+                   int l, float adjst);
   odb::Rect getRegion() { return region; }
   int getLayer() { return layer; }
-  float getAdjustment() { return adjsutment; }
+  float getAdjustment() { return adjustment; }
 };
 
 class GlobalRouter

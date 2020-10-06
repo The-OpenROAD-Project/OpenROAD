@@ -3048,6 +3048,14 @@ std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(int maxRoutingLayer)
   return defaultVias;
 }
 
+RegionAdjustment::RegionAdjustment(int minX, int minY, 
+                                   int maxX, int maxY,
+                                   int l, float adjst) {
+  region = odb::Rect(minX, minY, maxX, maxY);
+  layer = l;
+  adjustment = adjst;
+}
+
 const char *
 getNetName(odb::dbNet* db_net)
 {
