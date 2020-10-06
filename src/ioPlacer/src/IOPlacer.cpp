@@ -43,6 +43,7 @@
 namespace ioPlacer {
 
 using ord::error;
+using ord::warn;
 
 void IOPlacer::init(ord::OpenRoad* openroad)
 {
@@ -106,10 +107,6 @@ void IOPlacer::initParms()
   }
   if (_parms->getRandomMode() > -1) {
     _randomMode = (RandomMode) _parms->getRandomMode();
-  }
-  if (_forcePinSpread && (_randomMode > 0)) {
-    std::cout << "WARNING: force pin spread option has no effect"
-              << " when using random pin placement\n";
   }
 }
 
@@ -433,7 +430,7 @@ void IOPlacer::createSections()
     int midPoint = (endSlot - beginSlot) / 2;
     Section_t nSec = {slots.at(beginSlot + midPoint).pos};
     if (_usagePerSection > 1.f) {
-      std::cout << "WARNING: section usage exeeded max\n";
+      warn("section usage exeeded max");
       _usagePerSection = 1.;
       std::cout << "Forcing slots per section to increase\n";
       if (_slotsIncreaseFactor != 0.0f) {
@@ -518,9 +515,9 @@ void IOPlacer::setupSections()
   int i = 0;
   if (!_forcePinSpread && _usageIncreaseFactor == 0.0f
       && _slotsIncreaseFactor == 0.0f) {
-    std::cout << "WARNING: if _forcePinSpread = false than either "
-                 "_usageIncreaseFactor or _slotsIncreaseFactor "
-                 "must be != 0\n";
+    warn("If _forcePinSpread = false than either "
+         "_usageIncreaseFactor or _slotsIncreaseFactor "
+         "must be != 0");
   }
   do {
     std::cout << "Tentative " << i++ << " to setup sections\n";
@@ -531,17 +528,16 @@ void IOPlacer::setupSections()
     _usagePerSection *= (1 + _usageIncreaseFactor);
     _slotsPerSection *= (1 + _slotsIncreaseFactor);
     if (_sections.size() > MAX_SECTIONS_RECOMMENDED) {
-      std::cout << "WARNING: number of sections is " << _sections.size()
-                << " while the maximum recommended value is "
-                << MAX_SECTIONS_RECOMMENDED
-                << " this may negatively affect performance\n";
+      warn("Number of sections is %d"
+           " while the maximum recommended value is %d"
+           " this may negatively affect performance\n",
+           _sections.size(), MAX_SECTIONS_RECOMMENDED);
     }
     if (_slotsPerSection > MAX_SLOTS_RECOMMENDED) {
-      std::cout << "WARNING: number of slots per sections is "
-                << _slotsPerSection
-                << " while the maximum recommended value is "
-                << MAX_SLOTS_RECOMMENDED
-                << " this may negatively affect performance\n";
+      warn("Number of slots per sections is %d"
+           " while the maximum recommended value is %d"
+           " this may negatively affect performance\n",
+           _slotsPerSection, MAX_SLOTS_RECOMMENDED);
     }
   } while (!allAssigned);
 }
@@ -704,7 +700,7 @@ void IOPlacer::run(int horLayerIdx, int verLayerIdx)
   }
 
   if (!_cellsPlaced || (_randomMode > 0)) {
-    std::cout << "WARNING: running random pin placement\n";
+    std::cout << "Random pin placement\n";
     randomPlacement(_randomMode);
   } else {
     setupSections();
@@ -840,8 +836,8 @@ void IOPlacer::initNetlist()
     odb::dbBTerm* curBTerm = *btIter;
     odb::dbNet* net = curBTerm->getNet();
     if (!net) {
-      std::cout << "[WARNING] Pin " << curBTerm->getConstName()
-                << " without net!\n";
+      warn("Pin %s without net!\n",
+           curBTerm->getConstName());
     }
 
     Direction dir = DIR_INOUT;
