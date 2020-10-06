@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "openroad/OpenRoad.hh"
+#include "openroad/Version.hh" // BUILD_OPENPHYSYN
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
