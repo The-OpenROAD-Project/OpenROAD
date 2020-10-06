@@ -510,12 +510,7 @@ void IOPlacer::setupSections()
 {
   bool allAssigned;
   int i = 0;
-  if (!_forcePinSpread && _usageIncreaseFactor == 0.0f
-      && _slotsIncreaseFactor == 0.0f) {
-    warn("If _forcePinSpread = false than either "
-         "_usageIncreaseFactor or _slotsIncreaseFactor "
-         "must be != 0");
-  }
+
   do {
     std::cout << "Tentative " << i++ << " to setup sections\n";
     printConfig();
