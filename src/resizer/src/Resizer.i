@@ -213,6 +213,13 @@ estimate_parasitics_cmd()
   resizer->estimateWireParasitics();
 }
 
+bool
+have_estimated_parasitics()
+{
+  Resizer *resizer = getResizer();
+  return resizer->haveEstimatedParasitics();
+}
+
 void
 set_max_utilization(double max_utilization)
 {

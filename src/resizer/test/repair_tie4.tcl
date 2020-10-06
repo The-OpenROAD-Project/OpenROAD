@@ -10,7 +10,7 @@ write_tie_hi_fanout_def $def_filename LOGIC1_X1/Z BUF_X1/A 10
 
 read_def $def_filename
 
-# repair max_fanout should NOT repair the tie hi/low nets.
+# repair_design should NOT repair the hi fanout tie hi/low nets.
 set_max_fanout 5 [current_design]
 repair_design -buffer_cell BUF_X1
 repair_tie_fanout LOGIC1_X1/Z

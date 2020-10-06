@@ -38,6 +38,7 @@ Driver    length delay
 u2/Z manhtn 1499.8 steiner 1499.8 0.21
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
+Warning: max wire length less than 754u increases wire delays.
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.
