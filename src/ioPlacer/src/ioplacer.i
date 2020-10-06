@@ -46,6 +46,7 @@ ioPlacer::IOPlacer* getIOPlacer();
 } // namespace ord
 
 using ord::getIOPlacer;
+using ioPlacer::Edge;
 %}
 
 %include "../../Exception.i"
@@ -100,8 +101,14 @@ set_usage_factor(float usage)
   getIOPlacer()->getParameters()->setUsageFactor(usage);
 }
 
+Edge
+get_edge(const char* edge)
+{
+  return getIOPlacer()->getEdge(edge);
+}
+
 void
-exclude_interval(int edge, int begin, int end)
+exclude_interval(Edge edge, int begin, int end)
 {
   getIOPlacer()->excludeInterval(edge, begin, end);
 }

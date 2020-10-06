@@ -662,12 +662,26 @@ int IOPlacer::returnIONetsHPWL()
   return returnIONetsHPWL(_netlist);
 }
 
-void IOPlacer::excludeInterval(int edge, int begin, int end)
+void IOPlacer::excludeInterval(Edge edge, int begin, int end)
 {
   Interval excludedInterv
       = std::make_tuple((Edge)edge, begin, end);
 
   _excludedIntervals.push_back(excludedInterv);
+}
+
+Edge IOPlacer::getEdge(std::string edge) {
+  if (edge == "top") {
+    return Edge::Top;
+  } else if (edge == "bottom") {
+    return Edge::Bottom;
+  } else if (edge == "left") {
+    return Edge::Left;
+  } else {
+    return Edge::Right;
+  }
+  
+  return Edge::Invalid;
 }
 
 void IOPlacer::run()

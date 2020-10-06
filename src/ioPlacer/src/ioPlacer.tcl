@@ -159,24 +159,24 @@ proc io_placer { args } {
     
     foreach region $regions {
       if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
-        set edge_idx [ioPlacer::parse_edge "-exclude" $edge]
+        set edge_ [ioPlacer::parse_edge "-exclude" $edge]
 
         if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
           if {$begin == {*}} {
-            set begin [ioPlacer::get_edge_extreme 1 $edge_idx]
+            set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
           }
           if {$end == {*}} {
-            set end [ioPlacer::get_edge_extreme 0 $edge_idx]
+            set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
           }
           set begin [expr { int($begin * $lef_units) }]
           set end [expr { int($end * $lef_units) }]
 
-          ioPlacer::exclude_interval $edge_idx $begin $end
+          ioPlacer::exclude_interval $edge_ $begin $end
         } elseif {$interval == {*}} {
-          set begin [ioPlacer::get_edge_extreme 1 $edge_idx]
-          set end [ioPlacer::get_edge_extreme 0 $edge_idx]
+          set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+          set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
 
-          ioPlacer::exclude_interval $edge_idx $begin $end
+          ioPlacer::exclude_interval $edge_ $begin $end
         }
       }
     }
@@ -188,17 +188,11 @@ proc io_placer { args } {
 namespace eval ioPlacer {
 
 proc parse_edge { cmd edge } {
-  if {$edge == "top"} {
-    return 0
-  } elseif {$edge == "bottom"} {
-    return 1
-  } elseif {$edge == "left"} {
-    return 2
-  } elseif {$edge == "right"} {
-    return 3
-  } else {
+  if {$edge != "top" && $edge != "bottom" && \
+      $edge != "left" && $edge != "right"} {
     ord::error "$cmd: Invalid edge"
   }
+  return [ioPlacer::get_edge $edge]
 }
 
 proc parse_excludes_arg { args_var arg_error_var } {
@@ -218,20 +212,24 @@ proc parse_excludes_arg { args_var arg_error_var } {
   return $regions
 }
 
-proc get_edge_extreme { begin edge } {
+proc get_edge_extreme { cmd begin edge } {
   set dbBlock [ord::get_db_block]
   set die_area [$dbBlock getDieArea]
   if {$begin} {
-    if {$edge <= 1} {
+    if {$edge == "top" || $edge == "bottom"} {
       set extreme [$die_area xMin]
-    } elseif {$edge >= 2} {
+    } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMin]
+    } else {
+      ord::error "$cmd: Invalid edge"
     }
   } else {
-    if {$edge <= 1} {
+    if {$edge == "top" || $edge == "bottom"} {
       set extreme [$die_area xMax]
-    } elseif {$edge >= 2} {
+    } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMax]
+    } else {
+      ord::error "$cmd: Invalid edge"
     }
   }
 }
