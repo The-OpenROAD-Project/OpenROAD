@@ -82,6 +82,7 @@ Replace::Replace()
   verbose_(0),
   debug_(false),
   debug_pause_iterations_(10),
+  debug_update_iterations_(10),
   debug_draw_bins_(false) {
 };
 
@@ -139,6 +140,7 @@ void Replace::reset() {
   verbose_ = 0;
   debug_ = false;
   debug_pause_iterations_ = 10;
+  debug_update_iterations_ = 10;
   debug_draw_bins_ = false;
 }
 
@@ -233,6 +235,7 @@ void Replace::doNesterovPlace() {
   npVars.routabilityDrivenMode = routabilityDrivenMode_;
   npVars.debug = debug_;
   npVars.debug_pause_iterations = debug_pause_iterations_;
+  npVars.debug_update_iterations = debug_update_iterations_;
   npVars.debug_draw_bins = debug_draw_bins_;
 
   std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, log_));
@@ -328,9 +331,12 @@ Replace::setVerboseLevel(int verbose) {
 }
 
 void
-Replace::setDebug(int pause_iterations, bool draw_bins) {
+Replace::setDebug(int pause_iterations,
+                  int update_iterations,
+                  bool draw_bins) {
   debug_ = true;
   debug_pause_iterations_ = pause_iterations;
+  debug_update_iterations_ = update_iterations;
   debug_draw_bins_ = draw_bins;
 }
 
