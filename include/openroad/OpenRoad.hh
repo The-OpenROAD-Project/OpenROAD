@@ -200,9 +200,7 @@ private:
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
   antenna_checker::AntennaChecker *antennaChecker_;
-#ifdef BUILD_OPENPHYSYN
   psn::Psn *psn_;
-#endif
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
 
