@@ -28,8 +28,10 @@ if { [have_macros] } {
 
 ################################################################
 # Tapcell insertion
-eval $tapcell_cmd
+eval tapcell $tapcell_args
 
+################################################################
+# Power distribution network insertion
 pdngen -verbose $pdn_cfg
 
 # pre-placement/sizing wireload timing
