@@ -5,6 +5,6 @@ Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Info: Added 34 rows of 252 sites.
 #Macro blocks found: 0
-Default boundaries offset: 5 microns
-Default min distance between IO pins: 2 tracks
+Using 5u default boundaries offset
+Using 2 tracks default min distance between IO pins
 Error: missing track structure

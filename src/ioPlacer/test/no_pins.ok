@@ -8,6 +8,6 @@ Reading DEF file: no_pins.def
 Notice 0: Design: gcd
 Notice 0: Finished DEF file: no_pins.def
 #Macro blocks found: 0
-Default boundaries offset: 5 microns
-Default min distance between IO pins: 2 tracks
+Using 5u default boundaries offset
+Using 2 tracks default min distance between IO pins
 Error: Design without pins

@@ -100,7 +100,7 @@ proc io_placer { args } {
     set offset $keys(-boundaries_offset)
     ioPlacer::set_boundaries_offset $offset
   } else {
-    puts "Default boundaries offset: $offset microns"
+    puts "Using ${offset}u default boundaries offset"
     ioPlacer::set_boundaries_offset $offset
   }
 
@@ -109,7 +109,7 @@ proc io_placer { args } {
     set min_dist $keys(-min_distance)
     ioPlacer::set_min_distance $min_dist
   } else {
-    puts "Default min distance between IO pins: $min_dist tracks"
+    puts "Using $min_dist tracks default min distance between IO pins"
     ioPlacer::set_min_distance $min_dist
   }
 
