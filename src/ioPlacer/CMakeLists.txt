@@ -68,7 +68,6 @@ set(SRC_FILES
   src/IOPlacer.cpp
   src/MakeIoplacer.cpp
   src/Netlist.cpp
-  src/Parameters.cpp
   ${IOPLACER_WRAP}
   ${IOPLACER_TCL_INIT}
   )

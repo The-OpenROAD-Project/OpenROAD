@@ -90,7 +90,6 @@ proc io_placer { args } {
   set hor_layer 3
   if [info exists keys(-hor_layer)] {
     set hor_layer $keys(-hor_layer)
-    ioPlacer::set_hor_metal_layer $hor_layer
   } else {
     puts "Warning: use -hor_layer to set the horizontal layer."
   }       
@@ -98,7 +97,6 @@ proc io_placer { args } {
   set ver_layer 2
   if [info exists keys(-ver_layer)] {
     set ver_layer $keys(-ver_layer)
-    ioPlacer::set_ver_metal_layer $ver_layer
   } else {
     puts "Warning: use -ver_layer to set the vertical layer."
   }
@@ -182,7 +180,7 @@ proc io_placer { args } {
     }
   }
   
-  ioPlacer::run_io_placement 
+  ioPlacer::run_io_placement $hor_layer $ver_layer
 }
 
 namespace eval ioPlacer {

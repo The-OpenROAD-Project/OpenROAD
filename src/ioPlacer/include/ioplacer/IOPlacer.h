@@ -82,7 +82,7 @@ class IOPlacer
   IOPlacer() = default;
   ~IOPlacer();
   void init(ord::OpenRoad* openroad);
-  void run();
+  void run(int horLayer, int verLayer);
   void printConfig();
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
@@ -92,8 +92,6 @@ class IOPlacer
  protected:
   Netlist _netlist;
   Core _core;
-  std::string _horizontalMetalLayer;
-  std::string _verticalMetalLayer;
   std::vector<IOPin> _assignment;
   bool _reportHPWL;
 
@@ -110,7 +108,7 @@ class IOPlacer
  private:
   void makeComponents();
   void deleteComponents();
-  void initNetlistAndCore();
+  void initNetlistAndCore(int horLayerIdx, int verLayerIdx);
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
@@ -125,9 +123,10 @@ class IOPlacer
   inline bool checkBlocked(Edge edge, int pos);
 
   // db functions
-  void populateIOPlacer();
-  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
-  void initCore();
+  void populateIOPlacer(int horLayerIdx, int verLayerIdx);
+  void commitIOPlacementToDB(std::vector<IOPin>& assignment, int horLayerIdx,
+                             int verLayerIdx);
+  void initCore(int horLayerIdx, int verLayerIdx);
   void initNetlist();
   void initTracks();
 

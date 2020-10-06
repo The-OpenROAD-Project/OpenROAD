@@ -54,18 +54,6 @@ using ioPlacer::Edge;
 %inline %{
 
 void
-set_hor_metal_layer(int layer)
-{
-  getIOPlacer()->getParameters()->setHorizontalMetalLayer(layer);
-}
-
-void
-set_ver_metal_layer(int layer)
-{
-  getIOPlacer()->getParameters()->setVerticalMetalLayer(layer);
-}
-
-void
 set_num_slots(int numSlots)
 {
   getIOPlacer()->getParameters()->setNumSlots(numSlots);
@@ -138,15 +126,9 @@ set_ver_length(float length)
 }
 
 void
-print_all_parms()
+run_io_placement(int horLayer, int verLayer)
 {
-  getIOPlacer()->getParameters()->printAll();
-}
-
-void
-run_io_placement()
-{
-  getIOPlacer()->run();
+  getIOPlacer()->run(horLayer, verLayer);
 }
 
 void

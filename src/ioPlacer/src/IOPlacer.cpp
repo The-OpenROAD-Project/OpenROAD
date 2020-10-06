@@ -76,9 +76,9 @@ IOPlacer::~IOPlacer()
   deleteComponents();
 }
 
-void IOPlacer::initNetlistAndCore()
+void IOPlacer::initNetlistAndCore(int horLayerIdx, int verLayerIdx)
 {
-  populateIOPlacer();
+  populateIOPlacer(horLayerIdx, verLayerIdx);
 }
 
 void IOPlacer::initParms()
@@ -680,17 +680,17 @@ Edge IOPlacer::getEdge(std::string edge) {
   } else {
     return Edge::Right;
   }
-  
+
   return Edge::Invalid;
 }
 
-void IOPlacer::run()
+void IOPlacer::run(int horLayerIdx, int verLayerIdx)
 {
   initParms();
 
   std::cout << " > Running IO placement\n";
 
-  initNetlistAndCore();
+  initNetlistAndCore(horLayerIdx, verLayerIdx);
 
   std::vector<HungarianMatching> hgVec;
   int initHPWL = 0;
@@ -757,28 +757,25 @@ void IOPlacer::run()
     std::cout << "***HPWL delta  ioPlacer: " << deltaHPWL << "\n";
   }
 
-  commitIOPlacementToDB(_assignment);
+  commitIOPlacementToDB(_assignment, horLayerIdx, verLayerIdx);
   std::cout << " > IO placement done.\n";
 }
 
 // db functions
-void IOPlacer::populateIOPlacer()
+void IOPlacer::populateIOPlacer(int horLayerIdx, int verLayerIdx)
 {
   _tech = _db->getTech();
   _block = _db->getChip()->getBlock();
   initNetlist();
-  initCore();
+  initCore(horLayerIdx, verLayerIdx);
 }
 
-void IOPlacer::initCore()
+void IOPlacer::initCore(int horLayerIdx, int verLayerIdx)
 {
   int databaseUnit = _tech->getLefUnits();
 
   Rect boundary;
   _block->getDieArea(boundary);
-
-  int horLayerIdx = _parms->getHorizontalMetalLayer();
-  int verLayerIdx = _parms->getVerticalMetalLayer();
 
   odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
   odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
@@ -892,11 +889,10 @@ void IOPlacer::initNetlist()
   }
 }
 
-void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
+void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment, 
+                                     int horLayerIdx,
+                                     int verLayerIdx)
 {
-  int horLayerIdx = _parms->getHorizontalMetalLayer();
-  int verLayerIdx = _parms->getVerticalMetalLayer();
-
   odb::dbTechLayer* horLayer = _tech->findRoutingLayer(horLayerIdx);
 
   odb::dbTechLayer* verLayer = _tech->findRoutingLayer(verLayerIdx);
