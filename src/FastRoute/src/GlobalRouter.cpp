@@ -195,16 +195,11 @@ void GlobalRouter::startFastRoute()
   computeUserGlobalAdjustments();
   computeUserLayerAdjustments();
 
-  for (uint i = 0; i < regionsReductionPercentage.size(); i++) {
-    if (regionsLayer[i] < 1)
-      break;
-
-    std::cout << "Adjusting specific region in layer " << regionsLayer[i]
+  for (RegionAdjustment regionAdjst : _regionAdjustments) {
+    std::cout << "Adjusting region in layer " << regionAdjst.getLayer()
               << "...\n";
-    odb::Point lowerLeft = odb::Point(regionsMinX[i], regionsMinY[i]);
-    odb::Point upperRight = odb::Point(regionsMaxX[i], regionsMaxY[i]);
     computeRegionAdjustments(
-        lowerLeft, upperRight, regionsLayer[i], regionsReductionPercentage[i]);
+        regionAdjst.getRegion(), regionAdjst.getLayer(), regionAdjst.getAdjustment());
   }
 
   if (_onlySignalNets)
@@ -895,8 +890,7 @@ void GlobalRouter::computeUserLayerAdjustments()
   }
 }
 
-void GlobalRouter::computeRegionAdjustments(const odb::Point& lowerBound,
-                                               const odb::Point& upperBound,
+void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
                                                int layer,
                                                float reductionPercentage)
 {
@@ -909,19 +903,18 @@ void GlobalRouter::computeRegionAdjustments(const odb::Point& lowerBound,
                    _grid->getUpperRightX(),
                    _grid->getUpperRightY());
 
-  if ((dieBox.xMin() > lowerBound.x()
-       && dieBox.yMin() > lowerBound.y())
-      || (dieBox.xMax() < upperBound.x()
-          && dieBox.yMax() < upperBound.y())) {
+  if ((dieBox.xMin() > region.ll().x()
+       && dieBox.yMin() > region.ll().y())
+      || (dieBox.xMax() < region.ur().x()
+          && dieBox.yMax() < region.ur().y())) {
     error("Informed region is outside die area");
   }
 
   RoutingLayer routingLayer = getRoutingLayerByIndex(layer);
   bool direction = routingLayer.getPreferredDirection();
-  odb::Rect regionToAdjust = odb::Rect(lowerBound, upperBound);
 
   tilesToAdjust
-      = _grid->getBlockedTiles(regionToAdjust, firstTileBox, lastTileBox);
+      = _grid->getBlockedTiles(region, firstTileBox, lastTileBox);
   Grid::TILE& firstTile = tilesToAdjust.first;
   Grid::TILE& lastTile = tilesToAdjust.second;
 
@@ -930,10 +923,10 @@ void GlobalRouter::computeRegionAdjustments(const odb::Point& lowerBound,
                             routingTracks.getLine2ViaPitch());
 
   int firstTileReduce = _grid->computeTileReduce(
-      regionToAdjust, firstTileBox, trackSpace, true, direction);
+      region, firstTileBox, trackSpace, true, direction);
 
   int lastTileReduce = _grid->computeTileReduce(
-      regionToAdjust, lastTileBox, trackSpace, false, direction);
+      region, lastTileBox, trackSpace, false, direction);
 
   // If preferred direction is horizontal, only first and the last line will
   // have specific adjustments
@@ -1130,12 +1123,8 @@ void GlobalRouter::addRegionAdjustment(int minX,
                                           int layer,
                                           float reductionPercentage)
 {
-  regionsMinX.push_back(minX);
-  regionsMinY.push_back(minY);
-  regionsMaxX.push_back(maxX);
-  regionsMaxY.push_back(maxY);
-  regionsLayer.push_back(layer);
-  regionsReductionPercentage.push_back(reductionPercentage);
+  _regionAdjustments.push_back(RegionAdjustment(minX, minY, 
+                              maxX, maxY, layer, reductionPercentage));
 }
 
 void GlobalRouter::setLayerPitch(int layer, float pitch)
