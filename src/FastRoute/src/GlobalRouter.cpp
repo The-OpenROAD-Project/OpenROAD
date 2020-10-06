@@ -217,6 +217,7 @@ void GlobalRouter::startFastRoute()
 
 void GlobalRouter::runFastRoute()
 {
+  startFastRoute();
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
   NetRouteMap result = findRouting();
@@ -271,6 +272,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
 void GlobalRouter::routeClockNets()
 {
+  startFastRoute();
   std::cout << "Routing clock nets...\n";
   _routes = findRouting();
 

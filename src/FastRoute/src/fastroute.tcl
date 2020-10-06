@@ -294,7 +294,6 @@ proc fastroute { args } {
 
     if { $min_clock_layer < $max_clock_layer } {
       FastRoute::set_clock_layer_range $min_clock_layer $max_clock_layer
-      FastRoute::start_fastroute
       FastRoute::route_clock_nets
     } else {
       ord::error "-clock_layers: Min routing layer is greater than max routing layer"
@@ -342,7 +341,6 @@ proc fastroute { args } {
     FastRoute::report_congestion $congest_file
   }
 
-  FastRoute::start_fastroute
   FastRoute::run_fastroute
   
   if { [info exists keys(-output_file)] } {

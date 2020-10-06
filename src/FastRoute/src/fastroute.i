@@ -171,12 +171,6 @@ set_clock_layer_range(int minLayer, int maxLayer)
 }
 
 void
-start_fastroute()
-{
-  getFastRoute()->startFastRoute();
-}
-
-void
 run_fastroute()
 {
   getFastRoute()->runFastRoute();
