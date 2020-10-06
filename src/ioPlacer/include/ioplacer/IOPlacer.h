@@ -65,12 +65,13 @@ enum RandomMode
   Group
 };
 
-enum Edge
+enum class Edge
 {
   Top,
   Bottom,
   Left,
-  Right
+  Right,
+  Invalid
 };
 
 typedef std::tuple<Edge, int, int> Interval;
@@ -85,7 +86,8 @@ class IOPlacer
   void printConfig();
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
-  void excludeInterval(int edge, int begin, int end);
+  void excludeInterval(Edge edge, int begin, int end);
+  Edge getEdge(std::string edge);
 
  protected:
   Netlist _netlist;
