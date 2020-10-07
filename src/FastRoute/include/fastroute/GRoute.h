@@ -36,6 +36,7 @@
 
 namespace odb {
 class dbNet;
+class Rect;
 }
 
 namespace FastRoute {

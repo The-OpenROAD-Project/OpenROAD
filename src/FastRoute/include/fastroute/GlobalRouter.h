@@ -73,6 +73,20 @@ class SteinerTree;
 class RoutePt;
 struct NET;
 
+struct RegionAdjustment
+{
+  odb::Rect region;
+  int layer;
+  float adjustment;
+  
+  RegionAdjustment(int minX, int minY, 
+                   int maxX, int maxY,
+                   int l, float adjst);
+  odb::Rect getRegion() { return region; }
+  int getLayer() { return layer; }
+  float getAdjustment() { return adjustment; }
+};
+
 class GlobalRouter
 {
  public:
@@ -183,8 +197,7 @@ protected:
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
   void computeUserLayerAdjustments();
-  void computeRegionAdjustments(const odb::Point& lowerBound,
-                                const odb::Point& upperBound,
+  void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
@@ -283,12 +296,7 @@ protected:
   std::vector<float> _adjustments;
 
   // Region adjustment variables
-  std::vector<int> regionsMinX;
-  std::vector<int> regionsMinY;
-  std::vector<int> regionsMaxX;
-  std::vector<int> regionsMaxY;
-  std::vector<int> regionsLayer;
-  std::vector<float> regionsReductionPercentage;
+  std::vector<RegionAdjustment> _regionAdjustments;
 
   // Pitches variables
   std::vector<float> _layerPitches;
