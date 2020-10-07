@@ -87,6 +87,7 @@ class Search
   };
   using InstRange = Range<odb::dbInst*>;
   using ShapeRange = Range<odb::dbNet*>;
+  using FillRange = Range<odb::dbFill*>;
 
   // Build the structure for the given block.
   void init(odb::dbBlock* block);
@@ -100,6 +101,15 @@ class Search
                            int yHi,
                            int minSize = 0);
 
+  // Find all fills in the given bounds on the given layer which
+  // are at least minSize in either dimension.
+  FillRange search_fills(odb::dbTechLayer* layer,
+                         int xLo,
+                         int yLo,
+                         int xHi,
+                         int yHi,
+                         int minSize = 0);
+
   // Find all instances in the given bounds with height of at least minHeight
   InstRange search_insts(int xLo, int yLo, int xHi, int yHi, int minHeight = 0);
 
@@ -111,9 +121,9 @@ class Search
   void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
   void addInst(odb::dbInst* inst);
 
-  // The int stored in shapes is the "shapeId" from OpenDB.  Not
-  // being used yet but will be good for selection later.
+  // The net is used for filter shapes by net type
   std::map<odb::dbTechLayer*, rtree<odb::dbNet*>> shapes_;
+  std::map<odb::dbTechLayer*, rtree<odb::dbFill*>> fills_;
   rtree<odb::dbInst*> insts_;
 };
 

@@ -49,6 +49,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       view_(new QTreeView(parent)),
       model_(new QStandardItemModel(0, 4, parent)),
       tech_inited_(false),
+      fills_visible_(false),
       tracks_visible_pref_(false),
       tracks_visible_non_pref_(false),
       rows_visible_(false),
@@ -121,6 +122,15 @@ DisplayControls::DisplayControls(QWidget* parent)
       = makeItem("Non Pref", tracks_, Qt::Unchecked, [this](bool visible) {
           tracks_visible_non_pref_ = visible;
         });
+
+  // Track patterns
+  misc_ = makeItem("Misc", model_, Qt::Unchecked, [this](bool visible) {
+    toggleAllChildren(visible, misc_, Visible);
+  });
+
+  fills_ = makeItem("Fills", misc_, Qt::Unchecked, [this](bool visible) {
+    fills_visible_ = visible;
+  });
 
   setWidget(view_);
   connect(model_,
@@ -247,6 +257,11 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
     return it->second;
   }
   return false;
+}
+
+bool DisplayControls::areFillsVisible()
+{
+  return fills_visible_;
 }
 
 bool DisplayControls::areRowsVisible()
