@@ -86,7 +86,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   // Draw force direction lines
-  if (true || draw_bins_) {
+  if (draw_bins_) {
     float efMax = 0;
     int max_len = std::numeric_limits<int>::max();
     for (auto& bin : nb_->bins()) {
