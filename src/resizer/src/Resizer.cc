@@ -1215,6 +1215,7 @@ Resizer::repairHoldPass(VertexSet &ends,
   return repair_count;
 }
 
+// Remove non-violating hold ends and find worst hold slack.
 Slack
 Resizer::findHoldViolations(VertexSet &ends)
 {
@@ -1324,8 +1325,8 @@ Resizer::makeHoldDelay(Pin *drvr_pin,
 }
 
 // Gap between min setup and hold slacks.
-// This says how much head room there is for adding delay to fix a old violation
-// before violating a setup check.
+// This says how much head room there is for adding delay to fix a
+// hold violation before violating a setup check.
 float
 Resizer::slackGap(Vertex *vertex)
 {
@@ -1371,7 +1372,7 @@ Resizer::repairDesign(double max_wire_length, // meters
 	&& !isFuncOneZero(drvr_pin)
 	&& !hasTopLevelPort(net)
 	&& !isSpecial(net)) {
-      repairNet(net, drvr, true, true, true, max_length, buffer_cell,
+      repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
 		repair_count, slew_violations, cap_violations,
 		fanout_violations, length_violations);
     }
@@ -1422,7 +1423,8 @@ Resizer::repairClkNets(double max_wire_length, // meters
 	  ? network_->net(network_->term(clk_pin))
 	  : network_->net(clk_pin);
 	Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
-	repairNet(net, drvr, false, false, false, max_length, buffer_cell,
+	// Do not resize clock tree gates.
+	repairNet(net, drvr, false, false, false, max_length, false, buffer_cell,
 		  repair_count, slew_violations, cap_violations,
 		  fanout_violations, length_violations);
       }
@@ -1436,8 +1438,6 @@ Resizer::repairClkNets(double max_wire_length, // meters
 	   repair_count);
     level_drvr_verticies_valid_ = false;
   }
-  if (resize_count_ > 0)
-    printf("Resized %d instances.\n", resize_count_);
 }
 
 // for debugging
@@ -1465,7 +1465,7 @@ Resizer::repairNet(Net *net,
     PinSet::Iterator drvr_iter(drivers);
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-    repairNet(net, drvr, true, true, true, max_length, buffer_cell,
+    repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
 	      repair_count, slew_violations, cap_violations,
 	      fanout_violations, length_violations);
   }
@@ -1493,6 +1493,7 @@ Resizer::repairNet(Net *net,
 		   bool check_cap,
 		   bool check_fanout,
 		   int max_length, // dbu
+		   bool resize_drvr,
 		   LibertyCell *buffer_cell,
 		   int &repair_count,
 		   int &slew_violations,
@@ -1576,7 +1577,8 @@ Resizer::repairNet(Net *net,
 		ignore1, ignore2, ignore3, ignore4);
       repair_count++;
     }
-    resizeToTargetSlew(drvr_pin);
+    if (resize_drvr)
+      resizeToTargetSlew(drvr_pin);
     delete tree;
   }
 }

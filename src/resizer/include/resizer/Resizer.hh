@@ -203,6 +203,7 @@ protected:
 		 bool check_cap,
 		 bool check_fanout,
 		 int max_length, // dbu
+		 bool resize_drvr,
 		 LibertyCell *buffer_cell,
 		 int &repair_count,
 		 int &slew_violations,
