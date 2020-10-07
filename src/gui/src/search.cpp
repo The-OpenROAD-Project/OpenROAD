@@ -86,22 +86,21 @@ void Search::addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y)
 
 void Search::addSNet(odb::dbNet* net)
 {
-  odb::dbSet<odb::dbSWire> swires = net->getSWires();
-
-  for (auto itr = swires.begin(); itr != swires.end(); ++itr) {
-    odb::dbSWire* swire = *itr;
-    odb::dbSet<odb::dbSBox> wires = swire->getWires();
-    odb::dbSet<odb::dbSBox>::iterator box_itr;
-
-    for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
-      odb::dbSBox* box = *box_itr;
+  std::vector<odb::dbShape> shapes;
+  for (odb::dbSWire* swire : net->getSWires()) {
+    for (odb::dbSBox* box : swire->getWires()) {
       if (box->isVia()) {
-        continue;
+        box->getViaBoxes(shapes);
+        for (auto& shape : shapes) {
+          box_t bbox(point_t(shape.xMin(), shape.yMin()),
+                     point_t(shape.xMax(), shape.yMax()));
+          shapes_[shape.getTechLayer()].insert(std::make_pair(bbox, net));
+        }
+      } else {
+        box_t bbox(point_t(box->xMin(), box->yMin()),
+                   point_t(box->xMax(), box->yMax()));
+        shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
       }
-
-      box_t bbox(point_t(box->xMin(), box->yMin()),
-                 point_t(box->xMax(), box->yMax()));
-      shapes_[box->getTechLayer()].insert(std::make_pair(bbox, net));
     }
   }
 }
