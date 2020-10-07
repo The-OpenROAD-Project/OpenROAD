@@ -22,7 +22,7 @@ Notice 0: Finished DEF file: region_adjustment.def
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 3
 [INFO] Processing 177 obstacles in layer 1
-Adjusting specific region in layer 2...
+Adjusting region in layer 2...
 
 Final usage/overflow report: 
 
