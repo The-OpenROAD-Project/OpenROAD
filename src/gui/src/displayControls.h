@@ -77,6 +77,7 @@ class DisplayControls : public QDockWidget, public Options
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
+  bool areFillsVisible() override;
   bool areRowsVisible() override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
@@ -124,8 +125,10 @@ class DisplayControls : public QDockWidget, public Options
   QStandardItem* routing_;
   QStandardItem* tracks_;
   QStandardItem* nets_;
+  QStandardItem* misc_;
 
   // Object controls
+  QStandardItem* fills_;
   QStandardItem* rows_;
   QStandardItem* tracks_pref_;
   QStandardItem* tracks_non_pref_;
@@ -137,6 +140,7 @@ class DisplayControls : public QDockWidget, public Options
 
   odb::dbDatabase* db_;
   bool tech_inited_;
+  bool fills_visible_;
   bool tracks_visible_pref_;
   bool tracks_visible_non_pref_;
   bool rows_visible_;
