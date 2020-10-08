@@ -671,7 +671,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     // Now draw the fills
     if (options_->areFillsVisible()) {
-      QColor color = getColor(layer).lighter();
+      QColor color = getColor(layer).lighter(50);
       painter->setBrush(color);
       painter->setPen(QPen(color, 0));
       auto iter = search_.search_fills(layer,
