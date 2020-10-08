@@ -79,6 +79,10 @@ namespace opendp {
 class Opendp;
 }
 
+namespace finale {
+class Finale;
+}
+
 namespace MacroPlace {
 class TritonMacroPlace;
 }
@@ -126,6 +130,7 @@ public:
   TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::Opendp *getOpendp() { return opendp_; }
+  finale::Finale *getFinale() { return finale_; }
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
@@ -194,6 +199,7 @@ private:
   sta::Resizer *resizer_;
   ioPlacer::IOPlacer *ioPlacer_;
   opendp::Opendp *opendp_;
+  finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
   FastRoute::GlobalRouter *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
