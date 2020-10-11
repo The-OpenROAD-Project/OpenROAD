@@ -31,12 +31,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "DensityFill.h"
-
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
 #include <boost/polygon/polygon.hpp>
 
+#include "DensityFill.h"
 #include "opendb/dbShape.h"
 #include "openroad/Error.hh"
 
@@ -324,7 +323,10 @@ static void fill_polygon(const Polygon90& area,
   Polygon90Set fill_area;
   fill_area += area;
 
-  for (auto [w, h] : cfg.shapes) {
+  auto iter = cfg.shapes.begin();
+  while (iter != cfg.shapes.end()) {
+    auto [w, h] = *iter;
+    bool last_shape = ++iter == cfg.shapes.end();
     // Ensure the longer direction is in the preferred direction
     if (layer->getDirection() == dbTechLayerDir::HORIZONTAL && w < h
         || layer->getDirection() == dbTechLayerDir::VERTICAL && h < w) {
@@ -353,7 +355,9 @@ static void fill_polygon(const Polygon90& area,
       keep(fills, w * h, w * h, w - 1, w, h - 1, h);
 
       // Remove filled area from use by future shapes
-      fill_area -= (fills + space);
+      if (!last_shape) {
+        fill_area -= (fills + space);
+      }
 
       // Insert fills into the db
       std::vector<Rectangle> polygons;
