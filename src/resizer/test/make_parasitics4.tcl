@@ -11,6 +11,7 @@ create_clock -period 10 clk
 set_input_delay -clock clk 0 in1
 
 set_wire_rc -layer metal1
+estimate_parasitics -placement
 
 # report all corners
 report_checks -path_delay min_max

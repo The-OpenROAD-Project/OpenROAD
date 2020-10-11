@@ -90,6 +90,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
  signals:
   void location(qreal x, qreal y);
   void selected(const Selected& selected);
+  void addSelected(const Selected& selected);
 
  public slots:
   void zoomIn();

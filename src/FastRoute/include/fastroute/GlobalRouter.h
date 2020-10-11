@@ -61,7 +61,7 @@ namespace sta {
 
 namespace FastRoute {
 
-class FT;
+class FastRouteCore;
 class AntennaRepair;
 class Grid;
 class Pin;
@@ -72,7 +72,20 @@ class RoutingLayer;
 class SteinerTree;
 class RoutePt;
 struct NET;
-struct PIN;
+
+struct RegionAdjustment
+{
+  odb::Rect region;
+  int layer;
+  float adjustment;
+  
+  RegionAdjustment(int minX, int minY, 
+                   int maxX, int maxY,
+                   int l, float adjst);
+  odb::Rect getRegion() { return region; }
+  int getLayer() { return layer; }
+  float getAdjustment() { return adjustment; }
+};
 
 class GlobalRouter
 {
@@ -184,8 +197,7 @@ protected:
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
   void computeUserLayerAdjustments();
-  void computeRegionAdjustments(const odb::Point& lowerBound,
-                                const odb::Point& upperBound,
+  void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reductionPercentage);
   void computeObstaclesAdjustments();
@@ -194,6 +206,7 @@ protected:
 
 
   // aux functions
+  void findPins(Net& net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
@@ -210,11 +223,12 @@ protected:
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
+  odb::Point findFakePinPosition(Pin &pin);
   bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
-  NetRouteMap getRouting();
+  NetRouteMap findRouting();
 
   // check functions
   void checkPinPlacement();
@@ -250,7 +264,7 @@ protected:
 
   ord::OpenRoad* _openroad;
   // Objects variables
-  FT* _fastRoute = nullptr;
+  FastRouteCore* _fastRoute = nullptr;
   odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 
@@ -282,12 +296,7 @@ protected:
   std::vector<float> _adjustments;
 
   // Region adjustment variables
-  std::vector<int> regionsMinX;
-  std::vector<int> regionsMinY;
-  std::vector<int> regionsMaxX;
-  std::vector<int> regionsMaxY;
-  std::vector<int> regionsLayer;
-  std::vector<float> regionsReductionPercentage;
+  std::vector<RegionAdjustment> _regionAdjustments;
 
   // Pitches variables
   std::vector<float> _layerPitches;

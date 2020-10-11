@@ -80,6 +80,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(selected(const Selected&)),
           this,
           SLOT(setSelected(const Selected&)));
+  connect(viewer_,
+          SIGNAL(addSelected(const Selected&)),
+          this,
+          SLOT(addSelected(const Selected&)));
   connect(this,
           SIGNAL(selectionChanged()),
           viewer_,
@@ -148,14 +152,26 @@ void MainWindow::setLocation(qreal x, qreal y)
   location_->setText(QString("%1, %2").arg(x, 0, 'f', 5).arg(y, 0, 'f', 5));
 }
 
-void MainWindow::setSelected(const Selected& selection)
+void MainWindow::addSelected(const Selected& selection)
 {
-  selected_.clear();
   if (selection) {
     selected_.emplace(selection);
   }
   status(selection ? selection.getName(): "");
   emit selectionChanged();
+}
+
+void MainWindow::addSelected(const SelectionSet& selections)
+{
+  selected_.insert(selections.begin(), selections.end());
+  status(std::string("Added ") + std::to_string(selections.size()));
+  emit selectionChanged();
+}
+
+void MainWindow::setSelected(const Selected& selection)
+{
+  selected_.clear();
+  addSelected(selection);
 }
 
 void MainWindow::status(const std::string& message)

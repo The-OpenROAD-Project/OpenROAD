@@ -35,8 +35,7 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-project(ioPlacement)
-set(BIN_NAME "ioPlacer")
+project(ioPlacer)
 
 add_subdirectory(${IOPLACER_HOME}/src/munkres)
 
@@ -45,7 +44,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TclInterfaceWrap.cpp)
+set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/ioplacer_wrap.cpp)
 set(IOPLACER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/IoplacerTclInitVar.cc)
 
 add_custom_command(OUTPUT ${IOPLACER_WRAP}
@@ -64,36 +63,31 @@ add_custom_command(OUTPUT ${IOPLACER_TCL_INIT}
 )
 
 set(SRC_FILES
-  src/Box.cpp
-  src/Coordinate.cpp
   src/Core.cpp
   src/HungarianMatching.cpp
   src/IOPlacer.cpp
   src/MakeIoplacer.cpp
   src/Netlist.cpp
-  src/Parameters.cpp
   ${IOPLACER_WRAP}
   ${IOPLACER_TCL_INIT}
   )
 
 
-add_LIBRARY(${BIN_NAME} STATIC ${SRC_FILES} ${IOPLACER_WRAP} ${IOPLACER_TCL_INIT})
+add_LIBRARY(ioPlacer STATIC ${SRC_FILES} ${IOPLACER_WRAP} ${IOPLACER_TCL_INIT})
 
-target_include_directories(${BIN_NAME}
+target_include_directories(ioPlacer
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  PRIVATE
   ${OPENDB_HOME}/include/
   ${OPENSTA_HOME}/include
   ${OPENROAD_HOME}/include
   ${TCL_INCLUDE_PATH}
-  PRIVATE
   ${IOPLACER_HOME}/src
   ${IOPLACER_HOME}/src/munkres/src
   )
 
-include_directories(${opendb_home}/include/opendb) 
-
-target_link_libraries(${BIN_NAME}
+target_link_libraries(ioPlacer
         ${TCL_LIB}
         opendb
         lefin

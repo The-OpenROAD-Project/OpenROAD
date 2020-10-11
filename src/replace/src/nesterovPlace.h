@@ -69,6 +69,7 @@ class NesterovPlaceVars {
   bool routabilityDrivenMode;
   bool debug;
   int debug_pause_iterations;
+  int debug_update_iterations;
   bool debug_draw_bins;
 
   NesterovPlaceVars();

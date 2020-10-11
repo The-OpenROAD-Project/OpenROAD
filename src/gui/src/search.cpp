@@ -55,6 +55,14 @@ void Search::init(odb::dbBlock* block)
     }
     addInst(inst);
   }
+
+  for (odb::dbFill* fill : block->getFills()) {
+    odb::Rect rect;
+    fill->getRect(rect);
+    box_t box(point_t(rect.xMin(), rect.yMin()),
+              point_t(rect.xMax(), rect.yMax()));
+    fills_[fill->getTechLayer()].insert(std::make_pair(box, fill));
+  }
 }
 
 void Search::addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y)
@@ -209,6 +217,30 @@ Search::ShapeRange Search::search_shapes(odb::dbTechLayer* layer,
   }
 
   return ShapeRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+}
+
+Search::FillRange Search::search_fills(odb::dbTechLayer* layer,
+                                       int xLo,
+                                       int yLo,
+                                       int xHi,
+                                       int yHi,
+                                       int minSize)
+{
+  auto it = fills_.find(layer);
+  if (it == fills_.end()) {
+    return FillRange();
+  }
+
+  auto& rtree = it->second;
+  box_t query(point_t(xLo, yLo), point_t(xHi, yHi));
+  if (minSize > 0) {
+    return FillRange(rtree.qbegin(bgi::intersects(query)
+                                  && bgi::satisfies(
+                                      MinSizePredicate<odb::dbFill*>(minSize))),
+                     rtree.qend());
+  }
+
+  return FillRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
 }
 
 Search::InstRange Search::search_insts(int xLo,

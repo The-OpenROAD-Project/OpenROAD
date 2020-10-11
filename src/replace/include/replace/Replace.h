@@ -118,7 +118,9 @@ class Replace
 
     void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
-    void setDebug(int pause_iterations, bool draw_bins);
+    void setDebug(int pause_iterations,
+                  int update_iterations,
+                  bool draw_bins);
   private:
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
@@ -173,6 +175,7 @@ class Replace
     int verbose_;
     bool debug_;
     int debug_pause_iterations_;
+    int debug_update_iterations_;
     int debug_draw_bins_;
 };
 }

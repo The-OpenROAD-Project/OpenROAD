@@ -273,7 +273,11 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
   if (event->button() == Qt::LeftButton) {
     if (getBlock()) {
       Point pt_dbu = screenToDBU(event->pos());
-      emit selected(selectAtPoint(pt_dbu));
+      if (qGuiApp->keyboardModifiers() & Qt::ShiftModifier) {
+        emit addSelected(selectAtPoint(pt_dbu));
+      } else {
+        emit selected(selectAtPoint(pt_dbu));
+      }
     }
   } else if (event->button() == Qt::RightButton) {
     rubber_band_showing_ = true;
@@ -533,7 +537,6 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 }
 
-
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -557,6 +560,32 @@ void LayoutViewer::drawBlock(QPainter* painter,
   insts.reserve(10000);
   for (auto& [box, poly, inst] : inst_range) {
     insts.push_back(inst);
+  }
+
+  // Draw the instances bounds
+  for (auto inst : insts) {
+    dbMaster* master = inst->getMaster();
+    // setup the instance's transform
+    QTransform xfm = painter->transform();
+    dbTransform inst_xfm;
+    inst->getTransform(inst_xfm);
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // draw bbox
+    painter->setPen(QPen(Qt::gray, 0));
+    painter->setBrush(QBrush());
+    int master_w = master->getWidth();
+    int master_h = master->getHeight();
+    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
+
+    // Draw an orientation tag in corner if useful in size
+    if (master->getHeight() >= 5 * pixel) {
+      qreal tag_size = 0.1 * master_h;
+      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
+                        QPointF(0.0, tag_size));
+    }
+    painter->setTransform(initial_xfm);
   }
 
   dbTech* tech = block->getDataBase()->getTech();
@@ -655,36 +684,32 @@ void LayoutViewer::drawBlock(QPainter* painter,
       // painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
     }
 
+    // Now draw the fills
+    if (options_->areFillsVisible()) {
+      QColor color = getColor(layer).lighter();
+      painter->setBrush(color);
+      painter->setPen(QPen(color, 0));
+      auto iter = search_.search_fills(layer,
+                                       bounds.xMin(),
+                                       bounds.yMin(),
+                                       bounds.xMax(),
+                                       bounds.yMax(),
+                                       5 * pixel);
+
+      for (auto& i : iter) {
+        const auto& ll = i.first.min_corner();
+        const auto& ur = i.first.max_corner();
+        int w = ur.x() - ll.x();
+        int h = ur.y() - ll.y();
+        painter->drawRect(
+            QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      }
+    }
+
     drawTracks(layer, block, painter, bounds);
     for (auto* renderer : renderers) {
       renderer->drawLayer(layer, gui_painter);
     }
-  }
-
-  // Draw the instances bounds
-  for (auto inst : insts) {
-    dbMaster* master = inst->getMaster();
-    // setup the instance's transform
-    QTransform xfm = painter->transform();
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-    addInstTransform(xfm, inst_xfm);
-    painter->setTransform(xfm);
-
-    // draw bbox
-    painter->setPen(QPen(Qt::gray, 0));
-    painter->setBrush(QBrush());
-    int master_w = master->getWidth();
-    int master_h = master->getHeight();
-    painter->drawRect(QRect(QPoint(0, 0), QPoint(master_w, master_h)));
-
-    // Draw an orientation tag in corner if useful in size
-    if (master->getHeight() >= 5 * pixel) {
-      qreal tag_size = 0.1 * master_h;
-      painter->drawLine(QPointF(std::min(tag_size / 2, (double) master_w), 0.0),
-                        QPointF(0.0, tag_size));
-    }
-    painter->setTransform(initial_xfm);
   }
 
   drawRows(block, painter, bounds);

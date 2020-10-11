@@ -204,8 +204,15 @@ Opendp::updateDbInstLocations()
   for (Cell &cell : cells_) {
     if (!isFixed(&cell) && isStdCell(&cell)) {
       dbInst *db_inst_ = cell.db_inst_;
-      db_inst_->setOrient(cell.orient_);
-      db_inst_->setLocation(core_.xMin() + cell.x_, core_.yMin() + cell.y_);
+      // Only move the instance if necessary to avoid triggering callbacks.
+      if (db_inst_->getOrient() != cell.orient_)
+	db_inst_->setOrient(cell.orient_);
+      int x = core_.xMin() + cell.x_;
+      int y = core_.yMin() + cell.y_;
+      int inst_x, inst_y;
+      db_inst_->getLocation(inst_x, inst_y);
+      if (x != inst_x || y != inst_y)
+	db_inst_->setLocation(x, y);
     }
   }
 }

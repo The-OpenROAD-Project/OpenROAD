@@ -90,3 +90,12 @@ int start_gui(int argc, char* argv[])
 }
 
 }  // namespace gui
+
+namespace ord {
+
+class OpenRoad;
+void initGui(OpenRoad* openroad)
+{
+}
+
+}  // namespace ord

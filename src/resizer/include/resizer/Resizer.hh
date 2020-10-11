@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -77,7 +77,8 @@ public:
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
   void estimateWireParasitic(const dbNet *net);
-  
+  bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
+
   // Core area (meters).
   double coreArea() const;
   // 0.0 - 1.0 (100%) of core size.
@@ -202,6 +203,7 @@ protected:
 		 bool check_cap,
 		 bool check_fanout,
 		 int max_length, // dbu
+		 bool resize_drvr,
 		 LibertyCell *buffer_cell,
 		 int &repair_count,
 		 int &slew_violations,

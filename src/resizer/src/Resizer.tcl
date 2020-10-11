@@ -1,9 +1,9 @@
 ############################################################################
 ##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2019, OpenROAD
 ## All rights reserved.
+##
+## BSD 3-Clause License
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -122,7 +122,6 @@ proc set_wire_rc { args } {
   if { $clk } {
     set_wire_clk_rc_cmd $wire_res $wire_cap $corner
   }
-  estimate_parasitics_cmd
 }
 
 define_cmd_args "estimate_parasitics" { -placement|-global_routing }
@@ -170,6 +169,7 @@ proc resize { args } {
   
   check_argc_eq0 "resize" $args
   
+  check_parasitics
   resizer_preamble $resize_libs
   resize_to_target_slew
 }
@@ -253,6 +253,10 @@ proc repair_design { args } {
     set max_wire_length $keys(-max_wire_length)
     check_positive_float "-max_wire_length" $max_wire_length
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
+    set max_slew_wire_length [find_max_wire_length $buffer_cell]
+    if { $max_wire_length < $max_slew_wire_length } {
+      ord::warn "max wire length less than [format %.0fu [expr $max_slew_wire_length * 1e+6]] increases wire delays."
+    }
   }
   
   if { [info exists keys(-libraries)] } {
@@ -265,6 +269,7 @@ proc repair_design { args } {
   }
 
   check_argc_eq0 "repair_design" $args
+  check_parasitics
   resizer_preamble $resize_libs
   repair_design_cmd $max_wire_length $buffer_cell
 }
@@ -286,6 +291,8 @@ proc repair_clock_nets { args } {
   }
   
   check_argc_eq0 "repair_clock_nets" $args
+  check_parasitics
+  resizer_preamble [get_libs *]
   repair_clk_nets_cmd $max_wire_length $buffer_cell
 }
 
@@ -333,6 +340,7 @@ proc repair_hold_violations { args } {
   
   check_argc_eq0 "repair_hold_violations" $args
   
+  check_parasitics
   repair_hold_violations_cmd $buffer_cell
 }
 
@@ -377,6 +385,12 @@ proc_redirect report_long_wires {
   sta::check_argc_eq1 "report_long_wires" $args
   set count [lindex $args 0]
   report_long_wires_cmd $count $digits
+}
+
+proc check_parasitics { } {
+  if { ![have_estimated_parasitics] } {
+    ord::warn "no estimated parasitics. Using wire load models."
+  }
 }
 
 # sta namespace end

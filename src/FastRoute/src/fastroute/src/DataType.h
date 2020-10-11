@@ -34,6 +34,7 @@
 #define __DATATYPE_H__
 
 #include <string>
+#include <vector>
 
 #define MAXDEMAND 500   // MAX # Segments over an edge
 #define FILESTRLEN 100  // MAX length of file name
@@ -84,9 +85,9 @@ typedef struct
   short numPins;    // number of pins in the net
   short deg;  // net degree (number of MazePoints connecting by the net, pins in
               // same MazePoints count only 1)
-  short* pinX;   // array of X coordinates of pins
-  short* pinY;   // array of Y coordinates of pins
-  short* pinL;   // array of L coordinates of pins
+  std::vector<short> pinX;   // array of X coordinates of pins
+  std::vector<short> pinY;   // array of Y coordinates of pins
+  std::vector<short> pinL;   // array of L coordinates of pins
   float  alpha;  // alpha for pdrev when routing clock nets
   bool isClock;  // flag that indicates if net is a clock net
 } FrNet;           // A Net is a set of connected MazePoints

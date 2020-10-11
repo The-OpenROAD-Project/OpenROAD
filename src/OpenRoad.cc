@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "openroad/OpenRoad.hh"
+#include "openroad/Version.hh" // BUILD_OPENPHYSYN
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
@@ -56,7 +57,7 @@
 #include "init_fp//MakeInitFloorplan.hh"
 #include "ioplacer/MakeIoplacer.h"
 #include "resizer/MakeResizer.hh"
-#include "resizer/MakeResizer.hh"
+#include "gui/MakeGui.h"
 #include "opendp/MakeOpendp.h"
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
@@ -208,6 +209,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   Flute::readLUT();
   initDbSta(this);
   initResizer(this);
+  initGui(this);
   initDbVerilogNetwork(this);
   initIoplacer(this);
   initReplace(this);
