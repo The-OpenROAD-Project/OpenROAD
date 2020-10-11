@@ -61,7 +61,9 @@ void Search::init(odb::dbBlock* block)
     fill->getRect(rect);
     box_t box(point_t(rect.xMin(), rect.yMin()),
               point_t(rect.xMax(), rect.yMax()));
-    fills_[fill->getTechLayer()].insert(std::make_pair(box, fill));
+    polygon_t poly;
+    bg::convert(box, poly);
+    fills_[fill->getTechLayer()].insert(std::make_tuple(box,poly, fill));
   }
 }
 

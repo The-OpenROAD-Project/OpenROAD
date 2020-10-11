@@ -697,8 +697,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                        5 * pixel);
 
       for (auto& i : iter) {
-        const auto& ll = i.first.min_corner();
-        const auto& ur = i.first.max_corner();
+        const auto& ll = std::get<0>(i).min_corner();
+        const auto& ur = std::get<0>(i).max_corner();
         int w = ur.x() - ll.x();
         int h = ur.y() - ll.y();
         painter->drawRect(
