@@ -830,11 +830,12 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
 }
 
-void LayoutViewer::inDbMoveInst(dbInst*)
+void LayoutViewer::inDbPostMoveInst(dbInst*)
 {
   // This is not very smart - we just clear all the search structure
   // rather than try to surgically update it.  We need a pre & post
   // callback from OpenDB to do this right.
+  // TODO:: Update this now with the new callbacks from OpenDB
   if (search_init_) {
     search_.clear();
     search_init_ = false;

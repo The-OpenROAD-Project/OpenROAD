@@ -85,7 +85,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
 
   // From dbBlockCallBackObj
-  virtual void inDbMoveInst(odb::dbInst* inst) override;
+  virtual void inDbPostMoveInst(odb::dbInst* inst) override;
 
  signals:
   void location(qreal x, qreal y);
