@@ -314,6 +314,7 @@ static void fill_polygon(const Polygon90& area,
                          dbBlock* block,
                          const DensityFillShapesConfig& cfg,
                          int num_masks,
+                         bool needs_opc,
                          Polygon90Set* filled_area = nullptr)
 {
   // Convert the area polygon to a polygon set as we will remove areas
@@ -370,7 +371,7 @@ static void fill_polygon(const Polygon90& area,
         auto yLo = yl(f);
         auto xHi = xh(f);
         auto yHi = yh(f);
-        dbFill::create(block, false, mask, layer, xLo, yLo, xHi, yHi);
+        dbFill::create(block, needs_opc, mask, layer, xLo, yLo, xHi, yHi);
         if (filled_area) {
           *filled_area += makeRect(xLo, yLo, xHi, yHi);
         }
@@ -408,7 +409,7 @@ void DensityFill::fill_layer(dbBlock* block, dbTechLayer* layer)
     printf("  Filling %d areas with OPC fill...\n", polygons.size());
     for (auto& polygon : polygons) {
       fill_polygon(
-          polygon, layer, block, cfg.opc, cfg.num_masks, &opc_fill_area);
+                   polygon, layer, block, cfg.opc, cfg.num_masks, true, &opc_fill_area);
     }
     polygons.clear();
   }
@@ -422,7 +423,7 @@ void DensityFill::fill_layer(dbBlock* block, dbTechLayer* layer)
   fill_area.get(polygons);
   printf("  Filling %d areas with non-OPC fill...\n", polygons.size());
   for (auto& polygon : polygons) {
-    fill_polygon(polygon, layer, block, cfg.non_opc, cfg.num_masks);
+    fill_polygon(polygon, layer, block, cfg.non_opc, cfg.num_masks, false);
   }
 }
 
