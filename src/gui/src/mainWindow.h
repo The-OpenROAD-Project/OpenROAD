@@ -102,6 +102,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Displays the selection in the status bar
   void setSelected(const Selected& selection);
 
+  // Zoom to the given rectangle
+  void zoomTo(const odb::Rect& rect_dbu);
+
   // Show a message in the status bar
   void status(const std::string& message);
 

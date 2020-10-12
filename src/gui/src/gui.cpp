@@ -168,6 +168,11 @@ void Gui::addSelectedInsts(const char* pattern)
   mainWindow->addSelected(insts);
 }
 
+void Gui::zoomTo(const odb::Rect& rect_dbu)
+{
+  mainWindow->zoomTo(rect_dbu);
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregister_renderer(this);

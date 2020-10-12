@@ -174,6 +174,11 @@ void MainWindow::setSelected(const Selected& selection)
   addSelected(selection);
 }
 
+void MainWindow::zoomTo(const odb::Rect& rect_dbu)
+{
+  viewer_->zoomTo(rect_dbu);
+}
+
 void MainWindow::status(const std::string& message)
 {
   statusBar()->showMessage(QString::fromStdString(message));

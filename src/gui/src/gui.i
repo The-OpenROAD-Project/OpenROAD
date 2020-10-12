@@ -36,6 +36,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+#include "openroad/OpenRoad.hh"
+#include "openroad/Error.hh"
 #include "gui/gui.h"
 %}
 
@@ -67,6 +69,31 @@ selection_add_insts(const char* name)
 {
   auto gui = gui::Gui::get();
   gui->addSelectedInsts(name);
+}
+
+// converts from microns to DBU
+void zoom_to(double xlo, double ylo, double xhi, double yhi)
+{
+  auto gui = gui::Gui::get();
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  if (!db) {
+    ord::warn("No database loaded");
+    return;
+  }
+  auto chip = db->getChip();
+  if (!chip) {
+    ord::warn("No chip loaded");
+    return;
+  }
+  auto block = chip->getBlock();
+  if (!block) {
+    ord::warn("No block loaded");
+    return;
+  }
+
+  int dbuPerUU = block->getDbUnitsPerMicron();
+  odb::Rect rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
+  gui->zoomTo(rect);
 }
 
 %} // inline
