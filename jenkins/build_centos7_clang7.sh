@@ -7,4 +7,4 @@ export CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang
 mkdir build_clang
 cd build_clang
 cmake ..
-time make
+time make -j 8

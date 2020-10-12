@@ -9,7 +9,7 @@ RUN apt update
 
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 
-RUN apt install -y automake autotools-dev bison cmake clang-7 flex g++ gcc git libpcre3 libpcre3-dev qt5-default tcl tcl-dev wget zlib1g zlib1g-dev
+RUN apt install -y automake autotools-dev bison cmake flex g++ gcc git libpcre3 libpcre3-dev qt5-default tcl tcl-dev wget zlib1g zlib1g-dev
 
 # Install CMake
 RUN wget https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh && \
@@ -60,9 +60,5 @@ FROM base-dependencies AS builder
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-ENV CC=/usr/bin/clang-7 \
-    CPP=/usr/bin/clang-7 \
-    CXX=/usr/bin/clang-7
-
 # Build
-RUN cmake -B build . && cmake --build build
+RUN cmake -B build . && cmake --build build -j 8
