@@ -61,4 +61,4 @@ COPY . /OpenROAD
 WORKDIR /OpenROAD
 
 # Build
-RUN cmake -B build . && cmake --build build
+RUN cmake -B build . && cmake --build build -j 8
