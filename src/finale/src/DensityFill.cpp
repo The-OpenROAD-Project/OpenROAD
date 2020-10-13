@@ -324,13 +324,21 @@ static void fill_polygon(const Polygon90& area,
   Polygon90Set fill_area;
   fill_area += area;
 
+  bool isH = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  int space_x = cfg.space_to_fill;
+  int space_y = space_x;
+  if (isH) {
+    space_x = std::max(space_x, cfg.space_line_end);
+  } else {
+    space_y = std::max(space_y, cfg.space_line_end);
+  }
+
   auto iter = cfg.shapes.begin();
   while (iter != cfg.shapes.end()) {
     auto [w, h] = *iter;
     bool last_shape = ++iter == cfg.shapes.end();
     // Ensure the longer direction is in the preferred direction
-    if (layer->getDirection() == dbTechLayerDir::HORIZONTAL && w < h
-        || layer->getDirection() == dbTechLayerDir::VERTICAL && h < w) {
+    if (isH && w < h || !isH && h < w) {
       std::swap(w, h);
     }
 
@@ -344,9 +352,8 @@ static void fill_polygon(const Polygon90& area,
       // sweep on the origin of the tile set looking for maximum fill.
       // We could try that in the future.)
       Polygon90Set all_fills;
-      const int space = cfg.space_to_fill;
-      for (int x = xl(bounds); x < xh(bounds); x += w + space) {
-        for (int y = yl(bounds); y < yh(bounds); y += h + space) {
+      for (int x = xl(bounds); x < xh(bounds); x += w + space_x) {
+        for (int y = yl(bounds); y < yh(bounds); y += h + space_y) {
           all_fills.insert(makeRect(x, y, x + w, y + h));
         }
       }
@@ -357,7 +364,8 @@ static void fill_polygon(const Polygon90& area,
 
       // Remove filled area from use by future shapes
       if (!last_shape) {
-        fill_area -= (fills + space);
+        Polygon90Set tmp_fills(fills);
+        fill_area -= bloat(tmp_fills, space_x, space_x, space_y, space_y);
       }
 
       // Insert fills into the db
