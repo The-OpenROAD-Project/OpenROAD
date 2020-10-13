@@ -98,10 +98,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     for (auto& bin : nb_->bins()) {
       float fx = bin->electroForceX();
       float fy = bin->electroForceY();
-      float angle = atan(fy / fx);
-      float ratio = hypot(fx, fy) / efMax;
-      float dx = cos(angle) * max_len * ratio;
-      float dy = sin(angle) * max_len * ratio;
+      float f = hypot(fx, fy);
+      float ratio = f / efMax;
+      float dx = fx / f * max_len * ratio;
+      float dy = fy / f * max_len * ratio;
 
       int cx = bin->cx();
       int cy = bin->cy();
