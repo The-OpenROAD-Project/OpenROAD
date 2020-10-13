@@ -1397,39 +1397,6 @@ NesterovBase::targetDensity() const {
   return targetDensity_;
 }
 
-void
-NesterovBase::updateFillerCellSize(int dx, int dy) {
-  fillerDx_ = dx;
-  fillerDy_ = dy; 
-
-  // 
-  // note that numFillerCells will not be changed.
-  //
-  for(auto& gCell : gCells_) {
-    if( !gCell->isFiller() ) {
-      continue;
-    }
-
-    gCell->setSize(dx, dy);
-  }
-
-  // update areas
-  updateAreas();
-
-  // update densitySize
-  updateDensitySize();
-
-  for(auto& gCell : gCells_) {
-    if( !gCell->isFiller() ) {
-      continue;
-    }
-    
-    // update the cell locations if they are
-    // outside of diearea.
-    updateDensityCoordiLayoutInside(gCell);
-  }
-}
-
 // update densitySize and densityScale in each gCell
 void
 NesterovBase::updateDensitySize() {
