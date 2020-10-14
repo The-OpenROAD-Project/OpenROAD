@@ -100,10 +100,16 @@ class GuiPainter : public Painter
   void drawGeomShape(const odb::GeomShape* shape) override
   {
     std::vector<Point> points = shape->getPoints();
-    QPoint* qpoints = new QPoint[points.size()];
-    for(int i = 0;i<points.size();i++)
-      qpoints[i] = QPoint(points[i].getX(),points[i].getY());
-    painter_->drawPolygon(qpoints,points.size());
+    const int size = points.size();
+    if(size==5){
+      painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()), QPoint(shape->xMax(), shape->yMax())));
+    }else
+    {
+      QPolygon qpoly(size);
+      for(int i = 0;i<size;i++)
+        qpoly.setPoint(i,points[i].getX(),points[i].getY());
+      painter_->drawPolygon(qpoly);
+    }
   }
   void drawRect(const odb::Rect& rect) override
   {
@@ -674,14 +680,18 @@ void LayoutViewer::drawBlock(QPainter* painter,
       }
       auto poly = std::get<1>(i);
       int size = poly.outer().size();
-      QPoint* qpoints = new QPoint[size];
-      for(int i = 0;i<size;i++)
-        qpoints[i] = QPoint(poly.outer()[i].x(),poly.outer()[i].y());
-      painter->drawPolygon(qpoints,size);
-      // auto bbox = std::get<0>(i);
-      // const auto& ll = bbox.min_corner();
-      // const auto& ur = bbox.max_corner();
-      // painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      if(size==5){
+        auto bbox = std::get<0>(i);
+        const auto& ll = bbox.min_corner();
+        const auto& ur = bbox.max_corner();
+        painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      }else
+      {
+        QPolygon qpoly(size);
+        for(int i = 0;i<size;i++)
+          qpoly.setPoint(i,poly.outer()[i].x(),poly.outer()[i].y());
+        painter->drawPolygon(qpoly);
+      }
     }
 
     // Now draw the fills
