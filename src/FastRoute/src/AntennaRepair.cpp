@@ -169,8 +169,13 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
 
 void AntennaRepair::legalizePlacedCells()
 {
+  AntennaCbk *cbk = new AntennaCbk();
+  cbk->addOwner(_block);
+
   _opendp->detailedPlacement(0);
   _opendp->checkPlacement(false);
+
+  cbk->removeOwner();
 
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -286,6 +291,10 @@ void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStat
   for (odb::dbInst* diodeInst : _diodeInsts) {
     diodeInst->setPlacementStatus(placementStatus);
   }
+}
+
+void AntennaCbk::inDbMoveInst(odb::dbInst* inst) {
+
 }
 
 }
