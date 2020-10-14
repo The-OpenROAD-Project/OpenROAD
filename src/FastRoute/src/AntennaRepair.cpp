@@ -224,7 +224,12 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
             point(instBox->xMax() + (2 * siteWidth) - 1, instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
-    if (overlapInsts.empty()) {
+    odb::Rect coreArea;
+    _block->getCoreArea(coreArea);
+
+    if (overlapInsts.empty()&&
+        instBox->xMin() >= coreArea.xMin() &&
+        instBox->xMax() <= coreArea.xMax()) {
       legallyPlaced = true;
     }
     overlapInsts.clear();
