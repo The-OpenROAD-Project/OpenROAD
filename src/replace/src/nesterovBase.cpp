@@ -1771,9 +1771,9 @@ NesterovBase::updateDbGCells() {
 
       // pad awareness on X coordinates
       inst->setLocation( 
-          gCell->dCx()-gCell->dDx()/2
+          gCell->dCx()-gCell->dx()/2
           + pb_->siteSizeX() * pb_->padLeft(),
-          gCell->dCy()-gCell->dDy()/2 ); 
+          gCell->dCy()-gCell->dy()/2 ); 
     }
   }
 }
