@@ -44,6 +44,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "AntennaRepair.h"
 #include "FastRoute.h"
@@ -263,6 +264,12 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     NetRouteMap newRoute = findRouting();
     mergeResults(newRoute);
   }
+}
+
+void GlobalRouter::addDirtyNet(odb::dbNet* net)
+{
+  if (std::find(_dirtyNets.begin(), _dirtyNets.end(), net) == _dirtyNets.end())
+    _dirtyNets.push_back(net);
 }
 
 void GlobalRouter::routeClockNets()

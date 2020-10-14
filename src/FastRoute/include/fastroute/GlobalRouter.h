@@ -161,6 +161,7 @@ class GlobalRouter
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diodePort);
+  void addDirtyNet(odb::dbNet* net);
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -260,7 +261,6 @@ protected:
   void makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
   void initClockNets();
   void setSelectedMetal(int metal) { selectedMetal = metal; }
-  void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
 
   ord::OpenRoad* _openroad;
   // Objects variables
