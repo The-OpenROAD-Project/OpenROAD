@@ -64,7 +64,6 @@ AntennaRepair::AntennaRepair(GlobalRouter *grouter,
 int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 					  int maxRoutingLayer)
 {
-  std::vector<odb::dbNet*> dirtyNets;
   odb::dbTech* tech = _db->getTech();
 
   _arc->load_antenna_rules();
@@ -112,14 +111,12 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     std::vector<VINFO> netViol = _arc->get_net_antenna_violations(db_net);
     if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
-      dirtyNets.push_back(db_net);
+      _grouter->addDirtyNet(db_net);
     }
     if (wire != nullptr) {
       odb::dbWire::destroy(wire);
     }
   }
-
-  _grouter->setDirtyNets(dirtyNets);
 
   std::cout << "[INFO] #Antenna violations: " << _antennaViolations.size()
             << "\n";
@@ -169,7 +166,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
 
 void AntennaRepair::legalizePlacedCells()
 {
-  AntennaCbk *cbk = new AntennaCbk();
+  AntennaCbk *cbk = new AntennaCbk(_grouter);
   cbk->addOwner(_block);
 
   _opendp->detailedPlacement(0);
@@ -293,8 +290,15 @@ void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStat
   }
 }
 
-void AntennaCbk::inDbMoveInst(odb::dbInst* inst) {
+AntennaCbk::AntennaCbk(GlobalRouter* grouter)
+  : _grouter(grouter) {}
 
+void AntennaCbk::inDbMoveInst(odb::dbInst* inst) {
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getNet() != nullptr)
+      _grouter->addDirtyNet(iterm->getNet());
+    continue;
+  }
 }
 
 }
