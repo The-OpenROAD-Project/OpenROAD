@@ -88,8 +88,6 @@ public:
 
   void doNesterovPlace();
 
-  void updateCoordi(
-      std::vector<FloatPoint>& coordi);
   void updateBins();
   void updateWireLength();
 
