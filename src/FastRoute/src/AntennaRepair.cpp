@@ -171,6 +171,9 @@ void AntennaRepair::legalizePlacedCells()
 {
   _opendp->detailedPlacement(0);
   _opendp->checkPlacement(false);
+
+  // After legalize placement, diodes and violated insts don't need to be FIRM
+  setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 void AntennaRepair::insertDiode(odb::dbNet* net,
@@ -206,6 +209,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   // Use R-tree to check if diode will not overlap or cause 1-site spacing with
   // other cells
+  int leftPad = _opendp->padGlobalLeft();
+  int rightPad = _opendp->padGlobalRight();
   std::vector<value> overlapInsts;
   while (!legallyPlaced) {
     if (placeAtLeft) {
@@ -222,8 +227,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     antennaInst->setLocation(instLocX + offset, instLocY);
 
     odb::dbBox* instBox = antennaInst->getBBox();
-    box box(point(instBox->xMin() - (2 * siteWidth) + 1, instBox->yMin() + 1),
-            point(instBox->xMax() + (2 * siteWidth) - 1, instBox->yMax() - 1));
+    box box(point(instBox->xMin() - (leftPad * siteWidth) + 1, instBox->yMin() + 1),
+            point(instBox->xMax() + (rightPad * siteWidth) - 1, instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
     odb::Rect coreArea;
@@ -239,6 +244,7 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   odb::dbITerm::connect(antennaITerm, net);
+  _diodeInsts.push_back(antennaInst);
 
   // Add diode to the R-tree of fixed instances
   int fixedInstId = fixedInsts.size();
@@ -275,6 +281,10 @@ void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStat
         sinkITerm->getInst()->setPlacementStatus(placementStatus);
       }
     }
+  }
+
+  for (odb::dbInst* diodeInst : _diodeInsts) {
+    diodeInst->setPlacementStatus(placementStatus);
   }
 }
 

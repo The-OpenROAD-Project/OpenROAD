@@ -103,6 +103,7 @@ private:
   opendp::Opendp* _opendp;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
+  std::vector<odb::dbInst*> _diodeInsts;
   AntennaViolations _antennaViolations;
 };
 
