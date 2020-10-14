@@ -131,7 +131,6 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
   int siteWidth = -1;
   int cnt = 0;
   r_tree fixedInsts;
-  getFixedInstances(fixedInsts);
 
   auto rows = _block->getRows();
   for (odb::dbRow* db_row : rows) {
@@ -145,6 +144,9 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
       std::cout << "[WARNING] Design has rows with different site width\n";
     }
   }
+  
+  setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
+  getFixedInstances(fixedInsts);
 
   for (auto const& violation : _antennaViolations) {
     odb::dbNet* net = violation.first;
@@ -236,7 +238,6 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
   }
 
   antennaInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-  sinkInst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   odb::dbITerm::connect(antennaITerm, net);
 
   // Add diode to the R-tree of fixed instances
@@ -262,6 +263,17 @@ void AntennaRepair::getFixedInstances(r_tree& fixedInsts)
       value v(b, fixedInstId);
       fixedInsts.insert(v);
       fixedInstId++;
+    }
+  }
+}
+
+void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStatus)
+{
+  for (auto const& violation : _antennaViolations) {
+    for (int i = 0; i < violation.second.size(); i++) {
+      for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
+        sinkITerm->getInst()->setPlacementStatus(placementStatus);
+      }
     }
   }
 }

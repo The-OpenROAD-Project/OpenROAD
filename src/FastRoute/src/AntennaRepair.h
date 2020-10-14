@@ -96,6 +96,7 @@ private:
                    int siteWidth,
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
+  void setInstsPlacementStatus(odb::dbPlacementStatus placementStatus);
 
   GlobalRouter *_grouter;
   antenna_checker::AntennaChecker* _arc;
