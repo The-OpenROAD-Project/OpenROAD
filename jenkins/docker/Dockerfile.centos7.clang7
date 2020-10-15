@@ -79,4 +79,4 @@ ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
 # Build
 RUN source scl_source enable llvm-toolset-7.0 && \
     cmake -B build . && \
-    cmake --build build
+    cmake --build build -j 8

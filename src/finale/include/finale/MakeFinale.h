@@ -1,11 +1,9 @@
-%module gui
-
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, Matt Liberty
+// Copyright (c) 2020, OpenRoad Project
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -32,69 +30,23 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
-#include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
-#include "gui/gui.h"
-%}
+#pragma once
 
-%inline %{
+namespace finale {
+class Finale;
+}
 
+namespace ord {
+
+class OpenRoad;
+
+finale::Finale *
+makeFinale();
 void
-selection_add_net(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedNet(name);
-}
-
+initFinale(OpenRoad *openroad);
 void
-selection_add_nets(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
-}
+deleteFinale(finale::Finale *finale);
 
-void
-selection_add_inst(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedInst(name);
-}
-
-void
-selection_add_insts(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
-}
-
-// converts from microns to DBU
-void zoom_to(double xlo, double ylo, double xhi, double yhi)
-{
-  auto gui = gui::Gui::get();
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  if (!db) {
-    ord::warn("No database loaded");
-    return;
-  }
-  auto chip = db->getChip();
-  if (!chip) {
-    ord::warn("No chip loaded");
-    return;
-  }
-  auto block = chip->getBlock();
-  if (!block) {
-    ord::warn("No block loaded");
-    return;
-  }
-
-  int dbuPerUU = block->getDbUnitsPerMicron();
-  odb::Rect rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
-  gui->zoomTo(rect);
-}
-
-%} // inline
-
+}  // namespace ord

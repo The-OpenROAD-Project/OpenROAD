@@ -240,6 +240,9 @@ class Gui
   // Add instances matching the pattern to the selection set
   void addSelectedInsts(const char* pattern);
 
+  // Zoom to the given rectangle
+  void zoomTo(const odb::Rect& rect_dbu);
+
   // Force an immediate redraw.
   void redraw();
 

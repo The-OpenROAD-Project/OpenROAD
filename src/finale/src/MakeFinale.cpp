@@ -1,11 +1,9 @@
-%module gui
-
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, Matt Liberty
+// Copyright (c) 2020, OpenRoad Project
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -32,69 +30,45 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
+#include "finale/MakeFinale.h"
+
+#include <tcl.h>
+
+#include "finale/Finale.h"
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
-#include "gui/gui.h"
-%}
+#include "sta/StaMain.hh"
 
-%inline %{
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* finale_tcl_inits[];
+}  // namespace sta
 
-void
-selection_add_net(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedNet(name);
+extern "C" {
+extern int Finale_Init(Tcl_Interp* interp);
 }
 
-void
-selection_add_nets(const char* name)
+namespace ord {
+
+finale::Finale* makeFinale()
 {
-  auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
+  return new finale::Finale;
 }
 
-void
-selection_add_inst(const char* name)
+void deleteFinale(finale::Finale* finale)
 {
-  auto gui = gui::Gui::get();
-  gui->addSelectedInst(name);
+  delete finale;
 }
 
-void
-selection_add_insts(const char* name)
+void initFinale(OpenRoad* openroad)
 {
-  auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
+  Tcl_Interp* tcl_interp = openroad->tclInterp();
+  // Define swig TCL commands.
+  Finale_Init(tcl_interp);
+  // Eval encoded sta TCL sources.
+  sta::evalTclInit(tcl_interp, sta::finale_tcl_inits);
+  openroad->getFinale()->init(openroad->getDb());
 }
 
-// converts from microns to DBU
-void zoom_to(double xlo, double ylo, double xhi, double yhi)
-{
-  auto gui = gui::Gui::get();
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  if (!db) {
-    ord::warn("No database loaded");
-    return;
-  }
-  auto chip = db->getChip();
-  if (!chip) {
-    ord::warn("No chip loaded");
-    return;
-  }
-  auto block = chip->getBlock();
-  if (!block) {
-    ord::warn("No block loaded");
-    return;
-  }
-
-  int dbuPerUU = block->getDbUnitsPerMicron();
-  odb::Rect rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
-  gui->zoomTo(rect);
-}
-
-%} // inline
-
+}  // namespace ord

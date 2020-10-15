@@ -8,7 +8,7 @@ pipeline {
       parallel {
         stage('Local centos7 gcc8') {
           stages {
-	    stage('Build') {
+            stage('Build') {
               steps {
                 sh './jenkins/build.sh'
               }
@@ -44,16 +44,16 @@ pipeline {
             }
           }
         }
-        stage('Docker ubuntu18 gcc8') {
+        stage('Docker ubuntu20 gcc8') {
           stages{
             stage('Build') {
               steps {
-                sh './jenkins/docker/build.sh ubuntu18 gcc8'
+                sh './jenkins/docker/build.sh ubuntu20 gcc8'
               }
             }
             stage('Test') {
               steps {
-                sh './jenkins/docker/test.sh ubuntu18 gcc8'
+                sh './jenkins/docker/test.sh ubuntu20 gcc8'
               }
             }
           }

@@ -1,10 +1,7 @@
-%module gui
-
 /////////////////////////////////////////////////////////////////////////////
-//
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, Matt Liberty
+// Copyright (c) 2020, OpenRoad Project
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,69 +29,45 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
-#include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
-#include "gui/gui.h"
-%}
+#pragma once
 
-%inline %{
+#include <boost/property_tree/json_parser.hpp>
+#include <map>
+#include <vector>
 
-void
-selection_add_net(const char* name)
+#include "opendb/db.h"
+
+namespace finale {
+
+struct DensityFillLayerConfig;
+
+////////////////////////////////////////////////////////////////
+
+// This class inserts metal fill to meet density rules according
+// to the specification in a user given JSON file.
+class DensityFill
 {
-  auto gui = gui::Gui::get();
-  gui->addSelectedNet(name);
-}
+ public:
+  DensityFill(odb::dbDatabase* db);
+  ~DensityFill();
 
-void
-selection_add_nets(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
-}
+  DensityFill(const DensityFill&) = delete;
+  DensityFill& operator=(const DensityFill&) = delete;
+  DensityFill(const DensityFill&&) = delete;
+  DensityFill& operator=(const DensityFill&&) = delete;
 
-void
-selection_add_inst(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedInst(name);
-}
+  void fill(const char* cfg_filename);
 
-void
-selection_add_insts(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
-}
+ private:
+  void loadConfig(const char* cfg_filename, odb::dbTech* tech);
+  void read_and_expand_layers(odb::dbTech* tech,
+                              boost::property_tree::ptree& tree);
+  void fill_layer(odb::dbBlock* block, odb::dbTechLayer* layer);
 
-// converts from microns to DBU
-void zoom_to(double xlo, double ylo, double xhi, double yhi)
-{
-  auto gui = gui::Gui::get();
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  if (!db) {
-    ord::warn("No database loaded");
-    return;
-  }
-  auto chip = db->getChip();
-  if (!chip) {
-    ord::warn("No chip loaded");
-    return;
-  }
-  auto block = chip->getBlock();
-  if (!block) {
-    ord::warn("No block loaded");
-    return;
-  }
+  odb::dbDatabase* db_;
+  std::map<odb::dbTechLayer*, DensityFillLayerConfig> layers_;
+};
 
-  int dbuPerUU = block->getDbUnitsPerMicron();
-  odb::Rect rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
-  gui->zoomTo(rect);
-}
-
-%} // inline
-
+}  // namespace finale

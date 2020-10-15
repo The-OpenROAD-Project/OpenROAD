@@ -19,6 +19,7 @@ set(INIT_FP_HOME ${PROJECT_SOURCE_DIR}/src/init_fp)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/resizer)
 set(OPENDP_HOME ${PROJECT_SOURCE_DIR}/src/opendp)
+set(FINALE_HOME ${PROJECT_SOURCE_DIR}/src/finale)
 set(REPLACE_HOME ${PROJECT_SOURCE_DIR}/src/replace)
 set(PDNGEN_HOME ${OPENROAD_HOME}/src/pdngen)
 set(ICEWALL_HOME ${OPENROAD_HOME}/src/ICeWall)
@@ -222,6 +223,7 @@ add_subdirectory(resizer)
 add_subdirectory(flute3)
 add_subdirectory(replace)
 add_subdirectory(opendp)
+add_subdirectory(finale)
 add_subdirectory(ioPlacer)
 add_subdirectory(TritonCTS)
 add_subdirectory(FastRoute)
@@ -262,6 +264,7 @@ target_include_directories(openroad
   ${OPENDB_HOME}/include
   ${REPLACE_HOME}/include
   ${OPENDP_HOME}/include
+  ${FINALE_HOME}/include
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
   ${IOPLACER_HOME}/include
@@ -281,6 +284,7 @@ target_link_libraries(openroad
   openroad_swig
   replace
   opendp
+  finale
   resizer
   ioPlacer
   flute

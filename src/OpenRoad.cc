@@ -59,6 +59,7 @@
 #include "resizer/MakeResizer.hh"
 #include "gui/MakeGui.h"
 #include "opendp/MakeOpendp.h"
+#include "finale/MakeFinale.h"
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
 #include "fastroute/MakeFastRoute.h"
@@ -137,6 +138,7 @@ OpenRoad::~OpenRoad()
   deleteTritonMp(tritonMp_);
   deleteOpenRCX(extractor_);
   deleteReplace(replace_);
+  deleteFinale(finale_);
 #ifdef BUILD_OPENPHYSYN
   deletePsn(psn_);
 #endif
@@ -187,6 +189,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
+  finale_ = makeFinale();
   fastRoute_ = makeFastRoute();
   tritonCts_ = makeTritonCts();
   tapcell_ = makeTapcell();
@@ -214,6 +217,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initIoplacer(this);
   initReplace(this);
   initOpendp(this);
+  initFinale(this);
   initFastRoute(this);
   initTritonCts(this);
   initTapcell(this);

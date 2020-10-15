@@ -1,10 +1,8 @@
-%module gui
-
-/////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, Matt Liberty
+// Copyright (c) 2020, OpenRoad Project
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,68 +30,23 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
+%module finale
+ 
 %{
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
-#include "gui/gui.h"
+#include "finale/Finale.h"
+
 %}
 
 %inline %{
 
 void
-selection_add_net(const char* name)
+density_fill_cmd(const char* rules_filename)
 {
-  auto gui = gui::Gui::get();
-  gui->addSelectedNet(name);
-}
-
-void
-selection_add_nets(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedNets(name);
-}
-
-void
-selection_add_inst(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedInst(name);
-}
-
-void
-selection_add_insts(const char* name)
-{
-  auto gui = gui::Gui::get();
-  gui->addSelectedInsts(name);
-}
-
-// converts from microns to DBU
-void zoom_to(double xlo, double ylo, double xhi, double yhi)
-{
-  auto gui = gui::Gui::get();
-  auto db = ord::OpenRoad::openRoad()->getDb();
-  if (!db) {
-    ord::warn("No database loaded");
-    return;
-  }
-  auto chip = db->getChip();
-  if (!chip) {
-    ord::warn("No chip loaded");
-    return;
-  }
-  auto block = chip->getBlock();
-  if (!block) {
-    ord::warn("No block loaded");
-    return;
-  }
-
-  int dbuPerUU = block->getDbUnitsPerMicron();
-  odb::Rect rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
-  gui->zoomTo(rect);
+  auto *finale = ord::OpenRoad::openRoad()->getFinale();
+  finale->densityFill(rules_filename);
 }
 
 %} // inline

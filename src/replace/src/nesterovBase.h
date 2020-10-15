@@ -738,8 +738,6 @@ BinGrid::bins() const {
 class NesterovBaseVars {
 public:
   float targetDensity;
-  float minAvgCut;
-  float maxAvgCut;
   int binCntX;
   int binCntY;
   float minWireLengthForceBar;
@@ -819,9 +817,6 @@ public:
   // fillerArea, whiteSpaceArea, movableArea
   // and totalFillerArea after changing gCell's size
   void updateAreas();
-
-  // change fillerCell's size
-  void updateFillerCellSize(int dx, int dy);
 
   // update density sizes with changed dx and dy
   void updateDensitySize();
