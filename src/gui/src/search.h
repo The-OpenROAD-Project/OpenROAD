@@ -52,9 +52,9 @@ class Search
 {
   using point_t = bg::model::d2::point_xy<int, bg::cs::cartesian>;
   using box_t = bg::model::box<point_t>;
-
+  using polygon_t = bg::model::polygon<point_t,false>;//counterclockwise(clockwise=false)
   template <typename T>
-  using value_t = std::pair<box_t, T>;
+  using value_t = std::tuple<box_t,polygon_t, T>;
 
   template <typename T>
   using rtree = bgi::rtree<value_t<T>, bgi::quadratic<16>>;
