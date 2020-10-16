@@ -171,6 +171,12 @@ set_clock_layer_range(int minLayer, int maxLayer)
 }
 
 void
+set_macro_block_extension(int macroExtension)
+{
+  getFastRoute()->setMacroExtension(macroExtension);
+}
+
+void
 run_fastroute()
 {
   getFastRoute()->runFastRoute();
