@@ -44,6 +44,8 @@
 #include "layoutViewer.h"
 #include "mainWindow.h"
 #include "search.h"
+#include <vector>
+#include <tuple>
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -95,7 +97,20 @@ class GuiPainter : public Painter
   {
     painter_->setBrush(QColor(color.r, color.g, color.b, color.a));
   }
-
+  void drawGeomShape(const odb::GeomShape* shape) override
+  {
+    std::vector<Point> points = shape->getPoints();
+    const int size = points.size();
+    if(size==5){
+      painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()), QPoint(shape->xMax(), shape->yMax())));
+    }else
+    {
+      QPolygon qpoly(size);
+      for(int i = 0;i<size;i++)
+        qpoly.setPoint(i,points[i].getX(),points[i].getY());
+      painter_->drawPolygon(qpoly);
+    }
+  }
   void drawRect(const odb::Rect& rect) override
   {
     painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
@@ -233,8 +248,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
     // Just return the first one
     for (auto iter : shapes) {
-      if (options_->isNetVisible(iter.second)) {
-        return Selected(iter.second);
+      if (options_->isNetVisible(std::get<2>(iter))) {
+        return Selected(std::get<2>(iter));
       }
     }
   }
@@ -252,8 +267,9 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       = search_.search_insts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
   // Just return the first one
+
   if (insts.begin() != insts.end()) {
-    return Selected(insts.begin()->second);
+    return Selected(std::get<2>(*insts.begin()));
   }
   return Selected();
 }
@@ -548,7 +564,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (auto& [box, inst] : inst_range) {
+  for (auto& [box, poly, inst] : inst_range) {
     insts.push_back(inst);
   }
 
@@ -659,14 +675,23 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       5 * pixel);
 
     for (auto& i : iter) {
-      if (!options_->isNetVisible(i.second)) {
+      if (!options_->isNetVisible(std::get<2>(i))) {
         continue;
       }
-      const auto& ll = i.first.min_corner();
-      const auto& ur = i.first.max_corner();
-      int w = ur.x() - ll.x();
-      int h = ur.y() - ll.y();
-      painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      auto poly = std::get<1>(i);
+      int size = poly.outer().size();
+      if(size==5){
+        auto bbox = std::get<0>(i);
+        const auto& ll = bbox.min_corner();
+        const auto& ur = bbox.max_corner();
+        painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      }else
+      {
+        QPolygon qpoly(size);
+        for(int i = 0;i<size;i++)
+          qpoly.setPoint(i,poly.outer()[i].x(),poly.outer()[i].y());
+        painter->drawPolygon(qpoly);
+      }
     }
 
     // Now draw the fills
@@ -682,8 +707,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                        5 * pixel);
 
       for (auto& i : iter) {
-        const auto& ll = i.first.min_corner();
-        const auto& ur = i.first.max_corner();
+        const auto& ll = std::get<0>(i).min_corner();
+        const auto& ur = std::get<0>(i).max_corner();
         int w = ur.x() - ll.x();
         int h = ur.y() - ll.y();
         painter->drawRect(
@@ -840,11 +865,12 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
 }
 
-void LayoutViewer::inDbMoveInst(dbInst*)
+void LayoutViewer::inDbPostMoveInst(dbInst*)
 {
   // This is not very smart - we just clear all the search structure
   // rather than try to surgically update it.  We need a pre & post
   // callback from OpenDB to do this right.
+  // TODO:: Update this now with the new callbacks from OpenDB
   if (search_init_) {
     search_.clear();
     search_init_ = false;
