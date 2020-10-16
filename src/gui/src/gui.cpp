@@ -227,7 +227,8 @@ void OpenDbDescriptor::highlight(void* object, Painter& painter) const
       for (auto swire : net->getSWires()) {
         for (auto sbox : swire->getWires()) {
           sbox->getBox(rect);
-          painter.drawRect(rect);
+          painter.drawGeomShape(sbox->getGeomShape());
+          // painter.drawRect(rect);
         }
       }
       break;

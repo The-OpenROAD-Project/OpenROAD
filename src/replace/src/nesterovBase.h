@@ -738,8 +738,6 @@ BinGrid::bins() const {
 class NesterovBaseVars {
 public:
   float targetDensity;
-  float minAvgCut;
-  float maxAvgCut;
   int binCntX;
   int binCntY;
   float minWireLengthForceBar;
