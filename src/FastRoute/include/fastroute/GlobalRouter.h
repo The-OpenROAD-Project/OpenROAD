@@ -149,6 +149,7 @@ class GlobalRouter
   void setPDRevForHighFanout(int pdRevForHighFanout);
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
+  void setMacroExtension(int macroExtension);
   void printGrid();
 
   // flow functions
@@ -291,6 +292,7 @@ protected:
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
   unsigned _seed;
+  int _macroExtension;
 
   // Layer adjustment variables
   std::vector<float> _adjustments;
