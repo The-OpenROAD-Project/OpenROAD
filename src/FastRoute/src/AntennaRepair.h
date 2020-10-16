@@ -70,7 +70,7 @@ class AntennaCbk : public odb::dbBlockCallBackObj
 {
 public:
   AntennaCbk(GlobalRouter* grouter);
-  virtual void inDbMoveInst(odb::dbInst*);
+  virtual void inDbPostMoveInst(odb::dbInst*);
 private:
   GlobalRouter* _grouter;
 };

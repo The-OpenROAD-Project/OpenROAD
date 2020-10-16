@@ -293,7 +293,7 @@ void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStat
 AntennaCbk::AntennaCbk(GlobalRouter* grouter)
   : _grouter(grouter) {}
 
-void AntennaCbk::inDbMoveInst(odb::dbInst* inst) {
+void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst) {
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getNet() != nullptr)
       _grouter->addDirtyNet(iterm->getNet());
