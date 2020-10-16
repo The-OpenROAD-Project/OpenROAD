@@ -24,9 +24,9 @@ Notice 0: Finished DEF file: gcd_sky130.def
 [INFO] Found 1 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 11
-[INFO] Processing 17704 obstacles in layer 1
-[INFO] Processing 2627 obstacles in layer 2
-[INFO] Processing 10 obstacles in layer 5
+[INFO] Processing 17704 obstacles on layer 1
+[INFO] Processing 2627 obstacles on layer 2
+[INFO] Processing 10 obstacles on layer 5
 [INFO] Reducing resources of layer 2 by 80%
 [INFO] Reducing resources of layer 3 by 70%
 [INFO] Reducing resources of layer 4 by 50%
@@ -59,9 +59,9 @@ Final usage/overflow report:
 [INFO] Found 1 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 11
-[INFO] Processing 17704 obstacles in layer 1
-[INFO] Processing 2627 obstacles in layer 2
-[INFO] Processing 10 obstacles in layer 5
+[INFO] Processing 17704 obstacles on layer 1
+[INFO] Processing 2627 obstacles on layer 2
+[INFO] Processing 10 obstacles on layer 5
 [INFO] Reducing resources of layer 2 by 80%
 [INFO] Reducing resources of layer 3 by 70%
 [INFO] Reducing resources of layer 4 by 50%

@@ -29,9 +29,9 @@ Layer 6 pitch: 3.33
 [INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 11
-[INFO] Processing 17704 obstacles in layer 1
-[INFO] Processing 2627 obstacles in layer 2
-[INFO] Processing 10 obstacles in layer 5
+[INFO] Processing 17704 obstacles on layer 1
+[INFO] Processing 2627 obstacles on layer 2
+[INFO] Processing 10 obstacles on layer 5
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
@@ -105,9 +105,9 @@ Layer 6 pitch: 3.330000
 [INFO] Found 0 clock nets
 [INFO] Minimum degree: 3
 [INFO] Maximum degree: 3
-[INFO] Processing 17710 obstacles in layer 1
-[INFO] Processing 2631 obstacles in layer 2
-[INFO] Processing 10 obstacles in layer 5
+[INFO] Processing 17710 obstacles on layer 1
+[INFO] Processing 2631 obstacles on layer 2
+[INFO] Processing 10 obstacles on layer 5
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
