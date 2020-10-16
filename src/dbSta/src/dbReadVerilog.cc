@@ -213,11 +213,21 @@ Verilog2db::makeBlock()
   dbChip *chip = db_->getChip();
   if (chip == nullptr)
     chip = dbChip::create(db_);
-  dbBlock *block = chip->getBlock();
-  if (block)
-    dbBlock::destroy(block);
-  const char *design = network_->name(network_->cell(network_->topInstance()));
-  block_ = dbBlock::create(chip, design, network_->pathDivider());
+  block_ = chip->getBlock();
+  if (block_) {
+    auto insts = block_->getInsts();
+    for (auto iter = insts.begin(); iter != insts.end(); ) {
+      iter = dbInst::destroy(iter);
+    }
+    auto nets = block_->getNets();
+    for (auto iter = nets.begin(); iter != nets.end(); ) {
+      iter = dbNet::destroy(iter);
+    }
+  }
+  else {
+    const char *design = network_->name(network_->cell(network_->topInstance()));
+    block_ = dbBlock::create(chip, design, network_->pathDivider());
+  }
   dbTech *tech = db_->getTech();
   block_->setDefUnits(tech->getLefUnits());
   block_->setBusDelimeters('[', ']');
