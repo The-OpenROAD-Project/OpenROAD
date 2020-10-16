@@ -316,6 +316,9 @@ protected:
   // Variables for PADs obstacles handling
   std::map<Net*, std::vector<FastRoute::GSegment>> _padPinsConnections;
 
+  //  For guides output: factor between DB and lef.
+  int lef_factor;
+  
   // db variables
   sta::dbSta* _openSta;
   int selectedMetal = 3;

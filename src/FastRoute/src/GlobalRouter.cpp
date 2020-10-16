@@ -1258,6 +1258,14 @@ void GlobalRouter::writeGuides(const char* fileName)
   std::cout << "[INFO] Num routed nets: " << _routes.size() << "\n";
   int finalLayer;
 
+  // In general, DBu is the same as LEF units, but not always.
+  odb::dbTech* tech = _db->getTech();
+  lef_factor = tech->getDbUnitsPerMicron() / tech->getLefUnits();
+  assert(lef_factor >= 1);
+
+  offsetX /= lef_factor;
+  offsetY /= lef_factor;
+
   // Sort nets so guide file net order is consistent.
   std::vector<odb::dbNet*> sorted_nets;
   for (odb::dbNet* net : _block->getNets())
@@ -1640,6 +1648,14 @@ Box GlobalRouter::globalRoutingToBox(const GSegment& route)
     urY = dieBounds.getUpperBound().getY();
   }
 
+  //  Convert to LEF units
+  if (lef_factor != 1) {
+    llX /= lef_factor;
+    llY /= lef_factor;
+    urX /= lef_factor;
+    urY /= lef_factor;
+  }
+  
   Coordinate lowerLeft = Coordinate(llX, llY);
   Coordinate upperRight = Coordinate(urX, urY);
 
