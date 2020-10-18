@@ -657,7 +657,9 @@ Die::coreArea() const {
 }
 
 PlacerBaseVars::PlacerBaseVars()
-  : padLeft(0), padRight(0) {}
+{
+  reset();
+}
 
 void 
 PlacerBaseVars::reset() {

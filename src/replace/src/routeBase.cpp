@@ -535,24 +535,9 @@ RoutingTrack::RoutingTrack(int lx1, int ly1, int ux1, int uy1, int layer1, GNet*
 // RouteBaseVars
 
 RouteBaseVars::RouteBaseVars()
-  : gRoutePitchScale(1.09), 
-  edgeAdjustmentCoef(1.19),
-  pinInflationCoef(1.66), 
-  pinBlockageFactor(0.05),
-  inflationRatioCoef(2.5), 
-  maxInflationRatio(2.5), 
-  blockagePorosity(0),
-  maxDensity(0.90),
-  ignoreEdgeRatio(0.8),
-  targetRC(1.01),
-  rcK1(1.0),
-  rcK2(1.0),
-  rcK3(0.0),
-  rcK4(0.0),
-  maxBloatIter(1),
-  maxInflationIter(4),
-  minPinBlockLayer(1),
-  maxPinBlockLayer(2) {}
+{
+  reset();
+}
 
 void 
 RouteBaseVars::reset() {
