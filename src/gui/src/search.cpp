@@ -56,6 +56,26 @@ void Search::init(odb::dbBlock* block)
     addInst(inst);
   }
 
+  for (odb::dbBTerm* term : block->getBTerms()) {
+    for (odb::dbBPin* pin : term->getBPins()) {
+      odb::dbPlacementStatus status = pin->getPlacementStatus();
+      if (status == odb::dbPlacementStatus::NONE
+          || status == odb::dbPlacementStatus::UNPLACED) {
+        continue;
+      }
+      odb::dbBox* box = pin->getBox();
+      if (!box) {
+        continue;
+      }
+      box_t bbox(point_t(box->xMin(), box->yMin()),
+                 point_t(box->xMax(), box->yMax()));
+      polygon_t poly;
+      bg::convert(bbox, poly);
+      odb::dbTechLayer* layer = box->getTechLayer();
+      shapes_[layer].insert(std::make_tuple(bbox, poly, term->getNet()));
+    }
+  }
+
   for (odb::dbFill* fill : block->getFills()) {
     odb::Rect rect;
     fill->getRect(rect);
