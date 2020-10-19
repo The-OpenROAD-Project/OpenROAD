@@ -604,7 +604,7 @@ fastroute [-guide_file out_file] \
           [-clock_layers min-max] \
           [-clock_pdrev_fanout fanout] \
           [-clock_topology_priority priority] \
-          [-macro_block_extension extension]
+          [-macro_extension extension]
           [-unidirectional_routing] \
           [-allow_overflow]
 
@@ -622,7 +622,7 @@ Options description:
 - **clock_pdrev_fanout**: Set the minimum fanout to use PDRev for the routing topology construction of the clock nets (e.g.: -clock_pdrev_fanout 5)
 - **clock_topology_priority**: Set the PDRev routing topology construction priority for clock nets.
 See `set_pdrev_topology_priority` command description for more details about PDRev and topology priority (e.g.: -topology_priority 0.6)
-- **macro_block_extension**: Set the number of GCells added to the obstacles boundaries from macroblocks
+- **macro_extension**: Set the number of GCells added to the obstacles boundaries from macros
 - **unidirectional_routing**: Avoid routing in layer 1, using it only for pin access
 - **allow_overflow**: Allow global routing results with overflow
 

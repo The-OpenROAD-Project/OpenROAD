@@ -174,7 +174,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-clock_layers layers] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
-                                  [-macro_block_extension macro_extension] \
+                                  [-macro_extension macro_extension] \
                                   [-output_file out_file] \
                                   [-min_routing_layer min_layer] \
                                   [-max_routing_layer max_layer] \
@@ -187,7 +187,7 @@ proc fastroute { args } {
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
-          -macro_block_extension \
+          -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
          } \
     flags {-unidirectional_routing -allow_overflow} \
@@ -287,11 +287,11 @@ proc fastroute { args } {
 
   FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
 
-  if { [info exists keys(-macro_block_extension)] } {
-    set macro_extension $keys(-macro_block_extension)
-    FastRoute::set_macro_block_extension $macro_extension
+  if { [info exists keys(-macro_extension)] } {
+    set macro_extension $keys(-macro_extension)
+    FastRoute::set_macro_extension $macro_extension
   } else {
-    FastRoute::set_macro_block_extension 0
+    FastRoute::set_macro_extension 0
   }
 
   set min_clock_layer 6
