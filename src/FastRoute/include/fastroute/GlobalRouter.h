@@ -254,6 +254,10 @@ protected:
   void addNets(std::vector<odb::dbNet*> nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
+  void findLayerExtensions(std::vector<int>& layerExtensions);
+  void findObstructions(odb::Rect& dieArea);
+  void findInstancesObstacles(odb::Rect& dieArea, const std::vector<int>& layerExtensions);
+  void findNetsObstacles(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);

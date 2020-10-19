@@ -2675,11 +2675,18 @@ void GlobalRouter::initObstacles()
               _grid->getLowerLeftY(),
               _grid->getUpperRightX(),
               _grid->getUpperRightY());
+  std::vector<int> layerExtensions;
 
-  // Get routing obstructions
+  findLayerExtensions(layerExtensions);
+  findObstructions(dieArea);
+  findInstancesObstacles(dieArea, layerExtensions);
+  findNetsObstacles(dieArea);
+}
+
+void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
+{
   odb::dbTech* tech = _db->getTech();
-
-  std::map<int, int> layerExtensions;
+  layerExtensions.resize(tech->getRoutingLayerCount() + 1, 0);
 
   for (odb::dbTechLayer* obstructLayer : tech->getLayers()) {
     if (obstructLayer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
@@ -2727,9 +2734,11 @@ void GlobalRouter::initObstacles()
 
     layerExtensions[obstructLayer->getRoutingLevel()] = spacingExtension;
   }
+}
 
+void GlobalRouter::findObstructions(odb::Rect& dieArea)
+{
   int obstructionsCnt = 0;
-
   for (odb::dbObstruction* currObstruct : _block->getObstructions()) {
     odb::dbBox* obstructBox = currObstruct->getBBox();
 
@@ -2748,8 +2757,11 @@ void GlobalRouter::initObstacles()
   }
 
   std::cout << "[INFO] #DB Obstructions: " << obstructionsCnt << "\n";
+}
 
-  // Get instance obstructions
+void GlobalRouter::findInstancesObstacles(odb::Rect& dieArea,
+                                          const std::vector<int>& layerExtensions)
+{
   int macrosCnt = 0;
   int obstaclesCnt = 0;
   for (odb::dbInst* currInst : _block->getInsts()) {
@@ -2829,8 +2841,10 @@ void GlobalRouter::initObstacles()
 
   std::cout << "[INFO] #DB Obstacles: " << obstaclesCnt << "\n";
   std::cout << "[INFO] #DB Macros: " << macrosCnt << "\n";
+}
 
-  // Get nets obstructions (routing wires and pdn wires)
+void GlobalRouter::findNetsObstacles(odb::Rect& dieArea)
+{
   odb::dbSet<odb::dbNet> nets = _block->getNets();
 
   if (nets.empty()) {
