@@ -49,9 +49,9 @@ Final usage/overflow report:
 [Overflow Report] Final Overflow: 0
 
 [INFO] Final usage          : 2677
-[INFO] Final number of vias : 1768
-[INFO] Final usage 3D       : 7981
-[INFO] Total wirelength: 27547 um
+[INFO] Final number of vias : 1767
+[INFO] Final usage 3D       : 7978
+[INFO] Total wirelength: 27540 um
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.

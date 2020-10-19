@@ -25,7 +25,7 @@ Notice 0: Finished DEF file: multiple_calls.def
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 629
+[Overflow Report] Total Usage   : 628
 [Overflow Report] Total Capacity: 149734
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -34,9 +34,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 629
+[INFO] Final usage          : 628
 [INFO] Final number of vias : 250
-[INFO] Final usage 3D       : 1379
+[INFO] Final usage 3D       : 1378
 [INFO] Total wirelength: 2303 um
 [INFO] Num routed nets: 87
 [PARAMS] Min routing layer: 1
@@ -64,7 +64,7 @@ Final usage/overflow report:
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 626
+[Overflow Report] Total Usage   : 625
 [Overflow Report] Total Capacity: 23161
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -73,9 +73,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 626
+[INFO] Final usage          : 625
 [INFO] Final number of vias : 266
-[INFO] Final usage 3D       : 1424
+[INFO] Final usage 3D       : 1423
 [INFO] Total wirelength: 2641 um
 [INFO] Num routed nets: 87
 Differences found at line 3.

@@ -35,13 +35,13 @@ Final usage/overflow report:
 [Overflow Report] Final Overflow: 0
 
 [INFO] Final usage          : 3333
-[INFO] Final number of vias : 2597
-[INFO] Final usage 3D       : 11124
+[INFO] Final number of vias : 2598
+[INFO] Final usage 3D       : 11127
 [INFO] Total wirelength: 10292 um
 Net clk
  Pin capacitance: r 33.238 f 29.975
- Wire capacitance: r 17.626 f 17.626
- Total capacitance: r 50.864 f 47.602
+ Wire capacitance: r 17.615 f 17.615
+ Total capacitance: r 50.853 f 47.590
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36
