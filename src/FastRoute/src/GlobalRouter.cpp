@@ -268,8 +268,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
-  if (std::find(_dirtyNets.begin(), _dirtyNets.end(), net) == _dirtyNets.end())
-    _dirtyNets.push_back(net);
+  _dirtyNets.insert(net);
 }
 
 void GlobalRouter::routeClockNets()
@@ -2389,10 +2388,10 @@ void GlobalRouter::initNetlist(bool reroute)
 
     addNets(_dirtyNets);
   } else {
-    std::vector<odb::dbNet*> nets;
+    std::unordered_set<odb::dbNet*> nets;
 
     for (odb::dbNet* net : _block->getNets()) {
-      nets.push_back(net);
+      nets.insert(net);
     }
 
     if (nets.empty()) {
@@ -2403,7 +2402,7 @@ void GlobalRouter::initNetlist(bool reroute)
   }
 }
 
-void GlobalRouter::addNets(std::vector<odb::dbNet*> nets)
+void GlobalRouter::addNets(std::unordered_set<odb::dbNet*> nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
