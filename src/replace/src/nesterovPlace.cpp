@@ -52,24 +52,9 @@ static float
 getSecondNorm(vector<FloatPoint>& a);
 
 NesterovPlaceVars::NesterovPlaceVars()
-  : maxNesterovIter(5000), 
-  maxBackTrack(10),
-  initDensityPenalty(0.00008),
-  initWireLengthCoef(0.25),
-  targetOverflow(0.1),
-  minPhiCoef(0.95),
-  maxPhiCoef(1.05),
-  minPreconditioner(1.0),
-  initialPrevCoordiUpdateCoef(100),
-  referenceHpwl(446000000),
-  routabilityCheckOverflow(0.20),
-  timingDrivenMode(true),
-  routabilityDrivenMode(true),
-  debug(false),
-  debug_pause_iterations(10),
-  debug_update_iterations(10),
-  debug_draw_bins(true)
-{}
+{
+  reset();
+}
 
 
 void
