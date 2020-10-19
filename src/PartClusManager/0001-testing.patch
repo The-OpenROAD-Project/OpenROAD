@@ -1,0 +1,139 @@
+From 4776a24e245daead0b1126e75fa31c76792fac2b Mon Sep 17 00:00:00 2001
+From: Isadora Oliveira <isadorasop@gmail.com>
+Date: Thu, 15 Oct 2020 14:05:21 -0700
+Subject: [PATCH] testing
+
+---
+ include/openroad/OpenRoad.hh | 6 ++++++
+ src/CMakeLists.txt           | 3 +++
+ src/OpenRoad.cc              | 7 ++++++-
+ src/OpenRoad.i               | 8 ++++++++
+ 4 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/include/openroad/OpenRoad.hh b/include/openroad/OpenRoad.hh
+index 2523852..8477b64 100644
+--- a/include/openroad/OpenRoad.hh
++++ b/include/openroad/OpenRoad.hh
+@@ -107,6 +107,10 @@ namespace antenna_checker {
+ class AntennaChecker;
+ }
+ 
++namespace PartClusManager {
++class PartClusManagerKernel;
++}
++
+ 
+ namespace ord {
+ 
+@@ -139,6 +143,7 @@ public:
+   FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
+   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
+   ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
++  PartClusManager::PartClusManagerKernel *getPartClusManager() { return partClusManager_; }
+   // Return the bounding box of the db rows.
+   odb::Rect getCore();
+   // Return true if the command units have been initialized.
+@@ -209,6 +214,7 @@ private:
+   psn::Psn *psn_;
+   replace::Replace *replace_;
+   pdnsim::PDNSim *pdnsim_; 
++  PartClusManager::PartClusManagerKernel *partClusManager_;
+ 
+   std::set<Observer *> observers_;
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 2c471ad..c9c3a67 100755
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -33,6 +33,7 @@ set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
+ set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
+ set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antennachecker)
+ set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
++set(PARTCLUSMANAGER_HOME ${PROJECT_SOURCE_DIR}/src/PartClusManager)
+ 
+ set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
+ 
+@@ -232,6 +233,7 @@ add_subdirectory(TritonMacroPlace)
+ add_subdirectory(OpenRCX)
+ add_subdirectory(PDNSim)
+ add_subdirectory(antennachecker)
++add_subdirectory(PartClusManager)
+ 
+ if(BUILD_OPENPHYSYN)
+   add_subdirectory(OpenPhySyn)
+@@ -309,6 +311,7 @@ target_link_libraries(openroad
+   lefout
+   antennachecker
+   zutil
++  PartClusManager
+   ${TCL_LIBRARY}
+   ${CMAKE_THREAD_LIBS_INIT}
+ )
+diff --git a/src/OpenRoad.cc b/src/OpenRoad.cc
+index d676b49..98e7be2 100755
+--- a/src/OpenRoad.cc
++++ b/src/OpenRoad.cc
+@@ -68,6 +68,7 @@
+ #include "OpenRCX/MakeOpenRCX.h"
+ #include "pdnsim/MakePDNSim.hh"
+ #include "antennachecker/MakeAntennaChecker.hh"
++#include "PartClusManager/src/MakePartclusmanager.h"
+ #ifdef BUILD_OPENPHYSYN
+   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
+ #endif
+@@ -119,7 +120,8 @@ OpenRoad::OpenRoad()
+     psn_(nullptr),
+ #endif
+     replace_(nullptr),
+-    pdnsim_(nullptr) 
++    pdnsim_(nullptr),
++    partClusManager_(nullptr)
+ {
+   openroad_ = this;
+   db_ = dbDatabase::create();
+@@ -139,6 +141,7 @@ OpenRoad::~OpenRoad()
+   deleteOpenRCX(extractor_);
+   deleteReplace(replace_);
+   deleteFinale(finale_);
++  deletePartClusManager(partClusManager_);
+ #ifdef BUILD_OPENPHYSYN
+   deletePsn(psn_);
+ #endif
+@@ -198,6 +201,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
+   replace_ = makeReplace();
+   pdnsim_ = makePDNSim();
+   antennaChecker_ = makeAntennaChecker();
++  partClusManager_ = makePartClusManager();
+ #ifdef BUILD_OPENPHYSYN
+   psn_ = makePsn();
+ #endif
+@@ -225,6 +229,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
+   initOpenRCX(this);
+   initPDNSim(this);
+   initAntennaChecker(this);
++  initPartClusManager(this);
+ #ifdef BUILD_OPENPHYSYN
+     initPsn(this);
+ #endif
+diff --git a/src/OpenRoad.i b/src/OpenRoad.i
+index 449d05a..68f0f0b 100644
+--- a/src/OpenRoad.i
++++ b/src/OpenRoad.i
+@@ -163,6 +163,14 @@ getIOPlacer()
+   return openroad->getIOPlacer();
+ }
+ 
++PartClusManager::PartClusManagerKernel *
++getPartClusManager()
++{
++  OpenRoad *openroad = getOpenRoad();
++  return openroad->getPartClusManager();
++}
++
++
+ } // namespace ord
+ 
+ namespace sta {
+-- 
+1.8.3.1
+
