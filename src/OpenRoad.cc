@@ -68,9 +68,11 @@
 #include "OpenRCX/MakeOpenRCX.h"
 #include "pdnsim/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
+#include "PartClusManager/src/MakePartclusmanager.h"
 #ifdef BUILD_OPENPHYSYN
   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #endif
+#include <iostream>
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -119,7 +121,8 @@ OpenRoad::OpenRoad()
     psn_(nullptr),
 #endif
     replace_(nullptr),
-    pdnsim_(nullptr) 
+    pdnsim_(nullptr), 
+    partClusManager_(nullptr) 
 {
   openroad_ = this;
   db_ = dbDatabase::create();
@@ -145,6 +148,7 @@ OpenRoad::~OpenRoad()
   deleteAntennaChecker(antennaChecker_);
   odb::dbDatabase::destroy(db_);
   Flute::deleteLUT();
+  deletePartClusManager(partClusManager_);
 }
 
 void
@@ -201,6 +205,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 #ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif
+  partClusManager_ = makePartClusManager();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -228,6 +233,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 #ifdef BUILD_OPENPHYSYN
     initPsn(this);
 #endif
+  initPartClusManager(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

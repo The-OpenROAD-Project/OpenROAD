@@ -4,9 +4,12 @@ project(PartClusManager)
 
 set(BIN_NAME "PartClusManager")
 
-#add_subdirectory(${PARTCLUSMANAGER_HOME}/third_party/Chaco/code)
-#add_subdirectory(${PARTCLUSMANAGER_HOME}/third_party/Metis)
-#add_subdirectory(${PARTCLUSMANAGER_HOME}/third_party/MLPart)
+option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" OFF)
+if (LOAD_PARTITIONERS)
+	add_subdirectory(${PARTCLUSMANAGER_HOME}/Partitioners/Chaco/code)
+	add_subdirectory(${PARTCLUSMANAGER_HOME}/Partitioners/Metis)
+	add_subdirectory(${PARTCLUSMANAGER_HOME}/Partitioners/MLPart)
+endif (LOAD_PARTITIONERS)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -35,7 +38,7 @@ add_custom_command(OUTPUT ${PARTCLUSMANAGER_TCL_INIT}
 set(SRC_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Hypergraph.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/MakePartclusmanager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/PartClusManagerKernel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Partitioner.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/HypergraphDecomposition.cpp
    )
 
@@ -52,14 +55,22 @@ include_directories(${PARTCLUSMANAGER_HOME}/src
                     ${OPENSTA_HOME}/include
                     ${OPENSTA_HOME}/app
 		    ${TCL_INCLUDE_PATH}
-#                    ${PARTCLUSMANAGER_HOME}/third_party/Chaco/code
-#                    ${PARTCLUSMANAGER_HOME}/third_party/Metis/include
-#                    ${PARTCLUSMANAGER_HOME}/third_party/MLPart/src
-                   ) 
+		    )
+if (LOAD_PARTITIONERS)
+include_directories(PRIVATE
+		    ${PARTCLUSMANAGER_HOME}/Partitioners/Chaco/code
+                    ${PARTCLUSMANAGER_HOME}/Partitioners/Metis/include
+                    ${PARTCLUSMANAGER_HOME}/Partitioners/MLPart/src
+		    )
 
 target_link_libraries(${BIN_NAME} INTERFACE
-                      ${TCL_LIB}
-#                      Chaco
-#		      metis
-#		      MLPart
-                     )
+	Chaco
+	metis
+	MLPart
+	)
+endif (LOAD_PARTITIONERS)
+
+target_link_libraries(${BIN_NAME} INTERFACE
+			${TCL_LIB}
+			)
+unset(LOAD_PARTITIONERS)

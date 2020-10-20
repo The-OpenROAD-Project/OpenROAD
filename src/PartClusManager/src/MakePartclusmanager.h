@@ -34,18 +34,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace PartClusManager {
-class PartClusManagerKernel;
+class Partitioner;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-PartClusManager::PartClusManagerKernel* makePartClusManager();
+PartClusManager::Partitioner* makePartClusManager();
 
 void initPartClusManager(OpenRoad* openroad);
 
 void deletePartClusManager(
-    PartClusManager::PartClusManagerKernel* partclusmanager);
+    PartClusManager::Partitioner* partclusmanager);
 
 }  // namespace ord

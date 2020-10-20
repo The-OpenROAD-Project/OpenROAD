@@ -281,6 +281,7 @@ target_include_directories(openroad
   ${ANTENNACHECKER_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
+  ${PARTCLUSMANAGER_HOME}/include
   )
 
 target_link_libraries(openroad
@@ -313,6 +314,7 @@ target_link_libraries(openroad
   lefout
   antennachecker
   zutil
+  PartClusManager
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

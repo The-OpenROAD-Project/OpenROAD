@@ -35,7 +35,7 @@
 
 #include "MakePartclusmanager.h"
 
-#include "PartClusManagerKernel.h"
+#include "Partitioner.h"
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -51,9 +51,9 @@ extern int Partclusmanager_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-PartClusManager::PartClusManagerKernel* makePartClusManager()
+PartClusManager::Partitioner* makePartClusManager()
 {
-  return new PartClusManager::PartClusManagerKernel();
+  return new PartClusManager::Partitioner();
 }
 
 void initPartClusManager(OpenRoad* openroad)
@@ -63,21 +63,14 @@ void initPartClusManager(OpenRoad* openroad)
   sta::evalTclInit(tcl_interp, sta::partclusmanager_tcl_inits);
 
   unsigned dbId = openroad->getDb()->getId();
-  PartClusManager::PartClusManagerKernel* kernel
-#define STUB 1
-#ifdef STUB
-  /* TODO define getPartClusManager in openroad
-   */
-  = NULL;
-#else
-         = openroad->getPartClusManager();
-#endif
+  PartClusManager::Partitioner* kernel = 
+          openroad->getPartClusManager();
 
   kernel->setDbId(dbId);
 };
 
 void deletePartClusManager(
-    PartClusManager::PartClusManagerKernel* partclusmanager)
+    PartClusManager::Partitioner* partclusmanager)
 {
   delete partclusmanager;
 }

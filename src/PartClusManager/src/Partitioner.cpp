@@ -1,11 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////
-// Authors: Mateus Fogaça, Isadora Oliveira and Marcelo Danigno
-//
-//          (Advisor: Ricardo Reis and Paulo Butzen)
+/////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, Federal University of Rio Grande do Sul (UFRGS)
+// Copyright (c) 2019, University of California, San Diego.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,16 +30,19 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #define STUB 1
 
-#include "PartClusManagerKernel.h"
+#include "Partitioner.h"
 #ifdef STUB
 #else
 extern "C" {
 #include "main/ChacoWrapper.h"
 }
+#include "MLPart.h"
+#include "metis.h"
 #endif
 #include <time.h>
 
@@ -51,8 +51,6 @@ extern "C" {
 #include <fstream>
 #include <iostream>
 
-//SM #include "MLPart.h"
-//SM #include "metis.h"
 #include "opendb/db.h"
 #include "openroad/Error.hh"
 
@@ -60,7 +58,7 @@ namespace PartClusManager {
 
 // Partition Netlist
 
-void PartClusManagerKernel::runPartitioning()
+void Partitioner::runPartitioning()
 {
   hypergraph();
   if (_options.getTool() == "mlpart") {
@@ -72,7 +70,7 @@ void PartClusManagerKernel::runPartitioning()
   }
 }
 
-void PartClusManagerKernel::runChaco()
+void Partitioner::runChaco()
 {
 #ifdef STUB
   std::cout << "runChaco STUB...\n";
@@ -326,7 +324,7 @@ void PartClusManagerKernel::runChaco()
 #endif
 }
 
-void PartClusManagerKernel::runGpMetis()
+void Partitioner::runGpMetis()
 {
 #ifdef STUB
   std::cout << "runGpMetis STUB...\n";
@@ -467,7 +465,7 @@ void PartClusManagerKernel::runGpMetis()
 #endif
 }
 
-void PartClusManagerKernel::runMlPart()
+void Partitioner::runMlPart()
 {
 #ifdef STUB
   std::cout << "runMlPart STUB...\n";
@@ -643,7 +641,7 @@ void PartClusManagerKernel::runMlPart()
 #endif
 }
 
-void PartClusManagerKernel::toHypergraph()
+void Partitioner::toHypergraph()
 {
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
@@ -651,7 +649,7 @@ void PartClusManagerKernel::toHypergraph()
   hypergraphDecomp.toHypergraph(hype, _graph);
 }
 
-void PartClusManagerKernel::hypergraph()
+void Partitioner::hypergraph()
 {
   _hypergraph.fullClearHypergraph();
   HypergraphDecomposition hypergraphDecomp;
@@ -663,7 +661,7 @@ void PartClusManagerKernel::hypergraph()
   toGraph();
 }
 
-void PartClusManagerKernel::toGraph()
+void Partitioner::toGraph()
 {
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
@@ -676,7 +674,7 @@ void PartClusManagerKernel::toGraph()
                            _options.getCliqueThreshold());
 }
 
-unsigned PartClusManagerKernel::generatePartitionId()
+unsigned Partitioner::generatePartitionId()
 {
   unsigned sizeOfResults = _results.size();
   return sizeOfResults;
@@ -684,7 +682,7 @@ unsigned PartClusManagerKernel::generatePartitionId()
 
 // Evaluate Partitioning
 
-void PartClusManagerKernel::evaluatePartitioning()
+void Partitioner::evaluatePartitioning()
 {
   std::vector<int> partVector = _options.getPartitionsToTest();
   std::string evaluationFunction = _options.getEvaluationFunction();
@@ -715,7 +713,7 @@ void PartClusManagerKernel::evaluatePartitioning()
   setCurrentBestId(bestId);
 }
 
-void PartClusManagerKernel::computePartitionResult(unsigned partitionId,
+void Partitioner::computePartitionResult(unsigned partitionId,
                                                    std::string function)
 {
   odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
@@ -874,7 +872,7 @@ void PartClusManagerKernel::computePartitionResult(unsigned partitionId,
   _results[partitionId] = currentResults;
 }
 
-bool PartClusManagerKernel::comparePartitionings(PartSolutions oldPartition,
+bool Partitioner::comparePartitionings(PartSolutions oldPartition,
                                                  PartSolutions newPartition,
                                                  std::string function)
 {
@@ -898,7 +896,7 @@ bool PartClusManagerKernel::comparePartitionings(PartSolutions oldPartition,
   return isBetter;
 }
 
-void PartClusManagerKernel::reportPartitionResult(unsigned partitionId)
+void Partitioner::reportPartitionResult(unsigned partitionId)
 {
   PartSolutions currentResults = _results[partitionId];
   std::cout << "\nPartitioning Results for ID = " << partitionId
@@ -919,7 +917,7 @@ void PartClusManagerKernel::reportPartitionResult(unsigned partitionId)
 
 // Write Partitioning To DB
 
-odb::dbBlock* PartClusManagerKernel::getDbBlock() const
+odb::dbBlock* Partitioner::getDbBlock() const
 {
   odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
   odb::dbChip* chip = db->getChip();
@@ -927,7 +925,7 @@ odb::dbBlock* PartClusManagerKernel::getDbBlock() const
   return block;
 }
 
-void PartClusManagerKernel::writePartitioningToDb(unsigned partitioningId)
+void Partitioner::writePartitioningToDb(unsigned partitioningId)
 {
   std::cout << "[INFO] Writing partition id's to DB.\n";
   if (partitioningId >= getNumPartitioningResults()) {
@@ -958,7 +956,7 @@ void PartClusManagerKernel::writePartitioningToDb(unsigned partitioningId)
   std::cout << "[INFO] Writing done.\n";
 }
 
-void PartClusManagerKernel::dumpPartIdToFile(std::string name)
+void Partitioner::dumpPartIdToFile(std::string name)
 {
   std::ofstream file(name);
 
@@ -978,7 +976,7 @@ void PartClusManagerKernel::dumpPartIdToFile(std::string name)
 
 // Cluster Netlist
 
-void PartClusManagerKernel::runClustering()
+void Partitioner::runClustering()
 {
   hypergraph();
   if (_options.getTool() == "mlpart") {
@@ -990,7 +988,7 @@ void PartClusManagerKernel::runClustering()
   }
 }
 
-void PartClusManagerKernel::runChacoClustering()
+void Partitioner::runChacoClustering()
 {
 #ifdef STUB
   std::cout << "runChacoClustering STUB...\n";
@@ -1125,7 +1123,7 @@ void PartClusManagerKernel::runChacoClustering()
 #endif
 }
 
-void PartClusManagerKernel::runGpMetisClustering()
+void Partitioner::runGpMetisClustering()
 {
 #ifdef STUB
   std::cout << "runGpMetisClustering STUB...\n";
@@ -1209,7 +1207,7 @@ void PartClusManagerKernel::runGpMetisClustering()
 #endif
 }
 
-void PartClusManagerKernel::runMlPartClustering()
+void Partitioner::runMlPartClustering()
 {
 #ifdef STUB
   std::cout << "runMlPartClustering STUB...\n";
@@ -1304,7 +1302,7 @@ void PartClusManagerKernel::runMlPartClustering()
 #endif
 }
 
-unsigned PartClusManagerKernel::generateClusterId()
+unsigned Partitioner::generateClusterId()
 {
   unsigned sizeOfResults = _clusResults.size();
   return sizeOfResults;
@@ -1312,7 +1310,7 @@ unsigned PartClusManagerKernel::generateClusterId()
 
 // Write Clustering To DB
 
-void PartClusManagerKernel::writeClusteringToDb(unsigned clusteringId)
+void Partitioner::writeClusteringToDb(unsigned clusteringId)
 {
   std::cout << "[INFO] Writing cluster id's to DB.\n";
   if (clusteringId >= getNumClusteringResults()) {
@@ -1341,7 +1339,7 @@ void PartClusManagerKernel::writeClusteringToDb(unsigned clusteringId)
   std::cout << "[INFO] Writing done.\n";
 }
 
-void PartClusManagerKernel::dumpClusIdToFile(std::string name)
+void Partitioner::dumpClusIdToFile(std::string name)
 {
   std::ofstream file(name);
 
@@ -1361,7 +1359,7 @@ void PartClusManagerKernel::dumpClusIdToFile(std::string name)
 
 // Report Netlist Partitions
 
-void PartClusManagerKernel::reportNetlistPartitions(unsigned partitionId)
+void Partitioner::reportNetlistPartitions(unsigned partitionId)
 {
   std::map<unsigned long, unsigned long> setSizes;
   std::set<unsigned long> partitions;
@@ -1396,7 +1394,7 @@ void PartClusManagerKernel::reportNetlistPartitions(unsigned partitionId)
 
 // Read partitioning input file
 
-void PartClusManagerKernel::readPartitioningFile(std::string filename)
+void Partitioner::readPartitioningFile(std::string filename)
 {
   hypergraph();
   PartSolutions currentResults;

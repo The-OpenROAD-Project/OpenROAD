@@ -163,6 +163,13 @@ getIOPlacer()
   return openroad->getIOPlacer();
 }
 
+PartClusManager::Partitioner*
+getPartClusManager()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPartClusManager();
+}
+
 } // namespace ord
 
 namespace sta {

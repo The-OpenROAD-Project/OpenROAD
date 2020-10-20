@@ -35,7 +35,7 @@
 
 %module partclusmanager
 %{
-#include "PartClusManagerKernel.h"
+#include "Partitioner.h"
 #include "openroad/OpenRoad.hh"
 #include <algorithm>
 #include <iterator>
@@ -44,7 +44,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-        PartClusManager::PartClusManagerKernel* getPartClusManager();
+        PartClusManager::Partitioner* getPartClusManager();
 }  // namespace ord
 
 using ord::getPartClusManager;

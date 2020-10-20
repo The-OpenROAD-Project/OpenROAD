@@ -107,6 +107,10 @@ namespace antenna_checker {
 class AntennaChecker;
 }
 
+namespace PartClusManager {
+class Partitioner;
+}
+
 
 namespace ord {
 
@@ -139,6 +143,7 @@ public:
   FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
   ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
+  PartClusManager::Partitioner *getPartClusManager() { return partClusManager_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -210,6 +215,7 @@ private:
   psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
+  PartClusManager::Partitioner *partClusManager_; 
 
   std::set<Observer *> observers_;
 

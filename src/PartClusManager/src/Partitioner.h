@@ -206,7 +206,7 @@ class PartSolutions
   unsigned long _bestHopWeigth = 0;
 };
 
-class PartClusManagerKernel
+class Partitioner
 {
  protected:
   odb::dbBlock* getDbBlock() const;
@@ -224,7 +224,7 @@ class PartClusManagerKernel
   std::vector<PartSolutions> _clusResults;
 
  public:
-  PartClusManagerKernel() = default;
+  Partitioner() = default;
   void runPartitioning();
   void runClustering();
   void evaluatePartitioning();
