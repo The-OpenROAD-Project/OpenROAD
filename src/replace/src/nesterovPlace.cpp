@@ -103,10 +103,10 @@ NesterovPlace::NesterovPlace(
   nb_ = nb;
   rb_ = rb;
   log_ = log;
-  init();
   if (npVars.debug && Graphics::guiActive()) {
     graphics_ = make_unique<Graphics>(pb, nb, npVars_.debug_draw_bins);
   }
+  init();
 }
 
 NesterovPlace::~NesterovPlace() {
