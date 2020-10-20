@@ -120,7 +120,8 @@ class Replace
 
     void setDebug(int pause_iterations,
                   int update_iterations,
-                  bool draw_bins);
+                  bool draw_bins,
+                  bool initial);
   private:
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
@@ -177,6 +178,7 @@ class Replace
     int debug_pause_iterations_;
     int debug_update_iterations_;
     int debug_draw_bins_;
+    int debug_initial_;
 };
 }
 

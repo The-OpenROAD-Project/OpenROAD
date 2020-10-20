@@ -215,7 +215,7 @@ sta::define_cmd_args "global_placement_debug" {
 proc global_placement_debug { args } {
   sta::parse_key_args "detailed_placement" args \
       keys {-pause -update} \
-      flags {-draw_bins}
+      flags {-draw_bins -initial}
 
   set pause 10
   if { [info exists keys(-pause)] } {
@@ -231,5 +231,7 @@ proc global_placement_debug { args } {
 
   set draw_bins [info exists flags(-draw_bins)]
 
-  set_replace_debug_cmd $pause $update $draw_bins
+  set initial [info exists flags(-initial)]
+
+  set_replace_debug_cmd $pause $update $draw_bins $initial
 }

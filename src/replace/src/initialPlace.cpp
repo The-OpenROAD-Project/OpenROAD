@@ -39,6 +39,7 @@
 #include <Eigen/IterativeLinearSolvers>
 
 #include "plot.h"
+#include "graphics.h"
 
 namespace replace {
 using namespace std;
@@ -60,6 +61,7 @@ void InitialPlaceVars::reset() {
   maxFanout = 200;
   netWeightScale = 800.0;
   incrementalPlaceMode = false;
+  debug = false;
 }
 
 InitialPlace::InitialPlace()
@@ -68,7 +70,9 @@ InitialPlace::InitialPlace()
 InitialPlace::InitialPlace(InitialPlaceVars ipVars, 
     std::shared_ptr<PlacerBase> pb,
     std::shared_ptr<Logger> log)
-: ipVars_(ipVars), pb_(pb), log_(log) {}
+: ipVars_(ipVars), pb_(pb), log_(log)
+{
+}
 
 InitialPlace::~InitialPlace() {
   reset();
@@ -92,7 +96,12 @@ void InitialPlace::doBicgstabPlace() {
   pe.setPlacerBase(pb_);
   pe.Init();
 #endif
- 
+
+  std::unique_ptr<Graphics> graphics;
+  if (ipVars_.debug && Graphics::guiActive()) {
+    graphics = make_unique<Graphics>(pb_, this);
+  }
+
   // normally, initial place will place all cells in the centers.
   if( !ipVars_.incrementalPlaceMode ) {
     placeInstsCenter();
@@ -125,6 +134,10 @@ void InitialPlace::doBicgstabPlace() {
         string("InitPlace ") + to_string(i), false,
         string("./plot/cell/ip_") + to_string(i));
 #endif
+
+    if (graphics) {
+        graphics->cellPlot(true);
+    }
 
     if( max(errorX, errorY) <= 1e-5 && i >= 5 ) {
       break;
