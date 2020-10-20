@@ -160,6 +160,7 @@ public:
   // Write a flat verilog netlist for the database.
   void writeVerilog(const char *filename,
 		    bool sort,
+		    bool include_pwr_gnd,
 		    std::vector<sta::LibertyCell*> *remove_cells);
   void linkDesign(const char *top_cell_name);
 
