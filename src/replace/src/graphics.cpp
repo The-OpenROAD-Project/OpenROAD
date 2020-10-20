@@ -9,14 +9,21 @@
 namespace replace {
 
 Graphics::Graphics(std::shared_ptr<PlacerBase> pb,
-                   std::shared_ptr<NesterovBase> nb,
-                   bool draw_bins)
-    : pb_(pb), nb_(nb), selected_(nullptr), draw_bins_(draw_bins)
+                   InitialPlace* ip)
+    : pb_(pb), nb_(), ip_(ip), selected_(nullptr), draw_bins_(false)
 {
   gui::Gui::get()->register_renderer(this);
 }
 
-void Graphics::drawObjects(gui::Painter& painter)
+Graphics::Graphics(std::shared_ptr<PlacerBase> pb,
+                   std::shared_ptr<NesterovBase> nb,
+                   bool draw_bins)
+    : pb_(pb), nb_(nb), ip_(nullptr), selected_(nullptr), draw_bins_(draw_bins)
+{
+  gui::Gui::get()->register_renderer(this);
+}
+
+void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
   auto& die = pb_->die();
@@ -25,7 +32,30 @@ void Graphics::drawObjects(gui::Painter& painter)
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
   painter.drawLine(die.coreUx(), die.coreUy(), die.coreLx(), die.coreUy());
   painter.drawLine(die.coreLx(), die.coreUy(), die.coreLx(), die.coreLy());
+}
 
+void Graphics::drawInitial(gui::Painter& painter)
+{
+  drawBounds(painter);
+
+  painter.setPen(gui::Painter::white, /* cosmetic */ true);
+  for(auto& inst: pb_->placeInsts()) {
+    int lx = inst->lx();
+    int ly = inst->ly();
+    int ux = inst->ux();
+    int uy = inst->uy();
+
+    gui::Painter::Color color = gui::Painter::dark_blue;
+    color.a = 180;
+    painter.setBrush(color);
+    painter.drawRect({lx, ly, ux, uy});
+  }
+
+}
+
+void Graphics::drawNesterov(gui::Painter& painter)
+{
+  drawBounds(painter);
   if (draw_bins_) {
     // Draw the bins
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
@@ -112,6 +142,15 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
+void Graphics::drawObjects(gui::Painter& painter)
+{
+  if (nb_) {
+    drawNesterov(painter);
+  } else {
+    drawInitial(painter);
+  }
+}
+
 void Graphics::cellPlot(bool pause)
 {
   gui::Gui::get()->redraw();
@@ -124,7 +163,7 @@ gui::Selected Graphics::select(odb::dbTechLayer* layer, const odb::Point& point)
 {
   selected_ = nullptr;
 
-  if (layer) {
+  if (layer || !nb_) {
     return gui::Selected();
   }
 
