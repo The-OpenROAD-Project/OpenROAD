@@ -39,17 +39,20 @@ proc link_design { {top_cell_name ""} } {
   ord::link_design_db_cmd $top_cell_name
 }
 
-sta::define_cmd_args "write_verilog" {[-sort] [-remove_cells cells] filename}
+sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
+					[-remove_cells cells] filename}
 
 proc write_verilog { args } {
-  sta::parse_key_args "write_verilog" args keys {-remove_cells} flags {-sort}
+  sta::parse_key_args "write_verilog" args keys {-remove_cells} \
+    flags {-sort -include_pwr_gnd}
 
   set remove_cells {}
   if { [info exists keys(-remove_cells)] } {
     set remove_cells [sta::parse_libcell_arg $keys(-remove_cells)]
   }
   set sort [info exists flags(-sort)]
+  set include_pwr_gnd [info exists flags(-include_pwr_gnd)]
   sta::check_argc_eq1 "write_verilog" $args
   set filename $args
-  ord::write_verilog_cmd $filename $sort $remove_cells
+  ord::write_verilog_cmd $filename $sort $include_pwr_gnd $remove_cells
 }

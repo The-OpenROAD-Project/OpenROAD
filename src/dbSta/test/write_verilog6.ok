@@ -25,16 +25,26 @@ module top (in1,
 
  snl_ffqx1 r1 (.Q(r1q),
     .D(in1),
-    .CP(clk1));
+    .CP(clk1),
+    .VDD(VDD),
+    .VSS(VSS));
  snl_ffqx1 r2 (.Q(r2q),
     .D(in2),
-    .CP(clk2));
+    .CP(clk2),
+    .VDD(VDD),
+    .VSS(VSS));
  snl_ffqx1 r3 (.Q(out),
     .D(u2z),
-    .CP(clk3));
+    .CP(clk3),
+    .VDD(VDD),
+    .VSS(VSS));
  snl_bufx1 u1 (.Z(u1z),
-    .A(r2q));
+    .A(r2q),
+    .VDD(VDD),
+    .VSS(VSS));
  snl_and02x1 u2 (.Z(u2z),
     .A(r1q),
-    .B(u1z));
+    .B(u1z),
+    .VDD(VDD),
+    .VSS(VSS));
 endmodule
