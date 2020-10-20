@@ -1830,7 +1830,7 @@ getOverlapArea(const Bin* bin, const Instance* inst) {
 // https://codingforspeed.com/using-faster-exponential-approximation/
 static float
 fastExp(float a) {
-  a = 1.0 + a / 1024.0;
+  a = 1.0f + a / 1024.0f;
   a *= a;
   a *= a;
   a *= a;
