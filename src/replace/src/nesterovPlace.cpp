@@ -46,10 +46,10 @@ using namespace std;
 namespace replace {
 
 static float
-getDistance(vector<FloatPoint>& a, vector<FloatPoint>& b);
+getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
 
 static float
-getSecondNorm(vector<FloatPoint>& a);
+getSecondNorm(const vector<FloatPoint>& a);
 
 NesterovPlaceVars::NesterovPlaceVars()
 {
@@ -755,10 +755,10 @@ NesterovPlace::updateNextIter() {
 
 float
 NesterovPlace::getStepLength(
-    std::vector<FloatPoint>& prevSLPCoordi_,
-    std::vector<FloatPoint>& prevSLPSumGrads_,
-    std::vector<FloatPoint>& curSLPCoordi_,
-    std::vector<FloatPoint>& curSLPSumGrads_ ) {
+    const std::vector<FloatPoint>& prevSLPCoordi_,
+    const std::vector<FloatPoint>& prevSLPSumGrads_,
+    const std::vector<FloatPoint>& curSLPCoordi_,
+    const std::vector<FloatPoint>& curSLPSumGrads_ ) {
 
   float coordiDistance 
     = getDistance(prevSLPCoordi_, curSLPCoordi_);
@@ -772,7 +772,7 @@ NesterovPlace::getStepLength(
 }
 
 float
-NesterovPlace::getPhiCoef(float scaledDiffHpwl) {
+NesterovPlace::getPhiCoef(float scaledDiffHpwl) const {
   log_->infoFloatSignificant("  InputScaleDiffHPWL", scaledDiffHpwl, 3);
 
   float retCoef 
@@ -811,7 +811,7 @@ NesterovPlace::cutFillerCoordinates() {
 
 
 static float
-getDistance(vector<FloatPoint>& a, vector<FloatPoint>& b) {
+getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b) {
   float sumDistance = 0.0f;
   for(size_t i=0; i<a.size(); i++) {
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
@@ -822,7 +822,7 @@ getDistance(vector<FloatPoint>& a, vector<FloatPoint>& b) {
 }
 
 static float
-getSecondNorm(vector<FloatPoint>& a) {
+getSecondNorm(const vector<FloatPoint>& a) {
   float norm = 0;
   for(auto& coordi : a) {
     norm += coordi.x * coordi.x + coordi.y * coordi.y;

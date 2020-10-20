@@ -129,14 +129,14 @@ FFT::updateDensity(int x, int y, float density) {
 }
 
 std::pair<float, float> 
-FFT::getElectroForce(int x, int y) {
+FFT::getElectroForce(int x, int y) const {
   return std::make_pair(
       electroForceX_[x][y],
       electroForceY_[x][y]);
 }
 
 float
-FFT::getElectroPhi(int x, int y) {
+FFT::getElectroPhi(int x, int y) const {
   return electroPhi_[x][y]; 
 }
 

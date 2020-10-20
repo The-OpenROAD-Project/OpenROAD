@@ -70,7 +70,7 @@ class Tile {
     int uy() const;
 
     // only area is needed
-    const int64_t area() const;
+    int64_t area() const;
 
     int blockage(int layer) const;
     int capacity(int layer) const;
@@ -103,7 +103,7 @@ class Tile {
     // setter funcs
     void setBlockage(int layer, int blockage);
     void setCapacity(int layer, int capacity);
-    void setCapacity(std::vector<int>& capacity);
+    void setCapacity(const std::vector<int>& capacity);
     void setRoute(int layer, int route);
 
     void setUsageHL(int layer, int usage);
@@ -221,7 +221,7 @@ Tile::uy() const {
   return uy_;
 }
 
-inline const int64_t
+inline int64_t
 Tile::area() const {
   return
     static_cast<int64_t>(ux_ - lx_) *
