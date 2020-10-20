@@ -237,7 +237,7 @@ Tile::setCapacity(int layer, int capacity) {
 }
 
 void
-Tile::setCapacity(vector<int>& capacity) {
+Tile::setCapacity(const vector<int>& capacity) {
   capacity_ = capacity; 
 }
 
