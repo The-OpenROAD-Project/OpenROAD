@@ -21,5 +21,7 @@ module top (in1,
  input VSS;
 
  BUF_X1 u1 (.A(in1),
-    .Z(out1));
+    .Z(out1),
+    .VDD(VDD),
+    .VSS(VSS));
 endmodule
