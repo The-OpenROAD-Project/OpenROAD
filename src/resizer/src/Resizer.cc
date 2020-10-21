@@ -1181,18 +1181,18 @@ int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
-  VertexWeightMap weight_map = findFaninWeights(ends);
-  VertexSeq fanins = sortFaninsByWeight(weight_map);
+  VertexSet fanins = findHoldFanins(ends);
+  VertexSeq sorted_fanins = sortHoldFanins(fanins);
   
   int repair_count = 0;
   int max_repair_count = max(static_cast<int>(ends.size() * .2), 10);
-  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {
-    Vertex *vertex = fanins[i];
+  for(int i = 0; i < sorted_fanins.size() && repair_count < max_repair_count ; i++) {
+    Vertex *vertex = sorted_fanins[i];
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
     if (hold_slack < 0) {
       debugPrint4(debug_, "repair_hold", 2, " %s w=%s gap=%s #%d\n",
 		  vertex->name(sdc_network_),
-		  delayAsString(weight_map[vertex], this),
+		  delayAsString(sta_->vertexSlack(vertex, MinMax::min()), this),
 		  delayAsString(slackGap(vertex), this),
 		  i);
       Pin *drvr_pin = vertex->pin();
@@ -1238,51 +1238,49 @@ Resizer::findHoldViolations(VertexSet &ends)
   return worst_slack;
 }
 
-VertexWeightMap
-Resizer::findFaninWeights(VertexSet &ends)
+VertexSet
+Resizer::findHoldFanins(VertexSet &ends)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
-    iter.enqueue(vertex);
+    iter.enqueueAdjacentVertices(vertex);
 
-  VertexWeightMap weight_map;
+  VertexSet fanins;
   while (iter.hasNext()) {
-    Vertex *vertex = iter.next();
-    if (!sta_->isClock(vertex->pin())) {
-      if (!search->isEndpoint(vertex)
-	  && vertex->isDriver(db_network_))
-	weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
-      iter.enqueueAdjacentVertices(vertex);
+    Vertex *fanin = iter.next();
+    if (!sta_->isClock(fanin->pin())) {
+      if (fanin->isDriver(network_))
+	fanins.insert(fanin);
+      iter.enqueueAdjacentVertices(fanin);
     }
   }
-  return weight_map;
+  return fanins;
 }
 
 VertexSeq
-Resizer::sortFaninsByWeight(VertexWeightMap &weight_map)
+Resizer::sortHoldFanins(VertexSet &fanins)
 {
-  VertexSeq fanins;
-  for(auto vertex_weight : weight_map) {
-    Vertex *vertex = vertex_weight.first;
-    fanins.push_back(vertex);
-  }
-  sort(fanins, [&](Vertex *v1, Vertex *v2)
-	       { float w1 = weight_map[v1];
-		 float w2 = weight_map[v2];
-		 if (fuzzyEqual(w1, w2)) {
-		   float gap1 = slackGap(v1);
-		   float gap2 = slackGap(v2);
-		   // Break ties based on the hold/setup gap.
-		   if (fuzzyEqual(gap1, gap2))
-		     return v1->level() > v2->level();
-		   else
-		     return gap1 > gap2;
-		 }
-		 else
-		   return w1 < w2;});
-  return fanins;
+  VertexSeq sorted_fanins;
+  for(Vertex *vertex : fanins)
+    sorted_fanins.push_back(vertex);
+
+  sort(sorted_fanins, [&](Vertex *v1, Vertex *v2)
+		      { float s1 = sta_->vertexSlack(v1, MinMax::min());
+			float s2 = sta_->vertexSlack(v2, MinMax::min());
+			if (fuzzyEqual(s1, s2)) {
+			  float gap1 = slackGap(v1);
+			  float gap2 = slackGap(v2);
+			  // Break ties based on the hold/setup gap.
+			  if (fuzzyEqual(gap1, gap2))
+			    return v1->level() > v2->level();
+			  else
+			    return gap1 > gap2;
+			}
+			else
+			  return s1 < s2;});
+  return sorted_fanins;
 }
 
 void

@@ -291,16 +291,16 @@ protected:
 			 double wire_length,
 			 double max_slew);
 
-  VertexWeightMap findFaninWeights(VertexSet &ends);
-  float slackGap(Vertex *vertex);
   Slack findHoldViolations(VertexSet &ends);
   void repairHoldViolations(VertexSet &ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,
 		     LibertyCell *buffer_cell);
-  VertexSeq sortFaninsByWeight(VertexWeightMap &weight_map);
+  VertexSet findHoldFanins(VertexSet &ends);
+  VertexSeq sortHoldFanins(VertexSet &fanins);
   void makeHoldDelay(Pin *drvr_pin,
 		     LibertyCell *buffer_cell);
+  float slackGap(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
 			 // Return value.
 			 InstanceSeq &insts);
