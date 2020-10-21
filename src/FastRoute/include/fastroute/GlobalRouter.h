@@ -150,6 +150,7 @@ class GlobalRouter
   void setPDRevForHighFanout(int pdRevForHighFanout);
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
+  void setMacroExtension(int macroExtension);
   void printGrid();
 
   // flow functions
@@ -255,6 +256,10 @@ protected:
   void addNets(std::set<odb::dbNet*>& nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
+  void findLayerExtensions(std::vector<int>& layerExtensions);
+  void findObstructions(odb::Rect& dieArea);
+  void findInstancesObstacles(odb::Rect& dieArea, const std::vector<int>& layerExtensions);
+  void findNetsObstacles(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
@@ -292,6 +297,7 @@ protected:
   std::vector<int> _vCapacities;
   std::vector<int> _hCapacities;
   unsigned _seed;
+  int _macroExtension;
 
   // Layer adjustment variables
   std::vector<float> _adjustments;

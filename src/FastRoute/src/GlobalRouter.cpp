@@ -197,7 +197,7 @@ void GlobalRouter::startFastRoute()
   computeUserLayerAdjustments();
 
   for (RegionAdjustment regionAdjst : _regionAdjustments) {
-    std::cout << "Adjusting region in layer " << regionAdjst.getLayer()
+    std::cout << "Adjusting region on layer " << regionAdjst.getLayer()
               << "...\n";
     computeRegionAdjustments(
         regionAdjst.getRegion(), regionAdjst.getLayer(), regionAdjst.getAdjustment());
@@ -1001,7 +1001,7 @@ void GlobalRouter::computeObstaclesAdjustments()
       bool direction = routingLayer.getPreferredDirection();
 
       std::cout << "[INFO] Processing " << layerObstacles.size()
-                << " obstacles in layer " << layer << "\n";
+                << " obstacles on layer " << layer << "\n";
 
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
@@ -1179,6 +1179,11 @@ void GlobalRouter::setReportCongestion(char* congestFile)
 void GlobalRouter::setOnlyClockNets(bool onlyClocks)
 {
   _onlyClockNets = onlyClocks;
+}
+
+void GlobalRouter::setMacroExtension(int macroExtension)
+{
+  _macroExtension = macroExtension;
 }
 
 void GlobalRouter::writeGuides(const char* fileName)
@@ -2676,11 +2681,18 @@ void GlobalRouter::initObstacles()
               _grid->getLowerLeftY(),
               _grid->getUpperRightX(),
               _grid->getUpperRightY());
+  std::vector<int> layerExtensions;
 
-  // Get routing obstructions
+  findLayerExtensions(layerExtensions);
+  findObstructions(dieArea);
+  findInstancesObstacles(dieArea, layerExtensions);
+  findNetsObstacles(dieArea);
+}
+
+void GlobalRouter::findLayerExtensions(std::vector<int>& layerExtensions)
+{
   odb::dbTech* tech = _db->getTech();
-
-  std::map<int, uint> layerExtensions;
+  layerExtensions.resize(tech->getRoutingLayerCount() + 1, 0);
 
   for (odb::dbTechLayer* obstructLayer : tech->getLayers()) {
     if (obstructLayer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
@@ -2693,7 +2705,7 @@ void GlobalRouter::initObstacles()
     // for ANY configuration of PARALLELRUNLENGTH (the biggest value in the
     // table)
 
-    uint macroExtension = obstructLayer->getSpacing(maxInt, maxInt);
+    int spacingExtension = obstructLayer->getSpacing(maxInt, maxInt);
 
     odb::dbSet<odb::dbTechLayerSpacingRule> eolRules;
 
@@ -2702,9 +2714,9 @@ void GlobalRouter::initObstacles()
 
     if (obstructLayer->getV54SpacingRules(eolRules)) {
       for (odb::dbTechLayerSpacingRule* currentRule : eolRules) {
-        uint currentSpacing = currentRule->getSpacing();
-        if (currentSpacing > macroExtension) {
-          macroExtension = currentSpacing;
+        int currentSpacing = currentRule->getSpacing();
+        if (currentSpacing > spacingExtension) {
+          spacingExtension = currentSpacing;
         }
       }
     }
@@ -2718,19 +2730,21 @@ void GlobalRouter::initObstacles()
       if (!spacingTable.empty()) {
         std::vector<uint> lastRow = spacingTable.back();
         uint lastValue = lastRow.back();
-        if (lastValue > macroExtension) {
-          macroExtension = lastValue;
+        if (lastValue > spacingExtension) {
+          spacingExtension = lastValue;
         }
       }
     }
 
     // Save the extension to use when defining Macros
 
-    layerExtensions[obstructLayer->getRoutingLevel()] = macroExtension;
+    layerExtensions[obstructLayer->getRoutingLevel()] = spacingExtension;
   }
+}
 
+void GlobalRouter::findObstructions(odb::Rect& dieArea)
+{
   int obstructionsCnt = 0;
-
   for (odb::dbObstruction* currObstruct : _block->getObstructions()) {
     odb::dbBox* obstructBox = currObstruct->getBBox();
 
@@ -2749,8 +2763,11 @@ void GlobalRouter::initObstacles()
   }
 
   std::cout << "[INFO] #DB Obstructions: " << obstructionsCnt << "\n";
+}
 
-  // Get instance obstructions
+void GlobalRouter::findInstancesObstacles(odb::Rect& dieArea,
+                                          const std::vector<int>& layerExtensions)
+{
   int macrosCnt = 0;
   int obstaclesCnt = 0;
   for (odb::dbInst* currInst : _block->getInsts()) {
@@ -2776,16 +2793,17 @@ void GlobalRouter::initObstacles()
       currBox->getBox(rect);
       transform.apply(rect);
 
-      uint macroExtension = 0;
+      int layerExtension = 0;
 
       if (isMacro) {
-        macroExtension = layerExtensions[currBox->getTechLayer()->getRoutingLevel()];
+        layerExtension = layerExtensions[currBox->getTechLayer()->getRoutingLevel()];
+        layerExtension += _macroExtension * _grid->getTileWidth();
       }
 
-      odb::Point lowerBound = odb::Point(rect.xMin() - macroExtension,
-                                         rect.yMin() - macroExtension);
-      odb::Point upperBound = odb::Point(rect.xMax() + macroExtension,
-                                         rect.yMax() + macroExtension);
+      odb::Point lowerBound = odb::Point(rect.xMin() - layerExtension,
+                                         rect.yMin() - layerExtension);
+      odb::Point upperBound = odb::Point(rect.xMax() + layerExtension,
+                                         rect.yMax() + layerExtension);
       odb::Rect obstacleBox = odb::Rect(lowerBound, upperBound);
       if (!dieArea.contains(obstacleBox)) {
         std::cout << "[WARNING] Found obstacle outside die area in instance "
@@ -2829,8 +2847,10 @@ void GlobalRouter::initObstacles()
 
   std::cout << "[INFO] #DB Obstacles: " << obstaclesCnt << "\n";
   std::cout << "[INFO] #DB Macros: " << macrosCnt << "\n";
+}
 
-  // Get nets obstructions (routing wires and pdn wires)
+void GlobalRouter::findNetsObstacles(odb::Rect& dieArea)
+{
   odb::dbSet<odb::dbNet> nets = _block->getNets();
 
   if (nets.empty()) {
