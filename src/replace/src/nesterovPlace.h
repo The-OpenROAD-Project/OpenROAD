@@ -98,13 +98,13 @@ public:
   void updateInitialPrevSLPCoordi();
 
   float getStepLength(
-      std::vector<FloatPoint>& prevCoordi_,
-      std::vector<FloatPoint>& prevSumGrads_,
-      std::vector<FloatPoint>& curCoordi_,
-      std::vector<FloatPoint>& curSumGrads_ );
+      const std::vector<FloatPoint>& prevCoordi_,
+      const std::vector<FloatPoint>& prevSumGrads_,
+      const std::vector<FloatPoint>& curCoordi_,
+      const std::vector<FloatPoint>& curSumGrads_ );
 
   void updateNextIter();
-  float getPhiCoef(float scaledDiffHpwl);
+  float getPhiCoef(float scaledDiffHpwl) const;
 
   void updateDb();
 

@@ -277,10 +277,11 @@ ensure_linked()
 void
 write_verilog_cmd(const char *filename,
 		  bool sort,
+		  bool include_pwr_gnd,
 		  vector<LibertyCell*> *remove_cells)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeVerilog(filename, sort, remove_cells);
+  ord->writeVerilog(filename, sort, include_pwr_gnd, remove_cells);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -83,7 +83,8 @@ Replace::Replace()
   debug_(false),
   debug_pause_iterations_(10),
   debug_update_iterations_(10),
-  debug_draw_bins_(false) {
+  debug_draw_bins_(false),
+  debug_initial_(false) {
 };
 
 Replace::~Replace() {
@@ -142,6 +143,7 @@ void Replace::reset() {
   debug_pause_iterations_ = 10;
   debug_update_iterations_ = 10;
   debug_draw_bins_ = false;
+  debug_initial_ = false;
 }
 
 void Replace::setDb(odb::dbDatabase* db) {
@@ -169,6 +171,7 @@ void Replace::doInitialPlace() {
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.incrementalPlaceMode = incrementalPlaceMode_;
+  ipVars.debug = debug_initial_;
   
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
   ip_ = std::move(ip);
@@ -333,11 +336,13 @@ Replace::setVerboseLevel(int verbose) {
 void
 Replace::setDebug(int pause_iterations,
                   int update_iterations,
-                  bool draw_bins) {
+                  bool draw_bins,
+                  bool initial) {
   debug_ = true;
   debug_pause_iterations_ = pause_iterations;
   debug_update_iterations_ = update_iterations;
   debug_draw_bins_ = draw_bins;
+  debug_initial_ = initial;
 }
 
 void

@@ -37,6 +37,8 @@
 #include <QScrollBar>
 #include <QToolTip>
 #include <iostream>
+#include <tuple>
+#include <vector>
 
 #include "db.h"
 #include "dbTransform.h"
@@ -44,8 +46,6 @@
 #include "layoutViewer.h"
 #include "mainWindow.h"
 #include "search.h"
-#include <vector>
-#include <tuple>
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -63,6 +63,19 @@
 namespace gui {
 
 using namespace odb;
+
+static Rect getBounds(dbBlock* block)
+{
+  Rect bbox;
+  block->getBBox()->getBox(bbox);
+
+  Rect die;
+  block->getDieArea(die);
+
+  bbox.merge(die);
+
+  return bbox;
+}
 
 // This class wraps the QPainter in the abstract Painter API for
 // Renderer instances to use.
@@ -101,13 +114,13 @@ class GuiPainter : public Painter
   {
     std::vector<Point> points = shape->getPoints();
     const int size = points.size();
-    if(size==5){
-      painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()), QPoint(shape->xMax(), shape->yMax())));
-    }else
-    {
+    if (size == 5) {
+      painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()),
+                               QPoint(shape->xMax(), shape->yMax())));
+    } else {
       QPolygon qpoly(size);
-      for(int i = 0;i<size;i++)
-        qpoly.setPoint(i,points[i].getX(),points[i].getY());
+      for (int i = 0; i < size; i++)
+        qpoly.setPoint(i, points[i].getX(), points[i].getY());
       painter_->drawPolygon(qpoly);
     }
   }
@@ -175,9 +188,9 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
     return;
   }
 
-  dbBox* bbox = block->getBBox();
-  QSize size(ceil(bbox->getWidth(0) * pixelsPerDBU),
-             ceil(bbox->getLength(0) * pixelsPerDBU));
+  Rect bbox = getBounds(block);
+
+  QSize size(ceil(bbox.dx() * pixelsPerDBU), ceil(bbox.dy() * pixelsPerDBU));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
@@ -344,10 +357,9 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
   dbBlock* block = getBlock();
   if (block) {
-    dbBox* bbox = block->getBBox();
-    pixelsPerDBU_
-        = std::min(event->size().width() / (double) bbox->getWidth(0),
-                   event->size().height() / (double) bbox->getLength(0));
+    Rect bbox = getBounds(block);
+    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.dx(),
+                             event->size().height() / (double) bbox.dy());
   }
 }
 
@@ -680,16 +692,16 @@ void LayoutViewer::drawBlock(QPainter* painter,
       }
       auto poly = std::get<1>(i);
       int size = poly.outer().size();
-      if(size==5){
+      if (size == 5) {
         auto bbox = std::get<0>(i);
         const auto& ll = bbox.min_corner();
         const auto& ur = bbox.max_corner();
-        painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
-      }else
-      {
+        painter->drawRect(
+            QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      } else {
         QPolygon qpoly(size);
-        for(int i = 0;i<size;i++)
-          qpoly.setPoint(i,poly.outer()[i].x(),poly.outer()[i].y());
+        for (int i = 0; i < size; i++)
+          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
         painter->drawPolygon(qpoly);
       }
     }
@@ -810,12 +822,12 @@ void LayoutViewer::fit()
   if (block == nullptr) {
     return;
   }
-  dbBox* bbox = block->getBBox();
+
+  Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU
-      = std::min(viewport.width() / (double) bbox->getWidth(0),
-                 viewport.height() / (double) bbox->getLength(0));
+  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
+                                viewport.height() / (double) bbox.dy());
   setPixelsPerDBU(pixelsPerDBU);
 }
 

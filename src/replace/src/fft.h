@@ -51,8 +51,8 @@ class FFT {
     void doFFT();
 
     // returning func
-    std::pair<float, float> getElectroForce(int x, int y);
-    float getElectroPhi(int x, int y);
+    std::pair<float, float> getElectroForce(int x, int y) const;
+    float getElectroPhi(int x, int y) const;
 
   private:
     // 2D array; width: binCntX_, height: binCntY_;

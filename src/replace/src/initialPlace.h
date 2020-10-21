@@ -42,6 +42,8 @@ namespace replace {
 
 class PlacerBase;
 class Logger;
+class Graphics;
+
 class InitialPlaceVars {
 public:
   int maxIter;
@@ -50,6 +52,7 @@ public:
   int maxFanout;
   float netWeightScale;
   bool incrementalPlaceMode;
+  bool debug;
 
   InitialPlaceVars();
   void reset();
