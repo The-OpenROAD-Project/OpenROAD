@@ -1570,6 +1570,13 @@ NesterovBase::updateWireLengthForceWA(
     gNet->updateBox();
 
     for(auto& gPin : gNet->gPins()) {
+      // The WA terms are shift invariant:
+      //
+      //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
+      //   -----------------    = -----------------
+      //   Sum(exp(x_i))          Sum(exp(x_i - C))
+      //
+      // So we shift to keep the exponential from overflowing
       float expMinX = (gNet->lx() - gPin->cx()) * wlCoeffX; 
       float expMaxX = (gPin->cx() - gNet->ux()) * wlCoeffX;
       float expMinY = (gNet->ly() - gPin->cy()) * wlCoeffY;
