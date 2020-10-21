@@ -1181,10 +1181,8 @@ int
 Resizer::repairHoldPass(VertexSet &ends,
 			LibertyCell *buffer_cell)
 {
-  VertexWeightMap weight_map;
-  findFaninWeights(ends, weight_map);
-  VertexSeq fanins;
-  sortFaninsByWeight(weight_map, fanins);
+  VertexWeightMap weight_map = findFaninWeights(ends);
+  VertexSeq fanins = sortFaninsByWeight(weight_map);
   
   int repair_count = 0;
   int max_repair_count = max(static_cast<int>(ends.size() * .2), 10);
@@ -1203,7 +1201,7 @@ Resizer::repairHoldPass(VertexSet &ends,
 	: network_->net(drvr_pin);
       // Hands off special nets.
       if (!isSpecial(net)) {
-	makeHoldDelay(drvr_pin, hold_slack, buffer_cell);
+	makeHoldDelay(drvr_pin, buffer_cell);
 	repair_count++;
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
@@ -1240,10 +1238,8 @@ Resizer::findHoldViolations(VertexSet &ends)
   return worst_slack;
 }
 
-void
-Resizer::findFaninWeights(VertexSet &ends,
-			  // Return value.
-			  VertexWeightMap &weight_map)
+VertexWeightMap
+Resizer::findFaninWeights(VertexSet &ends)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
@@ -1251,6 +1247,7 @@ Resizer::findFaninWeights(VertexSet &ends,
   for (Vertex *vertex : ends)
     iter.enqueue(vertex);
 
+  VertexWeightMap weight_map;
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
     if (!sta_->isClock(vertex->pin())) {
@@ -1260,13 +1257,13 @@ Resizer::findFaninWeights(VertexSet &ends,
       iter.enqueueAdjacentVertices(vertex);
     }
   }
+  return weight_map;
 }
 
-void
-Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
-			    // Return value.
-			    VertexSeq &fanins)
+VertexSeq
+Resizer::sortFaninsByWeight(VertexWeightMap &weight_map)
 {
+  VertexSeq fanins;
   for(auto vertex_weight : weight_map) {
     Vertex *vertex = vertex_weight.first;
     fanins.push_back(vertex);
@@ -1285,11 +1282,11 @@ Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
 		 }
 		 else
 		   return w1 < w2;});
+  return fanins;
 }
 
 void
 Resizer::makeHoldDelay(Pin *drvr_pin,
-		       Slack hold_slack,
 		       LibertyCell *buffer_cell)
 {
   Instance *parent = db_network_->topInstance();
