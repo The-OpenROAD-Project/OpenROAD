@@ -6,6 +6,7 @@
 
 namespace replace {
 
+class InitialPlace;
 class NesterovBase;
 class PlacerBase;
 class GCell;
@@ -14,6 +15,11 @@ class GCell;
 class Graphics : public gui::Renderer
 {
  public:
+  // Debug InitialPlace
+  Graphics(std::shared_ptr<PlacerBase> pb,
+           InitialPlace* ip);
+
+  // Debug NesterovPlace
   Graphics(std::shared_ptr<PlacerBase> pb,
            std::shared_ptr<NesterovBase> nb,
            bool draw_bins);
@@ -35,8 +41,13 @@ class Graphics : public gui::Renderer
  private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
+  InitialPlace* ip_;
   GCell* selected_;
   bool draw_bins_;
+
+  void drawNesterov(gui::Painter& painter);
+  void drawInitial(gui::Painter& painter);
+  void drawBounds(gui::Painter& painter);
 };
 
 }  // namespace replace

@@ -46,30 +46,15 @@ using namespace std;
 namespace replace {
 
 static float
-getDistance(vector<FloatPoint>& a, vector<FloatPoint>& b);
+getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);
 
 static float
-getSecondNorm(vector<FloatPoint>& a);
+getSecondNorm(const vector<FloatPoint>& a);
 
 NesterovPlaceVars::NesterovPlaceVars()
-  : maxNesterovIter(5000), 
-  maxBackTrack(10),
-  initDensityPenalty(0.00008),
-  initWireLengthCoef(0.25),
-  targetOverflow(0.1),
-  minPhiCoef(0.95),
-  maxPhiCoef(1.05),
-  minPreconditioner(1.0),
-  initialPrevCoordiUpdateCoef(100),
-  referenceHpwl(446000000),
-  routabilityCheckOverflow(0.20),
-  timingDrivenMode(true),
-  routabilityDrivenMode(true),
-  debug(false),
-  debug_pause_iterations(10),
-  debug_update_iterations(10),
-  debug_draw_bins(true)
-{}
+{
+  reset();
+}
 
 
 void
@@ -118,10 +103,10 @@ NesterovPlace::NesterovPlace(
   nb_ = nb;
   rb_ = rb;
   log_ = log;
-  init();
   if (npVars.debug && Graphics::guiActive()) {
     graphics_ = make_unique<Graphics>(pb, nb, npVars_.debug_draw_bins);
   }
+  init();
 }
 
 NesterovPlace::~NesterovPlace() {
@@ -770,10 +755,10 @@ NesterovPlace::updateNextIter() {
 
 float
 NesterovPlace::getStepLength(
-    std::vector<FloatPoint>& prevSLPCoordi_,
-    std::vector<FloatPoint>& prevSLPSumGrads_,
-    std::vector<FloatPoint>& curSLPCoordi_,
-    std::vector<FloatPoint>& curSLPSumGrads_ ) {
+    const std::vector<FloatPoint>& prevSLPCoordi_,
+    const std::vector<FloatPoint>& prevSLPSumGrads_,
+    const std::vector<FloatPoint>& curSLPCoordi_,
+    const std::vector<FloatPoint>& curSLPSumGrads_ ) {
 
   float coordiDistance 
     = getDistance(prevSLPCoordi_, curSLPCoordi_);
@@ -787,7 +772,7 @@ NesterovPlace::getStepLength(
 }
 
 float
-NesterovPlace::getPhiCoef(float scaledDiffHpwl) {
+NesterovPlace::getPhiCoef(float scaledDiffHpwl) const {
   log_->infoFloatSignificant("  InputScaleDiffHPWL", scaledDiffHpwl, 3);
 
   float retCoef 
@@ -826,7 +811,7 @@ NesterovPlace::cutFillerCoordinates() {
 
 
 static float
-getDistance(vector<FloatPoint>& a, vector<FloatPoint>& b) {
+getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b) {
   float sumDistance = 0.0f;
   for(size_t i=0; i<a.size(); i++) {
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
@@ -837,7 +822,7 @@ getDistance(vector<FloatPoint>& a, vector<FloatPoint>& b) {
 }
 
 static float
-getSecondNorm(vector<FloatPoint>& a) {
+getSecondNorm(const vector<FloatPoint>& a) {
   float norm = 0;
   for(auto& coordi : a) {
     norm += coordi.x * coordi.x + coordi.y * coordi.y;

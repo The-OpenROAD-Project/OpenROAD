@@ -1,4 +1,4 @@
-# write_verilog vdd/vss def pins
+# write_verilog ignore vdd/vss def pins
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib

@@ -37,6 +37,8 @@
 #include <QScrollBar>
 #include <QToolTip>
 #include <iostream>
+#include <tuple>
+#include <vector>
 
 #include "db.h"
 #include "dbTransform.h"
@@ -61,6 +63,19 @@
 namespace gui {
 
 using namespace odb;
+
+static Rect getBounds(dbBlock* block)
+{
+  Rect bbox;
+  block->getBBox()->getBox(bbox);
+
+  Rect die;
+  block->getDieArea(die);
+
+  bbox.merge(die);
+
+  return bbox;
+}
 
 // This class wraps the QPainter in the abstract Painter API for
 // Renderer instances to use.
@@ -95,7 +110,20 @@ class GuiPainter : public Painter
   {
     painter_->setBrush(QColor(color.r, color.g, color.b, color.a));
   }
-
+  void drawGeomShape(const odb::GeomShape* shape) override
+  {
+    std::vector<Point> points = shape->getPoints();
+    const int size = points.size();
+    if (size == 5) {
+      painter_->drawRect(QRect(QPoint(shape->xMin(), shape->yMin()),
+                               QPoint(shape->xMax(), shape->yMax())));
+    } else {
+      QPolygon qpoly(size);
+      for (int i = 0; i < size; i++)
+        qpoly.setPoint(i, points[i].getX(), points[i].getY());
+      painter_->drawPolygon(qpoly);
+    }
+  }
   void drawRect(const odb::Rect& rect) override
   {
     painter_->drawRect(QRect(QPoint(rect.xMin(), rect.yMin()),
@@ -160,9 +188,9 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
     return;
   }
 
-  dbBox* bbox = block->getBBox();
-  QSize size(ceil(bbox->getWidth(0) * pixelsPerDBU),
-             ceil(bbox->getLength(0) * pixelsPerDBU));
+  Rect bbox = getBounds(block);
+
+  QSize size(ceil(bbox.dx() * pixelsPerDBU), ceil(bbox.dy() * pixelsPerDBU));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
@@ -233,8 +261,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
     // Just return the first one
     for (auto iter : shapes) {
-      if (options_->isNetVisible(iter.second)) {
-        return Selected(iter.second);
+      if (options_->isNetVisible(std::get<2>(iter))) {
+        return Selected(std::get<2>(iter));
       }
     }
   }
@@ -252,8 +280,9 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
       = search_.search_insts(pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y());
 
   // Just return the first one
+
   if (insts.begin() != insts.end()) {
-    return Selected(insts.begin()->second);
+    return Selected(std::get<2>(*insts.begin()));
   }
   return Selected();
 }
@@ -328,10 +357,9 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
 {
   dbBlock* block = getBlock();
   if (block) {
-    dbBox* bbox = block->getBBox();
-    pixelsPerDBU_
-        = std::min(event->size().width() / (double) bbox->getWidth(0),
-                   event->size().height() / (double) bbox->getLength(0));
+    Rect bbox = getBounds(block);
+    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.dx(),
+                             event->size().height() / (double) bbox.dy());
   }
 }
 
@@ -527,7 +555,6 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 }
 
-
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -549,7 +576,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // for each layer.
   std::vector<dbInst*> insts;
   insts.reserve(10000);
-  for (auto& [box, inst] : inst_range) {
+  for (auto& [box, poly, inst] : inst_range) {
     insts.push_back(inst);
   }
 
@@ -660,14 +687,45 @@ void LayoutViewer::drawBlock(QPainter* painter,
                                       5 * pixel);
 
     for (auto& i : iter) {
-      if (!options_->isNetVisible(i.second)) {
+      if (!options_->isNetVisible(std::get<2>(i))) {
         continue;
       }
-      const auto& ll = i.first.min_corner();
-      const auto& ur = i.first.max_corner();
-      int w = ur.x() - ll.x();
-      int h = ur.y() - ll.y();
-      painter->drawRect(QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      auto poly = std::get<1>(i);
+      int size = poly.outer().size();
+      if (size == 5) {
+        auto bbox = std::get<0>(i);
+        const auto& ll = bbox.min_corner();
+        const auto& ur = bbox.max_corner();
+        painter->drawRect(
+            QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      } else {
+        QPolygon qpoly(size);
+        for (int i = 0; i < size; i++)
+          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+        painter->drawPolygon(qpoly);
+      }
+    }
+
+    // Now draw the fills
+    if (options_->areFillsVisible()) {
+      QColor color = getColor(layer).lighter(50);
+      painter->setBrush(color);
+      painter->setPen(QPen(color, 0));
+      auto iter = search_.search_fills(layer,
+                                       bounds.xMin(),
+                                       bounds.yMin(),
+                                       bounds.xMax(),
+                                       bounds.yMax(),
+                                       5 * pixel);
+
+      for (auto& i : iter) {
+        const auto& ll = std::get<0>(i).min_corner();
+        const auto& ur = std::get<0>(i).max_corner();
+        int w = ur.x() - ll.x();
+        int h = ur.y() - ll.y();
+        painter->drawRect(
+            QRect(QPoint(ll.x(), ll.y()), QPoint(ur.x(), ur.y())));
+      }
     }
 
     drawTracks(layer, block, painter, bounds);
@@ -764,12 +822,12 @@ void LayoutViewer::fit()
   if (block == nullptr) {
     return;
   }
-  dbBox* bbox = block->getBBox();
+
+  Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU
-      = std::min(viewport.width() / (double) bbox->getWidth(0),
-                 viewport.height() / (double) bbox->getLength(0));
+  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
+                                viewport.height() / (double) bbox.dy());
   setPixelsPerDBU(pixelsPerDBU);
 }
 
@@ -819,11 +877,12 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   verticalScrollBar()->setValue(scrollbar_y + delta.y());
 }
 
-void LayoutViewer::inDbMoveInst(dbInst*)
+void LayoutViewer::inDbPostMoveInst(dbInst*)
 {
   // This is not very smart - we just clear all the search structure
   // rather than try to surgically update it.  We need a pre & post
   // callback from OpenDB to do this right.
+  // TODO:: Update this now with the new callbacks from OpenDB
   if (search_init_) {
     search_.clear();
     search_init_ = false;

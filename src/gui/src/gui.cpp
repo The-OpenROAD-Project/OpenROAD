@@ -168,6 +168,11 @@ void Gui::addSelectedInsts(const char* pattern)
   mainWindow->addSelected(insts);
 }
 
+void Gui::zoomTo(const odb::Rect& rect_dbu)
+{
+  mainWindow->zoomTo(rect_dbu);
+}
+
 Renderer::~Renderer()
 {
   gui::Gui::get()->unregister_renderer(this);
@@ -222,7 +227,8 @@ void OpenDbDescriptor::highlight(void* object, Painter& painter) const
       for (auto swire : net->getSWires()) {
         for (auto sbox : swire->getWires()) {
           sbox->getBox(rect);
-          painter.drawRect(rect);
+          painter.drawGeomShape(sbox->getGeomShape());
+          // painter.drawRect(rect);
         }
       }
       break;

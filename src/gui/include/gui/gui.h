@@ -172,6 +172,9 @@ class Painter
   // Set the brush to whatever the user has chosen for this layer
   virtual void setBrush(const Color& color) = 0;
 
+  // Draw a geom shape as a polygon with coordinates in DBU with the current pen/brush
+  virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
+
   // Draw a rect with coordinates in DBU with the current pen/brush
   virtual void drawRect(const odb::Rect& rect) = 0;
 
@@ -236,6 +239,9 @@ class Gui
 
   // Add instances matching the pattern to the selection set
   void addSelectedInsts(const char* pattern);
+
+  // Zoom to the given rectangle
+  void zoomTo(const odb::Rect& rect_dbu);
 
   // Force an immediate redraw.
   void redraw();

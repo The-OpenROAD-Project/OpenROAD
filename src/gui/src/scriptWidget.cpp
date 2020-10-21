@@ -259,6 +259,9 @@ void ScriptWidget::pause()
   pauser_->setText(prior_text);
   pauser_->setStyleSheet(prior_style);
   pauser_->setEnabled(prior_enable);
+
+  // Make changes visible while command runs
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 void ScriptWidget::pauserClicked()

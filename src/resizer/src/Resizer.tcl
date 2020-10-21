@@ -292,6 +292,7 @@ proc repair_clock_nets { args } {
   
   check_argc_eq0 "repair_clock_nets" $args
   check_parasitics
+  resizer_preamble [get_libs *]
   repair_clk_nets_cmd $max_wire_length $buffer_cell
 }
 

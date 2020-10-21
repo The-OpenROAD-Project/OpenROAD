@@ -231,10 +231,12 @@ set_replace_pad_right_cmd(int pad)
 void
 set_replace_debug_cmd(int pause_iterations,
                       int update_iterations,
-                      bool draw_bins)
+                      bool draw_bins,
+                      bool initial)
 {
   Replace* replace = getReplace();
-  replace->setDebug(pause_iterations, update_iterations, draw_bins);
+  replace->setDebug(pause_iterations, update_iterations, draw_bins,
+                    initial);
 }
 
 

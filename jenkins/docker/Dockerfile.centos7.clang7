@@ -44,7 +44,7 @@ RUN wget https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.
     tar -xf download && \
     cd boost_1_72_0 && \
     ./bootstrap.sh && \
-    ./b2 install --with-iostreams -j $(nproc)
+    ./b2 install --with-iostreams --with-test -j $(nproc)
 
 # eigen required by replace, TritonMacroPlace
 RUN git clone https://gitlab.com/libeigen/eigen.git \
@@ -79,4 +79,4 @@ ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
 # Build
 RUN source scl_source enable llvm-toolset-7.0 && \
     cmake -B build . && \
-    cmake --build build
+    cmake --build build -j 8
