@@ -39,7 +39,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <unordered_set>
+#include <set>
 
 #include "opendb/db.h"
 #include "sta/Liberty.hh"
@@ -252,7 +252,7 @@ protected:
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
-  void addNets(std::unordered_set<odb::dbNet*> nets);
+  void addNets(std::set<odb::dbNet*> nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
   int computeMaxRoutingLayer();
@@ -330,7 +330,7 @@ protected:
   odb::dbDatabase* _db = nullptr;
   odb::dbBlock* _block;
 
-  std::unordered_set<odb::dbNet*> _dirtyNets;
+  std::set<odb::dbNet*> _dirtyNets;
 };
 
 std::string getITermName(odb::dbITerm* iterm);

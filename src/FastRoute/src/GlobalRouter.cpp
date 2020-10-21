@@ -41,7 +41,7 @@
 #include <iostream>
 #include <istream>
 #include <string>
-#include <unordered_set>
+#include <set>
 #include <utility>
 #include <vector>
 #include <algorithm>
@@ -2388,7 +2388,7 @@ void GlobalRouter::initNetlist(bool reroute)
 
     addNets(_dirtyNets);
   } else {
-    std::unordered_set<odb::dbNet*> nets;
+    std::set<odb::dbNet*> nets;
 
     for (odb::dbNet* net : _block->getNets()) {
       nets.insert(net);
@@ -2402,7 +2402,7 @@ void GlobalRouter::initNetlist(bool reroute)
   }
 }
 
-void GlobalRouter::addNets(std::unordered_set<odb::dbNet*> nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*> nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
