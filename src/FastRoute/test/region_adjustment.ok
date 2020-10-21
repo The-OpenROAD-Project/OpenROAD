@@ -21,8 +21,8 @@ Notice 0: Finished DEF file: region_adjustment.def
 [INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 3
-[INFO] Processing 177 obstacles in layer 1
-Adjusting region in layer 2...
+[INFO] Processing 177 obstacles on layer 1
+Adjusting region on layer 2...
 
 Final usage/overflow report: 
 

@@ -21,7 +21,7 @@ Notice 0: Finished DEF file: gcd.def
 [INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 36
-[INFO] Processing 8469 obstacles in layer 1
+[INFO] Processing 8469 obstacles on layer 1
 
 Final usage/overflow report: 
 
