@@ -2402,7 +2402,7 @@ void GlobalRouter::initNetlist(bool reroute)
   }
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*> nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*>& nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),

@@ -252,7 +252,7 @@ protected:
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
-  void addNets(std::set<odb::dbNet*> nets);
+  void addNets(std::set<odb::dbNet*>& nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
   int computeMaxRoutingLayer();
