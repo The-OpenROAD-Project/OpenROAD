@@ -39,6 +39,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <set>
 
 #include "opendb/db.h"
 #include "sta/Liberty.hh"
@@ -162,6 +163,7 @@ class GlobalRouter
 
   // repair antenna public functions
   void repairAntennas(sta::LibertyPort* diodePort);
+  void addDirtyNet(odb::dbNet* net);
 
   // congestion drive replace functions
   ROUTE_ getRoute();
@@ -251,7 +253,7 @@ protected:
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
   void initNetlist(bool reroute);
-  void addNets(std::vector<odb::dbNet*> nets);
+  void addNets(std::set<odb::dbNet*>& nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
@@ -265,7 +267,6 @@ protected:
   void makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
   void initClockNets();
   void setSelectedMetal(int metal) { selectedMetal = metal; }
-  void setDirtyNets(std::vector<odb::dbNet*> dirtyNets) { _dirtyNets = dirtyNets; }
 
   ord::OpenRoad* _openroad;
   // Objects variables
@@ -335,7 +336,7 @@ protected:
   odb::dbDatabase* _db = nullptr;
   odb::dbBlock* _block;
 
-  std::vector<odb::dbNet*> _dirtyNets;
+  std::set<odb::dbNet*> _dirtyNets;
 };
 
 std::string getITermName(odb::dbITerm* iterm);

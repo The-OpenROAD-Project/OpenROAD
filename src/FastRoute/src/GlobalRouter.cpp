@@ -41,9 +41,10 @@
 #include <iostream>
 #include <istream>
 #include <string>
-#include <unordered_set>
+#include <set>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "AntennaRepair.h"
 #include "FastRoute.h"
@@ -263,6 +264,11 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     NetRouteMap newRoute = findRouting();
     mergeResults(newRoute);
   }
+}
+
+void GlobalRouter::addDirtyNet(odb::dbNet* net)
+{
+  _dirtyNets.insert(net);
 }
 
 void GlobalRouter::routeClockNets()
@@ -2387,10 +2393,10 @@ void GlobalRouter::initNetlist(bool reroute)
 
     addNets(_dirtyNets);
   } else {
-    std::vector<odb::dbNet*> nets;
+    std::set<odb::dbNet*> nets;
 
     for (odb::dbNet* net : _block->getNets()) {
-      nets.push_back(net);
+      nets.insert(net);
     }
 
     if (nets.empty()) {
@@ -2401,7 +2407,7 @@ void GlobalRouter::initNetlist(bool reroute)
   }
 }
 
-void GlobalRouter::addNets(std::vector<odb::dbNet*> nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*>& nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
