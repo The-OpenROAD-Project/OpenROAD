@@ -5,10 +5,10 @@ project(PartClusManager)
 set(BIN_NAME "PartClusManager")
 
 option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" OFF)
+
 if (LOAD_PARTITIONERS)
-	add_subdirectory(${PARTCLUSMANAGER_HOME}/Partitioners/Chaco/code)
-	add_subdirectory(${PARTCLUSMANAGER_HOME}/Partitioners/Metis)
-	add_subdirectory(${PARTCLUSMANAGER_HOME}/Partitioners/MLPart)
+	set(PATH_PARTITIONERS ${PARTCLUSMANAGER_HOME} CACHE PATH "Path to Partitioners Folder")
+	add_definitions(-DSTUB)
 endif (LOAD_PARTITIONERS)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -56,18 +56,46 @@ include_directories(${PARTCLUSMANAGER_HOME}/src
                     ${OPENSTA_HOME}/app
 		    ${TCL_INCLUDE_PATH}
 		    )
+
 if (LOAD_PARTITIONERS)
 include_directories(PRIVATE
-		    ${PARTCLUSMANAGER_HOME}/Partitioners/Chaco/code
-                    ${PARTCLUSMANAGER_HOME}/Partitioners/Metis/include
-                    ${PARTCLUSMANAGER_HOME}/Partitioners/MLPart/src
+		    ${PATH_PARTITIONERS}/Partitioners/Chaco/code
+                    ${PATH_PARTITIONERS}/Partitioners/Metis/include
+                    ${PATH_PARTITIONERS}/Partitioners/MLPart/src
 		    )
 
+find_library(MLPART NAMES MLPart 
+	PATHS ${PATH_PARTITIONERS}/Partitioners 
+	PATH_SUFFIXES build/MLPart)
+
+if (NOT MLPART)
+	add_subdirectory(${PATH_PARTITIONERS}/Partitioners/MLPart MLPart)
+	set(MLPART MLPart)
+endif()
+
+find_library(CHACO NAMES Chaco 
+	PATHS ${PATH_PARTITIONERS}/Partitioners 
+	PATH_SUFFIXES build/Chaco/code)
+
+if (NOT CHACO)
+	add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Chaco/code Chaco/code)
+	set(CHACO Chaco)
+endif()
+
+find_library(METIS NAMES metis 
+	PATHS ${PATH_PARTITIONERS}/Partitioners 
+	PATH_SUFFIXES build/Metis build/Metis/libmetis)
+
+if (NOT METIS)
+	add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Metis Metis)
+	set(METIS metis)
+endif()
+
 target_link_libraries(${BIN_NAME} INTERFACE
-	Chaco
-	metis
-	MLPart
-	)
+		${MLPART}
+		${CHACO}
+		${METIS}
+		)
 endif (LOAD_PARTITIONERS)
 
 target_link_libraries(${BIN_NAME} INTERFACE

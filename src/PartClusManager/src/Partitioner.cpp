@@ -33,11 +33,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#define STUB 1
+//#define STUB 1
 
 #include "Partitioner.h"
 #ifdef STUB
-#else
 extern "C" {
 #include "main/ChacoWrapper.h"
 }
@@ -73,8 +72,6 @@ void Partitioner::runPartitioning()
 void Partitioner::runChaco()
 {
 #ifdef STUB
-  std::cout << "runChaco STUB...\n";
-#else
   std::cout << "\nRunning chaco...\n";
 
   PartSolutions currentResults;
@@ -327,8 +324,6 @@ void Partitioner::runChaco()
 void Partitioner::runGpMetis()
 {
 #ifdef STUB
-  std::cout << "runGpMetis STUB...\n";
-#else
   std::cout << "Running GPMetis...\n";
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
@@ -468,8 +463,6 @@ void Partitioner::runGpMetis()
 void Partitioner::runMlPart()
 {
 #ifdef STUB
-  std::cout << "runMlPart STUB...\n";
-#else
   std::cout << "Running MLPart...\n";
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
@@ -991,8 +984,6 @@ void Partitioner::runClustering()
 void Partitioner::runChacoClustering()
 {
 #ifdef STUB
-  std::cout << "runChacoClustering STUB...\n";
-#else
   std::cout << "\nRunning chaco...\n";
 
   PartSolutions currentResults;
@@ -1126,8 +1117,6 @@ void Partitioner::runChacoClustering()
 void Partitioner::runGpMetisClustering()
 {
 #ifdef STUB
-  std::cout << "runGpMetisClustering STUB...\n";
-#else
   std::cout << "Running GPMetis...\n";
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
@@ -1210,8 +1199,6 @@ void Partitioner::runGpMetisClustering()
 void Partitioner::runMlPartClustering()
 {
 #ifdef STUB
-  std::cout << "runMlPartClustering STUB...\n";
-#else
   std::cout << "Running MLPart...\n";
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
