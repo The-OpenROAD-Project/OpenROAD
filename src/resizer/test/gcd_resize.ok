@@ -11,7 +11,7 @@ Notice 0:     Created 571 components and 2554 component-terminals.
 Notice 0:     Created 5 special nets and 1142 connections.
 Notice 0:     Created 528 nets and 1412 connections.
 Notice 0: Finished DEF file: gcd_placed.def
-worst slack 9.33
+worst slack 1.33
 Inserted 35 input buffers.
 Inserted 18 output buffers.
 Resized 47 instances.
@@ -46,17 +46,17 @@ Path Type: max
    0.00    0.64 v _880_/D (DFF_X1)
            0.64   data arrival time
 
-  10.00   10.00   clock core_clock (rise edge)
-   0.00   10.00   clock network delay (ideal)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ _880_/CK (DFF_X1)
-  -0.04    9.96   library setup time
-           9.96   data required time
+   2.00    2.00   clock core_clock (rise edge)
+   0.00    2.00   clock network delay (ideal)
+   0.00    2.00   clock reconvergence pessimism
+           2.00 ^ _880_/CK (DFF_X1)
+  -0.04    1.96   library setup time
+           1.96   data required time
 ---------------------------------------------------------
-           9.96   data required time
+           1.96   data required time
           -0.64   data arrival time
 ---------------------------------------------------------
-           9.32   slack (MET)
+           1.32   slack (MET)
 
 
 max slew
@@ -77,7 +77,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 _449_/ZN                               10.47    2.91    7.56 (MET)
 
-worst slack 9.32
+worst slack 1.32
 Driver    length delay
 _759_/Z manhtn 105.4 steiner 105.4 0.00
 _850_/Z manhtn 95.8 steiner 95.8 0.00
