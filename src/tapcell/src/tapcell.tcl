@@ -35,31 +35,25 @@
 
 
 sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master] \
-                                    [-endcap_master endcap_master] \
-                                    [-endcap_cpp endcap_cpp] \
-#when you set 25 (um), each row has 50um with checker-board pattern
-                                    [-distance dist] \
-                                    [-halo_width_x halo_x] \
-                                    [-halo_width_y halo_y] \
-#the next parameters are for 14nm tech
-                                    [-tap_nwin2_master tap_nwin2_master] \
-                                    [-tap_nwin3_master tap_nwin3_master] \
-                                    [-tap_nwout2_master tap_nwout2_master] \
-                                    [-tap_nwout3_master tap_nwout3_master] \
-                                    [-tap_nwintie_master tap_nwintie_master] \
-                                    [-tap_nwouttie_master tap_nwouttie_master] \
-                                    [-cnrcap_nwin_master cnrcap_nwin_master] \
-                                    [-cnrcap_nwout_master cnrcap_nwout_master] \
-                                    [-incnrcap_nwin_master incnrcap_nwin_master] \
-                                    [-incnrcap_nwout_master incnrcap_nwout_master] \
-                                    [-tbtie_cpp tbtie_cpp] \
-#the next flags enables 14 flow
-                                    [-no_cell_at_top_bottom] \
-                                    [-add_boundary_cell] \
+                                [-endcap_master endcap_master] \
+                                [-endcap_cpp endcap_cpp] \
+                                [-distance dist] \
+                                [-halo_width_x halo_x] \
+                                [-halo_width_y halo_y] \
+                                [-tap_nwin2_master tap_nwin2_master] \
+                                [-tap_nwin3_master tap_nwin3_master] \
+                                [-tap_nwout2_master tap_nwout2_master] \
+                                [-tap_nwout3_master tap_nwout3_master] \
+                                [-tap_nwintie_master tap_nwintie_master] \
+                                [-tap_nwouttie_master tap_nwouttie_master] \
+                                [-cnrcap_nwin_master cnrcap_nwin_master] \
+                                [-cnrcap_nwout_master cnrcap_nwout_master] \
+                                [-incnrcap_nwin_master incnrcap_nwin_master] \
+                                [-incnrcap_nwout_master incnrcap_nwout_master] \
+                                [-tbtie_cpp tbtie_cpp] \
+                                [-no_cell_at_top_bottom] \
+                                [-add_boundary_cell] \
 }
-
-#Pre-step: assumed that placement blockages inserted around macros
-#You might or might not need this step
 
 namespace eval tapcell {
     #proc to detect even/odd
@@ -470,6 +464,368 @@ namespace eval tapcell {
 
         return $new_x
     }
+
+    proc find_blockages {db} {
+        set block [[$db getChip] getBlock]
+        set blockages {}
+
+        foreach inst [$block getInsts] {
+            if { [$inst isBlock] } {
+                if { ![$inst isPlaced] } {
+                    puts "\[ERROR\] Macro [$inst getName] is not placed"
+                    continue
+                }
+                lappend blockages $inst
+            }
+        }
+
+        return $blockages
+    }
+
+    proc cut_rows {db endcap_master blockages halo_x halo_y} {
+        puts "Step 1: Cut rows..."
+
+        set block [[$db getChip] getBlock]
+
+        set rows_count 0
+        foreach row [$block getRows] {
+            incr rows_count
+        }
+
+        set end_master [$db findMaster $endcap_master]
+        if { $end_master == "NULL" } {
+                ord::error "\[ERROR\] Master $endcap_master not found"
+            }
+        set end_width [$end_master getWidth]
+        set min_row_width [expr 2*$end_width]
+
+        set block_count 0
+        set cut_rows_count 0
+        foreach blockage $blockages {
+            set rows [$block getRows]
+            incr block_count
+            foreach row $rows {
+                if {[overlaps $blockage $row $halo_x $halo_y]} {
+                    incr cut_rows_count
+                    # Create two new rows, avoiding overlap with blockage
+                    set row_site [$row getSite]
+                    set orient [$row getOrient]
+                    set direction [$row getDirection]
+
+                    set site_width [$row_site getWidth]
+
+                    set row1_name [$row getName]
+                    append row1_name "_1"
+
+                    set row2_name [$row getName]
+                    append row2_name "_2"
+
+                    ## First new row: from left of original row to the left boundary of blockage
+                    set row1_origin_x [[$row getBBox] xMin]
+                    set row1_origin_y [[$row getBBox] yMin]
+                    set row1_end_x [expr [[$blockage getBBox] xMin] - $halo_x]
+                    set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
+
+                    set curr_min_row_width [expr $min_row_width + 2*$site_width]
+                    set row1_width [expr $row1_num_sites*$site_width]
+
+                    if {$row1_num_sites > 0 && $row1_width >= $curr_min_row_width} {
+                        odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
+                    }
+
+                    ## Second new row: from right of original  row to the right boundary of blockage
+                    set blockage_x_max [[$blockage getBBox] xMax]
+
+                    set row2_origin_x_tmp [expr {ceil (1.0*($blockage_x_max + $halo_x)/$site_width)*$site_width}]
+                    set row2_origin_x [expr { int($row2_origin_x_tmp) }]
+                    set row2_origin_y [[$row getBBox] yMin]
+                    set row2_end_x [[$row getBBox] xMax]
+                    set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
+
+                    set row2_width [expr $row2_num_sites*$site_width]
+
+                    if {$row2_num_sites > 0 && $row2_width >= $curr_min_row_width} {
+                        odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
+                    }
+
+                    # Remove current row
+                    odb::dbRow_destroy $row
+                }
+            }
+        }
+
+        puts "\[INFO\] Macro blocks found: $block_count"
+        puts "\[INFO\] #Original rows: $rows_count"
+        puts "\[INFO\] #Cut rows: $cut_rows_count"
+    }
+
+    proc insert_endcaps {db endcap_cpp endcap_master cnrcap_nwin_master \
+                         cnrcap_nwout_master blockages halo_x halo_y \
+                         no_cell_at_top_bottom add_boundary_cell} {
+        puts "Step 2: Insert endcaps..."
+
+        set block [[$db getChip] getBlock]
+        
+        set rows [$block getRows]
+        
+        set min_y [get_min_rows_y $rows]
+        set max_y [get_max_rows_y $rows]
+
+        set cnt 0
+        set endcap_count 0
+        foreach row $rows {
+            set master [$db findMaster $endcap_master]
+            set site_x [[$row getSite] getWidth]
+            set endcapwidth [expr $endcap_cpp*$site_x]
+
+            if { $master == "NULL" } {
+                ord::error "\[ERROR\] Master $endcap_master not found"
+            }
+
+            set row_name [$row getName]
+
+            set ori [$row getOrient]
+
+            set top_bottom [tapcell::top_or_bottom $row $min_y $max_y]
+
+            if {$no_cell_at_top_bottom == true} {
+                if {$top_bottom == 1} {
+                    if { $ori == "MX" } {
+                        set master [$db findMaster $cnrcap_nwin_master]
+
+                        if { $master == "NULL" } {
+                            ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
+                        }
+                    } else {
+                        set master [$db findMaster $cnrcap_nwout_master]
+                        
+                        if { $master == "NULL" } {
+                            ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
+                        }
+                    }
+                } elseif {$top_bottom == -1} {
+                    if { $ori == "R0" } {
+                        set master [$db findMaster $cnrcap_nwin_master]
+
+                        if { $master == "NULL" } {
+                            ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
+                        }
+                    } else {
+                        set master [$db findMaster $cnrcap_nwout_master]
+
+                        if { $master == "NULL" } {
+                            ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
+                        }
+                    }
+                } else {
+                    set master [$db findMaster $endcap_master]
+                }
+            }
+
+            set master_x [$master getWidth]
+            set master_y [$master getHeight]
+
+            set llx [[$row getBBox] xMin]
+            set lly [[$row getBBox] yMin]
+            set urx [[$row getBBox] xMax]
+            set ury [[$row getBBox] yMax]
+
+            set row_width [expr $urx - $llx]
+            
+            if {$master_x > $row_width} {
+                puts "\[WARNING\] No enough space to place endcap in row $row_name. Skipping..."
+                    continue
+            }
+
+            set loc_2_x [expr $urx - $master_x]
+            set loc_2_y [expr $ury - $master_y]
+
+            set blocked_region false
+            set blocked_region [tapcell::in_blocked_region $llx $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+            if {$add_boundary_cell == true && $blocked_region == true} {    
+                if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
+                    if { $ori == "MX" } {
+                        set master [$db findMaster $cnrcap_nwin_master]
+                    } else {
+                        set master [$db findMaster $cnrcap_nwout_master]
+                    }
+                } else {
+                    if { $ori == "R0" } {
+                        set master [$db findMaster $cnrcap_nwin_master]
+                    } else {
+                        set master [$db findMaster $cnrcap_nwout_master]
+                    }
+                }
+            }
+
+            set inst1_name "PHY_${cnt}"
+            set inst1 [odb::dbInst_create $block $master $inst1_name]
+            $inst1 setOrient $ori
+            $inst1 setLocation $llx $lly
+            $inst1 setPlacementStatus LOCKED
+
+            incr cnt
+            incr endcap_count
+
+            set blocked_region false
+            set blocked_region [in_blocked_region $loc_2_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+            if {$add_boundary_cell == true && $blocked_region == true} {
+                if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
+                    if { $ori == "MX" } {
+                        set master [$db findMaster $cnrcap_nwin_master]
+                    } else {
+                        set master [$db findMaster $cnrcap_nwout_master]
+                    }
+                } else {
+                    if { $ori == "R0" } {
+                        set master [$db findMaster $cnrcap_nwin_master]
+                    } else {
+                        set master [$db findMaster $cnrcap_nwout_master]
+                    }
+                }
+            }
+
+            if {$llx == $loc_2_x && $lly == $loc_2_y} {
+                puts "WARNING: row $row_name have enough space for only one endcap"
+            continue
+            }
+
+            set inst2_name "PHY_${cnt}"
+            set inst2 [odb::dbInst_create $block $master $inst2_name]
+            set right_ori $ori
+            if { $ori == "MX" } {
+                set right_ori "R180"
+            } else {
+                if { $ori == "R0"} {
+                    set right_ori "MY"
+                }
+            }
+            $inst2 setOrient $right_ori
+            $inst2 setLocation $loc_2_x $loc_2_y
+            $inst2 setPlacementStatus LOCKED
+
+            incr cnt
+            incr endcap_count
+        }
+        puts "\[INFO\] #Endcaps inserted: $endcap_count"
+        return $cnt
+    }
+
+    proc insert_tapcells {db tapcell_master blockages dist endcap_cpp halo_x halo_y \
+                          endcap_width cnt no_cell_at_top_bottom add_boundary_cell} {
+        puts "Step 3: Insert tapcells..."
+
+        set block [[$db getChip] getBlock]
+        set lef_units [[$db getTech] getLefUnits]
+        
+        set rows [$block getRows]
+
+        set min_x [get_min_rows_x $rows]
+        set max_x [get_max_rows_x $rows]
+
+        set min_y [get_min_rows_y $rows]
+        set max_y [get_max_rows_y $rows]
+        
+        set tapcell_count 0
+
+        foreach row $rows {
+            set site_x [[$row getSite] getWidth]
+            set llx [[$row getBBox] xMin]
+            set lly [[$row getBBox] yMin]
+            set urx [[$row getBBox] xMax]
+            set ury [[$row getBBox] yMax]
+
+            set ori [$row getOrient]
+
+            set offsets ""
+            set pitch -1
+
+            if {[even $row]} {
+                set offset [expr $dist*$lef_units]
+                lappend offsets $offset
+            } else {
+                set offset [expr $dist*2*$lef_units]
+                lappend offsets $offset
+            }
+
+            if {[top_or_bottom $row $min_y $max_y]} {
+                if {$no_cell_at_top_bottom == true} {
+                    continue
+                }
+                set offsets ""
+                set pitch [expr $dist*$lef_units]
+                set offset [expr $dist*$lef_units]
+                lappend offsets $offset
+            } elseif {[right_above_below_macros $blockages $row $halo_x $halo_y] && \
+                      $add_boundary_cell == true} {
+                set offsets ""
+                set pitch [expr $dist*2*$lef_units]
+                set offset [expr $dist*$lef_units]
+                set offset2 [expr $dist*2*$lef_units]
+                lappend offsets $offset
+                lappend offsets $offset2
+            } else {
+                set pitch [expr {$dist*2*$lef_units}]
+            }
+
+            set endcapwidth [expr $endcap_cpp*$site_x]
+            foreach offset $offsets {
+                for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
+                    set master [$db findMaster $tapcell_master]
+                    if { $master == "NULL" } {
+                        ord::error "\[ERROR\] Master $tapcell_master not found"
+                    }
+
+                    set inst_name "PHY_${cnt}"
+                    set tap_width [$master getWidth]
+                    set tap_urx [expr $x + $tap_width]
+                    set end_llx [expr $urx - $endcap_width]
+
+                    set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
+                    set row_orig_fix [expr { $llx % $site_x }]
+                    set x [expr { int($x_tmp + $row_orig_fix) }]
+                    set x_end [expr $x + $site_x]
+                    set x_tmp $x
+
+                    if {$add_boundary_cell == true} {
+                        set blocked_region false
+                        set blocked_region [in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+                        if {$blocked_region == true} {
+                            set new_x [get_new_x $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
+                            if { $x != $new_x} {
+                                set x_tmp $new_x
+                            } else {
+                                continue
+                            }
+                        }
+                    }
+
+                    if {($x != $min_x) && ($x_end != $max_x)} {
+                        if { $tap_urx > $end_llx } {
+                            puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
+                            continue
+                        }
+
+                        set new_x [expr {ceil (1.0*$x_tmp/$site_x)*$site_x}]
+                        set new_x [expr { int($new_x) }]
+                        set real_x [get_correct_llx $new_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
+
+                        set inst [odb::dbInst_create $block $master $inst_name]
+                        $inst setOrient $ori
+
+                        $inst setLocation $real_x $lly
+                        $inst setPlacementStatus LOCKED
+
+                        incr cnt
+                        incr tapcell_count
+                    }
+                }
+            }
+        }
+
+        puts "\[INFO\] #Tapcells inserted: $tapcell_count"
+        return $cnt
+    }
 }
 
 # Main function. It will run tapcell given the correct parameters
@@ -512,42 +868,52 @@ proc tapcell { args } {
         set halo_x 2
     }
 
+    set tap_nwin2_master "INVALID"
     if { [info exists keys(-tap_nwin2_master)] } {
         set tap_nwin2_master $keys(-tap_nwin2_master)
     }
 
+    set tap_nwin3_master "INVALID"
     if { [info exists keys(-tap_nwin3_master)] } {
         set tap_nwin3_master $keys(-tap_nwin3_master)
     }
 
+    set tap_nwout2_master "INVALID"
     if { [info exists keys(-tap_nwout2_master)] } {
         set tap_nwout2_master $keys(-tap_nwout2_master)
     }
 
+    set tap_nwout3_master "INVALID"
     if { [info exists keys(-tap_nwout3_master)] } {
         set tap_nwout3_master $keys(-tap_nwout3_master)
     }
 
+    set tap_nwintie_master "INVALID"
     if { [info exists keys(-tap_nwintie_master)] } {
         set tap_nwintie_master $keys(-tap_nwintie_master)
     }
 
+    set tap_nwouttie_master "INVALID"
     if { [info exists keys(-tap_nwouttie_master)] } {
         set tap_nwouttie_master $keys(-tap_nwouttie_master)
     }
 
+    set cnrcap_nwin_master "INVALID"
     if { [info exists keys(-cnrcap_nwin_master)] } {
         set cnrcap_nwin_master $keys(-cnrcap_nwin_master)
     }
 
+    set cnrcap_nwout_master "INVALID"
     if { [info exists keys(-cnrcap_nwout_master)] } {
         set cnrcap_nwout_master $keys(-cnrcap_nwout_master)
     }
 
+    set incnrcap_nwin_master "INVALID"
     if { [info exists keys(-incnrcap_nwin_master)] } {
         set incnrcap_nwin_master $keys(-incnrcap_nwin_master)
     }
 
+    set incnrcap_nwout_master "INVALID"
     if { [info exists keys(-incnrcap_nwout_master)] } {
         set incnrcap_nwout_master $keys(-incnrcap_nwout_master)
     }
@@ -572,368 +938,43 @@ proc tapcell { args } {
         
     set db [::ord::get_db]
     set block [[$db getChip] getBlock]
-    set tech [$db getTech]
-    set lef_units [$tech getLefUnits]
+    set lef_units [[$db getTech] getLefUnits]
 
     set halo_y [expr $halo_y * $lef_units]
     set halo_x [expr $halo_x * $lef_units]
 
-    #Step 1: cut placement rows if there are overlaps between rows and placement blockages
-    puts "Step 1: Cut rows..."
+    set blockages [tapcell::find_blockages $db]
 
-    set block_count 0
-    set cut_rows_count 0
+    tapcell::cut_rows $db $endcap_master $blockages $halo_x $halo_y
 
-    set blockages {}
+    set cnt [tapcell::insert_endcaps $db $endcap_cpp $endcap_master \
+                                     $cnrcap_nwin_master $cnrcap_nwout_master \
+                                     $blockages $halo_x $halo_y \
+                                     $no_cell_at_top_bottom $add_boundary_cell]
 
-    foreach inst [$block getInsts] {
-        if { [$inst isBlock] } {
-            if { ![$inst isPlaced] } {
-                puts "\[ERROR\] Macro [$inst getName] is not placed"
-                continue
-            }
-            lappend blockages $inst
-        }
-    }
-
-    set rows_count 0
-    foreach row [$block getRows] {
-        incr rows_count
-    }
-
-    set end_master [$db findMaster $endcap_master]
-    if { $end_master == "NULL" } {
-            ord::error "\[ERROR\] Master $endcap_master not found"
-        }
-    set end_width [$end_master getWidth]
-    set min_row_width [expr 2*$end_width]
-
-    foreach blockage $blockages {
-        set rows [$block getRows]
-        incr block_count
-        foreach row $rows {
-            if {[tapcell::overlaps $blockage $row $halo_x $halo_y]} {
-                incr cut_rows_count
-                # Create two new rows, avoiding overlap with blockage
-                set row_site [$row getSite]
-                set orient [$row getOrient]
-                set direction [$row getDirection]
-
-                set site_width [$row_site getWidth]
-
-                set row1_name [$row getName]
-                append row1_name "_1"
-
-                set row2_name [$row getName]
-                append row2_name "_2"
-
-                ## First new row: from left of original row to the left boundary of blockage
-                set row1_origin_x [[$row getBBox] xMin]
-                set row1_origin_y [[$row getBBox] yMin]
-                set row1_end_x [expr [[$blockage getBBox] xMin] - $halo_x]
-                set row1_num_sites [expr {($row1_end_x - $row1_origin_x)/$site_width}]
-
-                set curr_min_row_width [expr $min_row_width + 2*$site_width]
-                set row1_width [expr $row1_num_sites*$site_width]
-
-                if {$row1_num_sites > 0 && $row1_width >= $curr_min_row_width} {
-                    odb::dbRow_create $block $row1_name $row_site $row1_origin_x $row1_origin_y $orient $direction $row1_num_sites $site_width
-                }
-
-                ## Second new row: from right of original  row to the right boundary of blockage
-                set blockage_x_max [[$blockage getBBox] xMax]
-
-                set row2_origin_x_tmp [expr {ceil (1.0*($blockage_x_max + $halo_x)/$site_width)*$site_width}]
-                set row2_origin_x [expr { int($row2_origin_x_tmp) }]
-                set row2_origin_y [[$row getBBox] yMin]
-                set row2_end_x [[$row getBBox] xMax]
-                set row2_num_sites [expr {($row2_end_x - $row2_origin_x)/$site_width}]
-
-                set row2_width [expr $row2_num_sites*$site_width]
-
-                if {$row2_num_sites > 0 && $row2_width >= $curr_min_row_width} {
-                    odb::dbRow_create $block $row2_name $row_site $row2_origin_x $row2_origin_y $orient $direction $row2_num_sites $site_width
-                }
-
-                # Remove current row
-                odb::dbRow_destroy $row
-            }
-        }
-    }
-
-    puts "\[INFO\] Macro blocks found: $block_count"
-    puts "\[INFO\] #Original rows: $rows_count"
-    puts "\[INFO\] #Cut rows: $cut_rows_count"
-
-    #Step 2: Insert Endcap at the left and right end of each row
-    puts "Step 2: Insert endcaps..."
-    
-    set rows [$block getRows]
-    
-    set min_y [tapcell::get_min_rows_y $rows]
-    set max_y [tapcell::get_max_rows_y $rows]
-
-    set cnt 0
-    set endcap_count 0
-    foreach row $rows {
-        set master [$db findMaster $endcap_master]
-        set site_x [[$row getSite] getWidth]
-        set endcapwidth [expr $endcap_cpp*$site_x]
-
-        if { $master == "NULL" } {
-            ord::error "\[ERROR\] Master $endcap_master not found"
-        }
-
-        set row_name [$row getName]
-
-        set ori [$row getOrient]
-
-        set top_bottom [tapcell::top_or_bottom $row $min_y $max_y]
-
-        if {$no_cell_at_top_bottom == true} {
-            if {$top_bottom == 1} {
-                if { $ori == "MX" } {
-                    set master [$db findMaster $cnrcap_nwin_master]
-
-                    if { $master == "NULL" } {
-                        ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
-                    }
-                } else {
-                    set master [$db findMaster $cnrcap_nwout_master]
-                    
-                    if { $master == "NULL" } {
-                        ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
-                    }
-                }
-            } elseif {$top_bottom == -1} {
-                if { $ori == "R0" } {
-                    set master [$db findMaster $cnrcap_nwin_master]
-
-                    if { $master == "NULL" } {
-                        ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
-                    }
-                } else {
-                    set master [$db findMaster $cnrcap_nwout_master]
-
-                    if { $master == "NULL" } {
-                        ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
-                    }
-                }
-            } else {
-                set master [$db findMaster $endcap_master]
-            }
-        }
-
-        set master_x [$master getWidth]
-        set master_y [$master getHeight]
-
-        set llx [[$row getBBox] xMin]
-        set lly [[$row getBBox] yMin]
-        set urx [[$row getBBox] xMax]
-        set ury [[$row getBBox] yMax]
-
-	set row_width [expr $urx - $llx]
-	
-	if {$master_x > $row_width} {
-	    puts "\[WARNING\] No enough space to place endcap in row $row_name. Skipping..."
-            continue
-	}
-
-        set loc_2_x [expr $urx - $master_x]
-        set loc_2_y [expr $ury - $master_y]
-
-        set blocked_region false
-        set blocked_region [tapcell::in_blocked_region $llx $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-        if {$add_boundary_cell == true && $blocked_region == true} {    
-            if {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
-                if { $ori == "MX" } {
-                    set master [$db findMaster $cnrcap_nwin_master]
-                } else {
-                    set master [$db findMaster $cnrcap_nwout_master]
-                }
-            } else {
-                if { $ori == "R0" } {
-                    set master [$db findMaster $cnrcap_nwin_master]
-                } else {
-                    set master [$db findMaster $cnrcap_nwout_master]
-                }
-            }
-        }
-
-        set inst1_name "PHY_${cnt}"
-        set inst1 [odb::dbInst_create $block $master $inst1_name]
-        $inst1 setOrient $ori
-        $inst1 setLocation $llx $lly
-        $inst1 setPlacementStatus LOCKED
-
-        incr cnt
-        incr endcap_count
-
-        set blocked_region false
-        set blocked_region [tapcell::in_blocked_region $loc_2_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-        if {$add_boundary_cell == true && $blocked_region == true} {
-            if {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
-                if { $ori == "MX" } {
-                    set master [$db findMaster $cnrcap_nwin_master]
-                } else {
-                    set master [$db findMaster $cnrcap_nwout_master]
-                }
-            } else {
-                if { $ori == "R0" } {
-                    set master [$db findMaster $cnrcap_nwin_master]
-                } else {
-                    set master [$db findMaster $cnrcap_nwout_master]
-                }
-            }
-        }
-
-        if {$llx == $loc_2_x && $lly == $loc_2_y} {
-            puts "WARNING: row $row_name have enough space for only one endcap"
-	    continue
-        }
-
-        set inst2_name "PHY_${cnt}"
-        set inst2 [odb::dbInst_create $block $master $inst2_name]
-        set right_ori $ori
-        if { $ori == "MX" } {
-            set right_ori "R180"
-        } else {
-            if { $ori == "R0"} {
-                set right_ori "MY"
-            }
-        }
-        $inst2 setOrient $right_ori
-        $inst2 setLocation $loc_2_x $loc_2_y
-        $inst2 setPlacementStatus LOCKED
-
-        incr cnt
-        incr endcap_count
-    }
-
-    puts "\[INFO\] #Endcaps inserted: $endcap_count"
-
-    #Step 3: Insert tap
-    puts "Step 3: Insert tapcells..."
-
-    set min_x [tapcell::get_min_rows_x $rows]
-    set max_x [tapcell::get_max_rows_x $rows]
-
-    set min_y [tapcell::get_min_rows_y $rows]
-    set max_y [tapcell::get_max_rows_y $rows]
-    
-    set tapcell_count 0
     set endcap_master [$db findMaster $endcap_master]
     set endcap_width [$endcap_master getWidth]
-
-    foreach row $rows {
-        set site_x [[$row getSite] getWidth]
-        set llx [[$row getBBox] xMin]
-        set lly [[$row getBBox] yMin]
-        set urx [[$row getBBox] xMax]
-        set ury [[$row getBBox] yMax]
-
-        set ori [$row getOrient]
-
-        set offsets ""
-        set pitch -1
-
-        if {[tapcell::even $row]} {
-            set offset [expr $dist*$lef_units]
-            lappend offsets $offset
-        } else {
-            set offset [expr $dist*2*$lef_units]
-            lappend offsets $offset
-        }
-
-        if {[tapcell::top_or_bottom $row $min_y $max_y]} {
-            if {$no_cell_at_top_bottom == true} {
-                continue
-            }
-            set offsets ""
-            set pitch [expr $dist*$lef_units]
-            set offset [expr $dist*$lef_units]
-            lappend offsets $offset
-        } elseif {[tapcell::right_above_below_macros $blockages $row $halo_x $halo_y] && \
-                  $add_boundary_cell == true} {
-            set offsets ""
-            set pitch [expr $dist*2*$lef_units]
-            set offset [expr $dist*$lef_units]
-            set offset2 [expr $dist*2*$lef_units]
-            lappend offsets $offset
-            lappend offsets $offset2
-        } else {
-            set pitch [expr {$dist*2*$lef_units}]
-        }
-
-        set endcapwidth [expr $endcap_cpp*$site_x]
-        foreach offset $offsets {
-            for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
-                set master [$db findMaster $tapcell_master]
-                if { $master == "NULL" } {
-                    ord::error "\[ERROR\] Master $tapcell_master not found"
-                }
-
-                set inst_name "PHY_${cnt}"
-        	    set tap_width [$master getWidth]
-                set tap_urx [expr $x + $tap_width]
-                set end_llx [expr $urx - $endcap_width]
-
-                set x_tmp [expr {ceil (1.0*$x/$site_x)*$site_x}]
-                set row_orig_fix [expr { $llx % $site_x }]
-                set x [expr { int($x_tmp + $row_orig_fix) }]
-                set x_end [expr $x + $site_x]
-                set x_tmp $x
-
-                if {$add_boundary_cell == true} {
-                    set blocked_region false
-                    set blocked_region [tapcell::in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-                    if {$blocked_region == true} {
-                        set new_x [tapcell::get_new_x $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
-                        if { $x != $new_x} {
-                            set x_tmp $new_x
-                        } else {
-                            continue
-                        }
-                    }
-                }
-
-                if {($x != $min_x) && ($x_end != $max_x)} {
-                    if { $tap_urx > $end_llx } {
-                        puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
-                        continue
-                    }
-
-                    set new_x [expr {ceil (1.0*$x_tmp/$site_x)*$site_x}]
-                    set new_x [expr { int($new_x) }]
-                    set real_x [tapcell::get_correct_llx $new_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x $add_boundary_cell]
-
-                    set inst [odb::dbInst_create $block $master $inst_name]
-                    $inst setOrient $ori
-
-                    $inst setLocation $real_x $lly
-                    $inst setPlacementStatus LOCKED
-
-                    incr cnt
-                    incr tapcell_count
-                }
-            }
-        }
-    }
-
-    puts "\[INFO\] #Tapcells inserted: $tapcell_count"
+    set cnt [tapcell::insert_tapcells $db $tapcell_master $blockages $dist \
+                                      $endcap_cpp $halo_x $halo_y \
+                                      $endcap_width $cnt $no_cell_at_top_bottom \
+                                      $add_boundary_cell]
 
     if {$add_boundary_cell == true} {
         #Step 4: Insert top/bottom
         #Step 4-1: insert top/bottom between cnr cell
         puts "Step 4.1: Insert tapcells at top/bottom between cnr cell..."
 
-        set tbtiewidth [expr $tbtie_cpp*$site_x]
-        set endcapwidth [expr $endcap_cpp*$site_x]
+        set rows [$block getRows]
 
         set topbottom_cnt 0
 
+        set min_y [tapcell::get_min_rows_y $rows]
+        set max_y [tapcell::get_max_rows_y $rows]
+
         foreach row $rows {
             set site_x [[$row getSite] getWidth]
+            set tbtiewidth [expr $tbtie_cpp*$site_x]
+            set endcapwidth [expr $endcap_cpp*$site_x]
 
             set llx [[$row getBBox] xMin]
             set lly [[$row getBBox] yMin]
