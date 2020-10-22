@@ -60,12 +60,6 @@ set_num_slots(int numSlots)
 }
 
 void
-set_random_mode(int mode)
-{
-  getIOPlacer()->getParameters()->setRandomMode(mode);
-}
-
-void
 set_slots_factor(float factor)
 {
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
@@ -126,9 +120,9 @@ set_ver_length(float length)
 }
 
 void
-run_io_placement(int horLayer, int verLayer)
+run_io_placement(int horLayer, int verLayer, bool randomMode)
 {
-  getIOPlacer()->run(horLayer, verLayer);
+  getIOPlacer()->run(horLayer, verLayer, randomMode);
 }
 
 void
