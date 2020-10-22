@@ -39,11 +39,11 @@ NETS 18 ;
     - i6z ( i6 Z ) ( i7 A ) + USE SIGNAL ;
     - i7z ( i7 Z ) ( i8 A ) + USE SIGNAL ;
     - i8z ( i8 Z ) ( r3 CK ) + USE SIGNAL ;
-    - r1q ( hold1 Z ) ( u2 A1 ) + USE SIGNAL ;
+    - r1q ( hold1 A ) ( r1 Q ) + USE SIGNAL ;
     - r2q ( r2 Q ) ( u1 A ) + USE SIGNAL ;
     - u1z ( u1 Z ) ( u2 A2 ) + USE SIGNAL ;
-    - u2z ( hold2 Z ) ( r3 D ) + USE SIGNAL ;
-    - net1 ( hold1 A ) ( r1 Q ) + USE SIGNAL ;
-    - net2 ( hold2 A ) ( u2 ZN ) + USE SIGNAL ;
+    - u2z ( hold2 A ) ( u2 ZN ) + USE SIGNAL ;
+    - net1 ( u2 A1 ) ( hold1 Z ) + USE SIGNAL ;
+    - net2 ( r3 D ) ( hold2 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

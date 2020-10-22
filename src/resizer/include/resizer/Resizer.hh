@@ -298,9 +298,11 @@ protected:
 		     LibertyCell *buffer_cell);
   VertexSet findHoldFanins(VertexSet &ends);
   VertexSeq sortHoldFanins(VertexSet &fanins);
-  void makeHoldDelay(Pin *drvr_pin,
+  void makeHoldDelay(Vertex *drvr,
+		     PinSeq &load_pins,
 		     LibertyCell *buffer_cell);
   float slackGap(Vertex *vertex);
+  int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
 			 // Return value.
 			 InstanceSeq &insts);

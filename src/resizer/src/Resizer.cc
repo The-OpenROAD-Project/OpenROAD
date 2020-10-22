@@ -1201,7 +1201,17 @@ Resizer::repairHoldPass(VertexSet &ends,
 	: network_->net(drvr_pin);
       // Hands off special nets.
       if (!isSpecial(net)) {
-	makeHoldDelay(drvr_pin, buffer_cell);
+	PinSeq load_pins;
+	// Only add delay to loads with hold violations.
+	VertexOutEdgeIterator edge_iter(vertex, graph_);
+	while (edge_iter.hasNext()) {
+	  Edge *edge = edge_iter.next();
+	  Vertex *fanout = edge->to(graph_);
+	  Slack fanout_slack = sta_->vertexSlack(fanout, MinMax::min());
+	  if (fanout_slack < 0)
+	    load_pins.push_back(fanout->pin());
+	}
+	makeHoldDelay(vertex, load_pins, buffer_cell);
 	repair_count++;
 	if (overMaxArea()) {
 	  warn("max utilization reached.");
@@ -1284,13 +1294,25 @@ Resizer::sortHoldFanins(VertexSet &fanins)
 }
 
 void
-Resizer::makeHoldDelay(Pin *drvr_pin,
+Resizer::makeHoldDelay(Vertex *drvr,
+		       PinSeq &load_pins,
 		       LibertyCell *buffer_cell)
 {
+  Pin *drvr_pin = drvr->pin();
+  debugPrint3(debug_, "repair_hold", 3, "insert %s loads %lu/%d\n",
+	      sdc_network_->pathName(drvr_pin),
+	      load_pins.size(),
+	      fanout(drvr));
   Instance *parent = db_network_->topInstance();
-  string net2_name = makeUniqueNetName();
+  Net *out_net;
+  Net *drvr_net = network_->isTopLevelPort(drvr_pin)
+    ? db_network_->net(db_network_->term(drvr_pin))
+    : db_network_->net(drvr_pin);
+  Net *in_net = drvr_net;
+  string out_net_name = makeUniqueNetName();
+  // drvr_pin->drvr_net->hold_buffer->net2->load_pins
   string buffer_name = makeUniqueInstName("hold");
-  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+  out_net = db_network_->makeNet(out_net_name.c_str(), parent);
   Instance *buffer = db_network_->makeInstance(buffer_cell,
 					       buffer_name.c_str(),
 					       parent);
@@ -1299,23 +1321,19 @@ Resizer::makeHoldDelay(Pin *drvr_pin,
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
-	      sdc_network_->pathName(drvr_pin),
-	      buffer_name.c_str(),
-	      net2_name.c_str())
-  Instance *drvr = db_network_->instance(drvr_pin);
-  Port *drvr_port = db_network_->port(drvr_pin);
-  Net *net = network_->isTopLevelPort(drvr_pin)
-    ? db_network_->net(db_network_->term(drvr_pin))
-    : db_network_->net(drvr_pin);
-  sta_->disconnectPin(drvr_pin);
-  sta_->connectPin(drvr, drvr_port, net2);
-  sta_->connectPin(buffer, input, net2);
-  sta_->connectPin(buffer, output, net);
+  sta_->connectPin(buffer, input, in_net);
+  sta_->connectPin(buffer, output, out_net);
   setLocation(buffer, db_network_->location(drvr_pin));
+
+  for (Pin *load_pin : load_pins) {
+    Instance *load = db_network_->instance(load_pin);
+    Port *load_port = db_network_->port(load_pin);
+    sta_->disconnectPin(load_pin);
+    sta_->connectPin(load, load_port, out_net);
+  }
   if (have_estimated_parasitics_) {
-    estimateWireParasitic(net);
-    estimateWireParasitic(net2);
+    estimateWireParasitic(drvr_net);
+    estimateWireParasitic(out_net);
   }
 }
 
@@ -1331,6 +1349,18 @@ Resizer::slackGap(Vertex *vertex)
 	     - slacks[RiseFall::riseIndex()][MinMax::minIndex()],
 	     slacks[RiseFall::fallIndex()][MinMax::maxIndex()]
 	     - slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
+}
+
+int
+Resizer::fanout(Vertex *vertex)
+{
+  int fanout = 0;
+  VertexOutEdgeIterator edge_iter(vertex, graph_);
+  while (edge_iter.hasNext()) {
+    edge_iter.next();
+    fanout++;
+  }
+  return fanout;
 }
 
 ////////////////////////////////////////////////////////////////
