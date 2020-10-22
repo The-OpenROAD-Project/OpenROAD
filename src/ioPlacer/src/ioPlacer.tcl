@@ -77,28 +77,22 @@ proc io_placer { args } {
 
   puts "#Macro blocks found: [llength $blockages]"
 
-  if { [info exists flags(-random)] } {
-    ioPlacer::set_random_mode 2
-  }
-
   set seed 42
   if [info exists keys(-random_seed)] {
     set seed $keys(-random_seed)
   }
   ioPlacer::set_rand_seed $seed
 
-  set hor_layer 3
   if [info exists keys(-hor_layer)] {
     set hor_layer $keys(-hor_layer)
   } else {
-    puts "Warning: use -hor_layer to set the horizontal layer."
+    ord::error("-hor_layer is mandatory")
   }       
   
-  set ver_layer 2
   if [info exists keys(-ver_layer)] {
     set ver_layer $keys(-ver_layer)
   } else {
-    puts "Warning: use -ver_layer to set the vertical layer."
+    ord::error("-ver_layer is mandatory")
   }
 
   set offset 5
@@ -106,7 +100,7 @@ proc io_placer { args } {
     set offset $keys(-boundaries_offset)
     ioPlacer::set_boundaries_offset $offset
   } else {
-    puts "Warning: using the default boundaries offset ($offset microns)"
+    puts "Using ${offset}u default boundaries offset"
     ioPlacer::set_boundaries_offset $offset
   }
 
@@ -115,7 +109,7 @@ proc io_placer { args } {
     set min_dist $keys(-min_distance)
     ioPlacer::set_min_distance $min_dist
   } else {
-    puts "Warning: using the default min distance between IO pins ($min_dist tracks)"
+    puts "Using $min_dist tracks default min distance between IO pins"
     ioPlacer::set_min_distance $min_dist
   }
 
@@ -180,7 +174,7 @@ proc io_placer { args } {
     }
   }
   
-  ioPlacer::run_io_placement $hor_layer $ver_layer
+  ioPlacer::run_io_placement $hor_layer $ver_layer [info exists flags(-random)]
 }
 
 namespace eval ioPlacer {
