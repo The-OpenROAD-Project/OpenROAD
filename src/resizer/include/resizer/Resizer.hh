@@ -301,6 +301,8 @@ protected:
   void makeHoldDelay(Vertex *drvr,
 		     PinSeq &load_pins,
 		     LibertyCell *buffer_cell);
+  Point holdDelayLocation(Pin *drvr_pin,
+			  PinSeq &load_pins);
   float slackGap(Vertex *vertex);
   int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,

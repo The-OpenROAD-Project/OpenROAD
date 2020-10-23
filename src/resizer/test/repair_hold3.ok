@@ -196,10 +196,10 @@ Path Type: min
    0.021    0.116 ^ i6/Z (BUF_X1)
    0.000    0.116 ^ r4/CK (DFF_X1)
    0.000    0.116   clock reconvergence pessimism
-   0.008    0.124   library hold time
-            0.124   data required time
+   0.008    0.123   library hold time
+            0.123   data required time
 -----------------------------------------------------------
-            0.124   data required time
+            0.123   data required time
            -0.148   data arrival time
 -----------------------------------------------------------
             0.024   slack (MET)

@@ -1127,7 +1127,7 @@ Resizer::repairHoldViolations(LibertyCell *buffer_cell)
   VertexSet hold_failures = *sta_->search()->endpoints();
   // Find endpoints with hold violation.
   findHoldViolations(hold_failures);
-  if (hold_failures.size() > 0) {
+  if (!hold_failures.empty()) {
     printf("Found %lu endpoints with hold violations.\n",
 	   hold_failures.size());
     repairHoldViolations(hold_failures, buffer_cell);
@@ -1299,20 +1299,22 @@ Resizer::makeHoldDelay(Vertex *drvr,
 		       LibertyCell *buffer_cell)
 {
   Pin *drvr_pin = drvr->pin();
-  debugPrint3(debug_, "repair_hold", 3, "insert %s loads %lu/%d\n",
-	      sdc_network_->pathName(drvr_pin),
-	      load_pins.size(),
-	      fanout(drvr));
   Instance *parent = db_network_->topInstance();
-  Net *out_net;
   Net *drvr_net = network_->isTopLevelPort(drvr_pin)
     ? db_network_->net(db_network_->term(drvr_pin))
     : db_network_->net(drvr_pin);
   Net *in_net = drvr_net;
   string out_net_name = makeUniqueNetName();
+  Net *out_net = db_network_->makeNet(out_net_name.c_str(), parent);
   // drvr_pin->drvr_net->hold_buffer->net2->load_pins
   string buffer_name = makeUniqueInstName("hold");
-  out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+  debugPrint5(debug_, "repair_hold", 3, "insert %s -> %s -> %s loads %lu/%d\n",
+	      sdc_network_->pathName(drvr_pin),
+	      buffer_name.c_str(),
+	      out_net_name.c_str(),
+	      load_pins.size(),
+	      fanout(drvr));
+
   Instance *buffer = db_network_->makeInstance(buffer_cell,
 					       buffer_name.c_str(),
 					       parent);
@@ -1323,7 +1325,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
   buffer_cell->bufferPorts(input, output);
   sta_->connectPin(buffer, input, in_net);
   sta_->connectPin(buffer, output, out_net);
-  setLocation(buffer, db_network_->location(drvr_pin));
+  setLocation(buffer, holdDelayLocation(drvr_pin, load_pins));
 
   for (Pin *load_pin : load_pins) {
     Instance *load = db_network_->instance(load_pin);
@@ -1335,6 +1337,24 @@ Resizer::makeHoldDelay(Vertex *drvr,
     estimateWireParasitic(drvr_net);
     estimateWireParasitic(out_net);
   }
+}
+
+Point
+Resizer::holdDelayLocation(Pin *drvr_pin,
+			   PinSeq &load_pins)
+{
+  Point drvr_loc = db_network_->location(drvr_pin);
+  int closest_dist = std::numeric_limits<int>::max();
+  Point closest_loc;
+  for (Pin *load_pin : load_pins) {
+    Point load_loc = db_network_->location(load_pin);
+    int dist = Point::manhattanDistance(drvr_loc, load_loc);
+    if (dist < closest_dist) {
+      closest_dist = dist;
+      closest_loc = load_loc;
+    }
+  }
+  return closest_loc;
 }
 
 // Gap between min setup and hold slacks.
