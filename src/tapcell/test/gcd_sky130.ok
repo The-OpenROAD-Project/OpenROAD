@@ -1,0 +1,25 @@
+Notice 0: Reading LEF file:  sky130/sky130_tech.lef
+Notice 0:     Created 11 technology layers
+Notice 0:     Created 25 technology vias
+Notice 0: Finished LEF file:  sky130/sky130_tech.lef
+Notice 0: Reading LEF file:  sky130/sky130_std_cell.lef
+Notice 0:     Created 390 library cells
+Notice 0: Finished LEF file:  sky130/sky130_std_cell.lef
+Notice 0: 
+Reading DEF file: gcd_sky130.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 279 components and 1515 component-terminals.
+Notice 0:     Created 315 nets and 957 connections.
+Notice 0: Finished DEF file: gcd_sky130.def
+Running tapcell...
+Step 1: Cut rows...
+[INFO] Macro blocks found: 0
+[INFO] #Original rows: 84
+[INFO] #Cut rows: 0
+Step 2: Insert endcaps...
+[INFO] #Endcaps inserted: 168
+Step 3: Insert tapcells...
+[INFO] #Tapcells inserted: 817
+Running tapcell... Done!
+No differences found.
