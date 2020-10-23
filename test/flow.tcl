@@ -35,7 +35,8 @@ eval tapcell $tapcell_args
 pdngen -verbose $pdn_cfg
 
 # pre-placement/sizing wireload timing
-report_checks
+report_checks -path_delay min_max -format full_clock_expanded \
+  -fields {input_pin slew capacitance} -digits 3
 
 ################################################################
 # Global placement
@@ -89,6 +90,8 @@ detailed_placement
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_hold_violations -buffer_cell $hold_buffer_cell
+report_checks -path_delay min_max -format full_clock_expanded \
+  -fields {input_pin slew capacitance} -digits 3
 
 detailed_placement
 filler_placement $filler_cells
@@ -134,13 +137,14 @@ ord::clear
 read_libraries
 read_def $routed_def
 read_sdc $sdc_file
+set_propagated_clock [all_clocks]
 
 ################################################################
 # Final Report
 # inlieu of rc extraction
-set_wire_rc -layer $wire_rc_layer
-report_checks -path_delay min_max -fields {input_pin slew capacitance} \
-  -format full_clock_expanded
+estimate_parasitics -placement
+report_checks -path_delay min_max -format full_clock_expanded \
+  -fields {input_pin slew capacitance} -digits 3
 report_wns
 report_tns
 report_check_types -max_slew -max_capacitance -max_fanout -violators
