@@ -338,7 +338,7 @@ static void fill_polygon(const Polygon90& area,
     auto [w, h] = *iter;
     bool last_shape = ++iter == cfg.shapes.end();
     // Ensure the longer direction is in the preferred direction
-    if (isH && w < h || !isH && h < w) {
+    if ((isH && w < h) || (!isH && h < w)) {
       std::swap(w, h);
     }
 
@@ -414,7 +414,7 @@ void DensityFill::fill_layer(dbBlock* block, dbTechLayer* layer)
         = (non_fill + cfg.opc_halo)
           & core_area - (non_fill + cfg.opc.space_to_non_fill);
     halo_area.get(polygons);
-    printf("  Filling %d areas with OPC fill...\n", polygons.size());
+    printf("  Filling %ld areas with OPC fill...\n", polygons.size());
     for (auto& polygon : polygons) {
       fill_polygon(
                    polygon, layer, block, cfg.opc, cfg.num_masks, true, &opc_fill_area);
@@ -429,7 +429,7 @@ void DensityFill::fill_layer(dbBlock* block, dbTechLayer* layer)
     fill_area -= (opc_fill_area + cfg.non_opc.space_to_fill);
   }
   fill_area.get(polygons);
-  printf("  Filling %d areas with non-OPC fill...\n", polygons.size());
+  printf("  Filling %ld areas with non-OPC fill...\n", polygons.size());
   for (auto& polygon : polygons) {
     fill_polygon(polygon, layer, block, cfg.non_opc, cfg.num_masks, false);
   }
