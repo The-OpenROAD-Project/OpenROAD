@@ -100,7 +100,7 @@ check_placement
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
 
-# missing vsrc file
+# missing mysterious vsrc file
 #analyze_power_grid
 
 ################################################################
@@ -141,8 +141,19 @@ set_propagated_clock [all_clocks]
 
 ################################################################
 # Final Report
-# inlieu of rc extraction
-estimate_parasitics -placement
+
+# Use global routing based parasitics inlieu of rc extraction
+foreach layer_adjustment $global_routing_layer_adjustments {
+  lassign $layer_adjustment layer adjustment
+  set_global_routing_layer_adjustment $layer $adjustment
+}
+fastroute \
+  -layers $global_routing_layers \
+  -unidirectional_routing true \
+  -overflow_iterations 100 \
+  -verbose 2
+estimate_parasitics -global_routing
+
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
 report_wns
@@ -156,10 +167,28 @@ report_design_area
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
+set pass 1
+
 if { ![info exists drv_count] } {
-  puts "fail drv count not found."
+  puts "Fail: drv count not found."
+  set pass 0
 } elseif { $drv_count > $max_drv_count } {
-  puts "fail max drv count exceeded $drv_count > $max_drv_count."
+  puts "Fail: max drv count exceeded $drv_count > $max_drv_count."
+  set pass 0
+}
+
+if { [sta::worst_slack -max] < $setup_slack_limit } {
+  puts "Fail: setup slack limit exceeded [format %.2f [sta::worst_slack -max]] < $setup_slack_limit"
+  set pass 0
+}
+
+if { [sta::worst_slack -min] < $hold_slack_limit } {
+  puts "Fail: hold slack limit exceeded [format %.2f [sta::worst_slack -min]] < $hold_slack_limit"
+  set pass 0
+}
+
+if { $pass } {
+  puts "pass"
 } else {
-  puts "pass drv count $drv_count <= $max_drv_count."
+  puts "fail"
 }
