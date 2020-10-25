@@ -23,6 +23,7 @@ record_tests {
   repair_hold2
   repair_hold3
   repair_hold4
+  repair_hold5
   repair_slew1
   repair_slew2
   repair_slew3

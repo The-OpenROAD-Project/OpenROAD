@@ -1241,11 +1241,13 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
 	    load_pins.push_back(fanout->pin());
 	  }
 	}
-	makeHoldDelay(vertex, load_pins, buffer_cell);
-	repair_count++;
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  return repair_count;
+	if (!load_pins.empty()) {
+	  makeHoldDelay(vertex, load_pins, buffer_cell);
+	  repair_count++;
+	  if (overMaxArea()) {
+	    warn("max utilization reached.");
+	    return repair_count;
+	  }
 	}
       }
     }
