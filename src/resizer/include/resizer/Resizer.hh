@@ -290,19 +290,21 @@ protected:
 			 LibertyPort *load_port,
 			 double wire_length,
 			 double max_slew);
-
-  Slack findHoldViolations(VertexSet &ends);
-  void repairHoldViolations(VertexSet &ends,
+  void findHoldViolations(VertexSet *ends,
+			  // Return values.
+			  Slack &worst_slack,
+			  VertexSet &hold_violations);
+  void repairHoldViolations(VertexSet *ends,
 			    LibertyCell *buffer_cell);
   int repairHoldPass(VertexSet &ends,
-		     LibertyCell *buffer_cell);
+		     LibertyCell *buffer_cell,
+		     float buffer_delay);
   VertexSet findHoldFanins(VertexSet &ends);
   VertexSeq sortHoldFanins(VertexSet &fanins);
   void makeHoldDelay(Vertex *drvr,
 		     PinSeq &load_pins,
 		     LibertyCell *buffer_cell);
-  Point holdDelayLocation(Pin *drvr_pin,
-			  PinSeq &load_pins);
+  Point findCenter(PinSeq &pins);
   float slackGap(Vertex *vertex);
   int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
