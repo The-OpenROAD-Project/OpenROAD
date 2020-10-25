@@ -40,13 +40,14 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <string>
 
-#include "FastRoute.h"
-#include "antennachecker/AntennaChecker.hh"
+#include "fastroute/GRoute.h"
 #include "opendb/db.h"
 #include "opendb/dbShape.h"
+#include "opendb/dbBlockCallBackObj.h"
 #include "opendb/wOrder.h"
 #include "opendp/Opendp.h"
 #include "sta/Liberty.hh"
+#include "antennachecker/AntennaChecker.hh"
 
 // Forward declaration protects FastRoute code from any
 // header file from the DB. FastRoute code keeps independent.
@@ -64,6 +65,15 @@ namespace FastRoute {
 typedef std::map<odb::dbNet*, std::vector<VINFO>> AntennaViolations;
 
 class GlobalRouter;
+
+class AntennaCbk : public odb::dbBlockCallBackObj
+{
+public:
+  AntennaCbk(GlobalRouter* grouter);
+  virtual void inDbPostMoveInst(odb::dbInst*);
+private:
+  GlobalRouter* _grouter;
+};
 
 class AntennaRepair
 {
@@ -96,12 +106,14 @@ private:
                    int siteWidth,
                    r_tree& fixedInsts);
   void getFixedInstances(r_tree& fixedInsts);
+  void setInstsPlacementStatus(odb::dbPlacementStatus placementStatus);
 
   GlobalRouter *_grouter;
   antenna_checker::AntennaChecker* _arc;
   opendp::Opendp* _opendp;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
+  std::vector<odb::dbInst*> _diodeInsts;
   AntennaViolations _antennaViolations;
 };
 

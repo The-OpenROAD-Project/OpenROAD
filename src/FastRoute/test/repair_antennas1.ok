@@ -29,9 +29,9 @@ Layer 6 pitch: 3.33
 [INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 11
-[INFO] Processing 17704 obstacles in layer 1
-[INFO] Processing 2627 obstacles in layer 2
-[INFO] Processing 10 obstacles in layer 5
+[INFO] Processing 17704 obstacles on layer 1
+[INFO] Processing 2627 obstacles on layer 2
+[INFO] Processing 10 obstacles on layer 5
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
@@ -81,14 +81,13 @@ row height                3.3 u
 
 Placement Analysis
 --------------------------------
-total displacement        0.0 u
+total displacement       19.1 u
 average displacement      0.0 u
-max displacement          0.0 u
-original HPWL         16909.8 u
-legalized HPWL        16909.8 u
+max displacement          6.7 u
+original HPWL         16910.8 u
+legalized HPWL        16931.0 u
 delta HPWL                  0 %
 
-Warning: Overlap check failed (2).
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.000000
@@ -103,20 +102,20 @@ Layer 6 pitch: 3.330000
 [INFO] #DB Obstacles: 22609
 [INFO] #DB Macros: 2
 [INFO] Found 0 clock nets
-[INFO] Minimum degree: 3
-[INFO] Maximum degree: 3
-[INFO] Processing 17710 obstacles in layer 1
-[INFO] Processing 2631 obstacles in layer 2
-[INFO] Processing 10 obstacles in layer 5
+[INFO] Minimum degree: 2
+[INFO] Maximum degree: 11
+[INFO] Processing 17710 obstacles on layer 1
+[INFO] Processing 2631 obstacles on layer 2
+[INFO] Processing 10 obstacles on layer 5
 [INFO] Reducing resources of layer 3 by 15%
 [INFO] Reducing resources of layer 4 by 15%
 [INFO] Reducing resources of layer 5 by 15%
 [INFO] Reducing resources of layer 6 by 15%
-[INFO] #Nets to reroute: 2
+[INFO] #Nets to reroute: 14
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 53
+[Overflow Report] Total Usage   : 175
 [Overflow Report] Total Capacity: 67250
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
@@ -125,9 +124,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 53
-[INFO] Final number of vias : 14
-[INFO] Final usage 3D       : 95
+[INFO] Final usage          : 175
+[INFO] Final number of vias : 101
+[INFO] Final usage 3D       : 478
 [INFO] Num routed nets: 322
 No differences found.
 No differences found.

@@ -46,7 +46,6 @@ class Parameters
   bool _reportHPWL = false;
   bool _forceSpread = true;
   int _numSlots = -1;
-  int _randomMode = 0;
   float _slotsFactor = -1;
   float _usage = -1;
   float _usageFactor = -1;
@@ -66,8 +65,6 @@ class Parameters
   bool getReportHPWL() const { return _reportHPWL; }
   void setNumSlots(int numSlots) { _numSlots = numSlots; }
   int getNumSlots() const { return _numSlots; }
-  void setRandomMode(int mode) { _randomMode = mode; }
-  int getRandomMode() const { return _randomMode; }
   void setSlotsFactor(float factor) { _slotsFactor = factor; }
   float getSlotsFactor() const { return _slotsFactor; }
   void setUsage(float usage) { _usage = usage; }

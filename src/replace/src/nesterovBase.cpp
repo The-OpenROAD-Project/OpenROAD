@@ -1570,6 +1570,13 @@ NesterovBase::updateWireLengthForceWA(
     gNet->updateBox();
 
     for(auto& gPin : gNet->gPins()) {
+      // The WA terms are shift invariant:
+      //
+      //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
+      //   -----------------    = -----------------
+      //   Sum(exp(x_i))          Sum(exp(x_i - C))
+      //
+      // So we shift to keep the exponential from overflowing
       float expMinX = (gNet->lx() - gPin->cx()) * wlCoeffX; 
       float expMaxX = (gPin->cx() - gNet->ux()) * wlCoeffX;
       float expMinY = (gNet->ly() - gPin->cy()) * wlCoeffY;
@@ -1830,7 +1837,7 @@ getOverlapArea(const Bin* bin, const Instance* inst) {
 // https://codingforspeed.com/using-faster-exponential-approximation/
 static float
 fastExp(float a) {
-  a = 1.0 + a / 1024.0;
+  a = 1.0f + a / 1024.0f;
   a *= a;
   a *= a;
   a *= a;
