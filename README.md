@@ -352,10 +352,12 @@ by `dist` (in liberty units, typically microns).
 
 ```
 repair_hold_violations -buffer_cell buffer_cell
-                       [-max_utilization util]
+                       [-allow_setup_violations]
+		       [-max_utilization util]
 ```
 The `repair_hold_violations` command inserts buffers to repair hold
-check violations.
+check violations. Buffers are not inserted that will cause setup
+violations unless '-allow_setup_violations' is specified.
 
 ```
 report_design_area

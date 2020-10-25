@@ -1119,19 +1119,21 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHoldViolations(LibertyCell *buffer_cell)
+Resizer::repairHoldViolations(LibertyCell *buffer_cell,
+			      bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
-  repairHoldViolations(ends, buffer_cell);
+  repairHoldViolations(ends, buffer_cell, allow_setup_violations);
 }
 
 // For testing/debug.
 void
 Resizer::repairHoldViolations(Pin *end_pin,
-			      LibertyCell *buffer_cell)
+			      LibertyCell *buffer_cell,
+			      bool allow_setup_violations)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
@@ -1139,12 +1141,13 @@ Resizer::repairHoldViolations(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  repairHoldViolations(&ends, buffer_cell);
+  repairHoldViolations(&ends, buffer_cell, allow_setup_violations);
 }
 
 void
 Resizer::repairHoldViolations(VertexSet *ends,
-			      LibertyCell *buffer_cell)
+			      LibertyCell *buffer_cell,
+			      bool allow_setup_violations)
 {
   // Find endpoints with hold violation.
   VertexSet hold_failures;
@@ -1160,8 +1163,10 @@ Resizer::repairHoldViolations(VertexSet *ends,
     while (!hold_failures.empty()
 	   // Make sure we are making progress.
 	   && repair_count > 0) {
-      repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay);
-      debugPrint4(debug_, "repair_hold", 1, "pass %d worst slack %s failures %lu inserted %d\n",
+      repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
+				    allow_setup_violations);
+      debugPrint4(debug_, "repair_hold", 1,
+		  "pass %d worst slack %s failures %lu inserted %d\n",
 		  pass,
 		  units_->timeUnit()->asString(worst_slack, 3),
 		  hold_failures .size(),
@@ -1204,7 +1209,8 @@ Resizer::findHoldViolations(VertexSet *ends,
 int
 Resizer::repairHoldPass(VertexSet &hold_failures,
 			LibertyCell *buffer_cell,
-			float buffer_delay)
+			float buffer_delay,
+			bool allow_setup_violations)
 {
   VertexSet fanins = findHoldFanins(hold_failures);
   VertexSeq sorted_fanins = sortHoldFanins(fanins);
@@ -1237,7 +1243,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
 	  Slack setup_slack = sta_->vertexSlack(fanout, MinMax::max());
 	  if (hold_slack < 0
 	      // Setup has to have slack to insert the buffer.
-	      && setup_slack > buffer_delay) {
+	      && (allow_setup_violations
+		  || setup_slack > buffer_delay)) {
 	    load_pins.push_back(fanout->pin());
 	  }
 	}

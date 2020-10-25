@@ -102,9 +102,11 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHoldViolations(LibertyCell *buffer_cell);
+  void repairHoldViolations(LibertyCell *buffer_cell,
+			    bool allow_setup_violations);
   void repairHoldViolations(Pin *end_pin,
-			    LibertyCell *buffer_cell);
+			    LibertyCell *buffer_cell,
+			    bool allow_setup_violations);
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -290,15 +292,17 @@ protected:
 			 LibertyPort *load_port,
 			 double wire_length,
 			 double max_slew);
+  void repairHoldViolations(VertexSet *ends,
+			    LibertyCell *buffer_cell,
+			    bool allow_setup_violations);
+  int repairHoldPass(VertexSet &ends,
+		     LibertyCell *buffer_cell,
+		     float buffer_delay,
+		     bool allow_setup_violations);
   void findHoldViolations(VertexSet *ends,
 			  // Return values.
 			  Slack &worst_slack,
 			  VertexSet &hold_violations);
-  void repairHoldViolations(VertexSet *ends,
-			    LibertyCell *buffer_cell);
-  int repairHoldPass(VertexSet &ends,
-		     LibertyCell *buffer_cell,
-		     float buffer_delay);
   VertexSet findHoldFanins(VertexSet &ends);
   VertexSeq sortHoldFanins(VertexSet &fanins);
   void makeHoldDelay(Vertex *drvr,
