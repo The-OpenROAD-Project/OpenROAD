@@ -15,6 +15,6 @@ set core_area {10.07 9.8 914.85 789.6}
 set max_drv_count 60
 # liberty units (ns)
 set setup_slack_limit 3.0
-set hold_slack_limit 0
+set hold_slack_limit 0.0
 
 source -echo "flow.tcl"
