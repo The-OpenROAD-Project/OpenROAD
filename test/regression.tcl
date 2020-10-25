@@ -247,7 +247,7 @@ proc find_log_pass_fail { log_file } {
       set last_line $line
     }
     close $stream
-    if { [string match "pass *" $last_line] } {
+    if { [string match "pass*" $last_line] } {
       return 0
     }
   }
