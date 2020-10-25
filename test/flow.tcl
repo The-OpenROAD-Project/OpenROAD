@@ -100,7 +100,7 @@ check_placement
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
 
-# missing vsrc file
+# missing mysterious vsrc file
 #analyze_power_grid
 
 ################################################################
@@ -141,8 +141,19 @@ set_propagated_clock [all_clocks]
 
 ################################################################
 # Final Report
-# inlieu of rc extraction
-estimate_parasitics -placement
+
+# Use global routing based parasitics inlieu of rc extraction
+foreach layer_adjustment $global_routing_layer_adjustments {
+  lassign $layer_adjustment layer adjustment
+  set_global_routing_layer_adjustment $layer $adjustment
+}
+fastroute \
+  -layers $global_routing_layers \
+  -unidirectional_routing true \
+  -overflow_iterations 100 \
+  -verbose 2
+estimate_parasitics -global_routing
+
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
 report_wns
