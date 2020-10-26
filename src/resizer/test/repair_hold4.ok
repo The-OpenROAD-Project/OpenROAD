@@ -232,7 +232,7 @@ Path Type: min
    0.019    0.145 ^ u1/Z (BUF_X1)
    0.022    0.167 ^ hold1/Z (BUF_X1)
    0.023    0.189 ^ u2/Z (BUF_X1)
-   0.020    0.209 ^ u3/Z (BUF_X1)
+   0.020    0.210 ^ u3/Z (BUF_X1)
    0.000    0.210 ^ r4/D (DFF_X1)
             0.210   data arrival time
 

@@ -57,15 +57,9 @@ Path Type: max
            1.96   data required time
 ---------------------------------------------------------
            1.96   data required time
-<<<<<<< HEAD
           -0.69   data arrival time
 ---------------------------------------------------------
            1.27   slack (MET)
-=======
-          -0.64   data arrival time
----------------------------------------------------------
-           1.32   slack (MET)
->>>>>>> openroad
 
 
 max slew
@@ -86,11 +80,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 _449_/ZN                               10.47    2.91    7.56 (MET)
 
-<<<<<<< HEAD
 worst slack 1.27
-=======
-worst slack 1.32
->>>>>>> openroad
 Driver    length delay
 _759_/Z manhtn 105.4 steiner 105.4 0.00
 _850_/Z manhtn 95.8 steiner 95.8 0.00

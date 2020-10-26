@@ -17,8 +17,8 @@ COMPONENTS 15 ;
     - r3 DFF_X1 + PLACED ( 200 400 ) N ;
     - u1 BUF_X1 + PLACED ( 200 500 ) N ;
     - u2 AND2_X1 + PLACED ( 200 600 ) N ;
-    - hold1 BUF_X1 + PLACED ( 322 1212 ) N ;
-    - hold2 BUF_X1 + PLACED ( 1090 1015 ) N ;
+    - hold1 BUF_X1 + PLACED ( 1828 1053 ) N ;
+    - hold2 BUF_X1 + PLACED ( 972 1167 ) N ;
 END COMPONENTS
 PINS 4 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
