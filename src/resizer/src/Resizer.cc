@@ -1241,9 +1241,12 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
 	  Vertex *fanout = edge->to(graph_);
 	  Slack hold_slack = sta_->vertexSlack(fanout, MinMax::min());
 	  Slack setup_slack = sta_->vertexSlack(fanout, MinMax::max());
-	  if (hold_slack < 0
-	      // Setup has to have slack to insert the buffer.
+	  if (hold_slack < 0.0
 	      && (allow_setup_violations
+		  // Require setup slack to insert buffer.
+		  // Note that this is an approximation because the
+		  // inserted buffer delay will drive all the loads,
+		  // not just a load equiv to itself.
 		  || setup_slack > buffer_delay)) {
 	    load_pins.push_back(fanout->pin());
 	  }
@@ -1339,7 +1342,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
   buffer_cell->bufferPorts(input, output);
   sta_->connectPin(buffer, input, in_net);
   sta_->connectPin(buffer, output, out_net);
-  setLocation(buffer, findCenter(load_pins));
+  setLocation(buffer, holdBufferLocation(drvr_pin, load_pins));
 
   for (Pin *load_pin : load_pins) {
     Instance *load = db_network_->instance(load_pin);
@@ -1351,6 +1354,16 @@ Resizer::makeHoldDelay(Vertex *drvr,
     estimateWireParasitic(drvr_net);
     estimateWireParasitic(out_net);
   }
+}
+
+Point
+Resizer::holdBufferLocation(Pin *drvr_pin,
+			    PinSeq &load_pins)
+{
+  Point drvr_loc = db_network_->location(drvr_pin);
+  Point load_center = findCenter(load_pins);
+  return Point((drvr_loc.x() + load_center.x()) / 2,
+	       (drvr_loc.y() + load_center.y()) / 2);
 }
 
 Point
