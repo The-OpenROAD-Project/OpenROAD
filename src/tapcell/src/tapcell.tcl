@@ -559,9 +559,8 @@ namespace eval tapcell {
         puts "\[INFO\] #Cut rows: $cut_rows_count"
     }
 
-    proc insert_endcaps {db endcap_cpp endcap_master cnrcap_nwin_master \
-                         cnrcap_nwout_master blockages halo_x halo_y \
-                         no_cell_at_top_bottom add_boundary_cell} {
+    proc insert_endcaps {db endcap_cpp endcap_master cnrcap_masters \
+                         blockages halo_x halo_y flags} {
         puts "Step 2: Insert endcaps..."
 
         set block [[$db getChip] getBlock]
@@ -570,6 +569,14 @@ namespace eval tapcell {
         
         set min_y [get_min_rows_y $rows]
         set max_y [get_max_rows_y $rows]
+
+        if {[llength $flags] == 2} {
+            lassign $flags no_cell_at_top_bottom add_boundary_cell
+        }
+
+        if {[llength $cnrcap_masters] == 2} {
+            lassign $cnrcap_masters cnrcap_nwin_master cnrcap_nwout_master
+        }
 
         set cnt 0
         set endcap_count 0
@@ -586,7 +593,7 @@ namespace eval tapcell {
 
             set ori [$row getOrient]
 
-            set top_bottom [tapcell::top_or_bottom $row $min_y $max_y]
+            set top_bottom [top_or_bottom $row $min_y $max_y]
 
             if {$no_cell_at_top_bottom == true} {
                 if {$top_bottom == 1} {
@@ -641,7 +648,7 @@ namespace eval tapcell {
             set loc_2_y [expr $ury - $master_y]
 
             set blocked_region false
-            set blocked_region [tapcell::in_blocked_region $llx $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
+            set blocked_region [in_blocked_region $llx $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
             if {$add_boundary_cell == true && $blocked_region == true} {    
                 if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
                     if { $ori == "MX" } {
@@ -712,7 +719,7 @@ namespace eval tapcell {
     }
 
     proc insert_tapcells {db tapcell_master blockages dist endcap_cpp halo_x halo_y \
-                          endcap_width cnt no_cell_at_top_bottom add_boundary_cell} {
+                          endcap_width cnt flags} {
         puts "Step 3: Insert tapcells..."
 
         set block [[$db getChip] getBlock]
@@ -725,6 +732,10 @@ namespace eval tapcell {
 
         set min_y [get_min_rows_y $rows]
         set max_y [get_max_rows_y $rows]
+
+        if {[llength $flags] == 2} {
+            lassign $flags no_cell_at_top_bottom add_boundary_cell
+        }
         
         set tapcell_count 0
 
@@ -826,150 +837,22 @@ namespace eval tapcell {
         puts "\[INFO\] #Tapcells inserted: $tapcell_count"
         return $cnt
     }
-}
 
-# Main function. It will run tapcell given the correct parameters
-proc tapcell { args } {
-    sta::parse_key_args "tapcell" args \
-        keys {-tapcell_master -endcap_master -endcap_cpp -distance -halo_width_x \
-              -halo_width_y -tap_nwin2_master -tap_nwin3_master -tap_nwout2_master \
-              -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
-              -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
-              -incnrcap_nwout_master -tbtie_cpp} \
-              flags {-no_cell_at_top_bottom -add_boundary_cell}
-
-    if { [info exists keys(-tapcell_master)] } {
-        set tapcell_master $keys(-tapcell_master)
-    }
-
-    if { [info exists keys(-endcap_master)] } {
-        set endcap_master $keys(-endcap_master)
-    }
-
-    if { [info exists keys(-endcap_cpp)] } {
-        set endcap_cpp $keys(-endcap_cpp)
-    }
-
-    if { [info exists keys(-distance)] } {
-        set dist $keys(-distance)
-    } else {
-        set dist 2
-    }
-
-    if { [info exists keys(-halo_width_y)] } {
-        set halo_y $keys(-halo_width_y)
-    } else {
-        set halo_y 2
-    }
-
-    if { [info exists keys(-halo_width_x)] } {
-        set halo_x $keys(-halo_width_x)
-    } else {
-        set halo_x 2
-    }
-
-    set tap_nwin2_master "INVALID"
-    if { [info exists keys(-tap_nwin2_master)] } {
-        set tap_nwin2_master $keys(-tap_nwin2_master)
-    }
-
-    set tap_nwin3_master "INVALID"
-    if { [info exists keys(-tap_nwin3_master)] } {
-        set tap_nwin3_master $keys(-tap_nwin3_master)
-    }
-
-    set tap_nwout2_master "INVALID"
-    if { [info exists keys(-tap_nwout2_master)] } {
-        set tap_nwout2_master $keys(-tap_nwout2_master)
-    }
-
-    set tap_nwout3_master "INVALID"
-    if { [info exists keys(-tap_nwout3_master)] } {
-        set tap_nwout3_master $keys(-tap_nwout3_master)
-    }
-
-    set tap_nwintie_master "INVALID"
-    if { [info exists keys(-tap_nwintie_master)] } {
-        set tap_nwintie_master $keys(-tap_nwintie_master)
-    }
-
-    set tap_nwouttie_master "INVALID"
-    if { [info exists keys(-tap_nwouttie_master)] } {
-        set tap_nwouttie_master $keys(-tap_nwouttie_master)
-    }
-
-    set cnrcap_nwin_master "INVALID"
-    if { [info exists keys(-cnrcap_nwin_master)] } {
-        set cnrcap_nwin_master $keys(-cnrcap_nwin_master)
-    }
-
-    set cnrcap_nwout_master "INVALID"
-    if { [info exists keys(-cnrcap_nwout_master)] } {
-        set cnrcap_nwout_master $keys(-cnrcap_nwout_master)
-    }
-
-    set incnrcap_nwin_master "INVALID"
-    if { [info exists keys(-incnrcap_nwin_master)] } {
-        set incnrcap_nwin_master $keys(-incnrcap_nwin_master)
-    }
-
-    set incnrcap_nwout_master "INVALID"
-    if { [info exists keys(-incnrcap_nwout_master)] } {
-        set incnrcap_nwout_master $keys(-incnrcap_nwout_master)
-    }
-
-    if { [info exists keys(-tbtie_cpp)] } {
-        set tbtie_cpp $keys(-tbtie_cpp)
-    }
-
-    if { [info exists flags(-add_boundary_cell)] } {
-        set add_boundary_cell true
-    } else {
-        set add_boundary_cell false
-    }
-
-    if { [info exists flags(-no_cell_at_top_bottom)] } {
-        set no_cell_at_top_bottom true
-    } else {
-        set no_cell_at_top_bottom false
-    }
-
-    puts "Running tapcell..."
-        
-    set db [::ord::get_db]
-    set block [[$db getChip] getBlock]
-    set lef_units [[$db getTech] getLefUnits]
-
-    set halo_y [expr $halo_y * $lef_units]
-    set halo_x [expr $halo_x * $lef_units]
-
-    set blockages [tapcell::find_blockages $db]
-
-    tapcell::cut_rows $db $endcap_master $blockages $halo_x $halo_y
-
-    set cnt [tapcell::insert_endcaps $db $endcap_cpp $endcap_master \
-                                     $cnrcap_nwin_master $cnrcap_nwout_master \
-                                     $blockages $halo_x $halo_y \
-                                     $no_cell_at_top_bottom $add_boundary_cell]
-
-    set endcap_master [$db findMaster $endcap_master]
-    set endcap_width [$endcap_master getWidth]
-    set cnt [tapcell::insert_tapcells $db $tapcell_master $blockages $dist \
-                                      $endcap_cpp $halo_x $halo_y \
-                                      $endcap_width $cnt $no_cell_at_top_bottom \
-                                      $add_boundary_cell]
-
-    if {$add_boundary_cell == true} {
-        #Step 4: Insert top/bottom
-        #Step 4-1: insert top/bottom between cnr cell
+    proc insert_at_top_bottom {db masters tbtie_cpp endcap_cpp cnt} {
         puts "Step 4.1: Insert tapcells at top/bottom between cnr cell..."
 
+        set block [[$db getChip] getBlock]
         set rows [$block getRows]
 
         set topbottom_cnt 0
 
-        set min_y [tapcell::get_min_rows_y $rows]
-        set max_y [tapcell::get_max_rows_y $rows]
+        set min_y [get_min_rows_y $rows]
+        set max_y [get_max_rows_y $rows]
+
+        if {[llength $masters] == 6} {
+            lassign $masters tap_nwintie_master tap_nwin2_master tap_nwin3_master \
+                             tap_nwouttie_master tap_nwout2_master tap_nwout3_master
+        }
 
         foreach row $rows {
             set site_x [[$row getSite] getWidth]
@@ -983,7 +866,7 @@ proc tapcell { args } {
 
             set ori [$row getOrient]
 
-            set topbottom_chk [tapcell::top_or_bottom $row $min_y $max_y]
+            set topbottom_chk [top_or_bottom $row $min_y $max_y]
             
             set master NULL
             set tb2_master NULL
@@ -1065,18 +948,27 @@ proc tapcell { args } {
         }
 
         puts "\[INFO\] Top/bottom cells inserted: $topbottom_cnt"
+        return $cnt
+    }
 
+    proc insert_around_macros {db masters cnt} {
         #Step 4-2: insert incnr/topbottom for blkgs
         puts "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
 
+        set block [[$db getChip] getBlock]
         set rows [$block getRows]
 
-        set corebox_llx [tapcell::get_min_rows_x $rows]
-        set corebox_lly [tapcell::get_min_rows_y $rows]
-        set corebox_urx [tapcell::get_max_rows_x $rows]
-        set corebox_ury [tapcell::get_max_rows_y $rows]
+        set corebox_llx [get_min_rows_x $rows]
+        set corebox_lly [get_min_rows_y $rows]
+        set corebox_urx [get_max_rows_x $rows]
+        set corebox_ury [get_max_rows_y $rows]
 
-        set blkgs_cnt 0      
+        set blkgs_cnt 0
+
+        if {[llength $masters] == 8} {
+            lassign $masters incnrcap_nwin_master tap_nwin2_master tap_nwin3_master tap_nwintie_master \
+                             incnrcap_nwout_master tap_nwout2_master tap_nwout3_master tap_nwouttie_master
+        }
 
         foreach blockage $blockages {
             set blockage_llx_ [expr [[$blockage getBBox] xMin] - $halo_x]
@@ -1084,7 +976,7 @@ proc tapcell { args } {
             set blockage_urx_ [expr [[$blockage getBBox] xMax] + $halo_x]
             set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
 
-            set rows_top_bottom [tapcell::get_rows_top_bottom_macro $blockage $rows $halo_x $halo_y]
+            set rows_top_bottom [get_rows_top_bottom_macro $blockage $rows $halo_x $halo_y]
             
             foreach row $rows_top_bottom {
                 set site_x [[$row getSite] getWidth]
@@ -1095,7 +987,7 @@ proc tapcell { args } {
                 set row_urx [[$row getBBox] xMax]
                 set row_ury [[$row getBBox] yMax]
 
-		        if {$blockage_llx_ < $row_llx} {
+                if {$blockage_llx_ < $row_llx} {
                     set blockage_llx $row_llx
                 } else {
                     set blockage_llx $blockage_llx_
@@ -1294,7 +1186,7 @@ proc tapcell { args } {
                     }
 
                     set numcpp [format %i [expr int(($x_end - $x)/$site_x)]]
-		    
+            
                     if {[expr $numcpp % 2] == 1} {
                         set x_tb3 [expr $x_end-(3*$site_x)]
                         set inst4_name "PHY_${cnt}"
@@ -1322,6 +1214,151 @@ proc tapcell { args } {
             }
         }
         puts "\[INFO\] Cells inserted near blkgs: $blkgs_cnt"
+    }
+}
+
+# Main function. It will run tapcell given the correct parameters
+proc tapcell { args } {
+    sta::parse_key_args "tapcell" args \
+        keys {-tapcell_master -endcap_master -endcap_cpp -distance -halo_width_x \
+              -halo_width_y -tap_nwin2_master -tap_nwin3_master -tap_nwout2_master \
+              -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
+              -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
+              -incnrcap_nwout_master -tbtie_cpp} \
+              flags {-no_cell_at_top_bottom -add_boundary_cell}
+
+    if { [info exists keys(-tapcell_master)] } {
+        set tapcell_master $keys(-tapcell_master)
+    }
+
+    if { [info exists keys(-endcap_master)] } {
+        set endcap_master $keys(-endcap_master)
+    }
+
+    if { [info exists keys(-endcap_cpp)] } {
+        set endcap_cpp $keys(-endcap_cpp)
+    }
+
+    if { [info exists keys(-distance)] } {
+        set dist $keys(-distance)
+    } else {
+        set dist 2
+    }
+
+    if { [info exists keys(-halo_width_y)] } {
+        set halo_y $keys(-halo_width_y)
+    } else {
+        set halo_y 2
+    }
+
+    if { [info exists keys(-halo_width_x)] } {
+        set halo_x $keys(-halo_width_x)
+    } else {
+        set halo_x 2
+    }
+
+    set tap_nwin2_master "INVALID"
+    if { [info exists keys(-tap_nwin2_master)] } {
+        set tap_nwin2_master $keys(-tap_nwin2_master)
+    }
+
+    set tap_nwin3_master "INVALID"
+    if { [info exists keys(-tap_nwin3_master)] } {
+        set tap_nwin3_master $keys(-tap_nwin3_master)
+    }
+
+    set tap_nwout2_master "INVALID"
+    if { [info exists keys(-tap_nwout2_master)] } {
+        set tap_nwout2_master $keys(-tap_nwout2_master)
+    }
+
+    set tap_nwout3_master "INVALID"
+    if { [info exists keys(-tap_nwout3_master)] } {
+        set tap_nwout3_master $keys(-tap_nwout3_master)
+    }
+
+    set tap_nwintie_master "INVALID"
+    if { [info exists keys(-tap_nwintie_master)] } {
+        set tap_nwintie_master $keys(-tap_nwintie_master)
+    }
+
+    set tap_nwouttie_master "INVALID"
+    if { [info exists keys(-tap_nwouttie_master)] } {
+        set tap_nwouttie_master $keys(-tap_nwouttie_master)
+    }
+
+    set cnrcap_nwin_master "INVALID"
+    if { [info exists keys(-cnrcap_nwin_master)] } {
+        set cnrcap_nwin_master $keys(-cnrcap_nwin_master)
+    }
+
+    set cnrcap_nwout_master "INVALID"
+    if { [info exists keys(-cnrcap_nwout_master)] } {
+        set cnrcap_nwout_master $keys(-cnrcap_nwout_master)
+    }
+
+    set incnrcap_nwin_master "INVALID"
+    if { [info exists keys(-incnrcap_nwin_master)] } {
+        set incnrcap_nwin_master $keys(-incnrcap_nwin_master)
+    }
+
+    set incnrcap_nwout_master "INVALID"
+    if { [info exists keys(-incnrcap_nwout_master)] } {
+        set incnrcap_nwout_master $keys(-incnrcap_nwout_master)
+    }
+
+    if { [info exists keys(-tbtie_cpp)] } {
+        set tbtie_cpp $keys(-tbtie_cpp)
+    }
+
+    if { [info exists flags(-add_boundary_cell)] } {
+        set add_boundary_cell true
+    } else {
+        set add_boundary_cell false
+    }
+
+    if { [info exists flags(-no_cell_at_top_bottom)] } {
+        set no_cell_at_top_bottom true
+    } else {
+        set no_cell_at_top_bottom false
+    }
+
+    puts "Running tapcell..."
+        
+    set db [::ord::get_db]
+    set block [[$db getChip] getBlock]
+    set lef_units [[$db getTech] getLefUnits]
+
+    set halo_y [expr $halo_y * $lef_units]
+    set halo_x [expr $halo_x * $lef_units]
+
+    set blockages [tapcell::find_blockages $db]
+
+    set input_flags {$no_cell_at_top_bottom $add_boundary_cell}
+    set cnrcap_masters {$cnrcap_nwin_master $cnrcap_nwout_master}
+
+    tapcell::cut_rows $db $endcap_master $blockages $halo_x $halo_y
+
+    set cnt [tapcell::insert_endcaps $db $endcap_cpp $endcap_master \
+                                     $cnrcap_masters \
+                                     $blockages $halo_x $halo_y \
+                                     $input_flags]
+
+    set endcap_master [$db findMaster $endcap_master]
+    set endcap_width [$endcap_master getWidth]
+    set cnt [tapcell::insert_tapcells $db $tapcell_master $blockages $dist \
+                                      $endcap_cpp $halo_x $halo_y \
+                                      $endcap_width $cnt $input_flags]
+
+    if {$add_boundary_cell == true} {
+        set tap_nw_masters {$tap_nwintie_master $tap_nwin2_master $tap_nwin3_master \
+                        $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master}
+        set tap_macro_masters {$incnrcap_nwin_master $tap_nwin2_master $tap_nwin3_master \ 
+                               $tap_nwintie_master $incnrcap_nwout_master $tap_nwout2_master \
+                               $tap_nwout3_master $tap_nwouttie_master}
+
+        set cnt [tapcell::insert_at_top_bottom $db $tap_nw_masters $tbtie_cpp $endcap_cpp $cnt]
+        tapcell::insert_around_macros $db $tap_macro_masters $cnt
     }
 
     puts "Running tapcell... Done!"
