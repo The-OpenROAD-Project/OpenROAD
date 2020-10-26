@@ -306,10 +306,9 @@ protected:
   VertexSet findHoldFanins(VertexSet &ends);
   VertexSeq sortHoldFanins(VertexSet &fanins);
   void makeHoldDelay(Vertex *drvr,
+		     int buffer_count,
 		     PinSeq &load_pins,
 		     LibertyCell *buffer_cell);
-  Point holdBufferLocation(Pin *drvr_pin,
-			   PinSeq &load_pins);
   Point findCenter(PinSeq &pins);
   float slackGap(Vertex *vertex);
   int fanout(Vertex *vertex);

@@ -91,7 +91,7 @@ Path Type: max
 
 
 Found 2 endpoints with hold violations.
-Inserted 24 hold buffers.
+Inserted 23 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -105,33 +105,32 @@ Path Type: min
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
    0.087    0.106 ^ r1/Q (DFF_X1)
-   0.019    0.126 ^ hold19/Z (BUF_X1)
-   0.019    0.144 ^ hold14/Z (BUF_X1)
-   0.019    0.163 ^ hold21/Z (BUF_X1)
-   0.019    0.182 ^ hold6/Z (BUF_X1)
-   0.019    0.201 ^ hold20/Z (BUF_X1)
-   0.019    0.219 ^ hold13/Z (BUF_X1)
-   0.019    0.238 ^ hold18/Z (BUF_X1)
-   0.019    0.257 ^ hold2/Z (BUF_X1)
-   0.019    0.276 ^ hold15/Z (BUF_X1)
-   0.019    0.294 ^ hold12/Z (BUF_X1)
-   0.019    0.313 ^ hold23/Z (BUF_X1)
-   0.019    0.332 ^ hold5/Z (BUF_X1)
-   0.019    0.351 ^ hold22/Z (BUF_X1)
-   0.019    0.370 ^ hold11/Z (BUF_X1)
-   0.019    0.389 ^ u1/Z (BUF_X1)
-   0.019    0.407 ^ hold10/Z (BUF_X1)
-   0.019    0.426 ^ hold4/Z (BUF_X1)
-   0.019    0.445 ^ hold24/Z (BUF_X1)
-   0.019    0.463 ^ hold9/Z (BUF_X1)
-   0.019    0.482 ^ hold17/Z (BUF_X1)
-   0.022    0.504 ^ hold1/Z (BUF_X1)
-   0.020    0.524 ^ hold16/Z (BUF_X1)
-   0.019    0.542 ^ hold8/Z (BUF_X1)
-   0.019    0.561 ^ hold3/Z (BUF_X1)
-   0.019    0.580 ^ hold7/Z (BUF_X1)
-   0.000    0.580 ^ r2/D (DFF_X1)
-            0.580   data arrival time
+   0.020    0.126 ^ u1/Z (BUF_X1)
+   0.019    0.145 ^ hold1/Z (BUF_X1)
+   0.020    0.165 ^ hold2/Z (BUF_X1)
+   0.020    0.185 ^ hold3/Z (BUF_X1)
+   0.020    0.204 ^ hold4/Z (BUF_X1)
+   0.020    0.224 ^ hold5/Z (BUF_X1)
+   0.020    0.243 ^ hold6/Z (BUF_X1)
+   0.020    0.263 ^ hold7/Z (BUF_X1)
+   0.020    0.283 ^ hold8/Z (BUF_X1)
+   0.020    0.302 ^ hold9/Z (BUF_X1)
+   0.020    0.322 ^ hold10/Z (BUF_X1)
+   0.020    0.342 ^ hold11/Z (BUF_X1)
+   0.020    0.361 ^ hold12/Z (BUF_X1)
+   0.020    0.381 ^ hold13/Z (BUF_X1)
+   0.020    0.400 ^ hold14/Z (BUF_X1)
+   0.020    0.420 ^ hold15/Z (BUF_X1)
+   0.020    0.440 ^ hold16/Z (BUF_X1)
+   0.019    0.458 ^ hold17/Z (BUF_X1)
+   0.019    0.478 ^ hold22/Z (BUF_X1)
+   0.019    0.497 ^ hold23/Z (BUF_X1)
+   0.019    0.516 ^ hold18/Z (BUF_X1)
+   0.020    0.536 ^ hold19/Z (BUF_X1)
+   0.020    0.556 ^ hold20/Z (BUF_X1)
+   0.022    0.578 ^ hold21/Z (BUF_X1)
+   0.000    0.578 ^ r2/D (DFF_X1)
+            0.578   data arrival time
 
    0.400    0.400   min_delay
    0.000    0.400   clock clk (rise edge)
@@ -147,13 +146,13 @@ Path Type: min
    0.024    0.556 ^ i8/Z (BUF_X1)
    0.000    0.556 ^ r2/CK (DFF_X1)
    0.000    0.556   clock reconvergence pessimism
-   0.008    0.563   library hold time
-            0.563   data required time
+   0.008    0.564   library hold time
+            0.564   data required time
 -----------------------------------------------------------
-            0.563   data required time
-           -0.580   data arrival time
+            0.564   data required time
+           -0.578   data arrival time
 -----------------------------------------------------------
-            0.017   slack (MET)
+            0.014   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -169,33 +168,32 @@ Path Type: max
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
    0.081    0.100 v r1/Q (DFF_X1)
-   0.023    0.123 v hold19/Z (BUF_X1)
-   0.023    0.146 v hold14/Z (BUF_X1)
-   0.023    0.169 v hold21/Z (BUF_X1)
-   0.023    0.192 v hold6/Z (BUF_X1)
-   0.023    0.215 v hold20/Z (BUF_X1)
-   0.023    0.238 v hold13/Z (BUF_X1)
-   0.023    0.261 v hold18/Z (BUF_X1)
-   0.023    0.284 v hold2/Z (BUF_X1)
-   0.023    0.307 v hold15/Z (BUF_X1)
-   0.023    0.330 v hold12/Z (BUF_X1)
-   0.023    0.353 v hold23/Z (BUF_X1)
-   0.023    0.376 v hold5/Z (BUF_X1)
-   0.023    0.399 v hold22/Z (BUF_X1)
-   0.023    0.423 v hold11/Z (BUF_X1)
-   0.023    0.446 v u1/Z (BUF_X1)
-   0.023    0.469 v hold10/Z (BUF_X1)
-   0.023    0.492 v hold4/Z (BUF_X1)
-   0.023    0.515 v hold24/Z (BUF_X1)
-   0.023    0.538 v hold9/Z (BUF_X1)
-   0.023    0.561 v hold17/Z (BUF_X1)
-   0.025    0.586 v hold1/Z (BUF_X1)
-   0.023    0.609 v hold16/Z (BUF_X1)
-   0.023    0.632 v hold8/Z (BUF_X1)
-   0.023    0.655 v hold3/Z (BUF_X1)
-   0.024    0.679 v hold7/Z (BUF_X1)
-   0.000    0.679 v r2/D (DFF_X1)
-            0.679   data arrival time
+   0.023    0.123 v u1/Z (BUF_X1)
+   0.024    0.147 v hold1/Z (BUF_X1)
+   0.024    0.171 v hold2/Z (BUF_X1)
+   0.024    0.194 v hold3/Z (BUF_X1)
+   0.024    0.218 v hold4/Z (BUF_X1)
+   0.024    0.242 v hold5/Z (BUF_X1)
+   0.024    0.265 v hold6/Z (BUF_X1)
+   0.024    0.289 v hold7/Z (BUF_X1)
+   0.024    0.313 v hold8/Z (BUF_X1)
+   0.024    0.336 v hold9/Z (BUF_X1)
+   0.024    0.360 v hold10/Z (BUF_X1)
+   0.024    0.384 v hold11/Z (BUF_X1)
+   0.024    0.407 v hold12/Z (BUF_X1)
+   0.024    0.431 v hold13/Z (BUF_X1)
+   0.024    0.455 v hold14/Z (BUF_X1)
+   0.024    0.478 v hold15/Z (BUF_X1)
+   0.024    0.502 v hold16/Z (BUF_X1)
+   0.023    0.525 v hold17/Z (BUF_X1)
+   0.024    0.549 v hold22/Z (BUF_X1)
+   0.023    0.572 v hold23/Z (BUF_X1)
+   0.024    0.596 v hold18/Z (BUF_X1)
+   0.024    0.619 v hold19/Z (BUF_X1)
+   0.024    0.643 v hold20/Z (BUF_X1)
+   0.026    0.668 v hold21/Z (BUF_X1)
+   0.000    0.668 v r2/D (DFF_X1)
+            0.668   data arrival time
 
    0.200    0.200   max_delay
    0.000    0.200   clock clk (rise edge)
@@ -215,8 +213,8 @@ Path Type: max
             0.320   data required time
 -----------------------------------------------------------
             0.320   data required time
-           -0.679   data arrival time
+           -0.668   data arrival time
 -----------------------------------------------------------
-           -0.359   slack (VIOLATED)
+           -0.349   slack (VIOLATED)
 
 

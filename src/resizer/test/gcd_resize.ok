@@ -16,7 +16,7 @@ Inserted 35 input buffers.
 Inserted 18 output buffers.
 Resized 47 instances.
 Found 35 endpoints with hold violations.
-Inserted 103 hold buffers.
+Inserted 105 hold buffers.
 Startpoint: _885_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _880_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
@@ -43,9 +43,9 @@ Path Type: max
    0.03    0.57 v _682_/ZN (AND2_X1)
    0.03    0.60 ^ _685_/ZN (OAI21_X1)
    0.02    0.61 v _686_/ZN (OAI21_X1)
-   0.03    0.64 v hold67/Z (BUF_X1)
-   0.02    0.66 v _814_/Z (BUF_X1)
-   0.02    0.69 v hold66/Z (BUF_X1)
+   0.03    0.64 v _814_/Z (BUF_X1)
+   0.02    0.66 v hold71/Z (BUF_X1)
+   0.02    0.69 v hold72/Z (BUF_X1)
    0.00    0.69 v _880_/D (DFF_X1)
            0.69   data arrival time
 
@@ -93,4 +93,4 @@ _851_/Z manhtn 69.5 steiner 69.5 0.00
 _725_/Z manhtn 67.2 steiner 67.2 0.00
 _849_/Z manhtn 64.8 steiner 64.8 0.00
 _860_/Z manhtn 64.5 steiner 64.5 0.00
-Design area 812 u^2 13% utilization.
+Design area 814 u^2 13% utilization.

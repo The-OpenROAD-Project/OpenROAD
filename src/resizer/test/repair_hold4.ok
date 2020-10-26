@@ -145,9 +145,9 @@ Path Type: min
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
    0.087    0.106 ^ r1/Q (DFF_X1)
-   0.020    0.126 ^ hold2/Z (BUF_X1)
-   0.019    0.145 ^ u1/Z (BUF_X1)
-   0.022    0.167 ^ hold1/Z (BUF_X1)
+   0.020    0.126 ^ u1/Z (BUF_X1)
+   0.019    0.145 ^ hold1/Z (BUF_X1)
+   0.022    0.167 ^ hold2/Z (BUF_X1)
    0.000    0.167 ^ r2/D (DFF_X1)
             0.167   data arrival time
 
@@ -170,7 +170,7 @@ Path Type: min
             0.164   data required time
            -0.167   data arrival time
 -----------------------------------------------------------
-            0.003   slack (MET)
+            0.004   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -186,12 +186,12 @@ Path Type: min
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
    0.087    0.106 ^ r1/Q (DFF_X1)
-   0.020    0.126 ^ hold2/Z (BUF_X1)
-   0.019    0.145 ^ u1/Z (BUF_X1)
-   0.022    0.167 ^ hold1/Z (BUF_X1)
-   0.023    0.189 ^ u2/Z (BUF_X1)
-   0.000    0.189 ^ r3/D (DFF_X1)
-            0.189   data arrival time
+   0.020    0.126 ^ u1/Z (BUF_X1)
+   0.019    0.145 ^ hold1/Z (BUF_X1)
+   0.022    0.167 ^ hold2/Z (BUF_X1)
+   0.023    0.190 ^ u2/Z (BUF_X1)
+   0.000    0.190 ^ r3/D (DFF_X1)
+            0.190   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
@@ -210,9 +210,9 @@ Path Type: min
             0.164   data required time
 -----------------------------------------------------------
             0.164   data required time
-           -0.189   data arrival time
+           -0.190   data arrival time
 -----------------------------------------------------------
-            0.026   slack (MET)
+            0.027   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -228,10 +228,10 @@ Path Type: min
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
    0.087    0.106 ^ r1/Q (DFF_X1)
-   0.020    0.126 ^ hold2/Z (BUF_X1)
-   0.019    0.145 ^ u1/Z (BUF_X1)
-   0.022    0.167 ^ hold1/Z (BUF_X1)
-   0.023    0.189 ^ u2/Z (BUF_X1)
+   0.020    0.126 ^ u1/Z (BUF_X1)
+   0.019    0.145 ^ hold1/Z (BUF_X1)
+   0.022    0.167 ^ hold2/Z (BUF_X1)
+   0.023    0.190 ^ u2/Z (BUF_X1)
    0.020    0.210 ^ u3/Z (BUF_X1)
    0.000    0.210 ^ r4/D (DFF_X1)
             0.210   data arrival time
@@ -255,6 +255,6 @@ Path Type: min
             0.163   data required time
            -0.210   data arrival time
 -----------------------------------------------------------
-            0.046   slack (MET)
+            0.047   slack (MET)
 
 

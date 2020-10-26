@@ -1221,18 +1221,29 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
     Vertex *vertex = sorted_fanins[i];
     // Should respect rise/fall differences.
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
-    if (hold_slack < 0) {
-      debugPrint4(debug_, "repair_hold", 2, " %s w=%s gap=%s #%d\n",
-		  vertex->name(sdc_network_),
-		  delayAsString(sta_->vertexSlack(vertex, MinMax::min()), this),
-		  delayAsString(slackGap(vertex), this),
-		  i);
+    Slack setup_slack = sta_->vertexSlack(vertex, MinMax::max());
+    if (hold_slack < 0
+	&& (allow_setup_violations
+	    || setup_slack > 0)) {
       Pin *drvr_pin = vertex->pin();
       Net *net = network_->isTopLevelPort(drvr_pin)
 	? network_->net(network_->term(drvr_pin))
 	: network_->net(drvr_pin);
       // Hands off special nets.
       if (!isSpecial(net)) {
+	// buffers to fix hold violation
+	int hold_count = std::ceil(-hold_slack / buffer_delay);
+	int max_count = setup_slack / buffer_delay;
+	int buffer_count = allow_setup_violations
+	  ? hold_count
+	  : min(hold_count, max_count);
+	float inserted_delay = buffer_count * buffer_delay;
+	debugPrint4(debug_, "repair_hold", 2, " %s hold=%s setup=%s buffers=%d\n",
+		    vertex->name(sdc_network_),
+		    delayAsString(hold_slack, this),
+		    delayAsString(setup_slack, this),
+		    buffer_count);
+
 	// Only add delay to loads with hold violations.
 	PinSeq load_pins;
 	VertexOutEdgeIterator edge_iter(vertex, graph_);
@@ -1247,13 +1258,13 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
 		  // Note that this is an approximation because the
 		  // inserted buffer delay will drive all the loads,
 		  // not just a load equiv to itself.
-		  || setup_slack > buffer_delay)) {
+		  || setup_slack > inserted_delay)) {
 	    load_pins.push_back(fanout->pin());
 	  }
 	}
 	if (!load_pins.empty()) {
-	  makeHoldDelay(vertex, load_pins, buffer_cell);
-	  repair_count++;
+	  makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
+	  repair_count += buffer_count;
 	  if (overMaxArea()) {
 	    warn("max utilization reached.");
 	    return repair_count;
@@ -1312,6 +1323,7 @@ Resizer::sortHoldFanins(VertexSet &fanins)
 
 void
 Resizer::makeHoldDelay(Vertex *drvr,
+		       int buffer_count,
 		       PinSeq &load_pins,
 		       LibertyCell *buffer_cell)
 {
@@ -1321,28 +1333,40 @@ Resizer::makeHoldDelay(Vertex *drvr,
     ? db_network_->net(db_network_->term(drvr_pin))
     : db_network_->net(drvr_pin);
   Net *in_net = drvr_net;
-  string out_net_name = makeUniqueNetName();
-  Net *out_net = db_network_->makeNet(out_net_name.c_str(), parent);
-  // drvr_pin->drvr_net->hold_buffer->net2->load_pins
-  string buffer_name = makeUniqueInstName("hold");
-  debugPrint5(debug_, "repair_hold", 3, "insert %s -> %s -> %s loads %lu/%d\n",
+  debugPrint3(debug_, "repair_hold", 3, "insert %s loads %lu/%d\n",
 	      sdc_network_->pathName(drvr_pin),
-	      buffer_name.c_str(),
-	      out_net_name.c_str(),
 	      load_pins.size(),
 	      fanout(drvr));
 
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-					       buffer_name.c_str(),
-					       parent);
-  inserted_buffer_count_++;
-  design_area_ += area(db_network_->cell(buffer_cell));
+  Net *out_net = nullptr;
 
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  sta_->connectPin(buffer, input, in_net);
-  sta_->connectPin(buffer, output, out_net);
-  setLocation(buffer, holdBufferLocation(drvr_pin, load_pins));
+  // Spread buffers between driver and load center.
+  Point drvr_loc = db_network_->location(drvr_pin);
+  Point load_center = findCenter(load_pins);
+  int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
+  int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);
+
+  // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+  for (int i = 0; i < buffer_count; i++) {
+    string out_net_name = makeUniqueNetName();
+    out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+    // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+    string buffer_name = makeUniqueInstName("hold");
+    Instance *buffer = db_network_->makeInstance(buffer_cell,
+						 buffer_name.c_str(),
+						 parent);
+    inserted_buffer_count_++;
+    design_area_ += area(db_network_->cell(buffer_cell));
+
+    LibertyPort *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    sta_->connectPin(buffer, input, in_net);
+    sta_->connectPin(buffer, output, out_net);
+    Point buffer_loc(drvr_loc.x() + dx * i,
+		     drvr_loc.y() + dy * i);
+    setLocation(buffer, buffer_loc);
+    in_net = out_net;
+  }
 
   for (Pin *load_pin : load_pins) {
     Instance *load = db_network_->instance(load_pin);
@@ -1354,16 +1378,6 @@ Resizer::makeHoldDelay(Vertex *drvr,
     estimateWireParasitic(drvr_net);
     estimateWireParasitic(out_net);
   }
-}
-
-Point
-Resizer::holdBufferLocation(Pin *drvr_pin,
-			    PinSeq &load_pins)
-{
-  Point drvr_loc = db_network_->location(drvr_pin);
-  Point load_center = findCenter(load_pins);
-  return Point((drvr_loc.x() + load_center.x()) / 2,
-	       (drvr_loc.y() + load_center.y()) / 2);
 }
 
 Point

@@ -19,7 +19,3 @@ repair_hold_violations -buffer_cell BUF_X1
 
 report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
   -endpoint_count 5
-
-set def_file [make_result_file repair_hold2.def]
-write_def $def_file
-diff_files repair_hold2.defok $def_file
