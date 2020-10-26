@@ -327,23 +327,36 @@ proc repair_tie_fanout { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
-					    [-allow_setup_violations]
+define_cmd_args "repair_hold_violations" {[-buffers buffer_cells]\
+					    [-allow_setup_violations]\
 					    [-max_utilization util]}
 
 proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
-    keys {-buffer_cell -max_utilization} \
+    keys {-buffers -buffer_cell -max_utilization} \
     flags {-allow_setup_violations}
   
-  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-buffer_cell)] } {
+#    ord::warn "-buffer_cell is deprecated. Use -buffers instead."
+    set buffers [parse_buffer_cell keys 0]
+  } elseif { [info exists keys(-buffers)] } {
+    set buffers [get_lib_cells_arg "-buffers" $keys(-buffers) ord::warn]
+  } else {
+    set buffers {}
+    foreach lib [get_libs *] {
+      foreach buffer [sta::find_library_buffers $lib] {
+	lappend buffers $buffer
+      }
+    }
+  }
+
   set_max_utilization [parse_max_util keys]
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   
   check_argc_eq0 "repair_hold_violations" $args
   
   check_parasitics
-  repair_hold_violations_cmd $buffer_cell $allow_setup_violations
+  repair_hold_violations_cmd $buffers $allow_setup_violations
 }
 
 define_cmd_args "report_design_area" {}

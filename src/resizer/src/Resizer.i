@@ -296,21 +296,21 @@ resize_target_load_cap(LibertyCell *cell)
 
 void
 repair_pin_hold_violations(Pin *end_pin,
-			   LibertyCell *buffer_cell,
+			   LibertyCellSeq *buffers,
 			   bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(end_pin, buffer_cell, allow_setup_violations);
+  resizer->repairHoldViolations(end_pin, buffers, allow_setup_violations);
 }
 
 void
-repair_hold_violations_cmd(LibertyCell *buffer_cell,
+repair_hold_violations_cmd(LibertyCellSeq *buffers,
 			   bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(buffer_cell, allow_setup_violations);
+  resizer->repairHoldViolations(buffers, allow_setup_violations);
 }
 
 float

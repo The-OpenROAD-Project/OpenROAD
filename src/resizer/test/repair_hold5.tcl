@@ -1,19 +1,26 @@
 # repair_hold_violations min/max delay prevents complete repair
 source helpers.tcl
-read_liberty Nangate45/Nangate45_typ.lib
-read_lef Nangate45/Nangate45.lef
+read_liberty sky130/sky130_tt.lib
+read_lef sky130/sky130_tech.lef
+read_lef sky130/sky130_std_cell.lef
 read_def repair_hold4.def
 
 create_clock -period 2 clk
 set_propagated_clock clk
-set_min_delay -from r1/CK -to r2/D 0.4
-set_max_delay -from r1/CK -to r2/D 0.2
+set_max_delay -from r1/CLK -to r3/D 0.05
 
-set_wire_rc -layer metal1
+set_wire_rc -layer met1
 estimate_parasitics -placement
 
-report_checks -path_delay min_max -format full_clock -digits 3
+report_checks -path_delay min_max -format full_clock -digits 3 -to r2/D
+# fails setup and hold
+report_checks -path_delay min_max -format full_clock -digits 3 -to r3/D
+report_checks -path_delay min_max -format full_clock -digits 3 -to r4/D
 
-repair_hold_violations -buffer_cell BUF_X1
+repair_hold_violations -buffers sky130_fd_sc_hs__dlygate4sd1_1
 
-report_checks -path_delay min_max -format full_clock -digits 3
+report_checks -path_delay min_max -format full_clock -digits 3 -to r2/D
+# fails setup and hold (cannot fix without -allow_setup_violations)
+report_checks -path_delay min_max -format full_clock -digits 3 -to r3/D
+report_checks -path_delay min_max -format full_clock -digits 3 -to r4/D
+

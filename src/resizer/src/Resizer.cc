@@ -94,11 +94,6 @@ extern int Resizer_Init(Tcl_Interp *interp);
 
 extern const char *resizer_tcl_inits[];
 
-typedef array<Delay, RiseFall::index_count> Delays;
-typedef array<Slack, RiseFall::index_count> Slacks;
-
-////////////////////////////////////////////////////////////////
-
 Resizer::Resizer() :
   StaState(),
   wire_res_(0.0),
@@ -1119,20 +1114,21 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHoldViolations(LibertyCell *buffer_cell,
+Resizer::repairHoldViolations(LibertyCellSeq *buffers,
 			      bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
+  LibertyCell *buffer_cell = (*buffers)[0];
   repairHoldViolations(ends, buffer_cell, allow_setup_violations);
 }
 
 // For testing/debug.
 void
 Resizer::repairHoldViolations(Pin *end_pin,
-			      LibertyCell *buffer_cell,
+			      LibertyCellSeq *buffers,
 			      bool allow_setup_violations)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
@@ -1141,6 +1137,7 @@ Resizer::repairHoldViolations(Pin *end_pin,
 
   init();
   sta_->findRequireds();
+  LibertyCell *buffer_cell = (*buffers)[0];
   repairHoldViolations(&ends, buffer_cell, allow_setup_violations);
 }
 
@@ -1193,6 +1190,7 @@ Resizer::findHoldViolations(VertexSet *ends,
   Search *search = sta_->search();
   worst_slack = INF;
   hold_violations.clear();
+  debugPrint0(debug_, "repair_hold", 3, "Hold violations\n");
   for (Vertex *end : *ends) {
     Slack slack = sta_->vertexSlack(end, MinMax::min());
     if (!sta_->isClock(end->pin())
@@ -1217,58 +1215,51 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
   
   int repair_count = 0;
   int max_repair_count = max(static_cast<int>(hold_failures.size() * .2), 10);
+  //max_repair_count = 1;
   for(int i = 0; i < sorted_fanins.size() && repair_count < max_repair_count ; i++) {
     Vertex *vertex = sorted_fanins[i];
-    // Should respect rise/fall differences.
+    Pin *drvr_pin = vertex->pin();
+    Net *net = network_->isTopLevelPort(drvr_pin)
+      ? network_->net(network_->term(drvr_pin))
+      : network_->net(drvr_pin);
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
-    Slack setup_slack = sta_->vertexSlack(vertex, MinMax::max());
     if (hold_slack < 0
-	&& (allow_setup_violations
-	    || setup_slack > 0)) {
-      Pin *drvr_pin = vertex->pin();
-      Net *net = network_->isTopLevelPort(drvr_pin)
-	? network_->net(network_->term(drvr_pin))
-	: network_->net(drvr_pin);
-      // Hands off special nets.
-      if (!isSpecial(net)) {
-	// buffers to fix hold violation
-	int hold_count = std::ceil(-hold_slack / buffer_delay);
-	int max_count = setup_slack / buffer_delay;
-	int buffer_count = allow_setup_violations
-	  ? hold_count
-	  : min(hold_count, max_count);
-	float inserted_delay = buffer_count * buffer_delay;
-	debugPrint4(debug_, "repair_hold", 2, " %s hold=%s setup=%s buffers=%d\n",
-		    vertex->name(sdc_network_),
-		    delayAsString(hold_slack, this),
-		    delayAsString(setup_slack, this),
-		    buffer_count);
-
-	// Only add delay to loads with hold violations.
-	PinSeq load_pins;
-	VertexOutEdgeIterator edge_iter(vertex, graph_);
-	while (edge_iter.hasNext()) {
-	  Edge *edge = edge_iter.next();
-	  Vertex *fanout = edge->to(graph_);
-	  Slack hold_slack = sta_->vertexSlack(fanout, MinMax::min());
-	  Slack setup_slack = sta_->vertexSlack(fanout, MinMax::max());
-	  if (hold_slack < 0.0
-	      && (allow_setup_violations
-		  // Require setup slack to insert buffer.
-		  // Note that this is an approximation because the
-		  // inserted buffer delay will drive all the loads,
-		  // not just a load equiv to itself.
-		  || setup_slack > inserted_delay)) {
+	// Hands off special nets.
+	&& !isSpecial(net)) {
+      // Only add delay to loads with hold violations.
+      PinSeq load_pins;
+      Slack buffer_delay = INF;
+      VertexOutEdgeIterator edge_iter(vertex, graph_);
+      while (edge_iter.hasNext()) {
+	Edge *edge = edge_iter.next();
+	Vertex *fanout = edge->to(graph_);
+	Slacks slacks;
+	sta_->vertexSlacks(fanout, slacks);
+	Slack hold_slack = holdSlack(slacks);
+	if (hold_slack < 0.0) {
+	  Delay delay = allow_setup_violations
+	    ? -hold_slack
+	    : min(-hold_slack, setupSlack(slacks));
+	  if (delay > 0.0) {
+	    buffer_delay = min(buffer_delay, delay);
 	    load_pins.push_back(fanout->pin());
 	  }
 	}
-	if (!load_pins.empty()) {
-	  makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
-	  repair_count += buffer_count;
-	  if (overMaxArea()) {
-	    warn("max utilization reached.");
-	    return repair_count;
-	  }
+      }
+      if (!load_pins.empty()) {
+	int buffer_count = std::ceil(buffer_delay / buffer_delay);
+	debugPrint5(debug_, "repair_hold", 2,
+		    " %s hold=%s inserted %d for %lu/%d loads\n",
+		    vertex->name(sdc_network_),
+		    delayAsString(hold_slack, this),
+		    buffer_count,
+		    load_pins.size(),
+		    fanout(vertex));
+	makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
+	repair_count += buffer_count;
+	if (overMaxArea()) {
+	  warn("max utilization reached.");
+	  return repair_count;
 	}
       }
     }
@@ -1318,6 +1309,16 @@ Resizer::sortHoldFanins(VertexSet &fanins)
 			}
 			else
 			  return s1 < s2;});
+  if (debug_->check("repair_hold", 4)) {
+    printf("Sorted fanins\n");
+    printf("     hold_slack  slack_gap  level\n");
+    for(Vertex *vertex : sorted_fanins)
+      printf("%s %s %s %d\n",
+	     vertex->name(network_),
+	     units_->timeUnit()->asString(sta_->vertexSlack(vertex, MinMax::min()), 3),
+	     units_->timeUnit()->asString(slackGap(vertex), 3),
+	     vertex->level());
+  }
   return sorted_fanins;
 }
 
@@ -1333,11 +1334,6 @@ Resizer::makeHoldDelay(Vertex *drvr,
     ? db_network_->net(db_network_->term(drvr_pin))
     : db_network_->net(drvr_pin);
   Net *in_net = drvr_net;
-  debugPrint3(debug_, "repair_hold", 3, "insert %s loads %lu/%d\n",
-	      sdc_network_->pathName(drvr_pin),
-	      load_pins.size(),
-	      fanout(drvr));
-
   Net *out_net = nullptr;
 
   // Spread buffers between driver and load center.
@@ -1395,15 +1391,35 @@ Resizer::findCenter(PinSeq &pins)
 // Gap between min setup and hold slacks.
 // This says how much head room there is for adding delay to fix a
 // hold violation before violating a setup check.
-float
-Resizer::slackGap(Vertex *vertex)
+Slack
+Resizer::slackGap(Slacks &slacks)
 {
-  Slack slacks[RiseFall::index_count][MinMax::index_count];
-  sta_->vertexSlacks(vertex, slacks);
   return min(slacks[RiseFall::riseIndex()][MinMax::maxIndex()]
 	     - slacks[RiseFall::riseIndex()][MinMax::minIndex()],
 	     slacks[RiseFall::fallIndex()][MinMax::maxIndex()]
 	     - slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
+}
+
+Slack
+Resizer::slackGap(Vertex *vertex)
+{
+  Slacks slacks;
+  sta_->vertexSlacks(vertex, slacks);
+  return slackGap(slacks);
+}
+
+Slack
+Resizer::holdSlack(Slacks &slacks)
+{
+  return min(slacks[RiseFall::riseIndex()][MinMax::minIndex()],
+	     slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
+}
+
+Slack
+Resizer::setupSlack(Slacks &slacks)
+{
+  return min(slacks[RiseFall::riseIndex()][MinMax::maxIndex()],
+	     slacks[RiseFall::fallIndex()][MinMax::maxIndex()]);
 }
 
 int
