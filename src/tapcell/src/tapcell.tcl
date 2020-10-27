@@ -209,432 +209,6 @@ proc tapcell { args } {
 }
 
 namespace eval tapcell {
-    #proc to detect even/odd
-    proc even {row} {
-        set db [::ord::get_db]
-        set block [[$db getChip] getBlock]
-
-        set site_y [[$row getSite] getHeight]
-
-        set lly [[$row getBBox] yMin]
-        set core_box_lly [[$block getBBox] yMin]
-        set lly_idx [expr ($lly-$core_box_lly)/$site_y]
-        set lly_idx_int [expr int($lly_idx)]
-
-        if {[expr $lly_idx_int % 2]==0} {
-            return 1
-        } else {
-            return 0
-        }
-    }
-
-    proc get_min_rows_y {rows} {
-        set min_y -1
-        foreach row $rows {
-            set row_y [[$row getBBox] yMin]
-            if {$min_y == -1} {
-                set min_y $row_y
-            }
-
-            if {$row_y < $min_y} {
-                set min_y $row_y
-            }
-        }
-
-        return $min_y
-    }
-
-    proc get_max_rows_y {rows} {
-        set max_y -1
-        foreach row $rows {
-            set row_y [[$row getBBox] yMax]
-            if {$row_y > $max_y} {
-                set max_y $row_y
-            }
-        }
-
-        return $max_y
-    }
-
-    proc get_min_rows_x {rows} {
-        set min_x -1
-        foreach row $rows {
-            set row_x [[$row getBBox] xMin]
-            if {$min_x == -1} {
-                set min_x $row_x
-            }
-
-            if {$row_x < $min_x} {
-                set min_x $row_x
-            }
-        }
-
-        return $min_x
-    }
-
-    proc get_max_rows_x {rows} {
-        set max_x -1
-        foreach row $rows {
-            set row_x [[$row getBBox] xMax]
-            if {$row_x > $max_x} {
-                set max_x $row_x
-            }
-        }
-
-        return $max_x
-    }
-
-    #proc to detect top/bottom row
-    proc top_or_bottom {row min_y max_y} {
-        set db [::ord::get_db]
-        set block [[$db getChip] getBlock]
-
-        set lly [[$row getBBox] yMin]
-        set ury [[$row getBBox] yMax]
-        set core_box_lly [[$block getBBox] yMin]
-        set core_box_ury [[$block getBBox] yMax]
-        
-        if {$lly == $min_y} {
-            return -1
-        } elseif {$ury == $max_y} {
-            return 1
-        } else {
-            return 0
-        }
-    }
-
-    #proc to detect if row is right below/above macro block
-    proc right_above_below_macros {blockages row halo_x halo_y} {
-        set row_llx [[$row getBBox] xMin]
-        set row_lly [[$row getBBox] yMin]
-        set row_urx [[$row getBBox] xMax]
-        set row_ury [[$row getBBox] yMax]
-        
-        set row_height [expr $row_ury - $row_lly]
-
-        set row_below_ury [expr $row_ury + $row_height]
-        set row_above_lly [expr $row_lly - $row_height]
-
-        foreach blockage $blockages {
-            set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
-            set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
-            set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
-            set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
-
-            set min_x [expr max($blockage_llx, $row_llx)]
-            set max_x [expr min($blockage_urx, $row_urx)]
-
-            set min_above_y [expr max($blockage_lly, $row_above_lly)]
-            set max_below_y [expr min($blockage_ury, $row_below_ury)]
-            
-            set min_y [expr max($blockage_lly, $row_lly)]
-            set max_y [expr min($blockage_ury, $row_ury)]
-
-            set dx [expr $min_x - $max_x]
-            
-            set dy_above [expr $min_above_y - $max_y]
-            set dy_below [expr $min_y - $max_below_y]
-
-            if {[expr ($dx < 0) && ($dy_above < 0)]} {
-                if {$row_lly < $blockage_lly} {
-                    return -1
-                } else {
-                    return 1
-                }
-            }
-
-            if {[expr ($dx < 0) && ($dy_below < 0)]} {
-                if {$row_lly < $blockage_lly} {
-                    return -1
-                } else {
-                    return 1
-                }
-            }
-        }
-        return 0
-    }
-
-    #proc to detect if blockage overlaps with row
-    proc overlaps {blockage row halo_x halo_y} {
-        set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
-        set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
-        set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
-        set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
-
-        set row_llx [[$row getBBox] xMin]
-        set row_lly [[$row getBBox] yMin]
-        set row_urx [[$row getBBox] xMax]
-        set row_ury [[$row getBBox] yMax]
-
-        set min_x [expr max($blockage_llx, $row_llx)]
-        set max_x [expr min($blockage_urx, $row_urx)]
-        set min_y [expr max($blockage_lly, $row_lly)]
-        set max_y [expr min($blockage_ury, $row_ury)]
-
-        set dx [expr $min_x - $max_x]
-        set dy [expr $min_y - $max_y]
-
-        set overlap [expr ($dx < 0) && ($dy < 0)]
-
-        return $overlap
-    }
-
-    proc get_insts_in_area {ll_x ll_y ur_x ur_y block} {
-        set ll_x [expr { int($ll_x) }]
-        set ll_y [expr { int($ll_y) }]
-        set ur_x [expr { int($ur_x) }]
-        set ur_y [expr { int($ur_y) }]
-
-        set insts_in_area ""
-
-        foreach inst [$block getInsts] {
-            set inst_llx [[$inst getBBox] xMin]
-            set inst_lly [[$inst getBBox] yMin]
-            set inst_urx [[$inst getBBox] xMax]
-            set inst_ury [[$inst getBBox] yMax]
-
-            if {($inst_llx >= $ll_x) && ($inst_lly >= $ll_y) && \
-                ($inst_urx <= $ur_x) && ($inst_ury <= $ur_y)} {
-                lappend insts_in_area $inst
-            }
-        }
-
-        return $insts_in_area
-    }
-
-    proc get_rows_top_bottom_macro {macro rows halo_x halo_y} {
-        set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
-        set macro_lly [expr [[$macro getBBox] yMin] - $halo_y]
-        set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
-        set macro_ury [expr [[$macro getBBox] yMax] + $halo_y]
-
-        set top_bottom_rows ""
-
-        foreach row $rows {
-            set row_llx [[$row getBBox] xMin]
-            set row_lly [[$row getBBox] yMin]
-            set row_urx [[$row getBBox] xMax]
-            set row_ury [[$row getBBox] yMax]
-
-            set row_height [expr $row_ury - $row_lly]
-
-            set row_below_ury [expr $row_ury + $row_height]
-            set row_above_lly [expr $row_lly - $row_height]
-
-            set min_x [expr max($macro_llx, $row_llx)]
-            set max_x [expr min($macro_urx, $row_urx)]
-
-            set min_above_y [expr max($macro_lly, $row_above_lly)]
-            set max_below_y [expr min($macro_ury, $row_below_ury)]
-            
-            set min_y [expr max($macro_lly, $row_lly)]
-            set max_y [expr min($macro_ury, $row_ury)]
-
-            set dx [expr $min_x - $max_x]
-            
-            set dy_above [expr $min_above_y - $max_y]
-            set dy_below [expr $min_y - $max_below_y]
-
-            if {[expr ($dx < 0) && ($dy_above < 0)]} {
-                lappend top_bottom_rows $row
-            } elseif {[expr ($dx < 0) && ($dy_below < 0)]} {
-                lappend top_bottom_rows $row
-            }
-        }
-
-        return $top_bottom_rows
-    }
-
-    proc get_macros_top_bottom_row {row macros halo_x halo_y} {
-        set row_llx [[$row getBBox] xMin]
-        set row_lly [[$row getBBox] yMin]
-        set row_urx [[$row getBBox] xMax]
-        set row_ury [[$row getBBox] yMax]
-
-        set top_bottom_macros ""
-
-        foreach macro $macros {
-            set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
-            set macro_lly [expr [[$macro getBBox] yMin] - $halo_y]
-            set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
-            set macro_ury [expr [[$macro getBBox] yMax] + $halo_y]
-            set row_height [expr $row_ury - $row_lly]
-
-            set row_below_ury [expr $row_ury + $row_height]
-            set row_above_lly [expr $row_lly - $row_height]
-
-            set min_x [expr max($macro_llx, $row_llx)]
-            set max_x [expr min($macro_urx, $row_urx)]
-
-            set min_above_y [expr max($macro_lly, $row_above_lly)]
-            set max_below_y [expr min($macro_ury, $row_below_ury)]
-            
-            set min_y [expr max($macro_lly, $row_lly)]
-            set max_y [expr min($macro_ury, $row_ury)]
-
-            set dx [expr $min_x - $max_x]
-            
-            set dy_above [expr $min_above_y - $max_y]
-            set dy_below [expr $min_y - $max_below_y]
-
-            if {[expr ($dx < 0) && ($dy_above < 0)]} {
-                lappend top_bottom_macros $macro
-            } elseif {[expr ($dx < 0) && ($dy_below < 0)]} {
-                lappend top_bottom_macros $macro
-            }
-        }
-
-        return $top_bottom_macros
-    }
-
-    proc get_macros_overlapping_with_row {row macros halo_x halo_y} {
-        set row_llx [expr [[$row getBBox] xMin] - $halo_x]
-        set row_lly [[$row getBBox] yMin]
-        set row_urx [expr [[$row getBBox] xMax] + $halo_x]
-        set row_ury [[$row getBBox] yMax]
-
-        set overlap_macros ""
-
-        set row_height [expr $row_ury - $row_lly]
-
-        foreach macro $macros {
-            set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
-            set macro_lly [expr {[[$macro getBBox] yMin] - $halo_y - $row_height}]
-            set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
-            set macro_ury [expr {[[$macro getBBox] yMax] + $halo_y + $row_height}]
-
-            set min_x [expr max($macro_llx, $row_llx)]
-            set max_x [expr min($macro_urx, $row_urx)]
-            
-            set min_y [expr max($macro_lly, $row_lly)]
-            set max_y [expr min($macro_ury, $row_ury)]
-
-            set dx [expr $min_x - $max_x]
-            set dy [expr $min_y - $max_y]
-
-            if {[expr ($dx < 0) && ($dy < 0)]} {
-                lappend overlap_macros $macro
-            }
-        }
-
-        return $overlap_macros
-    }
-
-    proc in_blocked_region {x row blockages halo_x halo_y master_width endcapwidth} {
-        set row_blockages ""
-        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
-        
-        set blocked_region false
-
-        if {([llength $row_blockages] > 0)} {
-            foreach row_blockage $row_blockages {
-                set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
-                set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
-                if {($x + $master_width) > ($row_blockage_llx - $endcapwidth) && \
-                     $x < ($row_blockage_urx + $endcapwidth)} {
-                    return true
-                }
-            }
-        }
-
-        return false
-    }
-
-    proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width add_boundary_cell} {
-        set row_blockages ""
-        set row_blockages [get_macros_overlapping_with_row $row $blockages $halo_x $halo_y]
-        set min_width [expr 2*$site_width]
-        set urx [[$row getBBox] xMax]
-        set end_llx [expr $urx - $endcapwidth] 
-        set tap_urx [expr $x + $master_width]
-        set increase -1
-
-        if { $add_boundary_cell == false } {
-            return $x
-        }
-
-        if { ([llength $row_blockages] > 0) } {
-            foreach row_blockage $row_blockages {
-                set blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
-                set blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
-
-                set dist_llx [expr {$blockage_llx - $tap_urx}]
-                set dist_urx [expr {$x - $blockage_urx}]
-
-                if {$dist_llx == 0 || $dist_urx == 0} {
-                    continue
-                }
-
-                set min_x [expr {$blockage_urx + $endcapwidth + $min_width}]
-                set max_x [expr {$blockage_llx - $endcapwidth - $min_width - $master_width}]
-
-                if { $x > $blockage_llx && $x < $min_x } {
-                    set increase 1
-                    set end_llx $min_x
-                }
-
-                if { $x < $blockage_urx && $x > $max_x } {
-                    set increase 0
-                    set end_llx $max_x
-                }
-            }
-        }
-
-        if { $increase == 1 } {
-            while { $x < $end_llx } {
-                set x [expr $x + $site_width]
-            }
-        } elseif { $increase == 0 } {
-            while { $x > $end_llx } {
-                set x [expr $x - $site_width]
-            }
-        }
-
-        return $x
-    }
-
-    proc get_new_x {x row blockages halo_x halo_y master_width endcapwidth site_width} {
-        set row_blockages ""
-        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
-
-        set blocked_region false
-        set new_x $x
-
-        if {([llength $row_blockages] > 0)} {
-            foreach row_blockage $row_blockages {
-                set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
-                set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
-                # if tapcell is only partially blocked at the right side of the blocked region
-                if { ($x + $master_width) > ($row_blockage_urx + $endcapwidth) && \
-                      $x < ($row_blockage_urx + $endcapwidth) } {
-                    # move this tapcell to avoid the blocked region
-                    set tmp_x [expr {ceil ((1.0*$row_blockage_urx + $endcapwidth)/$site_width)*$site_width}]
-                    set tmp_x [expr { int($tmp_x) }]
-                    set new_x $tmp_x 
-                }
-            }
-        }
-
-        return $new_x
-    }
-
-    proc find_blockages {db} {
-        set block [[$db getChip] getBlock]
-        set blockages {}
-
-        foreach inst [$block getInsts] {
-            if { [$inst isBlock] } {
-                if { ![$inst isPlaced] } {
-                    puts "\[ERROR\] Macro [$inst getName] is not placed"
-                    continue
-                }
-                lappend blockages $inst
-            }
-        }
-
-        return $blockages
-    }
-
     proc cut_rows {db endcap_master blockages halo_x halo_y} {
         puts "Step 1: Cut rows..."
 
@@ -1105,7 +679,6 @@ namespace eval tapcell {
     }
 
     proc insert_around_macros {db masters blockages cnt halo_x halo_y endcapwidth tbtie_cpp} {
-        #Step 4-2: insert incnr/topbottom for blkgs
         puts "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
 
         set block [[$db getChip] getBlock]
@@ -1123,8 +696,6 @@ namespace eval tapcell {
                              incnrcap_nwout_master tap_nwout2_master tap_nwout3_master tap_nwouttie_master
         }
 
-        set tbtiewidth [expr $tbtie_cpp*$site_x]
-
         foreach blockage $blockages {
             set blockage_llx_ [expr [[$blockage getBBox] xMin] - $halo_x]
             set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
@@ -1135,6 +706,7 @@ namespace eval tapcell {
             
             foreach row $rows_top_bottom {
                 set site_x [[$row getSite] getWidth]
+                set tbtiewidth [expr $tbtie_cpp*$site_x]
 
                 set ori [$row getOrient]
                 set row_llx [[$row getBBox] xMin]
@@ -1369,5 +941,431 @@ namespace eval tapcell {
             }
         }
         puts "\[INFO\] Cells inserted near blkgs: $blkgs_cnt"
+    }
+
+    #proc to detect even/odd
+    proc even {row} {
+        set db [::ord::get_db]
+        set block [[$db getChip] getBlock]
+
+        set site_y [[$row getSite] getHeight]
+
+        set lly [[$row getBBox] yMin]
+        set core_box_lly [[$block getBBox] yMin]
+        set lly_idx [expr ($lly-$core_box_lly)/$site_y]
+        set lly_idx_int [expr int($lly_idx)]
+
+        if {[expr $lly_idx_int % 2]==0} {
+            return 1
+        } else {
+            return 0
+        }
+    }
+
+    proc get_min_rows_y {rows} {
+        set min_y -1
+        foreach row $rows {
+            set row_y [[$row getBBox] yMin]
+            if {$min_y == -1} {
+                set min_y $row_y
+            }
+
+            if {$row_y < $min_y} {
+                set min_y $row_y
+            }
+        }
+
+        return $min_y
+    }
+
+    proc get_max_rows_y {rows} {
+        set max_y -1
+        foreach row $rows {
+            set row_y [[$row getBBox] yMax]
+            if {$row_y > $max_y} {
+                set max_y $row_y
+            }
+        }
+
+        return $max_y
+    }
+
+    proc get_min_rows_x {rows} {
+        set min_x -1
+        foreach row $rows {
+            set row_x [[$row getBBox] xMin]
+            if {$min_x == -1} {
+                set min_x $row_x
+            }
+
+            if {$row_x < $min_x} {
+                set min_x $row_x
+            }
+        }
+
+        return $min_x
+    }
+
+    proc get_max_rows_x {rows} {
+        set max_x -1
+        foreach row $rows {
+            set row_x [[$row getBBox] xMax]
+            if {$row_x > $max_x} {
+                set max_x $row_x
+            }
+        }
+
+        return $max_x
+    }
+
+    #proc to detect top/bottom row
+    proc top_or_bottom {row min_y max_y} {
+        set db [::ord::get_db]
+        set block [[$db getChip] getBlock]
+
+        set lly [[$row getBBox] yMin]
+        set ury [[$row getBBox] yMax]
+        set core_box_lly [[$block getBBox] yMin]
+        set core_box_ury [[$block getBBox] yMax]
+        
+        if {$lly == $min_y} {
+            return -1
+        } elseif {$ury == $max_y} {
+            return 1
+        } else {
+            return 0
+        }
+    }
+
+    #proc to detect if row is right below/above macro block
+    proc right_above_below_macros {blockages row halo_x halo_y} {
+        set row_llx [[$row getBBox] xMin]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [[$row getBBox] xMax]
+        set row_ury [[$row getBBox] yMax]
+        
+        set row_height [expr $row_ury - $row_lly]
+
+        set row_below_ury [expr $row_ury + $row_height]
+        set row_above_lly [expr $row_lly - $row_height]
+
+        foreach blockage $blockages {
+            set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
+            set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
+            set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
+            set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
+
+            set min_x [expr max($blockage_llx, $row_llx)]
+            set max_x [expr min($blockage_urx, $row_urx)]
+
+            set min_above_y [expr max($blockage_lly, $row_above_lly)]
+            set max_below_y [expr min($blockage_ury, $row_below_ury)]
+            
+            set min_y [expr max($blockage_lly, $row_lly)]
+            set max_y [expr min($blockage_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            
+            set dy_above [expr $min_above_y - $max_y]
+            set dy_below [expr $min_y - $max_below_y]
+
+            if {[expr ($dx < 0) && ($dy_above < 0)]} {
+                if {$row_lly < $blockage_lly} {
+                    return -1
+                } else {
+                    return 1
+                }
+            }
+
+            if {[expr ($dx < 0) && ($dy_below < 0)]} {
+                if {$row_lly < $blockage_lly} {
+                    return -1
+                } else {
+                    return 1
+                }
+            }
+        }
+        return 0
+    }
+
+    #proc to detect if blockage overlaps with row
+    proc overlaps {blockage row halo_x halo_y} {
+        set blockage_llx [expr [[$blockage getBBox] xMin] - $halo_x]
+        set blockage_lly [expr [[$blockage getBBox] yMin] - $halo_y]
+        set blockage_urx [expr [[$blockage getBBox] xMax] + $halo_x]
+        set blockage_ury [expr [[$blockage getBBox] yMax] + $halo_y]
+
+        set row_llx [[$row getBBox] xMin]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [[$row getBBox] xMax]
+        set row_ury [[$row getBBox] yMax]
+
+        set min_x [expr max($blockage_llx, $row_llx)]
+        set max_x [expr min($blockage_urx, $row_urx)]
+        set min_y [expr max($blockage_lly, $row_lly)]
+        set max_y [expr min($blockage_ury, $row_ury)]
+
+        set dx [expr $min_x - $max_x]
+        set dy [expr $min_y - $max_y]
+
+        set overlap [expr ($dx < 0) && ($dy < 0)]
+
+        return $overlap
+    }
+
+    proc get_insts_in_area {ll_x ll_y ur_x ur_y block} {
+        set ll_x [expr { int($ll_x) }]
+        set ll_y [expr { int($ll_y) }]
+        set ur_x [expr { int($ur_x) }]
+        set ur_y [expr { int($ur_y) }]
+
+        set insts_in_area ""
+
+        foreach inst [$block getInsts] {
+            set inst_llx [[$inst getBBox] xMin]
+            set inst_lly [[$inst getBBox] yMin]
+            set inst_urx [[$inst getBBox] xMax]
+            set inst_ury [[$inst getBBox] yMax]
+
+            if {($inst_llx >= $ll_x) && ($inst_lly >= $ll_y) && \
+                ($inst_urx <= $ur_x) && ($inst_ury <= $ur_y)} {
+                lappend insts_in_area $inst
+            }
+        }
+
+        return $insts_in_area
+    }
+
+    proc get_rows_top_bottom_macro {macro rows halo_x halo_y} {
+        set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
+        set macro_lly [expr [[$macro getBBox] yMin] - $halo_y]
+        set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
+        set macro_ury [expr [[$macro getBBox] yMax] + $halo_y]
+
+        set top_bottom_rows ""
+
+        foreach row $rows {
+            set row_llx [[$row getBBox] xMin]
+            set row_lly [[$row getBBox] yMin]
+            set row_urx [[$row getBBox] xMax]
+            set row_ury [[$row getBBox] yMax]
+
+            set row_height [expr $row_ury - $row_lly]
+
+            set row_below_ury [expr $row_ury + $row_height]
+            set row_above_lly [expr $row_lly - $row_height]
+
+            set min_x [expr max($macro_llx, $row_llx)]
+            set max_x [expr min($macro_urx, $row_urx)]
+
+            set min_above_y [expr max($macro_lly, $row_above_lly)]
+            set max_below_y [expr min($macro_ury, $row_below_ury)]
+            
+            set min_y [expr max($macro_lly, $row_lly)]
+            set max_y [expr min($macro_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            
+            set dy_above [expr $min_above_y - $max_y]
+            set dy_below [expr $min_y - $max_below_y]
+
+            if {[expr ($dx < 0) && ($dy_above < 0)]} {
+                lappend top_bottom_rows $row
+            } elseif {[expr ($dx < 0) && ($dy_below < 0)]} {
+                lappend top_bottom_rows $row
+            }
+        }
+
+        return $top_bottom_rows
+    }
+
+    proc get_macros_top_bottom_row {row macros halo_x halo_y} {
+        set row_llx [[$row getBBox] xMin]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [[$row getBBox] xMax]
+        set row_ury [[$row getBBox] yMax]
+
+        set top_bottom_macros ""
+
+        foreach macro $macros {
+            set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
+            set macro_lly [expr [[$macro getBBox] yMin] - $halo_y]
+            set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
+            set macro_ury [expr [[$macro getBBox] yMax] + $halo_y]
+            set row_height [expr $row_ury - $row_lly]
+
+            set row_below_ury [expr $row_ury + $row_height]
+            set row_above_lly [expr $row_lly - $row_height]
+
+            set min_x [expr max($macro_llx, $row_llx)]
+            set max_x [expr min($macro_urx, $row_urx)]
+
+            set min_above_y [expr max($macro_lly, $row_above_lly)]
+            set max_below_y [expr min($macro_ury, $row_below_ury)]
+            
+            set min_y [expr max($macro_lly, $row_lly)]
+            set max_y [expr min($macro_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            
+            set dy_above [expr $min_above_y - $max_y]
+            set dy_below [expr $min_y - $max_below_y]
+
+            if {[expr ($dx < 0) && ($dy_above < 0)]} {
+                lappend top_bottom_macros $macro
+            } elseif {[expr ($dx < 0) && ($dy_below < 0)]} {
+                lappend top_bottom_macros $macro
+            }
+        }
+
+        return $top_bottom_macros
+    }
+
+    proc get_macros_overlapping_with_row {row macros halo_x halo_y} {
+        set row_llx [expr [[$row getBBox] xMin] - $halo_x]
+        set row_lly [[$row getBBox] yMin]
+        set row_urx [expr [[$row getBBox] xMax] + $halo_x]
+        set row_ury [[$row getBBox] yMax]
+
+        set overlap_macros ""
+
+        set row_height [expr $row_ury - $row_lly]
+
+        foreach macro $macros {
+            set macro_llx [expr [[$macro getBBox] xMin] - $halo_x]
+            set macro_lly [expr {[[$macro getBBox] yMin] - $halo_y - $row_height}]
+            set macro_urx [expr [[$macro getBBox] xMax] + $halo_x]
+            set macro_ury [expr {[[$macro getBBox] yMax] + $halo_y + $row_height}]
+
+            set min_x [expr max($macro_llx, $row_llx)]
+            set max_x [expr min($macro_urx, $row_urx)]
+            
+            set min_y [expr max($macro_lly, $row_lly)]
+            set max_y [expr min($macro_ury, $row_ury)]
+
+            set dx [expr $min_x - $max_x]
+            set dy [expr $min_y - $max_y]
+
+            if {[expr ($dx < 0) && ($dy < 0)]} {
+                lappend overlap_macros $macro
+            }
+        }
+
+        return $overlap_macros
+    }
+
+    proc in_blocked_region {x row blockages halo_x halo_y master_width endcapwidth} {
+        set row_blockages ""
+        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
+        
+        set blocked_region false
+
+        if {([llength $row_blockages] > 0)} {
+            foreach row_blockage $row_blockages {
+                set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
+                set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
+                if {($x + $master_width) > ($row_blockage_llx - $endcapwidth) && \
+                     $x < ($row_blockage_urx + $endcapwidth)} {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+    proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width add_boundary_cell} {
+        set row_blockages ""
+        set row_blockages [get_macros_overlapping_with_row $row $blockages $halo_x $halo_y]
+        set min_width [expr 2*$site_width]
+        set urx [[$row getBBox] xMax]
+        set end_llx [expr $urx - $endcapwidth] 
+        set tap_urx [expr $x + $master_width]
+        set increase -1
+
+        if { $add_boundary_cell == false } {
+            return $x
+        }
+
+        if { ([llength $row_blockages] > 0) } {
+            foreach row_blockage $row_blockages {
+                set blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
+                set blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
+
+                set dist_llx [expr {$blockage_llx - $tap_urx}]
+                set dist_urx [expr {$x - $blockage_urx}]
+
+                if {$dist_llx == 0 || $dist_urx == 0} {
+                    continue
+                }
+
+                set min_x [expr {$blockage_urx + $endcapwidth + $min_width}]
+                set max_x [expr {$blockage_llx - $endcapwidth - $min_width - $master_width}]
+
+                if { $x > $blockage_llx && $x < $min_x } {
+                    set increase 1
+                    set end_llx $min_x
+                }
+
+                if { $x < $blockage_urx && $x > $max_x } {
+                    set increase 0
+                    set end_llx $max_x
+                }
+            }
+        }
+
+        if { $increase == 1 } {
+            while { $x < $end_llx } {
+                set x [expr $x + $site_width]
+            }
+        } elseif { $increase == 0 } {
+            while { $x > $end_llx } {
+                set x [expr $x - $site_width]
+            }
+        }
+
+        return $x
+    }
+
+    proc get_new_x {x row blockages halo_x halo_y master_width endcapwidth site_width} {
+        set row_blockages ""
+        set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
+
+        set blocked_region false
+        set new_x $x
+
+        if {([llength $row_blockages] > 0)} {
+            foreach row_blockage $row_blockages {
+                set row_blockage_llx [expr [[$row_blockage getBBox] xMin] - $halo_x]
+                set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
+                # if tapcell is only partially blocked at the right side of the blocked region
+                if { ($x + $master_width) > ($row_blockage_urx + $endcapwidth) && \
+                      $x < ($row_blockage_urx + $endcapwidth) } {
+                    # move this tapcell to avoid the blocked region
+                    set tmp_x [expr {ceil ((1.0*$row_blockage_urx + $endcapwidth)/$site_width)*$site_width}]
+                    set tmp_x [expr { int($tmp_x) }]
+                    set new_x $tmp_x 
+                }
+            }
+        }
+
+        return $new_x
+    }
+
+    proc find_blockages {db} {
+        set block [[$db getChip] getBlock]
+        set blockages {}
+
+        foreach inst [$block getInsts] {
+            if { [$inst isBlock] } {
+                if { ![$inst isPlaced] } {
+                    puts "\[ERROR\] Macro [$inst getName] is not placed"
+                    continue
+                }
+                lappend blockages $inst
+            }
+        }
+
+        return $blockages
     }
 }
