@@ -838,7 +838,7 @@ namespace eval tapcell {
         return $cnt
     }
 
-    proc insert_at_top_bottom {db masters tbtie_cpp endcap_cpp cnt} {
+    proc insert_at_top_bottom {db masters blockages tbtie_cpp endcap_cpp cnt} {
         puts "Step 4.1: Insert tapcells at top/bottom between cnr cell..."
 
         set block [[$db getChip] getBlock]
@@ -951,7 +951,7 @@ namespace eval tapcell {
         return $cnt
     }
 
-    proc insert_around_macros {db masters cnt} {
+    proc insert_around_macros {db masters blockages cnt halo_x halo_y endcapwidth tbtie_cpp} {
         #Step 4-2: insert incnr/topbottom for blkgs
         puts "Step 4.2: Insert tapcells incnr/top/bottom for blkgs..."
 
@@ -969,6 +969,8 @@ namespace eval tapcell {
             lassign $masters incnrcap_nwin_master tap_nwin2_master tap_nwin3_master tap_nwintie_master \
                              incnrcap_nwout_master tap_nwout2_master tap_nwout3_master tap_nwouttie_master
         }
+
+        set tbtiewidth [expr $tbtie_cpp*$site_x]
 
         foreach blockage $blockages {
             set blockage_llx_ [expr [[$blockage getBBox] xMin] - $halo_x]
@@ -1334,8 +1336,11 @@ proc tapcell { args } {
 
     set blockages [tapcell::find_blockages $db]
 
-    set input_flags {$no_cell_at_top_bottom $add_boundary_cell}
-    set cnrcap_masters {$cnrcap_nwin_master $cnrcap_nwout_master}
+    set input_flags {}
+    lappend input_flags $no_cell_at_top_bottom $add_boundary_cell
+    
+    set cnrcap_masters {}
+    lappend cnrcap_masters $cnrcap_nwin_master $cnrcap_nwout_master
 
     tapcell::cut_rows $db $endcap_master $blockages $halo_x $halo_y
 
@@ -1351,14 +1356,17 @@ proc tapcell { args } {
                                       $endcap_width $cnt $input_flags]
 
     if {$add_boundary_cell == true} {
-        set tap_nw_masters {$tap_nwintie_master $tap_nwin2_master $tap_nwin3_master \
-                        $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master}
-        set tap_macro_masters {$incnrcap_nwin_master $tap_nwin2_master $tap_nwin3_master \ 
-                               $tap_nwintie_master $incnrcap_nwout_master $tap_nwout2_master \
-                               $tap_nwout3_master $tap_nwouttie_master}
+        set tap_nw_masters {}
+        lappend tap_nw_masters $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master \
+                               $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master
 
-        set cnt [tapcell::insert_at_top_bottom $db $tap_nw_masters $tbtie_cpp $endcap_cpp $cnt]
-        tapcell::insert_around_macros $db $tap_macro_masters $cnt
+        set tap_macro_masters {}
+        lappend tap_macro_masters $incnrcap_nwin_master $tap_nwin2_master $tap_nwin3_master \
+                                  $tap_nwintie_master $incnrcap_nwout_master $tap_nwout2_master \
+                                  $tap_nwout3_master $tap_nwouttie_master
+
+        set cnt [tapcell::insert_at_top_bottom $db $tap_nw_masters $blockages $tbtie_cpp $endcap_cpp $cnt]
+        tapcell::insert_around_macros $db $tap_macro_masters $blockages $cnt $halo_x $halo_y $endcap_width $tbtie_cpp
     }
 
     puts "Running tapcell... Done!"
