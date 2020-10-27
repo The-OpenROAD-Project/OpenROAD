@@ -1215,7 +1215,6 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
   
   int repair_count = 0;
   int max_repair_count = max(static_cast<int>(hold_failures.size() * .2), 10);
-  //max_repair_count = 1;
   for(int i = 0; i < sorted_fanins.size() && repair_count < max_repair_count ; i++) {
     Vertex *vertex = sorted_fanins[i];
     Pin *drvr_pin = vertex->pin();

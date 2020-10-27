@@ -12,14 +12,14 @@ set_max_delay -from r1/CLK -to r3/D 0.05
 set_wire_rc -layer met1
 estimate_parasitics -placement
 
-report_checks -path_delay min_max -format full_clock -digits 3 -to r2/D
+report_checks -path_delay min -format full_clock -digits 3 -to r2/D
 # fails setup and hold
 report_checks -path_delay min_max -format full_clock -digits 3 -to r3/D
-report_checks -path_delay min_max -format full_clock -digits 3 -to r4/D
+report_checks -path_delay min -format full_clock -digits 3 -to r4/D
 
 repair_hold_violations -buffers sky130_fd_sc_hs__dlygate4sd1_1 -allow_setup_violations
 
-report_checks -path_delay min_max -format full_clock -digits 3 -to r2/D
-# fails setup
+report_checks -path_delay min -format full_clock -digits 3 -to r2/D
+# fails setup and hold (cannot fix without -allow_setup_violations)
 report_checks -path_delay min_max -format full_clock -digits 3 -to r3/D
-report_checks -path_delay min_max -format full_clock -digits 3 -to r4/D
+report_checks -path_delay min -format full_clock -digits 3 -to r4/D
