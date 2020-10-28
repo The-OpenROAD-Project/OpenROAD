@@ -19,13 +19,17 @@ record_tests {
   repair_cap2
   repair_fanout1
   repair_fanout2
+  repair_hold1
+  repair_hold2
+  repair_hold3
+  repair_hold4
+  repair_hold5
+  repair_hold6
   repair_slew1
   repair_slew2
   repair_slew3
   repair_slew4
   repair_slew5
-  repair_hold1
-  repair_hold2
   report_floating_nets1
   repair_tie1
   repair_tie2

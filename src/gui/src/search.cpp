@@ -124,7 +124,7 @@ void Search::addSNet(odb::dbNet* net)
                      point_t(shape.xMax(), shape.yMax()));
           polygon_t poly;
           bg::convert(bbox, poly);
-          shapes_[box->getTechLayer()].insert(std::make_tuple(bbox, poly, net));
+          shapes_[shape.getTechLayer()].insert(std::make_tuple(bbox, poly, net));
         }
       } else {
         box_t bbox(point_t(box->xMin(), box->yMin()),

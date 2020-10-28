@@ -43,9 +43,9 @@ proc remove_buffers { args } {
 }
 
 define_cmd_args "set_wire_rc" {[-clock] [-data]\
-				 [-layer layer_name]\
-				 [-resistance res ][-capacitance cap]\
-				 [-corner corner_name]}
+                                 [-layer layer_name]\
+                                 [-resistance res ][-capacitance cap]\
+                                 [-corner corner_name]}
 
 proc set_wire_rc { args } {
    parse_key_args "set_wire_rc" args \
@@ -57,7 +57,7 @@ proc set_wire_rc { args } {
 
   if { [info exists keys(-layer)] } {
     if { [info exists keys(-resistance)] \
-	   || [info exists keys(-capacitance)] } {
+           || [info exists keys(-capacitance)] } {
       ord::error "Use -layer or -resistance/-capacitance but not both."
     }
     set layer_name $keys(-layer)
@@ -72,7 +72,7 @@ proc set_wire_rc { args } {
     set cap_area_pf_per_sq_micron [$layer getCapacitance]
     set cap_edge_pf_per_micron [$layer getEdgeCapacitance]
     set cap_pf_per_micron [expr 1 * $layer_width_micron * $cap_area_pf_per_sq_micron \
-			     + $cap_edge_pf_per_micron * 2]
+                             + $cap_edge_pf_per_micron * 2]
     # ohms/meter
     set wire_res [expr $res_ohm_per_micron * 1e+6]
     # farads/meter
@@ -106,7 +106,7 @@ proc set_wire_rc { args } {
   check_argc_eq0 "set_wire_rc" $args
   
   if { [info exists flags(-clock)] && [info exists flags(-clock)] \
-	 || ![info exists flags(-clock)] && ![info exists flags(-clock)] } {
+         || ![info exists flags(-clock)] && ![info exists flags(-clock)] } {
     set data 1
     set clk 1
   } elseif { [info exists flags(-clock)] && ![info exists flags(-clock)] } {
@@ -152,7 +152,7 @@ proc set_dont_use { args } {
 }
 
 define_cmd_args "resize" {[-libraries resize_libs]\
-			    [-max_utilization util]}
+                            [-max_utilization util]}
 
 proc resize { args } {
   parse_key_args "resize" args \
@@ -196,9 +196,9 @@ proc parse_buffer_cell { keys_var required } {
     if { $buffer_cell_name != "" } {
       set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
       if { $buffer_cell != "NULL" } {
-	if { ![get_property $buffer_cell is_buffer] } {
-	  ord::error "[get_name $buffer_cell] is not a buffer."
-	}
+        if { ![get_property $buffer_cell is_buffer] } {
+          ord::error "[get_name $buffer_cell] is not a buffer."
+        }
       }
     }
   } elseif { $required } {
@@ -211,8 +211,8 @@ proc parse_buffer_cell { keys_var required } {
 }
 
 define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-				  -buffer_cell buffer_cell\
-				  [-max_utilization util]}
+                                  -buffer_cell buffer_cell\
+                                  [-max_utilization util]}
 
 proc buffer_ports { args } {
   parse_key_args "buffer_ports" args \
@@ -239,8 +239,8 @@ proc buffer_ports { args } {
 }
 
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-				   -buffer_cell buffer_cell\
-				   [-libraries resize_libs]}
+                                   -buffer_cell buffer_cell\
+                                   [-libraries resize_libs]}
 
 proc repair_design { args } {
   parse_key_args "repair_design" args \
@@ -275,7 +275,7 @@ proc repair_design { args } {
 }
 
 define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]\
-				       -buffer_cell buffer_cell}
+                                       -buffer_cell buffer_cell}
 
 proc repair_clock_nets { args } {
   parse_key_args "repair_clock_nets" args \
@@ -327,21 +327,36 @@ proc repair_tie_fanout { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
-					    [-max_utilization util]}
+define_cmd_args "repair_hold_violations" {[-buffers buffer_cells]\
+                                            [-allow_setup_violations]\
+                                            [-max_utilization util]}
 
 proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
-    keys {-buffer_cell -max_utilization} \
-    flags {}
+    keys {-buffers -buffer_cell -max_utilization} \
+    flags {-allow_setup_violations}
   
-  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-buffer_cell)] } {
+#    ord::warn "-buffer_cell is deprecated. Use -buffers instead."
+    set buffers [parse_buffer_cell keys 0]
+  } elseif { [info exists keys(-buffers)] } {
+    set buffers [get_lib_cells_arg "-buffers" $keys(-buffers) ord::warn]
+  } else {
+    set buffers {}
+    foreach lib [get_libs *] {
+      foreach buffer [sta::find_library_buffers $lib] {
+        lappend buffers $buffer
+      }
+    }
+  }
+
   set_max_utilization [parse_max_util keys]
+  set allow_setup_violations [info exists flags(-allow_setup_violations)]
   
   check_argc_eq0 "repair_hold_violations" $args
   
   check_parasitics
-  repair_hold_violations_cmd $buffer_cell
+  repair_hold_violations_cmd $buffers $allow_setup_violations
 }
 
 define_cmd_args "report_design_area" {}
@@ -364,7 +379,7 @@ proc report_floating_nets { args } {
     ord::warn "found $floating_net_count floatiing nets."
     if { $verbose } {
       foreach net $floating_nets {
-	puts " [get_full_name $net]"
+        puts " [get_full_name $net]"
       }
     }
   }
