@@ -284,6 +284,7 @@ void GlobalRouter::routeClockNets()
   clearFlow();
   _onlyClockNets = false;
   _onlySignalNets = true;
+  std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
 }
 
 NetRouteMap GlobalRouter::findRouting() {
@@ -534,7 +535,7 @@ void GlobalRouter::initializeNets(bool reroute)
   int minDegree = std::numeric_limits<int>::max();
   int maxDegree = std::numeric_limits<int>::min();
 
-  for (const Net& net : *_nets) {
+  for (Net& net : *_nets) {
     if (net.getNumPins() > 1
         && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
@@ -2040,11 +2041,11 @@ odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
   return fakePos;
 }
 
-bool GlobalRouter::checkSignalType(const Net &net) {
+bool GlobalRouter::checkSignalType(Net &net) {
   bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
   return ((!_onlyClockNets && !_onlySignalNets) ||
-          (_onlyClockNets && isClock) ||
-          (_onlySignalNets && !isClock));
+          (_onlyClockNets && isClock && !clockHasLeafITerm(net.getDbNet())) ||
+          (_onlySignalNets && (!isClock || clockHasLeafITerm(net.getDbNet()))));
 }
 
 void GlobalRouter::initAdjustments() {

@@ -228,7 +228,7 @@ protected:
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   odb::Point findFakePinPosition(Pin &pin);
-  bool checkSignalType(const Net &net);
+  bool checkSignalType(Net &net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
