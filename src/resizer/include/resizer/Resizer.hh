@@ -49,6 +49,7 @@ typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
+typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
 
 class Resizer : public StaState
 {
@@ -102,9 +103,11 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHoldViolations(LibertyCell *buffer_cell);
+  void repairHoldViolations(LibertyCellSeq *buffers,
+			    bool allow_setup_violations);
   void repairHoldViolations(Pin *end_pin,
-			    LibertyCell *buffer_cell);
+			    LibertyCellSeq *buffers,
+			    bool allow_setup_violations);
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -290,22 +293,29 @@ protected:
 			 LibertyPort *load_port,
 			 double wire_length,
 			 double max_slew);
-
-  void findFaninWeights(VertexSet &ends,
-			// Return value.
-			VertexWeightMap &weight_map);
-  float slackGap(Vertex *vertex);
-  Slack findHoldViolations(VertexSet &ends);
-  void repairHoldViolations(VertexSet &ends,
-			    LibertyCell *buffer_cell);
+  void repairHoldViolations(VertexSet *ends,
+			    LibertyCell *buffer_cell,
+			    bool allow_setup_violations);
   int repairHoldPass(VertexSet &ends,
+		     LibertyCell *buffer_cell,
+		     float buffer_delay,
+		     bool allow_setup_violations);
+  void findHoldViolations(VertexSet *ends,
+			  // Return values.
+			  Slack &worst_slack,
+			  VertexSet &hold_violations);
+  VertexSet findHoldFanins(VertexSet &ends);
+  VertexSeq sortHoldFanins(VertexSet &fanins);
+  void makeHoldDelay(Vertex *drvr,
+		     int buffer_count,
+		     PinSeq &load_pins,
 		     LibertyCell *buffer_cell);
-  void sortFaninsByWeight(VertexWeightMap &weight_map,
-			  // Return value.
-			  VertexSeq &fanins);
-  void makeHoldDelay(Pin *drvr_pin,
-		     Slack hold_slack,
-		     LibertyCell *buffer_cell);
+  Point findCenter(PinSeq &pins);
+  Slack holdSlack(Slacks &slacks);
+  Slack setupSlack(Slacks &slacks);
+  Slack slackGap(Vertex *vertex);
+  Slack slackGap(Slacks &slacks);
+  int fanout(Vertex *vertex);
   void findCellInstances(LibertyCell *cell,
 			 // Return value.
 			 InstanceSeq &insts);

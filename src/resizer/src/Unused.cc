@@ -1047,3 +1047,20 @@ Resizer::findLoads(Pin *drvr_pin,
   network_->visitConnectedPins(drvr_pin, visitor);
 }
 
+Point
+Resizer::closestPt(Pin *pin,
+		   PinSeq &pins)
+{
+  Point pin_loc = db_network_->location(pin);
+  int closest_dist = std::numeric_limits<int>::max();
+  Point closest_loc;
+  for (Pin *pin1 : pins) {
+    Point loc1 = db_network_->location(pin1);
+    int dist = Point::manhattanDistance(loc, loc1);
+    if (dist < closest_dist) {
+      closest_dist = dist;
+      closest_loc = load_loc;
+    }
+  }
+  return closest_loc;
+}

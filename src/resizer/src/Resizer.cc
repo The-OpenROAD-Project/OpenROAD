@@ -94,11 +94,6 @@ extern int Resizer_Init(Tcl_Interp *interp);
 
 extern const char *resizer_tcl_inits[];
 
-typedef array<Delay, RiseFall::index_count> Delays;
-typedef array<Slack, RiseFall::index_count> Slacks;
-
-////////////////////////////////////////////////////////////////
-
 Resizer::Resizer() :
   StaState(),
   wire_res_(0.0),
@@ -1119,27 +1114,22 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHoldViolations(LibertyCell *buffer_cell)
+Resizer::repairHoldViolations(LibertyCellSeq *buffers,
+			      bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
-  VertexSet hold_failures = *sta_->search()->endpoints();
-  // Find endpoints with hold violation.
-  findHoldViolations(hold_failures);
-  if (hold_failures.size() > 0) {
-    printf("Found %lu endpoints with hold violations.\n",
-	   hold_failures.size());
-    repairHoldViolations(hold_failures, buffer_cell);
-  }
-  else
-    printf("No hold violations found.\n");
+  VertexSet *ends = sta_->search()->endpoints();
+  LibertyCell *buffer_cell = (*buffers)[0];
+  repairHoldViolations(ends, buffer_cell, allow_setup_violations);
 }
 
 // For testing/debug.
 void
 Resizer::repairHoldViolations(Pin *end_pin,
-			      LibertyCell *buffer_cell)
+			      LibertyCellSeq *buffers,
+			      bool allow_setup_violations)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
@@ -1147,84 +1137,61 @@ Resizer::repairHoldViolations(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  repairHoldViolations(ends, buffer_cell);
+  LibertyCell *buffer_cell = (*buffers)[0];
+  repairHoldViolations(&ends, buffer_cell, allow_setup_violations);
 }
 
 void
-Resizer::repairHoldViolations(VertexSet &ends,
-			      LibertyCell *buffer_cell)
+Resizer::repairHoldViolations(VertexSet *ends,
+			      LibertyCell *buffer_cell,
+			      bool allow_setup_violations)
 {
-  inserted_buffer_count_ = 0;
-  int repair_count = 1;
-  int pass = 1;
-  Slack worst_slack = findHoldViolations(ends);
-  while (!ends.empty()
-	 // Make sure we are making progress.
-	 && repair_count > 0) {
-    repair_count = repairHoldPass(ends, buffer_cell);
-    debugPrint4(debug_, "repair_hold", 1, "pass %d worst slack %s ends %lu inserted %d\n",
-		pass,
-		units_->timeUnit()->asString(worst_slack, 3),
-		ends.size(),
-		repair_count);
-    sta_->findRequireds();
-    worst_slack = findHoldViolations(ends);
-    pass++;
-  }
-  if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
-    level_drvr_verticies_valid_ = false;
-  }
-}
-
-int
-Resizer::repairHoldPass(VertexSet &ends,
-			LibertyCell *buffer_cell)
-{
-  VertexWeightMap weight_map;
-  findFaninWeights(ends, weight_map);
-  VertexSeq fanins;
-  sortFaninsByWeight(weight_map, fanins);
-  
-  int repair_count = 0;
-  int max_repair_count = max(static_cast<int>(ends.size() * .2), 10);
-  for(int i = 0; i < fanins.size() && repair_count < max_repair_count ; i++) {
-    Vertex *vertex = fanins[i];
-    Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
-    if (hold_slack < 0) {
-      debugPrint4(debug_, "repair_hold", 2, " %s w=%s gap=%s #%d\n",
-		  vertex->name(sdc_network_),
-		  delayAsString(weight_map[vertex], this),
-		  delayAsString(slackGap(vertex), this),
-		  i);
-      Pin *drvr_pin = vertex->pin();
-      Net *net = network_->isTopLevelPort(drvr_pin)
-	? network_->net(network_->term(drvr_pin))
-	: network_->net(drvr_pin);
-      // Hands off special nets.
-      if (!isSpecial(net)) {
-	makeHoldDelay(drvr_pin, hold_slack, buffer_cell);
-	repair_count++;
-	if (overMaxArea()) {
-	  warn("max utilization reached.");
-	  break;
-	}
-      }
+  // Find endpoints with hold violation.
+  VertexSet hold_failures;
+  Slack worst_slack;
+  findHoldViolations(ends, worst_slack, hold_failures);
+  if (!hold_failures.empty()) {
+    printf("Found %lu endpoints with hold violations.\n",
+	   hold_failures.size());
+    inserted_buffer_count_ = 0;
+    int repair_count = 1;
+    int pass = 1;
+    float buffer_delay = bufferDelay(buffer_cell);
+    while (!hold_failures.empty()
+	   // Make sure we are making progress.
+	   && repair_count > 0) {
+      repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
+				    allow_setup_violations);
+      debugPrint4(debug_, "repair_hold", 1,
+		  "pass %d worst slack %s failures %lu inserted %d\n",
+		  pass,
+		  units_->timeUnit()->asString(worst_slack, 3),
+		  hold_failures .size(),
+		  repair_count);
+      sta_->findRequireds();
+      findHoldViolations(ends, worst_slack, hold_failures);
+      pass++;
+    }
+    if (inserted_buffer_count_ > 0) {
+      printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+      level_drvr_verticies_valid_ = false;
     }
   }
-  return repair_count;
+  else
+    printf("No hold violations found.\n");
 }
 
-// Remove non-violating hold ends and find worst hold slack.
-Slack
-Resizer::findHoldViolations(VertexSet &ends)
+void
+Resizer::findHoldViolations(VertexSet *ends,
+			    // Return values.
+			    Slack &worst_slack,
+			    VertexSet &hold_violations)
 {
   Search *search = sta_->search();
-  Slack worst_slack = INF;
-  // Cannot use range iteration because we are removing elements from ends.
-  auto end_iter = ends.begin();
-  while (end_iter != ends.end()) {
-    Vertex *end = *end_iter;
+  worst_slack = INF;
+  hold_violations.clear();
+  debugPrint0(debug_, "repair_hold", 3, "Hold violations\n");
+  for (Vertex *end : *ends) {
     Slack slack = sta_->vertexSlack(end, MinMax::min());
     if (!sta_->isClock(end->pin())
 	&& fuzzyLess(slack, 0.0)) {
@@ -1232,110 +1199,238 @@ Resizer::findHoldViolations(VertexSet &ends)
 		  end->name(sdc_network_));
       if (slack < worst_slack)
 	worst_slack = slack;
-      end_iter++;
+      hold_violations.insert(end);
     }
-    else
-      end_iter = ends.erase(end_iter);
   }
-  return worst_slack;
 }
 
-void
-Resizer::findFaninWeights(VertexSet &ends,
-			  // Return value.
-			  VertexWeightMap &weight_map)
+int
+Resizer::repairHoldPass(VertexSet &hold_failures,
+			LibertyCell *buffer_cell,
+			float buffer_delay,
+			bool allow_setup_violations)
+{
+  VertexSet fanins = findHoldFanins(hold_failures);
+  VertexSeq sorted_fanins = sortHoldFanins(fanins);
+  
+  int repair_count = 0;
+  int max_repair_count = max(static_cast<int>(hold_failures.size() * .2), 10);
+  for(int i = 0; i < sorted_fanins.size() && repair_count < max_repair_count ; i++) {
+    Vertex *vertex = sorted_fanins[i];
+    Pin *drvr_pin = vertex->pin();
+    Net *net = network_->isTopLevelPort(drvr_pin)
+      ? network_->net(network_->term(drvr_pin))
+      : network_->net(drvr_pin);
+    Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
+    if (hold_slack < 0
+	// Hands off special nets.
+	&& !isSpecial(net)) {
+      // Only add delay to loads with hold violations.
+      PinSeq load_pins;
+      Slack buffer_delay = INF;
+      VertexOutEdgeIterator edge_iter(vertex, graph_);
+      while (edge_iter.hasNext()) {
+	Edge *edge = edge_iter.next();
+	Vertex *fanout = edge->to(graph_);
+	Slacks slacks;
+	sta_->vertexSlacks(fanout, slacks);
+	Slack hold_slack = holdSlack(slacks);
+	if (hold_slack < 0.0) {
+	  Delay delay = allow_setup_violations
+	    ? -hold_slack
+	    : min(-hold_slack, setupSlack(slacks));
+	  if (delay > 0.0) {
+	    buffer_delay = min(buffer_delay, delay);
+	    load_pins.push_back(fanout->pin());
+	  }
+	}
+      }
+      if (!load_pins.empty()) {
+	int buffer_count = std::ceil(buffer_delay / buffer_delay);
+	debugPrint5(debug_, "repair_hold", 2,
+		    " %s hold=%s inserted %d for %lu/%d loads\n",
+		    vertex->name(sdc_network_),
+		    delayAsString(hold_slack, this),
+		    buffer_count,
+		    load_pins.size(),
+		    fanout(vertex));
+	makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
+	repair_count += buffer_count;
+	if (overMaxArea()) {
+	  warn("max utilization reached.");
+	  return repair_count;
+	}
+      }
+    }
+  }
+  return repair_count;
+}
+
+VertexSet
+Resizer::findHoldFanins(VertexSet &ends)
 {
   Search *search = sta_->search();
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
   for (Vertex *vertex : ends)
-    iter.enqueue(vertex);
+    iter.enqueueAdjacentVertices(vertex);
 
+  VertexSet fanins;
   while (iter.hasNext()) {
-    Vertex *vertex = iter.next();
-    if (!sta_->isClock(vertex->pin())) {
-      if (!search->isEndpoint(vertex)
-	  && vertex->isDriver(db_network_))
-	weight_map[vertex] += sta_->vertexSlack(vertex, MinMax::min());
-      iter.enqueueAdjacentVertices(vertex);
+    Vertex *fanin = iter.next();
+    if (!sta_->isClock(fanin->pin())) {
+      if (fanin->isDriver(network_))
+	fanins.insert(fanin);
+      iter.enqueueAdjacentVertices(fanin);
     }
   }
+  return fanins;
 }
 
-void
-Resizer::sortFaninsByWeight(VertexWeightMap &weight_map,
-			    // Return value.
-			    VertexSeq &fanins)
+VertexSeq
+Resizer::sortHoldFanins(VertexSet &fanins)
 {
-  for(auto vertex_weight : weight_map) {
-    Vertex *vertex = vertex_weight.first;
-    fanins.push_back(vertex);
+  VertexSeq sorted_fanins;
+  for(Vertex *vertex : fanins)
+    sorted_fanins.push_back(vertex);
+
+  sort(sorted_fanins, [&](Vertex *v1, Vertex *v2)
+		      { float s1 = sta_->vertexSlack(v1, MinMax::min());
+			float s2 = sta_->vertexSlack(v2, MinMax::min());
+			if (fuzzyEqual(s1, s2)) {
+			  float gap1 = slackGap(v1);
+			  float gap2 = slackGap(v2);
+			  // Break ties based on the hold/setup gap.
+			  if (fuzzyEqual(gap1, gap2))
+			    return v1->level() > v2->level();
+			  else
+			    return gap1 > gap2;
+			}
+			else
+			  return s1 < s2;});
+  if (debug_->check("repair_hold", 4)) {
+    printf("Sorted fanins\n");
+    printf("     hold_slack  slack_gap  level\n");
+    for(Vertex *vertex : sorted_fanins)
+      printf("%s %s %s %d\n",
+	     vertex->name(network_),
+	     units_->timeUnit()->asString(sta_->vertexSlack(vertex, MinMax::min()), 3),
+	     units_->timeUnit()->asString(slackGap(vertex), 3),
+	     vertex->level());
   }
-  sort(fanins, [&](Vertex *v1, Vertex *v2)
-	       { float w1 = weight_map[v1];
-		 float w2 = weight_map[v2];
-		 if (fuzzyEqual(w1, w2)) {
-		   float gap1 = slackGap(v1);
-		   float gap2 = slackGap(v2);
-		   // Break ties based on the hold/setup gap.
-		   if (fuzzyEqual(gap1, gap2))
-		     return v1->level() > v2->level();
-		   else
-		     return gap1 > gap2;
-		 }
-		 else
-		   return w1 < w2;});
+  return sorted_fanins;
 }
 
 void
-Resizer::makeHoldDelay(Pin *drvr_pin,
-		       Slack hold_slack,
+Resizer::makeHoldDelay(Vertex *drvr,
+		       int buffer_count,
+		       PinSeq &load_pins,
 		       LibertyCell *buffer_cell)
 {
+  Pin *drvr_pin = drvr->pin();
   Instance *parent = db_network_->topInstance();
-  string net2_name = makeUniqueNetName();
-  string buffer_name = makeUniqueInstName("hold");
-  Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
-  Instance *buffer = db_network_->makeInstance(buffer_cell,
-					       buffer_name.c_str(),
-					       parent);
-  inserted_buffer_count_++;
-  design_area_ += area(db_network_->cell(buffer_cell));
-
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  debugPrint3(debug_, "repair_hold", 3, "insert %s -> %s -> %s\n",
-	      sdc_network_->pathName(drvr_pin),
-	      buffer_name.c_str(),
-	      net2_name.c_str())
-  Instance *drvr = db_network_->instance(drvr_pin);
-  Port *drvr_port = db_network_->port(drvr_pin);
-  Net *net = network_->isTopLevelPort(drvr_pin)
+  Net *drvr_net = network_->isTopLevelPort(drvr_pin)
     ? db_network_->net(db_network_->term(drvr_pin))
     : db_network_->net(drvr_pin);
-  sta_->disconnectPin(drvr_pin);
-  sta_->connectPin(drvr, drvr_port, net2);
-  sta_->connectPin(buffer, input, net2);
-  sta_->connectPin(buffer, output, net);
-  setLocation(buffer, db_network_->location(drvr_pin));
-  if (have_estimated_parasitics_) {
-    estimateWireParasitic(net);
-    estimateWireParasitic(net2);
+  Net *in_net = drvr_net;
+  Net *out_net = nullptr;
+
+  // Spread buffers between driver and load center.
+  Point drvr_loc = db_network_->location(drvr_pin);
+  Point load_center = findCenter(load_pins);
+  int dx = (drvr_loc.x() - load_center.x()) / (buffer_count + 1);
+  int dy = (drvr_loc.y() - load_center.y()) / (buffer_count + 1);
+
+  // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+  for (int i = 0; i < buffer_count; i++) {
+    string out_net_name = makeUniqueNetName();
+    out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+    // drvr_pin->drvr_net->hold_buffer->net2->load_pins
+    string buffer_name = makeUniqueInstName("hold");
+    Instance *buffer = db_network_->makeInstance(buffer_cell,
+						 buffer_name.c_str(),
+						 parent);
+    inserted_buffer_count_++;
+    design_area_ += area(db_network_->cell(buffer_cell));
+
+    LibertyPort *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    sta_->connectPin(buffer, input, in_net);
+    sta_->connectPin(buffer, output, out_net);
+    Point buffer_loc(drvr_loc.x() + dx * i,
+		     drvr_loc.y() + dy * i);
+    setLocation(buffer, buffer_loc);
+    in_net = out_net;
   }
+
+  for (Pin *load_pin : load_pins) {
+    Instance *load = db_network_->instance(load_pin);
+    Port *load_port = db_network_->port(load_pin);
+    sta_->disconnectPin(load_pin);
+    sta_->connectPin(load, load_port, out_net);
+  }
+  if (have_estimated_parasitics_) {
+    estimateWireParasitic(drvr_net);
+    estimateWireParasitic(out_net);
+  }
+}
+
+Point
+Resizer::findCenter(PinSeq &pins)
+{
+  Point sum(0, 0);
+  for (Pin *pin : pins) {
+    Point loc = db_network_->location(pin);
+    sum.x() += loc.x();
+    sum.y() += loc.y();
+  }
+  return Point(sum.x() / pins.size(), sum.y() / pins.size());
 }
 
 // Gap between min setup and hold slacks.
 // This says how much head room there is for adding delay to fix a
 // hold violation before violating a setup check.
-float
-Resizer::slackGap(Vertex *vertex)
+Slack
+Resizer::slackGap(Slacks &slacks)
 {
-  Slack slacks[RiseFall::index_count][MinMax::index_count];
-  sta_->vertexSlacks(vertex, slacks);
   return min(slacks[RiseFall::riseIndex()][MinMax::maxIndex()]
 	     - slacks[RiseFall::riseIndex()][MinMax::minIndex()],
 	     slacks[RiseFall::fallIndex()][MinMax::maxIndex()]
 	     - slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
+}
+
+Slack
+Resizer::slackGap(Vertex *vertex)
+{
+  Slacks slacks;
+  sta_->vertexSlacks(vertex, slacks);
+  return slackGap(slacks);
+}
+
+Slack
+Resizer::holdSlack(Slacks &slacks)
+{
+  return min(slacks[RiseFall::riseIndex()][MinMax::minIndex()],
+	     slacks[RiseFall::fallIndex()][MinMax::minIndex()]);
+}
+
+Slack
+Resizer::setupSlack(Slacks &slacks)
+{
+  return min(slacks[RiseFall::riseIndex()][MinMax::maxIndex()],
+	     slacks[RiseFall::fallIndex()][MinMax::maxIndex()]);
+}
+
+int
+Resizer::fanout(Vertex *vertex)
+{
+  int fanout = 0;
+  VertexOutEdgeIterator edge_iter(vertex, graph_);
+  while (edge_iter.hasNext()) {
+    edge_iter.next();
+    fanout++;
+  }
+  return fanout;
 }
 
 ////////////////////////////////////////////////////////////////
