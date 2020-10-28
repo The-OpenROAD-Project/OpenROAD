@@ -9,8 +9,6 @@ Notice 0:
 Reading DEF file: gcd_nangate45.def
 Notice 0: Design: gcd
 Notice 0:     Created 54 pins.
-Notice 0:     Created 272 components and 1508 component-terminals.
-Notice 0:     Created 343 nets and 964 connections.
 Notice 0: Finished DEF file: gcd_nangate45.def
 Running tapcell...
 Step 1: Cut rows...
