@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
 //
 // BSD 3-Clause License

@@ -3,12 +3,12 @@
 // Woo(mwoo@eng.ucsd.edu)
 //          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
 // Rewrite by James Cherry, Parallax Software, Inc.
-
-// BSD 3-Clause License
 //
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // Copyright (c) 2018, SangGi Do and Mingyu Woo
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -166,11 +166,11 @@ public:
   void detailedPlacement(int max_displacment);
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
-		  int left,
-		  int right);
+                  int left,
+                  int right);
   void setPadding(dbInst *inst,
-		  int left,
-		  int right);
+                  int left,
+                  int right);
   // Global padding.
   int padGlobalLeft() const { return pad_left_; }
   int padGlobalRight() const { return pad_right_; }
@@ -181,16 +181,16 @@ public:
   bool checkPlacement(bool verbose);
   void fillerPlacement(const StringSeq *filler_master_names);
   void reportLegalizationStats(int64_t hpwl_before,
-			       int64_t avg_displacement,
-			       int64_t sum_displacement,
-			       int64_t max_displacement) const;
+                               int64_t avg_displacement,
+                               int64_t sum_displacement,
+                               int64_t max_displacement) const;
   void reportDesignStats() const;
   int64_t hpwl() const;
   int64_t hpwl(dbNet *net) const;
   void displacementStats(// Return values.
-			 int64_t *avg_displacement,
-			 int64_t *sum_displacement,
-			 int64_t *max_displacement) const;
+                         int64_t *avg_displacement,
+                         int64_t *sum_displacement,
+                         int64_t *max_displacement) const;
   void setPowerNetName(const char *power_name);
   void setGroundNetName(const char *ground_name);
   void optimizeMirroring();
@@ -266,7 +266,7 @@ private:
   static bool isPlaced(const Cell *cell);
   bool checkPowerLine(const Cell &cell) const;
   bool checkInRows(const Cell &cell,
-		   const Grid *grid) const;
+                   const Grid *grid) const;
   const Cell *checkOverlap(const Cell &cell, const Grid *grid) const;
   bool overlap(const Cell *cell1, const Cell *cell2) const;
   bool isOverlapPadded(const Cell *cell1, const Cell *cell2) const;
@@ -338,16 +338,16 @@ private:
   Grid *makeCellGrid();
   void placeRowFillers(const Grid *grid, int row);
   const char *gridInstName(const Grid *grid,
-			   int row,
-			   int col);
+                           int row,
+                           int col);
 
   // Optimizing mirroring
   void getBox(dbNet *net,
-	      // Return value.
-	      Rect &net_box) const;
+              // Return value.
+              Rect &net_box) const;
   void findNetBoxes(NetBoxes &net_boxes);
   void findMirrorCandidates(NetBoxes &net_boxes,
-			    vector<dbInst*> &mirror_candidates);
+                            vector<dbInst*> &mirror_candidates);
   int mirrorCandidates(vector<dbInst*> &mirror_candidates);
   // Sum of ITerm hpwl's.
   int64_t hpwl(dbInst *inst);

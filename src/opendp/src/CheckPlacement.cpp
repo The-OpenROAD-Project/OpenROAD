@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -71,7 +71,7 @@ Opendp::checkPlacement(bool verbose)
         power_line_failures.push_back(&cell);
       }
       if (!checkInRows(cell, grid))
-	in_rows_failures.push_back(&cell);
+        in_rows_failures.push_back(&cell);
     }
     // Placed check
     if (!isPlaced(&cell))
@@ -153,27 +153,27 @@ Opendp::checkPowerLine(const Cell &cell) const
           (height % 2 == 1
            // Odd height
            && ((top_power == rowTopPower(grid_y) && orient != dbOrientType::R0)
-	       || (top_power != rowTopPower(grid_y) && orient != dbOrientType::MX))));
+               || (top_power != rowTopPower(grid_y) && orient != dbOrientType::MX))));
 }
 
 bool
 Opendp::checkInRows(const Cell &cell,
-		    const Grid *grid) const
+                    const Grid *grid) const
 {
   int x_ll = gridX(&cell);
   int x_ur = gridEndX(&cell);
   int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
   if (!(x_ll >= 0
-	&& x_ur <= row_site_count_
-	&& y_ll >= 0
-	&& y_ur <= row_count_))
+        && x_ur <= row_site_count_
+        && y_ll >= 0
+        && y_ur <= row_count_))
     return false;
   for (int j = y_ll; j < y_ur; j++) {
     for (int k = x_ll; k < x_ur; k++) {
       Pixel &pixel = grid[j][k];
       if (!pixel.is_valid)
-	return false;
+        return false;
     }
   }
   return true;

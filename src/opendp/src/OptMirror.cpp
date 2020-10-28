@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -70,7 +70,7 @@ Opendp::optimizeMirroring()
   // Sort net boxes by net hpwl.
   sort(net_boxes.begin(), net_boxes.end(),
        [] (NetBox &net_box1, NetBox &net_box2) -> bool {
-	 return net_box1.hpwl() > net_box2.hpwl();
+         return net_box1.hpwl() > net_box2.hpwl();
        });
 
   vector<dbInst*> mirror_candidates;
@@ -98,7 +98,7 @@ Opendp::findNetBoxes(NetBoxes &net_boxes)
   net_boxes.reserve(nets.size());
   for (dbNet *net : nets) {
     if (!isSupply(net)
-	&& !net->isSpecial()) {
+        && !net->isSpecial()) {
       NetBox net_box(net);
       getBox(net, net_box.box);
       net_boxes.push_back(net_box);
@@ -108,7 +108,7 @@ Opendp::findNetBoxes(NetBoxes &net_boxes)
 
 void
 Opendp::findMirrorCandidates(NetBoxes &net_boxes,
-			     vector<dbInst*> &mirror_candidates)
+                             vector<dbInst*> &mirror_candidates)
 {
   unordered_set<dbInst*> existing;
   // Find inst terms on the boundary of the net boxes.
@@ -118,19 +118,19 @@ Opendp::findMirrorCandidates(NetBoxes &net_boxes,
     for (dbITerm *iterm : net->getITerms()) {
       dbInst *inst = iterm->getInst();
       if (inst->isCore()
-	  && !inst->isFixed()) {
-	int x, y;
-	if (iterm->getAvgXY(&x, &y)) {
-	  if (x == box.xMin() || x == box.xMax()
-	      || y == box.yMin() || y == box.yMax()) {
-	    dbInst *inst = iterm->getInst();
-	    if (existing.find(inst) == existing.end()) {
-	      mirror_candidates.push_back(inst);
-	      existing.insert(inst);
-	      //printf("candidate %s\n", inst->getConstName());
-	    }
-	  }
-	}
+          && !inst->isFixed()) {
+        int x, y;
+        if (iterm->getAvgXY(&x, &y)) {
+          if (x == box.xMin() || x == box.xMax()
+              || y == box.yMin() || y == box.yMax()) {
+            dbInst *inst = iterm->getInst();
+            if (existing.find(inst) == existing.end()) {
+              mirror_candidates.push_back(inst);
+              existing.insert(inst);
+              //printf("candidate %s\n", inst->getConstName());
+            }
+          }
+        }
       }
     }
   }

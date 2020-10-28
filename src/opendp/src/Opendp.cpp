@@ -4,11 +4,11 @@
 //          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
 // Rewrite by James Cherry, Parallax Software, Inc.
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // Copyright (c) 2018, SangGi Do and Mingyu Woo
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -151,7 +151,7 @@ Opendp::init(dbDatabase *db)
 
 void
 Opendp::setPaddingGlobal(int left,
-			 int right)
+                         int right)
 {
   pad_left_ = left;
   pad_right_ = right;
@@ -159,16 +159,16 @@ Opendp::setPaddingGlobal(int left,
 
 void
 Opendp::setPadding(dbInst *inst,
-		   int left,
-		   int right)
+                   int left,
+                   int right)
 {
   inst_padding_map_[inst] = std::make_pair(left, right);
 }
 
 void
 Opendp::setPadding(dbMaster *master,
-		   int left,
-		   int right)
+                   int left,
+                   int right)
 {
   master_padding_map_[master] = std::make_pair(left, right);
 }
@@ -195,7 +195,7 @@ Opendp::detailedPlacement(int max_displacment)
   displacementStats(&avg_displacement, &sum_displacement, &max_displacement);
   updateDbInstLocations();
   reportLegalizationStats(hpwl_before, avg_displacement,
-			  sum_displacement, max_displacement);
+                          sum_displacement, max_displacement);
 }
 
 void
@@ -206,13 +206,13 @@ Opendp::updateDbInstLocations()
       dbInst *db_inst_ = cell.db_inst_;
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell.orient_)
-	db_inst_->setOrient(cell.orient_);
+        db_inst_->setOrient(cell.orient_);
       int x = core_.xMin() + cell.x_;
       int y = core_.yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y)
-	db_inst_->setLocation(x, y);
+        db_inst_->setLocation(x, y);
     }
   }
 }
@@ -284,9 +284,9 @@ Opendp::reportDesignStats() const
 
 void
 Opendp::reportLegalizationStats(int64_t hpwl_before,
-				int64_t avg_displacement,
-				int64_t sum_displacement,
-				int64_t max_displacement) const
+                                int64_t avg_displacement,
+                                int64_t sum_displacement,
+                                int64_t max_displacement) const
 {
   printf("Placement Analysis\n");
   printf("--------------------------------\n");
@@ -307,9 +307,9 @@ Opendp::reportLegalizationStats(int64_t hpwl_before,
 
 void
 Opendp::displacementStats(// Return values.
-			  int64_t *avg_displacement,
-			  int64_t *sum_displacement,
-			  int64_t *max_displacement) const
+                          int64_t *avg_displacement,
+                          int64_t *sum_displacement,
+                          int64_t *max_displacement) const
 {
   *avg_displacement = 0;
   *sum_displacement = 0;
@@ -360,8 +360,8 @@ Opendp::isSupply(dbNet *net) const
 
 void
 Opendp::getBox(dbNet *net,
-	       // Return value.
-	       Rect &net_box) const
+               // Return value.
+               Rect &net_box) const
 {
   net_box.mergeInit();
 
@@ -387,13 +387,13 @@ Opendp::getBox(dbNet *net,
     for (dbBPin *bpin : bterm->getBPins()) {
       dbPlacementStatus status = bpin->getPlacementStatus();
       if (status.isPlaced()) {
-	dbBox *pin_box = bpin->getBox();
-	Rect pin_bbox;
-	pin_box->getBox(pin_bbox);
-	int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
-	int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
-	Rect pin_center(center_x, center_y, center_x, center_y);
-	net_box.merge(pin_center);
+        dbBox *pin_box = bpin->getBox();
+        Rect pin_bbox;
+        pin_box->getBox(pin_bbox);
+        int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
+        int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
+        Rect pin_center(center_x, center_y, center_x, center_y);
+        net_box.merge(pin_center);
       }
     }
   }
@@ -685,7 +685,7 @@ int
 Opendp::gridPaddedEndX(const Cell *cell) const
 {
   return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
-		 site_width_);
+                 site_width_);
 }
 
 int

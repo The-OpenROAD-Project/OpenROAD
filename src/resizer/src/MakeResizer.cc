@@ -59,8 +59,8 @@ void
 initResizer(OpenRoad *openroad)
 {
   openroad->getResizer()->init(openroad->tclInterp(),
-			       openroad->getDb(),
-			       openroad->getSta());
+                               openroad->getDb(),
+                               openroad->getSta());
 }
 
 }

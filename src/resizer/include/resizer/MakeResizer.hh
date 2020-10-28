@@ -54,4 +54,3 @@ void
 initResizer(OpenRoad *openroad);
 
 } // namespace
-

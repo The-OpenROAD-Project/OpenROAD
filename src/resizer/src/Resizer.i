@@ -58,10 +58,10 @@ namespace sta {
 // Defined in StaTcl.i
 LibertyLibrarySeq *
 tclListSeqLibertyLibrary(Tcl_Obj *const source,
-			 Tcl_Interp *interp);
+                         Tcl_Interp *interp);
 LibertyCellSeq *
 tclListSeqLibertyCell(Tcl_Obj *const source,
-		      Tcl_Interp *interp);
+                      Tcl_Interp *interp);
 
 } // namespace
 
@@ -101,7 +101,7 @@ using sta::dbNetwork;
   RiseFall *tr = RiseFall::find(arg);
   if (tr == nullptr) {
     Tcl_SetResult(interp,const_cast<char*>("Error: unknown transition name."),
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   $1 = tr;
@@ -153,8 +153,8 @@ remove_buffers_cmd()
 
 void
 set_wire_rc_cmd(float res,
-		float cap,
-		Corner *corner)
+                float cap,
+                Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -163,8 +163,8 @@ set_wire_rc_cmd(float res,
 
 void
 set_wire_clk_rc_cmd(float res,
-		    float cap,
-		    Corner *corner)
+                    float cap,
+                    Corner *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -296,8 +296,8 @@ resize_target_load_cap(LibertyCell *cell)
 
 void
 repair_pin_hold_violations(Pin *end_pin,
-			   LibertyCellSeq *buffers,
-			   bool allow_setup_violations)
+                           LibertyCellSeq *buffers,
+                           bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -306,7 +306,7 @@ repair_pin_hold_violations(Pin *end_pin,
 
 void
 repair_hold_violations_cmd(LibertyCellSeq *buffers,
-			   bool allow_setup_violations)
+                           bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -331,8 +331,8 @@ find_floating_nets()
 
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
-		      double separation, // meters
-		      bool verbose)
+                      double separation, // meters
+                      bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -341,7 +341,7 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 
 void
 repair_design_cmd(float max_length,
-		  LibertyCell *buffer_cell)
+                  LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -350,7 +350,7 @@ repair_design_cmd(float max_length,
 
 void
 repair_clk_nets_cmd(float max_length,
-		    LibertyCell *buffer_cell)
+                    LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -367,8 +367,8 @@ repair_clk_inverters_cmd()
 
 void
 repair_net_cmd(Net *net,
-	       float max_length,
-	       LibertyCell *buffer_cell)
+               float max_length,
+               LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -377,7 +377,7 @@ repair_net_cmd(Net *net,
 
 void
 report_long_wires_cmd(int count,
-		      int digits)
+                      int digits)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -388,14 +388,14 @@ report_long_wires_cmd(int count,
 
 float
 buffer_wire_delay(LibertyCell *buffer_cell,
-		  float wire_length) // meters
+                  float wire_length) // meters
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   Delay delay;
   Slew slew;
   resizer->bufferWireDelay(buffer_cell, wire_length,
-			   delay, slew);
+                           delay, slew);
   return delay;
 }
 
@@ -409,8 +409,8 @@ find_max_wire_length(LibertyCell *buffer_cell)
 
 double
 find_max_slew_wire_length(LibertyPort *drvr_port,
-			  LibertyPort *load_port,
-			  float max_slew)
+                          LibertyPort *load_port,
+                          float max_slew)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -443,7 +443,7 @@ max_load_manhatten_distance(Net *net)
 
 void
 write_net_svg(Net *net,
-	      const char *filename)
+              const char *filename)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
