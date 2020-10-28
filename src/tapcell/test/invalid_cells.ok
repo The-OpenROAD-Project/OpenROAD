@@ -1,0 +1,14 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45_tech.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0: Finished LEF file:  Nangate45/Nangate45_tech.lef
+Notice 0: Reading LEF file:  Nangate45/Nangate45_stdcell.lef
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45_stdcell.lef
+Notice 0: 
+Reading DEF file: invalid_cells.def
+Notice 0: Design: gcd
+Notice 0: Finished DEF file: invalid_cells.def
+Running tapcell...
+Step 1: Cut rows...
+Error: [ERROR] Master FILLCELL_X1x not found
