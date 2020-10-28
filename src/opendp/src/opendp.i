@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@ using sta::Instance;
 
 StringSeq *
 tclListSeqString(Tcl_Obj *const source,
-		 Tcl_Interp *interp)
+                 Tcl_Interp *interp)
 {
   int argc;
   Tcl_Obj **argv;
@@ -68,8 +68,8 @@ tclListSeqString(Tcl_Obj *const source,
 template <class TYPE>
 std::set<TYPE> *
 tclListSet(Tcl_Obj *const source,
-	   swig_type_info *swig_type,
-	   Tcl_Interp *interp)
+           swig_type_info *swig_type,
+           Tcl_Interp *interp)
 {
   int argc;
   Tcl_Obj **argv;
@@ -91,7 +91,7 @@ tclListSet(Tcl_Obj *const source,
   
 opendp::dbMasterSet *
 tclListSetdbMaster(Tcl_Obj *const source,
-		   Tcl_Interp *interp)
+                   Tcl_Interp *interp)
 {
   return tclListSet<odb::dbMaster*>(source, SWIGTYPE_p_dbMaster, interp);
 }
@@ -128,7 +128,7 @@ check_placement_cmd(bool verbose)
 
 void
 set_padding_global(int left,
-		   int right)
+                   int right)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPaddingGlobal(left, right);
@@ -136,8 +136,8 @@ set_padding_global(int left,
 
 void
 set_padding_master(odb::dbMaster *master,
-		   int left,
-		   int right)
+                   int left,
+                   int right)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPadding(master, left, right);
@@ -145,8 +145,8 @@ set_padding_master(odb::dbMaster *master,
 
 void
 set_padding_inst(odb::dbInst *inst,
-		 int left,
-		 int right)
+                 int left,
+                 int right)
 {
   opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPadding(inst, left, right);

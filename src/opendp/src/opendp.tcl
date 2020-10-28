@@ -1,9 +1,9 @@
 #############################################################################
 ##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2019, OpenROAD
 ## All rights reserved.
+##
+## BSD 3-Clause License
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -55,10 +55,10 @@ proc detailed_placement { args } {
 }
 
 sta::define_cmd_args "set_placement_padding" { -global|-masters masters|-instances insts\
-						 [-right site_count]\
-						 [-left site_count] \
-						 [instances]\
-					       }
+                                                 [-right site_count]\
+                                                 [-left site_count] \
+                                                 [instances]\
+                                               }
 
 proc set_placement_padding { args } {
   sta::parse_key_args "set_placement_padding" args \
@@ -144,13 +144,13 @@ proc get_masters_arg { arg_name arg } {
     set db [ord::get_db]
     foreach name $arg {
       foreach lib [$db getLibs] {
-	foreach master [$lib getMasters] {
-	  set master_name [$master getConstName]
-	  if { [regexp $name $master_name] } {
-	    lappend masters $master
-	    set matched 1
-	  }
-	}
+        foreach master [$lib getMasters] {
+          set master_name [$master getConstName]
+          if { [regexp $name $master_name] } {
+            lappend masters $master
+            set matched 1
+          }
+        }
       }
     }
   }

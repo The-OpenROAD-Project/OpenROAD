@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -76,7 +76,7 @@ Opendp::findFillerMasters(const StringSeq *filler_master_names)
       dbMaster *master = lib->findMaster(master_name.c_str());
       if (master != nullptr) {
         filler_masters_.push_back(master);
-	break;
+        break;
       }
     }
   }
@@ -116,7 +116,7 @@ Opendp::makeCellGrid()
 
 void
 Opendp::placeRowFillers(const Grid *grid,
-			int row)
+                        int row)
 {
   dbOrientType orient = rowOrient(row);
   int j = 0;
@@ -125,37 +125,37 @@ Opendp::placeRowFillers(const Grid *grid,
         && grid[row][j].is_valid) {
       int k = j;
       while (grid[row][k].cell == nullptr
-	     && grid[row][k].is_valid
-	     && k < row_site_count_) {
+             && grid[row][k].is_valid
+             && k < row_site_count_) {
         k++;
       }
       int gap = k - j;
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq &fillers = gapFillers(gap);
       if (fillers.empty()) {
-	int x = core_.xMin() + j * site_width_;
-	int y = core_.yMin() + row * row_height_;
-	error("could not fill gap of size %d at %d,%d dbu between %s and %s",
-	      gap, x, y,
-	      gridInstName(grid, row, j - 1),
-	      gridInstName(grid, row, k + 1));
+        int x = core_.xMin() + j * site_width_;
+        int y = core_.yMin() + row * row_height_;
+        error("could not fill gap of size %d at %d,%d dbu between %s and %s",
+              gap, x, y,
+              gridInstName(grid, row, j - 1),
+              gridInstName(grid, row, k + 1));
       }
       else {
-	k = j;
-	for (dbMaster *master : fillers) {
-	  string inst_name = "FILLER_" + to_string(row) + "_" + to_string(k);
-	  // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
-	  // site_width_);
-	  dbInst *inst = dbInst::create(block_, master, inst_name.c_str());
-	  int x = core_.xMin() + k * site_width_;
-	  int y = core_.yMin() + row * row_height_;
-	  inst->setOrient(orient);
-	  inst->setLocation(x, y);
-	  inst->setPlacementStatus(dbPlacementStatus::PLACED);
-	  filler_count_++;
-	  k += master->getWidth() / site_width_;
-	}
-	j += gap;
+        k = j;
+        for (dbMaster *master : fillers) {
+          string inst_name = "FILLER_" + to_string(row) + "_" + to_string(k);
+          // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
+          // site_width_);
+          dbInst *inst = dbInst::create(block_, master, inst_name.c_str());
+          int x = core_.xMin() + k * site_width_;
+          int y = core_.yMin() + row * row_height_;
+          inst->setOrient(orient);
+          inst->setLocation(x, y);
+          inst->setPlacementStatus(dbPlacementStatus::PLACED);
+          filler_count_++;
+          k += master->getWidth() / site_width_;
+        }
+        j += gap;
       }
     }
     else {
@@ -166,8 +166,8 @@ Opendp::placeRowFillers(const Grid *grid,
 
 const char *
 Opendp::gridInstName(const Grid *grid,
-		     int row,
-		     int col)
+                     int row,
+                     int col)
 {
   if (col < 0)
     return "core_left";
@@ -196,12 +196,12 @@ Opendp::gapFillers(int gap)
     for (dbMaster *filler_master : filler_masters_) {
       int filler_width = filler_master->getWidth() / site_width_;
       while ((width + filler_width) <= gap
-	     && (have_filler1
-		 || (width + filler_width) != gap - 1)) {
+             && (have_filler1
+                 || (width + filler_width) != gap - 1)) {
         fillers.push_back(filler_master);
         width += filler_width;
         if (width == gap) {
-	  return fillers;
+          return fillers;
         }
       }
     }
