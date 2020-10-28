@@ -57,7 +57,8 @@ class dbDatabase;
 }  // namespace odb
 
 namespace sta {
-  class dbSta;
+class dbSta;
+class dbNetwork;
 }
 
 namespace FastRoute {
@@ -239,8 +240,6 @@ protected:
   // antenna functions
   void addLocalConnections(NetRouteMap& routes);
   void mergeResults(NetRouteMap& routes);
-  void runClockNetsRouteFlow();
-  void restartFastRoute();
   void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
   void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
 
@@ -266,6 +265,8 @@ protected:
   void makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
   void initClockNets();
+  bool isClkTerm(odb::dbITerm *iterm, sta::dbNetwork *network);
+  bool clockHasLeafITerm(odb::dbNet* db_net);
   void setSelectedMetal(int metal) { selectedMetal = metal; }
 
   ord::OpenRoad* _openroad;

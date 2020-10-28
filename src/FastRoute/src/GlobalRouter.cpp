@@ -2446,6 +2446,28 @@ void GlobalRouter::initClockNets()
   }
 }
 
+bool GlobalRouter::isClkTerm(odb::dbITerm *iterm, sta::dbNetwork *network)
+{
+  const sta::Pin *pin = network->dbToSta(iterm);
+  sta::LibertyPort *lib_port = network->libertyPort(pin);
+  if (lib_port == nullptr)
+    return false;
+  return lib_port->isRegClk();
+}
+
+bool GlobalRouter::clockHasLeafITerm(odb::dbNet* db_net) {
+  sta::dbNetwork* network = _sta->getDbNetwork();
+  if (db_net->getSigType() == odb::dbSigType::CLOCK) {
+    for (odb::dbITerm* iterm : db_net->getITerms()) {
+      if (isClkTerm(iterm, network)) {
+        return true;        
+      }
+    }
+  }
+
+  return false;
+}
+
 void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea)
 {
   odb::dbTech* tech = _db->getTech();
