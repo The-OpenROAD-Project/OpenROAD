@@ -10,6 +10,7 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 88 components and 422 component-terminals.
 Notice 0:     Created 54 nets and 88 connections.
 Notice 0: Finished DEF file: gcd.def
+Restrict INPUT pins to region 0-200260, in the bottom edge
 #Macro blocks found: 0
  > Running IO placement
  * Num of slots          2494
