@@ -153,6 +153,9 @@ public:
   double findMaxSlewWireLength(LibertyPort *drvr_port,
                                LibertyPort *load_port,
                                double max_slew);
+  float bufferDelay(LibertyCell *buffer_cell);
+  float bufferDelay(LibertyCell *buffer_cell,
+                    const RiseFall *rf);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
   void writeNetSVG(Net *net,
@@ -271,7 +274,8 @@ protected:
   float bufferDelay(LibertyCell *buffer_cell,
                     RiseFall *rf,
                     float load_cap);
-  float bufferDelay(LibertyCell *buffer_cell);
+  float bufferDelay(LibertyCell *buffer_cell,
+                    float load_cap);
   Parasitic *makeWireParasitic(Net *net,
                                Pin *drvr_pin,
                                Pin *load_pin,
