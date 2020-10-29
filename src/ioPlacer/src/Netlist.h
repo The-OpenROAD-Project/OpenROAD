@@ -63,7 +63,9 @@ enum Direction
 {
   INPUT,
   OUTPUT,
-  INOUT
+  INOUT,
+  FEEDTHRU,
+  Invalid
 };
 
 class InstancePin

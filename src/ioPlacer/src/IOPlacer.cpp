@@ -667,6 +667,13 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   _excludedIntervals.push_back(excludedInterv);
 }
 
+void IOPlacer::addDirectionRestriction(Direction direction, Edge edge,
+                                       int begin, int end) {
+  Interval interval(edge, begin, end);
+  DirectionRestriction restriction(direction, interval);
+  _dirRestrictions.push_back(restriction);
+}
+
 Edge IOPlacer::getEdge(std::string edge) {
   if (edge == "top") {
     return Edge::Top;
@@ -679,6 +686,20 @@ Edge IOPlacer::getEdge(std::string edge) {
   }
 
   return Edge::Invalid;
+}
+
+Direction IOPlacer::getDirection(std::string direction) {
+  if (direction == "INPUT") {
+    return Direction::INPUT;
+  } else if (direction == "OUTPUT") {
+    return Direction::OUTPUT;
+  } else if (direction == "INOUT") {
+    return Direction::INOUT;
+  } else {
+    return Direction::FEEDTHRU;
+  }
+
+  return Direction::Invalid;
 }
 
 void IOPlacer::run(int horLayerIdx, int verLayerIdx, bool randomMode)

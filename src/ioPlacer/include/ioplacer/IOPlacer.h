@@ -109,7 +109,10 @@ class IOPlacer
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
+  void addDirectionRestriction(Direction direction, Edge edge, 
+                               int begin, int end);
   Edge getEdge(std::string edge);
+  Direction getDirection(std::string direction);
 
  protected:
   Netlist _netlist;
