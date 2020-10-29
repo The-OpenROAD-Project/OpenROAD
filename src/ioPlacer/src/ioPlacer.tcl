@@ -34,11 +34,11 @@
 ###############################################################################
 
 
-sta::define_cmd_args "set_pin_restriction" {[-direction direction] \
+sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
                                             [-region region]}
 
-proc set_pin_restriction { args } {
-  sta::parse_key_args "set_pin_restriction" args \
+proc set_io_pin_constraint { args } {
+  sta::parse_key_args "set_io_pin_constraint" args \
   keys {-direction -region}
 
   if [info exists keys(-direction)] {
@@ -49,7 +49,7 @@ proc set_pin_restriction { args } {
     set region $keys(-region)
   }
 
-  set dir [ioPlacer::parse_direction "set_pin_restriction" $direction]
+  set dir [ioPlacer::parse_direction "set_io_pin_constraint" $direction]
 
   if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
     set edge_ [ioPlacer::parse_edge "-exclude" $edge]
