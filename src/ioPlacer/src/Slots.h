@@ -41,6 +41,7 @@
 
 #include <numeric>
 #include <vector>
+#include <algorithm>
 
 #include "Netlist.h"
 
