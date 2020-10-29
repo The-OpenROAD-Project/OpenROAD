@@ -47,6 +47,7 @@ ioPlacer::IOPlacer* getIOPlacer();
 
 using ord::getIOPlacer;
 using ioPlacer::Edge;
+using ioPlacer::Direction;
 %}
 
 %include "../../Exception.i"
@@ -89,10 +90,22 @@ get_edge(const char* edge)
   return getIOPlacer()->getEdge(edge);
 }
 
+Direction
+get_direction(const char* direction)
+{
+  return getIOPlacer()->getDirection(direction);
+}
+
 void
 exclude_interval(Edge edge, int begin, int end)
 {
   getIOPlacer()->excludeInterval(edge, begin, end);
+}
+
+void add_direction_restriction(Direction direction, Edge edge,
+                               int begin, int end)
+{
+  getIOPlacer()->addDirectionRestriction(direction, edge, begin, end);
 }
 
 void

@@ -34,6 +34,46 @@
 ###############################################################################
 
 
+sta::define_cmd_args "set_pin_restriction" {[-direction direction] \
+                                            [-region region]}
+
+proc set_pin_restriction { args } {
+  sta::parse_key_args "set_pin_restriction" args \
+  keys {-direction -region}
+
+  if [info exists keys(-direction)] {
+    set direction $keys(-direction)
+  }
+
+  if [info exists keys(-region)] {
+    set region $keys(-region)
+  }
+
+  set dir [ioPlacer::parse_direction "set_pin_restriction" $direction]
+
+  if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+    set edge_ [ioPlacer::parse_edge "-exclude" $edge]
+
+    if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
+      if {$begin == {*}} {
+        set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+      }
+      if {$end == {*}} {
+        set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+      }
+
+      set begin [expr { int($begin * $lef_units) }]
+      set end [expr { int($end * $lef_units) }]
+    } elseif {$interval == {*}} {
+      set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+      set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+    }
+  }
+
+  puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
+  ioPlacer::add_direction_restriction $dir $edge_ $begin $end
+}
+
 sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 
                                   [-ver_layer v_layer]        \
                                   [-random_seed seed]         \
@@ -185,6 +225,14 @@ proc parse_edge { cmd edge } {
     ord::error "$cmd: Invalid edge"
   }
   return [ioPlacer::get_edge $edge]
+}
+
+proc parse_direction { cmd direction } {
+  if {$direction != "INPUT" && $direction != "OUTPUT" && \
+      $direction != "INOUT" && $direction != "FEEDTHRU"} {
+    ord::error "$cmd: Invalid pin direction"
+  }
+  return [ioPlacer::get_direction $direction]      
 }
 
 proc parse_excludes_arg { args_var arg_error_var } {
