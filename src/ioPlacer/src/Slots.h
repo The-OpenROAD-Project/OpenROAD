@@ -45,6 +45,7 @@
 #include "Netlist.h"
 
 namespace ioPlacer {
+enum class Edge;
 
 struct _Slot_t
 {
@@ -65,6 +66,7 @@ typedef struct _Section_t
   float maxSlots;
   int curSlots;
   int numSlots;
+  Edge edge;
 } Section_t;
 
 typedef std::vector<Section_t> sectionVector_t;

@@ -408,6 +408,9 @@ void IOPlacer::defineSlots()
 
 void IOPlacer::createSections()
 {
+  Point lb = _core.getBoundary().ll();
+  Point ub = _core.getBoundary().ur();
+
   slotVector_t& slots = _slots;
   _sections.clear();
   int numSlots = slots.size();
@@ -446,6 +449,15 @@ void IOPlacer::createSections()
     nSec.endSlot = endSlot;
     nSec.maxSlots = nSec.numSlots * _usagePerSection;
     nSec.curSlots = 0;
+    if (nSec.pos.x() == lb.x()) {
+      nSec.edge = Edge::Left;
+    } else if (nSec.pos.x() == ub.x()) {
+      nSec.edge = Edge::Right;
+    } else if (nSec.pos.y() == lb.y()) {
+      nSec.edge = Edge::Bottom;
+    } else if (nSec.pos.y() == ub.y()) {
+      nSec.edge = Edge::Top;
+    }
     _sections.push_back(nSec);
     beginSlot = ++endSlot;
   }
@@ -462,7 +474,7 @@ bool IOPlacer::assignPinsSections()
     std::vector<int> dst(sections.size());
     std::vector<InstancePin> instPinsVector;
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = net.computeIONetHPWL(idx, sections[i].pos);
+      dst[i] = net.computeIONetHPWL(idx, sections[i].pos, sections[i].edge, _dirRestrictions);
     }
     net.forEachSinkOfIO(
         idx, [&](InstancePin& instPin) { instPinsVector.push_back(instPin); });
@@ -832,16 +844,16 @@ void IOPlacer::initNetlist()
            curBTerm->getConstName());
     }
 
-    Direction dir = DIR_INOUT;
+    Direction dir = INOUT;
     switch (curBTerm->getIoType()) {
       case odb::dbIoType::INPUT:
-        dir = DIR_IN;
+        dir = INPUT;
         break;
       case odb::dbIoType::OUTPUT:
-        dir = DIR_OUT;
+        dir = OUTPUT;
         break;
       default:
-        dir = DIR_INOUT;
+        dir = INOUT;
     }
 
     int xPos = 0;

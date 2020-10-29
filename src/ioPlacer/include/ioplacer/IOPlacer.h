@@ -89,6 +89,15 @@ struct Interval
   int getEnd() { return end; }
 };
 
+struct DirectionRestriction
+{
+  Direction direction;
+  Interval interval;
+  DirectionRestriction(Direction dir, Interval interv) :
+    direction(dir), interval(interv)
+  {}
+};
+
 class IOPlacer
 {
  public:
@@ -117,6 +126,7 @@ class IOPlacer
   bool _forcePinSpread;
   std::string _blockagesFile;
   std::vector<Interval> _excludedIntervals;
+  std::vector<DirectionRestriction> _dirRestrictions;
 
  private:
   void makeComponents();

@@ -49,6 +49,9 @@ namespace ioPlacer {
 using odb::Point;
 using odb::Rect;
 
+struct DirectionRestriction;
+enum class Edge;
+
 enum Orientation
 {
   ORIENT_NORTH,
@@ -58,9 +61,9 @@ enum Orientation
 };
 enum Direction
 {
-  DIR_IN,
-  DIR_OUT,
-  DIR_INOUT
+  INPUT,
+  OUTPUT,
+  INOUT
 };
 
 class InstancePin
@@ -131,6 +134,9 @@ class Netlist
   std::vector<int> _netPointer;
   std::vector<IOPin> _ioPins;
 
+  bool checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
+                       std::vector<DirectionRestriction> restrictions);
+
  public:
   Netlist();
 
@@ -144,6 +150,7 @@ class Netlist
   int numIOPins();
 
   int computeIONetHPWL(int, odb::Point);
+  int computeIONetHPWL(int, odb::Point, Edge, std::vector<DirectionRestriction>&);
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
 };

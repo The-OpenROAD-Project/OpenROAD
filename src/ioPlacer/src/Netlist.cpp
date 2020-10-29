@@ -34,6 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Netlist.h"
+#include "Slots.h"
+#include "ioplacer/IOPlacer.h"
 
 namespace ioPlacer {
 
@@ -147,6 +149,20 @@ int Netlist::computeIONetHPWL(int idx, Point slotPos)
   return (x + y);
 }
 
+int Netlist::computeIONetHPWL(int idx, Point slotPos, Edge edge, 
+                              std::vector<DirectionRestriction>& restrictions)
+{
+  int hpwl;
+
+  if (checkSlotForPin(_ioPins[idx], edge, slotPos, restrictions)) {
+    hpwl = computeIONetHPWL(idx, slotPos);
+  } else {
+    hpwl = std::numeric_limits<int>::max();
+  }
+
+  return hpwl;
+}
+
 int Netlist::computeDstIOtoPins(int idx, Point slotPos)
 {
   int netStart = _netPointer[idx];
@@ -161,6 +177,27 @@ int Netlist::computeDstIOtoPins(int idx, Point slotPos)
   }
 
   return totalDistance;
+}
+
+bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
+                        std::vector<DirectionRestriction> restrictions)
+{
+  for (DirectionRestriction restriction : restrictions) {
+    int pos = (edge == Edge::Top || edge == Edge::Bottom) ?
+               point.x() :  point.y();
+
+    if (pin.getDirection() == restriction.direction) {
+      if (restriction.interval.getEdge() == edge &&
+          pos >= restriction.interval.getBegin() &&
+          pos <= restriction.interval.getEnd()) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 }  // namespace ioPlacer
