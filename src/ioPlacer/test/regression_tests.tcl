@@ -6,4 +6,8 @@ record_tests {
   exclude1
   exclude2
   exclude3
+  add_restriction1
+  add_restriction2
+  add_restriction3
+  add_restriction4
 }
