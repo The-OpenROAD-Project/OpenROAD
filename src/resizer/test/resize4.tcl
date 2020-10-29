@@ -10,7 +10,6 @@ set_wire_rc -layer met1
 estimate_parasitics -placement
 # value carefully chosen so resize chooses dly cell over vanilla buffer
 set_load .012 u1z
-#set_load .02 u1z
 
 report_checks -fields {slew input_pin} -digits 3
 resize

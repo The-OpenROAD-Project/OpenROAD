@@ -45,7 +45,7 @@ global_placement -disable_routability_driven \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
-# easier to see placement pre-filler
+# checkpoint - easier to see placement pre-filler
 set global_place_def [make_result_file ${design}_${platform}_global_place.def]
 write_def $global_place_def
 
@@ -66,6 +66,11 @@ set_placement_padding -global -left $detail_place_pad -right $detail_place_pad
 detailed_placement
 optimize_mirroring
 check_placement -verbose
+
+# post resize timing report (ideal clocks)
+report_checks -path_delay min_max -format full_clock_expanded \
+  -fields {input_pin slew capacitance} -digits 3
+report_check_types -max_slew -max_capacitance -max_fanout -violators
 
 ################################################################
 # Clock Tree Synthesis
@@ -96,6 +101,10 @@ report_checks -path_delay min_max -format full_clock_expanded \
 detailed_placement
 filler_placement $filler_cells
 check_placement
+
+# post cts timing report (propagated clocks)
+report_checks -path_delay min_max -format full_clock_expanded \
+  -fields {input_pin slew capacitance} -digits 3
 
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def

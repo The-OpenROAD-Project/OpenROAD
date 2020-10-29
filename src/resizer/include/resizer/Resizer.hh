@@ -154,6 +154,8 @@ public:
                                LibertyPort *load_port,
                                double max_slew);
   float bufferDelay(LibertyCell *buffer_cell);
+  float bufferDelay(LibertyCell *buffer_cell,
+                    const RiseFall *rf);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net *net);
   void writeNetSVG(Net *net,

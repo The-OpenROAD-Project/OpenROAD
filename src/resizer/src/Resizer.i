@@ -387,11 +387,12 @@ report_long_wires_cmd(int count,
 ////////////////////////////////////////////////////////////////
 
 float
-buffer_delay(LibertyCell *buffer_cell)
+buffer_delay(LibertyCell *buffer_cell,
+             const RiseFall *rf)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->bufferDelay(buffer_cell);
+  return resizer->bufferDelay(buffer_cell, rf);
 }
 
 float

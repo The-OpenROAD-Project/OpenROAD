@@ -64,7 +64,7 @@ Found 1 long wires.
 Inserted 3 buffers in 1 nets.
 Resized 4 instances.
 Driver    length delay
-repeater1/Z manhtn 950.9 steiner 950.9 0.08
+repeater1/Z manhtn 950.2 steiner 950.2 0.08
 repeater3/Z manhtn 948.6 steiner 948.6 0.08
 repeater2/Z manhtn 948.3 steiner 948.3 0.08
 u2/Z manhtn 150.4 steiner 150.4 0.00
@@ -87,11 +87,11 @@ Path Type: max
             0.021    0.005    0.055 ^ repeater3/A (BUF_X8)
   56.153    0.019    0.038    0.094 ^ repeater3/Z (BUF_X8)
             0.019    0.106    0.200 ^ repeater2/A (BUF_X8)
-  57.156    0.019    0.038    0.238 ^ repeater2/Z (BUF_X8)
-            0.019    0.067    0.305 ^ u3/A (BUF_X1)
-   0.000    0.004    0.021    0.326 ^ u3/Z (BUF_X1)
-            0.004    0.000    0.326 ^ out1 (out)
-                              0.326   data arrival time
+  53.973    0.019    0.037    0.237 ^ repeater2/Z (BUF_X8)
+            0.019    0.062    0.299 ^ u3/A (BUF_X1)
+   0.000    0.004    0.021    0.320 ^ u3/Z (BUF_X1)
+            0.004    0.000    0.320 ^ out1 (out)
+                              0.320   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
@@ -112,13 +112,13 @@ Path Type: max
             0.021    0.005    0.055 ^ repeater3/A (BUF_X8)
   56.153    0.019    0.038    0.094 ^ repeater3/Z (BUF_X8)
             0.019    0.106    0.200 ^ repeater2/A (BUF_X8)
-  57.156    0.019    0.038    0.238 ^ repeater2/Z (BUF_X8)
-            0.019    0.108    0.346 ^ repeater1/A (BUF_X8)
-  50.668    0.011    0.029    0.375 ^ repeater1/Z (BUF_X8)
-            0.082    0.067    0.442 ^ u4/A (BUF_X1)
-   0.000    0.007    0.027    0.469 ^ u4/Z (BUF_X1)
-            0.007    0.000    0.469 ^ out2 (out)
-                              0.469   data arrival time
+  53.973    0.019    0.037    0.237 ^ repeater2/Z (BUF_X8)
+            0.019    0.097    0.334 ^ repeater1/A (BUF_X4)
+  50.627    0.021    0.038    0.372 ^ repeater1/Z (BUF_X4)
+            0.090    0.072    0.444 ^ u4/A (BUF_X1)
+   0.000    0.007    0.028    0.471 ^ u4/Z (BUF_X1)
+            0.007    0.000    0.471 ^ out2 (out)
+                              0.471   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
