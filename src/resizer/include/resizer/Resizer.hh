@@ -194,7 +194,7 @@ protected:
                                    Parasitic *parasitic,
                                    const Net *net,
                                    const Pin *pin,
-                                   int steiner_pt);
+                                   SteinerPt steiner_pt);
   void findLongWires(VertexSeq &drvrs);
   void findLongWiresSteiner(VertexSeq &drvrs);
   int findMaxSteinerDist(Vertex *drvr);
