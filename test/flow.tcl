@@ -53,6 +53,7 @@ write_def $global_place_def
 # Resize
 # estimate wire rc parasitics
 set_wire_rc -layer $wire_rc_layer
+set_wire_rc -clock -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
