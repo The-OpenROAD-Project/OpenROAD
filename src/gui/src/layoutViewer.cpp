@@ -890,4 +890,15 @@ void LayoutViewer::inDbPostMoveInst(dbInst*)
   update();
 }
 
+void LayoutViewer::inDbFillCreate(dbFill* fill)
+{
+  // This is not very smart - we just clear all the search structure
+  // rather than try to surgically update it.
+  if (search_init_) {
+    search_.clear();
+    search_init_ = false;
+  }
+  update();
+}
+
 }  // namespace gui
