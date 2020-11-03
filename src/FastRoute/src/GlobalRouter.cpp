@@ -528,6 +528,8 @@ void GlobalRouter::initializeNets(bool reroute)
 {
   initNetlist(reroute);
   checkPinPlacement();
+  if (reroute)
+    _padPinsConnections.clear();
 
   int validNets = 0;
 
