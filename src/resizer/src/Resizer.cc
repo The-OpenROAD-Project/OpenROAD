@@ -926,7 +926,7 @@ Resizer::estimateWireParasitic(const Net *net)
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
         Pin *pin1, *pin2;
-        int steiner_pt1, steiner_pt2;
+        SteinerPt steiner_pt1, steiner_pt2;
         int wire_length_dbu;
         tree->branch(i,
                      pt1, pin1, steiner_pt1,
@@ -971,7 +971,7 @@ Resizer::findParasiticNode(SteinerTree *tree,
                            Parasitic *parasitic,
                            const Net *net,
                            const Pin *pin,
-                           int steiner_pt)
+                           SteinerPt steiner_pt)
 {
   if (pin == nullptr)
     // If the steiner pt is on top of a pin, use the pin instead.
