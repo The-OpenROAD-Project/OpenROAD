@@ -166,11 +166,11 @@ Path Type: min
    0.00    0.00   clock network delay (propagated)
    0.00    0.00 ^ input external delay
    0.00    0.00 ^ in2 (in)
-   0.02    0.02 ^ hold6/Z (BUF_X2)
-   0.02    0.03 ^ hold1/Z (BUF_X2)
-   0.02    0.05 ^ hold9/Z (BUF_X2)
-   0.02    0.07 ^ hold5/Z (BUF_X2)
-   0.02    0.09 ^ hold8/Z (BUF_X2)
+   0.02    0.02 ^ hold6/Z (BUF_X1)
+   0.02    0.04 ^ hold1/Z (BUF_X1)
+   0.02    0.05 ^ hold9/Z (BUF_X1)
+   0.02    0.07 ^ hold5/Z (BUF_X1)
+   0.02    0.09 ^ hold8/Z (BUF_X1)
    0.00    0.09 ^ r2/D (DFF_X1)
            0.09   data arrival time
 
@@ -189,7 +189,7 @@ Path Type: min
            0.09   data required time
           -0.09   data arrival time
 ---------------------------------------------------------
-           0.00   slack (MET)
+           0.01   slack (MET)
 
 
 Startpoint: in1 (input port clocked by clk)
@@ -203,10 +203,10 @@ Path Type: min
    0.00    0.00   clock network delay (propagated)
    0.00    0.00 ^ input external delay
    0.00    0.00 ^ in1 (in)
-   0.02    0.02 ^ hold4/Z (BUF_X2)
-   0.02    0.03 ^ hold7/Z (BUF_X2)
-   0.00    0.03 ^ r1/D (DFF_X1)
-           0.03   data arrival time
+   0.02    0.02 ^ hold4/Z (BUF_X1)
+   0.02    0.04 ^ hold7/Z (BUF_X1)
+   0.00    0.04 ^ r1/D (DFF_X1)
+           0.04   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
@@ -218,7 +218,7 @@ Path Type: min
            0.03   data required time
 ---------------------------------------------------------
            0.03   data required time
-          -0.03   data arrival time
+          -0.04   data arrival time
 ---------------------------------------------------------
            0.01   slack (MET)
 
@@ -236,9 +236,9 @@ Path Type: min
    0.02    0.02 ^ i1/Z (BUF_X1)
    0.00    0.02 ^ r1/CK (DFF_X1)
    0.09    0.11 ^ r1/Q (DFF_X1)
-   0.02    0.13 ^ hold2/Z (BUF_X2)
-   0.03    0.16 ^ u2/ZN (AND2_X1)
-   0.02    0.17 ^ hold3/Z (BUF_X2)
+   0.02    0.13 ^ hold2/Z (BUF_X1)
+   0.03    0.15 ^ u2/ZN (AND2_X1)
+   0.02    0.17 ^ hold3/Z (BUF_X1)
    0.00    0.17 ^ r3/D (DFF_X1)
            0.17   data arrival time
 
@@ -281,8 +281,8 @@ Path Type: min
    0.00    0.08 ^ r2/CK (DFF_X1)
    0.09    0.17 ^ r2/Q (DFF_X1)
    0.02    0.19 ^ u1/Z (BUF_X1)
-   0.03    0.22 ^ u2/ZN (AND2_X1)
-   0.02    0.23 ^ hold3/Z (BUF_X2)
+   0.03    0.21 ^ u2/ZN (AND2_X1)
+   0.02    0.23 ^ hold3/Z (BUF_X1)
    0.00    0.23 ^ r3/D (DFF_X1)
            0.23   data arrival time
 
@@ -308,4 +308,3 @@ Path Type: min
            0.07   slack (MET)
 
 
-No differences found.

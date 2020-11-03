@@ -864,7 +864,7 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   int scrollbar_y = verticalScrollBar()->value();
   QPointF pos_in_widget = QPointF(event->pos()) - widget()->pos();
 
-  if (event->delta() > 0) {
+  if (event->angleDelta().y() > 0) {
     viewer_->zoomIn();
   } else {
     viewer_->zoomOut();

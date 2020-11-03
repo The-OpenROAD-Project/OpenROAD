@@ -56,8 +56,8 @@ typedef Vector<SteinerPt> SteinerPtSeq;
 // Returns nullptr if net has less than 2 pins or any pin is not placed.
 SteinerTree *
 makeSteinerTree(const Net *net,
-		bool find_left_rights,
-		dbNetwork *network);
+                bool find_left_rights,
+                dbNetwork *network);
 
 class PointHash
 {
@@ -75,7 +75,7 @@ class PointEqual
 {
 public:
   bool operator()(const Point &pt1,
-		  const Point &pt2) const
+                  const Point &pt2) const
   {
     return pt1.x() == pt2.x()
       && pt1.y() == pt2.y();
@@ -92,14 +92,14 @@ public:
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
   void branch(int index,
-	      // Return values.
-	      Point &pt1,
-	      Pin *&pin1,
-	      int &steiner_pt1,
-	      Point &pt2,
-	      Pin *&pin2,
-	      int &steiner_pt2,
-	      int &wire_length);
+              // Return values.
+              Point &pt1,
+              Pin *&pin1,
+              int &steiner_pt1,
+              Point &pt2,
+              Pin *&pin2,
+              int &steiner_pt2,
+              int &wire_length);
   void report(const Network *network);
   // Return a pin in the same location as the steiner pt if it exists.
   Pin *steinerPtAlias(SteinerPt pt);
@@ -108,34 +108,34 @@ public:
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
-		   const Network *network);
+                   const Network *network);
   Pin *pin(SteinerPt pt) const;
   SteinerPt steinerPt(Pin *pin) const;
   bool isLoad(SteinerPt pt,
-	      const Network *network);
+              const Network *network);
   Point location(SteinerPt pt) const;
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
   void setTree(Flute::Tree tree,
-	       const dbNetwork *network);
+               const dbNetwork *network);
   void setHasInputPort(bool input_port);
   void writeSVG(const Network *network,
-		const char *filename);
+                const char *filename);
   static SteinerPt null_pt;
 
 protected:
   void findLeftRights(SteinerPt from,
-		      SteinerPt to,
-		      SteinerPtSeq &adj1,
-		      SteinerPtSeq &adj2,
-		      SteinerPtSeq &adj3);
+                      SteinerPt to,
+                      SteinerPtSeq &adj1,
+                      SteinerPtSeq &adj2,
+                      SteinerPtSeq &adj3);
   void findLeftRights(SteinerPt from,
-		      SteinerPt to,
-		      SteinerPt adj,
-		      SteinerPtSeq &adj1,
-		      SteinerPtSeq &adj2,
-		      SteinerPtSeq &adj3);
+                      SteinerPt to,
+                      SteinerPt adj,
+                      SteinerPtSeq &adj1,
+                      SteinerPtSeq &adj2,
+                      SteinerPtSeq &adj3);
   void checkSteinerPt(SteinerPt pt) const;
 
   Flute::Tree tree_;

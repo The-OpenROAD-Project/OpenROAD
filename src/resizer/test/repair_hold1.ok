@@ -92,6 +92,7 @@ Path Type: min
            0.05   slack (MET)
 
 
+Found 1 endpoints with hold violations.
 Inserted 2 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
@@ -106,9 +107,9 @@ Path Type: min
    0.02    0.02 ^ i1/Z (BUF_X1)
    0.00    0.02 ^ r1/CK (DFF_X1)
    0.09    0.11 ^ r1/Q (DFF_X1)
-   0.02    0.13 ^ hold1/Z (BUF_X2)
-   0.03    0.16 ^ u2/ZN (AND2_X1)
-   0.02    0.17 ^ hold2/Z (BUF_X2)
+   0.02    0.13 ^ hold1/Z (BUF_X1)
+   0.03    0.15 ^ u2/ZN (AND2_X1)
+   0.02    0.17 ^ hold2/Z (BUF_X1)
    0.00    0.17 ^ r3/D (DFF_X1)
            0.17   data arrival time
 
@@ -151,8 +152,8 @@ Path Type: min
    0.00    0.08 ^ r2/CK (DFF_X1)
    0.09    0.17 ^ r2/Q (DFF_X1)
    0.02    0.19 ^ u1/Z (BUF_X1)
-   0.03    0.22 ^ u2/ZN (AND2_X1)
-   0.02    0.23 ^ hold2/Z (BUF_X2)
+   0.03    0.21 ^ u2/ZN (AND2_X1)
+   0.02    0.23 ^ hold2/Z (BUF_X1)
    0.00    0.23 ^ r3/D (DFF_X1)
            0.23   data arrival time
 
@@ -178,4 +179,3 @@ Path Type: min
            0.07   slack (MET)
 
 
-No differences found.
