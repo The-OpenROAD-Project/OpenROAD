@@ -12,11 +12,8 @@ set_load 50 r2q
 set_load 50 u1z
 set_load 50 u2z
 
-report_checks
+report_checks -fields {slew input_pin} -digits 3
 set_dont_use {*/*8 */*16}
 resize
-report_checks
+report_checks -fields {slew input_pin} -digits 3
 
-set def_file [make_result_file resize3.def]
-write_def $def_file
-diff_files resize3.defok $def_file

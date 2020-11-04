@@ -1187,6 +1187,11 @@ void GlobalRouter::setMacroExtension(int macroExtension)
   _macroExtension = macroExtension;
 }
 
+void GlobalRouter::setOnlySignalNets(bool onlySignalNets)
+{
+  _onlySignalNets = onlySignalNets;
+}
+
 void GlobalRouter::writeGuides(const char* fileName)
 {
   std::ofstream guideFile;

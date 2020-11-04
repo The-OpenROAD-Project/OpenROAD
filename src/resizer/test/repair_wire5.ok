@@ -34,4 +34,10 @@ Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.
 Resized 1 instances.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+pad1/DATA                               0.20    0.26   -0.06 (VIOLATED)
+
 pad1 outside of core
