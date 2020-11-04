@@ -91,10 +91,11 @@ struct Interval
 
 struct Constraint
 {
+  std::string name;
   Direction direction;
   Interval interval;
-  Constraint(Direction dir, Interval interv) :
-    direction(dir), interval(interv)
+  Constraint(std::string name, Direction dir, Interval interv) :
+    name(name), direction(dir), interval(interv)
   {}
 };
 
@@ -110,6 +111,8 @@ class IOPlacer
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction, Edge edge, 
+                               int begin, int end);
+  void addNameConstraint(std::string name, Edge edge, 
                                int begin, int end);
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);

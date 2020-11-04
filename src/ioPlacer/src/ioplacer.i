@@ -108,6 +108,12 @@ void add_direction_constraint(Direction direction, Edge edge,
   getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
 }
 
+void add_name_constraint(const char* name, Edge edge,
+                               int begin, int end)
+{
+  getIOPlacer()->addNameConstraint(name, edge, begin, end);
+}
+
 void
 set_hor_length(float length)
 {

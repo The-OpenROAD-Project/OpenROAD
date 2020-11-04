@@ -35,21 +35,16 @@
 
 
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
-                                            [-region region]}
+                                              [-names names] \
+                                              [-region region]}
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -region}
-
-  if [info exists keys(-direction)] {
-    set direction $keys(-direction)
-  }
+  keys {-direction -names -region}
 
   if [info exists keys(-region)] {
     set region $keys(-region)
   }
-
-  set dir [ioPlacer::parse_direction "set_io_pin_constraint" $direction]
 
   if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
     set edge_ [ioPlacer::parse_edge "-exclude" $edge]
@@ -70,8 +65,24 @@ proc set_io_pin_constraint { args } {
     }
   }
 
-  puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
-  ioPlacer::add_direction_constraint $dir $edge_ $begin $end
+  if {[info exists keys(-direction)] && [info exists keys(-name)]} {
+    ord::error "set_io_pin_constraint: only one constraint allowed"
+  }
+
+  if [info exists keys(-direction)] {
+    set direction $keys(-direction)
+    set dir [ioPlacer::parse_direction "set_io_pin_constraint" $direction]
+    puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
+    ioPlacer::add_direction_constraint $dir $edge_ $begin $end
+  }
+
+  if [info exists keys(-names)] {
+    set names $keys(-names)
+    foreach name $names {
+      puts "Restrict I/O pin $name to region $begin-$end, in the $edge edge"
+      ioPlacer::add_name_constraint $name $edge_ $begin $end
+    }
+  }
 }
 
 sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 

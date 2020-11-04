@@ -138,6 +138,7 @@ class Netlist
 
   bool checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
                        std::vector<Constraint> restrictions);
+  bool checkInterval(Constraint constraint, Edge edge, int pos);
 
  public:
   Netlist();

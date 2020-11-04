@@ -670,7 +670,14 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
 void IOPlacer::addDirectionConstraint(Direction direction, Edge edge,
                                        int begin, int end) {
   Interval interval(edge, begin, end);
-  Constraint constraint(direction, interval);
+  Constraint constraint("INVALID", direction, interval);
+  _constraints.push_back(constraint);
+}
+
+void IOPlacer::addNameConstraint(std::string name, Edge edge,
+                                       int begin, int end) {
+  Interval interval(edge, begin, end);
+  Constraint constraint(name, Direction::Invalid, interval);
   _constraints.push_back(constraint);
 }
 
