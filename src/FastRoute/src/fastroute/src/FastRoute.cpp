@@ -1333,7 +1333,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
-    printf("[ERROR] FastRoute cannot handle very congested design\n");
+    printf("[ERROR] Design congestion too high\n");
     std::exit(2);
   }
 
