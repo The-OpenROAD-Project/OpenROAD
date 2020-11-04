@@ -6,8 +6,8 @@ read_def gcd.def
 set_io_pin_constraint -direction INPUT -region left:*
 io_placer -hor_layer 2 -ver_layer 3 -boundaries_offset 0 -min_distance 1
 
-set def_file [make_result_file add_restriction3.def]
+set def_file [make_result_file add_constraint3.def]
 
 write_def $def_file
 
-diff_file add_restriction3.defok $def_file
+diff_file add_constraint3.defok $def_file
