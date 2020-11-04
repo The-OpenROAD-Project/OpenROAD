@@ -175,6 +175,7 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-clock_pdrev_fanout fanout] \
                                   [-clock_topology_priority priority] \
                                   [-macro_extension macro_extension] \
+                                  [-only_signal_nets]
                                   [-output_file out_file] \
                                   [-min_routing_layer min_layer] \
                                   [-max_routing_layer max_layer] \
@@ -190,7 +191,7 @@ proc fastroute { args } {
           -macro_extension \
           -output_file -min_routing_layer -max_routing_layer -layers_pitches \
          } \
-    flags {-unidirectional_routing -allow_overflow} \
+    flags {-unidirectional_routing -allow_overflow -only_signal_nets} \
 
   if { ![ord::db_has_tech] } {
     ord::error "missing dbTech"
@@ -286,6 +287,7 @@ proc fastroute { args } {
   }
 
   FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
+  FastRoute::set_only_signal_nets [info exists flags(-only_signal_nets)]
 
   if { [info exists keys(-macro_extension)] } {
     set macro_extension $keys(-macro_extension)
