@@ -387,6 +387,15 @@ report_long_wires_cmd(int count,
 ////////////////////////////////////////////////////////////////
 
 float
+buffer_delay(LibertyCell *buffer_cell,
+             const RiseFall *rf)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->bufferDelay(buffer_cell, rf);
+}
+
+float
 buffer_wire_delay(LibertyCell *buffer_cell,
                   float wire_length) // meters
 {

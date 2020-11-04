@@ -218,7 +218,7 @@ Graph::~Graph()
   lllx.clear();
 }
 
-bool comp_xn(Node1 i, Node1 j)
+static bool comp_xn(const Node1& i, const Node1& j)
 {
   if (i.x == j.x) {
     return (i.y < j.y);
@@ -229,7 +229,7 @@ bool comp_xn(Node1 i, Node1 j)
 
 // increasing order
 
-bool comp_xi(Node1 i, Node1 j)
+static bool comp_xi(const Node1& i, const Node1& j)
 {
   if (i.x == j.x) {
     return (i.y < j.y);
@@ -240,7 +240,7 @@ bool comp_xi(Node1 i, Node1 j)
 
 // decreasing order
 
-bool comp_xd(Node1 i, Node1 j)
+static bool comp_xd(const Node1& i, const Node1& j)
 {
   if (i.x == j.x) {
     return (i.y < j.y);
@@ -251,7 +251,7 @@ bool comp_xd(Node1 i, Node1 j)
 
 // increasing order
 
-bool comp_yi(Node1 i, Node1 j)
+static bool comp_yi(const Node1& i, const Node1& j)
 {
   if (i.y == j.y) {
     return (i.x < j.x);
@@ -262,7 +262,7 @@ bool comp_yi(Node1 i, Node1 j)
 
 // decreasing order
 
-bool comp_yd(Node1 i, Node1 j)
+static bool comp_yd(const Node1& i, const Node1& j)
 {
   if (i.y == j.y) {
     return (i.x < j.x);
@@ -271,7 +271,7 @@ bool comp_yd(Node1 i, Node1 j)
   }
 }
 
-bool comp_xn2(Node i, Node j)
+static bool comp_xn2(Node i, Node j)
 {
   if (i.x == j.x) {
     return (i.y < j.y);
@@ -280,7 +280,7 @@ bool comp_xn2(Node i, Node j)
   }
 }
 
-bool comp_yn(Node1 i, Node1 j)
+static bool comp_yn(const Node1& i, const Node1& j)
 {
   if (i.y == j.y) {
     return (i.x < j.x);
@@ -289,7 +289,7 @@ bool comp_yn(Node1 i, Node1 j)
   }
 }
 
-bool comp_sw(Node i, Node j)
+static bool comp_sw(const Node& i, const Node& j)
 {
   if (i.y == j.y) {
     return (i.x > j.x);
@@ -298,7 +298,7 @@ bool comp_sw(Node i, Node j)
   }
 }
 
-bool comp_se(Node i, Node j)
+static bool comp_se(const Node& i, const Node& j)
 {
   if (i.y == j.y) {
     return (i.x < j.x);
@@ -307,7 +307,7 @@ bool comp_se(Node i, Node j)
   }
 }
 
-bool comp_nw(Node i, Node j)
+static bool comp_nw(const Node& i, const Node& j)
 {
   if (i.y == j.y) {
     return (i.x > j.x);
@@ -316,7 +316,7 @@ bool comp_nw(Node i, Node j)
   }
 }
 
-bool comp_ne(Node i, Node j)
+static bool comp_ne(const Node& i, const Node& j)
 {
   if (i.y == j.y) {
     return (i.x < j.x);
@@ -325,7 +325,7 @@ bool comp_ne(Node i, Node j)
   }
 }
 
-bool comp_en(Node i, Node j)
+static bool comp_en(const Node& i, const Node& j)
 {
   if (i.x == j.x) {
     return (i.y < j.y);
@@ -334,7 +334,7 @@ bool comp_en(Node i, Node j)
   }
 }
 
-bool comp_es(Node i, Node j)
+static bool comp_es(const Node& i, const Node& j)
 {
   if (i.x == j.x) {
     return (i.y > j.y);
@@ -343,7 +343,7 @@ bool comp_es(Node i, Node j)
   }
 }
 
-bool comp_wn(Node i, Node j)
+static bool comp_wn(const Node& i, const Node& j)
 {
   if (i.x == j.x) {
     return (i.y < j.y);
@@ -352,7 +352,7 @@ bool comp_wn(Node i, Node j)
   }
 }
 
-bool comp_ws(Node i, Node j)
+static bool comp_ws(const Node& i, const Node& j)
 {
   if (i.x == j.x) {
     return (i.y > j.y);
@@ -1820,7 +1820,7 @@ bool Graph::make_unique(vector<Node>& vec)
   return true;
 }
 
-bool comp_x(Node i, Node j)
+static bool comp_x(const Node& i, const Node& j)
 {
   if (i.x == j.x)
     return (i.y < j.y);
@@ -1828,7 +1828,7 @@ bool comp_x(Node i, Node j)
     return (i.x < j.x);
 }
 
-bool comp_y(Node i, Node j)
+static bool comp_y(const Node& i, const Node& j)
 {
   if (i.y == j.y)
     return (i.x < j.x);
@@ -1836,7 +1836,7 @@ bool comp_y(Node i, Node j)
     return (i.y < j.y);
 }
 
-bool comp_det_cost(Node i, Node j)
+static bool comp_det_cost(const Node& i, const Node& j)
 {
   return (i.det_cost_node > j.det_cost_node);
 }
