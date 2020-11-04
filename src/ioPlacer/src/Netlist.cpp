@@ -150,11 +150,11 @@ int Netlist::computeIONetHPWL(int idx, Point slotPos)
 }
 
 int Netlist::computeIONetHPWL(int idx, Point slotPos, Edge edge, 
-                              std::vector<DirectionRestriction>& restrictions)
+                              std::vector<Constraint>& constraints)
 {
   int hpwl;
 
-  if (checkSlotForPin(_ioPins[idx], edge, slotPos, restrictions)) {
+  if (checkSlotForPin(_ioPins[idx], edge, slotPos, constraints)) {
     hpwl = computeIONetHPWL(idx, slotPos);
   } else {
     hpwl = std::numeric_limits<int>::max();
@@ -180,16 +180,16 @@ int Netlist::computeDstIOtoPins(int idx, Point slotPos)
 }
 
 bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
-                        std::vector<DirectionRestriction> restrictions)
+                        std::vector<Constraint> constraints)
 {
-  for (DirectionRestriction restriction : restrictions) {
+  for (Constraint constraint : constraints) {
     int pos = (edge == Edge::Top || edge == Edge::Bottom) ?
                point.x() :  point.y();
 
-    if (pin.getDirection() == restriction.direction) {
-      if (restriction.interval.getEdge() == edge &&
-          pos >= restriction.interval.getBegin() &&
-          pos <= restriction.interval.getEnd()) {
+    if (pin.getDirection() == constraint.direction) {
+      if (constraint.interval.getEdge() == edge &&
+          pos >= constraint.interval.getBegin() &&
+          pos <= constraint.interval.getEnd()) {
         return true;
       } else {
         return false;

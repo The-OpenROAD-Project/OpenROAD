@@ -474,7 +474,7 @@ bool IOPlacer::assignPinsSections()
     std::vector<int> dst(sections.size());
     std::vector<InstancePin> instPinsVector;
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = net.computeIONetHPWL(idx, sections[i].pos, sections[i].edge, _dirRestrictions);
+      dst[i] = net.computeIONetHPWL(idx, sections[i].pos, sections[i].edge, _constraints);
     }
     net.forEachSinkOfIO(
         idx, [&](InstancePin& instPin) { instPinsVector.push_back(instPin); });
@@ -667,11 +667,11 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   _excludedIntervals.push_back(excludedInterv);
 }
 
-void IOPlacer::addDirectionRestriction(Direction direction, Edge edge,
+void IOPlacer::addDirectionConstraint(Direction direction, Edge edge,
                                        int begin, int end) {
   Interval interval(edge, begin, end);
-  DirectionRestriction restriction(direction, interval);
-  _dirRestrictions.push_back(restriction);
+  Constraint constraint(direction, interval);
+  _constraints.push_back(constraint);
 }
 
 Edge IOPlacer::getEdge(std::string edge) {

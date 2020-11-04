@@ -102,10 +102,10 @@ exclude_interval(Edge edge, int begin, int end)
   getIOPlacer()->excludeInterval(edge, begin, end);
 }
 
-void add_direction_restriction(Direction direction, Edge edge,
+void add_direction_constraint(Direction direction, Edge edge,
                                int begin, int end)
 {
-  getIOPlacer()->addDirectionRestriction(direction, edge, begin, end);
+  getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
 }
 
 void

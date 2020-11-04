@@ -89,11 +89,11 @@ struct Interval
   int getEnd() { return end; }
 };
 
-struct DirectionRestriction
+struct Constraint
 {
   Direction direction;
   Interval interval;
-  DirectionRestriction(Direction dir, Interval interv) :
+  Constraint(Direction dir, Interval interv) :
     direction(dir), interval(interv)
   {}
 };
@@ -109,7 +109,7 @@ class IOPlacer
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addDirectionRestriction(Direction direction, Edge edge, 
+  void addDirectionConstraint(Direction direction, Edge edge, 
                                int begin, int end);
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
@@ -129,7 +129,7 @@ class IOPlacer
   bool _forcePinSpread;
   std::string _blockagesFile;
   std::vector<Interval> _excludedIntervals;
-  std::vector<DirectionRestriction> _dirRestrictions;
+  std::vector<Constraint> _constraints;
 
  private:
   void makeComponents();

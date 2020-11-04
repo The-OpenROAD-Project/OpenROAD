@@ -71,7 +71,7 @@ proc set_io_pin_constraint { args } {
   }
 
   puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
-  ioPlacer::add_direction_restriction $dir $edge_ $begin $end
+  ioPlacer::add_direction_constraint $dir $edge_ $begin $end
 }
 
 sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 
