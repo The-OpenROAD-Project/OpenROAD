@@ -141,6 +141,8 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
       std::cout << "[WARNING] Design has rows with different site width\n";
     }
   }
+
+  deleteFillerCells();
   
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixedInsts);
@@ -176,6 +178,21 @@ void AntennaRepair::legalizePlacedCells()
 
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
+
+void AntennaRepair::deleteFillerCells()
+{
+  int fillerCnt = 0;
+  for (odb::dbInst* inst : _block->getInsts()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
+      fillerCnt++;
+      odb::dbInst::destroy(inst);
+    }
+  }
+
+  if (fillerCnt > 0) {
+    std::cout << "[INFO] " << fillerCnt << " filler cells deleted\n";
+  }
 }
 
 void AntennaRepair::insertDiode(odb::dbNet* net,

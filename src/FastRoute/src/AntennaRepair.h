@@ -98,6 +98,7 @@ private:
   typedef std::pair<box, int> value;
   typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
 
+  void deleteFillerCells();
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diodeMTerm,
                    odb::dbInst* sinkInst,
