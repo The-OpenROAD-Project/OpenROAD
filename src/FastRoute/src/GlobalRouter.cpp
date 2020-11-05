@@ -1728,7 +1728,7 @@ void GlobalRouter::computeWirelength()
     }
   }
   std::cout << std::fixed << "[INFO] Total wirelength: "
-            << totalWirelength / _grid->getDatabaseUnit() << " um\n";
+            << totalWirelength / _block->getDefUnits() << " um\n";
 }
 
 void GlobalRouter::mergeSegments()
@@ -2191,8 +2191,7 @@ void GlobalRouter::initGrid(int maxLayer)
                 genericVector,
                 genericVector,
                 genericVector,
-                genericMap,
-                tech->getLefUnits());
+                genericMap);
 }
 
 void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
