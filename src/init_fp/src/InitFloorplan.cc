@@ -339,6 +339,12 @@ InitFloorplan::makeRows(dbSite *site,
 			int core_ux,
 			int core_uy)
 {
+  // Delete any existing rows.
+  auto rows = block_->getRows();
+  for (dbSet<dbRow>::iterator row_itr = rows.begin();
+       row_itr != rows.end() ;
+       row_itr = dbRow::destroy(row_itr)) ;
+
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
   uint site_dx = site->getWidth();
@@ -473,7 +479,9 @@ InitFloorplan::makeTracks(Rect &die_area)
       int offset, pitch, track_count;
       switch (layer_dir) {
       case dbTechLayerDir::VERTICAL:
-	grid = dbTrackGrid::create(block_, layer);
+        grid = block_->findTrackGrid(layer);
+        if (grid == nullptr)
+          grid = dbTrackGrid::create(block_, layer);
 	width = die_area.dx();
 	pitch = layer->getPitchX();
 	if (pitch) {
@@ -487,7 +495,9 @@ InitFloorplan::makeTracks(Rect &die_area)
 	  printf("Error: layer %s has zero pitch.\n", layer->getConstName());
 	break;
       case dbTechLayerDir::HORIZONTAL:
-	grid = dbTrackGrid::create(block_, layer);
+        grid = block_->findTrackGrid(layer);
+        if (grid == nullptr)
+          grid = dbTrackGrid::create(block_, layer);
 	width = die_area.dy();
 	pitch = layer->getPitchY();
 	if (pitch) {

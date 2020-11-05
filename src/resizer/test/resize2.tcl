@@ -12,10 +12,6 @@ set_load 20 r2q
 set_load 20 u1z
 set_load 20 u2z
 
-report_checks
+report_checks -fields {slew capacitance input_pin} -digits 3
 resize
-report_checks
-
-set def_file [make_result_file resize2.def]
-write_def $def_file
-diff_files resize2.defok $def_file
+report_checks -fields {slew capacitance input_pin} -digits 3

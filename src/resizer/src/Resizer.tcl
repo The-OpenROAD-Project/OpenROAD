@@ -253,9 +253,11 @@ proc repair_design { args } {
     set max_wire_length $keys(-max_wire_length)
     check_positive_float "-max_wire_length" $max_wire_length
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
-    set max_slew_wire_length [find_max_wire_length $buffer_cell]
-    if { $max_wire_length < $max_slew_wire_length } {
-      ord::warn "max wire length less than [format %.0fu [expr $max_slew_wire_length * 1e+6]] increases wire delays."
+    if { [sta::wire_resistance] > 0 } {
+      set max_slew_wire_length [find_max_wire_length $buffer_cell]
+      if { $max_wire_length < $max_slew_wire_length } {
+        ord::warn "max wire length less than [format %.0fu [expr $max_slew_wire_length * 1e+6]] increases wire delays."
+      }
     }
   }
   
