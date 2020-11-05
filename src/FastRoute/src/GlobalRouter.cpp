@@ -1714,7 +1714,7 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
 
 void GlobalRouter::computeWirelength()
 {
-  int totalWirelength = 0;
+  int64_t totalWirelength = 0;
   for (auto &net_route : _routes) {
     GRoute &route = net_route.second;
     for (GSegment &segment : route) {
@@ -1728,7 +1728,7 @@ void GlobalRouter::computeWirelength()
     }
   }
   std::cout << std::fixed << "[INFO] Total wirelength: "
-            << (int) totalWirelength / _grid->getDatabaseUnit() << " um\n";
+            << totalWirelength / _grid->getDatabaseUnit() << " um\n";
 }
 
 void GlobalRouter::mergeSegments()
