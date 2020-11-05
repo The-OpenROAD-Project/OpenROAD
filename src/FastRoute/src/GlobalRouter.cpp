@@ -260,6 +260,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
+    removeDirtyNetsUsage();
 
     NetRouteMap newRoute = findRouting();
     mergeResults(newRoute);
@@ -438,6 +439,56 @@ void GlobalRouter::restorePreviousCapacities(int previousMinLayer, int previousM
         newTotalCap += oldCap;
         _fastRoute->addAdjustment(
             x - 1, y - 1, layer, x - 1, y, layer, oldCap, true);
+      }
+    }
+  }
+}
+
+void GlobalRouter::removeDirtyNetsUsage()
+{
+  for (odb::dbNet* db_net : _dirtyNets) {
+    GRoute &netRoute = _routes[db_net];
+    int segsCnt = 0;
+    for (GSegment &segment : netRoute) {
+      if (!(segment.initLayer != segment.finalLayer ||
+           (segment.initX == segment.finalX &&
+            segment.initY == segment.finalY))) {
+        odb::Point initOnGrid = 
+             _grid->getPositionOnGrid(odb::Point(segment.initX, segment.initY));
+        odb::Point finalOnGrid = 
+             _grid->getPositionOnGrid(odb::Point(segment.finalX, segment.finalY));
+
+        if (initOnGrid.y() == finalOnGrid.y()) {
+          int minX = (initOnGrid.x() <= finalOnGrid.x()) ? initOnGrid.x() : finalOnGrid.x();
+          int maxX = (initOnGrid.x() > finalOnGrid.x()) ? initOnGrid.x() : finalOnGrid.x();
+
+          minX = (minX - (_grid->getTileWidth() / 2)) / _grid->getTileWidth();
+          maxX = (maxX - (_grid->getTileWidth() / 2)) / _grid->getTileWidth();
+          int y = (initOnGrid.y() - (_grid->getTileHeight() / 2)) / _grid->getTileHeight();
+
+          for (int x = minX; x < maxX; x++) {
+            int newCap = _fastRoute->getEdgeCurrentResource(x, y, segment.initLayer,
+                                                            x+1, y, segment.initLayer) + 1;
+            _fastRoute->addAdjustment(
+                x, y, segment.initLayer, x + 1, y, segment.initLayer, newCap, false);
+          }
+        } else if (initOnGrid.x() == finalOnGrid.x()) {
+          int minY = (initOnGrid.y() <= finalOnGrid.y()) ? initOnGrid.y() : finalOnGrid.y();
+          int maxY = (initOnGrid.y() > finalOnGrid.y()) ? initOnGrid.y() : finalOnGrid.y();
+          
+          minY = (minY - (_grid->getTileHeight() / 2)) / _grid->getTileHeight();
+          maxY = (maxY - (_grid->getTileHeight() / 2)) / _grid->getTileHeight();
+          int x = (initOnGrid.x() - (_grid->getTileWidth() / 2)) / _grid->getTileWidth();
+
+          for (int y = minY; y < maxY; y++) {
+            int newCap = _fastRoute->getEdgeCurrentResource(x, y, segment.initLayer,
+                                                            x, y+1, segment.initLayer) + 1;
+            _fastRoute->addAdjustment(
+                x, y, segment.initLayer, x, y+1, segment.initLayer, newCap, false);
+          }
+        } else {
+          ord::error("Invalid segment for net %s", db_net->getConstName());
+        }
       }
     }
   }
