@@ -182,23 +182,20 @@ int Netlist::computeDstIOtoPins(int idx, Point slotPos)
 bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
                         std::vector<Constraint> constraints)
 {
-  bool dirCheck = true;
+  bool validSlot = true;
+
   for (Constraint constraint : constraints) {
     int pos = (edge == Edge::Top || edge == Edge::Bottom) ?
                point.x() :  point.y();
 
     if (pin.getDirection() == constraint.direction) {
-      dirCheck = checkInterval(constraint, edge, pos);
+      validSlot = checkInterval(constraint, edge, pos);
+    } else if (pin.getName() == constraint.name) {
+      validSlot = checkInterval(constraint, edge, pos); 
     }
-
-    if (pin.getName() == constraint.name) {
-      return checkInterval(constraint, edge, pos); 
-    }
-
-    
   }
 
-  return dirCheck;
+  return validSlot;
 }
 
 bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
