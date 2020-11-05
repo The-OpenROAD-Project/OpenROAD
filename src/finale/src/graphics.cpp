@@ -1,5 +1,4 @@
- /////////////////////////////////////////////////////////////////////////////
-//
+/////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
 // Copyright (c) 2020, OpenRoad Project
@@ -32,30 +31,51 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module finale
- 
-%{
-#include "openroad/OpenRoad.hh"
-#include "finale/Finale.h"
+#include "graphics.h"
 
-%}
+#include <algorithm>
+#include <cstdio>
+#include <limits>
 
-%inline %{
+namespace finale {
 
-void
-set_density_fill_debug_cmd()
+Graphics::Graphics()
 {
-  auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->setDebug();
+  gui::Gui::get()->register_renderer(this);
 }
 
-void
-density_fill_cmd(const char* rules_filename,
-                 const odb::Rect& fill_area)
+void Graphics::drawPolygon90Set(const Polygon90Set& set)
 {
-  auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->densityFill(rules_filename, fill_area);
+  // It is much faster to decompose the set to rectangles once using boost
+  // than trying to have Qt draw the polygons directly.
+  polygon_rects_.clear();
+  get_rectangles(polygon_rects_, set);
+  gui::Gui::get()->redraw();
+  gui::Gui::get()->pause();
 }
 
-%} // inline
+void Graphics::drawObjects(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::transparent);
+  auto color = gui::Painter::yellow;
+  color.a = 180;
+  painter.setBrush(color);
 
+  for (auto& rect : polygon_rects_) {
+    odb::Rect db_rect(xl(rect), yl(rect), xh(rect), yh(rect));
+    painter.drawRect(db_rect);
+  }
+}
+
+void Graphics::status(const std::string& message)
+{
+  gui::Gui::get()->status(message);
+}
+
+/* static */
+bool Graphics::guiActive()
+{
+  return gui::Gui::get() != nullptr;
+}
+
+}  // namespace finale
