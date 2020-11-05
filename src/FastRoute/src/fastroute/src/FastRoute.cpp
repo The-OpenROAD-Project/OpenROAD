@@ -59,6 +59,8 @@
 #include "route.h"
 #include "utility.h"
 
+#include "openroad/Error.hh"
+
 namespace FastRoute {
 
 int newnetID;
@@ -689,9 +691,8 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        std::cout << "[WARNING] Underflow in reduce\n";
-        std::cout << "[WARNING] cap, reducedCap: " << cap << ", " << reducedCap
-                  << "\n";
+        ord::warn("Underflow in reduce");
+        ord::warn("cap, reducedCap: %d, %d", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -718,9 +719,8 @@ void FastRouteCore::addAdjustment(long x1,
 
     if (((int) cap - reducedCap) < 0) {
       if (isReduce) {
-        std::cout << "[WARNING] Underflow in reduce\n";
-        std::cout << "[WARNING] cap, reducedCap: " << cap << ", " << reducedCap
-                  << "\n";
+        ord::warn("Underflow in reduce");
+        ord::warn("cap, reducedCap: %d, %d", cap, reducedCap);
       }
       reduce = 0;
     } else {
@@ -896,8 +896,7 @@ void FastRouteCore::writeCongestionReport2D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    std::cout << "[ERROR] Congestion report file could not be open!"
-              << std::endl;
+    ord::error("Congestion report file could not be open");
     congestFile.close();
     std::exit(1);
   }
@@ -943,8 +942,7 @@ void FastRouteCore::writeCongestionReport3D(std::string fileName)
   congestFile.open(fileName);
 
   if (!congestFile.is_open()) {
-    std::cout << "[ERROR] Congestion report file could not be open!"
-              << std::endl;
+    ord::error("Congestion report file could not be open");
     congestFile.close();
     std::exit(1);
   }
@@ -1333,12 +1331,11 @@ NetRouteMap FastRouteCore::run()
   }
 
   if (totalOverflow > 0 && !allowOverflow) {
-    printf("[ERROR] Design congestion too high\n");
-    std::exit(2);
+    ord::error("Design congestion too high");
   }
 
   if (allowOverflow && totalOverflow > 0) {
-    printf("[WARNING] Global routing finished with overflow!");
+    ord::warn("Global routing finished with overflow");
   }
 
   if (minofl > 0) {
