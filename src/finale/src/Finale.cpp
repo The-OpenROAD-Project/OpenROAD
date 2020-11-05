@@ -40,7 +40,7 @@ namespace finale {
 
 ////////////////////////////////////////////////////////////////
 
-Finale::Finale() : db_(nullptr)
+Finale::Finale() : db_(nullptr), debug_(false)
 {
 }
 
@@ -49,10 +49,15 @@ void Finale::init(odb::dbDatabase* db)
   db_ = db;
 }
 
-void Finale::densityFill(const char* rules_filename)
+void Finale::setDebug()
 {
-  DensityFill filler(db_);
-  filler.fill(rules_filename);
+  debug_ = true;
+}
+
+void Finale::densityFill(const char* rules_filename, const odb::Rect& fill_area)
+{
+  DensityFill filler(db_, debug_);
+  filler.fill(rules_filename, fill_area);
 }
 
 }  // namespace finale
