@@ -95,8 +95,6 @@ detailed_placement
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_hold_violations -buffer_cell $hold_buffer_cell
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
 
 detailed_placement
 filler_placement $filler_cells
@@ -126,41 +124,9 @@ fastroute -guide_file $route_guide\
   -verbose 2
 
 ################################################################
-# Detailed routing
-set routed_def [make_result_file ${design}_${platform}_route.def]
-
-set tr_lef [make_tr_lef]
-set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
-if { [catch "exec which TritonRoute"] } {
-  error "TritonRoute not found."
-}
-# TritonRoute returns error even when successful.
-catch "exec TritonRoute $tr_params" tr_log
-puts $tr_log
-regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
-
-################################################################
-
-# Reinitialize libraries and db with routed def.
-ord::clear
-read_libraries
-read_def $routed_def
-read_sdc $sdc_file
-set_propagated_clock [all_clocks]
-
-################################################################
 # Final Report
 
 # Use global routing based parasitics inlieu of rc extraction
-foreach layer_adjustment $global_routing_layer_adjustments {
-  lassign $layer_adjustment layer adjustment
-  set_global_routing_layer_adjustment $layer $adjustment
-}
-fastroute \
-  -layers $global_routing_layers \
-  -unidirectional_routing true \
-  -overflow_iterations 100 \
-  -verbose 2
 estimate_parasitics -global_routing
 
 report_checks -path_delay min_max -format full_clock_expanded \
@@ -176,6 +142,21 @@ report_design_area
 set verilog_file [make_result_file ${design}_${platform}.v]
 write_verilog -remove_cells $filler_cells $verilog_file
 
+################################################################
+# Detailed routing
+set routed_def [make_result_file ${design}_${platform}_route.def]
+
+set tr_lef [make_tr_lef]
+set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
+if { [catch "exec which TritonRoute"] } {
+  error "TritonRoute not found."
+}
+# TritonRoute returns error even when successful.
+catch "exec TritonRoute $tr_params" tr_log
+puts $tr_log
+regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
+
+################################################################
 set pass 1
 
 if { ![info exists drv_count] } {
