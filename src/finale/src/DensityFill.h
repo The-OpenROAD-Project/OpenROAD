@@ -42,6 +42,7 @@
 namespace finale {
 
 struct DensityFillLayerConfig;
+class Graphics;
 
 ////////////////////////////////////////////////////////////////
 
@@ -50,7 +51,7 @@ struct DensityFillLayerConfig;
 class DensityFill
 {
  public:
-  DensityFill(odb::dbDatabase* db);
+  DensityFill(odb::dbDatabase* db, bool debug);
   ~DensityFill();
 
   DensityFill(const DensityFill&) = delete;
@@ -58,16 +59,19 @@ class DensityFill
   DensityFill(const DensityFill&&) = delete;
   DensityFill& operator=(const DensityFill&&) = delete;
 
-  void fill(const char* cfg_filename);
+  void fill(const char* cfg_filename, const odb::Rect& fill_area);
 
  private:
   void loadConfig(const char* cfg_filename, odb::dbTech* tech);
   void read_and_expand_layers(odb::dbTech* tech,
                               boost::property_tree::ptree& tree);
-  void fill_layer(odb::dbBlock* block, odb::dbTechLayer* layer);
+  void fill_layer(odb::dbBlock* block,
+                  odb::dbTechLayer* layer,
+                  const odb::Rect& fill_bounds);
 
   odb::dbDatabase* db_;
   std::map<odb::dbTechLayer*, DensityFillLayerConfig> layers_;
+  std::unique_ptr<Graphics> graphics_;
 };
 
 }  // namespace finale

@@ -1,5 +1,4 @@
- /////////////////////////////////////////////////////////////////////////////
-//
+/////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
 // Copyright (c) 2020, OpenRoad Project
@@ -32,30 +31,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module finale
- 
-%{
-#include "openroad/OpenRoad.hh"
-#include "finale/Finale.h"
+#pragma once
 
-%}
+#include <boost/polygon/polygon.hpp>
 
-%inline %{
+namespace finale {
 
-void
-set_density_fill_debug_cmd()
-{
-  auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->setDebug();
-}
+using namespace boost::polygon::operators;
 
-void
-density_fill_cmd(const char* rules_filename,
-                 const odb::Rect& fill_area)
-{
-  auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->densityFill(rules_filename, fill_area);
-}
+using Rectangle = boost::polygon::rectangle_data<int>;
+using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
-%} // inline
-
+};  // namespace finale
