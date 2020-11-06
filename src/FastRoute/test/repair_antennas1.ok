@@ -88,6 +88,7 @@ original HPWL         16910.8 u
 legalized HPWL        16931.0 u
 delta HPWL                  0 %
 
+[INFO] 2 diodes inserted
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.000000
