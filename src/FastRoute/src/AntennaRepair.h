@@ -89,6 +89,7 @@ class AntennaRepair
   AntennaViolations getAntennaViolations() { return _antennaViolations; }
   void setAntennaViolations(AntennaViolations antennaViolations)
                            { _antennaViolations = antennaViolations; }
+  int getDiodesCount() { return _diodeInsts.size(); }
 
 private:
   typedef int coord_type;

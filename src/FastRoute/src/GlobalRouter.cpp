@@ -254,6 +254,9 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     
     antennaRepair->fixAntennas(diodeMTerm);
     antennaRepair->legalizePlacedCells();
+
+    std::cout << "[INFO] " << antennaRepair->getDiodesCount() << " diodes inserted\n";
+
     _reroute = true;
     startFastRoute();
     _fastRoute->setVerbose(0);

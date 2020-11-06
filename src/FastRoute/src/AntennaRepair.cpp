@@ -152,15 +152,17 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
         odb::dbInst* sinkInst = sinkITerm->getInst();
-        std::string antennaInstName = "ANTENNA_" + std::to_string(cnt);
-        insertDiode(net,
-                    diodeMTerm,
-                    sinkInst,
-                    sinkITerm,
-                    antennaInstName,
-                    siteWidth,
-                    fixedInsts);
-        cnt++;
+        for (int j = 0; j < violation.second[i].antenna_cell_nums; j++) {
+          std::string antennaInstName = "ANTENNA_" + std::to_string(cnt);
+          insertDiode(net,
+                      diodeMTerm,
+                      sinkInst,
+                      sinkITerm,
+                      antennaInstName,
+                      siteWidth,
+                      fixedInsts);
+          cnt++;
+        }
       }
     }
   }
