@@ -83,7 +83,7 @@ class AntennaRepair
 		opendp::Opendp* opendp, odb::dbDatabase* db);
 
   int checkAntennaViolations(NetRouteMap& routing,
-			     int maxRoutingLayer);
+			     int maxRoutingLayer, odb::dbMTerm* diodeMTerm);
   void fixAntennas(odb::dbMTerm* diodeMTerm);
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return _antennaViolations; }

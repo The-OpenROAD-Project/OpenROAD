@@ -62,7 +62,7 @@ AntennaRepair::AntennaRepair(GlobalRouter *grouter,
 	}
 
 int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
-					  int maxRoutingLayer)
+					  int maxRoutingLayer, odb::dbMTerm* diodeMTerm)
 {
   odb::dbTech* tech = _db->getTech();
 
@@ -108,7 +108,8 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     odb::orderWires(db_net, false, false);
 
-    std::vector<VINFO> netViol = _arc->get_net_antenna_violations(db_net);
+    std::vector<VINFO> netViol = _arc->get_net_antenna_violations(
+                                      db_net, diodeMTerm->getMaster()->getConstName(), diodeMTerm->getConstName());
     if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
       _grouter->addDirtyNet(db_net);

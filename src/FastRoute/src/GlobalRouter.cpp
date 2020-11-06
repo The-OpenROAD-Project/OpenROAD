@@ -242,16 +242,16 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   getPreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
   addLocalConnections(originalRoute);
 
+  odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
+  if (diodeMTerm == nullptr) {
+    error("conversion from liberty port to dbMTerm fail");
+  }
+
   int violationsCnt
-      = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer);
+      = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer, diodeMTerm);
 
   if (violationsCnt > 0) {
-    clearFlow();
-    odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
-    if (diodeMTerm == nullptr) {
-      error("conversion from liberty port to dbMTerm fail");
-    }
-    
+    clearFlow();    
     antennaRepair->fixAntennas(diodeMTerm);
     antennaRepair->legalizePlacedCells();
 
