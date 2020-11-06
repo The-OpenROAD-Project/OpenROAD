@@ -62,7 +62,7 @@ AntennaRepair::AntennaRepair(GlobalRouter *grouter,
 	}
 
 int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
-					  int maxRoutingLayer)
+					  int maxRoutingLayer, odb::dbMTerm* diodeMTerm)
 {
   odb::dbTech* tech = _db->getTech();
 
@@ -108,7 +108,8 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     odb::orderWires(db_net, false, false);
 
-    std::vector<VINFO> netViol = _arc->get_net_antenna_violations(db_net);
+    std::vector<VINFO> netViol = _arc->get_net_antenna_violations(
+                                      db_net, diodeMTerm->getMaster()->getConstName(), diodeMTerm->getConstName());
     if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
       _grouter->addDirtyNet(db_net);
@@ -141,6 +142,8 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
       std::cout << "[WARNING] Design has rows with different site width\n";
     }
   }
+
+  deleteFillerCells();
   
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixedInsts);
@@ -150,15 +153,17 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     for (int i = 0; i < violation.second.size(); i++) {
       for (odb::dbITerm* sinkITerm : violation.second[i].iterms) {
         odb::dbInst* sinkInst = sinkITerm->getInst();
-        std::string antennaInstName = "ANTENNA_" + std::to_string(cnt);
-        insertDiode(net,
-                    diodeMTerm,
-                    sinkInst,
-                    sinkITerm,
-                    antennaInstName,
-                    siteWidth,
-                    fixedInsts);
-        cnt++;
+        for (int j = 0; j < violation.second[i].antenna_cell_nums; j++) {
+          std::string antennaInstName = "ANTENNA_" + std::to_string(cnt);
+          insertDiode(net,
+                      diodeMTerm,
+                      sinkInst,
+                      sinkITerm,
+                      antennaInstName,
+                      siteWidth,
+                      fixedInsts);
+          cnt++;
+        }
       }
     }
   }
@@ -176,6 +181,21 @@ void AntennaRepair::legalizePlacedCells()
 
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
+
+void AntennaRepair::deleteFillerCells()
+{
+  int fillerCnt = 0;
+  for (odb::dbInst* inst : _block->getInsts()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::CORE_SPACER) {
+      fillerCnt++;
+      odb::dbInst::destroy(inst);
+    }
+  }
+
+  if (fillerCnt > 0) {
+    std::cout << "[INFO] " << fillerCnt << " filler cells deleted\n";
+  }
 }
 
 void AntennaRepair::insertDiode(odb::dbNet* net,

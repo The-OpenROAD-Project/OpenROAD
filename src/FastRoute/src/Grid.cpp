@@ -48,8 +48,7 @@ void Grid::init(const long lowerLeftX, const long lowerLeftY,
             const std::vector<int>& minWidths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstacles,
-            int databaseUnit)
+            const std::map<int, std::vector<odb::Rect>>& obstacles)
   {
     _lowerLeftX = lowerLeftX;
     _lowerLeftY = lowerLeftY;
@@ -67,7 +66,6 @@ void Grid::init(const long lowerLeftX, const long lowerLeftY,
     _horizontalEdgesCapacities = horizontalCapacities;
     _verticalEdgesCapacities = verticalCapacities;
     _obstacles = obstacles;
-    _databaseUnit = databaseUnit;
   }
 
 void Grid::clear()

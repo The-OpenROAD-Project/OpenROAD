@@ -38,6 +38,6 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-pad1/DATA                               0.20    0.26   -0.06 (VIOLATED)
+pad1/DATA                               0.20    0.24   -0.04 (VIOLATED)
 
 pad1 outside of core
