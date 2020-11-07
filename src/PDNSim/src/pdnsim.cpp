@@ -56,6 +56,8 @@ PDNSim::PDNSim()
   _vsrc_loc(""),
   _power_net(""),
   _out_file(""),
+  _em_out_file(""),
+  _enable_em(0),
   _spice_out_file(""){
 };
 
@@ -65,6 +67,8 @@ PDNSim::~PDNSim() {
   _vsrc_loc = "";
   _power_net = "";
   _out_file = "";
+  _em_out_file = "";
+  _enable_em = 0;
   _spice_out_file = "";
 }
 
@@ -92,6 +96,21 @@ void PDNSim::import_out_file(std::string out_file)
   cout << "INFO: Output voltage file specified " << _out_file << endl;
 }
 
+void PDNSim::import_em_out_file(std::string em_out_file)
+{
+  _em_out_file = em_out_file;
+  cout << "INFO: Output current file specified " << _em_out_file << endl;
+}
+void PDNSim::import_enable_em(int enable_em)
+{
+  _enable_em = enable_em;
+  if(_enable_em == 1){
+    cout << "INFO: EM calculation enabled"<< endl;
+  }
+}
+
+
+
 void PDNSim::import_spice_out_file(std::string out_file)
 {
   _spice_out_file = out_file;
@@ -99,7 +118,9 @@ void PDNSim::import_spice_out_file(std::string out_file)
 }
 
 void PDNSim::write_pg_spice() {
-  IRSolver* irsolve_h = new IRSolver( _db, _sta, _vsrc_loc, _power_net, _out_file, _spice_out_file);
+  IRSolver* irsolve_h = new IRSolver( 
+                _db, _sta, _vsrc_loc, _power_net, _out_file,
+                _em_out_file, _spice_out_file, _enable_em);
  
   if(!irsolve_h->Build()){
   	delete irsolve_h;
@@ -116,7 +137,9 @@ void PDNSim::write_pg_spice() {
 
 int PDNSim::analyze_power_grid(){
   GMat*     gmat_obj;
-  IRSolver* irsolve_h = new IRSolver( _db, _sta, _vsrc_loc,_power_net, _out_file, _spice_out_file);
+  IRSolver* irsolve_h = new IRSolver( 
+                  _db, _sta, _vsrc_loc,_power_net, _out_file,
+                  _em_out_file, _spice_out_file,_enable_em);
   
   if(!irsolve_h->Build()){
   	delete irsolve_h;
@@ -142,12 +165,24 @@ int PDNSim::analyze_power_grid(){
   cout << "Worstcase IR drop: " << std::setprecision(5) << irsolve_h->vdd - irsolve_h->wc_voltage
        << endl;
   cout << "######################################" << endl;
+  if(_enable_em == 1) {
+    cout << "\n" << endl;
+    cout << "######################################" << endl;
+    cout << "EM Analysis  " << endl;
+    cout << "Maximum current: " << std::setprecision(5) << irsolve_h->max_cur << endl;
+    cout << "Average current: " << std::setprecision(5) << irsolve_h->avg_cur << endl;
+    cout << "Number of resistors: " << std::setprecision(0) << irsolve_h->num_res << endl;
+    cout << "######################################" << endl;
+  }
+
   delete irsolve_h;
   return 1;
 }
 
 int PDNSim::check_connectivity() {
-  IRSolver* irsolve_h = new IRSolver( _db, _sta, _vsrc_loc, _power_net,_out_file, _spice_out_file);
+  IRSolver* irsolve_h = new IRSolver( 
+                _db, _sta, _vsrc_loc, _power_net, _out_file,
+                _em_out_file, _spice_out_file, _enable_em);
   if(!irsolve_h->BuildConnection()){
   	delete irsolve_h;
   	return 0;

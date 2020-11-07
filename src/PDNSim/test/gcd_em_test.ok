@@ -68,7 +68,8 @@ INFO: G matrix created
 INFO: No dangling stripe found on net VDD
 INFO: Connection between all PDN nodes established on net VDD
 INFO: Reading Voltage source file Vsrc_gcd.loc
-INFO: Output voltage file specified ./results/gcd_voltage.rpt
+INFO: EM calculation enabled
+INFO: Output current file specified ./results/gcd_em.rpt
 INFO: Reading location of VDD and VSS sources 
 Creating G Matrix
 Extracting power stripes on net VDD
@@ -94,6 +95,12 @@ Worstcase Voltage: 1.1
 Average IR drop  : 2.382e-05
 Worstcase IR drop: 3.1377e-05
 ######################################
-Differences found at line 2.
-PHY_110, 10.8, 89.6, 1.1
-PHY_110, 10.8, 89.6, 1.099993144
+
+
+######################################
+EM Analysis  
+Maximum current: 3.7603e-05
+Average current: 1.5067e-06
+Number of resistors: 1556
+######################################
+No differences found.

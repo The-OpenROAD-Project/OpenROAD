@@ -27,6 +27,8 @@ class PDNSim
     
     void import_vsrc_cfg(std::string vsrc);
     void import_out_file(std::string out_file);
+    void import_em_out_file(std::string em_out_file);
+    void import_enable_em(int enable_em);
     void import_spice_out_file(std::string out_file);
     void set_power_net(std::string net);
 
@@ -40,6 +42,8 @@ class PDNSim
     sta::dbSta* _sta;
     std::string _vsrc_loc;
     std::string _out_file;
+    std::string _em_out_file;
+    int         _enable_em;
     std::string _spice_out_file;
     std::string _power_net;
 

@@ -170,7 +170,7 @@ void IRSolver::SolveIR()
       std::vector<dbInst*>::iterator inst_it;
       if (m_out_file != "") {
         for(inst_it = insts.begin();inst_it!=insts.end();inst_it++) {
-          ir_report<<(*inst_it)->getName()<<", "<<loc_x<<", " <<loc_y<<", "<<setprecision(10)<<volt<<"\n";
+          ir_report<<(*inst_it)->getName()<<", "<<loc_x<<", " <<loc_y<<", "<<setprecision(4)<<volt<<"\n";
         }
       }
     }
@@ -178,6 +178,67 @@ void IRSolver::SolveIR()
   ir_report<<endl;
   ir_report.close();
   avg_voltage = sum_volt / num_nodes;
+  if(m_em_flag == 1) {
+    map<GMatLoc, double>::iterator it;
+    DokMatrix*        Gmat_dok = m_Gmat->GetGMatDOK();
+    int resistance_number = 0;
+    max_cur = 0;
+    double sum_cur = 0;
+    ofstream em_report;
+    if (m_em_out_file != "") {
+      em_report.open (m_em_out_file);
+      em_report<<"Segment name, "<<" Current, "<<" Node 1, "<<" Node 2 "<<"\n";
+    }
+    NodeLoc node_loc;
+    for(it = Gmat_dok->values.begin(); it!= Gmat_dok->values.end(); it++){
+      NodeIdx col = (it->first).first;
+      NodeIdx row = (it->first).second;
+      if(col <= row) {
+        continue; //ignore lower half and diagonal as matrix is symmetric
+      }
+      double cond = it->second;           // get cond value
+      if(abs(cond) < 1e-15){            //ignore if an empty cell
+        continue;
+      }
+      string net_name = "vdd";
+      if(col < num_nodes) { //resistances
+        double resistance = -1/cond;
+
+        Node* node1 = m_Gmat->GetNode(col); 
+        Node* node2 = m_Gmat->GetNode(row); 
+        node_loc = node1->GetLoc();
+        int x1 = node_loc.first;
+        int y1 = node_loc.second;
+        int l1 = node1->GetLayerNum();
+        string node1_name = net_name + "_" + to_string(x1) + "_" + to_string(y1) + "_" + to_string(l1);
+
+        node_loc = node2->GetLoc();
+        int x2 = node_loc.first;
+        int y2 = node_loc.second;
+        int l2 = node2->GetLayerNum();
+        string node2_name = net_name + "_" + to_string(x2) + "_" + to_string(y2) + "_" + to_string(l2);
+        
+        string segment_name = "seg_" + to_string(resistance_number); 
+
+        double v1 = node1->GetVoltage();
+        double v2 = node2->GetVoltage();
+        double seg_cur;
+        seg_cur = (v1-v2)/resistance;
+        sum_cur += abs(seg_cur);
+        if (m_em_out_file != "") {
+            em_report<<segment_name<<", "<<seg_cur<<", "<<node1_name<<", "<<node2_name<<endl;
+        }
+        seg_cur = abs(seg_cur);
+        if (seg_cur > max_cur) {
+            max_cur = seg_cur;
+        }
+        resistance_number++;
+      }
+    } // for gmat values
+    avg_cur = sum_cur/resistance_number;
+    num_res = resistance_number;
+
+  } //enable em
 }
 
 //! Function to add C4 bumps to the G matrix
@@ -880,6 +941,8 @@ vector<pair<string, double>> IRSolver::GetPower()
 bool IRSolver::GetResult(){
   return m_result; 
 }
+
+
 
 int IRSolver::PrintSpice() {
   DokMatrix*        Gmat = m_Gmat->GetGMatDOK();

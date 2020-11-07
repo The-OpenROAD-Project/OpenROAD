@@ -58,14 +58,18 @@ class IRSolver
            std::string              vsrc_loc,
            std::string              power_net,
            std::string              out_file,
-           std::string              spice_out_file)
+           std::string              em_out_file,
+           std::string              spice_out_file,
+           int                      em_analyze)
   {
     m_db           = t_db;
     m_sta          = t_sta;
     m_vsrc_file    = vsrc_loc;
     m_power_net    = power_net;
-    m_out_file      = out_file;
-    m_spice_out_file      = spice_out_file;
+    m_out_file     = out_file;
+    m_em_out_file  = em_out_file;
+    m_em_flag  = em_analyze;
+    m_spice_out_file = spice_out_file;
   }
   //! IRSolver destructor
   ~IRSolver() {
@@ -73,6 +77,12 @@ class IRSolver
   }
   //! Worst case voltage at the lowest layer nodes
   double                                      wc_voltage;
+  //! Worst case current at the lowest layer nodes
+  double                                      max_cur;
+  //! Average current at the lowest layer nodes
+  double                                      avg_cur;
+  //! number of resistances   
+  int                                         num_res;
   //! Voltage supply
   double                                      vdd;
   //! Average voltage at lowest layer nodes  
@@ -110,6 +120,8 @@ class IRSolver
   std::string              m_power_net;
   //! Resistance configuration file
   std::string              m_out_file;
+  std::string              m_em_out_file;
+  int                      m_em_flag;
   std::string              m_spice_out_file;
   //! G matrix for voltage 
   GMat*                    m_Gmat;

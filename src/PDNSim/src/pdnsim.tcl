@@ -1,10 +1,13 @@
 sta::define_cmd_args "analyze_power_grid" { 
   [-vsrc vsrc_file ]
-  [-outfile out_file]}
+  [-outfile out_file]
+  [-enable_em]
+  [-em_outfile em_out_file]
+  }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-vsrc -outfile} flags {}
+    keys {-vsrc -outfile -em_outfile} flags {-enable_em}
 
   if { [info exists keys(-vsrc)] } {
     set vsrc_file $keys(-vsrc)
@@ -14,18 +17,30 @@ proc analyze_power_grid { args } {
       ord::error "Cannot read $vsrc_file"
     }
   } else {
-    ord::error "key vsrc not defined."
+    ord::error "Key vsrc not defined."
   }
   set net "VDD"
   pdnsim_set_power_net $net
   if { [info exists keys(-outfile)] } {
     set out_file $keys(-outfile)
-     pdnsim_import_out_file_cmd $out_file
+    pdnsim_import_out_file_cmd $out_file
   }
+  set enable_em [info exists flags(-enable_em)]
+  pdnsim_import_em_enable $enable_em
+  if { [info exists keys(-em_outfile)]} {
+    set em_out_file $keys(-em_outfile)
+    if { $enable_em } {
+      pdnsim_import_em_out_file_cmd $em_out_file
+    } else {
+      ord::error "EM outfile defined without EM parameter."  
+    }
+  }
+
+
   if { [ord::db_has_rows] } {
     pdnsim_analyze_power_grid_cmd
   } else {
-  	ord::error "no rows defined in design. Use initialize_floorplan to add rows" 
+  	ord::error "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows" 
   }
 }
 
