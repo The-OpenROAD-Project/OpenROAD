@@ -1,5 +1,6 @@
 # aes flow pipe cleaner
 source "helpers.tcl"
+source "flow_helpers.tcl"
 source "Nangate45/Nangate45.vars"
 
 set design "aes"

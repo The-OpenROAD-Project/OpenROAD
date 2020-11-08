@@ -1,5 +1,6 @@
 # aes flow pipe cleaner
 source "helpers.tcl"
+source "flow_helpers.tcl"
 source "sky130/sky130.vars"
 
 set design "aes"
