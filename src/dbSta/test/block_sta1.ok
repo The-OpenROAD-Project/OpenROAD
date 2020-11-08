@@ -39,7 +39,7 @@ Path Type: max
            9.83   slack (MET)
 
 
- r 0.1796:0.1796 f 0.2264:0.2264
+ r 0.1796:0.1796 f 0.2263:0.2263
 A -> Z combinational
   ^ -> ^ 0.0139:0.0139
   v -> v 0.0192:0.0192
@@ -51,10 +51,10 @@ Cell: BUF_X1
 Arc sense: positive_unate
 Arc type: combinational
 A ^ -> Z ^
-Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1340
+Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1345
 P = 1.0000 V = 1.1000 T = 25.0000
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1340
+|       total_output_net_capacitance = 0.1345
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0151     0.0193
@@ -64,7 +64,7 @@ PVT scale factor = 1.0000
 Delay = 0.0139
 
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1340
+|       total_output_net_capacitance = 0.1345
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0043     0.0075
@@ -76,10 +76,10 @@ Slew = 0.0038
 .............................................
 
 A v -> Z v
-Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1356
+Pi model C2=0.1000 Rpi=100.0000 C1=0.1000, Ceff=0.1361
 P = 1.0000 V = 1.1000 T = 25.0000
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1356
+|       total_output_net_capacitance = 0.1361
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0202     0.0236
@@ -89,7 +89,7 @@ PVT scale factor = 1.0000
 Delay = 0.0192
 
 ------- input_net_transition = 0.0000
-|       total_output_net_capacitance = 0.1356
+|       total_output_net_capacitance = 0.1361
 |        0.3656     1.8954
 v      --------------------
 0.0012 | 0.0043     0.0059
@@ -112,20 +112,20 @@ Path Type: max
    0.0000    0.0000 ^ r2/CK (DFF_X1)
    0.0779    0.0779 v r2/Q (DFF_X1)
    0.0242    0.1020 v u1/Z (BUF_X1)
-   0.0281    0.1301 v u2/ZN (AND2_X1)
-   0.0000    0.1301 v r3/D (DFF_X1)
-             0.1301   data arrival time
+   0.0281    0.1302 v u2/ZN (AND2_X1)
+   0.0000    0.1302 v r3/D (DFF_X1)
+             0.1302   data arrival time
 
   10.0000   10.0000   clock clk1 (rise edge)
    0.0000   10.0000   clock network delay (ideal)
    0.0000   10.0000   clock reconvergence pessimism
             10.0000 ^ r3/CK (DFF_X1)
-  -0.0390    9.9610   library setup time
-             9.9610   data required time
+  -0.0391    9.9609   library setup time
+             9.9609   data required time
 -------------------------------------------------------------
-             9.9610   data required time
-            -0.1301   data arrival time
+             9.9609   data required time
+            -0.1302   data arrival time
 -------------------------------------------------------------
-             9.8308   slack (MET)
+             9.8307   slack (MET)
 
 
