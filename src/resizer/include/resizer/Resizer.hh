@@ -190,6 +190,7 @@ protected:
                              // Return values.
                              Slew slews[],
                              int counts[]);
+  bool hasMultipleOutputs(const Instance *inst);
   ParasiticNode *findParasiticNode(SteinerTree *tree,
                                    Parasitic *parasitic,
                                    const Net *net,
@@ -362,6 +363,8 @@ protected:
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
   TgtSlews tgt_slews_;
+  // Instances with multiple output ports that have been resized.
+  InstanceSet resized_multi_output_insts_;
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;

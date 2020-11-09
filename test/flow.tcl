@@ -1,5 +1,4 @@
-source "flow_helpers.tcl"
-
+# assumes flow_helpers.tcl has been read
 read_libraries
 read_verilog $synth_verilog
 link_design $top_module
