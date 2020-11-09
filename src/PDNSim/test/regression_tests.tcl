@@ -1,8 +1,8 @@
 record_tests {
-  aes_test
+  aes_test_vdd
   aes_test_vss
-  gcd_test
-  gcd_write_sp_test
-  gcd_em_test
-  gcd_vss_all
+  gcd_test_vdd
+  gcd_write_sp_test_vdd
+  gcd_em_test_vdd
+  gcd_all_vss
 }

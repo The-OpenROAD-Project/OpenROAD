@@ -68,8 +68,8 @@ Creating Connections:       1%  2%  3%  4%  5%  6%  
 INFO: G matrix created 
 INFO: No dangling stripe found on net VDD
 INFO: Connection between all PDN nodes established on net VDD
-INFO: Reading Voltage source file Vsrc_gcd.loc
-INFO: Output voltage file specified ./results/gcd_voltage.rpt
+INFO: Reading Voltage source file Vsrc_gcd_vdd.loc
+INFO: Output voltage file specified ./results/gcd_voltage_vdd.rpt
 INFO: Reading location of VDD and VSS sources 
 Creating G Matrix
 INFO: Found power net VDD
