@@ -10,5 +10,5 @@ read_sdc gcd.sdc
 # check_power_grid -vsrc Vsrc_gcd.loc 
 set spice_file [make_result_file gcd_spice.sp]
 
-write_pg_spice -vsrc Vsrc_gcd.loc -outfile $spice_file
+write_pg_spice -vsrc Vsrc_gcd.loc -outfile $spice_file -net VDD
 diff_files $spice_file gcd_spice.spok

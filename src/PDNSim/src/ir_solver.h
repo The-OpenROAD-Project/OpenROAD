@@ -133,12 +133,13 @@ class IRSolver
   int m_bottom_layer{10};
 
   bool m_result{false};
-
+  
   bool m_connection{false};
   //! Direction of the top layer
   odb::dbTechLayerDir::Value m_top_layer_dir;
 
   odb::dbTechLayerDir::Value m_bottom_layer_dir;
+  odb::dbSigType m_power_net_type;
   //! Current vector 1D
   std::vector<double>                            m_J;
   //! C4 bump locations and values

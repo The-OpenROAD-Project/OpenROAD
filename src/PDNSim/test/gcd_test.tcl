@@ -11,5 +11,5 @@ report_checks
 # check_power_grid -vsrc Vsrc_gcd.loc 
 set voltage_file [make_result_file gcd_voltage.rpt]
 check_power_grid -net VDD
-analyze_power_grid -vsrc Vsrc_gcd.loc -outfile $voltage_file
+analyze_power_grid -vsrc Vsrc_gcd.loc -outfile $voltage_file -net VDD
 diff_files $voltage_file gcd_voltage.rptok

@@ -157,8 +157,15 @@ void IRSolver::SolveIR()
     Node* node = m_Gmat->GetNode(node_num);
     double volt = x(node_num);
     sum_volt   = sum_volt + volt;
-    if (volt < wc_voltage) {
-      wc_voltage = volt;
+    if (m_power_net_type == dbSigType::POWER) {
+      if (volt < wc_voltage) {
+        wc_voltage = volt;
+      }
+    }
+    else {
+      if (volt > wc_voltage) {
+        wc_voltage = volt;
+      }
     }
     node->SetVoltage(volt);
     node_num++;
@@ -170,7 +177,7 @@ void IRSolver::SolveIR()
       std::vector<dbInst*>::iterator inst_it;
       if (m_out_file != "") {
         for(inst_it = insts.begin();inst_it!=insts.end();inst_it++) {
-          ir_report<<(*inst_it)->getName()<<", "<<loc_x<<", " <<loc_y<<", "<<setprecision(4)<<volt<<"\n";
+          ir_report<<(*inst_it)->getName()<<", "<<loc_x<<", " <<loc_y<<", "<<setprecision(6)<<volt<<"\n";
         }
       }
     }
@@ -200,7 +207,7 @@ void IRSolver::SolveIR()
       if(abs(cond) < 1e-15){            //ignore if an empty cell
         continue;
       }
-      string net_name = "vdd";
+      string net_name = m_power_net;
       if(col < num_nodes) { //resistances
         double resistance = -1/cond;
 
@@ -362,14 +369,18 @@ bool IRSolver::CreateJ()
       cout<<"WARNING: Instance current node at "<<node_loc.first<<" "<<node_loc.second<<" layer "<<l<<" moved from "<<x<<" "<<y<<endl;
       cout<<"Instance: " << it->first <<endl;
     }
-    //TODO modify for ground network
+    // Both these lines will change in the future for multiple power domains
     node_J->AddCurrentSrc(it->second);
     node_J->AddInstance(inst);
   }
   for (int i = 0; i < num_nodes; ++i) {
     Node* node_J = m_Gmat->GetNode(i);
-    m_J[i] = -1 * (node_J->GetCurrent());  // as MNA needs negative
-    // cout << m_J[i] <<endl;
+    if (m_power_net_type == dbSigType::GROUND) {
+        m_J[i] = (node_J->GetCurrent());  
+    }
+    else {
+        m_J[i] = -1*(node_J->GetCurrent()); 
+    }
   }
   cout << "INFO: Created J vector" << endl;
   return true;
@@ -391,32 +402,39 @@ bool IRSolver::CreateGmat(bool connection_only)
   dbChip*             chip  = m_db->getChip();
   dbBlock*            block = chip->getBlock();
   dbSet<dbNet>        nets  = block->getNets();
-  std::vector<dbNet*> vdd_nets;
-  std::vector<dbNet*> gnd_nets;
+  dbNet* power_net = block->findNet(m_power_net.data());
+  if (power_net == NULL) {
+    cout << "Error: Cannot find net " << m_power_net << " in the design. Please provide a valid VDD/VSS net"<<endl;
+    return false;
+  }
+  cout << "INFO: Found power net " << power_net->getName() <<endl;
+  m_power_net_type = power_net->getSigType();
   std::vector<dbNet*> power_nets;
   int num_wires =0;
-  cout << "Extracting power stripes on net " << m_power_net <<endl;
-  dbSet<dbNet>::iterator nIter;
-  for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
-    dbNet* curDnet = *nIter;
-    dbSigType nType = curDnet->getSigType();
-    if(m_power_net == "VSS") {
-      if (nType == dbSigType::GROUND) {
-        power_nets.push_back(curDnet);
-      } else {
-        continue;
-      }
-    } else if(m_power_net == "VDD") {
-      if (nType == dbSigType::POWER) {
-        power_nets.push_back(curDnet);
-      } else {
-        continue;
-      }
-    } else {
-      cout << "Warning: Net not specifed as VDD or VSS. Power grid checker is not run." <<endl;
-      return false;
-    }
-  }
+  cout << "INFO: Extracting power stripes on net " << power_net->getName()<<endl;
+  power_nets.push_back(power_net);
+  
+  //dbSet<dbNet>::iterator nIter;
+  //for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
+  //  dbNet* curDnet = *nIter;
+  //  dbSigType nType = curDnet->getSigType();
+  //  if(m_power_net == "VSS") {
+  //    if (nType == dbSigType::GROUND) {
+  //      power_nets.push_back(curDnet);
+  //    } else {
+  //      continue;
+  //    }
+  //  } else if(m_power_net == "VDD") {
+  //    if (nType == dbSigType::POWER) {
+  //      power_nets.push_back(curDnet);
+  //    } else {
+  //      continue;
+  //    }
+  //  } else {
+  //    cout << "Warning: Net not specifed as VDD or VSS. Power grid checker is not run." <<endl;
+  //    return false;
+  //  }
+  //}
   if(power_nets.size() == 0) {
     cout<<"Warning:No power stipes found in design. Power grid checker is not run."<<endl;
     return false;
@@ -972,7 +990,7 @@ int IRSolver::PrintSpice() {
       continue;
     }
 
-    string net_name = "vdd";
+    string net_name = m_power_net;
     if(col < num_nodes) { //resistances
       double resistance = -1/cond;
 
