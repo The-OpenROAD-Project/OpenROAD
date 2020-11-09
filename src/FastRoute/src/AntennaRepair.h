@@ -83,12 +83,13 @@ class AntennaRepair
 		opendp::Opendp* opendp, odb::dbDatabase* db);
 
   int checkAntennaViolations(NetRouteMap& routing,
-			     int maxRoutingLayer);
+			     int maxRoutingLayer, odb::dbMTerm* diodeMTerm);
   void fixAntennas(odb::dbMTerm* diodeMTerm);
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return _antennaViolations; }
   void setAntennaViolations(AntennaViolations antennaViolations)
                            { _antennaViolations = antennaViolations; }
+  int getDiodesCount() { return _diodeInsts.size(); }
 
 private:
   typedef int coord_type;
@@ -98,6 +99,7 @@ private:
   typedef std::pair<box, int> value;
   typedef bgi::rtree<value, bgi::quadratic<8, 4>> r_tree;
 
+  void deleteFillerCells();
   void insertDiode(odb::dbNet* net,
                    odb::dbMTerm* diodeMTerm,
                    odb::dbInst* sinkInst,

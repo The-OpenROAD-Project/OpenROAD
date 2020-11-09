@@ -32,11 +32,16 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "density_fill" {[-rules rules_file]}
+proc density_fill_debug { args } {
+  finale::set_density_fill_debug_cmd
+}
+
+sta::define_cmd_args "density_fill" {[-rules rules_file]\
+                                     [-area {lx ly ux uy}]}
 
 proc density_fill { args } {
   sta::parse_key_args "density_fill" args \
-    keys {-rules} flags {}
+    keys {-rules -area} flags {}
 
   if { [info exists keys(-rules)] } {
     set rules_file $keys(-rules)
@@ -44,6 +49,21 @@ proc density_fill { args } {
     ord::error "Rules argument must be specified"
   }
 
-  finale::density_fill_cmd $rules_file
+  if { [info exists keys(-area)] } {
+    set area $keys(-area)
+    if { [llength $area] != 4 } {
+      ord::error "-area is a list of 4 coordinates."
+    }
+    lassign $area lx ly ux uy
+    sta::check_positive_integer "-area" $lx
+    sta::check_positive_integer "-area" $ly
+    sta::check_positive_integer "-area" $ux
+    sta::check_positive_integer "-area" $uy
+    set fill_area [odb::Rect x $lx $ly $ux $uy]
+  } else {
+    set fill_area [ord::get_db_core]
+  }
+
+  finale::density_fill_cmd $rules_file $fill_area
 }
 

@@ -66,7 +66,6 @@ class Grid
   std::vector<int> _horizontalEdgesCapacities;
   std::vector<int> _verticalEdgesCapacities;
   std::map<int, std::vector<odb::Rect>> _obstacles;
-  int _databaseUnit;
 
  public:
   Grid() = default;
@@ -81,8 +80,7 @@ class Grid
             const std::vector<int>& minWidths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstacles,
-            int databaseUnit);
+            const std::map<int, std::vector<odb::Rect>>& obstacles);
 
   typedef struct
   {
@@ -120,8 +118,6 @@ class Grid
 
   const std::vector<int>& getSpacings() const { return _spacings; }
   const std::vector<int>& getMinWidths() const { return _minWidths; }
-
-  int getDatabaseUnit() const { return _databaseUnit; }
 
   void addSpacing(int value, int layer) { _spacings[layer] = value; }
   void addMinWidth(int value, int layer) { _minWidths[layer] = value; }

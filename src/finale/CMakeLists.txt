@@ -53,6 +53,7 @@ add_library(finale
   src/Finale.cpp
   src/MakeFinale.cpp
   src/DensityFill.cpp
+  src/graphics.cpp
 
   ${FINALE_WRAP}
   ${FINALE_TCL_INIT}
@@ -68,3 +69,8 @@ target_include_directories(finale
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
  )
+
+target_link_libraries( finale
+  PRIVATE
+  gui
+)
