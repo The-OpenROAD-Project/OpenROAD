@@ -28,5 +28,5 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-repeater2/Z                             0.20    0.05    0.14 (MET)
+repeater2/Z                             0.20    0.05    0.15 (MET)
 
