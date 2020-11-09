@@ -787,17 +787,29 @@ The `cluster_buffers` command can be used to automatically select representative
 
 #### PDN analysis
 
-PDNSim PDN checker searches for floating PDN stripes.
+PDNSim PDN checker searches for floating PDN stripes on the power and ground nets. 
 
-PDNSim reports worst IR drop given a placed and PDN synthesized design.
+PDNSim reports worst IR drop and worst current density in a power wire drop given a placed and PDN synthesized design.
+
+PDNSim spice netlist writer for power wires.
+
+Commands for the above three functionalities are below: 
 
 ```
-check_power_grid -net <VDD/VSS>
-analyze_power_grid -vsrc <voltage_source_location_file>
-write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp>
+check_power_grid -net <net_name>
+analyze_power_grid -vsrc <voltage_source_location_file> \
+                   -net <net_name> \ 
+                   [-outfile <filename>] \
+                   [-enable_em] \
+                   [-em_outfile <filename>]
+write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
 Options description:
-- **vsrc**: Set the location of the power C4 bumps/IO pins
+- **vsrc**: (mandatory) file to set the location of the power C4 bumps/IO pins
+- **net**: (mandatory) is the name of the net to analyze, power or ground net name
+- **enable_em**: (optional) is the flag to report current per power grid segment
+- **outfile**: (optional) filename specified per-instance voltage written into file
+- **em_outfile**: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
