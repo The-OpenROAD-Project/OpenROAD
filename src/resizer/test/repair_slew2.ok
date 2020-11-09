@@ -15,7 +15,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r1/Q                                    0.02    0.07   -0.05 (VIOLATED)
+r1/Q                                    0.02    0.06   -0.04 (VIOLATED)
 
 Found 1 slew violations.
 Inserted 4 buffers in 1 nets.

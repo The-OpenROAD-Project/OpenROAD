@@ -51,22 +51,22 @@ Corner: ss
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ r2/CK (DFF_X1)
    0.42    0.42 ^ r2/Q (DFF_X1)
-   0.42    0.83 ^ u1/Z (BUF_X1)
-   0.42    1.26 ^ u2/ZN (AND2_X1)
-   0.02    1.28 ^ r3/D (DFF_X1)
-           1.28   data arrival time
+   0.42    0.84 ^ u1/Z (BUF_X1)
+   0.42    1.25 ^ u2/ZN (AND2_X1)
+   0.02    1.27 ^ r3/D (DFF_X1)
+           1.27   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
    0.00   10.00   clock reconvergence pessimism
           10.00 ^ r3/CK (DFF_X1)
-  -0.13    9.87   library setup time
-           9.87   data required time
+  -0.12    9.88   library setup time
+           9.88   data required time
 ---------------------------------------------------------
-           9.87   data required time
-          -1.28   data arrival time
+           9.88   data required time
+          -1.27   data arrival time
 ---------------------------------------------------------
-           8.60   slack (MET)
+           8.61   slack (MET)
 
 
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -81,22 +81,22 @@ Corner: ss
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ r2/CK (DFF_X1)
    0.42    0.42 ^ r2/Q (DFF_X1)
-   0.42    0.83 ^ u1/Z (BUF_X1)
-   0.42    1.26 ^ u2/ZN (AND2_X1)
-   0.02    1.28 ^ r3/D (DFF_X1)
-           1.28   data arrival time
+   0.42    0.84 ^ u1/Z (BUF_X1)
+   0.42    1.25 ^ u2/ZN (AND2_X1)
+   0.02    1.27 ^ r3/D (DFF_X1)
+           1.27   data arrival time
 
   10.00   10.00   clock clk (rise edge)
    0.00   10.00   clock network delay (ideal)
    0.00   10.00   clock reconvergence pessimism
           10.00 ^ r3/CK (DFF_X1)
-  -0.13    9.87   library setup time
-           9.87   data required time
+  -0.12    9.88   library setup time
+           9.88   data required time
 ---------------------------------------------------------
-           9.87   data required time
-          -1.28   data arrival time
+           9.88   data required time
+          -1.27   data arrival time
 ---------------------------------------------------------
-           8.60   slack (MET)
+           8.61   slack (MET)
 
 
 Startpoint: in1 (input port clocked by clk)

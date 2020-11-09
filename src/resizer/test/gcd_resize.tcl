@@ -9,7 +9,7 @@ estimate_parasitics -placement
 # flute results are not stable on nets with fanout > 9
 set_load 20 _241_
 # force consistent results on centos/gcc
-set_load 2 [get_net -of [get_pin _888_/Q]]
+set_load 4 [get_net -of [get_pin _888_/Q]]
 
 report_worst_slack
 

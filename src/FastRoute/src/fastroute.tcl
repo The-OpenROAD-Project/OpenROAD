@@ -322,7 +322,7 @@ proc fastroute { args } {
 
   set max_layer -1
   if { [info exists keys(-max_routing_layer)] } {
-    ord::warn "option -max_routing_layer is deprecated. Use option -layers {min max}"
+    ord::warn "option -max_routing_layer is deprecated. Use option -layers min-max"
     set max_layer $keys(-max_routing_layer)
     sta::check_positive_integer "-max_routing_layer" $max_layer
     FastRoute::set_max_layer $max_layer

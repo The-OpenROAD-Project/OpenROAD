@@ -25906,7 +25906,7 @@ MACRO sky130_fd_sc_hs__fahcon_1
   END
 END sky130_fd_sc_hs__fahcon_1
 MACRO sky130_fd_sc_hs__fill_1
-  CLASS CORE ;
+  CLASS CORE SPACER ;
   FOREIGN sky130_fd_sc_hs__fill_1 ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.480000 BY  3.330000 ;
@@ -25938,7 +25938,7 @@ MACRO sky130_fd_sc_hs__fill_1
   END
 END sky130_fd_sc_hs__fill_1
 MACRO sky130_fd_sc_hs__fill_2
-  CLASS CORE ;
+  CLASS CORE SPACER ;
   FOREIGN sky130_fd_sc_hs__fill_2 ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  0.960000 BY  3.330000 ;
@@ -25972,7 +25972,7 @@ MACRO sky130_fd_sc_hs__fill_2
   END
 END sky130_fd_sc_hs__fill_2
 MACRO sky130_fd_sc_hs__fill_4
-  CLASS CORE ;
+  CLASS CORE SPACER ;
   FOREIGN sky130_fd_sc_hs__fill_4 ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  1.920000 BY  3.330000 ;
@@ -26010,7 +26010,7 @@ MACRO sky130_fd_sc_hs__fill_4
   END
 END sky130_fd_sc_hs__fill_4
 MACRO sky130_fd_sc_hs__fill_8
-  CLASS CORE ;
+  CLASS CORE SPACER ;
   FOREIGN sky130_fd_sc_hs__fill_8 ;
   ORIGIN  0.000000  0.000000 ;
   SIZE  3.840000 BY  3.330000 ;

@@ -673,6 +673,8 @@ repair_antennas diodeCellName/diodePinName
 ```
 The repair_antenna command evaluates the global routing results looking for antenna violations, and repairs the violations
 by inserting diodes. The input for this command is the diode cell and pin names.
+It uses the  `antennachecker` tool to identify the antenna violations and return the exact number of diodes necessary to
+fix the antenna violation.
 Example: `repair_antenna sky130_fd_sc_hs__diode_2/DIODE`
 
 ```

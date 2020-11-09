@@ -1,5 +1,4 @@
- /////////////////////////////////////////////////////////////////////////////
-//
+/////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
 // Copyright (c) 2020, OpenRoad Project
@@ -32,30 +31,34 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-%module finale
- 
-%{
-#include "openroad/OpenRoad.hh"
-#include "finale/Finale.h"
+#pragma once
 
-%}
+#include <memory>
 
-%inline %{
+#include "gui/gui.h"
+#include "polygon.h"
 
-void
-set_density_fill_debug_cmd()
+namespace finale {
+
+// This class draws debugging graphics on the layout
+class Graphics : public gui::Renderer
 {
-  auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->setDebug();
-}
+ public:
+  Graphics();
 
-void
-density_fill_cmd(const char* rules_filename,
-                 const odb::Rect& fill_area)
-{
-  auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->densityFill(rules_filename, fill_area);
-}
+  void drawPolygon90Set(const Polygon90Set& set);
 
-%} // inline
+  // From Renderer API
+  virtual void drawObjects(gui::Painter& painter) override;
 
+  // Show a message in the status bar
+  void status(const std::string& message);
+
+  // Is the GUI being displayed (true) or are we in batch mode (false)
+  static bool guiActive();
+
+ private:
+  std::vector<Rectangle> polygon_rects_;
+};
+
+}  // namespace finale
