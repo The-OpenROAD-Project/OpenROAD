@@ -106,9 +106,6 @@ public:
 		   // Return value
 		   std::set<dbNet*> &clk_nets);
 
-  virtual Instance *makeInstance(const char *name,
-				 LibertyCell *cell,
-				 Instance *parent) override;
   virtual void deleteInstance(Instance *inst) override;
   virtual void deleteNet(Net *net) override;
   virtual void connectPin(Instance *inst,

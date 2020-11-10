@@ -33,10 +33,6 @@ eval tapcell $tapcell_args
 # Power distribution network insertion
 pdngen -verbose $pdn_cfg
 
-# pre-placement/sizing wireload timing
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
-
 ################################################################
 # Global placement
 global_placement -disable_routability_driven \

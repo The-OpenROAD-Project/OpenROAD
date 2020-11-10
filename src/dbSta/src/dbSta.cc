@@ -163,6 +163,14 @@ void
 dbSta::postReadDb(dbDatabase* db)
 {
   db_network_->readDbAfter(db);
+  odb::dbChip *chip = db_->getChip();
+  if (chip) {
+    odb::dbBlock *block = chip->getBlock();
+    if (block) {
+      db_cbk_.addOwner(block);
+      db_cbk_.setNetwork(db_network_);
+    }
+  }
 }
 
 Slack
@@ -206,17 +214,6 @@ dbSta::findClkNets(const Clock *clk,
 // These override the default sta functions that call sta before/after
 // functions because the db calls them via callbacks.
 
-Instance *
-dbSta::makeInstance(const char *name,
-		  LibertyCell *cell,
-		  Instance *parent)
-{
-  NetworkEdit *network = networkCmdEdit();
-  Instance *inst = network->makeInstance(cell, name, parent);
-  network->makePins(inst);
-  return inst;
-}
-
 void
 dbSta::deleteInstance(Instance *inst)
 {
@@ -226,8 +223,8 @@ dbSta::deleteInstance(Instance *inst)
 
 void
 dbSta::replaceCell(Instance *inst,
-		 Cell *to_cell,
-		 LibertyCell *to_lib_cell)
+                   Cell *to_cell,
+                   LibertyCell *to_lib_cell)
 {
   NetworkEdit *network = networkCmdEdit();
   LibertyCell *from_lib_cell = network->libertyCell(inst);
@@ -252,8 +249,8 @@ dbSta::deleteNet(Net *net)
 
 void
 dbSta::connectPin(Instance *inst,
-		Port *port,
-		Net *net)
+                  Port *port,
+                  Net *net)
 {
   NetworkEdit *network = networkCmdEdit();
   Pin *pin = network->connect(inst, port, net);
@@ -261,8 +258,8 @@ dbSta::connectPin(Instance *inst,
 
 void
 dbSta::connectPin(Instance *inst,
-		LibertyPort *port,
-		Net *net)
+                  LibertyPort *port,
+                  Net *net)
 {
   NetworkEdit *network = networkCmdEdit();
   network->connect(inst, port, net);
