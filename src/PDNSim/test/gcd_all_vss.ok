@@ -94,15 +94,15 @@ INFO: SparseLU finished solving
 
 
 ######################################
-Worstcase Voltage: 9.03898e-05
-Average IR drop  : 6.9646e-05
-Worstcase IR drop: 9.039e-05
+Worstcase Voltage: 9.03891e-05
+Average IR drop  : 6.9645e-05
+Worstcase IR drop: 9.0389e-05
 ######################################
 
 
 ######################################
 EM Analysis  
-Maximum current: 6.6238e-05
+Maximum current: 6.6237e-05
 Average current: 1.8718e-06
 Number of resistors: 1244
 ######################################
