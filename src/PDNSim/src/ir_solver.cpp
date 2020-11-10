@@ -233,7 +233,7 @@ void IRSolver::SolveIR()
         seg_cur = (v1-v2)/resistance;
         sum_cur += abs(seg_cur);
         if (m_em_out_file != "") {
-            em_report<<segment_name<<", "<<seg_cur<<", "<<node1_name<<", "<<node2_name<<endl;
+            em_report<<segment_name<<", "<<std::setprecision(3)<<seg_cur<<", "<<node1_name<<", "<<node2_name<<endl;
         }
         seg_cur = abs(seg_cur);
         if (seg_cur > max_cur) {
