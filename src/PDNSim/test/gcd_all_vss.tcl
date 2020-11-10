@@ -15,5 +15,5 @@ analyze_power_grid -vsrc Vsrc_gcd_vss.loc -outfile $voltage_file -net VSS -enabl
 write_pg_spice -vsrc Vsrc_gcd_vss.loc -outfile $spice_file -net VSS
 
 diff_files $voltage_file gcd_voltage_vss.rptok
-diff_files $em_file gcd_em_vss.rptok
-#diff_files $spice_file gcd_spice_vss.spok
+#diff_files $em_file gcd_em_vss.rptok
+diff_files $spice_file gcd_spice_vss.spok
