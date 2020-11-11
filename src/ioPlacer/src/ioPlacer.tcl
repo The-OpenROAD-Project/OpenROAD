@@ -47,21 +47,21 @@ proc set_io_pin_constraint { args } {
   }
 
   if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
-    set edge_ [ioPlacer::parse_edge "-exclude" $edge]
+    set edge_ [ioPlacer::parse_edge "-region" $edge]
 
     if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
       if {$begin == {*}} {
-        set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+        set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
       }
       if {$end == {*}} {
-        set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+        set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
       }
 
       set begin [expr { int($begin * $lef_units) }]
       set end [expr { int($end * $lef_units) }]
     } elseif {$interval == {*}} {
-      set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
-      set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+      set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
+      set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
     }
   }
 
