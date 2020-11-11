@@ -12,7 +12,7 @@ Notice 0:     Created 2 special nets and 6 connections.
 Notice 0:     Created 4 nets and 6 connections.
 Notice 0: Finished DEF file: repair_wire1.def
 Max slew 0.199ns
-Max wire length 1120u
+Max wire length 1249u
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)
@@ -25,11 +25,11 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    0.998    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  79.346    0.156    0.144    0.160 ^ u2/Z (BUF_X1)
-            0.302    0.203    0.363 ^ u3/A (BUF_X1)
-   0.000    0.013    0.023    0.387 ^ u3/Z (BUF_X1)
-            0.013    0.000    0.387 ^ out1 (out)
-                              0.387   data arrival time
+  79.346    0.133    0.146    0.162 ^ u2/Z (BUF_X1)
+            0.263    0.185    0.347 ^ u3/A (BUF_X1)
+   0.000    0.012    0.024    0.372 ^ u3/Z (BUF_X1)
+            0.012    0.000    0.372 ^ out1 (out)
+                              0.372   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
@@ -38,7 +38,7 @@ Driver    length delay
 u2/Z manhtn 1499.8 steiner 1499.8 0.21
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
-Warning: max wire length less than 754u increases wire delays.
+Warning: max wire length less than 840u increases wire delays.
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.
@@ -61,15 +61,15 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    1.444    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
             0.007    0.000    0.018 ^ u2/A (CLKBUF_X3)
-  22.233    0.019    0.039    0.057 ^ u2/Z (CLKBUF_X3)
-            0.027    0.015    0.072 ^ repeater2/A (BUF_X4)
-  33.153    0.016    0.034    0.106 ^ repeater2/Z (BUF_X4)
-            0.043    0.032    0.138 ^ repeater1/A (BUF_X4)
-  30.752    0.016    0.036    0.174 ^ repeater1/Z (BUF_X4)
-            0.038    0.028    0.202 ^ u3/A (BUF_X1)
-   0.000    0.005    0.024    0.226 ^ u3/Z (BUF_X1)
-            0.005    0.000    0.226 ^ out1 (out)
-                              0.226   data arrival time
+  22.233    0.017    0.040    0.057 ^ u2/Z (CLKBUF_X3)
+            0.024    0.015    0.072 ^ repeater2/A (BUF_X4)
+  33.153    0.015    0.033    0.105 ^ repeater2/Z (BUF_X4)
+            0.039    0.030    0.135 ^ repeater1/A (BUF_X4)
+  30.752    0.015    0.036    0.171 ^ repeater1/Z (BUF_X4)
+            0.035    0.026    0.197 ^ u3/A (BUF_X1)
+   0.000    0.005    0.024    0.221 ^ u3/Z (BUF_X1)
+            0.005    0.000    0.221 ^ out1 (out)
+                              0.221   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
