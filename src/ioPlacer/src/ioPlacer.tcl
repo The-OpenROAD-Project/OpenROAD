@@ -51,6 +51,14 @@ proc io_placer { args } {
   keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
   flags {-random} 0
 
+  foreach arg $args {
+    if [regexp -all {(-[a-z]+)} $arg - opt] {
+      if {$opt != "-exclude"} {
+        ord::error "$opt is an invalid option"
+      }
+    }
+  }
+
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
     ord::error "missing dbTech"
