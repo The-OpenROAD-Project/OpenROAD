@@ -423,6 +423,13 @@ void IOPlacer::createSections()
   int numSlots = slots.size();
   int beginSlot = 0;
   int endSlot = 0;
+
+  int slotsPerEdge = numSlots/_slotsPerSection;
+  if (slotsPerEdge < 4) {
+    _slotsPerSection = numSlots / 4;
+    warn("Redefining the number of slots per section to have at least one section per edge");
+  }
+
   while (endSlot < numSlots) {
     int blockedSlots = 0;
     endSlot = beginSlot + _slotsPerSection - 1;
