@@ -152,8 +152,22 @@ namespace eval cdl {
     close $cdl_file
   }
 
-  proc out {file_name} {
+  proc out {args} {
     variable block
+
+    if {[set idx [lsearch $args "-include_fillers"]] > -1} {
+      set include_fillers 1
+      set args [lreplace $args $idx $idx]
+    } else {
+      set include_fillers 0
+    }
+
+    if {[llength $args] == 0} {
+      critical 1 "Must specify the name of the CDL file to be written"
+    } elseif {[llength $args] > 1} {
+      critical 2 "Too many arguments specified \"$args\", expecting a single file name argument"
+    }
+    set file_name $args
 
     set block [ord::get_db_block]
 
@@ -171,7 +185,7 @@ namespace eval cdl {
 
     foreach inst [$block getInsts] {
       set master [$inst getMaster]
-      if {[$master isFiller]} {continue}
+      if {$include_fillers == 0 && [$master isFiller]} {continue}
       set cell_name [$master getName] 
       set line "X[$inst getName]"
       

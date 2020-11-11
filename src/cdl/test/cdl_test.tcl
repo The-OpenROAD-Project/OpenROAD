@@ -15,7 +15,6 @@ namespace eval dummy_cdl {
     set db [ord::get_db]
     foreach lib [$db getLibs] {
       foreach cell [$lib getMasters] {
-        if {[$cell isFiller]} {continue}
         dummy_write_cell $ch $cell
       }
     }
