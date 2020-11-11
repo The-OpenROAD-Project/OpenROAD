@@ -37,7 +37,7 @@ Path Type: max
            9.95   data required time
           -0.52   data arrival time
 ---------------------------------------------------------
-           9.43   slack (MET)
+           9.44   slack (MET)
 
 
 Startpoint: in1 (input port clocked by clk)

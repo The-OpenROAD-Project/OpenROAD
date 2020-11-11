@@ -162,13 +162,13 @@ Path Type: min
    0.080    0.442 ^ i7/X (sky130_fd_sc_hs__buf_2)
    0.000    0.442 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
    0.000    0.442   clock reconvergence pessimism
-   0.022    0.464   library hold time
-            0.464   data required time
+   0.022    0.465   library hold time
+            0.465   data required time
 -----------------------------------------------------------
-            0.464   data required time
+            0.465   data required time
            -0.465   data arrival time
 -----------------------------------------------------------
-            0.001   slack (MET)
+            0.000   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -186,7 +186,7 @@ Path Type: min
    0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
    0.060    0.315 ^ u1/X (sky130_fd_sc_hs__buf_2)
    0.150    0.465 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd1_1)
-   0.073    0.537 ^ u2/X (sky130_fd_sc_hs__buf_2)
+   0.072    0.537 ^ u2/X (sky130_fd_sc_hs__buf_2)
    0.000    0.537 ^ r3/D (sky130_fd_sc_hs__dfxbp_1)
             0.537   data arrival time
 
@@ -208,7 +208,7 @@ Path Type: min
             0.467   data required time
            -0.537   data arrival time
 -----------------------------------------------------------
-            0.070   slack (MET)
+            0.069   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -226,7 +226,7 @@ Path Type: min
    0.193    0.255 ^ r1/Q (sky130_fd_sc_hs__dfxbp_1)
    0.060    0.315 ^ u1/X (sky130_fd_sc_hs__buf_2)
    0.150    0.465 ^ hold1/X (sky130_fd_sc_hs__dlygate4sd1_1)
-   0.073    0.537 ^ u2/X (sky130_fd_sc_hs__buf_2)
+   0.072    0.537 ^ u2/X (sky130_fd_sc_hs__buf_2)
    0.062    0.599 ^ u3/X (sky130_fd_sc_hs__buf_2)
    0.057    0.656 ^ u4/X (sky130_fd_sc_hs__buf_2)
    0.000    0.656 ^ r4/D (sky130_fd_sc_hs__dfxbp_1)
@@ -250,6 +250,6 @@ Path Type: min
             0.470   data required time
            -0.656   data arrival time
 -----------------------------------------------------------
-            0.187   slack (MET)
+            0.186   slack (MET)
 
 

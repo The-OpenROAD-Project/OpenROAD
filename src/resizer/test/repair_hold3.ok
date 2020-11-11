@@ -31,7 +31,7 @@ Path Type: min
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
-   0.019    0.038 ^ i2/Z (BUF_X1)
+   0.019    0.039 ^ i2/Z (BUF_X1)
    0.019    0.057 ^ i3/Z (BUF_X1)
    0.019    0.076 ^ i4/Z (BUF_X1)
    0.019    0.094 ^ i5/Z (BUF_X1)
@@ -70,7 +70,7 @@ Path Type: min
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
-   0.019    0.038 ^ i2/Z (BUF_X1)
+   0.019    0.039 ^ i2/Z (BUF_X1)
    0.019    0.057 ^ i3/Z (BUF_X1)
    0.019    0.076 ^ i4/Z (BUF_X1)
    0.019    0.094 ^ i5/Z (BUF_X1)
@@ -108,7 +108,7 @@ Path Type: min
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
-   0.019    0.038 ^ i2/Z (BUF_X1)
+   0.019    0.039 ^ i2/Z (BUF_X1)
    0.019    0.057 ^ i3/Z (BUF_X1)
    0.019    0.076 ^ i4/Z (BUF_X1)
    0.019    0.094 ^ i5/Z (BUF_X1)
@@ -149,7 +149,7 @@ Path Type: min
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
-   0.019    0.038 ^ i2/Z (BUF_X1)
+   0.019    0.039 ^ i2/Z (BUF_X1)
    0.019    0.057 ^ i3/Z (BUF_X1)
    0.019    0.076 ^ i4/Z (BUF_X1)
    0.019    0.094 ^ i5/Z (BUF_X1)
@@ -189,7 +189,7 @@ Path Type: min
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
-   0.019    0.038 ^ i2/Z (BUF_X1)
+   0.019    0.039 ^ i2/Z (BUF_X1)
    0.019    0.057 ^ i3/Z (BUF_X1)
    0.019    0.076 ^ i4/Z (BUF_X1)
    0.019    0.094 ^ i5/Z (BUF_X1)
@@ -228,7 +228,7 @@ Path Type: min
    0.000    0.000   clock source latency
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
-   0.019    0.038 ^ i2/Z (BUF_X1)
+   0.019    0.039 ^ i2/Z (BUF_X1)
    0.019    0.057 ^ i3/Z (BUF_X1)
    0.019    0.076 ^ i4/Z (BUF_X1)
    0.019    0.094 ^ i5/Z (BUF_X1)

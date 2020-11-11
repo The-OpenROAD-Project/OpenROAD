@@ -102,6 +102,14 @@ proc io_placer { args } {
   keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
   flags {-random} 0
 
+  foreach arg $args {
+    if [regexp -all {(-[a-z]+)} $arg - opt] {
+      if {$opt != "-exclude"} {
+        ord::error "$opt is an invalid option"
+      }
+    }
+  }
+
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
     ord::error "missing dbTech"
@@ -137,13 +145,13 @@ proc io_placer { args } {
   if [info exists keys(-hor_layer)] {
     set hor_layer $keys(-hor_layer)
   } else {
-    ord::error("-hor_layer is mandatory")
+    ord::error "-hor_layer is mandatory"
   }       
   
   if [info exists keys(-ver_layer)] {
     set ver_layer $keys(-ver_layer)
   } else {
-    ord::error("-ver_layer is mandatory")
+    ord::error "-ver_layer is mandatory"
   }
 
   set offset 5
@@ -201,7 +209,7 @@ proc io_placer { args } {
     set lef_units [$dbTech getLefUnits]
     
     foreach region $regions {
-      if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+      if [regexp -all {([a-z]+):(.+)} $region - edge interval] {
         set edge_ [ioPlacer::parse_edge "-exclude" $edge]
 
         if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
@@ -233,7 +241,7 @@ namespace eval ioPlacer {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    ord::error "$cmd: Invalid edge"
+    ord::error "$cmd: $edge is an invalid edge. use top, bottom, left or right"
   }
   return [ioPlacer::get_edge $edge]
 }
