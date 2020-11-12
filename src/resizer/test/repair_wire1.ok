@@ -42,11 +42,11 @@ Warning: max wire length less than 840u increases wire delays.
 Found 1 capacitance violations.
 Found 1 long wires.
 Inserted 2 buffers in 1 nets.
-Resized 3 instances.
+Resized 4 instances.
 Driver    length delay
 repeater1/Z manhtn 569.8 steiner 569.8 0.03
 repeater2/Z manhtn 569.3 steiner 569.3 0.03
-u2/Z manhtn 360.4 steiner 360.4 0.01
+u2/Z manhtn 360.1 steiner 360.1 0.01
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
 Startpoint: in1 (input port)
@@ -57,19 +57,19 @@ Path Type: max
      Cap     Slew    Delay     Time   Description
 ---------------------------------------------------------------------------
                      0.000    0.000 ^ input external delay
-   1.284    0.000    0.000    0.000 ^ in1 (in)
-            0.000    0.000    0.000 ^ u1/A (BUF_X1)
-   1.444    0.007    0.018    0.018 ^ u1/Z (BUF_X1)
-            0.007    0.000    0.018 ^ u2/A (CLKBUF_X3)
-  22.233    0.017    0.040    0.057 ^ u2/Z (CLKBUF_X3)
-            0.024    0.015    0.072 ^ repeater2/A (BUF_X4)
-  33.153    0.015    0.033    0.105 ^ repeater2/Z (BUF_X4)
-            0.039    0.030    0.135 ^ repeater1/A (BUF_X4)
-  30.752    0.015    0.036    0.171 ^ repeater1/Z (BUF_X4)
-            0.035    0.026    0.197 ^ u3/A (BUF_X1)
-   0.000    0.005    0.024    0.221 ^ u3/Z (BUF_X1)
-            0.005    0.000    0.221 ^ out1 (out)
-                              0.221   data arrival time
+   1.716    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (CLKBUF_X2)
+   3.425    0.008    0.023    0.023 ^ u1/Z (CLKBUF_X2)
+            0.008    0.000    0.023 ^ u2/A (BUF_X4)
+  22.220    0.013    0.026    0.049 ^ u2/Z (BUF_X4)
+            0.020    0.014    0.063 ^ repeater2/A (BUF_X4)
+  33.153    0.015    0.033    0.095 ^ repeater2/Z (BUF_X4)
+            0.039    0.030    0.126 ^ repeater1/A (BUF_X4)
+  30.752    0.015    0.036    0.161 ^ repeater1/Z (BUF_X4)
+            0.035    0.026    0.188 ^ u3/A (BUF_X1)
+   0.000    0.005    0.024    0.211 ^ u3/Z (BUF_X1)
+            0.005    0.000    0.211 ^ out1 (out)
+                              0.211   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
