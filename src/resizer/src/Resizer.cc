@@ -1530,12 +1530,10 @@ Resizer::repairDesign(double max_wire_length, // meters
     Vertex *drvr = level_drvr_verticies_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
-
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
         && !isFuncOneZero(drvr_pin)
-        && !hasTopLevelPort(net)
         && !isSpecial(net)) {
       repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
                 repair_count, slew_violations, cap_violations,
