@@ -153,6 +153,8 @@ public:
   double findMaxSlewWireLength(LibertyPort *drvr_port,
                                LibertyPort *load_port,
                                double max_slew);
+  double findSlewLoadCap(LibertyPort *drvr_port,
+                         double slew);
   float bufferDelay(LibertyCell *buffer_cell);
   float bufferDelay(LibertyCell *buffer_cell,
                     const RiseFall *rf);
@@ -254,8 +256,6 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew);
   double gateSlewDiff(LibertyPort *drvr_port,
                       double load_cap,
                       double slew);
