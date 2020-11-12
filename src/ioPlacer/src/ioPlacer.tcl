@@ -46,6 +46,9 @@ proc set_io_pin_constraint { args } {
     set region $keys(-region)
   }
 
+  set dbTech [ord::get_db_tech]
+  set lef_units [$dbTech getLefUnits]
+
   if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
     set edge_ [ioPlacer::parse_edge "-region" $edge]
 
