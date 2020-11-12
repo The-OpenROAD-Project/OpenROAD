@@ -34,8 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HungarianMatching.h"
+#include "openroad/Error.hh"
 
 namespace ioPlacer {
+
+using ord::warn;
 
 HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots)
     : _netlist(section.net), _slots(slots)
@@ -92,6 +95,10 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
       if (_assignment[row] != col) {
         slotIndex++;
         continue;
+      }
+      if (_hungarianMatrix[row][col] == std::numeric_limits<int>::max()) {
+        warn("I/O pin %s cannot be placed in the specified region. Not enough space",
+             ioPin.getName().c_str());
       }
       ioPin.setPos(_slots[slotIndex].pos);
       assigment.push_back(ioPin);
