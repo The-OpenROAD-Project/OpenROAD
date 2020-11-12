@@ -45,15 +45,16 @@ HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots)
   _endSlot = section.endSlot;
   _numSlots = _endSlot - _beginSlot;
   _nonBlockedSlots = section.numSlots;
+  _edge = section.edge;
 }
 
-void HungarianMatching::run()
+void HungarianMatching::run(std::vector<Constraint>& constraints)
 {
-  createMatrix();
+  createMatrix(constraints);
   _hungarianSolver.Solve(_hungarianMatrix, _assignment);
 }
 
-void HungarianMatching::createMatrix()
+void HungarianMatching::createMatrix(std::vector<Constraint>& constraints)
 {
   _hungarianMatrix.resize(_nonBlockedSlots);
   int slotIndex = 0;
@@ -65,7 +66,7 @@ void HungarianMatching::createMatrix()
     }
     _hungarianMatrix[slotIndex].resize(_numIOPins);
     _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
-      int hpwl = _netlist.computeIONetHPWL(idx, newPos);
+      int hpwl = _netlist.computeIONetHPWL(idx, newPos, _edge, constraints);
       _hungarianMatrix[slotIndex][pinIndex] = hpwl;
       pinIndex++;
     });

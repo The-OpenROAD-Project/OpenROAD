@@ -66,13 +66,14 @@ class HungarianMatching
   int _numSlots;
   int _numIOPins;
   int _nonBlockedSlots;
+  Edge _edge;
 
-  void createMatrix();
+  void createMatrix(std::vector<Constraint>& constraints);
 
  public:
   HungarianMatching(Section_t&, slotVector_t&);
   virtual ~HungarianMatching() = default;
-  void run();
+  void run(std::vector<Constraint>& constraints);
   void getFinalAssignment(std::vector<IOPin>&);
 };
 
