@@ -322,9 +322,11 @@ dbStaCbk::inDbInstSwapMasterAfter(dbInst *inst)
 }
 
 void
-dbStaCbk::inDbNetDestroy(dbNet *net)
+dbStaCbk::inDbNetDestroy(dbNet *db_net)
 {
-  sta_->deleteNetBefore(network_->dbToSta(net));
+  Net *net = network_->dbToSta(db_net);
+  sta_->deleteNetBefore(net);
+  network_->deleteNetBefore(net);
 }
 
 void
