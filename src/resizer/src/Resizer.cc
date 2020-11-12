@@ -781,11 +781,11 @@ Resizer::findTargetLoad(LibertyCell *cell,
       }
     }
   }
-  float target_load = 0;
+  float target_load = INF;
   for (int rf : RiseFall::rangeIndex()) {
     if (arc_count[rf] > 0) {
       float target = target_load_sum[rf] / arc_count[rf];
-      target_load = max(target_load, target);
+      target_load = min(target_load, target);
     }
   }
   (*target_load_map_)[cell] = target_load;
@@ -1530,12 +1530,10 @@ Resizer::repairDesign(double max_wire_length, // meters
     Vertex *drvr = level_drvr_verticies_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
-
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
         && !isFuncOneZero(drvr_pin)
-        && !hasTopLevelPort(net)
         && !isSpecial(net)) {
       repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
                 repair_count, slew_violations, cap_violations,

@@ -29,6 +29,12 @@ pdnsim_set_power_net_cmd(const char* net)
   pdnsim->set_power_net(net);
 }
 
+void 
+pdnsim_import_em_enable(int enable_em)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->import_enable_em(enable_em);
+}
 
 
 void 
@@ -37,6 +43,14 @@ pdnsim_import_out_file_cmd(const char* out_file)
   PDNSim* pdnsim = getPDNSim();
   pdnsim->import_out_file(out_file);
 }
+
+void 
+pdnsim_import_em_out_file_cmd(const char* out_file)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->import_em_out_file(out_file);
+}
+
 
 void 
 pdnsim_import_spice_out_file_cmd(const char* out_file)
