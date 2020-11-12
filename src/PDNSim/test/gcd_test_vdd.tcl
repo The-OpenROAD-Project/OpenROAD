@@ -9,7 +9,7 @@ report_checks
 # The command below runs a check for connectivity of the power grid
 # The analyze_power_grid command calls it by default
 # check_power_grid -vsrc Vsrc_gcd.loc 
-set voltage_file [make_result_file gcd_voltage.rpt]
+set voltage_file [make_result_file gcd_voltage_vdd.rpt]
 check_power_grid -net VDD
-analyze_power_grid -vsrc Vsrc_gcd.loc -outfile $voltage_file
-diff_files $voltage_file gcd_voltage.rptok
+analyze_power_grid -vsrc Vsrc_gcd_vdd.loc -outfile $voltage_file -net VDD
+diff_files $voltage_file gcd_voltage_vdd.rptok
