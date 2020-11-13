@@ -158,7 +158,7 @@ proc io_placer { args } {
     set lef_units [$dbTech getLefUnits]
     
     foreach region $regions {
-      if [regexp -all {([a-z]+):(.+)} $region - edge interval] {
+      if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
         set edge_ [ioPlacer::parse_edge "-exclude" $edge]
 
         if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
@@ -177,7 +177,11 @@ proc io_placer { args } {
           set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
 
           ioPlacer::exclude_interval $edge_ $begin $end
+        } else {
+          ord::error "-exclude: $interval is an invalid region"
         }
+      } else {
+        ord::error "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval"
       }
     }
   }
