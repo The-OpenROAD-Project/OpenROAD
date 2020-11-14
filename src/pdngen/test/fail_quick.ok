@@ -15,4 +15,4 @@ Notice 0: Finished DEF file: fail_quick/floorplan.def
 [INFO] [PDNG-0008] Design Name is gcd
 [INFO] [PDNG-0009] Reading technology data
 [CRIT] [PDNG-0030] Layer specified for std. cell rails 'M1' not in list of layers.
-Error: fail_quick.tcl, 6 Execution stopped
+Execution stopped
