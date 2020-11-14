@@ -46,10 +46,13 @@ class Finale
 
   void init(odb::dbDatabase* db);
 
-  void densityFill(const char* rules_filename);
+  void densityFill(const char* rules_filename, const odb::Rect& fill_area);
+
+  void setDebug();
 
  private:
   odb::dbDatabase* db_;
+  bool debug_;
 };
 
 }  // namespace finale

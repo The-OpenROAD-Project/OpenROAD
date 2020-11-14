@@ -31,21 +31,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "DensityFill.h"
+
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
-#include <boost/polygon/polygon.hpp>
 
-#include "DensityFill.h"
+#include "graphics.h"
 #include "opendb/dbShape.h"
 #include "openroad/Error.hh"
 
 namespace finale {
-
-using namespace boost::polygon::operators;
-
-using Rectangle = boost::polygon::rectangle_data<int>;
-using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
 namespace pt = boost::property_tree;
 
@@ -97,8 +92,11 @@ static double getValue(const char* key, pt::ptree& tree)
 
 ////////////////////////////////////////////////////////////////
 
-DensityFill::DensityFill(dbDatabase* db) : db_(db)
+DensityFill::DensityFill(dbDatabase* db, bool debug) : db_(db)
 {
+  if (debug && Graphics::guiActive()) {
+    graphics_ = std::make_unique<Graphics>();
+  }
 }
 
 DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
@@ -113,7 +111,7 @@ DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
 // values.  It also translates from microns to DBU and layer names
 // to dbTechLayer*.
 void DensityFill::read_and_expand_layers(dbTech* tech,
-                                         boost::property_tree::ptree& tree)
+                                         pt::ptree& tree)
 {
   int dbu = tech->getDbUnitsPerMicron();
 
@@ -198,7 +196,7 @@ void DensityFill::read_and_expand_layers(dbTech* tech,
 void DensityFill::loadConfig(const char* cfg_filename, dbTech* tech)
 {
   // Read the json config file using Boost's property_tree
-  boost::property_tree::ptree tree;
+  pt::ptree tree;
   pt::json_parser::read_json(cfg_filename, tree);
   read_and_expand_layers(tech, tree);
 }
@@ -306,6 +304,42 @@ static Polygon90Set or_non_fills(dbBlock* block, dbTechLayer* layer)
   return non_fill;
 }
 
+static std::pair<int, int> getSpacing(dbTechLayer* layer,
+                                      const DensityFillShapesConfig& cfg)
+{
+  bool isHoriz = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  int space_x = cfg.space_to_fill;
+  int space_y = space_x;
+  if (isHoriz) {
+    space_x = std::max(space_x, cfg.space_line_end);
+  } else {
+    space_y = std::max(space_y, cfg.space_line_end);
+  }
+
+  return std::make_pair(space_x, space_y);
+}
+
+// Two different polygons might be less than min space apart and this
+// can lead to DRVs when they are filled independently.  To avoid this
+// we exclude a min-space area around each polygon.  This is somewhat
+// conservative as we may not actually put a fill where a DRV would be
+// caused but is much faster than updating the fill area after every
+// polygon is filled.
+static void prune(Polygon90Set& fill_area,
+                  dbTechLayer* layer,
+                  const DensityFillShapesConfig& cfg,
+                  Graphics* graphics)
+{
+  auto [space_x, space_y] = getSpacing(layer, cfg);
+
+  // From Boost on grow_and:
+  //   Same as bloating non-overlapping regions and then applying self
+  //   intersect to retain only the overlaps introduced by the bloat.
+  Polygon90Set pruned(fill_area);
+  grow_and(pruned, space_x, space_x, space_y, space_y);
+  fill_area -= pruned;
+}
+
 // Fill a polygon (area) on the given layer using the given configuration.
 // Num_masks is used to color the generated fills.
 // filled_area, if given, is an OR of the generated fills without bloating
@@ -315,6 +349,7 @@ static void fill_polygon(const Polygon90& area,
                          const DensityFillShapesConfig& cfg,
                          int num_masks,
                          bool needs_opc,
+                         Graphics* graphics,
                          Polygon90Set* filled_area = nullptr)
 {
   // Convert the area polygon to a polygon set as we will remove areas
@@ -324,26 +359,41 @@ static void fill_polygon(const Polygon90& area,
   Polygon90Set fill_area;
   fill_area += area;
 
-  bool isH = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
-  int space_x = cfg.space_to_fill;
-  int space_y = space_x;
-  if (isH) {
-    space_x = std::max(space_x, cfg.space_line_end);
-  } else {
-    space_y = std::max(space_y, cfg.space_line_end);
-  }
+  bool isHoriz = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
+  auto [space_x, space_y] = getSpacing(layer, cfg);
 
   auto iter = cfg.shapes.begin();
   while (iter != cfg.shapes.end()) {
     auto [w, h] = *iter;
     bool last_shape = ++iter == cfg.shapes.end();
     // Ensure the longer direction is in the preferred direction
-    if ((isH && w < h) || (!isH && h < w)) {
+    if ((isHoriz && w < h) || (!isHoriz && h < w)) {
       std::swap(w, h);
     }
 
+    // Use a shrink/bloat cycle to remove any areas that are too small to fill
+    // with this fill shape.  A benefit is that it helps break up big polygons
+    // which makes it easier to fill them
+    Polygon90Set pruned_fill_area = fill_area;
+
+    int ew_sizing = w / 2 - 1;
+    int ns_sizing = h / 2 - 1;
+    shrink(pruned_fill_area, ew_sizing, ew_sizing, ns_sizing, ns_sizing);
+    bloat(pruned_fill_area, ew_sizing, ew_sizing, ns_sizing, ns_sizing);
+
+    // The polygon may break into parts that could be less than min-space
+    // apart so prune the result.
+    prune(pruned_fill_area, layer, cfg, graphics);
+
+    if (graphics) {
+      graphics->status("Fill Area for " + std::to_string(w) + " "
+                       + std::to_string(h));
+      graphics->drawPolygon90Set(pruned_fill_area);
+    }
+
+    Polygon90Set all_iter_fills;
     std::vector<Polygon90> sub_fill_areas;
-    fill_area.get(sub_fill_areas);
+    pruned_fill_area.get(sub_fill_areas);
     for (auto& sub_fill_area : sub_fill_areas) {
       Rectangle bounds;
       extents(bounds, sub_fill_area);
@@ -362,11 +412,8 @@ static void fill_polygon(const Polygon90& area,
       Polygon90Set fills = all_fills & sub_fill_area;
       keep(fills, w * h, w * h, w - 1, w, h - 1, h);
 
-      // Remove filled area from use by future shapes
-      if (!last_shape) {
-        Polygon90Set tmp_fills(fills);
-        fill_area -= bloat(tmp_fills, space_x, space_x, space_y, space_y);
-      }
+      Polygon90Set tmp_fills(fills);
+      all_iter_fills += bloat(tmp_fills, space_x, space_x, space_y, space_y);
 
       // Insert fills into the db
       std::vector<Rectangle> polygons;
@@ -385,58 +432,89 @@ static void fill_polygon(const Polygon90& area,
         }
       }
     }
+    // Remove filled area from use by future shapes
+    fill_area -= all_iter_fills;
   }
 }
 
 // Fill the given layer
-void DensityFill::fill_layer(dbBlock* block, dbTechLayer* layer)
+void DensityFill::fill_layer(dbBlock* block,
+                             dbTechLayer* layer,
+                             const odb::Rect& fill_bounds_rect)
 {
   printf("Filling %s...\n", layer->getConstName());
 
   Polygon90Set non_fill = or_non_fills(block, layer);
 
-  // We fill only the core area
-  Rect core_area_rect;
-  block->getCoreArea(core_area_rect);
-  auto core_area = makeRect(core_area_rect.xMin(),
-                            core_area_rect.yMin(),
-                            core_area_rect.xMax(),
-                            core_area_rect.yMax());
+  auto fill_bounds = makeRect(fill_bounds_rect.xMin(),
+                              fill_bounds_rect.yMin(),
+                              fill_bounds_rect.xMax(),
+                              fill_bounds_rect.yMax());
 
   const DensityFillLayerConfig& cfg = layers_[layer];
 
   std::vector<Polygon90> polygons;
-  Polygon90Set opc_fill_area;
-
-  // Do OPC fill
-  if (cfg.has_opc) {
-    Polygon90Set halo_area
-        = (non_fill + cfg.opc_halo)
-          & core_area - (non_fill + cfg.opc.space_to_non_fill);
-    halo_area.get(polygons);
-    printf("  Filling %ld areas with OPC fill...\n", polygons.size());
-    for (auto& polygon : polygons) {
-      fill_polygon(
-                   polygon, layer, block, cfg.opc, cfg.num_masks, true, &opc_fill_area);
-    }
-    polygons.clear();
-  }
 
   // Do non-OPC fill
   Polygon90Set fill_area
-      = core_area - (non_fill + cfg.non_opc.space_to_non_fill);
-  if (cfg.has_opc) {
-    fill_area -= (opc_fill_area + cfg.non_opc.space_to_fill);
+      = fill_bounds - (non_fill + cfg.non_opc.space_to_non_fill);
+
+  if (graphics_) {
+    graphics_->status("Non-OPC Area");
+    graphics_->drawPolygon90Set(fill_area);
   }
+
+  prune(fill_area, layer, cfg.non_opc, graphics_.get());
+
   fill_area.get(polygons);
   printf("  Filling %ld areas with non-OPC fill...\n", polygons.size());
+
+  Polygon90Set non_opc_fill_area;
   for (auto& polygon : polygons) {
-    fill_polygon(polygon, layer, block, cfg.non_opc, cfg.num_masks, false);
+    fill_polygon(polygon,
+                 layer,
+                 block,
+                 cfg.non_opc,
+                 cfg.num_masks,
+                 false,
+                 graphics_.get(),
+                 &non_opc_fill_area);
+  }
+  printf("  Total fills = %d\n", block->getFills().size());
+
+  if (!cfg.has_opc) {
+    return;
+  }
+
+  Polygon90Set opc_fill_area
+      = fill_bounds - (non_fill + cfg.opc.space_to_non_fill)
+        - (non_opc_fill_area + cfg.non_opc.space_to_fill);
+
+  if (graphics_) {
+    graphics_->status("OPC Area");
+    graphics_->drawPolygon90Set(opc_fill_area);
+  }
+
+  prune(opc_fill_area, layer, cfg.opc, graphics_.get());
+
+  polygons.clear();
+  opc_fill_area.get(polygons);
+  printf("  Filling %ld areas with OPC fill...\n", polygons.size());
+  for (auto& polygon : polygons) {
+    fill_polygon(
+        polygon, layer, block, cfg.opc, cfg.num_masks, true, graphics_.get());
+  }
+
+  printf("  Total fills = %d\n", block->getFills().size());
+
+  if (graphics_) {
+    graphics_->status("OPC Area");
+    graphics_->drawPolygon90Set(opc_fill_area);
   }
 }
 
 // Fill the design according to the given cfg file
-void DensityFill::fill(const char* cfg_filename)
+void DensityFill::fill(const char* cfg_filename, const odb::Rect& fill_area)
 {
   dbTech* tech = db_->getTech();
   loadConfig(cfg_filename, tech);
@@ -450,7 +528,7 @@ void DensityFill::fill(const char* cfg_filename)
       printf("skip layer %s\n", layer->getConstName());
       continue;
     }
-    fill_layer(block, layer);
+    fill_layer(block, layer, fill_area);
   }
 }
 

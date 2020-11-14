@@ -43,10 +43,18 @@
 %inline %{
 
 void
-density_fill_cmd(const char* rules_filename)
+set_density_fill_debug_cmd()
 {
   auto *finale = ord::OpenRoad::openRoad()->getFinale();
-  finale->densityFill(rules_filename);
+  finale->setDebug();
+}
+
+void
+density_fill_cmd(const char* rules_filename,
+                 const odb::Rect& fill_area)
+{
+  auto *finale = ord::OpenRoad::openRoad()->getFinale();
+  finale->densityFill(rules_filename, fill_area);
 }
 
 %} // inline

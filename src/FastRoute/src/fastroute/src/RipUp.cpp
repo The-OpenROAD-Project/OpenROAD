@@ -276,7 +276,7 @@ Bool newRipupType2(TreeEdge* treeedge,
       }
       grid = y2 * (xGrid - 1);
       for (i = x1; i < x2; i++) {
-        if (h_edges[grid + i].est_usage > v_edges[grid + i].cap) {
+        if (h_edges[grid + i].est_usage > h_edges[grid + i].cap) {
           needRipup = TRUE;
           break;
         }

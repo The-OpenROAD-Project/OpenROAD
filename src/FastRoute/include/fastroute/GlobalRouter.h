@@ -151,6 +151,7 @@ class GlobalRouter
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
   void setMacroExtension(int macroExtension);
+  void setOnlySignalNets(bool onlySignalNets);
   void printGrid();
 
   // flow functions
@@ -243,6 +244,7 @@ protected:
   void restartFastRoute();
   void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
   void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
+  void removeDirtyNetsUsage();
 
   // db functions
   void initGrid(int maxLayer);
@@ -316,8 +318,8 @@ protected:
   bool _clockNetsRouteFlow = false;
   bool _onlyClockNets = false;
   bool _onlySignalNets = false;
-  int _minLayerForClock;
-  int _maxLayerForClock;
+  int _minLayerForClock = -1;
+  int _maxLayerForClock = -2;
 
   // Antenna variables
   int*** oldHUsages;

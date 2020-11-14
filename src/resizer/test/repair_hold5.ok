@@ -264,10 +264,10 @@ Path Type: max
    0.062    0.062 ^ i1/X (sky130_fd_sc_hs__buf_2)
    0.000    0.062 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
    0.202    0.264 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.078    0.342 v u1/X (sky130_fd_sc_hs__buf_2)
-   0.077    0.419 v u2/X (sky130_fd_sc_hs__buf_2)
-   0.000    0.419 v r3/D (sky130_fd_sc_hs__dfxbp_1)
-            0.419   data arrival time
+   0.078    0.341 v u1/X (sky130_fd_sc_hs__buf_2)
+   0.077    0.418 v u2/X (sky130_fd_sc_hs__buf_2)
+   0.000    0.418 v r3/D (sky130_fd_sc_hs__dfxbp_1)
+            0.418   data arrival time
 
    0.050    0.050   max_delay
    0.000    0.050   clock clk (rise edge)
@@ -286,9 +286,9 @@ Path Type: max
             0.399   data required time
 -----------------------------------------------------------
             0.399   data required time
-           -0.419   data arrival time
+           -0.418   data arrival time
 -----------------------------------------------------------
-           -0.020   slack (VIOLATED)
+           -0.019   slack (VIOLATED)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)

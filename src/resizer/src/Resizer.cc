@@ -479,6 +479,7 @@ void
 Resizer::resizeToTargetSlew()
 {
   resize_count_ = 0;
+  resized_multi_output_insts_.clear();
   // Resize in reverse level order.
   for (int i = level_drvr_verticies_.size() - 1; i >= 0; i--) {
     Vertex *drvr = level_drvr_verticies_[i];
@@ -531,19 +532,28 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
   Instance *inst = network_->instance(drvr_pin);
   LibertyCell *cell = network_->libertyCell(inst);
   if (cell) {
-    bool is_buf_inv = cell->isBuffer() || cell->isInverter();
-    ensureWireParasitic(drvr_pin);
-    // Includes net parasitic capacitance.
-    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
-    if (load_cap > 0.0) {
-      LibertyCell *best_cell = cell;
-      float target_load = (*target_load_map_)[cell];
-      float best_ratio = (target_load < load_cap)
-        ? target_load / load_cap
-        : load_cap / target_load;
-      float best_delay = is_buf_inv ? bufferDelay(cell, load_cap) : 0.0;
-      LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-      if (equiv_cells) {
+    LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+    if (equiv_cells) {
+      bool revisiting_inst = false;
+      if (hasMultipleOutputs(inst)) {
+        if (resized_multi_output_insts_.hasKey(inst))
+          revisiting_inst = true;
+        debugPrint1(debug_, "resizer", 2, "multiple outputs%s\n",
+                    revisiting_inst ? " - revisit" : "");
+        resized_multi_output_insts_.insert(inst);
+      }
+      bool is_buf_inv = cell->isBuffer() || cell->isInverter();
+      ensureWireParasitic(drvr_pin);
+      // Includes net parasitic capacitance.
+      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+      if (load_cap > 0.0) {
+        LibertyCell *best_cell = cell;
+        float target_load = (*target_load_map_)[cell];
+        float best_load = target_load;
+        float best_ratio = (target_load < load_cap)
+          ? target_load / load_cap
+          : load_cap / target_load;
+        float best_delay = is_buf_inv ? bufferDelay(cell, load_cap) : 0.0;
         debugPrint4(debug_, "resizer", 2, "%s load cap %s ratio=%.2f delay=%s\n",
                     sdc_network_->pathName(drvr_pin),
                     units_->capacitanceUnit()->asString(load_cap),
@@ -569,9 +579,14 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
                     && ratio > best_ratio * 0.9)
                    || (ratio > best_ratio
                        && delay < best_delay * 1.1))
-                : ratio > best_ratio) {
+                : ratio > best_ratio
+                // If the instance has multiple outputs (generally a register Q/QN)
+                // only allow upsizing after the first pin is visited.
+                && (!revisiting_inst
+                    || target_load > best_load)) {
               best_cell = target_cell;
               best_ratio = ratio;
+              best_load = target_load;
               best_delay = delay;
             }
           }
@@ -590,7 +605,8 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
             design_area_ -= area(master);
             Cell *best_cell1 = db_network_->dbToSta(best_master);
             sta_->replaceCell(inst, best_cell1);
-            resize_count_++;
+            if (!revisiting_inst)
+              resize_count_++;
             design_area_ += area(best_master);
 
             // Delete estimated parasitics on all instance pins.
@@ -613,6 +629,23 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
       }
     }
   }
+}
+
+bool
+Resizer::hasMultipleOutputs(const Instance *inst)
+{
+  int output_count = 0;
+  InstancePinIterator *pin_iter = network_->pinIterator(inst);
+  while (pin_iter->hasNext()) {
+    const Pin *pin = pin_iter->next();
+    if (network_->direction(pin)->isAnyOutput()
+        && network_->net(pin)) {
+      output_count++;
+      if (output_count > 1)
+        return true;
+    }
+  }
+  return false;
 }
 
 void
@@ -748,11 +781,11 @@ Resizer::findTargetLoad(LibertyCell *cell,
       }
     }
   }
-  float target_load = 0;
+  float target_load = INF;
   for (int rf : RiseFall::rangeIndex()) {
     if (arc_count[rf] > 0) {
       float target = target_load_sum[rf] / arc_count[rf];
-      target_load = max(target_load, target);
+      target_load = min(target_load, target);
     }
   }
   (*target_load_map_)[cell] = target_load;
@@ -926,7 +959,7 @@ Resizer::estimateWireParasitic(const Net *net)
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
         Pin *pin1, *pin2;
-        int steiner_pt1, steiner_pt2;
+        SteinerPt steiner_pt1, steiner_pt2;
         int wire_length_dbu;
         tree->branch(i,
                      pt1, pin1, steiner_pt1,
@@ -971,7 +1004,7 @@ Resizer::findParasiticNode(SteinerTree *tree,
                            Parasitic *parasitic,
                            const Net *net,
                            const Pin *pin,
-                           int steiner_pt)
+                           SteinerPt steiner_pt)
 {
   if (pin == nullptr)
     // If the steiner pt is on top of a pin, use the pin instead.
@@ -1497,12 +1530,10 @@ Resizer::repairDesign(double max_wire_length, // meters
     Vertex *drvr = level_drvr_verticies_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->net(drvr_pin);
-
     if (net
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells.
         && !isFuncOneZero(drvr_pin)
-        && !hasTopLevelPort(net)
         && !isSpecial(net)) {
       repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
                 repair_count, slew_violations, cap_violations,
@@ -1586,6 +1617,7 @@ Resizer::repairNet(Net *net,
 
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+  resized_multi_output_insts_.clear();
   int repair_count = 0;
   int slew_violations = 0;
   int cap_violations = 0;

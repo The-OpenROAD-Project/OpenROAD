@@ -153,6 +153,8 @@ public:
   double findMaxSlewWireLength(LibertyPort *drvr_port,
                                LibertyPort *load_port,
                                double max_slew);
+  double findSlewLoadCap(LibertyPort *drvr_port,
+                         double slew);
   float bufferDelay(LibertyCell *buffer_cell);
   float bufferDelay(LibertyCell *buffer_cell,
                     const RiseFall *rf);
@@ -190,11 +192,12 @@ protected:
                              // Return values.
                              Slew slews[],
                              int counts[]);
+  bool hasMultipleOutputs(const Instance *inst);
   ParasiticNode *findParasiticNode(SteinerTree *tree,
                                    Parasitic *parasitic,
                                    const Net *net,
                                    const Pin *pin,
-                                   int steiner_pt);
+                                   SteinerPt steiner_pt);
   void findLongWires(VertexSeq &drvrs);
   void findLongWiresSteiner(VertexSeq &drvrs);
   int findMaxSteinerDist(Vertex *drvr);
@@ -253,8 +256,6 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
-  double findSlewLoadCap(LibertyPort *drvr_port,
-                         double slew);
   double gateSlewDiff(LibertyPort *drvr_port,
                       double load_cap,
                       double slew);
@@ -362,6 +363,8 @@ protected:
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;
   TgtSlews tgt_slews_;
+  // Instances with multiple output ports that have been resized.
+  InstanceSet resized_multi_output_insts_;
   int unique_net_index_;
   int unique_inst_index_;
   int resize_count_;

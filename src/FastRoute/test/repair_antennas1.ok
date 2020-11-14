@@ -88,6 +88,7 @@ original HPWL         16910.8 u
 legalized HPWL        16931.0 u
 delta HPWL                  0 %
 
+[INFO] 2 diodes inserted
 [PARAMS] Min routing layer: 2
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.000000
@@ -116,7 +117,7 @@ Layer 6 pitch: 3.330000
 Final usage/overflow report: 
 
 [Overflow Report] Total Usage   : 175
-[Overflow Report] Total Capacity: 67250
+[Overflow Report] Total Capacity: 67424
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
