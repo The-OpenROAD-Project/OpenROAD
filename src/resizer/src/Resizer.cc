@@ -149,6 +149,7 @@ double
 Resizer::utilization()
 {
   ensureBlock();
+  ensureDesignArea();
   double core_area = coreArea();
   if (core_area > 0.0)
     return design_area_ / core_area;
@@ -208,7 +209,6 @@ Resizer::ensureBlock()
                      && core_.xMax() == 0
                      && core_.yMin() == 0
                      && core_.yMax() == 0);
-    design_area_ = findDesignArea();
   }
 }
 
@@ -220,6 +220,7 @@ Resizer::init()
   sta_->ensureLevelized();
   graph_ = sta_->graph();
   ensureBlock();
+  ensureDesignArea();
   ensureLevelDrvrVerticies();
   sta_->ensureClkNetwork();
   ensureCorner();
@@ -1063,6 +1064,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
                          bool verbose)
 {
   ensureBlock();
+  ensureDesignArea();
   Instance *top_inst = network_->topInstance();
   LibertyCell *tie_cell = tie_port->libertyCell();
   InstanceSeq insts;
@@ -2454,6 +2456,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
 double
 Resizer::findMaxWireLength(LibertyCell *buffer_cell)
 {
+  ensureBlock();
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
   return findMaxWireLength(drvr_port);
@@ -2531,15 +2534,19 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
                        Delay &delay,
                        Slew &slew)
 {
+  // Make a (hierarchical) block to use as a scratchpad.
+  dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
+  dbSta *sta = makeBlockSta(block);
+
   Instance *top_inst = network_->topInstance();
   // Tmp net for parasitics to live on.
-  Net *net = sta_->makeNet("wire", top_inst);
+  Net *net = sta->makeNet("wire", top_inst);
   LibertyCell *drvr_cell = drvr_port->libertyCell();
   LibertyCell *load_cell = load_port->libertyCell();
-  Instance *drvr = sta_->makeInstance("drvr", drvr_cell, top_inst);
-  Instance *load = sta_->makeInstance("load", load_cell, top_inst);
-  sta_->connectPin(drvr, drvr_port, net);
-  sta_->connectPin(load, load_port, net);
+  Instance *drvr = sta->makeInstance("drvr", drvr_cell, top_inst);
+  Instance *load = sta->makeInstance("load", load_cell, top_inst);
+  sta->connectPin(drvr, drvr_port, net);
+  sta->connectPin(load, load_port, net);
   Pin *drvr_pin = network_->findPin(drvr, drvr_port);
   Pin *load_pin = network_->findPin(load, load_port);
 
@@ -2575,12 +2582,15 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
       }
     }
   }
+
   // Cleanup the turds.
   arc_delay_calc_->finishDrvrPin();
   parasitics_->deleteParasiticNetwork(net, dcalc_ap_->parasiticAnalysisPt());
-  sta_->deleteInstance(drvr);
-  sta_->deleteInstance(load);
-  sta_->deleteNet(net);
+  sta->deleteInstance(drvr);
+  sta->deleteInstance(load);
+  sta->deleteNet(net);
+  delete sta;
+  dbBlock::destroy(block);
 }
 
 Parasitic *
@@ -2608,6 +2618,7 @@ Resizer::findMaxSlewWireLength(LibertyPort *drvr_port,
                                LibertyPort *load_port,
                                double max_slew)
 {
+  ensureBlock();
   // wire_length1 lower bound
   // wire_length2 upper bound
   double wire_length1 = 0.0;
@@ -2658,6 +2669,7 @@ double
 Resizer::designArea()
 {
   ensureBlock();
+  ensureDesignArea();
   return design_area_;
 }
 
@@ -2666,15 +2678,16 @@ Resizer::designAreaIncr(float delta) {
   design_area_ += delta;
 }
 
-double
-Resizer::findDesignArea()
+void
+Resizer::ensureDesignArea()
 {
-  double design_area = 0.0;
-  for (dbInst *inst : block_->getInsts()) {
-    dbMaster *master = inst->getMaster();
-    design_area += area(master);
+  if (core_exists_) {
+    double design_area_ = 0.0;
+    for (dbInst *inst : block_->getInsts()) {
+      dbMaster *master = inst->getMaster();
+      design_area_ += area(master);
+    }
   }
-  return design_area;
 }
 
 int
@@ -2729,6 +2742,7 @@ Resizer::repairClkInverters()
   sta_->ensureLevelized();
   graph_ = sta_->graph();
   ensureBlock();
+  ensureDesignArea();
   InstanceSeq clk_inverters;
   findClkInverters(clk_inverters);
   for (Instance *inv : clk_inverters)
