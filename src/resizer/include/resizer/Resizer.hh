@@ -169,7 +169,7 @@ public:
 protected:
   void init();
   void ensureBlock();
-  double findDesignArea();
+  void ensureDesignArea();
   void ensureCorner();
   void initCorner(Corner *corner);
   void ensureLevelDrvrVerticies();
