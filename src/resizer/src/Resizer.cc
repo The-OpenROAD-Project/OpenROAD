@@ -388,7 +388,7 @@ Resizer::bufferInput(Pin *top_pin,
     Point pin_loc = db_network_->location(top_pin);
     Point buf_loc = closestPtInRect(core_, pin_loc);
     setLocation(buffer, buf_loc);
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
     NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
@@ -455,7 +455,7 @@ Resizer::bufferOutput(Pin *top_pin,
                                            parent);
   if (buffer) {
     setLocation(buffer, db_network_->location(top_pin));
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
     NetPinIterator *pin_iter = network->pinIterator(output_net);
@@ -603,12 +603,12 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
           if (best_master) {
             dbInst *dinst = db_network_->staToDb(inst);
             dbMaster *master = dinst->getMaster();
-            design_area_ -= area(master);
+            designAreaIncr(-area(master));
             Cell *best_cell1 = db_network_->dbToSta(best_master);
             sta_->replaceCell(inst, best_cell1);
             if (!revisiting_inst)
               resize_count_++;
-            design_area_ += area(best_master);
+            designAreaIncr(area(best_master));
 
             // Delete estimated parasitics on all instance pins.
             // Input nets change pin cap, outputs change location (slightly).
@@ -1102,7 +1102,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             Port *load_port = network_->port(load);
             sta_->connectPin(load_inst, load_port, load_net);
 
-            design_area_ += area(db_network_->cell(tie_cell));
+            designAreaIncr(area(db_network_->cell(tie_cell)));
             tie_count++;
           }
         }
@@ -1423,7 +1423,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
                                                  buffer_name.c_str(),
                                                  parent);
     inserted_buffer_count_++;
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
 
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -2044,7 +2044,7 @@ Resizer::makeRepeater(int x,
                                                  buffer_name.c_str(),
                                                  parent);
     setLocation(buffer, buf_loc);
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
     sta_->connectPin(buffer, buffer_input_port, in_net);
@@ -2674,7 +2674,8 @@ Resizer::designArea()
 }
 
 void
-Resizer::designAreaIncr(float delta) {
+Resizer::designAreaIncr(float delta)
+{
   design_area_ += delta;
 }
 
@@ -2682,7 +2683,7 @@ void
 Resizer::ensureDesignArea()
 {
   if (core_exists_) {
-    double design_area_ = 0.0;
+    design_area_ = 0.0;
     for (dbInst *inst : block_->getInsts()) {
       dbMaster *master = inst->getMaster();
       design_area_ += area(master);

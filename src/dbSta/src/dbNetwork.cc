@@ -1093,9 +1093,11 @@ dbNetwork::connect(Instance *inst,
     pin = dbToSta(iterm);
   }
 
+  // Incrementally update drivers.
   if (isDriver(pin)) {
     PinSet *drvrs = net_drvr_pin_map_[net];
-    drvrs->insert(pin);
+    if (drvrs)
+      drvrs->insert(pin);
   }
   return pin;
 }
@@ -1104,6 +1106,7 @@ void
 dbNetwork::disconnectPin(Pin *pin)
 {
   Net *net = this->net(pin);
+  // Incrementally update drivers.
   if (net && isDriver(pin)) {
     PinSet *drvrs = net_drvr_pin_map_.findKey(net);
     if (drvrs)
