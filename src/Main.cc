@@ -53,6 +53,7 @@
 #include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
+#include "openroad/Logger.h"
 #include "gui/gui.h"
 
 using sta::stringEq;
@@ -73,6 +74,8 @@ int
 main(int argc,
      char *argv[])
 {
+  ordlog::init();
+  ordlog::info(ordlog::OPENROAD,1,"Starting OpenROAD main");
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
     return 0;
