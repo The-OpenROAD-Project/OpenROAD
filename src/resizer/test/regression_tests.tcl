@@ -14,6 +14,7 @@ record_tests {
   resize3
   resize4
   resize5
+  resize6
   remove_buffers1
   repair_clk_nets1
   repair_clk_inverters1

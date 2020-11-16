@@ -14,4 +14,5 @@ Notice 0: Finished DEF file: ./results/repair_slew1.def
 Found 31 violations
 Found 1 slew violations.
 Inserted 2 buffers in 1 nets.
+Resized 1 instances.
 Found 0 violations

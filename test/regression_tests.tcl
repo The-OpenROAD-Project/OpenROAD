@@ -13,4 +13,5 @@ record_flow_tests {
   gcd_sky130
   aes_sky130
   ibex_sky130
+  jpeg_sky130
 }

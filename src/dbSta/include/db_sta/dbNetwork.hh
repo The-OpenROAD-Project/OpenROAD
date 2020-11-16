@@ -205,6 +205,7 @@ public:
   virtual Net *makeNet(const char *name,
 		       Instance *parent);
   virtual void deleteNet(Net *net);
+  void deleteNetBefore(Net *net);
   virtual void mergeInto(Net *net,
 			 Net *into_net);
   virtual Net *mergedInto(Net *net);

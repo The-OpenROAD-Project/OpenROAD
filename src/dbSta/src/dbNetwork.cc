@@ -1057,9 +1057,8 @@ dbNetwork::connect(Instance *inst,
     pin = dbToSta(iterm);
   }
   if (isDriver(pin)) {
-    PinSet *drvrs = net_drvr_pin_map_.findKey(net);
-    if (drvrs)
-      drvrs->insert(pin);
+    PinSet *drvrs = net_drvr_pin_map_[net];
+    drvrs->insert(pin);
   }
   return pin;
 }
@@ -1094,8 +1093,9 @@ dbNetwork::connect(Instance *inst,
     pin = dbToSta(iterm);
   }
 
+  // Incrementally update drivers.
   if (isDriver(pin)) {
-    PinSet *drvrs = net_drvr_pin_map_.findKey(net);
+    PinSet *drvrs = net_drvr_pin_map_[net];
     if (drvrs)
       drvrs->insert(pin);
   }
@@ -1106,6 +1106,7 @@ void
 dbNetwork::disconnectPin(Pin *pin)
 {
   Net *net = this->net(pin);
+  // Incrementally update drivers.
   if (net && isDriver(pin)) {
     PinSet *drvrs = net_drvr_pin_map_.findKey(net);
     if (drvrs)
@@ -1147,12 +1148,17 @@ dbNetwork::makeNet(const char *name,
 void
 dbNetwork::deleteNet(Net *net)
 {
+  deleteNetBefore(net);
+  dbNet *dnet = staToDb(net);
+  dbNet::destroy(dnet);
+}
+
+void
+dbNetwork::deleteNetBefore(Net *net)
+{
   PinSet *drvrs = net_drvr_pin_map_.findKey(net);
   delete drvrs;
   net_drvr_pin_map_.erase(net);
-
-  dbNet *dnet = staToDb(net);
-  dbNet::destroy(dnet);
 }
 
 void
