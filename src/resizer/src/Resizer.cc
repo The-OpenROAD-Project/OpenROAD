@@ -149,6 +149,7 @@ double
 Resizer::utilization()
 {
   ensureBlock();
+  ensureDesignArea();
   double core_area = coreArea();
   if (core_area > 0.0)
     return design_area_ / core_area;
@@ -208,7 +209,6 @@ Resizer::ensureBlock()
                      && core_.xMax() == 0
                      && core_.yMin() == 0
                      && core_.yMax() == 0);
-    design_area_ = findDesignArea();
   }
 }
 
@@ -220,6 +220,7 @@ Resizer::init()
   sta_->ensureLevelized();
   graph_ = sta_->graph();
   ensureBlock();
+  ensureDesignArea();
   ensureLevelDrvrVerticies();
   sta_->ensureClkNetwork();
   ensureCorner();
@@ -387,7 +388,7 @@ Resizer::bufferInput(Pin *top_pin,
     Point pin_loc = db_network_->location(top_pin);
     Point buf_loc = closestPtInRect(core_, pin_loc);
     setLocation(buffer, buf_loc);
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
     NetPinIterator *pin_iter = db_network_->pinIterator(input_net);
@@ -454,7 +455,7 @@ Resizer::bufferOutput(Pin *top_pin,
                                            parent);
   if (buffer) {
     setLocation(buffer, db_network_->location(top_pin));
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
     NetPinIterator *pin_iter = network->pinIterator(output_net);
@@ -602,12 +603,12 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
           if (best_master) {
             dbInst *dinst = db_network_->staToDb(inst);
             dbMaster *master = dinst->getMaster();
-            design_area_ -= area(master);
+            designAreaIncr(-area(master));
             Cell *best_cell1 = db_network_->dbToSta(best_master);
             sta_->replaceCell(inst, best_cell1);
             if (!revisiting_inst)
               resize_count_++;
-            design_area_ += area(best_master);
+            designAreaIncr(area(best_master));
 
             // Delete estimated parasitics on all instance pins.
             // Input nets change pin cap, outputs change location (slightly).
@@ -1063,6 +1064,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
                          bool verbose)
 {
   ensureBlock();
+  ensureDesignArea();
   Instance *top_inst = network_->topInstance();
   LibertyCell *tie_cell = tie_port->libertyCell();
   InstanceSeq insts;
@@ -1100,7 +1102,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
             Port *load_port = network_->port(load);
             sta_->connectPin(load_inst, load_port, load_net);
 
-            design_area_ += area(db_network_->cell(tie_cell));
+            designAreaIncr(area(db_network_->cell(tie_cell)));
             tie_count++;
           }
         }
@@ -1421,7 +1423,7 @@ Resizer::makeHoldDelay(Vertex *drvr,
                                                  buffer_name.c_str(),
                                                  parent);
     inserted_buffer_count_++;
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
 
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
@@ -2042,7 +2044,7 @@ Resizer::makeRepeater(int x,
                                                  buffer_name.c_str(),
                                                  parent);
     setLocation(buffer, buf_loc);
-    design_area_ += area(db_network_->cell(buffer_cell));
+    designAreaIncr(area(db_network_->cell(buffer_cell)));
     inserted_buffer_count_++;
 
     sta_->connectPin(buffer, buffer_input_port, in_net);
@@ -2454,6 +2456,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
 double
 Resizer::findMaxWireLength(LibertyCell *buffer_cell)
 {
+  ensureBlock();
   LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
   return findMaxWireLength(drvr_port);
@@ -2531,15 +2534,19 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
                        Delay &delay,
                        Slew &slew)
 {
+  // Make a (hierarchical) block to use as a scratchpad.
+  dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
+  dbSta *sta = makeBlockSta(block);
+
   Instance *top_inst = network_->topInstance();
   // Tmp net for parasitics to live on.
-  Net *net = sta_->makeNet("wire", top_inst);
+  Net *net = sta->makeNet("wire", top_inst);
   LibertyCell *drvr_cell = drvr_port->libertyCell();
   LibertyCell *load_cell = load_port->libertyCell();
-  Instance *drvr = sta_->makeInstance("drvr", drvr_cell, top_inst);
-  Instance *load = sta_->makeInstance("load", load_cell, top_inst);
-  sta_->connectPin(drvr, drvr_port, net);
-  sta_->connectPin(load, load_port, net);
+  Instance *drvr = sta->makeInstance("drvr", drvr_cell, top_inst);
+  Instance *load = sta->makeInstance("load", load_cell, top_inst);
+  sta->connectPin(drvr, drvr_port, net);
+  sta->connectPin(load, load_port, net);
   Pin *drvr_pin = network_->findPin(drvr, drvr_port);
   Pin *load_pin = network_->findPin(load, load_port);
 
@@ -2575,12 +2582,15 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
       }
     }
   }
+
   // Cleanup the turds.
   arc_delay_calc_->finishDrvrPin();
   parasitics_->deleteParasiticNetwork(net, dcalc_ap_->parasiticAnalysisPt());
-  sta_->deleteInstance(drvr);
-  sta_->deleteInstance(load);
-  sta_->deleteNet(net);
+  sta->deleteInstance(drvr);
+  sta->deleteInstance(load);
+  sta->deleteNet(net);
+  delete sta;
+  dbBlock::destroy(block);
 }
 
 Parasitic *
@@ -2608,6 +2618,7 @@ Resizer::findMaxSlewWireLength(LibertyPort *drvr_port,
                                LibertyPort *load_port,
                                double max_slew)
 {
+  ensureBlock();
   // wire_length1 lower bound
   // wire_length2 upper bound
   double wire_length1 = 0.0;
@@ -2658,23 +2669,26 @@ double
 Resizer::designArea()
 {
   ensureBlock();
+  ensureDesignArea();
   return design_area_;
 }
 
 void
-Resizer::designAreaIncr(float delta) {
+Resizer::designAreaIncr(float delta)
+{
   design_area_ += delta;
 }
 
-double
-Resizer::findDesignArea()
+void
+Resizer::ensureDesignArea()
 {
-  double design_area = 0.0;
-  for (dbInst *inst : block_->getInsts()) {
-    dbMaster *master = inst->getMaster();
-    design_area += area(master);
+  if (core_exists_) {
+    design_area_ = 0.0;
+    for (dbInst *inst : block_->getInsts()) {
+      dbMaster *master = inst->getMaster();
+      design_area_ += area(master);
+    }
   }
-  return design_area;
 }
 
 int
@@ -2729,6 +2743,7 @@ Resizer::repairClkInverters()
   sta_->ensureLevelized();
   graph_ = sta_->graph();
   ensureBlock();
+  ensureDesignArea();
   InstanceSeq clk_inverters;
   findClkInverters(clk_inverters);
   for (Instance *inv : clk_inverters)
