@@ -47,9 +47,10 @@ sta::define_cmd_alias "place_ios" "io_placer"
 sta::define_cmd_alias "place_pins" "io_placer"
 
 proc io_placer { args } {
+  set regions [ioPlacer::parse_excludes_arg $args]
   sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
-  flags {-random} 0
+  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
+  flags {-random}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
@@ -86,13 +87,13 @@ proc io_placer { args } {
   if [info exists keys(-hor_layer)] {
     set hor_layer $keys(-hor_layer)
   } else {
-    ord::error("-hor_layer is mandatory")
+    ord::error "-hor_layer is mandatory"
   }       
   
   if [info exists keys(-ver_layer)] {
     set ver_layer $keys(-ver_layer)
   } else {
-    ord::error("-ver_layer is mandatory")
+    ord::error "-ver_layer is mandatory"
   }
 
   set offset 5
@@ -144,8 +145,6 @@ proc io_placer { args } {
     ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
-  set arg_error 0
-  set regions [ioPlacer::parse_excludes_arg args arg_error]
   if { $regions != {} } {
     set lef_units [$dbTech getLefUnits]
     
@@ -169,7 +168,11 @@ proc io_placer { args } {
           set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
 
           ioPlacer::exclude_interval $edge_ $begin $end
+        } else {
+          ord::error "-exclude: $interval is an invalid region"
         }
+      } else {
+        ord::error "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval"
       }
     }
   }
@@ -182,22 +185,20 @@ namespace eval ioPlacer {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    ord::error "$cmd: Invalid edge"
+    ord::error "$cmd: $edge is an invalid edge. use top, bottom, left or right"
   }
   return [ioPlacer::get_edge $edge]
 }
 
-proc parse_excludes_arg { args_var arg_error_var } {
-  upvar 1 $args_var args
-  
+proc parse_excludes_arg { args_var } {
   set regions {}
-  while { $args != {} } {
-    set arg [lindex $args 0]
+  while { $args_var != {} } {
+    set arg [lindex $args_var 0]
     if { $arg == "-exclude" } {
-      lappend regions [lindex $args 1]
-      set args [lrange $args 1 end]
+      lappend regions [lindex $args_var 1]
+      set args_var [lrange $args_var 1 end]
     } else {
-      set args [lrange $args 1 end]
+      set args_var [lrange $args_var 1 end]
     }
   }
 
