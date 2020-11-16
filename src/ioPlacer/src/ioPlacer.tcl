@@ -253,7 +253,6 @@ proc parse_direction { cmd direction } {
 }
 
 proc parse_excludes_arg { args_var } {
->>>>>>> openroad
   set regions {}
   while { $args_var != {} } {
     set arg [lindex $args_var 0]
