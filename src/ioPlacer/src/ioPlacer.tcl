@@ -50,7 +50,7 @@ proc io_placer { args } {
   set regions [ioPlacer::parse_excludes_arg $args]
   sta::parse_key_args "io_placer" args \
   keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
-  flags {-random} 1
+  flags {-random}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
