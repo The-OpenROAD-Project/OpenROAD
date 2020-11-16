@@ -33,10 +33,6 @@ eval tapcell $tapcell_args
 # Power distribution network insertion
 pdngen -verbose $pdn_cfg
 
-# pre-placement/sizing wireload timing
-report_checks -path_delay min_max -format full_clock_expanded \
-  -fields {input_pin slew capacitance} -digits 3
-
 ################################################################
 # Global placement
 global_placement -disable_routability_driven \
@@ -44,7 +40,7 @@ global_placement -disable_routability_driven \
   -init_density_penalty $global_place_density_penalty \
   -pad_left $global_place_pad -pad_right $global_place_pad
 
-# checkpoint - easier to see placement pre-filler
+# checkpoint
 set global_place_def [make_result_file ${design}_${platform}_global_place.def]
 write_def $global_place_def
 
@@ -143,17 +139,22 @@ write_verilog -remove_cells $filler_cells $verilog_file
 
 ################################################################
 # Detailed routing
-set routed_def [make_result_file ${design}_${platform}_route.def]
 
-set tr_lef [make_tr_lef]
-set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
-if { [catch "exec which TritonRoute"] } {
-  error "TritonRoute not found."
+set detailed_routing 1
+set drv_count 0
+if { $detailed_routing } {
+  set routed_def [make_result_file ${design}_${platform}_route.def]
+
+  set tr_lef [make_tr_lef]
+  set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
+  if { [catch "exec which TritonRoute"] } {
+    error "TritonRoute not found."
+  }
+  # TritonRoute returns error even when successful.
+  catch "exec TritonRoute $tr_params" tr_log
+  puts $tr_log
+  regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
 }
-# TritonRoute returns error even when successful.
-catch "exec TritonRoute $tr_params" tr_log
-puts $tr_log
-regexp -all {number of violations = ([0-9]+)} $tr_log ignore drv_count
 
 ################################################################
 set pass 1

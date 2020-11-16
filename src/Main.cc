@@ -120,9 +120,9 @@ tclReadlineInit(Tcl_Interp *interp)
 // Tcl init executed inside Tcl_Main.
 static int
 tclAppInit(int argc,
-	   char *argv[],
-	   const char *init_filename,
-	   Tcl_Interp *interp)
+           char *argv[],
+           const char *init_filename,
+           Tcl_Interp *interp)
 {
   // source init.tcl
   if (Tcl_Init(interp) == TCL_ERROR) {
@@ -130,13 +130,13 @@ tclAppInit(int argc,
   }
 #ifdef ENABLE_READLINE
   if (!gui_mode) {
-      if (Tclreadline_Init(interp) == TCL_ERROR) {
-          return TCL_ERROR;
-      }
-      Tcl_StaticPackage(interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
-      if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
-          printf("Failed to load tclreadline\n");
-      }
+    if (Tclreadline_Init(interp) == TCL_ERROR) {
+      return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
+    if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") != TCL_OK) {
+      printf("Failed to load tclreadline\n");
+    }
   }
 #endif
   ord::initOpenRoad(interp);
@@ -154,8 +154,7 @@ tclAppInit(int argc,
       sourceTclFile(init.c_str(), true, true, interp);
     }
 #else
-    char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename)
-;
+    char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename);
     sourceTclFile(init_path, true, true, interp);
 #endif
   }
@@ -167,15 +166,17 @@ tclAppInit(int argc,
     if (argc == 2) {
       char *cmd_file = argv[1];
       if (cmd_file) {
-	sourceTclFile(cmd_file, false, false, interp);
-	if (exit_after_cmd_file)
-	  exit(EXIT_SUCCESS);
+	int result = sourceTclFile(cmd_file, false, false, interp);
+        if (exit_after_cmd_file) {
+          int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+          exit(exit_code);
+        }
       }
     }
   }
 #ifdef ENABLE_READLINE
   if (!gui_mode) {
-      return tclReadlineInit(interp);
+    return tclReadlineInit(interp);
   }
 #endif
   return TCL_OK;
