@@ -48,6 +48,7 @@ write_def $global_place_def
 # Resize
 # estimate wire rc parasitics
 set_wire_rc -layer $wire_rc_layer
+set_wire_rc -clock -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
@@ -112,9 +113,10 @@ foreach layer_adjustment $global_routing_layer_adjustments {
   lassign $layer_adjustment layer adjustment
   set_global_routing_layer_adjustment $layer $adjustment
 }
-fastroute -guide_file $route_guide\
+fastroute -guide_file $route_guide \
   -layers $global_routing_layers \
-  -unidirectional_routing true \
+  -clock_layers $global_routing_clock_layers \
+  -unidirectional_routing \
   -overflow_iterations 100 \
   -verbose 2
 
