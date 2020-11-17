@@ -710,11 +710,11 @@ Edge IOPlacer::getEdge(std::string edge) {
 }
 
 Direction IOPlacer::getDirection(std::string direction) {
-  if (direction == "INPUT") {
+  if (direction == "input") {
     return Direction::Input;
-  } else if (direction == "OUTPUT") {
+  } else if (direction == "output") {
     return Direction::Output;
-  } else if (direction == "INOUT") {
+  } else if (direction == "inout") {
     return Direction::Inout;
   } else {
     return Direction::Feedthru;

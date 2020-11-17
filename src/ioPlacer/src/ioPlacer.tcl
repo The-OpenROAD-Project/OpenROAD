@@ -245,11 +245,15 @@ proc parse_edge { cmd edge } {
 }
 
 proc parse_direction { cmd direction } {
-  if {$direction != "INPUT" && $direction != "OUTPUT" && \
-      $direction != "INOUT" && $direction != "FEEDTHRU"} {
+  if {[regexp -nocase -- {^INPUT$} $direction] || \
+      [regexp -nocase -- {^OUTPUT$} $direction] || \
+      [regexp -nocase -- {^INOUT$} $direction] || \
+      [regexp -nocase -- {^FEEDTHRU$} $direction]} {
+    set direction [string tolower $direction]
+    return [ioPlacer::get_direction $direction]      
+  } else {
     ord::error "$cmd: Invalid pin direction"
   }
-  return [ioPlacer::get_direction $direction]      
 }
 
 proc parse_excludes_arg { args_var } {
