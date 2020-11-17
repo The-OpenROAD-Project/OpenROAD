@@ -67,6 +67,7 @@ class HungarianMatching
   int _numIOPins;
   int _nonBlockedSlots;
   Edge _edge;
+  const int hungarian_fail = std::numeric_limits<int>::max();
 
   void createMatrix(std::vector<Constraint>& constraints);
 

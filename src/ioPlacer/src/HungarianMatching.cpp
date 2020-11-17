@@ -96,7 +96,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
         slotIndex++;
         continue;
       }
-      if (_hungarianMatrix[row][col] == std::numeric_limits<int>::max()) {
+      if (_hungarianMatrix[row][col] == hungarian_fail) {
         warn("I/O pin %s cannot be placed in the specified region. Not enough space",
              ioPin.getName().c_str());
       }
