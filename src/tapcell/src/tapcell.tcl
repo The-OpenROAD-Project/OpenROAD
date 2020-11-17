@@ -221,8 +221,8 @@ namespace eval tapcell {
 
         set end_master [$db findMaster $endcap_master]
         if { $end_master == "NULL" } {
-                ord::error "\[ERROR\] Master $endcap_master not found"
-            }
+            ord::error "Master $endcap_master not found"
+        }
         set end_width [$end_master getWidth]
         set min_row_width [expr 2*$end_width]
 
@@ -313,7 +313,7 @@ namespace eval tapcell {
             set endcapwidth [expr $endcap_cpp*$site_x]
 
             if { $master == "NULL" } {
-                ord::error "\[ERROR\] Master $endcap_master not found"
+                ord::error "Master $endcap_master not found"
             }
 
             set row_name [$row getName]
@@ -328,13 +328,13 @@ namespace eval tapcell {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
+                            ord::error "Master $cnrcap_nwin_master not found"
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
                         
                         if { $master == "NULL" } {
-                            ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
+                            ord::error "Master $cnrcap_nwout_master not found"
                         }
                     }
                 } elseif {$top_bottom == -1} {
@@ -342,13 +342,13 @@ namespace eval tapcell {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            ord::error "\[ERROR\] Master $cnrcap_nwin_master not found"
+                            ord::error "Master $cnrcap_nwin_master not found"
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
 
                         if { $master == "NULL" } {
-                            ord::error "\[ERROR\] Master $cnrcap_nwout_master not found"
+                            ord::error "Master $cnrcap_nwout_master not found"
                         }
                     }
                 } else {
@@ -367,8 +367,8 @@ namespace eval tapcell {
             set row_width [expr $urx - $llx]
             
             if {$master_x > $row_width} {
-                puts "\[WARNING\] No enough space to place endcap in row $row_name. Skipping..."
-                    continue
+                ord::warn "No enough space to place endcap in row $row_name. Skipping..."
+                continue
             }
 
             set loc_2_x [expr $urx - $master_x]
@@ -511,7 +511,7 @@ namespace eval tapcell {
                 for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                     set master [$db findMaster $tapcell_master]
                     if { $master == "NULL" } {
-                        ord::error "\[ERROR\] Master $tapcell_master not found"
+                        ord::error "Master $tapcell_master not found"
                     }
 
                     set inst_name "PHY_${cnt}"
@@ -540,7 +540,7 @@ namespace eval tapcell {
 
                     if {($x != $min_x) && ($x_end != $max_x)} {
                         if { $tap_urx > $end_llx } {
-                            puts "\[WARNING\] Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
+                            ord::warn "Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
                             continue
                         }
 
@@ -1359,7 +1359,7 @@ namespace eval tapcell {
         foreach inst [$block getInsts] {
             if { [$inst isBlock] } {
                 if { ![$inst isPlaced] } {
-                    puts "\[ERROR\] Macro [$inst getName] is not placed"
+                    ord::warn "Macro [$inst getName] is not placed"
                     continue
                 }
                 lappend blockages $inst
