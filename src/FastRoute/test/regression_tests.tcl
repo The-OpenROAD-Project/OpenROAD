@@ -7,4 +7,5 @@ record_tests {
   no_tracks
   region_adjustment
   repair_antennas1
+  repair_antennas2
 }

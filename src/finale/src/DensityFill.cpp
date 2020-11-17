@@ -111,7 +111,7 @@ DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
 // values.  It also translates from microns to DBU and layer names
 // to dbTechLayer*.
 void DensityFill::read_and_expand_layers(dbTech* tech,
-                                         boost::property_tree::ptree& tree)
+                                         pt::ptree& tree)
 {
   int dbu = tech->getDbUnitsPerMicron();
 
@@ -196,7 +196,7 @@ void DensityFill::read_and_expand_layers(dbTech* tech,
 void DensityFill::loadConfig(const char* cfg_filename, dbTech* tech)
 {
   // Read the json config file using Boost's property_tree
-  boost::property_tree::ptree tree;
+  pt::ptree tree;
   pt::json_parser::read_json(cfg_filename, tree);
   read_and_expand_layers(tech, tree);
 }

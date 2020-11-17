@@ -244,6 +244,7 @@ protected:
   void restartFastRoute();
   void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
   void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
+  void removeDirtyNetsUsage();
 
   // db functions
   void initGrid(int maxLayer);

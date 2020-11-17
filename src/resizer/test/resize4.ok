@@ -23,8 +23,8 @@ Path Type: max
    0.000    0.000    0.000   clock clk (rise edge)
             0.000    0.000   clock network delay (ideal)
    0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.025    0.190    0.190 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.025    0.000    0.190 v u1/A (sky130_fd_sc_hs__buf_1)
+   0.024    0.190    0.190 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.024    0.000    0.190 v u1/A (sky130_fd_sc_hs__buf_1)
    0.058    0.100    0.290 v u1/X (sky130_fd_sc_hs__buf_1)
    0.058    0.000    0.290 v r2/D (sky130_fd_sc_hs__dfxbp_1)
                      0.290   data arrival time
@@ -42,7 +42,7 @@ Path Type: max
                      0.585   slack (MET)
 
 
-Resized 1 instances.
+Resized 0 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -53,22 +53,22 @@ Path Type: max
    0.000    0.000    0.000   clock clk (rise edge)
             0.000    0.000   clock network delay (ideal)
    0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.026    0.191    0.191 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.026    0.000    0.191 v u1/A (sky130_fd_sc_hs__clkbuf_1)
-   0.091    0.117    0.308 v u1/X (sky130_fd_sc_hs__clkbuf_1)
-   0.091    0.000    0.308 v r2/D (sky130_fd_sc_hs__dfxbp_1)
-                     0.308   data arrival time
+   0.024    0.190    0.190 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.024    0.000    0.190 v u1/A (sky130_fd_sc_hs__buf_1)
+   0.058    0.100    0.290 v u1/X (sky130_fd_sc_hs__buf_1)
+   0.058    0.000    0.290 v r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.290   data arrival time
 
    0.000    1.000    1.000   clock clk (rise edge)
             0.000    1.000   clock network delay (ideal)
             0.000    1.000   clock reconvergence pessimism
                      1.000 ^ r2/CLK (sky130_fd_sc_hs__dfxbp_1)
-           -0.137    0.863   library setup time
-                     0.863   data required time
+           -0.125    0.875   library setup time
+                     0.875   data required time
 -------------------------------------------------------------------
-                     0.863   data required time
-                    -0.308   data arrival time
+                     0.875   data required time
+                    -0.290   data arrival time
 -------------------------------------------------------------------
-                     0.555   slack (MET)
+                     0.585   slack (MET)
 
 

@@ -242,24 +242,28 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
   getPreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
   addLocalConnections(originalRoute);
 
+  odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
+  if (diodeMTerm == nullptr) {
+    error("conversion from liberty port to dbMTerm fail");
+  }
+
   int violationsCnt
-      = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer);
+      = antennaRepair->checkAntennaViolations(originalRoute, _maxRoutingLayer, diodeMTerm);
 
   if (violationsCnt > 0) {
-    clearFlow();
-    odb::dbMTerm* diodeMTerm = _sta->getDbNetwork()->staToDb(diodePort);
-    if (diodeMTerm == nullptr) {
-      error("conversion from liberty port to dbMTerm fail");
-    }
-    
+    clearFlow();    
     antennaRepair->fixAntennas(diodeMTerm);
     antennaRepair->legalizePlacedCells();
+
+    std::cout << "[INFO] " << antennaRepair->getDiodesCount() << " diodes inserted\n";
+
     _reroute = true;
     startFastRoute();
     _fastRoute->setVerbose(0);
     std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
+    removeDirtyNetsUsage();
 
     NetRouteMap newRoute = findRouting();
     mergeResults(newRoute);
@@ -443,6 +447,56 @@ void GlobalRouter::restorePreviousCapacities(int previousMinLayer, int previousM
   }
 }
 
+void GlobalRouter::removeDirtyNetsUsage()
+{
+  for (odb::dbNet* db_net : _dirtyNets) {
+    GRoute &netRoute = _routes[db_net];
+    int segsCnt = 0;
+    for (GSegment &segment : netRoute) {
+      if (!(segment.initLayer != segment.finalLayer ||
+           (segment.initX == segment.finalX &&
+            segment.initY == segment.finalY))) {
+        odb::Point initOnGrid = 
+             _grid->getPositionOnGrid(odb::Point(segment.initX, segment.initY));
+        odb::Point finalOnGrid = 
+             _grid->getPositionOnGrid(odb::Point(segment.finalX, segment.finalY));
+
+        if (initOnGrid.y() == finalOnGrid.y()) {
+          int minX = (initOnGrid.x() <= finalOnGrid.x()) ? initOnGrid.x() : finalOnGrid.x();
+          int maxX = (initOnGrid.x() > finalOnGrid.x()) ? initOnGrid.x() : finalOnGrid.x();
+
+          minX = (minX - (_grid->getTileWidth() / 2)) / _grid->getTileWidth();
+          maxX = (maxX - (_grid->getTileWidth() / 2)) / _grid->getTileWidth();
+          int y = (initOnGrid.y() - (_grid->getTileHeight() / 2)) / _grid->getTileHeight();
+
+          for (int x = minX; x < maxX; x++) {
+            int newCap = _fastRoute->getEdgeCurrentResource(x, y, segment.initLayer,
+                                                            x+1, y, segment.initLayer) + 1;
+            _fastRoute->addAdjustment(
+                x, y, segment.initLayer, x + 1, y, segment.initLayer, newCap, false);
+          }
+        } else if (initOnGrid.x() == finalOnGrid.x()) {
+          int minY = (initOnGrid.y() <= finalOnGrid.y()) ? initOnGrid.y() : finalOnGrid.y();
+          int maxY = (initOnGrid.y() > finalOnGrid.y()) ? initOnGrid.y() : finalOnGrid.y();
+          
+          minY = (minY - (_grid->getTileHeight() / 2)) / _grid->getTileHeight();
+          maxY = (maxY - (_grid->getTileHeight() / 2)) / _grid->getTileHeight();
+          int x = (initOnGrid.x() - (_grid->getTileWidth() / 2)) / _grid->getTileWidth();
+
+          for (int y = minY; y < maxY; y++) {
+            int newCap = _fastRoute->getEdgeCurrentResource(x, y, segment.initLayer,
+                                                            x, y+1, segment.initLayer) + 1;
+            _fastRoute->addAdjustment(
+                x, y, segment.initLayer, x, y+1, segment.initLayer, newCap, false);
+          }
+        } else {
+          ord::error("Invalid segment for net %s", db_net->getConstName());
+        }
+      }
+    }
+  }
+}
+
 void GlobalRouter::setSpacingsAndMinWidths()
 {
   for (int l = 1; l <= _grid->getNumLayers(); l++) {
@@ -528,6 +582,8 @@ void GlobalRouter::initializeNets(bool reroute)
 {
   initNetlist(reroute);
   checkPinPlacement();
+  if (reroute)
+    _padPinsConnections.clear();
 
   int validNets = 0;
 
@@ -1714,7 +1770,7 @@ GlobalRouter::ROUTE_ GlobalRouter::getRoute()
 
 void GlobalRouter::computeWirelength()
 {
-  int totalWirelength = 0;
+  long totalWirelength = 0;
   for (auto &net_route : _routes) {
     GRoute &route = net_route.second;
     for (GSegment &segment : route) {
@@ -1728,7 +1784,7 @@ void GlobalRouter::computeWirelength()
     }
   }
   std::cout << std::fixed << "[INFO] Total wirelength: "
-            << (int) totalWirelength / _grid->getDatabaseUnit() << " um\n";
+            << totalWirelength / _block->getDefUnits() << " um\n";
 }
 
 void GlobalRouter::mergeSegments()
@@ -2191,8 +2247,7 @@ void GlobalRouter::initGrid(int maxLayer)
                 genericVector,
                 genericVector,
                 genericVector,
-                genericMap,
-                tech->getLefUnits());
+                genericMap);
 }
 
 void GlobalRouter::initRoutingLayers(std::vector<RoutingLayer>& routingLayers)
