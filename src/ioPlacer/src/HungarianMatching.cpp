@@ -51,7 +51,7 @@ HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots)
   _edge = section.edge;
 }
 
-void HungarianMatching::run(std::vector<Constraint>& constraints)
+void HungarianMatching::findAssignment(std::vector<Constraint>& constraints)
 {
   createMatrix(constraints);
   _hungarianSolver.Solve(_hungarianMatrix, _assignment);

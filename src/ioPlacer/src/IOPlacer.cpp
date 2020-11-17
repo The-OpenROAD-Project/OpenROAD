@@ -759,7 +759,7 @@ void IOPlacer::run(int horLayerIdx, int verLayerIdx, bool randomMode)
     }
 
     for (int idx = 0; idx < hgVec.size(); idx++) {
-      hgVec[idx].run(_constraints);
+      hgVec[idx].findAssignment(_constraints);
     }
 
     for (int idx = 0; idx < hgVec.size(); idx++) {

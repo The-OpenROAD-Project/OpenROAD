@@ -74,7 +74,7 @@ class HungarianMatching
  public:
   HungarianMatching(Section_t&, slotVector_t&);
   virtual ~HungarianMatching() = default;
-  void run(std::vector<Constraint>& constraints);
+  void findAssignment(std::vector<Constraint>& constraints);
   void getFinalAssignment(std::vector<IOPin>&);
 };
 
