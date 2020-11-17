@@ -506,9 +506,9 @@ void GlobalRouter::setSpacingsAndMinWidths()
   }
 }
 
-void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
-{ 
-  for (Pin& pin : net.getPins()) {
+void GlobalRouter::findPins(Net& net)
+{
+ for (Pin& pin : net.getPins()) {
     odb::Point pinPosition;
     int topLayer = pin.getTopLayer();
     RoutingLayer layer = getRoutingLayerByIndex(topLayer);
@@ -546,7 +546,17 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
     }
 
     pin.setOnGridPosition(pinPosition);
+  }
+}
 
+void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
+{ 
+  findPins(net);
+
+  for (Pin& pin : net.getPins()) {
+    odb::Point pinPosition = pin.getOnGridPosition();
+    int topLayer = pin.getTopLayer();
+    RoutingLayer layer = getRoutingLayerByIndex(topLayer);
     // If pin is connected to PAD, create a "fake" location in routing
     // grid to avoid PAD obstacles
     if (pin.isConnectedToPad() || pin.isPort()) {
@@ -636,6 +646,8 @@ void GlobalRouter::initializeNets(bool reroute)
             }
           }
         }
+      } else {
+        findPins(net);
       }
     }
     idx++;
