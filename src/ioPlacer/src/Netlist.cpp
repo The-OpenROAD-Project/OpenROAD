@@ -199,13 +199,9 @@ bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
 }
 
 bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
-  if (constraint.interval.getEdge() == edge &&
-      pos >= constraint.interval.getBegin() &&
-      pos <= constraint.interval.getEnd()) {
-    return true;
-  } else {
-    return false;
-  }
+  return (constraint.interval.getEdge() == edge &&
+          pos >= constraint.interval.getBegin() &&
+          pos <= constraint.interval.getEnd());
 }
 
 }  // namespace ioPlacer
