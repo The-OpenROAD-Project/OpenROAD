@@ -571,28 +571,28 @@ void IOPlacer::updateOrientation(IOPin& pin)
 
   if (x == lowerXBound) {
     if (y == upperYBound) {
-      pin.setOrientation(Orientation::ORIENT_SOUTH);
+      pin.setOrientation(Orientation::South);
       return;
     } else {
-      pin.setOrientation(Orientation::ORIENT_EAST);
+      pin.setOrientation(Orientation::East);
       return;
     }
   }
   if (x == upperXBound) {
     if (y == lowerYBound) {
-      pin.setOrientation(Orientation::ORIENT_NORTH);
+      pin.setOrientation(Orientation::North);
       return;
     } else {
-      pin.setOrientation(Orientation::ORIENT_WEST);
+      pin.setOrientation(Orientation::West);
       return;
     }
   }
   if (y == lowerYBound) {
-    pin.setOrientation(Orientation::ORIENT_NORTH);
+    pin.setOrientation(Orientation::North);
     return;
   }
   if (y == upperYBound) {
-    pin.setOrientation(Orientation::ORIENT_SOUTH);
+    pin.setOrientation(Orientation::South);
     return;
   }
 }
@@ -606,8 +606,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
   int upperXBound = _core.getBoundary().ur().x();
   int upperYBound = _core.getBoundary().ur().y();
 
-  if (pin.getOrientation() == Orientation::ORIENT_NORTH
-      || pin.getOrientation() == Orientation::ORIENT_SOUTH) {
+  if (pin.getOrientation() == Orientation::North
+      || pin.getOrientation() == Orientation::South) {
     float thicknessMultiplier = _parms->getVerticalThicknessMultiplier();
     int halfWidth = int(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplier;
     int height = int(std::max(2.0 * halfWidth,
@@ -622,7 +622,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       ext = _parms->getVerticalLengthExtend() * _core.getDatabaseUnit();
     }
 
-    if (pin.getOrientation() == Orientation::ORIENT_NORTH) {
+    if (pin.getOrientation() == Orientation::North) {
       pin.setLowerBound(pin.getX() - halfWidth, pin.getY() - ext);
       pin.setUpperBound(pin.getX() + halfWidth, pin.getY() + height);
     } else {
@@ -631,8 +631,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
   }
 
-  if (pin.getOrientation() == Orientation::ORIENT_WEST
-      || pin.getOrientation() == Orientation::ORIENT_EAST) {
+  if (pin.getOrientation() == Orientation::West
+      || pin.getOrientation() == Orientation::East) {
     float thicknessMultiplier = _parms->getHorizontalThicknessMultiplier();
     int halfWidth = int(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplier;
     int height = int(std::max(2.0 * halfWidth,
@@ -646,7 +646,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       height = _parms->getHorizontalLength() * _core.getDatabaseUnit();
     }
 
-    if (pin.getOrientation() == Orientation::ORIENT_EAST) {
+    if (pin.getOrientation() == Orientation::East) {
       pin.setLowerBound(pin.getX() - ext, pin.getY() - halfWidth);
       pin.setUpperBound(pin.getX() + height, pin.getY() + halfWidth);
     } else {
@@ -711,13 +711,13 @@ Edge IOPlacer::getEdge(std::string edge) {
 
 Direction IOPlacer::getDirection(std::string direction) {
   if (direction == "INPUT") {
-    return Direction::INPUT;
+    return Direction::Input;
   } else if (direction == "OUTPUT") {
-    return Direction::OUTPUT;
+    return Direction::Output;
   } else if (direction == "INOUT") {
-    return Direction::INOUT;
+    return Direction::Inout;
   } else {
-    return Direction::FEEDTHRU;
+    return Direction::Feedthru;
   }
 
   return Direction::Invalid;
@@ -886,16 +886,16 @@ void IOPlacer::initNetlist()
            curBTerm->getConstName());
     }
 
-    Direction dir = INOUT;
+    Direction dir = Direction::Inout;
     switch (curBTerm->getIoType()) {
       case odb::dbIoType::INPUT:
-        dir = INPUT;
+        dir = Direction::Input;
         break;
       case odb::dbIoType::OUTPUT:
-        dir = OUTPUT;
+        dir = Direction::Output;
         break;
       default:
-        dir = INOUT;
+        dir = Direction::Inout;
     }
 
     int xPos = 0;
@@ -962,8 +962,8 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment,
     int xMax = upperBound.x();
     int yMax = upperBound.y();
     odb::dbTechLayer* layer = verLayer;
-    if (pin.getOrientation() == Orientation::ORIENT_EAST
-        || pin.getOrientation() == Orientation::ORIENT_WEST) {
+    if (pin.getOrientation() == Orientation::East
+        || pin.getOrientation() == Orientation::West) {
       layer = horLayer;
     }
 

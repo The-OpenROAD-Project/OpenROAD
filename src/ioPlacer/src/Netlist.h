@@ -52,19 +52,19 @@ using odb::Rect;
 struct Constraint;
 enum class Edge;
 
-enum Orientation
+enum class Orientation
 {
-  ORIENT_NORTH,
-  ORIENT_SOUTH,
-  ORIENT_EAST,
-  ORIENT_WEST
+  North,
+  South,
+  East,
+  West
 };
-enum Direction
+enum class Direction
 {
-  INPUT,
-  OUTPUT,
-  INOUT,
-  FEEDTHRU,
+  Input,
+  Output,
+  Inout,
+  Feedthru,
   Invalid
 };
 
@@ -104,7 +104,7 @@ class IOPin : public InstancePin
         std::string netName,
         std::string locationType)
       : InstancePin(name, pos),
-        _orientation(ORIENT_NORTH),
+        _orientation(Orientation::North),
         _direction(dir),
         _lowerBound(lowerBound),
         _upperBound(upperBound),
