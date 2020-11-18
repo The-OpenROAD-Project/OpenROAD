@@ -49,18 +49,23 @@ namespace ioPlacer {
 using odb::Point;
 using odb::Rect;
 
-enum Orientation
+struct Constraint;
+enum class Edge;
+
+enum class Orientation
 {
-  ORIENT_NORTH,
-  ORIENT_SOUTH,
-  ORIENT_EAST,
-  ORIENT_WEST
+  North,
+  South,
+  East,
+  West
 };
-enum Direction
+enum class Direction
 {
-  DIR_IN,
-  DIR_OUT,
-  DIR_INOUT
+  Input,
+  Output,
+  Inout,
+  Feedthru,
+  Invalid
 };
 
 class InstancePin
@@ -99,7 +104,7 @@ class IOPin : public InstancePin
         std::string netName,
         std::string locationType)
       : InstancePin(name, pos),
-        _orientation(ORIENT_NORTH),
+        _orientation(Orientation::North),
         _direction(dir),
         _lowerBound(lowerBound),
         _upperBound(upperBound),
@@ -131,6 +136,10 @@ class Netlist
   std::vector<int> _netPointer;
   std::vector<IOPin> _ioPins;
 
+  bool checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
+                       std::vector<Constraint> restrictions);
+  bool checkInterval(Constraint constraint, Edge edge, int pos);
+
  public:
   Netlist();
 
@@ -144,6 +153,7 @@ class Netlist
   int numIOPins();
 
   int computeIONetHPWL(int, odb::Point);
+  int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
 };
