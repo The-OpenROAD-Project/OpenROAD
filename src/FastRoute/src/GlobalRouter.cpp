@@ -625,6 +625,8 @@ void GlobalRouter::initializeNets(bool reroute)
       }
 
       if (checkSignalType(net)) {
+        // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a single net.
+        // Nets with tens of thousands of pins lead to runtime issues (hours to complete) or segfault
         if (pin_count >= std::numeric_limits<short>::max()) {
           std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
                     << " due to large number of pins\n";
