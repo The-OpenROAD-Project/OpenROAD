@@ -12,5 +12,5 @@ estimate_parasitics -placement
 set_load .012 u1z
 
 report_checks -fields {slew input_pin} -digits 3
-resize
+sta::resize
 report_checks -fields {slew input_pin} -digits 3
