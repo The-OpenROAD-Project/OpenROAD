@@ -7,9 +7,7 @@ search and repair, and a DRC engine. The initial development of the
 is inspired by the 
 [ISPD-2018 initial detailed routing contest](http://www.ispd.cc/contests/18/). 
 However, the current framework differs and is built from scratch, aiming 
-for an industrial-oriented scalable and flexible flow. Currently, the router 
-only has a limited support of block-level designs with standard cells and 
-macros for CLN65LP.
+for an industrial-oriented scalable and flexible flow. 
 
 TritonRoute was developed by graduate students Lutong Wang and Bangqi Xu from 
 UC San Diego, and serves as the detailed router in the 
@@ -29,24 +27,8 @@ prerequisites:
 * Bison >= 3.0.4
 * zlib >= 1.2.7
 * CMake >= 3.1
-
-To install TritonRoute:
-```
-$ git clone https://github.com/The-OpenROAD-Project/TritonRoute.git
-$ cd TritonRoute 
-$ mkdir build
-$ cd build
-$ cmake -DBOOST_ROOT=<BOOST_ROOT> ../
-$ make
-```
-   
-To run TritonRoute: 
-```
-$ ./TritonRoute -lef <LEF_FILE> -def <DEF_FILE> -guide <GUIDE_FILE> -output <OUTPUT_DEF>
-```
-
+  
 ## Supported Technologies ##
-* CLN65LP (with limited selection of standard cells, macros and floorplans)
 * ISPD-2018 and ISPD-2019 Initial Detailed Routing Contests 
 
 ## References ##
