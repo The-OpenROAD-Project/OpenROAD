@@ -316,27 +316,15 @@ repair_design [-max_wire_length max_length]
 
 The `repair_design` inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
-delay in the wire. Use `-max_wire_length` to specify the maximum lenth
-of wires.  The resistance/capacitance values in `set_wire_rc` are used
-to find the wire delays.
+delay in the wire. It also resizes gates to normalize slews.  Use
+`-max_wire_length` to specify the maximum length of wires.  The
+resistance/capacitance values in `set_wire_rc` are used to find the
+wire delays.
 
 Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
 ```
 set_max_fanout <fanout> [current_design]
 ```
-
-```
-resize [-libraries resize_libraries]
-       [-max_utilization util]
-```
-The `resize` command resizes gates to normalize slews.
-
-The `-libraries` option specifies which libraries to use when
-resizing. `resize_libraries` defaults to all of the liberty libraries
-that have been read. Some designs have multiple libraries with
-different transistor thresholds (Vt) and are used to trade off power
-and speed. Chosing a low Vt library uses more power but results in a
-faster design after the resizing step.
 
 ```
 repair_tie_fanout [-separation dist]
