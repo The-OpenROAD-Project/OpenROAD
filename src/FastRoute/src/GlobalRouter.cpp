@@ -2507,9 +2507,7 @@ Net* GlobalRouter::getNet(odb::dbNet* db_net)
 
 void GlobalRouter::initClockNets()
 {
-  std::set<odb::dbNet*> _clockNets;
-
-  _sta->findClkNets(_clockNets);
+  std::set<odb::dbNet*> _clockNets = _sta->findClkNets();
 
   std::cout << "[INFO] Found " << _clockNets.size() << " clock nets\n";
 

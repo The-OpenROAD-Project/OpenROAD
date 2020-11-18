@@ -1058,7 +1058,8 @@ dbNetwork::connect(Instance *inst,
   }
   if (isDriver(pin)) {
     PinSet *drvrs = net_drvr_pin_map_[net];
-    drvrs->insert(pin);
+    if (drvrs)
+      drvrs->insert(pin);
   }
   return pin;
 }

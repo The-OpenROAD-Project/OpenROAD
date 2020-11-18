@@ -100,11 +100,8 @@ public:
   virtual void postReadDb(odb::dbDatabase* db) override;
 
   // Find clock nets connected by combinational gates from the clock roots. 
-  void findClkNets(// Return value
-		   std::set<dbNet*> &clk_nets);
-  void findClkNets(const Clock *clk,
-		   // Return value
-		   std::set<dbNet*> &clk_nets);
+  std::set<dbNet*> findClkNets();
+  std::set<dbNet*> findClkNets(const Clock *clk);
 
   virtual void deleteInstance(Instance *inst) override;
   virtual void deleteNet(Net *net) override;
