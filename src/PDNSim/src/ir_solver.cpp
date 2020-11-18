@@ -157,8 +157,15 @@ void IRSolver::SolveIR()
     Node* node = m_Gmat->GetNode(node_num);
     double volt = x(node_num);
     sum_volt   = sum_volt + volt;
-    if (volt < wc_voltage) {
-      wc_voltage = volt;
+    if (m_power_net_type == dbSigType::POWER) {
+      if (volt < wc_voltage) {
+        wc_voltage = volt;
+      }
+    }
+    else {
+      if (volt > wc_voltage) {
+        wc_voltage = volt;
+      }
     }
     node->SetVoltage(volt);
     node_num++;
@@ -170,7 +177,7 @@ void IRSolver::SolveIR()
       std::vector<dbInst*>::iterator inst_it;
       if (m_out_file != "") {
         for(inst_it = insts.begin();inst_it!=insts.end();inst_it++) {
-          ir_report<<(*inst_it)->getName()<<", "<<loc_x<<", " <<loc_y<<", "<<setprecision(10)<<volt<<"\n";
+          ir_report<<(*inst_it)->getName()<<", "<<loc_x<<", " <<loc_y<<", "<<setprecision(6)<<volt<<"\n";
         }
       }
     }
@@ -178,6 +185,67 @@ void IRSolver::SolveIR()
   ir_report<<endl;
   ir_report.close();
   avg_voltage = sum_volt / num_nodes;
+  if(m_em_flag == 1) {
+    map<GMatLoc, double>::iterator it;
+    DokMatrix*        Gmat_dok = m_Gmat->GetGMatDOK();
+    int resistance_number = 0;
+    max_cur = 0;
+    double sum_cur = 0;
+    ofstream em_report;
+    if (m_em_out_file != "") {
+      em_report.open (m_em_out_file);
+      em_report<<"Segment name, "<<" Current, "<<" Node 1, "<<" Node 2 "<<"\n";
+    }
+    NodeLoc node_loc;
+    for(it = Gmat_dok->values.begin(); it!= Gmat_dok->values.end(); it++){
+      NodeIdx col = (it->first).first;
+      NodeIdx row = (it->first).second;
+      if(col <= row) {
+        continue; //ignore lower half and diagonal as matrix is symmetric
+      }
+      double cond = it->second;           // get cond value
+      if(abs(cond) < 1e-15){            //ignore if an empty cell
+        continue;
+      }
+      string net_name = m_power_net;
+      if(col < num_nodes) { //resistances
+        double resistance = -1/cond;
+
+        Node* node1 = m_Gmat->GetNode(col); 
+        Node* node2 = m_Gmat->GetNode(row); 
+        node_loc = node1->GetLoc();
+        int x1 = node_loc.first;
+        int y1 = node_loc.second;
+        int l1 = node1->GetLayerNum();
+        string node1_name = net_name + "_" + to_string(x1) + "_" + to_string(y1) + "_" + to_string(l1);
+
+        node_loc = node2->GetLoc();
+        int x2 = node_loc.first;
+        int y2 = node_loc.second;
+        int l2 = node2->GetLayerNum();
+        string node2_name = net_name + "_" + to_string(x2) + "_" + to_string(y2) + "_" + to_string(l2);
+        
+        string segment_name = "seg_" + to_string(resistance_number); 
+
+        double v1 = node1->GetVoltage();
+        double v2 = node2->GetVoltage();
+        double seg_cur;
+        seg_cur = (v1-v2)/resistance;
+        sum_cur += abs(seg_cur);
+        if (m_em_out_file != "") {
+            em_report<<segment_name<<", "<<std::setprecision(3)<<seg_cur<<", "<<node1_name<<", "<<node2_name<<endl;
+        }
+        seg_cur = abs(seg_cur);
+        if (seg_cur > max_cur) {
+            max_cur = seg_cur;
+        }
+        resistance_number++;
+      }
+    } // for gmat values
+    avg_cur = sum_cur/resistance_number;
+    num_res = resistance_number;
+
+  } //enable em
 }
 
 //! Function to add C4 bumps to the G matrix
@@ -301,14 +369,18 @@ bool IRSolver::CreateJ()
       cout<<"WARNING: Instance current node at "<<node_loc.first<<" "<<node_loc.second<<" layer "<<l<<" moved from "<<x<<" "<<y<<endl;
       cout<<"Instance: " << it->first <<endl;
     }
-    //TODO modify for ground network
+    // Both these lines will change in the future for multiple power domains
     node_J->AddCurrentSrc(it->second);
     node_J->AddInstance(inst);
   }
   for (int i = 0; i < num_nodes; ++i) {
     Node* node_J = m_Gmat->GetNode(i);
-    m_J[i] = -1 * (node_J->GetCurrent());  // as MNA needs negative
-    // cout << m_J[i] <<endl;
+    if (m_power_net_type == dbSigType::GROUND) {
+        m_J[i] = (node_J->GetCurrent());  
+    }
+    else {
+        m_J[i] = -1*(node_J->GetCurrent()); 
+    }
   }
   cout << "INFO: Created J vector" << endl;
   return true;
@@ -330,32 +402,39 @@ bool IRSolver::CreateGmat(bool connection_only)
   dbChip*             chip  = m_db->getChip();
   dbBlock*            block = chip->getBlock();
   dbSet<dbNet>        nets  = block->getNets();
-  std::vector<dbNet*> vdd_nets;
-  std::vector<dbNet*> gnd_nets;
+  dbNet* power_net = block->findNet(m_power_net.data());
+  if (power_net == NULL) {
+    cout << "Error: Cannot find net " << m_power_net << " in the design. Please provide a valid VDD/VSS net"<<endl;
+    return false;
+  }
+  cout << "INFO: Found power net " << power_net->getName() <<endl;
+  m_power_net_type = power_net->getSigType();
   std::vector<dbNet*> power_nets;
   int num_wires =0;
-  cout << "Extracting power stripes on net " << m_power_net <<endl;
-  dbSet<dbNet>::iterator nIter;
-  for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
-    dbNet* curDnet = *nIter;
-    dbSigType nType = curDnet->getSigType();
-    if(m_power_net == "VSS") {
-      if (nType == dbSigType::GROUND) {
-        power_nets.push_back(curDnet);
-      } else {
-        continue;
-      }
-    } else if(m_power_net == "VDD") {
-      if (nType == dbSigType::POWER) {
-        power_nets.push_back(curDnet);
-      } else {
-        continue;
-      }
-    } else {
-      cout << "Warning: Net not specifed as VDD or VSS. Power grid checker is not run." <<endl;
-      return false;
-    }
-  }
+  cout << "INFO: Extracting power stripes on net " << power_net->getName()<<endl;
+  power_nets.push_back(power_net);
+  
+  //dbSet<dbNet>::iterator nIter;
+  //for (nIter = nets.begin(); nIter != nets.end(); ++nIter) {
+  //  dbNet* curDnet = *nIter;
+  //  dbSigType nType = curDnet->getSigType();
+  //  if(m_power_net == "VSS") {
+  //    if (nType == dbSigType::GROUND) {
+  //      power_nets.push_back(curDnet);
+  //    } else {
+  //      continue;
+  //    }
+  //  } else if(m_power_net == "VDD") {
+  //    if (nType == dbSigType::POWER) {
+  //      power_nets.push_back(curDnet);
+  //    } else {
+  //      continue;
+  //    }
+  //  } else {
+  //    cout << "Warning: Net not specifed as VDD or VSS. Power grid checker is not run." <<endl;
+  //    return false;
+  //  }
+  //}
   if(power_nets.size() == 0) {
     cout<<"Warning:No power stipes found in design. Power grid checker is not run."<<endl;
     return false;
@@ -881,6 +960,8 @@ bool IRSolver::GetResult(){
   return m_result; 
 }
 
+
+
 int IRSolver::PrintSpice() {
   DokMatrix*        Gmat = m_Gmat->GetGMatDOK();
   map<GMatLoc, double>::iterator it;
@@ -909,7 +990,7 @@ int IRSolver::PrintSpice() {
       continue;
     }
 
-    string net_name = "vdd";
+    string net_name = m_power_net;
     if(col < num_nodes) { //resistances
       double resistance = -1/cond;
 

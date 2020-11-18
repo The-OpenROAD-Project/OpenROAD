@@ -151,26 +151,11 @@ proc set_dont_use { args } {
   set_dont_use_cmd [get_lib_cells_arg "-dont_use" [lindex $args 0] ord::warn]
 }
 
-define_cmd_args "resize" {[-libraries resize_libs]\
-                            [-max_utilization util]}
-
+# for testing resizing separately
 proc resize { args } {
-  parse_key_args "resize" args \
-    keys {-libraries} flags {}
-  
-  if { [info exists keys(-libraries)] } {
-    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
-  } else {
-    set resize_libs [get_libs *]
-    if { $resize_libs == {} } {
-      ord::error "No liberty libraries found."
-    }
-  }
-  
   check_argc_eq0 "resize" $args
-  
   check_parasitics
-  resizer_preamble $resize_libs
+  resizer_preamble [get_libs *]
   resize_to_target_slew
 }
 
@@ -254,9 +239,9 @@ proc repair_design { args } {
     check_positive_float "-max_wire_length" $max_wire_length
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
     if { [sta::wire_resistance] > 0 } {
-      set max_slew_wire_length [find_max_wire_length $buffer_cell]
-      if { $max_wire_length < $max_slew_wire_length } {
-        ord::warn "max wire length less than [format %.0fu [expr $max_slew_wire_length * 1e+6]] increases wire delays."
+      set min_delay_max_wire_length [find_max_wire_length $buffer_cell]
+      if { $max_wire_length < $min_delay_max_wire_length } {
+        ord::warn "max wire length less than [format %.0fu [expr $min_delay_max_wire_length * 1e+6]] increases wire delays."
       }
     }
   }

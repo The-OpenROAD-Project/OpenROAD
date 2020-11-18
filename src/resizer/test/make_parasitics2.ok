@@ -23,7 +23,7 @@ Path Type: max
    0.00    0.00 ^ r2/CK (DFF_X1)
    0.10    0.10 ^ r2/Q (DFF_X1)
    0.09    0.20 ^ u1/Z (BUF_X1)
-   0.12    0.31 ^ u2/ZN (AND2_X1)
+   0.11    0.31 ^ u2/ZN (AND2_X1)
    0.01    0.32 ^ r3/D (DFF_X1)
            0.32   data arrival time
 
@@ -37,6 +37,6 @@ Path Type: max
            9.96   data required time
           -0.32   data arrival time
 ---------------------------------------------------------
-           9.63   slack (MET)
+           9.64   slack (MET)
 
 

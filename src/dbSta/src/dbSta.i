@@ -38,8 +38,7 @@ report_all_clk_nets()
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets;
-  sta->findClkNets(clk_nets);
+  std::set<dbNet*> clk_nets = sta->findClkNets();
   for (dbNet *net : clk_nets)
     printf("%s\n", net->getConstName());
 }
@@ -49,8 +48,7 @@ report_clk_nets(const Clock *clk)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets;
-  sta->findClkNets(clk, clk_nets);
+  std::set<dbNet*> clk_nets = sta->findClkNets(clk);
   for (dbNet *net : clk_nets)
     printf("%s\n", net->getConstName());
 }

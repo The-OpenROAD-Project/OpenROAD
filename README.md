@@ -316,27 +316,15 @@ repair_design [-max_wire_length max_length]
 
 The `repair_design` inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
-delay in the wire. Use `-max_wire_length` to specify the maximum lenth
-of wires.  The resistance/capacitance values in `set_wire_rc` are used
-to find the wire delays.
+delay in the wire. It also resizes gates to normalize slews.  Use
+`-max_wire_length` to specify the maximum length of wires.  The
+resistance/capacitance values in `set_wire_rc` are used to find the
+wire delays.
 
 Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
 ```
 set_max_fanout <fanout> [current_design]
 ```
-
-```
-resize [-libraries resize_libraries]
-       [-max_utilization util]
-```
-The `resize` command resizes gates to normalize slews.
-
-The `-libraries` option specifies which libraries to use when
-resizing. `resize_libraries` defaults to all of the liberty libraries
-that have been read. Some designs have multiple libraries with
-different transistor thresholds (Vt) and are used to trade off power
-and speed. Chosing a low Vt library uses more power but results in a
-faster design after the resizing step.
 
 ```
 repair_tie_fanout [-separation dist]
@@ -789,17 +777,29 @@ The `cluster_buffers` command can be used to automatically select representative
 
 #### PDN analysis
 
-PDNSim PDN checker searches for floating PDN stripes.
+PDNSim PDN checker searches for floating PDN stripes on the power and ground nets. 
 
-PDNSim reports worst IR drop given a placed and PDN synthesized design.
+PDNSim reports worst IR drop and worst current density in a power wire drop given a placed and PDN synthesized design.
+
+PDNSim spice netlist writer for power wires.
+
+Commands for the above three functionalities are below: 
 
 ```
-check_power_grid -net <VDD/VSS>
-analyze_power_grid -vsrc <voltage_source_location_file>
-write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp>
+check_power_grid -net <net_name>
+analyze_power_grid -vsrc <voltage_source_location_file> \
+                   -net <net_name> \ 
+                   [-outfile <filename>] \
+                   [-enable_em] \
+                   [-em_outfile <filename>]
+write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
 Options description:
-- **vsrc**: Set the location of the power C4 bumps/IO pins
+- **vsrc**: (mandatory) file to set the location of the power C4 bumps/IO pins
+- **net**: (mandatory) is the name of the net to analyze, power or ground net name
+- **enable_em**: (optional) is the flag to report current per power grid segment
+- **outfile**: (optional) filename specified per-instance voltage written into file
+- **em_outfile**: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).

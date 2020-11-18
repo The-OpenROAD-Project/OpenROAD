@@ -36,19 +36,49 @@
 #pragma once
 
 #include "opendb/db.h"
+#include "opendb/dbBlockCallBackObj.h"
 #include "sta/Sta.hh"
 #include "openroad/OpenRoad.hh"
 
 namespace sta {
 
+class dbSta;
 class dbNetwork;
 
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbNet;
+using odb::dbInst;
+using odb::dbITerm;
+using odb::dbBTerm;
 using odb::dbBlock;
 using odb::dbTech;
 using odb::dbLib;
+using odb::dbMaster;
+using odb::dbBlockCallBackObj;
+
+class dbStaCbk : public dbBlockCallBackObj
+{
+public:
+  dbStaCbk(dbSta *sta);
+  void setNetwork(dbNetwork *network);
+  virtual void inDbInstCreate(dbInst *inst) override;
+  virtual void inDbInstDestroy(dbInst *inst) override;
+  virtual void inDbInstSwapMasterBefore(dbInst *inst,
+                                        dbMaster *master) override;
+  virtual void inDbInstSwapMasterAfter(dbInst *inst) override;
+  virtual void inDbNetDestroy(dbNet *net) override;
+  void inDbITermPostConnect(dbITerm *iterm) override;
+  void inDbITermPreDisconnect(dbITerm *iterm) override;
+  void inDbITermDestroy(dbITerm *iterm) override;
+  void inDbBTermPostConnect(dbBTerm *bterm) override;
+  void inDbBTermPreDisconnect(dbBTerm *bterm) override;
+  void inDbBTermDestroy(dbBTerm *bterm) override;
+
+private:
+  dbSta *sta_;
+  dbNetwork *network_;
+};
 
 class dbSta : public Sta, public ord::OpenRoad::Observer
 {
@@ -70,21 +100,34 @@ public:
   virtual void postReadDb(odb::dbDatabase* db) override;
 
   // Find clock nets connected by combinational gates from the clock roots. 
-  void findClkNets(// Return value
-		   std::set<dbNet*> &clk_nets);
-  void findClkNets(const Clock *clk,
-		   // Return value
-		   std::set<dbNet*> &clk_nets);
+  std::set<dbNet*> findClkNets();
+  std::set<dbNet*> findClkNets(const Clock *clk);
+
+  virtual void deleteInstance(Instance *inst) override;
+  virtual void deleteNet(Net *net) override;
+  virtual void connectPin(Instance *inst,
+			  Port *port,
+			  Net *net) override;
+  virtual void connectPin(Instance *inst,
+			  LibertyPort *port,
+			  Net *net) override;
+  virtual void disconnectPin(Pin *pin) override;
 
   using Sta::netSlack;
   using Sta::isClock;
+  using Sta::replaceCell;
 
 protected:
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;
 
+  virtual void replaceCell(Instance *inst,
+                           Cell *to_cell,
+                           LibertyCell *to_lib_cell) override;
+
   dbDatabase *db_;
   dbNetwork *db_network_;
+  dbStaCbk db_cbk_;
 };
 
 dbSta *

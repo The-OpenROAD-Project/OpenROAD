@@ -1,5 +1,6 @@
 # gcd flow pipe cleaner
 source "helpers.tcl"
+source "flow_helpers.tcl"
 source "sky130/sky130.vars"
 
 set synth_verilog "gcd_sky130.v"

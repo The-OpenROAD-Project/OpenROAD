@@ -11,5 +11,5 @@ if { [catch { read_def xxx } result] } {
   puts "caught '$result'"
 }
 
-ord::error "last chance"
-puts "this message should not print because it follows an error"
+catch {ord::error "last chance"} error
+puts $error

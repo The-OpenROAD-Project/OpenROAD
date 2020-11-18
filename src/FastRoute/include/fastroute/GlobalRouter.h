@@ -211,6 +211,7 @@ protected:
 
 
   // aux functions
+  void findPins(Net& net);
   void findPins(Net& net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);

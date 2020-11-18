@@ -45,10 +45,12 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Bfs.hh"
+#include "sta/EquivCells.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
+#include "openroad/Error.hh"
 #include "dbSdcNetwork.hh"
 
 namespace ord {
@@ -99,7 +101,8 @@ extern const char *dbsta_tcl_inits[];
 
 dbSta::dbSta() :
   Sta(),
-  db_(nullptr)
+  db_(nullptr),
+  db_cbk_(this)
 {
 }
 
@@ -139,22 +142,35 @@ dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-void dbSta::postReadLef(dbTech* tech,
-			dbLib* library)
+void
+dbSta::postReadLef(dbTech* tech,
+                   dbLib* library)
 {
   if (library) {
     db_network_->readLefAfter(library);
   }
 }
 
-void dbSta::postReadDef(dbBlock* block)
+void
+dbSta::postReadDef(dbBlock* block)
 {
   db_network_->readDefAfter(block);
+  db_cbk_.addOwner(block);
+  db_cbk_.setNetwork(db_network_);
 }
 
-void dbSta::postReadDb(dbDatabase* db)
+void
+dbSta::postReadDb(dbDatabase* db)
 {
   db_network_->readDbAfter(db);
+  odb::dbChip *chip = db_->getChip();
+  if (chip) {
+    odb::dbBlock *block = chip->getBlock();
+    if (block) {
+      db_cbk_.addOwner(block);
+      db_cbk_.setNetwork(db_network_);
+    }
+  }
 }
 
 Slack
@@ -165,11 +181,11 @@ dbSta::netSlack(const dbNet *db_net,
   return netSlack(net, min_max);
 }
 
-void
-dbSta::findClkNets(// Return value.
-		   std::set<dbNet*> &clk_nets)
+std::set<dbNet*>
+dbSta::findClkNets()
 {
   ensureClkNetwork();
+  std::set<dbNet*> clk_nets;
   for (Clock *clk : sdc_->clks()) {
     for (const Pin *pin : *pins(clk)) {
       Net *net = network_->net(pin);      
@@ -177,19 +193,177 @@ dbSta::findClkNets(// Return value.
 	clk_nets.insert(db_network_->staToDb(net));
     }
   }
+  return clk_nets;
 }
 
-void
-dbSta::findClkNets(const Clock *clk,
-		   // Return value.
-		   std::set<dbNet*> &clk_nets)
+std::set<dbNet*>
+dbSta::findClkNets(const Clock *clk)
 {
   ensureClkNetwork();
+  std::set<dbNet*> clk_nets;
   for (const Pin *pin : *pins(clk)) {
     Net *net = network_->net(pin);      
     if (net)
       clk_nets.insert(db_network_->staToDb(net));
   }
+  return clk_nets;
+}
+
+////////////////////////////////////////////////////////////////
+
+// Network edit functions.
+// These override the default sta functions that call sta before/after
+// functions because the db calls them via callbacks.
+
+void
+dbSta::deleteInstance(Instance *inst)
+{
+  NetworkEdit *network = networkCmdEdit();
+  network->deleteInstance(inst);
+}
+
+void
+dbSta::replaceCell(Instance *inst,
+                   Cell *to_cell,
+                   LibertyCell *to_lib_cell)
+{
+  NetworkEdit *network = networkCmdEdit();
+  LibertyCell *from_lib_cell = network->libertyCell(inst);
+  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
+    replaceEquivCellBefore(inst, to_lib_cell);
+    network->replaceCell(inst, to_cell);
+    replaceEquivCellAfter(inst);
+  }
+  else {
+    replaceCellBefore(inst, to_lib_cell);
+    network->replaceCell(inst, to_cell);
+    replaceCellAfter(inst);
+  }
+}
+
+void
+dbSta::deleteNet(Net *net)
+{
+  NetworkEdit *network = networkCmdEdit();
+  network->deleteNet(net);
+}
+
+void
+dbSta::connectPin(Instance *inst,
+                  Port *port,
+                  Net *net)
+{
+  NetworkEdit *network = networkCmdEdit();
+  Pin *pin = network->connect(inst, port, net);
+}
+
+void
+dbSta::connectPin(Instance *inst,
+                  LibertyPort *port,
+                  Net *net)
+{
+  NetworkEdit *network = networkCmdEdit();
+  network->connect(inst, port, net);
+}
+
+void
+dbSta::disconnectPin(Pin *pin)
+{
+  NetworkEdit *network = networkCmdEdit();
+  network->disconnectPin(pin);
+}
+
+////////////////////////////////////////////////////////////////
+
+dbStaCbk::dbStaCbk(dbSta *sta) :
+  sta_(sta),
+  network_(nullptr)  // not built yet
+{
+}
+
+void
+dbStaCbk::setNetwork(dbNetwork *network)
+{
+  network_ = network;
+}
+
+void
+dbStaCbk::inDbInstCreate(dbInst* inst)
+{
+  sta_->makeInstanceAfter(network_->dbToSta(inst));
+}
+
+void
+dbStaCbk::inDbInstDestroy(dbInst *inst)
+{
+  // This is called after the iterms have been destroyed
+  // so it side-steps Sta::deleteInstanceAfter.
+  sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
+}
+
+void
+dbStaCbk::inDbInstSwapMasterBefore(dbInst *inst,
+                                   dbMaster *master)
+{
+  LibertyCell *to_lib_cell = network_->libertyCell(network_->dbToSta(master));
+  LibertyCell *from_lib_cell = network_->libertyCell(inst);
+  Instance *sta_inst = network_->dbToSta(inst);
+  if (sta::equivCells(from_lib_cell, to_lib_cell))
+    sta_->replaceEquivCellBefore(sta_inst, to_lib_cell);
+  else
+    ord::error("instance %s swap master %s is not equivalent",
+               inst->getConstName(),
+               master->getConstName());
+}
+
+void
+dbStaCbk::inDbInstSwapMasterAfter(dbInst *inst)
+{
+  sta_->replaceEquivCellAfter(network_->dbToSta(inst));
+}
+
+void
+dbStaCbk::inDbNetDestroy(dbNet *db_net)
+{
+  Net *net = network_->dbToSta(db_net);
+  sta_->deleteNetBefore(net);
+  network_->deleteNetBefore(net);
+}
+
+void
+dbStaCbk::inDbITermPostConnect(dbITerm *iterm)
+{
+  sta_->connectPinAfter(network_->dbToSta(iterm));
+}
+
+void
+dbStaCbk::inDbITermPreDisconnect(dbITerm *iterm)
+{
+  sta_->disconnectPinBefore(network_->dbToSta(iterm));
+}
+
+void
+dbStaCbk::inDbITermDestroy(dbITerm *iterm)
+{
+  sta_->deletePinBefore(network_->dbToSta(iterm));
+}
+
+void
+dbStaCbk::inDbBTermPostConnect(dbBTerm *bterm)
+{
+  sta_->connectPinAfter(network_->dbToSta(bterm));
+}
+
+void
+dbStaCbk::inDbBTermPreDisconnect(dbBTerm *bterm)
+{
+  sta_->disconnectPinBefore(network_->dbToSta(bterm));
+}
+
+void
+dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
+{
+  sta_->deletePinBefore(network_->dbToSta(bterm));
 }
 
 } // namespace sta
