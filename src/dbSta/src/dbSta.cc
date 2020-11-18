@@ -181,11 +181,11 @@ dbSta::netSlack(const dbNet *db_net,
   return netSlack(net, min_max);
 }
 
-void
-dbSta::findClkNets(// Return value.
-		   std::set<dbNet*> &clk_nets)
+std::set<dbNet*>
+dbSta::findClkNets()
 {
   ensureClkNetwork();
+  std::set<dbNet*> clk_nets;
   for (Clock *clk : sdc_->clks()) {
     for (const Pin *pin : *pins(clk)) {
       Net *net = network_->net(pin);      
@@ -193,19 +193,20 @@ dbSta::findClkNets(// Return value.
 	clk_nets.insert(db_network_->staToDb(net));
     }
   }
+  return clk_nets;
 }
 
-void
-dbSta::findClkNets(const Clock *clk,
-		   // Return value.
-		   std::set<dbNet*> &clk_nets)
+std::set<dbNet*>
+dbSta::findClkNets(const Clock *clk)
 {
   ensureClkNetwork();
+  std::set<dbNet*> clk_nets;
   for (const Pin *pin : *pins(clk)) {
     Net *net = network_->net(pin);      
     if (net)
       clk_nets.insert(db_network_->staToDb(net));
   }
+  return clk_nets;
 }
 
 ////////////////////////////////////////////////////////////////
