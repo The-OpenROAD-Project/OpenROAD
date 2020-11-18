@@ -2116,7 +2116,7 @@ odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
   return fakePos;
 }
 
-bool GlobalRouter::checkSignalType(Net &net) {
+bool GlobalRouter::checkSignalType(const Net &net) {
   bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
   return ((!_onlyClockNets && !_onlySignalNets) ||
           (_onlyClockNets && isClock && !clockHasLeafITerm(net.getDbNet())) ||
