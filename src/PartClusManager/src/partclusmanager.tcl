@@ -471,8 +471,3 @@ proc read_partitioning { args } {
   	} else {
 	}
 }
-sta::define_cmd_args "testing" { 
-				}
-proc testing { args } {
-	puts "Tcl cmd working"
-}
