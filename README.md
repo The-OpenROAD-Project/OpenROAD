@@ -248,13 +248,12 @@ In the example, three intervals were excluded: the whole top edge, the right edg
 left edge from the beginning to the 50 microns.
 
 ```
-set_io_pin_constraint -direction direction -names {name1 name2 ... nameN} -region edge:interval
+set_io_pin_constraint -direction direction -names names -region edge:interval
 ```
 
 The `set_io_pin_constraint` command sets region constraints for I/O pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
-function call. Examples: `set_io_pin_constraint -direction INPUT -region top:0-12`; `set_io_pin_constraint -names {clk pin1} -region bottom:*`
-The `-region` syntax is the same as the `-exclude` syntax.
+function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
 #### Gate Resizer
 
