@@ -47,7 +47,6 @@ Final usage/overflow report:
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 2874
 [INFO] #DB Macros: 0
-[INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 36
 [INFO] Processing 8469 obstacles on layer 1
