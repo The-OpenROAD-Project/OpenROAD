@@ -152,14 +152,13 @@ class GlobalRouter
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
   void setMacroExtension(int macroExtension);
-  void setOnlySignalNets(bool onlySignalNets);
   void printGrid();
 
   // flow functions
   void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
-  void runFastRoute();
+  void runFastRoute(bool onlySignal = false);
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
 
@@ -176,14 +175,13 @@ class GlobalRouter
   float dbuToMeters(unsigned dbu);
 
   // route clock nets public functions
-  void setOnlyClockNets(bool onlyClocks);
   void routeClockNets();
 
 protected:
   // Net functions
   int getNetCount() const;
   void reserveNets(size_t net_count);
-  Net* addNet(odb::dbNet* net);
+  Net* addNet(odb::dbNet* db_net, std::vector<Net>* nets);
   int getMaxNetDegree();
   friend class AntennaRepair;
 
@@ -191,13 +189,14 @@ protected:
   void makeComponents();
   void deleteComponents();
   void clearFlow();
+  void applyAdjustments();
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
   void initRoutingTracks();
   void setCapacities();
   void setSpacingsAndMinWidths();
-  void initializeNets(bool reroute);
+  void initializeNets(std::vector<Net>* nets);
   void computeGridAdjustments();
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
@@ -217,7 +216,7 @@ protected:
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route);
-  void addRemainingGuides(NetRouteMap& routes);
+  void addRemainingGuides(NetRouteMap& routes, std::vector<Net> *nets);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -230,11 +229,10 @@ protected:
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   odb::Point findFakePinPosition(Pin &pin);
-  bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
-  NetRouteMap findRouting();
+  NetRouteMap findRouting(std::vector<Net> *nets);
 
   // check functions
   void checkPinPlacement();
@@ -254,8 +252,8 @@ protected:
                          std::vector<float> layerPitches);
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
-  void initNetlist(bool reroute);
-  void addNets(std::set<odb::dbNet*>& nets);
+  void initNetlist(std::vector<Net>* nets);
+  void addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
@@ -279,6 +277,9 @@ protected:
   NetRouteMap _routes;
 
   std::vector<Net> *_nets;
+  std::vector<Net> *_clockNets;
+  std::vector<Net> *_signalNets;
+  std::vector<Net> *_antennaNets;
   std::map<odb::dbNet*, Net*> _db_net_map;
   Grid* _grid = nullptr;
   std::vector<RoutingLayer>* _routingLayers = nullptr;
@@ -317,22 +318,18 @@ protected:
   float _alpha;
   int _verbose;
   std::map<std::string, float> _netsAlpha;
-  bool _clockNetsRouteFlow = false;
-  bool _onlyClockNets = false;
-  bool _onlySignalNets = false;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 
   // Antenna variables
   int*** oldHUsages;
   int*** oldVUsages;
-  int _reroute = false;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;
 
   // Variables for PADs obstacles handling
-  std::map<Net*, std::vector<GSegment>> _padPinsConnections;
+  std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _sta;

@@ -103,6 +103,9 @@ void GlobalRouter::makeComponents()
   _grid = new Grid;
   _gridOrigin = new odb::Point(-1, -1);
   _nets = new std::vector<Net>;
+  _clockNets = new std::vector<Net>;
+  _signalNets = new std::vector<Net>;
+  _antennaNets = new std::vector<Net>;
   _sta = _openroad->getSta();
   _routingLayers = new std::vector<RoutingLayer>;
 }
@@ -115,6 +118,9 @@ void GlobalRouter::deleteComponents()
   delete _grid;
   delete _gridOrigin;
   delete _nets;
+  delete _clockNets;
+  delete _signalNets;
+  delete _antennaNets;
   delete _sta;
   delete _routingLayers;
 }
@@ -131,6 +137,9 @@ void GlobalRouter::clearFlow()
   _fastRoute->clear();
   _allRoutingTracks->clear();
   _nets->clear();
+  _clockNets->clear();
+  _signalNets->clear();
+  _antennaNets->clear();
   _db_net_map.clear();
   _routingLayers->clear();
   _vCapacities.clear();
@@ -189,7 +198,10 @@ void GlobalRouter::startFastRoute()
   initRoutingTracks();
   setCapacities();
   setSpacingsAndMinWidths();
-  initializeNets(_reroute);
+}
+
+void GlobalRouter::applyAdjustments()
+{
   computeGridAdjustments();
   computeTrackAdjustments();
   computeObstaclesAdjustments();
@@ -203,20 +215,21 @@ void GlobalRouter::startFastRoute()
         regionAdjst.getRegion(), regionAdjst.getLayer(), regionAdjst.getAdjustment());
   }
 
-  if (_onlySignalNets)
-  {
-    restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
-  }
+  restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
 
   _fastRoute->initAuxVar();
 }
 
-void GlobalRouter::runFastRoute()
+void GlobalRouter::runFastRoute(bool onlySignal)
 {
   startFastRoute();
+  initNetlist(_nets);
+  std::vector<Net> *nets = onlySignal ? _signalNets : _nets;
+  initializeNets(nets);
+  applyAdjustments();
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
-  NetRouteMap result = findRouting();
+  NetRouteMap result = findRouting(nets);
 
   _routes.insert(result.begin(), result.end());
 
@@ -257,15 +270,17 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     std::cout << "[INFO] " << antennaRepair->getDiodesCount() << " diodes inserted\n";
 
-    _reroute = true;
     startFastRoute();
+    initNetlist(_nets);
+    initializeNets(_antennaNets);
+    applyAdjustments();
     _fastRoute->setVerbose(0);
-    std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
+    std::cout << "[INFO] #Nets to reroute: " << _antennaNets->size() << "\n";
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsUsage();
 
-    NetRouteMap newRoute = findRouting();
+    NetRouteMap newRoute = findRouting(_antennaNets);
     mergeResults(newRoute);
   }
 }
@@ -278,22 +293,23 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 void GlobalRouter::routeClockNets()
 {
   startFastRoute();
+  initNetlist(_nets);
+  initializeNets(_clockNets);
+  applyAdjustments();
   std::cout << "Routing clock nets...\n";
-  _routes = findRouting();
+  _routes = findRouting(_clockNets);
 
   _minLayerForClock = _minRoutingLayer;
   _maxLayerForClock = _maxRoutingLayer;
 
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
-  _onlyClockNets = false;
-  _onlySignalNets = true;
   std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
 }
 
-NetRouteMap GlobalRouter::findRouting() {
+NetRouteMap GlobalRouter::findRouting(std::vector<Net> *nets) {
   NetRouteMap routes = _fastRoute->run();
-  addRemainingGuides(routes);
+  addRemainingGuides(routes, nets);
   connectPadPins(routes);
   for (auto &net_route : routes) {
     GRoute &route = net_route.second;
@@ -351,8 +367,7 @@ void GlobalRouter::initRoutingTracks()
 void GlobalRouter::setCapacities()
 {
   for (int l = 1; l <= _grid->getNumLayers(); l++) {
-    if (l < _minRoutingLayer || l > _maxRoutingLayer
-        || (_onlyClockNets && l < _minLayerForClock)) {
+    if (l < _minRoutingLayer || l > _maxRoutingLayer) {
       _fastRoute->addHCapacity(0, l);
       _fastRoute->addVCapacity(0, l);
 
@@ -562,7 +577,7 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
     // grid to avoid PAD obstacles
     if (pin.isConnectedToPad() || pin.isPort()) {
       GSegment pinConnection = createFakePin(pin, pinPosition, layer);
-      _padPinsConnections[&net].push_back(pinConnection);
+      _padPinsConnections[net.getDbNet()].push_back(pinConnection);
     }
 
     int  pinX = (int) ((pinPosition.x() -
@@ -589,21 +604,18 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
   }
 }
 
-void GlobalRouter::initializeNets(bool reroute)
+void GlobalRouter::initializeNets(std::vector<Net>* nets)
 {
-  initNetlist(reroute);
   checkPinPlacement();
-  if (reroute)
-    _padPinsConnections.clear();
+  _padPinsConnections.clear();
 
   int validNets = 0;
 
   int minDegree = std::numeric_limits<int>::max();
   int maxDegree = std::numeric_limits<int>::min();
 
-  for (Net& net : *_nets) {
+  for (Net& net : *nets) {
     if (net.getNumPins() > 1
-        && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
       validNets++;
     }
@@ -612,8 +624,7 @@ void GlobalRouter::initializeNets(bool reroute)
   _fastRoute->setNumberNets(validNets);
   _fastRoute->setMaxNetDegree(getMaxNetDegree());
 
-  int idx = 0;
-  for (Net& net : *_nets) {
+  for (Net& net : *nets) {
     int pin_count = net.getNumPins();
     if (pin_count > 1) {
       if (pin_count < minDegree) {
@@ -623,37 +634,31 @@ void GlobalRouter::initializeNets(bool reroute)
       if (pin_count > maxDegree) {
         maxDegree = pin_count;
       }
+      // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a single net.
+      // Nets with tens of thousands of pins lead to runtime issues (hours to complete) or segfault
+      if (pin_count >= std::numeric_limits<short>::max()) {
+        std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
+                  << " due to large number of pins\n";
+        std::cout << "[WARNING] Net " << net.getName() << " has "
+                  << net.getNumPins() << " pins\n";
+      } else {
+        std::vector<RoutePt> pinsOnGrid;
+        findPins(net, pinsOnGrid);
 
-      if (checkSignalType(net)) {
-        // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a single net.
-        // Nets with tens of thousands of pins lead to runtime issues (hours to complete) or segfault
-        if (pin_count >= std::numeric_limits<short>::max()) {
-          std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
-                    << " due to large number of pins\n";
-          std::cout << "[WARNING] Net " << net.getName() << " has "
-                    << net.getNumPins() << " pins\n";
-        } else {
-          std::vector<RoutePt> pinsOnGrid;
-          findPins(net, pinsOnGrid);
+        if (pinsOnGrid.size() > 1) {
+          float netAlpha = _alpha;
+          if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
+            netAlpha = _netsAlpha[net.getName()];
+          }
+          bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
 
-          if (pinsOnGrid.size() > 1) {
-            float netAlpha = _alpha;
-            if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
-              netAlpha = _netsAlpha[net.getName()];
-            }
-            bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
-
-            int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), pinsOnGrid.size(), netAlpha, isClock);
-            for (RoutePt &pinPos : pinsOnGrid) {
-              _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
-            }
+          int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), pinsOnGrid.size(), netAlpha, isClock);
+          for (RoutePt &pinPos : pinsOnGrid) {
+            _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
           }
         }
-      } else {
-        findPins(net);
       }
     }
-    idx++;
   }
 
   std::cout << "[INFO] Minimum degree: " << minDegree << "\n";
@@ -1247,19 +1252,9 @@ void GlobalRouter::setReportCongestion(char* congestFile)
   _congestFile = congestFile;
 }
 
-void GlobalRouter::setOnlyClockNets(bool onlyClocks)
-{
-  _onlyClockNets = onlyClocks;
-}
-
 void GlobalRouter::setMacroExtension(int macroExtension)
 {
   _macroExtension = macroExtension;
-}
-
-void GlobalRouter::setOnlySignalNets(bool onlySignalNets)
-{
-  _onlySignalNets = onlySignalNets;
 }
 
 void GlobalRouter::writeGuides(const char* fileName)
@@ -1521,7 +1516,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
   }
 }
 
-void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
+void GlobalRouter::addRemainingGuides(NetRouteMap &routes, std::vector<Net> *nets)
 {
   for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
@@ -1538,10 +1533,9 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
   }
 
   // Add local guides for nets with no routing.
-  for (Net& net : *_nets) {
+  for (Net& net : *nets) {
     odb::dbNet* db_net = net.getDbNet();
-    if (checkSignalType(net)
-        && net.getNumPins() > 1
+    if (net.getNumPins() > 1
 	      && (routes.find(db_net) == routes.end()
 	      || routes[db_net].empty())) {
       GRoute &route = routes[db_net];
@@ -1561,9 +1555,9 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
-    if (_padPinsConnections.find(net) != _padPinsConnections.end()
+    if (_padPinsConnections.find(db_net) != _padPinsConnections.end()
         || net->getNumPins() > 1) {
-      for (GSegment &segment : _padPinsConnections[net]) {
+      for (GSegment &segment : _padPinsConnections[db_net]) {
         route.push_back(segment);
       }
     }
@@ -2116,13 +2110,6 @@ odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
   return fakePos;
 }
 
-bool GlobalRouter::checkSignalType(const Net &net) {
-  bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
-  return ((!_onlyClockNets && !_onlySignalNets) ||
-          (_onlyClockNets && isClock && !clockHasLeafITerm(net.getDbNet())) ||
-          (_onlySignalNets && (!isClock || clockHasLeafITerm(net.getDbNet()))));
-}
-
 void GlobalRouter::initAdjustments() {
   if (_adjustments.empty()) {
     _adjustments.resize(_db->getTech()->getRoutingLayerCount() + 1, 0);
@@ -2139,14 +2126,16 @@ int GlobalRouter::getNetCount() const {
   return _nets->size();
 }
 
-Net* GlobalRouter::addNet(odb::dbNet* db_net) {
-  _nets->push_back(Net(db_net));
-  Net* net = &_nets->back();
+Net* GlobalRouter::addNet(odb::dbNet* db_net, std::vector<Net>* nets) {
+  nets->push_back(Net(db_net));
+  Net* net = &nets->back();
   return net;
 }
   
 void GlobalRouter::reserveNets(size_t net_count) {
   _nets->reserve(net_count);
+  _clockNets->reserve(net_count);
+  _signalNets->reserve(net_count);
 }
 
 int GlobalRouter::getMaxNetDegree() {
@@ -2455,34 +2444,23 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
   }
 }
 
-void GlobalRouter::initNetlist(bool reroute)
+void GlobalRouter::initNetlist(std::vector<Net>* nets)
 {
   initClockNets();
+  std::set<odb::dbNet*> db_nets;
 
-  odb::dbTech* tech = _db->getTech();
-
-  if (reroute) {
-    if (_dirtyNets.empty()) {
-      error("Not found any dirty net to reroute");
-    }
-
-    addNets(_dirtyNets);
-  } else {
-    std::set<odb::dbNet*> nets;
-
-    for (odb::dbNet* net : _block->getNets()) {
-      nets.insert(net);
-    }
-
-    if (nets.empty()) {
-      error("Design without nets");
-    }
-
-    addNets(nets);
+  for (odb::dbNet* net : _block->getNets()) {
+    db_nets.insert(net);
   }
+
+  if (db_nets.empty()) {
+    error("Design without nets");
+  }
+
+  addNets(db_nets, nets);
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*>& nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
@@ -2490,16 +2468,27 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& nets)
               _grid->getUpperRightY());
 
   // Prevent _nets from growing because pointers to nets become invalid.
-  reserveNets(nets.size());
-  for (odb::dbNet* db_net : nets) {
+  reserveNets(db_nets.size());
+  for (odb::dbNet* db_net : db_nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
-      Net* net = addNet(db_net);
+      Net* net = addNet(db_net, nets);
       _db_net_map[db_net] = net;
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
+      if (net->getSignalType() == odb::dbSigType::CLOCK &&
+        !clockHasLeafITerm(net->getDbNet())) {
+        _clockNets->push_back(*net);
+      } else {
+        _signalNets->push_back(*net);
+      }
+      findPins(*net);
     }
+  }
+
+  for (odb::dbNet* db_net : _dirtyNets) {
+    _antennaNets->push_back(*_db_net_map[db_net]);
   }
 }
 

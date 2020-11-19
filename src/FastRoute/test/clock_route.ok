@@ -23,7 +23,7 @@ Notice 0: Finished DEF file: gcd_sky130.def
 [INFO] #DB Macros: 0
 [INFO] Found 8 clock nets
 [INFO] Minimum degree: 2
-[INFO] Maximum degree: 11
+[INFO] Maximum degree: 3
 [INFO] Processing 17704 obstacles on layer 1
 [INFO] Processing 2627 obstacles on layer 2
 [INFO] Processing 10 obstacles on layer 5
