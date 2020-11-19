@@ -335,7 +335,7 @@ protected:
   int _numAdjusts = 0;
 
   // Variables for PADs obstacles handling
-  std::map<Net*, std::vector<GSegment>> _padPinsConnections;
+  std::map<odb::dbNet*, std::vector<GSegment>> _padPinsConnections;
 
   // db variables
   sta::dbSta* _sta;

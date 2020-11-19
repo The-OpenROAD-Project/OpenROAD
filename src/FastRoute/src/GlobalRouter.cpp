@@ -584,7 +584,7 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
     // grid to avoid PAD obstacles
     if (pin.isConnectedToPad() || pin.isPort()) {
       GSegment pinConnection = createFakePin(pin, pinPosition, layer);
-      _padPinsConnections[&net].push_back(pinConnection);
+      _padPinsConnections[net.getDbNet()].push_back(pinConnection);
     }
 
     int  pinX = (int) ((pinPosition.x() -
@@ -632,7 +632,6 @@ void GlobalRouter::initializeNets(std::vector<Net>* nets)
   _fastRoute->setNumberNets(validNets);
   _fastRoute->setMaxNetDegree(getMaxNetDegree());
 
-  int idx = 0;
   for (Net& net : *nets) {
     int pin_count = net.getNumPins();
     if (pin_count > 1) {
@@ -668,7 +667,6 @@ void GlobalRouter::initializeNets(std::vector<Net>* nets)
         }
       }
     }
-    idx++;
   }
 
   std::cout << "[INFO] Minimum degree: " << minDegree << "\n";
@@ -1576,9 +1574,9 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     odb::dbNet* db_net = net_route.first;
     GRoute &route = net_route.second;
     Net* net = getNet(db_net);
-    if (_padPinsConnections.find(net) != _padPinsConnections.end()
+    if (_padPinsConnections.find(db_net) != _padPinsConnections.end()
         || net->getNumPins() > 1) {
-      for (GSegment &segment : _padPinsConnections[net]) {
+      for (GSegment &segment : _padPinsConnections[db_net]) {
         route.push_back(segment);
       }
     }
@@ -2520,6 +2518,7 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* net
       } else {
         _signalNets->push_back(*net);
       }
+      findPins(*net);
     }
   }
 }
