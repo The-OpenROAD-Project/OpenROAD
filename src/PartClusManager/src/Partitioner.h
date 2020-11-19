@@ -110,6 +110,8 @@ class PartOptions
   unsigned getFinalPartitions() { return _finalPartitions; }
   void setForceGraph(bool force) { _forceGraph = force; }
   bool getForceGraph() { return _forceGraph; }
+  void setClusteringScheme(const std::string & scheme) {_clusteringScheme = scheme;}
+  std::string getClusteringScheme() {return _clusteringScheme;}
 
  private:
   unsigned _numStarts = 1;
@@ -135,6 +137,7 @@ class PartOptions
   std::vector<int> _archTopology;
   std::vector<int> _seeds;
   std::vector<int> _partitionsToTest;
+  std::string _clusteringScheme = "scheme1";
 };
 
 class PartSolutions
@@ -227,6 +230,7 @@ class Partitioner
   Partitioner() = default;
   void runPartitioning();
   void runClustering();
+  void run3PClustering();
   void evaluatePartitioning();
   unsigned getCurrentBestId() { return _bestId; }
   void setCurrentBestId(unsigned id) { _bestId = id; }

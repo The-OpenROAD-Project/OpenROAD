@@ -190,8 +190,8 @@ void dump_part_id_to_file(const char *name) {
         getPartClusManager()->dumpPartIdToFile(name);
 }
 
-unsigned run_clustering() {
-        getPartClusManager()->runClustering();
+unsigned run_3party_clustering() {
+        getPartClusManager()->run3PClustering();
         unsigned id = getPartClusManager()->getCurrentClusId();
         return id;
 }
@@ -222,6 +222,14 @@ void set_final_partitions(unsigned value) {
 
 void set_force_graph(bool value) {
         getPartClusManager()->getOptions().setForceGraph(value);
+}
+
+void set_clustering_scheme(const char* name) {
+        getPartClusManager()->getOptions().setClusteringScheme(name);
+}
+
+void run_clustering() {
+        getPartClusManager()->runClustering();
 }
 
 %}

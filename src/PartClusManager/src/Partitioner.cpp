@@ -969,7 +969,7 @@ void Partitioner::dumpPartIdToFile(std::string name)
 
 // Cluster Netlist
 
-void Partitioner::runClustering()
+void Partitioner::run3PClustering()
 {
   hypergraph();
   if (_options.getTool() == "mlpart") {
@@ -1406,6 +1406,18 @@ void Partitioner::readPartitioningFile(std::string filename)
   currentResults.addAssignment(partitions, 0, 1);
   _results.push_back(currentResults);
   computePartitionResult(partitionId, evaluationFunction);
+}
+
+void Partitioner::runClustering()
+{
+  hypergraph();
+  if (_options.getClusteringScheme() == "hem") {
+	std::cout << "Heavy Edge Matching\n";
+  } else if (_options.getClusteringScheme() == "scheme2") {
+	std::cout << "Scheme 2\n";
+  } else {
+	std::cout << "Scheme 3\n";
+  }
 }
 
 }  // namespace PartClusManager

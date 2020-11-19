@@ -393,7 +393,7 @@ proc cluster_netlist { args } {
 
   PartClusManager::generate_seeds 1
 
-  set currentId [PartClusManager::run_clustering]
+  set currentId [PartClusManager::run_3party_clustering]
   
   return $currentId
 }
@@ -470,4 +470,24 @@ proc read_partitioning { args } {
     		ord::error "missing mandatory argument \"-final_partitions \[2, 32768\]\""
   	} else {
 	}
+}
+
+sta::define_cmd_args "run_clustering" { [-scheme name] \
+					 }
+
+proc run_clustering { args } {
+  sta::parse_key_args "run_clustering" args \
+    keys {-scheme \
+         } flags {}
+
+  # Tool
+  set schemes "hem scheme2 scheme3"
+  if { ![info exists keys(-scheme)] } {
+    ord::error "missing mandatory argument -scheme"
+  } elseif { !($keys(-scheme) in $schemes) } {
+    ord::error "invalid scheme. Use one of the following: $schemes"
+  } else {
+     PartClusManager::set_clustering_scheme $keys(-scheme)
+  }
+  PartClusManager::run_clustering
 }
