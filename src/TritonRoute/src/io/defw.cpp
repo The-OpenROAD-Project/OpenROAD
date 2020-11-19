@@ -43,12 +43,6 @@
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 
-#pragma GCC diagnostic push
-// turn off the specific warning. Can also use "-Wall"
-#pragma GCC diagnostic ignored "-Wformat="
-#pragma GCC diagnostic ignored "-Wformat-extra-args"
-// turn the warnings back on
-
 //using namespace std;
 using namespace fr;
 
@@ -1340,7 +1334,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud) {
          }
       }
       if (net->polyMask(i)) {
-    fprintf(fout, "\n  + MASK %d + POLYGON % s ", net->polyMask(i),
+    fprintf(fout, "\n  + MASK %d + POLYGON %s ", net->polyMask(i),
       net->polygonName(i));
       } else {
           fprintf(fout, "\n  + POLYGON %s ", net->polygonName(i));
@@ -1901,9 +1895,9 @@ int casesens(defrCallbackType_e c, int d, defiUserData ud) {
   checkType(c);
   if (ud != userData) dataError();
   if (d == 1)
-     fprintf(fout, "NAMESCASESENSITIVE ON ;\n", d);
+     fprintf(fout, "NAMESCASESENSITIVE ON ;\n");
   else
-     fprintf(fout, "NAMESCASESENSITIVE OFF ;\n", d);
+     fprintf(fout, "NAMESCASESENSITIVE OFF ;\n");
   return 0;
 }
 
@@ -2647,7 +2641,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud) {
   case defrTimingDisableCbkType :
          td = (defiTimingDisable*)cl;
          if (td->hasFromTo())
-             fprintf(fout, "- FROMPIN %s %s ",
+             fprintf(fout, "- FROMPIN %s %s TOPIN %s %s",
                      td->fromInst(),
                      td->fromPin(),
                      td->toInst(),
@@ -2657,12 +2651,12 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud) {
                      td->thruInst(),
                      td->thruPin());
          if (td->hasMacroFromTo())
-             fprintf(fout, "- MACRO %s FROMPIN %s %s ",
+             fprintf(fout, "- MACRO %s FROMPIN %s TOPIN %s ",
                      td->macroName(),
                      td->fromPin(),
                      td->toPin());
          if (td->hasMacroThru())
-             fprintf(fout, "- MACRO %s THRUPIN %s %s ",
+             fprintf(fout, "- MACRO %s THRUPIN %s ",
                      td->macroName(),
                      td->fromPin());
          fprintf(fout, ";\n");
@@ -3217,7 +3211,7 @@ int io::Writer::writeDef(bool isTA, const std::string &str) {
        res = defrRead(f, inFile[fileCt], userData, 1);
 
        if (res)
-          fprintf(stderr, "Reader returns bad status.\n", inFile[fileCt]);
+          fprintf(stderr, "Reader returns bad status. %s\n", inFile[fileCt]);
 
        (void)defrPrintUnusedCallbacks(fout);
        (void)defrReleaseNResetMemory();
@@ -3256,7 +3250,7 @@ int io::Writer::writeDef(bool isTA, const std::string &str) {
        res = defrRead(f, inFile[fileCt], userData, 1);
  
        if (res)
-          fprintf(stderr, "Reader returns bad status.\n", inFile[fileCt]);
+          fprintf(stderr, "Reader returns bad status. %s\n", inFile[fileCt]);
  
        (void)defrPrintUnusedCallbacks(fout);
        (void)defrReleaseNResetMemory();
@@ -3278,7 +3272,7 @@ int io::Writer::writeDef(bool isTA, const std::string &str) {
        res = defrRead(f, inFile[fileCt], userData, 1);
 
        if (res)
-           fprintf(stderr, "Reader returns bad status.\n", inFile[fileCt]);
+           fprintf(stderr, "Reader returns bad status. %s\n", inFile[fileCt]);
 
        (void)defrPrintUnusedCallbacks(fout);
        (void)defrReleaseNResetMemory();
@@ -3404,5 +3398,3 @@ int io::Writer::writeDef(bool isTA, const std::string &str) {
 
   return res;
 }
-
-#pragma GCC diagnostic pop
