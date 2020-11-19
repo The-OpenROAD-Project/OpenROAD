@@ -103,6 +103,8 @@ void GlobalRouter::makeComponents()
   _grid = new Grid;
   _gridOrigin = new odb::Point(-1, -1);
   _nets = new std::vector<Net>;
+  _clockNets = new std::vector<Net>;
+  _signalNets = new std::vector<Net>;
   _sta = _openroad->getSta();
   _routingLayers = new std::vector<RoutingLayer>;
 }
@@ -115,6 +117,8 @@ void GlobalRouter::deleteComponents()
   delete _grid;
   delete _gridOrigin;
   delete _nets;
+  delete _clockNets;
+  delete _signalNets;
   delete _sta;
   delete _routingLayers;
 }
@@ -131,6 +135,8 @@ void GlobalRouter::clearFlow()
   _fastRoute->clear();
   _allRoutingTracks->clear();
   _nets->clear();
+  _clockNets->clear();
+  _signalNets->clear();
   _db_net_map.clear();
   _routingLayers->clear();
   _vCapacities.clear();
@@ -218,7 +224,11 @@ void GlobalRouter::runFastRoute()
 {
   startFastRoute();
   initNetlist(_reroute, _nets);
-  initializeNets(_nets);
+  if (_onlySignalNets) {
+    initializeNets(_signalNets);
+  } else {
+    initializeNets(_nets);
+  }
   applyAdjustments();
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
@@ -288,7 +298,7 @@ void GlobalRouter::routeClockNets()
 {
   startFastRoute();
   initNetlist(_reroute, _nets);
-  initializeNets(_nets);
+  initializeNets(_clockNets);
   applyAdjustments();
   std::cout << "Routing clock nets...\n";
   _routes = findRouting();
@@ -633,34 +643,29 @@ void GlobalRouter::initializeNets(std::vector<Net>* nets)
       if (pin_count > maxDegree) {
         maxDegree = pin_count;
       }
+      // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a single net.
+      // Nets with tens of thousands of pins lead to runtime issues (hours to complete) or segfault
+      if (pin_count >= std::numeric_limits<short>::max()) {
+        std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
+                  << " due to large number of pins\n";
+        std::cout << "[WARNING] Net " << net.getName() << " has "
+                  << net.getNumPins() << " pins\n";
+      } else {
+        std::vector<RoutePt> pinsOnGrid;
+        findPins(net, pinsOnGrid);
 
-      if (checkSignalType(net)) {
-        // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a single net.
-        // Nets with tens of thousands of pins lead to runtime issues (hours to complete) or segfault
-        if (pin_count >= std::numeric_limits<short>::max()) {
-          std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
-                    << " due to large number of pins\n";
-          std::cout << "[WARNING] Net " << net.getName() << " has "
-                    << net.getNumPins() << " pins\n";
-        } else {
-          std::vector<RoutePt> pinsOnGrid;
-          findPins(net, pinsOnGrid);
+        if (pinsOnGrid.size() > 1) {
+          float netAlpha = _alpha;
+          if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
+            netAlpha = _netsAlpha[net.getName()];
+          }
+          bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
 
-          if (pinsOnGrid.size() > 1) {
-            float netAlpha = _alpha;
-            if (_netsAlpha.find(net.getName()) != _netsAlpha.end()) {
-              netAlpha = _netsAlpha[net.getName()];
-            }
-            bool isClock = (net.getSignalType() == odb::dbSigType::CLOCK);
-
-            int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), pinsOnGrid.size(), netAlpha, isClock);
-            for (RoutePt &pinPos : pinsOnGrid) {
-              _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
-            }
+          int netID = _fastRoute->addNet(net.getDbNet(), pinsOnGrid.size(), pinsOnGrid.size(), netAlpha, isClock);
+          for (RoutePt &pinPos : pinsOnGrid) {
+            _fastRoute->addPin(netID, pinPos.x(), pinPos.y(), pinPos.layer());
           }
         }
-      } else {
-        findPins(net);
       }
     }
     idx++;
@@ -2157,6 +2162,8 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net, std::vector<Net>* nets) {
   
 void GlobalRouter::reserveNets(size_t net_count) {
   _nets->reserve(net_count);
+  _clockNets->reserve(net_count);
+  _signalNets->reserve(net_count);
 }
 
 int GlobalRouter::getMaxNetDegree() {
@@ -2507,6 +2514,12 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* net
       _db_net_map[db_net] = net;
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
+      if (net->getSignalType() == odb::dbSigType::CLOCK &&
+        !clockHasLeafITerm(net->getDbNet())) {
+        _clockNets->push_back(*net);
+      } else {
+        _signalNets->push_back(*net);
+      }
     }
   }
 }

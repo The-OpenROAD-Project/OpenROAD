@@ -183,7 +183,7 @@ protected:
   // Net functions
   int getNetCount() const;
   void reserveNets(size_t net_count);
-  Net* addNet(odb::dbNet* net, std::vector<Net>* nets);
+  Net* addNet(odb::dbNet* db_net, std::vector<Net>* nets);
   int getMaxNetDegree();
   friend class AntennaRepair;
 
@@ -280,6 +280,8 @@ protected:
   NetRouteMap _routes;
 
   std::vector<Net> *_nets;
+  std::vector<Net> *_clockNets;
+  std::vector<Net> *_signalNets;
   std::map<odb::dbNet*, Net*> _db_net_map;
   Grid* _grid = nullptr;
   std::vector<RoutingLayer>* _routingLayers = nullptr;
