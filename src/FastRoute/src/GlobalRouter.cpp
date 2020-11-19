@@ -197,7 +197,7 @@ void GlobalRouter::startFastRoute()
   setSpacingsAndMinWidths();
 }
 
-void GlobalRouter::applyAdjustments()
+void GlobalRouter::applyAdjustments(bool restore)
 {
   computeGridAdjustments();
   computeTrackAdjustments();
@@ -212,7 +212,7 @@ void GlobalRouter::applyAdjustments()
         regionAdjst.getRegion(), regionAdjst.getLayer(), regionAdjst.getAdjustment());
   }
 
-  if (_onlySignalNets)
+  if (restore)
   {
     restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
   }
@@ -220,13 +220,13 @@ void GlobalRouter::applyAdjustments()
   _fastRoute->initAuxVar();
 }
 
-void GlobalRouter::runFastRoute()
+void GlobalRouter::runFastRoute(bool onlySignal)
 {
   startFastRoute();
   initNetlist(_reroute, _nets);
-  std::vector<Net> *nets = _onlySignalNets ? _signalNets : _nets;
+  std::vector<Net> *nets = onlySignal ? _signalNets : _nets;
   initializeNets(nets);
-  applyAdjustments();
+  applyAdjustments(true);
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
   NetRouteMap result = findRouting(nets);
@@ -274,7 +274,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     startFastRoute();
     initNetlist(_reroute, _nets);
     initializeNets(_nets);
-    applyAdjustments();
+    applyAdjustments(true);
     _fastRoute->setVerbose(0);
     std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
 
@@ -296,7 +296,7 @@ void GlobalRouter::routeClockNets()
   startFastRoute();
   initNetlist(_reroute, _nets);
   initializeNets(_clockNets);
-  applyAdjustments();
+  applyAdjustments(false);
   std::cout << "Routing clock nets...\n";
   _routes = findRouting(_clockNets);
 
@@ -305,7 +305,6 @@ void GlobalRouter::routeClockNets()
 
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
-  _onlySignalNets = true;
   std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
 }
 
@@ -1257,11 +1256,6 @@ void GlobalRouter::setReportCongestion(char* congestFile)
 void GlobalRouter::setMacroExtension(int macroExtension)
 {
   _macroExtension = macroExtension;
-}
-
-void GlobalRouter::setOnlySignalNets(bool onlySignalNets)
-{
-  _onlySignalNets = onlySignalNets;
 }
 
 void GlobalRouter::writeGuides(const char* fileName)

@@ -176,15 +176,9 @@ set_macro_extension(int macroExtension)
 }
 
 void
-set_only_signal_nets(bool onlySignalNets)
+run_fastroute(bool onlySignal)
 {
-  getFastRoute()->setOnlySignalNets(onlySignalNets);
-}
-
-void
-run_fastroute()
-{
-  getFastRoute()->runFastRoute();
+  getFastRoute()->runFastRoute(onlySignal);
 }
 
 void

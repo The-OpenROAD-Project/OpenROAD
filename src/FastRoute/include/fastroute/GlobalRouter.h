@@ -152,14 +152,13 @@ class GlobalRouter
   void setAllowOverflow(bool allowOverflow);
   void setReportCongestion(char* congestFile);
   void setMacroExtension(int macroExtension);
-  void setOnlySignalNets(bool onlySignalNets);
   void printGrid();
 
   // flow functions
   void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
-  void runFastRoute();
+  void runFastRoute(bool onlySignal = false);
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
 
@@ -176,7 +175,6 @@ class GlobalRouter
   float dbuToMeters(unsigned dbu);
 
   // route clock nets public functions
-  void setOnlyClockNets(bool onlyClocks);
   void routeClockNets();
 
 protected:
@@ -191,7 +189,7 @@ protected:
   void makeComponents();
   void deleteComponents();
   void clearFlow();
-  void applyAdjustments();
+  void applyAdjustments(bool restore);
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
@@ -320,7 +318,6 @@ protected:
   int _verbose;
   std::map<std::string, float> _netsAlpha;
   bool _clockNetsRouteFlow = false;
-  bool _onlySignalNets = false;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 
