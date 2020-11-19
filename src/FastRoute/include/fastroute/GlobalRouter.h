@@ -320,7 +320,6 @@ protected:
   int _verbose;
   std::map<std::string, float> _netsAlpha;
   bool _clockNetsRouteFlow = false;
-  bool _onlyClockNets = false;
   bool _onlySignalNets = false;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;

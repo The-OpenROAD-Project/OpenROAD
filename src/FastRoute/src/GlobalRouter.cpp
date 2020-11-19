@@ -305,7 +305,6 @@ void GlobalRouter::routeClockNets()
 
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
-  _onlyClockNets = false;
   _onlySignalNets = true;
   std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
 }
@@ -370,8 +369,7 @@ void GlobalRouter::initRoutingTracks()
 void GlobalRouter::setCapacities()
 {
   for (int l = 1; l <= _grid->getNumLayers(); l++) {
-    if (l < _minRoutingLayer || l > _maxRoutingLayer
-        || (_onlyClockNets && l < _minLayerForClock)) {
+    if (l < _minRoutingLayer || l > _maxRoutingLayer) {
       _fastRoute->addHCapacity(0, l);
       _fastRoute->addVCapacity(0, l);
 
@@ -1254,11 +1252,6 @@ void GlobalRouter::setReportCongestion(char* congestFile)
 {
   _reportCongest = true;
   _congestFile = congestFile;
-}
-
-void GlobalRouter::setOnlyClockNets(bool onlyClocks)
-{
-  _onlyClockNets = onlyClocks;
 }
 
 void GlobalRouter::setMacroExtension(int macroExtension)

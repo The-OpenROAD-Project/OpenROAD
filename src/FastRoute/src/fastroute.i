@@ -165,7 +165,6 @@ set_layer_pitch(int layer, float pitch)
 void
 set_clock_layer_range(int minLayer, int maxLayer)
 {
-  getFastRoute()->setOnlyClockNets(1);
   getFastRoute()->setMinRoutingLayer(minLayer);
   getFastRoute()->setMaxRoutingLayer(maxLayer);
 }
