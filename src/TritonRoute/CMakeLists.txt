@@ -176,6 +176,7 @@ target_include_directories(tritonroute-swig
   ${FLEXROUTE_HOME}/include
   ${OPENROAD_HOME}/include
   ${FLEXROUTE_HOME}/src
+  ${TCL_INCLUDE_PATH}
 )
 
 set(TRITONROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonRouteTclInitVar.cc)
