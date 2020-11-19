@@ -203,6 +203,7 @@ set_target_properties( TritonRouteLib
 target_include_directories( TritonRouteLib
   PUBLIC
   ${FLEXROUTE_HOME}/include
+  ${TCL_INCLUDE_PATH}
 
   PRIVATE
   ${FLEXROUTE_HOME}/src
