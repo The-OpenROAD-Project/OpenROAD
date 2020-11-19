@@ -110,15 +110,15 @@ OpenRoad::OpenRoad()
     resizer_(nullptr),
     ioPlacer_(nullptr),
     opendp_(nullptr),
+    finale_(nullptr),
     tritonMp_(nullptr),
     fastRoute_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
     extractor_(nullptr),
+    detailed_router_(nullptr),
     antennaChecker_(nullptr),
-#ifdef BUILD_OPENPHYSYN
     psn_(nullptr),
-#endif
     replace_(nullptr),
     pdnsim_(nullptr) 
 {
