@@ -61,4 +61,9 @@ void Net::addPin(Pin& pin)
   _pins.push_back(pin);
 }
 
+void Net::destroyPins()
+{
+  _pins.clear();
+}
+
 }  // namespace FastRoute

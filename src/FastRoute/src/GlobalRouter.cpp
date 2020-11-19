@@ -130,8 +130,6 @@ void GlobalRouter::clearFlow()
   _grid->clear();
   _fastRoute->clear();
   _allRoutingTracks->clear();
-  _nets->clear();
-  _db_net_map.clear();
   _routingLayers->clear();
   _vCapacities.clear();
   _hCapacities.clear();
@@ -265,6 +263,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     std::cout << "[INFO] " << antennaRepair->getDiodesCount() << " diodes inserted\n";
 
     startFastRoute();
+    updateDirtyNets();
     std::vector<Net> *antennaNets = new std::vector<Net>;
     getNetsByType(NetType::Antenna, antennaNets);
     initializeNets(antennaNets);
@@ -509,6 +508,22 @@ void GlobalRouter::removeDirtyNetsUsage()
         }
       }
     }
+  }
+}
+
+void GlobalRouter::updateDirtyNets()
+{
+  odb::Rect dieArea(_grid->getLowerLeftX(),
+              _grid->getLowerLeftY(),
+              _grid->getUpperRightX(),
+              _grid->getUpperRightY());
+
+  for (odb::dbNet* db_net : _dirtyNets) {
+    Net* net = _db_net_map[db_net];
+    net->destroyPins();
+    makeItermPins(net, db_net, dieArea);
+    makeBtermPins(net, db_net, dieArea);
+    findPins(*net);
   }
 }
 

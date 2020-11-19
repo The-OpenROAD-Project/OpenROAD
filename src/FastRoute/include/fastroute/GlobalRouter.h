@@ -249,6 +249,7 @@ protected:
   void getPreviousCapacities(int previousMinLayer, int previousMaxLayer);
   void restorePreviousCapacities(int previousMinLayer, int previousMaxLayer);
   void removeDirtyNetsUsage();
+  void updateDirtyNets();
 
   // db functions
   void initGrid(int maxLayer);
