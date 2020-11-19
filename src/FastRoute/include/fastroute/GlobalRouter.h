@@ -218,7 +218,7 @@ protected:
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route);
-  void addRemainingGuides(NetRouteMap& routes);
+  void addRemainingGuides(NetRouteMap& routes, std::vector<Net> *nets);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -231,11 +231,10 @@ protected:
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
   odb::Point findFakePinPosition(Pin &pin);
-  bool checkSignalType(const Net &net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(odb::Rect& rect);
-  NetRouteMap findRouting();
+  NetRouteMap findRouting(std::vector<Net> *nets);
 
   // check functions
   void checkPinPlacement();

@@ -224,15 +224,12 @@ void GlobalRouter::runFastRoute()
 {
   startFastRoute();
   initNetlist(_reroute, _nets);
-  if (_onlySignalNets) {
-    initializeNets(_signalNets);
-  } else {
-    initializeNets(_nets);
-  }
+  std::vector<Net> *nets = _onlySignalNets ? _signalNets : _nets;
+  initializeNets(nets);
   applyAdjustments();
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
-  NetRouteMap result = findRouting();
+  NetRouteMap result = findRouting(nets);
 
   _routes.insert(result.begin(), result.end());
 
@@ -284,7 +281,7 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsUsage();
 
-    NetRouteMap newRoute = findRouting();
+    NetRouteMap newRoute = findRouting(_nets);
     mergeResults(newRoute);
   }
 }
@@ -301,7 +298,7 @@ void GlobalRouter::routeClockNets()
   initializeNets(_clockNets);
   applyAdjustments();
   std::cout << "Routing clock nets...\n";
-  _routes = findRouting();
+  _routes = findRouting(_clockNets);
 
   _minLayerForClock = _minRoutingLayer;
   _maxLayerForClock = _maxRoutingLayer;
@@ -313,9 +310,9 @@ void GlobalRouter::routeClockNets()
   std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
 }
 
-NetRouteMap GlobalRouter::findRouting() {
+NetRouteMap GlobalRouter::findRouting(std::vector<Net> *nets) {
   NetRouteMap routes = _fastRoute->run();
-  addRemainingGuides(routes);
+  addRemainingGuides(routes, nets);
   connectPadPins(routes);
   for (auto &net_route : routes) {
     GRoute &route = net_route.second;
@@ -623,7 +620,6 @@ void GlobalRouter::initializeNets(std::vector<Net>* nets)
 
   for (Net& net : *nets) {
     if (net.getNumPins() > 1
-        && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
       validNets++;
     }
@@ -1534,7 +1530,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
   }
 }
 
-void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
+void GlobalRouter::addRemainingGuides(NetRouteMap &routes, std::vector<Net> *nets)
 {
   for (auto &net_route : routes) {
     odb::dbNet* db_net = net_route.first;
@@ -1551,10 +1547,9 @@ void GlobalRouter::addRemainingGuides(NetRouteMap &routes)
   }
 
   // Add local guides for nets with no routing.
-  for (Net& net : *_nets) {
+  for (Net& net : *nets) {
     odb::dbNet* db_net = net.getDbNet();
-    if (checkSignalType(net)
-        && net.getNumPins() > 1
+    if (net.getNumPins() > 1
 	      && (routes.find(db_net) == routes.end()
 	      || routes[db_net].empty())) {
       GRoute &route = routes[db_net];
@@ -2127,13 +2122,6 @@ odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
   }
 
   return fakePos;
-}
-
-bool GlobalRouter::checkSignalType(const Net &net) {
-  bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
-  return ((!_onlyClockNets && !_onlySignalNets) ||
-          (_onlyClockNets && isClock && !clockHasLeafITerm(net.getDbNet())) ||
-          (_onlySignalNets && (!isClock || clockHasLeafITerm(net.getDbNet()))));
 }
 
 void GlobalRouter::initAdjustments() {
