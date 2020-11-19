@@ -1520,7 +1520,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter, vector<drNet*> &re
   auto rerouteNetsComp2 = [](drNet* const &a, drNet* const &b) {
                          return (a->getMarkerDist() == b->getMarkerDist() ? a->getId() < b->getId() : a->getMarkerDist() < b->getMarkerDist());
                          };
-  auto rerouteNetsComp3 = [mazeIter](drNet* const &a, drNet* const &b) {
+  auto rerouteNetsComp3 = [](drNet* const &a, drNet* const &b) {
                          frBox boxA, boxB;
                          a->getPinBox(boxA);
                          b->getPinBox(boxB);
