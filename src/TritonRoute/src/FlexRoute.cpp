@@ -27,19 +27,47 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include "global.h"
-#include "FlexRoute.h"
+#include "triton_route/TritonRoute.h"
 #include "io/io.h"
 #include "pa/FlexPA.h"
 #include "ta/FlexTA.h"
 #include "dr/FlexDR.h"
 #include "gc/FlexGC.h"
 #include "rp/FlexRP.h"
+#include "sta/StaMain.hh"
 
 using namespace std;
 using namespace fr;
+using namespace triton_route;
 
-void FlexRoute::init() {
+namespace sta {
+// Tcl files encoded into strings.
+extern const char *triton_route_tcl_inits[];
+}
+
+extern "C" {
+extern int Triton_route_Init(Tcl_Interp* interp);
+}
+
+TritonRoute::TritonRoute()
+  : design(std::make_unique<frDesign>())
+{
+}
+
+TritonRoute::~TritonRoute()
+{
+}
+
+void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
+{
+  // Define swig TCL commands.
+  Triton_route_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
+}
+
+void TritonRoute::init() {
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     VIAINPIN_BOTTOMLAYERNUM = 2;
     VIAINPIN_TOPLAYERNUM = 2;
@@ -58,29 +86,29 @@ void FlexRoute::init() {
   parser.postProcessGuide();
 }
 
-void FlexRoute::prep() {
+void TritonRoute::prep() {
   FlexRP rp(getDesign(), getDesign()->getTech());
   rp.main();
 }
 
-void FlexRoute::ta() {
+void TritonRoute::ta() {
   FlexTA ta(getDesign());
   ta.main();
   io::Writer writer(getDesign());
   writer.writeFromTA();
 }
 
-void FlexRoute::dr() {
+void TritonRoute::dr() {
   FlexDR dr(getDesign());
   dr.main();
 }
 
-void FlexRoute::endFR() {
+void TritonRoute::endFR() {
   io::Writer writer(getDesign());
   writer.writeFromDR();
 }
 
-int FlexRoute::main() {
+int TritonRoute::main() {
   init();
   prep();
   ta();
@@ -90,3 +118,47 @@ int FlexRoute::main() {
   return 0;
 }
 
+/* static */
+bool TritonRoute::readParams(const string &fileName)
+{
+  int readParamCnt = 0;
+  fstream fin(fileName.c_str());
+  string line;
+  if (fin.is_open()){
+    while (fin.good()){
+      getline(fin, line);
+      if (line[0] != '#'){
+        char delimiter=':';
+        int pos = line.find(delimiter);
+        string field = line.substr(0, pos);
+        string value = line.substr(pos + 1);
+        stringstream ss(value);
+        if (field == "lef")           { LEF_FILE = value; ++readParamCnt;}
+        else if (field == "def")      { DEF_FILE = value; REF_OUT_FILE = DEF_FILE; ++readParamCnt;}
+        else if (field == "guide")    { GUIDE_FILE = value; ++readParamCnt;}
+        else if (field == "outputTA") { OUTTA_FILE = value; ++readParamCnt;}
+        else if (field == "output")   { OUT_FILE = value; ++readParamCnt;}
+        else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
+        else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
+        else if (field == "outputDRC") { DRC_RPT_FILE = value; ++readParamCnt;}
+        else if (field == "threads")  { MAX_THREADS = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "verbose")    VERBOSE = atoi(value.c_str());
+        else if (field == "dbProcessNode") { DBPROCESSNODE = value; ++readParamCnt;}
+        else if (field == "drouteOnGridOnlyPrefWireBottomLayerNum") { ONGRIDONLY_WIRE_PREF_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteOnGridOnlyPrefWireTopLayerNum") { ONGRIDONLY_WIRE_PREF_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteOnGridOnlyNonPrefWireBottomLayerNum") { ONGRIDONLY_WIRE_NONPREF_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteOnGridOnlyNonPrefWireTopLayerNum") { ONGRIDONLY_WIRE_NONPREF_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteOnGridOnlyViaBottomLayerNum") { ONGRIDONLY_VIA_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteOnGridOnlyViaTopLayerNum") { ONGRIDONLY_VIA_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteViaInPinBottomLayerNum") { VIAINPIN_BOTTOMLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteViaInPinTopLayerNum") { VIAINPIN_TOPLAYERNUM = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "drouteEndIterNum") { END_ITERATION = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "OR_SEED") {OR_SEED = atoi(value.c_str()); ++readParamCnt;}
+        else if (field == "OR_K") {OR_K = atof(value.c_str()); ++readParamCnt;}
+      }
+    }
+    fin.close();
+  }
+
+  return readParamCnt >= 5;
+}

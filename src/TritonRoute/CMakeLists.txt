@@ -78,6 +78,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/rp/FlexRP.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_prep.cpp
   ${FLEXROUTE_HOME}/src/FlexRoute.cpp
+  ${FLEXROUTE_HOME}/src/MakeTritonRoute.cpp
   )
 
 
@@ -151,10 +152,47 @@ set (FLEXROUTE_HEADER
   )
 
 ############################################################
+# Create TCL Interface
+############################################################
+
+set(TRITONROUTE_SWIG_FILES
+    ${FLEXROUTE_HOME}/src/TritonRoute.i
+)
+
+set_source_files_properties(${TRITONROUTE_SWIG_FILES}
+    PROPERTIES CPLUSPLUS ON
+)
+
+swig_add_library(tritonroute-swig
+    LANGUAGE tcl
+    TYPE STATIC
+    SOURCES ${TRITONROUTE_SWIG_FILES}
+)
+
+set_property(TARGET tritonroute-swig PROPERTY SWIG_COMPILE_OPTIONS -namespace -prefix tr)
+
+target_include_directories(tritonroute-swig
+  PRIVATE
+  ${FLEXROUTE_HOME}/include
+  ${OPENROAD_HOME}/include
+  ${FLEXROUTE_HOME}/src
+)
+
+set(TRITONROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonRouteTclInitVar.cc)
+
+add_custom_command(OUTPUT ${TRITONROUTE_TCL_INIT}
+  COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TRITONROUTE_TCL_INIT} triton_route_tcl_inits TritonRoute.tcl
+  WORKING_DIRECTORY ${TRITONROUTE_HOME}/src
+  DEPENDS ${TRITONROUTE_HOME}/src/TritonRoute.tcl
+          ${OPENSTA_HOME}/etc/TclEncode.tcl
+  )
+
+############################################################
 # Create a library
 ############################################################
 add_library( TritonRouteLib
   ${FLEXROUTE_SRC}
+  ${TRITONROUTE_TCL_INIT}
 )
 
 set_target_properties( TritonRouteLib
@@ -163,11 +201,17 @@ set_target_properties( TritonRouteLib
 
 target_include_directories( TritonRouteLib
   PUBLIC
+  ${FLEXROUTE_HOME}/include
+
+  PRIVATE
   ${FLEXROUTE_HOME}/src
+  ${OPENROAD_HOME}/include
+  ${OPENSTA_HOME}/include
 )
 
 target_link_libraries( TritonRouteLib
   PUBLIC
+  tritonroute-swig
   def
   lef
 
@@ -196,19 +240,16 @@ target_link_libraries( TritonRoute
   TritonRouteLib
   )
 
+target_include_directories( TritonRoute
+  PRIVATE
+  ${FLEXROUTE_HOME}/src
+)
+
 # Do not build the executable by default
 set_target_properties( TritonRoute
   PROPERTIES EXCLUDE_FROM_ALL TRUE
 )
 
-
-############################################################
-# Install
-############################################################
-
-install(FILES ${FLEXROUTE_HEADER} DESTINATION include)
-install(TARGETS TritonRoute DESTINATION bin)
-install(TARGETS TritonRoute DESTINATION lib)
 
 ############################################################
 # Compiler flags
@@ -229,6 +270,11 @@ enable_testing()
 add_executable(trTest
   ${FLEXROUTE_HOME}/test/gcTest.cpp
   ${FLEXROUTE_HOME}/test/fixture.cpp
+)
+
+target_include_directories( trTest
+  PRIVATE
+  ${FLEXROUTE_HOME}/src
 )
 
 target_link_libraries(trTest

@@ -30,24 +30,35 @@
 #define _TRITONROUTE_H_
 
 #include <memory>
+#include <tcl.h>
 
 namespace fr {
   class frDesign;
+}
+
+namespace odb {
+  class dbDatabase;
 }
 
 namespace triton_route {
   class TritonRoute {
   public:
     TritonRoute();
+    ~TritonRoute();
+    void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db);
+
     fr::frDesign* getDesign() const {
       return design.get();
     }
+
     int main();
+
+    static bool readParams(const std::string &fileName);
+
   protected:
     std::unique_ptr<fr::frDesign> design;
   
     void init();
-    //void pinPrep();
     void prep();
     void ta();
     void dr();

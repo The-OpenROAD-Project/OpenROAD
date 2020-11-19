@@ -66,6 +66,7 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
+#include "triton_route/MakeTritonRoute.h"
 #include "pdnsim/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
 #ifdef BUILD_OPENPHYSYN
@@ -137,6 +138,7 @@ OpenRoad::~OpenRoad()
   deleteTapcell(tapcell_);
   deleteTritonMp(tritonMp_);
   deleteOpenRCX(extractor_);
+  deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
 #ifdef BUILD_OPENPHYSYN
@@ -195,6 +197,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
+  detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antennaChecker_ = makeAntennaChecker();
@@ -223,6 +226,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
+  initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
 #ifdef BUILD_OPENPHYSYN
