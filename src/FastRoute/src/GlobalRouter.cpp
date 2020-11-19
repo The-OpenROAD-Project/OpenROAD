@@ -189,7 +189,10 @@ void GlobalRouter::startFastRoute()
   initRoutingTracks();
   setCapacities();
   setSpacingsAndMinWidths();
-  initializeNets(_reroute);
+}
+
+void GlobalRouter::applyAdjustments()
+{
   computeGridAdjustments();
   computeTrackAdjustments();
   computeObstaclesAdjustments();
@@ -214,6 +217,9 @@ void GlobalRouter::startFastRoute()
 void GlobalRouter::runFastRoute()
 {
   startFastRoute();
+  initNetlist(_reroute, _nets);
+  initializeNets(_nets);
+  applyAdjustments();
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
   NetRouteMap result = findRouting();
@@ -259,6 +265,9 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     _reroute = true;
     startFastRoute();
+    initNetlist(_reroute, _nets);
+    initializeNets(_nets);
+    applyAdjustments();
     _fastRoute->setVerbose(0);
     std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
 
@@ -278,6 +287,9 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 void GlobalRouter::routeClockNets()
 {
   startFastRoute();
+  initNetlist(_reroute, _nets);
+  initializeNets(_nets);
+  applyAdjustments();
   std::cout << "Routing clock nets...\n";
   _routes = findRouting();
 
@@ -589,19 +601,17 @@ void GlobalRouter::findPins(Net& net, std::vector<RoutePt>& pinsOnGrid)
   }
 }
 
-void GlobalRouter::initializeNets(bool reroute)
+void GlobalRouter::initializeNets(std::vector<Net>* nets)
 {
-  initNetlist(reroute);
   checkPinPlacement();
-  if (reroute)
-    _padPinsConnections.clear();
+  _padPinsConnections.clear();
 
   int validNets = 0;
 
   int minDegree = std::numeric_limits<int>::max();
   int maxDegree = std::numeric_limits<int>::min();
 
-  for (Net& net : *_nets) {
+  for (Net& net : *nets) {
     if (net.getNumPins() > 1
         && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
@@ -613,7 +623,7 @@ void GlobalRouter::initializeNets(bool reroute)
   _fastRoute->setMaxNetDegree(getMaxNetDegree());
 
   int idx = 0;
-  for (Net& net : *_nets) {
+  for (Net& net : *nets) {
     int pin_count = net.getNumPins();
     if (pin_count > 1) {
       if (pin_count < minDegree) {
@@ -2139,9 +2149,9 @@ int GlobalRouter::getNetCount() const {
   return _nets->size();
 }
 
-Net* GlobalRouter::addNet(odb::dbNet* db_net) {
-  _nets->push_back(Net(db_net));
-  Net* net = &_nets->back();
+Net* GlobalRouter::addNet(odb::dbNet* db_net, std::vector<Net>* nets) {
+  nets->push_back(Net(db_net));
+  Net* net = &nets->back();
   return net;
 }
   
@@ -2455,34 +2465,32 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
   }
 }
 
-void GlobalRouter::initNetlist(bool reroute)
+void GlobalRouter::initNetlist(bool reroute, std::vector<Net>* nets)
 {
   initClockNets();
-
-  odb::dbTech* tech = _db->getTech();
 
   if (reroute) {
     if (_dirtyNets.empty()) {
       error("Not found any dirty net to reroute");
     }
 
-    addNets(_dirtyNets);
+    addNets(_dirtyNets, nets);
   } else {
-    std::set<odb::dbNet*> nets;
+    std::set<odb::dbNet*> db_nets;
 
     for (odb::dbNet* net : _block->getNets()) {
-      nets.insert(net);
+      db_nets.insert(net);
     }
 
-    if (nets.empty()) {
+    if (db_nets.empty()) {
       error("Design without nets");
     }
 
-    addNets(nets);
+    addNets(db_nets, nets);
   }
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*>& nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
@@ -2490,12 +2498,12 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& nets)
               _grid->getUpperRightY());
 
   // Prevent _nets from growing because pointers to nets become invalid.
-  reserveNets(nets.size());
-  for (odb::dbNet* db_net : nets) {
+  reserveNets(db_nets.size());
+  for (odb::dbNet* db_net : db_nets) {
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
-      Net* net = addNet(db_net);
+      Net* net = addNet(db_net, nets);
       _db_net_map[db_net] = net;
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);

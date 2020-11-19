@@ -183,7 +183,7 @@ protected:
   // Net functions
   int getNetCount() const;
   void reserveNets(size_t net_count);
-  Net* addNet(odb::dbNet* net);
+  Net* addNet(odb::dbNet* net, std::vector<Net>* nets);
   int getMaxNetDegree();
   friend class AntennaRepair;
 
@@ -191,13 +191,14 @@ protected:
   void makeComponents();
   void deleteComponents();
   void clearFlow();
+  void applyAdjustments();
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
   void initRoutingTracks();
   void setCapacities();
   void setSpacingsAndMinWidths();
-  void initializeNets(bool reroute);
+  void initializeNets(std::vector<Net>* nets);
   void computeGridAdjustments();
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
@@ -254,8 +255,8 @@ protected:
                          std::vector<float> layerPitches);
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
-  void initNetlist(bool reroute);
-  void addNets(std::set<odb::dbNet*>& nets);
+  void initNetlist(bool reroute, std::vector<Net>* nets);
+  void addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
