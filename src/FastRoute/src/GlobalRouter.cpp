@@ -103,9 +103,6 @@ void GlobalRouter::makeComponents()
   _grid = new Grid;
   _gridOrigin = new odb::Point(-1, -1);
   _nets = new std::vector<Net>;
-  _clockNets = new std::vector<Net>;
-  _signalNets = new std::vector<Net>;
-  _antennaNets = new std::vector<Net>;
   _sta = _openroad->getSta();
   _routingLayers = new std::vector<RoutingLayer>;
 }
@@ -118,9 +115,6 @@ void GlobalRouter::deleteComponents()
   delete _grid;
   delete _gridOrigin;
   delete _nets;
-  delete _clockNets;
-  delete _signalNets;
-  delete _antennaNets;
   delete _sta;
   delete _routingLayers;
 }
@@ -137,9 +131,6 @@ void GlobalRouter::clearFlow()
   _fastRoute->clear();
   _allRoutingTracks->clear();
   _nets->clear();
-  _clockNets->clear();
-  _signalNets->clear();
-  _antennaNets->clear();
   _db_net_map.clear();
   _routingLayers->clear();
   _vCapacities.clear();
@@ -198,6 +189,7 @@ void GlobalRouter::startFastRoute()
   initRoutingTracks();
   setCapacities();
   setSpacingsAndMinWidths();
+  initNetlist();
 }
 
 void GlobalRouter::applyAdjustments()
@@ -223,8 +215,9 @@ void GlobalRouter::applyAdjustments()
 void GlobalRouter::runFastRoute(bool onlySignal)
 {
   startFastRoute();
-  initNetlist(_nets);
-  std::vector<Net> *nets = onlySignal ? _signalNets : _nets;
+  std::vector<Net> *signalNets = new std::vector<Net>;
+  getNetsByType(NetType::Signal, signalNets);
+  std::vector<Net> *nets = onlySignal ? signalNets : _nets;
   initializeNets(nets);
   applyAdjustments();
   // Store results in a temporary map, allowing to keep any previous
@@ -239,6 +232,7 @@ void GlobalRouter::runFastRoute(bool onlySignal)
     _fastRoute->writeCongestionReport2D(_congestFile + "2D.log");
     _fastRoute->writeCongestionReport3D(_congestFile + "3D.log");
   }
+  delete signalNets;
 }
 
 void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
@@ -271,17 +265,20 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
     std::cout << "[INFO] " << antennaRepair->getDiodesCount() << " diodes inserted\n";
 
     startFastRoute();
-    initNetlist(_nets);
-    initializeNets(_antennaNets);
+    std::vector<Net> *antennaNets = new std::vector<Net>;
+    getNetsByType(NetType::Antenna, antennaNets);
+    initializeNets(antennaNets);
     applyAdjustments();
     _fastRoute->setVerbose(0);
-    std::cout << "[INFO] #Nets to reroute: " << _antennaNets->size() << "\n";
+    std::cout << "[INFO] #Nets to reroute: " << antennaNets->size() << "\n";
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsUsage();
 
-    NetRouteMap newRoute = findRouting(_antennaNets);
+    NetRouteMap newRoute = findRouting(antennaNets);
     mergeResults(newRoute);
+
+    delete antennaNets;
   }
 }
 
@@ -293,11 +290,12 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 void GlobalRouter::routeClockNets()
 {
   startFastRoute();
-  initNetlist(_nets);
-  initializeNets(_clockNets);
+  std::vector<Net> *clockNets = new std::vector<Net>;
+  getNetsByType(NetType::Clock, clockNets);
+  initializeNets(clockNets);
   applyAdjustments();
   std::cout << "Routing clock nets...\n";
-  _routes = findRouting(_clockNets);
+  _routes = findRouting(clockNets);
 
   _minLayerForClock = _minRoutingLayer;
   _maxLayerForClock = _maxRoutingLayer;
@@ -305,6 +303,7 @@ void GlobalRouter::routeClockNets()
   getPreviousCapacities(_minLayerForClock, _maxLayerForClock);
   clearFlow();
   std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
+  delete clockNets;
 }
 
 NetRouteMap GlobalRouter::findRouting(std::vector<Net> *nets) {
@@ -2126,16 +2125,14 @@ int GlobalRouter::getNetCount() const {
   return _nets->size();
 }
 
-Net* GlobalRouter::addNet(odb::dbNet* db_net, std::vector<Net>* nets) {
-  nets->push_back(Net(db_net));
-  Net* net = &nets->back();
+Net* GlobalRouter::addNet(odb::dbNet* db_net) {
+  _nets->push_back(Net(db_net));
+  Net* net = &_nets->back();
   return net;
 }
   
 void GlobalRouter::reserveNets(size_t net_count) {
   _nets->reserve(net_count);
-  _clockNets->reserve(net_count);
-  _signalNets->reserve(net_count);
 }
 
 int GlobalRouter::getMaxNetDegree() {
@@ -2444,23 +2441,25 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
   }
 }
 
-void GlobalRouter::initNetlist(std::vector<Net>* nets)
+void GlobalRouter::initNetlist()
 {
-  initClockNets();
-  std::set<odb::dbNet*> db_nets;
+  if (_nets->empty()) {
+    initClockNets();
+    std::set<odb::dbNet*> db_nets;
 
-  for (odb::dbNet* net : _block->getNets()) {
-    db_nets.insert(net);
+    for (odb::dbNet* net : _block->getNets()) {
+      db_nets.insert(net);
+    }
+
+    if (db_nets.empty()) {
+      error("Design without nets");
+    }
+
+    addNets(db_nets);
   }
-
-  if (db_nets.empty()) {
-    error("Design without nets");
-  }
-
-  addNets(db_nets, nets);
 }
 
-void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets)
+void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets)
 {
   odb::Rect dieArea(_grid->getLowerLeftX(),
               _grid->getLowerLeftY(),
@@ -2473,22 +2472,12 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* net
     if (db_net->getSigType().getValue() != odb::dbSigType::POWER
         && db_net->getSigType().getValue() != odb::dbSigType::GROUND
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
-      Net* net = addNet(db_net, nets);
+      Net* net = addNet(db_net);
       _db_net_map[db_net] = net;
       makeItermPins(net, db_net, dieArea);
       makeBtermPins(net, db_net, dieArea);
-      if (net->getSignalType() == odb::dbSigType::CLOCK &&
-        !clockHasLeafITerm(net->getDbNet())) {
-        _clockNets->push_back(*net);
-      } else {
-        _signalNets->push_back(*net);
-      }
       findPins(*net);
     }
-  }
-
-  for (odb::dbNet* db_net : _dirtyNets) {
-    _antennaNets->push_back(*_db_net_map[db_net]);
   }
 }
 
@@ -2497,13 +2486,30 @@ Net* GlobalRouter::getNet(odb::dbNet* db_net)
   return _db_net_map[db_net];
 }
 
+void GlobalRouter::getNetsByType(NetType type, std::vector<Net>* nets)
+{
+  if (type == NetType::Clock || type == NetType::Signal) {
+    bool getClock = type == NetType::Clock;
+    for (Net net : *_nets) {
+      if ((getClock && net.getSignalType() == odb::dbSigType::CLOCK && !clockHasLeafITerm(net.getDbNet())) ||
+          (!getClock && (net.getSignalType() != odb::dbSigType::CLOCK || clockHasLeafITerm(net.getDbNet())))) {
+        nets->push_back(net);
+      }
+    }    
+  } else if (type == NetType::Antenna) {
+    for (odb::dbNet* db_net : _dirtyNets) {
+      nets->push_back(*_db_net_map[db_net]);
+    }
+  }
+}
+
 void GlobalRouter::initClockNets()
 {
-  std::set<odb::dbNet*> _clockNets = _sta->findClkNets();
+  std::set<odb::dbNet*> clockNets = _sta->findClkNets();
 
-  std::cout << "[INFO] Found " << _clockNets.size() << " clock nets\n";
+  std::cout << "[INFO] Found " << clockNets.size() << " clock nets\n";
 
-  for (odb::dbNet* net : _clockNets) {
+  for (odb::dbNet* net : clockNets) {
     net->setSigType(odb::dbSigType::CLOCK);
   }
 }

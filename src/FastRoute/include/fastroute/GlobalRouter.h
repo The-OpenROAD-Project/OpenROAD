@@ -89,6 +89,12 @@ struct RegionAdjustment
   float getAdjustment() { return adjustment; }
 };
 
+enum class NetType {
+  Clock,
+  Signal,
+  Antenna
+};
+
 class GlobalRouter
 {
  public:
@@ -181,7 +187,7 @@ protected:
   // Net functions
   int getNetCount() const;
   void reserveNets(size_t net_count);
-  Net* addNet(odb::dbNet* db_net, std::vector<Net>* nets);
+  Net* addNet(odb::dbNet* db_net);
   int getMaxNetDegree();
   friend class AntennaRepair;
 
@@ -252,9 +258,10 @@ protected:
                          std::vector<float> layerPitches);
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
-  void initNetlist(std::vector<Net>* nets);
-  void addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets);
+  void initNetlist();
+  void addNets(std::set<odb::dbNet*>& db_nets);
   Net* getNet(odb::dbNet* db_net);
+  void getNetsByType(NetType type, std::vector<Net>* nets);
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
   void findObstructions(odb::Rect& dieArea);
@@ -277,9 +284,6 @@ protected:
   NetRouteMap _routes;
 
   std::vector<Net> *_nets;
-  std::vector<Net> *_clockNets;
-  std::vector<Net> *_signalNets;
-  std::vector<Net> *_antennaNets;
   std::map<odb::dbNet*, Net*> _db_net_map;
   Grid* _grid = nullptr;
   std::vector<RoutingLayer>* _routingLayers = nullptr;
