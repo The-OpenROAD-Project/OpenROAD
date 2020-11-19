@@ -198,4 +198,12 @@ odb::Point Grid::getMiddle()
                     (_lowerLeftY + (_upperRightY - _lowerLeftY) / 2.0));
 }
 
+odb::Rect Grid::getGridArea() const
+{
+  return odb::Rect(_lowerLeftX,
+              _lowerLeftY,
+              _upperRightX,
+              _upperRightY);
+}
+
 }  // namespace FastRoute

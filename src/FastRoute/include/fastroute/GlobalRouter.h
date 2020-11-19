@@ -237,7 +237,7 @@ protected:
   odb::Point findFakePinPosition(Pin &pin);
   void initAdjustments();
   void initPitches();
-  odb::Point getRectMiddle(odb::Rect& rect);
+  odb::Point getRectMiddle(const odb::Rect& rect);
   NetRouteMap findRouting(std::vector<Net> *nets);
 
   // check functions
@@ -271,8 +271,8 @@ protected:
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
   std::map<int, odb::dbTechVia*> getDefaultVias(int maxRoutingLayer);
-  void makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
-  void makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea);
+  void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
+  void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
   void initClockNets();
   bool isClkTerm(odb::dbITerm *iterm, sta::dbNetwork *network);
   bool clockHasLeafITerm(odb::dbNet* db_net);

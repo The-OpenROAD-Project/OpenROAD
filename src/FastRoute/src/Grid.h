@@ -171,6 +171,7 @@ class Grid
                         bool direction);
 
   odb::Point getMiddle();
+  odb::Rect getGridArea() const;
 };
 
 }  // namespace FastRoute

@@ -513,16 +513,11 @@ void GlobalRouter::removeDirtyNetsUsage()
 
 void GlobalRouter::updateDirtyNets()
 {
-  odb::Rect dieArea(_grid->getLowerLeftX(),
-              _grid->getLowerLeftY(),
-              _grid->getUpperRightX(),
-              _grid->getUpperRightY());
-
   for (odb::dbNet* db_net : _dirtyNets) {
     Net* net = _db_net_map[db_net];
     net->destroyPins();
-    makeItermPins(net, db_net, dieArea);
-    makeBtermPins(net, db_net, dieArea);
+    makeItermPins(net, db_net, _grid->getGridArea());
+    makeBtermPins(net, db_net, _grid->getGridArea());
     findPins(*net);
   }
 }
@@ -994,10 +989,7 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   odb::Rect lastTileBox;
   std::pair<Grid::TILE, Grid::TILE> tilesToAdjust;
 
-  odb::Rect dieBox = odb::Rect(_grid->getLowerLeftX(),
-                   _grid->getLowerLeftY(),
-                   _grid->getUpperRightX(),
-                   _grid->getUpperRightY());
+  odb::Rect dieBox = _grid->getGridArea();
 
   if ((dieBox.xMin() > region.ll().x()
        && dieBox.yMin() > region.ll().y())
@@ -1607,10 +1599,7 @@ void GlobalRouter::mergeBox(std::vector<odb::Rect>& guideBox)
 
 odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 {
-  odb::Rect dieBounds = odb::Rect(_grid->getLowerLeftX(),
-                      _grid->getLowerLeftY(),
-                      _grid->getUpperRightX(),
-                      _grid->getUpperRightY());
+  odb::Rect dieBounds = _grid->getGridArea();
   long initX, initY;
   long finalX, finalY;
 
@@ -2173,7 +2162,7 @@ std::vector<Pin*> GlobalRouter::getAllPorts() {
   return ports;
 }
 
-odb::Point GlobalRouter::getRectMiddle(odb::Rect& rect) {
+odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect) {
   return odb::Point((rect.xMin() + (rect.xMax() - rect.xMin()) / 2.0),
                     (rect.yMin() + (rect.yMax() - rect.yMin()) / 2.0));
 }
@@ -2476,11 +2465,6 @@ void GlobalRouter::initNetlist()
 
 void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets)
 {
-  odb::Rect dieArea(_grid->getLowerLeftX(),
-              _grid->getLowerLeftY(),
-              _grid->getUpperRightX(),
-              _grid->getUpperRightY());
-
   // Prevent _nets from growing because pointers to nets become invalid.
   reserveNets(db_nets.size());
   for (odb::dbNet* db_net : db_nets) {
@@ -2489,8 +2473,8 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets)
         && !db_net->isSpecial() && db_net->getSWires().empty()) {
       Net* net = addNet(db_net);
       _db_net_map[db_net] = net;
-      makeItermPins(net, db_net, dieArea);
-      makeBtermPins(net, db_net, dieArea);
+      makeItermPins(net, db_net, _grid->getGridArea());
+      makeBtermPins(net, db_net, _grid->getGridArea());
       findPins(*net);
     }
   }
@@ -2551,7 +2535,7 @@ bool GlobalRouter::clockHasLeafITerm(odb::dbNet* db_net) {
   return false;
 }
 
-void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea)
+void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea)
 {
   odb::dbTech* tech = _db->getTech();
   for (odb::dbITerm* iterm : db_net->getITerms()) {
@@ -2653,7 +2637,7 @@ void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieAre
   }
 }
 
-void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea)
+void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea)
 {
   odb::dbTech* tech = _db->getTech();
   for (odb::dbBTerm* bterm : db_net->getBTerms()) {
