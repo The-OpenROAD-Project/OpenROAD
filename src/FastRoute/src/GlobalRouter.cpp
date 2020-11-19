@@ -105,6 +105,7 @@ void GlobalRouter::makeComponents()
   _nets = new std::vector<Net>;
   _clockNets = new std::vector<Net>;
   _signalNets = new std::vector<Net>;
+  _antennaNets = new std::vector<Net>;
   _sta = _openroad->getSta();
   _routingLayers = new std::vector<RoutingLayer>;
 }
@@ -119,6 +120,7 @@ void GlobalRouter::deleteComponents()
   delete _nets;
   delete _clockNets;
   delete _signalNets;
+  delete _antennaNets;
   delete _sta;
   delete _routingLayers;
 }
@@ -137,6 +139,7 @@ void GlobalRouter::clearFlow()
   _nets->clear();
   _clockNets->clear();
   _signalNets->clear();
+  _antennaNets->clear();
   _db_net_map.clear();
   _routingLayers->clear();
   _vCapacities.clear();
@@ -197,7 +200,7 @@ void GlobalRouter::startFastRoute()
   setSpacingsAndMinWidths();
 }
 
-void GlobalRouter::applyAdjustments(bool restore)
+void GlobalRouter::applyAdjustments()
 {
   computeGridAdjustments();
   computeTrackAdjustments();
@@ -212,10 +215,7 @@ void GlobalRouter::applyAdjustments(bool restore)
         regionAdjst.getRegion(), regionAdjst.getLayer(), regionAdjst.getAdjustment());
   }
 
-  if (restore)
-  {
-    restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
-  }
+  restorePreviousCapacities(_minLayerForClock, _maxLayerForClock);
 
   _fastRoute->initAuxVar();
 }
@@ -223,10 +223,10 @@ void GlobalRouter::applyAdjustments(bool restore)
 void GlobalRouter::runFastRoute(bool onlySignal)
 {
   startFastRoute();
-  initNetlist(_reroute, _nets);
+  initNetlist(_nets);
   std::vector<Net> *nets = onlySignal ? _signalNets : _nets;
   initializeNets(nets);
-  applyAdjustments(true);
+  applyAdjustments();
   // Store results in a temporary map, allowing to keep any previous
   // routing result (e.g., after routeClockNets)
   NetRouteMap result = findRouting(nets);
@@ -270,18 +270,17 @@ void GlobalRouter::repairAntennas(sta::LibertyPort* diodePort)
 
     std::cout << "[INFO] " << antennaRepair->getDiodesCount() << " diodes inserted\n";
 
-    _reroute = true;
     startFastRoute();
-    initNetlist(_reroute, _nets);
-    initializeNets(_nets);
-    applyAdjustments(true);
+    initNetlist(_nets);
+    initializeNets(_antennaNets);
+    applyAdjustments();
     _fastRoute->setVerbose(0);
-    std::cout << "[INFO] #Nets to reroute: " << _nets->size() << "\n";
+    std::cout << "[INFO] #Nets to reroute: " << _antennaNets->size() << "\n";
 
     restorePreviousCapacities(_minRoutingLayer, _maxRoutingLayer);
     removeDirtyNetsUsage();
 
-    NetRouteMap newRoute = findRouting(_nets);
+    NetRouteMap newRoute = findRouting(_antennaNets);
     mergeResults(newRoute);
   }
 }
@@ -294,9 +293,9 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 void GlobalRouter::routeClockNets()
 {
   startFastRoute();
-  initNetlist(_reroute, _nets);
+  initNetlist(_nets);
   initializeNets(_clockNets);
-  applyAdjustments(false);
+  applyAdjustments();
   std::cout << "Routing clock nets...\n";
   _routes = findRouting(_clockNets);
 
@@ -2445,29 +2444,20 @@ void GlobalRouter::computeSpacingsAndMinWidth(int maxLayer)
   }
 }
 
-void GlobalRouter::initNetlist(bool reroute, std::vector<Net>* nets)
+void GlobalRouter::initNetlist(std::vector<Net>* nets)
 {
   initClockNets();
+  std::set<odb::dbNet*> db_nets;
 
-  if (reroute) {
-    if (_dirtyNets.empty()) {
-      error("Not found any dirty net to reroute");
-    }
-
-    addNets(_dirtyNets, nets);
-  } else {
-    std::set<odb::dbNet*> db_nets;
-
-    for (odb::dbNet* net : _block->getNets()) {
-      db_nets.insert(net);
-    }
-
-    if (db_nets.empty()) {
-      error("Design without nets");
-    }
-
-    addNets(db_nets, nets);
+  for (odb::dbNet* net : _block->getNets()) {
+    db_nets.insert(net);
   }
+
+  if (db_nets.empty()) {
+    error("Design without nets");
+  }
+
+  addNets(db_nets, nets);
 }
 
 void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets)
@@ -2495,6 +2485,10 @@ void GlobalRouter::addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* net
       }
       findPins(*net);
     }
+  }
+
+  for (odb::dbNet* db_net : _dirtyNets) {
+    _antennaNets->push_back(*_db_net_map[db_net]);
   }
 }
 

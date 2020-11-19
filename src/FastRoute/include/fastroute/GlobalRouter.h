@@ -189,7 +189,7 @@ protected:
   void makeComponents();
   void deleteComponents();
   void clearFlow();
-  void applyAdjustments(bool restore);
+  void applyAdjustments();
   // main functions
   void initCoreGrid();
   void initRoutingLayers();
@@ -252,7 +252,7 @@ protected:
                          std::vector<float> layerPitches);
   void computeCapacities(int maxLayer, std::vector<float> layerPitches);
   void computeSpacingsAndMinWidth(int maxLayer);
-  void initNetlist(bool reroute, std::vector<Net>* nets);
+  void initNetlist(std::vector<Net>* nets);
   void addNets(std::set<odb::dbNet*>& db_nets, std::vector<Net>* nets);
   Net* getNet(odb::dbNet* db_net);
   void initObstacles();
@@ -279,6 +279,7 @@ protected:
   std::vector<Net> *_nets;
   std::vector<Net> *_clockNets;
   std::vector<Net> *_signalNets;
+  std::vector<Net> *_antennaNets;
   std::map<odb::dbNet*, Net*> _db_net_map;
   Grid* _grid = nullptr;
   std::vector<RoutingLayer>* _routingLayers = nullptr;
@@ -317,14 +318,12 @@ protected:
   float _alpha;
   int _verbose;
   std::map<std::string, float> _netsAlpha;
-  bool _clockNetsRouteFlow = false;
   int _minLayerForClock = -1;
   int _maxLayerForClock = -2;
 
   // Antenna variables
   int*** oldHUsages;
   int*** oldVUsages;
-  int _reroute = false;
 
   // temporary for congestion driven replace
   int _numAdjusts = 0;
