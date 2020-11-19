@@ -247,6 +247,14 @@ or a range of values. Example: `place_pins -hor_layer 2 -ver_layer 3 -exclude to
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 
+```
+set_io_pin_constraint -direction direction -names names -region edge:interval
+```
+
+The `set_io_pin_constraint` command sets region constraints for I/O pins according the direction or the pin name.
+This command can be called multiple times with different constraints. Only one condition should be used for each
+function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+
 #### Gate Resizer
 
 Gate resizer commands are described below.

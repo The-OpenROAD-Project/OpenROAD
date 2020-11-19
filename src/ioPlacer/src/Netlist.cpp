@@ -34,6 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Netlist.h"
+#include "Slots.h"
+#include "ioplacer/IOPlacer.h"
 
 namespace ioPlacer {
 
@@ -147,6 +149,20 @@ int Netlist::computeIONetHPWL(int idx, Point slotPos)
   return (x + y);
 }
 
+int Netlist::computeIONetHPWL(int idx, Point slotPos, Edge edge, 
+                              std::vector<Constraint>& constraints)
+{
+  int hpwl;
+
+  if (checkSlotForPin(_ioPins[idx], edge, slotPos, constraints)) {
+    hpwl = computeIONetHPWL(idx, slotPos);
+  } else {
+    hpwl = std::numeric_limits<int>::max();
+  }
+
+  return hpwl;
+}
+
 int Netlist::computeDstIOtoPins(int idx, Point slotPos)
 {
   int netStart = _netPointer[idx];
@@ -161,6 +177,31 @@ int Netlist::computeDstIOtoPins(int idx, Point slotPos)
   }
 
   return totalDistance;
+}
+
+bool Netlist::checkSlotForPin(IOPin& pin, Edge edge, odb::Point& point,
+                        std::vector<Constraint> constraints)
+{
+  bool validSlot = true;
+
+  for (Constraint constraint : constraints) {
+    int pos = (edge == Edge::Top || edge == Edge::Bottom) ?
+               point.x() :  point.y();
+
+    if (pin.getDirection() == constraint.direction) {
+      validSlot = checkInterval(constraint, edge, pos);
+    } else if (pin.getName() == constraint.name) {
+      validSlot = checkInterval(constraint, edge, pos); 
+    }
+  }
+
+  return validSlot;
+}
+
+bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
+  return (constraint.interval.getEdge() == edge &&
+          pos >= constraint.interval.getBegin() &&
+          pos <= constraint.interval.getEnd());
 }
 
 }  // namespace ioPlacer
