@@ -37,7 +37,6 @@
 
 %{
 
-#include <iostream>
 #include "triton_route/TritonRoute.h"
 
 %}
@@ -46,16 +45,14 @@
 
 %inline %{
 
-bool detailed_route_cmd(const char* param_file)
+void detailed_route_cmd(const char* param_file)
 {
   bool readSuccess = triton_route::TritonRoute::readParams(param_file);
   if (!readSuccess) {
-    std::cout <<"Error reading param file!!!" << std::endl;
-    return false;
+    ord::error("Error reading param file: %s", param_file);
   }
   triton_route::TritonRoute router;
   router.main();
-  return true;
 }
 
 %} // inline
