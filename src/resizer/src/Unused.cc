@@ -1064,3 +1064,92 @@ Resizer::closestPt(Pin *pin,
   }
   return closest_loc;
 }
+
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::repairTiming()
+{
+  init();
+  Slack worst_slack;
+  Vertex *worst_vertex;
+  sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+  PathRef worst_path;
+  sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
+  PathExpanded worst_expanded(&worst_path, sta_);
+  if (worst_expanded.size() > 1) {
+    // slack_room says how much slack can be taken out at a vertex before
+    // another tributary downstream becomes the worst path.
+    int worst_length = worst_expanded.size();
+    vector<Slack> slack_room(worst_length);
+    vector<Delay> arc_delays(worst_length);
+    int end_index = worst_length - 1;
+    PathRef *path = worst_expanded.path(end_index);
+    Slack downstream_room = INF;
+    slack_room[end_index] = downstream_room;
+    for (int i = worst_length - 2; i >= worst_expanded.startIndex(); i--) {
+      PathRef *prev_path = worst_expanded.path(i);
+      Vertex *path_vertex = path->vertex(sta_);
+      const RiseFall *path_rf = path->transition(sta_);
+      Vertex *prev_vertex = prev_path ? prev_path->vertex(sta_) : nullptr;
+      slack_room[i] = downstream_room;
+      arc_delays[i + 1] = path->arrival(sta_) - prev_path->arrival(sta_);
+      if (path_vertex->isDriver(network_)) {
+        printf("%s\n", path_vertex->name(network_));
+        VertexInEdgeIterator edge_iter(path_vertex, graph_);
+        while (edge_iter.hasNext()) {
+          Edge *edge = edge_iter.next();
+          Vertex *fanin_vertex = edge->from(graph_);
+          if (fanin_vertex != prev_vertex
+              && !search_->isClock(fanin_vertex)) {
+            TimingArcSet *arc_set = edge->timingArcSet();
+            for (TimingArc *arc : arc_set->arcs()) {
+              if (arc->toTrans()->asRiseFall() == path_rf) {
+                const RiseFall *fanin_rf = arc->fromTrans()->asRiseFall();
+                Slack fanin_slack = sta_->vertexSlack(fanin_vertex, fanin_rf,
+                                                      MinMax::max());
+                Slack room = fanin_slack - worst_slack;
+#if 1
+                printf(" %s room = %s\n",
+                       fanin_vertex->name(network_),
+                       units_->timeUnit()->asString(room, 3));
+#endif
+                downstream_room = min(downstream_room, room);
+              }
+            }
+          }
+        }
+      }
+      path = prev_path;
+    }
+#if 1
+    for (int i = worst_expanded.startIndex(); i < worst_length; i++) {
+      PathRef *path = worst_expanded.path(i);
+      Vertex *path_vertex = path->vertex(sta_);
+      printf("%s delay = %s room = %s\n",
+             path_vertex->name(network_),
+             units_->timeUnit()->asString(arc_delays[i], 3),
+             units_->timeUnit()->asString(slack_room[i], 3));
+    }
+#endif
+    vector<pair<int, Delay>> sorted_arc_delays;
+    for (int i = worst_expanded.startIndex(); i < worst_length; i++)
+      sorted_arc_delays.push_back(pair(i, arc_delays[i]));
+    sort(sorted_arc_delays.begin(), sorted_arc_delays.end(),
+         [](pair<int, Delay> pair1,
+            pair<int, Delay> pair2) {
+           return pair1.second > pair2.second;
+         });
+    printf("sorted arcs\n");
+    for (auto index_delay : sorted_arc_delays) {
+      int i = index_delay.first;
+      PathRef *path = worst_expanded.path(i);
+      Vertex *path_vertex = path->vertex(sta_);
+      printf("%3d %s delay = %s room = %s\n",
+             i,
+             path_vertex->name(network_),
+             units_->timeUnit()->asString(arc_delays[i], 3),
+             units_->timeUnit()->asString(slack_room[i], 3));
+    }
+  }
+}

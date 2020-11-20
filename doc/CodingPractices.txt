@@ -36,6 +36,12 @@ ad nauseum
 
 ....
 
+Namespaces should be all lower case and short.
+This is an example of a poor choice:
+  namespace TritonCTS
+
+....
+
 Don't use extern on function definitions.
 It is pointless in a world with prototypes.
 

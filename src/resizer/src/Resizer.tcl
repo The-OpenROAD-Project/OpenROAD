@@ -346,6 +346,32 @@ proc repair_hold_violations { args } {
   repair_hold_violations_cmd $buffers $allow_setup_violations
 }
 
+define_cmd_args "repair_timing" {-buffer_cell buffer_cell\
+                                   [-libraries resize_libs]}
+
+proc repair_timing { args } {
+  parse_key_args "repair_timing" args \
+    keys {-buffer_cell -libraries} \
+    flags {}
+
+  set buffer_cell [parse_buffer_cell keys 1]
+
+  if { [info exists keys(-libraries)] } {
+    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
+  } else {
+    set resize_libs [get_libs *]
+    if { $resize_libs == {} } {
+      ord::error "No liberty libraries found."
+    }
+  }
+  check_argc_eq0 "repair_design" $args
+  check_parasitics
+  resizer_preamble $resize_libs
+  repair_timing_cmd $buffer_cell
+}
+
+################################################################
+
 define_cmd_args "report_design_area" {}
 
 proc report_design_area {} {

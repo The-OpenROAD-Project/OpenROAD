@@ -108,6 +108,7 @@ public:
   void repairHoldViolations(Pin *end_pin,
                             LibertyCellSeq *buffers,
                             bool allow_setup_violations);
+  void repairTiming(LibertyCell *buffer_cell);
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -338,6 +339,11 @@ protected:
   void setWireCorner(Corner *corner);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitics();
+  void repairTiming(PathRef &path,
+                    LibertyCell *buffer_cell);
+  void splitLoad(Pin *drvr_pin,
+                 Pin *load_pin,
+                 LibertyCell *buffer_cell);
 
   float wire_res_;
   float wire_cap_;

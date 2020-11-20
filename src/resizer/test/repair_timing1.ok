@@ -1,0 +1,50 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: repair_timing1.def
+Notice 0: Design: reg1
+Notice 0:     Created 1 pins.
+Notice 0:     Created 12 components and 62 component-terminals.
+Notice 0:     Created 2 special nets and 24 connections.
+Notice 0:     Created 7 nets and 25 connections.
+Notice 0: Finished DEF file: repair_timing1.def
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ r1/CK (DFF_X1)
+   0.151    0.151 ^ r1/Q (DFF_X1)
+   0.023    0.174 ^ u1/A (BUF_X1)
+   0.045    0.219 ^ u1/Z (BUF_X1)
+   0.001    0.220 ^ u2/A (BUF_X1)
+   0.036    0.256 ^ u2/Z (BUF_X1)
+   0.001    0.257 ^ u3/A (BUF_X1)
+   0.036    0.293 ^ u3/Z (BUF_X1)
+   0.001    0.294 ^ u4/A (BUF_X1)
+   0.036    0.330 ^ u4/Z (BUF_X1)
+   0.001    0.331 ^ u5/A (BUF_X1)
+   0.094    0.425 ^ u5/Z (BUF_X1)
+   0.045    0.470 ^ r2/D (DFF_X1)
+            0.470   data arrival time
+
+   1.000    1.000   clock clk (rise edge)
+   0.000    1.000   clock network delay (ideal)
+   0.000    1.000   clock reconvergence pessimism
+            1.000 ^ r2/CK (DFF_X1)
+  -0.046    0.954   library setup time
+            0.954   data required time
+-----------------------------------------------------------
+            0.954   data required time
+           -0.470   data arrival time
+-----------------------------------------------------------
+            0.484   slack (MET)
+
+

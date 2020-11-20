@@ -376,6 +376,14 @@ repair_net_cmd(Net *net,
 }
 
 void
+repair_timing_cmd(LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairTiming(buffer_cell);
+}
+
+void
 report_long_wires_cmd(int count,
                       int digits)
 {

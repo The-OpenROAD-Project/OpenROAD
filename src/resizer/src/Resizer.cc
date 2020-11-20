@@ -56,6 +56,8 @@
 #include "sta/SearchPred.hh"
 #include "sta/Bfs.hh"
 #include "sta/Search.hh"
+#include "sta/PathRef.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 #include "openroad/OpenRoad.hh"
@@ -76,6 +78,9 @@ using std::min;
 using std::max;
 using std::string;
 using std::to_string;
+using std::vector;
+using std::map;
+using std::pair;
 
 using ord::warn;
 using ord::closestPtInRect;
@@ -1181,6 +1186,134 @@ Resizer::tieLocation(Pin *load,
     return closestPtInRect(core_, tie_x, tie_y);
   else
     return Point(tie_x, tie_y);
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+Resizer::repairTiming(LibertyCell *buffer_cell)
+{
+  inserted_buffer_count_ = 0;
+  Slack worst_slack;
+  Vertex *worst_vertex;
+  sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+  PathRef worst_path;
+  sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
+  repairTiming(worst_path, buffer_cell);
+  if (inserted_buffer_count_ > 0)
+    printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+}
+
+void
+Resizer::repairTiming(PathRef &path,
+                      LibertyCell *buffer_cell)
+{
+  PathExpanded expanded(&path, sta_);
+  if (expanded.size() > 1) {
+    int path_length = expanded.size();
+    vector<pair<int, Delay>> load_delays;
+    int end_index = path_length - 1;
+    int start_index = expanded.startIndex();
+    PathRef *prev_path = expanded.path(start_index - 1);
+    for (int i = start_index; i < path_length; i++) {
+      PathRef *path = expanded.path(i);
+      Vertex *path_vertex = path->vertex(sta_);
+      if (path_vertex->isDriver(network_)) {
+        TimingArc *prev_arc = expanded.prevArc(i);
+        Delay load_delay = path->arrival(sta_) - prev_path->arrival(sta_)
+                   // Remove intrinsic delay to find load dependent delay.
+                   - prev_arc->intrinsicDelay();
+        load_delays.push_back(pair(i, load_delay));
+        debugPrint2(debug_, "retime", 3, "%s load_delay = %s\n",
+                    path_vertex->name(network_),
+                    units_->timeUnit()->asString(load_delay, 3));
+      }
+      prev_path = path;
+    }
+
+    sort(load_delays.begin(), load_delays.end(),
+         [](pair<int, Delay> pair1,
+            pair<int, Delay> pair2) {
+           return pair1.second > pair2.second;
+         });
+    // Find an arc delay we can apply load splitting to.
+    for (auto index_delay : load_delays) {
+      int drvr_index = index_delay.first;
+      Delay load_delay = index_delay.second;
+      PathRef *drvr_path = expanded.path(drvr_index);
+      Vertex *drvr_vertex = drvr_path->vertex(sta_);
+      Pin *drvr_pin = drvr_vertex->pin();
+      PathRef *load_path = expanded.path(drvr_index + 1);
+      Pin *load_pin = load_path->pin(sta_);
+      LibertyPort *load_port = network_->libertyPort(load_pin);
+      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+      // Segregate loads and/or capacitance from the critical path.
+      constexpr int load_split_min_fanout = 4;
+      int fanout = this->fanout(drvr_vertex);
+      // If there are numerous fanouts we can isolate...
+      if (fanout > load_split_min_fanout
+          // or the wire cap to them is large
+          || (fanout > 1
+              && load_cap > 10 * load_port->capacitance())) {
+        // Split loads away from critical path.
+        debugPrint2(debug_, "retime", 2, "split load %s -> %s\n",
+                    network_->pathName(drvr_pin),
+                    network_->pathName(load_pin));
+        splitLoad(drvr_pin, load_pin, buffer_cell);
+        break;
+      }
+    }
+  }
+}
+
+void
+Resizer::splitLoad(Pin *drvr_pin,
+                   Pin *load_pin,
+                   LibertyCell *buffer_cell)
+{
+  Net *net = network_->net(drvr_pin);
+
+  Instance *drvr = network_->instance(drvr_pin);
+  LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+  LibertyCell *drvr_cell = network_->libertyCell(drvr);
+  LibertyPort *load_port = network_->libertyPort(load_pin);
+
+  string buffer_name = makeUniqueInstName("split");
+  Instance *parent = db_network_->topInstance();
+  Instance *buffer = db_network_->makeInstance(buffer_cell,
+                                               buffer_name.c_str(),
+                                               parent);
+  inserted_buffer_count_++;
+  designAreaIncr(area(db_network_->cell(buffer_cell)));
+
+  Instance *load = network_->instance(load_pin);
+
+  string in_net_name = makeUniqueNetName();
+  Net *in_net = db_network_->makeNet(in_net_name.c_str(), parent);
+  string out_net_name = makeUniqueNetName();
+  Net *out_net = db_network_->makeNet(out_net_name.c_str(), parent);
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+
+  // before
+  // drvr_pin -> net -> load_pin
+  //                 -> rest of loads
+  // after
+  // drvr_pin -> in_net -> load_pin
+  //                    -> buffer_in -> net -> rest of loads
+  sta_->disconnectPin(drvr_pin);
+  sta_->disconnectPin(load_pin);
+
+  sta_->connectPin(drvr, drvr_port, in_net);
+  sta_->connectPin(load, load_port, in_net);
+  sta_->connectPin(buffer, input, in_net);
+
+  sta_->connectPin(buffer, output, net);
+
+  Point drvr_loc = db_network_->location(drvr_pin);
+  setLocation(buffer, drvr_loc);
+  Pin *buffer_out_pin = network_->findPin(buffer, output);
+  resizeToTargetSlew(buffer_out_pin);
 }
 
 ////////////////////////////////////////////////////////////////
