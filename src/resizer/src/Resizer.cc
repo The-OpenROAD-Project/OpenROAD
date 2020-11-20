@@ -507,7 +507,8 @@ Resizer::resizeToTargetSlew()
     }
   }
   ensureWireParasitics();
-  printf("Resized %d instances.\n", resize_count_);
+  if (resize_count_ > 0)
+    printf("Resized %d instances.\n", resize_count_);
 }
 
 bool
@@ -602,39 +603,49 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
                       sdc_network_->pathName(drvr_pin),
                       cell->name(),
                       best_cell->name());
-          const char *best_cell_name = best_cell->name();
-          dbMaster *best_master = db_->findMaster(best_cell_name);
-          // Replace LEF with LEF so ports stay aligned in instance.
-          if (best_master) {
-            dbInst *dinst = db_network_->staToDb(inst);
-            dbMaster *master = dinst->getMaster();
-            designAreaIncr(-area(master));
-            Cell *best_cell1 = db_network_->dbToSta(best_master);
-            sta_->replaceCell(inst, best_cell1);
-            if (!revisiting_inst)
-              resize_count_++;
-            designAreaIncr(area(best_master));
-
-            // Delete estimated parasitics on all instance pins.
-            // Input nets change pin cap, outputs change location (slightly).
-            if (have_estimated_parasitics_) {
-              InstancePinIterator *pin_iter = network_->pinIterator(inst);
-              while (pin_iter->hasNext()) {
-                const Pin *pin = pin_iter->next();
-                const Net *net = network_->net(pin);
-                if (net) {
-                  debugPrint1(debug_, "resizer_parasitics", 1, "delete parasitic %s\n",
-                              network_->pathName(net));
-                  parasitics_->deleteParasitics(net, parasitics_ap_);
-                }
-              }
-              delete pin_iter;
-            }
-          }
+          bool replaced = replaceCell(inst, best_cell);
+          if (replaced && revisiting_inst)
+            resize_count_--;
         }
       }
     }
   }
+}
+
+// Replace LEF with LEF so ports stay aligned in instance.
+bool
+Resizer::replaceCell(Instance *inst,
+                     LibertyCell *replacement)
+{
+  const char *replacement_name = replacement->name();
+  dbMaster *replacement_master = db_->findMaster(replacement_name);
+  if (replacement_master) {
+    dbInst *dinst = db_network_->staToDb(inst);
+    dbMaster *master = dinst->getMaster();
+    designAreaIncr(-area(master));
+    Cell *replacement_cell1 = db_network_->dbToSta(replacement_master);
+    sta_->replaceCell(inst, replacement_cell1);
+    resize_count_++;
+    designAreaIncr(area(replacement_master));
+
+    // Delete estimated parasitics on all instance pins.
+    // Input nets change pin cap, outputs change location (slightly).
+    if (have_estimated_parasitics_) {
+      InstancePinIterator *pin_iter = network_->pinIterator(inst);
+      while (pin_iter->hasNext()) {
+        const Pin *pin = pin_iter->next();
+        const Net *net = network_->net(pin);
+        if (net) {
+          debugPrint1(debug_, "resizer_parasitics", 1, "delete parasitic %s\n",
+                      network_->pathName(net));
+          parasitics_->deleteParasitics(net, parasitics_ap_);
+        }
+      }
+      delete pin_iter;
+    }
+    return true;
+  }
+  return false;
 }
 
 bool
@@ -1194,18 +1205,22 @@ void
 Resizer::repairTiming(LibertyCell *buffer_cell)
 {
   inserted_buffer_count_ = 0;
+  resize_count_ = 0;
   Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
   PathRef worst_path;
   sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
-  repairTiming(worst_path, buffer_cell);
+  repairTiming(worst_path, worst_slack, buffer_cell);
   if (inserted_buffer_count_ > 0)
-    printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+  if (resize_count_ > 0)
+    printf("Resized %d instances.\n", resize_count_);
 }
 
 void
 Resizer::repairTiming(PathRef &path,
+                      Slack path_slack,
                       LibertyCell *buffer_cell)
 {
   PathExpanded expanded(&path, sta_);
@@ -1244,25 +1259,53 @@ Resizer::repairTiming(PathRef &path,
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       Pin *drvr_pin = drvr_vertex->pin();
       PathRef *load_path = expanded.path(drvr_index + 1);
-      Pin *load_pin = load_path->pin(sta_);
+      Vertex *load_vertex = load_path->vertex(sta_);
+      Pin *load_pin = load_vertex->pin();
       LibertyPort *load_port = network_->libertyPort(load_pin);
       float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
       // Segregate loads and/or capacitance from the critical path.
       constexpr int load_split_min_fanout = 4;
       int fanout = this->fanout(drvr_vertex);
       // If there are numerous fanouts we can isolate...
-      if (fanout > load_split_min_fanout
-          // or the wire cap to them is large
-          || (fanout > 1
-              && load_cap > 10 * load_port->capacitance())) {
+      if (fanout > load_split_min_fanout) {
         // Split loads away from critical path.
         debugPrint2(debug_, "retime", 2, "split load %s -> %s\n",
                     network_->pathName(drvr_pin),
                     network_->pathName(load_pin));
+        if (debug_->check("retime", 3))
+          reportFanoutSlacks(drvr_path, path_slack);
         splitLoad(drvr_pin, load_pin, buffer_cell);
         break;
       }
+      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+      LibertyCell *upsize = upsizeCell(drvr_port);
+      if (upsize) {
+        Instance *drvr = network_->instance(drvr_pin);
+        replaceCell(drvr, upsize);
+        debugPrint2(debug_, "retime", 2, "resize %s -> %s\n",
+                    network_->pathName(drvr_pin),
+                    upsize->name());
+        break;
+      }
     }
+  }
+}
+
+void
+Resizer::reportFanoutSlacks(PathRef *drvr_path,
+                            Slack drvr_slack)
+{
+  const RiseFall *rf = drvr_path->transition(sta_);
+  Vertex *drvr_vertex = drvr_path->vertex(sta_);
+  VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+  while (edge_iter.hasNext()) {
+    Edge *edge = edge_iter.next();
+    Vertex *fanout_vertex = edge->to(graph_);
+    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, MinMax::max());
+    Slack slack_margin = fanout_slack - drvr_slack;
+    debugPrint2(debug_, "retime", 3, " fanin %s slack_margin = %s\n",
+                network_->pathName(fanout_vertex->pin()),
+                units_->timeUnit()->asString(slack_margin, 3));
   }
 }
 
@@ -1313,7 +1356,28 @@ Resizer::splitLoad(Pin *drvr_pin,
   Point drvr_loc = db_network_->location(drvr_pin);
   setLocation(buffer, drvr_loc);
   Pin *buffer_out_pin = network_->findPin(buffer, output);
+  // Don't count resizing for inserted buffers.
+  int resize_count = resize_count_;
   resizeToTargetSlew(buffer_out_pin);
+  resize_count_ = resize_count;
+}
+
+LibertyCell *
+Resizer::upsizeCell(LibertyPort *drvr_port)
+{
+  LibertyCell *cell = drvr_port->libertyCell();
+  const char *drvr_port_name = drvr_port->name();
+  float drive = drvr_port->driveResistance();
+  LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+  if (equiv_cells) {
+    for (LibertyCell *equiv : *equiv_cells) {
+      LibertyPort *equiv_port = equiv->findLibertyPort(drvr_port_name);
+      float equiv_drive = equiv_port->driveResistance();
+      if (equiv_drive < drive)
+        return equiv;
+    }
+  }
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
