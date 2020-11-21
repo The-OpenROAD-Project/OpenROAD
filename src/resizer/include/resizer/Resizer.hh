@@ -342,14 +342,12 @@ protected:
   void repairTiming(PathRef &path,
                     Slack path_slack,
                     LibertyCell *buffer_cell);
-  void splitLoad(Pin *drvr_pin,
-                 Pin *load_pin,
-                 LibertyCell *buffer_cell);
+  void splitLoads(PathRef *drvr_path,
+                  Slack drvr_slack,
+                  LibertyCell *buffer_cell);
   LibertyCell *upsizeCell(LibertyPort *drvr_port);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
-  void reportFanoutSlacks(PathRef *drvr_path,
-                          Slack drvr_slack);
 
   float wire_res_;
   float wire_cap_;
