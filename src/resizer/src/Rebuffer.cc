@@ -279,11 +279,9 @@ Resizer::rebuffer(const Pin *drvr_pin,
         ArcDelay gate_delays[RiseFall::index_count];
         Slew slews[RiseFall::index_count];
         gateDelays(drvr_port, p->cap(), gate_delays, slews);
-        Slack slacks[RiseFall::index_count];
-        slacks[RiseFall::riseIndex()] = p->required(RiseFall::rise())
-          - gate_delays[RiseFall::riseIndex()];
-        slacks[RiseFall::fallIndex()] = p->required(RiseFall::fall())
-          - gate_delays[RiseFall::fallIndex()];
+        Slack slacks[RiseFall::index_count] =
+          {p->required(RiseFall::rise()) - gate_delays[RiseFall::riseIndex()],
+           p->required(RiseFall::fall()) - gate_delays[RiseFall::fallIndex()]};
         RiseFall *rf = (slacks[RiseFall::riseIndex()] < slacks[RiseFall::fallIndex()])
           ? RiseFall::rise()
           : RiseFall::fall();
@@ -455,6 +453,9 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
     // account for wire delay
     Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
                    p->required(RiseFall::fall()) - wire_delay};
+    // We could add options of different buffer drive strengths here
+    // Which would have different delay Dbuf and input cap Lbuf
+    // for simplicity we only consider one size of buffer
     RebufferOption *z = makeRebufferOption(RebufferOptionType::wire,
                                            // account for wire load
                                            p->cap() + wire_cap,
