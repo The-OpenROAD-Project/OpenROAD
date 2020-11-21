@@ -384,6 +384,30 @@ repair_timing_cmd(LibertyCell *buffer_cell)
 }
 
 void
+repair_timing_pin_cmd(Pin *end_pin,
+                      LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairTiming(end_pin, buffer_cell);
+}
+
+////////////////////////////////////////////////////////////////
+
+// for testing
+void
+rebuffer_net(Net *net,
+             LibertyCell *buffer_cell)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  LibertyLibrarySeq *resize_libs = new LibertyLibrarySeq;
+  resize_libs->push_back(buffer_cell->libertyLibrary());
+  resizer->resizePreamble(resize_libs);
+  resizer->rebuffer(net, buffer_cell);
+}
+
+void
 report_long_wires_cmd(int count,
                       int digits)
 {

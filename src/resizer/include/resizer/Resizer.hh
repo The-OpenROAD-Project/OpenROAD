@@ -44,12 +44,16 @@ namespace sta {
 using std::array;
 using odb::Rect;
 
+class RebufferOption;
+
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
+typedef Vector<RebufferOption*> RebufferOptionSeq;
+enum class RebufferOptionType { sink, junction, wire, buffer };
 
 class Resizer : public StaState
 {
@@ -108,6 +112,8 @@ public:
   void repairHoldViolations(Pin *end_pin,
                             LibertyCellSeq *buffers,
                             bool allow_setup_violations);
+  void repairTiming(Pin *drvr_pin,
+                    LibertyCell *buffer_cell);
   void repairTiming(LibertyCell *buffer_cell);
   // Area of the design in meter^2.
   double designArea();
@@ -166,6 +172,16 @@ public:
   dbNetwork *getDbNetwork() { return db_network_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+
+  // Rebuffer net (for testing).
+  // Assumes buffer_cell->isBuffer() is true.
+  // resizerPreamble() required.
+  void rebuffer(Net *net,
+                LibertyCell *buffer_cell);
+
+  // Assumes buffer_cell->isBuffer() is true.
+  void rebuffer(const Pin *drvr_pin,
+                LibertyCell *buffer_cell);
 
 protected:
   void init();
@@ -348,6 +364,37 @@ protected:
   LibertyCell *upsizeCell(LibertyPort *drvr_port);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
+
+  RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
+                                     SteinerPt k,
+                                     SteinerPt prev,
+                                     int level,
+                                     LibertyCell *buffer_cell);
+  void rebufferTopDown(RebufferOption *choice,
+                       Net *net,
+                       int level,
+                       LibertyCell *buffer_cell);
+  RebufferOptionSeq
+  addWireAndBuffer(RebufferOptionSeq Z,
+                   SteinerTree *tree,
+                   SteinerPt k,
+                   SteinerPt prev,
+                   int level,
+                   LibertyCell *buffer_cell);
+  // RebufferOption factory.
+  RebufferOption *makeRebufferOption(RebufferOptionType type,
+                                     float cap,
+                                     Requireds requireds,
+                                     Pin *load_pin,
+                                     Point location,
+                                     RebufferOption *ref,
+                                     RebufferOption *ref2);
+  void deleteRebufferOptions();
+  bool hasTopLevelOutputPort(Net *net);
+
+  int rebuffer_net_count_;
+  RebufferOptionSeq rebuffer_options_;
+  friend class RebufferOption;
 
   float wire_res_;
   float wire_cap_;

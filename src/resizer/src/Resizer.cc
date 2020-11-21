@@ -1228,6 +1228,25 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
     printf("Resized %d instances.\n", resize_count_);
 }
 
+// For testing.
+void
+Resizer::repairTiming(Pin *end_pin,
+                      LibertyCell *buffer_cell)
+{
+  inserted_buffer_count_ = 0;
+  resize_count_ = 0;
+  Vertex *vertex = graph_->pinLoadVertex(end_pin);
+  Slack slack = sta_->vertexSlack(vertex, MinMax::max());
+  PathRef path;
+  sta_->vertexWorstSlackPath(vertex, MinMax::max(), path);
+  repairTiming(path, slack, buffer_cell);
+
+  if (inserted_buffer_count_ > 0)
+    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+  if (resize_count_ > 0)
+    printf("Resized %d instances.\n", resize_count_);
+}
+
 void
 Resizer::repairTiming(PathRef &path,
                       Slack path_slack,

@@ -364,10 +364,17 @@ proc repair_timing { args } {
       ord::error "No liberty libraries found."
     }
   }
-  check_argc_eq0 "repair_design" $args
+  check_argc_eq0 "repair_timing" $args
   check_parasitics
   resizer_preamble $resize_libs
   repair_timing_cmd $buffer_cell
+}
+
+# for testing
+proc repair_timing_pin { end_pin buffer_cell } {
+  check_parasitics
+  resizer_preamble [get_libs *]
+  repair_timing_pin_cmd $end_pin $buffer_cell
 }
 
 ################################################################
