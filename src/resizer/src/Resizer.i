@@ -345,7 +345,7 @@ repair_design_cmd(float max_length,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairDesign(max_length, buffer_cell);
+  resizer->repairDesign(max_length, buffer_cell);
 }
 
 void
@@ -354,7 +354,7 @@ repair_clk_nets_cmd(float max_length,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairClkNets(max_length, buffer_cell);
+  resizer->repairClkNets(max_length, buffer_cell);
 }
 
 void
@@ -362,7 +362,7 @@ repair_clk_inverters_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairClkInverters();
+  resizer->repairClkInverters();
 }
 
 void
@@ -372,7 +372,7 @@ repair_net_cmd(Net *net,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairNet(net, max_length, buffer_cell); 
+  resizer->repairNet(net, max_length, buffer_cell); 
 }
 
 void
@@ -380,7 +380,7 @@ repair_timing_cmd(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairTiming(buffer_cell);
+  resizer->repairTiming(buffer_cell);
 }
 
 void
@@ -389,7 +389,7 @@ repair_timing_pin_cmd(Pin *end_pin,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairTiming(end_pin, buffer_cell);
+  resizer->repairTiming(end_pin, buffer_cell);
 }
 
 ////////////////////////////////////////////////////////////////

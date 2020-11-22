@@ -372,8 +372,7 @@ protected:
                                      LibertyCell *buffer_cell);
   void rebufferTopDown(RebufferOption *choice,
                        Net *net,
-                       int level,
-                       LibertyCell *buffer_cell);
+                       int level);
   RebufferOptionSeq
   addWireAndBuffer(RebufferOptionSeq Z,
                    SteinerTree *tree,
@@ -387,6 +386,7 @@ protected:
                                      Requireds requireds,
                                      Pin *load_pin,
                                      Point location,
+                                     LibertyCell *buffer_cell,
                                      RebufferOption *ref,
                                      RebufferOption *ref2);
   void deleteRebufferOptions();

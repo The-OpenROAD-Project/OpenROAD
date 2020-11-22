@@ -7,9 +7,9 @@ Notice 0:
 Reading DEF file: repair_timing1.def
 Notice 0: Design: reg1
 Notice 0:     Created 1 pins.
-Notice 0:     Created 12 components and 62 component-terminals.
-Notice 0:     Created 2 special nets and 24 connections.
-Notice 0:     Created 7 nets and 25 connections.
+Notice 0:     Created 17 components and 92 component-terminals.
+Notice 0:     Created 2 special nets and 34 connections.
+Notice 0:     Created 7 nets and 30 connections.
 Notice 0: Finished DEF file: repair_timing1.def
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -21,19 +21,19 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.151    0.151 ^ r1/Q (DFF_X1)
-   0.023    0.174 ^ u1/A (BUF_X1)
-   0.045    0.219 ^ u1/Z (BUF_X1)
-   0.001    0.220 ^ u2/A (BUF_X1)
-   0.036    0.256 ^ u2/Z (BUF_X1)
-   0.001    0.257 ^ u3/A (BUF_X1)
-   0.036    0.293 ^ u3/Z (BUF_X1)
-   0.001    0.294 ^ u4/A (BUF_X1)
-   0.036    0.330 ^ u4/Z (BUF_X1)
-   0.001    0.331 ^ u5/A (BUF_X1)
-   0.094    0.425 ^ u5/Z (BUF_X1)
-   0.045    0.470 ^ r2/D (DFF_X1)
-            0.470   data arrival time
+   0.203    0.203 ^ r1/Q (DFF_X1)
+   0.024    0.227 ^ u1/A (BUF_X1)
+   0.047    0.273 ^ u1/Z (BUF_X1)
+   0.001    0.274 ^ u2/A (BUF_X1)
+   0.036    0.311 ^ u2/Z (BUF_X1)
+   0.001    0.312 ^ u3/A (BUF_X1)
+   0.036    0.347 ^ u3/Z (BUF_X1)
+   0.001    0.349 ^ u4/A (BUF_X1)
+   0.036    0.384 ^ u4/Z (BUF_X1)
+   0.001    0.385 ^ u5/A (BUF_X1)
+   0.094    0.480 ^ u5/Z (BUF_X1)
+   0.045    0.525 ^ r2/D (DFF_X1)
+            0.525   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -43,12 +43,12 @@ Path Type: max
             0.254   data required time
 -----------------------------------------------------------
             0.254   data required time
-           -0.470   data arrival time
+           -0.525   data arrival time
 -----------------------------------------------------------
-           -0.216   slack (VIOLATED)
+           -0.271   slack (VIOLATED)
 
 
-Inserted 1 buffers.
+Inserted 7 buffers.
 Resized 1 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -60,30 +60,32 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.096    0.096 ^ r1/Q (DFF_X1)
-   0.000    0.096 ^ u1/A (BUF_X1)
-   0.036    0.132 ^ u1/Z (BUF_X1)
-   0.001    0.133 ^ u2/A (BUF_X1)
-   0.036    0.168 ^ u2/Z (BUF_X1)
-   0.001    0.170 ^ u3/A (BUF_X1)
-   0.036    0.205 ^ u3/Z (BUF_X1)
-   0.001    0.206 ^ u4/A (BUF_X1)
-   0.023    0.230 ^ u4/Z (BUF_X1)
-   0.000    0.230 ^ u5/A (CLKBUF_X1)
-   0.027    0.257 ^ u5/Z (CLKBUF_X1)
-   0.000    0.257 ^ r2/D (DFF_X1)
-            0.257   data arrival time
+   0.097    0.097 ^ r1/Q (DFF_X1)
+   0.002    0.098 ^ u1/A (BUF_X1)
+   0.036    0.134 ^ u1/Z (BUF_X1)
+   0.001    0.136 ^ u2/A (BUF_X1)
+   0.036    0.171 ^ u2/Z (BUF_X1)
+   0.001    0.173 ^ u3/A (BUF_X1)
+   0.036    0.208 ^ u3/Z (BUF_X1)
+   0.001    0.209 ^ u4/A (BUF_X1)
+   0.035    0.244 ^ u4/Z (BUF_X1)
+   0.001    0.246 ^ u5/A (CLKBUF_X1)
+   0.045    0.291 ^ u5/Z (CLKBUF_X1)
+   0.000    0.291 ^ rebuffer6/A (BUF_X8)
+   0.027    0.318 ^ rebuffer6/Z (BUF_X8)
+   0.036    0.354 ^ r2/D (DFF_X1)
+            0.354   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.031    0.269   library setup time
-            0.269   data required time
+  -0.041    0.259   library setup time
+            0.259   data required time
 -----------------------------------------------------------
-            0.269   data required time
-           -0.257   data arrival time
+            0.259   data required time
+           -0.354   data arrival time
 -----------------------------------------------------------
-            0.012   slack (MET)
+           -0.095   slack (VIOLATED)
 
 

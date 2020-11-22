@@ -562,7 +562,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
                     sdc_network_->pathName(drvr_pin),
                     units_->capacitanceUnit()->asString(load_cap),
                     best_ratio,
-                    units_->timeUnit()->asString(best_delay, 3));
+                    delayAsString(best_delay, sta_, 3));
         for (LibertyCell *target_cell : *equiv_cells) {
           if (!dontUse(target_cell)) {
             float target_load = (*target_load_map_)[target_cell];
@@ -573,7 +573,7 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
             debugPrint3(debug_, "resizer", 2, " %s ratio=%.2f delay=%s\n",
                         target_cell->name(),
                         ratio,
-                        units_->timeUnit()->asString(delay, 3));
+                        delayAsString(delay, sta_, 3));
             if (is_buf_inv
                 // Library may have "delay" buffers/inverters that are
                 // functionally buffers/inverters but have additional
@@ -871,20 +871,20 @@ Resizer::findBufferTargetSlews(LibertyLibrarySeq *resize_libs)
     }
     debugPrint3(debug_, "resizer", 2, "target_slews %s = %s/%s\n",
                 lib->name(),
-                units_->timeUnit()->asString(slews[RiseFall::riseIndex()], 3),
-                units_->timeUnit()->asString(slews[RiseFall::fallIndex()], 3));
+                delayAsString(slews[RiseFall::riseIndex()], sta_, 3),
+                delayAsString(slews[RiseFall::fallIndex()], sta_, 3));
   }
 
   for (int rf : RiseFall::rangeIndex())
     tgt_slews_[rf] /= tgt_counts[rf];
 
   debugPrint2(debug_, "resizer", 1, "target_slews = %s/%s\n",
-              units_->timeUnit()->asString(tgt_slews_[RiseFall::riseIndex()], 3),
-              units_->timeUnit()->asString(tgt_slews_[RiseFall::fallIndex()], 3));
+              delayAsString(tgt_slews_[RiseFall::riseIndex()], sta_, 3),
+              delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
 
 //    printf("Target slews rise %s / fall %s\n",
-//           units_->timeUnit()->asString(tgt_slews_[RiseFall::riseIndex()], 3),
-//           units_->timeUnit()->asString(tgt_slews_[RiseFall::fallIndex()], 3));
+//           delayAsString(tgt_slews_[RiseFall::riseIndex()], sta_, 3),
+//           delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
 }
 
 void
@@ -1206,19 +1206,25 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
   Slack worst_slack;
   Vertex *worst_vertex;
   sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
-  Slack prev_worst_slack = worst_slack;
+  debugPrint1(debug_, "retime", 1, "worst_slack = %s\n",
+              delayAsString(worst_slack, sta_, 3));
+  Slack prev_worst_slack = -INF;
   int pass = 1;
   while (worst_slack < 0.0
          // No backsliding.
-         && worst_slack >= prev_worst_slack) {
-    debugPrint2(debug_, "retime", 1, "pass %d worst_slack = %s\n",
-                pass,
-                units_->timeUnit()->asString(worst_slack, 3));
+         && fuzzyGreater(worst_slack, prev_worst_slack)) {
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
     repairTiming(worst_path, worst_slack, buffer_cell);
-    prev_worst_slack  = worst_slack;
+    // This should use a dirty list for updating parasitics.
+    ensureWireParasitics();
+    // This should use incremental requireds.
+    sta_->findRequireds();
+    prev_worst_slack = worst_slack;
     sta_->worstSlack(MinMax::max(), worst_slack, worst_vertex);
+    debugPrint2(debug_, "retime", 1, "pass %d worst_slack = %s\n",
+                pass,
+                delayAsString(worst_slack, sta_, 3));
     pass++;
   }
 
@@ -1270,7 +1276,7 @@ Resizer::repairTiming(PathRef &path,
         load_delays.push_back(pair(i, load_delay));
         debugPrint2(debug_, "retime", 3, "%s load_delay = %s\n",
                     path_vertex->name(network_),
-                    units_->timeUnit()->asString(load_delay, 3));
+                    delayAsString(load_delay, sta_, 3));
       }
       prev_path = path;
     }
@@ -1290,24 +1296,33 @@ Resizer::repairTiming(PathRef &path,
       PathRef *load_path = expanded.path(drvr_index + 1);
       Vertex *load_vertex = load_path->vertex(sta_);
       Pin *load_pin = load_vertex->pin();
-      // Segregate loads and/or capacitance from the critical path.
-      constexpr int load_split_min_fanout = 4;
+      // Rebuffer blows up on large fanout nets.
+      constexpr int rebuffer_max_fanout = 16;
       int fanout = this->fanout(drvr_vertex);
-      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-      LibertyCell *upsize = upsizeCell(drvr_port);
-      debugPrint3(debug_, "retime", 2, "%s fanout = %d%s\n",
+      debugPrint2(debug_, "retime", 2, "%s fanout = %d\n",
                   network_->pathName(drvr_pin),
-                  fanout,
-                  upsize ? " up-sizable" : "");
-      // If there are numerous fanouts we can isolate...
-      if (fanout > load_split_min_fanout) {
-        // Split loads away from critical path.
-        debugPrint2(debug_, "retime", 2, "split load %s -> %s\n",
+                  fanout);
+      if (fanout < rebuffer_max_fanout) {
+        int count_before = inserted_buffer_count_;
+        rebuffer(drvr_pin, buffer_cell);
+        int insert_count = inserted_buffer_count_ - count_before;
+        debugPrint2(debug_, "retime", 2, "rebuffer %s inserted %d\n",
+                    network_->pathName(drvr_pin),
+                    insert_count);
+        if (insert_count > 0)
+          break;
+      }
+      constexpr int split_load_min_fanout = 8;
+      if (fanout > split_load_min_fanout) {
+        // Divide and conquer.
+        debugPrint2(debug_, "retime", 2, "split loads %s -> %s\n",
                     network_->pathName(drvr_pin),
                     network_->pathName(load_pin));
         splitLoads(drvr_path, path_slack, buffer_cell);
         break;
       }
+      LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+      LibertyCell *upsize = upsizeCell(drvr_port);
       if (upsize) {
         Instance *drvr = network_->instance(drvr_pin);
         replaceCell(drvr, upsize);
@@ -1338,7 +1353,7 @@ Resizer::splitLoads(PathRef *drvr_path,
     Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint2(debug_, "retime", 3, " fanin %s slack_margin = %s\n",
                 network_->pathName(fanout_vertex->pin()),
-                units_->timeUnit()->asString(slack_margin, 3));
+                delayAsString(slack_margin, sta_, 3));
     fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
   }
 
@@ -1378,6 +1393,7 @@ Resizer::splitLoads(PathRef *drvr_path,
   // drvr_pin -> net -> load_pins with low slack
   //                 -> buffer_in -> net -> rest of loads
   sta_->connectPin(buffer, input, net);
+  parasitics_->deleteParasitics(net, parasitics_ap_);
   sta_->connectPin(buffer, output, out_net);
   int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
@@ -1469,7 +1485,7 @@ Resizer::repairHoldViolations(VertexSet *ends,
       debugPrint4(debug_, "repair_hold", 1,
                   "pass %d worst slack %s failures %lu inserted %d\n",
                   pass,
-                  units_->timeUnit()->asString(worst_slack, 3),
+                  delayAsString(worst_slack, sta_, 3),
                   hold_failures .size(),
                   repair_count);
       sta_->findRequireds();
@@ -1554,7 +1570,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         debugPrint5(debug_, "repair_hold", 2,
                     " %s hold=%s inserted %d for %lu/%d loads\n",
                     vertex->name(sdc_network_),
-                    delayAsString(hold_slack, this),
+                    delayAsString(hold_slack, this, 3),
                     buffer_count,
                     load_pins.size(),
                     fanout(vertex));
@@ -1618,8 +1634,8 @@ Resizer::sortHoldFanins(VertexSet &fanins)
     for(Vertex *vertex : sorted_fanins)
       printf("%s %s %s %d\n",
              vertex->name(network_),
-             units_->timeUnit()->asString(sta_->vertexSlack(vertex, MinMax::min()), 3),
-             units_->timeUnit()->asString(slackGap(vertex), 3),
+             delayAsString(sta_->vertexSlack(vertex, MinMax::min()), sta_, 3),
+             delayAsString(slackGap(vertex), sta_, 3),
              vertex->level());
   }
   return sorted_fanins;
@@ -2331,7 +2347,7 @@ Resizer::reportLongWires(int count,
                      sdc_network_->pathName(drvr_pin),
                      units_->distanceUnit()->asString(wire_length, 1),
                      units_->distanceUnit()->asString(steiner_length, 1),
-                     units_->timeUnit()->asString(delay, digits));
+                     delayAsString(delay, sta_, digits));
       if (i == count)
         break;
       i++;
@@ -2541,16 +2557,6 @@ Resizer::bufferInputCapacitance(LibertyCell *buffer_cell)
 }
 
 float
-Resizer::pinCapacitance(const Pin *pin)
-{
-  LibertyPort *port = network_->libertyPort(pin);
-  if (port)
-    return portCapacitance(port);
-  else
-    return 0.0;
-}
-
-float
 Resizer::portCapacitance(const LibertyPort *port)
 {
   float cap1 = port->capacitance(RiseFall::rise(), min_max_);
@@ -2572,23 +2578,6 @@ Resizer::portFanoutLoad(LibertyPort *port)
     return fanout_load;
   else
     return 0.0;
-}
-
-Requireds
-Resizer::pinRequireds(const Pin *pin)
-{
-  Vertex *vertex = graph_->pinLoadVertex(pin);
-  PathAnalysisPt *path_ap = corner_->findPathAnalysisPt(min_max_);
-  Requireds requireds;
-  for (RiseFall *rf : RiseFall::range()) {
-    int rf_index = rf->index();
-    Required required = sta_->vertexRequired(vertex, rf, path_ap);
-    if (fuzzyInf(required))
-      // Unconstrained pin.
-      required = 0.0;
-    requireds[rf_index] = required;
-  }
-  return requireds;
 }
 
 float
@@ -2661,7 +2650,8 @@ Resizer::gateDelays(LibertyPort *drvr_port,
   LibertyCellTimingArcSetIterator set_iter(cell);
   while (set_iter.hasNext()) {
     TimingArcSet *arc_set = set_iter.next();
-    if (arc_set->to() == drvr_port) {
+    if (arc_set->to() == drvr_port
+        && !arc_set->role()->isTimingCheck()) {
       TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
         TimingArc *arc = arc_iter.next();

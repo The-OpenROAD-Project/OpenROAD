@@ -40,6 +40,8 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Graph.hh"
+#include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
 
 using std::min;
@@ -55,6 +57,7 @@ public:
                  Requireds requireds,
                  Pin *load_pin,
                  Point location,
+                 LibertyCell *buffer,
                  RebufferOption *ref,
                  RebufferOption *ref2);
   ~RebufferOption();
@@ -72,6 +75,7 @@ public:
   Required bufferRequired(LibertyCell *buffer_cell,
                           Resizer *resizer) const;
   Point location() const { return location_; }
+  LibertyCell *bufferCell() const { return buffer_cell_; }
   Pin *loadPin() const { return load_pin_; }
   RebufferOption *ref() const { return ref_; }
   RebufferOption *ref2() const { return ref2_; }
@@ -83,6 +87,7 @@ private:
   Requireds requireds_;
   Pin *load_pin_;
   Point location_;
+  LibertyCell *buffer_cell_;
   RebufferOption *ref_;
   RebufferOption *ref2_;
 };
@@ -92,6 +97,7 @@ RebufferOption::RebufferOption(RebufferOptionType type,
                                Requireds requireds,
                                Pin *load_pin,
                                Point location,
+                               LibertyCell *buffer_cell,
                                RebufferOption *ref,
                                RebufferOption *ref2) :
   type_(type),
@@ -99,6 +105,7 @@ RebufferOption::RebufferOption(RebufferOptionType type,
   requireds_(requireds),
   load_pin_(load_pin),
   location_(location),
+  buffer_cell_(buffer_cell),
   ref_(ref),
   ref2_(ref2)
 {
@@ -157,9 +164,10 @@ RebufferOption::print(int level,
            delayAsString(requiredMin(), resizer));
     break;
   case RebufferOptionType::buffer:
-    printf("%*sbuffer (%d, %d) cap %s req %s\n",
+    printf("%*sbuffer (%d, %d) %s cap %s req %s\n",
            level, "",
            location_.x(), location_.y(),
+           buffer_cell_->name(),
            units->capacitanceUnit()->asString(cap_),
            delayAsString(requiredMin(), resizer));
     break;
@@ -223,11 +231,14 @@ Resizer::makeRebufferOption(RebufferOptionType type,
                             Requireds requireds,
                             Pin *load_pin,
                             Point location,
+                            LibertyCell *buffer_cell,
                             RebufferOption *ref,
                             RebufferOption *ref2)
 {
   RebufferOption *option = new RebufferOption(type, cap, requireds,
-                                              load_pin, location, ref, ref2);
+                                              load_pin, location,
+                                              buffer_cell,
+                                              ref, ref2);
 
   rebuffer_options_.push_back(option);
   return option;
@@ -275,7 +286,7 @@ Resizer::rebuffer(const Pin *drvr_pin,
       int best_index = 0;
       int i = 1;
       for (RebufferOption *p : Z) {
-        // Find required for drvr_pin into option.
+        // Find slack for drvr_pin into option.
         ArcDelay gate_delays[RiseFall::index_count];
         Slew slews[RiseFall::index_count];
         gateDelays(drvr_port, p->cap(), gate_delays, slews);
@@ -306,8 +317,10 @@ Resizer::rebuffer(const Pin *drvr_pin,
       }
       if (best_option) {
         debugPrint1(debug_, "rebuffer", 3, "best option %d\n", best_index);
+        if (debug_->check("rebuffer", 4))
+          best_option->printTree(this);
         int before = inserted_buffer_count_;
-        rebufferTopDown(best_option, net, 1, buffer_cell);
+        rebufferTopDown(best_option, net, 1);
         if (inserted_buffer_count_ != before)
           rebuffer_net_count_++;
       }
@@ -368,6 +381,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
                                              pinRequireds(pin),
                                              pin,
                                              tree->location(k),
+                                             nullptr,
                                              nullptr, nullptr);
       if (debug_->check("rebuffer", 4))
         z->print(level, this);
@@ -394,6 +408,7 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
                                                     junc_reqs,
                                                     nullptr,
                                                     tree->location(k),
+                                                    nullptr,
                                                     p, q);
           Z.push_back(junc);
         }
@@ -430,6 +445,33 @@ Resizer::rebufferBottomUp(SteinerTree *tree,
   return RebufferOptionSeq();
 }
 
+float
+Resizer::pinCapacitance(const Pin *pin)
+{
+  LibertyPort *port = network_->libertyPort(pin);
+  if (port)
+    return portCapacitance(port);
+  else
+    return 0.0;
+}
+
+Requireds
+Resizer::pinRequireds(const Pin *pin)
+{
+  Vertex *vertex = graph_->pinLoadVertex(pin);
+  PathAnalysisPt *path_ap = corner_->findPathAnalysisPt(min_max_);
+  Requireds requireds;
+  for (RiseFall *rf : RiseFall::range()) {
+    int rf_index = rf->index();
+    Required required = sta_->vertexRequired(vertex, rf, path_ap);
+    if (fuzzyInf(required))
+      // Unconstrained pin.
+      required = 0.0;
+    requireds[rf_index] = required;
+  }
+  return requireds;
+}
+
 RebufferOptionSeq
 Resizer::addWireAndBuffer(RebufferOptionSeq Z,
                           SteinerTree *tree,
@@ -441,6 +483,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   RebufferOptionSeq Z1;
   Required best_req = -INF;
   RebufferOption *best_option = nullptr;
+  LibertyCell *best_buffer = nullptr;
   Point k_loc = tree->location(k);
   Point prev_loc = tree->location(prev);
   int wire_length_dbu = abs(k_loc.x() - prev_loc.x())
@@ -449,56 +492,56 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   float wire_cap = wire_length * wire_cap_;
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
-  for (RebufferOption *p : Z) {
-    // account for wire delay
-    Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
-                   p->required(RiseFall::fall()) - wire_delay};
-    // We could add options of different buffer drive strengths here
-    // Which would have different delay Dbuf and input cap Lbuf
-    // for simplicity we only consider one size of buffer
-    RebufferOption *z = makeRebufferOption(RebufferOptionType::wire,
-                                           // account for wire load
-                                           p->cap() + wire_cap,
-                                           reqs,
-                                           nullptr,
-                                           prev_loc,
-                                           p, nullptr);
-    if (debug_->check("rebuffer", 3)) {
-      printf("%*swire %s -> %s wl %d\n",
-             level, "",
-             tree->name(prev, sdc_network_),
-             tree->name(k, sdc_network_),
-             wire_length_dbu);
-      z->print(level, this);
+  LibertyCellSeq *buffer_cells = sta_->equivCells(buffer_cell);    
+  for (LibertyCell *buffer_cell : *buffer_cells) {
+    for (RebufferOption *p : Z) {
+      // account for wire delay
+      Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
+                     p->required(RiseFall::fall()) - wire_delay};
+      RebufferOption *z = makeRebufferOption(RebufferOptionType::wire,
+                                             // account for wire load
+                                             p->cap() + wire_cap,
+                                             reqs,
+                                             nullptr,
+                                             prev_loc,
+                                             nullptr,
+                                             p, nullptr);
+      if (debug_->check("rebuffer", 3)) {
+        printf("%*swire %s -> %s wl %d\n",
+               level, "",
+               tree->name(prev, sdc_network_),
+               tree->name(k, sdc_network_),
+               wire_length_dbu);
+        z->print(level, this);
+      }
+      Z1.push_back(z);
+      Required req = z->bufferRequired(buffer_cell, this);
+      if (fuzzyGreater(req, best_req)) {
+        best_req = req;
+        best_option = z;
+        best_buffer = buffer_cell;
+      }
     }
-    Z1.push_back(z);
-    // We could add options of different buffer drive strengths here
-    // Which would have different delay Dbuf and input cap Lbuf
-    // for simplicity we only consider one size of buffer.
-    Required req = z->bufferRequired(buffer_cell, this);
-    if (fuzzyGreater(req, best_req)) {
-      best_req = req;
-      best_option = z;
+    if (best_option) {
+      Requireds requireds = best_option->bufferRequireds(best_buffer, this);
+      RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
+                                             bufferInputCapacitance(best_buffer),
+                                             requireds,
+                                             nullptr,
+                                             // Locate buffer at opposite end of wire.
+                                             prev_loc,
+                                             best_buffer,
+                                             best_option, nullptr);
+      if (debug_->check("rebuffer", 3)) {
+        printf("%*sbuffer %s cap %s req %s ->\n",
+               level, "",
+               tree->name(prev, sdc_network_),
+               units_->capacitanceUnit()->asString(best_option->cap()),
+               delayAsString(best_req, this));
+        z->print(level, this);
+      }
+      Z1.push_back(z);
     }
-  }
-  if (best_option) {
-    Requireds requireds = best_option->bufferRequireds(buffer_cell, this);
-    RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
-                                           bufferInputCapacitance(buffer_cell),
-                                           requireds,
-                                           nullptr,
-                                           // Locate buffer at opposite end of wire.
-                                           prev_loc,
-                                           best_option, nullptr);
-    if (debug_->check("rebuffer", 3)) {
-      printf("%*sbuffer %s cap %s req %s ->\n",
-             level, "",
-             tree->name(prev, sdc_network_),
-             units_->capacitanceUnit()->asString(best_option->cap()),
-             delayAsString(best_req, this));
-      z->print(level, this);
-    }
-    Z1.push_back(z);
   }
   return Z1;
 }
@@ -507,8 +550,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
 void
 Resizer::rebufferTopDown(RebufferOption *choice,
                          Net *net,
-                         int level,
-                         LibertyCell *buffer_cell)
+                         int level)
 {
   switch(choice->type()) {
   case RebufferOptionType::buffer: {
@@ -516,6 +558,7 @@ Resizer::rebufferTopDown(RebufferOption *choice,
     string net2_name = makeUniqueNetName();
     string buffer_name = makeUniqueInstName("rebuffer");
     Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+    LibertyCell *buffer_cell = choice->bufferCell();
     Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                  buffer_name.c_str(),
                                                  parent);
@@ -524,26 +567,27 @@ Resizer::rebufferTopDown(RebufferOption *choice,
     level_drvr_verticies_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
-    debugPrint5(debug_, "rebuffer", 3, "%*sinsert %s -> %s -> %s\n",
+    debugPrint6(debug_, "rebuffer", 3, "%*sinsert %s -> %s (%s) -> %s\n",
                 level, "",
                 sdc_network_->pathName(net),
                 buffer_name.c_str(),
+                buffer_cell->name(),
                 net2_name.c_str());
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
-    rebufferTopDown(choice->ref(), net2, level + 1, buffer_cell);
+    rebufferTopDown(choice->ref(), net2, level + 1);
     parasitics_->deleteParasitics(net, parasitics_ap_);
     break;
   }
   case RebufferOptionType::wire:
     debugPrint2(debug_, "rebuffer", 3, "%*swire\n", level, "");
-    rebufferTopDown(choice->ref(), net, level + 1, buffer_cell);
+    rebufferTopDown(choice->ref(), net, level + 1);
     break;
   case RebufferOptionType::junction: {
     debugPrint2(debug_, "rebuffer", 3, "%*sjunction\n", level, "");
-    rebufferTopDown(choice->ref(), net, level + 1, buffer_cell);
-    rebufferTopDown(choice->ref2(), net, level + 1, buffer_cell);
+    rebufferTopDown(choice->ref(), net, level + 1);
+    rebufferTopDown(choice->ref2(), net, level + 1);
     break;
   }
   case RebufferOptionType::sink: {
