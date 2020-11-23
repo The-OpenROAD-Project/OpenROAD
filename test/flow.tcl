@@ -86,8 +86,7 @@ repair_clock_nets -max_wire_length $max_wire_length \
 # Get gates close to final positions so parasitics estimate is close.
 detailed_placement
 
-# CTS trashes the timing state and detailed placement moves instances
-# so update parastic estimates.
+# CTS and detailed placement move instances so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_hold_violations -buffer_cell $hold_buffer_cell
