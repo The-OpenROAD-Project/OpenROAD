@@ -163,11 +163,11 @@ getIOPlacer()
   return openroad->getIOPlacer();
 }
 
-PartClusManager::Partitioner*
-getPartClusManager()
+Partitioners::PartitionMgr*
+getPartitionMgr()
 {
   OpenRoad *openroad = getOpenRoad();
-  return openroad->getPartClusManager();
+  return openroad->getPartitionMgr();
 }
 
 } // namespace ord

@@ -85,7 +85,7 @@ proc partition_netlist { args } {
   } elseif { !($keys(-tool) in $tools) } {
     ord::error "invalid tool. Use one of the following: $tools"
   } else {
-     PartClusManager::set_tool $keys(-tool)
+     PartitionMgr::set_tool $keys(-tool)
   }
 
   # Clique threshold
@@ -94,10 +94,10 @@ proc partition_netlist { args } {
            $keys(-clique_threshold) >= 3 && $keys(-clique_threshold) <= 32768) } {
       ord::error "argument -clique_threshold should be an integer in the range \[3, 32768\]"
     } else {
-      PartClusManager::set_clique_threshold $keys(-clique_threshold)
+      PartitionMgr::set_clique_threshold $keys(-clique_threshold)
     }
   } else {
-    PartClusManager::set_clique_threshold 50
+    PartitionMgr::set_clique_threshold 50
   }
 
   # Graph model
@@ -107,9 +107,9 @@ proc partition_netlist { args } {
     } else {
       ord::error "invalid graph model. Use one of the following: $graph_models"
     }
-    PartClusManager::set_graph_model $keys(-graph_model)
+    PartitionMgr::set_graph_model $keys(-graph_model)
   } else {
-    PartClusManager::set_graph_model "star"
+    PartitionMgr::set_graph_model "star"
   }
 
   # Weight model
@@ -118,10 +118,10 @@ proc partition_netlist { args } {
              $keys(-weight_model) >= 1 && $keys(-weight_model) <= 7) } {
        ord::error "argument -weight_model should be an integer in the range \[1, 7\]"
      } else {
-       PartClusManager::set_weight_model $keys(-weight_model)
+       PartitionMgr::set_weight_model $keys(-weight_model)
      }     
   } else {
-    PartClusManager::set_weight_model 1
+    PartitionMgr::set_weight_model 1
   }
 
   # Max edge weight
@@ -130,10 +130,10 @@ proc partition_netlist { args } {
               $keys(-max_edge_weight) >= 1 && $keys(-max_edge_weight) <= 32768) } {
       ord::error "argument -max_edge_weight should be an integer in the range \[1, 32768\]"
     } else {
-       PartClusManager::set_max_edge_weight $keys(-max_edge_weight)
+       PartitionMgr::set_max_edge_weight $keys(-max_edge_weight)
     }       
   } else {
-    PartClusManager::set_max_edge_weight 100
+    PartitionMgr::set_max_edge_weight 100
   }
 
   # Max vertex weight
@@ -142,10 +142,10 @@ proc partition_netlist { args } {
               $keys(-max_vertex_weight) >= 1 && $keys(-max_vertex_weight) <= 32768) } {
       ord::error "argument -max_vertex_weight should be an integer in the range \[1, 32768\]"
     } else {
-       PartClusManager::set_max_vertex_weight $keys(-max_vertex_weight)
+       PartitionMgr::set_max_vertex_weight $keys(-max_vertex_weight)
     }       
   } else {
-    PartClusManager::set_max_vertex_weight 100
+    PartitionMgr::set_max_vertex_weight 100
   }
 
   # Num starts
@@ -154,7 +154,7 @@ proc partition_netlist { args } {
               $keys(-num_starts) >= 1 && $keys(-num_starts) <= 32768) } {
       ord::error "argument -num_starts should be an integer in the range \[1, 32768\]"
     } else {
-       PartClusManager::set_num_starts $keys(-num_starts)
+       PartitionMgr::set_num_starts $keys(-num_starts)
     }       
   }
   
@@ -164,10 +164,10 @@ proc partition_netlist { args } {
               $keys(-balance_constraint) >= 0 && $keys(-balance_constraint) <= 50) } {
       ord::error "argument -balance_constraint should be an integer in the range \[0, 50\]"
     } else {
-       PartClusManager::set_balance_constraint $keys(-balance_constraint)
+       PartitionMgr::set_balance_constraint $keys(-balance_constraint)
     }       
   } else {
-    PartClusManager::set_balance_constraint 2
+    PartitionMgr::set_balance_constraint 2
   }
 
   # Coarsening ratio 
@@ -176,10 +176,10 @@ proc partition_netlist { args } {
               $keys(-coarsening_ratio) >= 0.5 && $keys(-coarsening_ratio) <= 1.0) } {
       ord::error "argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
     } else {
-       PartClusManager::set_coarsening_ratio $keys(-coarsening_ratio)
+       PartitionMgr::set_coarsening_ratio $keys(-coarsening_ratio)
     }       
   } else {
-    PartClusManager::set_coarsening_ratio 0.7
+    PartitionMgr::set_coarsening_ratio 0.7
   }
 
   # Coarsening vertices
@@ -187,10 +187,10 @@ proc partition_netlist { args } {
        if { !([string is integer $keys(-coarsening_vertices)]) } {
           ord::error "argument -coarsening_vertices should be an integer"
        } else {
-        PartClusManager::set_coarsening_vertices $keys(-coarsening_vertices)
+        PartitionMgr::set_coarsening_vertices $keys(-coarsening_vertices)
        }
   } else {
-    PartClusManager::set_coarsening_vertices 2500
+    PartitionMgr::set_coarsening_vertices 2500
   }
 
   # Terminal propagation 
@@ -199,10 +199,10 @@ proc partition_netlist { args } {
               $keys(-enable_term_prop) >= 0 && $keys(-enable_term_prop) <= 1) } {
           ord::error "argument -enable_term_prop should be 0 or 1"
        } else {
-        PartClusManager::set_enable_term_prop $keys(-enable_term_prop)
+        PartitionMgr::set_enable_term_prop $keys(-enable_term_prop)
        }
   } else {
-    PartClusManager::set_enable_term_prop 0
+    PartitionMgr::set_enable_term_prop 0
   }
 
   # Cut hop ratio 
@@ -211,17 +211,17 @@ proc partition_netlist { args } {
               $keys(-cut_hop_ratio) >= 0.5 && $keys(-cut_hop_ratio) <= 1.0) } {
       ord::error "argument -cut_hop_ratio should be a floating number in the range \[0.5, 1.0\]"
     } else {
-       PartClusManager::set_cut_hop_ratio $keys(-cut_hop_ratio)
+       PartitionMgr::set_cut_hop_ratio $keys(-cut_hop_ratio)
     }       
   } else {
-    PartClusManager::set_cut_hop_ratio 1.0
+    PartitionMgr::set_cut_hop_ratio 1.0
   }
 
   # Architecture
   if { [info exists keys(-architecture)] } {
-        PartClusManager::set_architecture $keys(-architecture)
+        PartitionMgr::set_architecture $keys(-architecture)
   } else {
-    PartClusManager::clear_architecture
+    PartitionMgr::clear_architecture
   }
 
   # Refinement
@@ -230,20 +230,20 @@ proc partition_netlist { args } {
               $keys(-refinement) >= 0 && $keys(-refinement) <= 32768) } {
       ord::error "argument -refinement should be an integer in the range \[0, 32768\]"
     } else {
-        PartClusManager::set_refinement $keys(-refinement)
+        PartitionMgr::set_refinement $keys(-refinement)
     }
   } else {
-    PartClusManager::set_refinement 0
+    PartitionMgr::set_refinement 0
   }
 
   # Seeds
   if { [info exists keys(-seeds)] } {
-        PartClusManager::set_seeds $keys(-seeds)
+        PartitionMgr::set_seeds $keys(-seeds)
   } else {
         if {! [info exists keys(-num_starts)]} {
               ord::error "missing argument -seeds or -num_starts."
         }
-        PartClusManager::generate_seeds $keys(-num_starts)
+        PartitionMgr::generate_seeds $keys(-num_starts)
   }
 
 
@@ -254,9 +254,9 @@ proc partition_netlist { args } {
               $keys(-num_partitions) >= 2 && $keys(-num_partitions) <= 32768)} {
     ord::error "argument -num_partitions should be an integer in the range \[2, 32768\]"
   } else {
-    PartClusManager::set_target_partitions $keys(-num_partitions) 
+    PartitionMgr::set_target_partitions $keys(-num_partitions) 
     if {[expr !(($keys(-num_partitions) & ($keys(-num_partitions) - 1)) == 0)]} {
-          PartClusManager::set_architecture "1 $keys(-num_partitions)"
+          PartitionMgr::set_architecture "1 $keys(-num_partitions)"
     }
   }
 
@@ -265,17 +265,17 @@ proc partition_netlist { args } {
         if { !([string is integer $keys(-partition_id)]) } {
           ord::error "argument -partition_id should be an integer"
         } else {
-          PartClusManager::set_existing_id $keys(-partition_id)
+          PartitionMgr::set_existing_id $keys(-partition_id)
         }
   } else {
-    PartClusManager::set_existing_id -1
+    PartitionMgr::set_existing_id -1
   }
 
   if { [info exists keys(-force_graph)] } {
-        PartClusManager::set_force_graph $keys(-force_graph)
+        PartitionMgr::set_force_graph $keys(-force_graph)
   }
 
-  set currentId [PartClusManager::run_partitioning]
+  set currentId [PartitionMgr::run_partitioning]
   
   return $currentId
 }
@@ -295,7 +295,7 @@ proc evaluate_partitioning { args } {
     
   # Partition IDs
   if { [info exists keys(-partition_ids)] } {
-        PartClusManager::set_partition_ids_to_test $keys(-partition_ids)
+        PartitionMgr::set_partition_ids_to_test $keys(-partition_ids)
   } else {
         ord::error "missing argument -partition_ids."
   }
@@ -306,10 +306,10 @@ proc evaluate_partitioning { args } {
         if { !($keys(-evaluation_function) in $functions) } {
           ord::error "invalid function. Use one of the following: $functions"
         }
-        PartClusManager::set_evaluation_function $keys(-evaluation_function)
+        PartitionMgr::set_evaluation_function $keys(-evaluation_function)
   }
 
-  set bestId [PartClusManager::evaluate_partitioning]
+  set bestId [PartitionMgr::evaluate_partitioning]
   
   return $bestId
 }
@@ -335,10 +335,10 @@ proc write_partitioning_to_db { args } {
     set partition_id $keys(-partitioning_id)
   } 
   
-  PartClusManager::write_partitioning_to_db $partitioning_id
+  PartitionMgr::write_partitioning_to_db $partitioning_id
 
   if { [info exists keys(-dump_to_file)] } {
-    PartClusManager::dump_part_id_to_file $keys(-dump_to_file)
+    PartitionMgr::dump_part_id_to_file $keys(-dump_to_file)
   } 
 }
 
@@ -366,7 +366,7 @@ proc cluster_netlist { args } {
   } elseif { !($keys(-tool) in $tools) } {
     ord::error "invalid tool. Use one of the following: $tools"
   } else {
-     PartClusManager::set_tool $keys(-tool)
+     PartitionMgr::set_tool $keys(-tool)
   }
 
   # Coarsening ratio 
@@ -375,25 +375,25 @@ proc cluster_netlist { args } {
               $keys(-coarsening_ratio) >= 0.5 && $keys(-coarsening_ratio) <= 1.0) } {
       ord::error "argument -coarsening_ratio should be a floating number in the range \[0.5, 1.0\]"
     } else {
-       PartClusManager::set_coarsening_ratio $keys(-coarsening_ratio)
+       PartitionMgr::set_coarsening_ratio $keys(-coarsening_ratio)
     }       
   }
 
   # Coarsening vertices
   if { [info exists keys(-coarsening_vertices)] } {
-       PartClusManager::set_coarsening_vertices $keys(-coarsening_vertices)
+       PartitionMgr::set_coarsening_vertices $keys(-coarsening_vertices)
   }
 
   # Levels
   if { [info exists keys(-level)] } {
-        PartClusManager::set_level $keys(-level)
+        PartitionMgr::set_level $keys(-level)
   } else {
-        PartClusManager::set_level 1
+        PartitionMgr::set_level 1
   }
 
-  PartClusManager::generate_seeds 1
+  PartitionMgr::generate_seeds 1
 
-  set currentId [PartClusManager::run_3party_clustering]
+  set currentId [PartitionMgr::run_3party_clustering]
   
   return $currentId
 }
@@ -419,10 +419,10 @@ proc write_clustering_to_db { args } {
     set clustering_id $keys(-clustering_id)
   } 
   
-  PartClusManager::write_clustering_to_db $clustering_id
+  PartitionMgr::write_clustering_to_db $clustering_id
 
   if { [info exists keys(-dump_to_file)] } {
-    PartClusManager::dump_clus_id_to_file $keys(-dump_to_file)
+    PartitionMgr::dump_clus_id_to_file $keys(-dump_to_file)
   } 
 }
 
@@ -445,7 +445,7 @@ proc report_netlist_partitions { args } {
     set partitioning_id $keys(-partitioning_id)
   } 
   
-  PartClusManager::report_netlist_partitions $partitioning_id
+  PartitionMgr::report_netlist_partitions $partitioning_id
 }
 
 sta::define_cmd_args "read_partitioning" { [-read_file name] \
@@ -458,11 +458,11 @@ proc read_partitioning { args } {
 	       -final_partitions \
 	} flags { }
 
-    		PartClusManager::set_final_partitions $keys(-final_partitions) 
+    		PartitionMgr::set_final_partitions $keys(-final_partitions) 
 	if { ![info exists keys(-read_file)] } {
     		ord::error "missing mandatory argument -read_file"
   	} else {
-  		PartClusManager::read_file $keys(-read_file)
+  		PartitionMgr::read_file $keys(-read_file)
   	} 
   
 
@@ -487,7 +487,7 @@ proc run_clustering { args } {
   } elseif { !($keys(-scheme) in $schemes) } {
     ord::error "invalid scheme. Use one of the following: $schemes"
   } else {
-     PartClusManager::set_clustering_scheme $keys(-scheme)
+     PartitionMgr::set_clustering_scheme $keys(-scheme)
   }
-  PartClusManager::run_clustering
+  PartitionMgr::run_clustering
 }

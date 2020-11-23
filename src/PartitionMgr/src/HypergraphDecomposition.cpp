@@ -39,7 +39,7 @@
 
 #include "opendb/db.h"
 
-namespace PartClusManager {
+namespace Partitioners {
 
 void HypergraphDecomposition::init(int dbId)
 {
@@ -258,11 +258,8 @@ void HypergraphDecomposition::connectStarPins(int firstPin,
                                               int secondPin,
                                               float weight)
 {
-  bool isConnected = false;
   if (firstPin != secondPin) {
-    if (adjMatrix[firstPin].find(secondPin) != adjMatrix[firstPin].end())
-      isConnected = true;
-    if (!isConnected)
+    if (adjMatrix[firstPin].find(secondPin) == adjMatrix[firstPin].end())
       adjMatrix[firstPin][secondPin] = weight;
   }
 }
@@ -271,16 +268,11 @@ void HypergraphDecomposition::connectPins(int firstPin,
                                           int secondPin,
                                           float weight)
 {
-  bool isConnected = false;
   if (firstPin != secondPin) {
-    if (adjMatrix[firstPin].find(secondPin) != adjMatrix[firstPin].end())
-      isConnected = true;
-
-    if (!isConnected) {
+    if (adjMatrix[firstPin].find(secondPin) == adjMatrix[firstPin].end())
       adjMatrix[firstPin][secondPin] = weight;
-    } else {
+    else 
       adjMatrix[firstPin][secondPin] += weight;
-    }
   }
 }
 
@@ -354,4 +346,4 @@ void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph, Graph& graph)
   hypergraph.assignVertexWeight(graph.getVertexWeight());
 }
 
-}  // namespace PartClusManager
+}  // namespace Partitioners

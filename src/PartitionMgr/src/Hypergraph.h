@@ -37,23 +37,24 @@
 #include <string>
 #include <vector>
 
-namespace PartClusManager {
+namespace Partitioners {
 
 class Hypergraph
 {
  public:
   Hypergraph() {}
-  int getEdgeWeight(int idx) const { return _edgeWeightsNormalized[idx]; }
-  int getVertexWeight(int idx) const { return _vertexWeightsNormalized[idx]; }
-  int getColIdx(int idx) const { return _colIdx[idx]; }
-  int getRowPtr(int idx) const { return _rowPtr[idx]; }
-  int getMapping(std::string inst) { return _instToIdx[inst]; }
-  int getClusterMapping(int idx) { return _idxToClusterIdx[idx]; }
-  std::vector<float> getDefaultEdgeWeight() const { return _edgeWeights; };
-  std::vector<int> getEdgeWeight() const { return _edgeWeightsNormalized; };
-  std::vector<int> getVertexWeight() const { return _vertexWeightsNormalized; };
-  std::vector<int> getColIdx() const { return _colIdx; };
-  std::vector<int> getRowPtr() const { return _rowPtr; };
+  virtual ~Hypergraph() = default;
+  int getEdgeWeight(int idx) const { return _edgeWeightsNormalized.at(idx); }
+  int getVertexWeight(int idx) const { return _vertexWeightsNormalized.at(idx); }
+  int getColIdx(int idx) const { return _colIdx.at(idx); }
+  int getRowPtr(int idx) const { return _rowPtr.at(idx); }
+  int getMapping(std::string inst) { return _instToIdx.at(inst); }
+  int getClusterMapping(int idx) { return _idxToClusterIdx.at(idx); }
+  std::vector<float> getDefaultEdgeWeight() const & { return _edgeWeights; };
+  std::vector<int> getEdgeWeight() const & { return _edgeWeightsNormalized; };
+  std::vector<int> getVertexWeight() const & { return _vertexWeightsNormalized; };
+  std::vector<int> getColIdx() const & { return _colIdx; };
+  std::vector<int> getRowPtr() const & { return _rowPtr; };
 
   void addEdgeWeight(float weight) { _edgeWeights.push_back(weight); }
   void addEdgeWeightNormalized(int weight)
@@ -79,20 +80,15 @@ class Hypergraph
 
   inline bool isInMap(std::string pinName) const
   {
-    if (_instToIdx.find(pinName) != _instToIdx.end())
-      return true;
-    else
-      return false;
-  }
-  inline bool isInClusterMap(int idx) const
-  {
-    if (_idxToClusterIdx.find(idx) != _idxToClusterIdx.end())
-      return true;
-    else
-      return false;
+    return (_instToIdx.find(pinName) != _instToIdx.end());
   }
 
-  void fullClearHypergraph()
+  inline bool isInClusterMap(int idx) const
+  {
+    return (_idxToClusterIdx.find(idx) != _idxToClusterIdx.end());
+  }
+
+  void clearHypergraph()
   {
     _edgeWeightsNormalized.clear();
     _edgeWeights.clear();
@@ -100,14 +96,6 @@ class Hypergraph
     _colIdx.clear();
     _rowPtr.clear();
     _instToIdx.clear();
-  }
-
-  void clearHypergraph()
-  {
-    _colIdx.clear();
-    _rowPtr.clear();
-    _edgeWeightsNormalized.clear();
-    _vertexWeightsNormalized.clear();
   }
 
   void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
@@ -159,4 +147,4 @@ class Graph : public Hypergraph
   }
 };
 
-}  // namespace PartClusManager
+}  // namespace Partitioners

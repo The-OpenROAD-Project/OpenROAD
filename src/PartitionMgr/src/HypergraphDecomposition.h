@@ -44,15 +44,13 @@ class dbNet;
 class dbBox;
 }  // namespace odb
 
-namespace PartClusManager {
+namespace Partitioners {
 
 enum GraphType : uint8_t
 {
   CLIQUE,
   HYBRID,
-  HYBRID_OLD,
-  STAR,
-  STAR_OLD
+  STAR
 };
 
 class HypergraphDecomposition
@@ -84,7 +82,9 @@ class HypergraphDecomposition
   int _weightingOption;
   std::vector<std::map<int, float>> adjMatrix;
   GraphType resolveModel(std::string graphModel);
-  void addMapping(Hypergraph& hypergraph, std::string instName, odb::dbBox* box);
+  void addMapping(Hypergraph& hypergraph,
+                  std::string instName,
+                  odb::dbBox* box);
   void createCliqueGraph(Graph& graph, std::vector<int> net);
   void createStarGraph(Graph& graph, std::vector<int> net);
   void connectPins(int firstPin, int secondPin, float weight);
@@ -93,4 +93,4 @@ class HypergraphDecomposition
   void createCompressedMatrix(Graph& graph);
 };
 
-}  // namespace PartClusManager
+}  // namespace Partitioners

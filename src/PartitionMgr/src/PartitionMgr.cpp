@@ -33,9 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-//#define STUB 1
-
-#include "Partitioner.h"
+#include "PartitionMgr.h"
 #ifdef STUB
 extern "C" {
 #include "main/ChacoWrapper.h"
@@ -53,11 +51,11 @@ extern "C" {
 #include "opendb/db.h"
 #include "openroad/Error.hh"
 
-namespace PartClusManager {
+namespace Partitioners {
 
 // Partition Netlist
 
-void Partitioner::runPartitioning()
+void PartitionMgr::runPartitioning()
 {
   hypergraph();
   if (_options.getTool() == "mlpart") {
@@ -69,7 +67,7 @@ void Partitioner::runPartitioning()
   }
 }
 
-void Partitioner::runChaco()
+void PartitionMgr::runChaco()
 {
 #ifdef STUB
   std::cout << "\nRunning chaco...\n";
@@ -220,7 +218,7 @@ void Partitioner::runChaco()
                  multi-level KL */
         NULL,
         NULL, /* output assigment name and file, isn't needed because internal
-                 methods of PartClusManager are used instead */
+                 methods of PartitionMgr are used instead */
         assigment, /* vertex assigment vector. Contains the set that each vector
                       is present on.*/
         architecture,
@@ -321,7 +319,7 @@ void Partitioner::runChaco()
 #endif
 }
 
-void Partitioner::runGpMetis()
+void PartitionMgr::runGpMetis()
 {
 #ifdef STUB
   std::cout << "Running GPMetis...\n";
@@ -460,7 +458,7 @@ void Partitioner::runGpMetis()
 #endif
 }
 
-void Partitioner::runMlPart()
+void PartitionMgr::runMlPart()
 {
 #ifdef STUB
   std::cout << "Running MLPart...\n";
@@ -634,7 +632,7 @@ void Partitioner::runMlPart()
 #endif
 }
 
-void Partitioner::toHypergraph()
+void PartitionMgr::toHypergraph()
 {
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
@@ -642,9 +640,9 @@ void Partitioner::toHypergraph()
   hypergraphDecomp.toHypergraph(hype, _graph);
 }
 
-void Partitioner::hypergraph()
+void PartitionMgr::hypergraph()
 {
-  _hypergraph.fullClearHypergraph();
+  _hypergraph.clearHypergraph();
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
   hypergraphDecomp.constructMap(_hypergraph, _options.getMaxVertexWeight());
@@ -654,7 +652,7 @@ void Partitioner::hypergraph()
   toGraph();
 }
 
-void Partitioner::toGraph()
+void PartitionMgr::toGraph()
 {
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
@@ -667,7 +665,7 @@ void Partitioner::toGraph()
                            _options.getCliqueThreshold());
 }
 
-unsigned Partitioner::generatePartitionId()
+unsigned PartitionMgr::generatePartitionId()
 {
   unsigned sizeOfResults = _results.size();
   return sizeOfResults;
@@ -675,7 +673,7 @@ unsigned Partitioner::generatePartitionId()
 
 // Evaluate Partitioning
 
-void Partitioner::evaluatePartitioning()
+void PartitionMgr::evaluatePartitioning()
 {
   std::vector<int> partVector = _options.getPartitionsToTest();
   std::string evaluationFunction = _options.getEvaluationFunction();
@@ -706,8 +704,8 @@ void Partitioner::evaluatePartitioning()
   setCurrentBestId(bestId);
 }
 
-void Partitioner::computePartitionResult(unsigned partitionId,
-                                                   std::string function)
+void PartitionMgr::computePartitionResult(unsigned partitionId,
+                                          std::string function)
 {
   odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
   odb::dbChip* chip = db->getChip();
@@ -865,9 +863,9 @@ void Partitioner::computePartitionResult(unsigned partitionId,
   _results[partitionId] = currentResults;
 }
 
-bool Partitioner::comparePartitionings(PartSolutions oldPartition,
-                                                 PartSolutions newPartition,
-                                                 std::string function)
+bool PartitionMgr::comparePartitionings(PartSolutions oldPartition,
+                                        PartSolutions newPartition,
+                                        std::string function)
 {
   bool isBetter = false;
   if (function == "hyperedges") {
@@ -889,7 +887,7 @@ bool Partitioner::comparePartitionings(PartSolutions oldPartition,
   return isBetter;
 }
 
-void Partitioner::reportPartitionResult(unsigned partitionId)
+void PartitionMgr::reportPartitionResult(unsigned partitionId)
 {
   PartSolutions currentResults = _results[partitionId];
   std::cout << "\nPartitioning Results for ID = " << partitionId
@@ -910,7 +908,7 @@ void Partitioner::reportPartitionResult(unsigned partitionId)
 
 // Write Partitioning To DB
 
-odb::dbBlock* Partitioner::getDbBlock() const
+odb::dbBlock* PartitionMgr::getDbBlock() const
 {
   odb::dbDatabase* db = odb::dbDatabase::getDatabase(_dbId);
   odb::dbChip* chip = db->getChip();
@@ -918,7 +916,7 @@ odb::dbBlock* Partitioner::getDbBlock() const
   return block;
 }
 
-void Partitioner::writePartitioningToDb(unsigned partitioningId)
+void PartitionMgr::writePartitioningToDb(unsigned partitioningId)
 {
   std::cout << "[INFO] Writing partition id's to DB.\n";
   if (partitioningId >= getNumPartitioningResults()) {
@@ -949,7 +947,7 @@ void Partitioner::writePartitioningToDb(unsigned partitioningId)
   std::cout << "[INFO] Writing done.\n";
 }
 
-void Partitioner::dumpPartIdToFile(std::string name)
+void PartitionMgr::dumpPartIdToFile(std::string name)
 {
   std::ofstream file(name);
 
@@ -969,7 +967,7 @@ void Partitioner::dumpPartIdToFile(std::string name)
 
 // Cluster Netlist
 
-void Partitioner::run3PClustering()
+void PartitionMgr::run3PClustering()
 {
   hypergraph();
   if (_options.getTool() == "mlpart") {
@@ -981,7 +979,7 @@ void Partitioner::run3PClustering()
   }
 }
 
-void Partitioner::runChacoClustering()
+void PartitionMgr::runChacoClustering()
 {
 #ifdef STUB
   std::cout << "\nRunning chaco...\n";
@@ -1062,7 +1060,7 @@ void Partitioner::runChacoClustering()
                multi-level KL */
       NULL,
       NULL, /* output assigment name and file, isn't needed because internal
-               methods of PartClusManager are used instead */
+               methods of PartitionMgr are used instead */
       assigment, /* vertex assigment vector. Contains the set that each vector
                     is present on.*/
       architecture,
@@ -1114,7 +1112,7 @@ void Partitioner::runChacoClustering()
 #endif
 }
 
-void Partitioner::runGpMetisClustering()
+void PartitionMgr::runGpMetisClustering()
 {
 #ifdef STUB
   std::cout << "Running GPMetis...\n";
@@ -1196,7 +1194,7 @@ void Partitioner::runGpMetisClustering()
 #endif
 }
 
-void Partitioner::runMlPartClustering()
+void PartitionMgr::runMlPartClustering()
 {
 #ifdef STUB
   std::cout << "Running MLPart...\n";
@@ -1289,7 +1287,7 @@ void Partitioner::runMlPartClustering()
 #endif
 }
 
-unsigned Partitioner::generateClusterId()
+unsigned PartitionMgr::generateClusterId()
 {
   unsigned sizeOfResults = _clusResults.size();
   return sizeOfResults;
@@ -1297,7 +1295,7 @@ unsigned Partitioner::generateClusterId()
 
 // Write Clustering To DB
 
-void Partitioner::writeClusteringToDb(unsigned clusteringId)
+void PartitionMgr::writeClusteringToDb(unsigned clusteringId)
 {
   std::cout << "[INFO] Writing cluster id's to DB.\n";
   if (clusteringId >= getNumClusteringResults()) {
@@ -1326,7 +1324,7 @@ void Partitioner::writeClusteringToDb(unsigned clusteringId)
   std::cout << "[INFO] Writing done.\n";
 }
 
-void Partitioner::dumpClusIdToFile(std::string name)
+void PartitionMgr::dumpClusIdToFile(std::string name)
 {
   std::ofstream file(name);
 
@@ -1346,7 +1344,7 @@ void Partitioner::dumpClusIdToFile(std::string name)
 
 // Report Netlist Partitions
 
-void Partitioner::reportNetlistPartitions(unsigned partitionId)
+void PartitionMgr::reportNetlistPartitions(unsigned partitionId)
 {
   std::map<unsigned long, unsigned long> setSizes;
   std::set<unsigned long> partitions;
@@ -1381,7 +1379,7 @@ void Partitioner::reportNetlistPartitions(unsigned partitionId)
 
 // Read partitioning input file
 
-void Partitioner::readPartitioningFile(std::string filename)
+void PartitionMgr::readPartitioningFile(std::string filename)
 {
   hypergraph();
   PartSolutions currentResults;
@@ -1408,16 +1406,32 @@ void Partitioner::readPartitioningFile(std::string filename)
   computePartitionResult(partitionId, evaluationFunction);
 }
 
-void Partitioner::runClustering()
+void PartitionMgr::runClustering()
 {
   hypergraph();
   if (_options.getClusteringScheme() == "hem") {
-	std::cout << "Heavy Edge Matching\n";
+    std::cout << "Heavy Edge Matching\n";
   } else if (_options.getClusteringScheme() == "scheme2") {
-	std::cout << "Scheme 2\n";
+    std::cout << "Scheme 2\n";
   } else {
-	std::cout << "Scheme 3\n";
+    std::cout << "Scheme 3\n";
   }
 }
 
-}  // namespace PartClusManager
+void PartSolutions::addAssignment(std::vector<unsigned long> currentAssignment,
+                                  unsigned long runtime,
+                                  int seed)
+{
+  _assignmentResults.push_back(currentAssignment);
+  _runtimeResults.push_back(runtime);
+  _seeds.push_back(seed);
+}
+
+void PartSolutions::clearAssignments()
+{
+  _assignmentResults.clear();
+  _runtimeResults.clear();
+  _seeds.clear();
+}
+
+}  // namespace Partitioners

@@ -42,7 +42,7 @@ class dbBlock;
 class dbNet;
 }  // namespace odb
 
-namespace PartClusManager {
+namespace Partitioners {
 
 class PartOptions
 {
@@ -110,8 +110,11 @@ class PartOptions
   unsigned getFinalPartitions() { return _finalPartitions; }
   void setForceGraph(bool force) { _forceGraph = force; }
   bool getForceGraph() { return _forceGraph; }
-  void setClusteringScheme(const std::string & scheme) {_clusteringScheme = scheme;}
-  std::string getClusteringScheme() {return _clusteringScheme;}
+  void setClusteringScheme(const std::string& scheme)
+  {
+    _clusteringScheme = scheme;
+  }
+  std::string getClusteringScheme() { return _clusteringScheme; }
 
  private:
   unsigned _numStarts = 1;
@@ -145,18 +148,8 @@ class PartSolutions
  public:
   void addAssignment(std::vector<unsigned long> currentAssignment,
                      unsigned long runtime,
-                     int seed)
-  {
-    _assignmentResults.push_back(currentAssignment);
-    _runtimeResults.push_back(runtime);
-    _seeds.push_back(seed);
-  }
-  void clearAssignments()
-  {
-    _assignmentResults.clear();
-    _runtimeResults.clear();
-    _seeds.clear();
-  }
+                     int seed);
+  void clearAssignments();
   const std::vector<unsigned long>& getAssignment(unsigned idx) const
   {
     return _assignmentResults[idx];
@@ -209,7 +202,7 @@ class PartSolutions
   unsigned long _bestHopWeigth = 0;
 };
 
-class Partitioner
+class PartitionMgr
 {
  protected:
   odb::dbBlock* getDbBlock() const;
@@ -227,7 +220,7 @@ class Partitioner
   std::vector<PartSolutions> _clusResults;
 
  public:
-  Partitioner() = default;
+  PartitionMgr() = default;
   void runPartitioning();
   void runClustering();
   void run3PClustering();
@@ -262,4 +255,4 @@ class Partitioner
   void readPartitioningFile(std::string filename);
 };
 
-}  // namespace PartClusManager
+}  // namespace Partitioners

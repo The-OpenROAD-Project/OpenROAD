@@ -33,45 +33,43 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "MakePartclusmanager.h"
+#include "MakePartitionMgr.h"
 
-#include "Partitioner.h"
+#include "PartitionMgr.h"
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
 namespace sta {
 // Tcl files encoded into strings.
-extern const char* partclusmanager_tcl_inits[];
+extern const char* partitionmgr_tcl_inits[];
 }  // namespace sta
 
 extern "C" {
-extern int Partclusmanager_Init(Tcl_Interp* interp);
+extern int Partitionmgr_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-PartClusManager::Partitioner* makePartClusManager()
+Partitioners::PartitionMgr* makePartitionMgr()
 {
-  return new PartClusManager::Partitioner();
+  return new Partitioners::PartitionMgr();
 }
 
-void initPartClusManager(OpenRoad* openroad)
+void initPartitionMgr(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Partclusmanager_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::partclusmanager_tcl_inits);
+  Partitionmgr_Init(tcl_interp);
+  sta::evalTclInit(tcl_interp, sta::partitionmgr_tcl_inits);
 
   unsigned dbId = openroad->getDb()->getId();
-  PartClusManager::Partitioner* kernel = 
-          openroad->getPartClusManager();
+  Partitioners::PartitionMgr* kernel = openroad->getPartitionMgr();
 
   kernel->setDbId(dbId);
 };
 
-void deletePartClusManager(
-    PartClusManager::Partitioner* partclusmanager)
+void deletePartitionMgr(Partitioners::PartitionMgr* partitionmgr)
 {
-  delete partclusmanager;
+  delete partitionmgr;
 }
 }  // namespace ord

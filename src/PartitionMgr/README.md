@@ -1,10 +1,10 @@
-# PartClusManager
+# PartitionMgr
 
-PartClusManager is a tool that runs partitioning/clustering on a specific netlist. It provides a wrapper of three well-known open-source tools: Chaco, GPMetis and MLPart.
+PartitionMgr is a tool that runs partitioning/clustering on a specific netlist. It provides a wrapper of three well-known open-source tools: Chaco, GPMetis and MLPart.
 
 ### Usage
 
-PartClusManager offers six commands: partition_netlist, evaluate_partitioning, write_partitioning_to_db, cluster_netlist, write_clustering_to_db and report_netlist_partitions.
+PartitionMgr offers six commands: partition_netlist, evaluate_partitioning, write_partitioning_to_db, cluster_netlist, write_clustering_to_db and report_netlist_partitions.
 
 **partition_netlist**: Divides the netlist into N partitions and returns the id (partition_id) of the partitioning solution. The command may be called many times with different parameters. Each time, the command will generate a new solution.
 
@@ -169,7 +169,7 @@ Argument description:
 
 ### Authors
 
-PartClusManager is written by Mateus Fogaça and Isadora Oliveira from the Federal University of Rio Grande do Sul (UFRGS), Brazil, and Marcelo Danigno from the Federal University of Rio Grande (FURG), Brazil.
+PartitionMgr is written by Mateus Fogaça and Isadora Oliveira from the Federal University of Rio Grande do Sul (UFRGS), Brazil, and Marcelo Danigno from the Federal University of Rio Grande (FURG), Brazil.
 
 Mateus's and Isadora's advisor is Prof. Ricardo Reis; Marcelo's advisor is Prof. Paulo Butzen.
 

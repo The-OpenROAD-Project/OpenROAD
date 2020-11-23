@@ -36,8 +36,9 @@
 #include "Hypergraph.h"
 
 #include <algorithm>
+#include <iostream>
 
-namespace PartClusManager {
+namespace Partitioners {
 
 void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight)
 {
@@ -47,25 +48,28 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight)
   std::sort(edgeWeight.begin(), edgeWeight.end());
 
   int eSize = edgeWeight.size();
+  if (eSize != 0) {
+    eSize = (int) (eSize * percentile);
+    edgeWeight.resize(eSize);
+    edgeWeight.shrink_to_fit();
 
-  eSize = (int) (eSize * percentile);
-  edgeWeight.resize(eSize);
-  edgeWeight.shrink_to_fit();
+    float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
+    float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
 
-  float maxEWeight = *std::max_element(edgeWeight.begin(), edgeWeight.end());
-  float minEWeight = *std::min_element(edgeWeight.begin(), edgeWeight.end());
-
-  for (float& weight : _edgeWeights) {
-    int auxWeight;
-    weight = std::min(weight, maxEWeight);
-    if (minEWeight == maxEWeight) {
-      auxWeight = maxEdgeWeight;
-    } else {
-      auxWeight = (int) ((((weight - minEWeight) * (maxEdgeWeight - 1))
-                          / (maxEWeight - minEWeight))
-                         + 1);
+    for (float& weight : _edgeWeights) {
+      int auxWeight;
+      weight = std::min(weight, maxEWeight);
+      if (minEWeight == maxEWeight) {
+        auxWeight = maxEdgeWeight;
+      } else {
+        auxWeight = (int) ((((weight - minEWeight) * (maxEdgeWeight - 1))
+                            / (maxEWeight - minEWeight))
+                           + 1);
+      }
+      _edgeWeightsNormalized.push_back(auxWeight);
     }
-    _edgeWeightsNormalized.push_back(auxWeight);
+  } else {
+    std::cout << "[ERROR] Number of edges equal to 0\n";
   }
 }
 
@@ -77,30 +81,33 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight)
   std::sort(vertexWeight.begin(), vertexWeight.end());
 
   int vSize = vertexWeight.size();
+  if (vSize != 0) {
+    vSize = (int) (vSize * percentile);
+    vertexWeight.resize(vSize);
+    vertexWeight.shrink_to_fit();
 
-  vSize = (int) (vSize * percentile);
-  vertexWeight.resize(vSize);
-  vertexWeight.shrink_to_fit();
+    long long int maxVWeight
+        = *std::max_element(vertexWeight.begin(), vertexWeight.end());
+    long long int minVWeight
+        = *std::min_element(vertexWeight.begin(), vertexWeight.end());
 
-  long long int maxVWeight
-      = *std::max_element(vertexWeight.begin(), vertexWeight.end());
-  long long int minVWeight
-      = *std::min_element(vertexWeight.begin(), vertexWeight.end());
-
-  for (long long int& weight : _vertexWeights) {
-    int auxWeight;
-    weight = std::min(weight, maxVWeight);
-    if (minVWeight == maxVWeight) {
-      auxWeight = maxVertexWeight;
-    } else {
-      auxWeight = (int) ((((weight - minVWeight) * (maxVertexWeight - 1))
-                          / (maxVWeight - minVWeight))
-                         + 1);
+    for (long long int& weight : _vertexWeights) {
+      int auxWeight;
+      weight = std::min(weight, maxVWeight);
+      if (minVWeight == maxVWeight) {
+        auxWeight = maxVertexWeight;
+      } else {
+        auxWeight = (int) ((((weight - minVWeight) * (maxVertexWeight - 1))
+                            / (maxVWeight - minVWeight))
+                           + 1);
+      }
+      _vertexWeightsNormalized.push_back(auxWeight);
     }
-    _vertexWeightsNormalized.push_back(auxWeight);
+    _vertexWeights.clear();
+    _vertexWeights.shrink_to_fit();
+  } else {
+    std::cout << "[ERROR] Number of vertices equal to 0\n";
   }
-  _vertexWeights.clear();
-  _vertexWeights.shrink_to_fit();
 }
 
-}  // namespace PartClusManager
+}  // namespace Partitioners

@@ -33,9 +33,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%module partclusmanager
+%module partitionmgr
 %{
-#include "Partitioner.h"
+#include "PartitionMgr.h"
 #include "openroad/OpenRoad.hh"
 #include <algorithm>
 #include <iterator>
@@ -44,10 +44,10 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-        PartClusManager::Partitioner* getPartClusManager();
+        Partitioners::PartitionMgr* getPartitionMgr();
 }  // namespace ord
 
-using ord::getPartClusManager;
+using ord::getPartitionMgr;
 %}
 
 %include "../../Exception.i"
@@ -56,59 +56,59 @@ using ord::getPartClusManager;
 %inline %{
 
 void set_tool(const char* name) {
-        getPartClusManager()->getOptions().setTool(name);
+        getPartitionMgr()->getOptions().setTool(name);
 }
 
 void set_target_partitions(unsigned value) {
-        getPartClusManager()->getOptions().setTargetPartitions(value);
+        getPartitionMgr()->getOptions().setTargetPartitions(value);
 }
 
 void set_graph_model(const char* name) {
-        getPartClusManager()->getOptions().setGraphModel(name);
+        getPartitionMgr()->getOptions().setGraphModel(name);
 }
 
 void set_clique_threshold(unsigned value) {
-        getPartClusManager()->getOptions().setCliqueThreshold(value);
+        getPartitionMgr()->getOptions().setCliqueThreshold(value);
 }
 
 void set_weight_model(unsigned value) {
-        getPartClusManager()->getOptions().setWeightModel(value);
+        getPartitionMgr()->getOptions().setWeightModel(value);
 }
 
 void set_max_edge_weight(unsigned value) {
-        getPartClusManager()->getOptions().setMaxEdgeWeight(value);
+        getPartitionMgr()->getOptions().setMaxEdgeWeight(value);
 }
 
 void set_max_vertex_weight(unsigned value) {
-        getPartClusManager()->getOptions().setMaxVertexWeight(value);
+        getPartitionMgr()->getOptions().setMaxVertexWeight(value);
 }
 
 void set_num_starts(unsigned value) {
-        getPartClusManager()->getOptions().setNumStarts(value);
+        getPartitionMgr()->getOptions().setNumStarts(value);
 }
 
 void set_balance_constraints(unsigned value) {
-        getPartClusManager()->getOptions().setBalanceConstraint(value);
+        getPartitionMgr()->getOptions().setBalanceConstraint(value);
 }
 
 void set_coarsening_ratio(float value) {
-        getPartClusManager()->getOptions().setCoarRatio(value);
+        getPartitionMgr()->getOptions().setCoarRatio(value);
 }
 
 void set_coarsening_vertices(unsigned value) {
-        getPartClusManager()->getOptions().setCoarVertices(value);
+        getPartitionMgr()->getOptions().setCoarVertices(value);
 }
 
 void set_enable_term_prop(unsigned value) {
         if (value > 0){
-                getPartClusManager()->getOptions().setTermProp(true);
+                getPartitionMgr()->getOptions().setTermProp(true);
         } else {
-                getPartClusManager()->getOptions().setTermProp(false);
+                getPartitionMgr()->getOptions().setTermProp(false);
         }
 }
 
 void set_cut_hop_ratio(float value) {
-        getPartClusManager()->getOptions().setCutHopRatio(value);
+        getPartitionMgr()->getOptions().setCutHopRatio(value);
 }
 
 void set_architecture(const char* topology) {
@@ -116,16 +116,16 @@ void set_architecture(const char* topology) {
         std::istream_iterator<int> begin(ss);
         std::istream_iterator<int> end;
         std::vector<int> archTopology(begin, end);
-        getPartClusManager()->getOptions().setArchTopology(archTopology);
+        getPartitionMgr()->getOptions().setArchTopology(archTopology);
 }
 
 void clear_architecture() {
         std::vector<int> archTopology;
-        getPartClusManager()->getOptions().setArchTopology(archTopology);
+        getPartitionMgr()->getOptions().setArchTopology(archTopology);
 }
 
 void set_refinement(unsigned value) {
-        getPartClusManager()->getOptions().setRefinement(value);
+        getPartitionMgr()->getOptions().setRefinement(value);
 }
 
 void set_seeds(const char* seeds) {
@@ -133,11 +133,11 @@ void set_seeds(const char* seeds) {
         std::istream_iterator<int> begin(ss);
         std::istream_iterator<int> end;
         std::vector<int> seedVector(begin, end);
-        getPartClusManager()->getOptions().setSeeds(seedVector);
+        getPartitionMgr()->getOptions().setSeeds(seedVector);
 }
 
 void set_existing_id(int value) {
-        getPartClusManager()->getOptions().setExistingID(value);
+        getPartitionMgr()->getOptions().setExistingID(value);
 }
 
 void generate_seeds(unsigned value) {
@@ -154,7 +154,7 @@ void generate_seeds(unsigned value) {
                 } while (std::find(seedVector.begin(), seedVector.end(), seed) != seedVector.end());
                 seedVector.push_back(seed);
         }
-        getPartClusManager()->getOptions().setSeeds(seedVector);
+        getPartitionMgr()->getOptions().setSeeds(seedVector);
 }
 
 void set_partition_ids_to_test(const char* ids) {
@@ -162,74 +162,74 @@ void set_partition_ids_to_test(const char* ids) {
         std::istream_iterator<int> begin(ss);
         std::istream_iterator<int> end;
         std::vector<int> partIds(begin, end);
-        getPartClusManager()->getOptions().setPartitionsToTest(partIds);
+        getPartitionMgr()->getOptions().setPartitionsToTest(partIds);
 }
 
 void set_evaluation_function(const char* function) {
-        getPartClusManager()->getOptions().setEvaluationFunction(function);
+        getPartitionMgr()->getOptions().setEvaluationFunction(function);
 }
 
 unsigned run_partitioning() {
-        getPartClusManager()->runPartitioning();
-        unsigned id = getPartClusManager()->getCurrentId();
+        getPartitionMgr()->runPartitioning();
+        unsigned id = getPartitionMgr()->getCurrentId();
         return id;
 }
 
 
 unsigned evaluate_partitioning() {
-        getPartClusManager()->evaluatePartitioning();
-        unsigned id = getPartClusManager()->getCurrentBestId();
+        getPartitionMgr()->evaluatePartitioning();
+        unsigned id = getPartitionMgr()->getCurrentBestId();
         return id;
 }
 
 void write_partitioning_to_db(unsigned id) {
-        getPartClusManager()->writePartitioningToDb(id);
+        getPartitionMgr()->writePartitioningToDb(id);
 }
 
 void dump_part_id_to_file(const char *name) {
-        getPartClusManager()->dumpPartIdToFile(name);
+        getPartitionMgr()->dumpPartIdToFile(name);
 }
 
 unsigned run_3party_clustering() {
-        getPartClusManager()->run3PClustering();
-        unsigned id = getPartClusManager()->getCurrentClusId();
+        getPartitionMgr()->run3PClustering();
+        unsigned id = getPartitionMgr()->getCurrentClusId();
         return id;
 }
 
 void set_level(unsigned value) {
-        getPartClusManager()->getOptions().setLevel(value);
+        getPartitionMgr()->getOptions().setLevel(value);
 }
 
 void write_clustering_to_db(unsigned id) {
-        getPartClusManager()->writeClusteringToDb(id);
+        getPartitionMgr()->writeClusteringToDb(id);
 }
 
 void dump_clus_id_to_file(const char* name) {
-        getPartClusManager()->dumpClusIdToFile(name);
+        getPartitionMgr()->dumpClusIdToFile(name);
 }
 
 void report_netlist_partitions(unsigned id) {
-        getPartClusManager()->reportNetlistPartitions(id);
+        getPartitionMgr()->reportNetlistPartitions(id);
 }
 
 void read_file(const char* filename) {
-        getPartClusManager()->readPartitioningFile(filename);
+        getPartitionMgr()->readPartitioningFile(filename);
 }
 
 void set_final_partitions(unsigned value) {
-        getPartClusManager()->getOptions().setFinalPartitions(value);
+        getPartitionMgr()->getOptions().setFinalPartitions(value);
 }
 
 void set_force_graph(bool value) {
-        getPartClusManager()->getOptions().setForceGraph(value);
+        getPartitionMgr()->getOptions().setForceGraph(value);
 }
 
 void set_clustering_scheme(const char* name) {
-        getPartClusManager()->getOptions().setClusteringScheme(name);
+        getPartitionMgr()->getOptions().setClusteringScheme(name);
 }
 
 void run_clustering() {
-        getPartClusManager()->runClustering();
+        getPartitionMgr()->runClustering();
 }
 
 %}
