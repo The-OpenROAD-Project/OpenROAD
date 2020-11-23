@@ -1302,7 +1302,8 @@ Resizer::repairTiming(PathRef &path,
       debugPrint2(debug_, "retime", 2, "%s fanout = %d\n",
                   network_->pathName(drvr_pin),
                   fanout);
-      if (fanout < rebuffer_max_fanout) {
+      if (fanout > 1
+          && fanout < rebuffer_max_fanout) {
         int count_before = inserted_buffer_count_;
         rebuffer(drvr_pin, buffer_cell);
         int insert_count = inserted_buffer_count_ - count_before;
