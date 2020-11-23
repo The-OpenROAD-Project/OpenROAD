@@ -36,12 +36,10 @@
 #include <array>
 #include <stdio.h>
 #include <tcl.h>
-#ifndef _WIN32
 #include <stdlib.h>
 #include <limits.h>
 #include <cstring>
 #include <libgen.h>
-#endif
 // We have had too many problems with this std::filesytem on various platforms
 // so it is disabled but kept for future reference
 #ifdef USE_STD_FILESYSTEM
@@ -59,7 +57,7 @@
 #include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
-#include "openroad/Logger.hh"
+#include "ordlog/Logger.h" 
 #include "gui/gui.h"
 
 using sta::stringEq;
@@ -80,7 +78,6 @@ int
 main(int argc,
      char *argv[])
 {
-  #ifndef _WIN32
   char buffer [PATH_MAX];
   if(realpath(argv[0],buffer)!=NULL)
   {
@@ -91,7 +88,6 @@ main(int argc,
     ordlog::init(log_path);
     ordlog::info(ordlog::OPENROAD,1,"Starting OpenROAD main");
   }
-  #endif
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);

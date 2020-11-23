@@ -242,6 +242,22 @@ add_subdirectory(gui)
 
 ################################################################
 
+add_library(ordlog
+	Logger.cpp
+)
+target_include_directories(ordlog
+    PUBLIC
+        ${OPENROAD_HOME}/include
+    PRIVATE
+    	${OPENDB_HOME}/include
+)
+target_link_libraries(ordlog
+    PUBLIC
+        opendb
+)
+
+################################################################
+
 add_executable(openroad
   ${OPENROAD_SOURCE}
   )

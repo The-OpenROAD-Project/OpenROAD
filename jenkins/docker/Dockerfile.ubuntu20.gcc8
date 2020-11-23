@@ -51,7 +51,7 @@ RUN git clone -b v1.8.1 https://github.com/gabime/spdlog.git \
     && cd spdlog \
     && mkdir build \
     && cd build \
-    && cmake .. \
+    && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. \
     && make install -j
 
 # need the "hack" below to run on docker in gcloud instance (MacOS Docker does
