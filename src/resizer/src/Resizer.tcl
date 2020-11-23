@@ -151,26 +151,11 @@ proc set_dont_use { args } {
   set_dont_use_cmd [get_lib_cells_arg "-dont_use" [lindex $args 0] ord::warn]
 }
 
-define_cmd_args "resize" {[-libraries resize_libs]\
-                            [-max_utilization util]}
-
+# for testing resizing separately
 proc resize { args } {
-  parse_key_args "resize" args \
-    keys {-libraries} flags {}
-  
-  if { [info exists keys(-libraries)] } {
-    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
-  } else {
-    set resize_libs [get_libs *]
-    if { $resize_libs == {} } {
-      ord::error "No liberty libraries found."
-    }
-  }
-  
   check_argc_eq0 "resize" $args
-  
   check_parasitics
-  resizer_preamble $resize_libs
+  resizer_preamble [get_libs *]
   resize_to_target_slew
 }
 

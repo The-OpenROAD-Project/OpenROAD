@@ -7,11 +7,11 @@ create_clock -period 1 clk1
 
 set_load  5 r1q
 set_load 40 r1qn
-resize
+sta::resize
 report_instance r1
 
 # swap loads to check other resize order
 set_load 40 r1q
 set_load  5 r1qn
-resize
+sta::resize
 report_instance r1

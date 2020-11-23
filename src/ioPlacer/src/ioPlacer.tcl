@@ -34,6 +34,60 @@
 ###############################################################################
 
 
+sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
+                                              [-names names] \
+                                              [-region region]}
+
+proc set_io_pin_constraint { args } {
+  sta::parse_key_args "set_io_pin_constraint" args \
+  keys {-direction -names -region}
+
+  if [info exists keys(-region)] {
+    set region $keys(-region)
+  }
+
+  set dbTech [ord::get_db_tech]
+  set lef_units [$dbTech getLefUnits]
+
+  if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+    set edge_ [ioPlacer::parse_edge "-region" $edge]
+
+    if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
+      if {$begin == {*}} {
+        set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
+      }
+      if {$end == {*}} {
+        set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
+      }
+
+      set begin [expr { int($begin * $lef_units) }]
+      set end [expr { int($end * $lef_units) }]
+    } elseif {$interval == {*}} {
+      set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
+      set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
+    }
+  }
+
+  if {[info exists keys(-direction)] && [info exists keys(-name)]} {
+    ord::error "set_io_pin_constraint: only one constraint allowed"
+  }
+
+  if [info exists keys(-direction)] {
+    set direction $keys(-direction)
+    set dir [ioPlacer::parse_direction "set_io_pin_constraint" $direction]
+    puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
+    ioPlacer::add_direction_constraint $dir $edge_ $begin $end
+  }
+
+  if [info exists keys(-names)] {
+    set names $keys(-names)
+    foreach name $names {
+      puts "Restrict I/O pin $name to region $begin-$end, in the $edge edge"
+      ioPlacer::add_name_constraint $name $edge_ $begin $end
+    }
+  }
+}
+
 sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 
                                   [-ver_layer v_layer]        \
                                   [-random_seed seed]         \
@@ -188,6 +242,18 @@ proc parse_edge { cmd edge } {
     ord::error "$cmd: $edge is an invalid edge. use top, bottom, left or right"
   }
   return [ioPlacer::get_edge $edge]
+}
+
+proc parse_direction { cmd direction } {
+  if {[regexp -nocase -- {^INPUT$} $direction] || \
+      [regexp -nocase -- {^OUTPUT$} $direction] || \
+      [regexp -nocase -- {^INOUT$} $direction] || \
+      [regexp -nocase -- {^FEEDTHRU$} $direction]} {
+    set direction [string tolower $direction]
+    return [ioPlacer::get_direction $direction]      
+  } else {
+    ord::error "$cmd: Invalid pin direction"
+  }
 }
 
 proc parse_excludes_arg { args_var } {
