@@ -1210,7 +1210,7 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
               delayAsString(worst_slack, sta_, 3));
   Slack prev_worst_slack = -INF;
   int pass = 1;
-  while (worst_slack < 0.0
+  while (fuzzyLess(worst_slack, 0.0)
          // No backsliding.
          && fuzzyGreater(worst_slack, prev_worst_slack)) {
     PathRef worst_path;
