@@ -15,7 +15,7 @@ set_global_routing_layer_adjustment 2 0.8
 set_global_routing_layer_adjustment 3 0.7
 set_global_routing_layer_adjustment * 0.5
 
-fastroute -layers 2-6 \
+global_route -layers 2-6 \
           -unidirectional_routing \
           -clock_layers 4-6
 
