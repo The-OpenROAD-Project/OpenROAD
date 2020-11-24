@@ -601,7 +601,7 @@ void GlobalRouter::initializeNets(bool reroute)
   int minDegree = std::numeric_limits<int>::max();
   int maxDegree = std::numeric_limits<int>::min();
 
-  for (Net& net : *_nets) {
+  for (const Net& net : *_nets) {
     if (net.getNumPins() > 1
         && checkSignalType(net)
         && net.getNumPins() < std::numeric_limits<short>::max()) {
