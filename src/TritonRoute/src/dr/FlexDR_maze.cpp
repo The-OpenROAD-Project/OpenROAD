@@ -28,6 +28,7 @@
 
 #include "frProfileTask.h"
 #include "dr/FlexDR.h"
+#include "dr/FlexDR_graphics.h"
 #include "gc/FlexGC.h"
 #include <chrono>
 #include <algorithm>
@@ -2950,6 +2951,10 @@ bool FlexDRWorker::routeNet(drNet* net) {
   
   if (TEST || enableOutput) {
     cout <<"route " <<net->getFrNet()->getName() <<endl;
+  }
+
+  if (graphics) {
+    graphics->startNet(net);
   }
 
   set<drPin*, frBlockObjectComp> unConnPins;

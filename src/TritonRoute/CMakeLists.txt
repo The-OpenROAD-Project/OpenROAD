@@ -41,6 +41,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/dr/FlexGridGraph.cpp
   ${FLEXROUTE_HOME}/src/dr/FlexDR_rq.cpp
   ${FLEXROUTE_HOME}/src/dr/FlexDR_end.cpp
+  ${FLEXROUTE_HOME}/src/dr/FlexDR_graphics.cpp
   ${FLEXROUTE_HOME}/src/ta/FlexTA_end.cpp
   ${FLEXROUTE_HOME}/src/ta/FlexTA_init.cpp
   ${FLEXROUTE_HOME}/src/ta/FlexTA_rq.cpp
@@ -216,6 +217,7 @@ target_link_libraries( TritonRouteLib
   tritonroute-swig
   def
   lef
+  gui
 
   Threads::Threads
   OpenMP::OpenMP_CXX

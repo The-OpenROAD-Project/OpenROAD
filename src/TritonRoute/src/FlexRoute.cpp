@@ -52,12 +52,23 @@ extern int Triton_route_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
-  : design(std::make_unique<frDesign>())
+  : design(std::make_unique<frDesign>()),
+    debug(std::make_unique<frDebugSettings>())
 {
 }
 
 TritonRoute::~TritonRoute()
 {
+}
+
+void TritonRoute::setDebugDR(bool on)
+{
+  debug->debugDR = on;
+}
+
+void TritonRoute::setDebugNetName(const char* name)
+{
+  debug->netName = name;
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
@@ -100,6 +111,7 @@ void TritonRoute::ta() {
 
 void TritonRoute::dr() {
   FlexDR dr(getDesign());
+  dr.setDebug(debug.get());
   dr.main();
 }
 

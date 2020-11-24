@@ -32,10 +32,26 @@
 #include "frProfileTask.h"
 #include "dr/FlexDR.h"
 #include "db/infra/frTime.h"
+#include "dr/FlexDR_graphics.h"
 #include <omp.h>
 
 using namespace std;
 using namespace fr;
+
+FlexDR::FlexDR(frDesign* designIn)
+  : design(designIn)
+{
+}
+
+FlexDR::~FlexDR()
+{
+}
+
+void FlexDR::setDebug(frDebugSettings* settings)
+{
+  bool on = settings->debugDR;
+  graphics = on ? std::make_unique<FlexDRGraphics>(settings) : nullptr;
+}
 
 int FlexDRWorker::main() {
   using namespace std::chrono;
@@ -87,7 +103,10 @@ int FlexDRWorker::main_mt() {
                 <<routeBox.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
     cout <<ss.str() <<flush;
   }
-
+  if (graphics) {
+    graphics->startWorker(this);
+  }
+  
   init();
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
   if (getFixMode() != 9) {
@@ -1508,6 +1527,9 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     }
     cout <<suffix <<" optimization iteration ..." <<endl;
   }
+  if (graphics) {
+    graphics->status("start iter: " + std::to_string(iter));
+  }
   frBox dieBox;
   getDesign()->getTopBlock()->getBoundaryBBox(dieBox);
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
@@ -1604,6 +1626,8 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
         worker->setRipupMode(ripupMode);
         worker->setFollowGuide(followGuide);
         worker->setFixMode(fixMode);
+        // TODO: only pass to relevant workers
+        worker->setGraphics(graphics.get());
         worker->setCost(workerDRCCost, workerMarkerCost, workerMarkerBloatWidth, workerMarkerBloatDepth);
 
         int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;

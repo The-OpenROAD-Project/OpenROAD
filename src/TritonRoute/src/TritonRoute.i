@@ -37,8 +37,9 @@
 
 %{
 
+#include "openroad/OpenRoad.hh"
 #include "triton_route/TritonRoute.h"
-
+ 
 %}
 
 %include "../../Exception.i"
@@ -51,8 +52,16 @@ void detailed_route_cmd(const char* param_file)
   if (!readSuccess) {
     ord::error("Error reading param file: %s", param_file);
   }
-  triton_route::TritonRoute router;
-  router.main();
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->main();
+}
+
+void
+set_detailed_route_debug_cmd(const char* net_name, bool dr)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setDebugNetName(net_name);
+  router->setDebugDR(dr);
 }
 
 %} // inline

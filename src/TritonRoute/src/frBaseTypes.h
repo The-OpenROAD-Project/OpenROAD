@@ -262,6 +262,17 @@ namespace fr {
 
   template <typename T>
   using rq_box_value_t = std::pair<frBox, T>;
+
+  struct frDebugSettings
+  {
+    frDebugSettings()
+      : debugDR(false)
+    {
+    }
+
+    bool debugDR;
+    std::string netName;
+  };
 }
 
 #endif

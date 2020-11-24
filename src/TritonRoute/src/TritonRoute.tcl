@@ -46,3 +46,25 @@ proc detailed_route { args } {
   }
   tr::detailed_route_cmd $keys(-param)
 }
+
+sta::define_cmd_args "detailed_route_debug" {
+    [-dr]
+    [-net name]
+}
+
+proc detailed_route_debug { args } {
+  sta::parse_key_args "detailed_route_debug" args \
+      keys {-net} \
+      flags {-dr}
+
+  sta::check_argc_eq0 "detailed_route_debug" $args
+
+  set dr [info exists flags(-dr)]
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+  } else {
+    set net_name ""
+  }
+
+  tr::set_detailed_route_debug_cmd $net_name $dr
+}

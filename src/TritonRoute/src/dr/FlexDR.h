@@ -39,11 +39,13 @@
 
 namespace fr {
 
+  class FlexDRGraphics;
 
   class FlexDR {
   public:
     // constructors
-    FlexDR(frDesign* designIn): design(designIn) {}
+    FlexDR(frDesign* designIn);
+    ~FlexDR();
     // getters
     frTechObject* getTech() const {
       return design->getTech();
@@ -68,6 +70,7 @@ namespace fr {
     const std::vector<std::vector<frCoord> >* getVia2TurnMinLen() const {
       return &via2turnMinLen;
     }
+    void setDebug(frDebugSettings* settings);
   protected:
     frDesign*          design;
     std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin;
@@ -96,6 +99,8 @@ namespace fr {
     std::vector<std::vector<frCoord> > via2turnMinLen;
 
     std::vector<int>                   numViols;
+    std::unique_ptr<FlexDRGraphics>    graphics;
+    std::string                        debugNetName;
 
     // others
     void init();
@@ -260,7 +265,7 @@ namespace fr {
   public:
     // constructors
     FlexDRWorker(FlexDR* drIn): 
-                 design(drIn->getDesign()), dr(drIn), routeBox(), extBox(), drcBox(), drIter(0), mazeEndIter(1), 
+                 design(drIn->getDesign()), dr(drIn), graphics(nullptr), routeBox(), extBox(), drcBox(), drIter(0), mazeEndIter(1),
                  TEST(false), DRCTEST(false), QUICKDRCTEST(false), enableDRC(true), 
                  followGuide(false), needRecheck(false), skipRouting(false), ripupMode(1), fixMode(0), workerDRCCost(DRCCOST),
                  workerMarkerCost(MARKERCOST), workerMarkerBloatWidth(0), 
@@ -358,6 +363,10 @@ namespace fr {
     }
     void setGCWorker(FlexGCWorker *in) {
       gcWorker = in;
+    }
+
+    void setGraphics(FlexDRGraphics* in) {
+      graphics = in;
     }
 
     // getters
@@ -486,6 +495,8 @@ namespace fr {
 
     frDesign* design;
     FlexDR*   dr;
+    FlexDRGraphics*  graphics; // owned by FlexDR
+    frDebugSettings* debugSettings;
     frBox     routeBox;
     frBox     extBox;
     frBox     drcBox;

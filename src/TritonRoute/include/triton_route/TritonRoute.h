@@ -34,6 +34,7 @@
 
 namespace fr {
   class frDesign;
+  class frDebugSettings;
 }
 
 namespace odb {
@@ -53,10 +54,14 @@ namespace triton_route {
 
     int main();
 
+    void setDebugDR(bool on = true);
+    void setDebugNetName(const char* name);
+
     static bool readParams(const std::string &fileName);
 
   protected:
     std::unique_ptr<fr::frDesign> design;
+    std::unique_ptr<fr::frDebugSettings> debug;
   
     void init();
     void prep();
