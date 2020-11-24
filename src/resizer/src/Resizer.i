@@ -213,6 +213,15 @@ estimate_parasitics_cmd()
   resizer->estimateWireParasitics();
 }
 
+// For debugging. Does not protect against annotating power/gnd.
+void
+estimate_parasitic_net(const Net *net)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->estimateWireParasitic(net);
+}
+
 bool
 have_estimated_parasitics()
 {

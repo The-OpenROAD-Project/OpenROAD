@@ -288,6 +288,7 @@ void GlobalRouter::routeClockNets()
   clearFlow();
   _onlyClockNets = false;
   _onlySignalNets = true;
+  std::cout << "#Routed clock nets: " << _routes.size() << "\n\n\n";
 }
 
 NetRouteMap GlobalRouter::findRouting() {
@@ -624,6 +625,8 @@ void GlobalRouter::initializeNets(bool reroute)
       }
 
       if (checkSignalType(net)) {
+        // EM @ 20/11/18: FastRoute has a limitation for the number of pins in a single net.
+        // Nets with tens of thousands of pins lead to runtime issues (hours to complete) or segfault
         if (pin_count >= std::numeric_limits<short>::max()) {
           std::cout << "[WARNING] FastRoute cannot handle net " << net.getName()
                     << " due to large number of pins\n";
@@ -2116,8 +2119,8 @@ odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
 bool GlobalRouter::checkSignalType(const Net &net) {
   bool isClock = net.getSignalType() == odb::dbSigType::CLOCK;
   return ((!_onlyClockNets && !_onlySignalNets) ||
-          (_onlyClockNets && isClock) ||
-          (_onlySignalNets && !isClock));
+          (_onlyClockNets && isClock && !clockHasLeafITerm(net.getDbNet())) ||
+          (_onlySignalNets && (!isClock || clockHasLeafITerm(net.getDbNet()))));
 }
 
 void GlobalRouter::initAdjustments() {
@@ -2514,6 +2517,28 @@ void GlobalRouter::initClockNets()
   for (odb::dbNet* net : _clockNets) {
     net->setSigType(odb::dbSigType::CLOCK);
   }
+}
+
+bool GlobalRouter::isClkTerm(odb::dbITerm *iterm, sta::dbNetwork *network)
+{
+  const sta::Pin *pin = network->dbToSta(iterm);
+  sta::LibertyPort *lib_port = network->libertyPort(pin);
+  if (lib_port == nullptr)
+    return false;
+  return lib_port->isRegClk();
+}
+
+bool GlobalRouter::clockHasLeafITerm(odb::dbNet* db_net) {
+  sta::dbNetwork* network = _sta->getDbNetwork();
+  if (db_net->getSigType() == odb::dbSigType::CLOCK) {
+    for (odb::dbITerm* iterm : db_net->getITerms()) {
+      if (isClkTerm(iterm, network)) {
+        return true;        
+      }
+    }
+  }
+
+  return false;
 }
 
 void GlobalRouter::makeItermPins(Net* net, odb::dbNet* db_net, odb::Rect& dieArea)

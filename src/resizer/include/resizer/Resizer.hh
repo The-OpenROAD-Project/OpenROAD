@@ -255,7 +255,8 @@ protected:
                  float &pin_cap,
                  float &fanout,
                  PinSeq &load_pins);
-  void makeRepeater(SteinerTree *tree,
+  void makeRepeater(const char *where,
+                    SteinerTree *tree,
                     SteinerPt pt,
                     Net *in_net,
                     LibertyCell *buffer_cell,
@@ -264,7 +265,8 @@ protected:
                     float &pin_cap,
                     float &fanout,
                     PinSeq &load_pins);
-  void makeRepeater(int x,
+  void makeRepeater(const char *where,
+                    int x,
                     int y,
                     Net *in_net,
                     LibertyCell *buffer_cell,
