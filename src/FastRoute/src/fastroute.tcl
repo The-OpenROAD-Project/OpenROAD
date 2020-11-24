@@ -183,7 +183,12 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers_pitches layers_pitches] \
 }
 
-sta::define_cmd_alias "fastroute" "global_route"
+# sta::define_cmd_alias "fastroute" "global_route"
+
+proc fastroute { args } {
+  ord::warn "fastroute command is deprecated. Use global_route instead"
+  [eval global_route $args]
+}
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
