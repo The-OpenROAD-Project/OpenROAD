@@ -157,6 +157,10 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
+ public slots:
+  void zoomIn();
+  void zoomOut();
+
  protected:
   void wheelEvent(QWheelEvent* event) override;
 
