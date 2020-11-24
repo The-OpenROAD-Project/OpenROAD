@@ -957,6 +957,8 @@ Resizer::estimateWireParasitic(const Net *net)
                                                                parasitics_ap_);
       bool is_clk = !sta_->isClock(net);
       int branch_count = tree->branchCount();
+      float cap = 0.0;
+      float wl = 0.0;
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
         Pin *pin1, *pin2;
@@ -977,9 +979,10 @@ Resizer::estimateWireParasitic(const Net *net)
             float wire_cap = wire_length * (is_clk ? wire_clk_cap_ : wire_cap_);
             float wire_res = wire_length * (is_clk ? wire_clk_res_ : wire_res_);
             // Make pi model for the wire.
-            debugPrint5(debug_, "resizer_parasitics", 2,
-                        " pi %s c2=%s rpi=%s c1=%s %s\n",
+            debugPrint6(debug_, "resizer_parasitics", 2,
+                        " pi %s l=%s c2=%s rpi=%s c1=%s %s\n",
                         parasitics_->name(n1),
+                        units_->distanceUnit()->asString(wire_length),
                         units_->capacitanceUnit()->asString(wire_cap / 2.0),
                         units_->resistanceUnit()->asString(wire_res),
                         units_->capacitanceUnit()->asString(wire_cap / 2.0),
@@ -987,6 +990,8 @@ Resizer::estimateWireParasitic(const Net *net)
             parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap_);
             parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap_);
             parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap_);
+            cap += wire_cap;
+            wl += wire_length;
           }
         }
       }
@@ -1869,9 +1874,9 @@ Resizer::repairNet(SteinerTree *tree,
   debugPrint6(debug_, "repair_net", 3, "%*sleft l=%s cap=%s, right l=%s cap=%s\n",
               level, "",
               units_->distanceUnit()->asString(dbuToMeters(wire_length_left), 1),
-              units_->capacitanceUnit()->asString(pin_cap_left, 2),
+              units_->capacitanceUnit()->asString(pin_cap_left, 3),
               units_->distanceUnit()->asString(dbuToMeters(wire_length_right), 1),
-              units_->capacitanceUnit()->asString(pin_cap_right, 2));
+              units_->capacitanceUnit()->asString(pin_cap_right, 3));
   // Add a buffer to left or right branch to stay under the max cap/length/fanout.
   bool repeater_left = false;
   bool repeater_right = false;
@@ -1879,8 +1884,8 @@ Resizer::repairNet(SteinerTree *tree,
   double cap_right = pin_cap_right + dbuToMeters(wire_length_right) * wire_cap_;
   debugPrint4(debug_, "repair_net", 3, "%*scap_left=%s, right_cap=%s\n",
               level, "",
-              units_->capacitanceUnit()->asString(cap_left, 2),
-              units_->capacitanceUnit()->asString(cap_right, 2));
+              units_->capacitanceUnit()->asString(cap_left, 3),
+              units_->capacitanceUnit()->asString(cap_right, 3));
   bool cap_violation = (cap_left + cap_right) > max_cap;
   if (cap_violation) {
     debugPrint2(debug_, "repair_net", 3, "%*scap violation\n", level, "");
@@ -1909,10 +1914,10 @@ Resizer::repairNet(SteinerTree *tree,
   }
 
   if (repeater_left)
-    makeRepeater(tree, pt, net, buffer_cell, level,
+    makeRepeater("left", tree, pt, net, buffer_cell, level,
                  wire_length_left, pin_cap_left, fanout_left, loads_left);
   if (repeater_right)
-    makeRepeater(tree, pt, net, buffer_cell, level,
+    makeRepeater("right", tree, pt, net, buffer_cell, level,
                  wire_length_right, pin_cap_right, fanout_right, loads_right);
 
   wire_length = wire_length_left + wire_length_right;
@@ -1920,21 +1925,25 @@ Resizer::repairNet(SteinerTree *tree,
   fanout = fanout_left + fanout_right;
 
   // Union left/right load pins.
-  load_pins = loads_left;
+  for (Pin *load_pin : loads_left)
+    load_pins.push_back(load_pin);
   for (Pin *load_pin : loads_right)
     load_pins.push_back(load_pin);
 
   Net *buffer_out = nullptr;
+  Pin *load_pin = tree->pin(pt);
   // Steiner pt pin is the net driver if prev_pt is null.
   if (prev_pt != SteinerTree::null_pt) {
     Pin *load_pin = tree->pin(pt);
     if (load_pin) {
       Point load_loc = db_network_->location(load_pin);
-      debugPrint5(debug_, "repair_net", 2, "%*sload %s (%s %s)\n",
+      int load_dist = Point::manhattanDistance(load_loc, pt_loc);
+      debugPrint6(debug_, "repair_net", 2, "%*sload %s (%s %s) dist=%s\n",
                   level, "",
                   sdc_network_->pathName(load_pin),
                   units_->distanceUnit()->asString(dbuToMeters(load_loc.getX()), 1),
-                  units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 1));
+                  units_->distanceUnit()->asString(dbuToMeters(load_loc.getY()), 1),
+                  units_->distanceUnit()->asString(dbuToMeters(load_dist), 1));
       LibertyPort *load_port = network_->libertyPort(load_pin);
       if (load_port) {
         pin_cap += portCapacitance(load_port);
@@ -1979,7 +1988,7 @@ Resizer::repairNet(SteinerTree *tree,
       double d = buf_dist / length;
       int buf_x = pt_x + d * dx;
       int buf_y = pt_y + d * dy;
-      makeRepeater(buf_x, buf_y, net, buffer_cell, level,
+      makeRepeater("wire", buf_x, buf_y, net, buffer_cell, level,
                    wire_length, pin_cap, fanout, load_pins);
       // Update for the next round.
       length -= buf_dist;
@@ -1995,7 +2004,8 @@ Resizer::repairNet(SteinerTree *tree,
 }
 
 void
-Resizer::makeRepeater(SteinerTree *tree,
+Resizer::makeRepeater(const char *where,
+                      SteinerTree *tree,
                       SteinerPt pt,
                       Net *in_net,
                       LibertyCell *buffer_cell,
@@ -2006,12 +2016,13 @@ Resizer::makeRepeater(SteinerTree *tree,
                       PinSeq &load_pins)
 {
   Point pt_loc = tree->location(pt);
-  makeRepeater(pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell, level,
+  makeRepeater(where, pt_loc.getX(), pt_loc.getY(), in_net, buffer_cell, level,
                wire_length, pin_cap, fanout, load_pins);
 }
 
 void
-Resizer::makeRepeater(int x,
+Resizer::makeRepeater(const char *where,
+                      int x,
                       int y,
                       Net *in_net,
                       LibertyCell *buffer_cell,
@@ -2028,8 +2039,9 @@ Resizer::makeRepeater(int x,
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
     string buffer_name = makeUniqueInstName("repeater");
-    debugPrint5(debug_, "repair_net", 2, "%*s%s (%s %s)\n",
+    debugPrint6(debug_, "repair_net", 2, "%*s%s %s (%s %s)\n",
                 level, "",
+                where,
                 buffer_name.c_str(),
                 units_->distanceUnit()->asString(dbuToMeters(x), 1),
                 units_->distanceUnit()->asString(dbuToMeters(y), 1));
