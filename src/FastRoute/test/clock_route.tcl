@@ -1,4 +1,5 @@
 source "helpers.tcl"
+read_liberty "sky130/sky130_tt.lib"
 read_lef "sky130/sky130_tech.lef"
 read_lef "sky130/sky130_std_cell.lef"
 
