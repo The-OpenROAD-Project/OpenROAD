@@ -116,8 +116,16 @@ void MainWindow::createActions()
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
 
+  zoomIn_ = new QAction("Zoom in", this);
+  zoomIn_->setShortcut(QString("Z"));
+
+  zoomOut_ = new QAction("Zoom out", this);
+  zoomOut_->setShortcut(QString("Shift+Z"));
+
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
+  connect(zoomIn_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
+  connect(zoomOut_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
 }
 
 void MainWindow::createMenus()
@@ -127,6 +135,8 @@ void MainWindow::createMenus()
 
   viewMenu_ = menuBar()->addMenu("&View");
   viewMenu_->addAction(fit_);
+  viewMenu_->addAction(zoomIn_);
+  viewMenu_->addAction(zoomOut_);
 
   windowsMenu_ = menuBar()->addMenu("&Windows");
   windowsMenu_->addAction(controls_->toggleViewAction());
