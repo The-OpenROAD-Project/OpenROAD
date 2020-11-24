@@ -91,16 +91,19 @@ estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_hold_violations -buffer_cell $hold_buffer_cell
 
-detailed_placement
-filler_placement $filler_cells
-check_placement
-
 # post cts timing report (propagated clocks)
 report_checks -path_delay min_max -format full_clock_expanded \
   -fields {input_pin slew capacitance} -digits 3
 
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
+
+detailed_placement
+filler_placement $filler_cells
+check_placement
+
+set filler_def [make_result_file ${design}_${platform}_filler.def]
+write_def $filler_def
 
 # missing mysterious vsrc file
 #analyze_power_grid
@@ -147,7 +150,7 @@ if { $detailed_routing } {
   set routed_def [make_result_file ${design}_${platform}_route.def]
 
   set tr_lef [make_tr_lef]
-  set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
+  set tr_params [make_tr_params $tr_lef $filler_def $route_guide $routed_def]
   if { [catch "exec which TritonRoute"] } {
     error "TritonRoute not found."
   }

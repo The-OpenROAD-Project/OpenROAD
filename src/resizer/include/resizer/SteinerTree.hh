@@ -122,6 +122,8 @@ public:
   void setHasInputPort(bool input_port);
   void writeSVG(const Network *network,
                 const char *filename);
+  Flute::Tree &fluteTree() { return tree_; }
+
   static SteinerPt null_pt;
 
 protected:
