@@ -63,6 +63,8 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && cmake --build build -j $(nproc) --target install
 
 # spdlog required by OpenDB
+
+# These are referenced by cmake
 ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
     CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++
 
@@ -71,7 +73,7 @@ RUN git clone -b v1.8.1 https://github.com/gabime/spdlog.git \
     && mkdir build \
     && cd build \
     && source scl_source enable llvm-toolset-7.0 \ 
-    && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. \
+    && cmake .. \
     && make install -j
     
     
@@ -85,9 +87,6 @@ FROM base-dependencies AS builder
 COPY . /OpenROAD
 WORKDIR /OpenROAD
 
-# These are referenced by cmake
-ENV CC=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang \
-    CXX=/opt/rh/llvm-toolset-7.0/root/usr/bin/clang++
 
 # Build
 RUN source scl_source enable llvm-toolset-7.0 && \
