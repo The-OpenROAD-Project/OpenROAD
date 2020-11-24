@@ -38,7 +38,7 @@
 #include <tcl.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <cstring>
+#include <string>
 #include <libgen.h>
 // We have had too many problems with this std::filesytem on various platforms
 // so it is disabled but kept for future reference
@@ -79,13 +79,11 @@ main(int argc,
      char *argv[])
 {
   char buffer [PATH_MAX];
-  if(realpath(argv[0],buffer)!=NULL)
+  if(realpath(argv[0],buffer)!=nullptr)
   {
     char* dir = dirname(buffer);
-    char log_path[PATH_MAX];
-    std::strcat(log_path,dir);
-    std::strcat(log_path,"/ord_log.log");
-    ordlog::init(log_path);
+    std::string log_path = std::string(dir) + "/openroad.log";
+    ordlog::init(log_path.c_str());
     ordlog::info(ordlog::OPENROAD,1,"Starting OpenROAD main");
   }
 

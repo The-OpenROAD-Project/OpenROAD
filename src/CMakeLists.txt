@@ -40,6 +40,7 @@ set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 set(OPENROAD_SOURCE
   OpenRoad.cc
   Error.cc
+  Logger.cpp
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -239,22 +240,6 @@ if(BUILD_OPENPHYSYN)
   add_subdirectory(OpenPhySyn)
 endif()
 add_subdirectory(gui)
-
-################################################################
-
-add_library(ordlog
-	Logger.cpp
-)
-target_include_directories(ordlog
-    PUBLIC
-        ${OPENROAD_HOME}/include
-    PRIVATE
-    	${OPENDB_HOME}/include
-)
-target_link_libraries(ordlog
-    PUBLIC
-        opendb
-)
 
 ################################################################
 
