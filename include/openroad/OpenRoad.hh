@@ -107,7 +107,7 @@ namespace antenna_checker {
 class AntennaChecker;
 }
 
-namespace Partitioners {
+namespace partition {
 class PartitionMgr;
 }
 
@@ -143,7 +143,7 @@ public:
   FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
   ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
-  Partitioners::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
+  partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -215,7 +215,7 @@ private:
   psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
-  Partitioners::PartitionMgr *partitionMgr_; 
+  partition::PartitionMgr *partitionMgr_; 
 
   std::set<Observer *> observers_;
 

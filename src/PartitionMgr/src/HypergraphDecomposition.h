@@ -44,7 +44,7 @@ class dbNet;
 class dbBox;
 }  // namespace odb
 
-namespace Partitioners {
+namespace partition {
 
 enum GraphType : uint8_t
 {
@@ -93,4 +93,4 @@ class HypergraphDecomposition
   void createCompressedMatrix(Graph& graph);
 };
 
-}  // namespace Partitioners
+}  // namespace partition

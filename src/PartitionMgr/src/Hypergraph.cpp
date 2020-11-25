@@ -38,7 +38,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace Partitioners {
+namespace partition {
 
 void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight)
 {
@@ -110,4 +110,4 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight)
   }
 }
 
-}  // namespace Partitioners
+}  // namespace partition

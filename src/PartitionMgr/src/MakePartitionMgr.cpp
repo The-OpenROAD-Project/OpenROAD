@@ -51,9 +51,9 @@ extern int Partitionmgr_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-Partitioners::PartitionMgr* makePartitionMgr()
+partition::PartitionMgr* makePartitionMgr()
 {
-  return new Partitioners::PartitionMgr();
+  return new partition::PartitionMgr();
 }
 
 void initPartitionMgr(OpenRoad* openroad)
@@ -63,12 +63,12 @@ void initPartitionMgr(OpenRoad* openroad)
   sta::evalTclInit(tcl_interp, sta::partitionmgr_tcl_inits);
 
   unsigned dbId = openroad->getDb()->getId();
-  Partitioners::PartitionMgr* kernel = openroad->getPartitionMgr();
+  partition::PartitionMgr* kernel = openroad->getPartitionMgr();
 
   kernel->setDbId(dbId);
 };
 
-void deletePartitionMgr(Partitioners::PartitionMgr* partitionmgr)
+void deletePartitionMgr(partition::PartitionMgr* partitionmgr)
 {
   delete partitionmgr;
 }

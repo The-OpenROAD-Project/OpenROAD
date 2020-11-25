@@ -37,7 +37,7 @@
 #include <string>
 #include <vector>
 
-namespace Partitioners {
+namespace partition {
 
 class Hypergraph
 {
@@ -147,4 +147,4 @@ class Graph : public Hypergraph
   }
 };
 
-}  // namespace Partitioners
+}  // namespace partition
