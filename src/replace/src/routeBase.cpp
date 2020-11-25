@@ -659,7 +659,8 @@ RouteBase::getGlobalRouterResult() {
   grouter_->setOverflowIterations(0);
 
   grouter_->startFastRoute();
-  grouter_->runFastRoute();
+  // E.M @ 20/11/25: false is required here to run FastRoute for all nets
+  grouter_->runFastRoute(false);
 
   // Note that *.route info is unique.
   // TODO: read *.route only once.

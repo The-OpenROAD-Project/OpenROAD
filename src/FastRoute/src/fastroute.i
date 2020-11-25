@@ -165,7 +165,6 @@ set_layer_pitch(int layer, float pitch)
 void
 set_clock_layer_range(int minLayer, int maxLayer)
 {
-  getFastRoute()->setOnlyClockNets(1);
   getFastRoute()->setMinRoutingLayer(minLayer);
   getFastRoute()->setMaxRoutingLayer(maxLayer);
 }
@@ -177,15 +176,9 @@ set_macro_extension(int macroExtension)
 }
 
 void
-set_only_signal_nets(bool onlySignalNets)
+run_fastroute(bool onlySignal)
 {
-  getFastRoute()->setOnlySignalNets(onlySignalNets);
-}
-
-void
-run_fastroute()
-{
-  getFastRoute()->runFastRoute();
+  getFastRoute()->runFastRoute(onlySignal);
 }
 
 void

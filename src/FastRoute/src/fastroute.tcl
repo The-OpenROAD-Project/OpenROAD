@@ -294,7 +294,6 @@ proc global_route { args } {
   }
 
   FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
-  FastRoute::set_only_signal_nets [info exists flags(-only_signal_nets)]
 
   if { [info exists keys(-macro_extension)] } {
     set macro_extension $keys(-macro_extension)
@@ -359,7 +358,8 @@ proc global_route { args } {
     FastRoute::report_congestion $congest_file
   }
 
-  FastRoute::run_fastroute
+  set only_signal [expr [info exists keys(-clock_layers)] || [info exists flags(-only_signal_nets)]]
+  FastRoute::run_fastroute $only_signal
   
   if { [info exists keys(-output_file)] } {
     ord::warn "option -output_file is deprecated. Use option -guide_file"
