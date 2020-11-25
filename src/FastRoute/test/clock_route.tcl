@@ -1,4 +1,5 @@
 source "helpers.tcl"
+read_liberty "sky130/sky130_tt.lib"
 read_lef "sky130/sky130_tech.lef"
 read_lef "sky130/sky130_std_cell.lef"
 
@@ -14,7 +15,7 @@ set_global_routing_layer_adjustment 2 0.8
 set_global_routing_layer_adjustment 3 0.7
 set_global_routing_layer_adjustment * 0.5
 
-fastroute -layers 2-6 \
+global_route -layers 2-6 \
           -unidirectional_routing \
           -clock_layers 4-6
 

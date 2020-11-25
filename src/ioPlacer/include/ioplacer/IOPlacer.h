@@ -89,6 +89,16 @@ struct Interval
   int getEnd() { return end; }
 };
 
+struct Constraint
+{
+  std::string name;
+  Direction direction;
+  Interval interval;
+  Constraint(std::string name, Direction dir, Interval interv) :
+    name(name), direction(dir), interval(interv)
+  {}
+};
+
 class IOPlacer
 {
  public:
@@ -100,7 +110,12 @@ class IOPlacer
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
+  void addDirectionConstraint(Direction direction, Edge edge, 
+                               int begin, int end);
+  void addNameConstraint(std::string name, Edge edge, 
+                               int begin, int end);
   Edge getEdge(std::string edge);
+  Direction getDirection(std::string direction);
 
  protected:
   Netlist _netlist;
@@ -117,6 +132,7 @@ class IOPlacer
   bool _forcePinSpread;
   std::string _blockagesFile;
   std::vector<Interval> _excludedIntervals;
+  std::vector<Constraint> _constraints;
 
  private:
   void makeComponents();

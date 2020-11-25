@@ -1,0 +1,39 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: 
+Reading DEF file: gcd.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 88 components and 422 component-terminals.
+Notice 0:     Created 54 nets and 88 connections.
+Notice 0: Finished DEF file: gcd.def
+Restrict INPUT pins to region 0-201600, in the left edge
+#Macro blocks found: 0
+ > Running IO placement
+ * Num of slots          2494
+ * Num of I/O            54
+ * Num of I/O w/sink     54
+ * Num of I/O w/o sink   0
+ * Slots Per Section     200
+ * Slots Increase Factor 0.01
+ * Usage Per Section     0.8
+ * Usage Increase Factor 0.01
+ * Force Pin Spread      1
+
+Tentative 0 to setup sections
+ * Num of slots          2494
+ * Num of I/O            54
+ * Num of I/O w/sink     54
+ * Num of I/O w/o sink   0
+ * Slots Per Section     200
+ * Slots Increase Factor 0.01
+ * Usage Per Section     0.8
+ * Usage Increase Factor 0.01
+ * Force Pin Spread      1
+
+ > Successfully assigned I/O pins
+ > IO placement done.
+No differences found.

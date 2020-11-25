@@ -34,6 +34,60 @@
 ###############################################################################
 
 
+sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
+                                              [-names names] \
+                                              [-region region]}
+
+proc set_io_pin_constraint { args } {
+  sta::parse_key_args "set_io_pin_constraint" args \
+  keys {-direction -names -region}
+
+  if [info exists keys(-region)] {
+    set region $keys(-region)
+  }
+
+  set dbTech [ord::get_db_tech]
+  set lef_units [$dbTech getLefUnits]
+
+  if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
+    set edge_ [ioPlacer::parse_edge "-region" $edge]
+
+    if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
+      if {$begin == {*}} {
+        set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
+      }
+      if {$end == {*}} {
+        set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
+      }
+
+      set begin [expr { int($begin * $lef_units) }]
+      set end [expr { int($end * $lef_units) }]
+    } elseif {$interval == {*}} {
+      set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
+      set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
+    }
+  }
+
+  if {[info exists keys(-direction)] && [info exists keys(-name)]} {
+    ord::error "set_io_pin_constraint: only one constraint allowed"
+  }
+
+  if [info exists keys(-direction)] {
+    set direction $keys(-direction)
+    set dir [ioPlacer::parse_direction "set_io_pin_constraint" $direction]
+    puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
+    ioPlacer::add_direction_constraint $dir $edge_ $begin $end
+  }
+
+  if [info exists keys(-names)] {
+    set names $keys(-names)
+    foreach name $names {
+      puts "Restrict I/O pin $name to region $begin-$end, in the $edge edge"
+      ioPlacer::add_name_constraint $name $edge_ $begin $end
+    }
+  }
+}
+
 sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 
                                   [-ver_layer v_layer]        \
                                   [-random_seed seed]         \
@@ -47,9 +101,10 @@ sta::define_cmd_alias "place_ios" "io_placer"
 sta::define_cmd_alias "place_pins" "io_placer"
 
 proc io_placer { args } {
+  set regions [ioPlacer::parse_excludes_arg $args]
   sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance} \
-  flags {-random} 0
+  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
+  flags {-random}
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
@@ -86,13 +141,13 @@ proc io_placer { args } {
   if [info exists keys(-hor_layer)] {
     set hor_layer $keys(-hor_layer)
   } else {
-    ord::error("-hor_layer is mandatory")
+    ord::error "-hor_layer is mandatory"
   }       
   
   if [info exists keys(-ver_layer)] {
     set ver_layer $keys(-ver_layer)
   } else {
-    ord::error("-ver_layer is mandatory")
+    ord::error "-ver_layer is mandatory"
   }
 
   set offset 5
@@ -144,8 +199,6 @@ proc io_placer { args } {
     ord::error "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
-  set arg_error 0
-  set regions [ioPlacer::parse_excludes_arg args arg_error]
   if { $regions != {} } {
     set lef_units [$dbTech getLefUnits]
     
@@ -169,7 +222,11 @@ proc io_placer { args } {
           set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
 
           ioPlacer::exclude_interval $edge_ $begin $end
+        } else {
+          ord::error "-exclude: $interval is an invalid region"
         }
+      } else {
+        ord::error "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval"
       }
     }
   }
@@ -182,22 +239,32 @@ namespace eval ioPlacer {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    ord::error "$cmd: Invalid edge"
+    ord::error "$cmd: $edge is an invalid edge. use top, bottom, left or right"
   }
   return [ioPlacer::get_edge $edge]
 }
 
-proc parse_excludes_arg { args_var arg_error_var } {
-  upvar 1 $args_var args
-  
+proc parse_direction { cmd direction } {
+  if {[regexp -nocase -- {^INPUT$} $direction] || \
+      [regexp -nocase -- {^OUTPUT$} $direction] || \
+      [regexp -nocase -- {^INOUT$} $direction] || \
+      [regexp -nocase -- {^FEEDTHRU$} $direction]} {
+    set direction [string tolower $direction]
+    return [ioPlacer::get_direction $direction]      
+  } else {
+    ord::error "$cmd: Invalid pin direction"
+  }
+}
+
+proc parse_excludes_arg { args_var } {
   set regions {}
-  while { $args != {} } {
-    set arg [lindex $args 0]
+  while { $args_var != {} } {
+    set arg [lindex $args_var 0]
     if { $arg == "-exclude" } {
-      lappend regions [lindex $args 1]
-      set args [lrange $args 1 end]
+      lappend regions [lindex $args_var 1]
+      set args_var [lrange $args_var 1 end]
     } else {
-      set args [lrange $args 1 end]
+      set args_var [lrange $args_var 1 end]
     }
   }
 

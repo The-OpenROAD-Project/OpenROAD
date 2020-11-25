@@ -1,0 +1,25 @@
+Notice 0: Reading LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  nangate45-bench/tech/NangateOpenCellLibrary.lef
+Notice 0: Reading LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  nangate45-bench/tech/fakeram45_64x7.lef
+Notice 0: 
+Reading DEF file: gcd_fakeram.def
+Notice 0: Design: gcd_mem1
+Notice 0:     Created 61 pins.
+Notice 0:     Created 1 components and 32 component-terminals.
+Notice 0: Finished DEF file: gcd_fakeram.def
+Running tapcell...
+Step 1: Cut rows...
+[INFO] Macro blocks found: 1
+[INFO] #Original rows: 30
+[INFO] #Cut rows: 27
+Step 2: Insert endcaps...
+[INFO] #Endcaps inserted: 60
+Step 3: Insert tapcells...
+[INFO] #Tapcells inserted: 18
+Running tapcell... Done!
+No differences found.

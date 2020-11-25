@@ -111,8 +111,15 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 {
   const double seed = _parms->getRandSeed();
 
+  slotVector_t validSlots;
+  for (Slot_t &slot : _slots) {
+    if (!slot.blocked) {
+      validSlots.push_back(slot);
+    }
+  }
+
   int numIOs = _netlist.numIOPins();
-  int numSlots = _slots.size();
+  int numSlots = validSlots.size();
   double shift = numSlots / double(numIOs);
   int mid1 = numSlots * 1 / 8 - numIOs / 8;
   int mid2 = numSlots * 3 / 8 - numIOs / 8;
@@ -152,7 +159,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vSlots[0];
-        ioPin.setPos(_slots.at(b).pos);
+        ioPin.setPos(validSlots.at(b).pos);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
         vSlots.erase(vSlots.begin());
@@ -173,7 +180,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vIOs[0];
-        ioPin.setPos(_slots.at(floor(b * shift)).pos);
+        ioPin.setPos(validSlots.at(floor(b * shift)).pos);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
         vIOs.erase(vIOs.begin());
@@ -202,7 +209,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vIOs[0];
-        ioPin.setPos(_slots.at(b).pos);
+        ioPin.setPos(validSlots.at(b).pos);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
         vIOs.erase(vIOs.begin());
@@ -408,11 +415,21 @@ void IOPlacer::defineSlots()
 
 void IOPlacer::createSections()
 {
+  Point lb = _core.getBoundary().ll();
+  Point ub = _core.getBoundary().ur();
+
   slotVector_t& slots = _slots;
   _sections.clear();
   int numSlots = slots.size();
   int beginSlot = 0;
   int endSlot = 0;
+
+  int slotsPerEdge = numSlots/_slotsPerSection;
+  if (slotsPerEdge < 4) {
+    _slotsPerSection = numSlots / 4;
+    warn("Redefining the number of slots per section to have at least one section per edge");
+  }
+
   while (endSlot < numSlots) {
     int blockedSlots = 0;
     endSlot = beginSlot + _slotsPerSection - 1;
@@ -446,6 +463,15 @@ void IOPlacer::createSections()
     nSec.endSlot = endSlot;
     nSec.maxSlots = nSec.numSlots * _usagePerSection;
     nSec.curSlots = 0;
+    if (nSec.pos.x() == lb.x()) {
+      nSec.edge = Edge::Left;
+    } else if (nSec.pos.x() == ub.x()) {
+      nSec.edge = Edge::Right;
+    } else if (nSec.pos.y() == lb.y()) {
+      nSec.edge = Edge::Bottom;
+    } else if (nSec.pos.y() == ub.y()) {
+      nSec.edge = Edge::Top;
+    }
     _sections.push_back(nSec);
     beginSlot = ++endSlot;
   }
@@ -462,7 +488,7 @@ bool IOPlacer::assignPinsSections()
     std::vector<int> dst(sections.size());
     std::vector<InstancePin> instPinsVector;
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = net.computeIONetHPWL(idx, sections[i].pos);
+      dst[i] = net.computeIONetHPWL(idx, sections[i].pos, sections[i].edge, _constraints);
     }
     net.forEachSinkOfIO(
         idx, [&](InstancePin& instPin) { instPinsVector.push_back(instPin); });
@@ -545,28 +571,28 @@ void IOPlacer::updateOrientation(IOPin& pin)
 
   if (x == lowerXBound) {
     if (y == upperYBound) {
-      pin.setOrientation(Orientation::ORIENT_SOUTH);
+      pin.setOrientation(Orientation::South);
       return;
     } else {
-      pin.setOrientation(Orientation::ORIENT_EAST);
+      pin.setOrientation(Orientation::East);
       return;
     }
   }
   if (x == upperXBound) {
     if (y == lowerYBound) {
-      pin.setOrientation(Orientation::ORIENT_NORTH);
+      pin.setOrientation(Orientation::North);
       return;
     } else {
-      pin.setOrientation(Orientation::ORIENT_WEST);
+      pin.setOrientation(Orientation::West);
       return;
     }
   }
   if (y == lowerYBound) {
-    pin.setOrientation(Orientation::ORIENT_NORTH);
+    pin.setOrientation(Orientation::North);
     return;
   }
   if (y == upperYBound) {
-    pin.setOrientation(Orientation::ORIENT_SOUTH);
+    pin.setOrientation(Orientation::South);
     return;
   }
 }
@@ -580,8 +606,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
   int upperXBound = _core.getBoundary().ur().x();
   int upperYBound = _core.getBoundary().ur().y();
 
-  if (pin.getOrientation() == Orientation::ORIENT_NORTH
-      || pin.getOrientation() == Orientation::ORIENT_SOUTH) {
+  if (pin.getOrientation() == Orientation::North
+      || pin.getOrientation() == Orientation::South) {
     float thicknessMultiplier = _parms->getVerticalThicknessMultiplier();
     int halfWidth = int(ceil(_core.getMinWidthX() / 2.0)) * thicknessMultiplier;
     int height = int(std::max(2.0 * halfWidth,
@@ -596,7 +622,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       ext = _parms->getVerticalLengthExtend() * _core.getDatabaseUnit();
     }
 
-    if (pin.getOrientation() == Orientation::ORIENT_NORTH) {
+    if (pin.getOrientation() == Orientation::North) {
       pin.setLowerBound(pin.getX() - halfWidth, pin.getY() - ext);
       pin.setUpperBound(pin.getX() + halfWidth, pin.getY() + height);
     } else {
@@ -605,8 +631,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
     }
   }
 
-  if (pin.getOrientation() == Orientation::ORIENT_WEST
-      || pin.getOrientation() == Orientation::ORIENT_EAST) {
+  if (pin.getOrientation() == Orientation::West
+      || pin.getOrientation() == Orientation::East) {
     float thicknessMultiplier = _parms->getHorizontalThicknessMultiplier();
     int halfWidth = int(ceil(_core.getMinWidthY() / 2.0)) * thicknessMultiplier;
     int height = int(std::max(2.0 * halfWidth,
@@ -620,7 +646,7 @@ void IOPlacer::updatePinArea(IOPin& pin)
       height = _parms->getHorizontalLength() * _core.getDatabaseUnit();
     }
 
-    if (pin.getOrientation() == Orientation::ORIENT_EAST) {
+    if (pin.getOrientation() == Orientation::East) {
       pin.setLowerBound(pin.getX() - ext, pin.getY() - halfWidth);
       pin.setUpperBound(pin.getX() + height, pin.getY() + halfWidth);
     } else {
@@ -655,6 +681,20 @@ void IOPlacer::excludeInterval(Edge edge, int begin, int end)
   _excludedIntervals.push_back(excludedInterv);
 }
 
+void IOPlacer::addDirectionConstraint(Direction direction, Edge edge,
+                                       int begin, int end) {
+  Interval interval(edge, begin, end);
+  Constraint constraint("INVALID", direction, interval);
+  _constraints.push_back(constraint);
+}
+
+void IOPlacer::addNameConstraint(std::string name, Edge edge,
+                                       int begin, int end) {
+  Interval interval(edge, begin, end);
+  Constraint constraint(name, Direction::Invalid, interval);
+  _constraints.push_back(constraint);
+}
+
 Edge IOPlacer::getEdge(std::string edge) {
   if (edge == "top") {
     return Edge::Top;
@@ -667,6 +707,20 @@ Edge IOPlacer::getEdge(std::string edge) {
   }
 
   return Edge::Invalid;
+}
+
+Direction IOPlacer::getDirection(std::string direction) {
+  if (direction == "input") {
+    return Direction::Input;
+  } else if (direction == "output") {
+    return Direction::Output;
+  } else if (direction == "inout") {
+    return Direction::Inout;
+  } else {
+    return Direction::Feedthru;
+  }
+
+  return Direction::Invalid;
 }
 
 void IOPlacer::run(int horLayerIdx, int verLayerIdx, bool randomMode)
@@ -705,7 +759,7 @@ void IOPlacer::run(int horLayerIdx, int verLayerIdx, bool randomMode)
     }
 
     for (int idx = 0; idx < hgVec.size(); idx++) {
-      hgVec[idx].run();
+      hgVec[idx].findAssignment(_constraints);
     }
 
     for (int idx = 0; idx < hgVec.size(); idx++) {
@@ -832,16 +886,16 @@ void IOPlacer::initNetlist()
            curBTerm->getConstName());
     }
 
-    Direction dir = DIR_INOUT;
+    Direction dir = Direction::Inout;
     switch (curBTerm->getIoType()) {
       case odb::dbIoType::INPUT:
-        dir = DIR_IN;
+        dir = Direction::Input;
         break;
       case odb::dbIoType::OUTPUT:
-        dir = DIR_OUT;
+        dir = Direction::Output;
         break;
       default:
-        dir = DIR_INOUT;
+        dir = Direction::Inout;
     }
 
     int xPos = 0;
@@ -908,8 +962,8 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment,
     int xMax = upperBound.x();
     int yMax = upperBound.y();
     odb::dbTechLayer* layer = verLayer;
-    if (pin.getOrientation() == Orientation::ORIENT_EAST
-        || pin.getOrientation() == Orientation::ORIENT_WEST) {
+    if (pin.getOrientation() == Orientation::East
+        || pin.getOrientation() == Orientation::West) {
       layer = horLayer;
     }
 

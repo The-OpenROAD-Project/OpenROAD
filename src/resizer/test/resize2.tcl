@@ -13,5 +13,5 @@ set_load 20 u1z
 set_load 20 u2z
 
 report_checks -fields {slew capacitance input_pin} -digits 3
-resize
+sta::resize
 report_checks -fields {slew capacitance input_pin} -digits 3

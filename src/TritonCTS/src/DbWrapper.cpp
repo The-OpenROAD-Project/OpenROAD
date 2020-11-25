@@ -98,7 +98,7 @@ void DbWrapper::initAllClocks()
       clockNets.insert(net);
     }
   } else {
-    _openSta->findClkNets(clockNets);
+    clockNets = _openSta->findClkNets();
   }
 
   // Iterate over all the nets found by the user-input and dbSta

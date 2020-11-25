@@ -48,6 +48,7 @@ write_def $global_place_def
 # Resize
 # estimate wire rc parasitics
 set_wire_rc -layer $wire_rc_layer
+set_wire_rc -clock -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
@@ -85,15 +86,10 @@ repair_clock_nets -max_wire_length $max_wire_length \
 # Get gates close to final positions so parasitics estimate is close.
 detailed_placement
 
-# CTS trashes the timing state and detailed placement moves instances
-# so update parastic estimates.
+# CTS and detailed placement move instances so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_hold_violations -buffer_cell $hold_buffer_cell
-
-detailed_placement
-filler_placement $filler_cells
-check_placement
 
 # post cts timing report (propagated clocks)
 report_checks -path_delay min_max -format full_clock_expanded \
@@ -101,6 +97,13 @@ report_checks -path_delay min_max -format full_clock_expanded \
 
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
+
+detailed_placement
+filler_placement $filler_cells
+check_placement
+
+set filler_def [make_result_file ${design}_${platform}_filler.def]
+write_def $filler_def
 
 # missing mysterious vsrc file
 #analyze_power_grid
@@ -112,9 +115,10 @@ foreach layer_adjustment $global_routing_layer_adjustments {
   lassign $layer_adjustment layer adjustment
   set_global_routing_layer_adjustment $layer $adjustment
 }
-fastroute -guide_file $route_guide\
+fastroute -guide_file $route_guide \
   -layers $global_routing_layers \
-  -unidirectional_routing true \
+  -clock_layers $global_routing_clock_layers \
+  -unidirectional_routing \
   -overflow_iterations 100 \
   -verbose 2
 
@@ -146,7 +150,7 @@ if { $detailed_routing } {
   set routed_def [make_result_file ${design}_${platform}_route.def]
 
   set tr_lef [make_tr_lef]
-  set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
+  set tr_params [make_tr_params $tr_lef $filler_def $route_guide $routed_def]
   if { [catch "exec which TritonRoute"] } {
     error "TritonRoute not found."
   }

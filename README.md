@@ -247,6 +247,14 @@ or a range of values. Example: `place_pins -hor_layer 2 -ver_layer 3 -exclude to
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 
+```
+set_io_pin_constraint -direction direction -names names -region edge:interval
+```
+
+The `set_io_pin_constraint` command sets region constraints for I/O pins according the direction or the pin name.
+This command can be called multiple times with different constraints. Only one condition should be used for each
+function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
+
 #### Gate Resizer
 
 Gate resizer commands are described below.
@@ -316,27 +324,15 @@ repair_design [-max_wire_length max_length]
 
 The `repair_design` inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
-delay in the wire. Use `-max_wire_length` to specify the maximum lenth
-of wires.  The resistance/capacitance values in `set_wire_rc` are used
-to find the wire delays.
+delay in the wire. It also resizes gates to normalize slews.  Use
+`-max_wire_length` to specify the maximum length of wires.  The
+resistance/capacitance values in `set_wire_rc` are used to find the
+wire delays.
 
 Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
 ```
 set_max_fanout <fanout> [current_design]
 ```
-
-```
-resize [-libraries resize_libraries]
-       [-max_utilization util]
-```
-The `resize` command resizes gates to normalize slews.
-
-The `-libraries` option specifies which libraries to use when
-resizing. `resize_libraries` defaults to all of the liberty libraries
-that have been read. Some designs have multiple libraries with
-different transistor thresholds (Vt) and are used to trade off power
-and speed. Chosing a low Vt library uses more power but results in a
-faster design after the resizing step.
 
 ```
 repair_tie_fanout [-separation dist]
@@ -596,19 +592,19 @@ If this parameter is omitted, the metrics are shown on the standard output.
 Global router options and commands are described below. 
 
 ```
-fastroute [-guide_file out_file] \
-          [-layers min-max]
-          [-tile_size tile_size] \
-          [-verbose verbose] \
-          [-overflow_iterations iterations] \
-          [-grid_origin {x y}] \
-          [-report_congestion congest_file] \
-          [-clock_layers min-max] \
-          [-clock_pdrev_fanout fanout] \
-          [-clock_topology_priority priority] \
-          [-macro_extension extension]
-          [-unidirectional_routing] \
-          [-allow_overflow]
+global_route [-guide_file out_file] \
+             [-layers min-max]
+             [-tile_size tile_size] \
+             [-verbose verbose] \
+             [-overflow_iterations iterations] \
+             [-grid_origin {x y}] \
+             [-report_congestion congest_file] \
+             [-clock_layers min-max] \
+             [-clock_pdrev_fanout fanout] \
+             [-clock_topology_priority priority] \
+             [-macro_extension extension]
+             [-unidirectional_routing] \
+             [-allow_overflow]
 
 ```
 
