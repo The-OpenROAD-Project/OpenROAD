@@ -92,7 +92,8 @@ struct RegionAdjustment
 enum class NetType {
   Clock,
   Signal,
-  Antenna
+  Antenna,
+  All
 };
 
 class GlobalRouter
@@ -202,7 +203,7 @@ protected:
   void initRoutingTracks();
   void setCapacities();
   void setSpacingsAndMinWidths();
-  void initializeNets(std::vector<Net>* nets);
+  void initializeNets(std::vector<Net*>& nets);
   void computeGridAdjustments();
   void computeTrackAdjustments();
   void computeUserGlobalAdjustments();
@@ -216,13 +217,13 @@ protected:
 
 
   // aux functions
-  void findPins(Net& net);
-  void findPins(Net& net, std::vector<RoutePt>& pinsOnGrid);
+  void findPins(Net* net);
+  void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
   void addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route);
-  void addRemainingGuides(NetRouteMap& routes, std::vector<Net> *nets);
+  void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
   odb::Rect globalRoutingToBox(const GSegment& route);
@@ -238,7 +239,7 @@ protected:
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(const odb::Rect& rect);
-  NetRouteMap findRouting(std::vector<Net> *nets);
+  NetRouteMap findRouting(std::vector<Net*>& nets);
 
   // check functions
   void checkPinPlacement();
@@ -262,7 +263,7 @@ protected:
   void initNetlist();
   void addNets(std::set<odb::dbNet*>& db_nets);
   Net* getNet(odb::dbNet* db_net);
-  void getNetsByType(NetType type, std::vector<Net>* nets);
+  void getNetsByType(NetType type, std::vector<Net*>& nets);
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
   void findObstructions(odb::Rect& dieArea);
