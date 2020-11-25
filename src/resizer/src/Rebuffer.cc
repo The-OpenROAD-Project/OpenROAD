@@ -481,9 +481,6 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
                           LibertyCell *buffer_cell)
 {
   RebufferOptionSeq Z1;
-  Required best_req = -INF;
-  RebufferOption *best_option = nullptr;
-  LibertyCell *best_buffer = nullptr;
   Point k_loc = tree->location(k);
   Point prev_loc = tree->location(prev);
   int wire_length_dbu = abs(k_loc.x() - prev_loc.x())
@@ -493,44 +490,48 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
   LibertyCellSeq *buffer_cells = sta_->equivCells(buffer_cell);    
-  for (LibertyCell *buffer_cell : *buffer_cells) {
-    for (RebufferOption *p : Z) {
-      // account for wire delay
-      Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
-                     p->required(RiseFall::fall()) - wire_delay};
-      RebufferOption *z = makeRebufferOption(RebufferOptionType::wire,
-                                             // account for wire load
-                                             p->cap() + wire_cap,
-                                             reqs,
-                                             nullptr,
-                                             prev_loc,
-                                             nullptr,
-                                             p, nullptr);
-      if (debug_->check("rebuffer", 3)) {
-        printf("%*swire %s -> %s wl %d\n",
-               level, "",
-               tree->name(prev, sdc_network_),
-               tree->name(k, sdc_network_),
-               wire_length_dbu);
-        z->print(level, this);
-      }
-      Z1.push_back(z);
-      Required req = z->bufferRequired(buffer_cell, this);
-      if (fuzzyGreater(req, best_req)) {
-        best_req = req;
-        best_option = z;
-        best_buffer = buffer_cell;
-      }
+  for (RebufferOption *p : Z) {
+    // account for wire delay
+    Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
+                   p->required(RiseFall::fall()) - wire_delay};
+    RebufferOption *z = makeRebufferOption(RebufferOptionType::wire,
+                                           // account for wire load
+                                           p->cap() + wire_cap,
+                                           reqs,
+                                           nullptr,
+                                           prev_loc,
+                                           nullptr,
+                                           p, nullptr);
+    if (debug_->check("rebuffer", 3)) {
+      printf("%*swire %s -> %s wl %d\n",
+             level, "",
+             tree->name(prev, sdc_network_),
+             tree->name(k, sdc_network_),
+             wire_length_dbu);
+      z->print(level, this);
     }
-    if (best_option) {
-      Requireds requireds = best_option->bufferRequireds(best_buffer, this);
+    Z1.push_back(z);
+  }
+  if (!Z1.empty()) {
+    RebufferOptionSeq buffered_options;
+    for (LibertyCell *buffer_cell : *buffer_cells) {
+      Required best_req = -INF;
+      RebufferOption *best_option = nullptr;
+      for (RebufferOption *z : Z1) {
+        Required req = z->bufferRequired(buffer_cell, this);
+        if (fuzzyGreater(req, best_req)) {
+          best_req = req;
+          best_option = z;
+        }
+      }
+      Requireds requireds = best_option->bufferRequireds(buffer_cell, this);
       RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
-                                             bufferInputCapacitance(best_buffer),
+                                             bufferInputCapacitance(buffer_cell),
                                              requireds,
                                              nullptr,
                                              // Locate buffer at opposite end of wire.
                                              prev_loc,
-                                             best_buffer,
+                                             buffer_cell,
                                              best_option, nullptr);
       if (debug_->check("rebuffer", 3)) {
         printf("%*sbuffer %s cap %s req %s ->\n",
@@ -540,8 +541,10 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
                delayAsString(best_req, this));
         z->print(level, this);
       }
-      Z1.push_back(z);
+      buffered_options.push_back(z);
     }
+    for (RebufferOption *z : buffered_options)
+      Z1.push_back(z);
   }
   return Z1;
 }

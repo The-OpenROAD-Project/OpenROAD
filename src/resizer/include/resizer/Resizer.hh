@@ -291,6 +291,8 @@ protected:
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
+  ArcDelay gateDelay(LibertyPort *drvr_port,
+                     float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
                     RiseFall *rf,
                     float load_cap);
@@ -363,7 +365,8 @@ protected:
   void splitLoads(PathRef *drvr_path,
                   Slack drvr_slack,
                   LibertyCell *buffer_cell);
-  LibertyCell *upsizeCell(LibertyPort *drvr_port);
+  LibertyCell *upsizeCell(LibertyPort *drvr_port,
+                          float load_cap);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
 

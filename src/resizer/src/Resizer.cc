@@ -1215,9 +1215,12 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
               delayAsString(worst_slack, sta_, 3));
   Slack prev_worst_slack = -INF;
   int pass = 1;
+  int decreasing_slack_passes = 0;
   while (fuzzyLess(worst_slack, 0.0)
-         // No backsliding.
-         && fuzzyGreater(worst_slack, prev_worst_slack)) {
+         // Allow slack to increase a few passes to get out of local minima.
+         && (decreasing_slack_passes < 0
+             || fuzzyGreater(worst_slack, prev_worst_slack))
+         && !fuzzyEqual(worst_slack, prev_worst_slack)) {
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
     repairTiming(worst_path, worst_slack, buffer_cell);
@@ -1230,6 +1233,10 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
     debugPrint2(debug_, "retime", 1, "pass %d worst_slack = %s\n",
                 pass,
                 delayAsString(worst_slack, sta_, 3));
+    if (fuzzyLess(worst_slack, prev_worst_slack))
+      decreasing_slack_passes++;
+    else
+      decreasing_slack_passes = 0;
     pass++;
   }
 
@@ -1318,6 +1325,7 @@ Resizer::repairTiming(PathRef &path,
         if (insert_count > 0)
           break;
       }
+      // Don't split loads on low fanout nets.
       constexpr int split_load_min_fanout = 8;
       if (fanout > split_load_min_fanout) {
         // Divide and conquer.
@@ -1328,7 +1336,8 @@ Resizer::repairTiming(PathRef &path,
         break;
       }
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-      LibertyCell *upsize = upsizeCell(drvr_port);
+      float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap_);
+      LibertyCell *upsize = upsizeCell(drvr_port, load_cap);
       if (upsize) {
         Instance *drvr = network_->instance(drvr_pin);
         replaceCell(drvr, upsize);
@@ -1420,17 +1429,28 @@ Resizer::splitLoads(PathRef *drvr_path,
 }
 
 LibertyCell *
-Resizer::upsizeCell(LibertyPort *drvr_port)
+Resizer::upsizeCell(LibertyPort *drvr_port,
+                    float load_cap)
 {
   LibertyCell *cell = drvr_port->libertyCell();
-  const char *drvr_port_name = drvr_port->name();
-  float drive = drvr_port->driveResistance();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
   if (equiv_cells) {
+    const char *drvr_port_name = drvr_port->name();
+    sort(equiv_cells,
+         [drvr_port_name] (const LibertyCell *cell1,
+                           const LibertyCell *cell2) {
+           LibertyPort *port1 = cell1->findLibertyPort(drvr_port_name);
+           LibertyPort *port2 = cell2->findLibertyPort(drvr_port_name);
+           return port1->driveResistance() < port2->driveResistance();
+         });
+    float drive = drvr_port->driveResistance();
+    float delay = gateDelay(drvr_port, load_cap);
     for (LibertyCell *equiv : *equiv_cells) {
       LibertyPort *equiv_port = equiv->findLibertyPort(drvr_port_name);
       float equiv_drive = equiv_port->driveResistance();
-      if (equiv_drive < drive)
+      float equiv_delay = gateDelay(equiv_port, load_cap);
+      if (equiv_drive < drive
+          && equiv_delay < delay)
         return equiv;
     }
   }
@@ -2682,6 +2702,16 @@ Resizer::gateDelays(LibertyPort *drvr_port,
       }
     }
   }
+}
+
+ArcDelay
+Resizer::gateDelay(LibertyPort *drvr_port,
+                   float load_cap)
+{
+  ArcDelay delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  gateDelays(drvr_port, load_cap, delays, slews);
+  return max(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
 }
 
 ////////////////////////////////////////////////////////////////

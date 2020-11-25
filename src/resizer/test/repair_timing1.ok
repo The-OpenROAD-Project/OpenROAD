@@ -48,7 +48,7 @@ Path Type: max
            -0.271   slack (VIOLATED)
 
 
-Inserted 7 buffers.
+Inserted 5 buffers.
 Resized 1 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -60,32 +60,30 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.097    0.097 ^ r1/Q (DFF_X1)
-   0.002    0.098 ^ u1/A (BUF_X1)
-   0.036    0.134 ^ u1/Z (BUF_X1)
-   0.001    0.136 ^ u2/A (BUF_X1)
-   0.036    0.171 ^ u2/Z (BUF_X1)
-   0.001    0.173 ^ u3/A (BUF_X1)
-   0.036    0.208 ^ u3/Z (BUF_X1)
-   0.001    0.209 ^ u4/A (BUF_X1)
-   0.035    0.244 ^ u4/Z (BUF_X1)
-   0.001    0.246 ^ u5/A (CLKBUF_X1)
-   0.045    0.291 ^ u5/Z (CLKBUF_X1)
-   0.000    0.291 ^ rebuffer6/A (BUF_X8)
-   0.027    0.318 ^ rebuffer6/Z (BUF_X8)
-   0.036    0.354 ^ r2/D (DFF_X1)
-            0.354   data arrival time
+   0.092    0.092 v r1/Q (DFF_X1)
+   0.003    0.096 v u1/A (BUF_X1)
+   0.037    0.133 v u1/Z (BUF_X1)
+   0.001    0.134 v u2/A (BUF_X1)
+   0.034    0.168 v u2/Z (BUF_X1)
+   0.001    0.169 v u3/A (BUF_X1)
+   0.034    0.203 v u3/Z (BUF_X1)
+   0.001    0.205 v u4/A (BUF_X1)
+   0.034    0.238 v u4/Z (BUF_X1)
+   0.001    0.240 v u5/A (CLKBUF_X1)
+   0.106    0.345 v u5/Z (CLKBUF_X1)
+   0.045    0.390 v r2/D (DFF_X1)
+            0.390   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.041    0.259   library setup time
-            0.259   data required time
+  -0.070    0.230   library setup time
+            0.230   data required time
 -----------------------------------------------------------
-            0.259   data required time
-           -0.354   data arrival time
+            0.230   data required time
+           -0.390   data arrival time
 -----------------------------------------------------------
-           -0.095   slack (VIOLATED)
+           -0.160   slack (VIOLATED)
 
 
