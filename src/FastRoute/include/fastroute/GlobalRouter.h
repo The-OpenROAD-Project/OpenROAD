@@ -164,7 +164,7 @@ class GlobalRouter
   void writeGuides(const char* fileName);
   void startFastRoute();
   void estimateRC();
-  void runFastRoute(bool onlySignal = false);
+  void runFastRoute(bool onlySignal);
   NetRouteMap& getRoutes() { return _routes; }
   bool haveRoutes() const { return !_routes.empty(); }
 
