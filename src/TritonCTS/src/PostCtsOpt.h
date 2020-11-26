@@ -40,7 +40,7 @@
 
 #include <unordered_map>
 
-namespace TritonCTS {
+namespace cts {
 
 class PostCtsOpt
 {
@@ -72,4 +72,4 @@ class PostCtsOpt
   std::unordered_map<std::string, DBU> _sinkDistMap;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

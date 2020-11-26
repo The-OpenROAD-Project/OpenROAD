@@ -43,7 +43,7 @@
 #include <sstream>
 #include <vector>
 
-namespace TritonCTS {
+namespace cts {
 
 void TritonCTSKernel::set_only_characterization(bool enable)
 {
@@ -254,4 +254,4 @@ void TritonCTSKernel::set_sink_buffer(const char* buffer)
   _options.setSinkBuffer(buffer);
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

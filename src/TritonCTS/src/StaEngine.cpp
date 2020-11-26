@@ -45,7 +45,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace TritonCTS {
+namespace cts {
 
 void StaEngine::init()
 {
@@ -70,4 +70,4 @@ void StaEngine::findClockRoots()
   _options->setClockNets(clockNames);
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

@@ -46,7 +46,7 @@ class Sdc;
 class Network;
 }  // namespace sta
 
-namespace TritonCTS {
+namespace cts {
 
 class StaEngine
 {
@@ -63,4 +63,4 @@ class StaEngine
   CtsOptions* _options = nullptr;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

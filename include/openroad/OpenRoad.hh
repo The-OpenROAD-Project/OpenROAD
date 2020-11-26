@@ -63,7 +63,7 @@ namespace pin_placer {
 class IOPlacer;
 }
 
-namespace TritonCTS {
+namespace cts {
 class TritonCTSKernel;
 }
 
@@ -127,7 +127,7 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   sta::Resizer *getResizer() { return resizer_; }
-  TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
+  cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::Opendp *getOpendp() { return opendp_; }
   finale::Finale *getFinale() { return finale_; }
@@ -203,7 +203,7 @@ private:
   finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
   gr::GlobalRouter *fastRoute_;
-  TritonCTS::TritonCTSKernel *tritonCts_;
+  cts::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
   antenna_checker::AntennaChecker *antennaChecker_;

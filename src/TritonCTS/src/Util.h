@@ -37,7 +37,7 @@
 
 #include <ostream>
 
-namespace TritonCTS {
+namespace cts {
 
 typedef long long DBU;
 
@@ -138,4 +138,4 @@ class Box
   T _height;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

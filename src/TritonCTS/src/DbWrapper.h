@@ -50,7 +50,7 @@ class dbNet;
 class dbITerm;
 }  // namespace odb
 
-namespace TritonCTS {
+namespace cts {
 
 class TritonCTSKernel;
 
@@ -97,4 +97,4 @@ class DbWrapper
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts
