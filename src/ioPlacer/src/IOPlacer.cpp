@@ -275,7 +275,7 @@ void IOPlacer::defineSlots()
   totalNumSlots += (ubY - lbY) * 2 / minDstPinsY;
 
   /*******************************************
-   * How the for bellow follows core boundary *
+   *  Order of the edges when creating slots  *
    ********************************************
    *                 <----                    *
    *                                          *
