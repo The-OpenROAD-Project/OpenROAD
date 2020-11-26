@@ -156,7 +156,7 @@ getFastRoute()
   return openroad->getFastRoute();
 }
 
-ioPlacer::IOPlacer*
+pin_placer::IOPlacer*
 getIOPlacer()
 {
   OpenRoad *openroad = getOpenRoad();

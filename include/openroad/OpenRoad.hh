@@ -59,7 +59,7 @@ class Resizer;
 class LibertyCell;
 }
 
-namespace ioPlacer {
+namespace pin_placer {
 class IOPlacer;
 }
 
@@ -138,7 +138,7 @@ public:
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   gr::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
-  ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
+  pin_placer::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -198,7 +198,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
-  ioPlacer::IOPlacer *ioPlacer_;
+  pin_placer::IOPlacer *ioPlacer_;
   opendp::Opendp *opendp_;
   finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
