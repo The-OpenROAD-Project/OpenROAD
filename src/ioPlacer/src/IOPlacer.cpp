@@ -628,10 +628,19 @@ void IOPlacer::updatePinArea(IOPin& pin)
   int upperXBound = _core.getBoundary().ur().x();
   int upperYBound = _core.getBoundary().ur().y();
 
-  std::vector<int>::iterator it;
+  int index;
+  for (int i = 0; i < _horLayers.size(); i++) {
+    if (_horLayers[i] == pin.getLayer())
+      index = i;
+  }
+
+  for (int i = 0; i < _verLayers.size(); i++) {
+    if (_verLayers[i] == pin.getLayer())
+      index = i;
+  }
+
   if (pin.getOrientation() == Orientation::North
       || pin.getOrientation() == Orientation::South) {
-    int index = std::distance(_verLayers.begin(), it);
     float thicknessMultiplier = _parms->getVerticalThicknessMultiplier();
     int halfWidth = int(ceil(_core.getMinWidthX()[index] / 2.0)) * thicknessMultiplier;
     int height = int(std::max(2.0 * halfWidth,
@@ -657,7 +666,6 @@ void IOPlacer::updatePinArea(IOPin& pin)
 
   if (pin.getOrientation() == Orientation::West
       || pin.getOrientation() == Orientation::East) {
-    int index = std::distance(_horLayers.begin(), it);
     float thicknessMultiplier = _parms->getHorizontalThicknessMultiplier();
     int halfWidth = int(ceil(_core.getMinWidthY()[index] / 2.0)) * thicknessMultiplier;
     int height = int(std::max(2.0 * halfWidth,
