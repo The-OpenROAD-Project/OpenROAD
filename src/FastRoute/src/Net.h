@@ -41,7 +41,7 @@
 #include "Pin.h"
 #include "opendb/db.h"
 
-namespace FastRoute {
+namespace gr {
 
 class Net
 {
@@ -62,4 +62,4 @@ class Net
   std::vector<Pin> _pins;
 };
 
-}  // namespace FastRoute
+}  // namespace gr

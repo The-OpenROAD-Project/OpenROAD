@@ -59,15 +59,15 @@ class Resizer;
 class LibertyCell;
 }
 
-namespace ioPlacer {
+namespace pin_placer {
 class IOPlacer;
 }
 
-namespace TritonCTS {
+namespace cts {
 class TritonCTSKernel;
 }
 
-namespace FastRoute {
+namespace gr {
 class GlobalRouter;
 }
 
@@ -127,7 +127,7 @@ public:
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
   sta::Resizer *getResizer() { return resizer_; }
-  TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
+  cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::Opendp *getOpendp() { return opendp_; }
   finale::Finale *getFinale() { return finale_; }
@@ -136,9 +136,9 @@ public:
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
-  FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
+  gr::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
-  ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
+  pin_placer::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -198,12 +198,12 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
-  ioPlacer::IOPlacer *ioPlacer_;
+  pin_placer::IOPlacer *ioPlacer_;
   opendp::Opendp *opendp_;
   finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
-  FastRoute::GlobalRouter *fastRoute_;
-  TritonCTS::TritonCTSKernel *tritonCts_;
+  gr::GlobalRouter *fastRoute_;
+  cts::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
   antenna_checker::AntennaChecker *antennaChecker_;

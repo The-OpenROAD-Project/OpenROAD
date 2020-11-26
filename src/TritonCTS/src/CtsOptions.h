@@ -43,7 +43,7 @@
 #include <string>
 #include <vector>
 
-namespace TritonCTS {
+namespace cts {
 
 class CtsOptions
 {
@@ -240,4 +240,4 @@ class CtsOptions
   std::vector<odb::dbNet*> _clockNetsObjs;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts
