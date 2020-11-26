@@ -37,7 +37,7 @@
 
 #include <iostream>
 
-namespace TritonCTS {
+namespace cts {
 
 void PostCtsOpt::run()
 {
@@ -148,4 +148,4 @@ Point<DBU> PostCtsOpt::computeBufferLocation(ClockInst* driver,
   return bufLoc;
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

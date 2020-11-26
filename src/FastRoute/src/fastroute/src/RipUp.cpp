@@ -44,7 +44,7 @@
 #include "route.h"
 #include "utility.h"
 
-namespace FastRoute {
+namespace gr {
 
 // rip-up a L segment
 void ripupSegL(Segment* seg)
@@ -629,4 +629,4 @@ void newRipupNet(int netID)
   }
 }
 
-}  // namespace FastRoute
+}  // namespace gr

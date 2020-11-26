@@ -161,7 +161,7 @@ proc write_guides { args } {
   FastRoute::write_guides $file_name
 }
 
-sta::define_cmd_args "fastroute" {[-guide_file out_file] \
+sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers layers] \
                                   [-unidirectional_routing] \
                                   [-tile_size tile_size] \
@@ -183,8 +183,15 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-layers_pitches layers_pitches] \
 }
 
+# sta::define_cmd_alias "fastroute" "global_route"
+
 proc fastroute { args } {
-  sta::parse_key_args "fastroute" args \
+  ord::warn "fastroute command is deprecated. Use global_route instead"
+  [eval global_route $args]
+}
+
+proc global_route { args } {
+  sta::parse_key_args "global_route" args \
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
@@ -287,7 +294,6 @@ proc fastroute { args } {
   }
 
   FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
-  FastRoute::set_only_signal_nets [info exists flags(-only_signal_nets)]
 
   if { [info exists keys(-macro_extension)] } {
     set macro_extension $keys(-macro_extension)
@@ -352,7 +358,8 @@ proc fastroute { args } {
     FastRoute::report_congestion $congest_file
   }
 
-  FastRoute::run_fastroute
+  set only_signal [expr [info exists keys(-clock_layers)] || [info exists flags(-only_signal_nets)]]
+  FastRoute::run_fastroute $only_signal
   
   if { [info exists keys(-output_file)] } {
     ord::warn "option -output_file is deprecated. Use option -guide_file"

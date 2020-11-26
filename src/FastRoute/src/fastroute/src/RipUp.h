@@ -35,7 +35,7 @@
 
 #include "DataType.h"
 
-namespace FastRoute {
+namespace gr {
 
 extern void ripupSegL(Segment* seg);
 extern void ripupSegZ(Segment* seg);
@@ -64,6 +64,6 @@ extern Bool newRipupType2(TreeEdge* treeedge,
 extern Bool newRipup3DType3(int netID, int edgeID);
 
 extern void newRipupNet(int netID);
-}  // namespace FastRoute
+}  // namespace gr
 
 #endif /* __RIPUP_H__ */

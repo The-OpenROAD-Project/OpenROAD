@@ -33,7 +33,7 @@
 #ifndef __UTILITY_H__
 #define __UTILITY_H__
 
-namespace FastRoute {
+namespace gr {
 
 extern void getlen();
 extern void printEdge(int netID, int edgeID);
@@ -69,6 +69,6 @@ extern Tree        fluteToTree(Flute::Tree fluteTree);
 extern Flute::Tree treeToFlute(Tree tree);
 extern Tree        pdToTree(PD::Tree pdTree);
 
-}  // namespace FastRoute
+}  // namespace gr
 
 #endif /* __UTILITY_H__ */

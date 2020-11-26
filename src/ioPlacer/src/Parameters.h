@@ -38,7 +38,7 @@
 
 #include <string>
 
-namespace ioPlacer {
+namespace pin_placer {
 
 class Parameters
 {
@@ -108,5 +108,5 @@ class Parameters
   int getMinDistance() const { return _minDist; }
 };
 
-}  // namespace ioPlacer
+}  // namespace pin_placer
 #endif /* __PARAMETERS_H_ */

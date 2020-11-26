@@ -6,7 +6,7 @@ set_global_routing_region_adjustment {1.4 2 20 15.5} -layer 2 -adjustment 0.9
 
 set guide_file [make_result_file region_adjustment.guide]
 
-fastroute
+global_route
 
 write_guides $guide_file
 

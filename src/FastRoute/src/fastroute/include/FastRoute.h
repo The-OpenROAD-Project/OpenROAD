@@ -42,7 +42,7 @@
 
 #include "fastroute/GRoute.h"
 
-namespace FastRoute {
+namespace gr {
 
 class FastRouteCore
 {
@@ -117,4 +117,4 @@ private:
   int maxNetDegree;
 };
 
-}  // namespace FastRoute
+}  // namespace gr

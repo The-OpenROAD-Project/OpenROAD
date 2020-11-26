@@ -4,7 +4,7 @@ read_def "gcd.def"
 
 set guide_file [make_result_file gcd_route.guide]
 
-fastroute
+global_route
 
 write_guides $guide_file
 

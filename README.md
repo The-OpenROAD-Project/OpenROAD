@@ -592,19 +592,19 @@ If this parameter is omitted, the metrics are shown on the standard output.
 Global router options and commands are described below. 
 
 ```
-fastroute [-guide_file out_file] \
-          [-layers min-max]
-          [-tile_size tile_size] \
-          [-verbose verbose] \
-          [-overflow_iterations iterations] \
-          [-grid_origin {x y}] \
-          [-report_congestion congest_file] \
-          [-clock_layers min-max] \
-          [-clock_pdrev_fanout fanout] \
-          [-clock_topology_priority priority] \
-          [-macro_extension extension]
-          [-unidirectional_routing] \
-          [-allow_overflow]
+global_route [-guide_file out_file] \
+             [-layers min-max]
+             [-tile_size tile_size] \
+             [-verbose verbose] \
+             [-overflow_iterations iterations] \
+             [-grid_origin {x y}] \
+             [-report_congestion congest_file] \
+             [-clock_layers min-max] \
+             [-clock_pdrev_fanout fanout] \
+             [-clock_topology_priority priority] \
+             [-macro_extension extension]
+             [-unidirectional_routing] \
+             [-allow_overflow]
 
 ```
 

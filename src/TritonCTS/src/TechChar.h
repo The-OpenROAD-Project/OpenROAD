@@ -52,7 +52,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace TritonCTS {
+namespace cts {
 
 class WireSegment
 {
@@ -301,4 +301,4 @@ class TechChar
   CtsOptions* _options;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts
