@@ -53,6 +53,7 @@ struct _Slot_t
   bool blocked;
   bool used;
   odb::Point pos;
+  int layer;
 } typedef Slot_t;
 
 typedef std::vector<Slot_t> slotVector_t;
