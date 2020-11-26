@@ -67,7 +67,7 @@ namespace TritonCTS {
 class TritonCTSKernel;
 }
 
-namespace FastRoute {
+namespace gr {
 class GlobalRouter;
 }
 
@@ -136,7 +136,7 @@ public:
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
-  FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
+  gr::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
   ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
@@ -202,7 +202,7 @@ private:
   opendp::Opendp *opendp_;
   finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
-  FastRoute::GlobalRouter *fastRoute_;
+  gr::GlobalRouter *fastRoute_;
   TritonCTS::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;

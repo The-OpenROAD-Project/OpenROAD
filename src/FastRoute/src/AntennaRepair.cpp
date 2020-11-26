@@ -49,7 +49,7 @@
 #include "fastroute/GlobalRouter.h"
 #include "openroad/Error.hh"
 
-namespace FastRoute {
+namespace gr {
 
 using ord::error;
 

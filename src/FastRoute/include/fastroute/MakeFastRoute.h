@@ -35,7 +35,7 @@
 
 #pragma once
 
-namespace FastRoute {
+namespace gr {
 class GlobalRouter;
 }
 
@@ -43,10 +43,10 @@ namespace ord {
 
 class OpenRoad;
 
-FastRoute::GlobalRouter* makeFastRoute();
+gr::GlobalRouter* makeFastRoute();
 
 void initFastRoute(OpenRoad* openroad);
 
-void deleteFastRoute(FastRoute::GlobalRouter* fastroute);
+void deleteFastRoute(gr::GlobalRouter* fastroute);
 
 }  // namespace ord

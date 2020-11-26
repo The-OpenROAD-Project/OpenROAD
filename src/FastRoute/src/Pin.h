@@ -42,7 +42,7 @@
 
 #include "opendb/db.h"
 
-namespace FastRoute {
+namespace gr {
 
 class Net;
 
@@ -105,4 +105,4 @@ class Pin
   bool _connectedToPad;
 };
 
-}  // namespace FastRoute
+}  // namespace gr

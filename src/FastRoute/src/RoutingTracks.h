@@ -43,7 +43,7 @@
 
 #include "Pin.h"
 
-namespace FastRoute {
+namespace gr {
 
 class RoutingTracks
 {
@@ -80,4 +80,4 @@ class RoutingTracks
   bool getOrientation() const { return _orientation; }
 };
 
-}  // namespace FastRoute
+}  // namespace gr

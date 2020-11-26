@@ -61,7 +61,7 @@ class dbSta;
 class dbNetwork;
 }
 
-namespace FastRoute {
+namespace gr {
 
 class FastRouteCore;
 class AntennaRepair;
@@ -350,4 +350,4 @@ std::string getITermName(odb::dbITerm* iterm);
 Net *
 getNet(NET* net);
 
-}  // namespace FastRoute
+}  // namespace gr

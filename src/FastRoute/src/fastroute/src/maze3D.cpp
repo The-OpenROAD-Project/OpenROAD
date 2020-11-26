@@ -47,7 +47,7 @@
 #include "route.h"
 #include "utility.h"
 
-namespace FastRoute {
+namespace gr {
 
 #define PARENT(i) (i - 1) / 2
 //#define PARENT(i) ((i-1)>>1)
@@ -1866,4 +1866,4 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
   }
 }
 
-}  // namespace FastRoute
+}  // namespace gr
