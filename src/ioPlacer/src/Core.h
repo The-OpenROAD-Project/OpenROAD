@@ -47,31 +47,31 @@ class Core
 {
  private:
   Rect _boundary;
-  int _minDstPinsX;
-  int _minDstPinsY;
-  int _initTracksX;
-  int _initTracksY;
-  int _numTracksX;
-  int _numTracksY;
-  int _minAreaX;
-  int _minAreaY;
-  int _minWidthX;
-  int _minWidthY;
+  std::vector<int> _minDstPinsX;
+  std::vector<int> _minDstPinsY;
+  std::vector<int> _initTracksX;
+  std::vector<int> _initTracksY;
+  std::vector<int> _numTracksX;
+  std::vector<int> _numTracksY;
+  std::vector<int> _minAreaX;
+  std::vector<int> _minAreaY;
+  std::vector<int> _minWidthX;
+  std::vector<int> _minWidthY;
   int _databaseUnit;
 
  public:
   Core() = default;
   Core(const Rect& boundary,
-       const int& minDstPinsX,
-       const int& minDstPinsY,
-       const int& initTracksX,
-       const int& initTracksY,
-       const int& numTracksX,
-       const int& numTracksY,
-       const int& minAreaX,
-       const int& minAreaY,
-       const int& minWidthX,
-       const int& minWidthY,
+       const std::vector<int>& minDstPinsX,
+       const std::vector<int>& minDstPinsY,
+       const std::vector<int>& initTracksX,
+       const std::vector<int>& initTracksY,
+       const std::vector<int>& numTracksX,
+       const std::vector<int>& numTracksY,
+       const std::vector<int>& minAreaX,
+       const std::vector<int>& minAreaY,
+       const std::vector<int>& minWidthX,
+       const std::vector<int>& minWidthY,
        const int& databaseUnit)
       : _boundary(boundary),
         _minDstPinsX(minDstPinsX),
@@ -89,19 +89,22 @@ class Core
   }
 
   Rect getBoundary() const { return _boundary; }
-  int getMinDstPinsX() const { return _minDstPinsX; }
-  int getMinDstPinsY() const { return _minDstPinsY; }
-  int getInitTracksX() const { return _initTracksX; }
-  int getInitTracksY() const { return _initTracksY; }
-  int getNumTracksX() const { return _numTracksX; }
-  int getNumTracksY() const { return _numTracksY; }
-  int getMinAreaX() const { return _minAreaX; }
-  int getMinAreaY() const { return _minAreaY; }
-  int getMinWidthX() const { return _minWidthX; }
-  int getMinWidthY() const { return _minWidthY; }
+  std::vector<int> getMinDstPinsX() const { return _minDstPinsX; }
+  std::vector<int> getMinDstPinsY() const { return _minDstPinsY; }
+  std::vector<int> getInitTracksX() const { return _initTracksX; }
+  std::vector<int> getInitTracksY() const { return _initTracksY; }
+  std::vector<int> getNumTracksX() const { return _numTracksX; }
+  std::vector<int> getNumTracksY() const { return _numTracksY; }
+  std::vector<int> getMinAreaX() const { return _minAreaX; }
+  std::vector<int> getMinAreaY() const { return _minAreaY; }
+  std::vector<int> getMinWidthX() const { return _minWidthX; }
+  std::vector<int> getMinWidthY() const { return _minWidthY; }
   int getDatabaseUnit() const { return _databaseUnit; }
 
   int getPerimeter();
+
+  int getMaxDstX();
+  int getMaxDstY();
 };
 
 }  // namespace ioPlacer

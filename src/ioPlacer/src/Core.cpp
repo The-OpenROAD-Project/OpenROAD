@@ -45,4 +45,13 @@ int Core::getPerimeter()
   return (x + y) * 2;
 }
 
+int Core::getMaxDstX()
+{
+	return *std::max_element(_minDstPinsX.begin(), _minDstPinsX.end());
+}
+
+int Core::getMaxDstY() {
+	return *std::max_element(_minDstPinsY.begin(), _minDstPinsY.end());
+}
+
 }  // namespace ioPlacer
