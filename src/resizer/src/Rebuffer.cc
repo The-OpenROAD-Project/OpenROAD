@@ -489,7 +489,6 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   float wire_cap = wire_length * wire_cap_;
   float wire_res = wire_length * wire_res_;
   float wire_delay = wire_res * wire_cap;
-  LibertyCellSeq *buffer_cells = sta_->equivCells(buffer_cell);    
   for (RebufferOption *p : Z) {
     // account for wire delay
     Requireds reqs{p->required(RiseFall::rise()) - wire_delay,
@@ -513,6 +512,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
     Z1.push_back(z);
   }
   if (!Z1.empty()) {
+    LibertyCellSeq *buffer_cells = sta_->equivCells(buffer_cell);
     RebufferOptionSeq buffered_options;
     for (LibertyCell *buffer_cell : *buffer_cells) {
       Required best_req = -INF;
@@ -525,23 +525,38 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
         }
       }
       Requireds requireds = best_option->bufferRequireds(buffer_cell, this);
-      RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
-                                             bufferInputCapacitance(buffer_cell),
-                                             requireds,
-                                             nullptr,
-                                             // Locate buffer at opposite end of wire.
-                                             prev_loc,
-                                             buffer_cell,
-                                             best_option, nullptr);
-      if (debug_->check("rebuffer", 3)) {
-        printf("%*sbuffer %s cap %s req %s ->\n",
-               level, "",
-               tree->name(prev, sdc_network_),
-               units_->capacitanceUnit()->asString(best_option->cap()),
-               delayAsString(best_req, this));
-        z->print(level, this);
+      Required required = min(requireds[RiseFall::riseIndex()],
+                              requireds[RiseFall::fallIndex()]);
+      float buffer_cap = bufferInputCapacitance(buffer_cell);
+      // Don't add this buffer option if it has worse input cap and req than
+      // another existing buffer option.
+      bool prune = false;
+      for (RebufferOption *buffer_option : buffered_options) {
+        if (buffer_option->cap() <= buffer_cap
+            && buffer_option->requiredMin() >= required) {
+          prune = true;
+          break;
+        }
       }
-      buffered_options.push_back(z);
+      if (!prune) {
+        RebufferOption *z = makeRebufferOption(RebufferOptionType::buffer,
+                                               buffer_cap,
+                                               requireds,
+                                               nullptr,
+                                               // Locate buffer at opposite end of wire.
+                                               prev_loc,
+                                               buffer_cell,
+                                               best_option, nullptr);
+        if (debug_->check("rebuffer", 3)) {
+          printf("%*sbuffer %s cap %s req %s ->\n",
+                 level, "",
+                 tree->name(prev, sdc_network_),
+                 units_->capacitanceUnit()->asString(best_option->cap()),
+                 delayAsString(best_req, this));
+          z->print(level, this);
+        }
+        buffered_options.push_back(z);
+      }
     }
     for (RebufferOption *z : buffered_options)
       Z1.push_back(z);

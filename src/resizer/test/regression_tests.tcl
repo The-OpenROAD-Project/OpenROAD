@@ -28,6 +28,7 @@ record_tests {
   repair_hold4
   repair_hold5
   repair_hold6
+  repair_setup1
   repair_slew1
   repair_slew2
   repair_slew3
@@ -41,7 +42,6 @@ record_tests {
   repair_tie5
   repair_tie6
   repair_tie7
-  repair_timing1
   repair_wire1
   repair_wire2
   repair_wire3

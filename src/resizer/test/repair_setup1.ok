@@ -4,13 +4,13 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 Notice 0: 
-Reading DEF file: repair_timing1.def
+Reading DEF file: repair_setup1.def
 Notice 0: Design: reg1
 Notice 0:     Created 1 pins.
 Notice 0:     Created 17 components and 92 component-terminals.
 Notice 0:     Created 2 special nets and 34 connections.
 Notice 0:     Created 7 nets and 30 connections.
-Notice 0: Finished DEF file: repair_timing1.def
+Notice 0: Finished DEF file: repair_setup1.def
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -48,8 +48,18 @@ Path Type: max
            -0.271   slack (VIOLATED)
 
 
-Inserted 5 buffers.
-Resized 1 instances.
+Group                  Internal  Switching    Leakage      Total
+                          Power      Power      Power      Power
+----------------------------------------------------------------
+Sequential             1.25e-04   1.41e-05   9.49e-07   1.40e-04  89.2%
+Combinational          4.33e-06   1.26e-05   1.07e-07   1.71e-05  10.8%
+Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+----------------------------------------------------------------
+Total                  1.29e-04   2.67e-05   1.06e-06   1.57e-04 100.0%
+                          82.3%      17.0%       0.7%
+Inserted 6 buffers.
+Resized 13 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -60,30 +70,40 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.092    0.092 v r1/Q (DFF_X1)
-   0.003    0.096 v u1/A (BUF_X1)
-   0.037    0.133 v u1/Z (BUF_X1)
-   0.001    0.134 v u2/A (BUF_X1)
-   0.034    0.168 v u2/Z (BUF_X1)
-   0.001    0.169 v u3/A (BUF_X1)
-   0.034    0.203 v u3/Z (BUF_X1)
-   0.001    0.205 v u4/A (BUF_X1)
-   0.034    0.238 v u4/Z (BUF_X1)
-   0.001    0.240 v u5/A (CLKBUF_X1)
-   0.106    0.345 v u5/Z (CLKBUF_X1)
-   0.045    0.390 v r2/D (DFF_X1)
-            0.390   data arrival time
+   0.089    0.089 v r1/Q (DFF_X1)
+   0.002    0.092 v u1/A (BUF_X4)
+   0.027    0.119 v u1/Z (BUF_X4)
+   0.002    0.121 v u2/A (BUF_X4)
+   0.023    0.144 v u2/Z (BUF_X4)
+   0.002    0.146 v u3/A (BUF_X4)
+   0.023    0.169 v u3/Z (BUF_X4)
+   0.002    0.171 v u4/A (BUF_X4)
+   0.025    0.197 v u4/Z (BUF_X4)
+   0.004    0.201 v u5/A (BUF_X16)
+   0.025    0.226 v u5/Z (BUF_X16)
+   0.034    0.260 v r2/D (DFF_X1)
+            0.260   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.070    0.230   library setup time
-            0.230   data required time
+  -0.054    0.246   library setup time
+            0.246   data required time
 -----------------------------------------------------------
-            0.230   data required time
-           -0.390   data arrival time
+            0.246   data required time
+           -0.260   data arrival time
 -----------------------------------------------------------
-           -0.160   slack (VIOLATED)
+           -0.014   slack (VIOLATED)
 
 
+Group                  Internal  Switching    Leakage      Total
+                          Power      Power      Power      Power
+----------------------------------------------------------------
+Sequential             1.25e-04   1.94e-06   9.49e-07   1.28e-04  66.5%
+Combinational          3.21e-05   3.12e-05   9.17e-07   6.42e-05  33.5%
+Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
+----------------------------------------------------------------
+Total                  1.57e-04   3.31e-05   1.87e-06   1.92e-04 100.0%
+                          81.8%      17.3%       1.0%

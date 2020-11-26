@@ -365,8 +365,10 @@ protected:
   void splitLoads(PathRef *drvr_path,
                   Slack drvr_slack,
                   LibertyCell *buffer_cell);
-  LibertyCell *upsizeCell(LibertyPort *drvr_port,
-                          float load_cap);
+  LibertyCell *upsizeCell(LibertyPort *in_port,
+                          LibertyPort *drvr_port,
+                          float load_cap,
+                          float prev_drive);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
 

@@ -576,3 +576,66 @@ Resizer::repairTiming()
     }
   }
 }
+
+////////////////////////////////////////////////////////////////
+
+  void findBuffers(LibertyLibrarySeq *resize_libs);
+  float findBufferMinCap(LibertyLibrarySeq *resize_libs);
+  LibertyCell *findMinDelayBuffer(LibertyLibrarySeq *resize_libs,
+                                  float cap);
+
+void
+Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
+{
+  LibertyCellSet keepers;
+  float cap = findBufferMinCap(resize_libs);
+  for (int i = 0; i < 15; i++) {
+    LibertyCell *buffer = findMinDelayBuffer(resize_libs, cap);
+    keepers.insert(buffer);
+    cap *= 1.5;
+  }
+  printf("saving\n");
+  for (LibertyCell *buffer : keepers)
+    printf("%s\n", buffer->name());
+}
+
+LibertyCell *
+Resizer::findMinDelayBuffer(LibertyLibrarySeq *resize_libs,
+                            float cap)
+{
+  float min_delay = INF;
+  LibertyCell *min_buffer = nullptr;
+  for (LibertyLibrary *lib : *resize_libs) {
+    for (LibertyCell *buffer : *lib->buffers()) {
+      if (!dontUse(buffer)) {
+        LibertyPort *input, *output;
+        buffer->bufferPorts(input, output);
+        float delay = bufferDelay(buffer, cap) - input->intrinsicDelay();
+        printf("%s %s %s\n",
+               buffer->name(),
+               units_->capacitanceUnit()->asString(cap),
+               delayAsString(delay, sta_, 5));
+        if (delay < min_delay) {
+          min_buffer = buffer;
+          min_delay = delay;
+        }
+      }
+    }
+  }
+  return min_buffer;
+}
+
+float
+Resizer::findBufferMinCap(LibertyLibrarySeq *resize_libs)
+{
+  float min_cap = INF;
+  for (LibertyLibrary *lib : *resize_libs) {
+    for (LibertyCell *buffer : *lib->buffers()) {
+      LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      float cap = input->capacitance();
+      min_cap = min(cap, min_cap);
+    }
+  }
+  return min_cap;
+}
