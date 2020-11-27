@@ -1421,7 +1421,7 @@ Resizer::splitLoads(PathRef *drvr_path,
 
   string buffer_name = makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
-  LibertyCell *buffer_cell = buffer_cells_[0];
+  LibertyCell *buffer_cell = buffer_lowest_drive_;
   Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                buffer_name.c_str(),
                                                parent);
@@ -1504,13 +1504,13 @@ Resizer::upsizeCell(LibertyPort *in_port,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHoldViolations(LibertyCell *buffer_cell,
-                              bool allow_setup_violations)
+Resizer::repairHoldViolations(bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
+  LibertyCell *buffer_cell = findHoldBuffer();
   repairHoldViolations(ends, buffer_cell, allow_setup_violations);
 }
 
@@ -1527,6 +1527,21 @@ Resizer::repairHoldViolations(Pin *end_pin,
   init();
   sta_->findRequireds();
   repairHoldViolations(&ends, buffer_cell, allow_setup_violations);
+}
+
+LibertyCell *
+Resizer::findHoldBuffer()
+{
+  float max_delay = -INF;
+  LibertyCell *max_delay_cell = nullptr;
+  for (LibertyCell *buffer_cell : buffer_cells_) {
+    float buffer_delay = bufferDelay(buffer_cell);
+    if (buffer_delay > max_delay) {
+      max_delay = buffer_delay;
+      max_delay_cell = buffer_cell;
+    }
+  }
+  return max_delay_cell;
 }
 
 void

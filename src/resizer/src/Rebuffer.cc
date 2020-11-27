@@ -101,7 +101,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
   LibertyPort *drvr_port;
   if (network_->isTopLevelPort(drvr_pin)) {
     net = network_->net(network_->term(drvr_pin));
-    LibertyCell *buffer_cell = buffer_cells_[0];
+    LibertyCell *buffer_cell = buffer_lowest_drive_;
     // Should use sdc external driver here.
     LibertyPort *input;
     buffer_cell->bufferPorts(input, drvr_port);

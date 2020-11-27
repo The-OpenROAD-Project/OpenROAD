@@ -316,12 +316,11 @@ repair_pin_hold_violations(Pin *end_pin,
 }
 
 void
-repair_hold_violations_cmd(LibertyCell *buffer_cell,
-                           bool allow_setup_violations)
+repair_hold_violations_cmd(bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(buffer_cell, allow_setup_violations);
+  resizer->repairHoldViolations(allow_setup_violations);
 }
 
 float

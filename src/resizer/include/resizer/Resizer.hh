@@ -107,8 +107,7 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHoldViolations(LibertyCell *buffer_cell,
-                            bool allow_setup_violations);
+  void repairHoldViolations(bool allow_setup_violations);
   void repairHoldViolations(Pin *end_pin,
                             LibertyCell *buffer_cell,
                             bool allow_setup_violations);
@@ -310,6 +309,7 @@ protected:
                          LibertyPort *load_port,
                          double wire_length,
                          double max_slew);
+  LibertyCell *findHoldBuffer();
   void repairHoldViolations(VertexSet *ends,
                             LibertyCell *buffer_cell,
                             bool allow_setup_violations);

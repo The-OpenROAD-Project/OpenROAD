@@ -318,8 +318,7 @@ proc repair_tie_fanout { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
-                                            [-allow_setup_violations]\
+define_cmd_args "repair_hold_violations" {[-allow_setup_violations]\
                                             [-max_utilization util]}
 
 proc repair_hold_violations { args } {
@@ -327,14 +326,16 @@ proc repair_hold_violations { args } {
     keys {-buffer_cell -max_utilization} \
     flags {-allow_setup_violations}
   
-  set buffer_cell [parse_buffer_cell keys 0]
   set_max_utilization [parse_max_util keys]
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
-  
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
   check_argc_eq0 "repair_hold_violations" $args
   
   check_parasitics
-  repair_hold_violations_cmd $buffer_cell $allow_setup_violations
+  resizer_preamble [get_libs *]
+  repair_hold_violations_cmd $allow_setup_violations
 }
 
 define_cmd_args "repair_timing" {[-libraries resize_libs]}
