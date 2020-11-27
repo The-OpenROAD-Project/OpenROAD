@@ -87,7 +87,6 @@ buffer_ports -inputs
 
 report_check_types -max_slew
 
-set buffer_cell [get_lib_cell BUF_X2]
-repair_design -buffer_cell $buffer_cell
+repair_design
 
 report_check_types -max_slew

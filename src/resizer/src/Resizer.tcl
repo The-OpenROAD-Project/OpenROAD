@@ -226,7 +226,6 @@ proc buffer_ports { args } {
 }
 
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-                                   -buffer_cell buffer_cell\
                                    [-libraries resize_libs]}
 
 proc repair_design { args } {
@@ -234,14 +233,16 @@ proc repair_design { args } {
     keys {-max_wire_length -buffer_cell -libraries} \
     flags {}
   
-  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
   set max_wire_length 0
   if { [info exists keys(-max_wire_length)] } {
     set max_wire_length $keys(-max_wire_length)
     check_positive_float "-max_wire_length" $max_wire_length
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
     if { [sta::wire_resistance] > 0 } {
-      set min_delay_max_wire_length [find_max_wire_length $buffer_cell]
+      set min_delay_max_wire_length [find_max_wire_length]
       if { $max_wire_length < $min_delay_max_wire_length } {
         ord::warn "max wire length less than [format %.0fu [expr $min_delay_max_wire_length * 1e+6]] increases wire delays."
       }
@@ -260,18 +261,19 @@ proc repair_design { args } {
   check_argc_eq0 "repair_design" $args
   check_parasitics
   resizer_preamble $resize_libs
-  repair_design_cmd $max_wire_length $buffer_cell
+  repair_design_cmd $max_wire_length
 }
 
-define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]\
-                                       -buffer_cell buffer_cell}
+define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
 
 proc repair_clock_nets { args } {
   parse_key_args "repair_clock_nets" args \
     keys {-max_wire_length -buffer_cell} \
     flags {}
   
-  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
   set max_wire_length 0
   if { [info exists keys(-max_wire_length)] } {
     set max_wire_length $keys(-max_wire_length)
@@ -282,7 +284,7 @@ proc repair_clock_nets { args } {
   check_argc_eq0 "repair_clock_nets" $args
   check_parasitics
   resizer_preamble [get_libs *]
-  repair_clk_nets_cmd $max_wire_length $buffer_cell
+  repair_clk_nets_cmd $max_wire_length
 }
 
 define_cmd_args "repair_clock_inverters" {-buffer_cell buffer_cell}

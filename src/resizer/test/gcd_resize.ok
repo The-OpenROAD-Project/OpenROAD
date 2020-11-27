@@ -14,7 +14,7 @@ Notice 0: Finished DEF file: gcd_placed.def
 worst slack 1.33
 Inserted 35 input buffers.
 Inserted 18 output buffers.
-Warning: max wire length less than 840u increases wire delays.
+Warning: max wire length less than 998u increases wire delays.
 Resized 111 instances.
 Found 35 endpoints with hold violations.
 Inserted 105 hold buffers.

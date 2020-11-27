@@ -173,8 +173,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
 
 // For testing.
 void
-Resizer::rebuffer(Net *net,
-                  LibertyCell *buffer_cell)
+Resizer::rebuffer(Net *net)
 {
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;

@@ -318,7 +318,6 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
-              -buffer_cell buffer_cell
 ```
 
 The `repair_design` inserts buffers on nets to repair max slew, max
@@ -377,15 +376,14 @@ read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
 
-set buffer_cell BUF_X4
 set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
 
 buffer_ports -buffer_cell $buffer_cell
-repair_design -max_wire_length 100 -buffer_cell $buffer_cell
+repair_design -max_wire_length 100
 resize
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
-repair_hold_violations -buffer_cell $buffer_cell
+repair_hold_violations -buffer_cell BUF_X4
 resize
 ```
 

@@ -134,12 +134,10 @@ public:
                      Delay &delay,
                      Slew &slew);
   // Repair long wires, max fanout violations.
-  void repairDesign(double max_wire_length, // zero for none (meters)
-                    LibertyCell *buffer_cell);
+  void repairDesign(double max_wire_length); // zero for none (meters)
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
-  void repairClkNets(double max_wire_length, // meters
-                     LibertyCell *buffer_cell);
+  void repairClkNets(double max_wire_length); // meters
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -147,12 +145,12 @@ public:
   void repairClkInverters();
   // for debugging
   void repairNet(Net *net,
-                 double max_wire_length, // meters
-                 LibertyCell *buffer_cell);
+                 double max_wire_length); // meters
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
+  double findMaxWireLength();
   double findMaxWireLength(LibertyCell *buffer_cell);
   double findMaxWireLength(LibertyPort *drvr_port);
   // Find the max wire length with load slew < max_slew (in meters).
@@ -175,8 +173,7 @@ public:
   void rebuffer(const Pin *drvr_pin);
   // Rebuffer net (for testing).
   // resizerPreamble() required.
-  void rebuffer(Net *net,
-                LibertyCell *buffer_cell);
+  void rebuffer(Net *net);
 
 protected:
   void init();
@@ -226,7 +223,6 @@ protected:
                  bool check_fanout,
                  int max_length, // dbu
                  bool resize_drvr,
-                 LibertyCell *buffer_cell,
                  int &repair_count,
                  int &slew_violations,
                  int &cap_violations,
@@ -244,7 +240,6 @@ protected:
                  float max_cap,
                  float max_fanout,
                  int max_length,
-                 LibertyCell *buffer_cell,
                  int level,
                  // Return values.
                  int &wire_length,
@@ -365,7 +360,6 @@ protected:
                           float prev_drive);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
-  LibertyCell *lowestDriveBuffer();
 
   RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
                                      SteinerPt k,
@@ -401,6 +395,7 @@ protected:
   float wire_clk_res_;
   float wire_clk_cap_;
   LibertyCellSeq buffer_cells_;
+  LibertyCell *buffer_lowest_drive_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;

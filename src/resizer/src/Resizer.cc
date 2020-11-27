@@ -353,12 +353,25 @@ Resizer::resizePreamble(LibertyLibrarySeq *resize_libs)
 void
 Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
 {
+  buffer_lowest_drive_ = nullptr;
+  float low_drive = -INF;
   for (LibertyLibrary *lib : *resize_libs) {
     for (LibertyCell *buffer : *lib->buffers()) {
-      if (!dontUse(buffer))
+      if (!dontUse(buffer)) {
         buffer_cells_.push_back(buffer);
+
+        LibertyPort *input, *output;
+        buffer->bufferPorts(input, output);
+        float buffer_drive = output->driveResistance();
+        if (buffer_drive > low_drive) {
+          low_drive = buffer_drive;
+          buffer_lowest_drive_ = buffer;
+        }
+      }
     }
   }
+  if (buffer_cells_.empty())
+    error("no buffers found.");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -368,9 +381,6 @@ Resizer::bufferInputs()
 {
   init();
   inserted_buffer_count_ = 0;
-  LibertyCell *buffer_cell = lowestDriveBuffer();
-  if (buffer_cell == nullptr)
-    error("no buffers found.");
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
@@ -378,7 +388,7 @@ Resizer::bufferInputs()
     if (network_->direction(pin)->isInput()
         && !sta_->isClock(pin)
         && !isSpecial(net))
-      bufferInput(pin, buffer_cell);
+      bufferInput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
@@ -425,23 +435,6 @@ Resizer::bufferInput(Pin *top_pin,
   }
 }
 
-LibertyCell *
-Resizer::lowestDriveBuffer()
-{
-  LibertyCell *cell = nullptr;
-  float drive = -INF;
-  for (LibertyCell *buffer_cell : buffer_cells_) {
-    LibertyPort *input, *output;
-    buffer_cell->bufferPorts(input, output);
-    float buffer_drive = output->driveResistance();
-    if (buffer_drive > drive) {
-      drive = buffer_drive;
-      cell = buffer_cell;
-    }
-  }
-  return cell;
-}
-
 void
 Resizer::setLocation(Instance *inst,
                      Point pt)
@@ -455,9 +448,6 @@ void
 Resizer::bufferOutputs()
 {
   init();
-  LibertyCell *buffer_cell = lowestDriveBuffer();
-  if (buffer_cell == nullptr)
-    error("no buffers found.");
   inserted_buffer_count_ = 0;
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
@@ -466,7 +456,7 @@ Resizer::bufferOutputs()
     if (network_->direction(pin)->isOutput()
         && net
         && !isSpecial(net))
-      bufferOutput(pin, buffer_cell);
+      bufferOutput(pin, buffer_lowest_drive_);
   }
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
@@ -477,7 +467,7 @@ Resizer::bufferOutputs()
 
 void
 Resizer::bufferOutput(Pin *top_pin,
-                     LibertyCell *buffer_cell)
+                      LibertyCell *buffer_cell)
 {
   NetworkEdit *network = networkEdit();
   Term *term = network_->term(top_pin);
@@ -1836,8 +1826,7 @@ Resizer::fanout(Vertex *vertex)
 // Repair long wires, max slew, max capacitance, max fanout violations
 // The whole enchilada.
 void
-Resizer::repairDesign(double max_wire_length, // meters
-                      LibertyCell *buffer_cell)
+Resizer::repairDesign(double max_wire_length) // zero for none (meters)
 {
   init();
   sta_->checkSlewLimitPreamble();
@@ -1863,7 +1852,7 @@ Resizer::repairDesign(double max_wire_length, // meters
         // Exclude tie hi/low cells.
         && !isFuncOneZero(drvr_pin)
         && !isSpecial(net)) {
-      repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
+      repairNet(net, drvr, true, true, true, max_length, true,
                 repair_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
     }
@@ -1891,8 +1880,7 @@ Resizer::repairDesign(double max_wire_length, // meters
 // repairDesign but restricted to clock network and
 // no max_fanout/max_cap checks.
 void
-Resizer::repairClkNets(double max_wire_length, // meters
-                       LibertyCell *buffer_cell)
+Resizer::repairClkNets(double max_wire_length) // meters
 {
   init();
   // Need slews to resize inserted buffers.
@@ -1915,7 +1903,7 @@ Resizer::repairClkNets(double max_wire_length, // meters
           : network_->net(clk_pin);
         Vertex *drvr = graph_->pinDrvrVertex(clk_pin);
         // Do not resize clock tree gates.
-        repairNet(net, drvr, false, false, false, max_length, false, buffer_cell,
+        repairNet(net, drvr, false, false, false, max_length, false,
                   repair_count, slew_violations, cap_violations,
                   fanout_violations, length_violations);
       }
@@ -1934,8 +1922,7 @@ Resizer::repairClkNets(double max_wire_length, // meters
 // for debugging
 void
 Resizer::repairNet(Net *net,
-                   double max_wire_length, // meters
-                   LibertyCell *buffer_cell)
+                   double max_wire_length) // meters
 {
   init();
 
@@ -1957,7 +1944,7 @@ Resizer::repairNet(Net *net,
     PinSet::Iterator drvr_iter(drivers);
     Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
-    repairNet(net, drvr, true, true, true, max_length, true, buffer_cell,
+    repairNet(net, drvr, true, true, true, max_length, true,
               repair_count, slew_violations, cap_violations,
               fanout_violations, length_violations);
   }
@@ -1986,7 +1973,6 @@ Resizer::repairNet(Net *net,
                    bool check_fanout,
                    int max_length, // dbu
                    bool resize_drvr,
-                   LibertyCell *buffer_cell,
                    int &repair_count,
                    int &slew_violations,
                    int &cap_violations,
@@ -2065,7 +2051,7 @@ Resizer::repairNet(Net *net,
       float ignore2, ignore3;
       PinSeq ignore4;
       repairNet(tree, drvr_pt, SteinerTree::null_pt, net,
-                max_cap, max_fanout, max_length, buffer_cell, 0,
+                max_cap, max_fanout, max_length, 0,
                 ignore1, ignore2, ignore3, ignore4);
       repair_count++;
     }
@@ -2158,7 +2144,6 @@ Resizer::repairNet(SteinerTree *tree,
                    float max_cap,
                    float max_fanout,
                    int max_length, // dbu
-                   LibertyCell *buffer_cell,
                    int level,
                    // Return values.
                    // Remaining parasiics after repeater insertion.
@@ -2180,8 +2165,7 @@ Resizer::repairNet(SteinerTree *tree,
   float fanout_left = 0.0;
   PinSeq loads_left;
   if (left != SteinerTree::null_pt)
-    repairNet(tree, left, pt, net, max_cap, max_fanout, max_length,
-              buffer_cell, level + 1,
+    repairNet(tree, left, pt, net, max_cap, max_fanout, max_length, level + 1,
               wire_length_left, pin_cap_left, fanout_left, loads_left);
   SteinerPt right = tree->right(pt);
   int wire_length_right = 0;
@@ -2189,8 +2173,7 @@ Resizer::repairNet(SteinerTree *tree,
   float fanout_right = 0.0;
   PinSeq loads_right;
   if (right != SteinerTree::null_pt)
-    repairNet(tree, right, pt, net, max_cap, max_fanout, max_length,
-              buffer_cell, level + 1,
+    repairNet(tree, right, pt, net, max_cap, max_fanout, max_length, level + 1,
               wire_length_right, pin_cap_right, fanout_right, loads_right);
   debugPrint6(debug_, "repair_net", 3, "%*sleft l=%s cap=%s, right l=%s cap=%s\n",
               level, "",
@@ -2235,10 +2218,10 @@ Resizer::repairNet(SteinerTree *tree,
   }
 
   if (repeater_left)
-    makeRepeater("left", tree, pt, net, buffer_cell, level,
+    makeRepeater("left", tree, pt, net, buffer_lowest_drive_, level,
                  wire_length_left, pin_cap_left, fanout_left, loads_left);
   if (repeater_right)
-    makeRepeater("right", tree, pt, net, buffer_cell, level,
+    makeRepeater("right", tree, pt, net, buffer_lowest_drive_, level,
                  wire_length_right, pin_cap_right, fanout_right, loads_right);
 
   wire_length = wire_length_left + wire_length_right;
@@ -2309,7 +2292,7 @@ Resizer::repairNet(SteinerTree *tree,
       double d = buf_dist / length;
       int buf_x = pt_x + d * dx;
       int buf_y = pt_y + d * dy;
-      makeRepeater("wire", buf_x, buf_y, net, buffer_cell, level,
+      makeRepeater("wire", buf_x, buf_y, net, buffer_lowest_drive_, level,
                    wire_length, pin_cap, fanout, load_pins);
       // Update for the next round.
       length -= buf_dist;
@@ -2397,7 +2380,10 @@ Resizer::makeRepeater(const char *where,
 
     // Resize repeater as we back up by levels.
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
+    // Do not count repeaters in resize count.
+    int resize_save = resize_count_;
     resizeToTargetSlew(drvr_pin);
+    resize_count_ = resize_save;
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
@@ -2767,6 +2753,17 @@ Resizer::gateDelay(LibertyPort *drvr_port,
 }
 
 ////////////////////////////////////////////////////////////////
+
+double
+Resizer::findMaxWireLength()
+{
+  double max_length = -INF;
+  for (LibertyCell *buffer_cell : buffer_cells_) {
+    double buffer_length = findMaxWireLength(buffer_cell);
+    max_length = max(max_length, buffer_length);
+  }
+  return max_length;
+}
 
 // Find the max wire length before it is faster to split the wire
 // in half with a buffer (in meters).

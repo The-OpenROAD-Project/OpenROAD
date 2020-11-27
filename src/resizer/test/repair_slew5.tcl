@@ -19,7 +19,7 @@ set_max_transition .15 [current_design]
 report_net -connections -verbose u1/ZN
 report_check_types -max_slew -max_cap -max_fanout -violators
 
-repair_design -buffer_cell BUF_X1
+repair_design
 
 report_check_types -max_slew -max_cap -max_fanout
 

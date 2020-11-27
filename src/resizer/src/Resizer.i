@@ -143,6 +143,8 @@ using sta::dbNetwork;
 
 %inline %{
 
+namespace sta {
+
 void
 remove_buffers_cmd()
 {
@@ -349,21 +351,19 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
-repair_design_cmd(float max_length,
-                  LibertyCell *buffer_cell)
+repair_design_cmd(float max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, buffer_cell);
+  resizer->repairDesign(max_length);
 }
 
 void
-repair_clk_nets_cmd(float max_length,
-                    LibertyCell *buffer_cell)
+repair_clk_nets_cmd(float max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairClkNets(max_length, buffer_cell);
+  resizer->repairClkNets(max_length);
 }
 
 void
@@ -376,12 +376,11 @@ repair_clk_inverters_cmd()
 
 void
 repair_net_cmd(Net *net,
-               float max_length,
-               LibertyCell *buffer_cell)
+               float max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairNet(net, max_length, buffer_cell); 
+  resizer->repairNet(net, max_length); 
 }
 
 void
@@ -404,15 +403,11 @@ repair_timing_pin_cmd(Pin *end_pin)
 
 // for testing
 void
-rebuffer_net(Net *net,
-             LibertyCell *buffer_cell)
+rebuffer_net(Net *net)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  LibertyLibrarySeq *resize_libs = new LibertyLibrarySeq;
-  resize_libs->push_back(buffer_cell->libertyLibrary());
-  resizer->resizePreamble(resize_libs);
-  resizer->rebuffer(net, buffer_cell);
+  resizer->rebuffer(net);
 }
 
 void
@@ -449,7 +444,15 @@ buffer_wire_delay(LibertyCell *buffer_cell,
 }
 
 double
-find_max_wire_length(LibertyCell *buffer_cell)
+find_max_wire_length()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxWireLength();
+}
+
+double
+find_buffer_max_wire_length(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -515,5 +518,7 @@ utilization()
   Resizer *resizer = getResizer();
   return resizer->utilization();
 }
+
+} // namespace
 
 %} // inline

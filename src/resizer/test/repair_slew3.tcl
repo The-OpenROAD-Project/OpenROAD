@@ -9,5 +9,5 @@ estimate_parasitics -placement
 # set max slew for violations
 set_max_transition .03 [current_design]
 report_check_types -max_slew -max_cap -max_fanout -violators
-repair_design -buffer_cell BUF_X1
+repair_design
 report_check_types -max_slew -max_cap -max_fanout -violators

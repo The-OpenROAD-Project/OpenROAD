@@ -23,7 +23,7 @@ Warning: no estimated parasitics. Using wire load models.
 Found 1 slew violations.
 Found 1 capacitance violations.
 Inserted 1 buffers in 1 nets.
-Resized 2 instances.
+Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
