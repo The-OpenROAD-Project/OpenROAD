@@ -318,32 +318,34 @@ proc repair_tie_fanout { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {[-allow_setup_violations]\
-                                            [-max_utilization util]}
+define_cmd_args "repair_hold_violations" {[-allow_setup_violations]}
 
 proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
-    keys {-buffer_cell -max_utilization} \
+    keys {-buffer_cell} \
     flags {-allow_setup_violations}
   
-  set_max_utilization [parse_max_util keys]
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
-  if { [info exists keys(-buffer_cell)] } {
-    ord::warn "-buffer_cell is deprecated."
-  }
   check_argc_eq0 "repair_hold_violations" $args
-  
-  check_parasitics
-  resizer_preamble [get_libs *]
-  repair_hold_violations_cmd $allow_setup_violations
+  ord::warn "repair_hold_violations is deprecated. Use repair_timing -hold"  
+  repair_hold $allow_setup_violations
 }
 
-define_cmd_args "repair_timing" {[-libraries resize_libs]}
+define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                   [-allow_setup_violations]\
+                                   [-libraries resize_libs]}
 
 proc repair_timing { args } {
   parse_key_args "repair_timing" args \
     keys {-libraries} \
-    flags {}
+    flags {-setup -hold -allow_setup_violations}
+
+  set setup [info exists flags(-setup)]
+  set hold [info exists flags(-hold)]
+  if { !$setup && !$hold } {
+    set setup 1
+    set hold 1
+  }
 
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
@@ -353,17 +355,24 @@ proc repair_timing { args } {
       ord::error "No liberty libraries found."
     }
   }
+  set allow_setup_violations [info exists flags(-allow_setup_violations)]
+
   check_argc_eq0 "repair_timing" $args
   check_parasitics
   resizer_preamble $resize_libs
-  repair_timing_cmd
+  if { $setup } {
+    repair_setup
+  }
+  if { $hold } {
+    repair_hold $allow_setup_violations
+  }
 }
 
 # for testing
-proc repair_timing_pin { end_pin } {
+proc repair_setup_pin { end_pin } {
   check_parasitics
   resizer_preamble [get_libs *]
-  repair_timing_pin_cmd $end_pin
+  repair_setup_pin_cmd $end_pin
 }
 
 ################################################################

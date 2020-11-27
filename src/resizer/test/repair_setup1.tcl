@@ -8,6 +8,6 @@ estimate_parasitics -placement
 report_checks -fields input -digits 3
 report_power
 
-repair_timing
+repair_timing -setup
 report_checks -fields input -digits 3
 report_power

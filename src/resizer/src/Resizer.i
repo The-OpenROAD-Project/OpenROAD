@@ -306,21 +306,21 @@ resize_target_load_cap(LibertyCell *cell)
 }
 
 void
-repair_pin_hold_violations(Pin *end_pin,
-                           LibertyCell *buffer_cell,
-                           bool allow_setup_violations)
+repair_hold_pin(Pin *end_pin,
+                LibertyCell *buffer_cell,
+                bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(end_pin, buffer_cell, allow_setup_violations);
+  resizer->repairHold(end_pin, buffer_cell, allow_setup_violations);
 }
 
 void
-repair_hold_violations_cmd(bool allow_setup_violations)
+repair_hold(bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(allow_setup_violations);
+  resizer->repairHold(allow_setup_violations);
 }
 
 float
@@ -383,19 +383,19 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_timing_cmd()
+repair_setup()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTiming();
+  resizer->repairSetup();
 }
 
 void
-repair_timing_pin_cmd(Pin *end_pin)
+repair_setup_pin(Pin *end_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTiming(end_pin);
+  resizer->repairSetup(end_pin);
 }
 
 ////////////////////////////////////////////////////////////////

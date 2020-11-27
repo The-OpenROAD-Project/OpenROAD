@@ -107,12 +107,12 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHoldViolations(bool allow_setup_violations);
-  void repairHoldViolations(Pin *end_pin,
-                            LibertyCell *buffer_cell,
-                            bool allow_setup_violations);
-  void repairTiming();
-  void repairTiming(Pin *drvr_pin);
+  void repairHold(bool allow_setup_violations);
+  void repairHold(Pin *end_pin,
+                  LibertyCell *buffer_cell,
+                  bool allow_setup_violations);
+  void repairSetup();
+  void repairSetup(Pin *drvr_pin);
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -310,9 +310,9 @@ protected:
                          double wire_length,
                          double max_slew);
   LibertyCell *findHoldBuffer();
-  void repairHoldViolations(VertexSet *ends,
-                            LibertyCell *buffer_cell,
-                            bool allow_setup_violations);
+  void repairHold(VertexSet *ends,
+                  LibertyCell *buffer_cell,
+                  bool allow_setup_violations);
   int repairHoldPass(VertexSet &ends,
                      LibertyCell *buffer_cell,
                      float buffer_delay,
@@ -350,8 +350,8 @@ protected:
   void setWireCorner(Corner *corner);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitics();
-  void repairTiming(PathRef &path,
-                    Slack path_slack);
+  void repairSetup(PathRef &path,
+                   Slack path_slack);
   void splitLoads(PathRef *drvr_path,
                   Slack drvr_slack);
   LibertyCell *upsizeCell(LibertyPort *in_port,

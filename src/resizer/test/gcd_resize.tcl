@@ -21,7 +21,7 @@ repair_design -max_wire_length 800
 
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
-repair_hold_violations
+repair_timing
 
 report_checks
 report_check_types -max_slew -max_fanout -max_capacitance

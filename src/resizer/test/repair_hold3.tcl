@@ -12,6 +12,6 @@ estimate_parasitics -placement
 
 report_checks -path_delay min -format full_clock -digits 3 -group_count 3
 
-repair_hold_violations
+repair_timing -hold
 
 report_checks -path_delay min -format full_clock -digits 3 -group_count 3

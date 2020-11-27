@@ -1230,7 +1230,7 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairTiming()
+Resizer::repairSetup()
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -1249,7 +1249,7 @@ Resizer::repairTiming()
          && !fuzzyEqual(worst_slack, prev_worst_slack)) {
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
-    repairTiming(worst_path, worst_slack);
+    repairSetup(worst_path, worst_slack);
     // This should use a dirty list for updating parasitics.
     ensureWireParasitics();
     // This should use incremental requireds.
@@ -1274,7 +1274,7 @@ Resizer::repairTiming()
 
 // For testing.
 void
-Resizer::repairTiming(Pin *end_pin)
+Resizer::repairSetup(Pin *end_pin)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -1282,7 +1282,7 @@ Resizer::repairTiming(Pin *end_pin)
   Slack slack = sta_->vertexSlack(vertex, MinMax::max());
   PathRef path;
   sta_->vertexWorstSlackPath(vertex, MinMax::max(), path);
-  repairTiming(path, slack);
+  repairSetup(path, slack);
 
   if (inserted_buffer_count_ > 0)
     printf("Inserted %d buffers.\n", inserted_buffer_count_);
@@ -1291,8 +1291,8 @@ Resizer::repairTiming(Pin *end_pin)
 }
 
 void
-Resizer::repairTiming(PathRef &path,
-                      Slack path_slack)
+Resizer::repairSetup(PathRef &path,
+                     Slack path_slack)
 {
   PathExpanded expanded(&path, sta_);
   if (expanded.size() > 1) {
@@ -1504,19 +1504,19 @@ Resizer::upsizeCell(LibertyPort *in_port,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHoldViolations(bool allow_setup_violations)
+Resizer::repairHold(bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
   LibertyCell *buffer_cell = findHoldBuffer();
-  repairHoldViolations(ends, buffer_cell, allow_setup_violations);
+  repairHold(ends, buffer_cell, allow_setup_violations);
 }
 
 // For testing/debug.
 void
-Resizer::repairHoldViolations(Pin *end_pin,
+Resizer::repairHold(Pin *end_pin,
                               LibertyCell *buffer_cell,
                               bool allow_setup_violations)
 {
@@ -1526,7 +1526,7 @@ Resizer::repairHoldViolations(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  repairHoldViolations(&ends, buffer_cell, allow_setup_violations);
+  repairHold(&ends, buffer_cell, allow_setup_violations);
 }
 
 LibertyCell *
@@ -1545,9 +1545,9 @@ Resizer::findHoldBuffer()
 }
 
 void
-Resizer::repairHoldViolations(VertexSet *ends,
-                              LibertyCell *buffer_cell,
-                              bool allow_setup_violations)
+Resizer::repairHold(VertexSet *ends,
+                    LibertyCell *buffer_cell,
+                    bool allow_setup_violations)
 {
   // Find endpoints with hold violation.
   VertexSet hold_failures;
@@ -1843,7 +1843,6 @@ Resizer::fanout(Vertex *vertex)
 void
 Resizer::repairDesign(double max_wire_length) // zero for none (meters)
 {
-  init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
   sta_->checkFanoutLimitPreamble();

@@ -15,7 +15,7 @@ estimate_parasitics -placement
 report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
   -endpoint_count 5
 
-repair_hold_violations
+repair_timing -hold
 
 report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
   -endpoint_count 5
