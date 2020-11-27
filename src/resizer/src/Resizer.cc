@@ -102,6 +102,7 @@ Resizer::Resizer() :
   wire_cap_(0.0),
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
+  buffer_cells_(nullptr),
   corner_(nullptr),
   max_area_(0.0),
   sta_(nullptr),
@@ -803,7 +804,7 @@ Resizer::findTargetLoad(LibertyCell *cell,
     }
   }
   (*target_load_map_)[cell] = target_load;
-  debugPrint2(debug_, "resizer", 3, "%s target_load = %.2e\n",
+  debugPrint2(debug_, "resizer", 4, "%s target_load = %.2e\n",
               cell->name(),
               target_load);
 }
@@ -1206,6 +1207,8 @@ Resizer::tieLocation(Pin *load,
 void
 Resizer::repairTiming(LibertyCell *buffer_cell)
 {
+  buffer_cells_ = sta_->equivCells(buffer_cell);
+
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   Slack worst_slack;
@@ -1257,6 +1260,7 @@ Resizer::repairTiming(Pin *end_pin,
   Slack slack = sta_->vertexSlack(vertex, MinMax::max());
   PathRef path;
   sta_->vertexWorstSlackPath(vertex, MinMax::max(), path);
+  buffer_cells_ = sta_->equivCells(buffer_cell);
   repairTiming(path, slack, buffer_cell);
 
   if (inserted_buffer_count_ > 0)
@@ -1316,7 +1320,7 @@ Resizer::repairTiming(PathRef &path,
       if (fanout > 1
           && fanout < rebuffer_max_fanout) {
         int count_before = inserted_buffer_count_;
-        rebuffer(drvr_pin, buffer_cell);
+        rebuffer(drvr_pin);
         int insert_count = inserted_buffer_count_ - count_before;
         debugPrint2(debug_, "retime", 2, "rebuffer %s inserted %d\n",
                     network_->pathName(drvr_pin),

@@ -173,14 +173,10 @@ public:
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
+  void rebuffer(const Pin *drvr_pin);
   // Rebuffer net (for testing).
-  // Assumes buffer_cell->isBuffer() is true.
   // resizerPreamble() required.
   void rebuffer(Net *net,
-                LibertyCell *buffer_cell);
-
-  // Assumes buffer_cell->isBuffer() is true.
-  void rebuffer(const Pin *drvr_pin,
                 LibertyCell *buffer_cell);
 
 protected:
@@ -375,8 +371,7 @@ protected:
   RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
                                      SteinerPt k,
                                      SteinerPt prev,
-                                     int level,
-                                     LibertyCell *buffer_cell);
+                                     int level);
   void rebufferTopDown(RebufferOption *choice,
                        Net *net,
                        int level);
@@ -385,8 +380,7 @@ protected:
                    SteinerTree *tree,
                    SteinerPt k,
                    SteinerPt prev,
-                   int level,
-                   LibertyCell *buffer_cell);
+                   int level);
   // RebufferOption factory.
   RebufferOption *makeRebufferOption(RebufferOptionType type,
                                      float cap,
@@ -407,6 +401,7 @@ protected:
   float wire_cap_;
   float wire_clk_res_;
   float wire_clk_cap_;
+  LibertyCellSeq *buffer_cells_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;
