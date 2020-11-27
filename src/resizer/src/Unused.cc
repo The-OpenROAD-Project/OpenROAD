@@ -579,7 +579,6 @@ Resizer::repairTiming()
 
 ////////////////////////////////////////////////////////////////
 
-  void findBuffers(LibertyLibrarySeq *resize_libs);
   float findBufferMinCap(LibertyLibrarySeq *resize_libs);
   LibertyCell *findMinDelayBuffer(LibertyLibrarySeq *resize_libs,
                                   float cap);

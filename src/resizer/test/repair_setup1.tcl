@@ -8,6 +8,6 @@ estimate_parasitics -placement
 report_checks -fields input -digits 3
 report_power
 
-repair_timing -buffer_cell "BUF_X1"
+repair_timing
 report_checks -fields input -digits 3
 report_power

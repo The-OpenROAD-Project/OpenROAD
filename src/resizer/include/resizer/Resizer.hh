@@ -96,8 +96,8 @@ public:
 
   void setMaxUtilization(double max_utilization);
   void resizePreamble(LibertyLibrarySeq *resize_libs);
-  void bufferInputs(LibertyCell *buffer_cell);
-  void bufferOutputs(LibertyCell *buffer_cell);
+  void bufferInputs();
+  void bufferOutputs();
   // Resize all instances in the network.
   // resizerPreamble() required.
   void resizeToTargetSlew();
@@ -107,14 +107,13 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHoldViolations(LibertyCellSeq *buffers,
+  void repairHoldViolations(LibertyCell *buffer_cell,
                             bool allow_setup_violations);
   void repairHoldViolations(Pin *end_pin,
-                            LibertyCellSeq *buffers,
+                            LibertyCell *buffer_cell,
                             bool allow_setup_violations);
-  void repairTiming(Pin *drvr_pin,
-                    LibertyCell *buffer_cell);
-  void repairTiming(LibertyCell *buffer_cell);
+  void repairTiming();
+  void repairTiming(Pin *drvr_pin);
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -191,6 +190,7 @@ protected:
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
   void makeEquivCells(LibertyLibrarySeq *resize_libs);
+  void findBuffers(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrary *library,
                        TgtSlews &slews);
@@ -356,17 +356,16 @@ protected:
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitics();
   void repairTiming(PathRef &path,
-                    Slack path_slack,
-                    LibertyCell *buffer_cell);
+                    Slack path_slack);
   void splitLoads(PathRef *drvr_path,
-                  Slack drvr_slack,
-                  LibertyCell *buffer_cell);
+                  Slack drvr_slack);
   LibertyCell *upsizeCell(LibertyPort *in_port,
                           LibertyPort *drvr_port,
                           float load_cap,
                           float prev_drive);
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
+  LibertyCell *lowestDriveBuffer();
 
   RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
                                      SteinerPt k,
@@ -401,7 +400,7 @@ protected:
   float wire_cap_;
   float wire_clk_res_;
   float wire_clk_cap_;
-  LibertyCellSeq *buffer_cells_;
+  LibertyCellSeq buffer_cells_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;

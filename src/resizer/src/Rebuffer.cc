@@ -101,7 +101,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
   LibertyPort *drvr_port;
   if (network_->isTopLevelPort(drvr_pin)) {
     net = network_->net(network_->term(drvr_pin));
-    LibertyCell *buffer_cell = (*buffer_cells_)[0];
+    LibertyCell *buffer_cell = buffer_cells_[0];
     // Should use sdc external driver here.
     LibertyPort *input;
     buffer_cell->bufferPorts(input, drvr_port);
@@ -176,8 +176,6 @@ void
 Resizer::rebuffer(Net *net,
                   LibertyCell *buffer_cell)
 {
-  buffer_cells_ = sta_->equivCells(buffer_cell);
-
   inserted_buffer_count_ = 0;
   rebuffer_net_count_ = 0;
   PinSet *drvrs = network_->drivers(net);
@@ -352,7 +350,7 @@ Resizer::addWireAndBuffer(RebufferOptionSeq Z,
   }
   if (!Z1.empty()) {
     RebufferOptionSeq buffered_options;
-    for (LibertyCell *buffer_cell : *buffer_cells_) {
+    for (LibertyCell *buffer_cell : buffer_cells_) {
       Required best_req = -INF;
       RebufferOption *best_option = nullptr;
       for (RebufferOption *z : Z1) {

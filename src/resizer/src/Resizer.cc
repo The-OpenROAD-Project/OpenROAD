@@ -80,6 +80,7 @@ using std::map;
 using std::pair;
 
 using ord::warn;
+using ord::error;
 using ord::closestPtInRect;
 
 using odb::dbInst;
@@ -102,7 +103,6 @@ Resizer::Resizer() :
   wire_cap_(0.0),
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
-  buffer_cells_(nullptr),
   corner_(nullptr),
   max_area_(0.0),
   sta_(nullptr),
@@ -346,16 +346,31 @@ Resizer::resizePreamble(LibertyLibrarySeq *resize_libs)
 {
   init();
   makeEquivCells(resize_libs);
+  findBuffers(resize_libs);
   findTargetLoads(resize_libs);
+}
+
+void
+Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
+{
+  for (LibertyLibrary *lib : *resize_libs) {
+    for (LibertyCell *buffer : *lib->buffers()) {
+      if (!dontUse(buffer))
+        buffer_cells_.push_back(buffer);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::bufferInputs(LibertyCell *buffer_cell)
+Resizer::bufferInputs()
 {
   init();
   inserted_buffer_count_ = 0;
+  LibertyCell *buffer_cell = lowestDriveBuffer();
+  if (buffer_cell == nullptr)
+    error("no buffers found.");
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
     Pin *pin = port_iter->next();
@@ -410,6 +425,23 @@ Resizer::bufferInput(Pin *top_pin,
   }
 }
 
+LibertyCell *
+Resizer::lowestDriveBuffer()
+{
+  LibertyCell *cell = nullptr;
+  float drive = -INF;
+  for (LibertyCell *buffer_cell : buffer_cells_) {
+    LibertyPort *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    float buffer_drive = output->driveResistance();
+    if (buffer_drive > drive) {
+      drive = buffer_drive;
+      cell = buffer_cell;
+    }
+  }
+  return cell;
+}
+
 void
 Resizer::setLocation(Instance *inst,
                      Point pt)
@@ -420,9 +452,12 @@ Resizer::setLocation(Instance *inst,
 }
 
 void
-Resizer::bufferOutputs(LibertyCell *buffer_cell)
+Resizer::bufferOutputs()
 {
   init();
+  LibertyCell *buffer_cell = lowestDriveBuffer();
+  if (buffer_cell == nullptr)
+    error("no buffers found.");
   inserted_buffer_count_ = 0;
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
@@ -1205,10 +1240,8 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairTiming(LibertyCell *buffer_cell)
+Resizer::repairTiming()
 {
-  buffer_cells_ = sta_->equivCells(buffer_cell);
-
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   Slack worst_slack;
@@ -1226,7 +1259,7 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
          && !fuzzyEqual(worst_slack, prev_worst_slack)) {
     PathRef worst_path;
     sta_->vertexWorstSlackPath(worst_vertex, MinMax::max(), worst_path);
-    repairTiming(worst_path, worst_slack, buffer_cell);
+    repairTiming(worst_path, worst_slack);
     // This should use a dirty list for updating parasitics.
     ensureWireParasitics();
     // This should use incremental requireds.
@@ -1251,8 +1284,7 @@ Resizer::repairTiming(LibertyCell *buffer_cell)
 
 // For testing.
 void
-Resizer::repairTiming(Pin *end_pin,
-                      LibertyCell *buffer_cell)
+Resizer::repairTiming(Pin *end_pin)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -1260,8 +1292,7 @@ Resizer::repairTiming(Pin *end_pin,
   Slack slack = sta_->vertexSlack(vertex, MinMax::max());
   PathRef path;
   sta_->vertexWorstSlackPath(vertex, MinMax::max(), path);
-  buffer_cells_ = sta_->equivCells(buffer_cell);
-  repairTiming(path, slack, buffer_cell);
+  repairTiming(path, slack);
 
   if (inserted_buffer_count_ > 0)
     printf("Inserted %d buffers.\n", inserted_buffer_count_);
@@ -1271,8 +1302,7 @@ Resizer::repairTiming(Pin *end_pin,
 
 void
 Resizer::repairTiming(PathRef &path,
-                      Slack path_slack,
-                      LibertyCell *buffer_cell)
+                      Slack path_slack)
 {
   PathExpanded expanded(&path, sta_);
   if (expanded.size() > 1) {
@@ -1335,7 +1365,7 @@ Resizer::repairTiming(PathRef &path,
         debugPrint2(debug_, "retime", 2, "split loads %s -> %s\n",
                     network_->pathName(drvr_pin),
                     network_->pathName(load_pin));
-        splitLoads(drvr_path, path_slack, buffer_cell);
+        splitLoads(drvr_path, path_slack);
         break;
       }
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
@@ -1368,8 +1398,7 @@ Resizer::repairTiming(PathRef &path,
 
 void
 Resizer::splitLoads(PathRef *drvr_path,
-                    Slack drvr_slack,
-                    LibertyCell *buffer_cell)
+                    Slack drvr_slack)
 {
   Vertex *drvr_vertex = drvr_path->vertex(sta_);
   const RiseFall *rf = drvr_path->transition(sta_);
@@ -1402,6 +1431,7 @@ Resizer::splitLoads(PathRef *drvr_path,
 
   string buffer_name = makeUniqueInstName("split");
   Instance *parent = db_network_->topInstance();
+  LibertyCell *buffer_cell = buffer_cells_[0];
   Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                buffer_name.c_str(),
                                                parent);
@@ -1484,21 +1514,20 @@ Resizer::upsizeCell(LibertyPort *in_port,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHoldViolations(LibertyCellSeq *buffers,
+Resizer::repairHoldViolations(LibertyCell *buffer_cell,
                               bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
-  LibertyCell *buffer_cell = (*buffers)[0];
   repairHoldViolations(ends, buffer_cell, allow_setup_violations);
 }
 
 // For testing/debug.
 void
 Resizer::repairHoldViolations(Pin *end_pin,
-                              LibertyCellSeq *buffers,
+                              LibertyCell *buffer_cell,
                               bool allow_setup_violations)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
@@ -1507,7 +1536,6 @@ Resizer::repairHoldViolations(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  LibertyCell *buffer_cell = (*buffers)[0];
   repairHoldViolations(&ends, buffer_cell, allow_setup_violations);
 }
 

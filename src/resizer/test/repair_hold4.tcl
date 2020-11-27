@@ -13,6 +13,6 @@ estimate_parasitics -placement
 
 report_checks -path_delay min -format full_clock -digits 3 -group_count 3
 
-repair_hold_violations -buffers sky130_fd_sc_hs__dlygate4sd1_1
+repair_hold_violations -buffer_cell sky130_fd_sc_hs__dlygate4sd1_1
 
 report_checks -path_delay min -format full_clock -digits 3 -group_count 3

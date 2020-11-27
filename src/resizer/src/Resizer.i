@@ -256,19 +256,19 @@ resizer_preamble(LibertyLibrarySeq *resize_libs)
 }
 
 void
-buffer_inputs(LibertyCell *buffer_cell)
+buffer_inputs()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferInputs(buffer_cell);
+  resizer->bufferInputs();
 }
 
 void
-buffer_outputs(LibertyCell *buffer_cell)
+buffer_outputs()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferOutputs(buffer_cell);
+  resizer->bufferOutputs();
 }
 
 void
@@ -305,21 +305,21 @@ resize_target_load_cap(LibertyCell *cell)
 
 void
 repair_pin_hold_violations(Pin *end_pin,
-                           LibertyCellSeq *buffers,
+                           LibertyCell *buffer_cell,
                            bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(end_pin, buffers, allow_setup_violations);
+  resizer->repairHoldViolations(end_pin, buffer_cell, allow_setup_violations);
 }
 
 void
-repair_hold_violations_cmd(LibertyCellSeq *buffers,
+repair_hold_violations_cmd(LibertyCell *buffer_cell,
                            bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(buffers, allow_setup_violations);
+  resizer->repairHoldViolations(buffer_cell, allow_setup_violations);
 }
 
 float
@@ -385,20 +385,19 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_timing_cmd(LibertyCell *buffer_cell)
+repair_timing_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTiming(buffer_cell);
+  resizer->repairTiming();
 }
 
 void
-repair_timing_pin_cmd(Pin *end_pin,
-                      LibertyCell *buffer_cell)
+repair_timing_pin_cmd(Pin *end_pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairTiming(end_pin, buffer_cell);
+  resizer->repairTiming(end_pin);
 }
 
 ////////////////////////////////////////////////////////////////

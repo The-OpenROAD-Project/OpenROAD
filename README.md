@@ -310,7 +310,6 @@ in all libraries.
 ```
 buffer_ports [-inputs]
 	     [-outputs]
-	     -buffer_cell buffer_cell
 ```
 The `buffer_ports -inputs` command adds a buffer between the input and
 its loads.  The `buffer_ports -outputs` adds a buffer between the port

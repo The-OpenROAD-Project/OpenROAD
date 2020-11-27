@@ -196,7 +196,6 @@ proc parse_buffer_cell { keys_var required } {
 }
 
 define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                  -buffer_cell buffer_cell\
                                   [-max_utilization util]}
 
 proc buffer_ports { args } {
@@ -204,22 +203,25 @@ proc buffer_ports { args } {
     keys {-buffer_cell -max_utilization} \
     flags {-inputs -outputs}
   
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
+
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
   if { !$buffer_inputs && !$buffer_outputs } {
     set buffer_inputs 1
     set buffer_outputs 1
   }
-  set buffer_cell [parse_buffer_cell keys 1]
-  
   check_argc_eq0 "buffer_ports" $args
   
   set_max_utilization [parse_max_util keys]
+  resizer_preamble [get_libs *]
   if { $buffer_inputs } {
-    buffer_inputs $buffer_cell
+    buffer_inputs
   }
   if { $buffer_outputs } {
-    buffer_outputs $buffer_cell
+    buffer_outputs
   }
 }
 
@@ -314,47 +316,31 @@ proc repair_tie_fanout { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {[-buffers buffer_cells]\
+define_cmd_args "repair_hold_violations" {-buffer_cell buffer_cell\
                                             [-allow_setup_violations]\
                                             [-max_utilization util]}
 
 proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
-    keys {-buffers -buffer_cell -max_utilization} \
+    keys {-buffer_cell -max_utilization} \
     flags {-allow_setup_violations}
   
-  if { [info exists keys(-buffer_cell)] } {
-#    ord::warn "-buffer_cell is deprecated. Use -buffers instead."
-    set buffers [parse_buffer_cell keys 0]
-  } elseif { [info exists keys(-buffers)] } {
-    set buffers [get_lib_cells_arg "-buffers" $keys(-buffers) ord::warn]
-  } else {
-    set buffers {}
-    foreach lib [get_libs *] {
-      foreach buffer [sta::find_library_buffers $lib] {
-        lappend buffers $buffer
-      }
-    }
-  }
-
+  set buffer_cell [parse_buffer_cell keys 0]
   set_max_utilization [parse_max_util keys]
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   
   check_argc_eq0 "repair_hold_violations" $args
   
   check_parasitics
-  repair_hold_violations_cmd $buffers $allow_setup_violations
+  repair_hold_violations_cmd $buffer_cell $allow_setup_violations
 }
 
-define_cmd_args "repair_timing" {-buffer_cell buffer_cell\
-                                   [-libraries resize_libs]}
+define_cmd_args "repair_timing" {[-libraries resize_libs]}
 
 proc repair_timing { args } {
   parse_key_args "repair_timing" args \
-    keys {-buffer_cell -libraries} \
+    keys {-libraries} \
     flags {}
-
-  set buffer_cell [parse_buffer_cell keys 1]
 
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
@@ -367,14 +353,14 @@ proc repair_timing { args } {
   check_argc_eq0 "repair_timing" $args
   check_parasitics
   resizer_preamble $resize_libs
-  repair_timing_cmd $buffer_cell
+  repair_timing_cmd
 }
 
 # for testing
-proc repair_timing_pin { end_pin buffer_cell } {
+proc repair_timing_pin { end_pin } {
   check_parasitics
   resizer_preamble [get_libs *]
-  repair_timing_pin_cmd $end_pin $buffer_cell
+  repair_timing_pin_cmd $end_pin
 }
 
 ################################################################
