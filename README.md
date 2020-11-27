@@ -227,7 +227,7 @@ Use the following command to perform I/O pin assignment:
 ```
 place_pins [-hor_layer h_layer]  
            [-ver_layer v_layer] 
-                 [-random_seed seed] 
+           [-random_seed seed]
            [-exclude interval]
            [-random]
 ```
@@ -397,7 +397,7 @@ report_tns
 report_wns
 report_checks
 
-repair_designa
+repair_design
 
 report_checks
 report_tns

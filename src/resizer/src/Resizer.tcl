@@ -327,7 +327,7 @@ proc repair_hold_violations { args } {
   
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   check_argc_eq0 "repair_hold_violations" $args
-  ord::warn "repair_hold_violations is deprecated. Use repair_timing -hold"  
+  ord::warn "repair_hold_violations is deprecated. Use repair_timing -hold"
   repair_hold $allow_setup_violations
 }
 
@@ -349,10 +349,7 @@ proc repair_timing { args } {
 
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
-  } else {
-    set resize_libs [get_libs *]
-    if { $resize_libs == {} } {
-      ord::error "No liberty libraries found."
+
     }
   }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
