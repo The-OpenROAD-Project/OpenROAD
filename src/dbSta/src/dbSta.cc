@@ -51,9 +51,13 @@
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
+#include "gui/gui.h"
 #include "dbSdcNetwork.hh"
 
 namespace ord {
+
+using sta::dbSta;
+using sta::PathRef;
 
 sta::dbSta *
 makeDbSta()
@@ -64,8 +68,10 @@ makeDbSta()
 void
 initDbSta(OpenRoad *openroad)
 {
-  auto* sta = openroad->getSta();
-  sta->init(openroad->tclInterp(), openroad->getDb());
+  dbSta *sta = openroad->getSta();
+  sta->init(openroad->tclInterp(), openroad->getDb(),
+            // Gui broken api missing openroad accessor.
+            gui::Gui::get());
   openroad->addObserver(sta);
 }
 
@@ -80,6 +86,18 @@ deleteDbSta(sta::dbSta *sta)
 ////////////////////////////////////////////////////////////////
 
 namespace sta {
+
+class PathRenderer : public gui::Renderer
+{
+public:
+  PathRenderer(dbSta *sta);
+  void highlight(PathRef *path);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  dbSta *sta_;
+  PathRef *path_;
+};
 
 dbSta *
 makeBlockSta(dbBlock *block)
@@ -102,17 +120,25 @@ extern const char *dbsta_tcl_inits[];
 dbSta::dbSta() :
   Sta(),
   db_(nullptr),
-  db_cbk_(this)
+  db_cbk_(this),
+  path_renderer_(nullptr)
 {
+}
+
+dbSta::~dbSta()
+{
+  delete path_renderer_;
 }
 
 void
 dbSta::init(Tcl_Interp *tcl_interp,
-	    dbDatabase *db)
+	    dbDatabase *db,
+            gui::Gui *gui)
 {
   initSta();
   Sta::setSta(this);
   db_ = db;
+  gui_ = gui;
   makeComponents();
   setTclInterp(tcl_interp);
   // Define swig TCL commands.
@@ -368,6 +394,39 @@ void
 dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
 {
   sta_->deletePinBefore(network_->dbToSta(bterm));
+}
+
+////////////////////////////////////////////////////////////////
+
+PathRenderer::PathRenderer(dbSta *sta) :
+  sta_(sta),
+  path_(nullptr)
+{
+}
+
+void
+PathRenderer::highlight(PathRef *path)
+{
+  path_ = path;
+}
+
+void
+PathRenderer::drawObjects(gui::Painter &painter)
+{
+  painter.setPen(gui::Painter::red, true);
+  painter.drawLine(0, 0, 20000, 10000);
+}
+
+void
+dbSta::highlightPath(PathRef *path)
+{
+  if (gui_) {
+    if (path_renderer_ == nullptr) {
+      path_renderer_ = new PathRenderer(this);
+      gui_->register_renderer(path_renderer_);
+    }
+    path_renderer_->highlight(path);
+  }
 }
 
 } // namespace sta
