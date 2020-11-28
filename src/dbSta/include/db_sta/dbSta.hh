@@ -119,7 +119,8 @@ public:
 			  LibertyPort *port,
 			  Net *net) override;
   virtual void disconnectPin(Pin *pin) override;
-  void highlightPath(PathRef *path);
+  // Highlight path in the gui.
+  void highlight(PathRef *path);
 
   using Sta::netSlack;
   using Sta::isClock;

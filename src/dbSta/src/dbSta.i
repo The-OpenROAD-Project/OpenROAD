@@ -37,7 +37,7 @@ highlight_path_cmd(PathRef *path)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  sta->highlightPath(path);
+  sta->highlight(path);
 }
 
 // For debugging because I can't get a dbNet vector thru swig.
