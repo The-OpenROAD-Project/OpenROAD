@@ -5,8 +5,7 @@ read_lef Nangate45/Nangate45.lef
 read_def reg2.def
 create_clock -period 1 {clk1 clk2 clk3}
 
-set buffer_cell [get_lib_cell BUF_X2]
-buffer_ports -inputs -outputs -buffer_cell $buffer_cell
+buffer_ports -inputs -outputs
 
 set def_file [make_result_file buffer_ports1.def]
 write_def $def_file

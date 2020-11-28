@@ -12,7 +12,7 @@ foreach net_name {in1 n2 n2} {
 }
 
 # wire length = 1500u -> 2 buffers required
-repair_clock_nets -max_wire_length 600 -buffer_cell BUF_X1
+repair_clock_nets -max_wire_length 600
 
 puts [[sta::sta_to_db_net [get_net net2]] getSigType]
 

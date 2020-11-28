@@ -9,4 +9,4 @@ estimate_parasitics -placement
 
 report_long_wires 2
 
-repair_design -max_wire_length 600 -buffer_cell BUF_X1
+repair_design -max_wire_length 600

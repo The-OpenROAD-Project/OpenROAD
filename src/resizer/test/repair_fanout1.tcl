@@ -15,7 +15,7 @@ set_wire_rc -layer metal1
 estimate_parasitics -placement
 
 report_check_types -max_fanout
-repair_design -buffer_cell BUF_X1
+repair_design
 report_check_types -max_fanout
 
 # set repaired_filename [make_result_file "repair_fanout1.def"]

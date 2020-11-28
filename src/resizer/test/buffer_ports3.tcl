@@ -5,4 +5,4 @@ read_lef Nangate45/Nangate45.lef
 read_lef bus1.lef
 read_def bus1.def
 
-buffer_ports -buffer_cell BUF_X2
+buffer_ports

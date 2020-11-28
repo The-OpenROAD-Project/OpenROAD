@@ -44,12 +44,16 @@ namespace sta {
 using std::array;
 using odb::Rect;
 
+class RebufferOption;
+
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Map<Vertex*, float> VertexWeightMap;
 typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
+typedef Vector<RebufferOption*> RebufferOptionSeq;
+enum class RebufferOptionType { sink, junction, wire, buffer };
 
 class Resizer : public StaState
 {
@@ -92,8 +96,8 @@ public:
 
   void setMaxUtilization(double max_utilization);
   void resizePreamble(LibertyLibrarySeq *resize_libs);
-  void bufferInputs(LibertyCell *buffer_cell);
-  void bufferOutputs(LibertyCell *buffer_cell);
+  void bufferInputs();
+  void bufferOutputs();
   // Resize all instances in the network.
   // resizerPreamble() required.
   void resizeToTargetSlew();
@@ -103,11 +107,12 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHoldViolations(LibertyCellSeq *buffers,
-                            bool allow_setup_violations);
-  void repairHoldViolations(Pin *end_pin,
-                            LibertyCellSeq *buffers,
-                            bool allow_setup_violations);
+  void repairHold(bool allow_setup_violations);
+  void repairHold(Pin *end_pin,
+                  LibertyCell *buffer_cell,
+                  bool allow_setup_violations);
+  void repairSetup();
+  void repairSetup(Pin *drvr_pin);
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -128,12 +133,10 @@ public:
                      Delay &delay,
                      Slew &slew);
   // Repair long wires, max fanout violations.
-  void repairDesign(double max_wire_length, // zero for none (meters)
-                    LibertyCell *buffer_cell);
+  void repairDesign(double max_wire_length); // zero for none (meters)
   // repairDesign but restricted to clock network and
   // no max_fanout/max_cap checks.
-  void repairClkNets(double max_wire_length, // meters
-                     LibertyCell *buffer_cell);
+  void repairClkNets(double max_wire_length); // meters
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -141,12 +144,12 @@ public:
   void repairClkInverters();
   // for debugging
   void repairNet(Net *net,
-                 double max_wire_length, // meters
-                 LibertyCell *buffer_cell);
+                 double max_wire_length); // meters
   void reportLongWires(int count,
                        int digits);
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
+  double findMaxWireLength();
   double findMaxWireLength(LibertyCell *buffer_cell);
   double findMaxWireLength(LibertyPort *drvr_port);
   // Find the max wire length with load slew < max_slew (in meters).
@@ -166,6 +169,11 @@ public:
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
+  void rebuffer(const Pin *drvr_pin);
+  // Rebuffer net (for testing).
+  // resizerPreamble() required.
+  void rebuffer(Net *net);
+
 protected:
   void init();
   void ensureBlock();
@@ -178,6 +186,7 @@ protected:
   void bufferOutput(Pin *top_pin,
                     LibertyCell *buffer_cell);
   void makeEquivCells(LibertyLibrarySeq *resize_libs);
+  void findBuffers(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrarySeq *resize_libs);
   void findTargetLoads(LibertyLibrary *library,
                        TgtSlews &slews);
@@ -213,7 +222,6 @@ protected:
                  bool check_fanout,
                  int max_length, // dbu
                  bool resize_drvr,
-                 LibertyCell *buffer_cell,
                  int &repair_count,
                  int &slew_violations,
                  int &cap_violations,
@@ -231,7 +239,6 @@ protected:
                  float max_cap,
                  float max_fanout,
                  int max_length,
-                 LibertyCell *buffer_cell,
                  int level,
                  // Return values.
                  int &wire_length,
@@ -274,6 +281,8 @@ protected:
                   // Return values.
                   ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
+  ArcDelay gateDelay(LibertyPort *drvr_port,
+                     float load_cap);
   float bufferDelay(LibertyCell *buffer_cell,
                     RiseFall *rf,
                     float load_cap);
@@ -300,9 +309,10 @@ protected:
                          LibertyPort *load_port,
                          double wire_length,
                          double max_slew);
-  void repairHoldViolations(VertexSet *ends,
-                            LibertyCell *buffer_cell,
-                            bool allow_setup_violations);
+  LibertyCell *findHoldBuffer();
+  void repairHold(VertexSet *ends,
+                  LibertyCell *buffer_cell,
+                  bool allow_setup_violations);
   int repairHoldPass(VertexSet &ends,
                      LibertyCell *buffer_cell,
                      float buffer_delay,
@@ -340,11 +350,52 @@ protected:
   void setWireCorner(Corner *corner);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitics();
+  void repairSetup(PathRef &path,
+                   Slack path_slack);
+  void splitLoads(PathRef *drvr_path,
+                  Slack drvr_slack);
+  LibertyCell *upsizeCell(LibertyPort *in_port,
+                          LibertyPort *drvr_port,
+                          float load_cap,
+                          float prev_drive);
+  bool replaceCell(Instance *inst,
+                   LibertyCell *cell);
+
+  RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
+                                     SteinerPt k,
+                                     SteinerPt prev,
+                                     int level);
+  void rebufferTopDown(RebufferOption *choice,
+                       Net *net,
+                       int level);
+  RebufferOptionSeq
+  addWireAndBuffer(RebufferOptionSeq Z,
+                   SteinerTree *tree,
+                   SteinerPt k,
+                   SteinerPt prev,
+                   int level);
+  // RebufferOption factory.
+  RebufferOption *makeRebufferOption(RebufferOptionType type,
+                                     float cap,
+                                     Requireds requireds,
+                                     Pin *load_pin,
+                                     Point location,
+                                     LibertyCell *buffer_cell,
+                                     RebufferOption *ref,
+                                     RebufferOption *ref2);
+  void deleteRebufferOptions();
+  bool hasTopLevelOutputPort(Net *net);
+
+  int rebuffer_net_count_;
+  RebufferOptionSeq rebuffer_options_;
+  friend class RebufferOption;
 
   float wire_res_;
   float wire_cap_;
   float wire_clk_res_;
   float wire_clk_cap_;
+  LibertyCellSeq buffer_cells_;
+  LibertyCell *buffer_lowest_drive_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;
