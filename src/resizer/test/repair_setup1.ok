@@ -21,19 +21,19 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.203    0.203 ^ r1/Q (DFF_X1)
-   0.024    0.227 ^ u1/A (BUF_X1)
-   0.047    0.273 ^ u1/Z (BUF_X1)
-   0.001    0.274 ^ u2/A (BUF_X1)
-   0.036    0.311 ^ u2/Z (BUF_X1)
-   0.001    0.312 ^ u3/A (BUF_X1)
-   0.036    0.347 ^ u3/Z (BUF_X1)
-   0.001    0.349 ^ u4/A (BUF_X1)
-   0.036    0.384 ^ u4/Z (BUF_X1)
-   0.001    0.385 ^ u5/A (BUF_X1)
-   0.094    0.480 ^ u5/Z (BUF_X1)
-   0.045    0.525 ^ r2/D (DFF_X1)
-            0.525   data arrival time
+   0.194    0.194 ^ r1/Q (DFF_X1)
+   0.023    0.217 ^ u1/A (BUF_X1)
+   0.047    0.264 ^ u1/Z (BUF_X1)
+   0.001    0.265 ^ u2/A (BUF_X1)
+   0.036    0.301 ^ u2/Z (BUF_X1)
+   0.001    0.302 ^ u3/A (BUF_X1)
+   0.036    0.338 ^ u3/Z (BUF_X1)
+   0.001    0.339 ^ u4/A (BUF_X1)
+   0.036    0.375 ^ u4/Z (BUF_X1)
+   0.001    0.376 ^ u5/A (BUF_X1)
+   0.094    0.470 ^ u5/Z (BUF_X1)
+   0.045    0.515 ^ r2/D (DFF_X1)
+            0.515   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -43,22 +43,22 @@ Path Type: max
             0.254   data required time
 -----------------------------------------------------------
             0.254   data required time
-           -0.525   data arrival time
+           -0.515   data arrival time
 -----------------------------------------------------------
-           -0.271   slack (VIOLATED)
+           -0.261   slack (VIOLATED)
 
 
 Group                  Internal  Switching    Leakage      Total
                           Power      Power      Power      Power
 ----------------------------------------------------------------
-Sequential             1.25e-04   1.41e-05   9.49e-07   1.40e-04  89.2%
-Combinational          4.33e-06   1.26e-05   1.07e-07   1.71e-05  10.8%
+Sequential             1.25e-04   1.51e-05   9.49e-07   1.41e-04  89.3%
+Combinational          4.30e-06   1.26e-05   1.07e-07   1.70e-05  10.7%
 Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 ----------------------------------------------------------------
-Total                  1.29e-04   2.67e-05   1.06e-06   1.57e-04 100.0%
-                          82.3%      17.0%       0.7%
-Inserted 6 buffers.
+Total                  1.30e-04   2.78e-05   1.06e-06   1.58e-04 100.0%
+                          81.8%      17.5%       0.7%
+Inserted 12 buffers.
 Resized 13 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -70,19 +70,19 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.089    0.089 v r1/Q (DFF_X1)
-   0.002    0.092 v u1/A (BUF_X4)
-   0.027    0.119 v u1/Z (BUF_X4)
-   0.002    0.121 v u2/A (BUF_X4)
-   0.023    0.144 v u2/Z (BUF_X4)
-   0.002    0.146 v u3/A (BUF_X4)
-   0.023    0.169 v u3/Z (BUF_X4)
-   0.002    0.171 v u4/A (BUF_X4)
-   0.025    0.197 v u4/Z (BUF_X4)
-   0.004    0.201 v u5/A (BUF_X16)
-   0.025    0.226 v u5/Z (BUF_X16)
-   0.034    0.260 v r2/D (DFF_X1)
-            0.260   data arrival time
+   0.090    0.090 v r1/Q (DFF_X1)
+   0.002    0.093 v u1/A (BUF_X4)
+   0.027    0.120 v u1/Z (BUF_X4)
+   0.002    0.122 v u2/A (BUF_X4)
+   0.023    0.145 v u2/Z (BUF_X4)
+   0.002    0.147 v u3/A (BUF_X4)
+   0.023    0.171 v u3/Z (BUF_X4)
+   0.002    0.173 v u4/A (BUF_X4)
+   0.025    0.198 v u4/Z (BUF_X4)
+   0.004    0.202 v u5/A (BUF_X16)
+   0.025    0.227 v u5/Z (BUF_X16)
+   0.034    0.261 v r2/D (DFF_X1)
+            0.261   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
@@ -92,18 +92,18 @@ Path Type: max
             0.246   data required time
 -----------------------------------------------------------
             0.246   data required time
-           -0.260   data arrival time
+           -0.261   data arrival time
 -----------------------------------------------------------
-           -0.014   slack (VIOLATED)
+           -0.015   slack (VIOLATED)
 
 
 Group                  Internal  Switching    Leakage      Total
                           Power      Power      Power      Power
 ----------------------------------------------------------------
-Sequential             1.25e-04   1.94e-06   9.49e-07   1.28e-04  66.5%
-Combinational          3.21e-05   3.12e-05   9.17e-07   6.42e-05  33.5%
+Sequential             1.25e-04   2.09e-06   9.49e-07   1.28e-04  64.7%
+Combinational          3.58e-05   3.31e-05   9.85e-07   6.99e-05  35.3%
 Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 ----------------------------------------------------------------
-Total                  1.57e-04   3.31e-05   1.87e-06   1.92e-04 100.0%
-                          81.8%      17.3%       1.0%
+Total                  1.61e-04   3.52e-05   1.93e-06   1.98e-04 100.0%
+                          81.2%      17.8%       1.0%
