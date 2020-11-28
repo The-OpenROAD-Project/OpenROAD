@@ -349,7 +349,10 @@ proc repair_timing { args } {
 
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
-
+  } else {
+    set resize_libs [get_libs *]
+    if { $resize_libs == {} } {
+      ord::error "No liberty libraries found."
     }
   }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
