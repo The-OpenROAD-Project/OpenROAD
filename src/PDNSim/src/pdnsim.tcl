@@ -23,7 +23,7 @@ proc analyze_power_grid { args } {
     set net $keys(-net)
     pdnsim_set_power_net $net
   } else {
-    ord::error "Key net name not specified"
+    ord::error "Argument -net not specified"
   }
   if { [info exists keys(-dx)] } {
     set bump_pitch_x $keys(-dx)
@@ -64,7 +64,7 @@ proc check_power_grid { args } {
      set net $keys(-net)
      pdnsim_set_power_net $net
   } else {
-     ord::error "Key net name not specified"
+     ord::error "Argument -net not specified"
   }
   if { [ord::db_has_rows] } {
    	set res [pdnsim_check_connectivity_cmd]
@@ -101,7 +101,7 @@ proc write_pg_spice { args } {
     set net $keys(-net)
     pdnsim_set_power_net $net
   } else {
-    ord::error "Key net name not specified"
+    ord::error "Argument -net not specified"
   }
   if { [info exists keys(-dx)] } {
     set bump_pitch_x $keys(-dx)

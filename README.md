@@ -808,7 +808,9 @@ write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <
 ```
 
 Options description:
-- **vsrc**: (optional) file to set the location of the power C4 bumps/IO pins
+- **vsrc**: (optional) file to set the location of the power C4 bumps/IO pins.
+        [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) 
+        for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
 - **dx,dy**: (optional) these arguments set the bump pitch to decide the voltage
   source location in the absence of a vsrc file. Default bump pitch of 140um
   used in absence of these arguments and vsrc 
