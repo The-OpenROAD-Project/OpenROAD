@@ -33,47 +33,44 @@
 ##
 ############################################################################
 
-# Read Verilog to OpenDB
+namespace eval sta {
 
-sta::define_cmd_args "read_verilog" {filename}
+define_cmd_args "highlight_path" {[-min|-max] pin ^|r|rise|v|f|fall}
 
-proc read_verilog { filename } {
-  ord::read_verilog_cmd [file nativename $filename]
-}
+proc highlight_path { args } {
+  parse_key_args "highlight_path" args keys {} \
+    flags {-max -min} 0
 
-sta::define_cmd_args "link_design" {[top_cell_name]}
+  if { [info exists flags(-min)] && [info exists flags(-max)] } {
+    sta_error "-min and -max cannot both be specified."
+  } elseif [info exists flags(-min)] {
+    set min_max "min"
+  } elseif [info exists flags(-max)] {
+    set min_max "max"
+  } else {
+    # Default to max path.
+    set min_max "max"
+  }
+  check_argc_eq2 "highlight_path" $args
 
-proc link_design { {top_cell_name ""} } {
-  variable current_design_name
+  set pin_arg [lindex $args 0]
+  set tr [parse_rise_fall_arg [lindex $args 1]]
 
-  if { $top_cell_name == "" } {
-    if { $current_design_name == "" } {
-      ord::error "missing top_cell_name argument and no current_design."
-      return 0
-    } else {
-      set top_cell_name $current_design_name
+  set pin [get_port_pin_error "pin" $pin_arg]
+  if { [$pin is_hierarchical] } {
+    sta_error "pin '$pin_arg' is hierarchical."
+  } else {
+    foreach vertex [$pin vertices] {
+      if { $vertex != "NULL" } {
+        set worst_path [vertex_worst_arrival_path_rf $vertex $tr $min_max]
+        if { $worst_path != "NULL" } {
+          highlight_path_cmd $worst_path
+          delete_path_ref $worst_path
+        }
+      }
     }
   }
-  if { ![ord::db_has_tech] } {
-    ord::error "no technology has been read."
-  }
-  ord::link_design_db_cmd $top_cell_name
 }
 
-sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
-					[-remove_cells cells] filename}
-
-proc write_verilog { args } {
-  sta::parse_key_args "write_verilog" args keys {-remove_cells} \
-    flags {-sort -include_pwr_gnd}
-
-  set remove_cells {}
-  if { [info exists keys(-remove_cells)] } {
-    set remove_cells [sta::parse_libcell_arg $keys(-remove_cells)]
-  }
-  set sort [info exists flags(-sort)]
-  set include_pwr_gnd [info exists flags(-include_pwr_gnd)]
-  sta::check_argc_eq1 "write_verilog" $args
-  set filename $args
-  ord::write_verilog_cmd $filename $sort $include_pwr_gnd $remove_cells
+# namespace
 }
