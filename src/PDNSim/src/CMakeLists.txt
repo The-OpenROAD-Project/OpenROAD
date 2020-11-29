@@ -15,6 +15,7 @@ set (PDNSIM_SRC
   gmat.cpp
   ir_solver.cpp
   get_power.cpp
+  get_voltage.cpp
   pdnsim.cpp
   MakePDNSim.cpp
   ${PDNSIM_WRAP}

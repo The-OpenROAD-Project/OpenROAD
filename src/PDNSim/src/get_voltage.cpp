@@ -30,30 +30,50 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef __IRSOLVER_Power__
-#define __IRSOLVER_Power__ 0
-
-#include <vector>
-#include <string>
-namespace sta {
-class dbSta;
-}  // namespace sta
 
 
-//!  Calculates the power per instance using OpenSTA 
-/*!
-  Uses OpenSTA to report total power per instance and 
-  use it for IR drop estimation.
-*/
-class PowerInst
-{
- private:
-  //! Instance to OpenSTA object.
-  sta::dbSta*   _sta;
+#include "get_voltage.h"
+#include <iostream>
 
- public:
-  //! Function for power per instance calculation
-    std::vector<std::pair<std::string, double>> executePowerPerInst(sta::dbSta* sta);
-};
- // epower namespace end
-#endif
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Liberty.hh"
+
+std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta) {
+  std::pair<double, double>  supply_voltage;
+  sta::LibertyLibrary *default_library;
+  _sta = sta;
+  sta::dbNetwork* network = _sta->getDbNetwork();
+  sta::Corner* corner = _sta->cmdCorner();
+  sta::MinMax *mm = sta::MinMax::max();
+  const sta::DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(mm);
+  float power_voltage_;
+  float gnd_voltage_;
+  default_library= network->defaultLibertyLibrary();
+  bool exists;
+
+  const sta::Pvt *pvt = dcalc_ap->operatingConditions();
+  if (pvt == nullptr)
+    pvt = default_library->defaultOperatingConditions();
+  if (pvt)
+    power_voltage_ =  pvt->voltage();
+  else
+    power_voltage_ =  0.0;
+  gnd_voltage_ = 0.0;
+  //default_library_->supplyVoltage(power_name_, power_voltage_, exists);
+  //if (!exists) {
+  //  DcalcAnalysisPt *dcalc_ap = path_->dcalcAnalysisPt(this);
+  //  const OperatingConditions *op_cond = dcalc_ap->operatingConditions();
+  //  if (op_cond == nullptr)
+  //    op_cond = network->defaultLibertyLibrary()->defaultOperatingConditions();
+  //  power_voltage_ = op_cond->voltage();
+  //}
+  //default_library_->supplyVoltage(gnd_name_, gnd_voltage_, exists);
+  //if (!exists)
+  //  gnd_voltage_ = 0.0;
+  supply_voltage.first = power_voltage_;
+  supply_voltage.second = gnd_voltage_;
+  return supply_voltage;
+}

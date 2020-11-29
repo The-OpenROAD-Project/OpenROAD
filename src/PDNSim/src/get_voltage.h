@@ -30,8 +30,8 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef __IRSOLVER_Power__
-#define __IRSOLVER_Power__ 0
+#ifndef __IRSOLVER_Voltage__
+#define __IRSOLVER_Voltage__ 0
 
 #include <vector>
 #include <string>
@@ -45,7 +45,7 @@ class dbSta;
   Uses OpenSTA to report total power per instance and 
   use it for IR drop estimation.
 */
-class PowerInst
+class SupplyVoltage
 {
  private:
   //! Instance to OpenSTA object.
@@ -53,7 +53,7 @@ class PowerInst
 
  public:
   //! Function for power per instance calculation
-    std::vector<std::pair<std::string, double>> executePowerPerInst(sta::dbSta* sta);
+    std::pair<double, double> getSupplyVoltage(sta::dbSta* sta);
 };
  // epower namespace end
 #endif

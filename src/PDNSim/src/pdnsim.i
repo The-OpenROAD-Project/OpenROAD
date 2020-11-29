@@ -30,6 +30,29 @@ pdnsim_set_power_net_cmd(const char* net)
 }
 
 void 
+pdnsim_set_bump_pitch_x_cmd(float bump_pitch)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->set_bump_pitch_x(bump_pitch);
+}
+
+void 
+pdnsim_set_bump_pitch_y_cmd(float bump_pitch)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->set_bump_pitch_y(bump_pitch);
+}
+
+void 
+pdnsim_set_net_voltage_cmd(const char* net_name, float voltage)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->set_net_voltage(net_name, voltage);
+}
+
+
+
+void 
 pdnsim_import_em_enable(int enable_em)
 {
   PDNSim* pdnsim = getPDNSim();
