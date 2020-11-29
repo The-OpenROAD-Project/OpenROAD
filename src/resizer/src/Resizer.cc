@@ -522,7 +522,8 @@ Resizer::resizeToTargetSlew()
         && !sta_->isClock(drvr_pin)
         // Hands off special nets.
         && !isSpecial(net)) {
-      resizeToTargetSlew(drvr_pin);
+      if (resizeToTargetSlew(drvr_pin))
+        resize_count_++;
       if (overMaxArea()) {
         warn("Max utilization reached.");
         break;
@@ -555,7 +556,7 @@ Resizer::makeEquivCells(LibertyLibrarySeq *resize_libs)
   sta_->makeEquivCells(resize_libs, &map_libs);
 }
 
-void
+bool
 Resizer::resizeToTargetSlew(const Pin *drvr_pin)
 {
   NetworkEdit *network = networkEdit();
@@ -626,13 +627,13 @@ Resizer::resizeToTargetSlew(const Pin *drvr_pin)
                       sdc_network_->pathName(drvr_pin),
                       cell->name(),
                       best_cell->name());
-          bool replaced = replaceCell(inst, best_cell);
-          if (replaced && revisiting_inst)
-            resize_count_--;
+          return replaceCell(inst, best_cell)
+            && !revisiting_inst;
         }
       }
     }
   }
+  return false;
 }
 
 // Replace LEF with LEF so ports stay aligned in instance.
@@ -648,7 +649,6 @@ Resizer::replaceCell(Instance *inst,
     designAreaIncr(-area(master));
     Cell *replacement_cell1 = db_network_->dbToSta(replacement_master);
     sta_->replaceCell(inst, replacement_cell1);
-    resize_count_++;
     designAreaIncr(area(replacement_master));
 
     // Delete estimated parasitics on all instance pins.
@@ -1379,7 +1379,8 @@ Resizer::repairSetup(PathRef &path,
         debugPrint2(debug_, "retime", 2, "resize %s -> %s\n",
                     network_->pathName(drvr_pin),
                     upsize->name());
-        replaceCell(drvr, upsize);
+        if (replaceCell(drvr, upsize))
+          resize_count_++;
         break;
       }
     }
@@ -1457,11 +1458,8 @@ Resizer::splitLoads(PathRef *drvr_path,
     sta_->disconnectPin(load_pin);
     sta_->connectPin(load, load_port, out_net);
   }
-  // Don't count resizing for inserted buffers.
-  int resize_count = resize_count_;
   Pin *buffer_out_pin = network_->findPin(buffer, output);
   resizeToTargetSlew(buffer_out_pin);
-  resize_count_ = resize_count;
 }
 
 LibertyCell *
@@ -2069,8 +2067,9 @@ Resizer::repairNet(Net *net,
                 ignore1, ignore2, ignore3, ignore4);
       repair_count++;
     }
-    if (resize_drvr)
-      resizeToTargetSlew(drvr_pin);
+    if (resize_drvr
+        && resizeToTargetSlew(drvr_pin))
+      resize_count_++;
     delete tree;
   }
 }
@@ -2394,10 +2393,7 @@ Resizer::makeRepeater(const char *where,
 
     // Resize repeater as we back up by levels.
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
-    // Do not count repeaters in resize count.
-    int resize_save = resize_count_;
     resizeToTargetSlew(drvr_pin);
-    resize_count_ = resize_save;
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
@@ -3072,16 +3068,14 @@ Resizer::repairClkInverters()
   graph_ = sta_->graph();
   ensureBlock();
   ensureDesignArea();
-  InstanceSeq clk_inverters;
-  findClkInverters(clk_inverters);
-  for (Instance *inv : clk_inverters)
+  for (Instance *inv : findClkInverters())
     cloneClkInverter(inv);
 }
 
-void
-Resizer::findClkInverters(// Return values
-                          InstanceSeq &clk_inverters)
+InstanceSeq
+Resizer::findClkInverters()
 {
+  InstanceSeq clk_inverters;
   ClkArrivalSearchPred srch_pred(this);
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
   for (Clock *clk : sdc_->clks()) {
@@ -3105,6 +3099,7 @@ Resizer::findClkInverters(// Return values
     if (!vertex->isRegClk())
       bfs.enqueueAdjacentVertices(vertex);
   }
+  return clk_inverters;
 }
 
 void
