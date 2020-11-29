@@ -103,7 +103,8 @@ public:
   void resizeToTargetSlew();
   // Resize inst to target slew (public for testing).
   // resizerPreamble() required.
-  void resizeToTargetSlew(const Pin *drvr_pin);
+  // Return true if resized.
+  bool resizeToTargetSlew(const Pin *drvr_pin);
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
@@ -344,8 +345,7 @@ protected:
   Point tieLocation(Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);
-  void findClkInverters(// Return values
-                        InstanceSeq &clk_inverters);
+  InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
   void ensureWireParasitic(const Pin *drvr_pin);
