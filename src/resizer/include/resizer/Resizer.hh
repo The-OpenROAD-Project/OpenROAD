@@ -37,6 +37,7 @@
 
 #include <array>
 #include "db_sta/dbSta.hh"
+#include "sta/UnorderedSet.hh"
 #include "SteinerTree.hh"
 
 namespace sta {
@@ -45,6 +46,12 @@ using std::array;
 using odb::Rect;
 
 class RebufferOption;
+
+class NetHash
+{
+public:
+  size_t operator()(const Net *net) const { return hashPtr(net); }
+};
 
 typedef Map<LibertyCell*, float> CellTargetLoadMap;
 typedef Map<Vertex*, float> VertexWeightMap;
@@ -81,8 +88,9 @@ public:
   float wireClkCapacitance() { return wire_clk_cap_; }
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);
-  void estimateWireParasitic(const dbNet *net);
   bool haveEstimatedParasitics() const { return have_estimated_parasitics_; }
+  void parasiticsInvalid(const Net *net);
+  void parasiticsInvalid(const dbNet *net);
 
   // Core area (meters).
   double coreArea() const;
@@ -348,7 +356,10 @@ protected:
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
+  void ensureWireParasitic(const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
+  void ensureWireParasitic(const Pin *drvr_pin,
+                           const Net *net);
   void ensureWireParasitics();
   void repairSetup(PathRef &path,
                    Slack path_slack);
@@ -390,12 +401,11 @@ protected:
   RebufferOptionSeq rebuffer_options_;
   friend class RebufferOption;
 
+  // These are command args
   float wire_res_;
   float wire_cap_;
   float wire_clk_res_;
   float wire_clk_cap_;
-  LibertyCellSeq buffer_cells_;
-  LibertyCell *buffer_lowest_drive_;
   Corner *corner_;
   LibertyCellSet dont_use_;
   double max_area_;
@@ -411,7 +421,10 @@ protected:
   const DcalcAnalysisPt *dcalc_ap_;
   const Pvt *pvt_;
   const ParasiticAnalysisPt *parasitics_ap_;
+  LibertyCellSeq buffer_cells_;
+  LibertyCell *buffer_lowest_drive_;
   bool have_estimated_parasitics_;
+  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
   CellTargetLoadMap *target_load_map_;
   VertexSeq level_drvr_verticies_;
   bool level_drvr_verticies_valid_;

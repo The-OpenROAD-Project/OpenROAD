@@ -26,15 +26,15 @@ Path Type: max
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
    1.00    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
-   3.71    0.01    0.03    0.04 ^ u2/Z (BUF_X1)
-           0.01    0.00    0.04 ^ repeater2/A (BUF_X4)
-   3.71    0.01    0.02    0.06 ^ repeater2/Z (BUF_X4)
-           0.01    0.00    0.06 ^ repeater1/A (BUF_X4)
-   1.28    0.00    0.02    0.08 ^ repeater1/Z (BUF_X4)
-           0.00    0.00    0.08 ^ u3/A (BUF_X1)
-   0.31    0.00    0.02    0.09 ^ u3/Z (BUF_X1)
-           0.00    0.00    0.09 ^ out1 (out)
-                           0.09   data arrival time
+  22.24    0.05    0.06    0.08 ^ u2/Z (BUF_X1)
+           0.05    0.02    0.10 ^ repeater2/A (BUF_X4)
+  33.15    0.02    0.04    0.13 ^ repeater2/Z (BUF_X4)
+           0.04    0.03    0.16 ^ repeater1/A (BUF_X4)
+  30.75    0.02    0.04    0.20 ^ repeater1/Z (BUF_X4)
+           0.03    0.03    0.23 ^ u3/A (BUF_X1)
+   0.31    0.01    0.02    0.25 ^ u3/Z (BUF_X1)
+           0.01    0.00    0.25 ^ out1 (out)
+                           0.25   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 
