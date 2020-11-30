@@ -12,7 +12,6 @@ class FlexGridGraph;
 class FlexWavefrontGrid;
 class FlexDRWorker;
 class drNet;
-class frDebugSettings;
 
 // This class draws debugging graphics on the layout
 class FlexDRGraphics : public gui::Renderer
