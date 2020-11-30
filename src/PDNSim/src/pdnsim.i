@@ -44,10 +44,10 @@ pdnsim_set_bump_pitch_y_cmd(float bump_pitch)
 }
 
 void 
-pdnsim_set_net_voltage_cmd(const char* net_name, float voltage)
+pdnsim_set_pdnsim_net_voltage_cmd(const char* net_name, float voltage)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_net_voltage(net_name, voltage);
+  pdnsim->set_pdnsim_net_voltage(net_name, voltage);
 }
 
 

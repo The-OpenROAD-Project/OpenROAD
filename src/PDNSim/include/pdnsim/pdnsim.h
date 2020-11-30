@@ -67,7 +67,7 @@ class PDNSim
     void set_power_net(std::string net);
     void set_bump_pitch_x(float bump_pitch);
     void set_bump_pitch_y(float bump_pitch);
-    void set_net_voltage(std::string net, float voltage);
+    void set_pdnsim_net_voltage(std::string net, float voltage);
     int analyze_power_grid();
     void write_pg_spice();
 

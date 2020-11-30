@@ -96,7 +96,7 @@ void PDNSim::set_bump_pitch_y(float bump_pitch){
   _bump_pitch_y= bump_pitch;
 }
 
-void PDNSim::set_net_voltage(std::string net, float voltage){
+void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage){
  _net_voltage_map.insert(std::pair<std::string, float> (net, voltage));
 }
 

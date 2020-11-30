@@ -119,17 +119,17 @@ proc write_pg_spice { args } {
   }
 }
 
-sta::define_cmd_args "set_net_voltage" { 
+sta::define_cmd_args "set_pdnsim_net_voltage" { 
   [-net net_name]
   [-voltage volt]}
 
-proc set_net_voltage { args } {
-  sta::parse_key_args "set_net_voltage" args \
+proc set_pdnsim_net_voltage { args } {
+  sta::parse_key_args "set_pdnsim_net_voltage" args \
     keys {-net -voltage} flags {}
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
     set net $keys(-net)
     set voltage $keys(-voltage)
-    pdnsim_set_net_voltage_cmd $net $voltage
+    pdnsim_set_pdnsim_net_voltage_cmd $net $voltage
   } else {
     ord::error "Argument -net or -voltage not specified. Please specifiy both
     -net and -voltage arguments"

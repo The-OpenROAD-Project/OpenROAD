@@ -794,7 +794,7 @@ PDNSim spice netlist writer for power wires.
 Commands for the above three functionalities are below: 
 
 ```
-set_net_voltage -net <net_name> -voltage <voltage_value>
+set_pdnsim_net_voltage -net <net_name> -voltage <voltage_value>
 check_power_grid -net <net_name>
 analyze_power_grid -vsrc <voltage_source_location_file> \
                    -net <net_name> \ 
