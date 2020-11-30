@@ -309,7 +309,7 @@ namespace eval psn {
     }
 
 
-    define_cmd_args "repair_timing" {[-capacitance_violations]\
+    define_cmd_args "psn_repair_timing" {[-capacitance_violations]\
         [-transition_violations]\
         [-negative_slack_violations] [-iterations iteration_count] [-buffers buffer_cells]\
         [-inverters inverter cells] [-minimum_gain gain] [-auto_buffer_library size]\
@@ -321,7 +321,7 @@ namespace eval psn {
         [-upstream_resistance res] [-maximum_negative_slack_paths count] [-maximum_negative_slack_path_depth count]\
     }
 
-    proc repair_timing { args } {
+    proc psn_repair_timing { args } {
         if {![psn::has_liberty]} {
             sta::sta_error "No liberty filed is loaded"
             return

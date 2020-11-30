@@ -42,7 +42,7 @@
 #include <string>
 #include <vector>
 
-namespace TritonCTS {
+namespace cts {
 
 class Matching
 {
@@ -103,4 +103,4 @@ class SinkClustering
   float _maxInternalDiameter = 10;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

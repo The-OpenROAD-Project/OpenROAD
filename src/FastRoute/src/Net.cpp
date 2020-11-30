@@ -35,7 +35,7 @@
 
 #include "Net.h"
 
-namespace FastRoute {
+namespace gr {
 
 Net::Net(odb::dbNet* net) : _net(net)
 {
@@ -66,4 +66,4 @@ void Net::destroyPins()
   _pins.clear();
 }
 
-}  // namespace FastRoute
+}  // namespace gr

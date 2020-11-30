@@ -29,7 +29,6 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 u1/Z                                   60.65   72.60  -11.95 (VIOLATED)
 
-Warning: max wire length less than 840u increases wire delays.
 Found 1 slew violations.
 Found 1 capacitance violations.
 Found 1 long wires.

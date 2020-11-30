@@ -40,7 +40,7 @@
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
-namespace ioPlacer {
+namespace pin_placer {
 
 using ord::error;
 using ord::warn;
@@ -265,7 +265,7 @@ void IOPlacer::defineSlots()
       = std::ceil(offset / (std::max(_core.getMaxDstX(), _core.getMaxDstY())));
 
   /*******************************************
-   * How the for bellow follows core boundary *
+   *  Order of the edges when creating slots  *
    ********************************************
    *                 <----                    *
    *                                          *
@@ -1007,4 +1007,4 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
   };
 }
 
-}  // namespace ioPlacer
+}  // namespace pin_placer

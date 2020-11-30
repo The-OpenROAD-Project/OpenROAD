@@ -42,12 +42,12 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-ioPlacer::IOPlacer* getIOPlacer();
+pin_placer::IOPlacer* getIOPlacer();
 } // namespace ord
 
 using ord::getIOPlacer;
-using ioPlacer::Edge;
-using ioPlacer::Direction;
+using pin_placer::Edge;
+using pin_placer::Direction;
 %}
 
 %include "../../Exception.i"

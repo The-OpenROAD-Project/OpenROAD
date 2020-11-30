@@ -42,7 +42,7 @@
 #include <limits>
 #include <sstream>
 
-namespace TritonCTS {
+namespace cts {
 
 void Clock::report() const
 {
@@ -145,4 +145,4 @@ void Clock::forEachClockBuffer(const std::function<void(ClockInst&)>& func)
   }
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

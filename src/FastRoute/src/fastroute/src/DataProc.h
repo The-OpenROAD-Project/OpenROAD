@@ -42,7 +42,7 @@
 
 #define MAXLEN 20000
 
-namespace FastRoute {
+namespace gr {
 
 using boost::multi_array;
 
@@ -161,6 +161,6 @@ T ADIFF(T x, T y)
     return (y - x);
   }
 }
-}  // namespace FastRoute
+}  // namespace gr
 
 #endif /* __DATAPROC_H__ */

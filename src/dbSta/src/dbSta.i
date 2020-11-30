@@ -32,6 +32,14 @@ make_block_sta(odb::dbBlock *block)
   return sta::makeBlockSta(block);
 }
 
+void
+highlight_path_cmd(PathRef *path)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->highlight(path);
+}
+
 // For debugging because I can't get a dbNet vector thru swig.
 void
 report_all_clk_nets()

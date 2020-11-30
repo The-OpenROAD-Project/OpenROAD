@@ -45,6 +45,7 @@ set(DBSTA_TCL_FILES
   ${OPENSTA_HOME}/sdf/Sdf.tcl
 
   ${DBSTA_HOME}/src/dbReadVerilog.tcl
+  ${DBSTA_HOME}/src/dbSta.tcl
   )
 
 add_custom_command(OUTPUT ${DBSTA_TCL_INIT}
@@ -76,6 +77,7 @@ target_include_directories(dbSta
   ${DBSTA_HOME}/include/db_sta
   ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include
+  ${GUI_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${OPENSTA_HOME}/include
   # Unfortunate side-effect of swig include StaTcl.i

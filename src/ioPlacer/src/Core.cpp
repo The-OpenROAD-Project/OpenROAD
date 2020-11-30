@@ -36,7 +36,7 @@
 #include "Core.h"
 #include <algorithm>
 
-namespace ioPlacer {
+namespace pin_placer {
 
 int Core::getPerimeter()
 {
@@ -55,4 +55,4 @@ int Core::getMaxDstY() {
 	return *std::max_element(_minDstPinsY.begin(), _minDstPinsY.end());
 }
 
-}  // namespace ioPlacer
+}  // namespace pin_placer
