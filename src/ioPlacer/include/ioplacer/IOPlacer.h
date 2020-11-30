@@ -143,6 +143,7 @@ class IOPlacer
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
+  void findSlots(const std::vector<int>& layers, Edge edge);
   void defineSlots();
   void createSections();
   void setupSections();

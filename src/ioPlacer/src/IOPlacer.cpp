@@ -249,6 +249,82 @@ bool IOPlacer::checkBlocked(Edge edge, int pos)
   return false;
 }
 
+void IOPlacer::findSlots(const std::vector<int>& layers, Edge edge)
+{
+  Point lb = _core.getBoundary().ll();
+  Point ub = _core.getBoundary().ur();
+
+  int lbX = lb.x();
+  int lbY = lb.y();
+  int ubX = ub.x();
+  int ubY = ub.y();
+
+  bool vertical = (edge == Edge::Top || edge == Edge::Bottom);
+  int min = vertical ? lbX : lbY;
+  int max = vertical ? ubX : ubY;
+
+  int offset = _parms->getBoundariesOffset() * _core.getDatabaseUnit();
+  int num_tracks_offset
+      = std::ceil(offset / (std::max(_core.getMaxDstX(), _core.getMaxDstY())));
+
+  for (int i = 0; i < layers.size(); i++) {
+    int currX, currY, start_idx, end_idx;
+
+    int minDstPins = vertical ? _core.getMinDstPinsX()[i] * _parms->getMinDistance()
+                              : _core.getMinDstPinsY()[i] * _parms->getMinDistance();
+    int initTracks = vertical ? _core.getInitTracksX()[i]
+                              : _core.getInitTracksY()[i];
+    int numTracks = vertical ? _core.getNumTracksX()[i]
+                             : _core.getNumTracksY()[i];
+
+    float thicknessMultiplier = vertical ? _parms->getVerticalThicknessMultiplier()
+                                         : _parms->getHorizontalThicknessMultiplier();
+
+    int halfWidth = vertical ? int(ceil(_core.getMinWidthX()[i] / 2.0))
+                             : int(ceil(_core.getMinWidthY()[i] / 2.0));
+
+    halfWidth *= thicknessMultiplier;
+
+    start_idx
+        = std::max(0.0,
+                   ceil((min + halfWidth - initTracks) / minDstPins))
+          + num_tracks_offset;
+    end_idx
+        = std::min((numTracks - 1),
+                   (int)floor((max - halfWidth - initTracks) / minDstPins))
+          - num_tracks_offset;
+    if (vertical) {
+      currX = initTracks + start_idx * minDstPins;
+      currY = (edge == Edge::Bottom) ? lbY : ubY;
+    } else {
+      currY = initTracks + start_idx * minDstPins;
+      currX = (edge == Edge::Left) ? lbX : ubX;
+    }
+
+    std::vector<Point> slots;
+    for (int i = start_idx; i <= end_idx; ++i) {
+      Point pos(currX, currY);
+      slots.push_back(pos);
+      if (vertical) {
+        currX += minDstPins;
+      } else {
+        currY += minDstPins;
+      }
+    }
+
+    if (edge == Edge::Top || edge == Edge::Left) {
+      std::reverse(slots.begin(), slots.end());
+    }
+
+    for (Point pos : slots) {
+      currX = pos.getX();
+      currY = pos.getY();
+      bool blocked = vertical ? checkBlocked(edge, currX) : checkBlocked(edge, currY);
+      _slots.push_back({blocked, false, Point(currX, currY), layers[i]});
+    }
+  }
+}
+
 void IOPlacer::defineSlots()
 {
   Point lb = _core.getBoundary().ll();
@@ -291,147 +367,13 @@ void IOPlacer::defineSlots()
   // is k_end
   //     ^^^^^^^^ position of tracks(slots)
 
-  for (int i = 0; i < _verLayers.size(); i++) {
-    int currX, currY, start_idx, end_idx;
+  findSlots(_verLayers, Edge::Bottom);
 
-    int minDstPinsX = _core.getMinDstPinsX()[i] * _parms->getMinDistance();
-    int initTracksX = _core.getInitTracksX()[i];
-    int numTracksX = _core.getNumTracksX()[i];
+  findSlots(_horLayers, Edge::Right);
 
-    float thicknessMultiplierV = _parms->getVerticalThicknessMultiplier();;
-    int halfWidthX = int(ceil(_core.getMinWidthX()[i] / 2.0)) * thicknessMultiplierV;
+  findSlots(_verLayers, Edge::Top);
 
-    std::vector<Point> slotsEdge1;
-    start_idx
-        = std::max(0.0,
-                   ceil((lbX + halfWidthX - initTracksX) / minDstPinsX))
-          + num_tracks_offset;
-    end_idx
-        = std::min((numTracksX - 1),
-                   (int)floor((ubX - halfWidthX - initTracksX) / minDstPinsX))
-          - num_tracks_offset;
-    currX = initTracksX + start_idx * minDstPinsX;
-    currY = lbY;
-    for (int i = start_idx; i <= end_idx; ++i) {
-      Point pos(currX, currY);
-      slotsEdge1.push_back(pos);
-      currX += minDstPinsX;
-    }
-
-    for (Point pos : slotsEdge1) {
-      currX = pos.getX();
-      currY = pos.getY();
-      bool blocked = checkBlocked(Edge::Bottom, currX);
-      _slots.push_back({blocked, false, Point(currX, currY), _verLayers[i]});
-    }
-  }
-
-  for (int i = 0; i < _horLayers.size(); i++) {
-    int currX, currY, start_idx, end_idx;
-
-    int minDstPinsY = _core.getMinDstPinsY()[i] * _parms->getMinDistance();
-    int initTracksY = _core.getInitTracksY()[i];
-    int numTracksY = _core.getNumTracksY()[i];
-
-    float thicknessMultiplierH = _parms->getHorizontalThicknessMultiplier();
-    int halfWidthY = int(ceil(_core.getMinWidthY()[i] / 2.0)) * thicknessMultiplierH;
-
-    std::vector<Point> slotsEdge2;
-    start_idx
-        = std::max(0.0,
-                   ceil((lbY + halfWidthY - initTracksY) / minDstPinsY))
-          + num_tracks_offset;
-    end_idx
-        = std::min((numTracksY - 1),
-                   (int)floor((ubY - halfWidthY - initTracksY) / minDstPinsY))
-          - num_tracks_offset;
-    currY = initTracksY + start_idx * minDstPinsY;
-    currX = ubX;
-    for (int i = start_idx; i <= end_idx; ++i) {
-      Point pos(currX, currY);
-      slotsEdge2.push_back(pos);
-      currY += minDstPinsY;
-    }
-
-    for (Point pos : slotsEdge2) {
-      currX = pos.getX();
-      currY = pos.getY();
-      bool blocked = checkBlocked(Edge::Right, currY);
-      _slots.push_back({blocked, false, Point(currX, currY), _horLayers[i]});
-    }
-  }
-
-  for (int i = 0; i < _verLayers.size(); i++) {
-    int currX, currY, start_idx, end_idx;
-
-    int minDstPinsX = _core.getMinDstPinsX()[i] * _parms->getMinDistance();
-    int initTracksX = _core.getInitTracksX()[i];
-    int numTracksX = _core.getNumTracksX()[i];
-
-    float thicknessMultiplierV = _parms->getVerticalThicknessMultiplier();;
-    int halfWidthX = int(ceil(_core.getMinWidthX()[i] / 2.0)) * thicknessMultiplierV;
-
-    std::vector<Point> slotsEdge3;
-    start_idx
-        = std::max(0.0,
-                   ceil((lbX + halfWidthX - initTracksX) / minDstPinsX))
-          + num_tracks_offset;
-    end_idx
-        = std::min((numTracksX - 1),
-                   (int)floor((ubX - halfWidthX - initTracksX) / minDstPinsX))
-          - num_tracks_offset;
-    currX = initTracksX + start_idx * minDstPinsX;
-    currY = ubY;
-    for (int i = start_idx; i <= end_idx; ++i) {
-      Point pos(currX, currY);
-      slotsEdge3.push_back(pos);
-      currX += minDstPinsX;
-    }
-    std::reverse(slotsEdge3.begin(), slotsEdge3.end());
-
-    for (Point pos : slotsEdge3) {
-      currX = pos.getX();
-      currY = pos.getY();
-      bool blocked = checkBlocked(Edge::Top, currX);
-      _slots.push_back({blocked, false, Point(currX, currY), _verLayers[i]});
-    }
-  }
-
-  for (int i = 0; i < _horLayers.size(); i++) {
-    int currX, currY, start_idx, end_idx;
-
-    int minDstPinsY = _core.getMinDstPinsY()[i] * _parms->getMinDistance();
-    int initTracksY = _core.getInitTracksY()[i];
-    int numTracksY = _core.getNumTracksY()[i];
-
-    float thicknessMultiplierH = _parms->getHorizontalThicknessMultiplier();
-    int halfWidthY = int(ceil(_core.getMinWidthY()[i] / 2.0)) * thicknessMultiplierH;
-
-    std::vector<Point> slotsEdge4;
-    start_idx
-        = std::max(0.0,
-                   ceil((lbY + halfWidthY - initTracksY) / minDstPinsY))
-          + num_tracks_offset;
-    end_idx
-        = std::min((numTracksY - 1),
-                   (int)floor((ubY - halfWidthY - initTracksY) / minDstPinsY))
-          - num_tracks_offset;
-    currY = initTracksY + start_idx * minDstPinsY;
-    currX = lbX;
-    for (int i = start_idx; i <= end_idx; ++i) {
-      Point pos(currX, currY);
-      slotsEdge4.push_back(pos);
-      currY += minDstPinsY;
-    }
-    std::reverse(slotsEdge4.begin(), slotsEdge4.end());
-
-    for (Point pos : slotsEdge4) {
-      currX = pos.getX();
-      currY = pos.getY();
-      bool blocked = checkBlocked(Edge::Left, currY);
-      _slots.push_back({blocked, false, Point(currX, currY), _horLayers[i]});
-    }
-  }
+  findSlots(_horLayers, Edge::Left);
 }
 
 void IOPlacer::createSections()
