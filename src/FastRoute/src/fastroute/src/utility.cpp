@@ -41,7 +41,7 @@
 #include "flute.h"
 #include "pdrev/pdrev.h"
 
-namespace FastRoute {
+namespace gr {
 
 void printEdge(int netID, int edgeID)
 {
@@ -1857,4 +1857,4 @@ Tree pdToTree(PD::Tree pdTree)
   }
   return tree;
 }
-}  // namespace FastRoute
+}  // namespace gr

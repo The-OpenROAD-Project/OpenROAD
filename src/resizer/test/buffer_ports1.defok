@@ -10,9 +10,9 @@ COMPONENTS 8 ;
     - r3 DFF_X1 ;
     - u1 BUF_X1 ;
     - u2 AND2_X1 ;
-    - input1 BUF_X2 + PLACED ( 0 0 ) N ;
-    - input2 BUF_X2 + PLACED ( 333 1000 ) N ;
-    - output3 BUF_X2 + PLACED ( 1000 335 ) N ;
+    - input1 BUF_X1 + PLACED ( 0 0 ) N ;
+    - input2 BUF_X1 + PLACED ( 333 1000 ) N ;
+    - output3 BUF_X1 + PLACED ( 1000 335 ) N ;
 END COMPONENTS
 PINS 6 ;
     - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 0 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;

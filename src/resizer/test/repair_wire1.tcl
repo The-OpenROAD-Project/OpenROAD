@@ -20,7 +20,7 @@ report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1
 report_long_wires 2
 
 # wire length = 1500u -> 2 buffers required
-repair_design -max_wire_length 600 -buffer_cell BUF_X1
+repair_design -max_wire_length 600
 
 report_long_wires 4
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1

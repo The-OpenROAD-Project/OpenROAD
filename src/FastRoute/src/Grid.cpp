@@ -37,7 +37,7 @@
 
 #include <complex>
 
-namespace FastRoute {
+namespace gr {
 
 void Grid::init(const long lowerLeftX, const long lowerLeftY,
             const long upperRightX, const long upperRightY,
@@ -198,4 +198,12 @@ odb::Point Grid::getMiddle()
                     (_lowerLeftY + (_upperRightY - _lowerLeftY) / 2.0));
 }
 
-}  // namespace FastRoute
+odb::Rect Grid::getGridArea() const
+{
+  return odb::Rect(_lowerLeftX,
+              _lowerLeftY,
+              _upperRightX,
+              _upperRightY);
+}
+
+}  // namespace gr

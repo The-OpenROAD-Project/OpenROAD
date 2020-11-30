@@ -573,6 +573,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter, options_);
 
+  // Draw bounds
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
+  dbBox* bbox = block->getBBox();
+  painter->drawRect(bbox->xMin(), bbox->yMin(), bbox->getDX(), bbox->getDY());
+
   auto inst_range = search_.search_insts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
 
@@ -862,17 +868,40 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
     QScrollArea::wheelEvent(event);
     return;
   }
+
+  if (event->angleDelta().y() > 0) {
+    zoomIn();
+  } else {
+    zoomOut();
+  }
+}
+
+void LayoutScroll::zoomIn()
+{
   qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
 
   int scrollbar_x = horizontalScrollBar()->value();
   int scrollbar_y = verticalScrollBar()->value();
-  QPointF pos_in_widget = QPointF(event->pos()) - widget()->pos();
+  QPointF pos_in_widget = mapFromGlobal(QCursor::pos()) - widget()->pos();
 
-  if (event->angleDelta().y() > 0) {
-    viewer_->zoomIn();
-  } else {
-    viewer_->zoomOut();
-  }
+  viewer_->zoomIn();
+
+  qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
+  QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;
+
+  horizontalScrollBar()->setValue(scrollbar_x + delta.x());
+  verticalScrollBar()->setValue(scrollbar_y + delta.y());
+}
+
+void LayoutScroll::zoomOut()
+{
+  qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
+
+  int scrollbar_x = horizontalScrollBar()->value();
+  int scrollbar_y = verticalScrollBar()->value();
+  QPointF pos_in_widget = mapFromGlobal(QCursor::pos()) - widget()->pos();
+
+  viewer_->zoomOut();
 
   qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
   QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;

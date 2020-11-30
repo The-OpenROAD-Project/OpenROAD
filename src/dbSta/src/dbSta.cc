@@ -44,6 +44,8 @@
 #include "sta/Clock.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/PathRef.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/Bfs.hh"
 #include "sta/EquivCells.hh"
 #include "db_sta/dbNetwork.hh"
@@ -51,9 +53,14 @@
 #include "opendb/db.h"
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
+#include "gui/gui.h"
 #include "dbSdcNetwork.hh"
 
 namespace ord {
+
+using sta::dbSta;
+using sta::PathRef;
+using sta::PathExpanded;
 
 sta::dbSta *
 makeDbSta()
@@ -64,8 +71,10 @@ makeDbSta()
 void
 initDbSta(OpenRoad *openroad)
 {
-  auto* sta = openroad->getSta();
-  sta->init(openroad->tclInterp(), openroad->getDb());
+  dbSta *sta = openroad->getSta();
+  sta->init(openroad->tclInterp(), openroad->getDb(),
+            // Broken gui api missing openroad accessor.
+            gui::Gui::get());
   openroad->addObserver(sta);
 }
 
@@ -80,6 +89,20 @@ deleteDbSta(sta::dbSta *sta)
 ////////////////////////////////////////////////////////////////
 
 namespace sta {
+
+class PathRenderer : public gui::Renderer
+{
+public:
+  PathRenderer(dbSta *sta);
+  ~PathRenderer();
+  void highlight(PathRef *path);
+  virtual void drawObjects(gui::Painter& /* painter */) override;
+
+private:
+  dbSta *sta_;
+  // Expanded path is owned by PathRenderer.
+  PathExpanded *path_;
+};
 
 dbSta *
 makeBlockSta(dbBlock *block)
@@ -102,17 +125,25 @@ extern const char *dbsta_tcl_inits[];
 dbSta::dbSta() :
   Sta(),
   db_(nullptr),
-  db_cbk_(this)
+  db_cbk_(this),
+  path_renderer_(nullptr)
 {
+}
+
+dbSta::~dbSta()
+{
+  delete path_renderer_;
 }
 
 void
 dbSta::init(Tcl_Interp *tcl_interp,
-	    dbDatabase *db)
+	    dbDatabase *db,
+            gui::Gui *gui)
 {
   initSta();
   Sta::setSta(this);
   db_ = db;
+  gui_ = gui;
   makeComponents();
   setTclInterp(tcl_interp);
   // Define swig TCL commands.
@@ -368,6 +399,77 @@ void
 dbStaCbk::inDbBTermDestroy(dbBTerm *bterm)
 {
   sta_->deletePinBefore(network_->dbToSta(bterm));
+}
+
+////////////////////////////////////////////////////////////////
+
+// Highlight path in the gui.
+void
+dbSta::highlight(PathRef *path)
+{
+  if (gui_) {
+    if (path_renderer_ == nullptr) {
+      path_renderer_ = new PathRenderer(this);
+      gui_->register_renderer(path_renderer_);
+    }
+    path_renderer_->highlight(path);
+  }
+}
+
+PathRenderer::PathRenderer(dbSta *sta) :
+  sta_(sta),
+  path_(nullptr)
+{
+}
+
+PathRenderer::~PathRenderer()
+{
+  delete path_;
+}
+
+void
+PathRenderer::highlight(PathRef *path)
+{
+  if (path_)
+    delete path_;
+  path_ = new PathExpanded(path, sta_);
+}
+
+void
+PathRenderer::drawObjects(gui::Painter &painter)
+{
+  if (path_) {
+    dbNetwork *network = sta_->getDbNetwork();
+    Point prev_pt;
+    for (int i = 0; i < path_->size(); i++) {
+      PathRef *path = path_->path(i);
+      TimingArc *prev_arc = path_->prevArc(i);
+      // Draw lines for wires on the path.
+      if (prev_arc && prev_arc->role()->isWire()) {
+        PathRef *prev_path = path_->path(i - 1); 
+        const Pin *pin = path->pin(sta_);
+        const Pin *prev_pin = prev_path->pin(sta_);
+        Point pt1 = network->location(pin);
+        Point pt2 = network->location(prev_pin);
+        gui::Painter::Color color = sta_->isClock(pin)
+          ? gui::Painter::yellow
+          : gui::Painter::red;
+        painter.setPen(color, true);
+        painter.drawLine(pt1, pt2);
+
+        // Color in the instances to make them more visible.
+        const Instance *inst = network->instance(pin);
+        if (!network->isTopInstance(inst)) {
+          dbInst *db_inst = network->staToDb(inst);
+          odb::dbBox *bbox = db_inst->getBBox();
+          odb::Rect rect;
+          bbox->getBox(rect);
+          painter.setBrush(color);
+          painter.drawRect(rect);
+        }
+      }
+    }
+  }
 }
 
 } // namespace sta

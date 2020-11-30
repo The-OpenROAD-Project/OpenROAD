@@ -15,5 +15,5 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 
 report_check_types -max_slew -violators
-repair_design -buffer_cell BUF_X2
+repair_design
 report_check_types -max_slew -violators

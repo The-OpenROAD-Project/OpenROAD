@@ -45,7 +45,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace TritonCTS {
+namespace cts {
 
 enum InstType : uint8_t
 {
@@ -249,4 +249,4 @@ class Clock
   unsigned _numLevels = 0;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

@@ -19,5 +19,5 @@ estimate_parasitics -placement
 set_load 0 [get_net out1]
 
 report_long_wires 4
-repair_design -max_wire_length 900 -buffer_cell BUF_X1
+repair_design -max_wire_length 900
 report_long_wires 6

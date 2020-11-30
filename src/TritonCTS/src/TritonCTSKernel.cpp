@@ -42,7 +42,7 @@
 #include <fstream>
 #include <unordered_set>
 
-namespace TritonCTS {
+namespace cts {
 
 using ord::error;
 
@@ -245,4 +245,4 @@ void TritonCTSKernel::reportCtsMetrics()
   }
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

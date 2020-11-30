@@ -52,8 +52,7 @@ set_wire_rc -clock -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
-repair_design -max_wire_length $max_wire_length \
-  -buffer_cell $resize_buffer_cell
+repair_design -max_wire_length $max_wire_length
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
@@ -80,8 +79,7 @@ clock_tree_synthesis -lut_file $cts_lut_file \
   -wire_unit 20
 
 # CTS leaves a long wire from the pad to the clock tree root.
-repair_clock_nets -max_wire_length $max_wire_length \
-  -buffer_cell $resize_buffer_cell
+repair_clock_nets -max_wire_length $max_wire_length
 
 # Get gates close to final positions so parasitics estimate is close.
 detailed_placement
@@ -89,11 +87,7 @@ detailed_placement
 # CTS and detailed placement move instances so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
-repair_hold_violations -buffer_cell $hold_buffer_cell
-
-detailed_placement
-filler_placement $filler_cells
-check_placement
+repair_hold_violations
 
 # post cts timing report (propagated clocks)
 report_checks -path_delay min_max -format full_clock_expanded \
@@ -101,6 +95,13 @@ report_checks -path_delay min_max -format full_clock_expanded \
 
 set cts_def [make_result_file ${design}_${platform}_cts.def]
 write_def $cts_def
+
+detailed_placement
+filler_placement $filler_cells
+check_placement
+
+set filler_def [make_result_file ${design}_${platform}_filler.def]
+write_def $filler_def
 
 # missing mysterious vsrc file
 #analyze_power_grid
@@ -147,7 +148,7 @@ if { $detailed_routing } {
   set routed_def [make_result_file ${design}_${platform}_route.def]
 
   set tr_lef [make_tr_lef]
-  set tr_params [make_tr_params $tr_lef $cts_def $route_guide $routed_def]
+  set tr_params [make_tr_params $tr_lef $filler_def $route_guide $routed_def]
   if { [catch "exec which TritonRoute"] } {
     error "TritonRoute not found."
   }

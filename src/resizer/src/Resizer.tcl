@@ -196,7 +196,6 @@ proc parse_buffer_cell { keys_var required } {
 }
 
 define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                  -buffer_cell buffer_cell\
                                   [-max_utilization util]}
 
 proc buffer_ports { args } {
@@ -204,27 +203,29 @@ proc buffer_ports { args } {
     keys {-buffer_cell -max_utilization} \
     flags {-inputs -outputs}
   
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
+
   set buffer_inputs [info exists flags(-inputs)]
   set buffer_outputs [info exists flags(-outputs)]
   if { !$buffer_inputs && !$buffer_outputs } {
     set buffer_inputs 1
     set buffer_outputs 1
   }
-  set buffer_cell [parse_buffer_cell keys 1]
-  
   check_argc_eq0 "buffer_ports" $args
   
   set_max_utilization [parse_max_util keys]
+  resizer_preamble [get_libs *]
   if { $buffer_inputs } {
-    buffer_inputs $buffer_cell
+    buffer_inputs
   }
   if { $buffer_outputs } {
-    buffer_outputs $buffer_cell
+    buffer_outputs
   }
 }
 
 define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-                                   -buffer_cell buffer_cell\
                                    [-libraries resize_libs]}
 
 proc repair_design { args } {
@@ -232,14 +233,16 @@ proc repair_design { args } {
     keys {-max_wire_length -buffer_cell -libraries} \
     flags {}
   
-  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
   set max_wire_length 0
   if { [info exists keys(-max_wire_length)] } {
     set max_wire_length $keys(-max_wire_length)
     check_positive_float "-max_wire_length" $max_wire_length
     set max_wire_length [sta::distance_ui_sta $max_wire_length]
     if { [sta::wire_resistance] > 0 } {
-      set min_delay_max_wire_length [find_max_wire_length $buffer_cell]
+      set min_delay_max_wire_length [find_max_wire_length]
       if { $max_wire_length < $min_delay_max_wire_length } {
         ord::warn "max wire length less than [format %.0fu [expr $min_delay_max_wire_length * 1e+6]] increases wire delays."
       }
@@ -258,18 +261,19 @@ proc repair_design { args } {
   check_argc_eq0 "repair_design" $args
   check_parasitics
   resizer_preamble $resize_libs
-  repair_design_cmd $max_wire_length $buffer_cell
+  repair_design_cmd $max_wire_length
 }
 
-define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]\
-                                       -buffer_cell buffer_cell}
+define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
 
 proc repair_clock_nets { args } {
   parse_key_args "repair_clock_nets" args \
     keys {-max_wire_length -buffer_cell} \
     flags {}
   
-  set buffer_cell [parse_buffer_cell keys 1]
+  if { [info exists keys(-buffer_cell)] } {
+    ord::warn "-buffer_cell is deprecated."
+  }
   set max_wire_length 0
   if { [info exists keys(-max_wire_length)] } {
     set max_wire_length $keys(-max_wire_length)
@@ -280,7 +284,7 @@ proc repair_clock_nets { args } {
   check_argc_eq0 "repair_clock_nets" $args
   check_parasitics
   resizer_preamble [get_libs *]
-  repair_clk_nets_cmd $max_wire_length $buffer_cell
+  repair_clk_nets_cmd $max_wire_length
 }
 
 define_cmd_args "repair_clock_inverters" {-buffer_cell buffer_cell}
@@ -314,37 +318,64 @@ proc repair_tie_fanout { args } {
   }
 }
 
-define_cmd_args "repair_hold_violations" {[-buffers buffer_cells]\
-                                            [-allow_setup_violations]\
-                                            [-max_utilization util]}
+define_cmd_args "repair_hold_violations" {[-allow_setup_violations]}
 
 proc repair_hold_violations { args } {
   parse_key_args "repair_hold_violations" args \
-    keys {-buffers -buffer_cell -max_utilization} \
+    keys {-buffer_cell} \
     flags {-allow_setup_violations}
   
-  if { [info exists keys(-buffer_cell)] } {
-#    ord::warn "-buffer_cell is deprecated. Use -buffers instead."
-    set buffers [parse_buffer_cell keys 0]
-  } elseif { [info exists keys(-buffers)] } {
-    set buffers [get_lib_cells_arg "-buffers" $keys(-buffers) ord::warn]
-  } else {
-    set buffers {}
-    foreach lib [get_libs *] {
-      foreach buffer [sta::find_library_buffers $lib] {
-        lappend buffers $buffer
-      }
-    }
+  set allow_setup_violations [info exists flags(-allow_setup_violations)]
+  check_argc_eq0 "repair_hold_violations" $args
+  ord::warn "repair_hold_violations is deprecated. Use repair_timing -hold"
+  repair_hold $allow_setup_violations
+}
+
+define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                   [-allow_setup_violations]\
+                                   [-libraries resize_libs]}
+
+proc repair_timing { args } {
+  parse_key_args "repair_timing" args \
+    keys {-libraries} \
+    flags {-setup -hold -allow_setup_violations}
+
+  set setup [info exists flags(-setup)]
+  set hold [info exists flags(-hold)]
+  if { !$setup && !$hold } {
+    set setup 1
+    set hold 1
   }
 
-  set_max_utilization [parse_max_util keys]
+  if { [info exists keys(-libraries)] } {
+    set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
+  } else {
+    set resize_libs [get_libs *]
+    if { $resize_libs == {} } {
+      ord::error "No liberty libraries found."
+    }
+  }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
-  
-  check_argc_eq0 "repair_hold_violations" $args
-  
+
+  check_argc_eq0 "repair_timing" $args
   check_parasitics
-  repair_hold_violations_cmd $buffers $allow_setup_violations
+  resizer_preamble $resize_libs
+  if { $setup } {
+    repair_setup
+  }
+  if { $hold } {
+    repair_hold $allow_setup_violations
+  }
 }
+
+# for testing
+proc repair_setup_pin { end_pin } {
+  check_parasitics
+  resizer_preamble [get_libs *]
+  repair_setup_pin_cmd $end_pin
+}
+
+################################################################
 
 define_cmd_args "report_design_area" {}
 

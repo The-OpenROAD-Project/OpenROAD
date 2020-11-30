@@ -47,7 +47,6 @@ Final usage/overflow report:
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 2874
 [INFO] #DB Macros: 0
-[INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 36
 [INFO] Processing 8469 obstacles on layer 1
@@ -76,7 +75,7 @@ Final usage/overflow report:
 [INFO] Final usage          : 626
 [INFO] Final number of vias : 266
 [INFO] Final usage 3D       : 1424
-[INFO] Total wirelength: 2641 um
+[INFO] Total wirelength: 2301 um
 [INFO] Num routed nets: 87
 Differences found at line 3.
 54600 105000 63000 109200 metal1
