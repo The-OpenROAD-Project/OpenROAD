@@ -658,11 +658,8 @@ Resizer::replaceCell(Instance *inst,
       while (pin_iter->hasNext()) {
         const Pin *pin = pin_iter->next();
         const Net *net = network_->net(pin);
-        if (net) {
-          debugPrint1(debug_, "resizer_parasitics", 1, "delete parasitic %s\n",
-                      network_->pathName(net));
-          parasitics_->deleteParasitics(net, parasitics_ap_);
-        }
+        if (net)
+          parasiticsInvalid(net);
       }
       delete pin_iter;
     }
@@ -686,18 +683,6 @@ Resizer::hasMultipleOutputs(const Instance *inst)
     }
   }
   return false;
-}
-
-void
-Resizer::ensureWireParasitic(const Pin *drvr_pin)
-{
-  if (have_estimated_parasitics_
-      && parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
-                                   parasitics_ap_) == nullptr) {
-    const Net *net = network_->net(drvr_pin);
-    if (net)
-      estimateWireParasitic(net);
-  }
 }
 
 double
@@ -952,6 +937,56 @@ Resizer::findBufferTargetSlews(LibertyLibrary *library,
 ////////////////////////////////////////////////////////////////
 
 void
+Resizer::ensureWireParasitics()
+{
+  if (have_estimated_parasitics_) {
+    for (const Net *net : parasitics_invalid_)
+      estimateWireParasitic(net);
+    parasitics_invalid_.clear();
+  }
+  else
+    estimateWireParasitics();
+}
+
+void
+Resizer::ensureWireParasitic(const Pin *drvr_pin)
+{
+  const Net *net = network_->net(drvr_pin);
+  if (net)
+    ensureWireParasitic(drvr_pin, net);
+}
+
+void
+Resizer::ensureWireParasitic(const Net *net)
+{
+  if (have_estimated_parasitics_) {
+    PinSet *drivers = network_->drivers(net);
+    if (drivers && !drivers->empty()) {
+      PinSet::Iterator drvr_iter(drivers);
+      Pin *drvr_pin = drvr_iter.next();
+      if (parasitics_invalid_.hasKey(net)
+          || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
+                                       parasitics_ap_) == nullptr)
+        estimateWireParasitic(net);
+    }
+  }
+}
+
+void
+Resizer::ensureWireParasitic(const Pin *drvr_pin,
+                             const Net *net)
+{
+  if (have_estimated_parasitics_
+      && net
+      && (parasitics_invalid_.hasKey(net)
+          || parasitics_->findPiElmore(drvr_pin, RiseFall::rise(),
+                                       parasitics_ap_) == nullptr)) {
+      estimateWireParasitic(net);
+      parasitics_invalid_.erase(net);
+  }
+}
+
+void
 Resizer::estimateWireParasitics()
 {
   if (wire_cap_ > 0.0) {
@@ -965,29 +1000,23 @@ Resizer::estimateWireParasitics()
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
       Net *net = net_iter->next();
-      // Estimate parastices for clocks also for when they are propagated.
-      if (!network_->isPower(net)
-          && !network_->isGround(net))
-        estimateWireParasitic(net);
+      estimateWireParasitic(net);
     }
     delete net_iter;
     have_estimated_parasitics_ = true;
+    parasitics_invalid_.clear();
   }
 }
 
-void
-Resizer::estimateWireParasitic(const dbNet *net)
-{
-  estimateWireParasitic(db_network_->dbToSta(net));
-}
- 
 void
 Resizer::estimateWireParasitic(const Net *net)
 {
   // Do not add parasitics on ports.
   // When the input drives a pad instance with huge input
   // cap the elmore delay is gigantic.
-  if (!hasTopLevelPort(net)) {
+  if (!hasTopLevelPort(net)
+      && !network_->isPower(net)
+      && !network_->isGround(net)) {
     SteinerTree *tree = makeSteinerTree(net, false, db_network_);
     if (tree) {
       debugPrint1(debug_, "resizer_parasitics", 1, "estimate wire %s\n",
@@ -1077,25 +1106,19 @@ Resizer::hasTopLevelPort(const Net *net)
 }
 
 void
-Resizer::ensureWireParasitics()
+Resizer::parasiticsInvalid(const Net *net)
 {
   if (have_estimated_parasitics_) {
-    NetIterator *net_iter = network_->netIterator(network_->topInstance());
-    while (net_iter->hasNext()) {
-      Net *net = net_iter->next();
-      // Estimate parastices for clocks also for when they are propagated.
-      if (!network_->isPower(net)
-          && !network_->isGround(net)) {
-        PinSet *drivers = network_->drivers(net);
-        if (drivers && !drivers->empty()) {
-          PinSet::Iterator drvr_iter(drivers);
-          Pin *drvr_pin = drvr_iter.next();
-          ensureWireParasitic(drvr_pin);
-        }
-      }
-    }
-    delete net_iter;
+    debugPrint1(debug_, "resizer_parasitics", 2, "parasitics invalid %s\n",
+                network_->pathName(net));
+    parasitics_invalid_.insert(net);
   }
+}
+
+void
+Resizer::parasiticsInvalid(const dbNet *net)
+{
+  parasiticsInvalid(db_network_->dbToSta(net));
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1445,7 +1468,7 @@ Resizer::splitLoads(PathRef *drvr_path,
   // drvr_pin -> net -> load_pins with low slack
   //                 -> buffer_in -> net -> rest of loads
   sta_->connectPin(buffer, input, net);
-  parasitics_->deleteParasitics(net, parasitics_ap_);
+  parasiticsInvalid(net);
   sta_->connectPin(buffer, output, out_net);
   int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
@@ -1921,6 +1944,7 @@ Resizer::repairClkNets(double max_wire_length) // meters
       }
     }
   }
+  ensureWireParasitics();
   if (length_violations > 0)
     printf("Found %d long wires.\n", length_violations);
   if (inserted_buffer_count_ > 0) {
@@ -1996,7 +2020,7 @@ Resizer::repairNet(Net *net,
     Pin *drvr_pin = drvr->pin();
     debugPrint1(debug_, "repair_net", 1, "repair net %s\n",
                 sdc_network_->pathName(drvr_pin));
-    ensureWireParasitic(drvr_pin);
+    ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
     double max_cap = INF;
@@ -2386,10 +2410,8 @@ Resizer::makeRepeater(const char *where,
       sta_->connectPin(load, load_port, buffer_out);
     }
 
-    // Delete estimated parasitics on upstream driver.
-    debugPrint1(debug_, "resizer_parasitics", 1, "delete parasitic %s\n",
-                network_->pathName(in_net));
-    parasitics_->deleteParasitics(in_net, parasitics_ap_);
+    parasiticsInvalid(in_net);
+    parasiticsInvalid(buffer_out);
 
     // Resize repeater as we back up by levels.
     Pin *drvr_pin = network_->findPin(buffer, buffer_output_port);
