@@ -266,12 +266,20 @@ namespace fr {
   struct frDebugSettings
   {
     frDebugSettings()
-      : debugDR(false)
+      : debugDR(false),
+        debugMaze(false),
+        gcellX(-1),
+        gcellY(-1),
+        iter(0)
     {
     }
 
     bool debugDR;
+    bool debugMaze;
     std::string netName;
+    int gcellX;
+    int gcellY;
+    int iter;
   };
 }
 

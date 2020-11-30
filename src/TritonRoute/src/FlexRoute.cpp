@@ -66,9 +66,25 @@ void TritonRoute::setDebugDR(bool on)
   debug->debugDR = on;
 }
 
+void TritonRoute::setDebugMaze(bool on)
+{
+  debug->debugMaze = on;
+}
+
 void TritonRoute::setDebugNetName(const char* name)
 {
   debug->netName = name;
+}
+
+void TritonRoute::setDebugGCell(int x, int y)
+{
+  debug->gcellX = x;
+  debug->gcellY = y;
+}
+
+void TritonRoute::setDebugIter(int iter)
+{
+  debug->iter = iter;
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)

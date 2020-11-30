@@ -10,9 +10,12 @@ namespace fr {
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings)
   : worker_(nullptr),
     net_(nullptr),
-    settings_(settings)
+    settings_(settings),
+    current_iter_(-1),
+    last_pt_layer_(-1),
+    gui_(gui::Gui::get())
 {
-  gui::Gui::get()->register_renderer(this);
+  gui_->register_renderer(this);
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
@@ -24,13 +27,73 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setPen(layer);
   painter.setBrush(layer);
 
+  // Draw segs & vias
+  {
+    auto& rq = worker_->getWorkerRegionQuery();
+    frBox box;
+    worker_->getRouteBox(box);
+    std::vector<drConnFig*> figs;
+    rq.query(box, layer->getNumber(), figs);
+    for (auto& fig : figs) {
+      switch (fig->typeId()) {
+      case drcPathSeg: {
+        auto seg = (drPathSeg *) fig;
+        if (seg->getLayerNum() == layer->getNumber()) {
+          seg->getBBox(box);
+          painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        }
+        break;
+      }
+      case drcVia: {
+        auto via = (drVia *) fig;
+        auto viadef = via->getViaDef();
+        if (viadef->getLayer1Num() == layer->getNumber()) {
+          via->getLayer1BBox(box);
+        } else if (viadef->getLayer2Num() == layer->getNumber()) {
+          via->getLayer2BBox(box);
+        } else {
+          continue;
+        }
+        painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        break;
+      }
+      default:
+        printf("unknown %d\n", (int)fig->typeId());
+      }
+    }
+  }
+
+  // Draw guides
+  painter.setBrush(layer, /* alpha */ 50);
   for (auto& rect : net_->getOrigGuides()) {
     if (rect.getLayerNum() == layer->getNumber()) {
-      // printf("tr layer %s vs db layer %s\n",
-
       frBox box;
       rect.getBBox(box);
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+    }
+  }
+
+  painter.setPen(layer, /* cosmetic */ true);
+  if (layer->getNumber() < (int) points_by_layer_.size()) {
+    for (frPoint& pt : points_by_layer_[layer->getNumber()]) {
+        painter.drawLine({pt.x() - 100, pt.y() - 100},
+                         {pt.x() + 100, pt.y() + 100});
+        painter.drawLine({pt.x() - 100, pt.y() + 100},
+                         {pt.x() + 100, pt.y() - 100});
+    }
+  }
+
+  // Draw markers
+  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  for (auto& marker : worker_->getMarkers()) {
+    if (marker.getLayerNum() == layer->getNumber()) {
+      frBox box;
+      marker.getBBox(box);
+      painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+      painter.drawLine({box.left(), box.bottom()},
+                       {box.right(), box.top()});
+      painter.drawLine({box.left(), box.top()},
+                       {box.right(), box.bottom()});
     }
   }
 }
@@ -70,41 +133,108 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
 
 void FlexDRGraphics::startWorker(FlexDRWorker* in)
 {
-  status("start worker");
+  if (current_iter_ < settings_->iter) {
+    return;
+  }
+  status("Start worker: " + std::to_string(in->getMarkers().size())
+         + " markers");
+
   worker_ = in;
   net_ = nullptr;
 
-  auto* gui = gui::Gui::get();
-
-
+  points_by_layer_.resize(in->getTech()->getLayers().size());
+  
   if (settings_->netName.empty()) {
     frBox box;
     worker_->getExtBox(box);
-    gui->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
-    gui->pause();
+    gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+    gui_->pause();
   }
+}
+
+void FlexDRGraphics::searchNode(const FlexGridGraph* gridGraph,
+                                const FlexWavefrontGrid& grid)
+{
+  if (!net_) {
+    return;
+  }
+
+  frPoint in;
+  gridGraph->getPoint(in, grid.x(), grid.y());
+  frLayerNum layer = gridGraph->getLayerNum(grid.z());
+
+  auto& pts = points_by_layer_.at(layer);
+  pts.push_back(in);
+
+  // Pause on any layer change
+  if (settings_->debugMaze
+      && last_pt_layer_ != layer
+      && last_pt_layer_ != -1) {
+    gui_->redraw();
+    gui_->pause();
+  }
+
+  last_pt_layer_ = layer;
 }
 
 void FlexDRGraphics::startNet(drNet* net)
 {
+  net_ = nullptr;
+
+  if (current_iter_ < settings_->iter) {
+    return;
+  }
+
   if (!settings_->netName.empty() &&
       net->getFrNet()->getName() != settings_->netName) {
     return;
   }
 
-  status("start net: " + net->getFrNet()->getName());
+  status("Start net: " + net->getFrNet()->getName());
   net_ = net;
-
-  auto* gui = gui::Gui::get();
+  last_pt_layer_ = -1;
+  
   frBox box;
   worker_->getExtBox(box);
-  gui->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
-  gui->pause();
+  gui_->zoomTo({box.left(), box.bottom(), box.right(), box.top()});
+  gui_->pause();
+}
+
+void FlexDRGraphics::endNet(drNet* net)
+{
+  if (!net_) {
+    return;
+  }
+  assert(net == net_);
+
+  int point_cnt = 0;
+  for (auto& pts : points_by_layer_) {
+    point_cnt += pts.size();
+  }
+
+  status("End net: " + net->getFrNet()->getName() + " searched "
+         + std::to_string(point_cnt) + " points");
+
+  gui_->redraw();
+  gui_->pause();
+
+  for (auto& points : points_by_layer_) {
+    points.clear();
+  }
+}
+
+void FlexDRGraphics::startIter(int iter)
+{
+  current_iter_ = iter;
+  if (iter >= settings_->iter) {
+    status("Start iter: " + std::to_string(iter));
+    gui_->pause();
+  }
 }
 
 void FlexDRGraphics::status(const std::string& message)
 {
-  gui::Gui::get()->status(message);
+  gui_->status(message);
 }
 
 /* static */

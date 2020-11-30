@@ -28,6 +28,7 @@
 
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexDR.h"
+#include "dr/FlexDR_graphics.h"
 
 using namespace std;
 using namespace fr;
@@ -641,6 +642,10 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
     wavefront.pop();
     if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
       continue;
+    }
+
+    if (graphics) {
+      graphics->searchNode(this, currGrid);
     }
 
     // test

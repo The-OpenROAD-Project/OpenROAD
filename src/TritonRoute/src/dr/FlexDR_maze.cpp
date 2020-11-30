@@ -2975,6 +2975,7 @@ bool FlexDRWorker::routeNet(drNet* net) {
 
   vector<FlexMazeIdx> path; // astar must return with >= 1 idx
   bool isFirstConn = true;
+  bool searchSuccess = true;
   while(!unConnPins.empty()) {
     mazePinInit();
     auto nextPin = routeNet_getNextDst(ccMazeIdx1, ccMazeIdx2, mazeIdx2unConnPins);
@@ -2985,11 +2986,18 @@ bool FlexDRWorker::routeNet(drNet* net) {
       routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
       isFirstConn = false;
     } else {
-      return false;
+      searchSuccess = false;
+      break;
     }
   }
-  routeNet_postRouteAddPathCost(net);
-  return true;
+
+  if (searchSuccess) {
+    routeNet_postRouteAddPathCost(net);
+  }
+  if (graphics) {
+    graphics->endNet(net);
+  }
+  return searchSuccess;
 }
 
 void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(drNet* net, const vector<FlexMazeIdx> &path, const map<FlexMazeIdx, frCoord> &areaMap) {

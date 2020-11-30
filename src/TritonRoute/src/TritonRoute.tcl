@@ -49,22 +49,44 @@ proc detailed_route { args } {
 
 sta::define_cmd_args "detailed_route_debug" {
     [-dr]
+    [-maze]
     [-net name]
+    [-gcell x y]
+    [-iter iter]
 }
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-      keys {-net} \
-      flags {-dr}
+      keys {-net -gcell -iter} \
+      flags {-dr -maze}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
   set dr [info exists flags(-dr)]
+  set maze [info exists flags(-maze)]
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
   } else {
     set net_name ""
   }
 
-  tr::set_detailed_route_debug_cmd $net_name $dr
+  set gcell_x -1
+  set gcell_y -1
+  if [info exists keys(-gcell)] {
+    set gcell $keys(-gcell)
+    if { [llength $gcell] != 2 } {
+      ord::error "-gcell is a list of 2 coordinates."
+    }
+    lassign $gcell gcell_x gcell_y
+    sta::check_check_positive_integer "-gcell" $gcell_x
+    sta::check_check_positive_integer "-gcell" $gcell_y
+  }
+
+  if { [info exists keys(-iter)] } {
+    set iter $keys(-iter)
+  } else {
+    set iter 0
+  }
+
+  tr::set_detailed_route_debug_cmd $net_name $dr $maze $gcell_x $gcell_y $iter
 }

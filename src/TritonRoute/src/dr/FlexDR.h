@@ -367,6 +367,7 @@ namespace fr {
 
     void setGraphics(FlexDRGraphics* in) {
       graphics = in;
+      gridGraph.setGraphics(in);
     }
 
     // getters

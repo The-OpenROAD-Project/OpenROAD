@@ -1528,7 +1528,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     cout <<suffix <<" optimization iteration ..." <<endl;
   }
   if (graphics) {
-    graphics->status("start iter: " + std::to_string(iter));
+    graphics->startIter(iter);
   }
   frBox dieBox;
   getDesign()->getTopBlock()->getBoundaryBBox(dieBox);

@@ -42,12 +42,14 @@
 
 namespace fr {
   class FlexDRWorker;
+  class FlexDRGraphics;
   class FlexGridGraph {
   public:
     // constructors
     //FlexGridGraph() {}
     FlexGridGraph(frDesign* designIn, FlexDRWorker* workerIn): 
                   design(designIn), drWorker(workerIn),
+                  graphics(nullptr),
                   xCoords(), yCoords(), zCoords(), zHeights(),
                   ggDRCCost(0), ggMarkerCost(0), halfViaEncArea(nullptr),
                   via2viaMinLen(nullptr), via2viaMinLenNew(nullptr),
@@ -714,6 +716,9 @@ namespace fr {
         }
       }
     }
+    void setGraphics(FlexDRGraphics* g) {
+      graphics = g;
+    }
 
     // functions
     void init(const frBox &routeBBox, const frBox &extBBox,
@@ -777,6 +782,7 @@ namespace fr {
   protected:
     frDesign*     design;
     FlexDRWorker* drWorker;
+    FlexDRGraphics*  graphics; // owned by FlexDR
 
     //frBox     routeBox;
     // new // X == planar

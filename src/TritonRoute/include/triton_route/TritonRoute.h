@@ -55,7 +55,10 @@ namespace triton_route {
     int main();
 
     void setDebugDR(bool on = true);
+    void setDebugMaze(bool on = true);
     void setDebugNetName(const char* name);
+    void setDebugGCell(int x, int y);
+    void setDebugIter(int iter);
 
     static bool readParams(const std::string &fileName);
 

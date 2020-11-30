@@ -3,9 +3,13 @@
 #include <memory>
 
 #include "gui/gui.h"
+#include "frBaseTypes.h"
 
 namespace fr {
 
+class frPoint;
+class FlexGridGraph;
+class FlexWavefrontGrid;
 class FlexDRWorker;
 class drNet;
 class frDebugSettings;
@@ -19,7 +23,14 @@ class FlexDRGraphics : public gui::Renderer
 
   void startWorker(FlexDRWorker* worker);
 
+  void startIter(int iter);
+
   void startNet(drNet* net);
+
+  void endNet(drNet* net);
+
+  void searchNode(const FlexGridGraph* gridGraph,
+                  const FlexWavefrontGrid& grid);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -35,6 +46,10 @@ class FlexDRGraphics : public gui::Renderer
   FlexDRWorker*    worker_;
   drNet*           net_;
   frDebugSettings* settings_;
+  int              current_iter_;
+  frLayerNum       last_pt_layer_;
+  gui::Gui*        gui_;
+  std::vector<std::vector<frPoint>> points_by_layer_;
 };
 
 }  // namespace dr
