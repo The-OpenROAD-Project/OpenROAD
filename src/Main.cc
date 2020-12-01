@@ -57,7 +57,7 @@
 #include "openroad/Error.hh"
 #include "openroad/InitOpenRoad.hh"
 #include "openroad/OpenRoad.hh"
-#include "ordlog/Logger.h" 
+#include "openroad/Logger.h" 
 #include "gui/gui.h"
 
 using std::string;
@@ -84,8 +84,8 @@ main(int argc,
   {
     char* dir = dirname(buffer);
     std::string log_path = std::string(dir) + "/openroad.log";
-    ordlog::init(log_path.c_str());
-    ordlog::info(ordlog::OPENROAD,1,"Starting OpenROAD main");
+    ord::init(log_path.c_str());
+    ord::info(ord::OPENROAD,1,"Starting OpenROAD main");
   }
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
