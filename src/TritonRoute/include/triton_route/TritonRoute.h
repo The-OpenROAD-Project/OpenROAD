@@ -34,7 +34,7 @@
 
 namespace fr {
   class frDesign;
-  class frDebugSettings;
+  struct frDebugSettings;
 }
 
 namespace odb {
