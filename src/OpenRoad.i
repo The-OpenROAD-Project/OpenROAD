@@ -114,7 +114,7 @@ getResizer()
   return openroad->getResizer();
 }
 
-TritonCTS::TritonCTSKernel *
+cts::TritonCTSKernel *
 getTritonCts()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -142,6 +142,13 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
+triton_route::TritonRoute *
+getTritonRoute()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTritonRoute();
+}
+
 pdnsim::PDNSim*
 getPDNSim()
 {
@@ -149,14 +156,14 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-FastRoute::GlobalRouter*
+gr::GlobalRouter*
 getFastRoute()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getFastRoute();
 }
 
-ioPlacer::IOPlacer*
+pin_placer::IOPlacer*
 getIOPlacer()
 {
   OpenRoad *openroad = getOpenRoad();

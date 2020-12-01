@@ -42,7 +42,7 @@ namespace odb {
 namespace sta {
   class dbSta;
 }
-namespace FastRoute{
+namespace gr{
   class GlobalRouter;
 }
 
@@ -68,7 +68,7 @@ class Replace
 
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
-    void setFastRoute(FastRoute::GlobalRouter* fr);
+    void setFastRoute(gr::GlobalRouter* fr);
 
     void doInitialPlace();
     void doNesterovPlace();
@@ -125,7 +125,7 @@ class Replace
   private:
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
-    FastRoute::GlobalRouter* fr_;
+    gr::GlobalRouter* fr_;
 
     std::shared_ptr<PlacerBase> pb_;
     std::shared_ptr<NesterovBase> nb_;

@@ -60,10 +60,11 @@
 #include "ordlog/Logger.h" 
 #include "gui/gui.h"
 
+using std::string;
 using sta::stringEq;
 using sta::findCmdLineFlag;
-using sta::stringPrintTmp;
 using sta::sourceTclFile;
+using sta::is_regular_file;
 
 static int cmd_argc;
 static char **cmd_argv;
@@ -168,8 +169,11 @@ tclAppInit(int argc,
       sourceTclFile(init.c_str(), true, true, interp);
     }
 #else
-    char *init_path = stringPrintTmp("[file join $env(HOME) %s]",init_filename);
-    sourceTclFile(init_path, true, true, interp);
+    string init_path = getenv("HOME");
+    init_path += "/";
+    init_path += init_filename;
+    if (is_regular_file(init_path.c_str()))
+      sourceTclFile(init_path.c_str(), true, true, interp);
 #endif
   }
 

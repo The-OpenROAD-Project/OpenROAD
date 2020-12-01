@@ -50,9 +50,9 @@ extern int Tritoncts_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-TritonCTS::TritonCTSKernel* makeTritonCts()
+cts::TritonCTSKernel* makeTritonCts()
 {
-  return new TritonCTS::TritonCTSKernel();
+  return new cts::TritonCTSKernel();
 }
 
 void initTritonCts(OpenRoad* openroad)
@@ -64,11 +64,11 @@ void initTritonCts(OpenRoad* openroad)
 
   // Set DB index
   unsigned dbId = openroad->getDb()->getId();
-  TritonCTS::TritonCTSKernel* cts = openroad->getTritonCts();
+  cts::TritonCTSKernel* cts = openroad->getTritonCts();
   cts->getParms().setDbId(dbId);
 }
 
-void deleteTritonCts(TritonCTS::TritonCTSKernel* tritoncts)
+void deleteTritonCts(cts::TritonCTSKernel* tritoncts)
 {
 }
 

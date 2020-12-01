@@ -35,7 +35,7 @@
 
 #include "DataType.h"
 
-namespace FastRoute {
+namespace gr {
 
 typedef struct
 {
@@ -67,5 +67,5 @@ extern void str_accu(int rnd);
 extern void InitLastUsage(int upType);
 extern void InitEstUsage();
 
-}  // namespace FastRoute
+}  // namespace gr
 #endif /* __MAZE_H__ */

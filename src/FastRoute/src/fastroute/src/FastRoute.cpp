@@ -61,7 +61,7 @@
 
 #include "openroad/Error.hh"
 
-namespace FastRoute {
+namespace gr {
 
 int newnetID;
 int segcount;
@@ -1455,4 +1455,4 @@ netName(FrNet* net)
   return getNetName(net->db_net);
 }
 
-}  // namespace FastRoute
+}  // namespace gr

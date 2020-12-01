@@ -16,7 +16,7 @@ estimate_parasitics -placement
 with_output_to_variable violations { report_check_types -max_cap -violators }
 puts "Found [regexp -all VIOLATED $violations] violations"
 
-repair_design -buffer_cell BUF_X2
+repair_design
 
 with_output_to_variable violations { report_check_types -max_cap -violators }
 puts "Found [regexp -all VIOLATED $violations] violations"

@@ -35,11 +35,11 @@
 
 #include "DataType.h"
 
-namespace FastRoute {
+namespace gr {
 
 extern int edgeShift(Tree* t, int net);
 extern int edgeShiftNew(Tree* t, int net);
 
-}  // namespace FastRoute
+}  // namespace gr
 
 #endif /* __EDGESHIFT_H__ */

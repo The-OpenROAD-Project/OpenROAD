@@ -40,10 +40,15 @@
 #include "sta/Sta.hh"
 #include "openroad/OpenRoad.hh"
 
+namespace gui {
+class Gui;
+}
+
 namespace sta {
 
 class dbSta;
 class dbNetwork;
+class PathRenderer;
 
 using odb::dbDatabase;
 using odb::dbLib;
@@ -84,8 +89,10 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
 {
 public:
   dbSta();
+  virtual ~dbSta();
   void init(Tcl_Interp *tcl_interp,
-	    dbDatabase *db);
+	    dbDatabase *db,
+            gui::Gui *gui);
 
   dbDatabase *db() { return db_; }
   virtual void makeComponents() override;
@@ -112,6 +119,8 @@ public:
 			  LibertyPort *port,
 			  Net *net) override;
   virtual void disconnectPin(Pin *pin) override;
+  // Highlight path in the gui.
+  void highlight(PathRef *path);
 
   using Sta::netSlack;
   using Sta::isClock;
@@ -128,6 +137,9 @@ protected:
   dbDatabase *db_;
   dbNetwork *db_network_;
   dbStaCbk db_cbk_;
+  gui::Gui *gui_;
+
+  PathRenderer *path_renderer_;
 };
 
 dbSta *

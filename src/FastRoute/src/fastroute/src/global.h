@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 
-namespace FastRoute {
+namespace gr {
 
 #define TRUE 1
 #define FALSE 0
@@ -46,5 +46,5 @@ struct Point
   long x, y;
 };
 
-}  // namespace FastRoute
+}  // namespace gr
 #endif /* __GLOBAL_H__ */

@@ -213,7 +213,7 @@ sta::define_cmd_args "global_placement_debug" {
 }
 
 proc global_placement_debug { args } {
-  sta::parse_key_args "detailed_placement" args \
+  sta::parse_key_args "detailed_placement_debug" args \
       keys {-pause -update} \
       flags {-draw_bins -initial}
 
