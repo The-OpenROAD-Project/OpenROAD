@@ -15,6 +15,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings)
     last_pt_layer_(-1),
     gui_(gui::Gui::get())
 {
+  assert(MAX_THREADS == 1);
   gui_->register_renderer(this);
 }
 
