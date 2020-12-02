@@ -29,10 +29,9 @@
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __FLUTE_H__
-#define __FLUTE_H__
+#pragma once
 
-namespace Flute {
+namespace flute {
 
 /*****************************/
 /*  User-Defined Parameters  */
@@ -49,14 +48,14 @@ namespace Flute {
 typedef int DTYPE;
 
 typedef struct {
-        DTYPE x, y;  // starting point of the branch
-        int n;       // index of neighbor
+  DTYPE x, y;  // starting point of the branch
+  int n;       // index of neighbor
 } Branch;
 
 typedef struct {
-        int deg;         // degree
-        DTYPE length;    // total wirelength
-        Branch *branch;  // array of tree branches
+  int deg;         // degree
+  DTYPE length;    // total wirelength
+  Branch *branch;  // array of tree branches
 } Tree;
 
 // User-Callable Functions
@@ -80,47 +79,48 @@ Tree flutes_HD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc);
 Tree flutes_RDP(int d, DTYPE xs[], DTYPE ys[], int s[], int acc);
 
 inline DTYPE flutes_wl_LMD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
-        if (d <= FLUTE_D) {
-                return flutes_wl_LD(d, xs, ys, s);
-        } else {
-                return flutes_wl_MD(d, xs, ys, s, acc);
-        }
+  if (d <= FLUTE_D) {
+    return flutes_wl_LD(d, xs, ys, s);
+  } else {
+    return flutes_wl_MD(d, xs, ys, s, acc);
+  }
 }
 
 inline DTYPE flutes_wl_ALLD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
-        return flutes_wl_LMD(d, xs, ys, s, acc);
+  return flutes_wl_LMD(d, xs, ys, s, acc);
 }
 
 inline DTYPE flutes_wl(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
-        if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
-                return flutes_wl_RDP(d, xs, ys, s, acc);
-        } else {
-                return flutes_wl_ALLD(d, xs, ys, s, acc);
-        }
+  if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
+    return flutes_wl_RDP(d, xs, ys, s, acc);
+  } else {
+    return flutes_wl_ALLD(d, xs, ys, s, acc);
+  }
 }
 
 inline Tree flutes_ALLD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
-        if (d <= FLUTE_D) {
-                return flutes_LD(d, xs, ys, s);
-        } else {
-                return flutes_MD(d, xs, ys, s, acc);
-        }
+  if (d <= FLUTE_D) {
+    return flutes_LD(d, xs, ys, s);
+  } else {
+    return flutes_MD(d, xs, ys, s, acc);
+  }
 }
 
 inline Tree flutes(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
-        if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
-                return flutes_RDP(d, xs, ys, s, acc);
-        } else {
-                return flutes_ALLD(d, xs, ys, s, acc);
-        }
+  if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
+    return flutes_RDP(d, xs, ys, s, acc);
+  } else {
+    return flutes_ALLD(d, xs, ys, s, acc);
+  }
 }
 
 inline Tree flutes_LMD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
-        if (d <= FLUTE_D) {
-                return flutes_LD(d, xs, ys, s);
-        } else {
-                return flutes_MD(d, xs, ys, s, acc);
-        }
+  if (d <= FLUTE_D) {
+    return flutes_LD(d, xs, ys, s);
+  } else {
+    return flutes_MD(d, xs, ys, s, acc);
+  }
 }
-}  // namespace Flute
-#endif /* __FLUTE_H__ */
+
+}  // namespace flute
+
