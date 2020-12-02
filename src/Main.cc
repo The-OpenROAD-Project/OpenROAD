@@ -63,6 +63,7 @@
 using std::string;
 using sta::stringEq;
 using sta::findCmdLineFlag;
+using sta::findCmdLineKey;
 using sta::sourceTclFile;
 using sta::is_regular_file;
 
@@ -79,15 +80,6 @@ int
 main(int argc,
      char *argv[])
 {
-  char buffer [PATH_MAX];
-  if(realpath(argv[0],buffer)!=nullptr)
-  {
-    char* dir = dirname(buffer);
-    std::string log_path = std::string(dir) + "/openroad.log";
-    ord::init(log_path.c_str());
-    ord::info(ord::OPENROAD,1,"Starting OpenROAD main");
-  }
-
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
     return 0;
@@ -96,6 +88,13 @@ main(int argc,
     printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_SHA1);
     return 0;
   }
+
+  if (const char* log_name = findCmdLineKey(argc, argv, "-log")) {
+    remove(log_name);
+    ord::init(log_name);
+    ord::info(ord::OPENROAD, 1, "Starting OpenROAD");
+  }
+
   cmd_argc = argc;
   cmd_argv = argv;
   if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
@@ -211,7 +210,7 @@ static void
 showUsage(const char *prog,
 	  const char *init_filename)
 {
-  printf("Usage: %s [-help] [-version] [-no_init] [-exit] cmd_file\n", prog);
+  printf("Usage: %s [-help] [-version] [-no_init] [-exit] [-gui] [-log file_name] cmd_file\n", prog);
   printf("  -help              show help and exit\n");
   printf("  -version           show version and exit\n");
   printf("  -no_init           do not read %s init file\n", init_filename);
@@ -219,6 +218,7 @@ showUsage(const char *prog,
   printf("  -no_splash         do not show the license splash at startup\n");
   printf("  -exit              exit after reading cmd_file\n");
   printf("  -gui               start in gui mode\n");
+  printf("  -log <file_name>   write a log in <file_name>\n");
   printf("  cmd_file           source cmd_file\n");
 }
 
