@@ -46,11 +46,11 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-TritonCTS::TritonCTSKernel *
+cts::TritonCTSKernel *
 getTritonCts();
 }
 
-using namespace TritonCTS;
+using namespace cts;
 using ord::getTritonCts;
 %}
 
@@ -65,4 +65,4 @@ TritonCTSKernel* get_triton_cts() {
 %include "../../Exception.i"
 
 %include "TritonCTSKernel.h"
-using namespace TritonCTS;
+using namespace cts;

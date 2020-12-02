@@ -50,7 +50,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace TritonCTS {
+namespace cts {
 
 using ord::error;
 
@@ -486,4 +486,4 @@ void DbWrapper::removeNonClockNets()
   }
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

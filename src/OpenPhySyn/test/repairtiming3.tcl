@@ -8,7 +8,7 @@ create_clock -name core_clock -period 4.1 [get_ports {clk_i}]
 set_wire_rc -resistance 1.0e-03 -capacitance 1.0e-03
 report_wns -digit 3
 report_tns -digit 3
-repair_timing -negative_slack_violations -iterations 1 -auto_buffer_library small
+psn_repair_timing -negative_slack_violations -iterations 1 -auto_buffer_library small
 report_wns -digit 3
 report_tns -digit 3
 set def_file [make_result_file repairtiming3.def]

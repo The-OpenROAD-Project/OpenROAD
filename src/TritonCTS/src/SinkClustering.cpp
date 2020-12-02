@@ -42,7 +42,7 @@
 #include <string>
 #include <tuple>
 
-namespace TritonCTS {
+namespace cts {
 
 void SinkClustering::normalizePoints(float maxDiameter)
 {
@@ -381,4 +381,4 @@ void SinkClustering::writePlotFile(unsigned groupSize)
   file.close();
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

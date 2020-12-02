@@ -167,7 +167,8 @@ class Painter
   virtual void setPen(const Color& color, bool cosmetic = false) = 0;
 
   // Set the brush to whatever the user has chosen for this layer
-  virtual void setBrush(odb::dbTechLayer* layer) = 0;
+  // The alpha value may be overridden
+  virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
 
   // Set the brush to whatever the user has chosen for this layer
   virtual void setBrush(const Color& color) = 0;

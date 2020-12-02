@@ -54,6 +54,7 @@ add_custom_command(OUTPUT ${RESIZER_TCL_INIT}
 add_library(resizer
   MakeResizer.cc
   Resizer.cc
+  Rebuffer.cc
   SteinerTree.cc
   ${RESIZER_WRAP}
   ${RESIZER_TCL_INIT}

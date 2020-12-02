@@ -101,9 +101,13 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  void setBrush(odb::dbTechLayer* layer) override
+  void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
-    painter_->setBrush(options_->color(layer));
+    QColor color = options_->color(layer);
+    if (alpha >= 0) {
+      color.setAlpha(alpha);
+    }
+    painter_->setBrush(color);
   }
 
   void setBrush(const Color& color) override

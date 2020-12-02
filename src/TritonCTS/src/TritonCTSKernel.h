@@ -43,7 +43,7 @@
 
 #include <functional>
 
-namespace TritonCTS {
+namespace cts {
 
 class TritonCTSKernel
 {
@@ -119,4 +119,4 @@ class TritonCTSKernel
   void set_num_static_layers(unsigned num);
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

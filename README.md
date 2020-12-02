@@ -227,7 +227,7 @@ Use the following command to perform I/O pin assignment:
 ```
 place_pins [-hor_layer h_layer]  
            [-ver_layer v_layer] 
-	         [-random_seed seed] 
+           [-random_seed seed]
            [-exclude interval]
            [-random]
 ```
@@ -263,10 +263,10 @@ util` percent of the core area. `util` is between 0 and 100.
 
 ```
 set_wire_rc [-clock] [-data]
-	    [-layer layer_name]
+            [-layer layer_name]
             [-resistance res ]
-	    [-capacitance cap]
-	    [-corner corner_name]
+            [-capacitance cap]
+            [-corner corner_name]
 ```
 
 The `set_wire_rc` command sets the resistance and capacitance used to
@@ -309,8 +309,7 @@ in all libraries.
 
 ```
 buffer_ports [-inputs]
-	     [-outputs]
-	     -buffer_cell buffer_cell
+             [-outputs]
 ```
 The `buffer_ports -inputs` command adds a buffer between the input and
 its loads.  The `buffer_ports -outputs` adds a buffer between the port
@@ -319,7 +318,6 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
-              -buffer_cell buffer_cell
 ```
 
 The `repair_design` inserts buffers on nets to repair max slew, max
@@ -347,12 +345,13 @@ which can be a library/cell/port name or object returned by
 by `dist` (in liberty units, typically microns).
 
 ```
-repair_hold_violations -buffer_cell buffer_cell
-                       [-allow_setup_violations]
-		       [-max_utilization util]
+repair_timing [-setup]
+              [-hold]
+              [-allow_setup_violations]
 ```
-The `repair_hold_violations` command inserts buffers to repair hold
-check violations. Buffers are not inserted that will cause setup
+The `repair_timing` command repair setup and hold violations.
+It should be run after clock tree synthesis with propagated clocks.
+While repairing hold violations buffers are not inserted that will cause setup
 violations unless '-allow_setup_violations' is specified.
 
 ```
@@ -378,16 +377,14 @@ read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
 
-set buffer_cell BUF_X4
 set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
 
-buffer_ports -buffer_cell $buffer_cell
-repair_design -max_wire_length 100 -buffer_cell $buffer_cell
-resize
+buffer_ports
+repair_design -max_wire_length 100
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
-repair_hold_violations -buffer_cell $buffer_cell
-resize
+# clock tree synthesis...
+repair_timing
 ```
 
 Note that OpenSTA commands can be used to report timing metrics before
@@ -400,7 +397,7 @@ report_tns
 report_wns
 report_checks
 
-resize
+repair_design
 
 report_checks
 report_tns
@@ -700,7 +697,7 @@ The `optimize_logic` command should be run after the logic synthesis on hieraric
 
 
 ```
-repair_timing
+psn_repair_timing
         [-capacitance_violations]
         [-transition_violations]
         [-negative_slack_violations]

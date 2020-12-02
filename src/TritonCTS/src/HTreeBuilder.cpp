@@ -43,7 +43,7 @@
 #include <iostream>
 #include <map>
 
-namespace TritonCTS {
+namespace cts {
 
 using ord::error;
 
@@ -1009,4 +1009,4 @@ void SegmentBuilder::forceBufferInSegment(std::string master)
   _drivingSubNet->addInst(newBuffer);
 }
 
-}  // namespace TritonCTS
+}  // namespace cts
