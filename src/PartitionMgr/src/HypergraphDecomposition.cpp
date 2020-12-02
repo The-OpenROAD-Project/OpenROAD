@@ -135,6 +135,12 @@ void HypergraphDecomposition::createHypergraph(
   hypergraph.addRowPtr(nextPtr);
 }
 
+/*
+updateHypergraph: Given a hypergraph and a cluster solution,
+this function creates a new hypergraph containing only nodes/connections
+that are inside a specific cluster
+*/
+
 void HypergraphDecomposition::updateHypergraph(
     Hypergraph& hypergraph,
     Hypergraph& newHypergraph,
@@ -234,6 +240,12 @@ void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
   graph.computeEdgeWeightRange(maxEdgeWeight);
 }
 
+/*
+The following formulas were selected due to the work presented in
+C. J. Alpert and A. B. Kahng, “Recent Directions in Netlist Partitioning: A
+Survey“
+ */
+
 float HypergraphDecomposition::computeWeight(int nPins)
 {
   switch (_weightingOption) {
@@ -271,7 +283,7 @@ void HypergraphDecomposition::connectPins(int firstPin,
   if (firstPin != secondPin) {
     if (adjMatrix[firstPin].find(secondPin) == adjMatrix[firstPin].end())
       adjMatrix[firstPin][secondPin] = weight;
-    else 
+    else
       adjMatrix[firstPin][secondPin] += weight;
   }
 }

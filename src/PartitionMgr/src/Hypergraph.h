@@ -45,16 +45,22 @@ class Hypergraph
   Hypergraph() {}
   virtual ~Hypergraph() = default;
   int getEdgeWeight(int idx) const { return _edgeWeightsNormalized.at(idx); }
-  int getVertexWeight(int idx) const { return _vertexWeightsNormalized.at(idx); }
+  int getVertexWeight(int idx) const
+  {
+    return _vertexWeightsNormalized.at(idx);
+  }
   int getColIdx(int idx) const { return _colIdx.at(idx); }
   int getRowPtr(int idx) const { return _rowPtr.at(idx); }
   int getMapping(std::string inst) { return _instToIdx.at(inst); }
   int getClusterMapping(int idx) { return _idxToClusterIdx.at(idx); }
-  std::vector<float> getDefaultEdgeWeight() const & { return _edgeWeights; };
-  std::vector<int> getEdgeWeight() const & { return _edgeWeightsNormalized; };
-  std::vector<int> getVertexWeight() const & { return _vertexWeightsNormalized; };
-  std::vector<int> getColIdx() const & { return _colIdx; };
-  std::vector<int> getRowPtr() const & { return _rowPtr; };
+  std::vector<float> getDefaultEdgeWeight() const& { return _edgeWeights; };
+  std::vector<int> getEdgeWeight() const& { return _edgeWeightsNormalized; };
+  std::vector<int> getVertexWeight() const&
+  {
+    return _vertexWeightsNormalized;
+  };
+  std::vector<int> getColIdx() const& { return _colIdx; };
+  std::vector<int> getRowPtr() const& { return _rowPtr; };
 
   void addEdgeWeight(float weight) { _edgeWeights.push_back(weight); }
   void addEdgeWeightNormalized(int weight)
@@ -128,6 +134,47 @@ class Hypergraph
   std::map<int, int> _idxToClusterIdx;
 };
 
+/*
+Although the "Graph" class does not add new functionalities
+to the "Hypergraph" class, edges and hyperedges are stored
+using different formats. Therefore, the different classes
+are important to indicate how to read the edges/hyperedges
+connections.
+
+Example:
+
+Adjacency matrix of a 3-node clique graph:
+
+                |0 1 1|
+                |1 0 1|
+                |1 1 0|
+
+colidx 1 2 0 2 0 1
+rowptr 0 2 4 6
+
+colidx lists all adjacent nodes for each node on the graph
+rowptr indicates where the list for each node starts/ends
+e.g.,
+the nodes adjacent to node 0 begin to be described at colidx[rowptr[0]]
+and end at colidx[rowptr[1] - 1]
+i.e., nodes 1 and 2
+
+------------------------------------------------------------------------
+
+The same 3 nodes, now represented as a hypergraph with a
+single hyperedge:
+
+colidx 0 1 2
+rowptr 0 3
+
+colidx lists the nodes connected to each hyperedge
+rowptr indicates where the list for each hyperedge starts/ends
+e.g.,
+the nodes connected to hyperedge 0 begin to be described at colidx[rowptr[0]]
+and end at colidx[rowptr[1] - 1]
+i.e., nodes 0, 1 and 2
+
+*/
 class Graph : public Hypergraph
 {
  public:
