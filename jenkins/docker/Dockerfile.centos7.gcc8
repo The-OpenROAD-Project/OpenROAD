@@ -76,6 +76,14 @@ RUN yum install -y gettext-devel help2man texinfo \
     && make install -j $(nproc) \
     && cd - \
     && rm -rf flex
+    
+# spdlog required by OpenDB
+RUN git clone -b v1.8.1 https://github.com/gabime/spdlog.git \
+    && cd spdlog \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make install -j
 
 # Coverage
 FROM base-dependencies AS coverage

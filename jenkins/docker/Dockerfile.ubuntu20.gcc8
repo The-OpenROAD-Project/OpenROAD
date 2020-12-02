@@ -46,6 +46,14 @@ RUN wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && cmake -B build . \
     && cmake --build build -j $(nproc) --target install
 
+# spdlog required by OpenDB
+RUN git clone -b v1.8.1 https://github.com/gabime/spdlog.git \
+    && cd spdlog \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make install -j
+
 # need the "hack" below to run on docker in gcloud instance (MacOS Docker does
 # not need)
 RUN strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
