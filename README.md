@@ -225,8 +225,8 @@ creates a metal shape for each I/O pin using min-area rules.
 
 Use the following command to perform I/O pin assignment:
 ```
-place_pins [-hor_layers h_layer]  
-           [-ver_layers v_layer] 
+place_pins [-hor_layers h_layers]  
+           [-ver_layers v_layers] 
            [-random_seed seed]
            [-exclude interval]
            [-random]
@@ -243,7 +243,7 @@ random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
-or a range of values. Example: `place_pins -hor_layer 2 -ver_layer 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
+or a range of values. Example: `place_pins -hor_layers 2 -ver_layers 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 

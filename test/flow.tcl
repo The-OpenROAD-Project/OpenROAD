@@ -14,7 +14,7 @@ remove_buffers
 
 ################################################################
 # IO Placement
-io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_layer
+io_placer -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
 # Macro Placement
