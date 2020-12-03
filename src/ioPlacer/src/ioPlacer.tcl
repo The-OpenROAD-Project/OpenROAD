@@ -141,13 +141,13 @@ proc io_placer { args } {
   if [info exists keys(-hor_layers)] {
     set hor_layers $keys(-hor_layers)
   } else {
-    ord::error "-hor_layer is mandatory"
+    ord::error "-hor_layers is mandatory"
   }       
   
   if [info exists keys(-ver_layers)] {
     set ver_layers $keys(-ver_layers)
   } else {
-    ord::error "-ver_layer is mandatory"
+    ord::error "-ver_layers is mandatory"
   }
 
   set offset 5
