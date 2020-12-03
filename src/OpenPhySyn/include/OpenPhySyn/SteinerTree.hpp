@@ -119,9 +119,9 @@ private:
                        std::vector<SteinerPoint>& adj1,
                        std::vector<SteinerPoint>& adj2,
                        std::vector<SteinerPoint>& adj3);
-    SteinerTree(Flute::Tree tree, std::vector<InstanceTerm*> pins,
+    SteinerTree(flute::Tree tree, std::vector<InstanceTerm*> pins,
                 Psn* psn_inst);
-    Flute::Tree                tree_;
+    flute::Tree                tree_;
     std::vector<InstanceTerm*> pins_;
     std::vector<SteinerPoint>  left_;
     std::vector<SteinerPoint>  right_;

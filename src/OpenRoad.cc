@@ -146,7 +146,7 @@ OpenRoad::~OpenRoad()
 #endif
   deleteAntennaChecker(antennaChecker_);
   odb::dbDatabase::destroy(db_);
-  Flute::deleteLUT();
+  flute::deleteLUT();
 }
 
 void
@@ -212,7 +212,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
-  Flute::readLUT();
+  flute::readLUT();
   initDbSta(this);
   initResizer(this);
   initGui(this);
