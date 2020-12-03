@@ -1814,7 +1814,7 @@ void freeRR(void)
   }
 }
 
-Tree fluteToTree(Flute::Tree fluteTree)
+Tree fluteToTree(flute::Tree fluteTree)
 {
   Tree tree;
   tree.deg      = fluteTree.deg;
@@ -1829,15 +1829,15 @@ Tree fluteToTree(Flute::Tree fluteTree)
   return tree;
 }
 
-Flute::Tree treeToFlute(Tree tree)
+flute::Tree treeToFlute(Tree tree)
 {
-  Flute::Tree fluteTree;
+  flute::Tree fluteTree;
   fluteTree.deg    = tree.deg;
-  fluteTree.length = (Flute::DTYPE) fluteTree.length;
-  fluteTree.branch = new Flute::Branch[tree.totalDeg];
+  fluteTree.length = (flute::DTYPE) fluteTree.length;
+  fluteTree.branch = new flute::Branch[tree.totalDeg];
   for (int i = 0; i < tree.totalDeg; i++) {
-    fluteTree.branch[i].x = (Flute::DTYPE) tree.branch[i].x;
-    fluteTree.branch[i].y = (Flute::DTYPE) tree.branch[i].y;
+    fluteTree.branch[i].x = (flute::DTYPE) tree.branch[i].x;
+    fluteTree.branch[i].y = (flute::DTYPE) tree.branch[i].y;
     fluteTree.branch[i].n = tree.branch[i].n;
   }
   return fluteTree;

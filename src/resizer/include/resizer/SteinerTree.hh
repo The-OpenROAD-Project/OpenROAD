@@ -41,7 +41,6 @@
 #include "opendb/geom.h"
 #include "db_sta/dbNetwork.hh"
 
-#define FLUTE_DTYPE int
 #include "flute.h"
 
 namespace sta {
@@ -82,7 +81,7 @@ public:
   }
 };
 
-// Wrapper for Flute::Tree
+// Wrapper for flute::Tree
 class SteinerTree
 {
 public:
@@ -117,12 +116,12 @@ public:
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
-  void setTree(Flute::Tree tree,
+  void setTree(flute::Tree tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
   void writeSVG(const Network *network,
                 const char *filename);
-  Flute::Tree &fluteTree() { return tree_; }
+  flute::Tree &fluteTree() { return tree_; }
 
   static SteinerPt null_pt;
 
@@ -140,7 +139,7 @@ protected:
                       SteinerPtSeq &adj3);
   void checkSteinerPt(SteinerPt pt) const;
 
-  Flute::Tree tree_;
+  flute::Tree tree_;
   PinSeq pins_;
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;
