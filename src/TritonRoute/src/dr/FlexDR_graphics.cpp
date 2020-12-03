@@ -78,6 +78,15 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
         break;
       }
+      case drcPatchWire: {
+        auto patch = (drPatchWire *) fig;
+        if (patch->getLayerNum() == layerNum) {
+          patch->getBBox(box);
+          painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
+        }
+        break;
+      }
+
       default:
         printf("unknown %d\n", (int)fig->typeId());
       }
