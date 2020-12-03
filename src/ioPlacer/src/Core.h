@@ -102,9 +102,6 @@ class Core
   int getDatabaseUnit() const { return _databaseUnit; }
 
   int getPerimeter();
-
-  int getMaxDstX();
-  int getMaxDstY();
 };
 
 }  // namespace pin_placer
