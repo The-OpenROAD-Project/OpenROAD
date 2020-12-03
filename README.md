@@ -225,16 +225,16 @@ creates a metal shape for each I/O pin using min-area rules.
 
 Use the following command to perform I/O pin assignment:
 ```
-place_pins [-hor_layer h_layer]  
-           [-ver_layer v_layer] 
+place_pins [-hor_layers h_layer]  
+           [-ver_layers v_layer] 
            [-random_seed seed]
            [-exclude interval]
            [-random]
 ```
-- ``-hor_layer`` (mandatory). Set the layer to create the metal shapes 
-of I/O pins assigned to horizontal tracks. 
-- ``-ver_layer`` (mandatory). Set the layer to create the metal shapes
-of I/O pins assigned to vertical tracks. 
+- ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
+of I/O pins assigned to horizontal tracks. Can be a single layer or a list of layer indexes
+- ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
+of I/O pins assigned to vertical tracks. Can be a single layer or a list of layer indexes
 - ``-random_seed``. Set the seed for random operations.
 - ``-exclude``. Set an interval in one of the four edges of the die boundary
 where I/O pins cannot be assigned. Can be used multiple times.
