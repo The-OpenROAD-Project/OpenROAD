@@ -47,7 +47,7 @@
 #include "openroad/Error.hh"
 #include "init_fp/InitFloorplan.hh"
 
-namespace ord {
+namespace ifp {
 
 using std::string;
 using std::abs;
@@ -628,4 +628,4 @@ InitFloorplan::dbuToMeters(int dist) const
   return dist / (dbu * 1e+6);
 }
 
-} // namespace ord
+} // namespace

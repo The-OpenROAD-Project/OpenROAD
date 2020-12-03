@@ -101,7 +101,7 @@ proc initialize_floorplan { args } {
     } else {
       set aspect_ratio 1.0
     }
-    ord::init_floorplan_util $util $aspect_ratio \
+    ifp::init_floorplan_util $util $aspect_ratio \
       [sta::distance_ui_sta $core_sp_bottom] \
       [sta::distance_ui_sta $core_sp_top] \
       [sta::distance_ui_sta $core_sp_left] \
@@ -131,7 +131,7 @@ proc initialize_floorplan { args } {
       sta::check_positive_float "-core_area" $core_uy
 
       # convert die/core coordinates to meters.
-      ord::init_floorplan_core \
+      ifp::init_floorplan_core \
 	[sta::distance_ui_sta $die_lx] [sta::distance_ui_sta $die_ly] \
 	[sta::distance_ui_sta $die_ux] [sta::distance_ui_sta $die_uy] \
 	[sta::distance_ui_sta $core_lx] [sta::distance_ui_sta $core_ly] \
@@ -149,7 +149,7 @@ sta::define_cmd_args "auto_place_pins" {pin_layer}
 
 proc auto_place_pins { pin_layer } {
   if { [[ord::get_db_tech] findLayer $pin_layer] != "NULL" } {
-    ord::auto_place_pins_cmd $pin_layer
+    ifp::auto_place_pins_cmd $pin_layer
   } else {
     ord::error "layer $pin_layer not found."
   }
