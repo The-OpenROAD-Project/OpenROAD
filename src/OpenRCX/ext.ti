@@ -1,0 +1,436 @@
+#
+# BSD 3-Clause License
+#
+# Copyright (c) 2019, Nefelus Inc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+%{
+#include "ext.h"
+%}
+module Ext
+{
+	constructor
+	(
+	);
+    export clean
+	(
+        in bool all_models [ usage = "Delete all extract models" ; ],
+        in bool ext_only [ usage = "Delete only extract objects" ; ]
+	);
+    export load_model
+    ( 
+        in string name = "TYP" [ usage = "Process Corner Name" ; ],
+        in bool lef_rc [ usage = "Read process params from DB" ; ],
+        in string file [ usage = "Extraction Rules File" ; ],
+        in int set_min = -1 [usage = "Set index for Min Capacitance extraction Model";] ,
+        in int set_typ = -1 [usage = "Set index for Typ Capacitance extraction Model";] ,
+        in int set_max = -1 [usage = "Set index for Max Capacitance extraction Model";] 
+    );
+    export read_process
+    ( 
+        in string name = "TYP" [ usage = "Process Corner Name" ; ],
+        in string file [ usage = "Process parameters File" ; ]
+    );
+    export rules_gen
+    ( 
+        in string name = "TYP" [ usage = "Process Corner Name" ; ],
+        in string dir = "./extRulesGen" [ usage = "Directory Name for field solver runs" ; ],
+        in string file = "extRules" [ usage = "Output Rules File Name" ; ],
+        in bool write_to_solver [ usage = "Write input files to field solver but skip run" ; ],
+        in bool read_from_solver [ usage = "Read output files from field solver" ; ],
+        in bool run_solver [ usage = "run field solver only" ; ],
+        in int pattern = 0 [ usage = "pattern type" ; ],
+	in bool keep_file
+    );
+	export metal_rules_gen
+    (
+	in string name = "TYP" [ usage = "Process Corner Name" ; ],         in string dir = "./extRulesGen" [ usage = "Directory Name for field solver runs" ; ],         in string file = "extRules" [ usage = "Output Rules File Name" ; ],
+        in bool write_to_solver [ usage = "Write input files to field solver but skip run" ; ],
+        in bool read_from_solver [ usage = "Read output files from field solver" ; ],
+        in bool run_solver [ usage = "run field solver only" ; ],
+        in int pattern = 0 [ usage = "pattern type" ; ],
+        in bool keep_file,
+	in int metal = -1 [ usage = "metal layer" ;]
+    );
+	export write_rules
+    (
+	in string name = "TYP" [ usage = "Process Corner Name" ; ],         
+	in string dir = "./extRulesGen" [ usage = "Directory Name for field solver runs" ; ],         
+	in string file = "extRules" [ usage = "Output Rules File Name" ; ],
+	in int pattern = 0 [ usage = "pattern type" ; ],
+	in bool read_from_solver [ usage = "Read output files from field solver" ; ]
+    );
+	export get_ext_metal_count
+    (
+	out int metal_count [ usage = "Extraction metal layer count" ;]
+    );
+	export bench_net
+    ( 
+        in string dir = "./netBench" [ usage = "Directory for solver runs" ; ],
+        in int net  = 0 [ usage = "Net Id" ; ],
+        in bool write_to_solver [ usage = "Write input files to field solver but skip run" ; ],
+        in bool read_from_solver [ usage = "Read output files from field solver" ; ],
+        in bool run_solver [ usage = "run field solver only" ; ],
+        in int max_track_count  = 5 [ usage = "max number of context wire tracks away from main net wires" ; ]
+	);
+	export run_solver
+    (
+	in string dir = "./netBench" [ usage = "Directory for solver runs" ; ],
+	in int net  [ usage = "Net Id" ; ],
+	in int shape  [ usage = "Shape Id" ; ]
+    );
+    export bench_wires
+    ( 
+        in string block="blk" [ usage = "Block Name to store wire patterns" ; ],
+        in int over_dist = 100 [ usage = "over metal distance" ; ],
+        in int under_dist = 100 [ usage = "under metal distance" ; ],
+        in int met = -1 [ usage = "default runs all metals" ; ],
+        in int over_met=-1 [ usage = "under met, default sets all possible metals" ; ],
+        in int under_met=-1 [ usage = "over met, default sets all possible metals" ; ],
+        in int len  = 100 [ usage = "Length of each wire in microns" ; ],
+        in int cnt  = 0 [ usage = "wire cnt per pattern" ; ],
+
+        in string w="1" [ usage = "Multiplier List for minimum width" ; ],
+        in string s="1" [ usage = "Multiplier List for minimum spacing" ; ],
+        in string th="1" [ usage = "Multiplier List for nominal thickness" ; ],
+        in string d="0.0" [ usage = "List of wire density coefficients" ; ],
+
+        in string w_list="" [ usage = "List for widths per met in microns" ; ],
+        in string s_list="" [ usage = "List for spacings per met in microns" ; ],
+        in string th_list="" [ usage = "List for thickness per met in microns" ; ],
+
+        in string grid_list="" [ usage = "Multiplier List for minimum width/spacing and pitch" ; ],
+        in bool default_lef_rules [ usage = "Use default min width and spacing" ; ],
+        
+	in bool nondefault_lef_rules [ usage = "Use non default width and spacing" ; ],
+
+        in string dir = "./Bench" [ usage = "Directory for solver runs" ; ],
+
+        in bool Over [ usage = "Pattern over substrate/met" ; ],
+        in bool ddd [ usage = "Use 3d field solver" ; ],
+        in bool multiple_widths [ usage = "Wires with differet widths on same pattern" ; ],
+
+        in bool write_to_solver [ usage = "Write input files to field solver but skip run" ; ],
+        in bool read_from_solver [ usage = "Read output files from field solver" ; ],
+        in bool run_solver [ usage = "run field solver only" ; ],
+	in bool diag [ usage = "bench mark diagonal patterns" ; ]
+    );
+	export define_process_corner
+    ( 
+        in int ext_model_index = 0 [usage = "Set index for Capacitance extraction Model table of extraction ryles file";] ,
+        in string name [usage = "Name of the process corner";]
+    );
+	export get_ext_db_corner
+    ( 
+        out int index  [usage = "DB index of the extraction corner";] ,
+        in string name [usage = "Name of the process corner";]
+    );
+
+	export define_derived_corner
+    ( 
+        in string name [usage = "Name of the derived corner";],
+        in string process_corner_name [usage = "Primary process corner name already defined with <define_process_corner>";],
+        in float res_factor = 1.0 [usage = "multiply resistance by res_factor";],
+        in float cc_factor = 1.0 [usage = "multiply coupling capacitance by cc_factor";],
+        in float gndc_factor = 1.0 [usage = "multiply ground capacitance by gndc_factor";]
+    );
+	export delete_corners
+    ( 
+    );
+	export get_corners
+    ( 
+      out list string corner_list [ usage = "list of extraction corners"; ]
+    );
+	export assembly
+	(
+		in dbobject block [ usage = "Block to assembly" ; ],
+		in dbobject main_block [ usage = "Main block" ; ]
+	);
+
+	export write_spef_nets
+	(
+		in dbobject block [ usage = "Parasitics of the hierarchical block to be added to parent block" ; ],
+		in bool flatten [ usage = "Flatten Parasitics to top block" ; ],
+		in bool parallel [ usage = "BBD parallel Extraction" ; ],
+		in int corner [ usage = "corner index" ; ]
+	);
+
+	export flatten
+	(
+		in dbobject block [ usage = "Parasitics of the hierarchical block to be added to parent block" ; ],
+		in bool spef [ usage = "Main block" ; ]
+	);
+
+    export extract
+    ( 
+        in bool min [usage = "Min Capacitance extraction Model as already defined in the command load_model";],
+        in bool max [usage = "Max Capacitance extraction Model as already defined in the command load_model";],
+        in bool typ [usage = "Typ Capacitance extraction Model as already defined in the command load_model";],
+        in int set_min = -1 [usage = "Set index for Min Capacitance extraction Model as refered to the db capacitance table index";] ,
+        in int set_typ = -1 [usage = "Set index for Typ Capacitance extraction Model as refered to the db capacitance table index";] ,
+        in int set_max = -1 [usage = "Set index for Max Capacitance extraction Model as refered to the db capacitance table index";] ,
+        in bool litho [usage = "Litho simulation API";] ,
+        in bool wire_density [usage = "Wire density based modeling";] ,
+        in string cmp_file [usage = "CMP modeling file with variable thickness per geographical pixxel";] ,
+        in string ext_model_file [ usage = "Extraction RC Model File" ; ],
+        in string net = "" [ usage = "List of net Ids to extract" ; ],
+        in string bbox = "" [ usage = "Area to extract: x0 y0 x1 y1" ; ],
+        in string ibox = "" [ usage = "Incremental area to extract: x0 y0 x1 y1" ; ],
+        in int test = 0 [usage = "Test level";],
+	in int cc_band_tracks = 1000 [usage = "debug: Number of tracks in a cc extraction band, 0 is whole chip";],
+	in int signal_table = 3 [usage = "use signal table for band_tracks; 1:SigTable,noRotation; 2: SigTable+Rotation; 3: noSigTable,Rotation";],
+        in int cc_up = 2 [usage = "debug: 2- find cc of marked nets with wires at higher coord. 1- find cc with wires at higher coord. 0- with lower.";],
+        in int preserve_geom = 0 [usage = "keep search db, 0 is to remove";],
+        in int corner_cnt = 1 [usage = "First process corners from cap model table extracted at the same time";],
+        in float max_res = 50.0 [usage = "Combine resistors in series up to <max_res> value in OHMS, default value will disable feature";],
+        in bool no_merge_via_res [usage = "debug: Don't add via resistance to wire resistance";],
+        in float coupling_threshold = 0.1 [usage = "smaller measured coupling caps than value entered (in fF) will be grounded. default 0.5fF";],
+	in int context_depth = 0 [usage = "number of upper/lower layers context on CC";],
+	in int cc_model = 40 [usage = "number of maximum tracks for coupling nets on same layer";],
+        in bool over_cell [usage = "Add cell iterm and obstruction shapes as extraction context nets";],
+        in bool remove_cc [usage = "Remove CC";],
+        in bool remove_ext [usage = "Remove RC and CC";],
+        in bool unlink_ext [usage = "Unlink RC and CC";],
+        in bool eco [usage = "extract after load_def_eco";],
+        in bool no_gs [usage = "no geometry sequence using metal planes";],
+        in bool re_run [usage = "re_run extraction";],
+        in bool tile [usage = "Coupling threshold at Bterms is 0";],
+	in int tiling = 0 [usage = "Target number of tiles to be created";],
+	in bool skip_m1_caps [usage = "Extract power nets only";],
+	in bool power_grid [usage = "Extract power nets only";],
+	in string exclude_cells = "" [ usage = "List of cells to be excluded from metal1 grid" ; ],
+	in bool skip_power_stubs [ usage = "Only connect power pins to power grid" ; ],
+        in string power_source_coords [ usage = "File with x,y,met,VDD/GND info" ; ],
+        in bool lef_rc [ usage = "Use LEF RC technology values" ; ],
+        in bool rlog [usage = "print resource usage log";]
+    );
+    export adjust_rc
+    ( 
+        in float res_factor = 1.0 [usage = "multiply resistance by res_factor";],
+        in float cc_factor = 1.0 [usage = "multiply coupling capacitance by cc_factor";],
+        in float gndc_factor = 1.0 [usage = "multiply ground capacitance by gndc_factor";]
+    );
+    export init_incremental_spef
+    (
+      in string origp [ usage = "prefix of the name of the spef file of original parasitics of the changed nets"; ],
+      in string newp [ usage = "prefix of the name of the spef file of new parasitics of the changed nets and the new nets"; ],
+      in string reader [ usage = "prime_time or psta"; ],
+      in bool no_backslash = false [ usage = "strip backslash" ; ],
+      in string exclude_cells [ usage = "cells to be excluded";]
+    );
+    export calibrate
+    (
+        in string spef_file = "" [ usage = "Use contents of the spef file to calibrate" ; ],
+        in string db_corner_name = "" [ usage = "process corner name to reference corner in parasitics DB" ; ],
+        in int corner = -1 [ usage = "corner index to the parasitics DB" ; ],
+        in int spef_corner = -1 [ usage = "corner index to the input spef file" ; ],
+        in bool m_map [ usage = "debug: divider mapping for cswitch-MAGMA" ; ],
+        in float upper_limit = 2.0 [ usage = "upper limit of th calibration factor" ; ],
+        in float lower_limit = 0.5 [ usage = "lower limit of th calibration factor" ; ]
+    );
+    export match
+    (
+        in string spef_file = "" [ usage = "Match to the contents of the spef file" ; ],
+        in string db_corner_name = "" [ usage = "process corner name to reference corner in parasitics DB" ; ],
+        in int corner = -1 [ usage = "corner index to the parasitics DB" ; ],
+        in int spef_corner = -1 [ usage = "corner index to the input spef file" ; ],
+        in bool m_map [ usage = "debug: divider mapping for cswitch-MAGMA" ; ]
+    );
+    export write_spef
+    ( 
+        in string nets = "" [ usage = "List of net Ids to write" ; ],
+        in int net_id = 0 [ usage = "net id to write" ; ],
+        in string ext_corner_name = "" [ usage = "process corner name to reference corner in parasitics DB" ; ],
+        in int corner = -1 [ usage = "process corner" ; ],
+        in int debug = 0 [ usage = "debug level" ; ],
+        in bool flatten [ usage = "Flattened spef for hierarchical design" ; ],
+        in bool parallel [ usage = "Flattened spef for hierarchical design" ; ],
+        in bool init [ usage = "Write header, map and ports only" ; ],
+        in bool end [ usage = "Close open output file" ; ],
+        in bool use_ids [ usage = "Use net ids instead of names" ; ],
+	in bool no_name_map [ usage = "Don't write name map" ; ],
+        in string N = "" [ usage = "Write node coordinates. m: Magma, s: Synopsys-StarRC" ; ],
+        in bool term_junction_xy [ usage = "write wire junction coordinate of terms" ; ],
+        in bool single_pi [ usage = "Write gnd cap of segment on target cap node, do not split" ; ],
+        in string file [ usage = "output SPEF file" ; ],
+        in bool gz [ usage = "Use gzip to compress output" ; ],
+        in bool stop_after_map [ usage = "Stop writting after map" ; ],
+        in bool w_clock [ usage = "debug: write only clock nets in *D_NET" ; ],
+        in bool w_conn [ usage = "debug: write conn's in *D_NET" ; ],
+        in bool w_cap [ usage = "debug: write cap's in *D_NET" ; ],
+        in bool w_cc_cap [ usage = "debug: write only cc's in  *CAP in *D_NET" ; ],
+        in bool w_res [ usage = "debug: write res's in *D_NET" ; ],
+        in bool no_c_num [ usage = "debug: don't write cap number" ; ],
+	in bool prime_time [ usage = "debug: output file to be read by Prime Time" ; ],
+	in bool psta [ usage = "debug: output file to be read by psta" ; ],
+        in bool no_backslash = false [ usage = "strip backslash" ; ],
+        in string exclude_cells [ usage = "cells to be excluded";],
+        in string cap_units = "PF" [ usage = "cap units" ; ],
+        in string res_units = "OHM" [ usage = "res units" ; ]
+    );
+    export independent_spef_corner
+    (
+    );
+    export read_spef
+    ( 
+        in string file [ usage = "input SPEF file" ; ],
+        in string net = "" [ usage = "List of net Ids to read" ; ],
+        in bool force [usage = "delete extraction data, if any, before read spef"; ],
+        in bool use_ids [ usage = "Use net ids instead of names" ; ],
+	in bool keep_loaded_corner [ usage = "don't destroy previously loaded corners" ; ],
+        in bool stamp_wire [ usage = "attach junction id to capNode" ; ],
+	in int test_parsing = 0 [ usage = "Only parse every token; if 2, just counts D_NETS, Rs, CCs, Cs" ; ],
+        in string N = "" [ usage = "Read node coordinates. m: Magma, s: Synopsys-StarRC" ; ],
+        in bool r_conn [ usage = "debug: read conn's in *D_NET" ; ],
+        in bool r_cap [ usage = "debug: read cap's in *D_NET" ; ],
+        in bool r_cc_cap [ usage = "debug: read only cc's in  *CAP in *D_NET" ; ],
+        in bool r_res [ usage = "debug: read res's in *D_NET" ; ],
+        in float cc_threshold = -0.5 [usage = "smaller coupling caps than value entered (in fF) will be grounded, default is not used";],
+        in float cc_ground_factor = 0.0 [usage = "ground all coupling caps by this factor";],
+        in int app_print_limit = 0 [usage = "Number of entries to print per appearance number";],
+        in int corner = -1 [ usage = "process corner" ; ],
+        in string db_corner_name = "" [ usage = "process corner name to reference corner in parasitics DB" ; ],
+        in string calibrate_base_corner = "" [ usage = "process corner name to be calibrated" ; ],
+        in int spef_corner = -1 [ usage = "corner index to the input spef file" ; ],
+        in bool m_map [ usage = "debug: divider mapping for cswitch-MAGMA" ; ],
+		in bool more_to_read [ usage = "debug: not the last of multipart spef files" ; ],
+        in float length_unit = 1.0 [ usage = "length unit of the coordinates, in microns" ; ],
+        in int fix_loop = 0 [ usage = " 0: skip for opt, 1: break simple loop" ; ],
+	in bool no_cap_num_collapse [ usage = "do not collapse cap node numbers" ; ],
+        in string cap_node_map_file = "" [ usage = "write capNodeMap to this file" ; ],
+        in bool log [usage = "print resource usage log";]
+    );
+    export diff_spef
+    ( 
+        in string net = "" [ usage = "List of net Ids to read" ; ],
+        in bool use_ids [ usage = "Use net ids instead of names" ; ],
+        in bool test_parsing [ usage = "Only parse every token" ; ],
+        in string file [ usage = "input SPEF file" ; ],
+        in string db_corner_name = "" [ usage = "process corner name to reference corner in parasitics DB" ; ],
+        in int spef_corner = -1 [ usage = "corner index to the input spef file" ; ],
+        in string exclude_net_subword [ usage = "no reporting on nets with certain pattern" ; ],
+        in string net_subword [ usage = "only report on nets with certain pattern" ; ],
+        in string rc_stats_file [ usage = "if not empty will generate unit length statistics based on net names" ; ],
+        in bool r_conn [ usage = "debug: read conn's in *D_NET" ; ],
+        in bool r_cap [ usage = "debug: read cap's in *D_NET" ; ],
+        in bool r_cc_cap [ usage = "debug: read only cc's in  *CAP in *D_NET" ; ],
+        in bool r_res [ usage = "debug: read res's in *D_NET" ; ],
+        in int ext_corner = -1 [ usage = "process corner index to reference the parasitics DB" ; ],
+        in float low_guard = 1.0 [usage = "Lower percent guard for prunning small differences. default to print all";],
+        in float upper_guard = -1.0 [usage = "Upper percent guard for prunning small differences. default to print all";],
+        in bool m_map [ usage = "debug: divider mapping for cswitch-MAGMA" ; ],
+        in bool log [usage = "print resource usage log";]
+    );
+    export set_block
+    ( 
+        in string block_name = "" [ usage = "Block Name to extract" ; ],
+        in dbobject block [ usage = "Block to extract" ; ],
+        in string inst_name = "" [ usage = "Inst Name to extract" ; ],
+        in dbobject inst [ usage = "Inst object to extract" ; ]
+    );
+    export report_total_cap
+    (
+        in string file = "" [ usage = "write to file" ; ],
+        in bool res_only [ usage = "Report only resistence" ; ],
+        in bool cap_only [ usage = "Report only capcitance" ; ],
+        in float ccmult = 1.0 [ usage = "Multiply ccs to signal nets by ccmult" ; ],
+        in string ref = "" [ usage = "compare to reference total_cap file"; ],
+        in string read = "" [ usage = "read total_cap file"; ]
+   );
+    export report_total_cc
+    (
+        in string file = "" [ usage = "write to file" ; ],
+        in string ref = "" [ usage = "compare to reference total_cc file"; ],
+        in string read = "" [ usage = "read total_cap file"; ]
+    );
+	export attach_gui 
+    (
+	in zobject dcr [ usage = "data crawler zptr to be attached to"; ]
+    );
+	export attach 
+    (
+	in zobject dcr [ usage = "data crawler zptr to be attached to"; ],
+	out zobject gui [ usage = "gui agent to send data to"; ]
+    );
+    export export_sdb 
+    (
+	out zobject net_sdb [ usage = "Search data base for net wires"; ],
+	out zobject cc_sdb [ usage = "Search data base for coupling wires"; ]
+    );
+    export dump
+    ( 
+        in bool open_tree_file [usage = "open file for dumping rc_tree" ; ],
+        in bool close_tree_file [usage = "close file for dumping rc_tree" ; ],
+        in bool cc_cap_geom [ usage = "dump cc capacitance geometries" ; ],
+        in bool cc_net_geom [ usage = "dump cc net geometries" ; ],
+        in bool track_cnt [ usage = "dump track counts in search db" ; ],
+        in bool signal [ usage = "dump signal geometries" ; ],
+        in bool power [ usage = "dump power geometries" ; ],
+        in int layer = 0 [ usage = "layer to dump, 0 for all layers" ; ],
+        in string file = "" [ usage = "file to dump" ; ]
+    );
+    export count
+    ( 
+        in bool signal_wire_seg [ usage = "count signal wire segments" ; ],
+        in bool power_wire_seg [ usage = "count power wire segments" ; ]
+    );
+    export read_qcap
+    ( 
+        in string file = "" [ usage = "file name to read geometries" ; ],
+        in string cap_file = "" [ usage = "file name to read gnd and CC caps" ; ],
+        in bool skip_bterms [ usage = "will not create bterms for multi-wire nets, except for the first wire" ; ],
+        in bool no_qcap [ usage = "simple net-layer-coords format" ; ],
+        in string design = "QCAP_BLOCK" [ usage = "design name for defout" ; ]
+    );
+    export rc_tree
+    ( 
+		in float max_cap = 0.0 [usage = "Combine caps in series up to <max_cap> value in FF, default value will disable feature";],
+		in int test = 0 [ usage = "test flag" ; ],
+		in int net = 0 [ usage = "Net Id to test" ; ],
+		in string print_tag = "" [ usage = "tag on file name to print" ; ]
+	);
+
+    export net_stats
+    ( 
+		out list int net_ids [usage = "return list of nets that satisfy the range criteria";],
+		in string tcap [usage = "bounds for total cap <min>:<max> or <min> or :<max>";],
+		in string ccap [usage = "bounds for coupling cap <min>:<max> or <min> or :<max>";],
+		in string ratio_cap [usage = "bounds for ratio of coupling to total cap <min>:<max> or <min> or :<max>";],
+		in string res [usage = "bounds for total resistance <min>:<max> or <min> or :<max>";],
+		in string len [usage = "bounds for length(nm) <min>:<max> or <min> or :<max>";],
+		in string met_cnt [usage = "bounds for number of layers used <min>:<max> or <min> or :<max>";],
+		in string wire_cnt [usage = "bounds for wire count <min>:<max> or <min> or :<max>";],
+		in string via_cnt [usage = "bounds for via count <min>:<max> or <min> or :<max>";],
+		in string seg_cnt [usage = "bounds for res segment count <min>:<max> or <min> or :<max>";],
+		in string term_cnt [usage = "bounds for term count <min>:<max> or <min> or :<max>";],
+		in string bterm_cnt [usage = "bounds for bterm count <min>:<max> or <min> or :<max>";],
+		in string file [usage = "output file name";],
+		in string bbox [usage = "bounding box, default is entire block";],
+		in string branch_len [usage = "bounds for driver to receiver lentgh <min>:<max> or <min> or :<max>";]
+	);
+}

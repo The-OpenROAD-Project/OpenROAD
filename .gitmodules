@@ -4,6 +4,3 @@
 [submodule "module/OpenDB"]
 	path = src/OpenDB
 	url = ../OpenDB.git
-[submodule "src/OpenRCX"]
-	path = src/OpenRCX
-	url = ../OpenRCX.git
