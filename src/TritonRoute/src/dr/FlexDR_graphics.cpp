@@ -4,10 +4,12 @@
 
 #include "FlexDR_graphics.h"
 #include "FlexDR.h"
+#include "openroad/OpenRoad.hh"
 
 namespace fr {
 
-FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings)
+FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
+                               frDesign* design)
   : worker_(nullptr),
     net_(nullptr),
     settings_(settings),
@@ -16,12 +18,30 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings)
     gui_(gui::Gui::get())
 {
   assert(MAX_THREADS == 1);
+
+  // Build the layer map between opendb & tr
+  auto odb_tech = ord::OpenRoad::openRoad()->getDb()->getTech();
+
+  layer_map.resize(odb_tech->getLayerCount(), -1);
+
+  for (auto& tr_layer : design->getTech()->getLayers()) {
+    auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
+    if (odb_layer) {
+      layer_map[odb_layer->getNumber()] = tr_layer->getLayerNum();
+    }
+  }
+
   gui_->register_renderer(this);
 }
 
 void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
   if (!net_) {
+    return;
+  }
+
+  frLayerNum layerNum = layer_map.at(layer->getNumber());
+  if (layerNum < 0) {
     return;
   }
 
@@ -34,12 +54,12 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     frBox box;
     worker_->getRouteBox(box);
     std::vector<drConnFig*> figs;
-    rq.query(box, layer->getNumber(), figs);
+    rq.query(box, layerNum, figs);
     for (auto& fig : figs) {
       switch (fig->typeId()) {
       case drcPathSeg: {
         auto seg = (drPathSeg *) fig;
-        if (seg->getLayerNum() == layer->getNumber()) {
+        if (seg->getLayerNum() == layerNum) {
           seg->getBBox(box);
           painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
         }
@@ -48,9 +68,9 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       case drcVia: {
         auto via = (drVia *) fig;
         auto viadef = via->getViaDef();
-        if (viadef->getLayer1Num() == layer->getNumber()) {
+        if (viadef->getLayer1Num() == layerNum) {
           via->getLayer1BBox(box);
-        } else if (viadef->getLayer2Num() == layer->getNumber()) {
+        } else if (viadef->getLayer2Num() == layerNum) {
           via->getLayer2BBox(box);
         } else {
           continue;
@@ -67,7 +87,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   // Draw guides
   painter.setBrush(layer, /* alpha */ 50);
   for (auto& rect : net_->getOrigGuides()) {
-    if (rect.getLayerNum() == layer->getNumber()) {
+    if (rect.getLayerNum() == layerNum) {
       frBox box;
       rect.getBBox(box);
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});
@@ -75,19 +95,17 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   painter.setPen(layer, /* cosmetic */ true);
-  if (layer->getNumber() < (int) points_by_layer_.size()) {
-    for (frPoint& pt : points_by_layer_[layer->getNumber()]) {
-        painter.drawLine({pt.x() - 100, pt.y() - 100},
-                         {pt.x() + 100, pt.y() + 100});
-        painter.drawLine({pt.x() - 100, pt.y() + 100},
-                         {pt.x() + 100, pt.y() - 100});
-    }
+  for (frPoint& pt : points_by_layer_[layerNum]) {
+    painter.drawLine({pt.x() - 100, pt.y() - 100},
+                     {pt.x() + 100, pt.y() + 100});
+    painter.drawLine({pt.x() - 100, pt.y() + 100},
+                     {pt.x() + 100, pt.y() - 100});
   }
 
   // Draw markers
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
   for (auto& marker : worker_->getMarkers()) {
-    if (marker.getLayerNum() == layer->getNumber()) {
+    if (marker.getLayerNum() == layerNum) {
       frBox box;
       marker.getBBox(box);
       painter.drawRect({box.left(), box.bottom(), box.right(), box.top()});

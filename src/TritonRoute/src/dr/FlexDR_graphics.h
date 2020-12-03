@@ -12,13 +12,14 @@ class FlexGridGraph;
 class FlexWavefrontGrid;
 class FlexDRWorker;
 class drNet;
+class frDesign;
 
 // This class draws debugging graphics on the layout
 class FlexDRGraphics : public gui::Renderer
 {
  public:
   // Debug InitialPlace
-  FlexDRGraphics(frDebugSettings* settings);
+  FlexDRGraphics(frDebugSettings* settings, frDesign* design);
 
   void startWorker(FlexDRWorker* worker);
 
@@ -48,6 +49,8 @@ class FlexDRGraphics : public gui::Renderer
   int              current_iter_;
   frLayerNum       last_pt_layer_;
   gui::Gui*        gui_;
+  // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
+  std::vector<frLayerNum> layer_map;
   std::vector<std::vector<frPoint>> points_by_layer_;
 };
 

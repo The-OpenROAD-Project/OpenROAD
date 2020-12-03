@@ -50,7 +50,9 @@ FlexDR::~FlexDR()
 void FlexDR::setDebug(frDebugSettings* settings)
 {
   bool on = settings->debugDR;
-  graphics = on && FlexDRGraphics::guiActive() ? std::make_unique<FlexDRGraphics>(settings) : nullptr;
+  graphics = on && FlexDRGraphics::guiActive() ?
+    std::make_unique<FlexDRGraphics>(settings, design)
+    : nullptr;
 }
 
 int FlexDRWorker::main() {
