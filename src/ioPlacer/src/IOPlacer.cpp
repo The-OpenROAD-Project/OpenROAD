@@ -267,8 +267,6 @@ void IOPlacer::findSlots(const std::vector<int>& layers, Edge edge)
   int max = vertical ? ubX : ubY;
 
   int offset = _parms->getBoundariesOffset() * _core.getDatabaseUnit();
-  int num_tracks_offset
-      = std::ceil(offset / (std::max(_core.getMaxDstX(), _core.getMaxDstY())));
 
   for (int i = 0; i < layers.size(); i++) {
     int currX, currY, start_idx, end_idx;
@@ -287,6 +285,10 @@ void IOPlacer::findSlots(const std::vector<int>& layers, Edge edge)
                              : int(ceil(_core.getMinWidthY()[i] / 2.0));
 
     halfWidth *= thicknessMultiplier;
+
+    int num_tracks_offset
+      = std::ceil(offset / (std::max(_core.getMinDstPinsX()[i] * _parms->getMinDistance(),
+                                     _core.getMinDstPinsY()[i] * _parms->getMinDistance())));
 
     start_idx
         = std::max(0.0,
@@ -339,9 +341,6 @@ void IOPlacer::defineSlots()
 
   int offset = _parms->getBoundariesOffset();
   offset *= _core.getDatabaseUnit();
-
-  int num_tracks_offset
-      = std::ceil(offset / (std::max(_core.getMaxDstX(), _core.getMaxDstY())));
 
   /*******************************************
    *  Order of the edges when creating slots  *
