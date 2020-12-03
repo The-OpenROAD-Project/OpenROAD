@@ -65,8 +65,8 @@ extern void        iniBDE();
 extern void        copyBR(void);
 extern void        copyRS(void);
 extern void        freeRR(void);
-extern Tree        fluteToTree(flute::Tree fluteTree);
-extern flute::Tree treeToFlute(Tree tree);
+extern Tree        fluteToTree(stt::Tree fluteTree);
+extern stt::Tree   treeToFlute(Tree tree);
 extern Tree        pdToTree(PD::Tree pdTree);
 
 }  // namespace gr
