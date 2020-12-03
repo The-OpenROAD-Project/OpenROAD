@@ -47,7 +47,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-sta::Resizer *
+rsz::Resizer *
 getResizer();
 void
 ensureLinked();
@@ -82,9 +82,9 @@ using sta::NetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
-
-using sta::Resizer;
 using sta::dbNetwork;
+
+using rsz::Resizer;
 
 %}
 
@@ -143,7 +143,7 @@ using sta::dbNetwork;
 
 %inline %{
 
-namespace sta {
+namespace rsz {
 
 void
 remove_buffers_cmd()

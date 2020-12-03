@@ -59,6 +59,10 @@ class Resizer;
 class LibertyCell;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace pin_placer {
 class IOPlacer;
 }
@@ -130,7 +134,7 @@ public:
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
-  sta::Resizer *getResizer() { return resizer_; }
+  rsz::Resizer *getResizer() { return resizer_; }
   cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   opendp::Opendp *getOpendp() { return opendp_; }
@@ -202,7 +206,7 @@ private:
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
-  sta::Resizer *resizer_;
+  rsz::Resizer *resizer_;
   pin_placer::IOPlacer *ioPlacer_;
   opendp::Opendp *opendp_;
   finale::Finale *finale_;

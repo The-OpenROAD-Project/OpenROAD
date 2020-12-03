@@ -61,7 +61,7 @@ namespace ord {
 
 using sta::dbSta;
 using sta::dbNetwork;
-using sta::Resizer;
+using rsz::Resizer;
 
 using odb::dbDatabase;
 

@@ -36,16 +36,63 @@
 #pragma once
 
 #include <array>
+#include <string>
+
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 #include "SteinerTree.hh"
 
-namespace sta {
+namespace rsz {
 
 using std::array;
-using odb::Rect;
+using std::string;
 
-class RebufferOption;
+using odb::Rect;
+using odb::dbDatabase;
+using odb::dbNet;
+using odb::dbMaster;
+using odb::dbBlock;
+
+using sta::StaState;
+using sta::Sta;
+using sta::dbSta;
+using sta::dbNetwork;
+using sta::Vector;
+using sta::Map;
+using sta::UnorderedSet;
+using sta::MinMax;
+using sta::Net;
+using sta::NetSeq;
+using sta::Instance;
+using sta::InstanceSeq;
+using sta::InstanceSet;
+using sta::Pin;
+using sta::Cell;
+using sta::LibertyLibrary;
+using sta::LibertyLibrarySeq;
+using sta::LibertyCell;
+using sta::LibertyCellSeq;
+using sta::LibertyCellSet;
+using sta::LibertyPort;
+using sta::TimingArc;
+using sta::RiseFall;
+using sta::Vertex;
+using sta::VertexSeq;
+using sta::VertexSet;
+using sta::Delay;
+using sta::Slew;
+using sta::ArcDelay;
+using sta::Required;
+using sta::Slack;
+using sta::Corner;
+using sta::DcalcAnalysisPt;
+using sta::ParasiticAnalysisPt;
+using sta::Pvt;
+using sta::Parasitic;
+using sta::ParasiticNode;
+using sta::PathRef;
+
+class BufferedNet;
 
 class NetHash
 {
@@ -59,8 +106,8 @@ typedef Vector<Vector<Pin*>> GroupedPins;
 typedef array<Required, RiseFall::index_count> Requireds;
 typedef array<Slew, RiseFall::index_count> TgtSlews;
 typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
-typedef Vector<RebufferOption*> RebufferOptionSeq;
-enum class RebufferOptionType { sink, junction, wire, buffer };
+typedef Vector<BufferedNet*> BufferedNetSeq;
+enum class BufferedNetType { load, junction, wire, buffer };
 
 class Resizer : public StaState
 {
@@ -372,34 +419,33 @@ protected:
   bool replaceCell(Instance *inst,
                    LibertyCell *cell);
 
-  RebufferOptionSeq rebufferBottomUp(SteinerTree *tree,
+  BufferedNetSeq rebufferBottomUp(SteinerTree *tree,
                                      SteinerPt k,
                                      SteinerPt prev,
                                      int level);
-  void rebufferTopDown(RebufferOption *choice,
+  void rebufferTopDown(BufferedNet *choice,
                        Net *net,
                        int level);
-  RebufferOptionSeq
-  addWireAndBuffer(RebufferOptionSeq Z,
+  BufferedNetSeq
+  addWireAndBuffer(BufferedNetSeq Z,
                    SteinerTree *tree,
                    SteinerPt k,
                    SteinerPt prev,
                    int level);
-  // RebufferOption factory.
-  RebufferOption *makeRebufferOption(RebufferOptionType type,
+  // BufferedNet factory.
+  BufferedNet *makeBufferedNet(BufferedNetType type,
                                      float cap,
                                      Requireds requireds,
                                      Pin *load_pin,
                                      Point location,
                                      LibertyCell *buffer_cell,
-                                     RebufferOption *ref,
-                                     RebufferOption *ref2);
-  void deleteRebufferOptions();
+                                     BufferedNet *ref,
+                                     BufferedNet *ref2);
   bool hasTopLevelOutputPort(Net *net);
 
   int rebuffer_net_count_;
-  RebufferOptionSeq rebuffer_options_;
-  friend class RebufferOption;
+  BufferedNetSeq rebuffer_options_;
+  friend class BufferedNet;
 
   // These are command args
   float wire_res_;

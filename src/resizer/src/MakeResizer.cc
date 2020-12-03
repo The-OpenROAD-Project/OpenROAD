@@ -41,7 +41,7 @@
 namespace ord {
 
 using sta::dbSta;
-using sta::Resizer;
+using rsz::Resizer;
 
 Resizer *
 makeResizer()
