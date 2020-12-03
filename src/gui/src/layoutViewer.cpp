@@ -346,12 +346,12 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
     // Clip to the block bounds
     dbBlock* block = getBlock();
-    dbBox* bbox = block->getBBox();
+    Rect bbox = getBounds(block);
 
-    rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox->xMin()));
-    rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox->yMin()));
-    rubber_band_dbu.set_xhi(qMin(rubber_band_dbu.xMax(), bbox->xMax()));
-    rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox->yMax()));
+    rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox.xMin()));
+    rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox.yMin()));
+    rubber_band_dbu.set_xhi(qMin(rubber_band_dbu.xMax(), bbox.xMax()));
+    rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     zoomTo(rubber_band_dbu);
   }
@@ -576,8 +576,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
   // Draw bounds
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  dbBox* bbox = block->getBBox();
-  painter->drawRect(bbox->xMin(), bbox->yMin(), bbox->getDX(), bbox->getDY());
+  Rect bbox = getBounds(block);
+  painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
 
   auto inst_range = search_.search_insts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
@@ -768,7 +768,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 
   // Flip the y-coordinate (see file level comments)
   dbBlock* block = getBlock();
-  int dbu_height = block->getBBox()->getDY();
+  int dbu_height = getBounds(block).dy();
   dbu_top = dbu_height - dbu_top;
   dbu_bottom = dbu_height - dbu_bottom;
 
@@ -778,7 +778,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
-  int dbu_height = block->getBBox()->getDY();
+  int dbu_height = getBounds(block).dy();
 
   // Flip the y-coordinate (see file level comments)
   qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
