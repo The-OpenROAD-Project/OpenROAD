@@ -160,6 +160,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vSlots[0];
         ioPin.setPos(validSlots.at(b).pos);
+        ioPin.setLayer(validSlots.at(b).layer);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
         vSlots.erase(vSlots.begin());
@@ -181,6 +182,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vIOs[0];
         ioPin.setPos(validSlots.at(floor(b * shift)).pos);
+        ioPin.setLayer(validSlots.at(floor(b * shift)).layer);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
         vIOs.erase(vIOs.begin());
@@ -210,6 +212,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vIOs[0];
         ioPin.setPos(validSlots.at(b).pos);
+        ioPin.setLayer(validSlots.at(b).layer);
         _assignment.push_back(ioPin);
         _sections[0].net.addIONet(ioPin, instPins);
         vIOs.erase(vIOs.begin());
