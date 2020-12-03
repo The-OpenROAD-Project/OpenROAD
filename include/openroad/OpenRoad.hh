@@ -95,6 +95,10 @@ namespace OpenRCX {
 class Ext;
 }
 
+namespace triton_route {
+class TritonRoute;
+}
+
 namespace psn {
 class Psn;
 }
@@ -134,6 +138,7 @@ public:
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
+  triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   gr::GlobalRouter* getFastRoute() { return fastRoute_; }
@@ -206,6 +211,7 @@ private:
   cts::TritonCTSKernel *tritonCts_;
   tapcell::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  triton_route::TritonRoute *detailed_router_;
   antenna_checker::AntennaChecker *antennaChecker_;
   psn::Psn *psn_;
   replace::Replace *replace_;

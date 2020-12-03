@@ -142,6 +142,13 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
+triton_route::TritonRoute *
+getTritonRoute()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTritonRoute();
+}
+
 pdnsim::PDNSim*
 getPDNSim()
 {

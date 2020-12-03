@@ -42,7 +42,7 @@
 
 namespace gui {
 class Gui;
-};
+}
 
 namespace sta {
 
