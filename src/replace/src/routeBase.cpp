@@ -49,7 +49,7 @@ using std::to_string;
 using std::pair;
 using std::make_pair;
 using std::sort;
-using gr::GlobalRouter;
+using grt::GlobalRouter;
 
 namespace replace {
 
@@ -579,7 +579,7 @@ RouteBase::RouteBase()
 RouteBase::RouteBase(
     RouteBaseVars rbVars, 
     odb::dbDatabase* db, 
-    gr::GlobalRouter* grouter, 
+    grt::GlobalRouter* grouter, 
     std::shared_ptr<NesterovBase> nb,
     std::shared_ptr<Logger> log)
   : RouteBase() {
@@ -723,7 +723,7 @@ RouteBase::inflationIterCnt() const {
 // edgeCapacityStor_
 void 
 RouteBase::updateRoute() {
-  using gr::GlobalRouter;
+  using grt::GlobalRouter;
   GlobalRouter::ROUTE_ route = grouter_->getRoute();
   
   tg_->setTileCnt(route.gridCountX, route.gridCountY);
@@ -759,9 +759,9 @@ void
 RouteBase::updateEst() {
   for (auto &net_route : grouter_->getRoutes()) {
     odb::dbNet* db_net = net_route.first;
-    gr::GRoute &route = net_route.second;
+    grt::GRoute &route = net_route.second;
     GNet* gNet = nb_->dbToNb(db_net);
-    for (gr::GSegment &segment : route) {
+    for (grt::GSegment &segment : route) {
       if (segment.initLayer == segment.finalLayer) {
 	routingTracks_.push_back(RoutingTrack(segment.initX, segment.initY, 
 					      segment.finalX, segment.finalY,

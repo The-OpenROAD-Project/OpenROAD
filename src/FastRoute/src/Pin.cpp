@@ -36,7 +36,7 @@
 #include "Pin.h"
 #include "fastroute/GlobalRouter.h"
 
-namespace gr {
+namespace grt {
 
 Pin::Pin(odb::dbITerm* iterm,
          const odb::Point& position,
@@ -96,4 +96,4 @@ std::string Pin::getName() const
     return getITermName(_iterm);
 }
 
-}  // namespace gr
+}  // namespace grt

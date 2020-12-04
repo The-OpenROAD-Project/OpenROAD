@@ -43,7 +43,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-gr::GlobalRouter* getFastRoute();
+grt::GlobalRouter* getFastRoute();
 }  // namespace ord
 
 using ord::getFastRoute;

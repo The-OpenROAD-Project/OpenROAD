@@ -63,7 +63,7 @@
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
 
-namespace gr {
+namespace grt {
 
 using ord::error;
 
@@ -3191,4 +3191,4 @@ void print(GRoute &route)
   }
 }
 
-}  // namespace gr
+}  // namespace grt

@@ -51,12 +51,12 @@ extern int Fastroute_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-gr::GlobalRouter* makeFastRoute()
+grt::GlobalRouter* makeFastRoute()
 {
-  return new gr::GlobalRouter();
+  return new grt::GlobalRouter();
 }
 
-void deleteFastRoute(gr::GlobalRouter* fastroute)
+void deleteFastRoute(grt::GlobalRouter* fastroute)
 {
   delete fastroute;
 }

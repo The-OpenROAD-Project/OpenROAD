@@ -136,7 +136,7 @@ proc estimate_parasitics { args } {
       rsz::estimate_parasitics_cmd
     }
   } elseif { [info exists flags(-global_routing)] } {
-    FastRoute::estimate_rc_cmd
+    grt::estimate_rc_cmd
   } else {
     ord::error "missing -placement or -global_routing flag."
   }

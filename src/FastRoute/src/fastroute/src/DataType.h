@@ -47,7 +47,7 @@ namespace odb {
 class dbNet;
 }
 
-namespace gr {
+namespace grt {
 typedef char Bool;
 
 typedef int DTYPE;
@@ -221,6 +221,6 @@ typedef enum
   BID
 } viaST;
 
-}  // namespace gr
+}  // namespace grt
 
 #endif /* __DATATYPE_H__ */
