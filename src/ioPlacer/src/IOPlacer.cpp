@@ -36,6 +36,7 @@
 #include "ioplacer/IOPlacer.h"
 
 #include <random>
+#include <algorithm>
 #include "opendb/db.h"
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"

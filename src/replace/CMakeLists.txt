@@ -1,10 +1,3 @@
-# Note that this file belongs in replace/src, not here.
-
-cmake_minimum_required(VERSION 3.1)
-
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 option(USE_CIMG_LIB "Use CImg drawing library for image drawing" OFF)
 
 if( USE_CIMG_LIB )
