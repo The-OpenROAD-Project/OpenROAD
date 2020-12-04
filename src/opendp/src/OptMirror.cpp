@@ -36,9 +36,10 @@
 
 #include <unordered_set>
 #include <cstdlib>
+
 #include "opendb/dbTypes.h"
 
-namespace opendp {
+namespace dpl {
 
 using std::sort;
 using std::unordered_set;
@@ -198,4 +199,4 @@ Opendp::hpwl(dbInst *inst)
   return inst_hpwl;
 }
 
-}  // namespace opendp
+}  // namespace

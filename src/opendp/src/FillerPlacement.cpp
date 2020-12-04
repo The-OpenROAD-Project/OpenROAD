@@ -32,11 +32,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
 #include "opendp/Opendp.h"
+
+#include <algorithm>
 #include "openroad/Error.hh"
 
-namespace opendp {
+namespace dpl {
 
 using std::cout;
 using std::endl;
