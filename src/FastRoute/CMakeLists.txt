@@ -33,18 +33,14 @@
 ##
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.1)
+project(FastRoute)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-project(FastRoute)
-
 add_subdirectory(src/fastroute)
 add_subdirectory(src/pdrev)
-
-set(CMAKE_CXX_STANDARD 11)
 
 set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)

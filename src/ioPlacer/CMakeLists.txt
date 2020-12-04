@@ -33,8 +33,6 @@
 ##
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.1)
-
 project(ioPlacer)
 
 add_subdirectory(${IOPLACER_HOME}/src/munkres)

@@ -3,8 +3,6 @@ project(ParquetFP
   LANGUAGES CXX 
 )
 
-cmake_minimum_required(VERSION 2.6)
-
 ############################################################
 # Create a library for PARQUET
 ############################################################
