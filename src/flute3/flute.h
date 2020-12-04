@@ -31,7 +31,7 @@
 
 #pragma once
 
-namespace flute {
+namespace stt {
 
 /*****************************/
 /*  User-Defined Parameters  */
@@ -122,5 +122,4 @@ inline Tree flutes_LMD(int d, DTYPE xs[], DTYPE ys[], int s[], int acc) {
   }
 }
 
-}  // namespace flute
-
+}  // namespace

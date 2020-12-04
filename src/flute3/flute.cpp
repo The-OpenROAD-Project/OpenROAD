@@ -39,7 +39,7 @@
 #include <algorithm>
 #include "flute.h"
 
-namespace flute {
+namespace stt {
 
 #if FLUTE_D <= 7
 #define MGROUP 5040 / 4  // Max. # of groups, 7! = 5040
@@ -1976,4 +1976,4 @@ void free_tree(Tree t) {
   t.deg = 0 ;
 }
 
-}  // namespace Flute
+}  // namespace
