@@ -52,14 +52,14 @@ Opendp_Init(Tcl_Interp *interp);
 
 namespace ord {
 
-opendp::Opendp *
+dpl::Opendp *
 makeOpendp()
 {
-  return new opendp::Opendp;
+  return new dpl::Opendp;
 }
 
 void
-deleteOpendp(opendp::Opendp *opendp)
+deleteOpendp(dpl::Opendp *opendp)
 {
   delete opendp;
 }

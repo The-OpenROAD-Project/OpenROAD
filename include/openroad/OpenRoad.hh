@@ -72,10 +72,10 @@ class GlobalRouter;
 }
 
 namespace tapcell {
-    class Tapcell;
+class Tapcell;
 }
 
-namespace opendp {
+namespace dpl {
 class Opendp;
 }
 
@@ -111,7 +111,6 @@ namespace antenna_checker {
 class AntennaChecker;
 }
 
-
 namespace ord {
 
 using std::string;
@@ -133,7 +132,7 @@ public:
   sta::Resizer *getResizer() { return resizer_; }
   cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
-  opendp::Opendp *getOpendp() { return opendp_; }
+  dpl::Opendp *getOpendp() { return opendp_; }
   finale::Finale *getFinale() { return finale_; }
   tapcell::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
@@ -204,7 +203,7 @@ private:
   sta::dbSta *sta_;
   sta::Resizer *resizer_;
   pin_placer::IOPlacer *ioPlacer_;
-  opendp::Opendp *opendp_;
+  dpl::Opendp *opendp_;
   finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
   gr::GlobalRouter *fastRoute_;

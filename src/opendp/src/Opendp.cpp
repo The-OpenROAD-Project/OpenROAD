@@ -38,6 +38,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "opendp/Opendp.h"
+
 #include <cfloat>
 #include <cmath>
 #include <fstream>
@@ -45,10 +46,11 @@
 #include <limits>
 #include <map>
 #include <ostream>
+
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"  // closestPtInRect
 
-namespace opendp {
+namespace dpl {
 
 using std::ifstream;
 using std::ofstream;
