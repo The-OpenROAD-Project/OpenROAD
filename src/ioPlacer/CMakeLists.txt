@@ -48,7 +48,7 @@ set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/ioplacer_wrap.cpp)
 set(IOPLACER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/IoplacerTclInitVar.cc)
 
 add_custom_command(OUTPUT ${IOPLACER_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ioPlacer -I${IOPLACER_HOME}/include -o ${IOPLACER_WRAP} ${IOPLACER_HOME}/src/ioplacer.i
+        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ppl -I${IOPLACER_HOME}/include -o ${IOPLACER_WRAP} ${IOPLACER_HOME}/src/ioplacer.i
         WORKING_DIRECTORY ${IOPLACER_HOME}/src
         DEPENDS
         ${IOPLACER_HOME}/src/ioplacer.i

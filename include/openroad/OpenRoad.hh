@@ -63,7 +63,7 @@ namespace rsz {
 class Resizer;
 }
 
-namespace pin_placer {
+namespace ppl {
 class IOPlacer;
 }
 
@@ -146,7 +146,7 @@ public:
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   gr::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
-  pin_placer::IOPlacer *getIOPlacer() { return ioPlacer_; }
+  ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -206,7 +206,7 @@ private:
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
   rsz::Resizer *resizer_;
-  pin_placer::IOPlacer *ioPlacer_;
+  ppl::IOPlacer *ioPlacer_;
   dpl::Opendp *opendp_;
   finale::Finale *finale_;
   MacroPlace::TritonMacroPlace *tritonMp_;
