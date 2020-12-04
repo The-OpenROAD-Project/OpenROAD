@@ -35,7 +35,7 @@
 
 #include "Core.h"
 
-namespace pin_placer {
+namespace ppl {
 
 int Core::getPerimeter()
 {
@@ -45,4 +45,4 @@ int Core::getPerimeter()
   return (x + y) * 2;
 }
 
-}  // namespace pin_placer
+}  // namespace ppl

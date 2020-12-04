@@ -43,7 +43,7 @@
 #include "flute.h"
 #include "route.h"
 
-namespace gr {
+namespace grt {
 #define HORIZONTAL 1
 #define VERTICAL 0
 
@@ -519,4 +519,4 @@ int edgeShiftNew(Tree* t, int net)
 
   return (numShift);
 }
-}  // namespace gr
+}  // namespace grt

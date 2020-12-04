@@ -40,14 +40,14 @@
 
 namespace ord {
 
-tapcell::Tapcell *
+tap::Tapcell *
 makeTapcell()
 {
-  return new tapcell::Tapcell;
+  return new tap::Tapcell;
 }
 
 void
-deleteTapcell(tapcell::Tapcell *tapcell)
+deleteTapcell(tap::Tapcell *tapcell)
 {
   delete tapcell;
 }

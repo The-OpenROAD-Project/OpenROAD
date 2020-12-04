@@ -170,7 +170,7 @@ proc tapcell { args } {
     set halo_y [expr $halo_y * $lef_units]
     set halo_x [expr $halo_x * $lef_units]
 
-    set blockages [tapcell::find_blockages $db]
+    set blockages [tap::find_blockages $db]
 
     set input_flags {}
     lappend input_flags $no_cell_at_top_bottom $add_boundary_cell
@@ -178,16 +178,16 @@ proc tapcell { args } {
     set cnrcap_masters {}
     lappend cnrcap_masters $cnrcap_nwin_master $cnrcap_nwout_master
 
-    tapcell::cut_rows $db $endcap_master $blockages $halo_x $halo_y
+    tap::cut_rows $db $endcap_master $blockages $halo_x $halo_y
 
-    set cnt [tapcell::insert_endcaps $db $endcap_cpp $endcap_master \
+    set cnt [tap::insert_endcaps $db $endcap_cpp $endcap_master \
                                      $cnrcap_masters \
                                      $blockages $halo_x $halo_y \
                                      $input_flags]
 
     set endcap_master [$db findMaster $endcap_master]
     set endcap_width [$endcap_master getWidth]
-    set cnt [tapcell::insert_tapcells $db $tapcell_master $blockages $dist \
+    set cnt [tap::insert_tapcells $db $tapcell_master $blockages $dist \
                                       $endcap_cpp $halo_x $halo_y \
                                       $endcap_width $cnt $input_flags]
 
@@ -201,14 +201,14 @@ proc tapcell { args } {
                                   $tap_nwintie_master $incnrcap_nwout_master $tap_nwout2_master \
                                   $tap_nwout3_master $tap_nwouttie_master
 
-        set cnt [tapcell::insert_at_top_bottom $db $tap_nw_masters $blockages $tbtie_cpp $endcap_cpp $cnt]
-        tapcell::insert_around_macros $db $tap_macro_masters $blockages $cnt $halo_x $halo_y $endcap_width $tbtie_cpp
+        set cnt [tap::insert_at_top_bottom $db $tap_nw_masters $blockages $tbtie_cpp $endcap_cpp $cnt]
+        tap::insert_around_macros $db $tap_macro_masters $blockages $cnt $halo_x $halo_y $endcap_width $tbtie_cpp
     }
 
     puts "Running tapcell... Done!"
 }
 
-namespace eval tapcell {
+namespace eval tap {
     proc cut_rows {db endcap_master blockages halo_x halo_y} {
         puts "Step 1: Cut rows..."
 

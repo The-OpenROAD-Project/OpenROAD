@@ -156,14 +156,14 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-gr::GlobalRouter*
+grt::GlobalRouter*
 getFastRoute()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getFastRoute();
 }
 
-pin_placer::IOPlacer*
+ppl::IOPlacer*
 getIOPlacer()
 {
   OpenRoad *openroad = getOpenRoad();

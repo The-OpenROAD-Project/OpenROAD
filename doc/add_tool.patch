@@ -14,7 +14,7 @@ index 5026a61e..10fd7594 100755
  
 @@ -134,6 +137,8 @@ public:
    pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
-   FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
+   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
    antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
 +  tool::Tool *getTool(){ return tool_; }
 +

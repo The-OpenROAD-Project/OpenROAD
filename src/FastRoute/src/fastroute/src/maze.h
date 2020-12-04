@@ -35,7 +35,7 @@
 
 #include "DataType.h"
 
-namespace gr {
+namespace grt {
 
 typedef struct
 {
@@ -67,5 +67,5 @@ extern void str_accu(int rnd);
 extern void InitLastUsage(int upType);
 extern void InitEstUsage();
 
-}  // namespace gr
+}  // namespace grt
 #endif /* __MAZE_H__ */

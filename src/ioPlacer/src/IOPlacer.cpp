@@ -41,7 +41,7 @@
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
-namespace pin_placer {
+namespace ppl {
 
 using ord::error;
 using ord::warn;
@@ -973,4 +973,4 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment,
   };
 }
 
-}  // namespace pin_placer
+}  // namespace ppl

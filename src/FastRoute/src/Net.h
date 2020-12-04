@@ -41,7 +41,7 @@
 #include "Pin.h"
 #include "opendb/db.h"
 
-namespace gr {
+namespace grt {
 
 class Net
 {
@@ -62,4 +62,4 @@ class Net
   std::vector<Pin> _pins;
 };
 
-}  // namespace gr
+}  // namespace grt

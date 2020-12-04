@@ -47,7 +47,7 @@
 #include "route.h"
 #include "utility.h"
 
-namespace gr {
+namespace grt {
 
 #define FLUTEACCURACY 2
 
@@ -967,4 +967,4 @@ void gen_brk_RSMT(Bool congestionDriven,
   }
 }
 
-}  // namespace gr
+}  // namespace grt

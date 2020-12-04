@@ -60,7 +60,7 @@ class dbTech;
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
-namespace gr {
+namespace grt {
 
 typedef std::map<odb::dbNet*, std::vector<VINFO>> AntennaViolations;
 
@@ -119,4 +119,4 @@ private:
   AntennaViolations _antennaViolations;
 };
 
-}  // namespace gr
+}  // namespace grt

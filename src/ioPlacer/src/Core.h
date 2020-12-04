@@ -38,7 +38,7 @@
 
 #include "opendb/geom.h"
 
-namespace pin_placer {
+namespace ppl {
 
 using odb::Point;
 using odb::Rect;
@@ -104,6 +104,6 @@ class Core
   int getPerimeter();
 };
 
-}  // namespace pin_placer
+}  // namespace ppl
 
 #endif /* __CORE_H_ */

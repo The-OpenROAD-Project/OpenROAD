@@ -6,5 +6,5 @@ read_lef Nangate45/fakeram45_64x32.lef
 read_def cut_rows.def
 
 set db [::ord::get_db]
-set blockages [tapcell::find_blockages $db]
-tapcell::cut_rows $db FILLCELL_X1 $blockages 2 2
+set blockages [tap::find_blockages $db]
+tap::cut_rows $db FILLCELL_X1 $blockages 2 2

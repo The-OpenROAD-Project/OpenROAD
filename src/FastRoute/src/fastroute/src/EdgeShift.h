@@ -35,11 +35,11 @@
 
 #include "DataType.h"
 
-namespace gr {
+namespace grt {
 
 extern int edgeShift(Tree* t, int net);
 extern int edgeShiftNew(Tree* t, int net);
 
-}  // namespace gr
+}  // namespace grt
 
 #endif /* __EDGESHIFT_H__ */
