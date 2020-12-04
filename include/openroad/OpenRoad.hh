@@ -75,7 +75,7 @@ namespace grt {
 class GlobalRouter;
 }
 
-namespace tapcell {
+namespace tap {
 class Tapcell;
 }
 
@@ -138,7 +138,7 @@ public:
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
   finale::Finale *getFinale() { return finale_; }
-  tapcell::Tapcell *getTapcell() { return tapcell_; }
+  tap::Tapcell *getTapcell() { return tapcell_; }
   MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
@@ -212,7 +212,7 @@ private:
   MacroPlace::TritonMacroPlace *tritonMp_;
   grt::GlobalRouter *fastRoute_;
   cts::TritonCTSKernel *tritonCts_;
-  tapcell::Tapcell *tapcell_;
+  tap::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   antenna_checker::AntennaChecker *antennaChecker_;
