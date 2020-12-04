@@ -43,9 +43,18 @@
 
 #include "flute.h"
 
-namespace sta {
+namespace rsz {
 
 using odb::Point;
+
+using sta::UnorderedMap;
+using sta::Vector;
+using sta::Network;
+using sta::dbNetwork;
+using sta::Net;
+using sta::Pin;
+using sta::PinSeq;
+using sta::hashIncr;
 
 class SteinerTree;
 
@@ -63,7 +72,7 @@ class PointHash
 public:
   size_t operator()(const Point &pt) const
   {
-    size_t hash = hash_init_value;
+    size_t hash = sta::hash_init_value;
     hashIncr(hash, pt.x());
     hashIncr(hash, pt.y());
     return hash;

@@ -35,6 +35,8 @@
 
 #include "resizer/Resizer.hh"
 
+#include "resizer/SteinerTree.hh"
+
 #include "sta/Report.hh"
 #include "sta/Debug.hh"
 #include "sta/FuncExpr.hh"
@@ -60,15 +62,19 @@
 #include "sta/PathExpanded.hh"
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
+
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
-#include "resizer/SteinerTree.hh"
 #include "opendb/dbTransform.h"
 
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
 namespace sta {
+extern const char *resizer_tcl_inits[];
+}
+
+namespace rsz {
 
 using std::abs;
 using std::min;
@@ -91,11 +97,55 @@ using odb::dbTransform;
 using odb::dbMPin;
 using odb::dbBox;
 
+using sta::evalTclInit;
+using sta::makeBlockSta;
+using sta::Level;
+using sta::stringLess;
+using sta::Network;
+using sta::NetworkEdit;
+using sta::NetPinIterator;
+using sta::NetConnectedPinIterator;
+using sta::InstancePinIterator;
+using sta::LeafInstanceIterator;
+using sta::LibertyLibraryIterator;
+using sta::LibertyCellIterator;
+using sta::LibertyCellTimingArcSetIterator;
+using sta::TimingArcSet;
+using sta::TimingArcSetArcIterator;
+using sta::TimingArcSetSeq;
+using sta::GateTimingModel;
+using sta::TimingRole;
+using sta::FuncExpr;
+using sta::Term;
+using sta::Port;
+using sta::PinSeq;
+using sta::PinSet;
+using sta::NetIterator;
+using sta::PinConnectedPinIterator;
+using sta::FindNetDrvrLoads;;
+using sta::ReduceParasiticsTo;
+using sta::OperatingConditions;
+using sta::VertexIterator;
+using sta::VertexOutEdgeIterator;
+using sta::Edge;
+using sta::Search;
+using sta::SearchPredNonReg2;
+using sta::ClkArrivalSearchPred;
+using sta::BfsBkwdIterator;
+using sta::BfsFwdIterator;
+using sta::BfsIndex;
+using sta::Clock;
+using sta::PathExpanded;
+using sta::INF;
+using sta::fuzzyEqual;
+using sta::fuzzyLess;
+using sta::fuzzyGreater;
+using sta::fuzzyGreaterEqual;
+using sta::stringPrint;
+
 extern "C" {
 extern int Resizer_Init(Tcl_Interp *interp);
 }
-
-extern const char *resizer_tcl_inits[];
 
 Resizer::Resizer() :
   StaState(),
@@ -137,7 +187,7 @@ Resizer::init(Tcl_Interp *interp,
   // Define swig TCL commands.
   Resizer_Init(interp);
   // Eval encoded sta TCL sources.
-  evalTclInit(interp, resizer_tcl_inits);
+  evalTclInit(interp, sta::resizer_tcl_inits);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3175,4 +3225,4 @@ Resizer::cloneClkInverter(Instance *inv)
   }
 }
 
-} // namespace sta
+} // namespace

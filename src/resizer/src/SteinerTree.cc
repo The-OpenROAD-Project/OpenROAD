@@ -42,14 +42,23 @@
 #include "sta/Error.hh"
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
+
 #include "opendb/dbShape.h"
 
-namespace sta {
+namespace rsz {
 
 using std::abs;
 using std::string;
+
 using odb::dbShape;
 using odb::dbPlacementStatus;
+
+using sta::Debug;
+using sta::Report;
+using sta::stringPrint;
+using sta::stringPrintTmp;
+using sta::PinPathNameLess;
+using sta::NetConnectedPinIterator;
 
 static void
 connectedPins(const Net *net,
