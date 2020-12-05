@@ -52,9 +52,9 @@ void HypergraphDecomposition::addMapping(Hypergraph& hypergraph,
                                          std::string instName,
                                          odb::dbBox* box)
 {
-  long long int length = box->getLength();
-  long long int width = box->getWidth();
-  long long int area = length * width;
+  int length = box->getLength();
+  int width = box->getWidth();
+  int64_t area = length * width;
   int nextIdx = hypergraph.computeNextVertexIdx();
   hypergraph.addMapping(instName, nextIdx);
   hypergraph.addVertexWeight(area);

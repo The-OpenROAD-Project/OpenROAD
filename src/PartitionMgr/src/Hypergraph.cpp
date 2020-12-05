@@ -75,7 +75,7 @@ void Hypergraph::computeEdgeWeightRange(int maxEdgeWeight)
 
 void Hypergraph::computeVertexWeightRange(int maxVertexWeight)
 {
-  std::vector<long long int> vertexWeight = _vertexWeights;
+  std::vector<int64_t> vertexWeight = _vertexWeights;
   double percentile = 0.99;  // Exclude possible outliers
 
   std::sort(vertexWeight.begin(), vertexWeight.end());
@@ -86,12 +86,12 @@ void Hypergraph::computeVertexWeightRange(int maxVertexWeight)
     vertexWeight.resize(vSize);
     vertexWeight.shrink_to_fit();
 
-    long long int maxVWeight
+    int64_t maxVWeight
         = *std::max_element(vertexWeight.begin(), vertexWeight.end());
-    long long int minVWeight
+    int64_t minVWeight
         = *std::min_element(vertexWeight.begin(), vertexWeight.end());
 
-    for (long long int& weight : _vertexWeights) {
+    for (int64_t & weight : _vertexWeights) {
       int auxWeight;
       weight = std::min(weight, maxVWeight);
       if (minVWeight == maxVWeight) {

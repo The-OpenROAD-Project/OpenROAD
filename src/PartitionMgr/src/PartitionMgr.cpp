@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "PartitionMgr.h"
-#ifdef STUB
+#ifdef PARTITIONERS
 extern "C" {
 #include "main/ChacoWrapper.h"
 }
@@ -69,7 +69,7 @@ void PartitionMgr::runPartitioning()
 
 void PartitionMgr::runChaco()
 {
-#ifdef STUB
+#ifdef PARTITIONERS
   std::cout << "\nRunning chaco...\n";
 
   PartSolutions currentResults;
@@ -321,7 +321,7 @@ void PartitionMgr::runChaco()
 
 void PartitionMgr::runGpMetis()
 {
-#ifdef STUB
+#ifdef PARTITIONERS
   std::cout << "Running GPMetis...\n";
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
@@ -460,7 +460,7 @@ void PartitionMgr::runGpMetis()
 
 void PartitionMgr::runMlPart()
 {
-#ifdef STUB
+#ifdef PARTITIONERS
   std::cout << "Running MLPart...\n";
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);
@@ -981,7 +981,7 @@ void PartitionMgr::run3PClustering()
 
 void PartitionMgr::runChacoClustering()
 {
-#ifdef STUB
+#ifdef PARTITIONERS
   std::cout << "\nRunning chaco...\n";
 
   PartSolutions currentResults;
@@ -1114,7 +1114,7 @@ void PartitionMgr::runChacoClustering()
 
 void PartitionMgr::runGpMetisClustering()
 {
-#ifdef STUB
+#ifdef PARTITIONERS
   std::cout << "Running GPMetis...\n";
   PartSolutions currentResults;
   currentResults.setToolName(_options.getTool());
@@ -1196,7 +1196,7 @@ void PartitionMgr::runGpMetisClustering()
 
 void PartitionMgr::runMlPartClustering()
 {
-#ifdef STUB
+#ifdef PARTITIONERS
   std::cout << "Running MLPart...\n";
   HypergraphDecomposition hypergraphDecomp;
   hypergraphDecomp.init(_dbId);

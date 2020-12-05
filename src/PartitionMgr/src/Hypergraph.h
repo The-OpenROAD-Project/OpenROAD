@@ -67,11 +67,11 @@ class Hypergraph
   {
     _edgeWeightsNormalized.push_back(weight);
   }
-  void addVertexWeight(long long int weight)
+  void addVertexWeight (int64_t weight)
   {
     _vertexWeights.push_back(weight);
   }
-  void addVertexWeightNormalized(long long int weight)
+  void addVertexWeightNormalized(int64_t weight)
   {
     _vertexWeightsNormalized.push_back(weight);
   }
@@ -126,7 +126,7 @@ class Hypergraph
  protected:
   std::vector<float> _edgeWeights;
   std::vector<int> _edgeWeightsNormalized;
-  std::vector<long long int> _vertexWeights;
+  std::vector<int64_t> _vertexWeights;
   std::vector<int> _vertexWeightsNormalized;
   std::vector<int> _colIdx;
   std::vector<int> _rowPtr;

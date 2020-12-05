@@ -8,7 +8,7 @@ option(LOAD_PARTITIONERS "Load MLPart, GPMetis and Chaco" OFF)
 
 if (LOAD_PARTITIONERS)
         set(PATH_PARTITIONERS ${PARTITIONMGR_HOME} CACHE PATH "Path to Partitioners Folder")
-        add_definitions(-DSTUB)
+        add_definitions(-DPARTITIONERS)
 endif (LOAD_PARTITIONERS)
 
 set(CMAKE_CXX_STANDARD 11)
