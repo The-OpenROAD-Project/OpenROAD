@@ -41,7 +41,7 @@ using std::string;
 
 #define VERBOSE_CHECK() if( verbose_ < verbose ) { return; };
 
-namespace MacroPlace {
+namespace mpl {
 
 Logger::Logger(string name, int verbose)
   : name_(name), verbose_(verbose) {}
@@ -128,3 +128,4 @@ void Logger::infoRuntime(string input, double runtime, int verbose) {
 }
 
 }
+

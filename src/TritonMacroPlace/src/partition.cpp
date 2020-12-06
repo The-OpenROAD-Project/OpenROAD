@@ -42,14 +42,14 @@
 #include <cfloat>
 #include <fstream>
 
+namespace mpl {
+
 using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
 using std::pair;
 using std::unordered_map;
-
-namespace MacroPlace {
 
 Partition::Partition() 
   : partClass(PartClass::None), 

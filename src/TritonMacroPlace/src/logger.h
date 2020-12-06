@@ -31,12 +31,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_LOGGER__
-#define __REPLACE_LOGGER__
+#pragma once
 
 #include <string>
 
-namespace MacroPlace {
+namespace mpl {
 
 class Logger {
 
@@ -77,4 +76,3 @@ private:
 
 }
 
-#endif

@@ -33,8 +33,7 @@
 
 #include "graph.h"
 
-
-namespace MacroPlace {
+namespace mpl {
 
 ////////////////////////////////////////////////
 // Edge
@@ -198,4 +197,3 @@ PinGroup::addPin(sta::Pin* pin) {
 }
 
 }
-
