@@ -121,7 +121,7 @@ getTritonCts()
   return openroad->getTritonCts();
 }
 
-MacroPlace::TritonMacroPlace *
+mpl::TritonMacroPlace *
 getTritonMp()
 {
   OpenRoad *openroad = getOpenRoad();

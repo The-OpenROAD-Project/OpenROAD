@@ -31,14 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __MACRO_PLACER_HASH_UTIL__
-#define __MACRO_PLACER_HASH_UTIL__
+#pragma once
 
 #include <cstdlib>
 #include <utility>
 #include <functional>
 
-namespace MacroPlace {
+namespace mpl {
 
 struct PointerPairHash {
   std::size_t operator()(const std::pair<void*, void*> &k) const;
@@ -50,5 +49,3 @@ struct PointerPairEqual {
 };
 
 };
-
-#endif

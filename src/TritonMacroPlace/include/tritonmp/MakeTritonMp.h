@@ -35,7 +35,7 @@
 #ifndef MAKE_TRITONMP
 #define MAKE_TRITONMP
 
-namespace MacroPlace {
+namespace mpl {
 class TritonMacroPlace;
 }
 
@@ -43,14 +43,14 @@ namespace ord {
 
 class OpenRoad;
 
-MacroPlace::TritonMacroPlace *
+mpl::TritonMacroPlace *
 makeTritonMp();
 
 void
 initTritonMp(OpenRoad *openroad);
 
 void
-deleteTritonMp(MacroPlace::TritonMacroPlace *tritonmp);
+deleteTritonMp(mpl::TritonMacroPlace *tritonmp);
 
 }
 
