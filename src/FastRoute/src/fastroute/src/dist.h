@@ -35,10 +35,10 @@
 
 #include "global.h"
 
-namespace FastRoute {
+namespace grt {
 long dist(Point p, Point q);
 
 long dist2(Point* p, Point* q);
 
-}  // namespace FastRoute
+}  // namespace grt
 #endif /* __DIST_H__ */

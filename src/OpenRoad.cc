@@ -66,6 +66,7 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
+#include "triton_route/MakeTritonRoute.h"
 #include "pdnsim/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
@@ -111,15 +112,15 @@ OpenRoad::OpenRoad()
     resizer_(nullptr),
     ioPlacer_(nullptr),
     opendp_(nullptr),
+    finale_(nullptr),
     tritonMp_(nullptr),
     fastRoute_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
     extractor_(nullptr),
+    detailed_router_(nullptr),
     antennaChecker_(nullptr),
-#ifdef BUILD_OPENPHYSYN
     psn_(nullptr),
-#endif
     replace_(nullptr),
     pdnsim_(nullptr), 
     partitionMgr_(nullptr) 
@@ -140,6 +141,7 @@ OpenRoad::~OpenRoad()
   deleteTapcell(tapcell_);
   deleteTritonMp(tritonMp_);
   deleteOpenRCX(extractor_);
+  deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
 #ifdef BUILD_OPENPHYSYN
@@ -147,8 +149,8 @@ OpenRoad::~OpenRoad()
 #endif
   deleteAntennaChecker(antennaChecker_);
   odb::dbDatabase::destroy(db_);
-  Flute::deleteLUT();
   deletePartitionMgr(partitionMgr_);
+  stt::deleteLUT();
 }
 
 void
@@ -199,6 +201,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
+  detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antennaChecker_ = makeAntennaChecker();
@@ -214,7 +217,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
-  Flute::readLUT();
+  stt::readLUT();
   initDbSta(this);
   initResizer(this);
   initGui(this);
@@ -228,6 +231,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
+  initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
 #ifdef BUILD_OPENPHYSYN

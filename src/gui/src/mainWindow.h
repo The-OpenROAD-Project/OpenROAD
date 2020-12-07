@@ -132,6 +132,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QAction* exit_;
   QAction* fit_;
+  QAction* zoomIn_;
+  QAction* zoomOut_;
 
   QLabel* location_;
 };

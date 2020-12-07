@@ -37,7 +37,7 @@ set(INIT_FP_WRAP ${CMAKE_CURRENT_BINARY_DIR}/InitFloorplan_wrap.cc)
 set(INIT_FP_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/InitFloorplanTclInitVar.cc)
 
 add_custom_command(OUTPUT ${INIT_FP_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ord -I${INIT_FP_HOME}/include -o ${INIT_FP_WRAP} ${INIT_FP_HOME}/src/InitFloorplan.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ifp -I${INIT_FP_HOME}/include -o ${INIT_FP_WRAP} ${INIT_FP_HOME}/src/InitFloorplan.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${INIT_FP_WRAP}
   WORKING_DIRECTORY ${INIT_FP_HOME}/src
   DEPENDS

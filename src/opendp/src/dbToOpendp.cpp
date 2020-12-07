@@ -39,7 +39,7 @@
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
-namespace opendp {
+namespace dpl {
 
 using std::ifstream;
 using std::max;
@@ -312,4 +312,4 @@ Opendp::reportImportWarnings()
   }
 }
 
-}  // namespace opendp
+}  // namespace

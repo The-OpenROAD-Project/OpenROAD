@@ -37,14 +37,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "opendp/Opendp.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include "opendp/Opendp.h"
+
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
-namespace opendp {
+namespace dpl {
 
 using std::abs;
 using std::max;

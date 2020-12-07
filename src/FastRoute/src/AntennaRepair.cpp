@@ -49,13 +49,13 @@
 #include "fastroute/GlobalRouter.h"
 #include "openroad/Error.hh"
 
-namespace FastRoute {
+namespace grt {
 
 using ord::error;
 
 AntennaRepair::AntennaRepair(GlobalRouter *grouter,
                  antenna_checker::AntennaChecker* arc,
-                 opendp::Opendp* opendp, odb::dbDatabase* db)
+                 dpl::Opendp* opendp, odb::dbDatabase* db)
 	: _grouter(grouter), _arc(arc), _opendp(opendp), _db(db)
 	{
 		_block = _db->getChip()->getBlock();

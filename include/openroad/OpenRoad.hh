@@ -59,23 +59,27 @@ class Resizer;
 class LibertyCell;
 }
 
-namespace ioPlacer {
+namespace rsz {
+class Resizer;
+}
+
+namespace ppl {
 class IOPlacer;
 }
 
-namespace TritonCTS {
+namespace cts {
 class TritonCTSKernel;
 }
 
-namespace FastRoute {
+namespace grt {
 class GlobalRouter;
 }
 
-namespace tapcell {
-    class Tapcell;
+namespace tap {
+class Tapcell;
 }
 
-namespace opendp {
+namespace dpl {
 class Opendp;
 }
 
@@ -83,7 +87,7 @@ namespace finale {
 class Finale;
 }
 
-namespace MacroPlace {
+namespace mpl {
 class TritonMacroPlace;
 }
 
@@ -93,6 +97,10 @@ class Replace;
 
 namespace OpenRCX {
 class Ext;
+}
+
+namespace triton_route {
+class TritonRoute;
 }
 
 namespace psn {
@@ -106,6 +114,7 @@ class PDNSim;
 namespace antenna_checker {
 class AntennaChecker;
 }
+
 
 namespace partition {
 class PartitionMgr;
@@ -130,20 +139,21 @@ public:
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
-  sta::Resizer *getResizer() { return resizer_; }
-  TritonCTS::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
+  rsz::Resizer *getResizer() { return resizer_; }
+  cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
-  opendp::Opendp *getOpendp() { return opendp_; }
+  dpl::Opendp *getOpendp() { return opendp_; }
   finale::Finale *getFinale() { return finale_; }
-  tapcell::Tapcell *getTapcell() { return tapcell_; }
-  MacroPlace::TritonMacroPlace *getTritonMp() { return tritonMp_; }
+  tap::Tapcell *getTapcell() { return tapcell_; }
+  mpl::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
+  triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
-  FastRoute::GlobalRouter* getFastRoute() { return fastRoute_; }
+  grt::GlobalRouter* getFastRoute() { return fastRoute_; }
   antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
-  ioPlacer::IOPlacer *getIOPlacer() { return ioPlacer_; }
   partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
+  ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
   // Return true if the command units have been initialized.
@@ -202,15 +212,16 @@ private:
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
-  sta::Resizer *resizer_;
-  ioPlacer::IOPlacer *ioPlacer_;
-  opendp::Opendp *opendp_;
+  rsz::Resizer *resizer_;
+  ppl::IOPlacer *ioPlacer_;
+  dpl::Opendp *opendp_;
   finale::Finale *finale_;
-  MacroPlace::TritonMacroPlace *tritonMp_;
-  FastRoute::GlobalRouter *fastRoute_;
-  TritonCTS::TritonCTSKernel *tritonCts_;
-  tapcell::Tapcell *tapcell_;
+  mpl::TritonMacroPlace *tritonMp_;
+  grt::GlobalRouter *fastRoute_;
+  cts::TritonCTSKernel *tritonCts_;
+  tap::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
+  triton_route::TritonRoute *detailed_router_;
   antenna_checker::AntennaChecker *antennaChecker_;
   psn::Psn *psn_;
   replace::Replace *replace_;

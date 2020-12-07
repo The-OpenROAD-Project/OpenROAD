@@ -37,7 +37,7 @@ set(TAPCELL_WRAP ${CMAKE_CURRENT_BINARY_DIR}/tapcell_wrap.cpp)
 set(TAPCELL_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TapcellTclInitVar.cpp)
 
 add_custom_command(OUTPUT ${TAPCELL_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix Tapcell -I${OPENROAD_HOME}/include -o ${TAPCELL_WRAP} ${TAPCELL_HOME}/src/tapcell.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix tap -I${OPENROAD_HOME}/include -o ${TAPCELL_WRAP} ${TAPCELL_HOME}/src/tapcell.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${TAPCELL_WRAP}
   WORKING_DIRECTORY ${TAPCELL_HOME}/src
   DEPENDS ${TAPCELL_HOME}/src/tapcell.i

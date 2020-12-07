@@ -61,7 +61,7 @@ namespace ord {
 
 using sta::dbSta;
 using sta::dbNetwork;
-using sta::Resizer;
+using rsz::Resizer;
 
 using odb::dbDatabase;
 
@@ -114,14 +114,14 @@ getResizer()
   return openroad->getResizer();
 }
 
-TritonCTS::TritonCTSKernel *
+cts::TritonCTSKernel *
 getTritonCts()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getTritonCts();
 }
 
-MacroPlace::TritonMacroPlace *
+mpl::TritonMacroPlace *
 getTritonMp()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -142,6 +142,13 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
+triton_route::TritonRoute *
+getTritonRoute()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTritonRoute();
+}
+
 pdnsim::PDNSim*
 getPDNSim()
 {
@@ -149,14 +156,14 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-FastRoute::GlobalRouter*
+grt::GlobalRouter*
 getFastRoute()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getFastRoute();
 }
 
-ioPlacer::IOPlacer*
+ppl::IOPlacer*
 getIOPlacer()
 {
   OpenRoad *openroad = getOpenRoad();

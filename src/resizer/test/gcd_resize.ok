@@ -11,14 +11,14 @@ Notice 0:     Created 571 components and 2554 component-terminals.
 Notice 0:     Created 5 special nets and 1142 connections.
 Notice 0:     Created 528 nets and 1412 connections.
 Notice 0: Finished DEF file: gcd_placed.def
-worst slack 1.33
+worst slack 1.36
 Inserted 35 input buffers.
 Inserted 18 output buffers.
-Warning: max wire length less than 840u increases wire delays.
+Warning: max wire length less than 998u increases wire delays.
 Resized 111 instances.
 Found 35 endpoints with hold violations.
-Inserted 105 hold buffers.
-Startpoint: _888_ (rising edge-triggered flip-flop clocked by core_clock)
+Inserted 106 hold buffers.
+Startpoint: _886_ (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: _880_ (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -27,28 +27,28 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ _888_/CK (DFF_X1)
-   0.09    0.09 ^ _888_/Q (DFF_X1)
-   0.04    0.14 ^ _744_/Z (BUF_X1)
-   0.05    0.19 ^ _478_/ZN (XNOR2_X2)
-   0.05    0.23 ^ _479_/ZN (AND2_X2)
-   0.04    0.28 ^ _480_/ZN (AND2_X2)
-   0.02    0.30 v _615_/ZN (OAI21_X1)
-   0.03    0.33 ^ _616_/ZN (NAND2_X2)
-   0.05    0.37 ^ _651_/ZN (AND2_X1)
-   0.01    0.39 v _655_/ZN (NOR3_X4)
-   0.06    0.44 v _669_/ZN (OR3_X4)
-   0.03    0.47 ^ _673_/ZN (AOI21_X2)
-   0.01    0.48 v _680_/ZN (NOR2_X1)
-   0.04    0.52 v _681_/ZN (XNOR2_X1)
-   0.03    0.55 v _682_/ZN (AND2_X1)
-   0.03    0.58 ^ _685_/ZN (OAI21_X1)
+   0.00    0.00 ^ _886_/CK (DFF_X1)
+   0.09    0.09 ^ _886_/Q (DFF_X1)
+   0.04    0.12 ^ _748_/Z (BUF_X2)
+   0.05    0.17 ^ _475_/ZN (XNOR2_X2)
+   0.05    0.22 ^ _476_/ZN (AND2_X2)
+   0.04    0.27 ^ _480_/ZN (AND2_X2)
+   0.02    0.29 v _615_/ZN (OAI21_X1)
+   0.03    0.32 ^ _616_/ZN (NAND2_X2)
+   0.05    0.36 ^ _651_/ZN (AND2_X1)
+   0.01    0.38 v _655_/ZN (NOR3_X4)
+   0.06    0.43 v _669_/ZN (OR3_X4)
+   0.03    0.46 ^ _673_/ZN (AOI21_X2)
+   0.01    0.47 v _680_/ZN (NOR2_X1)
+   0.04    0.51 v _681_/ZN (XNOR2_X1)
+   0.03    0.54 v _682_/ZN (AND2_X1)
+   0.03    0.57 ^ _685_/ZN (OAI21_X1)
    0.02    0.59 v _686_/ZN (OAI21_X1)
-   0.03    0.62 v hold67/Z (BUF_X1)
-   0.02    0.64 v _814_/Z (BUF_X1)
-   0.02    0.67 v hold66/Z (BUF_X1)
-   0.00    0.67 v _880_/D (DFF_X1)
-           0.67   data arrival time
+   0.03    0.61 v hold67/Z (BUF_X1)
+   0.02    0.63 v _814_/Z (BUF_X1)
+   0.02    0.66 v hold66/Z (BUF_X1)
+   0.00    0.66 v _880_/D (DFF_X1)
+           0.66   data arrival time
 
    2.00    2.00   clock core_clock (rise edge)
    0.00    2.00   clock network delay (ideal)
@@ -58,9 +58,9 @@ Path Type: max
            1.96   data required time
 ---------------------------------------------------------
            1.96   data required time
-          -0.67   data arrival time
+          -0.66   data arrival time
 ---------------------------------------------------------
-           1.29   slack (MET)
+           1.30   slack (MET)
 
 
 max slew
@@ -81,7 +81,7 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 _443_/ZN                               10.47    6.32    4.15 (MET)
 
-worst slack 1.29
+worst slack 1.30
 Driver    length delay
 _759_/Z manhtn 105.4 steiner 105.4 0.00
 _850_/Z manhtn 95.8 steiner 95.8 0.00
@@ -94,4 +94,4 @@ _851_/Z manhtn 69.5 steiner 69.5 0.00
 _725_/Z manhtn 67.2 steiner 67.2 0.00
 _849_/Z manhtn 64.8 steiner 64.8 0.00
 _860_/Z manhtn 64.5 steiner 64.5 0.00
-Design area 917 u^2 14% utilization.
+Design area 916 u^2 14% utilization.

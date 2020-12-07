@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __MACRO_PLACER_EXTERNAL__
-#define __MACRO_PLACER_EXTERNAL__
+#pragma once
 
 #include <memory>
 
@@ -44,7 +43,7 @@ namespace sta {
 class dbSta;
 }
 
-namespace MacroPlace {
+namespace mpl {
 
 class MacroCircuit;
 
@@ -71,5 +70,3 @@ private:
 }; 
 
 }
-
-#endif

@@ -55,7 +55,7 @@ SteinerTree::create(Net* pin_net, Psn* psn_inst, int flute_accuracy)
             x[i]      = loc.x();
             y[i]      = loc.y();
         }
-        Flute::Tree flute_tree = Flute::flute(pin_count, x, y, flute_accuracy);
+        stt::Tree flute_tree = stt::flute(pin_count, x, y, flute_accuracy);
 
         tree.reset(new SteinerTree(flute_tree, pins, psn_inst));
         tree->net_ = pin_net;
@@ -80,9 +80,9 @@ SteinerTree::isPlaced() const
 SteinerBranch
 SteinerTree::branch(int index) const
 {
-    Flute::Branch& branch_pt1 = tree_.branch[index];
+    stt::Branch& branch_pt1 = tree_.branch[index];
     int            index2     = branch_pt1.n;
-    Flute::Branch& branch_pt2 = tree_.branch[index2];
+    stt::Branch& branch_pt2 = tree_.branch[index2];
     Point          pt1        = Point(branch_pt1.x, branch_pt1.y);
     Point          pt2        = Point(branch_pt2.x, branch_pt2.y);
     int            pin_count  = pins_.size();
@@ -141,7 +141,7 @@ SteinerTree::driverPoint() const
     }
     return SteinerNull;
 }
-SteinerTree::SteinerTree(Flute::Tree tree, std::vector<InstanceTerm*> pins,
+SteinerTree::SteinerTree(stt::Tree tree, std::vector<InstanceTerm*> pins,
                          Psn* psn_inst)
     : tree_(tree), pins_(pins), psn_(psn_inst)
 {
@@ -158,7 +158,7 @@ SteinerTree::SteinerTree(Flute::Tree tree, std::vector<InstanceTerm*> pins,
     }
     for (unsigned int i = 0; i < pin_count; i++)
     {
-        Flute::Branch&              branch_pt = tree_.branch[i];
+        stt::Branch&              branch_pt = tree_.branch[i];
         std::vector<InstanceTerm*>& pin_locations =
             pins_map[Point(branch_pt.x, branch_pt.y)];
         auto pin = pin_locations.back();
@@ -179,7 +179,7 @@ SteinerTree::populateSides()
     std::vector<SteinerPoint> adj3(branch_count, SteinerNull);
     for (int i = 0; i < branch_count; i++)
     {
-        Flute::Branch& branch_pt = tree_.branch[i];
+        stt::Branch& branch_pt = tree_.branch[i];
         SteinerPoint   j         = branch_pt.n;
         if (j != i)
         {
@@ -344,7 +344,7 @@ SteinerTree::subtreeLoad(float cap_per_micron, SteinerPoint pt) const
 
 SteinerTree::~SteinerTree()
 {
-    Flute::free_tree(tree_);
+    stt::free_tree(tree_);
 }
 
 void
@@ -357,7 +357,7 @@ Point
 SteinerTree::location(SteinerPoint pt) const
 {
     validatePoint(pt);
-    Flute::Branch& branch_pt = tree_.branch[pt];
+    stt::Branch& branch_pt = tree_.branch[pt];
     return Point(branch_pt.x, branch_pt.y);
 }
 
@@ -392,7 +392,7 @@ SteinerTree::top() const
 InstanceTerm*
 SteinerTree::alias(SteinerPoint pt)
 {
-    Flute::Branch& branch_pt = tree_.branch[pt];
+    stt::Branch& branch_pt = tree_.branch[pt];
     return pin_loc_[Point(branch_pt.x, branch_pt.y)];
 }
 

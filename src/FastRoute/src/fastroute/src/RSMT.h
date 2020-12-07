@@ -35,7 +35,7 @@
 
 #include "DataType.h"
 
-namespace FastRoute {
+namespace grt {
 extern int** V_table;
 extern int** H_table;
 
@@ -60,5 +60,5 @@ extern void fluteCongest(int   netID,
                          float coeffV,
                          Tree* t);
 
-}  // namespace FastRoute
+}  // namespace grt
 #endif /* __RSMT_H__ */

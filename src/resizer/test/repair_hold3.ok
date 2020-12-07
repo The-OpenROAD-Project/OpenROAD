@@ -138,12 +138,12 @@ Path Type: min
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
-   0.087    0.106 ^ r1/Q (DFF_X1)
-   0.020    0.126 ^ hold2/Z (BUF_X1)
-   0.022    0.148 ^ u1/Z (BUF_X1)
-   0.023    0.171 ^ hold1/Z (BUF_X1)
-   0.000    0.171 ^ r2/D (DFF_X1)
-            0.171   data arrival time
+   0.088    0.107 ^ r1/Q (DFF_X1)
+   0.026    0.133 ^ hold2/Z (CLKBUF_X3)
+   0.023    0.156 ^ u1/Z (BUF_X1)
+   0.027    0.183 ^ hold1/Z (CLKBUF_X3)
+   0.000    0.183 ^ r2/D (DFF_X1)
+            0.183   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
@@ -162,9 +162,9 @@ Path Type: min
             0.165   data required time
 -----------------------------------------------------------
             0.165   data required time
-           -0.171   data arrival time
+           -0.183   data arrival time
 -----------------------------------------------------------
-            0.006   slack (MET)
+            0.019   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -179,11 +179,11 @@ Path Type: min
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
-   0.087    0.106 ^ r1/Q (DFF_X1)
-   0.020    0.126 ^ hold2/Z (BUF_X1)
-   0.022    0.148 ^ u1/Z (BUF_X1)
-   0.000    0.148 ^ r4/D (DFF_X1)
-            0.148   data arrival time
+   0.088    0.107 ^ r1/Q (DFF_X1)
+   0.026    0.133 ^ hold2/Z (CLKBUF_X3)
+   0.023    0.156 ^ u1/Z (BUF_X1)
+   0.000    0.156 ^ r4/D (DFF_X1)
+            0.156   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
@@ -200,9 +200,9 @@ Path Type: min
             0.124   data required time
 -----------------------------------------------------------
             0.124   data required time
-           -0.148   data arrival time
+           -0.156   data arrival time
 -----------------------------------------------------------
-            0.024   slack (MET)
+            0.032   slack (MET)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -217,12 +217,12 @@ Path Type: min
    0.000    0.000 ^ clk (in)
    0.019    0.019 ^ i1/Z (BUF_X1)
    0.000    0.019 ^ r1/CK (DFF_X1)
-   0.087    0.106 ^ r1/Q (DFF_X1)
-   0.020    0.126 ^ hold2/Z (BUF_X1)
-   0.022    0.148 ^ u1/Z (BUF_X1)
-   0.023    0.171 ^ hold1/Z (BUF_X1)
-   0.000    0.171 ^ r3/D (DFF_X1)
-            0.171   data arrival time
+   0.088    0.107 ^ r1/Q (DFF_X1)
+   0.026    0.133 ^ hold2/Z (CLKBUF_X3)
+   0.023    0.156 ^ u1/Z (BUF_X1)
+   0.027    0.183 ^ hold1/Z (CLKBUF_X3)
+   0.000    0.183 ^ r3/D (DFF_X1)
+            0.183   data arrival time
 
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock source latency
@@ -236,12 +236,12 @@ Path Type: min
    0.022    0.138 ^ i7/Z (BUF_X1)
    0.000    0.138 ^ r3/CK (DFF_X1)
    0.000    0.138   clock reconvergence pessimism
-   0.008    0.146   library hold time
-            0.146   data required time
+   0.007    0.145   library hold time
+            0.145   data required time
 -----------------------------------------------------------
-            0.146   data required time
-           -0.171   data arrival time
+            0.145   data required time
+           -0.183   data arrival time
 -----------------------------------------------------------
-            0.025   slack (MET)
+            0.038   slack (MET)
 
 

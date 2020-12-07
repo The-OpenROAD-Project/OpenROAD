@@ -44,7 +44,7 @@ class OpenDbNetwork;
 class Report;
 }
 
-namespace ord {
+namespace ifp {
 
 using odb::dbDatabase;
 using sta::Report;
@@ -81,4 +81,3 @@ autoPlacePins(const char *pin_layer_name,
 	      Report *report);
 
 } // namespace
-

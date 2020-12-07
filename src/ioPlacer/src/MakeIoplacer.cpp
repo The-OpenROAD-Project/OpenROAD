@@ -51,12 +51,12 @@ extern int Ioplacer_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-ioPlacer::IOPlacer* makeIoplacer()
+ppl::IOPlacer* makeIoplacer()
 {
-  return new ioPlacer::IOPlacer();
+  return new ppl::IOPlacer();
 }
 
-void deleteIoplacer(ioPlacer::IOPlacer* ioplacer)
+void deleteIoplacer(ppl::IOPlacer* ioplacer)
 {
   delete ioplacer;
 }

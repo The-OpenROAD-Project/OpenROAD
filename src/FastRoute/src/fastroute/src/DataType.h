@@ -47,7 +47,7 @@ namespace odb {
 class dbNet;
 }
 
-namespace FastRoute {
+namespace grt {
 typedef char Bool;
 
 typedef int DTYPE;
@@ -221,6 +221,6 @@ typedef enum
   BID
 } viaST;
 
-}  // namespace FastRoute
+}  // namespace grt
 
 #endif /* __DATATYPE_H__ */

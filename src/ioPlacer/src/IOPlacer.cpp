@@ -36,11 +36,12 @@
 #include "ioplacer/IOPlacer.h"
 
 #include <random>
+#include <algorithm>
 #include "opendb/db.h"
 #include "openroad/Error.hh"
 #include "openroad/OpenRoad.hh"
 
-namespace ioPlacer {
+namespace ppl {
 
 using ord::error;
 using ord::warn;
@@ -275,7 +276,7 @@ void IOPlacer::defineSlots()
   totalNumSlots += (ubY - lbY) * 2 / minDstPinsY;
 
   /*******************************************
-   * How the for bellow follows core boundary *
+   *  Order of the edges when creating slots  *
    ********************************************
    *                 <----                    *
    *                                          *
@@ -972,4 +973,4 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment,
   };
 }
 
-}  // namespace ioPlacer
+}  // namespace ppl

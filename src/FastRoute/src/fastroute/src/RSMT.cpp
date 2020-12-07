@@ -47,7 +47,7 @@
 #include "route.h"
 #include "utility.h"
 
-namespace FastRoute {
+namespace grt {
 
 #define FLUTEACCURACY 2
 
@@ -336,7 +336,7 @@ void fluteNormal(int   netID,
     t->branch[3].y = y_mid;
     t->branch[3].n = 3;
   } else {
-    Flute::Tree fluteTree;
+    stt::Tree fluteTree;
     xs = new DTYPE[d];
     ys = new DTYPE[d];
 
@@ -430,7 +430,7 @@ void fluteNormal(int   netID,
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
-    fluteTree = Flute::flutes(d, tmp_xs, tmp_ys, s, acc);
+    fluteTree = stt::flutes(d, tmp_xs, tmp_ys, s, acc);
     (*t)      = fluteToTree(fluteTree);
 
     for (i = 0; i < 2 * d - 2; i++) {
@@ -535,7 +535,7 @@ void fluteCongest(int   netID,
     t->branch[3].y = y_mid;
     t->branch[3].n = 3;
   } else {
-    Flute::Tree fluteTree;
+    stt::Tree fluteTree;
     xs    = new DTYPE[d];
     ys    = new DTYPE[d];
     nxs   = new DTYPE[d];
@@ -593,7 +593,7 @@ void fluteCongest(int   netID,
       nys[i + 1] = nys[i] + y_seg[i];
     }
 
-    fluteTree = Flute::flutes(d, nxs, nys, s, acc);
+    fluteTree = stt::flutes(d, nxs, nys, s, acc);
     (*t)      = fluteToTree(fluteTree);
 
     // map the new coordinates back to original coordinates
@@ -967,4 +967,4 @@ void gen_brk_RSMT(Bool congestionDriven,
   }
 }
 
-}  // namespace FastRoute
+}  // namespace grt

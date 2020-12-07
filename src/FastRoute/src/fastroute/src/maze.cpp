@@ -48,7 +48,7 @@
 #include "route.h"
 #include "utility.h"
 
-namespace FastRoute {
+namespace grt {
 
 #define PARENT(i) (i - 1) / 2
 //#define PARENT(i) ((i-1)>>1)
@@ -2256,4 +2256,4 @@ void InitLastUsage(int upType)
   }
 }
 
-}  // namespace FastRoute
+}  // namespace grt

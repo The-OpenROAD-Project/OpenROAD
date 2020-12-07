@@ -45,7 +45,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Units.hh"
 
-namespace FastRoute {
+namespace grt {
 
 using std::abs;
 using std::min;
@@ -239,4 +239,4 @@ bool operator<(const RoutePt &p1,
 	&& p1._layer < p2._layer);
 }
 
-}  // namespace FastRoute
+}  // namespace grt

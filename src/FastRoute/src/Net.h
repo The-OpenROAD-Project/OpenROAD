@@ -41,24 +41,25 @@
 #include "Pin.h"
 #include "opendb/db.h"
 
-namespace FastRoute {
+namespace grt {
 
 class Net
 {
  public:
   Net() = default;
   Net(odb::dbNet* net);
-  odb::dbNet* getDbNet() { return _net; }
+  odb::dbNet* getDbNet() const { return _net; }
   const std::string getName() const;
   const char* getConstName() const;
   odb::dbSigType getSignalType() const;
   void addPin(Pin& pin);
   std::vector<Pin>& getPins() { return _pins; }
   int getNumPins() const { return _pins.size(); }
+  void destroyPins();
 
  private:
   odb::dbNet* _net;
   std::vector<Pin> _pins;
 };
 
-}  // namespace FastRoute
+}  // namespace grt

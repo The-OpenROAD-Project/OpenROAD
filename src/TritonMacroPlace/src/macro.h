@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __MACRO_PLACER_MACRO__
-#define __MACRO_PLACER_MACRO__ 
+#pragma once
 
 #include <string>
 
@@ -44,7 +43,7 @@ namespace odb {
 class dbInst;
 }
 
-namespace MacroPlace { 
+namespace mpl { 
 
 class Vertex;
 class Macro {
@@ -85,5 +84,3 @@ public:
   double GetChannelY() { return channelY_; }
 };
 
-
-#endif

@@ -50,7 +50,7 @@
 #include <ostream>
 #include <sstream>
 
-namespace TritonCTS {
+namespace cts {
 
 using ord::error;
 
@@ -1350,4 +1350,4 @@ void TechChar::create()
   }
 }
 
-}  // namespace TritonCTS
+}  // namespace cts

@@ -101,9 +101,13 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  void setBrush(odb::dbTechLayer* layer) override
+  void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
-    painter_->setBrush(options_->color(layer));
+    QColor color = options_->color(layer);
+    if (alpha >= 0) {
+      color.setAlpha(alpha);
+    }
+    painter_->setBrush(color);
   }
 
   void setBrush(const Color& color) override
@@ -342,12 +346,12 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 
     // Clip to the block bounds
     dbBlock* block = getBlock();
-    dbBox* bbox = block->getBBox();
+    Rect bbox = getBounds(block);
 
-    rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox->xMin()));
-    rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox->yMin()));
-    rubber_band_dbu.set_xhi(qMin(rubber_band_dbu.xMax(), bbox->xMax()));
-    rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox->yMax()));
+    rubber_band_dbu.set_xlo(qMax(rubber_band_dbu.xMin(), bbox.xMin()));
+    rubber_band_dbu.set_ylo(qMax(rubber_band_dbu.yMin(), bbox.yMin()));
+    rubber_band_dbu.set_xhi(qMin(rubber_band_dbu.xMax(), bbox.xMax()));
+    rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     zoomTo(rubber_band_dbu);
   }
@@ -569,6 +573,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   auto& renderers = Gui::get()->renderers();
   GuiPainter gui_painter(painter, options_);
 
+  // Draw bounds
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
+  Rect bbox = getBounds(block);
+  painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+
   auto inst_range = search_.search_insts(
       bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax(), 1 * pixel);
 
@@ -758,7 +768,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 
   // Flip the y-coordinate (see file level comments)
   dbBlock* block = getBlock();
-  int dbu_height = block->getBBox()->getDY();
+  int dbu_height = getBounds(block).dy();
   dbu_top = dbu_height - dbu_top;
   dbu_bottom = dbu_height - dbu_bottom;
 
@@ -768,7 +778,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
-  int dbu_height = block->getBBox()->getDY();
+  int dbu_height = getBounds(block).dy();
 
   // Flip the y-coordinate (see file level comments)
   qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
@@ -858,17 +868,40 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
     QScrollArea::wheelEvent(event);
     return;
   }
+
+  if (event->angleDelta().y() > 0) {
+    zoomIn();
+  } else {
+    zoomOut();
+  }
+}
+
+void LayoutScroll::zoomIn()
+{
   qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
 
   int scrollbar_x = horizontalScrollBar()->value();
   int scrollbar_y = verticalScrollBar()->value();
-  QPointF pos_in_widget = QPointF(event->pos()) - widget()->pos();
+  QPointF pos_in_widget = mapFromGlobal(QCursor::pos()) - widget()->pos();
 
-  if (event->angleDelta().y() > 0) {
-    viewer_->zoomIn();
-  } else {
-    viewer_->zoomOut();
-  }
+  viewer_->zoomIn();
+
+  qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
+  QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;
+
+  horizontalScrollBar()->setValue(scrollbar_x + delta.x());
+  verticalScrollBar()->setValue(scrollbar_y + delta.y());
+}
+
+void LayoutScroll::zoomOut()
+{
+  qreal old_pixelsPerDBU = viewer_->getPixelsPerDBU();
+
+  int scrollbar_x = horizontalScrollBar()->value();
+  int scrollbar_y = verticalScrollBar()->value();
+  QPointF pos_in_widget = mapFromGlobal(QCursor::pos()) - widget()->pos();
+
+  viewer_->zoomOut();
 
   qreal new_pixelsPerDBU = viewer_->getPixelsPerDBU();
   QPointF delta = (new_pixelsPerDBU / old_pixelsPerDBU - 1) * pos_in_widget;

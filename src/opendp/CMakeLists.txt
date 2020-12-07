@@ -40,7 +40,7 @@ set(OPENDP_WRAP ${CMAKE_CURRENT_BINARY_DIR}/opendp_wrap.cc)
 set(OPENDP_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpendpTclInitVar.cc)
 
 add_custom_command(OUTPUT ${OPENDP_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix opendp -I${OPENDP_HOME}/include -o ${OPENDP_WRAP} ${OPENDP_HOME}/src/opendp.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix dpl -I${OPENDP_HOME}/include -o ${OPENDP_WRAP} ${OPENDP_HOME}/src/opendp.i
   WORKING_DIRECTORY ${OPENDP_HOME}/src
   DEPENDS
   ${OPENDP_HOME}/src/opendp.i

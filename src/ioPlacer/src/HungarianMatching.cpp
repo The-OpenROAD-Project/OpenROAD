@@ -36,7 +36,7 @@
 #include "HungarianMatching.h"
 #include "openroad/Error.hh"
 
-namespace ioPlacer {
+namespace ppl {
 
 using ord::warn;
 
@@ -115,4 +115,4 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
   });
 }
 
-}  // namespace ioPlacer
+}  // namespace ppl
