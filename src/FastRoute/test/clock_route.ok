@@ -17,7 +17,7 @@ Notice 0: Finished DEF file: gcd_sky130.def
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.5
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 22597
 [INFO] #DB Macros: 0
@@ -55,7 +55,7 @@ Final usage/overflow report:
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.5
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 22597
 [INFO] #DB Macros: 0
