@@ -170,6 +170,13 @@ getIOPlacer()
   return openroad->getIOPlacer();
 }
 
+partition::PartitionMgr*
+getPartitionMgr()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPartitionMgr();
+}
+
 } // namespace ord
 
 namespace sta {
