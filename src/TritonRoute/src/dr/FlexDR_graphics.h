@@ -5,6 +5,10 @@
 #include "gui/gui.h"
 #include "frBaseTypes.h"
 
+namespace odb {
+  class dbDatabase;
+}
+
 namespace fr {
 
 class frPoint;
@@ -19,7 +23,7 @@ class FlexDRGraphics : public gui::Renderer
 {
  public:
   // Debug InitialPlace
-  FlexDRGraphics(frDebugSettings* settings, frDesign* design);
+  FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
 
   void startWorker(FlexDRWorker* worker);
 

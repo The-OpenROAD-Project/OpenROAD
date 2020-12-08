@@ -65,7 +65,8 @@ namespace triton_route {
   protected:
     std::unique_ptr<fr::frDesign> design;
     std::unique_ptr<fr::frDebugSettings> debug;
-  
+    odb::dbDatabase *db;
+    
     void init();
     void prep();
     void ta();

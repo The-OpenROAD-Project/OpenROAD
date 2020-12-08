@@ -89,6 +89,7 @@ void TritonRoute::setDebugIter(int iter)
 
 void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
 {
+  this->db = db;
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
@@ -127,7 +128,7 @@ void TritonRoute::ta() {
 
 void TritonRoute::dr() {
   FlexDR dr(getDesign());
-  dr.setDebug(debug.get());
+  dr.setDebug(debug.get(), db);
   dr.main();
 }
 

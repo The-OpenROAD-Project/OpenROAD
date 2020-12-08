@@ -47,11 +47,11 @@ FlexDR::~FlexDR()
 {
 }
 
-void FlexDR::setDebug(frDebugSettings* settings)
+void FlexDR::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   bool on = settings->debugDR;
   graphics = on && FlexDRGraphics::guiActive() ?
-    std::make_unique<FlexDRGraphics>(settings, design)
+    std::make_unique<FlexDRGraphics>(settings, design, db)
     : nullptr;
 }
 

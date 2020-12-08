@@ -37,6 +37,10 @@
 #include "dr/FlexWavefront.h"
 #include <deque>
 
+namespace odb {
+  class dbDatabase;
+}
+
 namespace fr {
 
   class FlexDRGraphics;
@@ -70,7 +74,7 @@ namespace fr {
     const std::vector<std::vector<frCoord> >* getVia2TurnMinLen() const {
       return &via2turnMinLen;
     }
-    void setDebug(frDebugSettings* settings);
+    void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   protected:
     frDesign*          design;
     std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin;
