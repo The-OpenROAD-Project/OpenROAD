@@ -47,8 +47,8 @@ write_def $global_place_def
 ################################################################
 # Resize
 # estimate wire rc parasitics
-set_wire_rc -layer $wire_rc_layer
-set_wire_rc -clock -layer $wire_rc_layer_clk
+set_wire_rc -signal -layer $wire_rc_layer
+set_wire_rc -clock  -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 set_dont_use $dont_use
 
@@ -73,21 +73,24 @@ report_check_types -max_slew -max_capacitance -max_fanout -violators
 # so cts does not try to buffer the inverted clocks.
 repair_clock_inverters
 
-clock_tree_synthesis -lut_file $cts_lut_file \
-  -sol_list $cts_sol_file \
-  -root_buf $cts_buffer \
-  -wire_unit 20
+# Use set_wire_rc -clock resitance/capacitance values.
+configure_cts_characterization \
+  -sqr_cap [expr [rsz::wire_clk_capacitance] * 1e12 * 1e-6] \
+  -sqr_res [expr [rsz::wire_clk_resistance] * 1e-6] \
+  -max_slew $cts_max_slew \
+  -max_cap $cts_max_cap
+
+clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer -wire_unit 20
 
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets -max_wire_length $max_wire_length
 
-# Get gates close to final positions so parasitics estimate is close.
-detailed_placement
-
 # CTS and detailed placement move instances so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
-repair_hold_violations
+repair_timing
+
+detailed_placement
 
 # post cts timing report (propagated clocks)
 report_checks -path_delay min_max -format full_clock_expanded \
