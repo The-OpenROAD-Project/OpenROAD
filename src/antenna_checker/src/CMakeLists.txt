@@ -33,7 +33,7 @@ set(ANTENNACHECKER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/AntennaChecker_wrap.cc)
 set(ANTENNACHECKER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/AntennaCheckerTclInitVar.cc)
 
 add_custom_command(OUTPUT ${ANTENNACHECKER_WRAP}
-  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix antenna_checker -I${OPENROAD_HOME}/include -o ${ANTENNACHECKER_WRAP} ${ANTENNACHECKER_HOME}/src/AntennaChecker.i
+  COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix ant -I${OPENROAD_HOME}/include -o ${ANTENNACHECKER_WRAP} ${ANTENNACHECKER_HOME}/src/AntennaChecker.i
   COMMAND ${OPENSTA_HOME}/etc/SwigCleanup.tcl ${CMAKE_CURRENT_BINARY_DIR}/AntennaChecker_wrap.cc
   WORKING_DIRECTORY ${ANTENNACHECKER_HOME}/src
   DEPENDS ${ANTENNACHECKER_HOME}/src/AntennaChecker.i

@@ -111,7 +111,7 @@ namespace pdnsim {
 class PDNSim;
 }
 
-namespace antenna_checker {
+namespace ant {
 class AntennaChecker;
 }
 
@@ -125,7 +125,10 @@ class dbVerilogNetwork;
 class OpenRoad
 {
 public:
-  // Singleton accessor used by tcl command interpreter.
+  // Singleton accessor.
+  // This accessor should ONLY be used for tcl commands.
+  // Tools should use their initialization functions to get the
+  // OpenRoad object and/or any other tools they need to reference.
   static OpenRoad *openRoad();
   void init(Tcl_Interp *tcl_interp);
 
@@ -145,7 +148,7 @@ public:
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
-  antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
+  ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -215,7 +218,7 @@ private:
   tap::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
-  antenna_checker::AntennaChecker *antennaChecker_;
+  ant::AntennaChecker *antenna_checker_;
   psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 

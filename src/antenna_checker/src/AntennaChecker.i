@@ -29,43 +29,79 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+%module antennachecker
 
-#include "openroad/OpenRoad.hh"
+%{
+
 #include "antennachecker/AntennaChecker.hh"
-#include "antennachecker/MakeAntennaChecker.hh"
-#include "sta/StaMain.hh"
+#include "openroad/OpenRoad.hh"
 
-namespace sta {
-// Tcl files encoded into strings.
-extern const char *antennachecker_tcl_inits[];
-}
-
-extern "C" {
-extern int Antennachecker_Init(Tcl_Interp *interp);
-}
-
-namespace ord {
-
-antenna_checker::AntennaChecker *
-makeAntennaChecker()
+ant::AntennaChecker *
+getAntennaChecker()
 {
-  return new antenna_checker::AntennaChecker;
+  return ord::OpenRoad::openRoad()->getAntennaChecker();
+}
+
+%}
+
+%inline %{
+
+namespace ant {
+
+void
+antennachecker_set_verbose(bool verbose)
+{
+  getAntennaChecker()->set_verbose(verbose);
 }
 
 void
-deleteAntennaChecker(antenna_checker::AntennaChecker *antennachecker)
+antennachecker_set_net_name(char * netname)
 {
-  delete antennachecker;
+  std::string net_name = netname;
+  getAntennaChecker()->set_net_name(net_name);
 }
 
 void
-initAntennaChecker(OpenRoad *openroad)
+antennachecker_set_route_level(int rt_lv)
 {
-  Tcl_Interp *tcl_interp = openroad->tclInterp();
+  getAntennaChecker()->set_route_level(rt_lv);
+}
 
-  Antennachecker_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::antennachecker_tcl_inits);
-  openroad->getAntennaChecker()->setDb(openroad->getDb());
+void
+check_antennas(char* path)
+{
+  getAntennaChecker()->check_antennas(std::string(path));
+}
+
+void
+get_met_avail_length()
+{
+  getAntennaChecker()->check_par_max_length();
+}
+
+void
+load_antenna_rules()
+{
+  getAntennaChecker()->load_antenna_rules();
+}
+
+int
+check_net_violation(char* netname)
+{ 
+  odb::dbNet* net = getAntennaChecker()->get_net( std::string(netname));
+  auto vios = getAntennaChecker()->get_net_antenna_violations(net);
+  if (vios.size() !=0)
+    return 1;
+  else
+    return 0;       
+}
+
+void
+find_max_wire_length()
+{
+    getAntennaChecker()->find_max_wire_length();
 }
 
 }
+
+%} // inline

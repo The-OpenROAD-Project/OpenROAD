@@ -117,7 +117,7 @@ OpenRoad::OpenRoad()
     tapcell_(nullptr),
     extractor_(nullptr),
     detailed_router_(nullptr),
-    antennaChecker_(nullptr),
+    antenna_checker_(nullptr),
     psn_(nullptr),
     replace_(nullptr),
     pdnsim_(nullptr) 
@@ -144,7 +144,7 @@ OpenRoad::~OpenRoad()
 #ifdef BUILD_OPENPHYSYN
   deletePsn(psn_);
 #endif
-  deleteAntennaChecker(antennaChecker_);
+  deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
   stt::deleteLUT();
 }
@@ -200,7 +200,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
-  antennaChecker_ = makeAntennaChecker();
+  antenna_checker_ = makeAntennaChecker();
 #ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif

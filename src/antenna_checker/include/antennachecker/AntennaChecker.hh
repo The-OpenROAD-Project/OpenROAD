@@ -30,11 +30,24 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#pragma once
+
 #include <tcl.h>
 #include <map>
 #include "opendb/db.h"
 #include "opendb/dbWireGraph.h"
 
+namespace ant {
+
+using odb::dbNet;
+using odb::dbWire;
+using odb::dbSWire;
+using odb::dbInst;
+using odb::dbWireGraph;
+using odb::dbTechLayer;
+using odb::dbITerm;
+
+typedef std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>> wireroots_info_vec;
 
 struct PARinfo
 {
@@ -106,22 +119,8 @@ struct VINFO
     int antenna_cell_nums;
 };
     
-
-namespace antenna_checker  {
-
-using odb::dbNet;
-using odb::dbWire;
-using odb::dbSWire;
-using odb::dbInst;
-using odb::dbWireGraph;
-using odb::dbTechLayer;
-using odb::dbITerm;
-
-typedef std::pair<dbWireGraph::Node*, std::vector<dbWireGraph::Node*>> wireroots_info_vec;
-
 class AntennaChecker
 {
-
 public:
     AntennaChecker();
     ~AntennaChecker();
@@ -192,8 +191,7 @@ private:
     std::string net_name_;
     int route_level_;
     std::map<odb::dbTechLayer*, ANTENNAmodel> layer_info;
-
-
 };
 
 }
+

@@ -38,14 +38,13 @@
 #include "opendb/db.h"
 #include "opendb/dbTypes.h"
 #include "opendb/dbWireGraph.h"
-#include <time.h>
 
 namespace sta {
 // Tcl files encoded into strings.
 extern const char *antennachecker_tcl_inits[];
 }
 
-namespace antenna_checker {
+namespace ant {
 
 using odb::dbSet;
 using odb::dbNet;
@@ -1894,3 +1893,4 @@ AntennaChecker::find_max_wire_length()
 }
 
 }
+
