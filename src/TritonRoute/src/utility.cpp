@@ -36,7 +36,7 @@ using namespace fr;
 
 void frDesign::printAllComps() {
   cout <<endl <<"print all components: ";
-  for (auto &m: topBlock->getInsts()) {
+  for (auto &m: topBlock_->getInsts()) {
     cout <<endl <<*m <<endl;
   }
 }
@@ -44,14 +44,14 @@ void frDesign::printAllComps() {
 void frDesign::printAllMacros() {
   cout <<endl;
   cout <<"print all macros: " <<endl;
-  for (auto &m: refBlocks) {
+  for (auto &m: refBlocks_) {
     cout <<endl <<*(m) <<endl;
   }
 }
 
 void frDesign::printAllTerms() {
   cout <<endl <<"print all terminals: ";
-  for (auto &m: topBlock->getTerms()) {
+  for (auto &m: topBlock_->getTerms()) {
     cout <<endl <<*m <<endl;
   }
 }

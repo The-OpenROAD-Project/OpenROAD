@@ -43,19 +43,19 @@ struct FlexTAWorkerRegionQuery::Impl
 };
 
 FlexTAWorkerRegionQuery::FlexTAWorkerRegionQuery(FlexTAWorker* in)
-  : impl(make_unique<Impl>())
+  : impl_(make_unique<Impl>())
 {
-  impl->taWorker = in;
+  impl_->taWorker = in;
 }
 
 FlexTAWorkerRegionQuery::~FlexTAWorkerRegionQuery() = default;
 
 FlexTAWorker* FlexTAWorkerRegionQuery::getTAWorker() const {
-  return impl->taWorker;
+  return impl_->taWorker;
 }
 
 frDesign* FlexTAWorkerRegionQuery::getDesign() const {
-  return impl->taWorker->getDesign();
+  return impl_->taWorker->getDesign();
 }
 
 void FlexTAWorkerRegionQuery::add(taPinFig* fig) {
@@ -65,12 +65,12 @@ void FlexTAWorkerRegionQuery::add(taPinFig* fig) {
     auto obj = static_cast<taPathSeg*>(fig);
     obj->getPoints(bp, ep);
     box = frBox(bp, ep);
-    impl->shapes.at(obj->getLayerNum()).insert(make_pair(box, obj));
+    impl_->shapes.at(obj->getLayerNum()).insert(make_pair(box, obj));
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
     obj->getOrigin(bp);
     box = frBox(bp, bp);
-    impl->shapes.at(obj->getViaDef()->getCutLayerNum()).insert(make_pair(box, obj));
+    impl_->shapes.at(obj->getViaDef()->getCutLayerNum()).insert(make_pair(box, obj));
   } else {
     cout <<"Error: unsupported region query add" <<endl;
   }
@@ -83,12 +83,12 @@ void FlexTAWorkerRegionQuery::remove(taPinFig* fig) {
     auto obj = static_cast<taPathSeg*>(fig);
     obj->getPoints(bp, ep);
     box = frBox(bp, ep);
-    impl->shapes.at(obj->getLayerNum()).remove(make_pair(box, obj));
+    impl_->shapes.at(obj->getLayerNum()).remove(make_pair(box, obj));
   } else if (fig->typeId() == tacVia) {
     auto obj = static_cast<taVia*>(fig);
     obj->getOrigin(bp);
     box = frBox(bp, bp);
-    impl->shapes.at(obj->getViaDef()->getCutLayerNum()).remove(make_pair(box, obj));
+    impl_->shapes.at(obj->getViaDef()->getCutLayerNum()).remove(make_pair(box, obj));
   } else {
     cout <<"Error: unsupported region query add" <<endl;
   }
@@ -96,7 +96,7 @@ void FlexTAWorkerRegionQuery::remove(taPinFig* fig) {
 
 void FlexTAWorkerRegionQuery::query(const frBox &box, frLayerNum layerNum, set<taPin*, frBlockObjectComp> &result) {
   vector<rq_box_value_t<taPinFig*> > temp;
-  auto& tree = impl->shapes.at(layerNum);
+  auto& tree = impl_->shapes.at(layerNum);
   transform(tree.qbegin(bgi::intersects(box)),
             tree.qend(),
             inserter(result, result.end()),
@@ -105,20 +105,20 @@ void FlexTAWorkerRegionQuery::query(const frBox &box, frLayerNum layerNum, set<t
 
 void FlexTAWorkerRegionQuery::init() {
   int numLayers = getDesign()->getTech()->getLayers().size();
-  impl->shapes.clear();
-  impl->shapes.resize(numLayers);
-  impl->costs.clear();
-  impl->costs.resize(numLayers);
+  impl_->shapes.clear();
+  impl_->shapes.resize(numLayers);
+  impl_->costs.clear();
+  impl_->costs.resize(numLayers);
 }
 
 void FlexTAWorkerRegionQuery::addCost(const frBox &box, frLayerNum layerNum, frBlockObject* obj, frConstraint* con) {
-  impl->costs.at(layerNum).insert(make_pair(box, make_pair(obj, con)));
+  impl_->costs.at(layerNum).insert(make_pair(box, make_pair(obj, con)));
 }
 
 void FlexTAWorkerRegionQuery::removeCost(const frBox &box, frLayerNum layerNum, frBlockObject* obj, frConstraint* con) {
-  impl->costs.at(layerNum).remove(make_pair(box, make_pair(obj, con)));
+  impl_->costs.at(layerNum).remove(make_pair(box, make_pair(obj, con)));
 }
 
 void FlexTAWorkerRegionQuery::queryCost(const frBox &box, frLayerNum layerNum, vector<rq_box_value_t<pair<frBlockObject*, frConstraint*> > > &result) {
-  impl->costs.at(layerNum).query(bgi::intersects(box), back_inserter(result));
+  impl_->costs.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }

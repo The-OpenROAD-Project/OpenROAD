@@ -9,7 +9,8 @@
 namespace fr {
 
 FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
-                               frDesign* design)
+                               frDesign* design,
+                               odb::dbDatabase* db)
   : worker_(nullptr),
     net_(nullptr),
     settings_(settings),
@@ -20,7 +21,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   assert(MAX_THREADS == 1);
 
   // Build the layer map between opendb & tr
-  auto odb_tech = ord::OpenRoad::openRoad()->getDb()->getTech();
+  auto odb_tech = db->getTech();
 
   layer_map.resize(odb_tech->getLayerCount(), -1);
 

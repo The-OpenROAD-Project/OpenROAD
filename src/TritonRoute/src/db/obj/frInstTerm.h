@@ -42,50 +42,50 @@ namespace fr {
   class frInstTerm: public frBlockObject {
   public:
     // constructors
-    frInstTerm(frInst* inst, frTerm* term): inst(inst), term(term), net(nullptr), ap() {}
-    frInstTerm(const frInstTerm &in): frBlockObject(), inst(in.inst), term(in.term), 
-                                      net(in.net), ap() {}
+    frInstTerm(frInst* inst, frTerm* term): inst_(inst), term_(term), net_(nullptr), ap_() {}
+    frInstTerm(const frInstTerm &in): frBlockObject(), inst_(in.inst_), term_(in.term_), 
+                                      net_(in.net_), ap_() {}
     // getters
     bool hasNet() const {
-      return (net);
+      return (net_);
     }
     frNet* getNet() const {
-      return net;
+      return net_;
     }
     frInst* getInst() const {
-      return inst;
+      return inst_;
     }
     frTerm* getTerm() const {
-      return term;
+      return term_;
     }
     void addToNet(frNet* in) {
-      net = in;
+      net_ = in;
     }
     const std::vector<frAccessPoint*>& getAccessPoints() const {
-      return ap;
+      return ap_;
     }
     frAccessPoint* getAccessPoint(int idx = 0) const {
-      return ap[idx];
+      return ap_[idx];
     }
     // setters
     void setAPSize(int size) {
-      ap.resize(size, nullptr);
+      ap_.resize(size, nullptr);
     }
     void setAccessPoint(int idx, frAccessPoint *in) {
-      ap[idx] = in;
+      ap_[idx] = in;
     }
     void addAccessPoint(frAccessPoint* in) {
-      ap.push_back(in);
+      ap_.push_back(in);
     }
     // others
     frBlockObjectEnum typeId() const override {
       return frcInstTerm;
     }
   protected:
-    frInst* inst;
-    frTerm* term;
-    frNet*  net;
-    std::vector<frAccessPoint*> ap; // follows pin index
+    frInst* inst_;
+    frTerm* term_;
+    frNet*  net_;
+    std::vector<frAccessPoint*> ap_; // follows pin index
 
   };
 }

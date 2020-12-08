@@ -36,53 +36,53 @@ namespace fr {
   class gcPin: public gcBlockObject {
   public:
     // constructors
-    gcPin(): gcBlockObject(), polygon(nullptr), net(nullptr)/*, dirty(false)*/, polygon_edges(), polygon_corners(), max_rectangles() {}
+    gcPin(): gcBlockObject(), polygon_(nullptr), net_(nullptr)/*, dirty_(false)*/, polygon_edges_(), polygon_corners_(), max_rectangles_() {}
     gcPin(const gtl::polygon_90_with_holes_data<frCoord> &shapeIn, frLayerNum layerNumIn, gcNet* netIn): 
-          gcBlockObject(), polygon(std::make_unique<gcPolygon>(shapeIn, layerNumIn, this, netIn)), net(netIn)/*, dirty(true)*/, 
-          polygon_edges(), polygon_corners(), max_rectangles() {
+          gcBlockObject(), polygon_(std::make_unique<gcPolygon>(shapeIn, layerNumIn, this, netIn)), net_(netIn)/*, dirty_(true)*/, 
+          polygon_edges_(), polygon_corners_(), max_rectangles_() {
     }
     // setters
     void setNet(gcNet* in) {
-      net = in;
+      net_ = in;
     }
     void addPolygonEdges(std::vector<std::unique_ptr<gcSegment> > &in) {
-      polygon_edges.push_back(std::move(in));
+      polygon_edges_.push_back(std::move(in));
     }
     void addPolygonCorners(std::vector<std::unique_ptr<gcCorner> > &in) {
-      polygon_corners.push_back(std::move(in));
+      polygon_corners_.push_back(std::move(in));
     }
     void addMaxRectangle(std::unique_ptr<gcRect> in) {
-      max_rectangles.push_back(std::move(in));
+      max_rectangles_.push_back(std::move(in));
     }
 
     // getters
     gcPolygon* getPolygon() const {
-      return polygon.get();
+      return polygon_.get();
     }
     const std::vector<std::vector<std::unique_ptr<gcSegment> > >& getPolygonEdges() const {
-      return polygon_edges;
+      return polygon_edges_;
     }
     const std::vector<std::vector<std::unique_ptr<gcCorner> > >& getPolygonCorners() const {
-      return polygon_corners;
+      return polygon_corners_;
     }
     const std::vector<std::unique_ptr<gcRect> >& getMaxRectangles() const {
-      return max_rectangles;
+      return max_rectangles_;
     }
 
     gcNet* getNet() {
-      return net;
+      return net_;
     }
     // others
     frBlockObjectEnum typeId() const override {
       return gccPin;
     }
   protected:
-    std::unique_ptr<gcPolygon>            polygon;
-    gcNet*                                net;
+    std::unique_ptr<gcPolygon>            polygon_;
+    gcNet*                                net_;
     // assisting structures
-    std::vector<std::vector<std::unique_ptr<gcSegment> > > polygon_edges;
-    std::vector<std::vector<std::unique_ptr<gcCorner> > > polygon_corners;
-    std::vector<std::unique_ptr<gcRect> > max_rectangles;
+    std::vector<std::vector<std::unique_ptr<gcSegment> > > polygon_edges_;
+    std::vector<std::vector<std::unique_ptr<gcCorner> > > polygon_corners_;
+    std::vector<std::unique_ptr<gcRect> > max_rectangles_;
   };
 }
 

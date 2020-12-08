@@ -52,8 +52,8 @@ extern int Triton_route_Init(Tcl_Interp* interp);
 }
 
 TritonRoute::TritonRoute()
-  : design(std::make_unique<frDesign>()),
-    debug(std::make_unique<frDebugSettings>())
+  : design_(std::make_unique<frDesign>()),
+    debug_(std::make_unique<frDebugSettings>())
 {
 }
 
@@ -63,32 +63,33 @@ TritonRoute::~TritonRoute()
 
 void TritonRoute::setDebugDR(bool on)
 {
-  debug->debugDR = on;
+  debug_->debugDR = on;
 }
 
 void TritonRoute::setDebugMaze(bool on)
 {
-  debug->debugMaze = on;
+  debug_->debugMaze = on;
 }
 
 void TritonRoute::setDebugNetName(const char* name)
 {
-  debug->netName = name;
+  debug_->netName = name;
 }
 
 void TritonRoute::setDebugGCell(int x, int y)
 {
-  debug->gcellX = x;
-  debug->gcellY = y;
+  debug_->gcellX = x;
+  debug_->gcellY = y;
 }
 
 void TritonRoute::setDebugIter(int iter)
 {
-  debug->iter = iter;
+  debug_->iter = iter;
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
 {
+  db_ = db;
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
@@ -127,7 +128,7 @@ void TritonRoute::ta() {
 
 void TritonRoute::dr() {
   FlexDR dr(getDesign());
-  dr.setDebug(debug.get());
+  dr.setDebug(debug_.get(), db_);
   dr.main();
 }
 

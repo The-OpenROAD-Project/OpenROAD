@@ -43,31 +43,31 @@ namespace fr {
   class frDesign {
   public:
     // constructors
-    frDesign(): topBlock(nullptr), tech(std::make_unique<frTechObject>()), 
-                rq(std::make_unique<frRegionQuery>(this)) {}
+    frDesign(): topBlock_(nullptr), tech_(std::make_unique<frTechObject>()), 
+                rq_(std::make_unique<frRegionQuery>(this)) {}
     // getters
     frBlock* getTopBlock() const {
-      return topBlock.get();
+      return topBlock_.get();
     }
     frTechObject* getTech() const {
-      return tech.get();
+      return tech_.get();
     }
     frRegionQuery* getRegionQuery() const {
-      return rq.get();
+      return rq_.get();
     }
     std::vector<std::unique_ptr<frBlock> >& getRefBlocks() {
-      return refBlocks;
+      return refBlocks_;
     }
     const std::vector<std::unique_ptr<frBlock> >& getRefBlocks() const {
-      return refBlocks;
+      return refBlocks_;
     }
     // setters
     void setTopBlock(std::unique_ptr<frBlock> in) {
-      topBlock = std::move(in);
+      topBlock_ = std::move(in);
     }
     void addRefBlock(std::unique_ptr<frBlock> in) {
-      name2refBlock[in->getName()] = in.get();
-      refBlocks.push_back(std::move(in));
+      name2refBlock_[in->getName()] = in.get();
+      refBlocks_.push_back(std::move(in));
     }
     // others
     void printAllMacros();
@@ -75,11 +75,11 @@ namespace fr {
     void printAllTerms();
     friend class io::Parser;
   protected:
-    std::unique_ptr<frBlock>                      topBlock;
-    std::map<frString, frBlock*>                  name2refBlock;
-    std::vector<std::unique_ptr<frBlock> >        refBlocks;
-    std::unique_ptr<frTechObject>                 tech;
-    std::unique_ptr<frRegionQuery>                rq;
+    std::unique_ptr<frBlock>                      topBlock_;
+    std::map<frString, frBlock*>                  name2refBlock_;
+    std::vector<std::unique_ptr<frBlock> >        refBlocks_;
+    std::unique_ptr<frTechObject>                 tech_;
+    std::unique_ptr<frRegionQuery>                rq_;
   };
 }
 

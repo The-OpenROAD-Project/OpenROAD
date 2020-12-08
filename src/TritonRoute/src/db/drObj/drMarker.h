@@ -37,56 +37,56 @@ namespace fr {
   class drMazeMarker: public drBlockObject {
   public:
     // constructors
-    drMazeMarker(): constraint(nullptr), trigNets(), cnt(0) {}
+    drMazeMarker(): constraint_(nullptr), trigNets_(), cnt_(0) {}
     // setters
     void setConstraint(frConstraint* in) {
-      constraint = in;
+      constraint_ = in;
     }
     void addTrigNet(drNet* in) {
-      auto it = trigNets.find(in);
-      if (it == trigNets.end()) {
-        trigNets[in] = 1;
+      auto it = trigNets_.find(in);
+      if (it == trigNets_.end()) {
+        trigNets_[in] = 1;
       } else {
-        ++(trigNets[in]);
+        ++(trigNets_[in]);
       }
-      cnt++;
+      cnt_++;
     }
     bool subTrigNet(drNet* in) {
-      auto it = trigNets.find(in);
-      if (it != trigNets.end()) {
+      auto it = trigNets_.find(in);
+      if (it != trigNets_.end()) {
         if (it->second == 1) {
-          trigNets.erase(it);
+          trigNets_.erase(it);
         } else {
           --(it->second);
         }
-        --cnt;
+        --cnt_;
       }
-      return (cnt) ? true : false;
+      return (cnt_) ? true : false;
     }
     // getters
     frConstraint* getConstraint() const {
-      return constraint;
+      return constraint_;
     }
     drNet* getTrigNet() const {
-      return trigNets.cbegin()->first;
+      return trigNets_.cbegin()->first;
     }
     const std::map<drNet*, int>& getTrigNets() const {
-      return trigNets;
+      return trigNets_;
     }
     int getCnt() const {
-      return cnt;
+      return cnt_;
     }
     // others
     frBlockObjectEnum typeId() const override {
       return drcMazeMarker;
     }
     bool operator< (const drMazeMarker &b) const {
-      return (constraint < b.constraint);
+      return (constraint_ < b.constraint_);
     }
   protected:
-    frConstraint*         constraint;
-    std::map<drNet*, int> trigNets;
-    int                   cnt;
+    frConstraint*         constraint_;
+    std::map<drNet*, int> trigNets_;
+    int                   cnt_;
   };
 }
 #endif

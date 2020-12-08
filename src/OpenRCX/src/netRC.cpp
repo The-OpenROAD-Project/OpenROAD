@@ -858,7 +858,7 @@ dbRSeg* extMain::addRSeg(dbNet*             net,
   if (net->getId() == _debug_net_id)
     debug("RCSEG",
           "R",
-          "\t%g shapeId= %d  rseg= %d  (%d %d)\n",
+          "\tshapeId= %d  rseg= %d  (%d %d) %g\n",
           pshape.junction_id,
           rsid,
           srcId,
@@ -972,7 +972,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
 #endif
   if (netId == _debug_net_id) {
     debug(
-        "RCSEG", "R", "makeNetRCsegs: BEGIN NET %d\n", netId, path.junction_id);
+        "RCSEG", "R", "makeNetRCsegs: BEGIN NET %d %d\n", netId, path.junction_id);
   }
 
   if (_mergeResBound != 0.0 || _mergeViaRes) {
@@ -1947,7 +1947,7 @@ void extMain::getExtractedCorners()
     _block->getExtCornerName(pCornerCnt + ii, &cName[0]);
     if (jj == pCornerCnt)
       warning(0,
-              "No matching process corner for scaled corner %d, model %d",
+              "No matching process corner for scaled corner %s, model %d",
               &cName[0],
               t->_model);
     t->_dbIndex = cornerCnt++;
@@ -2777,7 +2777,7 @@ uint extMain::makeBlockRCsegs(bool        btermThresholdFlag,
   if (eco) {
     _block->getWireUpdatedNets(inets, _ibox);
     if (inets.size() != 0)
-      notice(0, "eco extract %d nets.\n", inets.size());
+      notice(0, "eco extract %lu nets.\n", inets.size());
     else {
       notice(0, "no nets to eco extract.\n");
       return 1;

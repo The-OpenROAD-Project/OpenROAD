@@ -35,60 +35,60 @@ namespace fr {
   class frOrient {
   public:
     // constructor
-    frOrient(): orient(frcR0) {}
-    frOrient(const frOrient &tmpOrient): orient(tmpOrient.orient) {}
-    frOrient(frOrientEnum tmpOrient): orient(tmpOrient) {}
+    frOrient(): orient_(frcR0) {}
+    frOrient(const frOrient &tmpOrient): orient_(tmpOrient.orient_) {}
+    frOrient(frOrientEnum tmpOrient): orient_(tmpOrient) {}
     frOrient(const frString &name) {
       if (name == frString("frcR90")) {
-        orient = frcR90;
+        orient_ = frcR90;
       } else if (name == frString("frcR180")) {
-        orient = frcR180;
+        orient_ = frcR180;
       } else if (name == frString("frcR270")) {
-        orient = frcR270;
+        orient_ = frcR270;
       } else if (name == frString("frcMY")) {
-        orient = frcMY;
+        orient_ = frcMY;
       } else if (name == frString("frcMYR90")) {
-        orient = frcMYR90;
+        orient_ = frcMYR90;
       } else if (name == frString("frcMX")) {
-        orient = frcMX;
+        orient_ = frcMX;
       } else if (name == frString("frcMXR90")) {
-        orient = frcMXR90;
+        orient_ = frcMXR90;
       } else {
-        orient = frcR0;
+        orient_ = frcR0;
       }
     }
     // setters
     void set(frOrientEnum tmpOrient) {
-      orient = tmpOrient;
+      orient_ = tmpOrient;
     }
     void set(const frOrient &tmpOrient) {
-      orient = tmpOrient.orient;
+      orient_ = tmpOrient.orient_;
     }
     void set(const frString &name) {
       if (name == frString("frcR90")) {
-        orient = frcR90;
+        orient_ = frcR90;
       } else if (name == frString("frcR180")) {
-        orient = frcR180;
+        orient_ = frcR180;
       } else if (name == frString("frcR270")) {
-        orient = frcR270;
+        orient_ = frcR270;
       } else if (name == frString("frcMY")) {
-        orient = frcMY;
+        orient_ = frcMY;
       } else if (name == frString("frcMYR90")) {
-        orient = frcMYR90;
+        orient_ = frcMYR90;
       } else if (name == frString("frcMX")) {
-        orient = frcMX;
+        orient_ = frcMX;
       } else if (name == frString("frcMXR90")) {
-        orient = frcMXR90;
+        orient_ = frcMXR90;
       } else {
-        orient = frcR0;
+        orient_ = frcR0;
       }
     }
     // getters
     //frOrientEnum get() const {
-    //  return orient;
+    //  return orient_;
     //}
     frString getName() const {
-      switch(orient) {
+      switch(orient_) {
         //case frcR0    : return frString("frcR0");
         case frcR90   : return frString("frcR90");
         case frcR180  : return frString("frcR180");
@@ -101,7 +101,7 @@ namespace fr {
       }
     }
     void getName(frString &name) const {
-      switch(orient) {
+      switch(orient_) {
         //case frcR0    : return frString("frcR0");
         case frcR90   : 
           name = "frcR90";
@@ -130,13 +130,13 @@ namespace fr {
     }
     // overloads
     //frOrientEnum operator()() const {
-    //  return orient;
+    //  return orient_;
     //}
     operator frOrientEnum() const {
-      return orient;
+      return orient_;
     }
   protected:
-    frOrientEnum orient;
+    frOrientEnum orient_;
   };
 }
 

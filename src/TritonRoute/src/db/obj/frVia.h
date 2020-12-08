@@ -40,16 +40,16 @@ namespace fr {
   class frVia: public frRef {
   public:
     // constructors
-    frVia(): viaDef(nullptr), owner(nullptr) {}
-    frVia(frViaDef* in): frRef(), origin(), viaDef(in), owner(nullptr) {}
-    frVia(const frVia &in): frRef(in), origin(in.origin), viaDef(in.viaDef), owner(in.owner) {}
+    frVia(): viaDef_(nullptr), owner_(nullptr) {}
+    frVia(frViaDef* in): frRef(), origin_(), viaDef_(in), owner_(nullptr) {}
+    frVia(const frVia &in): frRef(in), origin_(in.origin_), viaDef_(in.viaDef_), owner_(in.owner_) {}
     frVia(const drVia &in);
     // getters
     frViaDef* getViaDef() const {
-      return viaDef;
+      return viaDef_;
     }
     void getLayer1BBox(frBox &boxIn) const {
-      auto &figs = viaDef->getLayer1Figs();
+      auto &figs = viaDef_->getLayer1Figs();
       bool isFirst = true;
       frBox box;
       frCoord xl = 0;
@@ -73,11 +73,11 @@ namespace fr {
       }
       boxIn.set(xl,yl,xh,yh);
       frTransform xform;
-      xform.set(origin);
+      xform.set(origin_);
       boxIn.transform(xform);
     }
     void getCutBBox(frBox &boxIn) const {
-      auto &figs = viaDef->getCutFigs();
+      auto &figs = viaDef_->getCutFigs();
       bool isFirst = true;
       frBox box;
       frCoord xl = 0;
@@ -101,11 +101,11 @@ namespace fr {
       }
       boxIn.set(xl,yl,xh,yh);
       frTransform xform;
-      xform.set(origin);
+      xform.set(origin_);
       boxIn.transform(xform);
     }
     void getLayer2BBox(frBox &boxIn) const {
-      auto &figs = viaDef->getLayer2Figs();
+      auto &figs = viaDef_->getLayer2Figs();
       bool isFirst = true;
       frBox box;
       frCoord xl = 0;
@@ -129,12 +129,12 @@ namespace fr {
       }
       boxIn.set(xl,yl,xh,yh);
       frTransform xform;
-      xform.set(origin);
+      xform.set(origin_);
       boxIn.transform(xform);
     }
     // setters
     void setViaDef(frViaDef* in) {
-      viaDef = in;
+      viaDef_ = in;
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -157,13 +157,13 @@ namespace fr {
       ;
     }
     void getOrigin(frPoint &tmpOrigin) const override {
-      tmpOrigin.set(origin);
+      tmpOrigin.set(origin_);
     }
     void setOrigin(const frPoint &tmpPoint) override {
-      origin.set(tmpPoint);
+      origin_.set(tmpPoint);
     }
     void getTransform(frTransform &xformIn) const override {
-      xformIn.set(origin);
+      xformIn.set(origin_);
     }
     void setTransform(const frTransform &xformIn) override {}
 
@@ -174,16 +174,16 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == frcPin);
+      return (owner_) && (owner_->typeId() == frcPin);
     }
     frPin* getPin() const override {
-      return reinterpret_cast<frPin*>(owner);
+      return reinterpret_cast<frPin*>(owner_);
     }
     void addToPin(frPin* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frConnFig
@@ -193,16 +193,16 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == frcNet);
+      return (owner_) && (owner_->typeId() == frcNet);
     }
     frNet* getNet() const override {
-      return reinterpret_cast<frNet*>(owner);
+      return reinterpret_cast<frNet*>(owner_);
     }
     void addToNet(frNet* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frFig
@@ -212,9 +212,9 @@ namespace fr {
      */
 
     void getBBox (frBox &boxIn) const override {
-      auto &layer1Figs = viaDef->getLayer1Figs();
-      auto &layer2Figs = viaDef->getLayer2Figs();
-      auto &cutFigs    = viaDef->getCutFigs();
+      auto &layer1Figs = viaDef_->getLayer1Figs();
+      auto &layer2Figs = viaDef_->getLayer2Figs();
+      auto &cutFigs    = viaDef_->getCutFigs();
       bool isFirst = true;
       frBox box;
       frCoord xl = 0;
@@ -268,7 +268,7 @@ namespace fr {
       }
       boxIn.set(xl,yl,xh,yh);
       frTransform xform;
-      xform.set(origin);
+      xform.set(origin_);
       boxIn.transform(xform);
     }
     void move(const frTransform &xform) override {
@@ -279,17 +279,17 @@ namespace fr {
     }
     
     void setIter(frListIter<std::unique_ptr<frVia> >& in) {
-      iter = in;
+      iter_ = in;
     }
     frListIter<std::unique_ptr<frVia> > getIter() const {
-      return iter;
+      return iter_;
     }
 
   protected:
-    frPoint        origin;
-    frViaDef*      viaDef;
-    frBlockObject* owner;
-    frListIter<std::unique_ptr<frVia> > iter;
+    frPoint        origin_;
+    frViaDef*      viaDef_;
+    frBlockObject* owner_;
+    frListIter<std::unique_ptr<frVia> > iter_;
   };
 }
 

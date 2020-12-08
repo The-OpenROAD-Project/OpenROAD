@@ -38,39 +38,39 @@ void frPoint::transform(const frTransform &xform) {
   //cout <<xform.orient() <<endl;
   switch(xform.orient()) {
     case frcR90 :
-      tmpX = xform.xOffset() - yCoord;
-      tmpY = xform.yOffset() + xCoord;
+      tmpX = xform.xOffset() - yCoord_;
+      tmpY = xform.yOffset() + xCoord_;
       break;
     case frcR180 :
-      tmpX = xform.xOffset() - xCoord;
-      tmpY = xform.yOffset() - yCoord;
+      tmpX = xform.xOffset() - xCoord_;
+      tmpY = xform.yOffset() - yCoord_;
       break;
     case frcR270 :
-      tmpX = xform.xOffset() + yCoord;
-      tmpY = xform.yOffset() - xCoord;
+      tmpX = xform.xOffset() + yCoord_;
+      tmpY = xform.yOffset() - xCoord_;
       break;
     case frcMY :
-      tmpX = xform.xOffset() - xCoord;
-      tmpY = xform.yOffset() + yCoord;
+      tmpX = xform.xOffset() - xCoord_;
+      tmpY = xform.yOffset() + yCoord_;
       break;
     case frcMYR90 : // MY, rotate, then shift 
-      tmpX = xform.xOffset() - yCoord;
-      tmpY = xform.yOffset() - xCoord;
+      tmpX = xform.xOffset() - yCoord_;
+      tmpY = xform.yOffset() - xCoord_;
       break;
     case frcMX :
-      tmpX = xform.xOffset() + xCoord;
-      tmpY = xform.yOffset() - yCoord;
+      tmpX = xform.xOffset() + xCoord_;
+      tmpY = xform.yOffset() - yCoord_;
       break;
     case frcMXR90 : // MX, rotate, then shift
-      tmpX = xform.xOffset() + yCoord;
-      tmpY = xform.yOffset() + xCoord;
+      tmpX = xform.xOffset() + yCoord_;
+      tmpY = xform.yOffset() + xCoord_;
       break;
     // frcR0
     default :
-      tmpX = xform.xOffset() + xCoord;
-      tmpY = xform.yOffset() + yCoord;
+      tmpX = xform.xOffset() + xCoord_;
+      tmpY = xform.yOffset() + yCoord_;
       break;
   }
-  xCoord = tmpX;
-  yCoord = tmpY;
+  xCoord_ = tmpX;
+  yCoord_ = tmpY;
 }

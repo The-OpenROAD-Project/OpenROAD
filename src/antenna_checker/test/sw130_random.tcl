@@ -2,9 +2,6 @@ source "helpers.tcl"
 read_lef merged_spacing.lef
 read_def -order_wires sw130_random.def
 
-# load layers' antenna rules into ARC
-load_antenna_rules
-
 # start checking antennas and generate a detail report
 check_antennas -path [make_result_file "./"]
 

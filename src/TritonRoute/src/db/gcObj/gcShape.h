@@ -66,88 +66,88 @@ namespace fr {
   class gcCorner: public gtl::point_data<frCoord> {
   public:
     // constructors
-    gcCorner(): prevCorner(nullptr), nextCorner(nullptr), prevEdge(nullptr), nextEdge(nullptr), cornerType(frCornerTypeEnum::UNKNOWN), cornerDir(frCornerDirEnum::UNKNOWN), fixed(false) {}
+    gcCorner(): prevCorner_(nullptr), nextCorner_(nullptr), prevEdge_(nullptr), nextEdge_(nullptr), cornerType_(frCornerTypeEnum::UNKNOWN), cornerDir_(frCornerDirEnum::UNKNOWN), fixed_(false) {}
     gcCorner(const gcCorner &in) = default;
 
     // getters
     gcCorner* getPrevCorner() const {
-      return prevCorner;
+      return prevCorner_;
     }
     gcCorner* getNextCorner() const {
-      return nextCorner;
+      return nextCorner_;
     }
     gcSegment* getPrevEdge() const {
-      return prevEdge;
+      return prevEdge_;
     }
     gcSegment* getNextEdge() const {
-      return nextEdge;
+      return nextEdge_;
     }
     frCornerTypeEnum getType() const {
-      return cornerType;
+      return cornerType_;
     }
     frCornerDirEnum getDir() const {
-      return cornerDir;
+      return cornerDir_;
     }
     bool isFixed() const {
-      return fixed;
+      return fixed_;
     }
 
     // setters
     void setPrevCorner(gcCorner* in) {
-      prevCorner = in;
+      prevCorner_ = in;
     }
     void setNextCorner(gcCorner* in) {
-      nextCorner = in;
+      nextCorner_ = in;
     }
     void setPrevEdge(gcSegment* in) {
-      prevEdge = in;
+      prevEdge_ = in;
     }
     void setNextEdge(gcSegment* in) {
-      nextEdge = in;
+      nextEdge_ = in;
     }
     void setType(frCornerTypeEnum in) {
-      cornerType = in;
+      cornerType_ = in;
     }
     void setDir(frCornerDirEnum in) {
-      cornerDir = in;
+      cornerDir_ = in;
     }
     void setFixed(bool in) {
-      fixed = in;
+      fixed_ = in;
     }
 
   private:
-    gcCorner* prevCorner;
-    gcCorner* nextCorner;
-    gcSegment* prevEdge;
-    gcSegment* nextEdge;
-    frCornerTypeEnum cornerType;
-    frCornerDirEnum cornerDir; // points away from poly for convex and concave
-    bool fixed;
+    gcCorner* prevCorner_;
+    gcCorner* nextCorner_;
+    gcSegment* prevEdge_;
+    gcSegment* nextEdge_;
+    frCornerTypeEnum cornerType_;
+    frCornerDirEnum cornerDir_; // points away from poly for convex and concave
+    bool fixed_;
   };
 
   class gcSegment: public gtl::segment_data<frCoord>, public gcShape {
   public:
     // constructors
-    gcSegment(): gtl::segment_data<frCoord>(), gcShape(), layer(-1), pin(nullptr), net(nullptr), prev_edge(nullptr),
-                                               next_edge(nullptr), lowCorner(nullptr), highCorner(nullptr), fixed(false) {}
-    gcSegment(const gcSegment &in): gtl::segment_data<frCoord>(in), gcShape(in), layer(in.layer), pin(in.pin), net(in.net),
-                              prev_edge(in.prev_edge), next_edge(in.next_edge),
-                              lowCorner(in.lowCorner), highCorner(in.highCorner), fixed(in.fixed) {}
+    gcSegment(): gtl::segment_data<frCoord>(), gcShape(), layer_(-1), pin_(nullptr), net_(nullptr), prev_edge_(nullptr),
+                                               next_edge_(nullptr), lowCorner_(nullptr), highCorner_(nullptr), fixed_(false) {}
+    gcSegment(const gcSegment &in): gtl::segment_data<frCoord>(in), gcShape(in), layer_(in.layer_), pin_(in.pin_), net_(in.net_),
+                              prev_edge_(in.prev_edge_), next_edge_(in.next_edge_),
+                              lowCorner_(in.lowCorner_), highCorner_(in.highCorner_), fixed_(in.fixed_) {}
     // getters
     gcSegment* getPrevEdge() const {
-      return prev_edge;
+      return prev_edge_;
     }
     gcSegment* getNextEdge() const {
-      return next_edge;
+      return next_edge_;
     }
     gcCorner* getLowCorner() const {
-      return lowCorner;
+      return lowCorner_;
     }
     gcCorner* getHighCorner() const {
-      return highCorner;
+      return highCorner_;
     }
     bool isFixed() const {
-      return fixed;
+      return fixed_;
     }
     // direction always from bp to ep, not orthogonal!!
     frDirEnum getDir() const {
@@ -178,19 +178,19 @@ namespace fr {
       gtl::segment_data<frCoord>::high(ep);
     }
     void setPrevEdge(gcSegment* in) {
-      prev_edge = in;
+      prev_edge_ = in;
     }
     void setNextEdge(gcSegment* in) {
-      next_edge = in;
+      next_edge_ = in;
     }
     void setLowCorner(gcCorner* in) {
-      lowCorner = in;
+      lowCorner_ = in;
     }
     void setHighCorner(gcCorner* in) {
-      highCorner = in;
+      highCorner_ = in;
     }
     void setFixed(bool in) {
-      fixed = in;
+      fixed_ = in;
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -201,10 +201,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from gcPinFig
@@ -214,19 +214,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (pin);
+      return pin_;
     }
     
     gcPin* getPin() const override {
-      return pin;
+      return pin_;
     }
     
     void addToPin(gcPin* in) override {
-      pin = in;
+      pin_ = in;
     }
     
     void removeFromPin() override {
-      pin = nullptr;
+      pin_ = nullptr;
     }
 
     /* from gcConnFig
@@ -236,38 +236,38 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (net);
+      return net_;
     }
     
     gcNet* getNet() const override {
-      return net;
+      return net_;
     }
     
     void addToNet(gcNet* in) override {
-      net = in;
+      net_ = in;
     }
     
     void removeFromNet() override {
-      net = nullptr;
+      net_ = nullptr;
     }
   protected:
-    frLayerNum  layer;
-    gcPin*      pin;
-    gcNet*      net;
-    gcSegment*  prev_edge;
-    gcSegment*  next_edge;
-    gcCorner*   lowCorner;
-    gcCorner*   highCorner;
-    bool        fixed;
+    frLayerNum  layer_;
+    gcPin*      pin_;
+    gcNet*      net_;
+    gcSegment*  prev_edge_;
+    gcSegment*  next_edge_;
+    gcCorner*   lowCorner_;
+    gcCorner*   highCorner_;
+    bool        fixed_;
   };
 
   class gcRect: public gtl::rectangle_data<frCoord>, public gcShape {
   public:
     // constructors
-    gcRect() : gtl::rectangle_data<frCoord>(), gcShape(), layer(-1), pin(nullptr), net(nullptr), fixed(false) {}
-    gcRect(const gcRect& in): gtl::rectangle_data<frCoord>(in), gcShape(in), layer(in.layer), pin(in.pin), net(in.net), fixed(in.fixed) {}
+    gcRect() : gtl::rectangle_data<frCoord>(), gcShape(), layer_(-1), pin_(nullptr), net_(nullptr), fixed_(false) {}
+    gcRect(const gcRect& in): gtl::rectangle_data<frCoord>(in), gcShape(in), layer_(in.layer_), pin_(in.pin_), net_(in.net_), fixed_(in.fixed_) {}
     gcRect(const gtl::rectangle_data<frCoord> &shapeIn, frLayerNum layerIn, gcPin* pinIn, gcNet* netIn, bool fixedIn):
-      gtl::rectangle_data<frCoord>(shapeIn), layer(layerIn), pin(pinIn), net(netIn), fixed(fixedIn) {}
+      gtl::rectangle_data<frCoord>(shapeIn), layer_(layerIn), pin_(pinIn), net_(netIn), fixed_(fixedIn) {}
     // setters
     void setRect(const gtl::rectangle_data<frCoord> &in) {
       gtl::rectangle_data<frCoord>::operator =(in);
@@ -291,7 +291,7 @@ namespace fr {
       gtl::yh((*this), in.top());
     }
     void setFixed(bool in) {
-      fixed = in;
+      fixed_ = in;
     }
     // getters
     frCoord length() const {
@@ -303,7 +303,7 @@ namespace fr {
                       gtl::yh(*this) - gtl::yl(*this));
     }
     bool isFixed() const {
-      return fixed;
+      return fixed_;
     }
 
     // others
@@ -315,10 +315,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from gcPinFig
@@ -328,19 +328,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (pin);
+      return pin_;
     }
     
     gcPin* getPin() const override {
-      return pin;
+      return pin_;
     }
     
     void addToPin(gcPin* in) override {
-      pin = in;
+      pin_ = in;
     }
     
     void removeFromPin() override {
-      pin = nullptr;
+      pin_ = nullptr;
     }
 
     /* from gcConnFig
@@ -350,35 +350,35 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (net);
+      return net_;
     }
     
     gcNet* getNet() const override {
-      return net;
+      return net_;
     }
     
     void addToNet(gcNet* in) override {
-      net = in;
+      net_ = in;
     }
     
     void removeFromNet() override {
-      net = nullptr;
+      net_ = nullptr;
     }
 
   protected:
-    frLayerNum                   layer;
-    gcPin*                       pin;
-    gcNet*                       net;
-    bool                         fixed;
+    frLayerNum                   layer_;
+    gcPin*                       pin_;
+    gcNet*                       net_;
+    bool                         fixed_;
   };
 
   class gcPolygon: public gtl::polygon_90_with_holes_data<frCoord>, public gcShape {
   public:
     // constructors
-    gcPolygon(): gtl::polygon_90_with_holes_data<frCoord>(), gcShape(), layer(-1), pin(nullptr), net(nullptr) {}
-    gcPolygon(const gcPolygon& in): gtl::polygon_90_with_holes_data<frCoord>(in), gcShape(in), layer(in.layer), pin(in.pin), net(in.net) {}
+    gcPolygon(): gtl::polygon_90_with_holes_data<frCoord>(), gcShape(), layer_(-1), pin_(nullptr), net_(nullptr) {}
+    gcPolygon(const gcPolygon& in): gtl::polygon_90_with_holes_data<frCoord>(in), gcShape(in), layer_(in.layer_), pin_(in.pin_), net_(in.net_) {}
     gcPolygon(const gtl::polygon_90_with_holes_data<frCoord> &shapeIn, frLayerNum layerIn, gcPin* pinIn, gcNet* netIn):
-              gtl::polygon_90_with_holes_data<frCoord>(shapeIn), layer(layerIn), pin(pinIn), net(netIn) {
+              gtl::polygon_90_with_holes_data<frCoord>(shapeIn), layer_(layerIn), pin_(pinIn), net_(netIn) {
     }
     // setters
     void setPolygon(const gtl::polygon_90_with_holes_data<frCoord> &in) {
@@ -411,10 +411,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from gcPinFig
@@ -424,19 +424,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (pin);
+      return pin_;
     }
     
     gcPin* getPin() const override {
-      return pin;
+      return pin_;
     }
     
     void addToPin(gcPin* in) override {
-      pin = in;
+      pin_ = in;
     }
     
     void removeFromPin() override {
-      pin = nullptr;
+      pin_ = nullptr;
     }
 
     /* from gcConnFig
@@ -446,26 +446,26 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (net);
+      return net_;
     }
     
     gcNet* getNet() const override {
-      return net;
+      return net_;
     }
     
     void addToNet(gcNet* in) override {
-      net = in;
+      net_ = in;
     }
     
     void removeFromNet() override {
-      net = nullptr;
+      net_ = nullptr;
     }
     
     // edge iterator
   protected:
-    frLayerNum layer;
-    gcPin*     pin;
-    gcNet*     net;
+    frLayerNum layer_;
+    gcPin*     pin_;
+    gcNet*     net_;
   };
 
 }

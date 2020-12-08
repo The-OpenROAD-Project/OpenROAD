@@ -40,13 +40,13 @@ namespace fr {
   public:
     // constructors
     frInstBlockage(frInst* inst, frBlockage* blockage)
-       : inst(inst), blockage(blockage) {}
+       : inst_(inst), blockage_(blockage) {}
     // getters
     frInst* getInst() const {
-      return inst;
+      return inst_;
     }
     frBlockage* getBlockage() const {
-      return blockage;
+      return blockage_;
     }
     // setters
     // others
@@ -54,8 +54,8 @@ namespace fr {
       return frcInstBlockage;
     }
   protected:
-    frInst*     inst;
-    frBlockage* blockage;
+    frInst*     inst_;
+    frBlockage* blockage_;
   };
 }
 

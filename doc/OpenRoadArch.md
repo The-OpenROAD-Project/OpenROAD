@@ -100,11 +100,11 @@ to get individual tools from the OpenROAD object can be defined.
 
 ### Initialization (c++ tools only)
 
-The OpenRoad class only has pointers to each tools with functions to
+The OpenRoad class has pointers to each tools with functions to
 get each tool.  Each tool has (at a minimum) a function to make an
 instance of the tool class, and an initialization function that is
 called after all of the tools have been made, and a funtion to delete
-the tool. This small header does NOT include the class definition for
+the tool. This small header does **not** include the class definition for
 the tool so that the OpenRoad framework does not have to know anything
 about the tool internals or include a gigantic header file.
 

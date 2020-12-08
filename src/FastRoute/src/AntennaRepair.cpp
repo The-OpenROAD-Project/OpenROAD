@@ -54,12 +54,12 @@ namespace grt {
 using ord::error;
 
 AntennaRepair::AntennaRepair(GlobalRouter *grouter,
-                 antenna_checker::AntennaChecker* arc,
+                 ant::AntennaChecker* arc,
                  dpl::Opendp* opendp, odb::dbDatabase* db)
 	: _grouter(grouter), _arc(arc), _opendp(opendp), _db(db)
-	{
-		_block = _db->getChip()->getBlock();
-	}
+{
+  _block = _db->getChip()->getBlock();
+}
 
 int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 					  int maxRoutingLayer, odb::dbMTerm* diodeMTerm)
@@ -108,8 +108,9 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     odb::orderWires(db_net, false, false);
 
-    std::vector<VINFO> netViol = _arc->get_net_antenna_violations(
-                                      db_net, diodeMTerm->getMaster()->getConstName(), diodeMTerm->getConstName());
+    std::vector<ant::VINFO> netViol =
+      _arc->get_net_antenna_violations(db_net, diodeMTerm->getMaster()->getConstName(),
+                                       diodeMTerm->getConstName());
     if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
       _grouter->addDirtyNet(db_net);
