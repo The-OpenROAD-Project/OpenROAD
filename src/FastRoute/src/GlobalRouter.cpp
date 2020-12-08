@@ -1521,9 +1521,9 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
 void GlobalRouter::addRemainingGuides(NetRouteMap &routes, std::vector<Net*>& nets)
 {
   for (Net* net : nets) {
-    odb::dbNet* db_net = net->getDbNet();
-    GRoute &route = routes[db_net];
     if (net->getNumPins() > 1) {
+      odb::dbNet* db_net = net->getDbNet();
+      GRoute &route = routes[db_net];
       if (route.empty()) {
         addGuidesForLocalNets(db_net, route);
       } else {
