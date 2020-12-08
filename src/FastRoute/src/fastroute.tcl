@@ -252,7 +252,7 @@ proc global_route { args } {
       ord::error "Wrong number of arguments for origin"
     }
   } else {
-    grt::set_grid_origin -1 -1
+    grt::set_grid_origin 0 0
   }
 
   if { [info exists keys(-overflow_iterations) ] } {
