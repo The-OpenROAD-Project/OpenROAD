@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 
-namespace gr {
+namespace grt {
 
 #define TRUE 1
 #define FALSE 0
@@ -46,5 +46,5 @@ struct Point
   long x, y;
 };
 
-}  // namespace gr
+}  // namespace grt
 #endif /* __GLOBAL_H__ */

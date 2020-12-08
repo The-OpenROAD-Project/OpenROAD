@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 
-namespace pin_placer {
+namespace ppl {
 
 using odb::Point;
 using odb::Rect;
@@ -161,5 +161,5 @@ class Netlist
   odb::Rect getBB(int, odb::Point);
 };
 
-}  // namespace pin_placer
+}  // namespace ppl
 #endif /* __NETLIST_H_ */

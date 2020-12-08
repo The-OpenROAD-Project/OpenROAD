@@ -47,7 +47,7 @@
 
 #define HCOST 5000
 
-namespace gr {
+namespace grt {
 
 float* costHVH;  // Horizontal first Z
 float* costVHV;  // Vertical first Z
@@ -1971,4 +1971,4 @@ void newrouteLInMaze(int netID)
       sttrees[netID].edges[i].route.type = NOROUTE;
   }  // loop i
 }
-}  // namespace gr
+}  // namespace grt

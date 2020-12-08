@@ -38,6 +38,8 @@
 #include <unordered_set>
 #include <memory>
 
+namespace mpl { 
+
 using std::string;
 using std::vector;
 using std::pair;
@@ -45,12 +47,6 @@ using std::unordered_map;
 using std::unordered_set;
 using std::cout;
 using std::endl;
-//using MacroPlace::Partition;
-
-using namespace MacroPlace;
-using namespace odb;
-
-namespace MacroPlace { 
 
 typedef vector<pair<Partition, Partition>> TwoPartitions;
 
@@ -64,8 +60,8 @@ static vector<pair<Partition, Partition>> GetPart(
 
 static void UpdateMacroPartMap( 
     MacroCircuit& mckt,
-    MacroPlace::Partition& part, 
-    unordered_map<MacroPlace::PartClass, vector<int>, 
+    mpl::Partition& part, 
+    unordered_map<mpl::PartClass, vector<int>, 
     PartClassHash, PartClassEqual> &macroPartMap );
 
 
@@ -80,7 +76,7 @@ PrintAllSets(FILE* fp, Layout& layout,
     vector< vector<Partition> >& allSets);
 
 static void 
-UpdateOpendbCoordi(dbDatabase* db, MacroCircuit& mckt); 
+UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt); 
 
 void 
 MacroCircuit::PlaceMacros(int& solCount) {
@@ -283,7 +279,7 @@ MacroCircuit::PlaceMacros(int& solCount) {
   log_->infoInt( "NumFinalSols", solCount);
 
   // bestset DEF writing
-  std::vector<MacroPlace::Partition> bestSet = allSets[bestSetIdx];
+  std::vector<mpl::Partition> bestSet = allSets[bestSetIdx];
 
   for( auto& curBestPart: bestSet) { 
     UpdateMacroCoordi(curBestPart);
@@ -296,15 +292,15 @@ MacroCircuit::PlaceMacros(int& solCount) {
 // 
 // update opendb dataset from mckt.
 static void 
-UpdateOpendbCoordi(dbDatabase* db, MacroCircuit& mckt) {
-  dbTech* tech = db->getTech();
+UpdateOpendbCoordi(odb::dbDatabase* db, MacroCircuit& mckt) {
+  odb::dbTech* tech = db->getTech();
   const int dbu = tech->getDbUnitsPerMicron();
   
   for(auto& curMacro : mckt.macroStor) {
     curMacro.dbInstPtr->setLocation( 
         static_cast<int>(round(curMacro.lx * dbu)), 
         static_cast<int>(round(curMacro.ly * dbu))) ;
-    curMacro.dbInstPtr->setPlacementStatus( dbPlacementStatus::LOCKED ) ;
+    curMacro.dbInstPtr->setPlacementStatus( odb::dbPlacementStatus::LOCKED ) ;
   }
 }
 
@@ -338,8 +334,8 @@ CutRoundUp(
 // second: macro candidates.
 static void UpdateMacroPartMap( 
     MacroCircuit& mckt,
-    MacroPlace::Partition& part, 
-    unordered_map<MacroPlace::PartClass, vector<int>, 
+    mpl::Partition& part, 
+    unordered_map<mpl::PartClass, vector<int>, 
     PartClassHash, PartClassEqual>& macroPartMap ) {
 
 
@@ -503,7 +499,7 @@ static vector<pair<Partition, Partition>> GetPart(
 
     // Fill in the Partitioning information
     PartClass lClass = None, uClass = None;
-    if( partition.partClass == MacroPlace::PartClass::ALL ) {
+    if( partition.partClass == mpl::PartClass::ALL ) {
 
       lClass = (isHorizontal)? W : S;
       uClass = (isHorizontal)? E : N;
@@ -626,3 +622,4 @@ static vector<pair<Partition, Partition>> GetPart(
 }
 
 }
+

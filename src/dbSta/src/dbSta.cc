@@ -99,9 +99,14 @@ public:
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
 private:
+  void highlightInst(const Pin *pin,
+                     gui::Painter &painter);
+
   dbSta *sta_;
   // Expanded path is owned by PathRenderer.
   PathExpanded *path_;
+  static gui::Painter::Color signal_color;
+  static gui::Painter::Color clock_color;
 };
 
 dbSta *
@@ -416,6 +421,9 @@ dbSta::highlight(PathRef *path)
   }
 }
 
+gui::Painter::Color PathRenderer::signal_color = gui::Painter::red;
+gui::Painter::Color PathRenderer::clock_color = gui::Painter::yellow;
+
 PathRenderer::PathRenderer(dbSta *sta) :
   sta_(sta),
   path_(nullptr)
@@ -451,24 +459,32 @@ PathRenderer::drawObjects(gui::Painter &painter)
         const Pin *prev_pin = prev_path->pin(sta_);
         Point pt1 = network->location(pin);
         Point pt2 = network->location(prev_pin);
-        gui::Painter::Color color = sta_->isClock(pin)
-          ? gui::Painter::yellow
-          : gui::Painter::red;
-        painter.setPen(color, true);
+        gui::Painter::Color wire_color = sta_->isClock(pin) ? clock_color : signal_color;
+        painter.setPen(wire_color, true);
         painter.drawLine(pt1, pt2);
-
-        // Color in the instances to make them more visible.
-        const Instance *inst = network->instance(pin);
-        if (!network->isTopInstance(inst)) {
-          dbInst *db_inst = network->staToDb(inst);
-          odb::dbBox *bbox = db_inst->getBBox();
-          odb::Rect rect;
-          bbox->getBox(rect);
-          painter.setBrush(color);
-          painter.drawRect(rect);
-        }
+        highlightInst(prev_pin, painter);
+        if (i == path_->size() - 1)
+          highlightInst(pin, painter);
       }
     }
+  }
+}
+
+// Color in the instances to make them more visible.
+void
+PathRenderer::highlightInst(const Pin *pin,
+                            gui::Painter &painter)
+{
+  dbNetwork *network = sta_->getDbNetwork();
+  const Instance *inst = network->instance(pin);
+  if (!network->isTopInstance(inst)) {
+    dbInst *db_inst = network->staToDb(inst);
+    odb::dbBox *bbox = db_inst->getBBox();
+    odb::Rect rect;
+    bbox->getBox(rect);
+    gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
+    painter.setBrush(inst_color);
+    painter.drawRect(rect);
   }
 }
 

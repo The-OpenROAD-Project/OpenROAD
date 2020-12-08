@@ -240,7 +240,7 @@ proc ensure_units_initialized { } {
 proc clear {} {
   sta::clear_network
   sta::clear_sta
-  FastRoute::clear_fastroute
+  grt::clear_fastroute
   [get_db] clear
 }
 

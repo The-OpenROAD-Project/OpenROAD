@@ -36,10 +36,11 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+
 #include "opendp/Opendp.h"
 #include "openroad/Error.hh"
 
-namespace opendp {
+namespace dpl {
 
 using std::max;
 using std::min;
@@ -314,4 +315,4 @@ Opendp::isWtClass(const Cell *cell) const
   return type == dbMasterType::CORE_WELLTAP;
 }
 
-}  // namespace opendp
+}  // namespace

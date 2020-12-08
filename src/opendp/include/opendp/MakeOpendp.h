@@ -34,7 +34,7 @@
 
 #pragma once
 
-namespace opendp {
+namespace dpl {
 class Opendp;
 }
 
@@ -42,11 +42,11 @@ namespace ord {
 
 class OpenRoad;
 
-opendp::Opendp *
+dpl::Opendp *
 makeOpendp();
 void
 initOpendp(OpenRoad *openroad);
 void
-deleteOpendp(opendp::Opendp *opendp);
+deleteOpendp(dpl::Opendp *opendp);
 
 }  // namespace ord

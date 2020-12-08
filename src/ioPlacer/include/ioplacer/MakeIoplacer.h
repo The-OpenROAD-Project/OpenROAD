@@ -36,7 +36,7 @@
 #ifndef MAKE_IOPLACER
 #define MAKE_IOPLACER
 
-namespace pin_placer {
+namespace ppl {
 class IOPlacer;
 }
 
@@ -44,11 +44,11 @@ namespace ord {
 
 class OpenRoad;
 
-pin_placer::IOPlacer* makeIoplacer();
+ppl::IOPlacer* makeIoplacer();
 
 void initIoplacer(OpenRoad* openroad);
 
-void deleteIoplacer(pin_placer::IOPlacer* ioplacer);
+void deleteIoplacer(ppl::IOPlacer* ioplacer);
 
 }  // namespace ord
 

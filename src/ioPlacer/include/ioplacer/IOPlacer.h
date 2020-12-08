@@ -52,7 +52,7 @@ class dbTech;
 class dbBlock;
 }
 
-namespace pin_placer {
+namespace ppl {
 
 using odb::Point;
 using odb::Rect;
@@ -178,5 +178,5 @@ class IOPlacer
   bool _verbose = false;
 };
 
-}  // namespace pin_placer
+}  // namespace ppl
 #endif /* __IOPLACEMENTKERNEL_H_ */

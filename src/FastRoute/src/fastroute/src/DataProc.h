@@ -42,7 +42,7 @@
 
 #define MAXLEN 20000
 
-namespace gr {
+namespace grt {
 
 using boost::multi_array;
 
@@ -161,6 +161,6 @@ T ADIFF(T x, T y)
     return (y - x);
   }
 }
-}  // namespace gr
+}  // namespace grt
 
 #endif /* __DATAPROC_H__ */

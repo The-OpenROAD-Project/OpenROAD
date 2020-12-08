@@ -33,7 +33,7 @@
 
 #include "hashUtil.h"
 
-namespace MacroPlace {
+namespace mpl {
 
 std::size_t 
 PointerPairHash::operator()(const std::pair<void*, void*> &k) const {

@@ -37,7 +37,7 @@
 #ifndef MAKE_TAPCELL_H
 #define MAKE_TAPCELL_H
 
-namespace tapcell {
+namespace tap {
 class Tapcell;
 }
 
@@ -45,11 +45,11 @@ namespace ord {
 
 class OpenRoad;
 
-tapcell::Tapcell *
+tap::Tapcell *
 makeTapcell();
 
 void
-deleteTapcell(tapcell::Tapcell *tapcell);
+deleteTapcell(tap::Tapcell *tapcell);
 
 void
 initTapcell(OpenRoad *openroad);

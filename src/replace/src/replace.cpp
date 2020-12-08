@@ -152,7 +152,7 @@ void Replace::setDb(odb::dbDatabase* db) {
 void Replace::setSta(sta::dbSta* sta) {
   sta_ = sta;
 }
-void Replace::setFastRoute(gr::GlobalRouter* fr) {
+void Replace::setFastRoute(grt::GlobalRouter* fr) {
   fr_ = fr;
 }
 void Replace::doInitialPlace() {

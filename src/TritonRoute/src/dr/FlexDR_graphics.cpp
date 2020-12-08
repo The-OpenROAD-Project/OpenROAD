@@ -105,10 +105,10 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   painter.setPen(layer, /* cosmetic */ true);
   for (frPoint& pt : points_by_layer_[layerNum]) {
-    painter.drawLine({pt.x() - 100, pt.y() - 100},
-                     {pt.x() + 100, pt.y() + 100});
-    painter.drawLine({pt.x() - 100, pt.y() + 100},
-                     {pt.x() + 100, pt.y() - 100});
+    painter.drawLine({pt.x() - 20, pt.y() - 20},
+                     {pt.x() + 20, pt.y() + 20});
+    painter.drawLine({pt.x() - 20, pt.y() + 20},
+                     {pt.x() + 20, pt.y() - 20});
   }
 
   // Draw markers
@@ -164,8 +164,12 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   if (current_iter_ < settings_->iter) {
     return;
   }
-  status("Start worker: " + std::to_string(in->getMarkers().size())
-         + " markers");
+  frPoint origin;
+  in->getDesign()->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(),
+                                              origin);
+  status("Start worker: gcell origin ("
+         + std::to_string(origin.x()) + ", " + std::to_string(origin.y()) + ") "
+         + std::to_string(in->getMarkers().size()) + " markers");
 
   worker_ = in;
   net_ = nullptr;

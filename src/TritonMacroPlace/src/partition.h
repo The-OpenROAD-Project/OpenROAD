@@ -31,16 +31,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __MACRO_PLACER_PARTITION__
-#define __MACRO_PLACER_PARTITION__
-
+#pragma once
 
 #include <string>
 #include <vector>
 #include <memory>
 #include <unordered_map>
 
-namespace MacroPlace {
+namespace mpl {
 
 class MacroCircuit;
 class Macro;
@@ -107,20 +105,16 @@ class Partition {
 };
 
 struct PartClassHash {
-  std::size_t operator()(const MacroPlace::PartClass &k) const {
+  std::size_t operator()(const mpl::PartClass &k) const {
     return k;
   }
 };
 
 struct PartClassEqual {
-  bool operator()(const MacroPlace::PartClass &p1,
-      const MacroPlace::PartClass &p2) const {
+  bool operator()(const mpl::PartClass &p1,
+      const mpl::PartClass &p2) const {
     return p1 == p2;
   }
 };
 
 }
-
-
-
-#endif

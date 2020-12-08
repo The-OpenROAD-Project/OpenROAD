@@ -481,6 +481,8 @@ Don't forced someone reading your code to use a super wide window.
 cmake
 
 Don't change compile flags in cmake files.
+These are set at the top level and should not be overriden.
+
  set(CMAKE_CXX_FLAGS "-O3")
  set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
  set(CMAKE_CXX_FLAGS_RELEASE "-O3")

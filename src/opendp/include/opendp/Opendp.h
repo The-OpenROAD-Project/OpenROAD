@@ -47,7 +47,7 @@
 
 #include "opendb/db.h"
 
-namespace opendp {
+namespace dpl {
 
 using std::map;
 using std::set;
@@ -417,4 +417,4 @@ divCeil(int dividend, int divisor);
 int
 divFloor(int dividend, int divisor);
 
-}  // namespace opendp
+}  // namespace

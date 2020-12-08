@@ -34,7 +34,7 @@
 #include "macro.h"
 #include <iostream>
 
-namespace MacroPlace{ 
+namespace mpl {
 
 
 Macro::Macro( std::string _name, std::string _type, 
@@ -60,6 +60,7 @@ void Macro::Dump() {
   std::cout << haloX << " " << haloY << " " 
     << channelX << " " << channelY << std::endl;
 }
+
 }
 
 MacroLocalInfo::MacroLocalInfo() : 

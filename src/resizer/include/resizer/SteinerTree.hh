@@ -43,9 +43,18 @@
 
 #include "flute.h"
 
-namespace sta {
+namespace rsz {
 
 using odb::Point;
+
+using sta::UnorderedMap;
+using sta::Vector;
+using sta::Network;
+using sta::dbNetwork;
+using sta::Net;
+using sta::Pin;
+using sta::PinSeq;
+using sta::hashIncr;
 
 class SteinerTree;
 
@@ -63,7 +72,7 @@ class PointHash
 public:
   size_t operator()(const Point &pt) const
   {
-    size_t hash = hash_init_value;
+    size_t hash = sta::hash_init_value;
     hashIncr(hash, pt.x());
     hashIncr(hash, pt.y());
     return hash;
@@ -81,7 +90,7 @@ public:
   }
 };
 
-// Wrapper for flute::Tree
+// Wrapper for stt::Tree
 class SteinerTree
 {
 public:
@@ -116,12 +125,12 @@ public:
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
   void findLeftRights(const Network *network);
-  void setTree(flute::Tree tree,
+  void setTree(stt::Tree tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
   void writeSVG(const Network *network,
                 const char *filename);
-  flute::Tree &fluteTree() { return tree_; }
+  stt::Tree &fluteTree() { return tree_; }
 
   static SteinerPt null_pt;
 
@@ -139,7 +148,7 @@ protected:
                       SteinerPtSeq &adj3);
   void checkSteinerPt(SteinerPt pt) const;
 
-  flute::Tree tree_;
+  stt::Tree tree_;
   PinSeq pins_;
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;

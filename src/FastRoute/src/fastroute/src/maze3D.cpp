@@ -47,7 +47,7 @@
 #include "route.h"
 #include "utility.h"
 
-namespace gr {
+namespace grt {
 
 #define PARENT(i) (i - 1) / 2
 //#define PARENT(i) ((i-1)>>1)
@@ -1866,4 +1866,4 @@ void getLayerRange(TreeNode* treenodes, int edgeID, int n1, int deg)
   }
 }
 
-}  // namespace gr
+}  // namespace grt

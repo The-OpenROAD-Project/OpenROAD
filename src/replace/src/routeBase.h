@@ -41,7 +41,7 @@ namespace odb {
   class dbDatabase;
 }
 
-namespace gr {
+namespace grt {
   class GlobalRouter;
 }
 
@@ -340,7 +340,7 @@ class RouteBase {
     RouteBase();
     RouteBase(RouteBaseVars rbVars,
         odb::dbDatabase* db,
-        gr::GlobalRouter* grouter,
+        grt::GlobalRouter* grouter,
         std::shared_ptr<NesterovBase> nb,
         std::shared_ptr<Logger> log);
     ~RouteBase();
@@ -370,7 +370,7 @@ class RouteBase {
   private:
     RouteBaseVars rbVars_;
     odb::dbDatabase* db_;
-    gr::GlobalRouter* grouter_;
+    grt::GlobalRouter* grouter_;
 
     std::shared_ptr<NesterovBase> nb_;
     std::shared_ptr<Logger> log_;

@@ -1,4 +1,4 @@
-%module mplace
+%module mpl
 
 %{
 #include "openroad/OpenRoad.hh"
@@ -6,15 +6,18 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-MacroPlace::TritonMacroPlace*
+mpl::TritonMacroPlace*
 getTritonMp();
 }
 
-using ord::getTritonMp;
-using MacroPlace::TritonMacroPlace;
 %}
 
 %inline %{
+
+namespace mpl {
+
+using ord::getTritonMp;
+using mpl::TritonMacroPlace;
 
 void
 set_macro_place_global_config_cmd(const char* file) 
@@ -50,5 +53,7 @@ get_macro_place_solution_count_cmd()
   TritonMacroPlace* tritonMp = getTritonMp();
   return tritonMp->getSolutionCount();
 } 
+
+}
 
 %} // inline

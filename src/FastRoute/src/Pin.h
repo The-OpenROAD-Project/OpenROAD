@@ -42,7 +42,7 @@
 
 #include "opendb/db.h"
 
-namespace gr {
+namespace grt {
 
 class Net;
 
@@ -105,4 +105,4 @@ class Pin
   bool _connectedToPad;
 };
 
-}  // namespace gr
+}  // namespace grt
