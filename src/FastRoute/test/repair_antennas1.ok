@@ -17,7 +17,7 @@ Notice 0: Finished DEF file: gcd_sky130.def
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 Layer 2 pitch: 0.37
 Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
@@ -93,7 +93,7 @@ delta HPWL                  0 %
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.000000
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 Layer 2 pitch: 0.370000
 Layer 3 pitch: 0.480000
 Layer 4 pitch: 0.740000
