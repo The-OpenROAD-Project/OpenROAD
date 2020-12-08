@@ -34,8 +34,8 @@ using namespace fr;
 void FlexTAWorker::initTracks() {
   //bool enableOutput = true;
   bool enableOutput = false;
-  trackLocs.clear();
-  trackLocs.resize(getDesign()->getTech()->getLayers().size());
+  trackLocs_.clear();
+  trackLocs_.resize(getDesign()->getTech()->getLayers().size());
   vector<set<frCoord> > trackCoordSets(getDesign()->getTech()->getLayers().size());
   // uPtr for tp
   for (int lNum = 0; lNum < (int)getDesign()->getTech()->getLayers().size(); lNum++) {
@@ -81,7 +81,7 @@ void FlexTAWorker::initTracks() {
       if (enableOutput) {
         cout <<" " <<coord * 1.0 / getDesign()->getTopBlock()->getDBUPerUU();
       }
-      trackLocs[i].push_back(coord);
+      trackLocs_[i].push_back(coord);
     }
     if (enableOutput) {
       cout <<endl;
@@ -121,7 +121,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide, frCoord &maxBegin, frCo
     }
   } 
   nbrGuides.clear();
-  if (layerNum + 2 < (int)design->getTech()->getLayers().size()) {
+  if (layerNum + 2 < (int) design_->getTech()->getLayers().size()) {
     rq->queryGuide(box, layerNum + 2, nbrGuides);
     for (auto &nbrGuide: nbrGuides) {
       if (nbrGuide->getNet() == net) {
@@ -321,7 +321,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide, frCoord &minBegin, 
     if (layerNum - 2 >= BOTTOM_ROUTING_LAYER) {
       rq->queryGuide(box, layerNum - 2, nbrGuides);
     } 
-    if (layerNum + 2 < (int)design->getTech()->getLayers().size()) {
+    if (layerNum + 2 < (int) design_->getTech()->getLayers().size()) {
       rq->queryGuide(box, layerNum + 2, nbrGuides);
     } 
     for (auto &nbrGuide: nbrGuides) {
@@ -494,7 +494,7 @@ void FlexTAWorker::initIroutes() {
   if (enableOutput) {
     bool   isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    for (auto &iroute: iroutes) {
+    for (auto &iroute: iroutes_) {
       frPoint bp, ep;
       frCoord bc, ec, trackLoc;
       cout <<iroute->getId() <<" " <<iroute->getGuide()->getNet()->getName();
@@ -531,7 +531,7 @@ void FlexTAWorker::initCosts() {
   frCoord bc, ec;
   // init cost
   if (isInitTA()) {
-    for (auto &iroute: iroutes) {
+    for (auto &iroute: iroutes_) {
       auto pitch = getDesign()->getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
       for (auto &uPinFig: iroute->getFigs()) {
         if (uPinFig->typeId() == tacPathSeg) {
@@ -546,20 +546,20 @@ void FlexTAWorker::initCosts() {
   } else {
     auto &workerRegionQuery = getWorkerRegionQuery();
     // update worker rq
-    for (auto &iroute: iroutes) {
+    for (auto &iroute: iroutes_) {
       for (auto &uPinFig: iroute->getFigs()) {
         workerRegionQuery.add(uPinFig.get());
         addCost(uPinFig.get());
       }
     }
-    for (auto &iroute: extIroutes) {
+    for (auto &iroute: extIroutes_) {
       for (auto &uPinFig: iroute->getFigs()) {
         workerRegionQuery.add(uPinFig.get());
         addCost(uPinFig.get());
       }
     }
     // update iroute cost
-    for (auto &iroute: iroutes) {
+    for (auto &iroute: iroutes_) {
       frUInt4 drcCost = 0;
       frCoord trackLoc = std::numeric_limits<frCoord>::max();
       for (auto &uPinFig: iroute->getFigs()) {
@@ -579,7 +579,7 @@ void FlexTAWorker::initCosts() {
       }
       assignIroute_getCost(iroute.get(), trackLoc, drcCost);
       iroute->setCost(drcCost);
-      totCost += drcCost;
+      totCost_ += drcCost;
       if (enableOutput && !isInitTA()) {
         bool   isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
         double dbu = getDesign()->getTopBlock()->getDBUPerUU();
@@ -616,11 +616,11 @@ void FlexTAWorker::sortIroutes() {
   bool enableOutput = false;
   // init cost
   if (isInitTA()) {
-    for (auto &iroute: iroutes) {
+    for (auto &iroute: iroutes_) {
       addToReassignIroutes(iroute.get());
     }
   } else {
-    for (auto &iroute: iroutes) {
+    for (auto &iroute: iroutes_) {
       if (iroute->getCost()) {
         addToReassignIroutes(iroute.get());
       }
@@ -629,7 +629,7 @@ void FlexTAWorker::sortIroutes() {
   if (enableOutput && !isInitTA()) {
     bool   isH = (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    for (auto &iroute: reassignIroutes) {
+    for (auto &iroute: reassignIroutes_) {
       frPoint bp, ep;
       frCoord bc, ec, trackLoc;
       cout <<iroute->getId() <<" " <<iroute->getGuide()->getNet()->getName();
@@ -756,7 +756,7 @@ void FlexTAWorker::initFixedObjs() {
             }
           }
           // up-via
-          if (layerNum + 2 < (int)design->getTech()->getLayers().size() && 
+          if (layerNum + 2 < (int) design_->getTech()->getLayers().size() && 
               getTech()->getLayer(layerNum + 2)->getType() == frLayerTypeEnum::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum + 1);
             frBox viaBox;
@@ -801,7 +801,7 @@ void FlexTAWorker::initFixedObjs() {
               initFixedObjs_helper(box, bloatDist, layerNum - 2, nullptr);
             }
             // up-via
-            if (layerNum + 2 < (int)design->getTech()->getLayers().size() && 
+            if (layerNum + 2 < (int) design_->getTech()->getLayers().size() && 
                 getTech()->getLayer(layerNum + 2)->getType() == frLayerTypeEnum::ROUTING) {
               auto cutLayer = getTech()->getLayer(layerNum + 1);
               bloatDist = initFixedObjs_calcOBSBloatDistVia(cutLayer->getDefaultViaDef(), layerNum, bounds);
@@ -883,7 +883,7 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject *obj, const frLa
 }
 
 void FlexTAWorker::init() {
-  rq.init();
+  rq_.init();
   initTracks();
   if (getTAIter() != -1) {
     initFixedObjs();

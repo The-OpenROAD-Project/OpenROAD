@@ -115,6 +115,12 @@ namespace ant {
 class AntennaChecker;
 }
 
+
+namespace partition {
+class PartitionMgr;
+}
+
+
 namespace ord {
 
 using std::string;
@@ -148,6 +154,7 @@ public:
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
+  partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
@@ -222,6 +229,7 @@ private:
   psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
+  partition::PartitionMgr *partitionMgr_; 
 
   std::set<Observer *> observers_;
 

@@ -52,7 +52,7 @@ void FlexRP::prep_viaForbiddenThrough() {
 
   int i = 0;
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
       continue;
     }
     frViaDef* downVia = nullptr;
@@ -82,7 +82,7 @@ void FlexRP::prep_viaForbiddenThrough_helper(const frLayerNum &lNum,
     isThroughAllowed = false;
   }
 
-  tech->viaForbiddenThrough[tableLayerIdx][tableEntryIdx] = !isThroughAllowed;
+  tech_->viaForbiddenThrough[tableLayerIdx][tableEntryIdx] = !isThroughAllowed;
 }
 
 bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum &lNum,
@@ -106,7 +106,7 @@ void FlexRP::prep_lineForbiddenLen() {
 
   int i = 0; 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
       continue;
     }
     prep_lineForbiddenLen_helper(lNum, i, 0, true , true );
@@ -139,20 +139,20 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum &lNum,
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech->line2LineForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->line2LineForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_lineForbiddenLen_minSpc(const frLayerNum &lNum,
                                           const bool isZShape,
                                           const bool isCurrDirX,
                                           vector<pair<frCoord, frCoord> > &forbiddenRanges) {
-  frCoord defaultWidth = tech->getLayer(lNum)->getWidth();
+  frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
 
   frCoord minNonOverlapDist = defaultWidth;
 
   frCoord minReqDist = INT_MIN;
-  frCoord prl = isZShape ? defaultWidth : tech->getLayer(lNum)->getPitch();
-  auto con = tech->getLayer(lNum)->getMinSpacing();
+  frCoord prl = isZShape ? defaultWidth : tech_->getLayer(lNum)->getPitch();
+  auto con = tech_->getLayer(lNum)->getMinSpacing();
   if (con) {
     if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
       minReqDist = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
@@ -224,7 +224,7 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum &lNum,
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
 
-  tech->viaForbiddenPlanarLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  tech_->viaForbiddenPlanarLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
 }
 
 void FlexRP::prep_viaForbiddenPlanarLen_minStep(const frLayerNum &lNum,
@@ -300,7 +300,7 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum &lNum,
     return;
   }
 
-  frCoord defaultWidth = tech->getLayer(lNum)->getWidth();
+  frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
 
   frVia via1(viaDef);
   frBox viaBox1;
@@ -462,8 +462,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum &lNum,
   frCoord reqSpcVal = 0;
   // check via1 cut layer to lNum
   auto via1CutLNum = viaDef1->getCutLayerNum();
-  if (!tech->getLayer(via1CutLNum)->getLef58CutSpacingConstraints(false).empty()) {
-    for (auto con: tech->getLayer(via1CutLNum)->getLef58CutSpacingConstraints(false)) {
+  if (!tech_->getLayer(via1CutLNum)->getLef58CutSpacingConstraints(false).empty()) {
+    for (auto con: tech_->getLayer(via1CutLNum)->getLef58CutSpacingConstraints(false)) {
       if (con->getSecondLayerNum() != lNum) {
         continue;
       }
@@ -475,7 +475,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum &lNum,
       forbiddenRanges.push_back(range);
     }
   } else {
-    for (auto con: tech->getLayer(via1CutLNum)->getLef58CutSpacingConstraints(true)) {
+    for (auto con: tech_->getLayer(via1CutLNum)->getLef58CutSpacingConstraints(true)) {
       if (con->getSecondLayerNum() != lNum) {
         continue;
       }
@@ -490,8 +490,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum &lNum,
 
   // check via2 cut layer to lNum
   auto via2CutLNum = viaDef2->getCutLayerNum();
-  if (!tech->getLayer(via2CutLNum)->getLef58CutSpacingConstraints(false).empty()) {
-    for (auto con: tech->getLayer(via2CutLNum)->getLef58CutSpacingConstraints(false)) {
+  if (!tech_->getLayer(via2CutLNum)->getLef58CutSpacingConstraints(false).empty()) {
+    for (auto con: tech_->getLayer(via2CutLNum)->getLef58CutSpacingConstraints(false)) {
       if (con->getSecondLayerNum() != lNum) {
         continue;
       }
@@ -503,7 +503,7 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc(const frLayerNum &lNum,
       forbiddenRanges.push_back(range);
     }
   } else {
-    for (auto con: tech->getLayer(via2CutLNum)->getLef58CutSpacingConstraints(true)) {
+    for (auto con: tech_->getLayer(via2CutLNum)->getLef58CutSpacingConstraints(true)) {
       if (con->getSecondLayerNum() != lNum) {
         continue;
       }

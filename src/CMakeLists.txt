@@ -32,6 +32,7 @@ set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
+set(PARTITIONMGR_HOME ${PROJECT_SOURCE_DIR}/src/PartitionMgr)
 set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antenna_checker)
 set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 set(TRITONROUTE_HOME ${PROJECT_SOURCE_DIR}/src/TritonRoute)
@@ -234,6 +235,7 @@ add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
+add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
 
 if(BUILD_OPENPHYSYN)
@@ -281,6 +283,7 @@ target_include_directories(openroad
   ${ANTENNACHECKER_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
+  ${PARTITIONMGR_HOME}/include
   )
 
 target_link_libraries(openroad
@@ -314,6 +317,7 @@ target_link_libraries(openroad
   lefout
   antennachecker
   zutil
+  PartitionMgr
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

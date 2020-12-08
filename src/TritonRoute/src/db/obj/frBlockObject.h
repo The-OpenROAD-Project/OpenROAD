@@ -37,23 +37,23 @@ namespace fr {
     virtual ~frBlockObject() {}
     // getters
     int getId() const {
-      return id;
+      return id_;
     }
     // setters
     void setId(int in) {
-      id = in;
+      id_ = in;
     }
     // others
     virtual frBlockObjectEnum typeId() const = 0;
     bool operator<(const frBlockObject &rhs) const {
-      return id < rhs.id;
+      return id_ < rhs.id_;
     }
   protected:
     // constructors
-    frBlockObject(): id(-1) {}
-    frBlockObject(const frBlockObject &in): id(in.id) {}
+    frBlockObject(): id_(-1) {}
+    frBlockObject(const frBlockObject &in): id_(in.id_) {}
   private:
-    int id;
+    int id_;
   };
   struct frBlockObjectComp {
     bool operator()(const frBlockObject* lhs, const frBlockObject* rhs) const {

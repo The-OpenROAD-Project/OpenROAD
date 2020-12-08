@@ -52,39 +52,39 @@ namespace fr {
     ~FlexDR();
     // getters
     frTechObject* getTech() const {
-      return design->getTech();
+      return design_->getTech();
     }
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
     frRegionQuery* getRegionQuery() const {
-      return design->getRegionQuery();
+      return design_->getRegionQuery();
     }
     // others
     int main();
     const std::vector<std::pair<frCoord, frCoord> >* getHalfViaEncArea() const {
-      return &halfViaEncArea;
+      return &halfViaEncArea_;
     }
     const std::vector<std::pair<std::vector<frCoord>, std::vector<bool> > >* getVia2ViaMinLen() const {
-      return &via2viaMinLen;
+      return &via2viaMinLen_;
     }
     const std::vector<std::vector<frCoord> >* getVia2ViaMinLenNew() const {
-      return &via2viaMinLenNew;
+      return &via2viaMinLenNew_;
     }
     const std::vector<std::vector<frCoord> >* getVia2TurnMinLen() const {
-      return &via2turnMinLen;
+      return &via2turnMinLen_;
     }
     void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   protected:
-    frDesign*          design;
-    std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin;
+    frDesign*          design_;
+    std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin_;
 
-    std::vector<std::pair<frCoord, frCoord> >  halfViaEncArea; // std::pair<layer1area, layer2area>
+    std::vector<std::pair<frCoord, frCoord> >  halfViaEncArea_; // std::pair<layer1area, layer2area>
     // via2viaMinLen[z][0], last via is down, curr via is down
     // via2viaMinLen[z][1], last via is down, curr via is up
     // via2viaMinLen[z][2], last via is up, curr via is down
     // via2viaMinLen[z][3], last via is up, curr via is up
-    std::vector<std::pair<std::vector<frCoord>, std::vector<bool> > > via2viaMinLen;
+    std::vector<std::pair<std::vector<frCoord>, std::vector<bool> > > via2viaMinLen_;
     
     // via2viaMinLen[z][0], prev via is down, curr via is down, min required x dist
     // via2viaMinLen[z][1], prev via is down, curr via is down, min required y dist
@@ -94,17 +94,17 @@ namespace fr {
     // via2viaMinLen[z][5], prev via is up,   curr via is down, min required y dist
     // via2viaMinLen[z][6], prev via is up,   curr via is up,   min required x dist
     // via2viaMinLen[z][7], prev via is up,   curr via is up,   min required y dist
-    std::vector<std::vector<frCoord> > via2viaMinLenNew;
+    std::vector<std::vector<frCoord> > via2viaMinLenNew_;
 
     // via2turnMinLen[z][0], last via is down, min required x dist
     // via2turnMinLen[z][1], last via is down, min required y dist
     // via2turnMinLen[z][2], last via is up,   min required x dist
     // via2turnMinLen[z][3], last via is up,   min required y dist
-    std::vector<std::vector<frCoord> > via2turnMinLen;
+    std::vector<std::vector<frCoord> > via2turnMinLen_;
 
-    std::vector<int>                   numViols;
-    std::unique_ptr<FlexDRGraphics>    graphics;
-    std::string                        debugNetName;
+    std::vector<int>                   numViols_;
+    std::unique_ptr<FlexDRGraphics>    graphics_;
+    std::string                        debugNetName_;
 
     // others
     void init();
@@ -223,45 +223,45 @@ namespace fr {
       void cleanup();
   private:
     struct Impl;
-    std::unique_ptr<Impl> impl;
+    std::unique_ptr<Impl> impl_;
   };
 
   class FlexDRMinAreaVio {
   public:
     // constructors
-    FlexDRMinAreaVio() : net(nullptr), gapArea(0) {}
-    FlexDRMinAreaVio(drNet* netIn, FlexMazeIdx bpIn, FlexMazeIdx epIn, frCoord gapAreaIn): net(netIn), 
-                                                                                           bp(bpIn),
-                                                                                           ep(epIn),
-                                                                                           gapArea(gapAreaIn) {}
+    FlexDRMinAreaVio() : net_(nullptr), gapArea_(0) {}
+    FlexDRMinAreaVio(drNet* netIn, FlexMazeIdx bpIn, FlexMazeIdx epIn, frCoord gapAreaIn): net_(netIn), 
+                                                                                           bp_(bpIn),
+                                                                                           ep_(epIn),
+                                                                                           gapArea_(gapAreaIn) {}
     // setters
     void setDRNet(drNet *netIn) {
-      net = netIn;
+      net_ = netIn;
     }
     void setPoints(FlexMazeIdx bpIn, FlexMazeIdx epIn) {
-      bp = bpIn;
-      ep = epIn;
+      bp_ = bpIn;
+      ep_ = epIn;
     }
     void setGapArea(frCoord gapAreaIn) {
-      gapArea = gapAreaIn;
+      gapArea_ = gapAreaIn;
     }
 
     // getters
     drNet* getNet() const {
-      return net;
+      return net_;
     }
     void getPoints(FlexMazeIdx &bpIn, FlexMazeIdx &epIn) const {
-      bpIn = bp;
-      epIn = ep;
+      bpIn = bp_;
+      epIn = ep_;
     }
     frCoord getGapArea() const {
-      return gapArea;
+      return gapArea_;
     }
 
   protected:
-    drNet *net;
-    FlexMazeIdx bp, ep;
-    frCoord gapArea;
+    drNet *net_;
+    FlexMazeIdx bp_, ep_;
+    frCoord gapArea_;
   };
 
   class FlexGCWorker;
@@ -269,220 +269,220 @@ namespace fr {
   public:
     // constructors
     FlexDRWorker(FlexDR* drIn): 
-                 design(drIn->getDesign()), dr(drIn), graphics(nullptr), routeBox(), extBox(), drcBox(), drIter(0), mazeEndIter(1),
-                 TEST(false), DRCTEST(false), QUICKDRCTEST(false), enableDRC(true), 
-                 followGuide(false), needRecheck(false), skipRouting(false), ripupMode(1), fixMode(0), workerDRCCost(DRCCOST),
-                 workerMarkerCost(MARKERCOST), workerMarkerBloatWidth(0), 
-                 workerMarkerBloatDepth(0), boundaryPin(), 
-                 pinCnt(0), initNumMarkers(0),
-                 apSVia(), fixedObjs(), planarHistoryMarkers(), viaHistoryMarkers(), 
-                 historyMarkers(std::vector<std::set<FlexMazeIdx> >(3)),
-                 nets(), owner2nets(), owner2pins(), gridGraph(drIn->getDesign(), this), markers(), rq(this), gcWorker(nullptr) /*, drcWorker(drIn->getDesign())*/ {}
+                 design_(drIn->getDesign()), dr_(drIn), graphics_(nullptr), routeBox_(), extBox_(), drcBox_(), drIter_(0), mazeEndIter_(1),
+                 TEST_(false), DRCTEST_(false), QUICKDRCTEST_(false), enableDRC_(true), 
+                 followGuide_(false), needRecheck_(false), skipRouting_(false), ripupMode_(1), fixMode_(0), workerDRCCost_(DRCCOST),
+                 workerMarkerCost_(MARKERCOST), workerMarkerBloatWidth_(0), 
+                 workerMarkerBloatDepth_(0), boundaryPin_(), 
+                 pinCnt_(0), initNumMarkers_(0),
+                 apSVia_(), fixedObjs_(), planarHistoryMarkers_(), viaHistoryMarkers_(), 
+                 historyMarkers_(std::vector<std::set<FlexMazeIdx> >(3)),
+                 nets_(), owner2nets_(), owner2pins_(), gridGraph_(drIn->getDesign(), this), markers_(), rq_(this), gcWorker_(nullptr) /*, drcWorker(drIn->getDesign())*/ {}
     // setters
     void setRouteBox(const frBox &boxIn) {
-      routeBox.set(boxIn);
+      routeBox_.set(boxIn);
     }
     void setExtBox(const frBox &boxIn) {
-      extBox.set(boxIn);
+      extBox_.set(boxIn);
     }
     void setDrcBox(const frBox &boxIn) {
-      drcBox.set(boxIn);
+      drcBox_.set(boxIn);
     }
     void setDRIter(int in) {
-      drIter = in;
+      drIter_ = in;
     }
     void setDRIter(int in, std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &bp) {
-      drIter = in;
-      boundaryPin = std::move(bp);
+      drIter_ = in;
+      boundaryPin_ = std::move(bp);
     }
     void setMazeEndIter(int in) {
-      mazeEndIter = in;
+      mazeEndIter_ = in;
     }
     void setTest(bool in) {
-      TEST = in;
+      TEST_ = in;
     }
     void setQuickDRCTest(bool in) {
-      QUICKDRCTEST = in;
+      QUICKDRCTEST_ = in;
     }
     void setDRCTest(bool in) {
-      DRCTEST = in;
+      DRCTEST_ = in;
     }
     void setEnableDRC(bool in) {
-      enableDRC = in;
+      enableDRC_ = in;
     }
     void setRipupMode(int in) {
-      ripupMode = in;
+      ripupMode_ = in;
     }
     void setFollowGuide(bool in) {
-      followGuide = in;
+      followGuide_ = in;
     }
     void setFixMode(int in) {
-      fixMode = in;
+      fixMode_ = in;
     }
     void setCost(frUInt4 drcCostIn, frUInt4 markerCostIn, frUInt4 markerBloatWidthIn, frUInt4 markerBloatDepthIn) {
-      workerDRCCost = drcCostIn;
-      workerMarkerCost = markerCostIn;
-      workerMarkerBloatWidth = markerBloatWidthIn;
-      workerMarkerBloatDepth = markerBloatDepthIn;
+      workerDRCCost_ = drcCostIn;
+      workerMarkerCost_ = markerCostIn;
+      workerMarkerBloatWidth_ = markerBloatWidthIn;
+      workerMarkerBloatDepth_ = markerBloatDepthIn;
     }
     void setMarkers(std::vector<frMarker> &in) {
-      markers.clear();
+      markers_.clear();
       frBox box;
       for (auto &marker: in) {
         marker.getBBox(box);
         if (getDrcBox().overlaps(box)) {
-          markers.push_back(marker);
+          markers_.push_back(marker);
         }
       }
     }
     void setMarkers(const std::vector<std::unique_ptr<frMarker> > &in) {
-      markers.clear();
+      markers_.clear();
       frBox box;
       for (auto &uMarker: in) {
         auto &marker = *uMarker;
         marker.getBBox(box);
         if (getDrcBox().overlaps(box)) {
-          markers.push_back(marker);
+          markers_.push_back(marker);
         }
       }
     }
     void setMarkers(std::vector<frMarker*> &in) {
-      markers.clear();
+      markers_.clear();
       frBox box;
       for (auto &marker: in) {
         marker->getBBox(box);
         if (getDrcBox().overlaps(box)) {
-          markers.push_back(*marker);
+          markers_.push_back(*marker);
         }
       }
     }
     void setBestMarkers() {
-      bestMarkers = markers;
+      bestMarkers_ = markers_;
     }
     void clearMarkers() {
-      markers.clear();
+      markers_.clear();
     }
     void setInitNumMarkers(int in) {
-      initNumMarkers = in;
+      initNumMarkers_ = in;
     }
     void setGCWorker(FlexGCWorker *in) {
-      gcWorker = in;
+      gcWorker_ = in;
     }
 
     void setGraphics(FlexDRGraphics* in) {
-      graphics = in;
-      gridGraph.setGraphics(in);
+      graphics_ = in;
+      gridGraph_.setGraphics(in);
     }
 
     // getters
     frTechObject* getTech() const {
-      return design->getTech();
+      return design_->getTech();
     }
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
     FlexDR* getDR() const {
-      return dr;
+      return dr_;
     }
     void getRouteBox(frBox &boxIn) const {
-      boxIn.set(routeBox);
+      boxIn.set(routeBox_);
     }
     const frBox& getRouteBox() const {
-      return routeBox;
+      return routeBox_;
     }
     frBox& getRouteBox() {
-      return routeBox;
+      return routeBox_;
     }
     void getExtBox(frBox &boxIn) const {
-      boxIn.set(extBox);
+      boxIn.set(extBox_);
     }
     const frBox& getExtBox() const {
-      return extBox;
+      return extBox_;
     }
     frBox& getExtBox() {
-      return extBox;
+      return extBox_;
     }
     const frBox& getDrcBox() const {
-      return drcBox;
+      return drcBox_;
     }
     frBox& getDrcBox() {
-      return drcBox;
+      return drcBox_;
     }
     frRegionQuery* getRegionQuery() const {
-      return design->getRegionQuery();
+      return design_->getRegionQuery();
     }
     bool isInitDR() const {
-      return (drIter == 0);
+      return (drIter_ == 0);
     }
     int getDRIter() const {
-      return drIter;
+      return drIter_;
     }
     int getMazeEndIter() const {
-      return mazeEndIter;
+      return mazeEndIter_;
     }
     bool isEnableDRC() const {
-      return enableDRC;
+      return enableDRC_;
     }
     bool isFollowGuide() const {
-      return followGuide;
+      return followGuide_;
     }
     int getRipupMode() const {
-      return ripupMode;
+      return ripupMode_;
     }
     int getFixMode() const {
-      return fixMode;
+      return fixMode_;
     }
     const std::vector<std::unique_ptr<drNet> >& getNets() const {
-      return nets;
+      return nets_;
     }
     std::vector<std::unique_ptr<drNet> >& getNets() {
-      return nets;
+      return nets_;
     }
     const std::vector<drNet*>* getDRNets(frNet* net) const {
-      auto it = owner2nets.find(net);
-      if (it != owner2nets.end()) {
+      auto it = owner2nets_.find(net);
+      if (it != owner2nets_.end()) {
         return &(it->second);
       } else {
         return nullptr;
       }
     }
     const std::vector<std::pair<frBlockObject*, std::pair<frMIdx, frBox> > >* getNetPins(frNet* net) const {
-      auto it = owner2pins.find(net);
-      if (it != owner2pins.end()) {
+      auto it = owner2pins_.find(net);
+      if (it != owner2pins_.end()) {
         return &(it->second);
       } else {
         return nullptr;
       }
     }
     const std::vector<frMarker>& getMarkers() const {
-      return markers;
+      return markers_;
     }
     std::vector<frMarker>& getMarkers() {
-      return markers;
+      return markers_;
     }
     const std::vector<frMarker>& getBestMarkers() const {
-      return bestMarkers;
+      return bestMarkers_;
     }
     std::vector<frMarker>& getBestMarkers() {
-      return bestMarkers;
+      return bestMarkers_;
     }
     const FlexDRWorkerRegionQuery& getWorkerRegionQuery() const {
-      return rq;
+      return rq_;
     }
     FlexDRWorkerRegionQuery& getWorkerRegionQuery() {
-      return rq;
+      return rq_;
     }
     int getInitNumMarkers() const {
-      return initNumMarkers;
+      return initNumMarkers_;
     }
     int getNumMarkers() const {
-      return markers.size();
+      return markers_.size();
     }
     int getBestNumMarkers() const {
-      return bestMarkers.size();
+      return bestMarkers_.size();
     }
     FlexGCWorker* getGCWorker() {
-      return gcWorker;
+      return gcWorker_;
     }
 
     // others
@@ -498,47 +498,47 @@ namespace fr {
       bool           doRoute;
     } RouteQueueEntry;
 
-    frDesign* design;
-    FlexDR*   dr;
-    FlexDRGraphics*  graphics; // owned by FlexDR
-    frDebugSettings* debugSettings;
-    frBox     routeBox;
-    frBox     extBox;
-    frBox     drcBox;
-    int       drIter;
-    int       mazeEndIter;
-    bool      TEST:1;
-    bool      DRCTEST:1;
-    bool      QUICKDRCTEST:1;
-    bool      enableDRC:1;
-    bool      followGuide:1;
-    bool      needRecheck:1;
-    bool      skipRouting:1;
-    int       ripupMode;
-    int       fixMode;
+    frDesign* design_;
+    FlexDR*   dr_;
+    FlexDRGraphics*  graphics_; // owned by FlexDR
+    frDebugSettings* debugSettings_;
+    frBox     routeBox_;
+    frBox     extBox_;
+    frBox     drcBox_;
+    int       drIter_;
+    int       mazeEndIter_;
+    bool      TEST_:1;
+    bool      DRCTEST_:1;
+    bool      QUICKDRCTEST_:1;
+    bool      enableDRC_:1;
+    bool      followGuide_:1;
+    bool      needRecheck_:1;
+    bool      skipRouting_:1;
+    int       ripupMode_;
+    int       fixMode_;
     //drNetOrderingEnum netOrderingMode;
-    frUInt4   workerDRCCost, workerMarkerCost, workerMarkerBloatWidth, workerMarkerBloatDepth;
+    frUInt4   workerDRCCost_, workerMarkerCost_, workerMarkerBloatWidth_, workerMarkerBloatDepth_;
     // used in init route as gr boundary pin
-    std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> boundaryPin;
-    int       pinCnt;
-    int       initNumMarkers;
-    std::map<FlexMazeIdx, drAccessPattern*> apSVia;
-    std::vector<frBlockObject*>             fixedObjs;
-    std::set<FlexMazeIdx>                   planarHistoryMarkers;
-    std::set<FlexMazeIdx>                   viaHistoryMarkers;
-    std::vector<std::set<FlexMazeIdx> >     historyMarkers;
+    std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> boundaryPin_;
+    int       pinCnt_;
+    int       initNumMarkers_;
+    std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
+    std::vector<frBlockObject*>             fixedObjs_;
+    std::set<FlexMazeIdx>                   planarHistoryMarkers_;
+    std::set<FlexMazeIdx>                   viaHistoryMarkers_;
+    std::vector<std::set<FlexMazeIdx> >     historyMarkers_;
 
     // local storage
-    std::vector<std::unique_ptr<drNet> >    nets;
-    std::map<frNet*, std::vector<drNet*> >  owner2nets;
-    std::map<frNet*, std::vector<std::pair<frBlockObject*, std::pair<frMIdx, frBox> > > > owner2pins;
-    FlexGridGraph                           gridGraph;
-    std::vector<frMarker>                   markers;
-    std::vector<frMarker>                   bestMarkers;
-    FlexDRWorkerRegionQuery                 rq;
+    std::vector<std::unique_ptr<drNet> >    nets_;
+    std::map<frNet*, std::vector<drNet*> >  owner2nets_;
+    std::map<frNet*, std::vector<std::pair<frBlockObject*, std::pair<frMIdx, frBox> > > > owner2pins_;
+    FlexGridGraph                           gridGraph_;
+    std::vector<frMarker>                   markers_;
+    std::vector<frMarker>                   bestMarkers_;
+    FlexDRWorkerRegionQuery                 rq_;
 
     // persistant gc worker
-    FlexGCWorker*                           gcWorker;
+    FlexGCWorker*                           gcWorker_;
 
     // init
     void init();

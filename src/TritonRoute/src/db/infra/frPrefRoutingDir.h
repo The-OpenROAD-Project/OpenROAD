@@ -35,20 +35,20 @@ namespace fr {
   class frPrefRoutingDir {
   public:
     // constructor
-    frPrefRoutingDir(): dir(frcNotApplicablePrefRoutingDir) {}
-    frPrefRoutingDir(const frPrefRoutingDir &in): dir(in.dir) {}
-    frPrefRoutingDir(frPrefRoutingDirEnum dirIn): dir(dirIn) {}
+    frPrefRoutingDir(): dir_(frcNotApplicablePrefRoutingDir) {}
+    frPrefRoutingDir(const frPrefRoutingDir &in): dir_(in.dir_) {}
+    frPrefRoutingDir(frPrefRoutingDirEnum dirIn): dir_(dirIn) {}
     // setters
     void set(frPrefRoutingDirEnum dirIn) {
-      dir = dirIn;
+      dir_ = dirIn;
     }
     // getters
     // overloads
     operator frPrefRoutingDirEnum() const {
-      return dir;
+      return dir_;
     }
   protected:
-    frPrefRoutingDirEnum dir;
+    frPrefRoutingDirEnum dir_;
   };
 }
 

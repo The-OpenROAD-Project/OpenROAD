@@ -35,8 +35,8 @@ using namespace fr;
 void frAccessPoint::addViaDef(frViaDef *in) {
   auto numCut = in->getNumCut();
   int numCutIdx = numCut - 1;
-  if (numCut > (int)viaDefs.size()) {
-    viaDefs.resize(numCut, {});
+  if (numCut > (int)viaDefs_.size()) {
+    viaDefs_.resize(numCut, {});
   }
-  viaDefs[numCutIdx].push_back(in);
+  viaDefs_[numCutIdx].push_back(in);
 }

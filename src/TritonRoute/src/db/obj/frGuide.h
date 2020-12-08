@@ -36,42 +36,42 @@ namespace fr {
   class frNet;
   class frGuide: public frConnFig {
   public:
-    frGuide(): frConnFig(), begin(), end(), beginLayer(0), endLayer(0), routeObj(), net(nullptr) {}
-    frGuide(const frGuide &in): frConnFig(), begin(in.begin), end(in.end), beginLayer(in.beginLayer),
-                                endLayer(in.endLayer), routeObj(), net(nullptr) {}
+    frGuide(): frConnFig(), begin_(), end_(), beginLayer_(0), endLayer_(0), routeObj_(), net_(nullptr) {}
+    frGuide(const frGuide &in): frConnFig(), begin_(in.begin_), end_(in.end_), beginLayer_(in.beginLayer_),
+                                endLayer_(in.endLayer_), routeObj_(), net_(nullptr) {}
     // getters
     void getPoints(frPoint &beginIn, frPoint &endIn) const {
-      beginIn.set(begin);
-      endIn.set(end);
+      beginIn.set(begin_);
+      endIn.set(end_);
     }
     frLayerNum getBeginLayerNum() const {
-      return beginLayer;
+      return beginLayer_;
     }
     frLayerNum getEndLayerNum() const {
-      return endLayer;
+      return endLayer_;
     }
     bool hasRoutes() const {
-      return routeObj.empty() ? false : true;
+      return routeObj_.empty() ? false : true;
     }
     const std::vector<std::unique_ptr<frConnFig> >& getRoutes() const {
-      return routeObj;
+      return routeObj_;
     }
     // setters
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
-      begin.set(beginIn);
-      end.set(endIn);
+      begin_.set(beginIn);
+      end_.set(endIn);
     }
     void setBeginLayerNum (frLayerNum numIn) {
-      beginLayer = numIn;
+      beginLayer_ = numIn;
     }
     void setEndLayerNum (frLayerNum numIn) {
-      endLayer = numIn;
+      endLayer_ = numIn;
     }
     void addRoute(std::unique_ptr<frConnFig> cfgIn) {
-      routeObj.push_back(std::move(cfgIn));
+      routeObj_.push_back(std::move(cfgIn));
     }
     void setRoutes(std::vector<std::unique_ptr<frConnFig> > &routesIn) {
-      routeObj = std::move(routesIn);
+      routeObj_ = std::move(routesIn);
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -85,16 +85,16 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (net);
+      return (net_);
     }
     frNet* getNet() const override {
-      return net;
+      return net_;
     }
     void addToNet(frNet* in) override {
-      net = in;
+      net_ = in;
     }
     void removeFromNet() override {
-      net = nullptr;
+      net_ = nullptr;
     }
 
     /* from frFig
@@ -104,7 +104,7 @@ namespace fr {
      */
     // needs to be updated
     void getBBox(frBox &boxIn) const override {
-      boxIn.set(begin, end);
+      boxIn.set(begin_, end_);
     }
     void move(const frTransform &xform) override {
       ;
@@ -114,12 +114,12 @@ namespace fr {
     }
 
   protected:
-    frPoint begin;
-    frPoint end;
-    frLayerNum beginLayer;
-    frLayerNum endLayer;
-    std::vector<std::unique_ptr<frConnFig> > routeObj;
-    frNet* net;
+    frPoint begin_;
+    frPoint end_;
+    frLayerNum beginLayer_;
+    frLayerNum endLayer_;
+    std::vector<std::unique_ptr<frConnFig> > routeObj_;
+    frNet* net_;
   };
 }
 

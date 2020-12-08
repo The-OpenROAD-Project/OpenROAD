@@ -37,9 +37,9 @@ using namespace std;
 using namespace fr;
 
 void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*> &prefTrackPatterns) {
-  for (auto &trackPattern: design->getTopBlock()->getTrackPatterns()) {
+  for (auto &trackPattern: design_->getTopBlock()->getTrackPatterns()) {
     auto isVerticalTrack = trackPattern->isHorizontal(); // yes = vertical track
-    if (design->getTech()->getLayer(trackPattern->getLayerNum())->getDir() == frcHorzPrefRoutingDir) {
+    if (design_->getTech()->getLayer(trackPattern->getLayerNum())->getDir() == frcHorzPrefRoutingDir) {
       if (!isVerticalTrack) {
         prefTrackPatterns.push_back(trackPattern);
       }
@@ -58,8 +58,8 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(map<frBlock*, tuple<frLay
   if (enableOutput) {
     cout <<endl <<"initUniqueInstances_refBlock2PinLayerRange ..." <<endl;
   }
-  int numLayers = design->getTech()->getLayers().size();
-  for (auto &uRefBlock: design->getRefBlocks()) {
+  int numLayers = design_->getTech()->getLayers().size();
+  for (auto &uRefBlock: design_->getRefBlocks()) {
     auto refBlock = uRefBlock.get();
     frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
     frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
@@ -96,9 +96,9 @@ void FlexPA::initUniqueInstance_refBlock2PinLayerRange(map<frBlock*, tuple<frLay
     maxLayerNum = std::min(maxLayerNum + 2, numLayers);
     refBlock2PinLayerRange[refBlock] = make_tuple(minLayerNum, maxLayerNum);
     if (enableOutput) {
-      cout <<"  " <<refBlock->getName() <<" PIN layer ("
-           <<design->getTech()->getLayer(minLayerNum)->getName() <<", "
-           <<design->getTech()->getLayer(maxLayerNum)->getName() <<")" <<endl;
+      cout << "  " <<refBlock->getName() << " PIN layer ("
+           << design_->getTech()->getLayer(minLayerNum)->getName() << ", "
+           << design_->getTech()->getLayer(maxLayerNum)->getName() << ")" <<endl;
     }
   }
   //cout <<"  refBlock pin layer range done" <<endl;
@@ -134,7 +134,7 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
       frBlockObjectComp> refBlockOT2Insts; // refblock orient track-offset to instances
   vector<frCoord> offset;
   int cnt = 0;
-  for (auto &inst: design->getTopBlock()->getInsts()) {
+  for (auto &inst: design_->getTopBlock()->getInsts()) {
     frPoint origin;
     inst->getOrigin(origin);
     frBox boundaryBBox;
@@ -209,9 +209,9 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
       }
       for (auto &[vec, inst]: offsetMap) {
         auto uniqueInst = *(inst.begin());
-        uniqueInstances.push_back(uniqueInst);
+        uniqueInstances_.push_back(uniqueInst);
         for (auto i: inst) {
-          inst2unique[i] = uniqueInst;
+          inst2unique_[i] = uniqueInst;
         }
         if (enableOutput) {
           cout <<" " <<(*(inst.begin()))->getName();
@@ -224,8 +224,8 @@ void FlexPA::initUniqueInstance_main(const map<frBlock*, tuple<frLayerNum, frLay
   }
 
   // init unique2Idx
-  for (int i = 0; i < (int)uniqueInstances.size(); i++) {
-    unique2Idx[uniqueInstances[i]] = i;
+  for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
+    unique2Idx_[uniqueInstances_[i]] = i;
   }
 
   //if (VERBOSE > 0) {
@@ -247,13 +247,13 @@ void FlexPA::initUniqueInstance() {
 void FlexPA::initPinAccess() {
   bool enableOutput = false;
   //bool enableOutput = true;
-  for (auto &inst: uniqueInstances) {
+  for (auto &inst: uniqueInstances_) {
     for (auto &instTerm: inst->getInstTerms()) {
       for (auto &pin: instTerm->getTerm()->getPins()) {
-        if (unique2paidx.find(inst) == unique2paidx.end()) {
-          unique2paidx[inst] = pin->getNumPinAccess();
+        if (unique2paidx_.find(inst) == unique2paidx_.end()) {
+          unique2paidx_[inst] = pin->getNumPinAccess();
         } else {
-          if (unique2paidx[inst] != pin->getNumPinAccess()) {
+          if (unique2paidx_[inst] != pin->getNumPinAccess()) {
             cout <<"Error: initPinAccess error" <<endl;
             exit(1);
           }
@@ -262,14 +262,14 @@ void FlexPA::initPinAccess() {
         pin->addPinAccess(std::move(pa));
       }
     }
-    inst->setPinAccessIdx(unique2paidx[inst]);
+    inst->setPinAccessIdx(unique2paidx_[inst]);
   }
-  for (auto &[inst, uniqueInst]: inst2unique) {
+  for (auto &[inst, uniqueInst]: inst2unique_) {
     inst->setPinAccessIdx(uniqueInst->getPinAccessIdx());
   }
   if (enableOutput) {
     cout <<"unique2paidx:" <<endl;
-    for (auto &[inst, idx]: unique2paidx) {
+    for (auto &[inst, idx]: unique2paidx_) {
       cout <<inst->getName() <<" " <<idx <<endl;
     }
   }
@@ -290,15 +290,15 @@ void FlexPA::initPinAccess() {
 }
 
 void FlexPA::initViaRawPriority() {
-  for (auto layerNum = design->getTech()->getBottomLayerNum(); layerNum <= design->getTech()->getTopLayerNum(); ++layerNum) {
-    if (design->getTech()->getLayer(layerNum)->getType() != frLayerTypeEnum::CUT) {
+  for (auto layerNum = design_->getTech()->getBottomLayerNum(); layerNum <= design_->getTech()->getTopLayerNum(); ++layerNum) {
+    if (design_->getTech()->getLayer(layerNum)->getType() != frLayerTypeEnum::CUT) {
       continue;
     }
-    for (auto &viaDef: design->getTech()->getLayer(layerNum)->getViaDefs()) {
+    for (auto &viaDef: design_->getTech()->getLayer(layerNum)->getViaDefs()) {
       int cutNum = int(viaDef->getCutFigs().size());
       viaRawPriorityTuple priority;
       getViaRawPriority(viaDef, priority);
-      layerNum2ViaDefs[layerNum][cutNum][priority] = viaDef;
+      layerNum2ViaDefs_[layerNum][cutNum][priority] = viaDef;
     }
   }
 }
@@ -356,16 +356,16 @@ void FlexPA::initTrackCoords() {
   frCoord manuGrid  = getDesign()->getTech()->getManufacturingGrid();
 
   // full coords
-  trackCoords.clear();
-  trackCoords.resize(numLayers);
-  for (auto &trackPattern: design->getTopBlock()->getTrackPatterns()) {
+  trackCoords_.clear();
+  trackCoords_.resize(numLayers);
+  for (auto &trackPattern: design_->getTopBlock()->getTrackPatterns()) {
     auto layerNum = trackPattern->getLayerNum();
-    auto isVLayer = (design->getTech()->getLayer(layerNum)->getDir() == frcVertPrefRoutingDir);
+    auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir() == frcVertPrefRoutingDir);
     auto isVTrack = trackPattern->isHorizontal(); // yes = vertical track
     if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
       frCoord currCoord = trackPattern->getStartCoord();
       for (int i = 0; i < (int)trackPattern->getNumTracks(); i++) {
-        trackCoords[layerNum][currCoord] = 0; // cost 0 for full coords
+        trackCoords_[layerNum][currCoord] = 0; // cost 0 for full coords
         currCoord += trackPattern->getTrackSpacing();
       }
     }
@@ -373,7 +373,7 @@ void FlexPA::initTrackCoords() {
   if (enableOutput) {
     cout <<"full coords: " <<endl;
     int cnt = 0;
-    for (auto &m: trackCoords) {
+    for (auto &m: trackCoords_) {
       if (!m.empty()) {
         cout <<getDesign()->getTech()->getLayer(cnt)->getName() <<": " <<m.size() <<endl;
       }
@@ -385,7 +385,7 @@ void FlexPA::initTrackCoords() {
   vector<vector<frCoord> > halfTrackCoords(numLayers);
   for (int i = 0; i < numLayers; i++) {
     frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
-    for (auto &[currFullCoord, cost]: trackCoords[i]) {
+    for (auto &[currFullCoord, cost]: trackCoords_[i]) {
       if (currFullCoord > prevFullCoord) {
         frCoord currHalfGrid = (currFullCoord + prevFullCoord) / 2 / manuGrid * manuGrid;
         if (currHalfGrid != currFullCoord && currHalfGrid != prevFullCoord) {
@@ -395,13 +395,13 @@ void FlexPA::initTrackCoords() {
       prevFullCoord = currFullCoord;
     }
     for (auto halfCoord: halfTrackCoords[i]) {
-      trackCoords[i][halfCoord] = 1; // cost 1 for half coords
+      trackCoords_[i][halfCoord] = 1; // cost 1 for half coords
     }
   }
   if (enableOutput) {
     cout <<"full+half coords: " <<endl;
     int cnt = 0;
-    for (auto &m: trackCoords) {
+    for (auto &m: trackCoords_) {
       if (!m.empty()) {
         cout <<getDesign()->getTech()->getLayer(cnt)->getName() <<": " <<m.size() <<endl;
       }

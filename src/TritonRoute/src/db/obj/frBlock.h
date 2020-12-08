@@ -48,21 +48,21 @@ namespace fr {
   class frBlock: public frBlockObject {
   public:
     // constructors
-    frBlock(const frString &name): frBlockObject(), name(name), dbUnit(0)/*, manufacturingGrid(0)*/, macroClass(MacroClassEnum::UNKNOWN) {};
+    frBlock(const frString &name): frBlockObject(), name_(name), dbUnit_(0)/*, manufacturingGrid_(0)*/, macroClass_(MacroClassEnum::UNKNOWN) {};
     // getters
     frUInt4 getDBUPerUU() const {
-      return dbUnit;
+      return dbUnit_;
     }
     void getBBox(frBox &boxIn) const {
-      if (boundaries.size()) {
-        boundaries.begin()->getBBox(boxIn);
+      if (boundaries_.size()) {
+        boundaries_.begin()->getBBox(boxIn);
       }
       frCoord llx = boxIn.left();
       frCoord lly = boxIn.bottom();
       frCoord urx = boxIn.right();
       frCoord ury = boxIn.top();
       frBox tmpBox;
-      for (auto &boundary: boundaries) {
+      for (auto &boundary: boundaries_) {
         boundary.getBBox(tmpBox);
         llx = llx < tmpBox.left()   ? llx : tmpBox.left();
         lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
@@ -90,15 +90,15 @@ namespace fr {
       boxIn.set(llx, lly, urx, ury);
     }
     void getBoundaryBBox(frBox &boxIn) const {
-      if (boundaries.size()) {
-        boundaries.begin()->getBBox(boxIn);
+      if (boundaries_.size()) {
+        boundaries_.begin()->getBBox(boxIn);
       }
       frCoord llx = boxIn.left();
       frCoord lly = boxIn.bottom();
       frCoord urx = boxIn.right();
       frCoord ury = boxIn.top();
       frBox tmpBox;
-      for (auto &boundary: boundaries) {
+      for (auto &boundary: boundaries_) {
         boundary.getBBox(tmpBox);
         llx = llx < tmpBox.left()   ? llx : tmpBox.left();
         lly = lly < tmpBox.bottom() ? lly : tmpBox.bottom();
@@ -108,13 +108,13 @@ namespace fr {
       boxIn.set(llx, lly, urx, ury);
     }
     const std::vector<frBoundary>& getBoundaries() const {
-      return boundaries;
+      return boundaries_;
     }
     const std::vector< std::unique_ptr<frBlockage> >& getBlockages() const {
-      return blockages;
+      return blockages_;
     }
     const std::vector<frGCellPattern>& getGCellPatterns() const {
-      return gCellPatterns;
+      return gCellPatterns_;
     }
     std::vector<frGuide*> getGuides() const {
       std::vector<frGuide*> sol;
@@ -126,20 +126,20 @@ namespace fr {
       return sol;
     }
     const frString& getName() const {
-      return name;
+      return name_;
     }
     const std::vector<std::unique_ptr<frInst> >& getInsts() const {
-      return insts;
+      return insts_;
     }
     const std::vector<std::unique_ptr<frNet> >& getNets() const {
-      return nets;
+      return nets_;
     }
     const std::vector<std::unique_ptr<frNet> >& getSNets() const {
-      return snets;
+      return snets_;
     }
     std::vector<frTrackPattern*> getTrackPatterns() const {
       std::vector<frTrackPattern*> sol;
-      for (auto &m: trackPatterns) {
+      for (auto &m: trackPatterns_) {
         for (auto &n: m) {
           sol.push_back(n.get());
         }
@@ -147,14 +147,14 @@ namespace fr {
       return sol;
     }
     const std::vector<std::unique_ptr<frTrackPattern> >& getTrackPatterns(frLayerNum lNum) const {
-      return trackPatterns.at(lNum);
+      return trackPatterns_.at(lNum);
     }
     const std::vector<std::unique_ptr<frTerm> >& getTerms() const {
-      return terms;
+      return terms_;
     }
     frTerm* getTerm(const std::string &in) const {
-      auto it = name2term.find(in);
-      if (it == name2term.end()) {
+      auto it = name2term_.find(in);
+      if (it == name2term_.end()) {
         return nullptr;
       } else {
         return it->second;
@@ -243,68 +243,68 @@ namespace fr {
       idx.set(idxX, idxY);
     }
     MacroClassEnum getMacroClass() {
-      return macroClass;
+      return macroClass_;
     }
     const frList<std::unique_ptr<frMarker> >& getMarkers() const {
-      return markers;
+      return markers_;
     }
     int getNumMarkers() const {
-      return markers.size();
+      return markers_.size();
     }
     frNet* getFakeVSSNet() {
-      return fakeSNets[0].get();
+      return fakeSNets_[0].get();
     }
     frNet* getFakeVDDNet() {
-      return fakeSNets[1].get();
+      return fakeSNets_[1].get();
     }
 
     // setters
     void setDBUPerUU(frUInt4 uIn) {
-      dbUnit = uIn;
+      dbUnit_ = uIn;
     }
     void addTerm(std::unique_ptr<frTerm> in) {
-      name2term[in->getName()] = in.get();
-      terms.push_back(std::move(in));
+      name2term_[in->getName()] = in.get();
+      terms_.push_back(std::move(in));
     }
     void addInst(std::unique_ptr<frInst> in) {
-      name2inst[in->getName()] = in.get();
-      insts.push_back(std::move(in));
+      name2inst_[in->getName()] = in.get();
+      insts_.push_back(std::move(in));
     }
     void addNet(std::unique_ptr<frNet> in) {
-      name2net[in->getName()] = in.get();
-      nets.push_back(std::move(in));
+      name2net_[in->getName()] = in.get();
+      nets_.push_back(std::move(in));
     }
     void addSNet(std::unique_ptr<frNet> in) {
-      name2snet[in->getName()] = in.get();
-      snets.push_back(std::move(in));
+      name2snet_[in->getName()] = in.get();
+      snets_.push_back(std::move(in));
     }
     void setBoundaries(const std::vector<frBoundary> in) {
-      boundaries = in;
+      boundaries_ = in;
     }
     void setBlockages(std::vector<std::unique_ptr<frBlockage>> &in) {
       for (auto &blk : in) {
-        blockages.push_back(std::move(blk));
+        blockages_.push_back(std::move(blk));
       }
     }
     void addBlockage(std::unique_ptr<frBlockage> in) {
-      blockages.push_back(std::move(in));
+      blockages_.push_back(std::move(in));
     }
     void setGCellPatterns(const std::vector<frGCellPattern> &gpIn) {
-      gCellPatterns = gpIn;
+      gCellPatterns_ = gpIn;
     }
     void setMacroClass(const MacroClassEnum &in) {
-      macroClass = in;
+      macroClass_ = in;
     }
     void addMarker(std::unique_ptr<frMarker> in) {
       auto rptr = in.get();
-      markers.push_back(std::move(in));
-      rptr->setIter(--(markers.end()));
+      markers_.push_back(std::move(in));
+      rptr->setIter(--(markers_.end()));
     }
     void removeMarker(frMarker* in) {
-      markers.erase(in->getIter());
+      markers_.erase(in->getIter());
     }
     void addFakeSNet(std::unique_ptr<frNet> in) {
-      fakeSNets.push_back(std::move(in));
+      fakeSNets_.push_back(std::move(in));
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -313,32 +313,32 @@ namespace fr {
     friend class io::Parser;
 
   protected:
-    frString                                                      name;
-    frUInt4                                                       dbUnit;
+    frString                                                      name_;
+    frUInt4                                                       dbUnit_;
 
-    MacroClassEnum                                                macroClass;
+    MacroClassEnum                                                macroClass_;
 
-    std::map<std::string, frInst*>                                name2inst;
-    std::vector<std::unique_ptr<frInst> >                         insts;
+    std::map<std::string, frInst*>                                name2inst_;
+    std::vector<std::unique_ptr<frInst> >                         insts_;
 
-    std::map<std::string, frTerm*>                                name2term;
-    std::vector<std::unique_ptr<frTerm> >                         terms;
+    std::map<std::string, frTerm*>                                name2term_;
+    std::vector<std::unique_ptr<frTerm> >                         terms_;
 
-    std::map<std::string, frNet*>                                 name2net;
-    std::vector<std::unique_ptr<frNet> >                          nets;
+    std::map<std::string, frNet*>                                 name2net_;
+    std::vector<std::unique_ptr<frNet> >                          nets_;
     
-    std::map<std::string, frNet*>                                 name2snet;
-    std::vector<std::unique_ptr<frNet> >                          snets;
+    std::map<std::string, frNet*>                                 name2snet_;
+    std::vector<std::unique_ptr<frNet> >                          snets_;
 
-    std::vector<std::unique_ptr<frBlockage> >                     blockages;
+    std::vector<std::unique_ptr<frBlockage> >                     blockages_;
     
-    std::vector<frBoundary>                                       boundaries;
-    std::vector<std::vector<std::unique_ptr<frTrackPattern> > >   trackPatterns;
-    std::vector<frGCellPattern>                                   gCellPatterns;
+    std::vector<frBoundary>                                       boundaries_;
+    std::vector<std::vector<std::unique_ptr<frTrackPattern> > >   trackPatterns_;
+    std::vector<frGCellPattern>                                   gCellPatterns_;
 
-    frList<std::unique_ptr<frMarker> >                            markers;
+    frList<std::unique_ptr<frMarker> >                            markers_;
 
-    std::vector<std::unique_ptr<frNet> >                          fakeSNets; // 0 is floating VSS, 1 is floating VDD
+    std::vector<std::unique_ptr<frNet> >                          fakeSNets_; // 0 is floating VSS, 1 is floating VDD
   };
 }
 

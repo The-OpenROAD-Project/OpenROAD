@@ -34,22 +34,22 @@ using namespace std;
 using namespace fr;
 
 frPathSeg::frPathSeg(const drPathSeg &in) {
-  in.getPoints(begin, end);
-  layer = in.getLayerNum();
-  in.getStyle(style);
-  owner = nullptr;
+  in.getPoints(begin_, end_);
+  layer_ = in.getLayerNum();
+  in.getStyle(style_);
+  owner_ = nullptr;
 }
 
 frPathSeg::frPathSeg(const taPathSeg &in) {
-  in.getPoints(begin, end);
-  layer = in.getLayerNum();
-  in.getStyle(style);
-  owner = nullptr;
+  in.getPoints(begin_, end_);
+  layer_ = in.getLayerNum();
+  in.getStyle(style_);
+  owner_ = nullptr;
 }
 
 frPatchWire::frPatchWire(const drPatchWire &in) {
-  in.getOrigin(origin);
-  in.getOffsetBox(offsetBox);
-  layer = in.getLayerNum();
-  owner = nullptr;
+  in.getOrigin(origin_);
+  in.getOffsetBox(offsetBox_);
+  layer_ = in.getLayerNum();
+  owner_ = nullptr;
 }

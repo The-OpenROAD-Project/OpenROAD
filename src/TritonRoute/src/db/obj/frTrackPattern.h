@@ -36,51 +36,51 @@ namespace fr {
   class frTrackPattern: public frBlockObject {
   public:
     // constructors
-    frTrackPattern() : horizontal(false), startCoord(0), numTracks(0),
-                       trackSpacing(0), layerNum(0) {}
+    frTrackPattern() : horizontal_(false), startCoord_(0), numTracks_(0),
+                       trackSpacing_(0), layerNum_(0) {}
     frTrackPattern(bool tmpIsH, frCoord tmpSC, frUInt4 tmpNT, frUInt4 tmpTS, frLayerNum tmpLN) :
-      horizontal(tmpIsH), startCoord(tmpSC), numTracks(tmpNT), trackSpacing(tmpTS), layerNum(tmpLN) {}
+      horizontal_(tmpIsH), startCoord_(tmpSC), numTracks_(tmpNT), trackSpacing_(tmpTS), layerNum_(tmpLN) {}
     // getters
     // vertical track has horizontal = true;
     bool isHorizontal() const {
-      return horizontal;
+      return horizontal_;
     }
     frCoord getStartCoord() const {
-      return startCoord;
+      return startCoord_;
     }
     frUInt4 getNumTracks() const {
-      return numTracks;
+      return numTracks_;
     }
     frUInt4 getTrackSpacing() const {
-      return trackSpacing;
+      return trackSpacing_;
     }
     frLayerNum getLayerNum() const {
-      return layerNum;
+      return layerNum_;
     }
     // setters
     // vertical track has horizontal = true;
     void setHorizontal(bool tmpIsHorizontal) {
-      horizontal = tmpIsHorizontal;
+      horizontal_ = tmpIsHorizontal;
     }
     void setStartCoord(frCoord tmpStartCoord) {
-      startCoord = tmpStartCoord;
+      startCoord_ = tmpStartCoord;
     }
     void setNumTracks(frUInt4 tmpNumTracks) {
-      numTracks = tmpNumTracks;
+      numTracks_ = tmpNumTracks;
     }
     void setTrackSpacing(frUInt4 tmpTrackSpacing) {
-      trackSpacing = tmpTrackSpacing;
+      trackSpacing_ = tmpTrackSpacing;
     }
     void setLayerNum(frLayerNum tmpLayerNum) {
-      layerNum = tmpLayerNum;
+      layerNum_ = tmpLayerNum;
     }
     frBlockObjectEnum typeId() const override { return frcTrackPattern;}
   protected:
-    bool       horizontal;
-    frCoord    startCoord;
-    frUInt4    numTracks;
-    frUInt4    trackSpacing;
-    frLayerNum layerNum;
+    bool       horizontal_;
+    frCoord    startCoord_;
+    frUInt4    numTracks_;
+    frUInt4    trackSpacing_;
+    frLayerNum layerNum_;
   };
 
 }

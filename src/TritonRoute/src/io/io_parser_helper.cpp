@@ -928,7 +928,7 @@ void io::Parser::buildGCellPatterns() {
 void io::Parser::writeGuideFile() {
   ofstream outputGuide(OUTGUIDE_FILE.c_str());
   if (outputGuide.is_open()) {
-    for (auto &net: design->topBlock->getNets()) {
+    for (auto &net: design->topBlock_->getNets()) {
       auto netName = net->getName();
       outputGuide << netName << endl;
       outputGuide << "(\n"; 

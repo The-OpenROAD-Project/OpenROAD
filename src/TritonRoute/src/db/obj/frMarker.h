@@ -38,38 +38,38 @@ namespace fr {
   class frMarker: public frFig {
   public:
     // constructors
-    frMarker(): frFig(), constraint(nullptr), bbox(), layerNum(0), srcs(), iter(), vioHasDir(false), vioIsH(false) {}
-    frMarker(const frMarker &in): constraint(in.constraint), bbox(in.bbox), layerNum(in.layerNum),
-                                  srcs(in.srcs), iter(), vioHasDir(in.vioHasDir), vioIsH(in.vioIsH) {}
+    frMarker(): frFig(), constraint_(nullptr), bbox_(), layerNum_(0), srcs_(), iter_(), vioHasDir_(false), vioIsH_(false) {}
+    frMarker(const frMarker &in): constraint_(in.constraint_), bbox_(in.bbox_), layerNum_(in.layerNum_),
+                                  srcs_(in.srcs_), iter_(), vioHasDir_(in.vioHasDir_), vioIsH_(in.vioIsH_) {}
     // setters
     void setConstraint(frConstraint* constraintIn) {
-      constraint = constraintIn;
+      constraint_ = constraintIn;
     }
 
     void setBBox(const frBox &bboxIn) {
-      bbox = bboxIn;
+      bbox_ = bboxIn;
     }
 
     void setLayerNum(const frLayerNum &layerNumIn) {
-      layerNum = layerNumIn;
+      layerNum_ = layerNumIn;
     }
 
     void setHasDir(const bool &in) {
-      vioHasDir = in;
+      vioHasDir_ = in;
     }
 
     void setIsH(const bool &in) {
-      vioIsH = in;
+      vioIsH_ = in;
     }
 
     void addSrc(frBlockObject *srcIn) {
-      srcs.insert(srcIn);
+      srcs_.insert(srcIn);
     }
     void addAggressor(frBlockObject *obj, const std::tuple<frLayerNum, frBox, bool> &tupleIn) {
-      aggressors.push_back(std::make_pair(obj, tupleIn));
+      aggressors_.push_back(std::make_pair(obj, tupleIn));
     }
     void addVictim(frBlockObject *obj, const std::tuple<frLayerNum, frBox, bool> &tupleIn) {
-      victims.push_back(std::make_pair(obj, tupleIn));
+      victims_.push_back(std::make_pair(obj, tupleIn));
     }
     // getters
 
@@ -80,35 +80,35 @@ namespace fr {
      */
 
     void getBBox(frBox &bboxIn) const override {
-      bboxIn.set(bbox);
+      bboxIn.set(bbox_);
     }
 
     frLayerNum getLayerNum() const {
-      return layerNum;
+      return layerNum_;
     }
 
     const std::set<frBlockObject*>& getSrcs() const {
-      return srcs;
+      return srcs_;
     }
     
     const std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool> > >& getAggressors() const {
-      return aggressors;
+      return aggressors_;
     }
 
     const std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool> > >& getVictims() const {
-      return victims;
+      return victims_;
     }
 
     frConstraint* getConstraint() const {
-      return constraint;
+      return constraint_;
     }
 
     bool hasDir() const {
-      return vioHasDir;
+      return vioHasDir_;
     }
 
     bool isH() const {
-      return vioIsH;
+      return vioIsH_;
     }
 
 
@@ -126,21 +126,22 @@ namespace fr {
     }
 
     void setIter(frListIter<std::unique_ptr<frMarker> >& in) {
-      iter = in;
+      iter_ = in;
     }
     frListIter<std::unique_ptr<frMarker> > getIter() const {
-      return iter;
+      return iter_;
     }
 
   protected:
-    frConstraint* constraint;
-    frBox bbox;
-    frLayerNum layerNum;
-    std::set<frBlockObject*> srcs;
-    std::vector<std::pair<frBlockObject*,std::tuple<frLayerNum, frBox, bool> > > victims; // obj, isFixed
-    std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool> > > aggressors; // obj, isFixed
-    frListIter<std::unique_ptr<frMarker> > iter;
-    bool vioHasDir, vioIsH;
+    frConstraint* constraint_;
+    frBox bbox_;
+    frLayerNum layerNum_;
+    std::set<frBlockObject*> srcs_;
+    std::vector<std::pair<frBlockObject*,std::tuple<frLayerNum, frBox, bool> > > victims_; // obj, isFixed
+    std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, frBox, bool> > > aggressors_; // obj, isFixed
+    frListIter<std::unique_ptr<frMarker> > iter_;
+    bool vioHasDir_;
+    bool vioIsH_;
   };
 }
 
