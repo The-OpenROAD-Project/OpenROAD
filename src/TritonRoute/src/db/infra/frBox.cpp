@@ -33,9 +33,9 @@ using namespace std;
 using namespace fr;
 
 void frBox::transform(const frTransform &xform) {
-  ll.transform(xform);
-  ur.transform(xform);
-  this->set(ll, ur);
+  ll_.transform(xform);
+  ur_.transform(xform);
+  this->set(ll_, ur_);
 }
 
 bool frBox::overlaps(const frBox &boxIn, bool incEdges) const {

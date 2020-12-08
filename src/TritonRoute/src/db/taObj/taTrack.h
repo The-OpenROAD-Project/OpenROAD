@@ -38,28 +38,28 @@ namespace fr{
   class taTrack: public taBlockObject {
   public:
     // constructors
-    taTrack(): trackLoc(0), planar(), via1(), via2(), costPlanar(), costVia1(), costVia2() {}
+    taTrack(): trackLoc_(0), planar_(), via1_(), via2_(), costPlanar_(), costVia1_(), costVia2_() {}
     // getters
     frCoord getTrackLoc() const {
-      return trackLoc;
+      return trackLoc_;
     }
     frUInt4 getCost(frCoord x1, frCoord x2, int type, taPinFig* fig) const;
     // setters
     void setTrackLoc(frCoord loc) {
-      trackLoc = loc;
+      trackLoc_ = loc;
     }
     // type 0/1/2: planar/down/up
     void addToIntv(taPinFig* obj, frCoord x1, frCoord x2, int type) {
       std::set<taPinFig*> tmpS {obj};
       switch(type) {
         case 0:
-          planar += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          planar_ += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 1:
-          via1   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          via1_   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 2:
-          via2   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          via2_   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         default:
           ;
@@ -69,13 +69,13 @@ namespace fr{
       std::set<taPinFig*> tmpS {obj};
       switch(type) {
         case 0:
-          planar -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          planar_ -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 1:
-          via1   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          via1_   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 2:
-          via2   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          via2_   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         default:
           ;
@@ -86,13 +86,13 @@ namespace fr{
       std::set<frBlockObject*> tmpS {obj};
       switch(type) {
         case 0:
-          costPlanar += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          costPlanar_ += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 1:
-          costVia1   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          costVia1_   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 2:
-          costVia2   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          costVia2_   += std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         default:
           ;
@@ -102,13 +102,13 @@ namespace fr{
       std::set<frBlockObject*> tmpS {obj};
       switch(type) {
         case 0:
-          costPlanar -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          costPlanar_ -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 1:
-          costVia1   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          costVia1_   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         case 2:
-          costVia2   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
+          costVia2_   -= std::make_pair(boost::icl::interval<frCoord>::closed(x1, x2), tmpS);
           break;
         default:
           ;
@@ -119,18 +119,18 @@ namespace fr{
       return tacTrack;
     }
     bool operator<(const taTrack &b) const {
-      return trackLoc < b.trackLoc;
+      return trackLoc_ < b.trackLoc_;
     }
   protected:
-    frCoord trackLoc;
+    frCoord trackLoc_;
     // intervals, ps bp-->ep, viaLoc
-    boost::icl::interval_map<frCoord, std::set<taPinFig*> > planar;
-    boost::icl::interval_map<frCoord, std::set<taPinFig*> > via1; // down via
-    boost::icl::interval_map<frCoord, std::set<taPinFig*> > via2; // up via
+    boost::icl::interval_map<frCoord, std::set<taPinFig*> > planar_;
+    boost::icl::interval_map<frCoord, std::set<taPinFig*> > via1_; // down via
+    boost::icl::interval_map<frCoord, std::set<taPinFig*> > via2_; // up via
     // block others bp, ep, viaLoc
-    boost::icl::interval_map<frCoord, std::set<frBlockObject*> > costPlanar; // all cost to others
-    boost::icl::interval_map<frCoord, std::set<frBlockObject*> > costVia1; // all cost to others
-    boost::icl::interval_map<frCoord, std::set<frBlockObject*> > costVia2; // all cost to others
+    boost::icl::interval_map<frCoord, std::set<frBlockObject*> > costPlanar_; // all cost to others
+    boost::icl::interval_map<frCoord, std::set<frBlockObject*> > costVia1_; // all cost to others
+    boost::icl::interval_map<frCoord, std::set<frBlockObject*> > costVia2_; // all cost to others
   };
 }
 #endif

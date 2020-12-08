@@ -75,30 +75,30 @@ namespace fr {
   class drPathSeg: public drShape {
   public:
     // constructors
-    drPathSeg(): drShape(), begin(), end(), layer(0), style(), owner(nullptr), 
-                 beginMazeIdx(), endMazeIdx(), patchSeg(false) {}
-    drPathSeg(const drPathSeg &in): drShape(in), begin(in.begin), end(in.end), layer(in.layer), style(in.style), owner(in.owner), 
-                                    beginMazeIdx(in.beginMazeIdx), endMazeIdx(in.endMazeIdx), patchSeg(in.patchSeg) {}
+    drPathSeg(): drShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr), 
+                 beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {}
+    drPathSeg(const drPathSeg &in): drShape(in), begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_), 
+                                    beginMazeIdx_(in.beginMazeIdx_), endMazeIdx_(in.endMazeIdx_), patchSeg_(in.patchSeg_) {}
     drPathSeg(const frPathSeg &in);
     // getters
     void getPoints(frPoint &beginIn, frPoint &endIn) const {
-      beginIn.set(begin);
-      endIn.set(end);
+      beginIn.set(begin_);
+      endIn.set(end_);
     }
     void getStyle(frSegStyle &styleIn) const {
-      styleIn.setBeginStyle(style.getBeginStyle(), style.getBeginExt());
-      styleIn.setEndStyle(style.getEndStyle(), style.getEndExt());
-      styleIn.setWidth(style.getWidth());
+      styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
+      styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
+      styleIn.setWidth(style_.getWidth());
     }
     // setters
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
-      begin.set(beginIn);
-      end.set(endIn);
+      begin_.set(beginIn);
+      end_.set(endIn);
     }
     void setStyle(const frSegStyle &styleIn) {
-      style.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
-      style.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
-      style.setWidth(styleIn.getWidth());
+      style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
+      style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
+      style_.setWidth(styleIn.getWidth());
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -110,10 +110,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from drPinFig
@@ -123,19 +123,19 @@ namespace fr {
      * removedromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == drcPin);
+      return (owner_) && (owner_->typeId() == drcPin);
     }
     
     drPin* getPin() const override {
-      return reinterpret_cast<drPin*>(owner);
+      return reinterpret_cast<drPin*>(owner_);
     }
     
     void addToPin(drPin* in) override {
-      owner = reinterpret_cast<drBlockObject*>(in);
+      owner_ = reinterpret_cast<drBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from drConnFig
@@ -145,19 +145,19 @@ namespace fr {
      * removedromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == drcNet);
+      return (owner_) && (owner_->typeId() == drcNet);
     }
     
     drNet* getNet() const override {
-      return reinterpret_cast<drNet*>(owner);
+      return reinterpret_cast<drNet*>(owner_);
     }
     
     void addToNet(drNet* in) override {
-      owner = reinterpret_cast<drBlockObject*>(in);
+      owner_ = reinterpret_cast<drBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from drFig
@@ -168,54 +168,54 @@ namespace fr {
     // needs to be updated
     void getBBox (frBox &boxIn) const override {
       bool isHorizontal = true;
-      if (begin.x() == end.x()) {
+      if (begin_.x() == end_.x()) {
         isHorizontal = false;
       }
-      auto width    = style.getWidth();
-      auto beginExt = style.getBeginExt();
-      auto endExt   = style.getEndExt();
+      auto width    = style_.getWidth();
+      auto beginExt = style_.getBeginExt();
+      auto endExt   = style_.getEndExt();
       if (isHorizontal) {
-        boxIn.set(begin.x() - beginExt, begin.y() - width / 2,
-                  end.x()   + endExt,   end.y()   + width / 2);
+        boxIn.set(begin_.x() - beginExt, begin_.y() - width / 2,
+                  end_.x()   + endExt,   end_.y()   + width / 2);
       } else {
-        boxIn.set(begin.x() - width / 2, begin.y() - beginExt,
-                  end.x()   + width / 2, end.y()   + endExt);
+        boxIn.set(begin_.x() - width / 2, begin_.y() - beginExt,
+                  end_.x()   + width / 2, end_.y()   + endExt);
       }
     }
 
     bool hasMazeIdx() const {
-      return (!beginMazeIdx.empty());
+      return (!beginMazeIdx_.empty());
     }
     void getMazeIdx(FlexMazeIdx &bi, FlexMazeIdx &ei) const {
-      bi.set(beginMazeIdx);
-      ei.set(endMazeIdx);
+      bi.set(beginMazeIdx_);
+      ei.set(endMazeIdx_);
     }
     void setMazeIdx(FlexMazeIdx &bi, FlexMazeIdx &ei) {
-      beginMazeIdx.set(bi);
-      endMazeIdx.set(ei);
+      beginMazeIdx_.set(bi);
+      endMazeIdx_.set(ei);
     }
     void setPatchSeg(bool in) {
-      patchSeg = in;
+      patchSeg_ = in;
     }
     bool isPatchSeg() const {
-      return patchSeg;
+      return patchSeg_;
     }
   protected:
-    frPoint        begin; // begin always smaller than end, assumed
-    frPoint        end;
-    frLayerNum     layer;
-    frSegStyle     style;
-    drBlockObject* owner;
-    FlexMazeIdx    beginMazeIdx;
-    FlexMazeIdx    endMazeIdx;
-    bool           patchSeg; 
+    frPoint        begin_; // begin always smaller than end, assumed
+    frPoint        end_;
+    frLayerNum     layer_;
+    frSegStyle     style_;
+    drBlockObject* owner_;
+    FlexMazeIdx    beginMazeIdx_;
+    FlexMazeIdx    endMazeIdx_;
+    bool           patchSeg_;
   };
 
   class drPatchWire: public drShape {
   public:
     // constructors
-    drPatchWire(): drShape(), offsetBox(), origin(), layer(0), owner(nullptr) {};
-    drPatchWire(const drPatchWire& in): drShape(in), offsetBox(in.offsetBox), origin(in.origin), layer(in.layer), owner(in.owner) {};
+    drPatchWire(): drShape(), offsetBox_(), origin_(), layer_(0), owner_(nullptr) {};
+    drPatchWire(const drPatchWire& in): drShape(in), offsetBox_(in.offsetBox_), origin_(in.origin_), layer_(in.layer_), owner_(in.owner_) {};
     drPatchWire(const frPatchWire& in);
     // others
     frBlockObjectEnum typeId() const override {
@@ -227,10 +227,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
 
 
@@ -241,19 +241,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == drcPin);
+      return (owner_) && (owner_->typeId() == drcPin);
     }
     
     drPin* getPin() const override {
-      return reinterpret_cast<drPin*>(owner);
+      return reinterpret_cast<drPin*>(owner_);
     }
     
     void addToPin(drPin* in) override {
-      owner = reinterpret_cast<drBlockObject*>(in);
+      owner_ = reinterpret_cast<drBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from drConnfig
@@ -263,19 +263,19 @@ namespace fr {
      * removedFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == drcNet);
+      return (owner_) && (owner_->typeId() == drcNet);
     }
     
     drNet* getNet() const override {
-      return reinterpret_cast<drNet*>(owner);
+      return reinterpret_cast<drNet*>(owner_);
     }
     
     void addToNet(drNet* in) override {
-      owner = reinterpret_cast<drBlockObject*>(in);
+      owner_ = reinterpret_cast<drBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from drFig
@@ -283,30 +283,30 @@ namespace fr {
      * setBBox
      */
     void getBBox (frBox &boxIn) const override {
-      frTransform xform(origin);
-      boxIn.set(offsetBox);
+      frTransform xform(origin_);
+      boxIn.set(offsetBox_);
       boxIn.transform(xform);
     }
 
     void getOffsetBox (frBox &boxIn) const {
-      boxIn = offsetBox;
+      boxIn = offsetBox_;
     }
     void setOffsetBox (const frBox &boxIn) {
-      offsetBox.set(boxIn);
+      offsetBox_.set(boxIn);
     }
 
     void getOrigin(frPoint &in) const {
-      in.set(origin);
+      in.set(origin_);
     }
     void setOrigin(const frPoint &in) {
-      origin.set(in);
+      origin_.set(in);
     }
 
   protected:
-    frBox           offsetBox;
-    frPoint         origin;
-    frLayerNum      layer;
-    drBlockObject*  owner;
+    frBox           offsetBox_;
+    frPoint         origin_;
+    frLayerNum      layer_;
+    drBlockObject*  owner_;
   };
 }
 

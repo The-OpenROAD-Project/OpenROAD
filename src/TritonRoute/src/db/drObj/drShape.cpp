@@ -34,15 +34,15 @@ using namespace std;
 using namespace fr;
 
 
-drPathSeg::drPathSeg(const frPathSeg &in): layer(in.getLayerNum()), 
-                                           owner(nullptr), 
-                                           beginMazeIdx(), endMazeIdx(), patchSeg(false) {
-  in.getPoints(begin, end);
-  in.getStyle(style);
+drPathSeg::drPathSeg(const frPathSeg &in): layer_(in.getLayerNum()), 
+                                           owner_(nullptr), 
+                                           beginMazeIdx_(), endMazeIdx_(), patchSeg_(false) {
+  in.getPoints(begin_, end_);
+  in.getStyle(style_);
 }
 
-drPatchWire::drPatchWire(const frPatchWire &in): layer(in.getLayerNum()), 
-                                           owner(nullptr) {
-  in.getOffsetBox(offsetBox);
-  in.getOrigin(origin);
+drPatchWire::drPatchWire(const frPatchWire &in): layer_(in.getLayerNum()), 
+                                                  owner_(nullptr) {
+  in.getOffsetBox(offsetBox_);
+  in.getOrigin(origin_);
 }

@@ -36,11 +36,11 @@ using namespace fr;
 void frTime::print() {
   boost::io::ios_all_saver guard(std::cout);
   auto t1        = std::chrono::high_resolution_clock::now();
-  auto time_span = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
+  auto time_span = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0_);
   int hour       = time_span.count() / 3600;
   int min        = (time_span.count() % 3600) / 60;
   int sec        = time_span.count() % 60;
-  auto t2        = (clock() - t) / CLOCKS_PER_SEC;
+  auto t2        = (clock() - t_) / CLOCKS_PER_SEC;
   int chour      = t2 / 3600;
   int cmin       = (t2 % 3600) / 60;
   int csec       = t2 % 60;

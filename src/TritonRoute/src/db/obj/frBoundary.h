@@ -40,14 +40,14 @@ namespace fr {
     frBoundary(): frFig() {}
     // getters
     const std::vector<frPoint>& getPoints() const {
-      return points;
+      return points_;
     }
     frUInt4 getNumPoints() const {
-      return points.size();
+      return points_.size();
     }
     // setters
     void setPoints(const std::vector<frPoint> &pIn) {
-      points = pIn;
+      points_ = pIn;
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -59,13 +59,13 @@ namespace fr {
       frCoord lly = 0;
       frCoord urx = 0;
       frCoord ury = 0;
-      if (points.size()) {
-        llx = points.begin()->x();
-        urx = points.begin()->x();
-        lly = points.begin()->y();
-        ury = points.begin()->y();
+      if (points_.size()) {
+        llx = points_.begin()->x();
+        urx = points_.begin()->x();
+        lly = points_.begin()->y();
+        ury = points_.begin()->y();
       }
-      for (auto &point: points) {
+      for (auto &point: points_) {
         llx = (llx < point.x()) ? llx : point.x();
         lly = (lly < point.y()) ? lly : point.y();
         urx = (urx > point.x()) ? urx : point.x();
@@ -74,7 +74,7 @@ namespace fr {
       boxIn.set(llx, lly, urx, ury);
     }
     void move(const frTransform &xform) override {
-      for (auto &point: points) {
+      for (auto &point: points_) {
         point.transform(xform);
       }
     }
@@ -82,7 +82,7 @@ namespace fr {
       return false;
     }
   protected:
-    std::vector<frPoint> points;
+    std::vector<frPoint> points_;
   };
 }
 

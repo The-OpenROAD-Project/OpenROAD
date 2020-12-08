@@ -55,7 +55,7 @@ namespace fr {
       void removeFromRegionQuery(gcNet* net);
   private:
     struct Impl;
-    std::unique_ptr<Impl> impl;
+    std::unique_ptr<Impl> impl_;
   };
 
   class FlexGCWorker::Impl {
@@ -64,34 +64,34 @@ namespace fr {
     // constructors
     Impl(frDesign* designIn, FlexDRWorker* drWorkerIn, FlexGCWorker* gcWorkerIn);
     gcNet* addNet(frBlockObject* owner = nullptr) {
-      auto uNet = std::make_unique<gcNet>(design->getTech()->getLayers().size());
+      auto uNet = std::make_unique<gcNet>(design_->getTech()->getLayers().size());
       auto net = uNet.get();
       net->setOwner(owner);
-      nets.push_back(std::move(uNet));
-      owner2nets[owner] = net;
+      nets_.push_back(std::move(uNet));
+      owner2nets_[owner] = net;
       return net;
     }
     bool addMarker(std::unique_ptr<frMarker> in);
     void clearMarkers() {
-      mapMarkers.clear();
-      markers.clear();
+      mapMarkers_.clear();
+      markers_.clear();
     }
     void addPAObj(frConnFig* obj, frBlockObject* owner);
     // getters
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
     FlexDRWorker* getDRWorker() const {
-      return drWorker;
+      return drWorker_;
     }
     const frBox& getExtBox() const {
-      return extBox;
+      return extBox_;
     }
     frRegionQuery* getRegionQuery() const {
-      return design->getRegionQuery();
+      return design_->getRegionQuery();
     }
     std::vector<std::unique_ptr<gcNet> >& getNets() {
-      return nets;
+      return nets_;
     }
     // others
     void init();
@@ -102,38 +102,38 @@ namespace fr {
     void initPA1();
     
   protected:
-    frDesign*                            design;
-    FlexDRWorker*                        drWorker;
+    frDesign*                            design_;
+    FlexDRWorker*                        drWorker_;
 
-    frBox                                extBox;
-    frBox                                drcBox;
+    frBox                                extBox_;
+    frBox                                drcBox_;
 
-    std::map<frBlockObject*, gcNet*>     owner2nets; // no order is assumed
-    std::vector<std::unique_ptr<gcNet> > nets;
+    std::map<frBlockObject*, gcNet*>     owner2nets_; // no order is assumed
+    std::vector<std::unique_ptr<gcNet> > nets_;
 
-    std::vector<std::unique_ptr<frMarker> > markers;
-    std::map<std::tuple<frBox, frLayerNum, frConstraint*, frBlockObject*, frBlockObject*>, frMarker*> mapMarkers;
-    std::vector<std::unique_ptr<drPatchWire> > pwires;
+    std::vector<std::unique_ptr<frMarker> > markers_;
+    std::map<std::tuple<frBox, frLayerNum, frConstraint*, frBlockObject*, frBlockObject*>, frMarker*> mapMarkers_;
+    std::vector<std::unique_ptr<drPatchWire> > pwires_;
 
-    FlexGCWorkerRegionQuery              rq;
-    bool                                 printMarker;
+    FlexGCWorkerRegionQuery              rq_;
+    bool                                 printMarker_;
 
     // temps
-    std::vector<drNet*>                  modifiedDRNets;
+    std::vector<drNet*>                  modifiedDRNets_;
 
     // parameters
-    gcNet*                               targetNet;
-    frLayerNum                           minLayerNum;
-    frLayerNum                           maxLayerNum;
+    gcNet*                               targetNet_;
+    frLayerNum                           minLayerNum_;
+    frLayerNum                           maxLayerNum_;
 
     // for pin prep
-    frBlockObject*                       targetObj;
-    bool                                 ignoreDB;
-    bool                                 ignoreMinArea;
-    bool                                 surgicalFixEnabled;
+    frBlockObject*                       targetObj_;
+    bool                                 ignoreDB_;
+    bool                                 ignoreMinArea_;
+    bool                                 surgicalFixEnabled_;
 
     FlexGCWorkerRegionQuery& getWorkerRegionQuery() {
-      return rq;
+      return rq_;
     }
 
     // init

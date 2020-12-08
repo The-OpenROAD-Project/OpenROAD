@@ -45,10 +45,10 @@ int FlexTAWorker::main() {
   if (VERBOSE > 1) {
     stringstream ss;
     ss <<endl <<"start TA worker (BOX) ("
-       <<routeBox.left()   * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-       <<routeBox.bottom() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ("
-       <<routeBox.right()  * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-       <<routeBox.top()    * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ";
+       <<routeBox_.left()   * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
+       <<routeBox_.bottom() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ("
+       <<routeBox_.right()  * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
+       <<routeBox_.top()    * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ";
     if (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
       ss <<"H";
     } else {
@@ -88,10 +88,10 @@ int FlexTAWorker::main_mt() {
   if (VERBOSE > 1) {
     stringstream ss;
     ss <<endl <<"start TA worker (BOX) ("
-       <<routeBox.left()   * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-       <<routeBox.bottom() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ("
-       <<routeBox.right()  * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
-       <<routeBox.top()    * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ";
+       <<routeBox_.left()   * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
+       <<routeBox_.bottom() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ("
+       <<routeBox_.right()  * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<", "
+       <<routeBox_.top()    * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() <<") ";
     if (getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir) {
       ss <<"H";
     } else {

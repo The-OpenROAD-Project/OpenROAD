@@ -34,7 +34,7 @@ using namespace std;
 using namespace fr;
 
 
-drVia::drVia(const frVia &in): viaDef(in.getViaDef()), owner(nullptr), 
-                               beginMazeIdx(), endMazeIdx() {
-  in.getOrigin(origin);
+drVia::drVia(const frVia &in): viaDef_(in.getViaDef()), owner_(nullptr), 
+                               beginMazeIdx_(), endMazeIdx_() {
+  in.getOrigin(origin_);
 }

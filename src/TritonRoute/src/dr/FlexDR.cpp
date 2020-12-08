@@ -39,7 +39,7 @@ using namespace std;
 using namespace fr;
 
 FlexDR::FlexDR(frDesign* designIn)
-  : design(designIn)
+  : design_(designIn)
 {
 }
 
@@ -50,8 +50,8 @@ FlexDR::~FlexDR()
 void FlexDR::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   bool on = settings->debugDR;
-  graphics = on && FlexDRGraphics::guiActive() ?
-    std::make_unique<FlexDRGraphics>(settings, design, db)
+  graphics_ = on && FlexDRGraphics::guiActive() ?
+    std::make_unique<FlexDRGraphics>(settings, design_, db)
     : nullptr;
 }
 
@@ -62,10 +62,10 @@ int FlexDRWorker::main() {
     frBox scaledBox;
     stringstream ss;
     ss <<endl <<"start DR worker (BOX) "
-                <<"( " <<routeBox.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<routeBox.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
-                <<routeBox.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<routeBox.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
+                <<"( " << routeBox_.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
+                << routeBox_.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
+                << routeBox_.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
+                << routeBox_.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
     cout <<ss.str() <<flush;
   }
 
@@ -99,14 +99,14 @@ int FlexDRWorker::main_mt() {
     frBox scaledBox;
     stringstream ss;
     ss <<endl <<"start DR worker (BOX) "
-                <<"( " <<routeBox.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<routeBox.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
-                <<routeBox.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
-                <<routeBox.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
+                <<"( " << routeBox_.left()   * 1.0 / getTech()->getDBUPerUU() <<" "
+                << routeBox_.bottom() * 1.0 / getTech()->getDBUPerUU() <<" ) ( "
+                << routeBox_.right()  * 1.0 / getTech()->getDBUPerUU() <<" "
+                << routeBox_.top()    * 1.0 / getTech()->getDBUPerUU() <<" )" <<endl;
     cout <<ss.str() <<flush;
   }
-  if (graphics) {
-    graphics->startWorker(this);
+  if (graphics_) {
+    graphics_->startWorker(this);
   }
   
   init();
@@ -173,7 +173,7 @@ void FlexDR::initGCell2BoundaryPin() {
   auto &xgp = gCellPatterns.at(0);
   auto &ygp = gCellPatterns.at(1);
   auto tmpVec = vector<map<frNet*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> >((int)ygp.getCount());
-  gcell2BoundaryPin = vector<vector<map<frNet*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> > >((int)xgp.getCount(), tmpVec);
+  gcell2BoundaryPin_ = vector<vector<map<frNet*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> > >((int)xgp.getCount(), tmpVec);
   for (auto &net: getDesign()->getTopBlock()->getNets()) {
     auto netPtr = net.get();
     for (auto &guide: net->getGuides()) {
@@ -216,7 +216,7 @@ void FlexDR::initGCell2BoundaryPin() {
               }
               if (hasLeftBound) {
                 frPoint boundaryPt(leftBound, bp.y());
-                gcell2BoundaryPin[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
                 if (enableOutput) {
                   cout << "init left boundary pin (" 
                        << boundaryPt.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() << ", " 
@@ -228,7 +228,7 @@ void FlexDR::initGCell2BoundaryPin() {
               }
               if (hasRightBound) {
                 frPoint boundaryPt(rightBound, ep.y());
-                gcell2BoundaryPin[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
                 if (enableOutput) {
                   cout << "init right boundary pin (" 
                        << boundaryPt.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() << ", " 
@@ -262,7 +262,7 @@ void FlexDR::initGCell2BoundaryPin() {
               }
               if (hasBottomBound) {
                 frPoint boundaryPt(bp.x(), bottomBound);
-                gcell2BoundaryPin[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
                 if (enableOutput) {
                   cout << "init bottom boundary pin (" 
                        << boundaryPt.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() << ", " 
@@ -274,7 +274,7 @@ void FlexDR::initGCell2BoundaryPin() {
               }
               if (hasTopBound) {
                 frPoint boundaryPt(ep.x(), topBound);
-                gcell2BoundaryPin[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].insert(make_pair(boundaryPt, layerNum));
                 if (enableOutput) {
                   cout << "init top boundary pin (" 
                        << boundaryPt.x() * 1.0 / getDesign()->getTopBlock()->getDBUPerUU() << ", " 
@@ -573,7 +573,7 @@ void FlexDR::init_via2viaMinLen() {
     }
     vector<frCoord> via2viaMinLenTmp(4, 0);
     vector<bool>    via2viaZeroLen(4, true);
-    via2viaMinLen.push_back(make_pair(via2viaMinLenTmp, via2viaZeroLen));
+    via2viaMinLen_.push_back(make_pair(via2viaMinLenTmp, via2viaZeroLen));
   }
   // check prl
   int i = 0;
@@ -589,17 +589,17 @@ void FlexDR::init_via2viaMinLen() {
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    (via2viaMinLen[i].first)[0] = max((via2viaMinLen[i].first)[0], init_via2viaMinLen_minSpc(lNum, downVia, downVia));
-    (via2viaMinLen[i].first)[1] = max((via2viaMinLen[i].first)[1], init_via2viaMinLen_minSpc(lNum, downVia, upVia));
-    (via2viaMinLen[i].first)[2] = max((via2viaMinLen[i].first)[2], init_via2viaMinLen_minSpc(lNum, upVia, downVia));
-    (via2viaMinLen[i].first)[3] = max((via2viaMinLen[i].first)[3], init_via2viaMinLen_minSpc(lNum, upVia, upVia));
+    (via2viaMinLen_[i].first)[0] = max((via2viaMinLen_[i].first)[0], init_via2viaMinLen_minSpc(lNum, downVia, downVia));
+    (via2viaMinLen_[i].first)[1] = max((via2viaMinLen_[i].first)[1], init_via2viaMinLen_minSpc(lNum, downVia, upVia));
+    (via2viaMinLen_[i].first)[2] = max((via2viaMinLen_[i].first)[2], init_via2viaMinLen_minSpc(lNum, upVia, downVia));
+    (via2viaMinLen_[i].first)[3] = max((via2viaMinLen_[i].first)[3], init_via2viaMinLen_minSpc(lNum, upVia, upVia));
     if (enableOutput) {
       cout <<"initVia2ViaMinLen_minSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (d2d, d2u, u2d, u2u) = (" 
-           <<(via2viaMinLen[i].first)[0] <<", "
-           <<(via2viaMinLen[i].first)[1] <<", "
-           <<(via2viaMinLen[i].first)[2] <<", "
-           <<(via2viaMinLen[i].first)[3] <<")" <<endl;
+           <<(via2viaMinLen_[i].first)[0] <<", "
+           <<(via2viaMinLen_[i].first)[1] <<", "
+           <<(via2viaMinLen_[i].first)[2] <<", "
+           <<(via2viaMinLen_[i].first)[3] <<")" <<endl;
     }
     i++;
   }
@@ -619,27 +619,27 @@ void FlexDR::init_via2viaMinLen() {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
     vector<frCoord> via2viaMinLenTmp(4, 0);
-    (via2viaMinLen[i].first)[0] = max((via2viaMinLen[i].first)[0], init_via2viaMinLen_minimumcut1(lNum, downVia, downVia));
-    (via2viaMinLen[i].first)[1] = max((via2viaMinLen[i].first)[1], init_via2viaMinLen_minimumcut1(lNum, downVia, upVia));
-    (via2viaMinLen[i].first)[2] = max((via2viaMinLen[i].first)[2], init_via2viaMinLen_minimumcut1(lNum, upVia, downVia));
-    (via2viaMinLen[i].first)[3] = max((via2viaMinLen[i].first)[3], init_via2viaMinLen_minimumcut1(lNum, upVia, upVia));
-    (via2viaMinLen[i].second)[0] = (via2viaMinLen[i].second)[0] && init_via2viaMinLen_minimumcut2(lNum, downVia, downVia);
-    (via2viaMinLen[i].second)[1] = (via2viaMinLen[i].second)[1] && init_via2viaMinLen_minimumcut2(lNum, downVia, upVia);
-    (via2viaMinLen[i].second)[2] = (via2viaMinLen[i].second)[2] && init_via2viaMinLen_minimumcut2(lNum, upVia, downVia);
-    (via2viaMinLen[i].second)[3] = (via2viaMinLen[i].second)[3] && init_via2viaMinLen_minimumcut2(lNum, upVia, upVia);
+    (via2viaMinLen_[i].first)[0] = max((via2viaMinLen_[i].first)[0], init_via2viaMinLen_minimumcut1(lNum, downVia, downVia));
+    (via2viaMinLen_[i].first)[1] = max((via2viaMinLen_[i].first)[1], init_via2viaMinLen_minimumcut1(lNum, downVia, upVia));
+    (via2viaMinLen_[i].first)[2] = max((via2viaMinLen_[i].first)[2], init_via2viaMinLen_minimumcut1(lNum, upVia, downVia));
+    (via2viaMinLen_[i].first)[3] = max((via2viaMinLen_[i].first)[3], init_via2viaMinLen_minimumcut1(lNum, upVia, upVia));
+    (via2viaMinLen_[i].second)[0] = (via2viaMinLen_[i].second)[0] && init_via2viaMinLen_minimumcut2(lNum, downVia, downVia);
+    (via2viaMinLen_[i].second)[1] = (via2viaMinLen_[i].second)[1] && init_via2viaMinLen_minimumcut2(lNum, downVia, upVia);
+    (via2viaMinLen_[i].second)[2] = (via2viaMinLen_[i].second)[2] && init_via2viaMinLen_minimumcut2(lNum, upVia, downVia);
+    (via2viaMinLen_[i].second)[3] = (via2viaMinLen_[i].second)[3] && init_via2viaMinLen_minimumcut2(lNum, upVia, upVia);
     if (enableOutput) {
       cout <<"initVia2ViaMinLen_minimumcut " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (d2d, d2u, u2d, u2u) = (" 
-           <<(via2viaMinLen[i].first)[0] <<", "
-           <<(via2viaMinLen[i].first)[1] <<", "
-           <<(via2viaMinLen[i].first)[2] <<", "
-           <<(via2viaMinLen[i].first)[3] <<")" <<endl;
+           <<(via2viaMinLen_[i].first)[0] <<", "
+           <<(via2viaMinLen_[i].first)[1] <<", "
+           <<(via2viaMinLen_[i].first)[2] <<", "
+           <<(via2viaMinLen_[i].first)[3] <<")" <<endl;
       cout <<"initVia2ViaMinLen_minimumcut " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" zerolen (b, b, b, b) = (" 
-           <<(via2viaMinLen[i].second)[0] <<", "
-           <<(via2viaMinLen[i].second)[1] <<", "
-           <<(via2viaMinLen[i].second)[2] <<", "
-           <<(via2viaMinLen[i].second)[3] <<")" 
+           <<(via2viaMinLen_[i].second)[0] <<", "
+           <<(via2viaMinLen_[i].second)[1] <<", "
+           <<(via2viaMinLen_[i].second)[2] <<", "
+           <<(via2viaMinLen_[i].second)[3] <<")" 
            <<endl;
     }
     i++;
@@ -952,7 +952,7 @@ void FlexDR::init_via2viaMinLenNew() {
       continue;
     }
     vector<frCoord> via2viaMinLenTmp(8, 0);
-    via2viaMinLenNew.push_back(via2viaMinLenTmp);
+    via2viaMinLenNew_.push_back(via2viaMinLenTmp);
   }
   // check prl
   int i = 0;
@@ -968,25 +968,25 @@ void FlexDR::init_via2viaMinLenNew() {
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2viaMinLenNew[i][0] = max(via2viaMinLenNew[i][0], init_via2viaMinLenNew_minSpc(lNum, downVia, downVia, false));
-    via2viaMinLenNew[i][1] = max(via2viaMinLenNew[i][1], init_via2viaMinLenNew_minSpc(lNum, downVia, downVia, true ));
-    via2viaMinLenNew[i][2] = max(via2viaMinLenNew[i][2], init_via2viaMinLenNew_minSpc(lNum, downVia, upVia,   false));
-    via2viaMinLenNew[i][3] = max(via2viaMinLenNew[i][3], init_via2viaMinLenNew_minSpc(lNum, downVia, upVia,   true ));
-    via2viaMinLenNew[i][4] = max(via2viaMinLenNew[i][4], init_via2viaMinLenNew_minSpc(lNum, upVia,   downVia, false));
-    via2viaMinLenNew[i][5] = max(via2viaMinLenNew[i][5], init_via2viaMinLenNew_minSpc(lNum, upVia,   downVia, true ));
-    via2viaMinLenNew[i][6] = max(via2viaMinLenNew[i][6], init_via2viaMinLenNew_minSpc(lNum, upVia,   upVia,   false));
-    via2viaMinLenNew[i][7] = max(via2viaMinLenNew[i][7], init_via2viaMinLenNew_minSpc(lNum, upVia,   upVia,   true ));
+    via2viaMinLenNew_[i][0] = max(via2viaMinLenNew_[i][0], init_via2viaMinLenNew_minSpc(lNum, downVia, downVia, false));
+    via2viaMinLenNew_[i][1] = max(via2viaMinLenNew_[i][1], init_via2viaMinLenNew_minSpc(lNum, downVia, downVia, true ));
+    via2viaMinLenNew_[i][2] = max(via2viaMinLenNew_[i][2], init_via2viaMinLenNew_minSpc(lNum, downVia, upVia,   false));
+    via2viaMinLenNew_[i][3] = max(via2viaMinLenNew_[i][3], init_via2viaMinLenNew_minSpc(lNum, downVia, upVia,   true ));
+    via2viaMinLenNew_[i][4] = max(via2viaMinLenNew_[i][4], init_via2viaMinLenNew_minSpc(lNum, upVia,   downVia, false));
+    via2viaMinLenNew_[i][5] = max(via2viaMinLenNew_[i][5], init_via2viaMinLenNew_minSpc(lNum, upVia,   downVia, true ));
+    via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_minSpc(lNum, upVia,   upVia,   false));
+    via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_minSpc(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
       cout <<"initVia2ViaMinLenNew_minSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (" 
-           <<via2viaMinLenNew[i][0] <<", "
-           <<via2viaMinLenNew[i][1] <<", "
-           <<via2viaMinLenNew[i][2] <<", "
-           <<via2viaMinLenNew[i][3] <<", "
-           <<via2viaMinLenNew[i][4] <<", "
-           <<via2viaMinLenNew[i][5] <<", "
-           <<via2viaMinLenNew[i][6] <<", "
-           <<via2viaMinLenNew[i][7] <<")" <<endl;
+           <<via2viaMinLenNew_[i][0] <<", "
+           <<via2viaMinLenNew_[i][1] <<", "
+           <<via2viaMinLenNew_[i][2] <<", "
+           <<via2viaMinLenNew_[i][3] <<", "
+           <<via2viaMinLenNew_[i][4] <<", "
+           <<via2viaMinLenNew_[i][5] <<", "
+           <<via2viaMinLenNew_[i][6] <<", "
+           <<via2viaMinLenNew_[i][7] <<")" <<endl;
     }
     i++;
   }
@@ -1005,25 +1005,25 @@ void FlexDR::init_via2viaMinLenNew() {
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2viaMinLenNew[i][0] = max(via2viaMinLenNew[i][0], init_via2viaMinLenNew_minimumcut1(lNum, downVia, downVia, false));
-    via2viaMinLenNew[i][1] = max(via2viaMinLenNew[i][1], init_via2viaMinLenNew_minimumcut1(lNum, downVia, downVia, true ));
-    via2viaMinLenNew[i][2] = max(via2viaMinLenNew[i][2], init_via2viaMinLenNew_minimumcut1(lNum, downVia, upVia,   false));
-    via2viaMinLenNew[i][3] = max(via2viaMinLenNew[i][3], init_via2viaMinLenNew_minimumcut1(lNum, downVia, upVia,   true ));
-    via2viaMinLenNew[i][4] = max(via2viaMinLenNew[i][4], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   downVia, false));
-    via2viaMinLenNew[i][5] = max(via2viaMinLenNew[i][5], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   downVia, true ));
-    via2viaMinLenNew[i][6] = max(via2viaMinLenNew[i][6], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   false));
-    via2viaMinLenNew[i][7] = max(via2viaMinLenNew[i][7], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   true ));
+    via2viaMinLenNew_[i][0] = max(via2viaMinLenNew_[i][0], init_via2viaMinLenNew_minimumcut1(lNum, downVia, downVia, false));
+    via2viaMinLenNew_[i][1] = max(via2viaMinLenNew_[i][1], init_via2viaMinLenNew_minimumcut1(lNum, downVia, downVia, true ));
+    via2viaMinLenNew_[i][2] = max(via2viaMinLenNew_[i][2], init_via2viaMinLenNew_minimumcut1(lNum, downVia, upVia,   false));
+    via2viaMinLenNew_[i][3] = max(via2viaMinLenNew_[i][3], init_via2viaMinLenNew_minimumcut1(lNum, downVia, upVia,   true ));
+    via2viaMinLenNew_[i][4] = max(via2viaMinLenNew_[i][4], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   downVia, false));
+    via2viaMinLenNew_[i][5] = max(via2viaMinLenNew_[i][5], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   downVia, true ));
+    via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   false));
+    via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_minimumcut1(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
       cout <<"initVia2ViaMinLenNew_minimumcut " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (" 
-           <<via2viaMinLenNew[i][0] <<", "
-           <<via2viaMinLenNew[i][1] <<", "
-           <<via2viaMinLenNew[i][2] <<", "
-           <<via2viaMinLenNew[i][3] <<", "
-           <<via2viaMinLenNew[i][4] <<", "
-           <<via2viaMinLenNew[i][5] <<", "
-           <<via2viaMinLenNew[i][6] <<", "
-           <<via2viaMinLenNew[i][7] <<")" <<endl;
+           <<via2viaMinLenNew_[i][0] <<", "
+           <<via2viaMinLenNew_[i][1] <<", "
+           <<via2viaMinLenNew_[i][2] <<", "
+           <<via2viaMinLenNew_[i][3] <<", "
+           <<via2viaMinLenNew_[i][4] <<", "
+           <<via2viaMinLenNew_[i][5] <<", "
+           <<via2viaMinLenNew_[i][6] <<", "
+           <<via2viaMinLenNew_[i][7] <<")" <<endl;
     }
     i++;
   }
@@ -1042,25 +1042,25 @@ void FlexDR::init_via2viaMinLenNew() {
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2viaMinLenNew[i][0] = max(via2viaMinLenNew[i][0], init_via2viaMinLenNew_cutSpc(lNum, downVia, downVia, false));
-    via2viaMinLenNew[i][1] = max(via2viaMinLenNew[i][1], init_via2viaMinLenNew_cutSpc(lNum, downVia, downVia, true ));
-    via2viaMinLenNew[i][2] = max(via2viaMinLenNew[i][2], init_via2viaMinLenNew_cutSpc(lNum, downVia, upVia,   false));
-    via2viaMinLenNew[i][3] = max(via2viaMinLenNew[i][3], init_via2viaMinLenNew_cutSpc(lNum, downVia, upVia,   true ));
-    via2viaMinLenNew[i][4] = max(via2viaMinLenNew[i][4], init_via2viaMinLenNew_cutSpc(lNum, upVia,   downVia, false));
-    via2viaMinLenNew[i][5] = max(via2viaMinLenNew[i][5], init_via2viaMinLenNew_cutSpc(lNum, upVia,   downVia, true ));
-    via2viaMinLenNew[i][6] = max(via2viaMinLenNew[i][6], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   false));
-    via2viaMinLenNew[i][7] = max(via2viaMinLenNew[i][7], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   true ));
+    via2viaMinLenNew_[i][0] = max(via2viaMinLenNew_[i][0], init_via2viaMinLenNew_cutSpc(lNum, downVia, downVia, false));
+    via2viaMinLenNew_[i][1] = max(via2viaMinLenNew_[i][1], init_via2viaMinLenNew_cutSpc(lNum, downVia, downVia, true ));
+    via2viaMinLenNew_[i][2] = max(via2viaMinLenNew_[i][2], init_via2viaMinLenNew_cutSpc(lNum, downVia, upVia,   false));
+    via2viaMinLenNew_[i][3] = max(via2viaMinLenNew_[i][3], init_via2viaMinLenNew_cutSpc(lNum, downVia, upVia,   true ));
+    via2viaMinLenNew_[i][4] = max(via2viaMinLenNew_[i][4], init_via2viaMinLenNew_cutSpc(lNum, upVia,   downVia, false));
+    via2viaMinLenNew_[i][5] = max(via2viaMinLenNew_[i][5], init_via2viaMinLenNew_cutSpc(lNum, upVia,   downVia, true ));
+    via2viaMinLenNew_[i][6] = max(via2viaMinLenNew_[i][6], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   false));
+    via2viaMinLenNew_[i][7] = max(via2viaMinLenNew_[i][7], init_via2viaMinLenNew_cutSpc(lNum, upVia,   upVia,   true ));
     if (enableOutput) {
       cout <<"initVia2ViaMinLenNew_cutSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (d2d-x, d2d-y, d2u-x, d2u-y, u2d-x, u2d-y, u2u-x, u2u-y) = (" 
-           <<via2viaMinLenNew[i][0] <<", "
-           <<via2viaMinLenNew[i][1] <<", "
-           <<via2viaMinLenNew[i][2] <<", "
-           <<via2viaMinLenNew[i][3] <<", "
-           <<via2viaMinLenNew[i][4] <<", "
-           <<via2viaMinLenNew[i][5] <<", "
-           <<via2viaMinLenNew[i][6] <<", "
-           <<via2viaMinLenNew[i][7] <<")" <<endl;
+           <<via2viaMinLenNew_[i][0] <<", "
+           <<via2viaMinLenNew_[i][1] <<", "
+           <<via2viaMinLenNew_[i][2] <<", "
+           <<via2viaMinLenNew_[i][3] <<", "
+           <<via2viaMinLenNew_[i][4] <<", "
+           <<via2viaMinLenNew_[i][5] <<", "
+           <<via2viaMinLenNew_[i][6] <<", "
+           <<via2viaMinLenNew_[i][7] <<")" <<endl;
     }
     i++;
   }
@@ -1083,9 +1083,9 @@ void FlexDR::init_halfViaEncArea() {
       via.getLayer2BBox(layer2Box);
       auto layer1HalfArea = layer1Box.width() * layer1Box.length() / 2;
       auto layer2HalfArea = layer2Box.width() * layer2Box.length() / 2;
-      halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
+      halfViaEncArea_.push_back(make_pair(layer1HalfArea, layer2HalfArea));
     } else {
-      halfViaEncArea.push_back(make_pair(0,0));
+      halfViaEncArea_.push_back(make_pair(0,0));
     }
   }
 }
@@ -1188,7 +1188,7 @@ void FlexDR::init_via2turnMinLen() {
       continue;
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
-    via2turnMinLen.push_back(via2turnMinLenTmp);
+    via2turnMinLen_.push_back(via2turnMinLenTmp);
   }
   // check prl
   int i = 0;
@@ -1204,17 +1204,17 @@ void FlexDR::init_via2turnMinLen() {
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
-    via2turnMinLen[i][0] = max(via2turnMinLen[i][0], init_via2turnMinLen_minSpc(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(via2turnMinLen[i][1], init_via2turnMinLen_minSpc(lNum, downVia, true));
-    via2turnMinLen[i][2] = max(via2turnMinLen[i][2], init_via2turnMinLen_minSpc(lNum, upVia, false));
-    via2turnMinLen[i][3] = max(via2turnMinLen[i][3], init_via2turnMinLen_minSpc(lNum, upVia, true));
+    via2turnMinLen_[i][0] = max(via2turnMinLen_[i][0], init_via2turnMinLen_minSpc(lNum, downVia, false));
+    via2turnMinLen_[i][1] = max(via2turnMinLen_[i][1], init_via2turnMinLen_minSpc(lNum, downVia, true));
+    via2turnMinLen_[i][2] = max(via2turnMinLen_[i][2], init_via2turnMinLen_minSpc(lNum, upVia, false));
+    via2turnMinLen_[i][3] = max(via2turnMinLen_[i][3], init_via2turnMinLen_minSpc(lNum, upVia, true));
     if (enableOutput) {
       cout <<"initVia2TurnMinLen_minSpc " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (down->x->y, down->y->x, up->x->y, up->y->x) = (" 
-           <<via2turnMinLen[i][0] <<", "
-           <<via2turnMinLen[i][1] <<", "
-           <<via2turnMinLen[i][2] <<", "
-           <<via2turnMinLen[i][3] <<")" <<endl;
+           <<via2turnMinLen_[i][0] <<", "
+           <<via2turnMinLen_[i][1] <<", "
+           <<via2turnMinLen_[i][2] <<", "
+           <<via2turnMinLen_[i][3] <<")" <<endl;
     }
     i++;
   }
@@ -1234,17 +1234,17 @@ void FlexDR::init_via2turnMinLen() {
       upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
     }
     vector<frCoord> via2turnMinLenTmp(4, 0);
-    via2turnMinLen[i][0] = max(via2turnMinLen[i][0], init_via2turnMinLen_minStp(lNum, downVia, false));
-    via2turnMinLen[i][1] = max(via2turnMinLen[i][1], init_via2turnMinLen_minStp(lNum, downVia, true));
-    via2turnMinLen[i][2] = max(via2turnMinLen[i][2], init_via2turnMinLen_minStp(lNum, upVia, false));
-    via2turnMinLen[i][3] = max(via2turnMinLen[i][3], init_via2turnMinLen_minStp(lNum, upVia, true));
+    via2turnMinLen_[i][0] = max(via2turnMinLen_[i][0], init_via2turnMinLen_minStp(lNum, downVia, false));
+    via2turnMinLen_[i][1] = max(via2turnMinLen_[i][1], init_via2turnMinLen_minStp(lNum, downVia, true));
+    via2turnMinLen_[i][2] = max(via2turnMinLen_[i][2], init_via2turnMinLen_minStp(lNum, upVia, false));
+    via2turnMinLen_[i][3] = max(via2turnMinLen_[i][3], init_via2turnMinLen_minStp(lNum, upVia, true));
     if (enableOutput) {
       cout <<"initVia2TurnMinLen_minstep " <<getDesign()->getTech()->getLayer(lNum)->getName()
            <<" (down->x->y, down->y->x, up->x->y, up->y->x) = (" 
-           <<via2turnMinLen[i][0] <<", "
-           <<via2turnMinLen[i][1] <<", "
-           <<via2turnMinLen[i][2] <<", "
-           <<via2turnMinLen[i][3] <<")" <<endl;
+           <<via2turnMinLen_[i][0] <<", "
+           <<via2turnMinLen_[i][1] <<", "
+           <<via2turnMinLen_[i][2] <<", "
+           <<via2turnMinLen_[i][3] <<")" <<endl;
     }
     i++;
   }
@@ -1272,8 +1272,8 @@ void FlexDR::init() {
 }
 
 void FlexDR::removeGCell2BoundaryPin() {
-  gcell2BoundaryPin.clear();
-  gcell2BoundaryPin.shrink_to_fit();
+  gcell2BoundaryPin_.clear();
+  gcell2BoundaryPin_.shrink_to_fit();
 }
 
 map<frNet*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> FlexDR::initDR_mergeBoundaryPin(int startX, int startY, int size, const frBox &routeBox) {
@@ -1283,7 +1283,7 @@ map<frNet*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> FlexDR::initDR_m
   auto &ygp = gCellPatterns.at(1);
   for (int i = startX; i < (int)xgp.getCount() && i < startX + size; i++) {
     for (int j = startY; j < (int)ygp.getCount() && j < startY + size; j++) {
-      auto &currBp = gcell2BoundaryPin[i][j];
+      auto &currBp = gcell2BoundaryPin_[i][j];
       for (auto &[net, s]: currBp) {
         for (auto &[pt, lNum]: s) {
           if (pt.x() == routeBox.left()   || pt.x() == routeBox.right() ||
@@ -1478,7 +1478,7 @@ void FlexDR::initDR(int size, bool enableDRC) {
 
   //cout <<"  number of violations = " <<numMarkers <<endl;
   removeGCell2BoundaryPin();
-  numViols.push_back(getDesign()->getTopBlock()->getNumMarkers());
+  numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     if (enableDRC) {
       cout <<"  number of violations = "       <<getDesign()->getTopBlock()->getNumMarkers() <<endl;
@@ -1529,8 +1529,8 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     }
     cout <<suffix <<" optimization iteration ..." <<endl;
   }
-  if (graphics) {
-    graphics->startIter(iter);
+  if (graphics_) {
+    graphics_->startIter(iter);
   }
   frBox dieBox;
   getDesign()->getTopBlock()->getBoundaryBBox(dieBox);
@@ -1629,7 +1629,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
         worker->setFollowGuide(followGuide);
         worker->setFixMode(fixMode);
         // TODO: only pass to relevant workers
-        worker->setGraphics(graphics.get());
+        worker->setGraphics(graphics_.get());
         worker->setCost(workerDRCCost, workerMarkerCost, workerMarkerBloatWidth, workerMarkerBloatDepth);
 
         int batchIdx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
@@ -1712,7 +1712,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
     }
   }
   checkConnectivity(iter);
-  numViols.push_back(getDesign()->getTopBlock()->getNumMarkers());
+  numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   if (VERBOSE > 0) {
     if (enableDRC) {
       cout <<"  number of violations = " <<getDesign()->getTopBlock()->getNumMarkers() <<endl;
@@ -1823,7 +1823,7 @@ void FlexDR::end() {
 }
 
 void FlexDR::reportDRC() {
-  double dbu = design->getTech()->getDBUPerUU();
+  double dbu = design_->getTech()->getDBUPerUU();
 
   if (DRC_RPT_FILE == string("")) {
     if (VERBOSE > 0) {

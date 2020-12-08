@@ -38,71 +38,71 @@ namespace fr{
   class taPin: public taBlockObject {
   public:
     // constructors
-    taPin(): taBlockObject(), guide(nullptr), pinFigs(), wlen_helper(0), pin(false), wlen_helper2(0), cost(0), numAssigned(0) {}
+    taPin(): taBlockObject(), guide_(nullptr), pinFigs_(), wlen_helper_(0), pin_(false), wlen_helper2_(0), cost_(0), numAssigned_(0) {}
     // getters
     int getWlenHelper() const {
-      return wlen_helper;
+      return wlen_helper_;
     }
     bool hasWlenHelper2() const {
-      return pin;
+      return pin_;
     }
     int getWlenHelper2() const {
-      return wlen_helper2;
+      return wlen_helper2_;
     }
     frGuide* getGuide() const {
-      return guide;
+      return guide_;
     }
     const std::vector<std::unique_ptr<taPinFig> >& getFigs() const {
-      return pinFigs;
+      return pinFigs_;
     }
     frCost getCost() const {
-      return cost;
+      return cost_;
     }
     int getNumAssigned() const {
-      return numAssigned;
+      return numAssigned_;
     }
     void setWlenHelper(int in) {
-      wlen_helper = in;
+      wlen_helper_ = in;
     }
     void setWlenHelper2(frCoord in) {
-      pin = true;
-      wlen_helper2 = in;
+      pin_ = true;
+      wlen_helper2_ = in;
     }
     void setGuide(frGuide* in) {
-      guide = in;
+      guide_ = in;
     }
     void addPinFig(std::unique_ptr<taPinFig> in) {
       in->addToPin(this);
-      pinFigs.push_back(std::move(in));
+      pinFigs_.push_back(std::move(in));
     }
     void setCost(frCost in) {
-      cost = in;
+      cost_ = in;
     }
     void addCost(frCost in) {
-      cost += in;
+      cost_ += in;
     }
     void addNumAssigned() {
-      numAssigned++;
+      numAssigned_++;
     }
     // others
     frBlockObjectEnum typeId() const override {
       return tacPin;
     }
     bool operator<(const taPin &b) const {
-      if (this->cost != b.cost) {
+      if (this->cost_ != b.cost_) {
         return this->getCost() > b.getCost();
       } else {
         return this->getId() < b.getId();
       }
     }
   protected:
-    frGuide*                                guide;
-    std::vector<std::unique_ptr<taPinFig> > pinFigs;
-    int                                     wlen_helper; // for nbr global guides
-    bool                                    pin;
-    frCoord                                 wlen_helper2; // for local guides and pin guides
-    frCost                                  cost;
-    int                                     numAssigned;
+    frGuide*                                guide_;
+    std::vector<std::unique_ptr<taPinFig> > pinFigs_;
+    int                                     wlen_helper_; // for nbr global guides
+    bool                                    pin_;
+    frCoord                                 wlen_helper2_; // for local guides and pin guides
+    frCost                                  cost_;
+    int                                     numAssigned_;
   };
   struct taPinComp {
     bool operator()(const taPin* lhs, const taPin* rhs) const {

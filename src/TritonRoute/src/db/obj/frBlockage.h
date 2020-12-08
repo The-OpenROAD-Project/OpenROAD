@@ -37,21 +37,21 @@ namespace fr {
   class frBlockage: public frBlockObject {
   public:
     // constructors
-    frBlockage(): frBlockObject(), pin(nullptr) {}
+    frBlockage(): frBlockObject(), pin_(nullptr) {}
     // getters
     frPin* getPin() const {
-      return pin.get();
+      return pin_.get();
     }
     // setters
     void setPin(std::unique_ptr<frPin> in) {
-      pin = std::move(in);
+      pin_ = std::move(in);
     }
     // others
     frBlockObjectEnum typeId() const override {
       return frcBlockage;
     }
   protected:
-    std::unique_ptr<frPin> pin;
+    std::unique_ptr<frPin> pin_;
   };
 }
 

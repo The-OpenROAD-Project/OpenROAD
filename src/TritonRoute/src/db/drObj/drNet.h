@@ -41,166 +41,166 @@ namespace fr {
   class drNet: public drBlockObject {
   public:
     // constructors
-    drNet(): drBlockObject(), pins(), extConnFigs(), routeConnFigs(), bestRouteConnFigs(),
-             fNetTerms(), fNet(nullptr), modified(false), numMarkers(0), numPinsIn(0), 
-             markerDist(std::numeric_limits<frCoord>::max()), allowRipup(true), pinBox(), ripup(false),
-             numReroutes(0), inQueue(false), routed(false), origGuides() {}
+    drNet(): drBlockObject(), pins_(), extConnFigs_(), routeConnFigs_(), bestRouteConnFigs_(),
+             fNetTerms_(), fNet_(nullptr), modified_(false), numMarkers_(0), numPinsIn_(0), 
+             markerDist_(std::numeric_limits<frCoord>::max()), allowRipup_(true), pinBox_(), ripup_(false),
+             numReroutes_(0), inQueue_(false), routed_(false), origGuides_() {}
     // getters
     const std::vector<std::unique_ptr<drPin> >& getPins() const {
-      return pins;
+      return pins_;
     }
     const std::vector<std::unique_ptr<drConnFig> >& getExtConnFigs() const {
-      return extConnFigs;
+      return extConnFigs_;
     }
     const std::vector<std::unique_ptr<drConnFig> >& getRouteConnFigs() const {
-      return routeConnFigs;
+      return routeConnFigs_;
     }
     const std::vector<std::unique_ptr<drConnFig> >& getBestRouteConnFigs() const {
-      return bestRouteConnFigs;
+      return bestRouteConnFigs_;
     }
     frNet* getFrNet() const {
-      return fNet;
+      return fNet_;
     }
     const std::set<frBlockObject*>& getFrNetTerms() const {
-      return fNetTerms;
+      return fNetTerms_;
     }
     bool isModified() const {
-      return modified;
+      return modified_;
     }
     int getNumMarkers() const {
-      return numMarkers;
+      return numMarkers_;
     }
     int getNumPinsIn() const {
-      return numPinsIn;
+      return numPinsIn_;
     }
     bool hasMarkerDist() const {
-      return (markerDist == -1);
+      return (markerDist_ == -1);
     }
     frCoord getMarkerDist() const {
-      return markerDist;
+      return markerDist_;
     }
     void getPinBox(frBox &in) {
-      in.set(pinBox);
+      in.set(pinBox_);
     }
     bool isRipup() const {
-      return allowRipup ? ripup : false;
+      return allowRipup_ ? ripup_ : false;
     }
     int getNumReroutes() const {
-      return numReroutes;
+      return numReroutes_;
     }
     bool isInQueue() const {
-      return inQueue;
+      return inQueue_;
     }
     bool isRouted() const {
-      return routed;
+      return routed_;
     }
     const std::vector<frRect>& getOrigGuides() const {
-      return origGuides;
+      return origGuides_;
     }
 
     // setters
     void addPin(std::unique_ptr<drPin> pinIn) {
       pinIn->setNet(this);
       //pinIn->setId(pins.size());
-      pins.push_back(std::move(pinIn));
+      pins_.push_back(std::move(pinIn));
     }
     void addRoute(std::unique_ptr<drConnFig> in, bool isExt = false) {
       in->addToNet(this);
       if (isExt) {
-        extConnFigs.push_back(std::move(in));
+        extConnFigs_.push_back(std::move(in));
       } else {
-        routeConnFigs.push_back(std::move(in));
+        routeConnFigs_.push_back(std::move(in));
       }
     }
     void setBestRouteConnFigs() {
-      bestRouteConnFigs.clear();
-      for (auto &uConnFig: routeConnFigs) {
+      bestRouteConnFigs_.clear();
+      for (auto &uConnFig: routeConnFigs_) {
         if (uConnFig->typeId() == drcPathSeg) {
           std::unique_ptr<drConnFig> uPtr = std::make_unique<drPathSeg>(*static_cast<drPathSeg*>(uConnFig.get()));
-          bestRouteConnFigs.push_back(std::move(uPtr));
+          bestRouteConnFigs_.push_back(std::move(uPtr));
         } else if (uConnFig->typeId() == drcVia) {
           std::unique_ptr<drConnFig> uPtr = std::make_unique<drVia>(*static_cast<drVia*>(uConnFig.get()));
-          bestRouteConnFigs.push_back(std::move(uPtr));
+          bestRouteConnFigs_.push_back(std::move(uPtr));
         } else if (uConnFig->typeId() == drcPatchWire) {
           std::unique_ptr<drConnFig> uPtr = std::make_unique<drPatchWire>(*static_cast<drPatchWire*>(uConnFig.get()));
-          bestRouteConnFigs.push_back(std::move(uPtr));
+          bestRouteConnFigs_.push_back(std::move(uPtr));
         }
       }
     }
     void clear() {
-      routeConnFigs.clear();
-      modified = true;
-      numMarkers = 0;
-      routed = false;
+      routeConnFigs_.clear();
+      modified_ = true;
+      numMarkers_ = 0;
+      routed_ = false;
     }
     void setFrNet(frNet* in) {
-      fNet = in;
+      fNet_ = in;
     }
     void setFrNetTerms(const std::set<frBlockObject*> &in) {
-      fNetTerms = in;
+      fNetTerms_ = in;
     }
     void setModified(bool in) {
-      modified = in;
+      modified_ = in;
     }
 
     void setNumMarkers(int in) {
-      numMarkers = in;
+      numMarkers_ = in;
     }
     void addMarker() {
-      numMarkers++;
+      numMarkers_++;
     }
     void setNumPinsIn(int in) {
-      numPinsIn = in;
+      numPinsIn_ = in;
     }
     void updateMarkerDist(frCoord in) {
-      markerDist = std::min(markerDist, in);
+      markerDist_ = std::min(markerDist_, in);
     }
     void resetMarkerDist() {
-      markerDist = std::numeric_limits<frCoord>::max();
+      markerDist_ = std::numeric_limits<frCoord>::max();
     }
     void setPinBox(const frBox &in) {
-      pinBox.set(in);
+      pinBox_.set(in);
     }
     void setRipup() {
-      ripup = true;
+      ripup_ = true;
     }
     void resetRipup() {
-      ripup = false;
+      ripup_ = false;
     }
     void setAllowRipup(bool in) {
-      allowRipup = in;
+      allowRipup_ = in;
     }
     void addNumReroutes() {
-      numReroutes++;
+      numReroutes_++;
     }
     void resetNumReroutes() {
-      numReroutes = 0;
+      numReroutes_ = 0;
     }
     void setInQueue() {
-      inQueue = true;
+      inQueue_ = true;
     }
     void resetInQueue() {
-      inQueue = false;
+      inQueue_ = false;
     }
     void setRouted() {
-      routed = true;
+      routed_ = true;
     }
     void resetRouted() {
-      routed = false;
+      routed_ = false;
     }
     void setOrigGuides(std::vector<frRect> &in) {
-      origGuides.assign(in.begin(), in.end());
+      origGuides_.assign(in.begin(), in.end());
     }
     void cleanup() {
-      pins.clear();
-      pins.shrink_to_fit();
-      extConnFigs.clear();
-      extConnFigs.shrink_to_fit();
-      routeConnFigs.clear();
-      routeConnFigs.shrink_to_fit();
-      fNetTerms.clear();
-      origGuides.clear();
-      origGuides.shrink_to_fit();
+      pins_.clear();
+      pins_.shrink_to_fit();
+      extConnFigs_.clear();
+      extConnFigs_.shrink_to_fit();
+      routeConnFigs_.clear();
+      routeConnFigs_.shrink_to_fit();
+      fNetTerms_.clear();
+      origGuides_.clear();
+      origGuides_.shrink_to_fit();
     }
 
     // others
@@ -209,30 +209,30 @@ namespace fr {
     }
 
     bool operator< (const drNet &b) const {
-      return (numMarkers == b.numMarkers) ? (getId() < b.getId()) : (numMarkers > b.numMarkers);
+      return (numMarkers_ == b.numMarkers_) ? (getId() < b.getId()) : (numMarkers_ > b.numMarkers_);
     }
 
   protected:
-    std::vector<std::unique_ptr<drPin> >         pins;
-    std::vector<std::unique_ptr<drConnFig> >     extConnFigs;
-    std::vector<std::unique_ptr<drConnFig> >     routeConnFigs;
-    std::vector<std::unique_ptr<drConnFig> >     bestRouteConnFigs;
-    std::set<frBlockObject*>                     fNetTerms;
-    frNet*                                       fNet;
+    std::vector<std::unique_ptr<drPin> >         pins_;
+    std::vector<std::unique_ptr<drConnFig> >     extConnFigs_;
+    std::vector<std::unique_ptr<drConnFig> >     routeConnFigs_;
+    std::vector<std::unique_ptr<drConnFig> >     bestRouteConnFigs_;
+    std::set<frBlockObject*>                     fNetTerms_;
+    frNet*                                       fNet_;
     // old
-    bool                                         modified;
-    int                                          numMarkers;
-    int                                          numPinsIn;
-    frCoord                                      markerDist;
-    bool                                         allowRipup;
-    frBox                                        pinBox;
-    bool                                         ripup;
+    bool                                         modified_;
+    int                                          numMarkers_;
+    int                                          numPinsIn_;
+    frCoord                                      markerDist_;
+    bool                                         allowRipup_;
+    frBox                                        pinBox_;
+    bool                                         ripup_;
     // new
-    int                                          numReroutes;
-    bool                                         inQueue;
-    bool                                         routed;
+    int                                          numReroutes_;
+    bool                                         inQueue_;
+    bool                                         routed_;
 
-    std::vector<frRect>                          origGuides;
+    std::vector<frRect>                          origGuides_;
   };
 }
 

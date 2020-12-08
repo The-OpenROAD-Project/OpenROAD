@@ -841,7 +841,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute, frLayerNum lNum, int idx
       if (enableOutput) {
         cout <<" use wlen2@" <<wlen2coord / dbu <<", wlen@" <<iroute->getWlenHelper() <<endl;
       }
-      int startTrackIdx = int(std::lower_bound(trackLocs[lNum].begin(), trackLocs[lNum].end(), wlen2coord) - trackLocs[lNum].begin());
+      int startTrackIdx = int(std::lower_bound(trackLocs_[lNum].begin(), trackLocs_[lNum].end(), wlen2coord) - trackLocs_[lNum].begin());
       startTrackIdx = min(startTrackIdx, idx2);
       startTrackIdx = max(startTrackIdx, idx1);
       for (int i = startTrackIdx; i <= idx2; i++) {
@@ -862,7 +862,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute, frLayerNum lNum, int idx
       if (enableOutput) {
         cout <<" use wlen2@" <<wlen2coord / dbu <<", wlen@" <<iroute->getWlenHelper() <<endl;
       }
-      int startTrackIdx = int(std::lower_bound(trackLocs[lNum].begin(), trackLocs[lNum].end(), wlen2coord) - trackLocs[lNum].begin());
+      int startTrackIdx = int(std::lower_bound(trackLocs_[lNum].begin(), trackLocs_[lNum].end(), wlen2coord) - trackLocs_[lNum].begin());
       startTrackIdx = min(startTrackIdx, idx2);
       startTrackIdx = max(startTrackIdx, idx1);
       //cout <<"startTrackIdx " <<startTrackIdx <<endl;
@@ -886,7 +886,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute, frLayerNum lNum, int idx
       if (enableOutput) {
         cout <<" use wlen2@" <<wlen2coord / dbu <<", wlen@" <<iroute->getWlenHelper() <<endl;
       }
-      int startTrackIdx = int(std::lower_bound(trackLocs[lNum].begin(), trackLocs[lNum].end(), wlen2coord) - trackLocs[lNum].begin());
+      int startTrackIdx = int(std::lower_bound(trackLocs_[lNum].begin(), trackLocs_[lNum].end(), wlen2coord) - trackLocs_[lNum].begin());
       startTrackIdx = min(startTrackIdx, idx2);
       startTrackIdx = max(startTrackIdx, idx1);
       for (int i = startTrackIdx; i >= idx1; i--) {
@@ -962,7 +962,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute, frLayerNum lNum, int idx
   if (enableOutput) {
     cout <<"  select track@" <<bestTrackLoc / dbu <<", cost=" <<bestCost <<endl;
   }
-  totCost    += drcCost;
+  totCost_ += drcCost;
   iroute->setCost(drcCost);
   return bestTrackLoc;
 }
@@ -1015,7 +1015,7 @@ void FlexTAWorker::assignIroute_init(taPin* iroute, set<taPin*, frBlockObjectCom
       workerRegionQuery.remove(uPinFig.get());
       subCost(uPinFig.get(), pinS);
     }
-    totCost    -= iroute->getCost();
+    totCost_ -= iroute->getCost();
   }
 }
 
@@ -1047,11 +1047,11 @@ void FlexTAWorker::assignIroute_updateOthers(set<taPin*, frBlockObjectComp> &pin
       cout <<"Error: FlexTAWorker::assignIroute_updateOthers does not find trackLoc" <<endl;
       exit(1);
     }
-    totCost    -= iroute->getCost();
+    totCost_ -= iroute->getCost();
     assignIroute_getCost(iroute, trackLoc, drcCost);
     iroute->setCost(drcCost);
-    totCost    += iroute->getCost();
-    if (drcCost && iroute->getNumAssigned() < maxRetry) {
+    totCost_ += iroute->getCost();
+    if (drcCost && iroute->getNumAssigned() < maxRetry_) {
       addToReassignIroutes(iroute);
     }
   }
@@ -1114,7 +1114,7 @@ void FlexTAWorker::assign() {
   while (iroute != nullptr) {
     auto it = find(buffers.begin(), buffers.end(), iroute);
     // in the buffer, skip
-    if (it != buffers.end() || iroute->getNumAssigned() >= maxRetry) {
+    if (it != buffers.end() || iroute->getNumAssigned() >= maxRetry_) {
       ;
     // not in the buffer, re-assign
     } else {
@@ -1129,9 +1129,9 @@ void FlexTAWorker::assign() {
       currBufferIdx = (currBufferIdx + 1) % maxBufferSize;
       if (enableOutput && !isInitTA()) {
         //cout <<"totCost@" <<totCost <<"/" <<totDrcCost <<endl;
-        cout <<"totCost@" <<totCost <<endl;
+        cout <<"totCost@" << totCost_ <<endl;
       }
-      numAssigned++;
+      numAssigned_++;
     }
     iroute = popFromReassignIroutes();
   }

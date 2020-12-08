@@ -41,59 +41,59 @@ namespace fr {
   public:
     // constructors
     frAccessPoint(const frPoint& point, frLayerNum layerNum): frBlockObject(),
-                    point(point), layerNum(layerNum), accesses(std::vector<bool>(6, false)),
-                     viaDefs(), typeL(frAccessPointEnum::frcOnGridAP), 
-                     typeH(frAccessPointEnum::frcOnGridAP), aps(nullptr) {}
+                    point_(point), layerNum_(layerNum), accesses_(std::vector<bool>(6, false)),
+                     viaDefs_(), typeL_(frAccessPointEnum::frcOnGridAP), 
+                     typeH_(frAccessPointEnum::frcOnGridAP), aps_(nullptr) {}
     // getters
     void getPoint(frPoint &in) const {
-      in.set(point);
+      in.set(point_);
     }
     const frPoint& getPoint() const {
-      return point;
+      return point_;
     }
     frLayerNum getLayerNum() const {
-      return layerNum;
+      return layerNum_;
     }
     bool hasAccess() const {
-      return (accesses[0] || accesses[1] || accesses[2] || accesses[3] || accesses[4] || accesses[5]); 
+      return (accesses_[0] || accesses_[1] || accesses_[2] || accesses_[3] || accesses_[4] || accesses_[5]); 
     }
     bool hasAccess(const frDirEnum &dir) const {
       switch (dir) {
         case (frDirEnum::E):
-          return accesses[0];
+          return accesses_[0];
           break;
         case (frDirEnum::S):
-          return accesses[1];
+          return accesses_[1];
           break;
         case (frDirEnum::W):
-          return accesses[2];
+          return accesses_[2];
           break;
         case (frDirEnum::N):
-          return accesses[3];
+          return accesses_[3];
           break;
         case (frDirEnum::U):
-          return accesses[4];
+          return accesses_[4];
           break;
         case (frDirEnum::D):
-          return accesses[5];
+          return accesses_[5];
           break;
         default:
           return false;
       }
     }
     const std::vector<bool>& getAccess() const {
-      return accesses;
+      return accesses_;
     }
     bool hasViaDef(int numCut = 1, int idx = 0) const {
       // first check numCuts
       int numCutIdx = numCut - 1;
-      if (numCutIdx >= 0 && numCutIdx < (int)viaDefs.size()) {
+      if (numCutIdx >= 0 && numCutIdx < (int)viaDefs_.size()) {
         ;
       } else {
         return false;
       }
       // then check idx
-      if (idx >= 0 && idx < (int)(viaDefs[numCutIdx].size())) {
+      if (idx >= 0 && idx < (int)(viaDefs_[numCutIdx].size())) {
         return true;
       } else {
         return false;
@@ -103,54 +103,54 @@ namespace fr {
     // e.g., getViaDefs(1)    --> get all one-cut viadefs
     // e.g., getViaDefs(2)    --> get all two-cut viadefs
     const std::vector<frViaDef*>& getViaDefs(int numCut = 1) const {
-      return viaDefs[numCut - 1];
+      return viaDefs_[numCut - 1];
     }
     std::vector<frViaDef*>& getViaDefs(int numCut = 1) {
-      return viaDefs[numCut - 1];
+      return viaDefs_[numCut - 1];
     }
     // e.g., getViaDef()     --> get best one-cut viadef
     // e.g., getViaDef(1)    --> get best one-cut viadef
     // e.g., getViaDef(2)    --> get best two-cut viadef
     // e.g., getViaDef(1, 1) --> get 1st alternative one-cut viadef
     frViaDef* getViaDef(int numCut = 1, int idx = 0) const {
-      return viaDefs[numCut - 1][idx];
+      return viaDefs_[numCut - 1][idx];
     }
     frPinAccess* getPinAccess() const {
-      return aps;
+      return aps_;
     }
     frCost getCost() const {
-      return (int)typeL + 4 * (int)typeH;
+      return (int)typeL_ + 4 * (int)typeH_;
     }
     frAccessPointEnum getType(bool isL) const {
       if (isL) {
-        return typeL;
+        return typeL_;
       } else {
-        return typeH;
+        return typeH_;
       }
     }
     // setters
     void setPoint(const frPoint &in) {
-      point.set(in);
+      point_.set(in);
     }
     void setAccess(const frDirEnum &dir, bool isValid = true) {
       switch (dir) {
         case (frDirEnum::E):
-          accesses[0] = isValid;
+          accesses_[0] = isValid;
           break;
         case (frDirEnum::S):
-          accesses[1] = isValid;
+          accesses_[1] = isValid;
           break;
         case (frDirEnum::W):
-          accesses[2] = isValid;
+          accesses_[2] = isValid;
           break;
         case (frDirEnum::N):
-          accesses[3] = isValid;
+          accesses_[3] = isValid;
           break;
         case (frDirEnum::U):
-          accesses[4] = isValid;
+          accesses_[4] = isValid;
           break;
         case (frDirEnum::D):
-          accesses[5] = isValid;
+          accesses_[5] = isValid;
           break;
         default:
           std::cout << "Error: unexpected direction in setValidAccess\n";
@@ -158,13 +158,13 @@ namespace fr {
     }
     void addViaDef(frViaDef *in);
     void addToPinAccess(frPinAccess* in) {
-      aps = in;
+      aps_ = in;
     }
     void setType(frAccessPointEnum in, bool isL = true) {
       if (isL) {
-        typeL = in;
+        typeL_ = in;
       } else {
-        typeH = in;
+        typeH_ = in;
       }
     }
     // others
@@ -172,45 +172,45 @@ namespace fr {
       return frcAccessPoint;
     }
   private:
-    frPoint                              point;
-    frLayerNum                           layerNum;
-    std::vector<bool>                    accesses; // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
-    std::vector<std::vector<frViaDef*> > viaDefs;  // cut number -> up-via access map 
-    frAccessPointEnum                    typeL;
-    frAccessPointEnum                    typeH;
-    frPinAccess*                         aps;
+    frPoint                              point_;
+    frLayerNum                           layerNum_;
+    std::vector<bool>                    accesses_; // 0 = E, 1 = S, 2 = W, 3 = N, 4 = U, 5 = D
+    std::vector<std::vector<frViaDef*> > viaDefs_;  // cut number -> up-via access map 
+    frAccessPointEnum                    typeL_;
+    frAccessPointEnum                    typeH_;
+    frPinAccess*                         aps_;
   };
 
   class frPinAccess: public frBlockObject {
   public:
-    frPinAccess(): frBlockObject(), aps(), pin(nullptr) {}
+    frPinAccess(): frBlockObject(), aps_(), pin_(nullptr) {}
     // getters
     const std::vector<std::unique_ptr<frAccessPoint> >& getAccessPoints() const {
-      return aps;
+      return aps_;
     }
     frPin* getPin() const {
-      return pin;
+      return pin_;
     }
     frAccessPoint* getAccessPoint(int idx) const {
-      return aps[idx].get();
+      return aps_[idx].get();
     }
     int getNumAccessPoints() const {
-      return aps.size();
+      return aps_.size();
     }
     // setters
     void addAccessPoint(std::unique_ptr<frAccessPoint> in) {
-      aps.push_back(std::move(in));
+      aps_.push_back(std::move(in));
     }
     void addToPin(frPin* in) {
-      pin = in;
+      pin_ = in;
     }
     // others
     frBlockObjectEnum typeId() const override {
       return frcPinAccess;
     }
   private:
-    std::vector<std::unique_ptr<frAccessPoint> > aps;
-    frPin* pin;
+    std::vector<std::unique_ptr<frAccessPoint> > aps_;
+    frPin* pin_;
   };
 }
 

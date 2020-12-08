@@ -49,7 +49,7 @@ namespace triton_route {
     void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db);
 
     fr::frDesign* getDesign() const {
-      return design.get();
+      return design_.get();
     }
 
     int main();
@@ -63,9 +63,9 @@ namespace triton_route {
     static bool readParams(const std::string &fileName);
 
   protected:
-    std::unique_ptr<fr::frDesign> design;
-    std::unique_ptr<fr::frDebugSettings> debug;
-    odb::dbDatabase *db;
+    std::unique_ptr<fr::frDesign> design_;
+    std::unique_ptr<fr::frDebugSettings> debug_;
+    odb::dbDatabase *db_;
     
     void init();
     void prep();

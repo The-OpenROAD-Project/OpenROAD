@@ -37,46 +37,46 @@ namespace fr {
   class frViaDef;
   class drAccessPattern: public drBlockObject {
   public:
-    drAccessPattern(): beginPoint(), beginLayerNum(0), beginArea(0), pin(nullptr), validAccess(std::vector<bool>(6, true)),
-                       vU(nullptr), vD(nullptr), vUIdx(0), vDIdx(0), onTrackX(true), onTrackY(true), pinCost(0) {}
+    drAccessPattern(): beginPoint_(), beginLayerNum_(0), beginArea_(0), pin_(nullptr), validAccess_(std::vector<bool>(6, true)),
+                       vU_(nullptr), vD_(nullptr), vUIdx_(0), vDIdx_(0), onTrackX_(true), onTrackY_(true), pinCost_(0) {}
     // getters
     void getPoint(frPoint &bpIn) const {
-      bpIn.set(beginPoint);
+      bpIn.set(beginPoint_);
     }
     frLayerNum getBeginLayerNum() const {
-      return beginLayerNum;
+      return beginLayerNum_;
     }
     frCoord getBeginArea() const {
-      return beginArea;
+      return beginArea_;
     }
     drPin* getPin() const {
-      return pin;
+      return pin_;
     }
     bool hasMazeIdx() const {
-      return (!mazeIdx.empty());
+      return (!mazeIdx_.empty());
     }
     void getMazeIdx(FlexMazeIdx &in) const {
-      in.set(mazeIdx);
+      in.set(mazeIdx_);
     }
     bool hasValidAccess(const frDirEnum &dir) {
       switch (dir) {
         case (frDirEnum::E):
-          return validAccess[0];
+          return validAccess_[0];
           break;
         case (frDirEnum::S):
-          return validAccess[1];
+          return validAccess_[1];
           break;
         case (frDirEnum::W):
-          return validAccess[2];
+          return validAccess_[2];
           break;
         case (frDirEnum::N):
-          return validAccess[3];
+          return validAccess_[3];
           break;
         case (frDirEnum::U):
-          return validAccess[4];
+          return validAccess_[4];
           break;
         case (frDirEnum::D):
-          return validAccess[5];
+          return validAccess_[5];
           break;
         default:
           return false;
@@ -84,36 +84,36 @@ namespace fr {
     }
     bool hasAccessViaDef(const frDirEnum &dir = frDirEnum::U) {
       if (dir ==  frDirEnum::U) {
-        return !(vU == nullptr);
+        return !(vU_ == nullptr);
       } else {
-        return !(vD == nullptr);
+        return !(vD_ == nullptr);
       }
     }
     frViaDef* getAccessViaDef(const frDirEnum &dir = frDirEnum::U) {
       if (dir ==  frDirEnum::U) {
-        return (*vU)[vUIdx];
+        return (*vU_)[vUIdx_];
       } else {
-        return (*vD)[vDIdx];
+        return (*vD_)[vDIdx_];
       }
     }
     bool nextAccessViaDef(const frDirEnum &dir = frDirEnum::U) {
       bool sol = true;
       if (dir ==  frDirEnum::U) {
-        if ((*vU).size() == 1) {
+        if ((*vU_).size() == 1) {
           sol = false;
         } else {
-          ++vUIdx;
-          if (vUIdx >= (int)(*vU).size()) {
-            vUIdx -= (int)(*vU).size();
+          ++vUIdx_;
+          if (vUIdx_ >= (int)(*vU_).size()) {
+            vUIdx_ -= (int)(*vU_).size();
           }
         }
       } else {
-        if ((*vD).size() == 1) {
+        if ((*vD_).size() == 1) {
           sol = false;
         } else {
-          ++vDIdx;
-          if (vDIdx >= (int)(*vD).size()) {
-            vDIdx -= (int)(*vD).size();
+          ++vDIdx_;
+          if (vDIdx_ >= (int)(*vD_).size()) {
+            vDIdx_ -= (int)(*vD_).size();
           }
         }
       }
@@ -122,68 +122,68 @@ namespace fr {
     bool prevAccessViaDef(const frDirEnum &dir = frDirEnum::U) {
       bool sol = true;
       if (dir ==  frDirEnum::U) {
-        if ((*vU).size() == 1) {
+        if ((*vU_).size() == 1) {
           sol = false;
         } else {
-          --vUIdx;
-          if (vUIdx < 0) {
-            vUIdx += (int)(*vU).size();
+          --vUIdx_;
+          if (vUIdx_ < 0) {
+            vUIdx_ += (int)(*vU_).size();
           }
         }
       } else {
-        if ((*vD).size() == 1) {
+        if ((*vD_).size() == 1) {
           sol = false;
         } else {
-          --vDIdx;
-          if (vDIdx < 0) {
-            vDIdx += (int)(*vD).size();
+          --vDIdx_;
+          if (vDIdx_ < 0) {
+            vDIdx_ += (int)(*vD_).size();
           }
         }
       }
       return sol;
     }
     bool isOnTrack(bool isX) const {
-      return (isX) ? onTrackX : onTrackY;
+      return (isX) ? onTrackX_ : onTrackY_;
     }
     frUInt4 getPinCost() const {
-      return pinCost;
+      return pinCost_;
     }
     // setters
     void setPoint(const frPoint &bpIn) {
-      beginPoint.set(bpIn);
+      beginPoint_.set(bpIn);
     }
     void setBeginLayerNum(frLayerNum in) {
-      beginLayerNum = in;
+      beginLayerNum_ = in;
     }
     void setBeginArea(frCoord in) {
-      beginArea = in;
+      beginArea_ = in;
     }
     void setMazeIdx(const FlexMazeIdx &in) {
-      mazeIdx.set(in);
+      mazeIdx_.set(in);
     }
     void setPin(drPin* in) {
-      pin = in;
+      pin_ = in;
     }
     void setValidAccess(const std::vector<bool> &in) {
-      validAccess = in;
+      validAccess_ = in;
     }
 
     void setAccessViaDef(const frDirEnum dir, std::vector<frViaDef*>* viaDef) {
       if (dir == frDirEnum::U) {
-        vU = viaDef;
+        vU_ = viaDef;
       } else {
-        vD = viaDef;
+        vD_ = viaDef;
       }
     }
     void setOnTrack(bool in, bool isX) {
       if (isX) {
-        onTrackX = in;
+        onTrackX_ = in;
       } else {
-        onTrackY = in;
+        onTrackY_ = in;
       }
     }
     void setPinCost(frUInt4 in) {
-      pinCost = in;
+      pinCost_ = in;
     }
 
     // others
@@ -192,19 +192,19 @@ namespace fr {
     }
 
   protected:
-    frPoint                 beginPoint;
-    frLayerNum              beginLayerNum;
-    frCoord                 beginArea;
-    FlexMazeIdx             mazeIdx;
-    drPin*                  pin;
-    std::vector<bool>       validAccess;
-    std::vector<frViaDef*>* vU;
-    std::vector<frViaDef*>* vD;
-    int                     vUIdx;
-    int                     vDIdx;
-    bool                    onTrackX; // initialized in initMazeIdx_ap
-    bool                    onTrackY; // initialized in initMazeIdx_ap
-    frUInt4                 pinCost; // is preferred ap
+    frPoint                 beginPoint_;
+    frLayerNum              beginLayerNum_;
+    frCoord                 beginArea_;
+    FlexMazeIdx             mazeIdx_;
+    drPin*                  pin_;
+    std::vector<bool>       validAccess_;
+    std::vector<frViaDef*>* vU_;
+    std::vector<frViaDef*>* vD_;
+    int                     vUIdx_;
+    int                     vDIdx_;
+    bool                    onTrackX_; // initialized in initMazeIdx_ap
+    bool                    onTrackY_; // initialized in initMazeIdx_ap
+    frUInt4                 pinCost_; // is preferred ap
   };
 }
 
