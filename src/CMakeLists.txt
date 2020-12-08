@@ -234,7 +234,7 @@ add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
-add_subdirectory(antennachecker)
+add_subdirectory(antenna_checker)
 
 if(BUILD_OPENPHYSYN)
   add_subdirectory(OpenPhySyn)
