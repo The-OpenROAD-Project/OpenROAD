@@ -54,6 +54,8 @@ namespace triton_route {
 
     int main();
 
+    int getNumDRVs() const;
+
     void setDebugDR(bool on = true);
     void setDebugMaze(bool on = true);
     void setDebugNetName(const char* name);
@@ -66,6 +68,7 @@ namespace triton_route {
     std::unique_ptr<fr::frDesign> design_;
     std::unique_ptr<fr::frDebugSettings> debug_;
     odb::dbDatabase *db_;
+    int num_drvs_;
     
     void init();
     void prep();

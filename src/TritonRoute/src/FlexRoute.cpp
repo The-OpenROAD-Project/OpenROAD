@@ -37,6 +37,7 @@
 #include "gc/FlexGC.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
+#include "openroad/Error.hh"
 
 using namespace std;
 using namespace fr;
@@ -53,7 +54,8 @@ extern int Triton_route_Init(Tcl_Interp* interp);
 
 TritonRoute::TritonRoute()
   : design_(std::make_unique<frDesign>()),
-    debug_(std::make_unique<frDebugSettings>())
+    debug_(std::make_unique<frDebugSettings>()),
+    num_drvs_(-1)
 {
 }
 
@@ -85,6 +87,14 @@ void TritonRoute::setDebugGCell(int x, int y)
 void TritonRoute::setDebugIter(int iter)
 {
   debug_->iter = iter;
+}
+
+int TritonRoute::getNumDRVs() const
+{
+  if (num_drvs_ < 0) {
+    ord::error("detailed routing has not been run yet");
+  }
+  return num_drvs_;
 }
 
 void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
@@ -127,6 +137,7 @@ void TritonRoute::ta() {
 }
 
 void TritonRoute::dr() {
+  num_drvs_ = -1;
   FlexDR dr(getDesign());
   dr.setDebug(debug_.get(), db_);
   dr.main();
@@ -143,6 +154,8 @@ int TritonRoute::main() {
   ta();
   dr();
   endFR();
+
+  num_drvs_ = design_->getTopBlock()->getNumMarkers();
 
   return 0;
 }
