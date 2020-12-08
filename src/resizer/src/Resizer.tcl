@@ -40,7 +40,7 @@ proc remove_buffers { args } {
   rsz::remove_buffers_cmd
 }
 
-sta::define_cmd_args "set_wire_rc" {[-clock] [-data]\
+sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
                                       [-layer layer_name]\
                                       [-resistance res ][-capacitance cap]\
                                       [-corner corner_name]}
@@ -48,7 +48,7 @@ sta::define_cmd_args "set_wire_rc" {[-clock] [-data]\
 proc set_wire_rc { args } {
    sta::parse_key_args "set_wire_rc" args \
      keys {-layer -resistance -capacitance -corner} \
-     flags {-clock -data}
+     flags {-clock -signal}
 
   set wire_res 0.0
   set wire_cap 0.0
@@ -103,18 +103,18 @@ proc set_wire_rc { args } {
   }
   sta::check_argc_eq0 "set_wire_rc" $args
   
-  if { [info exists flags(-clock)] && [info exists flags(-clock)] \
-         || ![info exists flags(-clock)] && ![info exists flags(-clock)] } {
-    set data 1
+  if { [info exists flags(-signal)] && [info exists flags(-clock)] \
+         || ![info exists flags(-signal)] && ![info exists flags(-clock)] } {
+    set signal 1
     set clk 1
-  } elseif { [info exists flags(-clock)] && ![info exists flags(-clock)] } {
-    set data 0
+  } elseif { [info exists flags(-clock)] && ![info exists flags(-signal)] } {
+    set signal 0
     set clk 1
-  } elseif { ![info exists flags(-clock)] && [info exists flags(-clock)] } {
-    set data 1
+  } elseif { [info exists flags(-signal)] && ![info exists flags(-clock)] } {
+    set signal 1
     set clk 0
   }
-  if { $data } {
+  if { $signal } {
     rsz::set_wire_rc_cmd $wire_res $wire_cap $corner
   }
   if { $clk } {
