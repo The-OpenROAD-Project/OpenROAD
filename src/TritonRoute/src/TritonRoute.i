@@ -46,6 +46,12 @@
 
 %inline %{
 
+int detailed_route_num_drvs()
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  return router->getNumDRVs();
+}
+
 void detailed_route_cmd(const char* param_file)
 {
   bool readSuccess = triton_route::TritonRoute::readParams(param_file);
