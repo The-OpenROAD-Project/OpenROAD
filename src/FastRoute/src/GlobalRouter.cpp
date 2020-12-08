@@ -1520,32 +1520,14 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
 
 void GlobalRouter::addRemainingGuides(NetRouteMap &routes, std::vector<Net*>& nets)
 {
-  for (auto &net_route : routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute &route = net_route.second;
-    Net* net = getNet(db_net);
-    // Skip nets with 1 pin or less
+  for (Net* net : nets) {
+    odb::dbNet* db_net = net->getDbNet();
+    GRoute &route = routes[db_net];
     if (net->getNumPins() > 1) {
       if (route.empty()) {
         addGuidesForLocalNets(db_net, route);
       } else {
         addGuidesForPinAccess(db_net, route);
-      }
-    }
-  }
-
-  // Add local guides for nets with no routing.
-  for (Net* net : nets) {
-    odb::dbNet* db_net = net->getDbNet();
-    if (net->getNumPins() > 1
-	      && (routes.find(db_net) == routes.end()
-	      || routes[db_net].empty())) {
-      GRoute &route = routes[db_net];
-      std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
-      for (Pin &pin : pins) {
-        odb::Point pinPos = pin.getOnGridPosition();
-        GSegment segment = GSegment(pinPos.x(), pinPos.y(), pin.getTopLayer(), pinPos.x(), pinPos.y(), pin.getTopLayer());
-        route.push_back(segment);
       }
     }
   }
