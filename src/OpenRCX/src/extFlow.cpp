@@ -3430,7 +3430,7 @@ uint extMain::invalidateNonDirShapes(dbBlock* blk, uint dir, bool setMainNet)
       dbRSeg* rseg1 = dbRSeg::getRSeg(blk, rsegId1);
       if (rseg1 == NULL) {
         warning(0,
-                "GndCap: cannot find rseg for net [%d] %d and shapeId %d\n",
+                "GndCap: cannot find rseg for net [%d] %s and shapeId %d\n",
                 net->getId(),
                 net->getConstName(),
                 shapeId);

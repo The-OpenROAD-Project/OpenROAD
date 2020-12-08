@@ -250,7 +250,7 @@ double extSpef::printDiff(dbNet*      net,
 
     double boundsPercent;
     double boundsPercentRef;
-    if (ctype == "netRes") {
+    if (strcmp(ctype, "netRes") == 0) {
       const char* comp_db = comp_bounds(
           dbCap, min_res + via_res, max_res + via_res, boundsPercent);
       const char* comp_ref = comp_bounds(

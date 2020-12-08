@@ -1318,9 +1318,9 @@ uint extMain::getLayerSearchBoundaries(odb::dbTechLayer* layer,
   uint p     = layer->getPitch();
   if (p <= 0)
     error(0,
-          "Layer %s, routing level %d, has pitch %d !!\n",
+          "Layer %s has pitch %u !!\n",
           layer->getConstName(),
-          pitch);
+          *pitch);
 
   pitch[0] = 0;
   pitch[1] = 0;
