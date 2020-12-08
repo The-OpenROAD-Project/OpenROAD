@@ -10,14 +10,13 @@ mpl::TritonMacroPlace*
 getTritonMp();
 }
 
+using ord::getTritonMp;
+
 %}
 
 %inline %{
 
 namespace mpl {
-
-using ord::getTritonMp;
-using mpl::TritonMacroPlace;
 
 void
 set_macro_place_global_config_cmd(const char* file) 

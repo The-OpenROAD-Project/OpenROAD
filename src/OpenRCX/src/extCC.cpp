@@ -504,22 +504,6 @@ uint Ath__track::couplingCaps(Ath__grid*          ccGrid,
         if (useDbSdb)
           wBoxId = wire->getRsegId();
 
-        /* DF 820
-                                                wBoxId = (int)wire->_boxId;
-
-                                                //*****************************************
-           NEED_TO_DEBUG 720 DF if (wire->isVia()) { if (wire->_otherId &&
-           useDbSdb) // useDbSdb should false
-                                                                wBoxId=wire->getShapeProperty(wire->_otherId);
-                                                } else {
-                                                if (wire->_otherId && useDbSdb)
-           // useDbSdb should false
-                                                        wire->getNet()->getWire()->getProperty((int)wire->_otherId,
-           wBoxId);
-                                                }
-                                                //***************************************************************************
-                                */
-
         coupleOptions[1] = wBoxId;  // dbRSeg id
         if (wire->_otherId == 0)
           coupleOptions[1] = -wBoxId;  // dbRSeg id
