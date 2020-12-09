@@ -47,6 +47,7 @@ extern "C" {
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <cmath>
 
 #include "opendb/db.h"
 #include "openroad/Error.hh"

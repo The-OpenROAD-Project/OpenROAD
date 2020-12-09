@@ -38,6 +38,7 @@
 #include "dr/FlexWavefront.h"
 #include <map>
 #include <iostream>
+#include <cstring>
 
 
 namespace fr {
@@ -95,14 +96,14 @@ namespace fr {
     bool isBlocked(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        const Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            return getBit(idx, 3);
+            return node.isBlockedEast;
           case frDirEnum::N:
-            return getBit(idx, 4);
+            return node.isBlockedNorth;
           case frDirEnum::U:
-            return getBit(idx, 5);
+            return node.isBlockedUp;
           default:
             return false;
         }
@@ -112,19 +113,19 @@ namespace fr {
     }
     // unsafe access, no check
     bool isSVia(frMIdx x, frMIdx y, frMIdx z) const {
-      return getBit(getIdx(x, y, z), 9);
+      return nodes[getIdx(x, y, z)].hasSpecialVia;
     }
     // unsafe access, no check
     bool hasGridCostE(frMIdx x, frMIdx y, frMIdx z) const {
-      return getBit(getIdx(x, y, z), 12);
+      return nodes[getIdx(x, y, z)].hasGridCostEast;
     }
     // unsafe access, no check
     bool hasGridCostN(frMIdx x, frMIdx y, frMIdx z) const {
-      return getBit(getIdx(x, y, z), 13);
+      return nodes[getIdx(x, y, z)].hasGridCostNorth;
     }
     // unsafe access, no check
     bool hasGridCostU(frMIdx x, frMIdx y, frMIdx z) const {
-      return getBit(getIdx(x, y, z), 14);
+      return nodes[getIdx(x, y, z)].hasGridCostUp;
     }
 
     void getBBox(frBox &in) const {
@@ -195,14 +196,14 @@ namespace fr {
     bool hasEdge(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        const Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            return getBit(idx, 0);
+            return node.hasEastEdge;
           case frDirEnum::N:
-            return getBit(idx, 1);
+            return node.hasNorthEdge;
           case frDirEnum::U:
-            return getBit(idx, 2);
+            return node.hasUpEdge;
           default:
             return false;
         }
@@ -229,12 +230,11 @@ namespace fr {
       frUInt4 sol = 0;
       if (dir != frDirEnum::D && dir != frDirEnum::U) {
         reverse(x, y, z, dir);
-        auto idx = getIdx(x, y, z);
-        sol = (getBits(idx, 56, GRIDGRAPHDRCCOSTSIZE));
+        sol = nodes[getIdx(x, y, z)].shapeCostPlanar;
       } else {
         correctU(x, y, z, dir);
-        auto idx = getIdx(x, y, z);
-        sol = isOverrideShapeCost(x, y, z, dir) ? 0 : (getBits(idx, 48, GRIDGRAPHDRCCOSTSIZE));
+        const Node& node = nodes[getIdx(x, y, z)];
+        sol = isOverrideShapeCost(x, y, z, dir) ? 0 : node.shapeCostVia;
       }
       return (sol);
     }
@@ -244,7 +244,7 @@ namespace fr {
       } else {
         correctU(x, y, z, dir);
         auto idx = getIdx(x, y, z);
-        return getBit(idx, 11);
+        return nodes[idx].overrideShapeCostVia;
       }
     }
     bool hasDRCCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const {
@@ -252,11 +252,11 @@ namespace fr {
       if (dir != frDirEnum::D && dir != frDirEnum::U) {
         reverse(x, y, z, dir);
         auto idx = getIdx(x, y, z);
-        sol = (getBits(idx, 16, GRIDGRAPHDRCCOSTSIZE));
+        sol = nodes[idx].drcCostPlanar;
       } else {
         correctU(x, y, z, dir);
         auto idx = getIdx(x, y, z);
-        sol = (getBits(idx, 24, GRIDGRAPHDRCCOSTSIZE));
+        sol = nodes[idx].drcCostVia;
       }
       return (sol);
     }
@@ -266,11 +266,11 @@ namespace fr {
       if (dir != frDirEnum::D && dir != frDirEnum::U) {
         reverse(x, y, z, dir);
         auto idx = getIdx(x, y, z);
-        sol += (getBits(idx, 32, GRIDGRAPHDRCCOSTSIZE));
+        sol += nodes[idx].markerCostPlanar;
       } else {
         correctU(x, y, z, dir);
         auto idx = getIdx(x, y, z);
-        sol += (getBits(idx, 40, GRIDGRAPHDRCCOSTSIZE));
+        sol += nodes[idx].markerCostVia;
       }
       // new
       //correct(x, y, z, dir);
@@ -348,18 +348,18 @@ namespace fr {
         correct(x, y, z, dir);
         //cout <<"corr edge (" <<x <<", " <<y <<", " <<z <<", " <<int(dir) <<")" <<endl;
         if (isValid(x, y, z, dir)) {
-          auto idx = getIdx(x, y, z);
+          Node& node = nodes[getIdx(x, y, z)];
           switch (dir) {
             case frDirEnum::E:
-              setBit(idx, 0);
+              node.hasEastEdge = true;
               sol = true;
               break;
             case frDirEnum::N:
-              setBit(idx, 1);
+              node.hasNorthEdge = true;
               sol = true;
               break;
             case frDirEnum::U:
-              setBit(idx, 2);
+              node.hasUpEdge = true;
               sol = true;
               break;
             default:
@@ -375,18 +375,18 @@ namespace fr {
       bool sol = false;
       correct(x, y, z, dir);
       if (isValid(x, y, z, dir)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            resetBit(idx, 0);
+            node.hasEastEdge = false;
             sol = true;
             break;
           case frDirEnum::N:
-            resetBit(idx, 1);
+            node.hasNorthEdge = false;
             sol = true;
             break;
           case frDirEnum::U:
-            resetBit(idx, 2);
+            node.hasUpEdge = false;
             sol = true;
             break;
           default:
@@ -398,14 +398,14 @@ namespace fr {
     void setBlocked(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            return setBit(idx, 3);
+            node.isBlockedEast = true;
           case frDirEnum::N:
-            return setBit(idx, 4);
+            node.isBlockedNorth = true;
           case frDirEnum::U:
-            return setBit(idx, 5);
+            node.isBlockedUp = true;
           default:
             ;
         }
@@ -414,14 +414,14 @@ namespace fr {
     void resetBlocked(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            return resetBit(idx, 3);
+            node.isBlockedEast = false;
           case frDirEnum::N:
-            return resetBit(idx, 4);
+            node.isBlockedNorth = false;
           case frDirEnum::U:
-            return resetBit(idx, 5);
+            node.isBlockedUp = false;
           default:
             ;
         }
@@ -429,49 +429,47 @@ namespace fr {
     }
     void addDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      addToBits(idx, 16, GRIDGRAPHDRCCOSTSIZE, 1);
+      nodes[idx].drcCostPlanar++;
     }
     void addDRCCostVia(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      addToBits(idx, 24, GRIDGRAPHDRCCOSTSIZE, 1);
+      nodes[idx].drcCostVia++;
     }
     void subDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      subToBits(idx, 16, GRIDGRAPHDRCCOSTSIZE, 1);
+      nodes[idx].drcCostPlanar--;
     }
     void subDRCCostVia(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      subToBits(idx, 24, GRIDGRAPHDRCCOSTSIZE, 1);
+      nodes[idx].drcCostVia--;
     }
     void resetDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      setBits(idx, 16, GRIDGRAPHDRCCOSTSIZE, 0);
+      nodes[idx].drcCostPlanar = 0;
     }
     void resetDRCCostVia(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      setBits(idx, 24, GRIDGRAPHDRCCOSTSIZE, 0);
+      nodes[idx].drcCostVia = 0;
     }
     void addMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      addToBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, 10);
+      nodes[idx].markerCostPlanar += 10;
     }
     void addMarkerCostVia(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      addToBits(idx, 40, GRIDGRAPHDRCCOSTSIZE, 10);
+      nodes[idx].markerCostVia += 10;
     }
     void addMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            addToBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, 10);
-            break;
           case frDirEnum::N:
-            addToBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, 10);
+            node.markerCostPlanar += 10;
             break;
           case frDirEnum::U:
-            addToBits(idx, 40, GRIDGRAPHDRCCOSTSIZE, 10);
+            node.markerCostVia += 10;
             break;
           default:
             ;
@@ -480,57 +478,61 @@ namespace fr {
     }
     bool decayMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z, float d) {
       auto idx = getIdx(x, y, z);
-      int currCost = (getBits(idx, 32, GRIDGRAPHDRCCOSTSIZE));
+      Node& node = nodes[idx];
+      int currCost = node.markerCostPlanar;
       currCost *= d;
       currCost = std::max(0, currCost);
-      setBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, currCost);
+      node.markerCostPlanar = currCost;
       return (currCost == 0);
     }
     bool decayMarkerCostVia(frMIdx x, frMIdx y, frMIdx z, float d) {
       auto idx = getIdx(x, y, z);
-      int currCost = (getBits(idx, 40, GRIDGRAPHDRCCOSTSIZE));
+      Node& node = nodes[idx];
+      int currCost = node.markerCostVia;
       currCost *= d;
       currCost = std::max(0, currCost);
-      setBits(idx, 40, GRIDGRAPHDRCCOSTSIZE, currCost);
+      node.markerCostVia = currCost;
       return (currCost == 0);
     }
     bool decayMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      int currCost = (getBits(idx, 32, GRIDGRAPHDRCCOSTSIZE));
+      Node& node = nodes[idx];
+      int currCost = node.markerCostPlanar;
       currCost--;
       currCost = std::max(0, currCost);
-      setBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, currCost);
+      node.markerCostPlanar = currCost;
       return (currCost == 0);
     }
     bool decayMarkerCostVia(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
-      int currCost = (getBits(idx, 40, GRIDGRAPHDRCCOSTSIZE));
+      Node& node = nodes[idx];
+      int currCost = node.markerCostVia;
       currCost--;
       currCost = std::max(0, currCost);
-      setBits(idx, 40, GRIDGRAPHDRCCOSTSIZE, currCost);
+      node.markerCostVia = currCost;
       return (currCost == 0);
     }
     bool decayMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir, float d) {
       correct(x, y, z, dir);
       int currCost = 0;
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            currCost = getBits(idx, 32, GRIDGRAPHDRCCOSTSIZE);
+            currCost = node.markerCostPlanar;
             currCost *= d;
             currCost = std::max(0, currCost);
-            setBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, currCost);
+            node.markerCostPlanar = currCost;
           case frDirEnum::N:
-            currCost = getBits(idx, 32, GRIDGRAPHDRCCOSTSIZE);
+            currCost = node.markerCostPlanar;
             currCost *= d;
             currCost = std::max(0, currCost);
-            setBits(idx, 32, GRIDGRAPHDRCCOSTSIZE, currCost);
+            node.markerCostPlanar = currCost;
           case frDirEnum::U:
-            currCost = getBits(idx, 40, GRIDGRAPHDRCCOSTSIZE);
+            currCost = node.markerCostVia;
             currCost *= d;
             currCost = std::max(0, currCost);
-            setBits(idx, 40, GRIDGRAPHDRCCOSTSIZE, currCost);
+            node.markerCostVia = currCost;
           default:
             ;
         }
@@ -540,25 +542,25 @@ namespace fr {
     void addShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
         auto idx = getIdx(x, y, z);
-        addToBits(idx, 56, GRIDGRAPHDRCCOSTSIZE, 1);
+        nodes[idx].shapeCostPlanar++;
       }
     }
     void addShapeCostVia(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
         auto idx = getIdx(x, y, z);
-        addToBits(idx, 48, GRIDGRAPHDRCCOSTSIZE, 1);
+        nodes[idx].shapeCostVia++;
       }
     }
     void subShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
         auto idx = getIdx(x, y, z);
-        subToBits(idx, 56, GRIDGRAPHDRCCOSTSIZE, 1);
+        nodes[idx].shapeCostPlanar--;
       }
     }
     void subShapeCostVia(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
         auto idx = getIdx(x, y, z);
-        subToBits(idx, 48, GRIDGRAPHDRCCOSTSIZE, 1);
+        nodes[idx].shapeCostVia--;
       }
     }
 
@@ -588,38 +590,38 @@ namespace fr {
     }
     // unsafe access
     void setSVia(frMIdx x, frMIdx y, frMIdx z) {
-      setBit(getIdx(x, y, z), 9);
+      nodes[getIdx(x, y, z)].hasSpecialVia = true;
     }
     void setOverrideShapeCostVia(frMIdx x, frMIdx y, frMIdx z) {
-      setBit(getIdx(x, y, z), 11);
+      nodes[getIdx(x, y, z)].overrideShapeCostVia = true;
     }
     void resetOverrideShapeCostVia(frMIdx x, frMIdx y, frMIdx z) {
-      resetBit(getIdx(x, y, z), 11);
+      nodes[getIdx(x, y, z)].overrideShapeCostVia = false;
     }
     void setGridCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            return setBit(idx, 12);
+            node.hasGridCostEast = true;
           case frDirEnum::N:
-            return setBit(idx, 13);
+            node.hasGridCostNorth = true;
           case frDirEnum::U:
-            return setBit(idx, 14);
+            node.hasGridCostUp = true;
           default:
             ;
         }
       }
     }
     void setGridCostE(frMIdx x, frMIdx y, frMIdx z) {
-      setBit(getIdx(x, y, z), 12);
+      nodes[getIdx(x, y, z)].hasGridCostEast = true;
     }
     void setGridCostN(frMIdx x, frMIdx y, frMIdx z) {
-      setBit(getIdx(x, y, z), 13);
+      nodes[getIdx(x, y, z)].hasGridCostNorth = true;
     }
     void setGridCostU(frMIdx x, frMIdx y, frMIdx z) {
-      setBit(getIdx(x, y, z), 14);
+      nodes[getIdx(x, y, z)].hasGridCostUp = true;
     }
     // unsafe access, no idx check
     void resetSrc(frMIdx x, frMIdx y, frMIdx z) {
@@ -638,14 +640,14 @@ namespace fr {
     void resetGridCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       correct(x, y, z, dir);
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
+        Node& node = nodes[getIdx(x, y, z)];
         switch (dir) {
           case frDirEnum::E:
-            return resetBit(idx, 12);
+            node.hasGridCostEast = false;
           case frDirEnum::N:
-            return resetBit(idx, 13);
+            node.hasGridCostNorth = false;
           case frDirEnum::U:
-            return resetBit(idx, 14);
+            node.hasGridCostUp = false;
           default:
             ;
         }
@@ -755,8 +757,8 @@ namespace fr {
       return (*via2turnMinLen)[z][((unsigned)isPrevViaUp << 1) + (unsigned)isCurrDirY];
     }
     void cleanup() {
-      bits.clear();
-      bits.shrink_to_fit();
+      nodes.clear();
+      nodes.shrink_to_fit();
       astarCosts.clear();
       astarCosts.shrink_to_fit();
       srcs.clear();
@@ -784,19 +786,43 @@ namespace fr {
     FlexDRWorker* drWorker;
     FlexDRGraphics*  graphics; // owned by FlexDR
 
-    //frBox     routeBox;
-    // new // X == planar
-    // [0] hasEEdge; [1] hasNEdge; [2] hasUpEdge
-    // [3] blockE;   [4] blockN;   [5] blockU
-    // [6] empty;    [7] empty;    [8] empty
-    // [9] hasSpecialVia
-    // [10] shape X cost; [11] override U shape cost; 
-    // [12] is W/E on grid; [13] is N/S on grid; [14] is U on grid
-    // [23-16] quick drc X cost; [31-24] quick drc U cost
-    // [39-32] markerdrc X cost; [47-40] markerdrc U cost
-    // [63-56] shape     X cost; [55-48] shape U cost
-    //frVector<unsigned long long>      bits;
-    frVector<unsigned long long>               bits;
+    struct Node {
+      Node() {
+        std::memset(this, 0, sizeof(Node));
+      }
+      // Byte 0
+      frUInt4 hasEastEdge : 1;
+      frUInt4 hasNorthEdge : 1;
+      frUInt4 hasUpEdge : 1;
+      frUInt4 isBlockedEast : 1;
+      frUInt4 isBlockedNorth : 1;
+      frUInt4 isBlockedUp : 1;
+      frUInt4 unused1 : 1;
+      frUInt4 unused2 : 1;
+      // Byte 1
+      frUInt4 hasSpecialVia : 1;
+      frUInt4 overrideShapeCostVia : 1;
+      frUInt4 hasGridCostEast : 1;
+      frUInt4 hasGridCostNorth : 1;
+      frUInt4 hasGridCostUp : 1;
+      frUInt4 unused3 : 1;
+      frUInt4 unused4 : 1;
+      frUInt4 unused5 : 1;
+      // Byte 2
+      frUInt4 drcCostPlanar : 8;
+      // Byte 3
+      frUInt4 drcCostVia : 8;
+      // Byte4
+      frUInt4 markerCostPlanar : 8;
+      // Byte5
+      frUInt4 markerCostVia : 8;
+      // Byte6
+      frUInt4 shapeCostVia : 8;
+      // Byte7
+      frUInt4 shapeCostPlanar : 8;
+    };
+    static_assert(sizeof(Node) == 8);
+    frVector<Node>                             nodes;
     std::vector<unsigned int>                  astarCosts; // astar cost
     std::vector<bool>                          prevDirs;
     std::vector<bool>                          srcs;
@@ -821,40 +847,10 @@ namespace fr {
     const std::vector<std::vector<frCoord> >* via2turnMinLen;
 
     // internal getters
-    bool getBit(frMIdx idx, frMIdx pos) const {
-      return (bits[idx] >> pos ) & 1;
-    }
-    frUInt4 getBits(frMIdx idx, frMIdx pos, frUInt4 length) const {
-      auto tmp = bits[idx] & (((1ull << length) - 1) << pos); // mask
-      return tmp >> pos;
-    }
     frMIdx getIdx(frMIdx xIdx, frMIdx yIdx, frMIdx zIdx) const {
       return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords.size() + zIdx * xCoords.size() * yCoords.size()): 
                                (yIdx + xIdx * yCoords.size() + zIdx * xCoords.size() * yCoords.size());
     }
-    // internal setters
-    void setBit(frMIdx idx, frMIdx pos) {
-      bits[idx] |= 1 << pos;
-    }
-    void resetBit(frMIdx idx, frMIdx pos) {
-      bits[idx] &= ~(1 << pos);
-    }
-    void addToBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val) {
-      auto tmp = getBits(idx, pos, length) + val;
-      tmp = (tmp > (1u << length)) ? (1u << length) : tmp;
-      setBits(idx, pos, length, tmp);
-    }
-    void subToBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val) {
-      int tmp = (int)getBits(idx, pos, length) - (int)val;
-      tmp = (tmp < 0) ? 0 : tmp;
-      setBits(idx, pos, length, tmp);
-    }
-    void setBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val) {
-      //std::cout <<"setBits (idx/pos/len/val) " <<idx <<" " <<pos <<" " <<length <<" " <<val <<std::endl;
-      bits[idx] &= ~(((1ull << length) - 1) << pos); // clear related bits to 0
-      bits[idx] |= ((unsigned long long)val & ((1ull << length) - 1)) << pos; // only get last length bits of val
-    }
-
     // internal utility
     void correct(frMIdx &x, frMIdx &y, frMIdx &z, frDirEnum &dir) const {
       switch (dir) {

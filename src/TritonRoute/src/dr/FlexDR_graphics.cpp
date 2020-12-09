@@ -23,12 +23,12 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   // Build the layer map between opendb & tr
   auto odb_tech = db->getTech();
 
-  layer_map.resize(odb_tech->getLayerCount(), -1);
+  layer_map_.resize(odb_tech->getLayerCount(), -1);
 
   for (auto& tr_layer : design->getTech()->getLayers()) {
     auto odb_layer = odb_tech->findLayer(tr_layer->getName().c_str());
     if (odb_layer) {
-      layer_map[odb_layer->getNumber()] = tr_layer->getLayerNum();
+      layer_map_[odb_layer->getNumber()] = tr_layer->getLayerNum();
     }
   }
 
@@ -41,7 +41,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
 
-  frLayerNum layerNum = layer_map.at(layer->getNumber());
+  frLayerNum layerNum = layer_map_.at(layer->getNumber());
   if (layerNum < 0) {
     return;
   }
@@ -201,7 +201,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* gridGraph,
 
   // Pause on any layer change
   if (settings_->debugMaze
-      && last_pt_layer_ != layer
+      // && last_pt_layer_ != layer
       && last_pt_layer_ != -1) {
     gui_->redraw();
     gui_->pause();
