@@ -48,7 +48,7 @@ sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
 proc set_wire_rc { args } {
    sta::parse_key_args "set_wire_rc" args \
      keys {-layer -resistance -capacitance -corner} \
-     flags {-clock -signal}
+     flags {-clock -signal -data}
 
   set wire_res 0.0
   set wire_cap 0.0
@@ -103,16 +103,15 @@ proc set_wire_rc { args } {
   }
   sta::check_argc_eq0 "set_wire_rc" $args
   
-  if { [info exists flags(-signal)] && [info exists flags(-clock)] \
-         || ![info exists flags(-signal)] && ![info exists flags(-clock)] } {
+  set signal [info exists flags(-signal)]
+  if { [info exists flags(-data)] } {
+    ord::warn "set_wire_rc -data is deprecated. Use -signal."
+    set signal 1
+  }
+  set clk [info exists flags(-clock)]
+  if { !$signal && !$clk } {
     set signal 1
     set clk 1
-  } elseif { [info exists flags(-clock)] && ![info exists flags(-signal)] } {
-    set signal 0
-    set clk 1
-  } elseif { [info exists flags(-signal)] && ![info exists flags(-clock)] } {
-    set signal 1
-    set clk 0
   }
   if { $signal } {
     rsz::set_wire_rc_cmd $wire_res $wire_cap $corner
