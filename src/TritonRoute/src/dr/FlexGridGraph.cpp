@@ -64,8 +64,8 @@ void FlexGridGraph::initGrids(const map<frCoord, map<frLayerNum, frTrackPattern*
   // initialize all grids
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
-  bits.clear();
-  bits.resize(xDim*yDim*zDim, 0);
+  nodes.clear();
+  nodes.resize(xDim*yDim*zDim, Node());
   // new
   astarCosts.clear();
   prevDirs.clear();

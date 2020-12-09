@@ -201,7 +201,7 @@ void FlexDRGraphics::searchNode(const FlexGridGraph* gridGraph,
 
   // Pause on any layer change
   if (settings_->debugMaze
-      && last_pt_layer_ != layer
+      // && last_pt_layer_ != layer
       && last_pt_layer_ != -1) {
     gui_->redraw();
     gui_->pause();
