@@ -124,14 +124,14 @@ void FlexGridGraph::expand(FlexWavefrontGrid &currGrid, const frDirEnum &dir,
     if (getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z()) == frDirEnum::UNKNOWN ||
         getPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z()) == tailDir) {
       setPrevAstarNodeDir(tailIdx.x(), tailIdx.y(), tailIdx.z(), tailDir);
-      wavefront.push(nextWavefrontGrid);
+      wavefront_.push(nextWavefrontGrid);
       if (enableOutput) {
         std::cout << "    commit (" << tailIdx.x() << ", " << tailIdx.y() << ", " << tailIdx.z() << ") prev accessing dir = " << (int)tailDir << "\n";
       }
     }
   } else {  
     // add to wavefront
-    wavefront.push(nextWavefrontGrid);
+    wavefront_.push(nextWavefrontGrid);
   }
 
   return;
@@ -276,7 +276,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx &src, const FlexMazeIdx &dstM
   getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause fobidden via spacing to boundary pin
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    if (drWorker && drWorker->getDRIter() >= 30 && drWorker->getRipupMode() == 0) {
+    if (drWorker_ && drWorker_->getDRIter() >= 30 && drWorker_->getRipupMode() == 0) {
       if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
         auto layerNum = (gridZ + 1) * 2;
         auto layer = getDesign()->getTech()->getLayer(layerNum);
@@ -286,14 +286,14 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx &src, const FlexMazeIdx &dstM
           if (gap &&
               (getDesign()->getTech()->isVia2ViaForbiddenLen(gridZ, false, false, false, gap, false) || layerNum - 2 < BOTTOM_ROUTING_LAYER) &&
               (getDesign()->getTech()->isVia2ViaForbiddenLen(gridZ, true, true, false, gap, false) || layerNum + 2 > getDesign()->getTech()->getTopLayerNum())) {
-            forbiddenPenalty = layer->getPitch() * ggDRCCost * 20;
+            forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
           }
         } else {
           auto gap = abs(nextPoint.x() - dstPoint1.x());
           if (gap &&
               (getDesign()->getTech()->isVia2ViaForbiddenLen(gridZ, false, false, true, gap, false) || layerNum - 2 < BOTTOM_ROUTING_LAYER) &&
               (getDesign()->getTech()->isVia2ViaForbiddenLen(gridZ, true, true, true, gap, false) || layerNum + 2 > getDesign()->getTech()->getTopLayerNum())) {
-            forbiddenPenalty = layer->getPitch() * ggDRCCost * 20;
+            forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
           }
         }
       }
@@ -399,10 +399,10 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
     }
 
     if (isForbiddenVia2Via) {
-      if (drWorker && drWorker->getDRIter() >= 3) {
-        nextPathCost += ggMarkerCost * getEdgeLength(gridX, gridY, gridZ, dir);
+      if (drWorker_ && drWorker_->getDRIter() >= 3) {
+        nextPathCost += ggMarkerCost_ * getEdgeLength(gridX, gridY, gridZ, dir);
       } else {
-        nextPathCost += ggDRCCost * getEdgeLength(gridX, gridY, gridZ, dir);
+        nextPathCost += ggDRCCost_ * getEdgeLength(gridX, gridY, gridZ, dir);
       }
     }
   }
@@ -446,10 +446,10 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
       }
     }
     if (isForbiddenTLen) {
-      if (drWorker && drWorker->getDRIter() >= 3) {
-        nextPathCost += ggDRCCost * getEdgeLength(gridX, gridY, gridZ, dir);
+      if (drWorker_ && drWorker_->getDRIter() >= 3) {
+        nextPathCost += ggDRCCost_ * getEdgeLength(gridX, gridY, gridZ, dir);
       } else {
-        nextPathCost += ggMarkerCost * getEdgeLength(gridX, gridY, gridZ, dir);
+        nextPathCost += ggMarkerCost_ * getEdgeLength(gridX, gridY, gridZ, dir);
       }
     }
   }
@@ -464,8 +464,8 @@ void FlexGridGraph::getPrevGrid(frMIdx &gridX, frMIdx &gridY, frMIdx &gridZ, con
   // temporarily disable guideCost
   nextPathCost += getEdgeLength(gridX, gridY, gridZ, dir)
                   + (gridCost   ? GRIDCOST         * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (drcCost    ? ggDRCCost        * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
-                  + (markerCost ? ggMarkerCost     * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                  + (drcCost    ? ggDRCCost_       * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
+                  + (markerCost ? ggMarkerCost_    * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
                   + (shapeCost  ? SHAPECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0)
                   + (blockCost  ? BLOCKCOST        * pathWidth * 20                          : 0)
                   + (!guideCost ? GUIDECOST        * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
@@ -617,7 +617,7 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
                     max(dstMazeIdx2.z(), mi.z()));
   }
 
-  wavefront.cleanup();
+  wavefront_.cleanup();
   // init wavefront
   frPoint currPt;
   for (auto &idx: connComps) {
@@ -638,20 +638,20 @@ bool FlexGridGraph::search(vector<FlexMazeIdx> &connComps, drPin* nextPin, vecto
                                std::numeric_limits<frCoord>::max(), std::numeric_limits<frCoord>::max(), true, 
                                std::numeric_limits<frCoord>::max(),
                                currDist, 0, getEstCost(idx, dstMazeIdx1, dstMazeIdx2, frDirEnum::UNKNOWN));
-    wavefront.push(currGrid);
+    wavefront_.push(currGrid);
     if (enableOutput) {
       cout <<"src add to wavefront (" <<idx.x() <<", " <<idx.y() <<", " <<idx.z() <<")" <<endl;
     }
   }
-  while(!wavefront.empty()) {
-    auto currGrid = wavefront.top();
-    wavefront.pop();
+  while(!wavefront_.empty()) {
+    auto currGrid = wavefront_.top();
+    wavefront_.pop();
     if (getPrevAstarNodeDir(currGrid.x(), currGrid.y(), currGrid.z()) != frDirEnum::UNKNOWN) {
       continue;
     }
 
-    if (graphics) {
-      graphics->searchNode(this, currGrid);
+    if (graphics_) {
+      graphics_->searchNode(this, currGrid);
     }
 
     // test
