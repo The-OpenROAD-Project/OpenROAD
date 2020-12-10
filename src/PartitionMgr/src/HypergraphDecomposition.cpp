@@ -195,9 +195,7 @@ GraphType HypergraphDecomposition::resolveModel(std::string graphModel)
   if (graphModel == "star") {
     return STAR;
   }
-  if (graphModel == "hybrid") {
-    return HYBRID;
-  }
+  return HYBRID;
 }
 
 void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
@@ -264,6 +262,7 @@ float HypergraphDecomposition::computeWeight(int nPins)
     case 7:
       return 2.0 / nPins;
   }
+  return 1.0;
 }
 
 void HypergraphDecomposition::connectStarPins(int firstPin,
