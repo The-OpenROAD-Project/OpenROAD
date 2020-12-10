@@ -41,6 +41,7 @@ sta::define_cmd_args "extract_parasitics" {
     [-lef_res]
     [-cc_model track]
     [-context_depth depth]
+    [-no_merge_via_res]
 }
 
 proc extract_parasitics { args } {
@@ -81,6 +82,7 @@ proc extract_parasitics { args } {
   }
 
   set lef_res [info exists flags(-lef_res)]
+  set no_merge_via_res [info exists flags(-no_merge_via_res)]
 
   set cc_model 10
   if { [info exists keys(-cc_model)] } {
@@ -99,7 +101,7 @@ proc extract_parasitics { args } {
 
   rcx::extract $ext_model_file $corner_cnt $max_res \
       $coupling_threshold $signal_table $cc_model \
-      $depth $debug_net_id $lef_res
+      $depth $debug_net_id $lef_res $no_merge_via_res
 }
 
 sta::define_cmd_args "write_spef" { 
