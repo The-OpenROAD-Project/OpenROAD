@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
 // Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -35,4 +35,118 @@
 
 #pragma once
 
-#include "opendb/Logger.h"
+#include <string>
+
+#include "spdlog/spdlog.h"
+
+namespace ord {
+
+#define FOREACH_TOOL(X) \
+    X(ANT) \
+    X(CTS) \
+    X(DPL) \
+    X(DRT) \
+    X(FIN) \
+    X(GPL) \
+    X(GRT) \
+    X(GUI) \
+    X(PAD) \
+    X(IFP) \
+    X(MPL) \
+    X(ODB) \
+    X(ORD) \
+    X(PAR) \
+    X(PDN) \
+    X(PPL) \
+    X(PSM) \
+    X(PSN) \
+    X(RCX) \
+    X(RSZ) \
+    X(STA) \
+    X(STT) \
+    X(TAP) \
+
+#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
+
+enum ToolId
+{
+ FOREACH_TOOL(GENERATE_ENUM)
+};
+
+static const char* tool_name_tbl[] = {
+ FOREACH_TOOL(GENERATE_STRING)
+};
+
+#undef FOREACH_TOOL
+#undef GENERATE_ENUM
+#undef GENERATE_STRING
+
+extern const char *logger_pattern;
+
+void initLogger();
+void initLogger(const char* file_name);
+
+template <typename... Args>
+inline int report(const std::string& message,
+                  const Args&... args)
+{
+  spdlog::set_pattern("%v");
+  spdlog::log(spdlog::level::level_enum::off, message, args...);
+  spdlog::set_pattern(logger_pattern);
+  return 0;
+}
+
+template <typename... Args>
+inline int info(ToolId tool,
+                int id,
+                const std::string& message,
+                const Args&... args)
+{
+  return log(tool, spdlog::level::level_enum::info, id, message, args...);
+}
+
+template <typename... Args>
+inline int ord_warn(ToolId tool,
+                    int id,
+                    const std::string& message,
+                    const Args&... args)
+{
+  return log(tool, spdlog::level::level_enum::warn, id, message, args...);
+}
+
+template <typename... Args>
+inline int ord_error(ToolId tool,
+                     int id,
+                     const std::string& message,
+                     const Args&... args)
+{
+  return log(tool, spdlog::level::err, id, message, args...);
+}
+
+template <typename... Args>
+int critical(ToolId tool,
+             int id,
+             const std::string& message,
+             const Args&... args)
+{
+  return log(tool, spdlog::level::level_enum::critical, id, message, args...);
+}
+
+template <typename... Args>
+inline int log(ToolId tool,
+               spdlog::level::level_enum status,
+               int id,
+               const std::string& message,
+               const Args&... args)
+{
+  assert(id > 0 && id <= 9999);
+  spdlog::log(status,
+              "[{}-{:04d}] " + message,
+              tool_name_tbl[tool],
+              id,
+              args...);
+  return 0;
+}
+
+}  // namespace ordlog

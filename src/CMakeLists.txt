@@ -42,6 +42,7 @@ set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 set(OPENROAD_SOURCE
   OpenRoad.cc
   Error.cc
+  Logger.cpp
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -205,6 +206,8 @@ else()
   set(ZLIB 0)
 endif()
 
+find_package(spdlog)
+
 find_package(Threads)
 
 ################################################################
@@ -318,6 +321,7 @@ target_link_libraries(openroad
   antennachecker
   zutil
   PartitionMgr
+  spdlog::spdlog
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
