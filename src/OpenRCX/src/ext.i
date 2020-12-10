@@ -65,7 +65,8 @@ extract(const char* ext_model_file,
         int cc_model,
         int context_depth,
         const char* debug_net_id,
-        bool lef_res)
+        bool lef_res,
+        bool no_merge_via_res)
 {
   Ext* ext = getOpenRCX();
   Ext::ExtractOptions opts;
@@ -79,7 +80,8 @@ extract(const char* ext_model_file,
   opts.context_depth = context_depth;
   opts.lef_res = lef_res;
   opts.debug_net = debug_net_id;
-
+  opts.no_merge_via_res = no_merge_via_res;
+  
   ext->extract(opts);
 }
 
