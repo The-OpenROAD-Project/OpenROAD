@@ -28,7 +28,6 @@
   // This catches ord::Error, sta::Exception and std errors.
   catch (std::exception &excp) {
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "Error: ", excp.what(), nullptr);
     return TCL_ERROR;
   }
 }

@@ -89,13 +89,10 @@ main(int argc,
     return 0;
   }
 
-  if (const char* log_name = findCmdLineKey(argc, argv, "-log")) {
+  const char* log_name = findCmdLineKey(argc, argv, "-log");
+  if (log_name)
     remove(log_name);
-    ord::initLogger(log_name);
-    ord::info(ord::ORD, 1, "Starting OpenROAD");
-  }
-  else
-    ord::initLogger();
+  ord::initLogger(log_name);
 
   cmd_argc = argc;
   cmd_argv = argv;

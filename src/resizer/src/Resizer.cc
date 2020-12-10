@@ -65,6 +65,7 @@
 
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "opendb/dbTransform.h"
 
 // multi-corner support
@@ -394,6 +395,10 @@ Resizer::ensureLevelDrvrVerticies()
 void
 Resizer::resizePreamble(LibertyLibrarySeq *resize_libs)
 {
+  ord::info(ord::RSZ, 1, "resizer info1");
+  ord::report("just logging around");
+  ord::error2(ord::RSZ, 2, "resizer error2");
+  ord::warn2(ord::RSZ, 3, "resizer warn3");
   init();
   makeEquivCells(resize_libs);
   findBuffers(resize_libs);

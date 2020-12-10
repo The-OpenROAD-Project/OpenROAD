@@ -36,6 +36,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "spdlog/spdlog.h"
 
@@ -69,6 +70,13 @@ namespace ord {
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 
+constexpr const char *level_names[] = {"TRACE",
+                                       "DEBUG",
+                                       "INFO",
+                                       "WARNING",
+                                       "ERROR",
+                                       "CRITICAL",
+                                       "OFF"};
 enum ToolId
 {
  FOREACH_TOOL(GENERATE_ENUM)
@@ -82,71 +90,73 @@ static const char* tool_name_tbl[] = {
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-extern const char *logger_pattern;
+extern std::shared_ptr<spdlog::logger> logger;
 
-void initLogger();
-void initLogger(const char* file_name);
+// Use nullptr if messages are not logged to a file.
+void initLogger(const char* filename);
 
 template <typename... Args>
-inline int report(const std::string& message,
-                  const Args&... args)
+inline void report(const std::string& message,
+                   const Args&... args)
 {
-  spdlog::set_pattern("%v");
-  spdlog::log(spdlog::level::level_enum::off, message, args...);
-  spdlog::set_pattern(logger_pattern);
-  return 0;
+  logger->log(spdlog::level::level_enum::off, message, args...);
 }
 
 template <typename... Args>
-inline int info(ToolId tool,
+inline void info(ToolId tool,
+                 int id,
+                 const std::string& message,
+                 const Args&... args)
+{
+  log(tool, spdlog::level::level_enum::info, id, message, args...);
+}
+
+template <typename... Args>
+inline void warn2(ToolId tool,
+                  int id,
+                  const std::string& message,
+                  const Args&... args)
+{
+  log(tool, spdlog::level::level_enum::warn, id, message, args...);
+}
+
+template <typename... Args>
+inline void error2(ToolId tool,
+                   int id,
+                   const std::string& message,
+                   const Args&... args)
+{
+  log(tool, spdlog::level::err, id, message, args...);
+  char tool_id[32];
+  sprintf(tool_id, "%s-%04d", tool_name_tbl[tool], id);
+  Exception except(tool_id);
+  // Exception should be caught by swig error handler.
+  throw except;
+}
+
+template <typename... Args>
+void critical(ToolId tool,
+              int id,
+              const std::string& message,
+              const Args&... args)
+{
+  log(tool, spdlog::level::level_enum::critical, id, message, args...);
+}
+
+template <typename... Args>
+inline void log(ToolId tool,
+                spdlog::level::level_enum level,
                 int id,
                 const std::string& message,
                 const Args&... args)
 {
-  return log(tool, spdlog::level::level_enum::info, id, message, args...);
-}
-
-template <typename... Args>
-inline int ord_warn(ToolId tool,
-                    int id,
-                    const std::string& message,
-                    const Args&... args)
-{
-  return log(tool, spdlog::level::level_enum::warn, id, message, args...);
-}
-
-template <typename... Args>
-inline int ord_error(ToolId tool,
-                     int id,
-                     const std::string& message,
-                     const Args&... args)
-{
-  return log(tool, spdlog::level::err, id, message, args...);
-}
-
-template <typename... Args>
-int critical(ToolId tool,
-             int id,
-             const std::string& message,
-             const Args&... args)
-{
-  return log(tool, spdlog::level::level_enum::critical, id, message, args...);
-}
-
-template <typename... Args>
-inline int log(ToolId tool,
-               spdlog::level::level_enum status,
-               int id,
-               const std::string& message,
-               const Args&... args)
-{
   assert(id > 0 && id <= 9999);
-  spdlog::log(status,
-              "[{}-{:04d}] " + message,
+  logger->log(level,
+              "[{} {}-{:04d}] " + message,
+              level_names[level],
               tool_name_tbl[tool],
               id,
               args...);
-  return 0;
 }
 
 }  // namespace ordlog
