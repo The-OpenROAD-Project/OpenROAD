@@ -218,18 +218,13 @@ using odb::dbTech;
 %typemap(in) ord::ToolId {
   int length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
-  bool found = false;
-  for (int i = 0; i < ord::END; i++ ) {
-    if (strcmp(ord::tool_name_tbl[i], arg) == 0) {
-      $1 = static_cast<ord::ToolId>(i);
-      found = true;
-    }
-  }
-  if (!found) {
+  ord::ToolId tool_id = ord::Logger::findToolId(arg);
+  if (tool_id == ord::UKN) {
     Tcl_SetResult(interp,const_cast<char*>("unknown tool name."),
                   TCL_STATIC);
     return TCL_ERROR;
   }
+  $1 = tool_id;
 }
 
 %inline %{

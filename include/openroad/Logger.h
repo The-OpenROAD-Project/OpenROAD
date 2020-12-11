@@ -67,7 +67,6 @@ namespace ord {
     X(STT) \
     X(TAP) \
     X(UKN) \
-    X(END) \
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -77,19 +76,12 @@ enum ToolId
  FOREACH_TOOL(GENERATE_ENUM)
 };
 
-static const char* tool_name_tbl[] = {
- FOREACH_TOOL(GENERATE_STRING)
-};
-
-#undef FOREACH_TOOL
-#undef GENERATE_ENUM
-#undef GENERATE_STRING
-
 class Logger
 {
  public:
   // Use nullptr if messages are not logged to a file.
   Logger(const char* filename);
+  static ToolId findToolId(const char *tool_name);
 
   template <typename... Args>
     inline void report(const std::string& message,
@@ -124,7 +116,7 @@ class Logger
     {
       log(tool, spdlog::level::err, id, message, args...);
       char tool_id[32];
-      sprintf(tool_id, "%s-%04d", tool_name_tbl[tool], id);
+      sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
       std::runtime_error except(tool_id);
       // Exception should be caught by swig error handler.
       throw except;
@@ -151,7 +143,7 @@ class Logger
       logger_->log(level,
                    "[{} {}-{:04d}] " + message,
                    level_names[level],
-                   tool_name_tbl[tool],
+                   tool_names_[tool],
                    id,
                    args...);
     }
@@ -166,6 +158,11 @@ class Logger
                                                 "CRITICAL",
                                                 "OFF"};
   static constexpr const char *pattern_ = "%v";
+  static constexpr const char* tool_names_[] = { FOREACH_TOOL(GENERATE_STRING) };
 };
+
+#undef FOREACH_TOOL
+#undef GENERATE_ENUM
+#undef GENERATE_STRING
 
 }  // namespace ordlog

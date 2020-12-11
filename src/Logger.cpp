@@ -53,4 +53,16 @@ Logger::Logger(const char* log_filename)
   logger_->set_pattern(pattern_);
 }
 
+ToolId
+Logger::findToolId(const char *tool_name)
+{
+  int tool_id = 0;
+  for (const char *tool : tool_names_) {
+    if (strcmp(tool_name, tool) == 0)
+      return static_cast<ToolId>(tool_id);
+    tool_id++;
+  }
+  return UKN;
+}
+
 }  // namespace
