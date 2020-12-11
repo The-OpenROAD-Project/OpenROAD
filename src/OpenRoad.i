@@ -268,7 +268,7 @@ ord_warn(ord::ToolId tool,
          const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::warn2(tool, id, msg);
+  ord::warn(tool, id, msg);
 }
 
 void
@@ -277,7 +277,7 @@ ord_error(ord::ToolId tool,
           const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::error2(tool, id, msg);
+  ord::error(tool, id, msg);
 }
 
 void

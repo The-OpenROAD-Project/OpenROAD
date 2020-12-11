@@ -115,19 +115,19 @@ inline void info(ToolId tool,
 }
 
 template <typename... Args>
-inline void warn2(ToolId tool,
-                  int id,
-                  const std::string& message,
-                  const Args&... args)
+inline void warn(ToolId tool,
+                 int id,
+                 const std::string& message,
+                 const Args&... args)
 {
   log(tool, spdlog::level::level_enum::warn, id, message, args...);
 }
 
 template <typename... Args>
-inline void error2(ToolId tool,
-                   int id,
-                   const std::string& message,
-                   const Args&... args)
+inline void error(ToolId tool,
+                  int id,
+                  const std::string& message,
+                  const Args&... args)
 {
   log(tool, spdlog::level::err, id, message, args...);
   char tool_id[32];

@@ -364,7 +364,7 @@ sta::define_cmd_args "report_design_area" {}
 proc report_design_area {} {
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
-  puts "Design area ${area} u^2 ${util}% utilization."
+  ord::report "Design area ${area} u^2 ${util}% utilization."
 }
 
 sta::define_cmd_args "report_floating_nets" {[-verbose]}
@@ -379,7 +379,7 @@ proc report_floating_nets { args } {
     ord::warn RSZ 20 "found $floating_net_count floatiing nets."
     if { $verbose } {
       foreach net $floating_nets {
-        puts " [get_full_name $net]"
+        ord::report " [get_full_name $net]"
       }
     }
   }
