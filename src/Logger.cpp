@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2020, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,8 +30,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#include "Logger.h"
+#include "openroad/Logger.h"
 
 #include <mutex>
 
@@ -40,19 +43,14 @@
 
 namespace ord {
 
-static const char *logger_pattern = "%v";
-
-std::vector<spdlog::sink_ptr> sinks;
-std::shared_ptr<spdlog::logger> logger;
-
-void initLogger(const char* filename)
+Logger::Logger(const char* log_filename)
 {
-  sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-  if (filename)
-    sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink<std::mutex>>(filename));
+  sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+  if (log_filename)
+    sinks_.push_back(std::make_shared<spdlog::sinks::basic_file_sink<std::mutex>>(log_filename));
   
-  logger = std::make_shared<spdlog::logger>("logger", sinks.begin(), sinks.end());
-  logger->set_pattern(logger_pattern);
+  logger_ = std::make_shared<spdlog::logger>("logger", sinks_.begin(), sinks_.end());
+  logger_->set_pattern(pattern_);
 }
 
 }  // namespace

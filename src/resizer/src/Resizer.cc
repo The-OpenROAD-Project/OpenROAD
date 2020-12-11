@@ -85,10 +85,6 @@ using std::vector;
 using std::map;
 using std::pair;
 
-using ord::info;
-using ord::warn;
-using ord::error;
-using ord::critical;
 using ord::RSZ;
 using ord::closestPtInRect;
 
@@ -179,9 +175,11 @@ Resizer::Resizer() :
 
 void
 Resizer::init(Tcl_Interp *interp,
+              Logger *logger,
               dbDatabase *db,
               dbSta *sta)
 {
+  logger_ = logger;
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
@@ -321,7 +319,7 @@ Resizer::removeBuffers()
       }
     }
   }
-  info(RSZ, 26, "Removed {} buffers.", remove_count);
+  logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
 void
@@ -424,7 +422,7 @@ Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
     }
   }
   if (buffer_cells_.empty())
-    error(RSZ, 22, "no buffers found.");
+    logger_->error(RSZ, 22, "no buffers found.");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -445,7 +443,7 @@ Resizer::bufferInputs()
   }
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
-    info(RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
+    logger_->info(RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -513,7 +511,7 @@ Resizer::bufferOutputs()
   }
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
-    info(RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
+    logger_->info(RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -578,14 +576,14 @@ Resizer::resizeToTargetSlew()
       if (resizeToTargetSlew(drvr_pin))
         resize_count_++;
       if (overMaxArea()) {
-        warn(RSZ, 24, "Max utilization reached.");
+        logger_->warn(RSZ, 24, "Max utilization reached.");
         break;
       }
     }
   }
   ensureWireParasitics();
   if (resize_count_ > 0)
-    info(RSZ, 29, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 29, "Resized {} instances.", resize_count_);
 }
 
 bool
@@ -1239,9 +1237,9 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   }
 
   if (tie_count > 0) {
-    info(RSZ, 29, "Inserted {} tie {} instances.",
-         tie_count,
-         tie_cell->name());
+    logger_->info(RSZ, 29, "Inserted {} tie {} instances.",
+                  tie_count,
+                  tie_cell->name());
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -1343,9 +1341,9 @@ Resizer::repairSetup()
   }
 
   if (inserted_buffer_count_ > 0)
-    info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+    logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
-    info(RSZ, 41, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
 }
 
 // For testing.
@@ -1361,9 +1359,9 @@ Resizer::repairSetup(Pin *end_pin)
   repairSetup(path, slack);
 
   if (inserted_buffer_count_ > 0)
-    info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
+    logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
-    info(RSZ, 31, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
 }
 
 void
@@ -1628,8 +1626,8 @@ Resizer::repairHold(VertexSet *ends,
   Slack worst_slack;
   findHoldViolations(ends, worst_slack, hold_failures);
   if (!hold_failures.empty()) {
-    info(RSZ, 32, "Found {} endpoints with hold violations.",
-         hold_failures.size());
+    logger_->info(RSZ, 32, "Found {} endpoints with hold violations.",
+                  hold_failures.size());
     inserted_buffer_count_ = 0;
     int repair_count = 1;
     int pass = 1;
@@ -1650,12 +1648,12 @@ Resizer::repairHold(VertexSet *ends,
       pass++;
     }
     if (inserted_buffer_count_ > 0) {
-      info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
+      logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       level_drvr_verticies_valid_ = false;
     }
   }
   else
-    info(RSZ, 33, "No hold violations found.");
+    logger_->info(RSZ, 33, "No hold violations found.");
 }
 
 void
@@ -1734,7 +1732,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
         repair_count += buffer_count;
         if (overMaxArea()) {
-          warn(RSZ, 25, "max utilization reached.");
+          logger_->warn(RSZ, 25, "max utilization reached.");
           return repair_count;
         }
       }
@@ -1948,21 +1946,21 @@ Resizer::repairDesign(double max_wire_length) // zero for none (meters)
   ensureWireParasitics();
 
   if (slew_violations > 0)
-    info(RSZ, 34, "Found {} slew violations.", slew_violations);
+    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
   if (fanout_violations > 0)
-    info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
+    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
   if (cap_violations > 0)
-    info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
+    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
   if (length_violations > 0)
-    info(RSZ, 37, "Found {} long wires.", length_violations);
+    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
   if (inserted_buffer_count_ > 0) {
-    info(RSZ, 38, "Inserted {} buffers in {} nets.",
-         inserted_buffer_count_,
-         repair_count);
+    logger_->info(RSZ, 38, "Inserted {} buffers in {} nets.",
+                  inserted_buffer_count_,
+                  repair_count);
     level_drvr_verticies_valid_ = false;
   }
   if (resize_count_ > 0)
-    info(RSZ, 39, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
 }
 
 // repairDesign but restricted to clock network and
@@ -2376,7 +2374,7 @@ Resizer::repairNet(SteinerTree *tree,
         buf_dist = length - (wire_length - cap_length * (1.0 - length_margin));
       }
       else
-        ord::critical(RSZ, 23, "repairNet failure.");
+        logger_->critical(RSZ, 23, "repairNet failure.");
       double dx = prev_x - pt_x;
       double dy = prev_y - pt_y;
       double d = buf_dist / length;

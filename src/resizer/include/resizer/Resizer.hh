@@ -42,10 +42,16 @@
 #include "sta/UnorderedSet.hh"
 #include "SteinerTree.hh"
 
+namespace ord {
+class Logger;
+}
+
 namespace rsz {
 
 using std::array;
 using std::string;
+
+using ord::Logger;
 
 using odb::Rect;
 using odb::dbDatabase;
@@ -114,6 +120,7 @@ class Resizer : public StaState
 public:
   Resizer();
   void init(Tcl_Interp *interp,
+            Logger *logger,
             dbDatabase *db,
             dbSta *sta);
 
@@ -456,6 +463,7 @@ protected:
   LibertyCellSet dont_use_;
   double max_area_;
 
+  Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;

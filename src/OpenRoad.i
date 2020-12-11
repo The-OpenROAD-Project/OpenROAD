@@ -250,7 +250,7 @@ void
 report(const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::report(msg);
+  ord->getLogger()->report(msg);
 }
 
 void
@@ -259,7 +259,7 @@ info(ord::ToolId tool,
      const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::info(tool, id, msg);
+  ord->getLogger()->info(tool, id, msg);
 }
 
 void
@@ -268,7 +268,7 @@ ord_warn(ord::ToolId tool,
          const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::warn(tool, id, msg);
+  ord->getLogger()->warn(tool, id, msg);
 }
 
 void
@@ -277,7 +277,7 @@ ord_error(ord::ToolId tool,
           const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::error(tool, id, msg);
+  ord->getLogger()->error(tool, id, msg);
 }
 
 void
@@ -286,7 +286,7 @@ critical(ord::ToolId tool,
          const char *msg)
 {
   OpenRoad *ord = getOpenRoad();
-  ord::critical(tool, id, msg);
+  ord->getLogger()->critical(tool, id, msg);
 }
 
 void

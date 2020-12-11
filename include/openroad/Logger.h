@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -85,81 +85,87 @@ static const char* tool_name_tbl[] = {
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-constexpr const char *level_names[] = {"TRACE",
-                                       "DEBUG",
-                                       "INFO",
-                                       "WARNING",
-                                       "ERROR",
-                                       "CRITICAL",
-                                       "OFF"};
-
-extern std::shared_ptr<spdlog::logger> logger;
-
-// Use nullptr if messages are not logged to a file.
-void initLogger(const char* filename);
-
-template <typename... Args>
-inline void report(const std::string& message,
-                   const Args&... args)
+class Logger
 {
-  logger->log(spdlog::level::level_enum::off, message, args...);
-}
+ public:
+  // Use nullptr if messages are not logged to a file.
+  Logger(const char* filename);
 
-template <typename... Args>
-inline void info(ToolId tool,
-                 int id,
-                 const std::string& message,
-                 const Args&... args)
-{
-  log(tool, spdlog::level::level_enum::info, id, message, args...);
-}
+  template <typename... Args>
+    inline void report(const std::string& message,
+                       const Args&... args)
+    {
+      logger_->log(spdlog::level::level_enum::off, message, args...);
+    }
 
-template <typename... Args>
-inline void warn(ToolId tool,
-                 int id,
-                 const std::string& message,
-                 const Args&... args)
-{
-  log(tool, spdlog::level::level_enum::warn, id, message, args...);
-}
+  template <typename... Args>
+    inline void info(ToolId tool,
+                     int id,
+                     const std::string& message,
+                     const Args&... args)
+    {
+      log(tool, spdlog::level::level_enum::info, id, message, args...);
+    }
 
-template <typename... Args>
-inline void error(ToolId tool,
+  template <typename... Args>
+    inline void warn(ToolId tool,
+                     int id,
+                     const std::string& message,
+                     const Args&... args)
+    {
+      log(tool, spdlog::level::level_enum::warn, id, message, args...);
+    }
+
+  template <typename... Args>
+    inline void error(ToolId tool,
+                      int id,
+                      const std::string& message,
+                      const Args&... args)
+    {
+      log(tool, spdlog::level::err, id, message, args...);
+      char tool_id[32];
+      sprintf(tool_id, "%s-%04d", tool_name_tbl[tool], id);
+      std::runtime_error except(tool_id);
+      // Exception should be caught by swig error handler.
+      throw except;
+    }
+
+  template <typename... Args>
+    void critical(ToolId tool,
                   int id,
                   const std::string& message,
                   const Args&... args)
-{
-  log(tool, spdlog::level::err, id, message, args...);
-  char tool_id[32];
-  sprintf(tool_id, "%s-%04d", tool_name_tbl[tool], id);
-  std::runtime_error except(tool_id);
-  // Exception should be caught by swig error handler.
-  throw except;
-}
+    {
+      log(tool, spdlog::level::level_enum::critical, id, message, args...);
+    }
 
-template <typename... Args>
-void critical(ToolId tool,
-              int id,
-              const std::string& message,
-              const Args&... args)
-{
-  log(tool, spdlog::level::level_enum::critical, id, message, args...);
-}
+ private:
+  template <typename... Args>
+    inline void log(ToolId tool,
+                    spdlog::level::level_enum level,
+                    int id,
+                    const std::string& message,
+                    const Args&... args)
+    {
+      assert(id >= 0 && id <= 9999);
+      logger_->log(level,
+                   "[{} {}-{:04d}] " + message,
+                   level_names[level],
+                   tool_name_tbl[tool],
+                   id,
+                   args...);
+    }
 
-template <typename... Args>
-inline void log(ToolId tool,
-                spdlog::level::level_enum level,
-                int id,
-                const std::string& message,
-                const Args&... args)
-{
-  assert(id >= 0 && id <= 9999);
-  logger->log(level,
-              "[{} {}-{:04d}] " + message,
-              level_names[level],
-              tool_name_tbl[tool],
-              id,
-              args...);
-}
+  std::vector<spdlog::sink_ptr> sinks_;
+  std::shared_ptr<spdlog::logger> logger_;
+  static constexpr const char *level_names[] = {"TRACE",
+                                                "DEBUG",
+                                                "INFO",
+                                                "WARNING",
+                                                "ERROR",
+                                                "CRITICAL",
+                                                "OFF"};
+  static constexpr const char *pattern_ = "%v";
+};
 
 }  // namespace ordlog
