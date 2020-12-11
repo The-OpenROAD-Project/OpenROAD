@@ -223,12 +223,28 @@ proc trace_file_continue_on_error { name1 name2 op } {
   set ::sta_continue_on_error $::file_continue_on_error
 }
 
-proc error { what } {
-  ::error "Error: $what"
+proc error { args } {
+  if { [llength $args] == 1 } {
+    # pre-logger compatibility
+    ord_error UKN 0 [lindex $args 0]
+  } elseif { [llength $args] == 3 } {
+    lassign $args tool_id id msg
+    ord_error $tool_id $id $msg
+  } else {
+    ord_error UKN 0 "ill-formed error arguments $args"
+  }
 }
 
-proc warn { what } {
-  puts "Warning: $what"
+proc warn { args } {
+  if { [llength $args] == 1 } {
+    # pre-logger compatibility
+    ord_warn UKN 0 [lindex $args 0]
+  } elseif { [llength $args] == 3 } {
+    lassign $args tool_id id msg
+    ord_warn $tool_id $id $msg
+  } else {
+    ord_warn UKN 0 "ill-formed warn arguments $args"
+  }
 }
 
 proc ensure_units_initialized { } {

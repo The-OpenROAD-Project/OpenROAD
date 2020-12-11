@@ -47,7 +47,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "openroad/Version.hh"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -215,6 +215,23 @@ using odb::dbTech;
   $1 = sta::tclListSeqLibertyCell($input, interp);
 }
 
+%typemap(in) ord::ToolId {
+  int length;
+  const char *arg = Tcl_GetStringFromObj($input, &length);
+  bool found = false;
+  for (int i = 0; i < ord::END; i++ ) {
+    if (strcmp(ord::tool_name_tbl[i], arg) == 0) {
+      $1 = static_cast<ord::ToolId>(i);
+      found = true;
+    }
+  }
+  if (!found) {
+    Tcl_SetResult(interp,const_cast<char*>("unknown tool name."),
+                  TCL_STATIC);
+    return TCL_ERROR;
+  }
+}
+
 %inline %{
 
 const char *
@@ -227,6 +244,49 @@ const char *
 openroad_git_sha1()
 {
   return OPENROAD_GIT_SHA1;
+}
+
+void
+report(const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord::report(msg);
+}
+
+void
+info(ord::ToolId tool,
+     int id,
+     const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord::info(tool, id, msg);
+}
+
+void
+ord_warn(ord::ToolId tool,
+         int id,
+         const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord::warn2(tool, id, msg);
+}
+
+void
+ord_error(ord::ToolId tool,
+          int id,
+          const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord::error2(tool, id, msg);
+}
+
+void
+critical(ord::ToolId tool,
+         int id,
+         const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord::critical(tool, id, msg);
 }
 
 void
@@ -406,13 +466,6 @@ void
 set_cmd_sta(sta::Sta *sta)
 {
   sta::Sta::setSta(sta);
-}
-
-// Used by test/error1.tcl
-void
-test_error1()
-{
-  ord::error("this is only a test.");
 }
 
 bool

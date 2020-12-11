@@ -11,13 +11,13 @@ Notice 0:     Created 3 components and 18 component-terminals.
 Notice 0:     Created 2 special nets and 6 connections.
 Notice 0:     Created 3 nets and 7 connections.
 Notice 0: Finished DEF file: resize5.def
-Warning: no estimated parasitics. Using wire load models.
+[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 Resized 1 instances.
 Instance r1
  Cell: DFF_X2
  Library: Nangate45
  Path cells: DFF_X2
-Warning: no estimated parasitics. Using wire load models.
+[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 Resized 1 instances.
 Instance r1
  Cell: DFF_X2

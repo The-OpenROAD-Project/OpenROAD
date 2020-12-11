@@ -66,17 +66,12 @@ namespace ord {
     X(STA) \
     X(STT) \
     X(TAP) \
+    X(UKN) \
+    X(END) \
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 
-constexpr const char *level_names[] = {"TRACE",
-                                       "DEBUG",
-                                       "INFO",
-                                       "WARNING",
-                                       "ERROR",
-                                       "CRITICAL",
-                                       "OFF"};
 enum ToolId
 {
  FOREACH_TOOL(GENERATE_ENUM)
@@ -89,6 +84,14 @@ static const char* tool_name_tbl[] = {
 #undef FOREACH_TOOL
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
+
+constexpr const char *level_names[] = {"TRACE",
+                                       "DEBUG",
+                                       "INFO",
+                                       "WARNING",
+                                       "ERROR",
+                                       "CRITICAL",
+                                       "OFF"};
 
 extern std::shared_ptr<spdlog::logger> logger;
 
@@ -129,7 +132,7 @@ inline void error2(ToolId tool,
   log(tool, spdlog::level::err, id, message, args...);
   char tool_id[32];
   sprintf(tool_id, "%s-%04d", tool_name_tbl[tool], id);
-  Exception except(tool_id);
+  std::runtime_error except(tool_id);
   // Exception should be caught by swig error handler.
   throw except;
 }
@@ -150,7 +153,7 @@ inline void log(ToolId tool,
                 const std::string& message,
                 const Args&... args)
 {
-  assert(id > 0 && id <= 9999);
+  assert(id >= 0 && id <= 9999);
   logger->log(level,
               "[{} {}-{:04d}] " + message,
               level_names[level],

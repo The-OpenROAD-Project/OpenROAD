@@ -42,7 +42,7 @@ Path Type: max
                               0.662   slack (MET)
 
 
-Warning: no estimated parasitics. Using wire load models.
+[WARNING RSZ-0021] no estimated parasitics. Using wire load models.
 Resized 4 instances.
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
