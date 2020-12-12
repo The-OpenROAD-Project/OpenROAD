@@ -11,3 +11,4 @@
 11 "please load the design before trying to use this command"
 12 "use -capacitance <value> or -resistance <value>."
 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+14 "LEF master {} has no liberty cell."

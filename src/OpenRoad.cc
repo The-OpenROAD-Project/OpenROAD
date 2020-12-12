@@ -376,7 +376,7 @@ void
 OpenRoad::linkDesign(const char *design_name)
 
 {
-  dbLinkDesign(design_name, verilog_network_, db_);
+  dbLinkDesign(design_name, verilog_network_, db_, logger_);
   for (Observer* observer : observers_) {
     observer->postReadDb(db_);
   }
