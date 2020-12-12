@@ -35,4 +35,4 @@ Notice 0: Finished DEF file: ./error01.def
        Re-floorplan to have enough coreArea
  (REPL-1)
 [ERROR UKN-0000] RePlAce terminated with errors.
-Error: UKN-0000
+UKN-0000
