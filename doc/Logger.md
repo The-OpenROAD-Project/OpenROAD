@@ -25,7 +25,7 @@ Example warning messages:
 * Pin ‘A[0]’ on instance ‘mem01’ does not contain antenna information and will not be checked for antenna violations.
 
 ### Error
-Error messages should be used for indicating correctness problems where the program is able to work around the issue or ignore the problem. Problems which prevent execution from continuing should be issued at a higher status level.
+Error messages should be used for indicating correctness problems where the program is able to work around the issue or ignore the problem. Problems with command arguments are a good example of errors. Errors exit the current command by throw an error that can be caught in a Tcl command script. Errors that occur while reading a command file stop executing the script commands.
 
 Example error messages:
 * Invalid selection: net ‘test0’ does not exist in the design.
@@ -33,7 +33,7 @@ Example error messages:
 * Argument ‘max_routing_layer’ expects an integer value from 1 to 10.
 
 ### Critical
-Critical messages should be used for indicating correctness problems that the program is not able to work around or ignore, and require immediate exiting of the function (ie, throw an error).
+Critical messages should be used for indicating correctness problems that the program is not able to work around or ignore, and require immediate exiting of the program (abort).
 
 Example critical messages:
 * Database ‘chip’ has been corrupted and is not recoverable.
