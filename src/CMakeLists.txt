@@ -173,6 +173,7 @@ swig_add_library(openroad_swig
 # build/src/CMakeFiles/openroad_swig.dir/OpenRoadTCL_wrap.cxx
 swig_link_libraries(openroad_swig
   PUBLIC
+  spdlog::spdlog
   openroad
   # OpenDB public includes incorrectly point to include/opendb so this fails.
   #opendb
@@ -207,6 +208,7 @@ else()
 endif()
 
 find_package(spdlog)
+message(STATUS "spdlog: ${spdlog_VERSION}")
 
 find_package(Threads)
 

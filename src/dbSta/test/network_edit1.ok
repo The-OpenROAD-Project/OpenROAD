@@ -26,7 +26,7 @@ Notice 0:     Created 5 components and 27 component-terminals.
 Notice 0:     Created 2 special nets and 10 connections.
 Notice 0:     Created 8 nets and 13 connections.
 Notice 0: Finished DEF file: ./results/network_edit1.def
-Warning: network_edit1.tcl, 22 port 'in1' not found.
+[WARNING STA-0000] port 'in1' not found.
 Net in1
 Driver pins
 
