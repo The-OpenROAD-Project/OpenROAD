@@ -117,7 +117,7 @@ The resizer and opendp have been updated to use the Logger if you need examples 
 Regression tests should not have any "UKN-0000" messages in their ok files. A simple grep should indicate that you still have pending calls to pre-logger error/warn functions.
 `
 
-The cmake file for the tool must also be updated to include spdlog in the link libraries so it can find the header files if they are not in the normal system directories (as on dfm when module is used to instal them).
+The cmake file for the tool must also be updated to include spdlog in the link libraries so it can find the header files if they are not in the normal system directories. dfm is an example of this problem; it has an ancient version of spdlog in '/usr/include/spdlog'. Use module to instal spdlog 1.8.1 on dfm and check your build there.
 
 ```
 target_link_libraries(<library_target>
