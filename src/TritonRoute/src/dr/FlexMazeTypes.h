@@ -32,44 +32,44 @@
 namespace fr {
   class FlexMazeIdx {
   public:
-    FlexMazeIdx(): xIdx(-1), yIdx(-1), zIdx(-1) {}
-    FlexMazeIdx(frMIdx xIn, frMIdx yIn, frMIdx zIn): xIdx(xIn), yIdx(yIn), zIdx(zIn) {}
+    FlexMazeIdx(): xIdx_(-1), yIdx_(-1), zIdx_(-1) {}
+    FlexMazeIdx(frMIdx xIn, frMIdx yIn, frMIdx zIn): xIdx_(xIn), yIdx_(yIn), zIdx_(zIn) {}
     // getters
     frMIdx x() const {
-      return xIdx;
+      return xIdx_;
     }
     frMIdx y() const {
-      return yIdx;
+      return yIdx_;
     }
     frMIdx z() const {
-      return zIdx;
+      return zIdx_;
     }
     bool empty() const {
-      return (xIdx == -1 && yIdx == -1 && zIdx == -1);
+      return (xIdx_ == -1 && yIdx_ == -1 && zIdx_ == -1);
     }
     // setters
     void set(frMIdx xIn, frMIdx yIn, frMIdx zIn) {
-      xIdx = xIn;
-      yIdx = yIn;
-      zIdx = zIn;
+      xIdx_ = xIn;
+      yIdx_ = yIn;
+      zIdx_ = zIn;
     }
     void set(const FlexMazeIdx &in) {
-      xIdx = in.x();
-      yIdx = in.y();
-      zIdx = in.z();
+      xIdx_ = in.x();
+      yIdx_ = in.y();
+      zIdx_ = in.z();
     }
     // others
     bool operator<(const FlexMazeIdx &rhs) const {
-      if (this->xIdx != rhs.x()) {
-        return this->xIdx < rhs.x();
-      } else if (this->yIdx != rhs.y()) {
-        return this->yIdx < rhs.y();
+      if (xIdx_ != rhs.x()) {
+        return xIdx_ < rhs.x();
+      } else if (yIdx_ != rhs.y()) {
+        return yIdx_ < rhs.y();
       } else {
-        return this->zIdx < rhs.z();
+        return zIdx_ < rhs.z();
       }
     }
     bool operator==(const FlexMazeIdx &rhs) const {
-      return (xIdx == rhs.xIdx && yIdx == rhs.yIdx && zIdx == rhs.zIdx);
+      return (xIdx_ == rhs.xIdx_ && yIdx_ == rhs.yIdx_ && zIdx_ == rhs.zIdx_);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const FlexMazeIdx &mIdx) {
@@ -78,9 +78,9 @@ namespace fr {
     }
 
   protected:
-    frMIdx xIdx;
-    frMIdx yIdx;
-    frMIdx zIdx;
+    frMIdx xIdx_;
+    frMIdx yIdx_;
+    frMIdx zIdx_;
   };
 }
 
