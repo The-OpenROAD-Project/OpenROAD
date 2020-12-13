@@ -8,7 +8,8 @@ All output from OpenROAD tools should be directed through the logging API so tha
 
 ### Report
 Reports are tool output in the form of a report to the user. Examples are timing paths, or power analysis results. Tool reports that use ‘printf’ or c++ streams should use the report message API instead.
-Information
+
+### Information
 Information messages may be used for reporting metrics, quality of results, or program status to the user. Any messages which indicate runtime problems, such as potential faulty input or other internal program issues, should be issued at a higher status level.
 
 Example messages for this status level:
@@ -25,7 +26,7 @@ Example warning messages:
 * Pin ‘A[0]’ on instance ‘mem01’ does not contain antenna information and will not be checked for antenna violations.
 
 ### Error
-Error messages should be used for indicating correctness problems where the program is able to work around the issue or ignore the problem. Problems with command arguments are a good example of errors. Errors exit the current command by throw an error that can be caught in a Tcl command script. Errors that occur while reading a command file stop executing the script commands.
+Error messages should be used for indicating correctness problems. Problems with command arguments are a good example of errors. Errors exit the current command by throw an error that can be caught in a Tcl command script. Errors that occur while reading a command file stop executing the script commands.
 
 Example error messages:
 * Invalid selection: net ‘test0’ does not exist in the design.
@@ -69,7 +70,7 @@ Tcl functions for reporting messages are defined in the OpenRoad swig file OpenR
 
 ord::report should be used instead of ‘puts’ so that all output is logged.
 
-Calls the the previously defined functions ord::warn and ord::error with a single message argument report with tool ID “UKN” and message ID 0000.
+Calls to the Tcl functions ord::warn and ord::error with a single message argument report with tool ID “UKN” and message ID 0000.
 
 Tools '#include openroad/Logger.h' that defines the logger API. Logger functions require an instance of the Logger class as the first argument. The Logger instance is owned by the OpenRoad instance. Each tool should retrieve the logger instance in the tool init function called after the tool make function by the OpenRoad application.
 
@@ -117,7 +118,7 @@ The resizer and opendp have been updated to use the Logger if you need examples 
 Regression tests should not have any "UKN-0000" messages in their ok files. A simple grep should indicate that you still have pending calls to pre-logger error/warn functions.
 `
 
-The cmake file for the tool must also be updated to include spdlog in the link libraries so it can find the header files if they are not in the normal system directories. dfm is an example of this problem; it has an ancient version of spdlog in '/usr/include/spdlog'. Use module to instal spdlog 1.8.1 on dfm and check your build there.
+The cmake file for the tool must also be updated to include spdlog in the link libraries so it can find the header files if they are not in the normal system directories. dfm is an example of this problem; it has an ancient version of spdlog in '/usr/include/spdlog'. Use module to install spdlog 1.8.1 on dfm and check your build there.
 
 ```
 target_link_libraries(<library_target>
