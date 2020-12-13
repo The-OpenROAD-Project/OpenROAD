@@ -3,4 +3,5 @@ record_tests {
   generate_rules
   ext_pattern
   gcd 
+  45_gcd
 }
