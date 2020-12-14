@@ -117,6 +117,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     auto show = [&](frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
                   return grid_graph_->hasEdge(x, y, z, dir)
                     && (grid_graph_->isBlocked(x, y, z, dir)
+                        || grid_graph_->hasDRCCost(x, y, z, dir)
                         || grid_graph_->hasShapeCost(x, y, z, dir)
                         || grid_graph_->hasMarkerCost(x, y, z, dir)
                         );
