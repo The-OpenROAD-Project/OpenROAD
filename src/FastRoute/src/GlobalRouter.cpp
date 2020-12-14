@@ -1279,11 +1279,11 @@ void GlobalRouter::writeGuides(const char* fileName)
   std::vector<odb::dbNet*> sorted_nets;
   for (odb::dbNet* net : _block->getNets())
     sorted_nets.push_back(net);
-  std::sort(sorted_nets.begin(),
-            sorted_nets.end(),
-            [](odb::dbNet* net1, odb::dbNet* net2) {
-              return strcmp(net1->getConstName(), net2->getConstName()) < 0;
-            });
+    std::sort(sorted_nets.begin(),
+              sorted_nets.end(),
+              [](odb::dbNet* net1, odb::dbNet* net2) {
+                return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+              });
 
   for (odb::dbNet* db_net : sorted_nets) {
     GRoute &route = _routes[db_net];
@@ -1293,67 +1293,67 @@ void GlobalRouter::writeGuides(const char* fileName)
       std::vector<odb::Rect> guideBox;
       finalLayer = -1;
       for (GSegment &segment : route) {
-	if (segment.initLayer != finalLayer && finalLayer != -1) {
-	  mergeBox(guideBox);
-	  for (odb::Rect &guide : guideBox) {
-	    guideFile << guide.xMin() + offsetX << " "
-		      << guide.yMin() + offsetY << " "
-		      << guide.xMax() + offsetX << " "
-		      << guide.yMax() + offsetY << " "
-		      << phLayerF.getName() << "\n";
-	  }
-	  guideBox.clear();
-	  finalLayer = segment.initLayer;
-	}
-	if (segment.initLayer == segment.finalLayer) {
-	  if (segment.initLayer < _minRoutingLayer && segment.initX != segment.finalX
-	      && segment.initY != segment.finalY) {
-	    error("Routing with guides in blocked metal for net %s",
-		  db_net->getConstName());
-	  }
+      	if (segment.initLayer != finalLayer && finalLayer != -1) {
+      	  mergeBox(guideBox);
+      	  for (odb::Rect &guide : guideBox) {
+      	    guideFile << guide.xMin() + offsetX << " "
+      		      << guide.yMin() + offsetY << " "
+      		      << guide.xMax() + offsetX << " "
+      		      << guide.yMax() + offsetY << " "
+      		      << phLayerF.getName() << "\n";
+      	  }
+      	  guideBox.clear();
+      	  finalLayer = segment.initLayer;
+      	}
+      	if (segment.initLayer == segment.finalLayer) {
+      	  if (segment.initLayer < _minRoutingLayer && segment.initX != segment.finalX
+      	      && segment.initY != segment.finalY) {
+      	    error("Routing with guides in blocked metal for net %s",
+      		  db_net->getConstName());
+      	  }
 
-	  guideBox.push_back(globalRoutingToBox(segment));
-	  if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
-	    phLayerF = getRoutingLayerByIndex(
-					      (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
-	  } else {
-	    phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-	  }
-	  finalLayer = segment.finalLayer;
-	} else {
-	  if (abs(segment.finalLayer - segment.initLayer) > 1) {
-	    error("Connection between non-adjacent layers in net %s",
-		  db_net->getConstName());
-	  } else {
-	    RoutingLayer phLayerI;
-	    if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
-	      phLayerI = getRoutingLayerByIndex(segment.initLayer + _minRoutingLayer
-						- segment.initLayer);
-	    } else {
-	      phLayerI = getRoutingLayerByIndex(segment.initLayer);
-	    }
-	    if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
-	      phLayerF = getRoutingLayerByIndex(
-						segment.finalLayer + _minRoutingLayer - segment.finalLayer);
-	    } else {
-	      phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-	    }
-	    finalLayer = segment.finalLayer;
-	    odb::Rect box;
-	    guideBox.push_back(globalRoutingToBox(segment));
-	    mergeBox(guideBox);
-	    for (odb::Rect &guide : guideBox) {
-	      guideFile << guide.xMin() + offsetX << " "
-            			<< guide.yMin() + offsetY << " "
-            			<< guide.xMax() + offsetX << " "
-            			<< guide.yMax() + offsetY << " "
-            			<< phLayerI.getName() << "\n";
-	    }
-	    guideBox.clear();
+      	  guideBox.push_back(globalRoutingToBox(segment));
+      	  if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
+      	    phLayerF = getRoutingLayerByIndex(
+      					      (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
+      	  } else {
+      	    phLayerF = getRoutingLayerByIndex(segment.finalLayer);
+      	  }
+      	  finalLayer = segment.finalLayer;
+      	} else {
+      	  if (abs(segment.finalLayer - segment.initLayer) > 1) {
+      	    error("Connection between non-adjacent layers in net %s",
+      		  db_net->getConstName());
+      	  } else {
+      	    RoutingLayer phLayerI;
+      	    if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
+      	      phLayerI = getRoutingLayerByIndex(segment.initLayer + _minRoutingLayer
+      						- segment.initLayer);
+      	    } else {
+      	      phLayerI = getRoutingLayerByIndex(segment.initLayer);
+      	    }
+      	    if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
+      	      phLayerF = getRoutingLayerByIndex(
+      						segment.finalLayer + _minRoutingLayer - segment.finalLayer);
+      	    } else {
+      	      phLayerF = getRoutingLayerByIndex(segment.finalLayer);
+      	    }
+      	    finalLayer = segment.finalLayer;
+      	    odb::Rect box;
+      	    guideBox.push_back(globalRoutingToBox(segment));
+      	    mergeBox(guideBox);
+      	    for (odb::Rect &guide : guideBox) {
+      	      guideFile << guide.xMin() + offsetX << " "
+                  			<< guide.yMin() + offsetY << " "
+                  			<< guide.xMax() + offsetX << " "
+                  			<< guide.yMax() + offsetY << " "
+                  			<< phLayerI.getName() << "\n";
+      	    }
+      	    guideBox.clear();
 
-	    guideBox.push_back(globalRoutingToBox(segment));
-	  }
-	}
+      	    guideBox.push_back(globalRoutingToBox(segment));
+      	  }
+      	}
       }
       mergeBox(guideBox);
       for (odb::Rect &guide : guideBox) {
