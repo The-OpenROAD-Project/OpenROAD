@@ -128,6 +128,373 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
+sta::define_cmd_args "create_physical_cluster" {cluster_name}
+
+proc create_physical_cluster { args } {
+  sta::check_argc_eq1 "create_physical_cluster" $args
+  set cluster_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [odb::dbGroup_create $block $cluster_name]
+  if { $group == "NULL" } {
+    ord::error "duplicate group name"
+  }
+}
+
+sta::define_cmd_args "create_child_physical_clusters" {[-module module_name | -modinst path]}
+
+proc create_child_physical_clusters { args } {
+  sta::parse_key_args "create_child_physical_clusters" args keys {-module -modinst} flags {}
+  set cluster_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  if { [info exists keys(-module)] } {
+    set module [$block findModule $keys(-module)]
+  }
+  if { [info exists keys(-modinst)] } {
+    set module [[$block findModInst $keys(-modinst)] getMaster]
+  }
+  if { $module == "NULL" } {
+    ord::error "module does not exist"
+  }
+  set module_instance [$module getModInst]
+  set modinsts [$module getChildren]
+  set insts [$module getInsts]
+  foreach modinst $modinsts {
+    set cluster_name "[$module getName]_[$modinst getName]"
+    set group [odb::dbGroup_create $block $cluster_name]
+    if { $group == "NULL" } {
+      ord::error "duplicate group name"
+    }
+    $group addModInst $modinst
+  }
+  if { [llength $insts] > 0 } {
+    if { $module_instance == "NULL" } {
+      set group [odb::dbGroup_create $block "[$module getName]_glue"]
+    } else {
+      set parent [$module_instance getParent]
+      set group [odb::dbGroup_create $block "[$parent getName]_[$module_instance getName]_glue"]
+    }
+    foreach inst $insts {
+      $group addInst $inst
+    }
+  }
+}
+
+sta::define_cmd_args "create_voltage_domain" {domain_name llx lly urx ury}
+
+proc create_voltage_domain { args } {
+  if { [llength $args] != 5 } {
+    sta::sta_error "create_voltage_domain requires five positional arguments."
+  }
+  set domain_name [lindex $args 0]
+  set llx [lindex $args 1]
+  set lly [lindex $args 2]
+  set urx [lindex $args 3]
+  set ury [lindex $args 4]
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [odb::dbGroup_create $block $domain_name $llx $lly $urx $ury]
+  if { $group == "NULL" } {
+    ord::error "duplicate group name"
+  }
+}
+
+sta::define_cmd_args "delete_physical_cluster" {cluster_name}
+
+proc delete_physical_cluster { args } {
+  sta::check_argc_eq1 "delete_physical_cluster" $args
+  set cluster_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [$block findGroup $cluster_name]
+  if { $group == "NULL" } {
+    ord::error "group does not exist"
+  }
+  if { [$group getType] == 1 } {
+    ord::error "group is not of physical cluster type"
+  }
+  odb::dbGroup_destroy $group
+}
+
+sta::define_cmd_args "delete_voltage_domain" {domain_name}
+
+proc delete_voltage_domain { args } {
+  sta::check_argc_eq1 "delete_voltage_domain" $args
+  set domain_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [$block findGroup $domain_name]
+  if { $group == "NULL" } {
+    ord::error "group does not exist"
+  }
+  if { [$group getType] == 0 } {
+    ord::error "group is not of voltage domain type"
+  }
+  odb::dbGroup_destroy $group
+}
+
+sta::define_cmd_args "assign_power_net" {domain_name net_name}
+
+proc assign_power_net { args } {
+  sta::check_argc_eq2 "assign_power_net" $args
+  set domain_name [lindex $args 0]
+  set net_name [lindex $args 1]
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [$block findGroup $domain_name]
+  set net [$block findNet $net_name]
+  if { $group == "NULL" } {
+    ord::error "group does not exist"
+  }
+  if { [$group getType] == 0 } {
+    ord::error "group is not of voltage domain type"
+  }
+  if { $net == "NULL" } {
+    ord::error "net does not exist"
+  }
+  $group addPowerNet $net
+}
+
+sta::define_cmd_args "assign_ground_net" {domain_name net_name}
+
+proc assign_ground_net { args } {
+  sta::check_argc_eq2 "assign_ground_net" $args
+  set domain_name [lindex $args 0]
+  set net_name [lindex $args 1]
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [$block findGroup $domain_name]
+  set net [$block findNet $net_name]
+  if { $group == "NULL" } {
+    ord::error "group does not exist"
+  }
+  if { [$group getType] == 0 } {
+    ord::error "group is not of voltage domain type"
+  }
+  if { $net == "NULL" } {
+    ord::error "net does not exist"
+  }
+  $group addGroundNet $net
+}
+
+sta::define_cmd_args "add_to_physical_cluster" { [-parent_module module_name -modinst modinst_name | -inst inst_name | -physical_cluster cluster_name]  cluster_name }
+
+proc add_to_physical_cluster { args } {
+  sta::parse_key_args "add_to_physical_cluster" args keys {-parent_module -modinst -inst -physical_cluster} flags {}
+  sta::check_argc_eq1 "add_to_physical_cluster" $args
+  set cluster_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [$block findGroup $cluster_name]
+  if { $group == "NULL" } {
+    ord::error "cluster does not exist"
+  }
+  if { [$group getType] == 1 } {
+    ord::error "group is not of physical cluster type"
+  }
+  if { [info exists keys(-parent_module)] } {
+    set module [$block findModule $keys(-parent_module)]
+    if { $module == "NULL" } {
+      ord::error "parent module does not exist"
+    }
+    set modinst [$module findModInst $keys(-modinst)]
+    if { $modinst == "NULL" } {
+      ord::error "modinst does not exist"
+    }
+    $group addModInst $modinst
+  }
+  if { [info exists keys(-inst)] } {
+    set inst [$block findInst $keys(-inst)]
+    if { $inst == "NULL" } {
+      ord::error "inst does not exist"
+    }
+    $group addInst $inst
+  }
+  if { [info exists keys(-physical_cluster)] } {
+    set child [$block findGroup $keys(-physical_cluster)]
+    if { $child == "NULL" } {
+      ord::error "child physical cluster does not exist"
+    }
+    if { [$child getType] == 1 } {
+      ord::error "child group is not of physical cluster type"
+    }
+    $group addGroup $child
+  }
+}
+
+sta::define_cmd_args "remove_from_physical_cluster" { [-parent_module module_name -modinst modinst_name | -inst inst_name | -physical_cluster cluster_name]  cluster_name }
+
+proc remove_from_physical_cluster { args } {
+  sta::parse_key_args "remove_from_physical_cluster" args keys {-parent_module -modinst -inst -physical_cluster} flags {}
+  sta::check_argc_eq1 "remove_from_physical_cluster" $args
+  set cluster_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set group [$block findGroup $cluster_name]
+  if { $group == "NULL" } {
+    ord::error "cluster does not exist"
+  }
+  if { [$group getType] == 1 } {
+    ord::error "group is not of physical cluster type"
+  }
+  if { [info exists keys(-parent_module)] } {
+    set module [$block findModule $keys(-parent_module)]
+    if { $module == "NULL" } {
+      ord::error "parent module does not exist"
+    }
+    set modinst [$module findModInst $keys(-modinst)]
+    if { $modinst == "NULL" } {
+      ord::error "modinst does not exist"
+    }
+    $group removeModInst $modinst
+  }
+  if { [info exists keys(-inst)] } {
+    set inst [$block findInst $keys(-inst)]
+    if { $inst == "NULL" } {
+      ord::error "inst does not exist"
+    }
+    $group removeInst $inst
+  }
+  if { [info exists keys(-physical_cluster)] } {
+    set child [$block findGroup $keys(-physical_cluster)]
+    if { $child == "NULL" } {
+      ord::error "child physical cluster does not exist"
+    }
+    if { [$child getType] == 1 } {
+      ord::error "child group is not of physical cluster type"
+    }
+    $group removeGroup $child
+  }
+}
+
+sta::define_cmd_args "report_physical_clusters" {}
+
+proc report_physical_clusters {} {
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set groups [$block getGroups]
+  puts "\nReporting Physical Clusters"
+  foreach group $groups {
+    if { [$group getType] == 0 } {
+      report_group $group
+    }
+  }
+  puts ""
+}
+
+sta::define_cmd_args "report_voltage_domains" {}
+
+proc report_voltage_domains {} {
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    ord::error "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set groups [$block getGroups]
+  puts "\nReporting Voltage Domains"
+  foreach group $groups {
+    if { [$group getType] == 1 } {
+      report_group $group
+    }
+  }
+  puts ""
+}
+
+proc report_group { group } {
+  if { [$group getType] == 0 } {
+    puts -nonewline "\nPhysical Cluster : "
+  } else {
+    puts -nonewline "\nVoltage Domain : "
+  }
+  puts -nonewline "[$group getName]"
+  if { [$group hasBox] } {
+    set rect [$group getBox]
+    puts -nonewline "\nBox : ([$rect xMin],[$rect yMin]) ([$rect xMax],[$rect yMax])"
+  }
+  set modinsts [$group getModInsts]
+  set insts [$group getInsts]
+  set children [$group getGroups]
+  set powerNets [$group getPowerNets]
+  set groundNets [$group getGroundNets]
+  if { [llength $modinsts] > 0 } {
+    puts -nonewline "\nModInsts: "
+    foreach modinst $modinsts {
+      puts -nonewline "[$modinst getName] "
+    }
+  }
+
+  if { [llength $insts] > 0 } {
+    puts -nonewline "\nInsts: "
+    foreach inst $insts {
+      puts -nonewline "[$inst getName] "
+    }
+  }
+
+  if { [llength $children] > 0 } {
+    puts -nonewline "\nChildren: "
+    foreach child $children {
+      puts -nonewline "[$child getName] "
+    }
+  }
+
+  if { [llength $powerNets] > 0 } {
+    puts -nonewline "\nPower Nets: "
+    foreach net $powerNets {
+      puts -nonewline "[$net getName] "
+    }
+  }
+  
+  if { [llength $groundNets] > 0 } {
+    puts -nonewline "\nGround Nets: "
+    foreach net $groundNets {
+      puts -nonewline "[$net getName] "
+    }
+  }
+  puts ""
+}
+
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
 sta::define_cmd_args "set_layer_rc" { [-layer layer] \
 					[-via via_layer] \
