@@ -260,6 +260,7 @@ function call. The `-names` argument is a list of names. The `-region` syntax is
 Gate resizer commands are described below.
 The resizer commands stop when the design area is `-max_utilization
 util` percent of the core area. `util` is between 0 and 100.
+The resizer stops and reports and error if the max utilization is exceeded.
 
 ```
 set_wire_rc [-clock] [-signal]
