@@ -288,6 +288,9 @@ namespace fr {
     void setDrcBox(const frBox &boxIn) {
       drcBox_.set(boxIn);
     }
+    void setGCellBox(const frBox &boxIn) {
+      gcellBox_.set(boxIn);
+    }
     void setDRIter(int in) {
       drIter_ = in;
     }
@@ -408,6 +411,9 @@ namespace fr {
     frBox& getDrcBox() {
       return drcBox_;
     }
+    const frBox& getGCellBox() const {
+      return gcellBox_;
+    }
     frRegionQuery* getRegionQuery() const {
       return design_->getRegionQuery();
     }
@@ -505,6 +511,7 @@ namespace fr {
     frBox     routeBox_;
     frBox     extBox_;
     frBox     drcBox_;
+    frBox     gcellBox_;
     int       drIter_;
     int       mazeEndIter_;
     bool      TEST_:1;

@@ -84,3 +84,8 @@ target_include_directories(dbSta
   ${OPENSTA_HOME}/include/sta
   ${OPENSTA_HOME}
   )
+
+target_link_libraries(dbSta
+  PUBLIC
+  spdlog::spdlog
+  )

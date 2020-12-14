@@ -10,7 +10,7 @@ Reading DEF file: multi_height05.def
 Notice 0: Design: multi_height_multi_port_rails
 Notice 0:     Created 3 components and 6 component-terminals.
 Notice 0: Finished DEF file: multi_height05.def
-Warning: could not find power special net
+[WARNING DPL-0011] Could not find power special net.
 Design Stats
 --------------------------------
 total instances             3

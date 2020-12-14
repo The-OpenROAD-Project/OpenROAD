@@ -47,6 +47,10 @@
 
 #include "opendb/db.h"
 
+namespace ord {
+class Logger;
+}
+
 namespace dpl {
 
 using std::map;
@@ -54,6 +58,8 @@ using std::set;
 using std::string;
 using std::vector;
 using std::pair;
+
+using ord::Logger;
 
 using odb::dbBlock;
 using odb::dbDatabase;
@@ -160,7 +166,8 @@ public:
   Opendp &operator=(const Opendp &&) = delete;
 
   void clear();
-  void init(dbDatabase *db);
+  void init(dbDatabase *db,
+            Logger *logger);
   // legalize/report
   // max_displacment is in rows, 0 for unconstrained
   void detailedPlacement(int max_displacment);
@@ -273,13 +280,14 @@ private:
   bool isCrWtBlClass(const Cell *cell) const;
   bool isWtClass(const Cell *cell) const;
   void reportFailures(const vector<Cell *> &failures,
+                      int msg_id,
                       const char *msg,
                       bool verbose) const;
-  void reportFailures(
-      const vector<Cell *> &failures,
-      const char *msg,
-      bool verbose,
-      const std::function<void(Cell *cell)> &report_failure) const;
+  void reportFailures(const vector<Cell *> &failures,
+                      int msg_id,
+                      const char *msg,
+                      bool verbose,
+                      const std::function<void(Cell *cell)> &report_failure) const;
   void reportOverlapFailure(const Cell *cell, const Grid *grid) const;
 
   void rectDist(const Cell *cell,
@@ -353,6 +361,7 @@ private:
   int64_t hpwl(dbInst *inst);
   bool isSupply(dbNet *net) const;
 
+  Logger *logger_;
   dbDatabase *db_;
   dbBlock *block_;
   int pad_left_;

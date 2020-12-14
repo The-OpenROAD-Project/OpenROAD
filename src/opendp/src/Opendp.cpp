@@ -47,7 +47,7 @@
 #include <map>
 #include <ostream>
 
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"  // closestPtInRect
 
 namespace dpl {
@@ -57,7 +57,7 @@ using std::ofstream;
 using std::round;
 using std::string;
 
-using ord::error;
+using ord::DPL;
 
 using odb::dbBox;
 using odb::dbBPin;
@@ -146,9 +146,11 @@ Opendp::~Opendp()
 }
 
 void
-Opendp::init(dbDatabase *db)
+Opendp::init(dbDatabase *db,
+             Logger *logger)
 {
   db_ = db;
+  logger_ = logger;
 }
 
 void
@@ -252,11 +254,11 @@ Opendp::findDesignStats()
 
   design_util_ = static_cast<double>(movable_area_) / (design_area_ - fixed_area_);
 
-  design_padded_util_ = static_cast<double>(movable_padded_area_) / (design_area_ - fixed_padded_area_);
+  design_padded_util_ = static_cast<double>(movable_padded_area_)
+    / (design_area_ - fixed_padded_area_);
 
-  if (design_util_ > 1.0) {
-    error("utilization exceeds 100%%.");
-  }
+  if (design_util_ > 1.0)
+    logger_->error(DPL, 14, "utilization exceeds 100%.");
 }
 
 void

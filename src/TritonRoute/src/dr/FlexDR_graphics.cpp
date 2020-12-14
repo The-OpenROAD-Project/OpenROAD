@@ -112,6 +112,39 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
                      {pt.x() + 20, pt.y() - 20});
   }
 
+  // Draw grid graph
+  if (grid_graph_ && layer->getType() == odb::dbTechLayerType::ROUTING) {
+    auto show = [&](frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
+                  return grid_graph_->hasEdge(x, y, z, dir)
+                    && (grid_graph_->isBlocked(x, y, z, dir)
+                        || grid_graph_->hasShapeCost(x, y, z, dir)
+                        || grid_graph_->hasMarkerCost(x, y, z, dir)
+                        );
+                };
+
+    frMIdx x_dim, y_dim, z_dim;
+    grid_graph_->getDim(x_dim, y_dim, z_dim);
+    frMIdx z = grid_graph_->getMazeZIdx(layerNum);
+    for (frMIdx x = 0; x < x_dim; ++x) {
+      for (frMIdx y = 0; y < y_dim; ++y) {
+        frPoint pt;
+        grid_graph_->getPoint(pt, x, y);
+
+        if (show(x, y, z, frDirEnum::E)) {
+          frPoint pt2;
+          grid_graph_->getPoint(pt2, x + 1, y);
+          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+        }
+
+        if (show(x, y, z, frDirEnum::N)) {
+          frPoint pt2;
+          grid_graph_->getPoint(pt2, x, y + 1);
+          painter.drawLine({pt.x(), pt.y()}, {pt2.x(), pt2.y()});
+        }
+      }
+    }
+  }
+
   // Draw markers
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
   for (auto& marker : worker_->getMarkers()) {
@@ -162,9 +195,18 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
 
 void FlexDRGraphics::startWorker(FlexDRWorker* in)
 {
+  worker_ = nullptr;
+
   if (current_iter_ < settings_->iter) {
     return;
   }
+
+  frBox gcellBox = in->getGCellBox();
+  if (settings_->gcellX >= 0 &&
+      !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+    return;
+  }
+
   frPoint origin;
   in->getDesign()->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(),
                                               origin);
@@ -174,6 +216,7 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
 
   worker_ = in;
   net_ = nullptr;
+  grid_graph_ = nullptr;
 
   points_by_layer_.resize(in->getTech()->getLayers().size());
   
@@ -185,23 +228,26 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
   }
 }
 
-void FlexDRGraphics::searchNode(const FlexGridGraph* gridGraph,
+void FlexDRGraphics::searchNode(const FlexGridGraph* grid_graph,
                                 const FlexWavefrontGrid& grid)
 {
   if (!net_) {
     return;
   }
 
+  assert(grid_graph_ == nullptr || grid_graph_ == grid_graph);
+  grid_graph_ = grid_graph;
+
   frPoint in;
-  gridGraph->getPoint(in, grid.x(), grid.y());
-  frLayerNum layer = gridGraph->getLayerNum(grid.z());
+  grid_graph->getPoint(in, grid.x(), grid.y());
+  frLayerNum layer = grid_graph->getLayerNum(grid.z());
 
   auto& pts = points_by_layer_.at(layer);
   pts.push_back(in);
 
   // Pause on any layer change
   if (settings_->debugMaze
-      // && last_pt_layer_ != layer
+      && last_pt_layer_ != layer
       && last_pt_layer_ != -1) {
     gui_->redraw();
     gui_->pause();
@@ -214,7 +260,7 @@ void FlexDRGraphics::startNet(drNet* net)
 {
   net_ = nullptr;
 
-  if (current_iter_ < settings_->iter) {
+  if (!worker_) {
     return;
   }
 

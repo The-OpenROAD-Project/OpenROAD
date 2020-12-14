@@ -43,4 +43,5 @@ Notice 0: Finished DEF file: ./diverge01.def
 [INFO] NumBins = 256
 [ERROR] RePlAce divergence detected. 
         Please decrease init_density_penalty value (REPL-3)
-Error: RePlAce terminated with errors.
+[ERROR UKN-0000] RePlAce terminated with errors.
+UKN-0000
