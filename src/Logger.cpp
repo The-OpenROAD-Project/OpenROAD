@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2020, OpenROAD
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -30,50 +30,39 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "opendp/MakeOpendp.h"
+#include "openroad/Logger.h"
 
-#include <tcl.h>
+#include <mutex>
 
-#include "opendp/Opendp.h"
-#include "openroad/OpenRoad.hh"
-#include "sta/StaMain.hh"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char *opendp_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-extern int
-Opendp_Init(Tcl_Interp *interp);
-}
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 namespace ord {
 
-dpl::Opendp *
-makeOpendp()
+Logger::Logger(const char* log_filename)
 {
-  return new dpl::Opendp;
+  sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+  if (log_filename)
+    sinks_.push_back(std::make_shared<spdlog::sinks::basic_file_sink<std::mutex>>(log_filename));
+  
+  logger_ = std::make_shared<spdlog::logger>("logger", sinks_.begin(), sinks_.end());
+  logger_->set_pattern(pattern_);
 }
 
-void
-deleteOpendp(dpl::Opendp *opendp)
+ToolId
+Logger::findToolId(const char *tool_name)
 {
-  delete opendp;
+  int tool_id = 0;
+  for (const char *tool : tool_names_) {
+    if (strcmp(tool_name, tool) == 0)
+      return static_cast<ToolId>(tool_id);
+    tool_id++;
+  }
+  return UKN;
 }
 
-void
-initOpendp(OpenRoad *openroad)
-{
-  Tcl_Interp *tcl_interp = openroad->tclInterp();
-  // Define swig TCL commands.
-  Opendp_Init(tcl_interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::opendp_tcl_inits);
-  openroad->getOpendp()->init(openroad->getDb(),
-                              openroad->getLogger());
-}
-
-}  // namespace ord
+}  // namespace

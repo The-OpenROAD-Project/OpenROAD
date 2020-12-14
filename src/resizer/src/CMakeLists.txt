@@ -70,3 +70,8 @@ target_include_directories(resizer
   ${OPENROAD_HOME}/src/flute3
   ${TCL_INCLUDE_PATH}
   )
+
+target_link_libraries(resizer
+  PUBLIC
+  spdlog::spdlog
+  )

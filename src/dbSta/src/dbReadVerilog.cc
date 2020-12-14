@@ -37,7 +37,6 @@
 
 #include <map>
 
-#include "sta/Error.hh"
 #include "sta/Report.hh"
 #include "sta/Debug.hh"
 #include "sta/Vector.hh"
@@ -50,7 +49,7 @@
 #include "opendb/db.h"
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 namespace ord {
 
@@ -91,7 +90,8 @@ using sta::NetConnectedPinIterator;
 using sta::PinPathNameLess;
 using sta::LibertyCell;
 
-using ord::warn;
+using ord::Logger;
+using ord::STA;
 
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
@@ -165,7 +165,8 @@ class Verilog2db
 {
 public:
   Verilog2db(Network *verilog_network,
-	     dbDatabase *db);
+	     dbDatabase *db,
+             Logger *logger);
   void makeBlock();
   void makeDbNetlist();
 
@@ -179,20 +180,22 @@ protected:
   Network *network_;
   dbDatabase *db_;
   dbBlock *block_;
+  Logger *logger_;
   std::map<Cell*, dbMaster*> master_map_;
 };
 
 void
 dbLinkDesign(const char *top_cell_name,
 	     dbVerilogNetwork *verilog_network,
-	     dbDatabase *db)
+	     dbDatabase *db,
+             Logger *logger)
 {
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(top_cell_name,
 					      link_make_black_boxes,
 					      verilog_network->report());
   if (success) {
-    Verilog2db v2db(verilog_network, db);
+    Verilog2db v2db(verilog_network, db, logger);
     v2db.makeBlock();
     v2db.makeDbNetlist();
     deleteVerilogReader();
@@ -200,10 +203,12 @@ dbLinkDesign(const char *top_cell_name,
 }
 
 Verilog2db::Verilog2db(Network *network,
-		       dbDatabase *db) :
+		       dbDatabase *db,
+                       Logger *logger) :
   network_(network),
   db_(db),
-  block_(nullptr)
+  block_(nullptr),
+  logger_(logger)
 {
 }
 
@@ -350,7 +355,7 @@ Verilog2db::getMaster(Cell *cell)
       // Check for corresponding liberty cell.
       LibertyCell *lib_cell = network_->libertyCell(cell);
       if (lib_cell == nullptr)
-	warn("LEF master %s has no liberty cell.", cell_name);
+	logger_->warn(ORD, 14, "LEF master {} has no liberty cell.", cell_name);
       return master;
     }
     else {

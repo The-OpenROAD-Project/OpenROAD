@@ -12,4 +12,5 @@ Notice 0: Finished DEF file: invalid_layer.def
 #Macro blocks found: 0
 Using 5u default boundaries offset
 Using 2 tracks default min distance between IO pins
-Error: Vertical routing layer (13) not found
+[ERROR UKN-0000] Vertical routing layer (13) not found
+UKN-0000

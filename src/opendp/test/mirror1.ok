@@ -10,7 +10,7 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 549 components and 2166 component-terminals.
 Notice 0:     Created 364 nets and 1068 connections.
 Notice 0: Finished DEF file: gcd_replace.def
-Warning: could not find power special net
+[WARNING DPL-0011] Could not find power special net.
 Design Stats
 --------------------------------
 total instances           549
