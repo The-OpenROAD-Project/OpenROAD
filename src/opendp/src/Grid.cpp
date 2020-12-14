@@ -42,14 +42,14 @@
 #include <cmath>
 #include <limits>
 
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 namespace dpl {
 
 using std::max;
 using std::min;
 
-using ord::error;
+using ord::DPL;
 
 void
 Opendp::initGrid()
@@ -306,7 +306,7 @@ Opendp::paint_pixel(Cell *cell, int grid_x, int grid_y)
     for (int j = grid_x; j < grid_x + x_step; j++) {
       Pixel &pixel = grid_[i][j];
       if (pixel.cell != nullptr) {
-        error("Cannot paint grid because it is already occupied.");
+        logger_->error(DPL, 13, "Cannot paint grid because it is already occupied.");
       }
       else {
         pixel.cell = cell;

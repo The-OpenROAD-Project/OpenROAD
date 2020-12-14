@@ -29,10 +29,10 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 u1/Z                                   60.65   72.60  -11.95 (VIOLATED)
 
-Found 1 slew violations.
-Found 1 capacitance violations.
-Found 1 long wires.
-Resized 1 instances.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0037] Found 1 long wires.
+[INFO RSZ-0039] Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack

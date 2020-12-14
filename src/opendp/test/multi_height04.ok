@@ -28,7 +28,7 @@ rows                        2
 row height                2.0 u
 max height                  2 rows
 
-Warning: detailed placement failed on _281_
+[WARNING DPL-0018] detailed placement failed on _281_.
 Placement Analysis
 --------------------------------
 total displacement        7.7 u
@@ -38,10 +38,10 @@ original HPWL            81.8 u
 legalized HPWL           81.8 u
 delta HPWL                  0 %
 
-Warning: Overlap check failed (1).
+[WARNING DPL-0005] Overlap check failed (1).
  _281_ overlaps _282_
-Warning: Site check failed (1).
+[WARNING DPL-0006] Site check failed (1).
  _281_
-Warning: Power line check failed (1).
+[WARNING DPL-0007] Power line check failed (1).
  _281_
 No differences found.

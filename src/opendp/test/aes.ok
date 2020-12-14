@@ -10,7 +10,7 @@ Notice 0:     Created 391 pins.
 Notice 0:     Created 21340 components and 108388 component-terminals.
 Notice 0:     Created 19675 nets and 65708 connections.
 Notice 0: Finished DEF file: aes_cipher_top_replace.def
-Warning: could not find power special net
+[WARNING DPL-0011] Could not find power special net.
 Design Stats
 --------------------------------
 total instances         21340

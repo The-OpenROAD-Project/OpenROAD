@@ -42,6 +42,7 @@ set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 set(OPENROAD_SOURCE
   OpenRoad.cc
   Error.cc
+  Logger.cpp
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -172,6 +173,7 @@ swig_add_library(openroad_swig
 # build/src/CMakeFiles/openroad_swig.dir/OpenRoadTCL_wrap.cxx
 swig_link_libraries(openroad_swig
   PUBLIC
+  spdlog::spdlog
   openroad
   # OpenDB public includes incorrectly point to include/opendb so this fails.
   #opendb
@@ -204,6 +206,9 @@ if (ZLIB_FOUND)
 else()
   set(ZLIB 0)
 endif()
+
+find_package(spdlog)
+message(STATUS "spdlog: ${spdlog_VERSION}")
 
 find_package(Threads)
 
@@ -318,6 +323,7 @@ target_link_libraries(openroad
   antennachecker
   zutil
   PartitionMgr
+  spdlog::spdlog
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

@@ -25,10 +25,10 @@
     fprintf(stderr, "Error: out of memory.");
     exit(0);
   }
-  // This catches ord::Error, sta::Exception and std errors.
+  // This catches std::runtime_eror (ord::error) and sta::Exception.
   catch (std::exception &excp) {
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "Error: ", excp.what(), nullptr);
+    Tcl_AppendResult(interp, excp.what(), nullptr);
     return TCL_ERROR;
   }
 }

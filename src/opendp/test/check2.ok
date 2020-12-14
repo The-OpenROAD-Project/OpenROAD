@@ -8,5 +8,5 @@ Reading DEF file: check2.def
 Notice 0: Design: ten_cells
 Notice 0:     Created 2 components and 10 component-terminals.
 Notice 0: Finished DEF file: check2.def
-Warning: Overlap check failed (1).
+[WARNING DPL-0005] Overlap check failed (1).
  _284_ overlaps _285_

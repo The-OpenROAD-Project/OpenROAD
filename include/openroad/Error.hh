@@ -43,8 +43,8 @@ namespace ord {
 using Exception = std::runtime_error;
 
 void
-error(const char *fmt, ...);
+error(const char *fmt, ...) __attribute__ ((deprecated));
 void
-warn(const char *fmt, ...);
+warn(const char *fmt, ...) __attribute__ ((deprecated));
 
 } // namespace
