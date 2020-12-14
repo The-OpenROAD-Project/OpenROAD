@@ -33,7 +33,7 @@ class FlexDRGraphics : public gui::Renderer
 
   void endNet(drNet* net);
 
-  void searchNode(const FlexGridGraph* gridGraph,
+  void searchNode(const FlexGridGraph* grid_graph,
                   const FlexWavefrontGrid& grid);
 
   // Show a message in the status bar
@@ -49,6 +49,7 @@ class FlexDRGraphics : public gui::Renderer
  private:
   FlexDRWorker*    worker_;
   drNet*           net_;
+  const FlexGridGraph* grid_graph_;
   frDebugSettings* settings_;
   int              current_iter_;
   frLayerNum       last_pt_layer_;
