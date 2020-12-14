@@ -310,6 +310,7 @@ in all libraries.
 ```
 buffer_ports [-inputs]
              [-outputs]
+             [-max_utilization util]
 ```
 The `buffer_ports -inputs` command adds a buffer between the input and
 its loads.  The `buffer_ports -outputs` adds a buffer between the port
@@ -318,9 +319,11 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
+              [-libraries resize_libs]
+              [-max_utilization util]
 ```
 
-The `repair_design` inserts buffers on nets to repair max slew, max
+The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
 delay in the wire. It also resizes gates to normalize slews.  Use
 `-max_wire_length` to specify the maximum length of wires.  The
@@ -348,6 +351,7 @@ by `dist` (in liberty units, typically microns).
 repair_timing [-setup]
               [-hold]
               [-allow_setup_violations]
+              [-max_utilization util]
 ```
 The `repair_timing` command repair setup and hold violations.
 It should be run after clock tree synthesis with propagated clocks.

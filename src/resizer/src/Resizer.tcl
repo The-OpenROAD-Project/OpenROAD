@@ -215,11 +215,12 @@ proc buffer_ports { args } {
 }
 
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length]\
-                                        [-libraries resize_libs]}
+                                        [-libraries resize_libs]\
+                                        [-max_utilization util]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
-    keys {-max_wire_length -buffer_cell -libraries} \
+    keys {-max_wire_length -buffer_cell -libraries -max_utilization} \
     flags {}
   
   if { [info exists keys(-buffer_cell)] } {
@@ -246,6 +247,7 @@ proc repair_design { args } {
       ord::error RSZ 8 "No liberty libraries found."
     }
   }
+  rsz::set_max_utilization [parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
@@ -322,11 +324,12 @@ proc repair_hold_violations { args } {
 
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-allow_setup_violations]\
-                                        [-libraries resize_libs]}
+                                        [-libraries resize_libs]\
+                                        [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
-    keys {-libraries} \
+    keys {-libraries -max_utilization} \
     flags {-setup -hold -allow_setup_violations}
 
   set setup [info exists flags(-setup)]
@@ -345,6 +348,7 @@ proc repair_timing { args } {
     }
   }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
+  rsz::set_max_utilization [parse_max_util keys]
 
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
