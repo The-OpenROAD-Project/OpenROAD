@@ -195,9 +195,18 @@ void FlexDRGraphics::drawObjects(gui::Painter& painter)
 
 void FlexDRGraphics::startWorker(FlexDRWorker* in)
 {
+  worker_ = nullptr;
+
   if (current_iter_ < settings_->iter) {
     return;
   }
+
+  frBox gcellBox = in->getGCellBox();
+  if (settings_->gcellX >= 0 &&
+      !gcellBox.contains(frPoint(settings_->gcellX, settings_->gcellY))) {
+    return;
+  }
+
   frPoint origin;
   in->getDesign()->getTopBlock()->getGCellIdx(in->getRouteBox().lowerLeft(),
                                               origin);
@@ -251,7 +260,7 @@ void FlexDRGraphics::startNet(drNet* net)
 {
   net_ = nullptr;
 
-  if (current_iter_ < settings_->iter) {
+  if (!worker_) {
     return;
   }
 
