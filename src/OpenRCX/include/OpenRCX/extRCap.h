@@ -174,6 +174,9 @@ class extDistRC
   void   printDebug(char*, char*, uint, uint, extDistRC *rcUnit=NULL);
 	void   printDebugRC(const char*);
   void   printDebugRC(int met, int overMet, int underMet, int width, int dist, int len);
+  void   printDebugRC_sum(int len, int dbUnit);
+  void   printDebugRC_diag(int met, int overMet,int underMet,int width,int dist,int dbUnit);
+  double GetDBcoords(int x, int db_factor);
 	void   debugRC(const char *debugWord, const char *from, int width, int level);
   void   set(uint d, double cc, double fr, double a, double r);
   void   readRC(Ath__parser* parser, double dbFactor = 1.0);
@@ -845,6 +848,7 @@ class extMeasure
 
   bool IsDebugNet();
   bool DebugStart();
+  bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2]);
 	double GetDBcoords(uint coord);
 	double GetDBcoords(int coord);
   void printNetCaps();
