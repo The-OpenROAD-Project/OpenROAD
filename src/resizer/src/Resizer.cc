@@ -1626,7 +1626,7 @@ Resizer::repairHold(VertexSet *ends,
   Slack worst_slack;
   findHoldViolations(ends, worst_slack, hold_failures);
   if (!hold_failures.empty()) {
-    logger_->info(RSZ, 32, "Found {} endpoints with hold violations.",
+    logger_->info(RSZ, 46, "Found {} endpoints with hold violations.",
                   hold_failures.size());
     inserted_buffer_count_ = 0;
     int repair_count = 1;

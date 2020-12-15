@@ -42,3 +42,4 @@
 43 "steiner point index out of range."
 44 "could not open {}"
 45 "steiner left/right failed"
+46 "Found {} endpoints with hold violations."
