@@ -8,3 +8,5 @@ ORD messages
 1006 "pin is not ITerm or BTerm"
 1007 "unhandled port direction"
 1008 "unknown master term type"
+1009 "missing top_cell_name argument and no current_design."
+1010 "no technology has been read."
