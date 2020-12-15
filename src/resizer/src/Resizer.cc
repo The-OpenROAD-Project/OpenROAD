@@ -576,7 +576,7 @@ Resizer::resizeToTargetSlew()
       if (resizeToTargetSlew(drvr_pin))
         resize_count_++;
       if (overMaxArea()) {
-        logger_->warn(RSZ, 24, "Max utilization reached.");
+        logger_->error(RSZ, 24, "Max utilization reached.");
         break;
       }
     }
@@ -1337,6 +1337,8 @@ Resizer::repairSetup()
       decreasing_slack_passes++;
     else
       decreasing_slack_passes = 0;
+    if (overMaxArea())
+      break;
     pass++;
   }
 
@@ -1344,6 +1346,8 @@ Resizer::repairSetup()
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  if (overMaxArea())
+    logger_->error(RSZ, 25, "max utilization reached.");
 }
 
 // For testing.
@@ -1632,9 +1636,11 @@ Resizer::repairHold(VertexSet *ends,
     int repair_count = 1;
     int pass = 1;
     float buffer_delay = bufferDelay(buffer_cell);
+    bool over_max_area = false;
     while (!hold_failures.empty()
            // Make sure we are making progress.
-           && repair_count > 0) {
+           && repair_count > 0
+           && !over_max_area) {
       repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
                                     allow_setup_violations);
       debugPrint4(debug_, "repair_hold", 1,
@@ -1645,12 +1651,15 @@ Resizer::repairHold(VertexSet *ends,
                   repair_count);
       sta_->findRequireds();
       findHoldViolations(ends, worst_slack, hold_failures);
+      over_max_area = overMaxArea();
       pass++;
     }
     if (inserted_buffer_count_ > 0) {
       logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       level_drvr_verticies_valid_ = false;
     }
+    if (over_max_area)
+      logger_->error(RSZ, 25, "max utilization reached.");
   }
   else
     logger_->info(RSZ, 33, "No hold violations found.");
@@ -1731,10 +1740,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
                     fanout(vertex));
         makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
         repair_count += buffer_count;
-        if (overMaxArea()) {
-          logger_->warn(RSZ, 25, "max utilization reached.");
+        if (overMaxArea())
           return repair_count;
-        }
       }
     }
   }
