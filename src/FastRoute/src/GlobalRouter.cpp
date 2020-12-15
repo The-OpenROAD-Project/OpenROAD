@@ -1433,6 +1433,10 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
       lastLayer = pins[p].getTopLayer();
   }
 
+  if (lastLayer == _maxRoutingLayer) {
+    lastLayer--;
+  }
+
   for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
     odb::Point pinPos = findFakePinPosition(pins[0]);
     GSegment segment = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l+1);
