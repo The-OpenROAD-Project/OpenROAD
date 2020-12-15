@@ -1884,8 +1884,13 @@ double extMeasure::getDiagUnderCC(extMetRCTable* rcModel,
 
   extDistRC* rc = rcModel->_capDiagUnder[_met]->getRC(n, _width, dist);
 
-  if (rc != NULL)
+  if (rc != NULL) {
+    if (IsDebugNet()) {
+      int dbUnit= _extMain->_block->getDbUnitsPerMicron();
+      rc->printDebugRC_diag(_met, overMet, 0, _width, dist, dbUnit);
+    }
     return rc->_fringe;  // TODO 620
+  }
   else
     return 0.0;
 }
@@ -2306,91 +2311,13 @@ void extMeasure::setEffParams(double wTop, double wBot, double teff)
   else
     _seff = _s_m;
 }
-void extDistRC::printDebug(char*      from,
-                           char*      name,
-                           uint       len,
-                           uint       dist,
-                           extDistRC* rcUnit)
-{
-  if (rcUnit != NULL)
-    debug("DistRC", "C", "\n");
-
-  debug("DistRC",
-        "C",
-        "%10s: %5s %g %g %g R %g %d %d",
-        from,
-        name,
-        _coupling,
-        _fringe,
-        _diag,
-        _res,
-        len,
-        dist);
-  if (rcUnit == NULL)
-    debug("DistRC", "C", "\n");
-  else
-    rcUnit->printDebugRC("   ");
-}
-
-void extDistRC::printDebugRC(const char* from)
-{
-  debug("DistRC",
-        "C",
-        " ---- %s: extRule\n\tDist  : %d\n\tCouple: %g\n\tFringe: %g\n\tDiagC "
-        ": %g\n\ttotCap: %g\n\tRes  : %g\n",
-        from,
-        _sep,
-        _coupling,
-        _fringe,
-        _diag,
-        _coupling + _fringe + _diag,
-        _res);
-}
-void extDistRC::printDebugRC(int met,
-                             int overMet,
-                             int underMet,
-                             int width,
-                             int dist,
-                             int len)
-{
-  char tmp[100];
-  if (overMet > 0 && underMet > 0)
-    sprintf(tmp,
-            "M%doM%duM%d W%d DIST=%d LEN=%d",
-            met,
-            underMet,
-            overMet,
-            width,
-            dist,
-            len);
-  else if (underMet > 0)
-    sprintf(tmp, "M%doM%d W%d DIST=%d LEN=%d", met, underMet, width, dist, len);
-  else if (overMet > 0)
-    sprintf(tmp, "M%duM%d W%d DIST=%d LEN=%d", met, overMet, width, dist, len);
-
-  debug("DistRC",
-        "C",
-        " ---- %s: extRule\n\tDist  : %d\n\tCouple: %g\n\tFringe: %g\n\tDiagC "
-        ": %g\n\ttotCap: %g\n\tRes  : %g\n",
-        tmp,
-        _sep,
-        _coupling,
-        _fringe,
-        _diag,
-        _coupling + _fringe + _diag,
-        _res);
-}
-/*
-void extDistRC::printDebugRC1(const char *from)
-{
-        debug("DistRC", "C", "%s: tot %g  CC %g  Fr %g  DG %g R %g D%d\n",
-                        from, _coupling+_fringe+_diag, _coupling,  _fringe,
-_diag, _res, _sep);
-} */
 extDistRC* extMeasure::addRC(extDistRC* rcUnit, uint len, uint jj)
 {
   if (rcUnit == NULL)
     return NULL;
+  int dbUnit= _extMain->_block->getDbUnitsPerMicron();
+  if (IsDebugNet())
+    rcUnit->printDebugRC(_met,_overMet, _underMet, _width, _dist, dbUnit);
 
   if (_sameNetFlag) {  // TO OPTIMIZE
     _rc[jj]->_fringe += 0.5 * rcUnit->_fringe * len;
@@ -2403,7 +2330,7 @@ extDistRC* extMeasure::addRC(extDistRC* rcUnit, uint len, uint jj)
 
   _rc[jj]->_res += rcUnit->_res * len;
   if (IsDebugNet()) {
-    _rc[jj]->printDebugRC("addRC: ");
+    _rc[jj]->printDebugRC_sum(len, dbUnit);
   }
   return rcUnit;
 }
@@ -2415,8 +2342,6 @@ extDistRC* extMeasure::computeOverUnderRC(uint len)
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
     rcUnit = getOverUnderRC(rcModel);
-    if (IsDebugNet())
-      rcUnit->printDebugRC(_met, _overMet, _underMet, _width, _dist, len);
 
     addRC(rcUnit, len, ii);
   }
@@ -2445,13 +2370,6 @@ extDistRC* extMeasure::computeR(uint len, double* valTable)
     rcUnit = getOverRC(rcModel);
     if (rcUnit != NULL)
       _rc[ii]->_res += rcUnit->_res * len;
-
-    //	if (IsDebugNet())
-    //		debug("EXT_RES", "R", "computeR: getOverRC: %g %g %d\n", rcUnit->_res
-    //* len, rcUnit->_res , len);
-    // extDistRC* rcFarRC = rcModel->getOverFringeRC(this);
-    // if (rcFarRC != NULL)
-    //  valTable[ii] = rcFarRC->getRes() * len;
   }
   return rcUnit;
 }
