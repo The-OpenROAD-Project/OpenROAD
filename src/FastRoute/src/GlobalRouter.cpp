@@ -580,7 +580,7 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
     RoutingLayer layer = getRoutingLayerByIndex(topLayer);
     // If pin is connected to PAD, create a "fake" location in routing
     // grid to avoid PAD obstacles
-    if (pin.isConnectedToPad() || pin.isPort()) {
+    if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
       GSegment pinConnection = createFakePin(pin, pinPosition, layer);
       _padPinsConnections[net->getDbNet()].push_back(pinConnection);
     }
@@ -1420,8 +1420,8 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
   int lastLayer = -1;
   for (uint p = 0; p < pins.size(); p++) {
     if (p > 0) {
-      odb::Point pinPos0 = findFakePinPosition(pins[p-1]);
-      odb::Point pinPos1 = findFakePinPosition(pins[p]);
+      odb::Point pinPos0 = findFakePinPosition(pins[p-1], db_net);
+      odb::Point pinPos1 = findFakePinPosition(pins[p], db_net);
       // If the net is not local, FR core result is invalid
       if (pinPos1.x() != pinPos0.x() || pinPos1.y() != pinPos0.y()) {
         error("Net %s not properly covered",
@@ -1438,7 +1438,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
   }
 
   for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-    odb::Point pinPos = findFakePinPosition(pins[0]);
+    odb::Point pinPos = findFakePinPosition(pins[0], db_net);
     GSegment segment = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l+1);
     route.push_back(segment);
   }
@@ -1453,7 +1453,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
       // potentially covers it
       GRoute coverSegs;
 
-      odb::Point pinPos = findFakePinPosition(pin);
+      odb::Point pinPos = findFakePinPosition(pin, db_net);
 
       int wireViaLayer = std::numeric_limits<int>::max();
       for (uint i = 0; i < route.size(); i++) {
@@ -2085,9 +2085,10 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   return pinConnection;
 }
 
-odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
+odb::Point GlobalRouter::findFakePinPosition(Pin &pin, odb::dbNet* db_net) {
   odb::Point fakePos = pin.getOnGridPosition();
-  if (pin.isConnectedToPad() || pin.isPort()) {
+  Net* net = _db_net_map[db_net];
+  if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
     RoutingLayer layer = getRoutingLayerByIndex(pin.getTopLayer());
     createFakePin(pin, fakePos, layer);
   }
