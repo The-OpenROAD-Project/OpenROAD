@@ -2744,9 +2744,10 @@ uint extMain::couplingFlow(bool        rlog,
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {
         notice(0,
-               "%c%d completion -- %d wires have been extracted\n",
-               '%',
+               "%d%c completion -- %d wires have been extracted\n",
+               
                (int) (100.0 * (1.0 * totalWiresExtracted / totWireCnt)),
+               '%',
                totalWiresExtracted);
 
         _previous_percent_extracted = percent_extracted;
@@ -3329,9 +3330,10 @@ void extWindow::updateLoBounds(bool reportFlag)
 
   if ((_totWireCnt > 0) && (_totalWiresExtracted > 0)) {
     notice(0,
-           "%c%d completion -- %d wires have been extracted\n",
-           '%',
+           "%d%c completion -- %d wires have been extracted\n",
+           
            (int) (100.0 * (1.0 * _totalWiresExtracted / _totWireCnt)),
+           '%',
            _totalWiresExtracted);
 
     _prev_percent_extracted = percent_extracted;
