@@ -1,0 +1,10 @@
+ORD messages
+1000 "LEF master %s has no liberty cell."
+1001 "LEF macro {} pin {} missing from liberty cell.",
+1002 "Liberty cell {} pin {} missing from LEF macro"
+1003 "deletePin not implemented for dbITerm"
+1004 "unimplemented network function mergeInto"
+1005 "unimplemented network function mergeInto"
+1006 "pin is not ITerm or BTerm"
+1007 "unhandled port direction"
+1008 "unknown master term type"

@@ -392,7 +392,7 @@ dbStaReport::error(int id,
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
-  logger_->error(ord::STA, id, buffer_);
+  logger_->error(STA, id, buffer_);
   va_end(args);
 }
 
@@ -405,7 +405,7 @@ dbStaReport::warn(int id,
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
-  logger_->warn(ord::STA, id, buffer_);
+  logger_->warn(STA, id, buffer_);
   va_end(args);
 }
 

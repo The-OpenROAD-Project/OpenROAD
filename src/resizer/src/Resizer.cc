@@ -122,7 +122,7 @@ using sta::PinSet;
 using sta::NetIterator;
 using sta::PinConnectedPinIterator;
 using sta::FindNetDrvrLoads;;
-using sta::ReduceParasiticsTo;
+using sta::ReducedParasiticType;
 using sta::OperatingConditions;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
@@ -1068,7 +1068,7 @@ Resizer::estimateWireParasitic(const Net *net)
   if (!hasTopLevelPort(net)
       && !network_->isPower(net)
       && !network_->isGround(net)) {
-    SteinerTree *tree = makeSteinerTree(net, false, db_network_);
+    SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
     if (tree) {
       debugPrint1(debug_, "resizer_parasitics", 1, "estimate wire %s\n",
                   sdc_network_->pathName(net));
@@ -1114,7 +1114,7 @@ Resizer::estimateWireParasitic(const Net *net)
           }
         }
       }
-      ReduceParasiticsTo reduce_to = ReduceParasiticsTo::pi_elmore;
+      ReducedParasiticType reduce_to = ReducedParasiticType::pi_elmore;
       const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
       parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                             corner_, MinMax::max(), parasitics_ap_);
@@ -1237,7 +1237,7 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   }
 
   if (tie_count > 0) {
-    logger_->info(RSZ, 29, "Inserted {} tie {} instances.",
+    logger_->info(RSZ, 42, "Inserted {} tie {} instances.",
                   tie_count,
                   tie_cell->name());
     level_drvr_verticies_valid_ = false;
@@ -2066,7 +2066,7 @@ Resizer::repairNet(Net *net,
                    int &fanout_violations,
                    int &length_violations)
 {
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
   if (tree) {
     Pin *drvr_pin = drvr->pin();
     debugPrint1(debug_, "repair_net", 1, "repair net %s\n",
@@ -2569,7 +2569,7 @@ Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
   Net *net = network_->net(drvr_pin);
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(drvr, tree);
     delete tree;
@@ -3125,9 +3125,9 @@ void
 Resizer::writeNetSVG(Net *net,
                      const char *filename)
 {
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
   if (tree)
-    tree->writeSVG(sdc_network_, filename);
+    tree->writeSVG(filename, sdc_network_, logger_);
 }
 
 ////////////////////////////////////////////////////////////////

@@ -355,7 +355,7 @@ Verilog2db::getMaster(Cell *cell)
       // Check for corresponding liberty cell.
       LibertyCell *lib_cell = network_->libertyCell(cell);
       if (lib_cell == nullptr)
-	logger_->warn(ORD, 14, "LEF master {} has no liberty cell.", cell_name);
+	logger_->warn(ORD, 1000, "LEF master {} has no liberty cell.", cell_name);
       return master;
     }
     else {
