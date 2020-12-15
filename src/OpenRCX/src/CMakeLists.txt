@@ -84,6 +84,7 @@ add_library(OpenRCX
     ext_test_wire.cpp
     extmain.cpp
     extmeasure.cpp
+    extDebugPrint.cpp
     extplanes.cpp
     extstats.cpp
     extprocess.cpp
