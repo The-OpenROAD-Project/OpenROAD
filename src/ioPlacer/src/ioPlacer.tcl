@@ -88,7 +88,7 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-sta::define_cmd_args "io_placer" {[-hor_layers h_layers]        \ 
+sta::define_cmd_args "place_pins" {[-hor_layers h_layers]        \ 
                                   [-ver_layers v_layers]        \
                                   [-random_seed seed]         \
                        	          [-random]                   \
@@ -97,12 +97,14 @@ sta::define_cmd_args "io_placer" {[-hor_layers h_layers]        \
                                   [-exclude region]         \
                                  }
 
-sta::define_cmd_alias "place_ios" "io_placer"
-sta::define_cmd_alias "place_pins" "io_placer"
-
 proc io_placer { args } {
+  ord::warn "io_placer command is deprecated. Use place_pins instead"
+  [eval place_pins $args]
+}
+
+proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
-  sta::parse_key_args "io_placer" args \
+  sta::parse_key_args "place_pins" args \
   keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude} \
   flags {-random}
 
