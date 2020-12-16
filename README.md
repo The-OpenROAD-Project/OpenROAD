@@ -217,13 +217,13 @@ Place pins around core boundary.
 auto_place_pins pin_layer
 ```
 
-#### I/O pin assignment
+#### Pin assignment
 
-Assign I/O pins to on-track locations at the boundaries of the 
-core while optimizing I/O nets wirelength. I/O pin assignment also 
-creates a metal shape for each I/O pin using min-area rules.
+Assign pins to on-track locations at the boundaries of the 
+core while optimizing nets wirelength. pin assignment also 
+creates a metal shape for each pin using min-area rules.
 
-Use the following command to perform I/O pin assignment:
+Use the following command to perform pin assignment:
 ```
 place_pins [-hor_layers h_layers]  
            [-ver_layers v_layers] 
@@ -232,13 +232,13 @@ place_pins [-hor_layers h_layers]
            [-random]
 ```
 - ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
-of I/O pins assigned to horizontal tracks. Can be a single layer or a list of layer indices
+of pins assigned to horizontal tracks. Can be a single layer or a list of layer indices
 - ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
-of I/O pins assigned to vertical tracks. Can be a single layer or a list of layer indices
+of pins assigned to vertical tracks. Can be a single layer or a list of layer indices
 - ``-random_seed``. Set the seed for random operations.
 - ``-exclude``. Set an interval in one of the four edges of the die boundary
-where I/O pins cannot be assigned. Can be used multiple times.
-- ``-random``. When this flag is enabled, the I/O pin assignment is 
+where pins cannot be assigned. Can be used multiple times.
+- ``-random``. When this flag is enabled, the pin assignment is 
 random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
@@ -251,7 +251,7 @@ left edge from the beginning to the 50 microns.
 set_io_pin_constraint -direction direction -names names -region edge:interval
 ```
 
-The `set_io_pin_constraint` command sets region constraints for I/O pins according the direction or the pin name.
+The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
 function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
