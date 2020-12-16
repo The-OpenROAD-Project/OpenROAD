@@ -114,8 +114,8 @@ class IOPlacer
                                int begin, int end);
   void addNameConstraint(std::string name, Edge edge, 
                                int begin, int end);
-  void addHorLayer(int layer) { _horLayers.push_back(layer); }
-  void addVerLayer(int layer) { _verLayers.push_back(layer); }
+  void addHorLayer(int layer) { _horLayers.insert(layer); }
+  void addVerLayer(int layer) { _verLayers.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
 
@@ -139,11 +139,11 @@ class IOPlacer
  private:
   void makeComponents();
   void deleteComponents();
-  void initNetlistAndCore(std::vector<int> horLayerIdx, std::vector<int> verLayerIdx);
+  void initNetlistAndCore(std::set<int> horLayerIdx, std::set<int> verLayerIdx);
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
-  void findSlots(const std::vector<int>& layers, Edge edge);
+  void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
   void createSections();
   void setupSections();
@@ -155,9 +155,9 @@ class IOPlacer
   bool checkBlocked(Edge edge, int pos);
 
   // db functions
-  void populateIOPlacer(std::vector<int> horLayerIdx, std::vector<int> verLayerIdx);
+  void populateIOPlacer(std::set<int> horLayerIdx, std::set<int> verLayerIdx);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
-  void initCore(std::vector<int> horLayerIdxs, std::vector<int> verLayerIdxs);
+  void initCore(std::set<int> horLayerIdxs, std::set<int> verLayerIdxs);
   void initNetlist();
   void initTracks();
 
@@ -169,8 +169,8 @@ class IOPlacer
   std::vector<IOPin> _zeroSinkIOs;
   RandomMode _randomMode = RandomMode::Full;
   bool _cellsPlaced = true;
-  std::vector<int> _horLayers;
-  std::vector<int> _verLayers;
+  std::set<int> _horLayers;
+  std::set<int> _verLayers;
   // db variables
   odb::dbDatabase* _db;
   odb::dbTech* _tech;

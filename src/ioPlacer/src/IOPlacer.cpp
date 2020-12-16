@@ -78,7 +78,7 @@ IOPlacer::~IOPlacer()
   deleteComponents();
 }
 
-void IOPlacer::initNetlistAndCore(std::vector<int> horLayerIdx, std::vector<int> verLayerIdx)
+void IOPlacer::initNetlistAndCore(std::set<int> horLayerIdx, std::set<int> verLayerIdx)
 {
   populateIOPlacer(horLayerIdx, verLayerIdx);
 }
@@ -253,7 +253,7 @@ bool IOPlacer::checkBlocked(Edge edge, int pos)
   return false;
 }
 
-void IOPlacer::findSlots(const std::vector<int>& layers, Edge edge)
+void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   Point lb = _core.getBoundary().ll();
   Point ub = _core.getBoundary().ur();
@@ -269,7 +269,8 @@ void IOPlacer::findSlots(const std::vector<int>& layers, Edge edge)
 
   int offset = _parms->getBoundariesOffset() * _core.getDatabaseUnit();
 
-  for (int i = 0; i < layers.size(); i++) {
+  int i = 0;
+  for (int layer : layers) {
     int currX, currY, start_idx, end_idx;
 
     int minDstPins = vertical ? _core.getMinDstPinsX()[i] * _parms->getMinDistance()
@@ -326,8 +327,9 @@ void IOPlacer::findSlots(const std::vector<int>& layers, Edge edge)
       currX = pos.getX();
       currY = pos.getY();
       bool blocked = vertical ? checkBlocked(edge, currX) : checkBlocked(edge, currY);
-      _slots.push_back({blocked, false, Point(currX, currY), layers[i]});
+      _slots.push_back({blocked, false, Point(currX, currY), layer});
     }
+    i++;
   }
 }
 
@@ -574,14 +576,19 @@ void IOPlacer::updatePinArea(IOPin& pin)
   int upperYBound = _core.getBoundary().ur().y();
 
   int index;
-  for (int i = 0; i < _horLayers.size(); i++) {
-    if (_horLayers[i] == pin.getLayer())
+
+  int i = 0;
+  for (int layer : _horLayers) {
+    if (layer == pin.getLayer())
       index = i;
+    i++;
   }
 
-  for (int i = 0; i < _verLayers.size(); i++) {
-    if (_verLayers[i] == pin.getLayer())
+  i = 0;
+  for (int layer : _verLayers) {
+    if (layer == pin.getLayer())
       index = i;
+    i++;
   }
 
   if (pin.getOrientation() == Orientation::North
@@ -779,7 +786,7 @@ void IOPlacer::run(bool randomMode)
 }
 
 // db functions
-void IOPlacer::populateIOPlacer(std::vector<int> horLayerIdx, std::vector<int> verLayerIdx)
+void IOPlacer::populateIOPlacer(std::set<int> horLayerIdx, std::set<int> verLayerIdx)
 {
   _tech = _db->getTech();
   _block = _db->getChip()->getBlock();
@@ -787,7 +794,7 @@ void IOPlacer::populateIOPlacer(std::vector<int> horLayerIdx, std::vector<int> v
   initCore(horLayerIdx, verLayerIdx);
 }
 
-void IOPlacer::initCore(std::vector<int> horLayerIdxs, std::vector<int> verLayerIdxs)
+void IOPlacer::initCore(std::set<int> horLayerIdxs, std::set<int> verLayerIdxs)
 {
   int databaseUnit = _tech->getLefUnits();
 
