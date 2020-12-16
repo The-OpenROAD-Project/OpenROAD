@@ -37,7 +37,8 @@
 
 #include "db_sta/dbNetwork.hh"
 
-#include "sta/Report.hh"
+#include "openroad/Logger.h"
+
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Liberty.hh"
@@ -45,6 +46,8 @@
 #include "opendb/db.h"
 
 namespace sta {
+
+using ord::ORD;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -390,6 +393,12 @@ dbNetwork::setBlock(dbBlock *block)
   db_ = block->getDataBase();
   block_ = block;
   makeTopCell();
+}
+
+void
+dbNetwork::setLogger(Logger *logger)
+{
+  logger_ = logger;
 }
 
 void
@@ -924,7 +933,7 @@ dbNetwork::makeCell(Library *library,
 	lib_port->setExtPort(mterm);
       }
       else if (!dir->isPowerGround())
-	report_->warn("LEF macro %s pin %s missing from liberty cell\n",
+	logger_->warn(ORD, 1001, "LEF macro {} pin {} missing from liberty cell.",
 		      cell_name,
 		      port_name);
     }
@@ -973,7 +982,8 @@ dbNetwork::readLibertyAfter(LibertyLibrary *lib)
 		lport->setExtPort(cport->extPort());
 	      }
 	      else if (!cport->direction()->isPowerGround())
-		report_->warn("Liberty cell %s pin %s missing from LEF macro\n",
+		logger_->warn(ORD, 1002,
+                              "Liberty cell {} pin {} missing from LEF macro.",
 			      lcell->name(),
 			      port_name);
 	    }
@@ -1130,7 +1140,7 @@ dbNetwork::deletePin(Pin *pin)
   dbBTerm *bterm;
   staToDb(pin, iterm, bterm);
   if (iterm)
-    internalError("not implemented deletePin dbITerm");
+    logger_->critical(ORD, 1003, "deletePin not implemented for dbITerm");
   else if (bterm)
     dbBTerm::destroy(bterm);
 }
@@ -1166,13 +1176,14 @@ void
 dbNetwork::mergeInto(Net *,
 		     Net *)
 {
-  internalError("unimplemented network function mergeInto\n");
+  logger_->critical(ORD, 1004, "unimplemented network function mergeInto");
 }
 
 Net *
 dbNetwork::mergedInto(Net *)
 {
-  internalError("unimplemented network function mergeInto\n");
+  logger_->critical(ORD, 1005, "unimplemented network function mergeInto");
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1207,7 +1218,7 @@ dbNetwork::staToDb(const Pin *pin,
       bterm = static_cast<dbBTerm*>(obj);
     }
     else
-      internalError("pin is not ITerm or BTerm");
+      logger_->critical(ORD, 1006, "pin is not ITerm or BTerm");
   }
   else {
     iterm = nullptr;
@@ -1275,7 +1286,7 @@ dbNetwork::staToDb(PortDirection *dir,
     io_type = dbIoType::INOUT;
   }
   else
-    internalError("unhandled port direction");
+    logger_->critical(ORD, 1007, "unhandled port direction");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1345,7 +1356,7 @@ dbNetwork::dbToSta(dbSigType sig_type,
   else if (io_type == dbIoType::FEEDTHRU)
     return PortDirection::bidirect();
   else {
-    internalError("unknown master term type");
+    logger_->critical(ORD, 1008, "unknown master term type");
     return PortDirection::bidirect();
   }
 }
