@@ -41,7 +41,7 @@ class dbDatabase;
 class dbChip;
 class dbBlock;
 class dbNet;
-class dbBox;
+class Rect;
 }  // namespace odb
 
 namespace partition {
@@ -84,7 +84,7 @@ class HypergraphDecomposition
   GraphType resolveModel(std::string graphModel);
   void addMapping(Hypergraph& hypergraph,
                   std::string instName,
-                  odb::dbBox* box);
+                  const odb::Rect& rect);
   void createCliqueGraph(Graph& graph, std::vector<int> net);
   void createStarGraph(Graph& graph, std::vector<int> net);
   void connectPins(int firstPin, int secondPin, float weight);

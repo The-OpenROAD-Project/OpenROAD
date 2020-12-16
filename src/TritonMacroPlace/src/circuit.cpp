@@ -398,10 +398,11 @@ MacroCircuit::FillPinGroup(){
 
       bool isAxisFound = false;
       for(dbBPin* bPin : bTerm->getBPins()) {
-        int boxLx = bPin->getBox()->xMin();
-        int boxLy = bPin->getBox()->yMin(); 
-        int boxUx = bPin->getBox()->xMax();
-        int boxUy = bPin->getBox()->yMax();
+        Rect pin_bbox = bPin->getBBox();
+        int boxLx = pin_bbox.xMin();
+        int boxLy = pin_bbox.yMin(); 
+        int boxUx = pin_bbox.xMax();
+        int boxUy = pin_bbox.yMax();
 
         if( isWithIn( dbuCoreLx, boxLx, boxUx ) ) {
           pgLoc = West;
@@ -426,10 +427,11 @@ MacroCircuit::FillPinGroup(){
       } 
       if( !isAxisFound ) {
         dbBPin* bPin = *(bTerm->getBPins().begin());
-        int boxLx = bPin->getBox()->xMin();
-        int boxLy = bPin->getBox()->yMin(); 
-        int boxUx = bPin->getBox()->xMax();
-        int boxUy = bPin->getBox()->yMax();
+        Rect pin_bbox = bPin->getBBox();
+        int boxLx = pin_bbox.xMin();
+        int boxLy = pin_bbox.yMin(); 
+        int boxUx = pin_bbox.xMax();
+        int boxUy = pin_bbox.yMax();
         pgLoc = getPinGroupLocation( 
             (boxLx + boxUx)/2, (boxLy + boxUy)/2,
             dbuCoreLx, dbuCoreLy, dbuCoreUx, dbuCoreUy); 

@@ -391,9 +391,7 @@ Opendp::getBox(dbNet *net,
     for (dbBPin *bpin : bterm->getBPins()) {
       dbPlacementStatus status = bpin->getPlacementStatus();
       if (status.isPlaced()) {
-        dbBox *pin_box = bpin->getBox();
-        Rect pin_bbox;
-        pin_box->getBox(pin_bbox);
+        Rect pin_bbox = bpin->getBBox();
         int center_x = (pin_bbox.xMin() + pin_bbox.xMax()) / 2;
         int center_y = (pin_bbox.yMin() + pin_bbox.yMax()) / 2;
         Rect pin_center(center_x, center_y, center_x, center_y);
