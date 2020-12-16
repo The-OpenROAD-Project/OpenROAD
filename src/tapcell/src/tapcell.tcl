@@ -503,6 +503,9 @@ namespace eval tap {
                     lappend offsets $offset
                     lappend offsets $offset2
                 } else {
+                    set offsets ""
+                    set offset [expr $dist*$lef_units]
+                    lappend offsets $offset
                     set pitch [expr {$dist*$lef_units}]
                 }
             } else {
