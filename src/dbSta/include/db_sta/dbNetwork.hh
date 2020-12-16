@@ -39,7 +39,13 @@
 #include "sta/GraphClass.hh"
 #include "opendb/db.h"
 
+namespace ord {
+class Logger;
+}
+
 namespace sta {
+
+using ord::Logger;
 
 using odb::dbDatabase;
 using odb::dbObject;
@@ -65,6 +71,7 @@ public:
   virtual ~dbNetwork();
   void setDb(dbDatabase *db);
   void setBlock(dbBlock *block);
+  void setLogger(Logger *logger);
   virtual void clear();
 
   void readLefAfter(dbLib *lib);
@@ -234,6 +241,7 @@ protected:
 			  ConstNetSet &visited_nets) const;
 
   dbDatabase *db_;
+  Logger *logger_;
   dbBlock *block_;
   Instance *top_instance_;
   Cell *top_cell_;

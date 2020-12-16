@@ -35,71 +35,71 @@ namespace fr {
   class frEndStyle {
   public:
     // constructor
-    frEndStyle(): style(frcExtendEndStyle) {}
-    frEndStyle(const frEndStyle &styleIn): style(styleIn.style) {}
-    frEndStyle(frEndStyleEnum styleIn): style(styleIn) {}
+    frEndStyle(): style_(frcExtendEndStyle) {}
+    frEndStyle(const frEndStyle &styleIn): style_(styleIn.style_) {}
+    frEndStyle(frEndStyleEnum styleIn): style_(styleIn) {}
     // setters
     void set(frEndStyleEnum styleIn) {
-      style = styleIn;
+      style_ = styleIn;
     }
     void set(const frEndStyle &styleIn) {
-      style = styleIn.style;
+      style_ = styleIn.style_;
     }
     // getters
     operator frEndStyleEnum() const {
-      return style;
+      return style_;
     }
   protected:
-    frEndStyleEnum style;
+    frEndStyleEnum style_;
   };
 
   class frSegStyle {
   public:
     // constructor
-    frSegStyle(): beginExt(0), endExt(0), width(0), beginStyle(), endStyle() {}
-    frSegStyle(const frSegStyle &in): beginExt(in.beginExt), endExt(in.endExt),
-                                      width(in.width), beginStyle(in.beginStyle),
-                                      endStyle(in.endStyle) {}
+    frSegStyle(): beginExt_(0), endExt_(0), width_(0), beginStyle_(), endStyle_() {}
+    frSegStyle(const frSegStyle &in): beginExt_(in.beginExt_), endExt_(in.endExt_),
+                                      width_(in.width_), beginStyle_(in.beginStyle_),
+                                      endStyle_(in.endStyle_) {}
     // setters
     void setWidth(frUInt4 widthIn) {
-      width = widthIn;
+      width_ = widthIn;
     }
     void setBeginStyle(const frEndStyle &style, frUInt4 ext = 0) {
-      beginStyle.set(style);
-      beginExt = ext;
+      beginStyle_.set(style);
+      beginExt_ = ext;
     }
     void setEndStyle(const frEndStyle &style, frUInt4 ext = 0) {
-      endStyle.set(style);
-      endExt = ext;
+      endStyle_.set(style);
+      endExt_ = ext;
     }
     void setBeginExt(const frUInt4 &in) {
-      beginExt = in;
+      beginExt_ = in;
     }
     void setEndExt(const frUInt4 &in) {
-      endExt = in;
+      endExt_ = in;
     }
     // getters
     frUInt4 getWidth() const {
-      return width;
+      return width_;
     }
     frUInt4 getBeginExt() const {
-      return beginExt;
+      return beginExt_;
     }
     frEndStyle getBeginStyle() const {
-      return beginStyle;
+      return beginStyle_;
     }
     frUInt4 getEndExt() const {
-      return endExt;
+      return endExt_;
     }
     frEndStyle getEndStyle() const {
-      return endStyle;
+      return endStyle_;
     }
   protected:
-    frUInt4 beginExt;
-    frUInt4 endExt;
-    frUInt4 width;
-    frEndStyle beginStyle;
-    frEndStyle endStyle;
+    frUInt4 beginExt_;
+    frUInt4 endExt_;
+    frUInt4 width_;
+    frEndStyle beginStyle_;
+    frEndStyle endStyle_;
   };
 
 }

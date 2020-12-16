@@ -37,30 +37,30 @@ namespace fr {
   class drPin: public drBlockObject {
   public:
     // constructors
-    drPin(): drBlockObject(), term(nullptr), accessPatterns(), net(nullptr) {}
+    drPin(): drBlockObject(), term_(nullptr), accessPatterns_(), net_(nullptr) {}
     // setters
     void setFrTerm(frBlockObject* in) {
-      term = in;
+      term_ = in;
     }
     void addAccessPattern(std::unique_ptr<drAccessPattern> in) {
       in->setPin(this);
-      accessPatterns.push_back(std::move(in));
+      accessPatterns_.push_back(std::move(in));
     }
     void setNet(drNet* in) {
-      net = in;
+      net_ = in;
     }
     // getters
     bool hasFrTerm() const {
-      return (term);
+      return term_;
     }
     frBlockObject* getFrTerm() const {
-      return term;
+      return term_;
     }
     const std::vector<std::unique_ptr<drAccessPattern> >& getAccessPatterns() const {
-      return accessPatterns;
+      return accessPatterns_;
     }
     drNet* getNet() const {
-      return net;
+      return net_;
     }
 
     // others
@@ -68,9 +68,9 @@ namespace fr {
       return drcPin;
     }
   protected:
-    frBlockObject*                                 term;  // either frTerm or frInstTerm
-    std::vector<std::unique_ptr<drAccessPattern> > accessPatterns;
-    drNet*                                         net;
+    frBlockObject*                                 term_;  // either frTerm or frInstTerm
+    std::vector<std::unique_ptr<drAccessPattern> > accessPatterns_;
+    drNet*                                         net_;
   };
 }
 

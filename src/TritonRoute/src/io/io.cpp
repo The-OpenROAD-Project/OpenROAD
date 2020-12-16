@@ -419,7 +419,7 @@ int io::Parser::Callbacks::getDefComponents(defrCallbackType_e type, defiCompone
   }
 
   io::Parser* parser = (io::Parser*) data;
-  if (parser->design->name2refBlock.find(comp->name()) == parser->design->name2refBlock.end()) {
+  if (parser->design->name2refBlock_.find(comp->name()) == parser->design->name2refBlock_.end()) {
     if (VERBOSE > -1) {
       cout <<"Error: library cell not found!" <<endl;
     }
@@ -432,7 +432,7 @@ int io::Parser::Callbacks::getDefComponents(defrCallbackType_e type, defiCompone
   }
 
   
-  frBlock* refBlock = parser->design->name2refBlock.at(comp->name());
+  frBlock* refBlock = parser->design->name2refBlock_.at(comp->name());
   auto uInst = make_unique<frInst>(comp->id(), refBlock);
   auto tmpInst = uInst.get();
   tmpInst->setId(parser->numInsts);
@@ -456,20 +456,20 @@ int io::Parser::Callbacks::getDefComponents(defrCallbackType_e type, defiCompone
     tmpInst->addInstBlockage(std::move(instBlk));
   }
 
-  if (parser->tmpBlock->name2inst.find(comp->id()) != parser->tmpBlock->name2inst.end()) {
+  if (parser->tmpBlock->name2inst_.find(comp->id()) != parser->tmpBlock->name2inst_.end()) {
     if (VERBOSE > -1) {
       cout <<"Error: same cell name!" <<endl;
     }
     exit(1);
   }
   parser->tmpBlock->addInst(std::move(uInst));
-  if (parser->tmpBlock->insts.size() < 100000) {
-    if (parser->tmpBlock->insts.size() % 10000 == 0) {
-      cout <<"defIn read " <<parser->tmpBlock->insts.size() <<" components" <<endl;
+  if (parser->tmpBlock->insts_.size() < 100000) {
+    if (parser->tmpBlock->insts_.size() % 10000 == 0) {
+      cout <<"defIn read " <<parser->tmpBlock->insts_.size() <<" components" <<endl;
     }
   } else {
-    if (parser->tmpBlock->insts.size() % 100000 == 0) {
-      cout <<"defIn read " <<parser->tmpBlock->insts.size() <<" components" <<endl;
+    if (parser->tmpBlock->insts_.size() % 100000 == 0) {
+      cout <<"defIn read " <<parser->tmpBlock->insts_.size() <<" components" <<endl;
     }
   }
 
@@ -483,8 +483,8 @@ int io::Parser::Callbacks::getDefString(defrCallbackType_e type, const char* str
     io::Parser* parser = (io::Parser*) data;
     auto &tmpBlock = parser->tmpBlock;
     tmpBlock = make_unique<frBlock>(string(str));
-    tmpBlock->trackPatterns.clear();
-    tmpBlock->trackPatterns.resize(parser->tech->layers.size());
+    tmpBlock->trackPatterns_.clear();
+    tmpBlock->trackPatterns_.resize(parser->tech->layers.size());
     if (enableOutput) {
       cout <<"DESIGN " <<tmpBlock->getName() <<" ;" <<endl;
     }
@@ -565,13 +565,13 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
     
     if (!strcmp(net->instance(i), "PIN")) {
       // IOs
-      if (parser->tmpBlock->name2term.find(net->pin(i)) == parser->tmpBlock->name2term.end()) {
+      if (parser->tmpBlock->name2term_.find(net->pin(i)) == parser->tmpBlock->name2term_.end()) {
         if (VERBOSE > -1) {
           cout <<"Error: term not found!" <<endl;
         }
         exit(1);
       }
-      auto term = parser->tmpBlock->name2term[net->pin(i)]; // frTerm*
+      auto term = parser->tmpBlock->name2term_[net->pin(i)]; // frTerm*
       term->addToNet(netIn);
       netIn->addTerm(term);
     } else {
@@ -589,13 +589,13 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
           }
         }
       } else {
-        if (parser->tmpBlock->name2inst.find(net->instance(i)) == parser->tmpBlock->name2inst.end()) {
+        if (parser->tmpBlock->name2inst_.find(net->instance(i)) == parser->tmpBlock->name2inst_.end()) {
           if (VERBOSE > -1) {
             cout <<"Error: component not found!" <<endl;
           }
           exit(1);
         }
-        auto inst = parser->tmpBlock->name2inst[net->instance(i)]; //frInst*
+        auto inst = parser->tmpBlock->name2inst_[net->instance(i)]; //frInst*
         bool flag =   false;
         for (auto &uInstTerm: inst->getInstTerms()) {
           auto instTerm = uInstTerm.get();
@@ -872,24 +872,24 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
 
   if (isSNet) {
     parser->tmpBlock->addSNet(std::move(uNetIn)); 
-    if (parser->tmpBlock->snets.size() < 100000) {
-      if (parser->tmpBlock->snets.size() % 10000 == 0) {
-        cout <<"defIn read " <<parser->tmpBlock->snets.size() <<" snets" <<endl;
+    if (parser->tmpBlock->snets_.size() < 100000) {
+      if (parser->tmpBlock->snets_.size() % 10000 == 0) {
+        cout <<"defIn read " <<parser->tmpBlock->snets_.size() <<" snets" <<endl;
       }
     } else {
-      if (parser->tmpBlock->snets.size() % 10000 == 0) {
-        cout <<"defIn read " <<parser->tmpBlock->snets.size() <<" snets" <<endl;
+      if (parser->tmpBlock->snets_.size() % 10000 == 0) {
+        cout <<"defIn read " <<parser->tmpBlock->snets_.size() <<" snets" <<endl;
       }
     }
   } else {
     parser->tmpBlock->addNet(std::move(uNetIn)); 
-    if (parser->tmpBlock->nets.size() < 100000) {
-      if (parser->tmpBlock->nets.size() % 10000 == 0) {
-        cout <<"defIn read " <<parser->tmpBlock->nets.size() <<" nets" <<endl;
+    if (parser->tmpBlock->nets_.size() < 100000) {
+      if (parser->tmpBlock->nets_.size() % 10000 == 0) {
+        cout <<"defIn read " <<parser->tmpBlock->nets_.size() <<" nets" <<endl;
       }
     } else {
-      if (parser->tmpBlock->nets.size() % 100000 == 0) {
-        cout <<"defIn read " <<parser->tmpBlock->nets.size() <<" nets" <<endl;
+      if (parser->tmpBlock->nets_.size() % 100000 == 0) {
+        cout <<"defIn read " <<parser->tmpBlock->nets_.size() <<" nets" <<endl;
       }
     }
   }
@@ -1009,8 +1009,8 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
     parser->tmpBlock->addTerm(std::move(uTermIn));
   }
 
-  if (parser->tmpBlock->terms.size() % 1000 == 0) {
-    cout <<"defIn read " <<parser->tmpBlock->terms.size() <<" pins" <<endl;
+  if (parser->tmpBlock->terms_.size() % 1000 == 0) {
+    cout <<"defIn read " <<parser->tmpBlock->terms_.size() <<" pins" <<endl;
   }
 
   return 0;
@@ -1049,7 +1049,7 @@ int io::Parser::Callbacks::getDefTracks(defrCallbackType_e type, defiTrack* trac
   tmpTrackPattern->setStartCoord(track->x());
   tmpTrackPattern->setNumTracks(track->xNum());
   tmpTrackPattern->setTrackSpacing(track->xStep());
-  parser->tmpBlock->trackPatterns.at(tmpTrackPattern->getLayerNum()).push_back(std::move(tmpTrackPattern));
+  parser->tmpBlock->trackPatterns_.at(tmpTrackPattern->getLayerNum()).push_back(std::move(tmpTrackPattern));
   //cout <<"here" <<endl;
 
   return 0;
@@ -4849,10 +4849,10 @@ void io::Parser::readLefDef() {
 
   if (VERBOSE > 0) {
     cout <<endl;
-    cout <<"units:       " <<tech->getDBUPerUU()      <<endl;
-    cout <<"#layers:     " <<tech->layers.size()      <<endl;
-    cout <<"#macros:     " <<design->refBlocks.size() <<endl;
-    cout <<"#vias:       " <<tech->vias.size()        <<endl;
+    cout <<"units:       " <<tech->getDBUPerUU()       <<endl;
+    cout <<"#layers:     " <<tech->layers.size()       <<endl;
+    cout <<"#macros:     " <<design->refBlocks_.size() <<endl;
+    cout <<"#vias:       " <<tech->vias.size()         <<endl;
     cout <<"#viarulegen: " <<tech->viaRuleGenerates.size() <<endl;
   }
 
@@ -4883,10 +4883,10 @@ void io::Parser::readLefDef() {
     cout <<"die area:    " <<dieBox                              <<endl;
     cout <<"trackPts:    " <<design->getTopBlock()->getTrackPatterns().size() <<endl;
     cout <<"defvias:     " <<tech->vias.size() - numLefVia       <<endl;
-    cout <<"#components: " <<design->getTopBlock()->insts.size() <<endl;
-    cout <<"#terminals:  " <<design->getTopBlock()->terms.size() <<endl;
-    cout <<"#snets:      " <<design->getTopBlock()->snets.size() <<endl;
-    cout <<"#nets:       " <<design->getTopBlock()->nets.size()  <<endl;
+    cout <<"#components: " <<design->getTopBlock()->insts_.size() <<endl;
+    cout <<"#terminals:  " <<design->getTopBlock()->terms_.size() <<endl;
+    cout <<"#snets:      " <<design->getTopBlock()->snets_.size() <<endl;
+    cout <<"#nets:       " <<design->getTopBlock()->nets_.size()  <<endl;
     //cout <<"#pins:       " <<numPins <<endl;
   }
   //cout <<flush;
@@ -4946,11 +4946,11 @@ void io::Parser::readGuide() {
         exit(2);
       } else if (vLine.size() == 1) {
         netName = vLine[0];
-        if (design->topBlock->name2net.find(vLine[0]) == design->topBlock->name2net.end()) {
+        if (design->topBlock_->name2net_.find(vLine[0]) == design->topBlock_->name2net_.end()) {
           cout <<"Error: cannot find net: " <<vLine[0] <<endl;
           exit(2);
         }
-        net = design->topBlock->name2net[netName]; 
+        net = design->topBlock_->name2net_[netName]; 
       } else if (vLine.size() == 5) {
         if (tech->name2layer.find(vLine[4]) == tech->name2layer.end()) {
           cout <<"Error: cannot find layer: " <<vLine[4] <<endl;

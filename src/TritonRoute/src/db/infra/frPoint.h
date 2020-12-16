@@ -37,42 +37,42 @@ namespace fr {
   class frPoint {
   public:
     // constructors
-    frPoint(): xCoord(0), yCoord(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord(tmpPoint.xCoord), yCoord(tmpPoint.yCoord) {}
+    frPoint(): xCoord_(0), yCoord_(0) {}
+    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
     frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord(tmpX), yCoord(tmpY) {};
+      : xCoord_(tmpX), yCoord_(tmpY) {};
     // setters
     void set(const frPoint &tmpPoint) {
-      xCoord = tmpPoint.xCoord;
-      yCoord = tmpPoint.yCoord;
+      xCoord_ = tmpPoint.xCoord_;
+      yCoord_ = tmpPoint.yCoord_;
     }
     void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord = tmpX;
-      yCoord = tmpY;
+      xCoord_ = tmpX;
+      yCoord_ = tmpY;
     }
     void setX(const frCoord tmpX) {
-      xCoord = tmpX;
+      xCoord_ = tmpX;
     }
     void setY(const frCoord tmpY) {
-      yCoord = tmpY;
+      yCoord_ = tmpY;
     }
     // getters
     frCoord x() const {
-      return xCoord;
+      return xCoord_;
     }
     frCoord y() const {
-      return yCoord;
+      return yCoord_;
     }
     // others
     void transform(const frTransform &xform);
     bool operator<(const frPoint &pIn) const {
-      return (xCoord == pIn.xCoord) ? (yCoord < pIn.yCoord) : (xCoord < pIn.xCoord);
+      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
     }
     bool operator==(const frPoint &pIn) const {
-      return (xCoord == pIn.xCoord) && (yCoord == pIn.yCoord);
+      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
     }
   protected:
-    frCoord xCoord, yCoord;
+    frCoord xCoord_, yCoord_;
   };
 }
 

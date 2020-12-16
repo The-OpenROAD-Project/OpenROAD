@@ -91,18 +91,18 @@ int FlexPA::main() {
   }
 
   if (VERBOSE > 0) {
-    cout <<"#scanned instances     = " <<inst2unique.size()     <<endl;
-    cout <<"#unique  instances     = " <<uniqueInstances.size() <<endl;
-    cout <<"#stdCellGenAp          = " <<stdCellPinGenApCnt           <<endl;
-    cout <<"#stdCellValidPlanarAp  = " <<stdCellPinValidPlanarApCnt   <<endl;
-    cout <<"#stdCellValidViaAp     = " <<stdCellPinValidViaApCnt      <<endl;
-    cout <<"#stdCellPinNoAp        = " <<stdCellPinNoApCnt            <<endl;
-    cout <<"#stdCellPinCnt         = " <<stdCellPinCnt                <<endl;
-    cout <<"#instTermValidViaApCnt = " <<instTermValidViaApCnt        <<endl;
-    cout <<"#macroGenAp            = " <<macroCellPinGenApCnt         <<endl;
-    cout <<"#macroValidPlanarAp    = " <<macroCellPinValidPlanarApCnt <<endl;
-    cout <<"#macroValidViaAp       = " <<macroCellPinValidViaApCnt    <<endl;
-    cout <<"#macroNoAp             = " <<macroCellPinNoApCnt          <<endl;
+    cout <<"#scanned instances     = " <<inst2unique_.size()     <<endl;
+    cout <<"#unique  instances     = " <<uniqueInstances_.size() <<endl;
+    cout <<"#stdCellGenAp          = " <<stdCellPinGenApCnt_           <<endl;
+    cout <<"#stdCellValidPlanarAp  = " <<stdCellPinValidPlanarApCnt_   <<endl;
+    cout <<"#stdCellValidViaAp     = " <<stdCellPinValidViaApCnt_      <<endl;
+    cout <<"#stdCellPinNoAp        = " <<stdCellPinNoApCnt_            <<endl;
+    cout <<"#stdCellPinCnt         = " <<stdCellPinCnt                 <<endl;
+    cout <<"#instTermValidViaApCnt = " <<instTermValidViaApCnt_        <<endl;
+    cout <<"#macroGenAp            = " <<macroCellPinGenApCnt_         <<endl;
+    cout <<"#macroValidPlanarAp    = " <<macroCellPinValidPlanarApCnt_ <<endl;
+    cout <<"#macroValidViaAp       = " <<macroCellPinValidViaApCnt_    <<endl;
+    cout <<"#macroNoAp             = " <<macroCellPinNoApCnt_          <<endl;
   }
 
   if (VERBOSE > 0) {

@@ -80,7 +80,7 @@ namespace fr {
 
   private:
     struct Impl;
-    std::unique_ptr<Impl> impl;
+    std::unique_ptr<Impl> impl_;
   };
 }
 

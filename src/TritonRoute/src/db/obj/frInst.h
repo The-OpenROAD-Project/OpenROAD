@@ -41,32 +41,32 @@ namespace fr {
   class frInst: public frRef {
   public:
     // constructors
-    frInst(const frString &name, frBlock* refBlock): name(name), refBlock(refBlock), pinAccessIdx(0) {}
+    frInst(const frString &name, frBlock* refBlock): name_(name), refBlock_(refBlock), pinAccessIdx_(0) {}
     // getters
     const frString& getName() const {
-      return name;
+      return name_;
     }
     frBlock* getRefBlock() const {
-      return refBlock;
+      return refBlock_;
     }
     const std::vector<std::unique_ptr<frInstTerm> >& getInstTerms() const {
-      return instTerms;
+      return instTerms_;
     }
     const std::vector<std::unique_ptr<frInstBlockage> >& getInstBlockages() const {
-      return instBlockages;
+      return instBlockages_;
     }
     int getPinAccessIdx() const {
-      return pinAccessIdx;
+      return pinAccessIdx_;
     }
     // setters
     void addInstTerm(std::unique_ptr<frInstTerm> in) {
-      instTerms.push_back(std::move(in));
+      instTerms_.push_back(std::move(in));
     }
     void addInstBlockage(std::unique_ptr<frInstBlockage> in) {
-      instBlockages.push_back(std::move(in));
+      instBlockages_.push_back(std::move(in));
     }
     void setPinAccessIdx(int in) {
-      pinAccessIdx = in;
+      pinAccessIdx_ = in;
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -84,22 +84,22 @@ namespace fr {
      */
 
     frOrient getOrient() const override {
-      return xform.orient();
+      return xform_.orient();
     }
     void setOrient(const frOrient &tmpOrient) override {
-      xform.set(tmpOrient);
+      xform_.set(tmpOrient);
     }
     void getOrigin(frPoint &tmpOrigin) const override {
-      tmpOrigin.set(xform.xOffset(), xform.yOffset());
+      tmpOrigin.set(xform_.xOffset(), xform_.yOffset());
     }
     void setOrigin(const frPoint &tmpPoint) override {
-      xform.set(tmpPoint);
+      xform_.set(tmpPoint);
     }
     void getTransform(frTransform &xformIn) const override {
-      xformIn.set(xform.xOffset(), xform.yOffset(), xform.orient());
+      xformIn.set(xform_.xOffset(), xform_.yOffset(), xform_.orient());
     }
     void setTransform(const frTransform &xformIn) override {
-      xform.set(xformIn.xOffset(), xformIn.yOffset(), xformIn.orient());
+      xform_.set(xformIn.xOffset(), xformIn.yOffset(), xformIn.orient());
     }
 
     /* from frPinFig
@@ -161,12 +161,12 @@ namespace fr {
     void getBoundaryBBox(frBox &in) const;
 
   protected:
-    frString                                       name;
-    frBlock*                                       refBlock;
-    std::vector<std::unique_ptr<frInstTerm> >      instTerms;
-    std::vector<std::unique_ptr<frInstBlockage> >  instBlockages;
-    frTransform                                    xform;
-    int                                            pinAccessIdx;
+    frString                                       name_;
+    frBlock*                                       refBlock_;
+    std::vector<std::unique_ptr<frInstTerm> >      instTerms_;
+    std::vector<std::unique_ptr<frInstBlockage> >  instBlockages_;
+    frTransform                                    xform_;
+    int                                            pinAccessIdx_;
   };
 }
 

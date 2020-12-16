@@ -4177,7 +4177,7 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
           debug("Trace",
                 "C",
                 "SRC: OU%d  M%d  W%d D%d L%d   Fr %g cc %g dg %d %g netcap %g "
-                "-- netRes %g %d-%d %s\n",
+                "-- netRes %g %g %u-%u %s\n",
                 totLenCovered,
                 _met,
                 _width,

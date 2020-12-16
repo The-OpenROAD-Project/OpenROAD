@@ -236,7 +236,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(map<frCoord, int> &coords, cons
   // hardcode first two single vias
   vector<frViaDef*> viaDefs;
   int cnt = 0;
-  for (auto &[tup, via]: layerNum2ViaDefs[layerNum + 1][1]) {
+  for (auto &[tup, via]: layerNum2ViaDefs_[layerNum + 1][1]) {
     viaDefs.push_back(via);
     cnt++;
     if (cnt >= maxNumViaTrial) {
@@ -306,8 +306,8 @@ void FlexPA::prepPoint_pin_genPoints_rect(vector<unique_ptr<frAccessPoint> > &ap
     cout <<"Error: prepPoint_pin_genPoints_rect cannot find secondLayerNum" <<endl;
     exit(1);
   }
-  auto &layer1TrackCoords = trackCoords[layerNum];
-  auto &layer2TrackCoords = trackCoords[secondLayerNum];
+  auto &layer1TrackCoords = trackCoords_[layerNum];
+  auto &layer2TrackCoords = trackCoords_[secondLayerNum];
   bool isLayer1Horz = (getDesign()->getTech()->getLayer(layerNum)->getDir() == frPrefRoutingDirEnum::frcHorzPrefRoutingDir);
 
   map<frCoord, int> xCoords;
@@ -708,7 +708,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(frAccessPoint* ap,
   vector<pair<int, frViaDef*> > viaDefs;
   // hardcode first two single vias
   int cnt = 0;
-  for (auto &[tup, viaDef]: layerNum2ViaDefs[layerNum + 1][1]) {
+  for (auto &[tup, viaDef]: layerNum2ViaDefs_[layerNum + 1][1]) {
     viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
     cnt++;
     if (cnt >= maxNumViaTrial) {
@@ -899,21 +899,21 @@ void FlexPA::prepPoint_pin_updateStat(const vector<unique_ptr<frAccessPoint> > &
         ap->hasAccess(frDirEnum::S) || ap->hasAccess(frDirEnum::N)) { 
       if (isStdCellPin) {
         #pragma omp atomic
-        stdCellPinValidPlanarApCnt++;
+        stdCellPinValidPlanarApCnt_++;
       }
       if (isMacroCellPin) {
         #pragma omp atomic
-        macroCellPinValidPlanarApCnt++;
+        macroCellPinValidPlanarApCnt_++;
       }
     }
     if (ap->hasAccess(frDirEnum::U)) { 
       if (isStdCellPin) {
         #pragma omp atomic
-        stdCellPinValidViaApCnt++;
+        stdCellPinValidViaApCnt_++;
       }
       if (isMacroCellPin) {
         #pragma omp atomic
-        macroCellPinValidViaApCnt++;
+        macroCellPinValidViaApCnt_++;
       }
     }
   }
@@ -937,11 +937,11 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
   prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm);
   if (isStdCellPin) {
     #pragma omp atomic
-    stdCellPinGenApCnt += tmpAps.size();
+    stdCellPinGenApCnt_ += tmpAps.size();
   }
   if (isMacroCellPin) {
     #pragma omp atomic
-    macroCellPinGenApCnt += tmpAps.size();
+    macroCellPinGenApCnt_ += tmpAps.size();
   }
   for (auto &ap: tmpAps) {
     // for stdcell, add (i) planar access if layerNum != VIA_ACCESS_LAYERNUM, and (ii) access if exist access
@@ -959,8 +959,8 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
   if (isStdCellPin && (int)aps.size() >= MINNUMACCESSPOINT_STDCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
-    auto it = unique2paidx.find(instTerm->getInst());
-    if (it == unique2paidx.end()) {
+    auto it = unique2paidx_.find(instTerm->getInst());
+    if (it == unique2paidx_.end()) {
       cout <<"Error: prepPoint_pin_helper unique2paidx not found" <<endl;
       exit(1);
     } else {
@@ -973,8 +973,8 @@ bool FlexPA::prepPoint_pin_helper(vector<unique_ptr<frAccessPoint> > &aps,
   if (isMacroCellPin && (int)aps.size() >= MINNUMACCESSPOINT_MACROCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
-    auto it = unique2paidx.find(instTerm->getInst());
-    if (it == unique2paidx.end()) {
+    auto it = unique2paidx_.find(instTerm->getInst());
+    if (it == unique2paidx_.end()) {
       cout <<"Error: prepPoint_pin_helper unique2paidx not found" <<endl;
       exit(1);
     } else {
@@ -1087,15 +1087,15 @@ void FlexPA::prepPoint_pin(frPin* pin, frInstTerm* instTerm) {
       cout <<"Error: no ap for PIN/" <<pin->getTerm()->getName() <<endl;
     }
     if (isStdCellPin) {
-      stdCellPinNoApCnt++;
+      stdCellPinNoApCnt_++;
     }
     if (isMacroCellPin) {
-      macroCellPinNoApCnt++;
+      macroCellPinNoApCnt_++;
     }
   } else {
     // write to pa
-    auto it = unique2paidx.find(instTerm->getInst());
-    if (it == unique2paidx.end()) {
+    auto it = unique2paidx_.find(instTerm->getInst());
+    if (it == unique2paidx_.end()) {
       cout <<"Error: prepPoint_pin unique2paidx not found" <<endl;
       exit(1);
     } else {
@@ -1127,8 +1127,8 @@ void FlexPA::prepPoint() {
 
   omp_set_num_threads(MAX_THREADS);
   #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)uniqueInstances.size(); i++) {
-    auto &inst = uniqueInstances[i];
+  for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
+    auto &inst = uniqueInstances_[i];
     // only do for core and block cells
     if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE && 
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIEHIGH && 
@@ -1209,14 +1209,14 @@ void FlexPA::prepPattern() {
   }
 
   // revert access points to origin
-  uniqueInstPatterns.resize(uniqueInstances.size());
+  uniqueInstPatterns_.resize(uniqueInstances_.size());
 
   int cnt = 0;
 
   omp_set_num_threads(MAX_THREADS);
   #pragma omp parallel for schedule(dynamic)
-  for (int currUniqueInstIdx = 0; currUniqueInstIdx < (int)uniqueInstances.size(); currUniqueInstIdx++) {
-    auto &inst = uniqueInstances[currUniqueInstIdx];
+  for (int currUniqueInstIdx = 0; currUniqueInstIdx < (int)uniqueInstances_.size(); currUniqueInstIdx++) {
+    auto &inst = uniqueInstances_[currUniqueInstIdx];
     // only do for core and block cells
     if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE && 
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIEHIGH && 
@@ -1336,13 +1336,13 @@ void FlexPA::prepPattern() {
 }
 
 void FlexPA::revertAccessPoints() {
-  for (auto &inst: uniqueInstances) {
+  for (auto &inst: uniqueInstances_) {
     frTransform xform, revertXform;
     inst->getTransform(xform);
     revertXform.set(-xform.xOffset(), -xform.yOffset());
     revertXform.set(frcR0);
 
-    auto paIdx = unique2paidx[inst];
+    auto paIdx = unique2paidx_[inst];
     for (auto &instTerm: inst->getInstTerms()) {
       // if (isSkipInstTerm(instTerm.get())) {
       //   continue;
@@ -1369,9 +1369,9 @@ void FlexPA::genInstPattern(std::vector<frInst*> &insts) {
   }
 
   // TODO: change to a global constant
-  maxAccessPatternSize = 5;
+  maxAccessPatternSize_ = 5;
   
-  int numNode = (insts.size() + 2) * maxAccessPatternSize;
+  int numNode = (insts.size() + 2) * maxAccessPatternSize_;
 
   std::vector<FlexDPNode> nodes(numNode);
 
@@ -1391,8 +1391,8 @@ void FlexPA::genInstPattern_init(std::vector<FlexDPNode> &nodes,
   }
 
   // init virutal nodes
-  int startNodeIdx = getFlatIdx(-1, 0, maxAccessPatternSize);
-  int endNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize);
+  int startNodeIdx = getFlatIdx(-1, 0, maxAccessPatternSize_);
+  int endNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
   nodes[startNodeIdx].setNodeCost(0);
   nodes[startNodeIdx].setPathCost(0);
   nodes[endNodeIdx].setNodeCost(0);
@@ -1400,11 +1400,11 @@ void FlexPA::genInstPattern_init(std::vector<FlexDPNode> &nodes,
   // init inst nodes
   for (int idx1 = 0; idx1 < (int)insts.size(); idx1++) {
     auto &inst = insts[idx1];
-    auto &uniqueInst = inst2unique[inst];
-    auto uniqueInstIdx = unique2Idx[uniqueInst];
-    auto &instPatterns = uniqueInstPatterns[uniqueInstIdx];
+    auto &uniqueInst = inst2unique_[inst];
+    auto uniqueInstIdx = unique2Idx_[uniqueInst];
+    auto &instPatterns = uniqueInstPatterns_[uniqueInstIdx];
     for (int idx2 = 0; idx2 < (int)instPatterns.size(); idx2++) {
-      int nodeIdx = getFlatIdx(idx1, idx2, maxAccessPatternSize);
+      int nodeIdx = getFlatIdx(idx1, idx2, maxAccessPatternSize_);
       auto accessPattern = instPatterns[idx2].get();
       nodes[nodeIdx].setNodeCost(accessPattern->getCost());
     }
@@ -1423,18 +1423,18 @@ void FlexPA::genInstPattern_perform(std::vector<FlexDPNode> &nodes,
     if (enableOutput) {
       if (currIdx1 != int(insts.size())) {
         cout << "  genInstPattern_perform " <<insts[currIdx1]->getName() << " uniqueInst " 
-             << inst2unique[insts[currIdx1]]->getName() <<endl <<flush;
+             << inst2unique_[insts[currIdx1]]->getName() <<endl <<flush;
       }
     }
-    for (int currIdx2 = 0; currIdx2 < maxAccessPatternSize; currIdx2++) {
-      auto currNodeIdx = getFlatIdx(currIdx1, currIdx2, maxAccessPatternSize);
+    for (int currIdx2 = 0; currIdx2 < maxAccessPatternSize_; currIdx2++) {
+      auto currNodeIdx = getFlatIdx(currIdx1, currIdx2, maxAccessPatternSize_);
       auto &currNode = nodes[currNodeIdx];
       if (currNode.getNodeCost() == std::numeric_limits<int>::max()) {
         continue;
       }
       int prevIdx1 = currIdx1 - 1;
-      for (int prevIdx2 = 0; prevIdx2 < maxAccessPatternSize; prevIdx2++) {
-        int prevNodeIdx = getFlatIdx(prevIdx1, prevIdx2, maxAccessPatternSize);
+      for (int prevIdx2 = 0; prevIdx2 < maxAccessPatternSize_; prevIdx2++) {
+        int prevNodeIdx = getFlatIdx(prevIdx1, prevIdx2, maxAccessPatternSize_);
         auto &prevNode = nodes[prevNodeIdx];
         if (prevNode.getPathCost() == std::numeric_limits<int>::max()) {
           continue;
@@ -1464,7 +1464,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode> &nodes,
   if (enableOutput) {
     cout << "  genInstPattern_commit\n" << flush;
   }
-  int currNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize);
+  int currNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
   auto currNode = &(nodes[currNodeIdx]);
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
@@ -1472,7 +1472,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode> &nodes,
     // non-virtual node
     if (instCnt != (int)insts.size()) {
       int currIdx1, currIdx2;
-      getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize);
+      getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize_);
       instAccessPatternIdx[currIdx1] = currIdx2;
     
       auto &inst = insts[currIdx1];
@@ -1480,9 +1480,9 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode> &nodes,
         cout << inst->getName() << " ";
       }
       int accessPointIdx = 0;
-      auto &uniqueInst = inst2unique[inst];
-      auto &uniqueInstIdx = unique2Idx[uniqueInst];
-      auto accessPattern = uniqueInstPatterns[uniqueInstIdx][currIdx2].get();
+      auto &uniqueInst = inst2unique_[inst];
+      auto &uniqueInstIdx = unique2Idx_[uniqueInst];
+      auto accessPattern = uniqueInstPatterns_[uniqueInstIdx][currIdx2].get();
       auto &accessPoints = accessPattern->getPattern();
       
       // update instTerm ap
@@ -1530,7 +1530,7 @@ void FlexPA::genInstPattern_commit(std::vector<FlexDPNode> &nodes,
 
 void FlexPA::genInstPattern_print(std::vector<FlexDPNode> &nodes,
                                  const std::vector<frInst*> &insts) {
-  int currNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize);
+  int currNodeIdx = getFlatIdx(insts.size(), 0, maxAccessPatternSize_);
   auto currNode = &(nodes[currNodeIdx]);
   int instCnt = insts.size();
   std::vector<int> instAccessPatternIdx(insts.size(), -1);
@@ -1548,15 +1548,15 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode> &nodes,
     // non-virtual node
     if (instCnt != (int)insts.size()) {
       int currIdx1, currIdx2;
-      getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize);
+      getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize_);
       instAccessPatternIdx[currIdx1] = currIdx2;
 
       // print debug information
       auto &inst = insts[currIdx1];
       int accessPointIdx = 0;
-      auto &uniqueInst = inst2unique[inst];
-      auto &uniqueInstIdx = unique2Idx[uniqueInst];
-      auto accessPattern = uniqueInstPatterns[uniqueInstIdx][currIdx2].get();
+      auto &uniqueInst = inst2unique_[inst];
+      auto &uniqueInstIdx = unique2Idx_[uniqueInst];
+      auto accessPattern = uniqueInstPatterns_[uniqueInstIdx][currIdx2].get();
       auto &accessPoints = accessPattern->getPattern();
 
       for (auto &instTerm: inst->getInstTerms()) {
@@ -1575,7 +1575,7 @@ void FlexPA::genInstPattern_print(std::vector<FlexDPNode> &nodes,
                  << instTerm->getTerm()->getName() << " " << accessPoint->getViaDef()->getName() << " "
                  << pt.x() << " " << pt.y() << " "
                  << orient2Name[inst->getOrient()] << "\n";
-            instTermValidViaApCnt++;
+            instTermValidViaApCnt_++;
             // cout << instTermValidViaApCnt << endl;
           }
           accessPointIdx++;
@@ -1603,8 +1603,8 @@ int FlexPA::getEdgeCost(int prevNodeIdx, int currNodeIdx,
   }
   int edgeCost = 0;
   int prevIdx1, prevIdx2, currIdx1, currIdx2;
-  getNestedIdx(prevNodeIdx, prevIdx1, prevIdx2, maxAccessPatternSize);
-  getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize);
+  getNestedIdx(prevNodeIdx, prevIdx1, prevIdx2, maxAccessPatternSize_);
+  getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPatternSize_);
   if (prevIdx1 == -1 || currIdx1 == (int)insts.size()) {
     return edgeCost;
   }
@@ -1616,11 +1616,11 @@ int FlexPA::getEdgeCost(int prevNodeIdx, int currNodeIdx,
   std::vector<std::pair<frConnFig*, frBlockObject*> > objs;
   // push the vias from prev inst access pattern and curr inst access pattern
   auto prevInst = insts[prevIdx1];
-  auto prevUniqueInstIdx = unique2Idx[inst2unique[prevInst]];
+  auto prevUniqueInstIdx = unique2Idx_[inst2unique_[prevInst]];
   auto currInst = insts[currIdx1];
-  auto currUniqueInstIdx = unique2Idx[inst2unique[currInst]];
-  auto prevPinAccessPattern = uniqueInstPatterns[prevUniqueInstIdx][prevIdx2].get();
-  auto currPinAccessPattern = uniqueInstPatterns[currUniqueInstIdx][currIdx2].get();
+  auto currUniqueInstIdx = unique2Idx_[inst2unique_[currInst]];
+  auto prevPinAccessPattern = uniqueInstPatterns_[prevUniqueInstIdx][prevIdx2].get();
+  auto currPinAccessPattern = uniqueInstPatterns_[currUniqueInstIdx][currIdx2].get();
   addAccessPatternObj(prevInst, prevPinAccessPattern, objs, tempVias, true);
   addAccessPatternObj(currInst, currPinAccessPattern, objs, tempVias, false);
 
@@ -1687,7 +1687,7 @@ void FlexPA::addAccessPatternObj(frInst* inst,
 }
 
 void FlexPA::getInsts(std::vector<frInst*> &insts) {
-  for (auto &inst: design->getTopBlock()->getInsts()) {
+  for (auto &inst: design_->getTopBlock()->getInsts()) {
     if (inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE && 
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIEHIGH && 
         inst->getRefBlock()->getMacroClass() != MacroClassEnum::CORE_TIELOW &&
@@ -1729,7 +1729,7 @@ void FlexPA::prepPattern_inst(frInst *inst, int currUniqueInstIdx) {
     cout << "start prepPattern " << inst->getName() << "\n" << flush;
   }
   // TODO: add assert in case input inst is not unique inst
-  int paIdx = unique2paidx[inst];
+  int paIdx = unique2paidx_[inst];
   for (auto &instTerm: inst->getInstTerms()) {
     if (isSkipInstTerm(instTerm.get())) {
       continue;
@@ -1783,7 +1783,7 @@ void FlexPA::genPatterns(const std::vector<std::pair<frPin*, frInstTerm*> > &pin
   }
 
   int maxAccessPointSize = 0;
-  int paIdx = unique2paidx[pins[0].second->getInst()];
+  int paIdx = unique2paidx_[pins[0].second->getInst()];
   for (auto &[pin, instTerm]: pins) {
     maxAccessPointSize = std::max(maxAccessPointSize, pin->getPinAccess(paIdx)->getNumAccessPoints());
   }
@@ -1900,7 +1900,7 @@ void FlexPA::genPatterns_init(std::vector<FlexDPNode> &nodes,
   // init pin nodes
   int pinIdx = 0;
   int apIdx = 0;
-  int paIdx = unique2paidx[pins[0].second->getInst()];
+  int paIdx = unique2paidx_[pins[0].second->getInst()];
 
   for (auto &[pin, instTerm]: pins) {
     apIdx = 0;
@@ -2048,14 +2048,14 @@ int FlexPA::getEdgeCost(int prevNodeIdx,
   if (vioEdges[edgeIdx] != -1) {
     hasVio = (vioEdges[edgeIdx] == 1);
   } else {
-    auto &currUniqueInst = uniqueInstances[currUniqueInstIdx];
+    auto &currUniqueInst = uniqueInstances_[currUniqueInstIdx];
     frTransform xform;
     currUniqueInst->getUpdatedXform(xform, true);
     // check DRC
     vector<pair<frConnFig*, frBlockObject*> > objs;
     auto &[pin1, instTerm1] = pins[prevIdx1];
     auto targetObj = instTerm1->getInst();
-    int paIdx = unique2paidx[targetObj];
+    int paIdx = unique2paidx_[targetObj];
     auto pa1 = pin1->getPinAccess(paIdx);
     unique_ptr<frVia> via1;
     if (pa1->getAccessPoint(prevIdx2)->hasAccess(frDirEnum::U)) {
@@ -2193,7 +2193,7 @@ bool FlexPA::genPatterns_commit(std::vector<FlexDPNode> &nodes,
       auto &[pin, instTerm] = pins[idx1];
       auto inst = instTerm->getInst();
       targetObj = inst;
-      int paIdx = unique2paidx[inst];
+      int paIdx = unique2paidx_[inst];
       auto pa = pin->getPinAccess(paIdx);
       auto accessPoint = pa->getAccessPoint(idx2);
       pin2AP[pin] = accessPoint;
@@ -2268,7 +2268,7 @@ bool FlexPA::genPatterns_commit(std::vector<FlexDPNode> &nodes,
       //     <<pinAccessPattern->getBoundaryAP(true) <<"/" 
       //     <<pinAccessPattern->getBoundaryAP(false) <<", "
       //     <<currUniqueInstIdx <<", " <<uniqueInstances[currUniqueInstIdx]->getName() <<endl;
-      uniqueInstPatterns[currUniqueInstIdx].push_back(std::move(pinAccessPattern));
+      uniqueInstPatterns_[currUniqueInstIdx].push_back(std::move(pinAccessPattern));
       // genPatterns_print(nodes, pins, maxAccessPointSize);
       isValid = true;
     } else {
@@ -2321,7 +2321,7 @@ void FlexPA::genPatterns_print_debug(std::vector<FlexDPNode> &nodes,
       auto &[pin, instTerm] = pins[pinCnt];
       auto inst = instTerm->getInst();
       cout <<" " <<instTerm->getTerm()->getName();
-      int paIdx = unique2paidx[inst];
+      int paIdx = unique2paidx_[inst];
       auto pa = pin->getPinAccess(paIdx);
       int currIdx1, currIdx2;
       getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPointSize);
@@ -2366,7 +2366,7 @@ void FlexPA::genPatterns_print(std::vector<FlexDPNode> &nodes,
     if (pinCnt != (int)pins.size()) {
       auto &[pin, instTerm] = pins[pinCnt];
       auto inst = instTerm->getInst();
-      int paIdx = unique2paidx[inst];
+      int paIdx = unique2paidx_[inst];
       auto pa = pin->getPinAccess(paIdx);
       int currIdx1, currIdx2;
       getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPointSize);

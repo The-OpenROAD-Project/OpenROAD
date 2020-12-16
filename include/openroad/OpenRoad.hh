@@ -111,25 +111,36 @@ namespace pdnsim {
 class PDNSim;
 }
 
-namespace antenna_checker {
+namespace ant {
 class AntennaChecker;
 }
+
+
+namespace partition {
+class PartitionMgr;
+}
+
 
 namespace ord {
 
 using std::string;
 
+class Logger;
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
 class OpenRoad
 {
 public:
-  // Singleton accessor used by tcl command interpreter.
+  // Singleton accessor.
+  // This accessor should ONLY be used for tcl commands.
+  // Tools should use their initialization functions to get the
+  // OpenRoad object and/or any other tools they need to reference.
   static OpenRoad *openRoad();
   void init(Tcl_Interp *tcl_interp);
 
   Tcl_Interp *tclInterp() { return tcl_interp_; }
+  Logger *getLogger() { return logger_; }
   odb::dbDatabase *getDb() { return db_; }
   sta::dbSta *getSta() { return sta_; }
   sta::dbNetwork *getDbNetwork();
@@ -145,7 +156,8 @@ public:
   replace::Replace* getReplace() { return replace_; }
   pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
-  antenna_checker::AntennaChecker *getAntennaChecker(){ return antennaChecker_; }
+  partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
+  ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -202,6 +214,7 @@ private:
   OpenRoad();
 
   Tcl_Interp *tcl_interp_;
+  Logger *logger_;
   odb::dbDatabase *db_;
   dbVerilogNetwork *verilog_network_;
   sta::dbSta *sta_;
@@ -215,10 +228,11 @@ private:
   tap::Tapcell *tapcell_;
   OpenRCX::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
-  antenna_checker::AntennaChecker *antennaChecker_;
+  ant::AntennaChecker *antenna_checker_;
   psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
+  partition::PartitionMgr *partitionMgr_; 
 
   std::set<Observer *> observers_;
 

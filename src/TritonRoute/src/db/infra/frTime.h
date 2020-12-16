@@ -39,19 +39,19 @@ extern size_t getCurrentRSS();
 namespace fr {
   class frTime {
   public:
-    frTime(): t0(std::chrono::high_resolution_clock::now()), t(clock()) {}
+    frTime(): t0_(std::chrono::high_resolution_clock::now()), t_(clock()) {}
     std::chrono::high_resolution_clock::time_point getT0() const {
-      return t0;
+      return t0_;
     }
     void print();
     bool isExceed(double in) {
       auto t1        = std::chrono::high_resolution_clock::now();
-      auto time_span = std::chrono::duration_cast<std::chrono::duration<double> >(t1 - t0);
+      auto time_span = std::chrono::duration_cast<std::chrono::duration<double> >(t1 - t0_);
       return (time_span.count() > in);
     }
   protected:
-    std::chrono::high_resolution_clock::time_point t0;
-    clock_t t;
+    std::chrono::high_resolution_clock::time_point t0_;
+    clock_t t_;
   };
 
   std::ostream& operator<<(std::ostream& os, const frTime &t);

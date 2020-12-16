@@ -72,28 +72,28 @@ namespace fr {
   class taPathSeg: public taShape {
   public:
     // constructors
-    taPathSeg(): taShape(), begin(), end(), layer(0), style(), owner(nullptr) {}
-    taPathSeg(const taPathSeg &in): begin(in.begin), end(in.end), layer(in.layer), style(in.style), owner(in.owner) {}
+    taPathSeg(): taShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr) {}
+    taPathSeg(const taPathSeg &in): begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_) {}
     taPathSeg(const frPathSeg &in);
     // getters
     void getPoints(frPoint &beginIn, frPoint &endIn) const {
-      beginIn.set(begin);
-      endIn.set(end);
+      beginIn.set(begin_);
+      endIn.set(end_);
     }
     void getStyle(frSegStyle &styleIn) const {
-      styleIn.setBeginStyle(style.getBeginStyle(), style.getBeginExt());
-      styleIn.setEndStyle(style.getEndStyle(), style.getEndExt());
-      styleIn.setWidth(style.getWidth());
+      styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
+      styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
+      styleIn.setWidth(style_.getWidth());
     }
     // setters
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
-      begin.set(beginIn);
-      end.set(endIn);
+      begin_.set(beginIn);
+      end_.set(endIn);
     }
     void setStyle(const frSegStyle &styleIn) {
-      style.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
-      style.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
-      style.setWidth(styleIn.getWidth());
+      style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
+      style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
+      style_.setWidth(styleIn.getWidth());
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -105,10 +105,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from frPinFig
@@ -118,19 +118,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == tacPin);
+      return (owner_) && (owner_->typeId() == tacPin);
     }
     
     taPin* getPin() const override {
-      return reinterpret_cast<taPin*>(owner);
+      return reinterpret_cast<taPin*>(owner_);
     }
     
     void addToPin(taPin* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frConnFig
@@ -140,19 +140,19 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == frcNet);
+      return (owner_) && (owner_->typeId() == frcNet);
     }
     
     frNet* getNet() const override {
-      return reinterpret_cast<frNet*>(owner);
+      return reinterpret_cast<frNet*>(owner_);
     }
     
     void addToNet(frNet* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frFig
@@ -163,33 +163,33 @@ namespace fr {
     // needs to be updated
     void getBBox (frBox &boxIn) const override {
       bool isHorizontal = true;
-      if (begin.x() == end.x()) {
+      if (begin_.x() == end_.x()) {
         isHorizontal = false;
       }
-      auto width    = style.getWidth();
-      auto beginExt = style.getBeginExt();
-      auto endExt   = style.getEndExt();
+      auto width    = style_.getWidth();
+      auto beginExt = style_.getBeginExt();
+      auto endExt   = style_.getEndExt();
       if (isHorizontal) {
-        boxIn.set(begin.x() - beginExt, begin.y() - width / 2,
-                  end.x()   + endExt,   end.y()   + width / 2);
+        boxIn.set(begin_.x() - beginExt, begin_.y() - width / 2,
+                  end_.x()   + endExt,   end_.y()   + width / 2);
       } else {
-        boxIn.set(begin.x() - width / 2, begin.y() - beginExt,
-                  end.x()   + width / 2, end.y()   + endExt);
+        boxIn.set(begin_.x() - width / 2, begin_.y() - beginExt,
+                  end_.x()   + width / 2, end_.y()   + endExt);
       }
     }
     void move(const frTransform &xform) override {
-      begin.transform(xform);
-      end.transform(xform);
+      begin_.transform(xform);
+      end_.transform(xform);
     }
     bool overlaps(const frBox &box) const override {
       return false;
     }
   protected:
-    frPoint        begin; // begin always smaller than end, assumed
-    frPoint        end;
-    frLayerNum     layer;
-    frSegStyle     style;
-    frBlockObject* owner;
+    frPoint        begin_; // begin always smaller than end, assumed
+    frPoint        end_;
+    frLayerNum     layer_;
+    frSegStyle     style_;
+    frBlockObject* owner_;
   };
 }
 

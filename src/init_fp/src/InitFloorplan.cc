@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+// Copyright (c) 2019, OpenROAD
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,19 +33,21 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "init_fp/InitFloorplan.hh"
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include "sta/Error.hh"
-#include "sta/Report.hh"
+
+#include "opendb/db.h"
+#include "opendb/dbTransform.h"
+
 #include "sta/StringUtil.hh"
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
-#include "opendb/db.h"
-#include "opendb/dbTransform.h"
+
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
-#include "init_fp/InitFloorplan.hh"
+#include "openroad/Logger.h"
 
 namespace ifp {
 
@@ -54,14 +56,12 @@ using std::abs;
 using std::round;
 
 using sta::Vector;
-using sta::Report;
 using sta::stdstrPrint;
 using sta::StringVector;
 using sta::stringEqual;
-using sta::FileNotReadable;
 
-using ord::error;
-using ord::warn;
+using ord::Logger;
+using ord::IFP;
 
 using odb::dbDatabase;
 using odb::dbChip;
@@ -118,7 +118,7 @@ public:
 		     const char *site_name,
 		     const char *tracks_file,
 		     dbDatabase *db,
-		     Report *report);
+		     Logger *logger);
 
   void initFloorplan(double die_lx,
 		     double die_ly,
@@ -131,11 +131,11 @@ public:
 		     const char *site_name,
 		     const char *tracks_file,
 		     dbDatabase *db,
-		     Report *report);
+		     Logger *logger );
 
   void autoPlacePins(const char *pin_layer_name,
 		     dbDatabase *db,
-		     Report *report);
+		     Logger *logger);
 
 protected:
   void initFloorplan(double die_lx,
@@ -165,8 +165,8 @@ protected:
   double dbuToMeters(int dist) const;
 
   dbDatabase *db_;
-  Report *report_;
   dbBlock *block_;
+  Logger *logger_;
   Vector<Track> tracks_;
 };
 
@@ -180,14 +180,14 @@ initFloorplan(double util,
 	      const char *site_name,
 	      const char *tracks_file,
 	      dbDatabase *db,
-	      Report *report)
+	      Logger *logger)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(util, aspect_ratio,
                         core_space_bottom, core_space_top,
                         core_space_left, core_space_right,
                         site_name, tracks_file,
-                        db, report);
+                        db, logger);
 }
 
 void
@@ -202,13 +202,13 @@ initFloorplan(double die_lx,
 	      const char *site_name,
 	      const char *tracks_file,
 	      dbDatabase *db,
-	      Report *report)
+              Logger *logger)
 {
   InitFloorplan init_fp;
   init_fp.initFloorplan(die_lx, die_ly, die_ux, die_uy,
 			core_lx, core_ly, core_ux, core_uy,
 			site_name, tracks_file,
-			db, report);
+			db, logger);
 }
 
 void
@@ -221,9 +221,9 @@ InitFloorplan::initFloorplan(double util,
 			     const char *site_name,
 			     const char *tracks_file,
 			     dbDatabase *db,
-			     Report *report)
+			     Logger *logger)
 {
-  report_ = report;
+  logger_ = logger;
   db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
@@ -274,9 +274,9 @@ InitFloorplan::initFloorplan(double die_lx,
 			     const char *site_name,
 			     const char *tracks_file,
 			     dbDatabase *db,
-			     Report *report)
+			     Logger *logger)
 {
-  report_ = report;
+  logger_ = logger;
   db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
@@ -327,8 +327,7 @@ InitFloorplan::initFloorplan(double die_lx,
 	makeTracks(die_area);
     }
     else
-      warn("SITE %s not found.", site_name);
-
+      logger_->warn(IFP, 9, "SITE {} not found.", site_name);
   }
 }
 
@@ -362,7 +361,7 @@ InitFloorplan::makeRows(dbSite *site,
 		  dbRowDir::HORIZONTAL, rows_x, site_dx);
     y += site_dy;
   }
-  report_->print("Info: Added %d rows of %d sites.\n", rows_y, rows_x);
+  logger_->info(IFP, 1, "Added {} rows of {} sites.", rows_y, rows_x);
 }
 
 dbSite *
@@ -408,7 +407,7 @@ InitFloorplan::makeTracks(const char *tracks_file,
 	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
 	break;
       default:
-	internalError("unknown track direction\n");
+	logger_->critical(IFP, 3, "unknown track direction\n");
       }
     }
   }
@@ -436,23 +435,26 @@ InitFloorplan::readTracks(const char *tracks_file)
 	  else if (stringEqual(dir_str.c_str(), "Y"))
 	    dir = 'Y';
 	  else
-	    error("track file line %d direction must be X or Y'.", line_count);
+	    logger_->error(IFP, 4, "track file line {} direction must be X or Y'.",
+                           line_count);
 	  // microns -> meters
 	  double offset = strtod(tokens[2].c_str(), nullptr) * 1e-6;
 	  double pitch = strtod(tokens[3].c_str(), nullptr) * 1e-6;
 	  tracks_.push_back(Track(layer_name, dir, offset, pitch));
 	}
 	else
-	  error("layer %s not found.", layer_name.c_str());
+	  logger_->error(IFP, 5, "layer {} not found.", layer_name);
       }
       else
-	error("track file line %d does not match 'layer X|Y offset pitch'.", line_count);
+	logger_->error(IFP, 6,
+                       "track file line {} does not match 'layer X|Y offset pitch'.",
+                       line_count);
       line_count++;
     }
     tracks_stream.close();
   }
   else
-    throw FileNotReadable(tracks_file);
+    logger_->error(IFP, 10, "Tracks file not readable.");
 }
 
 Track::Track(string layer,
@@ -492,7 +494,7 @@ InitFloorplan::makeTracks(Rect &die_area)
 	  grid->addGridPatternX(offset, track_count, pitch);
 	}
 	else
-	  printf("Error: layer %s has zero pitch.\n", layer->getConstName());
+	  logger_->error(IFP, 7, "layer {} has zero pitch.", layer->getConstName());
 	break;
       case dbTechLayerDir::HORIZONTAL:
         grid = block_->findTrackGrid(layer);
@@ -508,7 +510,8 @@ InitFloorplan::makeTracks(Rect &die_area)
 	  grid->addGridPatternY(offset, track_count, pitch);
 	}
 	else
-	  printf("Error: layer %s has zero pitch.\n", layer->getConstName());
+	  logger_->error(IFP, 8, "layer {} has zero pitch.",
+                         layer->getConstName());
 	break;
       case dbTechLayerDir::NONE:
 	break;
@@ -522,18 +525,18 @@ InitFloorplan::makeTracks(Rect &die_area)
 void
 autoPlacePins(const char *pin_layer_name,
 	      dbDatabase *db,
-	      Report *report)
+	      Logger *logger)
 {
   InitFloorplan init_fp;
-  init_fp.autoPlacePins(pin_layer_name, db, report);
+  init_fp.autoPlacePins(pin_layer_name, db, logger);
 }
 
 void
 InitFloorplan::autoPlacePins(const char *pin_layer_name,
 			     dbDatabase *db,
-			     Report *report)
+			     Logger *logger)
 {
-  report_ = report;
+  logger_ = logger;
   db_ = db;
   dbChip *chip = db_->getChip();
   if (chip) {
@@ -546,7 +549,7 @@ InitFloorplan::autoPlacePins(const char *pin_layer_name,
 	autoPlacePins(pin_layer, core);
       }
       else
-	warn("pin layer %s not found.", pin_layer_name);
+	logger_->warn(IFP, 2, "pin layer {} not found.", pin_layer_name);
     }
   }
 }

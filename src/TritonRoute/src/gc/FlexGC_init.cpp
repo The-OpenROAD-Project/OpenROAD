@@ -87,13 +87,13 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj) {
   }
 
   if (isFloatingVSS) {
-    return nets[0].get();
+    return nets_[0].get();
   } else if (isFloatingVDD) {
-    return nets[1].get();
+    return nets_[1].get();
   } else {
-    auto it = owner2nets.find(owner);
+    auto it = owner2nets_.find(owner);
     gcNet* currNet = nullptr;
-    if (it == owner2nets.end()) {
+    if (it == owner2nets_.end()) {
       currNet = addNet(owner);
     } else {
       currNet = it->second;
@@ -112,19 +112,19 @@ void FlexGCWorker::Impl::initObj(const frBox &box, frLayerNum layerNum, frBlockO
 }
 
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj) {
-  if (targetObj) {
-    if (targetObj->typeId() == frcInst) {
+  if (targetObj_) {
+    if (targetObj_->typeId() == frcInst) {
       if (obj->typeId() == frcInstTerm &&
-          static_cast<frInstTerm*>(obj)->getInst() == targetObj) {
+          static_cast<frInstTerm*>(obj)->getInst() == targetObj_) {
         return false;
       } else if (obj->typeId() == frcInstBlockage &&
-                 static_cast<frInstBlockage*>(obj)->getInst() == targetObj) {
+                 static_cast<frInstBlockage*>(obj)->getInst() == targetObj_) {
         return false;
       } else {
         return true;
       }
-    } else if (targetObj->typeId() == frcTerm) {
-      if (obj->typeId() == frcTerm && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj)) {
+    } else if (targetObj_->typeId() == frcTerm) {
+      if (obj->typeId() == frcTerm && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj_)) {
         return false;
       } else {
         return true;
@@ -144,7 +144,7 @@ void FlexGCWorker::Impl::initDesign() {
   bool enableOutput = false;
   //bool enableOutput = true;
 
-  if (ignoreDB) {
+  if (ignoreDB_) {
     return;
   }
 
@@ -160,7 +160,7 @@ void FlexGCWorker::Impl::initDesign() {
   int cnt = 0;
   // init all non-dr objs from design
   // for (auto i = getDesign()->getTech()->getBottomLayerNum(); i <= design->getTech()->getTopLayerNum(); i++) {
-  for (auto i = 0; i <= design->getTech()->getTopLayerNum(); i++) {
+  for (auto i = 0; i <= design_->getTech()->getTopLayerNum(); i++) {
     queryResult.clear();
     // queryResult.clear();
     regionQuery->query(queryBox, i, queryResult);
@@ -180,7 +180,7 @@ void FlexGCWorker::Impl::initDesign() {
     return;
   }
   cnt = 0;
-  for (auto i = getDesign()->getTech()->getBottomLayerNum(); i <= design->getTech()->getTopLayerNum(); i++) {
+  for (auto i = getDesign()->getTech()->getBottomLayerNum(); i <= design_->getTech()->getTopLayerNum(); i++) {
     queryResult.clear();
     regionQuery->queryDRObj(queryBox, i, queryResult);
     for (auto &[box, obj]: queryResult) {
@@ -197,9 +197,9 @@ void FlexGCWorker::Impl::initDesign() {
 }
 
 void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner) {
-  auto it = owner2nets.find(owner);
+  auto it = owner2nets_.find(owner);
   gcNet* currNet = nullptr;
-  if (it == owner2nets.end()) {
+  if (it == owner2nets_.end()) {
     currNet = addNet(owner);
   } else {
     currNet = it->second;
@@ -319,8 +319,8 @@ void FlexGCWorker::Impl::initDRWorker() {
   int cnt = 0;
   for (auto &uDRNet: getDRWorker()->getNets()) {
     // always first generate gcnet in case owner does not have any object
-    auto it = owner2nets.find(uDRNet->getFrNet());
-    if (it == owner2nets.end()) {
+    auto it = owner2nets_.find(uDRNet->getFrNet());
+    if (it == owner2nets_.end()) {
       addNet(uDRNet->getFrNet());
     }
     //auto net = uDRNet->getFrNet();
@@ -750,17 +750,17 @@ void FlexGCWorker::Impl::init() {
   ProfileTask profile("GC:init");
   //bool enableOutput = true;
   bool enableOutput = false;
-  addNet(design->getTopBlock()->getFakeVSSNet()); //[0] floating VSS
-  addNet(design->getTopBlock()->getFakeVDDNet()); //[1] floating VDD
+  addNet(design_->getTopBlock()->getFakeVSSNet()); //[0] floating VSS
+  addNet(design_->getTopBlock()->getFakeVDDNet()); //[1] floating VDD
   initDesign();
   initDRWorker();
   if (enableOutput) {
-    cout <<"#gcNets = " <<nets.size() <<endl;
+    cout <<"#gcNets = " << nets_.size() <<endl;
     int cntFloating = 0;
     int cntNet  = 0;
     int cntTerm = 0;
     int cntBlk  = 0;
-    for (auto &net: nets) {
+    for (auto &net: nets_) {
       if (net->getOwner() == nullptr) {
         cntFloating++;
       } else {
@@ -785,17 +785,17 @@ void FlexGCWorker::Impl::init() {
 void FlexGCWorker::Impl::initPA0() {
   //bool enableOutput = true;
   bool enableOutput = false;
-  addNet(design->getTopBlock()->getFakeVSSNet()); //[0] floating VSS
-  addNet(design->getTopBlock()->getFakeVDDNet()); //[1] floating VDD
+  addNet(design_->getTopBlock()->getFakeVSSNet()); //[0] floating VSS
+  addNet(design_->getTopBlock()->getFakeVDDNet()); //[1] floating VDD
   initDesign();
   initDRWorker();
   if (enableOutput) {
-    cout <<"#gcNets = " <<nets.size() <<endl;
+    cout <<"#gcNets = " << nets_.size() <<endl;
     int cntFloating = 0;
     int cntNet  = 0;
     int cntTerm = 0;
     int cntBlk  = 0;
-    for (auto &net: nets) {
+    for (auto &net: nets_) {
       if (net->getOwner() == nullptr) {
         cntFloating++;
       } else {
@@ -827,13 +827,13 @@ void FlexGCWorker::Impl::updateGCWorker() {
 
   // get all frNets, must be sorted by id
   set<frNet*, frBlockObjectComp> fnets;
-  for (auto dnet: modifiedDRNets) {
+  for (auto dnet: modifiedDRNets_) {
     fnets.insert(dnet->getFrNet());
   }
-  modifiedDRNets.clear();
+  modifiedDRNets_.clear();
 
   // get GC patched net as well
-  for (auto &patch: pwires) {
+  for (auto &patch: pwires_) {
     if (patch->hasNet() && patch->getNet()->getFrNet()) {
       fnets.insert(patch->getNet()->getFrNet());
     }
@@ -841,7 +841,7 @@ void FlexGCWorker::Impl::updateGCWorker() {
 
   // start init from dr objs
   for (auto fnet: fnets) {
-    auto net = owner2nets[fnet];
+    auto net = owner2nets_[fnet];
     getWorkerRegionQuery().removeFromRegionQuery(net); // delete all region queries
     net->clear();               // delete all pins and routeXXX
     // re-init gcnet from drobjs
@@ -863,17 +863,17 @@ void FlexGCWorker::Impl::updateGCWorker() {
   }
 
   // start init from GC patches
-  for (auto &patch: pwires) {
+  for (auto &patch: pwires_) {
     if (patch->hasNet() && patch->getNet()->getFrNet()) {
       auto fnet = patch->getNet()->getFrNet();
-      auto net = owner2nets[fnet];
+      auto net = owner2nets_[fnet];
       initDRObj(patch.get(), net);
     }
   }
 
   // init
   for (auto fnet: fnets) {
-    auto net = owner2nets[fnet];
+    auto net = owner2nets_[fnet];
     // init gc net
     initNet(net);
     getWorkerRegionQuery().addToRegionQuery(net);
@@ -881,6 +881,6 @@ void FlexGCWorker::Impl::updateGCWorker() {
 }
 
 void FlexGCWorker::updateDRNet(drNet* net) {
-  impl->modifiedDRNets.push_back(net);
+  impl_->modifiedDRNets_.push_back(net);
 }
 

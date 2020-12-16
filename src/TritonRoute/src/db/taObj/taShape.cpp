@@ -33,8 +33,8 @@ using namespace std;
 using namespace fr;
 
 taPathSeg::taPathSeg(const frPathSeg &in) {
-  in.getPoints(begin, end);
-  layer = in.getLayerNum();
-  in.getStyle(style);
-  owner = nullptr;
+  in.getPoints(begin_, end_);
+  layer_ = in.getLayerNum();
+  in.getStyle(style_);
+  owner_ = nullptr;
 }

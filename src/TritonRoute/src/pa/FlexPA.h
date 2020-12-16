@@ -42,38 +42,38 @@ namespace fr {
   class FlexPA {
   public:
     // constructor
-    FlexPA(frDesign* in): design(in), stdCellPinGenApCnt(0), stdCellPinValidPlanarApCnt(0), stdCellPinValidViaApCnt(0), stdCellPinNoApCnt(0),
-                          macroCellPinGenApCnt(0), macroCellPinValidPlanarApCnt(0), macroCellPinValidViaApCnt(0), macroCellPinNoApCnt(0), maxAccessPatternSize(0) {}
+    FlexPA(frDesign* in): design_(in), stdCellPinGenApCnt_(0), stdCellPinValidPlanarApCnt_(0), stdCellPinValidViaApCnt_(0), stdCellPinNoApCnt_(0),
+                          macroCellPinGenApCnt_(0), macroCellPinValidPlanarApCnt_(0), macroCellPinValidViaApCnt_(0), macroCellPinNoApCnt_(0), maxAccessPatternSize_(0) {}
     // getters
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
     // setters
     int main();
   protected:
-    frDesign* design;
+    frDesign* design_;
 
-    int stdCellPinGenApCnt;
-    int stdCellPinValidPlanarApCnt;
-    int stdCellPinValidViaApCnt;
-    int stdCellPinNoApCnt;
-    int instTermValidViaApCnt = 0;
-    int macroCellPinGenApCnt;
-    int macroCellPinValidPlanarApCnt;
-    int macroCellPinValidViaApCnt;
-    int macroCellPinNoApCnt;
+    int stdCellPinGenApCnt_;
+    int stdCellPinValidPlanarApCnt_;
+    int stdCellPinValidViaApCnt_;
+    int stdCellPinNoApCnt_;
+    int instTermValidViaApCnt_ = 0;
+    int macroCellPinGenApCnt_;
+    int macroCellPinValidPlanarApCnt_;
+    int macroCellPinValidViaApCnt_;
+    int macroCellPinNoApCnt_;
 
-    std::vector<frInst*>                          uniqueInstances;
-    std::map<frInst*, frInst*, frBlockObjectComp> inst2unique;
-    std::map<frInst*, int,     frBlockObjectComp> unique2paidx; //unique instance to pinaccess index;
-    std::map<frInst*, int,     frBlockObjectComp> unique2Idx;
-    std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern> > > uniqueInstPatterns;
+    std::vector<frInst*>                          uniqueInstances_;
+    std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
+    std::map<frInst*, int,     frBlockObjectComp> unique2paidx_; //unique instance to pinaccess index
+    std::map<frInst*, int,     frBlockObjectComp> unique2Idx_;
+    std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern> > > uniqueInstPatterns_;
 
-    int maxAccessPatternSize;
+    int maxAccessPatternSize_;
 
     // helper strutures
-    std::vector<std::map<frCoord, int> > trackCoords; // 0 -- on grid; 1 -- half-grid; 2 -- center; 3 -- 1/4 grid
-    std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*> > > layerNum2ViaDefs;
+    std::vector<std::map<frCoord, int> > trackCoords_; // 0 -- on grid; 1 -- half-grid; 2 -- center; 3 -- 1/4 grid
+    std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*> > > layerNum2ViaDefs_;
 
     // helper functions
     void getPrefTrackPatterns(std::vector<frTrackPattern*> &prefTrackPatterns);
@@ -208,75 +208,75 @@ namespace fr {
   class FlexPinAccessPattern {
   public:
     // constructor
-    FlexPinAccessPattern(): pattern(), left(nullptr), right(nullptr), cost(std::numeric_limits<int>::max()) {}
+    FlexPinAccessPattern(): pattern_(), left_(nullptr), right_(nullptr), cost_(std::numeric_limits<int>::max()) {}
     // getter
     const std::vector<frAccessPoint*> &getPattern() const {
-      return pattern;
+      return pattern_;
     }
     frAccessPoint* getBoundaryAP(bool isLeft) const {
-      return isLeft? left : right;
+      return isLeft ? left_ : right_;
     }
     int getCost() const {
-      return cost;
+      return cost_;
     }
     // setter
     void addAccessPoint(frAccessPoint *in) {
-      pattern.push_back(in);
+      pattern_.push_back(in);
     }
     void setBoundaryAP(bool isLeft, frAccessPoint* in) {
       if (isLeft) {
-        left = in;
+        left_ = in;
       } else {
-        right = in;
+        right_ = in;
       }
     }
     void updateCost() {
-      cost = 0;
-      for (auto &ap: pattern) {
-        cost += ap->getCost();
+      cost_ = 0;
+      for (auto &ap: pattern_) {
+        cost_ += ap->getCost();
       }
     }
   private:
-    std::vector<frAccessPoint*> pattern;
-    frAccessPoint* left;
-    frAccessPoint* right;
-    int cost;
+    std::vector<frAccessPoint*> pattern_;
+    frAccessPoint* left_;
+    frAccessPoint* right_;
+    int cost_;
   };
 
   // dynamic programming related
   class FlexDPNode {
   public:
     // constructor
-    FlexDPNode() : pathCost(std::numeric_limits<int>::max()), 
-                   nodeCost(std::numeric_limits<int>::max()),
-                   prevNodeIdx(-1) {}
+    FlexDPNode() : pathCost_(std::numeric_limits<int>::max()), 
+                   nodeCost_(std::numeric_limits<int>::max()),
+                   prevNodeIdx_(-1) {}
 
     // getters
     int getPathCost() const {
-      return pathCost;
+      return pathCost_;
     }
     int getNodeCost() const {
-      return nodeCost;
+      return nodeCost_;
     }
     int getPrevNodeIdx() const {
-      return prevNodeIdx;
+      return prevNodeIdx_;
     }
 
     // setters
     void setPathCost(int in) {
-      pathCost = in;
+      pathCost_ = in;
     }
     void setNodeCost(int in) {
-      nodeCost = in;
+      nodeCost_ = in;
     }
     void setPrevNodeIdx(int in) {
-      prevNodeIdx = in;
+      prevNodeIdx_ = in;
     }
 
   private:
-    int pathCost;
-    int nodeCost;
-    int prevNodeIdx;
+    int pathCost_;
+    int nodeCost_;
+    int prevNodeIdx_;
   };
 }
 

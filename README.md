@@ -260,9 +260,10 @@ function call. The `-names` argument is a list of names. The `-region` syntax is
 Gate resizer commands are described below.
 The resizer commands stop when the design area is `-max_utilization
 util` percent of the core area. `util` is between 0 and 100.
+The resizer stops and reports and error if the max utilization is exceeded.
 
 ```
-set_wire_rc [-clock] [-data]
+set_wire_rc [-clock] [-signal]
             [-layer layer_name]
             [-resistance res ]
             [-capacitance cap]
@@ -271,8 +272,8 @@ set_wire_rc [-clock] [-data]
 
 The `set_wire_rc` command sets the resistance and capacitance used to
 estimate delay of routing wires.  Separate values can be specified for
-clock and data nets with the `-data` and `-clock` flags. Without
-either `-data` or `-clock` the resistance and capacitance for clocks
+clock and data nets with the `-signal` and `-clock` flags. Without
+either `-signal` or `-clock` the resistance and capacitance for clocks
 and data nets are set.  Use `-layer` or `-resistance` and
 `-capacitance`.  If `-layer` is used, the LEF technology resistance
 and area/edge capacitance values for the layer are used for a minimum
@@ -310,6 +311,7 @@ in all libraries.
 ```
 buffer_ports [-inputs]
              [-outputs]
+             [-max_utilization util]
 ```
 The `buffer_ports -inputs` command adds a buffer between the input and
 its loads.  The `buffer_ports -outputs` adds a buffer between the port
@@ -318,9 +320,11 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
+              [-libraries resize_libs]
+              [-max_utilization util]
 ```
 
-The `repair_design` inserts buffers on nets to repair max slew, max
+The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
 delay in the wire. It also resizes gates to normalize slews.  Use
 `-max_wire_length` to specify the maximum length of wires.  The
@@ -348,6 +352,7 @@ by `dist` (in liberty units, typically microns).
 repair_timing [-setup]
               [-hold]
               [-allow_setup_violations]
+              [-max_utilization util]
 ```
 The `repair_timing` command repair setup and hold violations.
 It should be run after clock tree synthesis with propagated clocks.

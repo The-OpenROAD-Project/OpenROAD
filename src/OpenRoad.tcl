@@ -48,10 +48,10 @@ proc read_lef { args } {
 
   set filename [file nativename $args]
   if { ![file exists $filename] } {
-    ord::error "$filename does not exist."
+    ord::error ORD 1 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    ord::error "$filename is not readable."
+    ord::error ORD 2 "$filename is not readable."
   }
 
   set make_tech [info exists flags(-tech)]
@@ -71,13 +71,13 @@ proc read_def { args } {
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename $args]
   if { ![file exists $filename] } {
-    ord::error "$filename does not exist."
+    ord::error ORD 3 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    ord::error "$filename is not readable."
+    ord::error ORD 4 "$filename is not readable."
   }
   if { ![ord::db_has_tech] } {
-    ord::error "no technology has been read."
+    ord::error ORD 5 "no technology has been read."
   }
   set order_wires [info exists flags(-order_wires)]
   set continue_on_errors [info exists flags(-continue_on_errors)]
@@ -97,7 +97,7 @@ proc write_def { args } {
 	     || $version == "5.5" \
 	     || $version == "5.4" \
 	     || $version == "5.3") } {
-      ord::error "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
+      ord::error ORD 6 "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
     }
   }
 
@@ -112,10 +112,10 @@ proc read_db { args } {
   sta::check_argc_eq1 "read_db" $args
   set filename [file nativename $args]
   if { ![file exists $filename] } {
-    ord::error "$filename does not exist."
+    ord::error ORD 7 "$filename does not exist."
   }
   if { ![file readable $filename] } {
-    ord::error "$filename is not readable."
+    ord::error ORD 8 "$filename is not readable."
   }
   ord::read_db_cmd $filename
 }
@@ -139,11 +139,11 @@ proc set_layer_rc {args} {
     flags {}
 
   if { ![info exists keys(-layer)] && ![info exists keys(-via)] } {
-    ord::error "layer or via must be specified."
+    ord::error ORD 9 "layer or via must be specified."
   }
 
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    ord::error "Exactly one of layer or via must be specified."
+    ord::error ORD 10 "Exactly one of layer or via must be specified."
   }
 
   set db [ord::get_db]
@@ -157,7 +157,7 @@ proc set_layer_rc {args} {
 
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    ord::error "please load the design before trying to use this command"
+    ord::error ORD 11 "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
 
@@ -166,7 +166,7 @@ proc set_layer_rc {args} {
   }
 
   if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-    ord::error "use -capacitance <value> or -resistance <value>."
+    ord::error ORD 12 "use -capacitance <value> or -resistance <value>."
   }
 
   if { [info exists keys(-via)] } {
@@ -223,17 +223,33 @@ proc trace_file_continue_on_error { name1 name2 op } {
   set ::sta_continue_on_error $::file_continue_on_error
 }
 
-proc error { what } {
-  ::error "Error: $what"
+proc error { args } {
+  if { [llength $args] == 1 } {
+    # pre-logger compatibility
+    ord_error UKN 0 [lindex $args 0]
+  } elseif { [llength $args] == 3 } {
+    lassign $args tool_id id msg
+    ord_error $tool_id $id $msg
+  } else {
+    ord_error UKN 0 "ill-formed error arguments $args"
+  }
 }
 
-proc warn { what } {
-  puts "Warning: $what"
+proc warn { args } {
+  if { [llength $args] == 1 } {
+    # pre-logger compatibility
+    ord_warn UKN 0 [lindex $args 0]
+  } elseif { [llength $args] == 3 } {
+    lassign $args tool_id id msg
+    ord_warn $tool_id $id $msg
+  } else {
+    ord_warn UKN 0 "ill-formed warn arguments $args"
+  }
 }
 
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
-    ord::error "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+    ord::error ORD 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
   }
 }
 
@@ -250,8 +266,12 @@ proc clear {} {
 # redefine sta::sta_error to call ord::error
 namespace eval sta {
 
-proc sta_error { msg } {
-  ord::error $msg
+proc sta_error { id msg } {
+  ord::error STA $id $msg
+}
+
+proc sta_warn { id msg } {
+  ord::warn STA $id $msg
 }
 
 # namespace sta
