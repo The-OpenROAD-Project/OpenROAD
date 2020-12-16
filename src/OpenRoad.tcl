@@ -158,9 +158,10 @@ proc create_child_physical_clusters { args } {
   set block [$chip getBlock]
   if { [info exists keys(-module)] } {
     set module [$block findModule $keys(-module)]
-  }
-  if { [info exists keys(-modinst)] } {
+  } elseif { [info exists keys(-modinst)] } {
     set module [[$block findModInst $keys(-modinst)] getMaster]
+  } else {
+    ord::error "please define either the module or the modinst"
   }
   if { $module == "NULL" } {
     ord::error "module does not exist"
@@ -183,23 +184,31 @@ proc create_child_physical_clusters { args } {
       set parent [$module_instance getParent]
       set group [odb::dbGroup_create $block "[$parent getName]_[$module_instance getName]_glue"]
     }
+    if { $group == "NULL" } {
+      ord::error "duplicate group name"
+    }
     foreach inst $insts {
       $group addInst $inst
     }
   }
 }
 
-sta::define_cmd_args "create_voltage_domain" {domain_name llx lly urx ury}
+sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
 
 proc create_voltage_domain { args } {
-  if { [llength $args] != 5 } {
-    sta::sta_error "create_voltage_domain requires five positional arguments."
-  }
+  sta::parse_key_args "create_voltage_domain" args keys {-area} flags {}
   set domain_name [lindex $args 0]
-  set llx [lindex $args 1]
-  set lly [lindex $args 2]
-  set urx [lindex $args 3]
-  set ury [lindex $args 4]
+  if { [info exists keys(-area)] } {
+    set area $keys(-area)
+    set llx [lindex $area 0]
+    set lly [lindex $area 1]
+    set urx [lindex $area 2]
+    set ury [lindex $area 3]
+  } else {
+    ord::error "please define area"
+  }
+  sta::check_argc_eq1 "create_voltage_domain" $args
+  set domain_name $args
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
@@ -254,12 +263,20 @@ proc delete_voltage_domain { args } {
   odb::dbGroup_destroy $group
 }
 
-sta::define_cmd_args "assign_power_net" {domain_name net_name}
+sta::define_cmd_args "assign_power_net" {-domain domain_name -net snet_name}
 
 proc assign_power_net { args } {
-  sta::check_argc_eq2 "assign_power_net" $args
-  set domain_name [lindex $args 0]
-  set net_name [lindex $args 1]
+  sta::parse_key_args "assign_power_net" args keys {-domain -net} flags {}
+  if { [info exists keys(-domain)] } {
+    set domain_name $keys(-domain)
+  } else {
+    ord::error "define domain name"
+  }
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+  } else {
+    ord::error "define net name"
+  }
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
@@ -280,12 +297,20 @@ proc assign_power_net { args } {
   $group addPowerNet $net
 }
 
-sta::define_cmd_args "assign_ground_net" {domain_name net_name}
+sta::define_cmd_args "assign_ground_net" {-domain domain_name -net snet_name}
 
 proc assign_ground_net { args } {
-  sta::check_argc_eq2 "assign_ground_net" $args
-  set domain_name [lindex $args 0]
-  set net_name [lindex $args 1]
+  sta::parse_key_args "assign_ground_net" args keys {-domain -net} flags {}
+  if { [info exists keys(-domain)] } {
+    set domain_name $keys(-domain)
+  } else {
+    ord::error "define domain name"
+  }
+  if { [info exists keys(-net)] } {
+    set net_name $keys(-net)
+  } else {
+    ord::error "define net name"
+  }
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
@@ -414,13 +439,12 @@ proc report_physical_clusters {} {
   }
   set block [$chip getBlock]
   set groups [$block getGroups]
-  puts "\nReporting Physical Clusters"
+  ord::report "\nReporting Physical Clusters"
   foreach group $groups {
     if { [$group getType] == 0 } {
       report_group $group
     }
   }
-  puts ""
 }
 
 sta::define_cmd_args "report_voltage_domains" {}
@@ -433,25 +457,19 @@ proc report_voltage_domains {} {
   }
   set block [$chip getBlock]
   set groups [$block getGroups]
-  puts "\nReporting Voltage Domains"
+  ord::report "\nReporting Voltage Domains"
   foreach group $groups {
     if { [$group getType] == 1 } {
       report_group $group
     }
   }
-  puts ""
 }
 
 proc report_group { group } {
-  if { [$group getType] == 0 } {
-    puts -nonewline "\nPhysical Cluster : "
-  } else {
-    puts -nonewline "\nVoltage Domain : "
-  }
-  puts -nonewline "[$group getName]"
+  ord::report "[expr [$group getType] == 0 ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
     set rect [$group getBox]
-    puts -nonewline "\nBox : ([$rect xMin],[$rect yMin]) ([$rect xMax],[$rect yMax])"
+    ord::report "  * Box : ([$rect xMin],[$rect yMin]) ([$rect xMax],[$rect yMax])"
   }
   set modinsts [$group getModInsts]
   set insts [$group getInsts]
@@ -459,40 +477,35 @@ proc report_group { group } {
   set powerNets [$group getPowerNets]
   set groundNets [$group getGroundNets]
   if { [llength $modinsts] > 0 } {
-    puts -nonewline "\nModInsts: "
+    ord::report "  * ModInsts: "
     foreach modinst $modinsts {
-      puts -nonewline "[$modinst getName] "
+      ord::report "    * [[$modinst getParent] getName]/[$modinst getName]"
     }
   }
-
   if { [llength $insts] > 0 } {
-    puts -nonewline "\nInsts: "
+    ord::report "  * Insts: "
     foreach inst $insts {
-      puts -nonewline "[$inst getName] "
+      ord::report "    * [$inst getName]"
     }
   }
-
   if { [llength $children] > 0 } {
-    puts -nonewline "\nChildren: "
+    ord::report "  * Children: "
     foreach child $children {
-      puts -nonewline "[$child getName] "
+      ord::report "    * [$child getName]"
     }
   }
-
   if { [llength $powerNets] > 0 } {
-    puts -nonewline "\nPower Nets: "
+    ord::report "  * Power Nets: "
     foreach net $powerNets {
-      puts -nonewline "[$net getName] "
+      ord::report "    * [$net getName]"
     }
   }
-  
   if { [llength $groundNets] > 0 } {
-    puts -nonewline "\nGround Nets: "
+    ord::report "  * Ground Nets: "
     foreach net $groundNets {
-      puts -nonewline "[$net getName] "
+      ord::report "    * [$net getName]"
     }
   }
-  puts ""
 }
 
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
