@@ -83,8 +83,8 @@ proc detailed_route_debug { args } {
       ord::error "-gcell is a list of 2 coordinates."
     }
     lassign $gcell gcell_x gcell_y
-    sta::check_check_positive_integer "-gcell" $gcell_x
-    sta::check_check_positive_integer "-gcell" $gcell_y
+    sta::check_positive_integer "-gcell" $gcell_x
+    sta::check_positive_integer "-gcell" $gcell_y
   }
 
   if { [info exists keys(-iter)] } {
