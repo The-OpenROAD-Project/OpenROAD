@@ -232,9 +232,9 @@ place_pins [-hor_layers h_layers]
            [-random]
 ```
 - ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
-of I/O pins assigned to horizontal tracks. Can be a single layer or a list of layer indexes
+of I/O pins assigned to horizontal tracks. Can be a single layer or a list of layer indices
 - ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
-of I/O pins assigned to vertical tracks. Can be a single layer or a list of layer indexes
+of I/O pins assigned to vertical tracks. Can be a single layer or a list of layer indices
 - ``-random_seed``. Set the seed for random operations.
 - ``-exclude``. Set an interval in one of the four edges of the die boundary
 where I/O pins cannot be assigned. Can be used multiple times.
