@@ -105,6 +105,7 @@ class IOPlacer
   IOPlacer() = default;
   ~IOPlacer();
   void init(ord::OpenRoad* openroad);
+  void clear();
   void run(bool randomMode);
   void printConfig();
   Parameters* getParameters() { return _parms; }
@@ -132,7 +133,6 @@ class IOPlacer
   float _usageIncreaseFactor;
 
   bool _forcePinSpread;
-  std::string _blockagesFile;
   std::vector<Interval> _excludedIntervals;
   std::vector<Constraint> _constraints;
 

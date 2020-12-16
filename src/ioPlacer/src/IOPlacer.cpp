@@ -50,19 +50,26 @@ void IOPlacer::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
   makeComponents();
-
-  _reportHPWL = false;
-  _slotsPerSection = 200;
-  _slotsIncreaseFactor = 0.01f;
-  _usagePerSection = .8f;
-  _usageIncreaseFactor = 0.01f;
-  _forcePinSpread = true;
 }
 
 void IOPlacer::makeComponents()
 {
   _parms = new Parameters;
   _db = _openroad->getDb();
+}
+
+void IOPlacer::clear()
+{
+  _horLayers.clear();
+  _verLayers.clear();
+  _zeroSinkIOs.clear();
+  _sections.clear();
+  _slots.clear();
+  _assignment.clear();
+  _netlistIOPins.clear();
+  _excludedIntervals.clear();
+  _constraints.clear();
+  _netlist.clear();
 }
 
 void IOPlacer::deleteComponents()
@@ -85,6 +92,13 @@ void IOPlacer::initNetlistAndCore(std::set<int> horLayerIdx, std::set<int> verLa
 
 void IOPlacer::initParms()
 {
+  _reportHPWL = false;
+  _slotsPerSection = 200;
+  _slotsIncreaseFactor = 0.01f;
+  _usagePerSection = .8f;
+  _usageIncreaseFactor = 0.01f;
+  _forcePinSpread = true;
+
   if (_parms->getReportHPWL()) {
     _reportHPWL = true;
   }
@@ -956,7 +970,7 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 
     odb::dbBox::create(bpin, layer, xMin, yMin, xMax, yMax);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-  };
+  }
 }
 
 }  // namespace ppl

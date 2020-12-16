@@ -198,4 +198,10 @@ set_min_distance(int minDist)
   getIOPlacer()->getParameters()->setMinDistance(minDist);
 }
 
+void
+clear_ioplacer()
+{
+  getIOPlacer()->clear();
+}
+
 %} // inline
