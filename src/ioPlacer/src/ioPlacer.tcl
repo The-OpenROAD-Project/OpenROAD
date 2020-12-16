@@ -183,7 +183,7 @@ proc place_pins { args } {
     }
 
     if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      ord::error "missing track structure for layer $hor_layer"
+      ord::error "Routing tracks not found for layer $hor_layer"
     }
   }
 
@@ -194,7 +194,7 @@ proc place_pins { args } {
     }
 
     if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      ord::error "missing track structure for layer $hor_layer"
+      ord::error "Routing tracks not found for layer $hor_layer"
     }
   }
 

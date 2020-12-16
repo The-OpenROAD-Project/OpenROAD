@@ -7,4 +7,4 @@ Info: Added 34 rows of 252 sites.
 #Macro blocks found: 0
 Using 5u default boundaries offset
 Using 2 tracks default min distance between IO pins
-Error: missing track structure for layer 2
+Error: Routing tracks not found for layer 2
