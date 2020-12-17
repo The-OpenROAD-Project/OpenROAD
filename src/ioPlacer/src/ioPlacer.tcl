@@ -88,13 +88,13 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-sta::define_cmd_args "place_pins" {[-hor_layers h_layers]        \ 
-                                  [-ver_layers v_layers]        \
-                                  [-random_seed seed]         \
-                       	          [-random]                   \
-                                  [-boundaries_offset offset] \
-                                  [-min_distance min_dist]    \
-                                  [-exclude region]         \
+sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
+                                  [-ver_layers v_layers]\
+                                  [-random_seed seed]\
+                       	          [-random]\
+                                  [-boundaries_offset offset]\
+                                  [-min_distance min_dist]\
+                                  [-exclude region]\
                                  }
 
 proc io_placer { args } {
