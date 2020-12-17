@@ -68,3 +68,8 @@ target_include_directories(init_fp
   ${OPENSTA_INCLUDE_DIRS}
   ${TCL_INCLUDE_PATH}
   )
+
+target_link_libraries(init_fp
+  PUBLIC
+  spdlog::spdlog
+  )

@@ -88,22 +88,24 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 
-                                  [-ver_layer v_layer]        \
-                                  [-random_seed seed]         \
-                       	          [-random]                   \
-                                  [-boundaries_offset offset] \
-                                  [-min_distance min_dist]    \
-                                  [-exclude region]         \
+sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
+                                  [-ver_layers v_layers]\
+                                  [-random_seed seed]\
+                       	          [-random]\
+                                  [-boundaries_offset offset]\
+                                  [-min_distance min_dist]\
+                                  [-exclude region]\
                                  }
 
-sta::define_cmd_alias "place_ios" "io_placer"
-sta::define_cmd_alias "place_pins" "io_placer"
-
 proc io_placer { args } {
+  ord::warn "io_placer command is deprecated. Use place_pins instead"
+  [eval place_pins $args]
+}
+
+proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
-  sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
+  sta::parse_key_args "place_pins" args \
+  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude} \
   flags {-random}
 
   set dbTech [ord::get_db_tech]
@@ -138,16 +140,16 @@ proc io_placer { args } {
   }
   ppl::set_rand_seed $seed
 
-  if [info exists keys(-hor_layer)] {
-    set hor_layer $keys(-hor_layer)
+  if [info exists keys(-hor_layers)] {
+    set hor_layers $keys(-hor_layers)
   } else {
-    ord::error "-hor_layer is mandatory"
+    ord::error "-hor_layers is mandatory"
   }       
   
-  if [info exists keys(-ver_layer)] {
-    set ver_layer $keys(-ver_layer)
+  if [info exists keys(-ver_layers)] {
+    set ver_layers $keys(-ver_layers)
   } else {
-    ord::error "-ver_layer is mandatory"
+    ord::error "-ver_layers is mandatory"
   }
 
   set offset 5
@@ -174,20 +176,26 @@ proc io_placer { args } {
     ord::error "Design without pins"
   }
 
-  set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
-  set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+  foreach hor_layer $hor_layers {
+    set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
+    if { $hor_track_grid == "NULL" } {
+      ord::error "Horizontal routing layer ($hor_layer) not found"
+    }
 
-  if { $hor_track_grid == "NULL" } {
-    ord::error "Horizontal routing layer ($hor_layer) not found"
+    if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
+      ord::error "Routing tracks not found for layer $hor_layer"
+    }
   }
 
-  if { $ver_track_grid == "NULL" } {
-    ord::error "Vertical routing layer ($ver_layer) not found"
-  }
+  foreach ver_layer $ver_layers {
+    set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+    if { $ver_track_grid == "NULL" } {
+      ord::error "Vertical routing layer ($ver_layer) not found"
+    }
 
-  if { ![ord::db_layer_has_hor_tracks $hor_layer] || \
-       ![ord::db_layer_has_ver_tracks $ver_layer] } {
-    ord::error "missing track structure"
+    if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
+      ord::error "Routing tracks not found for layer $hor_layer"
+    }
   }
 
   set num_tracks_x [llength [$ver_track_grid getGridX]]
@@ -230,8 +238,16 @@ proc io_placer { args } {
       }
     }
   }
+
+  foreach hor_layer $hor_layers {
+    ppl::add_hor_layer $hor_layer 
+  }
+
+  foreach ver_layer $ver_layers {
+    ppl::add_ver_layer $ver_layer
+  }
   
-  ppl::run_io_placement $hor_layer $ver_layer [info exists flags(-random)]
+  ppl::run_io_placement [info exists flags(-random)]
 }
 
 namespace eval ppl {

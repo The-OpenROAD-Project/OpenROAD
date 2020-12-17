@@ -13,5 +13,5 @@ Notice 0:     Created 8 pins.
 Notice 0:     Created 1 components and 10 component-terminals.
 Notice 0:     Created 8 nets and 8 connections.
 Notice 0: Finished DEF file: bus1.def
-Inserted 4 input buffers.
-Inserted 4 output buffers.
+[INFO RSZ-0027] Inserted 4 input buffers.
+[INFO RSZ-0028] Inserted 4 output buffers.

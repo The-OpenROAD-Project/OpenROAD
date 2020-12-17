@@ -10,7 +10,7 @@ Notice 0:     Created 231 pins.
 Notice 0:     Created 34184 components and 173049 component-terminals.
 Notice 0:     Created 33171 nets and 104681 connections.
 Notice 0: Finished DEF file: ibex_core_replace.def
-Warning: could not find power special net
+[WARNING DPL-0011] Could not find power special net.
 Design Stats
 --------------------------------
 total instances         34184

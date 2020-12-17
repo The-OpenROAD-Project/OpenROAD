@@ -50,10 +50,10 @@ void HypergraphDecomposition::init(int dbId)
 
 void HypergraphDecomposition::addMapping(Hypergraph& hypergraph,
                                          std::string instName,
-                                         odb::dbBox* box)
+                                         const odb::Rect& rect)
 {
-  int length = box->getLength();
-  int width = box->getWidth();
+  int length = rect.dy();
+  int width = rect.dx();
   int64_t area = length * width;
   int nextIdx = hypergraph.computeNextVertexIdx();
   hypergraph.addMapping(instName, nextIdx);
@@ -70,7 +70,7 @@ void HypergraphDecomposition::constructMap(Hypergraph& hypergraph,
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         for (odb::dbBPin* pin : bterm->getBPins()) {
           if (!hypergraph.isInMap(bterm->getName())) {
-            odb::dbBox* box = pin->getBox();
+            odb::Rect box = pin->getBBox();
             addMapping(hypergraph, bterm->getName(), box);
           }
         }
@@ -80,7 +80,9 @@ void HypergraphDecomposition::constructMap(Hypergraph& hypergraph,
         odb::dbInst* inst = iterm->getInst();
         if (!hypergraph.isInMap(inst->getName())) {
           odb::dbBox* bbox = inst->getBBox();
-          addMapping(hypergraph, inst->getName(), bbox);
+          odb::Rect rect;
+          bbox->getBox(rect);
+          addMapping(hypergraph, inst->getName(), rect);
         }
       }
     }

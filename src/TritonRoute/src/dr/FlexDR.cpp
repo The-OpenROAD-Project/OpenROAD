@@ -1604,8 +1604,10 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
         frBox routeBox1;
         getDesign()->getTopBlock()->getGCellBox(frPoint(i, j), routeBox1);
         frBox routeBox2;
-        getDesign()->getTopBlock()->getGCellBox(frPoint(min((int)xgp.getCount() - 1, i + clipSize-1), 
-                                                        min((int)ygp.getCount(), j + clipSize-1)), routeBox2);
+        const int max_i = min((int)xgp.getCount() - 1, i + clipSize-1);
+        const int max_j = min((int)ygp.getCount(), j + clipSize-1);
+        getDesign()->getTopBlock()->getGCellBox(frPoint(max_i, max_j),
+                                                routeBox2);
         frBox routeBox(routeBox1.left(), routeBox1.bottom(), routeBox2.right(), routeBox2.top());
         frBox extBox;
         frBox drcBox;
@@ -1614,6 +1616,7 @@ void FlexDR::searchRepair(int iter, int size, int offset, int mazeEndIter,
         worker->setRouteBox(routeBox);
         worker->setExtBox(extBox);
         worker->setDrcBox(drcBox);
+        worker->setGCellBox(frBox(i, j, max_i, max_j));
         worker->setMazeEndIter(mazeEndIter);
         worker->setDRIter(iter);
         if (!iter) {

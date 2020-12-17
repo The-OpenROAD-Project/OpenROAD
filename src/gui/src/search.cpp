@@ -30,12 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "search.h"
-
 #include <tuple>
 #include <utility>
 
 #include "dbShape.h"
+#include "search.h"
 
 namespace gui {
 
@@ -63,16 +62,17 @@ void Search::init(odb::dbBlock* block)
           || status == odb::dbPlacementStatus::UNPLACED) {
         continue;
       }
-      odb::dbBox* box = pin->getBox();
-      if (!box) {
-        continue;
+      for (odb::dbBox* box : pin->getBoxes()) {
+        if (!box) {
+          continue;
+        }
+        box_t bbox(point_t(box->xMin(), box->yMin()),
+                   point_t(box->xMax(), box->yMax()));
+        polygon_t poly;
+        bg::convert(bbox, poly);
+        odb::dbTechLayer* layer = box->getTechLayer();
+        shapes_[layer].insert(std::make_tuple(bbox, poly, term->getNet()));
       }
-      box_t bbox(point_t(box->xMin(), box->yMin()),
-                 point_t(box->xMax(), box->yMax()));
-      polygon_t poly;
-      bg::convert(bbox, poly);
-      odb::dbTechLayer* layer = box->getTechLayer();
-      shapes_[layer].insert(std::make_tuple(bbox, poly, term->getNet()));
     }
   }
 
@@ -83,7 +83,7 @@ void Search::init(odb::dbBlock* block)
               point_t(rect.xMax(), rect.yMax()));
     polygon_t poly;
     bg::convert(box, poly);
-    fills_[fill->getTechLayer()].insert(std::make_tuple(box,poly, fill));
+    fills_[fill->getTechLayer()].insert(std::make_tuple(box, poly, fill));
   }
 }
 
@@ -124,7 +124,8 @@ void Search::addSNet(odb::dbNet* net)
                      point_t(shape.xMax(), shape.yMax()));
           polygon_t poly;
           bg::convert(bbox, poly);
-          shapes_[shape.getTechLayer()].insert(std::make_tuple(bbox, poly, net));
+          shapes_[shape.getTechLayer()].insert(
+              std::make_tuple(bbox, poly, net));
         }
       } else {
         box_t bbox(point_t(box->xMin(), box->yMin()),

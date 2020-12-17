@@ -1,0 +1,44 @@
+##############################################################################
+#
+# def_objs.defs
+#
+
+DEF_SRCS	= \
+		  $(DEF_SRC_DIR)/DFEF_malloc.cpp \
+		  $(DEF_SRC_DIR)/DFEF_stringhash.cpp \
+		  $(DEF_SRC_DIR)/def.tab.cpp \
+		  $(DEF_SRC_DIR)/def_keywords.cpp \
+		  $(DEF_SRC_DIR)/defiAlias.cpp \
+		  $(DEF_SRC_DIR)/defiAssertion.cpp \
+		  $(DEF_SRC_DIR)/defiBlockage.cpp \
+		  $(DEF_SRC_DIR)/defiComponent.cpp \
+		  $(DEF_SRC_DIR)/defiDebug.cpp \
+		  $(DEF_SRC_DIR)/defiFill.cpp \
+		  $(DEF_SRC_DIR)/defiFPC.cpp \
+		  $(DEF_SRC_DIR)/defiGroup.cpp \
+		  $(DEF_SRC_DIR)/defiIOTiming.cpp \
+		  $(DEF_SRC_DIR)/defiMisc.cpp \
+		  $(DEF_SRC_DIR)/defiNet.cpp \
+		  $(DEF_SRC_DIR)/defiNonDefault.cpp \
+		  $(DEF_SRC_DIR)/defiPartition.cpp \
+		  $(DEF_SRC_DIR)/defiPath.cpp \
+		  $(DEF_SRC_DIR)/defiPinCap.cpp \
+		  $(DEF_SRC_DIR)/defiPinProp.cpp \
+		  $(DEF_SRC_DIR)/defiProp.cpp \
+		  $(DEF_SRC_DIR)/defiPropType.cpp \
+		  $(DEF_SRC_DIR)/defiRegion.cpp \
+		  $(DEF_SRC_DIR)/defiRowTrack.cpp \
+		  $(DEF_SRC_DIR)/defiScanchain.cpp \
+		  $(DEF_SRC_DIR)/defiSite.cpp \
+		  $(DEF_SRC_DIR)/defiSlot.cpp \
+		  $(DEF_SRC_DIR)/defiTimingDisable.cpp \
+		  $(DEF_SRC_DIR)/defiUtil.cpp \
+		  $(DEF_SRC_DIR)/defiVia.cpp \
+		  $(DEF_SRC_DIR)/defrReader.cpp \
+		  $(DEF_SRC_DIR)/defwWriter.cpp \
+		  $(DEF_SRC_DIR)/defwWriterCalls.cpp
+
+DEF_BISON_SRCS	= $(DEF_SRC_DIR)/def.y
+
+DEF_OBJS	= $(DEF_SRCS:.cpp=.o)
+

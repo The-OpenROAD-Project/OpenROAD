@@ -37,5 +37,6 @@ Notice 0: Finished DEF file: no_sinks.def
  Net "clk" found
  Initializing clock net for : "clk"
     [WARNING] Net "clk" has 0 sinks. Skipping...
-Error: No clock nets have been found.
+[ERROR UKN-0000] No clock nets have been found.
 
+UKN-0000

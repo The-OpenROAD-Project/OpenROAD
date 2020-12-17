@@ -34,4 +34,5 @@ Notice 0: Finished DEF file: ./error01.def
        Please put higher target density or 
        Re-floorplan to have enough coreArea
  (REPL-1)
-Error: RePlAce terminated with errors.
+[ERROR UKN-0000] RePlAce terminated with errors.
+UKN-0000

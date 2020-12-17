@@ -3,6 +3,6 @@ Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Warning: found 1 floatiing nets.
-Warning: found 1 floatiing nets.
+[WARNING RSZ-0020] found 1 floatiing nets.
+[WARNING RSZ-0020] found 1 floatiing nets.
  r2q
