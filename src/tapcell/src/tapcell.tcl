@@ -165,10 +165,9 @@ proc tapcell { args } {
         
     set db [::ord::get_db]
     set block [[$db getChip] getBlock]
-    set lef_units [[$db getTech] getLefUnits]
 
-    set halo_y [expr $halo_y * $lef_units]
-    set halo_x [expr $halo_x * $lef_units]
+    set halo_y [::ord::microns_to_dbu $halo_y]
+    set halo_x [::ord::microns_to_dbu $halo_x]
 
     set blockages [tap::find_blockages $db]
 
@@ -450,7 +449,6 @@ namespace eval tap {
         puts "Step 3: Insert tapcells..."
 
         set block [[$db getChip] getBlock]
-        set lef_units [[$db getTech] getLefUnits]
         
         set rows [$block getRows]
 
@@ -479,10 +477,10 @@ namespace eval tap {
             set pitch -1
 
             if {[even $row]} {
-                set offset [expr $dist*$lef_units]
+                set offset [::ord::microns_to_dbu $dist]
                 lappend offsets $offset
             } else {
-                set offset [expr $dist*2*$lef_units]
+                set offset [::ord::microns_to_dbu [expr $dist*2]]
                 lappend offsets $offset
             }
 
@@ -491,25 +489,25 @@ namespace eval tap {
                     continue
                 }
                 set offsets ""
-                set pitch [expr $dist*$lef_units]
-                set offset [expr $dist*$lef_units]
+                set pitch [::ord::microns_to_dbu $dist]
+                set offset [::ord::microns_to_dbu $dist]
                 lappend offsets $offset
             } elseif {[right_above_below_macros $blockages $row $halo_x $halo_y]} {
                 if {$add_boundary_cell == true} {
                     set offsets ""
-                    set pitch [expr $dist*2*$lef_units]
-                    set offset [expr $dist*$lef_units]
-                    set offset2 [expr $dist*2*$lef_units]
+                    set pitch [::ord::microns_to_dbu [expr $dist*2]]
+                    set offset [::ord::microns_to_dbu $dist]
+                    set offset2 [::ord::microns_to_dbu [expr $dist*2]]
                     lappend offsets $offset
                     lappend offsets $offset2
                 } else {
                     set offsets ""
-                    set offset [expr $dist*$lef_units]
+                    set offset [::ord::microns_to_dbu $dist]
                     lappend offsets $offset
-                    set pitch [expr {$dist*$lef_units}]
+                    set pitch [::ord::microns_to_dbu $dist]
                 }
             } else {
-                set pitch [expr {$dist*2*$lef_units}]
+                set pitch [::ord::microns_to_dbu [expr $dist*2]]
             }
 
             set endcapwidth [expr $endcap_cpp*$site_x]
