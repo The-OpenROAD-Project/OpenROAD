@@ -217,13 +217,13 @@ Place pins around core boundary.
 auto_place_pins pin_layer
 ```
 
-#### Pin assignment
+#### Pin placement
 
-Assign pins to on-track locations at the boundaries of the 
-core while optimizing nets wirelength. pin assignment also 
+Place pins to on-track locations at the boundaries of the 
+core while optimizing nets wirelength. Pin placement also 
 creates a metal shape for each pin using min-area rules.
 
-Use the following command to perform pin assignment:
+Use the following command to perform pin placement:
 ```
 place_pins [-hor_layers h_layers]  
            [-ver_layers v_layers] 
@@ -232,13 +232,13 @@ place_pins [-hor_layers h_layers]
            [-random]
 ```
 - ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
-of pins assigned to horizontal tracks. Can be a single layer or a list of layer indices
+of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
 - ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
-of pins assigned to vertical tracks. Can be a single layer or a list of layer indices
+of pins placed in vertical tracks. Can be a single layer or a list of layer indices
 - ``-random_seed``. Set the seed for random operations.
 - ``-exclude``. Set an interval in one of the four edges of the die boundary
-where pins cannot be assigned. Can be used multiple times.
-- ``-random``. When this flag is enabled, the pin assignment is 
+where pins cannot be placed. Can be used multiple times.
+- ``-random``. When this flag is enabled, the pin placement is 
 random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
