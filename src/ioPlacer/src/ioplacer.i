@@ -139,9 +139,21 @@ set_ver_length(float length)
 }
 
 void
-run_io_placement(int horLayer, int verLayer, bool randomMode)
+add_hor_layer(int layer)
 {
-  getIOPlacer()->run(horLayer, verLayer, randomMode);
+  getIOPlacer()->addHorLayer(layer);
+}
+
+void
+add_ver_layer(int layer)
+{
+  getIOPlacer()->addVerLayer(layer);
+}
+
+void
+run_io_placement(bool randomMode)
+{
+  getIOPlacer()->run(randomMode);
 }
 
 void
@@ -184,6 +196,12 @@ void
 set_min_distance(int minDist)
 {
   getIOPlacer()->getParameters()->setMinDistance(minDist);
+}
+
+void
+clear_ioplacer()
+{
+  getIOPlacer()->clear();
 }
 
 %} // inline
