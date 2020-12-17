@@ -148,42 +148,6 @@ proc set_dont_use { args } {
   rsz::set_dont_use_cmd [sta::get_lib_cells_arg "-dont_use" [lindex $args 0] ord::warn]
 }
 
-proc parse_max_util { keys_var } {
-  upvar 1 $keys_var keys
-  set max_util 0.0
-  if { [info exists keys(-max_utilization)] } {
-    set max_util $keys(-max_utilization)
-    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
-      ord::error RSZ 4 "-max_utilization must be between 0 and 100%."
-    }
-    set max_util [expr $max_util / 100.0]
-  }
-  return $max_util
-}
-
-proc parse_buffer_cell { keys_var required } {
-  upvar 1 $keys_var keys
-  set buffer_cell "NULL"
-  if { [info exists keys(-buffer_cell)] } {
-    set buffer_cell_name $keys(-buffer_cell)
-    # check for -buffer_cell [get_lib_cell arg] return ""
-    if { $buffer_cell_name != "" } {
-      set buffer_cell [get_lib_cell_error "-buffer_cell" $buffer_cell_name]
-      if { $buffer_cell != "NULL" } {
-        if { ![get_property $buffer_cell is_buffer] } {
-          ord::error RSZ 5 "[get_name $buffer_cell] is not a buffer."
-        }
-      }
-    }
-  } elseif { $required } {
-    ord::error RSZ 6 "-buffer_cell required for buffer insertion."
-  }
-  if { $buffer_cell == "NULL" && $required } {
-    ord::error RSZ 7 "-buffer_cell required for buffer insertion."
-  }
-  return $buffer_cell
-}
-
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
                                        [-max_utilization util]}
 
@@ -204,7 +168,7 @@ proc buffer_ports { args } {
   }
   sta::check_argc_eq0 "buffer_ports" $args
   
-  rsz::set_max_utilization [parse_max_util keys]
+  rsz::set_max_utilization [rsz::parse_max_util keys]
   rsz::resizer_preamble [get_libs *]
   if { $buffer_inputs } {
     rsz::buffer_inputs
@@ -247,7 +211,7 @@ proc repair_design { args } {
       ord::error RSZ 8 "No liberty libraries found."
     }
   }
-  rsz::set_max_utilization [parse_max_util keys]
+  rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
@@ -323,13 +287,14 @@ proc repair_hold_violations { args } {
 }
 
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                        [-slack_margin slack_margin]\
                                         [-allow_setup_violations]\
                                         [-libraries resize_libs]\
                                         [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
-    keys {-libraries -max_utilization} \
+    keys {-slack_margin -libraries -max_utilization} \
     flags {-setup -hold -allow_setup_violations}
 
   set setup [info exists flags(-setup)]
@@ -339,6 +304,7 @@ proc repair_timing { args } {
     set hold 1
   }
 
+  set slack_margin [rsz::parse_slack_margin_arg keys]
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
   } else {
@@ -348,16 +314,16 @@ proc repair_timing { args } {
     }
   }
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
-  rsz::set_max_utilization [parse_max_util keys]
+  rsz::set_max_utilization [rsz::parse_max_util keys]
 
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   rsz::resizer_preamble $resize_libs
   if { $setup } {
-    rsz::repair_setup
+    rsz::repair_setup $slack_margin
   }
   if { $hold } {
-    rsz::repair_hold $allow_setup_violations
+    rsz::repair_hold $slack_margin $allow_setup_violations
   }
 }
 
@@ -427,6 +393,30 @@ proc check_parasitics { } {
   if { ![have_estimated_parasitics] } {
     ord::warn RSZ 21 "no estimated parasitics. Using wire load models."
   }
+}
+
+proc parse_slack_margin_arg { keys_var } {
+  upvar 1 $keys_var keys
+  set slack_margin 0.0
+  if { [info exists keys(-slack_margin)] } {
+    set slack_margin $keys(-slack_margin)
+    sta::check_positive_float "-slack_margin" $slack_margin
+    set slack_margin [sta::time_ui_sta $slack_margin]
+  }
+  return $slack_margin
+}
+
+proc parse_max_util { keys_var } {
+  upvar 1 $keys_var keys
+  set max_util 0.0
+  if { [info exists keys(-max_utilization)] } {
+    set max_util $keys(-max_utilization)
+    if {!([string is double $max_util] && $max_util >= 0.0 && $max_util <= 100)} {
+      ord::error RSZ 4 "-max_utilization must be between 0 and 100%."
+    }
+    set max_util [expr $max_util / 100.0]
+  }
+  return $max_util
 }
 
 # namespace

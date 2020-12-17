@@ -13,6 +13,6 @@ Notice 0:     Created 528 nets and 1412 connections.
 Notice 0: Finished DEF file: gcd_placed.def
 Design area 700 u^2 11% utilization.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-[INFO RSZ-0032] Inserted 166 hold buffers.
+[INFO RSZ-0032] Inserted 100 hold buffers.
 [ERROR RSZ-0025] max utilization reached.
 Design area 833 u^2 13% utilization.
