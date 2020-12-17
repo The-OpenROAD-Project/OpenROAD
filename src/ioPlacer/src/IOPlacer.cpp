@@ -98,6 +98,8 @@ void IOPlacer::initParms()
   _usagePerSection = .8f;
   _usageIncreaseFactor = 0.01f;
   _forcePinSpread = true;
+  _netlist = Netlist();
+  _netlistIOPins = Netlist();
 
   if (_parms->getReportHPWL()) {
     _reportHPWL = true;
