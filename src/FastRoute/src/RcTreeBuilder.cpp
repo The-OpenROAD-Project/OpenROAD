@@ -213,7 +213,7 @@ void RcTreeBuilder::reduceParasiticNetwork()
   sta::Sdc* sdc = _sta->sdc();
   sta::OperatingConditions* op_cond = sdc->operatingConditions(_min_max);
 
-  sta::ReduceParasiticsTo reduce_to = sta::ReduceParasiticsTo::pi_elmore;
+  sta::ReducedParasiticType reduce_to = sta::ReducedParasiticType::pi_elmore;
   _parasitics->reduceTo(_parasitic, _sta_net, reduce_to, op_cond, _corner,
                         _min_max, _analysisPoint);
   _parasitics->deleteParasiticNetwork(_sta_net, _analysisPoint);

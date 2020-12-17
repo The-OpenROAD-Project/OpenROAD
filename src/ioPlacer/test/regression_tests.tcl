@@ -1,5 +1,7 @@
 record_tests {
   gcd
+  multi_layers
+  multiple_calls
   invalid_layer
   no_pins
   no_tracks

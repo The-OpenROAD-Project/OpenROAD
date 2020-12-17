@@ -266,12 +266,12 @@ proc clear {} {
 # redefine sta::sta_error to call ord::error
 namespace eval sta {
 
-proc sta_error { msg } {
-  ord::error STA 0 $msg
+proc sta_error { id msg } {
+  ord::error STA $id $msg
 }
 
-proc sta_warn { msg } {
-  ord::warn STA 0 $msg
+proc sta_warn { id msg } {
+  ord::warn STA $id $msg
 }
 
 # namespace sta
