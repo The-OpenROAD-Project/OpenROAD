@@ -1,16 +1,21 @@
 source "helpers.tcl"
-read_liberty sky130/sky130_tt.lib
-read_lef sky130/sky130_tech.lef
-read_lef sky130/sky130_std_cell.lef
 
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
 read_def check_buffers.def
 
-create_clock clk -period 10
+create_clock -period 5 clk
 
-clock_tree_synthesis -lut_file sky130/sky130.lut \
-  -sol_list sky130/sky130.sol_list \
-  -root_buf sky130_fd_sc_hs__clkbuf_1 \
-  -wire_unit 20
+clock_tree_synthesis -lut_file "lut.txt" \
+                     -sol_list "sol_list.txt" \
+                     -root_buf CLKBUF_X3 \
+                     -wire_unit 20 \
+                     -post_cts_disable \
+                     -sink_clustering_enable \
+                     -distance_between_buffers 100 \
+                     -sink_clustering_size 10 \
+                     -sink_clustering_max_diameter 60 \
+                     -num_static_layers 1
 
 set unconnected_buffers 0
 foreach buf [get_cells clkbuf_*_clk] {
@@ -23,3 +28,5 @@ foreach buf [get_cells clkbuf_*_clk] {
 }
 
 puts "#unconnected buffers: $unconnected_buffers"
+
+exit
