@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 
-namespace FastRoute {
+namespace grt {
 
 class Grid
 {
@@ -171,6 +171,7 @@ class Grid
                         bool direction);
 
   odb::Point getMiddle();
+  odb::Rect getGridArea() const;
 };
 
-}  // namespace FastRoute
+}  // namespace grt

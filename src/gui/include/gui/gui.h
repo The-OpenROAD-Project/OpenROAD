@@ -81,36 +81,36 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object(nullptr), descriptor(nullptr) {}
+  Selected() : object_(nullptr), descriptor_(nullptr) {}
 
   Selected(void* object, Descriptor* descriptor)
-      : object(object), descriptor(descriptor)
+      : object_(object), descriptor_(descriptor)
   {
   }
 
   Selected(odb::dbObject* object)
-      : object(object), descriptor(OpenDbDescriptor::get())
+      : object_(object), descriptor_(OpenDbDescriptor::get())
   {
   }
 
-  std::string getName() const { return descriptor->getName(object); }
+  std::string getName() const { return descriptor_->getName(object_); }
 
   void highlight(Painter& painter) const
   {
-    return descriptor->highlight(object, painter);
+    return descriptor_->highlight(object_, painter);
   }
 
-  operator bool() const { return object != nullptr; }
+  operator bool() const { return object_ != nullptr; }
 
   // For SelectionSet
   friend bool operator<(const Selected& l, const Selected& r)
   {
-    return l.object < r.object;
+    return l.object_ < r.object_;
   }
 
  private:
-  void* object;
-  Descriptor* descriptor;
+  void* object_;
+  Descriptor* descriptor_;
 };
 
 // A collection of selected objects
@@ -167,7 +167,8 @@ class Painter
   virtual void setPen(const Color& color, bool cosmetic = false) = 0;
 
   // Set the brush to whatever the user has chosen for this layer
-  virtual void setBrush(odb::dbTechLayer* layer) = 0;
+  // The alpha value may be overridden
+  virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
 
   // Set the brush to whatever the user has chosen for this layer
   virtual void setBrush(const Color& color) = 0;

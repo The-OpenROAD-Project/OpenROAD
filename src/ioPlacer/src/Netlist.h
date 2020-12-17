@@ -44,7 +44,7 @@
 
 #include "opendb/db.h"
 
-namespace ioPlacer {
+namespace ppl {
 
 using odb::Point;
 using odb::Rect;
@@ -94,6 +94,7 @@ class IOPin : public InstancePin
   odb::Point _upperBound;
   std::string _netName;
   std::string _locationType;
+  int _layer;
 
  public:
   IOPin(const std::string& name,
@@ -122,11 +123,13 @@ class IOPin : public InstancePin
   void setPos(const int x, const int y) { _pos = odb::Point(x, y); }
   void setLowerBound(const int x, const int y) { _lowerBound = odb::Point(x, y); };
   void setUpperBound(const int x, const int y) { _upperBound = odb::Point(x, y); };
+  void setLayer(const int layer) { _layer = layer; }
   Direction getDirection() const { return _direction; }
   odb::Point getLowerBound() const { return _lowerBound; };
   odb::Point getUpperBound() const { return _upperBound; };
   std::string getNetName() const { return _netName; }
   std::string getLocationType() const { return _locationType; };
+  int getLayer() const { return _layer; }
 };
 
 class Netlist
@@ -156,7 +159,8 @@ class Netlist
   int computeIONetHPWL(int, odb::Point, Edge, std::vector<Constraint>&);
   int computeDstIOtoPins(int, odb::Point);
   odb::Rect getBB(int, odb::Point);
+  void clear();
 };
 
-}  // namespace ioPlacer
+}  // namespace ppl
 #endif /* __NETLIST_H_ */

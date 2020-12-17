@@ -43,6 +43,9 @@
 // Defined by OpenRoad.i
 namespace ord {
 
+OpenRoad *
+getOpenRoad();
+
 odb::dbDatabase *
 getDb();
 
@@ -62,6 +65,8 @@ getSta();
 
 %inline %{
 
+namespace ifp {
+
 void
 init_floorplan_core(double die_lx,
 		    double die_ly,
@@ -76,11 +81,11 @@ init_floorplan_core(double die_lx,
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
-  sta::Report *report = sta->report();
-  ord::initFloorplan(die_lx, die_ly, die_ux, die_uy,
+  ord::Logger *logger = ord::getOpenRoad()->getLogger();
+  ifp::initFloorplan(die_lx, die_ly, die_ux, die_uy,
 		     core_lx, core_ly, core_ux, core_uy,
 		     site_name, tracks_file,
-		     db, report);
+		     db, logger);
 }
 
 void
@@ -95,12 +100,12 @@ init_floorplan_util(double util,
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
-  sta::Report *report = sta->report();
-  ord::initFloorplan(util, aspect_ratio,
+  ord::Logger *logger = ord::getOpenRoad()->getLogger();
+  ifp::initFloorplan(util, aspect_ratio,
                      core_space_bottom, core_space_top,
                      core_space_left, core_space_right,
                      site_name, tracks_file,
-                     db, report);
+                     db, logger);
 }
 
 void
@@ -108,8 +113,10 @@ auto_place_pins_cmd(const char *pin_layer)
 {
   odb::dbDatabase *db = ord::getDb();
   sta::dbSta *sta = ord::getSta();
-  sta::Report *report = sta->report();
-  ord::autoPlacePins(pin_layer, db, report);
+  ord::Logger *logger = ord::getOpenRoad()->getLogger();
+  ifp::autoPlacePins(pin_layer, db, logger);
 }
+
+} // namespace
 
 %} // inline

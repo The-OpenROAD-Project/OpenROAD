@@ -35,6 +35,10 @@
 
 #pragma once
 
+namespace ord {
+class Logger;
+}
+
 namespace odb {
 class dbDatabase;
 }
@@ -44,10 +48,10 @@ class OpenDbNetwork;
 class Report;
 }
 
-namespace ord {
+namespace ifp {
 
 using odb::dbDatabase;
-using sta::Report;
+using ord::Logger;
 
 void
 initFloorplan(double die_lx,
@@ -61,7 +65,7 @@ initFloorplan(double die_lx,
 	      const char *site_name,
 	      const char *tracks_file,
 	      dbDatabase *db,
-	      Report *report);
+	      Logger *logger);
 
 void
 initFloorplan(double util,
@@ -73,12 +77,11 @@ initFloorplan(double util,
 	      const char *site_name,
 	      const char *tracks_file,
 	      dbDatabase *db,
-	      Report *report);
+	      Logger *logger);
 
 void
 autoPlacePins(const char *pin_layer_name,
 	      dbDatabase *db,
-	      Report *report);
+	      Logger *logger);
 
 } // namespace
-

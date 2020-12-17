@@ -41,7 +41,7 @@
 #include "flute.h"
 #include "pdrev/pdrev.h"
 
-namespace FastRoute {
+namespace grt {
 
 void printEdge(int netID, int edgeID)
 {
@@ -1814,7 +1814,7 @@ void freeRR(void)
   }
 }
 
-Tree fluteToTree(Flute::Tree fluteTree)
+Tree fluteToTree(stt::Tree fluteTree)
 {
   Tree tree;
   tree.deg      = fluteTree.deg;
@@ -1829,15 +1829,15 @@ Tree fluteToTree(Flute::Tree fluteTree)
   return tree;
 }
 
-Flute::Tree treeToFlute(Tree tree)
+stt::Tree treeToFlute(Tree tree)
 {
-  Flute::Tree fluteTree;
+  stt::Tree fluteTree;
   fluteTree.deg    = tree.deg;
-  fluteTree.length = (Flute::DTYPE) fluteTree.length;
-  fluteTree.branch = new Flute::Branch[tree.totalDeg];
+  fluteTree.length = (stt::DTYPE) fluteTree.length;
+  fluteTree.branch = new stt::Branch[tree.totalDeg];
   for (int i = 0; i < tree.totalDeg; i++) {
-    fluteTree.branch[i].x = (Flute::DTYPE) tree.branch[i].x;
-    fluteTree.branch[i].y = (Flute::DTYPE) tree.branch[i].y;
+    fluteTree.branch[i].x = (stt::DTYPE) tree.branch[i].x;
+    fluteTree.branch[i].y = (stt::DTYPE) tree.branch[i].y;
     fluteTree.branch[i].n = tree.branch[i].n;
   }
   return fluteTree;
@@ -1857,4 +1857,4 @@ Tree pdToTree(PD::Tree pdTree)
   }
   return tree;
 }
-}  // namespace FastRoute
+}  // namespace grt

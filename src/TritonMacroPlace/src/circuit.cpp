@@ -42,7 +42,6 @@
 #include "circuit.h"
 #include "logger.h"
 
-// None of these are necessary because they are included in circuit.h -cherry
 #include "sta/Graph.hh"
 #include "sta/Sta.hh"
 #include "sta/Network.hh"
@@ -58,9 +57,8 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 
-namespace MacroPlace {
+namespace mpl {
 
-// None of these are necessary because they are included in circuit.h -cherry
 using std::unordered_map;
 using std::unordered_set;
 using std::vector;
@@ -83,18 +81,18 @@ using sta::VertexIterator;
 
 
 static bool
-isNotVisited(MacroPlace::Vertex* vert, 
-    vector<MacroPlace::Vertex*> &path);
+isNotVisited(mpl::Vertex* vert, 
+    vector<mpl::Vertex*> &path);
 
 static bool 
-isTerminal(MacroPlace::Vertex* vert, 
-    MacroPlace::Vertex* target);
+isTerminal(mpl::Vertex* vert, 
+    mpl::Vertex* target);
 
 static size_t 
 TrimWhiteSpace(char *out, size_t len, 
     const char *str);
 
-static MacroPlace::PinGroupLocation
+static mpl::PinGroupLocation
 getPinGroupLocation(
     int cx, int cy, 
     int dieLx, int dieLy, int dieUx, int dieUy);
@@ -312,7 +310,7 @@ void MacroCircuit::FillMacroStor() {
     int placeX, placeY;
     inst->getLocation( placeX, placeY );
      
-    MacroPlace::Macro 
+    mpl::Macro 
       tmpMacro( inst->getConstName(), 
           inst->getMaster()->getConstName(), 
           1.0*placeX/dbu, 
@@ -354,7 +352,7 @@ MacroCircuit::FillPinGroup(){
   int dbuCoreUy = static_cast<int>(round(uy_ * dbu));
 
   // never makes sense to 'using' inside a function -cherry
-  using MacroPlace::PinGroupLocation;
+  using mpl::PinGroupLocation;
 
   // this is always four array.
   pinGroupStor.resize(4);
@@ -400,10 +398,11 @@ MacroCircuit::FillPinGroup(){
 
       bool isAxisFound = false;
       for(dbBPin* bPin : bTerm->getBPins()) {
-        int boxLx = bPin->getBox()->xMin();
-        int boxLy = bPin->getBox()->yMin(); 
-        int boxUx = bPin->getBox()->xMax();
-        int boxUy = bPin->getBox()->yMax();
+        Rect pin_bbox = bPin->getBBox();
+        int boxLx = pin_bbox.xMin();
+        int boxLy = pin_bbox.yMin(); 
+        int boxUx = pin_bbox.xMax();
+        int boxUy = pin_bbox.yMax();
 
         if( isWithIn( dbuCoreLx, boxLx, boxUx ) ) {
           pgLoc = West;
@@ -428,10 +427,11 @@ MacroCircuit::FillPinGroup(){
       } 
       if( !isAxisFound ) {
         dbBPin* bPin = *(bTerm->getBPins().begin());
-        int boxLx = bPin->getBox()->xMin();
-        int boxLy = bPin->getBox()->yMin(); 
-        int boxUx = bPin->getBox()->xMax();
-        int boxUy = bPin->getBox()->yMax();
+        Rect pin_bbox = bPin->getBBox();
+        int boxLx = pin_bbox.xMin();
+        int boxLy = pin_bbox.yMin(); 
+        int boxUx = pin_bbox.xMax();
+        int boxUy = pin_bbox.yMax();
         pgLoc = getPinGroupLocation( 
             (boxLx + boxUx)/2, (boxLy + boxUy)/2,
             dbuCoreLx, dbuCoreLy, dbuCoreUx, dbuCoreUy); 
@@ -462,7 +462,7 @@ void MacroCircuit::FillVertexEdge() {
       = vertexStor.size();
 
     vertexStor.push_back( 
-        MacroPlace::Vertex(&pinGroupStor[i]) );
+        mpl::Vertex(&pinGroupStor[i]) );
   }
 
   // Fill Vertex for FF/Macro cells 
@@ -501,7 +501,7 @@ void MacroCircuit::FillVertexEdge() {
     if( vertPtr == pinInstVertexMap.end()) {
       pinInstVertexMap[ vertex.first ] = vertexStor.size();
       vertexStor.push_back( 
-          MacroPlace::Vertex(vertex.first, vertex.second)); 
+          mpl::Vertex(vertex.first, vertex.second)); 
     }
   }
   
@@ -545,7 +545,7 @@ void MacroCircuit::FillVertexEdge() {
     pinStor.push_back(pin);
   
     sta::PortDirection* dir = sta_->network()->direction(pin);
-    MacroPlace::Vertex* curVertex = GetVertex(pin);
+    mpl::Vertex* curVertex = GetVertex(pin);
 
 
     // Query for get_fanin/get_fanout
@@ -563,7 +563,7 @@ void MacroCircuit::FillVertexEdge() {
           }
         }
         
-        MacroPlace::Vertex* adjVertex = GetVertex(adjPin);
+        mpl::Vertex* adjVertex = GetVertex(adjPin);
 
         if( adjVertex == curVertex ) {
           continue;
@@ -592,7 +592,7 @@ void MacroCircuit::FillVertexEdge() {
           }
         }
         
-        MacroPlace::Vertex* adjVertex = GetVertex(adjPin);
+        mpl::Vertex* adjVertex = GetVertex(adjPin);
 
         if( adjVertex == curVertex ) {
           continue;
@@ -691,8 +691,8 @@ void MacroCircuit::FillVertexEdge() {
       sta::Pin* startPin = startVert->pin();
       sta::Pin* endPin = endVert->pin();
 
-      MacroPlace::Vertex* startVertPtr = GetVertex( startPin );
-      MacroPlace::Vertex* endVertPtr = GetVertex( endPin );
+      mpl::Vertex* startVertPtr = GetVertex( startPin );
+      mpl::Vertex* endVertPtr = GetVertex( endPin );
 
 
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -715,7 +715,7 @@ void MacroCircuit::FillVertexEdge() {
 
 void MacroCircuit::CheckGraphInfo() {
   
-  vector<MacroPlace::Vertex*> searchVert;
+  vector<mpl::Vertex*> searchVert;
 
   for(auto& curMacro: macroStor) {
     searchVert.push_back( curMacro.ptr );
@@ -739,7 +739,7 @@ void MacroCircuit::CheckGraphInfo() {
 
 
   for(int level = 1; level <= CHECK_LEVEL_MAX;  level++) {
-    vector<MacroPlace::Vertex*> newVertex;
+    vector<mpl::Vertex*> newVertex;
 
     for(auto& curVertex1: searchVert) {
       // for all other vertex
@@ -992,16 +992,16 @@ MacroCircuit::GetPtrClassPair( sta::Pin* pin ) {
 
 
 int 
-MacroCircuit::GetPathWeight(MacroPlace::Vertex* from, MacroPlace::Vertex* to, int limit ) {
+MacroCircuit::GetPathWeight(mpl::Vertex* from, mpl::Vertex* to, int limit ) {
 
-  std::queue< vector<MacroPlace::Vertex*> > q;
-  vector<MacroPlace::Vertex*> path;
+  std::queue< vector<mpl::Vertex*> > q;
+  vector<mpl::Vertex*> path;
 
   path.reserve(limit+2);
   path.push_back(from);
 
   q.push(path);
-  vector< vector<MacroPlace::Vertex*> > result;
+  vector< vector<mpl::Vertex*> > result;
 
   int pathDepth = 1;
   cout << "Depth: " << 1 << endl;
@@ -1009,7 +1009,7 @@ MacroCircuit::GetPathWeight(MacroPlace::Vertex* from, MacroPlace::Vertex* to, in
   while(!q.empty()) {
     path = q.front();
     q.pop();
-    MacroPlace::Vertex* last = path[path.size()-1];
+    mpl::Vertex* last = path[path.size()-1];
 
     if( pathDepth < (int)path.size() ){
       cout << "Depth: " << path.size() << endl;
@@ -1022,22 +1022,22 @@ MacroCircuit::GetPathWeight(MacroPlace::Vertex* from, MacroPlace::Vertex* to, in
     }
 
     for(auto& curOutEdge: last->to()) {
-      MacroPlace::Vertex* nextVert = edgeStor[curOutEdge].to();
+      mpl::Vertex* nextVert = edgeStor[curOutEdge].to();
 
       if( !isTerminal(nextVert, to) && (int)path.size() < limit 
           && isNotVisited(nextVert, path)) {
-        vector<MacroPlace::Vertex*> newPath(path);
+        vector<mpl::Vertex*> newPath(path);
 
         newPath.push_back(nextVert);
         q.push(newPath);
       } 
     }
     for(auto& curInEdge: last->from()) {
-      MacroPlace::Vertex* nextVert = edgeStor[curInEdge].from();
+      mpl::Vertex* nextVert = edgeStor[curInEdge].from();
 
       if( !isTerminal(nextVert, to) && (int)path.size() < limit 
           && isNotVisited(nextVert, path)) {
-        vector<MacroPlace::Vertex*> newPath(path);
+        vector<mpl::Vertex*> newPath(path);
 
         newPath.push_back(nextVert);
         q.push(newPath);
@@ -1060,7 +1060,7 @@ MacroCircuit::GetPathWeight(MacroPlace::Vertex* from, MacroPlace::Vertex* to, in
     }
     cout << " " ;
     for(auto& curVert: curPath) {
-      MacroPlace::PinGroup* ptr = (MacroPlace::PinGroup*) curVert->ptr();
+      mpl::PinGroup* ptr = (mpl::PinGroup*) curVert->ptr();
 
       string name = (curVert->vertexType() == VertexType::PinGroupType)?
         ptr->name() :
@@ -1073,7 +1073,7 @@ MacroCircuit::GetPathWeight(MacroPlace::Vertex* from, MacroPlace::Vertex* to, in
 }
 
 int MacroCircuit::GetPathWeightMatrix(
-    SMatrix& mat, MacroPlace::Vertex* from, MacroPlace::Vertex* to) {
+    SMatrix& mat, mpl::Vertex* from, mpl::Vertex* to) {
 
   auto vpPtr = vertexPtrMap.find(from);
   if( vpPtr == vertexPtrMap.end()) {
@@ -1091,7 +1091,7 @@ int MacroCircuit::GetPathWeightMatrix(
 }
 
 int MacroCircuit::GetPathWeightMatrix(
-    SMatrix& mat, MacroPlace::Vertex* from, int toIdx) {
+    SMatrix& mat, mpl::Vertex* from, int toIdx) {
 
   auto vpPtr = vertexPtrMap.find(from);
   if( vpPtr == vertexPtrMap.end()) {
@@ -1114,7 +1114,7 @@ static float getRoundUpFloat( float x, float unit ) {
 // 
 // Update Macro Location
 // from partition
-void MacroCircuit::UpdateMacroCoordi( MacroPlace::Partition& part) {
+void MacroCircuit::UpdateMacroCoordi( mpl::Partition& part) {
   dbTech* tech = db_->getTech();
   dbTechLayer* fourLayer = tech->findRoutingLayer( 4 );
   if( !fourLayer ) {
@@ -1369,7 +1369,7 @@ void MacroCircuit::ParseLocalConfig(string fileName) {
 
 void 
 MacroCircuit::
-Plot(string fileName, vector<MacroPlace::Partition>& set) {
+Plot(string fileName, vector<mpl::Partition>& set) {
 
   cout<<"OutPut Plot file is "<<fileName<<endl;
   std::ofstream gpOut(fileName);
@@ -1421,7 +1421,7 @@ Plot(string fileName, vector<MacroPlace::Partition>& set) {
 
 }
 
-void MacroCircuit::UpdateNetlist(MacroPlace::Partition& layout) {
+void MacroCircuit::UpdateNetlist(mpl::Partition& layout) {
 
   if( netTable_ ) {
     delete[] netTable_;
@@ -1515,7 +1515,7 @@ double MacroCircuit::GetWeightedWL() {
   return wwl;
 }
 
-MacroPlace::Vertex* 
+mpl::Vertex* 
 MacroCircuit::GetVertex( sta::Pin *pin ) {
   pair<void*, VertexType> vertInfo = GetPtrClassPair( pin);
   auto vertPtr = pinInstVertexMap.find(vertInfo.first);
@@ -1535,7 +1535,7 @@ Layout::Layout( double lx, double ly,
     double ux, double uy) 
   : lx_(lx), ly_(ly), ux_(ux), uy_(uy) {}
       
-Layout::Layout( Layout& orig, MacroPlace::Partition& part ) 
+Layout::Layout( Layout& orig, mpl::Partition& part ) 
   : lx_(part.lx), ly_(part.ly), ux_(part.lx+part.width), uy_(part.ly+part.height) {}
 
 void
@@ -1563,7 +1563,7 @@ Layout::setUy(double uy) {
 
 
 static bool
-isNotVisited(MacroPlace::Vertex* vert, vector<MacroPlace::Vertex*> &path) {
+isNotVisited(mpl::Vertex* vert, vector<mpl::Vertex*> &path) {
   for(auto& curVert: path) {
     if( curVert == vert ) {
       return false;
@@ -1573,8 +1573,8 @@ isNotVisited(MacroPlace::Vertex* vert, vector<MacroPlace::Vertex*> &path) {
 }
 
 static bool 
-isTerminal(MacroPlace::Vertex* vert, 
-    MacroPlace::Vertex* target ) {
+isTerminal(mpl::Vertex* vert, 
+    mpl::Vertex* target ) {
 
   return ( vert != target && 
       (vert->vertexType() == VertexType::PinGroupType || 
@@ -1621,7 +1621,7 @@ TrimWhiteSpace(char *out, size_t len, const char *str)
   return out_size;
 }
 
-static MacroPlace::PinGroupLocation
+static mpl::PinGroupLocation
 getPinGroupLocation(
     int cx, int cy, 
     int dieLx, int dieLy, int dieUx, int dieUy) {

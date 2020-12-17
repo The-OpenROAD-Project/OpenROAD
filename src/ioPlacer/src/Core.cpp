@@ -34,8 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Core.h"
+#include <algorithm>
 
-namespace ioPlacer {
+namespace ppl {
 
 int Core::getPerimeter()
 {
@@ -45,4 +46,4 @@ int Core::getPerimeter()
   return (x + y) * 2;
 }
 
-}  // namespace ioPlacer
+}  // namespace ppl

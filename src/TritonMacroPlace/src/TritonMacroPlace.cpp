@@ -34,9 +34,7 @@
 #include "tritonmp/TritonMacroPlace.h"
 #include "circuit.h"
 
-namespace MacroPlace {
-
-using namespace odb;
+namespace mpl {
 
 TritonMacroPlace::TritonMacroPlace() 
   : solCount_(0) { 

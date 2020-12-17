@@ -45,7 +45,7 @@
 
 #include "Netlist.h"
 
-namespace ioPlacer {
+namespace ppl {
 enum class Edge;
 
 struct _Slot_t
@@ -53,6 +53,7 @@ struct _Slot_t
   bool blocked;
   bool used;
   odb::Point pos;
+  int layer;
 } typedef Slot_t;
 
 typedef std::vector<Slot_t> slotVector_t;
@@ -85,5 +86,5 @@ std::vector<size_t> sort_indexes(const std::vector<T>& v)
   return idx;
 }
 
-}  // namespace ioPlacer
+}  // namespace ppl
 #endif /* __SLOTS_H */

@@ -39,7 +39,7 @@ class dbNet;
 class Rect;
 }
 
-namespace FastRoute {
+namespace grt {
 
 struct GSegment
 {

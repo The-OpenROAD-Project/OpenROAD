@@ -37,7 +37,7 @@
 #include <tcl.h>
 #include "opendb/db.h"
 
-namespace tapcell {
+namespace tap {
 
 class Tapcell
 {

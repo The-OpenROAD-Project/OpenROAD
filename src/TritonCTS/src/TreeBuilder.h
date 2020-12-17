@@ -46,7 +46,7 @@
 #include "TechChar.h"
 #include "Util.h"
 
-namespace TritonCTS {
+namespace cts {
 
 class TreeBuilder
 {
@@ -65,4 +65,4 @@ class TreeBuilder
   TechChar* _techChar = nullptr;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

@@ -36,10 +36,11 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include "opendp/Opendp.h"
-#include "openroad/Error.hh"
 
-namespace opendp {
+#include "opendp/Opendp.h"
+#include "openroad/Logger.h"
+
+namespace dpl {
 
 using std::max;
 using std::min;
@@ -47,7 +48,7 @@ using std::vector;
 
 using odb::dbPlacementStatus;
 
-using ord::warn;
+using ord::DPL;
 
 bool
 Opendp::checkPlacement(bool verbose)
@@ -81,13 +82,13 @@ Opendp::checkPlacement(bool verbose)
       overlap_failures.push_back(&cell);
   }
 
-  reportFailures(placed_failures, "Placed", verbose);
-  reportFailures(in_rows_failures, "Placed in rows", verbose);
-  reportFailures(overlap_failures, "Overlap", verbose, [&](Cell *cell) -> void {
+  reportFailures(placed_failures, 3, "Placed", verbose);
+  reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
+  reportFailures(overlap_failures, 5, "Overlap", verbose, [&](Cell *cell) -> void {
     reportOverlapFailure(cell, grid);
   });
-  reportFailures(site_failures, "Site", verbose);
-  reportFailures(power_line_failures, "Power line", verbose);
+  reportFailures(site_failures, 6, "Site", verbose);
+  reportFailures(power_line_failures, 7, "Power line", verbose);
 
   deleteGrid(grid);
 
@@ -100,23 +101,24 @@ Opendp::checkPlacement(bool verbose)
 
 void
 Opendp::reportFailures(const vector<Cell *> &failures,
+                       int msg_id,
                        const char *msg,
                        bool verbose) const
 {
-  reportFailures(failures, msg, verbose, [](Cell *cell) -> void {
+  reportFailures(failures, msg_id, msg, verbose, [](Cell *cell) -> void {
     printf(" %s\n", cell->name());
   });
 }
 
 void
-Opendp::reportFailures(
-    const vector<Cell *> &failures,
-    const char *msg,
-    bool verbose,
-    const std::function<void(Cell *cell)> &report_failure) const
+Opendp::reportFailures(const vector<Cell *> &failures,
+                       int msg_id,
+                       const char *msg,
+                       bool verbose,
+                       const std::function<void(Cell *cell)> &report_failure) const
 {
   if (!failures.empty()) {
-    warn("%s check failed (%d).", msg, failures.size());
+    logger_->warn(DPL, msg_id, "{} check failed ({}).", msg, failures.size());
     if (verbose) {
       for (Cell *cell : failures) {
         report_failure(cell);
@@ -314,4 +316,4 @@ Opendp::isWtClass(const Cell *cell) const
   return type == dbMasterType::CORE_WELLTAP;
 }
 
-}  // namespace opendp
+}  // namespace

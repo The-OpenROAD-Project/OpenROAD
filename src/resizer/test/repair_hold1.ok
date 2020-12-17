@@ -92,8 +92,8 @@ Path Type: min
            0.05   slack (MET)
 
 
-Found 1 endpoints with hold violations.
-Inserted 2 hold buffers.
+[INFO RSZ-0046] Found 1 endpoints with hold violations.
+[INFO RSZ-0032] Inserted 2 hold buffers.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

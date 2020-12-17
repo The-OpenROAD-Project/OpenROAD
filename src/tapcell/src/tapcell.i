@@ -40,7 +40,7 @@
 #include "tapcell/tapcell.h"
 #include "openroad/OpenRoad.hh"
 
-tapcell::Tapcell *
+tap::Tapcell *
 getTapcell()
 {
   return ord::OpenRoad::openRoad()->getTapcell();

@@ -35,6 +35,10 @@
 
 #pragma once
 
+namespace ord {
+class Logger;
+}
+
 namespace odb {
 class dbDatabase;
 }
@@ -49,6 +53,7 @@ class dbVerilogNetwork;
 class OpenRoad;
 
 using odb::dbDatabase;
+
 using sta::NetworkReader;
 
 dbVerilogNetwork *
@@ -66,11 +71,12 @@ deleteDbVerilogNetwork(dbVerilogNetwork *verilog_network);
 // network.
 void
 dbReadVerilog(const char *filename,
-	      dbVerilogNetwork *verilog_networku );
+	      dbVerilogNetwork *verilog_network);
 
 void
 dbLinkDesign(const char *top_cell_name,
 	     dbVerilogNetwork *verilog_network,
-	     dbDatabase *db);
+	     dbDatabase *db,
+             Logger *logger);
 
 } // namespace

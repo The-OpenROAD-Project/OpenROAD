@@ -41,20 +41,20 @@ proc set_global_routing_layer_adjustment { args } {
 
     if {$layer == {*}} {
       sta::check_positive_float "adjustment" $adj
-      FastRoute::set_capacity_adjustment $adj
+      grt::set_capacity_adjustment $adj
     } elseif {[string is integer $layer]} {
-      FastRoute::check_routing_layer $layer
+      grt::check_routing_layer $layer
       sta::check_positive_float "adjustment" $adj
 
-      FastRoute::add_layer_adjustment $layer $adj
+      grt::add_layer_adjustment $layer $adj
     } else {
-      set layer_range [FastRoute::parse_layer_range "set_global_routing_layer_adjustment" $layer]
+      set layer_range [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer]
       lassign $layer_range first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
-        FastRoute::check_routing_layer $l
+        grt::check_routing_layer $l
         sta::check_positive_float "adjustment" $adj
 
-        FastRoute::add_layer_adjustment $l $adj
+        grt::add_layer_adjustment $l $adj
       }
     }
   } else {
@@ -68,10 +68,10 @@ proc set_global_routing_layer_pitch { args } {
   if {[llength $args] == 2} {
     lassign $args layer pitch
 
-    FastRoute::check_routing_layer $layer
+    grt::check_routing_layer $layer
     sta::check_positive_float "pitch" $pitch
 
-    FastRoute::set_layer_pitch $layer $pitch
+    grt::set_layer_pitch $layer $pitch
   } else {
     ord::error "set_global_routing_layer_pitch: Wrong number of arguments"
   }
@@ -84,7 +84,7 @@ proc set_pdrev_topology_priority { args } {
     lassign $args net alpha
     
     sta::check_positive_float "-alpha" $alpha
-    FastRoute::set_alpha_for_net $net $alpha
+    grt::set_alpha_for_net $net $alpha
   } else {
     ord::error "set_pdrev_topology_priority: Wrong number of arguments"
   }
@@ -133,9 +133,9 @@ proc set_global_routing_region_adjustment { args } {
     set upper_x [expr { int($upper_x * $lef_units) }]
     set upper_y [expr { int($upper_y * $lef_units) }]
 
-    FastRoute::check_region $lower_x $lower_y $upper_x $upper_y
+    grt::check_region $lower_x $lower_y $upper_x $upper_y
 
-    FastRoute::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
+    grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
   } else {
     ord::error "set_global_routing_region_adjustment: Wrong number of arguments to define a region"
   }
@@ -150,7 +150,7 @@ proc repair_antennas { args } {
     set lib_port [sta::get_lib_pins [lindex $args 0]]
   }
   if { $lib_port != "" } {
-    FastRoute::repair_antennas $lib_port
+    grt::repair_antennas $lib_port
   }
 }
 
@@ -158,10 +158,10 @@ sta::define_cmd_args "write_guides" { file_name }
 
 proc write_guides { args } {
   set file_name $args
-  FastRoute::write_guides $file_name
+  grt::write_guides $file_name
 }
 
-sta::define_cmd_args "fastroute" {[-guide_file out_file] \
+sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-layers layers] \
                                   [-unidirectional_routing] \
                                   [-tile_size tile_size] \
@@ -183,8 +183,15 @@ sta::define_cmd_args "fastroute" {[-guide_file out_file] \
                                   [-layers_pitches layers_pitches] \
 }
 
+# sta::define_cmd_alias "fastroute" "global_route"
+
 proc fastroute { args } {
-  sta::parse_key_args "fastroute" args \
+  ord::warn "fastroute command is deprecated. Use global_route instead"
+  [eval global_route $args]
+}
+
+proc global_route { args } {
+  sta::parse_key_args "global_route" args \
     keys {-guide_file -layers -tile_size -verbose -layers_adjustments \ 
           -overflow_iterations -grid_origin -seed -report_congestion \
           -clock_layers -clock_pdrev_fanout -clock_topology_priority \
@@ -203,9 +210,9 @@ proc fastroute { args } {
 
   if { [info exists keys(-verbose) ] } {
     set verbose $keys(-verbose)
-    FastRoute::set_verbose $verbose
+    grt::set_verbose $verbose
   } else {
-    FastRoute::set_verbose 0
+    grt::set_verbose 0
   }
 
   if { [info exists keys(-layers_pitches)] } {
@@ -214,7 +221,7 @@ proc fastroute { args } {
     foreach layer_pitch $layers_pitches {
       if { [llength $layer_pitch] == 2 } {
         lassign $layer_pitch layer pitch
-        FastRoute::set_layer_pitch $layer $pitch
+        grt::set_layer_pitch $layer $pitch
       } else {
         ord::error "Wrong number of arguments for layer pitches"
       }
@@ -227,85 +234,84 @@ proc fastroute { args } {
     foreach layer_adjustment $layers_adjustments {
       if { [llength $layer_adjustment] == 2 } {
         lassign $layer_adjustment layer reductionPercentage
-        FastRoute::add_layer_adjustment $layer $reductionPercentage
+        grt::add_layer_adjustment $layer $reductionPercentage
       } else {
         ord::error "Wrong number of arguments for layer adjustments"
       }
     }
   }
 
-  FastRoute::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
+  grt::set_unidirectional_routing [info exists flags(-unidirectional_routing)]
 
   if { [info exists keys(-grid_origin)] } {
     set origin $keys(-grid_origin)
     if { [llength $origin] == 2 } {
       lassign $origin origin_x origin_y
-      FastRoute::set_grid_origin $origin_x $origin_y
+      grt::set_grid_origin $origin_x $origin_y
     } else {
       ord::error "Wrong number of arguments for origin"
     }
   } else {
-    FastRoute::set_grid_origin -1 -1
+    grt::set_grid_origin 0 0
   }
 
   if { [info exists keys(-overflow_iterations) ] } {
     set iterations $keys(-overflow_iterations)
     sta::check_positive_integer "-overflow_iterations" $iterations
-    FastRoute::set_overflow_iterations $iterations
+    grt::set_overflow_iterations $iterations
   } else {
-    FastRoute::set_overflow_iterations 50
+    grt::set_overflow_iterations 50
   }
 
   if { [info exists keys(-clock_topology_priority) ] } {
     set priority $keys(-clock_topology_priority)
     sta::check_positive_float "-clock_topology_priority" $priority
-    FastRoute::set_alpha $clock_topology_priority
+    grt::set_alpha $clock_topology_priority
   } else {
     # Default alpha as 0.3 prioritize wire length, but keeps
     # aware of skew in the topology construction (see PDRev paper
     # for more reference)
-    FastRoute::set_alpha 0.3
+    grt::set_alpha 0.3
   }
 
   if { [info exists keys(-clock_pdrev_fanout)] } {
     set fanout $keys(-clock_pdrev_fanout)
-    FastRoute::set_pdrev_for_high_fanout $fanout
+    grt::set_pdrev_for_high_fanout $fanout
   } else {
-    FastRoute::set_pdrev_for_high_fanout -1
+    grt::set_pdrev_for_high_fanout -1
   }
 
   if { [info exists keys(-tile_size)] } {
     set tile_size $keys(-tile_size)
-    FastRoute::set_tile_size $tile_size
+    grt::set_tile_size $tile_size
   }
 
   if { [info exists keys(-seed) ] } {
     set seed $keys(-seed)
-    FastRoute::set_seed $seed
+    grt::set_seed $seed
   } else {
-    FastRoute::set_seed 0
+    grt::set_seed 0
   }
 
-  FastRoute::set_allow_overflow [info exists flags(-allow_overflow)]
-  FastRoute::set_only_signal_nets [info exists flags(-only_signal_nets)]
+  grt::set_allow_overflow [info exists flags(-allow_overflow)]
 
   if { [info exists keys(-macro_extension)] } {
     set macro_extension $keys(-macro_extension)
-    FastRoute::set_macro_extension $macro_extension
+    grt::set_macro_extension $macro_extension
   } else {
-    FastRoute::set_macro_extension 0
+    grt::set_macro_extension 0
   }
 
   set min_clock_layer 6
   if { [info exists keys(-clock_layers)] } {
-    set layer_range [FastRoute::parse_layer_range "-clock_layers" $keys(-clock_layers)]
+    set layer_range [grt::parse_layer_range "-clock_layers" $keys(-clock_layers)]
     lassign $layer_range min_clock_layer max_clock_layer
-    FastRoute::check_routing_layer $min_clock_layer
-    FastRoute::check_routing_layer $max_clock_layer
+    grt::check_routing_layer $min_clock_layer
+    grt::check_routing_layer $max_clock_layer
 
     if { $min_clock_layer < $max_clock_layer } {
-      FastRoute::set_clock_layer_range $min_clock_layer $max_clock_layer
-      FastRoute::route_clock_nets
+      grt::set_clock_layer_range $min_clock_layer $max_clock_layer
+      grt::route_clock_nets
     } else {
       ord::error "-clock_layers: Min routing layer is greater than max routing layer"
     }
@@ -315,9 +321,9 @@ proc fastroute { args } {
     ord::warn "option -min_routing_layer is deprecated. Use option -layers {min max}"
     set min_layer $keys(-min_routing_layer)
     sta::check_positive_integer "-min_routing_layer" $min_layer
-    FastRoute::set_min_layer $min_layer
+    grt::set_min_layer $min_layer
   } else {
-    FastRoute::set_min_layer 1
+    grt::set_min_layer 1
   }
 
   set max_layer -1
@@ -325,19 +331,19 @@ proc fastroute { args } {
     ord::warn "option -max_routing_layer is deprecated. Use option -layers min-max"
     set max_layer $keys(-max_routing_layer)
     sta::check_positive_integer "-max_routing_layer" $max_layer
-    FastRoute::set_max_layer $max_layer
+    grt::set_max_layer $max_layer
   } else {
-    FastRoute::set_max_layer -1
+    grt::set_max_layer -1
   }
 
   if { [info exists keys(-layers)] } {
-    set layer_range [FastRoute::parse_layer_range "-layers" $keys(-layers)]
+    set layer_range [grt::parse_layer_range "-layers" $keys(-layers)]
     lassign $layer_range min_layer max_layer
-    FastRoute::check_routing_layer $min_layer
-    FastRoute::check_routing_layer $max_layer
+    grt::check_routing_layer $min_layer
+    grt::check_routing_layer $max_layer
 
-    FastRoute::set_min_layer $min_layer
-    FastRoute::set_max_layer $max_layer
+    grt::set_min_layer $min_layer
+    grt::set_max_layer $max_layer
   }
 
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
@@ -349,24 +355,25 @@ proc fastroute { args } {
 
   if { [info exists keys(-report_congestion)] } {
     set congest_file $keys(-report_congestion)
-    FastRoute::report_congestion $congest_file
+    grt::report_congestion $congest_file
   }
 
-  FastRoute::run_fastroute
+  set only_signal [expr [info exists keys(-clock_layers)] || [info exists flags(-only_signal_nets)]]
+  grt::run_fastroute $only_signal
   
   if { [info exists keys(-output_file)] } {
     ord::warn "option -output_file is deprecated. Use option -guide_file"
     set out_file $keys(-output_file)
-    FastRoute::write_guides $out_file
+    grt::write_guides $out_file
   }
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
-    FastRoute::write_guides $out_file
+    grt::write_guides $out_file
   }
 }
 
-namespace eval FastRoute {
+namespace eval grt {
 
 proc estimate_rc_cmd {} {
   if { [have_routes] } {
@@ -427,6 +434,6 @@ proc check_region { lower_x lower_y upper_x upper_y } {
   }
 }
 
-# FastRoute namespace end
+# grt namespace end
 }
 

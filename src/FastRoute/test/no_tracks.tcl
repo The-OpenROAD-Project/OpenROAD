@@ -6,6 +6,6 @@ link_design gcd
 initialize_floorplan -site FreePDK45_38x28_10R_NP_162NW_34O \
 					 -utilization 30
 
-catch {fastroute -layers 2-10} error
+catch {global_route -layers 2-10} error
 puts $error
 

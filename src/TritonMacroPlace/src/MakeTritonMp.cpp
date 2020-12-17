@@ -42,32 +42,31 @@ extern const char *tritonmp_tcl_inits[];
 }
 
 extern "C" {
-extern int Mplace_Init(Tcl_Interp* interp);
+extern int Mpl_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
 
-MacroPlace::TritonMacroPlace * 
+mpl::TritonMacroPlace * 
 makeTritonMp() 
 {
-  return new MacroPlace::TritonMacroPlace; 
+  return new mpl::TritonMacroPlace; 
 }
 
 void 
 initTritonMp(OpenRoad *openroad) 
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
-  Mplace_Init(tcl_interp);
+  Mpl_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::tritonmp_tcl_inits);
   openroad->getTritonMp()->setDb(openroad->getDb());
   openroad->getTritonMp()->setSta(openroad->getSta());
 }
 
 void
-deleteTritonMp(MacroPlace::TritonMacroPlace *tritonmp)
+deleteTritonMp(mpl::TritonMacroPlace *tritonmp)
 {
   delete tritonmp;
 }
-
 
 }

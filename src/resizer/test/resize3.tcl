@@ -14,5 +14,5 @@ set_load 50 u2z
 
 report_checks -fields {slew input_pin} -digits 3
 set_dont_use {*/*8 */*16}
-sta::resize
+rsz::resize
 report_checks -fields {slew input_pin} -digits 3

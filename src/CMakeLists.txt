@@ -32,14 +32,17 @@ set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
 set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
-set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antennachecker)
+set(PARTITIONMGR_HOME ${PROJECT_SOURCE_DIR}/src/PartitionMgr)
+set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antenna_checker)
 set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
+set(TRITONROUTE_HOME ${PROJECT_SOURCE_DIR}/src/TritonRoute)
 
 set(OPENROAD_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/OpenRoadTclInitVar.cc)
 
 set(OPENROAD_SOURCE
   OpenRoad.cc
   Error.cc
+  Logger.cpp
   ${OPENROAD_TCL_INIT}
   Main.cc
   )
@@ -170,6 +173,7 @@ swig_add_library(openroad_swig
 # build/src/CMakeFiles/openroad_swig.dir/OpenRoadTCL_wrap.cxx
 swig_link_libraries(openroad_swig
   PUBLIC
+  spdlog::spdlog
   openroad
   # OpenDB public includes incorrectly point to include/opendb so this fails.
   #opendb
@@ -203,6 +207,9 @@ else()
   set(ZLIB 0)
 endif()
 
+find_package(spdlog)
+message(STATUS "spdlog: ${spdlog_VERSION}")
+
 find_package(Threads)
 
 ################################################################
@@ -233,12 +240,14 @@ add_subdirectory(tapcell)
 add_subdirectory(TritonMacroPlace)
 add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
-add_subdirectory(antennachecker)
+add_subdirectory(PartitionMgr)
+add_subdirectory(antenna_checker)
 
 if(BUILD_OPENPHYSYN)
   add_subdirectory(OpenPhySyn)
 endif()
 add_subdirectory(gui)
+add_subdirectory(TritonRoute)
 
 ################################################################
 
@@ -279,6 +288,7 @@ target_include_directories(openroad
   ${ANTENNACHECKER_HOME}/include
   ${TCL_INCLUDE_PATH}
   ${Boost_INCLUDE_DIRS}
+  ${PARTITIONMGR_HOME}/include
   )
 
 target_link_libraries(openroad
@@ -299,6 +309,7 @@ target_link_libraries(openroad
   FastRoute
   tapcell
   gui
+  TritonRouteLib
   TritonMacroPlace
   ParquetFP
   ABKCommon
@@ -311,6 +322,8 @@ target_link_libraries(openroad
   lefout
   antennachecker
   zutil
+  PartitionMgr
+  spdlog::spdlog
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )

@@ -9,5 +9,5 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 #rn u1/Z
 report_check_types -max_slew -max_cap -max_fanout -violators
-repair_design -buffer_cell BUF_X1
+repair_design
 report_check_types -max_slew -max_cap -max_fanout -violators

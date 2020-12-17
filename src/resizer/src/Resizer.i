@@ -47,7 +47,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-sta::Resizer *
+rsz::Resizer *
 getResizer();
 void
 ensureLinked();
@@ -82,9 +82,9 @@ using sta::NetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
-
-using sta::Resizer;
 using sta::dbNetwork;
+
+using rsz::Resizer;
 
 %}
 
@@ -142,6 +142,8 @@ using sta::dbNetwork;
 %include "../../Exception.i"
 
 %inline %{
+
+namespace rsz {
 
 void
 remove_buffers_cmd()
@@ -213,6 +215,15 @@ estimate_parasitics_cmd()
   resizer->estimateWireParasitics();
 }
 
+// For debugging. Does not protect against annotating power/gnd.
+void
+estimate_parasitic_net(const Net *net)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->estimateWireParasitic(net);
+}
+
 bool
 have_estimated_parasitics()
 {
@@ -247,19 +258,19 @@ resizer_preamble(LibertyLibrarySeq *resize_libs)
 }
 
 void
-buffer_inputs(LibertyCell *buffer_cell)
+buffer_inputs()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferInputs(buffer_cell);
+  resizer->bufferInputs();
 }
 
 void
-buffer_outputs(LibertyCell *buffer_cell)
+buffer_outputs()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->bufferOutputs(buffer_cell);
+  resizer->bufferOutputs();
 }
 
 void
@@ -295,22 +306,21 @@ resize_target_load_cap(LibertyCell *cell)
 }
 
 void
-repair_pin_hold_violations(Pin *end_pin,
-                           LibertyCellSeq *buffers,
-                           bool allow_setup_violations)
+repair_hold_pin(Pin *end_pin,
+                LibertyCell *buffer_cell,
+                bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(end_pin, buffers, allow_setup_violations);
+  resizer->repairHold(end_pin, buffer_cell, allow_setup_violations);
 }
 
 void
-repair_hold_violations_cmd(LibertyCellSeq *buffers,
-                           bool allow_setup_violations)
+repair_hold(bool allow_setup_violations)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairHoldViolations(buffers, allow_setup_violations);
+  resizer->repairHold(allow_setup_violations);
 }
 
 float
@@ -340,21 +350,19 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
-repair_design_cmd(float max_length,
-                  LibertyCell *buffer_cell)
+repair_design_cmd(float max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairDesign(max_length, buffer_cell);
+  resizer->repairDesign(max_length);
 }
 
 void
-repair_clk_nets_cmd(float max_length,
-                    LibertyCell *buffer_cell)
+repair_clk_nets_cmd(float max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairClkNets(max_length, buffer_cell);
+  resizer->repairClkNets(max_length);
 }
 
 void
@@ -362,17 +370,43 @@ repair_clk_inverters_cmd()
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairClkInverters();
+  resizer->repairClkInverters();
 }
 
 void
 repair_net_cmd(Net *net,
-               float max_length,
-               LibertyCell *buffer_cell)
+               float max_length)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->repairNet(net, max_length, buffer_cell); 
+  resizer->repairNet(net, max_length); 
+}
+
+void
+repair_setup()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairSetup();
+}
+
+void
+repair_setup_pin(Pin *end_pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairSetup(end_pin);
+}
+
+////////////////////////////////////////////////////////////////
+
+// for testing
+void
+rebuffer_net(Net *net)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->rebuffer(net);
 }
 
 void
@@ -409,7 +443,15 @@ buffer_wire_delay(LibertyCell *buffer_cell,
 }
 
 double
-find_max_wire_length(LibertyCell *buffer_cell)
+find_max_wire_length()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findMaxWireLength();
+}
+
+double
+find_buffer_max_wire_length(LibertyCell *buffer_cell)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -475,5 +517,7 @@ utilization()
   Resizer *resizer = getResizer();
   return resizer->utilization();
 }
+
+} // namespace
 
 %} // inline

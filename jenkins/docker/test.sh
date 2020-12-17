@@ -12,4 +12,8 @@ TARGET_COMPILER="$2"
 
 DOCKER_TAG="openroad/openroad_${TARGET_OS}_${TARGET_COMPILER}"
 
-docker run --rm "$DOCKER_TAG" bash -c "./test/regression"
+if [[ $TARGET_OS == centos7 ]] && [[ $TARGET_COMPILER == clang7 ]]; then 
+  docker run --rm "$DOCKER_TAG" bash -c "scl enable llvm-toolset-7.0 ./test/regression"
+else
+  docker run --rm "$DOCKER_TAG" bash -c "./test/regression"
+fi

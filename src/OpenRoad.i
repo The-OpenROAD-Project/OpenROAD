@@ -47,7 +47,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "openroad/Version.hh"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 ////////////////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ namespace ord {
 
 using sta::dbSta;
 using sta::dbNetwork;
-using sta::Resizer;
+using rsz::Resizer;
 
 using odb::dbDatabase;
 
@@ -114,14 +114,14 @@ getResizer()
   return openroad->getResizer();
 }
 
-TritonCTS::TritonCTSKernel *
+cts::TritonCTSKernel *
 getTritonCts()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getTritonCts();
 }
 
-MacroPlace::TritonMacroPlace *
+mpl::TritonMacroPlace *
 getTritonMp()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -142,6 +142,13 @@ getOpenRCX()
   return openroad->getOpenRCX();
 }
 
+triton_route::TritonRoute *
+getTritonRoute()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getTritonRoute();
+}
+
 pdnsim::PDNSim*
 getPDNSim()
 {
@@ -149,18 +156,25 @@ getPDNSim()
   return openroad->getPDNSim();
 }
 
-FastRoute::GlobalRouter*
+grt::GlobalRouter*
 getFastRoute()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getFastRoute();
 }
 
-ioPlacer::IOPlacer*
+ppl::IOPlacer*
 getIOPlacer()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getIOPlacer();
+}
+
+partition::PartitionMgr*
+getPartitionMgr()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getPartitionMgr();
 }
 
 } // namespace ord
@@ -201,6 +215,12 @@ using odb::dbTech;
   $1 = sta::tclListSeqLibertyCell($input, interp);
 }
 
+%typemap(in) ord::ToolId {
+  int length;
+  const char *arg = Tcl_GetStringFromObj($input, &length);
+  $1 = ord::Logger::findToolId(arg);
+}
+
 %inline %{
 
 const char *
@@ -213,6 +233,49 @@ const char *
 openroad_git_sha1()
 {
   return OPENROAD_GIT_SHA1;
+}
+
+void
+report(const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->getLogger()->report(msg);
+}
+
+void
+info(ord::ToolId tool,
+     int id,
+     const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->getLogger()->info(tool, id, msg);
+}
+
+void
+ord_warn(ord::ToolId tool,
+         int id,
+         const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->getLogger()->warn(tool, id, msg);
+}
+
+void
+ord_error(ord::ToolId tool,
+          int id,
+          const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->getLogger()->error(tool, id, msg);
+}
+
+void
+critical(ord::ToolId tool,
+         int id,
+         const char *msg)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->getLogger()->critical(tool, id, msg);
 }
 
 void
@@ -392,13 +455,6 @@ void
 set_cmd_sta(sta::Sta *sta)
 {
   sta::Sta::setSta(sta);
-}
-
-// Used by test/error1.tcl
-void
-test_error1()
-{
-  ord::error("this is only a test.");
 }
 
 bool

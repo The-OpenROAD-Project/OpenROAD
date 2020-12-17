@@ -35,6 +35,7 @@
 
 #include "openroad/OpenRoad.hh"
 #include "openroad/Version.hh" // BUILD_OPENPHYSYN
+#include "openroad/Logger.h"
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
@@ -66,11 +67,14 @@
 #include "TritonCTS/src/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
+#include "triton_route/MakeTritonRoute.h"
 #include "pdnsim/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
+#include "PartitionMgr/src/MakePartitionMgr.h"
 #ifdef BUILD_OPENPHYSYN
   #include "OpenPhySyn/MakeOpenPhySyn.hpp"
 #endif
+#include <iostream>
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -81,6 +85,9 @@ extern "C" {
 extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 }
+
+// Main.cc set by main()
+extern const char* log_filename;
 
 namespace ord {
 
@@ -103,23 +110,25 @@ OpenRoad *OpenRoad::openroad_ = nullptr;
 
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
+    logger_(nullptr),
     db_(nullptr),
     verilog_network_(nullptr),
     sta_(nullptr),
     resizer_(nullptr),
     ioPlacer_(nullptr),
     opendp_(nullptr),
+    finale_(nullptr),
     tritonMp_(nullptr),
     fastRoute_(nullptr),
     tritonCts_(nullptr),
     tapcell_(nullptr),
     extractor_(nullptr),
-    antennaChecker_(nullptr),
-#ifdef BUILD_OPENPHYSYN
+    detailed_router_(nullptr),
+    antenna_checker_(nullptr),
     psn_(nullptr),
-#endif
     replace_(nullptr),
-    pdnsim_(nullptr) 
+    pdnsim_(nullptr), 
+    partitionMgr_(nullptr) 
 {
   openroad_ = this;
   db_ = dbDatabase::create();
@@ -137,14 +146,17 @@ OpenRoad::~OpenRoad()
   deleteTapcell(tapcell_);
   deleteTritonMp(tritonMp_);
   deleteOpenRCX(extractor_);
+  deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
 #ifdef BUILD_OPENPHYSYN
   deletePsn(psn_);
 #endif
-  deleteAntennaChecker(antennaChecker_);
+  deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
-  Flute::deleteLUT();
+  deletePartitionMgr(partitionMgr_);
+  stt::deleteLUT();
+  delete logger_;
 }
 
 void
@@ -184,6 +196,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
+  logger_ = new Logger(log_filename);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();
@@ -195,12 +208,14 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tapcell_ = makeTapcell();
   tritonMp_ = makeTritonMp();
   extractor_ = makeOpenRCX();
+  detailed_router_ = makeTritonRoute();
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
-  antennaChecker_ = makeAntennaChecker();
+  antenna_checker_ = makeAntennaChecker();
 #ifdef BUILD_OPENPHYSYN
   psn_ = makePsn();
 #endif
+  partitionMgr_ = makePartitionMgr();
 
   // Init components.
   Openroad_Init(tcl_interp);
@@ -209,7 +224,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
 
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
-  Flute::readLUT();
+  stt::readLUT();
   initDbSta(this);
   initResizer(this);
   initGui(this);
@@ -223,11 +238,13 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTapcell(this);
   initTritonMp(this);
   initOpenRCX(this);
+  initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
 #ifdef BUILD_OPENPHYSYN
     initPsn(this);
 #endif
+  initPartitionMgr(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
@@ -359,7 +376,7 @@ void
 OpenRoad::linkDesign(const char *design_name)
 
 {
-  dbLinkDesign(design_name, verilog_network_, db_);
+  dbLinkDesign(design_name, verilog_network_, db_, logger_);
   for (Observer* observer : observers_) {
     observer->postReadDb(db_);
   }

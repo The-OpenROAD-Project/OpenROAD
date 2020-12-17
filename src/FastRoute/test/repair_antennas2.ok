@@ -17,7 +17,7 @@ Notice 0: Finished DEF file: repair_antennas2.def
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 Layer 2 pitch: 0.37
 Layer 3 pitch: 0.48
 Layer 4 pitch: 0.74
@@ -105,7 +105,7 @@ delta HPWL                  0 %
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.000000
 [PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 Layer 2 pitch: 0.370000
 Layer 3 pitch: 0.480000
 Layer 4 pitch: 0.740000
@@ -114,7 +114,6 @@ Layer 6 pitch: 3.330000
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 14285
 [INFO] #DB Macros: 13
-[INFO] Found 0 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 22
 [INFO] Processing 11107 obstacles on layer 1
@@ -140,7 +139,7 @@ Final usage/overflow report:
 [INFO] Final usage          : 525
 [INFO] Final number of vias : 187
 [INFO] Final usage 3D       : 1086
-Placed 6681 filler instances.
+[INFO DPL-0001] Placed 6681 filler instances.
 [INFO] Num routed nets: 262
 No differences found.
 No differences found.

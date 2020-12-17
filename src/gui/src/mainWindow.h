@@ -39,6 +39,7 @@
 #include <memory>
 
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 
 namespace odb {
 class dbDatabase;
@@ -132,6 +133,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QAction* exit_;
   QAction* fit_;
+  QAction* zoomIn_;
+  QAction* zoomOut_;
 
   QLabel* location_;
 };

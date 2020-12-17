@@ -67,7 +67,13 @@ development team so their private build environments can be updated.
 Each tool cmake file builds a library that is linked by the OpenROAD
 application. The tools should not define a `main()` function.  If the
 tool is tcl only and has no c++ code it does not need to have a cmake
-file.
+file. Tool cmake files should **not** include the following:
+
+* cmake_minimum_required
+* GCC_COVERAGE_COMPILE_FLAGS
+* GCC_COVERAGE_LINK_FLAGS
+* CMAKE_CXX_FLAGS
+* CMAKE_EXE_LINKER_FLAGS
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files.  These functions are all provided by the OpenROAD
@@ -94,11 +100,11 @@ to get individual tools from the OpenROAD object can be defined.
 
 ### Initialization (c++ tools only)
 
-The OpenRoad class only has pointers to each tools with functions to
+The OpenRoad class has pointers to each tools with functions to
 get each tool.  Each tool has (at a minimum) a function to make an
 instance of the tool class, and an initialization function that is
 called after all of the tools have been made, and a funtion to delete
-the tool. This small header does NOT include the class definition for
+the tool. This small header does **not** include the class definition for
 the tool so that the OpenRoad framework does not have to know anything
 about the tool internals or include a gigantic header file.
 

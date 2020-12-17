@@ -42,7 +42,7 @@
 #include <cmath>
 #include <limits>
 
-namespace TritonCTS {
+namespace cts {
 
 class SegmentBuilder
 {
@@ -281,4 +281,4 @@ class HTreeBuilder : public TreeBuilder
   unsigned _clockTreeMaxDepth = 0;
 };
 
-}  // namespace TritonCTS
+}  // namespace cts

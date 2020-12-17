@@ -4,7 +4,6 @@ record_tests {
   make_parasitics3
   make_parasitics4
   buffer_ports1
-  buffer_ports2
   buffer_ports3
   buffer_ports4
   buffer_ports5
@@ -28,6 +27,8 @@ record_tests {
   repair_hold4
   repair_hold5
   repair_hold6
+  repair_hold7
+  repair_setup1
   repair_slew1
   repair_slew2
   repair_slew3

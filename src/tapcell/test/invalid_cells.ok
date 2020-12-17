@@ -11,4 +11,5 @@ Notice 0: Design: gcd
 Notice 0: Finished DEF file: invalid_cells.def
 Running tapcell...
 Step 1: Cut rows...
-Error: Master FILLCELL_X1x not found
+[ERROR UKN-0000] Master FILLCELL_X1x not found
+UKN-0000

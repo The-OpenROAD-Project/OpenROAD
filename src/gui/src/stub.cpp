@@ -58,6 +58,10 @@ void gui::Gui::unregister_renderer(gui::Renderer*)
 {
 }
 
+void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
+{
+}
+
 void gui::Gui::redraw()
 {
 }

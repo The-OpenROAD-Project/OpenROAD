@@ -48,10 +48,10 @@ x4/A                                    0.15    0.18   -0.03 (VIOLATED)
 x6/A                                    0.15    0.18   -0.03 (VIOLATED)
 x7/A                                    0.15    0.18   -0.03 (VIOLATED)
 
-Found 7 slew violations.
-Found 1 capacitance violations.
-Inserted 5 buffers in 7 nets.
-Resized 11 instances.
+[INFO RSZ-0034] Found 7 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0038] Inserted 5 buffers in 7 nets.
+[INFO RSZ-0039] Resized 6 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack

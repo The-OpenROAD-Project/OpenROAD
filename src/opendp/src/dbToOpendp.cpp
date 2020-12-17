@@ -36,10 +36,10 @@
 #include <cfloat>
 #include <limits>
 #include "opendp/Opendp.h"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
-namespace opendp {
+namespace dpl {
 
 using std::ifstream;
 using std::max;
@@ -49,8 +49,7 @@ using std::ofstream;
 using std::string;
 using std::vector;
 
-using ord::error;
-using ord::warn;
+using ord::DPL;
 
 using odb::dbBox;
 using odb::dbMaster;
@@ -176,9 +175,8 @@ Opendp::examineRows()
 
     row0_orient_is_r0_ = (bottom_row->getOrient() == dbOrientType::R0);
   }
-  else {
-    error("no rows found.");
-  }
+  else
+    logger_->error(DPL, 12, "no rows found.");
 }
 
 void
@@ -305,11 +303,10 @@ void
 Opendp::reportImportWarnings()
 {
   if (macro_top_power_ == Power::undefined) {
-    warn("Cannot find MACRO with VDD/VSS pins.");
+    logger_->warn(DPL, 10, "Cannot find MACRO with VDD/VSS pins.");
   }
-  if (initial_power_ == Power::undefined) {
-    warn("could not find power special net");
-  }
+  if (initial_power_ == Power::undefined)
+    logger_->warn(DPL, 11, "Could not find power special net.");
 }
 
-}  // namespace opendp
+}  // namespace

@@ -40,15 +40,19 @@ class dbSta;
 class Resizer;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace ord {
 
 class OpenRoad;
 
-sta::Resizer *
+rsz::Resizer *
 makeResizer();
 
 void
-deleteResizer(sta::Resizer *resizer);
+deleteResizer(rsz::Resizer *resizer);
 
 void
 initResizer(OpenRoad *openroad);

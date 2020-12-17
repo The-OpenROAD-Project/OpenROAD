@@ -1,0 +1,34 @@
+Notice 0: Reading LEF file:  sky130/sky130_tech.lef
+Notice 0:     Created 11 technology layers
+Notice 0:     Created 25 technology vias
+Notice 0: Finished LEF file:  sky130/sky130_tech.lef
+Notice 0: Reading LEF file:  sky130/sky130_std_cell.lef
+Notice 0:     Created 390 library cells
+Notice 0: Finished LEF file:  sky130/sky130_std_cell.lef
+Notice 0: 
+Reading DEF file: gcd.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 7805 components and 18215 component-terminals.
+Notice 0:     Created 2 special nets and 0 connections.
+Notice 0:     Created 322 nets and 971 connections.
+Notice 0: Finished DEF file: gcd.def
+Notice 0: Split top of 118 T shapes.
+Notice 0: Defined process_corner X with ext_model_index 0
+Notice 0: Defined Extraction corner X
+Notice 0: extracting gcd ...
+Notice 0: Reading extraction model file ext_pattern.rules ...
+Notice 0: dbFactor= 2  dbunit= 2000 
+Notice 0: RC segment generation gcd (max_merge_res 0) ...
+Notice 0: Final 2814 rc segments
+Notice 0: Coupling Cap extraction gcd ...
+Notice 0: Coupling threshhold is 0.100000 FF, coupling capacitance less than 0.100000 FF will be grounded.
+Notice 0: 2107 wires to be extracted
+Notice 0: %48 completion -- 1032 wires have been extracted
+Notice 0: %100 completion -- 2107 wires have been extracted
+Notice 0: Extract 322 nets, 3136 rsegs, 3136 caps, 2061 ccs
+Notice 0: Finished extracting gcd.
+Notice 0: Writing SPEF ...
+Notice 0: 322 nets finished
+Notice 0: Finished writing SPEF ...
+No differences found.

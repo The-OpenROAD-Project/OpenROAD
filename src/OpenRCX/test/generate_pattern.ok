@@ -1,0 +1,10 @@
+Notice 0: Reading LEF file:  sky130/sky130_tech.lef
+Notice 0:     Created 11 technology layers
+Notice 0:     Created 25 technology vias
+Notice 0: Finished LEF file:  sky130/sky130_tech.lef
+Notice 0: Finished 252 bench measurements for pattern MET_OVER_MET
+Notice 0: Finished 240 measurements for pattern MET_UNDER_MET
+Notice 0: Finished 180 bench measurements for pattern MET_UNDER_MET
+Notice 0: Finished 182 bench measurements for pattern MET_DIAGUNDER_MET
+No differences found.
+No differences found.

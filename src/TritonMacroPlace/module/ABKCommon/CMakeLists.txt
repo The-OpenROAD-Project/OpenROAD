@@ -3,8 +3,6 @@ project(ABKCommon
   LANGUAGES CXX 
 )
 
-cmake_minimum_required(VERSION 2.6)
-
 set(ABKCOMMON_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "ABKCommon_home: ${ABKCOMMON_HOME}")
 

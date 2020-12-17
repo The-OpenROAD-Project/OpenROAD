@@ -14,7 +14,7 @@ Notice 0: Finished DEF file: gcd.def
 [PARAMS] Max routing layer: 10
 [PARAMS] Global adjustment: 0
 [PARAMS] Unidirectional routing: 0
-[PARAMS] Grid origin: (-1, -1)
+[PARAMS] Grid origin: (0, 0)
 [INFO] #DB Obstructions: 0
 [INFO] #DB Obstacles: 2874
 [INFO] #DB Macros: 0
