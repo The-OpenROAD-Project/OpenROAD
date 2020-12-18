@@ -149,17 +149,8 @@ proc tapcell { args } {
         set tbtie_cpp $keys(-tbtie_cpp)
     }
 
-    if { [info exists flags(-add_boundary_cell)] } {
-        set add_boundary_cell 1
-    } else {
-        set add_boundary_cell 0
-    }
-
-    if { [info exists flags(-no_cell_at_top_bottom)] } {
-        set no_cell_at_top_bottom 1
-    } else {
-        set no_cell_at_top_bottom 0
-    }
+    set add_boundary_cell [info exists flags(-add_boundary_cell)]
+    set no_cell_at_top_bottom [info exists flags(-no_cell_at_top_bottom)]
 
     puts "Running tapcell..."
         
