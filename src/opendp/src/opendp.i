@@ -39,7 +39,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "opendp/Opendp.h"
 
-using opendp::StringSeq;
+using dpl::StringSeq;
 using sta::Instance;
 
 StringSeq *
@@ -89,7 +89,7 @@ tclListSet(Tcl_Obj *const source,
     return nullptr;
 }
   
-opendp::dbMasterSet *
+dpl::dbMasterSet *
 tclListSetdbMaster(Tcl_Obj *const source,
                    Tcl_Interp *interp)
 {
@@ -111,17 +111,19 @@ tclListSetdbMaster(Tcl_Obj *const source,
 
 %inline %{
 
+namespace dpl {
+
 void
 detailed_placement_cmd(int max_displacment)
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment);
 }
 
 bool
 check_placement_cmd(bool verbose)
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   return opendp->checkPlacement(verbose);
 }
 
@@ -130,7 +132,7 @@ void
 set_padding_global(int left,
                    int right)
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPaddingGlobal(left, right);
 }
 
@@ -139,7 +141,7 @@ set_padding_master(odb::dbMaster *master,
                    int left,
                    int right)
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPadding(master, left, right);
 }
 
@@ -148,22 +150,24 @@ set_padding_inst(odb::dbInst *inst,
                  int left,
                  int right)
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setPadding(inst, left, right);
 }
 
 void
 filler_placement_cmd(StringSeq *fillers)
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->fillerPlacement(fillers);
 }
 
 void
 optimize_mirroring_cmd()
 {
-  opendp::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
+  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->optimizeMirroring();
 }
+
+} // namespace
 
 %} // inline

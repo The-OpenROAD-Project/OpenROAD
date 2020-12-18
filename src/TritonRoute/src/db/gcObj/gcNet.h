@@ -38,104 +38,104 @@ namespace fr {
   class gcNet: public gcBlockObject {
   public:
     // constructors
-    gcNet(int numLayers): gcBlockObject(), fixedPolygons(numLayers), routePolygons(numLayers), 
-                          fixedRectangles(numLayers), routeRectangles(numLayers), pins(numLayers), owner(nullptr) {}
+    gcNet(int numLayers): gcBlockObject(), fixedPolygons_(numLayers), routePolygons_(numLayers), 
+                          fixedRectangles_(numLayers), routeRectangles_(numLayers), pins_(numLayers), owner_(nullptr) {}
     // setters
     void addPolygon(const frBox &box, frLayerNum layerNum, bool isFixed = false) {
       gtl::rectangle_data<frCoord> rect(box.left(), box.bottom(), box.right(), box.top());
       using namespace gtl::operators;
       if (isFixed) {
-        fixedPolygons[layerNum] += rect;
+        fixedPolygons_[layerNum] += rect;
       } else {
-        routePolygons[layerNum] += rect;
+        routePolygons_[layerNum] += rect;
       }
     }
     void addRectangle(const frBox &box, frLayerNum layerNum, bool isFixed = false) {
       gtl::rectangle_data<frCoord> rect(box.left(), box.bottom(), box.right(), box.top());
       if (isFixed) {
-        fixedRectangles[layerNum].push_back(rect);
+        fixedRectangles_[layerNum].push_back(rect);
       } else {
-        routeRectangles[layerNum].push_back(rect);
+        routeRectangles_[layerNum].push_back(rect);
       }
     }
     void addPin(const gtl::polygon_90_with_holes_data<frCoord> &shape, frLayerNum layerNum) {
       auto pin = std::make_unique<gcPin>(shape, layerNum, this);
-      pin->setId(pins[layerNum].size());
-      pins[layerNum].push_back(std::move(pin));
+      pin->setId(pins_[layerNum].size());
+      pins_[layerNum].push_back(std::move(pin));
     }
     void addPin(const gtl::rectangle_data<frCoord> &rect, frLayerNum layerNum) {
       gtl::polygon_90_with_holes_data<frCoord> shape;
       std::vector<frCoord> coords = {gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)};
       shape.set_compact(coords.begin(), coords.end());
       auto pin = std::make_unique<gcPin>(shape, layerNum, this);
-      pin->setId(pins[layerNum].size());
-      pins[layerNum].push_back(std::move(pin));
+      pin->setId(pins_[layerNum].size());
+      pins_[layerNum].push_back(std::move(pin));
     }
     void setOwner(frBlockObject* in) {
-      owner = in;
+      owner_ = in;
     }
     void clear() {
-      auto size = routePolygons.size();
-      routePolygons.clear();
-      routePolygons.resize(size);
-      routeRectangles.clear();
-      routeRectangles.resize(size);
-      for (auto &layerPins: pins) {
+      auto size = routePolygons_.size();
+      routePolygons_.clear();
+      routePolygons_.resize(size);
+      routeRectangles_.clear();
+      routeRectangles_.resize(size);
+      for (auto &layerPins: pins_) {
         layerPins.clear();
       }
     }
     // getters
     const std::vector<gtl::polygon_90_set_data<frCoord> >& getPolygons(bool isFixed = false) const {
       if (isFixed) {
-        return fixedPolygons;
+        return fixedPolygons_;
       } else {
-        return routePolygons;
+        return routePolygons_;
       }
     }
     const gtl::polygon_90_set_data<frCoord>& getPolygons(frLayerNum layerNum, bool isFixed = false) const {
       if (isFixed) {
-        return fixedPolygons[layerNum];
+        return fixedPolygons_[layerNum];
       } else {
-        return routePolygons[layerNum];
+        return routePolygons_[layerNum];
       }
     }
     const std::vector<std::vector<gtl::rectangle_data<frCoord> > >& getRectangles(bool isFixed = false) const {
       if (isFixed) {
-        return fixedRectangles;
+        return fixedRectangles_;
       } else {
-        return routeRectangles;
+        return routeRectangles_;
       }
     }
     const std::vector<gtl::rectangle_data<frCoord> >& getRectangles(frLayerNum layerNum, bool isFixed = false) const {
       if (isFixed) {
-        return fixedRectangles[layerNum];
+        return fixedRectangles_[layerNum];
       } else {
-        return routeRectangles[layerNum];
+        return routeRectangles_[layerNum];
       }
     }
     const std::vector<std::vector<std::unique_ptr<gcPin> > >& getPins() const {
-      return pins;
+      return pins_;
     }
     const std::vector<std::unique_ptr<gcPin> >& getPins(frLayerNum layerNum) const {
-      return pins[layerNum];
+      return pins_[layerNum];
     }
     bool hasOwner() const {
-      return (owner);
+      return owner_;
     }
     frBlockObject* getOwner() const {
-      return owner;
+      return owner_;
     }
     // others
     frBlockObjectEnum typeId() const override {
       return gccNet;
     }
   protected:
-    std::vector<gtl::polygon_90_set_data<frCoord> >          fixedPolygons; // only routing layer
-    std::vector<gtl::polygon_90_set_data<frCoord> >          routePolygons; // only routing layer
-    std::vector<std::vector<gtl::rectangle_data<frCoord> > > fixedRectangles; // only cut layer
-    std::vector<std::vector<gtl::rectangle_data<frCoord> > > routeRectangles; // only cut layer
-    std::vector<std::vector<std::unique_ptr<gcPin> > >       pins;
-    frBlockObject*                                           owner;
+    std::vector<gtl::polygon_90_set_data<frCoord> >          fixedPolygons_; // only routing layer
+    std::vector<gtl::polygon_90_set_data<frCoord> >          routePolygons_; // only routing layer
+    std::vector<std::vector<gtl::rectangle_data<frCoord> > > fixedRectangles_; // only cut layer
+    std::vector<std::vector<gtl::rectangle_data<frCoord> > > routeRectangles_; // only cut layer
+    std::vector<std::vector<std::unique_ptr<gcPin> > >       pins_;
+    frBlockObject*                                           owner_;
 
     void init();
   };

@@ -1,4 +1,4 @@
-# repair_hold_violations min/max delay prevents complete repair
+# repair_timing -hold min/max delay prevents complete repair
 source helpers.tcl
 read_liberty sky130/sky130_tt.lib
 read_lef sky130/sky130_tech.lef

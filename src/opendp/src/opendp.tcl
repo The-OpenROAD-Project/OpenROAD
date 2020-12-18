@@ -48,7 +48,7 @@ proc detailed_placement { args } {
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    opendp::detailed_placement_cmd $max_displacment
+    dpl::detailed_placement_cmd $max_displacment
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
@@ -77,18 +77,18 @@ proc set_placement_padding { args } {
 
   sta::check_argc_eq0 "set_placement_padding" $args
   if { [info exists flags(-global)] } {
-    opendp::set_padding_global $left $right
+    dpl::set_padding_global $left $right
   } elseif { [info exists keys(-masters)] } {
-    set masters [opendp::get_masters_arg "-masters" $keys(-masters)]
+    set masters [dpl::get_masters_arg "-masters" $keys(-masters)]
     foreach master $masters {
-      opendp::set_padding_master $master $left $right
+      dpl::set_padding_master $master $left $right
     }
   } elseif { [info exists keys(-instances)] } {
     # sta::get_instances_error supports sdc get_cells
     set insts [sta::get_instances_error "-instances" $keys(-instances)]
     foreach inst $insts {
       set db_inst [sta::sta_to_db_inst $inst]
-      opendp::set_padding_inst $db_inst $left $right
+      dpl::set_padding_inst $db_inst $left $right
     }
   }
 }
@@ -97,14 +97,14 @@ sta::define_cmd_args "filler_placement" { filler_masters }
 
 proc filler_placement { args } {
   sta::check_argc_eq1 "filler_placement" $args
-  set fillers [opendp::get_masters_arg "filler_masters" [lindex $args 0]]
+  set fillers [dpl::get_masters_arg "filler_masters" [lindex $args 0]]
   if { [llength $fillers] > 0 } {
     # pass master names for now
     set filler_names {}
     foreach filler $fillers {
       lappend filler_names [$filler getConstName]
     }
-    opendp::filler_placement_cmd $filler_names
+    dpl::filler_placement_cmd $filler_names
   }
 }
 
@@ -116,17 +116,17 @@ proc check_placement { args } {
 
   set verbose [info exists flags(-verbose)]
   sta::check_argc_eq0 "check_placement" $args
-  opendp::check_placement_cmd $verbose
+  dpl::check_placement_cmd $verbose
 }
 
 sta::define_cmd_args "optimize_mirroring" {}
 
 proc optimize_mirroring { args } {
   sta::check_argc_eq0 "optimize_mirroring" $args
-  opendp::optimize_mirroring_cmd
+  dpl::optimize_mirroring_cmd
 }
 
-namespace eval opendp {
+namespace eval dpl {
 
 proc get_masters_arg { arg_name arg } {
   set matched 0

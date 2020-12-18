@@ -6,10 +6,6 @@ read_sdc gcd.sdc
 
 set_wire_rc -layer metal3
 estimate_parasitics -placement
-# flute results are not stable on nets with fanout > 9
-set_load 20 _241_
-# force consistent results on centos/gcc
-set_load 4 [get_net -of [get_pin _888_/Q]]
 
 report_worst_slack
 
@@ -21,9 +17,10 @@ repair_design -max_wire_length 800
 
 repair_tie_fanout LOGIC0_X1/Z
 repair_tie_fanout LOGIC1_X1/Z
-repair_timing
+repair_timing -setup
+repair_timing -hold -slack_margin .2
 
-report_checks
+report_checks -path_delay min_max
 report_check_types -max_slew -max_fanout -max_capacitance
 report_worst_slack
 report_long_wires 10

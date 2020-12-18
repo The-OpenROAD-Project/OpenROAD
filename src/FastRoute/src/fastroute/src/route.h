@@ -35,7 +35,7 @@
 
 #include "DataType.h"
 
-namespace gr {
+namespace grt {
 
 #define SAMEX 0
 #define SAMEY 1
@@ -65,5 +65,5 @@ extern void routeMonotonic(int netID, int edgeID, int threshold);
 extern void routeLVAll(int threshold, int expand);
 extern void spiralRouteAll();
 extern void newrouteLInMaze(int netID);
-}  // namespace gr
+}  // namespace grt
 #endif /* __ROUTE_H__ */

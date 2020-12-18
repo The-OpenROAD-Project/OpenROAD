@@ -70,6 +70,8 @@ using sta::is_regular_file;
 static int cmd_argc;
 static char **cmd_argv;
 bool gui_mode = false;
+const char* log_filename = nullptr;
+
 static const char *init_filename = ".openroad";
 
 static void
@@ -89,11 +91,9 @@ main(int argc,
     return 0;
   }
 
-  if (const char* log_name = findCmdLineKey(argc, argv, "-log")) {
-    remove(log_name);
-    ord::init(log_name);
-    ord::info(ord::OPENROAD, 1, "Starting OpenROAD");
-  }
+  log_filename = findCmdLineKey(argc, argv, "-log");
+  if (log_filename)
+    remove(log_filename);
 
   cmd_argc = argc;
   cmd_argv = argv;

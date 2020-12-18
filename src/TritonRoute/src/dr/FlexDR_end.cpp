@@ -32,13 +32,13 @@ using namespace std;
 using namespace fr;
 
 void FlexDRWorker::endGetModNets(set<frNet*, frBlockObjectComp> &modNets) {
-  for (auto &net: nets) {
+  for (auto &net: nets_) {
     if (net->isModified()) {
       modNets.insert(net->getFrNet());
     }
   }
   // change modified flag to true if another subnet get routed
-  for (auto &net: nets) {
+  for (auto &net: nets_) {
     if (!net->isModified() && modNets.find(net->getFrNet()) != modNets.end()) {
       net->setModified(true);
     }
@@ -436,7 +436,7 @@ void FlexDRWorker::endAddNets_merge(frNet* net, set<pair<frPoint, frLayerNum> > 
 
 void FlexDRWorker::endAddNets(map<frNet*, set<pair<frPoint, frLayerNum> >, frBlockObjectComp> &boundPts) {
   //bool enableOutput = true;
-  for(auto &net: nets) {
+  for(auto &net: nets_) {
     if (!net->isModified()) {
       continue;
     }
@@ -498,31 +498,31 @@ void FlexDRWorker::endAddMarkers() {
 }
 
 void FlexDRWorker::cleanup() {
-  apSVia.clear();
-  fixedObjs.clear();
-  fixedObjs.shrink_to_fit();
-  planarHistoryMarkers.clear();
-  viaHistoryMarkers.clear();
-  historyMarkers.clear();
-  historyMarkers.shrink_to_fit();
+  apSVia_.clear();
+  fixedObjs_.clear();
+  fixedObjs_.shrink_to_fit();
+  planarHistoryMarkers_.clear();
+  viaHistoryMarkers_.clear();
+  historyMarkers_.clear();
+  historyMarkers_.shrink_to_fit();
   for (auto &net: getNets()) {
     net->cleanup();
   }
-  owner2nets.clear();
-  owner2pins.clear();
-  gridGraph.cleanup();
-  markers.clear();
-  markers.shrink_to_fit();
-  rq.cleanup();
+  owner2nets_.clear();
+  owner2pins_.clear();
+  gridGraph_.cleanup();
+  markers_.clear();
+  markers_.shrink_to_fit();
+  rq_.cleanup();
 }
 
 void FlexDRWorker::end() {
-  if (skipRouting == true) {
+  if (skipRouting_ == true) {
     return;
   }
   // skip if current clip does not have input DRCs
   // ripupMode = 0 must have enableDRC = true in previous iteration
-  if (isEnableDRC() && getDRIter() && getInitNumMarkers() == 0 && !needRecheck) {
+  if (isEnableDRC() && getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
     return;
   // do not write back if current clip is worse than input
   } else if (isEnableDRC() && getRipupMode() == 0 && getBestNumMarkers() > getInitNumMarkers()) {
@@ -547,7 +547,7 @@ void FlexDRWorker::end() {
 
 int FlexDRWorker::getNumQuickMarkers() {
   int totNum = 0;
-  for (auto &net: nets) {
+  for (auto &net: nets_) {
     totNum += net->getNumMarkers();
   }
   return totNum;

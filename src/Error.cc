@@ -33,8 +33,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <stdarg.h>
 #include "openroad/Error.hh"
+
+#include <stdarg.h>
+#include "openroad/OpenRoad.hh"
+#include "openroad/Logger.h"
 
 namespace ord {
 
@@ -43,15 +46,11 @@ error(const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  char *what;
-  vasprintf(&what, fmt, args);
+  char *msg;
+  vasprintf(&msg, fmt, args);
   va_end(args);
-
-  Exception e(what);
-  free(what); // e will have copied what so free it
-
-  // Exception should be caught by swig error handler.
-  throw e;
+  // Do NOT copy this temporary use of the openroad singleton for compatibility.
+  OpenRoad::openRoad()->getLogger()->error(UKN, 0, msg);
 }
 
 void
@@ -59,10 +58,11 @@ warn(const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  printf("Warning: ");
-  vprintf(fmt, args);
-  printf("\n");
+  char *msg;
+  vasprintf(&msg, fmt, args);
   va_end(args);
+  // Do NOT copy this temporary use of the openroad singleton for compatibility.
+  OpenRoad::openRoad()->getLogger()->warn(UKN, 0, msg);
 }
 
 } // namespace

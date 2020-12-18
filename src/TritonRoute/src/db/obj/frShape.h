@@ -77,27 +77,27 @@ namespace fr {
   class frRect: public frShape {
   public:
     // constructors
-    frRect(): frShape(), box(), layer(0), owner(nullptr) {}
-    frRect(const frRect &in): frShape(in), box(in.box), layer(in.layer), owner(in.owner) {}
+    frRect(): frShape(), box_(), layer_(0), owner_(nullptr) {}
+    frRect(const frRect &in): frShape(in), box_(in.box_), layer_(in.layer_), owner_(in.owner_) {}
     // setters
     void setBBox (const frBox &boxIn) {
-      box.set(boxIn);
+      box_.set(boxIn);
     }
     // getters
     // others
     bool isHor() const {
-      frCoord xSpan = box.right() - box.left();
-      frCoord ySpan = box.top()   - box.bottom();
+      frCoord xSpan = box_.right() - box_.left();
+      frCoord ySpan = box_.top()   - box_.bottom();
       return (xSpan >= ySpan) ? true : false;
     }
     frCoord width() const {
-      frCoord xSpan = box.right() - box.left();
-      frCoord ySpan = box.top()   - box.bottom();
+      frCoord xSpan = box_.right() - box_.left();
+      frCoord ySpan = box_.top()   - box_.bottom();
       return (xSpan > ySpan) ? ySpan : xSpan;
     }
     frCoord length() const {
-      frCoord xSpan = box.right() - box.left();
-      frCoord ySpan = box.top()   - box.bottom();
+      frCoord xSpan = box_.right() - box_.left();
+      frCoord ySpan = box_.top()   - box_.bottom();
       return (xSpan < ySpan) ? ySpan : xSpan;
     }    
     frBlockObjectEnum typeId() const override {
@@ -109,10 +109,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from frPinFig
@@ -122,19 +122,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == frcPin);
+      return (owner_) && (owner_->typeId() == frcPin);
     }
     
     frPin* getPin() const override {
-      return reinterpret_cast<frPin*>(owner);
+      return reinterpret_cast<frPin*>(owner_);
     }
     
     void addToPin(frPin* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frConnFig
@@ -144,19 +144,19 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == frcNet);
+      return (owner_) && (owner_->typeId() == frcNet);
     }
     
     frNet* getNet() const override {
-      return reinterpret_cast<frNet*>(owner);
+      return reinterpret_cast<frNet*>(owner_);
     }
     
     void addToNet(frNet* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frFig
@@ -165,10 +165,10 @@ namespace fr {
      * overlaps in .cpp
      */
     void getBBox (frBox &boxIn) const override {
-      boxIn.set(box);
+      boxIn.set(box_);
     }
     void move(const frTransform &xform) override {
-      box.transform(xform);
+      box_.transform(xform);
     }
     bool overlaps(const frBox &box) const override {
       frBox rectBox;
@@ -177,32 +177,32 @@ namespace fr {
     }
     
     void setIter(frListIter<std::unique_ptr<frShape> >& in) override {
-      iter = in;
+      iter_ = in;
     }
     frListIter<std::unique_ptr<frShape> > getIter() const override {
-      return iter;
+      return iter_;
     }
 
   protected:
-    frBox          box;
-    frLayerNum     layer;
-    frBlockObject* owner; // general back pointer 0
-    frListIter<std::unique_ptr<frShape> > iter;
+    frBox          box_;
+    frLayerNum     layer_;
+    frBlockObject* owner_; // general back pointer 0
+    frListIter<std::unique_ptr<frShape> > iter_;
   };
 
   class frPatchWire: public frShape {
   public:
     // constructors
-    frPatchWire(): frShape(), offsetBox(), origin(), layer(0), owner(nullptr) {}
-    frPatchWire(const frPatchWire &in): frShape(), offsetBox(in.offsetBox), 
-                                        origin(in.origin), layer(in.layer), owner(in.owner) {}
+    frPatchWire(): frShape(), offsetBox_(), origin_(), layer_(0), owner_(nullptr) {}
+    frPatchWire(const frPatchWire &in): frShape(), offsetBox_(in.offsetBox_), 
+                                        origin_(in.origin_), layer_(in.layer_), owner_(in.owner_) {}
     frPatchWire(const drPatchWire &in);
     // setters
     void setOffsetBox (const frBox &in) {
-      offsetBox.set(in);
+      offsetBox_.set(in);
     }
     void setOrigin(const frPoint &in) {
-      origin.set(in);
+      origin_.set(in);
     }
     // getters
     // others
@@ -215,10 +215,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from frPinFig
@@ -228,19 +228,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == frcPin);
+      return (owner_) && (owner_->typeId() == frcPin);
     }
     
     frPin* getPin() const override {
-      return reinterpret_cast<frPin*>(owner);
+      return reinterpret_cast<frPin*>(owner_);
     }
     
     void addToPin(frPin* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frConnFig
@@ -250,19 +250,19 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == frcNet);
+      return (owner_) && (owner_->typeId() == frcNet);
     }
     
     frNet* getNet() const override {
-      return reinterpret_cast<frNet*>(owner);
+      return reinterpret_cast<frNet*>(owner_);
     }
     
     void addToNet(frNet* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frFig
@@ -271,15 +271,15 @@ namespace fr {
      * overlaps in .cpp
      */
     void getBBox (frBox &boxIn) const override {
-      frTransform xform(origin);
-      boxIn.set(offsetBox);
+      frTransform xform(origin_);
+      boxIn.set(offsetBox_);
       boxIn.transform(xform);
     }
     void getOffsetBox (frBox &boxIn) const {
-      boxIn.set(offsetBox);
+      boxIn.set(offsetBox_);
     }
     void getOrigin(frPoint &in) const {
-      in.set(origin);
+      in.set(origin_);
     }
     void move(const frTransform &xform) override {
     }
@@ -290,33 +290,33 @@ namespace fr {
     }
     
     void setIter(frListIter<std::unique_ptr<frShape> >& in) override {
-      iter = in;
+      iter_ = in;
     }
     frListIter<std::unique_ptr<frShape> > getIter() const override {
-      return iter;
+      return iter_;
     }
 
   protected:
-    // frBox          box;
-    frBox          offsetBox;
-    frPoint        origin;
-    frLayerNum     layer;
-    frBlockObject* owner; // general back pointer 0
-    frListIter<std::unique_ptr<frShape> > iter;
+    // frBox          box_;
+    frBox          offsetBox_;
+    frPoint        origin_;
+    frLayerNum     layer_;
+    frBlockObject* owner_; // general back pointer 0
+    frListIter<std::unique_ptr<frShape> > iter_;
   };
 
   class frPolygon: public frShape {
   public:
     // constructors
-    frPolygon(): frShape(), points(), layer(0), owner(nullptr) {}
-    frPolygon(const frPolygon &in): frShape(), points(in.points), layer(in.layer), owner(in.owner) {}
+    frPolygon(): frShape(), points_(), layer_(0), owner_(nullptr) {}
+    frPolygon(const frPolygon &in): frShape(), points_(in.points_), layer_(in.layer_), owner_(in.owner_) {}
     // setters
     void setPoints (const std::vector<frPoint> &pointsIn) {
-      points = pointsIn;
+      points_ = pointsIn;
     }
     // getters
     const std::vector<frPoint>& getPoints() const {
-      return points;
+      return points_;
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -328,10 +328,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from frPinFig
@@ -341,19 +341,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == frcPin);
+      return (owner_) && (owner_->typeId() == frcPin);
     }
     
     frPin* getPin() const override {
-      return reinterpret_cast<frPin*>(owner);
+      return reinterpret_cast<frPin*>(owner_);
     }
     
     void addToPin(frPin* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frConnFig
@@ -363,19 +363,19 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == frcNet);
+      return (owner_) && (owner_->typeId() == frcNet);
     }
     
     frNet* getNet() const override {
-      return reinterpret_cast<frNet*>(owner);
+      return reinterpret_cast<frNet*>(owner_);
     }
     
     void addToNet(frNet* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frFig
@@ -388,13 +388,13 @@ namespace fr {
       frCoord lly = 0;
       frCoord urx = 0;
       frCoord ury = 0;
-      if (points.size()) {
-        llx = points.begin()->x();
-        urx = points.begin()->x();
-        lly = points.begin()->y();
-        ury = points.begin()->y();
+      if (points_.size()) {
+        llx = points_.begin()->x();
+        urx = points_.begin()->x();
+        lly = points_.begin()->y();
+        ury = points_.begin()->y();
       }
-      for (auto &point: points) {
+      for (auto &point: points_) {
         llx = (llx < point.x()) ? llx : point.x();
         lly = (lly < point.y()) ? lly : point.y();
         urx = (urx > point.x()) ? urx : point.x();
@@ -403,7 +403,7 @@ namespace fr {
       boxIn.set(llx, lly, urx, ury);
     }
     void move(const frTransform &xform) override {
-      for (auto &point: points) {
+      for (auto &point: points_) {
         point.transform(xform);
       }
     }
@@ -412,46 +412,46 @@ namespace fr {
     }
     
     void setIter(frListIter<std::unique_ptr<frShape> >& in) override {
-      iter = in;
+      iter_ = in;
     }
     frListIter<std::unique_ptr<frShape> > getIter() const override {
-      return iter;
+      return iter_;
     }
 
   protected:
-    std::vector<frPoint> points;
-    frLayerNum           layer;
-    frBlockObject*       owner;
-    frListIter<std::unique_ptr<frShape> > iter;
+    std::vector<frPoint> points_;
+    frLayerNum           layer_;
+    frBlockObject*       owner_;
+    frListIter<std::unique_ptr<frShape> > iter_;
   };
 
 
   class frPathSeg: public frShape {
   public:
     // constructors
-    frPathSeg(): frShape(), begin(), end(), layer(0), style(), owner(nullptr) {}
-    frPathSeg(const frPathSeg &in): begin(in.begin), end(in.end), layer(in.layer), style(in.style), owner(in.owner) {}
+    frPathSeg(): frShape(), begin_(), end_(), layer_(0), style_(), owner_(nullptr) {}
+    frPathSeg(const frPathSeg &in): begin_(in.begin_), end_(in.end_), layer_(in.layer_), style_(in.style_), owner_(in.owner_) {}
     frPathSeg(const drPathSeg &in);
     frPathSeg(const taPathSeg &in);
     // getters
     void getPoints(frPoint &beginIn, frPoint &endIn) const {
-      beginIn.set(begin);
-      endIn.set(end);
+      beginIn.set(begin_);
+      endIn.set(end_);
     }
     void getStyle(frSegStyle &styleIn) const {
-      styleIn.setBeginStyle(style.getBeginStyle(), style.getBeginExt());
-      styleIn.setEndStyle(style.getEndStyle(), style.getEndExt());
-      styleIn.setWidth(style.getWidth());
+      styleIn.setBeginStyle(style_.getBeginStyle(), style_.getBeginExt());
+      styleIn.setEndStyle(style_.getEndStyle(), style_.getEndExt());
+      styleIn.setWidth(style_.getWidth());
     }
     // setters
     void setPoints(const frPoint &beginIn, const frPoint &endIn) {
-      begin.set(beginIn);
-      end.set(endIn);
+      begin_.set(beginIn);
+      end_.set(endIn);
     }
     void setStyle(const frSegStyle &styleIn) {
-      style.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
-      style.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
-      style.setWidth(styleIn.getWidth());
+      style_.setBeginStyle(styleIn.getBeginStyle(), styleIn.getBeginExt());
+      style_.setEndStyle(styleIn.getEndStyle(), styleIn.getEndExt());
+      style_.setWidth(styleIn.getWidth());
     }
     // others
     frBlockObjectEnum typeId() const override {
@@ -463,10 +463,10 @@ namespace fr {
      * getLayerNum
      */
     void setLayerNum (frLayerNum numIn) override {
-      layer = numIn;
+      layer_ = numIn;
     }
     frLayerNum getLayerNum() const override {
-      return layer;
+      return layer_;
     }
     
     /* from frPinFig
@@ -476,19 +476,19 @@ namespace fr {
      * removeFromPin
      */
     bool hasPin() const override {
-      return (owner) && (owner->typeId() == frcPin);
+      return (owner_) && (owner_->typeId() == frcPin);
     }
     
     frPin* getPin() const override {
-      return reinterpret_cast<frPin*>(owner);
+      return reinterpret_cast<frPin*>(owner_);
     }
     
     void addToPin(frPin* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromPin() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frConnFig
@@ -498,19 +498,19 @@ namespace fr {
      * removeFromNet
      */
     bool hasNet() const override {
-      return (owner) && (owner->typeId() == frcNet);
+      return (owner_) && (owner_->typeId() == frcNet);
     }
     
     frNet* getNet() const override {
-      return reinterpret_cast<frNet*>(owner);
+      return reinterpret_cast<frNet*>(owner_);
     }
     
     void addToNet(frNet* in) override {
-      owner = reinterpret_cast<frBlockObject*>(in);
+      owner_ = reinterpret_cast<frBlockObject*>(in);
     }
     
     void removeFromNet() override {
-      owner = nullptr;
+      owner_ = nullptr;
     }
 
     /* from frFig
@@ -521,41 +521,41 @@ namespace fr {
     // needs to be updated
     void getBBox (frBox &boxIn) const override {
       bool isHorizontal = true;
-      if (begin.x() == end.x()) {
+      if (begin_.x() == end_.x()) {
         isHorizontal = false;
       }
-      auto width    = style.getWidth();
-      auto beginExt = style.getBeginExt();
-      auto endExt   = style.getEndExt();
+      auto width    = style_.getWidth();
+      auto beginExt = style_.getBeginExt();
+      auto endExt   = style_.getEndExt();
       if (isHorizontal) {
-        boxIn.set(begin.x() - beginExt, begin.y() - width / 2,
-                  end.x()   + endExt,   end.y()   + width / 2);
+        boxIn.set(begin_.x() - beginExt, begin_.y() - width / 2,
+                  end_.x()   + endExt,   end_.y()   + width / 2);
       } else {
-        boxIn.set(begin.x() - width / 2, begin.y() - beginExt,
-                  end.x()   + width / 2, end.y()   + endExt);
+        boxIn.set(begin_.x() - width / 2, begin_.y() - beginExt,
+                  end_.x()   + width / 2, end_.y()   + endExt);
       }
     }
     void move(const frTransform &xform) override {
-      begin.transform(xform);
-      end.transform(xform);
+      begin_.transform(xform);
+      end_.transform(xform);
     }
     bool overlaps(const frBox &box) const override {
       return false;
     }
 
     void setIter(frListIter<std::unique_ptr<frShape> >& in) override {
-      iter = in;
+      iter_ = in;
     }
     frListIter<std::unique_ptr<frShape> > getIter() const override {
-      return iter;
+      return iter_;
     }
   protected:
-    frPoint        begin; // begin always smaller than end, assumed
-    frPoint        end;
-    frLayerNum     layer;
-    frSegStyle     style;
-    frBlockObject* owner;
-    frListIter<std::unique_ptr<frShape> > iter;
+    frPoint        begin_; // begin always smaller than end, assumed
+    frPoint        end_;
+    frLayerNum     layer_;
+    frSegStyle     style_;
+    frBlockObject* owner_;
+    frListIter<std::unique_ptr<frShape> > iter_;
   };
 }
 

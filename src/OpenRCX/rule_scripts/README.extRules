@@ -1,0 +1,16 @@
+STEP 1: Write process stack and variability tables from customer writtings
+				example: goto directory PROCESS_RULES/CUSTOMER_TABLES
+
+STEP 2: Run tcl script process_to_tables.tcl to create Variability Tables
+				example: under PROCESS_RULES/CUSTOMER_TABLES
+				howto run: >> tclsh process_to_tables.tcl
+
+STEP 3: Run script mk_process_rules.tcsh to create input file to rules_gen 
+				example: under PROCESS_RULES
+				read doc in  mk_process_rules.tcsh
+				(./mk_process_rules.tcsh CUSTOMER_TABLES process.rules)
+
+STEP 4: Run ade with tcl script rules_gen.tcl to create input file to extract
+				example: under EXT_RULES
+				(ade rulesGen.tcl)
+

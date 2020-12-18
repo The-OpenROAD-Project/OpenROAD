@@ -48,7 +48,7 @@
 #include "Netlist.h"
 #include "Slots.h"
 
-namespace pin_placer {
+namespace ppl {
 
 using odb::Point;
 using odb::Rect;
@@ -78,5 +78,5 @@ class HungarianMatching
   void getFinalAssignment(std::vector<IOPin>&);
 };
 
-}  // namespace pin_placer
+}  // namespace ppl
 #endif /* __HUNGARIANMATCHING_H_ */

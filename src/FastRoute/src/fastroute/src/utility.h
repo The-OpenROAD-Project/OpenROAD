@@ -33,7 +33,7 @@
 #ifndef __UTILITY_H__
 #define __UTILITY_H__
 
-namespace gr {
+namespace grt {
 
 extern void getlen();
 extern void printEdge(int netID, int edgeID);
@@ -65,10 +65,10 @@ extern void        iniBDE();
 extern void        copyBR(void);
 extern void        copyRS(void);
 extern void        freeRR(void);
-extern Tree        fluteToTree(Flute::Tree fluteTree);
-extern Flute::Tree treeToFlute(Tree tree);
+extern Tree        fluteToTree(stt::Tree fluteTree);
+extern stt::Tree   treeToFlute(Tree tree);
 extern Tree        pdToTree(PD::Tree pdTree);
 
-}  // namespace gr
+}  // namespace grt
 
 #endif /* __UTILITY_H__ */

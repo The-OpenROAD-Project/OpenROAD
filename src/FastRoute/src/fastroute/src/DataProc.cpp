@@ -39,7 +39,7 @@
 #include "DataType.h"
 #include "flute.h"
 
-namespace gr {
+namespace grt {
 
 // Global variables
 int   XRANGE, YRANGE;
@@ -144,4 +144,4 @@ void init_usage()
   for (i = 0; i < (yGrid - 1) * xGrid; i++)
     v_edges[i].usage = 0;
 }
-}  // namespace gr
+}  // namespace grt

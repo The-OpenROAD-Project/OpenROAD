@@ -35,6 +35,8 @@
 
 #include "resizer/Resizer.hh"
 
+#include "resizer/SteinerTree.hh"
+
 #include "sta/Report.hh"
 #include "sta/Debug.hh"
 #include "sta/FuncExpr.hh"
@@ -60,15 +62,19 @@
 #include "sta/PathExpanded.hh"
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
+
 #include "openroad/OpenRoad.hh"
-#include "openroad/Error.hh"
-#include "resizer/SteinerTree.hh"
+#include "openroad/Logger.h"
 #include "opendb/dbTransform.h"
 
 // multi-corner support
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
 namespace sta {
+extern const char *resizer_tcl_inits[];
+}
+
+namespace rsz {
 
 using std::abs;
 using std::min;
@@ -79,8 +85,7 @@ using std::vector;
 using std::map;
 using std::pair;
 
-using ord::warn;
-using ord::error;
+using ord::RSZ;
 using ord::closestPtInRect;
 
 using odb::dbInst;
@@ -91,11 +96,55 @@ using odb::dbTransform;
 using odb::dbMPin;
 using odb::dbBox;
 
+using sta::evalTclInit;
+using sta::makeBlockSta;
+using sta::Level;
+using sta::stringLess;
+using sta::Network;
+using sta::NetworkEdit;
+using sta::NetPinIterator;
+using sta::NetConnectedPinIterator;
+using sta::InstancePinIterator;
+using sta::LeafInstanceIterator;
+using sta::LibertyLibraryIterator;
+using sta::LibertyCellIterator;
+using sta::LibertyCellTimingArcSetIterator;
+using sta::TimingArcSet;
+using sta::TimingArcSetArcIterator;
+using sta::TimingArcSetSeq;
+using sta::GateTimingModel;
+using sta::TimingRole;
+using sta::FuncExpr;
+using sta::Term;
+using sta::Port;
+using sta::PinSeq;
+using sta::PinSet;
+using sta::NetIterator;
+using sta::PinConnectedPinIterator;
+using sta::FindNetDrvrLoads;;
+using sta::ReducedParasiticType;
+using sta::OperatingConditions;
+using sta::VertexIterator;
+using sta::VertexOutEdgeIterator;
+using sta::Edge;
+using sta::Search;
+using sta::SearchPredNonReg2;
+using sta::ClkArrivalSearchPred;
+using sta::BfsBkwdIterator;
+using sta::BfsFwdIterator;
+using sta::BfsIndex;
+using sta::Clock;
+using sta::PathExpanded;
+using sta::INF;
+using sta::fuzzyEqual;
+using sta::fuzzyLess;
+using sta::fuzzyGreater;
+using sta::fuzzyGreaterEqual;
+using sta::stringPrint;
+
 extern "C" {
 extern int Resizer_Init(Tcl_Interp *interp);
 }
-
-extern const char *resizer_tcl_inits[];
 
 Resizer::Resizer() :
   StaState(),
@@ -126,9 +175,11 @@ Resizer::Resizer() :
 
 void
 Resizer::init(Tcl_Interp *interp,
+              Logger *logger,
               dbDatabase *db,
               dbSta *sta)
 {
+  logger_ = logger;
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
@@ -137,7 +188,7 @@ Resizer::init(Tcl_Interp *interp,
   // Define swig TCL commands.
   Resizer_Init(interp);
   // Eval encoded sta TCL sources.
-  evalTclInit(interp, resizer_tcl_inits);
+  evalTclInit(interp, sta::resizer_tcl_inits);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -268,7 +319,7 @@ Resizer::removeBuffers()
       }
     }
   }
-  printf("Removed %d buffers.\n", remove_count);
+  logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
 void
@@ -371,7 +422,7 @@ Resizer::findBuffers(LibertyLibrarySeq *resize_libs)
     }
   }
   if (buffer_cells_.empty())
-    error("no buffers found.");
+    logger_->error(RSZ, 22, "no buffers found.");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -392,7 +443,7 @@ Resizer::bufferInputs()
   }
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d input buffers.\n", inserted_buffer_count_);
+    logger_->info(RSZ, 27, "Inserted {} input buffers.", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -460,7 +511,7 @@ Resizer::bufferOutputs()
   }
   delete port_iter;
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d output buffers.\n", inserted_buffer_count_);
+    logger_->info(RSZ, 28, "Inserted {} output buffers.", inserted_buffer_count_);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -525,14 +576,14 @@ Resizer::resizeToTargetSlew()
       if (resizeToTargetSlew(drvr_pin))
         resize_count_++;
       if (overMaxArea()) {
-        warn("Max utilization reached.");
+        logger_->error(RSZ, 24, "Max utilization reached.");
         break;
       }
     }
   }
   ensureWireParasitics();
   if (resize_count_ > 0)
-    printf("Resized %d instances.\n", resize_count_);
+    logger_->info(RSZ, 29, "Resized {} instances.", resize_count_);
 }
 
 bool
@@ -1017,7 +1068,7 @@ Resizer::estimateWireParasitic(const Net *net)
   if (!hasTopLevelPort(net)
       && !network_->isPower(net)
       && !network_->isGround(net)) {
-    SteinerTree *tree = makeSteinerTree(net, false, db_network_);
+    SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
     if (tree) {
       debugPrint1(debug_, "resizer_parasitics", 1, "estimate wire %s\n",
                   sdc_network_->pathName(net));
@@ -1063,7 +1114,7 @@ Resizer::estimateWireParasitic(const Net *net)
           }
         }
       }
-      ReduceParasiticsTo reduce_to = ReduceParasiticsTo::pi_elmore;
+      ReducedParasiticType reduce_to = ReducedParasiticType::pi_elmore;
       const OperatingConditions *op_cond = sdc_->operatingConditions(MinMax::max());
       parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
                             corner_, MinMax::max(), parasitics_ap_);
@@ -1186,9 +1237,9 @@ Resizer::repairTieFanout(LibertyPort *tie_port,
   }
 
   if (tie_count > 0) {
-    printf("Inserted %d tie %s instances.\n",
-           tie_count,
-           tie_cell->name());
+    logger_->info(RSZ, 42, "Inserted {} tie {} instances.",
+                  tie_count,
+                  tie_cell->name());
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -1253,7 +1304,7 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairSetup()
+Resizer::repairSetup(float slack_margin)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -1265,7 +1316,7 @@ Resizer::repairSetup()
   Slack prev_worst_slack = -INF;
   int pass = 1;
   int decreasing_slack_passes = 0;
-  while (fuzzyLess(worst_slack, 0.0)
+  while (fuzzyLess(worst_slack, slack_margin)
          // Allow slack to increase a few passes to get out of local minima.
          && (decreasing_slack_passes < 0
              || fuzzyGreater(worst_slack, prev_worst_slack))
@@ -1286,13 +1337,17 @@ Resizer::repairSetup()
       decreasing_slack_passes++;
     else
       decreasing_slack_passes = 0;
+    if (overMaxArea())
+      break;
     pass++;
   }
 
   if (inserted_buffer_count_ > 0)
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
-    printf("Resized %d instances.\n", resize_count_);
+    logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  if (overMaxArea())
+    logger_->error(RSZ, 25, "max utilization reached.");
 }
 
 // For testing.
@@ -1308,9 +1363,9 @@ Resizer::repairSetup(Pin *end_pin)
   repairSetup(path, slack);
 
   if (inserted_buffer_count_ > 0)
-    printf("Inserted %d buffers.\n", inserted_buffer_count_);
+    logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
-    printf("Resized %d instances.\n", resize_count_);
+    logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
 }
 
 void
@@ -1525,21 +1580,23 @@ Resizer::upsizeCell(LibertyPort *in_port,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHold(bool allow_setup_violations)
+Resizer::repairHold(float slack_margin,
+                    bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
   LibertyCell *buffer_cell = findHoldBuffer();
-  repairHold(ends, buffer_cell, allow_setup_violations);
+  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations);
 }
 
 // For testing/debug.
 void
 Resizer::repairHold(Pin *end_pin,
-                              LibertyCell *buffer_cell,
-                              bool allow_setup_violations)
+                    LibertyCell *buffer_cell,
+                    float slack_margin,
+                    bool allow_setup_violations)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
@@ -1547,7 +1604,7 @@ Resizer::repairHold(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  repairHold(&ends, buffer_cell, allow_setup_violations);
+  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations);
 }
 
 LibertyCell *
@@ -1568,24 +1625,27 @@ Resizer::findHoldBuffer()
 void
 Resizer::repairHold(VertexSet *ends,
                     LibertyCell *buffer_cell,
+                    float slack_margin,
                     bool allow_setup_violations)
 {
   // Find endpoints with hold violation.
   VertexSet hold_failures;
   Slack worst_slack;
-  findHoldViolations(ends, worst_slack, hold_failures);
+  findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
   if (!hold_failures.empty()) {
-    printf("Found %lu endpoints with hold violations.\n",
-           hold_failures.size());
+    logger_->info(RSZ, 46, "Found {} endpoints with hold violations.",
+                  hold_failures.size());
     inserted_buffer_count_ = 0;
     int repair_count = 1;
     int pass = 1;
     float buffer_delay = bufferDelay(buffer_cell);
+    bool over_max_area = false;
     while (!hold_failures.empty()
            // Make sure we are making progress.
-           && repair_count > 0) {
+           && repair_count > 0
+           && !over_max_area) {
       repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
-                                    allow_setup_violations);
+                                    slack_margin, allow_setup_violations);
       debugPrint4(debug_, "repair_hold", 1,
                   "pass %d worst slack %s failures %lu inserted %d\n",
                   pass,
@@ -1593,20 +1653,24 @@ Resizer::repairHold(VertexSet *ends,
                   hold_failures .size(),
                   repair_count);
       sta_->findRequireds();
-      findHoldViolations(ends, worst_slack, hold_failures);
+      findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
+      over_max_area = overMaxArea();
       pass++;
     }
     if (inserted_buffer_count_ > 0) {
-      printf("Inserted %d hold buffers.\n", inserted_buffer_count_);
+      logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       level_drvr_verticies_valid_ = false;
     }
+    if (over_max_area)
+      logger_->error(RSZ, 25, "max utilization reached.");
   }
   else
-    printf("No hold violations found.\n");
+    logger_->info(RSZ, 33, "No hold violations found.");
 }
 
 void
 Resizer::findHoldViolations(VertexSet *ends,
+                            float slack_margin,
                             // Return values.
                             Slack &worst_slack,
                             VertexSet &hold_violations)
@@ -1618,7 +1682,7 @@ Resizer::findHoldViolations(VertexSet *ends,
   for (Vertex *end : *ends) {
     Slack slack = sta_->vertexSlack(end, MinMax::min());
     if (!sta_->isClock(end->pin())
-        && fuzzyLess(slack, 0.0)) {
+        && fuzzyLess(slack, slack_margin)) {
       debugPrint1(debug_, "repair_hold", 3, " %s\n",
                   end->name(sdc_network_));
       if (slack < worst_slack)
@@ -1632,6 +1696,7 @@ int
 Resizer::repairHoldPass(VertexSet &hold_failures,
                         LibertyCell *buffer_cell,
                         float buffer_delay,
+                        float slack_margin,
                         bool allow_setup_violations)
 {
   VertexSet fanins = findHoldFanins(hold_failures);
@@ -1646,7 +1711,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
-    if (hold_slack < 0
+    if (hold_slack < slack_margin
         // Hands off special nets.
         && !isSpecial(net)) {
       // Only add delay to loads with hold violations.
@@ -1658,7 +1723,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         Vertex *fanout = edge->to(graph_);
         Slacks slacks;
         sta_->vertexSlacks(fanout, slacks);
-        Slack hold_slack = holdSlack(slacks);
+        Slack hold_slack = holdSlack(slacks) - slack_margin;
         if (hold_slack < 0.0) {
           Delay delay = allow_setup_violations
             ? -hold_slack
@@ -1680,10 +1745,8 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
                     fanout(vertex));
         makeHoldDelay(vertex, buffer_count, load_pins, buffer_cell);
         repair_count += buffer_count;
-        if (overMaxArea()) {
-          warn("max utilization reached.");
+        if (overMaxArea())
           return repair_count;
-        }
       }
     }
   }
@@ -1895,21 +1958,21 @@ Resizer::repairDesign(double max_wire_length) // zero for none (meters)
   ensureWireParasitics();
 
   if (slew_violations > 0)
-    printf("Found %d slew violations.\n", slew_violations);
+    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
   if (fanout_violations > 0)
-    printf("Found %d fanout violations.\n", fanout_violations);
+    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
   if (cap_violations > 0)
-    printf("Found %d capacitance violations.\n", cap_violations);
+    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
   if (length_violations > 0)
-    printf("Found %d long wires.\n", length_violations);
+    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers in %d nets.\n",
-           inserted_buffer_count_,
-           repair_count);
+    logger_->info(RSZ, 38, "Inserted {} buffers in {} nets.",
+                  inserted_buffer_count_,
+                  repair_count);
     level_drvr_verticies_valid_ = false;
   }
   if (resize_count_ > 0)
-    printf("Resized %d instances.\n", resize_count_);
+    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
 }
 
 // repairDesign but restricted to clock network and
@@ -2015,7 +2078,7 @@ Resizer::repairNet(Net *net,
                    int &fanout_violations,
                    int &length_violations)
 {
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
   if (tree) {
     Pin *drvr_pin = drvr->pin();
     debugPrint1(debug_, "repair_net", 1, "repair net %s\n",
@@ -2323,7 +2386,7 @@ Resizer::repairNet(SteinerTree *tree,
         buf_dist = length - (wire_length - cap_length * (1.0 - length_margin));
       }
       else
-        internalError("how did I get here?");
+        logger_->critical(RSZ, 23, "repairNet failure.");
       double dx = prev_x - pt_x;
       double dy = prev_y - pt_y;
       double d = buf_dist / length;
@@ -2518,7 +2581,7 @@ Resizer::findMaxSteinerDist(Vertex *drvr)
 {
   Pin *drvr_pin = drvr->pin();
   Net *net = network_->net(drvr_pin);
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
   if (tree) {
     int dist = findMaxSteinerDist(drvr, tree);
     delete tree;
@@ -3074,9 +3137,9 @@ void
 Resizer::writeNetSVG(Net *net,
                      const char *filename)
 {
-  SteinerTree *tree = makeSteinerTree(net, true, db_network_);
+  SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
   if (tree)
-    tree->writeSVG(sdc_network_, filename);
+    tree->writeSVG(filename, sdc_network_, logger_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3175,4 +3238,4 @@ Resizer::cloneClkInverter(Instance *inv)
   }
 }
 
-} // namespace sta
+} // namespace

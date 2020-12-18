@@ -42,108 +42,108 @@ namespace fr {
   class frNet: public frBlockObject {
   public:
     // constructors
-    frNet(const frString &in): frBlockObject(), name(in), instTerms(), terms(), shapes(), vias(), pwires(), guides(), type(frNetEnum::frcNormalNet), modified(false), isFakeNet(false) {}
+    frNet(const frString &in): frBlockObject(), name_(in), instTerms_(), terms_(), shapes_(), vias_(), pwires_(), guides_(), type_(frNetEnum::frcNormalNet), modified_(false), isFakeNet_(false) {}
     // getters
     const frString& getName() const {
-      return name;
+      return name_;
     }
     const std::vector<frInstTerm*>& getInstTerms() const {
-      return instTerms;
+      return instTerms_;
     }
     const std::vector<frTerm*>& getTerms() const {
-      return terms;
+      return terms_;
     }
     const std::list<std::unique_ptr<frShape> >& getShapes() const {
-      return shapes;
+      return shapes_;
     }
     const std::list<std::unique_ptr<frVia> >& getVias() const {
-      return vias;
+      return vias_;
     }
     const std::list<std::unique_ptr<frShape> >& getPatchWires() const {
-      return pwires;
+      return pwires_;
     }
     const std::vector<std::unique_ptr<frGuide> >& getGuides() const {
-      return guides;
+      return guides_;
     }
     bool isModified() const {
-      return modified;
+      return modified_;
     }
     bool isFake() const {
-      return isFakeNet;
+      return isFakeNet_;
     }
 
     // setters
     void addInstTerm(frInstTerm* in) {
-      instTerms.push_back(in);
+      instTerms_.push_back(in);
     }
     void addTerm(frTerm* in) {
-      terms.push_back(in);
+      terms_.push_back(in);
     }
     void setName(const frString &stringIn) {
-      name = stringIn;
+      name_ = stringIn;
     }
     void addShape(std::unique_ptr<frShape> in) {
       in->addToNet(this);
       auto rptr = in.get();
-      shapes.push_back(std::move(in));
-      rptr->setIter(--shapes.end());
+      shapes_.push_back(std::move(in));
+      rptr->setIter(--shapes_.end());
     }
     void addVia(std::unique_ptr<frVia> in) {
       in->addToNet(this);
       auto rptr = in.get();
-      vias.push_back(std::move(in));
-      rptr->setIter(--vias.end());
+      vias_.push_back(std::move(in));
+      rptr->setIter(--vias_.end());
     }
     void addPatchWire(std::unique_ptr<frShape> in) {
       in->addToNet(this);
       auto rptr = in.get();
-      pwires.push_back(std::move(in));
-      rptr->setIter(--pwires.end());
+      pwires_.push_back(std::move(in));
+      rptr->setIter(--pwires_.end());
     }
     void addGuide(std::unique_ptr<frGuide> in) {
       auto rptr = in.get();
       rptr->addToNet(this);
-      guides.push_back(std::move(in));
+      guides_.push_back(std::move(in));
     }
     void clearGuides() {
-      guides.clear();
+      guides_.clear();
     }
     void removeShape(frShape* in) {
-      shapes.erase(in->getIter());
+      shapes_.erase(in->getIter());
     }
     void removeVia(frVia* in) {
-      vias.erase(in->getIter());
+      vias_.erase(in->getIter());
     }
     void removePatchWire(frShape* in) {
-      pwires.erase(in->getIter());
+      pwires_.erase(in->getIter());
     }
     void setModified(bool in) {
-      modified = in;
+      modified_ = in;
     }
     void setIsFake(bool in) {
-      isFakeNet = in;
+      isFakeNet_ = in;
     }
     // others
     frNetEnum getType() const {
-      return type;
+      return type_;
     }
     void setType(frNetEnum in) {
-      type = in;
+      type_ = in;
     }
     virtual frBlockObjectEnum typeId() const override {
       return frcNet;
     }
   protected:
-    frString                                  name;
-    std::vector<frInstTerm*>                  instTerms;
-    std::vector<frTerm*>                      terms;     // terms is IO
-    std::list<std::unique_ptr<frShape> >      shapes;
-    std::list<std::unique_ptr<frVia> >        vias;
-    std::list<std::unique_ptr<frShape> >      pwires;
-    std::vector<std::unique_ptr<frGuide> >    guides;
-    frNetEnum                                 type;
-    bool                                      modified;
-    bool                                      isFakeNet; // indicate floating PG nets
+    frString                                  name_;
+    std::vector<frInstTerm*>                  instTerms_;
+    std::vector<frTerm*>                      terms_;     // terms is IO
+    std::list<std::unique_ptr<frShape> >      shapes_;
+    std::list<std::unique_ptr<frVia> >        vias_;
+    std::list<std::unique_ptr<frShape> >      pwires_;
+    std::vector<std::unique_ptr<frGuide> >    guides_;
+    frNetEnum                                 type_;
+    bool                                      modified_;
+    bool                                      isFakeNet_; // indicate floating PG nets
   };
 }
 

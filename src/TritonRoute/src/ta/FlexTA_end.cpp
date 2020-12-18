@@ -32,7 +32,7 @@ using namespace std;
 using namespace fr;
 
 void FlexTAWorker::saveToGuides() {
-  for (auto &iroute: iroutes) {
+  for (auto &iroute: iroutes_) {
     for (auto &uPinFig: iroute->getFigs()) {
       if (uPinFig->typeId() == tacPathSeg) {
         unique_ptr<frPathSeg> pathSeg = make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));

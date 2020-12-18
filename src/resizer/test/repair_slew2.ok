@@ -17,5 +17,5 @@ Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
 r1/Q                                    0.02    0.06   -0.04 (VIOLATED)
 
-Found 1 slew violations.
-Inserted 4 buffers in 1 nets.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0038] Inserted 4 buffers in 1 nets.

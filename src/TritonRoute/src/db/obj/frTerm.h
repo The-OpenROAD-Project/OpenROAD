@@ -41,15 +41,15 @@ namespace fr {
   class frTerm: public frBlockObject {
   public:
     // constructors
-    frTerm(const frString &name): frBlockObject(), name(name), net(nullptr), pins(), type(frTermEnum::frcNormalTerm) {}
-    frTerm(const frTerm &in): frBlockObject(), name(in.name), net(in.net), type(in.type) {
+    frTerm(const frString &name): frBlockObject(), name_(name), net_(nullptr), pins_(), type_(frTermEnum::frcNormalTerm) {}
+    frTerm(const frTerm &in): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin);
         addPin(std::move(tmp));
       }
     }
-    frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name(in.name), net(in.net), type(in.type) {
+    frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin, xform);
@@ -58,40 +58,40 @@ namespace fr {
     }
     // getters
     bool hasNet() const {
-      return (net);
+      return (net_);
     }
     frNet* getNet() const {
-      return net;
+      return net_;
     }
     const frString& getName() const {
-      return name;
+      return name_;
     }
     const std::vector< std::unique_ptr<frPin> >& getPins() const {
-      return pins;
+      return pins_;
     }
     // setters
     void addToNet(frNet* in) {
-      net = in;
+      net_ = in;
     }
     void addPin(std::unique_ptr<frPin> in) {
       in->setTerm(this);
-      pins.push_back(std::move(in));
+      pins_.push_back(std::move(in));
     }
     void setType(frTermEnum in) {
-      type = in;
+      type_ = in;
     }
     frTermEnum getType() const {
-      return type;
+      return type_;
     }
     // others
     frBlockObjectEnum typeId() const override {
       return frcTerm;
     }
   protected:
-    frString name; // A, B, Z, VSS, VDD
-    frNet* net; // set later, term in instTerm does not have net
-    std::vector<std::unique_ptr<frPin> > pins; // set later
-    frTermEnum type;
+    frString name_; // A, B, Z, VSS, VDD
+    frNet* net_; // set later, term in instTerm does not have net
+    std::vector<std::unique_ptr<frPin> > pins_; // set later
+    frTermEnum type_;
   };
 }
 

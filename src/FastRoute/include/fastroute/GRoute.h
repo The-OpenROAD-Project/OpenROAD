@@ -39,7 +39,7 @@ class dbNet;
 class Rect;
 }
 
-namespace gr {
+namespace grt {
 
 struct GSegment
 {

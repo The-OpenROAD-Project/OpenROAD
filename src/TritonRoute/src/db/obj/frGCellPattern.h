@@ -35,40 +35,40 @@ namespace fr {
   class frGCellPattern: public frBlockObject {
   public:
     // constructors
-    frGCellPattern(): horizontal(false), startCoord(0), spacing(0), count(0) {}
+    frGCellPattern(): horizontal_(false), startCoord_(0), spacing_(0), count_(0) {}
     // getters
     bool isHorizontal() const {
-      return horizontal;
+      return horizontal_;
     }
     frCoord getStartCoord() const {
-      return startCoord;
+      return startCoord_;
     }
     frUInt4 getSpacing() const {
-      return spacing;
+      return spacing_;
     }
     frUInt4 getCount() const {
-      return count;
+      return count_;
     }
     // setters
     void setHorizontal(bool isH) {
-      horizontal = isH;
+      horizontal_ = isH;
     }
     void setStartCoord(frCoord scIn) {
-      startCoord = scIn;
+      startCoord_ = scIn;
     }
     void setSpacing(frUInt4 sIn) {
-      spacing = sIn;
+      spacing_ = sIn;
     }
     void setCount(frUInt4 cIn) {
-      count = cIn;
+      count_ = cIn;
     }
     // others
     frBlockObjectEnum typeId() const override { return frcGCellPattern;}
   protected:
-    bool    horizontal;
-    frCoord startCoord;
-    frUInt4 spacing;
-    frUInt4 count;
+    bool    horizontal_;
+    frCoord startCoord_;
+    frUInt4 spacing_;
+    frUInt4 count_;
   };
 }
 

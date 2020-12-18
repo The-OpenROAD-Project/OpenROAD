@@ -33,17 +33,17 @@ using namespace std;
 using namespace fr;
 
 FlexGCWorker::FlexGCWorker(frDesign* designIn, FlexDRWorker* drWorkerIn)
-  : impl(std::make_unique<Impl>(designIn, drWorkerIn, this))
+  : impl_(std::make_unique<Impl>(designIn, drWorkerIn, this))
 {
 }
 
 FlexGCWorker::~FlexGCWorker() = default;
 
 FlexGCWorker::Impl::Impl(frDesign* designIn, FlexDRWorker* drWorkerIn, FlexGCWorker* gcWorkerIn)
-  : design(designIn), drWorker(drWorkerIn),
-    extBox(), drcBox(), owner2nets(), nets(), markers(), mapMarkers(), pwires(), rq(gcWorkerIn), printMarker(false), modifiedDRNets(),
-    targetNet(nullptr), minLayerNum(std::numeric_limits<frLayerNum>::min()), maxLayerNum(std::numeric_limits<frLayerNum>::max()),
-    targetObj(nullptr), ignoreDB(false), ignoreMinArea(false), surgicalFixEnabled(false)
+  : design_(designIn), drWorker_(drWorkerIn),
+    extBox_(), drcBox_(), owner2nets_(), nets_(), markers_(), mapMarkers_(), pwires_(), rq_(gcWorkerIn), printMarker_(false), modifiedDRNets_(),
+    targetNet_(nullptr), minLayerNum_(std::numeric_limits<frLayerNum>::min()), maxLayerNum_(std::numeric_limits<frLayerNum>::max()),
+    targetObj_(nullptr), ignoreDB_(false), ignoreMinArea_(false), surgicalFixEnabled_(false)
 {
 }
 
@@ -58,73 +58,73 @@ bool FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in) {
     srcs.at(i) = src;
     i++;
   }
-  if (mapMarkers.find(std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])) != mapMarkers.end()) {
+  if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])) != mapMarkers_.end()) {
     return false;
   }
-  if (mapMarkers.find(std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0])) != mapMarkers.end()) {
+  if (mapMarkers_.find(std::make_tuple(bbox, layerNum, con, srcs[1], srcs[0])) != mapMarkers_.end()) {
     return false;
   }
-  mapMarkers[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])] = in.get();
-  markers.push_back(std::move(in));
+  mapMarkers_[std::make_tuple(bbox, layerNum, con, srcs[0], srcs[1])] = in.get();
+  markers_.push_back(std::move(in));
   return true;
 }
 
 void FlexGCWorker::addPAObj(frConnFig* obj, frBlockObject* owner) {
-  impl->addPAObj(obj, owner);
+  impl_->addPAObj(obj, owner);
 }
 
 void FlexGCWorker::init()
 {
-  impl->init();
+  impl_->init();
 }
 
 int FlexGCWorker::main()
 {
-  return impl->main();
+  return impl_->main();
 }
 
 void FlexGCWorker::end()
 {
-  impl->end();
+  impl_->end();
 }
 
 void FlexGCWorker::initPA0()
 {
-  impl->initPA0();
+  impl_->initPA0();
 }
 
 void FlexGCWorker::initPA1()
 {
-  impl->initPA1();
+  impl_->initPA1();
 }
 
 void FlexGCWorker::setExtBox(const frBox &in)
 {
-  impl->extBox.set(in);
+  impl_->extBox_.set(in);
 }
 
 void FlexGCWorker::setDrcBox(const frBox &in)
 {
-  impl->drcBox.set(in);
+  impl_->drcBox_.set(in);
 }
 
 frDesign* FlexGCWorker::getDesign() const
 {
-  return impl->getDesign();
+  return impl_->getDesign();
 }
 
 const std::vector<std::unique_ptr<frMarker> >& FlexGCWorker::getMarkers() const {
-  return impl->markers;
+  return impl_->markers_;
 }
 
 const std::vector<std::unique_ptr<drPatchWire> >& FlexGCWorker::getPWires() const {
-  return impl->pwires;
+  return impl_->pwires_;
 }
 
 bool FlexGCWorker::setTargetNet(frBlockObject* in) {
-  auto& owner2nets = impl->owner2nets;
+  auto& owner2nets = impl_->owner2nets_;
   if (owner2nets.find(in) != owner2nets.end()) {
-    impl->targetNet = owner2nets[in];
+    impl_->targetNet_ = owner2nets[in];
     return true;
   } else {
     return false;
@@ -132,25 +132,25 @@ bool FlexGCWorker::setTargetNet(frBlockObject* in) {
 }
 
 void FlexGCWorker::setEnableSurgicalFix(bool in) {
-  impl->surgicalFixEnabled = in;
+  impl_->surgicalFixEnabled_ = in;
 }
 
 void FlexGCWorker::resetTargetNet() {
-  impl->targetNet = nullptr;
+  impl_->targetNet_ = nullptr;
 }
 
 void FlexGCWorker::setTargetObj(frBlockObject* in) {
-  impl->targetObj = in;
+  impl_->targetObj_ = in;
 }
 
 void FlexGCWorker::setIgnoreDB() {
-  impl->ignoreDB = true;
+  impl_->ignoreDB_ = true;
 }
 
 void FlexGCWorker::setIgnoreMinArea() {
-  impl->ignoreMinArea = true;
+  impl_->ignoreMinArea_ = true;
 }
 
 std::vector<std::unique_ptr<gcNet> >& FlexGCWorker::getNets() {
-  return impl->getNets();
+  return impl_->getNets();
 }

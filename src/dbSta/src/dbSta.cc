@@ -48,12 +48,19 @@
 #include "sta/PathExpanded.hh"
 #include "sta/Bfs.hh"
 #include "sta/EquivCells.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/MakeDbSta.hh"
+#include "sta/ReportTcl.hh"
+
 #include "opendb/db.h"
+
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
+#include "openroad/Logger.h"
+
 #include "gui/gui.h"
+
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/MakeDbSta.hh"
+
 #include "dbSdcNetwork.hh"
 
 namespace ord {
@@ -74,7 +81,8 @@ initDbSta(OpenRoad *openroad)
   dbSta *sta = openroad->getSta();
   sta->init(openroad->tclInterp(), openroad->getDb(),
             // Broken gui api missing openroad accessor.
-            gui::Gui::get());
+            gui::Gui::get(),
+            openroad->getLogger());
   openroad->addObserver(sta);
 }
 
@@ -90,6 +98,51 @@ deleteDbSta(sta::dbSta *sta)
 
 namespace sta {
 
+using ord::Logger;
+using ord::STA;
+
+class dbStaReport : public sta::ReportTcl
+{
+public:
+  void setLogger(Logger *logger);
+  virtual void error(int id,
+                     const char *fmt,
+                     ...)
+    __attribute__((format (printf, 3, 4)));
+  virtual void warn(int id,
+                    const char *fmt,
+                    ...)
+    __attribute__((format (printf, 3, 4)));
+
+private:
+  Logger *logger_;
+};
+
+class dbStaCbk : public dbBlockCallBackObj
+{
+public:
+  dbStaCbk(dbSta *sta,
+           Logger *logger);
+  void setNetwork(dbNetwork *network);
+  virtual void inDbInstCreate(dbInst *inst) override;
+  virtual void inDbInstDestroy(dbInst *inst) override;
+  virtual void inDbInstSwapMasterBefore(dbInst *inst,
+                                        dbMaster *master) override;
+  virtual void inDbInstSwapMasterAfter(dbInst *inst) override;
+  virtual void inDbNetDestroy(dbNet *net) override;
+  void inDbITermPostConnect(dbITerm *iterm) override;
+  void inDbITermPreDisconnect(dbITerm *iterm) override;
+  void inDbITermDestroy(dbITerm *iterm) override;
+  void inDbBTermPostConnect(dbBTerm *bterm) override;
+  void inDbBTermPreDisconnect(dbBTerm *bterm) override;
+  void inDbBTermDestroy(dbBTerm *bterm) override;
+
+private:
+  dbSta *sta_;
+  dbNetwork *network_;
+  Logger *logger_;
+};
+
 class PathRenderer : public gui::Renderer
 {
 public:
@@ -99,9 +152,14 @@ public:
   virtual void drawObjects(gui::Painter& /* painter */) override;
 
 private:
+  void highlightInst(const Pin *pin,
+                     gui::Painter &painter);
+
   dbSta *sta_;
   // Expanded path is owned by PathRenderer.
   PathExpanded *path_;
+  static gui::Painter::Color signal_color;
+  static gui::Painter::Color clock_color;
 };
 
 dbSta *
@@ -125,7 +183,7 @@ extern const char *dbsta_tcl_inits[];
 dbSta::dbSta() :
   Sta(),
   db_(nullptr),
-  db_cbk_(this),
+  db_cbk_(nullptr),
   path_renderer_(nullptr)
 {
 }
@@ -138,14 +196,18 @@ dbSta::~dbSta()
 void
 dbSta::init(Tcl_Interp *tcl_interp,
 	    dbDatabase *db,
-            gui::Gui *gui)
+            gui::Gui *gui,
+            Logger *logger)
 {
   initSta();
   Sta::setSta(this);
   db_ = db;
   gui_ = gui;
+  logger_ = logger;
   makeComponents();
   setTclInterp(tcl_interp);
+  db_report_->setLogger(logger);
+  db_cbk_ = new dbStaCbk(this, logger);
   // Define swig TCL commands.
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
@@ -158,6 +220,15 @@ dbSta::makeComponents()
 {
   Sta::makeComponents();
   db_network_->setDb(db_);
+}
+
+////////////////////////////////////////////////////////////////
+
+void
+dbSta::makeReport()
+{
+  db_report_ = new dbStaReport();
+  report_ = db_report_;
 }
 
 void
@@ -186,8 +257,8 @@ void
 dbSta::postReadDef(dbBlock* block)
 {
   db_network_->readDefAfter(block);
-  db_cbk_.addOwner(block);
-  db_cbk_.setNetwork(db_network_);
+  db_cbk_->addOwner(block);
+  db_cbk_->setNetwork(db_network_);
 }
 
 void
@@ -198,8 +269,8 @@ dbSta::postReadDb(dbDatabase* db)
   if (chip) {
     odb::dbBlock *block = chip->getBlock();
     if (block) {
-      db_cbk_.addOwner(block);
-      db_cbk_.setNetwork(db_network_);
+      db_cbk_->addOwner(block);
+      db_cbk_->setNetwork(db_network_);
     }
   }
 }
@@ -305,13 +376,49 @@ dbSta::disconnectPin(Pin *pin)
 }
 
 ////////////////////////////////////////////////////////////////
+
+void
+dbStaReport::setLogger(Logger *logger)
+{
+  logger_ = logger;
+}
+
+void
+dbStaReport::error(int id,
+                   const char *fmt,
+                   ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  std::unique_lock<std::mutex> lock(buffer_lock_);
+  printToBuffer(fmt, args);
+  logger_->error(STA, id, buffer_);
+  va_end(args);
+}
+
+void
+dbStaReport::warn(int id,
+                  const char *fmt,
+                  ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  std::unique_lock<std::mutex> lock(buffer_lock_);
+  printToBuffer(fmt, args);
+  logger_->warn(STA, id, buffer_);
+  va_end(args);
+}
+
+////////////////////////////////////////////////////////////////
 //
 // OpenDB callbacks to notify OpenSTA of network edits
 //
 ////////////////////////////////////////////////////////////////
 
-dbStaCbk::dbStaCbk(dbSta *sta) :
+dbStaCbk::dbStaCbk(dbSta *sta,
+                   Logger *logger) :
   sta_(sta),
+  logger_(logger),
   network_(nullptr)  // not built yet
 {
 }
@@ -346,9 +453,9 @@ dbStaCbk::inDbInstSwapMasterBefore(dbInst *inst,
   if (sta::equivCells(from_lib_cell, to_lib_cell))
     sta_->replaceEquivCellBefore(sta_inst, to_lib_cell);
   else
-    ord::error("instance %s swap master %s is not equivalent",
-               inst->getConstName(),
-               master->getConstName());
+    logger_->error(STA, 1000, "instance %s swap master %s is not equivalent",
+                   inst->getConstName(),
+                   master->getConstName());
 }
 
 void
@@ -416,6 +523,9 @@ dbSta::highlight(PathRef *path)
   }
 }
 
+gui::Painter::Color PathRenderer::signal_color = gui::Painter::red;
+gui::Painter::Color PathRenderer::clock_color = gui::Painter::yellow;
+
 PathRenderer::PathRenderer(dbSta *sta) :
   sta_(sta),
   path_(nullptr)
@@ -451,24 +561,32 @@ PathRenderer::drawObjects(gui::Painter &painter)
         const Pin *prev_pin = prev_path->pin(sta_);
         Point pt1 = network->location(pin);
         Point pt2 = network->location(prev_pin);
-        gui::Painter::Color color = sta_->isClock(pin)
-          ? gui::Painter::yellow
-          : gui::Painter::red;
-        painter.setPen(color, true);
+        gui::Painter::Color wire_color = sta_->isClock(pin) ? clock_color : signal_color;
+        painter.setPen(wire_color, true);
         painter.drawLine(pt1, pt2);
-
-        // Color in the instances to make them more visible.
-        const Instance *inst = network->instance(pin);
-        if (!network->isTopInstance(inst)) {
-          dbInst *db_inst = network->staToDb(inst);
-          odb::dbBox *bbox = db_inst->getBBox();
-          odb::Rect rect;
-          bbox->getBox(rect);
-          painter.setBrush(color);
-          painter.drawRect(rect);
-        }
+        highlightInst(prev_pin, painter);
+        if (i == path_->size() - 1)
+          highlightInst(pin, painter);
       }
     }
+  }
+}
+
+// Color in the instances to make them more visible.
+void
+PathRenderer::highlightInst(const Pin *pin,
+                            gui::Painter &painter)
+{
+  dbNetwork *network = sta_->getDbNetwork();
+  const Instance *inst = network->instance(pin);
+  if (!network->isTopInstance(inst)) {
+    dbInst *db_inst = network->staToDb(inst);
+    odb::dbBox *bbox = db_inst->getBBox();
+    odb::Rect rect;
+    bbox->getBox(rect);
+    gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
+    painter.setBrush(inst_color);
+    painter.drawRect(rect);
   }
 }
 

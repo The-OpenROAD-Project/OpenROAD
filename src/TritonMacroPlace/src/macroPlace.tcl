@@ -13,7 +13,7 @@ proc macro_placement { args } {
   } else {
     set global_config_file $keys(-global_config)
     if { [file readable $global_config_file] } {
-      set_macro_place_global_config_cmd $global_config_file
+      mpl::set_macro_place_global_config_cmd $global_config_file
     } else {
       puts "Warning: cannot read $global_config_file"
     }
@@ -22,7 +22,7 @@ proc macro_placement { args } {
   if { [info exists keys(-local_config)] } {
     set local_config_file $keys(-local_config)
     if { [file readable $local_config_file] } {
-      set_macro_place_local_config_cmd $local_config_file
+      mpl::set_macro_place_local_config_cmd $local_config_file
     } else {
       puts "Warning: cannot read $local_config_file"
     }
@@ -46,7 +46,7 @@ proc macro_placement { args } {
     set dieUx [expr double([$die_area xMax]) / $dbu]
     set dieUy [expr double([$die_area yMax]) / $dbu]
 
-    set_macro_place_fence_region_cmd $dieLx $dieLy $dieUx $dieUy
+    mpl::set_macro_place_fence_region_cmd $dieLx $dieLy $dieUx $dieUy
   }
 
   if { [info exists keys(-fence_region)] } {
@@ -90,11 +90,11 @@ proc macro_placement { args } {
       set uy $dieUy
     }
 
-    set_macro_place_fence_region_cmd $lx $ly $ux $uy
+    mpl::set_macro_place_fence_region_cmd $lx $ly $ux $uy
   }
   
   if { [ord::db_has_rows] } {
-    place_macros_cmd
+    mpl::place_macros_cmd
   } else {
     puts "Error: no rows defined in design. Use initialize_floorplan to add rows."
   }

@@ -47,6 +47,11 @@ proc detailed_route { args } {
   tr::detailed_route_cmd $keys(-param)
 }
 
+proc detailed_route_num_drvs { args } {
+  sta::check_argc_eq0 "detailed_route_num_drvs" $args
+  return [tr::detailed_route_num_drvs]
+}
+
 sta::define_cmd_args "detailed_route_debug" {
     [-dr]
     [-maze]
@@ -78,8 +83,8 @@ proc detailed_route_debug { args } {
       ord::error "-gcell is a list of 2 coordinates."
     }
     lassign $gcell gcell_x gcell_y
-    sta::check_check_positive_integer "-gcell" $gcell_x
-    sta::check_check_positive_integer "-gcell" $gcell_y
+    sta::check_positive_integer "-gcell" $gcell_x
+    sta::check_positive_integer "-gcell" $gcell_y
   }
 
   if { [info exists keys(-iter)] } {

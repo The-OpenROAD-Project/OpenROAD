@@ -41,7 +41,7 @@
 namespace ord {
 
 using sta::dbSta;
-using sta::Resizer;
+using rsz::Resizer;
 
 Resizer *
 makeResizer()
@@ -59,6 +59,7 @@ void
 initResizer(OpenRoad *openroad)
 {
   openroad->getResizer()->init(openroad->tclInterp(),
+                               openroad->getLogger(),
                                openroad->getDb(),
                                openroad->getSta());
 }

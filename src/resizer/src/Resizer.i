@@ -47,7 +47,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-sta::Resizer *
+rsz::Resizer *
 getResizer();
 void
 ensureLinked();
@@ -82,9 +82,9 @@ using sta::NetSeq;
 using sta::LibertyPort;
 using sta::Delay;
 using sta::Slew;
-
-using sta::Resizer;
 using sta::dbNetwork;
+
+using rsz::Resizer;
 
 %}
 
@@ -143,7 +143,7 @@ using sta::dbNetwork;
 
 %inline %{
 
-namespace sta {
+namespace rsz {
 
 void
 remove_buffers_cmd()
@@ -305,24 +305,6 @@ resize_target_load_cap(LibertyCell *cell)
   return resizer->targetLoadCap(cell);
 }
 
-void
-repair_hold_pin(Pin *end_pin,
-                LibertyCell *buffer_cell,
-                bool allow_setup_violations)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, buffer_cell, allow_setup_violations);
-}
-
-void
-repair_hold(bool allow_setup_violations)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairHold(allow_setup_violations);
-}
-
 float
 design_area()
 {
@@ -383,11 +365,11 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_setup()
+repair_setup(float slack_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup();
+  resizer->repairSetup(slack_margin);
 }
 
 void
@@ -396,6 +378,25 @@ repair_setup_pin(Pin *end_pin)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(end_pin);
+}
+
+void
+repair_hold_pin(Pin *end_pin,
+                LibertyCell *buffer_cell,
+                bool allow_setup_violations)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations);
+}
+
+void
+repair_hold(float slack_margin,
+            bool allow_setup_violations)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHold(slack_margin, allow_setup_violations);
 }
 
 ////////////////////////////////////////////////////////////////

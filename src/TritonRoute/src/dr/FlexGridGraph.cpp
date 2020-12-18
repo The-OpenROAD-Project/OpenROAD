@@ -42,64 +42,64 @@ void FlexGridGraph::initGrids(const map<frCoord, map<frLayerNum, frTrackPattern*
   //bool enableOutput = true;
   bool enableOutput = false;
   // initialize coord vectors
-  xCoords.clear();
-  yCoords.clear();
-  zCoords.clear();
-  zHeights.clear();
-  zDirs.clear();
+  xCoords_.clear();
+  yCoords_.clear();
+  zCoords_.clear();
+  zHeights_.clear();
+  zDirs_.clear();
   for (auto &[k, v]: xMap) {
-    xCoords.push_back(k);
+    xCoords_.push_back(k);
   }
   for (auto &[k, v]: yMap) {
-    yCoords.push_back(k);
+    yCoords_.push_back(k);
   }
   frCoord zHeight = 0;
   //vector<frCoord> via2viaMinLenTmp(4, 0);
   for (auto &[k, v]: zMap) {
-    zCoords.push_back(k);
+    zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
-    zHeights.push_back(zHeight);
-    zDirs.push_back((v == frPrefRoutingDirEnum::frcHorzPrefRoutingDir));
+    zHeights_.push_back(zHeight);
+    zDirs_.push_back((v == frPrefRoutingDirEnum::frcHorzPrefRoutingDir));
   }
   // initialize all grids
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
-  bits.clear();
-  bits.resize(xDim*yDim*zDim, 0);
+  nodes_.clear();
+  nodes_.resize(xDim*yDim*zDim, Node());
   // new
-  astarCosts.clear();
-  prevDirs.clear();
-  srcs.clear();
-  dsts.clear();
-  astarCosts.resize(xDim*yDim*zDim, UINT_MAX);
-  prevDirs.resize(xDim*yDim*zDim*3, 0);
-  srcs.resize(xDim*yDim*zDim, 0);
-  dsts.resize(xDim*yDim*zDim, 0);
-  guides.clear();
+  astarCosts_.clear();
+  prevDirs_.clear();
+  srcs_.clear();
+  dsts_.clear();
+  astarCosts_.resize(xDim*yDim*zDim, UINT_MAX);
+  prevDirs_.resize(xDim*yDim*zDim*3, 0);
+  srcs_.resize(xDim*yDim*zDim, 0);
+  dsts_.resize(xDim*yDim*zDim, 0);
+  guides_.clear();
   if (followGuide) {
-    guides.resize(xDim*yDim*zDim, 0);
+    guides_.resize(xDim*yDim*zDim, 0);
   } else {
-    guides.resize(xDim*yDim*zDim, 1);
+    guides_.resize(xDim*yDim*zDim, 1);
   }
 
   if (enableOutput) {
     cout <<"x ";
-    for (auto &k: xCoords) {
+    for (auto &k: xCoords_) {
       cout <<" " <<k;
     }
     cout <<endl;
     cout <<"y ";   
-    for (auto &k: yCoords) {
+    for (auto &k: yCoords_) {
       cout <<" " <<k;
     }
     cout <<endl;
     cout <<"z ";   
-    for (auto &k: zCoords) {
+    for (auto &k: zCoords_) {
       cout <<" " <<k;
     }
     cout <<endl;
     cout <<"z height ";   
-    for (auto &k: zHeights) {
+    for (auto &k: zHeights_) {
       cout <<" " <<k;
     }
     cout <<endl;
@@ -324,10 +324,10 @@ void FlexGridGraph::init(const frBox &routeBBox, const frBox &extBBox,
   bool enableOutput = false;
   // bool enableOutput = true;
 
-  halfViaEncArea = getDRWorker()->getDR()->getHalfViaEncArea();
-  via2viaMinLen  = getDRWorker()->getDR()->getVia2ViaMinLen();
-  via2turnMinLen = getDRWorker()->getDR()->getVia2TurnMinLen();
-  via2viaMinLenNew = getDRWorker()->getDR()->getVia2ViaMinLenNew();
+  halfViaEncArea_ = getDRWorker()->getDR()->getHalfViaEncArea();
+  via2viaMinLen_  = getDRWorker()->getDR()->getVia2ViaMinLen();
+  via2turnMinLen_ = getDRWorker()->getDR()->getVia2TurnMinLen();
+  via2viaMinLenNew_ = getDRWorker()->getDR()->getVia2ViaMinLenNew();
 
   // get tracks intersecting with the Maze bbox
   map<frLayerNum, frPrefRoutingDirEnum> zMap;
@@ -335,9 +335,9 @@ void FlexGridGraph::init(const frBox &routeBBox, const frBox &extBBox,
   initGrids(xMap, yMap, zMap, followGuide); // buildGridGraph
   initEdges(xMap, yMap, zMap, routeBBox, initDR); // add edges and edgeCost
   if (enableOutput) {
-    for(int i = 0; i < (int)xCoords.size(); i++) {
-      for(int j = 0; j < (int)yCoords.size(); j++) {
-        for(int k = 0; k < (int)zCoords.size(); k++) {
+    for(int i = 0; i < (int)xCoords_.size(); i++) {
+      for(int j = 0; j < (int)yCoords_.size(); j++) {
+        for(int k = 0; k < (int)zCoords_.size(); k++) {
           cout <<"test x/y/z/E/N/U = "  <<i <<" " <<j <<" " <<k <<" "
                <<hasGridCostE(i, j, k) <<" "
                <<hasGridCostN(i, j, k) <<" "
@@ -407,19 +407,19 @@ void FlexGridGraph::resetStatus() {
 }
 
 void FlexGridGraph::resetSrc() {
-  srcs.assign(srcs.size(), 0);
+  srcs_.assign(srcs_.size(), 0);
 }
 
 void FlexGridGraph::resetDst() {
-  dsts.assign(dsts.size(), 0);
+  dsts_.assign(dsts_.size(), 0);
 }
 
 void FlexGridGraph::resetAStarCosts() {
-  astarCosts.assign(astarCosts.size(), UINT_MAX);
+  astarCosts_.assign(astarCosts_.size(), UINT_MAX);
 }
 
 void FlexGridGraph::resetPrevNodeDir() {
-  prevDirs.assign(prevDirs.size(), 0);
+  prevDirs_.assign(prevDirs_.size(), 0);
 }
 
 // print the grid graph with edge and vertex for debug purpose

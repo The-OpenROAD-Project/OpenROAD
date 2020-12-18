@@ -35,7 +35,7 @@
 
 #include "Net.h"
 
-namespace gr {
+namespace grt {
 
 Net::Net(odb::dbNet* net) : _net(net)
 {
@@ -66,4 +66,4 @@ void Net::destroyPins()
   _pins.clear();
 }
 
-}  // namespace gr
+}  // namespace grt

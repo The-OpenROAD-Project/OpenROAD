@@ -52,14 +52,14 @@ Opendp_Init(Tcl_Interp *interp);
 
 namespace ord {
 
-opendp::Opendp *
+dpl::Opendp *
 makeOpendp()
 {
-  return new opendp::Opendp;
+  return new dpl::Opendp;
 }
 
 void
-deleteOpendp(opendp::Opendp *opendp)
+deleteOpendp(dpl::Opendp *opendp)
 {
   delete opendp;
 }
@@ -72,7 +72,8 @@ initOpendp(OpenRoad *openroad)
   Opendp_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::opendp_tcl_inits);
-  openroad->getOpendp()->init(openroad->getDb());
+  openroad->getOpendp()->init(openroad->getDb(),
+                              openroad->getLogger());
 }
 
 }  // namespace ord

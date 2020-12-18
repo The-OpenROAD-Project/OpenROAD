@@ -63,7 +63,7 @@
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
 
-namespace gr {
+namespace grt {
 
 using ord::error;
 
@@ -2676,23 +2676,24 @@ void GlobalRouter::makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& 
       int pinLayer;
       int lastLayer = -1;
 
-      odb::dbBox* currBTermBox = bterm_pin->getBox();
-      odb::dbTechLayer* techLayer = currBTermBox->getTechLayer();
-      if (techLayer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
-        continue;
-      }
-
-      pinLayer = techLayer->getRoutingLevel();
-      lowerBound = odb::Point(currBTermBox->xMin(), currBTermBox->yMin());
-      upperBound = odb::Point(currBTermBox->xMax(), currBTermBox->yMax());
-      pinBox = odb::Rect(lowerBound, upperBound);
-      if (!dieArea.contains(pinBox)) {
-        std::cout << "[WARNING] Pin " << pinName << " is outside die area\n";
-      }
-      pinBoxes[pinLayer].push_back(pinBox);
-
-      if (pinLayer > lastLayer) {
-        pinPos = lowerBound;
+      for (odb::dbBox* currBPinBox : bterm_pin->getBoxes()) {
+        odb::dbTechLayer* techLayer = currBPinBox->getTechLayer();
+        if (techLayer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+  
+        pinLayer = techLayer->getRoutingLevel();
+        lowerBound = odb::Point(currBPinBox->xMin(), currBPinBox->yMin());
+        upperBound = odb::Point(currBPinBox->xMax(), currBPinBox->yMax());
+        pinBox = odb::Rect(lowerBound, upperBound);
+        if (!dieArea.contains(pinBox)) {
+          std::cout << "[WARNING] Pin " << pinName << " is outside die area\n";
+        }
+        pinBoxes[pinLayer].push_back(pinBox);
+  
+        if (pinLayer > lastLayer) {
+          pinPos = lowerBound;
+        }
       }
     }
 
@@ -3191,4 +3192,4 @@ void print(GRoute &route)
   }
 }
 
-}  // namespace gr
+}  // namespace grt

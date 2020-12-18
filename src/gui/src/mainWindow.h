@@ -39,6 +39,7 @@
 #include <memory>
 
 #include "openroad/OpenRoad.hh"
+#include "gui/gui.h"
 
 namespace odb {
 class dbDatabase;

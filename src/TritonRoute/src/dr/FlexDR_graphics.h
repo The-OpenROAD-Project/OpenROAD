@@ -5,6 +5,10 @@
 #include "gui/gui.h"
 #include "frBaseTypes.h"
 
+namespace odb {
+  class dbDatabase;
+}
+
 namespace fr {
 
 class frPoint;
@@ -12,13 +16,14 @@ class FlexGridGraph;
 class FlexWavefrontGrid;
 class FlexDRWorker;
 class drNet;
+class frDesign;
 
 // This class draws debugging graphics on the layout
 class FlexDRGraphics : public gui::Renderer
 {
  public:
   // Debug InitialPlace
-  FlexDRGraphics(frDebugSettings* settings);
+  FlexDRGraphics(frDebugSettings* settings, frDesign* design, odb::dbDatabase* db);
 
   void startWorker(FlexDRWorker* worker);
 
@@ -28,7 +33,7 @@ class FlexDRGraphics : public gui::Renderer
 
   void endNet(drNet* net);
 
-  void searchNode(const FlexGridGraph* gridGraph,
+  void searchNode(const FlexGridGraph* grid_graph,
                   const FlexWavefrontGrid& grid);
 
   // Show a message in the status bar
@@ -44,10 +49,13 @@ class FlexDRGraphics : public gui::Renderer
  private:
   FlexDRWorker*    worker_;
   drNet*           net_;
+  const FlexGridGraph* grid_graph_;
   frDebugSettings* settings_;
   int              current_iter_;
   frLayerNum       last_pt_layer_;
   gui::Gui*        gui_;
+  // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
+  std::vector<frLayerNum> layer_map_;
   std::vector<std::vector<frPoint>> points_by_layer_;
 };
 

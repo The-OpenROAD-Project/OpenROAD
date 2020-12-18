@@ -59,7 +59,7 @@ namespace ord {
 class OpenRoad;
 }
 
-namespace gr {
+namespace grt {
 
 class RoutePt
 {
@@ -132,4 +132,4 @@ class RcTreeBuilder
   NodeRoutePtMap _node_map;
 };
 
-}  // namespace gr
+}  // namespace grt

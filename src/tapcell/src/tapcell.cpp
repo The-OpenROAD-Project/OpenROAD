@@ -42,7 +42,7 @@ namespace sta {
 extern const char *tapcell_tcl_inits[];
 }
 
-namespace tapcell {
+namespace tap {
 
 extern "C" {
 extern int Tapcell_Init(Tcl_Interp *interp);

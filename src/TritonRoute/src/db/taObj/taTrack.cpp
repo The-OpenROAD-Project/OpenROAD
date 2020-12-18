@@ -38,16 +38,16 @@ using namespace fr;
 // for via, return #overlaps
 frUInt4 taTrack::getCost(frCoord x1, frCoord x2, int type, taPinFig* fig) const {
   frUInt4 cost = 0;
-  decltype(costPlanar.equal_range(boost::icl::interval<frCoord>::closed(x1,x2))) itRes;
+  decltype(costPlanar_.equal_range(boost::icl::interval<frCoord>::closed(x1,x2))) itRes;
   switch(type) {
     case 0:
-      itRes = costPlanar.equal_range(boost::icl::interval<frCoord>::closed(x1,x2));
+      itRes = costPlanar_.equal_range(boost::icl::interval<frCoord>::closed(x1,x2));
       break;
     case 1:
-      itRes = costVia1.equal_range(boost::icl::interval<frCoord>::closed(x1,x2));
+      itRes = costVia1_.equal_range(boost::icl::interval<frCoord>::closed(x1,x2));
       break;
     case 2:
-      itRes = costVia2.equal_range(boost::icl::interval<frCoord>::closed(x1,x2));
+      itRes = costVia2_.equal_range(boost::icl::interval<frCoord>::closed(x1,x2));
       break;
     default:
       ;

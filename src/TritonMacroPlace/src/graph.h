@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __MACRO_NETLIST_GRAPH__
-#define __MACRO_NETLIST_GRAPH__ 
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -43,7 +42,7 @@ class Pin;
 class Instance;
 }
 
-namespace MacroPlace{
+namespace mpl {
 
 class MacroCircuit;
 class Vertex;
@@ -127,7 +126,4 @@ class PinGroup {
     std::vector<sta::Pin*> pins_;
 };
 
-
 }
-
-#endif

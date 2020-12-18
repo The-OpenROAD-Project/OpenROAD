@@ -35,10 +35,10 @@
 
 #include "global.h"
 
-namespace gr {
+namespace grt {
 long dist(Point p, Point q);
 
 long dist2(Point* p, Point* q);
 
-}  // namespace gr
+}  // namespace grt
 #endif /* __DIST_H__ */

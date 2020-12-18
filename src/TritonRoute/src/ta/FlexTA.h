@@ -39,19 +39,19 @@ namespace fr {
   class FlexTA {
   public:
     // constructors
-    FlexTA(frDesign* in): tech(in->getTech()), design(in) {};
+    FlexTA(frDesign* in): tech_(in->getTech()), design_(in) {};
     // getters
     frTechObject* getTech() const {
-      return tech;
+      return tech_;
     }
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
     // others
     int main();
   protected:
-    frTechObject*   tech;
-    frDesign*       design;
+    frTechObject*   tech_;
+    frDesign*       design_;
     // others
     void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
     void initTA(int size);
@@ -79,115 +79,115 @@ namespace fr {
     void init();
   private:
     struct Impl;
-    std::unique_ptr<Impl> impl;
+    std::unique_ptr<Impl> impl_;
   };
 
   class FlexTAWorker {
   public:
     // constructors
-    FlexTAWorker(frDesign* designIn): tech(nullptr), design(designIn),
-                                      dir(frPrefRoutingDirEnum::frcNotApplicablePrefRoutingDir), taIter(0),
-                                      rq(this), numAssigned(0), totCost(0), maxRetry(1) {};
+    FlexTAWorker(frDesign* designIn): tech_(nullptr), design_(designIn),
+                                      dir_(frPrefRoutingDirEnum::frcNotApplicablePrefRoutingDir), taIter_(0),
+                                      rq_(this), numAssigned_(0), totCost_(0), maxRetry_(1) {};
     // setters
     void setRouteBox(const frBox &boxIn) {
-      routeBox.set(boxIn);
+      routeBox_.set(boxIn);
     }
     void setExtBox(const frBox &boxIn) {
-      extBox.set(boxIn);
+      extBox_.set(boxIn);
     }
     void setDir(frPrefRoutingDirEnum in) {
-      dir = in;
+      dir_ = in;
     }
     void setTAIter(int in) {
-      taIter = in;
+      taIter_ = in;
     }
     void addIroute(std::unique_ptr<taPin> in, bool isExt = false) {
-      in->setId(iroutes.size() + extIroutes.size());
+      in->setId(iroutes_.size() + extIroutes_.size());
       if (isExt) {
-        extIroutes.push_back(std::move(in));
+        extIroutes_.push_back(std::move(in));
       } else {
-        iroutes.push_back(std::move(in));
+        iroutes_.push_back(std::move(in));
       }
     }
     void addToReassignIroutes(taPin* in) {
-      reassignIroutes.insert(in);
+      reassignIroutes_.insert(in);
     }
     void removeFromReassignIroutes(taPin* in) {
-      auto it = reassignIroutes.find(in);
-      if (it != reassignIroutes.end()) {
-        reassignIroutes.erase(it);
+      auto it = reassignIroutes_.find(in);
+      if (it != reassignIroutes_.end()) {
+        reassignIroutes_.erase(it);
       }
     }
     taPin* popFromReassignIroutes() {
       taPin *sol = nullptr;
-      if (!reassignIroutes.empty()) {
-        sol = *reassignIroutes.begin();
-        reassignIroutes.erase(reassignIroutes.begin());
+      if (!reassignIroutes_.empty()) {
+        sol = *reassignIroutes_.begin();
+        reassignIroutes_.erase(reassignIroutes_.begin());
       }
       return sol;
     }
     // getters
     frTechObject* getTech() const {
-      return design->getTech();
+      return design_->getTech();
     }
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
     const frBox& getRouteBox() const {
-      return routeBox;
+      return routeBox_;
     }
     const frBox& getExtBox() const {
-      return extBox;
+      return extBox_;
     }
     frPrefRoutingDirEnum getDir() const {
-      return dir;
+      return dir_;
     }
     int getTAIter() const {
-      return taIter;
+      return taIter_;
     }
     bool isInitTA() const {
-      return (taIter == 0);
+      return (taIter_ == 0);
     }
     frRegionQuery* getRegionQuery() const {
-      return design->getRegionQuery();
+      return design_->getRegionQuery();
     }
     void getTrackIdx(frCoord loc1, frCoord loc2, frLayerNum lNum, int &idx1, int &idx2) const {
-      idx1 = int(std::lower_bound(trackLocs[lNum].begin(), trackLocs[lNum].end(), loc1) - trackLocs[lNum].begin());
-      idx2 = int(std::upper_bound(trackLocs[lNum].begin(), trackLocs[lNum].end(), loc2) - trackLocs[lNum].begin()) - 1;
+      idx1 = int(std::lower_bound(trackLocs_[lNum].begin(), trackLocs_[lNum].end(), loc1) - trackLocs_[lNum].begin());
+      idx2 = int(std::upper_bound(trackLocs_[lNum].begin(), trackLocs_[lNum].end(), loc2) - trackLocs_[lNum].begin()) - 1;
     }
     const std::vector<frCoord>& getTrackLocs(frLayerNum in) const {
-      return trackLocs[in];
+      return trackLocs_[in];
     }
     const FlexTAWorkerRegionQuery& getWorkerRegionQuery() const {
-      return rq;
+      return rq_;
     }
     FlexTAWorkerRegionQuery& getWorkerRegionQuery() {
-      return rq;
+      return rq_;
     }
     int getNumAssigned() const {
-      return numAssigned;
+      return numAssigned_;
     }
     // others
     int main();
     int main_mt();
     
   protected:
-    frTechObject*                      tech; // not set
-    frDesign*                          design;
-    frBox                              routeBox;
-    frBox                              extBox;
-    frPrefRoutingDirEnum               dir;
-    int                                taIter;
-    FlexTAWorkerRegionQuery            rq;
+    frTechObject*                      tech_; // not set
+    frDesign*                          design_;
+    frBox                              routeBox_;
+    frBox                              extBox_;
+    frPrefRoutingDirEnum               dir_;
+    int                                taIter_;
+    FlexTAWorkerRegionQuery            rq_;
 
-    std::vector<std::unique_ptr<taPin> > iroutes; // unsorterd iroutes
-    std::vector<std::unique_ptr<taPin> > extIroutes;
-    std::vector<std::vector<frCoord> >   trackLocs;
-    std::set<taPin*, taPinComp>  reassignIroutes; // iroutes to be assigned in sorted order
+    std::vector<std::unique_ptr<taPin> > iroutes_; // unsorterd iroutes
+    std::vector<std::unique_ptr<taPin> > extIroutes_;
+    std::vector<std::vector<frCoord> >   trackLocs_;
+    std::set<taPin*, taPinComp>  reassignIroutes_; // iroutes to be assigned in sorted order
 
-    int                                numAssigned;
-    int                                totCost;
-    int                                maxRetry;
+    int                                numAssigned_;
+    int                                totCost_;
+    int                                maxRetry_;
     
     //// others
     void init();

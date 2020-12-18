@@ -43,7 +43,7 @@
 
 #include "Pin.h"
 
-namespace gr {
+namespace grt {
 
 class RoutingLayer
 {
@@ -69,4 +69,4 @@ class RoutingLayer
   bool getPreferredDirection() const { return _preferredDirection; }
 };
 
-}  // namespace gr
+}  // namespace grt

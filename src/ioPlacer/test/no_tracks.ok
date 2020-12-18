@@ -3,8 +3,9 @@ Notice 0:     Created 22 technology layers
 Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
-Info: Added 34 rows of 252 sites.
+[INFO IFP-0001] Added 34 rows of 252 sites.
 #Macro blocks found: 0
 Using 5u default boundaries offset
 Using 2 tracks default min distance between IO pins
-Error: missing track structure
+[ERROR UKN-0000] Routing tracks not found for layer 2
+UKN-0000

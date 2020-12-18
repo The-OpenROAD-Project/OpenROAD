@@ -45,7 +45,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Units.hh"
 
-namespace gr {
+namespace grt {
 
 using std::abs;
 using std::min;
@@ -213,7 +213,7 @@ void RcTreeBuilder::reduceParasiticNetwork()
   sta::Sdc* sdc = _sta->sdc();
   sta::OperatingConditions* op_cond = sdc->operatingConditions(_min_max);
 
-  sta::ReduceParasiticsTo reduce_to = sta::ReduceParasiticsTo::pi_elmore;
+  sta::ReducedParasiticType reduce_to = sta::ReducedParasiticType::pi_elmore;
   _parasitics->reduceTo(_parasitic, _sta_net, reduce_to, op_cond, _corner,
                         _min_max, _analysisPoint);
   _parasitics->deleteParasiticNetwork(_sta_net, _analysisPoint);
@@ -239,4 +239,4 @@ bool operator<(const RoutePt &p1,
 	&& p1._layer < p2._layer);
 }
 
-}  // namespace gr
+}  // namespace grt

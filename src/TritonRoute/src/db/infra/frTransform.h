@@ -37,15 +37,15 @@ namespace fr {
   class frTransform {
   public:
     // constructor
-    frTransform(): offset(), ori() {}
-    frTransform(const frPoint &pointIn, const frOrient &orientIn = frOrient(frcR0)): offset(pointIn), ori(orientIn) {}
-    frTransform(frCoord xOffsetIn, frCoord yOffsetIn, const frOrient &orientIn = frOrient(frcR0)): offset(xOffsetIn, yOffsetIn), ori(orientIn) {}
+    frTransform(): offset_(), ori_() {}
+    frTransform(const frPoint &pointIn, const frOrient &orientIn = frOrient(frcR0)): offset_(pointIn), ori_(orientIn) {}
+    frTransform(frCoord xOffsetIn, frCoord yOffsetIn, const frOrient &orientIn = frOrient(frcR0)): offset_(xOffsetIn, yOffsetIn), ori_(orientIn) {}
     // setters
     void set(const frPoint &pointIn) {
-      offset = pointIn;
+      offset_ = pointIn;
     }
     void set(const frOrient &orientIn) {
-      ori = orientIn;
+      ori_ = orientIn;
     }
     void set(const frPoint &pointIn, const frOrient &orientIn) {
       set(pointIn);
@@ -60,13 +60,13 @@ namespace fr {
     }
     // getters
     frCoord xOffset() const {
-      return offset.x();
+      return offset_.x();
     }
     frCoord yOffset() const {
-      return offset.y();
+      return offset_.y();
     }
     frOrient orient() const {
-      return ori;
+      return ori_;
     }
     // util
     void updateXform(frPoint &size) {
@@ -101,58 +101,58 @@ namespace fr {
     void revert(frTransform &transformIn) {
       frCoord resXOffset, resYOffset;
       frOrient resOrient;
-      switch(ori) {
+      switch(ori_) {
         case frcR0:
-          resXOffset = -offset.x();
-          resYOffset = -offset.y();
+          resXOffset = -offset_.x();
+          resYOffset = -offset_.y();
           resOrient = frcR0;
           break;
         case frcR90:
-          resXOffset = -offset.y();
-          resYOffset = offset.x();
+          resXOffset = -offset_.y();
+          resYOffset = offset_.x();
           resOrient = frcR270;
           break;
         case frcR180:
-          resXOffset = offset.x();
-          resYOffset = offset.y();
+          resXOffset = offset_.x();
+          resYOffset = offset_.y();
           resOrient = frcR180;
           break;
         case frcR270:
-          resXOffset = offset.y();
-          resYOffset = -offset.x();
+          resXOffset = offset_.y();
+          resYOffset = -offset_.x();
           resOrient = frcR90;
           break;
         case frcMY:
-          resXOffset = offset.x();
-          resYOffset = -offset.y();
+          resXOffset = offset_.x();
+          resYOffset = -offset_.y();
           resOrient = frcMY;
           break;
         case frcMYR90:
-          resXOffset = offset.y();
-          resYOffset = offset.x();
+          resXOffset = offset_.y();
+          resYOffset = offset_.x();
           resOrient = frcMYR90;
           break;
         case frcMX:
-          resXOffset = -offset.x();
-          resYOffset = offset.y();
+          resXOffset = -offset_.x();
+          resYOffset = offset_.y();
           resOrient = frcMX;
           break;
         case frcMXR90:
-          resXOffset = -offset.y();
-          resYOffset = -offset.x();
+          resXOffset = -offset_.y();
+          resYOffset = -offset_.x();
           resOrient = frcMXR90;
           break;
         default:
-          resXOffset = -offset.x();
-          resYOffset = -offset.y();
+          resXOffset = -offset_.x();
+          resYOffset = -offset_.y();
           resOrient = frcR0;
           std::cout << "Error: unrecognized orient in revert\n";
       }
       transformIn.set(resXOffset, resYOffset, resOrient);
     }
   protected:
-    frPoint offset;
-    frOrient ori;
+    frPoint offset_;
+    frOrient ori_;
   };
 }
 

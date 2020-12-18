@@ -49,23 +49,23 @@ void FlexRP::init() {
   auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
 
   for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
+    if (tech_->getLayer(lNum)->getType() != frLayerTypeEnum::ROUTING) {
       continue;
     }
-    tech->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
-    tech->via2ViaForbiddenOverlapLen.push_back(eightForbiddenRanges);
-    tech->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
-    tech->viaForbiddenPlanarLen.push_back(fourForbiddenRanges);
-    tech->line2LineForbiddenLen.push_back(fourForbiddenRanges);
-    tech->viaForbiddenThrough.push_back(fourForbidden);
+    tech_->via2ViaForbiddenLen.push_back(eightForbiddenRanges);
+    tech_->via2ViaForbiddenOverlapLen.push_back(eightForbiddenRanges);
+    tech_->viaForbiddenTurnLen.push_back(fourForbiddenRanges);
+    tech_->viaForbiddenPlanarLen.push_back(fourForbiddenRanges);
+    tech_->line2LineForbiddenLen.push_back(fourForbiddenRanges);
+    tech_->viaForbiddenThrough.push_back(fourForbidden);
   }
 
   if (enableOutput) {
-    cout << "tech->via2ViaForbiddenLen size = " << tech->via2ViaForbiddenLen.size() << "\n";
-    cout << "tech->via2ViaForbiddenOverlapLen size = " << tech->via2ViaForbiddenOverlapLen.size() << "\n";
-    cout << "tech->viaForbiddenTurnLen size = " << tech->viaForbiddenTurnLen.size() << "\n";
-    cout << "tech->viaForbiddenPlanarLen size = " << tech->viaForbiddenPlanarLen.size() << "\n";
-    cout << "tech->line2LineForbiddenLen size = " << tech->line2LineForbiddenLen.size() << "\n";
-    cout << "tech->viaForbiddenThrough size = " << tech->viaForbiddenThrough.size() << "\n";
+    cout << "tech_->via2ViaForbiddenLen size = " << tech_->via2ViaForbiddenLen.size() << "\n";
+    cout << "tech_->via2ViaForbiddenOverlapLen size = " << tech_->via2ViaForbiddenOverlapLen.size() << "\n";
+    cout << "tech_->viaForbiddenTurnLen size = " << tech_->viaForbiddenTurnLen.size() << "\n";
+    cout << "tech_->viaForbiddenPlanarLen size = " << tech_->viaForbiddenPlanarLen.size() << "\n";
+    cout << "tech_->line2LineForbiddenLen size = " << tech_->line2LineForbiddenLen.size() << "\n";
+    cout << "tech_->viaForbiddenThrough size = " << tech_->viaForbiddenThrough.size() << "\n";
   }
 }

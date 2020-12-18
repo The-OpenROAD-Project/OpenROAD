@@ -36,17 +36,32 @@
 #pragma once
 
 #include <string>
+
+#include "openroad/Logger.h"
+
 #include "sta/Hash.hh"
 #include "sta/UnorderedMap.hh"
+
 #include "opendb/geom.h"
+
 #include "db_sta/dbNetwork.hh"
 
-#define FLUTE_DTYPE int
 #include "flute.h"
 
-namespace sta {
+namespace rsz {
+
+using ord::Logger;
 
 using odb::Point;
+
+using sta::UnorderedMap;
+using sta::Vector;
+using sta::Network;
+using sta::dbNetwork;
+using sta::Net;
+using sta::Pin;
+using sta::PinSeq;
+using sta::hashIncr;
 
 class SteinerTree;
 
@@ -57,14 +72,15 @@ typedef Vector<SteinerPt> SteinerPtSeq;
 SteinerTree *
 makeSteinerTree(const Net *net,
                 bool find_left_rights,
-                dbNetwork *network);
+                dbNetwork *network,
+                Logger *logger);
 
 class PointHash
 {
 public:
   size_t operator()(const Point &pt) const
   {
-    size_t hash = hash_init_value;
+    size_t hash = sta::hash_init_value;
     hashIncr(hash, pt.x());
     hashIncr(hash, pt.y());
     return hash;
@@ -82,7 +98,7 @@ public:
   }
 };
 
-// Wrapper for Flute::Tree
+// Wrapper for stt::Tree
 class SteinerTree
 {
 public:
@@ -100,7 +116,8 @@ public:
               Pin *&pin2,
               int &steiner_pt2,
               int &wire_length);
-  void report(const Network *network);
+  void report(Logger *logger,
+              const Network *network);
   // Return a pin in the same location as the steiner pt if it exists.
   Pin *steinerPtAlias(SteinerPt pt);
   // Return the steiner pt connected to the driver pin.
@@ -111,18 +128,18 @@ public:
                    const Network *network);
   Pin *pin(SteinerPt pt) const;
   SteinerPt steinerPt(Pin *pin) const;
-  bool isLoad(SteinerPt pt,
-              const Network *network);
   Point location(SteinerPt pt) const;
   SteinerPt left(SteinerPt pt);
   SteinerPt right(SteinerPt pt);
-  void findLeftRights(const Network *network);
-  void setTree(Flute::Tree tree,
+  void findLeftRights(const Network *network,
+                      Logger *logger);
+  void setTree(stt::Tree tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
-  void writeSVG(const Network *network,
-                const char *filename);
-  Flute::Tree &fluteTree() { return tree_; }
+  void writeSVG(const char *filename,
+                const Network *network,
+                Logger *logger);
+  stt::Tree &fluteTree() { return tree_; }
 
   static SteinerPt null_pt;
 
@@ -131,16 +148,17 @@ protected:
                       SteinerPt to,
                       SteinerPtSeq &adj1,
                       SteinerPtSeq &adj2,
-                      SteinerPtSeq &adj3);
+                      SteinerPtSeq &adj3,
+                      Logger *logger);
   void findLeftRights(SteinerPt from,
                       SteinerPt to,
                       SteinerPt adj,
                       SteinerPtSeq &adj1,
                       SteinerPtSeq &adj2,
-                      SteinerPtSeq &adj3);
-  void checkSteinerPt(SteinerPt pt) const;
+                      SteinerPtSeq &adj3,
+                      Logger *logger);
 
-  Flute::Tree tree_;
+  stt::Tree tree_;
   PinSeq pins_;
   // Flute steiner pt index -> pin index.
   Vector<Pin*> steiner_pt_pin_map_;

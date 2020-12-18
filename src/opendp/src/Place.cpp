@@ -37,14 +37,16 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "opendp/Opendp.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include "opendp/Opendp.h"
-#include "openroad/Error.hh"
+
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
-namespace opendp {
+namespace dpl {
 
 using std::abs;
 using std::max;
@@ -55,7 +57,7 @@ using std::string;
 using std::vector;
 
 using ord::closestPtInRect;
-using ord::warn;
+using ord::DPL;
 
 static bool
 cellAreaLess(const Cell *cell1, const Cell *cell2);
@@ -180,7 +182,8 @@ Opendp::place()
       }
     }
     else {
-      warn("instance %s does not fit inside the ROW core area.", cell->name());
+      logger_->warn(DPL, 15, "instance {} does not fit inside the ROW core area.",
+                    cell->name());
     }
   }
   // This has negligible benefit -cherry
@@ -283,7 +286,8 @@ Opendp::brickPlace1(const Group *group)
 
     bool valid = map_move(cell, x, y);
     if (!valid) {
-      warn("cannot place instance (brick place 1) %s", cell->name());
+      logger_->warn(DPL, 16, "cannot place instance (brick place 1) {}.",
+                    cell->name());
     }
   }
 }
@@ -303,9 +307,9 @@ Opendp::brickPlace2(const Group *group)
       int x, y;
       rectDist(cell, cell->region_, &x, &y);
       bool valid = map_move(cell, x, y);
-      if (!valid) {
-        warn("cannot place instance (brick place 2) %s", cell->name());
-      }
+      if (!valid)
+        logger_->warn(DPL, 17, "cannot place instance (brick place 2) {}.",
+                      cell->name());
     }
   }
 }
@@ -449,7 +453,8 @@ Opendp::shift_move(Cell *cell)
 
   // place target cell
   if (!map_move(cell, x, y)) {
-    warn("detailed placement failed on %s", cell->name());
+    logger_->warn(DPL, 18, "detailed placement failed on {}.",
+                  cell->name());
     return false;
   }
 
@@ -459,7 +464,8 @@ Opendp::shift_move(Cell *cell)
       int x, y;
       initialPaddedLocation(around_cell, &x, &y);
       if (!map_move(around_cell, x, y)) {
-        warn("detailed placement failed on %s", around_cell->name());
+        logger_->warn(DPL, 19, "detailed placement failed on {}",
+                      around_cell->name());
         return false;
       }
     }

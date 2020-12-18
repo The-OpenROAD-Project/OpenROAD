@@ -44,4 +44,5 @@ Notice 0: Finished DEF file: ./diverge02.def
 [INFO] NumBins = 256
 [ERROR] RePlAce divergence detected. 
         Please tune the parameters again (REPL-6)
-Error: RePlAce terminated with errors.
+[ERROR UKN-0000] RePlAce terminated with errors.
+UKN-0000

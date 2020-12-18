@@ -50,21 +50,21 @@ proc set_io_pin_constraint { args } {
   set lef_units [$dbTech getLefUnits]
 
   if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
-    set edge_ [ioPlacer::parse_edge "-region" $edge]
+    set edge_ [ppl::parse_edge "-region" $edge]
 
     if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
       if {$begin == {*}} {
-        set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
+        set begin [ppl::get_edge_extreme "-region" 1 $edge]
       }
       if {$end == {*}} {
-        set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
+        set end [ppl::get_edge_extreme "-region" 0 $edge]
       }
 
       set begin [expr { int($begin * $lef_units) }]
       set end [expr { int($end * $lef_units) }]
     } elseif {$interval == {*}} {
-      set begin [ioPlacer::get_edge_extreme "-region" 1 $edge]
-      set end [ioPlacer::get_edge_extreme "-region" 0 $edge]
+      set begin [ppl::get_edge_extreme "-region" 1 $edge]
+      set end [ppl::get_edge_extreme "-region" 0 $edge]
     }
   }
 
@@ -74,36 +74,38 @@ proc set_io_pin_constraint { args } {
 
   if [info exists keys(-direction)] {
     set direction $keys(-direction)
-    set dir [ioPlacer::parse_direction "set_io_pin_constraint" $direction]
+    set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
     puts "Restrict $direction pins to region $begin-$end, in the $edge edge"
-    ioPlacer::add_direction_constraint $dir $edge_ $begin $end
+    ppl::add_direction_constraint $dir $edge_ $begin $end
   }
 
   if [info exists keys(-names)] {
     set names $keys(-names)
     foreach name $names {
       puts "Restrict I/O pin $name to region $begin-$end, in the $edge edge"
-      ioPlacer::add_name_constraint $name $edge_ $begin $end
+      ppl::add_name_constraint $name $edge_ $begin $end
     }
   }
 }
 
-sta::define_cmd_args "io_placer" {[-hor_layer h_layer]        \ 
-                                  [-ver_layer v_layer]        \
-                                  [-random_seed seed]         \
-                       	          [-random]                   \
-                                  [-boundaries_offset offset] \
-                                  [-min_distance min_dist]    \
-                                  [-exclude region]         \
+sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
+                                  [-ver_layers v_layers]\
+                                  [-random_seed seed]\
+                       	          [-random]\
+                                  [-boundaries_offset offset]\
+                                  [-min_distance min_dist]\
+                                  [-exclude region]\
                                  }
 
-sta::define_cmd_alias "place_ios" "io_placer"
-sta::define_cmd_alias "place_pins" "io_placer"
-
 proc io_placer { args } {
-  set regions [ioPlacer::parse_excludes_arg $args]
-  sta::parse_key_args "io_placer" args \
-  keys {-hor_layer -ver_layer -random_seed -boundaries_offset -min_distance -exclude} \
+  ord::warn "io_placer command is deprecated. Use place_pins instead"
+  [eval place_pins $args]
+}
+
+proc place_pins { args } {
+  set regions [ppl::parse_excludes_arg $args]
+  sta::parse_key_args "place_pins" args \
+  keys {-hor_layers -ver_layers -random_seed -boundaries_offset -min_distance -exclude} \
   flags {-random}
 
   set dbTech [ord::get_db_tech]
@@ -136,36 +138,36 @@ proc io_placer { args } {
   if [info exists keys(-random_seed)] {
     set seed $keys(-random_seed)
   }
-  ioPlacer::set_rand_seed $seed
+  ppl::set_rand_seed $seed
 
-  if [info exists keys(-hor_layer)] {
-    set hor_layer $keys(-hor_layer)
+  if [info exists keys(-hor_layers)] {
+    set hor_layers $keys(-hor_layers)
   } else {
-    ord::error "-hor_layer is mandatory"
+    ord::error "-hor_layers is mandatory"
   }       
   
-  if [info exists keys(-ver_layer)] {
-    set ver_layer $keys(-ver_layer)
+  if [info exists keys(-ver_layers)] {
+    set ver_layers $keys(-ver_layers)
   } else {
-    ord::error "-ver_layer is mandatory"
+    ord::error "-ver_layers is mandatory"
   }
 
   set offset 5
   if [info exists keys(-boundaries_offset)] {
     set offset $keys(-boundaries_offset)
-    ioPlacer::set_boundaries_offset $offset
+    ppl::set_boundaries_offset $offset
   } else {
     puts "Using ${offset}u default boundaries offset"
-    ioPlacer::set_boundaries_offset $offset
+    ppl::set_boundaries_offset $offset
   }
 
   set min_dist 2
   if [info exists keys(-min_distance)] {
     set min_dist $keys(-min_distance)
-    ioPlacer::set_min_distance $min_dist
+    ppl::set_min_distance $min_dist
   } else {
     puts "Using $min_dist tracks default min distance between IO pins"
-    ioPlacer::set_min_distance $min_dist
+    ppl::set_min_distance $min_dist
   }
 
   set bterms_cnt [llength [$dbBlock getBTerms]]
@@ -174,20 +176,26 @@ proc io_placer { args } {
     ord::error "Design without pins"
   }
 
-  set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
-  set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+  foreach hor_layer $hor_layers {
+    set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
+    if { $hor_track_grid == "NULL" } {
+      ord::error "Horizontal routing layer ($hor_layer) not found"
+    }
 
-  if { $hor_track_grid == "NULL" } {
-    ord::error "Horizontal routing layer ($hor_layer) not found"
+    if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
+      ord::error "Routing tracks not found for layer $hor_layer"
+    }
   }
 
-  if { $ver_track_grid == "NULL" } {
-    ord::error "Vertical routing layer ($ver_layer) not found"
-  }
+  foreach ver_layer $ver_layers {
+    set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
+    if { $ver_track_grid == "NULL" } {
+      ord::error "Vertical routing layer ($ver_layer) not found"
+    }
 
-  if { ![ord::db_layer_has_hor_tracks $hor_layer] || \
-       ![ord::db_layer_has_ver_tracks $ver_layer] } {
-    ord::error "missing track structure"
+    if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
+      ord::error "Routing tracks not found for layer $hor_layer"
+    }
   }
 
   set num_tracks_x [llength [$ver_track_grid getGridX]]
@@ -204,24 +212,24 @@ proc io_placer { args } {
     
     foreach region $regions {
       if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
-        set edge_ [ioPlacer::parse_edge "-exclude" $edge]
+        set edge_ [ppl::parse_edge "-exclude" $edge]
 
         if [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end] {
           if {$begin == {*}} {
-            set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
+            set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
           }
           if {$end == {*}} {
-            set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+            set end [ppl::get_edge_extreme "-exclude" 0 $edge]
           }
           set begin [expr { int($begin * $lef_units) }]
           set end [expr { int($end * $lef_units) }]
 
-          ioPlacer::exclude_interval $edge_ $begin $end
+          ppl::exclude_interval $edge_ $begin $end
         } elseif {$interval == {*}} {
-          set begin [ioPlacer::get_edge_extreme "-exclude" 1 $edge]
-          set end [ioPlacer::get_edge_extreme "-exclude" 0 $edge]
+          set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
+          set end [ppl::get_edge_extreme "-exclude" 0 $edge]
 
-          ioPlacer::exclude_interval $edge_ $begin $end
+          ppl::exclude_interval $edge_ $begin $end
         } else {
           ord::error "-exclude: $interval is an invalid region"
         }
@@ -230,18 +238,26 @@ proc io_placer { args } {
       }
     }
   }
+
+  foreach hor_layer $hor_layers {
+    ppl::add_hor_layer $hor_layer 
+  }
+
+  foreach ver_layer $ver_layers {
+    ppl::add_ver_layer $ver_layer
+  }
   
-  ioPlacer::run_io_placement $hor_layer $ver_layer [info exists flags(-random)]
+  ppl::run_io_placement [info exists flags(-random)]
 }
 
-namespace eval ioPlacer {
+namespace eval ppl {
 
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
     ord::error "$cmd: $edge is an invalid edge. use top, bottom, left or right"
   }
-  return [ioPlacer::get_edge $edge]
+  return [ppl::get_edge $edge]
 }
 
 proc parse_direction { cmd direction } {
@@ -250,7 +266,7 @@ proc parse_direction { cmd direction } {
       [regexp -nocase -- {^INOUT$} $direction] || \
       [regexp -nocase -- {^FEEDTHRU$} $direction]} {
     set direction [string tolower $direction]
-    return [ioPlacer::get_direction $direction]      
+    return [ppl::get_direction $direction]      
   } else {
     ord::error "$cmd: Invalid pin direction"
   }
@@ -296,10 +312,10 @@ proc get_edge_extreme { cmd begin edge } {
 proc exclude_intervals { cmd intervals } {
   if { $intervals != {} } {
     foreach interval $intervals {
-      ioPlacer::exclude_interval $interval
+      ppl::exclude_interval $interval
     }
   }
 }
 
-# ioPlacer namespace end
+# ppl namespace end
 }

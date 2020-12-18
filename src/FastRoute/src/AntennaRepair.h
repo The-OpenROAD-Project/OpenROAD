@@ -60,9 +60,9 @@ class dbTech;
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
-namespace gr {
+namespace grt {
 
-typedef std::map<odb::dbNet*, std::vector<VINFO>> AntennaViolations;
+typedef std::map<odb::dbNet*, std::vector<ant::VINFO>> AntennaViolations;
 
 class GlobalRouter;
 
@@ -79,8 +79,8 @@ class AntennaRepair
 {
  public:
   AntennaRepair(GlobalRouter *grouter,
-		antenna_checker::AntennaChecker* arc,
-		opendp::Opendp* opendp, odb::dbDatabase* db);
+		ant::AntennaChecker* arc,
+		dpl::Opendp* opendp, odb::dbDatabase* db);
 
   int checkAntennaViolations(NetRouteMap& routing,
 			     int maxRoutingLayer, odb::dbMTerm* diodeMTerm);
@@ -111,12 +111,12 @@ private:
   void setInstsPlacementStatus(odb::dbPlacementStatus placementStatus);
 
   GlobalRouter *_grouter;
-  antenna_checker::AntennaChecker* _arc;
-  opendp::Opendp* _opendp;
+  ant::AntennaChecker* _arc;
+  dpl::Opendp* _opendp;
   odb::dbDatabase* _db;
   odb::dbBlock* _block;
   std::vector<odb::dbInst*> _diodeInsts;
   AntennaViolations _antennaViolations;
 };
 
-}  // namespace gr
+}  // namespace grt

@@ -36,16 +36,16 @@ namespace fr {
   class FlexRP {
   public:
     // constructor
-    FlexRP(frDesign *designIn, frTechObject* techIn): design(designIn), tech(techIn) {}
+    FlexRP(frDesign *designIn, frTechObject* techIn): design_(designIn), tech_(techIn) {}
     
     frDesign* getDesign() const {
-      return design;
+      return design_;
     }
 
     void main();
   protected:
-    frDesign* design;
-    frTechObject* tech;
+    frDesign* design_;
+    frTechObject* tech_;
 
     // init
     void init();

@@ -42,8 +42,8 @@ namespace fr {
   class frPin: public frBlockObject {
   public:
     // constructors
-    frPin(): frBlockObject(), term(nullptr), pinFigs(), aps() {}
-    frPin(const frPin &in): frBlockObject(), term(in.term) {
+    frPin(): frBlockObject(), term_(nullptr), pinFigs_(), aps_() {}
+    frPin(const frPin &in): frBlockObject(), term_(in.term_) {
       for (auto &uPinFig: in.getFigs()) {
         auto pinFig = uPinFig.get();
         if (pinFig->typeId() == frcRect) {
@@ -58,7 +58,7 @@ namespace fr {
         }
       }
     }
-    frPin(const frPin &in, const frTransform &xform): frBlockObject(), term(in.term) {
+    frPin(const frPin &in, const frTransform &xform): frBlockObject(), term_(in.term_) {
       for (auto &uPinFig: in.getFigs()) {
         auto pinFig = uPinFig.get();
         if (pinFig->typeId() == frcRect) {
@@ -78,43 +78,43 @@ namespace fr {
 
     // getters
     frTerm* getTerm() const {
-      return term;
+      return term_;
     }
     const std::vector< std::unique_ptr<frPinFig> >& getFigs() const {
-      return pinFigs;
+      return pinFigs_;
     }
 
     int getNumPinAccess() const {
-      return aps.size();
+      return aps_.size();
     }
     bool hasPinAccess() const {
-      return !aps.empty();
+      return !aps_.empty();
     }
     frPinAccess* getPinAccess(int idx) const {
-      return aps[idx].get();
+      return aps_[idx].get();
     }
 
     // setters
     // cannot have setterm, must be available when creating
     void setTerm(frTerm *in) {
-      term = in;
+      term_ = in;
     }
     void addPinFig(std::unique_ptr<frPinFig> in) {
       in->addToPin(this);
-      pinFigs.push_back(std::move(in));
+      pinFigs_.push_back(std::move(in));
     }
     void addPinAccess(std::unique_ptr<frPinAccess> in) {
-      in->setId(aps.size());
-      aps.push_back(std::move(in));
+      in->setId(aps_.size());
+      aps_.push_back(std::move(in));
     }
     // others
     frBlockObjectEnum typeId() const override {
       return frcPin;
     }
   protected:
-    frTerm* term;
-    std::vector< std::unique_ptr<frPinFig> > pinFigs; // optional, set later
-    std::vector<std::unique_ptr<frPinAccess> > aps; // not copied in copy constructor
+    frTerm* term_;
+    std::vector< std::unique_ptr<frPinFig> > pinFigs_; // optional, set later
+    std::vector<std::unique_ptr<frPinAccess> > aps_; // not copied in copy constructor
   };
 }
 
