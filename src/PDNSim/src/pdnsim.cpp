@@ -42,7 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include "gmat.h"
 #include "node.h"
-//#include "parameters.h"
 
 using namespace std;
 
@@ -58,8 +57,11 @@ PDNSim::PDNSim()
   _out_file(""),
   _em_out_file(""),
   _enable_em(0),
-  _spice_out_file(""){
-};
+  _spice_out_file(""),
+  _bump_pitch_x(0),
+  _bump_pitch_y(0)
+  //_net_voltage_map(nullptr)
+  { };
 
 PDNSim::~PDNSim() {
   _db = nullptr;
@@ -70,6 +72,9 @@ PDNSim::~PDNSim() {
   _em_out_file = "";
   _enable_em = 0;
   _spice_out_file = "";
+  _bump_pitch_x=0;
+  _bump_pitch_y=0;
+  //_net_voltage_map = nullptr;
 }
 
 void PDNSim::setDb(odb::dbDatabase* db){
@@ -81,6 +86,18 @@ void PDNSim::setSta(sta::dbSta* sta){
 
 void PDNSim::set_power_net(std::string net){
   _power_net= net;
+}
+
+void PDNSim::set_bump_pitch_x(float bump_pitch){
+  _bump_pitch_x= bump_pitch;
+}
+
+void PDNSim::set_bump_pitch_y(float bump_pitch){
+  _bump_pitch_y= bump_pitch;
+}
+
+void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage){
+ _net_voltage_map.insert(std::pair<std::string, float> (net, voltage));
 }
 
 
@@ -120,7 +137,8 @@ void PDNSim::import_spice_out_file(std::string out_file)
 void PDNSim::write_pg_spice() {
   IRSolver* irsolve_h = new IRSolver( 
                 _db, _sta, _vsrc_loc, _power_net, _out_file,
-                _em_out_file, _spice_out_file, _enable_em);
+                _em_out_file, _spice_out_file, _enable_em, 
+                 _bump_pitch_x, _bump_pitch_y, _net_voltage_map);
  
   if(!irsolve_h->Build()){
   	delete irsolve_h;
@@ -139,7 +157,8 @@ int PDNSim::analyze_power_grid(){
   GMat*     gmat_obj;
   IRSolver* irsolve_h = new IRSolver( 
                   _db, _sta, _vsrc_loc,_power_net, _out_file,
-                  _em_out_file, _spice_out_file,_enable_em);
+                  _em_out_file, _spice_out_file,_enable_em,
+                 _bump_pitch_x, _bump_pitch_y, _net_voltage_map);
   
   if(!irsolve_h->Build()){
   	delete irsolve_h;
@@ -160,9 +179,9 @@ int PDNSim::analyze_power_grid(){
   cout << "\n" << endl;
   cout << "######################################" << endl;
   cout << "Worstcase Voltage: " << std::setprecision(6) << irsolve_h->wc_voltage << endl;
-  cout << "Average IR drop  : " << std::setprecision(5) << abs(irsolve_h->vdd - irsolve_h->avg_voltage)
+  cout << "Average IR drop  : " << std::setprecision(5) << abs(irsolve_h->supply_voltage_src - irsolve_h->avg_voltage)
        << endl;
-  cout << "Worstcase IR drop: " << std::setprecision(5) << abs(irsolve_h->vdd - irsolve_h->wc_voltage)
+  cout << "Worstcase IR drop: " << std::setprecision(5) << abs(irsolve_h->supply_voltage_src - irsolve_h->wc_voltage)
        << endl;
   cout << "######################################" << endl;
   if(_enable_em == 1) {
@@ -182,7 +201,8 @@ int PDNSim::analyze_power_grid(){
 int PDNSim::check_connectivity() {
   IRSolver* irsolve_h = new IRSolver( 
                 _db, _sta, _vsrc_loc, _power_net, _out_file,
-                _em_out_file, _spice_out_file, _enable_em);
+                _em_out_file, _spice_out_file, _enable_em,
+                 _bump_pitch_x, _bump_pitch_y, _net_voltage_map);
   if(!irsolve_h->BuildConnection()){
   	delete irsolve_h;
   	return 0;

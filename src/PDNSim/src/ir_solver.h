@@ -60,7 +60,10 @@ class IRSolver
            std::string              out_file,
            std::string              em_out_file,
            std::string              spice_out_file,
-           int                      em_analyze)
+           int                      em_analyze,
+           int                      bump_pitch_x,
+           int                      bump_pitch_y,
+           std::map<std::string, float> net_voltage_map)
   {
     m_db           = t_db;
     m_sta          = t_sta;
@@ -70,6 +73,9 @@ class IRSolver
     m_em_out_file  = em_out_file;
     m_em_flag  = em_analyze;
     m_spice_out_file = spice_out_file;
+    m_bump_pitch_x  = bump_pitch_x;
+    m_bump_pitch_y  = bump_pitch_y;
+    m_net_voltage_map =  net_voltage_map;
   }
   //! IRSolver destructor
   ~IRSolver() {
@@ -83,8 +89,6 @@ class IRSolver
   double                                      avg_cur;
   //! number of resistances   
   int                                         num_res;
-  //! Voltage supply
-  double                                      vdd;
   //! Average voltage at lowest layer nodes  
   double                                      avg_voltage;
   //! Vector of worstcase voltages in the lowest layers
@@ -97,6 +101,7 @@ class IRSolver
   void                                        SolveIR();
   //! Function to get the power value from OpenSTA
   std::vector<std::pair<std::string, double>> GetPower();
+  std::pair<double, double> GetSupplyVoltage();
 
   bool                                        CheckConnectivity();
   
@@ -109,6 +114,7 @@ class IRSolver
   bool                                        Build();
 
   bool                                        BuildConnection();
+  float                                       supply_voltage_src;
  
  private:
   //! Pointer to the Db
@@ -129,17 +135,21 @@ class IRSolver
   int m_node_density{5400};  // TODO get from somewhere
   //! Routing Level of the top layer
   int m_top_layer{0};
-  
+  int m_bump_pitch_x{0};
+  int m_bump_pitch_y{0};
+  int m_bump_pitch_default{140};
+  int m_bump_size{10};
+ 
   int m_bottom_layer{10};
 
   bool m_result{false};
-  
   bool m_connection{false};
   //! Direction of the top layer
   odb::dbTechLayerDir::Value m_top_layer_dir;
 
   odb::dbTechLayerDir::Value m_bottom_layer_dir;
   odb::dbSigType m_power_net_type;
+  std::map<std::string, float> m_net_voltage_map; 
   //! Current vector 1D
   std::vector<double>                            m_J;
   //! C4 bump locations and values

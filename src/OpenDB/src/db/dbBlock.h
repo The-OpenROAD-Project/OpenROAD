@@ -170,6 +170,7 @@ class _dbBlock : public _dbObject
   dbId<_dbGCellGrid>         _gcell_grid;
   dbId<_dbBlock>             _parent_block;  // Up hierarchy: TWG
   dbId<_dbInst>              _parent_inst;   // Up hierarchy: TWG
+  dbId<_dbModule>            _top_module;
   dbHashTable<_dbNet>        _net_hash;
   dbHashTable<_dbInst>       _inst_hash;
   dbHashTable<_dbModule>     _module_hash;
