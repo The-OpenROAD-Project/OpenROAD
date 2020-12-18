@@ -305,24 +305,6 @@ resize_target_load_cap(LibertyCell *cell)
   return resizer->targetLoadCap(cell);
 }
 
-void
-repair_hold_pin(Pin *end_pin,
-                LibertyCell *buffer_cell,
-                bool allow_setup_violations)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairHold(end_pin, buffer_cell, allow_setup_violations);
-}
-
-void
-repair_hold(bool allow_setup_violations)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->repairHold(allow_setup_violations);
-}
-
 float
 design_area()
 {
@@ -383,11 +365,11 @@ repair_net_cmd(Net *net,
 }
 
 void
-repair_setup()
+repair_setup(float slack_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup();
+  resizer->repairSetup(slack_margin);
 }
 
 void
@@ -396,6 +378,25 @@ repair_setup_pin(Pin *end_pin)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(end_pin);
+}
+
+void
+repair_hold_pin(Pin *end_pin,
+                LibertyCell *buffer_cell,
+                bool allow_setup_violations)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHold(end_pin, buffer_cell, 0.0, allow_setup_violations);
+}
+
+void
+repair_hold(float slack_margin,
+            bool allow_setup_violations)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->repairHold(slack_margin, allow_setup_violations);
 }
 
 ////////////////////////////////////////////////////////////////

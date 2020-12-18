@@ -402,10 +402,13 @@ namespace fr {
         switch (dir) {
           case frDirEnum::E:
             node.isBlockedEast = true;
+            break;
           case frDirEnum::N:
             node.isBlockedNorth = true;
+            break;
           case frDirEnum::U:
             node.isBlockedUp = true;
+            break;
           default:
             ;
         }
@@ -418,10 +421,13 @@ namespace fr {
         switch (dir) {
           case frDirEnum::E:
             node.isBlockedEast = false;
+            break;
           case frDirEnum::N:
             node.isBlockedNorth = false;
+            break;
           case frDirEnum::U:
             node.isBlockedUp = false;
+            break;
           default:
             ;
         }
@@ -605,10 +611,13 @@ namespace fr {
         switch (dir) {
           case frDirEnum::E:
             node.hasGridCostEast = true;
+            break;
           case frDirEnum::N:
             node.hasGridCostNorth = true;
+            break;
           case frDirEnum::U:
             node.hasGridCostUp = true;
+            break;
           default:
             ;
         }
@@ -644,10 +653,13 @@ namespace fr {
         switch (dir) {
           case frDirEnum::E:
             node.hasGridCostEast = false;
+            break;
           case frDirEnum::N:
             node.hasGridCostNorth = false;
+            break;
           case frDirEnum::U:
             node.hasGridCostUp = false;
+            break;
           default:
             ;
         }

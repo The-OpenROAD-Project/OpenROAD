@@ -33,5 +33,6 @@ Notice 0: Finished DEF file: no_clock.def
  ************************
  Initializing clock nets
  Looking for clock nets in the design
-Error: No clock nets have been found.
+[ERROR UKN-0000] No clock nets have been found.
 
+UKN-0000

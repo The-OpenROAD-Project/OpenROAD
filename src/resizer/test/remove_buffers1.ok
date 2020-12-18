@@ -30,7 +30,7 @@ Path Type: max
 (Path is unconstrained)
 
 
-Removed 2 buffers.
+[INFO RSZ-0026] Removed 2 buffers.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: (none)

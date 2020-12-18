@@ -1,0 +1,138 @@
+add_library(opendb
+    dbBTerm.cpp 
+    dbStream.cpp 
+    dbBTermItr.cpp 
+    dbBPinItr.cpp 
+    dbBlock.cpp 
+    dbBlockItr.cpp 
+    dbBox.cpp 
+    dbBoxItr.cpp 
+    dbChip.cpp 
+    dbDatabase.cpp 
+    dbITerm.cpp 
+    dbITermItr.cpp 
+    dbInst.cpp 
+    dbInstHdr.cpp 
+    dbLib.cpp 
+    dbMPin.cpp 
+    dbMPinItr.cpp 
+    dbMTerm.cpp 
+    dbMaster.cpp 
+    dbNet.cpp 
+    dbSearch.cpp
+    dbTech.cpp 
+    dbTechLayer.cpp 
+    dbTechLayerSpacingRule.cpp 
+    dbTechLayerAntennaRule.cpp 
+    dbTechMinCutOrAreaRule.cpp 
+    dbTechLayerItr.cpp 
+    dbTechVia.cpp 
+    dbTypes.cpp 
+    dbVia.cpp 
+    dbWire.cpp 
+    dbWireCodec.cpp 
+    dbGCellGrid.cpp 
+    dbTrackGrid.cpp 
+    dbBlockage.cpp 
+    dbObstruction.cpp 
+    dbObject.cpp 
+    dbInstShapeItr.cpp 
+    dbTransform.cpp 
+    dbITermShapeItr.cpp 
+    dbSWire.cpp 
+    dbSBox.cpp 
+    dbSWireItr.cpp 
+    dbSBoxItr.cpp 
+    dbDiff.cpp 
+    dbSite.cpp 
+    dbCCSeg.cpp 
+    dbCCSegItr.cpp 
+    dbWireShapeItr.cpp 
+    dbWirePathItr.cpp 
+    dbTarget.cpp 
+    dbTargetItr.cpp 
+    test_wire.cpp 
+    test_wire2.cpp 
+    dbTechNonDefaultRule.cpp 
+    dbTechLayerRule.cpp 
+    dbCapNode.cpp 
+    dbCapNodeItr.cpp 
+    dbRSeg.cpp 
+    dbRSegItr.cpp 
+    dbTechSameNetRule.cpp 
+    dbRow.cpp
+    dbFill.cpp
+    dbShape.cpp 
+    dbWireGraph.cpp 
+    dbJournal.cpp 
+    dbJournalLog.cpp 
+    dbBlockCallBackObj.cpp 
+    dbRtTree.cpp 
+    dbRegion.cpp 
+    dbRegionInstItr.cpp 
+    dbExtControl.cpp 
+    dbPrintControl.cpp 
+    dbNullIterator.cpp 
+    dbBPin.cpp 
+    dbHierInstShapeItr.cpp 
+    dbRegionItr.cpp 
+    dbHier.cpp 
+    dbTechViaRule.cpp 
+    dbTechViaLayerRule.cpp 
+    dbTechViaGenerateRule.cpp 
+    dbViaParams.cpp 
+    dbNameCache.cpp 
+    dbProperty.cpp 
+    dbPropertyItr.cpp 
+    dbFlatten.cpp 
+    dbUtil.cpp
+    gs.cpp
+    grids.cpp
+    dbLogger.cpp 
+    tmg_conn.cpp
+    tmg_conn_g.cpp
+    tmg_conn_s.cpp
+    tmg_conn_w.cpp
+    wOrder.cpp
+    dbGroupPowerNetItr.cpp
+    dbGroupGroundNetItr.cpp
+    # Generator Code Begin cpp
+    dbTechLayerSpacingEolRule.cpp
+    dbModule.cpp
+    dbModInst.cpp
+    dbGroup.cpp
+    dbModuleInstItr.cpp
+    dbModuleModInstItr.cpp
+    dbGroupModInstItr.cpp
+    dbGroupItr.cpp
+    dbGroupInstItr.cpp
+    # Generator Code End cpp
+)
+
+target_include_directories(opendb
+    PUBLIC
+        $<INSTALL_INTERFACE:include/opendb>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/opendb>
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/db
+)
+
+target_compile_features(opendb PRIVATE cxx_auto_type)
+target_compile_options(opendb PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall>)
+set_property(TARGET opendb PROPERTY POSITION_INDEPENDENT_CODE ON)
+find_package(spdlog)
+target_link_libraries(opendb
+    PUBLIC
+        zutil 
+        zlib 
+        tm
+        lef
+        defin
+        defout
+        lefout
+        zutil
+        lefin
+        spdlog::spdlog
+    PRIVATE
+        tcl
+)

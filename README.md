@@ -217,33 +217,33 @@ Place pins around core boundary.
 auto_place_pins pin_layer
 ```
 
-#### I/O pin assignment
+#### Pin placement
 
-Assign I/O pins to on-track locations at the boundaries of the 
-core while optimizing I/O nets wirelength. I/O pin assignment also 
-creates a metal shape for each I/O pin using min-area rules.
+Place pins to on-track locations at the boundaries of the 
+core while optimizing nets wirelength. Pin placement also 
+creates a metal shape for each pin using min-area rules.
 
-Use the following command to perform I/O pin assignment:
+Use the following command to perform pin placement:
 ```
-place_pins [-hor_layer h_layer]  
-           [-ver_layer v_layer] 
+place_pins [-hor_layers h_layers]  
+           [-ver_layers v_layers] 
            [-random_seed seed]
            [-exclude interval]
            [-random]
 ```
-- ``-hor_layer`` (mandatory). Set the layer to create the metal shapes 
-of I/O pins assigned to horizontal tracks. 
-- ``-ver_layer`` (mandatory). Set the layer to create the metal shapes
-of I/O pins assigned to vertical tracks. 
+- ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
+of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
+- ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
+of pins placed in vertical tracks. Can be a single layer or a list of layer indices
 - ``-random_seed``. Set the seed for random operations.
 - ``-exclude``. Set an interval in one of the four edges of the die boundary
-where I/O pins cannot be assigned. Can be used multiple times.
-- ``-random``. When this flag is enabled, the I/O pin assignment is 
+where pins cannot be placed. Can be used multiple times.
+- ``-random``. When this flag is enabled, the pin placement is 
 random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
-or a range of values. Example: `place_pins -hor_layer 2 -ver_layer 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
+or a range of values. Example: `place_pins -hor_layers 2 -ver_layers 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 
@@ -251,7 +251,7 @@ left edge from the beginning to the 50 microns.
 set_io_pin_constraint -direction direction -names names -region edge:interval
 ```
 
-The `set_io_pin_constraint` command sets region constraints for I/O pins according the direction or the pin name.
+The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
 function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
@@ -260,6 +260,7 @@ function call. The `-names` argument is a list of names. The `-region` syntax is
 Gate resizer commands are described below.
 The resizer commands stop when the design area is `-max_utilization
 util` percent of the core area. `util` is between 0 and 100.
+The resizer stops and reports and error if the max utilization is exceeded.
 
 ```
 set_wire_rc [-clock] [-signal]
@@ -310,6 +311,7 @@ in all libraries.
 ```
 buffer_ports [-inputs]
              [-outputs]
+             [-max_utilization util]
 ```
 The `buffer_ports -inputs` command adds a buffer between the input and
 its loads.  The `buffer_ports -outputs` adds a buffer between the port
@@ -318,9 +320,11 @@ driver and the output port. If  The default behavior is
 
 ```
 repair_design [-max_wire_length max_length]
+              [-libraries resize_libs]
+              [-max_utilization util]
 ```
 
-The `repair_design` inserts buffers on nets to repair max slew, max
+The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance, max fanout violations, and on long wires to reduce RC
 delay in the wire. It also resizes gates to normalize slews.  Use
 `-max_wire_length` to specify the maximum length of wires.  The
@@ -347,12 +351,17 @@ by `dist` (in liberty units, typically microns).
 ```
 repair_timing [-setup]
               [-hold]
+              [-slack_margin slack_margin]
               [-allow_setup_violations]
+              [-max_utilization util]
 ```
-The `repair_timing` command repair setup and hold violations.
+The `repair_timing` command repairs setup and hold violations.
 It should be run after clock tree synthesis with propagated clocks.
 While repairing hold violations buffers are not inserted that will cause setup
 violations unless '-allow_setup_violations' is specified.
+Use `-slack_margin` to add additional slack margin. To specify
+different slack margins use separate `repair_timing` commands for setup and
+hold.
 
 ```
 report_design_area
