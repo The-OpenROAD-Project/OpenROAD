@@ -196,7 +196,7 @@ void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
   uint w;
   debug("Trace",
         "C",
-        " ------  RC Segment Info --- %s \n\t%s  : %s\n\txHi   : %d\n\tyHi   : "
+        " ------  Total RC Wire Values --- %s \n\t%s  : %s\n\txHi   : %d\n\tyHi   : "
         "%d\n\tnetId : %d\n\tshapId: %d\n\trsegId: %d\n\tCap   : %.5f\n\tRes   "
         ": %.5f\n",
         msg,
@@ -222,7 +222,7 @@ void extMeasure::rcNetInfo()
   double totaCap = gndCap + ccCap;
   debug("Trace",
         "C",
-        " ---- Net RC Values \n\tNetId  : %d\n\tNetName: %s\n\tCCap   : "
+        " ---- Total Net RC Values \n\tNetId  : %d\n\tNetName: %s\n\tCCap   : "
         "%g\n\tGndCap : %g\n\tnetCap : %g\n\tNetRes : %g\n\n",
         _netId,
         net->getConstName(),
@@ -254,7 +254,7 @@ bool extMeasure::ouCovered_debug(int covered)
   debug(
       "Trace",
       "C",
-      " ------ Pattern Info\n\tLevel : M%d\n\tWidth : %d\n\tDist "
+      " ------ OverUnder Lengths\n\tLevel : M%d\n\tWidth : %d\n\tDist "
       " : %d\n\tLen   : %d\n\tOU_len: %d\n\tSubLen: %d\n\tDiag  : %d\n",
       _met,
       _width,
@@ -296,12 +296,38 @@ bool extMeasure::ouRCvalues(const char* msg, uint jj)
 
   return true;
 }
+bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res, double res, double cap, char* openDist)
+{
+  if (!IsDebugNet())
+    return false;
+
+  char buf[100];
+  sprintf(buf, "Over SUB %s", openDist);
+
+  rc->printDebugRC(buf);
+
+  debug(
+      "Trace",
+      "C",
+      " ------ Totals %s \n\tLevel : M%d\n\tWidth : %d\n\tLen   : %d\n\tSubLen: %d\n\tCap   :%g\n\tRes    : %g\n",
+      openDist,
+      _met,
+      _width,
+      _len,
+      lenOverSub,
+      res,
+      cap);
+
+  rcSegInfo();
+
+  return true;
+}
 bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 {
   if (!IsDebugNet())
     return false;
 
-  rc->printDebugRC("OvrSUB");
+  rc->printDebugRC("Over SUB");
   rcSegInfo();
 
   return true;
@@ -491,5 +517,19 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit)
         _coupling + _fringe + _diag,
         _res);
 }
+void extDistRC::printDebugRC_values(char* msg)
+{
+  debug("DistRC",
+        "C",
+        " ---- %s ------------ \n\t\t\tCouple: %.6f\n\t\t\tFringe: %.6f\n\t\t\tDiagC "
+        ": %.6f\n\t\t\ttotCap: %.6f\n\t\t\tRes   : %.6f\n",
+        msg,
+        _coupling,
+        _fringe,
+        _diag,
+        _coupling + _fringe + _diag,
+        _res);
+}
+
 
 } // end namespace
