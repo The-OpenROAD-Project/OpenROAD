@@ -281,6 +281,18 @@ char* dbModInst::getName() const
   size_t      idx    = h_name.find_last_of('/');
   return strdup(h_name.substr(idx + 1).c_str());
 }
+
+char* dbModInst::getHierarchalName() const
+{
+  _dbModInst* _obj      = (_dbModInst*) this;
+  dbBlock*   block    = (dbBlock*) _obj->getOwner();
+  std::string inst_name = getName();
+  dbModule* parent = getParent();
+  if(parent==block->getTopModule())
+    return strdup(inst_name.c_str());
+  else
+    return strdup((std::string(parent->getModInst()->getHierarchalName())+"/"+inst_name).c_str());
+}
 // User Code End dbModInstPublicMethods
 }  // namespace odb
    // Generator Code End 1
