@@ -163,11 +163,11 @@ proc tapcell { args } {
 
     puts "Running tapcell..."
         
-    set db [::ord::get_db]
+    set db [ord::get_db]
     set block [[$db getChip] getBlock]
 
-    set halo_y [::ord::microns_to_dbu $halo_y]
-    set halo_x [::ord::microns_to_dbu $halo_x]
+    set halo_y [ord::microns_to_dbu $halo_y]
+    set halo_x [ord::microns_to_dbu $halo_x]
 
     set blockages [tap::find_blockages $db]
 
@@ -477,10 +477,10 @@ namespace eval tap {
             set pitch -1
 
             if {[even $row]} {
-                set offset [::ord::microns_to_dbu $dist]
+                set offset [ord::microns_to_dbu $dist]
                 lappend offsets $offset
             } else {
-                set offset [::ord::microns_to_dbu [expr $dist*2]]
+                set offset [ord::microns_to_dbu [expr $dist*2]]
                 lappend offsets $offset
             }
 
@@ -489,25 +489,25 @@ namespace eval tap {
                     continue
                 }
                 set offsets ""
-                set pitch [::ord::microns_to_dbu $dist]
-                set offset [::ord::microns_to_dbu $dist]
+                set pitch [ord::microns_to_dbu $dist]
+                set offset [ord::microns_to_dbu $dist]
                 lappend offsets $offset
             } elseif {[right_above_below_macros $blockages $row $halo_x $halo_y]} {
                 if {$add_boundary_cell == true} {
                     set offsets ""
-                    set pitch [::ord::microns_to_dbu [expr $dist*2]]
-                    set offset [::ord::microns_to_dbu $dist]
-                    set offset2 [::ord::microns_to_dbu [expr $dist*2]]
+                    set pitch [ord::microns_to_dbu [expr $dist*2]]
+                    set offset [ord::microns_to_dbu $dist]
+                    set offset2 [ord::microns_to_dbu [expr $dist*2]]
                     lappend offsets $offset
                     lappend offsets $offset2
                 } else {
                     set offsets ""
-                    set offset [::ord::microns_to_dbu $dist]
+                    set offset [ord::microns_to_dbu $dist]
                     lappend offsets $offset
-                    set pitch [::ord::microns_to_dbu $dist]
+                    set pitch [ord::microns_to_dbu $dist]
                 }
             } else {
-                set pitch [::ord::microns_to_dbu [expr $dist*2]]
+                set pitch [ord::microns_to_dbu [expr $dist*2]]
             }
 
             set endcapwidth [expr $endcap_cpp*$site_x]
@@ -949,7 +949,7 @@ namespace eval tap {
 
     #proc to detect even/odd
     proc even {row} {
-        set db [::ord::get_db]
+        set db [ord::get_db]
         set block [[$db getChip] getBlock]
 
         set site_y [[$row getSite] getHeight]
@@ -1024,7 +1024,7 @@ namespace eval tap {
 
     #proc to detect top/bottom row
     proc top_or_bottom {row min_y max_y} {
-        set db [::ord::get_db]
+        set db [ord::get_db]
         set block [[$db getChip] getBlock]
 
         set lly [[$row getBBox] yMin]
