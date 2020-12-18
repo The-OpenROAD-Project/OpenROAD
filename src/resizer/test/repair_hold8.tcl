@@ -1,4 +1,4 @@
-# repair_timing -hold
+# repair_timing -hold -margin
 source helpers.tcl
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -12,10 +12,6 @@ set_propagated_clock clk
 set_wire_rc -layer metal1
 estimate_parasitics -placement
 
-report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
-  -endpoint_count 5
+repair_timing -hold -slack_margin .2
 
-repair_timing -hold
-
-report_checks -path_delay min -format full_clock -unique_paths_to_endpoint \
-  -endpoint_count 5
+report_checks -path_delay min -format full_clock
