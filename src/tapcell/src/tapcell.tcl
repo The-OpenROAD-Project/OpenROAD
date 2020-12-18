@@ -161,9 +161,6 @@ proc tapcell { args } {
     set halo_x [ord::microns_to_dbu $halo_x]
 
     set blockages [tap::find_blockages $db]
-
-    set input_flags {}
-    lappend input_flags $no_cell_at_top_bottom $add_boundary_cell
     
     set cnrcap_masters {}
     lappend cnrcap_masters $cnrcap_nwin_master $cnrcap_nwout_master
@@ -173,13 +170,15 @@ proc tapcell { args } {
     set cnt [tap::insert_endcaps $db $endcap_cpp $endcap_master \
                                      $cnrcap_masters \
                                      $blockages $halo_x $halo_y \
-                                     $input_flags]
+                                     $no_cell_at_top_bottom \
+                                     $add_boundary_cell]
 
     set endcap_master [$db findMaster $endcap_master]
     set endcap_width [$endcap_master getWidth]
     set cnt [tap::insert_tapcells $db $tapcell_master $blockages $dist \
                                       $endcap_cpp $halo_x $halo_y \
-                                      $endcap_width $cnt $input_flags]
+                                      $endcap_width $cnt $no_cell_at_top_bottom \
+                                      $add_boundary_cell]
 
     if {$add_boundary_cell} {
         set tap_nw_masters {}
@@ -277,7 +276,7 @@ namespace eval tap {
     }
 
     proc insert_endcaps {db endcap_cpp endcap_master cnrcap_masters \
-                         blockages halo_x halo_y flags} {
+                         blockages halo_x halo_y no_cell_at_top_bottom add_boundary_cell} {
         puts "Step 2: Insert endcaps..."
 
         set block [[$db getChip] getBlock]
@@ -286,10 +285,6 @@ namespace eval tap {
         
         set min_y [get_min_rows_y $rows]
         set max_y [get_max_rows_y $rows]
-
-        if {[llength $flags] == 2} {
-            lassign $flags no_cell_at_top_bottom add_boundary_cell
-        }
 
         if {[llength $cnrcap_masters] == 2} {
             lassign $cnrcap_masters cnrcap_nwin_master cnrcap_nwout_master
@@ -434,7 +429,7 @@ namespace eval tap {
     }
 
     proc insert_tapcells {db tapcell_master blockages dist endcap_cpp halo_x halo_y \
-                          endcap_width cnt flags} {
+                          endcap_width cnt no_cell_at_top_bottom add_boundary_cell} {
         puts "Step 3: Insert tapcells..."
 
         set block [[$db getChip] getBlock]
@@ -446,10 +441,6 @@ namespace eval tap {
 
         set min_y [get_min_rows_y $rows]
         set max_y [get_max_rows_y $rows]
-
-        if {[llength $flags] == 2} {
-            lassign $flags no_cell_at_top_bottom add_boundary_cell
-        }
         
         set tapcell_count 0
 
