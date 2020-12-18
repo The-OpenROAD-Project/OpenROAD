@@ -190,7 +190,7 @@ proc tapcell { args } {
                                       $endcap_cpp $halo_x $halo_y \
                                       $endcap_width $cnt $input_flags]
 
-    if {$add_boundary_cell == true} {
+    if {$add_boundary_cell} {
         set tap_nw_masters {}
         lappend tap_nw_masters $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master \
                                $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master
@@ -321,7 +321,7 @@ namespace eval tap {
 
             set top_bottom [top_or_bottom $row $min_y $max_y]
 
-            if {$no_cell_at_top_bottom == true} {
+            if {$no_cell_at_top_bottom} {
                 if {$top_bottom == 1} {
                     if { $ori == "MX" } {
                         set master [$db findMaster $cnrcap_nwin_master]
@@ -375,7 +375,7 @@ namespace eval tap {
 
             set blocked_region false
             set blocked_region [in_blocked_region $llx $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-            if {$add_boundary_cell == true && $blocked_region == true} {    
+            if {$add_boundary_cell && $blocked_region} {    
                 if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
                     if { $ori == "MX" } {
                         set master [$db findMaster $cnrcap_nwin_master]
@@ -402,7 +402,7 @@ namespace eval tap {
 
             set blocked_region false
             set blocked_region [in_blocked_region $loc_2_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-            if {$add_boundary_cell == true && $blocked_region == true} {
+            if {$add_boundary_cell && $blocked_region} {
                 if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
                     if { $ori == "MX" } {
                         set master [$db findMaster $cnrcap_nwin_master]
@@ -485,7 +485,7 @@ namespace eval tap {
             }
 
             if {[top_or_bottom $row $min_y $max_y]} {
-                if {$no_cell_at_top_bottom == true} {
+                if {$no_cell_at_top_bottom} {
                     continue
                 }
                 set offsets ""
@@ -493,7 +493,7 @@ namespace eval tap {
                 set offset [ord::microns_to_dbu $dist]
                 lappend offsets $offset
             } elseif {[right_above_below_macros $blockages $row $halo_x $halo_y]} {
-                if {$add_boundary_cell == true} {
+                if {$add_boundary_cell} {
                     set offsets ""
                     set pitch [ord::microns_to_dbu [expr $dist*2]]
                     set offset [ord::microns_to_dbu $dist]
@@ -529,10 +529,10 @@ namespace eval tap {
                     set x_end [expr $x + $site_x]
                     set x_tmp $x
 
-                    if {$add_boundary_cell == true} {
+                    if {$add_boundary_cell} {
                         set blocked_region false
                         set blocked_region [in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
-                        if {$blocked_region == true} {
+                        if {$blocked_region} {
                             set new_x [get_new_x $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
                             if { $x != $new_x} {
                                 set x_tmp $new_x
@@ -1287,7 +1287,7 @@ namespace eval tap {
         set tap_urx [expr $x + $master_width]
         set increase -1
 
-        if { $add_boundary_cell == false } {
+        if { !$add_boundary_cell } {
             return $x
         }
 
