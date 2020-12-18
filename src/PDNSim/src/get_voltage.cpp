@@ -31,62 +31,49 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __PDNSim_HEADER__
-#define __PDNSim_HEADER__
 
+#include "get_voltage.h"
+#include <iostream>
 
-#include <string>
-#include <map>
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Liberty.hh"
 
-namespace odb {
-  class dbDatabase;
+std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta) {
+  std::pair<double, double>  supply_voltage;
+  sta::LibertyLibrary *default_library;
+  _sta = sta;
+  sta::dbNetwork* network = _sta->getDbNetwork();
+  sta::Corner* corner = _sta->cmdCorner();
+  sta::MinMax *mm = sta::MinMax::max();
+  const sta::DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(mm);
+  float power_voltage_;
+  float gnd_voltage_;
+  default_library= network->defaultLibertyLibrary();
+  bool exists;
+
+  const sta::Pvt *pvt = dcalc_ap->operatingConditions();
+  if (pvt == nullptr)
+    pvt = default_library->defaultOperatingConditions();
+  if (pvt)
+    power_voltage_ =  pvt->voltage();
+  else
+    power_voltage_ =  0.0;
+  gnd_voltage_ = 0.0;
+  //default_library_->supplyVoltage(power_name_, power_voltage_, exists);
+  //if (!exists) {
+  //  DcalcAnalysisPt *dcalc_ap = path_->dcalcAnalysisPt(this);
+  //  const OperatingConditions *op_cond = dcalc_ap->operatingConditions();
+  //  if (op_cond == nullptr)
+  //    op_cond = network->defaultLibertyLibrary()->defaultOperatingConditions();
+  //  power_voltage_ = op_cond->voltage();
+  //}
+  //default_library_->supplyVoltage(gnd_name_, gnd_voltage_, exists);
+  //if (!exists)
+  //  gnd_voltage_ = 0.0;
+  supply_voltage.first = power_voltage_;
+  supply_voltage.second = gnd_voltage_;
+  return supply_voltage;
 }
-namespace sta {
-  class dbSta;
-}
-
-namespace pdnsim {
-
-class PDNSim
-{
-  public:
-    PDNSim();
-    ~PDNSim();
-
-    void init();
-    void reset();
-
-    void setDb(odb::dbDatabase* odb);
-    void setSta(sta::dbSta* dbSta);
-    
-    void import_vsrc_cfg(std::string vsrc);
-    void import_out_file(std::string out_file);
-    void import_em_out_file(std::string em_out_file);
-    void import_enable_em(int enable_em);
-    void import_spice_out_file(std::string out_file);
-    void set_power_net(std::string net);
-    void set_bump_pitch_x(float bump_pitch);
-    void set_bump_pitch_y(float bump_pitch);
-    void set_pdnsim_net_voltage(std::string net, float voltage);
-    int analyze_power_grid();
-    void write_pg_spice();
-
-    int check_connectivity();
-
-  private:
-    odb::dbDatabase* _db;
-    sta::dbSta* _sta;
-    std::string _vsrc_loc;
-    std::string _out_file;
-    std::string _em_out_file;
-    int         _enable_em;
-    int         _bump_pitch_x;
-    int         _bump_pitch_y;
-    std::string _spice_out_file;
-    std::string _power_net;
-    std::map<std::string, float> _net_voltage_map;
-
-};
-}
-
-#endif

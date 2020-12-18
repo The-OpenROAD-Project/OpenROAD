@@ -53,6 +53,7 @@ set(OPENROAD_TCL_FILES
   ${ICEWALL_HOME}/src/ICeWall.tcl
   ${PDNGEN_HOME}/src/PdnGen.tcl
   ${CDL_HOME}/src/cdl.tcl
+  ${OPENDB_HOME}/src/db/OpenDB.tcl
   )
 
 add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
@@ -101,7 +102,7 @@ find_package(Boost)
 set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
 
 set_property(SOURCE ${OPENDB_SWIG_FILE}
-  PROPERTY CPLUSPLUS ON
+  PROPERTY CPLUSPLUS ONF
 )
 
 # Ubuntu 18.04 cmake version 3.10.2 does not support the

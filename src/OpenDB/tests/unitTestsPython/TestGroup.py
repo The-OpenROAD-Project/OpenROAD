@@ -43,8 +43,8 @@ class TestModule(odbUnitTest.TestCase):
         self.group.addGroundNet(self.n1)
         self.assertEqual(self.group.getGroundNets()[0].getName(),"n1")
         self.group.removeNet(self.n1)
-        self.assertEqual(self.group.getType(),0)
-        self.group.setType(1)
+        self.assertEqual(self.group.getType(),"PHYSICAL_CLUSTER")
+        self.group.setType("VOLTAGE_DOMAIN")
         self.group.destroy(self.group)
 if __name__=='__main__':
     odbUnitTest.mainParallel(TestModule)     

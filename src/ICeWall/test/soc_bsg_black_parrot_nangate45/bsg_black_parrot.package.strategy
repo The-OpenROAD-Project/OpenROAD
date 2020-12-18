@@ -261,8 +261,8 @@ Footprint definition {
       pwrdet12  {type pdt   cell {centre {x 2480.000 y 2895.000}}}
     }                                           
     left {                                      
-      sig102    {type vss   cell {centre {x 105.000 y 2755.000}} bondpad {centre {x  63.293 y 2755.000}}}
-      sig103    {type vdd   cell {centre {x 105.000 y 2681.000}} bondpad {centre {x  63.293 y 2681.000}}}
+      sig102    {type sig   cell {centre {x 105.000 y 2755.000}} bondpad {centre {x  63.293 y 2755.000}}}
+      sig103    {type sig   cell {centre {x 105.000 y 2681.000}} bondpad {centre {x  63.293 y 2681.000}}}
       sig104    {type sig   cell {centre {x 105.000 y 2607.000}} bondpad {centre {x  63.293 y 2607.000}}}
       sig105    {type sig   cell {centre {x 105.000 y 2533.000}} bondpad {centre {x  63.293 y 2533.000}}}
       sig106    {type sig   cell {centre {x 105.000 y 2422.000}} bondpad {centre {x  63.293 y 2422.000}}}
