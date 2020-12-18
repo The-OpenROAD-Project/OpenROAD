@@ -816,6 +816,11 @@ class dbBlock : public dbObject
   /// Returns the hierarchical parent of this block if it exists.
   ///
   dbInst* getParentInst();
+  
+  ///
+  /// Returns the top module of this block.
+  ///
+  dbModule* getTopModule();
 
   ///
   /// Get the child blocks of this block.
@@ -7527,6 +7532,8 @@ class dbModInst : public dbObject
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
   char* getName() const;
+  
+  char* getHierarchalName() const;
   // User Code End dbModInst
 };
 

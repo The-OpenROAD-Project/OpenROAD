@@ -1154,3 +1154,39 @@
 		$1 = 0;
 	}
 }
+%typemap(out) odb::dbGroup::dbGroupType, dbGroupType {
+	PyObject *obj;
+	switch ($1) {
+		case odb::dbGroup::dbGroupType::PHYSICAL_CLUSTER:
+			obj = PyString_FromString("PHYSICAL_CLUSTER");
+			break;
+	 	case odb::dbGroup::dbGroupType::VOLTAGE_DOMAIN:
+			obj = PyString_FromString("VOLTAGE_DOMAIN");
+			break;
+	}
+	$result=obj;
+}
+%typemap(in) odb::dbGroup::dbGroupType, dbGroupType {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
+		$1 = odb::dbGroup::dbGroupType::PHYSICAL_CLUSTER;
+	} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+		$1 = odb::dbGroup::dbGroupType::VOLTAGE_DOMAIN;
+	}
+}
+%typemap(typecheck) odb::dbGroup::dbGroupType, dbGroupType {
+	char *str = PyString_AsString(PyUnicode_AsASCIIString($input));
+	bool found = false;
+	if (str) {
+		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
+			found = true;
+		} 	else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+			found = true;
+		}
+	}
+	if (found) {
+		$1 = 1;
+	} else {
+		$1 = 0;
+	}
+}
