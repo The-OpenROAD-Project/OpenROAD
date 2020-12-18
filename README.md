@@ -351,13 +351,17 @@ by `dist` (in liberty units, typically microns).
 ```
 repair_timing [-setup]
               [-hold]
+              [-slack_margin slack_margin]
               [-allow_setup_violations]
               [-max_utilization util]
 ```
-The `repair_timing` command repair setup and hold violations.
+The `repair_timing` command repairs setup and hold violations.
 It should be run after clock tree synthesis with propagated clocks.
 While repairing hold violations buffers are not inserted that will cause setup
 violations unless '-allow_setup_violations' is specified.
+Use `-slack_margin` to add additional slack margin. To specify
+different slack margins use separate `repair_timing` commands for setup and
+hold.
 
 ```
 report_design_area

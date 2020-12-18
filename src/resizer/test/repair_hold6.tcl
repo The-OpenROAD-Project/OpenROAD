@@ -1,4 +1,4 @@
-# repair_hold_violations repair_hold5 with -allow_setup_violations
+# repair_timing -hold repair_hold5 with -allow_setup_violations
 source helpers.tcl
 read_liberty sky130/sky130_tt.lib
 read_lef sky130/sky130_tech.lef
