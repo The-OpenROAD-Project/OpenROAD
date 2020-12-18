@@ -212,7 +212,7 @@ Footprint library {
       physical_only 1
     }
     PAD_CORNER {
-      orient {ll R0 lr R90 ul R180 ur R270}
+      orient {ll R0 lr R90 ur R180 ul R270}
       physical_only 1
     }
     DUMMY_BUMP_small {
