@@ -150,15 +150,15 @@ proc tapcell { args } {
     }
 
     if { [info exists flags(-add_boundary_cell)] } {
-        set add_boundary_cell true
+        set add_boundary_cell 1
     } else {
-        set add_boundary_cell false
+        set add_boundary_cell 0
     }
 
     if { [info exists flags(-no_cell_at_top_bottom)] } {
-        set no_cell_at_top_bottom true
+        set no_cell_at_top_bottom 1
     } else {
-        set no_cell_at_top_bottom false
+        set no_cell_at_top_bottom 0
     }
 
     puts "Running tapcell..."
@@ -373,7 +373,7 @@ namespace eval tap {
             set loc_2_x [expr $urx - $master_x]
             set loc_2_y [expr $ury - $master_y]
 
-            set blocked_region false
+            set blocked_region 0
             set blocked_region [in_blocked_region $llx $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
             if {$add_boundary_cell && $blocked_region} {    
                 if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
@@ -400,7 +400,7 @@ namespace eval tap {
             incr cnt
             incr endcap_count
 
-            set blocked_region false
+            set blocked_region 0
             set blocked_region [in_blocked_region $loc_2_x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
             if {$add_boundary_cell && $blocked_region} {
                 if {[right_above_below_macros $blockages $row $halo_x $halo_y] == 1} {
@@ -530,7 +530,7 @@ namespace eval tap {
                     set x_tmp $x
 
                     if {$add_boundary_cell} {
-                        set blocked_region false
+                        set blocked_region 0
                         set blocked_region [in_blocked_region $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth]
                         if {$blocked_region} {
                             set new_x [get_new_x $x $row $blockages $halo_x $halo_y [$master getWidth] $endcapwidth $site_x]
@@ -1262,7 +1262,7 @@ namespace eval tap {
         set row_blockages ""
         set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
         
-        set blocked_region false
+        set blocked_region 0
 
         if {([llength $row_blockages] > 0)} {
             foreach row_blockage $row_blockages {
@@ -1270,12 +1270,12 @@ namespace eval tap {
                 set row_blockage_urx [expr [[$row_blockage getBBox] xMax] + $halo_x]
                 if {($x + $master_width) > ($row_blockage_llx - $endcapwidth) && \
                      $x < ($row_blockage_urx + $endcapwidth)} {
-                    return true
+                    return 1
                 }
             }
         }
 
-        return false
+        return 0
     }
 
     proc get_correct_llx {x row blockages halo_x halo_y master_width endcapwidth site_width add_boundary_cell} {
@@ -1335,7 +1335,7 @@ namespace eval tap {
         set row_blockages ""
         set row_blockages [get_macros_top_bottom_row $row $blockages $halo_x $halo_y]
 
-        set blocked_region false
+        set blocked_region 0
         set new_x $x
 
         if {([llength $row_blockages] > 0)} {
