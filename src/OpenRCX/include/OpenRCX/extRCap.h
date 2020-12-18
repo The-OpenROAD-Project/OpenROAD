@@ -172,6 +172,7 @@ class extDistRC
 
  public:
   void   printDebug(char*, char*, uint, uint, extDistRC *rcUnit=NULL);
+  void   printDebugRC_values(char* msg);
 	void   printDebugRC(const char*);
   void   printDebugRC(int met, int overMet, int underMet, int width, int dist, int len);
   void   printDebugRC_sum(int len, int dbUnit);
@@ -845,6 +846,7 @@ class extMeasure
 	bool isVia(uint rsegId);
 	bool ouRCvalues(const char *msg, uint jj);
 	bool OverSubDebug(extDistRC *rc, int lenOverSub, int lenOverSub_res);
+  bool OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res, double res, double cap, char* openDist);
 
   bool IsDebugNet();
   bool DebugStart();

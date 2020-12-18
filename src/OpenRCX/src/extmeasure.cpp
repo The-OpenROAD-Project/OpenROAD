@@ -3613,19 +3613,9 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
   bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
 
   if (!((lenOverSub>0)||(res_lenOverSub>0))) {
-    // if (IsDebugNet())
-     //  debug("measureRC", "C"," -- Lengths Over Sub (remainder of OU/Diag) For \n\tCap  : 0 ");
-
       return;
   }
-  /*
-  if (IsDebugNet())
-     debug("measureRC",
-        "C",
-        " -------------------------- Lengths Over Sub (remainder of OU/Diag) For \n\tCap  : %d\n\tRes  : %d\n\n",
-        lenOverSub,
-        res_lenOverSub);
-*/
+  
   _underMet = 0;
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
     extDistRC* rc = _metRCTable.get(jj)->getOverFringeRC(this);
@@ -3646,14 +3636,7 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
         _extMain->updateRes(rseg1, res, jj);
       }
     }
-    OverSubDebug(rc, lenOverSub, res_lenOverSub);
-    /*
-                      if (IsDebugNet()) {
-                              debug("Trace", "C", "OverSub: M%d  W=%d BOT=%d
-       DIAG=%d  L%d %g netcap %g -- %g totRes %g\n", _met, _width, srcCovered,
-       diagCovered,lenOverSub, cap, rseg1->getNet()->getTotalCapacitance(jj),
-       res, rseg1->getNet()->getTotalResistance(jj)); rc->printDebugRC(" SUB:");
-                      } */
+    OverSubDebug(rc, lenOverSub, res_lenOverSub, res, cap, "Open");
   }
   // }
 }
@@ -3719,16 +3702,11 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
         if (_dist > 0) {  // dist based
           cc = SUB_MULT * rc->getCoupling() * lenOverSub;
           _extMain->updateCoupCap(rseg1, rseg2, jj, cc);
-          // dbCCSeg *ccap= dbCCSeg::create(
-          //	dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
-          //	dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
-          //	true);
-          // ccap->addCapacitance(cc, jj);
           tot += cc;
         }
       }
     }
-    OverSubDebug(rc, lenOverSub, lenOverSub);
+    OverSubDebug(rc, lenOverSub, lenOverSub, res, fr+cc, "Dist");
   }
 }
 
@@ -3803,17 +3781,24 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
 
     bool rvia1 = isVia(rseg1->getId());
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      bool ou=false;
       if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
+        ou= true;
         if (!rvia1)
           _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
+        else
+          _rc[jj]->_res= 0;
       }
       if (_rc[jj]->_fringe > 0) {
+        ou= true;
         double tot = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
-        rcSegInfo();
       }
-    }
-    if (IsDebugNet())
-          debug("measureRC", "C", "------------------ OverUnder/Diagonal RC  ----- END \n");
+      if (ou && IsDebugNet())
+        _rc[jj]->printDebugRC_values("OverUnder Total Open");
+     }
+     if (IsDebugNet())
+        debug("measureRC", "C", "------------------ OverUnder/Diagonal RC  ----- END \n");
+      rcSegInfo();
 
     if (COMPUTE_OVER_SUB) {
       OverSubRC(rseg1, NULL, totLenCovered, _diagLen, _len);
@@ -3833,31 +3818,37 @@ int extMeasure::computeAndStoreRC(dbRSeg* rseg1, dbRSeg* rseg2, int srcCovered)
     bool rvia2 = rseg2 != NULL && isVia(rseg2->getId());
 
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+      bool ou= false;
       double totR1 = 0;
       double totR2 = 0;
       if (!_extMain->_lef_res && _rc[jj]->_res > 0) {
         if (!rvia1) {
+          ou= true;
           totR1 = _extMain->updateRes(rseg1, _rc[jj]->_res, jj);
         }
         if (!rvia2)
+          ou= true;
           totR2 = _extMain->updateRes(rseg2, _rc[jj]->_res, jj);
       }
       double tot1 = 0;
       double tot2 = 0;
       if (_rc[jj]->_fringe > 0) {
+          ou= true;
         tot1 = _extMain->updateTotalCap(rseg1, _rc[jj]->_fringe, jj);
         tot2 = _extMain->updateTotalCap(rseg2, _rc[jj]->_fringe, jj);
       }
       if (_rc[jj]->_coupling > 0) {
+        ou= true;
         _extMain->updateCoupCap(rseg1, rseg2, jj, _rc[jj]->_coupling);
       }
       tot1 += _rc[jj]->_coupling;
       tot2 += _rc[jj]->_coupling;
-
-      rcSegInfo();
+      if (ou && IsDebugNet())
+        _rc[jj]->printDebugRC_values("OverUnder Total Dist");
     }
-      if (IsDebugNet())
-          debug("measureRC", "C", "------------------ OverUnder/Diagonal RC  ----- END \n");
+    rcSegInfo();
+    if (IsDebugNet())
+      debug("measureRC", "C", "------------------ OverUnder/Diagonal RC  ----- END \n");
 
     if (COMPUTE_OVER_SUB) {
       // OverSubRC(rseg1, NULL, totLenCovered, _diagLen, srcCovered);
