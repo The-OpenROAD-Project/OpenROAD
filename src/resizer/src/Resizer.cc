@@ -1304,7 +1304,7 @@ Resizer::tieLocation(Pin *load,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairSetup()
+Resizer::repairSetup(float slack_margin)
 {
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -1316,7 +1316,7 @@ Resizer::repairSetup()
   Slack prev_worst_slack = -INF;
   int pass = 1;
   int decreasing_slack_passes = 0;
-  while (fuzzyLess(worst_slack, 0.0)
+  while (fuzzyLess(worst_slack, slack_margin)
          // Allow slack to increase a few passes to get out of local minima.
          && (decreasing_slack_passes < 0
              || fuzzyGreater(worst_slack, prev_worst_slack))
@@ -1580,21 +1580,23 @@ Resizer::upsizeCell(LibertyPort *in_port,
 ////////////////////////////////////////////////////////////////
 
 void
-Resizer::repairHold(bool allow_setup_violations)
+Resizer::repairHold(float slack_margin,
+                    bool allow_setup_violations)
 {
   init();
   sta_->findRequireds();
   Search *search = sta_->search();
   VertexSet *ends = sta_->search()->endpoints();
   LibertyCell *buffer_cell = findHoldBuffer();
-  repairHold(ends, buffer_cell, allow_setup_violations);
+  repairHold(ends, buffer_cell, slack_margin, allow_setup_violations);
 }
 
 // For testing/debug.
 void
 Resizer::repairHold(Pin *end_pin,
-                              LibertyCell *buffer_cell,
-                              bool allow_setup_violations)
+                    LibertyCell *buffer_cell,
+                    float slack_margin,
+                    bool allow_setup_violations)
 {
   Vertex *end = graph_->pinLoadVertex(end_pin);
   VertexSet ends;
@@ -1602,7 +1604,7 @@ Resizer::repairHold(Pin *end_pin,
 
   init();
   sta_->findRequireds();
-  repairHold(&ends, buffer_cell, allow_setup_violations);
+  repairHold(&ends, buffer_cell, slack_margin, allow_setup_violations);
 }
 
 LibertyCell *
@@ -1623,12 +1625,13 @@ Resizer::findHoldBuffer()
 void
 Resizer::repairHold(VertexSet *ends,
                     LibertyCell *buffer_cell,
+                    float slack_margin,
                     bool allow_setup_violations)
 {
   // Find endpoints with hold violation.
   VertexSet hold_failures;
   Slack worst_slack;
-  findHoldViolations(ends, worst_slack, hold_failures);
+  findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
   if (!hold_failures.empty()) {
     logger_->info(RSZ, 46, "Found {} endpoints with hold violations.",
                   hold_failures.size());
@@ -1642,7 +1645,7 @@ Resizer::repairHold(VertexSet *ends,
            && repair_count > 0
            && !over_max_area) {
       repair_count = repairHoldPass(hold_failures, buffer_cell, buffer_delay,
-                                    allow_setup_violations);
+                                    slack_margin, allow_setup_violations);
       debugPrint4(debug_, "repair_hold", 1,
                   "pass %d worst slack %s failures %lu inserted %d\n",
                   pass,
@@ -1650,7 +1653,7 @@ Resizer::repairHold(VertexSet *ends,
                   hold_failures .size(),
                   repair_count);
       sta_->findRequireds();
-      findHoldViolations(ends, worst_slack, hold_failures);
+      findHoldViolations(ends, slack_margin, worst_slack, hold_failures);
       over_max_area = overMaxArea();
       pass++;
     }
@@ -1667,6 +1670,7 @@ Resizer::repairHold(VertexSet *ends,
 
 void
 Resizer::findHoldViolations(VertexSet *ends,
+                            float slack_margin,
                             // Return values.
                             Slack &worst_slack,
                             VertexSet &hold_violations)
@@ -1678,7 +1682,7 @@ Resizer::findHoldViolations(VertexSet *ends,
   for (Vertex *end : *ends) {
     Slack slack = sta_->vertexSlack(end, MinMax::min());
     if (!sta_->isClock(end->pin())
-        && fuzzyLess(slack, 0.0)) {
+        && fuzzyLess(slack, slack_margin)) {
       debugPrint1(debug_, "repair_hold", 3, " %s\n",
                   end->name(sdc_network_));
       if (slack < worst_slack)
@@ -1692,6 +1696,7 @@ int
 Resizer::repairHoldPass(VertexSet &hold_failures,
                         LibertyCell *buffer_cell,
                         float buffer_delay,
+                        float slack_margin,
                         bool allow_setup_violations)
 {
   VertexSet fanins = findHoldFanins(hold_failures);
@@ -1706,7 +1711,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
     Slack hold_slack = sta_->vertexSlack(vertex, MinMax::min());
-    if (hold_slack < 0
+    if (hold_slack < slack_margin
         // Hands off special nets.
         && !isSpecial(net)) {
       // Only add delay to loads with hold violations.
@@ -1718,7 +1723,7 @@ Resizer::repairHoldPass(VertexSet &hold_failures,
         Vertex *fanout = edge->to(graph_);
         Slacks slacks;
         sta_->vertexSlacks(fanout, slacks);
-        Slack hold_slack = holdSlack(slacks);
+        Slack hold_slack = holdSlack(slacks) - slack_margin;
         if (hold_slack < 0.0) {
           Delay delay = allow_setup_violations
             ? -hold_slack
