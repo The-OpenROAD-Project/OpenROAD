@@ -139,7 +139,7 @@ Final usage/overflow report:
 [INFO] Final usage          : 525
 [INFO] Final number of vias : 187
 [INFO] Final usage 3D       : 1086
-Placed 6681 filler instances.
+[INFO DPL-0001] Placed 6681 filler instances.
 [INFO] Num routed nets: 262
 No differences found.
 No differences found.

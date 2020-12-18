@@ -10,7 +10,7 @@ Notice 0:     Created 2 pins.
 Notice 0:     Created 10 components and 45 component-terminals.
 Notice 0:     Created 11 nets and 25 connections.
 Notice 0: Finished DEF file: simple05.def
-Warning: could not find power special net
+[WARNING DPL-0011] Could not find power special net.
 Design Stats
 --------------------------------
 total instances            10

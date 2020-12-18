@@ -82,6 +82,11 @@ target_include_directories(opendp
   ${TCL_INCLUDE_PATH}
  )
 
+target_link_libraries(opendp
+  PUBLIC
+  spdlog::spdlog
+  )
+
 ################################################################
 
 add_custom_target(opendp_tags etags -o TAGS

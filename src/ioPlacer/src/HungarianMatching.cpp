@@ -101,6 +101,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
              ioPin.getName().c_str());
       }
       ioPin.setPos(_slots[slotIndex].pos);
+      ioPin.setLayer(_slots[slotIndex].layer);
       assigment.push_back(ioPin);
       Point sPos = _slots[slotIndex].pos;
       for (int i = 0; i < _slots.size(); i++) {

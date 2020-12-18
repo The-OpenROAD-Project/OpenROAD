@@ -43,8 +43,6 @@
 #include <limits>
 #include <set>
 
-#include "openroad/Error.hh"
-
 namespace dpl {
 
 using std::abs;

@@ -35,6 +35,7 @@
 
 #include "openroad/OpenRoad.hh"
 #include "openroad/Version.hh" // BUILD_OPENPHYSYN
+#include "openroad/Logger.h"
 
 #include "opendb/db.h"
 #include "opendb/wOrder.h"
@@ -85,6 +86,9 @@ extern int Openroad_Init(Tcl_Interp *interp);
 extern int Opendbtcl_Init(Tcl_Interp *interp);
 }
 
+// Main.cc set by main()
+extern const char* log_filename;
+
 namespace ord {
 
 using std::min;
@@ -106,6 +110,7 @@ OpenRoad *OpenRoad::openroad_ = nullptr;
 
 OpenRoad::OpenRoad()
   : tcl_interp_(nullptr),
+    logger_(nullptr),
     db_(nullptr),
     verilog_network_(nullptr),
     sta_(nullptr),
@@ -151,6 +156,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   stt::deleteLUT();
+  delete logger_;
 }
 
 void
@@ -190,6 +196,7 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   tcl_interp_ = tcl_interp;
 
   // Make components.
+  logger_ = new Logger(log_filename);
   sta_ = makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
   ioPlacer_ = makeIoplacer();
@@ -369,7 +376,7 @@ void
 OpenRoad::linkDesign(const char *design_name)
 
 {
-  dbLinkDesign(design_name, verilog_network_, db_);
+  dbLinkDesign(design_name, verilog_network_, db_, logger_);
   for (Observer* observer : observers_) {
     observer->postReadDb(db_);
   }

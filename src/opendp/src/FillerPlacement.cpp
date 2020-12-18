@@ -35,17 +35,15 @@
 #include "opendp/Opendp.h"
 
 #include <algorithm>
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 namespace dpl {
 
-using std::cout;
-using std::endl;
 using std::max;
 using std::min;
 using std::to_string;
 
-using ord::error;
+using ord::DPL;
 
 using odb::dbLib;
 using odb::dbMaster;
@@ -65,7 +63,7 @@ Opendp::fillerPlacement(const StringSeq *filler_master_names)
   for (int row = 0; row < row_count_; row++) {
     placeRowFillers(grid, row);
   }
-  cout << "Placed " << to_string(filler_count_) << " filler instances." << endl;
+  logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
 }
 
 void
@@ -136,10 +134,11 @@ Opendp::placeRowFillers(const Grid *grid,
       if (fillers.empty()) {
         int x = core_.xMin() + j * site_width_;
         int y = core_.yMin() + row * row_height_;
-        error("could not fill gap of size %d at %d,%d dbu between %s and %s",
-              gap, x, y,
-              gridInstName(grid, row, j - 1),
-              gridInstName(grid, row, k + 1));
+        logger_->error(DPL, 2,
+                       "could not fill gap of size {} at {},{} dbu between {} and {}",
+                       gap, x, y,
+                       gridInstName(grid, row, j - 1),
+                       gridInstName(grid, row, k + 1));
       }
       else {
         k = j;
