@@ -1074,10 +1074,8 @@ Resizer::estimateWireParasitic(const Net *net)
                   sdc_network_->pathName(net));
       Parasitic *parasitic = parasitics_->makeParasiticNetwork(net, false,
                                                                parasitics_ap_);
-      bool is_clk = !sta_->isClock(net);
+      bool is_clk = sta_->isClock(net);
       int branch_count = tree->branchCount();
-      float cap = 0.0;
-      float wl = 0.0;
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
         Pin *pin1, *pin2;
@@ -1109,8 +1107,6 @@ Resizer::estimateWireParasitic(const Net *net)
             parasitics_->incrCap(n1, wire_cap / 2.0, parasitics_ap_);
             parasitics_->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap_);
             parasitics_->incrCap(n2, wire_cap / 2.0, parasitics_ap_);
-            cap += wire_cap;
-            wl += wire_length;
           }
         }
       }
