@@ -1,0 +1,104 @@
+1
+Notice 0: Reading LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  ../test/data/libraries/Nangate45/NangateOpenCellLibrary.mod.lef
+Notice 0: 
+Reading DEF file: pinswap1.def
+Notice 0: Design: gcd
+Notice 0:     Created 54 pins.
+Notice 0:     Created 482 components and 2074 component-terminals.
+Notice 0:     Created 385 nets and 1110 connections.
+Notice 0: Finished DEF file: pinswap1.def
+Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock core_clock (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ _596_/CK (DFF_X1)
+   0.160    0.160 ^ _596_/Q (DFF_X1)
+   0.059    0.220 ^ _399_/ZN (XNOR2_X2)
+   0.021    0.241 v _421_/ZN (AOI21_X4)
+   0.013    0.254 ^ _427_/ZN (INV_X4)
+   0.015    0.269 v _438_/ZN (NAND2_X2)
+   0.020    0.289 ^ _439_/ZN (NAND2_X4)
+   0.013    0.302 v _470_/ZN (NAND2_X2)
+   0.019    0.321 ^ _473_/ZN (NAND2_X2)
+   0.032    0.352 ^ _506_/ZN (AND2_X2)
+   0.007    0.360 v _507_/ZN (INV_X2)
+   0.027    0.387 v _510_/ZN (AND3_X4)
+   0.057    0.445 v _524_/ZN (OR3_X4)
+   0.026    0.471 ^ _528_/ZN (AOI21_X4)
+   0.009    0.480 v _535_/ZN (NOR2_X2)
+   0.038    0.518 v _536_/ZN (XNOR2_X1)
+   0.028    0.546 v _537_/ZN (AND2_X2)
+   0.027    0.572 ^ _540_/ZN (OAI21_X1)
+   0.020    0.593 v _541_/ZN (OAI21_X1)
+   0.000    0.593 v _594_/D (DFF_X1)
+            0.593   data arrival time
+
+  10.000   10.000   clock core_clock (rise edge)
+   0.000   10.000   clock network delay (ideal)
+   0.000   10.000   clock reconvergence pessimism
+           10.000 ^ _594_/CK (DFF_X1)
+  -0.041    9.959   library setup time
+            9.959   data required time
+-----------------------------------------------------------
+            9.959   data required time
+           -0.593   data arrival time
+-----------------------------------------------------------
+            9.367   slack (MET)
+
+
+Invoking pin_swap transform 
+Finished pin_swap transform ( 8 ) 
+Startpoint: _596_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _594_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock core_clock (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ _596_/CK (DFF_X1)
+   0.158    0.158 ^ _596_/Q (DFF_X1)
+   0.061    0.220 ^ _399_/ZN (XNOR2_X2)
+   0.021    0.241 v _421_/ZN (AOI21_X4)
+   0.012    0.253 ^ _427_/ZN (INV_X4)
+   0.015    0.268 v _438_/ZN (NAND2_X2)
+   0.017    0.285 ^ _439_/ZN (NAND2_X4)
+   0.013    0.299 v _470_/ZN (NAND2_X2)
+   0.019    0.317 ^ _473_/ZN (NAND2_X2)
+   0.032    0.349 ^ _506_/ZN (AND2_X2)
+   0.007    0.356 v _507_/ZN (INV_X2)
+   0.027    0.384 v _510_/ZN (AND3_X4)
+   0.057    0.441 v _524_/ZN (OR3_X4)
+   0.026    0.467 ^ _528_/ZN (AOI21_X4)
+   0.009    0.477 v _535_/ZN (NOR2_X2)
+   0.038    0.515 v _536_/ZN (XNOR2_X1)
+   0.028    0.542 v _537_/ZN (AND2_X2)
+   0.027    0.569 ^ _540_/ZN (OAI21_X1)
+   0.020    0.589 v _541_/ZN (OAI21_X1)
+   0.000    0.589 v _594_/D (DFF_X1)
+            0.589   data arrival time
+
+  10.000   10.000   clock core_clock (rise edge)
+   0.000   10.000   clock network delay (ideal)
+   0.000   10.000   clock reconvergence pessimism
+           10.000 ^ _594_/CK (DFF_X1)
+  -0.041    9.959   library setup time
+            9.959   data required time
+-----------------------------------------------------------
+            9.959   data required time
+           -0.589   data arrival time
+-----------------------------------------------------------
+            9.370   slack (MET)
+
+
+No differences found.
