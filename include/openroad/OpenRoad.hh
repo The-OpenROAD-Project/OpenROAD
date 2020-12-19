@@ -103,10 +103,6 @@ namespace triton_route {
 class TritonRoute;
 }
 
-namespace psn {
-class Psn;
-}
-
 namespace pdnsim {
 class PDNSim;
 }
@@ -229,7 +225,6 @@ private:
   OpenRCX::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   ant::AntennaChecker *antenna_checker_;
-  psn::Psn *psn_;
   replace::Replace *replace_;
   pdnsim::PDNSim *pdnsim_; 
   partition::PartitionMgr *partitionMgr_; 

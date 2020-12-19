@@ -1,2 +1,0 @@
-project(OpenPhySynBufferFanoutTransform VERSION 1.0.0 LANGUAGES CXX)
-DEFINETRANSFORM(buffer_fanout src/BufferFanoutTransform.cpp src/BufferFanoutTransform.hpp BufferFanoutTransform)
