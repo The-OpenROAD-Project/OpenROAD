@@ -30,6 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "displayControls.h"
+
+#include <QColorDialog>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -37,8 +40,9 @@
 #include <QVBoxLayout>
 
 #include "db.h"
-#include "displayControls.h"
 #include "openroad/InitOpenRoad.hh"
+
+Q_DECLARE_METATYPE(odb::dbTechLayer*);
 
 namespace gui {
 
@@ -137,6 +141,11 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(itemChanged(QStandardItem*)),
           this,
           SLOT(itemChanged(QStandardItem*)));
+
+  connect(view_,
+          SIGNAL(doubleClicked(const QModelIndex&)),
+          this,
+          SLOT(displayItemDblClicked(const QModelIndex&)));
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
@@ -153,10 +162,41 @@ void DisplayControls::toggleAllChildren(bool checked,
 
 void DisplayControls::itemChanged(QStandardItem* item)
 {
+  if (item->isCheckable() == false) {
+    emit changed();
+    return;
+  }
   bool checked = item->checkState() == Qt::Checked;
   Callback callback = item->data().value<Callback>();
   callback.action(checked);
   emit changed();
+}
+
+void DisplayControls::displayItemDblClicked(const QModelIndex& index)
+{
+  if (index.column() == 1) {
+    auto colorItem = model_->itemFromIndex(index);
+    QVariant colorVariant = colorItem->data(Qt::UserRole);
+    QColor colorVal = QColor(colorVariant.toString());
+
+    QColor chosenColor = QColorDialog::getColor(colorVal);
+    if (chosenColor.isValid()) {
+      colorItem->setData(QVariant(chosenColor), Qt::UserRole);
+      QPixmap swatch(20, 20);
+      swatch.fill(chosenColor);
+      colorItem->setIcon(QIcon(swatch));
+      QVariant techLayerData = colorItem->data(Qt::UserRole + 1);
+      if (techLayerData.isValid()) {
+        auto techLayer
+            = static_cast<odb::dbTechLayer*>(techLayerData.value<void*>());
+        if (techLayer != nullptr) {
+          layer_color_[techLayer] = chosenColor;
+          view_->repaint();
+          emit changed();
+        }
+      }
+    }
+  }
 }
 
 void DisplayControls::setDb(odb::dbDatabase* db)
@@ -182,7 +222,8 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           Qt::Checked,
           [this, layer](bool visible) { layer_visible_[layer] = visible; },
           [this, layer](bool select) { layer_selectable_[layer] = select; },
-          color(layer));
+          color(layer),
+          layer);
     }
   }
   emit changed();
@@ -195,16 +236,27 @@ QStandardItem* DisplayControls::makeItem(
     Qt::CheckState checked,
     const std::function<void(bool)>& visibility_action,
     const std::function<void(bool)>& select_action,
-    const QColor& color)
+    const QColor& color,
+    odb::dbTechLayer* techLayer)
 {
   QStandardItem* nameItem = new QStandardItem(text);
+  nameItem->setEditable(false);
 
   QPixmap swatch(20, 20);
   swatch.fill(color);
   QStandardItem* colorItem = new QStandardItem(QIcon(swatch), "");
+  QString colorName = color.name(QColor::HexArgb);
+  colorItem->setData(QVariant(colorName), Qt::UserRole);
+  colorItem->setEditable(false);
+  colorItem->setCheckable(false);
+  if (techLayer != nullptr) {
+    QVariant techLayerData(QVariant::fromValue(static_cast<void*>(techLayer)));
+    colorItem->setData(techLayerData, Qt::UserRole + 1);
+  }
 
   QStandardItem* visibilityItem = new QStandardItem("");
   visibilityItem->setCheckable(true);
+  visibilityItem->setEditable(false);
   visibilityItem->setCheckState(checked);
   visibilityItem->setData(QVariant::fromValue(Callback({visibility_action})));
 
@@ -213,6 +265,7 @@ QStandardItem* DisplayControls::makeItem(
     selectItem = new QStandardItem("");
     selectItem->setCheckable(true);
     selectItem->setCheckState(checked);
+    selectItem->setEditable(false);
     selectItem->setData(QVariant::fromValue(Callback({select_action})));
   }
 
@@ -236,17 +289,17 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
-  switch(net->getSigType()) {
-  case dbSigType::SIGNAL:
-    return nets_signal_visible_;
-  case dbSigType::POWER:
-    return nets_power_visible_;
-  case dbSigType::GROUND:
-    return nets_ground_visible_;
-  case dbSigType::CLOCK:
-    return nets_clock_visible_;
-  default:
-    return true;
+  switch (net->getSigType()) {
+    case dbSigType::SIGNAL:
+      return nets_signal_visible_;
+    case dbSigType::POWER:
+      return nets_power_visible_;
+    case dbSigType::GROUND:
+      return nets_ground_visible_;
+    case dbSigType::CLOCK:
+      return nets_clock_visible_;
+    default:
+      return true;
   }
 }
 

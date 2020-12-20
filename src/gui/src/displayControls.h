@@ -36,6 +36,7 @@
 
 #include <QDockWidget>
 #include <QLineEdit>
+#include <QModelIndex>
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTextEdit>
@@ -94,6 +95,8 @@ class DisplayControls : public QDockWidget, public Options
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
 
+  void displayItemDblClicked(const QModelIndex& index);
+
  private:
   // The columns in the tree view
   enum Column
@@ -113,7 +116,8 @@ class DisplayControls : public QDockWidget, public Options
                           const std::function<void(bool)>& visibility_action,
                           const std::function<void(bool)>& select_action
                           = std::function<void(bool)>(),
-                          const QColor& color = Qt::transparent);
+                          const QColor& color = Qt::transparent,
+                          odb::dbTechLayer* techLayer = nullptr);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
 
