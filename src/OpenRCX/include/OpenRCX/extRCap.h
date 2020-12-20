@@ -847,7 +847,7 @@ class extMeasure
 	bool ouRCvalues(const char *msg, uint jj);
 	bool OverSubDebug(extDistRC *rc, int lenOverSub, int lenOverSub_res);
   bool OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res, double res, double cap, char* openDist);
-
+  bool Debug_DiagValues(double res, double cap, char* openDist);
   bool IsDebugNet();
   bool DebugStart();
   bool DebugDiagCoords(int met, int targetMet, int len1, int diagDist, int ll[2], int ur[2]);
