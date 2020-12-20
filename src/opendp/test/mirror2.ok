@@ -38,8 +38,8 @@ legalized HPWL            2.1 u
 delta HPWL                136 %
 
 block orient R0
-Mirrored 1 instances
-HPWL before               2.1 u
-HPWL after                1.8 u
-HPWL delta                -17 %
+[INFO DPL-0020] Mirrored 1 instances
+[INFO DPL-0021] HPWL before               2.1 u
+[INFO DPL-0022] HPWL after                1.8 u
+[INFO DPL-0023] HPWL delta              -17.0 %
 block orient R0
