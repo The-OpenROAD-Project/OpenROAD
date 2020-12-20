@@ -3451,20 +3451,7 @@ void extMeasure::calcDiagRC(int  rsegId1,
       double diagCap = DOUBLE_DIAG * len * cap;
       capTable[ii]   = diagCap;
       _rc[ii]->_diag += diagCap;
-
-      if (IsDebugNet()) {
-        debug("DIAG_EXT",
-              "C",
-              "    calcDiagRC: M%d-%d   L%d D%d  DD%d  %g d2 %g -- %g\n",
-              _met,
-              tgtMet,
-              len,
-              dist,
-              DOUBLE_DIAG,
-              cap,
-              cap * 2,
-              diagCap);
-      }
+      Debug_DiagValues(0.0, diagCap, "calcDiagRC");
     } else
       capTable[ii] = 2 * len * getUnderRC(rcModel)->_fringe;
 #else

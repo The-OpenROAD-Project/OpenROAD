@@ -322,6 +322,15 @@ bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res,
 
   return true;
 }
+bool extMeasure::Debug_DiagValues(double res, double cap, char* openDist)
+{
+  if (!IsDebugNet())
+    return false;
+
+  debug("Trace", "C", " ------ %s --------- Res:  %g\tDiagCap:  %g\n", openDist, res, cap);
+
+  return true;
+}
 bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 {
   if (!IsDebugNet())
