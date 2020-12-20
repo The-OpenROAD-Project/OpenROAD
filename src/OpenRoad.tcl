@@ -243,7 +243,7 @@ proc warn { args } {
     lassign $args tool_id id msg
     ord_warn $tool_id $id $msg
   } else {
-    ord_warn UKN 0 "ill-formed warn arguments $args"
+    ord_warn UKN 14 "ill-formed warn arguments $args"
   }
 }
 

@@ -59,7 +59,7 @@ proc check_msgs { } {
   foreach msg $msgs {
     set msg_id [lindex $msg 1]
     if { $msg_id == $prev_id } {
-      puts "Warning: $id duplicated"
+      puts "Warning: $msg_id duplicated"
     }
     set prev_id $msg_id
   }
