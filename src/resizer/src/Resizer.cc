@@ -1658,7 +1658,7 @@ Resizer::repairHold(VertexSet *ends,
       level_drvr_verticies_valid_ = false;
     }
     if (over_max_area)
-      logger_->error(RSZ, 25, "max utilization reached.");
+      logger_->error(RSZ, 26, "max utilization reached.");
   }
   else
     logger_->info(RSZ, 33, "No hold violations found.");

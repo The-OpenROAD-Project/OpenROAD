@@ -1,10 +1,8 @@
-1 "Added {} rows of {} sites."
-2 "pin layer {} not found."
-3 "unknown track direction\n"
-4 "track file line {} direction must be X or Y'."
-5 "layer {} not found."
-6 "track file line {} does not match 'layer X|Y offset pitch'."
-7 "layer {} has zero pitch."
-8, "layer {} has zero pitch."
-9 "SITE {} not found."
-10 "Tracks file not readable."
+IFP 0002 InitFloorplan.cc:552      pin layer {} not found.
+IFP 0003 InitFloorplan.cc:410      unknown track direction
+IFP 0004 InitFloorplan.cc:438      track file line {} direction must be X or Y'.
+IFP 0005 InitFloorplan.cc:446      layer {} not found.
+IFP 0007 InitFloorplan.cc:497      layer {} has zero pitch.
+IFP 0008 InitFloorplan.cc:513      layer {} has zero pitch.
+IFP 0009 InitFloorplan.cc:330      SITE {} not found.
+IFP 0010 InitFloorplan.cc:457      Tracks file not readable.
