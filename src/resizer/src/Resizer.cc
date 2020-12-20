@@ -2005,11 +2005,11 @@ Resizer::repairClkNets(double max_wire_length) // meters
   }
   ensureWireParasitics();
   if (length_violations > 0)
-    printf("Found %d long wires.\n", length_violations);
+    logger_->info(RSZ, 47, "Found {} long wires.", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers in %d nets.\n",
-           inserted_buffer_count_,
-           repair_count);
+    logger_->info(RSZ, 48, "Inserted {} buffers in {} nets.",
+                  inserted_buffer_count_,
+                  repair_count);
     level_drvr_verticies_valid_ = false;
   }
 }
@@ -2043,21 +2043,25 @@ Resizer::repairNet(Net *net,
               repair_count, slew_violations, cap_violations,
               fanout_violations, length_violations);
   }
+
   if (slew_violations > 0)
-    printf("Found %d slew violations.\n", slew_violations);
+    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
   if (fanout_violations > 0)
-    printf("Found %d fanout violations.\n", fanout_violations);
+    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
   if (cap_violations > 0)
-    printf("Found %d capacitance violations.\n", cap_violations);
+    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
   if (length_violations > 0)
-    printf("Found %d long wires.\n", length_violations);
+    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
   if (inserted_buffer_count_ > 0) {
-    printf("Inserted %d buffers in %d nets.\n",
-           inserted_buffer_count_,
-           repair_count);
+    logger_->info(RSZ, 38, "Inserted {} buffers in {} nets.",
+                  inserted_buffer_count_,
+                  repair_count);
     level_drvr_verticies_valid_ = false;
   }
-  printf("Resized %d instances.\n", resize_count_);
+  if (resize_count_ > 0)
+    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
+  if (resize_count_ > 0)
+    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
 }
 
 void

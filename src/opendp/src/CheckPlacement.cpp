@@ -105,9 +105,10 @@ Opendp::reportFailures(const vector<Cell *> &failures,
                        const char *msg,
                        bool verbose) const
 {
-  reportFailures(failures, msg_id, msg, verbose, [](Cell *cell) -> void {
-    printf(" %s\n", cell->name());
-  });
+  reportFailures(failures, msg_id, msg, verbose,
+                 [&](Cell *cell) -> void {
+                   logger_->report(" {}", cell->name());
+                 });
 }
 
 void
@@ -131,7 +132,7 @@ void
 Opendp::reportOverlapFailure(const Cell *cell, const Grid *grid) const
 {
   const Cell *overlap = checkOverlap(*cell, grid);
-  printf(" %s overlaps %s\n", cell->name(), overlap->name());
+  logger_->report(" {} overlaps {}", cell->name(), overlap->name());
 }
 
 bool

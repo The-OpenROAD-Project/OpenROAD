@@ -15,3 +15,7 @@
 17 "cannot place instance (brick place 2) {}."
 18 "detailed placement failed on {}."
 19 "detailed placement failed on {}"
+20 "Mirrored {} instances"
+21 "HPWL before          {:8.1f} u"
+22 "HPWL after           {:8.1f} u"
+23 "HPWL delta           {:8.1f} %"
