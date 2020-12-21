@@ -1,0 +1,9 @@
+lef:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/test/testcase/ispd18_sample/ispd18_sample.input.lef
+def:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/test/testcase/ispd18_sample/ispd18_sample.input.def
+guide:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/test/testcase/ispd18_sample/ispd18_sample.input.guide
+output:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/result/ispd18_sample/ispd18_sample.output.def
+outputTA:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/result/ispd18_sample/ispd18_sample.output_TA.def
+outputguide:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/result/ispd18_sample/ispd18_sample.output_guide.mod
+outputDRC:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/result/ispd18_sample/ispd18_sample.output_DRC.rpt
+outputMaze:/home/osama/Desktop/Workspace/Private/OpenROAD/src/TritonRoute/result/ispd18_sample/ispd18_sample.output_Maze.log
+verbose:0

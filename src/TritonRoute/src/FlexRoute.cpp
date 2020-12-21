@@ -146,6 +146,7 @@ void TritonRoute::dr() {
 void TritonRoute::endFR() {
   io::Writer writer(getDesign());
   writer.writeFromDR();
+  writer.updateDb(db_);
 }
 
 int TritonRoute::main() {

@@ -210,6 +210,7 @@ target_include_directories( TritonRouteLib
   ${FLEXROUTE_HOME}/src
   ${OPENROAD_HOME}/include
   ${OPENSTA_HOME}/include
+  ${OPENDB_HOME}/include
 )
 
 target_link_libraries( TritonRouteLib
@@ -218,7 +219,8 @@ target_link_libraries( TritonRouteLib
   def
   lef
   gui
-
+  opendb
+  
   Threads::Threads
   OpenMP::OpenMP_CXX
   Boost::boost

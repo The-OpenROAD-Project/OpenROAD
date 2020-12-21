@@ -34,6 +34,11 @@
 #include <boost/icl/interval_set.hpp>
 #include "frDesign.h"
 
+namespace odb {
+  class dbDatabase;
+  class dbBlock;
+  class dbTech;
+}
 namespace fr {
   namespace io {
     // not default via, upperWidth, lowerWidth, not align upper, upperArea, lowerArea, not align lower
@@ -173,6 +178,7 @@ namespace fr {
       // others
       void writeFromTA();
       void writeFromDR(const std::string &str = "");
+      int  updateDb(odb::dbDatabase* db);
       std::map< frString, std::list<std::shared_ptr<frConnFig> > > connFigs; // all connFigs ready to def
       std::vector<frViaDef*> viaDefs;
     protected:
@@ -186,6 +192,9 @@ namespace fr {
       void splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
                            std::vector< std::vector< std::map<frCoord, std::vector<std::shared_ptr<frPathSeg> > > > > &mergedPathSegs);
       int writeDef(bool isTA, const std::string &str = "");
+      int updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
+      int updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
+
     };
   }
 }
