@@ -37,6 +37,8 @@
 #include <QColorDialog>
 #include <QDialog>
 #include <QDockWidget>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QLineEdit>
 #include <QModelIndex>
 #include <QRadioButton>
@@ -44,6 +46,7 @@
 #include <QStringList>
 #include <QTextEdit>
 #include <QTreeView>
+#include <QVBoxLayout>
 #include <vector>
 
 #include "options.h"
@@ -94,7 +97,12 @@ class DisplayColorDialog : public QDialog
  private:
   QColor color_;
   Qt::BrushStyle pattern_;
-  std::vector<PatternButton*> patternButtons;
+
+  QGroupBox* patternGroupBox_;
+  QGridLayout* gridLayout_;
+  QVBoxLayout* mainLayout_;
+
+  std::vector<PatternButton*> patternButtons_;
   QColorDialog* colorDialog_;
 
   void buildUI();

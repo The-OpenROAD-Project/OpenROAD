@@ -32,16 +32,11 @@
 
 #include "displayControls.h"
 
-#include <QColorDialog>
-#include <QDebug>
-#include <QDialogButtonBox>
-#include <QGroupBox>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QPainter>
 #include <QSettings>
-#include <QVBoxLayout>
 #include <vector>
 
 #include "db.h"
@@ -85,35 +80,35 @@ void DisplayColorDialog::buildUI()
   colorDialog_->setOptions(QColorDialog::DontUseNativeDialog);
   colorDialog_->setWindowFlags(Qt::Widget);
   colorDialog_->setCurrentColor(color_);
-  QGroupBox* patternGroupBox = new QGroupBox("Layer Pattern");
-  QGridLayout* gridLayout = new QGridLayout();
+  patternGroupBox_ = new QGroupBox("Layer Pattern");
+  gridLayout_ = new QGridLayout();
 
-  gridLayout->setColumnStretch(2, 4);
+  gridLayout_->setColumnStretch(2, 4);
 
   int rowIndex = 0;
   for (auto& patGrp : DisplayColorDialog::brushPatterns) {
     int colIndex = 0;
     for (auto pat : patGrp) {
       PatternButton* pBtn = new PatternButton(pat);
-      patternButtons.push_back(pBtn);
+      patternButtons_.push_back(pBtn);
       if (pat == pattern_)
         pBtn->setChecked(true);
       else
         pBtn->setChecked(false);
-      gridLayout->addWidget(pBtn, rowIndex, colIndex);
+      gridLayout_->addWidget(pBtn, rowIndex, colIndex);
       ++colIndex;
     }
     ++rowIndex;
   }
-  patternGroupBox->setLayout(gridLayout);
+  patternGroupBox_->setLayout(gridLayout_);
   connect(colorDialog_, SIGNAL(accepted()), this, SLOT(acceptDialog()));
   connect(colorDialog_, SIGNAL(rejected()), this, SLOT(rejectDialog()));
 
-  QVBoxLayout* mainLayout = new QVBoxLayout();
-  mainLayout->addWidget(patternGroupBox);
-  mainLayout->addWidget(colorDialog_);
+  mainLayout_ = new QVBoxLayout();
+  mainLayout_->addWidget(patternGroupBox_);
+  mainLayout_->addWidget(colorDialog_);
 
-  setLayout(mainLayout);
+  setLayout(mainLayout_);
   setWindowTitle("Layer Config");
   setFixedSize(600, width() - 20);
 }
@@ -124,7 +119,7 @@ DisplayColorDialog::~DisplayColorDialog()
 
 Qt::BrushStyle DisplayColorDialog::getSelectedPattern() const
 {
-  for (auto patBtn : patternButtons) {
+  for (auto patBtn : patternButtons_) {
     if (patBtn->isChecked())
       return patBtn->pattern();
   }
@@ -270,29 +265,29 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
   if (index.column() == 1) {
     auto colorItem = model_->itemFromIndex(index);
-    QVariant techLayerData = colorItem->data(Qt::UserRole + 2);
+    QVariant techLayerData = colorItem->data(Qt::UserRole);
     if (!techLayerData.isValid())
       return;
-    QVariant colorVariant = colorItem->data(Qt::UserRole);
-    QColor colorVal = QColor(colorVariant.toString());
-
-    QVariant patternVariant = colorItem->data(Qt::UserRole + 1);
-    Qt::BrushStyle patternVal
-        = static_cast<Qt::BrushStyle>(patternVariant.toInt());
-    // qDebug() << "Building Display Dlg with patern : " << patternVal;
+    auto techLayer
+        = static_cast<odb::dbTechLayer*>(techLayerData.value<void*>());
+    if (techLayer == nullptr)
+      return;
+    QColor colorVal = color(techLayer);
+    Qt::BrushStyle patternVal = pattern(techLayer);
     DisplayColorDialog dispDlg(colorVal, patternVal);
     dispDlg.exec();
     QColor chosenColor = dispDlg.getSelectedColor();
     if (chosenColor.isValid()) {
-      colorItem->setData(QVariant(chosenColor), Qt::UserRole);
       QPixmap swatch(20, 20);
       swatch.fill(chosenColor);
       colorItem->setIcon(QIcon(swatch));
-      auto techLayer
-          = static_cast<odb::dbTechLayer*>(techLayerData.value<void*>());
-      if (techLayer != nullptr
-          && (chosenColor != colorVal
-              || layer_pattern_[techLayer] != dispDlg.getSelectedPattern())) {
+      auto cutLayer = index.siblingAtRow(index.row() + 1);
+      if (cutLayer.isValid()) {
+        auto cutColorItem = model_->itemFromIndex(cutLayer);
+        cutColorItem->setIcon(QIcon(swatch));
+      }
+      if (chosenColor != colorVal
+          || layer_pattern_[techLayer] != dispDlg.getSelectedPattern()) {
         layer_color_[techLayer] = chosenColor;
         layer_pattern_[techLayer] = dispDlg.getSelectedPattern();
         view_->repaint();
@@ -349,13 +344,11 @@ QStandardItem* DisplayControls::makeItem(
   swatch.fill(color);
   QStandardItem* colorItem = new QStandardItem(QIcon(swatch), "");
   QString colorName = color.name(QColor::HexArgb);
-  colorItem->setData(QVariant(colorName), Qt::UserRole);
-  colorItem->setData(static_cast<int>(Qt::SolidPattern), Qt::UserRole + 1);
   colorItem->setEditable(false);
   colorItem->setCheckable(false);
   if (techLayer != nullptr) {
     QVariant techLayerData(QVariant::fromValue(static_cast<void*>(techLayer)));
-    colorItem->setData(techLayerData, Qt::UserRole + 2);
+    colorItem->setData(techLayerData, Qt::UserRole);
   }
 
   QStandardItem* visibilityItem = new QStandardItem("");
