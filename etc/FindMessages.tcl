@@ -2,13 +2,47 @@
 # The next line is executed by /bin/sh, but not Tcl \
 exec tclsh $0 ${1+"$@"}
 
-# Parallax Static Timing Analyzer
-# Copyright (c) 2020, Parallax Software, Inc.
-# All rights reserved.
-# 
-# No part of this document may be copied, transmitted or
-# disclosed in any form or fashion without the express
-# written consent of Parallax Software, Inc.
+############################################################################
+##
+## Copyright (c) 2019, OpenROAD
+## All rights reserved.
+##
+## BSD 3-Clause License
+##
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions are met:
+##
+## * Redistributions of source code must retain the above copyright notice, this
+##   list of conditions and the following disclaimer.
+##
+## * Redistributions in binary form must reproduce the above copyright notice,
+##   this list of conditions and the following disclaimer in the documentation
+##   and/or other materials provided with the distribution.
+##
+## * Neither the name of the copyright holder nor the names of its
+##   contributors may be used to endorse or promote products derived from
+##   this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+## POSSIBILITY OF SUCH DAMAGE.
+##
+############################################################################
+
+# Find logger warn/error/critical calls and report sorted message IDs.
+# Also checks for duplicate message IDs.
+#
+# Useage:
+# cd src/<tool>
+# ../etc/FindMessages.tcl > messages.txt
 
 proc scan_file { file warn_regexp } {
   global msgs
@@ -73,6 +107,8 @@ proc report_msgs { } {
     puts "$tool_id [format %04d $msg_id] [format %-25s [file tail $file]:$line] $msg1"
   }
 }
+
+################################################################
 
 set msgs {}
 scan_files $files_c $warn_regexp_c
