@@ -387,7 +387,7 @@ SteinerTree::findLeftRights(SteinerPt from,
 {
   if (adj != from && adj != null_pt) {
     if (adj == to)
-      logger->critical(RSZ, 45, "steiner left/right failed");
+      logger->critical(RSZ, 45, "steiner left/right failed.");
     if (left_[to] == null_pt) {
       left_[to] = adj;
       findLeftRights(to, adj, adj1, adj2, adj3, logger);
@@ -462,7 +462,7 @@ SteinerTree::writeSVG(const char *filename,
     fclose(stream);
   }
   else
-    logger->error(RSZ, 44, "could not open {}", filename);
+    logger->error(RSZ, 44, "could not open {}.", filename);
 }
 
 }

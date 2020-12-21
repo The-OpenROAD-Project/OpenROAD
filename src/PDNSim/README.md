@@ -16,6 +16,20 @@ repository must be used internal to the OpenROAD integrated app.
 You can find usage information inside the OpenROAD app repository in the PDN
 analysis section of the [README file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/openroad/README.md).
 
+
+## Cite this Work
+
+If you find PDNSim useful, please use the following bibtex to cite it:
+
+```
+@misc{pdnsim,
+author = "V. A. Chhabria and S. S. Sapatnekar",
+title={{PDNSim}},
+note= "\url{https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/PDNSim}"
+}
+```
+
+
 ## License
 The rest of this repository is licensed under BSD 3-Clause License.
 

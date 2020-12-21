@@ -42,6 +42,8 @@
 
 namespace finale {
 
+using ord::FIN;
+
 namespace pt = boost::property_tree;
 
 using namespace odb;
@@ -92,7 +94,8 @@ static double getValue(const char* key, pt::ptree& tree)
 
 ////////////////////////////////////////////////////////////////
 
-DensityFill::DensityFill(dbDatabase* db, bool debug) : db_(db)
+DensityFill::DensityFill(dbDatabase* db, ord::Logger* logger, bool debug)
+  : db_(db), logger_(logger)
 {
   if (debug && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>();
@@ -176,8 +179,8 @@ void DensityFill::read_and_expand_layers(dbTech* tech,
       for (auto& [name, layer_name] : layer.get_child("names")) {
         auto tech_layer = tech->findLayer(layer_name.data().c_str());
         if (!tech_layer) {
-          ord::error("Layer %s not found",
-                     layer.get_child("name").data().c_str());
+          logger_->error(FIN, 1, "Layer {} in names was not found.",
+                     layer.get_child("name").data());
         }
         layers_[tech_layer] = cfg;
       }
@@ -185,8 +188,8 @@ void DensityFill::read_and_expand_layers(dbTech* tech,
       // No expansion, just a single layer
       auto tech_layer = tech->findLayer(layer.get_child("name").data().c_str());
       if (!tech_layer) {
-        ord::error("Layer %s not found",
-                   layer.get_child("name").data().c_str());
+        logger_->error(FIN, 2, "Layer {} not found.",
+                       layer.get_child("name").data());
       }
       layers_[tech_layer] = cfg;
     }
@@ -442,7 +445,7 @@ void DensityFill::fill_layer(dbBlock* block,
                              dbTechLayer* layer,
                              const odb::Rect& fill_bounds_rect)
 {
-  printf("Filling %s...\n", layer->getConstName());
+  logger_->info(FIN, 3, "Filling layer {}", layer->getConstName());
 
   Polygon90Set non_fill = or_non_fills(block, layer);
 
@@ -480,7 +483,7 @@ void DensityFill::fill_layer(dbBlock* block,
                  graphics_.get(),
                  &non_opc_fill_area);
   }
-  printf("  Total fills = %d\n", block->getFills().size());
+  logger_->info(FIN, 4, "Total fills: {}", block->getFills().size());
 
   if (!cfg.has_opc) {
     return;
@@ -499,13 +502,13 @@ void DensityFill::fill_layer(dbBlock* block,
 
   polygons.clear();
   opc_fill_area.get(polygons);
-  printf("  Filling %ld areas with OPC fill...\n", polygons.size());
+  logger_->info(FIN, 5, "Filling {} areas with OPC fill.", polygons.size());
   for (auto& polygon : polygons) {
     fill_polygon(
         polygon, layer, block, cfg.opc, cfg.num_masks, true, graphics_.get());
   }
 
-  printf("  Total fills = %d\n", block->getFills().size());
+  logger_->info(FIN, 6, "Total fills = {}", block->getFills().size());
 
   if (graphics_) {
     graphics_->status("OPC Area");

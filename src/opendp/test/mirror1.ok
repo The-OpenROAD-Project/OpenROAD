@@ -34,7 +34,7 @@ original HPWL          6950.8 u
 legalized HPWL         8793.8 u
 delta HPWL                 27 %
 
-Mirrored 152 instances
-HPWL before            8793.8 u
-HPWL after             8707.9 u
-HPWL delta                 -1 %
+[INFO DPL-0020] Mirrored 152 instances
+[INFO DPL-0021] HPWL before            8793.8 u
+[INFO DPL-0022] HPWL after             8707.9 u
+[INFO DPL-0023] HPWL delta               -1.0 %
