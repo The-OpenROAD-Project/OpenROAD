@@ -14,12 +14,12 @@ Notice 0:     Created 1 components and 32 component-terminals.
 Notice 0: Finished DEF file: gcd_fakeram.def
 Running tapcell...
 Step 1: Cut rows...
-[INFO] Macro blocks found: 1
-[INFO] #Original rows: 30
-[INFO] #Cut rows: 27
+[INFO TAP-0001] [INFO] Macro blocks found: 1
+[INFO TAP-0002] [INFO] #Original rows: 30
+[INFO TAP-0003] [INFO] #Cut rows: 27
 Step 2: Insert endcaps...
-[INFO] #Endcaps inserted: 60
+[INFO TAP-0005] #Endcaps inserted: 60
 Step 3: Insert tapcells...
-[INFO] #Tapcells inserted: 19
+[INFO TAP-0005] [INFO] #Tapcells inserted: 19
 Running tapcell... Done!
 No differences found.
