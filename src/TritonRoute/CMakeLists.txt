@@ -124,7 +124,6 @@ set (FLEXROUTE_HEADER
   ${FLEXROUTE_HOME}/src/db/obj/frBoundary.h
   ${FLEXROUTE_HOME}/src/db/obj/frBlockage.h
   ${FLEXROUTE_HOME}/src/db/obj/frRef.h
-  ${FLEXROUTE_HOME}/src/db/obj/frCMap.h
   ${FLEXROUTE_HOME}/src/db/obj/frAccess.h
   ${FLEXROUTE_HOME}/src/db/obj/frInstTerm.h
   ${FLEXROUTE_HOME}/src/db/obj/frVia.h
