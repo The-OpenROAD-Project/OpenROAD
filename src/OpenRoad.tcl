@@ -1,9 +1,9 @@
 ############################################################################
 ##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2019, OpenROAD
 ## All rights reserved.
+##
+## BSD 3-Clause License
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -243,7 +243,7 @@ proc warn { args } {
     lassign $args tool_id id msg
     ord_warn $tool_id $id $msg
   } else {
-    ord_warn UKN 0 "ill-formed warn arguments $args"
+    ord_warn UKN 14 "ill-formed warn arguments $args"
   }
 }
 

@@ -58,7 +58,7 @@ Each status message requires:
 
 Reporting is simply printing and does not require a tool or message ID. The tool ID comes from a fixed enumeration of all the tools in the system. This enumeration is in `Logger.h`. New abbreviations should be added after discussion with the system architects. The abbreviation matches the c++ namespace for the tool.
 
-Message IDs are integers. They are expected to be unique for each tool.  This has the benefit that a message can be mapped to the source code unambiguously even if the text is not unique.  Maintaining this invariant is the tool owner’s responsibility. To ensure that the IDs are unique each tool should maintain a file named ‘messages.txt’ in the top level tool directory listing the message IDs along with the format string. When code that uses a message ID is removed the ID should be retired by removing it from ‘messages.txt’.
+Message IDs are integers. They are expected to be unique for each tool.  This has the benefit that a message can be mapped to the source code unambiguously even if the text is not unique.  Maintaining this invariant is the tool owner’s responsibility. To ensure that the IDs are unique each tool should maintain a file named ‘messages.txt’ in the top level tool directory listing the message IDs along with the format string. When code that uses a message ID is removed the ID should be retired by removing it from ‘messages.txt’. See the tuility `etc/FindMessages.tcl` to scan a tool directory and write a `messages.txt` file.
 
 Spdlog comes with the fmt library which supports message formatting in a python / [c++20 like style](https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification).
 
