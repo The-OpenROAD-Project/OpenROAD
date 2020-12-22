@@ -281,9 +281,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       QPixmap swatch(20, 20);
       swatch.fill(chosenColor);
       colorItem->setIcon(QIcon(swatch));
-      auto cutLayer = index.siblingAtRow(index.row() + 1);
-      if (cutLayer.isValid()) {
-        auto cutColorItem = model_->itemFromIndex(cutLayer);
+      auto cutLayerIndex
+          = model_->sibling(index.row() + 1, index.column(), index);
+      if (cutLayerIndex.isValid()) {
+        auto cutColorItem = model_->itemFromIndex(cutLayerIndex);
         cutColorItem->setIcon(QIcon(swatch));
       }
       if (chosenColor != colorVal
