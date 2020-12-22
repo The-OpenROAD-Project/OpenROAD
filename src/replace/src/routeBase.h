@@ -45,7 +45,7 @@ namespace grt {
   class GlobalRouter;
 }
 
-namespace replace {
+namespace gpl {
 
 class Logger;
 class NesterovBase;

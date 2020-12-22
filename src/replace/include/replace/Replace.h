@@ -46,7 +46,7 @@ namespace grt{
   class GlobalRouter;
 }
 
-namespace replace {
+namespace gpl {
 
 class PlacerBase;
 class NesterovBase;
@@ -134,7 +134,7 @@ class Replace
     std::unique_ptr<InitialPlace> ip_;
     std::unique_ptr<NesterovPlace> np_;
 
-    std::shared_ptr<replace::Logger> log_;
+    std::shared_ptr<gpl::Logger> log_;
 
     int initialPlaceMaxIter_;
     int initialPlaceMinDiffLength_;

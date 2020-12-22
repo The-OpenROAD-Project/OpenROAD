@@ -41,7 +41,7 @@
 #include "plot.h"
 #include "graphics.h"
 
-namespace replace {
+namespace gpl {
 using namespace std;
 
 using Eigen::BiCGSTAB;

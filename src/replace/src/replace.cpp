@@ -40,7 +40,7 @@
 #include "logger.h"
 #include <iostream>
 
-namespace replace {
+namespace gpl {
 
 using namespace std;
 

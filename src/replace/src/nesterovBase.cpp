@@ -45,7 +45,7 @@
 
 #define REPLACE_SQRT2 1.414213562373095048801L
 
-namespace replace {
+namespace gpl {
 
 using namespace std;
 using namespace odb;

@@ -317,7 +317,7 @@ Appendix :
 #include <cmath>
 #include <iostream>
 
-namespace replace {
+namespace gpl {
 
 
 void cdft(int n, int isgn, float *a, int *ip, float *w) {

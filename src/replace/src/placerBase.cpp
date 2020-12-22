@@ -38,7 +38,7 @@
 #include <opendb/db.h>
 #include <iostream>
 
-namespace replace {
+namespace gpl {
 
 using namespace odb;
 using namespace std;

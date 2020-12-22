@@ -47,9 +47,9 @@ extern int Replace_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-replace::Replace* 
+gpl::Replace* 
 makeReplace() {
-  return new replace::Replace();
+  return new gpl::Replace();
 }
 
 void
@@ -63,7 +63,7 @@ initReplace(OpenRoad* openroad) {
 }
 
 void
-deleteReplace(replace::Replace *replace) {
+deleteReplace(gpl::Replace *replace) {
   delete replace;
 }
 

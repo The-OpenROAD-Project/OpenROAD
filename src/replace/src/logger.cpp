@@ -42,7 +42,7 @@ using std::string;
 
 #define VERBOSE_CHECK() if( verbose_ < verbose ) { return; };
 
-namespace replace {
+namespace gpl {
 
 Logger::Logger(const string& name, int verbose)
   : name_(name), verbose_(verbose) {}

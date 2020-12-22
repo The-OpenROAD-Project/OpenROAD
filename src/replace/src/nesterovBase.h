@@ -48,7 +48,7 @@ class dbBTerm;
 class dbNet;
 }
 
-namespace replace {
+namespace gpl {
 
 class Instance;
 class Die;

@@ -8,13 +8,13 @@ namespace ord {
 OpenRoad*
 getOpenRoad();
 
-replace::Replace*
+gpl::Replace*
 getReplace();
 }
 
 using ord::getOpenRoad;
 using ord::getReplace;
-using replace::Replace;
+using gpl::Replace;
 %}
 
 %include "../../Exception.i"

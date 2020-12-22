@@ -43,7 +43,7 @@ using namespace std;
 #include "plot.h"
 #include "graphics.h"
 
-namespace replace {
+namespace gpl {
 
 static float
 getDistance(const vector<FloatPoint>& a, const vector<FloatPoint>& b);

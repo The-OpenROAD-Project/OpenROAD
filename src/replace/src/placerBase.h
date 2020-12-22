@@ -54,7 +54,7 @@ class dbBox;
 class Rect;
 }
 
-namespace replace {
+namespace gpl {
 
 class Pin;
 class Net;

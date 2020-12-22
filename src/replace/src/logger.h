@@ -36,7 +36,7 @@
 
 #include <string>
 
-namespace replace {
+namespace gpl {
 
 class Logger {
 

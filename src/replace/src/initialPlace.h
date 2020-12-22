@@ -38,7 +38,7 @@
 #include "opendb/db.h"
 #include <memory>
 
-namespace replace {
+namespace gpl {
 
 class PlacerBase;
 class Logger;

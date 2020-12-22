@@ -38,7 +38,7 @@
 #include <memory>
 #include <vector>
 
-namespace replace
+namespace gpl 
 {
 
 class PlacerBase;

@@ -51,7 +51,7 @@ using std::make_pair;
 using std::sort;
 using grt::GlobalRouter;
 
-namespace replace {
+namespace gpl {
 
 static bool
 inflationListCompare(std::pair<Tile*, float> l, 
