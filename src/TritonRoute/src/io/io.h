@@ -39,6 +39,10 @@ namespace odb {
   class dbBlock;
   class dbTech;
 }
+namespace ord{
+  class Logger;
+}
+
 namespace fr {
   namespace io {
     // not default via, upperWidth, lowerWidth, not align upper, upperArea, lowerArea, not align lower
@@ -167,7 +171,7 @@ namespace fr {
     class Writer {
     public:
       // constructors
-      Writer(frDesign* designIn): tech(designIn->getTech()), design(designIn) {}
+      Writer(frDesign* designIn, ord::Logger* loggerIn): tech(designIn->getTech()), design(designIn), logger(loggerIn) {}
       // getters
       frTechObject* getTech() const {
         return tech;
@@ -178,12 +182,13 @@ namespace fr {
       // others
       void writeFromTA();
       void writeFromDR(const std::string &str = "");
-      int  updateDb(odb::dbDatabase* db);
+      bool  updateDb(odb::dbDatabase* db);
       std::map< frString, std::list<std::shared_ptr<frConnFig> > > connFigs; // all connFigs ready to def
       std::vector<frViaDef*> viaDefs;
     protected:
       frTechObject*                                  tech;
       frDesign*                                      design;
+      ord::Logger*                                   logger;
       
       void fillViaDefs();
       void fillConnFigs(bool isTA);
@@ -192,8 +197,8 @@ namespace fr {
       void splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
                            std::vector< std::vector< std::map<frCoord, std::vector<std::shared_ptr<frPathSeg> > > > > &mergedPathSegs);
       int writeDef(bool isTA, const std::string &str = "");
-      int updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
-      int updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
+      bool updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
+      bool updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
 
     };
   }

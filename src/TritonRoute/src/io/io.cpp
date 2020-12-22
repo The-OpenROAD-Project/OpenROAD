@@ -40,6 +40,7 @@
 #include "lefrReader.hpp"
 #include "opendb/db.h"
 #include "opendb/dbWireCodec.h"
+#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
@@ -5371,50 +5372,46 @@ void io::Writer::writeFromDR(const string &str) {
   writeDef(false, str);
 }
 
-int io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
+bool io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
 {
   frBox box;
   for(auto via : viaDefs)
   {
     if(block->findVia(via->getName().c_str())!=nullptr)
       continue;
-    odb::dbVia* _db_via = odb::dbVia::create(block,via->getName().c_str());
     auto layer1Name = getTech()->getLayer(via->getLayer1Num())->getName();
     auto layer2Name = getTech()->getLayer(via->getLayer2Num())->getName();
+    auto cutName = getTech()->getLayer(via->getCutLayerNum())->getName();
     odb::dbTechLayer* _layer1 = tech->findLayer(layer1Name.c_str());
     odb::dbTechLayer* _layer2 = tech->findLayer(layer2Name.c_str());
-    if(_layer1==nullptr||_layer2==nullptr)
-      return 2;
-
-    auto &layer2figs = via->getLayer2Figs();
-    for(auto &fig: layer2figs)
+    odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
+    if(_layer1==nullptr||_layer2==nullptr||_cut_layer==nullptr){
+      logger->error(ord::ToolId::DRT,1,"techlayers for via {} not found in db tech",via->getName());
+      return false;
+    }
+    odb::dbVia* _db_via = odb::dbVia::create(block,via->getName().c_str());
+    
+    for(auto &fig: via->getLayer2Figs())
     {
       fig->getBBox(box);
       odb::dbBox::create(_db_via,_layer2,box.left(),box.bottom(),box.right(),box.top());
     }
-    auto &cutFigs = via->getCutFigs();
-    if(cutFigs.size()){
-      auto cutName = getTech()->getLayer(via->getCutLayerNum())->getName();
-      odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
-      if(_cut_layer==nullptr)
-        return 2;
-      for(auto &fig: cutFigs)
-      {
-        fig->getBBox(box);
-        odb::dbBox::create(_db_via,_cut_layer,box.left(),box.bottom(),box.right(),box.top());
-      }
+    for(auto &fig: via->getCutFigs())
+    {
+      fig->getBBox(box);
+      odb::dbBox::create(_db_via,_cut_layer,box.left(),box.bottom(),box.right(),box.top());
     }
-    auto &layer1figs = via->getLayer1Figs();
-    for(auto &fig: layer1figs)
+    
+    for(auto &fig: via->getLayer1Figs())
     {
       fig->getBBox(box);
       odb::dbBox::create(_db_via,_layer1,box.left(),box.bottom(),box.right(),box.top());
     }
   }
-  return 0;
+  return true;
 }
 
-int io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
+bool io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 {
   odb::dbWireEncoder _wire_encoder;
   for(auto net:block->getNets())
@@ -5489,25 +5486,28 @@ int io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
           }
           default:{
             _wire_encoder.clear();
-            return 2;
+            logger->error(ord::ToolId::DRT,2,"unknown connfig type while writing net {}",net->getName());
+            return false;
           }
         }
       }
       _wire_encoder.end();
     }
   }
-  return 0;
+  return true;
 }
 
-int io::Writer::updateDb(odb::dbDatabase* db)
+bool io::Writer::updateDb(odb::dbDatabase* db)
 {
-  if(db->getChip()==nullptr)
-    return(2);
+  if(db->getChip()==nullptr){
+    logger->error(ord::ToolId::DRT,3,"please load design first");
+    return false;
+  }
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
-  if(block==nullptr||tech==nullptr)
-    return(2);
-  updateDbVias(block, tech);
-  updateDbConn(block, tech);
-  return 0;
+  if(block==nullptr||tech==nullptr){
+    logger->error(ord::ToolId::DRT,3,"please load design first");
+    return false;
+  }
+  return updateDbVias(block, tech) & updateDbConn(block, tech);
 }
