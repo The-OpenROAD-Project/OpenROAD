@@ -10,18 +10,18 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 676 components and 2850 component-terminals.
 Notice 0:     Created 579 nets and 1498 connections.
 Notice 0: Finished DEF file: gcd.def
-[PARAMS] Min routing layer: 1
-[PARAMS] Max routing layer: 10
-[PARAMS] Global adjustment: 0
-[PARAMS] Unidirectional routing: 0
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 2874
-[INFO] #DB Macros: 0
-[INFO] Found 0 clock nets
-[INFO] Minimum degree: 2
-[INFO] Maximum degree: 36
-[INFO] Processing 8469 obstacles on layer 1
+Min routing layer: 1
+Max routing layer: 10
+Global adjustment: 0.0
+Unidirectional routing: false
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 2874
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0017] Found 0 clock nets
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0003] Processing 8469 obstacles on layer 1
 
 Final usage/overflow report: 
 
@@ -37,6 +37,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 3332
 [INFO] Final number of vias : 1228
 [INFO] Final usage 3D       : 7016
-[INFO] Total wirelength: 10222 um
-[INFO] Num routed nets: 563
+[INFO GRT-0018] Total wirelength: 10222 um
+[INFO GRT-0014] Num routed nets: 563
 No differences found.

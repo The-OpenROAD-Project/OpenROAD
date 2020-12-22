@@ -12,24 +12,24 @@ Notice 0:     Created 1 pins.
 Notice 0:     Created 43 components and 209 component-terminals.
 Notice 0:     Created 8 nets and 49 connections.
 Notice 0: Finished DEF file: clock_route.def
-[PARAMS] Min routing layer: 4
-[PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0.5
-[PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 4663
-[INFO] #DB Macros: 0
-[INFO] Found 8 clock nets
-[INFO] Minimum degree: 2
-[INFO] Maximum degree: 3
-[INFO] Processing 3609 obstacles on layer 1
-[INFO] Processing 86 obstacles on layer 2
-[INFO] Reducing resources of layer 2 by 80%
-[INFO] Reducing resources of layer 3 by 70%
-[INFO] Reducing resources of layer 4 by 50%
-[INFO] Reducing resources of layer 5 by 50%
-[INFO] Reducing resources of layer 6 by 50%
+Min routing layer: 4
+Max routing layer: 6
+Global adjustment: 0.5
+Unidirectional routing: true
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 4663
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0017] Found 8 clock nets
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 3
+[INFO GRT-0003] Processing 3609 obstacles on layer 1
+[INFO GRT-0003] Processing 86 obstacles on layer 2
+[INFO GRT-0013] Reducing resources of layer 2 by 80%
+[INFO GRT-0013] Reducing resources of layer 3 by 70%
+[INFO GRT-0013] Reducing resources of layer 4 by 50%
+[INFO GRT-0013] Reducing resources of layer 5 by 50%
+[INFO GRT-0013] Reducing resources of layer 6 by 50%
 Routing clock nets...
 
 Final usage/overflow report: 
@@ -46,26 +46,24 @@ Final usage/overflow report:
 [INFO] Final usage          : 44
 [INFO] Final number of vias : 41
 [INFO] Final usage 3D       : 167
-#Routed clock nets: 4
-
-
-[PARAMS] Min routing layer: 2
-[PARAMS] Max routing layer: 6
-[PARAMS] Global adjustment: 0.5
-[PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 4663
-[INFO] #DB Macros: 0
-[INFO] Minimum degree: 9
-[INFO] Maximum degree: 11
-[INFO] Processing 3609 obstacles on layer 1
-[INFO] Processing 86 obstacles on layer 2
-[INFO] Reducing resources of layer 2 by 80%
-[INFO] Reducing resources of layer 3 by 70%
-[INFO] Reducing resources of layer 4 by 50%
-[INFO] Reducing resources of layer 5 by 50%
-[INFO] Reducing resources of layer 6 by 50%
+[INFO GRT-0010] #Routed clock nets: 4
+Min routing layer: 2
+Max routing layer: 6
+Global adjustment: 0.5
+Unidirectional routing: true
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 4663
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0001] Minimum degree: 9
+[INFO GRT-0002] Maximum degree: 11
+[INFO GRT-0003] Processing 3609 obstacles on layer 1
+[INFO GRT-0003] Processing 86 obstacles on layer 2
+[INFO GRT-0013] Reducing resources of layer 2 by 80%
+[INFO GRT-0013] Reducing resources of layer 3 by 70%
+[INFO GRT-0013] Reducing resources of layer 4 by 50%
+[INFO GRT-0013] Reducing resources of layer 5 by 50%
+[INFO GRT-0013] Reducing resources of layer 6 by 50%
 
 Final usage/overflow report: 
 
@@ -81,6 +79,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 113
 [INFO] Final number of vias : 81
 [INFO] Final usage 3D       : 356
-[INFO] Total wirelength: 1627 um
-[INFO] Num routed nets: 8
+[INFO GRT-0018] Total wirelength: 1627 um
+[INFO GRT-0014] Num routed nets: 8
 No differences found.
