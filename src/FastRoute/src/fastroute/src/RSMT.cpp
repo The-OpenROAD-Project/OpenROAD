@@ -54,7 +54,7 @@ namespace grt {
 struct pnt
 {
   DTYPE x, y;
-  int   o;
+  int o;
 };
 
 struct wire
@@ -181,19 +181,19 @@ int mapxy(int nx, int xs[], int nxs[], int d)
 
 void copyStTree(int ind, Tree rsmt)
 {
-  int       i, d, numnodes, numedges;
-  int       n, x1, y1, x2, y2, edgecnt;
+  int i, d, numnodes, numedges;
+  int n, x1, y1, x2, y2, edgecnt;
   TreeEdge* treeedges;
   TreeNode* treenodes;
 
   // TODO: check this size
   const int sizeV = 2 * nets[ind]->numPins;
-  int       nbrcnt[sizeV];
+  int nbrcnt[sizeV];
 
-  d                  = rsmt.deg;
-  sttrees[ind].deg   = d;
-  numnodes           = 2 * d - 2;
-  numedges           = 2 * d - 3;
+  d = rsmt.deg;
+  sttrees[ind].deg = d;
+  numnodes = 2 * d - 2;
+  numedges = 2 * d - 3;
   sttrees[ind].nodes = new TreeNode[numnodes];
   sttrees[ind].edges = new TreeEdge[numedges];
 
@@ -210,11 +210,11 @@ void copyStTree(int ind, Tree rsmt)
   // original rsmt has 2*d-2 branch (one is a loop for root), in StTree 2*d-3
   // edges (no original loop)
   for (i = 0; i < numnodes; i++) {
-    x1             = rsmt.branch[i].x;
-    y1             = rsmt.branch[i].y;
-    n              = rsmt.branch[i].n;
-    x2             = rsmt.branch[n].x;
-    y2             = rsmt.branch[n].y;
+    x1 = rsmt.branch[i].x;
+    y1 = rsmt.branch[i].y;
+    n = rsmt.branch[i].n;
+    x2 = rsmt.branch[n].x;
+    y2 = rsmt.branch[n].y;
     treenodes[i].x = x1;
     treenodes[i].y = y1;
     if (i < d) {
@@ -233,9 +233,9 @@ void copyStTree(int ind, Tree rsmt)
         treeedges[edgecnt].n1 = n;
         treeedges[edgecnt].n2 = i;
       }
-      treenodes[i].nbr[nbrcnt[i]]  = n;
+      treenodes[i].nbr[nbrcnt[i]] = n;
       treenodes[i].edge[nbrcnt[i]] = edgecnt;
-      treenodes[n].nbr[nbrcnt[n]]  = i;
+      treenodes[n].nbr[nbrcnt[n]] = i;
       treenodes[n].edge[nbrcnt[n]] = edgecnt;
 
       nbrcnt[i]++;
@@ -252,24 +252,24 @@ void copyStTree(int ind, Tree rsmt)
   }
 }
 
-void fluteNormal(int   netID,
-                 int   d,
+void fluteNormal(int netID,
+                 int d,
                  DTYPE x[],
                  DTYPE y[],
-                 int   acc,
+                 int acc,
                  float coeffV,
                  Tree* t)
 {
   DTYPE *xs, *ys, minval, x_max, x_min, x_mid, y_max, y_min, y_mid, *tmp_xs,
       *tmp_ys;
-  int*        s;
-  int         i, j, k, minidx;
+  int* s;
+  int i, j, k, minidx;
   struct pnt *pt, **ptp, *tmpp;
 
   if (d == 2) {
-    t->deg         = 2;
-    t->length      = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
-    t->branch      = new Branch[2];
+    t->deg = 2;
+    t->length = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
+    t->branch = new Branch[2];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 1;
@@ -321,8 +321,8 @@ void fluteNormal(int   netID,
       }
     }
 
-    t->length      = ADIFF(x_max, x_min) + ADIFF(y_max, y_min);
-    t->branch      = new Branch[4];
+    t->length = ADIFF(x_max, x_min) + ADIFF(y_max, y_min);
+    t->branch = new Branch[4];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 3;
@@ -343,14 +343,14 @@ void fluteNormal(int   netID,
     tmp_xs = new DTYPE[d];
     tmp_ys = new DTYPE[d];
 
-    s   = new int[d];
-    pt  = new struct pnt[d + 1];
+    s = new int[d];
+    pt = new struct pnt[d + 1];
     ptp = new struct pnt*[d + 1];
 
     for (i = 0; i < d; i++) {
       pt[i].x = x[i];
       pt[i].y = y[i];
-      ptp[i]  = &pt[i];
+      ptp[i] = &pt[i];
     }
     // printf("OK here\n");
     // sort x
@@ -365,8 +365,8 @@ void fluteNormal(int   netID,
             minidx = j;
           }
         }
-        tmpp        = ptp[i];
-        ptp[i]      = ptp[minidx];
+        tmpp = ptp[i];
+        ptp[i] = ptp[minidx];
         ptp[minidx] = tmpp;
       }
     } else {
@@ -374,9 +374,9 @@ void fluteNormal(int   netID,
     }
 
 #if REMOVE_DUPLICATE_PIN == 1
-    ptp[d]    = &pt[d];
+    ptp[d] = &pt[d];
     ptp[d]->x = ptp[d]->y = -999999;
-    j                     = 0;
+    j = 0;
     for (i = 0; i < d; i++) {
       for (k = i + 1; ptp[k]->x == ptp[i]->x; k++)
         if (ptp[k]->y == ptp[i]->y)  // pins k and i are the same
@@ -388,7 +388,7 @@ void fluteNormal(int   netID,
 #endif
 
     for (i = 0; i < d; i++) {
-      xs[i]     = ptp[i]->x;
+      xs[i] = ptp[i]->x;
       ptp[i]->o = i;
     }
 
@@ -403,35 +403,35 @@ void fluteNormal(int   netID,
             minidx = j;
           }
         }
-        ys[i]       = ptp[minidx]->y;
-        s[i]        = ptp[minidx]->o;
+        ys[i] = ptp[minidx]->y;
+        s[i] = ptp[minidx]->o;
         ptp[minidx] = ptp[i];
       }
       ys[d - 1] = ptp[d - 1]->y;
-      s[d - 1]  = ptp[d - 1]->o;
+      s[d - 1] = ptp[d - 1]->o;
     } else {
       qsort(ptp, d, sizeof(struct point*), ordery);
       for (i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
-        s[i]  = ptp[i]->o;
+        s[i] = ptp[i]->o;
       }
     }
 
     gxs[netID] = new DTYPE[d];
     gys[netID] = new DTYPE[d];
-    gs[netID]  = new DTYPE[d];
+    gs[netID] = new DTYPE[d];
 
     for (i = 0; i < d; i++) {
       gxs[netID][i] = xs[i];
       gys[netID][i] = ys[i];
-      gs[netID][i]  = s[i];
+      gs[netID][i] = s[i];
 
       tmp_xs[i] = xs[i] * 100;
       tmp_ys[i] = ys[i] * ((int) (100 * coeffV));
     }
 
     fluteTree = stt::flutes(d, tmp_xs, tmp_ys, s, acc);
-    (*t)      = fluteToTree(fluteTree);
+    (*t) = fluteToTree(fluteTree);
 
     for (i = 0; i < 2 * d - 2; i++) {
       t->branch[i].x = t->branch[i].x / 100;
@@ -448,27 +448,27 @@ void fluteNormal(int   netID,
   }
 }
 
-void fluteCongest(int   netID,
-                  int   d,
+void fluteCongest(int netID,
+                  int d,
                   DTYPE x[],
                   DTYPE y[],
-                  int   acc,
+                  int acc,
                   float coeffV,
                   Tree* t)
 {
   DTYPE *xs, *ys, *nxs, *nys, *x_seg, *y_seg, minval, x_max, x_min, x_mid,
       y_max, y_min, y_mid;
-  int*  s;
-  int   i, j, k, minidx, grid;
+  int* s;
+  int i, j, k, minidx, grid;
   DTYPE height, width;
-  int   usageH, usageV;
+  int usageH, usageV;
   float coeffH = 1;
-  //	float coeffV = 2;//1.36;//hCapacity/vCapacity;//1;//
+  //  float coeffV = 2;//1.36;//hCapacity/vCapacity;//1;//
 
   if (d == 2) {
-    t->deg         = 2;
-    t->length      = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
-    t->branch      = new Branch[2];
+    t->deg = 2;
+    t->length = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
+    t->branch = new Branch[2];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 1;
@@ -520,8 +520,8 @@ void fluteCongest(int   netID,
       }
     }
 
-    t->length      = ADIFF(x_max, x_min) + ADIFF(y_max, y_min);
-    t->branch      = new Branch[4];
+    t->length = ADIFF(x_max, x_min) + ADIFF(y_max, y_min);
+    t->branch = new Branch[4];
     t->branch[0].x = x[0];
     t->branch[0].y = y[0];
     t->branch[0].n = 3;
@@ -536,18 +536,18 @@ void fluteCongest(int   netID,
     t->branch[3].n = 3;
   } else {
     stt::Tree fluteTree;
-    xs    = new DTYPE[d];
-    ys    = new DTYPE[d];
-    nxs   = new DTYPE[d];
-    nys   = new DTYPE[d];
+    xs = new DTYPE[d];
+    ys = new DTYPE[d];
+    nxs = new DTYPE[d];
+    nys = new DTYPE[d];
     x_seg = new DTYPE[d - 1];
     y_seg = new DTYPE[d - 1];
-    s     = new int[d];
+    s = new int[d];
 
     for (i = 0; i < d; i++) {
       xs[i] = gxs[netID][i];
       ys[i] = gys[netID][i];
-      s[i]  = gs[netID][i];
+      s[i] = gs[netID][i];
     }
 
     // get the new coordinates considering congestion
@@ -557,7 +557,7 @@ void fluteCongest(int   netID,
     }
 
     height = ys[d - 1] - ys[0] + 1;  // # vertical grids the net span
-    width  = xs[d - 1] - xs[0] + 1;  // # horizontal grids the net span
+    width = xs[d - 1] - xs[0] + 1;   // # horizontal grids the net span
 
     for (i = 0; i < d - 1; i++) {
       usageH = 0;
@@ -594,7 +594,7 @@ void fluteCongest(int   netID,
     }
 
     fluteTree = stt::flutes(d, nxs, nys, s, acc);
-    (*t)      = fluteToTree(fluteTree);
+    (*t) = fluteToTree(fluteTree);
 
     // map the new coordinates back to original coordinates
     for (i = 0; i < 2 * d - 2; i++) {
@@ -616,12 +616,12 @@ void fluteCongest(int   netID,
 
 Bool netCongestion(int netID)
 {
-  int       i, j, edgeID, edgelength, *gridsX, *gridsY;
-  int       n1, n2, x1, y1, x2, y2, distance, grid, ymin, ymax;
-  int       cnt, Zpoint;
+  int i, j, edgeID, edgelength, *gridsX, *gridsY;
+  int n1, n2, x1, y1, x2, y2, distance, grid, ymin, ymax;
+  int cnt, Zpoint;
   TreeEdge* treeedge;
   TreeNode* treenodes;
-  //	Bool Congested;
+  //  Bool Congested;
   Segment* seg;
 
   for (j = seglistIndex[netID]; j < seglistIndex[netID] + seglistCnt[netID];
@@ -674,7 +674,7 @@ Bool VTreeSuite(int netID)
 
   int i, deg;
 
-  deg  = nets[netID]->deg;
+  deg = nets[netID]->deg;
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
 
@@ -706,11 +706,11 @@ Bool HTreeSuite(int netID)
 
   int i, deg;
 
-  deg  = nets[netID]->deg;
+  deg = nets[netID]->deg;
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
 
-  //	printf("d %d\n",deg);
+  //  printf("d %d\n",deg);
 
   for (i = 0; i < deg; i++) {
     if (xmin > nets[netID]->pinX[i]) {
@@ -736,18 +736,18 @@ Bool HTreeSuite(int netID)
 
 float coeffADJ(int netID)
 {
-  int   xmin, xmax, ymin, ymax, Hcap, Vcap;
+  int xmin, xmax, ymin, ymax, Hcap, Vcap;
   float Husage, Vusage, coef;
 
   int i, j, deg, grid;
 
-  deg  = nets[netID]->deg;
+  deg = nets[netID]->deg;
   xmax = ymax = 0;
   xmin = ymin = BIG_INT;
   Hcap = Vcap = 0;
   Husage = Vusage = 0;
 
-  //	printf("d %d\n",deg);
+  //  printf("d %d\n",deg);
 
   for (i = 0; i < deg; i++) {
     if (xmin > nets[netID]->pinX[i]) {
@@ -810,11 +810,11 @@ void gen_brk_RSMT(Bool congestionDriven,
                   Bool newType,
                   Bool noADJ)
 {
-  int   i, j, d, n, n1, n2;
-  int   x1, y1, x2, y2;
-  int   segPos, segcnt;
-  Tree  rsmt;
-  int   wl, wl1, numShift = 0;
+  int i, j, d, n, n1, n2;
+  int x1, y1, x2, y2;
+  int segPos, segcnt;
+  Tree rsmt;
+  int wl, wl1, numShift = 0;
   float coeffV;
 
   TreeEdge *treeedges, *treeedge;
@@ -822,18 +822,18 @@ void gen_brk_RSMT(Bool congestionDriven,
 
   Bool cong;
 
-  wl = wl1    = 0;
+  wl = wl1 = 0;
   totalNumSeg = 0;
 
   for (i = 0; i < numValidNets; i++) {
-    coeffV    = 1.36;
+    coeffV = 1.36;
     int sizeV = nets[i]->numPins;
     int x[sizeV];
     int y[sizeV];
 
     if (congestionDriven) {
       coeffV = coeffADJ(i);
-      cong   = netCongestion(i);
+      cong = netCongestion(i);
 
     } else {
       if (HTreeSuite(i)) {
@@ -856,12 +856,12 @@ void gen_brk_RSMT(Bool congestionDriven,
               > 0)  // only route the non-degraded edges (len>0)
           {
             treeedge = &(treeedges[j]);
-            n1       = treeedge->n1;
-            n2       = treeedge->n2;
-            x1       = treenodes[n1].x;
-            y1       = treenodes[n1].y;
-            x2       = treenodes[n2].x;
-            y2       = treenodes[n2].y;
+            n1 = treeedge->n1;
+            n2 = treeedge->n2;
+            x1 = treenodes[n1].x;
+            y1 = treenodes[n1].y;
+            x2 = treenodes[n2].x;
+            y2 = treenodes[n2].y;
             newRipup(treeedge, treenodes, x1, y1, x2, y2);
           }
         }
@@ -876,15 +876,16 @@ void gen_brk_RSMT(Bool congestionDriven,
     if (noADJ) {
       coeffV = 1.2;
     }
-    if (pdRevForHighFanout > 0 && nets[i]->deg >= pdRevForHighFanout && nets[i]->isClock) {
-      PD::PdRev *pd;
+    if (pdRevForHighFanout > 0 && nets[i]->deg >= pdRevForHighFanout
+        && nets[i]->isClock) {
+      PD::PdRev* pd;
       std::vector<unsigned> vecX(x, x + d);
       std::vector<unsigned> vecY(y, y + d);
       pd->setAlphaPDII(nets[i]->alpha);
       pd->addNet(d, vecX, vecY);
       pd->runPDII();
       PD::Tree pdTree = pd->translateTree(0);
-      rsmt            = pdToTree(pdTree);
+      rsmt = pdToTree(pdTree);
       delete pd;
     } else {
       if (congestionDriven) {
@@ -921,7 +922,7 @@ void gen_brk_RSMT(Bool congestionDriven,
     for (j = 0; j < 2 * d - 2; j++) {
       x1 = rsmt.branch[j].x;
       y1 = rsmt.branch[j].y;
-      n  = rsmt.branch[j].n;
+      n = rsmt.branch[j].n;
       x2 = rsmt.branch[n].x;
       y2 = rsmt.branch[n].y;
 

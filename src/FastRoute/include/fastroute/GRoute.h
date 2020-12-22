@@ -37,7 +37,7 @@
 namespace odb {
 class dbNet;
 class Rect;
-}
+}  // namespace odb
 
 namespace grt {
 
@@ -50,16 +50,21 @@ struct GSegment
   int finalY;
   int finalLayer;
   GSegment() = default;
-  GSegment(int x0, int y0, int l0, int x1, int y1, int l1) :
-  	initX(x0), initY(y0), initLayer(l0),
-  	finalX(x1), finalY(y1), finalLayer(l1)
-  	{}
+  GSegment(int x0, int y0, int l0, int x1, int y1, int l1)
+      : initX(x0),
+        initY(y0),
+        initLayer(l0),
+        finalX(x1),
+        finalY(y1),
+        finalLayer(l1)
+  {
+  }
 };
 
 // class Route is defined in fastroute core.
 typedef std::vector<GSegment> GRoute;
 typedef std::map<odb::dbNet*, GRoute> NetRouteMap;
 
-void print(GRoute &groute);
+void print(GRoute& groute);
 
-} // namespace
+}  // namespace grt

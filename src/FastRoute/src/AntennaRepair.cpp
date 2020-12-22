@@ -44,8 +44,8 @@
 #include <utility>
 #include <vector>
 
-#include "Pin.h"
 #include "Net.h"
+#include "Pin.h"
 #include "fastroute/GlobalRouter.h"
 #include "openroad/Error.hh"
 
@@ -53,32 +53,35 @@ namespace grt {
 
 using ord::error;
 
-AntennaRepair::AntennaRepair(GlobalRouter *grouter,
-                 ant::AntennaChecker* arc,
-                 dpl::Opendp* opendp, odb::dbDatabase* db)
-	: _grouter(grouter), _arc(arc), _opendp(opendp), _db(db)
+AntennaRepair::AntennaRepair(GlobalRouter* grouter,
+                             ant::AntennaChecker* arc,
+                             dpl::Opendp* opendp,
+                             odb::dbDatabase* db)
+    : _grouter(grouter), _arc(arc), _opendp(opendp), _db(db)
 {
   _block = _db->getChip()->getBlock();
 }
 
 int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
-					  int maxRoutingLayer, odb::dbMTerm* diodeMTerm)
+                                          int maxRoutingLayer,
+                                          odb::dbMTerm* diodeMTerm)
 {
   odb::dbTech* tech = _db->getTech();
 
   _arc->load_antenna_rules();
 
-  std::map<int, odb::dbTechVia*> defaultVias = _grouter->getDefaultVias(maxRoutingLayer);
+  std::map<int, odb::dbTechVia*> defaultVias
+      = _grouter->getDefaultVias(maxRoutingLayer);
 
   for (auto net_route : routing) {
     odb::dbNet* db_net = net_route.first;
-    GRoute &route = net_route.second;
+    GRoute& route = net_route.second;
     odb::dbWire* wire = odb::dbWire::create(db_net);
     odb::dbWireEncoder wireEncoder;
     wireEncoder.begin(wire);
     odb::dbWireType wireType = odb::dbWireType::ROUTED;
 
-    for (GSegment &seg : route) {
+    for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
         error("Global route segment not valid\n");
       }
@@ -108,9 +111,10 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     odb::orderWires(db_net, false, false);
 
-    std::vector<ant::VINFO> netViol =
-      _arc->get_net_antenna_violations(db_net, diodeMTerm->getMaster()->getConstName(),
-                                       diodeMTerm->getConstName());
+    std::vector<ant::VINFO> netViol = _arc->get_net_antenna_violations(
+        db_net,
+        diodeMTerm->getMaster()->getConstName(),
+        diodeMTerm->getConstName());
     if (!netViol.empty()) {
       _antennaViolations[db_net] = netViol;
       _grouter->addDirtyNet(db_net);
@@ -145,7 +149,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
   }
 
   deleteFillerCells();
-  
+
   setInstsPlacementStatus(odb::dbPlacementStatus::FIRM);
   getFixedInstances(fixedInsts);
 
@@ -172,7 +176,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
 
 void AntennaRepair::legalizePlacedCells()
 {
-  AntennaCbk *cbk = new AntennaCbk(_grouter);
+  AntennaCbk* cbk = new AntennaCbk(_grouter);
   cbk->addOwner(_block);
 
   _opendp->detailedPlacement(0);
@@ -200,12 +204,12 @@ void AntennaRepair::deleteFillerCells()
 }
 
 void AntennaRepair::insertDiode(odb::dbNet* net,
-                            odb::dbMTerm* diodeMTerm,
-                            odb::dbInst* sinkInst,
-                            odb::dbITerm* sinkITerm,
-                            std::string antennaInstName,
-                            int siteWidth,
-                            r_tree& fixedInsts)
+                                odb::dbMTerm* diodeMTerm,
+                                odb::dbInst* sinkInst,
+                                odb::dbITerm* sinkITerm,
+                                std::string antennaInstName,
+                                int siteWidth,
+                                r_tree& fixedInsts)
 {
   bool legallyPlaced = false;
   bool placeAtLeft = true;
@@ -226,7 +230,8 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
 
   odb::dbInst* antennaInst
       = odb::dbInst::create(_block, antennaMaster, antennaInstName.c_str());
-  odb::dbITerm* antennaITerm = antennaInst->findITerm(diodeMTerm->getConstName());
+  odb::dbITerm* antennaITerm
+      = antennaInst->findITerm(diodeMTerm->getConstName());
   odb::dbBox* antennaBBox = antennaInst->getBBox();
   int antennaWidth = antennaBBox->xMax() - antennaBBox->xMin();
 
@@ -250,16 +255,17 @@ void AntennaRepair::insertDiode(odb::dbNet* net,
     antennaInst->setLocation(instLocX + offset, instLocY);
 
     odb::dbBox* instBox = antennaInst->getBBox();
-    box box(point(instBox->xMin() - (leftPad * siteWidth) + 1, instBox->yMin() + 1),
-            point(instBox->xMax() + (rightPad * siteWidth) - 1, instBox->yMax() - 1));
+    box box(
+        point(instBox->xMin() - (leftPad * siteWidth) + 1, instBox->yMin() + 1),
+        point(instBox->xMax() + (rightPad * siteWidth) - 1,
+              instBox->yMax() - 1));
     fixedInsts.query(bgi::intersects(box), std::back_inserter(overlapInsts));
 
     odb::Rect coreArea;
     _block->getCoreArea(coreArea);
 
-    if (overlapInsts.empty()&&
-        instBox->xMin() >= coreArea.xMin() &&
-        instBox->xMax() <= coreArea.xMax()) {
+    if (overlapInsts.empty() && instBox->xMin() >= coreArea.xMin()
+        && instBox->xMax() <= coreArea.xMax()) {
       legallyPlaced = true;
     }
     overlapInsts.clear();
@@ -296,7 +302,8 @@ void AntennaRepair::getFixedInstances(r_tree& fixedInsts)
   }
 }
 
-void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStatus)
+void AntennaRepair::setInstsPlacementStatus(
+    odb::dbPlacementStatus placementStatus)
 {
   for (auto const& violation : _antennaViolations) {
     for (int i = 0; i < violation.second.size(); i++) {
@@ -311,10 +318,12 @@ void AntennaRepair::setInstsPlacementStatus(odb::dbPlacementStatus placementStat
   }
 }
 
-AntennaCbk::AntennaCbk(GlobalRouter* grouter)
-  : _grouter(grouter) {}
+AntennaCbk::AntennaCbk(GlobalRouter* grouter) : _grouter(grouter)
+{
+}
 
-void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst) {
+void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst)
+{
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getNet() != nullptr)
       _grouter->addDirtyNet(iterm->getNet());
@@ -322,4 +331,4 @@ void AntennaCbk::inDbPostMoveInst(odb::dbInst* inst) {
   }
 }
 
-}
+}  // namespace grt
