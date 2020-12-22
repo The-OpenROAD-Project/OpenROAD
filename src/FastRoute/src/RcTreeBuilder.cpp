@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RcTreeBuilder.h"
+#include "openroad/Logger.h"
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -47,12 +48,15 @@
 
 namespace grt {
 
+using ord::GRT;
+
 using std::abs;
 using std::min;
 
 RcTreeBuilder::RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter)
 {
   _grouter = grouter;
+  _logger = openroad->getLogger();
   _sta = openroad->getSta();
   _parasitics = _sta->parasitics();
   _corner = _sta->cmdCorner();
@@ -68,7 +72,7 @@ void RcTreeBuilder::estimateParasitcs(odb::dbNet* net,
                                       std::vector<GSegment>& routes)
 {
   if (_debug)
-    printf("net %s\n", net->getConstName());
+    _logger->report("net {}", net->getConstName());
   _sta_net = _network->dbToSta(net);
   _node_id = 0;
   _node_map.clear();
@@ -126,12 +130,12 @@ void RcTreeBuilder::makeRouteParasitics(odb::dbNet* net,
     } else if (route.initLayer == route.finalLayer)
       layerRC(wire_length_dbu, route.initLayer, res, cap);
     else
-      ord::warn("non wire or via route found on net %s", net->getConstName());
+      _logger->warn(GRT, 7, "non wire or via route found on net {}", net->getConstName());
 
     if (_debug) {
       sta::Units* units = _sta->units();
       if (_debug)
-        printf("%s -> %s r=%s c=%s\n",
+        _logger->report("{} -> {} r={} c={}\n",
                _parasitics->name(n1),
                _parasitics->name(n2),
                units->resistanceUnit()->asString(res),
@@ -173,7 +177,7 @@ void RcTreeBuilder::makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node)
     _parasitics->incrCap(grid_node, cap / 2.0, _analysisPoint);
   } else {
     std::string pin_name = pin.getName();
-    ord::warn("missing route to pin %s", pin_name.c_str());
+    _logger->warn(GRT, 6, "missing route to pin {}", pin_name.c_str());
   }
 }
 
