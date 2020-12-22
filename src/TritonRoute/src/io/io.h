@@ -182,7 +182,7 @@ namespace fr {
       // others
       void writeFromTA();
       void writeFromDR(const std::string &str = "");
-      bool  updateDb(odb::dbDatabase* db);
+      void  updateDb(odb::dbDatabase* db);
       std::map< frString, std::list<std::shared_ptr<frConnFig> > > connFigs; // all connFigs ready to def
       std::vector<frViaDef*> viaDefs;
     protected:
@@ -197,8 +197,8 @@ namespace fr {
       void splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
                            std::vector< std::vector< std::map<frCoord, std::vector<std::shared_ptr<frPathSeg> > > > > &mergedPathSegs);
       int writeDef(bool isTA, const std::string &str = "");
-      bool updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
-      bool updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
+      void updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
+      void updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
 
     };
   }

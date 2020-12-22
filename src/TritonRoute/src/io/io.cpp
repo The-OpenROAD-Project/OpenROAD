@@ -5371,13 +5371,11 @@ void io::Writer::writeFromDR(const string &str) {
   fillViaDefs();
   writeDef(false, str);
 }
-
-bool io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
+void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
 {
   frBox box;
-  for(auto via : viaDefs)
-  {
-    if(block->findVia(via->getName().c_str())!=nullptr)
+  for (auto via : viaDefs) {
+    if (block->findVia(via->getName().c_str()) != nullptr)
       continue;
     auto layer1Name = getTech()->getLayer(via->getLayer1Num())->getName();
     auto layer2Name = getTech()->getLayer(via->getLayer2Num())->getName();
@@ -5385,50 +5383,52 @@ bool io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
     odb::dbTechLayer* _layer1 = tech->findLayer(layer1Name.c_str());
     odb::dbTechLayer* _layer2 = tech->findLayer(layer2Name.c_str());
     odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
-    if(_layer1==nullptr||_layer2==nullptr||_cut_layer==nullptr){
-      logger->error(ord::ToolId::DRT,1,"techlayers for via {} not found in db tech",via->getName());
-      return false;
+    if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
+      logger->error(ord::ToolId::DRT,
+                    1,
+                    "techlayers for via {} not found in db tech",
+                    via->getName());
     }
-    odb::dbVia* _db_via = odb::dbVia::create(block,via->getName().c_str());
-    
-    for(auto &fig: via->getLayer2Figs())
-    {
+    odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
+
+    for (auto& fig : via->getLayer2Figs()) {
       fig->getBBox(box);
-      odb::dbBox::create(_db_via,_layer2,box.left(),box.bottom(),box.right(),box.top());
+      odb::dbBox::create(
+          _db_via, _layer2, box.left(), box.bottom(), box.right(), box.top());
     }
-    for(auto &fig: via->getCutFigs())
-    {
+    for (auto& fig : via->getCutFigs()) {
       fig->getBBox(box);
-      odb::dbBox::create(_db_via,_cut_layer,box.left(),box.bottom(),box.right(),box.top());
+      odb::dbBox::create(_db_via,
+                         _cut_layer,
+                         box.left(),
+                         box.bottom(),
+                         box.right(),
+                         box.top());
     }
-    
-    for(auto &fig: via->getLayer1Figs())
-    {
+
+    for (auto& fig : via->getLayer1Figs()) {
       fig->getBBox(box);
-      odb::dbBox::create(_db_via,_layer1,box.left(),box.bottom(),box.right(),box.top());
+      odb::dbBox::create(
+          _db_via, _layer1, box.left(), box.bottom(), box.right(), box.top());
     }
   }
-  return true;
 }
 
-bool io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
+void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 {
   odb::dbWireEncoder _wire_encoder;
-  for(auto net:block->getNets())
-  {
-    
-    if (connFigs.find(net->getName()) != connFigs.end()) 
-    {
+  for (auto net : block->getNets()) {
+    if (connFigs.find(net->getName()) != connFigs.end()) {
       odb::dbWire* wire = net->getWire();
-      if(wire==nullptr)
+      if (wire == nullptr)
         wire = odb::dbWire::create(net);
       _wire_encoder.begin(wire);
-      for (auto &connFig: connFigs.at(net->getName())) {
-        switch (connFig->typeId())
-        {
-          case frcPathSeg:{
+      for (auto& connFig : connFigs.at(net->getName())) {
+        switch (connFig->typeId()) {
+          case frcPathSeg: {
             auto pathSeg = std::dynamic_pointer_cast<frPathSeg>(connFig);
-            auto layerName = getTech()->getLayer(pathSeg->getLayerNum())->getName();
+            auto layerName
+                = getTech()->getLayer(pathSeg->getLayerNum())->getName();
             auto layer = tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
             frPoint begin, end;
@@ -5436,78 +5436,87 @@ bool io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
             pathSeg->getPoints(begin, end);
             pathSeg->getStyle(segStyle);
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(begin.x(),begin.y());
-            } else if (segStyle.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(begin.x(),begin.y(),0);
-            } else if (segStyle.getBeginStyle() == frEndStyle(frcVariableEndStyle)) {
-              _wire_encoder.addPoint(begin.x(),begin.y(), segStyle.getBeginExt());
+              _wire_encoder.addPoint(begin.x(), begin.y());
+            } else if (segStyle.getBeginStyle()
+                       == frEndStyle(frcTruncateEndStyle)) {
+              _wire_encoder.addPoint(begin.x(), begin.y(), 0);
+            } else if (segStyle.getBeginStyle()
+                       == frEndStyle(frcVariableEndStyle)) {
+              _wire_encoder.addPoint(
+                  begin.x(), begin.y(), segStyle.getBeginExt());
             }
             if (segStyle.getEndStyle() == frEndStyle(frcExtendEndStyle)) {
-              _wire_encoder.addPoint(end.x(),end.y());
-            } else if (segStyle.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
-              _wire_encoder.addPoint(end.x(),end.y(),0);
-            } else if (segStyle.getBeginStyle() == frEndStyle(frcVariableEndStyle)) {
-              _wire_encoder.addPoint(end.x(),end.y(), segStyle.getEndExt());
+              _wire_encoder.addPoint(end.x(), end.y());
+            } else if (segStyle.getEndStyle()
+                       == frEndStyle(frcTruncateEndStyle)) {
+              _wire_encoder.addPoint(end.x(), end.y(), 0);
+            } else if (segStyle.getBeginStyle()
+                       == frEndStyle(frcVariableEndStyle)) {
+              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt());
             }
             break;
           }
-          case frcVia:{
+          case frcVia: {
             auto via = std::dynamic_pointer_cast<frVia>(connFig);
-            auto layerName = getTech()->getLayer(via->getViaDef()->getLayer1Num())->getName();
+            auto layerName = getTech()
+                                 ->getLayer(via->getViaDef()->getLayer1Num())
+                                 ->getName();
             auto viaName = via->getViaDef()->getName();
             auto layer = tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
             frPoint origin;
             via->getOrigin(origin);
-            _wire_encoder.addPoint(origin.x(),origin.y());
+            _wire_encoder.addPoint(origin.x(), origin.y());
             odb::dbTechVia* tech_via = tech->findVia(viaName.c_str());
-            if(tech_via!=nullptr)
-            {
+            if (tech_via != nullptr) {
               _wire_encoder.addTechVia(tech_via);
-            }else
-            {
+            } else {
               odb::dbVia* db_via = block->findVia(viaName.c_str());
               _wire_encoder.addVia(db_via);
             }
             break;
           }
-          case frcPatchWire:{
+          case frcPatchWire: {
             auto pwire = std::dynamic_pointer_cast<frPatchWire>(connFig);
-            auto layerName = getTech()->getLayer(pwire->getLayerNum())->getName();
+            auto layerName
+                = getTech()->getLayer(pwire->getLayerNum())->getName();
             auto layer = tech->findLayer(layerName.c_str());
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
             frPoint origin;
             frBox offsetBox;
             pwire->getOrigin(origin);
             pwire->getOffsetBox(offsetBox);
-            _wire_encoder.addPoint(origin.x(),origin.y());
-            _wire_encoder.addRect(offsetBox.left(), offsetBox.bottom(), offsetBox.right(), offsetBox.top());
+            _wire_encoder.addPoint(origin.x(), origin.y());
+            _wire_encoder.addRect(offsetBox.left(),
+                                  offsetBox.bottom(),
+                                  offsetBox.right(),
+                                  offsetBox.top());
             break;
           }
-          default:{
+          default: {
             _wire_encoder.clear();
-            logger->error(ord::ToolId::DRT,2,"unknown connfig type while writing net {}",net->getName());
-            return false;
+            logger->error(ord::ToolId::DRT,
+                          2,
+                          "unknown connfig type while writing net {}",
+                          net->getName());
           }
         }
       }
       _wire_encoder.end();
     }
   }
-  return true;
 }
 
-bool io::Writer::updateDb(odb::dbDatabase* db)
+void io::Writer::updateDb(odb::dbDatabase* db)
 {
-  if(db->getChip()==nullptr){
-    logger->error(ord::ToolId::DRT,3,"please load design first");
-    return false;
-  }
+  if (db->getChip() == nullptr)
+    logger->error(ord::ToolId::DRT, 3, "please load design first");
+
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
-  if(block==nullptr||tech==nullptr){
-    logger->error(ord::ToolId::DRT,3,"please load design first");
-    return false;
-  }
-  return updateDbVias(block, tech) & updateDbConn(block, tech);
+  if (block == nullptr || tech == nullptr)
+    logger->error(ord::ToolId::DRT, 3, "please load design first");
+
+  updateDbVias(block, tech);
+  updateDbConn(block, tech);
 }
