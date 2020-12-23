@@ -42,8 +42,12 @@ namespace odb {
 namespace sta {
   class dbSta;
 }
-namespace grt{
+namespace grt {
   class GlobalRouter;
+}
+
+namespace ord {
+  class Logger;
 }
 
 namespace gpl {
@@ -54,8 +58,7 @@ class RouteBase;
 
 class InitialPlace;
 class NesterovPlace;
-
-class Logger;
+class Debug;
 
 class Replace
 {
@@ -69,6 +72,7 @@ class Replace
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
     void setFastRoute(grt::GlobalRouter* fr);
+    void setLogger(ord::Logger* log);
 
     void doInitialPlace();
     void doNesterovPlace();
@@ -126,15 +130,17 @@ class Replace
     odb::dbDatabase* db_;
     sta::dbSta* sta_;
     grt::GlobalRouter* fr_;
+    ord::Logger* log_;
 
     std::shared_ptr<PlacerBase> pb_;
     std::shared_ptr<NesterovBase> nb_;
     std::shared_ptr<RouteBase> rb_;
+    std::shared_ptr<Debug> debug_;
 
     std::unique_ptr<InitialPlace> ip_;
     std::unique_ptr<NesterovPlace> np_;
 
-    std::shared_ptr<gpl::Logger> log_;
+
 
     int initialPlaceMaxIter_;
     int initialPlaceMinDiffLength_;
@@ -174,11 +180,11 @@ class Replace
     int padRight_;
 
     int verbose_;
-    bool debug_;
-    int debug_pause_iterations_;
-    int debug_update_iterations_;
-    int debug_draw_bins_;
-    int debug_initial_;
+    bool gui_debug_;
+    int gui_debug_pause_iterations_;
+    int gui_debug_update_iterations_;
+    int gui_debug_draw_bins_;
+    int gui_debug_initial_;
 };
 }
 

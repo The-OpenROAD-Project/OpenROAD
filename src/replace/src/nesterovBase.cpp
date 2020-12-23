@@ -36,7 +36,8 @@
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "fft.h"
-#include "logger.h"
+#include "openroad/Logger.h"
+#include "debug.h"
 
 #include <iostream>
 #include <random>
@@ -46,6 +47,8 @@
 #define REPLACE_SQRT2 1.414213562373095048801L
 
 namespace gpl {
+
+using ord::GPL;
 
 using namespace std;
 using namespace odb;
@@ -576,7 +579,7 @@ BinGrid::setPlacerBase(const std::shared_ptr<PlacerBase> pb) {
 }
 
 void
-BinGrid::setLogger(const std::shared_ptr<Logger> log) {
+BinGrid::setLogger(ord::Logger* log) {
   log_ = log;
 }
 
@@ -681,11 +684,11 @@ BinGrid::initBins() {
     std::round(static_cast<float>(averagePlaceInstArea) / targetDensity_);
   int idealBinCnt = totalBinArea / idealBinArea; 
   
-  log_->infoFloat("TargetDensity", targetDensity_);
-  log_->infoInt64("AveragePlaceInstArea", averagePlaceInstArea);
-  log_->infoInt64("IdealBinArea", idealBinArea);
-  log_->infoInt64("IdealBinCnt", idealBinCnt);
-  log_->infoInt64("TotalBinArea", totalBinArea);
+  log_->info(GPL, 23, "TargetDensity: {:.2f}", targetDensity_);
+  log_->info(GPL, 24, "AveragePlaceInstArea: {}", averagePlaceInstArea);
+  log_->info(GPL, 25, "IdealBinArea: {}", idealBinArea);
+  log_->info(GPL, 26, "IdealBinCnt: {}", idealBinCnt);
+  log_->info(GPL, 27, "TotalBinArea: {}", totalBinArea);
 
   int foundBinCnt = 2;
   // find binCnt: 2, 4, 8, 16, 32, 64, ...
@@ -708,14 +711,14 @@ BinGrid::initBins() {
   }
 
 
-  log_->infoIntPair("BinCnt", binCntX_, binCntY_ );
+  log_->info(GPL, 28, "BinCnt: {} {}", binCntX_, binCntY_ );
   
   binSizeX_ = ceil(
       static_cast<float>((ux_ - lx_))/binCntX_);
   binSizeY_ = ceil(
       static_cast<float>((uy_ - ly_))/binCntY_);
   
-  log_->infoIntPair("BinSize", binSizeX_, binSizeY_);
+  log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
   // initialize binStor_, bins_ vector
   binStor_.resize(binCntX_ * binCntY_);
@@ -749,7 +752,7 @@ BinGrid::initBins() {
     bins_.push_back( &bin );
   }
 
-  log_->infoInt("NumBins", bins_.size());
+  log_->info(GPL, 30, "NumBins: {}", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -931,7 +934,7 @@ NesterovBaseVars::reset() {
 // NesterovBase 
 
 NesterovBase::NesterovBase()
-  : pb_(nullptr), log_(nullptr), 
+  : pb_(nullptr), debug_(nullptr), log_(nullptr), 
   fillerDx_(0), fillerDy_(0),
   whiteSpaceArea_(0), 
   movableArea_(0), totalFillerArea_(0),
@@ -941,10 +944,12 @@ NesterovBase::NesterovBase()
 NesterovBase::NesterovBase(
     NesterovBaseVars nbVars, 
     std::shared_ptr<PlacerBase> pb,
-    std::shared_ptr<Logger> log)
+    std::shared_ptr<Debug> debug,
+    ord::Logger* log)
   : NesterovBase() {
   nbVars_ = nbVars;
   pb_ = pb;
+  debug_ = debug;
   log_ = log;
   init();
 }
@@ -957,6 +962,7 @@ void
 NesterovBase::reset() { 
   nbVars_.reset();
   pb_ = nullptr;
+  debug_ = nullptr;
   log_ = nullptr;
   
   fillerDx_ = fillerDy_ = 0;
@@ -1095,9 +1101,9 @@ NesterovBase::init() {
   }
 
 
-  log_->infoInt("FillerInit: NumGCells", gCells_.size());
-  log_->infoInt("FillerInit: NumGNets", gNets_.size());
-  log_->infoInt("FillerInit: NumGPins", gPins_.size());
+  log_->info(GPL, 31, "FillerInit: NumGCells: {}", gCells_.size());
+  log_->info(GPL, 32, "FillerInit: NumGNets: {}", gNets_.size());
+  log_->info(GPL, 33, "FillerInit: NumGPins: {}", gPins_.size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1184,20 +1190,20 @@ NesterovBase::initFillerGCells() {
     string msg = "Filler area is negative!!\n";
     msg += "       Please put higher target density or \n";
     msg += "       Re-floorplan to have enough coreArea\n";
-    log_->errorQuit( msg, 1 );
+    log_->error(GPL, 302,  msg);
   }
 
   int fillerCnt = 
     static_cast<int>(totalFillerArea_ 
         / static_cast<int64_t>(fillerDx_ * fillerDy_));
 
-  log_->infoInt64("FillerInit: CoreArea", coreArea, 3);
-  log_->infoInt64("FillerInit: WhiteSpaceArea", whiteSpaceArea_, 3);
-  log_->infoInt64("FillerInit: MovableArea", movableArea_, 3);
-  log_->infoInt64("FillerInit: TotalFillerArea", totalFillerArea_, 3);
-  log_->infoInt("FillerInit: NumFillerCells", fillerCnt, 3);
-  log_->infoInt64("FillerInit: FillerCellArea", fillerCellArea(), 3);
-  log_->infoIntPair("FillerInit: FillerCellSize", fillerDx_, fillerDy_, 3); 
+  debug_->print("FillerInit", 3, "CoreArea %d\n", coreArea);
+  debug_->print("FillerInit", 3, "WhiteSpaceArea %d\n", whiteSpaceArea_);
+  debug_->print("FillerInit", 3, "MovableArea %d\n", movableArea_);
+  debug_->print("FillerInit", 3, "TotalFillerArea %d\n", totalFillerArea_);
+  debug_->print("FillerInit", 3, "NumFillerCells %d\n", fillerCnt);
+  debug_->print("FillerInit", 3, "FillerCellArea %d\n", fillerCellArea());
+  debug_->print("FillerInit", 3, "FillerCellSize %d %d\n", fillerDx_, fillerDy_); 
 
   // 
   // mt19937 supports huge range of random values.
@@ -1458,7 +1464,7 @@ NesterovBase::updateAreas() {
     string msg = "Filler area is negative!!\n";
     msg += "       Please put higher target density or \n";
     msg += "       Re-floorplan to have enough coreArea\n";
-    log_->errorQuit( msg, 1 );
+    log_->error(GPL, 303, msg);
   }
 }
 
@@ -1469,7 +1475,7 @@ NesterovBase::cutFillerCells(int64_t targetFillerArea) {
   std::vector<GCell*> newGCellFillers;
 
   int64_t curFillerArea = 0;
-  log_->infoInt("gCellFiller", gCellFillers_.size());
+  log_->info(GPL, 34, "gCellFiller: {}", gCellFillers_.size());
 
   for(auto& gCellFiller : gCellFillers_ ) {
     curFillerArea += 
@@ -1489,7 +1495,7 @@ NesterovBase::cutFillerCells(int64_t targetFillerArea) {
 
   // update totalFillerArea_
   totalFillerArea_ = curFillerArea;
-  log_->infoInt64("NewTotalFillerArea", totalFillerArea_);
+  log_->info(GPL, 35, "NewTotalFillerArea: {}", totalFillerArea_);
 
   gCells_.swap(newGCells);
   gCellFillers_.swap(newGCellFillers);

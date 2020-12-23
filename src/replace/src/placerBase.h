@@ -52,6 +52,11 @@ class dbSigType;
 class dbBox;
 
 class Rect;
+
+}
+
+namespace ord {
+class Logger;
 }
 
 namespace gpl {
@@ -60,7 +65,6 @@ class Pin;
 class Net;
 class GCell;
 
-class Logger;
 
 class Instance {
 public:
@@ -281,7 +285,7 @@ public:
   // temp padLeft/Right before OpenDB supporting...
   PlacerBase(odb::dbDatabase* db, 
       PlacerBaseVars pbVars, 
-      std::shared_ptr<Logger> log);
+      ord::Logger* log);
   ~PlacerBase();
 
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -326,7 +330,7 @@ public:
 
 private:
   odb::dbDatabase* db_;
-  std::shared_ptr<Logger> log_;
+  ord::Logger* log_;
 
   PlacerBaseVars pbVars_;
 

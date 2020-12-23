@@ -31,47 +31,33 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_LOGGER__
-#define __REPLACE_LOGGER__
+#ifndef __REPLACE_DEBUG__
+#define __REPLACE_DEBUG__
 
 #include <string>
+#include <iostream>
 
 namespace gpl {
 
-class Logger {
+class Debug {
+  public:
+    Debug(int verbose);
 
-public:
-  Logger(const std::string& name, int verbose);
+    template <typename... Args>
+    inline void print(const std::string& what, 
+        int level,
+        const std::string& fmt, 
+        const Args&... args) {
+      if( level > verbose_ ) {
+        return;
+      }
+      std::cout << what << ": ";
+      printf(std::string(fmt + "\n").c_str(), args...);
+      fflush(stdout); 
+    }
 
-  // Print functions
-  void proc(const std::string& input, int verbose = 0);
-  void procBegin(const std::string& input, int verbose = 0);
-  void procEnd(const std::string& input, int verbose = 0);
-
-  void error(const std::string& input, int code, int verbose = 0);
-  void errorQuit(const std::string& input, int code, int verbose = 0);
-
-  void warn(const std::string& input, int code, int verbose = 0);
-
-  void infoInt(const std::string& input, int val, int verbose = 0);
-  void infoIntPair(const std::string& input, int val1, int val2, int verbose = 0);
-
-  void infoInt64(const std::string& input, int64_t val, int verbose = 0);
-
-  void infoFloat(const std::string& input, float val, int verbose = 0);
-  void infoFloatSignificant(const std::string& input, float val, int verbose = 0);
-  void infoFloatPair(const std::string& input, float val1, float val2, int verbose = 0);
-
-  void infoString(const std::string& input, int verbose = 0);
-  void infoString(const std::string& input, const std::string& val, int verbose = 0);
-
-  void infoRuntime(const std::string& input, double runtime, int verbose = 0);
-
-
-private:
-  int verbose_;
-  std::string name_;
-
+  private:
+    int verbose_;
 };
 
 }

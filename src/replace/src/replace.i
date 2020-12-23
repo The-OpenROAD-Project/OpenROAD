@@ -27,6 +27,7 @@ replace_reset_cmd()
   Replace* replace = getReplace();  
   replace->reset();
   replace->setDb(getOpenRoad()->getDb());
+  replace->setLogger(getOpenRoad()->getLogger());
   replace->setSta(getOpenRoad()->getSta());
   replace->setFastRoute(getOpenRoad()->getFastRoute());
 }

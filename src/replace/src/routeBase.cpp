@@ -32,11 +32,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "routeBase.h"
-#include "logger.h"
 #include "nesterovBase.h"
 
 #include "opendb/db.h"
 #include "fastroute/GlobalRouter.h"
+#include "openroad/Logger.h"
 
 #include <string>
 #include <iostream>
@@ -50,6 +50,8 @@ using std::pair;
 using std::make_pair;
 using std::sort;
 using grt::GlobalRouter;
+
+using ord::GPL;
 
 namespace gpl {
 
@@ -376,8 +378,13 @@ TileGrid::reset() {
 }
 
 void
-TileGrid::setLogger(std::shared_ptr<Logger> log) {
+TileGrid::setLogger(ord::Logger* log) {
   log_ = log;
+}
+
+void
+TileGrid::setDebug(std::shared_ptr<Debug> debug) {
+  debug_ = debug;
 }
 
 void
@@ -429,10 +436,10 @@ TileGrid::setLy(int ly) {
 
 void
 TileGrid::initTiles() {
-  log_->infoIntPair("TileLxLy", lx_, ly_);
-  log_->infoIntPair("TileSize", tileSizeX_, tileSizeY_);
-  log_->infoIntPair("TileCnt", tileCntX_, tileCntY_);
-  log_->infoInt("numRoutingLayers", numRoutingLayers_);
+  log_->info(GPL, 36, "TileLxL: {} {}", lx_, ly_);
+  log_->info(GPL, 37, "TileSize: {} {}", tileSizeX_, tileSizeY_);
+  log_->info(GPL, 38, "TileCnt: {} {}", tileCntX_, tileCntY_);
+  log_->info(GPL, 39, "numRoutingLayers: {}", numRoutingLayers_);
 
   // 2D tile grid structure init
   int x = lx_, y = ly_;
@@ -455,7 +462,7 @@ TileGrid::initTiles() {
 
     tiles_.push_back( &tile );
   }
-  log_->infoInt("NumTiles", tiles_.size());
+  log_->info(GPL, 40, "NumTiles: {}", tiles_.size());
 }
 
 int
@@ -567,6 +574,7 @@ RouteBase::RouteBase()
   db_(nullptr), 
   grouter_(nullptr), 
   nb_(nullptr), 
+  debug_(nullptr),
   log_(nullptr),
   inflatedAreaDelta_(0), 
   bloatIterCnt_(0), 
@@ -581,12 +589,14 @@ RouteBase::RouteBase(
     odb::dbDatabase* db, 
     grt::GlobalRouter* grouter, 
     std::shared_ptr<NesterovBase> nb,
-    std::shared_ptr<Logger> log)
+    std::shared_ptr<Debug> debug,
+    ord::Logger* log)
   : RouteBase() {
   rbVars_ = rbVars;
   db_ = db;
   grouter_ = grouter; 
   nb_ = nb;
+  debug_ = debug;
   log_ = log;
 
   init();
@@ -601,6 +611,7 @@ RouteBase::reset() {
   rbVars_.reset();
   db_ = nullptr;
   nb_ = nullptr;
+  debug_ = nullptr;
   log_ = nullptr;
 
   bloatIterCnt_ = inflationIterCnt_ = 0;
@@ -665,10 +676,10 @@ RouteBase::getGlobalRouterResult() {
   // Note that *.route info is unique.
   // TODO: read *.route only once.
   updateRoute();
-  log_->infoString("route parsing is done");
+  log_->report("route parsing is done");
 
   updateEst();
-  log_->infoString("est parsing is done");
+  log_->report("est parsing is done");
   tg_->initTiles();
 }
 
@@ -680,7 +691,7 @@ RouteBase::updateCongestionMap() {
   updateRoutes();
   updateInflationRatio();
 
-  log_->infoString("Congestion Map building is done");
+  log_->report("Congestion Map building is done");
 }
 
 int64_t 
@@ -785,8 +796,8 @@ RouteBase::updateSupplies() {
       / (minWireWidth_[i] + minWireSpacing_[i]);
   }
   
-  log_->infoInt("NumHTracks", numHTracks);
-  log_->infoInt("NumVTracks", numVTracks);
+  log_->info(GPL, 41, "NumHTracks: {}", numHTracks);
+  log_->info(GPL, 42, "NumVTracks: {}", numVTracks);
   
   int pitchH = std::round(static_cast<float>(tg_->tileSizeY()) 
       / numHTracks * rbVars_.gRoutePitchScale);
@@ -800,8 +811,8 @@ RouteBase::updateSupplies() {
     tile->setSupplyVR( tile->supplyVL() );
   }
 
-  log_->infoInt("PitchH", pitchH );
-  log_->infoInt("PitchV", pitchV );
+  log_->info(GPL, 43, "PitchH: {}", pitchH );
+  log_->info(GPL, 44, "PitchV: {}", pitchV );
 
   // apply edgeCapacityInfo from *.route
   // update supplyH/V
@@ -913,16 +924,20 @@ RouteBase::updateUsages() {
 
 
     if( lIdxX < 0 || lIdxX >= tg_->tileCntX() ) {
-      log_->error("lIdxX is wrong. Check the *.est file. lIdx: " + to_string(lIdxX), 100);
+      log_->error(GPL, 201, 
+          "lIdxX is wrong. Check the *.est file. lIdx: " + to_string(lIdxX), 100);
     }
     if( lIdxY < 0 || lIdxY >= tg_->tileCntY() ) {
-      log_->error("lIdxY is wrong. Check the *.est file. lIdxY: " + to_string(lIdxY), 100);
+      log_->error(GPL, 202, 
+          "lIdxY is wrong. Check the *.est file. lIdxY: " + to_string(lIdxY), 100);
     }
     if( uIdxX < 0 || uIdxX >= tg_->tileCntX() ) {
-      log_->error("uIdxX is wrong. Check the *.est file. uIdxX: " + to_string(uIdxX), 100);
+      log_->error(GPL, 203, 
+          "uIdxX is wrong. Check the *.est file. uIdxX: " + to_string(uIdxX), 100);
     }
     if( uIdxY < 0 || uIdxY >= tg_->tileCntY() ) {
-      log_->error("uIdxY is wrong. Check the *.est file. uIdxY: " + to_string(uIdxY), 100);
+      log_->error(GPL, 204, 
+          "uIdxY is wrong. Check the *.est file. uIdxY: " + to_string(uIdxY), 100);
     }
    
     // get lTile and uTile using lx, ly, ux, uy 
@@ -1144,15 +1159,15 @@ RouteBase::updateInflationRatio() {
     
   for(auto& tile : tg_->tiles()) {
     if( tile->inflationRatio() > 1.0 ) {
-      log_->infoIntPair("xy", tile->x(), tile->y(), 5); 
-      log_->infoIntPair("minxy", tile->lx(), tile->ly(), 5);
-      log_->infoIntPair("maxxy", tile->ux(), tile->uy(), 5);
-      log_->infoFloatPair("usageHV", 
-          tile->usageH(), tile->usageV(), 5); 
-      log_->infoFloatPair("supplyHV", 
-          tile->supplyH(), tile->supplyV(), 5); 
-      log_->infoInt("pinCnt", tile->pinCnt(), 5);
-      log_->infoFloat("calcInflationRatio", tile->inflationRatio(), 5);
+      debug_->print("updateInflationRatio", 5, "xy: %d %d", tile->x(), tile->y()); 
+      debug_->print("updateInflationRatio", 5, "minxy: %d %d", tile->lx(), tile->ly());
+      debug_->print("updateInflationRatio", 5, "maxxy: %d %d", tile->ux(), tile->uy());
+      debug_->print("updateInflationRatio", 5, "usageHV: %g %g", 
+          tile->usageH(), tile->usageV()); 
+      debug_->print("updateInflationRatio", 5, "supplyHV: %g %g", 
+          tile->supplyH(), tile->supplyV()); 
+      debug_->print("updateInflationRatio", 5, "pinCnt: %d", tile->pinCnt());
+      debug_->print("updateInflationRatio", 5, "calcInflationRatio: %g", tile->inflationRatio());
     }
   }
 }
@@ -1170,6 +1185,7 @@ RouteBase::routability() {
   std::unique_ptr<TileGrid> tg(new TileGrid());
   tg_ = std::move(tg);
   tg_->setLogger(log_);
+  tg_->setDebug(debug_);
   
   getGlobalRouterResult();
   updateCongestionMap();
@@ -1288,8 +1304,8 @@ RouteBase::routability() {
     // TODO dynamic inflation procedure?
   } 
 
-  log_->infoInt64("InflatedAreaDelta", inflatedAreaDelta_ );
-  log_->infoFloat("TargetDensity", nb_->targetDensity());
+  log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_ );
+  log_->info(GPL, 46, "TargetDensity: {}", nb_->targetDensity());
 
   int64_t totalGCellArea = inflatedAreaDelta_ 
         + nb_->nesterovInstsArea() + nb_->totalFillerArea();
@@ -1307,9 +1323,9 @@ RouteBase::routability() {
   //
   if( nb_->targetDensity() > rbVars_.maxDensity 
       || minRcViolatedCnt_ >= 3 ) {
-    log_->infoString("Revert Routability Procedure");
-    log_->infoFloatSignificant("SavedMinRC", minRc_);
-    log_->infoFloatSignificant("SavedTargetDensity", minRcTargetDensity_);
+    log_->report("Revert Routability Procedure");
+    log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
+    log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
 
     nb_->setTargetDensity(minRcTargetDensity_);
 
@@ -1321,12 +1337,12 @@ RouteBase::routability() {
     return make_pair(false, true);
   }
 
-  log_->infoInt64("WhiteSpaceArea", nb_->whiteSpaceArea());
-  log_->infoInt64("NesterovInstsArea", nb_->nesterovInstsArea());
-  log_->infoInt64("TotalFillerArea", nb_->totalFillerArea());
-  log_->infoInt64("TotalGCellsArea", nb_->nesterovInstsArea() 
+  log_->info(GPL, 49, "WhiteSpaceArea: {}", nb_->whiteSpaceArea());
+  log_->info(GPL, 50, "NesterovInstsArea: {}", nb_->nesterovInstsArea());
+  log_->info(GPL, 51, "TotalFillerArea: {}", nb_->totalFillerArea());
+  log_->info(GPL, 52, "TotalGCellsArea: {}", nb_->nesterovInstsArea() 
       + nb_->totalFillerArea());
-  log_->infoInt64("ExpectedTotalGCellsArea", 
+  log_->info(GPL, 53, "ExpectedTotalGCellsArea: {}", 
       inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea());
   
   // cut filler cells accordingly
@@ -1340,15 +1356,15 @@ RouteBase::routability() {
 //  }
  
   // updateArea 
-  log_->infoString("UpdateArea");
+  log_->report("UpdateArea");
   nb_->updateAreas();
 
-  log_->infoFloat("NewTargetDensity", nb_->targetDensity());
-  log_->infoInt64("NewWhiteSpaceArea", nb_->whiteSpaceArea());
-  log_->infoInt64("MovableArea", nb_->movableArea());
-  log_->infoInt64("NewNesterovInstsArea", nb_->nesterovInstsArea());
-  log_->infoInt64("NewTotalFillerArea", nb_->totalFillerArea());
-  log_->infoInt64("NewTotalGCellsArea", nb_->nesterovInstsArea() 
+  log_->info(GPL, 54, "NewTargetDensity: {}", nb_->targetDensity());
+  log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nb_->whiteSpaceArea());
+  log_->info(GPL, 56, "MovableArea: {}", nb_->movableArea());
+  log_->info(GPL, 57, "NewNesterovInstsArea: {}", nb_->nesterovInstsArea());
+  log_->info(GPL, 58, "NewTotalFillerArea: {}", nb_->totalFillerArea());
+  log_->info(GPL, 59, "NewTotalGCellsArea: {}", nb_->nesterovInstsArea() 
       + nb_->totalFillerArea());
 
   // update densitySizes for all gCell
@@ -1392,9 +1408,9 @@ RouteBase::getRC() const {
     }
   }
 
-  log_->infoFloatSignificant("TotalRouteOverflowH", totalRouteOverflowH);
-  log_->infoFloatSignificant("TotalRouteOverflowV", totalRouteOverflowV);
-  log_->infoInt("OverflowTileCnt", overflowTileCnt);
+  log_->info(GPL, 60, "TotalRouteOverflowH: {}", totalRouteOverflowH);
+  log_->info(GPL, 61, "TotalRouteOverflowV: {}", totalRouteOverflowV);
+  log_->info(GPL, 62, "OverflowTileCnt: {}", overflowTileCnt);
 
   // what's the difference between 1 and 2?
   double totalRouteOverflowH2 = 0;
@@ -1435,9 +1451,9 @@ RouteBase::getRC() const {
     }
   }
 
-  log_->infoFloatSignificant("TotalRouteOverflowH2", totalRouteOverflowH2);
-  log_->infoFloatSignificant("TotalRouteOverflowV2", totalRouteOverflowV2);
-  log_->infoInt("OverflowTileCnt2", overflowTileCnt2);
+  log_->info(GPL, 63, "TotalRouteOverflowH2: {}", totalRouteOverflowH2);
+  log_->info(GPL, 64, "TotalRouteOverflowV2: {}", totalRouteOverflowV2);
+  log_->info(GPL, 65, "OverflowTileCnt2: {}", overflowTileCnt2);
 
   int horArraySize = horEdgeCongArray.size();
   int verArraySize = verEdgeCongArray.size();
@@ -1493,15 +1509,15 @@ RouteBase::getRC() const {
   verAvg020RC /= 1.0 * 0.020 * verArraySize;
   verAvg050RC /= 1.0 * 0.050 * verArraySize;
 
-  log_->infoFloatSignificant("0.5%RC", fmax(horAvg005RC, verAvg005RC));
-  log_->infoFloatSignificant("1.0%RC", fmax(horAvg010RC, verAvg010RC));
-  log_->infoFloatSignificant("2.0%RC", fmax(horAvg020RC, verAvg020RC));
-  log_->infoFloatSignificant("5.0%RC", fmax(horAvg050RC, verAvg050RC));
+  log_->info(GPL, 66, "0.5%RC: {}", fmax(horAvg005RC, verAvg005RC));
+  log_->info(GPL, 67, "1.0%RC: {}", fmax(horAvg010RC, verAvg010RC));
+  log_->info(GPL, 68, "2.0%RC: {}", fmax(horAvg020RC, verAvg020RC));
+  log_->info(GPL, 69, "5.0%RC: {}", fmax(horAvg050RC, verAvg050RC));
 
-  log_->infoFloatSignificant("0.5rcK", rbVars_.rcK1);
-  log_->infoFloatSignificant("1.0rcK", rbVars_.rcK2);
-  log_->infoFloatSignificant("2.0rcK", rbVars_.rcK3);
-  log_->infoFloatSignificant("5.0rcK", rbVars_.rcK4);
+  log_->info(GPL, 70, "0.5rcK: {}", rbVars_.rcK1);
+  log_->info(GPL, 71, "1.0rcK: {}", rbVars_.rcK2);
+  log_->info(GPL, 72, "2.0rcK: {}", rbVars_.rcK3);
+  log_->info(GPL, 73, "5.0rcK: {}", rbVars_.rcK4);
 
   float finalRC = (rbVars_.rcK1 * fmax(horAvg005RC, verAvg005RC) +
                   rbVars_.rcK2 * fmax(horAvg010RC, verAvg010RC) +
@@ -1509,7 +1525,7 @@ RouteBase::getRC() const {
                   rbVars_.rcK4 * fmax(horAvg050RC, verAvg050RC)) /
                  (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
-  log_->infoFloatSignificant("FinalRC", finalRC);
+  log_->info(GPL, 74, "FinalRC: {}", finalRC);
   return finalRC;
 }
 

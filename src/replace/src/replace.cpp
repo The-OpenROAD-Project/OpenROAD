@@ -37,7 +37,7 @@
 #include "placerBase.h"
 #include "nesterovBase.h"
 #include "routeBase.h" 
-#include "logger.h"
+#include "openroad/Logger.h"
 #include <iostream>
 
 namespace gpl {
@@ -48,9 +48,9 @@ Replace::Replace()
   : db_(nullptr), 
   sta_(nullptr), 
   fr_(nullptr),
+  log_(nullptr),
   pb_(nullptr), nb_(nullptr), 
   ip_(nullptr), np_(nullptr),
-  log_(nullptr),
   initialPlaceMaxIter_(20), 
   initialPlaceMinDiffLength_(1500),
   initialPlaceMaxSolverIter_(100),
@@ -80,11 +80,11 @@ Replace::Replace()
   incrementalPlaceMode_(false),
   padLeft_(0), padRight_(0),
   verbose_(0),
-  debug_(false),
-  debug_pause_iterations_(10),
-  debug_update_iterations_(10),
-  debug_draw_bins_(false),
-  debug_initial_(false) {
+  gui_debug_(false),
+  gui_debug_pause_iterations_(10),
+  gui_debug_update_iterations_(10),
+  gui_debug_draw_bins_(false),
+  gui_debug_initial_(false) {
 };
 
 Replace::~Replace() {
@@ -99,6 +99,7 @@ void Replace::reset() {
   db_ = nullptr;
   sta_ = nullptr;
   fr_ = nullptr;
+  log_ = nullptr;
 
   ip_.reset();
   np_.reset();
@@ -139,11 +140,11 @@ void Replace::reset() {
 
   padLeft_ = padRight_ = 0;
   verbose_ = 0;
-  debug_ = false;
-  debug_pause_iterations_ = 10;
-  debug_update_iterations_ = 10;
-  debug_draw_bins_ = false;
-  debug_initial_ = false;
+  gui_debug_ = false;
+  gui_debug_pause_iterations_ = 10;
+  gui_debug_update_iterations_ = 10;
+  gui_debug_draw_bins_ = false;
+  gui_debug_initial_ = false;
 }
 
 void Replace::setDb(odb::dbDatabase* db) {
@@ -155,8 +156,10 @@ void Replace::setSta(sta::dbSta* sta) {
 void Replace::setFastRoute(grt::GlobalRouter* fr) {
   fr_ = fr;
 }
+void Replace::setLogger(ord::Logger* logger) {
+  log_ = logger;
+}
 void Replace::doInitialPlace() {
-  log_ = std::make_shared<Logger>("REPL", verbose_);
 
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
@@ -171,7 +174,7 @@ void Replace::doInitialPlace() {
   ipVars.maxFanout = initialPlaceMaxFanout_;
   ipVars.netWeightScale = initialPlaceNetWeightScale_;
   ipVars.incrementalPlaceMode = incrementalPlaceMode_;
-  ipVars.debug = debug_initial_;
+  ipVars.debug = gui_debug_initial_;
   
   std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
   ip_ = std::move(ip);
@@ -179,8 +182,9 @@ void Replace::doInitialPlace() {
 }
 
 void Replace::doNesterovPlace() {
-  if( !log_ ) {
-    log_ = std::make_shared<Logger>("REPL", verbose_);
+
+  if( !debug_ ) {
+    debug_ = std::make_shared<Debug>(verbose_);
   }
 
   if( !pb_ ) {
@@ -206,7 +210,7 @@ void Replace::doNesterovPlace() {
   }
 
 
-  nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
+  nb_ = std::make_shared<NesterovBase>(nbVars, pb_, debug_, log_);
   
 
   RouteBaseVars rbVars;
@@ -222,7 +226,7 @@ void Replace::doNesterovPlace() {
   rbVars.rcK3 = routabilityRcK3_;
   rbVars.rcK4 = routabilityRcK4_;
 
-  rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, log_);
+  rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, debug_, log_);
 
   NesterovPlaceVars npVars;
 
@@ -236,12 +240,12 @@ void Replace::doNesterovPlace() {
   npVars.maxNesterovIter = nesterovPlaceMaxIter_; 
   npVars.timingDrivenMode = timingDrivenMode_;
   npVars.routabilityDrivenMode = routabilityDrivenMode_;
-  npVars.debug = debug_;
-  npVars.debug_pause_iterations = debug_pause_iterations_;
-  npVars.debug_update_iterations = debug_update_iterations_;
-  npVars.debug_draw_bins = debug_draw_bins_;
+  npVars.debug = gui_debug_;
+  npVars.debug_pause_iterations = gui_debug_pause_iterations_;
+  npVars.debug_update_iterations = gui_debug_update_iterations_;
+  npVars.debug_draw_bins = gui_debug_draw_bins_;
 
-  std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, log_));
+  std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, debug_, log_));
   np_ = std::move(np);
 
   np_->doNesterovPlace();
@@ -338,11 +342,11 @@ Replace::setDebug(int pause_iterations,
                   int update_iterations,
                   bool draw_bins,
                   bool initial) {
-  debug_ = true;
-  debug_pause_iterations_ = pause_iterations;
-  debug_update_iterations_ = update_iterations;
-  debug_draw_bins_ = draw_bins;
-  debug_initial_ = initial;
+  gui_debug_ = true;
+  gui_debug_pause_iterations_ = pause_iterations;
+  gui_debug_update_iterations_ = update_iterations;
+  gui_debug_draw_bins_ = draw_bins;
+  gui_debug_initial_ = initial;
 }
 
 void

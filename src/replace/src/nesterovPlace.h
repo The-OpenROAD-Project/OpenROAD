@@ -38,15 +38,19 @@
 #include <memory>
 #include <vector>
 
+namespace ord {
+class Logger;
+}
+
 namespace gpl 
 {
 
 class PlacerBase;
 class Instance;
 class NesterovBase;
-class Logger;
 class RouteBase;
 class Graphics;
+class Debug;
 
 class NesterovPlaceVars {
   public:
@@ -83,7 +87,8 @@ public:
       std::shared_ptr<PlacerBase> pb,
       std::shared_ptr<NesterovBase> nb,
       std::shared_ptr<RouteBase> rb,
-      std::shared_ptr<Logger> log);
+      std::shared_ptr<Debug> debug,
+      ord::Logger* log);
   ~NesterovPlace();
 
   void doNesterovPlace();
@@ -111,7 +116,8 @@ public:
 private:
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBase> nb_;
-  std::shared_ptr<Logger> log_;
+  ord::Logger* log_;
+  std::shared_ptr<Debug> debug_;
   std::shared_ptr<RouteBase> rb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;

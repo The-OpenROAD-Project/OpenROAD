@@ -33,7 +33,7 @@
 
 #include "placerBase.h"
 #include "nesterovBase.h"
-#include "logger.h"
+#include "openroad/Logger.h"
 
 #include <opendb/db.h>
 #include <iostream>
@@ -42,6 +42,7 @@ namespace gpl {
 
 using namespace odb;
 using namespace std;
+using ord::GPL;
 
 static int 
 fastModulo(const int input, const int ceil);
@@ -51,7 +52,7 @@ getMinMaxIdx(int ll, int uu, int coreLL,
     int siteSize, int minIdx, int maxIdx);
 
 static
-std::shared_ptr<Logger> slog_;
+ord::Logger* slog_;
 
 
 static bool
@@ -456,7 +457,7 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm) {
       ux == INT_MIN || uy == INT_MIN ) {
     string msg = string(bTerm->getConstName()) + " toplevel port is not placed!\n";
     msg += "       Replace will regard " + string(bTerm->getConstName()) + " is placed in (0, 0)";
-    slog_->warn(msg, 1);
+    slog_->warn(GPL, 1, msg);
   }
 
   // Just center 
@@ -680,7 +681,7 @@ PlacerBase::PlacerBase()
 
 PlacerBase::PlacerBase(odb::dbDatabase* db,
     PlacerBaseVars pbVars,
-    std::shared_ptr<Logger> log)
+    ord::Logger* log)
   : PlacerBase() {
   db_ = db;
   log_ = log;
@@ -697,7 +698,7 @@ void
 PlacerBase::init() {
   slog_ = log_;
 
-  log_->infoInt("DBU", db_->getTech()->getDbUnitsPerMicron()); 
+  log_->info(GPL, 2, "DBU: {}", db_->getTech()->getDbUnitsPerMicron()); 
 
   dbBlock* block = db_->getChip()->getBlock();
   dbSet<dbInst> insts = block->getInsts();
@@ -715,9 +716,9 @@ PlacerBase::init() {
   siteSizeX_ = firstRow->getSite()->getWidth();
   siteSizeY_ = firstRow->getSite()->getHeight();
 
-  log_->infoIntPair("SiteSize", siteSizeX_, siteSizeY_);
-  log_->infoIntPair("CoreAreaLxLy", die_.coreLx(), die_.coreLy());
-  log_->infoIntPair("CoreAreaUxUy", die_.coreUx(), die_.coreUy());
+  log_->info(GPL, 3, "SiteSize: {} {}", siteSizeX_, siteSizeY_); 
+  log_->info(GPL, 4, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy()); 
+  log_->info(GPL, 5, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy()); 
   
   // insts fill with real instances
   instStor_.reserve(insts.size());
@@ -904,7 +905,7 @@ PlacerBase::initInstsForUnusableSites() {
     if (inst && !inst->isFixed()) {
       string msg = "Blockages associated with moveable instances "
         " are unsupported and ignored [inst: " + inst->getName() + "]\n";
-      slog_->error(msg, 3);
+      slog_->error(GPL, 3, msg);
       continue;
     }
     dbBox* bbox = blockage->getBBox();
@@ -1034,12 +1035,12 @@ PlacerBase::dbToPb(odb::dbNet* net) const {
 
 void 
 PlacerBase::printInfo() const { 
-  log_->infoInt("NumInstances", instStor_.size());
-  log_->infoInt("NumPlaceInstances", placeInsts_.size());
-  log_->infoInt("NumFixedInstances", fixedInsts_.size());
-  log_->infoInt("NumDummyInstances", dummyInsts_.size());
-  log_->infoInt("NumNets", nets_.size());
-  log_->infoInt("NumPins", pins_.size());
+  log_->info(GPL, 6, "NumInstances: {}", instStor_.size());
+  log_->info(GPL, 7, "NumPlaceInstances: {}", placeInsts_.size());
+  log_->info(GPL, 8, "NumFixedInstances: {}", fixedInsts_.size());
+  log_->info(GPL, 9, "NumDummyInstances: {}", dummyInsts_.size());
+  log_->info(GPL, 10, "NumNets: {}", nets_.size());
+  log_->info(GPL, 11, "NumPins: {}", pins_.size());
 
   int maxFanout = INT_MIN;
   int sumFanout = 0;
@@ -1061,29 +1062,29 @@ PlacerBase::printInfo() const {
   cout << endl;
   */
 
-  log_->infoIntPair("DieAreaLxLy", die_.dieLx(), die_.dieLy() );
-  log_->infoIntPair("DieAreaUxUy", die_.dieUx(), die_.dieUy() );
-  log_->infoIntPair("CoreAreaLxLy", die_.coreLx(), die_.coreLy() );
-  log_->infoIntPair("CoreAreaUxUy", die_.coreUx(), die_.coreUy() );
+  log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy() );
+  log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy() );
+  log_->info(GPL, 14, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy() );
+  log_->info(GPL, 15, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy() );
 
   const int64_t coreArea = die_.coreArea();
   float util = 
     static_cast<float>(placeInstsArea_) 
     / (coreArea - nonPlaceInstsArea_) * 100;
 
-  log_->infoInt64("CoreArea", coreArea);
-  log_->infoInt64("NonPlaceInstsArea", nonPlaceInstsArea_);
+  log_->info(GPL, 16, "CoreArea: {}", coreArea);
+  log_->info(GPL, 17, "NonPlaceInstsArea: {}", nonPlaceInstsArea_);
 
-  log_->infoInt64("PlaceInstsArea", placeInstsArea_ );
-  log_->infoFloat("Util(%)", util);
+  log_->info(GPL, 18, "PlaceInstsArea: {}", placeInstsArea_ );
+  log_->info(GPL, 19, "Util(%): {:.2f}", util);
   
-  log_->infoInt64("StdInstsArea", stdInstsArea_ );
-  log_->infoInt64("MacroInstsArea", macroInstsArea_ );
+  log_->info(GPL, 20, "StdInstsArea: {}", stdInstsArea_ );
+  log_->info(GPL, 21, "MacroInstsArea: {}", macroInstsArea_ );
 
   if( util >= 100.1 ) {
-    cout << "Error: Util exceeds 100%." << endl;
-    cout << "       Please double-check your die/row size" << endl;
-    exit(1);
+    std::string msg = "Error: Util exceeds 100%.\n";
+    msg += "       Please double-check your die/row size";
+    log_->error(GPL, 301, msg);
   }
 
 }
