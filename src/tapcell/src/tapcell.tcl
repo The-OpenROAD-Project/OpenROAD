@@ -270,9 +270,9 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 1 "\[INFO\] Macro blocks found: $block_count"
-        ord::info TAP 2 "\[INFO\] #Original rows: $rows_count"
-        ord::info TAP 3 "\[INFO\] #Cut rows: $cut_rows_count"
+        ord::info TAP 1 "Macro blocks found: $block_count"
+        ord::info TAP 2 "#Original rows: $rows_count"
+        ord::info TAP 3 "#Cut rows: $cut_rows_count"
     }
 
     proc insert_endcaps {db endcap_cpp endcap_master cnrcap_masters \
@@ -544,7 +544,7 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 5 "\[INFO\] #Tapcells inserted: $tapcell_count"
+        ord::info TAP 5 "#Tapcells inserted: $tapcell_count"
         return $cnt
     }
 
@@ -657,7 +657,7 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 5 "\[INFO\] Top/bottom cells inserted: $topbottom_cnt"
+        ord::info TAP 5 "Top/bottom cells inserted: $topbottom_cnt"
         return $cnt
     }
 
@@ -923,7 +923,7 @@ namespace eval tap {
                 }
             }
         }
-        ord::info TAP 5 "\[INFO\] Cells inserted near blkgs: $blkgs_cnt"
+        ord::info TAP 5 "Cells inserted near blkgs: $blkgs_cnt"
     }
 
     #proc to detect even/odd
