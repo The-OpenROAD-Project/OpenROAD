@@ -1084,6 +1084,11 @@ void GlobalRouter::computeObstaclesAdjustments()
       int trackSpace = _grid->getMinWidths()[layer - 1];
 
       for (odb::Rect& obs : layerObstacles) {
+        if (obs.xMax() <= _grid->getLowerLeftX() || obs.xMin() >= _grid->getUpperRightX() ||
+	    obs.yMax() <= _grid->getLowerLeftY() || obs.yMin() >= _grid->getUpperRightY()) {
+		continue;
+	}
+
         odb::Rect firstTileBox;
         odb::Rect lastTileBox;
 
