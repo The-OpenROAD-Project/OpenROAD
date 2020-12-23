@@ -6,27 +6,25 @@ Notice 0: Reading LEF file:  sky130/sky130_std_cell.lef
 Notice 0:     Created 390 library cells
 Notice 0: Finished LEF file:  sky130/sky130_std_cell.lef
 Notice 0: 
-Reading DEF file: gcd_sky130.def
+Reading DEF file: clock_route.def
 Notice 0: Design: gcd
-Notice 0:     Created 54 pins.
-Notice 0:     Created 1271 components and 5147 component-terminals.
-Notice 0:     Created 2 special nets and 0 connections.
-Notice 0:     Created 322 nets and 971 connections.
-Notice 0: Finished DEF file: gcd_sky130.def
+Notice 0:     Created 1 pins.
+Notice 0:     Created 43 components and 209 component-terminals.
+Notice 0:     Created 8 nets and 49 connections.
+Notice 0: Finished DEF file: clock_route.def
 [PARAMS] Min routing layer: 4
 [PARAMS] Max routing layer: 6
 [PARAMS] Global adjustment: 0.5
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (0, 0)
 [INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 22597
+[INFO] #DB Obstacles: 4663
 [INFO] #DB Macros: 0
 [INFO] Found 8 clock nets
 [INFO] Minimum degree: 2
 [INFO] Maximum degree: 3
-[INFO] Processing 17704 obstacles on layer 1
-[INFO] Processing 2627 obstacles on layer 2
-[INFO] Processing 10 obstacles on layer 5
+[INFO] Processing 3609 obstacles on layer 1
+[INFO] Processing 86 obstacles on layer 2
 [INFO] Reducing resources of layer 2 by 80%
 [INFO] Reducing resources of layer 3 by 70%
 [INFO] Reducing resources of layer 4 by 50%
@@ -57,13 +55,12 @@ Final usage/overflow report:
 [PARAMS] Unidirectional routing: 1
 [PARAMS] Grid origin: (0, 0)
 [INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 22597
+[INFO] #DB Obstacles: 4663
 [INFO] #DB Macros: 0
-[INFO] Minimum degree: 2
+[INFO] Minimum degree: 9
 [INFO] Maximum degree: 11
-[INFO] Processing 17704 obstacles on layer 1
-[INFO] Processing 2627 obstacles on layer 2
-[INFO] Processing 10 obstacles on layer 5
+[INFO] Processing 3609 obstacles on layer 1
+[INFO] Processing 86 obstacles on layer 2
 [INFO] Reducing resources of layer 2 by 80%
 [INFO] Reducing resources of layer 3 by 70%
 [INFO] Reducing resources of layer 4 by 50%
@@ -72,8 +69,8 @@ Final usage/overflow report:
 
 Final usage/overflow report: 
 
-[Overflow Report] Total Usage   : 2630
-[Overflow Report] Total Capacity: 27111
+[Overflow Report] Total Usage   : 113
+[Overflow Report] Total Capacity: 27356
 [Overflow Report] Max H Overflow: 0
 [Overflow Report] Max V Overflow: 0
 [Overflow Report] Max Overflow  : 0
@@ -81,9 +78,9 @@ Final usage/overflow report:
 [Overflow Report] V   Overflow  : 0
 [Overflow Report] Final Overflow: 0
 
-[INFO] Final usage          : 2630
-[INFO] Final number of vias : 2031
-[INFO] Final usage 3D       : 8723
-[INFO] Total wirelength: 27720 um
-[INFO] Num routed nets: 322
+[INFO] Final usage          : 113
+[INFO] Final number of vias : 81
+[INFO] Final usage 3D       : 356
+[INFO] Total wirelength: 1627 um
+[INFO] Num routed nets: 8
 No differences found.

@@ -140,28 +140,29 @@ target_link_libraries(<library_target>
   )
 ```
 
-Tool            message/namespace
-antenna_checker ant
-dbSta	        sta
-FastRoute	grt
-finale          fin	
-flute3	        stt
-gui	        gui
-ICeWall		pad	
-init_fp	ord	ifp
-ioPlacer	ppl
-OpenDB          odb
-opendp		dpl
-OpenRCX		rcx	
-<OpenROAD>	ord
-OpenSTA         sta
-PartClusManager par	
-pdngen		pdn	
-PDNSim		psm	
-replace		gpl	
-resizer		rsz
-tapcell		tap
-TritonCTS	cts
-TritonMacroPlace mpl
-TritonRoute     drt
+| Tool | message/namespace |
+|------|-------------------|
+| antenna_checker | ant |
+| dbSta | sta |
+| FastRoute | grt |
+| finale | fin |	
+| flute3 | stt |
+| gui | gui |
+| ICeWall | pad	 |
+| init_fp |	ifp |
+| ioPlacer | ppl |
+| OpenDB | odb |
+| opendp | dpl |
+| OpenRCX | rcx	 |
+| *OpenROAD* | ord |
+| OpenSTA | sta |
+| PartClusManager | par	|
+| pdngen | pdn |
+| PDNSim | psm |
+| replace | gpl |
+| resizer | rsz |
+| tapcell | tap |
+| TritonCTS | cts |
+| TritonMacroPlace | mpl |
+| TritonRoute | drt |
                 

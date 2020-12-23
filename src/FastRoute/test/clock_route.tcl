@@ -3,7 +3,7 @@ read_liberty "sky130/sky130_tt.lib"
 read_lef "sky130/sky130_tech.lef"
 read_lef "sky130/sky130_std_cell.lef"
 
-read_def "gcd_sky130.def"
+read_def "clock_route.def"
 
 current_design gcd
 create_clock -name core_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clk}]
