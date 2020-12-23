@@ -655,7 +655,7 @@ NesterovPlace::doNesterovPlace() {
 
     // minimum iteration is 50
     if( i > 50 && sumOverflow_ <= npVars_.targetOverflow) {
-      log_->report("[NesterovSolve] Finished with Overflow: {}", sumOverflow_);
+      log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflow_);
       break;
     }
   }
