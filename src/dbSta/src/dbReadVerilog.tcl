@@ -74,6 +74,6 @@ proc write_verilog { args } {
   set sort [info exists flags(-sort)]
   set include_pwr_gnd [info exists flags(-include_pwr_gnd)]
   sta::check_argc_eq1 "write_verilog" $args
-  set filename $args
+  set filename [file nativename [lindex $args 0]]
   ord::write_verilog_cmd $filename $sort $include_pwr_gnd $remove_cells
 }
