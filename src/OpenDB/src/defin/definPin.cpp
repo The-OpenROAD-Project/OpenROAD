@@ -259,6 +259,7 @@ void definPin::pinSupplyPin(const char* supplyPin)
 
 void definPin::pinEnd()
 {
+  dbBPin* pin = dbBPin::create(_cur_bterm);
   if (!_rects.empty()) {
     if (_has_placement == false) {
       _status = dbPlacementStatus::NONE;
@@ -270,7 +271,7 @@ void definPin::pinEnd()
     std::vector<PinRect>::iterator itr;
 
     for (itr = _rects.begin(); itr != _rects.end(); ++itr)
-      addRect(*itr);
+      addRect(*itr, pin);
   }
 
   if (!_polygons.empty()) {
@@ -284,15 +285,17 @@ void definPin::pinEnd()
     std::vector<Polygon>::iterator itr;
 
     for (itr = _polygons.begin(); itr != _polygons.end(); ++itr)
-      addPolygon(*itr);
+      addPolygon(*itr, pin);
   }
 
   _cur_bterm = NULL;
 }
 
-void definPin::addRect(PinRect& r)
+void definPin::addRect(PinRect& r, dbBPin* pin)
 {
-  dbBPin* pin = dbBPin::create(_cur_bterm);
+  if (pin == NULL)
+    pin = dbBPin::create(_cur_bterm);
+
   pin->setPlacementStatus(_status);
 
   Point     origin(0, 0);
@@ -308,7 +311,7 @@ void definPin::addRect(PinRect& r)
   dbBox::create(pin, r._layer, xmin, ymin, xmax, ymax);
 }
 
-void definPin::addPolygon(Polygon& p)
+void definPin::addPolygon(Polygon& p, dbBPin* pin)
 {
   std::vector<Rect> R;
 
@@ -319,7 +322,7 @@ void definPin::addPolygon(Polygon& p)
   for (itr = R.begin(); itr != R.end(); ++itr) {
     Rect& r = *itr;
     PinRect R(p._layer, r);
-    addRect(R);
+    addRect(R, pin);
   }
 }
 

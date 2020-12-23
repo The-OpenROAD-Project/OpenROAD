@@ -954,7 +954,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
   for (dbBox* box : bpin->getBoxes())
   {
-      
+
       int dw = defdist(int(box->getDX() / 2));
       int dh = defdist(int(box->getDY() / 2));
       int x  = defdist(box->xMin()) + dw;
@@ -968,7 +968,10 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
       else
         lname = layer->getName();
 
-      fprintf(_out, "\n      + PORT");
+      fprintf(_out, "\n      ");
+      /* if (_version > defout::DEF_5_6) */
+	      /* fprintf(_out, "+ PORT"); */
+
       if (_version == defout::DEF_5_5)
         fprintf(_out,
                 " + LAYER %s ( %d %d ) ( %d %d )",
@@ -1006,7 +1009,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
                   -dh,
                   dw,
                   dh);
-        } 
+        }
       }
 
       dbPlacementStatus status = bpin->getPlacementStatus();
@@ -1036,9 +1039,9 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
   }
   fprintf(_out, " ;\n");
-  
 
-  
+
+
 }
 
 void defout_impl::writeBlockages(dbBlock* block)
