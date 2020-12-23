@@ -77,6 +77,6 @@ Final usage/overflow report:
 [INFO] Final usage 3D       : 1424
 [INFO] Total wirelength: 2301 um
 [INFO] Num routed nets: 87
-Differences found at line 63.
+Differences found at line 65.
 105000 134400 109200 138600 metal1
 105000 130200 109200 134400 metal1
