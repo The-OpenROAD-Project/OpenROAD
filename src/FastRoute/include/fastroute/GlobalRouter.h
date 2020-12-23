@@ -235,7 +235,7 @@ protected:
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
-  odb::Point findFakePinPosition(Pin &pin);
+  odb::Point findFakePinPosition(Pin &pin, odb::dbNet* db_net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(const odb::Rect& rect);

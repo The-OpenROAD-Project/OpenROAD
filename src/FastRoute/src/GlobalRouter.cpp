@@ -580,7 +580,7 @@ void GlobalRouter::findPins(Net* net, std::vector<RoutePt>& pinsOnGrid)
     RoutingLayer layer = getRoutingLayerByIndex(topLayer);
     // If pin is connected to PAD, create a "fake" location in routing
     // grid to avoid PAD obstacles
-    if (pin.isConnectedToPad() || pin.isPort()) {
+    if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
       GSegment pinConnection = createFakePin(pin, pinPosition, layer);
       _padPinsConnections[net->getDbNet()].push_back(pinConnection);
     }
@@ -1279,11 +1279,11 @@ void GlobalRouter::writeGuides(const char* fileName)
   std::vector<odb::dbNet*> sorted_nets;
   for (odb::dbNet* net : _block->getNets())
     sorted_nets.push_back(net);
-  std::sort(sorted_nets.begin(),
-            sorted_nets.end(),
-            [](odb::dbNet* net1, odb::dbNet* net2) {
-              return strcmp(net1->getConstName(), net2->getConstName()) < 0;
-            });
+    std::sort(sorted_nets.begin(),
+              sorted_nets.end(),
+              [](odb::dbNet* net1, odb::dbNet* net2) {
+                return strcmp(net1->getConstName(), net2->getConstName()) < 0;
+              });
 
   for (odb::dbNet* db_net : sorted_nets) {
     GRoute &route = _routes[db_net];
@@ -1293,67 +1293,67 @@ void GlobalRouter::writeGuides(const char* fileName)
       std::vector<odb::Rect> guideBox;
       finalLayer = -1;
       for (GSegment &segment : route) {
-	if (segment.initLayer != finalLayer && finalLayer != -1) {
-	  mergeBox(guideBox);
-	  for (odb::Rect &guide : guideBox) {
-	    guideFile << guide.xMin() + offsetX << " "
-		      << guide.yMin() + offsetY << " "
-		      << guide.xMax() + offsetX << " "
-		      << guide.yMax() + offsetY << " "
-		      << phLayerF.getName() << "\n";
-	  }
-	  guideBox.clear();
-	  finalLayer = segment.initLayer;
-	}
-	if (segment.initLayer == segment.finalLayer) {
-	  if (segment.initLayer < _minRoutingLayer && segment.initX != segment.finalX
-	      && segment.initY != segment.finalY) {
-	    error("Routing with guides in blocked metal for net %s",
-		  db_net->getConstName());
-	  }
+      	if (segment.initLayer != finalLayer && finalLayer != -1) {
+      	  mergeBox(guideBox);
+      	  for (odb::Rect &guide : guideBox) {
+      	    guideFile << guide.xMin() + offsetX << " "
+      		      << guide.yMin() + offsetY << " "
+      		      << guide.xMax() + offsetX << " "
+      		      << guide.yMax() + offsetY << " "
+      		      << phLayerF.getName() << "\n";
+      	  }
+      	  guideBox.clear();
+      	  finalLayer = segment.initLayer;
+      	}
+      	if (segment.initLayer == segment.finalLayer) {
+      	  if (segment.initLayer < _minRoutingLayer && segment.initX != segment.finalX
+      	      && segment.initY != segment.finalY) {
+      	    error("Routing with guides in blocked metal for net %s",
+      		  db_net->getConstName());
+      	  }
 
-	  guideBox.push_back(globalRoutingToBox(segment));
-	  if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
-	    phLayerF = getRoutingLayerByIndex(
-					      (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
-	  } else {
-	    phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-	  }
-	  finalLayer = segment.finalLayer;
-	} else {
-	  if (abs(segment.finalLayer - segment.initLayer) > 1) {
-	    error("Connection between non-adjacent layers in net %s",
-		  db_net->getConstName());
-	  } else {
-	    RoutingLayer phLayerI;
-	    if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
-	      phLayerI = getRoutingLayerByIndex(segment.initLayer + _minRoutingLayer
-						- segment.initLayer);
-	    } else {
-	      phLayerI = getRoutingLayerByIndex(segment.initLayer);
-	    }
-	    if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
-	      phLayerF = getRoutingLayerByIndex(
-						segment.finalLayer + _minRoutingLayer - segment.finalLayer);
-	    } else {
-	      phLayerF = getRoutingLayerByIndex(segment.finalLayer);
-	    }
-	    finalLayer = segment.finalLayer;
-	    odb::Rect box;
-	    guideBox.push_back(globalRoutingToBox(segment));
-	    mergeBox(guideBox);
-	    for (odb::Rect &guide : guideBox) {
-	      guideFile << guide.xMin() + offsetX << " "
-            			<< guide.yMin() + offsetY << " "
-            			<< guide.xMax() + offsetX << " "
-            			<< guide.yMax() + offsetY << " "
-            			<< phLayerI.getName() << "\n";
-	    }
-	    guideBox.clear();
+      	  guideBox.push_back(globalRoutingToBox(segment));
+      	  if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
+      	    phLayerF = getRoutingLayerByIndex(
+      					      (segment.finalLayer + (_minRoutingLayer - segment.finalLayer)));
+      	  } else {
+      	    phLayerF = getRoutingLayerByIndex(segment.finalLayer);
+      	  }
+      	  finalLayer = segment.finalLayer;
+      	} else {
+      	  if (abs(segment.finalLayer - segment.initLayer) > 1) {
+      	    error("Connection between non-adjacent layers in net %s",
+      		  db_net->getConstName());
+      	  } else {
+      	    RoutingLayer phLayerI;
+      	    if (segment.initLayer < _minRoutingLayer && !_unidirectionalRoute) {
+      	      phLayerI = getRoutingLayerByIndex(segment.initLayer + _minRoutingLayer
+      						- segment.initLayer);
+      	    } else {
+      	      phLayerI = getRoutingLayerByIndex(segment.initLayer);
+      	    }
+      	    if (segment.finalLayer < _minRoutingLayer && !_unidirectionalRoute) {
+      	      phLayerF = getRoutingLayerByIndex(
+      						segment.finalLayer + _minRoutingLayer - segment.finalLayer);
+      	    } else {
+      	      phLayerF = getRoutingLayerByIndex(segment.finalLayer);
+      	    }
+      	    finalLayer = segment.finalLayer;
+      	    odb::Rect box;
+      	    guideBox.push_back(globalRoutingToBox(segment));
+      	    mergeBox(guideBox);
+      	    for (odb::Rect &guide : guideBox) {
+      	      guideFile << guide.xMin() + offsetX << " "
+                  			<< guide.yMin() + offsetY << " "
+                  			<< guide.xMax() + offsetX << " "
+                  			<< guide.yMax() + offsetY << " "
+                  			<< phLayerI.getName() << "\n";
+      	    }
+      	    guideBox.clear();
 
-	    guideBox.push_back(globalRoutingToBox(segment));
-	  }
-	}
+      	    guideBox.push_back(globalRoutingToBox(segment));
+      	  }
+      	}
       }
       mergeBox(guideBox);
       for (odb::Rect &guide : guideBox) {
@@ -1420,8 +1420,8 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
   int lastLayer = -1;
   for (uint p = 0; p < pins.size(); p++) {
     if (p > 0) {
-      odb::Point pinPos0 = findFakePinPosition(pins[p-1]);
-      odb::Point pinPos1 = findFakePinPosition(pins[p]);
+      odb::Point pinPos0 = findFakePinPosition(pins[p-1], db_net);
+      odb::Point pinPos1 = findFakePinPosition(pins[p], db_net);
       // If the net is not local, FR core result is invalid
       if (pinPos1.x() != pinPos0.x() || pinPos1.y() != pinPos0.y()) {
         error("Net %s not properly covered",
@@ -1433,8 +1433,12 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route)
       lastLayer = pins[p].getTopLayer();
   }
 
+  if (lastLayer == _maxRoutingLayer) {
+    lastLayer--;
+  }
+
   for (int l = _minRoutingLayer - _fixLayer; l <= lastLayer; l++) {
-    odb::Point pinPos = findFakePinPosition(pins[0]);
+    odb::Point pinPos = findFakePinPosition(pins[0], db_net);
     GSegment segment = GSegment(pinPos.x(), pinPos.y(), l, pinPos.x(), pinPos.y(), l+1);
     route.push_back(segment);
   }
@@ -1449,7 +1453,7 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
       // potentially covers it
       GRoute coverSegs;
 
-      odb::Point pinPos = findFakePinPosition(pin);
+      odb::Point pinPos = findFakePinPosition(pin, db_net);
 
       int wireViaLayer = std::numeric_limits<int>::max();
       for (uint i = 0; i < route.size(); i++) {
@@ -1520,32 +1524,14 @@ void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route)
 
 void GlobalRouter::addRemainingGuides(NetRouteMap &routes, std::vector<Net*>& nets)
 {
-  for (auto &net_route : routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute &route = net_route.second;
-    Net* net = getNet(db_net);
-    // Skip nets with 1 pin or less
+  for (Net* net : nets) {
     if (net->getNumPins() > 1) {
+      odb::dbNet* db_net = net->getDbNet();
+      GRoute &route = routes[db_net];
       if (route.empty()) {
         addGuidesForLocalNets(db_net, route);
       } else {
         addGuidesForPinAccess(db_net, route);
-      }
-    }
-  }
-
-  // Add local guides for nets with no routing.
-  for (Net* net : nets) {
-    odb::dbNet* db_net = net->getDbNet();
-    if (net->getNumPins() > 1
-	      && (routes.find(db_net) == routes.end()
-	      || routes[db_net].empty())) {
-      GRoute &route = routes[db_net];
-      std::vector<Pin>& pins = _db_net_map[db_net]->getPins();
-      for (Pin &pin : pins) {
-        odb::Point pinPos = pin.getOnGridPosition();
-        GSegment segment = GSegment(pinPos.x(), pinPos.y(), pin.getTopLayer(), pinPos.x(), pinPos.y(), pin.getTopLayer());
-        route.push_back(segment);
       }
     }
   }
@@ -2099,9 +2085,10 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   return pinConnection;
 }
 
-odb::Point GlobalRouter::findFakePinPosition(Pin &pin) {
+odb::Point GlobalRouter::findFakePinPosition(Pin &pin, odb::dbNet* db_net) {
   odb::Point fakePos = pin.getOnGridPosition();
-  if (pin.isConnectedToPad() || pin.isPort()) {
+  Net* net = _db_net_map[db_net];
+  if ((pin.isConnectedToPad() || pin.isPort()) && !net->isLocal()) {
     RoutingLayer layer = getRoutingLayerByIndex(pin.getTopLayer());
     createFakePin(pin, fakePos, layer);
   }
