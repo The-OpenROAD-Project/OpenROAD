@@ -89,14 +89,15 @@ tools should be upgraded to remove this deficiency as they are
 re-written to work in the OpenROAD framework.
 
 Each tool should use a unique namespace for all of its code.  The same
-namespace should be used for any Tcl commands.  Internal Tcl commands
-stay inside the namespace, user visible Tcl commands will be exported
-to the global namespace. User commands should be simple Tcl commands
-such as 'global_placement' that do not create tool instances that must
-be based to the commands. Defining Tcl commands for a tool class is
-fine for internals, but not for user visible commands. Commands have
-an implicit argument of the current OpenROAD class object. Functions
-to get individual tools from the OpenROAD object can be defined.
+namespace should be used for Tcl functions, including those defined by
+a swig interface file. Internal Tcl commands stay inside the
+namespace, and user visible Tcl commands should be defined in the
+global namespace. User commands should be simple Tcl commands such as
+'global_placement' that do not create tool instances that must be
+based to the commands. Defining Tcl commands for a tool class is fine
+for internals, but not for user visible commands. Commands have an
+implicit argument of the current OpenROAD class object. Functions to
+get individual tools from the OpenROAD object can be defined.
 
 ### Initialization (c++ tools only)
 

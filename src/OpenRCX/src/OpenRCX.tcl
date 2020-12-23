@@ -26,7 +26,7 @@ proc define_process_corner { args } {
     set ext_model_index $keys(-ext_model_index)
   }
 
-  set filename $args
+  set filename [file nativename [lindex $args 0]]
 
   rcx::define_process_corner $ext_model_index $filename
 }
@@ -172,7 +172,7 @@ proc diff_spef { args } {
   
   set filename "" 
   if { [info exists keys(-file)] } {
-    set filename $keys(-file)
+    set filename [file nativename $keys(-file)]
   }
   set res [info exists flags(-over)]
   set cap [info exists flags(-over)]
@@ -269,7 +269,7 @@ proc write_rules { args } {
   
   set filename "extRules" 
   if { [info exists keys(-file)] } {
-    set filename $keys(-file)
+    set filename [lindex $args $keys(-file)]
   }
 
   set dir "./" 
