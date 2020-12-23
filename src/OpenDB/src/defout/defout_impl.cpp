@@ -960,31 +960,6 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
       int x  = defdist(box->xMin()) + dw;
       int y  = defdist(box->yMin()) + dh;
 
-      dbPlacementStatus status = bpin->getPlacementStatus();
-
-      switch (status.getValue()) {
-        case dbPlacementStatus::NONE:
-        case dbPlacementStatus::UNPLACED:
-          break;
-
-        case dbPlacementStatus::SUGGESTED:
-        case dbPlacementStatus::PLACED: {
-          fprintf(_out, " + PLACED ( %d %d ) N", x, y);
-          break;
-        }
-
-        case dbPlacementStatus::LOCKED:
-        case dbPlacementStatus::FIRM: {
-          fprintf(_out, " + FIXED ( %d %d ) N", x, y);
-          break;
-        }
-
-        case dbPlacementStatus::COVER: {
-          fprintf(_out, " + COVER ( %d %d ) N", x, y);
-          break;
-        }
-      }
-
       dbTechLayer* layer = box->getTechLayer();
       std::string  lname;
 
@@ -993,6 +968,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
       else
         lname = layer->getName();
 
+      fprintf(_out, "\n      + PORT");
       if (_version == defout::DEF_5_5)
         fprintf(_out,
                 " + LAYER %s ( %d %d ) ( %d %d )",
@@ -1031,10 +1007,35 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
                   dw,
                   dh);
         } 
-    }
-    
-    fprintf(_out, " ;\n");
+      }
+
+      dbPlacementStatus status = bpin->getPlacementStatus();
+
+      switch (status.getValue()) {
+        case dbPlacementStatus::NONE:
+        case dbPlacementStatus::UNPLACED:
+          break;
+
+        case dbPlacementStatus::SUGGESTED:
+        case dbPlacementStatus::PLACED: {
+          fprintf(_out, " + PLACED ( %d %d ) N", x, y);
+          break;
+        }
+
+        case dbPlacementStatus::LOCKED:
+        case dbPlacementStatus::FIRM: {
+          fprintf(_out, " + FIXED ( %d %d ) N", x, y);
+          break;
+        }
+
+        case dbPlacementStatus::COVER: {
+          fprintf(_out, " + COVER ( %d %d ) N", x, y);
+          break;
+        }
+      }
+
   }
+  fprintf(_out, " ;\n");
   
 
   
