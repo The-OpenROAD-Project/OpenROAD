@@ -151,8 +151,6 @@ proc tapcell { args } {
 
     set add_boundary_cell [info exists flags(-add_boundary_cell)]
     set no_cell_at_top_bottom [info exists flags(-no_cell_at_top_bottom)]
-
-    ord::report "Running tapcell..."
         
     set db [ord::get_db]
     set block [[$db getChip] getBlock]
@@ -193,8 +191,6 @@ proc tapcell { args } {
         set cnt [tap::insert_at_top_bottom $db $tap_nw_masters $blockages $tbtie_cpp $endcap_cpp $cnt]
         tap::insert_around_macros $db $tap_macro_masters $blockages $cnt $halo_x $halo_y $endcap_width $tbtie_cpp
     }
-
-    ord::report "Running tapcell... Done!"
 }
 
 namespace eval tap {
