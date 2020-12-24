@@ -114,7 +114,7 @@ proc set_global_routing_region_adjustment { args } {
   if { [info exists keys(-adjustment)] } {
     set adjustment $keys(-adjustment)
   } else {
-    ord::error GRT 5 "set_global_routing_region_adjustment: Missing adjustment"
+    ord::error GRT 6 "set_global_routing_region_adjustment: Missing adjustment"
   }
 
   sta::check_argc_eq1 "set_global_routing_region_adjustment" $args

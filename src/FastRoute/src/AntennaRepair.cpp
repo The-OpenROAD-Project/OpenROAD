@@ -84,7 +84,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
-        _logger->error(ord::GRT, 24, "Global route segment not valid");
+        _logger->error(GRT, 52, "Global route segment not valid");
       }
       int x1 = seg.initX;
       int y1 = seg.initY;
@@ -144,7 +144,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     }
 
     if (siteWidth != site_width) {
-      _logger->warn(GRT, 5, "Design has rows with different site width");
+      _logger->warn(GRT, 7, "Design has rows with different site width");
     }
   }
 
