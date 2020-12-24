@@ -58,7 +58,7 @@ proc set_global_routing_layer_adjustment { args } {
       }
     }
   } else {
-    ord::error GRT 1 "set_global_routing_layer_adjustment: Wrong number of arguments"
+    ord::error GRT 26 "set_global_routing_layer_adjustment: Wrong number of arguments"
   }
 }
 
@@ -73,7 +73,7 @@ proc set_global_routing_layer_pitch { args } {
 
     grt::set_layer_pitch $layer $pitch
   } else {
-    ord::error GRT 2 "set_global_routing_layer_pitch: Wrong number of arguments"
+    ord::error GRT 27 "set_global_routing_layer_pitch: Wrong number of arguments"
   }
 }
 
@@ -86,7 +86,7 @@ proc set_pdrev_topology_priority { args } {
     sta::check_positive_float "-alpha" $alpha
     grt::set_alpha_for_net $net $alpha
   } else {
-    ord::error GRT 3 "set_pdrev_topology_priority: Wrong number of arguments"
+    ord::error GRT 28 "set_pdrev_topology_priority: Wrong number of arguments"
   }
 }
 
@@ -100,7 +100,7 @@ proc set_global_routing_region_adjustment { args } {
                  keys {-layer -adjustment}
 
   if { ![ord::db_has_tech] } {
-    ord::error GRT 4 "missing dbTech"
+    ord::error GRT 29 "missing dbTech"
   }
   set tech [ord::get_db_tech]
   set lef_units [$tech getLefUnits]
@@ -108,13 +108,13 @@ proc set_global_routing_region_adjustment { args } {
   if { [info exists keys(-layer)] } {
     set layer $keys(-layer)
   } else {
-    ord::error GRT 5 "set_global_routing_region_adjustment: Missing layer"
+    ord::error GRT 30 "set_global_routing_region_adjustment: Missing layer"
   }
 
   if { [info exists keys(-adjustment)] } {
     set adjustment $keys(-adjustment)
   } else {
-    ord::error GRT 6 "set_global_routing_region_adjustment: Missing adjustment"
+    ord::error GRT 31 "set_global_routing_region_adjustment: Missing adjustment"
   }
 
   sta::check_argc_eq1 "set_global_routing_region_adjustment" $args
@@ -137,7 +137,7 @@ proc set_global_routing_region_adjustment { args } {
 
     grt::add_region_adjustment $lower_x $lower_y $upper_x $upper_y $layer $adjustment
   } else {
-    ord::error GRT 7 "set_global_routing_region_adjustment: Wrong number of arguments to define a region"
+    ord::error GRT 32 "set_global_routing_region_adjustment: Wrong number of arguments to define a region"
   }
 }
 
@@ -201,11 +201,11 @@ proc global_route { args } {
     flags {-unidirectional_routing -allow_overflow -only_signal_nets} \
 
   if { ![ord::db_has_tech] } {
-    ord::error GRT 8 "missing dbTech"
+    ord::error GRT 33 "missing dbTech"
   }
 
   if { [ord::get_db_block] == "NULL" } {
-    ord::error GRT 9 "missing dbBlock"
+    ord::error GRT 34 "missing dbBlock"
   }
 
   if { [info exists keys(-verbose) ] } {
@@ -223,7 +223,7 @@ proc global_route { args } {
         lassign $layer_pitch layer pitch
         grt::set_layer_pitch $layer $pitch
       } else {
-        ord::error GRT 10 "Wrong number of arguments for layer pitches"
+        ord::error GRT 35 "Wrong number of arguments for layer pitches"
       }
     }
   }
@@ -236,7 +236,7 @@ proc global_route { args } {
         lassign $layer_adjustment layer reductionPercentage
         grt::add_layer_adjustment $layer $reductionPercentage
       } else {
-        ord::error GRT 11 "Wrong number of arguments for layer adjustments"
+        ord::error GRT 36 "Wrong number of arguments for layer adjustments"
       }
     }
   }
@@ -249,7 +249,7 @@ proc global_route { args } {
       lassign $origin origin_x origin_y
       grt::set_grid_origin $origin_x $origin_y
     } else {
-      ord::error GRT 12 "Wrong number of arguments for origin"
+      ord::error GRT 37 "Wrong number of arguments for origin"
     }
   } else {
     grt::set_grid_origin 0 0
@@ -313,7 +313,7 @@ proc global_route { args } {
       grt::set_clock_layer_range $min_clock_layer $max_clock_layer
       grt::route_clock_nets
     } else {
-      ord::error GRT 13 "-clock_layers: Min routing layer is greater than max routing layer"
+      ord::error GRT 38 "-clock_layers: Min routing layer is greater than max routing layer"
     }
   }
 
@@ -349,7 +349,7 @@ proc global_route { args } {
   for {set layer 1} {$layer <= $max_layer} {set layer [expr $layer+1]} {
     if { !([ord::db_layer_has_hor_tracks $layer] && \
          [ord::db_layer_has_ver_tracks $layer]) } {
-      ord::error GRT 14 "missing track structure"
+      ord::error GRT 39 "missing track structure"
     }
   }
 
@@ -379,13 +379,13 @@ proc estimate_rc_cmd {} {
   if { [have_routes] } {
     estimate_rc
   } else {
-    ord::error GRT 15 "run fastroute before estimating parasitics for global routing."
+    ord::error GRT 40 "run fastroute before estimating parasitics for global routing."
   }
 }
 
 proc check_routing_layer { layer } {
   if { ![ord::db_has_tech] } {
-    ord::error GRT 16 "no technology has been read."
+    ord::error GRT 41 "no technology has been read."
   }
   sta::check_positive_integer "layer" $layer
 
@@ -393,10 +393,10 @@ proc check_routing_layer { layer } {
   set max_routing_layer [$tech getRoutingLayerCount]
   
   if {$layer > $max_routing_layer} {
-    ord::error GRT 17 "check_routing_layer: layer $layer is greater than the max routing layer ($max_routing_layer)"
+    ord::error GRT 42 "check_routing_layer: layer $layer is greater than the max routing layer ($max_routing_layer)"
   }
   if {$layer < 1} {
-    ord::error GRT 18 "check_routing_layer: layer $layer is lesser than the min routing layer (1)"
+    ord::error GRT 43 "check_routing_layer: layer $layer is lesser than the min routing layer (1)"
   }
 }
 
@@ -405,32 +405,32 @@ proc parse_layer_range { cmd layer_range } {
     set layers "$min_layer $max_layer"
     return $layers
   } else {
-    ord::error GRT 19 "Input format to define layer range for $cmd is min-max"
+    ord::error GRT 44 "Input format to define layer range for $cmd is min-max"
   }
 }
 
 proc check_region { lower_x lower_y upper_x upper_y } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    ord::error GRT 20 "missing dbBlock"
+    ord::error GRT 45 "missing dbBlock"
   }
 
   set core_area [$block getDieArea]
 
   if {$lower_x < [$core_area xMin] || $lower_x > [$core_area xMax]} {
-    ord::error GRT 21 "check_region: Lower left x is outside die area"
+    ord::error GRT 46 "check_region: Lower left x is outside die area"
   }
 
   if {$lower_y < [$core_area yMin] || $lower_y > [$core_area yMax]} {
-    ord::error GRT 22 "check_region: Lower left y is outside die area"
+    ord::error GRT 47 "check_region: Lower left y is outside die area"
   }
 
   if {$upper_x < [$core_area xMin] || $upper_x > [$core_area xMax]} {
-    ord::error GRT 23 "check_region: Upper right x is outside die area"
+    ord::error GRT 48 "check_region: Upper right x is outside die area"
   }
 
   if {$upper_y < [$core_area yMin] || $upper_y > [$core_area yMax]} {
-    ord::error GRT 24 "check_region: Upper right y is outside die area"
+    ord::error GRT 49 "check_region: Upper right y is outside die area"
   }
 }
 

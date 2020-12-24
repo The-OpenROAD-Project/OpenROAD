@@ -84,7 +84,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
-        _logger->error(GRT, 52, "Global route segment not valid");
+        _logger->error(GRT, 77, "Global route segment not valid");
       }
       int x1 = seg.initX;
       int y1 = seg.initY;
