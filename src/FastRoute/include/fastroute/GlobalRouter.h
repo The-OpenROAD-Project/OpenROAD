@@ -36,14 +36,14 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <set>
 
+#include "GRoute.h"
 #include "opendb/db.h"
 #include "sta/Liberty.hh"
-#include "GRoute.h"
 
 namespace ord {
 class OpenRoad;
@@ -59,7 +59,7 @@ class dbDatabase;
 namespace sta {
 class dbSta;
 class dbNetwork;
-}
+}  // namespace sta
 
 namespace grt {
 
@@ -80,16 +80,15 @@ struct RegionAdjustment
   odb::Rect region;
   int layer;
   float adjustment;
-  
-  RegionAdjustment(int minX, int minY, 
-                   int maxX, int maxY,
-                   int l, float adjst);
+
+  RegionAdjustment(int minX, int minY, int maxX, int maxY, int l, float adjst);
   odb::Rect getRegion() { return region; }
   int getLayer() { return layer; }
   float getAdjustment() { return adjustment; }
 };
 
-enum class NetType {
+enum class NetType
+{
   Clock,
   Signal,
   Antenna,
@@ -184,7 +183,7 @@ class GlobalRouter
   // route clock nets public functions
   void routeClockNets();
 
-protected:
+ protected:
   // Net functions
   int getNetCount() const;
   void reserveNets(size_t net_count);
@@ -215,14 +214,13 @@ protected:
   void computeWirelength();
   std::vector<Pin*> getAllPorts();
 
-
   // aux functions
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pinsOnGrid);
   RoutingLayer getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
-  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute &route);
-  void addGuidesForPinAccess(odb::dbNet* db_net, GRoute &route);
+  void addGuidesForLocalNets(odb::dbNet* db_net, GRoute& route);
+  void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
   void addRemainingGuides(NetRouteMap& routes, std::vector<Net*>& nets);
   void connectPadPins(NetRouteMap& routes);
   void mergeBox(std::vector<odb::Rect>& guideBox);
@@ -235,7 +233,7 @@ protected:
   void mergeSegments(GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& trackPosition);
   GSegment createFakePin(Pin pin, odb::Point& pinPosition, RoutingLayer layer);
-  odb::Point findFakePinPosition(Pin &pin);
+  odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   void initPitches();
   odb::Point getRectMiddle(const odb::Rect& rect);
@@ -267,7 +265,8 @@ protected:
   void initObstacles();
   void findLayerExtensions(std::vector<int>& layerExtensions);
   void findObstructions(odb::Rect& dieArea);
-  void findInstancesObstacles(odb::Rect& dieArea, const std::vector<int>& layerExtensions);
+  void findInstancesObstacles(odb::Rect& dieArea,
+                              const std::vector<int>& layerExtensions);
   void findNetsObstacles(odb::Rect& dieArea);
   int computeMaxRoutingLayer();
   std::set<int> findTransitionLayers(int maxRoutingLayer);
@@ -275,7 +274,7 @@ protected:
   void makeItermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& dieArea);
   void initClockNets();
-  bool isClkTerm(odb::dbITerm *iterm, sta::dbNetwork *network);
+  bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   bool clockHasLeafITerm(odb::dbNet* db_net);
   void setSelectedMetal(int metal) { selectedMetal = metal; }
 
@@ -285,7 +284,7 @@ protected:
   odb::Point* _gridOrigin = nullptr;
   NetRouteMap _routes;
 
-  std::vector<Net> *_nets;
+  std::vector<Net>* _nets;
   std::map<odb::dbNet*, Net*> _db_net_map;
   Grid* _grid = nullptr;
   std::vector<RoutingLayer>* _routingLayers = nullptr;
@@ -347,7 +346,6 @@ protected:
 };
 
 std::string getITermName(odb::dbITerm* iterm);
-Net *
-getNet(NET* net);
+Net* getNet(NET* net);
 
 }  // namespace grt

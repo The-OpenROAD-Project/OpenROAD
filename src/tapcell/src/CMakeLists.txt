@@ -58,6 +58,7 @@ add_library(tapcell
 
 target_include_directories(tapcell
   PUBLIC ${TAPCELL_HOME}/include
+  spdlog::spdlog
   PRIVATE
   ${OPENROAD_HOME}/include
   ${OPENDB_HOME}/include

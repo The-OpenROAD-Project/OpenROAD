@@ -37,9 +37,13 @@
 #include <unordered_set>
 #include <cstdlib>
 
+#include "openroad/Logger.h"
+
 #include "opendb/dbTypes.h"
 
 namespace dpl {
+
+using ord::DPL;
 
 using std::sort;
 using std::unordered_set;
@@ -81,14 +85,14 @@ Opendp::optimizeMirroring()
   int mirror_count = mirrorCandidates(mirror_candidates);
 
   if (mirror_count > 0) {
-    printf("Mirrored %d instances\n", mirror_count);
+    logger_->info(DPL, 20, "Mirrored {} instances", mirror_count);
     double hpwl_after = hpwl();
-    printf("HPWL before          %8.1f u\n", dbuToMicrons(hpwl_before));
-    printf("HPWL after           %8.1f u\n", dbuToMicrons(hpwl_after));
+    logger_->info(DPL, 21, "HPWL before          {:8.1f} u", dbuToMicrons(hpwl_before));
+    logger_->info(DPL, 22, "HPWL after           {:8.1f} u", dbuToMicrons(hpwl_after));
     double hpwl_delta = (hpwl_before != 0.0)
       ? (hpwl_after - hpwl_before) / hpwl_before * 100
       : 0.0;
-    printf("HPWL delta           %8.0f %%\n", hpwl_delta);
+    logger_->info(DPL, 23, "HPWL delta           {:8.1f} %", hpwl_delta);
   }
 }
 

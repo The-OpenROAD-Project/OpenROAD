@@ -56,13 +56,17 @@ Path Type: max
 
 
 INFO: Reading location of VDD and VSS sources 
-Warning: Voltage pad location file not spcified, defaulting pad location to origin
+INFO: Voltage pad location (vsrc) file not spcified, defaulting pad location to checkerboard pattern on core area
+INFO: X direction bump pitch not specified defaulting to 140um
+INFO: Y direction bump pitch not specified defaulting to 140um
+WARNING: Voltage on net VSS is not explicitly set
+INFO: Using voltage 0V for ground network
 Creating G Matrix
 INFO: Found power net VSS
 INFO: Extracting power stripes on net VSS
 Creating Nodes:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-WARNING: Vsrc location at x=0um , y=0um and size =0um,  is not located on a power stripe.
-         Moving to closest stripe at x=8.1um , y=33.1um
+WARNING: Vsrc location at x=10.1um , y=11.2um and size =10um,  is not located on a power stripe.
+         Moving to closest stripe at x=10.8um , y=33.1um
 INFO: Number of nodes on net VSS =1245
 Creating Connections:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
 INFO: G matrix created 

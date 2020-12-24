@@ -217,33 +217,33 @@ Place pins around core boundary.
 auto_place_pins pin_layer
 ```
 
-#### I/O pin assignment
+#### Pin placement
 
-Assign I/O pins to on-track locations at the boundaries of the 
-core while optimizing I/O nets wirelength. I/O pin assignment also 
-creates a metal shape for each I/O pin using min-area rules.
+Place pins to on-track locations at the boundaries of the 
+core while optimizing nets wirelength. Pin placement also 
+creates a metal shape for each pin using min-area rules.
 
-Use the following command to perform I/O pin assignment:
+Use the following command to perform pin placement:
 ```
-place_pins [-hor_layer h_layer]  
-           [-ver_layer v_layer] 
+place_pins [-hor_layers h_layers]  
+           [-ver_layers v_layers] 
            [-random_seed seed]
            [-exclude interval]
            [-random]
 ```
-- ``-hor_layer`` (mandatory). Set the layer to create the metal shapes 
-of I/O pins assigned to horizontal tracks. 
-- ``-ver_layer`` (mandatory). Set the layer to create the metal shapes
-of I/O pins assigned to vertical tracks. 
+- ``-hor_layers`` (mandatory). Set the layers to create the metal shapes 
+of pins placed in horizontal tracks. Can be a single layer or a list of layer indices
+- ``-ver_layers`` (mandatory). Set the layers to create the metal shapes
+of pins placed in vertical tracks. Can be a single layer or a list of layer indices
 - ``-random_seed``. Set the seed for random operations.
 - ``-exclude``. Set an interval in one of the four edges of the die boundary
-where I/O pins cannot be assigned. Can be used multiple times.
-- ``-random``. When this flag is enabled, the I/O pin assignment is 
+where pins cannot be placed. Can be used multiple times.
+- ``-random``. When this flag is enabled, the pin placement is 
 random.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value,
-or a range of values. Example: `place_pins -hor_layer 2 -ver_layer 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
+or a range of values. Example: `place_pins -hor_layers 2 -ver_layers 3 -exclude top:* -exclude right:15-60.5 -exclude left:*-50`.
 In the example, three intervals were excluded: the whole top edge, the right edge from 15 microns to 60.5 microns, and the
 left edge from the beginning to the 50 microns.
 
@@ -251,7 +251,7 @@ left edge from the beginning to the 50 microns.
 set_io_pin_constraint -direction direction -names names -region edge:interval
 ```
 
-The `set_io_pin_constraint` command sets region constraints for I/O pins according the direction or the pin name.
+The `set_io_pin_constraint` command sets region constraints for pins according the direction or the pin name.
 This command can be called multiple times with different constraints. Only one condition should be used for each
 function call. The `-names` argument is a list of names. The `-region` syntax is the same as the `-exclude` syntax.
 
@@ -351,13 +351,17 @@ by `dist` (in liberty units, typically microns).
 ```
 repair_timing [-setup]
               [-hold]
+              [-slack_margin slack_margin]
               [-allow_setup_violations]
               [-max_utilization util]
 ```
-The `repair_timing` command repair setup and hold violations.
+The `repair_timing` command repairs setup and hold violations.
 It should be run after clock tree synthesis with propagated clocks.
 While repairing hold violations buffers are not inserted that will cause setup
 violations unless '-allow_setup_violations' is specified.
+Use `-slack_margin` to add additional slack margin. To specify
+different slack margins use separate `repair_timing` commands for setup and
+hold.
 
 ```
 report_design_area
@@ -796,20 +800,32 @@ PDNSim spice netlist writer for power wires.
 Commands for the above three functionalities are below: 
 
 ```
+set_pdnsim_net_voltage -net <net_name> -voltage <voltage_value>
 check_power_grid -net <net_name>
 analyze_power_grid -vsrc <voltage_source_location_file> \
                    -net <net_name> \ 
                    [-outfile <filename>] \
                    [-enable_em] \
                    [-em_outfile <filename>]
+                   [-dx]
+                   [-dy]
+                   [-em_outfile <filename>]
 write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
 Options description:
-- **vsrc**: (mandatory) file to set the location of the power C4 bumps/IO pins
+- **vsrc**: (optional) file to set the location of the power C4 bumps/IO pins.
+        [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) 
+        for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).
+- **dx,dy**: (optional) these arguments set the bump pitch to decide the voltage
+  source location in the absence of a vsrc file. Default bump pitch of 140um
+  used in absence of these arguments and vsrc 
 - **net**: (mandatory) is the name of the net to analyze, power or ground net name
 - **enable_em**: (optional) is the flag to report current per power grid segment
 - **outfile**: (optional) filename specified per-instance voltage written into file
-- **em_outfile**: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists
+- **em_outfile**: (optional) filename to write out the per segment current values into a file, 
+  can be specified only if enable_em is flag exists
+- **voltage**: Sets the voltage on a specific net. If this command is not run,
+  the voltage value is obtained from operating conditions in the liberty.
 
 ###### Note: See the file [Vsrc_aes.loc file](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/test/aes/Vsrc.loc) for an example with a description specified [here](https://github.com/The-OpenROAD-Project/PDNSim/blob/master/doc/Vsrc_description.md).

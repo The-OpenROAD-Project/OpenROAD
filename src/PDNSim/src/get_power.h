@@ -53,8 +53,7 @@ class PowerInst
 
  public:
   //! Function for power per instance calculation
-    std::vector<std::pair<std::string, double>> executePowerPerInst(
-      sta::dbSta* sta);
+    std::vector<std::pair<std::string, double>> executePowerPerInst(sta::dbSta* sta);
 };
  // epower namespace end
 #endif

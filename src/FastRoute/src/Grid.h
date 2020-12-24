@@ -41,7 +41,6 @@
 #include <vector>
 
 #include "RoutingLayer.h"
-
 #include "opendb/db.h"
 
 namespace grt {
@@ -71,12 +70,18 @@ class Grid
   Grid() = default;
   ~Grid() = default;
 
-  void init(const long lowerLeftX, const long lowerLeftY,
-            const long upperRightX, const long upperRightY,
-            const long tileWidth, const long tileHeight,
-            const int xGrids, const int yGrids,
-            const bool perfectRegularX, const bool perfectRegularY,
-            const int numLayers, const std::vector<int>& spacings,
+  void init(const long lowerLeftX,
+            const long lowerLeftY,
+            const long upperRightX,
+            const long upperRightY,
+            const long tileWidth,
+            const long tileHeight,
+            const int xGrids,
+            const int yGrids,
+            const bool perfectRegularX,
+            const bool perfectRegularY,
+            const int numLayers,
+            const std::vector<int>& spacings,
             const std::vector<int>& minWidths,
             const std::vector<int>& horizontalCapacities,
             const std::vector<int>& verticalCapacities,

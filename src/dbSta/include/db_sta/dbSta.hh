@@ -44,11 +44,19 @@ namespace gui {
 class Gui;
 }
 
+namespace ord {
+class Logger;
+}
+
 namespace sta {
 
 class dbSta;
 class dbNetwork;
+class dbStaReport;
+class dbStaCbk;
 class PathRenderer;
+
+using ord::Logger;
 
 using odb::dbDatabase;
 using odb::dbLib;
@@ -62,29 +70,6 @@ using odb::dbLib;
 using odb::dbMaster;
 using odb::dbBlockCallBackObj;
 
-class dbStaCbk : public dbBlockCallBackObj
-{
-public:
-  dbStaCbk(dbSta *sta);
-  void setNetwork(dbNetwork *network);
-  virtual void inDbInstCreate(dbInst *inst) override;
-  virtual void inDbInstDestroy(dbInst *inst) override;
-  virtual void inDbInstSwapMasterBefore(dbInst *inst,
-                                        dbMaster *master) override;
-  virtual void inDbInstSwapMasterAfter(dbInst *inst) override;
-  virtual void inDbNetDestroy(dbNet *net) override;
-  void inDbITermPostConnect(dbITerm *iterm) override;
-  void inDbITermPreDisconnect(dbITerm *iterm) override;
-  void inDbITermDestroy(dbITerm *iterm) override;
-  void inDbBTermPostConnect(dbBTerm *bterm) override;
-  void inDbBTermPreDisconnect(dbBTerm *bterm) override;
-  void inDbBTermDestroy(dbBTerm *bterm) override;
-
-private:
-  dbSta *sta_;
-  dbNetwork *network_;
-};
-
 class dbSta : public Sta, public ord::OpenRoad::Observer
 {
 public:
@@ -92,7 +77,8 @@ public:
   virtual ~dbSta();
   void init(Tcl_Interp *tcl_interp,
 	    dbDatabase *db,
-            gui::Gui *gui);
+            gui::Gui *gui,
+            Logger *logger);
 
   dbDatabase *db() { return db_; }
   virtual void makeComponents() override;
@@ -127,6 +113,7 @@ public:
   using Sta::replaceCell;
 
 protected:
+  virtual void makeReport() override;
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;
 
@@ -135,13 +122,16 @@ protected:
                            LibertyCell *to_lib_cell) override;
 
   dbDatabase *db_;
-  dbNetwork *db_network_;
-  dbStaCbk db_cbk_;
   gui::Gui *gui_;
+  Logger *logger_;
 
+  dbNetwork *db_network_;
+  dbStaReport *db_report_;
+  dbStaCbk *db_cbk_;
   PathRenderer *path_renderer_;
 };
 
+// Make a stand-alone (scratchpad) sta for block.
 dbSta *
 makeBlockSta(dbBlock *block);
 

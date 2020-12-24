@@ -1,9 +1,9 @@
 ############################################################################
 ##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, James Cherry, Parallax Software, Inc.
+## Copyright (c) 2019, OpenROAD
 ## All rights reserved.
+##
+## BSD 3-Clause License
 ##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are met:
@@ -46,7 +46,7 @@ proc read_lef { args } {
   sta::parse_key_args "read_lef" args keys {} flags {-tech -library}
   sta::check_argc_eq1 "read_lef" $args
 
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
     ord::error ORD 1 "$filename does not exist."
   }
@@ -69,7 +69,7 @@ sta::define_cmd_args "read_def" {[-order_wires] [-continue_on_errors] filename}
 proc read_def { args } {
   sta::parse_key_args "read_def" args keys {} flags {-order_wires -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
     ord::error ORD 3 "$filename does not exist."
   }
@@ -102,7 +102,7 @@ proc write_def { args } {
   }
 
   sta::check_argc_eq1 "write_def" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   ord::write_def_cmd $filename $version
 }
 
@@ -110,7 +110,7 @@ sta::define_cmd_args "read_db" {filename}
 
 proc read_db { args } {
   sta::check_argc_eq1 "read_db" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
     ord::error ORD 7 "$filename does not exist."
   }
@@ -124,7 +124,7 @@ sta::define_cmd_args "write_db" {filename}
 
 proc write_db { args } {
   sta::check_argc_eq1 "write_db" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   ord::write_db_cmd $filename
 }
 
@@ -243,7 +243,7 @@ proc warn { args } {
     lassign $args tool_id id msg
     ord_warn $tool_id $id $msg
   } else {
-    ord_warn UKN 0 "ill-formed warn arguments $args"
+    ord_warn UKN 14 "ill-formed warn arguments $args"
   }
 }
 
@@ -266,12 +266,12 @@ proc clear {} {
 # redefine sta::sta_error to call ord::error
 namespace eval sta {
 
-proc sta_error { msg } {
-  ord::error STA 0 $msg
+proc sta_error { id msg } {
+  ord::error STA $id $msg
 }
 
-proc sta_warn { msg } {
-  ord::warn STA 0 $msg
+proc sta_warn { id msg } {
+  ord::warn STA $id $msg
 }
 
 # namespace sta

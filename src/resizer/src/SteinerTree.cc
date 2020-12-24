@@ -38,8 +38,9 @@
 #include <fstream>
 #include <string>
 
+#include "openroad/Logger.h"
+
 #include "sta/Report.hh"
-#include "sta/Error.hh"
 #include "sta/Debug.hh"
 #include "sta/NetworkCmp.hh"
 
@@ -49,6 +50,8 @@ namespace rsz {
 
 using std::abs;
 using std::string;
+
+using ord::RSZ;
 
 using odb::dbShape;
 using odb::dbPlacementStatus;
@@ -73,7 +76,8 @@ SteinerPt SteinerTree::null_pt = -1;
 SteinerTree *
 makeSteinerTree(const Net *net,
                 bool find_left_rights,
-                dbNetwork *network)
+                dbNetwork *network,
+                Logger *logger)
 {
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
@@ -108,14 +112,14 @@ makeSteinerTree(const Net *net,
       tree->setTree(ftree, network);
       if (debug->check("steiner", 3)) {
         stt::printtree(ftree);
-        report->print("pin map\n");
+        logger->report("pin map");
         for (int i = 0; i < pin_count; i++)
-          report->print(" %d -> %s\n",i,network->pathName(tree->pin(i)));
+          logger->report(" {} -> {}",i, network->pathName(tree->pin(i)));
       }
       if (find_left_rights)
-        tree->findLeftRights(network);
+        tree->findLeftRights(network, logger);
       if (debug->check("steiner", 2))
-        tree->report(network);
+        tree->report(logger, network);
       delete [] x;
       delete [] y;
       return tree;
@@ -222,29 +226,23 @@ SteinerTree::branch(int index,
 }
 
 void
-SteinerTree::report(const Network *network)
+SteinerTree::report(Logger *logger,
+                    const Network *network)
 {
-  Report *report = network->report();
   int branch_count = branchCount();
   for (int i = 0; i < branch_count; i++) {
     stt::Branch &pt1 = tree_.branch[i];
     int j = pt1.n;
     stt::Branch &pt2 = tree_.branch[j];
     int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
-    report->print(" %s (%d %d) - %s wire_length = %d",
-                  name(i, network),
-                  pt1.x,
-                  pt1.y,
-                  name(j, network),
-                  wire_length);
-    if (left_.size()) {
-      SteinerPt left = this->left(i);
-      SteinerPt right = this->right(i);
-      report->print(" left = %s right = %s",
-                    name(left, network),
-                    name(right, network));
-    }
-    report->print("\n");
+    logger->report(" {} () {}) - {} wire_length = {} left = {} right = {}",
+                   name(i, network),
+                   pt1.x,
+                   pt1.y,
+                   name(j, network),
+                   wire_length,
+                   left_.size() ? name(this->left(i), network) : "",
+                   right_.size() ? name(this->right(i), network) : "");
   }
 }
 
@@ -262,7 +260,6 @@ SteinerTree::name(SteinerPt pt,
   if (pt == null_pt)
     return "NULL";
   else {
-    checkSteinerPt(pt);
     const Pin *pin = this->pin(pt);
     if (pin)
       return network->pathName(pin);
@@ -274,7 +271,6 @@ SteinerTree::name(SteinerPt pt,
 Pin *
 SteinerTree::pin(SteinerPt pt) const
 {
-  checkSteinerPt(pt);
   if (pt < pinCount())
     return steiner_pt_pin_map_[pt];
   else
@@ -305,32 +301,16 @@ SteinerTree::drvrPt(const Network *network) const
   return null_pt;
 }
 
-void
-SteinerTree::checkSteinerPt(SteinerPt pt) const
-{
-  if (pt < 0 || pt >= branchCount())
-    internalError("steiner point index out of range.");
-}
-
-bool
-SteinerTree::isLoad(SteinerPt pt,
-                    const Network *network)
-{
-  checkSteinerPt(pt);
-  Pin *pin = this->pin(pt);
-  return pin && network->isLoad(pin);
-}
-
 Point
 SteinerTree::location(SteinerPt pt) const
 {
-  checkSteinerPt(pt);
   stt::Branch &branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
 }
 
 void
-SteinerTree::findLeftRights(const Network *network)
+SteinerTree::findLeftRights(const Network *network,
+                            Logger *logger)
 {
   Debug *debug = network->debug();
   int branch_count = branchCount();
@@ -374,7 +354,7 @@ SteinerTree::findLeftRights(const Network *network)
   SteinerPt root = drvrPt(network);
   SteinerPt root_adj = adj1[root];
   left_[root] = root_adj;
-  findLeftRights(root, root_adj, adj1, adj2, adj3);
+  findLeftRights(root, root_adj, adj1, adj2, adj3, logger);
 }
 
 void
@@ -382,16 +362,17 @@ SteinerTree::findLeftRights(SteinerPt from,
                             SteinerPt to,
                             SteinerPtSeq &adj1,
                             SteinerPtSeq &adj2,
-                            SteinerPtSeq &adj3)
+                            SteinerPtSeq &adj3,
+                            Logger *logger)
 {
   if (to >= pinCount()) {
     SteinerPt adj;
     adj = adj1[to];
-    findLeftRights(from, to, adj, adj1, adj2, adj3);
+    findLeftRights(from, to, adj, adj1, adj2, adj3, logger);
     adj = adj2[to];
-    findLeftRights(from, to, adj, adj1, adj2, adj3);
+    findLeftRights(from, to, adj, adj1, adj2, adj3, logger);
     adj = adj3[to];
-    findLeftRights(from, to, adj, adj1, adj2, adj3);
+    findLeftRights(from, to, adj, adj1, adj2, adj3, logger);
   }
 }
 
@@ -401,18 +382,19 @@ SteinerTree::findLeftRights(SteinerPt from,
                             SteinerPt adj,
                             SteinerPtSeq &adj1,
                             SteinerPtSeq &adj2,
-                            SteinerPtSeq &adj3)
+                            SteinerPtSeq &adj3,
+                            Logger *logger)
 {
   if (adj != from && adj != null_pt) {
     if (adj == to)
-      internalError("steiner left/right failed");
+      logger->critical(RSZ, 45, "steiner left/right failed.");
     if (left_[to] == null_pt) {
       left_[to] = adj;
-      findLeftRights(to, adj, adj1, adj2, adj3);
+      findLeftRights(to, adj, adj1, adj2, adj3, logger);
     }
     else if (right_[to] == null_pt) {
       right_[to] = adj;
-      findLeftRights(to, adj, adj1, adj2, adj3);
+      findLeftRights(to, adj, adj1, adj2, adj3, logger);
     }
   }
 }
@@ -430,8 +412,9 @@ SteinerTree::right(SteinerPt pt)
 }
 
 void
-SteinerTree::writeSVG(const Network *network,
-                      const char *filename)
+SteinerTree::writeSVG(const char *filename,
+                      const Network *network,
+                      Logger *logger)
 {
   // compute bbox of pins
   odb::Rect bbox;
@@ -479,7 +462,7 @@ SteinerTree::writeSVG(const Network *network,
     fclose(stream);
   }
   else
-    printf("Error: could not open %s\n", filename);
+    logger->error(RSZ, 44, "could not open {}.", filename);
 }
 
 }

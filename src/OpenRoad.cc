@@ -34,7 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "openroad/OpenRoad.hh"
-#include "openroad/Version.hh" // BUILD_OPENPHYSYN
+
+#include <iostream>
+
 #include "openroad/Logger.h"
 
 #include "opendb/db.h"
@@ -71,10 +73,6 @@
 #include "pdnsim/MakePDNSim.hh"
 #include "antennachecker/MakeAntennaChecker.hh"
 #include "PartitionMgr/src/MakePartitionMgr.h"
-#ifdef BUILD_OPENPHYSYN
-  #include "OpenPhySyn/MakeOpenPhySyn.hpp"
-#endif
-#include <iostream>
 
 namespace sta {
 extern const char *openroad_tcl_inits[];
@@ -125,7 +123,6 @@ OpenRoad::OpenRoad()
     extractor_(nullptr),
     detailed_router_(nullptr),
     antenna_checker_(nullptr),
-    psn_(nullptr),
     replace_(nullptr),
     pdnsim_(nullptr), 
     partitionMgr_(nullptr) 
@@ -149,9 +146,6 @@ OpenRoad::~OpenRoad()
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
-#ifdef BUILD_OPENPHYSYN
-  deletePsn(psn_);
-#endif
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
@@ -212,9 +206,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
-#ifdef BUILD_OPENPHYSYN
-  psn_ = makePsn();
-#endif
   partitionMgr_ = makePartitionMgr();
 
   // Init components.
@@ -241,9 +232,6 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
-#ifdef BUILD_OPENPHYSYN
-    initPsn(this);
-#endif
   initPartitionMgr(this);
 
   // Import exported commands to global namespace.
