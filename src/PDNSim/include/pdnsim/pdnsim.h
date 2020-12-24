@@ -45,7 +45,7 @@ namespace sta {
   class dbSta;
 }
 
-namespace pdnsim {
+namespace psm {
 
 class PDNSim
 {

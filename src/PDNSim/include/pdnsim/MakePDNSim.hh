@@ -1,20 +1,20 @@
 #ifndef MAKE_PDNSIM
 #define MAKE_PDNSIM
 
-namespace pdnsim {
+namespace psm {
 class PDNSim;
 }
 
 namespace ord {
 class OpenRoad;
 
-pdnsim::PDNSim* makePDNSim();
+psm::PDNSim* makePDNSim();
 
 void
 initPDNSim(OpenRoad* openroad);
 
 void
-deletePDNSim(pdnsim::PDNSim *pdnsim);
+deletePDNSim(psm::PDNSim *pdnsim);
 
 }
 

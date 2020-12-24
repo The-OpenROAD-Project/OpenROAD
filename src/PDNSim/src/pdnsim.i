@@ -5,12 +5,12 @@
 #include "pdnsim/pdnsim.h"
 
 namespace ord {
-pdnsim::PDNSim*
+psm::PDNSim*
 getPDNSim();
 }
 
 using ord::getPDNSim;
-using pdnsim::PDNSim;
+using psm::PDNSim;
 %}
 
 %inline %{

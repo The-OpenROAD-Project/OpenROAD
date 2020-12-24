@@ -47,8 +47,8 @@ extern int Pdnsim_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-pdnsim::PDNSim* makePDNSim() {
-  return new pdnsim::PDNSim();
+psm::PDNSim* makePDNSim() {
+  return new psm::PDNSim();
 }
 
 void
@@ -61,7 +61,7 @@ initPDNSim(OpenRoad* openroad) {
 }
 
 void
-deletePDNSim(pdnsim::PDNSim *pdnsim) {
+deletePDNSim(psm::PDNSim *pdnsim) {
   delete pdnsim;
 }
 
