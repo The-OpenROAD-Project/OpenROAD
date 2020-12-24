@@ -53,7 +53,7 @@ Final usage/overflow report:
 [INFO] Final usage 3D       : 7981
 [INFO GRT-0018] Total wirelength: 27547 um
 Repairing antennas...
-[WARNING GRT-0008] No OR_DEFAULT vias defined
+[WARNING GRT-0025] No OR_DEFAULT vias defined
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
 Notice 0: Split top of 1 T shapes.
