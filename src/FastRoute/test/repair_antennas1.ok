@@ -29,13 +29,13 @@ Layer 6 pitch: 3.33
 [INFO GRT-0017] Found 0 clock nets
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 11
-[INFO GRT-0003] Processing 17704 obstacles on layer 1
-[INFO GRT-0003] Processing 2627 obstacles on layer 2
-[INFO GRT-0003] Processing 10 obstacles on layer 5
-[INFO GRT-0013] Reducing resources of layer 3 by 15%
-[INFO GRT-0013] Reducing resources of layer 4 by 15%
-[INFO GRT-0013] Reducing resources of layer 5 by 15%
-[INFO GRT-0013] Reducing resources of layer 6 by 15%
+[INFO GRT-0018] Processing 17704 obstacles on layer 1
+[INFO GRT-0019] Processing 2627 obstacles on layer 2
+[INFO GRT-0022] Processing 10 obstacles on layer 5
+[INFO GRT-0022] Reducing resources of layer 3 by 15%
+[INFO GRT-0023] Reducing resources of layer 4 by 15%
+[INFO GRT-0024] Reducing resources of layer 5 by 15%
+[INFO GRT-0025] Reducing resources of layer 6 by 15%
 
 Final usage/overflow report: 
 
@@ -104,13 +104,13 @@ Layer 6 pitch: 3.33
 [INFO GRT-0006] #DB Macros: 2
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 11
-[INFO GRT-0003] Processing 17710 obstacles on layer 1
-[INFO GRT-0003] Processing 2631 obstacles on layer 2
-[INFO GRT-0003] Processing 10 obstacles on layer 5
-[INFO GRT-0013] Reducing resources of layer 3 by 15%
-[INFO GRT-0013] Reducing resources of layer 4 by 15%
-[INFO GRT-0013] Reducing resources of layer 5 by 15%
-[INFO GRT-0013] Reducing resources of layer 6 by 15%
+[INFO GRT-0018] Processing 17710 obstacles on layer 1
+[INFO GRT-0019] Processing 2631 obstacles on layer 2
+[INFO GRT-0022] Processing 10 obstacles on layer 5
+[INFO GRT-0022] Reducing resources of layer 3 by 15%
+[INFO GRT-0023] Reducing resources of layer 4 by 15%
+[INFO GRT-0024] Reducing resources of layer 5 by 15%
+[INFO GRT-0025] Reducing resources of layer 6 by 15%
 [INFO GRT-0009] #Nets to reroute: 14
 
 Final usage/overflow report: 

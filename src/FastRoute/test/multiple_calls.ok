@@ -21,7 +21,7 @@ Grid origin: (0, 0)
 [INFO GRT-0017] Found 0 clock nets
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0003] Processing 8469 obstacles on layer 1
+[INFO GRT-0018] Processing 8469 obstacles on layer 1
 
 Final usage/overflow report: 
 
@@ -49,17 +49,17 @@ Grid origin: (0, 0)
 [INFO GRT-0006] #DB Macros: 0
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[INFO GRT-0003] Processing 8469 obstacles on layer 1
-[INFO GRT-0013] Reducing resources of layer 1 by 80%
-[INFO GRT-0013] Reducing resources of layer 2 by 80%
-[INFO GRT-0013] Reducing resources of layer 3 by 80%
-[INFO GRT-0013] Reducing resources of layer 4 by 80%
-[INFO GRT-0013] Reducing resources of layer 5 by 80%
-[INFO GRT-0013] Reducing resources of layer 6 by 80%
-[INFO GRT-0013] Reducing resources of layer 7 by 80%
-[INFO GRT-0013] Reducing resources of layer 8 by 80%
-[INFO GRT-0013] Reducing resources of layer 9 by 80%
-[INFO GRT-0013] Reducing resources of layer 10 by 80%
+[INFO GRT-0018] Processing 8469 obstacles on layer 1
+[INFO GRT-0024] Reducing resources of layer 1 by 80%
+[INFO GRT-0025] Reducing resources of layer 2 by 80%
+[INFO GRT-0026] Reducing resources of layer 3 by 80%
+[INFO GRT-0027] Reducing resources of layer 4 by 80%
+[INFO GRT-0028] Reducing resources of layer 5 by 80%
+[INFO GRT-0029] Reducing resources of layer 6 by 80%
+[INFO GRT-0030] Reducing resources of layer 7 by 80%
+[INFO GRT-0031] Reducing resources of layer 8 by 80%
+[INFO GRT-0032] Reducing resources of layer 9 by 80%
+[INFO GRT-0033] Reducing resources of layer 10 by 80%
 
 Final usage/overflow report: 
 
