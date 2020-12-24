@@ -34,11 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RcTreeBuilder.h"
-#include "openroad/Logger.h"
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"

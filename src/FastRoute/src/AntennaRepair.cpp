@@ -34,7 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "AntennaRepair.h"
-#include "openroad/Logger.h"
 
 #include <cmath>
 #include <cstring>
@@ -48,6 +47,7 @@
 #include "Net.h"
 #include "Pin.h"
 #include "fastroute/GlobalRouter.h"
+#include "openroad/Logger.h"
 
 namespace grt {
 
@@ -84,7 +84,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
-        _logger->error(ord::GRT, 24, "Global route segment not valid\n");
+        _logger->error(ord::GRT, 24, "Global route segment not valid");
       }
       int x1 = seg.initX;
       int y1 = seg.initY;
