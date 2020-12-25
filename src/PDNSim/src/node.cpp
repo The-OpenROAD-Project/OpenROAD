@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include "node.h"
 
+namespace psm {
 using namespace std;
 
 //! Get the layer number of the node
@@ -109,17 +110,15 @@ void Node::SetGLoc(NodeIdx t_loc)
 }
 
 //! Function to print node details
-void Node::Print()
+void Node::Print(ord::Logger* logger)
 {
-  cout << "Node: " << m_node_loc << endl;
-  cout << "    Location: Layer " << m_layer << ", x " << m_loc.first << ", y "
-       << m_loc.second << endl;
-  cout << "    Bounding box: x " << m_bBox.first << ", y " << m_bBox.second
-       << endl;
-  cout << "    Current: " << m_current_src << endl;
-  cout << "    Voltage: " << m_voltage << endl;
-  cout << "    Has connection: " << m_connected <<endl;
-  cout << "    Has instances:  " << m_has_instances <<endl;
+  logger->report("Node: {:d}", m_node_loc);
+  logger->report("  Location: Layer {:d}, x {:d}, y {:d}", m_layer, m_loc.first, m_loc.second);
+  logger->report("  Bounding box: x {:d}, y {:d} ",m_bBox.first, m_bBox.second);
+  logger->report("  Current: {:5.4e}A",m_current_src);
+  logger->report("  Voltage: {:5.4e}V",m_voltage);
+  logger->report("  Has connection: {}",m_connected? "true" : "false");  
+  logger->report("  Has instances:  {}",m_has_instances? "true" : "false");
 }
 
 //! Function to set the bounding box of the stripe
@@ -215,4 +214,5 @@ void Node::AddInstance(dbInst* inst)
 {
   m_has_instances =true;
   m_connected_instances.push_back(inst);
+}
 }

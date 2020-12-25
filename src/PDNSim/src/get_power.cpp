@@ -38,6 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 
+namespace psm {
 using namespace sta;
 using namespace std;
 
@@ -46,9 +47,6 @@ using namespace std;
 std::vector<pair<string, double>> PowerInst::executePowerPerInst(
     sta::dbSta* sta)
 {
-  cout << "\n" << endl;
-  cout << "INFO: Executing STA for Power" << endl;
-  cout << "INFO: Execute STA" << endl;
   // STA object create
   _sta = sta;
 
@@ -89,4 +87,5 @@ std::vector<pair<string, double>> PowerInst::executePowerPerInst(
   //cout <<"Total power:" << total.total() << endl;
   //cout <<"Total power calculated:" << total_calc.total() << endl;
   return power_report;
+}
 }

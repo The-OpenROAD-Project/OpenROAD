@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gmat.h"
 #include "node.h"
 
+namespace psm{
 using namespace std;
 
 //! Function to return a pointer to the node with a index
@@ -70,11 +71,11 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/)
       if (y_itr != x_itr->second.end()) {
         return y_itr->second;
       } else {
-        cout << "ERROR: Node location lookup error for y"<<endl;
+        m_logger->error(ord::PSM,46,"Node location lookup error for y");
         return nullptr;
       }
     } else {
-      cout << "ERROR: Node location lookup error for x"<<endl;
+      m_logger->error(ord::PSM,47,"Node location lookup error for x");
       return nullptr;
     }
   } else {
@@ -194,11 +195,11 @@ Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox)
 //! Function to print the G matrix
 void GMat::Print()
 {
-  std::cout << "GMat obj, with " << m_n_nodes << " nodes\n";
+  m_logger->info(ord::PSM,48, "Printing GMat obj, with {:d} nodes",m_n_nodes);
   for (NodeIdx i = 0; i < m_n_nodes; i++) {
     Node* node_ptr = m_G_mat_nodes[i];
     if (node_ptr != nullptr) {
-      node_ptr->Print();
+      node_ptr->Print(m_logger);
     }
   }
 }
@@ -235,8 +236,8 @@ void GMat::SetConductance(Node* t_node1, Node* t_node2, double t_cond)
 void GMat::InitializeGmatDok(int t_numC4)
 {
   if (m_n_nodes <= 0) {
-    cout << "ERROR: no nodes in object initialization stopped.\n";
-    exit(1);
+    m_logger->error(ord::PSM,49,"No nodes in object initialization stopped.");
+    return; 
   } else {
     m_G_mat_dok.num_cols = m_n_nodes + t_numC4;
     m_G_mat_dok.num_rows = m_n_nodes + t_numC4;
@@ -295,7 +296,7 @@ void GMat::GenerateStripeConductance(int                        t_l,
 {
   NodeMap& layer_map = m_layer_maps[t_l];
   if(t_x_min>t_x_max || t_y_min >t_y_max)
-    cout<<"ERROR: creating stripe condunctance with invalid inputs. Min and max values for X or Y are interchanged."<<endl;
+    m_logger->warn(ord::PSM,50,"Creating stripe condunctance with invalid inputs. Min and max values for X or Y are interchanged.");
   if (layer_dir == odb::dbTechLayerDir::Value::HORIZONTAL) {
     NodeMap::iterator x_itr;
     NodeMap::iterator x_prev;
@@ -508,9 +509,11 @@ bool GMat::GenerateACSCMatrix()
 double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
-    cout << "ERROR: Index out of bound for getting G matrix conductance. "
-            "Ensure object is initialized to the correct size first.\n";
-    exit(1);
+    m_logger->error(ord::PSM,51,
+                   "Index out of bound for getting G matrix conductance. {}",
+                   "Ensure object is initialized to the correct size first."
+                   );
+    return 0; 
   }
   GMatLoc                        key = make_pair(t_col, t_row);
   map<GMatLoc, double>::iterator it  = m_G_mat_dok.values.find(key);
@@ -535,9 +538,10 @@ double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
 void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
-    cout << "ERROR: Index out of bound for setting G matrix conductance. "
-            "Ensure object is initialized to the correct size first.\n";
-    exit(1);
+    m_logger->error(ord::PSM,52,
+                   "Index out of bound for getting G matrix conductance. {}",
+                   "Ensure object is initialized to the correct size first."
+                   );
   }
   GMatLoc key             = make_pair(t_col, t_row);
   m_G_mat_dok.values[key] = t_cond;
@@ -611,4 +615,5 @@ double GMat::GetConductivity(double width, double length, double rho)
 std::vector<Node*> GMat::GetAllNodes()
 {
   return m_G_mat_nodes;
+}
 }

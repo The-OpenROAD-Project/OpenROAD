@@ -1,5 +1,6 @@
 %module pdnsim
 
+%include "../../Exception.i"
 %{
 #include "openroad/OpenRoad.hh"
 #include "pdnsim/pdnsim.h"

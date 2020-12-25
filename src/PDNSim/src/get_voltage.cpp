@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
 
+namespace psm {
 std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta) {
   std::pair<double, double>  supply_voltage;
   sta::LibertyLibrary *default_library;
@@ -76,4 +77,5 @@ std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta) {
   supply_voltage.first = power_voltage_;
   supply_voltage.second = gnd_voltage_;
   return supply_voltage;
+}
 }

@@ -31,7 +31,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __IRSOLVER_Voltage__
-#define __IRSOLVER_Voltage__ 0
+#define __IRSOLVER_Voltage__ 
 
 #include <vector>
 #include <string>
@@ -39,6 +39,7 @@ namespace sta {
 class dbSta;
 }  // namespace sta
 
+namespace psm{
 
 //!  Calculates the power per instance using OpenSTA 
 /*!
@@ -56,4 +57,5 @@ class SupplyVoltage
     std::pair<double, double> getSupplyVoltage(sta::dbSta* sta);
 };
  // epower namespace end
+ }
 #endif

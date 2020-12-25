@@ -58,6 +58,7 @@ initPDNSim(OpenRoad* openroad) {
   sta::evalTclInit(tcl_interp, sta::pdnsim_tcl_inits);
   openroad->getPDNSim()->setDb(openroad->getDb());
   openroad->getPDNSim()->setSta(openroad->getSta());
+  openroad->getPDNSim()->setLogger(openroad->getLogger());
 }
 
 void

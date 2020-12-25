@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_GMAT_
 #include "node.h"
 #include "opendb/db.h"
+#include "openroad/Logger.h"
 
 
 //! Global variable which holds the G matrix. 
@@ -42,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Three dimensions with layer number,x location, and y location. 
  * Holds a pointer to the node of the power grid.
 */
+namespace psm{
 typedef std::map<int, std::map<int, Node*>> NodeMap;
 
 
@@ -55,10 +57,11 @@ class GMat
 {
  public:
   //! Constructor for creating the G matrix
-  GMat(int t_num_layers)
+  GMat(int t_num_layers, ord::Logger* logger)
       : m_num_layers(t_num_layers),
         m_layer_maps(t_num_layers + 1, NodeMap())
   {  // as it start from 0 and everywhere we use layer
+    m_logger = logger;
   }
   //! Destructor of the G matrix
   ~GMat()
@@ -118,6 +121,8 @@ class GMat
   DokMatrix* GetGMatDOK();
 
  private:
+  //! Pointer to the logger
+  ord::Logger*         m_logger;
   //! Number of nodes in G matrix
   NodeIdx              m_n_nodes{0};
   //! Number of metal layers in PDN stack
@@ -143,5 +148,5 @@ class GMat
   //! Function to find conductivity of a stripe based on width,length, and pitch
   double GetConductivity(double width, double length, double rho);
 };
-
+}
 #endif

@@ -44,6 +44,9 @@ namespace odb {
 namespace sta {
   class dbSta;
 }
+namespace ord {
+  class Logger;
+}
 
 namespace psm {
 
@@ -58,6 +61,7 @@ class PDNSim
 
     void setDb(odb::dbDatabase* odb);
     void setSta(sta::dbSta* dbSta);
+    void setLogger(ord::Logger* logger);
     
     void import_vsrc_cfg(std::string vsrc);
     void import_out_file(std::string out_file);
@@ -76,6 +80,7 @@ class PDNSim
   private:
     odb::dbDatabase* _db;
     sta::dbSta* _sta;
+    ord::Logger* _logger;
     std::string _vsrc_loc;
     std::string _out_file;
     std::string _em_out_file;

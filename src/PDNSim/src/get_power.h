@@ -31,7 +31,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __IRSOLVER_Power__
-#define __IRSOLVER_Power__ 0
+#define __IRSOLVER_Power__ 
 
 #include <vector>
 #include <string>
@@ -39,6 +39,7 @@ namespace sta {
 class dbSta;
 }  // namespace sta
 
+namespace psm {
 
 //!  Calculates the power per instance using OpenSTA 
 /*!
@@ -56,4 +57,5 @@ class PowerInst
     std::vector<std::pair<std::string, double>> executePowerPerInst(sta::dbSta* sta);
 };
  // epower namespace end
+}
 #endif

@@ -35,10 +35,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gmat.h"
 #include "opendb/db.h"
+#include "openroad/Logger.h"
 
-namespace sta {
-class dbSta;
-}  // namespace sta
+//namespace sta {
+//class dbSta;
+//}  // namespace sta
+namespace psm {
 
 //! Class for IR solver
 /* 
@@ -55,6 +57,7 @@ class IRSolver
    */
   IRSolver(odb::dbDatabase*         t_db,
            sta::dbSta*              t_sta,
+           ord::Logger*             t_logger,
            std::string              vsrc_loc,
            std::string              power_net,
            std::string              out_file,
@@ -67,6 +70,7 @@ class IRSolver
   {
     m_db           = t_db;
     m_sta          = t_sta;
+    m_logger       = t_logger;
     m_vsrc_file    = vsrc_loc;
     m_power_net    = power_net;
     m_out_file     = out_file;
@@ -121,6 +125,8 @@ class IRSolver
   odb::dbDatabase*         m_db;
   //! Pointer to STA
   sta::dbSta*              m_sta;
+  //! Pointer to Logger
+  ord::Logger*             m_logger;
   //! Voltage source file
   std::string              m_vsrc_file;
   std::string              m_power_net;
@@ -168,4 +174,5 @@ class IRSolver
   //! Function to create a G matrix using the nodes
   bool                                           CreateGmat(bool connection_only=false);
 };
+}
 #endif
