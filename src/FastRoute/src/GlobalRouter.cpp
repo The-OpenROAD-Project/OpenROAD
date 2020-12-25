@@ -1086,6 +1086,9 @@ void GlobalRouter::computeObstaclesAdjustments()
       for (odb::Rect& obs : layerObstacles) {
         if (obs.xMax() <= _grid->getLowerLeftX() || obs.xMin() >= _grid->getUpperRightX() ||
 	    obs.yMax() <= _grid->getLowerLeftY() || obs.yMin() >= _grid->getUpperRightY()) {
+		std::cout << "[WARNING] Ignoring an obstruction on "
+			  << routingLayer.getName()
+			  <<" outside the die area.\n";
 		continue;
 	}
 
