@@ -114,10 +114,10 @@ tclListSetdbMaster(Tcl_Obj *const source,
 namespace dpl {
 
 void
-detailed_placement_cmd(int max_displacment)
+detailed_placement_cmd(int max_displacement)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment);
+  opendp->detailedPlacement(max_displacement);
 }
 
 bool

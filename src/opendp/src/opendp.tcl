@@ -39,16 +39,16 @@ proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-constraints} flags {}
 
-  if { [info exists keys(-max_displacment)] } {
-    set max_displacment $keys(-max_displacment)
-    sta::check_positive_integer "-max_displacment" $max_displacment
+  if { [info exists keys(-max_displacement)] } {
+    set max_displacement $keys(-max_displacement)
+    sta::check_positive_integer "-max_displacement" $max_displacement
   } else {
-    set max_displacment 0
+    set max_displacement 0
   }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    dpl::detailed_placement_cmd $max_displacment
+    dpl::detailed_placement_cmd $max_displacement
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }

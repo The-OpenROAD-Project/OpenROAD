@@ -169,8 +169,8 @@ public:
   void init(dbDatabase *db,
             Logger *logger);
   // legalize/report
-  // max_displacment is in rows, 0 for unconstrained
-  void detailedPlacement(int max_displacment);
+  // max_displacement is in rows, 0 for unconstrained
+  void detailedPlacement(int max_displacement);
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
                   int left,

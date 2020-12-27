@@ -590,10 +590,10 @@ void
 Psn::setupCallbacks()
 {
     // Legalizer
-    psn_instance_->handler()->setLegalizer([=](int max_displacment) -> bool {
+    psn_instance_->handler()->setLegalizer([=](int max_displacement) -> bool {
         auto openroad = ord::OpenRoad::openRoad();
         auto opendp   = openroad->getOpendp();
-        opendp->detailedPlacement(max_displacment);
+        opendp->detailedPlacement(max_displacement);
         return true;
     });
 

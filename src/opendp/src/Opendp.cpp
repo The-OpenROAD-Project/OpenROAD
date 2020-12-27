@@ -186,12 +186,12 @@ Opendp::havePadding() const
 }
 
 void
-Opendp::detailedPlacement(int max_displacment)
+Opendp::detailedPlacement(int max_displacement_in)
 {
   importDb();
   reportImportWarnings();
   findDesignStats();
-  max_displacement_constraint_ = max_displacment;
+  max_displacement_constraint_ = max_displacement_in;
   reportDesignStats();
   int64_t hpwl_before = hpwl();
   detailedPlacement();
