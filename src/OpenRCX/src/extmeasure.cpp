@@ -3451,7 +3451,9 @@ void extMeasure::calcDiagRC(int  rsegId1,
       double diagCap = DOUBLE_DIAG * len * cap;
       capTable[ii]   = diagCap;
       _rc[ii]->_diag += diagCap;
-      Debug_DiagValues(0.0, diagCap, "calcDiagRC");
+      
+      const char* msg = "calcDiagRC";
+      Debug_DiagValues(0.0, diagCap, msg);
     } else
       capTable[ii] = 2 * len * getUnderRC(rcModel)->_fringe;
 #else
@@ -3623,7 +3625,8 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
         _extMain->updateRes(rseg1, res, jj);
       }
     }
-    OverSubDebug(rc, lenOverSub, res_lenOverSub, res, cap, "Open");
+    const char* msg = "Open";
+    OverSubDebug(rc, lenOverSub, res_lenOverSub, res, cap, msg);
   }
   // }
 }
@@ -3693,7 +3696,8 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
         }
       }
     }
-    OverSubDebug(rc, lenOverSub, lenOverSub, res, fr+cc, "Dist");
+    const char* msg = "Dist";
+    OverSubDebug(rc, lenOverSub, lenOverSub, res, fr+cc, msg);
   }
 }
 
