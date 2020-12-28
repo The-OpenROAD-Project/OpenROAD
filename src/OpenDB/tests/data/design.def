@@ -25,8 +25,12 @@ END COMPONENTS
 
 PINS 12 ;
 - inp0 + NET inp0 + DIRECTION INPUT 
-  + LAYER metal1 ( -25 0 ) ( 25 50 ) 
-  + LAYER metal2 ( -10 0 ) ( 10 75 ) ;
+  + PORT
+    + LAYER metal1 ( -25 0 ) ( 25 50 ) 
+    + LAYER metal2 ( -10 0 ) ( 10 75 ) 
+  + PORT
+    + LAYER metal1 ( -25 0 ) ( 25 50 ) 
+    + LAYER metal2 ( -10 0 ) ( 10 75 ) ;
 - inp1 + NET inp1 + DIRECTION INPUT ;
 - clk + NET clk + DIRECTION INPUT ;
 - out[8] + NET out[8] + DIRECTION OUTPUT ;

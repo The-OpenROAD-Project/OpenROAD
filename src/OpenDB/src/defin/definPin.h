@@ -121,6 +121,8 @@ class definPin : public definBase
   virtual void pinSupplyPin(const char* supplyPin);
   virtual void pinEnd();
   virtual void pinsEnd();
+  virtual void portBegin();
+  virtual void portEnd();
 
   definPin();
   virtual ~definPin();
