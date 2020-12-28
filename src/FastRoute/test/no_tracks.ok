@@ -4,5 +4,5 @@ Notice 0:     Created 27 technology vias
 Notice 0:     Created 134 library cells
 Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
 [INFO IFP-0001] Added 0 rows of 0 sites.
-[ERROR UKN-0000] missing track structure
-UKN-0000
+[ERROR GRT-0039] missing track structure
+GRT-0039

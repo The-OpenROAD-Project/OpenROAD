@@ -56,6 +56,7 @@ class Units;
 
 namespace ord {
 class OpenRoad;
+class Logger;
 }
 
 namespace grt {
@@ -106,6 +107,7 @@ class RcTreeBuilder
 
   // Variables common to all nets.
   GlobalRouter* _grouter;
+  ord::Logger *_logger;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
   sta::Parasitics* _parasitics;
