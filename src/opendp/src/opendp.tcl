@@ -32,12 +32,11 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-# -constraints is an undocumented option for worthless academic contests
-sta::define_cmd_args "detailed_placement" {[-constraints constraints_file]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement displacement]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-constraints} flags {}
+    keys {-max_displacement} flags {}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
