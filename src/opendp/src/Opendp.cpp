@@ -135,7 +135,7 @@ Opendp::Opendp() :
 {
   dummy_cell_.is_placed_ = true;
   // magic number alert
-  diamond_search_height_ = 100;
+  diamond_search_height_ = 400;
   diamond_search_width_ = diamond_search_height_ * 5;
   max_displacement_constraint_ = 0;
 }
