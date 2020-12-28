@@ -480,7 +480,7 @@ set_placement_padding -global|-instances insts|-masters masters
 detailed_placement [-max_displacement rows]
 check_placement [-verbose]
 filler_placement filler_masters
-optimimize_mirroring
+optimize_mirroring
 ```
 
 The `set_placement_padding` command sets left and right padding in
@@ -503,7 +503,7 @@ to connect the power and ground rails in the rows. `filler_masters` is
 a list of master/macro names to use for filling the gaps. Wildcard matching
 is supported, so `FILL*` will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
 
-The `optimimize_mirroring` command mirrors instances about the Y axis
+The `optimize_mirroring` command mirrors instances about the Y axis
 in vane attempt to minimize the total wire length (hpwl).
 
 #### Clock Tree Synthesis
