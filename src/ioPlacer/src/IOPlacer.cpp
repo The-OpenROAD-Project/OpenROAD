@@ -236,7 +236,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       });
       break;
     default:
-      _logger->error(PPL, 38, "Random mode not found");
+      _logger->error(PPL, 39, "Random mode not found");
       break;
   }
 }
@@ -411,7 +411,7 @@ void IOPlacer::createSections()
   int slotsPerEdge = numSlots/_slotsPerSection;
   if (slotsPerEdge < 4) {
     _slotsPerSection = numSlots / 4;
-    _logger->warn(PPL, 33, "Redefining the number of slots per section to have at least one section per edge");
+    _logger->warn(PPL, 34, "Redefining the number of slots per section to have at least one section per edge");
   }
 
   while (endSlot < numSlots) {
@@ -428,7 +428,7 @@ void IOPlacer::createSections()
     int midPoint = (endSlot - beginSlot) / 2;
     Section_t nSec = {slots.at(beginSlot + midPoint).pos};
     if (_usagePerSection > 1.f) {
-      _logger->warn(PPL, 34, "section usage exeeded max");
+      _logger->warn(PPL, 35, "section usage exeeded max");
       _usagePerSection = 1.;
       _logger->report("Forcing slots per section to increase");
       if (_slotsIncreaseFactor != 0.0f) {
@@ -441,7 +441,7 @@ void IOPlacer::createSections()
     }
     nSec.numSlots = endSlot - beginSlot - blockedSlots;
     if (nSec.numSlots < 0) {
-      _logger->error(PPL, 39, "Negative number of slots");
+      _logger->error(PPL, 40, "Negative number of slots");
     }
     nSec.beginSlot = beginSlot;
     nSec.endSlot = endSlot;
@@ -529,13 +529,13 @@ void IOPlacer::setupSections()
     _usagePerSection *= (1 + _usageIncreaseFactor);
     _slotsPerSection *= (1 + _slotsIncreaseFactor);
     if (_sections.size() > MAX_SECTIONS_RECOMMENDED) {
-      _logger->warn(PPL, 35, "Number of sections is {}"
+      _logger->warn(PPL, 36, "Number of sections is {}"
            " while the maximum recommended value is {}"
            " this may negatively affect performance",
            _sections.size(), MAX_SECTIONS_RECOMMENDED);
     }
     if (_slotsPerSection > MAX_SLOTS_RECOMMENDED) {
-      _logger->warn(PPL, 36, "Number of slots per sections is {}"
+      _logger->warn(PPL, 37, "Number of slots per sections is {}"
            " while the maximum recommended value is {}"
            " this may negatively affect performance",
            _slotsPerSection, MAX_SLOTS_RECOMMENDED);
@@ -780,7 +780,7 @@ void IOPlacer::run(bool randomMode)
   }
 
   if (_assignment.size() != (int) _netlist.numIOPins()) {
-    _logger->error(PPL, 40, "Assigned {} pins out of {} IO pins", _assignment.size(), _netlist.numIOPins());
+    _logger->error(PPL, 41, "Assigned {} pins out of {} IO pins", _assignment.size(), _netlist.numIOPins());
   }
 
   if (_reportHPWL) {
@@ -889,7 +889,7 @@ void IOPlacer::initNetlist()
     odb::dbBTerm* curBTerm = *btIter;
     odb::dbNet* net = curBTerm->getNet();
     if (!net) {
-      _logger->warn(PPL, 37, "Pin {} without net!",
+      _logger->warn(PPL, 38, "Pin {} without net!",
            curBTerm->getConstName());
     }
 

@@ -12,5 +12,5 @@ Notice 0: Finished DEF file: invalid_layer.def
 #Macro blocks found: 0
 Using 5u default boundaries offset
 Using 2 tracks default min distance between IO pins
-[ERROR PPL-0021] Vertical routing layer (13) not found
-PPL-0021
+[ERROR PPL-0022] Vertical routing layer (13) not found
+PPL-0022
