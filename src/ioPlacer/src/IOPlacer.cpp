@@ -38,17 +38,17 @@
 #include <random>
 #include <algorithm>
 #include "opendb/db.h"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ppl {
 
-using ord::error;
-using ord::warn;
+using ord::PPL;
 
 void IOPlacer::init(ord::OpenRoad* openroad)
 {
   _openroad = openroad;
+  _logger = openroad->getLogger();
   makeComponents();
 }
 
@@ -162,7 +162,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
 
   switch (mode) {
     case RandomMode::Full:
-      std::cout << "RandomMode Full\n";
+      _logger->report("RandomMode Full");
 
       for (size_t i = 0; i < vSlots.size(); ++i) {
         vSlots[i] = i;
@@ -184,7 +184,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       });
       break;
     case RandomMode::Even:
-      std::cout << "RandomMode Even\n";
+      _logger->report("RandomMode Even");
 
       for (size_t i = 0; i < vIOs.size(); ++i) {
         vIOs[i] = i;
@@ -206,7 +206,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       });
       break;
     case RandomMode::Group:
-      std::cout << "RandomMode Group\n";
+      _logger->report("RandomMode Group");
       for (size_t i = mid1; i < mid1 + slotsPerEdge; i++) {
         vIOs[idx++] = i;
       }
@@ -236,7 +236,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
       });
       break;
     default:
-      error("Random mode not found\n");
+      _logger->error(PPL, 39, "Random mode not found");
       break;
   }
 }
@@ -411,7 +411,7 @@ void IOPlacer::createSections()
   int slotsPerEdge = numSlots/_slotsPerSection;
   if (slotsPerEdge < 4) {
     _slotsPerSection = numSlots / 4;
-    warn("Redefining the number of slots per section to have at least one section per edge");
+    _logger->warn(PPL, 34, "Redefining the number of slots per section to have at least one section per edge");
   }
 
   while (endSlot < numSlots) {
@@ -428,9 +428,9 @@ void IOPlacer::createSections()
     int midPoint = (endSlot - beginSlot) / 2;
     Section_t nSec = {slots.at(beginSlot + midPoint).pos};
     if (_usagePerSection > 1.f) {
-      warn("section usage exeeded max");
+      _logger->warn(PPL, 35, "section usage exeeded max");
       _usagePerSection = 1.;
-      std::cout << "Forcing slots per section to increase\n";
+      _logger->report("Forcing slots per section to increase");
       if (_slotsIncreaseFactor != 0.0f) {
         _slotsPerSection *= (1 + _slotsIncreaseFactor);
       } else if (_usageIncreaseFactor != 0.0f) {
@@ -441,7 +441,7 @@ void IOPlacer::createSections()
     }
     nSec.numSlots = endSlot - beginSlot - blockedSlots;
     if (nSec.numSlots < 0) {
-      error("Negative number of slots\n");
+      _logger->error(PPL, 40, "Negative number of slots");
     }
     nSec.beginSlot = beginSlot;
     nSec.endSlot = endSlot;
@@ -494,26 +494,25 @@ bool IOPlacer::assignPinsSections()
   });
   // if forEachIOPin ends or returns/breaks goes here
   if (totalPinsAssigned == net.numIOPins()) {
-    std::cout << " > Successfully assigned I/O pins\n";
+    _logger->report("Successfully assigned I/O pins");
     return true;
   } else {
-    std::cout << " > Unsuccessfully assigned I/O pins\n";
+    _logger->report("Unsuccessfully assigned I/O pins");
     return false;
   }
 }
 
 void IOPlacer::printConfig()
 {
-  std::cout << " * Num of slots          " << _slots.size() << "\n";
-  std::cout << " * Num of I/O            " << _netlist.numIOPins() << "\n";
-  std::cout << " * Num of I/O w/sink     " << _netlistIOPins.numIOPins()
-            << "\n";
-  std::cout << " * Num of I/O w/o sink   " << _zeroSinkIOs.size() << "\n";
-  std::cout << " * Slots Per Section     " << _slotsPerSection << "\n";
-  std::cout << " * Slots Increase Factor " << _slotsIncreaseFactor << "\n";
-  std::cout << " * Usage Per Section     " << _usagePerSection << "\n";
-  std::cout << " * Usage Increase Factor " << _usageIncreaseFactor << "\n";
-  std::cout << " * Force Pin Spread      " << _forcePinSpread << "\n\n";
+  _logger->info(PPL, 1, " * Num of slots          {}", _slots.size());
+  _logger->info(PPL, 2, " * Num of I/O            {}", _netlist.numIOPins());
+  _logger->info(PPL, 3, " * Num of I/O w/sink     {}", _netlistIOPins.numIOPins());
+  _logger->info(PPL, 4, " * Num of I/O w/o sink   {}", _zeroSinkIOs.size());
+  _logger->info(PPL, 5, " * Slots Per Section     {}", _slotsPerSection);
+  _logger->info(PPL, 6, " * Slots Increase Factor {}", _slotsIncreaseFactor);
+  _logger->info(PPL, 7, " * Usage Per Section     {}", _usagePerSection);
+  _logger->info(PPL, 8, " * Usage Increase Factor {}", _usageIncreaseFactor);
+  _logger->info(PPL, 9, " * Force Pin Spread      {}", _forcePinSpread);
 }
 
 void IOPlacer::setupSections()
@@ -522,7 +521,7 @@ void IOPlacer::setupSections()
   int i = 0;
 
   do {
-    std::cout << "Tentative " << i++ << " to setup sections\n";
+    _logger->info(PPL, 10, "Tentative {} to setup sections", i++);
     printConfig();
 
     allAssigned = assignPinsSections();
@@ -530,15 +529,15 @@ void IOPlacer::setupSections()
     _usagePerSection *= (1 + _usageIncreaseFactor);
     _slotsPerSection *= (1 + _slotsIncreaseFactor);
     if (_sections.size() > MAX_SECTIONS_RECOMMENDED) {
-      warn("Number of sections is %d"
-           " while the maximum recommended value is %d"
-           " this may negatively affect performance\n",
+      _logger->warn(PPL, 36, "Number of sections is {}"
+           " while the maximum recommended value is {}"
+           " this may negatively affect performance",
            _sections.size(), MAX_SECTIONS_RECOMMENDED);
     }
     if (_slotsPerSection > MAX_SLOTS_RECOMMENDED) {
-      warn("Number of slots per sections is %d"
-           " while the maximum recommended value is %d"
-           " this may negatively affect performance\n",
+      _logger->warn(PPL, 37, "Number of slots per sections is {}"
+           " while the maximum recommended value is {}"
+           " this may negatively affect performance",
            _slotsPerSection, MAX_SLOTS_RECOMMENDED);
     }
   } while (!allAssigned);
@@ -728,8 +727,6 @@ void IOPlacer::run(bool randomMode)
 {
   initParms();
 
-  std::cout << " > Running IO placement\n";
-
   initNetlistAndCore(_horLayers, _verLayers);
 
   std::vector<HungarianMatching> hgVec;
@@ -740,21 +737,19 @@ void IOPlacer::run(bool randomMode)
   initIOLists();
   defineSlots();
 
-  printConfig();
-
   if (_reportHPWL) {
     initHPWL = returnIONetsHPWL(_netlist);
   }
 
   if (!_cellsPlaced || randomMode) {
-    std::cout << "Random pin placement\n";
+    _logger->report("Random pin placement");
     randomPlacement(RandomMode::Even);
   } else {
     setupSections();
 
     for (int idx = 0; idx < _sections.size(); idx++) {
       if (_sections[idx].net.numIOPins() > 0) {
-        HungarianMatching hg(_sections[idx], _slots);
+        HungarianMatching hg(_sections[idx], _slots, _logger);
         hgVec.push_back(hg);
       }
     }
@@ -785,7 +780,7 @@ void IOPlacer::run(bool randomMode)
   }
 
   if (_assignment.size() != (int) _netlist.numIOPins()) {
-    error("Assigned %d pins out of %d IO pins\n", _assignment.size(), _netlist.numIOPins());
+    _logger->error(PPL, 41, "Assigned {} pins out of {} IO pins", _assignment.size(), _netlist.numIOPins());
   }
 
   if (_reportHPWL) {
@@ -793,13 +788,12 @@ void IOPlacer::run(bool randomMode)
       totalHPWL += returnIONetsHPWL(_sections[idx].net);
     }
     deltaHPWL = initHPWL - totalHPWL;
-    std::cout << "***HPWL before ioPlacer: " << initHPWL << "\n";
-    std::cout << "***HPWL after  ioPlacer: " << totalHPWL << "\n";
-    std::cout << "***HPWL delta  ioPlacer: " << deltaHPWL << "\n";
+    _logger->info(PPL, 11, "***HPWL before ioPlacer: {}", initHPWL);
+    _logger->info(PPL, 12, "***HPWL after  ioPlacer: {}", totalHPWL);
+    _logger->info(PPL, 13, "***HPWL delta  ioPlacer: {}", deltaHPWL);
   }
 
   commitIOPlacementToDB(_assignment);
-  std::cout << " > IO placement done.\n";
 }
 
 // db functions
@@ -895,7 +889,7 @@ void IOPlacer::initNetlist()
     odb::dbBTerm* curBTerm = *btIter;
     odb::dbNet* net = curBTerm->getNet();
     if (!net) {
-      warn("Pin %s without net!\n",
+      _logger->warn(PPL, 38, "Pin {} without net!",
            curBTerm->getConstName());
     }
 

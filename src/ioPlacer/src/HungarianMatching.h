@@ -48,10 +48,15 @@
 #include "Netlist.h"
 #include "Slots.h"
 
+namespace ord {
+class Logger;
+}
+
 namespace ppl {
 
 using odb::Point;
 using odb::Rect;
+using ord::Logger;
 
 class HungarianMatching
 {
@@ -68,11 +73,12 @@ class HungarianMatching
   int _nonBlockedSlots;
   Edge _edge;
   const int hungarian_fail = std::numeric_limits<int>::max();
+  Logger *_logger;
 
   void createMatrix(std::vector<Constraint>& constraints);
 
  public:
-  HungarianMatching(Section_t&, slotVector_t&);
+  HungarianMatching(Section_t&, slotVector_t&, Logger *logger);
   virtual ~HungarianMatching() = default;
   void findAssignment(std::vector<Constraint>& constraints);
   void getFinalAssignment(std::vector<IOPin>&);
