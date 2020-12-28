@@ -771,6 +771,7 @@ void IOPlacer::run(bool randomMode)
       if (!_slots[i].used && !_slots[i].blocked) {
         _slots[i].used = true;
         _zeroSinkIOs[0].setPos(_slots[i].pos);
+        _zeroSinkIOs[0].setLayer(_slots[i].layer);
         _assignment.push_back(_zeroSinkIOs[0]);
         _zeroSinkIOs.erase(_zeroSinkIOs.begin());
       }

@@ -58,12 +58,12 @@ int edgeShift(Tree* t, int net)
 
   // TODO: check this size
   const int sizeV = 2 * nets[net]->numPins;
-  int       nbr[sizeV][3];
-  int       nbrCnt[sizeV];
-  int       pairN1[nets[net]->numPins];
-  int       pairN2[nets[net]->numPins];
-  int       costH[yGrid];
-  int       costV[xGrid];
+  int nbr[sizeV][3];
+  int nbrCnt[sizeV];
+  int pairN1[nets[net]->numPins];
+  int pairN2[nets[net]->numPins];
+  int costH[yGrid];
+  int costV[xGrid];
 
   deg = t->deg;
   // find root of the tree
@@ -80,7 +80,7 @@ int edgeShift(Tree* t, int net)
     nbrCnt[i] = 0;
   // edges from pin to steiner
   for (i = 0; i < deg; i++) {
-    n                 = t->branch[i].n;
+    n = t->branch[i].n;
     nbr[n][nbrCnt[n]] = i;
     nbrCnt[n]++;
   }
@@ -88,7 +88,7 @@ int edgeShift(Tree* t, int net)
   for (i = deg; i < 2 * deg - 2; i++) {
     if (i != root)  // not the removed steiner nodes and root
     {
-      n                 = t->branch[i].n;
+      n = t->branch[i].n;
       nbr[i][nbrCnt[i]] = n;
       nbrCnt[i]++;
       nbr[n][nbrCnt[n]] = i;
@@ -129,7 +129,7 @@ int edgeShift(Tree* t, int net)
       }
     }
 
-    bestPair    = -1;
+    bestPair = -1;
     bestBenefit = -1;
     // for each H or V edge, find the best benefit by shifting it
     for (i = 0; i < pairCnt; i++) {
@@ -165,7 +165,7 @@ int edgeShift(Tree* t, int net)
         {
           for (j = minY; j <= maxY; j++) {
             costH[j] = 0;
-            grid     = j * (xGrid - 1);
+            grid = j * (xGrid - 1);
             for (k = t->branch[n1].x; k < t->branch[n2].x; k++) {
               costH[j] += h_edges[grid + k].est_usage;
             }
@@ -177,17 +177,17 @@ int edgeShift(Tree* t, int net)
                 cost1 = cost2 = 0;
                 if (t->branch[n1].x < t->branch[n3].x) {
                   smallX = t->branch[n1].x;
-                  bigX   = t->branch[n3].x;
+                  bigX = t->branch[n3].x;
                 } else {
                   smallX = t->branch[n3].x;
-                  bigX   = t->branch[n1].x;
+                  bigX = t->branch[n1].x;
                 }
                 if (j < t->branch[n3].y) {
                   smallY = j;
-                  bigY   = t->branch[n3].y;
+                  bigY = t->branch[n3].y;
                 } else {
                   smallY = t->branch[n3].y;
-                  bigY   = j;
+                  bigY = j;
                 }
                 grid1 = smallY * (xGrid - 1);
                 grid2 = bigY * (xGrid - 1);
@@ -211,17 +211,17 @@ int edgeShift(Tree* t, int net)
                 cost1 = cost2 = 0;
                 if (t->branch[n2].x < t->branch[n3].x) {
                   smallX = t->branch[n2].x;
-                  bigX   = t->branch[n3].x;
+                  bigX = t->branch[n3].x;
                 } else {
                   smallX = t->branch[n3].x;
-                  bigX   = t->branch[n2].x;
+                  bigX = t->branch[n2].x;
                 }
                 if (j < t->branch[n3].y) {
                   smallY = j;
-                  bigY   = t->branch[n3].y;
+                  bigY = t->branch[n3].y;
                 } else {
                   smallY = t->branch[n3].y;
-                  bigY   = j;
+                  bigY = j;
                 }
                 grid1 = smallY * (xGrid - 1);
                 grid2 = bigY * (xGrid - 1);
@@ -240,11 +240,11 @@ int edgeShift(Tree* t, int net)
             }    // loop l
           }      // loop j
           bestCost = BIG_INT;
-          Pos      = t->branch[n1].y;
+          Pos = t->branch[n1].y;
           for (j = minY; j <= maxY; j++) {
             if (costH[j] < bestCost) {
               bestCost = costH[j];
-              Pos      = j;
+              Pos = j;
             }
           }
           if (Pos != t->branch[n1].y)  // find a better position than current
@@ -252,8 +252,8 @@ int edgeShift(Tree* t, int net)
             benefit = costH[t->branch[n1].y] - bestCost;
             if (benefit > bestBenefit) {
               bestBenefit = benefit;
-              bestPair    = i;
-              bestPos     = Pos;
+              bestPair = i;
+              bestPos = Pos;
             }
           }
         }
@@ -296,17 +296,17 @@ int edgeShift(Tree* t, int net)
                 cost1 = cost2 = 0;
                 if (j < t->branch[n3].x) {
                   smallX = j;
-                  bigX   = t->branch[n3].x;
+                  bigX = t->branch[n3].x;
                 } else {
                   smallX = t->branch[n3].x;
-                  bigX   = j;
+                  bigX = j;
                 }
                 if (t->branch[n1].y < t->branch[n3].y) {
                   smallY = t->branch[n1].y;
-                  bigY   = t->branch[n3].y;
+                  bigY = t->branch[n3].y;
                 } else {
                   smallY = t->branch[n3].y;
-                  bigY   = t->branch[n1].y;
+                  bigY = t->branch[n1].y;
                 }
                 grid1 = smallY * (xGrid - 1);
                 grid2 = bigY * (xGrid - 1);
@@ -330,17 +330,17 @@ int edgeShift(Tree* t, int net)
                 cost1 = cost2 = 0;
                 if (j < t->branch[n3].x) {
                   smallX = j;
-                  bigX   = t->branch[n3].x;
+                  bigX = t->branch[n3].x;
                 } else {
                   smallX = t->branch[n3].x;
-                  bigX   = j;
+                  bigX = j;
                 }
                 if (t->branch[n2].y < t->branch[n3].y) {
                   smallY = t->branch[n2].y;
-                  bigY   = t->branch[n3].y;
+                  bigY = t->branch[n3].y;
                 } else {
                   smallY = t->branch[n3].y;
-                  bigY   = t->branch[n2].y;
+                  bigY = t->branch[n2].y;
                 }
                 grid1 = smallY * (xGrid - 1);
                 grid2 = bigY * (xGrid - 1);
@@ -359,11 +359,11 @@ int edgeShift(Tree* t, int net)
             }    // loop l
           }      // loop j
           bestCost = BIG_INT;
-          Pos      = t->branch[n1].x;
+          Pos = t->branch[n1].x;
           for (j = minX; j <= maxX; j++) {
             if (costV[j] < bestCost) {
               bestCost = costV[j];
-              Pos      = j;
+              Pos = j;
             }
           }
           if (Pos != t->branch[n1].x)  // find a better position than current
@@ -371,8 +371,8 @@ int edgeShift(Tree* t, int net)
             benefit = costV[t->branch[n1].x] - bestCost;
             if (benefit > bestBenefit) {
               bestBenefit = benefit;
-              bestPair    = i;
-              bestPos     = Pos;
+              bestPair = i;
+              bestPos = Pos;
             }
           }
         }
@@ -404,20 +404,20 @@ int edgeShift(Tree* t, int net)
 // exchange Steiner nodes at the same position, then call edgeShift()
 int edgeShiftNew(Tree* t, int net)
 {
-  int  i, j, n;
-  int  deg, pairCnt, cur_pairN1, cur_pairN2;
-  int  N1nbrH, N1nbrV, N2nbrH, N2nbrV, iter;
-  int  numShift;
+  int i, j, n;
+  int deg, pairCnt, cur_pairN1, cur_pairN2;
+  int N1nbrH, N1nbrV, N2nbrH, N2nbrV, iter;
+  int numShift;
   Bool isPair;
 
   numShift = edgeShift(t, net);
-  deg      = t->deg;
+  deg = t->deg;
 
   const int sizeV = nets[net]->numPins;
-  int       pairN1[sizeV];
-  int       pairN2[sizeV];
+  int pairN1[sizeV];
+  int pairN2[sizeV];
 
-  iter       = 0;
+  iter = 0;
   cur_pairN1 = cur_pairN2 = -1;
   while (iter < 3) {
     iter++;
@@ -441,12 +441,12 @@ int edgeShiftNew(Tree* t, int net)
       {
         cur_pairN1 = pairN1[0];
         cur_pairN2 = pairN2[0];
-        isPair     = TRUE;
+        isPair = TRUE;
       } else if (pairN1[0] == cur_pairN1 && pairN2[0] == cur_pairN2
                  && pairCnt > 1) {
         cur_pairN1 = pairN1[1];
         cur_pairN2 = pairN2[1];
-        isPair     = TRUE;
+        isPair = TRUE;
       } else
         isPair = FALSE;
 
@@ -489,7 +489,7 @@ int edgeShiftNew(Tree* t, int net)
         // N2nbrV);getchar();}
         if (N1nbrH >= 0 && N2nbrH >= 0) {
           if (N2nbrH == t->branch[cur_pairN2].n) {
-            t->branch[N1nbrH].n     = cur_pairN2;
+            t->branch[N1nbrH].n = cur_pairN2;
             t->branch[cur_pairN1].n = N2nbrH;
             t->branch[cur_pairN2].n = cur_pairN1;
           } else {
@@ -499,7 +499,7 @@ int edgeShiftNew(Tree* t, int net)
           numShift += edgeShift(t, net);
         } else if (N1nbrV >= 0 && N2nbrV >= 0) {
           if (N2nbrV == t->branch[cur_pairN2].n) {
-            t->branch[N1nbrV].n     = cur_pairN2;
+            t->branch[N1nbrV].n = cur_pairN2;
             t->branch[cur_pairN1].n = N2nbrV;
             t->branch[cur_pairN2].n = cur_pairN1;
           } else {

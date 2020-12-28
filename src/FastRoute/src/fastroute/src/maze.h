@@ -44,13 +44,13 @@ typedef struct
 } Pos;
 
 // Maze-routing in different orders
-extern void mazeRouteMSMD(int   iter,
-                          int   expand,
+extern void mazeRouteMSMD(int iter,
+                          int expand,
                           float height,
-                          int   ripup_threshold,
-                          int   mazeedge_Threshold,
-                          Bool  ordering,
-                          int   cost_type);
+                          int ripup_threshold,
+                          int mazeedge_Threshold,
+                          Bool ordering,
+                          int cost_type);
 // Maze-routing for multi-source, multi-destination
 extern void convertToMazeroute();
 

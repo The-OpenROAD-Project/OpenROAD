@@ -35,10 +35,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include "opendb/db.h"
 
@@ -80,7 +80,10 @@ class Pin
   int getNumLayers() const { return _layers.size(); }
   int getTopLayer() const { return _layers.back(); }
   PinOrientation getOrientation() const { return _orientation; }
-  void setOrientation(PinOrientation orientation) { _orientation = orientation; }
+  void setOrientation(PinOrientation orientation)
+  {
+    _orientation = orientation;
+  }
   const std::map<int, std::vector<odb::Rect>>& getBoxes() const
   {
     return _boxesPerLayer;

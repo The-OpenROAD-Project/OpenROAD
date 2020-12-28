@@ -46,7 +46,7 @@ proc read_lef { args } {
   sta::parse_key_args "read_lef" args keys {} flags {-tech -library}
   sta::check_argc_eq1 "read_lef" $args
 
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
     ord::error ORD 1 "$filename does not exist."
   }
@@ -69,7 +69,7 @@ sta::define_cmd_args "read_def" {[-order_wires] [-continue_on_errors] filename}
 proc read_def { args } {
   sta::parse_key_args "read_def" args keys {} flags {-order_wires -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
     ord::error ORD 3 "$filename does not exist."
   }
@@ -102,7 +102,7 @@ proc write_def { args } {
   }
 
   sta::check_argc_eq1 "write_def" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   ord::write_def_cmd $filename $version
 }
 
@@ -110,7 +110,7 @@ sta::define_cmd_args "read_db" {filename}
 
 proc read_db { args } {
   sta::check_argc_eq1 "read_db" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
     ord::error ORD 7 "$filename does not exist."
   }
@@ -124,7 +124,7 @@ sta::define_cmd_args "write_db" {filename}
 
 proc write_db { args } {
   sta::check_argc_eq1 "write_db" $args
-  set filename [file nativename $args]
+  set filename [file nativename [lindex $args 0]]
   ord::write_db_cmd $filename
 }
 
