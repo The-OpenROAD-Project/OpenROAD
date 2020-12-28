@@ -727,8 +727,6 @@ void IOPlacer::run(bool randomMode)
 {
   initParms();
 
-  _logger->report("Running IO placement");
-
   initNetlistAndCore(_horLayers, _verLayers);
 
   std::vector<HungarianMatching> hgVec;
@@ -738,8 +736,6 @@ void IOPlacer::run(bool randomMode)
 
   initIOLists();
   defineSlots();
-
-  printConfig();
 
   if (_reportHPWL) {
     initHPWL = returnIONetsHPWL(_netlist);
@@ -798,7 +794,6 @@ void IOPlacer::run(bool randomMode)
   }
 
   commitIOPlacementToDB(_assignment);
-  _logger->report("IO placement done.");
 }
 
 // db functions

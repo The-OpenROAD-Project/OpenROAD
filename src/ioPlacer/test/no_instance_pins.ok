@@ -10,16 +10,6 @@ Notice 0:     Created 10 pins.
 Notice 0:     Created 10 nets and 0 connections.
 Notice 0: Finished DEF file: no_instance_pins.def
 #Macro blocks found: 0
-Running IO placement
-[INFO PPL-0001]  * Num of slots          2494
-[INFO PPL-0002]  * Num of I/O            10
-[INFO PPL-0003]  * Num of I/O w/sink     0
-[INFO PPL-0004]  * Num of I/O w/o sink   10
-[INFO PPL-0005]  * Slots Per Section     200
-[INFO PPL-0006]  * Slots Increase Factor 0.01
-[INFO PPL-0007]  * Usage Per Section     0.8
-[INFO PPL-0008]  * Usage Increase Factor 0.01
-[INFO PPL-0009]  * Force Pin Spread      true
 [INFO PPL-0010] Tentative 0 to setup sections
 [INFO PPL-0001]  * Num of slots          2494
 [INFO PPL-0002]  * Num of I/O            10
@@ -31,5 +21,4 @@ Running IO placement
 [INFO PPL-0008]  * Usage Increase Factor 0.01
 [INFO PPL-0009]  * Force Pin Spread      true
 Successfully assigned I/O pins
-IO placement done.
 No differences found.
