@@ -61,6 +61,8 @@ class _dbBPin : public _dbObject
   _dbBPinFlags   _flags;
   dbId<_dbBTerm> _bterm;
   dbId<_dbBox>   _boxes;
+  int            _orig_x;
+  int            _orig_y;
   dbId<_dbBPin>  _next_bpin;
   uint           _min_spacing;      // 5.6 DEF
   uint           _effective_width;  // 5.6 DEF

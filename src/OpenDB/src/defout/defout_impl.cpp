@@ -961,19 +961,17 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
   if (_version > defout::DEF_5_6)
     fprintf(_out, "+ PORT");
 
+  int x = bpin->getOriginX();
+  int y = bpin->getOriginY();
 
   for (dbBox* box : bpin->getBoxes())
   {
       
-      int dw = defdist(int(box->getDX() / 2));
-      int dh = defdist(int(box->getDY() / 2));
-      int x  = defdist(box->xMin()) + dw;
-      int y  = defdist(box->yMin()) + dh;
 
-      int minX = defdist(box->xMin());
-      int minY = defdist(box->yMin());
-      int maxX = defdist(box->xMax());
-      int maxY = defdist(box->yMax());
+      int minX = defdist(box->xMin() - x);
+      int minY = defdist(box->yMin() - y);
+      int maxX = defdist(box->xMax() - x);
+      int maxY = defdist(box->yMax() - y);
 
       dbTechLayer* layer = box->getTechLayer();
       std::string  lname;
@@ -1025,31 +1023,36 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
     }
 
 
-    dbPlacementStatus status = bpin->getPlacementStatus();
-
-    switch (status.getValue()) {
-      case dbPlacementStatus::NONE:
-      case dbPlacementStatus::UNPLACED:
-        break;
-
-      case dbPlacementStatus::SUGGESTED:
-      case dbPlacementStatus::PLACED: {
-        fprintf(_out, " + PLACED ( %d %d ) N", x, y);
-        break;
-      }
-
-      case dbPlacementStatus::LOCKED:
-      case dbPlacementStatus::FIRM: {
-        fprintf(_out, " + FIXED ( %d %d ) N", x, y);
-        break;
-      }
-
-      case dbPlacementStatus::COVER: {
-        fprintf(_out, " + COVER ( %d %d ) N", x, y);
-        break;
-      }
-    }   
   }
+
+  x = defdist(x);
+  y = defdist(y);
+  
+  dbPlacementStatus status = bpin->getPlacementStatus();
+
+  switch (status.getValue()) {
+    case dbPlacementStatus::NONE:
+    case dbPlacementStatus::UNPLACED:
+      break;
+
+    case dbPlacementStatus::SUGGESTED:
+    case dbPlacementStatus::PLACED: {
+      fprintf(_out, "\n        + PLACED ( %d %d ) N", x, y);
+      break;
+    }
+
+    case dbPlacementStatus::LOCKED:
+    case dbPlacementStatus::FIRM: {
+      fprintf(_out, "\n        + FIXED ( %d %d ) N", x, y);
+      break;
+    }
+
+    case dbPlacementStatus::COVER: {
+      fprintf(_out, "\n        + COVER ( %d %d ) N", x, y);
+      break;
+    }
+  } 
+  
   
 }
 

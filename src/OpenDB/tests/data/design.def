@@ -28,9 +28,11 @@ PINS 12 ;
   + PORT
     + LAYER metal1 ( -25 0 ) ( 25 50 ) 
     + LAYER metal2 ( -10 0 ) ( 10 75 ) 
+    + FIXED ( 10000 5000 ) N
   + PORT
     + LAYER metal1 ( -25 0 ) ( 25 50 ) 
-    + LAYER metal2 ( -10 0 ) ( 10 75 ) ;
+    + LAYER metal2 ( -10 0 ) ( 10 75 )
+    + FIXED ( 10000 5000 ) N ;
 - inp1 + NET inp1 + DIRECTION INPUT ;
 - clk + NET clk + DIRECTION INPUT ;
 - out[8] + NET out[8] + DIRECTION OUTPUT ;
