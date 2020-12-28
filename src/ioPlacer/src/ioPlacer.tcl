@@ -69,7 +69,7 @@ proc set_io_pin_constraint { args } {
   }
 
   if {[info exists keys(-direction)] && [info exists keys(-name)]} {
-    ord::error PPL 20 "set_io_pin_constraint: only one constraint allowed"
+    ord::error PPL 15 "set_io_pin_constraint: only one constraint allowed"
   }
 
   if [info exists keys(-direction)] {
@@ -98,7 +98,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                  }
 
 proc io_placer { args } {
-  ord::warn PPL 1 "io_placer command is deprecated. Use place_pins instead"
+  ord::warn PPL 14 "io_placer command is deprecated. Use place_pins instead"
   [eval place_pins $args]
 }
 
@@ -110,12 +110,12 @@ proc place_pins { args } {
 
   set dbTech [ord::get_db_tech]
   if { $dbTech == "NULL" } {
-    ord::critical PPL 1 "missing dbTech"
+    ord::critical PPL 30 "missing dbTech"
   }
 
   set dbBlock [ord::get_db_block]
   if { $dbBlock == "NULL" } {
-    ord::critical PPL 2 "missing dbBlock"
+    ord::critical PPL 31 "missing dbBlock"
   }
 
   set db [::ord::get_db]
@@ -143,13 +143,13 @@ proc place_pins { args } {
   if [info exists keys(-hor_layers)] {
     set hor_layers $keys(-hor_layers)
   } else {
-    ord::error PPL 15 "-hor_layers is mandatory"
+    ord::error PPL 16 "-hor_layers is mandatory"
   }       
   
   if [info exists keys(-ver_layers)] {
     set ver_layers $keys(-ver_layers)
   } else {
-    ord::error PPL 15 "-ver_layers is mandatory"
+    ord::error PPL 17 "-ver_layers is mandatory"
   }
 
   set offset 5
@@ -173,28 +173,28 @@ proc place_pins { args } {
   set bterms_cnt [llength [$dbBlock getBTerms]]
 
   if { $bterms_cnt == 0 } {
-    ord::error PPL 10 "Design without pins"
+    ord::error PPL 18 "Design without pins"
   }
 
   foreach hor_layer $hor_layers {
     set hor_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $hor_layer]]
     if { $hor_track_grid == "NULL" } {
-      ord::error PPL 9 "Horizontal routing layer ($hor_layer) not found"
+      ord::error PPL 19 "Horizontal routing layer ($hor_layer) not found"
     }
 
     if { ![ord::db_layer_has_hor_tracks $hor_layer] } {
-      ord::error PPL 8 "Routing tracks not found for layer $hor_layer"
+      ord::error PPL 20 "Routing tracks not found for layer $hor_layer"
     }
   }
 
   foreach ver_layer $ver_layers {
     set ver_track_grid [$dbBlock findTrackGrid [$dbTech findRoutingLayer $ver_layer]]
     if { $ver_track_grid == "NULL" } {
-      ord::error PPL 9 "Vertical routing layer ($ver_layer) not found"
+      ord::error PPL 21 "Vertical routing layer ($ver_layer) not found"
     }
 
     if { ![ord::db_layer_has_ver_tracks $ver_layer] } {
-      ord::error PPL 8 "Routing tracks not found for layer $ver_layer"
+      ord::error PPL 22 "Routing tracks not found for layer $ver_layer"
     }
   }
 
@@ -204,7 +204,7 @@ proc place_pins { args } {
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 
   if { ($bterms_cnt > $num_slots) } {
-    ord::error PPL 18 "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
+    ord::error PPL 23 "Number of pins ($bterms_cnt) exceed max possible ($num_slots)"
   }
  
   if { $regions != {} } {
@@ -231,10 +231,10 @@ proc place_pins { args } {
 
           ppl::exclude_interval $edge_ $begin $end
         } else {
-          ord::error PPL 19 "-exclude: $interval is an invalid region"
+          ord::error PPL 24 "-exclude: $interval is an invalid region"
         }
       } else {
-        ord::error PPL 17 "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval"
+        ord::error PPL 25 "-exclude: invalid syntax in $region. use (top|bottom|left|right):interval"
       }
     }
   }
@@ -255,7 +255,7 @@ namespace eval ppl {
 proc parse_edge { cmd edge } {
   if {$edge != "top" && $edge != "bottom" && \
       $edge != "left" && $edge != "right"} {
-    ord::error PPL 12 "$cmd: $edge is an invalid edge. use top, bottom, left or right"
+    ord::error PPL 26 "$cmd: $edge is an invalid edge. use top, bottom, left or right"
   }
   return [ppl::get_edge $edge]
 }
@@ -268,7 +268,7 @@ proc parse_direction { cmd direction } {
     set direction [string tolower $direction]
     return [ppl::get_direction $direction]      
   } else {
-    ord::error PPL 13 "$cmd: Invalid pin direction"
+    ord::error PPL 27 "$cmd: Invalid pin direction"
   }
 }
 
@@ -296,7 +296,7 @@ proc get_edge_extreme { cmd begin edge } {
     } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMin]
     } else {
-      ord::error PPL 12 "$cmd: Invalid edge"
+      ord::error PPL 28 "$cmd: Invalid edge"
     }
   } else {
     if {$edge == "top" || $edge == "bottom"} {
@@ -304,7 +304,7 @@ proc get_edge_extreme { cmd begin edge } {
     } elseif {$edge == "left" || $edge == "right"} {
       set extreme [$die_area yMax]
     } else {
-      ord::error PPL 12 "$cmd: Invalid edge"
+      ord::error PPL 29 "$cmd: Invalid edge"
     }
   }
 }
