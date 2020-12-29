@@ -274,6 +274,11 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
+  void getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
+                                      float &maxSlew, bool &maxSlewExist,
+                                      float &maxCap, bool &maxCapExist);
+  void getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bool& maxSlewExist,
+                                     float& maxCap, bool& maxCapExist);
 
   sta::dbSta* _openSta = nullptr;
   odb::dbDatabase* _db = nullptr;
