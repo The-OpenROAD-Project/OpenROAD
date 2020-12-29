@@ -55,6 +55,7 @@ class Net
   void addPin(Pin& pin);
   std::vector<Pin>& getPins() { return _pins; }
   int getNumPins() const { return _pins.size(); }
+  bool isLocal();
   void destroyPins();
 
  private:

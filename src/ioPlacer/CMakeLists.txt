@@ -86,10 +86,9 @@ target_include_directories(ioPlacer
   )
 
 target_link_libraries(ioPlacer
-        ${TCL_LIB}
-        opendb
-        lefin
+  PUBLIC
 	Munkres
+  spdlog::spdlog
 	)
                       
                       

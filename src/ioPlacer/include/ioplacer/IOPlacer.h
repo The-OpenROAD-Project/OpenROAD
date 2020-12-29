@@ -44,6 +44,7 @@
 
 namespace ord {
 class OpenRoad;
+class Logger;
 }
 
 namespace odb {
@@ -56,6 +57,8 @@ namespace ppl {
 
 using odb::Point;
 using odb::Rect;
+
+using ord::Logger;
 
 enum class RandomMode
 {
@@ -162,6 +165,7 @@ class IOPlacer
   void initTracks();
 
   ord::OpenRoad* _openroad;
+  Logger *_logger;
   Parameters* _parms;
   Netlist _netlistIOPins;
   slotVector_t _slots;

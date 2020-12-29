@@ -35,8 +35,8 @@
 
 #include "fastroute/MakeFastRoute.h"
 
-#include "fastroute/GlobalRouter.h"
 #include "FastRoute.h"
+#include "fastroute/GlobalRouter.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
 

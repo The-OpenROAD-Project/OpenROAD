@@ -1,0 +1,86 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 599920 600260 ) ;
+TRACKS X 480 DO 625 STEP 960 LAYER li1 ;
+TRACKS Y 370 DO 811 STEP 740 LAYER li1 ;
+TRACKS X 370 DO 811 STEP 740 LAYER met1 ;
+TRACKS Y 370 DO 811 STEP 740 LAYER met1 ;
+TRACKS X 480 DO 625 STEP 960 LAYER met2 ;
+TRACKS Y 480 DO 625 STEP 960 LAYER met2 ;
+TRACKS X 740 DO 405 STEP 1480 LAYER met3 ;
+TRACKS Y 740 DO 406 STEP 1480 LAYER met3 ;
+TRACKS X 960 DO 312 STEP 1920 LAYER met4 ;
+TRACKS Y 960 DO 313 STEP 1920 LAYER met4 ;
+TRACKS X 3700 DO 90 STEP 6660 LAYER met5 ;
+TRACKS Y 3700 DO 90 STEP 6660 LAYER met5 ;
+VIAS 3 ;
+    - via_1920x980 + VIARULE M1M2_PR + CUTSIZE 300 300  + LAYERS met1 via met2  + CUTSPACING 340 340  + ENCLOSURE 490 340 110 340  + ROWCOL 1 2  ;
+    - via2_1920x980 + VIARULE M2M3_PR + CUTSIZE 400 400  + LAYERS met2 via2 met3  + CUTSPACING 400 400  + ENCLOSURE 80 290 360 130  + ROWCOL 1 2  ;
+    - via3_1920x980 + VIARULE M3M4_PR + CUTSIZE 400 400  + LAYERS met3 via3 met4  + CUTSPACING 400 400  + ENCLOSURE 360 120 360 290  + ROWCOL 1 2  ;
+END VIAS
+COMPONENTS 43 ;
+    - _470_ sky130_fd_sc_hs__o21ai_4 + PLACED ( 327360 139860 ) FS ;
+    - _471_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 426240 153180 ) FS ;
+    - _472_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 290880 146520 ) N ;
+    - _473_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 308160 153180 ) FS ;
+    - _474_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 156480 339660 ) FS ;
+    - _475_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 449280 439560 ) N ;
+    - _476_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 461760 333000 ) N ;
+    - _477_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 190080 426240 ) N ;
+    - _478_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 256320 446220 ) FS ;
+    - _479_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 360960 452880 ) N ;
+    - _480_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 372480 339660 ) FS ;
+    - _481_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 378240 139860 ) FS ;
+    - _482_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 376320 246420 ) FS ;
+    - _483_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 454080 186480 ) N ;
+    - _484_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 464640 279720 ) N ;
+    - _485_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 308160 299700 ) FS ;
+    - _486_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 240960 319680 ) N ;
+    - _487_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 161280 179820 ) FS ;
+    - _488_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 177600 293040 ) N ;
+    - _489_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 233280 146520 ) N ;
+    - _490_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 175680 372960 ) N ;
+    - _491_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 438720 379620 ) FS ;
+    - _492_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 437760 326340 ) FS ;
+    - _493_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 202560 392940 ) FS ;
+    - _494_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 288960 412920 ) N ;
+    - _495_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 340800 412920 ) N ;
+    - _496_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 351360 386280 ) N ;
+    - _497_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 363840 166500 ) FS ;
+    - _498_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 374400 286380 ) FS ;
+    - _499_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 421440 173160 ) N ;
+    - _500_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 404160 306360 ) N ;
+    - _501_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 302400 346320 ) N ;
+    - _502_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 251520 346320 ) N ;
+    - _503_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 173760 173160 ) N ;
+    - _504_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 211200 259740 ) FS ;
+    - _505_ sky130_fd_sc_hs__dfxtp_4 + PLACED ( 252480 166500 ) FS ;
+    - clkbuf_0_clk sky130_fd_sc_hs__buf_1 + PLACED ( 331200 299700 ) FS ;
+    - clkbuf_1_0_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 280320 299700 ) FS ;
+    - clkbuf_1_1_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 363840 299700 ) FS ;
+    - clkbuf_2_0_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 238080 259740 ) FS ;
+    - clkbuf_2_1_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 242880 333000 ) N ;
+    - clkbuf_2_2_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 407040 266400 ) N ;
+    - clkbuf_2_3_0_clk sky130_fd_sc_hs__clkbuf_1 + PLACED ( 404160 333000 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 409440 599777 ) N + LAYER met2 ( -140 -483 ) ( 140 483 ) ;
+END PINS
+NETS 8 ;
+    - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK ;
+    - clknet_0_clk ( clkbuf_1_1_0_clk A ) ( clkbuf_1_0_0_clk A ) ( clkbuf_0_clk X ) + USE CLOCK ;
+    - clknet_1_0_0_clk ( clkbuf_2_1_0_clk A ) ( clkbuf_2_0_0_clk A ) ( clkbuf_1_0_0_clk X ) + USE CLOCK ;
+    - clknet_1_1_0_clk ( clkbuf_2_3_0_clk A ) ( clkbuf_2_2_0_clk A ) ( clkbuf_1_1_0_clk X ) + USE CLOCK ;
+    - clknet_2_0_0_clk ( _472_ CLK ) ( _473_ CLK ) ( _487_ CLK ) ( _488_ CLK ) ( _489_ CLK ) ( _503_ CLK ) ( _504_ CLK )
+      ( _505_ CLK ) ( clkbuf_2_0_0_clk X ) + USE CLOCK ;
+    - clknet_2_1_0_clk ( _474_ CLK ) ( _477_ CLK ) ( _478_ CLK ) ( _485_ CLK ) ( _486_ CLK ) ( _490_ CLK ) ( _493_ CLK )
+      ( _494_ CLK ) ( _501_ CLK ) ( _502_ CLK ) ( clkbuf_2_1_0_clk X ) + USE CLOCK ;
+    - clknet_2_2_0_clk ( _471_ CLK ) ( _481_ CLK ) ( _482_ CLK ) ( _483_ CLK ) ( _484_ CLK ) ( _497_ CLK ) ( _498_ CLK )
+      ( _499_ CLK ) ( clkbuf_2_2_0_clk X ) + USE CLOCK ;
+    - clknet_2_3_0_clk ( _475_ CLK ) ( _476_ CLK ) ( _479_ CLK ) ( _480_ CLK ) ( _491_ CLK ) ( _492_ CLK ) ( _495_ CLK )
+      ( _496_ CLK ) ( _500_ CLK ) ( clkbuf_2_3_0_clk X ) + USE CLOCK ;
+END NETS
+END DESIGN
