@@ -179,9 +179,6 @@ int Grid::computeTileReduce(const odb::Rect& obs,
     }
   }
 
-  if (reduce < 0) {
-    std::cout << "[WARNING] Invalid reduction\n";
-  }
   return reduce;
 }
 

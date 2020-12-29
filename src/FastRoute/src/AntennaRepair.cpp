@@ -47,17 +47,18 @@
 #include "Net.h"
 #include "Pin.h"
 #include "fastroute/GlobalRouter.h"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 namespace grt {
 
-using ord::error;
+using ord::GRT;
 
 AntennaRepair::AntennaRepair(GlobalRouter* grouter,
                              ant::AntennaChecker* arc,
                              dpl::Opendp* opendp,
-                             odb::dbDatabase* db)
-    : _grouter(grouter), _arc(arc), _opendp(opendp), _db(db)
+                             odb::dbDatabase* db,
+                             ord::Logger *logger)
+    : _grouter(grouter), _arc(arc), _opendp(opendp), _db(db), _logger(logger)
 {
   _block = _db->getChip()->getBlock();
 }
@@ -83,7 +84,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
 
     for (GSegment& seg : route) {
       if (std::abs(seg.initLayer - seg.finalLayer) > 1) {
-        error("Global route segment not valid\n");
+        _logger->error(GRT, 77, "Global route segment not valid");
       }
       int x1 = seg.initX;
       int y1 = seg.initY;
@@ -124,8 +125,7 @@ int AntennaRepair::checkAntennaViolations(NetRouteMap& routing,
     }
   }
 
-  std::cout << "[INFO] #Antenna violations: " << _antennaViolations.size()
-            << "\n";
+  _logger->info(GRT, 12, "#Antenna violations: {}", _antennaViolations.size());
   return _antennaViolations.size();
 }
 
@@ -144,7 +144,7 @@ void AntennaRepair::fixAntennas(odb::dbMTerm* diodeMTerm)
     }
 
     if (siteWidth != site_width) {
-      std::cout << "[WARNING] Design has rows with different site width\n";
+      _logger->warn(GRT, 7, "Design has rows with different site width");
     }
   }
 
@@ -199,7 +199,7 @@ void AntennaRepair::deleteFillerCells()
   }
 
   if (fillerCnt > 0) {
-    std::cout << "[INFO] " << fillerCnt << " filler cells deleted\n";
+    _logger->info(GRT, 11, "{} filler cells deleted", fillerCnt);
   }
 }
 
