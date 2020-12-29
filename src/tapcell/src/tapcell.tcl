@@ -348,7 +348,7 @@ namespace eval tap {
             set row_width [expr $urx - $llx]
             
             if {$master_x > $row_width} {
-                ord::warn TAP 8 "No enough space to place endcap in row $row_name. Skipping..."
+                ord::warn TAP 8 "Not enough space to place endcap in row $row_name. Skipping..."
                 continue
             }
 
