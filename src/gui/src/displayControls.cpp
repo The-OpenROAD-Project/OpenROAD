@@ -78,6 +78,7 @@ void DisplayColorDialog::buildUI()
 {
   colorDialog_ = new QColorDialog(this);
   colorDialog_->setOptions(QColorDialog::DontUseNativeDialog);
+  colorDialog_->setOption(QColorDialog::ShowAlphaChannel);
   colorDialog_->setWindowFlags(Qt::Widget);
   colorDialog_->setCurrentColor(color_);
   patternGroupBox_ = new QGroupBox("Layer Pattern");
