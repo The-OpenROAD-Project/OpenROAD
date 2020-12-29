@@ -206,7 +206,7 @@ namespace eval tap {
 
         set end_master [$db findMaster $endcap_master]
         if { $end_master == "NULL" } {
-            ord::error TAP 10 "Master $endcap_master not found"
+            ord::error TAP 11 "Master $endcap_master not found"
         }
         set end_width [$end_master getWidth]
         set min_row_width [expr 2*$end_width]
@@ -309,13 +309,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            ord::error TAP 11 "Master $cnrcap_nwin_master not found"
+                            ord::error TAP 12 "Master $cnrcap_nwin_master not found"
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
                         
                         if { $master == "NULL" } {
-                            ord::error TAP 12 "Master $cnrcap_nwout_master not found"
+                            ord::error TAP 13 "Master $cnrcap_nwout_master not found"
                         }
                     }
                 } elseif {$top_bottom == -1} {
@@ -323,13 +323,13 @@ namespace eval tap {
                         set master [$db findMaster $cnrcap_nwin_master]
 
                         if { $master == "NULL" } {
-                            ord::error TAP 13 "Master $cnrcap_nwin_master not found"
+                            ord::error TAP 14 "Master $cnrcap_nwin_master not found"
                         }
                     } else {
                         set master [$db findMaster $cnrcap_nwout_master]
 
                         if { $master == "NULL" } {
-                            ord::error TAP 14 "Master $cnrcap_nwout_master not found"
+                            ord::error TAP 15 "Master $cnrcap_nwout_master not found"
                         }
                     }
                 } else {
@@ -348,7 +348,7 @@ namespace eval tap {
             set row_width [expr $urx - $llx]
             
             if {$master_x > $row_width} {
-                ord::warn TAP 11 "No enough space to place endcap in row $row_name. Skipping..."
+                ord::warn TAP 8 "Not enough space to place endcap in row $row_name. Skipping..."
                 continue
             }
 
@@ -399,7 +399,7 @@ namespace eval tap {
             }
 
             if {$llx == $loc_2_x && $lly == $loc_2_y} {
-                ord::warn TAP 10 "WARNING: row $row_name have enough space for only one endcap"
+                ord::warn TAP 9 "WARNING: row $row_name have enough space for only one endcap"
             continue
             }
 
@@ -420,7 +420,7 @@ namespace eval tap {
             incr cnt
             incr endcap_count
         }
-        ord::info TAP 5 "#Endcaps inserted: $endcap_count"
+        ord::info TAP 4 "#Endcaps inserted: $endcap_count"
         return $cnt
     }
 
@@ -491,7 +491,7 @@ namespace eval tap {
                 for {set x [expr $llx+$offset]} {$x < [expr $urx-$endcap_cpp*$site_x]} {set x [expr $x+$pitch]} {
                     set master [$db findMaster $tapcell_master]
                     if { $master == "NULL" } {
-                        ord::error TAP 15 "Master $tapcell_master not found"
+                        ord::error TAP 16 "Master $tapcell_master not found"
                     }
 
                     set inst_name "PHY_${cnt}"
@@ -519,7 +519,7 @@ namespace eval tap {
 
                     if {($x != $min_x) && ($x_end != $max_x)} {
                         if { $tap_urx > $end_llx } {
-                            ord::warn TAP 15 "Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
+                            ord::warn TAP 10 "Tapcell at position ($x, $lly) will cause overlap with endcap. Skipping..."
                             continue
                         }
 
@@ -653,7 +653,7 @@ namespace eval tap {
             }
         }
 
-        ord::info TAP 5 "Top/bottom cells inserted: $topbottom_cnt"
+        ord::info TAP 6 "Top/bottom cells inserted: $topbottom_cnt"
         return $cnt
     }
 
@@ -919,7 +919,7 @@ namespace eval tap {
                 }
             }
         }
-        ord::info TAP 5 "Cells inserted near blkgs: $blkgs_cnt"
+        ord::info TAP 7 "Cells inserted near blkgs: $blkgs_cnt"
     }
 
     #proc to detect even/odd
