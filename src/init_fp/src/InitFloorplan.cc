@@ -603,6 +603,7 @@ InitFloorplan::autoPlacePins(dbTechLayer *pin_layer,
 
       dbBPin *bpin = dbBPin::create(bterm);
       bpin->setPlacementStatus(dbPlacementStatus::FIRM);
+      bpin->setOrigin(x,y);
       dbBox::create(bpin, pin_layer, x, y, x, y);
 
       location += pin_dist;

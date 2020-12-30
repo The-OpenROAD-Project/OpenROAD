@@ -950,7 +950,10 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
     int yMin = lowerBound.y();
     int xMax = upperBound.x();
     int yMax = upperBound.y();
-
+    
+    int originX = xMax - int((xMax - xMin)/2);
+    int originY = yMax - int((yMax - yMin)/2);
+    bpin->setOrigin(originX, originY);
     odb::dbBox::create(bpin, layer, xMin, yMin, xMax, yMax);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
