@@ -37,6 +37,9 @@
 
 #include <string>
 #include <vector>
+#include <array>
+#include <map>
+#include <string_view>
 
 #include "spdlog/spdlog.h"
 
@@ -74,6 +77,7 @@ namespace ord {
 enum ToolId
 {
  FOREACH_TOOL(GENERATE_ENUM)
+ SIZE // the number of tools, do not put anything after this
 };
 
 class Logger
@@ -88,6 +92,20 @@ class Logger
                        const Args&... args)
     {
       logger_->log(spdlog::level::level_enum::off, message, args...);
+    }
+
+  template <typename... Args>
+    inline void debug(ToolId tool,
+                      const char* group,
+                      int level,
+                      const std::string& message,
+                      const Args&... args)
+    {
+      auto& groups = debug_group_level_[tool];
+      auto it = groups.find(group);
+      if (it != groups.end() && level <= it->second) {
+        log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
+      }
     }
 
   template <typename... Args>
@@ -131,6 +149,8 @@ class Logger
       log(tool, spdlog::level::level_enum::critical, id, message, args...);
     }
 
+  void setDebugLevel(ToolId tool, const char* group, int level);
+
  private:
   template <typename... Args>
     inline void log(ToolId tool,
@@ -148,8 +168,19 @@ class Logger
                    args...);
     }
 
+  // Allows for lookup by a compatible key (ie string_view)
+  // to avoid constructing a key (string) just for lookup
+  struct StringViewCmp {
+    using is_transparent = std::true_type; // enabler
+    bool operator()(const std::string_view& a, const std::string_view& b) const {
+      return a < b;
+    }
+  };
+  using DebugGroups = std::map<std::string, int, StringViewCmp>;
+
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
+  std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   static constexpr const char *level_names[] = {"TRACE",
                                                 "DEBUG",
                                                 "INFO",
@@ -165,4 +196,4 @@ class Logger
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-}  // namespace ordlog
+}  // namespace ord

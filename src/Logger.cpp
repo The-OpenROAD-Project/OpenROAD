@@ -51,6 +51,7 @@ Logger::Logger(const char* log_filename)
   
   logger_ = std::make_shared<spdlog::logger>("logger", sinks_.begin(), sinks_.end());
   logger_->set_pattern(pattern_);
+  logger_->set_level(spdlog::level::level_enum::debug);
 }
 
 ToolId
@@ -63,6 +64,11 @@ Logger::findToolId(const char *tool_name)
     tool_id++;
   }
   return UKN;
+}
+
+void Logger::setDebugLevel(ToolId tool, const char* group, int level)
+{
+  debug_group_level_.at(tool)[group] = level;
 }
 
 }  // namespace

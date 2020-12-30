@@ -347,6 +347,21 @@ write_verilog_cmd(const char *filename,
   ord->writeVerilog(filename, sort, include_pwr_gnd, remove_cells);
 }
 
+void
+set_debug_level(const char* tool_name,
+                const char* group,
+                int level)
+{
+  using namespace ord;
+  auto* logger = getOpenRoad()->getLogger();
+
+  auto id = Logger::findToolId(tool_name);
+  if (id == UKN) {
+    logger->error(ORD, 15, "Unknown tool name {}", tool_name);
+  }
+  logger->setDebugLevel(id, group, level);
+}
+
 ////////////////////////////////////////////////////////////////
 
 odb::dbDatabase *
