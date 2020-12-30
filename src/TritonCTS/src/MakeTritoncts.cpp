@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "MakeTritoncts.h"
-#include "TritonCTSKernel.h"
+#include "TritonCTS.h"
 #include "db.h"
 #include "openroad/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -50,9 +50,9 @@ extern int Tritoncts_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-cts::TritonCTSKernel* makeTritonCts()
+cts::TritonCTS* makeTritonCts()
 {
-  return new cts::TritonCTSKernel();
+  return new cts::TritonCTS();
 }
 
 void initTritonCts(OpenRoad* openroad)
@@ -64,11 +64,11 @@ void initTritonCts(OpenRoad* openroad)
 
   // Set DB index
   unsigned dbId = openroad->getDb()->getId();
-  cts::TritonCTSKernel* cts = openroad->getTritonCts();
+  cts::TritonCTS* cts = openroad->getTritonCts();
   cts->getParms().setDbId(dbId);
 }
 
-void deleteTritonCts(cts::TritonCTSKernel* tritoncts)
+void deleteTritonCts(cts::TritonCTS* tritoncts)
 {
 }
 

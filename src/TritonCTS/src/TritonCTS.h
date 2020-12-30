@@ -45,10 +45,10 @@
 
 namespace cts {
 
-class TritonCTSKernel
+class TritonCTS
 {
  public:
-  TritonCTSKernel()
+  TritonCTS()
       : _dbWrapper(_options, *this), _techChar(_options), _staEngine(_options)
   {
   }

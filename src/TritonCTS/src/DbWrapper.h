@@ -52,12 +52,12 @@ class dbITerm;
 
 namespace cts {
 
-class TritonCTSKernel;
+class TritonCTS;
 
 class DbWrapper
 {
  public:
-  DbWrapper(CtsOptions& options, TritonCTSKernel& kernel);
+  DbWrapper(CtsOptions& options, TritonCTS& kernel);
 
   bool masterExists(const std::string& master) const;
 
@@ -74,7 +74,7 @@ class DbWrapper
   odb::dbChip* _chip = nullptr;
   odb::dbBlock* _block = nullptr;
   CtsOptions* _options = nullptr;
-  TritonCTSKernel* _kernel = nullptr;
+  TritonCTS* _kernel = nullptr;
   unsigned _numberOfClocks = 0;
   unsigned _numClkNets = 0;
   unsigned _numFixedNets = 0;

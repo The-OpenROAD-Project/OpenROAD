@@ -49,7 +49,7 @@ add_custom_command(OUTPUT ${TRITONCTS_WRAP}
         WORKING_DIRECTORY ${TRITONCTS_HOME}/src
         DEPENDS
         ${TRITONCTS_HOME}/src/tritoncts.i
-        ${TRITONCTS_HOME}/src/TritonCTSKernel.h
+        ${TRITONCTS_HOME}/src/TritonCTS.h
         ${OPENROAD_HOME}/src/Exception.i
 )
 
@@ -68,7 +68,7 @@ set(SRC_FILES
         SinkClustering.cpp
         StaEngine.cpp
         TechChar.cpp
-        TritonCTSKernel.cpp
+        TritonCTS.cpp
         CKMeans/clustering.cpp
 )
 

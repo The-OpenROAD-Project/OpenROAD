@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TritonCTSKernel.h"
+#include "TritonCTS.h"
 #include "PostCtsOpt.h"
 #include "openroad/Error.hh"
 
@@ -46,7 +46,7 @@ namespace cts {
 
 using ord::error;
 
-void TritonCTSKernel::runTritonCts()
+void TritonCTS::runTritonCts()
 {
   printHeader();
   setupCharacterization();
@@ -64,14 +64,14 @@ void TritonCTSKernel::runTritonCts()
   printFooter();
 }
 
-void TritonCTSKernel::printHeader() const
+void TritonCTS::printHeader() const
 {
   std::cout << " *****************\n";
   std::cout << " * TritonCTS 2.0 *\n";
   std::cout << " *****************\n";
 }
 
-void TritonCTSKernel::setupCharacterization()
+void TritonCTS::setupCharacterization()
 {
   if (_options.runAutoLut()) {
     // A new characteriztion is created.
@@ -87,7 +87,7 @@ void TritonCTSKernel::setupCharacterization()
   _options.setNumClockSubnets(0);
 }
 
-void TritonCTSKernel::importCharacterization()
+void TritonCTS::importCharacterization()
 {
   std::cout << " *****************************\n";
   std::cout << " *  Import characterization  *\n";
@@ -96,7 +96,7 @@ void TritonCTSKernel::importCharacterization()
   _techChar.parse(_options.getLutFile(), _options.getSolListFile());
 }
 
-void TritonCTSKernel::createCharacterization()
+void TritonCTS::createCharacterization()
 {
   std::cout << " *****************************\n";
   std::cout << " *  Create characterization  *\n";
@@ -105,7 +105,7 @@ void TritonCTSKernel::createCharacterization()
   _techChar.create();
 }
 
-void TritonCTSKernel::checkCharacterization()
+void TritonCTS::checkCharacterization()
 {
   std::cout << " ****************************\n";
   std::cout << " *  Check characterization  *\n";
@@ -130,7 +130,7 @@ void TritonCTSKernel::checkCharacterization()
             << " All of them are in the loaded DB.\n";
 }
 
-void TritonCTSKernel::findClockRoots()
+void TritonCTS::findClockRoots()
 {
   std::cout << " **********************\n";
   std::cout << " *  Find clock roots  *\n";
@@ -146,7 +146,7 @@ void TritonCTSKernel::findClockRoots()
   _staEngine.init();
 }
 
-void TritonCTSKernel::populateTritonCts()
+void TritonCTS::populateTritonCts()
 {
   std::cout << " ************************\n";
   std::cout << " *  Populate TritonCTS  *\n";
@@ -159,7 +159,7 @@ void TritonCTSKernel::populateTritonCts()
   }
 }
 
-void TritonCTSKernel::buildClockTrees()
+void TritonCTS::buildClockTrees()
 {
   std::cout << " ***********************\n";
   std::cout << " *  Build clock trees  *\n";
@@ -171,7 +171,7 @@ void TritonCTSKernel::buildClockTrees()
   }
 }
 
-void TritonCTSKernel::runPostCtsOpt()
+void TritonCTS::runPostCtsOpt()
 {
   if (!_options.runPostCtsOpt()) {
     return;
@@ -187,7 +187,7 @@ void TritonCTSKernel::runPostCtsOpt()
   }
 }
 
-void TritonCTSKernel::writeDataToDb()
+void TritonCTS::writeDataToDb()
 {
   std::cout << " ********************\n";
   std::cout << " * Write data to DB *\n";
@@ -198,7 +198,7 @@ void TritonCTSKernel::writeDataToDb()
   }
 }
 
-void TritonCTSKernel::forEachBuilder(
+void TritonCTS::forEachBuilder(
     const std::function<void(const TreeBuilder*)> func) const
 {
   for (const TreeBuilder* builder : _builders) {
@@ -206,12 +206,12 @@ void TritonCTSKernel::forEachBuilder(
   }
 }
 
-void TritonCTSKernel::printFooter() const
+void TritonCTS::printFooter() const
 {
   std::cout << " ... End of TritonCTS execution.\n";
 }
 
-void TritonCTSKernel::reportCtsMetrics()
+void TritonCTS::reportCtsMetrics()
 {
   std::string filename = _options.getMetricsFile();
 
@@ -245,7 +245,7 @@ void TritonCTSKernel::reportCtsMetrics()
   }
 }
 
-int TritonCTSKernel::setClockNets(const char* names)
+int TritonCTS::setClockNets(const char* names)
 {
   odb::dbDatabase* db = odb::dbDatabase::getDatabase(_options.getDbId());
   odb::dbChip* chip = db->getChip();
@@ -286,7 +286,7 @@ int TritonCTSKernel::setClockNets(const char* names)
   return 0;
 }
 
-void TritonCTSKernel::setBufferList(const char* buffers)
+void TritonCTS::setBufferList(const char* buffers)
 {
   std::stringstream ss(buffers);
   std::istream_iterator<std::string> begin(ss);

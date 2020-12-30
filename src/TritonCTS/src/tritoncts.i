@@ -36,12 +36,12 @@
 %module tritoncts
 
 %{
-#include "TritonCTSKernel.h"
+#include "TritonCTS.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
-cts::TritonCTSKernel *
+cts::TritonCTS *
 getTritonCts();
 }
 

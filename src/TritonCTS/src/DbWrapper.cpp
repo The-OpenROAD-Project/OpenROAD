@@ -35,7 +35,7 @@
 
 #include "DbWrapper.h"
 #include "HTreeBuilder.h"
-#include "TritonCTSKernel.h"
+#include "TritonCTS.h"
 #include "db_sta/dbSta.hh"
 #include "openroad/Error.hh"
 #include "sta/Clock.hh"
@@ -54,7 +54,7 @@ namespace cts {
 
 using ord::error;
 
-DbWrapper::DbWrapper(CtsOptions& options, TritonCTSKernel& kernel)
+DbWrapper::DbWrapper(CtsOptions& options, TritonCTS& kernel)
 {
   _options = &options;
   _kernel = &kernel;
