@@ -56,8 +56,11 @@ class TritonCTSKernel
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions& getParms() { return _options; }
+  TechChar& getCharacterization() { return _techChar; }
   void addBuilder(TreeBuilder* builder) { _builders.push_back(builder); }
   void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+  int setClockNets(const char* names);
+  void setBufferList(const char* buffers);
 
  private:
   void printHeader() const;
