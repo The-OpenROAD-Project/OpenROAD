@@ -69,7 +69,7 @@ set(SRC_FILES
         TechChar.cpp
         TritonCTSKernel.cpp
         TritonCTSKernelTcl.cpp
-        third_party/CKMeans/clustering.cpp
+        CKMeans/clustering.cpp
 )
 
 add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
