@@ -105,16 +105,23 @@ class dbStaReport : public sta::ReportTcl
 {
 public:
   void setLogger(Logger *logger);
-  virtual void error(int id,
-                     const char *fmt,
-                     ...)
-    __attribute__((format (printf, 3, 4)));
   virtual void warn(int id,
                     const char *fmt,
                     ...)
     __attribute__((format (printf, 3, 4)));
+  virtual void error(int id,
+                     const char *fmt,
+                     ...)
+    __attribute__((format (printf, 3, 4)));
+  virtual void critical(int id,
+                        const char *fmt,
+                        ...)
+    __attribute__((format (printf, 3, 4)));
 
-private:
+protected:
+  virtual void printLine(const char *line,
+                         size_t length);
+
   Logger *logger_;
 };
 
@@ -384,6 +391,13 @@ dbStaReport::setLogger(Logger *logger)
 }
 
 void
+dbStaReport::printLine(const char *line,
+                       size_t length)
+{
+  logger_->report(line);
+}
+ 
+void
 dbStaReport::error(int id,
                    const char *fmt,
                    ...)
@@ -406,6 +420,19 @@ dbStaReport::warn(int id,
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
   logger_->warn(STA, id, buffer_);
+  va_end(args);
+}
+
+void
+dbStaReport::critical(int id,
+                      const char *fmt,
+                      ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  std::unique_lock<std::mutex> lock(buffer_lock_);
+  printToBuffer(fmt, args);
+  logger_->critical(STA, id, buffer_);
   va_end(args);
 }
 
