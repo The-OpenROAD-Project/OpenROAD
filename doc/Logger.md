@@ -130,7 +130,7 @@ The debug() method of the Logger class should not be called directly.  No messag
 
 The argument types are as for the info/warn/error/ciritical messages.  The one additional argument is group which is a const char*.  Its purposes is to allow the enabling of subsets of messages within one tool.
 
-Debug messages are enabled with the tcl command: set_debug_level <tool> <group> <level>
+Debug messages are enabled with the tcl command: set_debug_level \<tool\> \<group\> \<level\>
 
 ## Converting to Logger
 
