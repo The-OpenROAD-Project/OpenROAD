@@ -170,13 +170,15 @@ private:
 };
 
 dbSta *
-makeBlockSta(dbBlock *block)
+makeBlockSta(ord::OpenRoad *openroad,
+             dbBlock *block)
 {
-  Sta *sta = Sta::sta();
+  dbSta *sta = openroad->getSta();
   dbSta *sta2 = new dbSta;
   sta2->makeComponents();
   sta2->getDbNetwork()->setBlock(block);
   sta2->setTclInterp(sta->tclInterp());
+  sta2->getDbReport()->setLogger(openroad->getLogger());
   sta2->copyUnits(sta->units());
   return sta2;
 }

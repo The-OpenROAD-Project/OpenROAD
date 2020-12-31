@@ -174,11 +174,13 @@ Resizer::Resizer() :
 }
 
 void
-Resizer::init(Tcl_Interp *interp,
+Resizer::init(OpenRoad *openroad,
+              Tcl_Interp *interp,
               Logger *logger,
               dbDatabase *db,
               dbSta *sta)
 {
+  openroad_ = openroad;
   logger_ = logger;
   db_ = db;
   block_ = nullptr;
@@ -2945,7 +2947,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
 {
   // Make a (hierarchical) block to use as a scratchpad.
   dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
-  dbSta *sta = makeBlockSta(block);
+  dbSta *sta = makeBlockSta(openroad_, block);
 
   Instance *top_inst = network_->topInstance();
   // Tmp net for parasitics to live on.

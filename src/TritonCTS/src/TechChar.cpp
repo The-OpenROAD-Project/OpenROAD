@@ -799,7 +799,7 @@ void TechChar::createStaInstance()
   if (_openStaChar != nullptr) {
     _openStaChar->clear();
   }
-  _openStaChar = sta::makeBlockSta(_charBlock);
+  _openStaChar = sta::makeBlockSta(openRoad, _charBlock);
   // Sets the current OpenSTA instance as the new one just created.
   sta::Sta::setSta(_openStaChar);
   _openStaChar->clear();
