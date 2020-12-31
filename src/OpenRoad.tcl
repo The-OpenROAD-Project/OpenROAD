@@ -214,9 +214,7 @@ proc set_layer_rc {args} {
 sta::define_cmd_args "set_debug_level" { tool group level }
 proc set_debug_level {args} {
   sta::check_argc_eq3 "set_debug_level" $args
-  set tool [lindex $args 0]
-  set group [lindex $args 1]
-  set level [lindex $args 2]
+  lassign $args tool group level
   sta::check_integer "set_debug_level" $level
   ord::set_debug_level $tool $group $level
 }
