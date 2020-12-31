@@ -94,6 +94,7 @@ class Logger
       logger_->log(spdlog::level::level_enum::off, message, args...);
     }
 
+  // Do NOT call this directly, use the debugPrint macro  instead (defined below)
   template <typename... Args>
     inline void debug(ToolId tool,
                       const char* group,
@@ -194,7 +195,9 @@ class Logger
   static constexpr const char* tool_names_[] = { FOREACH_TOOL(GENERATE_STRING) };
 };
 
-#define debugPrint(logger, tool, group, level, message, ...) \
+// Use this macro for any debug messages.  It avoids evaluating message and varargs
+// when no message is issued.
+#define debugPrint(logger, tool, group, level, message, ...)   \
   if (logger->debugCheck(tool, group, level)) {                \
     logger->debug(tool, group, level, message, ##__VA_ARGS__); \
   }
