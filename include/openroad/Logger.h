@@ -101,9 +101,7 @@ class Logger
                       const std::string& message,
                       const Args&... args)
     {
-      auto& groups = debug_group_level_[tool];
-      auto it = groups.find(group);
-      if (it != groups.end() && level <= it->second) {
+      if (debugCheck(tool, group, level)) {
         log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
       }
     }
@@ -150,6 +148,12 @@ class Logger
     }
 
   void setDebugLevel(ToolId tool, const char* group, int level);
+
+  bool debugCheck(ToolId tool, const char* group, int level) const {
+      auto& groups = debug_group_level_[tool];
+      auto it = groups.find(group);
+      return (it != groups.end() && level <= it->second);
+  }
 
  private:
   template <typename... Args>
