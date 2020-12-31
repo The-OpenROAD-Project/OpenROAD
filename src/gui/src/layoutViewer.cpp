@@ -33,11 +33,19 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
+#include <QDebug>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QScrollBar>
+#include <QSizePolicy>
+#include <QToolButton>
 #include <QToolTip>
+#include <QVBoxLayout>
 #include <iostream>
 #include <tuple>
 #include <vector>
@@ -161,6 +169,10 @@ LayoutViewer::LayoutViewer(Options* options,
 {
   setMouseTracking(true);
   resize(100, 100);  // just a placeholder until we load the design
+
+  findShortcut_ = new QShortcut(this);
+  findShortcut_->setKey(QKeySequence(Qt::CTRL + Qt::Key_F));
+  connect(findShortcut_, SIGNAL(activated()), this, SLOT(slotShortcutCtrlF()));
 }
 
 void LayoutViewer::setDb(dbDatabase* db)
@@ -849,6 +861,19 @@ void LayoutViewer::fit()
   qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
                                 viewport.height() / (double) bbox.dy());
   setPixelsPerDBU(pixelsPerDBU);
+}
+
+void LayoutViewer::slotShortcutCtrlF()
+{
+  auto topBlock = getBlock();
+  // qDebug() << "Landed in slotShortcutCtrlF Top Block is  : " << topBlock;
+  static FindObjectDialog findDlg(this);
+  findDlg.exec();
+}
+
+void LayoutViewer::findObjectInLayout()
+{
+  // qDebug() << "Landed in findObjectInLayout ";
 }
 
 void LayoutViewer::designLoaded(dbBlock* block)

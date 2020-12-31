@@ -7,6 +7,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if (Qt5_FOUND)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
+  set(CMAKE_AUTOUIC ON)
+  set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
 
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
@@ -29,8 +31,11 @@ if (Qt5_FOUND)
     src/displayControls.cpp
     src/gui.cpp
     src/search.cpp 
+    src/findDlg.cpp
     ${GUI_WRAP}
   )
+
+  qt5_wrap_ui(findDlg.ui)
 
   target_link_libraries(gui
     opendb
@@ -49,4 +54,6 @@ target_include_directories(gui
   PRIVATE
     ${OPENROAD_HOME}/include
     ${Boost_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
+    ${AUTOGEN_BUILD_DIR}/include
 )
