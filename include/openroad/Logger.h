@@ -101,9 +101,7 @@ class Logger
                       const std::string& message,
                       const Args&... args)
     {
-      if (debugCheck(tool, group, level)) {
-        log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
-      }
+      log(tool, spdlog::level::level_enum::debug, /*id*/ level, message, args...);
     }
 
   template <typename... Args>
@@ -195,6 +193,11 @@ class Logger
   static constexpr const char *pattern_ = "%v";
   static constexpr const char* tool_names_[] = { FOREACH_TOOL(GENERATE_STRING) };
 };
+
+#define debugPrint(logger, tool, group, level, message, ...) \
+  if (logger->debugCheck(tool, group, level)) {                \
+    logger->debug(tool, group, level, message, ##__VA_ARGS__); \
+  }
 
 #undef FOREACH_TOOL
 #undef GENERATE_ENUM
