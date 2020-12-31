@@ -149,6 +149,9 @@ class Logger
   void setDebugLevel(ToolId tool, const char* group, int level);
 
   bool debugCheck(ToolId tool, const char* group, int level) const {
+      if (!debug_on_) {
+        return false;
+      }
       auto& groups = debug_group_level_[tool];
       auto it = groups.find(group);
       return (it != groups.end() && level <= it->second);
@@ -184,6 +187,7 @@ class Logger
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
+  bool debug_on_;
   static constexpr const char *level_names[] = {"TRACE",
                                                 "DEBUG",
                                                 "INFO",

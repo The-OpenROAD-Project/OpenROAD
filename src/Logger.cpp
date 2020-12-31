@@ -44,6 +44,7 @@
 namespace ord {
 
 Logger::Logger(const char* log_filename)
+  : debug_on_(false)
 {
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
@@ -68,7 +69,20 @@ Logger::findToolId(const char *tool_name)
 
 void Logger::setDebugLevel(ToolId tool, const char* group, int level)
 {
-  debug_group_level_.at(tool)[group] = level;
+  if (level == 0) {
+    auto& groups = debug_group_level_[tool];
+    auto it = groups.find(group);
+    if (it != groups.end()) {
+      groups.erase(it);
+      debug_on_ = std::any_of(debug_group_level_.begin(),
+                              debug_group_level_.end(),
+                              [](auto& group) { return !group.empty(); }
+                              );
+    }
+  } else {
+    debug_on_ = true;
+    debug_group_level_.at(tool)[group] = level;
+  }
 }
 
 }  // namespace
