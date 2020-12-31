@@ -2265,6 +2265,12 @@ proc get_core_ring_centre {type side layer_info} {
   }
 }
 
+proc real_value {value} {
+  variable def_units
+
+  return [expr $value * 1.0 / $def_units]
+}
+
 proc find_pad_offset_area {} {
   variable block
   variable grid_data
@@ -2274,48 +2280,59 @@ proc find_pad_offset_area {} {
     critical 41 "Need to define pwr_pads and gnd_pads in config file to use pad_offset option"
   }
 
-  set pad_names {}
-  dict for {pin_name pads} [dict get $grid_data pwr_pads] {
-    set pad_names [concat $pad_names $pads]
-  }
-  dict for {pin_name pads} [dict get $grid_data gnd_pads] {
-    set pad_names [concat $pad_names $pads]
-  }
-  set pad_names [lsort -unique $pad_names]
-  set die_area [dict get $design_data config die_area]
-  set xMin [lindex $die_area 0]
-  set yMin [lindex $die_area 1]
-  set xMax [lindex $die_area 2]
-  set yMax [lindex $die_area 3]
+  if {![dict exists $design_data config pad_offset_area]} {
+    set pad_names {}
+    dict for {pin_name pads} [dict get $grid_data pwr_pads] {
+      set pad_names [concat $pad_names $pads]
+    }
+    dict for {pin_name pads} [dict get $grid_data gnd_pads] {
+      set pad_names [concat $pad_names $pads]
+    }
+    set pad_names [lsort -unique $pad_names]
+    set die_area [dict get $design_data config die_area]
+    set xMin [lindex $die_area 0]
+    set yMin [lindex $die_area 1]
+    set xMax [lindex $die_area 2]
+    set yMax [lindex $die_area 3]
 
-  foreach inst [$block getInsts] {
-    if {[lsearch $pad_names [[$inst getMaster] getName]] > -1} {
-      set quadrant [get_design_quadrant {*}[$inst getOrigin]]
-      switch $quadrant {
-        "b" {
-          if {$yMin < [set y [[$inst getBBox] yMax]]} {
-            set yMin $y
+    # debug "pad_names: $pad_names"
+    foreach inst [$block getInsts] {
+      if {[lsearch $pad_names [[$inst getMaster] getName]] > -1} {
+        # debug "inst_master: [[$inst getMaster] getName]"
+        set quadrant [get_design_quadrant {*}[$inst getOrigin]]
+        switch $quadrant {
+          "b" {
+            # debug "inst: [$inst getName], side: $quadrant, yMax: [real_value [[$inst getBBox] yMax]]"
+            if {$yMin < [set y [[$inst getBBox] yMax]]} {
+              set yMin $y
+            }
           }
-        }
-        "r" {
-          if {$xMax > [set x [[$inst getBBox] xMin]]} {
-            set xMax $x
+          "r" {
+            # debug "inst: [$inst getName], side: $quadrant, xMin: [real_value [[$inst getBBox] xMin]]"
+            if {$xMax > [set x [[$inst getBBox] xMin]]} {
+              set xMax $x
+            }
           }
-        }
-        "t" {
-          if {$yMax > [set y [[$inst getBBox] yMin]]} {
-            set yMax $y
+          "t" {
+            # debug "inst: [$inst getName], side: $quadrant, yMin: [real_value [[$inst getBBox] yMin]]"
+            if {$yMax > [set y [[$inst getBBox] yMin]]} {
+              set yMax $y
+            }
           }
-        }
-        "l" {
-          if {$xMin < [set x [[$inst getBBox] xMax]]} {
-            set xMin $x
+          "l" {
+            # debug "inst: [$inst getName], side: $quadrant, xMax: [real_value [[$inst getBBox] xMax]]"
+            if {$xMin < [set x [[$inst getBBox] xMax]]} {
+              set xMin $x
+            }
           }
         }
       }
     }
+    # debug "pad_area: ([real_value $xMin] [real_value $yMin]) ([real_value $xMax] [real_value $yMax])"
+    dict set design_data config pad_offset_area [list $xMin $yMin $xMax $yMax]
   }
-  return [list $xMin $yMin $xMax $yMax]
+
+  return [dict get $design_data config pad_offset_area]
 }
 
 proc generate_core_rings {core_ring_data} {

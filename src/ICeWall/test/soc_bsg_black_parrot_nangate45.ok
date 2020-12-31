@@ -6,7 +6,7 @@ Notice 0: Finished LEF file:  NangateOpenCellLibrary.mod.lef
 Notice 0: Reading LEF file:  dummy_pads.lef
 Notice 0:     Created 24 library cells
 Notice 0: Finished LEF file:  dummy_pads.lef
-[INFO IFP-0001] Added 1886 rows of 13894 sites.
+Info: Added 1886 rows of 13894 sites.
 [ERROR] [ICEW-0011] Expected instance u_dr_dm_1_o for padcell sig0 not found
 [ERROR] [ICEW-0004] Cannot find a terminal p_dr_dm_1_o for sig0 to associate with bondpad bp_u_dr_dm_1_o
 No differences found.
