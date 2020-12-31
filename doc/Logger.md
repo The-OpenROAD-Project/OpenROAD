@@ -9,6 +9,9 @@ All output from OpenROAD tools should be directed through the logging API so tha
 ### Report
 Reports are tool output in the form of a report to the user. Examples are timing paths, or power analysis results. Tool reports that use ‘printf’ or c++ streams should use the report message API instead.
 
+### Debug
+Debug messages are only of use to tool developers and not to end users.  These messages are not shown unless explicitly enabled.
+
 ### Information
 Information messages may be used for reporting metrics, quality of results, or program status to the user. Any messages which indicate runtime problems, such as potential faulty input or other internal program issues, should be issued at a higher status level.
 
@@ -115,6 +118,19 @@ Logger::critical(ToolId tool,
                      const std::string& message,
                      const Args&... args)
 ```
+
+### Debug Messages
+The debug message have a different programming model.  As they are most often *not* issued the concern is to avoid slowing down normal execution.  For this reason such messages are issued by using the debugPrint macro.  This macro will avoid evaluating its arguments if they are not going to be printed.  The API is:
+
+```
+debugPrint(logger, tool, group, level, message, ...)
+```
+
+The debug() method of the Logger class should not be called directly.  No message id is used as these messages are not intended for end users.  The level is printed as the message id in the output.
+
+The argument types are as for the info/warn/error/ciritical messages.  The one additional argument is group which is a const char*.  Its purposes is to allow the enabling of subsets of messages within one tool.
+
+Debug messages are enabled with the tcl command: set_debug_level <tool> <group> <level>
 
 ## Converting to Logger
 
