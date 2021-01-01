@@ -290,7 +290,9 @@ void initGui(OpenRoad* openroad)
 {
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
-  gui::mainWindow->setLogger(openroad->getLogger());
+  if (gui::mainWindow) {
+    gui::mainWindow->setLogger(openroad->getLogger());
+  }
 }
 
 }  // namespace ord
