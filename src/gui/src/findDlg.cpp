@@ -50,9 +50,9 @@ FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)
 
 void FindObjectDialog::accept()
 {
-  qDebug() << "In the Dialog Box accept slot, object to find = "
-           << this->findObjEdit->text()
-           << " Object Type : " << this->findObjType->currentText();
+  // qDebug() << "In the Dialog Box accept slot, object to find = "
+  //         << this->findObjEdit->text()
+  //         << " Object Type : " << this->findObjType->currentText();
   std::string patternToFind = findObjEdit->text().toStdString();
   bool matchCase = false;
   bool matchRegEx = false;
@@ -62,20 +62,26 @@ void FindObjectDialog::accept()
     matchRegEx = matchRegExCheckBox->isChecked();
 
   if (this->findObjType->currentText() == "Instance") {
-    Gui::get()->addSelectedInsts(patternToFind.c_str(), matchCase, matchRegEx);
+    Gui::get()->addSelectedInsts(patternToFind.c_str(),
+                                 matchCase,
+                                 matchRegEx,
+                                 addToHighlightCheckBox->isChecked());
   } else
-    Gui::get()->addSelectedNets(patternToFind.c_str(), matchCase, matchRegEx);
+    Gui::get()->addSelectedNets(patternToFind.c_str(),
+                                matchCase,
+                                matchRegEx,
+                                addToHighlightCheckBox->isChecked());
   QDialog::accept();
 }
 
 void FindObjectDialog::reject()
 {
-  qDebug() << "In the Dialog Box reject slot...";
+  // qDebug() << "In the Dialog Box reject slot...";
   QDialog::reject();
 }
 
 void FindObjectDialog::regExChkBoxToggled(bool val)
 {
-  qDebug() << "Regular Expression Toggled with val : " << val;
+  // qDebug() << "Regular Expression Toggled with val : " << val;
 }
 }  // namespace gui

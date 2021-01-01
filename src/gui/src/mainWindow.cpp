@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "mainWindow.h"
+
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
@@ -37,7 +39,6 @@
 
 #include "displayControls.h"
 #include "layoutViewer.h"
-#include "mainWindow.h"
 #include "scriptWidget.h"
 
 namespace gui {
@@ -46,7 +47,7 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       db_(nullptr),
       controls_(new DisplayControls(this)),
-      viewer_(new LayoutViewer(controls_, selected_)),
+      viewer_(new LayoutViewer(controls_, selected_, highlighted_)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this))
 {
@@ -84,11 +85,9 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(addSelected(const Selected&)),
           this,
           SLOT(addSelected(const Selected&)));
-  connect(this,
-          SIGNAL(selectionChanged()),
-          viewer_,
-          SLOT(update()));
-  
+  connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
+  connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
+
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
@@ -167,7 +166,7 @@ void MainWindow::addSelected(const Selected& selection)
   if (selection) {
     selected_.emplace(selection);
   }
-  status(selection ? selection.getName(): "");
+  status(selection ? selection.getName() : "");
   emit selectionChanged();
 }
 
@@ -182,6 +181,20 @@ void MainWindow::setSelected(const Selected& selection)
 {
   selected_.clear();
   addSelected(selection);
+}
+
+void MainWindow::addHighlighted(const SelectionSet& highlights)
+{
+  highlighted_.insert(highlights.begin(), highlights.end());
+  emit highlightChanged();
+}
+
+void MainWindow::clearHighlighted()
+{
+  if (highlighted_.empty())
+    return;
+  highlighted_.clear();
+  emit highlightChanged();
 }
 
 void MainWindow::zoomTo(const odb::Rect& rect_dbu)

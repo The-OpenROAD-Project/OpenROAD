@@ -38,8 +38,8 @@
 #include <QToolBar>
 #include <memory>
 
-#include "openroad/OpenRoad.hh"
 #include "gui/gui.h"
+#include "openroad/OpenRoad.hh"
 
 namespace odb {
 class dbDatabase;
@@ -87,6 +87,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // The selected set of objects has changed
   void selectionChanged();
 
+  // The highlight set of objects has changed
+  void highlightChanged();
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -103,6 +106,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Displays the selection in the status bar
   void setSelected(const Selected& selection);
 
+  // Add the selections to highlight set
+  void addHighlighted(const SelectionSet& selection);
+
+  // Higlight set will be cleared with this explicit call
+  void clearHighlighted();
+
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
 
@@ -117,6 +126,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   odb::dbDatabase* db_;
   SelectionSet selected_;
+  SelectionSet highlighted_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.

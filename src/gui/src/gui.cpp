@@ -119,7 +119,10 @@ void Gui::addSelectedNet(const char* name)
   mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
 }
 
-void Gui::addSelectedNets(const char* pattern, bool matchCase, bool matchRegEx)
+void Gui::addSelectedNets(const char* pattern,
+                          bool matchCase,
+                          bool matchRegEx,
+                          bool addToHighlightSet)
 {
   auto block = getBlock(mainWindow->getDb());
   if (!block) {
@@ -128,13 +131,34 @@ void Gui::addSelectedNets(const char* pattern, bool matchCase, bool matchRegEx)
 
   QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
   SelectionSet nets;
-  for (auto* net : block->getNets()) {
-    if (re.exactMatch(QString::fromStdString(net->getName()))) {
-      nets.emplace(net, OpenDbDescriptor::get());
+  if (matchRegEx == true) {
+    QRegExp re(pattern,
+               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               QRegExp::Wildcard);
+
+    for (auto* net : block->getNets()) {
+      if (re.exactMatch(QString::fromStdString(net->getName()))) {
+        nets.emplace(net, OpenDbDescriptor::get());
+      }
+    }
+  } else if (matchCase == false) {
+    QString patToMatch = QString::fromStdString(pattern).toUpper();
+    for (auto* net : block->getNets()) {
+      if (QString::fromStdString(net->getName()).toUpper() == patToMatch) {
+        nets.emplace(net, OpenDbDescriptor::get());
+      }
+    }
+  } else {
+    for (auto* net : block->getNets()) {
+      if (QString::fromStdString(net->getName()) == pattern) {
+        nets.emplace(net, OpenDbDescriptor::get());
+      }
     }
   }
 
   mainWindow->addSelected(nets);
+  if (addToHighlightSet == true)
+    mainWindow->addHighlighted(nets);
 }
 
 void Gui::addSelectedInst(const char* name)
@@ -152,14 +176,15 @@ void Gui::addSelectedInst(const char* name)
   mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
 }
 
-void Gui::addSelectedInsts(const char* pattern, bool matchCase, bool matchRegEx)
+void Gui::addSelectedInsts(const char* pattern,
+                           bool matchCase,
+                           bool matchRegEx,
+                           bool addToHighlightSet)
 {
   auto block = getBlock(mainWindow->getDb());
   if (!block) {
     return;
   }
-
-  qDebug() << "Came to select instance with pattern " << pattern;
 
   SelectionSet insts;
   if (matchRegEx) {
@@ -188,6 +213,8 @@ void Gui::addSelectedInsts(const char* pattern, bool matchCase, bool matchRegEx)
   }
 
   mainWindow->addSelected(insts);
+  if (addToHighlightSet == true)
+    mainWindow->addHighlighted(insts);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -223,10 +250,16 @@ std::string OpenDbDescriptor::getName(void* object) const
   }
 }
 
-void OpenDbDescriptor::highlight(void* object, Painter& painter) const
+void OpenDbDescriptor::highlight(void* object,
+                                 Painter& painter,
+                                 bool selectFlag) const
 {
-  painter.setPen(Painter::highlight, true);
-  painter.setBrush(Painter::transparent);
+  if (selectFlag == true) {
+    painter.setPen(Painter::highlight, true);
+    painter.setBrush(Painter::transparent);
+  } else {
+    painter.setPen(Painter::persistHighlight, true);
+  }
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj: {

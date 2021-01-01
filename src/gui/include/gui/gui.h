@@ -54,7 +54,11 @@ class Descriptor
  public:
   virtual std::string getName(void* object) const = 0;
 
-  virtual void highlight(void* object, Painter& painter) const = 0;
+  // If the selectFlag is false, the drawing will happen in highlight mode, with
+  // will highlight the object which can not
+  virtual void highlight(void* object,
+                         Painter& painter,
+                         bool selectFlag = true) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -64,7 +68,9 @@ class OpenDbDescriptor : public Descriptor
  public:
   std::string getName(void* object) const override;
 
-  void highlight(void* object, Painter& painter) const override;
+  void highlight(void* object,
+                 Painter& painter,
+                 bool selectFlag) const override;
 
   static OpenDbDescriptor* get();
 
@@ -95,9 +101,9 @@ class Selected
 
   std::string getName() const { return descriptor_->getName(object_); }
 
-  void highlight(Painter& painter) const
+  void highlight(Painter& painter, bool selectFlag = true) const
   {
-    return descriptor_->highlight(object_, painter);
+    return descriptor_->highlight(object_, painter, selectFlag);
   }
 
   operator bool() const { return object_ != nullptr; }
@@ -157,6 +163,7 @@ class Painter
 
   // The color to highlight in
   static inline const Color highlight = yellow;
+  static inline const Color persistHighlight = cyan;
 
   virtual ~Painter() = default;
 
@@ -236,7 +243,8 @@ class Gui
   // Add nets matching the pattern to the selection set
   void addSelectedNets(const char* pattern,
                        bool matchCase = true,
-                       bool matchRegEx = true);
+                       bool matchRegEx = true,
+                       bool addToHighlightSet = false);
 
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
@@ -244,7 +252,8 @@ class Gui
   // Add instances matching the pattern to the selection set
   void addSelectedInsts(const char* pattern,
                         bool matchCase = true,
-                        bool matchRegEx = true);
+                        bool matchRegEx = true,
+                        bool addToHighlightSet = false);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
