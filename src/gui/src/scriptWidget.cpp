@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "scriptWidget.h"
+#include "spdlog/sinks/base_sink.h"
+#include "spdlog/formatter.h"
 
 #include <unistd.h>
 #include <errno.h>
@@ -43,6 +45,7 @@
 #include <QVBoxLayout>
 
 #include "openroad/OpenRoad.hh"
+#include "openroad/Logger.h"
 
 namespace gui {
 
@@ -141,7 +144,7 @@ void ScriptWidget::setupTcl()
 
   // TODO: tclAppInit should return the status which we could
   // pass to updateOutput
-  updateOutput(TCL_OK);
+  updateOutput(TCL_OK, /* command_finished */ true);
 }
 
 void ScriptWidget::executeCommand()
@@ -161,7 +164,7 @@ void ScriptWidget::executeCommand()
   int return_code = Tcl_Eval(interp_, command.toLatin1().data());
 
   // Show its output
-  updateOutput(return_code);
+  updateOutput(return_code, /* command_finished */ true);
 
   // Update history; ignore repeated commands and keep last 100
   const int history_limit = 100;
@@ -178,7 +181,7 @@ void ScriptWidget::executeCommand()
   emit commandExecuted();
 }
 
-void ScriptWidget::updateOutput(int return_code)
+void ScriptWidget::updateOutput(int return_code, bool command_finished)
 {
   // Show whatever we captured from the output channel in grey
   output_->setTextColor(QColor(0x30, 0x30, 0x30));
@@ -189,11 +192,13 @@ void ScriptWidget::updateOutput(int return_code)
   }
   outputBuffer_.clear();
 
-  // Show the return value color-coded by ok/err.
-  const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
-  if (result[0] != '\0') {
-    output_->setTextColor((return_code == TCL_OK) ? Qt::blue : Qt::red);
-    output_->append(result);
+  if (command_finished) {
+    // Show the return value color-coded by ok/err.
+    const char* result = Tcl_GetString(Tcl_GetObjResult(interp_));
+    if (result[0] != '\0') {
+      output_->setTextColor((return_code == TCL_OK) ? Qt::blue : Qt::red);
+      output_->append(result);
+    }
   }
 }
 
@@ -267,6 +272,48 @@ void ScriptWidget::pause()
 void ScriptWidget::pauserClicked()
 {
   paused_ = false;
+}
+
+// This class is an spdlog sink that writes the messages into the output
+// area.
+template<typename Mutex>
+class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
+{
+public:
+  GuiSink(ScriptWidget* widget)
+    : widget_(widget)
+  {
+  }
+
+protected:
+  void sink_it_(const spdlog::details::log_msg& msg) override
+  {
+    // Convert the msg into a formatted string
+    spdlog::memory_buf_t formatted;
+    this->formatter_->format(msg, formatted);
+    // -1 is to drop the final '\n' character
+    auto str = QString::fromLatin1(formatted.data(), (int) formatted.size() - 1);
+    widget_->outputBuffer_.append(str);
+
+    // Make it appear now
+    widget_->updateOutput(0, /* command_finished */ false);
+    widget_->output_->update();
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  }
+
+  void flush_() override
+  {
+  }
+
+private:
+  ScriptWidget* widget_;
+};
+
+using GuiSinkMT = ScriptWidget::GuiSink<std::mutex>;
+
+void ScriptWidget::setLogger(ord::Logger* logger)
+{
+  logger->addSink(std::make_shared<GuiSinkMT>(this));
 }
 
 }  // namespace gui

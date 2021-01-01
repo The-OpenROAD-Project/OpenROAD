@@ -157,6 +157,8 @@ class Logger
       return (it != groups.end() && level <= it->second);
   }
 
+  void addSink(spdlog::sink_ptr sink);
+
  private:
   template <typename... Args>
     inline void log(ToolId tool,

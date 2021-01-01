@@ -85,4 +85,11 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
   }
 }
 
+void Logger::addSink(spdlog::sink_ptr sink)
+{
+  sinks_.push_back(sink);
+  logger_->sinks().push_back(sink);
+  logger_->set_pattern(pattern_); // updates the new sink
+}
+
 }  // namespace
