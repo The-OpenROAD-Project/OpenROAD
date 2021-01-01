@@ -37,6 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 
+#include <algorithm>            // min
 #include <tcl.h>
 
 #include "sta/StaMain.hh"
@@ -98,6 +99,8 @@ deleteDbSta(sta::dbSta *sta)
 
 namespace sta {
 
+using std::min;
+
 using ord::Logger;
 using ord::STA;
 
@@ -117,6 +120,8 @@ public:
                         const char *fmt,
                         ...)
     __attribute__((format (printf, 3, 4)));
+  virtual size_t printString(const char *buffer,
+                             size_t length);
 
 protected:
   virtual void printLine(const char *line,
@@ -392,13 +397,57 @@ dbStaReport::setLogger(Logger *logger)
   logger_ = logger;
 }
 
+// Return is implicit.
+// Log stream support supplied by Logger.
 void
-dbStaReport::printLine(const char *line,
+dbStaReport::printLine(const char *buffer,
                        size_t length)
 {
-  logger_->report(line);
+  if (redirect_to_string_) {
+    redirectStringPrint(buffer, length);
+    redirectStringPrint("\n", 1);
+  }
+  else {
+    if (redirect_stream_) {
+      fwrite(buffer, sizeof(char), length, redirect_stream_);
+      fwrite("\n", sizeof(char), 1, redirect_stream_);
+    }
+    else
+      logger_->report(buffer);
+  }
 }
- 
+
+// Only used by encapsulated Tcl channels, ie puts.
+size_t
+dbStaReport::printString(const char *buffer,
+                         size_t length)
+{
+  size_t ret = length;
+  if (redirect_to_string_)
+    redirectStringPrint(buffer, length);
+  else {
+    if (redirect_stream_)
+      ret = min(ret, fwrite(buffer, sizeof(char), length, redirect_stream_));
+    else {
+      if (buffer[length - 1] == '\n') {
+        // Strip the trailing \n.
+        char *buf = new char[length];
+        strcpy(buf, buffer);
+        buf[length - 1] = '\0';
+        logger_->report(buf);
+      }
+      else
+        // puts without a trailing \n in the string.
+        // Tcl command prompts get here.
+        // puts "xyz" makes a separate call for the '\n '.
+        // This seems to be the only way to get the output.
+        // It will not be logged.
+        printConsole(buffer, length);
+    }
+  }
+  return ret;
+}
+
 void
 dbStaReport::error(int id,
                    const char *fmt,
