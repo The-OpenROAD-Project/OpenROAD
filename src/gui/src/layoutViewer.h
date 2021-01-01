@@ -103,7 +103,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
   void slotShortcutCtrlF();
-  void findObjectInLayout();
+  void findObjectInLayout(const QString& objectName, const QString& ObjectType);
 
  private:
   struct Boxes
@@ -155,6 +155,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   bool rubber_band_showing_;
 
   QShortcut* findShortcut_;
+  FindObjectDialog* findDlg_;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

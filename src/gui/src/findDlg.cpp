@@ -32,10 +32,50 @@
 
 #include "findDlg.h"
 
+#include <QDebug>
+#include <string>
+
+#include "gui/gui.h"
+
 namespace gui {
 FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)
 {
   setupUi(this);
+  connect(this->matchRegExCheckBox,
+          SIGNAL(toggled(bool)),
+          this,
+          SLOT(regExChkBoxToggled(bool)));
   // perform additional setup here ...
+}
+
+void FindObjectDialog::accept()
+{
+  qDebug() << "In the Dialog Box accept slot, object to find = "
+           << this->findObjEdit->text()
+           << " Object Type : " << this->findObjType->currentText();
+  std::string patternToFind = findObjEdit->text().toStdString();
+  bool matchCase = false;
+  bool matchRegEx = false;
+  if (matchCaseCheckBox->isEnabled())
+    matchCase = matchCaseCheckBox->isChecked();
+  if (matchRegExCheckBox->isEnabled())
+    matchRegEx = matchRegExCheckBox->isChecked();
+
+  if (this->findObjType->currentText() == "Instance") {
+    Gui::get()->addSelectedInsts(patternToFind.c_str(), matchCase, matchRegEx);
+  } else
+    Gui::get()->addSelectedNets(patternToFind.c_str(), matchCase, matchRegEx);
+  QDialog::accept();
+}
+
+void FindObjectDialog::reject()
+{
+  qDebug() << "In the Dialog Box reject slot...";
+  QDialog::reject();
+}
+
+void FindObjectDialog::regExChkBoxToggled(bool val)
+{
+  qDebug() << "Regular Expression Toggled with val : " << val;
 }
 }  // namespace gui

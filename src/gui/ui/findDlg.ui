@@ -2,119 +2,151 @@
 <ui version="4.0">
  <class>FindObjDialog</class>
  <widget class="QDialog" name="FindObjDialog">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>523</width>
-    <height>82</height>
+    <width>604</width>
+    <height>186</height>
    </rect>
-  </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>523</width>
-    <height>82</height>
-   </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>523</width>
-    <height>82</height>
+    <width>604</width>
+    <height>186</height>
    </size>
   </property>
   <property name="sizeIncrement">
    <size>
-    <width>0</width>
-    <height>0</height>
+    <width>2</width>
+    <height>2</height>
    </size>
   </property>
   <property name="windowTitle">
    <string>Find Object</string>
   </property>
   <property name="sizeGripEnabled">
-   <bool>false</bool>
+   <bool>true</bool>
   </property>
   <property name="modal">
    <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Select Control</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QCheckBox" name="matchCaseCheckBox">
+          <property name="text">
+           <string>Match Case</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QCheckBox" name="matchRegExCheckBox">
+          <property name="text">
+           <string>Regular Expression</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QCheckBox" name="clearLastSelCheckBox">
+          <property name="text">
+           <string>Clear Last Selection</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QCheckBox" name="addToHighlightCheckBox">
+          <property name="text">
+           <string>Add Set To Highlight</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Find </string>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Find </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="findObjEdit"/>
+           </item>
+          </layout>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_2"/>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Type</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="findObjType">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <item>
+              <property name="text">
+               <string>Instance</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Net</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Port</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Type</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="comboBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <item>
-            <property name="text">
-             <string>Instance</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Net</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Port</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QDialogButtonBox" name="buttonBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="standardButtons">
+          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+         </property>
+        </widget>
        </item>
       </layout>
-     </item>
-     <item row="0" column="1">
-      <widget class="QDialogButtonBox" name="buttonBox">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>

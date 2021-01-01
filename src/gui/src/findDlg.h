@@ -42,5 +42,9 @@ class FindObjectDialog : public QDialog, public Ui::FindObjDialog
   Q_OBJECT
  public:
   FindObjectDialog(QWidget* parent = nullptr);
+ public slots:
+  void accept();
+  void reject();
+  void regExChkBoxToggled(bool val);
 };
 }  // namespace gui

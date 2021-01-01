@@ -30,13 +30,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "gui/gui.h"
+
 #include <QApplication>
+#include <QDebug>
 #include <stdexcept>
 
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
-#include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
@@ -117,7 +119,7 @@ void Gui::addSelectedNet(const char* name)
   mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
 }
 
-void Gui::addSelectedNets(const char* pattern)
+void Gui::addSelectedNets(const char* pattern, bool matchCase, bool matchRegEx)
 {
   auto block = getBlock(mainWindow->getDb());
   if (!block) {
@@ -150,18 +152,38 @@ void Gui::addSelectedInst(const char* name)
   mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
 }
 
-void Gui::addSelectedInsts(const char* pattern)
+void Gui::addSelectedInsts(const char* pattern, bool matchCase, bool matchRegEx)
 {
   auto block = getBlock(mainWindow->getDb());
   if (!block) {
     return;
   }
 
-  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
+  qDebug() << "Came to select instance with pattern " << pattern;
+
   SelectionSet insts;
-  for (auto* inst : block->getInsts()) {
-    if (re.exactMatch(QString::fromStdString(inst->getName()))) {
-      insts.emplace(inst, OpenDbDescriptor::get());
+  if (matchRegEx) {
+    QRegExp re(pattern,
+               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               QRegExp::Wildcard);
+    for (auto* inst : block->getInsts()) {
+      if (re.exactMatch(QString::fromStdString(inst->getName()))) {
+        insts.emplace(inst, OpenDbDescriptor::get());
+      }
+    }
+  } else if (matchCase == false) {
+    QString patToMatch = QString::fromStdString(pattern).toUpper();
+    for (auto* inst : block->getInsts()) {
+      if (QString::fromStdString(inst->getName()).toUpper() == patToMatch) {
+        insts.emplace(inst, OpenDbDescriptor::get());
+      }
+    }
+  } else {
+    for (auto* inst : block->getInsts()) {
+      if (QString::fromStdString(inst->getName()) == pattern) {
+        insts.emplace(inst, OpenDbDescriptor::get());
+        break;  // There can't be two insts with the same name
+      }
     }
   }
 
