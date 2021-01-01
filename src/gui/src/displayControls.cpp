@@ -30,19 +30,113 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "displayControls.h"
+
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QPainter>
 #include <QSettings>
-#include <QVBoxLayout>
+#include <vector>
 
 #include "db.h"
-#include "displayControls.h"
 #include "openroad/InitOpenRoad.hh"
+
+Q_DECLARE_METATYPE(odb::dbTechLayer*);
 
 namespace gui {
 
 using namespace odb;
+
+PatternButton::PatternButton(Qt::BrushStyle pattern, QWidget* parent)
+    : QRadioButton(parent), pattern_(pattern)
+{
+  setFixedWidth(100);
+}
+
+void PatternButton::paintEvent(QPaintEvent* event)
+{
+  QRadioButton::paintEvent(event);
+  auto qp = QPainter(this);
+  auto brush = QBrush(QColor("black"), pattern_);
+  qp.setBrush(brush);
+  auto btnRect = rect();
+  btnRect.adjust(18, 2, -1, -1);
+  qp.drawRect(btnRect);
+  qp.end();
+}
+
+DisplayColorDialog::DisplayColorDialog(QColor color,
+                                       Qt::BrushStyle pattern,
+                                       QWidget* parent)
+    : QDialog(parent), color_(color), pattern_(pattern)
+{
+  buildUI();
+}
+
+void DisplayColorDialog::buildUI()
+{
+  colorDialog_ = new QColorDialog(this);
+  colorDialog_->setOptions(QColorDialog::DontUseNativeDialog);
+  colorDialog_->setOption(QColorDialog::ShowAlphaChannel);
+  colorDialog_->setWindowFlags(Qt::Widget);
+  colorDialog_->setCurrentColor(color_);
+  patternGroupBox_ = new QGroupBox("Layer Pattern");
+  gridLayout_ = new QGridLayout();
+
+  gridLayout_->setColumnStretch(2, 4);
+
+  int rowIndex = 0;
+  for (auto& patGrp : DisplayColorDialog::brushPatterns) {
+    int colIndex = 0;
+    for (auto pat : patGrp) {
+      PatternButton* pBtn = new PatternButton(pat);
+      patternButtons_.push_back(pBtn);
+      if (pat == pattern_)
+        pBtn->setChecked(true);
+      else
+        pBtn->setChecked(false);
+      gridLayout_->addWidget(pBtn, rowIndex, colIndex);
+      ++colIndex;
+    }
+    ++rowIndex;
+  }
+  patternGroupBox_->setLayout(gridLayout_);
+  connect(colorDialog_, SIGNAL(accepted()), this, SLOT(acceptDialog()));
+  connect(colorDialog_, SIGNAL(rejected()), this, SLOT(rejectDialog()));
+
+  mainLayout_ = new QVBoxLayout();
+  mainLayout_->addWidget(patternGroupBox_);
+  mainLayout_->addWidget(colorDialog_);
+
+  setLayout(mainLayout_);
+  setWindowTitle("Layer Config");
+  setFixedSize(600, width() - 20);
+}
+
+DisplayColorDialog::~DisplayColorDialog()
+{
+}
+
+Qt::BrushStyle DisplayColorDialog::getSelectedPattern() const
+{
+  for (auto patBtn : patternButtons_) {
+    if (patBtn->isChecked())
+      return patBtn->pattern();
+  }
+  return Qt::SolidPattern;
+}
+
+void DisplayColorDialog::acceptDialog()
+{
+  color_ = colorDialog_->selectedColor();
+  accept();
+}
+
+void DisplayColorDialog::rejectDialog()
+{
+  reject();
+}
 
 DisplayControls::DisplayControls(QWidget* parent)
     : QDockWidget("Display Control", parent),
@@ -137,6 +231,11 @@ DisplayControls::DisplayControls(QWidget* parent)
           SIGNAL(itemChanged(QStandardItem*)),
           this,
           SLOT(itemChanged(QStandardItem*)));
+
+  connect(view_,
+          SIGNAL(doubleClicked(const QModelIndex&)),
+          this,
+          SLOT(displayItemDblClicked(const QModelIndex&)));
 }
 
 void DisplayControls::toggleAllChildren(bool checked,
@@ -153,10 +252,51 @@ void DisplayControls::toggleAllChildren(bool checked,
 
 void DisplayControls::itemChanged(QStandardItem* item)
 {
+  if (item->isCheckable() == false) {
+    emit changed();
+    return;
+  }
   bool checked = item->checkState() == Qt::Checked;
   Callback callback = item->data().value<Callback>();
   callback.action(checked);
   emit changed();
+}
+
+void DisplayControls::displayItemDblClicked(const QModelIndex& index)
+{
+  if (index.column() == 1) {
+    auto colorItem = model_->itemFromIndex(index);
+    QVariant techLayerData = colorItem->data(Qt::UserRole);
+    if (!techLayerData.isValid())
+      return;
+    auto techLayer
+        = static_cast<odb::dbTechLayer*>(techLayerData.value<void*>());
+    if (techLayer == nullptr)
+      return;
+    QColor colorVal = color(techLayer);
+    Qt::BrushStyle patternVal = pattern(techLayer);
+    DisplayColorDialog dispDlg(colorVal, patternVal);
+    dispDlg.exec();
+    QColor chosenColor = dispDlg.getSelectedColor();
+    if (chosenColor.isValid()) {
+      QPixmap swatch(20, 20);
+      swatch.fill(chosenColor);
+      colorItem->setIcon(QIcon(swatch));
+      auto cutLayerIndex
+          = model_->sibling(index.row() + 1, index.column(), index);
+      if (cutLayerIndex.isValid()) {
+        auto cutColorItem = model_->itemFromIndex(cutLayerIndex);
+        cutColorItem->setIcon(QIcon(swatch));
+      }
+      if (chosenColor != colorVal
+          || layer_pattern_[techLayer] != dispDlg.getSelectedPattern()) {
+        layer_color_[techLayer] = chosenColor;
+        layer_pattern_[techLayer] = dispDlg.getSelectedPattern();
+        view_->repaint();
+        emit changed();
+      }
+    }
+  }
 }
 
 void DisplayControls::setDb(odb::dbDatabase* db)
@@ -182,7 +322,8 @@ void DisplayControls::setDb(odb::dbDatabase* db)
           Qt::Checked,
           [this, layer](bool visible) { layer_visible_[layer] = visible; },
           [this, layer](bool select) { layer_selectable_[layer] = select; },
-          color(layer));
+          color(layer),
+          type == dbTechLayerType::CUT ? NULL : layer);
     }
   }
   emit changed();
@@ -195,16 +336,26 @@ QStandardItem* DisplayControls::makeItem(
     Qt::CheckState checked,
     const std::function<void(bool)>& visibility_action,
     const std::function<void(bool)>& select_action,
-    const QColor& color)
+    const QColor& color,
+    odb::dbTechLayer* techLayer)
 {
   QStandardItem* nameItem = new QStandardItem(text);
+  nameItem->setEditable(false);
 
   QPixmap swatch(20, 20);
   swatch.fill(color);
   QStandardItem* colorItem = new QStandardItem(QIcon(swatch), "");
+  QString colorName = color.name(QColor::HexArgb);
+  colorItem->setEditable(false);
+  colorItem->setCheckable(false);
+  if (techLayer != nullptr) {
+    QVariant techLayerData(QVariant::fromValue(static_cast<void*>(techLayer)));
+    colorItem->setData(techLayerData, Qt::UserRole);
+  }
 
   QStandardItem* visibilityItem = new QStandardItem("");
   visibilityItem->setCheckable(true);
+  visibilityItem->setEditable(false);
   visibilityItem->setCheckState(checked);
   visibilityItem->setData(QVariant::fromValue(Callback({visibility_action})));
 
@@ -213,6 +364,7 @@ QStandardItem* DisplayControls::makeItem(
     selectItem = new QStandardItem("");
     selectItem->setCheckable(true);
     selectItem->setCheckState(checked);
+    selectItem->setEditable(false);
     selectItem->setData(QVariant::fromValue(Callback({select_action})));
   }
 
@@ -223,6 +375,11 @@ QStandardItem* DisplayControls::makeItem(
 QColor DisplayControls::color(const odb::dbTechLayer* layer)
 {
   return layer_color_.at(layer);
+}
+
+Qt::BrushStyle DisplayControls::pattern(const odb::dbTechLayer* layer)
+{
+  return layer_pattern_.at(layer);
 }
 
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
@@ -236,17 +393,17 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
-  switch(net->getSigType()) {
-  case dbSigType::SIGNAL:
-    return nets_signal_visible_;
-  case dbSigType::POWER:
-    return nets_power_visible_;
-  case dbSigType::GROUND:
-    return nets_ground_visible_;
-  case dbSigType::CLOCK:
-    return nets_clock_visible_;
-  default:
-    return true;
+  switch (net->getSigType()) {
+    case dbSigType::SIGNAL:
+      return nets_signal_visible_;
+    case dbSigType::POWER:
+      return nets_power_visible_;
+    case dbSigType::GROUND:
+      return nets_ground_visible_;
+    case dbSigType::CLOCK:
+      return nets_clock_visible_;
+    default:
+      return true;
   }
 }
 
@@ -333,10 +490,10 @@ void DisplayControls::techInit()
     }
     color.setAlpha(180);
     layer_color_[layer] = color;
+    layer_pattern_[layer] = Qt::SolidPattern;  // Default pattern is fill solid
     layer_visible_[layer] = true;
     layer_selectable_[layer] = true;
   }
-
   tech_inited_ = true;
 }
 

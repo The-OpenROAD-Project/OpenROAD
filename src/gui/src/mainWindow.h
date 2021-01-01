@@ -45,6 +45,10 @@ namespace odb {
 class dbDatabase;
 }
 
+namespace ord {
+class Logger;
+}
+
 namespace gui {
 
 class LayoutViewer;
@@ -69,6 +73,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   virtual void postReadDef(odb::dbBlock* block) override;
   virtual void postReadDb(odb::dbDatabase* db) override;
 
+  // Capture logger messages into the script widget output
+  void setLogger(ord::Logger* logger);
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
@@ -86,7 +93,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // The selected set of objects has changed
   void selectionChanged();
-
+                        
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
