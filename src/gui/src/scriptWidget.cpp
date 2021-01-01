@@ -309,11 +309,9 @@ private:
   ScriptWidget* widget_;
 };
 
-using GuiSinkMT = ScriptWidget::GuiSink<std::mutex>;
-
 void ScriptWidget::setLogger(ord::Logger* logger)
 {
-  logger->addSink(std::make_shared<GuiSinkMT>(this));
+  logger->addSink(std::make_shared<GuiSink<std::mutex>>(this));
 }
 
 }  // namespace gui
