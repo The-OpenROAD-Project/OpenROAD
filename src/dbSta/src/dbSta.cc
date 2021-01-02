@@ -431,8 +431,8 @@ dbStaReport::printString(const char *buffer,
     else {
       if (buffer[length - 1] == '\n') {
         // Strip the trailing \n.
-        char *buf = new char[length + 1];
-        strcpy(buf, buffer);
+        char *buf = new char[length];
+        strncpy(buf, buffer, length - 1);
         buf[length] = '\0';
         logger_->report(buf);
       }
