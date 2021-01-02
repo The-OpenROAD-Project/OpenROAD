@@ -193,7 +193,7 @@ int PDNSim::analyze_power_grid(){
     _logger->report("EM Analysis");
     _logger->report("Maximum current: {:3.2e} A",irsolve_h->max_cur);
     _logger->report("Average current: {:3.2e} A",irsolve_h->avg_cur);
-    _logger->report("Number of resistors: {:d}",irsolve_h->num_res);
+    _logger->report("Number of resistors: {}",irsolve_h->num_res);
     _logger->report("######################################");
   }
 

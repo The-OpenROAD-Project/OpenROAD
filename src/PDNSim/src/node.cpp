@@ -112,9 +112,9 @@ void Node::SetGLoc(NodeIdx t_loc)
 //! Function to print node details
 void Node::Print(ord::Logger* logger)
 {
-  logger->report("Node: {:d}", m_node_loc);
-  logger->report("  Location: Layer {:d}, x {:d}, y {:d}", m_layer, m_loc.first, m_loc.second);
-  logger->report("  Bounding box: x {:d}, y {:d} ",m_bBox.first, m_bBox.second);
+  logger->report("Node: {}", m_node_loc);
+  logger->report("  Location: Layer {}, x {}, y {}", m_layer, m_loc.first, m_loc.second);
+  logger->report("  Bounding box: x {}, y {} ",m_bBox.first, m_bBox.second);
   logger->report("  Current: {:5.4e}A",m_current_src);
   logger->report("  Voltage: {:5.4e}V",m_voltage);
   logger->report("  Has connection: {}",m_connected? "true" : "false");  

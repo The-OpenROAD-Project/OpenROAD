@@ -195,7 +195,7 @@ Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox)
 //! Function to print the G matrix
 void GMat::Print()
 {
-  m_logger->info(ord::PSM,48, "Printing GMat obj, with {:d} nodes",m_n_nodes);
+  m_logger->info(ord::PSM,48, "Printing GMat obj, with {} nodes",m_n_nodes);
   for (NodeIdx i = 0; i < m_n_nodes; i++) {
     Node* node_ptr = m_G_mat_nodes[i];
     if (node_ptr != nullptr) {
@@ -510,7 +510,7 @@ double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
     m_logger->error(ord::PSM,51,
-                   "Index out of bound for getting G matrix conductance. {}",
+                   "Index out of bound for getting G matrix conductance. ",
                    "Ensure object is initialized to the correct size first."
                    );
     return 0; 
@@ -539,7 +539,7 @@ void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
     m_logger->error(ord::PSM,52,
-                   "Index out of bound for getting G matrix conductance. {}",
+                   "Index out of bound for getting G matrix conductance. ",
                    "Ensure object is initialized to the correct size first."
                    );
   }

@@ -313,11 +313,11 @@ void IRSolver::ReadC4Data()
     int offset_y = coreRect.yMin()-dieRect.yMin();
     if (m_bump_pitch_x == 0) {
         m_bump_pitch_x = m_bump_pitch_default;
-        m_logger->warn(ord::PSM,17,"X direction bump pitch is not specified, defaulting to {:d}um.",m_bump_pitch_default);
+        m_logger->warn(ord::PSM,17,"X direction bump pitch is not specified, defaulting to {}um.",m_bump_pitch_default);
     }
     if (m_bump_pitch_y == 0) {
         m_bump_pitch_y = m_bump_pitch_default;
-        m_logger->warn(ord::PSM,18,"Y direction bump pitch is not specified, defaulting to {:d}um.",m_bump_pitch_default);
+        m_logger->warn(ord::PSM,18,"Y direction bump pitch is not specified, defaulting to {}um.",m_bump_pitch_default);
     }
     if(!m_net_voltage_map.empty() && m_net_voltage_map.count(m_power_net)>0) {
         supply_voltage_src = m_net_voltage_map.at(m_power_net);
@@ -381,7 +381,7 @@ bool IRSolver::CreateJ()
     NodeLoc node_loc = node_J->GetLoc();
     if( abs(node_loc.first - x) > m_node_density || abs(node_loc.second - y) > m_node_density ){
       m_logger->warn(ord::PSM, 24,
-                     "Instance {} curent node at {:d} {:d} at layer {:d} have been moved from {:d} {:d}.",
+                     "Instance {} curent node at {} {} at layer {} have been moved from {} {}.",
                      it->first, node_loc.first, node_loc.second,
                      l, x, y
                      );
@@ -637,7 +637,7 @@ bool IRSolver::CreateGmat(bool connection_only)
       double old_loc2 = ((double)y) /((double) unit_micron);
       double old_size = ((double)size) /((double) unit_micron);
       m_logger->warn(ord::PSM, 30,
-                     "Vsrc location at x={:4.3f}um, y={:4.3f}um and size ={:4.3f}um, is not located on a power stripe. Moving to closest stripe at x={:4.3f}um, y={:4.3f}um.",
+                     "Vsrc location at ({:4.3f}um, {:4.3f}um) and size ={:4.3f}um, is not located on a power stripe. Moving to closest stripe at ({:4.3f}um, {:4.3f}um).",
                      old_loc1, old_loc2, old_size, new_loc1, new_loc2
                      );
       RDL_nodes = m_Gmat->GetRDLNodes(m_top_layer, 
@@ -658,7 +658,7 @@ bool IRSolver::CreateGmat(bool connection_only)
   // All new nodes must be inserted by this point
   // initialize G Matrix
 
-  m_logger->info(ord::PSM,31,"Number of nodes on net {} = {:d}.",m_power_net,m_Gmat->GetNumNodes());
+  m_logger->info(ord::PSM,31,"Number of nodes on net {} = {}.",m_power_net,m_Gmat->GetNumNodes());
   m_Gmat->InitializeGmatDok(num_C4);
   int err_flag_via = 1;
   int err_flag_layer = 1;
@@ -718,7 +718,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           NodeLoc node_loc = node_bot->GetLoc();
           if( abs(node_loc.first - x) > m_node_density || abs(node_loc.second - y) > m_node_density ){
             m_logger->warn(ord::PSM, 32,
-                           "Node at {:d},{:d} and layer {:d} moved from {:d},{:d}.",
+                           "Node at {},{} and layer {} moved from {},{}.",
                             node_loc.first, node_loc.second, l, x, y
                             ); 
           }
@@ -730,7 +730,7 @@ bool IRSolver::CreateGmat(bool connection_only)
           node_loc = node_top->GetLoc();
           if( abs(node_loc.first - x) > m_node_density || abs(node_loc.second - y) > m_node_density ){
             m_logger->warn(ord::PSM, 33,
-                           "Node at {:d},{:d} and layer {:d} moved from {:d},{:d}.",
+                           "Node at {},{} and layer {} moved from {},{}.",
                             node_loc.first, node_loc.second, l, x, y
                             ); 
           }
@@ -923,7 +923,7 @@ bool IRSolver::CheckConnectivity()
       //} else if( uncon_err_flag ==0) {
       unconnected_node =true;
       m_logger->warn(ord::PSM, 38, 
-                     "Unconnected PDN node on net {} at location x: {:4.3f}um, y:{:4.3f}um, layer: {:d}.",
+                     "Unconnected PDN node on net {} at location ({:4.3f}um, {:4.3f}um), layer: {}.",
                      m_power_net, loc_x, loc_y, (*node_list_it)->GetLayerNum()
                      );
       //}
@@ -937,7 +937,7 @@ bool IRSolver::CheckConnectivity()
           for(inst_it = insts.begin();inst_it!=insts.end();inst_it++) {
             uncon_inst_cnt++;
             m_logger->warn(ord::PSM, 39, 
-                     "Unconnected Instance {} at location x: {:4.3f}um, y:{:4.3f}um, layer: {:d}.",
+                     "Unconnected Instance {} at location ({:4.3f}um, {:4.3f}um) layer: {}.",
                      (*inst_it)->getName(), loc_x, loc_y, (*node_list_it)->GetLayerNum()
                      );
           }
