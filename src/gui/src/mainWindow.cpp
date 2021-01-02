@@ -40,6 +40,7 @@
 #include "displayControls.h"
 #include "layoutViewer.h"
 #include "scriptWidget.h"
+#include "selectHighlightWindow.h"
 
 namespace gui {
 
@@ -48,6 +49,7 @@ MainWindow::MainWindow(QWidget* parent)
       db_(nullptr),
       controls_(new DisplayControls(this)),
       viewer_(new LayoutViewer(controls_, selected_, highlighted_)),
+      selHltWin_(new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this))
 {
@@ -59,6 +61,9 @@ MainWindow::MainWindow(QWidget* parent)
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
+  addDockWidget(Qt::BottomDockWidgetArea, selHltWin_);
+
+  tabifyDockWidget(script_, selHltWin_);
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(commandExecuted()), viewer_, SLOT(update()));
@@ -87,6 +92,15 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(addSelected(const Selected&)));
   connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
   connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
+
+  connect(this,
+          SIGNAL(selectionChanged()),
+          selHltWin_,
+          SLOT(updateSelectionModel()));
+  connect(this,
+          SIGNAL(highlightChanged()),
+          selHltWin_,
+          SLOT(updateHighlightModel()));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -140,6 +154,7 @@ void MainWindow::createMenus()
   windowsMenu_ = menuBar()->addMenu("&Windows");
   windowsMenu_->addAction(controls_->toggleViewAction());
   windowsMenu_->addAction(script_->toggleViewAction());
+  windowsMenu_->addAction(selHltWin_->toggleViewAction());
 }
 
 void MainWindow::createToolbars()

@@ -48,6 +48,7 @@ class dbDatabase;
 namespace gui {
 
 class LayoutViewer;
+class SelectHighlightWindow;
 class LayoutScroll;
 class ScriptWidget;
 class DisplayControls;
@@ -132,6 +133,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // handle destroying the children.
   DisplayControls* controls_;
   LayoutViewer* viewer_;  // owned by scroll_
+  SelectHighlightWindow* selHltWin_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
 

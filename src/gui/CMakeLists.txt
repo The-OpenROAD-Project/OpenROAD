@@ -32,10 +32,11 @@ if (Qt5_FOUND)
     src/gui.cpp
     src/search.cpp 
     src/findDlg.cpp
+    src/selectHighlightWindow.cpp
     ${GUI_WRAP}
   )
 
-  qt5_wrap_ui(findDlg.ui)
+  qt5_wrap_ui(findDlg.ui selHltWidget.ui selectedWidget.ui)
 
   target_link_libraries(gui
     opendb
