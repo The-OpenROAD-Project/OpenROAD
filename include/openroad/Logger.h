@@ -97,7 +97,6 @@ class Logger
   // Do NOT call this directly, use the debugPrint macro  instead (defined below)
   template <typename... Args>
     inline void debug(ToolId tool,
-                      const char* group,
                       int level,
                       const std::string& message,
                       const Args&... args)
@@ -205,7 +204,7 @@ class Logger
 // when no message is issued.
 #define debugPrint(logger, tool, group, level, message, ...)   \
   if (logger->debugCheck(tool, group, level)) {                \
-    logger->debug(tool, group, level, message, ##__VA_ARGS__); \
+    logger->debug(tool, level, message, ##__VA_ARGS__); \
   }
 
 #undef FOREACH_TOOL
