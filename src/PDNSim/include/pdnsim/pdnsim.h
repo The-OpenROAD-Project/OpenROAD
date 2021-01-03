@@ -56,13 +56,11 @@ class PDNSim
     PDNSim();
     ~PDNSim();
 
-    void init();
+    void init(ord::Logger *logger,
+              odb::dbDatabase *db,
+              sta::dbSta *sta);
     void reset();
 
-    void setDb(odb::dbDatabase* odb);
-    void setSta(sta::dbSta* dbSta);
-    void setLogger(ord::Logger* logger);
-    
     void import_vsrc_cfg(std::string vsrc);
     void import_out_file(std::string out_file);
     void import_em_out_file(std::string em_out_file);

@@ -25,8 +25,7 @@ Notice 0: Finished DEF file: aes.def
 [INFO PSM-0009] Factorizing the G matrix.
 [INFO PSM-0011] Solving system of equations GV=J.
 [INFO PSM-0013] Solving system of equations GV=J complete.
-[INFO PSM-0042] Generating IR report.
-######################################
+########## IR report #################
 Worstcase voltage: 1.08e-03 V
 Average IR drop  : 8.91e-04 V
 Worstcase IR drop: 1.08e-03 V

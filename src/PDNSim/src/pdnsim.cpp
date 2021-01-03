@@ -44,11 +44,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "openroad/Logger.h"
 
-using namespace std;
-
 namespace psm {
 
-using namespace std;
 
 PDNSim::PDNSim()
   : _db(nullptr),
@@ -78,14 +75,11 @@ PDNSim::~PDNSim() {
   //_net_voltage_map = nullptr;
 }
 
-void PDNSim::setDb(odb::dbDatabase* db){
+void PDNSim::init(ord::Logger *logger,
+                  odb::dbDatabase *db,
+                  sta::dbSta *sta) {
   _db = db;
-}
-void PDNSim::setSta(sta::dbSta* sta){
   _sta = sta;
-}
-
-void PDNSim::setLogger(ord::Logger* logger){
   _logger = logger;
 }
 
@@ -121,7 +115,7 @@ void PDNSim::import_out_file(std::string out_file)
 void PDNSim::import_em_out_file(std::string em_out_file)
 {
   _em_out_file = em_out_file;
-  _logger->info(ord::PSM,3,"Output current file specified {}",_em_out_file);
+  _logger->info(ord::PSM,3,"Output current file specified {}.",_em_out_file);
 }
 void PDNSim::import_enable_em(int enable_em)
 {
@@ -181,16 +175,13 @@ int PDNSim::analyze_power_grid(){
       continue;
     NodeLoc loc = node->GetLoc();
   }
-  _logger->info(ord::PSM,42, "Generating IR report.");
-  _logger->report("######################################");
+  _logger->report("########## IR report #################");
   _logger->report("Worstcase voltage: {:3.2e} V",irsolve_h->wc_voltage);
   _logger->report("Average IR drop  : {:3.2e} V",abs(irsolve_h->supply_voltage_src - irsolve_h->avg_voltage));
   _logger->report("Worstcase IR drop: {:3.2e} V",abs(irsolve_h->supply_voltage_src - irsolve_h->wc_voltage));
   _logger->report("######################################");
   if(_enable_em == 1) {
-    _logger->info(ord::PSM,43, "Generating EM report.");
-    _logger->report("######################################");
-    _logger->report("EM Analysis");
+    _logger->report("########## EM analysis ###############");
     _logger->report("Maximum current: {:3.2e} A",irsolve_h->max_cur);
     _logger->report("Average current: {:3.2e} A",irsolve_h->avg_cur);
     _logger->report("Number of resistors: {}",irsolve_h->num_res);

@@ -37,9 +37,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opendb/db.h"
 #include "openroad/Logger.h"
 
-//namespace sta {
-//class dbSta;
-//}  // namespace sta
 namespace psm {
 
 //! Class for IR solver

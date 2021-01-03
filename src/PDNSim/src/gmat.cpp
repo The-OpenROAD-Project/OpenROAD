@@ -37,7 +37,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 
 namespace psm{
-using namespace std;
+using std::map;
+using std::vector;
+using std::pair;
+using std::make_pair;
 
 //! Function to return a pointer to the node with a index
 /*!
@@ -71,12 +74,10 @@ Node* GMat::GetNode(int t_x, int t_y, int t_l, bool t_nearest /*=false*/)
       if (y_itr != x_itr->second.end()) {
         return y_itr->second;
       } else {
-        m_logger->error(ord::PSM,46,"Node location lookup error for y");
-        return nullptr;
+        m_logger->error(ord::PSM,46,"Node location lookup error for y.");
       }
     } else {
-      m_logger->error(ord::PSM,47,"Node location lookup error for x");
-      return nullptr;
+      m_logger->error(ord::PSM,47,"Node location lookup error for x.");
     }
   } else {
     NodeMap::iterator        x_itr = layer_map.lower_bound(t_x);
@@ -195,7 +196,7 @@ Node* GMat::SetNode(int t_x, int t_y, int t_layer, BBox t_bBox)
 //! Function to print the G matrix
 void GMat::Print()
 {
-  m_logger->info(ord::PSM,48, "Printing GMat obj, with {} nodes",m_n_nodes);
+  m_logger->info(ord::PSM,48, "Printing GMat obj, with {} nodes.",m_n_nodes);
   for (NodeIdx i = 0; i < m_n_nodes; i++) {
     Node* node_ptr = m_G_mat_nodes[i];
     if (node_ptr != nullptr) {
@@ -237,7 +238,6 @@ void GMat::InitializeGmatDok(int t_numC4)
 {
   if (m_n_nodes <= 0) {
     m_logger->error(ord::PSM,49,"No nodes in object initialization stopped.");
-    return; 
   } else {
     m_G_mat_dok.num_cols = m_n_nodes + t_numC4;
     m_G_mat_dok.num_rows = m_n_nodes + t_numC4;
@@ -377,14 +377,14 @@ void GMat::GenerateStripeConductance(int                        t_l,
      \param t_y_max Upper right y location
      \return std::vector<Node*> 
 */
-std::vector<Node*> GMat::GetRDLNodes(int t_l,
+vector<Node*> GMat::GetRDLNodes(int t_l,
               odb::dbTechLayerDir::Value layer_dir,
               int                        t_x_min,
               int                        t_x_max,
               int                        t_y_min,
               int                        t_y_max)
 {
-  std::vector<Node*> RDLNodes;
+  vector<Node*> RDLNodes;
   NodeMap& layer_map = m_layer_maps[t_l];
   NodeLoc node_loc;
   Node* node1;
@@ -510,10 +510,9 @@ double GMat::GetConductance(NodeIdx t_row, NodeIdx t_col)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
     m_logger->error(ord::PSM,51,
-                   "Index out of bound for getting G matrix conductance. ",
+                   "Index out of bound for getting G matrix conductance. \n",
                    "Ensure object is initialized to the correct size first."
                    );
-    return 0; 
   }
   GMatLoc                        key = make_pair(t_col, t_row);
   map<GMatLoc, double>::iterator it  = m_G_mat_dok.values.find(key);
@@ -539,7 +538,7 @@ void GMat::UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond)
 {
   if (m_G_mat_dok.num_cols <= t_col || m_G_mat_dok.num_rows <= t_row) {
     m_logger->error(ord::PSM,52,
-                   "Index out of bound for getting G matrix conductance. ",
+                   "Index out of bound for getting G matrix conductance. \n",
                    "Ensure object is initialized to the correct size first."
                    );
   }
@@ -612,7 +611,7 @@ double GMat::GetConductivity(double width, double length, double rho)
 
 
 //! Function to return a vector which contains pointers to all nodes
-std::vector<Node*> GMat::GetAllNodes()
+vector<Node*> GMat::GetAllNodes()
 {
   return m_G_mat_nodes;
 }

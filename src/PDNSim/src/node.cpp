@@ -36,7 +36,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 
 namespace psm {
-using namespace std;
+
+using std::pair;
+using std::vector;
+using std::max;
+using std::make_pair;
 
 //! Get the layer number of the node
 /*
@@ -205,7 +209,7 @@ bool Node::HasInstances()
   return m_has_instances;
 }
 
-std::vector<dbInst*> Node::GetInstances()
+vector<dbInst*> Node::GetInstances()
 {
   return m_connected_instances;
 }

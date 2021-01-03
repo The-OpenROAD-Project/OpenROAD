@@ -39,12 +39,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "db_sta/dbSta.hh"
 
 namespace psm {
-using namespace sta;
-using namespace std;
-
+using sta::Corner;
+using sta::dbNetwork;
+using sta::PowerResult;
+using sta::Instance;
+using sta::LeafInstanceIterator;
+using sta::LibertyCell;
+using std::vector;
+using std::pair;
+using std::string;
 
 //! Function for power per instance calculation
-std::vector<pair<string, double>> PowerInst::executePowerPerInst(
+vector<pair<string, double>> PowerInst::executePowerPerInst(
     sta::dbSta* sta)
 {
   // STA object create
@@ -63,9 +69,9 @@ std::vector<pair<string, double>> PowerInst::executePowerPerInst(
   Corner* corner = _sta->cmdCorner();
   //cout << "Created cornert" << endl;
 
-  std::vector<pair<string, double>> power_report;
+  vector<pair<string, double>> power_report;
 
-  sta::dbNetwork* network = _sta->getDbNetwork();
+  dbNetwork* network = _sta->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
   PowerResult           total_calc;
   total_calc.clear();

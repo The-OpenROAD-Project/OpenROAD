@@ -69,7 +69,7 @@ Path Type: max
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
 [INFO PSM-0002] Output voltage file is specified as: ./results/gcd_voltage_vss.rpt.
 [INFO PSM-0004] EM calculation is enabled.
-[INFO PSM-0003] Output current file specified ./results/gcd_em_vss.rpt
+[INFO PSM-0003] Output current file specified ./results/gcd_em_vss.rpt.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
 [INFO PSM-0026] Creating G matrix.
 [INFO PSM-0028] Extracting power stripes on net VSS.
@@ -81,15 +81,12 @@ Path Type: max
 [INFO PSM-0009] Factorizing the G matrix.
 [INFO PSM-0011] Solving system of equations GV=J.
 [INFO PSM-0013] Solving system of equations GV=J complete.
-[INFO PSM-0042] Generating IR report.
-######################################
+########## IR report #################
 Worstcase voltage: 9.04e-05 V
 Average IR drop  : 6.96e-05 V
 Worstcase IR drop: 9.04e-05 V
 ######################################
-[INFO PSM-0043] Generating EM report.
-######################################
-EM Analysis
+########## EM analysis ###############
 Maximum current: 6.62e-05 A
 Average current: 1.87e-06 A
 Number of resistors: 1244
