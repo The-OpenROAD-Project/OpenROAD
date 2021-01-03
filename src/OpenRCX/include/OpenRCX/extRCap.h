@@ -835,6 +835,9 @@ class extNetStats
                     int*         val,
                     uint         units = 1);
   void   update_bbox(Ath__parser* parser, const char* bbox);
+  
+ protected:
+  Logger* logger_;
 };
 class extLenOU  // assume cross-section on the z-direction
 {
@@ -2707,7 +2710,7 @@ class extMain
   // uint adjustCapNode(odb::dbNet *net, odb::dbITerm *from_child_iterm, uint
   // node_num);
   extSpef*    getSpef();
-  static uint printRSegs(odb::dbNet* net);
+  static uint printRSegs(odb::dbNet* net, Logger* logger);
   // 021710D END
 
   // 022110D BEGIN

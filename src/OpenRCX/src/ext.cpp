@@ -35,7 +35,6 @@
 
 #include "openroad/Logger.h"
 
-#include "dbLogger.h"
 #include "sta/StaMain.hh"
 
 namespace sta {
@@ -45,7 +44,6 @@ extern const char* openrcx_tcl_inits[];
 
 namespace OpenRCX {
 
-using ord::Logger;
 using ord::RCX;
 
 extern "C" {
@@ -355,12 +353,12 @@ bool Ext::bench_verilog(const std::string& file)
 
   char* filename = (char*) file.c_str();
   if (!filename || !filename[0]) {
-    notice(0, "Please set file name.\n");
+    logger_->info(RCX,0, "Please set file name.");
     return 0;
   }
   FILE* fp = fopen(filename, "w");
   if (fp == NULL) {
-    notice(0, "Cannot open file %s\n", filename);
+    logger_->info(RCX,0, "Cannot open file {}", filename);
     return 0;
   }
   _ext->benchVerilog(fp);
@@ -1132,7 +1130,7 @@ bool Ext::rc_tree(float              max_cap,
   odb::dbBlock* block = _ext->getBlock();
 
   if (_tree == NULL)
-    _tree = new extRcTree(block);
+    _tree = new extRcTree(block, logger_);
 
   uint cnt;
   if (netId > 0)

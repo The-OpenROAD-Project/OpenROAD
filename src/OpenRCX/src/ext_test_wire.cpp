@@ -32,15 +32,17 @@
 #include <stdio.h>
 
 #include "db.h"
-//#include "dbWireCodec.h"
 #include <dbWireCodec.h>
-//#include "dbShape.h"
 #include <dbLogger.h>
 #include <dbShape.h>
 
 #include "extRCap.h"
 
+#include "openroad/Logger.h"
+
 namespace OpenRCX {
+
+using ord::RCX;
 
 static odb::dbTechLayer* m1;
 static odb::dbTechLayer* m2;
@@ -143,7 +145,7 @@ int extMain::db_test_wires(odb::dbDatabase* db)
     shape_id.push_back(sitr.getShapeId());
   }
 
-  odb::notice(0, "------------------------------\n");
+  logger_->info(RCX, 0, "------------------------------\n");
 
   std::vector<int>::iterator itr;
 
@@ -154,7 +156,7 @@ int extMain::db_test_wires(odb::dbDatabase* db)
     print_shape(shape, 0, 0);
   }
 
-  odb::notice(0, "\n\nRC PATHS ------------------------------\n");
+  logger_->info(RCX, 0, "\n\nRC PATHS ------------------------------\n");
 
   odb::dbWirePath      path;
   odb::dbWirePathShape pshape;

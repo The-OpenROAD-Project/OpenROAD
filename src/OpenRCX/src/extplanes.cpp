@@ -29,12 +29,14 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #include "extRCap.h"
-//#include "logger.h"
 #include <dbLogger.h>
-//#include "gseq.h"
+#include "openroad/Logger.h"
 
 namespace OpenRCX {
+
+using ord::RCX;
 
 uint extMain::allocateOverUnderMaps(uint layerCnt)
 {
@@ -83,8 +85,8 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
 
   if (bb != NULL) {
     maxRect = *bb;
-    odb::notice(0,
-                "init planes area: %d %d  %d %d\n",
+    logger_->info(RCX, 0,
+                "init planes area: {} {}  {} {}",
                 maxRect.xMin(),
                 maxRect.yMin(),
                 maxRect.xMax(),
@@ -148,7 +150,7 @@ uint extMain::initPlanes(uint  dir,
 }
 uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
 {
-  // odb::notice(0, "Initializing Extraction search DB ... \n");
+  // logger_->info(RCX, 0, "Initializing Extraction search DB ... ");
 
   if (_geomSeq)
     delete _geomSeq;

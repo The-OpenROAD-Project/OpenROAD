@@ -38,13 +38,21 @@
 #include "array1.h"
 #include "parse.h"
 
+#include "openroad/Logger.h"
+
+namespace ord {
+class Logger;
+}
+
 namespace OpenRCX {
+
+using ord::Logger;
 
 class extProcess;
 
 class extConductor
 {
-  extConductor();
+  extConductor(Logger* logger);
   bool readConductor(Ath__parser* parser);
   void print(FILE*       fp,
              const char* sep,
@@ -80,11 +88,14 @@ class extConductor
   friend class extRCModel;
   friend class extProcess;
   friend class extMasterConductor;
+ 
+ protected:
+  Logger *logger_;
 };
 
 class extDielectric
 {
-  extDielectric();
+  extDielectric(Logger* logger);
   bool readDielectric(Ath__parser* parser);
   void printInt(FILE*       fp,
                 const char* sep,
@@ -118,10 +129,13 @@ class extDielectric
 
   friend class extProcess;
   friend class extMasterConductor;
+
+ protected:
+  Logger *logger_;
 };
 class extMasterConductor
 {
-  extMasterConductor(uint condId, extConductor* cond, double prevHeight);
+  extMasterConductor(uint condId, extConductor* cond, double prevHeight, Logger* logger);
   extMasterConductor(uint           dielId,
                      extDielectric* diel,
                      double         xlo,
@@ -129,7 +143,7 @@ class extMasterConductor
                      double         xhi,
                      double         dx2,
                      double         h,
-                     double         th);
+                     double         th, Logger* logger);
 
  public:
   void reset(double height,
@@ -194,6 +208,9 @@ class extMasterConductor
   void   writeBoxName(FILE* fp, uint wireNum);
 
   uint _conformalId[3];
+
+ protected:
+  Logger *logger_;
 
  private:
   uint   _condId;
@@ -260,6 +277,7 @@ class extVariation
   double                interpolate(double                w,
                                     Ath__array1D<double>* X,
                                     Ath__array1D<double>* Y);
+  void setLogger(Logger* logger) { logger_ = logger; }
 
   extVarTable* _hiWidthC;
   extVarTable* _loWidthC;
@@ -268,11 +286,18 @@ class extVariation
   extVarTable* _loWidthR;
   extVarTable* _thicknessR;
   extVarTable* _p;
+ 
+ protected:
+  Logger *logger_;
+
 };
 class extProcess
 {
+ protected:
+  Logger *logger_;
+ 
  public:
-  extProcess(uint condCnt, uint dielCnt);
+  extProcess(uint condCnt, uint dielCnt, Logger* logger);
   ~extProcess();
   FILE*               openFile(const char* filename, const char* permissions);
   uint                readProcess(const char* name, char* filename);

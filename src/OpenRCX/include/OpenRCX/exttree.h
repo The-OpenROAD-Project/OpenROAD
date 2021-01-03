@@ -41,7 +41,15 @@
 
 #include "ZObject.h"
 
+#include "openroad/Logger.h"
+
+namespace ord {
+class Logger;
+}
+
 namespace OpenRCX {
+
+using ord::Logger;
 
 class extRCnode
 {
@@ -87,8 +95,11 @@ class extTnode
 
 class extRcTree
 {
+ protected:
+  Logger* logger_;
+
  public:
-  extRcTree(odb::dbBlock* blk);
+  extRcTree(odb::dbBlock* blk, Logger* logger);
   ~extRcTree();
   extTnode*  makeTree(odb::dbNet* net,
                       double      max_cap,

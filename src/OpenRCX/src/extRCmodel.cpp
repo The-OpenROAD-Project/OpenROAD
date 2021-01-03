@@ -5445,7 +5445,7 @@ uint extMain::readProcess(const char* name, const char* filename)
   return 1;
   */
 
-  extProcess* p = new extProcess(32, 32);
+  extProcess* p = new extProcess(32, 32, logger_);
 
   p->readProcess(name, (char*) filename);
   p->writeProcess("process.out");
@@ -5467,7 +5467,7 @@ uint extMain::readExtRules(const char* name,
                            int         typ,
                            int         max)
 {
-  //	extProcess *p= new extProcess(32, 32);
+  //	extProcess *p= new extProcess(32, 32, logger_);
 
   //	p->readProcess(name, (char *) filename);
 

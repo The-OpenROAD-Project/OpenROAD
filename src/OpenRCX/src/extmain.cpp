@@ -1624,7 +1624,7 @@ uint extMain::makeTree(uint netId)
   if (netId == 0)
     return 0;
 
-  extRcTree* tree = new extRcTree(_block);
+  extRcTree* tree = new extRcTree(_block, logger_);
 
   uint   test    = 0;
   double max_cap = 10.00;
