@@ -40,8 +40,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace psm {
 
 //! Class for IR solver
-/* 
- * Builds the equations GV=J and uses SuperLU 
+/*
+ * Builds the equations GV=J and uses SuperLU
  * to solve the matrix equations
  */
 class IRSolver
@@ -52,88 +52,86 @@ class IRSolver
    * This constructor creates an instance of the class using
    * the given inputs.
    */
-  IRSolver(odb::dbDatabase*         t_db,
-           sta::dbSta*              t_sta,
-           ord::Logger*             t_logger,
-           std::string              vsrc_loc,
-           std::string              power_net,
-           std::string              out_file,
-           std::string              em_out_file,
-           std::string              spice_out_file,
-           int                      em_analyze,
-           int                      bump_pitch_x,
-           int                      bump_pitch_y,
+  IRSolver(odb::dbDatabase*             t_db,
+           sta::dbSta*                  t_sta,
+           ord::Logger*                 t_logger,
+           std::string                  vsrc_loc,
+           std::string                  power_net,
+           std::string                  out_file,
+           std::string                  em_out_file,
+           std::string                  spice_out_file,
+           int                          em_analyze,
+           int                          bump_pitch_x,
+           int                          bump_pitch_y,
            std::map<std::string, float> net_voltage_map)
   {
-    m_db           = t_db;
-    m_sta          = t_sta;
-    m_logger       = t_logger;
-    m_vsrc_file    = vsrc_loc;
-    m_power_net    = power_net;
-    m_out_file     = out_file;
-    m_em_out_file  = em_out_file;
-    m_em_flag  = em_analyze;
-    m_spice_out_file = spice_out_file;
-    m_bump_pitch_x  = bump_pitch_x;
-    m_bump_pitch_y  = bump_pitch_y;
-    m_net_voltage_map =  net_voltage_map;
+    m_db              = t_db;
+    m_sta             = t_sta;
+    m_logger          = t_logger;
+    m_vsrc_file       = vsrc_loc;
+    m_power_net       = power_net;
+    m_out_file        = out_file;
+    m_em_out_file     = em_out_file;
+    m_em_flag         = em_analyze;
+    m_spice_out_file  = spice_out_file;
+    m_bump_pitch_x    = bump_pitch_x;
+    m_bump_pitch_y    = bump_pitch_y;
+    m_net_voltage_map = net_voltage_map;
   }
   //! IRSolver destructor
-  ~IRSolver() {
-    delete m_Gmat;
-  }
+  ~IRSolver() { delete m_Gmat; }
   //! Worst case voltage at the lowest layer nodes
-  double                                      wc_voltage;
+  double wc_voltage;
   //! Worst case current at the lowest layer nodes
-  double                                      max_cur;
+  double max_cur;
   //! Average current at the lowest layer nodes
-  double                                      avg_cur;
-  //! number of resistances   
-  int                                         num_res;
-  //! Average voltage at lowest layer nodes  
-  double                                      avg_voltage;
+  double avg_cur;
+  //! number of resistances
+  int num_res;
+  //! Average voltage at lowest layer nodes
+  double avg_voltage;
   //! Vector of worstcase voltages in the lowest layers
-  std::vector<double>                         wc_volt_layer;
+  std::vector<double> wc_volt_layer;
   //! Returns the created G matrix for the design
-  GMat*                                       GetGMat();
+  GMat* GetGMat();
   //! Returns current map represented as a 1D vector
-  std::vector<double>                         GetJ();
-  //! Function to solve for IR drop 
-  void                                        SolveIR();
+  std::vector<double> GetJ();
+  //! Function to solve for IR drop
+  void SolveIR();
   //! Function to get the power value from OpenSTA
   std::vector<std::pair<std::string, double>> GetPower();
-  std::pair<double, double> GetSupplyVoltage();
+  std::pair<double, double>                   GetSupplyVoltage();
 
-  bool                                        CheckConnectivity();
-  
-  int                                         GetConnectionTest();
+  bool CheckConnectivity();
 
-  bool                                        GetResult();
+  int GetConnectionTest();
 
-  int                                         PrintSpice();
+  bool GetResult();
 
-  bool                                        Build();
+  int PrintSpice();
 
-  bool                                        BuildConnection();
-  float                                       supply_voltage_src;
- 
+  bool Build();
+
+  bool  BuildConnection();
+  float supply_voltage_src;
+
  private:
   //! Pointer to the Db
-  odb::dbDatabase*         m_db;
+  odb::dbDatabase* m_db;
   //! Pointer to STA
-  sta::dbSta*              m_sta;
+  sta::dbSta* m_sta;
   //! Pointer to Logger
-  ord::Logger*             m_logger;
+  ord::Logger* m_logger;
   //! Voltage source file
-  std::string              m_vsrc_file;
-  std::string              m_power_net;
+  std::string m_vsrc_file;
+  std::string m_power_net;
   //! Resistance configuration file
-  std::string              m_out_file;
-  std::string              m_em_out_file;
-  int                      m_em_flag;
-  std::string              m_spice_out_file;
-  //! G matrix for voltage 
-  GMat*                    m_Gmat;
+  std::string m_out_file;
+  std::string m_em_out_file;
+  int         m_em_flag;
+  std::string m_spice_out_file;
+  //! G matrix for voltage
+  GMat* m_Gmat;
   //! Node density in the lower most layer to append the current sources
   int m_node_density{5400};  // TODO get from somewhere
   //! Routing Level of the top layer
@@ -142,7 +140,7 @@ class IRSolver
   int m_bump_pitch_y{0};
   int m_bump_pitch_default{140};
   int m_bump_size{10};
- 
+
   int m_bottom_layer{10};
 
   bool m_result{false};
@@ -150,26 +148,26 @@ class IRSolver
   //! Direction of the top layer
   odb::dbTechLayerDir::Value m_top_layer_dir;
 
-  odb::dbTechLayerDir::Value m_bottom_layer_dir;
-  odb::dbSigType m_power_net_type;
-  std::map<std::string, float> m_net_voltage_map; 
+  odb::dbTechLayerDir::Value   m_bottom_layer_dir;
+  odb::dbSigType               m_power_net_type;
+  std::map<std::string, float> m_net_voltage_map;
   //! Current vector 1D
-  std::vector<double>                            m_J;
+  std::vector<double> m_J;
   //! C4 bump locations and values
   std::vector<std::tuple<int, int, int, double>> m_C4Bumps;
   //! Per unit R and via R for each routing layer
   std::vector<std::tuple<int, double, double>> m_layer_res;
   //! Locations of the C4 bumps in the G matrix
-  std::vector<std::pair<NodeIdx,double>>         m_C4Nodes;
+  std::vector<std::pair<NodeIdx, double>> m_C4Nodes;
   //! Function to add C4 bumps to the G matrix
-  bool                                           AddC4Bump();
+  bool AddC4Bump();
   //! Function that parses the Vsrc file
-  void                                           ReadC4Data();
-//  void                                           ReadResData();
+  void ReadC4Data();
+  //  void                                           ReadResData();
   //! Function to create a J vector from the current map
-  bool                                           CreateJ();
+  bool CreateJ();
   //! Function to create a G matrix using the nodes
-  bool                                           CreateGmat(bool connection_only=false);
+  bool CreateGmat(bool connection_only = false);
 };
-}
+}  // namespace psm
 #endif

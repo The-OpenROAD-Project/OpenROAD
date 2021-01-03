@@ -31,7 +31,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #include "get_power.h"
 #include <iostream>
 
@@ -41,17 +40,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace psm {
 using sta::Corner;
 using sta::dbNetwork;
-using sta::PowerResult;
 using sta::Instance;
 using sta::LeafInstanceIterator;
 using sta::LibertyCell;
-using std::vector;
+using sta::PowerResult;
 using std::pair;
 using std::string;
+using std::vector;
 
 //! Function for power per instance calculation
-vector<pair<string, double>> PowerInst::executePowerPerInst(
-    sta::dbSta* sta)
+vector<pair<string, double>> PowerInst::executePowerPerInst(sta::dbSta* sta)
 {
   // STA object create
   _sta = sta;
@@ -60,24 +58,25 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(
   string cornerName = "wst";
   // string cornerNameFF="bst";
 
-//  StringSet cornerNameSet;
-//  cornerNameSet.insert(cornerName.c_str());
-//
-//  // define_corners
-//  _sta->makeCorners(&cornerNameSet);
-//  Corner* corner = _sta->findCorner(cornerName.c_str());
+  //  StringSet cornerNameSet;
+  //  cornerNameSet.insert(cornerName.c_str());
+  //
+  //  // define_corners
+  //  _sta->makeCorners(&cornerNameSet);
+  //  Corner* corner = _sta->findCorner(cornerName.c_str());
   Corner* corner = _sta->cmdCorner();
-  //cout << "Created cornert" << endl;
+  // cout << "Created cornert" << endl;
 
   vector<pair<string, double>> power_report;
 
-  dbNetwork* network = _sta->getDbNetwork();
+  dbNetwork*            network   = _sta->getDbNetwork();
   LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
   PowerResult           total_calc;
   total_calc.clear();
   while (inst_iter->hasNext()) {
-    Instance*    inst = inst_iter->next();
-    //cout << "Insode while for all isntance:"<<(string(network->name(inst))) << power<<endl;
+    Instance* inst = inst_iter->next();
+    // cout << "Insode while for all isntance:"<<(string(network->name(inst)))
+    // << power<<endl;
     LibertyCell* cell = network->libertyCell(inst);
     if (cell) {
       PowerResult inst_power;
@@ -85,13 +84,13 @@ vector<pair<string, double>> PowerInst::executePowerPerInst(
       total_calc.incr(inst_power);
       power_report.push_back(
           make_pair(string(network->name(inst)), inst_power.total()));
-       //cout << string(network->name(inst)) << inst_power.total() << endl;
+      // cout << string(network->name(inst)) << inst_power.total() << endl;
     }
   }
   delete inst_iter;
 
-  //cout <<"Total power:" << total.total() << endl;
-  //cout <<"Total power calculated:" << total_calc.total() << endl;
+  // cout <<"Total power:" << total.total() << endl;
+  // cout <<"Total power calculated:" << total_calc.total() << endl;
   return power_report;
 }
-}
+}  // namespace psm

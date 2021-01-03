@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pdnsim/MakePDNSim.hh"
 
 namespace sta {
-extern const char *pdnsim_tcl_inits[];
+extern const char* pdnsim_tcl_inits[];
 }
 
 extern "C" {
@@ -47,23 +47,23 @@ extern int Pdnsim_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-psm::PDNSim* makePDNSim() {
+psm::PDNSim* makePDNSim()
+{
   return new psm::PDNSim();
 }
 
-void
-initPDNSim(OpenRoad* openroad) {
+void initPDNSim(OpenRoad* openroad)
+{
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Pdnsim_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::pdnsim_tcl_inits);
-  openroad->getPDNSim()->init(openroad->getLogger(),
-                              openroad->getDb(),
-                              openroad->getSta());
+  openroad->getPDNSim()->init(
+      openroad->getLogger(), openroad->getDb(), openroad->getSta());
 }
 
-void
-deletePDNSim(psm::PDNSim *pdnsim) {
+void deletePDNSim(psm::PDNSim* pdnsim)
+{
   delete pdnsim;
 }
 
-}
+}  // namespace ord

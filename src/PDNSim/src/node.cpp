@@ -37,10 +37,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace psm {
 
+using std::make_pair;
+using std::max;
 using std::pair;
 using std::vector;
-using std::max;
-using std::make_pair;
 
 //! Get the layer number of the node
 /*
@@ -51,7 +51,6 @@ int Node::GetLayerNum()
   return m_layer;
 }
 
-
 //! Set the layer number of the node
 /*
  \param t_layer Layer number
@@ -60,7 +59,6 @@ void Node::SetLayerNum(int t_layer)
 {
   m_layer = t_layer;
 }
-
 
 //! Get the location of the node
 /*
@@ -71,7 +69,6 @@ NodeLoc Node::GetLoc()
   return m_loc;
 }
 
-
 //! Set the location of the node using x and y coordinates
 /*
  * \param t_x x index
@@ -81,7 +78,6 @@ void Node::SetLoc(int t_x, int t_y)
 {
   m_loc = make_pair(t_x, t_y);
 }
-
 
 //! Set the location of the node using x,y and layer information
 /*
@@ -117,12 +113,13 @@ void Node::SetGLoc(NodeIdx t_loc)
 void Node::Print(ord::Logger* logger)
 {
   logger->report("Node: {}", m_node_loc);
-  logger->report("  Location: Layer {}, x {}, y {}", m_layer, m_loc.first, m_loc.second);
-  logger->report("  Bounding box: x {}, y {} ",m_bBox.first, m_bBox.second);
-  logger->report("  Current: {:5.4e}A",m_current_src);
-  logger->report("  Voltage: {:5.4e}V",m_voltage);
-  logger->report("  Has connection: {}",m_connected? "true" : "false");  
-  logger->report("  Has instances:  {}",m_has_instances? "true" : "false");
+  logger->report(
+      "  Location: Layer {}, x {}, y {}", m_layer, m_loc.first, m_loc.second);
+  logger->report("  Bounding box: x {}, y {} ", m_bBox.first, m_bBox.second);
+  logger->report("  Current: {:5.4e}A", m_current_src);
+  logger->report("  Voltage: {:5.4e}V", m_voltage);
+  logger->report("  Has connection: {}", m_connected ? "true" : "false");
+  logger->report("  Has instances:  {}", m_has_instances ? "true" : "false");
 }
 
 //! Function to set the bounding box of the stripe
@@ -166,7 +163,7 @@ double Node::GetCurrent()
   return m_current_src;
 }
 
-//! Function to add the current source 
+//! Function to add the current source
 /*
  * \param t_current Value of current source
  */
@@ -201,7 +198,7 @@ bool Node::GetConnected()
 
 void Node::SetConnected()
 {
-  m_connected =true;
+  m_connected = true;
 }
 
 bool Node::HasInstances()
@@ -214,9 +211,9 @@ vector<dbInst*> Node::GetInstances()
   return m_connected_instances;
 }
 
-void Node::AddInstance(dbInst* inst) 
+void Node::AddInstance(dbInst* inst)
 {
-  m_has_instances =true;
+  m_has_instances = true;
   m_connected_instances.push_back(inst);
 }
-}
+}  // namespace psm

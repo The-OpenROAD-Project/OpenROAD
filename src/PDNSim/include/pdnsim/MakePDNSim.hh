@@ -10,12 +10,10 @@ class OpenRoad;
 
 psm::PDNSim* makePDNSim();
 
-void
-initPDNSim(OpenRoad* openroad);
+void initPDNSim(OpenRoad* openroad);
 
-void
-deletePDNSim(psm::PDNSim *pdnsim);
+void deletePDNSim(psm::PDNSim* pdnsim);
 
-}
+}  // namespace ord
 
 #endif
