@@ -1,0 +1,3 @@
+GUI 0001 gui.i:83                  No database loaded
+GUI 0002 gui.i:87                  No chip loaded
+GUI 0003 gui.i:91                  No block loaded
