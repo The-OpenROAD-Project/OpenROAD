@@ -271,7 +271,7 @@ proc write_rules { args } {
   
   set filename "extRules" 
   if { [info exists keys(-file)] } {
-    set filename [lindex $args $keys(-file)]
+    set filename $keys(-file)
   }
 
   set dir "./" 
@@ -286,7 +286,7 @@ proc write_rules { args } {
 
   set pattern 0
   if { [info exists keys(-pattern)] } {
-    set name $keys(-pattern)
+    set pattern $keys(-pattern)
   }
   set solver [info exists flags(-read_from_solver)]
   set db [info exists flags(-db)]

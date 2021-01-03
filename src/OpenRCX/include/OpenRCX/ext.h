@@ -38,9 +38,15 @@
 #include "extRCap.h"
 #include "exttree.h"
 
+namespace ord {
+class Logger;
+}
+
 namespace OpenRCX {
 
+using odb::debug;
 class Ext
+
 #ifndef SWIG  // causes swig warnings
     : public odb::ZInterface
 #endif
@@ -50,6 +56,7 @@ class Ext
   ~Ext();
 
   void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db);
+  void setLogger(ord::Logger *logger);
 
   bool load_model(const std::string& name,
                   bool               lef_rc,
@@ -350,6 +357,7 @@ class Ext
   odb::dbDatabase* _db;
   extMain*         _ext;
   extRcTree*       _tree;
+  ord::Logger *logger_;
   bool             _initWithChip;
 };  // namespace OpenRCX
 

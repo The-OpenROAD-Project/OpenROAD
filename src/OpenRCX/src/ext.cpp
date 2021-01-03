@@ -29,9 +29,11 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "ext.h"
 
+#include "ext.h"
 #include <errno.h>
+
+#include "openroad/Logger.h"
 
 #include "dbLogger.h"
 #include "sta/StaMain.hh"
@@ -43,6 +45,9 @@ extern const char* openrcx_tcl_inits[];
 
 namespace OpenRCX {
 
+using ord::Logger;
+using ord::RCX;
+
 extern "C" {
 extern int Openrcx_Init(Tcl_Interp* interp);
 }
@@ -52,6 +57,7 @@ Ext::Ext() : odb::ZInterface()
   _ext          = new extMain(5);
   _tree         = NULL;
   _initWithChip = false;
+  logger_ = nullptr;
 }
 
 Ext::~Ext()
@@ -69,6 +75,7 @@ void Ext::dbUpdate()
     _initWithChip = true;
     _ext->setDB(_db);
   }
+  _ext->setLogger(logger_);
 }
 
 void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
@@ -78,6 +85,11 @@ void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
   // Define swig TCL commands.
   Openrcx_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::openrcx_tcl_inits);
+}
+
+void Ext::setLogger(ord::Logger* logger) {
+  if (!logger_)
+    logger_ = logger;
 }
 
 bool Ext::load_model(const std::string& name,
@@ -93,7 +105,7 @@ bool Ext::load_model(const std::string& name,
       return TCL_ERROR;
     _ext->addExtModel();  // fprintf(stdout, "Using LEF RC values to
                           // extract!\n");
-    odb::notice(0, "Using LEF RC values to extract!\n");
+    logger_->info(RCX,0, "Using LEF RC values to extract!");
   } else if (!file.empty()) {
     _ext->readExtRules(name.c_str(), file.c_str(), setMin, setTyp, setMax);
     int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
@@ -105,11 +117,11 @@ bool Ext::load_model(const std::string& name,
     // fprintf(stdout, "\nHave to specify options:\n\t-lef_rc to read resistance
     // and capacitance values from LEF or \n\t-file to read high accuracy RC
     // models\n");
-    odb::notice(
+    logger_->info(RCX,
         0,
-        "\nHave to specify options:\n\t-lef_rc to read resistance and "
+        "Have to specify options:\n\t-lef_rc to read resistance and "
         "capacitance values from LEF or \n\t-file to read high accuracy RC "
-        "models\n");
+        "models");
   }
 
   return 0;
@@ -212,16 +224,16 @@ bool Ext::bench_net(const std::string& dir,
   opt._topDir  = dir.c_str();
 
   if (netId == 0) {
-    odb::notice(0, "Net (=%d), should be a positive number\n", netId);
+    logger_->info(RCX,0, "Net (={}), should be a positive number", netId);
     return TCL_OK;
   }
-  odb::notice(0, "Benchmarking using 3d field solver net %d...\n", netId);
+  logger_->info(RCX,0, "Benchmarking using 3d field solver net {}...", netId);
 #ifdef ZUI
   ZPtr<ISdb> dbNetSdb = _ext->getBlock()->getNetSdb(_context, _ext->getTech());
 
   _ext->benchNets(&opt, netId, trackCnt, dbNetSdb);
 #endif
-  odb::notice(0, "Finished.\n");
+  logger_->info(RCX,0, "Finished.");
 
   return TCL_OK;
 }
@@ -241,7 +253,8 @@ bool Ext::bench_wires(const BenchWiresOptions& bwo)
 {
   if (!_initWithChip && !_db->getChip()) {
     _ext->setDB(_db);
-  } else
+    _ext->setLogger(logger_);
+  } else 
     dbUpdate();
 
   extMainOptions opt;
@@ -367,7 +380,7 @@ bool Ext::define_process_corner(int ext_model_index, const std::string& name)
   char* cornerName = _ext->addRCCorner(name.c_str(), ext_model_index);
 
   if (cornerName != NULL) {
-    odb::notice(0, "Defined Extraction corner %s\n", cornerName);
+    logger_->info(RCX, 29, "Defined extraction corner {}", cornerName);
     return TCL_OK;
   } else {
     return TCL_ERROR;
@@ -382,7 +395,7 @@ bool Ext::define_derived_corner(const std::string& name,
 {
   dbUpdate();
   if (process_corner_name.empty()) {
-    odb::warning(0, "the original process corner name is required\n");
+    logger_->warn(RCX, 30, "the original process corner name is required");
     return TCL_ERROR;
   }
 
@@ -392,7 +405,7 @@ bool Ext::define_derived_corner(const std::string& name,
       name.c_str(), model, res_factor, cc_factor, gndc_factor);
 
   if (cornerName != NULL) {
-    odb::notice(0, "Defined Derived Extraction corner %s\n", cornerName);
+    logger_->info(RCX, 31, "Defined Derived extraction corner {}", cornerName);
     return TCL_OK;
   } else {
     return TCL_ERROR;
@@ -421,7 +434,7 @@ bool Ext::read_qcap(const std::string& file_name,
 {
   dbUpdate();
   if (file_name.empty()) {
-    odb::warning(0, "file option is required\n");
+    logger_->warn(RCX, 32, "file option is required");
     return TCL_OK;
   }
 
@@ -450,7 +463,7 @@ bool Ext::get_ext_db_corner(int& index, const std::string& name)
   index = _ext->getDbCornerIndex(name.c_str());
 
   if (index < 0)
-    odb::warning(0, "extraction corner %s not found\n", name.c_str());
+    logger_->warn(RCX,0, "extraction corner {} not found", name.c_str());
 
   return TCL_OK;
 }
@@ -459,17 +472,17 @@ bool Ext::assembly(odb::dbBlock* block, odb::dbBlock* main_block)
 {
   dbUpdate();
   if (main_block == NULL) {
-    odb::notice(0,
-                "Add parasitics of block %s onto nets/wires ...\n",
+    logger_->info(RCX,0,
+                "Add parasitics of block {} onto nets/wires ...{}",
                 block->getConstName());
   } else {
-    odb::notice(0,
-                "Add parasitics of block %s onto block %s...\n",
+    logger_->info(RCX,0,
+                "Add parasitics of block {} onto block {}...",
                 block->getConstName(),
                 main_block->getConstName());
   }
 
-  extMain::assemblyExt(main_block, block);
+  extMain::assemblyExt(main_block, block, logger_);
 
   return TCL_OK;
 }
@@ -478,7 +491,7 @@ bool Ext::flatten(odb::dbBlock* block, bool spef)
 {
   dbUpdate();
   if (block == NULL) {
-    odb::error(0, "No block for flatten command\n");
+    odb::error(0, "No block for flatten command");
   }
   _ext->addRCtoTop(block, spef);
   return TCL_OK;
@@ -487,15 +500,13 @@ bool Ext::flatten(odb::dbBlock* block, bool spef)
 bool Ext::extract(ExtractOptions opts)
 {
   dbUpdate();
-  //    fprintf(stdout, "extracting %s ...\n",
-  //    _ext->getBlock()->getName().c_str());
-  odb::notice(0, "extracting %s ...\n", _ext->getBlock()->getName().c_str());
+  logger_->info(RCX, 8, "extracting parasitics of {} ...", _ext->getBlock()->getName().c_str());
 
   if (opts.lef_rc) {
     if (!_ext->checkLayerResistance())
       return TCL_ERROR;
     _ext->addExtModel();
-    odb::notice(0, "Using LEF RC values to extract!\n");
+    logger_->info(RCX, 9, "Using LEF RC values to extract!");
   }
 
   bool extract_power_grid_only = opts.power_grid;
@@ -507,7 +518,7 @@ bool Ext::extract(ExtractOptions opts)
       bool skipCutVias = true;
       block->initSearchBlock(_db->getTech(), true, true, _context, skipCutVias);
     } else {
-      odb::error(0, "There is no block to extract!\n");
+      logger_->error(RCX, 10, "There is no block to extract!\n");
       return TCL_ERROR;
     }
     _ext->setPowerExtOptions(skip_power_stubs,
@@ -601,7 +612,7 @@ bool Ext::extract(ExtractOptions opts)
 
       cnt += _ext->rcNetGen(net);
     }
-    odb::notice(0, "777: Final rc segments = %d\n", cnt);
+    logger_->info(RCX, 14, "777: Final rc segments = {}", cnt);
     odb::dbRSeg* rc = odb::dbRSeg::getRSeg(_ext->getBlock(), 113);
   }
   if (_ext->makeBlockRCsegs(btermThresholdFlag,
@@ -639,12 +650,11 @@ bool Ext::extract(ExtractOptions opts)
 
     // Extraction
 
-    odb::notice(0, "List of extraction tile blocks: \n");
+    logger_->info(RCX, 11, "List of extraction tile blocks:");
     for (itr = children.begin(); itr != children.end(); ++itr) {
       odb::dbBlock* blk = *itr;
-      odb::notice(0, "%s ", blk->getConstName());
+      logger_->info(RCX, 11,"{} ", blk->getConstName());
     }
-    odb::notice(0, "\n");
   } else if (extdbg == 501) {
     odb::dbSet<odb::dbBlock>           children = topBlock->getChildren();
     odb::dbSet<odb::dbBlock>::iterator itr;
@@ -652,7 +662,7 @@ bool Ext::extract(ExtractOptions opts)
     // Extraction
     for (itr = children.begin(); itr != children.end(); ++itr) {
       odb::dbBlock* blk = *itr;
-      odb::notice(0, "Extacting block %s...\n", blk->getConstName());
+      logger_->info(RCX, 12, "Extacting block {}...", blk->getConstName());
       extMain* ext = new extMain(5);
       ext->setDB(_db);
 
@@ -684,16 +694,16 @@ bool Ext::extract(ExtractOptions opts)
                                extRules,
                                this)
           == 0) {
-        odb::warning(0, "Failed to Extact block %s...\n", blk->getConstName());
+        logger_->warn(RCX, 13, "Failed to Extract block {}...", blk->getConstName());
         return TCL_ERROR;
       }
     }
 
     for (itr = children.begin(); itr != children.end(); ++itr) {
       odb::dbBlock* blk = *itr;
-      odb::notice(0, "Assembly of block %s...\n", blk->getConstName());
+      logger_->info(RCX, 14, "Assembly of block {}...", blk->getConstName());
 
-      extMain::assemblyExt(topBlock, blk);
+      extMain::assemblyExt(topBlock, blk, logger_);
     }
     //_ext= new extMain(5);
     //_ext->setDB(_db);
@@ -723,8 +733,8 @@ bool Ext::extract(ExtractOptions opts)
 
   //    fprintf(stdout, "Finished extracting %s.\n",
   //    _ext->getBlock()->getName().c_str());
-  odb::notice(
-      0, "Finished extracting %s.\n", _ext->getBlock()->getName().c_str());
+  logger_->info(RCX,
+      15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
   return 0;
 }
 
@@ -785,7 +795,7 @@ bool Ext::write_spef(const SpefOptions& opts)
   bool stop     = opts.stop_after_map;
   bool initOnly = opts.init;
   if (!initOnly)
-    odb::notice(0, "Writing SPEF ...\n");
+    logger_->info(RCX, 16, "Writing SPEF ...");
   initOnly = opts.parallel && opts.flatten;
   _ext->writeSPEF((char*) opts.file,
                   (char*) opts.nets,
@@ -812,8 +822,7 @@ bool Ext::write_spef(const SpefOptions& opts)
                   opts.flatten,
                   opts.parallel);
 
-  odb::notice(0, "Finished writing SPEF ...\n");
-  // fprintf(stdout, "Hello Extraction %s\n", "Ext::write_spef");
+  logger_->info(RCX, 17, "Finished writing SPEF ...");
   return 0;
 }
 
@@ -827,9 +836,8 @@ bool Ext::independent_spef_corner()
 bool Ext::read_spef(ReadSpefOpts& opt)
 {
   dbUpdate();
-  // fprintf(stdout, "Hello Extraction %s\n", "Ext::read_spef");
-  //    fprintf(stdout, "reading %s\n",in_args->file());
-  odb::notice(0, "reading %s\n", opt.file);
+  
+  logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
   odb::ZPtr<odb::ISdb> netSdb    = NULL;
   bool                 stampWire = opt.stamp_wire;
@@ -843,8 +851,7 @@ bool Ext::read_spef(ReadSpefOpts& opt)
   Ath__parser parser;
   char*       filename = (char*) opt.file;
   if (!filename || !filename[0]) {
-    odb::notice(0, "Please input file name.\n");
-    return 0;
+    logger_->error(RCX, 2, "Please input SPEF file");
   }
   parser.mkWords(filename);
 
@@ -892,15 +899,12 @@ bool Ext::read_spef(ReadSpefOpts& opt)
 bool Ext::diff_spef(const DiffOptions& opt)
 {
   dbUpdate();
-  // fprintf(stdout, "Hello Extraction %s\n", "Ext::read_spef");
-  //    fprintf(stdout, "diffing spef %s\n",in_args->file());
   std::string filename(opt.file);
   if (filename.empty()) {
-    odb::notice(
-        0, "\nplease type in name of the spef file to diff, using -file\n");
-    return 0;
+    logger_->error(RCX,
+        20, "Please type in name of the spef file to diff, using -file");
   }
-  odb::notice(0, "diffing spef %s\n", opt.file);
+  logger_->info(RCX, 19, "diffing spef {}", opt.file);
 
   bool useIds      = opt.use_ids;
   bool testParsing = opt.test_parsing;
@@ -962,13 +966,12 @@ bool Ext::calibrate(const std::string& spef_file,
                     float              lower_limit)
 {
   dbUpdate();
-  if (spef_file.empty()) {
-    odb::notice(0,
-                "\nplease type in name of the spef file to calibrate, using "
-                "-spef_file\n");
-    return 0;
-  }
-  odb::notice(0, "calibrate on spef file  %s\n", spef_file.c_str());
+  if (spef_file.empty()) 
+    logger_->error(RCX, 20,
+                "please type in name of the spef file to calibrate, using "
+                "-spef_file");
+  
+  logger_->info(RCX, 21, "calibrate on spef file  {}", spef_file.c_str());
   Ath__parser parser;
   parser.mkWords((char*) spef_file.c_str());
   _ext->calibrate(parser.get(0),
@@ -989,12 +992,11 @@ bool Ext::match(const std::string& spef_file,
 {
   dbUpdate();
   if (spef_file.empty()) {
-    odb::notice(
-        0,
-        "\nplease type in name of the spef file to match, using -spef_file\n");
-    return 0;
+    logger_->info(RCX,
+        20,
+        "please type in name of the spef file to match, using -spef_file\n");
   }
-  odb::notice(0, "match on spef file  %s\n", spef_file.c_str());
+  logger_->info(RCX, 18, "match on spef file  {}", spef_file.c_str());
   Ath__parser parser;
   parser.mkWords((char*) spef_file.c_str());
   _ext->match(
@@ -1021,8 +1023,8 @@ bool Ext::set_block(const std::string& block_name,
     odb::dbChip*   chip = _db->getChip();
     odb::dbInst*   ii   = chip->getBlock()->findInst(inst_name.c_str());
     odb::dbMaster* m    = ii->getMaster();
-    odb::notice(0,
-                "Inst=%s ==> %d %s of Master %d %s",
+    logger_->info(RCX, 21,
+                "Inst={} ==> {} {} of Master {} {}",
                 inst_name.c_str(),
                 ii->getId(),
                 ii->getConstName(),
@@ -1031,14 +1033,14 @@ bool Ext::set_block(const std::string& block_name,
   }
   if (block == NULL) {
     if (block_name.empty()) {
-      odb::warning(0, "commnad requires either dbblock or block name\n");
+      logger_->warn(RCX,  22, "command requires either dbblock or block name{}");
       return TCL_ERROR;
     }
     odb::dbChip*  chip  = _db->getChip();
     odb::dbBlock* child = chip->getBlock()->findChild(block_name.c_str());
     if (child == NULL) {
-      odb::warning(
-          0, "Cannot find block with master name %s\n", block_name.c_str());
+      logger_->warn(RCX,
+          23, "Cannot find block with master name {}", block_name.c_str());
       return TCL_ERROR;
     }
     block = child;
@@ -1066,7 +1068,7 @@ bool Ext::report_total_cap(const std::string& file,
           dbChip *chip= _db->getChip();
           dbBlock * child = chip->getBlock()->findChild(block_name);
   if (child==NULL) {
-  odb::warning(0, "Cannot find block with master name %s\n",
+  logger_->warn(RCX, 24, "Cannot find block with master name {}",
   block_name);
   return TCL_ERROR;
   }
@@ -1095,9 +1097,7 @@ bool Ext::dump(bool               open_tree_file,
                const std::string& file)
 {
   dbUpdate();
-  // fprintf(stdout, "Hello Extraction %s\n", "Ext::read_spef");
-  //    fprintf(stdout, "dumping %s\n",in_args->file());
-  odb::notice(0, "dumping %s\n", file.c_str());
+  logger_->info(RCX, 25, "dumping {}", file.c_str());
 
   _ext->extDump((char*) file.c_str(),
                 open_tree_file,
@@ -1189,7 +1189,7 @@ bool Ext::net_stats(std::list<int>&    net_ids,
   if (filename != NULL) {
     fp = fopen(filename, "w");
     if (fp == NULL) {
-      odb::warning(0, "Cannot open file %s\n", filename);
+      logger_->warn(RCX, 27, "Cannot open file {}", filename);
       return TCL_OK;
     }
   }
@@ -1199,14 +1199,14 @@ bool Ext::net_stats(std::list<int>&    net_ids,
 
   odb::dbBlock* block = _ext->getBlock();
   if (block == NULL) {
-    odb::warning(0, "There is no extracted block\n");
+    logger_->warn(RCX, 28, "There is no extracted block");
     skipRC = true;
     return TCL_OK;
   }
   std::list<int> list_of_nets;
   int            n = _ext->printNetStats(
       fp, block, &limits, skipRC, skipDb, skipPower, &list_of_nets);
-  odb::notice(0, "%d nets found\n", n);
+  logger_->info(RCX, 26, "{} nets found", n);
 
   net_ids = list_of_nets;
 

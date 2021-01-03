@@ -40,10 +40,13 @@
 
 #include <map>
 #include <vector>
-//#include "logger.h"
 #include <dbLogger.h>
 
+#include "openroad/Logger.h"
+
 namespace OpenRCX {
+
+using ord::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -57,9 +60,7 @@ using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
 using odb::dbWire;
 using odb::dbWireShapeItr;
-using odb::debug;
 using odb::ISdb;
-using odb::notice;
 using odb::Rect;
 using odb::ZPtr;
 
@@ -281,15 +282,6 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
 
       uint cnt1 = benchWithVar_density(opt, &measure);
 
-      //          fprintf(stdout, "\nFinished %d measurements for bench pattern
-      //          M%d_over_M%d\n\n",
-      //              cnt1, met, underMet);
-      // notice(
-      //    0,
-      //    "Finished %d measurements for bench pattern M%d_over_M%d\n",
-      //    cnt1,
-      //    met,
-      //    underMet);
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
 
@@ -299,9 +291,8 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
     opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
     opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
   }
-  //  fprintf(stdout, "\nFinished %d bench measurements for pattern
-  //  MET_OVER_MET\n", cnt);
-  notice(0, "Finished %d bench measurements for pattern MET_OVER_MET\n", cnt);
+  
+  logger_->info(RCX, 55, "Finished {} bench measurements for pattern MET_OVER_MET", cnt);
 
   // closeCapLogFile();
   return cnt;
@@ -349,24 +340,13 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
 
       uint cnt1 = benchWithVar_density(opt, &measure);
 
-      //			fprintf(stdout, "\nFinished %d bench
-      // measurements for pattern M%d_under_M%d\n\n",
-      // cnt1, met, overMet); notice(
-      //    0,
-      //    "Finished %d bench measurements for pattern M%d_under_M%d\n",
-      //    cnt1,
-      //    met,
-      //    overMet);
-
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
     }
     opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
     opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
   }
-  //	fprintf(stdout, "\nFinished %d bench measurements for pattern
-  // MET_UNDER_MET\n", cnt);
-  notice(0, "Finished %d bench measurements for pattern MET_UNDER_MET\n", cnt);
+  logger_->info(RCX, 57, "Finished {} bench measurements for pattern MET_UNDER_MET", cnt);
 
   // closeCapLogFile();
   return cnt;
@@ -414,23 +394,15 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
 
       uint cnt1 = benchWithVar_density(opt, &measure);
 
-      // notice(
-      //    0,
-      //    "Finished %d bench measurements for pattern M%d_diagunder_M%d\n",
-      //    cnt1,
-      //    met,
-      //    overMet);
-
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
     }
     opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
     opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
   }
-  //      fprintf(stdout, "\nFinished %d bench measurements for pattern
-  //      MET_UNDER_MET\n", cnt);
-  notice(
-      0, "Finished %d bench measurements for pattern MET_DIAGUNDER_MET\n", cnt);
+  
+  logger_->info(RCX, 58, 
+      "Finished {} bench measurements for pattern MET_DIAGUNDER_MET", cnt);
 
   // closeCapLogFile();
   return cnt;
@@ -482,18 +454,6 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
 
         uint cnt1 = benchWithVar_density(opt, &measure);
 
-        /*				fprintf(stdout, "\nFinished %d bench
-           measurements for pattern M%d_over_M%d_under_M%d\n\n", cnt1, met,
-           underMet, overMet);
-        */
-        // notice(0,
-        //            "Finished %d bench measurements for pattern "
-        //            "M%d_over_M%d_under_M%d\n",
-        //            cnt1,
-        //            met,
-        //            underMet,
-        //            overMet);
-
         cnt += cnt1;
 
         opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
@@ -501,9 +461,8 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
       }
     }
   }
-  //	fprintf(stdout, "\nFinished %d measurements for pattern
-  // MET_UNDER_MET\n", cnt);
-  notice(0, "Finished %d measurements for pattern MET_UNDER_MET\n", cnt);
+  
+  logger_->info(RCX, 56, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
 
   // closeCapLogFile();
   return cnt;
@@ -512,7 +471,7 @@ uint extMain::benchWires(extMainOptions* opt)
 {
   if (opt->_db_only) {
     uint        layerCnt = _tech->getRoutingLayerCount();
-    extRCModel* m        = new extRCModel(layerCnt, "processName");
+    extRCModel* m        = new extRCModel(layerCnt, "processName", logger_);
     _modelTable->add(m);
 
     // m->setProcess(p);
@@ -601,7 +560,7 @@ uint extMain::benchWires(extMainOptions* opt)
 }
 uint extMain::runSolver(extMainOptions* opt, uint netId, int shapeId)
 {
-  extRCModel* m = new extRCModel("TYPICAL");
+  extRCModel* m = new extRCModel("TYPICAL", logger_);
   m->setExtMain(this);
   m->setOptions(opt->_topDir, "nets", false, false, true);
   uint shapeCnt = m->runWiresSolver(netId, shapeId);
@@ -962,8 +921,8 @@ uint extRCModel::netWiresBench(extMainOptions* opt,
     }
     fclose(fp);
 
-    notice(0,
-           "\nFinished %d boxes for net (%d,%d) at coords (%d,%d) (%d,%d)\n",
+    logger_->info(RCX, 0,
+           "Finished {} boxes for net ({},{}) at coords ({},{}) ({},{})",
            boxCnt - 1,
            netId,
            shapeId,
@@ -979,8 +938,8 @@ uint extRCModel::netWiresBench(extMainOptions* opt,
     if (!measureNetPattern(&measure, shapeId, &boxTable))
       return 0;
   }
-  //	notice(0, "\nFinished pattern for net id %d at coors (%d,%d)
-  //(%d,%d), %d boxes\n", 		cnt, s.xMin(), s.yMin(), s.xMax(), s.yMax(),
+  //	logger_->info(RCX, 0, "Finished pattern for net id %d at coors ({},{})
+  //({},{}), {} boxes", 		cnt, s.xMin(), s.yMin(), s.xMax(), s.yMax(),
   //boxCnt);
 
   // closeCapLogFile();
@@ -1029,7 +988,7 @@ uint extRCModel::getNetCapMatrixValues3D(uint        nodeCnt,
         m->_extMain->updateCCCap(rseg1, rsegN, cc1);
         CC += cc1;
       }
-      // notice(0, "\tccCap for netIds %d(%d), %d(%d) %e\n",
+      // logger_->info(RCX, 0, "\tccCap for netIds %d(%d), {}({}) %e",
       //	m->_idTable[n], n, m->_idTable[n+1], n+1, cc1);
     } else {
     }
@@ -1045,7 +1004,7 @@ uint extRCModel::getNetCapMatrixValues3D(uint        nodeCnt,
           CC,
           frCap);
 
-  // notice(0, "\tfrCap from CC for netId %d(%d) %e\n", m->_idTable[n], n,
+  // logger_->info(RCX, 0, "\tfrCap from CC for netId {}({}) %e", m->_idTable[n], n,
   // ccFr); m->printStats(_capLogFP);
   fprintf(_capLogFP, "\n\nEND\n\n");
 

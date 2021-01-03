@@ -40,8 +40,9 @@
 #include <algorithm>
 
 #include "parse.h"
-//#include "logger.h"
 #include <dbLogger.h>
+
+#include "openroad/Logger.h"
 
 //#ifdef _WIN32
 #define ATH__fprintf fprintf
@@ -51,14 +52,18 @@
 
 namespace OpenRCX {
 
+using ord::RCX;
+
 class extMain;
 
 extSpef::extSpef(odb::dbTech*  tech,
                  odb::dbBlock* blk,
+                 Logger* logger, 
                  extMain*      extmain,
                  uint          btermCnt,
                  uint          itermCnt)
 {
+  logger_ = logger;
   _ext     = extmain;
   _tech    = tech;
   _block   = blk;
@@ -261,6 +266,10 @@ void extSpef::set_single_pi(bool v)
 {
   _singleP = v;
 }
+void extSpef::setLogger(Logger* logger)
+{
+  logger_ = logger;
+}
 char* extSpef::getDelimeter()
 {
   return _delimiter;
@@ -322,12 +331,12 @@ void extSpef::setUseIdsFlag(bool useIds, bool diff, bool calib)
   if (diff && !calib) {
     _diffLogFP = ATH__fopen("diff_spef.log", "w");
     if (!_diffLogFP)
-      odb::error(0,
+      logger_->error(RCX, 0,
                  "Cannot open log file diff_spef.log for writing. Do you have "
                  "permissions?\n");
     _diffOutFP = ATH__fopen("diff_spef.out", "w");
     if (!_diffOutFP)
-      odb::error(0,
+      logger_->error(RCX, 0,
                  "Cannot open output file diff_spef.out for writing. Do you "
                  "have permissions?\n");
   }
@@ -1213,8 +1222,8 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId)
       writeCapNode(cc->getSourceCapNode(), netId);
       strcat(_bufString, "and ");
       writeCapNode(cc->getTargetCapNode(), netId);
-      odb::warning(0,
-                   "%s on the same net %d %s. Discard this CC.\n",
+      logger_->warn(RCX, 0,
+                   "{} on the same net {} {}. Discard this CC.\n",
                    _bufString,
                    scnode->getNet()->getId(),
                    scnode->getNet()->getConstName());
@@ -1359,11 +1368,11 @@ uint extSpef::writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
   }
   return cnt;
 }
-void getjxy(odb::dbNet* net, uint jid)
+void getjxy(odb::dbNet* net, uint jid, Logger* logger)
 {
   int jx, jy;
   net->getWire()->getCoord((int) jid, jx, jy);
-  odb::notice(0, "%d:%d %d %d\n", net->getId(), jid, jx, jy);
+  logger->info(RCX, 0, "{}:{} {} {}", net->getId(), jid, jx, jy);
 }
 uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug)
 {
@@ -1397,7 +1406,7 @@ uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug)
     if (_symmetricCCcaps)
       addCouplingCaps(net, totCap);
     else
-      odb::notice(0, "dimitris_change NEED TO IMPLEMENT NON SYMMTRIC CASE\n");
+      logger_->info(RCX, 0, "dimitris_change NEED TO IMPLEMENT NON SYMMTRIC CASE");
 
     //	odb::dbSet<odb::dbCapNode> capSet= net->getCapNodes();
 
@@ -1681,12 +1690,10 @@ uint extSpef::writeInstMap()
     if (inst->getMaster()->getMTermCount() <= 0)
       continue;
     if (inst->getMaster()->isMarked()) {
-      odb::notice(0,
-                  "Skip instance %s for cell %s is excluded\n",
+      logger_->info(RCX, 0, "Skip instance {} for cell {} is excluded",
                   inst->getConstName(),
                   inst->getMaster()->getConstName());
-      odb::verbose(0,
-                   "Skip instance %s for cell %s is excluded\n",
+      odb::verbose(0, "Skip instance %s for cell %s is excluded\n",
                    inst->getConstName(),
                    inst->getMaster()->getConstName());
       continue;
@@ -1713,7 +1720,7 @@ uint extSpef::stopWrite()
 {
   // TODO	for (uint j=0;j<tnets.size();j++)
   // TODO		tnets[j]->setMark(false);
-  // odb::notice(0, "%d nets finished\n", cnt);
+  // logger_->info(RCX, 0, "{} nets finished", cnt);
 
   closeOutFile();
   return 0;
@@ -1784,7 +1791,7 @@ uint extSpef::writeBlock(char*                    nodeCoord,
   _writingNodeCoords = C_NONE;
   if (nodeCoord && strcmp(nodeCoord, "m") == 0) {
     _writingNodeCoords = C_MAGMA;  // Magma
-    odb::notice(0, "\" -N m \" is not implemented.\n");
+    logger_->info(RCX, 0, "\" -N m \" is not implemented.");
     return 0;
   } else if (nodeCoord && strcmp(nodeCoord, "s") == 0)
     _writingNodeCoords = C_STARRC;  // SynopsysStarRC
@@ -1792,7 +1799,7 @@ uint extSpef::writeBlock(char*                    nodeCoord,
     _writingNodeCoords = C_STARRC;
     _NsLayer           = false;
   } else if (nodeCoord && nodeCoord[0] != '\0') {
-    odb::notice(0, "\" -N %s \" is unknown.\n", nodeCoord);
+    logger_->info(RCX, 0, "\" -N {} \" is unknown.", nodeCoord);
     return 0;
   }
   if (!wConn && !wCap && !wOnlyCCcap && !wRes)
@@ -1814,7 +1821,7 @@ uint extSpef::writeBlock(char*                    nodeCoord,
       mname  = parser->get(ii);
       master = _block->getDb()->findMaster(mname);
       if (!master) {
-        odb::warning(0, "Can't find master %s\n", mname);
+        logger_->warn(RCX, 0, "Can't find master {}\n", mname);
         continue;
       }
       excmaster.push_back(master);
@@ -1822,7 +1829,7 @@ uint extSpef::writeBlock(char*                    nodeCoord,
     }
   }
   if (excmaster.size())
-    odb::notice(0, "%d cells are excluded from write_spef\n", excmaster.size());
+    logger_->info(RCX, 0, "{} cells are excluded from write_spef", excmaster.size());
   if (!_stopBeforeDnets && !_stopAfterNameMap) {
     if (strcmp("PF", capUnit) == 0) {
       _cap_unit = 0.001;
@@ -1889,7 +1896,7 @@ uint extSpef::writeBlock(char*                    nodeCoord,
 
   if (_independentExtCorners) {
     if (_active_corner_cnt != 1) {
-      odb::warning(0,
+      logger_->warn(RCX, 0,
                    "Can only write one corner at a time when write_spef for "
                    "independent_spef_corner\n");
       return 0;
@@ -1903,8 +1910,8 @@ uint extSpef::writeBlock(char*                    nodeCoord,
                        ? _block
                        : _block->findExtCornerBlock(_active_corner_number[0]);
     if (_cornerBlock == NULL) {
-      odb::warning(0,
-                   "Can not find extBlock for corner %d.\n",
+      logger_->warn(RCX, 0,
+                   "Can not find extBlock for corner {}.\n",
                    _active_corner_number[0]);
       return 0;
     }
@@ -1933,13 +1940,13 @@ uint extSpef::writeBlock(char*                    nodeCoord,
     cnt += writeNet(net, 0.0, 0);
 
     if (cnt % repChunk == 0)
-      odb::notice(0, "%d nets finished\n", cnt);
+      logger_->info(RCX, 47, "{} nets finished", cnt);
   }
   for (ii = 0; ii < (int) excmaster.size(); ii++)
     ((odb::dbMaster*) excmaster[ii])->setMark(0);
   for (j = 0; j < tnets.size(); j++)
     tnets[j]->setMark(false);
-  odb::notice(0, "%d nets finished\n", cnt);
+  logger_->info(RCX, 47, "{} nets finished", cnt);
 
   closeOutFile();
 
@@ -1952,8 +1959,7 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel)
   _cornerBlock           = _block;
   _cornersPerBlock       = _cornerCnt;
 
-  odb::notice(
-      0, "extSpef::write_spef_nets: _cornersPerBlock= %d\n", _cornersPerBlock);
+  logger_->info(RCX, 0, "extSpef::write_spef_nets: _cornersPerBlock= {}", _cornersPerBlock);
   uint                             repChunk = 50000;
   odb::dbSet<odb::dbNet>           nets     = _block->getNets();
   odb::dbSet<odb::dbNet>::iterator net_itr;
@@ -1981,7 +1987,7 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel)
     cnt += writeNet(net, 0.0, 0);
 
     if (cnt % repChunk == 0)
-      odb::notice(0, "%d nets finished\n", cnt);
+      logger_->info(RCX, 47, "{} nets finished", cnt);
   }
   /*
           for (ii = 0; ii < (int)excmaster.size(); ii++)
@@ -1989,7 +1995,7 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel)
           for (j=0;j<tnets.size();j++)
                   tnets[j]->setMark(false);
   */
-  odb::notice(0, "%d nets finished\n", cnt);
+  logger_->info(RCX, 47, "{} nets finished", cnt);
 
   // closeOutFile();
 

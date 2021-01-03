@@ -32,14 +32,17 @@
 
 #include "extRCap.h"
 #include "extSpef.h"
-//#include "wire.h"
 #include <dbLogger.h>
 #include <math.h>
 #include <wire.h>
 
 #include "parse.h"
 
+#include "openroad/Logger.h"
+
 namespace OpenRCX {
+
+using ord::RCX;
 
 dbInst* extSpef::getDbInst(uint id)
 {
@@ -70,7 +73,7 @@ dbInst* extSpef::getDbInst(uint id)
     if (!inst && _notFoundInst->getDataId(iName, 1, 0) == 0) {
       _unmatchedSpefInst++;
       _notFoundInst->addNewName(iName, 1);
-      verbose(0, "Error: Spef instance %s not found in db.\n", instName);
+      logger_->warn(RCX, 0, "Error: Spef instance {} not found in db.", instName);
     }
     return inst;
   }
@@ -138,7 +141,7 @@ dbInst* extSpef::getDbInst(uint id)
   if (!inst && _notFoundInst->getDataId(iName, 1, 0) == 0) {
     _unmatchedSpefInst++;
     _notFoundInst->addNewName(iName, 1);
-    verbose(0, "Error: Spef instance %s not found in db.\n", instName);
+    logger_->warn(RCX, 0, "Error: Spef instance {} not found in db.", instName);
   }
   return inst;
 }
@@ -171,7 +174,7 @@ uint extSpef::getBTermId(char* name)
 
   dbBTerm* bterm = _block->findBTerm(name);
   if (!bterm)
-    error(0, "Can not find bterm %s in db.\n", name);
+    logger_->error(RCX, 0, "Can not find bterm {} in db.\n", name);
   return bterm->getId();
 }
 uint extSpef::getBTermId(uint id)
@@ -463,8 +466,8 @@ void extSpef::checkCCterm()
             _cciterm2->getMTerm()->getConstName());
   else
     sprintf(tn2, "Bterm %s", _ccbterm2->getConstName());
-  error(0,
-        "%s and %s are connected to a coupling cap of net %d %s in spef, but "
+  logger_->error(RCX, 0,
+        "{} and {} are connected to a coupling cap of net {} {} in spef, but "
         "connectd to net %d %s and net %d %s respectively in db.\n",
         tn1,
         tn2,
@@ -555,8 +558,8 @@ uint extSpef::getCapNodeId(char* nodeWord, char* capWord, uint* netId)
         else
           cornerNet = net;
         if (!cccap && *netId != _d_net->getId())
-          error(0,
-                "Iterm %s/%s is connected to net %d %s in spef, but connected "
+          logger_->error(RCX, 0,
+                "Iterm {}/{} is connected to net {} {} in spef, but connected "
                 "to net %d %s in db.\n",
                 iterm->getInst()->getConstName(),
                 iterm->getMTerm()->getConstName(),
@@ -579,7 +582,7 @@ uint extSpef::getCapNodeId(char* nodeWord, char* capWord, uint* netId)
           cap->setITermFlag();
         } else if (capId == 0) {
           cap = NULL;
-          warning(0, "Cap Node %s not extracted \n", nodeWord);
+          logger_->warn(RCX, 0, "Cap Node {} not extracted ", nodeWord);
         } else {
           cap = dbCapNode::getCapNode(_cornerBlock, capId);
           if (_ccidmap)
@@ -608,8 +611,8 @@ uint extSpef::getCapNodeId(char* nodeWord, char* capWord, uint* netId)
         cornerNet = net;
       *netId = net->getId();
       if (!cccap && *netId != _d_net->getId())
-        error(0,
-              "Bterm %s is connected to net %d %s in spef, but connected to "
+        logger_->error(RCX, 0,
+              "Bterm {} is connected to net {} {} in spef, but connected to "
               "net %d %s in db.\n",
               bterm->getConstName(),
               _d_net->getId(),
@@ -630,7 +633,7 @@ uint extSpef::getCapNodeId(char* nodeWord, char* capWord, uint* netId)
         cap->setNode(btermId);
       } else if (capId == 0) {
         cap = NULL;
-        warning(0, "Cap Node %s not extracted \n", nodeWord);
+        logger_->warn(RCX, 0, "Cap Node {} not extracted ", nodeWord);
       } else {
         cap = dbCapNode::getCapNode(_cornerBlock, capId);
 
@@ -834,8 +837,8 @@ dbNet* extSpef::getDbNet(uint* id, uint spefId)
   net = _block->findNet(nName);
   if (!_mMap || net) {
     if (!net) {
-      // error(0, "Can not find net %s in db.\n", netName);
-      verbose(0, "Error: Spef net %s not found in db.\n", netName);
+      // logger_->error(RCX, 0, "Can not find net {} in db.\n", netName);
+      logger_->warn(RCX, 0, "Error: Spef net {} not found in db.", netName);
       _unmatchedSpefNet++;
     } else
       *id = net->getId();
@@ -972,8 +975,7 @@ dbNet* extSpef::getDbNet(uint* id, uint spefId)
   _mMapName[jj] = '\0';
   net           = _block->findNet(_mMapName);
   if (!net) {
-    // error(0, "Can not find net %s in db.\n", netName);
-    verbose(0, "Error: Spef net %s not found in db.\n", netName);
+    logger_->warn(RCX, 0, "Error: Spef net {} not found in db.", netName);
     _unmatchedSpefNet++;
     return net;
   }
@@ -1167,9 +1169,9 @@ void extSpef::collectDbCCap(dbNet* net)
     cc       = vec_cc[j];
     otherNet = cc->getTargetCapNode()->getNet();
     if (!otherNet->isMark_1ed()) {
-      notice(0,
-             "There is cc cap between net %d and net %d in db, but not in "
-             "reference spef file\n",
+      logger_->info(RCX, 0,
+             "There is cc cap between net {} and net {} in db, but not in "
+             "reference spef file",
              net->getId(),
              otherNet->getId());
       continue;
@@ -1220,8 +1222,8 @@ uint extSpef::matchNetCcap(dbNet* net)
     otherNet = _netV1[jj];
     dbCC     = otherNet->getDbCc();
     if (dbCC == 0.0) {
-      notice(0,
-             "There is cc cap between net %d and net %d in reference spef "
+      logger_->info(RCX, 0,
+             "There is cc cap between net {} and net {} in reference spef "
              "file, but not in db\n",
              net->getId(),
              otherNet->getId());
@@ -1407,7 +1409,7 @@ uint extSpef::getNetLW(dbNet* net, uint& w)
   if (!getFirstShape(net, s)) {
     // net->printNetName(stdout);
     // fprintf(stdout, "has no shapes!\n");
-    notice(0, "%s has no shapes!\n", net->getName().c_str());
+    logger_->info(RCX, 0, "{} has no shapes!", net->getName().c_str());
   }
   w        = s.yMax() - s.yMin();
   uint len = s.xMax() - s.xMin();
@@ -1528,8 +1530,8 @@ void extSpef::setJunctionId(dbCapNode* capnode, dbRSeg* rseg)
     }
   }
   if (mindd == MAX_INT)
-    warning(0,
-            "No junction stamp on the capnode %d at %d %d for net %d %s\n",
+    logger_->warn(RCX, 0,
+            "No junction stamp on the capnode {} at {} {} for net {} {}\n",
             capnode->getId(),
             cx,
             cy,
@@ -1612,8 +1614,8 @@ uint extSpef::sortRSegs()
   if (!zcfound)
     zcfound = drvCapNode->getTermCoords(ndx, ndy, _block);
   if (!zcfound) {
-    warning(0,
-            "Cannot find coords of driver capNode %d of net %d %s\n",
+    logger_->warn(RCX, 0,
+            "Cannot find coords of driver capNode {} of net {} {}\n",
             tgtCapn,
             _d_net->getId(),
             _d_net->getConstName());
@@ -1654,8 +1656,8 @@ uint extSpef::sortRSegs()
   }
   int drvCapii = drvCapNode->getSortIndex() - 1;
   if (_hcnrc->geti(drvCapii)->getCnt() < 1) {
-    warning(0,
-            "Driving node of net %d %s is not connected to a rseg .\n",
+    logger_->warn(RCX, 0,
+            "Driving node of net {} {} is not connected to a rseg .\n",
             _d_net->getId(),
             _d_net->getConstName());
     _d_corner_net->setRCDisconnected(true);
@@ -1732,8 +1734,8 @@ uint extSpef::sortRSegs()
       tgtCapn     = srcCapn;
       scns[ski++] = srcCapidx;
     } else {
-      warning(0,
-              "Inconsistency in RC of net %d %s .\n",
+      logger_->warn(RCX, 0,
+              "Inconsistency in RC of net {} {} .\n",
               _d_net->getId(),
               _d_net->getConstName());
       _d_corner_net->setRCDisconnected(true);
@@ -1750,8 +1752,8 @@ uint extSpef::sortRSegs()
         rc->setCoords(x1, y1);
         zcfound = true;
       } else {
-        warning(0,
-                "Cannot find node coords for targetCapNodeId %d of net %d %s\n",
+        logger_->warn(RCX, 0,
+                "Cannot find node coords for targetCapNodeId {} of net {} {}\n",
                 tgtCapn,
                 _d_net->getId(),
                 _d_net->getConstName());
@@ -1779,8 +1781,8 @@ uint extSpef::sortRSegs()
               _d_net->getId(),
               _d_net->getConstName());
     } else {
-      warning(0,
-              "RC of net %d %s is disconnected!\n",
+      logger_->warn(RCX, 0,
+              "RC of net {} {} is disconnected!\n",
               _d_net->getId(),
               _d_net->getConstName());
     }
@@ -1818,22 +1820,22 @@ uint extSpef::sortRSegs()
           break;
       }
       if (jj < 0)
-        error(0,
-              "Failed to identify loop in net %d %s\n",
+        logger_->error(RCX, 0,
+              "Failed to identify loop in net {} {}\n",
               _d_net->getId(),
               (char*) _d_net->getConstName());
       hh = ii - jj + 1;
-      verbose(0,
-              "Warning: %d capNodes loop in net %d %s\n",
+      logger_->warn(RCX, 0,
+              "Warning: {} capNodes loop in net {} {}\n",
               hh,
               _d_net->getId(),
               (char*) _d_net->getConstName());
       for (; jj <= ii; jj++) {
         tcapn = _nrseg->get(_srsegi->get(jj))->getSourceCapNode();
-        verbose(0, "    id=%d", tcapn->getId());
+        logger_->warn(RCX, 0, "    id={}", tcapn->getId());
         for (kk = 0; kk < _cornerCnt; kk++)
-          verbose(0, " cap-%d=%f", kk, tcapn->getCapacitance(kk));
-        verbose(0, "\n\n");
+          logger_->warn(RCX, 0, " cap-{}={}", kk, tcapn->getCapacitance(kk));
+        logger_->warn(RCX, 0, "");
       }
       if (loopcnt == 0) {
         if (jj == ii - 2)  // simple triangle, prepare to break it
@@ -1868,14 +1870,14 @@ uint extSpef::sortRSegs()
   {
     _breakLoopNet++;
     if (_breakLoopNet <= 50)
-      warning(0,
-              "Break one simple loop of %d-rsegs net %d %s\n",
+      logger_->warn(RCX, 0,
+              "Break one simple loop of {}-rsegs net {} {}\n",
               _rsegCnt,
               _d_net->getId(),
               _d_net->getConstName());
     else
-      verbose(0,
-              "Break one simple loop of %d-rsegs net %d %s\n",
+      logger_->warn(RCX, 0,
+              "Break one simple loop of {}-rsegs net {} {}\n",
               _rsegCnt,
               _d_net->getId(),
               _d_net->getConstName());
@@ -1899,15 +1901,15 @@ uint extSpef::sortRSegs()
   if (loopcnt == 1 && rseg1 == NULL) {
     _bigLoop++;
     if (_bigLoop <= 50)
-      warning(0,
-              "%d-rsegs net %d %s has a %d-rsegs loop\n",
+      logger_->warn(RCX, 0,
+              "{}-rsegs net {} {} has a {}-rsegs loop\n",
               _rsegCnt,
               _d_net->getId(),
               _d_net->getConstName(),
               hh);
     else
-      verbose(0,
-              "%d-rsegs net %d %s has a %d-rsegs loop\n",
+      logger_->warn(RCX, 0,
+              "{}-rsegs net {} {} has a {}-rsegs loop\n",
               _rsegCnt,
               _d_net->getId(),
               _d_net->getConstName(),
@@ -1915,15 +1917,15 @@ uint extSpef::sortRSegs()
   } else {
     _multipleLoop++;
     if (_multipleLoop <= 50)
-      warning(0,
-              "%d-rsegs net %d %s has %d loops\n",
+      logger_->warn(RCX, 0,
+              "{}-rsegs net {} {} has {} loops\n",
               _rsegCnt,
               _d_net->getId(),
               _d_net->getConstName(),
               loopcnt);
     else
-      verbose(0,
-              "%d-rsegs net %d %s has %d loops\n",
+      logger_->warn(RCX, 0,
+              "{}-rsegs net {} {} has {} loops\n",
               _rsegCnt,
               _d_net->getId(),
               _d_net->getConstName(),
@@ -1979,8 +1981,8 @@ uint extSpef::readDNet(uint debug)
   }
   dbRSeg* zrseg = _d_corner_net->getZeroRSeg();
   if (!_diff && !_keep_loaded_corner && zrseg) {
-    warning(0,
-            "net %d %s has rseg before reading spef\n",
+    logger_->warn(RCX, 0,
+            "net {} {} has rseg before reading spef\n",
             _d_net->getId(),
             _d_net->getConstName());
     return 0;
@@ -2029,7 +2031,7 @@ uint extSpef::readDNet(uint debug)
           break;
         if (_readingNodeCoords == C_STARRC) {
           if (_readingNodeCoordsInput == C_STARRC) {
-            warning(0,
+            logger_->warn(RCX, 0,
                     "\"-N s\" in read_spef command, but no coordinates in spef "
                     "file.\n");
           }
@@ -2108,8 +2110,8 @@ uint extSpef::readDNet(uint debug)
           dbCapNode* srcCapNode = dbCapNode::getCapNode(_cornerBlock, srcId);
           dbCapNode* tgtCapNode = dbCapNode::getCapNode(_cornerBlock, dstId);
           if (srcId == dstId) {
-            warning(0,
-                    "Source capnode %s is the same as target capnode %s. Add "
+            logger_->warn(RCX, 0,
+                    "Source capnode {} is the same as target capnode {}. Add "
                     "the cc capactiance to ground.\n",
                     _parser->get(1),
                     _parser->get(2));
@@ -2383,15 +2385,15 @@ uint extSpef::readBlockIncr(uint debug)
       }
     }
     if (cnt % 100000 == 0)
-      notice(0, "Have read %d nets\n", cnt);
+      logger_->info(RCX, 0, "Have read {} nets", cnt);
 
   } while (_parser->parseNextLine() > 0);
   if (sortingRSeg)
     _cornerBlock->preExttreeMergeRC(0.0, 0);
   if (_loopNet)
-    warning(0, "There are %d nets with looped spef rc\n", _loopNet);
+    logger_->warn(RCX, 0, "There are {} nets with looped spef rc", _loopNet);
   if (_breakLoopNet)
-    warning(0, "Break simple loop of %d nets\n", _breakLoopNet);
+    logger_->warn(RCX, 0, "Break simple loop of {} nets", _breakLoopNet);
   setSpefFlag(false);
 
   deleteNodeCoordTables();
@@ -2400,8 +2402,8 @@ uint extSpef::readBlockIncr(uint debug)
     fclose(_diffLogFP);
     fclose(_diffOutFP);
   }
-  notice(0,
-         "Read %d D_NET nets, %d resistors, %d gnd caps %d coupling caps\n",
+  logger_->info(RCX, 0,
+         "Read {} D_NET nets, {} resistors, {} gnd caps {} coupling caps",
          _resCnt,
          _gndCapCnt,
          _ccCapCnt,
@@ -2475,7 +2477,7 @@ uint extSpef::readBlock(uint                debug,
     _readingNodeCoords = C_STARRC;
     _NsLayer           = false;
   } else if (nodeCoord) {
-    notice(0, "\" -N %s \" is unknown.\n", nodeCoord);
+    logger_->info(RCX, 0, "\" -N {} \" is unknown.", nodeCoord);
     return 0;
   }
   _readingNodeCoordsInput = _readingNodeCoords;
@@ -2518,7 +2520,7 @@ uint extSpef::readBlock(uint                debug,
 
     _maxMapId = readMaxMapId(&cornerCnt);
     if (cornerCnt == 0) {
-      notice(0, "Number of corners in SPEF file = 0.\n");
+      logger_->info(RCX, 0, "Number of corners in SPEF file = 0.");
       return 0;
     }
     if ((spefCorner < 0) && (cornerCnt == 1))
@@ -2528,7 +2530,7 @@ uint extSpef::readBlock(uint                debug,
     if (calibrateBaseCorner != NULL) {
       int n = _block->getExtCornerIndex(calibrateBaseCorner);
       if (n < 0) {
-        notice(0, "Cannot find corner name %s in DB\n", calibrateBaseCorner);
+        logger_->info(RCX, 0, "Cannot find corner name {} in DB", calibrateBaseCorner);
         return 0;
       }
       _db_calibbase_corner = n;
@@ -2536,7 +2538,7 @@ uint extSpef::readBlock(uint                debug,
     if (dbCornerName != NULL) {
       int n = _block->getExtCornerIndex(dbCornerName);
       if (n < 0) {
-        notice(0, "Cannot find corner name %s in DB\n", dbCornerName);
+        logger_->info(RCX, 0, "Cannot find corner name {} in DB", dbCornerName);
         return 0;
       }
       _db_ext_corner = n;
@@ -2547,8 +2549,8 @@ uint extSpef::readBlock(uint                debug,
       // return 0;
       // }
       if (corner >= (int) _cornerCnt) {
-        notice(0,
-               "Ext corner %d out of range; There are only %d defined process "
+        logger_->info(RCX, 0,
+               "Ext corner {} out of range; There are only {} defined process "
                "corners.\n",
                corner,
                _cornerCnt);
@@ -2562,16 +2564,16 @@ uint extSpef::readBlock(uint                debug,
     }
 
     if (spefCorner == -1 && _cornerCnt && cornerCnt != (int) _cornerCnt) {
-      notice(0,
-             "Mismatch on the numbers of corners: Spef file has %d corners vs. "
+      logger_->info(RCX, 0,
+             "Mismatch on the numbers of corners: Spef file has {} corners vs. "
              "Process corner table has %d corners.(Use -spef_corner option) \n",
              cornerCnt,
              _cornerCnt);
       return 0;
     }
     if (spefCorner > cornerCnt - 1) {
-      notice(0,
-             "Spef corner %d out of range; There are only %d corners in Spef "
+      logger_->info(RCX, 0,
+             "Spef corner {} out of range; There are only {} corners in Spef "
              "file\n",
              spefCorner,
              cornerCnt);
@@ -2594,7 +2596,7 @@ uint extSpef::readBlock(uint                debug,
           setCornerCnt(1);
       }
       if (!prevCornerCnt)
-        extMain::addDummyCorners(_block, _cornerCnt);
+        extMain::addDummyCorners(_block, _cornerCnt, logger_);
     } else {  // one corner at a time!
       if ((spefCorner < 0) && (_db_ext_corner < 0)) {
         // no spef_corner and db_corner_name specified, try all corners
@@ -2604,7 +2606,7 @@ uint extSpef::readBlock(uint                debug,
         if (spefCorner <= 0)  // assuming 0 spef corner index
           _in_spef_corner = 0;
       } else if (_db_ext_corner < 0) {  // target specific db corner
-        notice(0, "Have to specify option _db_corner_name\n");
+        logger_->info(RCX, 0, "Have to specify option _db_corner_name");
         return 0;
       }
     }
@@ -2690,9 +2692,9 @@ uint extSpef::readBlock(uint                debug,
       readDNet(debug);
 
       if (cnt % 100000 == 0) {
-        notice(0,
-               "Have read %d D_NET nets, %d resistors, %d gnd caps %d coupling "
-               "caps\n",
+        logger_->info(RCX, 59,
+               "Have read {} D_NET nets, {} resistors, {} gnd caps {} coupling "
+               "caps",
                cnt,
                _resCnt,
                _gndCapCnt,
@@ -2716,9 +2718,9 @@ uint extSpef::readBlock(uint                debug,
     if (_stampWire)
       _block->getExtControl()->_wireStamped = true;
     if (_loopNet)
-      warning(0, "%d nets with looped spef rc\n", _loopNet);
+      logger_->warn(RCX, 0, "{} nets with looped spef rc", _loopNet);
     if (_breakLoopNet)
-      warning(0, "Break simple loop of %d nets\n", _breakLoopNet);
+      logger_->warn(RCX, 0, "Break simple loop of {} nets", _breakLoopNet);
 
     if (!(_testParsing || _statsOnly))
       resetExtIds(0);
@@ -2751,19 +2753,18 @@ uint extSpef::readBlock(uint                debug,
     }
   }
 
-  notice(
-      0,
-      "Have read %d D_NET nets, %d resistors, %d gnd caps %d coupling caps\n",
+  logger_->info(RCX, 59,
+      "Have read {} D_NET nets, {} resistors, {} gnd caps {} coupling caps",
       cnt,
       _resCnt,
       _gndCapCnt,
       _ccCapCnt);
 
   if (_cc_merge_cnt)
-    notice(0, "     merged %d coupling caps\n", _cc_merge_cnt);
+    logger_->info(RCX, 60, "     merged {} coupling caps", _cc_merge_cnt);
   if (_cc_thres_flag)
-    notice(0,
-           "Broke %d coupling caps of %e fF or smaller\n",
+    logger_->info(RCX, 61,
+           "Broke {} coupling caps of {} fF or smaller",
            _cc_break_cnt,
            _cc_thres);
   uint unmatchedDbNet  = 0;
@@ -2781,8 +2782,8 @@ uint extSpef::readBlock(uint                debug,
       if (!cornerNet->isSpef()) {
         unmatchedDbNet++;
         if (unmatchedDbNet < 1000)
-          verbose(0,
-                  "Warning: Db net %d %s not read from spef file.\n",
+          logger_->warn(RCX, 54,
+                  "Db net {} {} not read from spef file!",
                   net->getId(),
                   (char*) net->getConstName());
       }
@@ -2795,8 +2796,8 @@ uint extSpef::readBlock(uint                debug,
       if (!inst->getUserFlag1()) {
         unmatchedDbInst++;
         if (unmatchedDbInst < 1000)
-          verbose(0,
-                  "Warning: Db inst %d %s not read from spef file.\n",
+          logger_->warn(RCX, 53,
+                  "Db inst {} {} not read from spef file!",
                   inst->getId(),
                   (char*) inst->getConstName());
       }
@@ -2805,15 +2806,15 @@ uint extSpef::readBlock(uint                debug,
   }
 
   if (unmatchedDbNet)
-    notice(0, "Warning: %d db nets not read from spef.\n", unmatchedDbNet);
+    logger_->warn(RCX, 48, "{} db nets not read from spef.", unmatchedDbNet);
   if (unmatchedDbInst)
-    notice(0, "Warning: %d db insts not read from spef.\n", unmatchedDbInst);
+    logger_->warn(RCX, 49, "{} db insts not read from spef.", unmatchedDbInst);
   if (_unmatchedSpefNet)
-    notice(0, "Error: %d spef nets not found in db.\n", _unmatchedSpefNet);
+    logger_->warn(RCX, 50, "{} spef nets not found in db.", _unmatchedSpefNet);
   if (_unmatchedSpefInst)
-    notice(0, "Error: %d spef insts not found in db.\n", _unmatchedSpefInst);
+    logger_->warn(RCX, 51, "{} spef insts not found in db.", _unmatchedSpefInst);
   if (_unmatchedSpefNet || _unmatchedSpefInst)
-    error(0, "Unmatched spef and db.\n");
+    logger_->error(RCX, 52, "Unmatched spef and db!");
 
   rsegCoord = _readingNodeCoords == C_NONE ? false : true;
   return cnt;
@@ -2827,18 +2828,18 @@ void extSpef::printCapNode(uint capNodeId)
   uint tnode = capNode->getNode();
   if (capNode->isITerm()) {
     dbITerm* iterm = dbITerm::getITerm(_block, tnode);
-    notice(
-        0, "*%d%s%s ", tid, _delimiter, iterm->getMTerm()->getName().c_str());
+    logger_->info(RCX, 
+        0, "*{}{}{} ", tid, _delimiter, iterm->getMTerm()->getName().c_str());
   } else if (capNode->isBTerm()) {
-    notice(0, "%s ", dbBTerm::getBTerm(_block, tid)->getName().c_str());
+    logger_->info(RCX, 0, "{} ", dbBTerm::getBTerm(_block, tid)->getName().c_str());
   } else {
-    notice(0, "%s ", _nodeHashTable->getName(tid));
+    logger_->info(RCX, 0, "{} ", _nodeHashTable->getName(tid));
   }
 }
 void extSpef::printAppearance(int app, int appc)
 {
   int pcnt = appc < (int) _cc_app_print_limit ? appc : _cc_app_print_limit;
-  notice(0, "    First %d cc that appear %d times:\n", pcnt, app + 1);
+  logger_->info(RCX, 0, "    First {} cc that appear {} times:", pcnt, app + 1);
   dbSet<dbCCSeg>           ccSet = _cornerBlock->getCCSegs();
   dbSet<dbCCSeg>::iterator cc_itr;
   int                      cnt = 0;
@@ -2846,10 +2847,10 @@ void extSpef::printAppearance(int app, int appc)
     dbCCSeg* cc = *cc_itr;
     if ((int) cc->getInfileCnt() != app)
       continue;
-    notice(0, "        ");
+    logger_->info(RCX, 0, "        ");
     printCapNode(cc->getSourceCapNode()->getId());
     printCapNode(cc->getTargetCapNode()->getId());
-    notice(0, "\n");
+    logger_->info(RCX, 0, "");
     cnt++;
     if (cnt >= pcnt)
       break;
@@ -2940,7 +2941,7 @@ bool extSpef::readNameMap(uint debug, bool skip)
     if (strcmp("*PORTS", _parser->get(0)) == 0)
       return true;
     if (strcmp("*D_NET", _parser->get(0)) == 0) {
-      warning(0, "There is no *PORTS section\n");
+      logger_->warn(RCX, 0, "There is no *PORTS section");
       _noPorts = true;
       return true;
     }
@@ -2980,14 +2981,14 @@ bool extSpef::readHeaderInfo(uint debug, bool skipFlag)
       return true;
     if (_parser->isKeyword(0, "*PORTS")) {
       _noNameMap = true;
-      warning(0, "There is no *NAME_MAP section\n");
+      logger_->warn(RCX, 0, "There is no *NAME_MAP section");
       return true;
     }
     if (_parser->isKeyword(0, "*D_NET")) {
       _noNameMap = true;
-      warning(0, "There is no *NAME_MAP section\n");
+      logger_->warn(RCX, 0, "There is no *NAME_MAP section");
       _noPorts = true;
-      warning(0, "There is no *PORTS section\n");
+      logger_->warn(RCX, 0, "There is no *PORTS section");
       return true;
     }
     if (skipFlag)

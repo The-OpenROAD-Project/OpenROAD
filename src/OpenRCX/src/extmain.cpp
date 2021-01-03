@@ -33,10 +33,13 @@
 #include "extRCap.h"
 #include "extSpef.h"
 #include "exttree.h"
-//#include "logger.h"
 #include <dbLogger.h>
 
+#include "openroad/Logger.h"
+
 namespace OpenRCX {
+
+using ord::RCX;
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -59,13 +62,10 @@ using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::dbWirePathShape;
 using odb::debug;
-using odb::error;
 using odb::gs;
 using odb::ISdb;
-using odb::notice;
 using odb::Rect;
 using odb::SEQ;
-using odb::warning;
 using odb::ZPtr;
 
 void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext)
@@ -76,11 +76,11 @@ void extMain::destroyExtSdb(std::vector<dbNet*>& nets, void* _ext)
   ext->removeSdb(nets);
 }
 
-void extMain::addDummyCorners(dbBlock* block, uint cnt)
+void extMain::addDummyCorners(dbBlock* block, uint cnt, Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    error(0, "ext opbject on dbBlock is NULL!\n");
+    logger->error(RCX, 0, "ext opbject on dbBlock is NULL!");
     return;
   }
   tmiExt->addDummyCorners(cnt);
@@ -204,7 +204,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& bnets,
   if (!_spef || _spef->getBlock() != _block) {
     if (_spef)
       delete _spef;
-    _spef = new extSpef(_tech, _block, this);
+    _spef = new extSpef(_tech, _block, logger_, this);
     // copy block name for incremental spef - needed for magma
     // Mattias - Nov 19/07
     _spef->setDesign((char*) _block->getName().c_str());
@@ -256,7 +256,7 @@ void extMain::writeIncrementalSpef(char*                filename,
     debug("EXT_SPEF", "I", "Writing Spef to File %s\n", filename);
     sprintf(&fname[0], "%s.%d.spef", filename, nn);
     if (openSpefFile(fname, 1) > 0)
-      notice(0, "Can not open file \"%s\" to write spef.\n", filename);
+      logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", filename);
     else
       cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                               _excludeCells,
@@ -281,7 +281,7 @@ void extMain::writeIncrementalSpef(char*                filename,
   _block->replaceOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.1.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    notice(0, "Can not open file \"%s\" to write spef.\n", fname);
+    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -302,7 +302,7 @@ void extMain::writeIncrementalSpef(char*                filename,
   _block->restoreOldParasitics(bnets, oldNetCap, oldNetRseg);
   sprintf(&fname[0], "%s.2.%d.spef", filename, nn);
   if (openSpefFile(fname, 1) > 0)
-    notice(0, "Can not open file \"%s\" to write spef.\n", fname);
+    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", fname);
   else
     cnt = _spef->writeBlock(NULL /*nodeCoord*/,
                             _excludeCells,
@@ -346,7 +346,7 @@ void extMain::writeSpef(char*                filename,
   if (!_spef || _spef->getBlock() != _block) {
     if (_spef)
       delete _spef;
-    _spef = new extSpef(_tech, _block, this);
+    _spef = new extSpef(_tech, _block, logger_, this);
   }
   _spef->setDesign((char*) _block->getConstName());
   uint cCnt = _block->getCornerCount();
@@ -360,7 +360,7 @@ void extMain::writeSpef(char*                filename,
   }
   uint cnt;
   if (openSpefFile(filename, 1) > 0) {
-    notice(0, "Can not open file \"%s\" to write spef.\n", filename);
+    logger_->info(RCX, 0, "Can not open file \"{}\" to write spef.", filename);
     return;
   } else
     cnt = _spef->writeBlock(coord /*nodeCoord*/,
@@ -670,7 +670,7 @@ uint extMain::addExtModel(dbTech* tech)
           m= _modelTable->get(0);
 */
   if (m == NULL) {
-    m = new extRCModel(layerCnt, "TYPICAL");
+    m = new extRCModel(layerCnt, "TYPICAL", logger_);
     _modelTable->add(m);
   }
 
@@ -804,7 +804,7 @@ uint extMain::getResCapTable(bool lefRC)
   }
   //	if (allRzero)
   //	{
-  //		notice(0, "\nWarning: No RESISTANCE from all layers in the
+  //		logger_->info(RCX, 0, "Warning: No RESISTANCE from all layers in the
   // lef files. Can't do extraction.\n\n"); 		return 0;
   //	}
   return cnt;
@@ -825,14 +825,14 @@ bool extMain::checkLayerResistance()
     double res = layer->getResistance();  // OHMS per square
 
     if (res <= 0.0) {
-      warning(
-          0, "Missing Resistance value for layer %s\n", layer->getConstName());
+      logger_->warn(RCX, 
+          0, "Missing Resistance value for layer {}", layer->getConstName());
       cnt++;
     }
   }
   if (cnt > 0) {
-    warning(0, "%d layers are missing resistance value; Check LEF file\n", cnt);
-    warning(0, "Extraction cannot proceed! Exiting\n");
+    logger_->warn(RCX, 0, "{} layers are missing resistance value; Check LEF file", cnt);
+    logger_->warn(RCX, 0, "Extraction cannot proceed! Exiting");
     return false;
   }
   return true;
@@ -1401,9 +1401,9 @@ void extMain::ccReportProgress()
     //		fprintf(stdout, "Have processed %d total segments, %d signal
     // segments, %d CC caps, and stored %d CC caps\n", _totSegCnt,
     //_totSignalSegCnt, _totCCcnt, _totBigCCcnt);
-    notice(0,
-           "Have processed %d total segments, %d signal segments, %d CC "
-           "caps, and stored %d CC caps\n",
+    logger_->info(RCX, 0,
+           "Have processed {} total segments, {} signal segments, {} CC "
+           "caps, and stored {} CC caps",
            _totSegCnt,
            _totSignalSegCnt,
            _totCCcnt,
@@ -1503,8 +1503,8 @@ void extMain::measureRC(int* options)
       int pbase = m._dir ? m._ur[1] : m._ur[0];
       //		  fprintf(stdout, "Context of layer %d, xy=%d len=%d
       // base=%d width=%d :\n", m._met, pxy, m._len, pbase, m._s_nm);
-      notice(0,
-             "Context of layer %d, xy=%d len=%d base=%d width=%d :\n",
+      logger_->info(RCX, 0,
+             "Context of layer {} xy={} len={} base={} width={}",
              m._met,
              pxy,
              m._len,
@@ -1515,19 +1515,19 @@ void extMain::measureRC(int* options)
                    && (int) ii + m._met < _currentModel->getLayerCnt();
            ii++) {
         //		    fprintf(stdout, "  layer %d\n", ii+m._met);
-        notice(0, "  layer %d\n", ii + m._met);
+        logger_->info(RCX, 0, "  layer {}", ii + m._met);
         for (jj = 0; jj < _ccContextArray[ii + m._met]->getCnt(); jj++)
           //		      fprintf(stdout, "    %d: %d\n", jj,
           //_ccContextArray[ii+m._met]->get(jj));
-          notice(0, "    %d: %d\n", jj, _ccContextArray[ii + m._met]->get(jj));
+          logger_->info(RCX, 0, "    {}: {}", jj, _ccContextArray[ii + m._met]->get(jj));
       }
       for (ii = 1; ii <= _ccContextDepth && m._met - ii > 0; ii++) {
         //		    fprintf(stdout, "  layer %d\n", m._met-ii);
-        notice(0, "  layer %d\n", m._met - ii);
+        logger_->info(RCX, 0, "  layer {}", m._met - ii);
         for (jj = 0; jj < _ccContextArray[m._met - ii]->getCnt(); jj++)
           //		      fprintf(stdout, "    %d: %d\n", jj,
           //_ccContextArray[m._met-ii]->get(jj));
-          notice(0, "    %d: %d\n", jj, _ccContextArray[m._met - ii]->get(jj));
+          logger_->info(RCX, 0, "    {}: {}", jj, _ccContextArray[m._met - ii]->get(jj));
       }
     }
     //		for (uint ii= 0; _ccContextArray!=NULL && m._met>1 &&

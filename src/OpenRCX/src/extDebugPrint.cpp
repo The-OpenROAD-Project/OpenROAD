@@ -296,7 +296,7 @@ bool extMeasure::ouRCvalues(const char* msg, uint jj)
 
   return true;
 }
-bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res, double res, double cap, char* openDist)
+bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res, double res, double cap, const char* openDist)
 {
   if (!IsDebugNet())
     return false;
@@ -322,7 +322,7 @@ bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res,
 
   return true;
 }
-bool extMeasure::Debug_DiagValues(double res, double cap, char* openDist)
+bool extMeasure::Debug_DiagValues(double res, double cap, const char* openDist)
 {
   if (!IsDebugNet())
     return false;
@@ -404,8 +404,8 @@ bool extMeasure::DebugDiagCoords(int met, int targetMet, int len1, int diagDist,
 //
 // from extRCmodel.cpp
 
-void extDistRC::printDebug(char*      from,
-                           char*      name,
+void extDistRC::printDebug(const char*      from,
+                           const char*      name,
                            uint       len,
                            uint       dist,
                            extDistRC* rcUnit)
@@ -526,7 +526,7 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit)
         _coupling + _fringe + _diag,
         _res);
 }
-void extDistRC::printDebugRC_values(char* msg)
+void extDistRC::printDebugRC_values(const char* msg)
 {
   debug("DistRC",
         "C",

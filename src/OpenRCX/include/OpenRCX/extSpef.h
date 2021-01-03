@@ -48,7 +48,13 @@
 
 #include <map>
 
+namespace ord {
+class Logger;
+}
+
 namespace OpenRCX {
+
+using ord::Logger;
 
 class extRcTripplet
 {
@@ -267,6 +273,10 @@ class extSpef
   uint _childBlockInstBaseMap;
   uint _childBlockNetBaseMap;
   // 021810D END
+  
+ protected:
+  Logger *logger_;
+ 
  public:
   bool          _addRepeatedCapValue;
   bool          _noCapNumCollapse;
@@ -293,11 +303,13 @@ class extSpef
  public:
   extSpef(odb::dbTech*  tech,
           odb::dbBlock* blk,
+          Logger* logger, 
           extMain *extmain,
           uint          btermCnt = 0,
           uint          itermCnt = 0);
   ~extSpef();
-
+  
+  void setLogger(Logger* logger);
   bool matchNetGndCap(odb::dbNet* net,
                       uint        dbCorner,
                       double      dbCap,
