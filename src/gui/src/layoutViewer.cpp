@@ -38,7 +38,6 @@
 #include <QPixmap>
 #include <QScrollBar>
 #include <QToolTip>
-#include <iostream>
 #include <tuple>
 #include <vector>
 

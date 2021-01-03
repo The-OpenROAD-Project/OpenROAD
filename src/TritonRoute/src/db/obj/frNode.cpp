@@ -26,57 +26,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#include "db/obj/frNode.h"
+#include "db/grObj/grNode.h"
+#include "db/grObj/grNet.h"
 
-#include "frBaseTypes.h"
+using namespace std;
+using namespace fr;
 
-namespace fr {
-  class frTransform;
-
-  class frPoint {
-  public:
-    // constructors
-    frPoint(): xCoord_(0), yCoord_(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
-    frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY) {};
-    // setters
-    void set(const frPoint &tmpPoint) {
-      xCoord_ = tmpPoint.xCoord_;
-      yCoord_ = tmpPoint.yCoord_;
-    }
-    void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord_ = tmpX;
-      yCoord_ = tmpY;
-    }
-    void setX(const frCoord tmpX) {
-      xCoord_ = tmpX;
-    }
-    void setY(const frCoord tmpY) {
-      yCoord_ = tmpY;
-    }
-    // getters
-    frCoord x() const {
-      return xCoord_;
-    }
-    frCoord y() const {
-      return yCoord_;
-    }
-    // others
-    void transform(const frTransform &xform);
-    bool operator<(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
-    }
-    bool operator==(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-    }
-    bool operator!=(const frPoint &pIn) const {
-      return !(*this == pIn);
-    }
-  protected:
-    frCoord xCoord_, yCoord_;
-  };
+frNode::frNode(grNode &in) {
+  net = in.getNet()->getFrNet();
+  loc = in.getLoc();
+  layerNum = in.getLayerNum();
+  connFig = nullptr;
+  pin = nullptr;
+  type = in.getType();
+  parent = nullptr;
 }
-
-#endif

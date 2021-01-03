@@ -26,56 +26,59 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#ifndef _FR_RPIN_H_
+#define _FR_RPIN_H_
 
 #include "frBaseTypes.h"
+#include "db/obj/frBlockObject.h"
+#include "db/infra/frBox.h"
+// #include "db/obj/frAccess.h"
 
 namespace fr {
-  class frTransform;
-
-  class frPoint {
+  class frNet;
+  class frAccessPoint;
+  // serve the same purpose as drPin and grPin, but on fr level
+  class frRPin: public frBlockObject {
   public:
     // constructors
-    frPoint(): xCoord_(0), yCoord_(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
-    frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY) {};
+    frRPin(): frBlockObject(), term(nullptr), accessPoint(nullptr), net(nullptr) {}
     // setters
-    void set(const frPoint &tmpPoint) {
-      xCoord_ = tmpPoint.xCoord_;
-      yCoord_ = tmpPoint.yCoord_;
+    void setFrTerm(frBlockObject *in) {
+      term = in;
     }
-    void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord_ = tmpX;
-      yCoord_ = tmpY;
+    void setAccessPoint(frAccessPoint* &in) {
+      accessPoint = std::move(in);
     }
-    void setX(const frCoord tmpX) {
-      xCoord_ = tmpX;
-    }
-    void setY(const frCoord tmpY) {
-      yCoord_ = tmpY;
+    void addToNet(frNet *in) {
+      net = in;
     }
     // getters
-    frCoord x() const {
-      return xCoord_;
+    bool hasFrTerm() const {
+      return (term);
     }
-    frCoord y() const {
-      return yCoord_;
+    frBlockObject* getFrTerm() const {
+      return term;
     }
+    frAccessPoint* getAccessPoint() const {
+      return accessPoint;
+    }
+    frNet* getNet() const {
+      return net;
+    }
+
+    // utility
+    void getBBox(frBox &in);
+    frLayerNum getLayerNum();
+
     // others
-    void transform(const frTransform &xform);
-    bool operator<(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
+    frBlockObjectEnum typeId() const override {
+      return frcRPin;
     }
-    bool operator==(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-    }
-    bool operator!=(const frPoint &pIn) const {
-      return !(*this == pIn);
-    }
+
   protected:
-    frCoord xCoord_, yCoord_;
+    frBlockObject* term; // either frTerm or frInstTerm
+    frAccessPoint* accessPoint; // pref AP for frTerm and frInstTerm
+    frNet*         net;
   };
 }
 

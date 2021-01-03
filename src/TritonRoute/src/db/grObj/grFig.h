@@ -26,56 +26,83 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#ifndef _GR_FIG_H_
+#define _GR_FIG_H_
 
-#include "frBaseTypes.h"
+#include <memory>
+#include "db/grObj/grBlockObject.h"
+#include "db/infra/frBox.h"
+#include "db/infra/frTransform.h"
 
 namespace fr {
-  class frTransform;
-
-  class frPoint {
+  class grFig: public grBlockObject {
   public:
     // constructors
-    frPoint(): xCoord_(0), yCoord_(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
-    frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY) {};
-    // setters
-    void set(const frPoint &tmpPoint) {
-      xCoord_ = tmpPoint.xCoord_;
-      yCoord_ = tmpPoint.yCoord_;
-    }
-    void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord_ = tmpX;
-      yCoord_ = tmpY;
-    }
-    void setX(const frCoord tmpX) {
-      xCoord_ = tmpX;
-    }
-    void setY(const frCoord tmpY) {
-      yCoord_ = tmpY;
-    }
+    grFig(): grBlockObject() {}
     // getters
-    frCoord x() const {
-      return xCoord_;
-    }
-    frCoord y() const {
-      return yCoord_;
-    }
+    virtual void getBBox(frBox &box) const = 0;
+    // setters
     // others
-    void transform(const frTransform &xform);
-    bool operator<(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
-    }
-    bool operator==(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-    }
-    bool operator!=(const frPoint &pIn) const {
-      return !(*this == pIn);
-    }
   protected:
-    frCoord xCoord_, yCoord_;
+  };
+
+  class frNet;
+  class grNet;
+  class frNode;
+  class grNode;
+  class grConnFig: public grFig {
+  public:
+    // constructors
+    grConnFig(): grFig() {}
+    // getters
+    virtual bool hasNet() const = 0;
+    virtual frNet* getNet() const = 0;
+    virtual bool hasGrNet() const = 0;
+    virtual grNet* getGrNet() const = 0;
+    virtual frNode* getChild() const = 0;
+    virtual frNode* getParent() const = 0;
+    virtual grNode* getGrChild() const = 0;
+    virtual grNode* getGrParent() const = 0;
+    // setters
+    virtual void addToNet(frBlockObject* in) = 0;
+    virtual void removeFromNet() = 0;
+    virtual void setChild(frBlockObject* in) = 0;
+    virtual void setParent(frBlockObject* in) = 0;
+    // others
+
+    /* from frFig
+     * getBBox
+     * move
+     * overlaps
+     */
+  protected:
+  };
+
+  class grPin;
+  class grPinFig: public grConnFig {
+  public:
+    grPinFig(): grConnFig() {}
+    // getters
+    virtual bool hasPin() const = 0;
+    virtual grPin* getPin() const = 0;
+    // setters
+    virtual void addToPin(grPin* in) = 0;
+    virtual void removeFromPin() = 0;
+    // others
+
+    /* from grConnFig
+     * hasNet
+     * getNet
+     * addToNet
+     * removeFromNet
+     */
+
+    /* from grFig
+     * getBBox
+     * move
+     * overlaps
+     */
+  protected:
   };
 }
 

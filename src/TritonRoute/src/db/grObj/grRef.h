@@ -26,56 +26,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#ifndef _GR_REF_H_
+#define _GR_REF_H_
 
-#include "frBaseTypes.h"
+#include "db/grObj/grFig.h"
+#include "db/infra/frOrient.h"
 
 namespace fr {
-  class frTransform;
-
-  class frPoint {
+  class grRef: public grPinFig {
   public:
     // constructors
-    frPoint(): xCoord_(0), yCoord_(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
-    frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY) {};
-    // setters
-    void set(const frPoint &tmpPoint) {
-      xCoord_ = tmpPoint.xCoord_;
-      yCoord_ = tmpPoint.yCoord_;
-    }
-    void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord_ = tmpX;
-      yCoord_ = tmpY;
-    }
-    void setX(const frCoord tmpX) {
-      xCoord_ = tmpX;
-    }
-    void setY(const frCoord tmpY) {
-      yCoord_ = tmpY;
-    }
+    grRef(): grPinFig() {}
     // getters
-    frCoord x() const {
-      return xCoord_;
+    virtual frOrient getOrient() const = 0;
+    virtual void getOrigin(frPoint &tmpOrigin) const = 0;
+    virtual void getTransform(frTransform &xform) const = 0;
+    // setters
+    virtual void setOrient(const frOrient &tmpOrient) = 0;
+    virtual void setOrigin(const frPoint &tmpPoint) = 0;
+    virtual void setTransform(const frTransform &xform) = 0;
+    frBlockObjectEnum typeId() const override {
+      return grcRef;
     }
-    frCoord y() const {
-      return yCoord_;
-    }
-    // others
-    void transform(const frTransform &xform);
-    bool operator<(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
-    }
-    bool operator==(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-    }
-    bool operator!=(const frPoint &pIn) const {
-      return !(*this == pIn);
-    }
-  protected:
-    frCoord xCoord_, yCoord_;
   };
 }
 
