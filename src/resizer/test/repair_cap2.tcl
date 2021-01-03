@@ -11,12 +11,6 @@ read_def $def_file
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
-# flute results are unstable across platforms so just check
-# that the violation goes away
-with_output_to_variable violations { report_check_types -max_cap -violators }
-puts "Found [regexp -all VIOLATED $violations] violations"
-
+report_check_types -max_cap -violators
 repair_design
-
-with_output_to_variable violations { report_check_types -max_cap -violators }
-puts "Found [regexp -all VIOLATED $violations] violations"
+report_check_types -max_cap -violators
