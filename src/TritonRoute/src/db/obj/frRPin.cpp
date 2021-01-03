@@ -26,57 +26,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#include "frRPin.h"
+// #include "db/obj/frAccess.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frInst.h"
+// #include "db/infra/frTransform.h"
+// #include "db/infra/frTransform.h"
 
-#include "frBaseTypes.h"
+using namespace std;
+using namespace fr;
 
-namespace fr {
-  class frTransform;
+void frRPin::getBBox(frBox &in) {
+  frPoint pt;
+  if (term->typeId() == frcInstTerm) {
+    auto inst = static_cast<frInstTerm*>(term)->getInst();
+    frTransform shiftXform;
+    inst->getTransform(shiftXform);
+    shiftXform.set(frOrient(frcR0));
 
-  class frPoint {
-  public:
-    // constructors
-    frPoint(): xCoord_(0), yCoord_(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
-    frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY) {};
-    // setters
-    void set(const frPoint &tmpPoint) {
-      xCoord_ = tmpPoint.xCoord_;
-      yCoord_ = tmpPoint.yCoord_;
-    }
-    void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord_ = tmpX;
-      yCoord_ = tmpY;
-    }
-    void setX(const frCoord tmpX) {
-      xCoord_ = tmpX;
-    }
-    void setY(const frCoord tmpY) {
-      yCoord_ = tmpY;
-    }
-    // getters
-    frCoord x() const {
-      return xCoord_;
-    }
-    frCoord y() const {
-      return yCoord_;
-    }
-    // others
-    void transform(const frTransform &xform);
-    bool operator<(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
-    }
-    bool operator==(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-    }
-    bool operator!=(const frPoint &pIn) const {
-      return !(*this == pIn);
-    }
-  protected:
-    frCoord xCoord_, yCoord_;
-  };
+    accessPoint->getPoint(pt);
+    pt.transform(shiftXform);
+  } else if (term->typeId() == frcTerm) {
+    accessPoint->getPoint(pt);
+  }
+
+  in.set(pt.x(), pt.y(), pt.x(), pt.y());
 }
 
-#endif
+frLayerNum frRPin::getLayerNum() {
+  return accessPoint->getLayerNum();
+}

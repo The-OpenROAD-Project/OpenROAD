@@ -26,56 +26,51 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#ifndef _GR_PIN_H_
+#define _GR_PIN_H_
 
-#include "frBaseTypes.h"
+#include "db/grObj/grBlockObject.h"
+#include "db/grObj/grAccessPattern.h"
 
 namespace fr {
-  class frTransform;
-
-  class frPoint {
+  class grNet;
+  class grPin: public grBlockObject {
   public:
     // constructors
-    frPoint(): xCoord_(0), yCoord_(0) {}
-    frPoint(const frPoint &tmpPoint): xCoord_(tmpPoint.xCoord_), yCoord_(tmpPoint.yCoord_) {}
-    frPoint(const frCoord tmpX, const frCoord tmpY)
-      : xCoord_(tmpX), yCoord_(tmpY) {};
+    grPin(): grBlockObject(), term(nullptr), accessPattern(nullptr), net(nullptr) {}
     // setters
-    void set(const frPoint &tmpPoint) {
-      xCoord_ = tmpPoint.xCoord_;
-      yCoord_ = tmpPoint.yCoord_;
+    void setFrTerm(frBlockObject *in) {
+      term = in;
     }
-    void set(const frCoord tmpX, const frCoord tmpY) {
-      xCoord_ = tmpX;
-      yCoord_ = tmpY;
+    void setAccessPattern(grAccessPattern* in) {
+      accessPattern = in;
     }
-    void setX(const frCoord tmpX) {
-      xCoord_ = tmpX;
+    void setNet(grNet* in) {
+      net = in;
     }
-    void setY(const frCoord tmpY) {
-      yCoord_ = tmpY;
-    }
+
     // getters
-    frCoord x() const {
-      return xCoord_;
+    bool hasFrTerm() const {
+      return (term);
     }
-    frCoord y() const {
-      return yCoord_;
+    frBlockObject* getFrTerm() const {
+      return term;
     }
+    grAccessPattern* getAccessPattern() const {
+      return accessPattern;
+    }
+    grNet* getNet() const {
+      return net;
+    }
+
     // others
-    void transform(const frTransform &xform);
-    bool operator<(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) ? (yCoord_ < pIn.yCoord_) : (xCoord_ < pIn.xCoord_);
-    }
-    bool operator==(const frPoint &pIn) const {
-      return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
-    }
-    bool operator!=(const frPoint &pIn) const {
-      return !(*this == pIn);
+    frBlockObjectEnum typeId() const override {
+      return grcPin;
     }
   protected:
-    frCoord xCoord_, yCoord_;
+    frBlockObject*                   term; // either frTerm or frInstTerm
+    grAccessPattern*                 accessPattern;
+    grNet*                           net;
   };
 }
 
