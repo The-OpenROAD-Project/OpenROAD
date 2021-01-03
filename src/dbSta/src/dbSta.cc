@@ -430,10 +430,13 @@ dbStaReport::printString(const char *buffer,
       ret = min(ret, fwrite(buffer, sizeof(char), length, redirect_stream_));
     else {
       if (buffer[length - 1] == '\n') {
+        int strip = 1;
+        if (buffer[length - 2] == '\r')
+          strip++;
         // Strip the trailing \n.
-        char *buf = new char[length];
-        strncpy(buf, buffer, length - 1);
-        buf[length] = '\0';
+        char *buf = new char[length - strip + 1];
+        strncpy(buf, buffer, length - strip);
+        buf[length - strip] = '\0';
         logger_->report(buf);
       }
       else

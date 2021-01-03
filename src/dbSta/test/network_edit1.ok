@@ -15,9 +15,7 @@ Net in1
 Driver pins
 
 Load pins
-Notice 0: warning: pin in1 skipped because it has no netDifferences found at line 4.
-DESIGN reg1 ;
-DESIGN top ;
+Notice 0: warning: pin in1 skipped because it has no netNo differences found.
 Notice 0: 
 Reading DEF file: ./results/network_edit1.def
 Notice 0: Design: reg1
