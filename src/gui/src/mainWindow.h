@@ -113,6 +113,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Higlight set will be cleared with this explicit call
   void clearHighlighted();
 
+  // Remove items from the Selected Set
+  void removeFromSelected(const QList<const Selected*>& items);
+
+  // Remove items from the Highlighted Set
+  void removeFromHighlighted(const QList<const Selected*>& items);
+
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
 

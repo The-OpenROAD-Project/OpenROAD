@@ -32,6 +32,7 @@
 
 #include "mainWindow.h"
 
+#include <QDebug>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
@@ -63,7 +64,8 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
   addDockWidget(Qt::BottomDockWidgetArea, selHltWin_);
 
-  tabifyDockWidget(script_, selHltWin_);
+  tabifyDockWidget(selHltWin_, script_);
+  selHltWin_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(commandExecuted()), viewer_, SLOT(update()));
@@ -101,6 +103,23 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(highlightChanged()),
           selHltWin_,
           SLOT(updateHighlightModel()));
+
+  connect(
+      selHltWin_, &SelectHighlightWindow::clearAllSelections, this, [this]() {
+        this->setSelected(Selected());
+      });
+  connect(
+      selHltWin_, &SelectHighlightWindow::clearAllHighlights, this, [this]() {
+        this->clearHighlighted();
+      });
+  connect(selHltWin_,
+          SIGNAL(clearSelectedItems(const QList<const Selected*>&)),
+          this,
+          SLOT(removeFromSelected(const QList<const Selected*>&)));
+  connect(selHltWin_,
+          SIGNAL(clearHighlightedItems(const QList<const Selected*>&)),
+          this,
+          SLOT(removeFromHighlighted(const QList<const Selected*>&)));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -155,6 +174,7 @@ void MainWindow::createMenus()
   windowsMenu_->addAction(controls_->toggleViewAction());
   windowsMenu_->addAction(script_->toggleViewAction());
   windowsMenu_->addAction(selHltWin_->toggleViewAction());
+  selHltWin_->setVisible(false);
 }
 
 void MainWindow::createToolbars()
@@ -183,6 +203,7 @@ void MainWindow::addSelected(const Selected& selection)
   }
   status(selection ? selection.getName() : "");
   emit selectionChanged();
+  selHltWin_->show();
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)
@@ -190,6 +211,7 @@ void MainWindow::addSelected(const SelectionSet& selections)
   selected_.insert(selections.begin(), selections.end());
   status(std::string("Added ") + std::to_string(selections.size()));
   emit selectionChanged();
+  selHltWin_->show();
 }
 
 void MainWindow::setSelected(const Selected& selection)
@@ -209,6 +231,26 @@ void MainWindow::clearHighlighted()
   if (highlighted_.empty())
     return;
   highlighted_.clear();
+  emit highlightChanged();
+}
+
+void MainWindow::removeFromSelected(const QList<const Selected*>& items)
+{
+  if (items.empty())
+    return;
+  for (auto& item : items) {
+    selected_.erase(*item);
+  }
+  emit selectionChanged();
+}
+
+void MainWindow::removeFromHighlighted(const QList<const Selected*>& items)
+{
+  if (items.empty())
+    return;
+  for (auto& item : items) {
+    highlighted_.erase(*item);
+  }
   emit highlightChanged();
 }
 

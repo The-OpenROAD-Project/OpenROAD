@@ -35,6 +35,7 @@
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QSortFilterProxyModel>
 #include <QString>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -98,7 +99,7 @@ QVariant SelHltModel::data(const QModelIndex& index, int role) const
   } else if (index.column() == 1) {
     return QString::fromStdString(objType);
   } else if (index.column() == 2) {
-    return QString("(0, 0)");
+    return QString::fromStdString(tableData_[rowIndex]->getLocation());
   }
   return QVariant();
 }
@@ -125,11 +126,73 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
     : QDockWidget(parent),
       ui(new Ui::SelectHighlightWidget),
       selModel_(selSet),
-      hltModel_(hltSet)
+      hltModel_(hltSet),
+      selectContextMenu_(new QMenu(this)),
+      highlightContextMenu_(new QMenu(this))
 {
   ui->setupUi(this);
-  ui->selTableView->setModel(&selModel_);
-  ui->hltTableView->setModel(&hltModel_);
+
+  QSortFilterProxyModel* selFilterProxy = new QSortFilterProxyModel(this);
+  selFilterProxy->setSourceModel(&selModel_);
+
+  QSortFilterProxyModel* hltFilterProxy = new QSortFilterProxyModel(this);
+  hltFilterProxy->setSourceModel(&hltModel_);
+
+  ui->selTableView->setModel(selFilterProxy);
+  ui->hltTableView->setModel(hltFilterProxy);
+
+  connect(ui->clearAllSelBtn, &QPushButton::clicked, this, [this]() {
+    emit clearAllSelections();
+  });
+  connect(ui->clearAllHltBtn, &QPushButton::clicked, this, [this]() {
+    emit clearAllHighlights();
+  });
+  connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
+    this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
+  });
+  connect(ui->findEditInHlt, &QLineEdit::returnPressed, this, [this]() {
+    this->ui->hltTableView->keyboardSearch(ui->findEditInSel->text());
+  });
+
+  connect(ui->selTableView,
+          SIGNAL(customContextMenuRequested(QPoint)),
+          this,
+          SLOT(showSelectCustomMenu(QPoint)));
+  connect(ui->hltTableView,
+          SIGNAL(customContextMenuRequested(QPoint)),
+          this,
+          SLOT(showHighlightCustomMenu(QPoint)));
+  ui->selTableView->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::Stretch);
+  ui->hltTableView->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::Stretch);
+
+  QAction* removeSelItemAct = selectContextMenu_->addAction("De-Select");
+  QAction* highlightSelItemAct = selectContextMenu_->addAction("Highlight");
+  selectContextMenu_->addSeparator();
+  QAction* showSelItemAct = selectContextMenu_->addAction("Zoom In Layout");
+
+  connect(removeSelItemAct, SIGNAL(triggered()), this, SLOT(deselectItems()));
+  connect(highlightSelItemAct,
+          SIGNAL(triggered()),
+          this,
+          SLOT(highlightSelectedItems()));
+  connect(
+      showSelItemAct, SIGNAL(triggered()), this, SLOT(zoomInSelectedItems()));
+
+  QAction* removeHltItemAct = highlightContextMenu_->addAction("De-Highlight");
+  highlightContextMenu_->addSeparator();
+  QAction* showHltItemAct = highlightContextMenu_->addAction("Zoom In Layout");
+
+  connect(
+      removeHltItemAct, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
+  connect(showHltItemAct,
+          SIGNAL(triggered()),
+          this,
+          SLOT(zoomInHighlightedItems()));
+
+  ui->selTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+  ui->hltTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 }
 
 SelectHighlightWindow::~SelectHighlightWindow()
@@ -144,6 +207,65 @@ void SelectHighlightWindow::updateSelectionModel()
 void SelectHighlightWindow::updateHighlightModel()
 {
   hltModel_.populateModel();
+}
+
+void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
+{
+  selectContextMenu_->popup(ui->selTableView->viewport()->mapToGlobal(pos));
+}
+
+void SelectHighlightWindow::showHighlightCustomMenu(QPoint pos)
+{
+  highlightContextMenu_->popup(ui->hltTableView->viewport()->mapToGlobal(pos));
+}
+
+void SelectHighlightWindow::deselectItems()
+{
+  auto selIndices = ui->selTableView->selectionModel()->selectedRows();
+  QList<const Selected*> deselItems;
+  for (auto& selItem : selIndices) {
+    deselItems << selModel_.getItemAt(selItem.row());
+  }
+  emit clearSelectedItems(deselItems);
+}
+void SelectHighlightWindow::highlightSelectedItems()
+{
+  auto selIndices = ui->selTableView->selectionModel()->selectedRows();
+  QList<const Selected*> deselItems;
+  for (auto& selItem : selIndices) {
+    deselItems << selModel_.getItemAt(selItem.row());
+  }
+  emit highlightSelectedItems(deselItems);
+}
+
+void SelectHighlightWindow::zoomInSelectedItems()
+{
+  auto selIndices = ui->selTableView->selectionModel()->selectedRows();
+  QList<const Selected*> deselItems;
+  for (auto& selItem : selIndices) {
+    deselItems << selModel_.getItemAt(selItem.row());
+  }
+  emit zoomSelectedItems(deselItems);
+}
+
+void SelectHighlightWindow::dehighlightItems()
+{
+  auto selIndices = ui->hltTableView->selectionModel()->selectedRows();
+  QList<const Selected*> dehltItems;
+  for (auto& selItem : selIndices) {
+    dehltItems << hltModel_.getItemAt(selItem.row());
+  }
+  emit clearHighlightedItems(dehltItems);
+}
+
+void SelectHighlightWindow::zoomInHighlightedItems()
+{
+  auto selIndices = ui->hltTableView->selectionModel()->selectedRows();
+  QList<const Selected*> dehltItems;
+  for (auto& selItem : selIndices) {
+    dehltItems << hltModel_.getItemAt(selItem.row());
+  }
+  emit zoomHighlightedItems(dehltItems);
 }
 
 }  // namespace gui

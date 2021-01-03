@@ -34,7 +34,9 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "db.h"
 #include "dbShape.h"
@@ -247,6 +249,43 @@ std::string OpenDbDescriptor::getName(void* object) const
       return "Inst: " + static_cast<odb::dbInst*>(db_obj)->getName();
     default:
       return db_obj->getObjName();
+  }
+}
+
+std::string OpenDbDescriptor::getLocation(void* object) const
+{
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  auto block = getBlock(mainWindow->getDb());
+  auto toMicrons = block->getDbUnitsPerMicron();
+  switch (db_obj->getObjectType()) {
+    case odb::dbNetObj: {
+      auto net = static_cast<odb::dbNet*>(db_obj);
+      auto wire = net->getWire();
+      odb::Rect wireBBox;
+      if (wire->getBBox(wireBBox)) {
+        std::stringstream ss;
+        ss << "[(" << wireBBox.xMin() / toMicrons << ","
+           << wireBBox.yMin() / toMicrons << "), ("
+           << wireBBox.xMax() / toMicrons << "," << wireBBox.yMax() / toMicrons
+           << ")]";
+        return ss.str();
+      }
+      return std::string("NA");
+    } break;
+    case odb::dbInstObj: {
+      auto instObj = static_cast<odb::dbInst*>(db_obj);
+      auto instBBox = instObj->getBBox();
+      auto placementStatus = instObj->getPlacementStatus().getString();
+      auto instOrient = instObj->getOrient().getString();
+      std::stringstream ss;
+      ss << "[(" << instBBox->xMin() / toMicrons << ","
+         << instBBox->yMin() / toMicrons << "), ("
+         << instBBox->xMax() / toMicrons << "," << instBBox->yMax() / toMicrons
+         << ")], " << instOrient << ": " << placementStatus;
+      return ss.str();
+    } break;
+    default:
+      return std::string("NA");
   }
 }
 

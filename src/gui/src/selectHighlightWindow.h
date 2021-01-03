@@ -33,10 +33,14 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QAction>
 #include <QDockWidget>
 #include <QMainWindow>
+#include <QMenu>
 #include <QModelIndex>
+#include <QPoint>
 #include <QShortcut>
+#include <QStringList>
 #include <QToolBar>
 #include <QVariant>
 #include <unordered_map>
@@ -62,6 +66,8 @@ class SelHltModel : public QAbstractTableModel
                       Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
 
+  const Selected* getItemAt(int idx) const { return tableData_[idx]; }
+
   void populateModel();
 
  private:
@@ -79,14 +85,35 @@ class SelectHighlightWindow : public QDockWidget
                                  QWidget* parent = nullptr);
   ~SelectHighlightWindow();
 
+ signals:
+  void clearAllSelections();
+  void clearAllHighlights();
+
+  void clearSelectedItems(const QList<const Selected*>& items);
+  void clearHighlightedItems(const QList<const Selected*>& items);
+  void zoomSelectedItems(const QList<const Selected*>& items);
+  void highlightSelectedItems(const QList<const Selected*>& items);
+  void zoomHighlightedItems(const QList<const Selected*>& items);
+
  public slots:
   void updateSelectionModel();
   void updateHighlightModel();
+  void showSelectCustomMenu(QPoint pos);
+  void showHighlightCustomMenu(QPoint pos);
+
+  void deselectItems();
+  void highlightSelectedItems();
+  void zoomInSelectedItems();
+  void dehighlightItems();
+  void zoomInHighlightedItems();
 
  private:
   Ui::SelectHighlightWidget* ui;
   SelHltModel selModel_;
   SelHltModel hltModel_;
+
+  QMenu* selectContextMenu_;
+  QMenu* highlightContextMenu_;
 };
 
 }  // namespace gui
