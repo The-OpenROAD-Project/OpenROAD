@@ -9,6 +9,9 @@ All output from OpenROAD tools should be directed through the logging API so tha
 ### Report
 Reports are tool output in the form of a report to the user. Examples are timing paths, or power analysis results. Tool reports that use ‘printf’ or c++ streams should use the report message API instead.
 
+### Debug
+Debug messages are only of use to tool developers and not to end users.  These messages are not shown unless explicitly enabled.
+
 ### Information
 Information messages may be used for reporting metrics, quality of results, or program status to the user. Any messages which indicate runtime problems, such as potential faulty input or other internal program issues, should be issued at a higher status level.
 
@@ -58,9 +61,10 @@ Each status message requires:
 
 Reporting is simply printing and does not require a tool or message ID. The tool ID comes from a fixed enumeration of all the tools in the system. This enumeration is in `Logger.h`. New abbreviations should be added after discussion with the system architects. The abbreviation matches the c++ namespace for the tool.
 
-Message IDs are integers. They are expected to be unique for each tool.  This has the benefit that a message can be mapped to the source code unambiguously even if the text is not unique.  Maintaining this invariant is the tool owner’s responsibility. To ensure that the IDs are unique each tool should maintain a file named ‘messages.txt’ in the top level tool directory listing the message IDs along with the format string. When code that uses a message ID is removed the ID should be retired by removing it from ‘messages.txt’.
+Message IDs are integers. They are expected to be unique for each tool.  This has the benefit that a message can be mapped to the source code unambiguously even if the text is not unique.  Maintaining this invariant is the tool owner’s responsibility. To ensure that the IDs are unique each tool should maintain a file named ‘messages.txt’ in the top level tool directory listing the message IDs along with the format string. When code that uses a message ID is removed the ID should be retired by removing it from ‘messages.txt’. See the tuility `etc/FindMessages.tcl` to scan a tool directory and write a `messages.txt` file.
 
-Spdlog comes with the fmt library which supports message formatting in a python / c++20 like style.
+Spdlog comes with the fmt library which supports message formatting in a python / [c++20 like style](https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification).
+
 
 The message string should not include the tool ID or message ID which will automatically be prepended.  A trailing new line will automatically be added so messages should not end with one.  Messages should be written as complete sentences and end in a period. Multi-line messages may contain embedded new lines.
 
@@ -115,6 +119,19 @@ Logger::critical(ToolId tool,
                      const Args&... args)
 ```
 
+### Debug Messages
+The debug message have a different programming model.  As they are most often *not* issued the concern is to avoid slowing down normal execution.  For this reason such messages are issued by using the debugPrint macro.  This macro will avoid evaluating its arguments if they are not going to be printed.  The API is:
+
+```
+debugPrint(logger, tool, group, level, message, ...)
+```
+
+The debug() method of the Logger class should not be called directly.  No message id is used as these messages are not intended for end users.  The level is printed as the message id in the output.
+
+The argument types are as for the info/warn/error/ciritical messages.  The one additional argument is group which is a const char*.  Its purposes is to allow the enabling of subsets of messages within one tool.
+
+Debug messages are enabled with the tcl command: set_debug_level \<tool\> \<group\> \<level\>
+
 ## Converting to Logger
 
 The error functions in `include/openroad/Error.hh` should no longer be included or used.
@@ -138,3 +155,30 @@ target_link_libraries(<library_target>
   spdlog::spdlog
   )
 ```
+
+| Tool | message/namespace |
+|------|-------------------|
+| antenna_checker | ant |
+| dbSta | sta |
+| FastRoute | grt |
+| finale | fin |	
+| flute3 | stt |
+| gui | gui |
+| ICeWall | pad	 |
+| init_fp |	ifp |
+| ioPlacer | ppl |
+| OpenDB | odb |
+| opendp | dpl |
+| OpenRCX | rcx	 |
+| *OpenROAD* | ord |
+| OpenSTA | sta |
+| PartClusManager | par	|
+| pdngen | pdn |
+| PDNSim | psm |
+| replace | gpl |
+| resizer | rsz |
+| tapcell | tap |
+| TritonCTS | cts |
+| TritonMacroPlace | mpl |
+| TritonRoute | drt |
+                

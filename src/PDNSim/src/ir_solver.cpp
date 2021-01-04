@@ -48,6 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
 #include "opendb/db.h"
+#include "get_voltage.h"
 #include "ir_solver.h"
 #include "node.h"
 #include "gmat.h"
@@ -152,7 +153,7 @@ void IRSolver::SolveIR()
   int num_nodes         = m_Gmat->GetNumNodes();
   int node_num =0;
   double       sum_volt = 0;
-  wc_voltage            = vdd;
+  wc_voltage            = supply_voltage_src;
   while(node_num < num_nodes) {
     Node* node = m_Gmat->GetNode(node_num);
     double volt = x(node_num);
@@ -257,10 +258,9 @@ bool IRSolver::AddC4Bump()
   }
   for (unsigned int it = 0; it < m_C4Nodes.size(); ++it) {
     NodeIdx node_loc = m_C4Nodes[it].first;
-    double  voltage  = m_C4Nodes[it].second;
+    double  voltage_value  = m_C4Nodes[it].second;
     m_Gmat->AddC4Bump(node_loc, it);  // add the 0th bump
-    m_J.push_back(voltage);           // push back first vdd
-    vdd = voltage;
+    m_J.push_back(voltage_value);           // push back first vdd
   }
   return true;
 }
@@ -279,7 +279,6 @@ void IRSolver::ReadC4Data()
   while (getline(file, line)) {
     tuple<int, int, int, double> c4_bump;
     int                          first, second, size;
-    double                       voltage;
     stringstream                 X(line);
     string                       val;
     for (int i = 0; i < 4; ++i) {
@@ -291,55 +290,76 @@ void IRSolver::ReadC4Data()
       } else if (i == 2) {
         size = (int) (unit_micron * stod(val));
       } else {
-        voltage = stod(val);
+        supply_voltage_src = stod(val);
       }
     }
-    m_C4Bumps.push_back(make_tuple(first, second, size, voltage));
+    m_C4Bumps.push_back(make_tuple(first, second, size, supply_voltage_src));
   }
   file.close();
   }
   else {
-    cout << "Warning: Voltage pad location file not spcified, defaulting pad location to origin" << endl;
-    m_C4Bumps.push_back(make_tuple(0,0,0,0));
+    cout << "INFO: Voltage pad location (vsrc) file not spcified, defaulting pad location to checkerboard pattern on core area" << endl;
+    dbChip*                      chip         = m_db->getChip();
+    dbBlock*                     block        = chip->getBlock();
+    odb::Rect coreRect;
+    block->getCoreArea(coreRect);
+    int coreW = coreRect.xMax()-coreRect.xMin();
+    int coreL = coreRect.yMax()-coreRect.yMin();
+    odb::Rect dieRect;
+    block->getDieArea(dieRect);
+    int dieW = dieRect.xMax()-dieRect.xMin();
+    int dieL = dieRect.xMax()-dieRect.xMin();
+    int offset_x = coreRect.xMin()-dieRect.xMin();
+    int offset_y = coreRect.yMin()-dieRect.yMin();
+    if (m_bump_pitch_x == 0) {
+        m_bump_pitch_x = m_bump_pitch_default;
+        cout << "INFO: X direction bump pitch not specified defaulting to " << m_bump_pitch_x << "um" << endl; 
+    }
+    if (m_bump_pitch_y == 0) {
+        m_bump_pitch_y = m_bump_pitch_default;
+        cout << "INFO: Y direction bump pitch not specified defaulting to " << m_bump_pitch_y << "um" <<endl; 
+    }
+    if(!m_net_voltage_map.empty()) {
+        if(m_net_voltage_map.count(m_power_net)>0) {
+            supply_voltage_src = m_net_voltage_map.at(m_power_net);
+        }
+        else {
+        cout << "WARNING: Voltage on net "<<m_power_net<< " is not explicitly set" << endl;
+        }
+    }
+    else {
+        cout << "WARNING: Voltage on net "<<m_power_net<< " is not explicitly set" << endl;
+        std::pair<double, double> supply_voltages = GetSupplyVoltage();
+        dbNet* power_net = block->findNet(m_power_net.data());
+        if (power_net == NULL) {
+            cout << "Error: Cannot find net " << m_power_net << " in the design. Please provide a valid VDD/VSS net"<<endl;
+        }
+        m_power_net_type = power_net->getSigType();
+        if (m_power_net_type == dbSigType::GROUND) {
+            supply_voltage_src = supply_voltages.second;
+            cout << "INFO: Using voltage 0V for ground network" << endl;
+        }
+        else {
+            supply_voltage_src = supply_voltages.first;
+            cout << "INFO: Using voltage from liberty PVT" << endl;
+        }
+    }
+    int x_cor, y_cor;
+    int num_b_x = coreW/m_bump_pitch_x; 
+    int num_b_y =  coreL/m_bump_pitch_y;
+    for (int i=0; i< num_b_y; i++){
+        for (int j=0; j<num_b_y; j++) {
+            x_cor = (m_bump_pitch_x*j + ((2*i)%6)*m_bump_pitch_x)*unit_micron + offset_x;
+            y_cor = (m_bump_pitch_y*i)*unit_micron + offset_y;
+            if(x_cor <= coreW && y_cor<=coreL) {
+                m_C4Bumps.push_back(make_tuple(x_cor,y_cor,m_bump_size*unit_micron,supply_voltage_src));
+            }
+        }
+    }
   }
 }
 
 
-//! Function that parses the Vsrc file
-/*void IRSolver::ReadResData()
-{
-  cout << "Default resistance file" << m_def_res << endl;
-  cout << "INFO: Reading resistance of layers and vias " << endl;
-  std::ifstream file(m_def_res);    
-  std::string line = "";
-  int line_num = 0;
-  // Iterate through each line and split the content using delimiter
-  while (getline(file, line)) {
-    line_num ++;
-    if (line_num == 1) {
-      continue;
-    }
-    //tuple<int, double, double> layer_res;
-    int                          routing_level;
-    double                       res_per_unit;
-    double                       res_via;
-    stringstream                 X(line);
-    string                       val;
-    for (int i = 0; i < 3; ++i) {
-      getline(X, val, ',');
-      if (i == 0) {
-        routing_level = stoi(val);
-      } else if (i == 1) {
-        res_per_unit = stod(val);
-      } else {
-        res_via = stod(val);
-      }
-    }
-    m_layer_res.push_back(make_tuple(routing_level, res_per_unit, res_via));
-  }
-  file.close();
-}
-*/
 
 //! Function to create a J vector from the current map
 bool IRSolver::CreateJ()
@@ -386,6 +406,7 @@ bool IRSolver::CreateJ()
   return true;
 }
 
+ 
 
 //! Function to create a G matrix using the nodes
 bool IRSolver::CreateGmat(bool connection_only)
@@ -947,14 +968,19 @@ int IRSolver::GetConnectionTest(){
  *\return vector of pairs of instance name 
  and its corresponding power value
 */
-vector<pair<string, double>> IRSolver::GetPower()
-{
+vector<pair<string, double>> IRSolver::GetPower() {
   PowerInst                    power_inst;
-  vector<pair<string, double>> power_report = power_inst.executePowerPerInst(
-      m_sta);
-
+  vector<pair<string, double>> power_report = power_inst.executePowerPerInst(m_sta);
   return power_report;
 }
+
+
+pair<double, double> IRSolver::GetSupplyVoltage() {
+  SupplyVoltage                    supply_volt;
+  pair<double, double> supply_voltage = supply_volt.getSupplyVoltage(m_sta);
+  return supply_voltage;
+}
+
 
 bool IRSolver::GetResult(){
   return m_result; 
@@ -1024,14 +1050,14 @@ int IRSolver::PrintSpice() {
     } else { //voltage
       Node* node1 = m_Gmat->GetNode(row); //VDD location 
       node_loc = node1->GetLoc();
-      double voltage = J[col];
+      double voltage_value = J[col];
       int x1 = node_loc.first;
       int y1 = node_loc.second;
       int l1 = node1->GetLayerNum();
       string node1_name = net_name + "_" + to_string(x1) + "_" + to_string(y1) + "_" + to_string(l1);
       string voltage_name = "V" + to_string(voltage_number); 
       voltage_number++;
-      pdnsim_spice_file<< voltage_name <<" "<< node1_name << " 0 " << to_string(voltage) <<endl;
+      pdnsim_spice_file<< voltage_name <<" "<< node1_name << " 0 " << to_string(voltage_value) <<endl;
     }
   } 
   

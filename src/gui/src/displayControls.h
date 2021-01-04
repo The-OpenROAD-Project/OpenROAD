@@ -34,12 +34,20 @@
 
 #include <tcl.h>
 
+#include <QColorDialog>
+#include <QDialog>
 #include <QDockWidget>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QLineEdit>
+#include <QModelIndex>
+#include <QRadioButton>
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTextEdit>
 #include <QTreeView>
+#include <QVBoxLayout>
+#include <vector>
 
 #include "options.h"
 
@@ -54,6 +62,56 @@ namespace gui {
 struct Callback
 {
   std::function<void(bool)> action;
+};
+
+class PatternButton : public QRadioButton
+{
+  Q_OBJECT
+ public:
+  PatternButton(Qt::BrushStyle pattern, QWidget* parent = nullptr);
+  ~PatternButton() {}
+
+  void paintEvent(QPaintEvent* event);
+  Qt::BrushStyle pattern() const { return pattern_; }
+
+ private:
+  Qt::BrushStyle pattern_;
+};
+
+class DisplayColorDialog : public QDialog
+{
+  Q_OBJECT
+ public:
+  DisplayColorDialog(QColor color,
+                     Qt::BrushStyle pattern = Qt::SolidPattern,
+                     QWidget* parent = nullptr);
+  ~DisplayColorDialog();
+
+  QColor getSelectedColor() const { return color_; }
+  Qt::BrushStyle getSelectedPattern() const;
+
+ public slots:
+  void acceptDialog();
+  void rejectDialog();
+
+ private:
+  QColor color_;
+  Qt::BrushStyle pattern_;
+
+  QGroupBox* patternGroupBox_;
+  QGridLayout* gridLayout_;
+  QVBoxLayout* mainLayout_;
+
+  std::vector<PatternButton*> patternButtons_;
+  QColorDialog* colorDialog_;
+
+  void buildUI();
+
+  static inline std::vector<std::vector<Qt::BrushStyle>> brushPatterns{
+      {Qt::NoBrush, Qt::SolidPattern},
+      {Qt::HorPattern, Qt::VerPattern},
+      {Qt::CrossPattern, Qt::DiagCrossPattern},
+      {Qt::FDiagPattern, Qt::BDiagPattern}};
 };
 
 // This class shows the user the set of layers & objects that
@@ -74,6 +132,7 @@ class DisplayControls : public QDockWidget, public Options
 
   // From the Options API
   QColor color(const odb::dbTechLayer* layer) override;
+  Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
   bool isNetVisible(odb::dbNet* net) override;
@@ -94,6 +153,8 @@ class DisplayControls : public QDockWidget, public Options
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
 
+  void displayItemDblClicked(const QModelIndex& index);
+
  private:
   // The columns in the tree view
   enum Column
@@ -113,7 +174,8 @@ class DisplayControls : public QDockWidget, public Options
                           const std::function<void(bool)>& visibility_action,
                           const std::function<void(bool)>& select_action
                           = std::function<void(bool)>(),
-                          const QColor& color = Qt::transparent);
+                          const QColor& color = Qt::transparent,
+                          odb::dbTechLayer* techLayer = nullptr);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
 
@@ -149,7 +211,9 @@ class DisplayControls : public QDockWidget, public Options
   bool nets_power_visible_;
   bool nets_ground_visible_;
   bool nets_clock_visible_;
+
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
+  std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;
   std::map<const odb::dbTechLayer*, bool> layer_visible_;
   std::map<const odb::dbTechLayer*, bool> layer_selectable_;
 };

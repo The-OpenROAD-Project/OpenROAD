@@ -35,12 +35,11 @@
 
 #pragma once
 
-#include "fastroute/GlobalRouter.h"
+#include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
-#include "FastRoute.h"
-
 #include "db_sta/dbSta.hh"
+#include "fastroute/GlobalRouter.h"
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
 
@@ -57,64 +56,58 @@ class Units;
 
 namespace ord {
 class OpenRoad;
+class Logger;
 }
 
 namespace grt {
 
 class RoutePt
 {
-public:
+ public:
   RoutePt() = default;
-  RoutePt(int x,
-	  int y,
-	  int layer);
+  RoutePt(int x, int y, int layer);
   int x() { return _x; };
   int y() { return _y; };
   int layer() { return _layer; };
 
-  friend bool operator<(const RoutePt &p1,
-			const RoutePt &p2);
-private:
+  friend bool operator<(const RoutePt& p1, const RoutePt& p2);
+
+ private:
   int _x;
   int _y;
   int _layer;
 };
 
-bool operator<(const RoutePt &p1,
-	       const RoutePt &p2);
+bool operator<(const RoutePt& p1, const RoutePt& p2);
 
 typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
 
 class RcTreeBuilder
 {
  public:
-  RcTreeBuilder(ord::OpenRoad* openroad,
-		GlobalRouter* grouter);
+  RcTreeBuilder(ord::OpenRoad* openroad, GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
-			 std::vector<Pin>& pins,
-			 std::vector<GSegment>& routes);
+                         std::vector<Pin>& pins,
+                         std::vector<GSegment>& routes);
 
  protected:
   void makePinRoutePts(std::vector<Pin>& pins);
   RoutePt routePt(Pin& pin);
   sta::Pin* staPin(Pin& pin);
-  void makeRouteParasitics(odb::dbNet* net,
-			   std::vector<GSegment>& routes);
-  sta::ParasiticNode *ensureParasiticNode(int x,
-					  int y,
-					  int layer);
+  void makeRouteParasitics(odb::dbNet* net, std::vector<GSegment>& routes);
+  sta::ParasiticNode* ensureParasiticNode(int x, int y, int layer);
   void makeParasiticsToGrid(std::vector<Pin>& pins);
-  void makeParasiticsToGrid(Pin& pin,
-			    sta::ParasiticNode *pin_node);
+  void makeParasiticsToGrid(Pin& pin, sta::ParasiticNode* pin_node);
   void reduceParasiticNetwork();
   void layerRC(int wire_length_dbu,
-	       int layer,
-	       // Return values.
-	       float &res,
-	       float &cap);
+               int layer,
+               // Return values.
+               float& res,
+               float& cap);
 
   // Variables common to all nets.
   GlobalRouter* _grouter;
+  ord::Logger *_logger;
   sta::dbSta* _sta;
   sta::dbNetwork* _network;
   sta::Parasitics* _parasitics;
@@ -123,7 +116,7 @@ class RcTreeBuilder
   sta::ParasiticAnalysisPt* _analysisPoint;
   bool _debug;
 
-  // Net variables 
+  // Net variables
   sta::Net* _sta_net;
   sta::Parasitic* _parasitic;
   // Counter for internal parasitic node IDs.

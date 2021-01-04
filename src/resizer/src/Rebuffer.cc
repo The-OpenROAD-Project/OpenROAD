@@ -148,8 +148,8 @@ Resizer::rebuffer(const Pin *drvr_pin)
     SteinerTree *tree = makeSteinerTree(net, true, db_network_, logger_);
     if (tree) {
       SteinerPt drvr_pt = tree->drvrPt(network_);
-      debugPrint1(debug_, "rebuffer", 2, "driver %s\n",
-                  sdc_network_->pathName(drvr_pin));
+      debugPrint(debug_, "rebuffer", 2, "driver %s\n",
+                 sdc_network_->pathName(drvr_pin));
       BufferedNetSeq Z = rebufferBottomUp(tree, tree->left(drvr_pt),
                                              drvr_pt, 1);
       Required best_slack = -INF;
@@ -168,15 +168,15 @@ Resizer::rebuffer(const Pin *drvr_pin)
           ? RiseFall::rise()
           : RiseFall::fall();
         int rf_index = rf->index();
-        debugPrint7(debug_, "rebuffer", 3,
-                    "option %3d: %2d buffers req %s %s - %s = %s cap %s\n",
-                    i,
-                    p->bufferCount(),
-                    rf->asString(),
-                    delayAsString(p->required(rf), this, 3),
-                    delayAsString(gate_delays[rf_index], this, 3),
-                    delayAsString(slacks[rf_index], this, 3),
-                    units_->capacitanceUnit()->asString(p->cap()));
+        debugPrint(debug_, "rebuffer", 3,
+                   "option %3d: %2d buffers req %s %s - %s = %s cap %s\n",
+                   i,
+                   p->bufferCount(),
+                   rf->asString(),
+                   delayAsString(p->required(rf), this, 3),
+                   delayAsString(gate_delays[rf_index], this, 3),
+                   delayAsString(slacks[rf_index], this, 3),
+                   units_->capacitanceUnit()->asString(p->cap()));
         if (debug_->check("rebuffer", 4))
           p->printTree(this);
         if (fuzzyGreater(slacks[rf_index], best_slack)) {
@@ -187,7 +187,7 @@ Resizer::rebuffer(const Pin *drvr_pin)
         i++;
       }
       if (best_option) {
-        debugPrint1(debug_, "rebuffer", 3, "best option %d\n", best_index);
+        debugPrint(debug_, "rebuffer", 3, "best option %d\n", best_index);
         if (debug_->check("rebuffer", 4))
           best_option->printTree(this);
         int before = inserted_buffer_count_;
@@ -450,12 +450,12 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     level_drvr_verticies_valid_ = false;
     LibertyPort *input, *output;
     buffer_cell->bufferPorts(input, output);
-    debugPrint6(debug_, "rebuffer", 3, "%*sinsert %s -> %s (%s) -> %s\n",
-                level, "",
-                sdc_network_->pathName(net),
-                buffer_name.c_str(),
-                buffer_cell->name(),
-                net2_name.c_str());
+    debugPrint(debug_, "rebuffer", 3, "%*sinsert %s -> %s (%s) -> %s\n",
+               level, "",
+               sdc_network_->pathName(net),
+               buffer_name.c_str(),
+               buffer_cell->name(),
+               net2_name.c_str());
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
@@ -464,11 +464,11 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     break;
   }
   case BufferedNetType::wire:
-    debugPrint2(debug_, "rebuffer", 3, "%*swire\n", level, "");
+    debugPrint(debug_, "rebuffer", 3, "%*swire\n", level, "");
     rebufferTopDown(choice->ref(), net, level + 1);
     break;
   case BufferedNetType::junction: {
-    debugPrint2(debug_, "rebuffer", 3, "%*sjunction\n", level, "");
+    debugPrint(debug_, "rebuffer", 3, "%*sjunction\n", level, "");
     rebufferTopDown(choice->ref(), net, level + 1);
     rebufferTopDown(choice->ref2(), net, level + 1);
     break;
@@ -479,10 +479,10 @@ Resizer::rebufferTopDown(BufferedNet *choice,
     if (load_net != net) {
       Instance *load_inst = db_network_->instance(load_pin);
       Port *load_port = db_network_->port(load_pin);
-      debugPrint4(debug_, "rebuffer", 3, "%*sconnect load %s to %s\n",
-                  level, "",
-                  sdc_network_->pathName(load_pin),
-                  sdc_network_->pathName(net));
+      debugPrint(debug_, "rebuffer", 3, "%*sconnect load %s to %s\n",
+                 level, "",
+                 sdc_network_->pathName(load_pin),
+                 sdc_network_->pathName(net));
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load_inst, load_port, net);
       parasitics_->deleteParasitics(load_net, parasitics_ap_);

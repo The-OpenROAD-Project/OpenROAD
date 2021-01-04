@@ -413,6 +413,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _gcell_grid(block._gcell_grid),
       _parent_block(block._parent_block),
       _parent_inst(block._parent_inst),
+      _top_module(block._top_module),
       _net_hash(block._net_hash),
       _inst_hash(block._inst_hash),
       _module_hash(block._module_hash),
@@ -753,7 +754,9 @@ void _dbBlock::initialize(_dbChip*    chip,
   _bbox           = box->getOID();
   _chip           = chip->getOID();
   _hier_delimeter = delimeter;
-
+  //create top module
+  _dbModule* _top = (_dbModule*) dbModule::create((dbBlock*)this, (std::string(name)+"_top_module").c_str());
+  _top_module = _top->getOID();
   if (parent) {
     _def_units      = parent->_def_units;
     _dbu_per_micron = parent->_dbu_per_micron;
@@ -887,6 +890,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._parent_block;
     stream << block._parent_inst;
   }
+  stream << block._top_module;
   stream << block._net_hash;
   stream << block._inst_hash;
   stream << block._module_hash;
@@ -975,6 +979,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._gcell_grid;
   stream >> block._parent_block;
   stream >> block._parent_inst;
+  stream >> block._top_module;
   stream >> block._net_hash;
   stream >> block._inst_hash;
   stream >> block._module_hash;
@@ -1123,6 +1128,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
 
   if (_parent_inst != rhs._parent_inst)
+    return false;
+  
+  if (_top_module != rhs._top_module)
     return false;
 
   if (_net_hash != rhs._net_hash)
@@ -1289,6 +1297,7 @@ void _dbBlock::differences(dbDiff&         diff,
   DIFF_OBJECT(_gcell_grid, _gcell_grid_tbl, rhs._gcell_grid_tbl);
   DIFF_FIELD(_parent_block);
   DIFF_FIELD(_parent_inst);
+  DIFF_FIELD(_top_module);
 
   if (!diff.deepDiff()) {
     DIFF_HASH_TABLE(_net_hash);
@@ -1370,6 +1379,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_OBJECT(_gcell_grid, _gcell_grid_tbl);
   DIFF_OUT_FIELD(_parent_block);
   DIFF_OUT_FIELD(_parent_inst);
+  DIFF_OUT_FIELD(_top_module);
 
   if (!diff.deepDiff()) {
     DIFF_OUT_HASH_TABLE(_net_hash);
@@ -1564,6 +1574,12 @@ dbInst* dbBlock::getParentInst()
   return (dbInst*) parent_inst;
 }
 
+dbModule* dbBlock::getTopModule()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbModule*) block->_module_tbl->getPtr(block->_top_module);
+}
+
 dbSet<dbBlock> dbBlock::getChildren()
 {
   _dbBlock*    block = (_dbBlock*) this;
@@ -1642,8 +1658,19 @@ dbModule* dbBlock::findModule(const char* name)
 
 dbModInst* dbBlock::findModInst(const char* path)
 {
-  _dbBlock*   block    = (_dbBlock*) this;
-  return (dbModInst*) block->_modinst_hash.find(path);
+  char* _path = strdup(path);
+  dbModule*   cur_mod  = getTopModule();
+  dbModInst*  cur_inst = nullptr;
+  char *token = strtok(_path, "/");
+  while (token != NULL) 
+  {
+    cur_inst = cur_mod->findModInst(token);
+    if(cur_inst==nullptr)
+      return nullptr;
+    cur_mod  = cur_inst->getMaster();
+    token = strtok(NULL,"/");
+  }
+  return cur_inst;
 }
 
 dbGroup* dbBlock::findGroup(const char* name)

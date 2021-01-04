@@ -82,8 +82,8 @@ makeSteinerTree(const Net *net,
   Network *sdc_network = network->sdcNetwork();
   Debug *debug = network->debug();
   Report *report = network->report();
-  debugPrint1(debug, "steiner", 1, "Net %s\n",
-              sdc_network->pathName(net));
+  debugPrint(debug, "steiner", 1, "Net %s\n",
+             sdc_network->pathName(net));
 
   SteinerTree *tree = new SteinerTree();
   PinSeq &pins = tree->pins();
@@ -101,9 +101,9 @@ makeSteinerTree(const Net *net,
       Point loc = network->location(pin);
       x[i] = loc.x();
       y[i] = loc.y();
-      debugPrint3(debug, "steiner", 3, "%s (%d %d)\n",
-                  sdc_network->pathName(pin),
-                  loc.x(), loc.y());
+      debugPrint(debug, "steiner", 3, "%s (%d %d)\n",
+                 sdc_network->pathName(pin),
+                 loc.x(), loc.y());
       is_placed &= network->isPlaced(pin);
     }
     if (is_placed) {
@@ -387,7 +387,7 @@ SteinerTree::findLeftRights(SteinerPt from,
 {
   if (adj != from && adj != null_pt) {
     if (adj == to)
-      logger->critical(RSZ, 45, "steiner left/right failed");
+      logger->critical(RSZ, 45, "steiner left/right failed.");
     if (left_[to] == null_pt) {
       left_[to] = adj;
       findLeftRights(to, adj, adj1, adj2, adj3, logger);
@@ -462,7 +462,7 @@ SteinerTree::writeSVG(const char *filename,
     fclose(stream);
   }
   else
-    logger->error(RSZ, 44, "could not open {}", filename);
+    logger->error(RSZ, 44, "could not open {}.", filename);
 }
 
 }

@@ -264,26 +264,28 @@ Opendp::findDesignStats()
 void
 Opendp::reportDesignStats() const
 {
-  printf("Design Stats\n");
-  printf("--------------------------------\n");
-  printf("total instances      %8d\n", block_->getInsts().size());
-  printf("multi row instances  %8d\n", multi_row_inst_count_);
-  printf("fixed instances      %8d\n", fixed_inst_count_);
-  printf("nets                 %8d\n", block_->getNets().size());
-  printf("design area          %8.1f u^2\n", dbuAreaToMicrons(design_area_));
-  printf("fixed area           %8.1f u^2\n", dbuAreaToMicrons(fixed_area_));
-  printf("movable area         %8.1f u^2\n", dbuAreaToMicrons(movable_area_));
-  printf("utilization          %8.0f %%\n", design_util_ * 100);
-  printf("utilization padded   %8.0f %%\n", design_padded_util_ * 100);
-  printf("rows                 %8d\n", row_count_);
-  printf("row height           %8.1f u\n", dbuToMicrons(row_height_));
+  logger_->report("Design Stats");
+  logger_->report("--------------------------------");
+  logger_->report("total instances      {:8}", block_->getInsts().size());
+  logger_->report("multi row instances  {:8}", multi_row_inst_count_);
+  logger_->report("fixed instances      {:8}", fixed_inst_count_);
+  logger_->report("nets                 {:8}", block_->getNets().size());
+  logger_->report("design area          {:8.1f} u^2", dbuAreaToMicrons(design_area_));
+  logger_->report("fixed area           {:8.1f} u^2", dbuAreaToMicrons(fixed_area_));
+  logger_->report("movable area         {:8.1f} u^2", dbuAreaToMicrons(movable_area_));
+  int util = round(design_util_ * 100);
+  logger_->report("utilization          {:8} %", util);
+  int padded_util = round(design_padded_util_ * 100);
+  logger_->report("utilization padded   {:8} %", padded_util);
+  logger_->report("rows                 {:8}", row_count_);
+  logger_->report("row height           {:8.1f} u", dbuToMicrons(row_height_));
   if (max_cell_height_ > 1) {
-    printf("max height           %8d rows\n", max_cell_height_);
+    logger_->report("max height           {:8} rows", max_cell_height_);
   }
   if (groups_.size() > 0) {
-    printf("group count          %8lu\n", groups_.size());
+    logger_->report("group count          {:8}", groups_.size());
   }
-  printf("\n");
+  logger_->report("");
 }
 
 void
@@ -292,19 +294,19 @@ Opendp::reportLegalizationStats(int64_t hpwl_before,
                                 int64_t sum_displacement,
                                 int64_t max_displacement) const
 {
-  printf("Placement Analysis\n");
-  printf("--------------------------------\n");
-  printf("total displacement   %8.1f u\n", dbuToMicrons(sum_displacement));
-  printf("average displacement %8.1f u\n", dbuToMicrons(avg_displacement));
-  printf("max displacement     %8.1f u\n", dbuToMicrons(max_displacement));
-  printf("original HPWL        %8.1f u\n", dbuToMicrons(hpwl_before));
+  logger_->report("Placement Analysis");
+  logger_->report("--------------------------------");
+  logger_->report("total displacement   {:8.1f} u", dbuToMicrons(sum_displacement));
+  logger_->report("average displacement {:8.1f} u", dbuToMicrons(avg_displacement));
+  logger_->report("max displacement     {:8.1f} u", dbuToMicrons(max_displacement));
+  logger_->report("original HPWL        {:8.1f} u", dbuToMicrons(hpwl_before));
   double hpwl_legal = hpwl();
-  printf("legalized HPWL       %8.1f u\n", dbuToMicrons(hpwl_legal));
-  double hpwl_delta = (hpwl_before == 0.0)
+  logger_->report("legalized HPWL       {:8.1f} u", dbuToMicrons(hpwl_legal));
+  int hpwl_delta = (hpwl_before == 0.0)
     ? 0.0
-    : (hpwl_legal - hpwl_before) / hpwl_before * 100;
-  printf("delta HPWL           %8.0f %%\n", hpwl_delta);
-  printf("\n");
+    : round((hpwl_legal - hpwl_before) / hpwl_before * 100);
+  logger_->report("delta HPWL           {:8} %", hpwl_delta);
+  logger_->report("");
 }
 
 ////////////////////////////////////////////////////////////////

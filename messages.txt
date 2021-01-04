@@ -1,14 +1,16 @@
-1 "$filename does not exist."
-2 "$filename is not readable."
-3 "$filename does not exist."
-4 "$filename is not readable."
-5 "no technology has been read."
-6 "DEF versions 5.8, 5.6, 5.4, 5.3 supported."
-7 "$filename does not exist."
-8 "$filename is not readable."
-9 "layer or via must be specified."
-10 "Exactly one of layer or via must be specified."
-11 "please load the design before trying to use this command"
-12 "use -capacitance <value> or -resistance <value>."
-13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
-
+UKN 0000 OpenRoad.tcl:244          ill-formed error arguments $args
+ORD 0001 OpenRoad.tcl:51           $filename does not exist.
+ORD 0002 OpenRoad.tcl:54           $filename is not readable.
+ORD 0003 OpenRoad.tcl:74           $filename does not exist.
+ORD 0004 OpenRoad.tcl:77           $filename is not readable.
+ORD 0005 OpenRoad.tcl:80           no technology has been read.
+ORD 0006 OpenRoad.tcl:100          DEF versions 5.8, 5.6, 5.4, 5.3 supported.
+ORD 0007 OpenRoad.tcl:115          $filename does not exist.
+ORD 0008 OpenRoad.tcl:118          $filename is not readable.
+ORD 0009 OpenRoad.tcl:142          layer or via must be specified.
+ORD 0010 OpenRoad.tcl:146          Exactly one of layer or via must be specified.
+ORD 0011 OpenRoad.tcl:160          please load the design before trying to use this command
+ORD 0012 OpenRoad.tcl:169          use -capacitance <value> or -resistance <value>.
+ORD 0013 OpenRoad.tcl:262          command units uninitialized. Use the read_liberty or set_cmd_units command to set units.
+UKN 0014 OpenRoad.tcl:256          ill-formed warn arguments $args
+ORD 0015 OpenRoad.i:360            Unknown tool name {}

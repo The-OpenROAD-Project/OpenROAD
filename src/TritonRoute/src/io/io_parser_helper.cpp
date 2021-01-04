@@ -549,7 +549,7 @@ void io::Parser::writeRefDef() {
   }
 
   if (REF_OUT_FILE != DEF_FILE) {
-    cout << "Writing reference output def...\n";
+    cout << "Writing reference output def (" << REF_OUT_FILE << ")...\n";
     bool hasVia = false;
     ifstream fin(DEF_FILE);
     ofstream fout(REF_OUT_FILE);
@@ -726,7 +726,73 @@ void io::Parser::postProcessGuide() {
     //}
     writeGuideFile();
   }
+}
 
+// instantiate RPin and region query for RPin
+void io::Parser::initRPin() {
+  if (VERBOSE > 0) {
+    cout << endl << "post process initialize RPin region query ..." << endl;
+  }
+  initRPin_rpin();
+  initRPin_rq();
+}
+
+void io::Parser::initRPin_rpin() {
+  for (auto &net: design->getTopBlock()->getNets()) {
+    // instTerm
+    for (auto &instTerm: net->getInstTerms()) {
+      auto inst = instTerm->getInst();
+      int pinIdx = 0;
+      auto trueTerm = instTerm->getTerm();
+      for (auto &pin: trueTerm->getPins()) {
+        auto rpin = make_unique<frRPin>();
+        rpin->setFrTerm(instTerm);
+        rpin->addToNet(net.get());
+        frAccessPoint* prefAp = (instTerm->getAccessPoints())[pinIdx];
+
+        // MACRO does not go through PA
+        if (prefAp == nullptr) {
+          if (inst->getRefBlock()->getMacroClass() == MacroClassEnum::BLOCK ||
+              inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD ||
+              inst->getRefBlock()->getMacroClass() == MacroClassEnum::PAD_POWER ||
+              inst->getRefBlock()->getMacroClass() == MacroClassEnum::RING) {
+            prefAp = (pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints())[0].get();
+          }
+        }
+
+        if (prefAp == nullptr) {
+          cout << "Error: " << instTerm->getInst()->getName() << "/" << trueTerm->getName() 
+               << " from " << net->getName() << " has nullptr as prefAP\n";  
+        }
+
+        rpin->setAccessPoint(prefAp);
+
+        net->addRPin(rpin);
+
+        pinIdx++;
+      }
+    }
+    // term
+    for (auto &term: net->getTerms()) {
+      int pinIdx = 0;
+      auto trueTerm = term;
+      for (auto &pin: trueTerm->getPins()) {
+        auto rpin = make_unique<frRPin>();
+        rpin->setFrTerm(term);
+        rpin->addToNet(net.get());
+        frAccessPoint* prefAp = (pin->getPinAccess(0)->getAccessPoints())[0].get();
+        rpin->setAccessPoint(prefAp);
+
+        net->addRPin(rpin);
+
+        pinIdx++;
+      }
+    }
+  }
+}
+
+void io::Parser::initRPin_rq() {
+  design->getRegionQuery()->initRPin(design->getTech()->getLayers().size());
 }
 
 void io::Parser::buildGCellPatterns_helper(frCoord &GCELLGRIDX, frCoord &GCELLGRIDY,

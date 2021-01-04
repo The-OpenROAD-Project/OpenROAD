@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include <string>
+#include <map>
 
 namespace odb {
   class dbDatabase;
@@ -64,7 +65,9 @@ class PDNSim
     void import_enable_em(int enable_em);
     void import_spice_out_file(std::string out_file);
     void set_power_net(std::string net);
-
+    void set_bump_pitch_x(float bump_pitch);
+    void set_bump_pitch_y(float bump_pitch);
+    void set_pdnsim_net_voltage(std::string net, float voltage);
     int analyze_power_grid();
     void write_pg_spice();
 
@@ -77,9 +80,11 @@ class PDNSim
     std::string _out_file;
     std::string _em_out_file;
     int         _enable_em;
+    int         _bump_pitch_x;
+    int         _bump_pitch_y;
     std::string _spice_out_file;
     std::string _power_net;
-
+    std::map<std::string, float> _net_voltage_map;
 
 };
 }

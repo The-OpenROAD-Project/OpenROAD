@@ -42,90 +42,90 @@
 namespace grt {
 
 // Global variables
-int   XRANGE, YRANGE;
-int   xGrid, yGrid, numGrids, numNets, invalidNets;
-int * vCapacity3D, *hCapacity3D;
+int XRANGE, YRANGE;
+int xGrid, yGrid, numGrids, numNets, invalidNets;
+int *vCapacity3D, *hCapacity3D;
 float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-int   MaxDegree;
-int * MinWidth, *MinSpacing, *ViaSpacing;
-int   xcorner, ycorner, wTile, hTile;
-int   enlarge, costheight, ripup_threshold, ahTH;
+int MaxDegree;
+int *MinWidth, *MinSpacing, *ViaSpacing;
+int xcorner, ycorner, wTile, hTile;
+int enlarge, costheight, ripup_threshold, ahTH;
 int numValidNets;  // # nets need to be routed (having pins in different grids)
 int numLayers;
 int totalNumSeg;    // total # segments
 int totalOverflow;  // total # overflow
 int mazeThreshold;  // the wirelen threshold to do maze routing
-FrNet**                 nets;
-Edge *                h_edges, *v_edges;
+FrNet** nets;
+Edge *h_edges, *v_edges;
 multi_array<float, 2> d1;
 multi_array<float, 2> d2;
-int                   layerOrientation;
-float                 alpha;
-int                   verbose;
-int                   overflowIterations;
-int                   pdRevForHighFanout;
-bool                  allowOverflow;
+int layerOrientation;
+float alpha;
+int verbose;
+int overflowIterations;
+int pdRevForHighFanout;
+bool allowOverflow;
 
 Bool** HV;
 Bool** hyperV;
 Bool** hyperH;
-int**  corrEdge;
-int    SLOPE;
+int** corrEdge;
+int SLOPE;
 
 float LB;
 float UB;
-int   THRESH_M;
+int THRESH_M;
 float LOGIS_COF;
-int   ENLARGE;
-int   STEP;
-int   COSHEIGHT;
-int   STOP;
-int   VCA;
-int   L;
-int   VIA, slope, max_adj;
+int ENLARGE;
+int STEP;
+int COSHEIGHT;
+int STOP;
+int VCA;
+int L;
+int VIA, slope, max_adj;
 
 char benchFile[STRINGLEN];
 
 Segment* seglist;
-int*     seglistIndex;  // the index for the segments for each net
-int*     seglistCnt;    // the number of segements for each net
-Tree*    trees;         // the tree topologies
-StTree*  sttrees;       // the Steiner trees
-DTYPE**  gxs;           // the copy of xs for nets, used for second FLUTE
-DTYPE**  gys;           // the copy of xs for nets, used for second FLUTE
-DTYPE**  gs;  // the copy of vertical sequence for nets, used for second FLUTE
-Edge3D*  h_edges3D;
-Edge3D*  v_edges3D;
+int* seglistIndex;  // the index for the segments for each net
+int* seglistCnt;    // the number of segements for each net
+Tree* trees;        // the tree topologies
+StTree* sttrees;    // the Steiner trees
+DTYPE** gxs;        // the copy of xs for nets, used for second FLUTE
+DTYPE** gys;        // the copy of xs for nets, used for second FLUTE
+DTYPE** gs;  // the copy of vertical sequence for nets, used for second FLUTE
+Edge3D* h_edges3D;
+Edge3D* v_edges3D;
 
 OrderNetPin* treeOrderPV;
-OrderTree*   treeOrderCong;
-int          numTreeedges;
-int          viacost;
+OrderTree* treeOrderCong;
+int numTreeedges;
+int viacost;
 
 int** layerGrid;
 int** gridD;
 int** viaLink;
 
-multi_array<int, 3>   d13D;
+multi_array<int, 3> d13D;
 multi_array<short, 3> d23D;
 
 dirctionT*** directions3D;
-int***       corrEdge3D;
-parent3D***  pr3D;
+int*** corrEdge3D;
+parent3D*** pr3D;
 
-int    mazeedge_Threshold;
+int mazeedge_Threshold;
 Bool** inRegion;
 
-int  gridHV, gridH, gridV;
+int gridHV, gridH, gridV;
 int *gridHs, *gridVs;
 
-int**   heap13D;
+int** heap13D;
 short** heap23D;
 
-float *       h_costTable, *v_costTable;
-Bool          stopDEC, errorPRONE;
+float *h_costTable, *v_costTable;
+Bool stopDEC, errorPRONE;
 OrderNetEdge* netEO;
-int *         xcor, *ycor, *dcor;
+int *xcor, *ycor, *dcor;
 
 StTree* sttreesBK;
 

@@ -33,17 +33,17 @@
 
 #pragma once
 
+#include <fstream>
 #include <unordered_map>
 #include <vector>
-#include <fstream>
 
 #include "edge.h"
 #include "node.h"
 
 namespace PD {
 
-using std::vector;
 using std::ofstream;
+using std::vector;
 
 class Graph
 {
@@ -221,5 +221,4 @@ class Graph
                            std::pair<double, double>& out);
 };
 
-} // namespace
-
+}  // namespace PD

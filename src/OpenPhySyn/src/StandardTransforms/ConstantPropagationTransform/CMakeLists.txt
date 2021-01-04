@@ -1,2 +1,0 @@
-project(ConstantPropagation VERSION 1.0.0 LANGUAGES CXX)
-DEFINETRANSFORM(constant_propagation src/ConstantPropagationTransform.cpp src/ConstantPropagationTransform.hpp ConstantPropagationTransform)

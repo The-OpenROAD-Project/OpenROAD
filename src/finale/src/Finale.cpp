@@ -44,9 +44,10 @@ Finale::Finale() : db_(nullptr), debug_(false)
 {
 }
 
-void Finale::init(odb::dbDatabase* db)
+void Finale::init(odb::dbDatabase* db, Logger *logger)
 {
   db_ = db;
+  logger_ = logger;
 }
 
 void Finale::setDebug()
@@ -56,7 +57,7 @@ void Finale::setDebug()
 
 void Finale::densityFill(const char* rules_filename, const odb::Rect& fill_area)
 {
-  DensityFill filler(db_, debug_);
+  DensityFill filler(db_, logger_, debug_);
   filler.fill(rules_filename, fill_area);
 }
 

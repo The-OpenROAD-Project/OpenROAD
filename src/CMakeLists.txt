@@ -30,7 +30,6 @@ set(FASTROUTE_HOME ${PROJECT_SOURCE_DIR}/src/FastRoute)
 set(TAPCELL_HOME ${OPENROAD_HOME}/src/tapcell)
 set(OPENRCX_HOME ${OPENROAD_HOME}/src/OpenRCX)
 set(MPLACE_HOME ${PROJECT_SOURCE_DIR}/src/TritonMacroPlace)
-set(OPENPHYSYN_HOME ${PROJECT_SOURCE_DIR}/src/OpenPhySyn)
 set(PDNSIM_HOME ${PROJECT_SOURCE_DIR}/src/PDNSim)
 set(PARTITIONMGR_HOME ${PROJECT_SOURCE_DIR}/src/PartitionMgr)
 set(ANTENNACHECKER_HOME ${PROJECT_SOURCE_DIR}/src/antenna_checker)
@@ -53,6 +52,7 @@ set(OPENROAD_TCL_FILES
   ${ICEWALL_HOME}/src/ICeWall.tcl
   ${PDNGEN_HOME}/src/PdnGen.tcl
   ${CDL_HOME}/src/cdl.tcl
+  ${OPENDB_HOME}/src/db/OpenDB.tcl
   )
 
 add_custom_command(OUTPUT ${OPENROAD_TCL_INIT}
@@ -101,7 +101,7 @@ find_package(Boost)
 set(OPENDB_SWIG_FILE ${OPENDB_HOME}/src/swig/tcl/opendbtcl.i)
 
 set_property(SOURCE ${OPENDB_SWIG_FILE}
-  PROPERTY CPLUSPLUS ON
+  PROPERTY CPLUSPLUS ONF
 )
 
 # Ubuntu 18.04 cmake version 3.10.2 does not support the
@@ -242,10 +242,6 @@ add_subdirectory(OpenRCX)
 add_subdirectory(PDNSim)
 add_subdirectory(PartitionMgr)
 add_subdirectory(antenna_checker)
-
-if(BUILD_OPENPHYSYN)
-  add_subdirectory(OpenPhySyn)
-endif()
 add_subdirectory(gui)
 add_subdirectory(TritonRoute)
 
@@ -279,7 +275,6 @@ target_include_directories(openroad
   ${MPLACE_HOME}/include
   ${FASTROUTE_HOME}/include
   ${IOPLACER_HOME}/include
-  ${OPENPHYSYN_HOME}/include
   flute3
   ${PDNGEN_HOME}/include
   ${TAPCELL_HOME}/include
@@ -327,10 +322,6 @@ target_link_libraries(openroad
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
 )
-
-if (BUILD_OPENPHYSYN)
-  target_link_libraries(openroad OpenPhySyn)
-endif()
 
 # tclReadline
 if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)

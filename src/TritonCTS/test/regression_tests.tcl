@@ -1,4 +1,5 @@
 record_tests {
+  check_buffers
   check_lut
   create_lut
   find_clock

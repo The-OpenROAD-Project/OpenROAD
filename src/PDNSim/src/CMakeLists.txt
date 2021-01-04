@@ -1,7 +1,3 @@
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(PDNSIM_WRAP ${CMAKE_CURRENT_BINARY_DIR}/pdnsim_wrap.cpp)
 set(PDNSIM_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/PDNSimTclInitVar.cc)
 
@@ -13,6 +9,7 @@ set (PDNSIM_SRC
   gmat.cpp
   ir_solver.cpp
   get_power.cpp
+  get_voltage.cpp
   pdnsim.cpp
   MakePDNSim.cpp
   ${PDNSIM_WRAP}
