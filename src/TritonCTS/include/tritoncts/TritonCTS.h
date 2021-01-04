@@ -37,6 +37,10 @@
 
 #include <functional>
 
+namespace ord {
+class OpenRoad;
+}
+
 namespace cts {
 
 class CtsOptions;
@@ -49,7 +53,9 @@ class TritonCTS
 {
  public:
   TritonCTS() = default;
+  ~TritonCTS();
 
+  void init(ord::OpenRoad* openroad);
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return _options; }
@@ -60,6 +66,8 @@ class TritonCTS
   void setBufferList(const char* buffers);
 
  private:
+  void makeComponents();
+  void deleteComponents();
   void printHeader() const;
   void setupCharacterization();
   void createCharacterization();
@@ -72,6 +80,7 @@ class TritonCTS
   void writeDataToDb();
   void printFooter() const;
 
+  ord::OpenRoad* _openroad;
   CtsOptions* _options;
   DbWrapper* _dbWrapper;
   TechChar* _techChar;

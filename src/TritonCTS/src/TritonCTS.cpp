@@ -33,9 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TritonCTS.h"
-#include "PostCtsOpt.h"
+#include "tritoncts/TritonCTS.h"
 #include "openroad/Error.hh"
+#include "PostCtsOpt.h"
+#include "CtsOptions.h"
+#include "DbWrapper.h"
+#include "StaEngine.h"
+#include "TechChar.h"
+#include "TreeBuilder.h"
 
 #include <chrono>
 #include <ctime>
@@ -46,6 +51,35 @@ namespace cts {
 
 using ord::error;
 
+void TritonCTS::init(ord::OpenRoad* openroad)
+{
+  _openroad = openroad;
+  makeComponents();
+}
+
+void TritonCTS::makeComponents()
+{
+  _options = new CtsOptions;
+  _techChar = new TechChar(_options);
+  _staEngine = new StaEngine(*_options);
+  _dbWrapper = new DbWrapper(*_options, *this, _openroad->getDb());
+  _builders = new std::vector<TreeBuilder*>;
+}
+
+void TritonCTS::deleteComponents()
+{
+  delete _options;
+  delete _techChar;
+  delete _staEngine;
+  delete _dbWrapper;
+  delete _builders;
+}
+
+TritonCTS::~TritonCTS()
+{
+  deleteComponents();
+}
+
 void TritonCTS::runTritonCts()
 {
   printHeader();
@@ -53,15 +87,20 @@ void TritonCTS::runTritonCts()
   findClockRoots();
   populateTritonCts();
   checkCharacterization();
-  if (_options.getOnlyCharacterization()) {
+  if (_options->getOnlyCharacterization()) {
     return;
   }
   buildClockTrees();
-  if (_options.runPostCtsOpt()) {
+  if (_options->runPostCtsOpt()) {
     runPostCtsOpt();
   }
   writeDataToDb();
   printFooter();
+}
+
+void TritonCTS::addBuilder(TreeBuilder* builder)
+{
+  _builders->push_back(builder);
 }
 
 void TritonCTS::printHeader() const
@@ -73,7 +112,7 @@ void TritonCTS::printHeader() const
 
 void TritonCTS::setupCharacterization()
 {
-  if (_options.runAutoLut()) {
+  if (_options->runAutoLut()) {
     // A new characteriztion is created.
     createCharacterization();
   } else {
@@ -81,10 +120,10 @@ void TritonCTS::setupCharacterization()
     importCharacterization();
   }
   // Also resets metrics everytime the setup is done
-  _options.setNumSinks(0);
-  _options.setNumBuffersInserted(0);
-  _options.setNumClockRoots(0);
-  _options.setNumClockSubnets(0);
+  _options->setNumSinks(0);
+  _options->setNumBuffersInserted(0);
+  _options->setNumClockRoots(0);
+  _options->setNumClockSubnets(0);
 }
 
 void TritonCTS::importCharacterization()
@@ -93,7 +132,7 @@ void TritonCTS::importCharacterization()
   std::cout << " *  Import characterization  *\n";
   std::cout << " *****************************\n";
 
-  _techChar.parse(_options.getLutFile(), _options.getSolListFile());
+  _techChar->parse(_options->getLutFile(), _options->getSolListFile());
 }
 
 void TritonCTS::createCharacterization()
@@ -102,7 +141,7 @@ void TritonCTS::createCharacterization()
   std::cout << " *  Create characterization  *\n";
   std::cout << " *****************************\n";
 
-  _techChar.create();
+  _techChar->create();
 }
 
 void TritonCTS::checkCharacterization()
@@ -112,11 +151,11 @@ void TritonCTS::checkCharacterization()
   std::cout << " ****************************\n";
 
   std::unordered_set<std::string> visitedMasters;
-  _techChar.forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
+  _techChar->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
     for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
       std::string master = wireSeg.getBufferMaster(buf);
       if (visitedMasters.count(master) == 0) {
-        if (_dbWrapper.masterExists(master)) {
+        if (_dbWrapper->masterExists(master)) {
           visitedMasters.insert(master);
         } else {
           error(("Buffer " + master + " is not in the loaded DB.\n").c_str());
@@ -136,14 +175,14 @@ void TritonCTS::findClockRoots()
   std::cout << " *  Find clock roots  *\n";
   std::cout << " **********************\n";
 
-  if (_options.getClockNets() != "") {
+  if (_options->getClockNets() != "") {
     std::cout << " Running TritonCTS with user-specified clock roots: ";
-    std::cout << _options.getClockNets() << "\n";
+    std::cout << _options->getClockNets() << "\n";
     return;
   }
 
   std::cout << " User did not specify clock roots.\n";
-  _staEngine.init();
+  _staEngine->init();
 }
 
 void TritonCTS::populateTritonCts()
@@ -152,9 +191,9 @@ void TritonCTS::populateTritonCts()
   std::cout << " *  Populate TritonCTS  *\n";
   std::cout << " ************************\n";
 
-  _dbWrapper.populateTritonCTS();
+  _dbWrapper->populateTritonCTS();
 
-  if (_builders.size() < 1) {
+  if (_builders->size() < 1) {
     error("No valid clock nets in the design.\n");
   }
 }
@@ -165,15 +204,15 @@ void TritonCTS::buildClockTrees()
   std::cout << " *  Build clock trees  *\n";
   std::cout << " ***********************\n";
 
-  for (TreeBuilder* builder : _builders) {
-    builder->setTechChar(_techChar);
+  for (TreeBuilder* builder : *_builders) {
+    builder->setTechChar(*_techChar);
     builder->run();
   }
 }
 
 void TritonCTS::runPostCtsOpt()
 {
-  if (!_options.runPostCtsOpt()) {
+  if (!_options->runPostCtsOpt()) {
     return;
   }
 
@@ -181,8 +220,8 @@ void TritonCTS::runPostCtsOpt()
   std::cout << " * Post CTS opt *\n";
   std::cout << " ****************\n";
 
-  for (TreeBuilder* builder : _builders) {
-    PostCtsOpt opt(builder->getClock(), _options);
+  for (TreeBuilder* builder : *_builders) {
+    PostCtsOpt opt(builder->getClock(), *_options);
     opt.run();
   }
 }
@@ -193,15 +232,15 @@ void TritonCTS::writeDataToDb()
   std::cout << " * Write data to DB *\n";
   std::cout << " ********************\n";
 
-  for (TreeBuilder* builder : _builders) {
-    _dbWrapper.writeClockNetsToDb(builder->getClock());
+  for (TreeBuilder* builder : *_builders) {
+    _dbWrapper->writeClockNetsToDb(builder->getClock());
   }
 }
 
 void TritonCTS::forEachBuilder(
     const std::function<void(const TreeBuilder*)> func) const
 {
-  for (const TreeBuilder* builder : _builders) {
+  for (const TreeBuilder* builder : *_builders) {
     func(builder);
   }
 }
@@ -213,7 +252,7 @@ void TritonCTS::printFooter() const
 
 void TritonCTS::reportCtsMetrics()
 {
-  std::string filename = _options.getMetricsFile();
+  std::string filename = _options->getMetricsFile();
 
   if (filename != "") {
     std::ofstream file(filename.c_str());
@@ -224,34 +263,34 @@ void TritonCTS::reportCtsMetrics()
     }
 
     file << "[TritonCTS Metrics] Total number of Clock Roots: "
-         << _options.getNumClockRoots() << ".\n";
+         << _options->getNumClockRoots() << ".\n";
     file << "[TritonCTS Metrics] Total number of Buffers Inserted: "
-         << _options.getNumBuffersInserted() << ".\n";
+         << _options->getNumBuffersInserted() << ".\n";
     file << "[TritonCTS Metrics] Total number of Clock Subnets: "
-         << _options.getNumClockSubnets() << ".\n";
+         << _options->getNumClockSubnets() << ".\n";
     file << "[TritonCTS Metrics] Total number of Sinks: "
-         << _options.getNumSinks() << ".\n";
+         << _options->getNumSinks() << ".\n";
 
     file.close();
   } else {
     std::cout << "[TritonCTS Metrics] Total number of Clock Roots: "
-              << _options.getNumClockRoots() << ".\n";
+              << _options->getNumClockRoots() << ".\n";
     std::cout << "[TritonCTS Metrics] Total number of Buffers Inserted: "
-              << _options.getNumBuffersInserted() << ".\n";
+              << _options->getNumBuffersInserted() << ".\n";
     std::cout << "[TritonCTS Metrics] Total number of Clock Subnets: "
-              << _options.getNumClockSubnets() << ".\n";
+              << _options->getNumClockSubnets() << ".\n";
     std::cout << "[TritonCTS Metrics] Total number of Sinks: "
-              << _options.getNumSinks() << ".\n";
+              << _options->getNumSinks() << ".\n";
   }
 }
 
 int TritonCTS::setClockNets(const char* names)
 {
-  odb::dbDatabase* db = odb::dbDatabase::getDatabase(_options.getDbId());
+  odb::dbDatabase* db = _openroad->getDb();
   odb::dbChip* chip = db->getChip();
   odb::dbBlock* block = chip->getBlock();
 
-  _options.setClockNets(names);
+  _options->setClockNets(names);
   std::stringstream ss(names);
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
@@ -282,7 +321,7 @@ int TritonCTS::setClockNets(const char* names)
       return 1;
     }
   }
-  _options.setClockNetsObjs(netObjects);
+  _options->setClockNetsObjs(netObjects);
   return 0;
 }
 
@@ -292,7 +331,7 @@ void TritonCTS::setBufferList(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferVector(begin, end);
-  _options.setBufferList(bufferVector);
+  _options->setBufferList(bufferVector);
 }
 
 }  // namespace cts
