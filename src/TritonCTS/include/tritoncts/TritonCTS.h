@@ -39,12 +39,25 @@
 
 namespace ord {
 class OpenRoad;
-}
+} // namespace ord
+
+namespace odb {
+class dbDatabase;
+class dbBlock;
+class dbInst;
+class dbNet;
+class dbITerm;
+} // namespace odb
+
+namespace sta {
+class dbSta;
+}  // namespace sta
 
 namespace cts {
 
+class Clock;
+class ClockInst;
 class CtsOptions;
-class DbWrapper;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
@@ -80,12 +93,41 @@ class TritonCTS
   void writeDataToDb();
   void printFooter() const;
 
+  // db functions
+  bool masterExists(const std::string& master) const;
+  void populateTritonCTS();
+  void writeClockNetsToDb(Clock& clockNet);
+  void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
+  void clearNumClocks() { _numberOfClocks = 0; }
+  unsigned getNumClocks() const { return _numberOfClocks; }
+  void parseClockNames(std::vector<std::string>& clockNetNames) const;
+  void initDB();
+  void initAllClocks();
+  void initClock(odb::dbNet* net);
+  void disconnectAllSinksFromNet(odb::dbNet* net);
+  void disconnectAllPinsFromNet(odb::dbNet* net);
+  void checkUpstreamConnections(odb::dbNet* net);
+  void createClockBuffers(Clock& clk);
+  void removeNonClockNets();
+  void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
+  std::pair<int, int> branchBufferCount(ClockInst* inst,
+                                        int bufCounter,
+                                        Clock& clockNet);
+  odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
+
   ord::OpenRoad* _openroad;
   CtsOptions* _options;
-  DbWrapper* _dbWrapper;
   TechChar* _techChar;
   StaEngine* _staEngine;
   std::vector<TreeBuilder*>* _builders;
+
+  // db vars
+  sta::dbSta* _openSta = nullptr;
+  odb::dbDatabase* _db = nullptr;
+  odb::dbBlock* _block = nullptr;
+  unsigned _numberOfClocks = 0;
+  unsigned _numClkNets = 0;
+  unsigned _numFixedNets = 0;
 };
 
 }  // namespace cts

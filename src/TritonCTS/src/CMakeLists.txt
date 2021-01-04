@@ -61,7 +61,6 @@ add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
 
 set(SRC_FILES
   Clock.cpp
-  DbWrapper.cpp
   HTreeBuilder.cpp
   MakeTritoncts.cpp
   PostCtsOpt.cpp
