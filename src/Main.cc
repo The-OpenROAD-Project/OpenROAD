@@ -77,6 +77,8 @@ static const char *init_filename = ".openroad";
 static void
 showUsage(const char *prog,
 	  const char *init_filename);
+static void
+showSplash();
 
 int
 main(int argc,
@@ -156,7 +158,7 @@ tclAppInit(int argc,
   ord::initOpenRoad(interp);
 
   if (!findCmdLineFlag(argc, argv, "-no_splash"))
-    Tcl_Eval(interp, "show_openroad_splash");
+    showSplash();
 
   bool exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
@@ -222,3 +224,14 @@ showUsage(const char *prog,
   printf("  cmd_file           source cmd_file\n");
 }
 
+static void
+showSplash()
+{
+  ord::Logger *logger = ord::OpenRoad::openRoad()->getLogger();
+  string sha = OPENROAD_GIT_SHA1;
+  logger->report("OpenROAD {} {}",
+                 OPENROAD_VERSION,
+                 sha.substr(0, 10).c_str());
+  logger->report("This program is licensed under the BSD-3 license. See the LICENSE file for details.");
+  logger->report("Components of this program may be licensed under more restrictive licenses which must be honored.");
+}
