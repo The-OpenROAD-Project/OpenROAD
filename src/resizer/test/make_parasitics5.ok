@@ -1,0 +1,44 @@
+Notice 0: Reading LEF file:  Nangate45/Nangate45.lef
+Notice 0:     Created 22 technology layers
+Notice 0:     Created 27 technology vias
+Notice 0:     Created 134 library cells
+Notice 0: Finished LEF file:  Nangate45/Nangate45.lef
+Notice 0: Reading LEF file:  pad.lef
+Notice 0:     Created 1 library cells
+Notice 0: Finished LEF file:  pad.lef
+Notice 0: 
+Reading DEF file: make_parasitics5.def
+Notice 0: Design: RocketTile
+Notice 0:     Created 2 pins.
+Notice 0:     Created 3 components and 16 component-terminals.
+Notice 0:     Created 2 special nets and 2 connections.
+Notice 0:     Created 4 nets and 6 connections.
+Notice 0: Finished DEF file: make_parasitics5.def
+Net in1
+ Pin capacitance: 2.20
+ Wire capacitance: 0.00
+ Total capacitance: 2.20
+ Number of drivers: 2
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ in1 input port (0, 0)
+ pad1/PAD bidirect (PAD) 2.20 (420, 1000)
+
+Load pins
+ pad1/PAD bidirect (PAD) 2.20 (420, 1000)
+Net out1
+ Pin capacitance: 2.20
+ Wire capacitance: 0.00
+ Total capacitance: 2.20
+ Number of drivers: 1
+ Number of loads: 2
+ Number of pins: 2
+
+Driver pins
+ pad2/PAD bidirect (PAD) 2.20 (15, 1000)
+
+Load pins
+ out1 output port (0, 0)
+ pad2/PAD bidirect (PAD) 2.20 (15, 1000)

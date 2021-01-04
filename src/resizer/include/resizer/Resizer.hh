@@ -423,6 +423,9 @@ protected:
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
   void ensureWireParasitics();
+  bool isPadPin(const Pin *pin) const;
+  bool isPad(const Instance *inst) const;
+
   void repairSetup(PathRef &path,
                    Slack path_slack);
   void splitLoads(PathRef *drvr_path,

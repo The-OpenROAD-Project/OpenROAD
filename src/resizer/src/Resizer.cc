@@ -144,6 +144,8 @@ using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::stringPrint;
 
+using odb::dbMasterType;
+
 extern "C" {
 extern int Resizer_Init(Tcl_Interp *interp);
 }
@@ -1641,11 +1643,7 @@ Resizer::estimateWireParasitics()
 void
 Resizer::estimateWireParasitic(const Net *net)
 {
-  // Do not add parasitics on ports.
-  // When the input drives a pad instance with huge input
-  // cap the elmore delay is gigantic.
-  if (!hasTopLevelPort(net)
-      && !network_->isPower(net)
+  if (!network_->isPower(net)
       && !network_->isGround(net)) {
     SteinerTree *tree = makeSteinerTree(net, false, db_network_, logger_);
     if (tree) {
@@ -1669,6 +1667,12 @@ Resizer::estimateWireParasitic(const Net *net)
         if (n1 != n2) {
           if (wire_length_dbu == 0)
             // Use a small resistor to keep the connectivity intact.
+            parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
+          // When an input port drives a pad instance with huge input
+          // cap the elmore delay is gigantic, so use very small resistance
+          // to connect them.
+          else if ((pin1 && isPadPin(pin1))
+                   || (pin2 && isPadPin(pin2)))
             parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap_);
           else {
             float wire_length = dbuToMeters(wire_length_dbu);
@@ -1697,6 +1701,57 @@ Resizer::estimateWireParasitic(const Net *net)
       delete tree;
     }
   }
+}
+
+bool
+Resizer::isPadPin(const Pin *pin) const
+{
+  Instance *inst = network_->instance(pin);
+  return inst
+    && !network_->isTopInstance(inst)
+    && isPad(inst);
+}
+
+bool
+Resizer::isPad(const Instance *inst) const
+{
+  dbInst *db_inst = db_network_->staToDb(inst);
+  dbMasterType type = db_inst->getMaster()->getType();
+  // Use switch so if new types are added we get a compiler warning.
+  switch (type) {
+  case dbMasterType::CORE:
+  case dbMasterType::CORE_ANTENNACELL:
+  case dbMasterType::CORE_FEEDTHRU:
+  case dbMasterType::CORE_TIEHIGH:
+  case dbMasterType::CORE_TIELOW:
+  case dbMasterType::CORE_WELLTAP:
+  case dbMasterType::ENDCAP:
+  case dbMasterType::ENDCAP_PRE:
+  case dbMasterType::ENDCAP_POST:
+  case dbMasterType::CORE_SPACER:
+  case dbMasterType::BLOCK:
+  case dbMasterType::BLOCK_BLACKBOX:
+  case dbMasterType::BLOCK_SOFT:
+  case dbMasterType::ENDCAP_TOPLEFT:
+  case dbMasterType::ENDCAP_TOPRIGHT:
+  case dbMasterType::ENDCAP_BOTTOMLEFT:
+  case dbMasterType::ENDCAP_BOTTOMRIGHT:
+  case dbMasterType::COVER:
+  case dbMasterType::RING:
+    return false;
+  case dbMasterType::COVER_BUMP:
+  case dbMasterType::PAD:
+  case dbMasterType::PAD_AREAIO:
+  case dbMasterType::PAD_INPUT:
+  case dbMasterType::PAD_OUTPUT:
+  case dbMasterType::PAD_INOUT:
+  case dbMasterType::PAD_POWER:
+  case dbMasterType::PAD_SPACER:
+  case dbMasterType::NONE:
+    return true;
+  }
+  // gcc warniing
+  return false;
 }
 
 ParasiticNode *

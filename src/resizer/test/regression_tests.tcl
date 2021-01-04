@@ -3,6 +3,7 @@ record_tests {
   make_parasitics2
   make_parasitics3
   make_parasitics4
+  make_parasitics5
   buffer_ports1
   buffer_ports3
   buffer_ports4
