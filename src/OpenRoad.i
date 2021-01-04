@@ -149,7 +149,7 @@ getTritonRoute()
   return openroad->getTritonRoute();
 }
 
-pdnsim::PDNSim*
+psm::PDNSim*
 getPDNSim()
 {
   OpenRoad *openroad = getOpenRoad();

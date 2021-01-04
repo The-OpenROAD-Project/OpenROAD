@@ -42,133 +42,153 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include "gmat.h"
 #include "node.h"
+#include "openroad/Logger.h"
 
-using namespace std;
-
-namespace pdnsim {
-
-using namespace std;
+namespace psm {
 
 PDNSim::PDNSim()
-  : _db(nullptr),
-  _sta(nullptr),
-  _vsrc_loc(""),
-  _power_net(""),
-  _out_file(""),
-  _em_out_file(""),
-  _enable_em(0),
-  _spice_out_file(""),
-  _bump_pitch_x(0),
-  _bump_pitch_y(0)
-  //_net_voltage_map(nullptr)
-  { };
+    : _db(nullptr),
+      _sta(nullptr),
+      _vsrc_loc(""),
+      _power_net(""),
+      _out_file(""),
+      _em_out_file(""),
+      _enable_em(0),
+      _spice_out_file(""),
+      _bump_pitch_x(0),
+      _bump_pitch_y(0)
+      //_net_voltage_map(nullptr)
+      {};
 
-PDNSim::~PDNSim() {
-  _db = nullptr;
-  _sta = nullptr; 
-  _vsrc_loc = "";
-  _power_net = "";
-  _out_file = "";
-  _em_out_file = "";
-  _enable_em = 0;
+PDNSim::~PDNSim()
+{
+  _db             = nullptr;
+  _sta            = nullptr;
+  _vsrc_loc       = "";
+  _power_net      = "";
+  _out_file       = "";
+  _em_out_file    = "";
+  _enable_em      = 0;
   _spice_out_file = "";
-  _bump_pitch_x=0;
-  _bump_pitch_y=0;
+  _bump_pitch_x   = 0;
+  _bump_pitch_y   = 0;
   //_net_voltage_map = nullptr;
 }
 
-void PDNSim::setDb(odb::dbDatabase* db){
-  _db = db;
-}
-void PDNSim::setSta(sta::dbSta* sta){
-  _sta = sta;
-}
-
-void PDNSim::set_power_net(std::string net){
-  _power_net= net;
+void PDNSim::init(ord::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
+{
+  _db     = db;
+  _sta    = sta;
+  _logger = logger;
 }
 
-void PDNSim::set_bump_pitch_x(float bump_pitch){
-  _bump_pitch_x= bump_pitch;
+void PDNSim::set_power_net(std::string net)
+{
+  _power_net = net;
 }
 
-void PDNSim::set_bump_pitch_y(float bump_pitch){
-  _bump_pitch_y= bump_pitch;
+void PDNSim::set_bump_pitch_x(float bump_pitch)
+{
+  _bump_pitch_x = bump_pitch;
 }
 
-void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage){
- _net_voltage_map.insert(std::pair<std::string, float> (net, voltage));
+void PDNSim::set_bump_pitch_y(float bump_pitch)
+{
+  _bump_pitch_y = bump_pitch;
 }
 
+void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage)
+{
+  _net_voltage_map.insert(std::pair<std::string, float>(net, voltage));
+}
 
 void PDNSim::import_vsrc_cfg(std::string vsrc)
 {
   _vsrc_loc = vsrc;
-  cout << "INFO: Reading Voltage source file " << _vsrc_loc << endl;
+  _logger->info(ord::PSM, 1, "Reading voltage source file: {}.", _vsrc_loc);
 }
 
 void PDNSim::import_out_file(std::string out_file)
 {
   _out_file = out_file;
-  cout << "INFO: Output voltage file specified " << _out_file << endl;
+  _logger->info(
+      ord::PSM, 2, "Output voltage file is specified as: {}.", _out_file);
 }
 
 void PDNSim::import_em_out_file(std::string em_out_file)
 {
   _em_out_file = em_out_file;
-  cout << "INFO: Output current file specified " << _em_out_file << endl;
+  _logger->info(ord::PSM, 3, "Output current file specified {}.", _em_out_file);
 }
 void PDNSim::import_enable_em(int enable_em)
 {
   _enable_em = enable_em;
-  if(_enable_em == 1){
-    cout << "INFO: EM calculation enabled"<< endl;
+  if (_enable_em == 1) {
+    _logger->info(ord::PSM, 4, "EM calculation is enabled.");
   }
 }
-
-
 
 void PDNSim::import_spice_out_file(std::string out_file)
 {
   _spice_out_file = out_file;
-  cout << "INFO: Output spice file specified " << _spice_out_file << endl;
+  _logger->info(
+      ord::PSM, 5, "Output spice file is specified as: {}.", _spice_out_file);
 }
 
-void PDNSim::write_pg_spice() {
-  IRSolver* irsolve_h = new IRSolver( 
-                _db, _sta, _vsrc_loc, _power_net, _out_file,
-                _em_out_file, _spice_out_file, _enable_em, 
-                 _bump_pitch_x, _bump_pitch_y, _net_voltage_map);
- 
-  if(!irsolve_h->Build()){
-  	delete irsolve_h;
+void PDNSim::write_pg_spice()
+{
+  IRSolver* irsolve_h = new IRSolver(_db,
+                                     _sta,
+                                     _logger,
+                                     _vsrc_loc,
+                                     _power_net,
+                                     _out_file,
+                                     _em_out_file,
+                                     _spice_out_file,
+                                     _enable_em,
+                                     _bump_pitch_x,
+                                     _bump_pitch_y,
+                                     _net_voltage_map);
+
+  if (!irsolve_h->Build()) {
+    delete irsolve_h;
   } else {
     int check_spice = irsolve_h->PrintSpice();
-    if(check_spice){
-    	cout << "Spice file written: "<<_spice_out_file <<endl;
-    }
-    else {
-      cout << "Spice file not written"<< endl;
+    if (check_spice) {
+      _logger->info(
+          ord::PSM, 6, "Spice file is written at: {}.", _spice_out_file);
+    } else {
+      _logger->error(
+          ord::PSM, 7, "Falied to write out spice file: {}.", _spice_out_file);
     }
   }
 }
 
-int PDNSim::analyze_power_grid(){
+int PDNSim::analyze_power_grid()
+{
   GMat*     gmat_obj;
-  IRSolver* irsolve_h = new IRSolver( 
-                  _db, _sta, _vsrc_loc,_power_net, _out_file,
-                  _em_out_file, _spice_out_file,_enable_em,
-                 _bump_pitch_x, _bump_pitch_y, _net_voltage_map);
-  
-  if(!irsolve_h->Build()){
-  	delete irsolve_h;
-  	return 0;
+  IRSolver* irsolve_h = new IRSolver(_db,
+                                     _sta,
+                                     _logger,
+                                     _vsrc_loc,
+                                     _power_net,
+                                     _out_file,
+                                     _em_out_file,
+                                     _spice_out_file,
+                                     _enable_em,
+                                     _bump_pitch_x,
+                                     _bump_pitch_y,
+                                     _net_voltage_map);
+
+  if (!irsolve_h->Build()) {
+    delete irsolve_h;
+    return 0;
   }
   gmat_obj = irsolve_h->GetGMat();
   irsolve_h->SolveIR();
   std::vector<Node*> nodes       = gmat_obj->GetAllNodes();
   int                unit_micron = (_db->getTech())->getDbUnitsPerMicron();
-  int      vsize;
+  int                vsize;
   vsize = nodes.size();
   for (int n = 0; n < vsize; n++) {
     Node* node = nodes[n];
@@ -176,43 +196,46 @@ int PDNSim::analyze_power_grid(){
       continue;
     NodeLoc loc = node->GetLoc();
   }
-  cout << "\n" << endl;
-  cout << "######################################" << endl;
-  cout << "Worstcase Voltage: " << std::setprecision(6) << irsolve_h->wc_voltage << endl;
-  cout << "Average IR drop  : " << std::setprecision(5) << abs(irsolve_h->supply_voltage_src - irsolve_h->avg_voltage)
-       << endl;
-  cout << "Worstcase IR drop: " << std::setprecision(5) << abs(irsolve_h->supply_voltage_src - irsolve_h->wc_voltage)
-       << endl;
-  cout << "######################################" << endl;
-  if(_enable_em == 1) {
-    cout << "\n" << endl;
-    cout << "######################################" << endl;
-    cout << "EM Analysis  " << endl;
-    cout << "Maximum current: " << std::setprecision(5) << irsolve_h->max_cur << endl;
-    cout << "Average current: " << std::setprecision(5) << irsolve_h->avg_cur << endl;
-    cout << "Number of resistors: " << std::setprecision(0) << irsolve_h->num_res << endl;
-    cout << "######################################" << endl;
+  _logger->report("########## IR report #################");
+  _logger->report("Worstcase voltage: {:3.2e} V", irsolve_h->wc_voltage);
+  _logger->report("Average IR drop  : {:3.2e} V",
+                  abs(irsolve_h->supply_voltage_src - irsolve_h->avg_voltage));
+  _logger->report("Worstcase IR drop: {:3.2e} V",
+                  abs(irsolve_h->supply_voltage_src - irsolve_h->wc_voltage));
+  _logger->report("######################################");
+  if (_enable_em == 1) {
+    _logger->report("########## EM analysis ###############");
+    _logger->report("Maximum current: {:3.2e} A", irsolve_h->max_cur);
+    _logger->report("Average current: {:3.2e} A", irsolve_h->avg_cur);
+    _logger->report("Number of resistors: {}", irsolve_h->num_res);
+    _logger->report("######################################");
   }
 
   delete irsolve_h;
   return 1;
 }
 
-int PDNSim::check_connectivity() {
-  IRSolver* irsolve_h = new IRSolver( 
-                _db, _sta, _vsrc_loc, _power_net, _out_file,
-                _em_out_file, _spice_out_file, _enable_em,
-                 _bump_pitch_x, _bump_pitch_y, _net_voltage_map);
-  if(!irsolve_h->BuildConnection()){
-  	delete irsolve_h;
-  	return 0;
+int PDNSim::check_connectivity()
+{
+  IRSolver* irsolve_h = new IRSolver(_db,
+                                     _sta,
+                                     _logger,
+                                     _vsrc_loc,
+                                     _power_net,
+                                     _out_file,
+                                     _em_out_file,
+                                     _spice_out_file,
+                                     _enable_em,
+                                     _bump_pitch_x,
+                                     _bump_pitch_y,
+                                     _net_voltage_map);
+  if (!irsolve_h->BuildConnection()) {
+    delete irsolve_h;
+    return 0;
   }
   int val = irsolve_h->GetConnectionTest();
   delete irsolve_h;
   return val;
 }
 
-}
-
-
-
+}  // namespace psm
