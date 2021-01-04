@@ -80,6 +80,7 @@ include_directories(${TRITONCTS_HOME}/src
                     ${OPENROAD_HOME}/include
                     ${DBSTA_HOME}/include
                     ${OPENSTA_HOME}/include
+                    ${RESIZER_HOME}/include
 		    ${TCL_INCLUDE_PATH}
                     ${LEMON_INCLUDE_DIRS}
                    ) 
