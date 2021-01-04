@@ -50,6 +50,9 @@ namespace fr {
       void readGuide();
       void postProcess();
       void postProcessGuide();
+      void initDefaultVias();
+      void writeRefDef();
+      void initRPin();
       std::map<frBlock*, std::map<frOrient, std::map<std::vector<frCoord>, std::set<frInst*, frBlockObjectComp> > >, frBlockObjectComp> &getTrackOffsetMap() {
         return trackOffsetMap;
       }
@@ -114,13 +117,11 @@ namespace fr {
       void buildGCellPatterns_helper(frCoord &GCELLGRIDX, frCoord &GCELLGRIDY, frCoord &GCELLOFFSETX, frCoord &GCELLOFFSETY);
       void buildGCellPatterns_getWidth(frCoord &GCELLGRIDX, frCoord &GCELLGRIDY);
       void buildGCellPatterns_getOffset(frCoord GCELLGRIDX, frCoord GCELLGRIDY, frCoord &GCELLOFFSETX, frCoord &GCELLOFFSETY);
-      void initDefaultVias();
       void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple &priority);
       void initDefaultVias_N16(const std::string &in);
       void initDefaultVias_GF14(const std::string &in);
       void initCutLayerWidth();
       void initConstraintLayerIdx();
-      void writeRefDef();
 
       // instance analysis
       void instAnalysis();
@@ -152,6 +153,10 @@ namespace fr {
                            std::map<std::pair<frPoint, frLayerNum>, std::set<int> > &nodeMap, int &gCnt, int &nCnt, bool forceFeedThrough, bool retry);
       void genGuides_final(frNet *net, std::vector<frRect> &rects, std::vector<bool> &adjVisited, std::vector<int> &adjPrevIdx, int gCnt, int nCnt,
                            std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
+
+      // temp init functions
+      void initRPin_rpin();
+      void initRPin_rq();
 
       // write guide
       void writeGuideFile();

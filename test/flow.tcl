@@ -14,7 +14,7 @@ remove_buffers
 
 ################################################################
 # IO Placement
-io_placer -random -hor_layer $io_placer_hor_layer -ver_layer $io_placer_ver_layer
+place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
 
 ################################################################
 # Macro Placement
@@ -85,7 +85,7 @@ clock_tree_synthesis -root_buf $cts_buffer -buf_list $cts_buffer
 # CTS leaves a long wire from the pad to the clock tree root.
 repair_clock_nets -max_wire_length $max_wire_length
 
-# CTS and detailed placement move instances so update parastic estimates.
+# CTS and detailed placement move instances, so update parastic estimates.
 estimate_parasitics -placement
 set_propagated_clock [all_clocks]
 repair_timing

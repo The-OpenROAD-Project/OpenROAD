@@ -34,13 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "HungarianMatching.h"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 namespace ppl {
 
-using ord::warn;
-
-HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots)
+HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots, Logger *logger)
     : _netlist(section.net), _slots(slots)
 {
   _numIOPins = _netlist.numIOPins();
@@ -49,6 +47,7 @@ HungarianMatching::HungarianMatching(Section_t& section, slotVector_t& slots)
   _numSlots = _endSlot - _beginSlot;
   _nonBlockedSlots = section.numSlots;
   _edge = section.edge;
+  _logger = logger;
 }
 
 void HungarianMatching::findAssignment(std::vector<Constraint>& constraints)
@@ -97,10 +96,11 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment)
         continue;
       }
       if (_hungarianMatrix[row][col] == hungarian_fail) {
-        warn("I/O pin %s cannot be placed in the specified region. Not enough space",
+        _logger->warn(ord::PPL, 33, "I/O pin {} cannot be placed in the specified region. Not enough space",
              ioPin.getName().c_str());
       }
       ioPin.setPos(_slots[slotIndex].pos);
+      ioPin.setLayer(_slots[slotIndex].layer);
       assigment.push_back(ioPin);
       Point sPos = _slots[slotIndex].pos;
       for (int i = 0; i < _slots.size(); i++) {

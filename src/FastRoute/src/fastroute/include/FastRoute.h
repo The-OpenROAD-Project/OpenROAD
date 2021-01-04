@@ -49,7 +49,7 @@ class FastRouteCore
  public:
   FastRouteCore();
   ~FastRouteCore();
-  
+
   void deleteComponents();
   void clear();
   void setGridsAndLayers(int x, int y, int nLayers);
@@ -64,10 +64,10 @@ class FastRouteCore
   void setLayerOrientation(int x);
   void addPin(int netID, int x, int y, int layer);
   int addNet(odb::dbNet* db_net,
-              int   nPins,
-              int validPins,
-              float alpha,
-              bool isClock);
+             int nPins,
+             int validPins,
+             float alpha,
+             bool isClock);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(long x1,
@@ -111,8 +111,8 @@ class FastRouteCore
   void setOverflowIterations(int iterations);
   void setPDRevForHighFanout(int pdRevHihgFanout);
   void setAllowOverflow(bool allow);
-  
-private:
+
+ private:
   NetRouteMap getRoutes();
   int maxNetDegree;
 };

@@ -445,10 +445,11 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm) {
   int uy = INT_MIN;
 
   for(dbBPin* bPin : bTerm->getBPins()) {
-    lx = std::min(bPin->getBox()->xMin(), lx);
-    ly = std::min(bPin->getBox()->yMin(), ly);
-    ux = std::max(bPin->getBox()->xMax(), ux);
-    uy = std::max(bPin->getBox()->yMax(), uy);
+    Rect bbox = bPin->getBBox();
+    lx = std::min(bbox.xMin(), lx);
+    ly = std::min(bbox.yMin(), ly);
+    ux = std::max(bbox.xMax(), ux);
+    uy = std::max(bbox.yMax(), uy);
   }
 
   if( lx == INT_MAX || ly == INT_MAX ||
@@ -551,10 +552,11 @@ void Net::updateBox() {
   }
   for(dbBTerm* bTerm : net_->getBTerms()) {
     for(dbBPin* bPin : bTerm->getBPins()) {
-      lx_ = std::min(bPin->getBox()->xMin(), lx_);
-      ly_ = std::min(bPin->getBox()->yMin(), ly_);
-      ux_ = std::max(bPin->getBox()->xMax(), ux_);
-      uy_ = std::max(bPin->getBox()->yMax(), uy_);
+      Rect bbox = bPin->getBBox();
+      lx_ = std::min(bbox.xMin(), lx_);
+      ly_ = std::min(bbox.yMin(), ly_);
+      ux_ = std::max(bbox.xMax(), ux_);
+      uy_ = std::max(bbox.yMax(), uy_);
     }
   }
 }

@@ -51,6 +51,7 @@ namespace rsz {
 using std::array;
 using std::string;
 
+using ord::OpenRoad;
 using ord::Logger;
 
 using odb::Rect;
@@ -119,7 +120,8 @@ class Resizer : public StaState
 {
 public:
   Resizer();
-  void init(Tcl_Interp *interp,
+  void init(OpenRoad *openroad,
+            Tcl_Interp *interp,
             Logger *logger,
             dbDatabase *db,
             dbSta *sta);
@@ -170,11 +172,14 @@ public:
 
   Slew targetSlew(const RiseFall *tr);
   float targetLoadCap(LibertyCell *cell);
-  void repairHold(bool allow_setup_violations);
+  void repairHold(float slack_margin,
+                  bool allow_setup_violations);
   void repairHold(Pin *end_pin,
                   LibertyCell *buffer_cell,
+                  float slack_margin,
                   bool allow_setup_violations);
-  void repairSetup();
+  void repairSetup(float slack_margin);
+  // For testing.
   void repairSetup(Pin *drvr_pin);
   // Area of the design in meter^2.
   double designArea();
@@ -375,12 +380,15 @@ protected:
   LibertyCell *findHoldBuffer();
   void repairHold(VertexSet *ends,
                   LibertyCell *buffer_cell,
+                  float slack_margin,
                   bool allow_setup_violations);
   int repairHoldPass(VertexSet &ends,
                      LibertyCell *buffer_cell,
                      float buffer_delay,
+                     float slack_margin,
                      bool allow_setup_violations);
   void findHoldViolations(VertexSet *ends,
+                          float slack_margin,
                           // Return values.
                           Slack &worst_slack,
                           VertexSet &hold_violations);
@@ -463,6 +471,7 @@ protected:
   LibertyCellSet dont_use_;
   double max_area_;
 
+  OpenRoad *openroad_;
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;

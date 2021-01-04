@@ -4,10 +4,6 @@ project(TritonRoute
   LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 include(CheckIPOSupported)
@@ -33,6 +29,15 @@ find_package(Threads REQUIRED)
 find_package(VTune)
 
 set (FLEXROUTE_SRC
+  ${FLEXROUTE_HOME}/src/gr/FlexGRCMap.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGR.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGR_end.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGRGridGraph.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGRGridGraph_maze.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGR_init.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGR_maze.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGR_rq.cpp
+  ${FLEXROUTE_HOME}/src/gr/FlexGR_topo.cpp
   ${FLEXROUTE_HOME}/src/dr/FlexDR_conn.cpp
   ${FLEXROUTE_HOME}/src/dr/FlexDR_init.cpp
   ${FLEXROUTE_HOME}/src/dr/FlexDR.cpp
@@ -66,6 +71,8 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/db/obj/frInst.cpp
   ${FLEXROUTE_HOME}/src/db/obj/frVia.cpp
   ${FLEXROUTE_HOME}/src/db/obj/frAccess.cpp
+  ${FLEXROUTE_HOME}/src/db/obj/frRPin.cpp
+  ${FLEXROUTE_HOME}/src/db/obj/frNode.cpp
   ${FLEXROUTE_HOME}/src/frRegionQuery.cpp
   ${FLEXROUTE_HOME}/src/io/io_pin.cpp
   ${FLEXROUTE_HOME}/src/io/io.cpp
@@ -84,6 +91,10 @@ set (FLEXROUTE_SRC
 
 
 set (FLEXROUTE_HEADER
+  ${FLEXROUTE_HOME}/src/gr/FlexGR.h
+  ${FLEXROUTE_HOME}/src/gr/FlexGRCMap.h
+  ${FLEXROUTE_HOME}/src/gr/FlexGRGridGraph.h
+  ${FLEXROUTE_HOME}/src/gr/FlexGRWavefront.h
   ${FLEXROUTE_HOME}/src/gc/FlexGC.h
   ${FLEXROUTE_HOME}/src/dr/FlexWavefront.h
   ${FLEXROUTE_HOME}/src/dr/FlexGridGraph.h
@@ -99,6 +110,15 @@ set (FLEXROUTE_HEADER
   ${FLEXROUTE_HOME}/src/db/infra/frPrefRoutingDir.h
   ${FLEXROUTE_HOME}/src/db/infra/frBox.h
   ${FLEXROUTE_HOME}/src/db/infra/frSegStyle.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grAccessPattern.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grBlockObject.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grFig.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grNet.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grNode.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grPin.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grRef.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grShape.h
+  ${FLEXROUTE_HOME}/src/db/grObj/grVia.h
   ${FLEXROUTE_HOME}/src/db/taObj/taPin.h
   ${FLEXROUTE_HOME}/src/db/taObj/taTrack.h
   ${FLEXROUTE_HOME}/src/db/taObj/taVia.h
@@ -124,7 +144,6 @@ set (FLEXROUTE_HEADER
   ${FLEXROUTE_HOME}/src/db/obj/frBoundary.h
   ${FLEXROUTE_HOME}/src/db/obj/frBlockage.h
   ${FLEXROUTE_HOME}/src/db/obj/frRef.h
-  ${FLEXROUTE_HOME}/src/db/obj/frCMap.h
   ${FLEXROUTE_HOME}/src/db/obj/frAccess.h
   ${FLEXROUTE_HOME}/src/db/obj/frInstTerm.h
   ${FLEXROUTE_HOME}/src/db/obj/frVia.h
@@ -135,6 +154,8 @@ set (FLEXROUTE_HEADER
   ${FLEXROUTE_HOME}/src/db/obj/frNet.h
   ${FLEXROUTE_HOME}/src/db/obj/frShape.h
   ${FLEXROUTE_HOME}/src/db/obj/frInstBlockage.h
+  ${FLEXROUTE_HOME}/src/db/obj/frRPin.h
+  ${FLEXROUTE_HOME}/src/db/obj/frNode.h
   ${FLEXROUTE_HOME}/src/db/drObj/drRef.h
   ${FLEXROUTE_HOME}/src/db/drObj/drPin.h
   ${FLEXROUTE_HOME}/src/db/drObj/drAccessPattern.h
@@ -218,6 +239,7 @@ target_link_libraries( TritonRouteLib
   def
   lef
   gui
+  flute
 
   Threads::Threads
   OpenMP::OpenMP_CXX

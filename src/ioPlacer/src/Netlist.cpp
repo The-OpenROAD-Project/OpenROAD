@@ -204,4 +204,11 @@ bool Netlist::checkInterval(Constraint constraint, Edge edge, int pos) {
           pos <= constraint.interval.getEnd());
 }
 
+void Netlist::clear()
+{
+  _instPins.clear();
+  _netPointer.clear();
+  _ioPins.clear();
+}
+
 }  // namespace ppl

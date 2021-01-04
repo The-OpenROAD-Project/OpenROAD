@@ -29,8 +29,6 @@
 #ifndef _FLEX_GRID_GRAPH_H
 #define _FLEX_GRID_GRAPH_H
 
-#define GRIDGRAPHDRCCOSTSIZE 8
-
 #include "frBaseTypes.h"
 #include "FlexMazeTypes.h"
 #include "frDesign.h"
@@ -272,21 +270,6 @@ namespace fr {
         auto idx = getIdx(x, y, z);
         sol += nodes_[idx].markerCostVia;
       }
-      // new
-      //correct(x, y, z, dir);
-      //if (isValid(x, y, z)) {
-      //  auto idx = getIdx(x, y, z);
-      //  switch (dir) {
-      //    case frDirEnum::E:
-      //      sol += getBits(idx, 56, GRIDGRAPHDRCCOSTSIZE);
-      //    case frDirEnum::N:
-      //      sol += getBits(idx, 48, GRIDGRAPHDRCCOSTSIZE);
-      //    case frDirEnum::U:
-      //      sol += getBits(idx, 40, GRIDGRAPHDRCCOSTSIZE);
-      //    default:
-      //      ;
-      //  }
-      //}
       return (sol);
     }
     // unsafe access
@@ -434,20 +417,20 @@ namespace fr {
       }
     }
     void addDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
-      auto idx = getIdx(x, y, z);
-      nodes_[idx].drcCostPlanar++;
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.drcCostPlanar = addToByte(node.drcCostPlanar, 1);
     }
     void addDRCCostVia(frMIdx x, frMIdx y, frMIdx z) {
-      auto idx = getIdx(x, y, z);
-      nodes_[idx].drcCostVia++;
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.drcCostVia = addToByte(node.drcCostVia, 1);
     }
     void subDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
-      auto idx = getIdx(x, y, z);
-      nodes_[idx].drcCostPlanar--;
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.drcCostPlanar = subFromByte(node.drcCostPlanar, 1);
     }
     void subDRCCostVia(frMIdx x, frMIdx y, frMIdx z) {
-      auto idx = getIdx(x, y, z);
-      nodes_[idx].drcCostVia--;
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.drcCostVia = subFromByte(node.drcCostVia, 1);
     }
     void resetDRCCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       auto idx = getIdx(x, y, z);
@@ -458,12 +441,12 @@ namespace fr {
       nodes_[idx].drcCostVia = 0;
     }
     void addMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
-      auto idx = getIdx(x, y, z);
-      nodes_[idx].markerCostPlanar += 10;
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.markerCostPlanar = addToByte(node.markerCostPlanar, 10);
     }
     void addMarkerCostVia(frMIdx x, frMIdx y, frMIdx z) {
-      auto idx = getIdx(x, y, z);
-      nodes_[idx].markerCostVia += 10;
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.markerCostVia = addToByte(node.markerCostVia, 10);
     }
     void addMarkerCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) {
       correct(x, y, z, dir);
@@ -472,10 +455,10 @@ namespace fr {
         switch (dir) {
           case frDirEnum::E:
           case frDirEnum::N:
-            node.markerCostPlanar += 10;
+            node.markerCostPlanar = addToByte(node.markerCostPlanar, 10);
             break;
           case frDirEnum::U:
-            node.markerCostVia += 10;
+            node.markerCostVia = addToByte(node.markerCostVia, 10);
             break;
           default:
             ;
@@ -547,26 +530,26 @@ namespace fr {
     }
     void addShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
-        nodes_[idx].shapeCostPlanar++;
+        auto& node = nodes_[getIdx(x, y, z)];
+        node.shapeCostPlanar = addToByte(node.shapeCostPlanar, 1);
       }
     }
     void addShapeCostVia(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
-        nodes_[idx].shapeCostVia++;
+        auto& node = nodes_[getIdx(x, y, z)];
+        node.shapeCostVia = addToByte(node.shapeCostVia, 1);
       }
     }
     void subShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
-        nodes_[idx].shapeCostPlanar--;
+        auto& node = nodes_[getIdx(x, y, z)];
+        node.shapeCostPlanar = subFromByte(node.shapeCostPlanar, 1);
       }
     }
     void subShapeCostVia(frMIdx x, frMIdx y, frMIdx z) {
       if (isValid(x, y, z)) {
-        auto idx = getIdx(x, y, z);
-        nodes_[idx].shapeCostVia--;
+        auto& node = nodes_[getIdx(x, y, z)];
+        node.shapeCostVia = subFromByte(node.shapeCostVia, 1);
       }
     }
 
@@ -863,6 +846,16 @@ namespace fr {
       return (getZDir(zIdx)) ? (xIdx + yIdx * xCoords_.size() + zIdx * xCoords_.size() * yCoords_.size()): 
                                (yIdx + xIdx * yCoords_.size() + zIdx * xCoords_.size() * yCoords_.size());
     }
+
+    frUInt4 addToByte(frUInt4 augend, frUInt4 summand) {
+      constexpr frUInt4 limit = (1u << 8) - 1;
+      return std::min(augend + summand, limit);
+    }
+
+    frUInt4 subFromByte(frUInt4 minuend, frUInt4 subtrahend) {
+      return std::max(minuend - subtrahend, 0u);
+    }
+
     // internal utility
     void correct(frMIdx &x, frMIdx &y, frMIdx &z, frDirEnum &dir) const {
       switch (dir) {

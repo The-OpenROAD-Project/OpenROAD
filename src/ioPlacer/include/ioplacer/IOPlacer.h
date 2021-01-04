@@ -44,6 +44,7 @@
 
 namespace ord {
 class OpenRoad;
+class Logger;
 }
 
 namespace odb {
@@ -56,6 +57,8 @@ namespace ppl {
 
 using odb::Point;
 using odb::Rect;
+
+using ord::Logger;
 
 enum class RandomMode
 {
@@ -105,7 +108,8 @@ class IOPlacer
   IOPlacer() = default;
   ~IOPlacer();
   void init(ord::OpenRoad* openroad);
-  void run(int horLayer, int verLayer, bool randomMode);
+  void clear();
+  void run(bool randomMode);
   void printConfig();
   Parameters* getParameters() { return _parms; }
   int returnIONetsHPWL();
@@ -114,6 +118,8 @@ class IOPlacer
                                int begin, int end);
   void addNameConstraint(std::string name, Edge edge, 
                                int begin, int end);
+  void addHorLayer(int layer) { _horLayers.insert(layer); }
+  void addVerLayer(int layer) { _verLayers.insert(layer); }
   Edge getEdge(std::string edge);
   Direction getDirection(std::string direction);
 
@@ -130,17 +136,17 @@ class IOPlacer
   float _usageIncreaseFactor;
 
   bool _forcePinSpread;
-  std::string _blockagesFile;
   std::vector<Interval> _excludedIntervals;
   std::vector<Constraint> _constraints;
 
  private:
   void makeComponents();
   void deleteComponents();
-  void initNetlistAndCore(int horLayerIdx, int verLayerIdx);
+  void initNetlistAndCore(std::set<int> horLayerIdx, std::set<int> verLayerIdx);
   void initIOLists();
   void initParms();
   void randomPlacement(const RandomMode);
+  void findSlots(const std::set<int>& layers, Edge edge);
   void defineSlots();
   void createSections();
   void setupSections();
@@ -152,14 +158,14 @@ class IOPlacer
   bool checkBlocked(Edge edge, int pos);
 
   // db functions
-  void populateIOPlacer(int horLayerIdx, int verLayerIdx);
-  void commitIOPlacementToDB(std::vector<IOPin>& assignment, int horLayerIdx,
-                             int verLayerIdx);
-  void initCore(int horLayerIdx, int verLayerIdx);
+  void populateIOPlacer(std::set<int> horLayerIdx, std::set<int> verLayerIdx);
+  void commitIOPlacementToDB(std::vector<IOPin>& assignment);
+  void initCore(std::set<int> horLayerIdxs, std::set<int> verLayerIdxs);
   void initNetlist();
   void initTracks();
 
   ord::OpenRoad* _openroad;
+  Logger *_logger;
   Parameters* _parms;
   Netlist _netlistIOPins;
   slotVector_t _slots;
@@ -167,6 +173,8 @@ class IOPlacer
   std::vector<IOPin> _zeroSinkIOs;
   RandomMode _randomMode = RandomMode::Full;
   bool _cellsPlaced = true;
+  std::set<int> _horLayers;
+  std::set<int> _verLayers;
   // db variables
   odb::dbDatabase* _db;
   odb::dbTech* _tech;

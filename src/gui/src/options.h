@@ -37,7 +37,7 @@
 namespace odb {
 class dbTechLayer;
 class dbNet;
-}
+}  // namespace odb
 
 namespace gui {
 
@@ -48,6 +48,7 @@ class Options
  public:
   virtual ~Options() {}
   virtual QColor color(const odb::dbTechLayer* layer) = 0;
+  virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
   virtual bool isNetVisible(odb::dbNet* net) = 0;
