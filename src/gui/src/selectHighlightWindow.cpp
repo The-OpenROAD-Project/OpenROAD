@@ -141,12 +141,12 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
   ui->selTableView->setModel(selFilterProxy);
   ui->hltTableView->setModel(hltFilterProxy);
 
-  connect(ui->clearAllSelBtn, &QPushButton::clicked, this, [this]() {
-    emit clearAllSelections();
-  });
-  connect(ui->clearAllHltBtn, &QPushButton::clicked, this, [this]() {
-    emit clearAllHighlights();
-  });
+  // connect(ui->clearAllSelBtn, &QPushButton::clicked, this, [this]() {
+  //  emit clearAllSelections();
+  //});
+  // connect(ui->clearAllHltBtn, &QPushButton::clicked, this, [this]() {
+  //  emit clearAllHighlights();
+  //});
   connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
     this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
   });
@@ -168,11 +168,15 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
       QHeaderView::Stretch);
 
   QAction* removeSelItemAct = selectContextMenu_->addAction("De-Select");
+  QAction* removeAllSelItems = selectContextMenu_->addAction("Clear All");
   QAction* highlightSelItemAct = selectContextMenu_->addAction("Highlight");
   selectContextMenu_->addSeparator();
   QAction* showSelItemAct = selectContextMenu_->addAction("Zoom In Layout");
 
   connect(removeSelItemAct, SIGNAL(triggered()), this, SLOT(deselectItems()));
+  connect(removeAllSelItems, &QAction::triggered, this, [this]() {
+    emit clearAllSelections();
+  });
   connect(highlightSelItemAct,
           SIGNAL(triggered()),
           this,
@@ -181,11 +185,15 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
       showSelItemAct, SIGNAL(triggered()), this, SLOT(zoomInSelectedItems()));
 
   QAction* removeHltItemAct = highlightContextMenu_->addAction("De-Highlight");
+  QAction* removeAllHltItems = highlightContextMenu_->addAction("Clear All");
   highlightContextMenu_->addSeparator();
   QAction* showHltItemAct = highlightContextMenu_->addAction("Zoom In Layout");
 
   connect(
-      removeHltItemAct, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
+      removeAllHltItems, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
+  connect(removeAllSelItems, &QAction::triggered, this, [this]() {
+    emit clearAllHighlights();
+  });
   connect(showHltItemAct,
           SIGNAL(triggered()),
           this,
@@ -231,11 +239,11 @@ void SelectHighlightWindow::deselectItems()
 void SelectHighlightWindow::highlightSelectedItems()
 {
   auto selIndices = ui->selTableView->selectionModel()->selectedRows();
-  QList<const Selected*> deselItems;
+  QList<const Selected*> selItems;
   for (auto& selItem : selIndices) {
-    deselItems << selModel_.getItemAt(selItem.row());
+    selItems << selModel_.getItemAt(selItem.row());
   }
-  emit highlightSelectedItems(deselItems);
+  emit highlightSelectedItemsSig(selItems);
 }
 
 void SelectHighlightWindow::zoomInSelectedItems()

@@ -120,6 +120,10 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(clearHighlightedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
+  connect(selHltWin_,
+          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
+          this,
+          SLOT(updateHighlightedSet(const QList<const Selected*>&)));
 
   // Restore the settings (if none this is a no-op)
   QSettings settings("OpenRoad Project", "openroad");
@@ -223,6 +227,14 @@ void MainWindow::setSelected(const Selected& selection)
 void MainWindow::addHighlighted(const SelectionSet& highlights)
 {
   highlighted_.insert(highlights.begin(), highlights.end());
+  emit highlightChanged();
+}
+
+void MainWindow::updateHighlightedSet(const QList<const Selected*>& items)
+{
+  for (auto item : items) {
+    highlighted_.insert(*item);
+  }
   emit highlightChanged();
 }
 

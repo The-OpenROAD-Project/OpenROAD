@@ -110,6 +110,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Add the selections to highlight set
   void addHighlighted(const SelectionSet& selection);
 
+  // Add the selections(List) to highlight set
+  void updateHighlightedSet(const QList<const Selected*>& itemsToHighlight);
+
   // Higlight set will be cleared with this explicit call
   void clearHighlighted();
 
