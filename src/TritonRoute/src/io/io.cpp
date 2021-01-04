@@ -574,6 +574,13 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
       auto term = parser->tmpBlock->name2term_[net->pin(i)]; // frTerm*
       term->addToNet(netIn);
       netIn->addTerm(term);
+      // graph enablement
+      auto termNode = make_unique<frNode>();
+      termNode->setPin(term);
+      termNode->setType(frNodeTypeEnum::frcPin);
+      netIn->addNode(termNode);
+
+
     } else {
       // Instances
       if (!strcmp(net->instance(i), "*")) {
@@ -584,6 +591,12 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
             if (name == frString(net->pin(i))) {
               instTerm->addToNet(netIn);
               netIn->addInstTerm(instTerm);
+              // graph enablement
+              auto instTermNode = make_unique<frNode>();
+              instTermNode->setPin(instTerm);
+              instTermNode->setType(frNodeTypeEnum::frcPin);
+              netIn->addNode(instTermNode);
+
               break;
             }
           }
@@ -604,6 +617,12 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
             flag = true;
             instTerm->addToNet(netIn);
             netIn->addInstTerm(instTerm);
+            // graph enablement
+            auto instTermNode = make_unique<frNode>();
+            instTermNode->setPin(instTerm);
+            instTermNode->setType(frNodeTypeEnum::frcPin);
+            netIn->addNode(instTermNode);
+            
             break;
           }
         }
@@ -926,6 +945,29 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
     }
   }
 
+  frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+  if (term->hasDirection()) {
+    string str(term->direction());
+    if (str == "INPUT") {
+      termDirection = frTermDirectionEnum::INPUT;
+    } else if (str == "OUTPUT") {
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "OUTPUT TRISTATE") {
+      // TODO: make tristate another property
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "INOUT") {
+      termDirection = frTermDirectionEnum::INOUT;
+    } else if (str == "FEEDTHRU") {
+      termDirection = frTermDirectionEnum::FEEDTHRU;
+    } else {
+      cout << "Error: unsupported term direction " << str << " in lef" << endl;
+      exit(1);
+    }
+  }
+  if (termDirection == frTermDirectionEnum::UNKNOWN) {
+    cout << "Warning: DEF " << term->pinName() << " has no direction\n";
+  }
+
   io::Parser* parser = (io::Parser*) data;
   if (term->hasPort()) {
     cout <<"Error: multiple pin ports existing in DEF" <<endl;
@@ -937,6 +979,7 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
     termIn->setId(parser->numTerms);
     parser->numTerms++;
     termIn->setType(termType);
+    termIn->setDirection(termDirection);
     // term should add pin
     // pin
     auto pinIn  = make_unique<frPin>();
@@ -4215,6 +4258,31 @@ int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lef
     }
   }
   term->setType(termType);
+
+  frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+  if (pin->hasDirection()) {
+    string str(pin->direction());
+    if (str == "INPUT") {
+      termDirection = frTermDirectionEnum::INPUT;
+    } else if (str == "OUTPUT") {
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "OUTPUT TRISTATE") {
+      // TODO: add separate flag for TRISTATE
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "INOUT") {
+      termDirection = frTermDirectionEnum::INOUT;
+    } else if (str == "FEEDTHRU") {
+      termDirection = frTermDirectionEnum::FEEDTHRU;
+    } else {
+      cout << "Error: unsupported term direction " << str << " in lef" << endl;
+      exit(1);
+    }
+  }
+  if (termDirection == frTermDirectionEnum::UNKNOWN) {
+    cout << "Warning: LEF " << ((io::Parser*)data)->tmpBlock->getName() << "/" <<pin->name() << " has no direction, setting to INPUT...\n";
+    termDirection = frTermDirectionEnum::INPUT;
+  }
+  term->setDirection(termDirection);
 
   int numPorts = pin->numPorts();
   int numItems = 0;
