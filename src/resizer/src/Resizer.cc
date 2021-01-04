@@ -1382,7 +1382,9 @@ Resizer::repairSetup(PathRef &path,
     for (int i = start_index; i < path_length; i++) {
       PathRef *path = expanded.path(i);
       Vertex *path_vertex = path->vertex(sta_);
-      if (path_vertex->isDriver(network_)) {
+      const Pin *path_pin = path->pin(sta_);
+      if (network_->isDriver(path_pin)
+          && !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
         Delay load_delay = path->arrival(sta_) - prev_path->arrival(sta_)
                    // Remove intrinsic delay to find load dependent delay.
