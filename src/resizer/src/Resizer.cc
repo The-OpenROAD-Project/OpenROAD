@@ -2858,10 +2858,10 @@ Resizer::gateDelay(LibertyPort *drvr_port,
 double
 Resizer::findMaxWireLength()
 {
-  double max_length = -INF;
+  double max_length = INF;
   for (LibertyCell *buffer_cell : buffer_cells_) {
     double buffer_length = findMaxWireLength(buffer_cell);
-    max_length = max(max_length, buffer_length);
+    max_length = min(max_length, buffer_length);
   }
   return max_length;
 }

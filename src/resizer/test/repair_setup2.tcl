@@ -6,4 +6,7 @@ read_sdc repair_setup2.sdc
 set_wire_rc -signal -layer metal3
 set_wire_rc -clock  -layer metal5
 estimate_parasitics -placement
+report_worst_slack
+repair_design
 repair_timing -setup
+report_worst_slack

@@ -30,6 +30,7 @@ record_tests {
   repair_hold7
   repair_hold8
   repair_setup1
+  repair_setup2
   repair_slew1
   repair_slew2
   repair_slew3
