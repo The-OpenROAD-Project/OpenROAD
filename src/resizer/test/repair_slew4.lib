@@ -1,4 +1,4 @@
-library (NangateOpenCellLibrary) {
+library (repair_slew4) {
 
   /* Documentation Attributes */
   date                    		: "Thu 10 Feb 2011, 18:11:20";

@@ -55,14 +55,14 @@ typedef int DTYPE;
 typedef struct
 {
   DTYPE x, y;
-  int   n;
+  int n;
 } Branch;
 
 typedef struct
 {
-  int     deg;
-  int     totalDeg;
-  DTYPE   length;
+  int deg;
+  int totalDeg;
+  DTYPE length;
   Branch* branch;
 } Tree;
 
@@ -72,37 +72,36 @@ typedef struct
   Bool HVH;     // TRUE = HVH or FALSE = VHV (only for Z route)
   Bool maze;    // Whether this segment is routed by maze
 
-  short  x1, y1, x2, y2;  // coordinates of two endpoints
-  int    netID;           // the netID of the net this segment belonging to
-  short  Zpoint;    // The coordinates of Z point (x for HVH and y for VHV)
-  short* route;     // array of H and V Edges to implement this Segment
-  int    numEdges;  // number of H and V Edges to implement this Segment
-} Segment;          // A Segment is a 2-pin connection
+  short x1, y1, x2, y2;  // coordinates of two endpoints
+  int netID;             // the netID of the net this segment belonging to
+  short Zpoint;          // The coordinates of Z point (x for HVH and y for VHV)
+  short* route;          // array of H and V Edges to implement this Segment
+  int numEdges;          // number of H and V Edges to implement this Segment
+} Segment;               // A Segment is a 2-pin connection
 
 typedef struct
 {
   odb::dbNet* db_net;
-  short numPins;    // number of pins in the net
+  short numPins;  // number of pins in the net
   short deg;  // net degree (number of MazePoints connecting by the net, pins in
               // same MazePoints count only 1)
-  std::vector<short> pinX;   // array of X coordinates of pins
-  std::vector<short> pinY;   // array of Y coordinates of pins
-  std::vector<short> pinL;   // array of L coordinates of pins
-  float  alpha;  // alpha for pdrev when routing clock nets
-  bool isClock;  // flag that indicates if net is a clock net
-} FrNet;           // A Net is a set of connected MazePoints
+  std::vector<short> pinX;  // array of X coordinates of pins
+  std::vector<short> pinY;  // array of Y coordinates of pins
+  std::vector<short> pinL;  // array of L coordinates of pins
+  float alpha;              // alpha for pdrev when routing clock nets
+  bool isClock;             // flag that indicates if net is a clock net
+} FrNet;                    // A Net is a set of connected MazePoints
 
-const char *
-netName(FrNet* net);
+const char* netName(FrNet* net);
 
 typedef struct
 {
-  short          congCNT;
+  short congCNT;
   unsigned short cap;    // the capacity of the edge
   unsigned short usage;  // the usage of the edge
   unsigned short red;
-  short          last_usage;
-  float          est_usage;  // the estimated usage of the edge
+  short last_usage;
+  float est_usage;  // the estimated usage of the edge
 } Edge;  // An Edge is the routing track holder between two adjacent MazePoints
 
 typedef struct
@@ -124,10 +123,10 @@ typedef struct
   short x, y;     // position in the grid graph
   short nbr[3];   // three neighbors
   short edge[3];  // three adjacent edges
-  int   hID;
-  int   lID;
-  int   eID[6];
-  int   stackAlias;
+  int hID;
+  int lID;
+  int eID[6];
+  int stackAlias;
 } TreeNode;
 
 #define NOROUTE 0
@@ -152,10 +151,10 @@ typedef struct
   short*
       gridsY;  // valid for MAZEROUTE, a list of grids (n=routelen+1) the route
                // passes, (x1, y1) is the first one, but (x2, y2) is the lastone
-  short* gridsL;    // n
-  int    routelen;  // valid for MAZEROUTE, the number of edges in the route
-                    // Edge3D *edge;       // list of 3D edges the route go
-                    // through;
+  short* gridsL;  // n
+  int routelen;   // valid for MAZEROUTE, the number of edges in the route
+                  // Edge3D *edge;       // list of 3D edges the route go
+                  // through;
 
 } Route;
 
@@ -163,24 +162,24 @@ typedef struct
 {
   Bool assigned;
 
-  int   len;  // the Manhanttan Distance for two end nodes
-  int   n1, n1a;
-  int   n2, n2a;
+  int len;  // the Manhanttan Distance for two end nodes
+  int n1, n1a;
+  int n2, n2a;
   Route route;
 
 } TreeEdge;
 
 typedef struct
 {
-  int       deg;
+  int deg;
   TreeNode* nodes;  // the nodes (pin and Steiner nodes) in the tree
   TreeEdge* edges;  // the tree edges
 } StTree;
 
 typedef struct
 {
-  int   treeIndex;
-  int   minX;
+  int treeIndex;
+  int minX;
   float npv;  // net length over pin
 } OrderNetPin;
 
@@ -194,7 +193,7 @@ typedef struct
 typedef struct
 {
   short l;
-  int   x, y;
+  int x, y;
 } parent3D;
 
 typedef struct

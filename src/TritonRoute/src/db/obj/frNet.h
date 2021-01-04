@@ -34,6 +34,10 @@
 #include "db/obj/frGuide.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/obj/frNode.h"
+#include "db/obj/frRPin.h"
+#include "db/grObj/grShape.h"
+#include "db/grObj/grVia.h"
 
 namespace fr {
   class frInstTerm;
@@ -42,7 +46,7 @@ namespace fr {
   class frNet: public frBlockObject {
   public:
     // constructors
-    frNet(const frString &in): frBlockObject(), name_(in), instTerms_(), terms_(), shapes_(), vias_(), pwires_(), guides_(), type_(frNetEnum::frcNormalNet), modified_(false), isFakeNet_(false) {}
+    frNet(const frString &in): frBlockObject(), name_(in), instTerms_(), terms_(), shapes_(), vias_(), pwires_(), grShapes_(), grVias_(), nodes_(), root_(nullptr), rootGCellNode_(nullptr), firstNonRPinNode_(nullptr), rpins_(), guides_(), type_(frNetEnum::frcNormalNet), modified_(false), isFakeNet_(false) {}
     // getters
     const frString& getName() const {
       return name_;
@@ -61,6 +65,42 @@ namespace fr {
     }
     const std::list<std::unique_ptr<frShape> >& getPatchWires() const {
       return pwires_;
+    }
+    std::list<std::unique_ptr<grShape> >& getGRShapes() {
+      return grShapes_;
+    }
+    const std::list<std::unique_ptr<grShape> >& getGRShapes() const {
+      return grShapes_;
+    }
+    std::list<std::unique_ptr<grVia> >& getGRVias() {
+      return grVias_;
+    }
+    const std::list<std::unique_ptr<grVia> >& getGRVias() const {
+      return grVias_;
+    }
+    std::list<std::unique_ptr<frNode> >& getNodes() {
+      return nodes_;
+    }
+    const std::list<std::unique_ptr<frNode> >& getNodes() const {
+      return nodes_;
+    }
+    frNode* getRoot() {
+      return root_;
+    }
+    frNode* getRootGCellNode() {
+      return rootGCellNode_;
+    }
+    frNode* getFirstNonRPinNode() {
+      return firstNonRPinNode_;
+    }
+    std::vector<std::unique_ptr<frRPin> >& getRPins() {
+      return rpins_;
+    }
+    const std::vector<std::unique_ptr<frRPin> >& getRPins() const {
+      return rpins_;
+    }
+    std::vector<std::unique_ptr<frGuide> >& getGuides() {
+      return guides_;
     }
     const std::vector<std::unique_ptr<frGuide> >& getGuides() const {
       return guides_;
@@ -100,6 +140,42 @@ namespace fr {
       pwires_.push_back(std::move(in));
       rptr->setIter(--pwires_.end());
     }
+    void addGRShape(std::unique_ptr<grShape> &in) {
+      in->addToNet(this);
+      auto rptr = in.get();
+      grShapes_.push_back(std::move(in));
+      rptr->setIter(--grShapes_.end());
+    }
+    void addGRVia(std::unique_ptr<grVia> &in) {
+      in->addToNet(this);
+      auto rptr = in.get();
+      grVias_.push_back(std::move(in));
+      rptr->setIter(--grVias_.end());
+    }
+    void addNode(std::unique_ptr<frNode> &in) {
+      in->addToNet(this);
+      auto rptr = in.get();
+      if (nodes_.empty()) {
+        rptr->setId(0);
+      } else {
+        rptr->setId(nodes_.back()->getId() + 1);
+      }
+      nodes_.push_back(std::move(in));
+      rptr->setIter(--nodes_.end());
+    }
+    void setRoot(frNode* in) {
+      root_ = in;
+    }
+    void setRootGCellNode(frNode* in) {
+      rootGCellNode_ = in;
+    }
+    void setFirstNonRPinNode(frNode* in) {
+      firstNonRPinNode_ = in;
+    }
+    void addRPin(std::unique_ptr<frRPin> &in) {
+      in->addToNet(this);
+      rpins_.push_back(std::move(in));      
+    }
     void addGuide(std::unique_ptr<frGuide> in) {
       auto rptr = in.get();
       rptr->addToNet(this);
@@ -116,6 +192,21 @@ namespace fr {
     }
     void removePatchWire(frShape* in) {
       pwires_.erase(in->getIter());
+    }
+    void removeGRShape(grShape* in) {
+      grShapes_.erase(in->getIter());
+    }
+    void clearGRShapes() {
+      grShapes_.clear();
+    }
+    void removeGRVia(grVia *in) {
+      grVias_.erase(in->getIter());
+    }
+    void clearGRVias() {
+      grVias_.clear();
+    }
+    void removeNode(frNode* in) {
+      nodes_.erase(in->getIter());
     }
     void setModified(bool in) {
       modified_ = in;
@@ -137,9 +228,20 @@ namespace fr {
     frString                                  name_;
     std::vector<frInstTerm*>                  instTerms_;
     std::vector<frTerm*>                      terms_;     // terms is IO
+    // dr
     std::list<std::unique_ptr<frShape> >      shapes_;
     std::list<std::unique_ptr<frVia> >        vias_;
     std::list<std::unique_ptr<frShape> >      pwires_;
+    // gr
+    std::list<std::unique_ptr<grShape> >      grShapes_;
+    std::list<std::unique_ptr<grVia> >        grVias_;
+    //
+    std::list<std::unique_ptr<frNode> >       nodes_; // the nodes at the beginning of the list correspond to rpins
+                                                     // there is no guarantee that first element is root
+    frNode*                                   root_;
+    frNode*                                   rootGCellNode_;
+    frNode*                                   firstNonRPinNode_;
+    std::vector<std::unique_ptr<frRPin> >     rpins_;
     std::vector<std::unique_ptr<frGuide> >    guides_;
     frNetEnum                                 type_;
     bool                                      modified_;

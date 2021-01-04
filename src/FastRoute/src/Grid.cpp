@@ -39,34 +39,40 @@
 
 namespace grt {
 
-void Grid::init(const long lowerLeftX, const long lowerLeftY,
-            const long upperRightX, const long upperRightY,
-            const long tileWidth, const long tileHeight,
-            const int xGrids, const int yGrids,
-            const bool perfectRegularX, const bool perfectRegularY,
-            const int numLayers, const std::vector<int>& spacings,
-            const std::vector<int>& minWidths,
-            const std::vector<int>& horizontalCapacities,
-            const std::vector<int>& verticalCapacities,
-            const std::map<int, std::vector<odb::Rect>>& obstacles)
-  {
-    _lowerLeftX = lowerLeftX;
-    _lowerLeftY = lowerLeftY;
-    _upperRightX = upperRightX;
-    _upperRightY = upperRightY;
-    _tileWidth = tileWidth;
-    _tileHeight = tileHeight;
-    _xGrids = xGrids;
-    _yGrids = yGrids;
-    _perfectRegularX = perfectRegularX;
-    _perfectRegularY = perfectRegularY;
-    _numLayers = numLayers;
-    _spacings = spacings;
-    _minWidths = minWidths;
-    _horizontalEdgesCapacities = horizontalCapacities;
-    _verticalEdgesCapacities = verticalCapacities;
-    _obstacles = obstacles;
-  }
+void Grid::init(const long lowerLeftX,
+                const long lowerLeftY,
+                const long upperRightX,
+                const long upperRightY,
+                const long tileWidth,
+                const long tileHeight,
+                const int xGrids,
+                const int yGrids,
+                const bool perfectRegularX,
+                const bool perfectRegularY,
+                const int numLayers,
+                const std::vector<int>& spacings,
+                const std::vector<int>& minWidths,
+                const std::vector<int>& horizontalCapacities,
+                const std::vector<int>& verticalCapacities,
+                const std::map<int, std::vector<odb::Rect>>& obstacles)
+{
+  _lowerLeftX = lowerLeftX;
+  _lowerLeftY = lowerLeftY;
+  _upperRightX = upperRightX;
+  _upperRightY = upperRightY;
+  _tileWidth = tileWidth;
+  _tileHeight = tileHeight;
+  _xGrids = xGrids;
+  _yGrids = yGrids;
+  _perfectRegularX = perfectRegularX;
+  _perfectRegularY = perfectRegularY;
+  _numLayers = numLayers;
+  _spacings = spacings;
+  _minWidths = minWidths;
+  _horizontalEdgesCapacities = horizontalCapacities;
+  _verticalEdgesCapacities = verticalCapacities;
+  _obstacles = obstacles;
+}
 
 void Grid::clear()
 {
@@ -98,9 +104,10 @@ odb::Point Grid::getPositionOnGrid(const odb::Point& position)
   return odb::Point(centerX, centerY);
 }
 
-std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(const odb::Rect& obstacle,
-                                                        odb::Rect& firstTileBds,
-                                                        odb::Rect& lastTileBds)
+std::pair<Grid::TILE, Grid::TILE> Grid::getBlockedTiles(
+    const odb::Rect& obstacle,
+    odb::Rect& firstTileBds,
+    odb::Rect& lastTileBds)
 {
   std::pair<TILE, TILE> tiles;
   TILE firstTile;
@@ -155,40 +162,23 @@ int Grid::computeTileReduce(const odb::Rect& obs,
 {
   int reduce = -1;
   if (direction == RoutingLayer::VERTICAL) {
-    if (obs.xMin() >= tile.xMin()
-        && obs.xMax() <= tile.xMax()) {
-      reduce = ceil(
-          std::abs(obs.xMax() - obs.xMin())
-          / trackSpace);
+    if (obs.xMin() >= tile.xMin() && obs.xMax() <= tile.xMax()) {
+      reduce = ceil(std::abs(obs.xMax() - obs.xMin()) / trackSpace);
     } else if (first) {
-      reduce = ceil(
-          std::abs(tile.xMax() - obs.xMin())
-          / trackSpace);
+      reduce = ceil(std::abs(tile.xMax() - obs.xMin()) / trackSpace);
     } else {
-      reduce = ceil(
-          std::abs(obs.xMax() - tile.xMin())
-          / trackSpace);
+      reduce = ceil(std::abs(obs.xMax() - tile.xMin()) / trackSpace);
     }
   } else {
-    if (obs.yMin() >= tile.yMin()
-        && obs.yMax() <= tile.yMax()) {
-      reduce = ceil(
-          std::abs(obs.yMax() - obs.yMin())
-          / trackSpace);
+    if (obs.yMin() >= tile.yMin() && obs.yMax() <= tile.yMax()) {
+      reduce = ceil(std::abs(obs.yMax() - obs.yMin()) / trackSpace);
     } else if (first) {
-      reduce = ceil(
-          std::abs(tile.yMax() - obs.yMin())
-          / trackSpace);
+      reduce = ceil(std::abs(tile.yMax() - obs.yMin()) / trackSpace);
     } else {
-      reduce = ceil(
-          std::abs(obs.yMax() - tile.yMin())
-          / trackSpace);
+      reduce = ceil(std::abs(obs.yMax() - tile.yMin()) / trackSpace);
     }
   }
 
-  if (reduce < 0) {
-    std::cout << "[WARNING] Invalid reduction\n";
-  }
   return reduce;
 }
 
@@ -200,10 +190,7 @@ odb::Point Grid::getMiddle()
 
 odb::Rect Grid::getGridArea() const
 {
-  return odb::Rect(_lowerLeftX,
-              _lowerLeftY,
-              _upperRightX,
-              _upperRightY);
+  return odb::Rect(_lowerLeftX, _lowerLeftY, _upperRightX, _upperRightY);
 }
 
 }  // namespace grt

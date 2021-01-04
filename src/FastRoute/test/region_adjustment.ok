@@ -10,19 +10,19 @@ Notice 0:     Created 4 pins.
 Notice 0:     Created 7 components and 35 component-terminals.
 Notice 0:     Created 10 nets and 18 connections.
 Notice 0: Finished DEF file: region_adjustment.def
-[PARAMS] Min routing layer: 1
-[PARAMS] Max routing layer: 10
-[PARAMS] Global adjustment: 0
-[PARAMS] Unidirectional routing: 0
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 95
-[INFO] #DB Macros: 0
-[INFO] Found 0 clock nets
-[INFO] Minimum degree: 2
-[INFO] Maximum degree: 3
-[INFO] Processing 177 obstacles on layer 1
-Adjusting region on layer 2...
+Min routing layer: 1
+Max routing layer: 10
+Global adjustment: 0.0
+Unidirectional routing: false
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 95
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0017] Found 0 clock nets
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 3
+[INFO GRT-0018] Processing 177 obstacles on layer 1
+Adjusting region on layer 2
 
 Final usage/overflow report: 
 
@@ -38,6 +38,6 @@ Final usage/overflow report:
 [INFO] Final usage          : 46
 [INFO] Final number of vias : 44
 [INFO] Final usage 3D       : 178
-[INFO] Total wirelength: 165 um
-[INFO] Num routed nets: 10
+[INFO GRT-0018] Total wirelength: 165 um
+[INFO GRT-0014] Num routed nets: 10
 No differences found.

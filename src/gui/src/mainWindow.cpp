@@ -228,4 +228,9 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   emit designLoaded(block);
 }
 
+void MainWindow::setLogger(ord::Logger* logger)
+{
+  script_->setLogger(logger);
+}
+
 }  // namespace gui

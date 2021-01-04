@@ -47,28 +47,28 @@ namespace grt {
 using boost::multi_array;
 
 // global variables
-extern int   XRANGE, YRANGE;
-extern int   xGrid, yGrid, numGrids, numNets, invalidNets, vCapacity, hCapacity;
-extern int * vCapacity3D, *hCapacity3D;
+extern int XRANGE, YRANGE;
+extern int xGrid, yGrid, numGrids, numNets, invalidNets, vCapacity, hCapacity;
+extern int *vCapacity3D, *hCapacity3D;
 extern float vCapacity_lb, hCapacity_lb, vCapacity_ub, hCapacity_ub;
-extern int   layerOrientation;
+extern int layerOrientation;
 extern float alpha;
-extern int   verbose;
-extern int   overflowIterations;
-extern int   pdRevForHighFanout;
-extern bool  allowOverflow;
+extern int verbose;
+extern int overflowIterations;
+extern int pdRevForHighFanout;
+extern bool allowOverflow;
 
-extern int  enlarge, costheight, ripup_threshold;
-extern int  MaxDegree;
+extern int enlarge, costheight, ripup_threshold;
+extern int MaxDegree;
 extern int *MinWidth, *MinSpacing, *ViaSpacing;
-extern int  xcorner, ycorner, wTile, hTile, ahTH;
+extern int xcorner, ycorner, wTile, hTile, ahTH;
 
 extern int
-             numValidNets;  // # nets need to be routed (having pins in different grids)
-extern int   numLayers;
-extern int   totalNumSeg;    // total # segments
-extern int   totalOverflow;  // total # overflow
-extern int   mazeThreshold;  // the wirelen threshold to do maze routing
+    numValidNets;  // # nets need to be routed (having pins in different grids)
+extern int numLayers;
+extern int totalNumSeg;    // total # segments
+extern int totalOverflow;  // total # overflow
+extern int mazeThreshold;  // the wirelen threshold to do maze routing
 extern FrNet** nets;
 extern Edge *h_edges, *v_edges;
 
@@ -78,28 +78,28 @@ extern multi_array<float, 2> d2;
 extern Bool** HV;
 extern Bool** hyperV;
 extern Bool** hyperH;
-extern int**  corrEdge;
-extern int    SLOPE;
+extern int** corrEdge;
+extern int SLOPE;
 
 // coefficient
 extern float LB;
 extern float UB;
-extern int   THRESH_M;
+extern int THRESH_M;
 extern float LOGIS_COF;
-extern int   ENLARGE;
-extern int   STEP;
-extern int   COSHEIGHT;
-extern int   STOP;
-extern int   L;
-extern int   VCA;
-extern int   VIA, slope, max_adj;
-extern char  benchFile[STRINGLEN];
+extern int ENLARGE;
+extern int STEP;
+extern int COSHEIGHT;
+extern int STOP;
+extern int L;
+extern int VCA;
+extern int VIA, slope, max_adj;
+extern char benchFile[STRINGLEN];
 
 extern Segment* seglist;
-extern int*     seglistIndex;  // the index for the segments for each net
-extern int*     seglistCnt;    // the number of segements for each net
+extern int* seglistIndex;  // the index for the segments for each net
+extern int* seglistCnt;    // the number of segements for each net
 
-extern Tree*   trees;    // the tree topologies
+extern Tree* trees;      // the tree topologies
 extern StTree* sttrees;  // the Steiner trees
 extern DTYPE** gxs;      // the copy of xs for nets, used for second FLUTE
 extern DTYPE** gys;      // the copy of xs for nets, used for second FLUTE
@@ -107,9 +107,9 @@ extern DTYPE**
     gs;  // the copy of vertical sequence for nets, used for second FLUTE
 
 extern OrderNetPin* treeOrderPV;
-extern OrderTree*   treeOrderCong;
-extern int          numTreeedges;
-extern int          viacost;
+extern OrderTree* treeOrderCong;
+extern int numTreeedges;
+extern int viacost;
 
 extern Edge3D* h_edges3D;
 extern Edge3D* v_edges3D;
@@ -118,25 +118,25 @@ extern int** layerGrid;
 extern int** gridD;
 extern int** viaLink;
 
-extern multi_array<int, 3>   d13D;
+extern multi_array<int, 3> d13D;
 extern multi_array<short, 3> d23D;
 
 extern dirctionT*** directions3D;
-extern int***       corrEdge3D;
-extern parent3D***  pr3D;
+extern int*** corrEdge3D;
+extern parent3D*** pr3D;
 
-extern int    mazeedge_Threshold;
+extern int mazeedge_Threshold;
 extern Bool** inRegion;
 
-extern int  gridHV, gridH, gridV;
+extern int gridHV, gridH, gridV;
 extern int *gridHs, *gridVs;
 
-extern int**   heap13D;
+extern int** heap13D;
 extern short** heap23D;
 
 extern float *h_costTable, *v_costTable;
 
-extern Bool          stopDEC, errorPRONE;
+extern Bool stopDEC, errorPRONE;
 extern OrderNetEdge* netEO;
 
 extern int *xcor, *ycor, *dcor;
@@ -146,7 +146,7 @@ extern StTree* sttreesBK;
 extern short **parentX1, **parentY1, **parentX3, **parentY3;
 
 extern float **heap2, **heap1;
-extern Bool*   pop_heap2;
+extern Bool* pop_heap2;
 
 extern void init_usage();
 extern void readFile(char benchFile[]);
