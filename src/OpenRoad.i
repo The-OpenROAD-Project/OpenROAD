@@ -170,7 +170,7 @@ getIOPlacer()
   return openroad->getIOPlacer();
 }
 
-partition::PartitionMgr*
+par::PartitionMgr*
 getPartitionMgr()
 {
   OpenRoad *openroad = getOpenRoad();

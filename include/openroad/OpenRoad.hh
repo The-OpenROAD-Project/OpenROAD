@@ -112,7 +112,7 @@ class AntennaChecker;
 }
 
 
-namespace partition {
+namespace par {
 class PartitionMgr;
 }
 
@@ -152,7 +152,7 @@ public:
   replace::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
-  partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
+  par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
@@ -227,7 +227,7 @@ private:
   ant::AntennaChecker *antenna_checker_;
   replace::Replace *replace_;
   psm::PDNSim *pdnsim_; 
-  partition::PartitionMgr *partitionMgr_; 
+  par::PartitionMgr *partitionMgr_;
 
   std::set<Observer *> observers_;
 
