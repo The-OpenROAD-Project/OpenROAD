@@ -36,7 +36,7 @@
 #include "extSpef.h"
 #include "exttree.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 void extMain::resetMinMaxRC(uint ii, uint jj)
 {
@@ -234,4 +234,4 @@ uint extMain::getExtStats(odb::dbNet* net,
   return cnt;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

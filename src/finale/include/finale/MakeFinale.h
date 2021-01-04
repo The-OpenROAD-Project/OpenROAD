@@ -34,7 +34,7 @@
 
 #pragma once
 
-namespace finale {
+namespace fin {
 class Finale;
 }
 
@@ -42,11 +42,11 @@ namespace ord {
 
 class OpenRoad;
 
-finale::Finale *
+fin::Finale *
 makeFinale();
 void
 initFinale(OpenRoad *openroad);
 void
-deleteFinale(finale::Finale *finale);
+deleteFinale(fin::Finale *finale);
 
 }  // namespace ord

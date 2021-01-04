@@ -14,7 +14,7 @@
 
 #include "dbLogger.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -1056,4 +1056,4 @@ _wireDirName, xcnt++, !measure->_dir, ll, ur);
   return 1;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

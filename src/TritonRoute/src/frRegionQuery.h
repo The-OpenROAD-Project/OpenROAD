@@ -47,6 +47,8 @@ namespace fr {
     void addDRObj(frShape* in);
     void addDRObj(frVia* in);
     void addMarker(frMarker* in);
+    void addGRObj(grShape* in);
+    void addGRObj(grVia* in);
 
     // Queries
     void query(const frBox &box, frLayerNum layerNum, Objects<frBlockObject> &result);
@@ -54,16 +56,21 @@ namespace fr {
     void queryGuide(const frBox &box, frLayerNum layerNum, std::vector<frGuide*> &result);
     void queryGuide(const frBox &box, std::vector<frGuide*> &result);
     void queryOrigGuide(const frBox &box, frLayerNum layerNum, Objects<frNet> &result);
+    void queryRPin(const frBox &box, frLayerNum layerNum, Objects<frRPin> &result);
     void queryGRPin(const frBox &box, std::vector<frBlockObject*> &result);
     void queryDRObj(const frBox &box, frLayerNum layerNum, Objects<frBlockObject> &result);
     void queryDRObj(const frBox &box, frLayerNum layerNum, std::vector<frBlockObject*> &result);
     void queryDRObj(const frBox &box, std::vector<frBlockObject*> &result);
+    void queryGRObj(const frBox &box, frLayerNum layerNum, Objects<grBlockObject> &result);
+    void queryGRObj(const frBox &box, std::vector<grBlockObject*> &result);
     void queryMarker(const frBox &box, frLayerNum layerNum, std::vector<frMarker*> &result);
     void queryMarker(const frBox &box, std::vector<frMarker*> &result);
 
     void clearGuides();
     void removeDRObj(frShape* in);
     void removeDRObj(frVia*   in);
+    void removeGRObj(grShape* in);
+    void removeGRObj(grVia*   in);
     void removeMarker(frMarker* in);
 
     // init
@@ -71,12 +78,15 @@ namespace fr {
     void initGuide(frLayerNum numLayers);
     void initOrigGuide(frLayerNum numLayers, std::map<frNet*, std::vector<frRect>, frBlockObjectComp> &tmpGuides);
     void initGRPin(std::vector<std::pair<frBlockObject*, frPoint> > &in);
+    void initRPin(frLayerNum numLayers);
     void initDRObj(frLayerNum numLayers);
+    void initGRObj(frLayerNum numLayers);
     
     // utility
     void print();
     void printGuide();
     void printDRObj();
+    void printGRObj();
 
   private:
     struct Impl;

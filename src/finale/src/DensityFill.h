@@ -40,7 +40,7 @@
 #include "opendb/db.h"
 #include "openroad/Logger.h"
 
-namespace finale {
+namespace fin {
 
 struct DensityFillLayerConfig;
 class Graphics;
@@ -76,4 +76,4 @@ class DensityFill
   ord::Logger* logger_;
 };
 
-}  // namespace finale
+}  // namespace fin

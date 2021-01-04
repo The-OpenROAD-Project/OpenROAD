@@ -44,6 +44,7 @@
 namespace ord {
 
 Logger::Logger(const char* log_filename)
+  : debug_on_(false)
 {
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
@@ -51,6 +52,7 @@ Logger::Logger(const char* log_filename)
   
   logger_ = std::make_shared<spdlog::logger>("logger", sinks_.begin(), sinks_.end());
   logger_->set_pattern(pattern_);
+  logger_->set_level(spdlog::level::level_enum::debug);
 }
 
 ToolId
@@ -63,6 +65,31 @@ Logger::findToolId(const char *tool_name)
     tool_id++;
   }
   return UKN;
+}
+
+void Logger::setDebugLevel(ToolId tool, const char* group, int level)
+{
+  if (level == 0) {
+    auto& groups = debug_group_level_[tool];
+    auto it = groups.find(group);
+    if (it != groups.end()) {
+      groups.erase(it);
+      debug_on_ = std::any_of(debug_group_level_.begin(),
+                              debug_group_level_.end(),
+                              [](auto& group) { return !group.empty(); }
+                              );
+    }
+  } else {
+    debug_on_ = true;
+    debug_group_level_.at(tool)[group] = level;
+  }
+}
+
+void Logger::addSink(spdlog::sink_ptr sink)
+{
+  sinks_.push_back(sink);
+  logger_->sinks().push_back(sink);
+  logger_->set_pattern(pattern_); // updates the new sink
 }
 
 }  // namespace

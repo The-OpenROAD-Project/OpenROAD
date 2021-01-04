@@ -45,6 +45,10 @@ namespace odb {
 class dbDatabase;
 }
 
+namespace ord {
+class Logger;
+}
+
 namespace gui {
 
 // This shows a line edit to enter tcl commands and a
@@ -64,6 +68,8 @@ class ScriptWidget : public QDockWidget
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
+  void setLogger(ord::Logger* logger);
+
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
@@ -80,7 +86,7 @@ class ScriptWidget : public QDockWidget
  private:
   void keyPressEvent(QKeyEvent* e) override;
   void setupTcl();
-  void updateOutput(int return_code);
+  void updateOutput(int return_code, bool command_finished);
   static int channelOutput(ClientData instanceData,
                            const char* buf,
                            int toWrite,
@@ -94,6 +100,9 @@ class ScriptWidget : public QDockWidget
   QStringList history_;
   int historyPosition_;
   bool paused_;
+
+  // Logger sink
+  template<typename Mutex> class GuiSink;
 
   static Tcl_ChannelType stdoutChannelType;
 };

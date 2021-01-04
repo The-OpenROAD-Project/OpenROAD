@@ -37,8 +37,6 @@ project(TritonCTS)
 
 set(BIN_NAME "TritonCTS")
 
-set(CMAKE_CXX_STANDARD 11)
-
 find_package(LEMON REQUIRED)
 
 set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/tritoncts_wrap.cpp)

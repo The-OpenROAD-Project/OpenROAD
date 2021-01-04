@@ -38,8 +38,6 @@ project(FastRoute)
 add_subdirectory(src/fastroute)
 add_subdirectory(src/pdrev)
 
-set(CMAKE_CXX_STANDARD 11)
-
 set(FASTROUTE_WRAP ${CMAKE_CURRENT_BINARY_DIR}/fastroute_wrap.cpp)
 set(FASTROUTE_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/FastrouteTclInitVar.cc)
 

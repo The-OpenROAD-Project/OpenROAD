@@ -48,7 +48,7 @@
 
 #include <map>
 
-namespace OpenRCX {
+namespace rcx {
 
 class extRcTripplet
 {
@@ -626,6 +626,6 @@ class extSpef
 	double percentDiff(double dbCap, double refCap);
 };
 
-}  // namespace OpenRCX
+}  // namespace rcx
 
 #endif

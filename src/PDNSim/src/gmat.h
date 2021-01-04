@@ -35,30 +35,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __IRSOLVER_GMAT_
 #include "node.h"
 #include "opendb/db.h"
+#include "openroad/Logger.h"
 
-
-//! Global variable which holds the G matrix. 
+//! Global variable which holds the G matrix.
 /*!
- * Three dimensions with layer number,x location, and y location. 
+ * Three dimensions with layer number,x location, and y location.
  * Holds a pointer to the node of the power grid.
-*/
+ */
+namespace psm {
 typedef std::map<int, std::map<int, Node*>> NodeMap;
-
 
 //! G matrix class
 /*!
  * Class to store the G matrix. Contains the member functions for all node
  * related operations.
  *
-*/
+ */
 class GMat
 {
  public:
   //! Constructor for creating the G matrix
-  GMat(int t_num_layers)
-      : m_num_layers(t_num_layers),
-        m_layer_maps(t_num_layers + 1, NodeMap())
+  GMat(int t_num_layers, ord::Logger* logger)
+      : m_num_layers(t_num_layers), m_layer_maps(t_num_layers + 1, NodeMap())
   {  // as it start from 0 and everywhere we use layer
+    m_logger = logger;
   }
   //! Destructor of the G matrix
   ~GMat()
@@ -69,79 +69,82 @@ class GMat
     }
   }
   //! Function to return a pointer to the node with a index
-  Node*      GetNode(NodeIdx t_node);
+  Node* GetNode(NodeIdx t_node);
   //! Function to return a pointer to the node with the x, y, and layer number
-  Node*      GetNode(int t_x, int t_y, int t_l, bool t_nearest=false);
+  Node* GetNode(int t_x, int t_y, int t_l, bool t_nearest = false);
   //! Function to set attributes of the node with index and node pointer
-  void       SetNode(NodeIdx t_node_loc, Node* t_node);
+  void SetNode(NodeIdx t_node_loc, Node* t_node);
   //! Function to create a node
-  Node*      SetNode(int t_x, int t_y, int t_layer, BBox t_bBox);
+  Node* SetNode(int t_x, int t_y, int t_layer, BBox t_bBox);
   //! Function to insert a node into the matrix
-  void       InsertNode(Node* t_node);
+  void InsertNode(Node* t_node);
   //! Function that prints the G matrix for debug purposes
-  void       Print();
+  void Print();
   //! Function to add the conductance value between two nodes
-  void       SetConductance(Node* t_node1, Node* t_node2, double t_cond);
+  void SetConductance(Node* t_node1, Node* t_node2, double t_cond);
   //! Function to initialize the sparse dok matrix
-  void       InitializeGmatDok(int t_numC4);
+  void InitializeGmatDok(int t_numC4);
   //! Function that returns the number of nodes in the G matrix
-  NodeIdx    GetNumNodes();
-  //! Function to return a pointer to the G matrix 
+  NodeIdx GetNumNodes();
+  //! Function to return a pointer to the G matrix
   CscMatrix* GetGMat();
-  //! Function to return a pointer to the A matrix 
+  //! Function to return a pointer to the A matrix
   CscMatrix* GetAMat();
   //! Function to get the conductance of the strip of the power grid
-  void       GenerateStripeConductance(int                        t_l,
-                                       odb::dbTechLayerDir::Value layer_dir,
-                                       int                        t_x_min,
-                                       int                        t_x_max,
-                                       int                        t_y_min,
-                                       int                        t_y_max,
-                                       double                     t_rho);
+  void GenerateStripeConductance(int                        t_l,
+                                 odb::dbTechLayerDir::Value layer_dir,
+                                 int                        t_x_min,
+                                 int                        t_x_max,
+                                 int                        t_y_min,
+                                 int                        t_y_max,
+                                 double                     t_rho);
   //! Function to get location of vias to the redistribution layer
-  std::vector<Node*> GetRDLNodes(int t_l,
-              odb::dbTechLayerDir::Value layer_dir,
-              int                        t_x_min,
-              int                        t_x_max,
-              int                        t_y_min,
-              int                        t_y_max);
+  std::vector<Node*> GetRDLNodes(int                        t_l,
+                                 odb::dbTechLayerDir::Value layer_dir,
+                                 int                        t_x_min,
+                                 int                        t_x_max,
+                                 int                        t_y_min,
+                                 int                        t_y_max);
   //! Function to add the voltage source based on C4 bump location
-  void       AddC4Bump(int t_loc, int t_C4Num);
+  void AddC4Bump(int t_loc, int t_C4Num);
   //! Function which generates the compressed sparse column matrix
-  bool       GenerateCSCMatrix();
+  bool GenerateCSCMatrix();
   //! Function which generates the compressed sparse column matrix for A
-  bool       GenerateACSCMatrix();
+  bool GenerateACSCMatrix();
   //! Function to return a vector which contains a  pointer to all the nodes
   std::vector<Node*> GetAllNodes();
 
-  //! Function to return a pointer to the G matrix in DOK format 
+  //! Function to return a pointer to the G matrix in DOK format
   DokMatrix* GetGMatDOK();
 
  private:
+  //! Pointer to the logger
+  ord::Logger* m_logger;
   //! Number of nodes in G matrix
-  NodeIdx              m_n_nodes{0};
+  NodeIdx m_n_nodes{0};
   //! Number of metal layers in PDN stack
-  int                  m_num_layers;
+  int m_num_layers;
   //! Dictionary of keys for G matrix
-  DokMatrix            m_G_mat_dok;
+  DokMatrix m_G_mat_dok;
   //! Compressed sparse column matrix for superLU
-  CscMatrix            m_G_mat_csc;
+  CscMatrix m_G_mat_csc;
   //! Dictionary of keys for A matrix
-  DokMatrix            m_A_mat_dok;
+  DokMatrix m_A_mat_dok;
   //! Compressed sparse column matrix for A
-  CscMatrix            m_A_mat_csc;
+  CscMatrix m_A_mat_csc;
   //! Vector of pointers to all nodes in the G matrix
-  std::vector<Node*>   m_G_mat_nodes;
+  std::vector<Node*> m_G_mat_nodes;
   //! Vector of maps to all nodes
   std::vector<NodeMap> m_layer_maps;
   //! Function to get the conductance value at a row and column of the matrix
   double GetConductance(NodeIdx t_row, NodeIdx t_col);
-  //! Function to add a conductance value at the specified location of the matrix
-  void   UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond);
+  //! Function to add a conductance value at the specified location of the
+  //! matrix
+  void UpdateConductance(NodeIdx t_row, NodeIdx t_col, double t_cond);
   //! Function to find the nearest node to a particular location
-  Node*  NearestYNode(NodeMap::iterator x_itr, int t_y);
+  Node* NearestYNode(NodeMap::iterator x_itr, int t_y);
   //! Function to find conductivity of a stripe based on width,length, and pitch
   double GetConductivity(double width, double length, double rho);
 };
-
+}  // namespace psm
 #endif

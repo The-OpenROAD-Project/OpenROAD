@@ -213,12 +213,12 @@ OpenRoad::init(Tcl_Interp *tcl_interp)
   // Import TCL scripts.
   evalTclInit(tcl_interp, sta::openroad_tcl_inits);
 
+  initGui(this); // first so we can register our sink with the logger
   Opendbtcl_Init(tcl_interp);
   initInitFloorplan(this);
   stt::readLUT();
   initDbSta(this);
   initResizer(this);
-  initGui(this);
   initDbVerilogNetwork(this);
   initIoplacer(this);
   initReplace(this);
