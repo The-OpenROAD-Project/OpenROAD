@@ -33,12 +33,6 @@
 ##
 ############################################################################
 
-proc show_openroad_splash {} {
-  puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
-This program is licensed under the BSD-3 license. See the LICENSE file for details. 
-Components of this program may be licensed under more restrictive licenses which must be honored."
-}
-
 # -library is the default
 sta::define_cmd_args "read_lef" {[-tech] [-library] filename}
 
