@@ -274,6 +274,7 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
+  void getClockLayerResCap(double &cap, double &res);
   void getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyCell* buffer,
                                       float &maxSlew, bool &maxSlewExist,
                                       float &maxCap, bool &maxCapExist);

@@ -45,6 +45,7 @@
 #include "sta/Units.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
+#include "resizer/Resizer.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -533,11 +534,13 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bo
       case sta::TableAxisVariable::total_output_net_capacitance:
            maxCap = axis->axisValue(axis->size() - 1);
            maxCapExist = true;
+           std::cout << "Found maxCap " << maxCap << std::endl;
            break;
       case sta::TableAxisVariable::input_net_transition:
       case sta::TableAxisVariable::input_transition_time:
            maxSlew = axis->axisValue(axis->size() - 1);
            maxSlewExist = true;
+           std::cout << "Found maxSlew " << maxSlew << std::endl;
            break;
       default: break;
     }
@@ -549,29 +552,36 @@ void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyC
 {
   sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
-  std::cout << "Got buffer" << std::endl;
   sta::TimingArcSetSeq *arc_sets = buffer->timingArcSets(input, output);
   if (arc_sets) {
     for (sta::TimingArcSet *arc_set : *arc_sets) {
       sta::TimingArcSetArcIterator arc_iter(arc_set);
       while (arc_iter.hasNext()) {
-        std::cout << "Got timing arc" << std::endl;
         sta::TimingArc *arc = arc_iter.next();
         sta::GateTableModel *model = dynamic_cast<sta::GateTableModel*>(arc->model());
         if(!model)
           continue;
-        std::cout << "Got table model" << std::endl;
         auto delayModel = model->delayModel();
         sta::TableAxis *axis1 = delayModel->axis1();
         sta::TableAxis *axis2 = delayModel->axis2();
         sta::TableAxis *axis3 = delayModel->axis3();
-        std::cout << "Got axis" << std::endl;
         if(axis1) getMaxSlewMaxCapFromAxis(axis1, maxSlew, maxSlewExist, maxCap, maxCapExist);
         if(axis2) getMaxSlewMaxCapFromAxis(axis2, maxSlew, maxSlewExist, maxCap, maxCapExist);
         if(axis3) getMaxSlewMaxCapFromAxis(axis3, maxSlew, maxSlewExist, maxCap, maxCapExist);
       }
     }
   }
+}
+
+void TechChar::getClockLayerResCap(double &cap, double &res)
+{
+  /* Clock layer should be set with set_wire_rc -clock */
+  rsz::Resizer *sizer = ord::OpenRoad::openRoad()->getResizer();
+  
+  cap   = sizer->wireClkCapacitance()*std::pow(10.0, -6); //convert from per micron to per meter
+  res   = sizer->wireClkResistance()*std::pow(10.0, -6); //convert from per micron to per meter
+
+  return;
 }
 // Characterization Methods
 
@@ -604,12 +614,17 @@ void TechChar::initCharacterization()
   float dbUnitsPerMicron = static_cast<float>(block->getDbUnitsPerMicron());
 
   // Change resPerSqr and capPerSqr to DBU units.
-  double newCapPerSqr
-      = (_options->getCapPerSqr() * std::pow(10.0, -12)) / dbUnitsPerMicron;
+  double newCapPerSqr = (_options->getCapPerSqr() * std::pow(10.0, -12)) / dbUnitsPerMicron;
   double newResPerSqr = (_options->getResPerSqr()) / dbUnitsPerMicron;
-  _options->setCapPerSqr(newCapPerSqr);  // picofarad/micron to farad/DBU
-  _options->setResPerSqr(newResPerSqr);  // ohm/micron to ohm/DBU
-
+  if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
+    getClockLayerResCap(newCapPerSqr, newResPerSqr);
+    _options->setCapPerSqr(newCapPerSqr / dbUnitsPerMicron);  // picofarad/micron to farad/DBU
+    _options->setResPerSqr(newResPerSqr / dbUnitsPerMicron);  // ohm/micron to ohm/DBU
+  }
+  if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
+    std::cout << "    [WARNING] Per unit resistance or capacitance not set or zero." << std::endl;
+    std::cout << "              Use set_wire_rc before running clock_tree_synthesis." << std::endl;
+  }
   // Change intervals if needed
   if (_options->getSlewInter() != 0) {
     _charSlewInter = _options->getSlewInter();
@@ -697,14 +712,12 @@ void TechChar::initCharacterization()
     sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
     bool maxSlewExist = false;
     bool maxCapExist = false;
-    std::cout << "Getting maxcap, maxslew" << std::endl;
     getBufferMaxSlewMaxCap(staLib, libertyCell, maxSlew, maxSlewExist, maxCap, maxCapExist);
-    if(!maxSlewExist || !maxCapExist) { //In case buffer does not have tables 
+    if(!maxSlewExist || !maxCapExist) { //In case buffer does not have tables
+      std::cout << "    [WARNING] Could not get maxSlew/maxCap values from buffer " << bufMasterName << std::endl;
+      std::cout << "              Using library values" << std::endl;
       staLib->defaultMaxSlew(maxSlew, maxSlewExist);
       staLib->defaultMaxCapacitance(maxCap, maxCapExist);
-    } else{
-      std::cout << "Buffer Cell max cap = " << maxCap << std::endl;
-      std::cout << "Buffer Cell max slew = " << maxSlew << std::endl;
     }
     if (!maxSlewExist || !maxCapExist) {
       error("Liberty Library does not have Max Slew or Max Cap values.\n");
@@ -716,7 +729,6 @@ void TechChar::initCharacterization()
     _charMaxSlew = _options->getMaxCharSlew();
     _charMaxCap = _options->getMaxCharCap();
   }
-
   // Creates the different slews and loads to test.
   unsigned slewIterations = _options->getCharSlewIterations();
   unsigned loadIterations = _options->getCharLoadIterations();
