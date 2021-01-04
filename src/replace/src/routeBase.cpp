@@ -658,7 +658,6 @@ RouteBase::getGlobalRouterResult() {
   grouter_->setAllowOverflow(true);
   grouter_->setOverflowIterations(0);
 
-  grouter_->startFastRoute();
   // E.M @ 20/11/25: false is required here to run FastRoute for all nets
   grouter_->runFastRoute(false);
 
