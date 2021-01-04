@@ -81,6 +81,7 @@ include_directories(${TRITONCTS_HOME}/src
                     ${DBSTA_HOME}/include
                     ${OPENSTA_HOME}/include
                     ${RESIZER_HOME}/include
+                    ${OPENROAD_HOME}/src/flute3
 		    ${TCL_INCLUDE_PATH}
                     ${LEMON_INCLUDE_DIRS}
                    ) 
