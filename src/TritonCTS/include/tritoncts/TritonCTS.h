@@ -35,29 +35,26 @@
 
 #pragma once
 
-#include "CtsOptions.h"
-#include "DbWrapper.h"
-#include "StaEngine.h"
-#include "TechChar.h"
-#include "TreeBuilder.h"
-
 #include <functional>
 
 namespace cts {
 
+class CtsOptions;
+class DbWrapper;
+class TechChar;
+class StaEngine;
+class TreeBuilder;
+
 class TritonCTS
 {
  public:
-  TritonCTS()
-      : _dbWrapper(_options, *this), _techChar(_options), _staEngine(_options)
-  {
-  }
+  TritonCTS() = default;
 
   void runTritonCts();
   void reportCtsMetrics();
-  CtsOptions& getParms() { return _options; }
-  TechChar& getCharacterization() { return _techChar; }
-  void addBuilder(TreeBuilder* builder) { _builders.push_back(builder); }
+  CtsOptions* getParms() { return _options; }
+  TechChar* getCharacterization() { return _techChar; }
+  void addBuilder(TreeBuilder* builder);
   void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
@@ -75,11 +72,11 @@ class TritonCTS
   void writeDataToDb();
   void printFooter() const;
 
-  CtsOptions _options;
-  DbWrapper _dbWrapper;
-  TechChar _techChar;
-  StaEngine _staEngine;
-  std::vector<TreeBuilder*> _builders;
+  CtsOptions* _options;
+  DbWrapper* _dbWrapper;
+  TechChar* _techChar;
+  StaEngine* _staEngine;
+  std::vector<TreeBuilder*>* _builders;
 };
 
 }  // namespace cts
