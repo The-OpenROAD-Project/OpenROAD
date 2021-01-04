@@ -226,9 +226,37 @@ proc init_via_tech {} {
   
   set def_via_tech {}
   foreach via_rule [$tech getViaGenerateRules] {
-    set lower [$via_rule getViaLayerRule 0]
-    set upper [$via_rule getViaLayerRule 1]
-    set cut   [$via_rule getViaLayerRule 2]
+    set level0 [[[$via_rule getViaLayerRule 0] getLayer] getNumber]
+    set level1 [[[$via_rule getViaLayerRule 1] getLayer] getNumber]
+    set level2 [[[$via_rule getViaLayerRule 2] getLayer] getNumber]
+    if {$level0<$level1 && $level0<$level2} {
+       set lower [$via_rule getViaLayerRule 0]
+       if {$level1<$level2} {
+          set upper [$via_rule getViaLayerRule 2]
+          set cut   [$via_rule getViaLayerRule 1]
+       } else {
+          set upper [$via_rule getViaLayerRule 1]
+          set cut   [$via_rule getViaLayerRule 2]
+       }
+    } elseif {$level1<$level0 && $level1<$level2} {
+       set lower [$via_rule getViaLayerRule 1]
+       if {$level0<$level2} {
+          set upper [$via_rule getViaLayerRule 2]
+          set cut   [$via_rule getViaLayerRule 0]
+       } else {
+          set upper [$via_rule getViaLayerRule 0]
+          set cut   [$via_rule getViaLayerRule 2]
+       }
+    } elseif {$level2<$level0 && $level2<$level1} {
+       set lower [$via_rule getViaLayerRule 2]
+       if {$level0<$level1} {
+          set upper [$via_rule getViaLayerRule 1]
+          set cut   [$via_rule getViaLayerRule 0]
+       } else {
+          set upper [$via_rule getViaLayerRule 0]
+          set cut   [$via_rule getViaLayerRule 1]
+       }
+    }
 
     dict set def_via_tech [$via_rule getName] [list \
       lower [list layer [[$lower getLayer] getName] enclosure [$lower getEnclosure]] \
