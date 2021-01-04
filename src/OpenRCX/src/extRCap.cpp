@@ -46,7 +46,7 @@
 //#include "logger.h"
 #include <dbLogger.h>
 
-namespace OpenRCX {
+namespace rcx {
 
 static int read_total_cap_file(const char* file,
                                double*     ctotV,
@@ -1172,4 +1172,4 @@ void extNetStats::update_bbox(Ath__parser* parser, const char* bbox)
   _ur[0] = parser->getInt(2);
   _ur[1] = parser->getInt(3);
 }
-}  // namespace OpenRCX
+}  // namespace rcx

@@ -45,7 +45,7 @@
 
 #define DEBUG_NET_ID 228157
 
-namespace OpenRCX {
+namespace rcx {
 
 #ifdef DEBUG_NET_ID
 FILE* fp;
@@ -3770,4 +3770,4 @@ void extMain::setUniqueExttreeCorner()
   _block->setCornersPerBlock(1);
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

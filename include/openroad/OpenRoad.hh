@@ -95,7 +95,7 @@ namespace replace {
 class Replace;
 }
 
-namespace OpenRCX {
+namespace rcx {
 class Ext;
 }
 
@@ -147,7 +147,7 @@ public:
   fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::TritonMacroPlace *getTritonMp() { return tritonMp_; }
-  OpenRCX::Ext *getOpenRCX() { return extractor_; }
+  rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   replace::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
@@ -222,7 +222,7 @@ private:
   grt::GlobalRouter *fastRoute_;
   cts::TritonCTSKernel *tritonCts_;
   tap::Tapcell *tapcell_;
-  OpenRCX::Ext *extractor_;
+  rcx::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   ant::AntennaChecker *antenna_checker_;
   replace::Replace *replace_;

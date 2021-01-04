@@ -38,7 +38,7 @@
 #include "extRCap.h"
 #include "exttree.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 class Ext
 #ifndef SWIG  // causes swig warnings
@@ -351,8 +351,8 @@ class Ext
   extMain*         _ext;
   extRcTree*       _tree;
   bool             _initWithChip;
-};  // namespace OpenRCX
+};
 
-}  // namespace OpenRCX
+}  // namespace rcx
 
 #endif

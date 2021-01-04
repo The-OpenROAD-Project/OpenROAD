@@ -135,7 +135,7 @@ getReplace()
   return openroad->getReplace();
 }
 
-OpenRCX::Ext *
+rcx::Ext *
 getOpenRCX()
 {
   OpenRoad *openroad = getOpenRoad();
