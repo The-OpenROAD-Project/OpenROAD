@@ -407,7 +407,7 @@ InitFloorplan::makeTracks(const char *tracks_file,
 	grid->addGridPatternY(die_area.yMin() + offset, track_count, pitch);
 	break;
       default:
-	logger_->critical(IFP, 3, "unknown track direction\n");
+	logger_->critical(IFP, 3, "unknown track direction");
       }
     }
   }

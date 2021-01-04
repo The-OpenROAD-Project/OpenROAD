@@ -1,45 +1,25 @@
-1 "Use -layer or -resistance/-capacitance but not both."
-2 "layer $layer_name not found."
-3 "missing -placement or -global_routing flag."
-4 "-max_utilization must be between 0 and 100%."
-5 "[get_name $buffer_cell] is not a buffer."
-6 "-buffer_cell required for buffer insertion."
-7 "-buffer_cell required for buffer insertion."
-8 "No liberty libraries found."
-9 "No liberty libraries found."
-10 "layer resistance is 0.0"
-11 "layer capacitance is 0.0"
-12 "-corner argument ignored."
-13 "set_wire_rc -data is deprecated. Use -signal."
-14 "wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance."
-15 "-buffer_cell is deprecated."
-16 "-buffer_cell is deprecated."
-17 "max wire length less than [format %.0fu [expr $min_delay_max_wire_length * 1e+6]] increases wire delays."
-18 "-buffer_cell is deprecated."
-19 "repair_hold_violations is deprecated. Use repair_timing -hold"
-20 "found $floating_net_count floatiing nets."
-21 "no estimated parasitics. Using wire load models."
-22 "no buffers found."
-23 "repairNet failure."
-24 "Max utilization reached."
-25 "max utilization reached."
-26 "Removed %d buffers.\n"
-27 "Inserted {} input buffers.
-28 "Inserted {} output buffers."
-29 "Inserted {} tie {} instances."
-30 "Inserted {} buffers."
-31 "Resized {} instances."
-32 "Inserted {} hold buffers."
-33 "No hold violations found."
-35 "Found %d fanout violations.
-36 "Found %d capacitance violations."
-37 "Found %d long wires."
-38 "Inserted {} buffers in {} nets."
-39 "Resized {} instances."
-40 "Inserted {} buffers."
-41 "Resized {} instances."
-42 "Inserted {} tie {} instances."
-43 "steiner point index out of range."
-44 "could not open {}"
-45 "steiner left/right failed"
-46 "Found {} endpoints with hold violations."
+RSZ 0001 Resizer.tcl:59            Use -layer or -resistance/-capacitance but not both.
+RSZ 0002 Resizer.tcl:64            layer $layer_name not found.
+RSZ 0003 Resizer.tcl:140           missing -placement or -global_routing flag.
+RSZ 0004 Resizer.tcl:415           -max_utilization must be between 0 and 100%.
+RSZ 0008 Resizer.tcl:211           No liberty libraries found.
+RSZ 0009 Resizer.tcl:313           No liberty libraries found.
+RSZ 0010 Resizer.tcl:80            layer resistance is 0.0
+RSZ 0011 Resizer.tcl:83            layer capacitance is 0.0
+RSZ 0012 Resizer.tcl:102           -corner argument ignored.
+RSZ 0013 Resizer.tcl:108           set_wire_rc -data is deprecated. Use -signal.
+RSZ 0014 Resizer.tcl:133           wire capacitance is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+RSZ 0015 Resizer.tcl:160           -buffer_cell is deprecated.
+RSZ 0016 Resizer.tcl:191           -buffer_cell is deprecated.
+RSZ 0017 Resizer.tcl:201           max wire length less than [format %.0fu [expr $min_delay_max_wire_length * 1e+6]] increases wire delays.
+RSZ 0018 Resizer.tcl:230           -buffer_cell is deprecated.
+RSZ 0019 Resizer.tcl:285           repair_hold_violations is deprecated. Use repair_timing -hold
+RSZ 0020 Resizer.tcl:349           found $floating_net_count floatiing nets.
+RSZ 0021 Resizer.tcl:394           no estimated parasitics. Using wire load models.
+RSZ 0022 Resizer.cc:425            no buffers found.
+RSZ 0023 Resizer.cc:2389           repairNet failure.
+RSZ 0024 Resizer.cc:579            Max utilization reached.
+RSZ 0025 Resizer.cc:1346           max utilization reached.
+RSZ 0026 Resizer.cc:1661           max utilization reached.
+RSZ 0044 SteinerTree.cc:465        could not open {}.
+RSZ 0045 SteinerTree.cc:390        steiner left/right failed.

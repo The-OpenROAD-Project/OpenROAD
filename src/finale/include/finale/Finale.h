@@ -35,7 +35,13 @@
 
 #include "opendb/db.h"
 
+namespace ord {
+class Logger;
+}
+
 namespace finale {
+
+using ord::Logger;
 
 ////////////////////////////////////////////////////////////////
 
@@ -44,7 +50,7 @@ class Finale
  public:
   Finale();
 
-  void init(odb::dbDatabase* db);
+  void init(odb::dbDatabase* db, Logger *logger);
 
   void densityFill(const char* rules_filename, const odb::Rect& fill_area);
 
@@ -52,6 +58,7 @@ class Finale
 
  private:
   odb::dbDatabase* db_;
+  Logger* logger_;
   bool debug_;
 };
 

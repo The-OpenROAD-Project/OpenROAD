@@ -1,17 +1,10 @@
-1 "Placed {} filler instances."
-2 "could not fill gap of size {} at {},{} dbu between {} and {}",
-3 "Placed check failed ({})."
-4 "Placed in rows check failed ({})."
-5 "Overlap check failed ({})."
-6 "Site check failed ({})."
-7 "Power line check failed ({})."
-10 "Cannot find MACRO with VDD/VSS pins."
-11 "could not find power special net"
-12 "no rows found."
-13 "Cannot paint grid because it is already occupied."
-14 "utilization exceeds 100%%."
-15 "instance {} does not fit inside the ROW core area."
-16 "cannot place instance (brick place 1) {}."
-17 "cannot place instance (brick place 2) {}."
-18 "detailed placement failed on {}."
-19 "detailed placement failed on {}"
+DPL 0010 dbToOpendp.cpp:306        Cannot find MACRO with VDD/VSS pins.
+DPL 0011 dbToOpendp.cpp:309        Could not find power special net.
+DPL 0012 dbToOpendp.cpp:179        no rows found.
+DPL 0013 Grid.cpp:309              Cannot paint grid because it is already occupied.
+DPL 0014 Opendp.cpp:261            utilization exceeds 100%.
+DPL 0015 Place.cpp:185             instance {} does not fit inside the ROW core area.
+DPL 0016 Place.cpp:289             cannot place instance (brick place 1) {}.
+DPL 0017 Place.cpp:311             cannot place instance (brick place 2) {}.
+DPL 0018 Place.cpp:456             detailed placement failed on {}.
+DPL 0019 Place.cpp:467             detailed placement failed on {}

@@ -1,0 +1,8 @@
+1 "Layer {} in names was not found"
+2 "Layer {} not found."
+3 "Filling layer {}"
+4 "Total fills: {}"
+5 "Filling {} areas with OPC fill."
+6 "Total fills: {}"
+7 "The -rules argument must be specified."
+8 "The -area argument must be a list of 4 coordinates."

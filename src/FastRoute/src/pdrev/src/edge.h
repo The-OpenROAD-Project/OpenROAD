@@ -77,5 +77,4 @@ class Edge
   ~Edge() { STNodes.clear(); }
 };
 
-} // namespace
-
+}  // namespace PD

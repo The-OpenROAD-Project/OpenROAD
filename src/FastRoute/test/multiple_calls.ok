@@ -10,18 +10,18 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 676 components and 2850 component-terminals.
 Notice 0:     Created 87 nets and 250 connections.
 Notice 0: Finished DEF file: multiple_calls.def
-[PARAMS] Min routing layer: 1
-[PARAMS] Max routing layer: 10
-[PARAMS] Global adjustment: 0
-[PARAMS] Unidirectional routing: 0
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 2874
-[INFO] #DB Macros: 0
-[INFO] Found 0 clock nets
-[INFO] Minimum degree: 2
-[INFO] Maximum degree: 36
-[INFO] Processing 8469 obstacles on layer 1
+Min routing layer: 1
+Max routing layer: 10
+Global adjustment: 0.0
+Unidirectional routing: false
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 2874
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0017] Found 0 clock nets
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0018] Processing 8469 obstacles on layer 1
 
 Final usage/overflow report: 
 
@@ -37,29 +37,29 @@ Final usage/overflow report:
 [INFO] Final usage          : 629
 [INFO] Final number of vias : 250
 [INFO] Final usage 3D       : 1379
-[INFO] Total wirelength: 2303 um
-[INFO] Num routed nets: 87
-[PARAMS] Min routing layer: 1
-[PARAMS] Max routing layer: 10
-[PARAMS] Global adjustment: 0.800000
-[PARAMS] Unidirectional routing: 0
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 2874
-[INFO] #DB Macros: 0
-[INFO] Minimum degree: 2
-[INFO] Maximum degree: 36
-[INFO] Processing 8469 obstacles on layer 1
-[INFO] Reducing resources of layer 1 by 80%
-[INFO] Reducing resources of layer 2 by 80%
-[INFO] Reducing resources of layer 3 by 80%
-[INFO] Reducing resources of layer 4 by 80%
-[INFO] Reducing resources of layer 5 by 80%
-[INFO] Reducing resources of layer 6 by 80%
-[INFO] Reducing resources of layer 7 by 80%
-[INFO] Reducing resources of layer 8 by 80%
-[INFO] Reducing resources of layer 9 by 80%
-[INFO] Reducing resources of layer 10 by 80%
+[INFO GRT-0018] Total wirelength: 2303 um
+[INFO GRT-0014] Num routed nets: 87
+Min routing layer: 1
+Max routing layer: 10
+Global adjustment: 0.8
+Unidirectional routing: false
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 2874
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0018] Processing 8469 obstacles on layer 1
+[INFO GRT-0024] Reducing resources of layer 1 by 80%
+[INFO GRT-0025] Reducing resources of layer 2 by 80%
+[INFO GRT-0026] Reducing resources of layer 3 by 80%
+[INFO GRT-0027] Reducing resources of layer 4 by 80%
+[INFO GRT-0028] Reducing resources of layer 5 by 80%
+[INFO GRT-0029] Reducing resources of layer 6 by 80%
+[INFO GRT-0030] Reducing resources of layer 7 by 80%
+[INFO GRT-0031] Reducing resources of layer 8 by 80%
+[INFO GRT-0032] Reducing resources of layer 9 by 80%
+[INFO GRT-0033] Reducing resources of layer 10 by 80%
 
 Final usage/overflow report: 
 
@@ -75,8 +75,8 @@ Final usage/overflow report:
 [INFO] Final usage          : 626
 [INFO] Final number of vias : 266
 [INFO] Final usage 3D       : 1424
-[INFO] Total wirelength: 2301 um
-[INFO] Num routed nets: 87
-Differences found at line 63.
+[INFO GRT-0018] Total wirelength: 2301 um
+[INFO GRT-0014] Num routed nets: 87
+Differences found at line 65.
 105000 134400 109200 138600 metal1
 105000 130200 109200 134400 metal1

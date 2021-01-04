@@ -29,7 +29,8 @@ using sta::Instance;
 sta::Sta *
 make_block_sta(odb::dbBlock *block)
 {
-  return sta::makeBlockSta(block);
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  return sta::makeBlockSta(openroad, block);
 }
 
 void

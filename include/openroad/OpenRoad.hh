@@ -103,11 +103,7 @@ namespace triton_route {
 class TritonRoute;
 }
 
-namespace psn {
-class Psn;
-}
-
-namespace pdnsim {
+namespace psm {
 class PDNSim;
 }
 
@@ -154,7 +150,7 @@ public:
   OpenRCX::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   replace::Replace* getReplace() { return replace_; }
-  pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
+  psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
   partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
@@ -229,9 +225,8 @@ private:
   OpenRCX::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   ant::AntennaChecker *antenna_checker_;
-  psn::Psn *psn_;
   replace::Replace *replace_;
-  pdnsim::PDNSim *pdnsim_; 
+  psm::PDNSim *pdnsim_; 
   partition::PartitionMgr *partitionMgr_; 
 
   std::set<Observer *> observers_;
