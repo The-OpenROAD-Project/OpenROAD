@@ -397,58 +397,33 @@ dbStaReport::setLogger(Logger *logger)
   logger_ = logger;
 }
 
-// Return is implicit.
-// Log stream support supplied by Logger.
+// Line return \n is implicit.
 void
 dbStaReport::printLine(const char *buffer,
                        size_t length)
 {
-  if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
-    redirectStringPrint("\n", 1);
-  }
-  else {
-    if (redirect_stream_) {
-      fwrite(buffer, sizeof(char), length, redirect_stream_);
-      fwrite("\n", sizeof(char), 1, redirect_stream_);
-    }
-    else
-      logger_->report(buffer);
-  }
+  logger_->report(buffer);
 }
 
-// Only used by encapsulated Tcl channels, ie puts.
+// Only used by encapsulated Tcl channels, ie puts and command prompt.
 size_t
 dbStaReport::printString(const char *buffer,
                          size_t length)
 {
-  size_t ret = length;
-  if (redirect_to_string_)
-    redirectStringPrint(buffer, length);
-  else {
-    if (redirect_stream_)
-      ret = min(ret, fwrite(buffer, sizeof(char), length, redirect_stream_));
-    else {
-      if (buffer[length - 1] == '\n') {
-        int strip = 1;
-        if (buffer[length - 2] == '\r')
-          strip++;
-        // Strip the trailing \n.
-        char *buf = new char[length - strip + 1];
-        strncpy(buf, buffer, length - strip);
-        buf[length - strip] = '\0';
-        logger_->report(buf);
-      }
-      else
-        // puts without a trailing \n in the string.
-        // Tcl command prompts get here.
-        // puts "xyz" makes a separate call for the '\n '.
-        // This seems to be the only way to get the output.
-        // It will not be logged.
-        printConsole(buffer, length);
-    }
+  if (buffer[length - 1] == '\n') {
+    string buf(buffer);
+    // Trim trailing \r\n.
+    buf.erase(buf.find_last_not_of("\r\n") + 1);
+    logger_->report(buf.c_str());
   }
-  return ret;
+  else
+    // puts without a trailing \n in the string.
+    // Tcl command prompts get here.
+    // puts "xyz" makes a separate call for the '\n '.
+    // This seems to be the only way to get the output.
+    // It will not be logged.
+    printConsole(buffer, length);
+  return length;
 }
 
 void
