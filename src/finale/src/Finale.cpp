@@ -36,7 +36,7 @@
 #include "DensityFill.h"
 #include "openroad/Error.hh"
 
-namespace finale {
+namespace fin {
 
 ////////////////////////////////////////////////////////////////
 
@@ -61,4 +61,4 @@ void Finale::densityFill(const char* rules_filename, const odb::Rect& fill_area)
   filler.fill(rules_filename, fill_area);
 }
 
-}  // namespace finale
+}  // namespace fin
