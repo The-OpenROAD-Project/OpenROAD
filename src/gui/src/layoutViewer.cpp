@@ -30,20 +30,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "layoutViewer.h"
+
 #include <QApplication>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QScrollBar>
 #include <QToolTip>
-#include <iostream>
 #include <tuple>
 #include <vector>
 
 #include "db.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
-#include "layoutViewer.h"
 #include "mainWindow.h"
 #include "search.h"
 
@@ -104,10 +104,11 @@ class GuiPainter : public Painter
   void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
     QColor color = options_->color(layer);
+    Qt::BrushStyle brushPattern = options_->pattern(layer);
     if (alpha >= 0) {
       color.setAlpha(alpha);
     }
-    painter_->setBrush(color);
+    painter_->setBrush(QBrush(color, brushPattern));
   }
 
   void setBrush(const Color& color) override
@@ -194,7 +195,7 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
 
   Rect bbox = getBounds(block);
 
-  QSize size(ceil(bbox.dx() * pixelsPerDBU), ceil(bbox.dy() * pixelsPerDBU));
+  QSize size(ceil(bbox.xMax() * pixelsPerDBU), ceil(bbox.yMax() * pixelsPerDBU));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
@@ -362,14 +363,19 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   dbBlock* block = getBlock();
   if (block) {
     Rect bbox = getBounds(block);
-    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.dx(),
-                             event->size().height() / (double) bbox.dy());
+    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.xMax(),
+                             event->size().height() / (double) bbox.yMax());
   }
 }
 
 QColor LayoutViewer::getColor(dbTechLayer* layer)
 {
   return options_->color(layer);
+}
+
+Qt::BrushStyle LayoutViewer::getPattern(dbTechLayer* layer)
+{
+  return options_->pattern(layer);
 }
 
 void LayoutViewer::addInstTransform(QTransform& xfm,
@@ -651,14 +657,15 @@ void LayoutViewer::drawBlock(QPainter* painter,
       // Only draw the pins/obs if they are big enough to be useful
       painter->setPen(Qt::NoPen);
       QColor color = getColor(layer);
-      painter->setBrush(color);
+      Qt::BrushStyle brushPattern = getPattern(layer);
+      painter->setBrush(QBrush(color, brushPattern));
 
       painter->setBrush(color.lighter());
       for (auto& box : boxes->obs) {
         painter->drawRect(box);
       }
 
-      painter->setBrush(color);
+      painter->setBrush(QBrush(color, brushPattern));
       for (auto& box : boxes->mterms) {
         painter->drawRect(box);
       }
@@ -687,7 +694,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
 
     // Now draw the shapes
     QColor color = getColor(layer);
-    painter->setBrush(color);
+    Qt::BrushStyle brushPattern = getPattern(layer);
+    painter->setBrush(QBrush(color, brushPattern));
     painter->setPen(QPen(color, 0));
     auto iter = search_.search_shapes(layer,
                                       bounds.xMin(),
@@ -719,7 +727,8 @@ void LayoutViewer::drawBlock(QPainter* painter,
     // Now draw the fills
     if (options_->areFillsVisible()) {
       QColor color = getColor(layer).lighter(50);
-      painter->setBrush(color);
+      Qt::BrushStyle brushPattern = getPattern(layer);
+      painter->setBrush(QBrush(color, brushPattern));
       painter->setPen(QPen(color, 0));
       auto iter = search_.search_fills(layer,
                                        bounds.xMin(),
@@ -768,7 +777,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 
   // Flip the y-coordinate (see file level comments)
   dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).dy();
+  int dbu_height = getBounds(block).yMax();
   dbu_top = dbu_height - dbu_top;
   dbu_bottom = dbu_height - dbu_bottom;
 
@@ -778,7 +787,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).dy();
+  int dbu_height = getBounds(block).yMax();
 
   // Flip the y-coordinate (see file level comments)
   qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
@@ -836,8 +845,8 @@ void LayoutViewer::fit()
   Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
-                                viewport.height() / (double) bbox.dy());
+  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.xMax(),
+                                viewport.height() / (double) bbox.yMax());
   setPixelsPerDBU(pixelsPerDBU);
 }
 

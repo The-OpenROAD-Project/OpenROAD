@@ -10,18 +10,18 @@ Notice 0:     Created 4 pins.
 Notice 0:     Created 7 components and 35 component-terminals.
 Notice 0:     Created 10 nets and 18 connections.
 Notice 0: Finished DEF file: est_rc2.def
-[PARAMS] Min routing layer: 2
-[PARAMS] Max routing layer: 10
-[PARAMS] Global adjustment: 0
-[PARAMS] Unidirectional routing: 1
-[PARAMS] Grid origin: (0, 0)
-[INFO] #DB Obstructions: 0
-[INFO] #DB Obstacles: 95
-[INFO] #DB Macros: 0
-[INFO] Found 0 clock nets
-[INFO] Minimum degree: 2
-[INFO] Maximum degree: 3
-[INFO] Processing 177 obstacles on layer 1
+Min routing layer: 2
+Max routing layer: 10
+Global adjustment: 0.0
+Unidirectional routing: true
+Grid origin: (0, 0)
+[INFO GRT-0004] #DB Obstructions: 0
+[INFO GRT-0005] #DB Obstacles: 95
+[INFO GRT-0006] #DB Macros: 0
+[INFO GRT-0017] Found 0 clock nets
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 3
+[INFO GRT-0018] Processing 177 obstacles on layer 1
 
 Final usage/overflow report: 
 
@@ -37,7 +37,7 @@ Final usage/overflow report:
 [INFO] Final usage          : 44
 [INFO] Final number of vias : 44
 [INFO] Final usage 3D       : 176
-[INFO] Total wirelength: 161 um
+[INFO GRT-0018] Total wirelength: 161 um
 Net clk
  Pin capacitance: r 3.402 f 3.004
  Wire capacitance: r 0.819 f 0.819

@@ -47,6 +47,7 @@
 
 namespace ord {
 class OpenRoad;
+class Logger;
 }
 
 namespace odb {
@@ -279,6 +280,7 @@ class GlobalRouter
   void setSelectedMetal(int metal) { selectedMetal = metal; }
 
   ord::OpenRoad* _openroad;
+  ord::Logger *_logger;
   // Objects variables
   FastRouteCore* _fastRoute = nullptr;
   odb::Point* _gridOrigin = nullptr;

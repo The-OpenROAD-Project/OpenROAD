@@ -40,8 +40,6 @@ add_subdirectory(${IOPLACER_HOME}/src/munkres)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
-set(CMAKE_CXX_STANDARD 11)
-
 set(IOPLACER_WRAP ${CMAKE_CURRENT_BINARY_DIR}/ioplacer_wrap.cpp)
 set(IOPLACER_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/IoplacerTclInitVar.cc)
 
@@ -86,10 +84,9 @@ target_include_directories(ioPlacer
   )
 
 target_link_libraries(ioPlacer
-        ${TCL_LIB}
-        opendb
-        lefin
+  PUBLIC
 	Munkres
+  spdlog::spdlog
 	)
                       
                       

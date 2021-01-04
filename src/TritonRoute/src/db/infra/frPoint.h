@@ -71,6 +71,9 @@ namespace fr {
     bool operator==(const frPoint &pIn) const {
       return (xCoord_ == pIn.xCoord_) && (yCoord_ == pIn.yCoord_);
     }
+    bool operator!=(const frPoint &pIn) const {
+      return !(*this == pIn);
+    }
   protected:
     frCoord xCoord_, yCoord_;
   };

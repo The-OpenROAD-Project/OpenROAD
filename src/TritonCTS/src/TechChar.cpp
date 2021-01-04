@@ -682,6 +682,13 @@ void TechChar::initCharacterization()
     _options->setWireSegmentUnit(segmentDistance * dbUnitsPerMicron);
   }
 
+  // Required to make sure that the fake entry for minLengthSinkRegion
+  // exists (see HTreeBuilder::run())
+  if (_options->isFakeLutEntriesEnabled()) {
+    maxWirelength = std::max(maxWirelength,
+                             2 * _options->getWireSegmentUnit());
+  }
+
   for (unsigned wirelengthInter = _options->getWireSegmentUnit();
        (wirelengthInter <= maxWirelength)
        && (wirelengthInter
@@ -868,7 +875,7 @@ void TechChar::createStaInstance()
   if (_openStaChar != nullptr) {
     _openStaChar->clear();
   }
-  _openStaChar = sta::makeBlockSta(_charBlock);
+  _openStaChar = sta::makeBlockSta(openRoad, _charBlock);
   // Sets the current OpenSTA instance as the new one just created.
   sta::Sta::setSta(_openStaChar);
   _openStaChar->clear();

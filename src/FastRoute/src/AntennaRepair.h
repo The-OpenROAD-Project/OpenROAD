@@ -57,6 +57,10 @@ class dbChip;
 class dbTech;
 }  // namespace odb
 
+namespace ord {
+class Logger;
+} // namespace ord
+
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 
@@ -82,7 +86,8 @@ class AntennaRepair
   AntennaRepair(GlobalRouter* grouter,
                 ant::AntennaChecker* arc,
                 dpl::Opendp* opendp,
-                odb::dbDatabase* db);
+                odb::dbDatabase* db,
+                ord::Logger *logger);
 
   int checkAntennaViolations(NetRouteMap& routing,
                              int maxRoutingLayer,
@@ -119,6 +124,7 @@ class AntennaRepair
   ant::AntennaChecker* _arc;
   dpl::Opendp* _opendp;
   odb::dbDatabase* _db;
+  ord::Logger *_logger;
   odb::dbBlock* _block;
   std::vector<odb::dbInst*> _diodeInsts;
   AntennaViolations _antennaViolations;
