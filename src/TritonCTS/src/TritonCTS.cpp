@@ -61,8 +61,8 @@ void TritonCTS::makeComponents()
 {
   _options = new CtsOptions;
   _techChar = new TechChar(_options);
-  _staEngine = new StaEngine(*_options);
-  _dbWrapper = new DbWrapper(*_options, *this, _openroad->getDb());
+  _staEngine = new StaEngine(_options);
+  _dbWrapper = new DbWrapper(_options, *this, _openroad->getDb());
   _builders = new std::vector<TreeBuilder*>;
 }
 

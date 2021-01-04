@@ -51,7 +51,7 @@ namespace cts {
 class StaEngine
 {
  public:
-  StaEngine(CtsOptions& options) : _options(&options){};
+  StaEngine(CtsOptions* options) : _options(options){};
 
   void init();
   void findClockRoots();

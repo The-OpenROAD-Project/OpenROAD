@@ -57,7 +57,7 @@ class TritonCTS;
 class DbWrapper
 {
  public:
-  DbWrapper(CtsOptions& options, TritonCTS& kernel);
+  DbWrapper(CtsOptions* options, TritonCTS& kernel, odb::dbDatabase* db);
 
   bool masterExists(const std::string& master) const;
 

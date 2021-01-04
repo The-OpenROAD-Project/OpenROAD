@@ -35,7 +35,7 @@
 
 #include "DbWrapper.h"
 #include "HTreeBuilder.h"
-#include "TritonCTS.h"
+#include "tritoncts/TritonCTS.h"
 #include "db_sta/dbSta.hh"
 #include "openroad/Error.hh"
 #include "sta/Clock.hh"
@@ -54,10 +54,11 @@ namespace cts {
 
 using ord::error;
 
-DbWrapper::DbWrapper(CtsOptions& options, TritonCTS& kernel)
+DbWrapper::DbWrapper(CtsOptions* options, TritonCTS& kernel, odb::dbDatabase* db)
 {
-  _options = &options;
+  _options = options;
   _kernel = &kernel;
+  _db = db;
 }
 
 void DbWrapper::populateTritonCTS()
@@ -70,7 +71,6 @@ void DbWrapper::initDB()
 {
   ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
   _openSta = openRoad->getSta();
-  _db = odb::dbDatabase::getDatabase(_options->getDbId());
   _chip = _db->getChip();
   _block = _chip->getBlock();
   _options->setDbUnits(_block->getDbUnitsPerMicron());

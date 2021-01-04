@@ -36,7 +36,9 @@
 %module tritoncts
 
 %{
-#include "TritonCTS.h"
+#include "tritoncts/TritonCTS.h"
+#include "CtsOptions.h"
+#include "TechChar.h"
 #include "openroad/OpenRoad.hh"
 
 namespace ord {
@@ -56,97 +58,97 @@ using ord::getTritonCts;
 void
 set_only_characterization(bool enable)
 {
-  getTritonCts()->getParms().setOnlyCharacterization(enable);
+  getTritonCts()->getParms()->setOnlyCharacterization(enable);
 }
 
 void
 set_simple_cts(bool enable)
 {
-  getTritonCts()->getParms().setSimpleCts(enable);
+  getTritonCts()->getParms()->setSimpleCts(enable);
 }
 
 void
 set_sink_clustering(bool enable)
 {
-  getTritonCts()->getParms().setSinkClustering(enable);
+  getTritonCts()->getParms()->setSinkClustering(enable);
 }
 
 void
 set_auto_lut(bool enable)
 {
-  getTritonCts()->getParms().setAutoLut(enable);
+  getTritonCts()->getParms()->setAutoLut(enable);
 }
 
 void
 set_lut_file(const char* file)
 {
-  getTritonCts()->getParms().setLutFile(file);
+  getTritonCts()->getParms()->setLutFile(file);
 }
 
 void
 set_sol_list_file(const char* file)
 {
-  getTritonCts()->getParms().setSolListFile(file);
+  getTritonCts()->getParms()->setSolListFile(file);
 }
 
 void
 set_max_char_cap(double cap)
 {
-  getTritonCts()->getParms().setMaxCharCap(cap);
+  getTritonCts()->getParms()->setMaxCharCap(cap);
 }
 
 void
 set_max_char_slew(double slew)
 {
-  getTritonCts()->getParms().setMaxCharSlew(slew);
+  getTritonCts()->getParms()->setMaxCharSlew(slew);
 }
 
 void
 set_wire_segment_distance_unit(unsigned unit)
 {
-  getTritonCts()->getParms().setWireSegmentUnit(unit);
+  getTritonCts()->getParms()->setWireSegmentUnit(unit);
 }
 
 void
 set_root_buffer(const char* buffer)
 {
-  getTritonCts()->getParms().setRootBuffer(buffer);
+  getTritonCts()->getParms()->setRootBuffer(buffer);
 }
 
 void
 set_out_path(const char* path)
 {
-  getTritonCts()->getParms().setOutputPath(path);
+  getTritonCts()->getParms()->setOutputPath(path);
 }
 
 void
 set_cap_per_sqr(double cap)
 {
-  getTritonCts()->getParms().setCapPerSqr(cap);
+  getTritonCts()->getParms()->setCapPerSqr(cap);
 }
 
 void
 set_res_per_sqr(double res)
 {
-  getTritonCts()->getParms().setResPerSqr(res);
+  getTritonCts()->getParms()->setResPerSqr(res);
 }
 
 void
 set_slew_inter(double slew)
 {
-  getTritonCts()->getParms().setSlewInter(slew);
+  getTritonCts()->getParms()->setSlewInter(slew);
 }
 
 void
 set_cap_inter(double cap)
 {
-  getTritonCts()->getParms().setCapInter(cap);
+  getTritonCts()->getParms()->setCapInter(cap);
 }
 
 void
 set_metric_output(const char* file)
 {
-  getTritonCts()->getParms().setMetricsFile(file);
+  getTritonCts()->getParms()->setMetricsFile(file);
 }
 
 void
@@ -158,81 +160,81 @@ report_cts_metrics()
 void
 set_tree_buf(const char* buffer)
 {
-  getTritonCts()->getParms().setTreeBuffer(buffer);
+  getTritonCts()->getParms()->setTreeBuffer(buffer);
 }
 
 void
 set_distance_between_buffers(double distance)
 {
-  getTritonCts()->getParms().setSimpleSegmentsEnabled(true);
-  getTritonCts()->getParms().setBufferDistance(distance);
+  getTritonCts()->getParms()->setSimpleSegmentsEnabled(true);
+  getTritonCts()->getParms()->setBufferDistance(distance);
 }
 
 void
 set_branching_point_buffers_distance(double distance)
 {
-  getTritonCts()->getParms().setVertexBuffersEnabled(true);
-  getTritonCts()->getParms().setVertexBufferDistance(distance);
+  getTritonCts()->getParms()->setVertexBuffersEnabled(true);
+  getTritonCts()->getParms()->setVertexBufferDistance(distance);
 }
 
 void
 set_disable_post_cts(bool disable)
 {
-  getTritonCts()->getParms().setRunPostCtsOpt(!(disable));
+  getTritonCts()->getParms()->setRunPostCtsOpt(!(disable));
 }
 
 void
 set_clustering_exponent(unsigned power)
 {
-  getTritonCts()->getParms().setClusteringPower(power);
+  getTritonCts()->getParms()->setClusteringPower(power);
 }
 
 void
 set_clustering_unbalance_ratio(double ratio)
 {
-  getTritonCts()->getParms().setClusteringCapacity(ratio);
+  getTritonCts()->getParms()->setClusteringCapacity(ratio);
 }
 
 void
 set_sink_clustering_size(unsigned size)
 {
-  getTritonCts()->getParms().setSizeSinkClustering(size);
+  getTritonCts()->getParms()->setSizeSinkClustering(size);
 }
 
 void
 set_clustering_diameter(double distance)
 {
-  getTritonCts()->getParms().setMaxDiameter(distance);
+  getTritonCts()->getParms()->setMaxDiameter(distance);
 }
 
 void
 set_num_static_layers(unsigned num)
 {
-  getTritonCts()->getParms().setNumStaticLayers(num);
+  getTritonCts()->getParms()->setNumStaticLayers(num);
 }
 
 void
 set_sink_buffer(const char* buffer)
 {
-  getTritonCts()->getParms().setSinkBuffer(buffer);
+  getTritonCts()->getParms()->setSinkBuffer(buffer);
 }
 
 void
 report_characterization()
 {
-  getTritonCts()->getCharacterization().report();
+  getTritonCts()->getCharacterization()->report();
 }
 
 void
 report_wire_segments(unsigned length, unsigned load, unsigned outputSlew)
 {
-  getTritonCts()->getCharacterization().reportSegments(length, load, outputSlew);
+  getTritonCts()->getCharacterization()->reportSegments(length, load, outputSlew);
 }
 
 void
 export_characterization(const char* file)
 {
-  getTritonCts()->getCharacterization().write(file);
+  getTritonCts()->getCharacterization()->write(file);
 }
 
 int
