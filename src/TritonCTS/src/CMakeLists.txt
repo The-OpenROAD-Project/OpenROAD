@@ -49,7 +49,7 @@ add_custom_command(OUTPUT ${TRITONCTS_WRAP}
         WORKING_DIRECTORY ${TRITONCTS_HOME}/src
         DEPENDS
         ${TRITONCTS_HOME}/src/tritoncts.i
-        ${TRITONCTS_HOME}/src/TritonCTS.h
+        ${TRITONCTS_HOME}/include/tritoncts/TritonCTS.h
         ${OPENROAD_HOME}/src/Exception.i
 )
 
@@ -60,34 +60,36 @@ add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
 )
 
 set(SRC_FILES
-        Clock.cpp
-        DbWrapper.cpp
-        HTreeBuilder.cpp
-        MakeTritoncts.cpp
-        PostCtsOpt.cpp
-        SinkClustering.cpp
-        StaEngine.cpp
-        TechChar.cpp
-        TritonCTS.cpp
-        CKMeans/clustering.cpp
+  Clock.cpp
+  DbWrapper.cpp
+  HTreeBuilder.cpp
+  MakeTritoncts.cpp
+  PostCtsOpt.cpp
+  SinkClustering.cpp
+  StaEngine.cpp
+  TechChar.cpp
+  TritonCTS.cpp
+  CKMeans/clustering.cpp
 )
 
 add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
 
-
-include_directories(${TRITONCTS_HOME}/src
-                    PRIVATE
-                    ${OPENDB_HOME}/include
-                    ${OPENDB_HOME}/include/opendb
-                    ${OPENROAD_HOME}/include
-                    ${DBSTA_HOME}/include
-                    ${OPENSTA_HOME}/include
-		    ${TCL_INCLUDE_PATH}
-                    ${LEMON_INCLUDE_DIRS}
-                   ) 
+target_include_directories(TritonCTS
+  PUBLIC
+  PUBLIC ${TRITONCTS_HOME}/include
+  PRIVATE
+  ${OPENDB_HOME}/include
+  ${OPENDB_HOME}/include/opendb
+  ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
+  ${OPENSTA_HOME}/include
+  ${TRITONCTS_HOME}/src
+  ${TCL_INCLUDE_PATH}
+  ${LEMON_INCLUDE_DIRS}
+ )
 
 target_link_libraries(${BIN_NAME} INTERFACE
-                      ${TCL_LIB}
-                      lefin
-                      opendb
-                     )
+  ${TCL_LIB}
+  lefin
+  opendb
+ )
