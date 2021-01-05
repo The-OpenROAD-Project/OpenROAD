@@ -47,14 +47,18 @@ struct frRegionQuery::Impl
     std::vector<rtree<frGuide>>       guides;
     std::vector<rtree<frNet>>         origGuides; // non-processed guides;
     rtree<frBlockObject>              grPins;
+    std::vector<rtree<frRPin>>        rpins; // only for rpins
+    std::vector<rtree<grBlockObject>> grObjs; // only for gr objs, via only in via layer
     std::vector<rtree<frBlockObject>> drObjs; // only for dr objs, via only in via layer
     std::vector<rtree<frMarker>>      markers; // use init()  
 
     void init(frLayerNum numLayers);
     void initOrigGuide(frLayerNum numLayers, map<frNet*, vector<frRect>, frBlockObjectComp> &tmpGuides);
     void initGuide(frLayerNum numLayers);
+    void initRPin(frLayerNum numLayers);
     void initGRPin(vector<pair<frBlockObject*, frPoint> > &in);
     void initDRObj(frLayerNum numLayers);
+    void initGRObj(frLayerNum numLayers);
   
     void add(frShape* in,    ObjectsByLayer<frBlockObject> &allShapes);
     void add(frVia* in,      ObjectsByLayer<frBlockObject> &allShapes);
@@ -66,6 +70,11 @@ struct frRegionQuery::Impl
     void addOrigGuide(frNet* net, const frRect &rect, ObjectsByLayer<frNet> &allShapes);
     void addDRObj(frShape* in, ObjectsByLayer<frBlockObject> &allShapes);
     void addDRObj(frVia* in,   ObjectsByLayer<frBlockObject> &allShapes);
+    void addRPin(frRPin *rpin, std::vector<std::vector<rq_box_value_t<frRPin*>>> &allRPins);
+    void addGRObj(grShape* in, std::vector<std::vector<rq_box_value_t<grBlockObject*>>> &allShapes);
+    void addGRObj(grVia* in, std::vector<std::vector<rq_box_value_t<grBlockObject*>>> &allShapes);
+    void addGRObj(grShape* in);
+    void addGRObj(grVia* in);
 };
 
 frRegionQuery::frRegionQuery(frDesign* designIn)
@@ -128,6 +137,60 @@ void frRegionQuery::removeDRObj(frShape* shape) {
     shape->getBBox(frb);
     boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
     impl_->drObjs.at(shape->getLayerNum()).remove(make_pair(boostb, shape));
+  } else {
+    cout <<"Error: unsupported region query add" <<endl;
+  }
+}
+
+void frRegionQuery::addGRObj(grShape* shape) {
+  impl_->addGRObj(shape);
+}
+
+void frRegionQuery::Impl::addGRObj(grShape* shape) {
+  frBox frb;
+  box_t boostb;
+  if (shape->typeId() == grcPathSeg) {
+    shape->getBBox(frb);
+    boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+    grObjs.at(shape->getLayerNum()).insert(make_pair(boostb, shape));
+  } else {
+    cout <<"Error: unsupported region query add" <<endl;
+  }
+}
+
+void frRegionQuery::Impl::addGRObj(grVia *via, vector<vector<rq_box_value_t<grBlockObject*>>> &allShapes) {
+  frBox frb;
+  via->getBBox(frb);
+  box_t boostb(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+  allShapes.at(via->getViaDef()->getCutLayerNum()).push_back(make_pair(boostb, via));
+}
+
+void frRegionQuery::removeGRObj(grVia* via) {
+  frBox frb;
+  via->getBBox(frb);
+  box_t boostb(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+  impl_->grObjs.at(via->getViaDef()->getCutLayerNum()).remove(make_pair(boostb, via));
+}
+
+void frRegionQuery::Impl::addGRObj(grShape* shape, vector<vector<rq_box_value_t<grBlockObject*>>> &allShapes) {
+  frBox frb;
+  box_t boostb;
+  if (shape->typeId() == grcPathSeg) {
+    shape->getBBox(frb);
+    boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+    allShapes.at(shape->getLayerNum()).push_back(make_pair(boostb, shape));
+  } else {
+    cout <<"Error: unsupported region query add" <<endl;
+  }
+}
+
+void frRegionQuery::removeGRObj(grShape* shape) {
+  frBox frb;
+  box_t boostb;
+  if (shape->typeId() == grcPathSeg) {
+    shape->getBBox(frb);
+    boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+    impl_->grObjs.at(shape->getLayerNum()).remove(make_pair(boostb, shape));
   } else {
     cout <<"Error: unsupported region query add" <<endl;
   }
@@ -202,6 +265,13 @@ void frRegionQuery::removeDRObj(frVia* via) {
   via->getBBox(frb);
   box_t boostb(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
   impl_->drObjs.at(via->getViaDef()->getCutLayerNum()).remove(make_pair(boostb, via));
+}
+
+void frRegionQuery::addGRObj(grVia* via) {
+  frBox frb;
+  via->getBBox(frb);
+  box_t boostb(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+  impl_->grObjs.at(via->getViaDef()->getCutLayerNum()).insert(make_pair(boostb, via));
 }
 
 void frRegionQuery::Impl::add(frInstTerm* instTerm, ObjectsByLayer<frBlockObject> &allShapes) {
@@ -290,6 +360,15 @@ void frRegionQuery::Impl::addGuide(frGuide* guide, ObjectsByLayer<frGuide> &allS
   }
 }
 
+void frRegionQuery::Impl::addRPin(frRPin *rpin, vector<vector<rq_box_value_t<frRPin*>>> &allRPins) {
+  frBox frb;
+  box_t boostb;
+  frLayerNum layerNum = rpin->getLayerNum();
+  rpin->getBBox(frb);
+  boostb = box_t(point_t(frb.left(), frb.bottom()), point_t(frb.right(), frb.top()));
+  allRPins.at(layerNum).push_back(make_pair(boostb, rpin));
+}
+
 void frRegionQuery::Impl::addOrigGuide(frNet* net, const frRect &rect, ObjectsByLayer<frNet> &allShapes) {
   frBox frb;
   rect.getBBox(frb);
@@ -301,6 +380,11 @@ void frRegionQuery::Impl::addOrigGuide(frNet* net, const frRect &rect, ObjectsBy
 void frRegionQuery::query(const frBox &box, frLayerNum layerNum, Objects<frBlockObject> &result) {
   box_t boostb = box_t(point_t(box.left(), box.bottom()), point_t(box.right(), box.top()));
   impl_->shapes.at(layerNum).query(bgi::intersects(boostb), back_inserter(result));
+}
+
+void frRegionQuery::queryRPin(const frBox &box, frLayerNum layerNum, Objects<frRPin> &result) {
+  box_t boostb = box_t(point_t(box.left(), box.bottom()), point_t(box.right(), box.top()));
+  impl_->rpins.at(layerNum).query(bgi::intersects(boostb), back_inserter(result));
 }
 
 void frRegionQuery::queryGuide(const frBox &box, frLayerNum layerNum, Objects<frGuide> &result) {
@@ -351,6 +435,15 @@ void frRegionQuery::queryDRObj(const frBox &box, vector<frBlockObject*> &result)
   Objects<frBlockObject> temp;
   box_t boostb = box_t(point_t(box.left(), box.bottom()), point_t(box.right(), box.top()));
   for (auto &m: impl_->drObjs) {
+    m.query(bgi::intersects(boostb), back_inserter(temp));
+  }
+  transform(temp.begin(), temp.end(), back_inserter(result), [](auto &kv) {return kv.second;});
+}
+
+void frRegionQuery::queryGRObj(const frBox &box, vector<grBlockObject*> &result) {
+  Objects<grBlockObject> temp;
+  box_t boostb = box_t(point_t(box.left(), box.bottom()), point_t(box.right(), box.top()));
+  for (auto &m: impl_->grObjs) {
     m.query(bgi::intersects(boostb), back_inserter(temp));
   }
   transform(temp.begin(), temp.end(), back_inserter(result), [](auto &kv) {return kv.second;});
@@ -568,6 +661,29 @@ void frRegionQuery::Impl::initGRPin(vector<pair<frBlockObject*, frPoint> > &in) 
   grPins = boost::move(rtree<frBlockObject>(allGRPins));
 }
 
+void frRegionQuery::initRPin(frLayerNum numLayers) {
+  impl_->initRPin(numLayers);
+}
+
+void frRegionQuery::Impl::initRPin(frLayerNum numLayers) {
+  rpins.clear();
+  rpins.resize(numLayers);
+
+  vector<vector<rq_box_value_t<frRPin*>>> allRPins(numLayers);
+
+  for (auto &net: design->getTopBlock()->getNets()) {
+    for (auto &rpin: net->getRPins()) {
+      addRPin(rpin.get(), allRPins);
+    }
+  }
+
+  for (auto i = 0; i < numLayers; i++) {
+    rpins.at(i) = boost::move(rtree<frRPin>(allRPins.at(i)));
+    allRPins.at(i).clear();
+    allRPins.at(i).shrink_to_fit();
+  }
+}
+
 void frRegionQuery::initDRObj(frLayerNum numLayers) {
   impl_->initDRObj(numLayers);
 }
@@ -593,6 +709,42 @@ void frRegionQuery::Impl::initDRObj(frLayerNum numLayers) {
     allShapes.at(i).shrink_to_fit();
   }
 
+}
+
+void frRegionQuery::Impl::initGRObj(frLayerNum numLayers) {
+  grObjs.clear();
+  grObjs.shrink_to_fit();
+  grObjs.resize(numLayers);
+
+  vector<vector<rq_box_value_t<grBlockObject*>>> allShapes(numLayers);
+
+  for (auto &net: design->getTopBlock()->getNets()) {
+    for (auto &shape: net->getGRShapes()) {
+      addGRObj(shape.get(), allShapes);
+    }
+    for (auto &via: net->getGRVias()) {
+      addGRObj(via.get(), allShapes);
+    }
+  }
+
+  for (auto i = 0; i < numLayers; i++) {
+    grObjs.at(i) = boost::move(bgi::rtree<rq_box_value_t<grBlockObject*>, bgi::quadratic<16> >(allShapes.at(i)));
+    allShapes.at(i).clear();
+    allShapes.at(i).shrink_to_fit();
+  }
+}
+
+void frRegionQuery::initGRObj(frLayerNum numLayers) {
+  impl_->initGRObj(numLayers);
+}
+
+void frRegionQuery::printGRObj() {
+  cout <<endl;
+  for (int i = 0; i < (int)(impl_->design->getTech()->getLayers().size()); i++) {
+    frString layerName;
+    impl_->design->getTech()->getLayers().at(i)->getName(layerName);
+    cout <<layerName <<" grObj region query size = " <<impl_->grObjs.at(i).size() <<endl <<flush;
+  }
 }
 
 void frRegionQuery::print() {

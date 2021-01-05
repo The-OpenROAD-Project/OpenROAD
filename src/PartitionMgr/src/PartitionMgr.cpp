@@ -52,7 +52,7 @@ extern "C" {
 #include "opendb/db.h"
 #include "openroad/Error.hh"
 
-namespace partition {
+namespace par {
 
 // Partition Netlist
 
@@ -1435,4 +1435,4 @@ void PartSolutions::clearAssignments()
   _seeds.clear();
 }
 
-}  // namespace partition
+}  // namespace par

@@ -15,14 +15,9 @@ estimate_parasitics -placement
 # set max slew low enough there are no max cap violations
 set_max_transition .05 [current_design]
 # print order is not stable across ports so just count violations
-with_output_to_variable violations {
-  report_check_types -max_slew -max_cap -max_fanout -violators
-}
-puts "Found [regexp -all VIOLATED $violations] violations"
+set violation_count [llength [sta::pin_slew_limit_violations [sta::cmd_corner] max]]
+puts "Found $violation_count violations"
 
 repair_design
 
-with_output_to_variable violations {
-  report_check_types -max_slew -max_cap -max_fanout -violators
-}
-puts "Found [regexp -all VIOLATED $violations] violations"
+report_check_types -max_slew -max_cap -max_fanout -violators

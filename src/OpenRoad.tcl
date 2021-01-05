@@ -33,12 +33,6 @@
 ##
 ############################################################################
 
-proc show_openroad_splash {} {
-  puts "OpenROAD [ord::openroad_version] [string range [ord::openroad_git_sha1] 0 9]
-This program is licensed under the BSD-3 license. See the LICENSE file for details. 
-Components of this program may be licensed under more restrictive licenses which must be honored."
-}
-
 # -library is the default
 sta::define_cmd_args "read_lef" {[-tech] [-library] filename}
 
@@ -146,21 +140,13 @@ proc set_layer_rc {args} {
     ord::error ORD 10 "Exactly one of layer or via must be specified."
   }
 
-  set db [ord::get_db]
-  set tech [$db getTech]
+  set tech [ord::get_db_tech]
 
   if { [info exists keys(-layer)] } {
     set techLayer [$tech findLayer $keys(-layer)]
   } else {
     set techLayer [$tech findLayer $keys(-via)]
   }
-
-  set chip [$db getChip]
-  if { $chip == "NULL" } {
-    ord::error ORD 11 "please load the design before trying to use this command"
-  }
-  set block [$chip getBlock]
-
   if { $techLayer == "NULL" } {
     ord::error "layer not found."
   }
@@ -181,98 +167,105 @@ proc set_layer_rc {args} {
       set wire_res [resistance_ui_sta $keys(-resistance)]
       $viaTechLayer setResistance $wire_res
     }
-
-    return
+  } else {
+    if { [info exists keys(-capacitance)] } {
+      # Zero the edge cap and just use the user given value
+      $techLayer setEdgeCapacitance 0
+      # The DB stores capacitance per square micron of area, not per
+      # micron of length.
+      set wire_width [ord::dbu_to_microns [$techLayer getWidth]]
+      set wire_cap [expr [sta::capacitance_ui_sta $keys(-capacitance)] \
+                      / [sta::distance_ui_sta 1.0]]
+      # ui_sta converts to F/m so multiple by 1E6 to get pF/um
+      set cap_per_square [expr 1E6 * $wire_cap / $wire_width]
+      
+      $techLayer setCapacitance $cap_per_square
+    }
+    
+    if { [info exists keys(-resistance)] } {
+      # The DB stores resistance for a square of wire,
+      # not unit resistance.
+      set wire_width [ord::dbu_to_microns [$techLayer getWidth]]
+      set wire_res [expr [sta::resistance_ui_sta $keys(-resistance)] \
+                      / [sta::distance_ui_sta 1.0]]
+      # ui_sta converts to ohm/m so multiple by 1E-6 to get ohm/um
+      set res_per_square [expr 1e-6 * $wire_width * $wire_res]
+      
+      $techLayer setResistance $res_per_square
+    }
   }
+}
 
-  if { [info exists keys(-capacitance)] } {
-    # Zero the edge cap and just use the user given value
-    $techLayer setEdgeCapacitance 0
-    # The DB stores capacitance per square micron of area, not per
-    # micron of length. "1.0" is just for casting integer to float
-    set dbu [expr 1.0 * [$block getDbUnitsPerMicron]]
-    set wire_width [expr 1.0 * [$techLayer getWidth] / $dbu]
-    set wire_cap [expr [sta::capacitance_ui_sta $keys(-capacitance)] / [sta::distance_ui_sta 1.0]]
-    # ui_sta converts to F/m so multiple by 1E6 to get pF/um
-    set cap_per_square [expr 1E6 * $wire_cap / $wire_width]
-
-    $techLayer setCapacitance $cap_per_square
-  }
-
-  if { [info exists keys(-resistance)] } {
-    # The DB stores resistance for a square of wire,
-    # not unit resistance. "1.0" is just for casting integer to float
-    set wire_width [expr 1.0 * [$techLayer getWidth] / [$block getDbUnitsPerMicron]]
-    set wire_res [expr [sta::resistance_ui_sta $keys(-resistance)] / [sta::distance_ui_sta 1.0]]
-    # ui_sta converts to ohm/m so multiple by 1E-6 to get ohm/um
-    set res_per_square [expr 1e-6 * $wire_width * $wire_res]
-
-    $techLayer setResistance $res_per_square
-  }
+sta::define_cmd_args "set_debug_level" { tool group level }
+proc set_debug_level {args} {
+  sta::check_argc_eq3 "set_debug_level" $args
+  lassign $args tool group level
+  sta::check_integer "set_debug_level" $level
+  ord::set_debug_level $tool $group $level
 }
 
 ################################################################
 
 namespace eval ord {
-
-trace variable ::file_continue_on_error "w" \
-  ord::trace_file_continue_on_error
-
-# Sync with sta::sta_continue_on_error used by 'source' proc defined by OpenSTA.
-proc trace_file_continue_on_error { name1 name2 op } {
-  set ::sta_continue_on_error $::file_continue_on_error
-}
-
-proc error { args } {
-  if { [llength $args] == 1 } {
-    # pre-logger compatibility
-    ord_error UKN 0 [lindex $args 0]
-  } elseif { [llength $args] == 3 } {
-    lassign $args tool_id id msg
-    ord_error $tool_id $id $msg
-  } else {
-    ord_error UKN 0 "ill-formed error arguments $args"
+  
+  trace variable ::file_continue_on_error "w" \
+    ord::trace_file_continue_on_error
+  
+  # Sync with sta::sta_continue_on_error used by 'source' proc defined by OpenSTA.
+  proc trace_file_continue_on_error { name1 name2 op } {
+    set ::sta_continue_on_error $::file_continue_on_error
   }
-}
-
-proc warn { args } {
-  if { [llength $args] == 1 } {
-    # pre-logger compatibility
-    ord_warn UKN 0 [lindex $args 0]
-  } elseif { [llength $args] == 3 } {
-    lassign $args tool_id id msg
-    ord_warn $tool_id $id $msg
-  } else {
-    ord_warn UKN 14 "ill-formed warn arguments $args"
+  
+  proc error { args } {
+    if { [llength $args] == 1 } {
+      # pre-logger compatibility
+      ord_error UKN 0 [lindex $args 0]
+    } elseif { [llength $args] == 3 } {
+      lassign $args tool_id id msg
+      ord_error $tool_id $id $msg
+    } else {
+      ord_error UKN 0 "ill-formed error arguments $args"
+    }
   }
-}
-
-proc ensure_units_initialized { } {
-  if { ![units_initialized] } {
-    ord::error ORD 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+  
+  proc warn { args } {
+    if { [llength $args] == 1 } {
+      # pre-logger compatibility
+      ord_warn UKN 0 [lindex $args 0]
+    } elseif { [llength $args] == 3 } {
+      lassign $args tool_id id msg
+      ord_warn $tool_id $id $msg
+    } else {
+      ord_warn UKN 14 "ill-formed warn arguments $args"
+    }
   }
-}
-
-proc clear {} {
-  sta::clear_network
-  sta::clear_sta
-  grt::clear_fastroute
-  [get_db] clear
-}
-
-# namespace ord
+  
+  proc ensure_units_initialized { } {
+    if { ![units_initialized] } {
+      ord::error ORD 13 "command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
+    }
+  }
+  
+  proc clear {} {
+    sta::clear_network
+    sta::clear_sta
+    grt::clear_fastroute
+    [get_db] clear
+  }
+  
+  # namespace ord
 }
 
 # redefine sta::sta_error to call ord::error
 namespace eval sta {
-
-proc sta_error { id msg } {
-  ord::error STA $id $msg
-}
-
-proc sta_warn { id msg } {
-  ord::warn STA $id $msg
-}
-
-# namespace sta
+  
+  proc sta_error { id msg } {
+    ord::error STA $id $msg
+  }
+  
+  proc sta_warn { id msg } {
+    ord::warn STA $id $msg
+  }
+  
+  # namespace sta
 }

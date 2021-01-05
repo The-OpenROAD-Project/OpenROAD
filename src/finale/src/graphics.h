@@ -38,7 +38,7 @@
 #include "gui/gui.h"
 #include "polygon.h"
 
-namespace finale {
+namespace fin {
 
 // This class draws debugging graphics on the layout
 class Graphics : public gui::Renderer
@@ -61,4 +61,4 @@ class Graphics : public gui::Renderer
   std::vector<Rectangle> polygon_rects_;
 };
 
-}  // namespace finale
+}  // namespace fin

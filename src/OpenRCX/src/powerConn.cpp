@@ -51,7 +51,7 @@
 //#include "logger.h"
 #include <dbLogger.h>
 
-namespace OpenRCX {
+namespace rcx {
 
 void extMain::setPowerExtOptions(bool        skip_power_stubs,
                                  const char* exclude_cells,
@@ -6078,4 +6078,4 @@ void extMain::addPowerSourceName(uint ii, char* sname)
   _powerSourceTable[ii].push_back(sname);
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

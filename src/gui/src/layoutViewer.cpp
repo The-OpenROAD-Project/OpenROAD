@@ -45,8 +45,7 @@
 #include <QSizePolicy>
 #include <QToolButton>
 #include <QToolTip>
-#include <QVBoxLayout>
-#include <iostream>
+
 #include <tuple>
 #include <vector>
 
@@ -206,7 +205,7 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
 
   Rect bbox = getBounds(block);
 
-  QSize size(ceil(bbox.dx() * pixelsPerDBU), ceil(bbox.dy() * pixelsPerDBU));
+  QSize size(ceil(bbox.xMax() * pixelsPerDBU), ceil(bbox.yMax() * pixelsPerDBU));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
@@ -374,8 +373,8 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   dbBlock* block = getBlock();
   if (block) {
     Rect bbox = getBounds(block);
-    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.dx(),
-                             event->size().height() / (double) bbox.dy());
+    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.xMax(),
+                             event->size().height() / (double) bbox.yMax());
   }
 }
 
@@ -796,7 +795,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 
   // Flip the y-coordinate (see file level comments)
   dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).dy();
+  int dbu_height = getBounds(block).yMax();
   dbu_top = dbu_height - dbu_top;
   dbu_bottom = dbu_height - dbu_bottom;
 
@@ -806,7 +805,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).dy();
+  int dbu_height = getBounds(block).yMax();
 
   // Flip the y-coordinate (see file level comments)
   qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
@@ -864,8 +863,8 @@ void LayoutViewer::fit()
   Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
-                                viewport.height() / (double) bbox.dy());
+  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.xMax(),
+                                viewport.height() / (double) bbox.yMax());
   setPixelsPerDBU(pixelsPerDBU);
 }
 

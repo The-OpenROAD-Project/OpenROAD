@@ -577,6 +577,7 @@ void io::Parser::genGuides(frNet *net, vector<frRect> &rects) {
   //bool enableOutput = true;
   bool enableOutput = false;
   // cout <<"net " <<net->getName() <<endl <<flush;
+  net->clearGuides();
   vector<map<frCoord, boost::icl::interval_set<frCoord> > > intvs(tech->getLayers().size());
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);

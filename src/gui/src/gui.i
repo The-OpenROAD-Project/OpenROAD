@@ -38,6 +38,7 @@
 %{
 #include "openroad/OpenRoad.hh"
 #include "openroad/Error.hh"
+#include "openroad/Logger.h"
 #include "gui/gui.h"
 %}
 
@@ -76,19 +77,18 @@ void zoom_to(double xlo, double ylo, double xhi, double yhi)
 {
   auto gui = gui::Gui::get();
   auto db = ord::OpenRoad::openRoad()->getDb();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
+  using ord::GUI;
   if (!db) {
-    ord::warn("No database loaded");
-    return;
+    logger->error(GUI, 1, "No database loaded");
   }
   auto chip = db->getChip();
   if (!chip) {
-    ord::warn("No chip loaded");
-    return;
+    logger->error(GUI, 2, "No chip loaded");
   }
   auto block = chip->getBlock();
   if (!block) {
-    ord::warn("No block loaded");
-    return;
+    logger->error(GUI, 3, "No block loaded");
   }
 
   int dbuPerUU = block->getDbUnitsPerMicron();

@@ -42,7 +42,7 @@
 //#include "logger.h"
 #include <dbLogger.h>
 
-namespace OpenRCX {
+namespace rcx {
 
 #ifdef EXT_SI
 void initExtSi(dbNet* victim, bool is_min, bool is_rise, tmg_db* tm);
@@ -1531,4 +1531,4 @@ void extRcTree::makeTree(double max_cap, uint test, bool for_buffering)
   }
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

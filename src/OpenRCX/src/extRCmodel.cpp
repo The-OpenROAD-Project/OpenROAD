@@ -46,7 +46,7 @@
 #include <vector>
 
 //#define SKIP_SOLVER
-namespace OpenRCX {
+namespace rcx {
 
 bool OUREVERSEORDER = false;
 
@@ -5682,4 +5682,4 @@ rcTable, false); else // total ;
 rcTable, false);
 }
 */
-}  // namespace OpenRCX
+}  // namespace rcx
