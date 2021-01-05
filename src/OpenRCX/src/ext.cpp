@@ -41,7 +41,7 @@ namespace sta {
 extern const char* openrcx_tcl_inits[];
 }  // namespace sta
 
-namespace OpenRCX {
+namespace rcx {
 
 extern "C" {
 extern int Openrcx_Init(Tcl_Interp* interp);
@@ -1213,4 +1213,4 @@ bool Ext::net_stats(std::list<int>&    net_ids,
   return TCL_OK;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

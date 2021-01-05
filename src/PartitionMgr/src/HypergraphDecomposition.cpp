@@ -39,7 +39,7 @@
 
 #include "opendb/db.h"
 
-namespace partition {
+namespace par {
 
 void HypergraphDecomposition::init(int dbId)
 {
@@ -360,4 +360,4 @@ void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph, Graph& graph)
   hypergraph.assignVertexWeight(graph.getVertexWeight());
 }
 
-}  // namespace partition
+}  // namespace par

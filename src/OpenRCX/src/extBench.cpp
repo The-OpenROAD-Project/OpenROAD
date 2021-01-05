@@ -43,7 +43,7 @@
 //#include "logger.h"
 #include <dbLogger.h>
 
-namespace OpenRCX {
+namespace rcx {
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -1052,4 +1052,4 @@ uint extRCModel::getNetCapMatrixValues3D(uint        nodeCnt,
   return 0;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

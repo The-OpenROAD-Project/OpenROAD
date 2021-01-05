@@ -135,7 +135,7 @@ getReplace()
   return openroad->getReplace();
 }
 
-OpenRCX::Ext *
+rcx::Ext *
 getOpenRCX()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -149,7 +149,7 @@ getTritonRoute()
   return openroad->getTritonRoute();
 }
 
-pdnsim::PDNSim*
+psm::PDNSim*
 getPDNSim()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -170,7 +170,7 @@ getIOPlacer()
   return openroad->getIOPlacer();
 }
 
-partition::PartitionMgr*
+par::PartitionMgr*
 getPartitionMgr()
 {
   OpenRoad *openroad = getOpenRoad();
