@@ -258,7 +258,7 @@ void ScriptWidget::pause()
 
   // Keep processing events until the user continues
   while (paused_) {
-    QCoreApplication::processEvents();
+    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents);
   }
 
   pauser_->setText(prior_text);
