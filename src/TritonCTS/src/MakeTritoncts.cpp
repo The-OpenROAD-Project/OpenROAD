@@ -67,6 +67,7 @@ void initTritonCts(OpenRoad* openroad)
 
 void deleteTritonCts(cts::TritonCTS* tritoncts)
 {
+	delete tritoncts;
 }
 
 }  // namespace ord
