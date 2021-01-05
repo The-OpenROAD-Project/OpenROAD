@@ -226,7 +226,7 @@ void TritonCTS::runPostCtsOpt()
   std::cout << " ****************\n";
 
   for (TreeBuilder* builder : *_builders) {
-    PostCtsOpt opt(builder->getClock(), *_options);
+    PostCtsOpt opt(builder->getClock(), _options);
     opt.run();
   }
 }
@@ -463,7 +463,7 @@ void TritonCTS::initClock(odb::dbNet* net)
 
   clockNet.setNetObj(net);
 
-  addBuilder(new HTreeBuilder(*_options, clockNet));
+  addBuilder(new HTreeBuilder(_options, clockNet));
 }
 
 void TritonCTS::parseClockNames(std::vector<std::string>& clockNetNames) const

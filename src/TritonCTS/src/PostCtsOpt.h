@@ -45,8 +45,8 @@ namespace cts {
 class PostCtsOpt
 {
  public:
-  PostCtsOpt(Clock& clock, CtsOptions& options)
-      : _clock(&clock), _options(&options)
+  PostCtsOpt(Clock& clock, CtsOptions* options)
+      : _clock(&clock), _options(options)
   {
     _bufDistRatio = _options->getBufDistRatio();
   }
