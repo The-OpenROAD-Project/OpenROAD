@@ -39,7 +39,7 @@ namespace ord {
 class Logger;
 }
 
-namespace finale {
+namespace fin {
 
 using ord::Logger;
 
@@ -62,4 +62,4 @@ class Finale
   bool debug_;
 };
 
-}  // namespace finale
+}  // namespace fin
