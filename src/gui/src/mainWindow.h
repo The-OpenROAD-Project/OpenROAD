@@ -38,6 +38,7 @@
 #include <QToolBar>
 #include <memory>
 
+#include "findDlg.h"
 #include "gui/gui.h"
 #include "openroad/OpenRoad.hh"
 
@@ -131,11 +132,16 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show a message in the status bar
   void status(const std::string& message);
 
+  // Show Find Dialog Box
+  void slotShortcutCtrlF();
+
  private:
   void createMenus();
   void createActions();
   void createToolbars();
   void createStatusBar();
+
+  odb::dbBlock* getBlock();
 
   odb::dbDatabase* db_;
   SelectionSet selected_;
@@ -157,10 +163,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QAction* exit_;
   QAction* fit_;
+  QAction* find_;
   QAction* zoomIn_;
   QAction* zoomOut_;
 
   QLabel* location_;
+
+  FindObjectDialog* findDlg_;
 };
 
 }  // namespace gui

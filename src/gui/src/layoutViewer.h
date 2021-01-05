@@ -40,7 +40,6 @@
 #include <map>
 #include <vector>
 
-#include "findDlg.h"
 #include "gui/gui.h"
 #include "opendb/dbBlockCallBackObj.h"
 #include "options.h"
@@ -103,8 +102,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   void zoomTo(const odb::Rect& rect_dbu);
   void designLoaded(odb::dbBlock* block);
   void fit();  // fit the whole design in the window
-  void slotShortcutCtrlF();
-  void findObjectInLayout(const QString& objectName, const QString& ObjectType);
 
  private:
   struct Boxes
@@ -156,9 +153,6 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   CellBoxes cell_boxes_;
   QRect rubber_band_;  // screen coordinates
   bool rubber_band_showing_;
-
-  QShortcut* findShortcut_;
-  FindObjectDialog* findDlg_;
 };
 
 // The LayoutViewer widget can become quite large as you zoom

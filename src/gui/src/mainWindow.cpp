@@ -36,7 +36,6 @@
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
-#include <iostream>
 
 #include "displayControls.h"
 #include "layoutViewer.h"
@@ -58,6 +57,8 @@ MainWindow::MainWindow(QWidget* parent)
   QSize size = QDesktopWidget().availableGeometry(this).size();
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
+
+  findDlg_ = new FindObjectDialog(this);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
@@ -144,6 +145,8 @@ MainWindow::MainWindow(QWidget* parent)
   createMenus();
   createToolbars();
   createStatusBar();
+
+  // find_->setDisabled(true);
 }
 
 void MainWindow::createStatusBar()
@@ -152,12 +155,30 @@ void MainWindow::createStatusBar()
   statusBar()->addPermanentWidget(location_);
 }
 
+odb::dbBlock* MainWindow::getBlock()
+{
+  if (!db_) {
+    return nullptr;
+  }
+
+  auto chip = db_->getChip();
+  if (!chip) {
+    return nullptr;
+  }
+
+  auto topBlock = chip->getBlock();
+  return topBlock;
+}
+
 void MainWindow::createActions()
 {
   exit_ = new QAction("Exit", this);
 
   fit_ = new QAction("Fit", this);
   fit_->setShortcut(QString("F"));
+
+  find_ = new QAction("Find", this);
+  find_->setShortcut(QString("Ctrl+F"));
 
   zoomIn_ = new QAction("Zoom in", this);
   zoomIn_->setShortcut(QString("Z"));
@@ -169,6 +190,7 @@ void MainWindow::createActions()
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
   connect(zoomIn_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
   connect(zoomOut_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
+  connect(find_, SIGNAL(triggered()), this, SLOT(slotShortcutCtrlF()));
 }
 
 void MainWindow::createMenus()
@@ -178,6 +200,7 @@ void MainWindow::createMenus()
 
   viewMenu_ = menuBar()->addMenu("&View");
   viewMenu_->addAction(fit_);
+  viewMenu_->addAction(find_);
   viewMenu_->addAction(zoomIn_);
   viewMenu_->addAction(zoomOut_);
 
@@ -192,6 +215,7 @@ void MainWindow::createToolbars()
 {
   viewToolBar_ = addToolBar("View");
   viewToolBar_->addAction(fit_);
+  viewToolBar_->addAction(find_);
   viewToolBar_->setObjectName("view_toolbar");  // for settings
 }
 
@@ -302,6 +326,13 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 void MainWindow::status(const std::string& message)
 {
   statusBar()->showMessage(QString::fromStdString(message));
+}
+
+void MainWindow::slotShortcutCtrlF()
+{
+  if (getBlock() == nullptr)
+    return;
+  findDlg_->exec();
 }
 
 void MainWindow::saveSettings()

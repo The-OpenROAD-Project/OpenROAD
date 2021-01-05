@@ -171,12 +171,6 @@ LayoutViewer::LayoutViewer(Options* options,
 {
   setMouseTracking(true);
   resize(100, 100);  // just a placeholder until we load the design
-
-  findShortcut_ = new QShortcut(this);
-  findShortcut_->setKey(QKeySequence(Qt::CTRL + Qt::Key_F));
-  connect(findShortcut_, SIGNAL(activated()), this, SLOT(slotShortcutCtrlF()));
-
-  findDlg_ = new FindObjectDialog(this);
 }
 
 void LayoutViewer::setDb(dbDatabase* db)
@@ -873,22 +867,6 @@ void LayoutViewer::fit()
   qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
                                 viewport.height() / (double) bbox.dy());
   setPixelsPerDBU(pixelsPerDBU);
-}
-
-void LayoutViewer::slotShortcutCtrlF()
-{
-  auto topBlock = getBlock();
-  // qDebug() << "Landed in slotShortcutCtrlF Top Block is  : " << topBlock;
-  // static FindObjectDialog findDlg(this);
-  if (topBlock == nullptr)
-    return;
-  findDlg_->exec();
-}
-
-void LayoutViewer::findObjectInLayout(const QString& objectName,
-                                      const QString& objectType)
-{
-  // qDebug() << "Landed in findObjectInLayout ";
 }
 
 void LayoutViewer::designLoaded(dbBlock* block)
