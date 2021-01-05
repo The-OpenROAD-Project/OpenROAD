@@ -39,14 +39,17 @@ VIAS 9 ;
     - via5_1860x1860 + VIARULE Via5Array-0 + CUTSIZE 280 280  + LAYERS metal5 via5 metal6  + CUTSPACING 320 320  + ENCLOSURE 190 190 190 190  + ROWCOL 3 3  ;
     - via6_1860x2800 + VIARULE Via6Array-0 + CUTSIZE 280 280  + LAYERS metal6 via6 metal7  + CUTSPACING 320 320  + ENCLOSURE 490 60 490 260  + ROWCOL 5 2  ;
 END VIAS
-COMPONENTS 2 ;
+COMPONENTS 3 ;
 - u1 BUF_X1 + PLACED   ( 31040 28000 ) N ;
 - pad1 PAD + FIXED ( 809120 2000000 ) N ;
+- pad2 PAD + FIXED ( 0 2000000 ) N ;
 END COMPONENTS
 
-PINS 1 ;
+PINS 2 ;
 - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL 
   + LAYER metal1 ( 100 0 ) ( 100 100 ) + FIXED ( 0 0 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL 
+  + LAYER metal1 ( 200 0 ) ( 200 200 ) + FIXED ( 0 0 ) N ;
 END PINS
 
 SPECIALNETS 2 ;
@@ -54,8 +57,10 @@ SPECIALNETS 2 ;
     - VSS ( * VSS ) + USE GROUND ;
 END SPECIALNETS
 
-NETS 2 ;
-- in1 ( PIN in1 ) ( u1 A ) ;
-- n1 ( u1 Z ) ( pad1 DATA ) ;
+NETS 4 ;
+- in1 ( PIN in1 ) ( pad1 PAD ) ;
+- n1 ( pad1 Y ) ( u1 A )  ;
+- n2  ( u1 Z ) ( pad2 DATA )  ;
+- out1 ( PIN out1 ) ( pad2 PAD ) ;
 END NETS
 END DESIGN

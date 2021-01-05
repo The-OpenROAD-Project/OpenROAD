@@ -23,20 +23,20 @@ Corner: ss
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ input external delay
    0.00    0.00 ^ in1 (in)
-   0.00    0.00 ^ r1/D (DFF_X1)
-           0.00   data arrival time
+   0.02    0.02 ^ r1/D (DFF_X1)
+           0.02   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00   clock reconvergence pessimism
            0.00 ^ r1/CK (DFF_X1)
-   0.01    0.01   library hold time
-           0.01   data required time
+   0.02    0.02   library hold time
+           0.02   data required time
 ---------------------------------------------------------
-           0.01   data required time
-          -0.00   data arrival time
+           0.02   data required time
+          -0.02   data arrival time
 ---------------------------------------------------------
-          -0.01   slack (VIOLATED)
+           0.00   slack (VIOLATED)
 
 
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -109,21 +109,21 @@ Corner: ff
 ---------------------------------------------------------
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 v input external delay
-   0.00    0.00 v in1 (in)
-   0.00    0.00 v r1/D (DFF_X1)
-           0.00   data arrival time
+   0.00    0.00 ^ input external delay
+   0.00    0.00 ^ in1 (in)
+   0.02    0.02 ^ r1/D (DFF_X1)
+           0.02   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00   clock reconvergence pessimism
            0.00 ^ r1/CK (DFF_X1)
-   0.00    0.00   library hold time
-           0.00   data required time
+   0.01    0.01   library hold time
+           0.01   data required time
 ---------------------------------------------------------
-           0.00   data required time
-          -0.00   data arrival time
+           0.01   data required time
+          -0.02   data arrival time
 ---------------------------------------------------------
-           0.00   slack (VIOLATED)
+           0.01   slack (MET)
 
 
