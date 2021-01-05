@@ -44,7 +44,7 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-        partition::PartitionMgr* getPartitionMgr();
+        par::PartitionMgr* getPartitionMgr();
 }  // namespace ord
 
 using ord::getPartitionMgr;

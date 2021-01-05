@@ -37,8 +37,6 @@
 
 #include <map>
 
-#include "sta/Report.hh"
-#include "sta/Debug.hh"
 #include "sta/Vector.hh"
 #include "sta/PortDirection.hh"
 #include "sta/ConcreteNetwork.hh"
@@ -71,8 +69,6 @@ using sta::dbNetwork;
 using sta::ConcreteNetwork;
 using sta::Network;
 using sta::NetworkReader;
-using sta::Report;
-using sta::Debug;
 using sta::PortDirection;
 using sta::Library;
 using sta::Instance;

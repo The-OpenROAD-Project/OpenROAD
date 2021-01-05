@@ -34,7 +34,7 @@
 #include <dbLogger.h>
 //#include "gseq.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 uint extMain::allocateOverUnderMaps(uint layerCnt)
 {
@@ -511,4 +511,4 @@ uint extMain::addInstShapesOnPlanes(uint dir, int* ll, int* ur)
   return cnt;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

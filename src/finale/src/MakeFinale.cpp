@@ -51,12 +51,12 @@ extern int Finale_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-finale::Finale* makeFinale()
+fin::Finale* makeFinale()
 {
-  return new finale::Finale;
+  return new fin::Finale;
 }
 
-void deleteFinale(finale::Finale* finale)
+void deleteFinale(fin::Finale* finale)
 {
   delete finale;
 }

@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace partition {
+namespace par {
 class PartitionMgr;
 }
 
@@ -41,10 +41,10 @@ namespace ord {
 
 class OpenRoad;
 
-partition::PartitionMgr* makePartitionMgr();
+par::PartitionMgr* makePartitionMgr();
 
 void initPartitionMgr(OpenRoad* openroad);
 
-void deletePartitionMgr(partition::PartitionMgr* partitionmgr);
+void deletePartitionMgr(par::PartitionMgr* partitionmgr);
 
 }  // namespace ord
