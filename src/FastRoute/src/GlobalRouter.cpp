@@ -123,6 +123,7 @@ void GlobalRouter::deleteComponents()
 void GlobalRouter::clear()
 {
   _routes.clear();
+  _nets->clear();
   clearFlow();
 }
 
