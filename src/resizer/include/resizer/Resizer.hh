@@ -418,13 +418,19 @@ protected:
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
+  void estimateWireParasiticSteiner(const Net *net);
   void ensureWireParasitic(const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
   void ensureWireParasitics();
+  void makePadParasitic(const Net *net);
+  bool isPadNet(const Net *net) const;
   bool isPadPin(const Pin *pin) const;
   bool isPad(const Instance *inst) const;
+  void net2Pins(const Net *net,
+                const Pin *&pin1,
+                const Pin *&pin2) const;
 
   void repairSetup(PathRef &path,
                    Slack path_slack);
