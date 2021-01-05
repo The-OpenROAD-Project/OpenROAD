@@ -8,4 +8,6 @@ record_tests {
   no_sinks
   simple_test
   simple_test_clustered
+  check_wire_rc_char
+  check_wire_rc_cts
 }

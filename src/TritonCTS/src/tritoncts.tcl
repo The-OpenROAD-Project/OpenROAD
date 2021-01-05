@@ -60,7 +60,7 @@ proc configure_cts_characterization { args } {
   } else {
     #User may enter capacitance and resistance per square (um²) when creating a new characterization.
     #In case not provided, would be picked from clock layer set by set_wire_rc -clock -layer
-    ord::report "Missing argument -sqr_cap and/or -sqr_res. Would use from CTS layer specified by set_wire_rc"
+    #ord::report "Values for arguments -sqr_cap and/or -sqr_res would be used from CTS layer specified by set_wire_rc"
   }
 
   if { [info exists keys(-max_cap)] } {

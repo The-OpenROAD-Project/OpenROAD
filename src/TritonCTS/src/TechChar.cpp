@@ -534,13 +534,11 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bo
       case sta::TableAxisVariable::total_output_net_capacitance:
            maxCap = axis->axisValue(axis->size() - 1);
            maxCapExist = true;
-           std::cout << "Found maxCap " << maxCap << std::endl;
            break;
       case sta::TableAxisVariable::input_net_transition:
       case sta::TableAxisVariable::input_transition_time:
            maxSlew = axis->axisValue(axis->size() - 1);
            maxSlewExist = true;
-           std::cout << "Found maxSlew " << maxSlew << std::endl;
            break;
       default: break;
     }
@@ -618,12 +616,15 @@ void TechChar::initCharacterization()
   double newResPerSqr = (_options->getResPerSqr()) / dbUnitsPerMicron;
   if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
     getClockLayerResCap(newCapPerSqr, newResPerSqr);
-    _options->setCapPerSqr(newCapPerSqr / dbUnitsPerMicron);  // picofarad/micron to farad/DBU
-    _options->setResPerSqr(newResPerSqr / dbUnitsPerMicron);  // ohm/micron to ohm/DBU
+    newCapPerSqr = (newCapPerSqr / dbUnitsPerMicron);  // picofarad/micron to farad/DBU
+    newResPerSqr = (newResPerSqr / dbUnitsPerMicron);  // ohm/micron to ohm/DBU
   }
   if(newCapPerSqr == 0.0 || newResPerSqr == 0.0) {
     std::cout << "    [WARNING] Per unit resistance or capacitance not set or zero." << std::endl;
     std::cout << "              Use set_wire_rc before running clock_tree_synthesis." << std::endl;
+  } else {
+    _options->setCapPerSqr(newCapPerSqr);  // picofarad/micron to farad/DBU
+    _options->setResPerSqr(newResPerSqr);  // ohm/micron to ohm/DBU
   }
   // Change intervals if needed
   if (_options->getSlewInter() != 0) {
