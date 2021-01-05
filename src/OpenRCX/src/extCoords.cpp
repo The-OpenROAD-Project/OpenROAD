@@ -37,7 +37,7 @@
 #include "parse.h"
 #include "wire.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 void extSpef::initSearchForNets()
 {
@@ -506,7 +506,7 @@ void extSpef::searchDealloc()
   _search->dealloc();
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx
 
 void Ath__grid::dealloc()
 {

@@ -35,6 +35,7 @@
 #include "ta/FlexTA.h"
 #include "dr/FlexDR.h"
 #include "gc/FlexGC.h"
+#include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "openroad/Error.hh"
@@ -118,16 +119,29 @@ void TritonRoute::init() {
 
   io::Parser parser(getDesign());
   parser.readLefDef();
-  parser.readGuide();
+  if (GUIDE_FILE != string("")) {
+    parser.readGuide();
+  } else {
+    ENABLE_VIA_GEN = false;
+  }
   parser.postProcess();
   FlexPA pa(getDesign());
   pa.main();
-  parser.postProcessGuide();
+  if (GUIDE_FILE != string("")) {
+    parser.postProcessGuide();
+  }
+  // GR-related
+  parser.initRPin();
 }
 
 void TritonRoute::prep() {
   FlexRP rp(getDesign(), getDesign()->getTech());
   rp.main();
+}
+
+void TritonRoute::gr() {
+  FlexGR gr(getDesign());
+  gr.main();
 }
 
 void TritonRoute::ta() {
@@ -152,6 +166,16 @@ void TritonRoute::endFR() {
 
 int TritonRoute::main() {
   init();
+  if (GUIDE_FILE == string("")) {
+    gr();
+    io::Parser parser(getDesign());
+    GUIDE_FILE = OUTGUIDE_FILE;
+    ENABLE_VIA_GEN = true;
+    parser.readGuide();
+    parser.initDefaultVias();
+    parser.writeRefDef();
+    parser.postProcessGuide();
+  }
   prep();
   ta();
   dr();
@@ -185,6 +209,7 @@ bool TritonRoute::readParams(const string &fileName)
         else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
         else if (field == "outputDRC") { DRC_RPT_FILE = value; ++readParamCnt;}
+        else if (field == "outputCMap") { CMAP_FILE = value; ++readParamCnt;}
         else if (field == "threads")  { MAX_THREADS = atoi(value.c_str()); ++readParamCnt;}
         else if (field == "verbose")    VERBOSE = atoi(value.c_str());
         else if (field == "dbProcessNode") { DBPROCESSNODE = value; ++readParamCnt;}

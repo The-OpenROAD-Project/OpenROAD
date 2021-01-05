@@ -38,7 +38,7 @@
 #include "array1.h"
 #include "parse.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 class extProcess;
 
@@ -382,6 +382,6 @@ class extProcess
   Ath__array1D<double>*              _dataRateTable;
 };
 
-}  // namespace OpenRCX
+}  // namespace rcx
 
 #endif

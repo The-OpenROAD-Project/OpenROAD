@@ -35,8 +35,8 @@
 
 #include <string.h>
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <map>
 #include <queue>
@@ -44,13 +44,13 @@
 
 namespace PD {
 
-using std::ostream;
 using std::cout;
 using std::endl;
-using std::queue;
+using std::map;
 using std::max;
 using std::min;
-using std::map;
+using std::ostream;
+using std::queue;
 using std::swap;
 
 ostream& operator<<(ostream& os, Node& n)
@@ -4097,4 +4097,4 @@ bool Graph::find_max_dc_node(vector<float>& node_and_dc)
   return (true);
 }
 
-} // namespace
+}  // namespace PD

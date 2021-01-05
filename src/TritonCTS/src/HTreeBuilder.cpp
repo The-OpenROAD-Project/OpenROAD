@@ -208,7 +208,7 @@ void HTreeBuilder::run()
         _minLengthSinkRegion = 1;
         stopCriterionFound = false;
       } else {
-        std::cout << " Stop criterion found. Min lenght of sink region is ("
+        std::cout << " Stop criterion found. Min length of sink region is ("
                   << _minLengthSinkRegion << ")\n";
         break;
       }

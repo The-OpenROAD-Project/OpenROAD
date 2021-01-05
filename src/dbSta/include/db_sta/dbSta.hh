@@ -45,6 +45,7 @@ class Gui;
 }
 
 namespace ord {
+class OpenRoad;
 class Logger;
 }
 
@@ -56,6 +57,7 @@ class dbStaReport;
 class dbStaCbk;
 class PathRenderer;
 
+using ord::OpenRoad;
 using ord::Logger;
 
 using odb::dbDatabase;
@@ -83,6 +85,7 @@ public:
   dbDatabase *db() { return db_; }
   virtual void makeComponents() override;
   dbNetwork *getDbNetwork() { return db_network_; }
+  dbStaReport *getDbReport() { return db_report_; }
 
   Slack netSlack(const dbNet *net,
 		 const MinMax *min_max);
@@ -133,6 +136,7 @@ protected:
 
 // Make a stand-alone (scratchpad) sta for block.
 dbSta *
-makeBlockSta(dbBlock *block);
+makeBlockSta(OpenRoad *openroad,
+             dbBlock *block);
 
 } // namespace

@@ -75,6 +75,7 @@ namespace triton_route {
     
     void init();
     void prep();
+    void gr();
     void ta();
     void dr();
     void endFR();

@@ -36,12 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <map>
 #include "opendb/db.h"
+#include "openroad/Logger.h"
+namespace psm {
 using odb::dbInst;
 
-
-typedef std::pair<int, int>         NodeLoc;
-typedef std::pair<int, int>         BBox;
-typedef int                         NodeIdx;  // TODO temp as it interfaces with SUPERLU
+typedef std::pair<int, int> NodeLoc;
+typedef std::pair<int, int> BBox;
+typedef int                 NodeIdx;  // TODO temp as it interfaces with SUPERLU
 typedef std::pair<NodeIdx, NodeIdx> GMatLoc;
 
 //! Data structure for the Dictionary of Keys Matrix
@@ -70,57 +71,58 @@ class Node
   Node() : m_loc(std::make_pair(0.0, 0.0)), m_bBox(std::make_pair(0.0, 0.0)) {}
   ~Node() {}
   //! Get the layer number of the node
-  int     GetLayerNum();
+  int GetLayerNum();
   //! Set the layer number of the node
-  void    SetLayerNum(int layer);
+  void SetLayerNum(int layer);
   //! Get the location of the node
   NodeLoc GetLoc();
   //! Set the location of the node using x and y coordinates
-  void    SetLoc(int x, int y);
+  void SetLoc(int x, int y);
   //! Set the location of the node using x,y and layer information
-  void    SetLoc(int x, int y, int l);
+  void SetLoc(int x, int y, int l);
   //! Get location of the node in G matrix
   NodeIdx GetGLoc();
   //! Get location of the node in G matrix
-  void    SetGLoc(NodeIdx loc);
+  void SetGLoc(NodeIdx loc);
   //! Function to print node details
-  void    Print();
+  void Print(ord::Logger* logger);
   //! Function to set the bounding box of the stripe
-  void    SetBbox(int dX, int dY);
+  void SetBbox(int dX, int dY);
   //! Function to get the bounding box of the stripe
-  BBox    GetBbox();
+  BBox GetBbox();
   //! Function to update the stripe
-  void    UpdateMaxBbox(int dX, int dY);
+  void UpdateMaxBbox(int dX, int dY);
   //! Function to set the current value at a particular node
-  void    SetCurrent(double t_current);
+  void SetCurrent(double t_current);
   //! Function to get the value of current at a node
-  double  GetCurrent();
-  //! Function to add the current source 
-  void    AddCurrentSrc(double t_current);
+  double GetCurrent();
+  //! Function to add the current source
+  void AddCurrentSrc(double t_current);
   //! Function to set the value of the voltage source
-  void    SetVoltage(double t_voltage);
+  void SetVoltage(double t_voltage);
   //! Function to get the value of the voltage source
-  double  GetVoltage();
+  double GetVoltage();
 
-  bool    GetConnected();
+  bool GetConnected();
 
-  void    SetConnected();
+  void SetConnected();
 
-  bool    HasInstances();
+  bool HasInstances();
 
   std::vector<dbInst*> GetInstances();
 
-  void    AddInstance(dbInst* inst);
+  void AddInstance(dbInst* inst);
 
  private:
-  int     m_layer;
-  NodeLoc m_loc;  // layer,x,y
-  NodeIdx m_node_loc{0};
-  BBox    m_bBox;
-  double  m_current_src{0.0};
-  double  m_voltage{0.0};
-  bool    m_connected{false};
-  bool    m_has_instances{false};
+  int                  m_layer;
+  NodeLoc              m_loc;  // layer,x,y
+  NodeIdx              m_node_loc{0};
+  BBox                 m_bBox;
+  double               m_current_src{0.0};
+  double               m_voltage{0.0};
+  bool                 m_connected{false};
+  bool                 m_has_instances{false};
   std::vector<dbInst*> m_connected_instances;
 };
+}  // namespace psm
 #endif

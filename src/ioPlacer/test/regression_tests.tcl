@@ -3,6 +3,7 @@ record_tests {
   multi_layers
   multiple_calls
   invalid_layer
+  no_instance_pins
   no_pins
   no_tracks
   exclude1

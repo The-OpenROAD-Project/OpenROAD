@@ -119,6 +119,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                  int depth);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
+  Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
   void updateRubberBandRegion();
   void drawTracks(odb::dbTechLayer* layer,
                   odb::dbBlock* block,

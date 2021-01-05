@@ -72,5 +72,6 @@ target_include_directories(finale
 
 target_link_libraries( finale
   PRIVATE
+  opendb
   gui
 )

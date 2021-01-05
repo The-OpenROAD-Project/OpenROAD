@@ -45,6 +45,7 @@ extern std::string REF_OUT_FILE;
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
+extern std::string CMAP_FILE;
 // to be removed
 extern int OR_SEED;
 extern double OR_K;
@@ -103,10 +104,19 @@ extern float       MARKERDECAY;
 extern float       SHAPEBLOATWIDTH;
 extern int MISALIGNMENTCOST;
 
+// GR
+extern int HISTCOST;
+extern int CONGCOST;
+
 #define DIRBITSIZE 3
 #define WAVEFRONTBUFFERSIZE 2
 #define WAVEFRONTBITSIZE (WAVEFRONTBUFFERSIZE * DIRBITSIZE)
 #define WAVEFRONTBUFFERHIGHMASK (111 << ((WAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
+
+// GR
+#define GRWAVEFRONTBUFFERSIZE 2
+#define GRWAVEFRONTBITSIZE (GRWAVEFRONTBUFFERSIZE * DIRBITSIZE)
+#define GRWAVEFRONTBUFFERHIGHMASK (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE))
 
 namespace fr {
   frCoord getGCELLGRIDX();

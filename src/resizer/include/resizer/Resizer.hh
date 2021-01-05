@@ -51,6 +51,7 @@ namespace rsz {
 using std::array;
 using std::string;
 
+using ord::OpenRoad;
 using ord::Logger;
 
 using odb::Rect;
@@ -119,7 +120,8 @@ class Resizer : public StaState
 {
 public:
   Resizer();
-  void init(Tcl_Interp *interp,
+  void init(OpenRoad *openroad,
+            Tcl_Interp *interp,
             Logger *logger,
             dbDatabase *db,
             dbSta *sta);
@@ -416,11 +418,20 @@ protected:
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance *inv);
   void setWireCorner(Corner *corner);
+  void estimateWireParasiticSteiner(const Net *net);
   void ensureWireParasitic(const Net *net);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
   void ensureWireParasitics();
+  void makePadParasitic(const Net *net);
+  bool isPadNet(const Net *net) const;
+  bool isPadPin(const Pin *pin) const;
+  bool isPad(const Instance *inst) const;
+  void net2Pins(const Net *net,
+                const Pin *&pin1,
+                const Pin *&pin2) const;
+
   void repairSetup(PathRef &path,
                    Slack path_slack);
   void splitLoads(PathRef *drvr_path,
@@ -469,6 +480,7 @@ protected:
   LibertyCellSet dont_use_;
   double max_area_;
 
+  OpenRoad *openroad_;
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;

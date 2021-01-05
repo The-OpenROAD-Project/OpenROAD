@@ -37,6 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 
+#include <algorithm>            // min
 #include <tcl.h>
 
 #include "sta/StaMain.hh"
@@ -98,6 +99,8 @@ deleteDbSta(sta::dbSta *sta)
 
 namespace sta {
 
+using std::min;
+
 using ord::Logger;
 using ord::STA;
 
@@ -105,16 +108,25 @@ class dbStaReport : public sta::ReportTcl
 {
 public:
   void setLogger(Logger *logger);
-  virtual void error(int id,
-                     const char *fmt,
-                     ...)
-    __attribute__((format (printf, 3, 4)));
   virtual void warn(int id,
                     const char *fmt,
                     ...)
     __attribute__((format (printf, 3, 4)));
+  virtual void error(int id,
+                     const char *fmt,
+                     ...)
+    __attribute__((format (printf, 3, 4)));
+  virtual void critical(int id,
+                        const char *fmt,
+                        ...)
+    __attribute__((format (printf, 3, 4)));
+  virtual size_t printString(const char *buffer,
+                             size_t length);
 
-private:
+protected:
+  virtual void printLine(const char *line,
+                         size_t length);
+
   Logger *logger_;
 };
 
@@ -163,13 +175,15 @@ private:
 };
 
 dbSta *
-makeBlockSta(dbBlock *block)
+makeBlockSta(ord::OpenRoad *openroad,
+             dbBlock *block)
 {
-  Sta *sta = Sta::sta();
+  dbSta *sta = openroad->getSta();
   dbSta *sta2 = new dbSta;
   sta2->makeComponents();
   sta2->getDbNetwork()->setBlock(block);
   sta2->setTclInterp(sta->tclInterp());
+  sta2->getDbReport()->setLogger(openroad->getLogger());
   sta2->copyUnits(sta->units());
   return sta2;
 }
@@ -383,6 +397,35 @@ dbStaReport::setLogger(Logger *logger)
   logger_ = logger;
 }
 
+// Line return \n is implicit.
+void
+dbStaReport::printLine(const char *buffer,
+                       size_t length)
+{
+  logger_->report(buffer);
+}
+
+// Only used by encapsulated Tcl channels, ie puts and command prompt.
+size_t
+dbStaReport::printString(const char *buffer,
+                         size_t length)
+{
+  if (buffer[length - 1] == '\n') {
+    string buf(buffer);
+    // Trim trailing \r\n.
+    buf.erase(buf.find_last_not_of("\r\n") + 1);
+    logger_->report(buf.c_str());
+  }
+  else
+    // puts without a trailing \n in the string.
+    // Tcl command prompts get here.
+    // puts "xyz" makes a separate call for the '\n '.
+    // This seems to be the only way to get the output.
+    // It will not be logged.
+    printConsole(buffer, length);
+  return length;
+}
+
 void
 dbStaReport::error(int id,
                    const char *fmt,
@@ -406,6 +449,19 @@ dbStaReport::warn(int id,
   std::unique_lock<std::mutex> lock(buffer_lock_);
   printToBuffer(fmt, args);
   logger_->warn(STA, id, buffer_);
+  va_end(args);
+}
+
+void
+dbStaReport::critical(int id,
+                      const char *fmt,
+                      ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  std::unique_lock<std::mutex> lock(buffer_lock_);
+  printToBuffer(fmt, args);
+  logger_->critical(STA, id, buffer_);
   va_end(args);
 }
 

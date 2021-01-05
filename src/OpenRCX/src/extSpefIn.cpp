@@ -39,7 +39,7 @@
 
 #include "parse.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 dbInst* extSpef::getDbInst(uint id)
 {
@@ -3031,4 +3031,4 @@ bool extSpef::readHeaderInfo(uint debug, bool skipFlag)
   return false;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx
