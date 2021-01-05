@@ -32,11 +32,11 @@
 
 #include "mainWindow.h"
 
-#include <QDebug>
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QSettings>
 #include <QStatusBar>
+#include <iostream>
 
 #include "displayControls.h"
 #include "layoutViewer.h"
@@ -116,10 +116,17 @@ MainWindow::MainWindow(QWidget* parent)
           SIGNAL(clearSelectedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromSelected(const QList<const Selected*>&)));
+
+  connect(selHltWin_,
+          SIGNAL(zoomInToItems(const QList<const Selected*>&)),
+          this,
+          SLOT(zoomInToItems(const QList<const Selected*>&)));
+
   connect(selHltWin_,
           SIGNAL(clearHighlightedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
+
   connect(selHltWin_,
           SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
           this,
@@ -269,6 +276,27 @@ void MainWindow::removeFromHighlighted(const QList<const Selected*>& items)
 void MainWindow::zoomTo(const odb::Rect& rect_dbu)
 {
   viewer_->zoomTo(rect_dbu);
+}
+
+void MainWindow::zoomInToItems(const QList<const Selected*>& items)
+{
+  if (items.empty())
+    return;
+  odb::Rect itemsBBox;
+  bool firstShapeIncluded = false;
+  for (auto& item : items) {
+    odb::Rect itemBBox;
+    if (item->getBBox(itemBBox)) {
+      if (!firstShapeIncluded) {
+        firstShapeIncluded = true;
+        itemsBBox = itemBBox;
+        continue;
+      }
+      itemsBBox.merge(itemBBox);
+    }
+  }
+
+  zoomTo(itemsBBox);
 }
 
 void MainWindow::status(const std::string& message)

@@ -125,6 +125,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
 
+  // Zoom In To Items such that its bbox is in visible Area
+  void zoomInToItems(const QList<const Selected*>& items);
+
   // Show a message in the status bar
   void status(const std::string& message);
 

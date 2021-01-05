@@ -289,6 +289,31 @@ std::string OpenDbDescriptor::getLocation(void* object) const
   }
 }
 
+bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
+{
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  switch (db_obj->getObjectType()) {
+    case odb::dbNetObj: {
+      auto net = static_cast<odb::dbNet*>(db_obj);
+      auto wire = net->getWire();
+      if (wire->getBBox(bbox)) {
+        return true;
+      }
+      return false;
+    }
+    case odb::dbInstObj: {
+      auto instObj = static_cast<odb::dbInst*>(db_obj);
+      auto instBBox = instObj->getBBox();
+      bbox.set_xlo(instBBox->xMin());
+      bbox.set_ylo(instBBox->yMin());
+      bbox.set_xhi(instBBox->xMax());
+      bbox.set_yhi(instBBox->yMax());
+      return true;
+    }
+  }
+  return false;
+}
+
 void OpenDbDescriptor::highlight(void* object,
                                  Painter& painter,
                                  bool selectFlag) const

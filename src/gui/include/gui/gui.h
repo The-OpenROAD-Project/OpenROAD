@@ -55,7 +55,14 @@ class Descriptor
   virtual std::string getName(void* object) const = 0;
   virtual std::string getLocation(void* object) const
   {
+    (void) object;
     return std::string("NA");
+  }
+  virtual bool getBBox(void* object, odb::Rect& bbox) const
+  {
+    (void) object;
+    (void) bbox;
+    return false;
   }
 
   // If the selectFlag is false, the drawing will happen in highlight mode, with
@@ -72,6 +79,7 @@ class OpenDbDescriptor : public Descriptor
  public:
   std::string getName(void* object) const override;
   std::string getLocation(void* object) const override;
+  bool getBBox(void* object, odb::Rect& bbox) const override;
 
   void highlight(void* object,
                  Painter& painter,
@@ -106,6 +114,10 @@ class Selected
 
   std::string getName() const { return descriptor_->getName(object_); }
   std::string getLocation() const { return descriptor_->getLocation(object_); }
+  bool getBBox(odb::Rect& bbox) const
+  {
+    return descriptor_->getBBox(object_, bbox);
+  }
 
   void highlight(Painter& painter, bool selectFlag = true) const
   {

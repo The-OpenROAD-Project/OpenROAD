@@ -32,7 +32,6 @@
 
 #include "selectHighlightWindow.h"
 
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
@@ -141,12 +140,6 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
   ui->selTableView->setModel(selFilterProxy);
   ui->hltTableView->setModel(hltFilterProxy);
 
-  // connect(ui->clearAllSelBtn, &QPushButton::clicked, this, [this]() {
-  //  emit clearAllSelections();
-  //});
-  // connect(ui->clearAllHltBtn, &QPushButton::clicked, this, [this]() {
-  //  emit clearAllHighlights();
-  //});
   connect(ui->findEditInSel, &QLineEdit::returnPressed, this, [this]() {
     this->ui->selTableView->keyboardSearch(ui->findEditInSel->text());
   });
@@ -190,8 +183,8 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
   QAction* showHltItemAct = highlightContextMenu_->addAction("Zoom In Layout");
 
   connect(
-      removeAllHltItems, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
-  connect(removeAllSelItems, &QAction::triggered, this, [this]() {
+      removeHltItemAct, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
+  connect(removeAllHltItems, &QAction::triggered, this, [this]() {
     emit clearAllHighlights();
   });
   connect(showHltItemAct,
@@ -253,7 +246,7 @@ void SelectHighlightWindow::zoomInSelectedItems()
   for (auto& selItem : selIndices) {
     deselItems << selModel_.getItemAt(selItem.row());
   }
-  emit zoomSelectedItems(deselItems);
+  emit zoomInToItems(deselItems);
 }
 
 void SelectHighlightWindow::dehighlightItems()
@@ -273,7 +266,7 @@ void SelectHighlightWindow::zoomInHighlightedItems()
   for (auto& selItem : selIndices) {
     dehltItems << hltModel_.getItemAt(selItem.row());
   }
-  emit zoomHighlightedItems(dehltItems);
+  emit zoomInToItems(dehltItems);
 }
 
 }  // namespace gui
