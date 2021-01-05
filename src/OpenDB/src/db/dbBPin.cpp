@@ -54,8 +54,6 @@ _dbBPin::_dbBPin(_dbDatabase*)
   _flags._spare_bits          = 0;
   _min_spacing                = 0;
   _effective_width            = 0;
-  _orig_y                     = 0;
-  _orig_x                     = 0;
 }
 
 _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
@@ -64,9 +62,7 @@ _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
       _boxes(p._boxes),
       _next_bpin(p._next_bpin),
       _min_spacing(p._min_spacing),
-      _effective_width(p._effective_width),
-      _orig_x(p._orig_x),
-      _orig_y(p._orig_y)
+      _effective_width(p._effective_width)
 {
 }
 
@@ -100,13 +96,6 @@ bool _dbBPin::operator==(const _dbBPin& rhs) const
   if (_effective_width != rhs._effective_width)
     return false;
 
-  if(_orig_y != rhs._orig_y)
-    return false;
-
-  if(_orig_x != rhs._orig_x)
-    return false;
-
-    
   return true;
 }
 
@@ -123,9 +112,6 @@ void _dbBPin::differences(dbDiff&        diff,
   DIFF_FIELD(_next_bpin);
   DIFF_FIELD(_min_spacing);
   DIFF_FIELD(_effective_width);
-  DIFF_FIELD(_orig_y);
-  DIFF_FIELD(_orig_x);
-  
   DIFF_END
 }
 
@@ -140,8 +126,6 @@ void _dbBPin::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_next_bpin);
   DIFF_OUT_FIELD(_min_spacing);
   DIFF_OUT_FIELD(_effective_width);
-  DIFF_OUT_FIELD(_orig_y);
-  DIFF_OUT_FIELD(_orig_x);
   DIFF_END
 }
 
@@ -154,8 +138,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
   stream << bpin._next_bpin;
   stream << bpin._min_spacing;
   stream << bpin._effective_width;
-  stream << bpin._orig_x;
-  stream << bpin._orig_y;
   
   return stream;
 }
@@ -169,8 +151,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
   stream >> bpin._next_bpin;
   stream >> bpin._min_spacing;
   stream >> bpin._effective_width;
-  stream >> bpin._orig_x;
-  stream >> bpin._orig_y;
 
   return stream;
 }
@@ -234,25 +214,6 @@ void dbBPin::setEffectiveWidth(int w)
   bpin->_flags._has_effective_width = 1U;
   bpin->_effective_width            = w;
 }
-
-void dbBPin::setOrigin(int x, int y)
-{
-  _dbBPin* bpin                     = (_dbBPin*) this;
-  bpin->_orig_x                     = x;
-  bpin->_orig_y                     = y;
-}
-
-
-int dbBPin::getOriginX(){
-  _dbBPin* bpin                     = (_dbBPin*) this;
-  return bpin->_orig_x;
-}
-
-int dbBPin::getOriginY(){
-  _dbBPin* bpin                     = (_dbBPin*) this;
-  return bpin->_orig_y;
-}
-  
 
 int dbBPin::getEffectiveWidth()
 {

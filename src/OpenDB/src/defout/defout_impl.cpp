@@ -961,18 +961,26 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
   if (_version > defout::DEF_5_6)
     fprintf(_out, "+ PORT");
 
-  int x = bpin->getOriginX();
-  int y = bpin->getOriginY();
+
+  bool isFirst = 1;
+  int dw, dh, x , y ;
+  int xMin, yMin, xMax, yMax;
 
   for (dbBox* box : bpin->getBoxes())
   {
-      
+      dw = defdist(int(box->getDX() / 2));
+      dh = defdist(int(box->getDY() / 2));
 
-      int minX = defdist(box->xMin() - x);
-      int minY = defdist(box->yMin() - y);
-      int maxX = defdist(box->xMax() - x);
-      int maxY = defdist(box->yMax() - y);
+      if(isFirst){
+        isFirst = 0;  
+        x  = defdist(box->xMin()) + dw;
+        y  = defdist(box->yMin()) + dh;
+      }
 
+      xMin = defdist(box->xMin()) - x;
+      yMin = defdist(box->yMin()) - y;
+      xMax = defdist(box->xMax()) - x;
+      yMax = defdist(box->yMax()) - y;
       dbTechLayer* layer = box->getTechLayer();
       std::string  lname;
 
@@ -986,10 +994,10 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
         fprintf(_out,
                 " + LAYER %s ( %d %d ) ( %d %d )",
                 lname.c_str(),
-                minX,
-                minY,
-                maxX,
-                maxY);
+                xMin,
+                yMin,
+                xMax,
+                yMax);
       else {
         if (bpin->hasEffectiveWidth()) {
           int w = defdist(bpin->getEffectiveWidth());
@@ -997,36 +1005,31 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
                   " + LAYER %s DESIGNRULEWIDTH %d ( %d %d ) ( %d %d )",
                   lname.c_str(),
                   w,
-                  minX,
-                  minY,
-                  maxX,
-                  maxY);
+                  xMin,
+                  yMin,
+                  xMax,
+                  yMax);
         } else if (bpin->hasMinSpacing()) {
           int s = defdist(bpin->getMinSpacing());
           fprintf(_out,
                   " + LAYER %s SPACING %d ( %d %d ) ( %d %d )",
                   lname.c_str(),
                   s,
-                  minX,
-                  minY,
-                  maxX,
-                  maxY);
+                  xMin,
+                  yMin,
+                  xMax,
+                  yMax);
         } else {
           fprintf(_out,
                   " + LAYER %s ( %d %d ) ( %d %d )",
                   lname.c_str(),
-                  minX,
-                  minY,
-                  maxX,
-                  maxY);
+                  xMin,
+                  yMin,
+                  xMax,
+                  yMax);
         } 
     }
-
-
   }
-
-  x = defdist(x);
-  y = defdist(y);
   
   dbPlacementStatus status = bpin->getPlacementStatus();
 

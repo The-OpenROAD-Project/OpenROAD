@@ -1775,13 +1775,6 @@ class dbBPin : public dbObject
   /// Get the placement status of this block-terminal.
   ///
   dbPlacementStatus getPlacementStatus();
-
-
-  void setOrigin(int, int);
-
-  int getOriginX();
-
-  int getOriginY();
   
   ///
   /// Set the placement status of this block-terminal.

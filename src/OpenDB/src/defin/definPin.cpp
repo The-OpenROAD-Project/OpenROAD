@@ -276,7 +276,6 @@ void definPin::portEnd(){
     if(_has_effective_width)
       pin->setEffectiveWidth(_effective_width);
 
-    pin->setOrigin(_orig_x, _orig_y);
   }
   
   if (!_rects.empty()) {

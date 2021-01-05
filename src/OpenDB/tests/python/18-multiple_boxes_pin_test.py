@@ -23,16 +23,16 @@ box_0 = boxes[0]
 box_1 = boxes[1]
 
 
-assert(box_0.xMin() - pins[0].getOriginX() == -50)
-assert(box_0.yMin() - pins[0].getOriginY() == 0)
-assert(box_0.xMax() - pins[0].getOriginX() == 50)
-assert(box_0.yMax() - pins[0].getOriginY() == 100)
+assert(box_0.xMin() == 19950)
+assert(box_0.yMin() == 10000)
+assert(box_0.xMax() == 20050)
+assert(box_0.yMax() == 10100)
 
 
-assert(box_1.xMin()  - pins[0].getOriginX() == -20)
-assert(box_1.yMin() - pins[0].getOriginY() == 0)
-assert(box_1.xMax()  - pins[0].getOriginX() == 20)
-assert(box_1.yMax() - pins[0].getOriginY() == 150)
+assert(box_1.xMin()  == 19980)
+assert(box_1.yMin() == 10000)
+assert(box_1.xMax()  == 20020)
+assert(box_1.yMax() == 10150)
 
 
 
