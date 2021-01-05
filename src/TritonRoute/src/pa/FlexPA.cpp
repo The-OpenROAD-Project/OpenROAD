@@ -59,8 +59,8 @@ void FlexPA::prep() {
 
   duration<double> time_span1 = duration_cast<duration<double>>(t1 - t0);
   duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
-  cout << "Expt1 runtime (pin-level access point gen): " << time_span1.count() << endl;
-  cout << "Expt2 runtime (design-level access pattern gen): " << time_span2.count() << endl;
+  // cout << "Expt1 runtime (pin-level access point gen): " << time_span1.count() << endl;
+  // cout << "Expt2 runtime (design-level access pattern gen): " << time_span2.count() << endl;
 }
 
 int FlexPA::main() {
