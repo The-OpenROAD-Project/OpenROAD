@@ -39,12 +39,12 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-OpenRCX::Ext*
+rcx::Ext*
 getOpenRCX();
 }
 
 using ord::getOpenRCX;
-using OpenRCX::Ext;
+using rcx::Ext;
 %}
 
 %inline %{

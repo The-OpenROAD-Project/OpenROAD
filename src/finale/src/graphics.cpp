@@ -37,7 +37,7 @@
 #include <cstdio>
 #include <limits>
 
-namespace finale {
+namespace fin {
 
 Graphics::Graphics()
 {
@@ -78,4 +78,4 @@ bool Graphics::guiActive()
   return gui::Gui::get() != nullptr;
 }
 
-}  // namespace finale
+}  // namespace fin

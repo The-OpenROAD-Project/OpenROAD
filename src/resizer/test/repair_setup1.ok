@@ -51,13 +51,13 @@ Path Type: max
 Group                  Internal  Switching    Leakage      Total
                           Power      Power      Power      Power
 ----------------------------------------------------------------
-Sequential             1.25e-04   1.51e-05   9.49e-07   1.41e-04  89.3%
-Combinational          4.30e-06   1.26e-05   1.07e-07   1.70e-05  10.7%
+Sequential             1.27e-04   1.51e-05   9.49e-07   1.43e-04  89.4%
+Combinational          4.30e-06   1.26e-05   1.07e-07   1.70e-05  10.6%
 Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 ----------------------------------------------------------------
-Total                  1.30e-04   2.78e-05   1.06e-06   1.58e-04 100.0%
-                          81.8%      17.5%       0.7%
+Total                  1.32e-04   2.78e-05   1.06e-06   1.61e-04 100.0%
+                          82.1%      17.3%       0.7%
 [INFO RSZ-0040] Inserted 6 buffers.
 [INFO RSZ-0041] Resized 7 instances.
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -100,10 +100,10 @@ Path Type: max
 Group                  Internal  Switching    Leakage      Total
                           Power      Power      Power      Power
 ----------------------------------------------------------------
-Sequential             1.25e-04   2.94e-06   9.49e-07   1.29e-04  77.9%
-Combinational          1.82e-05   1.78e-05   4.87e-07   3.64e-05  22.1%
+Sequential             1.27e-04   2.94e-06   9.49e-07   1.31e-04  78.2%
+Combinational          1.82e-05   1.78e-05   4.87e-07   3.64e-05  21.8%
 Macro                  0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 Pad                    0.00e+00   0.00e+00   0.00e+00   0.00e+00   0.0%
 ----------------------------------------------------------------
-Total                  1.43e-04   2.07e-05   1.44e-06   1.65e-04 100.0%
-                          86.6%      12.5%       0.9%
+Total                  1.45e-04   2.07e-05   1.44e-06   1.67e-04 100.0%
+                          86.8%      12.4%       0.9%

@@ -42,7 +42,7 @@ class dbBlock;
 class dbNet;
 }  // namespace odb
 
-namespace partition {
+namespace par {
 
 class PartOptions
 {
@@ -255,4 +255,4 @@ class PartitionMgr
   void readPartitioningFile(std::string filename);
 };
 
-}  // namespace partition
+}  // namespace par
