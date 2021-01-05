@@ -38,8 +38,8 @@
 using namespace std;
 using namespace fr;
 
-FlexDR::FlexDR(frDesign* designIn)
-  : design_(designIn)
+FlexDR::FlexDR(frDesign* designIn,ord::Logger* loggerIn)
+  : design_(designIn), logger_(loggerIn)
 {
 }
 
