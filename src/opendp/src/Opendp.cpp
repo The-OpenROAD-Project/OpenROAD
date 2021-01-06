@@ -186,8 +186,10 @@ Opendp::havePadding() const
 }
 
 void
-Opendp::detailedPlacement(int max_displacment)
+Opendp::detailedPlacement(int max_displacment, int diamond_search_height)
 {
+  diamond_search_height_ = diamond_search_height;
+  diamond_search_width_ = diamond_search_height_ * 5;
   importDb();
   reportImportWarnings();
   findDesignStats();

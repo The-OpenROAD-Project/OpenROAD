@@ -170,7 +170,7 @@ public:
             Logger *logger);
   // legalize/report
   // max_displacment is in rows, 0 for unconstrained
-  void detailedPlacement(int max_displacment);
+  void detailedPlacement(int max_displacment, int diamond_search_height=100);
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster *inst,
                   int left,

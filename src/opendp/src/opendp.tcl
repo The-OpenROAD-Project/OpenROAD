@@ -33,11 +33,11 @@
 #############################################################################
 
 # -constraints is an undocumented option for worthless academic contests
-sta::define_cmd_args "detailed_placement" {[-constraints constraints_file]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement max_displacement_val] [-diamond_search_height diamond_search_height_val]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-constraints} flags {}
+    keys {-max_displacement -diamond_search_height} flags {}
 
   if { [info exists keys(-max_displacment)] } {
     set max_displacment $keys(-max_displacment)
@@ -45,10 +45,15 @@ proc detailed_placement { args } {
   } else {
     set max_displacment 0
   }
+  set diamond_search_height 100
+  if { [info exists keys(-diamond_search_height)] } {
+    set diamond_search_height $keys(-diamond_search_height)
+    sta::check_positive_integer "-diamond_search_height" $diamond_search_height
+  }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
-    dpl::detailed_placement_cmd $max_displacment
+    dpl::detailed_placement_cmd $max_displacment $diamond_search_height
   } else {
     ord::error "no rows defined in design. Use initialize_floorplan to add rows."
   }
