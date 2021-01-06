@@ -40,7 +40,7 @@
 #include "opendb/dbShape.h"
 #include "openroad/Error.hh"
 
-namespace finale {
+namespace fin {
 
 using ord::FIN;
 
@@ -535,4 +535,4 @@ void DensityFill::fill(const char* cfg_filename, const odb::Rect& fill_area)
   }
 }
 
-}  // namespace finale
+}  // namespace fin

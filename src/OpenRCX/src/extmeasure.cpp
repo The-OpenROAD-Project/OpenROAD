@@ -45,7 +45,7 @@
 //#define DEBUG_NET 208091
 //#define MIN_FOR_LOOPS
 
-namespace OpenRCX {
+namespace rcx {
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -4831,4 +4831,4 @@ void extMeasure::printDgContext()
   }
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

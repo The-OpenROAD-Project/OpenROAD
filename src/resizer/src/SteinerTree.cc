@@ -39,6 +39,8 @@
 #include <string>
 
 #include "openroad/Logger.h"
+// Move logger macro out of the way.
+#undef debugPrint
 
 #include "sta/Report.hh"
 #include "sta/Debug.hh"

@@ -2,6 +2,7 @@
 record_tests {
   test_gcd
   test_gcd_dual_rails
+  test_gcd.invert_viarule
   fail_quick
   tinyRocket
   soc_bsg_black_parrot_nangate45

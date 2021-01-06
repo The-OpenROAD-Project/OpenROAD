@@ -39,10 +39,12 @@
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
 using namespace triton_route;
+using ord::DRT;
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -93,14 +95,15 @@ void TritonRoute::setDebugIter(int iter)
 int TritonRoute::getNumDRVs() const
 {
   if (num_drvs_ < 0) {
-    ord::error("detailed routing has not been run yet");
+    logger_->error(DRT, 2, "Detailed routing has not been run yet.");
   }
   return num_drvs_;
 }
 
-void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
+void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, ord::Logger* logger)
 {
   db_ = db;
+  logger_ = logger;
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
@@ -146,20 +149,21 @@ void TritonRoute::gr() {
 void TritonRoute::ta() {
   FlexTA ta(getDesign());
   ta.main();
-  io::Writer writer(getDesign());
+  io::Writer writer(getDesign(),logger_);
   writer.writeFromTA();
 }
 
 void TritonRoute::dr() {
   num_drvs_ = -1;
-  FlexDR dr(getDesign());
+  FlexDR dr(getDesign(),logger_);
   dr.setDebug(debug_.get(), db_);
   dr.main();
 }
 
 void TritonRoute::endFR() {
-  io::Writer writer(getDesign());
+  io::Writer writer(getDesign(),logger_);
   writer.writeFromDR();
+  writer.updateDb(db_);
 }
 
 int TritonRoute::main() {
@@ -184,8 +188,7 @@ int TritonRoute::main() {
   return 0;
 }
 
-/* static */
-bool TritonRoute::readParams(const string &fileName)
+void TritonRoute::readParams(const string &fileName)
 {
   int readParamCnt = 0;
   fstream fin(fileName.c_str());
@@ -227,5 +230,7 @@ bool TritonRoute::readParams(const string &fileName)
     fin.close();
   }
 
-  return readParamCnt >= 5;
+  if (readParamCnt < 5) {
+    logger_->error(DRT, 1, "Error reading param file: {}", fileName);
+  }
 }

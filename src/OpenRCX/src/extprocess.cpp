@@ -34,7 +34,7 @@
 //#include "logger.h"
 #include <dbLogger.h>
 
-namespace OpenRCX {
+namespace rcx {
 
 extConductor::extConductor()
 {
@@ -1749,4 +1749,4 @@ extVarTable::~extVarTable()
   _width   = NULL;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

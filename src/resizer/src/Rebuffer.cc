@@ -35,6 +35,8 @@
 
 #include "resizer/Resizer.hh"
 
+// Move logger macro out of the way.
+#undef debugPrint
 #include "sta/Debug.hh"
 #include "sta/Units.hh"
 #include "sta/Fuzzy.hh"
