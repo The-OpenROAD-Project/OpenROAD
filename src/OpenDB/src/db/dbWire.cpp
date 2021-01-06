@@ -735,12 +735,12 @@ bool dbWire::getProperty(int jid, int& prpty)
   _dbWire* wire = (_dbWire*) this;
   int      wlen = (int) wire->length();
   ZASSERT(0 <= jid && jid < wlen);
-  if ((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_COLINEAR) {
+  unsigned char op = wire->_opcodes[jid] & WOP_OPCODE_MASK;
+  if (op == WOP_COLINEAR || op == WOP_RECT) {
     prpty = 0;
     return true;
   }
-  ZASSERT((wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_X
-          || (wire->_opcodes[jid] & WOP_OPCODE_MASK) == WOP_Y);
+  ZASSERT(op == WOP_X || op == WOP_Y);
   ZASSERT(jid + 1 < wlen);
   if ((wire->_opcodes[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     prpty = wire->_data[jid + 1];
