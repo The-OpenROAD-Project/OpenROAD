@@ -37,7 +37,6 @@
 #include "placerBase.h"
 #include "fft.h"
 #include "openroad/Logger.h"
-#include "debug.h"
 
 #include <iostream>
 #include <random>
@@ -934,7 +933,7 @@ NesterovBaseVars::reset() {
 // NesterovBase 
 
 NesterovBase::NesterovBase()
-  : pb_(nullptr), debug_(nullptr), log_(nullptr), 
+  : pb_(nullptr), log_(nullptr), 
   fillerDx_(0), fillerDy_(0),
   whiteSpaceArea_(0), 
   movableArea_(0), totalFillerArea_(0),
@@ -944,12 +943,10 @@ NesterovBase::NesterovBase()
 NesterovBase::NesterovBase(
     NesterovBaseVars nbVars, 
     std::shared_ptr<PlacerBase> pb,
-    std::shared_ptr<Debug> debug,
     ord::Logger* log)
   : NesterovBase() {
   nbVars_ = nbVars;
   pb_ = pb;
-  debug_ = debug;
   log_ = log;
   init();
 }
@@ -962,7 +959,6 @@ void
 NesterovBase::reset() { 
   nbVars_.reset();
   pb_ = nullptr;
-  debug_ = nullptr;
   log_ = nullptr;
   
   fillerDx_ = fillerDy_ = 0;
@@ -1197,13 +1193,13 @@ NesterovBase::initFillerGCells() {
     static_cast<int>(totalFillerArea_ 
         / static_cast<int64_t>(fillerDx_ * fillerDy_));
 
-  debug_->print("FillerInit", 3, "CoreArea %d\n", coreArea);
-  debug_->print("FillerInit", 3, "WhiteSpaceArea %d\n", whiteSpaceArea_);
-  debug_->print("FillerInit", 3, "MovableArea %d\n", movableArea_);
-  debug_->print("FillerInit", 3, "TotalFillerArea %d\n", totalFillerArea_);
-  debug_->print("FillerInit", 3, "NumFillerCells %d\n", fillerCnt);
-  debug_->print("FillerInit", 3, "FillerCellArea %d\n", fillerCellArea());
-  debug_->print("FillerInit", 3, "FillerCellSize %d %d\n", fillerDx_, fillerDy_); 
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: CoreArea {}", coreArea);
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: WhiteSpaceArea {}", whiteSpaceArea_);
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: MovableArea {}", movableArea_);
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: TotalFillerArea {}", totalFillerArea_);
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: NumFillerCells {}", fillerCnt);
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: FillerCellArea {}", fillerCellArea());
+  debugPrint(log_, GPL, "replace", 3, "FillerInit: FillerCellSize {} {}", fillerDx_, fillerDy_); 
 
   // 
   // mt19937 supports huge range of random values.

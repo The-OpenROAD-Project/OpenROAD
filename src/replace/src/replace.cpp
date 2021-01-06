@@ -43,6 +43,7 @@
 namespace gpl {
 
 using namespace std;
+using ord::GPL;
 
 Replace::Replace()
   : db_(nullptr), 
@@ -161,6 +162,10 @@ void Replace::setLogger(ord::Logger* logger) {
 }
 void Replace::doInitialPlace() {
 
+  if( log_ ) {
+    log_->setDebugLevel(GPL, "replace", verbose_);
+  }
+
   PlacerBaseVars pbVars;
   pbVars.padLeft = padLeft_;
   pbVars.padRight = padRight_;
@@ -182,9 +187,9 @@ void Replace::doInitialPlace() {
 }
 
 void Replace::doNesterovPlace() {
-
-  if( !debug_ ) {
-    debug_ = std::make_shared<Debug>(verbose_);
+  
+  if( log_ ) {
+    log_->setDebugLevel(GPL, "replace", verbose_);
   }
 
   if( !pb_ ) {
@@ -210,7 +215,7 @@ void Replace::doNesterovPlace() {
   }
 
 
-  nb_ = std::make_shared<NesterovBase>(nbVars, pb_, debug_, log_);
+  nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
   
 
   RouteBaseVars rbVars;
@@ -226,7 +231,7 @@ void Replace::doNesterovPlace() {
   rbVars.rcK3 = routabilityRcK3_;
   rbVars.rcK4 = routabilityRcK4_;
 
-  rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, debug_, log_);
+  rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, log_);
 
   NesterovPlaceVars npVars;
 
@@ -245,7 +250,7 @@ void Replace::doNesterovPlace() {
   npVars.debug_update_iterations = gui_debug_update_iterations_;
   npVars.debug_draw_bins = gui_debug_draw_bins_;
 
-  std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, debug_, log_));
+  std::unique_ptr<NesterovPlace> np(new NesterovPlace(npVars, pb_, nb_, rb_, log_));
   np_ = std::move(np);
 
   np_->doNesterovPlace();

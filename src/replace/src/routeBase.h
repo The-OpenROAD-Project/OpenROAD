@@ -52,7 +52,6 @@ namespace ord {
 namespace gpl {
 
 class NesterovBase;
-class Debug;
 class GNet;
 class Die;
 
@@ -239,7 +238,6 @@ class TileGrid {
     ~TileGrid();
 
     void setLogger(ord::Logger* log);
-    void setDebug(std::shared_ptr<Debug> debug);
     void setTileCnt(int tileCntX, int tileCntY);
     void setTileCntX(int tileCntX);
     void setTileCntY(int tileCntY);
@@ -270,7 +268,6 @@ class TileGrid {
   private:
     // for traversing layer info!
     ord::Logger* log_;
-    std::shared_ptr<Debug> debug_;
 
     std::vector<Tile> tileStor_;
     std::vector<Tile*> tiles_;
@@ -348,7 +345,6 @@ class RouteBase {
         odb::dbDatabase* db,
         grt::GlobalRouter* grouter,
         std::shared_ptr<NesterovBase> nb,
-        std::shared_ptr<Debug> debug,
         ord::Logger* log);
     ~RouteBase();
 
@@ -380,7 +376,6 @@ class RouteBase {
     grt::GlobalRouter* grouter_;
 
     std::shared_ptr<NesterovBase> nb_;
-    std::shared_ptr<Debug> debug_;
     ord::Logger* log_;
 
     std::unique_ptr<TileGrid> tg_;

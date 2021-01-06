@@ -45,7 +45,6 @@
 
 using std::vector;
 using std::string;
-using std::to_string; 
 using std::pair;
 using std::make_pair;
 using std::sort;
@@ -383,11 +382,6 @@ TileGrid::setLogger(ord::Logger* log) {
 }
 
 void
-TileGrid::setDebug(std::shared_ptr<Debug> debug) {
-  debug_ = debug;
-}
-
-void
 TileGrid::setTileCnt(int tileCntX, int tileCntY) {
   tileCntX_ = tileCntX;
   tileCntY_ = tileCntY;
@@ -574,7 +568,6 @@ RouteBase::RouteBase()
   db_(nullptr), 
   grouter_(nullptr), 
   nb_(nullptr), 
-  debug_(nullptr),
   log_(nullptr),
   inflatedAreaDelta_(0), 
   bloatIterCnt_(0), 
@@ -589,14 +582,12 @@ RouteBase::RouteBase(
     odb::dbDatabase* db, 
     grt::GlobalRouter* grouter, 
     std::shared_ptr<NesterovBase> nb,
-    std::shared_ptr<Debug> debug,
     ord::Logger* log)
   : RouteBase() {
   rbVars_ = rbVars;
   db_ = db;
   grouter_ = grouter; 
   nb_ = nb;
-  debug_ = debug;
   log_ = log;
 
   init();
@@ -611,7 +602,6 @@ RouteBase::reset() {
   rbVars_.reset();
   db_ = nullptr;
   nb_ = nullptr;
-  debug_ = nullptr;
   log_ = nullptr;
 
   bloatIterCnt_ = inflationIterCnt_ = 0;
@@ -924,19 +914,19 @@ RouteBase::updateUsages() {
 
     if( lIdxX < 0 || lIdxX >= tg_->tileCntX() ) {
       log_->error(GPL, 201, 
-          "lIdxX is wrong. Check the *.est file. lIdx: " + to_string(lIdxX), 100);
+          "lIdxX is wrong. Check the *.est file. lIdxX: {}", lIdxX);
     }
     if( lIdxY < 0 || lIdxY >= tg_->tileCntY() ) {
       log_->error(GPL, 202, 
-          "lIdxY is wrong. Check the *.est file. lIdxY: " + to_string(lIdxY), 100);
+          "lIdxY is wrong. Check the *.est file. lIdxY: {}", lIdxY);
     }
     if( uIdxX < 0 || uIdxX >= tg_->tileCntX() ) {
       log_->error(GPL, 203, 
-          "uIdxX is wrong. Check the *.est file. uIdxX: " + to_string(uIdxX), 100);
+          "uIdxX is wrong. Check the *.est file. uIdxX: {}", uIdxX);
     }
     if( uIdxY < 0 || uIdxY >= tg_->tileCntY() ) {
       log_->error(GPL, 204, 
-          "uIdxY is wrong. Check the *.est file. uIdxY: " + to_string(uIdxY), 100);
+          "uIdxY is wrong. Check the *.est file. uIdxY: {}", uIdxY);
     }
    
     // get lTile and uTile using lx, ly, ux, uy 
@@ -1158,15 +1148,22 @@ RouteBase::updateInflationRatio() {
     
   for(auto& tile : tg_->tiles()) {
     if( tile->inflationRatio() > 1.0 ) {
-      debug_->print("updateInflationRatio", 5, "xy: %d %d", tile->x(), tile->y()); 
-      debug_->print("updateInflationRatio", 5, "minxy: %d %d", tile->lx(), tile->ly());
-      debug_->print("updateInflationRatio", 5, "maxxy: %d %d", tile->ux(), tile->uy());
-      debug_->print("updateInflationRatio", 5, "usageHV: %g %g", 
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: xy: {} {}", tile->x(), tile->y()); 
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: minxy: {} {}", tile->lx(), tile->ly());
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: maxxy: {} {}", tile->ux(), tile->uy());
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: usageHV: {} {}", 
           tile->usageH(), tile->usageV()); 
-      debug_->print("updateInflationRatio", 5, "supplyHV: %g %g", 
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: supplyHV: {} {}", 
           tile->supplyH(), tile->supplyV()); 
-      debug_->print("updateInflationRatio", 5, "pinCnt: %d", tile->pinCnt());
-      debug_->print("updateInflationRatio", 5, "calcInflationRatio: %g", tile->inflationRatio());
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: pinCnt: {}", tile->pinCnt());
+      debugPrint(log_, GPL, "replace", 5, 
+          "updateInflationRatio: calcInflationRatio: {}", tile->inflationRatio());
     }
   }
 }
@@ -1184,7 +1181,6 @@ RouteBase::routability() {
   std::unique_ptr<TileGrid> tg(new TileGrid());
   tg_ = std::move(tg);
   tg_->setLogger(log_);
-  tg_->setDebug(debug_);
   
   getGlobalRouterResult();
   updateCongestionMap();

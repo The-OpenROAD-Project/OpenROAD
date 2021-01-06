@@ -39,7 +39,6 @@
 #include <unordered_map>
 
 #include "point.h"
-#include "debug.h"
 
 
 namespace odb {
@@ -757,7 +756,6 @@ public:
   NesterovBase();
   NesterovBase(NesterovBaseVars nbVars,
       std::shared_ptr<PlacerBase> pb,
-      std::shared_ptr<Debug> debug,
       ord::Logger* log);
   ~NesterovBase();
 
@@ -890,7 +888,6 @@ public:
 private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
-  std::shared_ptr<Debug> debug_;
   ord::Logger* log_;
 
   BinGrid bg_;
