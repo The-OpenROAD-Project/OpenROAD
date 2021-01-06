@@ -117,8 +117,8 @@ void TritonRoute::init() {
     ENABLE_VIA_GEN = false;
   }
 
-  io::Parser parser(getDesign());
-  parser.readLefDef();
+  io::Parser parser(getDesign(),logger_);
+  parser.readLefDef(db_);
   if (GUIDE_FILE != string("")) {
     parser.readGuide();
   } else {
@@ -168,7 +168,7 @@ int TritonRoute::main() {
   init();
   if (GUIDE_FILE == string("")) {
     gr();
-    io::Parser parser(getDesign());
+    io::Parser parser(getDesign(),logger_);
     GUIDE_FILE = OUTGUIDE_FILE;
     ENABLE_VIA_GEN = true;
     parser.readGuide();
