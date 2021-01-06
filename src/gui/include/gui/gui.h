@@ -53,8 +53,15 @@ class Descriptor
 {
  public:
   virtual std::string getName(void* object) const = 0;
+  virtual std::string getLocation(void* object) const = 0;
+  virtual bool getBBox(void* object, odb::Rect& bbox) const = 0;
 
-  virtual void highlight(void* object, Painter& painter) const = 0;
+  // If the selectFlag is false, the drawing will happen in highlight mode.
+  // Highlight shapes are persistent which will not get removed from
+  // highlightSet, if the user clicks on layout view as in case of selectionSet
+  virtual void highlight(void* object,
+                         Painter& painter,
+                         bool selectFlag = true) const = 0;
 };
 
 // An implementation of the Descriptor interface for OpenDB
@@ -63,8 +70,12 @@ class OpenDbDescriptor : public Descriptor
 {
  public:
   std::string getName(void* object) const override;
+  std::string getLocation(void* object) const override;
+  bool getBBox(void* object, odb::Rect& bbox) const override;
 
-  void highlight(void* object, Painter& painter) const override;
+  void highlight(void* object,
+                 Painter& painter,
+                 bool selectFlag) const override;
 
   static OpenDbDescriptor* get();
 
@@ -94,10 +105,15 @@ class Selected
   }
 
   std::string getName() const { return descriptor_->getName(object_); }
-
-  void highlight(Painter& painter) const
+  std::string getLocation() const { return descriptor_->getLocation(object_); }
+  bool getBBox(odb::Rect& bbox) const
   {
-    return descriptor_->highlight(object_, painter);
+    return descriptor_->getBBox(object_, bbox);
+  }
+
+  void highlight(Painter& painter, bool selectFlag = true) const
+  {
+    return descriptor_->highlight(object_, painter, selectFlag);
   }
 
   operator bool() const { return object_ != nullptr; }
@@ -157,6 +173,7 @@ class Painter
 
   // The color to highlight in
   static inline const Color highlight = yellow;
+  static inline const Color persistHighlight = cyan;
 
   virtual ~Painter() = default;
 
@@ -173,7 +190,8 @@ class Painter
   // Set the brush to whatever the user has chosen for this layer
   virtual void setBrush(const Color& color) = 0;
 
-  // Draw a geom shape as a polygon with coordinates in DBU with the current pen/brush
+  // Draw a geom shape as a polygon with coordinates in DBU with the current
+  // pen/brush
   virtual void drawGeomShape(const odb::GeomShape* shape) = 0;
 
   // Draw a rect with coordinates in DBU with the current pen/brush
@@ -233,13 +251,19 @@ class Gui
   void addSelectedNet(const char* name);
 
   // Add nets matching the pattern to the selection set
-  void addSelectedNets(const char* pattern);
+  void addSelectedNets(const char* pattern,
+                       bool matchCase = true,
+                       bool matchRegEx = false,
+                       bool addToHighlightSet = false);
 
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
   // Add instances matching the pattern to the selection set
-  void addSelectedInsts(const char* pattern);
+  void addSelectedInsts(const char* pattern,
+                        bool matchCase = true,
+                        bool matchRegEx = true,
+                        bool addToHighlightSet = false);
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
