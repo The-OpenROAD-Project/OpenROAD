@@ -1,0 +1,2 @@
+DRT 0001 FlexRoute.cpp:234         Error reading param file: {}
+DRT 0002 FlexRoute.cpp:98          Detailed routing has not been run yet.

@@ -123,7 +123,7 @@ namespace fr {
     bool hasNet() const override {
       return (owner) && (owner->typeId() == frcNet);
     }
-    bool hasGrNet() const {
+    bool hasGrNet() const override {
       return (owner) && (owner->typeId() == grcNet);
     }
     frNet* getNet() const override {
@@ -150,10 +150,10 @@ namespace fr {
     void removeFromNet() override {
       owner = nullptr;
     }
-    void setChild(frBlockObject *in) {
+    void setChild(frBlockObject *in) override {
       child = in;
     }
-    void setParent(frBlockObject *in) {
+    void setParent(frBlockObject *in) override {
       parent = in;
     }
 
