@@ -38,9 +38,7 @@
 
 #define MAX32 32
 
-//#ifdef _WIN32
 typedef unsigned int uint;
-//#endif
 
 #define ath__maxInt 2100000000
 
