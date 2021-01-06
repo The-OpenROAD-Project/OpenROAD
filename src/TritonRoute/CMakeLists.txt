@@ -165,36 +165,6 @@ target_link_libraries( TritonRouteLib
 )
 
 ############################################################
-# Create an executable
-############################################################
-add_executable( TritonRoute
-  ${FLEXROUTE_HOME}/src/main.cpp
-)
-
-if( ipo_supported )
-    message(STATUS "IPO / LTO enabled")
-    set_property(TARGET TritonRoute PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-else()
-    message(STATUS "IPO / LTO not supported: <${error}>")
-endif()
-
-target_link_libraries( TritonRoute
-  PUBLIC
-  TritonRouteLib
-  )
-
-target_include_directories( TritonRoute
-  PRIVATE
-  ${FLEXROUTE_HOME}/src
-)
-
-# Do not build the executable by default
-set_target_properties( TritonRoute
-  PROPERTIES EXCLUDE_FROM_ALL TRUE
-)
-
-
-############################################################
 # Compiler flags
 ############################################################
 # Todo: add -Wextra and cleanup warnings
