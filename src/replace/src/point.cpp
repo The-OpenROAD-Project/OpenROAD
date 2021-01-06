@@ -33,7 +33,7 @@
 
 #include "point.h"
 
-namespace replace {
+namespace gpl {
 
 FloatPoint::FloatPoint() : x(0), y(0) {}
 FloatPoint::FloatPoint(float inputX, float inputY) {

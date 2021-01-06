@@ -5600,12 +5600,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
 void io::Writer::updateDb(odb::dbDatabase* db)
 {
   if (db->getChip() == nullptr)
-    logger->error(ord::ToolId::DRT, 3, "please load design first");
+    logger->error(ord::DRT, 3, "please load design first");
 
   odb::dbBlock* block = db->getChip()->getBlock();
   odb::dbTech* tech = db->getTech();
   if (block == nullptr || tech == nullptr)
-    logger->error(ord::ToolId::DRT, 3, "please load design first");
+    logger->error(ord::DRT, 4, "please load design first");
 
   updateDbVias(block, tech);
   updateDbConn(block, tech);
