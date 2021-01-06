@@ -70,6 +70,7 @@ set subdirs {src}
 set files_c {}
 foreach subdir $subdirs {
   set files_c [concat $files_c [glob -nocomplain [file join $subdir "*.{cc,,cpp,h,hh,yy,ll,i}"]]]
+  set files_c [concat $files_c [glob -nocomplain [file join $subdir "*" "*.{cc,,cpp,h,hh,yy,ll,i}"]]]
 }
 set warn_regexp_c {->(info|warn|fileWarn|error|fileError|critical)\((?:ord::)?([A-Z][A-Z][A-Z]), *([0-9]+),.*(".+")}
 
