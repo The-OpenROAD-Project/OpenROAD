@@ -6,7 +6,7 @@
 #include "nesterovBase.h"
 #include "placerBase.h"
 
-namespace replace {
+namespace gpl {
 
 Graphics::Graphics(std::shared_ptr<PlacerBase> pb,
                    InitialPlace* ip)
@@ -199,4 +199,4 @@ bool Graphics::guiActive()
   return gui::Gui::get() != nullptr;
 }
 
-}  // namespace replace
+}  // namespace gpl

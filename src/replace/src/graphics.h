@@ -4,7 +4,7 @@
 
 #include "gui/gui.h"
 
-namespace replace {
+namespace gpl {
 
 class InitialPlace;
 class NesterovBase;
@@ -50,4 +50,4 @@ class Graphics : public gui::Renderer
   void drawBounds(gui::Painter& painter);
 };
 
-}  // namespace replace
+}  // namespace gpl
