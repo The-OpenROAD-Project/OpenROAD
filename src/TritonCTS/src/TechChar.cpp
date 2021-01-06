@@ -530,17 +530,18 @@ void TechChar::getMaxSlewMaxCapFromAxis(sta::TableAxis* axis, float& maxSlew, bo
                                      float& maxCap, bool& maxCapExist)
 {
   if (axis) {
-    switch(axis->variable()) {
+    switch (axis->variable()) {
       case sta::TableAxisVariable::total_output_net_capacitance:
-           maxCap = axis->axisValue(axis->size() - 1);
-           maxCapExist = true;
-           break;
+        maxCap = axis->axisValue(axis->size() - 1);
+        maxCapExist = true;
+        break;
       case sta::TableAxisVariable::input_net_transition:
       case sta::TableAxisVariable::input_transition_time:
-           maxSlew = axis->axisValue(axis->size() - 1);
-           maxSlewExist = true;
-           break;
-      default: break;
+        maxSlew = axis->axisValue(axis->size() - 1);
+        maxSlewExist = true;
+        break;
+      default:
+        break;
     }
   }
 }
@@ -557,15 +558,15 @@ void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyC
       while (arc_iter.hasNext()) {
         sta::TimingArc *arc = arc_iter.next();
         sta::GateTableModel *model = dynamic_cast<sta::GateTableModel*>(arc->model());
-        if(!model)
-          continue;
-        auto delayModel = model->delayModel();
-        sta::TableAxis *axis1 = delayModel->axis1();
-        sta::TableAxis *axis2 = delayModel->axis2();
-        sta::TableAxis *axis3 = delayModel->axis3();
-        if(axis1) getMaxSlewMaxCapFromAxis(axis1, maxSlew, maxSlewExist, maxCap, maxCapExist);
-        if(axis2) getMaxSlewMaxCapFromAxis(axis2, maxSlew, maxSlewExist, maxCap, maxCapExist);
-        if(axis3) getMaxSlewMaxCapFromAxis(axis3, maxSlew, maxSlewExist, maxCap, maxCapExist);
+        if(model) {
+          auto delayModel = model->delayModel();
+          sta::TableAxis *axis1 = delayModel->axis1();
+          sta::TableAxis *axis2 = delayModel->axis2();
+          sta::TableAxis *axis3 = delayModel->axis3();
+          if(axis1) getMaxSlewMaxCapFromAxis(axis1, maxSlew, maxSlewExist, maxCap, maxCapExist);
+          if(axis2) getMaxSlewMaxCapFromAxis(axis2, maxSlew, maxSlewExist, maxCap, maxCapExist);
+          if(axis3) getMaxSlewMaxCapFromAxis(axis3, maxSlew, maxSlewExist, maxCap, maxCapExist);
+        }
       }
     }
   }
@@ -576,10 +577,9 @@ void TechChar::getClockLayerResCap(double &cap, double &res)
   /* Clock layer should be set with set_wire_rc -clock */
   rsz::Resizer *sizer = ord::OpenRoad::openRoad()->getResizer();
   
-  cap   = sizer->wireClkCapacitance()*std::pow(10.0, -6); //convert from per micron to per meter
-  res   = sizer->wireClkResistance()*std::pow(10.0, -6); //convert from per micron to per meter
+  cap   = sizer->wireClkCapacitance()*1e-6; //convert from per micron to per meter
+  res   = sizer->wireClkResistance()*1e-6; //convert from per micron to per meter
 
-  return;
 }
 // Characterization Methods
 
