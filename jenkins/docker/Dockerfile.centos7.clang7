@@ -47,7 +47,7 @@ RUN wget https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.
     ./b2 install --with-iostreams --with-test -j $(nproc)
 
 # eigen required by replace, TritonMacroPlace
-RUN git clone https://gitlab.com/libeigen/eigen.git \
+RUN git clone -b 3.3 https://gitlab.com/libeigen/eigen.git \
     && cd eigen \
     && mkdir build \
     && cd build \

@@ -98,9 +98,10 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
+void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, ord::Logger* logger)
 {
   db_ = db;
+  logger_ = logger;
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
@@ -146,20 +147,21 @@ void TritonRoute::gr() {
 void TritonRoute::ta() {
   FlexTA ta(getDesign());
   ta.main();
-  io::Writer writer(getDesign());
+  io::Writer writer(getDesign(),logger_);
   writer.writeFromTA();
 }
 
 void TritonRoute::dr() {
   num_drvs_ = -1;
-  FlexDR dr(getDesign());
+  FlexDR dr(getDesign(),logger_);
   dr.setDebug(debug_.get(), db_);
   dr.main();
 }
 
 void TritonRoute::endFR() {
-  io::Writer writer(getDesign());
+  io::Writer writer(getDesign(),logger_);
   writer.writeFromDR();
+  writer.updateDb(db_);
 }
 
 int TritonRoute::main() {
