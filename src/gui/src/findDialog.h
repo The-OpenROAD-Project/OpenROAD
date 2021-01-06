@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, OpenROAD
+// Copyright (c) 2021, OpenROAD
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,5 @@ class FindObjectDialog : public QDialog, public Ui::FindObjDialog
  public slots:
   void accept();
   void reject();
-  void regExChkBoxToggled(bool val);
 };
 }  // namespace gui

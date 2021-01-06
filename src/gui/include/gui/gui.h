@@ -53,20 +53,12 @@ class Descriptor
 {
  public:
   virtual std::string getName(void* object) const = 0;
-  virtual std::string getLocation(void* object) const
-  {
-    (void) object;
-    return std::string("NA");
-  }
-  virtual bool getBBox(void* object, odb::Rect& bbox) const
-  {
-    (void) object;
-    (void) bbox;
-    return false;
-  }
+  virtual std::string getLocation(void* object) const = 0;
+  virtual bool getBBox(void* object, odb::Rect& bbox) const = 0;
 
-  // If the selectFlag is false, the drawing will happen in highlight mode, with
-  // will highlight the object which can not
+  // If the selectFlag is false, the drawing will happen in highlight mode.
+  // Highlight shapes are persistent which will not get removed from
+  // highlightSet, if the user clicks on layout view as in case of selectionSet
   virtual void highlight(void* object,
                          Painter& painter,
                          bool selectFlag = true) const = 0;
@@ -261,7 +253,7 @@ class Gui
   // Add nets matching the pattern to the selection set
   void addSelectedNets(const char* pattern,
                        bool matchCase = true,
-                       bool matchRegEx = true,
+                       bool matchRegEx = false,
                        bool addToHighlightSet = false);
 
   // Add an instance to the selection set

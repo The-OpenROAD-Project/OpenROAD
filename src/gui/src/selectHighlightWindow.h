@@ -49,12 +49,11 @@
 #include "ui_selectedWidget.h"
 
 namespace gui {
-class SelHltModel : public QAbstractTableModel
+class SelectHighlightModel : public QAbstractTableModel
 {
   Q_OBJECT
  public:
-  SelHltModel(const SelectionSet& objs);
-  ~SelHltModel();
+  SelectHighlightModel(const SelectionSet& objs);
 
   int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
   int columnCount(const QModelIndex& parent
@@ -108,8 +107,8 @@ class SelectHighlightWindow : public QDockWidget
 
  private:
   Ui::SelectHighlightWidget* ui;
-  SelHltModel selModel_;
-  SelHltModel hltModel_;
+  SelectHighlightModel selectionModel_;
+  SelectHighlightModel highlightModel_;
 
   QMenu* selectContextMenu_;
   QMenu* highlightContextMenu_;

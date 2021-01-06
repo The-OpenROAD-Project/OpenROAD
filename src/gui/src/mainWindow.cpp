@@ -49,7 +49,8 @@ MainWindow::MainWindow(QWidget* parent)
       db_(nullptr),
       controls_(new DisplayControls(this)),
       viewer_(new LayoutViewer(controls_, selected_, highlighted_)),
-      selHltWin_(new SelectHighlightWindow(selected_, highlighted_, this)),
+      selectionBrowser_(
+          new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
       script_(new ScriptWidget(this))
 {
@@ -58,15 +59,15 @@ MainWindow::MainWindow(QWidget* parent)
   resize(size * 0.8);
   move(size.width() * 0.1, size.height() * 0.1);
 
-  findDlg_ = new FindObjectDialog(this);
+  findDialog_ = new FindObjectDialog(this);
 
   setCentralWidget(scroll_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
-  addDockWidget(Qt::BottomDockWidgetArea, selHltWin_);
+  addDockWidget(Qt::BottomDockWidgetArea, selectionBrowser_);
 
-  tabifyDockWidget(selHltWin_, script_);
-  selHltWin_->hide();
+  tabifyDockWidget(selectionBrowser_, script_);
+  selectionBrowser_->hide();
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(commandExecuted()), viewer_, SLOT(update()));
@@ -98,37 +99,37 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(this,
           SIGNAL(selectionChanged()),
-          selHltWin_,
+          selectionBrowser_,
           SLOT(updateSelectionModel()));
   connect(this,
           SIGNAL(highlightChanged()),
-          selHltWin_,
+          selectionBrowser_,
           SLOT(updateHighlightModel()));
 
-  connect(
-      selHltWin_, &SelectHighlightWindow::clearAllSelections, this, [this]() {
-        this->setSelected(Selected());
-      });
-  connect(
-      selHltWin_, &SelectHighlightWindow::clearAllHighlights, this, [this]() {
-        this->clearHighlighted();
-      });
-  connect(selHltWin_,
+  connect(selectionBrowser_,
+          &SelectHighlightWindow::clearAllSelections,
+          this,
+          [this]() { this->setSelected(Selected()); });
+  connect(selectionBrowser_,
+          &SelectHighlightWindow::clearAllHighlights,
+          this,
+          [this]() { this->clearHighlighted(); });
+  connect(selectionBrowser_,
           SIGNAL(clearSelectedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromSelected(const QList<const Selected*>&)));
 
-  connect(selHltWin_,
+  connect(selectionBrowser_,
           SIGNAL(zoomInToItems(const QList<const Selected*>&)),
           this,
           SLOT(zoomInToItems(const QList<const Selected*>&)));
 
-  connect(selHltWin_,
+  connect(selectionBrowser_,
           SIGNAL(clearHighlightedItems(const QList<const Selected*>&)),
           this,
           SLOT(removeFromHighlighted(const QList<const Selected*>&)));
 
-  connect(selHltWin_,
+  connect(selectionBrowser_,
           SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
           this,
           SLOT(updateHighlightedSet(const QList<const Selected*>&)));
@@ -145,8 +146,6 @@ MainWindow::MainWindow(QWidget* parent)
   createMenus();
   createToolbars();
   createStatusBar();
-
-  // find_->setDisabled(true);
 }
 
 void MainWindow::createStatusBar()
@@ -190,7 +189,7 @@ void MainWindow::createActions()
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
   connect(zoomIn_, SIGNAL(triggered()), scroll_, SLOT(zoomIn()));
   connect(zoomOut_, SIGNAL(triggered()), scroll_, SLOT(zoomOut()));
-  connect(find_, SIGNAL(triggered()), this, SLOT(slotShortcutCtrlF()));
+  connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
 }
 
 void MainWindow::createMenus()
@@ -207,8 +206,8 @@ void MainWindow::createMenus()
   windowsMenu_ = menuBar()->addMenu("&Windows");
   windowsMenu_->addAction(controls_->toggleViewAction());
   windowsMenu_->addAction(script_->toggleViewAction());
-  windowsMenu_->addAction(selHltWin_->toggleViewAction());
-  selHltWin_->setVisible(false);
+  windowsMenu_->addAction(selectionBrowser_->toggleViewAction());
+  selectionBrowser_->setVisible(false);
 }
 
 void MainWindow::createToolbars()
@@ -238,7 +237,7 @@ void MainWindow::addSelected(const Selected& selection)
   }
   status(selection ? selection.getName() : "");
   emit selectionChanged();
-  selHltWin_->show();
+  selectionBrowser_->show();
 }
 
 void MainWindow::addSelected(const SelectionSet& selections)
@@ -246,7 +245,7 @@ void MainWindow::addSelected(const SelectionSet& selections)
   selected_.insert(selections.begin(), selections.end());
   status(std::string("Added ") + std::to_string(selections.size()));
   emit selectionChanged();
-  selHltWin_->show();
+  selectionBrowser_->show();
 }
 
 void MainWindow::setSelected(const Selected& selection)
@@ -307,17 +306,11 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
   if (items.empty())
     return;
   odb::Rect itemsBBox;
-  bool firstShapeIncluded = false;
+  itemsBBox.mergeInit();
   for (auto& item : items) {
     odb::Rect itemBBox;
-    if (item->getBBox(itemBBox)) {
-      if (!firstShapeIncluded) {
-        firstShapeIncluded = true;
-        itemsBBox = itemBBox;
-        continue;
-      }
+    if (item->getBBox(itemBBox))
       itemsBBox.merge(itemBBox);
-    }
   }
 
   zoomTo(itemsBBox);
@@ -328,11 +321,11 @@ void MainWindow::status(const std::string& message)
   statusBar()->showMessage(QString::fromStdString(message));
 }
 
-void MainWindow::slotShortcutCtrlF()
+void MainWindow::showFindDialog()
 {
   if (getBlock() == nullptr)
     return;
-  findDlg_->exec();
+  findDialog_->exec();
 }
 
 void MainWindow::saveSettings()

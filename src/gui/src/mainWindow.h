@@ -38,7 +38,7 @@
 #include <QToolBar>
 #include <memory>
 
-#include "findDlg.h"
+#include "findDialog.h"
 #include "gui/gui.h"
 #include "openroad/OpenRoad.hh"
 
@@ -99,7 +99,6 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // The highlight set of objects has changed
   void highlightChanged();
 
-
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -141,7 +140,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void status(const std::string& message);
 
   // Show Find Dialog Box
-  void slotShortcutCtrlF();
+  void showFindDialog();
 
  private:
   void createMenus();
@@ -159,7 +158,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // handle destroying the children.
   DisplayControls* controls_;
   LayoutViewer* viewer_;  // owned by scroll_
-  SelectHighlightWindow* selHltWin_;
+  SelectHighlightWindow* selectionBrowser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
 
@@ -177,7 +176,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QLabel* location_;
 
-  FindObjectDialog* findDlg_;
+  FindObjectDialog* findDialog_;
 };
 
 }  // namespace gui

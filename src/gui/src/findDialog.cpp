@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "findDlg.h"
+#include "findDialog.h"
 
 #include <QDebug>
 #include <string>
@@ -41,18 +41,10 @@ namespace gui {
 FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)
 {
   setupUi(this);
-  connect(this->matchRegExCheckBox,
-          SIGNAL(toggled(bool)),
-          this,
-          SLOT(regExChkBoxToggled(bool)));
-  // perform additional setup here ...
 }
 
 void FindObjectDialog::accept()
 {
-  // qDebug() << "In the Dialog Box accept slot, object to find = "
-  //         << this->findObjEdit->text()
-  //         << " Object Type : " << this->findObjType->currentText();
   std::string patternToFind = findObjEdit->text().toStdString();
   bool matchCase = false;
   bool matchRegEx = false;
@@ -76,12 +68,7 @@ void FindObjectDialog::accept()
 
 void FindObjectDialog::reject()
 {
-  // qDebug() << "In the Dialog Box reject slot...";
   QDialog::reject();
 }
 
-void FindObjectDialog::regExChkBoxToggled(bool val)
-{
-  // qDebug() << "Regular Expression Toggled with val : " << val;
-}
 }  // namespace gui

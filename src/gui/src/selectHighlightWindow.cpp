@@ -44,15 +44,12 @@
 
 namespace gui {
 
-SelHltModel::SelHltModel(const SelectionSet& objs) : objs_(objs)
+SelectHighlightModel::SelectHighlightModel(const SelectionSet& objs)
+    : objs_(objs)
 {
 }
 
-SelHltModel::~SelHltModel()
-{
-}
-
-void SelHltModel::populateModel()
+void SelectHighlightModel::populateModel()
 {
   beginResetModel();
   int objIdx = 0;
@@ -64,19 +61,19 @@ void SelHltModel::populateModel()
   endResetModel();
 }
 
-int SelHltModel::rowCount(const QModelIndex& parent) const
+int SelectHighlightModel::rowCount(const QModelIndex& parent) const
 {
   Q_UNUSED(parent);
   return objs_.size();
 }
 
-int SelHltModel::columnCount(const QModelIndex& parent) const
+int SelectHighlightModel::columnCount(const QModelIndex& parent) const
 {
   Q_UNUSED(parent);
   return 3;
 }
 
-QVariant SelHltModel::data(const QModelIndex& index, int role) const
+QVariant SelectHighlightModel::data(const QModelIndex& index, int role) const
 {
   if (!index.isValid() || role != Qt::DisplayRole) {
     return QVariant();
@@ -103,9 +100,9 @@ QVariant SelHltModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
-QVariant SelHltModel::headerData(int section,
-                                 Qt::Orientation orientation,
-                                 int role) const
+QVariant SelectHighlightModel::headerData(int section,
+                                          Qt::Orientation orientation,
+                                          int role) const
 {
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     if (section == 0) {
@@ -124,18 +121,18 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& selSet,
                                              QWidget* parent)
     : QDockWidget(parent),
       ui(new Ui::SelectHighlightWidget),
-      selModel_(selSet),
-      hltModel_(hltSet),
+      selectionModel_(selSet),
+      highlightModel_(hltSet),
       selectContextMenu_(new QMenu(this)),
       highlightContextMenu_(new QMenu(this))
 {
   ui->setupUi(this);
 
   QSortFilterProxyModel* selFilterProxy = new QSortFilterProxyModel(this);
-  selFilterProxy->setSourceModel(&selModel_);
+  selFilterProxy->setSourceModel(&selectionModel_);
 
   QSortFilterProxyModel* hltFilterProxy = new QSortFilterProxyModel(this);
-  hltFilterProxy->setSourceModel(&hltModel_);
+  hltFilterProxy->setSourceModel(&highlightModel_);
 
   ui->selTableView->setModel(selFilterProxy);
   ui->hltTableView->setModel(hltFilterProxy);
@@ -202,12 +199,12 @@ SelectHighlightWindow::~SelectHighlightWindow()
 
 void SelectHighlightWindow::updateSelectionModel()
 {
-  selModel_.populateModel();
+  selectionModel_.populateModel();
 }
 
 void SelectHighlightWindow::updateHighlightModel()
 {
-  hltModel_.populateModel();
+  highlightModel_.populateModel();
 }
 
 void SelectHighlightWindow::showSelectCustomMenu(QPoint pos)
@@ -225,7 +222,7 @@ void SelectHighlightWindow::deselectItems()
   auto selIndices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> deselItems;
   for (auto& selItem : selIndices) {
-    deselItems << selModel_.getItemAt(selItem.row());
+    deselItems << selectionModel_.getItemAt(selItem.row());
   }
   emit clearSelectedItems(deselItems);
 }
@@ -234,7 +231,7 @@ void SelectHighlightWindow::highlightSelectedItems()
   auto selIndices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> selItems;
   for (auto& selItem : selIndices) {
-    selItems << selModel_.getItemAt(selItem.row());
+    selItems << selectionModel_.getItemAt(selItem.row());
   }
   emit highlightSelectedItemsSig(selItems);
 }
@@ -244,7 +241,7 @@ void SelectHighlightWindow::zoomInSelectedItems()
   auto selIndices = ui->selTableView->selectionModel()->selectedRows();
   QList<const Selected*> deselItems;
   for (auto& selItem : selIndices) {
-    deselItems << selModel_.getItemAt(selItem.row());
+    deselItems << selectionModel_.getItemAt(selItem.row());
   }
   emit zoomInToItems(deselItems);
 }
@@ -254,7 +251,7 @@ void SelectHighlightWindow::dehighlightItems()
   auto selIndices = ui->hltTableView->selectionModel()->selectedRows();
   QList<const Selected*> dehltItems;
   for (auto& selItem : selIndices) {
-    dehltItems << hltModel_.getItemAt(selItem.row());
+    dehltItems << highlightModel_.getItemAt(selItem.row());
   }
   emit clearHighlightedItems(dehltItems);
 }
@@ -264,7 +261,7 @@ void SelectHighlightWindow::zoomInHighlightedItems()
   auto selIndices = ui->hltTableView->selectionModel()->selectedRows();
   QList<const Selected*> dehltItems;
   for (auto& selItem : selIndices) {
-    dehltItems << hltModel_.getItemAt(selItem.row());
+    dehltItems << highlightModel_.getItemAt(selItem.row());
   }
   emit zoomInToItems(dehltItems);
 }
