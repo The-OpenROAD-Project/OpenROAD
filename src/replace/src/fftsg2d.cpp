@@ -431,7 +431,7 @@ macro definitions
   }
 #endif /* USE_FFT2D_WINTHREADS */
 
-namespace replace {
+namespace gpl {
 
 void cdft2d(int n1, int n2, int isgn, float **a, float *t, int *ip, float *w) {
   void makewt(int nw, int *ip, float *w);

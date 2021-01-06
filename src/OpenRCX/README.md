@@ -48,6 +48,7 @@ extract_parasitics
                                   <cc_model> distance
   [-context_depth depth]          caculate upper/lower coupling from 
                                   <depth> level away
+  [-no_merge_via_res]             seperate via resistance
 ```
 
 The `extract_parasitics` command performs parastic extraction based on the
@@ -61,6 +62,7 @@ The `context_depth` option is used to specify the levels that OpenRCX needs to c
 The default value is 5.
 for the over/under context overlap for capacitance calculation. 
 The `max_res` command combines resistors in series up to the threshold values.
+Use `no_merge_via_res` seperates the via resistance from the wire resistance.
 
 The `corner_cnt` defines the number of corners used during the parastic
 extractions.

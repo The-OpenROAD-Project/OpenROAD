@@ -39,10 +39,12 @@
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
 using namespace triton_route;
+using ord::DRT;
 
 namespace sta {
 // Tcl files encoded into strings.
@@ -93,7 +95,7 @@ void TritonRoute::setDebugIter(int iter)
 int TritonRoute::getNumDRVs() const
 {
   if (num_drvs_ < 0) {
-    ord::error("detailed routing has not been run yet");
+    logger_->error(DRT, 2, "Detailed routing has not been run yet.");
   }
   return num_drvs_;
 }
@@ -186,8 +188,7 @@ int TritonRoute::main() {
   return 0;
 }
 
-/* static */
-bool TritonRoute::readParams(const string &fileName)
+void TritonRoute::readParams(const string &fileName)
 {
   int readParamCnt = 0;
   fstream fin(fileName.c_str());
@@ -229,5 +230,7 @@ bool TritonRoute::readParams(const string &fileName)
     fin.close();
   }
 
-  return readParamCnt >= 5;
+  if (readParamCnt < 5) {
+    logger_->error(DRT, 1, "Error reading param file: {}", fileName);
+  }
 }
