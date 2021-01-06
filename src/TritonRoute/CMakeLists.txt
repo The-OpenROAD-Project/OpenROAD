@@ -85,7 +85,7 @@ set (FLEXROUTE_SRC
   ${FLEXROUTE_HOME}/src/rp/FlexRP_init.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP.cpp
   ${FLEXROUTE_HOME}/src/rp/FlexRP_prep.cpp
-  ${FLEXROUTE_HOME}/src/FlexRoute.cpp
+  ${FLEXROUTE_HOME}/src/TritonRoute.cpp
   ${FLEXROUTE_HOME}/src/MakeTritonRoute.cpp
   )
 
