@@ -36,7 +36,6 @@
 #include <fstream>
 #include <iostream>
 
-#ifndef _WIN32
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/times.h>
@@ -45,7 +44,6 @@
 #if sun == 1
 #include <fcntl.h>
 #include <procfs.h>
-#endif
 #endif
 
 #include <assert.h>
@@ -79,7 +77,6 @@ unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime)
 
 int AthGetProcessMem(uint64* size, uint64* res)
 {
-#ifndef _WIN32
 #if unix == 1
 #if sun == 1
 
@@ -130,7 +127,6 @@ int AthGetProcessMem(uint64* size, uint64* res)
 
 #endif
 #endif
-#endif
   return 0;
 }
 
@@ -139,7 +135,6 @@ uint64 max_size = 0;
 
 void AthSignalInstaller(int signo, void (*signal_handler)(int))
 {
-#ifndef _WIN32
   struct sigaction act;
   act.sa_handler = signal_handler;
   sigemptyset(&act.sa_mask);
@@ -148,7 +143,6 @@ void AthSignalInstaller(int signo, void (*signal_handler)(int))
     perror("signal:");
   }
   // printf("Installed signal handler!\n");
-#endif
 }
 
 void AthMaxMem(uint64 size, uint64 res)
@@ -192,11 +186,6 @@ void AthMemCounterp(int /* unused: signo */)
 
 int AthResourceLog(const char* title, int ss)
 {
-#ifdef _WIN32
-  return 0;
-#endif
-
-#ifndef _WIN32
   static struct tms ctp;
   static long       wtp = 0;
   static double     mmp = 0.0;
@@ -272,7 +261,7 @@ int AthResourceLog(const char* title, int ss)
   max_res  = res;
 
   return 1;
-#endif
+
 }
 
 int Ath__double2int(double v)

@@ -34,9 +34,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#ifndef _WIN32
 #include <sys/times.h>
-#endif
 
 #include "odb.h"
 #include "ZInterface.h"
