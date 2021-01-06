@@ -133,13 +133,13 @@ void ripupSegZ(Segment* seg)
 
 void newRipup(TreeEdge* treeedge,
               TreeNode* treenodes,
-              int       x1,
-              int       y1,
-              int       x2,
-              int       y2)
+              int x1,
+              int y1,
+              int x2,
+              int y2)
 {
-  short *   gridsX, *gridsY;
-  int       i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
+  short *gridsX, *gridsY;
+  int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
   RouteType ripuptype;
 
   if (treeedge->len == 0) {
@@ -226,16 +226,16 @@ void newRipup(TreeEdge* treeedge,
 
 Bool newRipupType2(TreeEdge* treeedge,
                    TreeNode* treenodes,
-                   int       x1,
-                   int       y1,
-                   int       x2,
-                   int       y2,
-                   int       deg)
+                   int x1,
+                   int y1,
+                   int x2,
+                   int y2,
+                   int deg)
 {
-  int       i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
-  int *     gridsX, *gridsY;
+  int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2;
+  int *gridsX, *gridsY;
   RouteType ripuptype;
-  Bool      needRipup = FALSE;
+  Bool needRipup = FALSE;
 
   if (treeedge->len == 0) {
     return (FALSE);  // not ripup for degraded edge
@@ -330,17 +330,17 @@ void printEdgeVEC(TreeEdge* treeedge)
 }
 
 Bool newRipupCheck(TreeEdge* treeedge,
-                   int       x1,
-                   int       y1,
-                   int       x2,
-                   int       y2,
-                   int       ripup_threshold,
-                   int       netID,
-                   int       edgeID)
+                   int x1,
+                   int y1,
+                   int x2,
+                   int y2,
+                   int ripup_threshold,
+                   int netID,
+                   int edgeID)
 {
   short *gridsX, *gridsY;
-  int    i, grid, Zpoint, ymin, xmin, max_usageH, max_usageV;
-  Bool   needRipup = FALSE;
+  int i, grid, Zpoint, ymin, xmin, max_usageH, max_usageV;
+  Bool needRipup = FALSE;
 
   if (treeedge->len == 0) {
     return (FALSE);
@@ -407,7 +407,7 @@ Bool newRipup3DType3(int netID, int edgeID)
   TreeNode* treenodes;
 
   treeedges = sttrees[netID].edges;
-  treeedge  = &(treeedges[edgeID]);
+  treeedge = &(treeedges[edgeID]);
 
   if (treeedge->len == 0) {
     return (FALSE);  // not ripup for degraded edge
@@ -425,31 +425,31 @@ Bool newRipup3DType3(int netID, int edgeID)
   } else {
     bl = BIG_INT;
   }
-  hl  = 0;
+  hl = 0;
   hid = bid = BIG_INT;
 
   for (i = 0; i < treenodes[n1a].conCNT; i++) {
     if (treenodes[n1a].eID[i] == edgeID) {
       for (k = i + 1; k < treenodes[n1a].conCNT; k++) {
-        treenodes[n1a].eID[k - 1]     = treenodes[n1a].eID[k];
+        treenodes[n1a].eID[k - 1] = treenodes[n1a].eID[k];
         treenodes[n1a].heights[k - 1] = treenodes[n1a].heights[k];
         if (bl > treenodes[n1a].heights[k]) {
-          bl  = treenodes[n1a].heights[k];
+          bl = treenodes[n1a].heights[k];
           bid = treenodes[n1a].eID[k];
         }
         if (hl < treenodes[n1a].heights[k]) {
-          hl  = treenodes[n1a].heights[k];
+          hl = treenodes[n1a].heights[k];
           hid = treenodes[n1a].eID[k];
         }
       }
       break;
     } else {
       if (bl > treenodes[n1a].heights[i]) {
-        bl  = treenodes[n1a].heights[i];
+        bl = treenodes[n1a].heights[i];
         bid = treenodes[n1a].eID[i];
       }
       if (hl < treenodes[n1a].heights[i]) {
-        hl  = treenodes[n1a].heights[i];
+        hl = treenodes[n1a].heights[i];
         hid = treenodes[n1a].eID[i];
       }
     }
@@ -457,40 +457,40 @@ Bool newRipup3DType3(int netID, int edgeID)
   treenodes[n1a].conCNT--;
 
   treenodes[n1a].botL = bl;
-  treenodes[n1a].lID  = bid;
+  treenodes[n1a].lID = bid;
   treenodes[n1a].topL = hl;
-  treenodes[n1a].hID  = hid;
+  treenodes[n1a].hID = hid;
 
   if (n2a < deg) {
     bl = 0;
   } else {
     bl = BIG_INT;
   }
-  hl  = 0;
+  hl = 0;
   hid = bid = BIG_INT;
 
   for (i = 0; i < treenodes[n2a].conCNT; i++) {
     if (treenodes[n2a].eID[i] == edgeID) {
       for (k = i + 1; k < treenodes[n2a].conCNT; k++) {
-        treenodes[n2a].eID[k - 1]     = treenodes[n2a].eID[k];
+        treenodes[n2a].eID[k - 1] = treenodes[n2a].eID[k];
         treenodes[n2a].heights[k - 1] = treenodes[n2a].heights[k];
         if (bl > treenodes[n2a].heights[k]) {
-          bl  = treenodes[n2a].heights[k];
+          bl = treenodes[n2a].heights[k];
           bid = treenodes[n2a].eID[k];
         }
         if (hl < treenodes[n2a].heights[k]) {
-          hl  = treenodes[n2a].heights[k];
+          hl = treenodes[n2a].heights[k];
           hid = treenodes[n2a].eID[k];
         }
       }
       break;
     } else {
       if (bl > treenodes[n2a].heights[i]) {
-        bl  = treenodes[n2a].heights[i];
+        bl = treenodes[n2a].heights[i];
         bid = treenodes[n2a].eID[i];
       }
       if (hl < treenodes[n2a].heights[i]) {
-        hl  = treenodes[n2a].heights[i];
+        hl = treenodes[n2a].heights[i];
         hid = treenodes[n2a].eID[i];
       }
     }
@@ -498,9 +498,9 @@ Bool newRipup3DType3(int netID, int edgeID)
   treenodes[n2a].conCNT--;
 
   treenodes[n2a].botL = bl;
-  treenodes[n2a].lID  = bid;
+  treenodes[n2a].lID = bid;
   treenodes[n2a].topL = hl;
-  treenodes[n2a].hID  = hid;
+  treenodes[n2a].hID = hid;
 
   gridsX = treeedge->route.gridsX;
   gridsY = treeedge->route.gridsY;
@@ -531,16 +531,16 @@ Bool newRipup3DType3(int netID, int edgeID)
 void newRipupNet(int netID)
 {
   short *gridsX, *gridsY;
-  int    i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2, edgeID;
+  int i, j, grid, Zpoint, ymin, ymax, xmin, n1, n2, edgeID;
 
   RouteType ripuptype;
   TreeEdge *treeedges, *treeedge;
   TreeNode* treenodes;
-  int       x1, y1, x2, y2, deg;
+  int x1, y1, x2, y2, deg;
 
   treeedges = sttrees[netID].edges;
   treenodes = sttrees[netID].nodes;
-  deg       = sttrees[netID].deg;
+  deg = sttrees[netID].deg;
 
   for (edgeID = 0; edgeID < 2 * deg - 3; edgeID++) {
     treeedge = &(treeedges[edgeID]);
@@ -620,7 +620,8 @@ void newRipupNet(int netID)
             xmin = std::min(gridsX[i], gridsX[i + 1]);
             h_edges[gridsY[i] * (xGrid - 1) + xmin].est_usage -= 1;
           } else {
-            printf("MAZE RIPUP WRONG in newRipupNet for net %s\n", netName(nets[netID]));
+            printf("MAZE RIPUP WRONG in newRipupNet for net %s\n",
+                   netName(nets[netID]));
             exit(1);
           }
         }

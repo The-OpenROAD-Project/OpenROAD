@@ -40,7 +40,7 @@
 
 #include "extRCap.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 static odb::dbTechLayer* m1;
 static odb::dbTechLayer* m2;
@@ -191,4 +191,4 @@ int extMain::db_test_wires(odb::dbDatabase* db)
   return 0;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

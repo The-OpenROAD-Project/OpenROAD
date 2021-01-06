@@ -31,7 +31,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __IRSOLVER_Power__
-#define __IRSOLVER_Power__ 0
+#define __IRSOLVER_Power__
 
 #include <vector>
 #include <string>
@@ -39,21 +39,24 @@ namespace sta {
 class dbSta;
 }  // namespace sta
 
+namespace psm {
 
-//!  Calculates the power per instance using OpenSTA 
+//!  Calculates the power per instance using OpenSTA
 /*!
-  Uses OpenSTA to report total power per instance and 
+  Uses OpenSTA to report total power per instance and
   use it for IR drop estimation.
 */
 class PowerInst
 {
  private:
   //! Instance to OpenSTA object.
-  sta::dbSta*   _sta;
+  sta::dbSta* _sta;
 
  public:
   //! Function for power per instance calculation
-    std::vector<std::pair<std::string, double>> executePowerPerInst(sta::dbSta* sta);
+  std::vector<std::pair<std::string, double>> executePowerPerInst(
+      sta::dbSta* sta);
 };
- // epower namespace end
+// epower namespace end
+}  // namespace psm
 #endif

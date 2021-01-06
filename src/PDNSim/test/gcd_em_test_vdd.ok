@@ -55,55 +55,37 @@ Path Type: max
            9.30   slack (MET)
 
 
-INFO: Reading location of VDD and VSS sources 
-INFO: Voltage pad location (vsrc) file not spcified, defaulting pad location to checkerboard pattern on core area
-INFO: X direction bump pitch not specified defaulting to 140um
-INFO: Y direction bump pitch not specified defaulting to 140um
-WARNING: Voltage on net VDD is not explicitly set
-INFO: Using voltage from liberty PVT
-Creating G Matrix
-INFO: Found power net VDD
-INFO: Extracting power stripes on net VDD
-Creating Nodes:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: Number of nodes on net VDD =1527
-Creating Connections:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: G matrix created 
-INFO: No dangling stripe found on net VDD
-INFO: Connection between all PDN nodes established on net VDD
-INFO: Reading Voltage source file Vsrc_gcd_vdd.loc
-INFO: EM calculation enabled
-INFO: Output current file specified ./results/gcd_em_vdd.rpt
-INFO: Reading location of VDD and VSS sources 
-Creating G Matrix
-INFO: Found power net VDD
-INFO: Extracting power stripes on net VDD
-Creating Nodes:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: Number of nodes on net VDD =1527
-Creating Connections:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: G matrix created 
-
-
-INFO: Executing STA for Power
-INFO: Execute STA
-INFO: Created J vector
-INFO: No dangling stripe found on net VDD
-INFO: Connection between all PDN nodes established on net VDD
-INFO: Factorizing G
-INFO: Solving GV=J
-INFO: SparseLU begin solving
-INFO: SparseLU finished solving
-
-
+[WARNING PSM-0016] Voltage pad location (vsrc) file not specified, defaulting pad location to checkerboard pattern on core area.
+[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0019] Voltage on net VDD is not explicitly set.
+[WARNING PSM-0022] Using voltage 1.100V for VDD network.
+[INFO PSM-0026] Creating G matrix.
+[INFO PSM-0028] Extracting power stripes on net VDD.
+[INFO PSM-0031] Number of nodes on net VDD = 1527.
+[INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0040] Connection between all PDN nodes established in net VDD.
+[INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vdd.loc.
+[INFO PSM-0004] EM calculation is enabled.
+[INFO PSM-0003] Output current file specified ./results/gcd_em_vdd.rpt.
+[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vdd.loc.
+[INFO PSM-0026] Creating G matrix.
+[INFO PSM-0028] Extracting power stripes on net VDD.
+[INFO PSM-0031] Number of nodes on net VDD = 1527.
+[INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0044] Executing STA for power calculation.
+[INFO PSM-0025] Created J vector.
+[INFO PSM-0040] Connection between all PDN nodes established in net VDD.
+[INFO PSM-0009] Factorizing the G matrix.
+[INFO PSM-0011] Solving system of equations GV=J.
+[INFO PSM-0013] Solving system of equations GV=J complete.
+########## IR report #################
+Worstcase voltage: 1.10e+00 V
+Average IR drop  : 2.38e-05 V
+Worstcase IR drop: 3.14e-05 V
 ######################################
-Worstcase Voltage: 1.09997
-Average IR drop  : 2.382e-05
-Worstcase IR drop: 3.1377e-05
-######################################
-
-
-######################################
-EM Analysis  
-Maximum current: 3.7602e-05
-Average current: 1.5067e-06
+########## EM analysis ###############
+Maximum current: 3.76e-05 A
+Average current: 1.51e-06 A
 Number of resistors: 1556
 ######################################

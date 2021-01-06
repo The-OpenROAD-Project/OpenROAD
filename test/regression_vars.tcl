@@ -33,7 +33,7 @@ if [info exists env(DIFF_OPTIONS)] {
   set diff_options $env(DIFF_OPTIONS)
 }
 
-set valgrind_suppress [file join $test_dir valgrind.suppress]
+set valgrind_suppress [file join $openroad_dir "test" valgrind.suppress]
 set valgrind_options "--num-callers=20 --leak-check=full --freelist-vol=100000000 --leak-resolution=high --suppressions=$valgrind_suppress"
 if { [exec "uname"] == "Darwin" } {
   append valgrind_options " --dsymutil=yes"

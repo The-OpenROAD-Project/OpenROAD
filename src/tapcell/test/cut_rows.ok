@@ -17,6 +17,6 @@ Notice 0: Design: RocketTile
 Notice 0:     Created 2 components and 214 component-terminals.
 Notice 0: Finished DEF file: cut_rows.def
 Step 1: Cut rows...
-[INFO] Macro blocks found: 2
-[INFO] #Original rows: 557
-[INFO] #Cut rows: 83
+[INFO TAP-0001] Macro blocks found: 2
+[INFO TAP-0002] #Original rows: 557
+[INFO TAP-0003] #Cut rows: 83

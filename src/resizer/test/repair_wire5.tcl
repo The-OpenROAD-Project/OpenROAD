@@ -1,4 +1,4 @@
-# repair_long_wires wire to pad
+# repair_design long wire wire to pad
 source "resizer_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_liberty Nangate45/fakeram45_64x32.lib

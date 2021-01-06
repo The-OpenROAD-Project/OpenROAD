@@ -32,6 +32,7 @@ proc define_tool_script { tool script } {
   dict set tool_scripts [string tolower $tool] $script
 }
 
+define_tool_script "TritonRoute" "src/TritonRoute/test/regression"
 define_tool_script "init_fp" "src/init_fp/test/regression"
 define_tool_script "dbSta" "src/dbSta/test/regression"
 define_tool_script "IoPlacer" "src/ioPlacer/test/regression"

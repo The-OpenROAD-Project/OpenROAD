@@ -1,5 +1,6 @@
 record_tests {
   error1
+  set_layer_rc1
 }
 
 define_test_group "non_flow" {"error1"}

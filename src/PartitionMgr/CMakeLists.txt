@@ -11,8 +11,6 @@ if (LOAD_PARTITIONERS)
         add_definitions(-DPARTITIONERS)
 endif (LOAD_PARTITIONERS)
 
-set(CMAKE_CXX_STANDARD 11)
-
 #include(${PROJECT_SOURCE_DIR}/cmake/FindTCL.cmake)
 find_package(SWIG REQUIRED)
 

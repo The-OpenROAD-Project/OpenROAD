@@ -58,7 +58,8 @@ deleteResizer(Resizer *resizer)
 void
 initResizer(OpenRoad *openroad)
 {
-  openroad->getResizer()->init(openroad->tclInterp(),
+  openroad->getResizer()->init(openroad,
+                               openroad->tclInterp(),
                                openroad->getLogger(),
                                openroad->getDb(),
                                openroad->getSta());

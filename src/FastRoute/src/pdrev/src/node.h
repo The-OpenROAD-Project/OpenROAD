@@ -61,8 +61,8 @@ class Node
   int cost_edgeToP;         // Cost of edge to parent
   int src_to_sink_dist;  // source to sink distance tranversing from the node to
                          // the source through the tree
-  int K_t;         // No. of downstream sinks
-  unsigned level;  // Level in tree
+  int K_t;               // No. of downstream sinks
+  unsigned level;        // Level in tree
   vector<int>
       nn_edge_detcost;  // Detour cost of the edges to the nearest neighbours
   vector<float> nn_sw_cost;
@@ -136,5 +136,4 @@ class Node1
   ~Node1() {}
 };
 
-} // namespace
-
+}  // namespace PD

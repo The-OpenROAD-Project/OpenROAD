@@ -35,6 +35,7 @@
 #include "ta/FlexTA.h"
 #include "dr/FlexDR.h"
 #include "gc/FlexGC.h"
+#include "gr/FlexGR.h"
 #include "rp/FlexRP.h"
 #include "sta/StaMain.hh"
 #include "openroad/Error.hh"
@@ -97,9 +98,10 @@ int TritonRoute::getNumDRVs() const
   return num_drvs_;
 }
 
-void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db)
+void TritonRoute::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, ord::Logger* logger)
 {
   db_ = db;
+  logger_ = logger;
   // Define swig TCL commands.
   Triton_route_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::triton_route_tcl_inits);
@@ -117,11 +119,19 @@ void TritonRoute::init() {
 
   io::Parser parser(getDesign());
   parser.readLefDef();
-  parser.readGuide();
+  if (GUIDE_FILE != string("")) {
+    parser.readGuide();
+  } else {
+    ENABLE_VIA_GEN = false;
+  }
   parser.postProcess();
   FlexPA pa(getDesign());
   pa.main();
-  parser.postProcessGuide();
+  if (GUIDE_FILE != string("")) {
+    parser.postProcessGuide();
+  }
+  // GR-related
+  parser.initRPin();
 }
 
 void TritonRoute::prep() {
@@ -129,27 +139,43 @@ void TritonRoute::prep() {
   rp.main();
 }
 
+void TritonRoute::gr() {
+  FlexGR gr(getDesign());
+  gr.main();
+}
+
 void TritonRoute::ta() {
   FlexTA ta(getDesign());
   ta.main();
-  io::Writer writer(getDesign());
+  io::Writer writer(getDesign(),logger_);
   writer.writeFromTA();
 }
 
 void TritonRoute::dr() {
   num_drvs_ = -1;
-  FlexDR dr(getDesign());
+  FlexDR dr(getDesign(),logger_);
   dr.setDebug(debug_.get(), db_);
   dr.main();
 }
 
 void TritonRoute::endFR() {
-  io::Writer writer(getDesign());
+  io::Writer writer(getDesign(),logger_);
   writer.writeFromDR();
+  writer.updateDb(db_);
 }
 
 int TritonRoute::main() {
   init();
+  if (GUIDE_FILE == string("")) {
+    gr();
+    io::Parser parser(getDesign());
+    GUIDE_FILE = OUTGUIDE_FILE;
+    ENABLE_VIA_GEN = true;
+    parser.readGuide();
+    parser.initDefaultVias();
+    parser.writeRefDef();
+    parser.postProcessGuide();
+  }
   prep();
   ta();
   dr();
@@ -183,6 +209,7 @@ bool TritonRoute::readParams(const string &fileName)
         else if (field == "outputguide") { OUTGUIDE_FILE = value; ++readParamCnt;}
         else if (field == "outputMaze") { OUT_MAZE_FILE = value; ++readParamCnt;}
         else if (field == "outputDRC") { DRC_RPT_FILE = value; ++readParamCnt;}
+        else if (field == "outputCMap") { CMAP_FILE = value; ++readParamCnt;}
         else if (field == "threads")  { MAX_THREADS = atoi(value.c_str()); ++readParamCnt;}
         else if (field == "verbose")    VERBOSE = atoi(value.c_str());
         else if (field == "dbProcessNode") { DBPROCESSNODE = value; ++readParamCnt;}

@@ -135,7 +135,7 @@ getReplace()
   return openroad->getReplace();
 }
 
-OpenRCX::Ext *
+rcx::Ext *
 getOpenRCX()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -149,7 +149,7 @@ getTritonRoute()
   return openroad->getTritonRoute();
 }
 
-pdnsim::PDNSim*
+psm::PDNSim*
 getPDNSim()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -170,7 +170,7 @@ getIOPlacer()
   return openroad->getIOPlacer();
 }
 
-partition::PartitionMgr*
+par::PartitionMgr*
 getPartitionMgr()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -345,6 +345,21 @@ write_verilog_cmd(const char *filename,
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeVerilog(filename, sort, include_pwr_gnd, remove_cells);
+}
+
+void
+set_debug_level(const char* tool_name,
+                const char* group,
+                int level)
+{
+  using namespace ord;
+  auto* logger = getOpenRoad()->getLogger();
+
+  auto id = Logger::findToolId(tool_name);
+  if (id == UKN) {
+    logger->error(ORD, 15, "Unknown tool name {}", tool_name);
+  }
+  logger->setDebugLevel(id, group, level);
 }
 
 ////////////////////////////////////////////////////////////////

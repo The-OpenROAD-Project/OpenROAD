@@ -47,7 +47,7 @@
 //#define TEST_SIGNAL_TABLE 1
 //#define TEST_POWER_LEN 1
 
-namespace OpenRCX {
+namespace rcx {
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -5037,4 +5037,4 @@ void extMain::writeMapping(dbBlock* block)
   fclose(fp);
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

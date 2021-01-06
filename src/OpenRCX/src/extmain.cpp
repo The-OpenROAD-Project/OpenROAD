@@ -36,7 +36,7 @@
 //#include "logger.h"
 #include <dbLogger.h>
 
-namespace OpenRCX {
+namespace rcx {
 
 using odb::dbBlock;
 using odb::dbBox;
@@ -1638,4 +1638,4 @@ uint extMain::makeTree(uint netId)
   return 0;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

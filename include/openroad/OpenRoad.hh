@@ -83,7 +83,7 @@ namespace dpl {
 class Opendp;
 }
 
-namespace finale {
+namespace fin {
 class Finale;
 }
 
@@ -95,7 +95,7 @@ namespace gpl {
 class Replace;
 }
 
-namespace OpenRCX {
+namespace rcx {
 class Ext;
 }
 
@@ -103,7 +103,7 @@ namespace triton_route {
 class TritonRoute;
 }
 
-namespace pdnsim {
+namespace psm {
 class PDNSim;
 }
 
@@ -112,7 +112,7 @@ class AntennaChecker;
 }
 
 
-namespace partition {
+namespace par {
 class PartitionMgr;
 }
 
@@ -144,15 +144,15 @@ public:
   cts::TritonCTSKernel *getTritonCts() { return tritonCts_; } 
   dbVerilogNetwork *getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp *getOpendp() { return opendp_; }
-  finale::Finale *getFinale() { return finale_; }
+  fin::Finale *getFinale() { return finale_; }
   tap::Tapcell *getTapcell() { return tapcell_; }
   mpl::TritonMacroPlace *getTritonMp() { return tritonMp_; }
-  OpenRCX::Ext *getOpenRCX() { return extractor_; }
+  rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
-  pdnsim::PDNSim* getPDNSim() { return pdnsim_; }
+  psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
-  partition::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
+  par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
   ant::AntennaChecker *getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer *getIOPlacer() { return ioPlacer_; }
   // Return the bounding box of the db rows.
@@ -217,17 +217,17 @@ private:
   rsz::Resizer *resizer_;
   ppl::IOPlacer *ioPlacer_;
   dpl::Opendp *opendp_;
-  finale::Finale *finale_;
+  fin::Finale *finale_;
   mpl::TritonMacroPlace *tritonMp_;
   grt::GlobalRouter *fastRoute_;
   cts::TritonCTSKernel *tritonCts_;
   tap::Tapcell *tapcell_;
-  OpenRCX::Ext *extractor_;
+  rcx::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   ant::AntennaChecker *antenna_checker_;
   gpl::Replace *replace_;
-  pdnsim::PDNSim *pdnsim_; 
-  partition::PartitionMgr *partitionMgr_; 
+  psm::PDNSim *pdnsim_; 
+  par::PartitionMgr *partitionMgr_;
 
   std::set<Observer *> observers_;
 

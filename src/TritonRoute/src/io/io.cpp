@@ -38,6 +38,9 @@
 
 #include "defrReader.hpp"
 #include "lefrReader.hpp"
+#include "opendb/db.h"
+#include "opendb/dbWireCodec.h"
+#include "openroad/Logger.h"
 
 using namespace std;
 using namespace fr;
@@ -574,6 +577,13 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
       auto term = parser->tmpBlock->name2term_[net->pin(i)]; // frTerm*
       term->addToNet(netIn);
       netIn->addTerm(term);
+      // graph enablement
+      auto termNode = make_unique<frNode>();
+      termNode->setPin(term);
+      termNode->setType(frNodeTypeEnum::frcPin);
+      netIn->addNode(termNode);
+
+
     } else {
       // Instances
       if (!strcmp(net->instance(i), "*")) {
@@ -584,6 +594,12 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
             if (name == frString(net->pin(i))) {
               instTerm->addToNet(netIn);
               netIn->addInstTerm(instTerm);
+              // graph enablement
+              auto instTermNode = make_unique<frNode>();
+              instTermNode->setPin(instTerm);
+              instTermNode->setType(frNodeTypeEnum::frcPin);
+              netIn->addNode(instTermNode);
+
               break;
             }
           }
@@ -604,6 +620,12 @@ int io::Parser::Callbacks::getDefNets(defrCallbackType_e type, defiNet* net, def
             flag = true;
             instTerm->addToNet(netIn);
             netIn->addInstTerm(instTerm);
+            // graph enablement
+            auto instTermNode = make_unique<frNode>();
+            instTermNode->setPin(instTerm);
+            instTermNode->setType(frNodeTypeEnum::frcPin);
+            netIn->addNode(instTermNode);
+            
             break;
           }
         }
@@ -926,6 +948,29 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
     }
   }
 
+  frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+  if (term->hasDirection()) {
+    string str(term->direction());
+    if (str == "INPUT") {
+      termDirection = frTermDirectionEnum::INPUT;
+    } else if (str == "OUTPUT") {
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "OUTPUT TRISTATE") {
+      // TODO: make tristate another property
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "INOUT") {
+      termDirection = frTermDirectionEnum::INOUT;
+    } else if (str == "FEEDTHRU") {
+      termDirection = frTermDirectionEnum::FEEDTHRU;
+    } else {
+      cout << "Error: unsupported term direction " << str << " in lef" << endl;
+      exit(1);
+    }
+  }
+  if (termDirection == frTermDirectionEnum::UNKNOWN) {
+    cout << "Warning: DEF " << term->pinName() << " has no direction\n";
+  }
+
   io::Parser* parser = (io::Parser*) data;
   if (term->hasPort()) {
     cout <<"Error: multiple pin ports existing in DEF" <<endl;
@@ -937,6 +982,7 @@ int io::Parser::Callbacks::getDefTerminals(defrCallbackType_e type, defiPin* ter
     termIn->setId(parser->numTerms);
     parser->numTerms++;
     termIn->setType(termType);
+    termIn->setDirection(termDirection);
     // term should add pin
     // pin
     auto pinIn  = make_unique<frPin>();
@@ -4216,6 +4262,31 @@ int io::Parser::Callbacks::getLefPins(lefrCallbackType_e type, lefiPin* pin, lef
   }
   term->setType(termType);
 
+  frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+  if (pin->hasDirection()) {
+    string str(pin->direction());
+    if (str == "INPUT") {
+      termDirection = frTermDirectionEnum::INPUT;
+    } else if (str == "OUTPUT") {
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "OUTPUT TRISTATE") {
+      // TODO: add separate flag for TRISTATE
+      termDirection = frTermDirectionEnum::OUTPUT;
+    } else if (str == "INOUT") {
+      termDirection = frTermDirectionEnum::INOUT;
+    } else if (str == "FEEDTHRU") {
+      termDirection = frTermDirectionEnum::FEEDTHRU;
+    } else {
+      cout << "Error: unsupported term direction " << str << " in lef" << endl;
+      exit(1);
+    }
+  }
+  if (termDirection == frTermDirectionEnum::UNKNOWN) {
+    cout << "Warning: LEF " << ((io::Parser*)data)->tmpBlock->getName() << "/" <<pin->name() << " has no direction, setting to INPUT...\n";
+    termDirection = frTermDirectionEnum::INPUT;
+  }
+  term->setDirection(termDirection);
+
   int numPorts = pin->numPorts();
   int numItems = 0;
   int itemType = 0;
@@ -5367,4 +5438,153 @@ void io::Writer::writeFromDR(const string &str) {
   fillConnFigs(false);
   fillViaDefs();
   writeDef(false, str);
+}
+void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* tech)
+{
+  frBox box;
+  for (auto via : viaDefs) {
+    if (block->findVia(via->getName().c_str()) != nullptr)
+      continue;
+    auto layer1Name = getTech()->getLayer(via->getLayer1Num())->getName();
+    auto layer2Name = getTech()->getLayer(via->getLayer2Num())->getName();
+    auto cutName = getTech()->getLayer(via->getCutLayerNum())->getName();
+    odb::dbTechLayer* _layer1 = tech->findLayer(layer1Name.c_str());
+    odb::dbTechLayer* _layer2 = tech->findLayer(layer2Name.c_str());
+    odb::dbTechLayer* _cut_layer = tech->findLayer(cutName.c_str());
+    if (_layer1 == nullptr || _layer2 == nullptr || _cut_layer == nullptr) {
+      logger->error(ord::ToolId::DRT,
+                    1,
+                    "techlayers for via {} not found in db tech",
+                    via->getName());
+    }
+    odb::dbVia* _db_via = odb::dbVia::create(block, via->getName().c_str());
+
+    for (auto& fig : via->getLayer2Figs()) {
+      fig->getBBox(box);
+      odb::dbBox::create(
+          _db_via, _layer2, box.left(), box.bottom(), box.right(), box.top());
+    }
+    for (auto& fig : via->getCutFigs()) {
+      fig->getBBox(box);
+      odb::dbBox::create(_db_via,
+                         _cut_layer,
+                         box.left(),
+                         box.bottom(),
+                         box.right(),
+                         box.top());
+    }
+
+    for (auto& fig : via->getLayer1Figs()) {
+      fig->getBBox(box);
+      odb::dbBox::create(
+          _db_via, _layer1, box.left(), box.bottom(), box.right(), box.top());
+    }
+  }
+}
+
+void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* tech)
+{
+  odb::dbWireEncoder _wire_encoder;
+  for (auto net : block->getNets()) {
+    if (connFigs.find(net->getName()) != connFigs.end()) {
+      odb::dbWire* wire = net->getWire();
+      if (wire == nullptr)
+        wire = odb::dbWire::create(net);
+      _wire_encoder.begin(wire);
+      for (auto& connFig : connFigs.at(net->getName())) {
+        switch (connFig->typeId()) {
+          case frcPathSeg: {
+            auto pathSeg = std::dynamic_pointer_cast<frPathSeg>(connFig);
+            auto layerName
+                = getTech()->getLayer(pathSeg->getLayerNum())->getName();
+            auto layer = tech->findLayer(layerName.c_str());
+            _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            frPoint begin, end;
+            frSegStyle segStyle;
+            pathSeg->getPoints(begin, end);
+            pathSeg->getStyle(segStyle);
+            if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
+              _wire_encoder.addPoint(begin.x(), begin.y());
+            } else if (segStyle.getBeginStyle()
+                       == frEndStyle(frcTruncateEndStyle)) {
+              _wire_encoder.addPoint(begin.x(), begin.y(), 0);
+            } else if (segStyle.getBeginStyle()
+                       == frEndStyle(frcVariableEndStyle)) {
+              _wire_encoder.addPoint(
+                  begin.x(), begin.y(), segStyle.getBeginExt());
+            }
+            if (segStyle.getEndStyle() == frEndStyle(frcExtendEndStyle)) {
+              _wire_encoder.addPoint(end.x(), end.y());
+            } else if (segStyle.getEndStyle()
+                       == frEndStyle(frcTruncateEndStyle)) {
+              _wire_encoder.addPoint(end.x(), end.y(), 0);
+            } else if (segStyle.getBeginStyle()
+                       == frEndStyle(frcVariableEndStyle)) {
+              _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt());
+            }
+            break;
+          }
+          case frcVia: {
+            auto via = std::dynamic_pointer_cast<frVia>(connFig);
+            auto layerName = getTech()
+                                 ->getLayer(via->getViaDef()->getLayer1Num())
+                                 ->getName();
+            auto viaName = via->getViaDef()->getName();
+            auto layer = tech->findLayer(layerName.c_str());
+            _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            frPoint origin;
+            via->getOrigin(origin);
+            _wire_encoder.addPoint(origin.x(), origin.y());
+            odb::dbTechVia* tech_via = tech->findVia(viaName.c_str());
+            if (tech_via != nullptr) {
+              _wire_encoder.addTechVia(tech_via);
+            } else {
+              odb::dbVia* db_via = block->findVia(viaName.c_str());
+              _wire_encoder.addVia(db_via);
+            }
+            break;
+          }
+          case frcPatchWire: {
+            auto pwire = std::dynamic_pointer_cast<frPatchWire>(connFig);
+            auto layerName
+                = getTech()->getLayer(pwire->getLayerNum())->getName();
+            auto layer = tech->findLayer(layerName.c_str());
+            _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
+            frPoint origin;
+            frBox offsetBox;
+            pwire->getOrigin(origin);
+            pwire->getOffsetBox(offsetBox);
+            _wire_encoder.addPoint(origin.x(), origin.y());
+            _wire_encoder.addRect(offsetBox.left(),
+                                  offsetBox.bottom(),
+                                  offsetBox.right(),
+                                  offsetBox.top());
+            break;
+          }
+          default: {
+            _wire_encoder.clear();
+            logger->error(ord::ToolId::DRT,
+                          2,
+                          "unknown connfig type while writing net {}",
+                          net->getName());
+          }
+        }
+      }
+      _wire_encoder.end();
+    }
+  }
+}
+
+void io::Writer::updateDb(odb::dbDatabase* db)
+{
+  if (db->getChip() == nullptr)
+    logger->error(ord::ToolId::DRT, 3, "please load design first");
+
+  odb::dbBlock* block = db->getChip()->getBlock();
+  odb::dbTech* tech = db->getTech();
+  if (block == nullptr || tech == nullptr)
+    logger->error(ord::ToolId::DRT, 3, "please load design first");
+
+  updateDbVias(block, tech);
+  updateDbConn(block, tech);
 }

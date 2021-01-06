@@ -41,6 +41,7 @@ string OUT_FILE;
 string REF_OUT_FILE;
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
+string CMAP_FILE;
 
 // to be removed
 int OR_SEED = -1;
@@ -97,6 +98,9 @@ frUInt4 GUIDECOST       = 1; // disabled change getNextPathCost to enable
 float   MARKERDECAY     = 0.8;
 float   SHAPEBLOATWIDTH = 3;
 int     MISALIGNMENTCOST = 8;
+
+int CONGCOST = 8;
+int HISTCOST = 32;
 
 namespace fr {
 
