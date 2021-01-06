@@ -33,7 +33,6 @@
 
 #include "initialPlace.h"
 #include "placerBase.h"
-#include "logger.h" 
 #include <iostream>
 
 #include <Eigen/IterativeLinearSolvers>
@@ -41,11 +40,14 @@
 #include "plot.h"
 #include "graphics.h"
 
-namespace replace {
+#include "openroad/Logger.h"
+
+namespace gpl {
 using namespace std;
 
 using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
+using ord::GPL;
 
 typedef Eigen::Triplet< float > T;
 
@@ -69,7 +71,7 @@ InitialPlace::InitialPlace()
 
 InitialPlace::InitialPlace(InitialPlaceVars ipVars, 
     std::shared_ptr<PlacerBase> pb,
-    std::shared_ptr<Logger> log)
+    ord::Logger* log)
 : ipVars_(ipVars), pb_(pb), log_(log)
 {
 }
@@ -88,7 +90,7 @@ static PlotEnv pe;
 #endif
 
 void InitialPlace::doBicgstabPlace() {
-  log_->procBegin("InitialPlace", 3);
+  log_->report("Begin InitialPlace");
 
   float errorX = 0.0f, errorY = 0.0f;
 
@@ -124,9 +126,8 @@ void InitialPlace::doBicgstabPlace() {
     instLocVecY_ = solver.solveWithGuess(fixedInstForceVecY_, instLocVecY_);
     errorY = solver.error();
 
-    cout << "[InitialPlace]  Iter: " << i 
-      << " CG Error: " << max(errorX, errorY)
-      << " HPWL: " << pb_->hpwl() << endl; 
+    log_->report("[InitialPlace]  Iter: {} CG Error: {:0.8f} HPWL: {}",
+       i, max(errorX, errorY), pb_->hpwl());
     updateCoordi();
 
 #ifdef ENABLE_CIMG_LIB
@@ -144,7 +145,7 @@ void InitialPlace::doBicgstabPlace() {
     }
   }
 
-  log_->procEnd("InitialPlace", 3);
+  log_->report("End InitialPlace");
 }
 
 // starting point of initial place is center.

@@ -91,7 +91,7 @@ namespace mpl {
 class TritonMacroPlace;
 }
 
-namespace replace {
+namespace gpl {
 class Replace;
 }
 
@@ -149,7 +149,7 @@ public:
   mpl::TritonMacroPlace *getTritonMp() { return tritonMp_; }
   rcx::Ext *getOpenRCX() { return extractor_; }
   triton_route::TritonRoute *getTritonRoute() { return detailed_router_; }
-  replace::Replace* getReplace() { return replace_; }
+  gpl::Replace* getReplace() { return replace_; }
   psm::PDNSim* getPDNSim() { return pdnsim_; }
   grt::GlobalRouter* getFastRoute() { return fastRoute_; }
   par::PartitionMgr *getPartitionMgr() { return partitionMgr_; }
@@ -225,7 +225,7 @@ private:
   rcx::Ext *extractor_;
   triton_route::TritonRoute *detailed_router_;
   ant::AntennaChecker *antenna_checker_;
-  replace::Replace *replace_;
+  gpl::Replace *replace_;
   psm::PDNSim *pdnsim_; 
   par::PartitionMgr *partitionMgr_;
 

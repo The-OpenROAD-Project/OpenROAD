@@ -26,7 +26,7 @@ Notice 0: Coupling threshhold is 0.100000 FF, coupling capacitance less than 0.1
 Notice 0: 2107 wires to be extracted
 Notice 0: %48 completion -- 1032 wires have been extracted
 Notice 0: %100 completion -- 2107 wires have been extracted
-Notice 0: Extract 322 nets, 3136 rsegs, 3136 caps, 2061 ccs
+Notice 0: Extract 322 nets, 3136 rsegs, 3136 caps, 2044 ccs
 Notice 0: Finished extracting gcd.
 Notice 0: Writing SPEF ...
 Notice 0: 322 nets finished

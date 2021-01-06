@@ -156,8 +156,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
     _sections.push_back(s);
   }
 
-  std::random_device rd;
-  std::mt19937 g(rd());
+  std::mt19937 g(seed);
   switch (mode) {
     case RandomMode::Full:
       _logger->report("RandomMode Full");

@@ -30,13 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "gui/gui.h"
+
 #include <QApplication>
+#include <QDebug>
+#include <boost/algorithm/string/predicate.hpp>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "db.h"
 #include "dbShape.h"
 #include "defin.h"
-#include "gui/gui.h"
 #include "lefin.h"
 #include "mainWindow.h"
 #include "openroad/OpenRoad.hh"
@@ -117,7 +122,10 @@ void Gui::addSelectedNet(const char* name)
   mainWindow->addSelected(Selected(net, OpenDbDescriptor::get()));
 }
 
-void Gui::addSelectedNets(const char* pattern)
+void Gui::addSelectedNets(const char* pattern,
+                          bool matchCase,
+                          bool matchRegEx,
+                          bool addToHighlightSet)
 {
   auto block = getBlock(mainWindow->getDb());
   if (!block) {
@@ -126,14 +134,33 @@ void Gui::addSelectedNets(const char* pattern)
 
   QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
   SelectionSet nets;
-  for (auto* net : block->getNets()) {
-    if (re.exactMatch(QString::fromStdString(net->getName()))) {
-      nets.emplace(net, OpenDbDescriptor::get());
+  if (matchRegEx == true) {
+    QRegExp re(pattern,
+               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               QRegExp::Wildcard);
+
+    for (auto* net : block->getNets()) {
+      if (re.exactMatch(net->getConstName())) {
+        nets.emplace(net, OpenDbDescriptor::get());
+      }
+    }
+  } else if (matchCase == false) {
+    for (auto* net : block->getNets()) {
+      if (boost::iequals(pattern, net->getConstName()))
+        nets.emplace(net, OpenDbDescriptor::get());
+    }
+  } else {
+    for (auto* net : block->getNets()) {
+      if (pattern == net->getConstName()) {
+        nets.emplace(net, OpenDbDescriptor::get());
+      }
     }
   }
 
   mainWindow->addSelected(nets);
-}
+  if (addToHighlightSet == true)
+    mainWindow->addHighlighted(nets);
+}  // namespace gui
 
 void Gui::addSelectedInst(const char* name)
 {
@@ -150,22 +177,43 @@ void Gui::addSelectedInst(const char* name)
   mainWindow->addSelected(Selected(inst, OpenDbDescriptor::get()));
 }
 
-void Gui::addSelectedInsts(const char* pattern)
+void Gui::addSelectedInsts(const char* pattern,
+                           bool matchCase,
+                           bool matchRegEx,
+                           bool addToHighlightSet)
 {
   auto block = getBlock(mainWindow->getDb());
   if (!block) {
     return;
   }
 
-  QRegExp re(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
   SelectionSet insts;
-  for (auto* inst : block->getInsts()) {
-    if (re.exactMatch(QString::fromStdString(inst->getName()))) {
-      insts.emplace(inst, OpenDbDescriptor::get());
+  if (matchRegEx) {
+    QRegExp re(pattern,
+               matchCase == true ? Qt::CaseSensitive : Qt::CaseInsensitive,
+               QRegExp::Wildcard);
+    for (auto* inst : block->getInsts()) {
+      if (re.exactMatch(inst->getConstName())) {
+        insts.emplace(inst, OpenDbDescriptor::get());
+      }
+    }
+  } else if (matchCase == false) {
+    for (auto* inst : block->getInsts()) {
+      if (boost::iequals(inst->getConstName(), pattern))
+        insts.emplace(inst, OpenDbDescriptor::get());
+    }
+  } else {
+    for (auto* inst : block->getInsts()) {
+      if (pattern == inst->getConstName()) {
+        insts.emplace(inst, OpenDbDescriptor::get());
+        break;  // There can't be two insts with the same name
+      }
     }
   }
 
   mainWindow->addSelected(insts);
+  if (addToHighlightSet == true)
+    mainWindow->addHighlighted(insts);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -201,10 +249,78 @@ std::string OpenDbDescriptor::getName(void* object) const
   }
 }
 
-void OpenDbDescriptor::highlight(void* object, Painter& painter) const
+std::string OpenDbDescriptor::getLocation(void* object) const
 {
-  painter.setPen(Painter::highlight, true);
-  painter.setBrush(Painter::transparent);
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  auto block = getBlock(mainWindow->getDb());
+  auto toMicrons = block->getDbUnitsPerMicron();
+  switch (db_obj->getObjectType()) {
+    case odb::dbNetObj: {
+      auto net = static_cast<odb::dbNet*>(db_obj);
+      auto wire = net->getWire();
+      odb::Rect wireBBox;
+      if (wire->getBBox(wireBBox)) {
+        std::stringstream ss;
+        ss << "[(" << wireBBox.xMin() / toMicrons << ","
+           << wireBBox.yMin() / toMicrons << "), ("
+           << wireBBox.xMax() / toMicrons << "," << wireBBox.yMax() / toMicrons
+           << ")]";
+        return ss.str();
+      }
+      return std::string("NA");
+    } break;
+    case odb::dbInstObj: {
+      auto instObj = static_cast<odb::dbInst*>(db_obj);
+      auto instBBox = instObj->getBBox();
+      auto placementStatus = instObj->getPlacementStatus().getString();
+      auto instOrient = instObj->getOrient().getString();
+      std::stringstream ss;
+      ss << "[(" << instBBox->xMin() / toMicrons << ","
+         << instBBox->yMin() / toMicrons << "), ("
+         << instBBox->xMax() / toMicrons << "," << instBBox->yMax() / toMicrons
+         << ")], " << instOrient << ": " << placementStatus;
+      return ss.str();
+    } break;
+    default:
+      return std::string("NA");
+  }
+}
+
+bool OpenDbDescriptor::getBBox(void* object, odb::Rect& bbox) const
+{
+  odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
+  switch (db_obj->getObjectType()) {
+    case odb::dbNetObj: {
+      auto net = static_cast<odb::dbNet*>(db_obj);
+      auto wire = net->getWire();
+      if (wire->getBBox(bbox)) {
+        return true;
+      }
+      return false;
+    }
+    case odb::dbInstObj: {
+      auto instObj = static_cast<odb::dbInst*>(db_obj);
+      auto instBBox = instObj->getBBox();
+      bbox.set_xlo(instBBox->xMin());
+      bbox.set_ylo(instBBox->yMin());
+      bbox.set_xhi(instBBox->xMax());
+      bbox.set_yhi(instBBox->yMax());
+      return true;
+    }
+  }
+  return false;
+}
+
+void OpenDbDescriptor::highlight(void* object,
+                                 Painter& painter,
+                                 bool selectFlag) const
+{
+  if (selectFlag == true) {
+    painter.setPen(Painter::highlight, true);
+    painter.setBrush(Painter::transparent);
+  } else {
+    painter.setPen(Painter::persistHighlight, true);
+  }
   odb::dbObject* db_obj = static_cast<odb::dbObject*>(object);
   switch (db_obj->getObjectType()) {
     case odb::dbNetObj: {
