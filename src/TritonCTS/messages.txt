@@ -21,9 +21,9 @@ CTS 0020 HTreeBuilder.cpp:138       Wire segment unit: {}  dbu ({} um)
 CTS 0021 HTreeBuilder.cpp:143       Distance between buffers: {} units ({} um)
 CTS 0022 HTreeBuilder.cpp:147       Branch Length for Vertex Buffer: {} units ({} um)
 CTS 0023 HTreeBuilder.cpp:160       Original sink region: [({}, {}), ({}, {})]
-CTS 0024 HTreeBuilder.cpp:167       Normalized sink region: [({}, {}), ({}, {})]
-CTS 0025 HTreeBuilder.cpp:169          Width:  {}
-CTS 0026 HTreeBuilder.cpp:170          Height: {}
+CTS 0024 HTreeBuilder.cpp:167       Normalized sink region: [({:.4f}, {:.4f}), ({:.4f}, {:.4f})]
+CTS 0025 HTreeBuilder.cpp:169          Width:  {:.4f}
+CTS 0026 HTreeBuilder.cpp:170          Height: {:.4f}
 CTS 0027 HTreeBuilder.cpp:175       Generating H-Tree topology for net {}
 CTS 0028 HTreeBuilder.cpp:176          Tot. number of sinks: {}
 CTS 0029 HTreeBuilder.cpp:178          Sinks will be clustered in groups of {} and a maximum diameter of {} um
@@ -33,10 +33,10 @@ CTS 0032 HTreeBuilder.cpp:213       Stop criterion found. Max number of sinks is
 CTS 0033 HTreeBuilder.cpp:231       done.
 CTS 0034 HTreeBuilder.cpp:284          Segment length (rounded): {}
 CTS 0035 HTreeBuilder.cpp:779       Number of sinks covered: {}
-CTS 0036 PostCtsOpt.cpp:63          Avg. source sink dist: {} dbu.
+CTS 0036 PostCtsOpt.cpp:63          Avg. source sink dist: {:.2f} dbu.
 CTS 0037 PostCtsOpt.cpp:90          Num outlier sinks: {}
-CTS 0038 TechChar.cpp:1285         Number of created patterns = {}.
-CTS 0039 TechChar.cpp:1298         Number of created patterns = {}.
+CTS 0038 TechChar.cpp:1284         Number of created patterns = {}.
+CTS 0039 TechChar.cpp:1297         Number of created patterns = {}.
 CTS 0040 TritonCTS.cpp:385         A net was not found in the design. Skipping...
 CTS 0041 TritonCTS.cpp:436          has {} sinks. Skipping...
 CTS 0042 TritonCTS.cpp:441          has 0 sinks. Disconnected net or
@@ -68,17 +68,17 @@ CTS 0065 TechChar.cpp:240          Normalized values in the LUT should be in the
 CTS 0066 TechChar.cpp:277          Could not find sol_list file.
 CTS 0067 TechChar.cpp:296          Number of buffers does not match on solution.
 
-CTS 0068 TechChar.cpp:502          Network not found. Check your lef/def/verilog file.
-CTS 0069 TechChar.cpp:506          Database not found. Check your lef/def/verilog file.
-CTS 0070 TechChar.cpp:510          Chip not found. Check your lef/def/verilog file.
-CTS 0071 TechChar.cpp:514          Block not found. Check your lef/def/verilog file.
-CTS 0072 TechChar.cpp:519          Network not found. Check your lef/def/verilog file.
-CTS 0073 TechChar.cpp:541          Buffer not found. Check your -buf_list input.
-CTS 0074 TechChar.cpp:547          Buffer not found. Check your -buf_list input.
-CTS 0075 TechChar.cpp:603          Error generating the wirelengths to test. Check your -wire_unit 
-CTS 0076 TechChar.cpp:617          No Liberty cell found for %s.
-CTS 0077 TechChar.cpp:626          Liberty Library does not have Max Slew or Max Cap values.
-CTS 0078 TechChar.cpp:653          Error generating the wirelengths to test. 
+CTS 0068 TechChar.cpp:501          Network not found. Check your lef/def/verilog file.
+CTS 0069 TechChar.cpp:505          Database not found. Check your lef/def/verilog file.
+CTS 0070 TechChar.cpp:509          Chip not found. Check your lef/def/verilog file.
+CTS 0071 TechChar.cpp:513          Block not found. Check your lef/def/verilog file.
+CTS 0072 TechChar.cpp:518          Network not found. Check your lef/def/verilog file.
+CTS 0073 TechChar.cpp:540          Buffer not found. Check your -buf_list input.
+CTS 0074 TechChar.cpp:546          Buffer not found. Check your -buf_list input.
+CTS 0075 TechChar.cpp:602          Error generating the wirelengths to test. Check your -wire_unit 
+CTS 0076 TechChar.cpp:616          No Liberty cell found for %s.
+CTS 0077 TechChar.cpp:625          Liberty Library does not have Max Slew or Max Cap values.
+CTS 0078 TechChar.cpp:652          Error generating the wirelengths to test. 
 CTS 0079 HTreeBuilder.cpp:96       Sink not found.
 CTS 0080 HTreeBuilder.cpp:771      Sink not found.
 CTS 0081 TritonCTS.cpp:167          is not in the loaded DB.

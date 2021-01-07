@@ -164,10 +164,10 @@ void HTreeBuilder::initSinkRegion()
   } else {
     _sinkRegion = _clock.computeSinkRegionClustered(_topLevelSinksClustered);
   }
-  _logger->info(CTS, 24, " Normalized sink region: [({}, {}), ({}, {})]",
+  _logger->info(CTS, 24, " Normalized sink region: [({:.4f}, {:.4f}), ({:.4f}, {:.4f})]",
                 _sinkRegion.getMinX(), _sinkRegion.getMinY(), _sinkRegion.getMaxX(), _sinkRegion.getMaxY());
-  _logger->info(CTS, 25, "    Width:  {}", _sinkRegion.getWidth());
-  _logger->info(CTS, 26, "    Height: {}", _sinkRegion.getHeight());
+  _logger->info(CTS, 25, "    Width:  {:.4f}", _sinkRegion.getWidth());
+  _logger->info(CTS, 26, "    Height: {:.4f}", _sinkRegion.getHeight());
 }
 
 void HTreeBuilder::run()
@@ -270,7 +270,7 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   _logger->report(" Level {}", level);
   _logger->report("    Direction: {}", ((isVertical(level)) ? ("Vertical") : ("Horizontal")));
   _logger->report("    # sinks per sub-region: {}", numSinksPerSubRegion);
-  _logger->report("    Sub-region size: {} X {}", width, height);
+  _logger->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
   unsigned minLength = _minLengthSinkRegion / 2;
   unsigned segmentLength = std::round(width / (2.0 * minLength)) * minLength;

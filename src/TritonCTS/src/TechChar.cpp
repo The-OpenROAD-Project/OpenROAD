@@ -484,9 +484,8 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  _logger->report("    Key: {}", " outSlew: {}", " load: {}",
-                  " length: {}", " isBuffered: {}",  key,
-                  (unsigned) seg.getOutputSlew(), (unsigned) seg.getLoad(),
+  _logger->report("    Key: {} outSlew: {} load: {} length: {} isBuffered: {}",
+                  key, (unsigned) seg.getOutputSlew(), (unsigned) seg.getLoad(),
                   (unsigned) seg.getLength(), seg.isBuffered());
 }
 
