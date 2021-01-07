@@ -299,27 +299,45 @@ Resizer::removeBuffers()
   for (dbInst *inst : block_->getInsts()) {
     LibertyCell *lib_cell = db_network_->libertyCell(inst);
     if (lib_cell && lib_cell->isBuffer()) {
-      LibertyPort *input_port, *output_port;
-      lib_cell->bufferPorts(input_port, output_port);
+      LibertyPort *in_port, *out_port;
+      lib_cell->bufferPorts(in_port, out_port);
       Instance *buffer = db_network_->dbToSta(inst);
-      Pin *input_pin = db_network_->findPin(buffer, input_port);
-      Pin *output_pin = db_network_->findPin(buffer, output_port);
-      Net *input_net = db_network_->net(input_pin);
-      Net *output_net = db_network_->net(output_pin);
-      if (!hasTopLevelPort(input_net)
-          && !hasTopLevelPort(output_net)) {
-        NetPinIterator *pin_iter = db_network_->pinIterator(output_net);
+      Pin *in_pin = db_network_->findPin(buffer, in_port);
+      Pin *out_pin = db_network_->findPin(buffer, out_port);
+      Net *in_net = db_network_->net(in_pin);
+      Net *out_net = db_network_->net(out_pin);
+      // Verilog uses nets as ports, so the surviving net has to be
+      // the one connected the port.
+      bool in_net_ports = hasTopLevelPort(in_net);
+      bool out_net_ports = hasTopLevelPort(out_net);
+      if (in_net_ports && out_net_ports)
+        logger_->warn(RSZ, 46,
+                      "Cannot remove buffers between net {} and {} because both nets have ports connected to them",
+                      sdc_network_->pathName(in_net),
+                      sdc_network_->pathName(out_net));
+      else {
+        Net *survivor, *removed;
+        if (in_net_ports) {
+          survivor = in_net;
+          removed = out_net;
+        }
+        else {
+          // out_net_ports
+          survivor = out_net;
+          removed = in_net;
+        }
+        NetPinIterator *pin_iter = db_network_->pinIterator(removed);
         while (pin_iter->hasNext()) {
           Pin *pin = pin_iter->next();
-          if (pin != output_pin) {
-            Instance *pin_inst = db_network_->instance(pin);
+          Instance *pin_inst = db_network_->instance(pin);
+          if (pin_inst != buffer) {
             Port *pin_port = db_network_->port(pin);
             sta_->disconnectPin(pin);
-            sta_->connectPin(pin_inst, pin_port, input_net);
+            sta_->connectPin(pin_inst, pin_port, survivor);
           }
         }
         delete pin_iter;
-        sta_->deleteNet(output_net);
+        sta_->deleteNet(removed);
         sta_->deleteInstance(buffer);
         remove_count++;
       }
@@ -686,23 +704,23 @@ Resizer::repairNet(Net *net,
   }
 
   if (slew_violations > 0)
-    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
+    logger_->info(RSZ, 51, "Found {} slew violations.", slew_violations);
   if (fanout_violations > 0)
-    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
+    logger_->info(RSZ, 52, "Found {} fanout violations.", fanout_violations);
   if (cap_violations > 0)
-    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
+    logger_->info(RSZ, 53, "Found {} capacitance violations.", cap_violations);
   if (length_violations > 0)
-    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
+    logger_->info(RSZ, 54, "Found {} long wires.", length_violations);
   if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ, 38, "Inserted {} buffers in {} nets.",
+    logger_->info(RSZ, 55, "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repair_count);
     level_drvr_verticies_valid_ = false;
   }
   if (resize_count_ > 0)
-    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 56, "Resized {} instances.", resize_count_);
   if (resize_count_ > 0)
-    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 57, "Resized {} instances.", resize_count_);
 }
 
 void
@@ -2341,7 +2359,7 @@ Resizer::repairHold(VertexSet *ends,
       level_drvr_verticies_valid_ = false;
     }
     if (over_max_area)
-      logger_->error(RSZ, 26, "max utilization reached.");
+      logger_->error(RSZ, 50, "max utilization reached.");
   }
   else
     logger_->info(RSZ, 33, "No hold violations found.");
