@@ -558,7 +558,7 @@ void TechChar::getBufferMaxSlewMaxCap(sta::LibertyLibrary* staLib, sta::LibertyC
       while (arc_iter.hasNext()) {
         sta::TimingArc *arc = arc_iter.next();
         sta::GateTableModel *model = dynamic_cast<sta::GateTableModel*>(arc->model());
-        if(model) {
+        if(model && model->delayModel()) {
           auto delayModel = model->delayModel();
           sta::TableAxis *axis1 = delayModel->axis1();
           sta::TableAxis *axis2 = delayModel->axis2();
