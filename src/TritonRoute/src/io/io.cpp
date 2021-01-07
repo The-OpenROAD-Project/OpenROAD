@@ -1386,7 +1386,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 
 void io::Parser::setNets(odb::dbBlock* block)
 {
-
+  /*
   for(auto net: block->getNets())
   {
     unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
@@ -1478,7 +1478,6 @@ void io::Parser::setNets(odb::dbBlock* block)
       switch (pathId)
       {
         case odb::dbWireDecoder::PATH:
-          /* code */
           break;
         
         default:
@@ -1735,8 +1734,80 @@ void io::Parser::setNets(odb::dbBlock* block)
 
     return 0;
   }
-
+  */
 }
+
+void io::Parser::setBTerms(odb::dbBlock* block)
+{
+  for(auto term:block->getBTerms())
+  {
+    frTermEnum termType;
+    switch (term->getSigType().getValue())
+    {
+      case odb::dbSigType::SIGNAL:
+        termType = frTermEnum::frcNormalTerm;
+        break;
+      case odb::dbSigType::POWER:
+        termType = frTermEnum::frcPowerTerm;
+        break;
+      case odb::dbSigType::GROUND:
+        termType = frTermEnum::frcGroundTerm;
+        break;
+      case odb::dbSigType::CLOCK:
+        termType = frTermEnum::frcClockTerm;
+        break;
+      default:
+        logger->error(ord::DRT,0,"unsupported PIN USE in db");
+        break;
+    }
+    frTermDirectionEnum termDirection = frTermDirectionEnum::UNKNOWN;
+    switch (term->getIoType().getValue())
+    {
+      case odb::dbIoType::INPUT:
+        termDirection = frTermDirectionEnum::INPUT;
+        break;
+      case odb::dbIoType::OUTPUT:
+        termDirection = frTermDirectionEnum::OUTPUT;
+        break;
+      case odb::dbIoType::INOUT:
+        termDirection = frTermDirectionEnum::INOUT;
+        break;
+      case odb::dbIoType::FEEDTHRU:
+        termDirection = frTermDirectionEnum::FEEDTHRU;
+        break;
+    }
+    auto uTermIn = make_unique<frTerm>(term->getName());
+    auto termIn = uTermIn.get();
+    termIn->setId(numTerms);
+    numTerms++;
+    termIn->setType(termType);
+    termIn->setDirection(termDirection);
+    auto pinIn  = make_unique<frPin>();
+    pinIn->setId(0);
+    for(auto pin:term->getBPins())
+    {
+      for(auto box: pin->getBoxes())
+      {
+        if (tech->name2layer.find(box->getTechLayer()->getName()) == tech->name2layer.end())
+        logger->error(ord::DRT,0,"unsupported layer {}",box->getTechLayer()->getName());
+        frLayerNum layerNum = tech->name2layer[box->getTechLayer()->getName()]->getLayerNum();
+        frCoord xl = invertdbdist(block,box->xMin());
+        frCoord yl = invertdbdist(block,box->yMin());
+        frCoord xh = invertdbdist(block,box->xMax());
+        frCoord yh = invertdbdist(block,box->yMax());
+        unique_ptr<frRect> pinFig = make_unique<frRect>();
+        pinFig->setBBox(frBox(xl, yl, xh, yh));
+        pinFig->addToPin(pinIn.get());
+        pinFig->setLayerNum(layerNum);
+        unique_ptr<frPinFig> uptr(std::move(pinFig));
+        pinIn->addPinFig(std::move(uptr));
+      }
+    }
+    termIn->addPin(std::move(pinIn));
+    tmpBlock->addTerm(std::move(uTermIn));
+  }
+}
+
 void io::Parser::readDb(odb::dbDatabase* db) {
   ProfileTask profile("IO:readDb");
   odb::dbBlock* block = db->getChip()->getBlock();
@@ -1748,6 +1819,7 @@ void io::Parser::readDb(odb::dbDatabase* db) {
   setInsts(block);
   setObstructions(block);
   setVias(block);
+  setBTerms(block);
   // tmpBlock->setId(0);
   // design->setTopBlock(std::move(tmpBlock));
 }
@@ -1770,7 +1842,7 @@ void io::Parser::readDef() {
   // defrSetUnitsCbk(Callbacks::getDefUnits);
   // defrSetTrackCbk(Callbacks::getDefTracks);
   // defrSetComponentCbk(Callbacks::getDefComponents);
-  defrSetPinCbk(Callbacks::getDefTerminals);
+  // defrSetPinCbk(Callbacks::getDefTerminals);
   defrSetSNetCbk(Callbacks::getDefNets);
   defrSetNetCbk(Callbacks::getDefNets);
   defrSetAddPathToNet();

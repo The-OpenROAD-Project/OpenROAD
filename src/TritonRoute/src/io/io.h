@@ -81,6 +81,7 @@ namespace fr {
       void setBTerms(odb::dbBlock* block);
       void setVias(odb::dbBlock* block);
       void setNets(odb::dbBlock* block);
+
       frDesign*       design;
       frTechObject*   tech;
       ord::Logger*    logger;
