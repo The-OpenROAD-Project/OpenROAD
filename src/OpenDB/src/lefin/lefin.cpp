@@ -1502,7 +1502,8 @@ void lefin::setDBUPerMicron(int dbu)
     case 8000:
     case 10000:
     case 20000:
-      _dist_factor = _dbu_per_micron = dbu;
+      _dist_factor = dbu;
+      _dbu_per_micron = dbu;
       _area_factor = _dbu_per_micron * _dbu_per_micron;
       break;
     default:
