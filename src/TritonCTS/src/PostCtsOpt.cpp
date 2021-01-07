@@ -35,9 +35,13 @@
 
 #include "PostCtsOpt.h"
 
+#include "openroad/Logger.h"
+
 #include <iostream>
 
 namespace cts {
+
+using ord::CTS;
 
 void PostCtsOpt::run()
 {
@@ -56,7 +60,7 @@ void PostCtsOpt::initSourceSinkDists()
   });
 
   _avgSourceSinkDist /= _clock->getNumSinks();
-  std::cout << " Avg. source sink dist: " << _avgSourceSinkDist << " dbu.\n";
+  _logger->info(CTS, 36, " Avg. source sink dist: {} dbu.", _avgSourceSinkDist);
 }
 
 void PostCtsOpt::computeNetSourceSinkDists(const Clock::SubNet& subNet)
@@ -83,7 +87,7 @@ void PostCtsOpt::fixSourceSinkDists()
     fixNetSourceSinkDists(subNet);
   });
 
-  std::cout << " Num outlier sinks: " << _numViolatingSinks << "\n";
+  _logger->info(CTS, 37, " Num outlier sinks: {}", _numViolatingSinks);
 }
 
 void PostCtsOpt::fixNetSourceSinkDists(Clock::SubNet& subNet)

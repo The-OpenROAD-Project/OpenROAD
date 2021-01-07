@@ -39,6 +39,7 @@
 
 namespace ord {
 class OpenRoad;
+class Logger;
 } // namespace ord
 
 namespace odb {
@@ -54,6 +55,8 @@ class dbSta;
 }  // namespace sta
 
 namespace cts {
+
+using ord::Logger;
 
 class Clock;
 class ClockInst;
@@ -116,6 +119,7 @@ class TritonCTS
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
 
   ord::OpenRoad* _openroad;
+  Logger* _logger;
   CtsOptions* _options;
   TechChar* _techChar;
   StaEngine* _staEngine;

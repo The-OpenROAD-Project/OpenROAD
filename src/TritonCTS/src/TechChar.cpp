@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TechChar.h"
-#include "openroad/Error.hh"
+#include "openroad/Logger.h"
 
 #include "db_sta/dbSta.hh"
 #include "sta/Graph.hh"
@@ -52,11 +52,11 @@
 
 namespace cts {
 
-using ord::error;
+using ord::CTS;
 
 void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
 {
-  std::cout << " Compiling LUT\n";
+  _logger->report(" Compiling LUT");
   initLengthUnits();
 
   _minSegmentLength = toInternalLengthUnit(_minSegmentLength);
@@ -111,40 +111,42 @@ void TechChar::compileLut(std::vector<TechChar::ResultData> lutSols)
   }
 
   if (noSlewDegradationCount > 0) {
-    std::cout << "    [WARNING] " << noSlewDegradationCount
-              << " wires are pure wire and no slew degration.\n"
-              << "    TritonCTS forced slew degradation on these wires.\n";
+    _logger->warn(CTS, 43, "{} wires are pure wire and no slew degration.\n"
+                  "TritonCTS forced slew degradation on these wires.",
+                  noSlewDegradationCount);
   }
 
-  std::cout << "    Num wire segments: " << _wireSegments.size() << "\n";
-  std::cout << "    Num keys in characterization LUT: "
-            << _keyToWireSegments.size() << "\n";
+  _logger->warn(CTS, 46, "    Num wire segments: {}",
+                _wireSegments.size());
+  _logger->warn(CTS, 47, "    Num keys in characterization LUT: {}",
+                _keyToWireSegments.size());
 
-  std::cout << "    Actual min input cap: " << _actualMinInputCap << "\n";
+  _logger->warn(CTS, 48, "    Actual min input cap: {}",
+                _actualMinInputCap);
 }
 
 void TechChar::parseLut(const std::string& file)
 {
-  std::cout << " Reading LUT file \"" << file << "\"\n";
+  _logger->report(" Reading LUT file \"{}\"", file);
   std::ifstream lutFile(file.c_str());
 
   if (!lutFile.is_open()) {
-    error("Could not find LUT file.\n");
+    _logger->error(CTS, 61, "Could not find LUT file.");
   }
 
   // First line of the LUT is a header with normalization values
   if (!(lutFile >> _minSegmentLength >> _maxSegmentLength >> _minCapacitance
         >> _maxCapacitance >> _minSlew >> _maxSlew)) {
-    error("Problem reading the LUT file.\n");
+    _logger->error(CTS, 62, "Problem reading the LUT file.");
   }
 
   if (_options->getWireSegmentUnit() == 0) {
     unsigned presetWireUnit = 0;
     if (!(lutFile >> presetWireUnit)) {
-      error("Problem reading the LUT file.\n");
+      _logger->error(CTS, 63, "Problem reading the LUT file.");
     }
     if (presetWireUnit == 0) {
-      error("Problem reading the LUT file.\n");
+      _logger->error(CTS, 64, "Problem reading the LUT file.");
     }
     _options->setWireSegmentUnit(presetWireUnit);
     setLenghthUnit(static_cast<unsigned>(presetWireUnit) / 2);
@@ -193,16 +195,17 @@ void TechChar::parseLut(const std::string& file)
   }
 
   if (noSlewDegradationCount > 0) {
-    std::cout << "    [WARNING] " << noSlewDegradationCount
-              << " wires are pure wire and no slew degration.\n"
-              << "    TritonCTS forced slew degradation on these wires.\n";
+    _logger->warn(CTS, 44, "{} wires are pure wire and no slew degration.\n"
+                  "TritonCTS forced slew degradation on these wires.",
+                  noSlewDegradationCount);
   }
 
-  std::cout << "    Num wire segments: " << _wireSegments.size() << "\n";
-  std::cout << "    Num keys in characterization LUT: "
-            << _keyToWireSegments.size() << "\n";
-
-  std::cout << "    Actual min input cap: " << _actualMinInputCap << "\n";
+  _logger->warn(CTS, 49, "    Num wire segments: {}",
+                _wireSegments.size());
+  _logger->warn(CTS, 50, "    Num keys in characterization LUT: {}",
+                _keyToWireSegments.size());
+  _logger->warn(CTS, 51, "    Actual min input cap: {}",
+                _actualMinInputCap);
 }
 
 void TechChar::parse(const std::string& lutFile, const std::string solListFile)
@@ -220,15 +223,11 @@ void TechChar::initLengthUnits()
 
 inline void TechChar::reportCharacterizationBounds() const
 {
-  std::cout << std::setw(12) << "Min. len" << std::setw(12) << "Max. len"
-            << std::setw(12) << "Min. cap" << std::setw(12) << "Max. cap"
-            << std::setw(12) << "Min. slew" << std::setw(12) << "Max. slew"
-            << "\n";
+  _logger->report("Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew");
 
-  std::cout << std::setw(12) << _minSegmentLength << std::setw(12)
-            << _maxSegmentLength << std::setw(12) << _minCapacitance
-            << std::setw(12) << _maxCapacitance << std::setw(12) << _minSlew
-            << std::setw(12) << _maxSlew << "\n";
+  _logger->report("{:<12}{:<12}{:<12}{:<12}{:<12}{:<12}",
+                  _minSegmentLength, _maxSegmentLength, 
+                  _minCapacitance, _maxCapacitance, _minSlew, _maxSlew);
 }
 
 inline void TechChar::checkCharacterizationBounds() const
@@ -238,10 +237,10 @@ inline void TechChar::checkCharacterizationBounds() const
       || _minCapacitance > MAX_NORMALIZED_VAL
       || _maxCapacitance > MAX_NORMALIZED_VAL || _minSlew > MAX_NORMALIZED_VAL
       || _maxSlew > MAX_NORMALIZED_VAL) {
-    error(("Normalized values in the LUT should be in the range [1, "
+    _logger->error(CTS, 65, ("Normalized values in the LUT should be in the range [1, "
            + std::to_string(MAX_NORMALIZED_VAL) + "\n Check the table "
            + "above to see the normalization ranges and check "
-           + "your characterization configuration.\n")
+           + "your characterization configuration.")
               .c_str());
   }
 }
@@ -271,11 +270,11 @@ inline WireSegment& TechChar::createWireSegment(uint8_t length,
 
 void TechChar::parseSolList(const std::string& file)
 {
-  std::cout << " Reading solution list file \"" << file << "\"\n";
+  _logger->report(" Reading solution list file \"{}\"", file);
   std::ifstream solFile(file.c_str());
 
   if (!solFile.is_open()) {
-    error("Could not find sol_list file.\n");
+    _logger->error(CTS, 66, "Could not find sol_list file.");
   }
 
   unsigned solIdx = 0;
@@ -294,10 +293,9 @@ void TechChar::parseSolList(const std::string& file)
 
     // Sanity check
     if (_wireSegments[solIdx].getNumBuffers() != numBuffers) {
-      error(("Number of buffers does not match on solution.\n"
+      _logger->error(CTS, 67, ("Number of buffers does not match on solution.\n"
              + std::to_string(solIdx) + " " + std::to_string(numBuffers)
-             + ".\n")
-                .c_str());
+             + ".").c_str());
     }
     ++solIdx;
   }
@@ -331,88 +329,58 @@ void TechChar::forEachWireSegment(
 
 void TechChar::report() const
 {
-  std::cout << "\n";
-  std::cout << "***************************************************************"
-               "******\n";
-  std::cout << "*                     Report Characterization                  "
-               "     *\n";
-  std::cout << "***************************************************************"
-               "******\n";
-  std::cout << std::setw(5) << "Idx" << std::setw(5) << "Len" << std::setw(5)
-            << "Load" << std::setw(10) << "Out slew" << std::setw(12) << "Power"
-            << std::setw(8) << "Delay" << std::setw(8) << "In cap"
-            << std::setw(8) << "In slew" << std::setw(8) << "Buf"
-            << std::setw(10) << "Buf Locs"
-            << "\n";
+  _logger->report("\n");
+  _logger->report("*********************************************************************");
+  _logger->report("*                     Report Characterization                       *");
+  _logger->report("*********************************************************************");
+  _logger->report("     Idx  Len  Load      Out slew    Power   Delay"
+                  "   In cap  In slew Buf     Buf Locs");
 
-  std::cout.precision(2);
-  std::cout << std::boolalpha;
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
-    std::cout << std::scientific;
-    std::cout << std::setw(5) << idx << std::setw(5)
-              << (unsigned) segment.getLength() << std::setw(5)
-              << (unsigned) segment.getLoad() << std::setw(10)
-              << (unsigned) segment.getOutputSlew() << std::setw(12)
-              << segment.getPower() << std::setw(8) << segment.getDelay()
-              << std::setw(8) << (unsigned) segment.getInputCap()
-              << std::setw(8) << (unsigned) segment.getInputSlew()
-              << std::setw(8) << segment.isBuffered();
+    _logger->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}",
+                    idx, (unsigned) segment.getLength(),(unsigned) segment.getLoad(),
+                    (unsigned) segment.getOutputSlew(), segment.getPower(), segment.getDelay(),
+                    (unsigned) segment.getInputCap(), (unsigned) segment.getInputSlew(),
+                    segment.isBuffered());
 
-    std::cout << std::fixed;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-      std::cout << std::setw(6) << segment.getBufferLocation(idx) << " ";
+      _logger->report("{:<6} ", segment.getBufferLocation(idx));
     }
 
-    std::cout << "\n";
+    _logger->report("\n");
   });
 
-  std::cout
-      << "*************************************************************\n\n";
+  _logger->report("*************************************************************");
 }
 
 void TechChar::reportSegments(uint8_t length,
                               uint8_t load,
                               uint8_t outputSlew) const
 {
-  std::cout << "\n";
-  std::cout << "***************************************************************"
-               "******\n";
-  std::cout << "*                     Report Characterization                  "
-               "     *\n";
-  std::cout << "***************************************************************"
-               "******\n\n";
+  _logger->report("\n");
+  _logger->report("*********************************************************************");
+  _logger->report("*                     Report Characterization                       *");
+  _logger->report("*********************************************************************");
 
-  std::cout << " Reporting wire segments with length: " << (unsigned) length
-            << " load: " << (unsigned) load
-            << " out slew: " << (unsigned) outputSlew << "\n\n";
+  _logger->report(" Reporting wire segments with length: {} load: {} out slew: {}",
+    (unsigned) length, (unsigned) load, (unsigned) outputSlew);
 
-  std::cout << std::setw(5) << "Idx" << std::setw(5) << "Len" << std::setw(5)
-            << "Load" << std::setw(10) << "Out slew" << std::setw(12) << "Power"
-            << std::setw(8) << "Delay" << std::setw(8) << "In cap"
-            << std::setw(8) << "In slew" << std::setw(8) << "Buf"
-            << std::setw(10) << "Buf Locs"
-            << "\n";
+  _logger->report("     Idx  Len  Load      Out slew    Power   Delay"
+                  "   In cap  In slew Buf     Buf Locs");
 
-  std::cout.precision(2);
-  std::cout << std::boolalpha;
   forEachWireSegment(
       length, load, outputSlew, [&](unsigned idx, const WireSegment& segment) {
-        std::cout << std::scientific;
-        std::cout << std::setw(5) << idx << std::setw(5)
-                  << (unsigned) segment.getLength() << std::setw(5)
-                  << (unsigned) segment.getLoad() << std::setw(10)
-                  << (unsigned) segment.getOutputSlew() << std::setw(12)
-                  << segment.getPower() << std::setw(8) << segment.getDelay()
-                  << std::setw(8) << (unsigned) segment.getInputCap()
-                  << std::setw(8) << (unsigned) segment.getInputSlew()
-                  << std::setw(8) << segment.isBuffered();
+        _logger->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}",
+                    idx, (unsigned) segment.getLength(),(unsigned) segment.getLoad(),
+                    (unsigned) segment.getOutputSlew(), segment.getPower(), segment.getDelay(),
+                    (unsigned) segment.getInputCap(), (unsigned) segment.getInputSlew(),
+                    segment.isBuffered());        
 
-        std::cout << std::fixed;
         for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-          std::cout << std::setw(6) << segment.getBufferLocation(idx) << " ";
+          _logger->report("{:<6} ", segment.getBufferLocation(idx));
         }
 
-        std::cout << "\n";
+        _logger->report("\n");
       });
 }
 
@@ -421,7 +389,7 @@ void TechChar::write(const std::string& filename) const
   std::ofstream file(filename.c_str());
 
   if (!file.is_open()) {
-    std::cout << " [ERROR] Could not open characterization file.\n";
+    _logger->error(CTS, 59, "Could not open characterization file.");
   }
 
   file << _minSegmentLength << " " << _maxSegmentLength << " "
@@ -453,7 +421,7 @@ void TechChar::writeSol(const std::string& filename) const
   std::ofstream file(filename.c_str());
 
   if (!file.is_open()) {
-    std::cout << " [ERROR] Could not open characterization file.\n";
+    _logger->error(CTS, 60, " Could not open characterization file.");
   }
 
   file.precision(15);
@@ -490,7 +458,7 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
     return;
   }
 
-  std::cout << " [WARNING] Creating fake entries in the LUT.\n";
+  _logger->warn(CTS, 45, "Creating fake entries in the LUT.");
   for (unsigned load = 1; load <= getMaxCapacitance(); ++load) {
     for (unsigned outSlew = 1; outSlew <= getMaxSlew(); ++outSlew) {
       forEachWireSegment(
@@ -516,11 +484,10 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  std::cout << "    Key: " << key
-            << " outSlew: " << (unsigned) seg.getOutputSlew()
-            << " load: " << (unsigned) seg.getLoad()
-            << " length: " << (unsigned) seg.getLength()
-            << " isBuffered: " << seg.isBuffered() << "\n";
+  _logger->report("    Key: {}", " outSlew: {}", " load: {}",
+                  " length: {}", " isBuffered: {}",  key,
+                  (unsigned) seg.getOutputSlew(), (unsigned) seg.getLoad(),
+                  (unsigned) seg.getLength(), seg.isBuffered());
 }
 
 // Characterization Methods
@@ -532,24 +499,24 @@ void TechChar::initCharacterization()
   ord::OpenRoad* openRoad = ord::OpenRoad::openRoad();
   _dbNetworkChar = openRoad->getDbNetwork();
   if (_dbNetworkChar == nullptr) {
-    error("Network not found. Check your lef/def/verilog file.\n");
+    _logger->error(CTS, 68, "Network not found. Check your lef/def/verilog file.");
   }
   _db = openRoad->getDb();
   if (_db == nullptr) {
-    error("Database not found. Check your lef/def/verilog file.\n");
+    _logger->error(CTS, 69, "Database not found. Check your lef/def/verilog file.");
   }
   odb::dbChip* chip = _db->getChip();
   if (chip == nullptr) {
-    error("Chip not found. Check your lef/def/verilog file.\n");
+    _logger->error(CTS, 70, "Chip not found. Check your lef/def/verilog file.");
   }
   odb::dbBlock* block = chip->getBlock();
   if (block == nullptr) {
-    error("Block not found. Check your lef/def/verilog file.\n");
+    _logger->error(CTS, 71, "Block not found. Check your lef/def/verilog file.");
   }
   _openSta = openRoad->getSta();
   sta::Network* networkChar = _openSta->network();
   if (networkChar == nullptr) {
-    error("Network not found. Check your lef/def/verilog file.\n");
+    _logger->error(CTS, 72, "Network not found. Check your lef/def/verilog file.");
   }
   float dbUnitsPerMicron = static_cast<float>(block->getDbUnitsPerMicron());
 
@@ -571,13 +538,13 @@ void TechChar::initCharacterization()
   // Gets the buffer masters and its in/out pins.
   std::vector<std::string> masterVector = _options->getBufferList();
   if (masterVector.size() < 1) {
-    error("Buffer not found. Check your -buf_list input.\n");
+    _logger->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
   odb::dbMaster* testBuf = nullptr;
   for (std::string masterString : masterVector) {
     testBuf = _db->findMaster(masterString.c_str());
     if (testBuf == nullptr) {
-      error("Buffer not found. Check your -buf_list input.\n");
+      _logger->error(CTS, 74, "Buffer not found. Check your -buf_list input.");
     }
     _masterNames.insert(masterString);
   }
@@ -633,9 +600,8 @@ void TechChar::initCharacterization()
   }
 
   if (_wirelengthsToTest.size() < 1) {
-    error(
-        "Error generating the wirelengths to test. Check your -wire_unit "
-        "parameter or technology files.\n");
+    _logger->error(CTS, 75,  "Error generating the wirelengths to test. Check your -wire_unit "
+        "parameter or technology files.");
   }
 
   setLenghthUnit(static_cast<unsigned>(((_charBuf->getHeight() * 10) / 2)
@@ -648,7 +614,7 @@ void TechChar::initCharacterization()
     sta::Cell* masterCell = _dbNetworkChar->dbToSta(_charBuf);
     sta::LibertyCell* libertyCell = networkChar->libertyCell(masterCell);
     if (!libertyCell) {
-      error("No Liberty cell found for %s.\n", bufMasterName.c_str());
+      _logger->error(CTS, 76, "No Liberty cell found for %s.", bufMasterName.c_str());
     }
 
     sta::LibertyLibrary* staLib = libertyCell->libertyLibrary();
@@ -657,7 +623,7 @@ void TechChar::initCharacterization()
     staLib->defaultMaxSlew(maxSlew, maxSlewExist);
     staLib->defaultMaxCapacitance(maxCap, maxCapExist);
     if (!maxSlewExist || !maxCapExist) {
-      error("Liberty Library does not have Max Slew or Max Cap values.\n");
+      _logger->error(CTS, 77, "Liberty Library does not have Max Slew or Max Cap values.");
     } else {
       _charMaxSlew = maxSlew;
       _charMaxCap = maxCap;
@@ -684,10 +650,9 @@ void TechChar::initCharacterization()
   }
 
   if ((_loadsToTest.size() < 1) || (_slewsToTest.size() < 1)) {
-    error(
-        "Error generating the wirelengths to test. "
+    _logger->error(CTS, 78,  "Error generating the wirelengths to test. "
         "Check your -max_cap / -max_slew / -cap_inter / -slew_inter parameter "
-        "or technology files.\n");
+        "or technology files.");
   }
 }
 
@@ -1317,8 +1282,7 @@ void TechChar::create()
             }
             topologiesCreated++;
             if (topologiesCreated % 50000 == 0) {
-              std::cout << "Number of created patterns = " << topologiesCreated
-                        << ".\n";
+              _logger->info(CTS, 38, "Number of created patterns = {}.", topologiesCreated);
             }
           }
         }
@@ -1331,7 +1295,7 @@ void TechChar::create()
       } while (buffersUpdate != 0);
     }
   }
-  std::cout << "Number of created patterns = " << topologiesCreated << ".\n";
+  _logger->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   // Returns the OpenSTA instance to the old one.
   sta::Sta::setSta(_openSta);
   // Post-processing of the results.
