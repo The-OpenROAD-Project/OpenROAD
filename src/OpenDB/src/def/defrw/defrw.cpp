@@ -2875,11 +2875,7 @@ void lineNumberCB(long long lineNo) {
         ccr1131444 = 0;
     }
 
-#ifdef _WIN32
-  fprintf(fout, "Parsed %I64d number of lines!!\n", lineNo);
-#else 
-  fprintf(fout, "Parsed %lld number of lines!!\n", lineNo);
-#endif
+    fprintf(fout, "Parsed %lld number of lines!!\n", lineNo);
 }
 
 int unUsedCB(defrCallbackType_e, void*, defiUserData) {

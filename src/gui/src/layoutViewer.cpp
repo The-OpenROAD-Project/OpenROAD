@@ -33,12 +33,19 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
+#include <QDebug>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QScrollBar>
+#include <QSizePolicy>
+#include <QToolButton>
 #include <QToolTip>
-#include <iostream>
+
 #include <tuple>
 #include <vector>
 
@@ -147,11 +154,13 @@ class GuiPainter : public Painter
 
 LayoutViewer::LayoutViewer(Options* options,
                            const SelectionSet& selected,
+                           const SelectionSet& highlighted,
                            QWidget* parent)
     : QWidget(parent),
       db_(nullptr),
       options_(options),
       selected_(selected),
+      highlighted_(highlighted),
       scroller_(nullptr),
       pixelsPerDBU_(1.0),
       min_depth_(0),
@@ -196,7 +205,7 @@ void LayoutViewer::setPixelsPerDBU(qreal pixelsPerDBU)
 
   Rect bbox = getBounds(block);
 
-  QSize size(ceil(bbox.dx() * pixelsPerDBU), ceil(bbox.dy() * pixelsPerDBU));
+  QSize size(ceil(bbox.xMax() * pixelsPerDBU), ceil(bbox.yMax() * pixelsPerDBU));
   resize(size);
   setMinimumSize(size);  // needed by scroll area
   update();
@@ -364,8 +373,8 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
   dbBlock* block = getBlock();
   if (block) {
     Rect bbox = getBounds(block);
-    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.dx(),
-                             event->size().height() / (double) bbox.dy());
+    pixelsPerDBU_ = std::min(event->size().width() / (double) bbox.xMax(),
+                             event->size().height() / (double) bbox.yMax());
   }
 }
 
@@ -566,6 +575,13 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 }
 
+void LayoutViewer::drawHighlighted(Painter& painter)
+{
+  for (auto& highlighted : highlighted_) {
+    highlighted.highlight(painter, false /* selectFlag*/);
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -759,6 +775,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
   }
 
+  drawHighlighted(gui_painter);
   // Always last so on top
   drawSelected(gui_painter);
 }
@@ -778,7 +795,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 
   // Flip the y-coordinate (see file level comments)
   dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).dy();
+  int dbu_height = getBounds(block).yMax();
   dbu_top = dbu_height - dbu_top;
   dbu_bottom = dbu_height - dbu_bottom;
 
@@ -788,7 +805,7 @@ Rect LayoutViewer::screenToDBU(const QRect& screen_rect)
 QRectF LayoutViewer::DBUToScreen(const Rect& dbu_rect)
 {
   dbBlock* block = getBlock();
-  int dbu_height = getBounds(block).dy();
+  int dbu_height = getBounds(block).yMax();
 
   // Flip the y-coordinate (see file level comments)
   qreal screen_left = dbu_rect.xMin() * pixelsPerDBU_;
@@ -846,8 +863,8 @@ void LayoutViewer::fit()
   Rect bbox = getBounds(block);
 
   QSize viewport = scroller_->maximumViewportSize();
-  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.dx(),
-                                viewport.height() / (double) bbox.dy());
+  qreal pixelsPerDBU = std::min(viewport.width() / (double) bbox.xMax(),
+                                viewport.height() / (double) bbox.yMax());
   setPixelsPerDBU(pixelsPerDBU);
 }
 

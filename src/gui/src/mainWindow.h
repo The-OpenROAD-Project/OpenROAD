@@ -38,16 +38,22 @@
 #include <QToolBar>
 #include <memory>
 
-#include "openroad/OpenRoad.hh"
+#include "findDialog.h"
 #include "gui/gui.h"
+#include "openroad/OpenRoad.hh"
 
 namespace odb {
 class dbDatabase;
 }
 
+namespace ord {
+class Logger;
+}
+
 namespace gui {
 
 class LayoutViewer;
+class SelectHighlightWindow;
 class LayoutScroll;
 class ScriptWidget;
 class DisplayControls;
@@ -69,6 +75,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   virtual void postReadDef(odb::dbBlock* block) override;
   virtual void postReadDb(odb::dbDatabase* db) override;
 
+  // Capture logger messages into the script widget output
+  void setLogger(ord::Logger* logger);
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
@@ -87,6 +96,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // The selected set of objects has changed
   void selectionChanged();
 
+  // The highlight set of objects has changed
+  void highlightChanged();
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -103,11 +115,32 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Displays the selection in the status bar
   void setSelected(const Selected& selection);
 
+  // Add the selections to highlight set
+  void addHighlighted(const SelectionSet& selection);
+
+  // Add the selections(List) to highlight set
+  void updateHighlightedSet(const QList<const Selected*>& itemsToHighlight);
+
+  // Higlight set will be cleared with this explicit call
+  void clearHighlighted();
+
+  // Remove items from the Selected Set
+  void removeFromSelected(const QList<const Selected*>& items);
+
+  // Remove items from the Highlighted Set
+  void removeFromHighlighted(const QList<const Selected*>& items);
+
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
 
+  // Zoom In To Items such that its bbox is in visible Area
+  void zoomInToItems(const QList<const Selected*>& items);
+
   // Show a message in the status bar
   void status(const std::string& message);
+
+  // Show Find Dialog Box
+  void showFindDialog();
 
  private:
   void createMenus();
@@ -115,13 +148,17 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void createToolbars();
   void createStatusBar();
 
+  odb::dbBlock* getBlock();
+
   odb::dbDatabase* db_;
   SelectionSet selected_;
+  SelectionSet highlighted_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
   LayoutViewer* viewer_;  // owned by scroll_
+  SelectHighlightWindow* selectionBrowser_;
   LayoutScroll* scroll_;
   ScriptWidget* script_;
 
@@ -133,10 +170,13 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   QAction* exit_;
   QAction* fit_;
+  QAction* find_;
   QAction* zoomIn_;
   QAction* zoomOut_;
 
   QLabel* location_;
+
+  FindObjectDialog* findDialog_;
 };
 
 }  // namespace gui

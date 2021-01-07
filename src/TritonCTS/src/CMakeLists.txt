@@ -37,21 +37,20 @@ project(TritonCTS)
 
 set(BIN_NAME "TritonCTS")
 
-set(CMAKE_CXX_STANDARD 11)
-
 find_package(LEMON REQUIRED)
 
-set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/TritonCTSKernelTclWrap.cpp)
+set(TRITONCTS_WRAP ${CMAKE_CURRENT_BINARY_DIR}/tritoncts_wrap.cpp)
+set(TRITONCTS_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonctsTclInitVar.cc)
+
 add_custom_command(OUTPUT ${TRITONCTS_WRAP}
-        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -o ${TRITONCTS_WRAP} TritonCTSKernelTcl.i   
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND ${SWIG_EXECUTABLE} -tcl8 -c++ -namespace -prefix cts -I${TRITONCTS_HOME}/include -o ${TRITONCTS_WRAP} ${TRITONCTS_HOME}/src/tritoncts.i
+        WORKING_DIRECTORY ${TRITONCTS_HOME}/src
         DEPENDS
-        TritonCTSKernelTcl.i
-        TritonCTSKernel.h
+        ${TRITONCTS_HOME}/src/tritoncts.i
+        ${TRITONCTS_HOME}/include/tritoncts/TritonCTS.h
         ${OPENROAD_HOME}/src/Exception.i
 )
 
-set(TRITONCTS_TCL_INIT ${CMAKE_CURRENT_BINARY_DIR}/TritonCtsTclInitVar.cc)
 add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
         COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${TRITONCTS_TCL_INIT} tritoncts_tcl_inits ${TRITONCTS_HOME}/src/tritoncts.tcl
         WORKING_DIRECTORY ${TRITONCTS_HOME}/src
@@ -59,35 +58,35 @@ add_custom_command(OUTPUT ${TRITONCTS_TCL_INIT}
 )
 
 set(SRC_FILES
-        Clock.cpp
-        DbWrapper.cpp
-        HTreeBuilder.cpp
-        MakeTritoncts.cpp
-        PostCtsOpt.cpp
-        SinkClustering.cpp
-        StaEngine.cpp
-        TechChar.cpp
-        TritonCTSKernel.cpp
-        TritonCTSKernelTcl.cpp
-        third_party/CKMeans/clustering.cpp
+  Clock.cpp
+  HTreeBuilder.cpp
+  MakeTritoncts.cpp
+  PostCtsOpt.cpp
+  SinkClustering.cpp
+  StaEngine.cpp
+  TechChar.cpp
+  TritonCTS.cpp
+  clustering.cpp
 )
 
 add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
 
-
-include_directories(${TRITONCTS_HOME}/src
-                    PRIVATE
-                    ${OPENDB_HOME}/include
-                    ${OPENDB_HOME}/include/opendb
-                    ${OPENROAD_HOME}/include
-                    ${DBSTA_HOME}/include
-                    ${OPENSTA_HOME}/include
-		    ${TCL_INCLUDE_PATH}
-                    ${LEMON_INCLUDE_DIRS}
-                   ) 
+target_include_directories(TritonCTS
+  PUBLIC
+  PUBLIC ${TRITONCTS_HOME}/include
+  PRIVATE
+  ${OPENDB_HOME}/include
+  ${OPENDB_HOME}/include/opendb
+  ${OPENROAD_HOME}/include
+  ${DBSTA_HOME}/include
+  ${OPENSTA_HOME}/include
+  ${TRITONCTS_HOME}/src
+  ${TCL_INCLUDE_PATH}
+  ${LEMON_INCLUDE_DIRS}
+ )
 
 target_link_libraries(${BIN_NAME} INTERFACE
-                      ${TCL_LIB}
-                      lefin
-                      opendb
-                     )
+  ${TCL_LIB}
+  lefin
+  opendb
+ )

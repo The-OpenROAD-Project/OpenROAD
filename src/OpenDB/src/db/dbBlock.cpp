@@ -31,9 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <errno.h>
-#ifndef _WIN32
 #include <unistd.h>
-#endif
 #include <memory>
 #include <string>
 
@@ -3331,17 +3329,10 @@ void dbBlock::writeDb(char* filename, int allNode)
   _dbBlock* block = (_dbBlock*) this;
   char      dbname[max_name_length];
   if (allNode) {
-#ifndef _WIN32
     if (block->_journal)
       sprintf(dbname, "%s.main.%d.db", filename, getpid());
     else
       sprintf(dbname, "%s.remote.%d.db", filename, getpid());
-#else
-    if (block->_journal)
-      sprintf(dbname, "%s.main.db", filename);
-    else
-      sprintf(dbname, "%s.remote.db", filename);
-#endif
   } else
     sprintf(dbname, "%s.db", filename);
   FILE* file = fopen(dbname, "wb");

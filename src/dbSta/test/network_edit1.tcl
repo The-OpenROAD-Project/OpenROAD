@@ -15,9 +15,6 @@ diff_files $def_file "network_edit1.defok"
 odb::dbChip_destroy [odb::dbDatabase_getChip [ord::get_db]]
 read_def $def_file
 
-set db_file [make_result_file "network_edit1.db"]
-write_db $db_file
-
 connect_pin in1 r1/D
 connect_pin in1 [get_ports in1]
 report_net -connections in1

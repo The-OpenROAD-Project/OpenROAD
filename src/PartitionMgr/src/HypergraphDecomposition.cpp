@@ -39,7 +39,7 @@
 
 #include "opendb/db.h"
 
-namespace partition {
+namespace par {
 
 void HypergraphDecomposition::init(int dbId)
 {
@@ -189,28 +189,14 @@ void HypergraphDecomposition::updateHypergraph(
   newHypergraph.addRowPtr(nextPtr);
 }
 
-GraphType HypergraphDecomposition::resolveModel(std::string graphModel)
-{
-  if (graphModel == "clique") {
-    return CLIQUE;
-  }
-  if (graphModel == "star") {
-    return STAR;
-  }
-  if (graphModel == "hybrid") {
-    return HYBRID;
-  }
-}
-
 void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
                                       Graph& graph,
-                                      std::string graphModelS,
+                                      GraphType graphModel,
                                       unsigned weightingOption,
                                       unsigned maxEdgeWeight,
                                       unsigned threshold)
 {
   _weightingOption = weightingOption;
-  GraphType graphModel = resolveModel(graphModelS);
   std::vector<int> colIdx = hypergraph.getColIdx();
   adjMatrix.resize(hypergraph.getNumVertex());
   for (int i = 0; i < hypergraph.getNumRowPtr() - 1; i++) {
@@ -266,6 +252,7 @@ float HypergraphDecomposition::computeWeight(int nPins)
     case 7:
       return 2.0 / nPins;
   }
+  return 1.0;
 }
 
 void HypergraphDecomposition::connectStarPins(int firstPin,
@@ -360,4 +347,4 @@ void HypergraphDecomposition::toHypergraph(Hypergraph& hypergraph, Graph& graph)
   hypergraph.assignVertexWeight(graph.getVertexWeight());
 }
 
-}  // namespace partition
+}  // namespace par

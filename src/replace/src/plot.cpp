@@ -47,7 +47,7 @@
 //
 // This is temporal implementation with CImg
 //
-namespace replace {
+namespace gpl {
 
 using namespace cimg_library;
 using namespace std;

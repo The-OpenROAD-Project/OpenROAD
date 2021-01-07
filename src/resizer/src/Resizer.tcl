@@ -190,18 +190,7 @@ proc repair_design { args } {
   if { [info exists keys(-buffer_cell)] } {
     ord::warn RSZ 16 "-buffer_cell is deprecated."
   }
-  set max_wire_length 0
-  if { [info exists keys(-max_wire_length)] } {
-    set max_wire_length $keys(-max_wire_length)
-    sta::check_positive_float "-max_wire_length" $max_wire_length
-    set max_wire_length [sta::distance_ui_sta $max_wire_length]
-    if { [rsz::wire_resistance] > 0 } {
-      set min_delay_max_wire_length [rsz::find_max_wire_length]
-      if { $max_wire_length < $min_delay_max_wire_length } {
-        ord::warn RSZ 17 "max wire length less than [format %.0fu [expr $min_delay_max_wire_length * 1e+6]] increases wire delays."
-      }
-    }
-  }
+  set max_wire_length [rsz::parse_max_wire_length keys]
   
   if { [info exists keys(-libraries)] } {
     set resize_libs [get_liberty_error "-libraries" $keys(-libraries)]
@@ -216,6 +205,7 @@ proc repair_design { args } {
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   rsz::resizer_preamble $resize_libs
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   rsz::repair_design_cmd $max_wire_length
 }
 
@@ -229,16 +219,12 @@ proc repair_clock_nets { args } {
   if { [info exists keys(-buffer_cell)] } {
     ord::warn RSZ 18 "-buffer_cell is deprecated."
   }
-  set max_wire_length 0
-  if { [info exists keys(-max_wire_length)] } {
-    set max_wire_length $keys(-max_wire_length)
-    sta::check_positive_float "-max_wire_length" $max_wire_length
-    set max_wire_length [sta::distance_ui_sta $max_wire_length]
-  }
+  set max_wire_length [rsz::parse_max_wire_length keys]
   
   sta::check_argc_eq0 "repair_clock_nets" $args
   rsz::check_parasitics
   rsz::resizer_preamble [get_libs *]
+  set max_wire_length [rsz::check_max_wire_length $max_wire_length]
   rsz::repair_clk_nets_cmd $max_wire_length
 }
 
@@ -283,7 +269,13 @@ proc repair_hold_violations { args } {
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   sta::check_argc_eq0 "repair_hold_violations" $args
   ord::warn RSZ 19 "repair_hold_violations is deprecated. Use repair_timing -hold"
-  rsz::repair_hold $allow_setup_violations
+  set resize_libs [get_libs *]
+  if { $resize_libs == {} } {
+    ord::error RSZ 9 "No liberty libraries found."
+  }
+  rsz::check_parasitics
+  rsz::resizer_preamble $resize_libs
+  rsz::repair_hold 0.0 $allow_setup_violations
 }
 
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
@@ -417,6 +409,32 @@ proc parse_max_util { keys_var } {
     set max_util [expr $max_util / 100.0]
   }
   return $max_util
+}
+
+proc parse_max_wire_length { keys_var } {
+  upvar 1 $keys_var keys
+  set max_wire_length 0
+  if { [info exists keys(-max_wire_length)] } {
+    set max_wire_length $keys(-max_wire_length)
+    sta::check_positive_float "-max_wire_length" $max_wire_length
+    set max_wire_length [sta::distance_ui_sta $max_wire_length]
+  }
+  return $max_wire_length
+}
+
+proc check_max_wire_length { max_wire_length } {
+  if { [rsz::wire_resistance] > 0 } {
+    if { $max_wire_length > 0 } {
+      set min_delay_max_wire_length [rsz::find_max_wire_length]
+      if { $max_wire_length < $min_delay_max_wire_length } {
+        ord::warn RSZ 17 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
+      }
+    } else {
+      # Must follow preamble so buffers are known.
+      set max_wire_length [rsz::find_max_wire_length]
+    }
+  }
+  return $max_wire_length
 }
 
 # namespace

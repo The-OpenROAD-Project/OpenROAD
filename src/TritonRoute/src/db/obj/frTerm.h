@@ -41,15 +41,15 @@ namespace fr {
   class frTerm: public frBlockObject {
   public:
     // constructors
-    frTerm(const frString &name): frBlockObject(), name_(name), net_(nullptr), pins_(), type_(frTermEnum::frcNormalTerm) {}
-    frTerm(const frTerm &in): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_) {
+    frTerm(const frString &name): frBlockObject(), name_(name), net_(nullptr), pins_(), type_(frTermEnum::frcNormalTerm), direction_(frTermDirectionEnum::UNKNOWN) {}
+    frTerm(const frTerm &in): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin);
         addPin(std::move(tmp));
       }
     }
-    frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_) {
+    frTerm(const frTerm &in, const frTransform &xform): frBlockObject(), name_(in.name_), net_(in.net_), type_(in.type_), direction_(in.direction_) {
       for (auto &uPin: in.getPins()) {
         auto pin = uPin.get();
         auto tmp = std::make_unique<frPin>(*pin, xform);
@@ -83,6 +83,12 @@ namespace fr {
     frTermEnum getType() const {
       return type_;
     }
+    void setDirection(frTermDirectionEnum in) {
+      direction_ = in;
+    }
+    frTermDirectionEnum getDirection() const {
+      return direction_;
+    }
     // others
     frBlockObjectEnum typeId() const override {
       return frcTerm;
@@ -92,6 +98,7 @@ namespace fr {
     frNet* net_; // set later, term in instTerm does not have net
     std::vector<std::unique_ptr<frPin> > pins_; // set later
     frTermEnum type_;
+    frTermDirectionEnum direction_;
   };
 }
 

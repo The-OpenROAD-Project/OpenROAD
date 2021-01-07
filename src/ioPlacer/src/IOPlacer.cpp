@@ -156,10 +156,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
     _sections.push_back(s);
   }
 
-  // MF @ 2020/03/09: Set the seed for std::random_shuffle
-  srand(seed);
-  //---
-
+  std::mt19937 g(seed);
   switch (mode) {
     case RandomMode::Full:
       _logger->report("RandomMode Full");
@@ -168,11 +165,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
         vSlots[i] = i;
       }
 
-      // MF @ 2020/03/09: std::shuffle produces different results
-      // between gccs 4.8.x and 8.5.x
-      // std::random_shuffle is deterministic across versions
-      std::random_shuffle(vSlots.begin(), vSlots.end());
-      // ---
+      std::shuffle(vSlots.begin(), vSlots.end(), g);
 
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vSlots[0];
@@ -190,11 +183,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
         vIOs[i] = i;
       }
 
-      // MF @ 2020/03/09: std::shuffle produces different results
-      // between gccs 4.8.x and 8.5.x
-      // std::random_shuffle is deterministic across versions
-      std::random_shuffle(vIOs.begin(), vIOs.end());
-      // ---
+      std::shuffle(vIOs.begin(), vIOs.end(), g);
 
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vIOs[0];
@@ -220,11 +209,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
         vIOs[idx++] = i;
       }
 
-      // MF @ 2020/03/09: std::shuffle produces different results
-      // between gccs 4.8.x and 8.5.x
-      // std::random_shuffle is deterministic across versions
-      std::random_shuffle(vIOs.begin(), vIOs.end());
-      // ---
+      std::shuffle(vIOs.begin(), vIOs.end(), g);
 
       _netlist.forEachIOPin([&](int idx, IOPin& ioPin) {
         int b = vIOs[0];
@@ -964,7 +949,9 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
     int yMin = lowerBound.y();
     int xMax = upperBound.x();
     int yMax = upperBound.y();
-
+    
+    int originX = xMax - int((xMax - xMin)/2);
+    int originY = yMax - int((yMax - yMin)/2);
     odb::dbBox::create(bpin, layer, xMin, yMin, xMax, yMax);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }

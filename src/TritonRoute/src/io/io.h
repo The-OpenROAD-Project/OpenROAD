@@ -34,6 +34,15 @@
 #include <boost/icl/interval_set.hpp>
 #include "frDesign.h"
 
+namespace odb {
+  class dbDatabase;
+  class dbBlock;
+  class dbTech;
+}
+namespace ord{
+  class Logger;
+}
+
 namespace fr {
   namespace io {
     // not default via, upperWidth, lowerWidth, not align upper, upperArea, lowerArea, not align lower
@@ -50,6 +59,9 @@ namespace fr {
       void readGuide();
       void postProcess();
       void postProcessGuide();
+      void initDefaultVias();
+      void writeRefDef();
+      void initRPin();
       std::map<frBlock*, std::map<frOrient, std::map<std::vector<frCoord>, std::set<frInst*, frBlockObjectComp> > >, frBlockObjectComp> &getTrackOffsetMap() {
         return trackOffsetMap;
       }
@@ -114,13 +126,11 @@ namespace fr {
       void buildGCellPatterns_helper(frCoord &GCELLGRIDX, frCoord &GCELLGRIDY, frCoord &GCELLOFFSETX, frCoord &GCELLOFFSETY);
       void buildGCellPatterns_getWidth(frCoord &GCELLGRIDX, frCoord &GCELLGRIDY);
       void buildGCellPatterns_getOffset(frCoord GCELLGRIDX, frCoord GCELLGRIDY, frCoord &GCELLOFFSETX, frCoord &GCELLOFFSETY);
-      void initDefaultVias();
       void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple &priority);
       void initDefaultVias_N16(const std::string &in);
       void initDefaultVias_GF14(const std::string &in);
       void initCutLayerWidth();
       void initConstraintLayerIdx();
-      void writeRefDef();
 
       // instance analysis
       void instAnalysis();
@@ -153,6 +163,10 @@ namespace fr {
       void genGuides_final(frNet *net, std::vector<frRect> &rects, std::vector<bool> &adjVisited, std::vector<int> &adjPrevIdx, int gCnt, int nCnt,
                            std::map<frBlockObject*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> &pin2GCellMap);
 
+      // temp init functions
+      void initRPin_rpin();
+      void initRPin_rq();
+
       // write guide
       void writeGuideFile();
 
@@ -162,7 +176,7 @@ namespace fr {
     class Writer {
     public:
       // constructors
-      Writer(frDesign* designIn): tech(designIn->getTech()), design(designIn) {}
+      Writer(frDesign* designIn, ord::Logger* loggerIn): tech(designIn->getTech()), design(designIn), logger(loggerIn) {}
       // getters
       frTechObject* getTech() const {
         return tech;
@@ -173,11 +187,13 @@ namespace fr {
       // others
       void writeFromTA();
       void writeFromDR(const std::string &str = "");
+      void  updateDb(odb::dbDatabase* db);
       std::map< frString, std::list<std::shared_ptr<frConnFig> > > connFigs; // all connFigs ready to def
       std::vector<frViaDef*> viaDefs;
     protected:
       frTechObject*                                  tech;
       frDesign*                                      design;
+      ord::Logger*                                   logger;
       
       void fillViaDefs();
       void fillConnFigs(bool isTA);
@@ -186,6 +202,9 @@ namespace fr {
       void splitVia_helper(frLayerNum layerNum, int isH, frCoord trackLoc, frCoord x, frCoord y, 
                            std::vector< std::vector< std::map<frCoord, std::vector<std::shared_ptr<frPathSeg> > > > > &mergedPathSegs);
       int writeDef(bool isTA, const std::string &str = "");
+      void updateDbConn(odb::dbBlock* block, odb::dbTech* tech);
+      void updateDbVias(odb::dbBlock* block, odb::dbTech* tech);
+
     };
   }
 }
