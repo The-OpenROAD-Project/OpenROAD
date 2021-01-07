@@ -32,9 +32,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#include "direct.h"
-#endif
 #include <stdio.h>
 
 #include "dbLogger.h"
@@ -113,7 +110,6 @@ void Ath__parser::addSeparator(const char* s)
 
 void Ath__parser::openFile(char* name)
 {
-#ifndef _WIN32
   if (name != NULL && strlen(name) > 4
       && !strcmp(name + strlen(name) - 3, ".gz")) {
     char cmd[256];
@@ -136,7 +132,6 @@ void Ath__parser::openFile(char* name)
     sprintf(cmd, "gzip -cd %s", _inputFile);
     _inFP = popen(cmd, "r");
   } else
-#endif
       if (name != NULL) {
     _inFP = ATH__openFile(name, (char*) "r");
     strcpy(_inputFile, name);
@@ -159,7 +154,6 @@ void Ath__parser::setDbg(int v)
 }
 Ath__parser::~Ath__parser()
 {
-#ifndef _WIN32
   if (_inFP && strlen(_inputFile) > 4
       && !strcmp(_inputFile + strlen(_inputFile) - 3, ".gz")) {
     char buff[1024];
@@ -171,7 +165,6 @@ Ath__parser::~Ath__parser()
     pclose(_inFP);
     _inFP = NULL;
   }
-#endif
   ATH__deallocCharWord(_inputFile);
   ATH__deallocCharWord(_line);
   ATH__deallocCharWord(_tmpLine);
@@ -424,13 +417,9 @@ int Ath__parser::get2Double(const char* word,
 }
 bool Ath__parser::mkDir(char* word)
 {
-#ifdef _WIN32
-  return mkdir(word) == 0;
-#else
   char command[1024];
   sprintf(command, "mkdir -p %s", word);
   return system(command) == 0;
-#endif
 }
 
 int Ath__parser::mkDirTree(const char* word, const char* sep)

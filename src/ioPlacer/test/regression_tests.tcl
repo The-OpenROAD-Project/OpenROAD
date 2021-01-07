@@ -6,6 +6,8 @@ record_tests {
   no_instance_pins
   no_pins
   no_tracks
+  random1
+  random2
   exclude1
   exclude2
   exclude3

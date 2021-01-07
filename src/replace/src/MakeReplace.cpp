@@ -47,9 +47,9 @@ extern int Replace_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-replace::Replace* 
+gpl::Replace* 
 makeReplace() {
-  return new replace::Replace();
+  return new gpl::Replace();
 }
 
 void
@@ -59,11 +59,12 @@ initReplace(OpenRoad* openroad) {
   sta::evalTclInit(tcl_interp, sta::replace_tcl_inits);
   openroad->getReplace()->setDb(openroad->getDb());
   openroad->getReplace()->setSta(openroad->getSta());
+  openroad->getReplace()->setLogger(openroad->getLogger());
   openroad->getReplace()->setFastRoute(openroad->getFastRoute());
 }
 
 void
-deleteReplace(replace::Replace *replace) {
+deleteReplace(gpl::Replace *replace) {
   delete replace;
 }
 
