@@ -66,7 +66,7 @@
 #include "tritonmp/MakeTritonMp.h"
 #include "replace/MakeReplace.h"
 #include "fastroute/MakeFastRoute.h"
-#include "TritonCTS/src/MakeTritoncts.h"
+#include "tritoncts/MakeTritoncts.h"
 #include "tapcell/MakeTapcell.h"
 #include "OpenRCX/MakeOpenRCX.h"
 #include "triton_route/MakeTritonRoute.h"
