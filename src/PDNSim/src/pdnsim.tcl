@@ -16,14 +16,14 @@ proc analyze_power_grid { args } {
     if { [file readable $vsrc_file] } {
       pdnsim_import_vsrc_cfg_cmd $vsrc_file
     } else {
-      ord::error "Cannot read $vsrc_file"
+      ord::error PSM 53 "Cannot read $vsrc_file."
     }
   } 
   if { [info exists keys(-net)] } {
     set net $keys(-net)
     pdnsim_set_power_net $net
   } else {
-    ord::error "Argument -net not specified"
+    ord::error PSM 54 "Argument -net not specified."
   }
   if { [info exists keys(-dx)] } {
     set bump_pitch_x $keys(-dx)
@@ -44,13 +44,13 @@ proc analyze_power_grid { args } {
     if { $enable_em } {
       pdnsim_import_em_out_file_cmd $em_out_file
     } else {
-      ord::error "EM outfile defined without EM enable flag. Add -enable_em."  
+      ord::error PSM 55 "EM outfile defined without EM enable flag. Add -enable_em."  
     }
   }
   if { [ord::db_has_rows] } {
     pdnsim_analyze_power_grid_cmd
   } else {
-  	ord::error "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows" 
+  	ord::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows." 
   }
 }
 
@@ -64,13 +64,13 @@ proc check_power_grid { args } {
      set net $keys(-net)
      pdnsim_set_power_net $net
   } else {
-     ord::error "Argument -net not specified"
+     ord::error PSM 57 "Argument -net not specified."
   }
   if { [ord::db_has_rows] } {
    	set res [pdnsim_check_connectivity_cmd]
    	return $res
   } else {
-   	ord::error "No rows defined in design. Use initialize_floorplan to add rows" 
+   	ord::error PSM 58 "No rows defined in design. Use initialize_floorplan to add rows." 
   }
 }
 
@@ -90,7 +90,7 @@ proc write_pg_spice { args } {
     if { [file readable $vsrc_file] } {
       pdnsim_import_vsrc_cfg_cmd $vsrc_file
     } else {
-      ord::error "Cannot read $vsrc_file"
+      ord::error PSM 59 "Cannot read $vsrc_file."
     }
   } 
   if { [info exists keys(-outfile)] } {
@@ -101,7 +101,7 @@ proc write_pg_spice { args } {
     set net $keys(-net)
     pdnsim_set_power_net $net
   } else {
-    ord::error "Argument -net not specified"
+    ord::error PSM 60 "Argument -net not specified."
   }
   if { [info exists keys(-dx)] } {
     set bump_pitch_x $keys(-dx)
@@ -115,7 +115,7 @@ proc write_pg_spice { args } {
   if { [ord::db_has_rows] } {
     pdnsim_write_pg_spice_cmd
   } else {
-  	ord::error "No rows defined in design. Use initialize_floorplan to add rows and construct PDN" 
+  	ord::error PSM 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN." 
   }
 }
 
@@ -131,8 +131,7 @@ proc set_pdnsim_net_voltage { args } {
     set voltage $keys(-voltage)
     pdnsim_set_pdnsim_net_voltage_cmd $net $voltage
   } else {
-    ord::error "Argument -net or -voltage not specified. Please specifiy both
-    -net and -voltage arguments"
+    ord::error PSM 62 "Argument -net or -voltage not specified. Please specifiy both -net and -voltage arguments."
   }
 }
 

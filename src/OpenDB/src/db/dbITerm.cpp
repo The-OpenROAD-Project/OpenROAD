@@ -54,10 +54,6 @@
 #include "dbTable.hpp"
 #include "dbLogger.h"
 
-#ifdef _WIN32
-#define MINFLOAT -1.0e+20
-#define MAXFLOAT 1.0e+20
-#endif
 
 namespace odb {
 

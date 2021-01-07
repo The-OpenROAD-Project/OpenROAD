@@ -34,19 +34,19 @@
 #ifndef MAKE_OPENRCX_H
 #define MAKE_OPENRCX_H
 
-namespace OpenRCX {
+namespace rcx {
 class Ext;
-} // namespace OpenRCX
+} // namespace rcx
 
 namespace ord {
 
 class OpenRoad;
 
-OpenRCX::Ext *
+rcx::Ext *
 makeOpenRCX();
 
 void
-deleteOpenRCX(OpenRCX::Ext *extractor);
+deleteOpenRCX(rcx::Ext *extractor);
 
 void
 initOpenRCX(OpenRoad *openroad);

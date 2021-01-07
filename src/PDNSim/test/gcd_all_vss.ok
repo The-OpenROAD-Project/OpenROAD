@@ -55,78 +55,52 @@ Path Type: max
            9.30   slack (MET)
 
 
-INFO: Reading location of VDD and VSS sources 
-INFO: Voltage pad location (vsrc) file not spcified, defaulting pad location to checkerboard pattern on core area
-INFO: X direction bump pitch not specified defaulting to 140um
-INFO: Y direction bump pitch not specified defaulting to 140um
-WARNING: Voltage on net VSS is not explicitly set
-INFO: Using voltage 0V for ground network
-Creating G Matrix
-INFO: Found power net VSS
-INFO: Extracting power stripes on net VSS
-Creating Nodes:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-WARNING: Vsrc location at x=10.1um , y=11.2um and size =10um,  is not located on a power stripe.
-         Moving to closest stripe at x=10.8um , y=33.1um
-INFO: Number of nodes on net VSS =1245
-Creating Connections:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: G matrix created 
-INFO: No dangling stripe found on net VSS
-INFO: Connection between all PDN nodes established on net VSS
-INFO: Reading Voltage source file Vsrc_gcd_vss.loc
-INFO: Output voltage file specified ./results/gcd_voltage_vss.rpt
-INFO: EM calculation enabled
-INFO: Output current file specified ./results/gcd_em_vss.rpt
-INFO: Reading location of VDD and VSS sources 
-Creating G Matrix
-INFO: Found power net VSS
-INFO: Extracting power stripes on net VSS
-Creating Nodes:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: Number of nodes on net VSS =1245
-Creating Connections:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: G matrix created 
-
-
-INFO: Executing STA for Power
-INFO: Execute STA
-INFO: Created J vector
-INFO: No dangling stripe found on net VSS
-INFO: Connection between all PDN nodes established on net VSS
-INFO: Factorizing G
-INFO: Solving GV=J
-INFO: SparseLU begin solving
-INFO: SparseLU finished solving
-
-
+[WARNING PSM-0016] Voltage pad location (vsrc) file not specified, defaulting pad location to checkerboard pattern on core area.
+[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0019] Voltage on net VSS is not explicitly set.
+[WARNING PSM-0021] Using voltage 0.000V for ground network.
+[INFO PSM-0026] Creating G matrix.
+[INFO PSM-0028] Extracting power stripes on net VSS.
+[WARNING PSM-0030] Vsrc location at (10.070um, 11.200um) and size =10.000um, is not located on a power stripe. Moving to closest stripe at (10.800um, 33.115um).
+[INFO PSM-0031] Number of nodes on net VSS = 1245.
+[INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0040] Connection between all PDN nodes established in net VSS.
+[INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
+[INFO PSM-0002] Output voltage file is specified as: ./results/gcd_voltage_vss.rpt.
+[INFO PSM-0004] EM calculation is enabled.
+[INFO PSM-0003] Output current file specified ./results/gcd_em_vss.rpt.
+[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
+[INFO PSM-0026] Creating G matrix.
+[INFO PSM-0028] Extracting power stripes on net VSS.
+[INFO PSM-0031] Number of nodes on net VSS = 1245.
+[INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0044] Executing STA for power calculation.
+[INFO PSM-0025] Created J vector.
+[INFO PSM-0040] Connection between all PDN nodes established in net VSS.
+[INFO PSM-0009] Factorizing the G matrix.
+[INFO PSM-0011] Solving system of equations GV=J.
+[INFO PSM-0013] Solving system of equations GV=J complete.
+########## IR report #################
+Worstcase voltage: 9.04e-05 V
+Average IR drop  : 6.96e-05 V
+Worstcase IR drop: 9.04e-05 V
 ######################################
-Worstcase Voltage: 9.03891e-05
-Average IR drop  : 6.9645e-05
-Worstcase IR drop: 9.0389e-05
-######################################
-
-
-######################################
-EM Analysis  
-Maximum current: 6.6237e-05
-Average current: 1.8718e-06
+########## EM analysis ###############
+Maximum current: 6.62e-05 A
+Average current: 1.87e-06 A
 Number of resistors: 1244
 ######################################
-INFO: Reading Voltage source file Vsrc_gcd_vss.loc
-INFO: Output spice file specified ./results/gcd_spice_vss.sp
-INFO: Reading location of VDD and VSS sources 
-Creating G Matrix
-INFO: Found power net VSS
-INFO: Extracting power stripes on net VSS
-Creating Nodes:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: Number of nodes on net VSS =1245
-Creating Connections:       1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
-INFO: G matrix created 
-
-
-INFO: Executing STA for Power
-INFO: Execute STA
-INFO: Created J vector
-INFO: No dangling stripe found on net VSS
-INFO: Connection between all PDN nodes established on net VSS
-Spice file written: ./results/gcd_spice_vss.sp
+[INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
+[INFO PSM-0005] Output spice file is specified as: ./results/gcd_spice_vss.sp.
+[INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
+[INFO PSM-0026] Creating G matrix.
+[INFO PSM-0028] Extracting power stripes on net VSS.
+[INFO PSM-0031] Number of nodes on net VSS = 1245.
+[INFO PSM-0037] G matrix created sucessfully.
+[INFO PSM-0044] Executing STA for power calculation.
+[INFO PSM-0025] Created J vector.
+[INFO PSM-0040] Connection between all PDN nodes established in net VSS.
+[INFO PSM-0006] Spice file is written at: ./results/gcd_spice_vss.sp.
 No differences found.
 No differences found.

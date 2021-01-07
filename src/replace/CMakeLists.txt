@@ -43,7 +43,6 @@ set (REPLACE_SRC
   src/fftsg2d.cpp
   src/point.cpp
   src/plot.cpp
-  src/logger.cpp
   src/routeBase.cpp
   src/graphics.cpp
   )
@@ -93,6 +92,7 @@ target_include_directories( replace
 
 target_link_libraries( replace
   PRIVATE
+  spdlog::spdlog
   Eigen3::Eigen
   gui
 )

@@ -130,12 +130,6 @@ void definPin::pinBegin(const char* name, const char* net_name)
 
     free((void*) bname);
   }
-
-  _rects.clear();
-  _polygons.clear();
-  _has_min_spacing     = false;
-  _has_effective_width = false;
-  _has_placement       = false;
 }
 
 void definPin::pinSpecial()
@@ -257,44 +251,54 @@ void definPin::pinSupplyPin(const char* supplyPin)
   _supply_pins.push_back(Pin(_cur_bterm, std::string(supplyPin)));
 }
 
-void definPin::pinEnd()
-{
+void definPin::portBegin(){
+  _rects.clear();
+  _polygons.clear();
+  _has_min_spacing     = false;
+  _has_effective_width = false;
+  _has_placement       = false;
+  _status = dbPlacementStatus::NONE;
+  _orient = dbOrientType::R0; 
+  _orig_x = 0;
+  _orig_y = 0;
+}
+
+void definPin::portEnd(){
+  dbBPin* pin = 0;
+
+  if(!_rects.empty() || !_polygons.empty()){
+    pin = dbBPin::create(_cur_bterm);
+    pin->setPlacementStatus(_status);
+    
+    if(_has_min_spacing)
+      pin->setMinSpacing(_min_spacing);
+      
+    if(_has_effective_width)
+      pin->setEffectiveWidth(_effective_width);
+
+  }
+  
   if (!_rects.empty()) {
-    if (_has_placement == false) {
-      _status = dbPlacementStatus::NONE;
-      _orient = dbOrientType::R0;
-      _orig_x = 0;
-      _orig_y = 0;
-    }
 
-    std::vector<PinRect>::iterator itr;
-
-    for (itr = _rects.begin(); itr != _rects.end(); ++itr)
-      addRect(*itr);
+    for (auto itr = _rects.rbegin(); itr != _rects.rend(); ++itr)
+      addRect(*itr, pin);
   }
 
   if (!_polygons.empty()) {
-    if (_has_placement == false) {
-      _status = dbPlacementStatus::NONE;
-      _orient = dbOrientType::R0;
-      _orig_x = 0;
-      _orig_y = 0;
-    }
-
     std::vector<Polygon>::iterator itr;
 
     for (itr = _polygons.begin(); itr != _polygons.end(); ++itr)
-      addPolygon(*itr);
+      addPolygon(*itr, pin);
   }
+}
 
+void definPin::pinEnd()
+{
   _cur_bterm = NULL;
 }
 
-void definPin::addRect(PinRect& r)
+void definPin::addRect(PinRect& r, dbBPin* pin)
 {
-  dbBPin* pin = dbBPin::create(_cur_bterm);
-  pin->setPlacementStatus(_status);
-
   Point     origin(0, 0);
   dbOrientType orient(_orient);
   dbTransform  transform(orient, origin);
@@ -308,7 +312,7 @@ void definPin::addRect(PinRect& r)
   dbBox::create(pin, r._layer, xmin, ymin, xmax, ymax);
 }
 
-void definPin::addPolygon(Polygon& p)
+void definPin::addPolygon(Polygon& p, dbBPin* pin)
 {
   std::vector<Rect> R;
 
@@ -319,7 +323,7 @@ void definPin::addPolygon(Polygon& p)
   for (itr = R.begin(); itr != R.end(); ++itr) {
     Rect& r = *itr;
     PinRect R(p._layer, r);
-    addRect(R);
+    addRect(R, pin);
   }
 }
 

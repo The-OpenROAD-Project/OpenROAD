@@ -87,3 +87,9 @@ echo "[17] Database read/write test"
 python3 $BASE_DIR/python/17-db_read-write_test.py
 echo "SUCCESS!"
 echo ""
+
+
+echo "[18] Multiple Boxes per dbBPin test"
+python3 $BASE_DIR/python/18-multiple_boxes_pin_test.py
+echo "SUCCESS!"
+echo ""

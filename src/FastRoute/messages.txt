@@ -75,3 +75,4 @@ GRT 0074 GlobalRouter.cpp:2949     Design without nets
 GRT 0075 GlobalRouter.cpp:3023     Layer {} not found
 GRT 0076 GlobalRouter.cpp:3069     Tech without vias
 GRT 0077 AntennaRepair.cpp:87      Global route segment not valid
+GRT 0078 GlobalRouter.cpp:2715     Pin {} does not have layer assignment

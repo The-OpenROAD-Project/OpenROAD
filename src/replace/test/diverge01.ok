@@ -10,38 +10,41 @@ Notice 0:     Created 54 pins.
 Notice 0:     Created 294 components and 1656 component-terminals.
 Notice 0:     Created 364 nets and 1068 connections.
 Notice 0: Finished DEF file: ./diverge01.def
-[INFO] DBU = 2000
-[INFO] SiteSize = (380, 2800)
-[INFO] CoreAreaLxLy = (0, 0)
-[INFO] CoreAreaUxUy = (61940, 61600)
-[INFO] NumInstances = 294
-[INFO] NumPlaceInstances = 294
-[INFO] NumFixedInstances = 0
-[INFO] NumDummyInstances = 0
-[INFO] NumNets = 364
-[INFO] NumPins = 1122
-[INFO] DieAreaLxLy = (0, 0)
-[INFO] DieAreaUxUy = (61940, 61600)
-[INFO] CoreAreaLxLy = (0, 0)
-[INFO] CoreAreaUxUy = (61940, 61600)
-[INFO] CoreArea = 3815504000
-[INFO] NonPlaceInstsArea = 0
-[INFO] PlaceInstsArea = 2279088000
-[INFO] Util(%) = 59.732300
-[INFO] StdInstsArea = 2279088000
-[INFO] MacroInstsArea = 0
-[INFO] FillerInit: NumGCells = 348
-[INFO] FillerInit: NumGNets = 364
-[INFO] FillerInit: NumGPins = 1122
-[INFO] TargetDensity = 0.700000
-[INFO] AveragePlaceInstArea = 7752000
-[INFO] IdealBinArea = 11074286
-[INFO] IdealBinCnt = 344
-[INFO] TotalBinArea = 3815504000
-[INFO] BinCnt = (16, 16)
-[INFO] BinSize = (3872, 3850)
-[INFO] NumBins = 256
-[ERROR] RePlAce divergence detected. 
-        Please decrease init_density_penalty value (REPL-3)
-[ERROR UKN-0000] RePlAce terminated with errors.
-UKN-0000
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: 380 2800
+[INFO GPL-0004] CoreAreaLxLy: 0 0
+[INFO GPL-0005] CoreAreaUxUy: 61940 61600
+[INFO GPL-0006] NumInstances: 294
+[INFO GPL-0007] NumPlaceInstances: 294
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 364
+[INFO GPL-0011] NumPins: 1122
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 61940 61600
+[INFO GPL-0014] CoreAreaLxLy: 0 0
+[INFO GPL-0015] CoreAreaUxUy: 61940 61600
+[INFO GPL-0016] CoreArea: 3815504000
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 2279088000
+[INFO GPL-0019] Util(%): 59.73
+[INFO GPL-0020] StdInstsArea: 2279088000
+[INFO GPL-0021] MacroInstsArea: 0
+Begin InitialPlace
+End InitialPlace
+[INFO GPL-0031] FillerInit: NumGCells: 348
+[INFO GPL-0032] FillerInit: NumGNets: 364
+[INFO GPL-0033] FillerInit: NumGPins: 1122
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 7752000
+[INFO GPL-0025] IdealBinArea: 11074286
+[INFO GPL-0026] IdealBinCnt: 344
+[INFO GPL-0027] TotalBinArea: 3815504000
+[INFO GPL-0028] BinCnt: 16 16
+[INFO GPL-0029] BinSize: 3872 3850
+[INFO GPL-0030] NumBins: 256
+Begin NesterovInit
+End NesterovInit
+[ERROR GPL-0306] RePlAce divergence detected. 
+        Please decrease init_density_penalty value
+GPL-0306
