@@ -147,6 +147,23 @@ void dbBoxItr::reverse(dbObject* parent)
       break;
     }
 
+    case dbBPinObj: {
+      _dbBPin* bpin  = (_dbBPin*) parent;
+      uint        id   = bpin->_boxes;
+      uint        list = 0;
+
+      while (id != 0) {
+        _dbBox* b    = _box_tbl->getPtr(id);
+        uint    n    = b->_next_box;
+        b->_next_box = list;
+        list         = id;
+        id           = n;
+      }
+
+      bpin->_boxes = list;
+      break;
+    }
+
     default:
       break;
   }

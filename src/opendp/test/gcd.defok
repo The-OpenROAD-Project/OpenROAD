@@ -661,60 +661,222 @@ COMPONENTS 549 ;
     - PHY_255 FILLCELL_X1 + SOURCE DIST + FIXED ( 267400 263200 ) S ;
 END COMPONENTS
 PINS 54 ;
-    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 184430 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[0\] + NET req_msg\[0\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 215740 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[1\] + NET req_msg\[1\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 203420 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[2\] + NET req_msg\[2\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 75740 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[3\] + NET req_msg\[3\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 45500 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[4\] + NET req_msg\[4\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 192270 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[5\] + NET req_msg\[5\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 88060 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[6\] + NET req_msg\[6\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 160860 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[7\] + NET req_msg\[7\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 43310 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[8\] + NET req_msg\[8\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 64590 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[9\] + NET req_msg\[9\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 97020 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[10\] + NET req_msg\[10\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 288540 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[11\] + NET req_msg\[11\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 277390 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[12\] + NET req_msg\[12\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 248270 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[13\] + NET req_msg\[13\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 35470 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[14\] + NET req_msg\[14\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 267260 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[15\] + NET req_msg\[15\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 118300 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[16\] + NET req_msg\[16\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 194460 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[17\] + NET req_msg\[17\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 2940 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[18\] + NET req_msg\[18\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 173180 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[19\] + NET req_msg\[19\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 170990 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[20\] + NET req_msg\[20\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 99310 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[21\] + NET req_msg\[21\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 139580 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[22\] + NET req_msg\[22\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 24220 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[23\] + NET req_msg\[23\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 56750 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[24\] + NET req_msg\[24\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 182140 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[25\] + NET req_msg\[25\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 66780 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[26\] + NET req_msg\[26\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 234830 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[27\] + NET req_msg\[27\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 140 245980 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[28\] + NET req_msg\[28\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 120590 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[29\] + NET req_msg\[29\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 78030 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[30\] + NET req_msg\[30\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 149710 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_msg\[31\] + NET req_msg\[31\] + DIRECTION INPUT + USE SIGNAL + FIXED ( 141870 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 205710 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL + FIXED ( 163150 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - reset + NET reset + DIRECTION INPUT + USE SIGNAL + FIXED ( 22030 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[0\] + NET resp_msg\[0\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 295860 237020 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[1\] + NET resp_msg\[1\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 128430 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[2\] + NET resp_msg\[2\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 290830 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[3\] + NET resp_msg\[3\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 295860 279580 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[4\] + NET resp_msg\[4\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 269550 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[5\] + NET resp_msg\[5\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 750 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[6\] + NET resp_msg\[6\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 295860 151900 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[7\] + NET resp_msg\[7\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 14190 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[8\] + NET resp_msg\[8\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 107150 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[9\] + NET resp_msg\[9\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 295860 130620 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[10\] + NET resp_msg\[10\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 295860 109340 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[11\] + NET resp_msg\[11\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 85870 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[12\] + NET resp_msg\[12\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 226990 295860 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[13\] + NET resp_msg\[13\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 213550 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[14\] + NET resp_msg\[14\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 140 224700 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_msg\[15\] + NET resp_msg\[15\] + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 256110 140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL + FIXED ( 295860 258300 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
-    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 140 54460 ) N + LAYER metal5 ( -140 -140 ) ( 140 140 ) ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 184430 295860 ) N ;
+    - req_msg\[0\] + NET req_msg\[0\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 215740 ) N ;
+    - req_msg\[1\] + NET req_msg\[1\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 203420 ) N ;
+    - req_msg\[2\] + NET req_msg\[2\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 75740 ) N ;
+    - req_msg\[3\] + NET req_msg\[3\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 45500 ) N ;
+    - req_msg\[4\] + NET req_msg\[4\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 192270 140 ) N ;
+    - req_msg\[5\] + NET req_msg\[5\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 88060 ) N ;
+    - req_msg\[6\] + NET req_msg\[6\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 160860 ) N ;
+    - req_msg\[7\] + NET req_msg\[7\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 43310 140 ) N ;
+    - req_msg\[8\] + NET req_msg\[8\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 64590 140 ) N ;
+    - req_msg\[9\] + NET req_msg\[9\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 97020 ) N ;
+    - req_msg\[10\] + NET req_msg\[10\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 288540 ) N ;
+    - req_msg\[11\] + NET req_msg\[11\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 277390 140 ) N ;
+    - req_msg\[12\] + NET req_msg\[12\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 248270 295860 ) N ;
+    - req_msg\[13\] + NET req_msg\[13\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 35470 295860 ) N ;
+    - req_msg\[14\] + NET req_msg\[14\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 267260 ) N ;
+    - req_msg\[15\] + NET req_msg\[15\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 118300 ) N ;
+    - req_msg\[16\] + NET req_msg\[16\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 194460 ) N ;
+    - req_msg\[17\] + NET req_msg\[17\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 2940 ) N ;
+    - req_msg\[18\] + NET req_msg\[18\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 173180 ) N ;
+    - req_msg\[19\] + NET req_msg\[19\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 170990 140 ) N ;
+    - req_msg\[20\] + NET req_msg\[20\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 99310 295860 ) N ;
+    - req_msg\[21\] + NET req_msg\[21\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 139580 ) N ;
+    - req_msg\[22\] + NET req_msg\[22\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 24220 ) N ;
+    - req_msg\[23\] + NET req_msg\[23\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 56750 295860 ) N ;
+    - req_msg\[24\] + NET req_msg\[24\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 182140 ) N ;
+    - req_msg\[25\] + NET req_msg\[25\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 66780 ) N ;
+    - req_msg\[26\] + NET req_msg\[26\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 234830 140 ) N ;
+    - req_msg\[27\] + NET req_msg\[27\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 245980 ) N ;
+    - req_msg\[28\] + NET req_msg\[28\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 120590 295860 ) N ;
+    - req_msg\[29\] + NET req_msg\[29\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 78030 295860 ) N ;
+    - req_msg\[30\] + NET req_msg\[30\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 149710 140 ) N ;
+    - req_msg\[31\] + NET req_msg\[31\] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 141870 295860 ) N ;
+    - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 205710 295860 ) N ;
+    - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 163150 295860 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 22030 140 ) N ;
+    - resp_msg\[0\] + NET resp_msg\[0\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 237020 ) N ;
+    - resp_msg\[1\] + NET resp_msg\[1\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 128430 140 ) N ;
+    - resp_msg\[2\] + NET resp_msg\[2\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 290830 295860 ) N ;
+    - resp_msg\[3\] + NET resp_msg\[3\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 279580 ) N ;
+    - resp_msg\[4\] + NET resp_msg\[4\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 269550 295860 ) N ;
+    - resp_msg\[5\] + NET resp_msg\[5\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 750 140 ) N ;
+    - resp_msg\[6\] + NET resp_msg\[6\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 151900 ) N ;
+    - resp_msg\[7\] + NET resp_msg\[7\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 14190 295860 ) N ;
+    - resp_msg\[8\] + NET resp_msg\[8\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 107150 140 ) N ;
+    - resp_msg\[9\] + NET resp_msg\[9\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 130620 ) N ;
+    - resp_msg\[10\] + NET resp_msg\[10\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 109340 ) N ;
+    - resp_msg\[11\] + NET resp_msg\[11\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 85870 140 ) N ;
+    - resp_msg\[12\] + NET resp_msg\[12\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 226990 295860 ) N ;
+    - resp_msg\[13\] + NET resp_msg\[13\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 213550 140 ) N ;
+    - resp_msg\[14\] + NET resp_msg\[14\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 224700 ) N ;
+    - resp_msg\[15\] + NET resp_msg\[15\] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 256110 140 ) N ;
+    - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 295860 258300 ) N ;
+    - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal5 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 140 54460 ) N ;
 END PINS
 NETS 364 ;
     - clk ( PIN clk ) ( _536_ CK ) ( _537_ CK ) ( _538_ CK ) ( _539_ CK ) ( _540_ CK ) ( _541_ CK )

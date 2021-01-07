@@ -45,9 +45,12 @@ namespace grt {
   class GlobalRouter;
 }
 
-namespace replace {
+namespace ord {
+  class Logger;
+}
 
-class Logger;
+namespace gpl {
+
 class NesterovBase;
 class GNet;
 class Die;
@@ -234,7 +237,7 @@ class TileGrid {
     TileGrid();
     ~TileGrid();
 
-    void setLogger(std::shared_ptr<Logger> log);
+    void setLogger(ord::Logger* log);
     void setTileCnt(int tileCntX, int tileCntY);
     void setTileCntX(int tileCntX);
     void setTileCntY(int tileCntY);
@@ -264,7 +267,7 @@ class TileGrid {
 
   private:
     // for traversing layer info!
-    std::shared_ptr<Logger> log_;
+    ord::Logger* log_;
 
     std::vector<Tile> tileStor_;
     std::vector<Tile*> tiles_;
@@ -342,7 +345,7 @@ class RouteBase {
         odb::dbDatabase* db,
         grt::GlobalRouter* grouter,
         std::shared_ptr<NesterovBase> nb,
-        std::shared_ptr<Logger> log);
+        ord::Logger* log);
     ~RouteBase();
 
     // update Route and Est info
@@ -373,7 +376,7 @@ class RouteBase {
     grt::GlobalRouter* grouter_;
 
     std::shared_ptr<NesterovBase> nb_;
-    std::shared_ptr<Logger> log_;
+    ord::Logger* log_;
 
     std::unique_ptr<TileGrid> tg_;
 
