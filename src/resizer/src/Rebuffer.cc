@@ -440,9 +440,8 @@ Resizer::rebufferTopDown(BufferedNet *choice,
   switch(choice->type()) {
   case BufferedNetType::buffer: {
     Instance *parent = db_network_->topInstance();
-    string net2_name = makeUniqueNetName();
     string buffer_name = makeUniqueInstName("rebuffer");
-    Net *net2 = db_network_->makeNet(net2_name.c_str(), parent);
+    Net *net2 = makeUniqueNet();
     LibertyCell *buffer_cell = choice->bufferCell();
     Instance *buffer = db_network_->makeInstance(buffer_cell,
                                                  buffer_name.c_str(),
@@ -457,7 +456,7 @@ Resizer::rebufferTopDown(BufferedNet *choice,
                sdc_network_->pathName(net),
                buffer_name.c_str(),
                buffer_cell->name(),
-               net2_name.c_str());
+               sdc_network_->pathName(net2));
     sta_->connectPin(buffer, input, net);
     sta_->connectPin(buffer, output, net2);
     setLocation(buffer, choice->location());
