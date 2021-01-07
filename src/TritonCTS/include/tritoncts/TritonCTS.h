@@ -35,66 +35,99 @@
 
 #pragma once
 
-#include "CtsOptions.h"
-#include "TreeBuilder.h"
+#include <functional>
 
-#include <string>
-#include <vector>
+namespace ord {
+class OpenRoad;
+} // namespace ord
 
 namespace odb {
 class dbDatabase;
-class dbChip;
 class dbBlock;
 class dbInst;
 class dbNet;
 class dbITerm;
-}  // namespace odb
+} // namespace odb
+
+namespace sta {
+class dbSta;
+}  // namespace sta
 
 namespace cts {
 
-class TritonCTSKernel;
+class Clock;
+class ClockInst;
+class CtsOptions;
+class TechChar;
+class StaEngine;
+class TreeBuilder;
 
-class DbWrapper
+class TritonCTS
 {
  public:
-  DbWrapper(CtsOptions& options, TritonCTSKernel& kernel);
+  TritonCTS() = default;
+  ~TritonCTS();
 
+  void init(ord::OpenRoad* openroad);
+  void runTritonCts();
+  void reportCtsMetrics();
+  CtsOptions* getParms() { return _options; }
+  TechChar* getCharacterization() { return _techChar; }
+  void addBuilder(TreeBuilder* builder);
+  void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+  int setClockNets(const char* names);
+  void setBufferList(const char* buffers);
+
+ private:
+  void makeComponents();
+  void deleteComponents();
+  void printHeader() const;
+  void setupCharacterization();
+  void createCharacterization();
+  void importCharacterization();
+  void checkCharacterization();
+  void findClockRoots();
+  void populateTritonCts();
+  void buildClockTrees();
+  void runPostCtsOpt();
+  void writeDataToDb();
+  void printFooter() const;
+
+  // db functions
   bool masterExists(const std::string& master) const;
-
   void populateTritonCTS();
   void writeClockNetsToDb(Clock& clockNet);
-
   void incrementNumClocks() { _numberOfClocks = _numberOfClocks + 1; }
   void clearNumClocks() { _numberOfClocks = 0; }
   unsigned getNumClocks() const { return _numberOfClocks; }
-
- private:
-  sta::dbSta* _openSta = nullptr;
-  odb::dbDatabase* _db = nullptr;
-  odb::dbChip* _chip = nullptr;
-  odb::dbBlock* _block = nullptr;
-  CtsOptions* _options = nullptr;
-  TritonCTSKernel* _kernel = nullptr;
-  unsigned _numberOfClocks = 0;
-  unsigned _numClkNets = 0;
-  unsigned _numFixedNets = 0;
-
   void parseClockNames(std::vector<std::string>& clockNetNames) const;
-
   void initDB();
   void initAllClocks();
   void initClock(odb::dbNet* net);
-
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
   void createClockBuffers(Clock& clk);
   void removeNonClockNets();
-  void computeITermPosition(odb::dbITerm* term, DBU& x, DBU& y) const;
+  void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
+
+  ord::OpenRoad* _openroad;
+  CtsOptions* _options;
+  TechChar* _techChar;
+  StaEngine* _staEngine;
+  std::vector<TreeBuilder*>* _builders;
+
+  // db vars
+  sta::dbSta* _openSta = nullptr;
+  odb::dbDatabase* _db = nullptr;
+  odb::dbBlock* _block = nullptr;
+  unsigned _numberOfClocks = 0;
+  unsigned _numClkNets = 0;
+  unsigned _numFixedNets = 0;
 };
 
 }  // namespace cts
