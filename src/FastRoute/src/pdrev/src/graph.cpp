@@ -1237,7 +1237,6 @@ int Graph::DeltaN(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.N;
-  // cout << "N nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1245,7 +1244,6 @@ int Graph::DeltaN(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].y;
       int delta = abs(rN.y - ref);
-      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1270,7 +1268,6 @@ int Graph::DeltaS(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.S;
-  // cout << "S nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1278,7 +1275,6 @@ int Graph::DeltaS(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].y;
       int delta = abs(rN.y - ref);
-      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1303,7 +1299,6 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.W;
-  // cout << "W nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1312,7 +1307,6 @@ int Graph::DeltaW(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].x;
       int delta = abs(rN.x - ref);
-      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1337,7 +1331,6 @@ int Graph::DeltaE(int idx, int rIdx, bool isRemove)
 {
   Node& cN = nodes[idx];
   vector<int>& nList = cN.E;
-  // cout << "E nList size: " << nList.size() << endl;
   if (nList.size() != 0) {
     if (nList[nList.size() - 1] == rIdx) {
       Node& rN = nodes[rIdx];
@@ -1345,7 +1338,6 @@ int Graph::DeltaE(int idx, int rIdx, bool isRemove)
       if (nList.size() >= 2)
         ref = nodes[nList[nList.size() - 2]].x;
       int delta = abs(rN.x - ref);
-      // cout << " delta = " << delta << endl;
       if (isRemove)
         nList.erase(nList.begin() + nList.size() - 1);
       return delta;
@@ -1718,7 +1710,6 @@ void Graph::refineSteiner()
 
       int newPLToChildForParentCandi = 0;
       int newMaxPLCandi = 0;
-      // cout << neighbors[j] << " " << newPL << endl;
       if (verbose > 3) {
         cout << "nNode: " << nNode << endl;
         cout << "IsSubTree: " << IsSubTree(cN.idx, nNode.idx) << endl;
@@ -1870,7 +1861,6 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   // Note: nNode.y <= cNode.y
   for (unsigned i = 0; i < idx; ++i) {
     Node& nNode = nodes[sorted[i]];
-    // cout << "1 " << nNode << endl;
     if (urlx[nNode.idx] == cNode.x) {
       nn[nNode.idx].push_back(cNode.idx);
       urux[nNode.idx] = cNode.x;
@@ -1890,7 +1880,6 @@ bool Graph::buildNearestNeighbors_single_node(unsigned num_terms,
   // Note: nNode.y <= cNode.y
   for (int i = idx - 1; i >= 0; --i) {
     Node& nNode = nodes[sorted[i]];
-    // cout << "2 " << nNode << endl;
     if (lrlx[cNode.idx] == nNode.x) {
       nn[cNode.idx].push_back(nNode.idx);
       lrux[cNode.idx] = nNode.x;
@@ -2282,7 +2271,6 @@ unsigned Graph::heap_delete_min()
   unsigned j;     /* child of the hole    */
   unsigned l_key; /* key of last point    */
 
-  // cout << "heap size = " << heap_size << endl;
   if (heap_size == 0) /* heap is empty */
     return (-1);
 
@@ -3027,7 +3015,6 @@ bool Graph::fix_max_dc()
 
   UpdateAllEdgesNSEW();
 
-  // cout << "Starting refineSteiner" << endl;
   refineSteiner2();
   constructSteiner();
   // print_tree_v2();
@@ -3041,7 +3028,6 @@ bool Graph::fix_max_dc()
   buildNearestNeighborsForSPT(nodes.size());
   UpdateAllEdgesNSEW();
 
-  // cout << "Starting refineSteiner" << endl;
   refineSteiner();
 
   if (verbose > 1) {
@@ -3067,7 +3053,6 @@ bool Graph::fix_max_dc()
 
   UpdateAllEdgesNSEW();
 
-  // cout << "Starting refineSteiner" << endl;
   refineSteiner();
 
   if (verbose > 2) {
@@ -3100,7 +3085,6 @@ bool Graph::fix_max_dc()
     cout << "Start third refineSteiner" << endl;
   }
 
-  // cout << "Starting refineSteiner" << endl;
   refineSteiner();
 
   if (verbose > 2) {
@@ -3855,7 +3839,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
       cnt++;
     }
     cnt = 0;
-    unsigned s = tmp.size();  // cout << "Size of tmp = " << s << endl;
+    unsigned s = tmp.size();
     for (unsigned j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
@@ -3879,7 +3863,7 @@ unsigned Graph::calc_ov_x_or_y(vector<Node>& sorted, Node curr_node, char tag[])
       cnt++;
     }
     cnt = 0;
-    unsigned s = tmp.size();  // cout << "Size of tmp = " << s << endl;
+    unsigned s = tmp.size();
     for (unsigned j = 0; j < s; j++) {
       tmp_ov.push_back(0);
       tmp_ov[j] = tmp[j] * (s - j);
