@@ -36,7 +36,7 @@
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "openroad/Error.hh"
-#include "CKMeans/clustering.h"
+#include "clustering.h"
 
 #include <fstream>
 #include <iomanip>

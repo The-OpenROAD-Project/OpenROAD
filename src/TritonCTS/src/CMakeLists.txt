@@ -66,7 +66,7 @@ set(SRC_FILES
   StaEngine.cpp
   TechChar.cpp
   TritonCTS.cpp
-  CKMeans/clustering.cpp
+  clustering.cpp
 )
 
 add_library(${BIN_NAME} ${SRC_FILES} ${TRITONCTS_WRAP} ${TRITONCTS_TCL_INIT})
