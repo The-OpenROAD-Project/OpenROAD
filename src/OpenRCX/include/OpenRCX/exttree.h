@@ -41,7 +41,7 @@
 
 #include "ZObject.h"
 
-namespace OpenRCX {
+namespace rcx {
 
 class extRCnode
 {
@@ -228,6 +228,6 @@ class extRcTree
   static void free_exttree(extTnode* driver);
 };
 
-}  // namespace OpenRCX
+}  // namespace rcx
 
 #endif

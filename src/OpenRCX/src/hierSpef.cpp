@@ -48,7 +48,7 @@
 #define ATH__fclose fclose
 //#endif
 
-namespace OpenRCX {
+namespace rcx {
 
 uint extSpef::writeHierInstNameMap()
 {
@@ -746,4 +746,4 @@ void extSpef::setHierBaseNameMap(uint instBase, uint netBase)
   _childBlockInstBaseMap = instBase;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

@@ -156,8 +156,7 @@ void IOPlacer::randomPlacement(const RandomMode mode)
     _sections.push_back(s);
   }
 
-  std::random_device rd;
-  std::mt19937 g(rd());
+  std::mt19937 g(seed);
   switch (mode) {
     case RandomMode::Full:
       _logger->report("RandomMode Full");
@@ -950,7 +949,9 @@ void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
     int yMin = lowerBound.y();
     int xMax = upperBound.x();
     int yMax = upperBound.y();
-
+    
+    int originX = xMax - int((xMax - xMin)/2);
+    int originY = yMax - int((yMax - yMin)/2);
     odb::dbBox::create(bpin, layer, xMin, yMin, xMax, yMax);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }

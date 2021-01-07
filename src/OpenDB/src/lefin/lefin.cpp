@@ -1544,10 +1544,6 @@ void lefin::setDBUPerMicron(int dbu)
   }
 }
 
-#ifdef _WIN32
-#define strncasecmp strncmp
-#endif
-
 void lefin::useMinSpacing(lefiUseMinSpacing* spacing)
 {
   if (!strncasecmp(spacing->name(), "PIN", 3)) {

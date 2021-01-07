@@ -33,11 +33,19 @@
 #include "layoutViewer.h"
 
 #include <QApplication>
+#include <QDebug>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QScrollBar>
+#include <QSizePolicy>
+#include <QToolButton>
 #include <QToolTip>
+
 #include <tuple>
 #include <vector>
 
@@ -146,11 +154,13 @@ class GuiPainter : public Painter
 
 LayoutViewer::LayoutViewer(Options* options,
                            const SelectionSet& selected,
+                           const SelectionSet& highlighted,
                            QWidget* parent)
     : QWidget(parent),
       db_(nullptr),
       options_(options),
       selected_(selected),
+      highlighted_(highlighted),
       scroller_(nullptr),
       pixelsPerDBU_(1.0),
       min_depth_(0),
@@ -565,6 +575,13 @@ void LayoutViewer::drawSelected(Painter& painter)
   }
 }
 
+void LayoutViewer::drawHighlighted(Painter& painter)
+{
+  for (auto& highlighted : highlighted_) {
+    highlighted.highlight(painter, false /* selectFlag*/);
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter,
@@ -758,6 +775,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
     renderer->drawObjects(gui_painter);
   }
 
+  drawHighlighted(gui_painter);
   // Always last so on top
   drawSelected(gui_painter);
 }
