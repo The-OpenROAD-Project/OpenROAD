@@ -592,7 +592,7 @@ void TechChar::initCharacterization()
   if (_dbNetworkChar == nullptr) {
     error("Network not found. Check your lef/def/verilog file.\n");
   }
-  _db = odb::dbDatabase::getDatabase(_options->getDbId());
+  _db = openRoad->getDb();
   if (_db == nullptr) {
     error("Database not found. Check your lef/def/verilog file.\n");
   }

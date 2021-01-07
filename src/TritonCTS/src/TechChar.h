@@ -175,7 +175,7 @@ class TechChar
   };
 
  public:
-  TechChar(CtsOptions& options) : _options(&options) {}
+  TechChar(CtsOptions* options) : _options(options) {}
 
   void create();
   void compileLut(std::vector<ResultData> lutSols);
