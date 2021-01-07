@@ -40,6 +40,9 @@
 namespace odb {
   class dbDatabase;
 }
+namespace ord{
+  class Logger;
+}
 
 namespace fr {
 
@@ -48,7 +51,7 @@ namespace fr {
   class FlexDR {
   public:
     // constructors
-    FlexDR(frDesign* designIn);
+    FlexDR(frDesign* designIn,ord::Logger* loggerIn);
     ~FlexDR();
     // getters
     frTechObject* getTech() const {
@@ -77,6 +80,7 @@ namespace fr {
     void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   protected:
     frDesign*          design_;
+    ord::Logger*         logger_;
     std::vector<std::vector<std::map<frNet*, std::set<std::pair<frPoint, frLayerNum> >, frBlockObjectComp> > > gcell2BoundaryPin_;
 
     std::vector<std::pair<frCoord, frCoord> >  halfViaEncArea_; // std::pair<layer1area, layer2area>

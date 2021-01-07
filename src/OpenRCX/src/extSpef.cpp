@@ -49,7 +49,7 @@
 #define ATH__fclose fclose
 //#endif
 
-namespace OpenRCX {
+namespace rcx {
 
 class extMain;
 
@@ -2038,4 +2038,4 @@ bool extSpef::writeHeaderInfo(uint debug)
   return true;
 }
 
-}  // namespace OpenRCX
+}  // namespace rcx

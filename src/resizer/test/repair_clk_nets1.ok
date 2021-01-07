@@ -11,6 +11,7 @@ Notice 0:     Created 3 components and 12 component-terminals.
 Notice 0:     Created 2 special nets and 6 connections.
 Notice 0:     Created 4 nets and 6 connections.
 Notice 0: Finished DEF file: repair_wire1.def
+[WARNING RSZ-0017] max wire length less than 853u increases wire delays.
 [INFO RSZ-0047] Found 1 long wires.
 [INFO RSZ-0048] Inserted 2 buffers in 1 nets.
 CLOCK
@@ -22,7 +23,7 @@ Path Type: max
 
     Cap    Slew   Delay    Time   Description
 -----------------------------------------------------------------------
-   1.28    0.00    0.00    0.00 ^ in1 (in)
+   1.01    0.00    0.00    0.00 ^ in1 (in)
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
    1.00    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
@@ -32,8 +33,8 @@ Path Type: max
            0.04    0.03    0.16 ^ repeater1/A (BUF_X4)
   30.75    0.02    0.04    0.20 ^ repeater1/Z (BUF_X4)
            0.03    0.03    0.23 ^ u3/A (BUF_X1)
-   0.31    0.01    0.02    0.25 ^ u3/Z (BUF_X1)
-           0.01    0.00    0.25 ^ out1 (out)
+   0.06    0.00    0.02    0.25 ^ u3/Z (BUF_X1)
+           0.00    0.00    0.25 ^ out1 (out)
                            0.25   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)

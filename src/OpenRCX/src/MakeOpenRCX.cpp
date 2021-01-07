@@ -38,12 +38,12 @@
 
 namespace ord {
 
-OpenRCX::Ext* makeOpenRCX()
+rcx::Ext* makeOpenRCX()
 {
-  return new OpenRCX::Ext();
+  return new rcx::Ext();
 }
 
-void deleteOpenRCX(OpenRCX::Ext* extractor)
+void deleteOpenRCX(rcx::Ext* extractor)
 {
   delete extractor;
 }
