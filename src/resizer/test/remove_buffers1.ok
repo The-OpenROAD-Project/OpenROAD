@@ -30,7 +30,7 @@ Path Type: max
 (Path is unconstrained)
 
 
-[WARNING RSZ-0046] Cannot remove buffers between net in1 and n1 because nets have ports connected to them
+[WARNING RSZ-0046] Cannot remove buffers between net in1 and out1 because both nets have ports connected to them.
 [INFO RSZ-0026] Removed 3 buffers.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -41,7 +41,7 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00 v input external delay
    0.00    0.00 v in1 (in)
-   0.02    0.02 v b1/Z (BUF_X1)
+   0.02    0.02 v b4/Z (BUF_X8)
    0.00    0.02 v out1 (out)
            0.02   data arrival time
 ---------------------------------------------------------
