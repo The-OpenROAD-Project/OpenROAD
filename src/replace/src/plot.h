@@ -52,7 +52,7 @@ template<typename T1>
 class CImg;
 }
 
-namespace replace {
+namespace gpl {
 
 void SaveCellPlotAsJPEG(std::string imgName, bool isGCell, std::string imgPosition);
 void SaveBinPlotAsJPEG(std::string imgName, std::string imgPosition);

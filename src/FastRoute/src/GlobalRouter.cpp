@@ -102,7 +102,7 @@ void GlobalRouter::makeComponents()
   _db = _openroad->getDb();
   _fastRoute = new FastRouteCore;
   _grid = new Grid;
-  _gridOrigin = new odb::Point(-1, -1);
+  _gridOrigin = new odb::Point(0, 0);
   _nets = new std::vector<Net>;
   _sta = _openroad->getSta();
   _routingLayers = new std::vector<RoutingLayer>;
@@ -123,6 +123,7 @@ void GlobalRouter::deleteComponents()
 void GlobalRouter::clear()
 {
   _routes.clear();
+  _nets->clear();
   clearFlow();
 }
 
@@ -2709,6 +2710,10 @@ void GlobalRouter::makeBtermPins(Net* net,
             PinOrientation::invalid,
             pinBoxes,
             (connectedToPad || connectedToMacro));
+
+    if (pin.getLayers().empty()) {
+      _logger->error(GRT, 78, "Pin {} does not have layer assignment", bterm->getConstName());
+    }
 
     if (connectedToPad) {
       odb::Point pinPosition = pin.getPosition();

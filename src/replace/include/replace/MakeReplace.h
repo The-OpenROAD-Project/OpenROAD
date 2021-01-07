@@ -34,21 +34,21 @@
 #ifndef MAKE_REPLACE
 #define MAKE_REPLACE
 
-namespace replace {
+namespace gpl {
 class Replace;
 }
 
 namespace ord {
 class OpenRoad;
 
-replace::Replace*
+gpl::Replace*
 makeReplace();
 
 void
 initReplace(OpenRoad* openroad);
 
 void
-deleteReplace(replace::Replace *replace);
+deleteReplace(gpl::Replace *replace);
 
 }
 

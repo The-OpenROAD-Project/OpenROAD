@@ -36,17 +36,17 @@
 #pragma once
 
 namespace cts {
-class TritonCTSKernel;
+class TritonCTS;
 }
 
 namespace ord {
 
 class OpenRoad;
 
-cts::TritonCTSKernel* makeTritonCts();
+cts::TritonCTS* makeTritonCts();
 
 void initTritonCts(OpenRoad* openroad);
 
-void deleteTritonCts(cts::TritonCTSKernel* tritoncts);
+void deleteTritonCts(cts::TritonCTS* tritoncts);
 
 }  // namespace ord

@@ -269,7 +269,13 @@ proc repair_hold_violations { args } {
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   sta::check_argc_eq0 "repair_hold_violations" $args
   ord::warn RSZ 19 "repair_hold_violations is deprecated. Use repair_timing -hold"
-  rsz::repair_hold $allow_setup_violations
+  set resize_libs [get_libs *]
+  if { $resize_libs == {} } {
+    ord::error RSZ 9 "No liberty libraries found."
+  }
+  rsz::check_parasitics
+  rsz::resizer_preamble $resize_libs
+  rsz::repair_hold 0.0 $allow_setup_violations
 }
 
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\

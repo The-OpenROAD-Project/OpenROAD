@@ -32,9 +32,11 @@
 
 #pragma once
 
+#include <QFrame>
 #include <QMainWindow>
 #include <QOpenGLWidget>
 #include <QScrollArea>
+#include <QShortcut>
 #include <map>
 #include <vector>
 
@@ -71,6 +73,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
  public:
   LayoutViewer(Options* options,
                const SelectionSet& selected,
+               const SelectionSet& highlighted,
                QWidget* parent = nullptr);
 
   void setDb(odb::dbDatabase* db);
@@ -130,6 +133,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
                 QPainter* painter,
                 const odb::Rect& bounds);
   void drawSelected(Painter& painter);
+  void drawHighlighted(Painter& painter);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   odb::Rect screenToDBU(const QRect& rect);
@@ -139,6 +143,7 @@ class LayoutViewer : public QWidget, public odb::dbBlockCallBackObj
   odb::dbDatabase* db_;
   Options* options_;
   const SelectionSet& selected_;
+  const SelectionSet& highlighted_;
   LayoutScroll* scroller_;
   qreal pixelsPerDBU_;
   int min_depth_;

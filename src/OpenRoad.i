@@ -114,7 +114,7 @@ getResizer()
   return openroad->getResizer();
 }
 
-cts::TritonCTSKernel *
+cts::TritonCTS *
 getTritonCts()
 {
   OpenRoad *openroad = getOpenRoad();
@@ -128,7 +128,7 @@ getTritonMp()
   return openroad->getTritonMp();
 }
 
-replace::Replace*
+gpl::Replace*
 getReplace()
 {
   OpenRoad *openroad = getOpenRoad();
