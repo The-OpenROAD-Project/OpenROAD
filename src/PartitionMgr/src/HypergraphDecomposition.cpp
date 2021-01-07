@@ -189,26 +189,14 @@ void HypergraphDecomposition::updateHypergraph(
   newHypergraph.addRowPtr(nextPtr);
 }
 
-GraphType HypergraphDecomposition::resolveModel(std::string graphModel)
-{
-  if (graphModel == "clique") {
-    return CLIQUE;
-  }
-  if (graphModel == "star") {
-    return STAR;
-  }
-  return HYBRID;
-}
-
 void HypergraphDecomposition::toGraph(Hypergraph& hypergraph,
                                       Graph& graph,
-                                      std::string graphModelS,
+                                      GraphType graphModel,
                                       unsigned weightingOption,
                                       unsigned maxEdgeWeight,
                                       unsigned threshold)
 {
   _weightingOption = weightingOption;
-  GraphType graphModel = resolveModel(graphModelS);
   std::vector<int> colIdx = hypergraph.getColIdx();
   adjMatrix.resize(hypergraph.getNumVertex());
   for (int i = 0; i < hypergraph.getNumRowPtr() - 1; i++) {
