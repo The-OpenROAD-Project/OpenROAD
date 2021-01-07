@@ -1492,55 +1492,26 @@ void lefin::units(lefiUnits* unit)
 void lefin::setDBUPerMicron(int dbu)
 {
   switch (dbu) {
-    case 100: {
-      _dist_factor    = 100.0;
-      _area_factor    = 10000.0;
-      _dbu_per_micron = 100;
+    case 100:
+    case 200:
+    case 400:
+    case 800:
+    case 1000:
+    case 2000:
+    case 4000:
+    case 8000:
+    case 10000:
+    case 20000:
+      _dist_factor = _dbu_per_micron = dbu;
+      _area_factor = _dbu_per_micron * _dbu_per_micron;
       break;
-    }
-
-    case 200: {
-      _dist_factor    = 200.0;
-      _area_factor    = 40000.0;
-      _dbu_per_micron = 200;
-      break;
-    }
-
-    case 1000: {
-      _dist_factor    = 1000.0;
-      _area_factor    = 1000000.0;
-      _dbu_per_micron = 1000;
-      break;
-    }
-
-    case 2000: {
-      _dist_factor    = 2000.0;
-      _area_factor    = 4000000.0;
-      _dbu_per_micron = 2000;
-      break;
-    }
-
-    case 10000: {
-      _dist_factor    = 10000.0;
-      _area_factor    = 100000000.0;
-      _dbu_per_micron = 10000;
-      break;
-    }
-
-    case 20000: {
-      _dist_factor    = 20000.0;
-      _area_factor    = 400000000.0;
-      _dbu_per_micron = 20000;
-      break;
-    }
-
-    default: {
+    default:
       ++_errors;
       notice(0,
-             "error: invalid dbu-per-micron value %d; valid units (100, 200, "
-             "1000, 2000, 10000, 20000)\n",
+             "error: invalid dbu-per-micron value %d; valid units (100, 200, 400, 800"
+             "1000, 2000, 4000, 8000, 10000, 20000)\n",
              _lef_units);
-    }
+      break;
   }
 }
 
