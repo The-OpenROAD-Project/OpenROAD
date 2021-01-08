@@ -119,7 +119,9 @@ unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
   }
 
   _logger->error(CTS, 58, "Invalid parameters in {}", __func__ );
-  std::exit(1);
+
+  // avoid warn message
+  return 4;
 }
 
 void SinkClustering::findBestMatching()
@@ -154,8 +156,8 @@ void SinkClustering::findBestMatching()
   Point<double>& p1 = _points[idx1];
   matchingCost1 += p0.computeDist(p1);
 
-  _logger->report("Matching0 size: ", matching0.size());
-  _logger->report("Matching1 size: ", matching1.size());
+  _logger->report("Matching0 size: {}", matching0.size());
+  _logger->report("Matching1 size: {}", matching1.size());
   if (matchingCost0 < matchingCost1) {
     _matchings = matching0;
   } else {
